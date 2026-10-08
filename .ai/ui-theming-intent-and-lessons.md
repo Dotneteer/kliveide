@@ -944,6 +944,21 @@ the present, so two rules carry the whole visual vocabulary:
   `--bgcolor-history-band`, `--border-history-band`. The CPU panel's band, the status-bar chip, the
   Execution History document's cursor row (a 3px rail plus an outline, so it reads apart from the
   selection) and the toolbar's absence of any colour change all come from them.
+- **Under full reverse debugging the machine itself is in the past**, so the "present" bands go by
+  themselves (`historyMemoryIsHistorical`) and nothing else changes colour: the outline markers stay
+  the only in-view signal. The status bar carries the rest in **one chip whose text is the state** -
+  `⟲ −1.24 s · step −3,412` in the past, `▶ Replaying · 800 ms to present`, `⟲ Searching back… 3
+  intervals` - all on the history tokens, a click doing the one obvious thing (back to the present,
+  cancel the search; nothing while replaying, which drops the pointer and the hover). The words
+  live in `@common/history/reverseDebugText.ts`, not in the component, so status bar, tooltip and
+  docs cannot drift. The reverse range and "input ignored" go in the tooltip (the latter also
+  suffixes the label), never in a second chip.
+- **An action beside a state chip is outlined in the same hue, never filled** (`.historyAction`:
+  "Take over here"): fill is what says *state*, so a filled button next to a filled chip reads as a
+  second state. It gains the band's fill only on hover.
+- **A timeline that stopped early uses the status bar's error label** (`--bgcolor-errorLabel`), not a
+  history token: it is a failure, not a place in time. Its tooltip carries the reason; it clears at
+  the next Stop or debug session.
 - **A changed value on an accent-coloured panel takes the wash, not the colour** (`changedWash` via
   `Bit16Value`/`Bit8Value`'s `changed`): `.changed` repaints an accent value in the same accent and
   shows nothing. In history the CPU panel marks what the *previous step* changed, the present value

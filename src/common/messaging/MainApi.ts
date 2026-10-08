@@ -83,6 +83,18 @@ class MainApiImpl {
   }
 
   /**
+   * Asks the user to confirm an action that cannot be undone: a question box with the action's own
+   * button and Cancel (the default). Resolves true only when the action's button was chosen.
+   * @param _title The box's title
+   * @param _message The question
+   * @param _detail What happens, in more words (optional)
+   * @param _confirmLabel The action's button, a verb ("Take Over")
+   */
+  async confirmAction(_title: string, _message: string, _detail: string | undefined, _confirmLabel: string): Promise<boolean> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * Creates a new disk file of the specified type in the given folder.
    * @param _diskFolder The folder to create the disk in.
    * @param _filename The name of the disk file.

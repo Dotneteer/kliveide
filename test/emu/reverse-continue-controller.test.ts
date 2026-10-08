@@ -140,4 +140,97 @@ describe("Reverse Continue by replay (Phase 5)", () => {
     expect(session.peek(0x9500)).toBe(written & 1 ? (written - 1) & 0xff : written);
     await controller.stop();
   }, 600_000);
+
+  it("publishes where the timeline stands, and a search shows progress and can be canceled (§4.4)", async () => {
+    const session = (await createSp48Session()).bootToBasic();
+    const program = await session.loadCode(PROGRAM);
+    session.poke(0x9600, 0);
+    session.machine.pc = program.symbol("Main");
+    const store = createAppStore("test-reverse-progress");
+    const controller = new MachineController(store, new ResolvingMessenger(), session.machine as any);
+    const debugSupport = session.attachDebugSupport();
+    controller.debugSupport = debugSupport;
+    controller.state = MachineControllerState.Paused;
+    const paused = () => controller.state === MachineControllerState.Paused;
+    const reverse = () => store.getState().emulatorState?.reverseDebug;
+
+    const bp = { address: program.symbol("Loop"), exec: true, hitCount: 400_000 };
+    debugSupport.addBreakpoint(bp);
+    await controller.startDebug();
+    await waitFor(paused, "the loop breakpoint");
+    debugSupport.removeBreakpoint(bp);
+    const timeline = controller.timeline!;
+    const present = timeline.position;
+    expect(reverse()).toMatchObject({ active: true, mode: "live" });
+    expect(reverse()!.rangeSeconds).toBeGreaterThan(0.5);
+
+    // --- In the past: how far back, in machine time
+    for (let i = 0; i < 50; i++) controller.navigateHistory("back");
+    expect(reverse()).toMatchObject({ active: true, mode: "navigating" });
+    expect(reverse()!.behindSeconds).toBeGreaterThanOrEqual(0);
+    expect(reverse()!.behindSeconds).toBeLessThan(0.1);
+    // --- A step from the past replays: no live input was pressed, so none is reported as ignored
+    await controller.stepInto();
+    await waitFor(paused, "a step from the past");
+    expect(reverse()).toMatchObject({ active: true, mode: "navigating" });
+    expect(reverse()!.inputsIgnored).toBeUndefined();
+    controller.navigateHistory("present");
+    expect(reverse()!.mode).toBe("live");
+
+    // --- A watchpoint nothing hits: the search goes interval by interval, publishing its progress,
+    // --- until canceled - then the machine is back where it started
+    debugSupport.addBreakpoint({ address: 0xa000, memoryWrite: true });
+    const searching = controller.reverseContinue();
+    await waitFor(() => (reverse()?.searchedIntervals ?? 0) >= 2, "two intervals searched");
+    expect(controller.cancelReverseContinue()).toBe(true);
+    const result = await searching;
+    expect(result.reason).toBe("canceled");
+    expect(result.moved).toBe(false);
+    expect(timeline.mode).toBe("live");
+    expect(timeline.position).toEqual(present);
+    expect(reverse()!.searchedIntervals).toBeUndefined();
+    expect(controller.cancelReverseContinue()).toBe(false);
+    await controller.stop();
+    expect(reverse()).toBeUndefined();
+  }, 600_000);
+
+  it("reports a desync once, on the status bar's state and in the output pane (D9)", async () => {
+    const session = (await createSp48Session()).bootToBasic();
+    const program = await session.loadCode(PROGRAM);
+    session.poke(0x9600, 0);
+    session.machine.pc = program.symbol("Main");
+    const store = createAppStore("test-reverse-desync");
+    const sent: string[] = [];
+    class RecordingMessenger extends ResolvingMessenger {
+      protected override send(message: RequestMessage): void {
+        sent.push(JSON.stringify(message));
+        super.send(message);
+      }
+    }
+    const controller = new MachineController(store, new RecordingMessenger(), session.machine as any);
+    const debugSupport = session.attachDebugSupport();
+    controller.debugSupport = debugSupport;
+    controller.state = MachineControllerState.Paused;
+    const paused = () => controller.state === MachineControllerState.Paused;
+    const runLoops = async (n: number) => {
+      const bp = { address: program.symbol("Loop"), exec: true, hitCount: n };
+      debugSupport.resetHitCounts();
+      debugSupport.addBreakpoint(bp);
+      await controller.startDebug();
+      await waitFor(paused, "the loop breakpoint");
+      debugSupport.removeBreakpoint(bp);
+    };
+    await runLoops(30_000);
+    // --- A byte changed behind the journal's back: the live run takes the other branch from here
+    const raw = (controller.timeline as any).handle.raw;
+    raw.sp48WriteMemory(0x9600, 1);
+    await runLoops(30_000);
+    controller.navigateHistory("back");
+    expect(controller.timeline).toBeUndefined();
+    expect(store.getState().emulatorState?.reverseDebug).toMatchObject({ active: false, mode: "live" });
+    expect(store.getState().emulatorState?.reverseDebug?.desync).toMatch(/diverged/);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(sent.filter((m) => m.includes("Reverse debugging stopped")).length).toBe(1);
+    await controller.stop();
+  }, 600_000);
 });

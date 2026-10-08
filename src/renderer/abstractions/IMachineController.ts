@@ -188,6 +188,15 @@ export interface IMachineController {
   /** Take over here (`.plans/REVERSE_DEBUGGING_PLAN.md` D12); false when the machine is not in the past */
   takeOverHere?(): Promise<boolean>;
 
+  /** What Take over here would leave behind (`.plans/REVERSE_DEBUGGING_PLAN.md` T4) */
+  forkPreview?(): { sdWrites: number; hostFiles: string[] } | undefined;
+
+  /** Reverse Continue with progress and cancel (D15) */
+  reverseContinue?(): Promise<HistoryNavigationResult>;
+
+  /** Stops a running Reverse Continue search */
+  cancelReverseContinue?(): boolean;
+
   /** Returns to the present (D5) */
   clearHistoryCursor?(): void;
 

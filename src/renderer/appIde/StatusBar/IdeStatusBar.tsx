@@ -8,6 +8,7 @@ import styles from "./IdeStatusBar.module.scss";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { CODE_EDITOR } from "@common/state/common-ids";
 import { historyStepText } from "@common/history/historyNavigation";
+import { reverseStatusText, reverseStatusTooltip } from "@common/history/reverseDebugText";
 
 type IdeStatusBarProps = {
   show: boolean;
@@ -17,6 +18,8 @@ export const IdeStatusBar = ({ show }: IdeStatusBarProps) => {
   const { projectService, ideCommandsService } = useAppServices();
   // --- The history cursor (`.plans/LITE_STEP_BACK_PLAN.md` D7): "you are in the past", one click back
   const historyPosition = useSelector((s) => s.emulatorState?.historyPosition);
+  // --- Full reverse debugging (`.plans/REVERSE_DEBUGGING_PLAN.md` §4.4): in the past, replaying, searching
+  const reverseDebug = useSelector((s) => s.emulatorState?.reverseDebug);
   const execState = useSelector((s) => s.emulatorState?.machineState);
   const statusMessage = useSelector((s) => s.ideView?.statusMessage);
   const statusSuccess = useSelector((s) => s.ideView?.statusSuccess);
@@ -61,7 +64,17 @@ export const IdeStatusBar = ({ show }: IdeStatusBarProps) => {
           <LabelSeparator />
           <Label text={machineState} />
         </Section>
-        {!!historyPosition && execState === MachineControllerState.Paused && (
+        {reverseDebug && reverseStatusText(reverseDebug, historyPosition ? historyStepText(historyPosition) : undefined) ? (
+          <ReverseDebugSection
+            text={reverseStatusText(reverseDebug, historyPosition ? historyStepText(historyPosition) : undefined)!}
+            tooltip={reverseStatusTooltip(reverseDebug)}
+            stopped={!reverseDebug.active}
+            searching={reverseDebug.searchedIntervals !== undefined}
+            inThePast={reverseDebug.active && reverseDebug.mode === "navigating" && reverseDebug.searchedIntervals === undefined}
+            inputIgnored={!!reverseDebug.inputsIgnored}
+            run={(command) => void ideCommandsService.executeCommand(command)}
+          />
+        ) : !!historyPosition && execState === MachineControllerState.Paused && (
           <Section>
             <button
               type="button"
@@ -115,6 +128,53 @@ export const IdeStatusBar = ({ show }: IdeStatusBarProps) => {
         )}
       </div>
     </div>
+  );
+};
+
+type ReverseDebugSectionProps = {
+  text: string;
+  tooltip?: string;
+  /** The timeline ended early (a desync): an error chip that explains itself in its tooltip */
+  stopped: boolean;
+  /** A Reverse Continue search runs: a click cancels it */
+  searching: boolean;
+  /** Paused in the past: a click returns to the present, and Take over here is offered */
+  inThePast: boolean;
+  /** Live input was dropped while in the past (D12) */
+  inputIgnored: boolean;
+  run: (command: string) => void;
+};
+
+/**
+ * The reverse-debugging states (`.plans/REVERSE_DEBUGGING_PLAN.md` §4.4): "⟲ −1.24 s · step −3,412"
+ * in the past, with Take over here beside it; "▶ Replaying · 800 ms to present"; a search's progress,
+ * which a click cancels; and an error chip when the timeline stopped. The reverse range is in the
+ * tooltip. The past keeps G4.3's chip colours (the secondary accent).
+ */
+const ReverseDebugSection = ({ text, tooltip, stopped, searching, inThePast, inputIgnored, run }: ReverseDebugSectionProps) => {
+  const action = searching ? "reverse-continue-cancel" : inThePast ? "history-present" : undefined;
+  return (
+    <Section>
+      <button
+        type="button"
+        className={classnames(styles.historyChip, { [styles.reverseStopped]: stopped, [styles.passive]: !action })}
+        title={tooltip}
+        onClick={action ? () => run(action) : undefined}
+      >
+        {text}
+        {inputIgnored && !searching ? " · input ignored" : ""}
+      </button>
+      {inThePast && (
+        <button
+          type="button"
+          className={styles.historyAction}
+          title="Continue from this point: the recorded future is discarded (asks first)"
+          onClick={() => run("history-take-over")}
+        >
+          Take over here
+        </button>
+      )}
+    </Section>
   );
 };
 

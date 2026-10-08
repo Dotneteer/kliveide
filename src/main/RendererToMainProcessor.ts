@@ -186,6 +186,26 @@ class MainMessageProcessor {
   }
 
   /**
+   * Asks the user to confirm an action that cannot be undone (see `MainApi.confirmAction`)
+   */
+  async confirmAction(title: string, message: string, detail: string | undefined, confirmLabel: string): Promise<boolean> {
+    try {
+      const result = await dialog.showMessageBox(this.window, {
+        type: "question",
+        buttons: [confirmLabel, "Cancel"],
+        defaultId: 1,
+        cancelId: 1,
+        title,
+        message,
+        detail
+      });
+      return result.response === 0;
+    } finally {
+      this.dispatch(dimMenuAction(false));
+    }
+  }
+
+  /**
    * Asks the user to confirm overwriting an existing file.
    * @param targetPath The target path that would be overwritten.
    */

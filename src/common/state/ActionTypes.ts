@@ -118,6 +118,8 @@ export interface ActionTypes {
   SET_HISTORY_POSITION: null;
   SET_SCREEN_RECORDING_STATE: null;
   SET_RZX_STATE: null;
+  // --- Full reverse debugging (`.plans/REVERSE_DEBUGGING_PLAN.md` §4.4)
+  SET_REVERSE_DEBUG_STATE: null;
   SET_SCREEN_RECORDING_QUALITY: null;
   SET_SCREEN_RECORDING_FORMAT: null;
   SET_WINDOW_RECORDING_STATE: null;

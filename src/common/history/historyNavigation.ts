@@ -31,7 +31,7 @@ export type HistoryNavigationResult = {
   /** The cursor moved */
   moved: boolean;
   /** Why it did not get where it was asked to go */
-  reason?: HistoryWalkReason | "running" | "noHistory" | "gone";
+  reason?: HistoryWalkReason | "running" | "noHistory" | "gone" | "canceled";
   /** The call/return pairing disagreed with SP here (T3) */
   uncertain?: boolean;
   /** What to tell the user: the start of recorded history, conditions that were not checked */
@@ -94,6 +94,8 @@ export function historyReasonText(
       return "This machine does not record execution history";
     case "gone":
       return "That record is no longer in the history";
+    case "canceled":
+      return "Reverse continue canceled: back where it started";
   }
   return undefined;
 }

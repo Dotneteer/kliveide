@@ -1,0 +1,118 @@
+---
+description: "Reverse debugging: step back with the whole machine in the past, continue from there, take over at any point, and find the last write to an address."
+---
+
+import { Callout } from 'nextra/components'
+
+# Reverse Debugging
+
+When a debug session pauses, you can go **back in time**: not just look at old register values, but
+put the whole machine where it was - memory, devices, the screen - at any instruction of the
+session. Every panel shows that moment, and every breakpoint kind works there. From that point you
+can step forward again, continue, or take over and let the program run a different way.
+
+<Callout type="info">
+Reverse debugging works on every Z80 machine: the ZX Spectrum 48K and 16K, 128K, Pentagon 128,
++2A/+3/+2E/+3E and Next, the Scorpion ZS-256, the Timex machines, the Cambridge Z88, and the ZX80
+and ZX81. It is on by default in every debug session (**Start with Debugging**); a plain **Start**
+does not record.
+</Callout>
+
+## How it works
+
+While a debug session runs, Klive keeps **keyframes** - copies of the machine taken every fraction
+of a second, sharing everything that did not change - and a **journal** of every input the machine
+received: keys, joysticks, the mouse, tapes, disks, memory edits, the SD card's data. To go back,
+Klive restores the keyframe before the point you want and replays the journal up to the exact
+instruction. The replay checks itself against the recorded run as it goes.
+
+How far back you can go is the **reverse range**. With the default memory budget it is minutes of
+machine time on the ZX Spectrum and usually several minutes on the Next; the status bar's tooltip
+and the Execution History's header show it.
+
+## Going back
+
+The [step-back commands](/working-with-ide/execution-history#stepping-back) - Step Back, Reverse
+Step Over, Reverse Step Out, Reverse Continue, selecting a row of the Execution History - now move
+the machine itself. Memory, Watch, the ULA and Next panels, the screen and the bytes in the
+disassembly all show the past; there is no "memory shows the present" band.
+
+The status bar says where you are:
+
+| Status bar | Meaning | Click |
+| --- | --- | --- |
+| `⟲ −1.24 s · step −3,412` | Paused 1.24 seconds of machine time before the present, 3,412 instructions back | returns to the present |
+| `⟲ −13 s · before the history window` | Further back than the Execution History reaches (Reverse Continue can land there); the history shows the run up to this point | returns to the present |
+| `▶ Replaying · 800 ms to present` | Running from the past toward the present | |
+| `⟲ Searching back… 3 intervals` | Reverse Continue is searching | cancels the search |
+| `⚠ Reverse debugging stopped` | The timeline ended early; the tooltip and the output say why | |
+
+## Continuing from the past
+
+**Step Into, Step Over, Continue and Run to Cursor** in the past **replay**: the machine runs toward
+the present with your breakpoints active and the recorded input playing, so it does exactly what it
+did before. Reaching the present, it simply goes on running live. Step Forward does the same one
+instruction at a time.
+
+**Key presses are ignored while in the past** - the recorded ones play instead - and the status bar
+says so. A plain **Start** (not debugging) returns to the present first.
+
+## Taking over
+
+**Take over here** makes the point you stand at the present: the recorded future is discarded and
+the machine continues live from there, with your input. Use the **Take over here** button next to
+the status bar's `⟲` label, or the `history-take-over` command. It asks first, and names what the
+discarded future leaves behind:
+
+- **SD card writes are undone.** Sectors the program wrote to the Next's SD card in the discarded
+  future get their old contents back, so the card image matches the machine again.
+- **Disks follow the machine.** The +3's and the Beta 128's disk files are written back from the
+  restored disks.
+- **Tape files stay.** Files a program saved to tape in the discarded future remain on your disk;
+  the confirmation lists them.
+
+**Editing in the past takes over too.** Changing a register, memory or a variable while the machine
+stands in the past asks the same question first - an edit changes the past, so the point becomes the
+present.
+
+## Reverse Continue
+
+**Reverse Continue** (`Alt+F5`) goes back to the last point where a breakpoint would have stopped
+the machine - and because the machine is really there, **every breakpoint kind works**: conditions
+that read memory or ports, memory and I/O breakpoints, and the Next's NextReg and Copper breakpoints.
+A memory-write breakpoint becomes a **reverse watchpoint**: *where did this byte last
+change?*
+
+The search goes back one keyframe interval at a time, newest first, so a recent hit is found
+quickly. A long search shows its progress in the status bar; click it, or run
+`reverse-continue-cancel`, to stop it - the machine goes back where the search started.
+
+## Settings
+
+On the **Debugging** page of [Settings](/working-with-ide/settings):
+
+- **Reverse debugging** turns it on or off for the next debug session. Off, stepping back shows the
+  recorded registers only, with memory at the present (the history works as it did before).
+- **Memory for the reverse-debugging timeline**: *Automatic* (512 MB, or a sixteenth of the
+  computer's memory if that is less) or a fixed size. More memory reaches further back.
+
+## Limits
+
+- **The range is finite.** The oldest keyframes make room for new ones; going back further stops at
+  the start of the range and says so.
+- **A replay that disagrees with the recording stops reverse debugging** for the session rather than
+  show you a wrong past. The output says where; please report it - it is a bug.
+- **Loading a snapshot or a state, a reset or injecting code** ends the timeline: the past before it
+  belongs to another machine.
+
+## Commands
+
+```
+history-take-over     ; take over here, after asking (htake)
+history-take-over -y  ; take over here without asking
+reverse-continue      ; back to the previous breakpoint hit (rcont)
+reverse-continue-cancel ; stop a running Reverse Continue search (rcancel)
+```
+
+See also [The Execution History](/working-with-ide/execution-history) and the
+[command reference](/commands-reference#history-take-over).

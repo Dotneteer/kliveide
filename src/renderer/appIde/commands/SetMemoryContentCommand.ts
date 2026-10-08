@@ -1,4 +1,5 @@
 import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
+import { takeOverBeforeEdit } from "./reverseDebugFork";
 import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
 import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
 import { writeSuccessMessage, commandSuccess, IdeCommandBase, commandError } from "../services/ide-commands";
@@ -85,7 +86,12 @@ export class SetMemoryContentCommand extends IdeCommandBase<SetMemoryContentComm
     }
     outp.resetStyle();
 
-    context.emuApi.setMemoryContent(args.address, args.value, size, bigEndian);
+    // --- An edit in the past changes the past: take over there first, after asking (REVERSE_DEBUGGING_PLAN D12)
+    if (!(await takeOverBeforeEdit(context, "Edit memory"))) {
+      writeSuccessMessage(context.output, "Memory edit canceled");
+      return commandSuccess;
+    }
+    await context.emuApi.setMemoryContent(args.address, args.value, size, bigEndian);
     context.store.dispatch(incEmuViewVersionAction(), "ide");
 
     writeSuccessMessage(context.output, "Memory content set");

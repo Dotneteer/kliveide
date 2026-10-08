@@ -20,6 +20,9 @@ export function emulatorStateReducer(
     case "SET_RZX_STATE":
       return { ...state, rzx: payload?.value };
 
+    case "SET_REVERSE_DEBUG_STATE":
+      return { ...state, reverseDebug: payload?.value };
+
     case "SET_QUICK_STATE_AVAILABLE":
       return { ...state, quickStateAvailable: payload?.flag as boolean };
 

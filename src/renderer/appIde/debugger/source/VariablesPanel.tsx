@@ -12,7 +12,9 @@ import dataStyles from "@renderer/controls/data/Data.module.scss";
 import { Icon } from "@renderer/controls/Icon";
 import { IconButton } from "@renderer/controls/IconButton";
 import { useEmuApi } from "@renderer/core/EmuApi";
-import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
+import { useDispatch, useSelector, useStore } from "@renderer/core/RendererProvider";
+import { useMainApi } from "@renderer/core/MainApi";
+import { takeOverBeforeEdit } from "@renderer/appIde/commands/reverseDebugFork";
 import { iconSizes } from "@renderer/theming/tokens/dimensions";
 
 import { buildSourceCallStack } from "./call-stack-model";
@@ -40,6 +42,8 @@ export const VariablesPanel = () => {
 
 const SourceVariables = ({ info }: { info: SourceLevelDebugInfo }) => {
   const emuApi = useEmuApi();
+  const mainApi = useMainApi();
+  const store = useStore();
   const dispatch = useDispatch();
   const machineState = useSelector((s) => s.emulatorState?.machineState);
   const frame = useSelector((s) => s.ideView?.sourceFrame ?? 0);
@@ -110,6 +114,11 @@ const SourceVariables = ({ info }: { info: SourceLevelDebugInfo }) => {
     const encoded = encodeValue(node.valueType!, editing.text);
     if ("error" in encoded) {
       setEditing({ ...editing, error: encoded.error });
+      return;
+    }
+    // --- An edit in the past changes the past: take over there first, after asking (REVERSE_DEBUGGING_PLAN D12)
+    if (!(await takeOverBeforeEdit({ store, emuApi, mainApi }, `Edit ${node.name}`))) {
+      setEditing(undefined);
       return;
     }
     for (let i = 0; i < encoded.bytes.length; i++) {

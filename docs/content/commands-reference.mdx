@@ -1370,15 +1370,42 @@ Available aliases: `stbu`
 
 ## `reverse-continue`
 
-Use this command to go back to the previous hit of an enabled execution breakpoint in the execution
-history. Conditions that read only registers and flags are checked against the recorded registers;
-other conditions count as hit, and the output says so.
+Use this command to go back to the previous point where an enabled breakpoint would have stopped the
+machine. With [reverse debugging](/working-with-ide/reverse-debugging) on, the machine is really
+there: every breakpoint kind is checked, and a memory-write breakpoint finds the last write to an
+address. With it off, only execution breakpoints are searched in the recorded history; conditions
+that read only registers and flags are checked against the recorded registers, other conditions
+count as hit, and the output says so.
 
 ```
 reverse-continue
 ```
 
 Available aliases: `rcont`
+
+## `reverse-continue-cancel`
+
+Use this command to stop a running Reverse Continue search. The machine goes back where the search
+started.
+
+```
+reverse-continue-cancel
+```
+
+Available aliases: `rcancel`
+
+## `history-take-over`
+
+Use this command, while the machine stands in the past of a reverse-debugging session, to make that
+point the present: the recorded future is discarded and the machine continues live from there. It
+asks first and names what the discarded future leaves behind (SD card writes it undoes, tape files
+that stay); `-y` skips the question.
+
+```
+history-take-over [-y]
+```
+
+Available aliases: `htake`
 
 ## `history-present`
 

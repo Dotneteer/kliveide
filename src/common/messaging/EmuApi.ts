@@ -599,6 +599,27 @@ class EmuApiImpl {
   }
 
   /**
+   * What Take over here would leave behind (`.plans/REVERSE_DEBUGGING_PLAN.md` T4): SD card sector
+   * writes it reverts, files saved to tape that stay. Undefined without a timeline.
+   */
+  async getForkPreview(): Promise<{ sdWrites: number; hostFiles: string[] } | undefined> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Reverse Continue (D15) with progress and cancel: resolves when the search ends; while it runs,
+   * the emulator state's `reverseDebug.searchedIntervals` counts the keyframe intervals covered
+   */
+  async reverseContinue(): Promise<HistoryNavigationResult> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /** Stops a running Reverse Continue search; false when none runs */
+  async cancelReverseContinue(): Promise<boolean> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * Gets the ZX Spectrum Next Copper's state: its list RAM, mode, pointers and beam.
    */
   async getCopperState(): Promise<CopperState> {

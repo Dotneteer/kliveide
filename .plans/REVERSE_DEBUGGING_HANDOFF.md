@@ -1,7 +1,8 @@
 # Reverse Debugging (G4.4) — Handoff
 
 For an AI session picking up [REVERSE_DEBUGGING_PLAN.md](REVERSE_DEBUGGING_PLAN.md). Written 2026-10-08,
-after Phases 0–5; updated after Phases 6 and 7. The plan is the source of truth; this note is the map into it and the code, plus what
+after Phases 0–5; updated after Phases 6, 7 and 8. **G4.4 is complete**; this note is now a map for
+maintenance and for G4.6 (saving a timeline). The plan is the source of truth; this note is the map into it and the code, plus what
 only the previous session knew.
 
 ## 1. Where things stand
@@ -13,8 +14,9 @@ only the previous session knew.
   toward the present, Take over here forks, Reverse Continue checks every breakpoint kind on the real
   past machine (reverse watchpoints included). Since Phase 6 the Next's SD card is safe in a timeline:
   replays never ask the host, and a fork writes the discarded future's sectors back (§16 of the plan).
-- **Next:** Phase 8 (UI, docs, competitive analysis). See §4 below.
-- **Committed:** Phases 0–6 are commit `7bb36ace5` on `dotneteer/execution-history`, Phase 7 the commit after it.
+- **Next:** nothing in G4.4. G4.6 (`.plans/DEBUG_SESSION_RECORDING_PLAN.md`) builds on it.
+- **Committed:** Phases 0–6 are commit `7bb36ace5` on `dotneteer/execution-history`, Phase 7 is
+  `2a16d4877`, Phase 8 the commit after it.
   `_experiments/testprojects/disann/klive.project` was already modified before this work
   and is not part of it. Commit only when the user asks.
 - Last verified state (after Phase 6): `npm run build:check` clean (112 known), full `npm test` green,
@@ -86,8 +88,11 @@ only the previous session knew.
 
 ## 4. What is next
 
-**Phases 6 and 7 are done** (plan §16, §17). What they leave for Phase 8: the fork confirmation
-itself (`controller.forkPreview()` has the data). The Phase 7 cores have no frame-boundary scratch
+**Phases 6, 7 and 8 are done** (plan §16-§18). The UI: `emulatorState.reverseDebug`, published by
+`MachineController.publishReverseState`; the status bar's chip and Take over here
+(`IdeStatusBar.tsx`); the words in `@common/history/reverseDebugText.ts`; the fork confirmation in
+`appIde/commands/reverseDebugFork.ts`; `reverseContinue`/`cancelReverseContinue` on the controller.
+Verify UI work in the running IDE over CDP, as Phase 8 did (§18 of the plan). The Phase 7 cores have no frame-boundary scratch
 (T5) - their keyframes keep the audio buffers; worth it only if memory says so. A fork test that writes
 a disk end to end (the +3, the Beta 128) is still missing; `republishDisks` is tested on the machines.
 

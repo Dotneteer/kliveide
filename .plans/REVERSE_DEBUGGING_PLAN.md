@@ -2,14 +2,15 @@
 
 Handoff notes for a new session: [REVERSE_DEBUGGING_HANDOFF.md](REVERSE_DEBUGGING_HANDOFF.md).
 
-Status: **Phase 7 done** (2026-10-08); **Phase 6 done** (2026-10-08); **Phase 5 done** (2026-10-08); **Phase 4 done** (2026-10-08); **Phase 3 done** (2026-10-08); **Phase 2 done** (2026-10-08); **Phase 1 done** (2026-10-08); **Phase 0 done — GO** (2026-10-07). D1–D21 are the decisions
+Status: **Done — all phases** (2026-10-08). **Phase 8 done** (2026-10-08); **Phase 7 done** (2026-10-08); **Phase 6 done** (2026-10-08); **Phase 5 done** (2026-10-08); **Phase 4 done** (2026-10-08); **Phase 3 done** (2026-10-08); **Phase 2 done** (2026-10-08); **Phase 1 done** (2026-10-08); **Phase 0 done — GO** (2026-10-07). D1–D21 are the decisions
 (2026-10-06); the author accepted the suggested answers to all §9 questions, folded into D2, D6, D11,
 D12, D19 and D21. Phase 0 was a **spike with a go/no-go gate**, as the roadmap asks. Its measurements
 are in §10; they revised D3, D4, D5 and T5 and added T15–T17. Phase 1's results are in §11; they
 revised D7 and added T18–T20. Phase 2's are in §12; they revised D9 and D16 and added T21. Phase 3's are in §13; they revised
 D5, D6, D18, T5 and T9. Phase 4's are in §14; they revised D10, D11, D17 and D20 and added T22. Phase 5's are in §15; they
 revised D15 and D17. Phase 6's are in §16; they revised D11, D12, D13, D14, D17, T3 and T4. Phase 7's are in §17; they
-revised D9, D13, D17 and D19 and added T23-T25. The phase after it are planned in less detail on purpose.
+revised D9, D13, D17 and D19 and added T23-T25. Phase 8's are in §18; they revised D12 and the UI of
+§4.4. Earlier, the phases after it are planned in less detail on purpose.
 
 Scope:
 - [CLOSING_THE_GAPS_PLAN.md](CLOSING_THE_GAPS_PLAN.md) **G4.4**, full reverse debugging: step back
@@ -87,7 +88,7 @@ yet exist:
 | D9 | **Replay verifies itself.** When a replay passes a later keyframe's position, the live image's page hashes must equal that keyframe's. While the history ring still holds a record for the position being replayed, the recorder compares its would-be record with it (PC, SP, AF). A mismatch stops the replay with "Replay diverged at step −N", like an RZX desync (G2.7), and the timeline is cut there. A desync is treated as a bug with a test, never as a user error. Since Phase 2: a keyframe restore **rewinds** the ring when it still holds that point (`z80HistoryRewind`), so the recorded run's later records stay in their slots, and with `z80HistorySetVerify` on, the recorder compares each record it is about to write with the one in its slot (PC, SP, AF) and stops the frame loop on a difference. Cutting the timeline ends it; the machine stays where the replay stopped. Since Phase 7: the comparison is with the slot as the sequence's *first* staging found it (the header keeps PC, SP and AF, words 64-76; the header is 80 bytes now), and a difference counts only once the record is published, because a forced NOP that extends a run stages a record and drops it (T23). |
 | D10 | **The historical-state provider is replay.** `ReplayStateProvider` implements G4.3's `IHistoricalStateProvider`: restore keyframe, replay to *s*, report `memoryIsHistorical: true`. Every G4.3 banner then disappears, and every panel shows the past because the machine **is** in the past. Since Phase 4: G4.3's `HistoryCursor` takes a `HistoryReplayHook`; moving the cursor to record *s* calls `ReplayStateProvider.enter(s)`, which has the timeline put the machine where it was just before *s* ran (`Timeline.navigateTo`); clearing it replays back to the present. Where the machine cannot go (before the timeline's start, a desync), the cursor falls back to G4.3's lite view and the navigation result says why. The walkers keep the present's PC and SP from the provider. |
 | D11 | **Continue from the past replays toward the present.** Continue, Step Into/Over/Out and Run-to from a past position run the machine with the journal supplying inputs ("**Replaying**", with the distance to the present in the status bar). Breakpoints are active. Live input is ignored, and the status bar says so. Reaching the end of the journal switches seamlessly to live. This is the default because it loses nothing and keeps Step Forward meaningful (Q3); a forking "Continue from here (take over)" can be added later if users ask. Since Phase 4: a debug run started while the machine is in the past is a *replay run* (`Timeline.startReplayRun`): the ring is rewound to the machine's position with verification on, the core's stop target is the next journal entry, and the 48K's and the Next's debug loops ask the core after every instruction (`z80HistoryCheckStop`, armed by `ExecutionContext.historyStopArmed`). The controller applies the entries there and goes live at the present; a breakpoint, a step or a pause before that leaves the machine in the past with the cursor on it. Since Phase 6: a replay run that stops older than anything the present's ring holds keeps the ring it regenerated, as a deep landing does (D17), instead of attaching a cursor the ring cannot hold - which had sent the machine back to the present. A frame command (the Next's SD card) is never processed while a replay runs: the journal answered it at its position. G4.3's rule that a machine command returns to the present first (its D5) now holds only while the machine is not itself in the past; a plain Run (no debugging) still returns first. |
-| D12 | **Forking is explicit: "Take over here".** A command (and status-bar action) discards the future: journal entries, keyframes and history records after the position. Live input then resumes, as RZX's "record from here" does. These also fork after a confirmation: editing a register or memory in the past, or loading media. **Key presses (and joystick or mouse input) while replaying never fork** (Q4): keys reach the emulator panel by accident, and a fork is irreversible for tape saves. They are ignored *visibly*, as the status bar flashes "Replaying — input ignored · Take over here". Since Phase 6: until Phase 8's confirmation exists, edits and new media in the past return to the present first, as G4.3's D5 has them do: tape and disk changes, Z88 card changes and machine commands (the Z88's flap, battery and shift keys) - in the past the muted journal would drop them silently. `clearHistoryCursor` also leaves a past that has no cursor (a deep landing). `takeOverHere` is asynchronous: it awaits the SD revert (D14). |
+| D12 | **Forking is explicit: "Take over here".** A command (and status-bar action) discards the future: journal entries, keyframes and history records after the position. Live input then resumes, as RZX's "record from here" does. These also fork after a confirmation: editing a register or memory in the past, or loading media. **Key presses (and joystick or mouse input) while replaying never fork** (Q4): keys reach the emulator panel by accident, and a fork is irreversible for tape saves. They are ignored *visibly*, as the status bar flashes "Replaying — input ignored · Take over here". Since Phase 8: the status bar's in-the-past chip gains "· input ignored" (and the tooltip says how many) once live input was dropped; a run no longer re-pushes the fast-load setting while replaying, which had counted as ignored input. Editing a register, memory or a variable in the past now **asks and forks** (`takeOverBeforeEdit`): declining cancels the edit. Take over here asks too (`history-take-over -y` skips it); the question names the SD writes the fork undoes and the tape files that stay (`forkConfirmation`). Since Phase 6: until Phase 8's confirmation exists, edits and new media in the past return to the present first, as G4.3's D5 has them do: tape and disk changes, Z88 card changes and machine commands (the Z88's flap, battery and shift keys) - in the past the muted journal would drop them silently. `clearHistoryCursor` also leaves a past that has no cursor (a deep landing). `takeOverHere` is asynchronous: it awaits the SD revert (D14). |
 | D13 | **Host side effects are suppressed during replay and undone on fork** (T3, T4). Tape-save publishing, disk write-back publishing, logpoint output, Z88 serial output, audio and frame-completed screen pushes are skipped while replaying. On fork: disk images are re-published from the restored in-core image; Next SD sectors written in the discarded future are restored from the SD undo log (D14); host files written by tape SAVE cannot be unwritten, so the fork confirmation lists them. Since Phase 6: the controller drops what a replayed frame produced for the host - `SAVED_TO_TAPE` and the pending disk changes (`discardReplayedHostEffects`) - rather than holding it, since publishing a replay's older sector contents after a return to the present would corrupt the file; to keep the present's own unpublished effects from being taken for a replay's, `TimelineOptions.beforeLeavePresent` publishes them before the machine leaves the present. Machines see a replay through `ExecutionContext.isReplayingHistory`. Since Phase 7 the Z88's serial-output buffer is volatile (T25): a replay empties it unshown, and `restoreHostState` empties it, so replayed output never reaches the IDE; the ZX80/81 takes an auto-RUN hit in a replay without typing RUN. On fork, `ForkAwareMachine.republishDisks` hands every sector of the inserted disks to the write-back (the +3's `.dsk`, the Beta 128's `.trd`, within the file's geometry); host files are noted by position (`Timeline.noteHostFile`) and `forkPreview()` / `fork()` name the ones after the fork point. |
 | D14 | **The Next SD card gets a journal and an undo log.** Sector reads in a timeline are journaled with their 512-byte data, so replay never re-reads a host file that later writes may have changed. A write first reads the old sector and journals it, then writes. On fork, the discarded future's writes are reverted in reverse order. During replay, writes are acknowledged from the journal without touching the host. Since Phase 6: the reads needed nothing new - the sector data already went through `writeCoreBytes` (Phase 1). The undo log (`SdUndoLog.ts`, owned by the `Timeline`, attached to the machine through `TimelineMachine.attachSdUndoLog`) keys each write by the journal index its acknowledgement was journaled at, the index a fork's journal truncation uses, so the two always agree; the old sector is read from the host just before the write (a failed read is logged as unrevertable). `fork()` returns the writes to undo, newest first, and the controller has the machine write them back (`revertSdWrites`); writes it could not undo are reported in the output pane. The Next's debug loop drops, on entry, a command the core no longer waits for. |
 | D15 | **Reverse Continue scans forward.** To find the last breakpoint hit before *s*: replay the keyframe interval that ends at or contains *s* with breakpoints in *collect* mode (record hits, do not stop); take the last hit before *s*; if there is none, move one interval back. Then replay to that hit. Every breakpoint kind works: conditions reading memory, memory-write watchpoints, I/O, NextReg and Copper breakpoints. That gives **reverse watchpoints** ("last write to `$8000`") without new machinery. Since Phase 5: collect mode is a D11 replay run with an end limit (`Timeline.startReplayRun(limit)`), driven through the machine's own per-instruction debug loop with breakpoints active; every stop before the limit is noted with the controller's own stop description, and the run continues as a real Continue would. The intervals are the keyframes (transient ones included), searched from the machine's position backwards. Memory, I/O and NextReg stops spend their one-shots as a real stop does; the landing replay restores the breakpoint state of the keyframe it starts from (D16), which brings them back. |
@@ -377,7 +378,7 @@ The G4.3 visuals stay, minus the "memory shows the present" banners (`memoryIsHi
 | 5 ✅ 2026-10-08 (§15) | Reverse Continue with collect-mode breakpoints; reverse watchpoints (D15). | e2e: last write to an address found across three keyframe intervals. |
 | 6 ✅ 2026-10-08 (§16) | Next SD journal and undo log (D14); Z88 cards, flap and battery; disk write-back republish (D13). | SD fork test restores the host image byte for byte. |
 | 7 ✅ 2026-10-08 (§17) | Remaining cores in the G4.2 order, each gated by the determinism test (D19). | `MF_REVERSE_DEBUG` set per core as it passes. |
-| 8 | UI polish, docs page, `.ai/ui-theming-intent-and-lessons.md` (status-bar states, Take over here), competitive analysis §2 (reverse debugging ✅) and §4 (close W2), roadmap. | Verified in the running IDE on the Next and the 48K. |
+| 8 ✅ 2026-10-08 (§18) | UI polish, docs page, `.ai/ui-theming-intent-and-lessons.md` (status-bar states, Take over here), competitive analysis §2 (reverse debugging ✅) and §4 (close W2), roadmap. | Verified in the running IDE on the Next and the 48K. |
 
 ---
 
@@ -776,3 +777,47 @@ What Phase 7 built:
 
 Not built, by choice: frame-boundary scratch (T5) for the new cores. Their keyframes keep the audio
 buffers; the 48K's measurements put that at a few KB per keyframe.
+
+---
+
+## 18. Phase 8 results (2026-10-08)
+
+**Done: G4.4 is complete.** Verified in the running IDE (a CDP-driven dev launch with a seeded
+settings file) on the **48K** - paused in BASIC, 20 Step Backs (`⟲ −… · step −20`, Take over here
+beside it, no "shows the present" band anywhere), Step Into from the past (step −19, no "input
+ignored"), Continue from the past running on into the present, a Reverse Continue search for a write
+nothing makes (`⟲ Searching back… 4 intervals`, then 6; a click on the chip canceled it and the
+output said "back where it started"), and `history-take-over -y` - and on the **Next** (30 Step
+Backs to `⟲ −20 ms · step −30`, the tooltip's "Reverse range: 8.04 s" after eight seconds of
+running, Step Into from the past).
+
+What Phase 8 built:
+
+- **State:** `emulatorState.reverseDebug` (`ReverseDebugState`): mode, seconds behind the present and
+  the reverse range in machine time (keyframes and the present now record the frame counter),
+  deep landing, ignored input, a search's progress, and why a timeline ended early.
+  `MachineController.publishReverseState` dispatches it on every change.
+- **Status bar:** one chip whose text is the state - `⟲ −1.24 s · step −3,412`, `⟲ −13 s · before
+  the history window`, `▶ Replaying · 800 ms to present`, `⟲ Searching back… 3 intervals`,
+  `⚠ Reverse debugging stopped` - with the reverse range and ignored input in its tooltip, and
+  **Take over here** beside it in the past. The words live in `@common/history/reverseDebugText.ts`.
+- **Take over here and fork-on-edit:** a native confirmation (`MainApi.confirmAction`) naming what the
+  discarded future leaves; register, memory and variable edits in the past ask and fork.
+- **Reverse Continue:** `MachineController.reverseContinue` runs the search as a generator that yields
+  after each keyframe interval, publishes its progress and stops on `cancelReverseContinue`
+  (`reverse-continue-cancel`, or a click on the chip), going back where it started - a deep landing
+  included. The command uses it; `navigateHistory("reverseContinue")` stays synchronous.
+- **Desync:** reported once, from wherever a replay found it (a step back, a replay run, a keyframe's
+  calibration replay, which used to be silent): the output pane and the status bar's error chip,
+  until the next Stop or debug session. There is no toast mechanism in the IDE; the chip is the
+  persistent signal.
+- **Settings:** *Reverse debugging* and *Memory for the reverse-debugging timeline* on the Debugging
+  page. **Execution History:** "Reverse range" in the header. **Docs:** a Reverse Debugging page, the
+  Execution History page corrected (its lite-mode statements now say "with reverse debugging off"),
+  the two new commands in the reference, the settings rows.
+- **Status-bar time** is microseconds, milliseconds or seconds by size: a few instructions back read
+  "−0.00 s" in the first IDE run.
+
+Not built: an Escape key for canceling a search (the chip and the command cancel it); screenshots for
+the docs page (`scripts/doc-shots/` can make them).
+

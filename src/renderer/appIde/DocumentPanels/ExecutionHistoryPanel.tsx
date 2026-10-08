@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { formatReverseSeconds } from "@common/history/reverseDebugText";
 import type { KeyboardEvent as ReactKeyboardEvent, MouseEvent as ReactMouseEvent } from "react";
 import classnames from "classnames";
 
@@ -483,6 +484,11 @@ const ExecutionHistoryPanel = (_props: DocumentProps) => {
     }
   };
 
+  // --- The reverse-debugging timeline's reach (`.plans/REVERSE_DEBUGGING_PLAN.md` §4.4)
+  const reverseRange = useSelector((s) =>
+    s.emulatorState?.reverseDebug?.active ? s.emulatorState.reverseDebug.rangeSeconds : undefined
+  );
+
   // --- Empty states (§4.6.1)
   const empty = historyEmptyMessage({ supported, running, debugging: !!isDebugging }, info);
   const header = (
@@ -495,6 +501,17 @@ const ExecutionHistoryPanel = (_props: DocumentProps) => {
       >
         {info?.enabled ? "● Recording" : "○ Not recording"}
       </span>
+      {reverseRange !== undefined && (
+        <>
+          <ToolbarSeparator small={true} />
+          <span
+            className={styles.count}
+            title="How far back the machine itself can go (full reverse debugging): the rows reach as far as the history holds"
+          >
+            Reverse range {formatReverseSeconds(reverseRange)}
+          </span>
+        </>
+      )}
       <ToolbarSeparator small={true} />
       <LabeledSwitch
         value={state.followNewest}

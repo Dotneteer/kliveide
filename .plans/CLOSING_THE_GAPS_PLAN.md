@@ -199,7 +199,7 @@ then moves the frame trace to a diagnostics build, which shrinks the Next to abo
 | G4.1 History viewer (Next) ✅ **done** (2026-10-07) | After a stop, list the last N executed instructions with registers, disassembly and source line; click one to jump to its source. Read-only. | M (the data exists; needs an export, a UI and source mapping) |
 | G4.2 History in the other cores ✅ **done** (2026-10-07) | The same trace recording for 48K/128K/+3E (and Z88). Done for every Z80 core: 48K/16K, Timex, 128K/Pentagon/Scorpion, +2A/+3/+2E/+3E, Z88 and ZX80/81, with the ZX80/81's display NOPs merged per line and interrupt service folded in the viewer. | M |
 | G4.3 "Lite" step back ✅ **done** | Step backwards through the trace and show the historical registers and PC in the CPU panel and editor. Memory stays at the present. This is DeZog's "lite" mode. | M, after G4.1 |
-| G4.4 Full reverse debugging | Step back and reverse-continue with exact memory and device state: periodic checkpoints plus deterministic re-execution to the target instruction. | XL (every core needs cheap state capture; input, tape, disk and audio must replay deterministically) |
+| G4.4 Full reverse debugging ✅ **done** (2026-10-08) | Step back and reverse-continue with exact memory and device state: periodic checkpoints plus deterministic re-execution to the target instruction. Done on every Z80 machine: keyframes, an input journal at each core's export boundary and self-checking replay; Continue from the past, Take over here, reverse watchpoints, the Next's SD card undone on a fork (.plans/REVERSE_DEBUGGING_PLAN.md). | XL (every core needs cheap state capture; input, tape, disk and audio must replay deterministically) |
 | G4.5 Trace export | Save a history range as a text or CSV trace for diffing two runs. | S, after G4.1 |
 | G4.6 Debug session recording | Save a reverse-debugging timeline (keyframes and the input journal, with SD sector data) to a file, so a bug repro replays later with the debugger attached: an RZX for every machine, with breakpoints. Replays only on the same Klive build. | M, after G4.4 works on two cores |
 
@@ -347,7 +347,9 @@ and WPMEM comments.
   here) and 5 (Reverse Continue checking every breakpoint on the real past machine, reverse
   watchpoints) and 6 (the Next's SD card journaled and undone on a fork, disk write-back republished,
   replays kept away from every host side effect) and 7 (every Z80 machine: 128K, Pentagon, Scorpion,
-  +2A/+3/+3E, Timex, Z88, ZX81, ZX80) are done too; Phase 8, the UI and docs, is next. (RZX, G2.7–G2.8, turned out not to need it and is done;
+  +2A/+3/+3E, Timex, Z88, ZX81, ZX80) and 8 (the status bar, Take over here with its confirmation,
+  Reverse Continue progress and cancel, settings rows, the docs page) are done: **G4.4 is done**
+  (2026-10-08). (RZX, G2.7–G2.8, turned out not to need it and is done;
   Klive state files, G2.6, are done too.)
 - ~~G3.6 layer composition~~ (done).
 - G6.4 real Next hardware debugging, with G6.5 send-to-Next as its first milestone.

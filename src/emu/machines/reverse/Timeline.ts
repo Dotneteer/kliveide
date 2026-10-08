@@ -59,6 +59,11 @@ export interface TimelineMachine {
   invalidateHostSync(): void;
   /** The CPU's speed as a multiple of its base clock: a frame's replay cost grows with it (D5) */
   readonly clockMultiplier?: number;
+  /** Frames completed (keyframes and the present record it, so the IDE can say how far back is how long) */
+  readonly frames?: number;
+  /** The tact within the current frame, and the frame's length: the fraction of a frame */
+  readonly currentFrameTact?: number;
+  readonly tactsInFrame?: number;
   /**
    * A machine with an SD card logs every sector it writes in a live timeline here (D14); undefined
    * detaches the log when the timeline ends
@@ -144,6 +149,10 @@ type HitLogEntry = { position: TimelinePosition; key: string };
 /** The present the timeline left: where it was and what the wrapper and the breakpoints held */
 type Present = {
   position: TimelinePosition;
+  /** Where the machine's frame counter stood, in frames (with the fraction of the frame in progress) */
+  frames: number;
+  /** Live input dropped before the present was left */
+  dropped: number;
   journalLength: number;
   host: unknown;
   debug?: DebugTimelineState;
@@ -347,12 +356,35 @@ export class Timeline {
       debug: this.debugSupport?.captureTimelineState(),
       hitLogIndex: this.hitLog.length
     };
-    const keyframe = this.store.capture(this.memory.buffer, this.port.captureSeed(), 0, this.journal.length, meta, {
+    const keyframe = this.store.capture(this.memory.buffer, this.port.captureSeed(), this.machineFrames, this.journal.length, meta, {
       complete: !this.machine.isAtFrameBoundary()
     });
     this.framesSinceKeyframe = 0;
     this.weightedFrames = 0;
     return keyframe;
+  }
+
+  /** The machine's frame counter, with the fraction of the frame in progress */
+  get machineFrames(): number {
+    const m = this.machine;
+    const fraction = m.tactsInFrame ? (m.currentFrameTact ?? 0) / m.tactsInFrame : 0;
+    return (m.frames ?? 0) + Math.min(Math.max(fraction, 0), 1);
+  }
+
+  /** The present's frame counter (with its fraction): the machine's own while live */
+  get presentFrames(): number {
+    return this.present?.frames ?? this.machineFrames;
+  }
+
+  /** The frame counter at the timeline's start: its oldest lasting keyframe */
+  get startFrames(): number | undefined {
+    const first = this.store.keyframes.find((k) => !k.transient);
+    return first?.frame;
+  }
+
+  /** Live input dropped since the machine left the present (D12) */
+  get inputsIgnored(): number {
+    return this.present ? this.journal.dropped - this.present.dropped : 0;
   }
 
   private get memory(): WebAssembly.Memory {
@@ -597,6 +629,8 @@ export class Timeline {
     this.options.beforeLeavePresent?.();
     this.present = {
       position: this.port.position,
+      frames: this.machineFrames,
+      dropped: this.journal.dropped,
       journalLength: this.journal.length,
       host: this.machine.captureHostState(),
       debug: this.debugSupport?.captureTimelineState(),
@@ -633,7 +667,7 @@ export class Timeline {
                 // --- A transient keyframe answers for the host and breakpoint state as its base does:
                 // --- the hit log from the base's index covers the hits between them
                 capture: (journalIndex) =>
-                  this.store.capture(this.memory.buffer, this.port.captureSeed(), 0, journalIndex, baseMeta && { ...baseMeta }, {
+                  this.store.capture(this.memory.buffer, this.port.captureSeed(), this.machineFrames, journalIndex, baseMeta && { ...baseMeta }, {
                     complete: true,
                     transient: true
                   })

@@ -109,7 +109,12 @@ The filter field in the header narrows the list to:
 While the machine is paused you can **step back** through the history and look at the program as it
 was at any recorded instruction. The CPU panel shows the registers, flags and interrupt state from
 before that instruction ran, the editor and the disassembly mark its line, and the Call Stack is
-rebuilt from the history. The machine itself does not change.
+rebuilt from the history.
+
+With [reverse debugging](/working-with-ide/reverse-debugging) - on by default - the **machine
+itself** goes back: memory, devices and the screen show that moment too, and you can continue from
+it. The rest of this section describes what is the same either way, and what changes with reverse
+debugging turned off.
 
 | Command | Toolbar / menu | Default key | Goes to |
 | --- | --- | --- | --- |
@@ -126,25 +131,31 @@ On Linux the default keys use `Ctrl+Alt` instead of `Alt`. Every key is a settin
 
 ![Reverse Step Over: the CPU panel shows history step −6, the disassembly outlines the CALL](/images/working-with-ide/step-back-over.png)
 
-**Memory shows the present.** A history record holds the registers, not memory, so the Memory view,
+**With reverse debugging off, memory shows the present.** A history record holds the registers, not
+memory, so the Memory view,
 Watch, the ULA and Next panels, the system variables and the bytes in the disassembly keep showing
 the live machine. Each says so in a band at its top while you are in the past, and the CPU panel's
 band repeats it. A disassembly row whose bytes have changed since the instruction ran has a dashed
 outline.
 
 **You can tell the past from the present at a glance.** The present's execution point is a solid
-highlight; a historical one is an outline in the second accent colour. The status bar shows
-`⟲ History −42`; click it to return to the present.
+highlight; a historical one is an outline in the second accent colour. The status bar shows how far
+back you are (`⟲ −1.24 s · step −42` with reverse debugging, `⟲ History −42` without); click it to
+return to the present.
 
-**Any machine command returns to the present first.** Continue, the steps, Pause, Stop, Reset and
-register or memory edits act on the live machine; you cannot continue from a point in the past.
+**With reverse debugging off, any machine command returns to the present first.** Continue, the
+steps, Pause, Stop, Reset and register or memory edits act on the live machine. With it on,
+continuing and stepping replay from the past, and an edit asks to
+[take over](/working-with-ide/reverse-debugging#taking-over) there.
 
 **Interrupts.** Interrupt and NMI rows are not stops: stepping back from an interrupt routine's first
 instruction lands on the instruction that was interrupted, and the CPU panel says the routine was
 entered by an interrupt. When the document folds interrupt service, Step Back and Step Forward pass
 over a whole service in one step. Reverse Step Over and Out always do.
 
-**Reverse Continue and conditions.** A condition that reads only registers and flags is checked
+**Reverse Continue and conditions.** With reverse debugging, every breakpoint kind and condition is
+checked on the machine itself ([details](/working-with-ide/reverse-debugging#reverse-continue)).
+Without it, a condition that reads only registers and flags is checked
 against the recorded registers. A condition that reads memory, ports, paging or the frame counter
 cannot be checked in the past, so the breakpoint counts as hit and the output says the condition was
 not checked. Hit counts are ignored and logpoints do not print.
@@ -173,6 +184,7 @@ step-back-out         ; step back out of the current routine (stbu)
 reverse-continue      ; back to the previous breakpoint hit (rcont)
 history-present       ; return to the present (hpres)
 history-goto -42      ; go to step −42, or to a record with history-goto #1234
+history-take-over     ; continue from the point in the past (reverse debugging) (htake)
 ```
 
 See [Interactive Commands](/working-with-ide/commands) and the

@@ -133,6 +133,31 @@ export type ScreenRecordingState = "idle" | "armed" | "recording" | "paused";
  * An RZX session on the emulator (`.plans/RZX_PLAN.md` §4.6): playing a recording, recording one,
  * or rendering one to video
  */
+/**
+ * What the IDE shows of a reverse-debugging timeline (`.plans/REVERSE_DEBUGGING_PLAN.md` §4.4): the
+ * status bar's "in the past" and "replaying" states, the reverse range, the deep-landing marker, a
+ * Reverse Continue search's progress and why a timeline ended. Undefined while no timeline runs and
+ * none ended with something to say.
+ */
+export type ReverseDebugState = {
+  /** Whether a timeline is active; false after one ended (`desync` says why) */
+  active: boolean;
+  /** `live`: at the present; `navigating`: paused in the past; `replaying`: running toward the present */
+  mode: "live" | "navigating" | "replaying";
+  /** How far behind the present the machine stands, in seconds of machine time */
+  behindSeconds?: number;
+  /** How far back the timeline reaches from the present, in seconds (the reverse range) */
+  rangeSeconds?: number;
+  /** The machine stands older than the history views reach: there is no history cursor (D17) */
+  deepLanding?: boolean;
+  /** Live input dropped since the machine left the present (D12) */
+  inputsIgnored?: number;
+  /** A Reverse Continue search: keyframe intervals searched so far (D15) */
+  searchedIntervals?: number;
+  /** Why the last timeline ended early (a desync, D9) */
+  desync?: string;
+};
+
 export type RzxState = {
   mode: "idle" | "playing" | "recording" | "rendering";
   /** Frames played or recorded */
@@ -209,6 +234,8 @@ export type EmulatorState = {
   screenRecordingState?: ScreenRecordingState;
   /** The RZX session, if any (`.plans/RZX_PLAN.md` §4.6) */
   rzx?: RzxState;
+  /** The reverse-debugging timeline, while the debug session has one (`.plans/REVERSE_DEBUGGING_PLAN.md` §4.4) */
+  reverseDebug?: ReverseDebugState;
   screenRecordingFile?: string;
   screenRecordingFps?: RecordingFps;
   screenRecordingQuality?: RecordingQuality;

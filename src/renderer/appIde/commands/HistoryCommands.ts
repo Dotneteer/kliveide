@@ -17,6 +17,8 @@ import {
   type HistoryNavigationOp
 } from "@common/history/historyNavigation";
 import { readFoldPreference } from "@renderer/features/history/historyViewModel";
+import { forkConfirmation } from "@common/history/reverseDebugText";
+import { isInThePast } from "./reverseDebugFork";
 import { createSpecialDocument } from "@renderer/features/documents/specialDocuments";
 import { HistoryDisassemblyCache, historyLabelLookup } from "@renderer/features/history/historyDisassembly";
 import { locateSource } from "@renderer/appIde/utils/source-location";
@@ -169,7 +171,11 @@ async function navigate(
   const refused = requireHistory(context);
   if (refused) return refused;
   const machineId = context.store.getState().emulatorState?.machineId;
-  const result = await context.emuApi.navigateHistory(op, { foldServices: readFoldPreference(machineId) });
+  // --- Reverse Continue searches with progress and can be canceled (REVERSE_DEBUGGING_PLAN D15)
+  const result =
+    op === "reverseContinue"
+      ? await context.emuApi.reverseContinue()
+      : await context.emuApi.navigateHistory(op, { foldServices: readFoldPreference(machineId) });
   const info = await context.emuApi.getHistoryInfo();
   for (const note of result.notes ?? []) writeMessage(context.output, note, "yellow");
   if (result.reason === "running" || result.reason === "noHistory" || result.reason === "empty") {
@@ -254,6 +260,20 @@ export class ReverseContinueCommand extends IdeCommandBase {
   }
 }
 
+/** `reverse-continue-cancel`: stops a running Reverse Continue search */
+export class ReverseContinueCancelCommand extends IdeCommandBase {
+  readonly id = "reverse-continue-cancel";
+  readonly description = "Stops a running Reverse Continue search; the machine goes back where it started";
+  readonly usage = "reverse-continue-cancel";
+  readonly aliases = ["rcancel"];
+
+  async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
+    if (!(await context.emuApi.cancelReverseContinue())) return commandError("No Reverse Continue search is running");
+    writeInfoMessage(context.output, "Reverse continue: canceling");
+    return commandSuccess;
+  }
+}
+
 /** `history-present`: leaves the history and shows the live machine again */
 export class HistoryPresentCommand extends IdeCommandBase {
   readonly id = "history-present";
@@ -270,15 +290,27 @@ export class HistoryPresentCommand extends IdeCommandBase {
  * `history-take-over`: the point the machine stands at in the past becomes the present
  * (`.plans/REVERSE_DEBUGGING_PLAN.md` D12): the recorded future goes, and live input resumes
  */
-export class HistoryTakeOverCommand extends IdeCommandBase {
+export class HistoryTakeOverCommand extends IdeCommandBase<{ "-y"?: boolean }> {
   readonly id = "history-take-over";
-  readonly description = "Takes over at the current point in the past: discards the recorded future";
-  readonly usage = "history-take-over";
+  readonly description = "Takes over at the current point in the past: discards the recorded future (-y: without asking)";
+  readonly usage = "history-take-over [-y]";
   readonly aliases = ["htake"];
+  readonly argumentInfo: CommandArgumentInfo = { commandOptions: ["-y"] };
 
-  async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
+  async execute(context: IdeCommandContext, args: { "-y"?: boolean }): Promise<IdeCommandResult> {
     const refused = requireHistory(context);
     if (refused) return refused;
+    if (!isInThePast(context.store)) {
+      return commandError("Take over here works in the past of a reverse-debugging session (step back first)");
+    }
+    // --- A fork cannot be undone: ask, naming what the discarded future takes with it (D12, T4)
+    if (!args?.["-y"]) {
+      const text = forkConfirmation(await context.emuApi.getForkPreview());
+      if (!(await context.mainApi.confirmAction(text.title, text.message, text.detail, text.confirmLabel))) {
+        writeInfoMessage(context.output, "Take over here: canceled");
+        return commandSuccess;
+      }
+    }
     if (!(await context.emuApi.takeOverHere())) {
       return commandError("Take over here works in the past of a reverse-debugging session (step back first)");
     }

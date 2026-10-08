@@ -1185,6 +1185,26 @@ class EmuMessageProcessor {
     return (await controller.takeOverHere?.()) ?? false;
   }
 
+  /** What Take over here would leave behind (T4) */
+  getForkPreview(): { sdWrites: number; hostFiles: string[] } | undefined {
+    return this.machineService.getMachineController()?.forkPreview?.();
+  }
+
+  /** Reverse Continue with progress and cancel (D15, §4.4) */
+  async reverseContinue(): Promise<HistoryNavigationResult> {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    if (controller.reverseContinue) return await controller.reverseContinue();
+    return controller.navigateHistory?.("reverseContinue") ?? { position: 0, moved: false, reason: "noHistory" };
+  }
+
+  /** Stops a running Reverse Continue search */
+  cancelReverseContinue(): boolean {
+    return this.machineService.getMachineController()?.cancelReverseContinue?.() ?? false;
+  }
+
   /**
    * Gets the ZX Spectrum Next Copper's state.
    */

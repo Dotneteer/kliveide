@@ -181,6 +181,12 @@ export const setQuickStateAvailableAction: ActionCreator = (available: boolean) 
   payload: { flag: available }
 });
 
+/** The reverse-debugging timeline's state (`.plans/REVERSE_DEBUGGING_PLAN.md` §4.4); undefined clears it */
+export const setReverseDebugStateAction: ActionCreator = (reverseDebug?: import("./AppState").ReverseDebugState) => ({
+  type: "SET_REVERSE_DEBUG_STATE",
+  payload: { value: reverseDebug }
+});
+
 /** The RZX session's state (`.plans/RZX_PLAN.md` §4.6); undefined clears it */
 export const setRzxStateAction: ActionCreator = (rzx?: import("./AppState").RzxState) => ({
   type: "SET_RZX_STATE",
