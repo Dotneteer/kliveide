@@ -10,6 +10,7 @@ const {
   stampWasmLayout
 } = require("./wasm-layout.cjs");
 const { Z80_HISTORY_EXPORTS, Z80_HISTORY_VOLATILE_SYMBOLS } = require("./z80-history-exports.cjs");
+const { Z80_PROFILE_EXPORTS, Z80_PROFILE_VOLATILE_SYMBOLS } = require("./z80-profile-exports.cjs");
 
 /**
  * Statics a Klive state file leaves out (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` trap 10):
@@ -91,7 +92,11 @@ const ZXNEXT_VOLATILE_SYMBOLS = [
   "zxnextBeamLatchesDone",
   "zxnextBeamInfo",
   // --- The execution-history ring (EXECUTION_HISTORY_VIEWER_PLAN D7)
-  ...Z80_HISTORY_VOLATILE_SYMBOLS
+  ...Z80_HISTORY_VOLATILE_SYMBOLS,
+  // --- The access profile: flags, counters, time and its never-wrapping 28 MHz clock
+  // --- (CODE_COVERAGE_AND_HEAT_MAP_PLAN T4, T7, D8)
+  ...Z80_PROFILE_VOLATILE_SYMBOLS,
+  "zxnextProfileTicks28"
 ];
 
 const root = resolve(__dirname, "..");
@@ -125,6 +130,8 @@ const productionExports = [
   "condPeek",
   // --- Execution history recorder (`src/emu/z80/wasm/z80-history.c`)
   ...Z80_HISTORY_EXPORTS,
+  // --- Access profile (`src/emu/z80/wasm/z80-profile.c`)
+  ...Z80_PROFILE_EXPORTS,
   "memory",
   "zxnextMemoryPtr",
   "zxnextPixelBufferPtr",
@@ -498,8 +505,9 @@ const buildModes = {
     exports: productionExports,
     sources: [source],
     // --- 40 MB: the 8 MB execution-history ring did not fit beside the frame trace in 32 MB
-    // --- (EXECUTION_HISTORY_VIEWER_PLAN T9, Q6)
-    initialMemory: 40 * 1024 * 1024
+    // --- (EXECUTION_HISTORY_VIEWER_PLAN T9, Q6). 56 MB: the access profile adds its 2 MB of flags
+    // --- and its 12 MB counter pool (CODE_COVERAGE_AND_HEAT_MAP_PLAN D5)
+    initialMemory: 56 * 1024 * 1024
   }
 };
 

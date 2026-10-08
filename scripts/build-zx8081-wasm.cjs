@@ -4,6 +4,7 @@ const { spawnSync } = require("node:child_process");
 
 const { acquireWasmBuildLock, waitForWasmBuildLock } = require("./wasm-build-lock.cjs");
 const { Z80_HISTORY_EXPORTS, Z80_HISTORY_VOLATILE_SYMBOLS } = require("./z80-history-exports.cjs");
+const { Z80_PROFILE_EXPORTS, Z80_PROFILE_VOLATILE_SYMBOLS } = require("./z80-profile-exports.cjs");
 const {
   discardWasmOutput,
   layoutMapArgs,
@@ -32,7 +33,9 @@ const ZX8081_VOLATILE_SYMBOLS = [
   "zx8081BreakpointFlags",
   // --- The execution-history ring, and whether the last M1 read a forced NOP (EXECUTION_HISTORY_ALL_CORES_PLAN)
   ...Z80_HISTORY_VOLATILE_SYMBOLS,
-  "zx8081HistoryForcedNop"
+  "zx8081HistoryForcedNop",
+  // --- The access profile: flags, counters and time (CODE_COVERAGE_AND_HEAT_MAP_PLAN T4, T7)
+  ...Z80_PROFILE_VOLATILE_SYMBOLS
 ];
 
 /*
@@ -74,6 +77,8 @@ const productionExports = [
   "condPeek",
   // --- Execution history recorder (`src/emu/z80/wasm/z80-history.c`)
   ...Z80_HISTORY_EXPORTS,
+  // --- Access profile (`src/emu/z80/wasm/z80-profile.c`)
+  ...Z80_PROFILE_EXPORTS,
   "memory",
   "zx8081ArmAutoRun",
   "zx8081BreakpointFlagsPtr",
@@ -186,10 +191,11 @@ const productionExports = [
 /*
  * 64K RAM, the 416 x 400 raw raster (650 KB), the 352 x 288 picture (400 KB) and the tape buffer fit
  * in 2 MiB with room for the stack; the 4 MiB execution-history ring
- * (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` D2, D3) makes it 6 MiB. Raise this only with a
- * recorded reason.
+ * (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` D2, D3) makes it 6 MiB; the access profile's 72 KB
+ * of flags and its 1.7 MB counter pool, which covers all of it (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`
+ * D5), make it 8 MiB. Raise this only with a recorded reason.
  */
-const ZX8081_WASM_MEMORY_BYTES = 6 * 1024 * 1024;
+const ZX8081_WASM_MEMORY_BYTES = 8 * 1024 * 1024;
 
 function normalizeOptimization(optimization = process.env.ZX8081_WASM_OPTIMIZATION || "speed") {
   if (optimizationProfiles[optimization] == null) {

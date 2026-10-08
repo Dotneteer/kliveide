@@ -155,6 +155,8 @@ class MachineService implements IMachineService {
     }
 
     this._controller = newController;
+    // --- Coverage is switched on for the session, not per machine (CODE_COVERAGE_AND_HEAT_MAP_PLAN D6)
+    newController.applyProfilingState();
     this._newInitialized.fire(machine);
 
     // --- Ready, sign the machine type state change

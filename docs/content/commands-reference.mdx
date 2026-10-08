@@ -1515,6 +1515,44 @@ or a record's sequence number (`#1234`).
 history-goto <-n | #sequence>
 ```
 
+## `coverage`
+
+Use this command to control [code coverage and the memory heat map](/working-with-ide/code-coverage).
+Alias: `cov`.
+
+```
+coverage on [-nocounts] | off | reset | status
+coverage export <file> [-format lcov|csv|kcov] [-norom] [-f]
+coverage load <file>
+coverage smc
+```
+
+- `on`, `off`: turn coverage on or off for the session. `-nocounts` keeps only whether each byte was
+  executed, read or written, not how often.
+- `reset`: clear everything coverage recorded.
+- `status`: whether coverage is on, what it counted, how full the counter pool is, the time split and
+  the current build's line coverage.
+- `export`: write LCOV (`.info`, `.lcov`), CSV (`.csv`) or Klive coverage (`.kcov`); `-format`
+  overrides the extension, `-norom` leaves ROM bytes out of a CSV, `-f` replaces an existing file.
+- `load`: merge a `.kcov` file into the current coverage.
+- `smc`: list the self-modified bytes, with the nearest label and their counts.
+
+## `coverage-reset`
+
+Use this command to clear code coverage and the heat map. Alias: `covr`.
+
+```
+coverage-reset
+```
+
+## `memory-heat`
+
+Use this command to set the memory view's heat map, as its **Heat** selector does.
+
+```
+memory-heat <off|exec|read|write|all>
+```
+
 ## `show-disassembly`
 
 Use this command to display the machine code disassembly view, and optionally to show an address in

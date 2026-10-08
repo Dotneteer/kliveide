@@ -434,6 +434,13 @@ type DisassemblyRowProps = DisassemblyRowViewModelParams & {
    * Undefined on a non-branching row, and on every row when `showBranchGutter` is false.
    */
   verdict?: BranchVerdict;
+  /**
+   * Reserve code coverage's cell (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D13): a property of
+   * the listing, like `showBranchGutter`
+   */
+  showCoverage?: boolean;
+  /** This row's coverage: undefined no data, 0 never started, -1 started (no count), n started n times */
+  coverage?: number;
   selected?: boolean;
   selectedRange?: boolean;
   /**
@@ -474,6 +481,8 @@ export const DisassemblyRow = memo(function DisassemblyRow({
   selectedRange,
   showBranchGutter = false,
   verdict,
+  showCoverage = false,
+  coverage,
   ...viewModelParams
 }: DisassemblyRowProps) {
   const breakpoint = viewModelParams.breakpoint;
@@ -670,6 +679,19 @@ export const DisassemblyRow = memo(function DisassemblyRow({
             * from the certain one at PC lives in the stylesheet, keyed off `.execPoint`, so it is
             * not restated per row here.
             */}
+          {showCoverage && (
+            <span
+              className={classnames(styles.coverageCell, { [styles.covered]: !!coverage })}
+              data-coverage={coverage === undefined ? undefined : coverage === 0 ? "none" : "covered"}
+              title={
+                coverage === undefined || coverage === 0
+                  ? undefined
+                  : coverage > 0
+                    ? `Executed ${coverage.toLocaleString("en-US")} time${coverage === 1 ? "" : "s"}`
+                    : "Executed"
+              }
+            />
+          )}
           {showBranchGutter && (
             <span
               className={styles.branchGutter}

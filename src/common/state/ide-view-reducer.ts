@@ -65,6 +65,12 @@ export function ideViewReducer (
         statusSuccess: payload?.flag
       };
 
+    case "SET_MEMORY_HEAT_MODE":
+      return {
+        ...state,
+        memoryHeatMode: payload?.text
+      };
+
     case "SET_SOURCE_FRAME":
       return {
         ...state,

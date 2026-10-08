@@ -4,9 +4,9 @@
  *
  * - G4: the execution history (viewer, lite step back, trace export), full reverse debugging (the
  *   timeline, Reverse Step/Continue, Take over here) and debug session recordings (`.klr`).
- * - G5: code coverage and the heat map, the profiler, unit tests and the CLI. None of it is built
- *   yet; each piece must check `isAdvancedDebuggingEnabled` (or gate its machine feature through
- *   `ADVANCED_DEBUGGING_FEATURES`) when it is.
+ * - G5: code coverage and the heat map (`MF_PROFILE`), the profiler, unit tests and the CLI. Each
+ *   piece checks `isAdvancedDebuggingEnabled` or gates its machine feature through
+ *   `ADVANCED_DEBUGGING_FEATURES`.
  *
  * **Off unless the user opts in**, like `devTools.allow` (`docs/content/howto/diagnostics.mdx`):
  *
@@ -28,16 +28,16 @@ import type { AppState } from "@common/state/AppState";
 import type { MachineInfo } from "@common/machines/info-types";
 import type { createSettingsReader } from "@common/utils/SettingsReader";
 
-import { MF_EXEC_HISTORY, MF_REVERSE_DEBUG } from "@common/machines/constants";
+import { MF_EXEC_HISTORY, MF_PROFILE, MF_REVERSE_DEBUG } from "@common/machines/constants";
 
 /** The user setting (`set -u features.advancedDebugging 1`). */
 export const ADVANCED_DEBUGGING_SETTING = "features.advancedDebugging";
 
 /**
  * The machine features that belong to the group: off, a machine is treated as not having them.
- * G5 adds its own (the coverage plan's `MF_PROFILE`) here.
+ * G5's code coverage and heat map gate on `MF_PROFILE`.
  */
-export const ADVANCED_DEBUGGING_FEATURES: readonly string[] = [MF_EXEC_HISTORY, MF_REVERSE_DEBUG];
+export const ADVANCED_DEBUGGING_FEATURES: readonly string[] = [MF_EXEC_HISTORY, MF_REVERSE_DEBUG, MF_PROFILE];
 
 /** What a command or a refused action says when the group is off. */
 export const ADVANCED_DEBUGGING_OFF_MESSAGE =

@@ -41,6 +41,7 @@ export const E2E_CORE_TESTS: string[] = [
   "test/emu/reverse-sd-fork-controller.test.ts",
   "test/emu/reverse-cores-controller.test.ts",
   "test/emu/reverse-next-breakpoints-controller.test.ts",
+  "test/emu/profile-controller.test.ts",
   "test/emu/history-step-back-real-machine.test.ts",
   "test/emu/logpoints-real-machine.test.ts",
   "test/emu/one-shot-real-machine.test.ts",

@@ -105,6 +105,42 @@
 #define Z80_HISTORY_COMMIT() ((void)0)
 #endif
 
+/*
+ * The access profile (`z80-profile.c`, `.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §4.1). A core that
+ * profiles includes `z80-profile.h` before this file, which defines all seven; every other core keeps
+ * these no-ops and pays nothing.
+ *
+ * - `Z80_PROFILE_FETCH(address, m1)`: a code byte fetched; `m1` at an instruction's first byte,
+ *   where it also opens the instruction's span (D7) - one call and one mapping per instruction
+ *   rather than two (trap T10);
+ * - `Z80_PROFILE_READ(address)` / `Z80_PROFILE_WRITE(address)`: a CPU data access - only the CPU's
+ *   own funnels below, never the cores' memory functions, which also serve the debugger (trap T1);
+ * - `Z80_PROFILE_END()`: an instruction's span ends (D7), once no prefix is pending;
+ * - `Z80_PROFILE_MARK()` with `Z80_PROFILE_ACK_END(nmi)` or `Z80_PROFILE_HALT_END()`: an interrupt
+ *   acknowledge's or a HALTed cycle's time.
+ */
+#ifndef Z80_PROFILE_FETCH
+#define Z80_PROFILE_FETCH(address, m1) ((void)0)
+#endif
+#ifndef Z80_PROFILE_READ
+#define Z80_PROFILE_READ(address) ((void)0)
+#endif
+#ifndef Z80_PROFILE_WRITE
+#define Z80_PROFILE_WRITE(address) ((void)0)
+#endif
+#ifndef Z80_PROFILE_END
+#define Z80_PROFILE_END() ((void)0)
+#endif
+#ifndef Z80_PROFILE_MARK
+#define Z80_PROFILE_MARK() ((void)0)
+#endif
+#ifndef Z80_PROFILE_ACK_END
+#define Z80_PROFILE_ACK_END(nmi) ((void)0)
+#endif
+#ifndef Z80_PROFILE_HALT_END
+#define Z80_PROFILE_HALT_END() ((void)0)
+#endif
+
 #ifndef Z80_ALWAYS_INLINE
 #define Z80_ALWAYS_INLINE static inline __attribute__((always_inline))
 #endif
@@ -393,11 +429,8 @@ Z80_ALWAYS_INLINE void removeFromHaltedState(void) {
   }
 }
 
-/*
- * A code byte - an opcode, a displacement or an operand. It has a memory read's timing and side
- * effects, but it is not a data access, so it is never logged.
- */
-Z80_ALWAYS_INLINE uint8_t readCodeMemory(uint16_t address) {
+/* A memory read cycle: its timing and the byte, with no profiling (the callers below say what it is) */
+Z80_ALWAYS_INLINE uint8_t readBusMemory(uint16_t address) {
   delayMemoryRead(address);
 #ifdef Z80_READ_MEMORY
   return Z80_READ_MEMORY(address);
@@ -406,9 +439,36 @@ Z80_ALWAYS_INLINE uint8_t readCodeMemory(uint16_t address) {
 #endif
 }
 
+/*
+ * A code byte - an opcode, a displacement or an operand. It has a memory read's timing and side
+ * effects, but it is not a data access, so it is never logged. `m1` marks an instruction's first byte
+ * for the access profile. The profile hook runs before the read: a machine whose fetch pages memory
+ * after the byte is read (the Next's delayed DivMMC automap) is still credited to the bank it read.
+ * It runs before the read's delay too, so an instruction's span (D7) starts before its M1 cycle.
+ */
+Z80_ALWAYS_INLINE uint8_t readOpcodeMemory(uint16_t address, uint8_t m1) {
+  Z80_PROFILE_FETCH(address, m1);
+  delayMemoryRead(address);
+#ifdef Z80_READ_MEMORY
+  return Z80_READ_MEMORY(address);
+#else
+  return memory[address];
+#endif
+}
+
+Z80_ALWAYS_INLINE uint8_t readCodeMemory(uint16_t address) {
+  return readOpcodeMemory(address, 0u);
+}
+
 /* A data read: logged while the machine captures bus events */
 Z80_ALWAYS_INLINE uint8_t readMemory(uint16_t address) {
-  uint8_t value = readCodeMemory(address);
+  delayMemoryRead(address);
+  Z80_PROFILE_READ(address);
+#ifdef Z80_READ_MEMORY
+  uint8_t value = Z80_READ_MEMORY(address);
+#else
+  uint8_t value = memory[address];
+#endif
   if (Z80_CAPTURE_BUS_EVENTS()) {
     z80LogAccess(address, value, 0u);
   }
@@ -417,6 +477,7 @@ Z80_ALWAYS_INLINE uint8_t readMemory(uint16_t address) {
 
 Z80_ALWAYS_INLINE void writeMemory(uint16_t address, uint8_t value) {
   delayMemoryWrite(address);
+  if (!Z80_MEMORY_WRITE_SUPPRESSED()) Z80_PROFILE_WRITE(address);
 #ifdef Z80_WRITE_MEMORY
   Z80_WRITE_MEMORY(address, value);
 #else
@@ -473,6 +534,7 @@ static inline void tbBlueOut(uint8_t address, uint8_t value) {
 
 Z80_ALWAYS_INLINE uint8_t fetchCodeByte(void) {
 #ifdef Z80_FETCH_CODE_BYTE
+  Z80_PROFILE_FETCH(cpu.pc, 0u);
   uint8_t value = Z80_FETCH_CODE_BYTE(cpu.pc);
 #else
   uint8_t value = readCodeMemory(cpu.pc);
@@ -3264,13 +3326,17 @@ void z80ExecuteCpuCycle(void) {
 
   if (cpu.sigNmi && cpu.prefix == PREFIX_NONE) {
     Z80_HISTORY_EVENT(Z80_HISTORY_KIND_NMI);
+    Z80_PROFILE_MARK();
     processNmi();
+    Z80_PROFILE_ACK_END(1u);
     return;
   }
 
   if (cpu.sigInt && cpu.prefix == PREFIX_NONE && cpu.iff1 && cpu.eiBacklog == 0) {
     Z80_HISTORY_EVENT(Z80_HISTORY_KIND_INT);
+    Z80_PROFILE_MARK();
     processInt();
+    Z80_PROFILE_ACK_END(0u);
     return;
   }
 
@@ -3278,10 +3344,12 @@ void z80ExecuteCpuCycle(void) {
 
   if (cpu.halted) {
     Z80_HISTORY_EVENT(Z80_HISTORY_KIND_HALT);
+    Z80_PROFILE_MARK();
     delayMemoryRead(cpu.pc);
     Z80_REFRESH(IR);
     refreshMemory();
     tactPlus1WithAddress(IR);
+    Z80_PROFILE_HALT_END();
     return;
   }
 
@@ -3290,7 +3358,9 @@ void z80ExecuteCpuCycle(void) {
     Z80_HISTORY_BEGIN();
     Z80_BEFORE_OPCODE_FETCH();
   }
-  cpu.opCode = readCodeMemory(cpu.pc);
+  /* The profile's fetch hook runs after the fetch-time paging of BEFORE_OPCODE_FETCH (the 128K's
+     TR-DOS ROM), so the instruction is credited to the ROM it runs from */
+  cpu.opCode = readOpcodeMemory(cpu.pc, m1Active);
   if (m1Active) {
     Z80_REFRESH(IR);
     refreshMemory();
@@ -3371,6 +3441,8 @@ void z80ExecuteCpuCycle(void) {
       cpu.prefix = PREFIX_NONE;
       break;
   }
+  /* A prefixed instruction is one span: it ends in the cycle that leaves no prefix pending (D7) */
+  if (cpu.prefix == PREFIX_NONE) Z80_PROFILE_END();
 }
 
 // -----------------------------------------------------------------------------

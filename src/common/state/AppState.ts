@@ -87,6 +87,11 @@ export type IdeView = {
   navHistory?: NavigationHistoryState;
   /** The source-level call-stack frame selected in the Call Stack panel (0: innermost); the Variables panel shows its locals. */
   sourceFrame?: number;
+  /**
+   * The memory view's heat map (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D14): "off", "exec",
+   * "read", "write" or "all". Shared by the toolbar's Heat selector and `memory-heat`.
+   */
+  memoryHeatMode?: string;
 };
 
 /**
@@ -201,6 +206,13 @@ export type EmulatorState = {
   breakpointsVersion: number;
   /** Bumped when breakpoint hit counters moved; see `incBreakpointHitsVersionAction`. */
   breakpointHitsVersion?: number;
+  /**
+   * The access profile's switch (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D6): coverage and the
+   * heat map are recorded while `enabled`; `counters` keeps the counts as well as the flags
+   */
+  profiling?: { enabled: boolean; counters: boolean };
+  /** Bumped when the access profile moved; see `incProfileVersionAction` */
+  profileVersion?: number;
   emuViewVersion: number;
   /**
    * True while the host mouse is captured by the emulator screen (Pointer Lock).

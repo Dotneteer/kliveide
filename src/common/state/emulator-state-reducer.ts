@@ -124,6 +124,18 @@ export function emulatorStateReducer(
         breakpointHitsVersion: (state.breakpointHitsVersion ?? 0) + 1
       };
 
+    case "SET_PROFILING":
+      return {
+        ...state,
+        profiling: payload?.value
+      };
+
+    case "INC_PROFILE_VERSION":
+      return {
+        ...state,
+        profileVersion: (state.profileVersion ?? 0) + 1
+      };
+
     case "INC_EMU_VIEW_VERSION":
       return {
         ...state,

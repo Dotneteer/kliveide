@@ -93,6 +93,7 @@ import {
   StepBackOverCommand,
   StepForwardCommand
 } from "./commands/HistoryCommands";
+import { CoverageCommand, CoverageResetCommand, MemoryHeatCommand } from "./commands/CoverageCommands";
 import {
   ExportPatternsCommand,
   ShowPatternsCommand,
@@ -194,6 +195,10 @@ export function registerIdeCommands(cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new ClearExecutionHistoryCommand());
   cmdSrv.registerCommand(new HistoryCommand());
   cmdSrv.registerCommand(new HistoryExportCommand());
+  // --- Code coverage and the heat map (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D15)
+  cmdSrv.registerCommand(new CoverageCommand());
+  cmdSrv.registerCommand(new CoverageResetCommand());
+  cmdSrv.registerCommand(new MemoryHeatCommand());
   // --- Lite step back (`.plans/LITE_STEP_BACK_PLAN.md` §4.5)
   cmdSrv.registerCommand(new StepBackCommand());
   cmdSrv.registerCommand(new StepForwardCommand());

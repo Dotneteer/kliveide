@@ -1,5 +1,8 @@
 import { WasmHistorySource } from "../history/WasmHistorySource";
+import { WasmProfileSource } from "../profile/WasmProfileSource";
 import type { IExecutionHistorySource } from "@emu/abstractions/IExecutionHistorySource";
+import type { IAccessProfileSource } from "@emu/abstractions/IAccessProfileSource";
+import type { ProfileCounts, ProfileInfo, ProfileTouchedByte } from "@common/profile/profileTypes";
 import type { ExecutionHistoryInfo, ExecutionHistoryPage } from "@common/history/historyTypes";
 import type { HistoryServiceSpan } from "@common/history/serviceSpans";
 import { conditionStoreOf, type ConditionStore } from "../conditionStore";
@@ -52,7 +55,7 @@ function isProgramFile(value: unknown): value is ZxProgramFile {
  * memory there (the disassembly) and the instruction executed differ: `getCpuState().opCode` is the
  * executed $00.
  */
-export class Zx8081WasmV2Machine extends Zx8081WasmHost implements IExecutionHistorySource {
+export class Zx8081WasmV2Machine extends Zx8081WasmHost implements IExecutionHistorySource, IAccessProfileSource {
   // ==============================================================================================
   // Execution history (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`): the shared recorder in the
   // core, read through the shared reader; the machine id names the context decoder
@@ -84,6 +87,47 @@ export class Zx8081WasmV2Machine extends Zx8081WasmHost implements IExecutionHis
 
   setHistoryEnabled(enabled: boolean): void {
     this.wasmV2History.setEnabled(enabled);
+  }
+
+  // ==============================================================================================
+  // The access profile (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`): the shared module in the core,
+  // read through the shared reader; the ZX80 and the ZX81 share one layout (`layouts/zx8081.ts`)
+
+  get profileMachineId(): string {
+    return this.machineId;
+  }
+
+  private readonly wasmV2Profile = new WasmProfileSource(
+    () => this.wasmV2Runtime?.exports,
+    () => this.profileMachineId
+  );
+
+  getProfileInfo(): ProfileInfo | undefined {
+    return this.wasmV2Profile.info();
+  }
+
+  setProfiling(enabled: boolean, counters: boolean): void {
+    this.wasmV2Profile.setEnabled(enabled, counters);
+  }
+
+  resetProfile(): void {
+    this.wasmV2Profile.reset();
+  }
+
+  readProfileFlags(start: number, length: number): Uint8Array | undefined {
+    return this.wasmV2Profile.flags(start, length);
+  }
+
+  readProfileCounts(start: number, length: number): ProfileCounts | undefined {
+    return this.wasmV2Profile.counts(start, length);
+  }
+
+  readProfileTouched(mask?: number): ProfileTouchedByte[] | undefined {
+    return this.wasmV2Profile.touched(mask);
+  }
+
+  mergeProfile(bytes: readonly ProfileTouchedByte[], totals: { instructions: number; timeTotal: number }): void {
+    this.wasmV2Profile.merge(bytes, totals);
   }
 
   public readonly implementation = "wasm" as const;

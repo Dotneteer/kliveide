@@ -37,6 +37,9 @@ export const CORE_EXPORT_PREFIXES: Record<string, readonly string[]> = {
 const SHARED: [RegExp, ExportClass][] = [
   // --- The execution-history recorder: volatile ring, header and stop target
   [/^z80History/, "debug"],
+  // --- The access profile: volatile flags, page map, counter pool and header
+  // --- (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` T4, T7)
+  [/^z80Profile/, "debug"],
   // --- The breakpoint condition evaluator: volatile arena, slots and environment
   [/^cond/, "debug"]
 ];

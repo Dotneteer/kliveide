@@ -71,6 +71,7 @@
 /working-with-ide/beam-position/index.html
 /working-with-ide/breakpoints/index.html
 /working-with-ide/build-system/index.html
+/working-with-ide/code-coverage/index.html
 /working-with-ide/commands/index.html
 /working-with-ide/copper/index.html
 /working-with-ide/cpu/index.html

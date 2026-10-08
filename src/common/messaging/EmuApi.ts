@@ -22,6 +22,13 @@ import type { SourceLevelDebugInfo } from "@abstractions/CompilerInfo";
 import type { SourceActivationInfo, SourceStopInfo } from "@abstractions/SourceDebugInfo";
 import type { SourceStepKind } from "@emu/machines/SourceStepDecision";
 import type { ExecutionHistoryInfo, ExecutionHistoryPage } from "@common/history/historyTypes";
+import type {
+  ProfileSample,
+  ProfileStatus,
+  ProfileTouched,
+  ProfileTouchedByte,
+  ProfileView
+} from "@common/profile/profileTypes";
 import type { HistoryServiceSpan } from "@common/history/serviceSpans";
 import type { HistoryRegisters } from "@common/history/historyRecord";
 import type {
@@ -623,6 +630,60 @@ class EmuApiImpl {
    * Empties the execution-history ring.
    */
   async clearHistory(): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  // --- The access profile: code coverage and the heat map (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`
+  // --- §4.2). Undefined on a machine whose core does not profile, or with advanced debugging off.
+
+  /** What the profile holds (`coverage status`) */
+  async getProfileStatus(): Promise<ProfileStatus | undefined> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Turns profiling on or off for the session (D6)
+   * @param _counters Keep the counters too; omitted, the setting decides
+   */
+  async setProfiling(_enabled: boolean, _counters?: boolean): Promise<ProfileStatus | undefined> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /** Clears the flags, the counters and the time */
+  async resetProfile(): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * The flags (and counts) of the 64K the CPU sees now, or of one partition (the memory view's heat
+   * map, D14)
+   */
+  async getProfileView(_partition?: number, _withCounts?: boolean): Promise<ProfileView | undefined> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * The flags (and execution counts) at CPU addresses, each in its partition - or, where the
+   * partition is null, in what is paged there now (the editor strip and the disassembly, D11-D13)
+   */
+  async getProfileSample(
+    _addresses: number[],
+    _partitions?: (number | null)[],
+    _withCounts?: boolean
+  ): Promise<ProfileSample | undefined> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /** Every touched byte with one of `mask`'s flags (exports, the SMC report) */
+  async getProfileTouched(_mask?: number): Promise<ProfileTouched | undefined> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /** Merges a saved run into the profile (`coverage load`, D16) */
+  async mergeProfile(
+    _bytes: ProfileTouchedByte[],
+    _totals: { instructions: number; timeTotal: number }
+  ): Promise<ProfileStatus | undefined> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 

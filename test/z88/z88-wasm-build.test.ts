@@ -63,8 +63,8 @@ describe("Cambridge Z88 WASM build", () => {
     expect(result.optimization).toBe("speed");
   });
 
-  it("reserves 12 MiB of linear memory (8 MiB, plus the 4 MiB execution-history ring)", () => {
-    expect(Z88_WASM_MEMORY_BYTES).toBe(12 * 1024 * 1024);
+  it("reserves 28 MiB of linear memory (8 MiB, the 4 MiB execution-history ring and the 16 MiB access profile)", () => {
+    expect(Z88_WASM_MEMORY_BYTES).toBe(28 * 1024 * 1024);
   });
 
   it("builds only the production artifact from the CLI helper", () => {
@@ -112,8 +112,11 @@ describe("Cambridge Z88 WASM build", () => {
     // --- ... and the shared execution-history recorder, and exports it
     const recorder = readFileSync(join(folder, "../../../../z80/wasm/z80-history.c"), "utf8");
     const historyFunctions = [...recorder.matchAll(/^(?:uint32_t|void) (z80History[A-Za-z0-9]+)\([^)]*\)\s*\{/gm)].map((m) => m[1]);
+    // --- ... and the shared access profile (CODE_COVERAGE_AND_HEAT_MAP_PLAN D1), and exports it
+    const profile = readFileSync(join(folder, "../../../../z80/wasm/z80-profile.c"), "utf8");
+    const profileFunctions = [...profile.matchAll(/^(?:uint32_t|void) (z80Profile[A-Za-z0-9]+)\([^)]*\)\s*\{/gm)].map((m) => m[1]);
     expect(productionExports.filter((name) => name !== "memory").sort()).toEqual(
-      [...cFunctions, ...condFunctions, ...historyFunctions].sort()
+      [...cFunctions, ...condFunctions, ...historyFunctions, ...profileFunctions].sort()
     );
   });
 

@@ -217,3 +217,39 @@
   font-weight: 600;
   pointer-events: none;
 }
+
+/*
+ * The heat map's cells (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D14). Unlike the changed-byte
+ * mark above, a heat cell *fills*: the information is the pattern a region's bytes make together, and
+ * a band of fills is that pattern. It sits behind the row's one text node (z-index -1 inside
+ * `.hexValues`' stacking context), so the text stays `--color-memory-value` on every step - the ramp
+ * keeps it at 3:1 or better over the hottest step (`test/theming/heat-ramp.test.ts`).
+ */
+.heatCell {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.heatExec1 { background: var(--color-heat-exec-1); }
+.heatExec2 { background: var(--color-heat-exec-2); }
+.heatExec3 { background: var(--color-heat-exec-3); }
+.heatExec4 { background: var(--color-heat-exec-4); }
+.heatExec5 { background: var(--color-heat-exec-5); }
+.heatRead1 { background: var(--color-heat-read-1); }
+.heatRead2 { background: var(--color-heat-read-2); }
+.heatRead3 { background: var(--color-heat-read-3); }
+.heatRead4 { background: var(--color-heat-read-4); }
+.heatRead5 { background: var(--color-heat-read-5); }
+.heatWrite1 { background: var(--color-heat-write-1); }
+.heatWrite2 { background: var(--color-heat-write-2); }
+.heatWrite3 { background: var(--color-heat-write-3); }
+.heatWrite4 { background: var(--color-heat-write-4); }
+.heatWrite5 { background: var(--color-heat-write-5); }
+
+/* A self-modified byte (D9): an inset outline, so it shows on any step and does not move the text */
+.heatSmc {
+  box-shadow: inset 0 0 0 1px var(--border-heat-smc);
+}

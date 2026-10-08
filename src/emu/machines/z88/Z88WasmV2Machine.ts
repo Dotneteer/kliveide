@@ -1,5 +1,8 @@
 import { WasmHistorySource } from "../history/WasmHistorySource";
+import { WasmProfileSource } from "../profile/WasmProfileSource";
 import type { IExecutionHistorySource } from "@emu/abstractions/IExecutionHistorySource";
+import type { IAccessProfileSource } from "@emu/abstractions/IAccessProfileSource";
+import type { ProfileCounts, ProfileInfo, ProfileTouchedByte } from "@common/profile/profileTypes";
 import type { ExecutionHistoryInfo, ExecutionHistoryPage } from "@common/history/historyTypes";
 import type { HistoryServiceSpan } from "@common/history/serviceSpans";
 import { conditionStoreOf, type ConditionStore } from "../conditionStore";
@@ -103,7 +106,7 @@ const toHexa2 = (value: number) => value.toString(16).toUpperCase().padStart(2, 
  * the core had matched it (`.plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`, tag
  * `z88-typescript-last`); its recorded behaviour is in `test/wasm/z88/goldens/`.
  */
-export class Z88WasmV2Machine extends Z88WasmHost implements IExecutionHistorySource {
+export class Z88WasmV2Machine extends Z88WasmHost implements IExecutionHistorySource, IAccessProfileSource {
   // ==============================================================================================
   // Execution history (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`): the shared recorder in the
   // core, read through the shared reader; the machine id names the context decoder
@@ -136,6 +139,61 @@ export class Z88WasmV2Machine extends Z88WasmHost implements IExecutionHistorySo
   setHistoryEnabled(enabled: boolean): void {
     this.wasmV2History.setEnabled(enabled);
   }
+
+  // ==============================================================================================
+  // The access profile (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`): the shared module in the core,
+  // read through the shared reader; the machine id names the layout (`layouts/z88.ts`). Its offsets
+  // are physical (`z88Memory`), so a byte is one byte whichever bank or mirror the CPU reached it by.
+
+  get profileMachineId(): string {
+    return this.machineId;
+  }
+
+  private readonly wasmV2Profile = new WasmProfileSource(
+    () => this.wasmV2Runtime?.exports,
+    () => this.profileMachineId
+  );
+
+  getProfileInfo(): ProfileInfo | undefined {
+    return this.wasmV2Profile.info();
+  }
+
+  setProfiling(enabled: boolean, counters: boolean): void {
+    this.wasmV2Profile.setEnabled(enabled, counters);
+  }
+
+  resetProfile(): void {
+    this.wasmV2Profile.reset();
+  }
+
+  readProfileFlags(start: number, length: number): Uint8Array | undefined {
+    return this.wasmV2Profile.flags(start, length);
+  }
+
+  readProfileCounts(start: number, length: number): ProfileCounts | undefined {
+    return this.wasmV2Profile.counts(start, length);
+  }
+
+  readProfileTouched(mask?: number): ProfileTouchedByte[] | undefined {
+    return this.wasmV2Profile.touched(mask);
+  }
+
+  mergeProfile(bytes: readonly ProfileTouchedByte[], totals: { instructions: number; timeTotal: number }): void {
+    this.wasmV2Profile.merge(bytes, totals);
+  }
+  /**
+   * The profile offset the CPU reaches at an address now (D11): the Z88 names no partition per
+   * address, and a small card's mirrors and segment 0's half bank make the bank number alone
+   * ambiguous, so the core's own page map answers
+   */
+  currentProfileOffset(address: number): number | undefined {
+    const w = this.wasmV2Runtime?.exports;
+    if (!w) return undefined;
+    const page = (address >>> 13) & 0x07;
+    if (w.z88GetPageCardType(page) === 0) return undefined;
+    return w.z88GetPageOffset(page) + (address & 0x1fff);
+  }
+
 
   public readonly implementation = "wasm" as const;
   public wasmV2Runtime?: Z88WasmV2Runtime;

@@ -4,6 +4,7 @@ const { dirname, relative, resolve, sep } = require("node:path");
 const root = resolve(__dirname, "..");
 const sharedCpuSource = resolve(root, "src/emu/z80/wasm/z80.c");
 const { Z80_HISTORY_EXPORTS } = require("./z80-history-exports.cjs");
+const { Z80_PROFILE_EXPORTS } = require("./z80-profile-exports.cjs");
 /* The execution-history recorder (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.1) */
 const historyHeaderInclude = '#include "../../../../z80/wasm/z80-history.h"';
 const historySourceInclude = '#include "../../../../z80/wasm/z80-history.c"';
@@ -15,6 +16,18 @@ const historyMachineMacros = [
   "Z80_HISTORY_FRAME",
   "Z80_HISTORY_FRAME_TACT"
 ];
+/* The access profile (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §4.1, D1) */
+const profileHeaderInclude = '#include "../../../../z80/wasm/z80-profile.h"';
+const profileSourceInclude = '#include "../../../../z80/wasm/z80-profile.c"';
+/* What a core that profiles defines for the module: its physical span, pool and mapping (D4, D5, D8) */
+const profileMachineMacros = [
+  "Z80_PROFILE_FLAG_BYTES",
+  "Z80_PROFILE_POOL_PAGES",
+  "Z80_PROFILE_PHYS_READ",
+  "Z80_PROFILE_PHYS_WRITE",
+  "Z80_PROFILE_FRAME_TICKS"
+];
+const profileHookNames = ["FETCH", "READ", "WRITE", "END", "MARK", "ACK_END", "HALT_END"];
 const sharedSpectrumDeviceSources = {
   ula: resolve(root, "src/emu/machines/zxSpectrum/wasm/common/zx-spectrum-ula.c"),
   keyboard: resolve(root, "src/emu/machines/zxSpectrum/wasm/common/zx-spectrum-keyboard.c"),
@@ -217,6 +230,20 @@ function validateSharedCpuSource() {
       errors.push(`shared CPU source does not declare the default-no-op hook: ${hookDefault}`);
     }
   }
+  // --- The access-profile hooks: no-ops unless a core includes `z80-profile.h`
+  for (const hookDefault of [
+    "#define Z80_PROFILE_FETCH(address, m1) ((void)0)",
+    "#define Z80_PROFILE_READ(address) ((void)0)",
+    "#define Z80_PROFILE_WRITE(address) ((void)0)",
+    "#define Z80_PROFILE_END() ((void)0)",
+    "#define Z80_PROFILE_MARK() ((void)0)",
+    "#define Z80_PROFILE_ACK_END(nmi) ((void)0)",
+    "#define Z80_PROFILE_HALT_END() ((void)0)"
+  ]) {
+    if (!source.includes(hookDefault)) {
+      errors.push(`shared CPU source does not declare the default-no-op hook: ${hookDefault}`);
+    }
+  }
   return {
     path: sharedCpuSource,
     relativePath: relativeToRoot(sharedCpuSource),
@@ -289,6 +316,29 @@ function validateModelContract(entry) {
       }
     }
   }
+  // --- Profile: the same shape as history - one header turns every hook on, the module follows the
+  // --- machine's macros, and a core that defines one machine macro defines all of them (D1)
+  const profiles = coreText.includes(profileHeaderInclude);
+  const hookPattern = new RegExp(`#define\\s+Z80_PROFILE_(${profileHookNames.join("|")})\\b`);
+  if (hookPattern.test(coreText)) {
+    errors.push(
+      `${relativeToRoot(entry.cpuAdapterSource)} defines a Z80_PROFILE_* hook itself; include '${profileHeaderInclude}', which defines them all`
+    );
+  }
+  const definedProfileMacros = profileMachineMacros.filter((macro) => new RegExp(`#define\\s+${macro}\\b`).test(coreText));
+  if (profiles || definedProfileMacros.length > 0) {
+    if (!profiles) {
+      errors.push(`${entry.id} defines profile machine macros but does not include the hooks '${profileHeaderInclude}'`);
+    }
+    if (!coreText.includes(profileSourceInclude)) {
+      errors.push(`${entry.id} includes the profile hooks but not the module '${profileSourceInclude}'`);
+    }
+    for (const macro of profileMachineMacros) {
+      if (!definedProfileMacros.includes(macro)) {
+        errors.push(`${entry.id} profiles but does not define ${macro}`);
+      }
+    }
+  }
   if (!sourceText.includes("#define Z80_EXTERNAL_BUS 1")) {
     errors.push(`${relativeToRoot(entry.cpuAdapterSource)} does not declare the external Z80 bus adapter`);
   }
@@ -313,6 +363,11 @@ function validateModelContract(entry) {
       errors.push(`${relativeToRoot(entry.buildScript)} records history but does not export '${exportName}'`);
     }
   }
+  for (const exportName of profiles ? Z80_PROFILE_EXPORTS : []) {
+    if (!build.productionExports.includes(exportName)) {
+      errors.push(`${relativeToRoot(entry.buildScript)} profiles but does not export '${exportName}'`);
+    }
+  }
   for (const exportName of entry.requiredExports) {
     if (!build.productionExports.includes(exportName)) {
       errors.push(`${relativeToRoot(entry.buildScript)} does not export required CPU contract symbol '${exportName}'`);
@@ -335,6 +390,7 @@ function validateModelContract(entry) {
     forbiddenIncludeFragments: entry.forbiddenIncludeFragments ?? [],
     allowedIncludeFragments: entry.allowedIncludeFragments ?? [],
     recordsHistory,
+    profiles,
     ok: errors.length === 0,
     errors
   };

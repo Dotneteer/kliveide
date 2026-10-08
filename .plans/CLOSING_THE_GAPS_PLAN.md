@@ -31,7 +31,7 @@ are estimates for prioritising, not commitments.
 | G2 | Load and save snapshots (.sna/.z80/.szx), RZX | **S → L** | ✅ done (2026-10-04): G2.1–G2.8 |
 | G3 | Live Next hardware inspectors | **M** (layers: M–L) | ✅ done (2026-10-05 – 10-08): G3.1–G3.9 (G3.8's sprite half on 2026-10-08) |
 | G4 | Execution history and reverse debugging | **M → XL** | ✅ done (2026-10-07 – 10-08): G4.1–G4.6 |
-| G5 | Code coverage, profiler, unit tests | **M → L** | Coverage map in the disassembly · plans ready, decisions recorded (2026-10-08): coverage and heat map, profiler, unit tests, CLI/CI |
+| G5 | Code coverage, profiler, unit tests | **M → L** | ✅ G5.1 and G5.2 done (2026-10-08): coverage per bank and the heat map on every Z80 machine · plans ready for the profiler, unit tests, CLI/CI |
 | G6 | Remote debugging, real hardware, external API | **M → XL** | Command API for scripts and CI |
 | G7 | 48K/128K reverse-engineering depth | **M → L** | Generalising the NEX annotation sidecar |
 | G8 | BASIC editor intelligence | **M** | ✅ done (2026-10-03): G8.1–G8.5 |
@@ -232,7 +232,10 @@ then moves the frame trace to a diagnostics build, which shrinks the Next to abo
 *internal* test harness (`test/harness/sp48`, `test/harness/zxnext`), but nothing for users.
 
 **Plan (decisions recorded, 2026-10-08: the suggested answers accepted for all four plans):**
-- G5.1 and G5.2 are in [CODE_COVERAGE_AND_HEAT_MAP_PLAN.md](CODE_COVERAGE_AND_HEAT_MAP_PLAN.md).
+- G5.1 and G5.2 are in [CODE_COVERAGE_AND_HEAT_MAP_PLAN.md](CODE_COVERAGE_AND_HEAT_MAP_PLAN.md). **Done
+  (2026-10-08)** on every Z80 core: the shared in-core access profile (`z80-profile.c`), the editor
+  strip, the disassembly cell, the memory view's heat map, the `coverage` commands, the SMC report
+  and LCOV/CSV/`.kcov` exports. The core module also records the per-instruction time G5.3 reads.
   It also builds the shared in-core access profile (`z80-profile.c`: a flag byte per physical byte,
   plus a counter pool with per-instruction time) that the profiler reads.
 - G5.3 and G5.4 are in [PROFILER_PLAN.md](PROFILER_PLAN.md).
@@ -250,8 +253,8 @@ Research for the plans corrected four assumptions in the table below:
 
 | Feature | What it does | Size |
 |---|---|---|
-| G5.1 Code coverage map | A per-address (and per-bank) "executed" bitmap in the core; executed lines are marked in the editor gutter and disassembly, and can be reset. | M (a C bitmap in each core, then source mapping through the existing debug info) |
-| G5.2 Memory access heat map | Read, write and execute counts per address, shown as a heat map in the memory view; also spots self-modifying code. | M, alongside G5.1 |
+| G5.1 Code coverage map ✅ **done** | A per-address (and per-bank) "executed" bitmap in the core; executed lines are marked in the editor gutter and disassembly, and can be reset. | M (a C bitmap in each core, then source mapping through the existing debug info) |
+| G5.2 Memory access heat map ✅ **done** | Read, write and execute counts per address, shown as a heat map in the memory view; also spots self-modifying code. | M, alongside G5.1 |
 | G5.3 Flat profiler | T-states spent per address, rolled up per label or procedure; a "top routines" table. | M |
 | G5.4 Call-graph profiler | Inclusive and exclusive time per routine using the call stack. | L |
 | G5.5 Z80 unit tests | **DeZog-compatible** (decision D3): the same test-case labelling and assertion-macro conventions, so DeZog unit-test projects run in Klive unchanged, with both Klive asm and sjasmplus. A runner sets up the machine headlessly, calls each test, checks results, and reports pass/fail in a Test panel with click-to-source. Debug a failing test. | L (assembler support for the conventions, a headless runner, UI; the exact DeZog conventions are researched in this feature's own plan) |

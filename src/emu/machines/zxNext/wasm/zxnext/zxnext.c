@@ -148,6 +148,13 @@ static uint8_t cpuPrefix;
 static uint32_t frames;
 static uint32_t tacts;
 static uint32_t frameTacts28;
+/*
+ * The access profile's clock (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D8): 28 MHz ticks, like
+ * `frameTacts28`, but never wrapped at a frame end, so a 32-bit difference is a duration even across
+ * a frame boundary or a speed change. Advanced wherever `frameTacts28` is advanced by time passing
+ * (CPU cycles and DMA holds), never by the frame-position setters. Volatile, like the profile itself.
+ */
+static uint32_t zxnextProfileTicks28;
 static uint32_t currentFrameTact;
 static uint8_t frameCompleted;
 static uint32_t totalContentionDelaySinceStart;
@@ -1151,3 +1158,69 @@ static void zxnextHistoryDmaHold(uint32_t cpuTacts, uint16_t src, uint16_t dest,
     cpuTacts -= taken;
   }
 }
+
+// -----------------------------------------------------------------------------
+// The access profile (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §2.2, D4): the shared module, with
+// this machine's physical layout. The profile offset is the offset into `zxnextMemory` - Next ROM,
+// DivMMC ROM, Multiface, Alt ROMs, DivMMC RAM, then the 224 Next RAM pages (`nextMemoryLayout.ts`);
+// `src/common/profile/layouts/zxnext.ts` names them by partition. Time is in 28 MHz ticks (D8), from
+// `zxnextProfileTicks28`, which a frame end does not wrap.
+//
+// Reads (and code fetches) and writes resolve apart (trap T2), exactly as `zxnextMemoryPeekMapped` and
+// `zxnextMemoryWriteMapped` do: the Multiface and DivMMC overlays of $0000-$3FFF first, then the
+// Layer 2 mapping - which can map writes only, or reads only, over ROM - then the MMU. A write that
+// reaches no memory (ROM, the DivMMC ROM, mapram's bank 3, an MMU page above $DF) maps nowhere, and
+// so does anything at or above the error page (`OFFS_ERR_PAGE`), which no partition names.
+// -----------------------------------------------------------------------------
+
+#define ZXNEXT_PROFILE_ERR_PAGE (2048u * 1024u)
+
+/*
+ * Both run at every CPU memory access while profiling is on (trap T10), so the common case - no
+ * Layer 2 mapping in that direction, no overlay in slots 0-1 - is one table load, and only the rare
+ * mappings take the general path (the same steps as the core's own read and write paths).
+ */
+Z80_ALWAYS_INLINE int32_t zxnextProfilePhysRead(uint32_t address) {
+  const uint32_t normalized = address & 0xffffu;
+  const uint32_t slot = normalized >> 13u;
+  if (zxnextLayer2EnableMappingForReads == 0u && (slot >= 2u || !zxnextMemoryLowOverlayActive())) {
+    /* MMU offsets are below the error page: RAM page $DF ends at 2 MB */
+    return (int32_t)(pageReadOffset[slot] + (normalized & 0x1fffu));
+  }
+  uint32_t physical = ZXNEXT_NO_WRITE_OFFSET;
+  if (!(slot < 2u && zxnextMemoryLowOverlayActive())) {
+    physical = zxnextMemoryResolveLayer2Offset(normalized, 0u);
+  }
+  if (physical == ZXNEXT_NO_WRITE_OFFSET) {
+    physical = zxnextMemoryResolveReadOffset(slot) + (normalized & 0x1fffu);
+  }
+  return physical < ZXNEXT_PROFILE_ERR_PAGE ? (int32_t)physical : -1;
+}
+
+Z80_ALWAYS_INLINE int32_t zxnextProfilePhysWrite(uint32_t address) {
+  const uint32_t normalized = address & 0xffffu;
+  const uint32_t slot = normalized >> 13u;
+  uint32_t physical = ZXNEXT_NO_WRITE_OFFSET;
+  if (zxnextLayer2EnableMappingForWrites == 0u && (slot >= 2u || !zxnextMemoryLowOverlayActive())) {
+    physical = pageWriteOffset[slot];
+    return physical == ZXNEXT_NO_WRITE_OFFSET ? -1 : (int32_t)(physical + (normalized & 0x1fffu));
+  }
+  if (!(slot < 2u && zxnextMemoryLowOverlayActive())) {
+    physical = zxnextMemoryResolveLayer2Offset(normalized, 1u);
+  }
+  if (physical == ZXNEXT_NO_WRITE_OFFSET) {
+    physical = zxnextMemoryResolveWriteOffset(slot);
+    if (physical == ZXNEXT_NO_WRITE_OFFSET) return -1;
+    physical += normalized & 0x1fffu;
+  }
+  return physical < ZXNEXT_PROFILE_ERR_PAGE ? (int32_t)physical : -1;
+}
+
+/* The whole of `zxnextMemory`, error page included, so an offset is the physical offset unchanged */
+#define Z80_PROFILE_FLAG_BYTES ZXNEXT_MEMORY_SIZE
+/* 64 pages (12 MB): 512K of touched memory with counters; the flags cover all 2 MB regardless (D5, T6) */
+#define Z80_PROFILE_POOL_PAGES 64u
+#define Z80_PROFILE_PHYS_READ(address) zxnextProfilePhysRead((uint32_t)(address))
+#define Z80_PROFILE_PHYS_WRITE(address) zxnextProfilePhysWrite((uint32_t)(address))
+#define Z80_PROFILE_FRAME_TICKS() zxnextProfileTicks28
+#include "../../../../z80/wasm/z80-profile.c"

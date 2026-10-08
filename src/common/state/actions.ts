@@ -268,6 +268,12 @@ export const setSourceFrameAction: ActionCreator = (frame: number) => ({
   payload: { index: frame }
 });
 
+/** The memory view's heat map mode (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D14) */
+export const setMemoryHeatModeAction: ActionCreator = (mode: string) => ({
+  type: "SET_MEMORY_HEAT_MODE",
+  payload: { text: mode }
+});
+
 export const incBreakpointsVersionAction: ActionCreator = () => ({
   type: "INC_BPS_VERSION"
 });
@@ -280,6 +286,23 @@ export const incBreakpointsVersionAction: ActionCreator = () => ({
  */
 export const incBreakpointHitsVersionAction: ActionCreator = () => ({
   type: "INC_BP_HITS_VERSION"
+});
+
+/**
+ * The access profile's switch (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D6): Debug -> Code
+ * Coverage and `coverage on|off`. One switch per session, not a setting.
+ */
+export const setProfilingAction: ActionCreator = (enabled: boolean, counters: boolean) => ({
+  type: "SET_PROFILING",
+  payload: { value: { enabled, counters } }
+});
+
+/**
+ * The access profile moved (§4.2): coverage strips, the disassembly cell and the heat map refresh.
+ * Throttled by the machine controller like `incBreakpointHitsVersionAction`.
+ */
+export const incProfileVersionAction: ActionCreator = () => ({
+  type: "INC_PROFILE_VERSION"
 });
 
 export const incToolCommandSeqNoAction: ActionCreator = () => ({

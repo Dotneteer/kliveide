@@ -1,5 +1,8 @@
 import { conditionStoreOf, type ConditionStore } from "../conditionStore";
 import { WasmHistoryReader } from "../history/WasmHistoryReader";
+import { WasmProfileSource } from "../profile/WasmProfileSource";
+import type { IAccessProfileSource } from "@emu/abstractions/IAccessProfileSource";
+import type { ProfileCounts, ProfileInfo, ProfileTouchedByte } from "@common/profile/profileTypes";
 import type { IExecutionHistorySource } from "@emu/abstractions/IExecutionHistorySource";
 import type { ExecutionHistoryInfo, ExecutionHistoryPage } from "@common/history/historyTypes";
 import type { HistoryServiceSpan } from "@common/history/serviceSpans";
@@ -161,7 +164,7 @@ type ZxNextWasmV2Checkpoint = {
 
 export class ZxNextWasmV2Machine
   extends ZxNextWasmHost
-  implements IZxNextIdeMachine, IZxNextHostInputMachine, IExecutionHistorySource
+  implements IZxNextIdeMachine, IZxNextHostInputMachine, IExecutionHistorySource, IAccessProfileSource
 {
   public readonly implementation = "wasm" as const;
   public wasmV2Runtime?: ZxNextWasmV2Runtime;
@@ -836,6 +839,47 @@ export class ZxNextWasmV2Machine
 
   setHistoryEnabled(enabled: boolean): void {
     this.historyReader()?.setEnabled(enabled);
+  }
+
+  // ==============================================================================================
+  // The access profile (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`): the shared module in the core,
+  // read through the shared reader. Time is in 28 MHz ticks (D8), so it stays comparable across CPU
+  // speed changes; the DMA's bus holds are a header bucket (T5).
+
+  readonly profileMachineId = "zxnext";
+
+  private readonly wasmV2Profile = new WasmProfileSource(
+    () => this.wasmV2Runtime?.exports,
+    () => this.profileMachineId,
+    "28 MHz ticks"
+  );
+
+  getProfileInfo(): ProfileInfo | undefined {
+    return this.wasmV2Profile.info();
+  }
+
+  setProfiling(enabled: boolean, counters: boolean): void {
+    this.wasmV2Profile.setEnabled(enabled, counters);
+  }
+
+  resetProfile(): void {
+    this.wasmV2Profile.reset();
+  }
+
+  readProfileFlags(start: number, length: number): Uint8Array | undefined {
+    return this.wasmV2Profile.flags(start, length);
+  }
+
+  readProfileCounts(start: number, length: number): ProfileCounts | undefined {
+    return this.wasmV2Profile.counts(start, length);
+  }
+
+  readProfileTouched(mask?: number): ProfileTouchedByte[] | undefined {
+    return this.wasmV2Profile.touched(mask);
+  }
+
+  mergeProfile(bytes: readonly ProfileTouchedByte[], totals: { instructions: number; timeTotal: number }): void {
+    this.wasmV2Profile.merge(bytes, totals);
   }
 
   /**

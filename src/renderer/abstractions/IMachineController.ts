@@ -20,6 +20,7 @@ import type { IRzxSession, RzxStop } from "@emu/machines/zxSpectrum/rzx/rzxSessi
 import type { RzxState } from "@state/AppState";
 import { IAnyMachine } from "./IAnyMachine";
 import type { HistoryCursor } from "@emu/machines/history/HistoryCursor";
+import type { ProfileStatus } from "@common/profile/profileTypes";
 import type {
   HistoryNavigationOp,
   HistoryNavigationOptions,
@@ -215,6 +216,16 @@ export interface IMachineController {
 
   /** Returns to the present (D5) */
   clearHistoryCursor?(): void;
+
+  /**
+   * The access profile (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §4.2): its status, undefined
+   * when the machine does not profile. Optional so test doubles need not provide them.
+   */
+  getProfileStatus?(): ProfileStatus | undefined;
+  /** Turns profiling on or off for the session (D6); false when the machine does not profile */
+  setProfiling?(enabled: boolean, counters?: boolean): boolean;
+  /** Clears the profile */
+  resetProfile?(): void;
 
   /**
    * Starts the machine in step-over mode.

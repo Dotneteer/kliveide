@@ -359,6 +359,32 @@ static uint8_t z88CardCommandRead(uint32_t slot, uint8_t bank, uint32_t address)
   }
 }
 
+/*
+ * Whether a CPU write to a slot's EPROM or flash card will program the byte it addresses - asked by
+ * the access profile before the write (`z88ProfilePhys` in z88.c, CODE_COVERAGE_AND_HEAT_MAP_PLAN
+ * trap T2), so it mirrors the conditions of the writers below without changing any state: an EPROM
+ * blows a byte under the programming conditions of `z88EpromWrite`; an Intel chip in a byte program's
+ * second cycle; an AMD chip accumulating the cycle after its $A0 command (the pending cycle is the
+ * "any address, any data" one). Every other write is a command cycle or ignored. Whether the byte
+ * then takes the value (bits only go from 1 to 0) does not matter: the write reached the array.
+ */
+static uint32_t z88CardWriteProgramsByte(uint32_t slot, uint8_t bank) {
+  const Z88FlashChip *chip = &z88Flash[slot];
+  switch (z88Cards[slot].kind) {
+    case Z88_CARD_UV_EPROM:
+      return bank >= 0xc0u && (z88Com & Z88_COM_VPPON) && (z88Com & (Z88_COM_PROGRAM | Z88_COM_OVERP)) &&
+        z88Epr == (z88Cards[slot].size == 0x8000u ? 0x48u : 0x69u);
+    case Z88_CARD_INTEL_FLASH:
+      return !chip->readArrayMode && (chip->command == 0x10u || chip->command == 0x40u);
+    case Z88_CARD_AMD_29F040B:
+    case Z88_CARD_AMD_29F080B:
+      return !chip->readArrayMode && chip->accumulating && chip->command == 0xa0u && chip->unlockDepth >= 2u &&
+        chip->unlock[chip->unlockDepth - 2u] == Z88_AMD_ANY;
+    default:
+      return 0u;
+  }
+}
+
 /* A write to a slot's EPROM or flash card */
 static void z88CardWrite(uint32_t slot, uint8_t bank, uint32_t address, uint8_t value) {
   switch (z88Cards[slot].kind) {

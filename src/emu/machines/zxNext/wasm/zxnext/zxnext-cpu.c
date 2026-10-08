@@ -54,6 +54,9 @@ static inline void zxnextCpuDelayContendedMemory(uint32_t address, uint32_t memo
    itself and this machine's macros for it are at the end of zxnext.c */
 #include "../../../../z80/wasm/z80-history.h"
 static void zxnextHistoryDmaHold(uint32_t cpuTacts, uint16_t src, uint16_t dest, uint32_t frame, uint32_t frameTact);
+/* The access profile's hooks (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`); the module and this
+   machine's mapping for it are at the end of zxnext.c */
+#include "../../../../z80/wasm/z80-profile.h"
 
 #include "../../../../z80/wasm/z80.c"
 
@@ -75,7 +78,9 @@ static inline void zxnextCpuMarkFrameCompleted(void) {
 static inline void zxnextCpuTactPlusN(uint32_t value) {
   cpu.tacts += value;
   tacts += value;
-  frameTacts28 += value * zxnextCpuTactScale();
+  const uint32_t ticks28 = value * zxnextCpuTactScale();
+  frameTacts28 += ticks28;
+  zxnextProfileTicks28 += ticks28;
   while (frameTacts28 >= ZXNEXT_TACTS_IN_FRAME) {
     zxnextCtcOnFrameCompleted();
     zxnextPsgOnFrameWrap(ZXNEXT_TACTS_IN_FRAME);
@@ -106,6 +111,10 @@ static inline void zxnextCpuTactPlusDmaTicks(uint32_t ticks) {
   cpu.tacts += cpuTacts;
   tacts += cpuTacts;
   frameTacts28 += ticks;
+  zxnextProfileTicks28 += ticks;
+  /* The DMA holds the bus before the instruction: its time is a header bucket, never an address's
+     (D7, trap T5). Every hold reaches the frame through here, so this is the one charge site. */
+  if (z80ProfileHeader.enabled) z80ProfileChargeBucket(Z80_PROFILE_BUCKET_DMA, ticks);
   while (frameTacts28 >= ZXNEXT_TACTS_IN_FRAME) {
     zxnextCtcOnFrameCompleted();
     zxnextPsgOnFrameWrap(ZXNEXT_TACTS_IN_FRAME);

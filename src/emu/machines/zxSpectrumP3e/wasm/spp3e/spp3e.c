@@ -803,6 +803,9 @@ static inline void rzxIntAck(void);
 /* The execution-history recorder's hooks; the recorder and this machine's macros for it are at the
    end of this file (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` Phase 3) */
 #include "../../../../z80/wasm/z80-history.h"
+/* The access profile's hooks; the module and this machine's mapping for it are at the end of this
+   file (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` Phase 2) */
+#include "../../../../z80/wasm/z80-profile.h"
 #include "../../../../z80/wasm/z80.c"
 #undef Z80_REFRESH
 #undef Z80_INT_ACK
@@ -2628,3 +2631,37 @@ static inline void spp3eHistoryContext(uint32_t kind, uint8_t *out) {
 #define Z80_HISTORY_FRAME() spp3eFrames
 #define Z80_HISTORY_FRAME_TACT() spp3eUlaCurrentFrameTact()
 #include "../../../../z80/wasm/z80-history.c"
+
+// -----------------------------------------------------------------------------
+// The access profile (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §2.2, D4): the shared module, with
+// this machine's physical layout. Time is in CPU T-states (D8).
+//
+// One linear offset space over the physical arrays: RAM banks 0-7 ($00000-$1FFFF), then ROMs 0-3
+// ($20000-$2FFFF). `src/common/profile/layouts/spp3e.ts` names them in `getPartition`'s terms.
+//
+// The mapping goes through `spp3eMemorySlotBase`, which the special (all-RAM) paging modes set too,
+// never the flat `spp3eMemory` mirror (trap T3). A write to a ROM slot does not reach memory, so it
+// maps nowhere (T2); in a special paging mode every slot is RAM, so reads and writes agree.
+// -----------------------------------------------------------------------------
+
+#define SPP3E_PROFILE_ROM_BASE SPP3E_RAM_SIZE
+
+static inline int32_t spp3eProfilePhys(uint32_t address, uint32_t write) {
+  const uint32_t a = address & 0xffffu;
+  const uint32_t slot = a >> 14u;
+  if (write != 0u && spp3eMemorySlotWritable[slot] == 0u) return -1;
+  const uintptr_t p = (uintptr_t)spp3eMemorySlotBase[slot] + (a & 0x3fffu);
+  const uintptr_t ram = (uintptr_t)spp3eRam;
+  const uintptr_t rom = (uintptr_t)spp3eRom;
+  if (p - ram < SPP3E_RAM_SIZE) return (int32_t)(p - ram);
+  if (p - rom < SPP3E_ROM_SIZE) return (int32_t)(SPP3E_PROFILE_ROM_BASE + (p - rom));
+  return -1;
+}
+
+/* 192 KB of flags; the pool holds all 24 of its 8K pages, so no page ever loses its counters (T6) */
+#define Z80_PROFILE_FLAG_BYTES (SPP3E_RAM_SIZE + SPP3E_ROM_SIZE)
+#define Z80_PROFILE_POOL_PAGES 24u
+#define Z80_PROFILE_PHYS_READ(address) spp3eProfilePhys((uint32_t)(address), 0u)
+#define Z80_PROFILE_PHYS_WRITE(address) spp3eProfilePhys((uint32_t)(address), 1u)
+#define Z80_PROFILE_FRAME_TICKS() cpu.tacts
+#include "../../../../z80/wasm/z80-profile.c"

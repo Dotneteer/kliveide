@@ -4,6 +4,7 @@ const { spawnSync } = require("node:child_process");
 
 const { acquireWasmBuildLock, waitForWasmBuildLock } = require("./wasm-build-lock.cjs");
 const { Z80_HISTORY_EXPORTS, Z80_HISTORY_VOLATILE_SYMBOLS } = require("./z80-history-exports.cjs");
+const { Z80_PROFILE_EXPORTS, Z80_PROFILE_VOLATILE_SYMBOLS } = require("./z80-profile-exports.cjs");
 const {
   discardWasmOutput,
   layoutMapArgs,
@@ -32,7 +33,9 @@ const Z88_VOLATILE_SYMBOLS = [
   "z88UartTx",
   "z88UartTxCount",
   // --- The execution-history ring (EXECUTION_HISTORY_ALL_CORES_PLAN)
-  ...Z80_HISTORY_VOLATILE_SYMBOLS
+  ...Z80_HISTORY_VOLATILE_SYMBOLS,
+  // --- The access profile: flags, counters and time (CODE_COVERAGE_AND_HEAT_MAP_PLAN T4, T7)
+  ...Z80_PROFILE_VOLATILE_SYMBOLS
 ];
 
 /*
@@ -74,6 +77,8 @@ const productionExports = [
   "condPeek",
   // --- Execution history recorder (`src/emu/z80/wasm/z80-history.c`)
   ...Z80_HISTORY_EXPORTS,
+  // --- Access profile (`src/emu/z80/wasm/z80-profile.c`)
+  ...Z80_PROFILE_EXPORTS,
   "memory",
   // --- Buffers
   "z88BreakpointFlagsPtr",
@@ -230,10 +235,12 @@ const productionExports = [
 
 /*
  * 4 MB of physical memory, an 800x480 pixel buffer (1.5 MB), the audio buffer and the 4 MB
- * execution-history ring (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` D2, D3) fit in 12 MiB;
- * `z88.c` asserts the sum at compile time. Raise this only with a recorded reason.
+ * execution-history ring (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` D2, D3) fit in 12 MiB; the
+ * access profile adds 16 MB - a flag byte per physical byte (4 MB) and a 64-page counter pool (12 MB)
+ * (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D2, D5). `z88.c` asserts the sum at compile time.
+ * Raise this only with a recorded reason.
  */
-const Z88_WASM_MEMORY_BYTES = 12 * 1024 * 1024;
+const Z88_WASM_MEMORY_BYTES = 28 * 1024 * 1024;
 
 const buildModes = {
   production: {

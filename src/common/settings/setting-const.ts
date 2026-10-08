@@ -19,6 +19,17 @@ export const SETTING_EMU_FAST_LOAD = "emuOptions.fastLoad";
 export const SETTING_EMU_REVERSE_DEBUGGING = "emuOptions.reverseDebugging";
 /** The reverse-debugging keyframe budget in MB (D6); 0: the smaller of 512 MB and 1/16 of memory */
 export const SETTING_EMU_REVERSE_DEBUG_MEMORY_MB = "emuOptions.reverseDebugMemoryMb";
+/*
+ * Code coverage and the heat map (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D6, T11, §4.3)
+ */
+/** Clear the profile when a machine starts from Stopped (as DeZog does): on by default */
+export const SETTING_EMU_PROFILE_RESET_ON_START = "emuOptions.profileResetOnStart";
+/** Clear the profile after a code-injection flow, so the ROM's boot is not counted (T11, Q3): on */
+export const SETTING_EMU_PROFILE_RESET_AFTER_INJECTION = "emuOptions.profileResetAfterInjection";
+/** Keep execution, read and write counts as well as the flags (D2, Q1): on */
+export const SETTING_EMU_PROFILE_COUNTERS = "emuOptions.profileCounters";
+/** Tint covered source lines' background as well as marking the strip (D12): off */
+export const SETTING_IDE_COVERAGE_LINE_TINT = "ideViewOptions.coverageLineTint";
 /** The TR-DOS ROM file the Pentagon's Beta 128 boots (`.plans/BETA128_TRDOS_PLAN.md` Q1): Klive cannot ship it */
 export const SETTING_EMU_TRDOS_ROM = "emuOptions.trdosRomFile";
 /** The TC2048 ROM file the Timex boots (`.plans/TIMEX_SCORPION_PLAN.md` P5): Klive cannot ship it */

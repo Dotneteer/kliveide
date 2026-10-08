@@ -198,6 +198,34 @@ borrows the gutter dot's colour rather than picking a position in the local hue 
 A changed byte is also not painted as a status: it is the normal result of a program running, and
 finding it is the whole point of the view.
 
+**The heat map is the one per-byte mark that fills**, and the reason is the rule above turned round:
+a changed byte is a fact about *that byte*, while heat is a pattern across a region - a band of fills
+*is* the information. Three things keep it readable:
+
+- **It goes behind the text, not over it.** A heat cell is an empty box at `z-index: -1` inside
+  `.hexValues`, which is already a stacking context (`position: relative; z-index: 1`), so the row's
+  one text node paints on top. No copy of the byte's text, so nothing can drift out of alignment. A
+  cell spans its byte and half the gap each side, so a hot run reads as one band.
+- **Its ramp is fixed and accent-independent** (`HEAT` in L1, three hues: execute warm, read
+  green-teal, write violet). An accent ramp would collide with the changed-byte mark and the hover,
+  which are the secondary accent in the same rows. L2 derives the five steps by mixing each hue into
+  `--surface-panel` (`HEAT_RAMP_PCT`), so the light theme is derived, the steps are monotonic in
+  lightness by construction (lighter in dark, darker in light), and they are opaque - alternate row
+  tints do not change a step's meaning.
+- **The text never changes colour over it.** The ramp stops where `--text-primary` still has 3:1
+  over the hottest step in both tones; `test/theming/heat-ramp.test.ts` holds monotonicity, that
+  contrast, the hues apart at every step and the ramp independent of the accent. A self-modified byte
+  takes an *inset* outline (`box-shadow`), which shows on any step and moves no text.
+
+**Coverage marks say "ran" in one colour everywhere.** The editor strip (Monaco's
+`linesDecorationsClassName` column, so the glyph margin stays the breakpoints') and the disassembly's
+coverage cell both use `--color-coverage-covered` (the success green: DeZog's convention, and the
+meaning). Code that never ran is a hollow mark in `--text-tertiary` - an absence, not a problem, so
+never a status hue - and only where the absence is news: the editor shows it, because every line of a
+source file is the user's own; the disassembly does not, because most of a ROM listing never runs and
+a hollow mark on every such row would bury the ones that did. A cell like this is reserved on every
+row once there is data (the branch gutter's pattern), and absent - no reserved width - before.
+
 ### Two lines of prose about the same problem: colour one, not both
 
 The NEX viewer's validation banner says two things at once — *"This NEX file has 3 problems."* and

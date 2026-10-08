@@ -48,6 +48,9 @@ export interface ActionTypes {
   SET_SOURCE_FRAME: null;
   INC_BPS_VERSION: null;
   INC_BP_HITS_VERSION: null;
+  SET_PROFILING: null;
+  SET_MEMORY_HEAT_MODE: null;
+  INC_PROFILE_VERSION: null;
   INC_TOOL_CMD_SEQ: null;
 
   OPEN_FOLDER: null;

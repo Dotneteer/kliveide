@@ -923,6 +923,9 @@ static inline void sp128BetaBeforeFetch(uint16_t pc) {
 /* The execution-history recorder's hooks; the recorder and this machine's macros for it are at the
    end of this file (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` Phase 2) */
 #include "../../../../z80/wasm/z80-history.h"
+/* The access profile's hooks; the module and this machine's mapping for it are at the end of this
+   file (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` Phase 2) */
+#include "../../../../z80/wasm/z80-profile.h"
 #include "../../../../z80/wasm/z80.c"
 #undef Z80_REFRESH
 #undef Z80_INT_ACK
@@ -2739,3 +2742,44 @@ static inline void sp128HistoryContext(uint32_t kind, uint8_t *out) {
 #define Z80_HISTORY_FRAME() sp128Frames
 #define Z80_HISTORY_FRAME_TACT() currentFrameTact()
 #include "../../../../z80/wasm/z80-history.c"
+
+// -----------------------------------------------------------------------------
+// The access profile (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §2.2, D4): the shared module, with
+// this machine's physical layout. Time is in CPU T-states (D8).
+//
+// One linear offset space over the physical arrays, shared by the 128K, the Pentagon and the
+// Scorpion: RAM banks 0-15 ($00000-$3FFFF; the 128K and the Pentagon use 0-7), ROMs 0-2
+// ($40000-$4BFFF; ROM 2 is the Scorpion's service ROM) and the TR-DOS ROM ($4C000-$4FFFF).
+// `src/common/profile/layouts/sp128.ts` names them in `getPartition`'s terms.
+//
+// The mapping goes through `sp128MemorySlotBase`, never the flat `sp128Memory` mirror, which would
+// credit bank 5 and bank 7 at $C000 to the same bytes (trap T3). The hooks run after
+// `Z80_BEFORE_OPCODE_FETCH`, so a fetch the Beta 128 pages TR-DOS in for lands on the TR-DOS ROM. A
+// write to a ROM slot does not reach memory, so it maps nowhere (T2).
+// -----------------------------------------------------------------------------
+
+#define SP128_PROFILE_ROM_BASE SP128_RAM_SIZE
+#define SP128_PROFILE_TRDOS_BASE (SP128_RAM_SIZE + SP128_ROM_SIZE)
+
+static inline int32_t sp128ProfilePhys(uint32_t address, uint32_t write) {
+  if (sp128MemorySlotMapInitialized == 0u) rebuildMemorySlotMap();
+  const uint32_t a = address & 0xffffu;
+  const uint32_t slot = a >> 14u;
+  if (write != 0u && sp128MemorySlotWritable[slot] == 0u) return -1;
+  const uintptr_t p = (uintptr_t)sp128MemorySlotBase[slot] + (a & 0x3fffu);
+  const uintptr_t ram = (uintptr_t)sp128Ram;
+  const uintptr_t rom = (uintptr_t)sp128Rom;
+  const uintptr_t trdos = (uintptr_t)sp128TrdosRom;
+  if (p - ram < SP128_RAM_SIZE) return (int32_t)(p - ram);
+  if (p - rom < SP128_ROM_SIZE) return (int32_t)(SP128_PROFILE_ROM_BASE + (p - rom));
+  if (p - trdos < 0x4000u) return (int32_t)(SP128_PROFILE_TRDOS_BASE + (p - trdos));
+  return -1;
+}
+
+/* 320 KB of flags; the pool holds all 40 of its 8K pages, so no page ever loses its counters (T6) */
+#define Z80_PROFILE_FLAG_BYTES (SP128_RAM_SIZE + SP128_ROM_SIZE + 0x4000u)
+#define Z80_PROFILE_POOL_PAGES 40u
+#define Z80_PROFILE_PHYS_READ(address) sp128ProfilePhys((uint32_t)(address), 0u)
+#define Z80_PROFILE_PHYS_WRITE(address) sp128ProfilePhys((uint32_t)(address), 1u)
+#define Z80_PROFILE_FRAME_TICKS() cpu.tacts
+#include "../../../../z80/wasm/z80-profile.c"

@@ -47,15 +47,22 @@
 #define Z88_KEYBOARD_LINES 8u
 
 /* The linear memory the build script reserves (Z88_WASM_MEMORY_BYTES in build-z88-wasm.cjs) */
-#define Z88_WASM_LINEAR_MEMORY (12u * 1024u * 1024u)
+#define Z88_WASM_LINEAR_MEMORY (28u * 1024u * 1024u)
 /* The execution-history ring: 65,536 records of 64 bytes (EXECUTION_HISTORY_ALL_CORES_PLAN D2) */
 #define Z88_WASM_HISTORY_RING (65536u * 64u)
+/*
+ * The access profile (CODE_COVERAGE_AND_HEAT_MAP_PLAN D2, D5): a flag byte per physical byte (4 MB),
+ * its page map (a uint16 per 8K page) and the counter pool - Z88_PROFILE_POOL_PAGES 8K pages of
+ * 24-byte entries (12 MB). Defined at the end of this file with the module.
+ */
+#define Z88_PROFILE_POOL_PAGES 64u
+#define Z88_WASM_PROFILE (Z88_MEMORY_SIZE + (Z88_MEMORY_SIZE / 0x2000u) * 2u + Z88_PROFILE_POOL_PAGES * 0x2000u * 24u)
 /* Headroom for the stack, the CPU state and the machine's small variables */
 #define Z88_WASM_RESERVED (512u * 1024u)
 
 _Static_assert(
   Z88_MEMORY_SIZE + Z88_PIXEL_BUFFER_WORDS * 4u + Z88_AUDIO_SAMPLE_CAPACITY * 16u + 0x20000u + Z88_WASM_HISTORY_RING +
-      Z88_WASM_RESERVED <=
+      Z88_WASM_PROFILE + Z88_WASM_RESERVED <=
     Z88_WASM_LINEAR_MEMORY,
   "The Z88 buffers no longer fit the WASM linear memory; raise Z88_WASM_MEMORY_BYTES with a reason");
 
@@ -127,6 +134,9 @@ static inline void z88BusNewInstruction(void);
 /* The execution-history recorder's hooks; the recorder and this machine's macros for it are at the
    end of this file (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` Phase 4) */
 #include "../../../../z80/wasm/z80-history.h"
+/* The access profile's hooks; the module and this machine's mapping for it are at the end of this
+   file (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D1, D4) */
+#include "../../../../z80/wasm/z80-profile.h"
 #include "../../../../z80/wasm/z80.c"
 
 // -----------------------------------------------------------------------------
@@ -199,7 +209,11 @@ uint32_t z88ExecuteInstruction(void) {
   z80SetSigInt(z88InterruptSignal);
   do {
     if (z80IsCpuSnoozed()) {
+      /* The snooze is no instruction's time: the profile keeps it in its own bucket (D7). The pause
+         falls between instructions (only a completed IN from $B2 snoozes), so nothing is open. */
+      const uint32_t before = cpu.tacts;
       z80SnoozeCycle();
+      if (z80ProfileHeader.enabled) z80ProfileChargeBucket(Z80_PROFILE_BUCKET_SNOOZE, cpu.tacts - before);
     } else {
       z80ExecuteCpuCycle();
     }
@@ -460,3 +474,37 @@ static inline void z88HistoryContext(uint32_t kind, uint8_t *out) {
 #define Z80_HISTORY_FRAME() z88Frames
 #define Z80_HISTORY_FRAME_TACT() z88FrameTacts
 #include "../../../../z80/wasm/z80-history.c"
+
+// -----------------------------------------------------------------------------
+// The access profile (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §2.2, D4): the shared module, with
+// this machine's physical layout. Time is in CPU T-states (D8); the snooze goes to its own bucket
+// (`z88ExecuteInstruction`, D7), and a CPU in coma is HALTed, so its time is the HALT's.
+//
+// The profile offset is the offset in `z88Memory` (slot N at N * 1 MB, internal RAM at $080000), as
+// each 8K page's `z88PageOffset` names it. That offset already carries a small card's mirroring and
+// the half of SR0's bank that segment 0's upper page shows, so a byte is flagged once, at its
+// storage, whichever mirror the CPU reached it through (`src/common/profile/layouts/z88.ts`).
+//
+// Nothing backs a page with no card: its reads are the Blink's random values and its writes are
+// dropped, so both map nowhere. A write reaches memory only on RAM, or on an EPROM or flash card
+// whose chip is about to program this byte (`z88CardWriteProgramsByte`); a ROM ignores it, and a
+// flash chip's command cycles are not stores (trap T2). A read of a flash chip in a command state
+// answers its status, not the array, but it is still that card's byte the CPU addressed, so it maps.
+// -----------------------------------------------------------------------------
+
+static inline int32_t z88ProfilePhys(uint32_t address, uint32_t write) {
+  const uint32_t page = (address & 0xffffu) >> 13;
+  const uint8_t card = z88PageCard[page];
+  if (card == Z88_PAGE_NO_CARD) return -1;
+  if (write != 0u && z88Cards[card].kind != Z88_CARD_RAM && !z88CardWriteProgramsByte(card, z88PageBank[page])) {
+    return -1;
+  }
+  return (int32_t)(z88PageOffset[page] + (address & 0x1fffu));
+}
+
+#define Z80_PROFILE_FLAG_BYTES Z88_MEMORY_SIZE
+#define Z80_PROFILE_POOL_PAGES Z88_PROFILE_POOL_PAGES
+#define Z80_PROFILE_PHYS_READ(address) z88ProfilePhys((uint32_t)(address), 0u)
+#define Z80_PROFILE_PHYS_WRITE(address) z88ProfilePhys((uint32_t)(address), 1u)
+#define Z80_PROFILE_FRAME_TICKS() cpu.tacts
+#include "../../../../z80/wasm/z80-profile.c"

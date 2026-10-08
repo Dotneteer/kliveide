@@ -41,7 +41,7 @@ describe("ZX80/ZX81 WASM build", () => {
     }
   });
 
-  it("exports every non-static function of the C core (the keyboard's through its aliases, the recorder's), and nothing else", () => {
+  it("exports every non-static function of the C core (the keyboard's through its aliases, the recorder's, the profile's), and nothing else", () => {
     const folder = dirname(source);
     const cFunctions = readdirSync(folder)
       .filter((f) => f.endsWith(".c"))
@@ -52,8 +52,18 @@ describe("ZX80/ZX81 WASM build", () => {
     // --- ... and the shared execution-history recorder, and exports it
     const recorder = readFileSync(join(folder, "../../../../z80/wasm/z80-history.c"), "utf8");
     const historyFunctions = [...recorder.matchAll(/^(?:uint32_t|void) (z80History[A-Za-z0-9]+)\([^)]*\)\s*\{/gm)].map((m) => m[1]);
+    // --- ... and the shared access profile (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §4.1)
+    const profile = readFileSync(join(folder, "../../../../z80/wasm/z80-profile.c"), "utf8");
+    const profileFunctions = [...profile.matchAll(/^(?:uint32_t|void) (z80Profile[A-Za-z0-9]+)\([^)]*\)\s*\{/gm)].map((m) => m[1]);
     expect(productionExports.filter((n) => n !== "memory").sort()).toEqual(
-      [...cFunctions, ...condFunctions, ...historyFunctions, "zx8081SetKeyStatus", "zx8081GetKeyboardLine"].sort()
+      [
+        ...cFunctions,
+        ...condFunctions,
+        ...historyFunctions,
+        ...profileFunctions,
+        "zx8081SetKeyStatus",
+        "zx8081GetKeyboardLine"
+      ].sort()
     );
   });
 

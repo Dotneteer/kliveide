@@ -247,6 +247,13 @@ Ten recipes; the rest of the pages were deliberately left ungenerated.
   chip (`_historyChip_`), the historical disassembly row (`[data-history-exec="true"]`) and the
   "present" bands (`[role="note"]`) before it photographs. It ends with `em-sti` and checks every band
   is gone: a machine command returns to the present.
+- `recipes/code-coverage.cjs` — the running-app check of code coverage and the heat map on the
+  48K (staged shots only; the page has no images yet). It verifies the editor strip, `coverage
+  status`/`coverage smc`, the disassembly's coverage cell and the memory view's heat cells from the
+  DOM. **A new project's build-root file is open the moment `newp` returns, and its Monaco model
+  outlives `close`/`open`**: overwriting that file leaves the editor showing the template's text
+  under the new program's decorations. Write the program as a *new* file, point
+  `klive.project`'s `builder.roots` at it, then `close` and `open` the project.
 - `recipes/scripting.cjs` — `scripting/script-output-pane.png`. The worked template.
 - `recipes/disassembly.cjs` — `working-with-ide/disass-branch-verdicts.png`. Adds three
   techniques worth reusing:

@@ -151,6 +151,20 @@ describe("harness session", () => {
     expect(s.clearHistory().historyInfo().count).toBe(0);
   });
 
+  it("profile / profileFlags / profileCounts: flags and counts by physical offset; off counts nothing", async () => {
+    const s = await createSession();
+    await s.loadCode(" .org $8000\nStart: ld a,1\n inc a\n jr $");
+    // --- $8000 is slot 4, MMU page 4 in the NEX layout: physical $40000 + 4 x 8K
+    const start = 0x40000 + s.partition(0x8000)! * 0x2000;
+    s.profile(false).resetProfile().step(1);
+    expect(s.profileTouched()).toEqual([]);
+    s.profile(true).step(2).profile(false);
+    expect(s.profileFlags(start + 2, 1)[0] & 0x01, "inc a started").toBe(0x01);
+    expect(s.profileCounts(start + 2, 1).exec[0]).toBe(1);
+    expect(s.profileInfo().instructions).toBe(2);
+    expect(s.resetProfile().profileInfo().instructions).toBe(0);
+  });
+
   it("reset is a soft reset: PC back to 0, RAM kept", async () => {
     const s = await createSession();
     await s.loadCode(` .org $8000\n ld a,1\n jr $`);

@@ -73,8 +73,14 @@ import {
   isExecutionHistorySource,
   type IExecutionHistorySource
 } from "@emu/abstractions/IExecutionHistorySource";
+import { isAccessProfileSource, type IAccessProfileSource } from "@emu/abstractions/IAccessProfileSource";
+import type { ProfileInfo } from "@common/profile/profileTypes";
+import { incProfileVersionAction, setProfilingAction } from "@common/state/actions";
 import {
   SETTING_EMU_FAST_LOAD,
+  SETTING_EMU_PROFILE_COUNTERS,
+  SETTING_EMU_PROFILE_RESET_AFTER_INJECTION,
+  SETTING_EMU_PROFILE_RESET_ON_START,
   SETTING_EMU_REVERSE_DEBUG_MEMORY_MB,
   SETTING_EMU_REVERSE_DEBUGGING,
   SETTING_EMU_JUST_MY_CODE,
@@ -82,7 +88,7 @@ import {
   SETTING_EMU_STOP_ON_ERRORS
 } from "@common/settings/setting-const";
 import { getGlobalSetting } from "@renderer/core/RendererProvider";
-import { MF_REVERSE_DEBUG } from "@common/machines/constants";
+import { MF_PROFILE, MF_REVERSE_DEBUG } from "@common/machines/constants";
 import {
   ADVANCED_DEBUGGING_OFF_MESSAGE,
   isAdvancedDebuggingEnabled
@@ -209,6 +215,76 @@ export class MachineController implements IMachineController {
     this._machineInfo = machineRegistry.find(
       (m) => m.machineId === machine.machineId
     ) as MachineInfo;
+  }
+
+  // ------------------------------------------------------------------------------------------------
+  // The access profile: code coverage and the heat map (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`)
+
+  /**
+   * Instructions the profile counted in a future that Take over here abandoned (D10, Q4): they really
+   * ran, so the counts keep them, and `coverage status` says so until the next reset
+   */
+  private _abandonedInstructions = 0;
+  /** The profile's generation and instruction count when `profileVersion` last moved */
+  private _publishedProfile = { generation: -1, instructions: -1 };
+
+  /** The machine as an access-profile source, when its core profiles and the switch allows it (D15) */
+  private profileSource(): IAccessProfileSource | undefined {
+    if (!this.advancedDebuggingEnabled || !this._machineInfo?.features?.[MF_PROFILE]) return undefined;
+    return isAccessProfileSource(this.machine) ? this.machine : undefined;
+  }
+
+  /** What the profile holds, with what the controller adds; undefined without one */
+  getProfileStatus(): (ProfileInfo & { abandonedInstructions: number }) | undefined {
+    const info = this.profileSource()?.getProfileInfo();
+    return info ? { ...info, abandonedInstructions: this._abandonedInstructions } : undefined;
+  }
+
+  /**
+   * Turns profiling on or off (D6): the user's switch, for the session - it is not tied to debugging,
+   * because "what did the game use?" is asked at full speed
+   * @param counters Keep the counters too; by default the setting decides (Q1)
+   * @returns false when the machine has no profile
+   */
+  setProfiling(enabled: boolean, counters?: boolean): boolean {
+    const source = this.profileSource();
+    if (!source) return false;
+    const keepCounts = counters ?? this.flagSetting(SETTING_EMU_PROFILE_COUNTERS, true);
+    source.setProfiling(enabled, keepCounts);
+    this.store?.dispatch(setProfilingAction(enabled, keepCounts), "emu");
+    this.publishProfileVersion(true);
+    return true;
+  }
+
+  /** Clears the profile; the abandoned-future note goes with it */
+  resetProfile(): void {
+    this.profileSource()?.resetProfile();
+    this._abandonedInstructions = 0;
+    this.publishProfileVersion(true);
+  }
+
+  /**
+   * Applies the session's switch to this controller's machine: a machine switch or a reload creates
+   * a new core, which starts with profiling off
+   */
+  applyProfilingState(): void {
+    const profiling = this.store?.getState()?.emulatorState?.profiling;
+    if (profiling?.enabled) this.profileSource()?.setProfiling(true, profiling.counters);
+  }
+
+  /**
+   * Tells the IDE the profile moved, if it did (D12's `profileVersion`): throttled like the
+   * breakpoint hit counts - every 10 frames while running, and once when a run ends
+   */
+  private publishProfileVersion(force = false): void {
+    const source = this.profileSource();
+    if (!source || !this.store) return;
+    const info = source.getProfileInfo();
+    if (!info) return;
+    const last = this._publishedProfile;
+    if (!force && info.generation === last.generation && info.instructions === last.instructions) return;
+    this._publishedProfile = { generation: info.generation, instructions: info.instructions };
+    this.store.dispatch(incProfileVersionAction(), "emu");
   }
 
   /**
@@ -1038,6 +1114,9 @@ export class MachineController implements IMachineController {
 
     this.assertMachineOperationIsCurrent(operationRevision);
 
+    // --- Coverage starts with the program, not with the ROM's boot to the injection point (T11, Q3)
+    if (this.flagSetting(SETTING_EMU_PROFILE_RESET_AFTER_INJECTION, true)) this.resetProfile();
+
     // --- Set the continuation point
     if (!keepPc) {
       m.pc = entryPoint;
@@ -1592,6 +1671,11 @@ export class MachineController implements IMachineController {
     const timeline = this.timeline;
     if (!timeline || timeline.mode !== "navigating" || this.state !== MachineControllerState.Paused) return false;
     this._historyCursor?.clear(false);
+    // --- The abandoned future's instructions stay in the profile (D10): say how many there were
+    if (this.profileSource()?.getProfileInfo()?.enabled) {
+      const abandoned = timeline.presentPosition.sequence - timeline.position.sequence;
+      if (abandoned > 0) this._abandonedInstructions += abandoned;
+    }
     const forked = timeline.fork();
     this.replayProvider.forgetPresent();
     this.store?.dispatch(setMachineStateAction(this.state, this.machine.pc), "emu");
@@ -1754,6 +1838,8 @@ export class MachineController implements IMachineController {
         this.startLogSession();
         // --- ...and so does the execution history: a start from Stopped is a new timeline (D9)
         this.historySource()?.clearHistory();
+        // --- ...and coverage, unless the user keeps it across starts (D6)
+        if (this.flagSetting(SETTING_EMU_PROFILE_RESET_ON_START, true)) this.resetProfile();
         break;
     }
 
@@ -1908,9 +1994,10 @@ export class MachineController implements IMachineController {
           this.publishRzxState();
         }
 
-        // --- Live hit counts: at most every 10 frames while running (§4.5)
+        // --- Live hit counts: at most every 10 frames while running (§4.5); the access profile too
         if (frameCompleted && this.frameStats.frameCount % 10 === 0) {
           this.publishBreakpointHits();
+          this.publishProfileVersion();
         }
 
         // --- Handle termination
@@ -1918,11 +2005,13 @@ export class MachineController implements IMachineController {
           // --- The machine is paused or stopped
           this.context.canceled = true;
           this.publishBreakpointHits();
+          this.publishProfileVersion();
           return;
         }
 
         if (termination !== FrameTerminationMode.Normal) {
           this.publishBreakpointHits();
+          this.publishProfileVersion();
           this.state = MachineControllerState.Paused;
           this._machineTask = undefined;
           this.context.canceled = true;

@@ -152,6 +152,9 @@ static void zx8081IntAck(void);
 /* The execution-history recorder's hooks; the recorder and this machine's macros for it are at the
    end of this file (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` Phase 5) */
 #include "../../../../z80/wasm/z80-history.h"
+/* The access profile's hooks; the module and this machine's mapping for it are at the end of this
+   file (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §2.2) */
+#include "../../../../z80/wasm/z80-profile.h"
 #include "../../../../z80/wasm/z80.c"
 
 // -----------------------------------------------------------------------------
@@ -467,3 +470,53 @@ static inline void zx8081HistoryContext(uint32_t kind, uint8_t *out) {
 #define Z80_HISTORY_FRAME_TACT() zx8081FrameTacts
 #define Z80_HISTORY_FORCED_NOP() zx8081HistoryForcedNop
 #include "../../../../z80/wasm/z80-history.c"
+
+// -----------------------------------------------------------------------------
+// The access profile (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §2.2, D4): the shared module, with
+// this machine's physical layout. Time is in CPU T-states (D8).
+//
+// The profile offset of a byte is its *canonical address* - the lowest CPU address a data access
+// reaches it at - so the layout (`src/common/profile/layouts/zx8081.ts`) is one fixed map for every
+// model, whose RAM size and ROM are run-time configuration (`zx8081Configure`), not machine ids:
+//   $00000-$01FFF  the ROM, through its mirrors (`& zx8081RomMask`: the 4K ZX80 ROM fills $0000-$0FFF)
+//   $02000-$0FFFF  the RAM: 1K/16K at $4000 + (address & mask), whatever mirror was used; 64K at its
+//                  address ($2000-$FFFF)
+//   $10000-$11FFF  the 64K model's lowest 8K of RAM, which no data access reaches: only an opcode
+//                  fetch above 32K does, through the lower-32K redirect of `zx8081CpuReadMemory`
+// The decode is `zx8081CpuReadMemory`/`zx8081CpuWriteMemory`'s, mirrors included; a write below the
+// RAM reaches nothing (the ROM ignores it), so it maps nowhere.
+//
+// The redirect applies to the M1 opcode read only. `Z80_BEFORE_OPCODE_FETCH` sets `zx8081M1Fetch`
+// before the profile's BEGIN and M1 fetch hooks run, and the read clears it, so the flag tells them
+// apart from the operand and data reads; a HALTed CPU re-fetches its HALT, so its cycles are charged
+// where the HALT's own M1 was.
+//
+// The display file: while the ROM shows a picture the CPU fetches the display file above 32K and the
+// ULA forces those bytes to NOPs. Those fetches are mapped like any other - they *are* M1 cycles at
+// those bytes, the history records them too, and the time the picture costs in SLOW mode is charged
+// where it is spent - so the display file reads as executed code (E/C), and, once the ROM writes it
+// while profiling runs, as self-modified (S, D9). `zx8081-profile.test.ts` pins this down.
+// -----------------------------------------------------------------------------
+
+#define ZX8081_PROFILE_RAM_BASE 0x4000u
+#define ZX8081_PROFILE_HIDDEN_BASE 0x10000u
+
+static inline int32_t zx8081ProfilePhys(uint32_t address, uint32_t write) {
+  const uint32_t a = address & 0xffffu;
+  if (a < zx8081RamBase) return write != 0u ? -1 : (int32_t)(a & zx8081RomMask);
+  if (zx8081RamSizeKb == 64u) {
+    if (write == 0u && (a & 0x8000u) != 0u && (zx8081M1Fetch != 0u || cpu.halted != 0u)) {
+      const uint32_t index = a & 0x7fffu;
+      return (int32_t)(index < 0x2000u ? ZX8081_PROFILE_HIDDEN_BASE + index : index);
+    }
+    return (int32_t)a;
+  }
+  return (int32_t)(ZX8081_PROFILE_RAM_BASE + (a & zx8081RamMask));
+}
+
+#define Z80_PROFILE_FLAG_BYTES 0x12000u
+#define Z80_PROFILE_POOL_PAGES 9u
+#define Z80_PROFILE_PHYS_READ(address) zx8081ProfilePhys((uint32_t)(address), 0u)
+#define Z80_PROFILE_PHYS_WRITE(address) zx8081ProfilePhys((uint32_t)(address), 1u)
+#define Z80_PROFILE_FRAME_TICKS() cpu.tacts
+#include "../../../../z80/wasm/z80-profile.c"

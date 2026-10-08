@@ -10,7 +10,7 @@
  *    `set:` UI action of the same key (`MainApi.runUiAction`, `src/main/ui-actions.ts`).
  * File rows (ROMs, the key mapping) show a value and offer buttons, which run UI actions.
  */
-import { isAdvancedDebuggingEnabled } from "@common/features/advancedDebugging";
+import { hasMachineFeature, isAdvancedDebuggingEnabled } from "@common/features/advancedDebugging";
 import type { AppState } from "@state/AppState";
 import type { UiActionId } from "./ui-action-ids";
 import { KliveGlobalSettings } from "./setting-definitions";
@@ -25,6 +25,7 @@ import {
   MC_DISK_SUPPORT,
   MC_SCREEN_SIZE,
   MC_SP48_ROM_FILE,
+  MF_PROFILE,
   MI_SCORPION,
   MI_SPECTRUM_128,
   MI_SPECTRUM_48,
@@ -63,6 +64,10 @@ import {
   SETTING_EMU_STOP_ON_ERRORS,
   SETTING_EMU_REVERSE_DEBUGGING,
   SETTING_EMU_REVERSE_DEBUG_MEMORY_MB,
+  SETTING_EMU_PROFILE_COUNTERS,
+  SETTING_EMU_PROFILE_RESET_AFTER_INJECTION,
+  SETTING_EMU_PROFILE_RESET_ON_START,
+  SETTING_IDE_COVERAGE_LINE_TINT,
   SETTING_EMU_TC2048_ROM,
   SETTING_EMU_TC2068_ROM,
   SETTING_EMU_TRDOS_ROM,
@@ -134,7 +139,12 @@ export type SettingsRowCondition =
   | { kind: "beta128" }
   | { kind: "kliveProject" }
   /** The advanced-debugging feature switch is on (`@common/features/advancedDebugging`) */
-  | { kind: "advancedDebugging" };
+  | { kind: "advancedDebugging" }
+  /**
+   * The running machine has a feature, as `hasMachineFeature` answers (so a feature of the
+   * advanced-debugging group also needs the switch): the coverage rows key on `MF_PROFILE`
+   */
+  | { kind: "feature"; feature: string };
 
 export type SettingsRow = {
   id: string;
@@ -600,6 +610,48 @@ export const SETTINGS_ROWS: SettingsRow[] = [
     ])
   },
 
+  // --- Code coverage and the heat map (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §4.3)
+  {
+    id: "profileResetOnStart",
+    page: "debugging",
+    group: "Coverage and profiling",
+    title: "Clear coverage when the machine starts",
+    description: "Coverage and the heat map start over when the machine starts from Stopped",
+    editor: "switch",
+    source: setting(SETTING_EMU_PROFILE_RESET_ON_START),
+    when: { kind: "feature", feature: MF_PROFILE }
+  },
+  {
+    id: "profileResetAfterInjection",
+    page: "debugging",
+    group: "Coverage and profiling",
+    title: "Clear coverage after code injection",
+    description: "The ROM's boot to the injection point does not show as covered",
+    editor: "switch",
+    source: setting(SETTING_EMU_PROFILE_RESET_AFTER_INJECTION),
+    when: { kind: "feature", feature: MF_PROFILE }
+  },
+  {
+    id: "profileCounters",
+    page: "debugging",
+    group: "Coverage and profiling",
+    title: "Count executions, reads and writes",
+    description: "Off: only whether each byte was executed, read or written, which costs less",
+    editor: "switch",
+    source: setting(SETTING_EMU_PROFILE_COUNTERS),
+    when: { kind: "feature", feature: MF_PROFILE }
+  },
+  {
+    id: "coverageLineTint",
+    page: "debugging",
+    group: "Coverage and profiling",
+    title: "Tint covered source lines",
+    description: "A tinted background as well as the coverage strip",
+    editor: "switch",
+    source: setting(SETTING_IDE_COVERAGE_LINE_TINT),
+    when: { kind: "feature", feature: MF_PROFILE }
+  },
+
   // --- Machine: only the running machine's rows show
   {
     id: "sp48Rom",
@@ -946,6 +998,12 @@ export function isSettingsRowApplicable(row: SettingsRow, appState: AppState | u
       return !!appState?.project?.isKliveProject;
     case "advancedDebugging":
       return isAdvancedDebuggingEnabled(appState);
+    case "feature":
+      return hasMachineFeature(
+        machineRegistry.find((m) => m.machineId === machineId),
+        when.feature,
+        appState
+      );
     default:
       return true;
   }

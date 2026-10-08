@@ -9,10 +9,10 @@ Klive's advanced debugging features are turned off unless you turn them on. They
 - the [Execution History](/working-with-ide/execution-history), with lite step back and trace export;
 - [reverse debugging](/working-with-ide/reverse-debugging): Step Back and Forward, Reverse Step
   Over and Out, Reverse Continue, and Take over here;
-- [debug recordings](/howto/debug-recordings) (`.klr` files).
+- [debug recordings](/howto/debug-recordings) (`.klr` files);
+- [code coverage and the memory heat map](/working-with-ide/code-coverage).
 
-The same switch will also cover the code coverage, profiling and unit-testing features as they
-arrive.
+The same switch will also cover the profiling and unit-testing features as they arrive.
 
 Use these steps to turn them on:
 
@@ -26,10 +26,11 @@ set -u features.advancedDebugging 1
 3. Restart Klive
 
 After the restart, the **Debug** menu has the reverse-stepping commands, **Execution History**,
-**Export Execution History...** and the debug-recording commands. The toolbars have the Step Back,
+**Export Execution History...**, **Code Coverage**, **Reset Coverage** and the debug-recording
+commands, and the memory view has its **Heat** selector. The toolbars have the Step Back,
 Step Forward and Return to Present buttons. The keyboard shortcuts, the history commands
-(`show-history`, `step-back`, `history-export`, `debug-recording-load` and the rest) and the
-**Reverse debugging** settings page group work too.
+(`show-history`, `step-back`, `history-export`, `debug-recording-load`, `coverage` and the rest)
+and the **Reverse debugging** and **Coverage and profiling** settings groups work too.
 
 While the features are off, Klive does not record the execution history or keep a reverse-debugging
 timeline, so a debug session costs nothing extra. The history commands, and opening a `.klr` file,

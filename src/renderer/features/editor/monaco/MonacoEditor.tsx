@@ -1,4 +1,5 @@
 import Editor from "@monaco-editor/react";
+import { useCoverageDecorations, type CoverageClasses } from "@renderer/features/coverage/useCoverageDecorations";
 import { DEFAULT_ACCENT, isAccentId, type AccentId } from "@common/theming/accents";
 import * as monacoEditor from "monaco-editor";
 import AutoSizer from "../../../../lib/react-virtualized-auto-sizer";
@@ -12,6 +13,14 @@ import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import type { SourceLevelDebugInfo } from "@abstractions/CompilerInfo";
 import { addBreakpoint, getBreakpoints, removeBreakpoint } from "@renderer/appIde/utils/breakpoint-utils";
 import styles from "./MonacoEditor.module.scss";
+
+/** The coverage strip's classes (stable, so the coverage hook does not re-run for them) */
+const COVERAGE_CLASSES: CoverageClasses = {
+  covered: styles.coverageCovered,
+  partial: styles.coveragePartial,
+  uncovered: styles.coverageUncovered,
+  lineTint: styles.coverageLine
+};
 import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
 import { isAnnotationBreakpoint } from "@common/utils/breakpoint-scope";
 import {
@@ -190,6 +199,8 @@ type EditorProps = {
 export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: EditorProps) => {
   // --- Monaco editor instance and related state variables
   const editor = useRef<monacoEditor.editor.IStandaloneCodeEditor>(null);
+  // --- Bumped on every mount, so effects that need the editor itself re-run once it exists
+  const [editorReady, setEditorReady] = useState(0);
   const mounted = useRef(false);
 
   // --- Keep track of the editors undo stack
@@ -419,6 +430,9 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
     }
   };
 
+  // --- Code coverage's strip (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D12): its own collection
+  useCoverageDecorations(editor, editorReady, document.id, COVERAGE_CLASSES);
+
   // --- Refresh breakpoints when they may change
   useEffect(() => {
     void refreshEditorBreakpoints.current();
@@ -604,6 +618,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
     // --- Restore the view state to display the editor is it has been left
     mounted.current = false;
     editor.current = ed;
+    setEditorReady((v) => v + 1);
 
     // --- We need to add these commands to the editor to be able to use the shortcuts.
     // --- Otherwise, the v0.46.0 Monaco editor will not work properly with Electron v0.35.1.

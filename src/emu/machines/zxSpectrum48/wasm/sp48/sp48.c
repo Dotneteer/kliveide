@@ -366,6 +366,9 @@ static inline void rzxIntAck(void);
 /* The execution-history recorder's hooks; the recorder and this machine's macros for it are at the
    end of this file (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` Phase 1) */
 #include "../../../../z80/wasm/z80-history.h"
+/* The access profile's hooks; the module and this machine's mapping for it are at the end of this
+   file (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` Phase 0) */
+#include "../../../../z80/wasm/z80-profile.h"
 #include "../../../../z80/wasm/z80.c"
 #define RZX_CORE_PREFIX sp48
 #include "../../../zxSpectrum/wasm/common/zx-spectrum-rzx.c"
@@ -1307,3 +1310,45 @@ static inline void sp48HistoryContext(uint32_t kind, uint8_t *out) {
 #define Z80_HISTORY_FRAME() sp48Frames
 #define Z80_HISTORY_FRAME_TACT() currentFrameTact()
 #include "../../../../z80/wasm/z80-history.c"
+
+// -----------------------------------------------------------------------------
+// The access profile (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §2.2, D4): the shared module, with
+// this machine's physical layout. Time is in CPU T-states (D8).
+//
+// The 48K/16K: the profile offset is the address - `sp48Memory` is the whole machine. A write to the
+// ROM does not reach memory, so it maps nowhere.
+//
+// The Timex: HOME ($00000-$0FFFF), EXROM ($10000-$11FFF), DOCK ($12000-$21FFF), as the chunk map
+// (`timexRebuildChunkMap`) sees them; a chunk with nothing behind it, and a write to a read-only one,
+// map nowhere (`src/common/profile/layouts/timex.ts` names them).
+// -----------------------------------------------------------------------------
+
+#ifdef SP48_SCLD
+#define SP48_PROFILE_EXROM_BASE 0x10000u
+#define SP48_PROFILE_DOCK_BASE 0x12000u
+
+static inline int32_t sp48ProfilePhys(uint32_t address, uint32_t write) {
+  if (sp48TimexChunkMapValid == 0u) timexRebuildChunkMap();
+  const uint32_t a = address & 0xffffu;
+  const uint32_t chunk = a >> 13u;
+  if (write != 0u && sp48TimexChunkWritable[chunk] == 0u) return -1;
+  switch (sp48TimexChunkSource[chunk]) {
+    case TIMEX_CHUNK_HOME: return (int32_t)a;
+    case TIMEX_CHUNK_EXROM: return (int32_t)(SP48_PROFILE_EXROM_BASE + (a & 0x1fffu));
+    case TIMEX_CHUNK_DOCK: return (int32_t)(SP48_PROFILE_DOCK_BASE + a);
+    default: return -1;
+  }
+}
+
+#define Z80_PROFILE_FLAG_BYTES 0x22000u
+#define Z80_PROFILE_POOL_PAGES 17u
+#define Z80_PROFILE_PHYS_READ(address) sp48ProfilePhys((uint32_t)(address), 0u)
+#define Z80_PROFILE_PHYS_WRITE(address) sp48ProfilePhys((uint32_t)(address), 1u)
+#else
+#define Z80_PROFILE_FLAG_BYTES 0x10000u
+#define Z80_PROFILE_POOL_PAGES 8u
+#define Z80_PROFILE_PHYS_READ(address) ((int32_t)((address) & 0xffffu))
+#define Z80_PROFILE_PHYS_WRITE(address) (((address) & 0xffffu) >= 0x4000u ? (int32_t)((address) & 0xffffu) : -1)
+#endif
+#define Z80_PROFILE_FRAME_TICKS() cpu.tacts
+#include "../../../../z80/wasm/z80-profile.c"

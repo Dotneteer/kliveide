@@ -67,8 +67,9 @@ const timexOwnExports = [
 
 const productionExports = [...sp48Exports, ...timexOwnExports];
 
-/* 12 MB: the 4 MB execution-history ring (EXECUTION_HISTORY_ALL_CORES_PLAN D2, D3) */
-const INITIAL_MEMORY = 12 * 1024 * 1024;
+/* 16 MB: the 4 MB execution-history ring (EXECUTION_HISTORY_ALL_CORES_PLAN D2, D3) and the access
+   profile's 136 KB of flags and 3.2 MB counter pool (CODE_COVERAGE_AND_HEAT_MAP_PLAN D5) */
+const INITIAL_MEMORY = 16 * 1024 * 1024;
 
 function buildTimexWasm({
   compiler = process.env.TIMEX_WASM_CC || process.env.SP48_WASM_CC || "clang",

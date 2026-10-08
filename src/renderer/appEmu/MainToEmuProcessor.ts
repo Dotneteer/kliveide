@@ -27,6 +27,10 @@ import { EmuScriptRunner } from "./ksx/EmuScriptRunner";
 import { getCachedMessenger, getCachedStore } from "@renderer/CachedServices";
 import { isZxNextIdeMachine, type IZxNextIdeMachine } from "@emu/machines/zxNext/IZxNextIdeMachine";
 import { isExecutionHistorySource } from "@emu/abstractions/IExecutionHistorySource";
+import { isAccessProfileSource } from "@emu/abstractions/IAccessProfileSource";
+import { profileLayoutOf } from "@common/profile/layouts";
+import { buildProfileView, resolveProfileOffsets, sampleProfile } from "@emu/machines/profile/profileViews";
+import type { ProfileTouchedByte } from "@common/profile/profileTypes";
 import type { CallStackInfo } from "@emu/abstractions/CallStack";
 import { historyContextDecoder } from "@common/history/contexts";
 import { HistoryKind } from "@common/history/historyRecord";
@@ -1227,6 +1231,78 @@ class EmuMessageProcessor {
     controller?.clearHistoryCursor?.();
     const machine = controller?.machine;
     if (isExecutionHistorySource(machine)) machine.clearHistory();
+  }
+
+  // --- The access profile (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §4.2): the controller owns
+  // --- the switch and the status, the machine's profile source the data
+
+  /** The controller and its machine's profile source, when the machine profiles */
+  private profileTarget() {
+    const controller = this.machineService.getMachineController();
+    const status = controller?.getProfileStatus?.();
+    const machine = controller?.machine;
+    if (!controller || !status || !isAccessProfileSource(machine)) return undefined;
+    return { controller, status, source: machine };
+  }
+
+  getProfileStatus() {
+    return this.machineService.getMachineController()?.getProfileStatus?.();
+  }
+
+  setProfiling(enabled: boolean, counters?: boolean) {
+    const controller = this.machineService.getMachineController();
+    if (!controller?.setProfiling?.(enabled, counters)) return undefined;
+    return controller.getProfileStatus?.();
+  }
+
+  resetProfile() {
+    this.machineService.getMachineController()?.resetProfile?.();
+  }
+
+  getProfileView(partition?: number, withCounts = true) {
+    const target = this.profileTarget();
+    if (!target) return undefined;
+    const layout = profileLayoutOf(target.source.profileMachineId);
+    if (!layout) return undefined;
+    const machine = target.controller.machine;
+    return buildProfileView(
+      target.source,
+      layout,
+      target.status,
+      (address) => machine.getPartition?.(address),
+      partition,
+      withCounts
+    );
+  }
+
+  getProfileSample(addresses: number[], partitions?: (number | null)[], withCounts = false) {
+    const target = this.profileTarget();
+    if (!target) return undefined;
+    const layout = profileLayoutOf(target.source.profileMachineId);
+    if (!layout) return undefined;
+    const machine = target.controller.machine;
+    const source = target.source;
+    const offsets = resolveProfileOffsets(
+      layout,
+      (address) => machine.getPartition?.(address),
+      addresses,
+      partitions,
+      source.currentProfileOffset ? (address) => source.currentProfileOffset!(address) : undefined
+    );
+    return sampleProfile(target.source, target.status, offsets, withCounts);
+  }
+
+  getProfileTouched(mask?: number) {
+    const target = this.profileTarget();
+    if (!target) return undefined;
+    return { info: target.status, bytes: target.source.readProfileTouched(mask) ?? [] };
+  }
+
+  mergeProfile(bytes: ProfileTouchedByte[], totals: { instructions: number; timeTotal: number }) {
+    const target = this.profileTarget();
+    if (!target) return undefined;
+    target.source.mergeProfile(bytes, totals);
+    return target.controller.getProfileStatus?.();
   }
 
   /**

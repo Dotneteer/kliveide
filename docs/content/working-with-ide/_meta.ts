@@ -19,6 +19,7 @@ export default {
   "beam-position": "The Beam Position",
   "execution-history": "The Execution History",
   "reverse-debugging": "Reverse Debugging",
+  "code-coverage": "Code Coverage and the Heat Map",
   memory: "The Memory View",
   disassembly: "The Disassembly View",
   watch: "Watch Expressions",

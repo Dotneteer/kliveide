@@ -34,6 +34,9 @@ import {
   useDisassemblyRefresh
 } from "./useDisassemblyRefresh";
 import { DisassemblyRow } from "./DisassemblyRow";
+import { hasMachineFeature } from "@common/features/advancedDebugging";
+import { MF_PROFILE } from "@common/machines/constants";
+import { PF_EXECUTED } from "@common/profile/profileTypes";
 import { useLaunchedNexAnnotations } from "./Next/useNexLiveBank";
 import { createNexLiveOperandLabelResolver } from "./Next/nexLiveSymbols";
 import { chainOperandLabelResolvers } from "../disassemblers/sys-var-operand-labels";
@@ -526,6 +529,56 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
     return verdicts;
   }, [showBranchGutter, cpuSnapshot, items, pausedPc]);
 
+  /*
+   * Code coverage's cell (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D13): reserved on every row
+   * once coverage has recorded anything, so the columns after it line up (the branch gutter's
+   * pattern). Each row's own partition decides which bank's byte is asked about (D11). One number
+   * per row - undefined: no data; 0: never started; -1: started, count not kept; n: started n
+   * times - so the memoized row compares it by value.
+   */
+  const coverageAvailable = useSelector((s) =>
+    hasMachineFeature(
+      machineRegistry.find((m) => m.machineId === s.emulatorState?.machineId),
+      MF_PROFILE,
+      s
+    )
+  );
+  const profileVersion = useSelector((s) => s.emulatorState?.profileVersion);
+  const [coverageMarks, setCoverageMarks] = useState<Map<number, number> | undefined>();
+  useEffect(() => {
+    if (!coverageAvailable || items.length === 0) {
+      setCoverageMarks(undefined);
+      return undefined;
+    }
+    let cancelled = false;
+    const partitions = items.map((item) => resolveRowPartition(item.address, isFullView, currentSegment, mem64kPartitions) ?? null);
+    void emuApi
+      .getProfileSample(
+        items.map((item) => item.address),
+        partitions,
+        true
+      )
+      .then((sample) => {
+        if (cancelled) return;
+        if (!sample || (!sample.info.enabled && sample.info.instructions === 0)) {
+          setCoverageMarks(undefined);
+          return;
+        }
+        const marks = new Map<number, number>();
+        items.forEach((item, i) => {
+          const executed = (sample.flags[i] & PF_EXECUTED) !== 0;
+          marks.set(item.address, !executed ? 0 : sample.exec ? sample.exec[i] || -1 : -1);
+        });
+        setCoverageMarks(marks);
+      })
+      .catch(() => {
+        if (!cancelled) setCoverageMarks(undefined);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [coverageAvailable, items, profileVersion, isFullView, currentSegment, mem64kPartitions, emuApi]);
+
   const commentWidthCh = useMemo(
     () =>
       items.reduce(
@@ -654,6 +707,8 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
                   showBanks={machineSetup.showBanks}
                   showBranchGutter={showBranchGutter}
                   verdict={branchVerdicts?.get(item.address)}
+                  showCoverage={!!coverageMarks}
+                  coverage={coverageMarks?.get(item.address)}
                 />
               );
             }}

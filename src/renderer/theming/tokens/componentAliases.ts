@@ -466,6 +466,30 @@ export const componentAliases: Record<string, string> = {
   "--border-memory-highlight": "var(--accent-secondary-border)",
 
   /*
+   * The memory view's heat map (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D14): a fixed,
+   * accent-independent ramp per kind of access, so it never reads as the changed-byte mark or the
+   * hover (both the secondary accent). A heat cell *fills* - unlike the changed-byte mark, which
+   * must not - because the fill is the information: the whole point of the view is the pattern a
+   * region's bytes make together. The text keeps `--color-memory-value` on every step.
+   */
+  ...Object.fromEntries(
+    (["exec", "read", "write"] as const).flatMap((kind) =>
+      [1, 2, 3, 4, 5].map((step) => [`--color-heat-${kind}-${step}`, `var(--heat-${kind}-${step})`])
+    )
+  ),
+  /* A self-modified byte (D9): outlined in the write hue's hottest step, whatever the mode */
+  "--border-heat-smc": "var(--heat-write-5)",
+
+  /*
+   * Code coverage (D12, D13): the editor's strip and the disassembly's cell. Covered is the success
+   * green (DeZog's convention, and the meaning: "this ran"); never-run code is a hollow mark in the
+   * tertiary text colour - an absence, not a problem, so not a status hue.
+   */
+  "--color-coverage-covered": "var(--status-success)",
+  "--color-coverage-uncovered": "var(--text-tertiary)",
+  "--bgcolor-coverage-line": "var(--status-success-subtle)",
+
+  /*
    * Disassembly columns: address, opcode bytes, decoded instruction, jump-target label.
    *
    * Same principles as the memory dump above, mapped onto disassembly's own columns rather than

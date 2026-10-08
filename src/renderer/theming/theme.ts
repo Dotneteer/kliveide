@@ -240,6 +240,27 @@ export type ThemeProperties = {
   "--bgcolor-disass-hover"?: string;
 
   // --- Memory panel
+  "--color-heat-exec-1"?: string;
+  "--color-heat-exec-2"?: string;
+  "--color-heat-exec-3"?: string;
+  "--color-heat-exec-4"?: string;
+  "--color-heat-exec-5"?: string;
+  "--color-heat-read-1"?: string;
+  "--color-heat-read-2"?: string;
+  "--color-heat-read-3"?: string;
+  "--color-heat-read-4"?: string;
+  "--color-heat-read-5"?: string;
+  "--color-heat-write-1"?: string;
+  "--color-heat-write-2"?: string;
+  "--color-heat-write-3"?: string;
+  "--color-heat-write-4"?: string;
+  "--color-heat-write-5"?: string;
+  "--border-heat-smc"?: string;
+
+  // --- Code coverage (editor strip, disassembly cell)
+  "--color-coverage-covered"?: string;
+  "--color-coverage-uncovered"?: string;
+  "--bgcolor-coverage-line"?: string;
   "--bgcolor-memory-hover"?: string;
   "--bgcolor-memory-pointed"?: string;
   "--bgcolor-memory-pc-pointed"?: string;

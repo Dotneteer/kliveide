@@ -11,6 +11,7 @@ const {
 } = require("./wasm-layout.cjs");
 const { RZX_VOLATILE_SYMBOLS, rzxExports } = require("./rzx-core-exports.cjs");
 const { Z80_HISTORY_EXPORTS, Z80_HISTORY_VOLATILE_SYMBOLS } = require("./z80-history-exports.cjs");
+const { Z80_PROFILE_EXPORTS, Z80_PROFILE_VOLATILE_SYMBOLS } = require("./z80-profile-exports.cjs");
 
 /**
  * Statics a Klive state file leaves out (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` trap 10):
@@ -41,7 +42,9 @@ const SP48_VOLATILE_SYMBOLS = [
   ...RZX_VOLATILE_SYMBOLS,
   // --- The execution-history ring and the model byte of its contexts (EXECUTION_HISTORY_ALL_CORES_PLAN)
   ...Z80_HISTORY_VOLATILE_SYMBOLS,
-  "sp48HistoryModel"
+  "sp48HistoryModel",
+  // --- The access profile: flags, counters and time (CODE_COVERAGE_AND_HEAT_MAP_PLAN T4, T7)
+  ...Z80_PROFILE_VOLATILE_SYMBOLS
 ];
 
 const root = resolve(__dirname, "..");
@@ -74,6 +77,8 @@ const productionExports = [
   "condPeek",
   // --- Execution history recorder (`src/emu/z80/wasm/z80-history.c`)
   ...Z80_HISTORY_EXPORTS,
+  // --- Access profile (`src/emu/z80/wasm/z80-profile.c`)
+  ...Z80_PROFILE_EXPORTS,
   "memory",
   "sp48MemoryPtr",
   "sp48PixelBufferPtr",
@@ -269,8 +274,9 @@ const buildModes = {
     output: productionOutput,
     exports: productionExports,
     sources: [source],
-    // --- 12 MB: the 4 MB execution-history ring (EXECUTION_HISTORY_ALL_CORES_PLAN D2, D3)
-    initialMemory: 12 * 1024 * 1024
+    // --- 14 MB: the 4 MB execution-history ring (EXECUTION_HISTORY_ALL_CORES_PLAN D2, D3) and the
+    // --- access profile's 64 KB of flags and 1.5 MB counter pool (CODE_COVERAGE_AND_HEAT_MAP_PLAN D5)
+    initialMemory: 14 * 1024 * 1024
   }
 };
 

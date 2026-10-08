@@ -9,6 +9,7 @@ import { CharDescriptor } from "@common/machines/info-types";
 import { memo, useRef, useState, useMemo, useCallback } from "react";
 import { EMPTY_OBJECT } from "@renderer/utils/stablerefs";
 import { isWidePartitionLabel } from "@renderer/controls/data/partitionWidth";
+import { HEAT_SMC, heatKind, heatStep } from "@renderer/features/coverage/heatModel";
 
 export type MemoryDumpSectionProps = {
   showPartitions?: boolean;
@@ -30,6 +31,13 @@ export type MemoryDumpSectionProps = {
    * leaves it unset and renders exactly as before.
    */
   changedBytes?: readonly boolean[];
+  /**
+   * One heat byte per byte of `bytes` (`heatModel.ts`: a ramp step, a hue, the SMC mark), or
+   * undefined with the heat map off (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D14)
+   */
+  heatSteps?: ArrayLike<number>;
+  /** The heat map's tooltip line for an address (`E 12 · R 340 · W 2`); stable across refreshes */
+  heatTooltipOf?: (address: number) => string | undefined;
   decimalView: boolean;
   charDump: boolean;
   pointedInfo?: Record<number, string>;
@@ -70,6 +78,8 @@ const MemoryDumpSectionViewComponent = ({
   address,
   bytes,
   changedBytes,
+  heatSteps,
+  heatTooltipOf,
   decimalView,
   charDump,
   pointedInfo,
@@ -113,6 +123,8 @@ const MemoryDumpSectionViewComponent = ({
         address={address}
         bytes={bytes}
         changedBytes={changedBytes}
+        heatSteps={heatSteps}
+        heatTooltipOf={heatTooltipOf}
         decimalView={decimalView}
         pointedInfo={pointedInfo}
         lastJumpAddress={lastJumpAddress}
@@ -162,11 +174,16 @@ export const MemoryDumpSectionView = memo(MemoryDumpSectionViewComponent, (prev,
   // --- comparators on this path (this one and `HexValues`'s) and a prop missing from either is a
   // --- row that keeps a stale rendering, so both check it.
   if (!!prev.changedBytes !== !!next.changedBytes) return false;
+  // --- The heat map, for the same reason (CODE_COVERAGE_AND_HEAT_MAP_PLAN §4.3): a row whose bytes
+  // --- did not change still repaints when their heat did
+  if (!!prev.heatSteps !== !!next.heatSteps) return false;
+  if (prev.heatTooltipOf !== next.heatTooltipOf) return false;
 
   // Compare the byte values actually rendered
   for (let i = 0; i < prev.bytes.length; i++) {
     const addr = prev.address + i;
     if (prev.bytes[i] !== next.bytes[i]) return false;
+    if (prev.heatSteps && next.heatSteps && prev.heatSteps[i] !== next.heatSteps[i]) return false;
     if (
       prev.changedBytes &&
       next.changedBytes &&
@@ -240,6 +257,8 @@ type HexValuesProps = {
   address: number;
   bytes: readonly number[];
   changedBytes?: readonly boolean[];
+  heatSteps?: ArrayLike<number>;
+  heatTooltipOf?: (address: number) => string | undefined;
   decimalView?: boolean;
   pointedInfo?: Record<number, string>;
   lastJumpAddress?: number;
@@ -254,6 +273,8 @@ const HexValuesComponent = ({
   address,
   bytes,
   changedBytes,
+  heatSteps,
+  heatTooltipOf,
   decimalView,
   pointedInfo,
   lastJumpAddress,
@@ -346,6 +367,34 @@ const HexValuesComponent = ({
   }, [hoveredByteIndex, address, bytes, tooltipCache]);
 
   const pointedHint = hoveredByteIndex != null ? pointedInfo?.[address + hoveredByteIndex] : undefined;
+  const heatHint = hoveredByteIndex != null && heatSteps ? heatTooltipOf?.(address + hoveredByteIndex) : undefined;
+
+  /*
+   * The heat map's cells (D14). Behind the row's text, not a copy laid over it: `.heatCell` sits at
+   * z-index -1 inside `.hexValues`' own stacking context, so the one text node draws on top. A cell
+   * spans its byte and half the gap on each side, so a run of hot bytes reads as one band.
+   */
+  const heatCells = useMemo(() => {
+    if (!heatSteps) return undefined;
+    const width = decimalView ? 3 : 2;
+    const cells: { index: number; left: string; width: string; className: string }[] = [];
+    for (let i = 0; i < bytes.length; i++) {
+      const heat = heatSteps[i] ?? 0;
+      const step = heatStep(heat);
+      if (step === 0) continue;
+      cells.push({
+        index: i,
+        left: `${i * (width + 1) - 0.5}ch`,
+        width: `${width + 1}ch`,
+        className: classnames(
+          styles.heatCell,
+          styles[`heat${HEAT_KIND_CLASS[heatKind(heat)]}${step}`],
+          heat & HEAT_SMC ? styles.heatSmc : undefined
+        )
+      });
+    }
+    return cells.length ? cells : undefined;
+  }, [heatSteps, bytes.length, decimalView]);
 
   // Calculate overlay position for the hovered byte - memoized
   const overlayStyle = useMemo(() => {
@@ -410,6 +459,9 @@ const HexValuesComponent = ({
       onContextMenu={handleContextMenu}
     >
       {hexString}
+      {heatCells?.map((cell) => (
+        <div key={`h${cell.index}`} className={cell.className} style={{ left: cell.left, width: cell.width }} />
+      ))}
       {/*
         * Before the hover overlay in document order, so a hovered changed byte shows the hover
         * treatment on top rather than fighting it.
@@ -455,6 +507,7 @@ const HexValuesComponent = ({
           {pointedHint && (
             <div className={styles.tooltipPointed}>Pointed by: {pointedHint}</div>
           )}
+          {heatHint && <div className={styles.tooltipPointed}>{heatHint}</div>}
         </TooltipFactory>
       )}
     </div>
@@ -491,6 +544,14 @@ const HexValues = memo(HexValuesComponent, (prev, next) => {
       if (!!prev.changedBytes[i] !== !!next.changedBytes[i]) return false;
     }
   }
+  // --- ...and the heat map's steps, a third array of the same kind (CODE_COVERAGE_AND_HEAT_MAP_PLAN §4.3)
+  if (!!prev.heatSteps !== !!next.heatSteps) return false;
+  if (prev.heatTooltipOf !== next.heatTooltipOf) return false;
+  if (prev.heatSteps && next.heatSteps) {
+    for (let i = 0; i < prev.bytes.length; i++) {
+      if (prev.heatSteps[i] !== next.heatSteps[i]) return false;
+    }
+  }
 
   // Check if pointedInfo has changed for any of the bytes
   for (let i = 0; i < prev.bytes.length; i++) {
@@ -500,6 +561,9 @@ const HexValues = memo(HexValuesComponent, (prev, next) => {
 
   return true;
 });
+
+/** The heat cell classes' kind part, by `heatKind` */
+const HEAT_KIND_CLASS = ["Exec", "Read", "Write"];
 
 function useMemoryCharacterInfo(charset?: Record<number, CharDescriptor>) {
   return getMemoryCharacterInfo(charset);

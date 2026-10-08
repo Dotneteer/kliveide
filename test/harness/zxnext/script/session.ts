@@ -31,6 +31,7 @@ import {
 import { connectConditionSupport } from "@emu/machines/conditionStore";
 import { decodeHistoryPage, type HistoryRecord } from "@common/history/historyRecord";
 import type { ExecutionHistoryInfo } from "@common/history/historyTypes";
+import type { ProfileCounts, ProfileInfo, ProfileTouchedByte } from "@common/profile/profileTypes";
 import { DebugSupport } from "@emu/machines/DebugSupport";
 import {
   beginSourceStep,
@@ -264,6 +265,43 @@ export class NextTestSession {
   historyFrom(fromSequence: number, count: number): { records: HistoryRecord[]; gone: boolean } {
     const page = this.machine.readHistory(fromSequence, count)!;
     return { records: decodeHistoryPage(page), gone: page.gone };
+  }
+
+  // ==========================================================================================
+  // Access profile (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`): code coverage, the heat map and the
+  // profiler's time, as the IDE reads them through `IAccessProfileSource`. Offsets are physical
+  // offsets into the Next's memory (`src/common/profile/layouts/zxnext.ts` names them).
+
+  /** Turns the access profile on or off; `counters` keeps counts and time as well as the flags (D2). */
+  profile(on = true, { counters = true }: { counters?: boolean } = {}): this {
+    this.machine.setProfiling(on, counters);
+    return this;
+  }
+
+  /** Clears every flag, count and time bucket, as `coverage reset` does. */
+  resetProfile(): this {
+    this.machine.resetProfile();
+    return this;
+  }
+
+  /** The profile's header: enabled, sizes, the pool, the time buckets (28 MHz ticks), the generation. */
+  profileInfo(): ProfileInfo {
+    return this.machine.getProfileInfo()!;
+  }
+
+  /** The flag bytes (`PF_*`) of `length` physical bytes from profile offset `offset`. */
+  profileFlags(offset: number, length = 1): number[] {
+    return Array.from(this.machine.readProfileFlags(offset, length)!);
+  }
+
+  /** The counters of `length` physical bytes from `offset`; `counted` is 0 where the page has none. */
+  profileCounts(offset: number, length = 1): ProfileCounts {
+    return this.machine.readProfileCounts(offset, length)!;
+  }
+
+  /** Every touched byte (with one of `mask`'s flags), with its counters where kept. */
+  profileTouched(mask?: number): ProfileTouchedByte[] {
+    return this.machine.readProfileTouched(mask)!;
   }
 
   // ==========================================================================================
