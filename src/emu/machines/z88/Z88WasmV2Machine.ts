@@ -505,7 +505,8 @@ export class Z88WasmV2Machine extends Z88WasmHost implements IExecutionHistorySo
     runtime.exports.z88ExecuteFrame();
     this.syncFrameCountersFromWasmV2(runtime);
     this.flushUartTx(runtime);
-    this.frameCompleted = true;
+    // --- A reverse-debugging stop target can end the call mid-frame (REVERSE_DEBUGGING_PLAN D4)
+    this.frameCompleted = runtime.exports.z88GetFrameCompleted() !== 0;
     this.executionContext.lastTerminationReason = FrameTerminationMode.Normal;
     return FrameTerminationMode.Normal;
   }
@@ -564,6 +565,11 @@ export class Z88WasmV2Machine extends Z88WasmHost implements IExecutionHistorySo
 
       // --- Through `super`: the value was just read from the core, so it need not be pushed back
       super.pc = wasm.z88GetCpuPc();
+      // --- A reverse-debugging replay run reached its next journal entry (REVERSE_DEBUGGING_PLAN D11);
+      // --- `z88ExecuteUntilStop` stops there too
+      if (this.executionContext.historyStopArmed && wasm.z80HistoryCheckStop() !== 0) {
+        return this.finishWasmV2DebugLoop(FrameTerminationMode.UntilExecutionPoint);
+      }
       if (watchesBusAccess) {
         this.importWasmV2BusAccess(runtime);
       }
@@ -763,8 +769,56 @@ export class Z88WasmV2Machine extends Z88WasmHost implements IExecutionHistorySo
     const runtime = this.requireWasmV2Runtime();
     return {
       ...captureWasmImage("z88", runtime.module, runtime.exports.memory.buffer),
-      host: { cards: this.cards.map((c) => (c ? { ...c } : null)) }
+      host: this.captureHostState()
     };
+  }
+
+  // ------------------------------------------------------------------------------------------------
+  // Reverse debugging (`.plans/REVERSE_DEBUGGING_PLAN.md` §4.2, `reverse/Timeline.ts`)
+
+  /** The core, as the export contract names it */
+  get reverseCoreId(): string {
+    return "z88";
+  }
+
+  get reverseRuntime(): Z88WasmV2Runtime | undefined {
+    return this.wasmV2Runtime;
+  }
+
+  readonly reverseFrameExport = "z88ExecuteFrame";
+
+  isAtFrameBoundary(): boolean {
+    return this.wasmV2Runtime?.exports.z88GetFrameCompleted() !== 0;
+  }
+
+  /** The wrapper's own fields: what a state file and a keyframe keep besides the image */
+  captureHostState(): Record<string, unknown> {
+    return { cards: this.cards.map((c) => (c ? { ...c } : null)) };
+  }
+
+  /**
+   * After the core changed under the wrapper (a replay, a return to the present, T7): the wrapper's
+   * fields from `state`, the mirrors re-read from the core. Nothing is pushed - the cards' contents
+   * are in the image - and queued keystrokes and audio of the replaced run go.
+   */
+  restoreHostState(state: unknown): void {
+    const runtime = this.requireWasmV2Runtime();
+    const host = (state ?? {}) as { cards?: (Z88CardSpec | null)[] };
+    (host.cards ?? []).forEach((card, slot) => {
+      if (slot < this.cards.length) this.cards[slot] = card ? { ...card } : undefined;
+    });
+    this.wasmV2AudioSamples.length = 0;
+    this.emulatedKeyStrokes.length = 0;
+    // --- Serial output a replay produced was shown when the live run produced it
+    runtime.exports.z88ClearUartTx();
+    this.frameCompleted = runtime.exports.z88GetFrameCompleted() !== 0;
+    this.syncFrameCountersFromWasmV2(runtime);
+    this.syncCpuFromWasmV2(runtime);
+  }
+
+  /** Forgets what was last pushed into the core, so the next frame pushes the live state (D8) */
+  invalidateHostSync(): void {
+    this.syncedTargetClockMultiplier = -1;
   }
 
   /**
@@ -958,10 +1012,13 @@ export class Z88WasmV2Machine extends Z88WasmHost implements IExecutionHistorySo
    * none.
    */
   private flushUartTx(runtime: Z88WasmV2Runtime): void {
-    // --- A reverse-debugging replay re-sends what the IDE has shown already; the journal clears the
-    // --- core's buffer where the live run did (REVERSE_DEBUGGING_PLAN D13)
-    if (this.executionContext.isReplayingHistory?.()) return;
     const w = runtime.exports;
+    // --- A reverse-debugging replay re-sends what the IDE has shown already (REVERSE_DEBUGGING_PLAN
+    // --- D13): emptied, not shown. The buffer is volatile, so emptying it is not an input.
+    if (this.executionContext.isReplayingHistory?.()) {
+      w.z88ClearUartTx();
+      return;
+    }
     const count = w.z88GetUartTxCount();
     if (count === 0) return;
     const bytes = new Uint8Array(w.memory.buffer, w.z88UartTxPtr(), count).slice();

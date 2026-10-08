@@ -1,21 +1,22 @@
 # Reverse Debugging (G4.4) — Handoff
 
 For an AI session picking up [REVERSE_DEBUGGING_PLAN.md](REVERSE_DEBUGGING_PLAN.md). Written 2026-10-08,
-after Phases 0–5; updated after Phase 6. The plan is the source of truth; this note is the map into it and the code, plus what
+after Phases 0–5; updated after Phases 6 and 7. The plan is the source of truth; this note is the map into it and the code, plus what
 only the previous session knew.
 
 ## 1. Where things stand
 
-- **Done:** Phases 0–6 (§5 of the plan marks each ✅). Full reverse debugging works on the **ZX Spectrum
-  48K and the ZX Spectrum Next** (`MF_REVERSE_DEBUG`), through the real `MachineController`: Step Back
+- **Done:** Phases 0–7 (§5 of the plan marks each ✅). Full reverse debugging works on **every WASM Z80
+  machine** - 48K, 128K, Pentagon, Scorpion, +2A/+3/+2E/+3E, Timex, Next, Z88, ZX81, ZX80
+  (`MF_REVERSE_DEBUG`) - through the real `MachineController`: Step Back
   and the other G4.3 commands put the whole machine in the past, Continue/Step from the past replays
   toward the present, Take over here forks, Reverse Continue checks every breakpoint kind on the real
   past machine (reverse watchpoints included). Since Phase 6 the Next's SD card is safe in a timeline:
   replays never ask the host, and a fork writes the discarded future's sectors back (§16 of the plan).
-- **Next:** Phase 7 (the other cores), then Phase 8 (UI, docs, competitive analysis). See §4 below.
-- **Nothing is committed.** All of Phases 0–6 is in the working tree (`git status`).
-  `_experiments/testprojects/disann/klive.project` was already modified before this work and is not part
-  of it. Commit only when the user asks.
+- **Next:** Phase 8 (UI, docs, competitive analysis). See §4 below.
+- **Committed:** Phases 0–6 are commit `7bb36ace5` on `dotneteer/execution-history`, Phase 7 the commit after it.
+  `_experiments/testprojects/disann/klive.project` was already modified before this work
+  and is not part of it. Commit only when the user asks.
 - Last verified state (after Phase 6): `npm run build:check` clean (112 known), full `npm test` green,
   `npm run lint:renderer` warnings only.
 
@@ -34,9 +35,12 @@ only the previous session knew.
   phase), `stopState`, `verifyState`. Exports (listed in `scripts/z80-history-exports.cjs`):
   `z80HistorySetTarget/ClearTarget/GetSub/GetPhase/SetPosition/Rewind/SetVerify/CheckStop/
   BusEventFieldsPtr/BusEventFieldsSize`. `z80HistoryStopNow()` is the per-instruction check.
-- **Frame loops call `z80HistoryStopNow()` only in the 48K (`sp48.c`, `sp48ExecuteFrame`) and the Next
-  (`zxnext-frame.c`)**, together with the **frame-in-progress rule** (`sp48FrameBegun`,
-  `zxnextFrameBegun`; T17). Other cores still lack both — Phase 7.
+- **Every frame loop calls `z80HistoryStopNow()`** (and every `…ExecuteUntilStop`), with the
+  **frame-in-progress rule** (`sp48FrameBegun`, `sp128FrameBegun`, `spp3eFrameBegun`, `zxnextFrameBegun`;
+  the Z88 and ZX80/81 begin a frame only after one completed, which is the same rule; T17). The Timex
+  compiles `sp48.c`.
+- The header is **80 bytes** since Phase 7: words 64-76 hold the self-check's copy of the recorded
+  record (T23). `z80HistoryVerifySlot` compares with it; a mismatch counts at publish.
 - `spp3e.c`: new side-effect-free `spp3ePeekMemory` / `spp3ePeekScreenMemoryOffset` (T18).
 - `zxnext.c`: `zxnextGetResetRequest` (T19).
 - `scripts/wasm-layout.cjs`: the layout stamp now carries `stack` and `scratch` (outside the
@@ -56,11 +60,12 @@ only the previous session knew.
 | `SdUndoLog.ts` | The SD undo log (D14): writes keyed by their acknowledgement's journal index, `takeFrom` for a fork, `revertSdWrites` |
 
 ### Integration points
-- **Machines:** the 48K (`ZxSpectrum48WasmV2Machine.ts`) and the Next implement `TimelineMachine`
-  (`reverseCoreId`, `reverseRuntime`, `reverseFrameExport`, `isAtFrameBoundary`, `captureHostState`,
-  `restoreHostState`, `invalidateHostSync`); their debug loops honour `ExecutionContext.historyStopArmed`.
-  128K, +3, Timex, Z88, ZX81 have `invalidateHostSync` (where they cache pushes) and journaled writes,
-  but no `TimelineMachine` yet.
+- **Machines:** every WASM Z80 machine implements `TimelineMachine` (`reverseCoreId`, `reverseRuntime`,
+  `reverseFrameExport`, `isAtFrameBoundary`, `captureHostState`, `restoreHostState`,
+  `invalidateHostSync`) and its debug loop honours `ExecutionContext.historyStopArmed` (the Timex
+  inherits the 48K's). `restoreHostState` re-reads what the wrapper mirrors of the core - tape-save
+  and disk-write revisions (128K's Beta 128 via `Beta128Disks.followCoreRevision`, +3), frame flags -
+  and empties the Z88's serial output.
 - **`MachineController.ts`:** `ensureTimeline`/`endTimeline` (lifecycle tied to history recording, D2),
   `afterFrame` keyframes in the run loop, D13 guards (`suppressingSideEffects`), `beginRunFromPast`,
   `serviceReplayRun`, `settleReplayRun`, `takeOverHere`, `reverseContinueByReplay`/`collectBreakpointHits`,
@@ -81,18 +86,10 @@ only the previous session knew.
 
 ## 4. What is next
 
-**Phase 6 is done** (plan §16). What it leaves for later phases: the fork confirmation itself (Phase 8;
-`controller.forkPreview()` has the data), and each Phase 7 machine's own host effects - see below.
-
-**Phase 7:** per core (128K family, +3E, Z88, ZX80/81; Timex too): stop checks + frame-in-progress
-rule in its frame loop / `ExecuteUntilStop`, `TimelineMachine` on the machine, a determinism-test
-entry (`test/wasm/reverse/journal-replay-determinism.test.ts`), scratch symbols only if the T5 proof
-passes, then `MF_REVERSE_DEBUG` in `machine-registry.ts`. Also test the Next's NextReg/Copper
-breakpoints in Reverse Continue. Watch each machine's own host-side publishing inside
-`executeMachineFrame`: the +3's `publishDiskChangesFromWasmV2` clears the core's change journal with a
-journaled `fillCoreBytes` and keeps a TypeScript revision (`wasmV2DiskChangeRevision`), the 128K's and
-+3's tape-save revision likewise - `restoreHostState` must re-read those from the core, as the 48K's
-does for its tape-save revision. A fork test per disk machine should check the republish end to end.
+**Phases 6 and 7 are done** (plan §16, §17). What they leave for Phase 8: the fork confirmation
+itself (`controller.forkPreview()` has the data). The Phase 7 cores have no frame-boundary scratch
+(T5) - their keyframes keep the audio buffers; worth it only if memory says so. A fork test that writes
+a disk end to end (the +3, the Beta 128) is still missing; `republishDisks` is tested on the machines.
 
 **Phase 8:** status bar ("⟲ −1.24 s · step −3,412", "▶ Replaying", "Reverse range"), Take over here
 button and fork confirmation (incl. D12's fork-on-edit), desync toast, progress/cancel for Reverse
@@ -127,6 +124,9 @@ per run today), and whether Reverse Continue needs a C-side collect mode for spe
 - **A cursor the ring cannot hold clears itself - and clearing it returns to the present.** A replay run
   that stopped older than the present's ring did exactly that until Phase 6 (D11, D17). Anything that
   attaches a cursor must check `timeline.viewHolds` first.
+- **The recorder's self-check is only as good as the slot it reads** (T23, T24): staging writes into
+  the next slot; a run's record changes its repeat count after the fact. A desync on a fresh core
+  with an empty journal is a recorder bug - compare the replay without verification first.
 - **Order host effects by what decides them.** SD writes are keyed by journal index, because the fork
   truncates the journal by index; tape-save notes by position, because several can share one journal
   index when no input lands between them.
@@ -138,12 +138,14 @@ per run today), and whether Reverse Continue needs a C-side collect mode for spe
 | What | Where / how |
 | --- | --- |
 | Export contract (every core) | `test/wasm/reverse/export-contract.test.ts` |
-| Journal-replay determinism + T5 proof (48K, Next) | `test/wasm/reverse/journal-replay-determinism.test.ts`; more seeds: `KLIVE_REVERSE_SEEDS=1-30` |
+| Journal-replay determinism (every core; T5 proof on the 48K and Next) | `test/wasm/reverse/journal-replay-determinism.test.ts`; more seeds: `KLIVE_REVERSE_SEEDS=1-30` |
 | T2 inputs journaled, NextReg `$02` reset replay | `test/wasm/reverse/journal-inputs.test.ts` |
 | Timeline (step back, fork, hit counts, desync, transients) | `test/wasm/reverse/timeline.test.ts` |
 | Controller lifecycle / 1,000 step backs + fork / Reverse Continue | `test/emu/reverse-{timeline,step-back,continue}-controller.test.ts` |
 | SD card in a timeline (T3 wait, journaled reads, fork restores the image) | `test/emu/reverse-sd-fork-controller.test.ts`; `test/emu/reverse-sd-undo-log.test.ts` (unit) |
 | Disk republish | `test/sp128-hw/beta128/wd1793.test.ts`, `test/zxSpectrum/ZxSpectrumP3eWasmV2Machine.test.ts` |
+| Every Phase 7 machine through the controller (step back, step into/continue from the past, fork) | `test/emu/reverse-cores-controller.test.ts` |
+| NextReg and Copper breakpoints in Reverse Continue | `test/emu/reverse-next-breakpoints-controller.test.ts` |
 | Measurements (dev flag) | `KLIVE_REVERSE_SPIKE=1` (Phase 0) or `KLIVE_REVERSE_SESSION=1` (10-minute gate) `npm test -- test/reverse/reverse-spike-measure.test.ts`; `KLIVE_REVERSE_SPIKE_OUT=<file.json>` writes results |
 
 All of these are in `build/e2e-tests.ts`. Run focused tests first, then `npm run build:check`,

@@ -35,7 +35,14 @@ typedef struct Z80HistoryHeader {
   uint32_t targetSub; /* 48 */
   uint32_t stopState; /* 52: Z80_HISTORY_STOP_ARMED, Z80_HISTORY_STOP_REACHED */
   uint32_t targetPhase; /* 56: 0 an instruction boundary, 1/2 inside a prefixed instruction */
-  uint32_t verifyState; /* 60: Z80_HISTORY_VERIFY_ON, Z80_HISTORY_VERIFY_MISMATCH (D9) */
+  uint32_t verifyState; /* 60: Z80_HISTORY_VERIFY_ON, _MISMATCH (D9), _STAGED */
+  /* What the verifying replay compares a sequence with: the recorded record's checked fields, kept at
+     the sequence's first staging - a forced NOP that extends a run stages into the slot and drops it,
+     overwriting what the recorded run left there (`z80HistoryVerifySlot`) */
+  uint32_t verifyStagedLo; /* 64: the sequence staged last (low word) */
+  uint32_t verifyHeldLo; /* 68: the sequence whose recorded fields are held (0: none) */
+  uint32_t verifyPcSp; /* 72: its PC (low half) and SP (high half) */
+  uint32_t verifyAf; /* 76 */
 } Z80HistoryHeader;
 
 static Z80HistoryHeader z80HistoryHeader;
@@ -44,6 +51,8 @@ static Z80HistoryHeader z80HistoryHeader;
 #define Z80_HISTORY_STOP_REACHED 0x02u
 #define Z80_HISTORY_VERIFY_ON 0x01u
 #define Z80_HISTORY_VERIFY_MISMATCH 0x02u
+/* The staged record disagrees with the recorded one: a mismatch once it is published */
+#define Z80_HISTORY_VERIFY_STAGED 0x04u
 
 /*
  * Nonzero when a frame loop must return now: the recorder reached its stop target and the CPU is at

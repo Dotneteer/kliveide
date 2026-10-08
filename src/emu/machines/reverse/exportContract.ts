@@ -107,6 +107,10 @@ const OVERRIDES: Record<string, ExportClass> = {
 
 /** Exceptions that hold for one core only */
 const CORE_OVERRIDES: Record<string, Record<string, ExportClass>> = {
+  z88: {
+    // --- The serial output buffer is volatile (host-side capture the guest never reads)
+    ClearUartTx: "debug"
+  },
   spp3e: {
     // --- The CPU's and the ULA's reads latch the floating-bus value; the host reads with the
     // --- side-effect-free `spp3ePeekMemory` / `spp3ePeekScreenMemoryOffset`

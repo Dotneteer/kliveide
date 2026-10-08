@@ -231,6 +231,8 @@ uint32_t z88ExecuteUntilStop(uint32_t extraStop, uint32_t mask) {
   do {
     z88ExecuteInstruction();
     executed++;
+    /* A reverse-debugging stop target (REVERSE_DEBUGGING_PLAN D4): the host asks the recorder after the call */
+    if (z80HistoryStopNow() != 0u) break;
     const uint16_t pc = (uint16_t)z80GetPc();
     if ((z88BreakpointFlags[pc] & mask) || pc == extraStop) break;
   } while (!z88FrameCompleted);
@@ -245,6 +247,12 @@ uint32_t z88ExecuteUntilStop(uint32_t extraStop, uint32_t mask) {
 uint32_t z88ExecuteFrame(void) {
   do {
     z88ExecuteInstruction();
+    /*
+     * A reverse-debugging stop target (REVERSE_DEBUGGING_PLAN D4), checked on the frame's last
+     * instruction too. A frame left mid-way goes on at the next call: an instruction begins a new
+     * frame only after the last one completed, which is the frame-in-progress rule (T17).
+     */
+    if (z80HistoryStopNow() != 0u) break;
   } while (!z88FrameCompleted);
   return 0u;
 }

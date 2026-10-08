@@ -271,7 +271,9 @@ export const machineRegistry: MachineInfo[] = [
       [MF_ROM]: 2,
       [MF_BANK]: 8,
       // --- The shared execution-history recorder (EXECUTION_HISTORY_ALL_CORES_PLAN)
-      [MF_EXEC_HISTORY]: true
+      [MF_EXEC_HISTORY]: true,
+      // --- Passes the journal-replay determinism test (REVERSE_DEBUGGING_PLAN D19)
+      [MF_REVERSE_DEBUG]: true
     },
     // --- The disks are the Pentagon's Beta 128 (the model's `MC_DISK_SUPPORT`; the 128K has none)
     mediaIds: [MEDIA_TAPE, MEDIA_DISK_A, MEDIA_DISK_B],
@@ -299,7 +301,9 @@ export const machineRegistry: MachineInfo[] = [
       [MF_ROM]: 4,
       [MF_BANK]: 8,
       // --- The shared execution-history recorder (EXECUTION_HISTORY_ALL_CORES_PLAN)
-      [MF_EXEC_HISTORY]: true
+      [MF_EXEC_HISTORY]: true,
+      // --- Passes the journal-replay determinism test (REVERSE_DEBUGGING_PLAN D19)
+      [MF_REVERSE_DEBUG]: true
     },
     mediaIds: [MEDIA_TAPE, MEDIA_DISK_A, MEDIA_DISK_B],
     // --- +2A/+3 (Amstrad ROMs) and +2E/+3E (+3E ROMs): one core, the ROM set is model config
@@ -372,7 +376,9 @@ export const machineRegistry: MachineInfo[] = [
       [MF_ROM]: 2,
       [MF_BANK]: 8,
       // --- The shared execution-history recorder (EXECUTION_HISTORY_ALL_CORES_PLAN)
-      [MF_EXEC_HISTORY]: true
+      [MF_EXEC_HISTORY]: true,
+      // --- Passes the journal-replay determinism test (REVERSE_DEBUGGING_PLAN D19)
+      [MF_REVERSE_DEBUG]: true
     },
     models: TIMEX_MODELS,
     // --- The DOCK is the 2068s' (their model config); the TC2048 has none
@@ -402,7 +408,9 @@ export const machineRegistry: MachineInfo[] = [
       [MF_ROM]: 4,
       [MF_BANK]: 16,
       // --- The shared execution-history recorder (EXECUTION_HISTORY_ALL_CORES_PLAN)
-      [MF_EXEC_HISTORY]: true
+      [MF_EXEC_HISTORY]: true,
+      // --- Passes the journal-replay determinism test (REVERSE_DEBUGGING_PLAN D19)
+      [MF_REVERSE_DEBUG]: true
     },
     mediaIds: [MEDIA_TAPE, MEDIA_DISK_A, MEDIA_DISK_B],
     models: SCORPION_MODELS,
@@ -428,7 +436,9 @@ export const machineRegistry: MachineInfo[] = [
       [MF_BLINK]: true,
       [MF_ALLOW_SCAN_LINES]: false,
       // --- The shared execution-history recorder (EXECUTION_HISTORY_ALL_CORES_PLAN)
-      [MF_EXEC_HISTORY]: true
+      [MF_EXEC_HISTORY]: true,
+      // --- Passes the journal-replay determinism test (REVERSE_DEBUGGING_PLAN D19)
+      [MF_REVERSE_DEBUG]: true
     },
     models: [...Z88_MODELS],
     toolInfo: {
@@ -458,7 +468,9 @@ export const machineRegistry: MachineInfo[] = [
       [MF_INJECT_SUPPORT]: false,
       [MF_ALLOW_SCAN_LINES]: false,
       // --- The shared execution-history recorder (EXECUTION_HISTORY_ALL_CORES_PLAN)
-      [MF_EXEC_HISTORY]: true
+      [MF_EXEC_HISTORY]: true,
+      // --- Passes the journal-replay determinism test (REVERSE_DEBUGGING_PLAN D19)
+      [MF_REVERSE_DEBUG]: true
     },
     models: [...ZX81_MODELS],
     mediaIds: [MEDIA_TAPE],
@@ -486,7 +498,9 @@ export const machineRegistry: MachineInfo[] = [
       [MF_INJECT_SUPPORT]: false,
       [MF_ALLOW_SCAN_LINES]: false,
       // --- The shared execution-history recorder (EXECUTION_HISTORY_ALL_CORES_PLAN)
-      [MF_EXEC_HISTORY]: true
+      [MF_EXEC_HISTORY]: true,
+      // --- Passes the journal-replay determinism test (REVERSE_DEBUGGING_PLAN D19)
+      [MF_REVERSE_DEBUG]: true
     },
     models: [...ZX80_MODELS],
     mediaIds: [MEDIA_TAPE],

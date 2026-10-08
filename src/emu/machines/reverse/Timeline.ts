@@ -422,7 +422,7 @@ export class Timeline {
     this.assertActive();
     if (this._mode !== "navigating" || !this.at) return;
     this.runLimit = limit && comparePositions(limit, this.presentPosition) < 0 ? limit : undefined;
-    this.port.rewindTo(this.at.sequence);
+    this.port.rewindTo(this.at);
     this.port.setVerify(true);
     this._mode = "replaying";
     this.nextEntry = this.appliedJournalEnd;
@@ -549,7 +549,7 @@ export class Timeline {
     if (this._mode === "replaying") this.pauseReplayRun();
     const at = this.position;
     // --- The ring back to the machine's real position: what it records next is the new future
-    this.port.rewindTo(at.sequence);
+    this.port.rewindTo(at);
     this.port.setVerify(false);
     this.journal.truncate(this.appliedJournalEnd);
     this.store.dropAfter(at);

@@ -87,7 +87,7 @@ typedef struct Z80HistoryRecord {
 } Z80HistoryRecord;
 
 _Static_assert(sizeof(Z80HistoryRecord) == 64, "a history record is 64 bytes");
-_Static_assert(sizeof(Z80HistoryHeader) == 64, "the history header is 64 bytes");
+_Static_assert(sizeof(Z80HistoryHeader) == 80, "the history header is 80 bytes");
 
 static Z80HistoryRecord z80HistoryRing[Z80_HISTORY_CAPACITY] __attribute__((aligned(64)));
 
@@ -117,13 +117,30 @@ _Static_assert(offsetof(Z80HistoryRecord, iy) - offsetof(Z80HistoryRecord, af) =
 /*
  * Replay's self-check (`.plans/REVERSE_DEBUGGING_PLAN.md` D9): the slot about to be written may still
  * hold the record the recorded run wrote for the same sequence (a rewound ring keeps them). If it
- * does and the CPU disagrees with it, the replay has diverged: mark it and stop at once.
+ * does and the CPU disagrees with it, the replay has diverged - once the staged record is published
+ * (`z80HistoryPublish` marks it and stops at once). A forced NOP that extends a run stages a record
+ * it then drops, while the slot holds the record *after* the run: that comparison is void.
  */
 static void z80HistoryVerifySlot(const Z80HistoryRecord *old) {
-  if (old->sequence != z80HistoryHeader.newestSequenceLo + 1u) return;
-  if (old->pc == cpu.pc && old->sp == cpu.sp && old->af == cpu.af.word) return;
-  z80HistoryHeader.verifyState |= Z80_HISTORY_VERIFY_MISMATCH;
-  z80HistoryHeader.stopState = Z80_HISTORY_STOP_ARMED | Z80_HISTORY_STOP_REACHED;
+  const uint32_t next = z80HistoryHeader.newestSequenceLo + 1u;
+  z80HistoryHeader.verifyState &= ~Z80_HISTORY_VERIFY_STAGED;
+  if (z80HistoryHeader.verifyStagedLo != next) {
+    /* The sequence's first staging: the slot still holds what the recorded run left there */
+    z80HistoryHeader.verifyStagedLo = next;
+    if (old->sequence == next) {
+      z80HistoryHeader.verifyHeldLo = next;
+      z80HistoryHeader.verifyPcSp = (uint32_t)old->pc | ((uint32_t)old->sp << 16);
+      z80HistoryHeader.verifyAf = old->af;
+    } else {
+      z80HistoryHeader.verifyHeldLo = 0u;
+    }
+  }
+  if (z80HistoryHeader.verifyHeldLo != next) return;
+  if ((uint16_t)z80HistoryHeader.verifyPcSp == cpu.pc && (uint16_t)(z80HistoryHeader.verifyPcSp >> 16) == cpu.sp &&
+      (uint16_t)z80HistoryHeader.verifyAf == cpu.af.word) {
+    return;
+  }
+  z80HistoryHeader.verifyState |= Z80_HISTORY_VERIFY_STAGED;
 }
 
 /* Writes the CPU state into the next slot without publishing it */
@@ -148,6 +165,10 @@ Z80_ALWAYS_INLINE Z80HistoryRecord *z80HistoryStage(uint32_t kind) {
 
 /* Publishes the staged record: the newest sequence, the write index and the count move on */
 Z80_ALWAYS_INLINE void z80HistoryPublish(void) {
+  if ((z80HistoryHeader.verifyState & Z80_HISTORY_VERIFY_STAGED) != 0u) {
+    z80HistoryHeader.verifyState = (z80HistoryHeader.verifyState & ~Z80_HISTORY_VERIFY_STAGED) | Z80_HISTORY_VERIFY_MISMATCH;
+    z80HistoryHeader.stopState = Z80_HISTORY_STOP_ARMED | Z80_HISTORY_STOP_REACHED;
+  }
   z80HistoryHeader.newestSequenceLo++;
   if (z80HistoryHeader.newestSequenceLo == 0u) z80HistoryHeader.newestSequenceHi++;
   z80HistoryHeader.writeIndex = (z80HistoryHeader.writeIndex + 1u) & Z80_HISTORY_MASK;
@@ -220,6 +241,11 @@ static void z80HistoryForcedNop(Z80HistoryRecord *r) {
   if (newest && newest->kind == Z80_HISTORY_KIND_FORCED_NOP && newest->repeat < Z80_HISTORY_MAX_REPEAT &&
       (uint16_t)(newest->pc + newest->repeat) == cpu.pc) {
     newest->repeat++;
+    /* The staged record is dropped, and its self-check with it (see `z80HistoryVerifySlot`); the
+       slot must not pass for the next sequence's record either, should the run stop here and a
+       replay later come through it */
+    z80HistoryHeader.verifyState &= ~Z80_HISTORY_VERIFY_STAGED;
+    r->sequence = 0u;
     /* Staging wrote into the slot after the newest one: with a full ring, that was the oldest record */
     if (z80HistoryHeader.count == (uint32_t)(Z80_HISTORY_CAPACITY)) z80HistoryHeader.count--;
     return;
@@ -375,6 +401,8 @@ uint32_t z80HistoryRewind(uint32_t sequenceLo, uint32_t sequenceHi) {
   z80HistoryHeader.newestSequenceLo = sequenceLo;
   z80HistoryHeader.newestSequenceHi = sequenceHi;
   z80HistoryHeader.generation++;
+  z80HistoryHeader.verifyStagedLo = 0u;
+  z80HistoryHeader.verifyHeldLo = 0u;
   return 1u;
 }
 
@@ -382,6 +410,8 @@ uint32_t z80HistoryRewind(uint32_t sequenceLo, uint32_t sequenceHi) {
 void z80HistorySetVerify(uint32_t on) {
   z80HistoryEnsureHeader();
   z80HistoryHeader.verifyState = on ? Z80_HISTORY_VERIFY_ON : 0u;
+  z80HistoryHeader.verifyStagedLo = 0u;
+  z80HistoryHeader.verifyHeldLo = 0u;
 }
 
 /*
@@ -397,6 +427,8 @@ void z80HistorySetPosition(uint32_t sequenceLo, uint32_t sequenceHi, uint32_t ha
   z80HistoryHeader.count = hasRecord ? 1u : 0u;
   z80HistoryHeader.writeIndex = hasRecord ? 1u : 0u;
   z80HistoryHeader.generation++;
+  z80HistoryHeader.verifyStagedLo = 0u;
+  z80HistoryHeader.verifyHeldLo = 0u;
 }
 
 /*

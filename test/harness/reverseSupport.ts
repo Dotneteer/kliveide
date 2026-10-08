@@ -12,17 +12,27 @@ import { HistoryPositionPort, type HistoryPositionExports } from "@emu/machines/
 import { readWasmLayout, type WasmLayout } from "@emu/machines/state/wasmLayout";
 import { captureWasmImage } from "@emu/machines/state/wasmStateImage";
 
-/** The machines the spike covers */
-export type SpikeCoreId = "sp48" | "zxnext";
+/** The cores a rig drives (the export contract's ids) */
+export type SpikeCoreId = "sp48" | "zxnext" | "timex" | "sp128" | "spp3e" | "z88" | "zx8081";
 
 /** What the rig needs of a machine: its WASM runtime */
 type RuntimeOwner = {
   wasmV2Runtime?: { module: WebAssembly.Module; exports: object };
 };
 
-const FRAME_EXPORT: Record<SpikeCoreId, string> = { sp48: "sp48ExecuteFrame", zxnext: "zxnextExecuteFrame" };
-const FRAME_COMPLETED_EXPORT: Record<SpikeCoreId, string> = { sp48: "sp48GetFrameCompleted", zxnext: "zxnextGetFrameCompleted" };
-const FRAMES_EXPORT: Record<SpikeCoreId, string> = { sp48: "sp48GetFrames", zxnext: "zxnextGetFrames" };
+/** The prefix of a core's frame exports: the Timex runs the 48K's frame loop */
+const FRAME_PREFIX: Record<SpikeCoreId, string> = {
+  sp48: "sp48",
+  timex: "sp48",
+  zxnext: "zxnext",
+  sp128: "sp128",
+  spp3e: "spp3e",
+  z88: "z88",
+  zx8081: "zx8081"
+};
+const FRAME_EXPORT = (id: SpikeCoreId) => `${FRAME_PREFIX[id]}ExecuteFrame`;
+const FRAME_COMPLETED_EXPORT = (id: SpikeCoreId) => `${FRAME_PREFIX[id]}GetFrameCompleted`;
+const FRAMES_EXPORT = (id: SpikeCoreId) => `${FRAME_PREFIX[id]}GetFrames`;
 
 export class ReverseRig {
   readonly port: HistoryPositionPort;
@@ -45,7 +55,7 @@ export class ReverseRig {
     const raw = runtime.exports as unknown as HistoryPositionExports & Record<string, (...a: number[]) => number>;
     this.port = new HistoryPositionPort(raw);
     this.handle = installJournal(runtime, coreId, this.journal, this.port);
-    const frame = raw[FRAME_EXPORT[coreId]];
+    const frame = raw[FRAME_EXPORT(coreId)];
     const handle = this.handle;
     this.core = {
       memory: raw.memory,
@@ -66,11 +76,11 @@ export class ReverseRig {
 
   /** The core's frame-completed flag: true at a frame boundary */
   get atFrameBoundary(): boolean {
-    return this.raw[FRAME_COMPLETED_EXPORT[this.coreId]]() !== 0;
+    return this.raw[FRAME_COMPLETED_EXPORT(this.coreId)]() !== 0;
   }
 
   get frames(): number {
-    return this.raw[FRAMES_EXPORT[this.coreId]]();
+    return this.raw[FRAMES_EXPORT(this.coreId)]();
   }
 
   /**

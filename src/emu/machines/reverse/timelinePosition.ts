@@ -200,9 +200,21 @@ export class HistoryPositionPort {
     this.restoreView(snapshot.view);
   }
 
-  /** Rewinds the ring to a sequence it holds (the machine's real position before it runs again) */
-  rewindTo(sequence: number): boolean {
-    return this.exports.z80HistoryRewind(sequence >>> 0, Math.floor(sequence / 0x1_0000_0000) >>> 0) !== 0;
+  /**
+   * Rewinds the ring to a position it holds (the machine's real position before it runs again). The
+   * newest record gets the position's units back: a ring put back from the present holds the record
+   * as the run *ended* it - a HALT, a forced-NOP run or a DMA hold that went on after this point - and
+   * the recorder would go on counting from there, mislabelling every position after it.
+   */
+  rewindTo(position: TimelinePosition): boolean {
+    const s = position.sequence;
+    if (this.exports.z80HistoryRewind(s >>> 0, Math.floor(s / 0x1_0000_0000) >>> 0) === 0) return false;
+    if (position.sub > 0 && this.u32(H_COUNT) > 0) {
+      const capacity = this.u32(H_CAPACITY);
+      const slot = (this.u32(H_WRITE_INDEX) - 1 + capacity) % capacity;
+      this.view.setUint16(this.u32(H_RING_OFFSET) + slot * RECORD_SIZE + 14, position.sub, true);
+    }
+    return true;
   }
 
   /** A held record's repeat count (the units it ended with), or undefined when the ring does not hold it */

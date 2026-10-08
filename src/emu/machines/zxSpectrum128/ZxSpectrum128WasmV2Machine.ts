@@ -1132,6 +1132,11 @@ export class ZxSpectrum128WasmV2Machine extends ZxSpectrum128WasmHost implements
       // --- In playback a frame completes only at an RZX frame end, above
       this.frameCompleted = rzx?.mode === "play" ? false : wasm.sp128GetFrameCompleted() !== 0;
 
+      // --- A reverse-debugging replay run reached its next journal entry (REVERSE_DEBUGGING_PLAN D11)
+      if (this.executionContext.historyStopArmed && wasm.z80HistoryCheckStop() !== 0) {
+        return this.finishWasmV2DebugLoop(FrameTerminationMode.UntilExecutionPoint);
+      }
+
       if (this.executionContext.frameTerminationMode === FrameTerminationMode.UntilExecutionPoint) {
         const point = this.executionContext.terminationPoint;
         if (point != null && this.pc === (point & 0xffff)) {
@@ -1370,8 +1375,50 @@ export class ZxSpectrum128WasmV2Machine extends ZxSpectrum128WasmHost implements
     const runtime = this.requireWasmV2Runtime();
     return {
       ...captureWasmImage("sp128", runtime.module, runtime.exports.memory.buffer),
-      host: { normalFrames: this.wasmV2NormalFrames }
+      host: this.captureHostState()
     };
+  }
+
+  // ------------------------------------------------------------------------------------------------
+  // Reverse debugging (`.plans/REVERSE_DEBUGGING_PLAN.md` §4.2, `reverse/Timeline.ts`)
+
+  /** The core, as the export contract names it */
+  get reverseCoreId(): string {
+    return "sp128";
+  }
+
+  get reverseRuntime(): Sp128WasmV2Runtime | undefined {
+    return this.wasmV2Runtime;
+  }
+
+  readonly reverseFrameExport = "sp128ExecuteFrame";
+
+  isAtFrameBoundary(): boolean {
+    return this.wasmV2Runtime?.exports.sp128GetFrameCompleted() !== 0;
+  }
+
+  /** The wrapper's own fields: what a state file and a keyframe keep besides the image */
+  captureHostState(): Record<string, unknown> {
+    return { normalFrames: this.wasmV2NormalFrames };
+  }
+
+  /**
+   * After the core changed under the wrapper (a replay, a return to the present, T7): the wrapper's
+   * fields from `state`, the mirrors re-read from the core. Nothing live is pushed - the controller
+   * calls `invalidateHostSync` when live input resumes - and queued keystrokes of the replaced run go.
+   * What the core holds - a saved tape, the disks' written sectors - is not published again as new.
+   */
+  restoreHostState(state: unknown): void {
+    const runtime = this.requireWasmV2Runtime();
+    const host = (state ?? {}) as { normalFrames?: number };
+    this.wasmV2NormalFrames = host.normalFrames ?? 0;
+    this.wasmV2AudioSamples.length = 0;
+    this.emulatedKeyStrokes.length = 0;
+    this.wasmV2SavedTapeRevision = runtime.exports.sp128TapeGetSavedRevision();
+    this.beta128Disks?.followCoreRevision();
+    this.frameCompleted = runtime.exports.sp128GetFrameCompleted() !== 0;
+    this.syncFrameCountersFromWasmV2(runtime);
+    this.syncCpuFromWasmV2(runtime);
   }
 
   /**

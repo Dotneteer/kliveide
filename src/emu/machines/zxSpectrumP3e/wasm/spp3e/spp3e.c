@@ -202,6 +202,12 @@ static uint32_t spp3eContentionDelaySincePause;
 static uint32_t spp3eCpuInstructionsExecuted;
 static uint32_t spp3eCpuFrameSliceInstructions;
 static uint8_t spp3eFrameCompleted;
+/*
+ * A frame has begun (`spp3eBeginMachineFrame`) since the reset. With `spp3eFrameCompleted` clear,
+ * that frame is still in progress - a history stop target or the debug loop left it mid-way - and
+ * the next fast frame continues it instead of beginning another (REVERSE_DEBUGGING_PLAN D4, T17).
+ */
+static uint32_t spp3eFrameBegun;
 static uint32_t spp3eInterruptsRaised;
 static uint8_t spp3eInterruptLineActive;
 static uint8_t spp3eCaptureBusEvents = 1u;
@@ -1712,6 +1718,7 @@ static void spp3eFdcOnFrameCompleted(void) {
 
 static void spp3eBeginMachineFrame(void) {
   spp3eFrameCompleted = 0u;
+  spp3eFrameBegun = 1u;
   spp3eBeginAudioFrame();
   spp3eUlaBeginBorderFrame(spp3eNextFrameStartTact);
   spp3eCpuFrameSliceInstructions = 0u;
@@ -1789,6 +1796,7 @@ void spp3eReset(void) {
   spp3eCpuInstructionsExecuted = 0u;
   spp3eCpuFrameSliceInstructions = 0u;
   spp3eFrameCompleted = 0u;
+  spp3eFrameBegun = 0u;
   spp3eInterruptsRaised = 0u;
   spp3eInterruptLineActive = 0u;
   z80ClearBusEvents();
@@ -1843,7 +1851,8 @@ uint32_t spp3eExecuteFrame(void) {
     return 0u;
   }
 
-  spp3eBeginMachineFrame();
+  /* A frame a stop target or the debug loop left mid-way goes on where it stopped */
+  if (spp3eFrameCompleted != 0u || spp3eFrameBegun == 0u) spp3eBeginMachineFrame();
   spp3eCaptureBusEvents = 0u;
   z80ClearBusEvents();
 
@@ -1854,7 +1863,10 @@ uint32_t spp3eExecuteFrame(void) {
   const uint32_t frameEndTact = spp3eNextFrameStartTact + spp3eTactsInFrame;
   while (spp3eTacts < frameEndTact) {
     spp3eExecuteInstruction();
+    /* Checked on the frame's last instruction too: the host reads the reached mark after the call */
+    const uint32_t stop = z80HistoryStopNow();
     if (spp3eFrameCompleted != 0u) break;
+    if (stop != 0u) break;
   }
   spp3eCaptureBusEvents = 1u;
   return 0;

@@ -298,6 +298,12 @@ static uint32_t sp128ContentionDelaySincePause;
 static uint32_t sp128CpuInstructionsExecuted;
 static uint32_t sp128CpuFrameSliceInstructions;
 static uint32_t sp128FrameCompleted;
+/*
+ * A frame has begun (`beginMachineFrame`) since the reset. With `sp128FrameCompleted` clear, that
+ * frame is still in progress - a history stop target or the debug loop left it mid-way - and the
+ * next fast frame continues it instead of beginning another (REVERSE_DEBUGGING_PLAN D4, T17).
+ */
+static uint32_t sp128FrameBegun;
 static uint32_t sp128InterruptsRaised;
 static uint8_t sp128InterruptLineActive;
 static uint8_t sp128CaptureBusEvents = 1u;
@@ -1216,6 +1222,7 @@ static uint32_t normalizeClockMultiplier(uint32_t value) {
 
 static void beginMachineFrame(void) {
   sp128FrameCompleted = 0u;
+  sp128FrameBegun = 1u;
 
   if (sp128ClockMultiplier != sp128TargetClockMultiplier) {
     sp128ClockMultiplier = sp128TargetClockMultiplier;
@@ -1344,6 +1351,7 @@ void sp128Reset(void) {
   sp128TactsInCurrentFrame = sp128TactsInFrame;
   sp128NextFrameStartTact = 0u;
   sp128FrameCompleted = 0u;
+  sp128FrameBegun = 0u;
   sp128SelectedRom = 0u;
   sp128SelectedBank = 0u;
   sp128PagingEnabled = 1u;
@@ -1397,7 +1405,8 @@ uint32_t sp128ExecuteFrame(void) {
     return 0u;
   }
 
-  beginMachineFrame();
+  /* A frame a stop target or the debug loop left mid-way goes on where it stopped */
+  if (sp128FrameCompleted != 0u || sp128FrameBegun == 0u) beginMachineFrame();
   sp128CaptureBusEvents = 0u;
   z80ClearBusEvents();
 
@@ -1408,7 +1417,10 @@ uint32_t sp128ExecuteFrame(void) {
   const uint32_t frameEndTact = sp128NextFrameStartTact + sp128TactsInCurrentFrame;
   while (sp128Tacts < frameEndTact) {
     sp128ExecuteInstruction();
+    /* Checked on the frame's last instruction too: the host reads the reached mark after the call */
+    const uint32_t stop = z80HistoryStopNow();
     if (sp128FrameCompleted != 0u) break;
+    if (stop != 0u) break;
   }
   sp128CaptureBusEvents = 1u;
   return 0u;

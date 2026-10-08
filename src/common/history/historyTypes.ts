@@ -5,7 +5,7 @@
 
 /** The size of one record, and of the header, in bytes (`z80-history.c`) */
 export const HISTORY_RECORD_SIZE = 64;
-export const HISTORY_HEADER_SIZE = 64;
+export const HISTORY_HEADER_SIZE = 80;
 
 /** What the ring holds */
 export type ExecutionHistoryInfo = {

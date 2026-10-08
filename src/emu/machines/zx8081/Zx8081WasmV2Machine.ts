@@ -429,7 +429,9 @@ export class Zx8081WasmV2Machine extends Zx8081WasmHost implements IExecutionHis
 
   /** Types RUN once the ROM has finished a load the tape-load flow started */
   private checkAutoRun(runtime: Zx8081WasmV2Runtime): void {
-    if (runtime.exports.zx8081TakeAutoRunHit() !== 0) {
+    // --- Taken in a reverse-debugging replay too, but not typed: the live run typed it already, and
+    // --- the journal replays those keys (REVERSE_DEBUGGING_PLAN D13)
+    if (runtime.exports.zx8081TakeAutoRunHit() !== 0 && !this.executionContext.isReplayingHistory?.()) {
       this.typeText(ZX8081_RUN_COMMAND, AUTO_RUN_DELAY_FRAMES);
     }
   }
@@ -450,7 +452,8 @@ export class Zx8081WasmV2Machine extends Zx8081WasmHost implements IExecutionHis
     runtime.exports.zx8081ExecuteFrame();
     this.syncFrameCounters(runtime);
     this.checkAutoRun(runtime);
-    this.frameCompleted = true;
+    // --- A reverse-debugging stop target can end the call mid-frame (REVERSE_DEBUGGING_PLAN D4)
+    this.frameCompleted = runtime.exports.zx8081GetFrameCompleted() !== 0;
     this.executionContext.lastTerminationReason = FrameTerminationMode.Normal;
     return FrameTerminationMode.Normal;
   }
@@ -498,6 +501,11 @@ export class Zx8081WasmV2Machine extends Zx8081WasmHost implements IExecutionHis
         instructionsExecuted++;
       }
       super.pc = wasm.zx8081GetCpuPc();
+      // --- A reverse-debugging replay run reached its next journal entry (REVERSE_DEBUGGING_PLAN D11);
+      // --- `zx8081ExecuteUntilStop` stops there too
+      if (this.executionContext.historyStopArmed && wasm.z80HistoryCheckStop() !== 0) {
+        return this.finishDebugLoop(FrameTerminationMode.UntilExecutionPoint);
+      }
       if (watchesBusAccess) {
         this.importBusAccess(runtime);
       }
@@ -694,8 +702,43 @@ export class Zx8081WasmV2Machine extends Zx8081WasmHost implements IExecutionHis
     const runtime = this.requireWasmV2Runtime();
     return {
       ...captureWasmImage("zx8081", runtime.module, runtime.exports.memory.buffer),
-      host: {}
+      host: this.captureHostState()
     };
+  }
+
+  // ------------------------------------------------------------------------------------------------
+  // Reverse debugging (`.plans/REVERSE_DEBUGGING_PLAN.md` §4.2, `reverse/Timeline.ts`)
+
+  /** The core, as the export contract names it */
+  get reverseCoreId(): string {
+    return "zx8081";
+  }
+
+  get reverseRuntime(): Zx8081WasmV2Runtime | undefined {
+    return this.wasmV2Runtime;
+  }
+
+  readonly reverseFrameExport = "zx8081ExecuteFrame";
+
+  isAtFrameBoundary(): boolean {
+    return this.wasmV2Runtime?.exports.zx8081GetFrameCompleted() !== 0;
+  }
+
+  /** The wrapper keeps no state of its own a keyframe needs: the core holds it all */
+  captureHostState(): Record<string, unknown> {
+    return {};
+  }
+
+  /**
+   * After the core changed under the wrapper (a replay, a return to the present, T7): the mirrors
+   * re-read from the core, nothing pushed, queued keystrokes of the replaced run dropped
+   */
+  restoreHostState(_state: unknown): void {
+    const runtime = this.requireWasmV2Runtime();
+    this.emulatedKeyStrokes.length = 0;
+    this.frameCompleted = runtime.exports.zx8081GetFrameCompleted() !== 0;
+    this.syncFrameCounters(runtime);
+    this.syncCpuFromWasmV2(runtime);
   }
 
   /**

@@ -346,7 +346,8 @@ and WPMEM comments.
   and the other G4.3 commands put the machine itself in the past; Continue from the past; Take over
   here) and 5 (Reverse Continue checking every breakpoint on the real past machine, reverse
   watchpoints) and 6 (the Next's SD card journaled and undone on a fork, disk write-back republished,
-  replays kept away from every host side effect) are done too; Phase 7, the remaining cores, is next. (RZX, G2.7–G2.8, turned out not to need it and is done;
+  replays kept away from every host side effect) and 7 (every Z80 machine: 128K, Pentagon, Scorpion,
+  +2A/+3/+3E, Timex, Z88, ZX81, ZX80) are done too; Phase 8, the UI and docs, is next. (RZX, G2.7–G2.8, turned out not to need it and is done;
   Klive state files, G2.6, are done too.)
 - ~~G3.6 layer composition~~ (done).
 - G6.4 real Next hardware debugging, with G6.5 send-to-Next as its first milestone.

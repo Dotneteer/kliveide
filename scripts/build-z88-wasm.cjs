@@ -27,6 +27,10 @@ const Z88_VOLATILE_SYMBOLS = [
   "condLastStatus",
   "condEnv",
   "z88BreakpointFlags",
+  // --- What the Z88 sent to TXD, held until the host shows it: output the guest never reads back, not
+  // --- machine state (a reverse-debugging replay must not depend on when the host emptied it)
+  "z88UartTx",
+  "z88UartTxCount",
   // --- The execution-history ring (EXECUTION_HISTORY_ALL_CORES_PLAN)
   ...Z80_HISTORY_VOLATILE_SYMBOLS
 ];

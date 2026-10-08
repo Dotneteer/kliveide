@@ -145,6 +145,14 @@ export class Beta128Disks {
   }
 
   /**
+   * The core changed under the host (a reverse-debugging replay): its write revision is the past's or
+   * the replayed run's, not a new write to publish
+   */
+  followCoreRevision(): void {
+    this.revision = this.core.sp128BetaGetDirtyRevision();
+  }
+
+  /**
    * Every sector of every written-back disk, as a publish (REVERSE_DEBUGGING_PLAN D13): after a fork
    * the in-core disks are the restored past's, and the files must follow them. `.scl` and detached
    * disks are never written back, so they are left out.
