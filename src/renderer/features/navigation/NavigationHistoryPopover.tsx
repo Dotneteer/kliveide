@@ -24,7 +24,8 @@ export const REASON_LABELS: Record<NavigationReason, string> = {
   tapeBlock: "block",
   tabSwitch: "tab",
   explorer: "explorer",
-  command: "command"
+  command: "command",
+  profiler: "profiler"
 };
 
 type Props = {

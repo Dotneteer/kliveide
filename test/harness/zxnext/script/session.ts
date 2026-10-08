@@ -31,7 +31,7 @@ import {
 import { connectConditionSupport } from "@emu/machines/conditionStore";
 import { decodeHistoryPage, type HistoryRecord } from "@common/history/historyRecord";
 import type { ExecutionHistoryInfo } from "@common/history/historyTypes";
-import type { ProfileCounts, ProfileInfo, ProfileTouchedByte } from "@common/profile/profileTypes";
+import type { ProfileCounts, ProfileEdge, ProfileInfo, ProfileTouchedByte } from "@common/profile/profileTypes";
 import { DebugSupport } from "@emu/machines/DebugSupport";
 import {
   beginSourceStep,
@@ -272,9 +272,13 @@ export class NextTestSession {
   // profiler's time, as the IDE reads them through `IAccessProfileSource`. Offsets are physical
   // offsets into the Next's memory (`src/common/profile/layouts/zxnext.ts` names them).
 
-  /** Turns the access profile on or off; `counters` keeps counts and time as well as the flags (D2). */
-  profile(on = true, { counters = true }: { counters?: boolean } = {}): this {
+  /**
+   * Turns the access profile on or off; `counters` keeps counts and time as well as the flags (D2),
+   * `calls` runs the call tracker too (`.plans/PROFILER_PLAN.md` D1), which an off leaves as it is.
+   */
+  profile(on = true, { counters = true, calls }: { counters?: boolean; calls?: boolean } = {}): this {
     this.machine.setProfiling(on, counters);
+    if (calls !== undefined) this.machine.setProfileCalls(calls);
     return this;
   }
 
@@ -302,6 +306,11 @@ export class NextTestSession {
   /** Every touched byte (with one of `mask`'s flags), with its counters where kept. */
   profileTouched(mask?: number): ProfileTouchedByte[] {
     return this.machine.readProfileTouched(mask)!;
+  }
+
+  /** The call graph's edges (`.plans/PROFILER_PLAN.md` D12), keyed by physical offset, open frames folded in. */
+  profileEdges(): ProfileEdge[] {
+    return this.machine.readProfileEdges()!;
   }
 
   // ==========================================================================================

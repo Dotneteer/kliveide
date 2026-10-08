@@ -31,7 +31,7 @@ are estimates for prioritising, not commitments.
 | G2 | Load and save snapshots (.sna/.z80/.szx), RZX | **S → L** | ✅ done (2026-10-04): G2.1–G2.8 |
 | G3 | Live Next hardware inspectors | **M** (layers: M–L) | ✅ done (2026-10-05 – 10-08): G3.1–G3.9 (G3.8's sprite half on 2026-10-08) |
 | G4 | Execution history and reverse debugging | **M → XL** | ✅ done (2026-10-07 – 10-08): G4.1–G4.6 |
-| G5 | Code coverage, profiler, unit tests | **M → L** | ✅ G5.1 and G5.2 done (2026-10-08): coverage per bank and the heat map on every Z80 machine · plans ready for the profiler, unit tests, CLI/CI |
+| G5 | Code coverage, profiler, unit tests | **M → L** | ✅ G5.1 and G5.2 done (2026-10-08): coverage per bank and the heat map on every Z80 machine · ✅ G5.3 and G5.4 done (2026-10-08): flat and call-graph profiler on every Z80 machine · plans ready for unit tests, CLI/CI |
 | G6 | Remote debugging, real hardware, external API | **M → XL** | Command API for scripts and CI |
 | G7 | 48K/128K reverse-engineering depth | **M → L** | Generalising the NEX annotation sidecar |
 | G8 | BASIC editor intelligence | **M** | ✅ done (2026-10-03): G8.1–G8.5 |
@@ -238,7 +238,11 @@ then moves the frame trace to a diagnostics build, which shrinks the Next to abo
   and LCOV/CSV/`.kcov` exports. The core module also records the per-instruction time G5.3 reads.
   It also builds the shared in-core access profile (`z80-profile.c`: a flag byte per physical byte,
   plus a counter pool with per-instruction time) that the profiler reads.
-- G5.3 and G5.4 are in [PROFILER_PLAN.md](PROFILER_PLAN.md).
+- G5.3 and G5.4 are in [PROFILER_PLAN.md](PROFILER_PLAN.md). **Done (2026-10-08)** on every Z80
+  core: the flat "top routines" profile rolled up from Klive BASIC callables, `.proc` extents or labels;
+  a call tracker in `z80-profile.c` (inclusive/exclusive time, interrupts as their own roots, stack
+  switches counted); the `$profiler` document; `profile` commands with `-at`/`-until` windows; editor
+  hints; and speedscope, callgrind, CSV and Fuse exports.
 - G5.5 is in [Z80_UNIT_TESTS_PLAN.md](Z80_UNIT_TESTS_PLAN.md).
 - G5.6 is in [UNIT_TESTS_CLI_PLAN.md](UNIT_TESTS_CLI_PLAN.md).
 
@@ -255,8 +259,8 @@ Research for the plans corrected four assumptions in the table below:
 |---|---|---|
 | G5.1 Code coverage map ✅ **done** | A per-address (and per-bank) "executed" bitmap in the core; executed lines are marked in the editor gutter and disassembly, and can be reset. | M (a C bitmap in each core, then source mapping through the existing debug info) |
 | G5.2 Memory access heat map ✅ **done** | Read, write and execute counts per address, shown as a heat map in the memory view; also spots self-modifying code. | M, alongside G5.1 |
-| G5.3 Flat profiler | T-states spent per address, rolled up per label or procedure; a "top routines" table. | M |
-| G5.4 Call-graph profiler | Inclusive and exclusive time per routine using the call stack. | L |
+| G5.3 Flat profiler ✅ **done** | T-states spent per address, rolled up per label or procedure; a "top routines" table. | M |
+| G5.4 Call-graph profiler ✅ **done** | Inclusive and exclusive time per routine using the call stack. | L |
 | G5.5 Z80 unit tests | **DeZog-compatible** (decision D3): the same test-case labelling and assertion-macro conventions, so DeZog unit-test projects run in Klive unchanged, with both Klive asm and sjasmplus. A runner sets up the machine headlessly, calls each test, checks results, and reports pass/fail in a Test panel with click-to-source. Debug a failing test. | L (assembler support for the conventions, a headless runner, UI; the exact DeZog conventions are researched in this feature's own plan) |
 | G5.6 Tests from the command line / CI | Run the G5.5 tests without the UI (`klive test project/`), with exit codes and JUnit output. | M, after G5.5 and G6.1 |
 
@@ -382,7 +386,7 @@ and WPMEM comments.
 **Wave 3 — depth:**
 - G5.5 DeZog-compatible unit tests and G6.1 CLI, which together enable G5.6 (CI).
 - G7.1 annotations for any machine, G7.2 ROM annotations written from scratch.
-- ~~G8.x BASIC intelligence~~ (done), ~~G2.4 snapshot saving~~ (done), G5.2–G5.3 heat map and profiler.
+- ~~G8.x BASIC intelligence~~ (done), ~~G2.4 snapshot saving~~ (done), ~~G5.2–G5.4 heat map and profiler~~ (done).
 - ~~**G4.2 history in every core**~~ (done), which is the groundwork for G4.4.
 
 **Wave 4 — the big bets:**

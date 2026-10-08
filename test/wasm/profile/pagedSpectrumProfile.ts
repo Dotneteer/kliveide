@@ -120,3 +120,28 @@ export function checkTimeSums(s: Sp128TestSession, frames = 5): void {
   expect(info.instructions).toBe(touched.reduce((sum, b) => sum + (b.exec ?? 0), 0));
   expect(info.pagesDropped).toBe(0);
 }
+
+/*
+ * The call tracker's smoke test (`.plans/PROFILER_PLAN.md` Phase 3): `call Sub / jr $ / Sub: nop /
+ * ret` at $8000 gives one edge from the root to Sub, whose inclusive time is Sub's own instructions'
+ */
+export const CALL_SMOKE_PROGRAM = [0xcd, 0x05, 0x80, 0x18, 0xfe, 0x00, 0xc9];
+
+/** Runs the smoke program with the call tracker on and checks its one edge */
+export function checkCallEdge(s: Sp128TestSession, layout: ProfileLayout): void {
+  s.poke(0x8000, CALL_SMOKE_PROGRAM);
+  const sub = profileOffsetOf(layout, s.machine.getPartition(0x8005), 0x8005)!;
+  profiled(s, () => {
+    s.machine.setProfileCalls(true);
+    jump(s, 0x8000);
+    s.machine.sp = 0xbff0;
+    s.step(3);
+  });
+  s.machine.setProfileCalls(false);
+  const edges = s.machine.readProfileEdges()!;
+  const own = Array.from(s.machine.readProfileCounts(sub, 2)!.time).reduce((a, b) => a + b, 0);
+  expect(edges).toHaveLength(1);
+  expect(edges[0]).toMatchObject({ callee: sub, calleeAddress: 0x8005, calls: 1, kind: "call", inclusive: own, exclusive: own });
+  // --- nop (4) and ret (10); bank 2 at $8000 is uncontended on every model
+  expect(own).toBe(14);
+}

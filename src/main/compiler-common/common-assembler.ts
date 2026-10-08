@@ -206,6 +206,12 @@ export abstract class CommonAssembler<
   // --- Label that overflew from a label-only line
   protected _overflowLabelLine: LabelOnlyLine<TInstruction> | null = null;
 
+  /** The names of the `.proc` blocks being assembled, innermost last (PROFILER_PLAN D7) */
+  private _procNames: string[] = [];
+
+  /** The last label defined in a module's global scope: an unnamed `.proc` is named after it (D7) */
+  private _lastGlobalLabel: string | undefined;
+
   // --- The source line of the experession evaluation context
   protected _currentSourceLine: AssemblyLine<TInstruction>;
 
@@ -1655,6 +1661,7 @@ export abstract class CommonAssembler<
     symbolType: SymbolType = SymbolType.Label
   ): Promise<void> {
     const assembler = this;
+    const displayName = symbol;
 
     // --- Handle case-sensitivity
     if (!this._options.useCaseSensitiveSymbols) {
@@ -1722,7 +1729,12 @@ export abstract class CommonAssembler<
       return;
     }
 
-    lookup[symbol] = new AssemblySymbolInfo(symbol, symbolType, value, locationFromLine(line));
+    const info = new AssemblySymbolInfo(symbol, symbolType, value, locationFromLine(line));
+    if (displayName !== symbol) info.writtenName = displayName;
+    lookup[symbol] = info;
+    if (symbolType === SymbolType.Label && lookup === this._currentModule.symbols && !symbolIsTemporary) {
+      this._lastGlobalLabel = displayName;
+    }
 
     /**
      * Gets the current symbol map that can be used for symbol resolution
@@ -4261,7 +4273,7 @@ export abstract class CommonAssembler<
         this.reportAssemblyError("Z0704", stmt, null, ".until", ".repeat");
         break;
       case "ProcStatement":
-        await this.processProcStatement(allLines, scopeLines, currentLineIndex);
+        await this.processProcStatement(allLines, scopeLines, currentLineIndex, label);
         break;
       case "ProcEndStatement":
         this.reportAssemblyError("Z0704", stmt, null, ".endp/.pend", ".proc");
@@ -5311,7 +5323,8 @@ export abstract class CommonAssembler<
   private async processProcStatement(
     allLines: AssemblyLine<TInstruction>[],
     scopeLines: AssemblyLine<TInstruction>[],
-    currentLineIndex: { index: number }
+    currentLineIndex: { index: number },
+    label?: string | null
   ): Promise<void> {
     // --- Search for the end of the proc
     const firstLine = currentLineIndex.index;
@@ -5322,6 +5335,21 @@ export abstract class CommonAssembler<
 
     // --- End found
     const lastLine = currentLineIndex.index;
+
+    // --- The procedure's extent (`.plans/PROFILER_PLAN.md` D7): its name is the label on the
+    // --- `.proc` line, or the enclosing one - the open proc's, else the last global label
+    const procStart = this.getCurrentAssemblyAddress();
+    const procSegment = this._output.segments.length - 1;
+    const enclosing = this._procNames[this._procNames.length - 1];
+    const ownName = label && !label.startsWith("`") ? label : undefined;
+    const baseName = ownName
+      ? enclosing
+        ? `${enclosing}.${ownName}`
+        : ownName
+      : (enclosing ?? this._lastGlobalLabel ?? `proc_${procStart.toString(16).padStart(4, "0")}`);
+    const modulePath = this.modulePathOf(this._currentModule);
+    const procName = modulePath && !enclosing ? `${modulePath}.${baseName}` : baseName;
+    this._procNames.push(procName);
 
     // --- Create a scope for the proc
     const procScope = new SymbolScope<TInstruction, TToken>(null, this.isCaseSensitive);
@@ -5363,6 +5391,35 @@ export abstract class CommonAssembler<
 
     // --- Clean up the loop's scope
     this._currentModule.localScopes.pop();
+
+    // --- Record the extent; a proc that emitted nothing has none
+    this._procNames.pop();
+    const procEnd = this.getCurrentAssemblyAddress();
+    if (procEnd !== procStart || this._output.segments.length - 1 !== procSegment) {
+      const startLine = scopeLines[firstLine];
+      this._output.procedures.push({
+        name: procName,
+        startAddress: procStart,
+        endAddress: procEnd,
+        segmentIndex: procSegment,
+        fileIndex: startLine.fileIndex,
+        startLine: startLine.line,
+        endLine: scopeLines[lastLine].line
+      });
+    }
+  }
+
+  /** The dotted path of a nested module ("" for the root) */
+  private modulePathOf(module: AssemblyModule<TInstruction, TToken>): string {
+    const parts: string[] = [];
+    let current = module;
+    while (current.parentModule) {
+      const parent = current.parentModule;
+      const name = Object.keys(parent.nestedModules).find((key) => parent.nestedModules[key] === current);
+      if (name) parts.unshift(name);
+      current = parent;
+    }
+    return parts.join(".");
   }
 
   /**

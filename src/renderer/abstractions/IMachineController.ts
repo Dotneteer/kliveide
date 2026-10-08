@@ -226,6 +226,13 @@ export interface IMachineController {
   setProfiling?(enabled: boolean, counters?: boolean): boolean;
   /** Clears the profile */
   resetProfile?(): void;
+  /**
+   * A profiling window (`.plans/PROFILER_PLAN.md` D1, D2): reset, counters on, the call tracker when
+   * asked, and the optional start/stop markers; false when the machine does not profile
+   */
+  startProfiling?(options?: { calls?: boolean; at?: number; until?: number }): boolean;
+  /** Ends the window without a reset: the data stays frozen (D1) */
+  stopProfiling?(): boolean;
 
   /**
    * Starts the machine in step-over mode.

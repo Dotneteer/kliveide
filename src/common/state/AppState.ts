@@ -210,7 +210,7 @@ export type EmulatorState = {
    * The access profile's switch (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D6): coverage and the
    * heat map are recorded while `enabled`; `counters` keeps the counts as well as the flags
    */
-  profiling?: { enabled: boolean; counters: boolean };
+  profiling?: { enabled: boolean; counters: boolean; calls?: boolean };
   /** Bumped when the access profile moved; see `incProfileVersionAction` */
   profileVersion?: number;
   emuViewVersion: number;

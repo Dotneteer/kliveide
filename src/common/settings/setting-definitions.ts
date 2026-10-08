@@ -20,6 +20,7 @@ import {
   SETTING_EMU_PROFILE_RESET_AFTER_INJECTION,
   SETTING_EMU_PROFILE_COUNTERS,
   SETTING_IDE_COVERAGE_LINE_TINT,
+  SETTING_IDE_PROFILER_INLAYS,
   SETTING_EMU_TRDOS_ROM,
   SETTING_EMU_TC2048_ROM,
   SETTING_EMU_TC2068_ROM,
@@ -361,6 +362,17 @@ const settingDefinitions: Setting[] = [
     id: SETTING_IDE_COVERAGE_LINE_TINT,
     title: "Tint Covered Source Lines",
     description: "Covered source lines get a tinted background as well as the coverage strip.",
+    type: "boolean",
+    defaultValue: false,
+    saveWithIde: true,
+    boundTo: "ide"
+  },
+  {
+    id: SETTING_IDE_PROFILER_INLAYS,
+    title: "Show Profile Hints in the Editor",
+    description:
+      "With a profile present, each routine's first line shows its share of the time and its calls " +
+      "(\"9.4% · 1,204 calls\").",
     type: "boolean",
     defaultValue: false,
     saveWithIde: true,

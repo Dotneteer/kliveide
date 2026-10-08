@@ -142,4 +142,42 @@ describe("the access profile through the controller", () => {
     void session;
     await controller.stop();
   }, 300_000);
+
+  it("profiles one pass of a loop between its armed markers (PROFILER_PLAN D2)", async () => {
+    const { controller, program, debugSupport, store } = await setUp();
+    const loop = program.symbol("Loop");
+    expect(controller.startProfiling({ calls: true, at: loop, until: loop })).toBe(true);
+    expect(store.getState().emulatorState.profiling).toEqual({ enabled: true, counters: true, calls: true });
+    expect(controller.getProfileStatus()).toMatchObject({ enabled: true, callsOn: true, armedStart: loop, armedStop: loop });
+
+    const stopAt = { address: loop, exec: true, hitCount: 50 };
+    debugSupport.addBreakpoint(stopAt);
+    await controller.startDebug();
+    await waitPaused(controller, "the loop's 50th pass");
+    debugSupport.removeBreakpoint(stopAt);
+
+    // --- The second arrival at Loop closed the window inside the core; the switch followed it
+    const status = controller.getProfileStatus()!;
+    expect(status).toMatchObject({ enabled: false, windowClosed: 1, armedStart: -1, armedStop: -1 });
+    expect(store.getState().emulatorState.profiling?.enabled).toBe(false);
+    // --- D5: a frame and the clock in the profile's unit
+    expect(status.frameTicks).toBe(69888);
+    expect(status.clockHz).toBe(3_500_000);
+    // --- Exactly one pass: inc (hl), ld a,(hl), inc l, call Sub, Sub, jr Loop
+    const machine = controller.machine as any;
+    expect(machine.readProfileCounts(loop, 1).exec[0]).toBe(1);
+    expect(machine.readProfileCounts(program.symbol("Sub"), 1).exec[0]).toBe(1);
+    expect(status.instructions).toBe(7);
+    const edges = machine.readProfileEdges();
+    expect(edges).toHaveLength(1);
+    expect(edges[0]).toMatchObject({ callee: program.symbol("Sub"), calls: 1, inclusive: 4 + 10 });
+
+    // --- Stopping keeps the data; a new start resets it
+    expect(controller.stopProfiling()).toBe(true);
+    expect(controller.getProfileStatus()!.instructions).toBe(7);
+    controller.startProfiling();
+    expect(controller.getProfileStatus()!).toMatchObject({ instructions: 0, callsOn: false, enabled: true });
+    controller.stopProfiling();
+    await controller.stop();
+  }, 300_000);
 });

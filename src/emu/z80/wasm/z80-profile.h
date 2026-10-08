@@ -18,8 +18,9 @@
 #include <stdint.h>
 
 /*
- * The 128-byte header the reader (`WasmProfileReader.ts`) parses. Little-endian, natural alignment:
- * every field sits at the offset in the comment, so the struct is the wire format.
+ * The 192-byte header the reader (`WasmProfileReader.ts`) parses. Little-endian, natural alignment:
+ * every field sits at the offset in the comment, so the struct is the wire format. Version 2 added
+ * the call tracker's fields (`.plans/PROFILER_PLAN.md` §4.2) from offset 116 on.
  */
 typedef struct Z80ProfileHeader {
   uint32_t magic; /* 0: "KPRF" */
@@ -28,7 +29,7 @@ typedef struct Z80ProfileHeader {
   uint8_t enabled; /* 8: the hooks run */
   uint8_t countersOn; /* 9: the counter pool is kept, not only the flags */
   uint8_t muted; /* 10: 1 while a replay runs (D10); set by the hooks themselves */
-  uint8_t pad0; /* 11 */
+  uint8_t callsOn; /* 11: the call tracker runs (PROFILER_PLAN D1, D9) */
   uint32_t flagBytes; /* 12: the size of the flag array - the core's physical span */
   uint32_t poolPages; /* 16: the pool's capacity in 8K pages */
   uint32_t pagesUsed; /* 20 */
@@ -48,20 +49,49 @@ typedef struct Z80ProfileHeader {
   uint32_t pageMapOffset; /* 104: where the page map (uint16 per 8K page) is */
   uint32_t poolOffset; /* 108: where the counter pool is */
   uint32_t pageMapEntries; /* 112: 8K pages the flag array spans */
-  uint32_t pad1; /* 116 */
-  uint32_t pad2; /* 120 */
-  uint32_t pad3; /* 124 */
+  uint32_t stackResyncs; /* 116: stack switches that flushed the call stack (PROFILER_PLAN D10) */
+  uint32_t depthOverflows; /* 120: calls past the call stack's depth, not tracked (D10) */
+  uint32_t edgesDropped; /* 124: calls whose edge found the edge table full, charged to (other) (D12) */
+  uint32_t edgesOffset; /* 128: where the edge table is in linear memory */
+  uint32_t edgeCapacity; /* 132: its slots */
+  uint32_t edgesUsed; /* 136 */
+  uint32_t stackOffset; /* 140: where the call stack (Z80ProfileFrame[]) is */
+  uint32_t stackCapacity; /* 144: its depth */
+  uint32_t depth; /* 148: the frames open now */
+  uint64_t calls; /* 152: CALL and RST pushes tracked */
+  uint64_t interrupts; /* 160: interrupt and NMI pushes tracked */
+  uint32_t armedStart; /* 168: the CPU address whose next M1 starts counting, 0xFFFFFFFF when none (D2) */
+  uint32_t armedStop; /* 172: the CPU address whose next M1 stops profiling, 0xFFFFFFFF when none (D2) */
+  uint32_t windowClosed; /* 176: bumped when an armed stop fired */
+  uint32_t pad1; /* 180 */
+  uint64_t pad2; /* 184 */
 } Z80ProfileHeader;
+
+/*
+ * The call tracker's pending event (`.plans/PROFILER_PLAN.md` D9): CALL, RST, RET and interrupt
+ * pushes only note it; the instruction's end (or the acknowledge's) settles it once the stack pointer
+ * and the program counter are final and the instruction's time is in the clock.
+ */
+#define Z80_PROFILE_EV_NONE 0u
+#define Z80_PROFILE_EV_CALL 1u
+#define Z80_PROFILE_EV_RST 2u
+#define Z80_PROFILE_EV_RET 3u
+#define Z80_PROFILE_EV_INT 4u
+#define Z80_PROFILE_EV_NMI 5u
+static uint32_t z80ProfileCallEvent;
+/* The clock when an interrupt pushed: its frame includes the acknowledge */
+static uint64_t z80ProfileCallEventTime;
 
 static Z80ProfileHeader z80ProfileHeader;
 
-/* The flag byte's bits (D3); bits 6-7 are spare for branch coverage (§1.2) */
+/* The flag byte's bits (D3); bit 7 is spare for branch coverage (§1.2) */
 #define Z80_PF_E 0x01u /* an instruction started here: M1 of its first opcode or prefix byte */
 #define Z80_PF_C 0x02u /* fetched as code: opcode, prefix, displacement or operand */
 #define Z80_PF_R 0x04u /* data read */
 #define Z80_PF_W 0x08u /* data write */
 #define Z80_PF_S 0x10u /* self-modified (D9) */
 #define Z80_PF_X 0x20u /* an instruction started here inside an interrupt service */
+#define Z80_PF_H 0x40u /* a HALT waited here: its time is mostly waiting (PROFILER_PLAN D4) */
 
 /* The header's time buckets a core charges directly (`z80ProfileChargeBucket`) */
 #define Z80_PROFILE_BUCKET_DMA 0u
@@ -109,6 +139,24 @@ static void Z80_PROFILE_NOINLINE z80ProfileChargeBucket(uint32_t bucket, uint32_
 #define Z80_PROFILE_HALT_END() \
   do { \
     if (z80ProfileHeader.enabled) z80ProfileHaltEnd(); \
+  } while (0)
+
+/* The call tracker's hooks (PROFILER_PLAN D9): a load, a compare and a store while it runs */
+#define Z80_PROFILE_CALLS_ON() ((z80ProfileHeader.enabled & z80ProfileHeader.callsOn) != 0u)
+#define Z80_PROFILE_CALL(rst) \
+  do { \
+    if (Z80_PROFILE_CALLS_ON()) z80ProfileCallEvent = (rst) ? Z80_PROFILE_EV_RST : Z80_PROFILE_EV_CALL; \
+  } while (0)
+#define Z80_PROFILE_RET() \
+  do { \
+    if (Z80_PROFILE_CALLS_ON()) z80ProfileCallEvent = Z80_PROFILE_EV_RET; \
+  } while (0)
+#define Z80_PROFILE_INT(nmi) \
+  do { \
+    if (Z80_PROFILE_CALLS_ON()) { \
+      z80ProfileCallEvent = (nmi) ? Z80_PROFILE_EV_NMI : Z80_PROFILE_EV_INT; \
+      z80ProfileCallEventTime = z80ProfileHeader.timeTotal; \
+    } \
   } while (0)
 
 #endif

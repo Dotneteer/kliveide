@@ -140,6 +140,21 @@
 #ifndef Z80_PROFILE_HALT_END
 #define Z80_PROFILE_HALT_END() ((void)0)
 #endif
+/*
+ * The call tracker (`.plans/PROFILER_PLAN.md` D9), at the same four shadow-stack choke points as
+ * step-out: `Z80_PROFILE_CALL(rst)` in `callCore`/`rstCore`, `Z80_PROFILE_RET()` in `retCore` and
+ * `Z80_PROFILE_INT(nmi)` after an interrupt's push. Each only notes the event; the instruction's end
+ * settles it.
+ */
+#ifndef Z80_PROFILE_CALL
+#define Z80_PROFILE_CALL(rst) ((void)0)
+#endif
+#ifndef Z80_PROFILE_RET
+#define Z80_PROFILE_RET() ((void)0)
+#endif
+#ifndef Z80_PROFILE_INT
+#define Z80_PROFILE_INT(nmi) ((void)0)
+#endif
 
 #ifndef Z80_ALWAYS_INLINE
 #define Z80_ALWAYS_INLINE static inline __attribute__((always_inline))
@@ -881,10 +896,12 @@ static inline void retCore(void) {
   /* The single choke point for every RET: the conditional ones call this inside their condition
      and RETN/RETI delegate to it, so the shadow stack is balanced here and nowhere else. */
   popFromStepOutStack();
+  Z80_PROFILE_RET();
 }
 
 static inline void callCore(void) {
   pushToStepOutStack(cpu.pc);
+  Z80_PROFILE_CALL(0);
   tactPlus1WithAddress(cpu.pc);
   cpu.sp = (uint16_t)(cpu.sp - 1);
   writeMemory(cpu.sp, hi(cpu.pc));
@@ -895,6 +912,7 @@ static inline void callCore(void) {
 
 static inline void rstCore(uint16_t address) {
   pushToStepOutStack(cpu.pc);
+  Z80_PROFILE_CALL(1);
   tactPlus1WithAddress(IR);
   cpu.sp = (uint16_t)(cpu.sp - 1);
   writeMemory(cpu.sp, hi(cpu.pc));
@@ -956,6 +974,7 @@ static inline void processNmi(void) {
   cpu.iff1 = 0;
   applyAfterLdAIRInterruptQuirk();
   pushPcForInterrupt();
+  Z80_PROFILE_INT(1);
   Z80_REFRESH(IR);
   refreshMemory();
   cpu.pc = 0x0066;
@@ -971,6 +990,7 @@ static inline void processInt(void) {
   cpu.iff2 = 0;
   applyAfterLdAIRInterruptQuirk();
   pushPcForInterrupt();
+  Z80_PROFILE_INT(0);
   Z80_REFRESH(IR);
   refreshMemory();
 

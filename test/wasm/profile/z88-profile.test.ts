@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { PF_CODE, PF_EXECUTED, PF_READ, PF_SELF_MODIFIED, PF_WRITTEN } from "@common/profile/profileTypes";
+import { PF_CODE, PF_EXECUTED, PF_READ, PF_SELF_MODIFIED, PF_WRITTEN, PROFILE_KEY_ROOT } from "@common/profile/profileTypes";
 import { profileLocationOf, profileOffsetOf } from "@common/profile/layouts/profileLayout";
 import { z88ProfileLayout } from "@common/profile/layouts/z88";
 import { CardIds } from "@emu/machines/z88/CardIds";
@@ -284,5 +284,30 @@ Done:   jr Done
     const inAt = flat(program.symbol("Done") - 2);
     expect(m.readProfileCounts(inAt, 1)!.time[0]).toBe(11);
     expect(m.readProfileCounts(flat(program.symbol("Done")), 1)!.exec[0]).toBe(0);
+  });
+
+  it("tracks a CALL and its RET as one edge (PROFILER_PLAN Phase 3)", async () => {
+    const program = await s.loadCode(
+      `
+        .org $8000
+Main:   call Sub
+Done:   jr Done
+Sub:    nop
+        ret
+`
+    );
+    m.resetProfile();
+    m.setProfiling(true, true);
+    m.setProfileCalls(true);
+    s.runTo("Done");
+    m.setProfiling(false, true);
+    m.setProfileCalls(false);
+    const sub = flat(program.symbol("Sub"));
+    const own = Array.from(m.readProfileCounts(sub, 2)!.time).reduce((a, b) => a + b, 0);
+    expect(own).toBeGreaterThanOrEqual(14);
+    // --- An interrupt may land inside Sub: its time is the handler's, not Sub's (D11)
+    expect(m.readProfileEdges()!.filter((e) => e.callee === sub)).toEqual([
+      expect.objectContaining({ caller: PROFILE_KEY_ROOT, calls: 1, inclusive: own, exclusive: own })
+    ]);
   });
 });

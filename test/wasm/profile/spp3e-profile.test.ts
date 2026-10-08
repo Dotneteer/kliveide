@@ -3,7 +3,7 @@ import { PF_CODE, PF_EXECUTED, PF_READ, PF_SELF_MODIFIED, PF_WRITTEN } from "@co
 import { profileOffsetOf } from "@common/profile/layouts/profileLayout";
 import { spp3eProfileLayout as layout } from "@common/profile/layouts/spp3e";
 import { createSp128Session, type Sp128TestSession } from "../../harness/sp128";
-import { checkMapping, checkTimeSums, jump, out, profiled } from "./pagedSpectrumProfile";
+import { checkCallEdge, checkMapping, checkTimeSums, jump, out, profiled } from "./pagedSpectrumProfile";
 
 /*
  * The access profile on the +2A/+3/+2E/+3E core (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` Phase 2):
@@ -107,5 +107,9 @@ describe.each(["nofdd", "plus3-fdd1"] as const)("the access profile on the +3E c
 
   it("charges every T-state to an address or a header bucket (D7)", () => {
     checkTimeSums(s);
+  });
+
+  it("tracks a CALL and its RET as one edge (PROFILER_PLAN Phase 3)", () => {
+    checkCallEdge(s, layout);
   });
 });

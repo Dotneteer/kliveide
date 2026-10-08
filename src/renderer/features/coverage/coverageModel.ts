@@ -77,7 +77,8 @@ export function buildCoverageModel(output: KliveCompilerOutput | undefined, mach
 
   for (const item of compilation.listFileItems) {
     const segment = item.segmentIndex !== undefined ? compilation.segments?.[item.segmentIndex] : undefined;
-    const partition = resolvedPartitionFor(segment, item.address, machineId) ?? null;
+    // --- sjasmplus names the partition itself (its SLD page, PROFILER_PLAN D8b)
+    const partition = item.partition ?? resolvedPartitionFor(segment, item.address, machineId) ?? null;
     const key = `${item.fileIndex}:${item.lineNumber}`;
     let line = lineIndex.get(key);
     if (!line) {

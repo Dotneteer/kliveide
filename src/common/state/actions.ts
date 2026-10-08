@@ -290,11 +290,12 @@ export const incBreakpointHitsVersionAction: ActionCreator = () => ({
 
 /**
  * The access profile's switch (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D6): Debug -> Code
- * Coverage and `coverage on|off`. One switch per session, not a setting.
+ * Coverage and `coverage on|off`. One switch per session, not a setting. `calls` is the profiler's
+ * call tracker (`.plans/PROFILER_PLAN.md` D1).
  */
-export const setProfilingAction: ActionCreator = (enabled: boolean, counters: boolean) => ({
+export const setProfilingAction: ActionCreator = (enabled: boolean, counters: boolean, calls?: boolean) => ({
   type: "SET_PROFILING",
-  payload: { value: { enabled, counters } }
+  payload: { value: { enabled, counters, ...(calls ? { calls } : {}) } }
 });
 
 /**

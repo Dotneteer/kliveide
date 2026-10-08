@@ -5,7 +5,7 @@ import type { ErrorCodes } from "./assembler-errors";
 import { AssemblyModule } from "./assembly-module";
 import { IAssemblerErrorInfo, IBinarySegment, IFileLine, IListFileItem, ISourceFileItem, SourceMap, SymbolReferenceInfo, SymbolValueMap, TypedObject } from "@main/compiler-common/abstractions";
 import { CommonTokenType } from "./common-tokens";
-import type { SourceAnnotation } from "@abstractions/CompilerInfo";
+import type { ProcedureInfo, SourceAnnotation } from "@abstractions/CompilerInfo";
 import type { CopperBlock } from "@common/zxnext/copper/copperBlocks";
 
 /**
@@ -114,6 +114,12 @@ export class AssemblerOutput<
    * value (after fixups) and source line (`.plans/COPPER_DEBUGGING_PLAN.md` D8)
    */
   readonly copperBlocks: CopperBlock[] = [];
+
+  /**
+   * The `.proc`/`.endp` blocks' extents (`.plans/PROFILER_PLAN.md` D7): the profiler rolls time up
+   * per procedure, and the editor outline shows them
+   */
+  readonly procedures: ProcedureInfo[] = [];
 
   /**
    * ZX Spectrum Next NEX file configuration

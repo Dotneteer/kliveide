@@ -1305,6 +1305,43 @@ class EmuMessageProcessor {
     return target.controller.getProfileStatus?.();
   }
 
+  // --- The profiler (`.plans/PROFILER_PLAN.md` D1, D2, D12)
+
+  startProfiling(options?: { calls?: boolean; at?: number; until?: number }) {
+    const controller = this.machineService.getMachineController();
+    if (!controller?.startProfiling?.(options)) return undefined;
+    return controller.getProfileStatus?.();
+  }
+
+  stopProfiling() {
+    const controller = this.machineService.getMachineController();
+    if (!controller?.stopProfiling?.()) return undefined;
+    return controller.getProfileStatus?.();
+  }
+
+  getProfileEdges() {
+    const target = this.profileTarget();
+    if (!target) return undefined;
+    return { info: target.status, edges: target.source.readProfileEdges?.() ?? [] };
+  }
+
+  getProfileSlotOffsets() {
+    const target = this.profileTarget();
+    if (!target) return undefined;
+    const layout = profileLayoutOf(target.source.profileMachineId);
+    if (!layout) return undefined;
+    const machine = target.controller.machine;
+    const addresses = Array.from({ length: 8 }, (_, slot) => slot * 0x2000);
+    const source = target.source;
+    return resolveProfileOffsets(
+      layout,
+      (address) => machine.getPartition?.(address),
+      addresses,
+      undefined,
+      source.currentProfileOffset ? (address) => source.currentProfileOffset!(address) : undefined
+    ).map((offset) => (offset < 0 ? null : offset));
+  }
+
   /**
    * Moves the history cursor (`.plans/LITE_STEP_BACK_PLAN.md` D4).
    */

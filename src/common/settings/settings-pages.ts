@@ -68,6 +68,7 @@ import {
   SETTING_EMU_PROFILE_RESET_AFTER_INJECTION,
   SETTING_EMU_PROFILE_RESET_ON_START,
   SETTING_IDE_COVERAGE_LINE_TINT,
+  SETTING_IDE_PROFILER_INLAYS,
   SETTING_EMU_TC2048_ROM,
   SETTING_EMU_TC2068_ROM,
   SETTING_EMU_TRDOS_ROM,
@@ -649,6 +650,16 @@ export const SETTINGS_ROWS: SettingsRow[] = [
     description: "A tinted background as well as the coverage strip",
     editor: "switch",
     source: setting(SETTING_IDE_COVERAGE_LINE_TINT),
+    when: { kind: "feature", feature: MF_PROFILE }
+  },
+  {
+    id: "profilerInlays",
+    page: "debugging",
+    group: "Coverage and profiling",
+    title: "Profile hints in the editor",
+    description: "Each routine's first line shows its share of the time and its calls",
+    editor: "switch",
+    source: setting(SETTING_IDE_PROFILER_INLAYS),
     when: { kind: "feature", feature: MF_PROFILE }
   },
 

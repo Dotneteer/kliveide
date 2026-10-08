@@ -1,4 +1,4 @@
-import type { ProfileCounts, ProfileInfo, ProfileTouchedByte } from "@common/profile/profileTypes";
+import type { ProfileCounts, ProfileEdge, ProfileInfo, ProfileTouchedByte } from "@common/profile/profileTypes";
 
 /**
  * A machine whose core keeps an access profile (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §4.2):
@@ -31,6 +31,15 @@ export interface IAccessProfileSource {
   currentProfileOffset?(address: number): number | undefined;
   /** Merges a saved run into the profile (D16, `coverage load`): flags OR-ed, counts added */
   mergeProfile(bytes: readonly ProfileTouchedByte[], totals: { instructions: number; timeTotal: number }): void;
+  /**
+   * The call tracker (`.plans/PROFILER_PLAN.md` D1, D9): on starts an empty call stack, off closes
+   * the open frames. Optional: a source without it has the flat profile only.
+   */
+  setProfileCalls?(on: boolean): void;
+  /** Arms the profiling window's start and stop markers, CPU addresses (D2); undefined disarms */
+  armProfileWindow?(start: number | undefined, stop: number | undefined): void;
+  /** The call graph's edges, open frames folded in (D12) */
+  readProfileEdges?(): ProfileEdge[] | undefined;
 }
 
 /** Whether a machine keeps an access profile */

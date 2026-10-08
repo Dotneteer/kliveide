@@ -30,6 +30,8 @@ export const SETTING_EMU_PROFILE_RESET_AFTER_INJECTION = "emuOptions.profileRese
 export const SETTING_EMU_PROFILE_COUNTERS = "emuOptions.profileCounters";
 /** Tint covered source lines' background as well as marking the strip (D12): off */
 export const SETTING_IDE_COVERAGE_LINE_TINT = "ideViewOptions.coverageLineTint";
+/** The profiler's hints at each routine's first line (`.plans/PROFILER_PLAN.md` D15): off */
+export const SETTING_IDE_PROFILER_INLAYS = "ideViewOptions.profilerInlays";
 /** The TR-DOS ROM file the Pentagon's Beta 128 boots (`.plans/BETA128_TRDOS_PLAN.md` Q1): Klive cannot ship it */
 export const SETTING_EMU_TRDOS_ROM = "emuOptions.trdosRomFile";
 /** The TC2048 ROM file the Timex boots (`.plans/TIMEX_SCORPION_PLAN.md` P5): Klive cannot ship it */

@@ -165,6 +165,16 @@ describe("harness session", () => {
     expect(s.resetProfile().profileInfo().instructions).toBe(0);
   });
 
+  it("profile({ calls }) / profileEdges: one edge per caller/callee pair, by physical offset", async () => {
+    const s = await createSession();
+    await s.loadCode(" .org $8000\nStart: call Sub\n jr $\nSub: ret");
+    const sub = 0x40000 + s.partition(0x8000)! * 0x2000 + 5;
+    s.resetProfile().profile(true, { calls: true }).step(2).profile(false, { calls: false });
+    const edges = s.profileEdges();
+    expect(edges).toHaveLength(1);
+    expect(edges[0]).toMatchObject({ callee: sub, calleeAddress: 0x8005, calls: 1 });
+  });
+
   it("reset is a soft reset: PC back to 0, RAM kept", async () => {
     const s = await createSession();
     await s.loadCode(` .org $8000\n ld a,1\n jr $`);

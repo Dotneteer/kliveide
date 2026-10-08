@@ -1,4 +1,4 @@
-import type { ProfileCounts, ProfileInfo, ProfileTouchedByte } from "@common/profile/profileTypes";
+import type { ProfileCounts, ProfileEdge, ProfileInfo, ProfileTouchedByte } from "@common/profile/profileTypes";
 import { hasProfileExports, WasmProfileReader } from "./WasmProfileReader";
 
 /*
@@ -60,5 +60,17 @@ export class WasmProfileSource {
 
   merge(bytes: readonly ProfileTouchedByte[], totals: { instructions: number; timeTotal: number }): void {
     this.reader()?.merge(bytes, totals);
+  }
+
+  setCalls(on: boolean): void {
+    this.reader()?.setCalls(on);
+  }
+
+  arm(start: number | undefined, stop: number | undefined): void {
+    this.reader()?.arm(start, stop);
+  }
+
+  edges(): ProfileEdge[] | undefined {
+    return this.reader()?.edges();
   }
 }

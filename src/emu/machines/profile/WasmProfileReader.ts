@@ -1,7 +1,11 @@
 import {
+  PROFILE_EDGE_SIZE,
   PROFILE_ENTRY_SIZE,
+  PROFILE_FRAME_SIZE,
   PROFILE_PAGE_SIZE,
   type ProfileCounts,
+  type ProfileEdge,
+  type ProfileEdgeKind,
   type ProfileInfo,
   type ProfileTouchedByte
 } from "@common/profile/profileTypes";
@@ -22,7 +26,11 @@ export const Z80_PROFILE_CORE_EXPORTS = [
   "z80ProfileSetEnabled",
   "z80ProfileReset",
   "z80ProfileMergeByte",
-  "z80ProfileMergeTotals"
+  "z80ProfileMergeTotals",
+  "z80ProfileSetCalls",
+  "z80ProfileArm",
+  "z80ProfileGetEdgesOffset",
+  "z80ProfileGetStackOffset"
 ] as const;
 
 /** The profile's exports, as a core's export type includes them */
@@ -35,6 +43,10 @@ export type Z80ProfileCoreExports = {
   z80ProfileReset(): void;
   z80ProfileMergeByte(phys: number, flags: number, exec: number, read: number, write: number, timeLo: number, timeHi: number): void;
   z80ProfileMergeTotals(instructionsLo: number, instructionsHi: number, timeLo: number, timeHi: number): void;
+  z80ProfileSetCalls(on: number): void;
+  z80ProfileArm(start: number, stop: number): void;
+  z80ProfileGetEdgesOffset(): number;
+  z80ProfileGetStackOffset(): number;
 };
 
 /** What the reader needs of a core */
@@ -48,7 +60,7 @@ export function hasProfileExports(exports: unknown): exports is WasmProfileExpor
 
 /** "KPRF" */
 export const PROFILE_MAGIC = 0x4652504b;
-export const PROFILE_VERSION = 1;
+export const PROFILE_VERSION = 2;
 
 /** The header's field offsets (`Z80ProfileHeader`) */
 const H_MAGIC = 0;
@@ -74,6 +86,41 @@ const H_FLAGS_OFFSET = 100;
 const H_PAGE_MAP_OFFSET = 104;
 const H_POOL_OFFSET = 108;
 const H_PAGE_MAP_ENTRIES = 112;
+// --- The call tracker (version 2, `.plans/PROFILER_PLAN.md` §4.2)
+const H_CALLS_ON = 11;
+const H_STACK_RESYNCS = 116;
+const H_DEPTH_OVERFLOWS = 120;
+const H_EDGES_DROPPED = 124;
+const H_EDGES_OFFSET = 128;
+const H_EDGE_CAPACITY = 132;
+const H_EDGES_USED = 136;
+const H_STACK_OFFSET = 140;
+const H_DEPTH = 148;
+const H_CALLS = 152;
+const H_INTERRUPTS = 160;
+const H_ARMED_START = 168;
+const H_ARMED_STOP = 172;
+const H_WINDOW_CLOSED = 176;
+
+/** Edge field offsets (`Z80ProfileEdge`) */
+const G_CALLER = 0;
+const G_CALLEE = 4;
+const G_CALLS = 8;
+const G_CALLEE_ADDR = 12;
+const G_KIND = 14;
+const G_INCLUSIVE = 16;
+const G_EXCLUSIVE = 24;
+
+/** Frame field offsets (`Z80ProfileFrame`) */
+const F_EDGE = 4;
+const F_START = 8;
+const F_CHILD = 16;
+const F_EXCLUDED = 24;
+const F_IS_INT = 36;
+const F_NESTED = 37;
+
+const EDGE_KINDS: Record<number, ProfileEdgeKind> = { 1: "call", 2: "rst", 3: "int", 4: "im2", 5: "nmi" };
+const NONE = 0xffffffff;
 
 /** A page map entry for a page that found the pool full */
 const PAGE_DROPPED = 0xffff;
@@ -133,8 +180,88 @@ export class WasmProfileReader {
       timeTotal: u64(v, o + H_TIME_TOTAL),
       instructions: u64(v, o + H_INSTRUCTIONS),
       generation: v.getUint32(o + H_GENERATION, true),
-      timeUnit: this.timeUnit
+      timeUnit: this.timeUnit,
+      callsOn: v.getUint8(o + H_CALLS_ON) !== 0,
+      depth: v.getUint32(o + H_DEPTH, true),
+      stackResyncs: v.getUint32(o + H_STACK_RESYNCS, true),
+      depthOverflows: v.getUint32(o + H_DEPTH_OVERFLOWS, true),
+      edgesDropped: v.getUint32(o + H_EDGES_DROPPED, true),
+      edgesUsed: v.getUint32(o + H_EDGES_USED, true),
+      edgeCapacity: v.getUint32(o + H_EDGE_CAPACITY, true),
+      calls: u64(v, o + H_CALLS),
+      interrupts: u64(v, o + H_INTERRUPTS),
+      armedStart: marker(v.getUint32(o + H_ARMED_START, true)),
+      armedStop: marker(v.getUint32(o + H_ARMED_STOP, true)),
+      windowClosed: v.getUint32(o + H_WINDOW_CLOSED, true)
     };
+  }
+
+  /** Turns the call tracker on or off (D1); on starts an empty stack, off closes the open frames */
+  setCalls(on: boolean): void {
+    this.exports.z80ProfileSetCalls(on ? 1 : 0);
+  }
+
+  /**
+   * Arms the profiling window (D2): counting waits for the first instruction at `start`; profiling
+   * stops at the next instruction at `stop` after that. Undefined disarms a marker.
+   */
+  arm(start: number | undefined, stop: number | undefined): void {
+    this.exports.z80ProfileArm(start === undefined ? NONE : start & 0xffff, stop === undefined ? NONE : stop & 0xffff);
+  }
+
+  /**
+   * The call graph's edges (G5.4), with the frames still open folded in as if they returned now:
+   * a profile stopped inside a routine (D1 freezes it) still shows that routine's time so far. The
+   * fold follows the core's own pop: an open interrupt's time is excluded from what it interrupted
+   * (D11), and recursion counts inclusive time once (D12).
+   */
+  edges(): ProfileEdge[] {
+    const v = this.view();
+    const o = this.headerOffset;
+    const edgesOffset = v.getUint32(o + H_EDGES_OFFSET, true);
+    const capacity = v.getUint32(o + H_EDGE_CAPACITY, true);
+    const bySlot = new Map<number, ProfileEdge>();
+    for (let slot = 0; slot < capacity; slot++) {
+      const e = edgesOffset + slot * PROFILE_EDGE_SIZE;
+      const calls = v.getUint32(e + G_CALLS, true);
+      if (calls === 0) continue;
+      bySlot.set(slot, {
+        caller: v.getUint32(e + G_CALLER, true),
+        callee: v.getUint32(e + G_CALLEE, true),
+        calleeAddress: v.getUint16(e + G_CALLEE_ADDR, true),
+        kind: EDGE_KINDS[v.getUint8(e + G_KIND)] ?? "call",
+        calls,
+        inclusive: u64(v, e + G_INCLUSIVE),
+        exclusive: u64(v, e + G_EXCLUSIVE)
+      });
+    }
+    // --- The open frames, newest first, as `z80ProfileCallPop` would close them now
+    const depth = v.getUint32(o + H_DEPTH, true);
+    const stack = v.getUint32(o + H_STACK_OFFSET, true);
+    const now = u64(v, o + H_TIME_TOTAL);
+    let pendingChild = 0;
+    let pendingExcluded = 0;
+    for (let i = depth - 1; i >= 0; i--) {
+      const f = stack + i * PROFILE_FRAME_SIZE;
+      const excluded = u64(v, f + F_EXCLUDED) + pendingExcluded;
+      const spent = Math.max(0, now - u64(v, f + F_START));
+      const inclusive = Math.max(0, spent - excluded);
+      const exclusive = Math.max(0, inclusive - (u64(v, f + F_CHILD) + pendingChild));
+      const edge = bySlot.get(v.getUint32(f + F_EDGE, true));
+      if (edge) {
+        if (v.getUint8(f + F_NESTED) === 0) edge.inclusive += inclusive;
+        edge.exclusive += exclusive;
+        edge.open = (edge.open ?? 0) + 1;
+      }
+      if (v.getUint8(f + F_IS_INT) !== 0) {
+        pendingChild = 0;
+        pendingExcluded = excluded + inclusive;
+      } else {
+        pendingChild = inclusive;
+        pendingExcluded = excluded;
+      }
+    }
+    return [...bySlot.values()];
   }
 
   /** Turns profiling on or off; `counters` keeps the counter pool too (D2) */
@@ -293,6 +420,11 @@ export class WasmProfileReader {
   private poolOffset(): number {
     return this.view().getUint32(this.headerOffset + H_POOL_OFFSET, true);
   }
+}
+
+/** An armed-window marker: -1 when not armed */
+function marker(value: number): number {
+  return value === NONE ? -1 : value;
 }
 
 /** A little-endian u64 as a number (exact up to 2^53) */

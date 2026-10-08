@@ -1074,7 +1074,27 @@ A file viewer whose file the running build may refuse (a `.klr` replays only in 
 it) says so in one row, **Opens in this build:**, answered in a sentence - yes, no with the reason and
 the fallback, or "not known yet" with why - rather than a flag, because the useful part is the reason.
 
-## Verify Geometry In The Running App, Never In A Replica
+## A Share Is A Wash Behind Its Figure; Time That Is Nobody's Recedes In Italics
+
+The Profiler (`.plans/PROFILER_PLAN.md` D3, D4, D14) set three rules for tables of measured time:
+
+- **A percentage of a whole is drawn as a bar behind the figure**, in `--bgcolor-profiler-bar`
+  (the primary accent's subtle wash), never as a coloured number or a status hue. The figure stays
+  in the data ink and stays legible over the bar; the bar is the at-a-glance ranking. A heat ramp
+  is for patterns across many cells (the memory view); a single share per row is a bar.
+- **Rows that are time but not a routine** (HALT waiting, interrupt acknowledge, DMA, snooze) and the
+  call tree's roots are **italic in `--color-profiler-pseudo`** (the secondary data ink): present,
+  counted, but not code you can fix. A recursive repeat is `--color-profiler-recursive` with `↺`.
+- **A caveat about the data's accuracy is a warning-ink fact in the header** with its explanation
+  in the tooltip (`--color-profiler-warning`: stack switches, overflowed depth, a full edge table),
+  never an error colour and never a modal - the data is still useful.
+- **A column that can never hold anything on this machine is omitted**, not left blank: the
+  partition column appears only on machines that have banks.
+- **A view with tabs inside a document uses a segmented `role="tablist"`** in the panel header,
+  styled like the Sprite Inspector's (accent fill on the selected segment), so tabs never read as
+  the document tab strip.
+
+
 
 This is the process lesson from the same work, and it cost two rounds of shipping a "fix" the user
 could see was still broken.

@@ -104,7 +104,8 @@ export function sampleProfile(
 ): ProfileSample {
   const flags = new Uint8Array(offsets.length);
   const exec = withCounts && status.counters ? new Uint32Array(offsets.length) : undefined;
-  if (offsets.length === 0) return { info: status, flags, exec };
+  const time = exec ? new Float64Array(offsets.length) : undefined;
+  if (offsets.length === 0) return { info: status, flags, exec, time };
   // --- One read over the span the offsets cover, when it is compact; per offset otherwise
   let min = Infinity;
   let max = -Infinity;
@@ -120,13 +121,18 @@ export function sampleProfile(
       if (o < 0) return;
       flags[i] = all?.[o - min] ?? 0;
       if (exec && counts) exec[i] = counts.exec[o - min];
+      if (time && counts) time[i] = counts.time[o - min];
     });
   } else {
     offsets.forEach((o, i) => {
       if (o < 0) return;
       flags[i] = source.readProfileFlags(o, 1)?.[0] ?? 0;
-      if (exec) exec[i] = source.readProfileCounts(o, 1)?.exec[0] ?? 0;
+      if (exec) {
+        const counts = source.readProfileCounts(o, 1);
+        exec[i] = counts?.exec[0] ?? 0;
+        if (time) time[i] = counts?.time[0] ?? 0;
+      }
     });
   }
-  return { info: status, flags, exec };
+  return { info: status, flags, exec, time };
 }

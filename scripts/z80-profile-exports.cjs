@@ -15,13 +15,30 @@ const Z80_PROFILE_EXPORTS = [
   "z80ProfileReset",
   // --- `coverage load` (D16): a saved run merged into the live one
   "z80ProfileMergeByte",
-  "z80ProfileMergeTotals"
+  "z80ProfileMergeTotals",
+  // --- The call tracker and the armed window (`.plans/PROFILER_PLAN.md` D2, D9-D12)
+  "z80ProfileSetCalls",
+  "z80ProfileArm",
+  "z80ProfileGetEdgesOffset",
+  "z80ProfileGetStackOffset"
 ];
 
 /**
  * The statics a Klive state file and a keyframe leave out (traps T4, T7): the profile describes the
  * present's run, not machine state, so a restore keeps the live profile and a replay does not count
  */
-const Z80_PROFILE_VOLATILE_SYMBOLS = ["z80ProfileHeader", "z80ProfileFlags", "z80ProfilePageMap", "z80ProfilePool"];
+const Z80_PROFILE_VOLATILE_SYMBOLS = [
+  "z80ProfileHeader",
+  "z80ProfileFlags",
+  "z80ProfilePageMap",
+  "z80ProfilePool",
+  // --- The call tracker (PROFILER_PLAN §4.2): profile data too, never machine state
+  "z80ProfileStack",
+  "z80ProfileEdges",
+  "z80ProfileRootLastCallee",
+  "z80ProfileRootLastEdge",
+  "z80ProfileCallEvent",
+  "z80ProfileCallEventTime"
+];
 
 module.exports = { Z80_PROFILE_EXPORTS, Z80_PROFILE_VOLATILE_SYMBOLS };

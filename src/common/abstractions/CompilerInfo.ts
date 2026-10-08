@@ -612,6 +612,12 @@ export type ListFileItem = {
   codeLength?: number;
   sourceText?: string;
   isMacroInvocation?: boolean;
+  /**
+   * The partition the line's code lives in, when the compiler knows it directly (sjasmplus's SLD
+   * page on a banked device, `.plans/PROFILER_PLAN.md` D8b); the Klive assembler's comes from the
+   * segment's bank instead
+   */
+  partition?: number;
 };
 
 /**
@@ -870,6 +876,32 @@ export type DebuggableOutput = InjectableOutput & {
    * consecutive `.copper` emissions, matched against the live Copper RAM by instruction shape.
    */
   readonly copperBlocks?: CopperBlock[];
+
+  /**
+   * The Klive assembler's `.proc`/`.endp` extents (`.plans/PROFILER_PLAN.md` D7): the profiler's
+   * second-best routine source after Klive BASIC callables (D6).
+   */
+  readonly procedures?: ProcedureInfo[];
+};
+
+/** One `.proc`/`.endp` block's extent (`.plans/PROFILER_PLAN.md` D7) */
+export type ProcedureInfo = {
+  /** The label on the `.proc` line, or the enclosing one; dotted with its module and outer procs */
+  readonly name: string;
+  /** Its first byte's address */
+  readonly startAddress: number;
+  /** One past its last byte */
+  readonly endAddress: number;
+  /**
+   * The output segment it starts in: its bank (`resolvedPartitionFor`) names the partition, which
+   * depends on the machine (a 16K bank is two 8K partitions on the Next)
+   */
+  readonly segmentIndex: number;
+  /** Index into `sourceFileList` */
+  readonly fileIndex: number;
+  /** The `.proc` and `.endp` lines, 1-based */
+  readonly startLine: number;
+  readonly endLine: number;
 };
 
 /** A source-comment annotation the build found (`.plans/LOGPOINTS_PLAN.md` §4.7). */

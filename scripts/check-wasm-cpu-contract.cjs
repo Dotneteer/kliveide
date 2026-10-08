@@ -27,7 +27,7 @@ const profileMachineMacros = [
   "Z80_PROFILE_PHYS_WRITE",
   "Z80_PROFILE_FRAME_TICKS"
 ];
-const profileHookNames = ["FETCH", "READ", "WRITE", "END", "MARK", "ACK_END", "HALT_END"];
+const profileHookNames = ["FETCH", "READ", "WRITE", "END", "MARK", "ACK_END", "HALT_END", "CALL", "RET", "INT"];
 const sharedSpectrumDeviceSources = {
   ula: resolve(root, "src/emu/machines/zxSpectrum/wasm/common/zx-spectrum-ula.c"),
   keyboard: resolve(root, "src/emu/machines/zxSpectrum/wasm/common/zx-spectrum-keyboard.c"),
@@ -238,7 +238,11 @@ function validateSharedCpuSource() {
     "#define Z80_PROFILE_END() ((void)0)",
     "#define Z80_PROFILE_MARK() ((void)0)",
     "#define Z80_PROFILE_ACK_END(nmi) ((void)0)",
-    "#define Z80_PROFILE_HALT_END() ((void)0)"
+    "#define Z80_PROFILE_HALT_END() ((void)0)",
+    // --- The call tracker's (`.plans/PROFILER_PLAN.md` D9)
+    "#define Z80_PROFILE_CALL(rst) ((void)0)",
+    "#define Z80_PROFILE_RET() ((void)0)",
+    "#define Z80_PROFILE_INT(nmi) ((void)0)"
   ]) {
     if (!source.includes(hookDefault)) {
       errors.push(`shared CPU source does not declare the default-no-op hook: ${hookDefault}`);

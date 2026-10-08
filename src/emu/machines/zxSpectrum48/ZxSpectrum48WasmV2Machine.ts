@@ -2,7 +2,7 @@ import { WasmHistorySource } from "../history/WasmHistorySource";
 import { WasmProfileSource } from "../profile/WasmProfileSource";
 import type { IExecutionHistorySource } from "@emu/abstractions/IExecutionHistorySource";
 import type { IAccessProfileSource } from "@emu/abstractions/IAccessProfileSource";
-import type { ProfileCounts, ProfileInfo, ProfileTouchedByte } from "@common/profile/profileTypes";
+import type { ProfileCounts, ProfileEdge, ProfileInfo, ProfileTouchedByte } from "@common/profile/profileTypes";
 import type { ExecutionHistoryInfo, ExecutionHistoryPage } from "@common/history/historyTypes";
 import type { HistoryServiceSpan } from "@common/history/serviceSpans";
 import { conditionStoreOf, type ConditionStore } from "../conditionStore";
@@ -153,6 +153,18 @@ export class ZxSpectrum48WasmV2Machine
 
   mergeProfile(bytes: readonly ProfileTouchedByte[], totals: { instructions: number; timeTotal: number }): void {
     this.wasmV2Profile.merge(bytes, totals);
+  }
+
+  setProfileCalls(on: boolean): void {
+    this.wasmV2Profile.setCalls(on);
+  }
+
+  armProfileWindow(start: number | undefined, stop: number | undefined): void {
+    this.wasmV2Profile.arm(start, stop);
+  }
+
+  readProfileEdges(): ProfileEdge[] | undefined {
+    return this.wasmV2Profile.edges();
   }
 
   public readonly implementation = "wasm" as const;

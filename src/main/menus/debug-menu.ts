@@ -145,6 +145,33 @@ export function createDebugMenu(context: MenuContext): MenuItemConstructorOption
             click: async () => {
               await getIdeApi().executeCommand("coverage reset");
             }
+          },
+          // --- The profiler (`.plans/PROFILER_PLAN.md` D1): Start turns the flat profile and the
+          // --- call graph on and resets them; Stop freezes the data and opens the Profiler
+          { type: "separator" as const },
+          {
+            id: "start_profiling",
+            label: "Start Profiling",
+            enabled: !context.appState?.emulatorState?.profiling?.enabled,
+            click: async () => {
+              await getIdeApi().executeCommand("profile start -calls");
+            }
+          },
+          {
+            id: "stop_profiling",
+            label: "Stop Profiling",
+            enabled: !!context.appState?.emulatorState?.profiling?.enabled,
+            click: async () => {
+              await getIdeApi().executeCommand("profile stop");
+              await getIdeApi().executeCommand("show-profiler");
+            }
+          },
+          {
+            id: "show_profiler",
+            label: "Profiler",
+            click: async () => {
+              await getIdeApi().executeCommand("show-profiler");
+            }
           }
         ]
       : []),

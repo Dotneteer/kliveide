@@ -13,12 +13,57 @@ export const PF_READ = 0x04;
 export const PF_WRITTEN = 0x08;
 export const PF_SELF_MODIFIED = 0x10;
 export const PF_INTERRUPT = 0x20;
+/** A HALT waited here: the byte's time is mostly waiting (`.plans/PROFILER_PLAN.md` D4) */
+export const PF_HALT = 0x40;
 
 /** The pool's page size: counters are kept per 8K physical page */
 export const PROFILE_PAGE_SIZE = 0x2000;
 /** The size of one counter entry, and of the header, in bytes (`z80-profile.c`) */
 export const PROFILE_ENTRY_SIZE = 24;
-export const PROFILE_HEADER_SIZE = 128;
+export const PROFILE_HEADER_SIZE = 192;
+/** The call tracker's edge and frame sizes (`.plans/PROFILER_PLAN.md` §4.2) */
+export const PROFILE_EDGE_SIZE = 32;
+export const PROFILE_FRAME_SIZE = 48;
+
+/*
+ * The call tracker's keys (`z80-profile.c`): a callee or caller is a profile offset; these values
+ * above every profile span name the roots and the overflow edge
+ */
+/** The code outside every tracked call: what ran before profiling started (T5) or between calls */
+export const PROFILE_KEY_ROOT = 0xffffffff;
+/** The maskable interrupt's root (D11) */
+export const PROFILE_KEY_INT = 0xfffffffe;
+/** The NMI's root */
+export const PROFILE_KEY_NMI = 0xfffffffd;
+/** The edge that collects calls once the edge table is full (D12) */
+export const PROFILE_KEY_OTHER = 0xfffffffc;
+/** A callee nothing backs is keyed by its address with this bit set */
+export const PROFILE_KEY_UNMAPPED = 0x40000000;
+
+/** Whether a call-tracker key is a root (or the overflow edge) rather than a routine's entry */
+export function isProfileRootKey(key: number): boolean {
+  return key >= PROFILE_KEY_OTHER;
+}
+
+/** The event that first made an edge */
+export type ProfileEdgeKind = "call" | "rst" | "int" | "im2" | "nmi";
+
+/** One caller/callee pair of the call graph (G5.4), its time in the core's unit */
+export type ProfileEdge = {
+  /** The caller's entry (a profile offset), or a root key */
+  caller: number;
+  /** The callee's entry: a profile offset, or `PROFILE_KEY_UNMAPPED | address` */
+  callee: number;
+  /** The callee's CPU address when it was called */
+  calleeAddress: number;
+  kind: ProfileEdgeKind;
+  calls: number;
+  /** Counted at the callee's outermost activation only (D12: recursion is not counted twice) */
+  inclusive: number;
+  exclusive: number;
+  /** Activations still open when the edges were read: their time so far is included */
+  open?: number;
+};
 
 /** What the core's profile holds now */
 export type ProfileInfo = {
@@ -53,6 +98,28 @@ export type ProfileInfo = {
   generation: number;
   /** What the time counts in ("T-states", or the Next's "28 MHz ticks") */
   timeUnit: string;
+  // --- The call tracker (`.plans/PROFILER_PLAN.md` D1, D9-D12)
+  /** Whether the call tracker runs */
+  callsOn: boolean;
+  /** Frames open now */
+  depth: number;
+  /** Stack switches that flushed the call stack (D10) */
+  stackResyncs: number;
+  /** Calls past the stack's depth, not tracked (D10) */
+  depthOverflows: number;
+  /** Calls whose edge found the table full, charged to (other) (D12) */
+  edgesDropped: number;
+  edgesUsed: number;
+  edgeCapacity: number;
+  /** CALL and RST pushes tracked */
+  calls: number;
+  /** Interrupt and NMI pushes tracked */
+  interrupts: number;
+  /** The armed window's markers (D2): CPU addresses, -1 when not armed */
+  armedStart: number;
+  armedStop: number;
+  /** Bumped when an armed stop fired */
+  windowClosed: number;
 };
 
 /** The counters of a run of profile offsets */
@@ -99,6 +166,16 @@ export type ProfileStatus = ProfileInfo & {
    * until the next reset
    */
   abandonedInstructions: number;
+  /** One emulated frame in the time unit (PROFILER_PLAN D5): the "per frame" columns divide by it */
+  frameTicks?: number;
+  /** The time unit's frequency in Hz, for wall time (D5) */
+  clockHz?: number;
+};
+
+/** The call graph's edges (`getProfileEdges`) */
+export type ProfileEdges = {
+  info: ProfileStatus;
+  edges: ProfileEdge[];
 };
 
 /** The flags (and execution counts) at a list of addresses: what the editor strip reads */
@@ -108,6 +185,8 @@ export type ProfileSample = {
   flags: Uint8Array;
   /** Execution counts per requested address, when asked for and kept */
   exec?: Uint32Array;
+  /** The time of the instructions starting at each address, with `exec` (`.plans/PROFILER_PLAN.md` D15) */
+  time?: Float64Array;
 };
 
 /** Every touched byte: what the exports and the self-modifying-code report read */

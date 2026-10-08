@@ -1,5 +1,6 @@
 import Editor from "@monaco-editor/react";
 import { useCoverageDecorations, type CoverageClasses } from "@renderer/features/coverage/useCoverageDecorations";
+import { useProfilerInlays } from "@renderer/features/profiler/profilerInlays";
 import { DEFAULT_ACCENT, isAccentId, type AccentId } from "@common/theming/accents";
 import * as monacoEditor from "monaco-editor";
 import AutoSizer from "../../../../lib/react-virtualized-auto-sizer";
@@ -432,6 +433,8 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
 
   // --- Code coverage's strip (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D12): its own collection
   useCoverageDecorations(editor, editorReady, document.id, COVERAGE_CLASSES);
+  // --- The profiler's hints (`.plans/PROFILER_PLAN.md` D15), behind their setting
+  useProfilerInlays(editor, editorReady, document.id);
 
   // --- Refresh breakpoints when they may change
   useEffect(() => {

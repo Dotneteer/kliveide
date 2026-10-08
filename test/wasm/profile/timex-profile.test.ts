@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { profileLayoutOf } from "@common/profile/layouts";
 import { profileOffsetOf } from "@common/profile/layouts/profileLayout";
-import { PF_CODE, PF_EXECUTED, PF_READ, PF_WRITTEN } from "@common/profile/profileTypes";
+import { PF_CODE, PF_EXECUTED, PF_READ, PF_WRITTEN, PROFILE_KEY_ROOT } from "@common/profile/profileTypes";
 import { createTimexSession } from "../../harness/timex";
 
 /*
@@ -62,5 +62,25 @@ describe("the Timex's access profile", () => {
     expect(profileOffsetOf(layout, 8 + 6, 0xc000)).toBe(0x12000 + 0xc000);
     expect(profileOffsetOf(layout, -(3 + 6), 0xc000)).toBe(0x10000);
     expect(profileOffsetOf(layout, undefined, 0x8000)).toBe(0x8000);
+  });
+
+  it("tracks a CALL and its RET as one edge (PROFILER_PLAN Phase 3)", async () => {
+    const s = await createTimexSession({ model: "ts2068", rom: { bytes: new Uint8Array(0x6000) } });
+    // --- di; call $8006; jr $; $8006: nop; ret
+    s.poke(0x8000, [0xf3, 0xcd, 0x06, 0x80, 0x18, 0xfe, 0x00, 0xc9]);
+    s.machine.resetProfile();
+    s.machine.setProfiling(true, true);
+    s.machine.setProfileCalls(true);
+    s.machine.pc = 0x8000;
+    s.machine.sp = 0x9000;
+    s.step(4);
+    s.machine.setProfiling(false, true);
+    s.machine.setProfileCalls(false);
+    const sub = profileOffsetOf(layout, undefined, 0x8006)!;
+    const own = Array.from(s.machine.readProfileCounts(sub, 2)!.time).reduce((a, b) => a + b, 0);
+    expect(own).toBe(14);
+    expect(s.machine.readProfileEdges()!).toEqual([
+      expect.objectContaining({ caller: PROFILE_KEY_ROOT, callee: sub, calls: 1, inclusive: own, exclusive: own })
+    ]);
   });
 });

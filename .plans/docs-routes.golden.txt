@@ -85,6 +85,7 @@
 /working-with-ide/memory/index.html
 /working-with-ide/navigation/index.html
 /working-with-ide/pasta80/index.html
+/working-with-ide/profiler/index.html
 /working-with-ide/project-explorer/index.html
 /working-with-ide/reverse-debugging/index.html
 /working-with-ide/run-debug/index.html

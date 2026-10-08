@@ -31,6 +31,7 @@ import {
   MEMORY_EDITOR,
   COPPER_EDITOR,
   HISTORY_EDITOR,
+  PROFILER_EDITOR,
   SPRITES_EDITOR,
   TILEMAP_EDITOR,
   LAYER2_EDITOR,
@@ -54,6 +55,7 @@ import { ToolRendererInfo } from "./abstractions/ToolRendererInfo";
 import { createBasicPanel } from "./appIde/DocumentPanels/BasicPanel";
 import { createCopperListPanel } from "./appIde/DocumentPanels/CopperListPanel";
 import { createExecutionHistoryPanel } from "./appIde/DocumentPanels/ExecutionHistoryPanel";
+import { createProfilerPanel } from "./appIde/DocumentPanels/ProfilerPanel";
 import { createSpriteInspectorPanel } from "./appIde/DocumentPanels/SpriteInspector/SpriteInspectorPanel";
 import { createTilemapInspectorPanel } from "./appIde/DocumentPanels/TilemapInspector/TilemapInspectorPanel";
 import { createLayer2InspectorPanel } from "./appIde/DocumentPanels/Layer2Inspector/Layer2InspectorPanel";
@@ -460,6 +462,11 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     id: HISTORY_EDITOR,
     renderer: createExecutionHistoryPanel,
     icon: "history"
+  },
+  {
+    id: PROFILER_EDITOR,
+    renderer: createProfilerPanel,
+    icon: "gauge"
   },
   {
     id: SPRITES_EDITOR,

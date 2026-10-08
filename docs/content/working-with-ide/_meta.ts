@@ -20,6 +20,7 @@ export default {
   "execution-history": "The Execution History",
   "reverse-debugging": "Reverse Debugging",
   "code-coverage": "Code Coverage and the Heat Map",
+  profiler: "The Profiler",
   memory: "The Memory View",
   disassembly: "The Disassembly View",
   watch: "Watch Expressions",

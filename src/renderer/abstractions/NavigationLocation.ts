@@ -44,7 +44,9 @@ export type NavigationReason =
   | "tapeBlock"
   | "tabSwitch"
   | "explorer"
-  | "command";
+  | "command"
+  /** The Profiler document's double-click on a routine (`.plans/PROFILER_PLAN.md` D14). */
+  | "profiler";
 
 /** Every reason, for validating the `nav -r <reason>` option. */
 export const NAVIGATION_REASONS: readonly NavigationReason[] = [
@@ -60,7 +62,8 @@ export const NAVIGATION_REASONS: readonly NavigationReason[] = [
   "tapeBlock",
   "tabSwitch",
   "explorer",
-  "command"
+  "command",
+  "profiler"
 ];
 
 /** A recorded location. */

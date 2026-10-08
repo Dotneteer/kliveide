@@ -1553,6 +1553,54 @@ Use this command to set the memory view's heat map, as its **Heat** selector doe
 memory-heat <off|exec|read|write|all>
 ```
 
+## `profile`
+
+Use this command to control [the profiler](/working-with-ide/profiler). Alias: `prof`.
+
+```
+profile start [-calls] [-at <address|label>] [-until <address|label>]
+profile stop | reset | status
+profile top [n] [-by self|inclusive|calls] [-waiting]
+profile export <file> [-format fuse|csv|callgrind|speedscope] [-addresses] [-f]
+```
+
+- `start`: reset the profile and start a window. `-calls` records the call graph. `-at` starts counting
+  the first time the program reaches the address; `-until` stops profiling the next time it gets
+  there after that.
+- `stop`: stop profiling; the profile stays until the next start or reset.
+- `reset`: clear the profile.
+- `status`: whether profiling is on and armed, the time and frames measured, and the call graph's
+  counters (calls, interrupts, stack switches).
+- `top`: the top `n` routines (10 by default), sorted by self time, inclusive time or calls. `-waiting`
+  keeps time in `HALT` in the table.
+- `export`: write speedscope (`.json`), callgrind (`callgrind.out.*`, `.callgrind`), CSV (`.csv`) or
+  Fuse (`.prof`); `-format` overrides the file name, `-addresses` writes the Addresses table as CSV,
+  `-f` replaces an existing file.
+
+## `profile-start`
+
+Use this command to start profiling, as `profile start` does. Alias: `pst`.
+
+```
+profile-start [-calls] [-at <address|label>] [-until <address|label>]
+```
+
+## `profile-stop`
+
+Use this command to stop profiling, as `profile stop` does. Alias: `psp`.
+
+```
+profile-stop
+```
+
+## `show-profiler`
+
+Use this command to display the Profiler document. Alias: `shprof`. `hide-profiler` (`hprof`) closes it.
+
+```
+show-profiler
+```
+
 ## `show-disassembly`
 
 Use this command to display the machine code disassembly view, and optionally to show an address in

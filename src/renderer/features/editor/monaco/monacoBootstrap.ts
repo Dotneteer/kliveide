@@ -20,6 +20,10 @@ import { registerZ80Providers } from "@renderer/appIde/services/z80-providers";
 import { basicIntelSingleton } from "@renderer/appIde/services/BasicIntelService";
 import { registerBasicProviders } from "@renderer/appIde/services/basic-providers";
 import {
+  PROFILER_INLAY_LANGUAGES,
+  registerProfilerInlayProvider
+} from "@renderer/features/profiler/profilerInlays";
+import {
   applyMonacoExternalEdits,
   getMonacoNavigationPosition,
   getMonacoProjectFiles,
@@ -76,6 +80,9 @@ export async function initializeMonaco(): Promise<void> {
     navigateToFile: navigateMonacoToFile,
     applyExternalEdits: applyMonacoExternalEdits
   });
+
+  // --- The profiler's hints at each routine's first line (`.plans/PROFILER_PLAN.md` D15)
+  for (const language of PROFILER_INLAY_LANGUAGES) registerProfilerInlayProvider(monaco, language);
 
   monacoEditor.editor.registerEditorOpener({
     openCodeEditor(

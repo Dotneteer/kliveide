@@ -5,8 +5,10 @@ import {
   PF_INTERRUPT,
   PF_READ,
   PF_SELF_MODIFIED,
-  PF_WRITTEN
+  PF_WRITTEN,
+  PROFILE_KEY_ROOT
 } from "@common/profile/profileTypes";
+import { profileOffsetOf } from "@common/profile/layouts/profileLayout";
 import { zx8081ProfileLayout } from "@common/profile/layouts/zx8081";
 import { createZx81Session, type Zx81TestSession } from "../../harness/zx81";
 
@@ -265,5 +267,20 @@ describe("the ZX81's display file in the profile", () => {
     const dFile = s.peekWord(0x400c);
     // --- "H": written by PRINT, then fetched through the echo as a NOP the ULA forced onto the bus
     expect(s.machine.readProfileFlags(dFile + 1, 1)![0] & (E | C | W | S)).toBe(E | C | W | S);
+  });
+
+  it("tracks a CALL and its RET as one edge (PROFILER_PLAN Phase 3)", async () => {
+    const s = await session();
+    // --- The prologue, then call $6008; ret; $6008: nop; ret
+    s.poke(MAIN, [...PROLOGUE, 0xcd, 0x08, 0x60, 0xc9, 0x00, 0x00, 0xc9]);
+    s.machine.setProfileCalls(true);
+    call(s, MAIN);
+    s.machine.setProfileCalls(false);
+    const sub = profileOffsetOf(zx8081ProfileLayout, undefined, 0x6008)!;
+    const own = Array.from(s.machine.readProfileCounts(sub, 2)!.time).reduce((a, b) => a + b, 0);
+    expect(own).toBeGreaterThanOrEqual(14);
+    expect(s.machine.readProfileEdges()!.filter((e) => e.callee === sub)).toEqual([
+      expect.objectContaining({ caller: PROFILE_KEY_ROOT, calls: 1, inclusive: own, exclusive: own })
+    ]);
   });
 });

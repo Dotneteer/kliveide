@@ -4,7 +4,7 @@ import { profileOffsetOf, type ProfileLayout } from "@common/profile/layouts/pro
 import { scorpionProfileLayout, sp128ProfileLayout } from "@common/profile/layouts/sp128";
 import { createSp128Session, type Sp128TestSession } from "../../harness/sp128";
 import { buildTestTrdosRom, ENTRY } from "../../sp128-hw/beta128/test-rom";
-import { checkMapping, checkTimeSums, jump, out, profiled } from "./pagedSpectrumProfile";
+import { checkCallEdge, checkMapping, checkTimeSums, jump, out, profiled } from "./pagedSpectrumProfile";
 
 /*
  * The access profile on the 128K core (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` Phase 2): the ZX
@@ -119,6 +119,10 @@ describe.each(MODELS)("the access profile on the $model", ({ model, layout, bank
 
   it("charges every T-state to an address or a header bucket (D7)", () => {
     checkTimeSums(s);
+  });
+
+  it("tracks a CALL and its RET as one edge (PROFILER_PLAN Phase 3)", () => {
+    checkCallEdge(s, layout);
   });
 });
 

@@ -74,7 +74,7 @@ import {
   type IExecutionHistorySource
 } from "@emu/abstractions/IExecutionHistorySource";
 import { isAccessProfileSource, type IAccessProfileSource } from "@emu/abstractions/IAccessProfileSource";
-import type { ProfileInfo } from "@common/profile/profileTypes";
+import type { ProfileStatus } from "@common/profile/profileTypes";
 import { incProfileVersionAction, setProfilingAction } from "@common/state/actions";
 import {
   SETTING_EMU_FAST_LOAD,
@@ -234,10 +234,20 @@ export class MachineController implements IMachineController {
     return isAccessProfileSource(this.machine) ? this.machine : undefined;
   }
 
-  /** What the profile holds, with what the controller adds; undefined without one */
-  getProfileStatus(): (ProfileInfo & { abandonedInstructions: number }) | undefined {
+  /**
+   * What the profile holds, with what the controller adds: the abandoned-future note and the frame
+   * length and clock in the profile's time unit (`.plans/PROFILER_PLAN.md` D5) - on the Next its 28
+   * MHz reference, whatever the CPU speed; elsewhere the CPU's T-states at the current multiplier
+   */
+  getProfileStatus(): ProfileStatus | undefined {
     const info = this.profileSource()?.getProfileInfo();
-    return info ? { ...info, abandonedInstructions: this._abandonedInstructions } : undefined;
+    if (!info) return undefined;
+    const machine = this.machine as Partial<{ tactsInFrame: number; baseClockFrequency: number; clockMultiplier: number }>;
+    const ticks28 = info.timeUnit === "28 MHz ticks";
+    const multiplier = ticks28 ? 1 : Math.max(1, machine.clockMultiplier ?? 1);
+    const frameTicks = machine.tactsInFrame ? machine.tactsInFrame * multiplier : undefined;
+    const clockHz = machine.baseClockFrequency ? machine.baseClockFrequency * (ticks28 ? 8 : multiplier) : undefined;
+    return { ...info, abandonedInstructions: this._abandonedInstructions, frameTicks, clockHz };
   }
 
   /**
@@ -251,10 +261,52 @@ export class MachineController implements IMachineController {
     if (!source) return false;
     const keepCounts = counters ?? this.flagSetting(SETTING_EMU_PROFILE_COUNTERS, true);
     source.setProfiling(enabled, keepCounts);
-    this.store?.dispatch(setProfilingAction(enabled, keepCounts), "emu");
+    this.store?.dispatch(setProfilingAction(enabled, keepCounts, this.profileCallsOn(source)), "emu");
     this.publishProfileVersion(true);
     return true;
   }
+
+  /** Whether the machine's call tracker runs now */
+  private profileCallsOn(source: IAccessProfileSource): boolean {
+    return !!source.getProfileInfo()?.callsOn;
+  }
+
+  /**
+   * A profiling window (`.plans/PROFILER_PLAN.md` D1, D2): resets the profile and turns it on, with
+   * counters (the flat profile needs them) and, when asked, the call tracker; `at`/`until` arm the
+   * one-shot markers that start and stop the window at those CPU addresses
+   * @returns false when the machine has no profile
+   */
+  startProfiling(options: { calls?: boolean; at?: number; until?: number } = {}): boolean {
+    const source = this.profileSource();
+    if (!source) return false;
+    source.resetProfile();
+    this._abandonedInstructions = 0;
+    source.setProfiling(true, true);
+    source.setProfileCalls?.(!!options.calls);
+    source.armProfileWindow?.(options.at, options.until);
+    this._seenWindowClosed = source.getProfileInfo()?.windowClosed ?? 0;
+    this.store?.dispatch(setProfilingAction(true, true, this.profileCallsOn(source)), "emu");
+    this.publishProfileVersion(true);
+    return true;
+  }
+
+  /**
+   * Ends a profiling window (D1): profiling stops without a reset, so the data stays frozen - the
+   * call tracker's open frames included, which the edges fold in
+   */
+  stopProfiling(): boolean {
+    const source = this.profileSource();
+    if (!source) return false;
+    const info = source.getProfileInfo();
+    source.setProfiling(false, info?.counters ?? true);
+    this.store?.dispatch(setProfilingAction(false, info?.counters ?? true, info?.callsOn), "emu");
+    this.publishProfileVersion(true);
+    return true;
+  }
+
+  /** The armed stop marker's count when the IDE last heard of it (D2) */
+  private _seenWindowClosed = 0;
 
   /** Clears the profile; the abandoned-future note goes with it */
   resetProfile(): void {
@@ -269,7 +321,10 @@ export class MachineController implements IMachineController {
    */
   applyProfilingState(): void {
     const profiling = this.store?.getState()?.emulatorState?.profiling;
-    if (profiling?.enabled) this.profileSource()?.setProfiling(true, profiling.counters);
+    if (profiling?.enabled) {
+      this.profileSource()?.setProfiling(true, profiling.counters);
+      if (profiling.calls) this.profileSource()?.setProfileCalls?.(true);
+    }
   }
 
   /**
@@ -281,6 +336,11 @@ export class MachineController implements IMachineController {
     if (!source || !this.store) return;
     const info = source.getProfileInfo();
     if (!info) return;
+    // --- An armed stop marker turned profiling off inside the core (D2): the switch follows
+    if (info.windowClosed !== this._seenWindowClosed) {
+      this._seenWindowClosed = info.windowClosed;
+      if (!info.enabled) this.store.dispatch(setProfilingAction(false, info.counters, info.callsOn), "emu");
+    }
     const last = this._publishedProfile;
     if (!force && info.generation === last.generation && info.instructions === last.instructions) return;
     this._publishedProfile = { generation: info.generation, instructions: info.instructions };

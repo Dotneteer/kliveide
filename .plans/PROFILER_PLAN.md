@@ -1,7 +1,8 @@
 # Profiler Plan: Flat and Call-Graph Profiling
 
-Status: **decisions recorded** (2026-10-08). D1–D17 are the decisions; the author accepted the suggested answers to all §8 questions, which the decisions already assume.
-Nothing is implemented.
+Status: **implemented** (2026-10-08), Phases 1–5, on every Z80 core. D1–D17 are the decisions; the
+author accepted the suggested answers to all §8 questions, which the decisions already assume. §9
+records what was built, the measurements and the departures.
 
 Scope:
 - [CLOSING_THE_GAPS_PLAN.md](CLOSING_THE_GAPS_PLAN.md) **G5.3**: the T-states spent per address,
@@ -242,3 +243,69 @@ When each lands:
    G10.3 first?
 6. **Q6: Inlay hints in the editor** (D15). Suggested: in, but off by default. They are cheap, and
    they are what makes a profile actionable while editing.
+
+---
+
+## 9. Implementation notes (2026-10-08)
+
+### 9.1 Where things are
+
+| Part | Files |
+| --- | --- |
+| Call tracker, armed window | `src/emu/z80/wasm/z80-profile.c/.h` (header v2, 192 bytes), hooks in `z80.c`; exports in `scripts/z80-profile-exports.cjs` |
+| Reader, Emu API | `WasmProfileReader.edges()` (open frames folded in), `IAccessProfileSource.setProfileCalls/armProfileWindow/readProfileEdges`, `startProfiling`/`stopProfiling`/`getProfileEdges`/`getProfileSlotOffsets`; `MachineController.startProfiling/stopProfiling`, `frameTicks`/`clockHz` in the status |
+| Pure rollup and exports | `src/common/profile/routineMap.ts`, `profileRollup.ts`, `profileExport.ts` |
+| D7, D8 | `common-assembler.ts` `processProcStatement` → `AssemblerOutput.procedures`, outline `"proc"` entries; `SjasmPCompiler.ts` `sldSymbols` (types, `isLocal`, page → partition), `ListFileItem.partition` |
+| IDE | `ProfilerPanel.tsx`, `features/profiler/profilerModel.ts`, `profilerInlays.ts`, `ProfileCommands.ts`, Debug menu |
+| Tests | `test/wasm/profile/sp48-calls.test.ts` (T1, T2, T4, T5, D2, D10, D12, open frames), a CALL/RET smoke test in every core's profile test, `test/common/profile/{routineMap,profileRollup}.test.ts`, `test/z80-assembler/proc-extents.test.ts`, `test/sjasm-int/sld-profiler.test.ts`, `test/commands/ProfileCommands.test.ts`, `test/renderer/profiler/profilerModel.test.ts`, `test/emu/profile-controller.test.ts` (the `-at`/`-until` window); running-app check `scripts/doc-shots/recipes/profiler.cjs` |
+
+### 9.2 Measurements
+
+- **T8: the call tracker costs 0.6%** on top of counters in a loop that is nearly all CALL/RET (300
+  frames of the 48K, median of five), and nothing measurable with the ROM idling in BASIC. The gate
+  was 10%. The edge cache in the parent frame makes a hot pair one compare.
+- The running-app recipe checks the numbers end to end: in a frame loop where `Draw` calls `Plot` 200
+  times, the table shows exactly 200 × Draw's calls for Plot.
+
+### 9.3 Departures from the plan
+
+- **The header grew to 192 bytes (version 2)** rather than taking new fields in place; the call
+  tracker's fields start at offset 116. The edge is 32 bytes (§4.2's struct), so the table is 512 KB,
+  not the 384 KB D12 quoted. It stops adding edges at 7/8 full, to keep linear probing short.
+- **The hooks only note the event; the instruction's end settles it.** A CALL's own time is its
+  caller's, a RET's its callee's, and SP and PC are final when the frame opens or closes. An
+  interrupt's frame starts before its acknowledge, so a handler's cost includes it.
+- **A frame carries its excluded interrupt time** (`excluded`) besides `child`: the D11 exclusion has
+  to propagate to every frame the interrupt nested in, not only its parent. A push also closes the
+  frames whose return slot it overwrote (a routine that dropped its return address and called on).
+- **D10's resync is distance-based**: a push more than 512 bytes below the open frame flushes the
+  stack, and a RET or push that closed every frame by jumping more than 512 bytes counts as a switch
+  too. `LD SP` is not hooked; the cheap check catches it at the next hook.
+- **D2's markers live in the profile module, not in `DebugSupport`.** The fetch hook compares the M1
+  address with the armed start and stop: no machine stop, no IDE round trip, deterministic. Markers
+  are CPU addresses (unbanked), one-shot, disarmed when profiling turns off. An armed stop turns
+  profiling off inside the core; the controller notices `windowClosed` at its next publish and
+  updates the switch.
+- **D4 needed a flag bit:** `PF_HALT` (bit 6) marks a byte where a HALT waited, so the flat profile
+  moves that byte's time to the "HALT (waiting)" row. Bit 7 stays spare for branch coverage.
+- **D5's frames are the total time over one frame's length** (`frameTicks`: `tactsInFrame` times the
+  clock multiplier, or the Next's 28 MHz frame), not a count of frame ends: a one-pass window of a
+  60-T loop then reads 0.0009 frames instead of 0 or 1.
+- **D6:** the Klive assembler stores names lower-case in a case-insensitive build, so a symbol now
+  carries `writtenName`, and the routine keeps the name as written. sjasmplus output carries
+  `sourceType: "sjasmp"`, which names the compiler in the header. The heuristic is as decided: a
+  global label on a loop splits its routine, which the docs explain (use `` `loop`` or `.proc`).
+- **D12's Call tree is the call graph expanded**: each row shows the edge from its parent with that
+  edge's exact numbers; deeper rows show the callee's own edges, summed over all its callers. The
+  speedscope export splits those below the first level in proportion to each caller's time (gprof's
+  estimate), so its weights add up to the total.
+- **D15:** the disassembly tooltip is shown whenever times are known, not behind the setting - it
+  changes nothing visible. The inlay provider re-registers itself on new hints instead of firing
+  `onDidChangeInlayHints`: Monaco 0.55's inlay controller adds that listener to a store it resets on
+  every request yet remembers the provider as watched, so after a second request the event is lost.
+  The hook throttles its reads (750 ms): a debounce never fired while the machine ran, because the
+  profile moves every 10 frames.
+- **New Emu API method `getProfileSlotOffsets`**: the profile offset each 8K slot maps to now, so the
+  rollup places unbanked code where it runs. `getProfileSample` returns per-address time with counts.
+- `nav` gained the `profiler` navigation reason (D14's `nav … -r profiler`).
+

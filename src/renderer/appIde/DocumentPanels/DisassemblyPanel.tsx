@@ -545,6 +545,8 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
   );
   const profileVersion = useSelector((s) => s.emulatorState?.profileVersion);
   const [coverageMarks, setCoverageMarks] = useState<Map<number, number> | undefined>();
+  // --- The profiler's share of the time per row, in tenths of a percent (`.plans/PROFILER_PLAN.md` D15)
+  const [timeShares, setTimeShares] = useState<Map<number, number> | undefined>();
   useEffect(() => {
     if (!coverageAvailable || items.length === 0) {
       setCoverageMarks(undefined);
@@ -562,17 +564,26 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
         if (cancelled) return;
         if (!sample || (!sample.info.enabled && sample.info.instructions === 0)) {
           setCoverageMarks(undefined);
+          setTimeShares(undefined);
           return;
         }
         const marks = new Map<number, number>();
+        const shares = new Map<number, number>();
+        const total = sample.info.timeTotal;
         items.forEach((item, i) => {
           const executed = (sample.flags[i] & PF_EXECUTED) !== 0;
           marks.set(item.address, !executed ? 0 : sample.exec ? sample.exec[i] || -1 : -1);
+          const time = sample.time?.[i] ?? 0;
+          if (executed && time > 0 && total > 0) shares.set(item.address, Math.round((1000 * time) / total) / 10);
         });
         setCoverageMarks(marks);
+        setTimeShares(shares.size ? shares : undefined);
       })
       .catch(() => {
-        if (!cancelled) setCoverageMarks(undefined);
+        if (!cancelled) {
+          setCoverageMarks(undefined);
+          setTimeShares(undefined);
+        }
       });
     return () => {
       cancelled = true;
@@ -709,6 +720,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
                   verdict={branchVerdicts?.get(item.address)}
                   showCoverage={!!coverageMarks}
                   coverage={coverageMarks?.get(item.address)}
+                  timeShare={timeShares?.get(item.address)}
                 />
               );
             }}

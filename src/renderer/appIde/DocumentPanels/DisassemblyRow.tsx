@@ -441,6 +441,8 @@ type DisassemblyRowProps = DisassemblyRowViewModelParams & {
   showCoverage?: boolean;
   /** This row's coverage: undefined no data, 0 never started, -1 started (no count), n started n times */
   coverage?: number;
+  /** The profiled time's share of this row's instruction, in percent (`.plans/PROFILER_PLAN.md` D15) */
+  timeShare?: number;
   selected?: boolean;
   selectedRange?: boolean;
   /**
@@ -483,6 +485,7 @@ export const DisassemblyRow = memo(function DisassemblyRow({
   verdict,
   showCoverage = false,
   coverage,
+  timeShare,
   ...viewModelParams
 }: DisassemblyRowProps) {
   const breakpoint = viewModelParams.breakpoint;
@@ -686,9 +689,9 @@ export const DisassemblyRow = memo(function DisassemblyRow({
               title={
                 coverage === undefined || coverage === 0
                   ? undefined
-                  : coverage > 0
-                    ? `Executed ${coverage.toLocaleString("en-US")} time${coverage === 1 ? "" : "s"}`
-                    : "Executed"
+                  : (coverage > 0
+                      ? `Executed ${coverage.toLocaleString("en-US")} time${coverage === 1 ? "" : "s"}`
+                      : "Executed") + (timeShare !== undefined ? ` · ${timeShare.toFixed(1)}% of the profiled time` : "")
               }
             />
           )}

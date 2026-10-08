@@ -5,7 +5,8 @@ import {
   PF_INTERRUPT,
   PF_READ,
   PF_SELF_MODIFIED,
-  PF_WRITTEN
+  PF_WRITTEN,
+  PROFILE_KEY_ROOT
 } from "@common/profile/profileTypes";
 import { profileLocationOf, profileOffsetOf } from "@common/profile/layouts/profileLayout";
 import { zxnextProfileLayout } from "@common/profile/layouts/zxnext";
@@ -366,5 +367,35 @@ Loop:   halt
     // --- The handler ran inside an interrupt service
     expect(s.profileFlags(offsetOf(s, 0x0038)!, 1)[0] & PF_INTERRUPT).toBe(PF_INTERRUPT);
     expect(info.instructions).toBe(s.profileTouched().reduce((sum, b) => sum + (b.exec ?? 0), 0));
+  });
+});
+
+describe("the Next's call tracker", () => {
+  it("tracks a CALL and its RET as one edge, in 28 MHz ticks (PROFILER_PLAN Phase 3)", async () => {
+    const s = await createSession();
+    await s.loadCode(
+      `
+        .org $8000
+Main:   di
+        call Sub
+        ret
+Sub:    nop
+        ret
+Park:   jr Park`,
+      { entry: "Park" }
+    );
+    s.resetProfile().profile(true, { calls: true });
+    try {
+      s.call("Main");
+    } finally {
+      s.profile(false, { calls: false });
+    }
+    const sub = offsetOf(s, s.symbol("Sub"))!;
+    const own = s.profileCounts(sub, 2).time.reduce((a, b) => a + b, 0);
+    // --- nop (4) and ret (10) T-states, at the current speed's ticks per T-state
+    expect(own).toBe(14 * ticksPerTState(s));
+    expect(s.profileEdges()).toEqual([
+      expect.objectContaining({ caller: PROFILE_KEY_ROOT, callee: sub, calls: 1, inclusive: own, exclusive: own })
+    ]);
   });
 });

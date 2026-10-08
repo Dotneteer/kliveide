@@ -23,6 +23,7 @@ import type { SourceActivationInfo, SourceStopInfo } from "@abstractions/SourceD
 import type { SourceStepKind } from "@emu/machines/SourceStepDecision";
 import type { ExecutionHistoryInfo, ExecutionHistoryPage } from "@common/history/historyTypes";
 import type {
+  ProfileEdges,
   ProfileSample,
   ProfileStatus,
   ProfileTouched,
@@ -684,6 +685,34 @@ class EmuApiImpl {
     _bytes: ProfileTouchedByte[],
     _totals: { instructions: number; timeTotal: number }
   ): Promise<ProfileStatus | undefined> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  // --- The profiler (`.plans/PROFILER_PLAN.md` D1, D2, D9-D12)
+
+  /**
+   * Starts a profiling window: resets the profile, turns it on with counters and, with `calls`, the
+   * call tracker; `at`/`until` are CPU addresses where counting starts and profiling stops (D2)
+   */
+  async startProfiling(_options?: { calls?: boolean; at?: number; until?: number }): Promise<ProfileStatus | undefined> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /** Ends the window without a reset (D1): the data stays frozen */
+  async stopProfiling(): Promise<ProfileStatus | undefined> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /** The call graph's edges, open frames folded in (D12); undefined without a profile */
+  async getProfileEdges(): Promise<ProfileEdges | undefined> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * The profile offset each 8K slot of the 64K maps to now, null where nothing backs it: how the
+   * profiler places unbanked code, which runs in whatever is paged (D6)
+   */
+  async getProfileSlotOffsets(): Promise<(number | null)[] | undefined> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 

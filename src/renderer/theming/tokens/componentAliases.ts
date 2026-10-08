@@ -490,6 +490,18 @@ export const componentAliases: Record<string, string> = {
   "--bgcolor-coverage-line": "var(--status-success-subtle)",
 
   /*
+   * The Profiler document (`.plans/PROFILER_PLAN.md` D3, D4, D10, D14). The share bar behind a
+   * row's self % is the primary accent's subtle wash - a quantity, drawn like a selection would be
+   * too strong; the pseudo-rows (HALT, acknowledges, DMA, snooze) are time that is no routine's, so
+   * they recede in the secondary data ink, in italics; the call tracker's "approximate" counters
+   * are a warning, not an error.
+   */
+  "--bgcolor-profiler-bar": "var(--accent-subtle)",
+  "--color-profiler-pseudo": "var(--data-secondary)",
+  "--color-profiler-warning": "var(--status-warning)",
+  "--color-profiler-recursive": "var(--text-tertiary)",
+
+  /*
    * Disassembly columns: address, opcode bytes, decoded instruction, jump-target label.
    *
    * Same principles as the memory dump above, mapped onto disassembly's own columns rather than
