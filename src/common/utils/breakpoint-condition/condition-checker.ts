@@ -375,10 +375,15 @@ class Checker {
       case "flag":
         return { min: 0, max: 1, name: this.source(syntax).toUpperCase() };
       case "special":
-        // --- A Copper breakpoint's VAL is the 16-bit instruction word, its ADDR the list index
+        // --- A Copper breakpoint's VAL is the 16-bit instruction word, its ADDR the list index; a
+        // --- sprite breakpoint's VAL is the byte written, its ADDR the attribute byte (0-4)
         return node.s === "val"
           ? { min: 0, max: this.env.accessKind === "copper" ? 0xffff : 0xff, name: "VAL" }
-          : { min: 0, max: this.env.accessKind === "copper" ? 0x3ff : 0xffff, name: "ADDR" };
+          : {
+              min: 0,
+              max: this.env.accessKind === "copper" ? 0x3ff : this.env.accessKind === "sprite" ? 4 : 0xffff,
+              name: "ADDR"
+            };
       case "mem": {
         const bits = node.width * 8;
         const name = syntax.k === "mem" ? `${syntax.access.name}[…]` : "the access";

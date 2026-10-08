@@ -13,7 +13,12 @@ import styles from "./BreakpointsPanel.module.scss";
 import { getBreakpointAddressSpec, getBreakpointStorageKey } from "@common/utils/breakpoints";
 import { toHexa2, toHexa4 } from "../services/ide-commands";
 import { useEmuApi } from "@renderer/core/EmuApi";
-import { CopperHitEvent, CpuState, NextRegWriteEvent } from "@common/messaging/EmuApi";
+import {
+  CopperHitEvent,
+  CpuState,
+  NextRegWriteEvent,
+  SpriteWriteEvent
+} from "@common/messaging/EmuApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import classnames from "classnames";
 import { TooltipFactory, useTooltipRef } from "@renderer/controls/Tooltip";
@@ -65,7 +70,18 @@ import { IconButton } from "@renderer/controls/IconButton";
 import { useConfirmPort } from "@mvc/dialogs/useDialogPorts";
 import { useBreakpointDialog } from "../dialogs/useBreakpointDialog";
 import { isAuthorableBreakpoint } from "../utils/breakpoint-form";
-import { isCopperBreakpoint, isNextRegBreakpoint } from "@common/utils/breakpoint-scope";
+import {
+  isCopperBreakpoint,
+  isNextRegBreakpoint,
+  isSpriteBreakpoint,
+  spriteAttrMaskOf
+} from "@common/utils/breakpoint-scope";
+import {
+  describeSpriteWriteOrigin,
+  formatSpriteAttrList,
+  SPRITE_ATTR_ALL,
+  SPRITE_ATTRIBUTE_LABELS
+} from "@common/zxnext/sprites/spriteBreakpoints";
 import {
   copperWordAt,
   decodeCopperWord,
@@ -110,6 +126,18 @@ const nextRegWriteOf = (state?: CpuState) =>
 const copperHitOf = (state?: CpuState): CopperHitEvent | undefined =>
   state && "lastCopperHit" in state ? state.lastCopperHit : undefined;
 
+/** The sprite attribute write the machine last stopped on, or `undefined`; see `nextRegWriteOf`. */
+const spriteWriteOf = (state?: CpuState): SpriteWriteEvent | undefined =>
+  state && "lastSpriteWrite" in state ? state.lastSpriteWrite : undefined;
+
+/** What a sprite breakpoint watches, for its row and tooltip: `attr 0,1 (X, Y)` or `all attributes`. */
+const spriteAttrText = (bp: BreakpointInfo): string => {
+  const mask = spriteAttrMaskOf(bp);
+  if (mask === SPRITE_ATTR_ALL) return "all attributes";
+  const names = SPRITE_ATTRIBUTE_LABELS.filter((_, a) => mask & (1 << a)).join("; ");
+  return `attr ${formatSpriteAttrList(mask)} (${names})`;
+};
+
 /** A Next Register's documented name, for the row and the tooltip. */
 const nextRegName = (reg: number | undefined): string => {
   if (reg === undefined) return "";
@@ -124,14 +152,18 @@ const breakpointTooltip = (
   isWatchpoint: boolean,
   lastWrite?: NextRegWriteEvent,
   partitionLabels?: Record<number, string>,
-  copperHit?: CopperHitEvent
+  copperHit?: CopperHitEvent,
+  spriteWrite?: SpriteWriteEvent
 ): string => {
   const nextRegKind = isNextRegBreakpoint(bp);
   const copperKind = isCopperBreakpoint(bp);
+  const spriteKind = isSpriteBreakpoint(bp);
   const kind = nextRegKind
     ? "NextReg write"
     : copperKind
       ? "Copper"
+      : spriteKind
+      ? "Sprite attribute"
       : bp.memoryRead
       ? "Memory read"
       : bp.memoryWrite
@@ -146,7 +178,21 @@ const breakpointTooltip = (
   const noun = isLogpoint(bp) ? "logpoint" : "breakpoint";
   const lines = comment
     ? [`${bp.annotationKind ?? "LOGPOINT"} comment at ${bp.resource}:${bp.line}`]
-    : [`${kind} ${noun} ${nextRegKind || copperKind ? "on" : "at"} ${addrKey}`];
+    : [`${kind} ${noun} ${nextRegKind || copperKind || spriteKind ? "on" : "at"} ${addrKey}`];
+  if (spriteKind) {
+    lines.push(`Watches ${spriteAttrText(bp)}`);
+    lines.push("Stops after the instruction during which a watched byte is written (port $57, DMA, NextReg mirror or Copper)");
+    if (spriteWrite?.sprite === bp.spriteIndex) {
+      const paged =
+        spriteWrite.partition === undefined
+          ? ""
+          : ` in ${partitionLabels?.[spriteWrite.partition] ?? spriteWrite.partition}`;
+      lines.push(
+        `attr ${spriteWrite.attribute} $${toHexa2(spriteWrite.oldValue)} -> $${toHexa2(spriteWrite.newValue)} ` +
+          `by ${describeSpriteWriteOrigin(spriteWrite.origin)}; CPU at $${toHexa4(spriteWrite.pc)}${paged}`
+      );
+    }
+  }
   if (copperKind) {
     if (instruction) lines.push(instruction);
     lines.push("Stops when the Copper completes it: a WAIT when satisfied, a MOVE when issued");
@@ -809,11 +855,14 @@ export const BreakpointsPanel = () => {
                   isCurrent = nextRegWriteOf(lastCpuState)?.reg === bp.nextReg;
                 } else if (isCopperBreakpoint(bp)) {
                   isCurrent = copperHitOf(lastCpuState)?.index === bp.copperIndex;
+                } else if (isSpriteBreakpoint(bp)) {
+                  isCurrent = spriteWriteOf(lastCpuState)?.sprite === bp.spriteIndex;
                 }
               }
 
               const isWatchpoint = !!(bp.memoryRead || bp.memoryWrite || bp.ioRead || bp.ioWrite);
-              const instruction = bp.instruction || (isCopperBreakpoint(bp) ? "" : "???");
+              const instruction =
+                bp.instruction || (isCopperBreakpoint(bp) || isSpriteBreakpoint(bp) ? "" : "???");
 
               return (
                 <BreakpointRow
@@ -824,7 +873,8 @@ export const BreakpointsPanel = () => {
                     isWatchpoint,
                     nextRegWriteOf(lastCpuState),
                     partitionLabels,
-                    copperHitOf(lastCpuState)
+                    copperHitOf(lastCpuState),
+                    spriteWriteOf(lastCpuState)
                   )}
                   onContextMenu={(e) => showRowMenu(bp, e)}
                   revealed={revealedKey !== undefined && safeStorageKey(bp) === revealedKey}
@@ -847,6 +897,7 @@ export const BreakpointsPanel = () => {
                     disabled={disabled}
                     nextReg={bp.nextReg}
                     copper={isCopperBreakpoint(bp)}
+                    sprite={isSpriteBreakpoint(bp)}
                     /*
                      * Told rather than inferred from the type of `address`. Every shape the panel
                      * lists is armed except an unresolved source breakpoint, which is the one the
@@ -982,6 +1033,40 @@ export const BreakpointsPanel = () => {
                       )}
                     </>
                   )}
+                  {isSpriteBreakpoint(bp) &&
+                    (() => {
+                      const hit =
+                        machineState === MachineControllerState.Paused &&
+                        spriteWriteOf(lastCpuState)?.sprite === bp.spriteIndex
+                          ? spriteWriteOf(lastCpuState)
+                          : undefined;
+                      return (
+                        <>
+                          {hit && (
+                            <>
+                              {/* The NextReg row's treatment: the before/after pair, then the writer */}
+                              <Value
+                                text={`attr ${hit.attribute} $${toHexa2(hit.oldValue)} \u2192 $${toHexa2(hit.newValue)}`}
+                                width="auto"
+                                className={classnames(styles.bpCell, regStyles.stateValueAlt)}
+                              />
+                              <Value
+                                text={
+                                  `${hit.origin === "port" || hit.origin === "nextreg" ? "@" : `${hit.origin === "dma" ? "DMA" : "copper"}, PC `}` +
+                                  `$${toHexa4(hit.pc)}` +
+                                  (hit.partition === undefined
+                                    ? ""
+                                    : ` ${partitionLabels?.[hit.partition] ?? hit.partition}`)
+                                }
+                                width="auto"
+                                className={classnames(styles.bpCell, regStyles.stateValueAlt)}
+                              />
+                            </>
+                          )}
+                          <Secondary text={spriteAttrText(bp)} width="auto" />
+                        </>
+                      );
+                    })()}
                   {isWatchpoint && machineState === MachineControllerState.Paused && (
                     <>
                       <Secondary

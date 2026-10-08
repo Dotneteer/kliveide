@@ -79,6 +79,12 @@ The `address-spec` parameter can be
   for example, `cu:$00B` &mdash; meaning "stop when the Copper completes list instruction `$00B`": a
   `MOVE` when it is issued, a `WAIT` when its condition is satisfied. Like `nr:`, it has no address
   and no partition. See [Copper Breakpoints](/working-with-ide/breakpoints#copper-breakpoints-zx-spectrum-next);
+- a **sprite attribute write** on the ZX Spectrum Next (`sp:` then a sprite, `$00`-`$7F`), for
+  example, `sp:$0C` &mdash; meaning "stop when an attribute byte of sprite `$0C` is written", through
+  port `$57` or the `$35`-`$39`/`$75`-`$79` NextReg mirrors, by the CPU, the DMA or the Copper. Add
+  `-attr` and a list of attribute bytes (`0`-`4`) to watch only those, as in `sp:$0C -attr 0,1` or
+  `-attr 0-3`. Like `cu:`, it has no address and no partition. See
+  [Sprite Attribute Breakpoints](/working-with-ide/breakpoints#sprite-attribute-breakpoints-zx-spectrum-next);
 - a **watch symbol** (`WS:` then a build symbol), for example, `WS:score -w -len 2` &mdash; a memory
   breakpoint anchored to the symbol rather than to an address, so a rebuild that moves the symbol
   moves the watched bytes, and it does not stop while the build has no such symbol. This is what
@@ -174,6 +180,12 @@ The `address-spec` parameter can be
   for example, `cu:$00B` &mdash; meaning "stop when the Copper completes list instruction `$00B`": a
   `MOVE` when it is issued, a `WAIT` when its condition is satisfied. Like `nr:`, it has no address
   and no partition. See [Copper Breakpoints](/working-with-ide/breakpoints#copper-breakpoints-zx-spectrum-next);
+- a **sprite attribute write** on the ZX Spectrum Next (`sp:` then a sprite, `$00`-`$7F`), for
+  example, `sp:$0C` &mdash; meaning "stop when an attribute byte of sprite `$0C` is written", through
+  port `$57` or the `$35`-`$39`/`$75`-`$79` NextReg mirrors, by the CPU, the DMA or the Copper. Add
+  `-attr` and a list of attribute bytes (`0`-`4`) to watch only those, as in `sp:$0C -attr 0,1` or
+  `-attr 0-3`. Like `cu:`, it has no address and no partition. See
+  [Sprite Attribute Breakpoints](/working-with-ide/breakpoints#sprite-attribute-breakpoints-zx-spectrum-next);
 - or a source code line specification, for example, `[code/code.kz80.asm]:12`
 
 The `-d` option disables the breakpoint.
@@ -186,7 +198,7 @@ either command by changing only its first word.
 This command sets a breakpoint.
 
 ```
-bp-set <address-spec> [-r] [-w] [-i] [-o] [-c] [-m <mask>] [-v <value>] [-len <bytes>] [-once] [-log "<message>"] [-hit <spec>] [-if <condition>]
+bp-set <address-spec> [-r] [-w] [-i] [-o] [-c] [-m <mask>] [-v <value>] [-len <bytes>] [-attr <bytes>] [-once] [-log "<message>"] [-hit <spec>] [-if <condition>]
 ```
 
 Available aliases: `bp`
@@ -201,6 +213,9 @@ reads and `-o` I/O writes. With none of them, the breakpoint is an execution bre
 - `-len <bytes>` makes a memory breakpoint (`-r` or `-w`) watch a **range** of that many bytes from
   its address, 1 to 65536; the range may not run past `$FFFF`. The length is part of the
   breakpoint's identity, so `bp-del` and `bp-en` need it too.
+- `-attr <bytes>` makes a `sp:` breakpoint watch only those attribute bytes (`0`-`4`, as a list with
+  ranges: `0,1`, `0-3`, `1,3-4`); without it, all five. It is not part of the identity: `bp-set` on
+  the same sprite with another list updates the breakpoint.
 - `-once` makes a **one-shot** breakpoint: it is removed the first time it stops the machine, and it
   is never saved with the project. With `-hit` or `-if`, "the first time" means the first time its
   own rule and condition let it stop, so `-once -hit 10` stops on the 10th hit and is then gone. A
@@ -264,6 +279,12 @@ The `address-spec` parameter can be
   for example, `cu:$00B` &mdash; meaning "stop when the Copper completes list instruction `$00B`": a
   `MOVE` when it is issued, a `WAIT` when its condition is satisfied. Like `nr:`, it has no address
   and no partition. See [Copper Breakpoints](/working-with-ide/breakpoints#copper-breakpoints-zx-spectrum-next);
+- a **sprite attribute write** on the ZX Spectrum Next (`sp:` then a sprite, `$00`-`$7F`), for
+  example, `sp:$0C` &mdash; meaning "stop when an attribute byte of sprite `$0C` is written", through
+  port `$57` or the `$35`-`$39`/`$75`-`$79` NextReg mirrors, by the CPU, the DMA or the Copper. Add
+  `-attr` and a list of attribute bytes (`0`-`4`) to watch only those, as in `sp:$0C -attr 0,1` or
+  `-attr 0-3`. Like `cu:`, it has no address and no partition. See
+  [Sprite Attribute Breakpoints](/working-with-ide/breakpoints#sprite-attribute-breakpoints-zx-spectrum-next);
 - a **watch symbol** (`WS:` then a build symbol, with `-r` or `-w`), for example, `WS:score -w -len 2`,
   as described under [`bp-del`](#bp-del);
 - or a source code line specification, for example, `[code/code.kz80.asm]:12`
@@ -1131,10 +1152,12 @@ run-to $8000
 run-to r1:$32ac
 run-to 05:+$0100
 run-to cu:$00B
+run-to sp:$0C
 ```
 
 On the ZX Spectrum Next, `run-to cu:<index>` runs until the Copper completes that list
-instruction &mdash; the Copper List's **Run to here**.
+instruction &mdash; the Copper List's **Run to here** &mdash; and `run-to sp:<sprite>` runs until an
+attribute byte of that sprite is written &mdash; the Sprite Inspector's **Run until attribute write**.
 
 ## `script-cancel`
 

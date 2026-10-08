@@ -19,7 +19,12 @@ import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import type { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
 import type { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
 import type { MachineInfo } from "@common/machines/info-types";
-import type { CopperHitEvent, NextRegWriteEvent } from "@common/messaging/EmuApi";
+import type {
+  CopperHitEvent,
+  NextRegWriteEvent,
+  SpriteWriteEvent
+} from "@common/messaging/EmuApi";
+import { describeSpriteStop } from "@common/zxnext/sprites/spriteBreakpoints";
 import {
   decodeCopperWord,
   formatCopperIndex,
@@ -2258,6 +2263,10 @@ export class MachineController implements IMachineController {
     const copperHit = (this.machine as { lastCopperHit?: CopperHitEvent }).lastCopperHit;
     if (copperHit) {
       return describeCopperStop(copperHit, this.machine.getPartitionLabels?.());
+    }
+    const spriteWrite = (this.machine as { lastSpriteWrite?: SpriteWriteEvent }).lastSpriteWrite;
+    if (spriteWrite) {
+      return describeSpriteStop(spriteWrite, this.machine.getPartitionLabels?.());
     }
     const write = (this.machine as { lastNextRegWrite?: NextRegWriteEvent }).lastNextRegWrite;
     if (!write) {

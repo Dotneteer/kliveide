@@ -104,6 +104,27 @@ static uint8_t zxnextCopperWatchArmed;
 static uint8_t zxnextCopperWatchAny;
 static uint32_t zxnextCopperHit;
 
+/*
+ * The sprite-attribute breakpoint watch and its hit latch (G3.8, sprite half; see
+ * `.plans/SPRITE_ATTRIBUTE_BREAKPOINTS_PLAN.md`).
+ *
+ * One byte per sprite, pushed whole by the host: bits 0-4 select which of the five attribute bytes
+ * are watched, and 0 means the sprite is not watched. `zxnextSpriteWatchArmed` keeps the attribute
+ * write paths free when no `sp:` breakpoint exists. The latch keeps the *first* hit since the host
+ * last took one, like the NextReg and Copper latches: a DMA burst or an OTIR that writes many
+ * watched bytes reports the earliest, and the next is reported on the next run.
+ *
+ * `zxnextSpriteWriteFromDma` labels a port $57 write the DMA performs, so the hit can say who wrote.
+ */
+#define ZXNEXT_SPRITE_ORIGIN_PORT_CPU 1u
+#define ZXNEXT_SPRITE_ORIGIN_PORT_DMA 2u
+#define ZXNEXT_SPRITE_ORIGIN_NEXTREG_CPU 3u
+#define ZXNEXT_SPRITE_ORIGIN_NEXTREG_COPPER 4u
+static uint8_t zxnextSpriteWatch[128];
+static uint8_t zxnextSpriteWatchArmed;
+static uint32_t zxnextSpriteHit;
+static uint8_t zxnextSpriteWriteFromDma;
+
 static uint16_t cpuAf;
 static uint16_t cpuBc;
 static uint16_t cpuDe;
@@ -555,6 +576,30 @@ void zxnextSetCopperWatchMode(uint32_t armed, uint32_t any) {
 uint32_t zxnextTakeCopperHit(void) {
   uint32_t hit = zxnextCopperHit;
   zxnextCopperHit = 0u;
+  return hit;
+}
+
+/*
+ * The sprite-attribute watch table: 128 bytes, one per sprite, bits 0-4 the watched attribute bytes.
+ * The host pushes it whole, then arms it with `zxnextSetSpriteWatchArmed`.
+ */
+uint32_t zxnextSpriteWatchPtr(void) { return (uint32_t)(uintptr_t)zxnextSpriteWatch; }
+
+/* Arm (or disarm) the sprite-attribute watch. Clears a stale hit. */
+void zxnextSetSpriteWatchArmed(uint32_t armed) {
+  zxnextSpriteWatchArmed = armed ? 1u : 0u;
+  zxnextSpriteHit = 0u;
+}
+
+/*
+ * Take the latched sprite-attribute hit, if there is one, and clear it. Bit 31: present; bits 26-28:
+ * origin (1 port $57 by the CPU, 2 the DMA - port $57 or a NextReg mirror, 3 a NextReg mirror by the
+ * CPU, 4 a NextReg mirror by the Copper); bits 18-25: the value written; bits 10-17: the value the
+ * byte held before; bits 7-9: the attribute byte (0-4); bits 0-6: the sprite.
+ */
+uint32_t zxnextTakeSpriteHit(void) {
+  uint32_t hit = zxnextSpriteHit;
+  zxnextSpriteHit = 0u;
   return hit;
 }
 

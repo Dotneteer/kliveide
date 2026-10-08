@@ -792,6 +792,24 @@ user (`useNextSpriteState`). On an image rather than a table (the Tilemap Inspec
 dot goes in the changed cell's top-right corner, drawn on the overlay canvas — still a marker, never a
 tint over the machine's pixels.
 
+## A Breakpoint On A Table Row Is The Gutter Dot, Before The Index
+
+A table that is not a code listing still marks a row with a breakpoint the way the Copper List's
+gutter does: the `circle-filled` icon in `--color-breakpoint-binary` (`--color-breakpoint-disabled`
+when disabled), placed **before** the row's index in the index cell. The Sprite Inspector's `sp:`
+rows are the first case. The "changed since the previous stop" dot stays **after** the index, as an
+`::after` in `--color-state-changed`, so a row can carry both and they never compete for one spot or
+one hue. Do not add a gutter column to a table that has none: the index cell already is the row's
+identity, and the menu on the row is where the breakpoint is set.
+
+A new event-breakpoint type gets its own `bp-*` icon in the family's shape: the downward write arrow
+over a small glyph of the thing written (`bp-nextreg` sliders, `bp-sprite` a sprite cell), painted
+with `--color-breakpoint-type` like every other type icon.
+
+A dialog choice among a handful of independent bits (the sprite kind's five attribute bytes) is a
+column of checkboxes, each labelled with its bit and what it holds (`2: palette, mirror, rotate,
+X8`), with `--space-1` between them; one error line under the group when none is ticked.
+
 ## A Wide Table Scrolls As One Piece, Pinned Columns Fixed
 
 A table wider than its pane puts its header **and** its rows in one scroller: the header row is

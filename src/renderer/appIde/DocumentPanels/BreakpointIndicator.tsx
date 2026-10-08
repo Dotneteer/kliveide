@@ -35,6 +35,8 @@ type Props = {
   nextReg?: number;
   /** This row is a Copper breakpoint (`cu:`); `address` then carries its `CU:$xxx` spec. */
   copper?: boolean;
+  /** This row is a sprite-attribute breakpoint (`sp:`); `address` then carries its `SP:$xx` spec. */
+  sprite?: boolean;
   memoryRead?: boolean;
   memoryWrite?: boolean;
   ioRead?: boolean;
@@ -112,6 +114,7 @@ export const BreakpointIndicator = ({
   current,
   nextReg,
   copper,
+  sprite,
   memoryRead,
   memoryWrite,
   ioRead,
@@ -173,6 +176,9 @@ export const BreakpointIndicator = ({
   } else if (copper) {
     bpType = "Copper instruction";
     typeIcon = "bp-copper";
+  } else if (sprite) {
+    bpType = "Sprite attribute write";
+    typeIcon = "bp-sprite";
   }
   // --- One colour for all five: the glyphs now carry the read/write distinction the three ANSI
   // --- hues used to. See `--color-breakpoint-type` in componentAliases.ts.

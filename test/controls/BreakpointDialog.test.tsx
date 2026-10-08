@@ -915,3 +915,51 @@ describe("BreakpointDialog - Copper instruction breakpoints", () => {
     expect(controls.close.mock.calls[0][0].breakpoint.address).toBeUndefined();
   });
 });
+
+describe("BreakpointDialog - sprite attribute breakpoints", () => {
+  const chooseSprite = () => fireEvent.click(screen.getByLabelText("Sprite attribute write"));
+
+  it("offers the type only on the ZX Spectrum Next", () => {
+    renderWithProviders(
+      <BreakpointDialog env={anEnv()} machineSetup={aListMachine} controls={someControls()} />
+    );
+    expect(screen.queryByLabelText("Sprite attribute write")).toBeNull();
+    cleanup();
+    renderWithProviders(
+      <BreakpointDialog env={aNextEnv()} machineSetup={aMatrixMachine} controls={someControls()} />
+    );
+    expect(screen.queryByLabelText("Sprite attribute write")).not.toBeNull();
+  });
+
+  it("replaces the address with a sprite and attribute bytes, and hides the partition row", () => {
+    renderWithProviders(
+      <BreakpointDialog env={aNextEnv()} machineSetup={aMatrixMachine} controls={someControls()} />
+    );
+    chooseSprite();
+    expect(screen.queryByText(/^Address/)).toBeNull();
+    expect(screen.queryByText("Break only in a specific partition")).toBeNull();
+    expect(screen.queryByText("Sprite *")).not.toBeNull();
+    expect(screen.queryByText("0: X")).not.toBeNull();
+    expect(screen.queryByText("4: attr4")).not.toBeNull();
+  });
+
+  it("emits an sp: breakpoint, narrowed to the ticked bytes", async () => {
+    const controls = someControls();
+    renderWithProviders(
+      <BreakpointDialog env={aNextEnv()} machineSetup={aMatrixMachine} controls={controls} />
+    );
+    chooseSprite();
+    typeInto(0, "$0C");
+    // --- Untick attr2, attr3 and attr4: X and Y remain
+    for (const label of ["2: palette, mirror, rotate, X8", "3: visible, pattern", "4: attr4"]) {
+      fireEvent.click(screen.getByText(label));
+    }
+    submit();
+    await waitFor(() =>
+      expect(controls.close).toHaveBeenCalledWith({
+        breakpoint: expect.objectContaining({ spriteIndex: 0x0c, spriteAttrMask: 0x03, exec: false })
+      })
+    );
+    expect(controls.close.mock.calls[0][0].breakpoint.address).toBeUndefined();
+  });
+});

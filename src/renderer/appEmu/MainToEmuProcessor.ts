@@ -128,7 +128,7 @@ export function setEmuRecordingManager(mgr: RecordingManager | null): void {
  */
 export function historicalCpuState(live: Z80CpuState, historical: HistoricalState): Z80CpuState {
   const { record, info, pcPartition } = historical;
-  const { lastNextRegWrite: _w, lastCopperHit: _c, ...rest } = live;
+  const { lastNextRegWrite: _w, lastCopperHit: _c, lastSpriteWrite: _s, ...rest } = live;
   return {
     ...rest,
     ...record.regs,

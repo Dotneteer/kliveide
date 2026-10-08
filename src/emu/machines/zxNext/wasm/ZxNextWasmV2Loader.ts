@@ -152,6 +152,9 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Z
   zxnextCopperWatchPtr: ZxNextWasmV2ExportFunction;
   zxnextSetCopperWatchMode: ZxNextWasmV2ExportFunction;
   zxnextTakeCopperHit: ZxNextWasmV2ExportFunction;
+  zxnextSpriteWatchPtr: ZxNextWasmV2ExportFunction;
+  zxnextSetSpriteWatchArmed: ZxNextWasmV2ExportFunction;
+  zxnextTakeSpriteHit: ZxNextWasmV2ExportFunction;
   zxnextGetPortFeValue: ZxNextWasmV2ExportFunction;
   zxnextGetBorderColor: ZxNextWasmV2ExportFunction;
   zxnextGetEarBit: ZxNextWasmV2ExportFunction;
@@ -421,6 +424,8 @@ export type ZxNextWasmV2Runtime = {
   readonly nextRegWatch: Uint8Array;
   /** One bit per Copper list index: the Copper-instruction breakpoint watch (COPPER_DEBUGGING_PLAN §4.6) */
   readonly copperWatch: Uint8Array;
+  /** One byte per sprite, bits 0-4 the watched attribute bytes: the sprite-attribute breakpoint watch (G3.8) */
+  readonly spriteWatch: Uint8Array;
   /** The Copper list RAM, 2K, big-endian words (read only by the IDE) */
   readonly copperMemory: Uint8Array;
   /** The sprite attribute slots, 128 x 5 bytes (read only by the IDE) */
@@ -574,6 +579,9 @@ const requiredV2Exports = [
   "zxnextCopperWatchPtr",
   "zxnextSetCopperWatchMode",
   "zxnextTakeCopperHit",
+  "zxnextSpriteWatchPtr",
+  "zxnextSetSpriteWatchArmed",
+  "zxnextTakeSpriteHit",
   "zxnextGetPortFeValue",
   "zxnextGetBorderColor",
   "zxnextGetEarBit",
@@ -883,6 +891,7 @@ export function createZxNextWasmV2Views(
   assertViewRange(artifactName, "nextRegs", exports.zxnextNextRegsPtr(), nextRegCount, memoryBuffer);
   assertViewRange(artifactName, "nextRegWatch", exports.zxnextNextRegWatchPtr(), nextRegCount * 3, memoryBuffer);
   assertViewRange(artifactName, "copperWatch", exports.zxnextCopperWatchPtr(), 128, memoryBuffer);
+  assertViewRange(artifactName, "spriteWatch", exports.zxnextSpriteWatchPtr(), 128, memoryBuffer);
   assertViewRange(artifactName, "copperMemory", exports.zxnextCopperMemoryPtr(), 0x800, memoryBuffer);
   assertViewRange(artifactName, "spriteAttributes", exports.zxnextSpriteAttributesPtr(), 640, memoryBuffer);
   assertViewRange(artifactName, "spritePatterns8", exports.zxnextSpritePatternMemory8Ptr(), 512 * 256, memoryBuffer);
@@ -900,6 +909,7 @@ export function createZxNextWasmV2Views(
     nextRegs: new Uint8Array(memoryBuffer, exports.zxnextNextRegsPtr(), nextRegCount),
     nextRegWatch: new Uint8Array(memoryBuffer, exports.zxnextNextRegWatchPtr(), nextRegCount * 3),
     copperWatch: new Uint8Array(memoryBuffer, exports.zxnextCopperWatchPtr(), 128),
+    spriteWatch: new Uint8Array(memoryBuffer, exports.zxnextSpriteWatchPtr(), 128),
     copperMemory: new Uint8Array(memoryBuffer, exports.zxnextCopperMemoryPtr(), 0x800),
     spriteAttributes: new Uint8Array(memoryBuffer, exports.zxnextSpriteAttributesPtr(), 640),
     spritePatterns8: new Uint8Array(memoryBuffer, exports.zxnextSpritePatternMemory8Ptr(), 512 * 256),

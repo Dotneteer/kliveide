@@ -99,6 +99,20 @@ export interface IDebugSupport {
    */
   hasCopperHit(index: number, word: number): boolean;
 
+  /** Does any enabled breakpoint watch a sprite's attribute writes (`sp:`)? */
+  hasSpriteBreakpoints(): boolean;
+
+  /** The 128-byte sprite watch table (one byte per sprite, bits 0-4 the attribute bytes) for the Next core. */
+  buildSpriteWatch(): Uint8Array;
+
+  /**
+   * Does any breakpoint want to stop on this sprite attribute write?
+   * @param sprite The sprite (0-127)
+   * @param attribute The attribute byte (0-4; a condition's `ADDR`)
+   * @param value The value written (a condition's `VAL`)
+   */
+  hasSpriteHit(sprite: number, attribute: number, value: number): boolean;
+
   /**
    * Gets IO read breakpoint information for the specified port
    * @param port Port read during the current instruction

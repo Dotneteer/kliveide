@@ -44,8 +44,34 @@ static void zxnextSpritesAttrNumberChanged(void) {
 
 static uint32_t zxnextSpritesGetMirrorNumber(void) { return zxnextSpriteMirrorQ & 0x7fu; }
 
+/*
+ * Does this attribute write trip a sprite-attribute breakpoint? If so, latch it for the host.
+ *
+ * Called before the byte is stored, so the latch can carry the value it replaces. Writes with no
+ * origin (the IDE's own direct NextReg writes and reset branches) are never reported, as with the
+ * NextReg watch.
+ */
+static void zxnextSpritesCheckWatch(uint32_t sprite, uint32_t attribute, uint8_t value, uint32_t origin) {
+  if (zxnextSpriteHit || origin == 0u) return;
+  if ((zxnextSpriteWatch[sprite & 0x7fu] & (1u << attribute)) == 0u) return;
+  zxnextSpriteHit = 0x80000000u
+    | ((origin & 0x07u) << 26)
+    | ((uint32_t)value << 18)
+    | ((uint32_t)zxnextSpriteAttributes[sprite & 0x7fu][attribute] << 10)
+    | ((attribute & 0x07u) << 7)
+    | (sprite & 0x7fu);
+}
+
 static void zxnextSpritesMirrorWrite(uint32_t attribute, uint8_t byteValue) {
   uint8_t sprite = zxnextSpriteMirrorQ & 0x7fu;
+  if (zxnextSpriteWatchArmed) {
+    uint32_t origin =
+        zxnextSpriteWriteFromDma                                         ? ZXNEXT_SPRITE_ORIGIN_PORT_DMA
+      : zxnextNextRegWriteOrigin == ZXNEXT_NEXTREG_ORIGIN_CPU            ? ZXNEXT_SPRITE_ORIGIN_NEXTREG_CPU
+      : zxnextNextRegWriteOrigin == ZXNEXT_NEXTREG_ORIGIN_COPPER         ? ZXNEXT_SPRITE_ORIGIN_NEXTREG_COPPER
+      : 0u;
+    zxnextSpritesCheckWatch(sprite, attribute, byteValue, origin);
+  }
   zxnextSpriteAttributes[sprite][attribute] = byteValue;
 }
 
@@ -148,6 +174,10 @@ static void zxnextSpritesWritePort303b(uint32_t value) {
 
 static void zxnextSpritesWritePort57(uint32_t value) {
   uint8_t sprite = zxnextSpriteIndex & 0x7fu;
+  if (zxnextSpriteWatchArmed) {
+    zxnextSpritesCheckWatch(sprite, zxnextSpriteSubIndex, (uint8_t)value,
+      zxnextSpriteWriteFromDma ? ZXNEXT_SPRITE_ORIGIN_PORT_DMA : ZXNEXT_SPRITE_ORIGIN_PORT_CPU);
+  }
   zxnextSpriteAttributes[sprite][zxnextSpriteSubIndex] = (uint8_t)value;
   /* A 4-byte sprite: the index skips attr4 without writing it (sprites.vhd ~641, ~660-664, ~717 write
      attr4 only at attr_id "100"); the renderer ignores attr4 while attr3 bit 6 is clear. */

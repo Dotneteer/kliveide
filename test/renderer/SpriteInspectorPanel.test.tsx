@@ -19,6 +19,7 @@ vi.hoisted(() => {
 });
 
 const emuApi = vi.hoisted(() => ({
+  listBreakpoints: vi.fn(),
   getNextSpriteState: vi.fn(),
   getCpuStateChunk: vi.fn(),
   getPalettedDeviceInfo: vi.fn()
@@ -31,8 +32,9 @@ vi.mock("@renderer/appIde/useStateRefresh", () => ({
     listeners.push(fn);
   }
 }));
+const executeCommand = vi.hoisted(() => vi.fn());
 vi.mock("@renderer/appIde/services/AppServicesProvider", () => ({
-  useAppServices: () => ({ ideCommandsService: { executeCommand: vi.fn() } })
+  useAppServices: () => ({ ideCommandsService: { executeCommand } })
 }));
 vi.mock("@renderer/appIde/services/DocumentServiceProvider", () => ({
   useDocumentHubService: () => ({ setDocumentViewState: vi.fn() })
@@ -72,6 +74,8 @@ const tick = async () => {
 beforeEach(() => {
   listeners.length = 0;
   emuApi.getNextSpriteState.mockReset().mockResolvedValue(snapshot());
+  emuApi.listBreakpoints.mockReset().mockResolvedValue({ breakpoints: [] });
+  executeCommand.mockReset().mockResolvedValue({ success: true });
   emuApi.getCpuStateChunk.mockReset().mockResolvedValue({ state: MachineControllerState.Paused, pcValue: 0, tacts: 1 });
   emuApi.getPalettedDeviceInfo.mockReset().mockRejectedValue(new Error("none"));
 });
@@ -128,5 +132,39 @@ describe("Sprite Inspector document", () => {
     );
     fireEvent.click(screen.getByRole("tab", { name: "Patterns" }));
     await waitFor(() => expect(screen.getByRole("listbox", { name: "Sprite pattern RAM" })).toBeTruthy());
+  });
+});
+
+describe("Sprite Inspector - sprite-attribute breakpoints (G3.8)", () => {
+  const openMenu = async () => {
+    const store = createMockStore();
+    store.dispatch(setMachineTypeAction("zxnext"));
+    renderWithProviders(createSpriteInspectorPanel({ document: doc }), { store });
+    await tick();
+    await waitFor(() => expect(document.querySelector('[data-sprite="0"]')).toBeTruthy());
+    fireEvent.contextMenu(document.querySelector('[data-sprite="0"]')!);
+  };
+
+  it("sets an sp: breakpoint from the row menu", async () => {
+    await openMenu();
+    fireEvent.click(await screen.findByText("Break on attribute write"));
+    await waitFor(() => expect(executeCommand).toHaveBeenCalledWith("bp-set sp:$00"));
+  });
+
+  it("runs until the sprite's attributes are written", async () => {
+    await openMenu();
+    fireEvent.click(await screen.findByText("Run until attribute write"));
+    await waitFor(() => expect(executeCommand).toHaveBeenCalledWith("run-to sp:$00"));
+  });
+
+  it("marks a sprite that has a breakpoint, and offers to remove and edit it", async () => {
+    emuApi.listBreakpoints.mockResolvedValue({ breakpoints: [{ spriteIndex: 0, exec: false }] });
+    await openMenu();
+    await waitFor(() =>
+      expect(document.querySelector('[title^="Breaks when an attribute of sprite #0 is written"]')).toBeTruthy()
+    );
+    expect(await screen.findByText("Edit breakpoint...")).toBeTruthy();
+    fireEvent.click(await screen.findByText("Remove attribute-write breakpoint"));
+    await waitFor(() => expect(executeCommand).toHaveBeenCalledWith("bp-del sp:$00"));
   });
 });

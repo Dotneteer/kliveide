@@ -975,6 +975,11 @@ export type Z80CpuState = {
    */
   lastCopperHit?: CopperHitEvent;
   /**
+   * The sprite attribute write the machine last stopped on. ZX Spectrum Next only, and absent until
+   * a sprite-attribute breakpoint (`sp:`) fires.
+   */
+  lastSpriteWrite?: SpriteWriteEvent;
+  /**
    * Set while the history cursor is in the past (`.plans/LITE_STEP_BACK_PLAN.md` D2, T9): the
    * registers, flags, interrupt state and PC partition are the record's; `tacts`, the last memory
    * and I/O accesses and `opStartAddress` are not in a record and must be shown as unknown.
@@ -1172,6 +1177,31 @@ export type CopperState = {
   timing: { lines: number; hcs: number; upperBorder?: number };
   /** The stop's hit, when the last stop was a Copper breakpoint */
   lastHit?: CopperHitEvent;
+};
+
+/**
+ * Who wrote a sprite attribute byte: port `$57` by the CPU, the DMA (port `$57` or a NextReg
+ * mirror), a `$35`-`$39`/`$75`-`$79` NextReg mirror by the CPU, or one by the Copper.
+ */
+export type SpriteWriteOrigin = "port" | "dma" | "nextreg" | "copper";
+
+/**
+ * A sprite attribute write a breakpoint stopped on; see `Z80CpuState.lastSpriteWrite`
+ * (`.plans/SPRITE_ATTRIBUTE_BREAKPOINTS_PLAN.md`). The machine stops at the end of the instruction
+ * during which the write happened, so the event carries the byte it replaced as well.
+ */
+export type SpriteWriteEvent = {
+  /** The sprite, 0..127 */
+  sprite: number;
+  /** The attribute byte, 0..4 */
+  attribute: number;
+  oldValue: number;
+  newValue: number;
+  origin: SpriteWriteOrigin;
+  /** The first byte of the Z80 instruction during which the write happened */
+  pc: number;
+  /** The memory partition `pc` was in, if the machine has partitions */
+  partition?: number;
 };
 
 /** A NextReg write a breakpoint stopped on; see `Z80CpuState.lastNextRegWrite`. */

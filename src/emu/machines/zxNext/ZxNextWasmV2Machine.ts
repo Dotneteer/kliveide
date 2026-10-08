@@ -9,6 +9,7 @@ import {
   ULA_BORDER_COLOR_NAMES,
   type CpuState,
   type CopperHitEvent,
+  type SpriteWriteEvent,
   type CopperState,
   type NextSpriteState,
   type NextTilemapState,
@@ -946,6 +947,19 @@ export class ZxNextWasmV2Machine
     this.lastCopperHit = undefined;
 
     /*
+     * The sprite-attribute watch (G3.8, sprite half): pushed whole on entry and disarmed when no
+     * `sp:` breakpoint is enabled, so the attribute write paths stay free.
+     */
+    const watchesSprites = debugSupport?.hasSpriteBreakpoints() ?? false;
+    if (watchesSprites) {
+      runtime.spriteWatch.set(debugSupport!.buildSpriteWatch());
+      wasm.zxnextSetSpriteWatchArmed(1);
+    } else {
+      wasm.zxnextSetSpriteWatchArmed(0);
+    }
+    this.lastSpriteWrite = undefined;
+
+    /*
      * Finish a reset the last run stopped in front of.
      *
      * A NextReg write breakpoint on `$02` catches the write that *asks* for a reset, and stops
@@ -974,7 +988,10 @@ export class ZxNextWasmV2Machine
       // --- its first byte, as the TypeScript CPU records it - so not while a prefix is pending
       // --- `|| watchesNextReg`: a NextReg hit is reported against the instruction that wrote, the
       // --- same way a watchpoint hit is, so it needs this tracked too.
-      if ((watchesBusAccess || watchesNextReg || watchesCopper) && wasm.zxnextGetCpuPrefix() === 0) {
+      if (
+        (watchesBusAccess || watchesNextReg || watchesCopper || watchesSprites) &&
+        wasm.zxnextGetCpuPrefix() === 0
+      ) {
         this.opStartAddress = this.pc;
       }
       wasm.zxnextExecuteInstruction();
@@ -1013,6 +1030,11 @@ export class ZxNextWasmV2Machine
       // --- The Copper may complete a watched instruction during any Z80 instruction; the machine
       // --- stops at the end of it, while the Copper has run on to the end of it (T1).
       if (watchesCopper && this.acceptWasmV2CopperHit(runtime, wasm.zxnextTakeCopperHit())) {
+        return this.finishWasmV2DebugLoop(runtime, FrameTerminationMode.DebugEvent);
+      }
+      // --- A watched sprite attribute byte was written during this instruction (by the CPU, the
+      // --- DMA it held the bus for, or the Copper); the machine stops at its end.
+      if (watchesSprites && this.acceptWasmV2SpriteHit(wasm.zxnextTakeSpriteHit())) {
         return this.finishWasmV2DebugLoop(runtime, FrameTerminationMode.DebugEvent);
       }
 
@@ -1184,6 +1206,33 @@ export class ZxNextWasmV2Machine
       word,
       line: (packed >>> 10) & 0x1ff,
       hc: (packed >>> 19) & 0x1ff,
+      pc,
+      partition: this.getPartition(pc)
+    };
+    return true;
+  }
+
+  /**
+   * Unpacks a sprite attribute write the core latched and asks whether a `sp:` breakpoint's filters
+   * (hit count, condition) accept it.
+   *
+   * @param packed `zxnextTakeSpriteHit`'s word: bit 31 presence, 26-28 origin (1 port, 2 DMA,
+   *   3 NextReg mirror, 4 Copper), 18-25 new value, 10-17 old value, 7-9 attribute, 0-6 sprite.
+   */
+  private acceptWasmV2SpriteHit(packed: number): boolean {
+    if ((packed & 0x8000_0000) === 0) return false;
+    const sprite = packed & 0x7f;
+    const attribute = (packed >>> 7) & 0x07;
+    const newValue = (packed >>> 18) & 0xff;
+    if (!this.executionContext.debugSupport?.hasSpriteHit(sprite, attribute, newValue)) return false;
+    const originCode = (packed >>> 26) & 0x07;
+    const pc = this.opStartAddress;
+    this.lastSpriteWrite = {
+      sprite,
+      attribute,
+      oldValue: (packed >>> 10) & 0xff,
+      newValue,
+      origin: originCode === 1 ? "port" : originCode === 2 ? "dma" : originCode === 3 ? "nextreg" : "copper",
       pc,
       partition: this.getPartition(pc)
     };
@@ -1651,6 +1700,12 @@ export class ZxNextWasmV2Machine
   lastCopperHit?: CopperHitEvent;
 
   /**
+   * The sprite attribute write a `sp:` breakpoint last stopped on. Set by the debug loop, cleared
+   * when the machine resumes.
+   */
+  lastSpriteWrite?: SpriteWriteEvent;
+
+  /**
    * "Step Copper" is pending: the next debug run stops after the Z80 instruction during which the
    * Copper completes its next instruction, whatever its index (plan §4.6).
    */
@@ -1670,7 +1725,8 @@ export class ZxNextWasmV2Machine
     return {
       ...super.getCpuState(),
       lastNextRegWrite: this.lastNextRegWrite,
-      lastCopperHit: this.lastCopperHit
+      lastCopperHit: this.lastCopperHit,
+      lastSpriteWrite: this.lastSpriteWrite
     };
   }
 

@@ -7,7 +7,8 @@ import {
   isBankRelative,
   isCopperBreakpoint,
   isLabelAnchored,
-  isNextRegBreakpoint
+  isNextRegBreakpoint,
+  isSpriteBreakpoint
 } from "@common/utils/breakpoint-scope";
 import { isLogpoint } from "@common/utils/breakpoint-filters";
 import { logGroupOf } from "@common/utils/breakpoint-condition/logpoint-template";
@@ -25,7 +26,7 @@ import { logGroupOf } from "@common/utils/breakpoint-condition/logpoint-template
  * See `.plans/NEXTREG_WRITE_BREAKPOINTS_PLAN.md` §4.9a.
  */
 
-/** The seven groups, which are the seven breakpoint kinds. */
+/** The eight groups, which are the eight breakpoint kinds. */
 export type BreakpointGroup =
   | "exec"
   | "memRead"
@@ -33,7 +34,8 @@ export type BreakpointGroup =
   | "ioRead"
   | "ioWrite"
   | "nextRegWrite"
-  | "copper";
+  | "copper"
+  | "sprite";
 
 /** Group order, matching the dialog's type selector so the two read the same way. */
 export const BREAKPOINT_GROUP_ORDER: readonly BreakpointGroup[] = [
@@ -43,7 +45,8 @@ export const BREAKPOINT_GROUP_ORDER: readonly BreakpointGroup[] = [
   "ioRead",
   "ioWrite",
   "nextRegWrite",
-  "copper"
+  "copper",
+  "sprite"
 ];
 
 /** What a group header calls itself. Sentence case, as the dialog's options are. */
@@ -54,7 +57,8 @@ export const BREAKPOINT_GROUP_TITLES: Record<BreakpointGroup, string> = {
   ioRead: "I/O read",
   ioWrite: "I/O write",
   nextRegWrite: "NextReg write",
-  copper: "Copper"
+  copper: "Copper",
+  sprite: "Sprite attribute"
 };
 
 /**
@@ -70,7 +74,8 @@ export const BREAKPOINT_GROUP_ICONS: Record<BreakpointGroup, string> = {
   ioRead: "bp-io-read",
   ioWrite: "bp-io-write",
   nextRegWrite: "bp-nextreg",
-  copper: "bp-copper"
+  copper: "bp-copper",
+  sprite: "bp-sprite"
 };
 
 /** A header, or a breakpoint. One flat array, because `VirtualizedList` takes one. */
@@ -99,6 +104,7 @@ export type BreakpointListItem<T extends BreakpointInfo = BreakpointInfo> =
 export function groupOf(bp: BreakpointInfo): BreakpointGroup {
   if (isNextRegBreakpoint(bp)) return "nextRegWrite";
   if (isCopperBreakpoint(bp)) return "copper";
+  if (isSpriteBreakpoint(bp)) return "sprite";
   if (bp.memoryRead) return "memRead";
   if (bp.memoryWrite) return "memWrite";
   if (bp.ioRead) return "ioRead";
@@ -118,6 +124,7 @@ export function shapeRank(bp: BreakpointInfo): number {
   if (bp.address !== undefined) return 0;
   if (isNextRegBreakpoint(bp)) return 0;
   if (isCopperBreakpoint(bp)) return 0;
+  if (isSpriteBreakpoint(bp)) return 0;
   if (isBankRelative(bp)) return 1;
   if (isLabelAnchored(bp)) return 2;
   return 3;

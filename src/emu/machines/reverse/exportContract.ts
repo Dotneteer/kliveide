@@ -70,6 +70,8 @@ const OVERRIDES: Record<string, ExportClass> = {
   ClearNextRegWatch: "debug",
   TakeNextRegHit: "debug",
   TakeCopperHit: "debug",
+  SetSpriteWatchArmed: "debug",
+  TakeSpriteHit: "debug",
   TakeAutoRunHit: "debug",
   // --- The ZX81 auto-RUN watch lives in a non-volatile static
   ArmAutoRun: "journaled",

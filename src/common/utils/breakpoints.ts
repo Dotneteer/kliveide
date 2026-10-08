@@ -11,7 +11,12 @@ import { Store } from "@common/state/redux-light";
 import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
 import { toHexa2, toHexa4 } from "@renderer/appIde/services/ide-commands";
 import { getBreakpoints } from "@renderer/appIde/utils/breakpoint-utils";
-import { breakpointMatchesScope, isCopperBreakpoint, isNextRegBreakpoint } from "./breakpoint-scope";
+import {
+  breakpointMatchesScope,
+  isCopperBreakpoint,
+  isNextRegBreakpoint,
+  isSpriteBreakpoint
+} from "./breakpoint-scope";
 import { resolvedPartitionFor } from "./source-breakpoint-partition";
 import { hasSourceLevelDebug, isDebuggableCompilerOutput } from "@renderer/appIde/utils/compiler-utils";
 import type {
@@ -186,6 +191,15 @@ function buildBreakpointKey(
    */
   if (isCopperBreakpoint(bp)) {
     return `CU:$${(bp.copperIndex! & 0x3ff).toString(16).toUpperCase().padStart(3, "0")}`;
+  }
+
+  /*
+   * A sprite-attribute breakpoint is named by its sprite: `SP:$0C`. The attribute filter is not
+   * part of it (`BreakpointInfo.spriteAttrMask`). `SP` cannot collide with a partition label either
+   * (`S` and `P` are not hex digits).
+   */
+  if (isSpriteBreakpoint(bp)) {
+    return `SP:$${toHexa2(bp.spriteIndex! & 0x7f)}`;
   }
 
   if (bp.address !== undefined) {

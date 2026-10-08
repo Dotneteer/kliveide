@@ -55,6 +55,8 @@ import {
   isCopperBreakpoint,
   isEventBreakpoint,
   isNextRegBreakpoint,
+  isSpriteBreakpoint,
+  spriteAttrMaskOf,
   withScopeOwner
 } from "@common/utils/breakpoint-scope";
 
@@ -178,6 +180,9 @@ const NEXTREG_WATCH_SIZE = NEXTREG_WATCH_ROW * 3;
 /** The Copper-instruction watch: 1024 list indexes, one bit each (`zxnextCopperWatch`). */
 const COPPER_WATCH_SIZE = 128;
 
+/** The sprite-attribute watch: one byte per sprite, bits 0-4 the watched attribute bytes (`zxnextSpriteWatch`). */
+const SPRITE_WATCH_SIZE = 128;
+
 /**
  * This class implement support functions for debugging
  */
@@ -197,6 +202,9 @@ export class DebugSupport implements IDebugSupport {
 
   /** The Copper watch table: one bit per list index, as `zxnextCopperWatch` expects. */
   readonly copperWatch = new Uint8Array(COPPER_WATCH_SIZE);
+
+  /** The sprite-attribute watch table: one byte per sprite, as `zxnextSpriteWatch` expects. */
+  readonly spriteWatch = new Uint8Array(SPRITE_WATCH_SIZE);
 
   private suspendVersionIncrement = false;
 
@@ -638,6 +646,56 @@ export class DebugSupport implements IDebugSupport {
   }
 
   /**
+   * Does any enabled breakpoint watch a sprite's attribute writes (`sp:`)? Asked once per
+   * debug-loop entry by the ZX Spectrum Next, like `hasCopperBreakpoints`.
+   */
+  hasSpriteBreakpoints(): boolean {
+    for (const bp of this.breakpointDefs.values()) {
+      if (isSpriteBreakpoint(bp) && !bp.disabled) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * The sprite watch table to hand the core: 128 bytes, byte `sprite` holding the watched attribute
+   * bytes as bits 0-4. Exact, like the Copper table: every breakpoint's mask is OR-ed in, and
+   * `hasSpriteHit` only has to apply the filters the core cannot (hit counts and conditions).
+   */
+  buildSpriteWatch(): Uint8Array {
+    this.spriteWatch.fill(0);
+    for (const bp of this.breakpointDefs.values()) {
+      if (!isSpriteBreakpoint(bp) || bp.disabled) continue;
+      this.spriteWatch[bp.spriteIndex! & 0x7f] |= spriteAttrMaskOf(bp);
+    }
+    return this.spriteWatch;
+  }
+
+  /**
+   * Does any breakpoint want to stop on this sprite attribute write? Runs every matching definition
+   * through `handleHit`, so hit counts, conditions, logpoints and one-shots apply. In a condition,
+   * `ADDR` is the attribute byte (0-4) and `VAL` the value written.
+   *
+   * @param sprite The sprite whose attribute byte was written
+   * @param attribute Which attribute byte (0-4)
+   * @param value The value written
+   */
+  hasSpriteHit(sprite: number, attribute: number, value: number): boolean {
+    let stop = false;
+    for (const [key, bp] of this.breakpointDefs) {
+      if (!isSpriteBreakpoint(bp) || bp.disabled) continue;
+      if ((bp.spriteIndex! & 0x7f) !== (sprite & 0x7f)) continue;
+      if ((spriteAttrMaskOf(bp) & (1 << attribute)) === 0) continue;
+      const access = { value: value & 0xff, address: attribute & 0x07 };
+      if (this.handleHit(key, bp, "sprite", sprite & 0x7f, access, false)) {
+        stop = true;
+      }
+    }
+    return stop;
+  }
+
+  /**
    * Gets I/O read breakpoint information for the specified address
    * @param address I/O address read during the current instruction
    */
@@ -775,6 +833,9 @@ export class DebugSupport implements IDebugSupport {
         nextRegCopper: bp.nextRegCopper,
         // --- Same reason again: the Copper list index is a Copper breakpoint's whole identity.
         copperIndex: bp.copperIndex,
+        // --- And the sprite, with the attribute bytes it watches.
+        spriteIndex: bp.spriteIndex,
+        spriteAttrMask: bp.spriteAttrMask,
         /*
          * `disabled` and `hitCount`, for the same reason as `owner` and `bank` above — and these
          * two were being dropped.
@@ -2245,6 +2306,7 @@ function accessKindOf(kind: DecisionKind): ConditionAccessKind {
 function accessKindOfBreakpoint(bp: BreakpointInfo): ConditionAccessKind {
   if (isNextRegBreakpoint(bp)) return "nextReg";
   if (isCopperBreakpoint(bp)) return "copper";
+  if (isSpriteBreakpoint(bp)) return "sprite";
   if (bp.memoryRead || bp.memoryWrite) return "memory";
   if (bp.ioRead || bp.ioWrite) return "io";
   return "exec";

@@ -166,11 +166,26 @@ export function isCopperBreakpoint(bp: BreakpointInfo): boolean {
 }
 
 /**
- * Is this an *event* breakpoint - one bound to something other than a Z80 address (a NextReg write
- * or a Copper instruction)? Such a breakpoint is never an execution breakpoint and has no gutter.
+ * Is this breakpoint watching a ZX Spectrum Next sprite's attribute writes (`sp:`)? The sprite is
+ * the binding, as the list index is for `isCopperBreakpoint`.
+ */
+export function isSpriteBreakpoint(bp: BreakpointInfo): boolean {
+  return bp?.spriteIndex !== undefined;
+}
+
+/** The attribute bytes a sprite breakpoint watches, as a 5-bit mask (all five when unset). */
+export function spriteAttrMaskOf(bp: BreakpointInfo): number {
+  const mask = (bp?.spriteAttrMask ?? 0x1f) & 0x1f;
+  return mask === 0 ? 0x1f : mask;
+}
+
+/**
+ * Is this an *event* breakpoint - one bound to something other than a Z80 address (a NextReg write,
+ * a Copper instruction or a sprite attribute write)? Such a breakpoint is never an execution
+ * breakpoint and has no gutter.
  */
 export function isEventBreakpoint(bp: BreakpointInfo): boolean {
-  return isNextRegBreakpoint(bp) || isCopperBreakpoint(bp);
+  return isNextRegBreakpoint(bp) || isCopperBreakpoint(bp) || isSpriteBreakpoint(bp);
 }
 
 /**

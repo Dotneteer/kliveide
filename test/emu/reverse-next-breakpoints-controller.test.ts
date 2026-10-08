@@ -15,7 +15,8 @@ import { createSession } from "../harness/zxnext";
  *
  * - a NextReg write breakpoint finds the last write to a register, then the one before it;
  * - a Copper breakpoint finds the last time the Copper completed an instruction - in the frame
- *   before, then the frame before that.
+ *   before, then the frame before that;
+ * - a sprite-attribute breakpoint finds the last port $57 write to a sprite, then the one before it.
  */
 
 class ResolvingMessenger extends MessengerBase {
@@ -34,7 +35,8 @@ class ResolvingMessenger extends MessengerBase {
 
 /**
  * Starts a Copper list in mode 11 (restarted every frame: two MOVEs, a WAIT for line 96, two MOVEs),
- * then counts at $9000 and, every 64 passes, writes the write count to NextReg $4A
+ * then counts at $9000 and, every 64 passes, writes the write count to NextReg $4A and to sprite 5's
+ * attr0 through port $57
  */
 const PROGRAM = `
       .org $8000
@@ -60,6 +62,13 @@ Loop:
       ld ($9001),a
       nextreg $4a,a
 AfterWrite:
+      ld bc,$303b
+      ld a,5
+      out (c),a
+      ld bc,$0057
+      ld a,($9001)
+      out (c),a
+AfterSprite:
       jr Loop
 
 CopperList:
@@ -75,8 +84,8 @@ async function waitFor(done: () => boolean, what: string): Promise<void> {
   throw new Error(`Timed out waiting for ${what}`);
 }
 
-describe("Reverse Continue with NextReg and Copper breakpoints (Phase 7)", () => {
-  it("finds the last NextReg write and the last Copper instruction on the real past machine", async () => {
+describe("Reverse Continue with NextReg, Copper and sprite breakpoints (Phase 7)", () => {
+  it("finds the last NextReg write, Copper instruction and sprite attribute write on the real past machine", async () => {
     const s = await createSession();
     const program = await s.loadCode(PROGRAM);
     s.poke(0x9000, 0);
@@ -128,6 +137,20 @@ describe("Reverse Continue with NextReg and Copper breakpoints (Phase 7)", () =>
     expect(controller.navigateHistory("reverseContinue").moved).toBe(true);
     expect(machine.frames).toBe(firstFrame - 1);
     debugSupport.removeBreakpoint(copperBp);
+
+    // --- The last write to sprite 5's attributes, then the one before it
+    controller.navigateHistory("present");
+    const spriteBp = { spriteIndex: 5 };
+    debugSupport.addBreakpoint(spriteBp);
+    const sprite = controller.navigateHistory("reverseContinue");
+    expect(sprite.moved).toBe(true);
+    expect(sprite.breakpoint ?? "").toMatch(/^Sprite breakpoint: sprite \$05 attr 0 \(X\)/);
+    expect(machine.pc).toBe(program.symbol("AfterSprite"));
+    expect(s.peek(0x9001)).toBe(writes);
+    expect(controller.navigateHistory("reverseContinue").moved).toBe(true);
+    expect(machine.pc).toBe(program.symbol("AfterSprite"));
+    expect(s.peek(0x9001)).toBe(writes - 1);
+    debugSupport.removeBreakpoint(spriteBp);
     await controller.stop();
   }, 600_000);
 });

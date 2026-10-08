@@ -277,6 +277,26 @@ export type BreakpointInfo = {
   copperIndex?: number;
 
   /**
+   * The ZX Spectrum Next **sprite** (`$00`-`$7F`) whose attribute writes this breakpoint watches:
+   * the machine stops after the instruction during which a watched attribute byte of that sprite is
+   * written - through port `$57` (by the CPU or the DMA) or the `$35`-`$39`/`$75`-`$79` NextReg
+   * mirrors (by the CPU or the Copper) (`.plans/SPRITE_ATTRIBUTE_BREAKPOINTS_PLAN.md`).
+   *
+   * Like `copperIndex`, the sprite is the binding and the discriminator. Use `isSpriteBreakpoint`
+   * in `@common/utils/breakpoint-scope`. It has no Z80 address, no partition and no gutter.
+   */
+  spriteIndex?: number;
+
+  /**
+   * Which of the sprite's five attribute bytes a sprite breakpoint watches: bit `n` for attribute
+   * byte `n` (0-4). Absent (or `$1F`) watches all five.
+   *
+   * Not part of the identity, like `nextRegCopper`: two breakpoints on one sprite that differ only
+   * in the bytes they watch are one breakpoint, which `bp-set` updates in place.
+   */
+  spriteAttrMask?: number;
+
+  /**
    * Indicates an execution breakpoint
    */
   exec?: boolean;

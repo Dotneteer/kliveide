@@ -29,7 +29,7 @@ are estimates for prioritising, not commitments.
 |---|---|---|---|
 | G1 | Conditional breakpoints, hit counts, logpoints | **S–M** | ✅ done (2026-10-03): G1.1–G1.4, G1.5 (DeZog ASSERTION/WPMEM comments) and G1.6 (one-shot breakpoints) |
 | G2 | Load and save snapshots (.sna/.z80/.szx), RZX | **S → L** | ✅ done (2026-10-04): G2.1–G2.8 |
-| G3 | Live Next hardware inspectors | **M** (layers: M–L) | ✅ done (2026-10-05 – 10-06): G3.1–G3.7, G3.9 and the Copper half of G3.8; the sprite half of G3.8 is open |
+| G3 | Live Next hardware inspectors | **M** (layers: M–L) | ✅ done (2026-10-05 – 10-08): G3.1–G3.9 (G3.8's sprite half on 2026-10-08) |
 | G4 | Execution history and reverse debugging | **M → XL** | ✅ done (2026-10-07 – 10-08): G4.1–G4.6 |
 | G5 | Code coverage, profiler, unit tests | **M → L** | Coverage map in the disassembly · plans ready, decisions recorded (2026-10-08): coverage and heat map, profiler, unit tests, CLI/CI |
 | G6 | Remote debugging, real hardware, external API | **M → XL** | Command API for scripts and CI |
@@ -142,7 +142,8 @@ G3.2 and G3.3, as one Sprite Inspector document, in [SPRITE_INSPECTOR_PLAN.md](S
 G3.4 in [TILEMAP_INSPECTOR_PLAN.md](TILEMAP_INSPECTOR_PLAN.md) (done); G3.5 in
 [LAYER2_INSPECTOR_PLAN.md](LAYER2_INSPECTOR_PLAN.md) (done); G3.6 in
 [LAYER_COMPOSITION_PLAN.md](LAYER_COMPOSITION_PLAN.md) (done); G3.7 in
-[BEAM_POSITION_OVERLAY_PLAN.md](BEAM_POSITION_OVERLAY_PLAN.md) (done).
+[BEAM_POSITION_OVERLAY_PLAN.md](BEAM_POSITION_OVERLAY_PLAN.md) (done); the sprite half of G3.8 in
+[SPRITE_ATTRIBUTE_BREAKPOINTS_PLAN.md](SPRITE_ATTRIBUTE_BREAKPOINTS_PLAN.md) (done).
 Research for those four corrected two assumptions in the table below: the `.sl2`/`.shr` viewers G3.5
 was to reuse are stubs (the Layer 2 plan builds the decoder and replaces the `.sl2`/`.nxi` stubs),
 and G3.6 is nearer **M–L** than L, because the core already renders each layer into its own buffer
@@ -159,7 +160,7 @@ overlay now sits on a shared `EmulatorScreenOverlay`, and its render to the beam
 | G3.5 Layer 2 live viewer ✅ **done** | Current Layer 2 banks as an image at its resolution (256×192 / 320×256 / 640×256), with scroll and clip shown. Delivered as the Layer 2 Inspector: the displayed, shadow and `$123B`-window banks, whole or as displayed. | S–M (there were no viewers to reuse: `.sl2` was a stub and `.shr` is a Timex mode; the Layer 2 decoder was built once and also replaced the `.sl2`/`.nxi` stubs) |
 | G3.6 Layer composition view ✅ **done** | Toggle individual layers (ULA, Layer 2, sprites, tilemap) on and off in the emulator screen; show the priority order, clip windows and transparency. Delivered as a debug mask in the core's mixer (the program is unaffected), a Layers strip with hide/solo/transparency/clips, an exact paused recompose from a per-span capture, a pixel probe that names the rule a pixel won by, and a `$layers` document. | M–L (the core already rendered each layer into its own buffer and mixed them in one function; the mask, the capture and the probe all live there) |
 | G3.7 Beam-position overlay ✅ **done** | Show the raster position on the paused screen; useful with Copper and with the ULA panel's beam phase. Delivered on the Next and every Spectrum core (48K, 128K, Pentagon, Scorpion, +2A/+3, +2E/+3E, Timex): the beam line and pill, the paused picture rendered up to the beam without changing the machine, the previous frame's pixels hatched, blanking named, a hover readout of when the beam reaches any pixel, the Copper's hit as a second marker, and the ULA panel's RAS/POS fixed on the non-Next machines. | S–M |
-| G3.8 Copper / sprite breakpoints (Copper half ✅ **done**) | Stop when the Copper reaches an instruction (`cu:<index>`, Step Copper), or when a sprite attribute is written (not yet). | M, after G1 |
+| G3.8 Copper / sprite breakpoints ✅ **done** | Stop when the Copper reaches an instruction (`cu:<index>`, Step Copper), or when a sprite attribute is written (`sp:<sprite>`, with an `-attr` byte filter; port `$57` and the NextReg mirrors, by the CPU, the DMA or the Copper; set from the Sprite Inspector). | M, after G1 |
 | G3.9 `.copper` assembler pragma ✅ **done** | `.copper wait/move/nop/halt/word` in the Klive Z80 Assembler, with highlighting, completion and hover; the Copper List maps the live list back to these source lines and a margin click on one sets a Copper breakpoint. | S |
 
 ---
@@ -250,6 +251,12 @@ hardware, where competitors lead.
 | ~~G6.3 DeZog-compatible remote~~ | **Dropped** (decision D1). DeZog compatibility applies to source conventions instead (D3). | — |
 | G6.4 Real Next hardware debugging | Run and debug on a physical Next over UART **from Klive's own debugger UI**, with an on-Next agent program handling breakpoints and memory. Fits D1: Klive is the client. | XL (hardware, a Z80N agent, timing and banking constraints) |
 | G6.5 Send to Next | Push a built `.nex` to real hardware over serial or Wi-Fi without debugging. | M |
+
+**Plan:** G6.4 and G6.5 are planned together in [NEXT_HARDWARE_DEBUGGING_PLAN.md](NEXT_HARDWARE_DEBUGGING_PLAN.md)
+(draft, open questions, 2026-10-08). Its verdict: feasible. The link it proposes is a UART on a joystick port
+(NextReg `$0B`) through a 3.3 V USB-serial adapter, with Wi-Fi via the ESP kept for send-to-Next only.
+The Next runs a Klive agent, and the whole stack is testable on the WASM core's emulated UART.
+G6.5 is its Phase 2.
 
 ---
 
