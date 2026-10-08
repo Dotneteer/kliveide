@@ -1,3 +1,7 @@
+import { WasmHistorySource } from "../history/WasmHistorySource";
+import type { IExecutionHistorySource } from "@emu/abstractions/IExecutionHistorySource";
+import type { ExecutionHistoryInfo, ExecutionHistoryPage } from "@common/history/historyTypes";
+import type { HistoryServiceSpan } from "@common/history/serviceSpans";
 import { conditionStoreOf, type ConditionStore } from "../conditionStore";
 import type { MachineConfigSet, MachineModel } from "@common/machines/info-types";
 import type { MessengerBase } from "@common/messaging/MessengerBase";
@@ -29,6 +33,7 @@ import {
   restoreWasmImage,
   type MachineStateParts
 } from "../state/wasmStateImage";
+import { fillCoreBytes, writeCoreBytes } from "@emu/machines/reverse/coreMemoryWrites";
 
 /** The size of a slot's region in the 4 MB physical memory */
 const Z88_SLOT_SIZE = 0x10_0000;
@@ -98,7 +103,40 @@ const toHexa2 = (value: number) => value.toString(16).toUpperCase().padStart(2, 
  * the core had matched it (`.plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`, tag
  * `z88-typescript-last`); its recorded behaviour is in `test/wasm/z88/goldens/`.
  */
-export class Z88WasmV2Machine extends Z88WasmHost {
+export class Z88WasmV2Machine extends Z88WasmHost implements IExecutionHistorySource {
+  // ==============================================================================================
+  // Execution history (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`): the shared recorder in the
+  // core, read through the shared reader; the machine id names the context decoder
+
+  get historyMachineId(): string {
+    return this.machineId;
+  }
+
+  private readonly wasmV2History = new WasmHistorySource(
+    () => this.wasmV2Runtime?.exports,
+    () => this.historyMachineId
+  );
+
+  getHistoryInfo(): ExecutionHistoryInfo | undefined {
+    return this.wasmV2History.info();
+  }
+
+  readHistory(fromSequence: number, count: number): ExecutionHistoryPage | undefined {
+    return this.wasmV2History.read(fromSequence, count);
+  }
+
+  getHistoryServiceSpans(): HistoryServiceSpan[] | undefined {
+    return this.wasmV2History.serviceSpans();
+  }
+
+  clearHistory(): void {
+    this.wasmV2History.clear();
+  }
+
+  setHistoryEnabled(enabled: boolean): void {
+    this.wasmV2History.setEnabled(enabled);
+  }
+
   public readonly implementation = "wasm" as const;
   public wasmV2Runtime?: Z88WasmV2Runtime;
 
@@ -467,7 +505,8 @@ export class Z88WasmV2Machine extends Z88WasmHost {
     runtime.exports.z88ExecuteFrame();
     this.syncFrameCountersFromWasmV2(runtime);
     this.flushUartTx(runtime);
-    this.frameCompleted = true;
+    // --- A reverse-debugging stop target can end the call mid-frame (REVERSE_DEBUGGING_PLAN D4)
+    this.frameCompleted = runtime.exports.z88GetFrameCompleted() !== 0;
     this.executionContext.lastTerminationReason = FrameTerminationMode.Normal;
     return FrameTerminationMode.Normal;
   }
@@ -526,6 +565,11 @@ export class Z88WasmV2Machine extends Z88WasmHost {
 
       // --- Through `super`: the value was just read from the core, so it need not be pushed back
       super.pc = wasm.z88GetCpuPc();
+      // --- A reverse-debugging replay run reached its next journal entry (REVERSE_DEBUGGING_PLAN D11);
+      // --- `z88ExecuteUntilStop` stops there too
+      if (this.executionContext.historyStopArmed && wasm.z80HistoryCheckStop() !== 0) {
+        return this.finishWasmV2DebugLoop(FrameTerminationMode.UntilExecutionPoint);
+      }
       if (watchesBusAccess) {
         this.importWasmV2BusAccess(runtime);
       }
@@ -699,7 +743,7 @@ export class Z88WasmV2Machine extends Z88WasmHost {
     this.cards[slot] = card;
     runtime.exports.z88InsertCard(slot, CARD_KIND_CODES[card.kind], card.sizeInBytes);
     if (contents) {
-      runtime.memory.set(contents, slot * Z88_SLOT_SIZE);
+      writeCoreBytes(runtime, runtime.memory, contents, slot * Z88_SLOT_SIZE);
     }
   }
 
@@ -725,8 +769,56 @@ export class Z88WasmV2Machine extends Z88WasmHost {
     const runtime = this.requireWasmV2Runtime();
     return {
       ...captureWasmImage("z88", runtime.module, runtime.exports.memory.buffer),
-      host: { cards: this.cards.map((c) => (c ? { ...c } : null)) }
+      host: this.captureHostState()
     };
+  }
+
+  // ------------------------------------------------------------------------------------------------
+  // Reverse debugging (`.plans/REVERSE_DEBUGGING_PLAN.md` §4.2, `reverse/Timeline.ts`)
+
+  /** The core, as the export contract names it */
+  get reverseCoreId(): string {
+    return "z88";
+  }
+
+  get reverseRuntime(): Z88WasmV2Runtime | undefined {
+    return this.wasmV2Runtime;
+  }
+
+  readonly reverseFrameExport = "z88ExecuteFrame";
+
+  isAtFrameBoundary(): boolean {
+    return this.wasmV2Runtime?.exports.z88GetFrameCompleted() !== 0;
+  }
+
+  /** The wrapper's own fields: what a state file and a keyframe keep besides the image */
+  captureHostState(): Record<string, unknown> {
+    return { cards: this.cards.map((c) => (c ? { ...c } : null)) };
+  }
+
+  /**
+   * After the core changed under the wrapper (a replay, a return to the present, T7): the wrapper's
+   * fields from `state`, the mirrors re-read from the core. Nothing is pushed - the cards' contents
+   * are in the image - and queued keystrokes and audio of the replaced run go.
+   */
+  restoreHostState(state: unknown): void {
+    const runtime = this.requireWasmV2Runtime();
+    const host = (state ?? {}) as { cards?: (Z88CardSpec | null)[] };
+    (host.cards ?? []).forEach((card, slot) => {
+      if (slot < this.cards.length) this.cards[slot] = card ? { ...card } : undefined;
+    });
+    this.wasmV2AudioSamples.length = 0;
+    this.emulatedKeyStrokes.length = 0;
+    // --- Serial output a replay produced was shown when the live run produced it
+    runtime.exports.z88ClearUartTx();
+    this.frameCompleted = runtime.exports.z88GetFrameCompleted() !== 0;
+    this.syncFrameCountersFromWasmV2(runtime);
+    this.syncCpuFromWasmV2(runtime);
+  }
+
+  /** Forgets what was last pushed into the core, so the next frame pushes the live state (D8) */
+  invalidateHostSync(): void {
+    this.syncedTargetClockMultiplier = -1;
   }
 
   /**
@@ -783,7 +875,7 @@ export class Z88WasmV2Machine extends Z88WasmHost {
     // --- A clean machine, with no stale bytes of a card the snapshot does not have
     this.reset();
     w.z88ResetBlink();
-    runtime.memory.fill(0);
+    fillCoreBytes(runtime, runtime.memory, 0);
 
     // --- Cards, then the internal RAM (banks $20-$3F, at $080000)
     for (let slot = 0; slot < 4; slot++) {
@@ -794,7 +886,7 @@ export class Z88WasmV2Machine extends Z88WasmHost {
         this.removeCardFromBackend(slot);
       }
     }
-    runtime.memory.set(snapshot.ram, Z88_INTERNAL_RAM_BANK * Z88_BANK_SIZE);
+    writeCoreBytes(runtime, runtime.memory, snapshot.ram, Z88_INTERNAL_RAM_BANK * Z88_BANK_SIZE);
     // --- A later card change or hard reset keeps the snapshot's cards and what they hold
     this.adoptConfiguredSlots();
 
@@ -921,6 +1013,12 @@ export class Z88WasmV2Machine extends Z88WasmHost {
    */
   private flushUartTx(runtime: Z88WasmV2Runtime): void {
     const w = runtime.exports;
+    // --- A reverse-debugging replay re-sends what the IDE has shown already (REVERSE_DEBUGGING_PLAN
+    // --- D13): emptied, not shown. The buffer is volatile, so emptying it is not an input.
+    if (this.executionContext.isReplayingHistory?.()) {
+      w.z88ClearUartTx();
+      return;
+    }
     const count = w.z88GetUartTxCount();
     if (count === 0) return;
     const bytes = new Uint8Array(w.memory.buffer, w.z88UartTxPtr(), count).slice();

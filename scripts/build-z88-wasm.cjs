@@ -3,6 +3,7 @@ const { dirname, relative, resolve, sep } = require("node:path");
 const { spawnSync } = require("node:child_process");
 
 const { acquireWasmBuildLock, waitForWasmBuildLock } = require("./wasm-build-lock.cjs");
+const { Z80_HISTORY_EXPORTS, Z80_HISTORY_VOLATILE_SYMBOLS } = require("./z80-history-exports.cjs");
 const {
   discardWasmOutput,
   layoutMapArgs,
@@ -25,7 +26,13 @@ const Z88_VOLATILE_SYMBOLS = [
   "condToken",
   "condLastStatus",
   "condEnv",
-  "z88BreakpointFlags"
+  "z88BreakpointFlags",
+  // --- What the Z88 sent to TXD, held until the host shows it: output the guest never reads back, not
+  // --- machine state (a reverse-debugging replay must not depend on when the host emptied it)
+  "z88UartTx",
+  "z88UartTxCount",
+  // --- The execution-history ring (EXECUTION_HISTORY_ALL_CORES_PLAN)
+  ...Z80_HISTORY_VOLATILE_SYMBOLS
 ];
 
 /*
@@ -65,6 +72,8 @@ const productionExports = [
   "condEvaluateValue",
   "condSetEnv",
   "condPeek",
+  // --- Execution history recorder (`src/emu/z80/wasm/z80-history.c`)
+  ...Z80_HISTORY_EXPORTS,
   "memory",
   // --- Buffers
   "z88BreakpointFlagsPtr",
@@ -220,10 +229,11 @@ const productionExports = [
 ];
 
 /*
- * 4 MB of physical memory, an 800x480 pixel buffer (1.5 MB) and the audio buffer fit in 8 MiB;
+ * 4 MB of physical memory, an 800x480 pixel buffer (1.5 MB), the audio buffer and the 4 MB
+ * execution-history ring (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` D2, D3) fit in 12 MiB;
  * `z88.c` asserts the sum at compile time. Raise this only with a recorded reason.
  */
-const Z88_WASM_MEMORY_BYTES = 8 * 1024 * 1024;
+const Z88_WASM_MEMORY_BYTES = 12 * 1024 * 1024;
 
 const buildModes = {
   production: {

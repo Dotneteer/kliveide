@@ -1,0 +1,112 @@
+---
+description: "Save a reverse-debugging session to a .klr file and open it later, or on another computer, with the whole past to step back through."
+---
+
+import { Callout } from 'nextra/components'
+
+# Saving and Opening Debug Recordings
+
+<Callout type="info">
+This is one of Klive's [advanced debugging features](/howto/advanced-debugging), which are off unless
+you turn them on: run `set -u features.advancedDebugging 1` in the IDE, then restart Klive.
+</Callout>
+
+With [reverse debugging](/working-with-ide/reverse-debugging), a debug session remembers its past:
+Step Back, Reverse Continue and reverse watchpoints can take the machine back to any moment since
+the session started. A **debug recording** saves that whole session to a `.klr` file. Whoever opens
+it - you tomorrow, or someone you send it to - is in the debugger at the moment you saved, on a
+machine that is exactly yours, and can step back through everything the recording holds.
+
+It is the best way to report a bug that is hard to reproduce: reproduce it once, save, send the file.
+
+<Callout type="info">
+Debug recordings work on every machine with reverse debugging: the ZX Spectrum 48K and 16K, 128K,
+Pentagon 128, +2A/+3/+2E/+3E and Next, the Scorpion ZS-256, the Timex machines, the Cambridge Z88,
+and the ZX80 and ZX81.
+</Callout>
+
+## Making a bug report
+
+1. **Start with Debugging** (reverse debugging is on by default).
+2. Make the bug happen.
+3. Pause the machine at the bug - or step back to the moment that shows it best.
+4. **Debug &rarr; Save Debug Recording...**, or type `drsave bug.klr -note Crashes when the second level starts`.
+
+Saving pauses a running machine for a moment and lets it run on; the session goes on as before.
+A recording saved while the machine stands in the past opens at that point.
+
+A recording is small, because it holds keyframes and inputs, not video: about 1-2 MB for a minute of
+a ZX Spectrum game and 2-4 MB for a minute of a busy ZX Spectrum Next program.
+
+## Opening a recording
+
+- **Debug &rarr; Open Debug Recording...**, or **File &rarr; Open File...**, choosing a `.klr` file.
+- Drop a `.klr` file onto the Emulator window.
+- Open it in the Explorer to see what it holds; its tab has **Open** and **Open at start** buttons.
+- `drload bug.klr` from the command prompt.
+
+Klive switches to the machine, model and configuration the recording was made on, and stands paused
+**where it was saved**, in a debug session. From there everything works as in the session that made
+it: Step Back, Reverse Step Over and Out, Reverse Continue, reverse watchpoints, the Execution History.
+The status bar names the recording while you work in it.
+
+**Open at start** (`drload bug.klr -start`) stands at the recording's first moment instead. Continue
+then replays the recording with your breakpoints active - "the recording, with the debugger
+attached". At the recording's end the machine goes on running live: the recording becomes the past of
+a new session, and saving again writes the longer recording. If you stop, reset or restart a
+recording you ran on like that, Klive asks first, so you can save the new part.
+
+## What is in a recording
+
+- the machine's **keyframes** (complete pictures of the machine taken as the session ran) and its
+  **inputs**: every key, joystick and mouse movement, every tape block and every SD card sector the
+  machine read;
+- your **breakpoints and watches**. Opened, they are added as *session* breakpoints, next to the
+  project's own, and are never saved into the project. Use `-nobreakpoints` to keep only yours;
+- the **sources' identity**: the compilation's file names and fingerprints. If the open project's
+  files differ, Klive says which before you step, because labels and source lines may then not match;
+  stepping through the disassembly and address breakpoints are always exact. `drsave -sources` puts
+  the source files themselves in the recording;
+- the **media's names**: tapes and disks are inside the machine, so the recording needs no files. A
+  disk is detached on opening, so replaying never writes into your `.dsk`;
+- on the ZX Spectrum Next, **no SD card image**: every sector the session read is in the recording,
+  so it replays without the card. Running on past its end uses your card only if it is the one the
+  recording was made with.
+
+<Callout type="warning" emoji="⚠️">
+A recording holds everything the machine was given: whatever was typed, every SD card sector read,
+and with `-sources` the source files. Check before you share one.
+</Callout>
+
+## Same Klive build only
+
+A recording replays the exact code that made it, so it opens only in a Klive whose emulator core is
+**the same build**. Klive checks this when it opens one (and the Explorer view says it before you
+open it). A recording from another build is refused - but it also carries the machine state of its
+end, which Klive offers to open instead: the bug's moment, without its past.
+
+## Making recordings smaller
+
+- `drsave bug.klr -from -500000` drops everything before the last keyframe at or before 500,000
+  instructions back (`-from #1234` names a record of the Execution History).
+- `drsave bug.klr -sparse` keeps only keyframes about a second apart. The first step back into a
+  stretch then replays a little longer.
+
+`drload bug.klr -verify` replays a recording once from its start, checking it against every keyframe,
+and reports how long that took. A recording checks itself as it replays anyway: a damaged one stops
+reverse debugging at the first point that does not match, never showing a wrong past.
+
+## Commands
+
+```
+drsave bug.klr                 ; save the session (debug-recording-save)
+drsave bug.klr -f -note Text   ; replace the file; the note is the rest of the line
+drsave bug.klr -sparse -sources
+drload bug.klr                 ; open where it was saved (debug-recording-load)
+drload bug.klr -start          ; open at its start
+drload bug.klr -verify         ; replay it all once, checking every keyframe
+drload bug.klr -nobreakpoints  ; keep the current breakpoints
+drload bug.klr -y              ; another build's recording: open its end state
+```
+
+See the [command reference](../commands-reference#debug-recording-save).

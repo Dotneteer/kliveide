@@ -1,0 +1,44 @@
+---
+description: "Turn on Klive's advanced debugging features: the execution history, reverse debugging, trace export and debug recordings."
+---
+
+# Advanced Debugging Features
+
+Klive's advanced debugging features are turned off unless you turn them on. They are:
+
+- the [Execution History](/working-with-ide/execution-history), with lite step back and trace export;
+- [reverse debugging](/working-with-ide/reverse-debugging): Step Back and Forward, Reverse Step
+  Over and Out, Reverse Continue, and Take over here;
+- [debug recordings](/howto/debug-recordings) (`.klr` files).
+
+The same switch will also cover the code coverage, profiling and unit-testing features as they
+arrive.
+
+Use these steps to turn them on:
+
+1. Start Klive
+2. In the IDE window, execute this command:
+
+```text
+set -u features.advancedDebugging 1
+```
+
+3. Restart Klive
+
+After the restart, the **Debug** menu has the reverse-stepping commands, **Execution History**,
+**Export Execution History...** and the debug-recording commands. The toolbars have the Step Back,
+Step Forward and Return to Present buttons. The keyboard shortcuts, the history commands
+(`show-history`, `step-back`, `history-export`, `debug-recording-load` and the rest) and the
+**Reverse debugging** settings page group work too.
+
+While the features are off, Klive does not record the execution history or keep a reverse-debugging
+timeline, so a debug session costs nothing extra. The history commands, and opening a `.klr` file,
+say how to turn the features on.
+
+You can turn the features off by executing this command in the IDE window:
+
+```text
+set -u features.advancedDebugging 0
+```
+
+You should restart Klive after changing the setting.

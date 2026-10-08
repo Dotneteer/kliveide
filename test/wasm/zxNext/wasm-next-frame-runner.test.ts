@@ -92,13 +92,22 @@ describe("ZX Spectrum Next WASM v2 frame runner", () => {
     expect(executeAndCaptureFrame(wasm)).toEqual(oneNopStop(FrameTerminationMode.DebugEvent));
   });
 
-  it("stops when a frame command is queued without completing the frame", async () => {
+  it("runs nothing while an SD command waits for the host, as the native frame loop does (REVERSE_DEBUGGING_PLAN T3)", async () => {
     const wasm = await createTestZxNextWasmMachine();
     initializeFrameRunnerMachine(wasm);
-    wasm.setFrameCommand({ command: "sd-read" });
+    const programEnd = installSdReadProgram(wasm);
+    executeAndCaptureFrame(wasm);
+    expect(wasm.getFrameCommand()).toEqual({ command: "sd-read", sector: 5 });
+    const tacts = wasm.tacts;
 
-    // --- the command is noticed after the first instruction; the frame ends normally, incomplete
-    expect(executeAndCaptureFrame(wasm)).toEqual(oneNopStop(FrameTerminationMode.Normal));
+    // --- The debug loop (a pending command sends the machine there) returns without running
+    const snapshot = executeAndCaptureFrame(wasm);
+    expect(snapshot).toMatchObject({ termination: FrameTerminationMode.Normal, pc: programEnd, tacts, frameCompleted: false });
+
+    // --- ...also when a state restore dropped the wrapper's copy: the core still holds the command
+    wasm.setFrameCommand(null);
+    expect(executeAndCaptureFrame(wasm)).toMatchObject({ pc: programEnd, tacts });
+    expect(wasm.getFrameCommand()).toEqual({ command: "sd-read", sector: 5 });
   });
 
   it("stops the native WASM frame loop when an SD command is queued mid-frame", async () => {

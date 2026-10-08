@@ -1,4 +1,5 @@
 import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
+import { takeOverBeforeEdit } from "./reverseDebugFork";
 import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
 import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
 import {
@@ -93,6 +94,11 @@ export class SetZ80RegisterCommand extends IdeCommandBase<SetZ80RegisterCommandA
     }
     outp.resetStyle();
 
+    // --- An edit in the past changes the past: take over there first, after asking (REVERSE_DEBUGGING_PLAN D12)
+    if (!(await takeOverBeforeEdit(context, `Edit ${regInfo.name}`))) {
+      writeSuccessMessage(context.output, "Register edit canceled");
+      return commandSuccess;
+    }
     await context.emuApi.setRegisterValue(args.register, args.value);
     context.store.dispatch(incEmuViewVersionAction(), "ide");
 

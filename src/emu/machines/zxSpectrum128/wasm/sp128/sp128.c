@@ -298,6 +298,12 @@ static uint32_t sp128ContentionDelaySincePause;
 static uint32_t sp128CpuInstructionsExecuted;
 static uint32_t sp128CpuFrameSliceInstructions;
 static uint32_t sp128FrameCompleted;
+/*
+ * A frame has begun (`beginMachineFrame`) since the reset. With `sp128FrameCompleted` clear, that
+ * frame is still in progress - a history stop target or the debug loop left it mid-way - and the
+ * next fast frame continues it instead of beginning another (REVERSE_DEBUGGING_PLAN D4, T17).
+ */
+static uint32_t sp128FrameBegun;
 static uint32_t sp128InterruptsRaised;
 static uint8_t sp128InterruptLineActive;
 static uint8_t sp128CaptureBusEvents = 1u;
@@ -914,6 +920,9 @@ static inline void sp128BetaBeforeFetch(uint16_t pc) {
   rebuildMemorySlotMap();
   rebuildFlatRomSlot();
 }
+/* The execution-history recorder's hooks; the recorder and this machine's macros for it are at the
+   end of this file (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` Phase 2) */
+#include "../../../../z80/wasm/z80-history.h"
 #include "../../../../z80/wasm/z80.c"
 #undef Z80_REFRESH
 #undef Z80_INT_ACK
@@ -1213,6 +1222,7 @@ static uint32_t normalizeClockMultiplier(uint32_t value) {
 
 static void beginMachineFrame(void) {
   sp128FrameCompleted = 0u;
+  sp128FrameBegun = 1u;
 
   if (sp128ClockMultiplier != sp128TargetClockMultiplier) {
     sp128ClockMultiplier = sp128TargetClockMultiplier;
@@ -1341,6 +1351,7 @@ void sp128Reset(void) {
   sp128TactsInCurrentFrame = sp128TactsInFrame;
   sp128NextFrameStartTact = 0u;
   sp128FrameCompleted = 0u;
+  sp128FrameBegun = 0u;
   sp128SelectedRom = 0u;
   sp128SelectedBank = 0u;
   sp128PagingEnabled = 1u;
@@ -1394,7 +1405,8 @@ uint32_t sp128ExecuteFrame(void) {
     return 0u;
   }
 
-  beginMachineFrame();
+  /* A frame a stop target or the debug loop left mid-way goes on where it stopped */
+  if (sp128FrameCompleted != 0u || sp128FrameBegun == 0u) beginMachineFrame();
   sp128CaptureBusEvents = 0u;
   z80ClearBusEvents();
 
@@ -1405,7 +1417,10 @@ uint32_t sp128ExecuteFrame(void) {
   const uint32_t frameEndTact = sp128NextFrameStartTact + sp128TactsInCurrentFrame;
   while (sp128Tacts < frameEndTact) {
     sp128ExecuteInstruction();
+    /* Checked on the frame's last instruction too: the host reads the reached mark after the call */
+    const uint32_t stop = z80HistoryStopNow();
     if (sp128FrameCompleted != 0u) break;
+    if (stop != 0u) break;
   }
   sp128CaptureBusEvents = 1u;
   return 0u;
@@ -2688,3 +2703,39 @@ static uint32_t condSp128PeekPartition(int32_t partition, uint32_t address) {
 #define COND_PEEK_PARTITION(partition, address) condSp128PeekPartition(partition, address)
 #define COND_PARTITION_OF(address) ((int64_t)(int32_t)sp128GetCurrentPartition((address) >> 14))
 #include "../../../../z80/wasm/z80-condition.c"
+
+// -----------------------------------------------------------------------------
+// Execution history (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` §3, Phase 2): the shared recorder,
+// with this machine's side-effect-free peek through the current map, its frame position in T-states
+// (never an absolute tact: the counter is rebased, trap T4) and its context. The context is captured
+// after the opcode fetch (the recorder's default), so an instruction the Beta 128 paged TR-DOS in
+// for names the TR-DOS ROM (trap T7).
+//
+// The context (`sp128Context.ts` decodes it), shared by the 128K, the Pentagon and the Scorpion:
+//   0    port $7FFD   1 the selected ROM   2 the selected RAM bank (bit 3: the Scorpion's banks 8-15)
+//   3    bit 0 the Beta 128 has TR-DOS paged in, bit 1 paging is locked ($7FFD bit 5)
+//   4    the timing profile (0 128K, 1 Pentagon, 2 Scorpion)   5 the Scorpion's port $1FFD
+//   8-11 the partition of each 16K slot, as `getPartition` names it (`sp128GetCurrentPartition`),
+//        a signed byte: the ROMs -1..-4, the RAM banks 0-15
+// -----------------------------------------------------------------------------
+
+static inline void sp128HistoryContext(uint32_t kind, uint8_t *out) {
+  (void)kind;
+  out[0] = sp128Port7ffd;
+  out[1] = sp128SelectedRom;
+  out[2] = sp128SelectedBank;
+  out[3] = (uint8_t)((beta128Paged != 0u ? 0x01u : 0u) | (sp128PagingEnabled == 0u ? 0x02u : 0u));
+  out[4] = (uint8_t)sp128Timing;
+  out[5] = sp128Port1ffd;
+  out[6] = 0u;
+  out[7] = 0u;
+  for (uint32_t slot = 0u; slot < 4u; slot++) out[8u + slot] = (uint8_t)sp128GetCurrentPartition(slot);
+  for (uint32_t i = 12u; i < 16u; i++) out[i] = 0u;
+}
+
+#define Z80_HISTORY_CAPACITY 65536u
+#define Z80_HISTORY_PEEK(address) readMappedMemory((uint32_t)(address))
+#define Z80_HISTORY_CONTEXT(kind, out16) sp128HistoryContext(kind, out16)
+#define Z80_HISTORY_FRAME() sp128Frames
+#define Z80_HISTORY_FRAME_TACT() currentFrameTact()
+#include "../../../../z80/wasm/z80-history.c"

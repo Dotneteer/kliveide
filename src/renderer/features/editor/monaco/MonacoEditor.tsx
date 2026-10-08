@@ -228,6 +228,8 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
   const breakpoints = useRef<BreakpointInfo[]>([]);
   const compilation = useSelector((s) => s.compilation);
   const execState = useSelector((s) => s.emulatorState?.machineState);
+  // --- The history cursor (`.plans/LITE_STEP_BACK_PLAN.md` D2, D7): the execution marker follows it
+  const historyPosition = useSelector((s) => s.emulatorState?.historyPosition);
   const isProjectDebugging = useSelector((s) => s.emulatorState?.isProjectDebugging ?? false);
 
   // --- Store Monaco editor decorations to display breakpoint information
@@ -420,7 +422,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
   // --- Refresh breakpoints when they may change
   useEffect(() => {
     void refreshEditorBreakpoints.current();
-  }, [breakpointsVersion, compilation, execState, hubVersion, sourceFrame]);
+  }, [breakpointsVersion, compilation, execState, hubVersion, sourceFrame, historyPosition]);
 
   useEffect(() => {
     // Clear previous decorations and model markers
@@ -1781,13 +1783,16 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
 
     // --- Is the machine running?
     const machineState = store.getState().emulatorState?.machineState;
+    // --- In the past (LITE_STEP_BACK_PLAN D7): the historical marker replaces the current one, and
+    // --- what belongs to the present's stop (its source report, step-into targets, frames) is left out
+    const history = (cpuStateResponse as { history?: { position: number } }).history;
 
     // --- Source-level debug info (plan §10.5): the active statement's own range, and return
     // --- points, which the emulator's report of the last stop knows about
     if (machineState === MachineControllerState.Paused && hasSourceLevelDebug(compilation.result)) {
       let stop;
       try {
-        stop = await emuApi.getSourceStopInfo();
+        stop = history ? undefined : await emuApi.getSourceStopInfo();
       } catch {
         stop = undefined;
       }
@@ -1797,6 +1802,12 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
         if (location.filename.replaceAll(sep, "/").endsWith(getResourceName())) {
           const resName = getResourceName()?.slice(1);
           const activeBp = bps.find((bp) => (bp.line === location.line && bp.resource === resName) || bp.address === pc);
+          if (history) {
+            decorations.push(asHistoricalDecoration(createCurrentStatementDecoration(location, activeBp), history.position));
+            execPointDecoration.current?.clear();
+            execPointDecoration.current = editor.current.createDecorationsCollection(decorations);
+            return;
+          }
           decorations.push(createCurrentStatementDecoration(location, activeBp));
           const justMyCode = getGlobalSetting(store, SETTING_EMU_JUST_MY_CODE) !== false;
           stepIntoTargets(compilation.result.sourceLevelDebug, stop, justMyCode).forEach((target, i) => {
@@ -1881,9 +1892,31 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
     if (execPointDecoration.current) {
       execPointDecoration.current.clear();
     }
-    execPointDecoration.current = editor.current.createDecorationsCollection(decorations);
+    execPointDecoration.current = editor.current.createDecorationsCollection(
+      history ? decorations.map((d) => asHistoricalDecoration(d, history.position)) : decorations
+    );
   }
 };
+
+/**
+ * The execution marker in the past (`.plans/LITE_STEP_BACK_PLAN.md` D7, Q1): outlined in the
+ * secondary accent instead of the solid current-line fill, with a hollow arrow in the gutter, so a
+ * historical point is never mistaken for where the machine is.
+ */
+function asHistoricalDecoration(decoration: Decoration, position: number): Decoration {
+  const { className: _c, glyphMarginClassName: _g, after: _a, hoverMessage: _h, ...options } = decoration.options;
+  return {
+    ...decoration,
+    options: {
+      ...options,
+      className: styles.historyLine,
+      glyphMarginClassName: styles.historyMargin,
+      hoverMessage: {
+        value: `History step \u2212${position.toLocaleString("en-US")}: the registers here are from the past; memory shows the present`
+      }
+    }
+  };
+}
 
 /**
  * Creates a code breakpoint decoration

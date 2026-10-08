@@ -55,6 +55,8 @@ import {
   isCopperBreakpoint,
   isEventBreakpoint,
   isNextRegBreakpoint,
+  isSpriteBreakpoint,
+  spriteAttrMaskOf,
   withScopeOwner
 } from "@common/utils/breakpoint-scope";
 
@@ -115,6 +117,14 @@ export type LogLine = {
 /** Which access a stop decision is about; selects the definitions that can match. */
 type DecisionKind = "exec" | "memRead" | "memWrite" | "ioRead" | "ioWrite";
 
+/** What a reverse-debugging keyframe keeps of the breakpoints (`.plans/REVERSE_DEBUGGING_PLAN.md` D16) */
+export type DebugTimelineState = {
+  /** Hit counters that are not zero, by storage key */
+  hits: [string, number][];
+  /** The one-shot definitions that existed */
+  oneShots: BreakpointInfo[];
+};
+
 /** Per-definition runtime state, keyed by storage key; never persisted (plan §4.5, C12). */
 type BreakpointRuntimeState = {
   /** Condition-true hits since the last restart or reset. */
@@ -170,6 +180,9 @@ const NEXTREG_WATCH_SIZE = NEXTREG_WATCH_ROW * 3;
 /** The Copper-instruction watch: 1024 list indexes, one bit each (`zxnextCopperWatch`). */
 const COPPER_WATCH_SIZE = 128;
 
+/** The sprite-attribute watch: one byte per sprite, bits 0-4 the watched attribute bytes (`zxnextSpriteWatch`). */
+const SPRITE_WATCH_SIZE = 128;
+
 /**
  * This class implement support functions for debugging
  */
@@ -190,6 +203,9 @@ export class DebugSupport implements IDebugSupport {
   /** The Copper watch table: one bit per list index, as `zxnextCopperWatch` expects. */
   readonly copperWatch = new Uint8Array(COPPER_WATCH_SIZE);
 
+  /** The sprite-attribute watch table: one byte per sprite, as `zxnextSpriteWatch` expects. */
+  readonly spriteWatch = new Uint8Array(SPRITE_WATCH_SIZE);
+
   private suspendVersionIncrement = false;
 
   /** Per-definition hit counters and compiled conditions; see `BreakpointRuntimeState`. */
@@ -197,6 +213,41 @@ export class DebugSupport implements IDebugSupport {
 
   /** A counter moved since `takeHitsChanged` last asked. */
   private hitsChanged = false;
+
+  /**
+   * Called with a definition's storage key whenever its hit counter moves: the reverse-debugging
+   * timeline logs it with the position, so a replay - which runs without breakpoints - can put the
+   * counters where the recorded run had them (`.plans/REVERSE_DEBUGGING_PLAN.md` D16, T8).
+   */
+  onHitCounted?: (key: string) => void;
+
+  /** The hit counters and the one-shot definitions, for a reverse-debugging keyframe (D16) */
+  captureTimelineState(): DebugTimelineState {
+    const hits: [string, number][] = [];
+    for (const [key, state] of this.runtime) if (state.hits > 0) hits.push([key, state.hits]);
+    const oneShots: BreakpointInfo[] = [];
+    for (const bp of this.breakpointDefs.values()) if (bp.oneShot) oneShots.push({ ...bp });
+    return { hits, oneShots };
+  }
+
+  /**
+   * Puts the hit counters where a keyframe had them, plus `extraHits` (the logged hits between the
+   * keyframe and the replay target), and brings back one-shots the keyframe had that fired since.
+   * Definitions that no longer exist are skipped; a counter of a definition the keyframe did not
+   * know starts at its extra hits.
+   */
+  restoreTimelineState(state: DebugTimelineState, extraHits?: ReadonlyMap<string, number>): void {
+    for (const bp of state.oneShots) {
+      if (!this.breakpointDefs.has(getBreakpointStorageKey(bp))) this.addBreakpoint({ ...bp });
+    }
+    const base = new Map(state.hits);
+    const hitsOf = (key: string) => (base.get(key) ?? 0) + (extraHits?.get(key) ?? 0);
+    for (const [key, runtime] of this.runtime) runtime.hits = hitsOf(key);
+    for (const key of new Set([...base.keys(), ...(extraHits?.keys() ?? [])])) {
+      if (!this.runtime.has(key) && this.breakpointDefs.has(key)) this.runtime.set(key, { hits: hitsOf(key) });
+    }
+    this.hitsChanged = true;
+  }
 
   /** The machine facts conditions are compiled against; `setConditionEnvironment` sets them. */
   private conditionFacts: ConditionMachineFacts = { isZ80: true };
@@ -595,6 +646,56 @@ export class DebugSupport implements IDebugSupport {
   }
 
   /**
+   * Does any enabled breakpoint watch a sprite's attribute writes (`sp:`)? Asked once per
+   * debug-loop entry by the ZX Spectrum Next, like `hasCopperBreakpoints`.
+   */
+  hasSpriteBreakpoints(): boolean {
+    for (const bp of this.breakpointDefs.values()) {
+      if (isSpriteBreakpoint(bp) && !bp.disabled) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * The sprite watch table to hand the core: 128 bytes, byte `sprite` holding the watched attribute
+   * bytes as bits 0-4. Exact, like the Copper table: every breakpoint's mask is OR-ed in, and
+   * `hasSpriteHit` only has to apply the filters the core cannot (hit counts and conditions).
+   */
+  buildSpriteWatch(): Uint8Array {
+    this.spriteWatch.fill(0);
+    for (const bp of this.breakpointDefs.values()) {
+      if (!isSpriteBreakpoint(bp) || bp.disabled) continue;
+      this.spriteWatch[bp.spriteIndex! & 0x7f] |= spriteAttrMaskOf(bp);
+    }
+    return this.spriteWatch;
+  }
+
+  /**
+   * Does any breakpoint want to stop on this sprite attribute write? Runs every matching definition
+   * through `handleHit`, so hit counts, conditions, logpoints and one-shots apply. In a condition,
+   * `ADDR` is the attribute byte (0-4) and `VAL` the value written.
+   *
+   * @param sprite The sprite whose attribute byte was written
+   * @param attribute Which attribute byte (0-4)
+   * @param value The value written
+   */
+  hasSpriteHit(sprite: number, attribute: number, value: number): boolean {
+    let stop = false;
+    for (const [key, bp] of this.breakpointDefs) {
+      if (!isSpriteBreakpoint(bp) || bp.disabled) continue;
+      if ((bp.spriteIndex! & 0x7f) !== (sprite & 0x7f)) continue;
+      if ((spriteAttrMaskOf(bp) & (1 << attribute)) === 0) continue;
+      const access = { value: value & 0xff, address: attribute & 0x07 };
+      if (this.handleHit(key, bp, "sprite", sprite & 0x7f, access, false)) {
+        stop = true;
+      }
+    }
+    return stop;
+  }
+
+  /**
    * Gets I/O read breakpoint information for the specified address
    * @param address I/O address read during the current instruction
    */
@@ -732,6 +833,9 @@ export class DebugSupport implements IDebugSupport {
         nextRegCopper: bp.nextRegCopper,
         // --- Same reason again: the Copper list index is a Copper breakpoint's whole identity.
         copperIndex: bp.copperIndex,
+        // --- And the sprite, with the attribute bytes it watches.
+        spriteIndex: bp.spriteIndex,
+        spriteAttrMask: bp.spriteAttrMask,
         /*
          * `disabled` and `hitCount`, for the same reason as `owner` and `bank` above — and these
          * two were being dropped.
@@ -1537,6 +1641,7 @@ export class DebugSupport implements IDebugSupport {
 
     state.hits++;
     this.hitsChanged = true;
+    this.onHitCounted?.(key);
     const mode = effectiveHitMode(bp);
     if (!mode) return true;
     const target = bp.hitCount!;
@@ -1764,6 +1869,32 @@ export class DebugSupport implements IDebugSupport {
     const changed = this.hitsChanged;
     this.hitsChanged = false;
     return changed;
+  }
+
+  /**
+   * The breakpoints that would stop at an execution address in the past
+   * (`.plans/LITE_STEP_BACK_PLAN.md` D11): Reverse Continue's search. Enabled execution breakpoints
+   * claiming the address in the partition the record was made in, with their compiled conditions for
+   * the caller to evaluate against the record's registers. Hit counts are ignored, logpoints neither
+   * stop nor print, and a condition waiting for a missing label does not stop - as live.
+   */
+  historicalExecBreakpoints(
+    address: number,
+    partition: number | undefined
+  ): { bp: BreakpointInfo; compiled?: CompiledCondition; error?: string }[] {
+    const found: { bp: BreakpointInfo; compiled?: CompiledCondition; error?: string }[] = [];
+    for (const [key, bp] of this.breakpointDefs) {
+      // --- ASSERTION and WPMEM comments are checks, not stops a user placed to come back to
+      if (bp.disabled || !bp.exec || bp.runTo || bp.annotationKind || isLogpoint(bp)) continue;
+      if (!this.claimsAddress(bp, address)) continue;
+      const site = effectiveBankSite(bp);
+      const own = site ? bankRelativePartition(site.bank, site.bankOffset) : (bp.partition ?? bp.resolvedPartition);
+      if (own !== undefined && own !== partition) continue;
+      const state = this.runtimeFor(key, bp, "exec");
+      if (state.compiled?.inactiveReason) continue;
+      found.push({ bp, ...(state.compiled ? { compiled: state.compiled } : {}), ...(state.error ? { error: state.error } : {}) });
+    }
+    return found;
   }
 
   /**
@@ -2175,6 +2306,7 @@ function accessKindOf(kind: DecisionKind): ConditionAccessKind {
 function accessKindOfBreakpoint(bp: BreakpointInfo): ConditionAccessKind {
   if (isNextRegBreakpoint(bp)) return "nextReg";
   if (isCopperBreakpoint(bp)) return "copper";
+  if (isSpriteBreakpoint(bp)) return "sprite";
   if (bp.memoryRead || bp.memoryWrite) return "memory";
   if (bp.ioRead || bp.ioWrite) return "io";
   return "exec";

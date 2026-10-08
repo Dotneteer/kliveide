@@ -14,6 +14,8 @@ import {
 import { DEFAULT_JOYSTICK_BINDINGS } from "@common/settings/joystick-bindings";
 import {
   SETTING_EMU_FAST_LOAD,
+  SETTING_EMU_REVERSE_DEBUGGING,
+  SETTING_EMU_REVERSE_DEBUG_MEMORY_MB,
   SETTING_EMU_TRDOS_ROM,
   SETTING_EMU_TC2048_ROM,
   SETTING_EMU_TC2068_ROM,
@@ -293,6 +295,29 @@ const settingDefinitions: Setting[] = [
     description: "Allows the emulator fast tape load mode.",
     type: "boolean",
     defaultValue: true,
+    saveWithIde: true,
+    boundTo: "emu"
+  },
+  // --- Reverse debugging (`.plans/REVERSE_DEBUGGING_PLAN.md` D2, D6)
+  {
+    id: SETTING_EMU_REVERSE_DEBUGGING,
+    title: "Reverse Debugging",
+    description:
+      "Debug sessions keep a timeline of keyframes and inputs, so the debugger can go back to any " +
+      "earlier instruction with the whole machine as it was then.",
+    type: "boolean",
+    defaultValue: true,
+    saveWithIde: true,
+    boundTo: "emu"
+  },
+  {
+    id: SETTING_EMU_REVERSE_DEBUG_MEMORY_MB,
+    title: "Reverse Debugging Memory (MB)",
+    description:
+      "The memory the reverse-debugging timeline may use, 64 to 2048 MB; when it is full, the oldest " +
+      "part of the timeline goes. 0: the smaller of 512 MB and a sixteenth of the computer's memory.",
+    type: "number",
+    defaultValue: 0,
     saveWithIde: true,
     boundTo: "emu"
   },

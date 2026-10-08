@@ -160,6 +160,9 @@ export async function applyCardStateChange (
   const newConfig = { ...machineConfig, [slot]: cardState };
   store.dispatch(setMachineConfigAction(newConfig), "emu");
 
+  // --- A card change acts on the present: in the past the muted journal would drop it
+  // --- (REVERSE_DEBUGGING_PLAN D12)
+  controller.clearHistoryCursor?.();
   const machine = controller.machine as IZ88Machine;
   machine.dynamicConfig = newConfig;
   await machine.configure();

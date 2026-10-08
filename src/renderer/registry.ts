@@ -12,6 +12,7 @@ import {
   SPECTRUM_SNAPSHOT_VIEWER,
   RZX_VIEWER,
   MACHINE_STATE_VIEWER,
+  DEBUG_RECORDING_VIEWER,
   SCR_VIEWER,
   SHC_VIEWER,
   SHR_VIEWER,
@@ -29,6 +30,7 @@ import {
   SCRIPT_OUTPUT_VIEWER,
   MEMORY_EDITOR,
   COPPER_EDITOR,
+  HISTORY_EDITOR,
   SPRITES_EDITOR,
   TILEMAP_EDITOR,
   LAYER2_EDITOR,
@@ -51,6 +53,7 @@ import { SideBarPanelInfo } from "./abstractions/SideBarPanelInfo";
 import { ToolRendererInfo } from "./abstractions/ToolRendererInfo";
 import { createBasicPanel } from "./appIde/DocumentPanels/BasicPanel";
 import { createCopperListPanel } from "./appIde/DocumentPanels/CopperListPanel";
+import { createExecutionHistoryPanel } from "./appIde/DocumentPanels/ExecutionHistoryPanel";
 import { createSpriteInspectorPanel } from "./appIde/DocumentPanels/SpriteInspector/SpriteInspectorPanel";
 import { createTilemapInspectorPanel } from "./appIde/DocumentPanels/TilemapInspector/TilemapInspectorPanel";
 import { createLayer2InspectorPanel } from "./appIde/DocumentPanels/Layer2Inspector/Layer2InspectorPanel";
@@ -148,6 +151,11 @@ import {
   machineStateLaunchCommandBarRenderer
 } from "@renderer/features/documents/MachineStateLaunchMenu";
 import { createMachineStateViewerPanel } from "@renderer/appIde/DocumentPanels/MachineState/MachineStateViewerPanel";
+import { createDebugRecordingViewerPanel } from "@renderer/appIde/DocumentPanels/DebugRecording/DebugRecordingViewerPanel";
+import {
+  debugRecordingLaunchCommandBarRenderer,
+  getDebugRecordingContextMenuInfo
+} from "@renderer/features/documents/DebugRecordingLaunchMenu";
 import {
   getZ88SnapshotContextMenuInfo,
   z88SnapshotLaunchCommandBarRenderer
@@ -449,6 +457,11 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     icon: "bp-copper"
   },
   {
+    id: HISTORY_EDITOR,
+    renderer: createExecutionHistoryPanel,
+    icon: "history"
+  },
+  {
     id: SPRITES_EDITOR,
     renderer: createSpriteInspectorPanel,
     icon: "sprites"
@@ -542,6 +555,12 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     id: MACHINE_STATE_VIEWER,
     renderer: createMachineStateViewerPanel,
     icon: "chip"
+  },
+  {
+    // --- Debug recordings (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` D19)
+    id: DEBUG_RECORDING_VIEWER,
+    renderer: createDebugRecordingViewerPanel,
+    icon: "history"
   },
   {
     id: Z88_SNAPSHOT_VIEWER,
@@ -932,6 +951,19 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     openPermanent: true,
     documentTabRenderer: machineStateLaunchCommandBarRenderer,
     contextMenuInfo: getMachineStateContextMenuInfo
+  },
+  {
+    // --- Debug recordings (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` D19)
+    matchType: "ends",
+    pattern: ".klr",
+    editor: DEBUG_RECORDING_VIEWER,
+    icon: "history",
+    ignoreCase: true,
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true,
+    documentTabRenderer: debugRecordingLaunchCommandBarRenderer,
+    contextMenuInfo: getDebugRecordingContextMenuInfo
   },
   {
     matchType: "ends",

@@ -63,6 +63,7 @@ import {
   DisassemblyBankToolbar,
   DisassemblyToolbar
 } from "./DisassemblyToolbars";
+import { HistoryPresentBanner } from "../debugger/history/HistoryPresentBanner";
 
 /* M3: see `MemoryPanel` — the height belongs to `rowSizes`, not to this file. */
 const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
@@ -222,6 +223,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
   const {
     breakpointMap,
     cpuSnapshot,
+    history,
     items,
     mem64kLabels,
     pausedPc,
@@ -578,6 +580,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
         sysVarNames={sysVarNames}
         topAddress={topAddress}
       />
+      <HistoryPresentBanner what="The listed bytes" plural />
       <DisassemblyBankToolbar
         allowViews={machineSetup.allowViews}
         autoRefresh={autoRefresh}
@@ -646,6 +649,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
                   partitionLabels={machineSetup.partitionLabels}
                   partitionWidthCh={partitionWidthCh}
                   pausedPc={pausedPc}
+                  historyBytes={history?.bytes}
                   rowHeight={disassemblyRowItemSize}
                   showBanks={machineSetup.showBanks}
                   showBranchGutter={showBranchGutter}

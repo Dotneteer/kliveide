@@ -78,6 +78,22 @@ import {
 } from "./commands/ToolCommands";
 import { HideCopperCommand, ShowCopperCommand, StepCopperCommand } from "./commands/CopperCommands";
 import {
+  ClearExecutionHistoryCommand,
+  HideHistoryCommand,
+  HistoryCommand,
+  HistoryExportCommand,
+  HistoryGotoCommand,
+  HistoryPresentCommand,
+  ReverseContinueCommand,
+  ShowHistoryCommand,
+  StepBackCommand,
+  StepBackOutCommand,
+  HistoryTakeOverCommand,
+  ReverseContinueCancelCommand,
+  StepBackOverCommand,
+  StepForwardCommand
+} from "./commands/HistoryCommands";
+import {
   ExportPatternsCommand,
   ShowPatternsCommand,
   ShowSpritesCommand
@@ -125,6 +141,7 @@ import { Z88SnapshotCommand } from "./commands/Z88SnapshotCommand";
 import { SpectrumSnapshotCommand } from "./commands/SpectrumSnapshotCommand";
 import { SpectrumSnapshotSaveCommand } from "./commands/SpectrumSnapshotSaveCommand";
 import { StateLoadCommand, StateSaveCommand } from "./commands/MachineStateCommands";
+import { DebugRecordingLoadCommand, DebugRecordingSaveCommand } from "./commands/DebugRecordingCommands";
 import { TapeLoadCommand } from "./commands/TapeLoadCommand";
 import { RunToCursorCommand } from "./commands/RunToCursorCommand";
 import { NexLabelCommand } from "./commands/NexLabelCommand";
@@ -172,6 +189,21 @@ export function registerIdeCommands(cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new ShowCopperCommand());
   cmdSrv.registerCommand(new HideCopperCommand());
   cmdSrv.registerCommand(new StepCopperCommand());
+  cmdSrv.registerCommand(new ShowHistoryCommand());
+  cmdSrv.registerCommand(new HideHistoryCommand());
+  cmdSrv.registerCommand(new ClearExecutionHistoryCommand());
+  cmdSrv.registerCommand(new HistoryCommand());
+  cmdSrv.registerCommand(new HistoryExportCommand());
+  // --- Lite step back (`.plans/LITE_STEP_BACK_PLAN.md` §4.5)
+  cmdSrv.registerCommand(new StepBackCommand());
+  cmdSrv.registerCommand(new StepForwardCommand());
+  cmdSrv.registerCommand(new StepBackOverCommand());
+  cmdSrv.registerCommand(new StepBackOutCommand());
+  cmdSrv.registerCommand(new HistoryTakeOverCommand());
+  cmdSrv.registerCommand(new ReverseContinueCancelCommand());
+  cmdSrv.registerCommand(new ReverseContinueCommand());
+  cmdSrv.registerCommand(new HistoryPresentCommand());
+  cmdSrv.registerCommand(new HistoryGotoCommand());
   cmdSrv.registerCommand(new ShowSpritesCommand());
   cmdSrv.registerCommand(new ShowPatternsCommand());
   cmdSrv.registerCommand(new ExportPatternsCommand());
@@ -253,6 +285,8 @@ export function registerIdeCommands(cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new RzxVideoCommand());
   cmdSrv.registerCommand(new StateSaveCommand());
   cmdSrv.registerCommand(new StateLoadCommand());
+  cmdSrv.registerCommand(new DebugRecordingSaveCommand());
+  cmdSrv.registerCommand(new DebugRecordingLoadCommand());
   cmdSrv.registerCommand(new TapeLoadCommand());
   cmdSrv.registerCommand(new RunToCursorCommand());
   cmdSrv.registerCommand(new NexLabelCommand());

@@ -12,7 +12,7 @@ export function emulatorStateReducer(
   switch (type) {
     // --- A machine or model change rebuilds the machine, which empties its quick-save slot
     case "SET_MACHINE_TYPE":
-      return { ...state, machineId: payload?.id, quickStateAvailable: false };
+      return { ...state, machineId: payload?.id, quickStateAvailable: false, historyPosition: undefined, historySequence: undefined };
 
     case "SET_MODEL_TYPE":
       return { ...state, modelId: payload?.id, quickStateAvailable: false };
@@ -20,12 +20,25 @@ export function emulatorStateReducer(
     case "SET_RZX_STATE":
       return { ...state, rzx: payload?.value };
 
+    case "SET_REVERSE_DEBUG_STATE":
+      return { ...state, reverseDebug: payload?.value };
+
     case "SET_QUICK_STATE_AVAILABLE":
       return { ...state, quickStateAvailable: payload?.flag as boolean };
+
+    case "SET_HISTORY_POSITION":
+      return {
+        ...state,
+        historyPosition: payload?.value?.position || undefined,
+        historySequence: payload?.value?.position ? payload?.value?.sequence : undefined,
+        historyMemoryIsHistorical: payload?.value?.position ? !!payload?.value?.memoryIsHistorical : undefined
+      };
 
     case "SET_MACHINE_STATE":
       return {
         ...state,
+        // --- Only a paused machine has a history cursor (D1)
+        ...(payload?.state === MachineControllerState.Paused ? {} : { historyPosition: undefined, historySequence: undefined, historyMemoryIsHistorical: undefined }),
         machineState: payload?.state,
         isProjectDebugging:
           payload?.state === MachineControllerState.Stopped ||
@@ -115,6 +128,12 @@ export function emulatorStateReducer(
       return {
         ...state,
         emuViewVersion: (state.emuViewVersion ?? 0) + 1
+      };
+
+    case "SET_ADVANCED_DEBUGGING":
+      return {
+        ...state,
+        advancedDebugging: payload?.flag as boolean
       };
 
     case "SET_SCREEN_RECORDING_AVAILABLE":

@@ -42,7 +42,7 @@ These were decided by the project author. Changing them is a product decision, n
 | Sidebar "..." menu and panel badges | **Extension points exist, unused by default** (`Activity.commands`, `SideBarPanelInfo.badge`). An activity with no commands renders **no button at all**. Badges so far: Breakpoints, Watch. |
 | Next palette display | **Four device sections, one fixed-cell grid.** The sidebar panel is ULA / Layer 2 / Sprites / Tilemap — *one palette with two banks each*, never eight peers — each row carrying a 32px thumbnail of its whole palette and a two-segment bank control: the fill is the bank you are *looking at*, an accent ring is the bank the machine is *drawing with*. The ring marks the **exception** — the two coincide by default, so it only becomes visible once the view is pinned away from the hardware. `NextPaletteViewer` has no "small" mode and is **sized from its swatch** (`cellSize`, 14px in the sidebar), never from its container. |
 | Navigation history (Go Back / Forward) | **Toolbar controls, not per-area buttons** (the author chose Option A over buttons in each document header): Back, a narrow chevron that opens the history list, and Forward, grouped with no internal gap at the **start** of the IDE toolbar, then a separator. Neutral `--color-toolbarbutton` glyphs; the tooltip names the target and the shortcut. The list is a portalled popover — see "A Menu-Like List With A Header". |
-| Register/state panel colour | **A third exception, added after Phase 10** at the author's request, panel by panel — Z80 CPU, ULA & I/O, Next Registers, Next Memory Mapping, Call Stack, Watch, Breakpoints, the Copper panel and Copper List, the Sprite Inspector, the Tilemap Inspector, the Layer 2 Inspector and the Layers document (whose plans asked for it). Every *value* takes the primary accent (`--color-state-value`); labels stay `--data-label`. **One hue, plus the secondary (`--color-state-value-alt`) wherever a row carries two kinds of number with nothing but position to tell them apart** — `NextRegPanel`'s previous value, `MemMappingPanel`'s page offsets, `CallStackPanel`'s stack slot beside its return address. Contrast the Z80 shadow bank, which asked for the same treatment and was refused — `AF'` is *named* differently from `AF`, so the hue would buy nothing. Panels that have not been converted stay neutral; convert one by passing `valueXclass`/`iconFill`, never by restyling the shared primitives. |
+| Register/state panel colour | **A third exception, added after Phase 10** at the author's request, panel by panel — Z80 CPU, ULA & I/O, Next Registers, Next Memory Mapping, Call Stack, Watch, Breakpoints, the Copper panel and Copper List, the Sprite Inspector, the Tilemap Inspector, the Layer 2 Inspector, the Layers document and the Execution History (whose plans asked for it). Every *value* takes the primary accent (`--color-state-value`); labels stay `--data-label`. **One hue, plus the secondary (`--color-state-value-alt`) wherever a row carries two kinds of number with nothing but position to tell them apart** — `NextRegPanel`'s previous value, `MemMappingPanel`'s page offsets, `CallStackPanel`'s stack slot beside its return address. Contrast the Z80 shadow bank, which asked for the same treatment and was refused — `AF'` is *named* differently from `AF`, so the hue would buy nothing. Panels that have not been converted stay neutral; convert one by passing `valueXclass`/`iconFill`, never by restyling the shared primitives. |
 
 > **Phase 8's Monaco palette was wrong and has been replaced.** It generated every class as a
 > lightness step of the accent, which put nine of eleven classes in one blue and comments in neutral
@@ -742,6 +742,44 @@ the one literal colour in these views (see "Colour That Belongs To The Machine")
 sat beside the list's scrollbar and looked like a second one; its zones were invisible. At `8ch` the
 bands read as bands. Size a vertical overview strip so its content, not its edge, is what you see.
 
+## An Event In An Instruction Listing Is A Band, Not A Row Kind Of Its Own
+
+A listing of what the CPU did - the Execution History - interleaves instructions with events that ran
+no opcode: an interrupt acknowledge, an NMI, the DMA holding the bus. They are drawn as **separator
+rows**: the whole row is one secondary-text sentence ("— IM 2 interrupt, vector $FF —") on a subtle
+neutral band (`--bgcolor-history-separator` / `--color-history-separator`), with no address, bytes or
+changes columns. A run of instructions then reads unbroken, and the event still stands out; colouring
+them with an accent or a status hue would make an ordinary interrupt look like an error. A HALT that
+repeated is an instruction row with a count (`HALT ×1,203`), not a separator: the CPU did execute it.
+
+Two things in the same listing are **not** rows: a frame boundary is a hairline on the frame's first
+record (`--color-history-frame-line`, a top border that is transparent on every other row so heights
+never change), because a row there would shift the step numbers G4.3 steps through. And the newest
+record - where the machine is now - takes the execution point's fill (`--bgcolor-history-newest`, the
+accent's subtle fill, as the Copper's PC row). The recording indicator in the header is the one status
+hue (`--color-history-recording`, `--status-error`: the conventional "recording" red); it is text, so
+"○ Not recording" is told by the words, not the colour alone. Values (addresses, register changes)
+take `--color-state-value`, the register/state panels' rule.
+
+A **folded interrupt service** is the same separator band, not a new row kind: the INT or NMI row
+reads "▸ NMI service, 5 instructions, 32 T" and stands for the whole service. A merged ZX80/81
+display line ("Display NOPs ×32") is *not* a separator: like `HALT ×n`, the CPU did execute those
+NOPs, so it is an instruction row with a count. The open/fold glyph (`▸`/`▾`) is the only
+interactive part of a separator: neutral `--data-label`, `--color-history-separator` on hover, a
+fixed `2ch` box so folded and opened rows keep their text aligned - no button chrome, no accent,
+because folding is a view choice, not an event. Folding never renumbers: a folded row keeps its INT
+record's step number and the next row jumps past the service, so "−120" names the same instruction
+folded or not (G4.3 steps through those numbers).
+
+**A `VirtualizedList` beside a side pane goes in a flex row, not a `SplitPanel`.** The first
+Execution History put its list in a `SplitPanel` pane: the virtualizer laid out its full 2.7M px
+content, yet OverlayScrollbars marked the viewport `overflowYHidden`, its `scrollHeight` equalled its
+`clientHeight`, and neither the wheel nor `scrollToIndex` moved it - so "follow newest" showed the
+*oldest* rows. Laid out as the Copper List lays out its table and ruler (`.body` a flex row with
+`min-width: 0`, the list `flex: 1 1 0; min-width: 0; overflow: hidden`, the side pane a fixed `ch`
+width), the same list scrolls. Probe it in the running app: the viewport's
+`data-overlayscrollbars-viewport` attribute says `overflowYScroll` when it works.
+
 ## Changed Since The Previous Stop Is A Dot, Defined Once
 
 "These bytes moved since the machine last stopped" has one treatment, so any state panel can adopt it
@@ -753,6 +791,24 @@ the *previous* stop while paused, and the last stop while running; the Sprite In
 user (`useNextSpriteState`). On an image rather than a table (the Tilemap Inspector's map) the same
 dot goes in the changed cell's top-right corner, drawn on the overlay canvas — still a marker, never a
 tint over the machine's pixels.
+
+## A Breakpoint On A Table Row Is The Gutter Dot, Before The Index
+
+A table that is not a code listing still marks a row with a breakpoint the way the Copper List's
+gutter does: the `circle-filled` icon in `--color-breakpoint-binary` (`--color-breakpoint-disabled`
+when disabled), placed **before** the row's index in the index cell. The Sprite Inspector's `sp:`
+rows are the first case. The "changed since the previous stop" dot stays **after** the index, as an
+`::after` in `--color-state-changed`, so a row can carry both and they never compete for one spot or
+one hue. Do not add a gutter column to a table that has none: the index cell already is the row's
+identity, and the menu on the row is where the breakpoint is set.
+
+A new event-breakpoint type gets its own `bp-*` icon in the family's shape: the downward write arrow
+over a small glyph of the thing written (`bp-nextreg` sliders, `bp-sprite` a sprite cell), painted
+with `--color-breakpoint-type` like every other type icon.
+
+A dialog choice among a handful of independent bits (the sprite kind's five attribute bytes) is a
+column of checkboxes, each labelled with its bit and what it holds (`2: palette, mirror, rotate,
+X8`), with `--space-1` between them; one error line under the group when none is ticked.
 
 ## A Wide Table Scrolls As One Piece, Pinned Columns Fixed
 
@@ -885,6 +941,48 @@ accents cannot supply four, and the status hues can. Three further rules:
   Layers document's pictures to 2.5:1. Same rule as the Layer 2 Inspector's 640×256: never scale the
   two axes of a non-square pixel by the same factor.
 
+## The Past Is Outlined In The Secondary Accent; The Present Stays Solid
+
+Lite step back (`.plans/LITE_STEP_BACK_PLAN.md` D7) shows registers from the past while memory stays at
+the present, so two rules carry the whole visual vocabulary:
+
+- **Where the view shows the past, it says where - in the secondary accent, as an outline or a band,
+  never a fill or a panel tint.** The present's execution point is a *solid* primary-accent fill
+  (editor line, disassembly row); the historical one is an *outline* in `--color-history-marker`
+  (dashed in the editor, solid in the disassembly, dashed there too when the bytes have changed since
+  - "what is listed is not what ran"), with a hollow arrow glyph in the gutter. Two pointers into one
+  timeline, two hues - the same reasoning as two pointers into one list. A tint over a whole panel was
+  rejected: it reads as *disabled*, and under full reverse debugging (G4.4) it would have to cover the
+  whole IDE.
+- **Where the view shows the present while the cursor is in the past, it says that** - a thin band
+  (`HistoryPresentBanner`, italic `--text-tertiary` on `--bgcolor-history-band` with a 2px rail) at
+  the top of every memory- or device-reading view. It keys off `historyMemoryIsHistorical`, not off
+  "a cursor is set", so it disappears by itself when memory becomes historical.
+- Four L4 aliases, all of the secondary accent: `--color-history-marker`, `--color-history-text`,
+  `--bgcolor-history-band`, `--border-history-band`. The CPU panel's band, the status-bar chip, the
+  Execution History document's cursor row (a 3px rail plus an outline, so it reads apart from the
+  selection) and the toolbar's absence of any colour change all come from them.
+- **Under full reverse debugging the machine itself is in the past**, so the "present" bands go by
+  themselves (`historyMemoryIsHistorical`) and nothing else changes colour: the outline markers stay
+  the only in-view signal. The status bar carries the rest in **one chip whose text is the state** -
+  `⟲ −1.24 s · step −3,412` in the past, `▶ Replaying · 800 ms to present`, `⟲ Searching back… 3
+  intervals` - all on the history tokens, a click doing the one obvious thing (back to the present,
+  cancel the search; nothing while replaying, which drops the pointer and the hover). The words
+  live in `@common/history/reverseDebugText.ts`, not in the component, so status bar, tooltip and
+  docs cannot drift. The reverse range and "input ignored" go in the tooltip (the latter also
+  suffixes the label), never in a second chip.
+- **An action beside a state chip is outlined in the same hue, never filled** (`.historyAction`:
+  "Take over here"): fill is what says *state*, so a filled button next to a filled chip reads as a
+  second state. It gains the band's fill only on hover.
+- **A timeline that stopped early uses the status bar's error label** (`--bgcolor-errorLabel`), not a
+  history token: it is a failure, not a place in time. Its tooltip carries the reason; it clears at
+  the next Stop or debug session.
+- **A changed value on an accent-coloured panel takes the wash, not the colour** (`changedWash` via
+  `Bit16Value`/`Bit8Value`'s `changed`): `.changed` repaints an accent value in the same accent and
+  shows nothing. In history the CPU panel marks what the *previous step* changed, the present value
+  goes in the tooltip, and what a record does not hold (T-states, last accesses) shows as `--`,
+  never as the present's number.
+
 ## A Picture That Is Partly Last Frame's Says So
 
 A paused emulator screen holds two frames: this one up to the beam, the previous one after it. That
@@ -924,6 +1022,29 @@ the middle of a listing reads as a second title, which is what made `DskViewerPa
 headings look like strips of chrome in the content. `SectionHeader` is the primitive for a heading
 *within* content: a disk track, a memory bank, a breakpoint group. Its own doc comment says so; the
 mistake recurs anyway, which is why it is here too.
+
+## A Header Action The Machine State Forbids Stays, Disabled, And Its Tooltip Says Why
+
+A document-header action that cannot run in the current machine state (the Execution History's
+Export while the machine runs) stays in its place, disabled, and its `title` changes to the reason
+("Pause the machine to export the history") - it does not disappear and reflow the strip. A file
+action in a header is a `SmallIconButton` with the stock `save` glyph, placed after the panel's other
+actions and before its filter; the context menu carries the row-relative variant ("… from here to
+the newest…") rather than a second header button.
+
+## Where A Timeline Came From Rides In The Reverse Segment, Not A New One
+
+The IDE status bar has one reverse-debugging segment (`reverseStatusText`). Anything more that
+describes the timeline - such as the debug recording (`.klr`) it was opened from - is appended to
+that segment's text after ` · ` (`⟲ −1.24 s · step −42 · bug.klr`), and at the present, where the
+segment would otherwise be empty, it is the whole text (`Recording: bug.klr`), in words, not a glyph
+that could be read as "recording in progress". It never adds a second segment beside the first: the
+status bar's segments are the machine's facts, and two that change together must not compete. The
+tooltip carries the sentence that explains it.
+
+A file viewer whose file the running build may refuse (a `.klr` replays only in the build that made
+it) says so in one row, **Opens in this build:**, answered in a sentence - yes, no with the reason and
+the fallback, or "not known yet" with why - rather than a flag, because the useful part is the reason.
 
 ## Verify Geometry In The Running App, Never In A Replica
 

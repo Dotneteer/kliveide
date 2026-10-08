@@ -3,6 +3,18 @@ const { dirname, relative, resolve, sep } = require("node:path");
 
 const root = resolve(__dirname, "..");
 const sharedCpuSource = resolve(root, "src/emu/z80/wasm/z80.c");
+const { Z80_HISTORY_EXPORTS } = require("./z80-history-exports.cjs");
+/* The execution-history recorder (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.1) */
+const historyHeaderInclude = '#include "../../../../z80/wasm/z80-history.h"';
+const historySourceInclude = '#include "../../../../z80/wasm/z80-history.c"';
+/* What a core that records history defines for the recorder */
+const historyMachineMacros = [
+  "Z80_HISTORY_CAPACITY",
+  "Z80_HISTORY_PEEK",
+  "Z80_HISTORY_CONTEXT",
+  "Z80_HISTORY_FRAME",
+  "Z80_HISTORY_FRAME_TACT"
+];
 const sharedSpectrumDeviceSources = {
   ula: resolve(root, "src/emu/machines/zxSpectrum/wasm/common/zx-spectrum-ula.c"),
   keyboard: resolve(root, "src/emu/machines/zxSpectrum/wasm/common/zx-spectrum-keyboard.c"),
@@ -195,6 +207,16 @@ function validateSharedCpuSource() {
       errors.push(`shared CPU source does not declare the default-no-op hook: ${hookDefault}`);
     }
   }
+  // --- The execution-history hooks: no-ops unless a core includes `z80-history.h`
+  for (const hookDefault of [
+    "#define Z80_HISTORY_EVENT(kind) ((void)0)",
+    "#define Z80_HISTORY_BEGIN() ((void)0)",
+    "#define Z80_HISTORY_COMMIT() ((void)0)"
+  ]) {
+    if (!source.includes(hookDefault)) {
+      errors.push(`shared CPU source does not declare the default-no-op hook: ${hookDefault}`);
+    }
+  }
   return {
     path: sharedCpuSource,
     relativePath: relativeToRoot(sharedCpuSource),
@@ -242,6 +264,31 @@ function validateModelContract(entry) {
       }
     }
   }
+  // --- History: a core that turns the hooks on (one header) defines all three (that header, again),
+  // --- includes the recorder after them, provides every machine macro and exports the recorder
+  const folderText = readdirSync(dirname(entry.cpuAdapterSource))
+    .filter((name) => name.endsWith(".c") || name.endsWith(".h"))
+    .map((name) => readText(resolve(dirname(entry.cpuAdapterSource), name)))
+    .join("\n");
+  const entryText = existsSync(entry.buildEntrySource) ? readText(entry.buildEntrySource) : "";
+  const coreText = `${folderText}\n${entryText}`;
+  const recordsHistory = coreText.includes(historyHeaderInclude);
+  const definesHistoryHook = /#define\s+Z80_HISTORY_(EVENT|BEGIN|COMMIT)\b/.test(coreText);
+  if (definesHistoryHook) {
+    errors.push(
+      `${relativeToRoot(entry.cpuAdapterSource)} defines a Z80_HISTORY_* hook itself; include '${historyHeaderInclude}', which defines all three`
+    );
+  }
+  if (recordsHistory) {
+    if (!coreText.includes(historySourceInclude)) {
+      errors.push(`${entry.id} includes the history hooks but not the recorder '${historySourceInclude}'`);
+    }
+    for (const macro of historyMachineMacros) {
+      if (!new RegExp(`#define\\s+${macro}\\b`).test(coreText)) {
+        errors.push(`${entry.id} records history but does not define ${macro}`);
+      }
+    }
+  }
   if (!sourceText.includes("#define Z80_EXTERNAL_BUS 1")) {
     errors.push(`${relativeToRoot(entry.cpuAdapterSource)} does not declare the external Z80 bus adapter`);
   }
@@ -260,6 +307,11 @@ function validateModelContract(entry) {
     errors.push(
       `${relativeToRoot(entry.buildScript)} source is ${relativeToRoot(build.source)}; expected ${relativeToRoot(entry.buildEntrySource)}`
     );
+  }
+  for (const exportName of recordsHistory ? Z80_HISTORY_EXPORTS : []) {
+    if (!build.productionExports.includes(exportName)) {
+      errors.push(`${relativeToRoot(entry.buildScript)} records history but does not export '${exportName}'`);
+    }
   }
   for (const exportName of entry.requiredExports) {
     if (!build.productionExports.includes(exportName)) {
@@ -282,6 +334,7 @@ function validateModelContract(entry) {
     sharedDeviceIncludes: entry.sharedDeviceIncludes ?? [],
     forbiddenIncludeFragments: entry.forbiddenIncludeFragments ?? [],
     allowedIncludeFragments: entry.allowedIncludeFragments ?? [],
+    recordsHistory,
     ok: errors.length === 0,
     errors
   };

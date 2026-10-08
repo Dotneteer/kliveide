@@ -19,7 +19,12 @@ import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import type { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
 import type { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
 import type { MachineInfo } from "@common/machines/info-types";
-import type { CopperHitEvent, NextRegWriteEvent } from "@common/messaging/EmuApi";
+import type {
+  CopperHitEvent,
+  NextRegWriteEvent,
+  SpriteWriteEvent
+} from "@common/messaging/EmuApi";
+import { describeSpriteStop } from "@common/zxnext/sprites/spriteBreakpoints";
 import {
   decodeCopperWord,
   formatCopperIndex,
@@ -27,7 +32,7 @@ import {
 } from "@common/zxnext/copper/copperDecoder";
 import type { IFloppyControllerDevice } from "@emu/abstractions/IFloppyControllerDevice";
 import type { IRzxSession, RzxStop } from "@emu/machines/zxSpectrum/rzx/rzxSession";
-import type { RzxState } from "@state/AppState";
+import type { ReverseDebugState, RzxState } from "@state/AppState";
 
 import { toHexa4 } from "@appIde/services/ide-commands";
 import { NEXT_REG_DESCRIPTORS } from "@emu/machines/zxNext/nextRegDescriptors";
@@ -41,8 +46,14 @@ import {
   setRzxStateAction,
   incBreakpointHitsVersionAction,
   setMachineStateAction,
-  setProjectDebuggingAction
+  setProjectDebuggingAction,
+  setHistoryPositionAction,
+  setReverseDebugStateAction
 } from "@state/actions";
+import { HistoryCursor } from "./history/HistoryCursor";
+import type { HistoryRecord } from "@common/history/historyRecord";
+import type { HistoryNavigationOp, HistoryNavigationOptions, HistoryNavigationResult } from "@common/history/historyNavigation";
+import { evaluateHistoryCondition } from "@common/history/historyCondition";
 import {
   DISK_A_CHANGES,
   DISK_A_WP,
@@ -59,12 +70,35 @@ import { PANE_ID_EMU } from "@common/integration/constants";
 import { logLineOutput } from "./logOutput";
 import { createIdeApi } from "@common/messaging/IdeApi";
 import {
+  isExecutionHistorySource,
+  type IExecutionHistorySource
+} from "@emu/abstractions/IExecutionHistorySource";
+import {
   SETTING_EMU_FAST_LOAD,
+  SETTING_EMU_REVERSE_DEBUG_MEMORY_MB,
+  SETTING_EMU_REVERSE_DEBUGGING,
   SETTING_EMU_JUST_MY_CODE,
   SETTING_EMU_STEP_IN_INTERRUPTS,
   SETTING_EMU_STOP_ON_ERRORS
 } from "@common/settings/setting-const";
 import { getGlobalSetting } from "@renderer/core/RendererProvider";
+import { MF_REVERSE_DEBUG } from "@common/machines/constants";
+import {
+  ADVANCED_DEBUGGING_OFF_MESSAGE,
+  isAdvancedDebuggingEnabled
+} from "@common/features/advancedDebugging";
+import {
+  Timeline,
+  type ForkAwareMachine,
+  type ForkPreview,
+  type ForkResult,
+  type TimelineDebugSupport,
+  type TimelineMachine,
+  type TimelineSnapshot
+} from "./reverse/Timeline";
+import { ReplayStateProvider } from "./reverse/ReplayStateProvider";
+import { comparePositions, type TimelinePosition } from "./reverse/timelinePosition";
+import { reverseDebugBudgetBytes } from "./reverse/KeyframeStore";
 import { IAnyMachine } from "@renderer/abstractions/IAnyMachine";
 import type { SourceLevelDebugInfo } from "@abstractions/CompilerInfo";
 import type { SourceActivationInfo, SourceStopInfo } from "@abstractions/SourceDebugInfo";
@@ -160,6 +194,7 @@ export class MachineController implements IMachineController {
     public readonly machine: IAnyMachine
   ) {
     this.context = machine.executionContext;
+    if (this.context) this.context.isReplayingHistory = () => this.suppressingSideEffects;
     this.isDebugging = false;
     this.frameStats = {
       frameCount: 0,
@@ -180,6 +215,7 @@ export class MachineController implements IMachineController {
    * Disposes resources held by this class
    */
   dispose(): void {
+    this.endTimeline();
     this.stateChanged?.release();
     this.frameCompleted?.release();
     this.rzxStopped?.release();
@@ -211,7 +247,13 @@ export class MachineController implements IMachineController {
 
     const oldState = this._machineState;
     this._machineState = value;
+    // --- Only a paused machine is looked at in the past (D1)
+    if (value !== MachineControllerState.Paused) this._historyCursor?.clear();
+    // --- A replay run toward the present that stops short leaves the machine in the past: the cursor
+    // --- shows where (REVERSE_DEBUGGING_PLAN D11)
+    else this.settleReplayRun();
     this.store.dispatch(setMachineStateAction(value, this.machine.pc), "emu");
+    this.publishReverseState();
     this.stateChanged.fire({ oldState, newState: this._machineState });
   }
 
@@ -404,6 +446,11 @@ export class MachineController implements IMachineController {
     // --- Stop the machine
     const beforeState = this.state;
     this.isDebugging = false;
+    // --- A stop ends the debug session, and with it the reverse-debugging timeline (D2) - and what
+    // --- the status bar said about one that ended early
+    this.endTimeline();
+    this._reverseDesync = undefined;
+    this.publishReverseState();
     await this.finishExecutionLoop(MachineControllerState.Stopping, MachineControllerState.Stopped);
     if (
       beforeState !== MachineControllerState.Stopped &&
@@ -430,6 +477,8 @@ export class MachineController implements IMachineController {
       delete this.debugSupport.imminentBreakpoint;
       delete this.debugSupport.lastBreakpoint;
       delete this.debugSupport.lastStartupBreakpoint;
+      // --- ...and the last decision: a breakpoint at a restored PC fires before that instruction runs
+      delete this.debugSupport.lastDecisionPc;
     }
   }
 
@@ -710,6 +759,9 @@ export class MachineController implements IMachineController {
    * @param command Custom command string
    */
   async customCommand(command: string): Promise<any> {
+    // --- A machine command (the Z88's flap, battery and shift keys) is an input to the present: in
+    // --- the past the muted journal would drop it (REVERSE_DEBUGGING_PLAN D12)
+    this.clearHistoryCursor();
     return await this.machine.executeCustomCommand(command);
   }
 
@@ -737,6 +789,8 @@ export class MachineController implements IMachineController {
     this.assertMachineOperationIsCurrent(operationRevision);
 
     applyState();
+    // --- The restored state's past is not in the ring: that history belongs to another timeline (D7, D9)
+    this.historySource()?.clearHistory();
 
     // --- `run()` attaches the stored media when it starts from a stop; this restore takes the
     // --- place of that start. A Klive state brings its own media inside the core's memory, which
@@ -855,6 +909,9 @@ export class MachineController implements IMachineController {
           // --- cold boot dwarfs everything else the flow does. When the step opts into a checkpoint
           // --- and the machine still holds one, restore it and skip the journey entirely.
           if (step.checkpoint && m.tryRestoreCheckpoint?.(step.checkpoint)) {
+            // --- The checkpoint leaves the history ring alone (T7): what it holds is another run's
+            this.historySource()?.clearHistory();
+            this.endTimeline();
             // --- `run()` attaches the stored media as part of starting from a stop; the restore
             // --- took the place of that start, so do it here instead.
             attachStoredMedia(m, this._machineInfo.mediaIds);
@@ -1002,6 +1059,7 @@ export class MachineController implements IMachineController {
         this.suppressUserBreakpointsUntilKeystrokesLand(operationRevision);
         this.machine?.awakeCpu();
         this.store.dispatch(setDebuggingAction(true), "emu");
+        this.applyHistoryRecording(true);
       } else {
         // --- No suppression here: this branch starts a machine that is stopped or paused, so
         // --- nothing is in flight, and a window opened before `startDebug` would be closed by the
@@ -1046,6 +1104,622 @@ export class MachineController implements IMachineController {
     this.debugSupport.normalizeBreakpoints(resource, lineCount);
   }
 
+  // ==============================================================================================
+  // The history cursor (`.plans/LITE_STEP_BACK_PLAN.md`, G4.3): the paused machine looked at in its
+  // recorded past. The machine itself never changes; `getCpuState()` answers from the cursor (D2).
+
+  private _historyCursor?: HistoryCursor;
+
+  /** The history cursor; created on first use */
+  get historyCursor(): HistoryCursor {
+    this._historyCursor ??= new HistoryCursor({
+      historySource: () => this.historySource(),
+      isPaused: () => this.state === MachineControllerState.Paused,
+      // --- With a timeline the machine itself goes to the cursor (REVERSE_DEBUGGING_PLAN D10)
+      replay: () => (this.timeline ? this.replayProvider : undefined),
+      // --- The present's PC and SP: in the past the machine's are the past's
+      livePc: () => (this.timeline ? this.replayProvider.presentPc : this.machine.pc),
+      liveSp: () => (this.timeline ? this.replayProvider.presentSp : this.machine.sp),
+      statementStop: () => {
+        // --- Statement-level stepping back (D12) uses the same index as forward source stepping
+        if (!this.usesSourceStepping) return undefined;
+        this.refreshSourceIndex();
+        const index = this.sourceIndex;
+        return index ? (record, partition) => index.entryAt(record.regs.pc, partition) >= 0 : undefined;
+      },
+      breakpointHit: (record, partition, notes) => this.historicalBreakpointHit(record, partition, notes),
+      publish: (position, sequence) => {
+        this.store?.dispatch(
+          setHistoryPositionAction(position, sequence, this._historyCursor?.memoryIsHistorical ?? false),
+          "emu"
+        );
+        this.publishReverseState();
+      }
+    });
+    return this._historyCursor;
+  }
+
+  /** Moves the history cursor (D4): never a machine command, the machine is not touched */
+  navigateHistory(op: HistoryNavigationOp, options?: HistoryNavigationOptions): HistoryNavigationResult {
+    // --- With a timeline, Reverse Continue checks every breakpoint on the real past machine (D15)
+    if (op === "reverseContinue" && this.timeline && this.state === MachineControllerState.Paused) {
+      return this.reverseContinueByReplay();
+    }
+    const result = this.historyCursor.navigate(op, options);
+    this.publishReverseState();
+    // --- The machine could not go there itself (before the timeline's start, a desync): say why
+    const failed = this.timeline || this._replayProvider?.lastError ? this._replayProvider?.lastError : undefined;
+    if (failed && result.moved && result.position > 0 && !this.historyCursor.memoryIsHistorical) {
+      return { ...result, notes: [...(result.notes ?? []), `Memory and devices show the present here: ${failed}`] };
+    }
+    return result;
+  }
+
+  /** Returns to the present (D5): register and memory edits call it before they act */
+  clearHistoryCursor(): void {
+    this._historyCursor?.clear();
+    this.leavePast();
+  }
+
+  /**
+   * Back to the present when the machine stands in the past without a cursor - after a deep landing
+   * (D17) - which `HistoryCursor.clear` cannot see
+   */
+  private leavePast(): void {
+    if (this.timeline?.mode === "navigating" && this.state === MachineControllerState.Paused) {
+      this.replayProvider.leave();
+    }
+  }
+
+  /**
+   * Reverse Continue by replay (`.plans/REVERSE_DEBUGGING_PLAN.md` D15): the keyframe interval that
+   * ends where the machine stands is replayed with breakpoints in *collect* mode - every stop is noted
+   * and the run goes on - and the last hit before that point wins; with none, the interval before it.
+   * Every breakpoint kind works, because the machine is really there: conditions that read memory,
+   * memory and I/O watchpoints, NextReg and Copper breakpoints. That is also what makes a memory-write
+   * watchpoint a reverse watchpoint ("the last write to $8000").
+   */
+  private reverseContinueByReplay(): HistoryNavigationResult {
+    const search = this.reverseContinueSearch();
+    for (;;) {
+      const step = search.next();
+      if (step.done === true) return step.value;
+    }
+  }
+
+  /** Set by `cancelReverseContinue`: the search stops after the interval it is in */
+  private _reverseSearchCanceled = false;
+  /** Keyframe intervals a running search has covered (the IDE's progress) */
+  private _reverseSearchIntervals?: number;
+
+  /**
+   * Reverse Continue with progress and cancel (D15, §4.4): the search yields to the event loop after
+   * every keyframe interval, publishes how many it covered, and stops - back where it started - when
+   * `cancelReverseContinue` is called. Without a timeline, G4.3's walker answers at once.
+   */
+  async reverseContinue(): Promise<HistoryNavigationResult> {
+    if (!this.timeline || this.state !== MachineControllerState.Paused) return this.navigateHistory("reverseContinue");
+    this._reverseSearchCanceled = false;
+    const search = this.reverseContinueSearch();
+    try {
+      for (;;) {
+        const step = search.next();
+        if (step.done === true) return step.value;
+        this._reverseSearchIntervals = step.value;
+        this.publishReverseState();
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
+    } finally {
+      this._reverseSearchIntervals = undefined;
+      this._reverseSearchCanceled = false;
+      this.publishReverseState();
+    }
+  }
+
+  /** Stops a running Reverse Continue search; the machine goes back where the search started */
+  cancelReverseContinue(): boolean {
+    if (this._reverseSearchIntervals === undefined) return false;
+    this._reverseSearchCanceled = true;
+    return true;
+  }
+
+  /** The search behind Reverse Continue: yields the intervals covered after each one, returns the result */
+  private *reverseContinueSearch(): Generator<number, HistoryNavigationResult> {
+    const timeline = this.timeline!;
+    const cursor = this.historyCursor;
+    const startSequence = cursor.sequence;
+    const startedInPast = timeline.mode === "navigating";
+    const from = timeline.position;
+    const here = (extra: Partial<HistoryNavigationResult>): HistoryNavigationResult => ({
+      position: cursor.position,
+      sequence: cursor.sequence,
+      moved: false,
+      ...extra
+    });
+    /** Back where the search started: the cursor's record, a deep landing, or the present */
+    const backToStart = () => {
+      if (startSequence !== undefined) cursor.moveToRecord(startSequence);
+      else if (startedInPast) {
+        timeline.landAt(from);
+        this.replayProvider.anchorHere();
+      } else timeline.returnToPresent();
+    };
+    let end = from;
+    let hit: { position: TimelinePosition; label: string } | undefined;
+    let intervals = 0;
+    try {
+      for (let keyframe = timeline.keyframeBefore(end); keyframe; keyframe = timeline.keyframeBefore(end)) {
+        const hits = this.collectBreakpointHits(keyframe.seed.position, end);
+        if (hits.length) {
+          hit = hits[hits.length - 1];
+          break;
+        }
+        end = keyframe.seed.position;
+        yield ++intervals;
+        if (this._reverseSearchCanceled) {
+          backToStart();
+          return here({ reason: "canceled" });
+        }
+      }
+    } catch (err) {
+      // --- A desync ends the timeline (D9): the machine stays where the replay stopped
+      if (!this.timeline) return here({ notes: [`Reverse debugging stopped: ${(err as Error).message}`] });
+      throw err;
+    }
+    if (!hit) {
+      backToStart();
+      return here({ reason: "noHit" });
+    }
+    // --- The machine stood just before the hit's next record: the cursor goes there
+    if (timeline.viewHolds(hit.position.sequence)) {
+      cursor.moveToRecord(hit.position.sequence + 1);
+      return { position: cursor.position, sequence: cursor.sequence, moved: true, breakpoint: hit.label };
+    }
+    // --- Older than anything the ring holds: the machine goes there and the ring it regenerated becomes
+    // --- the history views' (no cursor: the machine itself shows the point)
+    cursor.clear(false);
+    timeline.landAt(hit.position);
+    this.replayProvider.anchorHere();
+    this.store?.dispatch(setHistoryPositionAction(0, undefined, true), "emu");
+    return {
+      position: 0,
+      moved: true,
+      breakpoint: hit.label,
+      notes: ["Found before the recorded history's window: the history shows the run up to this point"]
+    };
+  }
+
+  /**
+   * Replays from a position (a keyframe's) to `end` with breakpoints in collect mode: every stop
+   * before `end` is noted with what stopped it, and the run continues (D15)
+   */
+  private collectBreakpointHits(from: TimelinePosition, end: TimelinePosition): { position: TimelinePosition; label: string }[] {
+    const timeline = this.timeline!;
+    // --- The run makes the decision at `from` itself: a hit exactly at a keyframe belongs to this interval
+    timeline.replayTo(from, { beforeDecision: true });
+    timeline.startReplayRun(end);
+    const ctx = this.context;
+    const saved = {
+      debugStepMode: ctx.debugStepMode,
+      frameTerminationMode: ctx.frameTerminationMode,
+      debugSupport: ctx.debugSupport,
+      historyStopArmed: ctx.historyStopArmed
+    };
+    ctx.debugStepMode = DebugStepMode.StopAtBreakpoint;
+    ctx.frameTerminationMode = FrameTerminationMode.DebugEvent;
+    ctx.debugSupport = this.debugSupport;
+    ctx.historyStopArmed = true;
+    const hits: { position: TimelinePosition; label: string }[] = [];
+    try {
+      for (let guard = 0; timeline.mode === "replaying"; guard++) {
+        if (guard > 10_000_000) throw new Error("Reverse Continue did not finish an interval");
+        const termination = this.machine.executeMachineFrame();
+        if (timeline.port.targetReached) {
+          const outcome = timeline.onReplayTarget();
+          if (outcome === "desync") throw timeline.lastDesync ?? new Error("Replay diverged");
+          if (outcome !== "continue") break;
+          continue;
+        }
+        if (termination === FrameTerminationMode.DebugEvent) {
+          const position = timeline.port.position;
+          if (comparePositions(position, end) < 0) hits.push({ position, label: this.describeDebugStop() });
+          // --- Memory, I/O and NextReg stops spend their one-shots as a real stop would
+          this.debugSupport?.consumeFiredOneShots();
+        }
+      }
+    } finally {
+      ctx.debugStepMode = saved.debugStepMode;
+      ctx.frameTerminationMode = saved.frameTerminationMode;
+      ctx.debugSupport = saved.debugSupport;
+      ctx.historyStopArmed = saved.historyStopArmed;
+      if (timeline.mode === "replaying") timeline.pauseReplayRun();
+    }
+    return hits;
+  }
+
+  /** Reverse Continue (D11): whether an enabled execution breakpoint stops at a record */
+  private historicalBreakpointHit(
+    record: HistoryRecord,
+    partition: number | undefined,
+    notes: Set<string>
+  ): { hit: boolean; label?: string } {
+    const candidates = this.debugSupport?.historicalExecBreakpoints?.(record.regs.pc, partition) ?? [];
+    for (const { bp, compiled, error } of candidates) {
+      const label = bp.resource && bp.line !== undefined ? `${bp.resource}:${bp.line}` : `$${toHexa4(record.regs.pc)}`;
+      // --- No condition, or one that does not compile (it stops every time, as live: C15)
+      if (!compiled || error) return { hit: true, label };
+      const result = evaluateHistoryCondition(compiled, record.regs);
+      if ("value" in result) {
+        if (result.value) return { hit: true, label };
+        continue;
+      }
+      // --- Over-stopping is the safe failure (Q5): the user is told, once per breakpoint
+      notes.add(
+        `Breakpoint ${label}: condition not checked - ${(result as { reason: string }).reason}, which is not historical in lite mode`
+      );
+      return { hit: true, label };
+    }
+    return { hit: false };
+  }
+
+  /**
+   * The machine as an execution-history recorder, when it is one
+   * (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.4)
+   */
+  private historySource(): IExecutionHistorySource | undefined {
+    return isExecutionHistorySource(this.machine) ? this.machine : undefined;
+  }
+
+  /**
+   * Records history in debug sessions only (D8): Start with debugging and the steps, never a plain
+   * Run, and not the `NoDebug` runs of a code-injection flow that boot the machine to its entry point.
+   * @param debugRun Whether the run about to start is a debug run
+   */
+  private applyHistoryRecording(debugRun: boolean): void {
+    // --- Never with the advanced-debugging switch off: the whole G4 group then costs nothing
+    const recording = this.isDebugging && debugRun && this.advancedDebuggingEnabled;
+    this.historySource()?.setHistoryEnabled(recording);
+    // --- A timeline's positions are the recorder's: it lives exactly while the recorder records (D2, D3)
+    if (recording) this.ensureTimeline();
+    else this.endTimeline();
+  }
+
+  /**
+   * The advanced-debugging feature switch (G4 + G5, `@common/features/advancedDebugging`): read from
+   * the shared store, where the main process put it at startup
+   */
+  private get advancedDebuggingEnabled(): boolean {
+    return isAdvancedDebuggingEnabled(this.store?.getState());
+  }
+
+  // ------------------------------------------------------------------------------------------------
+  // Reverse debugging (`.plans/REVERSE_DEBUGGING_PLAN.md` D2, D13; `reverse/Timeline.ts`)
+
+  private _timeline?: Timeline;
+
+  /** The reverse-debugging timeline of the current debug session, if the machine keeps one */
+  get timeline(): Timeline | undefined {
+    return this._timeline && !this._timeline.isEnded ? this._timeline : undefined;
+  }
+
+  /**
+   * Starts a timeline for a debug run (D2): on a machine with `MF_REVERSE_DEBUG`, unless the
+   * `emuOptions.reverseDebugging` setting is off. A failure to start leaves debugging as it was.
+   */
+  private ensureTimeline(): void {
+    if (this.timeline) return;
+    if (!this._machineInfo?.features?.[MF_REVERSE_DEBUG]) return;
+    if (!this.advancedDebuggingEnabled) return;
+    if (this.store && getGlobalSetting(this.store, SETTING_EMU_REVERSE_DEBUGGING) === false) return;
+    if (!isTimelineMachine(this.machine)) return;
+    try {
+      const settingMb = this.store ? (getGlobalSetting(this.store, SETTING_EMU_REVERSE_DEBUG_MEMORY_MB) as number) : 0;
+      const deviceGb = (globalThis.navigator as { deviceMemory?: number } | undefined)?.deviceMemory;
+      this._reverseDesync = undefined;
+      this._timeline = Timeline.start(this.machine, {
+        budgetBytes: reverseDebugBudgetBytes(settingMb, deviceGb ? deviceGb * 2 ** 30 : undefined),
+        debugSupport: hasTimelineState(this.debugSupport) ? this.debugSupport : undefined,
+        // --- The present's unpublished tape saves and disk writes go out before the machine moves
+        // --- into the past, where a replay's own would be indistinguishable from them (D13)
+        beforeLeavePresent: () => this.publishHostEffects(),
+        onLanded: (decided) => this.markReplayLanding(decided)
+      });
+    } catch (err) {
+      console.warn("Reverse debugging is off for this session:", err);
+      this._timeline = undefined;
+    }
+    this.publishReverseState();
+  }
+
+  /**
+   * Opens a saved timeline - a debug recording (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` §4.4, D1,
+   * D10): the machine takes the present's state, the timeline is rebuilt around it by replaying from
+   * its last keyframe (which checks itself, D9), and the machine stands paused in a debug session -
+   * at the present, or, with `land`, at the recording's start or the point it was saved at. Every
+   * reverse-debugging command then works on it as on a session that just ran.
+   * @param applyState Puts the present's state into the machine (the recording's `.kls`)
+   * @param snapshot The timeline
+   * @param options `land`: where to stand; `description`: the output line; `expectedImage`: the
+   * present's state image, which the replay must arrive at; `recordingName`: the file, for the
+   * status bar (D10) and the unsaved-extension question (Q7)
+   * @throws When the machine keeps no timeline, or the replay diverged (the machine is then stopped)
+   */
+  async openTimeline(
+    applyState: () => void,
+    snapshot: TimelineSnapshot,
+    options: { land?: TimelinePosition; description?: string; expectedImage?: Uint8Array; recordingName?: string } = {}
+  ): Promise<void> {
+    if (!this.advancedDebuggingEnabled) throw new Error(ADVANCED_DEBUGGING_OFF_MESSAGE);
+    if (!isTimelineMachine(this.machine)) throw new Error("This machine has no reverse debugging");
+    await this.restoreState(applyState, options.description ?? "Debug recording opened", { attachMedia: false });
+    this.historySource()?.setHistoryEnabled(true);
+    this.isDebugging = true;
+    const settingMb = this.store ? (getGlobalSetting(this.store, SETTING_EMU_REVERSE_DEBUG_MEMORY_MB) as number) : 0;
+    const deviceGb = (globalThis.navigator as { deviceMemory?: number } | undefined)?.deviceMemory;
+    this._reverseDesync = undefined;
+    try {
+      this._timeline = Timeline.fromSnapshot(this.machine, snapshot, {
+        budgetBytes: reverseDebugBudgetBytes(settingMb, deviceGb ? deviceGb * 2 ** 30 : undefined),
+        debugSupport: hasTimelineState(this.debugSupport) ? this.debugSupport : undefined,
+        beforeLeavePresent: () => this.publishHostEffects(),
+        onLanded: (decided) => this.markReplayLanding(decided)
+      }, options.expectedImage ? { image: options.expectedImage } : undefined);
+    } catch (err) {
+      this._timeline = undefined;
+      this.historySource()?.setHistoryEnabled(false);
+      this.isDebugging = false;
+      this.state = MachineControllerState.Stopped;
+      throw err;
+    }
+    if (options.recordingName) {
+      this._timeline.recording = { name: options.recordingName, savedPresent: this._timeline.presentPosition };
+    }
+    this._replayProvider?.forgetPresent();
+    this.store?.dispatch(setDebuggingAction(true), "emu");
+    if (options.land) this.landInTimeline(options.land);
+    this.store?.dispatch(setMachineStateAction(this.state, this.machine.pc), "emu");
+    this.publishReverseState();
+  }
+
+  /**
+   * A replay put the machine at a point (`TimelineOptions.onLanded`): its stop decision counts as made
+   * when the restored counters hold it - so the next run neither counts nor stops on it again, as
+   * when resuming from a pause - and as not made when the next run is to make it (Reverse Continue)
+   */
+  private markReplayLanding(decided: boolean): void {
+    const ds = this.debugSupport;
+    if (!ds) return;
+    ds.lastBreakpoint = undefined;
+    ds.lastDecisionPc = decided ? this.machine.pc : undefined;
+  }
+
+  /** Puts the machine at a point of the timeline: on a record the cursor can name, else a deep landing (D17) */
+  private landInTimeline(target: TimelinePosition): void {
+    const timeline = this.timeline;
+    if (!timeline || comparePositions(target, timeline.presentPosition) >= 0) return;
+    const onRecord =
+      target.phase === 0 && timeline.viewHolds(target.sequence) && timeline.port.recordRepeat(target.sequence) === target.sub;
+    if (onRecord) {
+      this.historyCursor.moveToRecord(target.sequence + 1);
+      return;
+    }
+    this._historyCursor?.clear(false);
+    timeline.landAt(target);
+    this.replayProvider.anchorHere();
+    this.store?.dispatch(setHistoryPositionAction(0, undefined, true), "emu");
+  }
+
+  /**
+   * Ends the timeline (D2): a stop, a reset, a restore, a code injection, a machine change, or the
+   * recorder going off
+   */
+  endTimeline(): void {
+    this.publishReverseState();
+    this._timeline?.end();
+    this._timeline = undefined;
+    this.context.historyStopArmed = false;
+    this._replayProvider?.forgetPresent();
+    this.publishReverseState();
+  }
+
+  /** What `publishReverseState` dispatched last, to skip repeats */
+  private _reverseStateJson?: string;
+  /** Why the last timeline ended early, until a new one starts */
+  private _reverseDesync?: string;
+
+  /**
+   * Tells the IDE where the timeline stands (§4.4): the mode, how far behind the present the machine
+   * is and how far back the timeline reaches - in seconds of machine time - a deep landing, ignored
+   * input, a search's progress, and why a timeline ended early. Dispatched only when it changed.
+   */
+  publishReverseState(): void {
+    if (!this.store) return;
+    const ended = this._timeline;
+    if (ended?.isEnded && ended.lastDesync && this._reverseDesync !== ended.lastDesync.message) {
+      // --- A desync ends the timeline wherever a replay found it - a step back, a replay run, a
+      // --- keyframe's calibration replay: said once, in the output pane and on the status bar (D9)
+      this._reverseDesync = ended.lastDesync.message;
+      void this.sendOutput(`Reverse debugging stopped: ${ended.lastDesync.message}`, "red");
+    }
+    const timeline = this.timeline;
+    let state: ReverseDebugState | undefined;
+    if (timeline) {
+      const m = this.machine;
+      const secondsPerFrame =
+        m.baseClockFrequency > 0 ? m.tactsInFrame / (m.frameTactMultiplier || 1) / m.baseClockFrequency : 0.02;
+      const present = timeline.presentFrames;
+      const start = timeline.startFrames;
+      const round = (s: number) => Math.round(Math.max(0, s) * 1_000_000) / 1_000_000;
+      const mode = timeline.mode;
+      state = {
+        active: true,
+        mode,
+        behindSeconds: mode === "live" ? undefined : round((present - timeline.machineFrames) * secondsPerFrame),
+        rangeSeconds: start === undefined ? undefined : round((present - start) * secondsPerFrame),
+        deepLanding: mode === "navigating" && this._historyCursor?.sequence === undefined ? true : undefined,
+        inputsIgnored: timeline.inputsIgnored || undefined,
+        searchedIntervals: this._reverseSearchIntervals,
+        recording: timeline.recording?.name
+      };
+    } else if (this._reverseDesync) {
+      state = { active: false, mode: "live", desync: this._reverseDesync };
+    }
+    const json = JSON.stringify(state);
+    if (json === this._reverseStateJson) return;
+    this._reverseStateJson = json;
+    this.store.dispatch(setReverseDebugStateAction(state), "emu");
+  }
+
+  /** While a replay runs, the host side effects of D13 are off */
+  private get suppressingSideEffects(): boolean {
+    return !!this._timeline?.isReplaying;
+  }
+
+  private _replayProvider?: ReplayStateProvider;
+
+  /** Puts the machine at the history cursor by replay (D10) */
+  get replayProvider(): ReplayStateProvider {
+    this._replayProvider ??= new ReplayStateProvider(() => this.timeline, this.machine);
+    return this._replayProvider;
+  }
+
+  /**
+   * Take over here (D12): the point the machine stands at in the past becomes the present; the
+   * recorded future - its inputs, keyframes and logged hits - goes, and live input resumes
+   * @returns false when the machine is not in the past
+   */
+  async takeOverHere(): Promise<boolean> {
+    const timeline = this.timeline;
+    if (!timeline || timeline.mode !== "navigating" || this.state !== MachineControllerState.Paused) return false;
+    this._historyCursor?.clear(false);
+    const forked = timeline.fork();
+    this.replayProvider.forgetPresent();
+    this.store?.dispatch(setMachineStateAction(this.state, this.machine.pc), "emu");
+    this.publishReverseState();
+    await this.undoForkedHostEffects(forked);
+    return true;
+  }
+
+  /** What a Take over here from where the machine stands would leave behind (the confirmation, T4) */
+  forkPreview(): ForkPreview | undefined {
+    return this.timeline?.forkPreview();
+  }
+
+  /**
+   * After a fork (D13, D14): the SD sectors the discarded future wrote get their old bytes back, the
+   * disks are written back from the restored in-core images, and host files the future's tape SAVEs
+   * wrote - which Klive does not delete - are named
+   */
+  private async undoForkedHostEffects(forked: ForkResult): Promise<void> {
+    const machine = this.machine as Partial<ForkAwareMachine>;
+    if (forked.sdReverts.length && machine.revertSdWrites) {
+      const result = await machine.revertSdWrites(forked.sdReverts, this.messenger);
+      if (result.failed.length) {
+        await this.sendOutput(
+          `Take over here: ${result.failed.length} SD card sector write(s) of the discarded future could not be undone (sectors ${result.failed.map((e) => e.sector).join(", ")})`,
+          "red"
+        );
+      }
+    }
+    if (machine.republishDisks?.()) this.emitPendingMediaChanges();
+    if (forked.hostFiles.length) {
+      await this.sendOutput(
+        `Take over here: files saved to tape in the discarded future remain: ${forked.hostFiles.join(", ")}`,
+        "yellow"
+      );
+    }
+  }
+
+  /**
+   * Publishes what the machine has produced for the host and not handed over yet - a tape SAVE, disk
+   * writes - outside the frame loop (a pause, a step, a move into the past)
+   */
+  private publishHostEffects(): void {
+    const savedFileInfo = this.machine.getMachineProperty(SAVED_TO_TAPE) as SavedFileInfo;
+    if (savedFileInfo) {
+      this.machine.setMachineProperty(SAVED_TO_TAPE);
+      this._timeline?.noteHostFile(savedFileInfo.name);
+    }
+    const diskChanges = this.collectPendingMediaChanges();
+    if (savedFileInfo || diskChanges.diskAChanges || diskChanges.diskBChanges) {
+      this.frameCompleted.fire({
+        fullFrame: false,
+        savedFileInfo,
+        ...diskChanges,
+        clockMultiplier: this.machine.clockMultiplier
+      });
+    }
+  }
+
+  /**
+   * A replayed frame re-did tape SAVEs and disk writes the host already has - or, short of the
+   * present, must never get: they are dropped, not published (D13)
+   */
+  private discardReplayedHostEffects(): void {
+    this.machine.setMachineProperty(SAVED_TO_TAPE);
+    this.collectPendingMediaChanges();
+  }
+
+  /**
+   * A run from the past (D11): a debug run replays toward the present with breakpoints active and the
+   * journal supplying the input; a plain Run first returns to the present
+   */
+  private beginRunFromPast(debugRun: boolean): void {
+    const timeline = this.timeline;
+    if (timeline?.mode !== "navigating") return;
+    if (!debugRun) {
+      this._historyCursor?.clear();
+      return;
+    }
+    this._historyCursor?.clear(false);
+    timeline.startReplayRun();
+    this.context.historyStopArmed = true;
+  }
+
+  /**
+   * A machine command leaves the history cursor (G4.3 D5). With the machine itself in the past, a run
+   * continues from there or returns first (`beginRunFromPast`), and a stop ends the timeline: the
+   * cursor stays for `run` to decide.
+   */
+  private clearCursorForCommand(): void {
+    if (this.timeline?.mode === "navigating") return;
+    this._historyCursor?.clear();
+  }
+
+  /** The machine paused: a replay run that stopped short of the present leaves the cursor where it is */
+  private settleReplayRun(): void {
+    const timeline = this._timeline;
+    if (timeline?.mode !== "replaying") return;
+    this.context.historyStopArmed = false;
+    const at = timeline.pauseReplayRun();
+    if (!at) return;
+    if (timeline.viewHolds(at.sequence)) {
+      this.historyCursor.attach(at.sequence + 1);
+      return;
+    }
+    // --- Older than the present's ring (T22): no cursor, the machine itself shows the point, as after
+    // --- a deep Reverse Continue landing (D17)
+    this.replayProvider.anchorHere();
+    this.store?.dispatch(setHistoryPositionAction(0, undefined, true), "emu");
+  }
+
+  /**
+   * After every frame of a replay run: applies the journal entries the core reached and goes live at
+   * the present (D11)
+   * @returns `"entry"` when the frame ended at a journal entry (or the present) rather than at a
+   * breakpoint or a step, `"desync"` when the replay diverged (the timeline has ended), `"none"`
+   */
+  private serviceReplayRun(): "none" | "entry" | "desync" {
+    const timeline = this._timeline;
+    if (timeline?.mode !== "replaying" || !timeline.port.targetReached) return "none";
+    const outcome = timeline.onReplayTarget();
+    if (outcome !== "continue") this.context.historyStopArmed = false;
+    if (outcome === "present") this.replayProvider.forgetPresent();
+    if (outcome !== "continue") this.publishReverseState();
+    if (outcome === "desync") return "desync";
+    return "entry";
+  }
+
   /**
    * Run the machine loop until cancelled
    */
@@ -1078,8 +1752,13 @@ export class MachineController implements IMachineController {
         // --- come here, so it keeps them.
         this.debugSupport?.resetHitCounts();
         this.startLogSession();
+        // --- ...and so does the execution history: a start from Stopped is a new timeline (D9)
+        this.historySource()?.clearHistory();
         break;
     }
+
+    // --- A run from the past (REVERSE_DEBUGGING_PLAN D11)
+    this.beginRunFromPast(debugStepMode !== DebugStepMode.NoDebug);
 
     // --- Every run, a resume included: the previous stop's definitions no longer explain anything
     this.debugSupport?.clearFiredBreakpoints?.();
@@ -1109,12 +1788,16 @@ export class MachineController implements IMachineController {
     this.machine.resetContentionDelaySincePause();
     this.machine.tactsAtLastStart = this.machine.tacts;
 
-    // --- Obtain fastload settings
-    const fastLoad = getGlobalSetting(this.store, SETTING_EMU_FAST_LOAD);
-    this.machine.setMachineProperty(FAST_LOAD, fastLoad);
+    // --- Obtain fastload settings - not while replaying from the past: the journal carries the
+    // --- setting the recorded run had, and the push would only count as ignored input (D12)
+    if (!this._timeline?.isReplaying) {
+      const fastLoad = getGlobalSetting(this.store, SETTING_EMU_FAST_LOAD);
+      this.machine.setMachineProperty(FAST_LOAD, fastLoad);
+    }
 
     // --- Sign if we are in debug mode
     this.store.dispatch(setDebuggingAction(this.isDebugging), "emu");
+    this.applyHistoryRecording(debugStepMode !== DebugStepMode.NoDebug);
 
     // --- Now, run!
     this.state = MachineControllerState.Running;
@@ -1146,24 +1829,37 @@ export class MachineController implements IMachineController {
 
         // --- Run the machine frame and measure execution time
         const frameStartTime = performance.now();
-        const termination = this.machine.executeMachineFrame();
+        const replayedFrame = this.suppressingSideEffects;
+        let termination = this.machine.executeMachineFrame();
+        const replayStop = this.serviceReplayRun();
+        if (replayedFrame) this.discardReplayedHostEffects();
+        if (replayStop === "desync") {
+          // --- The replay diverged and ended the timeline: stop where it is (D9)
+          termination = FrameTerminationMode.DebugEvent;
+        } else if (replayStop === "entry" && termination === FrameTerminationMode.UntilExecutionPoint) {
+          // --- A replay run reached its next journal entry: not a stop - unless this was a single step
+          termination =
+            debugStepMode === DebugStepMode.StepInto ? FrameTerminationMode.DebugEvent : FrameTerminationMode.Normal;
+        }
         const cpuTime = performance.now() - frameStartTime;
         // --- Logpoint lines of this frame: one IPC call, sent before anything else this frame
         // --- reports (`.plans/LOGPOINTS_PLAN.md` L4, L8). Not awaited, to keep the frame rate;
         // --- awaited below before a stop message, so the lines come first.
-        const logFlush = this.flushLogLines();
+        const logFlush = this.suppressingSideEffects ? Promise.resolve() : this.flushLogLines();
         const frameCompleted =
           termination === FrameTerminationMode.Normal && this.machine.frameJustCompleted;
         let savedFileInfo: SavedFileInfo;
         let diskAChanges: SectorChanges;
         let diskBChanges: SectorChanges;
 
-        // --- Handle frame completion events
-        if (frameCompleted) {
+        // --- Handle frame completion events (none of them while a replay runs, D13)
+        if (frameCompleted && !this.suppressingSideEffects) {
           // --- Check for file to save
           savedFileInfo = this.machine.getMachineProperty(SAVED_TO_TAPE) as SavedFileInfo;
           if (savedFileInfo) {
             this.machine.setMachineProperty(SAVED_TO_TAPE);
+            // --- A fork cannot unwrite it: the confirmation names it (T4)
+            this._timeline?.noteHostFile(savedFileInfo.name);
           }
 
           // --- Check for disk changes
@@ -1172,8 +1868,11 @@ export class MachineController implements IMachineController {
           diskBChanges = diskChanges.diskBChanges;
         }
 
-        // --- Refresh the UI, if required so
-        this.frameCompleted?.fire({
+        // --- A keyframe, when one is due (D5)
+        this._timeline?.afterFrame(frameCompleted);
+
+        // --- Refresh the UI, if required so (not with a replay's frames: no audio, no screen, D13)
+        if (!this.suppressingSideEffects) this.frameCompleted?.fire({
           fullFrame: frameCompleted,
           savedFileInfo,
           diskAChanges,
@@ -1245,7 +1944,11 @@ export class MachineController implements IMachineController {
 
         // --- Execute the optional frame command
         const frameCommand = this.machine.getFrameCommand();
-        if (frameCommand) {
+        if (frameCommand && this.suppressingSideEffects) {
+          // --- A replay never asks the host: the journal answered at the command's position, and
+          // --- an SD write must not reach the card again (D14)
+          this.machine.setFrameCommand(null);
+        } else if (frameCommand) {
           await this.machine.processFrameCommand(this.messenger);
           // --- FIX for ISSUE #2: Clear frame command AFTER processing is complete
           // --- This ensures the response is ready before the next frame iteration
@@ -1322,6 +2025,9 @@ export class MachineController implements IMachineController {
    * sequence that may still be waiting on ROM execution, queued keys, or startup delays.
    */
   private beginMachineOperation(): number {
+    // --- Any machine command returns to the present first (`.plans/LITE_STEP_BACK_PLAN.md` D5) -
+    // --- unless the machine itself is in the past: then `run` decides (REVERSE_DEBUGGING_PLAN D11)
+    this.clearCursorForCommand();
     return ++this._operationRevision;
   }
 
@@ -1329,6 +2035,7 @@ export class MachineController implements IMachineController {
    * Invalidates pending project startup continuations for user-issued machine control commands.
    */
   private prepareMachineOperation(operationRevision?: number): number {
+    this.clearCursorForCommand();
     if (operationRevision === undefined) {
       return this.beginMachineOperation();
     }
@@ -1572,6 +2279,10 @@ export class MachineController implements IMachineController {
     if (copperHit) {
       return describeCopperStop(copperHit, this.machine.getPartitionLabels?.());
     }
+    const spriteWrite = (this.machine as { lastSpriteWrite?: SpriteWriteEvent }).lastSpriteWrite;
+    if (spriteWrite) {
+      return describeSpriteStop(spriteWrite, this.machine.getPartitionLabels?.());
+    }
     const write = (this.machine as { lastNextRegWrite?: NextRegWriteEvent }).lastNextRegWrite;
     if (!write) {
       return `Breakpoint reached at PC=$${toHexa4(this.machine.pc)}`;
@@ -1648,4 +2359,23 @@ function nearestSymbol(symbols: Record<string, number> | undefined, address: num
   }
   if (!best) return undefined;
   return address === best.value ? best.name : `${best.name}+${address - best.value}`;
+}
+
+/** Whether a machine can keep a reverse-debugging timeline (`reverse/Timeline.ts`) */
+function isTimelineMachine(machine: unknown): machine is TimelineMachine {
+  const m = machine as Partial<TimelineMachine> | undefined;
+  return (
+    typeof m?.captureHostState === "function" &&
+    typeof m?.restoreHostState === "function" &&
+    typeof m?.invalidateHostSync === "function" &&
+    typeof m?.isAtFrameBoundary === "function" &&
+    typeof m?.reverseFrameExport === "string" &&
+    !!m?.reverseRuntime
+  );
+}
+
+/** Whether a breakpoint store can keep its hit counters with keyframes (D16) */
+function hasTimelineState(debugSupport: unknown): debugSupport is TimelineDebugSupport {
+  const d = debugSupport as Partial<TimelineDebugSupport> | undefined;
+  return typeof d?.captureTimelineState === "function" && typeof d?.restoreTimelineState === "function";
 }

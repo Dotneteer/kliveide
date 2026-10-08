@@ -10,12 +10,22 @@ const {
   stampWasmLayout
 } = require("./wasm-layout.cjs");
 const { RZX_VOLATILE_SYMBOLS, rzxExports } = require("./rzx-core-exports.cjs");
+const { Z80_HISTORY_EXPORTS, Z80_HISTORY_VOLATILE_SYMBOLS } = require("./z80-history-exports.cjs");
 
 /**
  * Statics a Klive state file leaves out (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` trap 10):
  * debugging state and buffers the core rewrites before it reads them, so a restore keeps the live
  * core's bytes there.
  */
+/*
+ * Frame-boundary scratch (`.plans/REVERSE_DEBUGGING_PLAN.md` T5): the frame's audio samples, which
+ * the core rewrites before it reads them. Keyframes taken at a frame boundary leave them out; the T5
+ * proof in `test/wasm/reverse/journal-replay-determinism.test.ts` checks every keyframe interval.
+ * Not scratch: the picture, which a step back shows half drawn (D18), and the beeper's transition
+ * buffers, whose transitions not yet turned into samples carry over into the next frame.
+ */
+const SP48_SCRATCH_SYMBOLS = ["sp48AudioSamples"];
+
 const SP48_VOLATILE_SYMBOLS = [
   // --- The IDE's breakpoint conditions and the per-instruction access log they read: debugging
   // --- state, not machine state, so a restore never brings back old breakpoints
@@ -28,7 +38,10 @@ const SP48_VOLATILE_SYMBOLS = [
   "z80AccessLogCount",
   "z80AccessLogOverflows",
   // --- An RZX session in progress (`zx-spectrum-rzx.c`)
-  ...RZX_VOLATILE_SYMBOLS
+  ...RZX_VOLATILE_SYMBOLS,
+  // --- The execution-history ring and the model byte of its contexts (EXECUTION_HISTORY_ALL_CORES_PLAN)
+  ...Z80_HISTORY_VOLATILE_SYMBOLS,
+  "sp48HistoryModel"
 ];
 
 const root = resolve(__dirname, "..");
@@ -59,6 +72,8 @@ const productionExports = [
   "condEvaluateValue",
   "condSetEnv",
   "condPeek",
+  // --- Execution history recorder (`src/emu/z80/wasm/z80-history.c`)
+  ...Z80_HISTORY_EXPORTS,
   "memory",
   "sp48MemoryPtr",
   "sp48PixelBufferPtr",
@@ -254,7 +269,8 @@ const buildModes = {
     output: productionOutput,
     exports: productionExports,
     sources: [source],
-    initialMemory: 8 * 1024 * 1024
+    // --- 12 MB: the 4 MB execution-history ring (EXECUTION_HISTORY_ALL_CORES_PLAN D2, D3)
+    initialMemory: 12 * 1024 * 1024
   }
 };
 
@@ -322,7 +338,7 @@ function buildSp48Wasm({
     );
   }
   // --- The memory layout a Klive state file depends on (scripts/wasm-layout.cjs)
-  const layout = stampWasmLayout(compiledOutput, layoutMap, SP48_VOLATILE_SYMBOLS);
+  const layout = stampWasmLayout(compiledOutput, layoutMap, SP48_VOLATILE_SYMBOLS, SP48_SCRATCH_SYMBOLS);
   publishWasmOutput(compiledOutput, selectedOutput);
   return {
     layout,

@@ -15,6 +15,7 @@ import { EmptyState } from "@renderer/controls/data";
 import regStyles from "@renderer/controls/data/Registers.module.scss";
 import { hasSourceLevelDebug } from "../utils/compiler-utils";
 import { SourceCallStack } from "../debugger/source/SourceCallStack";
+import { HistoricalCallStack } from "../debugger/history/HistoricalCallStack";
 
 /**
  * A stack address, in hex and decimal.
@@ -67,6 +68,9 @@ const CallStackRow = ({ index, slot, frame }: { index: number; slot: number; fra
  */
 export const CallStackPanel = () => {
   const result = useSelector((s) => s.compilation?.result);
+  // --- In the past the stack memory is the present's: the frames come from history (D6, D10)
+  const historyPosition = useSelector((s) => s.emulatorState?.historyPosition);
+  if (historyPosition) return <HistoricalCallStack />;
   if (hasSourceLevelDebug(result)) return <SourceCallStack info={result.sourceLevelDebug} />;
   return <RawCallStack />;
 };

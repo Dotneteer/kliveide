@@ -14,6 +14,8 @@ import {
   LAYER2_PANEL_ID,
   LAYERS_EDITOR,
   LAYERS_PANEL_ID,
+  HISTORY_EDITOR,
+  HISTORY_PANEL_ID,
   MEMORY_PANEL_ID
 } from "@common/state/common-ids";
 import type { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
@@ -26,7 +28,8 @@ export type SpecialDocumentId =
   | typeof SPRITES_PANEL_ID
   | typeof TILEMAP_PANEL_ID
   | typeof LAYER2_PANEL_ID
-  | typeof LAYERS_PANEL_ID;
+  | typeof LAYERS_PANEL_ID
+  | typeof HISTORY_PANEL_ID;
 
 export type SpecialDocumentDefinition = Pick<
   ProjectDocumentState,
@@ -94,6 +97,14 @@ const specialDocumentDefinitions: Record<SpecialDocumentId, SpecialDocumentDefin
     name: "Layers",
     type: LAYERS_EDITOR,
     iconName: "layers",
+    workspaceRestorable: true
+  },
+  // --- The execution history (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.6, D13)
+  [HISTORY_PANEL_ID]: {
+    id: HISTORY_PANEL_ID,
+    name: "Execution History",
+    type: HISTORY_EDITOR,
+    iconName: "history",
     workspaceRestorable: true
   }
 };

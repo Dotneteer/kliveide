@@ -1,13 +1,19 @@
 /*
  * The Debug menu (`.plans/MENU_REDESIGN_PLAN.md` §3): starting with the debugger, stepping, the
- * machine's own debugging commands (Step Copper on the Next), and the source sync. The debugger's
+ * Execution History, the machine's own debugging commands (Step Copper on the Next), and the source
+ * sync. The debugger's
  * preferences are in Settings › Debugging.
  */
 import type { MenuItemConstructorOptions } from "electron";
 
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { SETTING_IDE_SYNC_BREAKPOINTS } from "@common/settings/setting-const";
+import { MF_EXEC_HISTORY, MF_REVERSE_DEBUG } from "@common/machines/constants";
+import { hasMachineFeature } from "@common/features/advancedDebugging";
 import { getEmuApi } from "@messaging/MainToEmuMessenger";
+import { getIdeApi } from "@messaging/MainToIdeMessenger";
+import { canExportHistory, exportExecutionHistoryAs } from "@main/history-export";
+import { canSaveDebugRecording, pickAndOpenDebugRecording, saveDebugRecordingAs } from "@main/debug-recording-menus";
 import { type MenuContext, windowInfoOf } from "./menu-context";
 import { createBooleanSettingsMenu, submenuContent, tidySeparators } from "./menu-utils";
 
@@ -70,7 +76,76 @@ export function createDebugMenu(context: MenuContext): MenuItemConstructorOption
         await getEmuApi().sourceStep("overLine");
       }
     },
+    // --- Reverse stepping through the recorded history (`.plans/LITE_STEP_BACK_PLAN.md` §4.5): IDE
+    // --- commands, so the output pane says where each one went; never a machine command (D4)
+    ...(hasMachineFeature(context.currentMachine, MF_EXEC_HISTORY, context.appState)
+      ? [
+          { type: "separator" as const },
+          reverseItem("step_back", "Step Back", context.shortcuts.stepBack, "step-back", machinePaused),
+          reverseItem("step_forward", "Step Forward", context.shortcuts.stepForward, "step-forward", machinePaused),
+          reverseItem("step_back_over", "Reverse Step Over", context.shortcuts.stepBackOver, "step-back-over", machinePaused),
+          reverseItem("step_back_out", "Reverse Step Out", context.shortcuts.stepBackOut, "step-back-out", machinePaused),
+          reverseItem(
+            "reverse_continue",
+            "Reverse Continue",
+            context.shortcuts.reverseContinue,
+            "reverse-continue",
+            machinePaused
+          ),
+          reverseItem(
+            "history_present",
+            "Return to Present",
+            undefined,
+            "history-present",
+            machinePaused && !!context.appState?.emulatorState?.historyPosition
+          )
+        ]
+      : []),
     { type: "separator" },
+    // --- Every machine that records history, so G4.2 lights it up without moving it
+    // --- (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.5, D12)
+    ...(hasMachineFeature(context.currentMachine, MF_EXEC_HISTORY, context.appState)
+      ? [
+          {
+            id: "show_execution_history",
+            label: "Execution History",
+            click: async () => {
+              await getIdeApi().executeCommand("show-history");
+            }
+          },
+          // --- A trace for a diff tool (`.plans/TRACE_EXPORT_PLAN.md` D13): not while running (D10)
+          {
+            id: "export_execution_history",
+            label: "Export Execution History...",
+            enabled: canExportHistory(context.appState),
+            click: async () => {
+              await exportExecutionHistoryAs(context.focusedWindow());
+            }
+          }
+        ]
+      : []),
+    // --- Debug recordings (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` D2): a reverse-debugging session
+    // --- to a file and back; saving needs a timeline, opening switches to the recording's machine
+    ...(hasMachineFeature(context.currentMachine, MF_REVERSE_DEBUG, context.appState)
+      ? [
+          { type: "separator" as const },
+          {
+            id: "save_debug_recording",
+            label: "Save Debug Recording...",
+            enabled: canSaveDebugRecording(context.appState),
+            click: async () => {
+              await saveDebugRecordingAs(context.focusedWindow());
+            }
+          },
+          {
+            id: "open_debug_recording",
+            label: "Open Debug Recording...",
+            click: async () => {
+              await pickAndOpenDebugRecording(context.focusedWindow());
+            }
+          }
+        ]
+      : []),
     ...machineItems,
     { type: "separator" },
     // --- Shown in both windows: it is a debugger behaviour, not a part of one window
@@ -85,4 +160,23 @@ export function createDebugMenu(context: MenuContext): MenuItemConstructorOption
     }
   ];
   return { label: "Debug", submenu: tidySeparators(items) };
+}
+
+/** A reverse-stepping item: runs its IDE command */
+function reverseItem(
+  id: string,
+  label: string,
+  accelerator: string | undefined,
+  command: string,
+  enabled: boolean
+): MenuItemConstructorOptions {
+  return {
+    id,
+    label,
+    enabled,
+    ...(accelerator ? { accelerator } : {}),
+    click: async () => {
+      await getIdeApi().executeCommand(command);
+    }
+  };
 }

@@ -16,6 +16,12 @@
  */
 
 import { deflateSync, inflateSync } from "fflate";
+import {
+  hasContainerMagic,
+  readChunkedContainer,
+  writeChunkedContainer,
+  type ContainerSection
+} from "./chunkedContainer";
 
 /** The file's magic */
 export const KLIVE_STATE_MAGIC = "KLIVESTA";
@@ -89,56 +95,42 @@ export type KliveStateReadResult = KliveStateFile & {
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 
-function u16(value: number): number[] {
-  return [value & 0xff, (value >> 8) & 0xff];
-}
-function u32(value: number): number[] {
-  return [value & 0xff, (value >> 8) & 0xff, (value >> 16) & 0xff, (value >>> 24) & 0xff];
-}
-
 /**
  * Writes a state file
  * @param file The state
  * @param level The deflate level of the memory image (1-9)
  */
 export function writeKliveStateFile(file: KliveStateFile, level: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 = 6): Uint8Array {
-  const parts: Uint8Array[] = [];
-  const header = encoder.encode(JSON.stringify(file.header));
-  parts.push(
-    encoder.encode(KLIVE_STATE_MAGIC),
-    Uint8Array.from([...u16(KLIVE_STATE_VERSION), ...u16(0), ...u32(header.length)]),
-    header
-  );
-  const section = (tag: string, payload: Uint8Array) => {
-    parts.push(encoder.encode(tag.padEnd(4, " ").slice(0, 4)), Uint8Array.from(u32(payload.length)), payload);
-  };
+  const sections: ContainerSection[] = [];
+  const section = (tag: string, payload: Uint8Array) => sections.push({ tag, payload });
   if (file.meta) section("META", encoder.encode(JSON.stringify(file.meta)));
-  if (file.thumbnail) {
-    const t = file.thumbnail;
-    const payload = new Uint8Array(4 + t.rgba.length);
-    payload.set([...u16(t.width), ...u16(t.height)]);
-    payload.set(t.rgba, 4);
-    section("THMB", payload);
-  }
+  if (file.thumbnail) section("THMB", encodeThumbnail(file.thumbnail));
   section("CORE", deflateSync(file.image, { level }));
   section("HOST", encoder.encode(JSON.stringify(file.host ?? {})));
   section("MEDI", encoder.encode(JSON.stringify(file.media ?? [])));
   if (file.szx) section("SZX ", file.szx);
+  return writeChunkedContainer(KLIVE_STATE_MAGIC, KLIVE_STATE_VERSION, file.header, sections);
+}
 
-  const total = parts.reduce((n, p) => n + p.length, 0);
-  const out = new Uint8Array(total);
-  let offset = 0;
-  for (const p of parts) {
-    out.set(p, offset);
-    offset += p.length;
-  }
-  return out;
+/** A thumbnail section's payload: u16 width, u16 height, RGBA pixels */
+export function encodeThumbnail(t: KliveStateThumbnail): Uint8Array {
+  const payload = new Uint8Array(4 + t.rgba.length);
+  payload.set([t.width & 0xff, (t.width >> 8) & 0xff, t.height & 0xff, (t.height >> 8) & 0xff]);
+  payload.set(t.rgba, 4);
+  return payload;
+}
+
+/** Reads a thumbnail section; undefined when its size does not match its dimensions */
+export function decodeThumbnail(payload: Uint8Array): KliveStateThumbnail | undefined {
+  if (payload.length < 4) return undefined;
+  const width = payload[0] | (payload[1] << 8);
+  const height = payload[2] | (payload[3] << 8);
+  return 4 + width * height * 4 === payload.length ? { width, height, rgba: payload.slice(4) } : undefined;
 }
 
 /** Does this look like a state file? */
 export function hasKliveStateMagic(bytes: Uint8Array): boolean {
-  if (bytes.length < 8) return false;
-  return decoder.decode(bytes.subarray(0, 8)) === KLIVE_STATE_MAGIC;
+  return hasContainerMagic(bytes, KLIVE_STATE_MAGIC);
 }
 
 /**
@@ -151,27 +143,14 @@ export function readKliveStateFile(
   bytes: Uint8Array,
   options: { skipImage?: boolean } = {}
 ): KliveStateReadResult {
-  if (!hasKliveStateMagic(bytes)) {
-    throw new Error("Not a Klive state file: the KLIVESTA header is missing");
-  }
-  const word = (o: number) => bytes[o] | (bytes[o + 1] << 8);
-  const dword = (o: number) =>
-    (bytes[o] | (bytes[o + 1] << 8) | (bytes[o + 2] << 16) | (bytes[o + 3] << 24)) >>> 0;
-  if (bytes.length < 16) throw new Error("The state file is truncated (header)");
-  const version = word(8);
-  if (version !== KLIVE_STATE_VERSION) {
-    throw new Error(
-      `The state file has container version ${version}; this Klive reads version ${KLIVE_STATE_VERSION}`
-    );
-  }
-  const headerLength = dword(12);
-  if (16 + headerLength > bytes.length) throw new Error("The state file is truncated (header)");
-  let header: KliveStateHeader;
-  try {
-    header = JSON.parse(decoder.decode(bytes.subarray(16, 16 + headerLength)));
-  } catch {
-    throw new Error("The state file's header is not valid");
-  }
+  const container = readChunkedContainer<KliveStateHeader>(
+    bytes,
+    KLIVE_STATE_MAGIC,
+    KLIVE_STATE_VERSION,
+    "state file",
+    "Not a Klive state file: the KLIVESTA header is missing"
+  );
+  const header = container.header;
   if (!header?.machineId || !header.coreId || !header.fingerprint) {
     throw new Error("The state file's header lacks the machine, core or fingerprint");
   }
@@ -185,15 +164,8 @@ export function readKliveStateFile(
     unknownSections: []
   };
   let sawCore = false;
-  let offset = 16 + headerLength;
-  while (offset < bytes.length) {
-    if (offset + 8 > bytes.length) throw new Error(`The state file is truncated (section at ${offset})`);
-    const tag = decoder.decode(bytes.subarray(offset, offset + 4));
-    const length = dword(offset + 4);
-    const start = offset + 8;
-    if (start + length > bytes.length) throw new Error(`The state file's ${tag.trim()} section is truncated`);
-    const payload = bytes.subarray(start, start + length);
-    offset = start + length;
+  for (const { tag, payload } of container.sections) {
+    const length = payload.length;
     const json = () => {
       try {
         return JSON.parse(decoder.decode(payload));
@@ -206,13 +178,7 @@ export function readKliveStateFile(
         result.meta = json();
         break;
       case "THMB":
-        if (length >= 4) {
-          const width = payload[0] | (payload[1] << 8);
-          const height = payload[2] | (payload[3] << 8);
-          if (4 + width * height * 4 === length) {
-            result.thumbnail = { width, height, rgba: payload.slice(4) };
-          }
-        }
+        result.thumbnail = decodeThumbnail(payload);
         break;
       case "CORE":
         sawCore = true;

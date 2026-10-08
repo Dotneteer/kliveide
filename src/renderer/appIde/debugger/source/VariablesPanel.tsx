@@ -12,7 +12,9 @@ import dataStyles from "@renderer/controls/data/Data.module.scss";
 import { Icon } from "@renderer/controls/Icon";
 import { IconButton } from "@renderer/controls/IconButton";
 import { useEmuApi } from "@renderer/core/EmuApi";
-import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
+import { useDispatch, useSelector, useStore } from "@renderer/core/RendererProvider";
+import { useMainApi } from "@renderer/core/MainApi";
+import { takeOverBeforeEdit } from "@renderer/appIde/commands/reverseDebugFork";
 import { iconSizes } from "@renderer/theming/tokens/dimensions";
 
 import { buildSourceCallStack } from "./call-stack-model";
@@ -20,6 +22,7 @@ import { bankedMemoryView, bankPagesOf, encodeValue, memoryView, type MemoryView
 import { buildVariableSections, type VariableNode } from "./variables-model";
 import { evaluateWatch } from "./watch-expression";
 import styles from "./VariablesPanel.module.scss";
+import { HistoryPresentBanner } from "../history/HistoryPresentBanner";
 
 type Snapshot = { chain: SourceActivationInfo[]; stop?: SourceStopInfo; mem: MemoryView };
 
@@ -39,6 +42,8 @@ export const VariablesPanel = () => {
 
 const SourceVariables = ({ info }: { info: SourceLevelDebugInfo }) => {
   const emuApi = useEmuApi();
+  const mainApi = useMainApi();
+  const store = useStore();
   const dispatch = useDispatch();
   const machineState = useSelector((s) => s.emulatorState?.machineState);
   const frame = useSelector((s) => s.ideView?.sourceFrame ?? 0);
@@ -111,6 +116,11 @@ const SourceVariables = ({ info }: { info: SourceLevelDebugInfo }) => {
       setEditing({ ...editing, error: encoded.error });
       return;
     }
+    // --- An edit in the past changes the past: take over there first, after asking (REVERSE_DEBUGGING_PLAN D12)
+    if (!(await takeOverBeforeEdit({ store, emuApi, mainApi }, `Edit ${node.name}`))) {
+      setEditing(undefined);
+      return;
+    }
     for (let i = 0; i < encoded.bytes.length; i++) {
       await emuApi.setMemoryContent((node.address! + i) & 0xffff, encoded.bytes[i], 8, false);
     }
@@ -174,6 +184,7 @@ const SourceVariables = ({ info }: { info: SourceLevelDebugInfo }) => {
 
   return (
     <DataPanel xclass={styles.variablesPanel}>
+      <HistoryPresentBanner what="Variables" plural />
       {!sections && <EmptyState message="Pause the machine to see variables" />}
       {sections && sections.returned.length > 0 && (
         <>

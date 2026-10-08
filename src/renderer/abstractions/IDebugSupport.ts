@@ -4,7 +4,7 @@ import type {
   LogpointGroupState
 } from "@abstractions/BreakpointInfo";
 import type { SourceStep } from "@emu/machines/SourceStepDecision";
-import type { ConditionSymbols } from "@common/utils/breakpoint-condition/condition-types";
+import type { CompiledCondition, ConditionSymbols } from "@common/utils/breakpoint-condition/condition-types";
 import type { ConditionMachineInfo, ConditionStore } from "@emu/machines/conditionStore";
 import type { LogLine } from "@emu/machines/DebugSupport";
 import type { ConditionMachineFacts } from "@common/utils/breakpoint-condition/condition-machine";
@@ -98,6 +98,20 @@ export interface IDebugSupport {
    * @param word The instruction word (a condition's `VAL`; `ADDR` is the index)
    */
   hasCopperHit(index: number, word: number): boolean;
+
+  /** Does any enabled breakpoint watch a sprite's attribute writes (`sp:`)? */
+  hasSpriteBreakpoints(): boolean;
+
+  /** The 128-byte sprite watch table (one byte per sprite, bits 0-4 the attribute bytes) for the Next core. */
+  buildSpriteWatch(): Uint8Array;
+
+  /**
+   * Does any breakpoint want to stop on this sprite attribute write?
+   * @param sprite The sprite (0-127)
+   * @param attribute The attribute byte (0-4; a condition's `ADDR`)
+   * @param value The value written (a condition's `VAL`)
+   */
+  hasSpriteHit(sprite: number, attribute: number, value: number): boolean;
 
   /**
    * Gets IO read breakpoint information for the specified port
@@ -273,6 +287,15 @@ export interface IDebugSupport {
 
   /** The breakpoints with their runtime state (hit count, condition error/inactive). */
   listBreakpointsWithState(): BreakpointInfo[];
+
+  /**
+   * Reverse Continue (`.plans/LITE_STEP_BACK_PLAN.md` D11): the enabled execution breakpoints at an
+   * address in a partition, with their compiled conditions. Optional: test doubles may omit it.
+   */
+  historicalExecBreakpoints?(
+    address: number,
+    partition: number | undefined
+  ): { bp: BreakpointInfo; compiled?: CompiledCondition; error?: string }[];
 
   // --- Logpoints (`.plans/LOGPOINTS_PLAN.md` §4.2)
 

@@ -29,6 +29,8 @@ import {
   type RecomposeStatus
 } from "@common/zxnext/layers/layerMix";
 import { connectConditionSupport } from "@emu/machines/conditionStore";
+import { decodeHistoryPage, type HistoryRecord } from "@common/history/historyRecord";
+import type { ExecutionHistoryInfo } from "@common/history/historyTypes";
 import { DebugSupport } from "@emu/machines/DebugSupport";
 import {
   beginSourceStep,
@@ -85,6 +87,19 @@ export type NextRegHit = {
   newValue: number;
   /** Which writer performed it. Copper writes are only ever caught when the watch asked for them. */
   origin: "cpu" | "copper";
+};
+
+/** A sprite attribute write the core caught for an armed sprite watch, as `takeSpriteHit` reports it. */
+export type SpriteHit = {
+  /** The sprite whose attribute byte was written, 0..127 */
+  sprite: number;
+  /** Which attribute byte, 0..4 */
+  attribute: number;
+  /** What the byte held immediately before the write */
+  oldValue: number;
+  newValue: number;
+  /** Port $57 by the CPU, the DMA, a NextReg mirror by the CPU, or a NextReg mirror by the Copper */
+  origin: "port" | "dma" | "nextreg" | "copper";
 };
 
 /** A Copper instruction the core caught for an armed Copper watch, as `takeCopperHit` reports it. */
@@ -203,6 +218,53 @@ export class NextTestSession {
 
   /** What the last `pressHotkey` returned to the app (the new setting, or `undefined` when gated). */
   lastHotkeyResult: unknown;
+
+  // ==========================================================================================
+  // Execution history (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md`): the core's recorder, as the IDE
+  // reads it through `IExecutionHistorySource`
+
+  /**
+   * The partition the machine names for an address now (`getPartition`): what source mapping,
+   * partitioned breakpoints and `page()` see. In slots 0-1 the Multiface (undefined) and the DivMMC
+   * (`DM` -7, `M0`..`MF` -8..-23) overlay the MMU page.
+   */
+  partition(address: number): number | undefined {
+    return this.machine.getPartition(address & 0xffff);
+  }
+
+  /** Turns the execution-history recorder on or off, as a debug session does (D8). */
+  recordHistory(on = true): this {
+    this.machine.setHistoryEnabled(on);
+    return this;
+  }
+
+  /** Empties the history ring, as the controller does on a start from Stopped or a restore. */
+  clearHistory(): this {
+    this.machine.clearHistory();
+    return this;
+  }
+
+  /** What the ring holds: capacity, count, newest and oldest sequence, generation, enabled. */
+  historyInfo(): ExecutionHistoryInfo {
+    return this.machine.getHistoryInfo()!;
+  }
+
+  /**
+   * The newest `count` history records (all held when omitted), oldest first, decoded, with full
+   * sequence numbers. Each holds the state *before* its instruction or event.
+   */
+  history(count?: number): HistoryRecord[] {
+    const info = this.historyInfo();
+    const n = Math.min(count ?? info.count, info.count);
+    if (n === 0) return [];
+    return decodeHistoryPage(this.machine.readHistory(info.newestSequence - n + 1, n)!);
+  }
+
+  /** History records from `fromSequence` on: the reader's page, decoded, with its `gone` flag. */
+  historyFrom(fromSequence: number, count: number): { records: HistoryRecord[]; gone: boolean } {
+    const page = this.machine.readHistory(fromSequence, count)!;
+    return { records: decodeHistoryPage(page), gone: page.gone };
+  }
 
   // ==========================================================================================
   // Checkpoints
@@ -899,6 +961,48 @@ export class NextTestSession {
       kind: kind === 1 ? "wait" : kind === 2 ? "move" : "nop",
       line: (packed >>> 10) & 0x1ff,
       hc: (packed >>> 19) & 0x1ff
+    };
+  }
+
+  /**
+   * Arms the core's sprite-attribute watch, as `sp:` breakpoints do (G3.8, sprite half). Each entry
+   * names a sprite `0..127` and, optionally, which attribute bytes (`0..4`) to watch; all five by
+   * default. Replaces any earlier watch and clears a latched hit. Like `watchCopper`, a run through
+   * the debug loop re-pushes the watch from `DebugSupport`; drive a watched program with `runFrames`.
+   */
+  watchSpriteAttributes(sprites: Array<number | { sprite: number; attributes?: number[] }>): this {
+    const runtime = this.machine.wasmV2Runtime!;
+    runtime.spriteWatch.fill(0);
+    for (const entry of sprites) {
+      const sprite = typeof entry === "number" ? entry : entry.sprite;
+      const attributes = typeof entry === "number" ? undefined : entry.attributes;
+      const mask = attributes ? attributes.reduce((m, a) => m | (1 << a), 0) : 0x1f;
+      runtime.spriteWatch[sprite & 0x7f] |= mask;
+    }
+    runtime.exports.zxnextSetSpriteWatchArmed(sprites.length > 0 ? 1 : 0);
+    return this;
+  }
+
+  /** Disarms the sprite-attribute watch and clears any latched hit. */
+  clearSpriteWatch(): this {
+    this.machine.wasmV2Runtime!.exports.zxnextSetSpriteWatchArmed(0);
+    return this;
+  }
+
+  /**
+   * Takes the latched sprite-attribute hit - the **first** watched attribute byte written since the
+   * latch was last taken, with the value it replaced - and clears it. `undefined` if none.
+   */
+  takeSpriteHit(): SpriteHit | undefined {
+    const packed = this.machine.wasmV2Runtime!.exports.zxnextTakeSpriteHit();
+    if ((packed & 0x8000_0000) === 0) return undefined;
+    const origin = (packed >>> 26) & 0x07;
+    return {
+      sprite: packed & 0x7f,
+      attribute: (packed >>> 7) & 0x07,
+      oldValue: (packed >>> 10) & 0xff,
+      newValue: (packed >>> 18) & 0xff,
+      origin: origin === 1 ? "port" : origin === 2 ? "dma" : origin === 3 ? "nextreg" : "copper"
     };
   }
 

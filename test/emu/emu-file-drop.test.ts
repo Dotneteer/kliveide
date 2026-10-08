@@ -23,6 +23,13 @@ describe("droppedFileAction", () => {
     });
   });
 
+  it("opens a debug recording through the recording flow, which offers another build's end state", () => {
+    expect(droppedFileAction("/g/Bug 1.KLR")).toEqual({
+      kind: "recording",
+      command: 'debug-recording-load "/g/Bug 1.KLR"'
+    });
+  });
+
   it("inserts tapes and refuses other files", () => {
     expect(droppedFileAction("/g/a.TZX")).toEqual({ kind: "tape" });
     expect(droppedFileAction("/g/a.tap")).toEqual({ kind: "tape" });

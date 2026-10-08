@@ -616,6 +616,19 @@ export const componentAliases: Record<string, string> = {
   "--bgcolor-copper-pc": "var(--accent-subtle)",
   "--bgcolor-copper-hit": "var(--status-warning-subtle)",
 
+  // --- Execution History (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.6) -----------------------
+  /*
+   * Event rows (INT, NMI, DMA hold) are separators, not instructions: a subtle neutral band with
+   * secondary text, so a run of instructions reads unbroken and an interrupt still stands out. The
+   * newest row is where the machine is now - the execution point's colour, as in the Copper list. A
+   * frame boundary is a hairline, not a row: it must not change the row count G4.3 steps through.
+   */
+  "--bgcolor-history-separator": "var(--surface-hover)",
+  "--color-history-separator": "var(--data-secondary)",
+  "--bgcolor-history-newest": "var(--accent-subtle)",
+  "--color-history-frame-line": "var(--border-strong)",
+  "--color-history-recording": "var(--status-error)",
+
   // --- NEX bank browser content mix (`.plans/NEX_DMA_COPPER_REGIONS_PLAN.md` Phase 4) -----------
   /*
    * The two hardware-program kinds take fixed hues, not accent shades: the accent already owns
@@ -756,6 +769,16 @@ export const componentAliases: Record<string, string> = {
   "--bgcolor-debug-active-bp": "var(--accent-subtle)",
   "--bgcolor-debug-macro-bp": "var(--status-success-subtle)",
   "--color-debug-unreachable-bp": "var(--status-warning)",
+  /*
+   * The history cursor (`.plans/LITE_STEP_BACK_PLAN.md` D7, Q1): "you are looking at the past".
+   * The secondary accent, because the present's execution point is the primary one and both can be
+   * talked about in one view (the editor, the status bar) - two pointers into one timeline. An
+   * outline and a band, never a tint over a whole panel: a tinted panel reads as disabled.
+   */
+  "--color-history-marker": "var(--accent-secondary-solid)",
+  "--color-history-text": "var(--accent-secondary-text)",
+  "--bgcolor-history-band": "var(--accent-secondary-subtle)",
+  "--border-history-band": "var(--accent-secondary-border)",
 
   // --- Editors ----------------------------------------------------------------------------------
   "--bgcolor-editors": "var(--surface-canvas)",

@@ -202,6 +202,12 @@ static uint32_t spp3eContentionDelaySincePause;
 static uint32_t spp3eCpuInstructionsExecuted;
 static uint32_t spp3eCpuFrameSliceInstructions;
 static uint8_t spp3eFrameCompleted;
+/*
+ * A frame has begun (`spp3eBeginMachineFrame`) since the reset. With `spp3eFrameCompleted` clear,
+ * that frame is still in progress - a history stop target or the debug loop left it mid-way - and
+ * the next fast frame continues it instead of beginning another (REVERSE_DEBUGGING_PLAN D4, T17).
+ */
+static uint32_t spp3eFrameBegun;
 static uint32_t spp3eInterruptsRaised;
 static uint8_t spp3eInterruptLineActive;
 static uint8_t spp3eCaptureBusEvents = 1u;
@@ -794,6 +800,9 @@ static inline void rzxCountFetch(void);
 static inline void rzxIntAck(void);
 #define Z80_REFRESH(address) rzxCountFetch()
 #define Z80_INT_ACK() rzxIntAck()
+/* The execution-history recorder's hooks; the recorder and this machine's macros for it are at the
+   end of this file (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` Phase 3) */
+#include "../../../../z80/wasm/z80-history.h"
 #include "../../../../z80/wasm/z80.c"
 #undef Z80_REFRESH
 #undef Z80_INT_ACK
@@ -1709,6 +1718,7 @@ static void spp3eFdcOnFrameCompleted(void) {
 
 static void spp3eBeginMachineFrame(void) {
   spp3eFrameCompleted = 0u;
+  spp3eFrameBegun = 1u;
   spp3eBeginAudioFrame();
   spp3eUlaBeginBorderFrame(spp3eNextFrameStartTact);
   spp3eCpuFrameSliceInstructions = 0u;
@@ -1786,6 +1796,7 @@ void spp3eReset(void) {
   spp3eCpuInstructionsExecuted = 0u;
   spp3eCpuFrameSliceInstructions = 0u;
   spp3eFrameCompleted = 0u;
+  spp3eFrameBegun = 0u;
   spp3eInterruptsRaised = 0u;
   spp3eInterruptLineActive = 0u;
   z80ClearBusEvents();
@@ -1840,7 +1851,8 @@ uint32_t spp3eExecuteFrame(void) {
     return 0u;
   }
 
-  spp3eBeginMachineFrame();
+  /* A frame a stop target or the debug loop left mid-way goes on where it stopped */
+  if (spp3eFrameCompleted != 0u || spp3eFrameBegun == 0u) spp3eBeginMachineFrame();
   spp3eCaptureBusEvents = 0u;
   z80ClearBusEvents();
 
@@ -1851,7 +1863,10 @@ uint32_t spp3eExecuteFrame(void) {
   const uint32_t frameEndTact = spp3eNextFrameStartTact + spp3eTactsInFrame;
   while (spp3eTacts < frameEndTact) {
     spp3eExecuteInstruction();
+    /* Checked on the frame's last instruction too: the host reads the reached mark after the call */
+    const uint32_t stop = z80HistoryStopNow();
     if (spp3eFrameCompleted != 0u) break;
+    if (stop != 0u) break;
   }
   spp3eCaptureBusEvents = 1u;
   return 0;
@@ -2016,6 +2031,22 @@ uint32_t spp3eReadScreenMemoryOffset(uint32_t offset) {
   const uint32_t bank = spp3eUseShadowScreen != 0u ? 7u : 5u;
   spp3eLastUlaReadValue = spp3eRam[spp3eRamBankOffset(bank) + (offset & 0x3fffu)];
   return spp3eLastUlaReadValue;
+}
+
+/*
+ * The host's reads (memory panels, watches, the debugger): the same bytes as `spp3eReadMemory` and
+ * `spp3eReadScreenMemoryOffset`, without the floating-bus latches those update for the CPU and the
+ * ULA. A host read must change nothing, or looking at memory would change what the +3 does next
+ * (`.plans/REVERSE_DEBUGGING_PLAN.md` Phase 1, the export contract).
+ */
+uint32_t spp3ePeekMemory(uint32_t address) {
+  const uint32_t maskedAddress = address & 0xffffu;
+  return spp3eMemorySlotBase[maskedAddress >> 14u][maskedAddress & 0x3fffu];
+}
+
+uint32_t spp3ePeekScreenMemoryOffset(uint32_t offset) {
+  const uint32_t bank = spp3eUseShadowScreen != 0u ? 7u : 5u;
+  return spp3eRam[spp3eRamBankOffset(bank) + (offset & 0x3fffu)];
 }
 
 void spp3eRenderInstantScreen(void) {
@@ -2569,3 +2600,31 @@ static uint32_t condSpp3ePeekPartition(int32_t partition, uint32_t address) {
 #define COND_PEEK_PARTITION(partition, address) condSpp3ePeekPartition(partition, address)
 #define COND_PARTITION_OF(address) ((int64_t)spp3eGetCurrentPartition((address) >> 14))
 #include "../../../../z80/wasm/z80-condition.c"
+
+// -----------------------------------------------------------------------------
+// Execution history (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` §3, Phase 3): the shared recorder,
+// with this machine's side-effect-free peek (the slot map, without the floating-bus latch
+// `spp3eReadMemory` keeps), its frame position in T-states (trap T4) and its context.
+//
+// The context (`spp3eContext.ts` decodes it):
+//   0    port $7FFD   1 port $1FFD
+//   2-5  the partition of each 16K slot (`spp3eMemorySlotPartition`, what `getPartition` names), a
+//        signed byte: the ROMs -1..-4, the RAM banks 0-7 - the special paging modes included
+//   6    bit 0 a special (all-RAM) paging mode is on
+// -----------------------------------------------------------------------------
+
+static inline void spp3eHistoryContext(uint32_t kind, uint8_t *out) {
+  (void)kind;
+  out[0] = spp3ePort7ffd;
+  out[1] = spp3ePort1ffd;
+  for (uint32_t slot = 0u; slot < 4u; slot++) out[2u + slot] = (uint8_t)spp3eMemorySlotPartition[slot];
+  out[6] = spp3eInSpecialPagingMode != 0u ? 0x01u : 0u;
+  for (uint32_t i = 7u; i < 16u; i++) out[i] = 0u;
+}
+
+#define Z80_HISTORY_CAPACITY 65536u
+#define Z80_HISTORY_PEEK(address) spp3eMemorySlotBase[((address) & 0xffffu) >> 14u][(address) & 0x3fffu]
+#define Z80_HISTORY_CONTEXT(kind, out16) spp3eHistoryContext(kind, out16)
+#define Z80_HISTORY_FRAME() spp3eFrames
+#define Z80_HISTORY_FRAME_TACT() spp3eUlaCurrentFrameTact()
+#include "../../../../z80/wasm/z80-history.c"

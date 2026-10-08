@@ -128,11 +128,18 @@ export function shouldStopAtDebugPoint(input: DebugStopDecisionInput): boolean {
    * counts it has a side effect, and asking it here would count the instruction a run resumes from
    * a second time (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.6) - the same reasoning as consuming
    * one-shots only inside the guard, below.
+   *
+   * **Nor is it asked again where the last decision was made and nothing ran since** - the same
+   * "arrival" a logpoint logs on, above. A loop exits after deciding at the next PC: a step, a frame
+   * boundary, a pause. When that decision did not stop (a hit-count rule said "not yet"), the hit was
+   * already counted, and asking again at the resumed-from instruction counted it twice: every step
+   * through a hit-count breakpoint, and every frame that ended on one, did. A replay that lands the
+   * machine at a point marks its decision made the same way (`Timeline`'s `onLanded`), because the
+   * counters it restores already hold it.
    */
   const resuming =
     instructionsExecuted === 0 &&
-    debugSupport.lastBreakpoint !== undefined &&
-    debugSupport.lastBreakpoint === pc;
+    ((debugSupport.lastBreakpoint !== undefined && debugSupport.lastBreakpoint === pc) || !debugSupport.logArrival);
   if (!resuming && debugSupport.shouldStopAt(pc, getPartition)) {
     debugSupport.lastBreakpoint = pc;
     debugSupport.imminentBreakpoint = undefined;

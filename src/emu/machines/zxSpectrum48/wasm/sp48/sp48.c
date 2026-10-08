@@ -158,6 +158,12 @@ static uint8_t sp48TapeSaveData[SP48_TAPE_SAVE_DATA_CAPACITY];
 static uint32_t sp48Frames;
 static uint32_t sp48Tacts;
 /*
+ * The model byte of an execution-history context: 0 the 16K, 1 the 48K; on the Timex core the
+ * Timex model (`timexHardReset`). Volatile debug bookkeeping: set by the hard reset that creates the
+ * machine, so a restored state keeps the live machine's value.
+ */
+static uint8_t sp48HistoryModel = 1u;
+/*
  * What the host's tact counter is ahead of the internal one (see `sp48ShiftTactOrigin`). Every
  * export that hands out or takes an absolute tact adds or removes it, so the host sees one
  * continuous 32-bit counter, as before.
@@ -204,6 +210,12 @@ static uint32_t sp48CpuInstructionsExecuted;
 static uint32_t sp48CpuFrameSliceInstructions;
 static uint32_t sp48NextFrameStartTact;
 static uint32_t sp48FrameCompleted;
+/*
+ * A frame has begun (`beginMachineFrame`) since the reset. With `sp48FrameCompleted` clear, that
+ * frame is still in progress - a history stop target or the debug loop left it mid-way - and the
+ * next fast frame continues it instead of beginning another (REVERSE_DEBUGGING_PLAN D4).
+ */
+static uint32_t sp48FrameBegun;
 static uint32_t sp48InterruptsRaised;
 static uint8_t sp48InterruptLineActive;
 static uint32_t sp48RomUploadCount;
@@ -351,6 +363,9 @@ static inline void rzxCountFetch(void);
 static inline void rzxIntAck(void);
 #define Z80_REFRESH(address) rzxCountFetch()
 #define Z80_INT_ACK() rzxIntAck()
+/* The execution-history recorder's hooks; the recorder and this machine's macros for it are at the
+   end of this file (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` Phase 1) */
+#include "../../../../z80/wasm/z80-history.h"
 #include "../../../../z80/wasm/z80.c"
 #define RZX_CORE_PREFIX sp48
 #include "../../../zxSpectrum/wasm/common/zx-spectrum-rzx.c"
@@ -502,6 +517,7 @@ static uint32_t normalizeClockMultiplier(uint32_t value) {
 
 static void beginMachineFrame(void) {
   sp48FrameCompleted = 0u;
+  sp48FrameBegun = 1u;
 
   if (sp48ClockMultiplier != sp48TargetClockMultiplier) {
     sp48ClockMultiplier = sp48TargetClockMultiplier;
@@ -606,6 +622,7 @@ void sp48Reset(void) {
   sp48CpuFrameSliceInstructions = 0u;
   sp48NextFrameStartTact = 0u;
   sp48FrameCompleted = 0u;
+  sp48FrameBegun = 0u;
   sp48InterruptsRaised = 0u;
   sp48InterruptLineActive = 0u;
   resetTapePlayback();
@@ -617,7 +634,7 @@ void sp48Reset(void) {
 }
 
 void sp48HardReset(uint32_t is16k, uint32_t isNtsc) {
-  (void)is16k;
+  sp48HistoryModel = is16k != 0u ? 0u : 1u;
   sp48RzxSetMode(RZX_MODE_OFF);
   sp48BaseClockFrequency = isNtsc != 0u
     ? SP48_BASE_CLOCK_FREQUENCY_NTSC
@@ -645,7 +662,8 @@ uint32_t sp48ExecuteFrame(void) {
     return 0u;
   }
 
-  beginMachineFrame();
+  /* A frame a stop target or the debug loop left mid-way goes on where it stopped */
+  if (sp48FrameCompleted != 0u || sp48FrameBegun == 0u) beginMachineFrame();
   sp48CaptureBusEvents = 0u;
   z80ClearBusEvents();
 
@@ -657,7 +675,10 @@ uint32_t sp48ExecuteFrame(void) {
   const uint32_t frameEndTact = sp48NextFrameStartTact + sp48TactsInCurrentFrame;
   while (sp48Tacts < frameEndTact) {
     sp48ExecuteInstruction();
+    /* Checked on the frame's last instruction too: the host reads the reached mark after the call */
+    const uint32_t stop = z80HistoryStopNow();
     if (sp48FrameCompleted != 0u) break;
+    if (stop != 0u) break;
   }
   sp48CaptureBusEvents = 1u;
   return 0u;
@@ -1249,3 +1270,40 @@ uint32_t sp48GetDiagnosticFlags(void) {
 #define COND_PEEK(address) ((uint32_t)sp48Memory[(address) & 0xffffu])
 #endif
 #include "../../../../z80/wasm/z80-condition.c"
+
+// -----------------------------------------------------------------------------
+// Execution history (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` §3, Phase 1): the shared recorder,
+// with this machine's side-effect-free peek (the IDE's view of memory), its frame position in
+// T-states (never an absolute tact: the counter is rebased, trap T4) and its context.
+//
+// The 48K/16K context (`sp48Context.ts` decodes it): 0 the model (0 16K, 1 48K); the rest zero.
+// There is no paging: the 48K's `getPartition` names no partition anywhere.
+//
+// The Timex context (`timexContext.ts`), from `timexRebuildChunkMap`'s inputs and result, not its
+// pointers: 0 port $F4 (which chunks are external), 1 port $FF (bit 7: the EXROM bank, not the
+// DOCK), 2-3 the source of each 8K chunk, 2 bits each, chunk 0 in bits 0-1 of byte 2 (0 HOME,
+// 1 DOCK, 2 EXROM, 3 nothing behind it), 4 the Timex model.
+// -----------------------------------------------------------------------------
+
+static inline void sp48HistoryContext(uint32_t kind, uint8_t *out) {
+  (void)kind;
+  for (uint32_t i = 0u; i < 16u; i++) out[i] = 0u;
+#ifdef SP48_SCLD
+  if (sp48TimexChunkMapValid == 0u) timexRebuildChunkMap();
+  out[0] = sp48TimexPortF4;
+  out[1] = sp48ScldPortFf;
+  for (uint32_t chunk = 0u; chunk < 8u; chunk++) {
+    out[2u + (chunk >> 2u)] |= (uint8_t)((sp48TimexChunkSource[chunk] & 0x03u) << ((chunk & 0x03u) * 2u));
+  }
+  out[4] = sp48HistoryModel;
+#else
+  out[0] = sp48HistoryModel;
+#endif
+}
+
+#define Z80_HISTORY_CAPACITY 65536u
+#define Z80_HISTORY_PEEK(address) sp48ReadMemory((uint32_t)(address))
+#define Z80_HISTORY_CONTEXT(kind, out16) sp48HistoryContext(kind, out16)
+#define Z80_HISTORY_FRAME() sp48Frames
+#define Z80_HISTORY_FRAME_TACT() currentFrameTact()
+#include "../../../../z80/wasm/z80-history.c"

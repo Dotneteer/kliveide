@@ -43,6 +43,10 @@ export type DisassemblyRowViewModel = {
   breakpointAddress: number | string;
   breakpointPartition?: string;
   execPoint: boolean;
+  /** The exec point is the history cursor's, not the machine's (`.plans/LITE_STEP_BACK_PLAN.md` D7) */
+  historical: boolean;
+  /** The bytes at the historical PC differ from the ones the CPU decoded then (T2) */
+  codeChanged: boolean;
   hasBreakpoint: boolean;
   instruction: string;
   labelText: string;
@@ -78,6 +82,11 @@ export type DisassemblyRowViewModelParams = {
   partitionLabels: Record<number, string>;
   pausedPc: number;
   showBanks: boolean;
+  /**
+   * While the history cursor is in the past: the bytes the CPU decoded at `pausedPc` then
+   * (`.plans/LITE_STEP_BACK_PLAN.md` T2). Undefined at the present.
+   */
+  historyBytes?: number[];
 };
 
 /**
@@ -210,9 +219,18 @@ export function deriveDisassemblyRowViewModel({
   mem64kLabels,
   partitionLabels,
   pausedPc,
-  showBanks
+  showBanks,
+  historyBytes
 }: DisassemblyRowViewModelParams): DisassemblyRowViewModel {
   const address = item.address;
+  const execPoint = address === pausedPc;
+  // --- Present memory at a historical PC is not necessarily what ran there (self-modifying code, a
+  // --- different bank paged in): compare the instruction's bytes with the ones the record holds
+  const codeChanged =
+    execPoint &&
+    !!historyBytes &&
+    !!item.opCodes?.length &&
+    item.opCodes.slice(0, 4).some((b, i) => historyBytes[i] !== undefined && historyBytes[i] !== b);
   let partitionLabel = isFullView
     ? (mem64kLabels[address >> 13] ?? "")
     : (partitionLabels[currentSegment] ?? "");
@@ -256,7 +274,9 @@ export function deriveDisassemblyRowViewModel({
           : address,
     breakpointPartition:
       breakpoint?.partition !== undefined ? (partitionLabels[breakpoint.partition] ?? "?") : undefined,
-    execPoint: address === pausedPc,
+    execPoint,
+    historical: execPoint && !!historyBytes,
+    codeChanged,
     hasBreakpoint: !!breakpoint,
     instruction: item.instruction ?? "",
     labelText: formatDisassemblyLabel(item, decimalView),
@@ -502,6 +522,8 @@ export const DisassemblyRow = memo(function DisassemblyRow({
         [styles.selectedRangeItem]: selectedRange,
         [styles.selectedItem]: selected,
         [styles.execPoint]: viewModel?.execPoint,
+        [styles.historyExecPoint]: viewModel?.historical,
+        [styles.historyCodeChanged]: viewModel?.codeChanged,
         [styles.synopsisBlockFirst]: synopsisEdge === "first" || synopsisEdge === "only",
         [styles.synopsisBlockLast]: synopsisEdge === "last" || synopsisEdge === "only"
       })}
@@ -511,6 +533,14 @@ export const DisassemblyRow = memo(function DisassemblyRow({
       data-annotation-region={item.annotation?.regionType}
       data-selected={selected ? "true" : undefined}
       data-selected-range={selectedRange ? "true" : undefined}
+      data-history-exec={viewModel?.historical ? "true" : undefined}
+      title={
+        viewModel?.codeChanged
+          ? "History: the code here has changed since this instruction ran. The listing shows the present bytes."
+          : viewModel?.historical
+            ? "History: the instruction the history cursor is on. The bytes are the present's."
+            : undefined
+      }
       data-synopsis-edge={synopsisEdge}
       onClick={onClick}
       onContextMenu={

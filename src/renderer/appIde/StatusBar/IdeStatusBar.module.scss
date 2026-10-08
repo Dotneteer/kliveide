@@ -60,3 +60,58 @@
   margin: 0 var(--space-1);
   align-items: center;
 }
+
+/*
+ * The history cursor's chip (`.plans/LITE_STEP_BACK_PLAN.md` D7): the secondary accent, as the
+ * editor's historical marker. A chip because it is state that needs undoing, and a button because
+ * the undo is one click.
+ */
+.historyChip {
+  font: inherit;
+  font-size: var(--font-size-100);
+  font-family: var(--monospace-font);
+  padding: 0 var(--space-2);
+  border: 1px solid var(--border-history-band);
+  border-radius: var(--radius-sm);
+  background: var(--bgcolor-history-band);
+  color: var(--color-history-text);
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--color-history-marker);
+  }
+
+  // --- A chip that only reports (a replay run): no pointer, no hover
+  &.passive {
+    cursor: default;
+
+    &:hover {
+      border-color: var(--border-history-band);
+    }
+  }
+
+  // --- The timeline stopped early (a desync): the status bar's error label, which explains in its tooltip
+  &.reverseStopped {
+    border-color: transparent;
+    background: var(--bgcolor-errorLabel);
+    color: var(--text-on-accent);
+  }
+}
+
+// --- "Take over here" beside the in-the-past chip: the same hue, outlined only - an action, not a state
+.historyAction {
+  font: inherit;
+  font-size: var(--font-size-100);
+  margin-left: var(--space-1);
+  padding: 0 var(--space-2);
+  border: 1px solid var(--border-history-band);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-history-text);
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--color-history-marker);
+    background: var(--bgcolor-history-band);
+  }
+}

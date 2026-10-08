@@ -29,6 +29,7 @@ import { expectSameBytes } from "../../expectBytes";
 type StateMachine = {
   saveMachineState(): MachineStateParts;
   loadMachineState(parts: MachineStateParts): void;
+  setHistoryEnabled(enabled: boolean): void;
   pc: number;
   sp: number;
   af: number;
@@ -47,8 +48,14 @@ function fingerprint(m: StateMachine) {
   return { image: parts.image, regs: [m.pc, m.sp, m.af, m.ir] };
 }
 
-/** Steps 1-5 above */
+/**
+ * Steps 1-5 above. A records execution history and B does not
+ * (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` T10): the recorder writes only volatile memory, so
+ * the images are still equal.
+ */
 function proveDeterminism(a: Driver, b: Driver, frames: number): void {
+  a.machine.setHistoryEnabled(true);
+  b.machine.setHistoryEnabled(false);
   const saved = a.machine.saveMachineState();
   a.runFrames(frames);
   b.runFrames(3);

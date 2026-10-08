@@ -1,9 +1,15 @@
 import { conditionStoreOf, type ConditionStore } from "../conditionStore";
+import { WasmHistoryReader } from "../history/WasmHistoryReader";
+import type { IExecutionHistorySource } from "@emu/abstractions/IExecutionHistorySource";
+import type { ExecutionHistoryInfo, ExecutionHistoryPage } from "@common/history/historyTypes";
+import type { HistoryServiceSpan } from "@common/history/serviceSpans";
+import { readWasmLayout } from "../state/wasmLayout";
 import type { MachineConfigSet, MachineModel } from "@common/machines/info-types";
 import {
   ULA_BORDER_COLOR_NAMES,
   type CpuState,
   type CopperHitEvent,
+  type SpriteWriteEvent,
   type CopperState,
   type NextSpriteState,
   type NextTilemapState,
@@ -45,7 +51,7 @@ import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { MemorySectionType } from "@abstractions/MemorySection";
 import { TapeMode } from "@emu/abstractions/TapeMode";
 import { createMainApi } from "@common/messaging/MainApi";
-import { loadZxNextWasmV2 } from "./wasm/ZxNextWasmV2Loader";
+import { loadZxNextWasmV2, ZXNEXT_NO_PARTITION } from "./wasm/ZxNextWasmV2Loader";
 import {
   allRamBanksFor,
   OFFS_ALT_ROM_0,
@@ -67,6 +73,8 @@ import {
   restoreWasmImage,
   type MachineStateParts
 } from "../state/wasmStateImage";
+import { writeCoreBytes } from "@emu/machines/reverse/coreMemoryWrites";
+import { revertSdWrites, type SdRevertResult, type SdUndoEntry, type SdUndoLog } from "@emu/machines/reverse/SdUndoLog";
 
 const WASM_AUDIO_SAMPLE_SCALE = 32768.0;
 
@@ -134,15 +142,14 @@ type ZxNextWasmV2Checkpoint = {
   key: string;
 
   /**
-   * The core's linear memory, minus the frame-trace ring that sits between these two halves.
-   *
-   * That ring is ~19.5 MiB of the 32 MiB buffer and holds nothing but diagnostics, so leaving it out
-   * takes the checkpoint from 32 MiB to roughly 13 MiB and lets a trace being recorded across a
-   * restore stay intact - the ring's header lives inside the excluded span, so it stays consistent
-   * with its own contents.
+   * The core's linear memory, minus every volatile range of its `klive.layout` stamp: the frame
+   * trace, the execution-history ring, the layer captures and the other debugging buffers
+   * (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` trap T7). They hold nothing a restored machine needs,
+   * so leaving them out keeps the checkpoint small, and a restore leaves them as they are - the
+   * history ring is the controller's to clear (D9), and a trace recorded across a restore stays
+   * consistent with its own header. One entry per kept span, in address order.
    */
-  memoryBeforeTrace: Uint8Array;
-  memoryAfterTrace: Uint8Array;
+  memory: { offset: number; bytes: Uint8Array }[];
 
   normalFrames: number;
   debugSteps: number;
@@ -154,7 +161,7 @@ type ZxNextWasmV2Checkpoint = {
 
 export class ZxNextWasmV2Machine
   extends ZxNextWasmHost
-  implements IZxNextIdeMachine, IZxNextHostInputMachine
+  implements IZxNextIdeMachine, IZxNextHostInputMachine, IExecutionHistorySource
 {
   public readonly implementation = "wasm" as const;
   public wasmV2Runtime?: ZxNextWasmV2Runtime;
@@ -576,6 +583,11 @@ export class ZxNextWasmV2Machine
     return FrameTerminationMode.Normal;
   }
 
+  /** Forgets what was last pushed into the core, so the next frame pushes the live state (D8) */
+  invalidateHostSync(): void {
+    this.wasmV2AudioSampleRate = -1;
+  }
+
   executeWasmV2DebugStep(): FrameTerminationMode {
     const runtime = this.requireWasmV2Runtime();
     this.executeWasmV2Instruction(runtime);
@@ -602,6 +614,8 @@ export class ZxNextWasmV2Machine
    * so a hard reset also restores what this class owns (the ROM images, the audio rate).
    */
   private applyWasmV2ResetRequest(runtime: ZxNextWasmV2Runtime): boolean {
+    // --- Asked after every debug-loop instruction: only a pending request is taken (a journaled call)
+    if (runtime.exports.zxnextGetResetRequest() === 0) return false;
     const request = runtime.exports.zxnextTakeResetRequest();
     if (request === 2) this.hardReset();
     else if (request === 1) this.reset();
@@ -617,25 +631,52 @@ export class ZxNextWasmV2Machine
     const runtime = this.requireWasmV2Runtime();
     return {
       ...captureWasmImage("zxnext", runtime.module, runtime.exports.memory.buffer),
-      host: {
-        normalFrames: this.wasmV2NormalFrames,
-        debugSteps: this.wasmV2DebugSteps,
-        lastStopReason: this.wasmV2LastStopReason,
-        sdCardInfoLoaded: this.wasmV2SdCardInfoLoaded,
-        lastRenderedFrameTact: this.lastRenderedFrameTact
-      }
+      host: this.captureHostState()
+    };
+  }
+
+  // ------------------------------------------------------------------------------------------------
+  // Reverse debugging (`.plans/REVERSE_DEBUGGING_PLAN.md` §4.2, `reverse/Timeline.ts`)
+
+  readonly reverseCoreId = "zxnext";
+
+  get reverseRuntime(): ZxNextWasmV2Runtime | undefined {
+    return this.wasmV2Runtime;
+  }
+
+  readonly reverseFrameExport = "zxnextExecuteFrame";
+
+  isAtFrameBoundary(): boolean {
+    return this.wasmV2Runtime?.exports.zxnextGetFrameCompleted() !== 0;
+  }
+
+  /** The wrapper's own fields: what a state file and a keyframe keep besides the image */
+  captureHostState(): Record<string, unknown> {
+    return {
+      normalFrames: this.wasmV2NormalFrames,
+      debugSteps: this.wasmV2DebugSteps,
+      lastStopReason: this.wasmV2LastStopReason,
+      sdCardInfoLoaded: this.wasmV2SdCardInfoLoaded,
+      lastRenderedFrameTact: this.lastRenderedFrameTact
     };
   }
 
   /**
-   * Puts the machine back into a saved state; the host-side caches are invalidated so the next
-   * frame pushes the live host's settings. Queued work of the run being replaced is dropped.
-   * @throws MachineStateMismatchError when the state was saved by another core or layout
+   * After the core changed under the wrapper (a replay, a return to the present, T7): the wrapper's
+   * fields from `state`, the mirrors re-read from the core. Nothing live is pushed - the controller
+   * calls `invalidateHostSync` when live input resumes - and queued work of the replaced run goes.
    */
-  loadMachineState(parts: MachineStateParts): void {
+  restoreHostState(state: unknown): void {
     const runtime = this.requireWasmV2Runtime();
-    restoreWasmImage(parts, "zxnext", runtime.module, runtime.exports.memory.buffer);
-    const host = parts.host as {
+    this.applyHostFields(state);
+    this.emulatedKeyStrokes.length = 0;
+    this.setFrameCommand(null);
+    this.wasmV2AudioSamples.length = 0;
+    this.syncCpuFromWasmV2(runtime);
+  }
+
+  private applyHostFields(state: unknown): void {
+    const host = (state ?? {}) as {
       normalFrames?: number;
       debugSteps?: number;
       lastStopReason?: ZxNextWasmV2StopReason;
@@ -647,6 +688,17 @@ export class ZxNextWasmV2Machine
     this.wasmV2LastStopReason = host.lastStopReason ?? "reset";
     this.wasmV2SdCardInfoLoaded = !!host.sdCardInfoLoaded;
     this.lastRenderedFrameTact = host.lastRenderedFrameTact ?? 0;
+  }
+
+  /**
+   * Puts the machine back into a saved state; the host-side caches are invalidated so the next
+   * frame pushes the live host's settings. Queued work of the run being replaced is dropped.
+   * @throws MachineStateMismatchError when the state was saved by another core or layout
+   */
+  loadMachineState(parts: MachineStateParts): void {
+    const runtime = this.requireWasmV2Runtime();
+    restoreWasmImage(parts, "zxnext", runtime.module, runtime.exports.memory.buffer);
+    this.applyHostFields(parts.host);
     // --- As a checkpoint restore: queued work of the replaced run goes; the audio rate is re-pushed
     this.emulatedKeyStrokes.length = 0;
     this.setFrameCommand(null);
@@ -676,12 +728,9 @@ export class ZxNextWasmV2Machine
     const runtime = this.wasmV2Runtime;
     if (runtime == null) return;
     const all = new Uint8Array(runtime.memoryBuffer);
-    const traceStart = runtime.exports.zxnextTraceGetStartOffset();
-    const traceEnd = traceStart + runtime.frameTrace.byteLength;
     this.wasmV2Checkpoint = {
       key,
-      memoryBeforeTrace: all.slice(0, traceStart),
-      memoryAfterTrace: all.slice(traceEnd),
+      memory: this.checkpointSpans(runtime).map(([from, to]) => ({ offset: from, bytes: all.slice(from, to) })),
       normalFrames: this.wasmV2NormalFrames,
       debugSteps: this.wasmV2DebugSteps,
       lastStopReason: this.wasmV2LastStopReason,
@@ -702,8 +751,7 @@ export class ZxNextWasmV2Machine
     if (runtime == null || checkpoint == null || checkpoint.key !== key) return false;
 
     const all = new Uint8Array(runtime.memoryBuffer);
-    all.set(checkpoint.memoryBeforeTrace, 0);
-    all.set(checkpoint.memoryAfterTrace, all.length - checkpoint.memoryAfterTrace.length);
+    for (const span of checkpoint.memory) all.set(span.bytes, span.offset);
     this.lastRenderedFrameTact = checkpoint.lastRenderedFrameTact;
     this.wasmV2NormalFrames = checkpoint.normalFrames;
     this.wasmV2DebugSteps = checkpoint.debugSteps;
@@ -722,6 +770,72 @@ export class ZxNextWasmV2Machine
     // --- The image carried the debug view of its time: put back today's (D2)
     this.reapplyLayerDebug(runtime);
     return true;
+  }
+
+  /**
+   * The spans of linear memory a checkpoint keeps, `[from, to)` in address order: everything but the
+   * volatile ranges of the core's layout stamp. A core without a stamp (a test double) leaves out
+   * only the frame trace, as checkpoints always did.
+   */
+  private checkpointSpans(runtime: ZxNextWasmV2Runtime): [number, number][] {
+    if (this.wasmV2CheckpointSpans?.runtime === runtime) return this.wasmV2CheckpointSpans.spans;
+    const size = runtime.memoryBuffer.byteLength;
+    const excluded = (readWasmLayout(runtime.module)?.volatile ?? []).map(
+      (v) => [v.address, v.address + v.size] as [number, number]
+    );
+    if (!excluded.length) {
+      const traceStart = runtime.exports.zxnextTraceGetStartOffset();
+      excluded.push([traceStart, traceStart + runtime.frameTrace.byteLength]);
+    }
+    excluded.sort((a, b) => a[0] - b[0]);
+    const spans: [number, number][] = [];
+    let from = 0;
+    for (const [start, end] of excluded) {
+      if (start > from) spans.push([from, Math.min(start, size)]);
+      from = Math.max(from, end);
+    }
+    if (from < size) spans.push([from, size]);
+    this.wasmV2CheckpointSpans = { runtime, spans };
+    return spans;
+  }
+
+  private wasmV2CheckpointSpans?: { runtime: ZxNextWasmV2Runtime; spans: [number, number][] };
+
+  // ==============================================================================================
+  // Execution history (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.4): the shared recorder in the
+  // core, read through the shared reader
+
+  readonly historyMachineId = "zxnext";
+
+  private wasmV2HistoryReader?: { runtime: ZxNextWasmV2Runtime; reader: WasmHistoryReader };
+
+  private historyReader(): WasmHistoryReader | undefined {
+    const runtime = this.wasmV2Runtime;
+    if (runtime == null) return undefined;
+    if (this.wasmV2HistoryReader?.runtime !== runtime) {
+      this.wasmV2HistoryReader = { runtime, reader: new WasmHistoryReader(runtime.exports, this.historyMachineId) };
+    }
+    return this.wasmV2HistoryReader.reader;
+  }
+
+  getHistoryInfo(): ExecutionHistoryInfo | undefined {
+    return this.historyReader()?.info();
+  }
+
+  readHistory(fromSequence: number, count: number): ExecutionHistoryPage | undefined {
+    return this.historyReader()?.read(fromSequence, count);
+  }
+
+  getHistoryServiceSpans(): HistoryServiceSpan[] | undefined {
+    return this.historyReader()?.serviceSpans();
+  }
+
+  clearHistory(): void {
+    this.historyReader()?.clear();
+  }
+
+  setHistoryEnabled(enabled: boolean): void {
+    this.historyReader()?.setEnabled(enabled);
   }
 
   /**
@@ -757,6 +871,26 @@ export class ZxNextWasmV2Machine
     const debugSupport = this.executionContext.debugSupport;
     let instructionsExecuted = 0;
     this.executionContext.lastTerminationReason = undefined;
+
+    /*
+     * The core waits for the host's SD answer before another instruction runs - the fast frame loop
+     * returns at once while a host command is pending - and so does this loop (REVERSE_DEBUGGING_PLAN
+     * T3). A stop right after the instruction that raised the command (a step, a breakpoint) leaves
+     * it unanswered; resuming then must not run on, or the answer lands one instruction late and a
+     * replay - whose fast frames wait - could never apply it where it was journaled. Returning
+     * without running lets the controller answer first. The command is re-read from the core, which
+     * holds it across a state restore that dropped the wrapper's copy - and a copy the core no longer
+     * waits for goes: a reverse-debugging replay applied the journaled answer (D14), and asking the
+     * host again would repeat a write and hand the core a response it does not expect.
+     */
+    if (wasm.zxnextGetSdHostCommand() === 0) this.setFrameCommand(null);
+    this.syncWasmV2StorageFrameCommand(runtime);
+    if (this.getFrameCommand()) {
+      const termination = this.finishWasmV2DebugLoop(runtime, FrameTerminationMode.Normal);
+      // --- No frame ended here: the frame the command interrupted was reported already
+      this.frameCompleted = false;
+      return termination;
+    }
 
     this.syncCpuFromWasmV2(runtime);
     if (this.frameCompleted) {
@@ -813,6 +947,19 @@ export class ZxNextWasmV2Machine
     this.lastCopperHit = undefined;
 
     /*
+     * The sprite-attribute watch (G3.8, sprite half): pushed whole on entry and disarmed when no
+     * `sp:` breakpoint is enabled, so the attribute write paths stay free.
+     */
+    const watchesSprites = debugSupport?.hasSpriteBreakpoints() ?? false;
+    if (watchesSprites) {
+      runtime.spriteWatch.set(debugSupport!.buildSpriteWatch());
+      wasm.zxnextSetSpriteWatchArmed(1);
+    } else {
+      wasm.zxnextSetSpriteWatchArmed(0);
+    }
+    this.lastSpriteWrite = undefined;
+
+    /*
      * Finish a reset the last run stopped in front of.
      *
      * A NextReg write breakpoint on `$02` catches the write that *asks* for a reset, and stops
@@ -841,7 +988,10 @@ export class ZxNextWasmV2Machine
       // --- its first byte, as the TypeScript CPU records it - so not while a prefix is pending
       // --- `|| watchesNextReg`: a NextReg hit is reported against the instruction that wrote, the
       // --- same way a watchpoint hit is, so it needs this tracked too.
-      if ((watchesBusAccess || watchesNextReg || watchesCopper) && wasm.zxnextGetCpuPrefix() === 0) {
+      if (
+        (watchesBusAccess || watchesNextReg || watchesCopper || watchesSprites) &&
+        wasm.zxnextGetCpuPrefix() === 0
+      ) {
         this.opStartAddress = this.pc;
       }
       wasm.zxnextExecuteInstruction();
@@ -852,6 +1002,10 @@ export class ZxNextWasmV2Machine
       // --- every write back into the core, and this value was just read out of that same core.
       super.pc = wasm.zxnextGetCpuPc();
       this.frameCompleted = wasm.zxnextGetFrameCompleted() !== 0;
+      // --- A reverse-debugging replay run reached its next journal entry (REVERSE_DEBUGGING_PLAN D11)
+      if (this.executionContext.historyStopArmed && wasm.z80HistoryCheckStop() !== 0) {
+        return this.finishWasmV2DebugLoop(runtime, FrameTerminationMode.UntilExecutionPoint);
+      }
       if (watchesBusAccess) {
         this.importWasmV2BusAccess(runtime);
       }
@@ -876,6 +1030,11 @@ export class ZxNextWasmV2Machine
       // --- The Copper may complete a watched instruction during any Z80 instruction; the machine
       // --- stops at the end of it, while the Copper has run on to the end of it (T1).
       if (watchesCopper && this.acceptWasmV2CopperHit(runtime, wasm.zxnextTakeCopperHit())) {
+        return this.finishWasmV2DebugLoop(runtime, FrameTerminationMode.DebugEvent);
+      }
+      // --- A watched sprite attribute byte was written during this instruction (by the CPU, the
+      // --- DMA it held the bus for, or the Copper); the machine stops at its end.
+      if (watchesSprites && this.acceptWasmV2SpriteHit(wasm.zxnextTakeSpriteHit())) {
         return this.finishWasmV2DebugLoop(runtime, FrameTerminationMode.DebugEvent);
       }
 
@@ -1047,6 +1206,33 @@ export class ZxNextWasmV2Machine
       word,
       line: (packed >>> 10) & 0x1ff,
       hc: (packed >>> 19) & 0x1ff,
+      pc,
+      partition: this.getPartition(pc)
+    };
+    return true;
+  }
+
+  /**
+   * Unpacks a sprite attribute write the core latched and asks whether a `sp:` breakpoint's filters
+   * (hit count, condition) accept it.
+   *
+   * @param packed `zxnextTakeSpriteHit`'s word: bit 31 presence, 26-28 origin (1 port, 2 DMA,
+   *   3 NextReg mirror, 4 Copper), 18-25 new value, 10-17 old value, 7-9 attribute, 0-6 sprite.
+   */
+  private acceptWasmV2SpriteHit(packed: number): boolean {
+    if ((packed & 0x8000_0000) === 0) return false;
+    const sprite = packed & 0x7f;
+    const attribute = (packed >>> 7) & 0x07;
+    const newValue = (packed >>> 18) & 0xff;
+    if (!this.executionContext.debugSupport?.hasSpriteHit(sprite, attribute, newValue)) return false;
+    const originCode = (packed >>> 26) & 0x07;
+    const pc = this.opStartAddress;
+    this.lastSpriteWrite = {
+      sprite,
+      attribute,
+      oldValue: (packed >>> 10) & 0xff,
+      newValue,
+      origin: originCode === 1 ? "port" : originCode === 2 ? "dma" : originCode === 3 ? "nextreg" : "copper",
       pc,
       partition: this.getPartition(pc)
     };
@@ -1350,7 +1536,7 @@ export class ZxNextWasmV2Machine
       const sectorData = await createMainApi(messenger).readSdCardSector(frameCommand.sector);
       const data = sectorData instanceof Uint8Array ? sectorData : new Uint8Array(sectorData);
       const ptr = runtime.exports.zxnextGetSdWriteBufferPtr();
-      new Uint8Array(runtime.memoryBuffer).set(data.slice(0, ZXNEXT_SD_BYTES_PER_SECTOR), ptr);
+      writeCoreBytes(runtime, new Uint8Array(runtime.memoryBuffer), data.slice(0, ZXNEXT_SD_BYTES_PER_SECTOR), ptr);
       runtime.exports.zxnextSetSdReadResponse(card, ptr, Math.min(data.length, ZXNEXT_SD_BYTES_PER_SECTOR));
     } catch (err) {
       console.log(`${frameCommand.command === "sd-read-card1" ? "SD card 1" : "SD card"} sector read error`, err);
@@ -1373,13 +1559,48 @@ export class ZxNextWasmV2Machine
     this.invalidateCheckpoints();
 
     try {
-      const result = await createMainApi(messenger).writeSdCardSector(frameCommand.sector, frameCommand.data);
+      const api = createMainApi(messenger);
+      // --- In a reverse-debugging timeline the sector's old bytes are kept first, so a fork can
+      // --- write them back (REVERSE_DEBUGGING_PLAN D14). A failed read still logs the write: the
+      // --- fork then reports it as one it could not undo.
+      if (this.sdUndoLog) {
+        let before: Uint8Array | undefined;
+        try {
+          const old = await api.readSdCardSector(frameCommand.sector);
+          before = old instanceof Uint8Array ? old : new Uint8Array(old);
+        } catch {
+          before = undefined;
+        }
+        this.sdUndoLog.record(card, frameCommand.sector, before);
+      }
+      const result = await api.writeSdCardSector(frameCommand.sector, frameCommand.data);
       runtime.exports.zxnextSetSdWriteResponse(card, result?.persistenceConfirmed ? 1 : 0);
     } catch (err) {
       console.log(`${frameCommand.command === "sd-write-card1" ? "SD card 1" : "SD card"} sector write error`, err);
       runtime.exports.zxnextSetSdWriteResponse(card, 0);
     }
     runtime.exports.zxnextClearSdHostCommand();
+  }
+
+  /** The timeline's SD undo log while one runs (`TimelineMachine.attachSdUndoLog`, D14) */
+  private sdUndoLog?: SdUndoLog;
+
+  attachSdUndoLog(log: SdUndoLog | undefined): void {
+    this.sdUndoLog = log;
+  }
+
+  /**
+   * A fork discarded a future that wrote to the SD card (D14): writes the sectors' old bytes back,
+   * newest first, so the host's card image is what it was at the fork point
+   */
+  async revertSdWrites(entries: readonly SdUndoEntry[], messenger: MessengerBase): Promise<SdRevertResult> {
+    if (entries.length === 0) return { reverted: 0, failed: [] };
+    // --- The card changed under any checkpoint, as with a guest write
+    this.invalidateCheckpoints();
+    const api = createMainApi(messenger);
+    return revertSdWrites(entries, {
+      writeSector: async (_card, sector, data) => !!(await api.writeSdCardSector(sector, data))?.success
+    });
   }
 
   private async ensureWasmV2SdCardInfo(messenger: MessengerBase): Promise<void> {
@@ -1395,7 +1616,7 @@ export class ZxNextWasmV2Machine
 
   private setWasmV2SdInlineResponse(runtime: ZxNextWasmV2Runtime, card: number, response: Uint8Array): void {
     const ptr = runtime.exports.zxnextGetSdWriteBufferPtr();
-    new Uint8Array(runtime.memoryBuffer).set(response, ptr);
+    writeCoreBytes(runtime, new Uint8Array(runtime.memoryBuffer), response, ptr);
     runtime.exports.zxnextSetSdReadResponse(card, ptr, response.length);
   }
 
@@ -1432,7 +1653,7 @@ export class ZxNextWasmV2Machine
     this.beamPreviewShown = false;
     const snapshot = new Uint32Array(runtime.pixelBuffer);
     if (savedPixelBuffer != null) {
-      runtime.pixelBuffer.set(savedPixelBuffer.subarray(0, runtime.pixelBuffer.length));
+      writeCoreBytes(runtime, runtime.pixelBuffer, savedPixelBuffer.subarray(0, runtime.pixelBuffer.length));
     } else {
       runtime.exports.zxnextRenderInstantScreen();
     }
@@ -1479,6 +1700,12 @@ export class ZxNextWasmV2Machine
   lastCopperHit?: CopperHitEvent;
 
   /**
+   * The sprite attribute write a `sp:` breakpoint last stopped on. Set by the debug loop, cleared
+   * when the machine resumes.
+   */
+  lastSpriteWrite?: SpriteWriteEvent;
+
+  /**
    * "Step Copper" is pending: the next debug run stops after the Z80 instruction during which the
    * Copper completes its next instruction, whatever its index (plan §4.6).
    */
@@ -1498,7 +1725,8 @@ export class ZxNextWasmV2Machine
     return {
       ...super.getCpuState(),
       lastNextRegWrite: this.lastNextRegWrite,
-      lastCopperHit: this.lastCopperHit
+      lastCopperHit: this.lastCopperHit,
+      lastSpriteWrite: this.lastSpriteWrite
     };
   }
 
@@ -1956,10 +2184,11 @@ export class ZxNextWasmV2Machine
   private uploadCachedWasmV2RomImages(runtime: ZxNextWasmV2Runtime): void {
     const roms = this.wasmV2RomImages;
     if (!roms) return;
-    runtime.memory.set(roms.nextRom, OFFS_NEXT_ROM);
-    runtime.memory.set(roms.divMmcRom, OFFS_DIVMMC_ROM);
-    runtime.memory.set(roms.multifaceRom, OFFS_MULTIFACE_MEM);
-    runtime.memory.set(roms.altRom, OFFS_ALT_ROM_0);
+    // --- Journaled: a program's NextReg $02 hard reset re-uploads them inside a timeline (T11)
+    writeCoreBytes(runtime, runtime.memory, roms.nextRom, OFFS_NEXT_ROM);
+    writeCoreBytes(runtime, runtime.memory, roms.divMmcRom, OFFS_DIVMMC_ROM);
+    writeCoreBytes(runtime, runtime.memory, roms.multifaceRom, OFFS_MULTIFACE_MEM);
+    writeCoreBytes(runtime, runtime.memory, roms.altRom, OFFS_ALT_ROM_0);
   }
 
 
@@ -2052,40 +2281,16 @@ export class ZxNextWasmV2Machine
   /**
    * The partition index paged into an 8K page, or `undefined` when the page is not backed by one.
    *
-   * The WASM counterpart of `MemoryDevice.getPartitionForPage`, and the only offset-to-index
-   * function on this path. It replaces a pair — one building a label from offsets, one parsing that
-   * label back — whose vocabularies (`A0`/`A1`, `D0`..`DF`) matched each other and nothing else in
-   * the system.
-   *
-   * The `bank8 < 224` threshold is carried over verbatim from the function this replaces; see
-   * `.plans/PARTITION_NAMING_UNIFICATION_PLAN.md` §8, decision 3.
+   * The WASM counterpart of `MemoryDevice.getPartitionForPage`. The core decides
+   * (`zxnextPartitionOfPage` in `zxnext.c`, the same function breakpoint conditions' `page()` uses),
+   * the way the CPU reads code: in slots 0-1 the Multiface (no partition) wins over the DivMMC
+   * (`DM`, `M0`..`MF`), and both over the MMU. Before, this read the MMU's page tables only, so
+   * while the DivMMC was mapped it named the ROM underneath - for source mapping, partitioned
+   * breakpoints and the execution history alike.
    */
   private getWasmV2PartitionForPage(pageIndex: number): number | undefined {
-    const wasm = this.requireWasmV2Runtime().exports;
-    const bank8 = wasm.zxnextGetMemoryPageBank8(pageIndex);
-    // --- The 8K page itself, not `>> 1`. See `MemoryDevice.getPartitionForPage`.
-    if (bank8 < 224) return bank8;
-
-    const readOffset = wasm.zxnextGetMemoryPageReadOffset(pageIndex);
-    if (readOffset >= OFFS_NEXT_RAM) return undefined;
-    if (readOffset >= OFFS_DIVMMC_RAM) {
-      // --- DivMMC RAM pages 0..15 occupy partitions -8..-23 ("M0".."MF")
-      return -8 - ((readOffset - OFFS_DIVMMC_RAM) >> 13);
-    }
-    if (readOffset >= OFFS_ALT_ROM_1 && readOffset < OFFS_ALT_ROM_1 + 0x4000) {
-      return -6; // --- Alt ROM 1, "X1"
-    }
-    if (readOffset >= OFFS_ALT_ROM_0 && readOffset < OFFS_ALT_ROM_0 + 0x4000) {
-      return -5; // --- Alt ROM 0, "X0"
-    }
-    if (readOffset >= OFFS_DIVMMC_ROM && readOffset < OFFS_DIVMMC_ROM + 0x2000) {
-      return -7; // --- DivMMC ROM, "DM"
-    }
-    if (readOffset < OFFS_NEXT_ROM + 0x10000) {
-      // --- Next ROM 0..3 occupy partitions -1..-4
-      return -1 - (readOffset >> 14);
-    }
-    return undefined;
+    const partition = this.requireWasmV2Runtime().exports.zxnextGetPartitionOfPage(pageIndex & 0x07);
+    return partition === ZXNEXT_NO_PARTITION ? undefined : partition;
   }
 
   /**
@@ -2120,20 +2325,21 @@ export class ZxNextWasmV2Machine
 
   private syncCpuFromWasmV2(runtime: ZxNextWasmV2Runtime): void {
     const wasm = runtime.exports;
-    this.af = wasm.zxnextGetCpuAf();
-    this.af_ = wasm.zxnextGetCpuAfAlt();
-    this.bc = wasm.zxnextGetCpuBc();
-    this.bc_ = wasm.zxnextGetCpuBcAlt();
-    this.de = wasm.zxnextGetCpuDe();
-    this.de_ = wasm.zxnextGetCpuDeAlt();
-    this.hl = wasm.zxnextGetCpuHl();
-    this.hl_ = wasm.zxnextGetCpuHlAlt();
-    this.ix = wasm.zxnextGetCpuIx();
-    this.iy = wasm.zxnextGetCpuIy();
-    this.ir = wasm.zxnextGetCpuIr();
-    this.wz = wasm.zxnextGetCpuWz();
-    this.pc = wasm.zxnextGetCpuPc();
-    this.sp = wasm.zxnextGetCpuSp();
+    // --- Through `super`: these setters push into the core, which already holds the values
+    super.af = wasm.zxnextGetCpuAf();
+    super.af_ = wasm.zxnextGetCpuAfAlt();
+    super.bc = wasm.zxnextGetCpuBc();
+    super.bc_ = wasm.zxnextGetCpuBcAlt();
+    super.de = wasm.zxnextGetCpuDe();
+    super.de_ = wasm.zxnextGetCpuDeAlt();
+    super.hl = wasm.zxnextGetCpuHl();
+    super.hl_ = wasm.zxnextGetCpuHlAlt();
+    super.ix = wasm.zxnextGetCpuIx();
+    super.iy = wasm.zxnextGetCpuIy();
+    super.ir = wasm.zxnextGetCpuIr();
+    super.wz = wasm.zxnextGetCpuWz();
+    super.pc = wasm.zxnextGetCpuPc();
+    super.sp = wasm.zxnextGetCpuSp();
     this.tacts = wasm.zxnextGetTacts();
     this.frames = wasm.zxnextGetFrames();
     this.frameTacts = wasm.zxnextGetCurrentFrameTact();
@@ -2149,9 +2355,9 @@ export class ZxNextWasmV2Machine
     this.frameCompleted = wasm.zxnextGetFrameCompleted() !== 0;
     this.halted = wasm.zxnextGetCpuHalted() !== 0;
     this.opCode = wasm.zxnextGetCpuPrefix();
-    this.iff1 = wasm.zxnextGetCpuIff1() !== 0;
-    this.iff2 = wasm.zxnextGetCpuIff2() !== 0;
-    this.interruptMode = wasm.zxnextGetCpuInterruptMode();
+    super.iff1 = wasm.zxnextGetCpuIff1() !== 0;
+    super.iff2 = wasm.zxnextGetCpuIff2() !== 0;
+    super.interruptMode = wasm.zxnextGetCpuInterruptMode();
     // --- The core owns the contention counters; `contentionDelaySincePause` restarts at every run,
     // --- which the core's own counter does not, so it is measured from the base taken then.
     this.totalContentionDelaySinceStart = wasm.zxnextGetTotalContentionDelaySinceStart();

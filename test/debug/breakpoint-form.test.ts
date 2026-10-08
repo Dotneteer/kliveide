@@ -400,6 +400,8 @@ describe("helpers", () => {
       nextRegMask: "",
       nextRegCopper: false,
       copperIndex: "",
+      spriteIndex: "",
+      spriteAttrMask: 0x1f,
       disabled: false,
       oneShot: false,
       length: "",
@@ -1233,5 +1235,74 @@ describe("Copper breakpoints - the form", () => {
 
   it("allows VAL as a 16-bit word in a condition", () => {
     expect(validateBreakpointForm(copperForm({ condition: "VAL == $BE78" }), nextRegEnv())).toEqual({});
+  });
+});
+
+/*
+ * Sprite-attribute breakpoints: the eighth kind, bound to a sprite and a set of attribute bytes
+ * (`.plans/SPRITE_ATTRIBUTE_BREAKPOINTS_PLAN.md`). Like the Copper kind it shares no field with the
+ * place kinds.
+ */
+describe("Sprite breakpoints - the form", () => {
+  const spriteForm = (over: Partial<BreakpointFormState> = {}): BreakpointFormState => ({
+    ...createEmptyForm(),
+    kind: "sprite",
+    spriteIndex: "$0C",
+    ...over
+  });
+
+  it("accepts a sprite, spelled any way the command takes", () => {
+    for (const text of ["$0C", "12", "$7f", "0"]) {
+      expect(validateBreakpointForm(spriteForm({ spriteIndex: text }), nextRegEnv())).toEqual({});
+    }
+  });
+
+  it("refuses the kind off the ZX Spectrum Next, an empty and an out-of-range sprite", () => {
+    expect(validateBreakpointForm(spriteForm(), nextEnv()).spriteIndex).toMatch(/ZX Spectrum Next only/);
+    expect(validateBreakpointForm(spriteForm({ spriteIndex: "" }), nextRegEnv()).spriteIndex).toMatch(
+      /Enter a sprite index/
+    );
+    expect(validateBreakpointForm(spriteForm({ spriteIndex: "$80" }), nextRegEnv()).spriteIndex).toMatch(
+      /between \$00 and \$7F/
+    );
+  });
+
+  it("needs at least one attribute byte", () => {
+    expect(validateBreakpointForm(spriteForm({ spriteAttrMask: 0 }), nextRegEnv()).spriteAttrMask).toMatch(
+      /at least one attribute byte/
+    );
+  });
+
+  it("builds a non-exec breakpoint with the sprite, and the mask only when it narrows", () => {
+    const all = formToBreakpointInfo(spriteForm({ partition: 3, address: "$8000" }));
+    expect(all).toMatchObject({ spriteIndex: 0x0c, exec: false });
+    expect(all.spriteAttrMask).toBeUndefined();
+    expect(all.address).toBeUndefined();
+    expect(all.partition).toBeUndefined();
+    expect(formToBreakpointInfo(spriteForm({ spriteAttrMask: 0x03 })).spriteAttrMask).toBe(0x03);
+  });
+
+  it("round-trips through breakpointToForm", () => {
+    const form = breakpointToForm({ spriteIndex: 0x0c, spriteAttrMask: 0x05, hitCount: 2, hitMode: "eq" });
+    expect(form).toMatchObject({ kind: "sprite", spriteIndex: "$0C", spriteAttrMask: 0x05, hitCount: "2" });
+    expect(breakpointToForm({ spriteIndex: 1 }).spriteAttrMask).toBe(0x1f);
+    expect(isAuthorableBreakpoint({ spriteIndex: 0x0c })).toBe(true);
+  });
+
+  it("drops the place when switching to it, and the sprite when leaving it", () => {
+    const toSprite = applyKindChange({ ...createEmptyForm(), address: "$8000", partition: 2 }, "sprite");
+    expect(toSprite).toMatchObject({ address: "", partition: undefined });
+    const left = applyKindChange(spriteForm({ spriteAttrMask: 0x01 }), "exec");
+    expect(left).toMatchObject({ spriteIndex: "", spriteAttrMask: 0x1f });
+  });
+
+  it("refuses a duplicate, whatever bytes it watches", () => {
+    const errors = validateBreakpointForm(spriteForm({ spriteAttrMask: 0x01 }), nextRegEnv({ existingKeys: ["SP:$0C"] }));
+    expect(errors.form).toMatch(/already exists at SP:\$0C/);
+  });
+
+  it("allows ADDR up to 4 in a condition, and not beyond", () => {
+    expect(validateBreakpointForm(spriteForm({ condition: "ADDR == 3 && VAL == $C0" }), nextRegEnv())).toEqual({});
+    expect(validateBreakpointForm(spriteForm({ condition: "ADDR == 5" }), nextRegEnv()).condition).toBeDefined();
   });
 });

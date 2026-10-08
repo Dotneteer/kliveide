@@ -63,8 +63,8 @@ describe("Cambridge Z88 WASM build", () => {
     expect(result.optimization).toBe("speed");
   });
 
-  it("reserves 8 MiB of linear memory", () => {
-    expect(Z88_WASM_MEMORY_BYTES).toBe(8 * 1024 * 1024);
+  it("reserves 12 MiB of linear memory (8 MiB, plus the 4 MiB execution-history ring)", () => {
+    expect(Z88_WASM_MEMORY_BYTES).toBe(12 * 1024 * 1024);
   });
 
   it("builds only the production artifact from the CLI helper", () => {
@@ -109,8 +109,11 @@ describe("Cambridge Z88 WASM build", () => {
     const condFunctions = [
       ...evaluator.matchAll(/^(?:uint32_t|int64_t|void) (cond[A-Za-z0-9]+)\([^)]*\)\s*\{/gm)
     ].map((m) => m[1]);
+    // --- ... and the shared execution-history recorder, and exports it
+    const recorder = readFileSync(join(folder, "../../../../z80/wasm/z80-history.c"), "utf8");
+    const historyFunctions = [...recorder.matchAll(/^(?:uint32_t|void) (z80History[A-Za-z0-9]+)\([^)]*\)\s*\{/gm)].map((m) => m[1]);
     expect(productionExports.filter((name) => name !== "memory").sort()).toEqual(
-      [...cFunctions, ...condFunctions].sort()
+      [...cFunctions, ...condFunctions, ...historyFunctions].sort()
     );
   });
 

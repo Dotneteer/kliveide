@@ -27,6 +27,7 @@ it("prints", async () => {
 | Debug | `attachDebugSupport()`, `debug(action)`, `breakpoint(address)`, `watch(address, access)` | The emulator's own breakpoint store; continue/step into/over/out as `MachineController` runs them. |
 | Memory | `peek`, `peekWord`, `poke` | Through the memory map. |
 | Screen | `screenText()`, `screenPixels()`, `isInk(x, y)`, `pixelArt(x, y, w, h)` | The display file as text (inverse in brackets; the character set follows the ROM); the published picture. |
+| History | `recordHistory(on)`, `clearHistory()`, `historyInfo()`, `history(count?)`, `historyFrom(sequence, count)` | The execution-history recorder (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`) through the machine's `IExecutionHistorySource`, shared with every harness (`../historySupport.ts`): on/off, clear, the ring's header, the newest records decoded oldest first (each the state *before* its instruction or event), a read by sequence with its "gone" flag. Display NOPs come as one forced-NOP record per run. |
 
 ## Notes
 

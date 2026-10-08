@@ -26,6 +26,16 @@ import { mediaStore } from "@emu/machines/media/media-info";
 import { EmuScriptRunner } from "./ksx/EmuScriptRunner";
 import { getCachedMessenger, getCachedStore } from "@renderer/CachedServices";
 import { isZxNextIdeMachine, type IZxNextIdeMachine } from "@emu/machines/zxNext/IZxNextIdeMachine";
+import { isExecutionHistorySource } from "@emu/abstractions/IExecutionHistorySource";
+import type { CallStackInfo } from "@emu/abstractions/CallStack";
+import { historyContextDecoder } from "@common/history/contexts";
+import { HistoryKind } from "@common/history/historyRecord";
+import type {
+  HistoryNavigationOp,
+  HistoryNavigationOptions,
+  HistoryNavigationResult
+} from "@common/history/historyNavigation";
+import type { HistoricalState } from "@emu/machines/history/HistoryCursor";
 import { createMainApi } from "@common/messaging/MainApi";
 import { IMachineService } from "@renderer/abstractions/IMachineService";
 import { CodeToInject } from "@abstractions/CodeToInject";
@@ -37,6 +47,7 @@ import type { SourceStepKind } from "@emu/machines/SourceStepDecision";
 import {
   CpuState,
   CpuStateChunk,
+  type Z80CpuState,
   isMachineNotAvailableError,
   MACHINE_NOT_AVAILABLE_MESSAGE,
   ULA_BORDER_COLOR_NAMES,
@@ -68,12 +79,21 @@ import type {
   RzxVideoOptions
 } from "@common/spectrum/rzx/rzxCommandTypes";
 import {
+  coreIdOfMachine,
   loadMachineStateFile,
   quickRestoreMachineState,
   quickSaveMachineState,
   saveMachineStateFile,
   type MachineStatePorts
 } from "./machines/machineStateFile";
+import { coreIdentity, loadDebugRecording, recordingMismatch, saveDebugRecording } from "./machines/debugRecordingFile";
+import type {
+  DebugRecordingCompatibility,
+  DebugRecordingLoadOptions,
+  DebugRecordingLoadResult,
+  DebugRecordingSaveOptions,
+  DebugRecordingSaveResult
+} from "@common/debugRecording/debugRecordingTypes";
 import type {
   MachineStateLoadMode,
   MachineStateLoadResult,
@@ -98,6 +118,27 @@ let _emuRecordingManager: RecordingManager | null = null;
 /** Called from EmuApp after the RecordingManager is created. */
 export function setEmuRecordingManager(mgr: RecordingManager | null): void {
   _emuRecordingManager = mgr;
+}
+
+/**
+ * The CPU state at the history cursor (`.plans/LITE_STEP_BACK_PLAN.md` D2, T9): the record's
+ * registers, interrupt state and partition over the live state's shape. What a record does not hold
+ * - the T-state counter, the last memory and I/O accesses, the stop events - must not pass for
+ * historical, so `history` tells the views to show it as unknown and the stop events are dropped.
+ */
+export function historicalCpuState(live: Z80CpuState, historical: HistoricalState): Z80CpuState {
+  const { record, info, pcPartition } = historical;
+  const { lastNextRegWrite: _w, lastCopperHit: _c, lastSpriteWrite: _s, ...rest } = live;
+  return {
+    ...rest,
+    ...record.regs,
+    halted: record.kind === HistoryKind.Halt,
+    snoozed: false,
+    sigINT: record.intPending,
+    opStartAddress: record.regs.pc,
+    ...(pcPartition === undefined ? { pcPartition: undefined } : { pcPartition }),
+    history: info
+  };
 }
 
 // --- There is no machine controller: a machine is being rebuilt (see MACHINE_NOT_AVAILABLE_MESSAGE)
@@ -144,11 +185,11 @@ class EmuMessageProcessor {
       case "pause":
         return controller.pause();
       case "stop":
-        return controller.stop();
+        return this.unlessKeepingRecording("Stop", () => controller.stop());
       case "reset":
-        return controller.cpuReset();
+        return this.unlessKeepingRecording("Reset", () => controller.cpuReset());
       case "restart":
-        return controller.restart();
+        return this.unlessKeepingRecording("Restart", () => controller.restart());
       case "debug":
         return controller.startDebug();
       case "stepInto":
@@ -219,6 +260,8 @@ class EmuMessageProcessor {
     confirm?: boolean,
     suppressError?: boolean
   ) {
+    // --- New media act on the present: a muted journal in the past would drop them (REVERSE_DEBUGGING_PLAN D12)
+    this.machineService.getMachineController()?.clearHistoryCursor?.();
     await this.machineService.getMachineController()?.interruptRzx?.("the tape was changed");
     // --- A ZX80/ZX81 program file (.p, .81, .o, .80) is its own tape: the machine plays its bytes
     if (file && isZx8081ProgramFileName(file)) {
@@ -494,6 +537,63 @@ class EmuMessageProcessor {
   }
 
   /**
+   * Runs a command that ends the timeline - unless the timeline came from a debug recording, was run
+   * on past its end, and the user keeps it (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` Q7, T12)
+   */
+  private async unlessKeepingRecording(what: string, command: () => Promise<unknown>): Promise<unknown> {
+    const timeline = this.machineService.getMachineController()?.timeline;
+    if (timeline?.hasUnsavedExtension) {
+      const discard = await createMainApi(this.mainMessenger).confirmAction(
+        "Debug Recording",
+        `${what} discards what ran after the end of ${timeline.recording!.name}.`,
+        "The recording was continued past its end, and that part is not in the file. Cancel, then use Debug › Save Debug Recording... to keep it.",
+        what
+      );
+      if (!discard) return undefined;
+    }
+    return command();
+  }
+
+  /**
+   * Saves a debug recording (see `EmuApi.saveDebugRecording`).
+   */
+  saveDebugRecording(options: DebugRecordingSaveOptions): Promise<DebugRecordingSaveResult> {
+    return saveDebugRecording(this.machineStatePorts(), options);
+  }
+
+  /**
+   * Opens a debug recording (see `EmuApi.loadDebugRecording`).
+   */
+  loadDebugRecording(
+    fileName: string,
+    contents: Uint8Array,
+    kliveVersion: string,
+    options: DebugRecordingLoadOptions = {}
+  ): Promise<DebugRecordingLoadResult> {
+    return loadDebugRecording(this.machineStatePorts(), fileName, contents, kliveVersion, options);
+  }
+
+  /**
+   * Whether this build can replay a debug recording (see `EmuApi.checkDebugRecording`).
+   */
+  async checkDebugRecording(
+    header: { kliveVersion: string; coreId: string; fingerprint: string; codeHash: string; contractHash: string; memorySize: number },
+    kliveVersion: string
+  ): Promise<DebugRecordingCompatibility> {
+    const machine = this.machineService.getMachineController()?.machine as
+      | { machineId: string; wasmV2Runtime?: { module?: WebAssembly.Module } }
+      | undefined;
+    const liveCoreId = machine ? coreIdOfMachine(machine.machineId) : undefined;
+    if (!machine || liveCoreId !== header.coreId) return { known: false, liveCoreId };
+    try {
+      const live = await coreIdentity(header.coreId, machine.wasmV2Runtime?.module);
+      return { known: true, refusal: recordingMismatch(header, header.coreId, live, kliveVersion) };
+    } catch (err) {
+      return { known: true, refusal: (err as Error).message };
+    }
+  }
+
+  /**
    * Quick-saves the machine (see `EmuApi.quickSaveMachineState`).
    */
   async quickSaveMachineState(): Promise<{ machineName: string; pc: number }> {
@@ -526,6 +626,8 @@ class EmuMessageProcessor {
   ) {
     // --- Get disk information
     const controller = this.machineService.getMachineController();
+    // --- New media act on the present (REVERSE_DEBUGGING_PLAN D12)
+    controller?.clearHistoryCursor?.();
     await controller?.interruptRzx?.("a disk was changed");
     const mediaId = diskIndex ? MEDIA_DISK_B : MEDIA_DISK_A;
     // --- `diskIndex` is a number, so indexing it always yielded `undefined` and every message
@@ -597,15 +699,18 @@ class EmuMessageProcessor {
   }
 
   /**
-   * Gets the current CPU state.
+   * Gets the current CPU state: the state at the history cursor while it is in the past
+   * (`.plans/LITE_STEP_BACK_PLAN.md` D2), unless `present` asks for the live one.
    */
-  getCpuState(): CpuState {
+  getCpuState(options?: { present?: boolean }): CpuState {
     const controller = this.machineService.getMachineController();
     if (!controller) {
       noController();
     }
     const machine = controller.machine;
     const state = machine.getCpuState();
+    const historical = options?.present ? undefined : controller.historyCursor?.state();
+    if (historical) return historicalCpuState(state as Z80CpuState, historical);
     const pcPartition = machine.getPartition?.(state.pc);
     return pcPartition === undefined ? state : { ...state, pcPartition };
   }
@@ -836,7 +941,24 @@ class EmuMessageProcessor {
       selectedRom: controller.machine.getSelectedRomPage?.(),
       selectedBank: controller.machine.getSelectedRamBank?.(),
       memBreakpoints: controller.debugSupport.breakpoints,
-      osInitialized: controller.machine?.isOsInitialized ?? false
+      osInitialized: controller.machine?.isOsInitialized ?? false,
+      ...this.historyOfMemoryView(controller)
+    };
+  }
+
+  /** The history cursor's PC, registers and decoded bytes, for the disassembly (T2) */
+  private historyOfMemoryView(controller: { historyCursor?: { state(): HistoricalState | undefined } }) {
+    const state = controller.historyCursor?.state();
+    if (!state) return {};
+    const { record, info, pcPartition } = state;
+    return {
+      history: {
+        position: info.position,
+        pc: record.regs.pc,
+        regs: record.regs,
+        bytes: record.bytes,
+        ...(pcPartition === undefined ? {} : { partition: pcPartition })
+      }
     };
   }
 
@@ -862,6 +984,8 @@ class EmuMessageProcessor {
       noController();
     }
     void controller.interruptRzx?.("code was injected");
+    // --- Injection waits on wall time, so where it continues is not reproducible (T10)
+    controller.endTimeline?.();
     controller.machine.injectCodeToRun(codeToInject);
   }
 
@@ -1071,6 +1195,83 @@ class EmuMessageProcessor {
   }
 
   /**
+   * What the execution-history ring holds; undefined on a machine that does not record history. The
+   * guard is the capability, not the Next, so every core that records needs no handler of its own.
+   */
+  getHistoryInfo() {
+    const machine = this.machineService.getMachineController()?.machine;
+    return isExecutionHistorySource(machine) ? machine.getHistoryInfo() : undefined;
+  }
+
+  /**
+   * Consecutive raw history records from a sequence number on.
+   */
+  getHistoryRecords(fromSequence: number, count: number) {
+    const machine = this.machineService.getMachineController()?.machine;
+    return isExecutionHistorySource(machine) ? machine.readHistory(fromSequence, count) : undefined;
+  }
+
+  /**
+   * The outermost interrupt service spans of the held history records (the viewer folds them).
+   */
+  getHistoryServiceSpans() {
+    const machine = this.machineService.getMachineController()?.machine;
+    return isExecutionHistorySource(machine) ? machine.getHistoryServiceSpans() : undefined;
+  }
+
+  /**
+   * Empties the execution-history ring; a history cursor goes with it (T6).
+   */
+  clearHistory() {
+    const controller = this.machineService.getMachineController();
+    controller?.clearHistoryCursor?.();
+    const machine = controller?.machine;
+    if (isExecutionHistorySource(machine)) machine.clearHistory();
+  }
+
+  /**
+   * Moves the history cursor (`.plans/LITE_STEP_BACK_PLAN.md` D4).
+   */
+  navigateHistory(op: HistoryNavigationOp, options?: HistoryNavigationOptions): HistoryNavigationResult {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    return controller.navigateHistory?.(op, options) ?? { position: 0, moved: false, reason: "noHistory" };
+  }
+
+  /**
+   * Take over here (`.plans/REVERSE_DEBUGGING_PLAN.md` D12).
+   */
+  async takeOverHere(): Promise<boolean> {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    return (await controller.takeOverHere?.()) ?? false;
+  }
+
+  /** What Take over here would leave behind (T4) */
+  getForkPreview(): { sdWrites: number; hostFiles: string[] } | undefined {
+    return this.machineService.getMachineController()?.forkPreview?.();
+  }
+
+  /** Reverse Continue with progress and cancel (D15, §4.4) */
+  async reverseContinue(): Promise<HistoryNavigationResult> {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    if (controller.reverseContinue) return await controller.reverseContinue();
+    return controller.navigateHistory?.("reverseContinue") ?? { position: 0, moved: false, reason: "noHistory" };
+  }
+
+  /** Stops a running Reverse Continue search */
+  cancelReverseContinue(): boolean {
+    return this.machineService.getMachineController()?.cancelReverseContinue?.() ?? false;
+  }
+
+  /**
    * Gets the ZX Spectrum Next Copper's state.
    */
   getCopperState() {
@@ -1209,10 +1410,32 @@ class EmuMessageProcessor {
   /**
    * Gets the current call stack information.
    */
-  getCallStack() {
+  getCallStack(): CallStackInfo {
     const controller = this.machineService.getMachineController();
     if (!controller) {
       noController();
+    }
+    // --- In the past the memory above SP is the present's: reconstruct from history (D6, D10)
+    const cursor = controller.historyCursor;
+    const historical = cursor?.callStack();
+    if (cursor && historical) {
+      const machine = controller.machine;
+      const decoder = historyContextDecoder(isExecutionHistorySource(machine) ? machine.historyMachineId : undefined);
+      return {
+        sp: cursor.state()?.record.regs.sp ?? machine.sp,
+        frames: [],
+        historical: {
+          incomplete: historical.incomplete,
+          frames: historical.frames.map((f) => ({
+            callSite: f.callSite,
+            returnAddress: f.returnAddress,
+            kind: f.kind,
+            sp: f.sp,
+            sequence: f.sequence,
+            partition: decoder?.partitionFor(f.context, f.callSite)
+          }))
+        }
+      };
     }
     return controller.machine.getCallStack();
   }
@@ -1299,6 +1522,8 @@ class EmuMessageProcessor {
     if (!controller) {
       noController();
     }
+    // --- An edit acts on the present: no register edits in the past (LITE_STEP_BACK_PLAN D5)
+    controller.clearHistoryCursor?.();
     await controller.interruptRzx?.(`register ${register.toUpperCase()} was edited`);
     const machine = controller.machine as any;
     switch (register.toUpperCase()) {
@@ -1403,6 +1628,7 @@ class EmuMessageProcessor {
     if (!controller) {
       noController();
     }
+    controller.clearHistoryCursor?.();
     await controller.interruptRzx?.("memory was edited");
     const machine = controller.machine;
     switch (size) {
@@ -1465,10 +1691,14 @@ class EmuMessageProcessor {
       noController();
     }
     const machine = controller.machine;
+    // --- The cursor's PC and position, so the state listener refreshes on a cursor move (D3)
+    const cursor = controller.historyCursor;
+    const position = cursor?.position ?? 0;
     return {
       state: controller.state,
-      pcValue: machine.pc,
-      tacts: machine.tacts
+      pcValue: position ? (cursor!.state()?.record.regs.pc ?? machine.pc) : machine.pc,
+      tacts: machine.tacts,
+      ...(position ? { historyPosition: position } : {})
     };
   }
 

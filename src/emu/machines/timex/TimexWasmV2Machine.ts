@@ -27,6 +27,7 @@ import {
   validateTimexOwnExports,
   type TimexWasmV2Exports
 } from "./wasm/TimexWasmV2Loader";
+import { writeCoreBytes } from "@emu/machines/reverse/coreMemoryWrites";
 
 /** The machine property naming each model's ROM file (set from the settings by `MachineService`) */
 const ROM_PROPERTY: Record<TimexModelId, string> = {
@@ -168,7 +169,7 @@ export class TimexWasmV2Machine extends ZxSpectrum48WasmV2Machine {
     for (let chunk = 0; chunk < 8; chunk++) {
       // --- Only a chunk whose type says so carries an image; a RAM chunk without one starts cleared
       const image = dock.chunks[chunk];
-      if (image && (dock.chunkTypes[chunk] & 0x02) !== 0) memory.set(image.subarray(0, 0x2000), chunk * 0x2000);
+      if (image && (dock.chunkTypes[chunk] & 0x02) !== 0) writeCoreBytes(runtime, memory, image.subarray(0, 0x2000), chunk * 0x2000);
       exports.timexDockSetChunkType(chunk, dock.chunkTypes[chunk] & 0x03);
     }
   }
@@ -347,7 +348,7 @@ export class TimexWasmV2Machine extends ZxSpectrum48WasmV2Machine {
         exports.timexDockEject();
         const memory = new Uint8Array(runtime.exports.memory.buffer, exports.timexDockPtr(), 0x10000);
         for (const page of dockPages) {
-          memory.set(page.data.subarray(0, 0x2000), (page.page & 0x07) * 0x2000);
+          writeCoreBytes(runtime, memory, page.data.subarray(0, 0x2000), (page.page & 0x07) * 0x2000);
           exports.timexDockSetChunkType(page.page & 0x07, 0x02 | (page.ram ? 0x01 : 0));
         }
       }

@@ -71,6 +71,17 @@ describe("layout fingerprint", () => {
     expect(build("b", edited).layout.fingerprint).toBe(build("b0", BASE).layout.fingerprint);
   });
 
+  it("keeps the fingerprint but changes the code hash on an edit inside a function body (DEBUG_SESSION_RECORDING D3, T1)", () => {
+    const edited = BASE.replace("buffer[i & 63] += counter++;", "buffer[i & 63] ^= counter++ * 7;");
+    const a = build("h1", BASE).layout;
+    const b = build("h2", BASE).layout;
+    const c = build("h3", edited).layout;
+    expect(a.codeHash).toMatch(/^[0-9a-f]{64}$/);
+    expect(a.codeHash).toBe(b.codeHash);
+    expect(c.fingerprint).toBe(a.fingerprint);
+    expect(c.codeHash).not.toBe(a.codeHash);
+  });
+
   it("changes when a static is added", () => {
     // --- Used by `run`, so the linker keeps it
     const added = BASE.replace("static u32 counter;", "static u32 extra[4];\nstatic u32 counter;").replace(
@@ -127,6 +138,9 @@ describe("the cores carry a layout", () => {
     expect(b.layout.fingerprint).toBe(a.layout.fingerprint);
     const module = new WebAssembly.Module(readFileSync(join(dir, `${core}-a.wasm`)));
     expect(readWasmLayout(module)?.fingerprint).toBe(a.layout.fingerprint);
+    // --- Two builds of one core are the same code: a debug recording opens in either (D3)
+    expect((a.layout as { codeHash?: string }).codeHash).toMatch(/^[0-9a-f]{64}$/);
+    expect((b.layout as { codeHash?: string }).codeHash).toBe((a.layout as { codeHash?: string }).codeHash);
     expect(new WebAssembly.Instance(module, {}).exports.memory).toBeInstanceOf(WebAssembly.Memory);
   });
 });

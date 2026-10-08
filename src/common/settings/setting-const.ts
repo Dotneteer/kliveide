@@ -15,6 +15,10 @@ export const SETTING_EMU_MOUSE_SENSITIVITY = "emuOptions.mouseSensitivity";
 export const SETTING_EMU_JOYSTICK_BINDINGS = "emuOptions.joystickBindings";
 export const SETTING_EMU_MACHINE_FAVORITES = "emuOptions.machineFavorites";
 export const SETTING_EMU_FAST_LOAD = "emuOptions.fastLoad";
+/** Reverse debugging in debug sessions (`.plans/REVERSE_DEBUGGING_PLAN.md` D2): on by default */
+export const SETTING_EMU_REVERSE_DEBUGGING = "emuOptions.reverseDebugging";
+/** The reverse-debugging keyframe budget in MB (D6); 0: the smaller of 512 MB and 1/16 of memory */
+export const SETTING_EMU_REVERSE_DEBUG_MEMORY_MB = "emuOptions.reverseDebugMemoryMb";
 /** The TR-DOS ROM file the Pentagon's Beta 128 boots (`.plans/BETA128_TRDOS_PLAN.md` Q1): Klive cannot ship it */
 export const SETTING_EMU_TRDOS_ROM = "emuOptions.trdosRomFile";
 /** The TC2048 ROM file the Timex boots (`.plans/TIMEX_SCORPION_PLAN.md` P5): Klive cannot ship it */

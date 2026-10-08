@@ -1,3 +1,5 @@
+import type { Timeline, TimelineSnapshot } from "@emu/machines/reverse/Timeline";
+import type { TimelinePosition } from "@emu/machines/reverse/timelinePosition";
 import type { ILiteEvent } from "@abstractions/ILiteEvent";
 import type { IOutputBuffer, OutputColor } from "@appIde/ToolArea/abstractions";
 import type { CodeToInject } from "@abstractions/CodeToInject";
@@ -17,6 +19,12 @@ import type { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
 import type { IRzxSession, RzxStop } from "@emu/machines/zxSpectrum/rzx/rzxSession";
 import type { RzxState } from "@state/AppState";
 import { IAnyMachine } from "./IAnyMachine";
+import type { HistoryCursor } from "@emu/machines/history/HistoryCursor";
+import type {
+  HistoryNavigationOp,
+  HistoryNavigationOptions,
+  HistoryNavigationResult
+} from "@common/history/historyNavigation";
 
 /**
  * This class implements a machine controller that can operate an emulated machine invoking its execution loop.
@@ -111,6 +119,23 @@ export interface IMachineController {
   /** Ends an active RZX session because the IDE changed the machine from outside the CPU (trap 4) */
   interruptRzx(reason: string): Promise<void>;
 
+  /** Ends the reverse-debugging timeline (`.plans/REVERSE_DEBUGGING_PLAN.md` D2): code injection does */
+  endTimeline?(): void;
+
+  /** The reverse-debugging timeline of the current debug session, if the machine keeps one */
+  readonly timeline?: Timeline;
+
+  /**
+   * Opens a saved timeline - a debug recording (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` §4.4): the
+   * machine takes the present's state, the timeline is rebuilt around it, and the machine stands
+   * paused in a debug session at `land` (the present when omitted)
+   */
+  openTimeline?(
+    applyState: () => void,
+    snapshot: TimelineSnapshot,
+    options?: { land?: TimelinePosition; description?: string; expectedImage?: Uint8Array; recordingName?: string }
+  ): Promise<void>;
+
   /** Publishes the RZX session's progress to the store */
   publishRzxState(): void;
 
@@ -166,6 +191,30 @@ export interface IMachineController {
 
   /** The symbolic call stack, innermost first. */
   getSourceCallStack(): SourceActivationInfo[] | undefined;
+
+  /**
+   * The history cursor (`.plans/LITE_STEP_BACK_PLAN.md` D1): the paused machine looked at in its
+   * recorded past. Optional so test doubles need not provide it.
+   */
+  readonly historyCursor?: HistoryCursor;
+
+  /** Moves the history cursor (D4); the machine is not touched */
+  navigateHistory?(op: HistoryNavigationOp, options?: HistoryNavigationOptions): HistoryNavigationResult;
+
+  /** Take over here (`.plans/REVERSE_DEBUGGING_PLAN.md` D12); false when the machine is not in the past */
+  takeOverHere?(): Promise<boolean>;
+
+  /** What Take over here would leave behind (`.plans/REVERSE_DEBUGGING_PLAN.md` T4) */
+  forkPreview?(): { sdWrites: number; hostFiles: string[] } | undefined;
+
+  /** Reverse Continue with progress and cancel (D15) */
+  reverseContinue?(): Promise<HistoryNavigationResult>;
+
+  /** Stops a running Reverse Continue search */
+  cancelReverseContinue?(): boolean;
+
+  /** Returns to the present (D5) */
+  clearHistoryCursor?(): void;
 
   /**
    * Starts the machine in step-over mode.

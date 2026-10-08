@@ -1,3 +1,7 @@
+import { WasmHistorySource } from "../history/WasmHistorySource";
+import type { IExecutionHistorySource } from "@emu/abstractions/IExecutionHistorySource";
+import type { ExecutionHistoryInfo, ExecutionHistoryPage } from "@common/history/historyTypes";
+import type { HistoryServiceSpan } from "@common/history/serviceSpans";
 import { conditionStoreOf, type ConditionStore } from "../conditionStore";
 import type { MachineConfigSet, MachineModel } from "@common/machines/info-types";
 import type { CpuState } from "@common/messaging/EmuApi";
@@ -46,6 +50,7 @@ import { RzxCoreBridge } from "../zxSpectrum/rzx/rzxCoreBridge";
 import type { IRzxMachine, IRzxSession } from "../zxSpectrum/rzx/rzxSession";
 import { spectrumWasmBeamPosition } from "../zxSpectrum/WasmSpectrumSupport";
 import type { BeamPosition } from "@common/utils/beamGeometry";
+import { fillCoreBytes, writeCoreBytes } from "@emu/machines/reverse/coreMemoryWrites";
 
 const WASM_AUDIO_SAMPLE_SCALE = 32768.0;
 
@@ -84,7 +89,40 @@ export type SpP3eWasmV2Diagnostics = {
 /**
  * Full-machine WASM v2 adapter for the ZX Spectrum +2E/+3E migration path.
  */
-export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3eWasmHost implements IRzxMachine {
+export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3eWasmHost implements IExecutionHistorySource, IRzxMachine {
+  // ==============================================================================================
+  // Execution history (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`): the shared recorder in the
+  // core, read through the shared reader; the machine id names the context decoder
+
+  get historyMachineId(): string {
+    return this.machineId;
+  }
+
+  private readonly wasmV2History = new WasmHistorySource(
+    () => this.wasmV2Runtime?.exports,
+    () => this.historyMachineId
+  );
+
+  getHistoryInfo(): ExecutionHistoryInfo | undefined {
+    return this.wasmV2History.info();
+  }
+
+  readHistory(fromSequence: number, count: number): ExecutionHistoryPage | undefined {
+    return this.wasmV2History.read(fromSequence, count);
+  }
+
+  getHistoryServiceSpans(): HistoryServiceSpan[] | undefined {
+    return this.wasmV2History.serviceSpans();
+  }
+
+  clearHistory(): void {
+    this.wasmV2History.clear();
+  }
+
+  setHistoryEnabled(enabled: boolean): void {
+    this.wasmV2History.setEnabled(enabled);
+  }
+
   public readonly implementation = "wasm" as const;
   public wasmV2Runtime?: SpP3eWasmV2Runtime;
   /** The RZX session playing or recording on this machine (`.plans/RZX_PLAN.md` §4.3) */
@@ -497,7 +535,8 @@ export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3eWasmHost implements
 
   override readScreenMemory(offset: number): number {
     const runtime = this.requireWasmV2Runtime();
-    const value = runtime.exports.spp3eReadScreenMemoryOffset(offset & 0x3fff);
+    // --- A host read: no floating-bus latch (the ULA's own reads do that inside the core)
+    const value = runtime.exports.spp3ePeekScreenMemoryOffset(offset & 0x3fff);
     this.importWasmV2BusAccess(runtime);
     return value;
   }
@@ -553,7 +592,8 @@ export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3eWasmHost implements
 
   override doReadMemory(address: number): number {
     const runtime = this.requireWasmV2Runtime();
-    const value = runtime.exports.spp3eReadMemory(address & 0xffff);
+    // --- A host read: no floating-bus latch (the CPU's own reads do that inside the core)
+    const value = runtime.exports.spp3ePeekMemory(address & 0xffff);
     this.importWasmV2BusAccess(runtime);
     return value;
   }
@@ -788,7 +828,7 @@ export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3eWasmHost implements
     let offset = 0;
     for (let i = 0; i < blocks.length; i++) {
       const block = blocks[i];
-      runtime.tapeData.set(block.data, offset);
+      writeCoreBytes(runtime, runtime.tapeData, block.data, offset);
       if (
         wasm.spp3eTapeSetBlock(
           i,
@@ -975,9 +1015,31 @@ export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3eWasmHost implements
       DISK_B_CHANGES,
       this.collectWasmDiskChanges(runtime, 1, runtime.diskBChanges)
     );
-    runtime.diskChanges.fill(0);
-    runtime.diskBChanges.fill(0);
+    fillCoreBytes(runtime, runtime.diskChanges, 0);
+    fillCoreBytes(runtime, runtime.diskBChanges, 0);
     this.wasmV2DiskChangeRevision = revision;
+  }
+
+  /**
+   * After a reverse-debugging fork (REVERSE_DEBUGGING_PLAN D13): every sector of the inserted disks
+   * goes to the write-back, so the `.dsk` files follow the restored in-core disks
+   * @returns true when there was a disk to write back
+   */
+  republishDisks(): boolean {
+    const runtime = this.wasmV2Runtime;
+    if (runtime == null) return false;
+    let any = false;
+    for (let drive = 0; drive < 2; drive++) {
+      const payload = this.wasmV2DiskPayloads[drive];
+      if (payload == null || payload.sectorLength === 0) continue;
+      const diskData = drive === 0 ? runtime.diskData : runtime.diskBData;
+      const changes: SectorChanges = new Map();
+      this.collectWasmDiskRangeChanges(changes, diskData, payload, 0, Math.min(payload.data.length, diskData.length));
+      if (changes.size === 0) continue;
+      this.mergePendingDiskChanges(drive === 0 ? DISK_A_CHANGES : DISK_B_CHANGES, changes);
+      any = true;
+    }
+    return any;
   }
 
   private collectWasmDiskChanges(
@@ -1257,6 +1319,11 @@ export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3eWasmHost implements
       // --- In playback a frame completes only at an RZX frame end, above
       this.frameCompleted = rzx?.mode === "play" ? false : wasm.spp3eGetFrameCompleted() !== 0;
 
+      // --- A reverse-debugging replay run reached its next journal entry (REVERSE_DEBUGGING_PLAN D11)
+      if (this.executionContext.historyStopArmed && wasm.z80HistoryCheckStop() !== 0) {
+        return this.finishWasmV2DebugLoop(FrameTerminationMode.UntilExecutionPoint);
+      }
+
       if (this.executionContext.frameTerminationMode === FrameTerminationMode.UntilExecutionPoint) {
         const point = this.executionContext.terminationPoint;
         if (point != null && this.pc === (point & 0xffff)) {
@@ -1439,8 +1506,51 @@ export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3eWasmHost implements
     const runtime = this.requireWasmV2Runtime();
     return {
       ...captureWasmImage("spp3e", runtime.module, runtime.exports.memory.buffer),
-      host: { normalFrames: this.wasmV2NormalFrames }
+      host: this.captureHostState()
     };
+  }
+
+  // ------------------------------------------------------------------------------------------------
+  // Reverse debugging (`.plans/REVERSE_DEBUGGING_PLAN.md` §4.2, `reverse/Timeline.ts`)
+
+  /** The core, as the export contract names it */
+  get reverseCoreId(): string {
+    return "spp3e";
+  }
+
+  get reverseRuntime(): SpP3eWasmV2Runtime | undefined {
+    return this.wasmV2Runtime;
+  }
+
+  readonly reverseFrameExport = "spp3eExecuteFrame";
+
+  isAtFrameBoundary(): boolean {
+    return this.wasmV2Runtime?.exports.spp3eGetFrameCompleted() !== 0;
+  }
+
+  /** The wrapper's own fields: what a state file and a keyframe keep besides the image */
+  captureHostState(): Record<string, unknown> {
+    return { normalFrames: this.wasmV2NormalFrames };
+  }
+
+  /**
+   * After the core changed under the wrapper (a replay, a return to the present, T7): the wrapper's
+   * fields from `state`, the mirrors re-read from the core. Nothing live is pushed - the controller
+   * calls `invalidateHostSync` when live input resumes - and queued keystrokes of the replaced run go.
+   * What the core holds - a saved tape, the disks' write revision - is not published again as new;
+   * unlike a state load, the disks stay attached to their files (the timeline's past is theirs).
+   */
+  restoreHostState(state: unknown): void {
+    const runtime = this.requireWasmV2Runtime();
+    const host = (state ?? {}) as { normalFrames?: number };
+    this.wasmV2NormalFrames = host.normalFrames ?? 0;
+    this.wasmV2AudioSamples.length = 0;
+    this.emulatedKeyStrokes.length = 0;
+    this.wasmV2SavedTapeRevision = runtime.exports.spp3eTapeGetSavedRevision();
+    this.wasmV2DiskChangeRevision = runtime.exports.spp3eFdcGetDirtyRevision();
+    this.frameCompleted = runtime.exports.spp3eGetFrameCompleted() !== 0;
+    this.syncFrameCountersFromWasmV2(runtime);
+    this.syncCpuFromWasmV2(runtime);
   }
 
   /**
@@ -1462,10 +1572,15 @@ export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3eWasmHost implements
     // --- rewound machine writes is merged back into a host .dsk; inserting a disk attaches again
     this.wasmV2DiskChangeRevision = runtime.exports.spp3eFdcGetDirtyRevision();
     this.wasmV2DiskPayloads.length = 0;
-    runtime.diskChanges.fill(0);
-    runtime.diskBChanges.fill(0);
+    fillCoreBytes(runtime, runtime.diskChanges, 0);
+    fillCoreBytes(runtime, runtime.diskBChanges, 0);
     this.syncFrameCountersFromWasmV2(runtime);
     this.syncCpuFromWasmV2(runtime);
+  }
+
+  /** Forgets what was last pushed into the core, so the next frame pushes the live state (D8) */
+  invalidateHostSync(): void {
+    this.invalidateWasmV2Sync();
   }
 
   private invalidateWasmV2Sync(): void {

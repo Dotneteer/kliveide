@@ -27,6 +27,7 @@ import { iconSizes } from "@renderer/theming/tokens/dimensions";
 
 import { useEmuStateListener } from "../useStateRefresh";
 import styles from "./SysVarsPanel.module.scss";
+import { HistoryPresentBanner } from "../debugger/history/HistoryPresentBanner";
 
 /**
  * `$5C00` — four hex digits and the prefix. Every machine's system variables live in the 16-bit
@@ -361,6 +362,7 @@ export const SysVarsPanel = () => {
 
   return (
     <DataPanel>
+      <HistoryPresentBanner what="System variables" plural />
       {samples.length > 0 && (
         <PanelFilter
           value={filter}

@@ -51,6 +51,7 @@ it("prints through the ROM", async () => {
 | RZX | `startRzxRecording(options?)` → `RzxRecorder`, `stopRzxRecording()` → `Uint8Array` | Records an RZX file from the current state as the emulator does (a `.szx` snapshot, then every IN and every frame's fetch count); stopping returns the finalised file. |
 | | `playRzx(bytes, options?)` → `RzxPlayer`, `runRzx({ onFrame, maxFrames })` → `RzxStop`, `rzxStatus` | Loads a recording's snapshot and plays it on the machine's own frame loop until it ends or desyncs (`.plans/RZX_PLAN.md`). Shared with `../sp128/` through `../spectrumRzx.ts`; `runFrames` throws when a session stops under it. |
 | Screen | `screenChar(row, col)`, `screenLine(row)` | Text in a cell/row, recognised against the ROM character set (INVERSE-insensitive); `?` for unrecognised cells. |
+| History | `recordHistory(on)`, `clearHistory()`, `historyInfo()`, `history(count?)`, `historyFrom(sequence, count)` | The execution-history recorder (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`) through the machine's `IExecutionHistorySource`, shared with every harness (`../historySupport.ts`): on/off, clear, the ring's header, the newest records decoded oldest first (each the state *before* its instruction or event), a read by sequence with its "gone" flag. `step(n)` here runs CPU *cycles*: a prefixed instruction takes several, but is one record. |
 
 ## Notes
 

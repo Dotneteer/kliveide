@@ -101,6 +101,20 @@ export const MF_ALLOW_SCAN_LINES = "allowScanLines";
  * they deliver the code by whatever route the machine does support.
  */
 export const MF_INJECT_SUPPORT = "injectSupport";
+/**
+ * Whether the machine records execution history in debug sessions
+ * (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` D12): the Execution History document, its commands and
+ * its menu item gate on this, not on a list of machine ids, so a core that starts recording lights
+ * them up by setting it here.
+ */
+export const MF_EXEC_HISTORY = "execHistory";
+
+/**
+ * Whether the machine keeps a reverse-debugging timeline in debug sessions
+ * (`.plans/REVERSE_DEBUGGING_PLAN.md` D19): set per core once it passes the journal-replay
+ * determinism test (`test/wasm/reverse/journal-replay-determinism.test.ts`).
+ */
+export const MF_REVERSE_DEBUG = "reverseDebug";
 
 // Available custom tool keys
 export const CT_DISASSEMBLER = "disassembler";

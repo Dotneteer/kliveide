@@ -162,16 +162,41 @@ export const setNextLayersAction: ActionCreator = (
   payload: { value }
 });
 
+/**
+ * The history cursor moved (`.plans/LITE_STEP_BACK_PLAN.md` D3): steps back from the present (0 at
+ * the present) and the record it is on
+ */
+export const setHistoryPositionAction: ActionCreator = (
+  position: number,
+  sequence?: number,
+  memoryIsHistorical = false
+) => ({
+  type: "SET_HISTORY_POSITION",
+  payload: { value: { position, sequence, memoryIsHistorical } }
+});
+
 /** The emulator holds a quick-saved machine state (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` D19) */
 export const setQuickStateAvailableAction: ActionCreator = (available: boolean) => ({
   type: "SET_QUICK_STATE_AVAILABLE",
   payload: { flag: available }
 });
 
+/** The reverse-debugging timeline's state (`.plans/REVERSE_DEBUGGING_PLAN.md` §4.4); undefined clears it */
+export const setReverseDebugStateAction: ActionCreator = (reverseDebug?: import("./AppState").ReverseDebugState) => ({
+  type: "SET_REVERSE_DEBUG_STATE",
+  payload: { value: reverseDebug }
+});
+
 /** The RZX session's state (`.plans/RZX_PLAN.md` §4.6); undefined clears it */
 export const setRzxStateAction: ActionCreator = (rzx?: import("./AppState").RzxState) => ({
   type: "SET_RZX_STATE",
   payload: { value: rzx }
+});
+
+/** The advanced-debugging feature switch, as the main process read it at startup */
+export const setAdvancedDebuggingAction: ActionCreator = (enabled: boolean) => ({
+  type: "SET_ADVANCED_DEBUGGING",
+  payload: { flag: enabled }
 });
 
 export const setScreenRecordingAvailableAction: ActionCreator = (available: boolean) => ({

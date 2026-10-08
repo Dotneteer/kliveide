@@ -324,6 +324,14 @@ th.pinPattern {
   transform: translateY(-50%);
 }
 
+/* --- An `sp:` breakpoint on the sprite: the Copper List's gutter dot, ahead of the index. */
+.bpMark {
+  display: inline-flex;
+  align-items: center;
+  margin-right: var(--space-0_5);
+  vertical-align: middle;
+}
+
 .anchorBadge {
   margin-left: var(--space-1);
   color: var(--color-sprite-anchor);

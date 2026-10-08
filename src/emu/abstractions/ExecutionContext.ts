@@ -41,6 +41,20 @@ export type ExecutionContext = {
   canceled: boolean;
 
   /**
+   * A reverse-debugging replay run is going toward the present (`.plans/REVERSE_DEBUGGING_PLAN.md`
+   * D11): the per-instruction loops ask the core's history recorder after every instruction whether
+   * its stop target (the next journal entry) is reached, and return `UntilExecutionPoint` if it is.
+   */
+  historyStopArmed?: boolean;
+
+  /**
+   * Whether a reverse-debugging replay is running (`.plans/REVERSE_DEBUGGING_PLAN.md` D13): host side
+   * effects a machine produces itself - the Z88's serial output, for one - stay off, since the
+   * journal re-does the core's part and the host already saw the rest. Set by the controller.
+   */
+  isReplayingHistory?: () => boolean;
+
+  /**
    * The object that provides debug support for the machone
    */
   debugSupport?: IDebugSupport;

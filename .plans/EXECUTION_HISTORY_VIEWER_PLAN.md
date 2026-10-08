@@ -4,6 +4,9 @@ Status: **decisions recorded** (2026-10-06). D1–D17 are the decisions; the aut
 §8's questions (Q1, Q2, Q4, Q6 directly; Q3, Q5, Q7 by accepting the suggested answers). They are
 folded into D6, D8, D13, D15–D17 and §1.2.
 
+**Implemented (2026-10-07)** — see §9 for what was built, the measurements, and where the
+implementation departs from the text below.
+
 Scope:
 - [CLOSING_THE_GAPS_PLAN.md](CLOSING_THE_GAPS_PLAN.md) **G4.1**, the history viewer on the Next:
   after a stop, list the last N executed instructions with registers, disassembly and source line,
@@ -417,3 +420,68 @@ document.
 5. **Q5 — DMA marker rows.** Yes, as the `DmaHold` record kind, in this plan (D15, Phase 7b).
 6. **Q6 — Next ring size.** 131,072 records, Next memory raised to 40 MB (D6, T9).
 7. **Q7 — Klive BASIC statement grouping.** With G4.3's source-level step back, not here (D16).
+
+---
+
+## 9. Implementation record (2026-10-07)
+
+### 9.1 Where things are
+
+| Piece | Files |
+| --- | --- |
+| Hooks | `src/emu/z80/wasm/z80.c` (`Z80_HISTORY_EVENT/BEGIN/COMMIT`, no-op defaults, the record kinds); `z80-history.h` turns them on (one `if (enabled)` each) |
+| Recorder | `src/emu/z80/wasm/z80-history.c`; exports and volatile symbols in `scripts/z80-history-exports.cjs` |
+| Next wiring | `zxnext-cpu.c` (header include, the DMA-hold call), the end of `zxnext.c` (context, `Z80_HISTORY_PEEK3`, `zxnextHistoryDmaHold`), `zxnext-memory.c` (the slot-partition cache), `scripts/build-zxnext-wasm.cjs` (40 MB) |
+| Contract | `scripts/check-wasm-cpu-contract.cjs` (`recordsHistory`, the machine macros, the exports) |
+| Reader, contract, API | `src/emu/machines/history/WasmHistoryReader.ts`, `src/emu/abstractions/IExecutionHistorySource.ts`, `ZxNextWasmV2Machine` (source + generalised checkpoint cut), `MachineController` (`applyHistoryRecording`, clears), `EmuApi`/`MainToEmuProcessor` (`getHistoryInfo`, `getHistoryRecords`, `clearHistory`) |
+| Pure modules | `src/common/history/` (`historyTypes`, `historyRecord`, `registerDiff`, `flowKind`, `historyRow`, `contexts/`) |
+| Document | `ExecutionHistoryPanel.tsx` + `.module.scss`, `features/history/historyViewModel.ts`, `historyDisassembly.ts`; `HistoryCommands.ts`; Debug → Execution History |
+| Tests | `test/zxnext-hw/history/` (core, §6.1), `test/common/history/` (pure, §6.2), `test/renderer/history/` (model, §6.3), `test/emu/execution-history-controller.test.ts` (controller on the real core), `test/wasm/zxNext/wasm-next-history.perf.test.ts` (T14), the checkpoint and contract tests, the harness self-test |
+| Docs | `docs/content/working-with-ide/execution-history.mdx`, the command reference, `scripts/doc-shots/recipes/execution-history.cjs` |
+
+### 9.2 Measurements
+
+- **Phase 1 (T9).** Before this work the Next's last volatile static ended at about **31.1 MB** of the
+  32 MB (the layer-capture and beam-preview buffers had grown since the plan's 23.2 MB estimate), so
+  the 8 MB ring needed the 40 MB memory (Q6). With the ring the data ends at about **39.4 MB**.
+- **T14.** Debug loop at 28 MHz, recording on vs off, interleaved rounds, minimum of each:
+  **5.9–7.2%** (budget 8%). A fast frame with recording on costs about 12% (a plain Run never
+  records, D8). Getting there took two changes: `Z80_HISTORY_PEEK3` (one mapping resolution for
+  the three operand bytes, about 2%) and caching the eight slot partitions until
+  `zxnextMemorySetPageInfo` changes the page tables (about 1.5%). What remains is mostly the
+  64-byte store per instruction into an 8 MB ring. The "off" cost against a build *without* the
+  hook was not measured: a test cannot build the core twice.
+
+### 9.3 Departures from the text
+
+- **The context's bytes 0–7 are the partition of each slot, not MMU0–7** (§4.3). ROM, DivMMC and Alt
+  ROM overlay slots 0–1 whatever MMU0/1 say, so the raw registers could not reproduce `getPartition`;
+  the partition can, and it is what source mapping needs (T13). Encoding: 0–223 a RAM page, 233–255 the
+  negative partitions −23..−1, 224 none. The invariant test compares it with `getPartition` per slot.
+- **`getPartition` follows the DivMMC and Multiface overlays** (fixed after G4.1 landed; it used to
+  read only the MMU's page tables and named the ROM underneath a mapped DivMMC). One C function,
+  `zxnextPartitionOfPage`, now answers for `getPartition` (through `zxnextGetPartitionOfPage`),
+  breakpoint conditions' `page()` and the history context, in the CPU's code-fetch order: Multiface
+  (no partition), then DivMMC (`DM`, `M0`..`MF`), then the MMU. The Next captures an instruction's
+  context *before* the opcode fetch (`Z80_HISTORY_CONTEXT_BEFORE_FETCH`), so an instant DivMMC entry
+  names the DivMMC and a delayed one the ROM the byte was fetched from. A Layer 2 read mapping is
+  deliberately not an overlay for partitions (it maps RAM for data reads; a read and a write of one
+  address would disagree). Tests: `test/zxnext-hw/memory/partition-overlays.test.ts`.
+- **`Z80_HISTORY_CONTEXT` takes the kind** (`(kind, out16)`), and the recorder exposes
+  `z80HistoryAppend`/`z80HistoryNewest` so a core can write its own event records (the DMA hold).
+- **DMA holds** are recorded whenever `zxnextCpuRunDma` held the bus before an instruction (a whole
+  continuous block runs inside one call; the early return happens only at a frame end). The context
+  holds the source and destination addresses at the start of the hold (not port A/B), the bytes
+  left, and the direction/mode/I-O flags in byte 6.
+- **Sequence numbers keep counting across a clear**; a clear empties the ring and bumps the
+  generation. The ring is aligned to the write index, not to `sequence % capacity`.
+- **The checkpoint excludes every volatile range** of the layout stamp (T7), which also leaves out the
+  layer captures and beam previews: the checkpoint shrank accordingly.
+- **Click selects; double-click or Enter goes to the source** (§4.6.2). `nav` activates the source
+  document, which would hide the history document in the same editor area on every click.
+- **"Copy rows as text"** copies from the selected row to the newest (at most 10,000 rows).
+- **The bytes-truncated flag** (bit 5) is defined but never set on the Next: its peek reads every
+  address.
+- **Not done:** the Phase 0 mockup (the document was built directly from §4.6); an NMI test in
+  §6.1 (the INT path is tested; NMI shares the event code); the "records' R equals the CPU panel's
+  R when stepping" test is the harness `registers()` comparison.

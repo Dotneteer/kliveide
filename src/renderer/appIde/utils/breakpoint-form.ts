@@ -9,8 +9,11 @@ import { getBreakpointDisplayKey } from "@common/utils/breakpoints";
 import {
   isBankRelative,
   isCopperBreakpoint,
-  isNextRegBreakpoint
+  isNextRegBreakpoint,
+  isSpriteBreakpoint,
+  spriteAttrMaskOf
 } from "@common/utils/breakpoint-scope";
+import { SPRITE_ATTR_ALL, SPRITE_INDEX_MAX } from "@common/zxnext/sprites/spriteBreakpoints";
 import {
   MAX_BREAKPOINT_HIT_COUNT,
   breakpointFiltersOf,
@@ -72,7 +75,9 @@ export type BreakpointKind =
   | "ioWrite"
   | "nextRegWrite"
   /** The ZX Spectrum Next's `cu:<index>`: the Copper completes a list instruction. */
-  | "copper";
+  | "copper"
+  /** The ZX Spectrum Next's `sp:<sprite>`: an attribute byte of a sprite is written. */
+  | "sprite";
 
 /**
  * The dialog's fields, as the user typed them.
@@ -112,6 +117,10 @@ export type BreakpointFormState = {
   nextRegCopper: boolean;
   /** Raw input, Copper kind only: the Copper list index, `$000`..`$3FF`. */
   copperIndex: string;
+  /** Raw input, sprite kind only: the sprite, `$00`..`$7F`. */
+  spriteIndex: string;
+  /** Sprite kind only: the watched attribute bytes, bit `n` for byte `n`. `$1F` is all five. */
+  spriteAttrMask: number;
   disabled: boolean;
   /**
    * "Remove after it stops" (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §4.2): a one-shot,
@@ -241,6 +250,7 @@ export function isAuthorableBreakpoint(bp: BreakpointInfo | undefined): boolean 
     bp?.address !== undefined ||
     isNextRegBreakpoint(bp ?? {}) ||
     isCopperBreakpoint(bp ?? {}) ||
+    isSpriteBreakpoint(bp ?? {}) ||
     isBankRelative(bp ?? {})
   );
 }
@@ -304,6 +314,8 @@ export function createEmptyForm(): BreakpointFormState {
     nextRegMask: "",
     nextRegCopper: false,
     copperIndex: "",
+    spriteIndex: "",
+    spriteAttrMask: SPRITE_ATTR_ALL,
     disabled: false,
     oneShot: false,
     length: "",
@@ -335,6 +347,11 @@ export function isCopperKind(kind: BreakpointKind): boolean {
 
 const COPPER_INDEX_MAX = 0x3ff;
 
+/** True for the kind bound to a sprite's attribute writes rather than to a place. */
+export function isSpriteKind(kind: BreakpointKind): boolean {
+  return kind === "sprite";
+}
+
 /**
  * Switch the breakpoint type, dropping whatever the new type cannot carry.
  *
@@ -350,15 +367,18 @@ export function applyKindChange(
 ): BreakpointFormState {
   const nextReg = isNextRegKind(kind);
   const copper = isCopperKind(kind);
+  const sprite = isSpriteKind(kind);
   return {
     ...form,
     kind,
     copperIndex: copper ? form.copperIndex : "",
+    spriteIndex: sprite ? form.spriteIndex : "",
+    spriteAttrMask: sprite ? form.spriteAttrMask : SPRITE_ATTR_ALL,
     // --- A NextReg breakpoint has no address and no partition; the address field is not merely
     // --- re-labelled for it, it is replaced, so a value left here would be invisible *and*
     // --- unreachable.
-    address: nextReg || copper ? "" : form.address,
-    partition: isIoKind(kind) || nextReg || copper ? undefined : form.partition,
+    address: nextReg || copper || sprite ? "" : form.address,
+    partition: isIoKind(kind) || nextReg || copper || sprite ? undefined : form.partition,
     ioMask: isIoKind(kind) ? form.ioMask : "",
     nextReg: nextReg ? form.nextReg : "",
     filterValue: nextReg ? form.filterValue : false,
@@ -501,6 +521,23 @@ function formPlaceToBreakpointInfo(form: BreakpointFormState): BreakpointInfo {
     };
   }
 
+  // --- A sprite breakpoint: an event kind too, bound to a sprite
+  if (isSpriteKind(form.kind)) {
+    const index = parseNumericInput(form.spriteIndex);
+    const attrMask = form.spriteAttrMask & SPRITE_ATTR_ALL;
+    return {
+      spriteIndex: index.ok ? index.value & SPRITE_INDEX_MAX : undefined,
+      // --- All five bytes is the default and is not stored, as `bp-set` does without `-attr`
+      spriteAttrMask: attrMask !== SPRITE_ATTR_ALL ? attrMask : undefined,
+      exec: false,
+      memoryRead: false,
+      memoryWrite: false,
+      ioRead: false,
+      ioWrite: false,
+      disabled: form.disabled
+    };
+  }
+
   const mask = isIoKind(form.kind) ? parseNumericInput(form.ioMask) : undefined;
 
   // --- A bank-relative site instead of an address. Not for the I/O kinds, which watch a port and
@@ -555,6 +592,8 @@ export function breakpointToForm(bp: BreakpointInfo): BreakpointFormState {
     ? "nextRegWrite"
     : isCopperBreakpoint(bp)
       ? "copper"
+      : isSpriteBreakpoint(bp)
+      ? "sprite"
       : bp.memoryRead
       ? "memRead"
       : bp.memoryWrite
@@ -576,6 +615,8 @@ export function breakpointToForm(bp: BreakpointInfo): BreakpointFormState {
       bp.copperIndex === undefined
         ? ""
         : `$${(bp.copperIndex & COPPER_INDEX_MAX).toString(16).toUpperCase().padStart(3, "0")}`,
+    spriteIndex: bp.spriteIndex === undefined ? "" : `$${toHexa2(bp.spriteIndex & SPRITE_INDEX_MAX)}`,
+    spriteAttrMask: bp.spriteIndex === undefined ? SPRITE_ATTR_ALL : spriteAttrMaskOf(bp),
     // --- The same spelling `getBreakpointDisplayKey` produces and `bp-set` accepts, so an edited
     // --- breakpoint round-trips through the field without changing its key.
     address: isBankRelative(bp)
@@ -683,6 +724,28 @@ export function validateBreakpointForm(
       } else if (index.value < 0 || index.value > COPPER_INDEX_MAX) {
         errors.copperIndex = "A Copper list index is between $000 and $3FF.";
       }
+    }
+    addDuplicateKeyError(errors, form, env);
+    return errors;
+  }
+
+  // --- The sprite rules, on their own path like the Copper ones
+  if (isSpriteKind(form.kind)) {
+    if (!env.supportsNextRegBreakpoints) {
+      errors.spriteIndex = "Sprite breakpoints are supported on the ZX Spectrum Next only.";
+    } else {
+      const index = parseNumericInput(form.spriteIndex);
+      if (!index.ok) {
+        errors.spriteIndex =
+          index.reason === "empty"
+            ? "Enter a sprite index."
+            : "Enter a valid sprite index, for example $0C or 12.";
+      } else if (index.value < 0 || index.value > SPRITE_INDEX_MAX) {
+        errors.spriteIndex = "A sprite index is between $00 and $7F.";
+      }
+    }
+    if ((form.spriteAttrMask & SPRITE_ATTR_ALL) === 0) {
+      errors.spriteAttrMask = "Watch at least one attribute byte.";
     }
     addDuplicateKeyError(errors, form, env);
     return errors;
@@ -847,6 +910,8 @@ export function conditionAccessKindOf(kind: BreakpointKind): ConditionAccessKind
       return "nextReg";
     case "copper":
       return "copper";
+    case "sprite":
+      return "sprite";
     default:
       return "exec";
   }

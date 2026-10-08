@@ -49,7 +49,7 @@ export type MachineStatePorts = SpectrumSnapshotLoadPorts & {
 };
 
 /** The part of the WASM machines this flow needs */
-type StateMachine = {
+export type StateMachine = {
   machineId: string;
   pc: number;
   saveMachineState(): MachineStateParts;
@@ -61,7 +61,7 @@ type StateMachine = {
   wasmV2Runtime?: { module?: WebAssembly.Module };
 };
 
-function stateMachineOf(controller: IMachineController | undefined): StateMachine | undefined {
+export function stateMachineOf(controller: IMachineController | undefined): StateMachine | undefined {
   const machine = controller?.machine as unknown as StateMachine | undefined;
   return typeof machine?.saveMachineState === "function" ? machine : undefined;
 }
@@ -130,38 +130,51 @@ export async function saveMachineStateFile(
     throw new Error("The machine has no state to save; start it first");
   }
 
-  const warnings: string[] = [];
-  const emulator = ports.getEmulatorState();
-  const mediaFiles = ports.getMediaFiles();
   const running = state === MachineControllerState.Running;
   const debugging = controller.isDebugging;
-  let parts: MachineStateParts;
-  let szx: Uint8Array | undefined;
-  let thumbnail: KliveStateThumbnail | undefined;
+  let captured: { file: KliveStateFile; machineName: string; warnings: string[] };
   if (running) await controller.pause();
   try {
-    parts = machine.saveMachineState();
-    thumbnail = thumbnailOf(machine);
-    if (machine.captureSnapshotState) {
-      try {
-        const snapshot = machine.captureSnapshotState({
-          tapeFile: mediaFiles[MEDIA_TAPE],
-          diskFiles: [mediaFiles[MEDIA_DISK_A], mediaFiles[MEDIA_DISK_B]]
-        });
-        szx = writeSpectrumSnapshot(snapshot, "szx", {
-          name: "Klive IDE",
-          ...versionParts(options.kliveVersion)
-        }).bytes;
-      } catch (err) {
-        warnings.push(
-          `The state has no portable .szx part (${(err as Error).message}); it loads only into this version of Klive`
-        );
-      }
-    }
+    captured = captureKliveStateFile(ports, machine, options);
   } finally {
     if (running) {
       if (debugging) await controller.startDebug();
       else await controller.start();
+    }
+  }
+  const { file, machineName, warnings } = captured;
+  return { bytes: writeKliveStateFile(file), machineName, pc: file.header.pc, warnings };
+}
+
+/**
+ * The state file of the machine as it stands now - no pause, no resume: the caller holds the machine
+ * still (a state save, or a debug recording's present, `.plans/DEBUG_SESSION_RECORDING_PLAN.md` D16)
+ */
+export function captureKliveStateFile(
+  ports: MachineStatePorts,
+  machine: StateMachine,
+  options: { kliveVersion: string; sdCard?: KliveStateMedia }
+): { file: KliveStateFile; machineName: string; warnings: string[] } {
+  const warnings: string[] = [];
+  const emulator = ports.getEmulatorState();
+  const mediaFiles = ports.getMediaFiles();
+  const parts = machine.saveMachineState();
+  const thumbnail = thumbnailOf(machine);
+  let szx: Uint8Array | undefined;
+  if (machine.captureSnapshotState) {
+    try {
+      const snapshot = machine.captureSnapshotState({
+        tapeFile: mediaFiles[MEDIA_TAPE],
+        diskFiles: [mediaFiles[MEDIA_DISK_A], mediaFiles[MEDIA_DISK_B]]
+      });
+      szx = writeSpectrumSnapshot(snapshot, "szx", {
+        name: "Klive IDE",
+        ...versionParts(options.kliveVersion)
+      }).bytes;
+    } catch (err) {
+      warnings.push(
+        `The state has no portable .szx part (${(err as Error).message}); it loads only into this version of Klive`
+      );
     }
   }
 
@@ -191,7 +204,7 @@ export async function saveMachineStateFile(
     media,
     szx
   };
-  return { bytes: writeKliveStateFile(file), machineName, pc: machine.pc, warnings };
+  return { file, machineName, warnings };
 }
 
 /** "0.62.1" -> { major: 0, minor: 62 } */
@@ -201,7 +214,7 @@ function versionParts(version: string): { major: number; minor: number } {
 }
 
 /** Do two configurations differ? (key order does not matter) */
-function configDiffers(a: MachineConfigSet | undefined, b: Record<string, unknown> | undefined): boolean {
+export function configDiffers(a: MachineConfigSet | undefined, b: Record<string, unknown> | undefined): boolean {
   const norm = (c: object | undefined) =>
     JSON.stringify(Object.entries(c ?? {}).sort(([x], [y]) => x.localeCompare(y)));
   return norm(a) !== norm(b);

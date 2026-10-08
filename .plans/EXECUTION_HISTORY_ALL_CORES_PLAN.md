@@ -1,6 +1,6 @@
 # Execution History in Every Core Plan
 
-Status: **decisions recorded** (2026-10-06). Depends on [EXECUTION_HISTORY_VIEWER_PLAN.md](EXECUTION_HISTORY_VIEWER_PLAN.md)
+Status: **done** (2026-10-07; see §9, the implementation record). Decisions recorded 2026-10-06. Depends on [EXECUTION_HISTORY_VIEWER_PLAN.md](EXECUTION_HISTORY_VIEWER_PLAN.md)
 (G4.1), which designs the recorder, the record format, the reader and the viewer. D1–D12 are the
 decisions; the author accepted the suggested answers to all §7 questions, folded into D2 and D10–D12.
 
@@ -210,3 +210,78 @@ globs) or are added to `build/e2e-tests.ts`.
 
 **M**, as the roadmap estimated: about two to three days per core family once G4.1's recorder
 exists, most of it in tests and contexts. The ZX80/81 is the largest because of T2 and T3.
+
+---
+
+## 9. Implementation record (2026-10-07)
+
+Every Z80 core records history; `MF_EXEC_HISTORY` is set for `sp48`, `timex`, `sp128` (and its
+Pentagon model), `scorpion`, `spp3e`, `z88`, `zx80`, `zx81` and `zxnext`. The CPU contract check
+reports `recordsHistory` for all seven cores.
+
+**Shared pieces.** `Z80_HISTORY_FORCED_NOP()` in `z80-history.c` (Phase 0): a forced NOP stages as
+usual, then either starts a run record or grows the newest one when it ends right before this PC;
+with a full ring the staged slot was the oldest record, so the count drops by one (a ZX81 ring then
+reads "65,535 of 65,536", as designed). Staging copies AF..IY in one block (asserted contiguous).
+`WasmHistorySource` gives each machine class its four `IExecutionHistorySource` methods; the harness
+helpers live in `test/harness/historySupport.ts`. The suite of §6 is `test/wasm/history/
+historyCoreSuite.ts`, instantiated per core in `test/wasm/history/history-*.test.ts`.
+
+**Headroom (Phase 0), measured from the layout stamps after the ring was added** (memory minus the
+end of the last volatile range): sp48 1.6 MB of 12, timex 1.2 of 12, sp128 1.0 of 13, spp3e 0.45 of
+12, z88 2.6 of 12, zx8081 0.65 of 6. The figures of §2.2 held.
+
+**Contexts, as built** (deviations from §3 in bold):
+- 48K/16K: byte 0 the model, from a volatile `sp48HistoryModel` set by the hard reset.
+- Timex: as §3 (`timexContext.ts` names the partitions as `getCurrentPartitions` does, an empty
+  chunk after the bank port $FF selects).
+- 128K/Pentagon/Scorpion: as §3, 4 the timing profile, 5 $1FFD, **plus 8-11 the partition of each
+  16K slot** (`sp128GetCurrentPartition`), so the decoder needs no TR-DOS or Scorpion rule of its
+  own. The Scorpion is its own decoder entry over the same decoder.
+- +3: as §3.
+- Z88: as §3 (13 unused). **The Z88's `getPartition` names no partition**, so neither does its
+  decoder (D4 holds trivially); the banks are in the detail text.
+- ZX80/81: 0 RAM size, ULA, ROM and NTSC; **1 bit 0 the NMI generator** (SLOW mode). "Inside the
+  NMI service" is not a core fact; the viewer derives service spans instead.
+
+**D10, folded interrupt service.** `src/common/history/serviceSpans.ts`: a span starts at an INT or
+NMI record and ends at the first taken return, or indirect `JP (HL)/(IX)/(IY)`, after which SP is
+back at or above the level before the acknowledge. Relative and absolute jumps never end one (the
+ZX81 display's INT pops its return address, then `RET Z` not taken, `JR`, `JP (HL)`). Nested spans
+fold into the outermost; a service still running at the newest record does not fold, but the
+finished services nested in it do. The reader scans the ring in the emulator process
+(`WasmHistoryReader.serviceSpans`, Emu API `getHistoryServiceSpans`), so no ring copy crosses the
+API; `foldedHistoryRows` maps rows through the spans by binary search. The "Fold interrupts"
+switch is remembered per machine in `localStorage`, default on for `zx80`/`zx81`. A filter shows
+every match unfolded. On a booted ZX81 the display's NMI service (~1,800 instructions, the line INTs
+nested) folds into one row, and more than half the records fold away.
+
+**Traps, as they turned out.**
+- T1: the Spectrum harnesses' `step` runs one CPU *cycle*; the suite's driver steps to the end of
+  the instruction. Every core records `DD CB d op` as one record.
+- T2/T3: one forced-NOP record per display line, `repeat` 32, starting at D_FILE + 1 + 33 × row
+  through the upper echo; the machine frame (65,000 T) is not the ROM-timed picture, so the test
+  checks one whole picture, not one frame. NMIs and the ZX80's line INTs are recorded.
+- T4: frame and frame tact on every core; nothing absolute.
+- **T5: the Z88's C debug loop is the exception.** Measured (`history-cores.perf.test.ts`): 48K
+  3.9%, 128K 2.2%, +3E 4.1% (budget 8%), ZX81 6.5% (budget 15%), **Z88 36.5%**. The Z88's loop runs
+  an instruction in about 22 ns, so the recorder's fixed cost - mostly the 64-byte store into a 4 MB
+  ring, which a bulk register copy and branch-free flags barely moved - is about 8 ns, a third of it.
+  The debug run is still well over 100 times real time. The test's bound there is 50%, a regression
+  guard; meeting 15% would need a smaller record, which G4.1 fixed for every core.
+- T7: the TR-DOS page-in test is gated on `KLIVE_TRDOS_ROM` (Klive cannot ship the ROM).
+- **T8: a snoozed Z88 runs no CPU cycle**, so it records nothing rather than a coalesced HALT; the
+  frame numbers show the gap. A test sleeps the CPU on the keyboard and wakes it.
+- T9: RZX playback with recording on replays identically (`rzx-sp48-roundtrip.test.ts`).
+- T10: `machine-state-determinism` now records on machine A only, on every core. **It caught a G4.1
+  bug on the Next**: the history slot cache's valid flag (non-volatile) was set only while
+  recording, so recording changed the state image. The cache is now updated eagerly by
+  `zxnextMemorySetPageInfo`, recording or not, and the flag is gone.
+
+**Not done as planned.** Phase 0's Next-build unit test of the forced-NOP macro: the ZX81 tests
+cover it on the core that uses it. G4.3's Step Back over a folded service is G4.3's to build.
+
+**Verified in the running app** (`scripts/doc-shots/recipes/execution-history-cores.cjs`): the 48K
+records 65,536 and does not fold by default; the ZX81 folds by default, a folded row opens and
+closes, and the screenshot is `docs/public/images/working-with-ide/execution-history-fold.png`.
+

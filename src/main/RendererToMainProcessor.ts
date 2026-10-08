@@ -47,6 +47,7 @@ import { createCompilerRegistry } from "./compiler-integration/compiler-registry
 import { getDirectoryContent, getProjectDirectoryContentFilter } from "./directory-content";
 import { KLIVE_GITHUB_PAGES } from "./menus/help-menu";
 import { checkZ88SlotFile } from "./machine-menus/z88-menus";
+import { displaySaveFileDialog } from "./save-file-dialog";
 import {
   MEDIA_DISK_A,
   MEDIA_DISK_B,
@@ -186,6 +187,26 @@ class MainMessageProcessor {
   }
 
   /**
+   * Asks the user to confirm an action that cannot be undone (see `MainApi.confirmAction`)
+   */
+  async confirmAction(title: string, message: string, detail: string | undefined, confirmLabel: string): Promise<boolean> {
+    try {
+      const result = await dialog.showMessageBox(this.window, {
+        type: "question",
+        buttons: [confirmLabel, "Cancel"],
+        defaultId: 1,
+        cancelId: 1,
+        title,
+        message,
+        detail
+      });
+      return result.response === 0;
+    } finally {
+      this.dispatch(dimMenuAction(false));
+    }
+  }
+
+  /**
    * Asks the user to confirm overwriting an existing file.
    * @param targetPath The target path that would be overwritten.
    */
@@ -220,6 +241,22 @@ class MainMessageProcessor {
    */
   showOpenFileDialog(filters?: { name: string; extensions: string[] }[], settingsId?: string) {
     return displayOpenFileDialog(this.window, filters, settingsId);
+  }
+
+  /**
+   * Opens a save dialog and returns the chosen path (see `MainApi.showSaveFileDialog`).
+   */
+  async showSaveFileDialog(options: {
+    title?: string;
+    defaultPath?: string;
+    filters?: { name: string; extensions: string[] }[];
+    settingsId?: string;
+  }) {
+    try {
+      return await displaySaveFileDialog(this.window, options ?? {});
+    } finally {
+      this.dispatch(dimMenuAction(false));
+    }
   }
 
   /**

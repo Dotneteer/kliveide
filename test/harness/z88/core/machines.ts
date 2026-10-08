@@ -140,6 +140,8 @@ let wasmArtifactChecked = false;
 /** What the artifact is built from: the Z88 core, the shared Z80 core it includes, the build script */
 const WASM_INPUTS = ["src/emu/machines/z88/wasm/z88", "src/emu/z80/wasm"];
 const WASM_BUILD_SCRIPT = "scripts/build-z88-wasm.cjs";
+/** The layout stamp's writer: a change to what it stamps (the code hash) needs a rebuild too */
+const WASM_LAYOUT_SCRIPT = "scripts/wasm-layout.cjs";
 
 /** The inputs newer than the production artifact (all of them when there is none) */
 function staleZ88WasmInputs(): string[] {
@@ -149,7 +151,8 @@ function staleZ88WasmInputs(): string[] {
         .filter((f) => f.endsWith(".c") || f.endsWith(".h"))
         .map((f) => join(dir, f))
     ),
-    WASM_BUILD_SCRIPT
+    WASM_BUILD_SCRIPT,
+    WASM_LAYOUT_SCRIPT
   ];
   if (!existsSync(productionOutput)) return inputs;
   const built = statSync(productionOutput).mtimeMs;

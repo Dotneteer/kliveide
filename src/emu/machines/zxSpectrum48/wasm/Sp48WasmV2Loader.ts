@@ -1,4 +1,5 @@
 import { CONDITION_CORE_EXPORTS, type ConditionCoreExports } from "@emu/machines/conditionStore";
+import { Z80_HISTORY_CORE_EXPORTS, type Z80HistoryCoreExports } from "@emu/machines/history/WasmHistoryReader";
 import { WASM_ACCESS_LOG_CAPACITY } from "../../wasmAccessLog";
 import { rzxCoreExportNames, type RzxCoreExports } from "../../zxSpectrum/rzx/rzxCoreBridge";
 
@@ -9,7 +10,7 @@ export const SP48_WASM_V2_PIXEL_GUARD_LINES = 4;
 
 export type Sp48WasmV2ExportFunction = (...args: number[]) => number;
 
-export type Sp48WasmV2Exports = WebAssembly.Exports & ConditionCoreExports & RzxCoreExports<"sp48"> & {
+export type Sp48WasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Z80HistoryCoreExports & RzxCoreExports<"sp48"> & {
   memory: WebAssembly.Memory;
   sp48MemoryPtr: Sp48WasmV2ExportFunction;
   sp48PixelBufferPtr: Sp48WasmV2ExportFunction;
@@ -368,7 +369,9 @@ const requiredV2Exports = [
   ...rzxCoreExportNames("sp48"),
   // --- Last, so a core missing its own exports is reported by those: the breakpoint condition
   // --- evaluator, identical in every Z80 core
-  ...CONDITION_CORE_EXPORTS
+  ...CONDITION_CORE_EXPORTS,
+  // --- The execution-history recorder, identical in every core that records history
+  ...Z80_HISTORY_CORE_EXPORTS
 ] as const;
 
 let cachedV2Module: WebAssembly.Module | undefined;

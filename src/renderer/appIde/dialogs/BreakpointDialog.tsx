@@ -34,11 +34,13 @@ import {
   isBankRelativeInput,
   isCopperKind,
   isFormValid,
+  isSpriteKind,
   isNextRegKind,
   parseNumericInput,
   validateBreakpointForm
 } from "@renderer/appIde/utils/breakpoint-form";
 import { NEXT_REG_DESCRIPTORS } from "@emu/machines/zxNext/nextRegDescriptors";
+import { SPRITE_ATTRIBUTE_LABELS } from "@common/zxnext/sprites/spriteBreakpoints";
 import styles from "./BreakpointDialog.module.scss";
 
 /**
@@ -67,6 +69,9 @@ const NEXT_REG_OPTION: RadioGroupOption = { value: "nextRegWrite", label: "NextR
 
 /** The seventh, on the same machines: the Copper completes a list instruction. */
 const COPPER_OPTION: RadioGroupOption = { value: "copper", label: "Copper instruction" };
+
+/** The eighth, on the same machines: an attribute byte of a sprite is written. */
+const SPRITE_OPTION: RadioGroupOption = { value: "sprite", label: "Sprite attribute write" };
 
 /**
  * The Copper index field's hint: the instruction at that index in the live list RAM, decoded, or
@@ -193,13 +198,14 @@ export const BreakpointDialog = ({
   const ioKind = isIoKind(form.kind);
   const nextRegKind = isNextRegKind(form.kind);
   const copperKind = isCopperKind(form.kind);
-  // --- The sixth and seventh types are offered only where they mean something.
+  const spriteKind = isSpriteKind(form.kind);
+  // --- The sixth to eighth types are offered only where they mean something.
   // --- `validateBreakpointForm` refuses them anyway, but a type a machine cannot have should not be
   // --- on screen to choose.
   const kindOptions = useMemo(
     () =>
       env.supportsNextRegBreakpoints
-        ? [...KIND_OPTIONS, NEXT_REG_OPTION, COPPER_OPTION]
+        ? [...KIND_OPTIONS, NEXT_REG_OPTION, COPPER_OPTION, SPRITE_OPTION]
         : KIND_OPTIONS,
     [env.supportsNextRegBreakpoints]
   );
@@ -228,7 +234,7 @@ export const BreakpointDialog = ({
   // --- register has no location, so there is no "why not" worth a sentence - unlike the I/O case,
   // --- where a user might reasonably expect a partition to apply.
   const partitionEnabled =
-    env.supportsPartitions && !ioKind && !bankRelative && !nextRegKind && !copperKind;
+    env.supportsPartitions && !ioKind && !bankRelative && !nextRegKind && !copperKind && !spriteKind;
   /*
    * What ticking the partition box selects first. The lowest index the machine actually has, which
    * is ROM 0 where there are ROMs and bank 0 otherwise — never a hardcoded 0, which is not a
@@ -279,7 +285,7 @@ export const BreakpointDialog = ({
       </DialogRow>
       )}
 
-      {!sourceMode && env.supportsPartitions && !nextRegKind && !copperKind && (
+      {!sourceMode && env.supportsPartitions && !nextRegKind && !copperKind && !spriteKind && (
         <DialogRow rows={true} label="Partition">
           {/*
             * Opt in, rather than a "(none)" entry in the picker.
@@ -430,7 +436,51 @@ export const BreakpointDialog = ({
         </DialogRow>
       )}
 
-      {!sourceMode && !nextRegKind && !copperKind && (
+      {!sourceMode && spriteKind && (
+        <>
+          <DialogRow rows={true} label="Sprite *">
+            <TextInput
+              value={form.spriteIndex}
+              width={BYTE_FIELD}
+              error={errorFor("spriteIndex")}
+              autoFocus={!focus}
+              onChange={(spriteIndex) => {
+                setTouched((t) => ({ ...t, spriteIndex: true }));
+                update({ spriteIndex });
+              }}
+            />
+            <div className={styles.hint}>Accepts $0C, 12 or %1100 ($00-$7F).</div>
+          </DialogRow>
+          <DialogRow rows={true} label="Attribute bytes">
+            <div className={styles.attrBytes} role="group" aria-label="Attribute bytes">
+              {SPRITE_ATTRIBUTE_LABELS.map((label, attr) => (
+                <Checkbox
+                  key={attr}
+                  initialValue={(form.spriteAttrMask & (1 << attr)) !== 0}
+                  label={`${attr}: ${label}`}
+                  right={true}
+                  onChange={(on) => {
+                    setTouched((t) => ({ ...t, spriteAttrMask: true }));
+                    setForm((prev) => ({
+                      ...prev,
+                      spriteAttrMask: on
+                        ? prev.spriteAttrMask | (1 << attr)
+                        : prev.spriteAttrMask & ~(1 << attr)
+                    }));
+                  }}
+                />
+              ))}
+            </div>
+            {errorFor("spriteAttrMask") && (
+              <div className={styles.error} role="alert">
+                {errorFor("spriteAttrMask")}
+              </div>
+            )}
+          </DialogRow>
+        </>
+      )}
+
+      {!sourceMode && !nextRegKind && !copperKind && !spriteKind && (
       <DialogRow rows={true} label={`${addressLabel} *`}>
         <TextInput
           value={form.address}
@@ -564,6 +614,8 @@ export const BreakpointDialog = ({
           {logging ? "Logs" : "Stops"} only when true. Registers, flags (ZF, CF, …), memory ([HL], w[$5C3A]),{" "}
           {copperKind
             ? "VAL (the instruction word) and ADDR (the list index), "
+            : spriteKind
+            ? "VAL (the byte written) and ADDR (the attribute byte, 0-4), "
             : nextRegKind || !(form.kind === "exec" || sourceMode)
               ? "VAL and ADDR, "
               : ""}
@@ -665,6 +717,16 @@ export const BreakpointDialog = ({
           <div className={styles.hint}>
             Stops after the Z80 instruction during which the Copper completed it. The Copper keeps
             running to the end of that instruction, so its PC may already be past the index.
+          </div>
+        </DialogRow>
+      )}
+
+      {!sourceMode && spriteKind && (
+        <DialogRow rows={true}>
+          <div className={styles.hint}>
+            Stops after the instruction during which the byte was written &mdash; through port $57
+            (by the CPU or the DMA) or the $35-$39/$75-$79 NextReg mirrors (by the CPU or the
+            Copper) &mdash; reporting its previous and new values.
           </div>
         </DialogRow>
       )}

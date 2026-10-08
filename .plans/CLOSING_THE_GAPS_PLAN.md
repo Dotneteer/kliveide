@@ -29,9 +29,9 @@ are estimates for prioritising, not commitments.
 |---|---|---|---|
 | G1 | Conditional breakpoints, hit counts, logpoints | **S–M** | ✅ done (2026-10-03): G1.1–G1.4, G1.5 (DeZog ASSERTION/WPMEM comments) and G1.6 (one-shot breakpoints) |
 | G2 | Load and save snapshots (.sna/.z80/.szx), RZX | **S → L** | ✅ done (2026-10-04): G2.1–G2.8 |
-| G3 | Live Next hardware inspectors | **M** (layers: M–L) | Copper list viewer, sprite table · ✅ G3.1, the Copper half of G3.8 and the `.copper` pragma (G3.9) done (2026-10-05) · ✅ G3.2 and G3.3, the Sprite Inspector, done (2026-10-05) · ✅ G3.4, the Tilemap Inspector, done (2026-10-06) · ✅ G3.5, the Layer 2 Inspector, done (2026-10-06) · ✅ G3.6, layer composition (hide, solo, probe, the Layers document), done (2026-10-06) · ✅ G3.7, the beam position overlay, done (2026-10-06) |
-| G4 | Execution history and reverse debugging | **M → XL** | Read-only history viewer on the Next |
-| G5 | Code coverage, profiler, unit tests | **M → L** | Coverage map in the disassembly |
+| G3 | Live Next hardware inspectors | **M** (layers: M–L) | ✅ done (2026-10-05 – 10-08): G3.1–G3.9 (G3.8's sprite half on 2026-10-08) |
+| G4 | Execution history and reverse debugging | **M → XL** | ✅ done (2026-10-07 – 10-08): G4.1–G4.6 |
+| G5 | Code coverage, profiler, unit tests | **M → L** | Coverage map in the disassembly · plans ready, decisions recorded (2026-10-08): coverage and heat map, profiler, unit tests, CLI/CI |
 | G6 | Remote debugging, real hardware, external API | **M → XL** | Command API for scripts and CI |
 | G7 | 48K/128K reverse-engineering depth | **M → L** | Generalising the NEX annotation sidecar |
 | G8 | BASIC editor intelligence | **M** | ✅ done (2026-10-03): G8.1–G8.5 |
@@ -142,7 +142,8 @@ G3.2 and G3.3, as one Sprite Inspector document, in [SPRITE_INSPECTOR_PLAN.md](S
 G3.4 in [TILEMAP_INSPECTOR_PLAN.md](TILEMAP_INSPECTOR_PLAN.md) (done); G3.5 in
 [LAYER2_INSPECTOR_PLAN.md](LAYER2_INSPECTOR_PLAN.md) (done); G3.6 in
 [LAYER_COMPOSITION_PLAN.md](LAYER_COMPOSITION_PLAN.md) (done); G3.7 in
-[BEAM_POSITION_OVERLAY_PLAN.md](BEAM_POSITION_OVERLAY_PLAN.md) (done).
+[BEAM_POSITION_OVERLAY_PLAN.md](BEAM_POSITION_OVERLAY_PLAN.md) (done); the sprite half of G3.8 in
+[SPRITE_ATTRIBUTE_BREAKPOINTS_PLAN.md](SPRITE_ATTRIBUTE_BREAKPOINTS_PLAN.md) (done).
 Research for those four corrected two assumptions in the table below: the `.sl2`/`.shr` viewers G3.5
 was to reuse are stubs (the Layer 2 plan builds the decoder and replaces the `.sl2`/`.nxi` stubs),
 and G3.6 is nearer **M–L** than L, because the core already renders each layer into its own buffer
@@ -159,12 +160,22 @@ overlay now sits on a shared `EmulatorScreenOverlay`, and its render to the beam
 | G3.5 Layer 2 live viewer ✅ **done** | Current Layer 2 banks as an image at its resolution (256×192 / 320×256 / 640×256), with scroll and clip shown. Delivered as the Layer 2 Inspector: the displayed, shadow and `$123B`-window banks, whole or as displayed. | S–M (there were no viewers to reuse: `.sl2` was a stub and `.shr` is a Timex mode; the Layer 2 decoder was built once and also replaced the `.sl2`/`.nxi` stubs) |
 | G3.6 Layer composition view ✅ **done** | Toggle individual layers (ULA, Layer 2, sprites, tilemap) on and off in the emulator screen; show the priority order, clip windows and transparency. Delivered as a debug mask in the core's mixer (the program is unaffected), a Layers strip with hide/solo/transparency/clips, an exact paused recompose from a per-span capture, a pixel probe that names the rule a pixel won by, and a `$layers` document. | M–L (the core already rendered each layer into its own buffer and mixed them in one function; the mask, the capture and the probe all live there) |
 | G3.7 Beam-position overlay ✅ **done** | Show the raster position on the paused screen; useful with Copper and with the ULA panel's beam phase. Delivered on the Next and every Spectrum core (48K, 128K, Pentagon, Scorpion, +2A/+3, +2E/+3E, Timex): the beam line and pill, the paused picture rendered up to the beam without changing the machine, the previous frame's pixels hatched, blanking named, a hover readout of when the beam reaches any pixel, the Copper's hit as a second marker, and the ULA panel's RAS/POS fixed on the non-Next machines. | S–M |
-| G3.8 Copper / sprite breakpoints (Copper half ✅ **done**) | Stop when the Copper reaches an instruction (`cu:<index>`, Step Copper), or when a sprite attribute is written (not yet). | M, after G1 |
+| G3.8 Copper / sprite breakpoints ✅ **done** | Stop when the Copper reaches an instruction (`cu:<index>`, Step Copper), or when a sprite attribute is written (`sp:<sprite>`, with an `-attr` byte filter; port `$57` and the NextReg mirrors, by the CPU, the DMA or the Copper; set from the Sprite Inspector). | M, after G1 |
 | G3.9 `.copper` assembler pragma ✅ **done** | `.copper wait/move/nop/halt/word` in the Klive Z80 Assembler, with highlighting, completion and hover; the Copper List maps the live list back to these source lines and a margin click on one sets a Copper breakpoint. | S |
 
 ---
 
 ## G4. Execution history and reverse debugging — **M → XL; full reverse debugging is in scope (D2)**
+
+> **Feature switch (G4 and G5):** the whole group is off unless the user runs
+> `set -u features.advancedDebugging 1` and restarts (`docs/content/howto/advanced-debugging.mdx`).
+> The main process reads it once at startup into `emulatorState.advancedDebugging`;
+> `src/common/features/advancedDebugging.ts` is the one gate. Off, `MF_EXEC_HISTORY` and
+> `MF_REVERSE_DEBUG` read as absent (`hasMachineFeature`) and the machine controller never starts the
+> recorder or the timeline. **Every G5 piece must honour it too**: add its machine feature (the
+> coverage plan's `MF_PROFILE`) to `ADVANCED_DEBUGGING_FEATURES`, and gate its commands, views and
+> hooks on `isAdvancedDebuggingEnabled`. Tests of the group turn it on with
+> `test/advanced-debugging-helper.ts`.
 
 **Why it matters:** this is DeZog's most-praised feature: "how did I get here?" answered by
 stepping backwards.
@@ -176,9 +187,13 @@ neither.
 
 **Plan:** G4.1 in [EXECUTION_HISTORY_VIEWER_PLAN.md](EXECUTION_HISTORY_VIEWER_PLAN.md), G4.2 in
 [EXECUTION_HISTORY_ALL_CORES_PLAN.md](EXECUTION_HISTORY_ALL_CORES_PLAN.md), G4.3 in
-[LITE_STEP_BACK_PLAN.md](LITE_STEP_BACK_PLAN.md), G4.4 in [REVERSE_DEBUGGING_PLAN.md](REVERSE_DEBUGGING_PLAN.md).
+[LITE_STEP_BACK_PLAN.md](LITE_STEP_BACK_PLAN.md), G4.4 in [REVERSE_DEBUGGING_PLAN.md](REVERSE_DEBUGGING_PLAN.md),
+G4.5 in [TRACE_EXPORT_PLAN.md](TRACE_EXPORT_PLAN.md) and G4.6 in
+[DEBUG_SESSION_RECORDING_PLAN.md](DEBUG_SESSION_RECORDING_PLAN.md) (decisions recorded for both,
+2026-10-08: the suggested answers accepted).
 The G4.1 and G4.2 decisions and G4.3's D1–D14 are recorded (2026-10-06). G4.4's decisions are recorded
-too; it is gated by a Phase 0 spike. G4.3's §8 questions are still open. G4.4 uses keyframes that share unchanged
+too; its Phase 0 spike passed its go/no-go gate on the 48K and the Next (2026-10-07; results in the
+plan's §10). G4.3's §8 questions were answered as suggested and G4.3 is done (2026-10-07). G4.4 uses keyframes that share unchanged
 pages, an input journal kept at each core's export boundary, and deterministic replay to an exact
 instruction, which the replay checks itself. Research for
 them corrected the foundation note above. The frame trace is a **linear** buffer that stops when
@@ -192,19 +207,46 @@ then moves the frame trace to a diagnostics build, which shrinks the Next to abo
 
 | Feature | What it does | Size |
 |---|---|---|
-| G4.1 History viewer (Next) | After a stop, list the last N executed instructions with registers, disassembly and source line; click one to jump to its source. Read-only. | M (the data exists; needs an export, a UI and source mapping) |
-| G4.2 History in the other cores | The same trace recording for 48K/128K/+3E (and Z88). | M |
-| G4.3 "Lite" step back | Step backwards through the trace and show the historical registers and PC in the CPU panel and editor. Memory stays at the present. This is DeZog's "lite" mode. | M, after G4.1 |
-| G4.4 Full reverse debugging | Step back and reverse-continue with exact memory and device state: periodic checkpoints plus deterministic re-execution to the target instruction. | XL (every core needs cheap state capture; input, tape, disk and audio must replay deterministically) |
-| G4.5 Trace export | Save a history range as a text or CSV trace for diffing two runs. | S, after G4.1 |
-| G4.6 Debug session recording | Save a reverse-debugging timeline (keyframes and the input journal, with SD sector data) to a file, so a bug repro replays later with the debugger attached: an RZX for every machine, with breakpoints. Replays only on the same Klive build. | M, after G4.4 works on two cores |
+| G4.1 History viewer (Next) ✅ **done** (2026-10-07) | After a stop, list the last N executed instructions with registers, disassembly and source line; click one to jump to its source. Read-only. | M (the data exists; needs an export, a UI and source mapping) |
+| G4.2 History in the other cores ✅ **done** (2026-10-07) | The same trace recording for 48K/128K/+3E (and Z88). Done for every Z80 core: 48K/16K, Timex, 128K/Pentagon/Scorpion, +2A/+3/+2E/+3E, Z88 and ZX80/81, with the ZX80/81's display NOPs merged per line and interrupt service folded in the viewer. | M |
+| G4.3 "Lite" step back ✅ **done** | Step backwards through the trace and show the historical registers and PC in the CPU panel and editor. Memory stays at the present. This is DeZog's "lite" mode. | M, after G4.1 |
+| G4.4 Full reverse debugging ✅ **done** (2026-10-08) | Step back and reverse-continue with exact memory and device state: periodic checkpoints plus deterministic re-execution to the target instruction. Done on every Z80 machine: keyframes, an input journal at each core's export boundary and self-checking replay; Continue from the past, Take over here, reverse watchpoints, the Next's SD card undone on a fork (.plans/REVERSE_DEBUGGING_PLAN.md). | XL (every core needs cheap state capture; input, tape, disk and audio must replay deterministically) |
+| G4.5 Trace export ✅ **done** (2026-10-08) | Save a history range as a text or CSV trace for diffing two runs. Done: `history-export` (`hexp`), Debug › Export Execution History… and the document's Export button; diff-friendly defaults (relative time, masked wait counts, `-nointerrupts`), selectable columns, CSV with a column per register (.plans/TRACE_EXPORT_PLAN.md). | S, after G4.1 |
+| G4.6 Debug session recording ✅ **done** (2026-10-08) | Save a reverse-debugging timeline (keyframes and the input journal, with SD sector data) to a file, so a bug repro replays later with the debugger attached: an RZX for every machine, with breakpoints. Replays only on the same Klive build. Done on every machine with reverse debugging: `.klr` files (`drsave`/`drload`, Debug › Save/Open Debug Recording…, a viewer, drag and drop) open paused where they were saved with their whole past; breakpoints travel as session breakpoints; another build's file opens as its end state; 1-4 MB per minute (.plans/DEBUG_SESSION_RECORDING_PLAN.md). | M, after G4.4 works on two cores |
 
 ---
 
 ## G5. Coverage, profiling and unit tests — **M → L**
 
+> **Feature switch (G4 and G5):** the whole group is off unless the user runs
+> `set -u features.advancedDebugging 1` and restarts (`docs/content/howto/advanced-debugging.mdx`).
+> The main process reads it once at startup into `emulatorState.advancedDebugging`;
+> `src/common/features/advancedDebugging.ts` is the one gate. Off, `MF_EXEC_HISTORY` and
+> `MF_REVERSE_DEBUG` read as absent (`hasMachineFeature`) and the machine controller never starts the
+> recorder or the timeline. **Every G5 piece must honour it too**: add its machine feature (the
+> coverage plan's `MF_PROFILE`) to `ADVANCED_DEBUGGING_FEATURES`, and gate its commands, views and
+> hooks on `isAdvancedDebuggingEnabled`. Tests of the group turn it on with
+> `test/advanced-debugging-helper.ts`.
+
 **Why it matters:** DeZog's unit tests and coverage are unique in the field. Klive has a strong
 *internal* test harness (`test/harness/sp48`, `test/harness/zxnext`), but nothing for users.
+
+**Plan (decisions recorded, 2026-10-08: the suggested answers accepted for all four plans):**
+- G5.1 and G5.2 are in [CODE_COVERAGE_AND_HEAT_MAP_PLAN.md](CODE_COVERAGE_AND_HEAT_MAP_PLAN.md).
+  It also builds the shared in-core access profile (`z80-profile.c`: a flag byte per physical byte,
+  plus a counter pool with per-instruction time) that the profiler reads.
+- G5.3 and G5.4 are in [PROFILER_PLAN.md](PROFILER_PLAN.md).
+- G5.5 is in [Z80_UNIT_TESTS_PLAN.md](Z80_UNIT_TESTS_PLAN.md).
+- G5.6 is in [UNIT_TESTS_CLI_PLAN.md](UNIT_TESTS_CLI_PLAN.md).
+
+Research for the plans corrected four assumptions in the table below:
+- **G5.3 is S–M, not M.** The coverage module already measures time per instruction.
+- **G5.4 is M–L, not L.** The shared Z80's shadow-stack functions are ready-made CALL/RET hook
+  points.
+- **G5.5's runner is Electron-free.** It runs in a worker on its own machine instance, not on the
+  user's emulator.
+- **G5.6 does not need G6.1.** CI needs a headless Node process, not a transport into a running
+  IDE. The CLI it adds (`klive test`) becomes the skeleton G6.1 extends.
 
 | Feature | What it does | Size |
 |---|---|---|
@@ -229,6 +271,12 @@ hardware, where competitors lead.
 | ~~G6.3 DeZog-compatible remote~~ | **Dropped** (decision D1). DeZog compatibility applies to source conventions instead (D3). | — |
 | G6.4 Real Next hardware debugging | Run and debug on a physical Next over UART **from Klive's own debugger UI**, with an on-Next agent program handling breakpoints and memory. Fits D1: Klive is the client. | XL (hardware, a Z80N agent, timing and banking constraints) |
 | G6.5 Send to Next | Push a built `.nex` to real hardware over serial or Wi-Fi without debugging. | M |
+
+**Plan:** G6.4 and G6.5 are planned together in [NEXT_HARDWARE_DEBUGGING_PLAN.md](NEXT_HARDWARE_DEBUGGING_PLAN.md)
+(draft, open questions, 2026-10-08). Its verdict: feasible. The link it proposes is a UART on a joystick port
+(NextReg `$0B`) through a 3.3 V USB-serial adapter, with Wi-Fi via the ESP kept for send-to-Next only.
+The Next runs a Klive agent, and the whole stack is testable on the WASM core's emulated UART.
+G6.5 is its Phase 2.
 
 ---
 
@@ -324,19 +372,28 @@ G1.1 hit counts · G1.2 register conditions · G1.4 logpoints · G1.6 one-shot b
 G10.1–G10.4 proof points.
 
 **Wave 2 — the Next leadership set:**
-~~G3.2 sprite inspector~~ (done) · ~~G3.4 tilemap~~ (done) · ~~G3.5 Layer 2~~ (done) · G4.1 history viewer (Next) · G4.3 lite
-step back · G5.1 coverage · G1.3 memory and value conditions · G1.5 DeZog-compatible ASSERTION
+~~G3.2 sprite inspector~~ (done) · ~~G3.4 tilemap~~ (done) · ~~G3.5 Layer 2~~ (done) · ~~G4.1 history viewer (Next)~~ (done) · ~~G4.3 lite
+step back~~ (done) · G5.1 coverage · G1.3 memory and value conditions · G1.5 DeZog-compatible ASSERTION
 and WPMEM comments.
 
 **Wave 3 — depth:**
 - G5.5 DeZog-compatible unit tests and G6.1 CLI, which together enable G5.6 (CI).
 - G7.1 annotations for any machine, G7.2 ROM annotations written from scratch.
 - ~~G8.x BASIC intelligence~~ (done), ~~G2.4 snapshot saving~~ (done), G5.2–G5.3 heat map and profiler.
-- **G4.2 history in every core**, which is the groundwork for G4.4.
+- ~~**G4.2 history in every core**~~ (done), which is the groundwork for G4.4.
 
 **Wave 4 — the big bets:**
 - **G4.4 full reverse debugging.** Start with a design spike on cheap state capture and
-  deterministic replay across all cores. (RZX, G2.7–G2.8, turned out not to need it and is done;
+  deterministic replay across all cores. The spike (Phase 0) is done and passed its gate; Phase 1, the
+  export contract and the journal, is done (2026-10-08); Phases 2 (the timeline and replay engine on
+  the Next and the 48K), 3 (performance: the gate holds over a 10-minute session) and 4 (Step Back
+  and the other G4.3 commands put the machine itself in the past; Continue from the past; Take over
+  here) and 5 (Reverse Continue checking every breakpoint on the real past machine, reverse
+  watchpoints) and 6 (the Next's SD card journaled and undone on a fork, disk write-back republished,
+  replays kept away from every host side effect) and 7 (every Z80 machine: 128K, Pentagon, Scorpion,
+  +2A/+3/+3E, Timex, Z88, ZX81, ZX80) and 8 (the status bar, Take over here with its confirmation,
+  Reverse Continue progress and cancel, settings rows, the docs page) are done: **G4.4 is done**
+  (2026-10-08). (RZX, G2.7–G2.8, turned out not to need it and is done;
   Klive state files, G2.6, are done too.)
 - ~~G3.6 layer composition~~ (done).
 - G6.4 real Next hardware debugging, with G6.5 send-to-Next as its first milestone.

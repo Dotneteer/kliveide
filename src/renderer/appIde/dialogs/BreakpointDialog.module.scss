@@ -55,6 +55,16 @@
   font-family: var(--monospace-font);
 }
 
+/*
+ * The sprite kind's five attribute-byte checkboxes: one per line, so each byte's meaning reads next
+ * to its box. The gap is the dialog's own small step, not a new size.
+ */
+.attrBytes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
 /* A note that accepts the form anyway: a condition label not in the symbol table yet. */
 .warning {
   margin-top: var(--space-1_5);

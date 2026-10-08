@@ -43,6 +43,7 @@ it("pages bank 3 in from a snapshot", async () => {
 | AY | `psgRegister(n)`, `psgSelected()` | A register's value (the selection is restored after reading); the selected register. |
 | ULA | `frameTact()`, `border()` | T-states since the frame started; the border colour. |
 | CPU | `cpu()` | Every register read from the core, with IFF1/IFF2, IM, HALT and the EI backlog. |
+| History | `recordHistory(on)`, `clearHistory()`, `historyInfo()`, `history(count?)`, `historyFrom(sequence, count)` | The execution-history recorder (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`) through the machine's `IExecutionHistorySource`, shared with every harness (`../historySupport.ts`): on/off, clear, the ring's header, the newest records decoded oldest first (each the state *before* its instruction or event), a read by sequence with its "gone" flag. |
 
 ## Notes
 

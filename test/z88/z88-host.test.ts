@@ -170,3 +170,26 @@ describe("Z88 host - Blink panel state (IZ88IdeMachine)", () => {
     );
   });
 });
+
+describe("Z88 host - serial output and reverse-debugging replays", () => {
+  it("drops TXD output a replay produces: the IDE showed it when the live run sent it (REVERSE_DEBUGGING_PLAN D13)", async () => {
+    const machine = await createZ88();
+    const messenger = (machine as unknown as { messenger: { sent: { method?: string }[] } }).messenger;
+    const w = machine.wasmV2Runtime!.exports;
+    const outputs = () => messenger.sent.filter((m) => m.method === "displayOutputBatch").length;
+    for (const byte of [0x48, 0x69, 0x0d]) w.z88WritePort(0xe3, byte);
+
+    let replaying = true;
+    machine.executionContext.isReplayingHistory = () => replaying;
+    machine.executeMachineFrame();
+    expect(outputs()).toBe(0);
+    // --- Emptied, so it does not come out once the machine is live again
+    expect(w.z88GetUartTxCount()).toBe(0);
+
+    replaying = false;
+    for (const byte of [0x4f, 0x4b, 0x0d]) w.z88WritePort(0xe3, byte);
+    machine.executeMachineFrame();
+    expect(outputs()).toBe(1);
+    expect(w.z88GetUartTxCount()).toBe(0);
+  });
+});

@@ -94,18 +94,26 @@ describe("ZX Spectrum Next WASM checkpoints", () => {
     expect(machine.getKeyQueueLength()).toBe(0);
   });
 
-  it("excludes the diagnostics trace ring from the captured state", async () => {
+  it("excludes every volatile range - the trace and the history ring among them - from the captured state", async () => {
     const machine: any = await createTestZxNextWasmMachine();
     machine.reset();
     machine.captureCheckpoint("boot");
 
     const checkpoint = (machine as any).wasmV2Checkpoint;
-    const captured =
-      checkpoint.memoryBeforeTrace.length + checkpoint.memoryAfterTrace.length;
-    const total = machine.wasmV2Runtime.memoryBuffer.byteLength;
-    const traceBytes = machine.wasmV2Runtime.frameTrace.byteLength;
+    const spans: { offset: number; bytes: Uint8Array }[] = checkpoint.memory;
+    const captured = spans.reduce((sum, span) => sum + span.bytes.length, 0);
+    const runtime = machine.wasmV2Runtime;
+    const total = runtime.memoryBuffer.byteLength;
+    const traceStart = runtime.exports.zxnextTraceGetStartOffset();
+    const traceEnd = traceStart + runtime.frameTrace.byteLength;
+    const header = new DataView(runtime.memoryBuffer);
+    const ringStart = header.getUint32(runtime.exports.z80HistoryGetHeaderOffset() + 36, true);
+    const ringEnd = ringStart + 131072 * 64;
+    const overlaps = (from: number, to: number) => spans.some((s) => s.offset < to && s.offset + s.bytes.length > from);
 
-    expect(captured).toBe(total - traceBytes);
+    expect(overlaps(traceStart, traceEnd)).toBe(false);
+    expect(overlaps(ringStart, ringEnd)).toBe(false);
+    expect(captured).toBeLessThan(total - runtime.frameTrace.byteLength - 131072 * 64 + 1);
     expect(captured).toBeLessThan(total / 2);
   });
 });

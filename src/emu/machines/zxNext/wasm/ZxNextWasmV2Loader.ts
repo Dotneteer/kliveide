@@ -1,4 +1,5 @@
 import { CONDITION_CORE_EXPORTS, type ConditionCoreExports } from "@emu/machines/conditionStore";
+import { Z80_HISTORY_CORE_EXPORTS, type Z80HistoryCoreExports } from "@emu/machines/history/WasmHistoryReader";
 import { WASM_ACCESS_LOG_CAPACITY } from "../../wasmAccessLog";
 import { OFFS_ERR_PAGE } from "../nextMemoryLayout";
 import { ZXNEXT_FRAME_TRACE_CAPACITY, ZXNEXT_FRAME_TRACE_HEADER_SIZE, ZXNEXT_FRAME_TRACE_RECORD_SIZE } from "./frameTraceLayout";
@@ -10,10 +11,12 @@ export const ZXNEXT_WASM_V2_KEYBOARD_LINE_COUNT = 8;
 export const ZXNEXT_WASM_V2_NEXT_REG_COUNT = 0x100;
 export const ZXNEXT_WASM_V2_SCREEN_WIDTH = 720;
 export const ZXNEXT_WASM_V2_SCREEN_HEIGHT = 288;
+/** `zxnextGetPartitionOfPage`'s answer when no partition is paged into the slot (Multiface memory) */
+export const ZXNEXT_NO_PARTITION = 0x7fffffff;
 
 export type ZxNextWasmV2ExportFunction = (...args: number[]) => number;
 
-export type ZxNextWasmV2Exports = WebAssembly.Exports & ConditionCoreExports & {
+export type ZxNextWasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Z80HistoryCoreExports & {
   memory: WebAssembly.Memory;
   zxnextMemoryPtr: ZxNextWasmV2ExportFunction;
   zxnextPixelBufferPtr: ZxNextWasmV2ExportFunction;
@@ -35,6 +38,8 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & ConditionCoreExports & {
   zxnextGetMemoryPortEff7: ZxNextWasmV2ExportFunction;
   zxnextGetMemoryPageBank16: ZxNextWasmV2ExportFunction;
   zxnextGetMemoryPageBank8: ZxNextWasmV2ExportFunction;
+  /** The partition an 8K slot holds, overlays included; `ZXNEXT_NO_PARTITION` for none */
+  zxnextGetPartitionOfPage: ZxNextWasmV2ExportFunction;
   zxnextGetMemorySelectedRomPage: ZxNextWasmV2ExportFunction;
   zxnextGetMemorySelectedRamBank: ZxNextWasmV2ExportFunction;
   zxnextSetKeyStatus: ZxNextWasmV2ExportFunction;
@@ -134,6 +139,7 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & ConditionCoreExports & {
   zxnextWriteNextRegister: ZxNextWasmV2ExportFunction;
   zxnextGetNextRegisterLastWrite: ZxNextWasmV2ExportFunction;
   zxnextPeekNextRegister: ZxNextWasmV2ExportFunction;
+  zxnextGetResetRequest: ZxNextWasmV2ExportFunction;
   zxnextTakeResetRequest: ZxNextWasmV2ExportFunction;
   zxnextPressMultifaceNmiButton: ZxNextWasmV2ExportFunction;
   zxnextPressDivMmcNmiButton: ZxNextWasmV2ExportFunction;
@@ -146,6 +152,9 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & ConditionCoreExports & {
   zxnextCopperWatchPtr: ZxNextWasmV2ExportFunction;
   zxnextSetCopperWatchMode: ZxNextWasmV2ExportFunction;
   zxnextTakeCopperHit: ZxNextWasmV2ExportFunction;
+  zxnextSpriteWatchPtr: ZxNextWasmV2ExportFunction;
+  zxnextSetSpriteWatchArmed: ZxNextWasmV2ExportFunction;
+  zxnextTakeSpriteHit: ZxNextWasmV2ExportFunction;
   zxnextGetPortFeValue: ZxNextWasmV2ExportFunction;
   zxnextGetBorderColor: ZxNextWasmV2ExportFunction;
   zxnextGetEarBit: ZxNextWasmV2ExportFunction;
@@ -415,6 +424,8 @@ export type ZxNextWasmV2Runtime = {
   readonly nextRegWatch: Uint8Array;
   /** One bit per Copper list index: the Copper-instruction breakpoint watch (COPPER_DEBUGGING_PLAN §4.6) */
   readonly copperWatch: Uint8Array;
+  /** One byte per sprite, bits 0-4 the watched attribute bytes: the sprite-attribute breakpoint watch (G3.8) */
+  readonly spriteWatch: Uint8Array;
   /** The Copper list RAM, 2K, big-endian words (read only by the IDE) */
   readonly copperMemory: Uint8Array;
   /** The sprite attribute slots, 128 x 5 bytes (read only by the IDE) */
@@ -455,6 +466,7 @@ const requiredV2Exports = [
   "zxnextGetMemoryPortEff7",
   "zxnextGetMemoryPageBank16",
   "zxnextGetMemoryPageBank8",
+  "zxnextGetPartitionOfPage",
   "zxnextGetMemorySelectedRomPage",
   "zxnextGetMemorySelectedRamBank",
   "zxnextSetKeyStatus",
@@ -554,6 +566,7 @@ const requiredV2Exports = [
   "zxnextWriteNextRegister",
   "zxnextGetNextRegisterLastWrite",
   "zxnextPeekNextRegister",
+  "zxnextGetResetRequest",
   "zxnextTakeResetRequest",
   "zxnextPressMultifaceNmiButton",
   "zxnextPressDivMmcNmiButton",
@@ -566,6 +579,9 @@ const requiredV2Exports = [
   "zxnextCopperWatchPtr",
   "zxnextSetCopperWatchMode",
   "zxnextTakeCopperHit",
+  "zxnextSpriteWatchPtr",
+  "zxnextSetSpriteWatchArmed",
+  "zxnextTakeSpriteHit",
   "zxnextGetPortFeValue",
   "zxnextGetBorderColor",
   "zxnextGetEarBit",
@@ -796,7 +812,9 @@ const requiredV2Exports = [
   "zxnextGetDmaSeq",
   // --- Last, so a core missing its own exports is reported by those: the breakpoint condition
   // --- evaluator, identical in every Z80 core
-  ...CONDITION_CORE_EXPORTS
+  ...CONDITION_CORE_EXPORTS,
+  // --- The execution-history recorder, identical in every core that records history
+  ...Z80_HISTORY_CORE_EXPORTS
 ] as const;
 
 export function resetZxNextWasmV2ModuleCache(): void {
@@ -873,6 +891,7 @@ export function createZxNextWasmV2Views(
   assertViewRange(artifactName, "nextRegs", exports.zxnextNextRegsPtr(), nextRegCount, memoryBuffer);
   assertViewRange(artifactName, "nextRegWatch", exports.zxnextNextRegWatchPtr(), nextRegCount * 3, memoryBuffer);
   assertViewRange(artifactName, "copperWatch", exports.zxnextCopperWatchPtr(), 128, memoryBuffer);
+  assertViewRange(artifactName, "spriteWatch", exports.zxnextSpriteWatchPtr(), 128, memoryBuffer);
   assertViewRange(artifactName, "copperMemory", exports.zxnextCopperMemoryPtr(), 0x800, memoryBuffer);
   assertViewRange(artifactName, "spriteAttributes", exports.zxnextSpriteAttributesPtr(), 640, memoryBuffer);
   assertViewRange(artifactName, "spritePatterns8", exports.zxnextSpritePatternMemory8Ptr(), 512 * 256, memoryBuffer);
@@ -890,6 +909,7 @@ export function createZxNextWasmV2Views(
     nextRegs: new Uint8Array(memoryBuffer, exports.zxnextNextRegsPtr(), nextRegCount),
     nextRegWatch: new Uint8Array(memoryBuffer, exports.zxnextNextRegWatchPtr(), nextRegCount * 3),
     copperWatch: new Uint8Array(memoryBuffer, exports.zxnextCopperWatchPtr(), 128),
+    spriteWatch: new Uint8Array(memoryBuffer, exports.zxnextSpriteWatchPtr(), 128),
     copperMemory: new Uint8Array(memoryBuffer, exports.zxnextCopperMemoryPtr(), 0x800),
     spriteAttributes: new Uint8Array(memoryBuffer, exports.zxnextSpriteAttributesPtr(), 640),
     spritePatterns8: new Uint8Array(memoryBuffer, exports.zxnextSpritePatternMemory8Ptr(), 512 * 256),

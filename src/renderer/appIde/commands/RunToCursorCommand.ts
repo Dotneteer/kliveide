@@ -29,7 +29,7 @@ import { BreakpointWithAddressCommand, type BreakpointWithAddressArgs } from "./
 export class RunToCursorCommand extends BreakpointWithAddressCommand {
   readonly id = "run-to";
   readonly description = "Runs the machine until it reaches the given address, then stops";
-  readonly usage = "run-to <address> | run-to cu:<index>";
+  readonly usage = "run-to <address> | run-to cu:<index> | run-to sp:<sprite>";
   readonly aliases = ["rtc"];
 
   /**
@@ -65,8 +65,18 @@ export class RunToCursorCommand extends BreakpointWithAddressCommand {
 
     // --- `run-to cu:<index>`: run until the Copper completes that list instruction (the Copper
     // --- List's "Run to here", `.plans/COPPER_DEBUGGING_PLAN.md` D6)
+    // --- `run-to sp:<sprite>`: run until an attribute byte of that sprite is written (the Sprite
+    // --- Inspector's "Run until attribute write")
     const target: BreakpointInfo =
-      args.copperIndex !== undefined
+      args.spriteIndex !== undefined
+        ? {
+            spriteIndex: args.spriteIndex,
+            exec: false,
+            oneShot: true,
+            runTo: true,
+            owner: { kind: "session" }
+          }
+        : args.copperIndex !== undefined
         ? {
             copperIndex: args.copperIndex,
             exec: false,

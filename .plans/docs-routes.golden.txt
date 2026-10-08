@@ -42,9 +42,11 @@
 /getting-started/keyboard/index.html
 /getting-started/save-programs/index.html
 /getting-started/tapes/index.html
+/howto/advanced-debugging/index.html
 /howto/always-on-top/index.html
 /howto/background-compilation/index.html
 /howto/customize-syntax-colors/index.html
+/howto/debug-recordings/index.html
 /howto/diagnostics/index.html
 /howto/file-extensions/index.html
 /howto/ide-startup/index.html
@@ -74,6 +76,7 @@
 /working-with-ide/cpu/index.html
 /working-with-ide/disassembly/index.html
 /working-with-ide/editing-code/index.html
+/working-with-ide/execution-history/index.html
 /working-with-ide/exporting-code/index.html
 /working-with-ide/ide-settings/index.html
 /working-with-ide/layer2-inspector/index.html
@@ -82,6 +85,7 @@
 /working-with-ide/navigation/index.html
 /working-with-ide/pasta80/index.html
 /working-with-ide/project-explorer/index.html
+/working-with-ide/reverse-debugging/index.html
 /working-with-ide/run-debug/index.html
 /working-with-ide/settings/index.html
 /working-with-ide/sjasmp/index.html

@@ -133,6 +133,33 @@ export type ScreenRecordingState = "idle" | "armed" | "recording" | "paused";
  * An RZX session on the emulator (`.plans/RZX_PLAN.md` §4.6): playing a recording, recording one,
  * or rendering one to video
  */
+/**
+ * What the IDE shows of a reverse-debugging timeline (`.plans/REVERSE_DEBUGGING_PLAN.md` §4.4): the
+ * status bar's "in the past" and "replaying" states, the reverse range, the deep-landing marker, a
+ * Reverse Continue search's progress and why a timeline ended. Undefined while no timeline runs and
+ * none ended with something to say.
+ */
+export type ReverseDebugState = {
+  /** Whether a timeline is active; false after one ended (`desync` says why) */
+  active: boolean;
+  /** `live`: at the present; `navigating`: paused in the past; `replaying`: running toward the present */
+  mode: "live" | "navigating" | "replaying";
+  /** How far behind the present the machine stands, in seconds of machine time */
+  behindSeconds?: number;
+  /** How far back the timeline reaches from the present, in seconds (the reverse range) */
+  rangeSeconds?: number;
+  /** The machine stands older than the history views reach: there is no history cursor (D17) */
+  deepLanding?: boolean;
+  /** Live input dropped since the machine left the present (D12) */
+  inputsIgnored?: number;
+  /** A Reverse Continue search: keyframe intervals searched so far (D15) */
+  searchedIntervals?: number;
+  /** Why the last timeline ended early (a desync, D9) */
+  desync?: string;
+  /** The debug recording the timeline was opened from (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` D10) */
+  recording?: string;
+};
+
 export type RzxState = {
   mode: "idle" | "playing" | "recording" | "rendering";
   /** Frames played or recorded */
@@ -191,11 +218,31 @@ export type EmulatorState = {
    */
   nextLayers?: import("@common/zxnext/layers/layerMix").NextLayerViewState;
   screenRecordingAvailable?: boolean;
+  /**
+   * The advanced-debugging feature switch (G4 + G5; `@common/features/advancedDebugging`): read once
+   * by the main process at startup from `features.advancedDebugging`. Off unless set.
+   */
+  advancedDebugging?: boolean;
   /** A quick-saved machine state is held for the current machine (D19 of the state-files plan) */
   quickStateAvailable?: boolean;
+  /**
+   * The history cursor (`.plans/LITE_STEP_BACK_PLAN.md` D3): steps back from the present (1 = the
+   * newest record); undefined at the present. The IDE's effects keyed on the execution point re-run
+   * when it moves.
+   */
+  historyPosition?: number;
+  /** The record the history cursor is on */
+  historySequence?: number;
+  /**
+   * Whether memory and devices show the history cursor's moment too (D14): false in lite mode,
+   * where the "present" banners say so; G4.4's full reverse debugging makes it true
+   */
+  historyMemoryIsHistorical?: boolean;
   screenRecordingState?: ScreenRecordingState;
   /** The RZX session, if any (`.plans/RZX_PLAN.md` §4.6) */
   rzx?: RzxState;
+  /** The reverse-debugging timeline, while the debug session has one (`.plans/REVERSE_DEBUGGING_PLAN.md` §4.4) */
+  reverseDebug?: ReverseDebugState;
   screenRecordingFile?: string;
   screenRecordingFps?: RecordingFps;
   screenRecordingQuality?: RecordingQuality;

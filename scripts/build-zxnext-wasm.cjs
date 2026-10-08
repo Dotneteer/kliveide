@@ -9,12 +9,22 @@ const {
   stagingWasmOutput,
   stampWasmLayout
 } = require("./wasm-layout.cjs");
+const { Z80_HISTORY_EXPORTS, Z80_HISTORY_VOLATILE_SYMBOLS } = require("./z80-history-exports.cjs");
 
 /**
  * Statics a Klive state file leaves out (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` trap 10):
  * debugging state and buffers the core rewrites before it reads them, so a restore keeps the live
  * core's bytes there.
  */
+/*
+ * Frame-boundary scratch (`.plans/REVERSE_DEBUGGING_PLAN.md` T5): the ULA/sprite coverage map, which
+ * the core rewrites before it reads it. Keyframes taken at a frame boundary leave it out; the T5 proof
+ * in `test/wasm/reverse/journal-replay-determinism.test.ts` checks every keyframe interval. Not
+ * scratch: the picture and the four layer buffers, which a step back shows half drawn (D18) and the
+ * layer views read, and the beeper's transition buffer, whose pending transitions carry over.
+ */
+const ZXNEXT_SCRATCH_SYMBOLS = ["zxnextUlaSpriteCoverage"];
+
 const ZXNEXT_VOLATILE_SYMBOLS = [
   // --- The IDE's breakpoint conditions and the per-instruction access log they read: debugging
   // --- state, not machine state, so a restore never brings back old breakpoints
@@ -36,6 +46,10 @@ const ZXNEXT_VOLATILE_SYMBOLS = [
   "zxnextCopperWatchArmed",
   "zxnextCopperWatchAny",
   "zxnextCopperHit",
+  "zxnextSpriteWatch",
+  "zxnextSpriteWatchArmed",
+  "zxnextSpriteHit",
+  "zxnextSpriteWriteFromDma",
   // --- The Sprite Inspector's resolve buffer (SPRITE_INSPECTOR_PLAN trap T3)
   "zxnextIdeResolvedSprites",
   "zxnextIdeResolveScratch",
@@ -75,7 +89,9 @@ const ZXNEXT_VOLATILE_SYMBOLS = [
   "zxnextBeamSaveResolved",
   "zxnextBeamSaveShown",
   "zxnextBeamLatchesDone",
-  "zxnextBeamInfo"
+  "zxnextBeamInfo",
+  // --- The execution-history ring (EXECUTION_HISTORY_VIEWER_PLAN D7)
+  ...Z80_HISTORY_VOLATILE_SYMBOLS
 ];
 
 const root = resolve(__dirname, "..");
@@ -107,6 +123,8 @@ const productionExports = [
   "condEvaluateValue",
   "condSetEnv",
   "condPeek",
+  // --- Execution history recorder (`src/emu/z80/wasm/z80-history.c`)
+  ...Z80_HISTORY_EXPORTS,
   "memory",
   "zxnextMemoryPtr",
   "zxnextPixelBufferPtr",
@@ -128,6 +146,7 @@ const productionExports = [
   "zxnextGetMemoryPortEff7",
   "zxnextGetMemoryPageBank16",
   "zxnextGetMemoryPageBank8",
+  "zxnextGetPartitionOfPage",
   "zxnextGetMemorySelectedRomPage",
   "zxnextGetMemorySelectedRamBank",
   "zxnextSetKeyStatus",
@@ -227,6 +246,7 @@ const productionExports = [
   "zxnextWriteNextRegister",
   "zxnextGetNextRegisterLastWrite",
   "zxnextPeekNextRegister",
+  "zxnextGetResetRequest",
   "zxnextTakeResetRequest",
   "zxnextPressMultifaceNmiButton",
   "zxnextPressDivMmcNmiButton",
@@ -239,6 +259,9 @@ const productionExports = [
   "zxnextCopperWatchPtr",
   "zxnextSetCopperWatchMode",
   "zxnextTakeCopperHit",
+  "zxnextSpriteWatchPtr",
+  "zxnextSetSpriteWatchArmed",
+  "zxnextTakeSpriteHit",
   "zxnextGetPortFeValue",
   "zxnextGetBorderColor",
   "zxnextGetEarBit",
@@ -474,7 +497,9 @@ const buildModes = {
     output: productionOutput,
     exports: productionExports,
     sources: [source],
-    initialMemory: 32 * 1024 * 1024
+    // --- 40 MB: the 8 MB execution-history ring did not fit beside the frame trace in 32 MB
+    // --- (EXECUTION_HISTORY_VIEWER_PLAN T9, Q6)
+    initialMemory: 40 * 1024 * 1024
   }
 };
 
@@ -548,7 +573,7 @@ function buildZxNextWasm({
       );
     }
     // --- The memory layout a Klive state file depends on (scripts/wasm-layout.cjs)
-    const layout = stampWasmLayout(compiledOutput, layoutMap, ZXNEXT_VOLATILE_SYMBOLS);
+    const layout = stampWasmLayout(compiledOutput, layoutMap, ZXNEXT_VOLATILE_SYMBOLS, ZXNEXT_SCRATCH_SYMBOLS);
     publishWasmOutput(compiledOutput, selectedOutput);
     return {
       layout,

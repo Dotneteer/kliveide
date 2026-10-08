@@ -21,7 +21,13 @@ import {
   reinstallAnnotationBreakpoints
 } from "@common/utils/breakpoints";
 import { formatHitSpec, isLogpoint, parseHitSpec } from "@common/utils/breakpoint-filters";
-import { isAnnotationBreakpoint } from "@common/utils/breakpoint-scope";
+import { isAnnotationBreakpoint, spriteAttrMaskOf } from "@common/utils/breakpoint-scope";
+import {
+  formatSpriteAttrList,
+  parseSpriteAttrList,
+  SPRITE_ATTR_ALL,
+  SPRITE_INDEX_MAX
+} from "@common/zxnext/sprites/spriteBreakpoints";
 import {
   compileLogTemplate,
   logGroupOf
@@ -178,6 +184,10 @@ export type BreakpointWithAddressArgs = {
   nextReg?: number;
   /** The Copper list index of a `cu:` breakpoint (ZX Spectrum Next only), `$000-$3FF`. */
   copperIndex?: number;
+  /** The sprite of an `sp:` breakpoint (ZX Spectrum Next only), `$00-$7F`. */
+  spriteIndex?: number;
+  /** The attribute bytes an `sp:` breakpoint watches, as typed (`0,2`, `0-3`). */
+  "-attr"?: string;
   /** Also break on copper writes (NextReg breakpoints only). */
   "-c"?: boolean;
   /** Break only on this written value (NextReg breakpoints only); `-m` masks the comparison. */
@@ -225,6 +235,8 @@ function parseNumericSpec(text: string): number | undefined {
 function breakpointFromArgs(args: BreakpointWithAddressArgs): BreakpointInfo {
   const isNextReg = args.nextReg !== undefined;
   const isCopper = args.copperIndex !== undefined;
+  const isSprite = args.spriteIndex !== undefined;
+  const attrMask = isSprite && args["-attr"] !== undefined ? parseSpriteAttrList(args["-attr"]) : undefined;
   return {
     address: args.address,
     partition: args.partition,
@@ -240,7 +252,10 @@ function breakpointFromArgs(args: BreakpointWithAddressArgs): BreakpointInfo {
     nextRegMask: isNextReg && args["-v"] !== undefined ? args["-m"] : undefined,
     nextRegCopper: args["-c"],
     copperIndex: args.copperIndex,
-    exec: !(args["-r"] || args["-w"] || args["-i"] || args["-o"] || isNextReg || isCopper),
+    spriteIndex: args.spriteIndex,
+    // --- All five bytes is the default, so it is not stored
+    spriteAttrMask: attrMask !== undefined && attrMask !== SPRITE_ATTR_ALL ? attrMask : undefined,
+    exec: !(args["-r"] || args["-w"] || args["-i"] || args["-o"] || isNextReg || isCopper || isSprite),
     memoryRead: args["-r"],
     memoryWrite: args["-w"],
     ioRead: args["-i"],
@@ -279,6 +294,9 @@ export abstract class BreakpointWithAddressCommand extends IdeCommandBase<Breakp
       },
       {
         name: "-log"
+      },
+      {
+        name: "-attr"
       }
     ],
     // --- `bp-del` and `bp-en` accept and ignore `-if`/`-hit`/`-log`, so a `bp-list` line edits
@@ -369,6 +387,31 @@ export abstract class BreakpointWithAddressCommand extends IdeCommandBase<Breakp
                   break;
                 }
                 args.copperIndex = index;
+                break;
+              }
+
+              /*
+               * `sp:<sprite>` - a sprite-attribute breakpoint
+               * (`.plans/SPRITE_ATTRIBUTE_BREAKPOINTS_PLAN.md`). Before the partition gate for the
+               * same reason as `nr:`; `sp` cannot shadow a partition label (`s`, `p` are not hex).
+               */
+              if (segments[0] === "sp") {
+                if (machine.machineId !== MI_ZXNEXT) {
+                  messages = [
+                    validationError("Sprite breakpoints are supported on the ZX Spectrum Next only")
+                  ];
+                  break;
+                }
+                const sprite = parseNumericSpec(segments[1]);
+                if (sprite === undefined) {
+                  messages = [validationError("Invalid sprite index")];
+                  break;
+                }
+                if (sprite < 0 || sprite > SPRITE_INDEX_MAX) {
+                  messages = [validationError("A sprite index must be between $00 and $7F")];
+                  break;
+                }
+                args.spriteIndex = sprite;
                 break;
               }
 
@@ -581,6 +624,26 @@ export abstract class BreakpointWithAddressCommand extends IdeCommandBase<Breakp
         )
       ];
     }
+    if (
+      args.spriteIndex !== undefined &&
+      (bpOptions > 0 || args["-c"] || args["-v"] !== undefined || args["-m"] !== undefined)
+    ) {
+      return [
+        validationError(
+          "A sprite breakpoint watches a sprite's attribute writes, not memory, a port or a register"
+        )
+      ];
+    }
+    if (args["-attr"] !== undefined) {
+      if (args.spriteIndex === undefined) {
+        return [validationError("You can use the -attr option only with a sprite breakpoint (sp:)")];
+      }
+      if (parseSpriteAttrList(String(args["-attr"])) === undefined) {
+        return [
+          validationError("The -attr option takes attribute bytes 0-4, e.g. -attr 0,1 or -attr 0-3")
+        ];
+      }
+    }
     if (isNextReg && bpOptions > 0) {
       return [
         validationError("A NextReg breakpoint watches a register, not memory or a port")
@@ -637,9 +700,10 @@ export class SetBreakpointCommand extends BreakpointWithAddressCommand {
   readonly id = "bp-set";
   readonly description = "Sets a breakpoint at the specified address";
   readonly usage = [
-    "bp-set <address-spec> [-r] [-w] [-i] [-o] [-c] [-m <mask>] [-v <value>] [-len <bytes>] [-once] [-log \"<template>\"] [-hit <spec>] [-if <condition>]",
+    "bp-set <address-spec> [-r] [-w] [-i] [-o] [-c] [-m <mask>] [-v <value>] [-len <bytes>] [-attr <bytes>] [-once] [-log \"<template>\"] [-hit <spec>] [-if <condition>]",
     "-len: a memory breakpoint (-r/-w) over this many bytes, e.g. bp-set $8000 -w -len 5",
     "cu:<index>: (ZX Spectrum Next) stop when the Copper completes list index $000-$3FF; a WAIT when it is satisfied, e.g. bp-set cu:$00B -hit 50",
+    "sp:<sprite>: (ZX Spectrum Next) stop when an attribute byte of sprite $00-$7F is written; -attr picks the bytes, e.g. bp-set sp:$0C -attr 0,1",
     "-once: a one-shot breakpoint, removed the first time it stops the machine; never saved",
     "-log: log the message and continue instead of stopping (a logpoint), e.g. -log \"[LOOP] B={B} HL={HL:hex16}\"",
     "-hit: stop on hit N (N or =N), after it (>N), from it (>=N), before it (<N), up to it (<=N), every Nth (*N)",
@@ -776,7 +840,8 @@ export class ResetBreakpointHitsCommand extends BreakpointWithAddressCommand {
       { name: "-v", type: "number" },
       { name: "-len", type: "number" },
       { name: "-hit" },
-      { name: "-log" }
+      { name: "-log" },
+      { name: "-attr" }
     ],
     rawTailOption: "-if"
   };
@@ -812,6 +877,7 @@ export class ResetBreakpointHitsCommand extends BreakpointWithAddressCommand {
 function accessKindOfArgs(args: BreakpointWithAddressArgs): ConditionAccessKind {
   if (args.nextReg !== undefined) return "nextReg";
   if (args.copperIndex !== undefined) return "copper";
+  if (args.spriteIndex !== undefined) return "sprite";
   if (args["-r"] || args["-w"]) return "memory";
   if (args["-i"] || args["-o"]) return "io";
   return "exec";
@@ -854,6 +920,9 @@ export function breakpointCommandSpec(
     parts.push(`-len ${bp.length}`);
   }
   if (bp.nextRegCopper) parts.push("-c");
+  if (bp.spriteIndex !== undefined && spriteAttrMaskOf(bp) !== SPRITE_ATTR_ALL) {
+    parts.push(`-attr ${formatSpriteAttrList(spriteAttrMaskOf(bp))}`);
+  }
   // --- Before `-hit`/`-if`, so a listed line pastes back (§4.2)
   if (bp.oneShot && !bp.runTo) parts.push("-once");
   if (bp.logMessage) parts.push(`-log ${quoteLogTemplate(bp.logMessage)}`);

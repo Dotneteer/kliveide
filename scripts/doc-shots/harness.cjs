@@ -72,7 +72,13 @@ async function launchKlive({
    * its SD card image (`~/Klive/ks2.cim`, written by every ZX Spectrum Next launch) and its exports
    * under it. Unset, the app uses the real home, as every recipe did before this option existed.
    */
-  userHome
+  userHome,
+  /*
+   * User settings, as `set -u` would have stored them (nested: `{ features: { advancedDebugging:
+   * "1" } }`). Read at startup, so a setting that needs a restart - the advanced-debugging switch -
+   * is in force from the first frame. Unset, none.
+   */
+  userSettings
 }) {
   if (!fs.existsSync(MAIN)) {
     throw new Error(`No build at ${MAIN} — run \`npx electron-vite build --config build/electron.vite.config.ts\` first.`);
@@ -93,6 +99,7 @@ async function launchKlive({
         theme,
         ...(accent ? { accent } : {}),
         windowStates: { showIdeOnStartup: true },
+        ...(userSettings ? { userSettings } : {}),
         globalSettings: {
           ideViewOptions: {
             showSidebar: true,

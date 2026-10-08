@@ -47,6 +47,7 @@ import {
   type SpriteSelection
 } from "@renderer/features/sprites/spriteViewModel";
 import { useNextSpriteState } from "@renderer/features/sprites/useNextSpriteState";
+import { useSpriteBreakpoints } from "@renderer/features/sprites/useSpriteBreakpoints";
 import type { NexSpriteFormat } from "@common/zxnext/sprites/spritePatterns";
 import { SpritesTable } from "./SpritesTable";
 import { PatternsView } from "./PatternsView";
@@ -179,6 +180,7 @@ const SpriteInspectorPanel = ({ document, viewState }: DocumentProps<Partial<Spr
   );
 
   const { state, patternsVersion, baseline } = useNextSpriteState({ enabled: isNext });
+  const spriteBreakpoints = useSpriteBreakpoints();
   const palette = useSpritePalette({ bank: look.palettePin, enabled: isNext && !!state });
 
   const [selection, setSelection] = useState<SpriteSelection>();
@@ -357,6 +359,10 @@ const SpriteInspectorPanel = ({ document, viewState }: DocumentProps<Partial<Spr
         void navigator.clipboard?.writeText(text);
         dispatch(setIdeStatusMessageAction(`${what} copied to the clipboard`, true));
       }}
+      breakpoints={spriteBreakpoints.breakpoints}
+      onToggleBreakpoint={(sprite) => void spriteBreakpoints.toggle(sprite)}
+      onEditBreakpoint={(sprite) => void spriteBreakpoints.edit(sprite)}
+      onRunUntilWrite={(sprite) => void spriteBreakpoints.runUntilWrite(sprite)}
     />
   );
   const patternsPane = (

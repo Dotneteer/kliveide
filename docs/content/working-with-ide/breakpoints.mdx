@@ -104,7 +104,7 @@ The **Add breakpoint** button and the **Edit breakpoint** command both open a di
 every option the `bp-set` command accepts, without the flag syntax:
 
 - **Type** &mdash; execution, memory read, memory write, I/O read, I/O write, or, on the ZX Spectrum
-  Next, NextReg write and Copper instruction. A breakpoint has exactly one type, so choosing one here replaces the last.
+  Next, NextReg write, Copper instruction and sprite attribute write. A breakpoint has exactly one type, so choosing one here replaces the last.
   Choosing **NextReg write** replaces the address field with a register chooser and hides the
   partition row, because that type names no place; it adds a value filter and a copper checkbox of
   its own. See [NextReg Write Breakpoints](#nextreg-write-breakpoints).
@@ -167,7 +167,9 @@ stop, why.
 Every breakpoint &mdash; execution, memory, I/O, NextReg, bank-relative, label-anchored and
 source-code &mdash; can carry a **condition** and a **hit count rule**. The machine stops only if
 the condition is true; a hit is counted only when it is, and the rule then decides whether this hit
-stops. Set them with `-if` and `-hit` on [`bp-set`](/commands-reference#bp-set), in the breakpoint
+stops. A hit is counted once each time the program reaches the breakpoint - also when you step onto
+it and on from it, or when you go back to it in the [execution history](/working-with-ide/reverse-debugging).
+Set them with `-if` and `-hit` on [`bp-set`](/commands-reference#bp-set), in the breakpoint
 dialog, or from the editor's margin menu. Conditions work on the Z80 machines.
 
 ```
@@ -718,6 +720,49 @@ of the [Breakpoint Dialog](#the-breakpoint-dialog), or by clicking the margin of
 line while the program runs: Klive finds where that line's instruction sits in the Copper's memory
 and sets the breakpoint on that index.
 
+## Sprite Attribute Breakpoints (ZX Spectrum Next)
+
+A sprite attribute breakpoint stops when **an attribute byte of a sprite is written**. It names the
+sprite, `$00` to `$7F`:
+
+```
+bp-set sp:$0C
+```
+
+It catches every way the hardware stores an attribute byte:
+
+- port `$57`, written by the CPU (`OUT`, `OTIR`) or by the DMA;
+- the NextReg mirrors `$35`-`$39` and `$75`-`$79` on the sprite `$34` selects, written by the CPU
+  (`NEXTREG`, port `$253B`), the DMA or the Copper.
+
+Selecting a sprite (`$303B`, `$34`) is not a write. A four-byte sprite (attribute 3, bit 6 clear) skips
+its fifth byte without writing it, so a breakpoint on attribute 4 does not fire for it.
+
+To watch only some of the five bytes, add `-attr` with a list. Attributes 0 and 1 hold X and Y, so
+this stops only when sprite 12 moves:
+
+```
+bp-set sp:$0C -attr 0,1
+bp-set sp:$0C -attr 0-3 -hit 10
+```
+
+Hit counts, conditions, logpoints and one-shots work as on any other breakpoint. In a condition,
+`ADDR` is the attribute byte (`0`-`4`) and `VAL` is the value written, so
+`-if ADDR == 3 && (VAL & $80) == 0` stops when the sprite is made invisible.
+
+The machine stops after the instruction during which the byte was written, and the stop message
+reports the byte's previous and new values and who wrote it:
+
+```
+Sprite breakpoint: sprite $0C attr 0 (X) $00 -> $40 through port $57, written at $800C in 05
+Sprite breakpoint: sprite $14 attr 3 (visible, pattern) $00 -> $C0 by the Copper, with the CPU at $8026
+```
+
+You can set a sprite attribute breakpoint from the [Sprite Inspector](/working-with-ide/sprite-inspector):
+right-click a sprite and choose **Break on attribute write**, or **Run until attribute write** for a
+one-shot. The **Sprite attribute write** type of the [Breakpoint Dialog](#the-breakpoint-dialog) has
+a checkbox for each attribute byte.
+
 ## Resolved Source Code Breakpoints
 
 When you open a project or modify an assembly source code file, the source code breakpoint addresses are not resolved to an actual physical address. The orange color of a source code breakpoint indicates this status:
@@ -730,7 +775,7 @@ Source code breakpoints are resolved to a CPU address after compilation, and thi
 
 ## Breakpoint Types
 
-The second icon of the breakpoint item displays its type. There are six types of breakpoints (depending on the operation triggering the machine to pause). Five of them are shown in the following figure:
+The second icon of the breakpoint item displays its type. Every machine has five types of breakpoints (depending on the operation triggering the machine to pause), shown in the following figure; the ZX Spectrum Next adds three more.
 
 <ClickableImage src="/images/working-with-ide/bp-types.png" width={128} />
 
@@ -741,7 +786,9 @@ These are the available breakpoint types (from top to bottom in the figure):
 - **Memory read**. This breakpoint is triggered when an instruction reads a particular 16-bit memory address as data. Fetching the instruction's own opcode and operand bytes does not count. Every data access of an instruction is examined, so `LD HL,($8000)` triggers a read breakpoint on `$8000` as well as on `$8001`. 
 - **Memory write**. This breakpoint is triggered when a particular 16-bit memory address has been written.
 
-The sixth is the ZX Spectrum Next's **NextReg write**, which is triggered when a Next Register is
-written rather than when a place in memory is touched. Because it names no address, it is the one
-type with no margin to click and no disassembly beside it &mdash; see
-[NextReg Write Breakpoints](#nextreg-write-breakpoints). 
+The first of the ZX Spectrum Next's three is **NextReg write**, which is triggered when a Next Register is
+written rather than when a place in memory is touched &mdash; see
+[NextReg Write Breakpoints](#nextreg-write-breakpoints). The other two are the
+[Copper instruction](#copper-breakpoints-zx-spectrum-next) and the
+[sprite attribute write](#sprite-attribute-breakpoints-zx-spectrum-next). All three watch a machine
+event rather than an address, so they have no margin to click and no disassembly beside them. 

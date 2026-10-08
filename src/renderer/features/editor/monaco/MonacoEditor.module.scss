@@ -72,6 +72,23 @@
 }
 
 /*
+ * The execution marker in the past (`.plans/LITE_STEP_BACK_PLAN.md` D7, Q1): an outline in the
+ * secondary accent, no fill, and a hollow arrow in the gutter. The present's marker is a solid fill
+ * in the primary accent; the two never look alike, whichever accent the user picked.
+ */
+.historyLine {
+  border: 1px dashed var(--color-history-marker);
+  border-radius: var(--radius-xs);
+}
+
+.historyMargin {
+  cursor: pointer;
+  background-color: var(--color-history-marker);
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M21.75 10.725l-6.39-7.11-1.11-0.83H6.375L4.5 4.875v14.22l1.875 1.875h7.59l1.395-0.63 6.39-7.11v-1.065zm-7.785 8.37H6.375V4.875h7.59l6.39 7.11-6.39 7.11z'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+}
+
+/*
  * Inline statement markers (plan §10.3): before each further statement of a line, clicked to set a
  * breakpoint on that statement alone. The breakpoint tokens, as in the gutter; the empty marker is
  * the disabled colour, faint, so it reads as "possible here" and never as a breakpoint.

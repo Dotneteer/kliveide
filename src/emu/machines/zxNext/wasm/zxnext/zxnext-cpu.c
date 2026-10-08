@@ -50,6 +50,11 @@ static inline void zxnextCpuDelayContendedMemory(uint32_t address, uint32_t memo
 #define Z80_DELAY_PORT_READ(address) zxnextCpuDelayPortAccess(address)
 #define Z80_DELAY_PORT_WRITE(address) zxnextCpuDelayPortAccess(address)
 
+/* The execution-history recorder's hooks (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md`); the recorder
+   itself and this machine's macros for it are at the end of zxnext.c */
+#include "../../../../z80/wasm/z80-history.h"
+static void zxnextHistoryDmaHold(uint32_t cpuTacts, uint16_t src, uint16_t dest, uint32_t frame, uint32_t frameTact);
+
 #include "../../../../z80/wasm/z80.c"
 
 static inline uint32_t zxnextCpuTactScale(void) {
@@ -354,7 +359,23 @@ static uint32_t zxnextCpuExecuteInstruction(void) {
 
   // --- The DMA goes first, after the INT line is sampled, as in ZxNextMachine.beforeInstructionExecuted.
   cpuTactScale = 8u >> (cpuEffectiveSpeed & 0x03u);
-  if (zxnextCpuRunDma()) {
+  uint32_t dmaHeld;
+  if (z80HistoryHeader.enabled && zxnextDmaIsActive()) {
+    /* A DMA hold is a history record of its own (plan D15): the T-states the CPU waited, where the
+       transfer started and how much is left */
+    const uint32_t tactsBeforeDma = cpu.tacts;
+    const uint16_t dmaSrcBefore = dmaSrc;
+    const uint16_t dmaDestBefore = dmaDest;
+    const uint32_t frameBeforeDma = frames;
+    const uint32_t frameTactBeforeDma = frameTacts28;
+    dmaHeld = zxnextCpuRunDma();
+    if (cpu.tacts != tactsBeforeDma) {
+      zxnextHistoryDmaHold(cpu.tacts - tactsBeforeDma, dmaSrcBefore, dmaDestBefore, frameBeforeDma, frameTactBeforeDma);
+    }
+  } else {
+    dmaHeld = zxnextCpuRunDma();
+  }
+  if (dmaHeld) {
     zxnextCpuHeldAtFrameEnd = 1u;
     return zxnextSharedCpuExecutedInstructions;
   }

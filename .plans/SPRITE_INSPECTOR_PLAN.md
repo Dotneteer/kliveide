@@ -31,7 +31,8 @@ Related plans:
   the shared pieces** (`src/common/zxnext/`, the Machine → ZX Spectrum Next menu group, the
   `show-*` command pattern for a Next special document). The second reuses them.
 - [NEXTREG_WRITE_BREAKPOINTS_PLAN.md](NEXTREG_WRITE_BREAKPOINTS_PLAN.md) gives `nr:$35`–`$39`/`$75`–`$79`
-  breakpoints today. They are the stop-gap for "break when sprite attributes change" until G3.8.
+  breakpoints today. They were the stop-gap for "break when sprite attributes change" until G3.8,
+  whose sprite half is now done: [SPRITE_ATTRIBUTE_BREAKPOINTS_PLAN.md](SPRITE_ATTRIBUTE_BREAKPOINTS_PLAN.md).
 
 Hardware reference: `_input/next-fpga/src/video/sprites.vhd`. The C engine
 `src/emu/machines/zxNext/wasm/zxnext/zxnext-sprites.c` (storage, ports, NextRegs) and the sprite
@@ -91,6 +92,7 @@ for ZEsarUX (§2, W4). DeZog shows sprites too. This plan closes the sprite half
 
 - **G3.8 (sprite half): stop when a sprite attribute is written.** The Sprites view's row context
   menu leaves a slot for "Break on attribute write" so that G3.8 can add it without a layout change.
+  (Done: `sp:` breakpoints fill the slot; see SPRITE_ATTRIBUTE_BREAKPOINTS_PLAN.md.)
   Until then, the docs point at `nr:` breakpoints on the attribute mirrors.
 - **G3.6 layer composition.** The inspector's sprite-space map (§4.5.3) shows *where* sprites are,
   not the composed picture.

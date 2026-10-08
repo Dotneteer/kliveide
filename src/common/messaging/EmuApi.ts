@@ -1,3 +1,10 @@
+import type {
+  DebugRecordingCompatibility,
+  DebugRecordingLoadOptions,
+  DebugRecordingLoadResult,
+  DebugRecordingSaveOptions,
+  DebugRecordingSaveResult
+} from "@common/debugRecording/debugRecordingTypes";
 import { PsgChipState } from "@emu/abstractions/PsgChipState";
 import { MachineCommand } from "@abstractions/MachineCommand";
 import { buildMessagingProxy } from "./MessageProxy";
@@ -14,6 +21,15 @@ import { IMemorySection } from "@abstractions/MemorySection";
 import type { SourceLevelDebugInfo } from "@abstractions/CompilerInfo";
 import type { SourceActivationInfo, SourceStopInfo } from "@abstractions/SourceDebugInfo";
 import type { SourceStepKind } from "@emu/machines/SourceStepDecision";
+import type { ExecutionHistoryInfo, ExecutionHistoryPage } from "@common/history/historyTypes";
+import type { HistoryServiceSpan } from "@common/history/serviceSpans";
+import type { HistoryRegisters } from "@common/history/historyRecord";
+import type {
+  HistoricalCpuInfo,
+  HistoryNavigationOp,
+  HistoryNavigationOptions,
+  HistoryNavigationResult
+} from "@common/history/historyNavigation";
 import type { Z88SnapshotLoadMode, Z88SnapshotLoadResult } from "@common/z88/z88SnapshotLoadTypes";
 import type { TilemapRegs } from "@common/zxnext/tilemap/tilemapDecode";
 import type { Layer2Regs } from "@common/zxnext/layer2/layer2Decode";
@@ -259,6 +275,46 @@ class EmuApiImpl {
   }
 
   /**
+   * Saves the reverse-debugging timeline as a debug recording (`.klr`;
+   * `.plans/DEBUG_SESSION_RECORDING_PLAN.md` §4.4). A running machine runs on afterwards.
+   * @param _options What to save, and the IDE's part of it (version, watches, sources, SD card)
+   * @returns The file; rejects when the machine keeps no timeline
+   */
+  async saveDebugRecording(_options: DebugRecordingSaveOptions): Promise<DebugRecordingSaveResult> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Opens a debug recording: the machine it was made on, its timeline, paused where it was saved
+   * (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` §4.4, D10)
+   * @param _fileName The file's name, for messages
+   * @param _contents The file
+   * @param _kliveVersion This Klive's version (the same-build message, D3)
+   * @param _options Where to land, `-verify`, `-nobreakpoints`, the end-state fallback, the SD card
+   */
+  async loadDebugRecording(
+    _fileName: string,
+    _contents: Uint8Array,
+    _kliveVersion: string,
+    _options?: DebugRecordingLoadOptions
+  ): Promise<DebugRecordingLoadResult> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Whether this build can replay a debug recording (the viewer, `.plans/DEBUG_SESSION_RECORDING_PLAN.md`
+   * D19): known when the running machine has the recording's core
+   * @param _header The recording's identity
+   * @param _kliveVersion This Klive's version, for the message
+   */
+  async checkDebugRecording(
+    _header: { kliveVersion: string; coreId: string; fingerprint: string; codeHash: string; contractHash: string; memorySize: number },
+    _kliveVersion: string
+  ): Promise<DebugRecordingCompatibility> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * Saves the machine's state into its in-memory quick slot (D19 of
    * `.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md`); a running machine runs on.
    */
@@ -309,9 +365,10 @@ class EmuApiImpl {
   }
 
   /**
-   * Gets the current CPU state.
+   * Gets the current CPU state. While the history cursor is in the past it is the state at the
+   * cursor (`.plans/LITE_STEP_BACK_PLAN.md` D2), with `history` set; `present` asks for the live one.
    */
-  async getCpuState(): Promise<CpuState> {
+  async getCpuState(_options?: { present?: boolean }): Promise<CpuState> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 
@@ -534,6 +591,78 @@ class EmuApiImpl {
    * Gets the Next register state.
    */
   async getNextRegState(): Promise<NextRegState> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * What the execution-history ring holds (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.4), or
+   * undefined when the machine does not record history.
+   */
+  async getHistoryInfo(): Promise<ExecutionHistoryInfo | undefined> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Up to `count` consecutive history records from `fromSequence` on, raw (`decodeHistoryPage`
+   * reads them), or undefined when the machine does not record history.
+   */
+  async getHistoryRecords(_fromSequence: number, _count: number): Promise<ExecutionHistoryPage | undefined> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * The outermost interrupt service spans of the held history records, for the viewer to fold
+   * (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` D10), or undefined when the machine does not
+   * record history.
+   */
+  async getHistoryServiceSpans(): Promise<HistoryServiceSpan[] | undefined> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Empties the execution-history ring.
+   */
+  async clearHistory(): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Moves the history cursor (`.plans/LITE_STEP_BACK_PLAN.md` D4): Step Back, Step Forward, Reverse
+   * Step Over/Out, Reverse Continue, Return to Present, or to a record. Never changes the machine.
+   */
+  async navigateHistory(
+    _op: HistoryNavigationOp,
+    _options?: HistoryNavigationOptions
+  ): Promise<HistoryNavigationResult> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Take over here (`.plans/REVERSE_DEBUGGING_PLAN.md` D12): the point in the past the machine
+   * stands at becomes the present. False when the machine is not in the past.
+   */
+  async takeOverHere(): Promise<boolean> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * What Take over here would leave behind (`.plans/REVERSE_DEBUGGING_PLAN.md` T4): SD card sector
+   * writes it reverts, files saved to tape that stay. Undefined without a timeline.
+   */
+  async getForkPreview(): Promise<{ sdWrites: number; hostFiles: string[] } | undefined> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Reverse Continue (D15) with progress and cancel: resolves when the search ends; while it runs,
+   * the emulator state's `reverseDebug.searchedIntervals` counts the keyframe intervals covered
+   */
+  async reverseContinue(): Promise<HistoryNavigationResult> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /** Stops a running Reverse Continue search; false when none runs */
+  async cancelReverseContinue(): Promise<boolean> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 
@@ -786,8 +915,11 @@ class EmuApiImpl {
 // --- The response with the CPU state chunk
 export type CpuStateChunk = {
   state: MachineControllerState;
+  /** The PC at the history cursor while it is in the past (D3) */
   pcValue: number;
   tacts: number;
+  /** The history cursor's steps back from the present; 0 or absent at the present */
+  historyPosition?: number;
 };
 
 // --- The response with the CPU state information
@@ -842,6 +974,17 @@ export type Z80CpuState = {
    * Copper breakpoint (`cu:`) or a Copper step fires.
    */
   lastCopperHit?: CopperHitEvent;
+  /**
+   * The sprite attribute write the machine last stopped on. ZX Spectrum Next only, and absent until
+   * a sprite-attribute breakpoint (`sp:`) fires.
+   */
+  lastSpriteWrite?: SpriteWriteEvent;
+  /**
+   * Set while the history cursor is in the past (`.plans/LITE_STEP_BACK_PLAN.md` D2, T9): the
+   * registers, flags, interrupt state and PC partition are the record's; `tacts`, the last memory
+   * and I/O accesses and `opStartAddress` are not in a record and must be shown as unknown.
+   */
+  history?: HistoricalCpuInfo;
 };
 
 /**
@@ -1034,6 +1177,31 @@ export type CopperState = {
   timing: { lines: number; hcs: number; upperBorder?: number };
   /** The stop's hit, when the last stop was a Copper breakpoint */
   lastHit?: CopperHitEvent;
+};
+
+/**
+ * Who wrote a sprite attribute byte: port `$57` by the CPU, the DMA (port `$57` or a NextReg
+ * mirror), a `$35`-`$39`/`$75`-`$79` NextReg mirror by the CPU, or one by the Copper.
+ */
+export type SpriteWriteOrigin = "port" | "dma" | "nextreg" | "copper";
+
+/**
+ * A sprite attribute write a breakpoint stopped on; see `Z80CpuState.lastSpriteWrite`
+ * (`.plans/SPRITE_ATTRIBUTE_BREAKPOINTS_PLAN.md`). The machine stops at the end of the instruction
+ * during which the write happened, so the event carries the byte it replaced as well.
+ */
+export type SpriteWriteEvent = {
+  /** The sprite, 0..127 */
+  sprite: number;
+  /** The attribute byte, 0..4 */
+  attribute: number;
+  oldValue: number;
+  newValue: number;
+  origin: SpriteWriteOrigin;
+  /** The first byte of the Z80 instruction during which the write happened */
+  pc: number;
+  /** The memory partition `pc` was in, if the machine has partitions */
+  partition?: number;
 };
 
 /** A NextReg write a breakpoint stopped on; see `Z80CpuState.lastNextRegWrite`. */
@@ -1251,6 +1419,12 @@ export type MemoryInfo = {
   selectedBank?: number;
   osInitialized: boolean;
   memBreakpoints: BreakpointInfo[];
+  /**
+   * Set while the history cursor is in the past (`.plans/LITE_STEP_BACK_PLAN.md` T2): the
+   * registers above are the present's, these are the cursor's, and `bytes` are the bytes the CPU
+   * decoded at `pc` then - the disassembly marks the row when memory there has changed since.
+   */
+  history?: { position: number; pc: number; regs: HistoryRegisters; bytes: number[]; partition?: number };
 };
 
 // --- The response with the Next register descriptors
@@ -1347,7 +1521,10 @@ const UNBOUNDED_EMU_METHODS = [
   "startDiskBoot",
   // --- Script lifetime is controlled by the script/user, not by this call
   "startScript",
-  "stopScript"
+  "stopScript",
+  // --- Scale with the recording: deflating or replaying hundreds of MB (DEBUG_SESSION_RECORDING T9)
+  "saveDebugRecording",
+  "loadDebugRecording"
 ] as const;
 
 export function createEmuApi(messenger: MessengerBase): EmuApiImpl {

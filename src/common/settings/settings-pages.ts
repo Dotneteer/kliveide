@@ -10,6 +10,7 @@
  *    `set:` UI action of the same key (`MainApi.runUiAction`, `src/main/ui-actions.ts`).
  * File rows (ROMs, the key mapping) show a value and offer buttons, which run UI actions.
  */
+import { isAdvancedDebuggingEnabled } from "@common/features/advancedDebugging";
 import type { AppState } from "@state/AppState";
 import type { UiActionId } from "./ui-action-ids";
 import { KliveGlobalSettings } from "./setting-definitions";
@@ -60,6 +61,8 @@ import {
   SETTING_EMU_STAY_ON_TOP,
   SETTING_EMU_STEP_IN_INTERRUPTS,
   SETTING_EMU_STOP_ON_ERRORS,
+  SETTING_EMU_REVERSE_DEBUGGING,
+  SETTING_EMU_REVERSE_DEBUG_MEMORY_MB,
   SETTING_EMU_TC2048_ROM,
   SETTING_EMU_TC2068_ROM,
   SETTING_EMU_TRDOS_ROM,
@@ -129,7 +132,9 @@ export type SettingsRowCondition =
   | { kind: "machine"; machineIds: string[] }
   /** The Pentagon's and the Scorpion's Beta 128 */
   | { kind: "beta128" }
-  | { kind: "kliveProject" };
+  | { kind: "kliveProject" }
+  /** The advanced-debugging feature switch is on (`@common/features/advancedDebugging`) */
+  | { kind: "advancedDebugging" };
 
 export type SettingsRow = {
   id: string;
@@ -565,6 +570,35 @@ export const SETTINGS_ROWS: SettingsRow[] = [
     editor: "switch",
     source: setting(SETTING_IDE_BP_GROUP_BY_KIND)
   },
+  // --- Full reverse debugging (`.plans/REVERSE_DEBUGGING_PLAN.md` D2, D6)
+  {
+    id: "reverseDebugging",
+    page: "debugging",
+    group: "Reverse debugging",
+    title: "Reverse debugging",
+    description: "Step back with the whole machine in the past; takes effect at the next debug session",
+    editor: "switch",
+    source: setting(SETTING_EMU_REVERSE_DEBUGGING),
+    when: { kind: "advancedDebugging" }
+  },
+  {
+    id: "reverseDebugMemory",
+    page: "debugging",
+    group: "Reverse debugging",
+    title: "Memory for the reverse-debugging timeline",
+    description: "More memory reaches further back. Automatic: 512 MB or 1/16 of the computer's memory",
+    editor: "select",
+    source: setting(SETTING_EMU_REVERSE_DEBUG_MEMORY_MB),
+    when: { kind: "advancedDebugging" },
+    options: opts([
+      [0, "Automatic"],
+      [128, "128 MB"],
+      [256, "256 MB"],
+      [512, "512 MB"],
+      [1024, "1 GB"],
+      [2048, "2 GB"]
+    ])
+  },
 
   // --- Machine: only the running machine's rows show
   {
@@ -910,6 +944,8 @@ export function isSettingsRowApplicable(row: SettingsRow, appState: AppState | u
     }
     case "kliveProject":
       return !!appState?.project?.isKliveProject;
+    case "advancedDebugging":
+      return isAdvancedDebuggingEnabled(appState);
     default:
       return true;
   }

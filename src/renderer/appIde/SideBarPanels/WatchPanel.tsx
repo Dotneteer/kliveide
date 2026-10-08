@@ -36,6 +36,7 @@ import { TooltipFactory, useTooltipRef } from "@renderer/controls/Tooltip";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { DataRow, EmptyState, formatHex } from "@renderer/controls/data";
 import regStyles from "@renderer/controls/data/Registers.module.scss";
+import { HistoryPresentBanner } from "../debugger/history/HistoryPresentBanner";
 
 /**
  * The type icon's colour.
@@ -220,6 +221,7 @@ export const WatchPanel = () => {
 
   return (
     <div className={styles.watchPanel}>
+      <HistoryPresentBanner what="Watched memory" />
       <ContextMenu state={menuState} onClickOutside={() => menuApi.conceal()}>
         <ContextMenuItem
           text="Break on write"

@@ -3,6 +3,7 @@ import { TooltipFactory, useTooltipRef } from "../Tooltip";
 import { Icon } from "../Icon";
 import { DataLabel, DataRow, DataValue } from "./index";
 import styles from "./Registers.module.scss";
+import dataStyles from "./Data.module.scss";
 import { useMemo, memo, useState } from "react";
 import classnames from "classnames";
 
@@ -33,10 +34,18 @@ type Props = {
    * and the cell stays the neutral `--data-value` it always was.
    */
   valueXclass?: string;
+  /**
+   * The value differs from a baseline (the history cursor's previous step,
+   * `.plans/LITE_STEP_BACK_PLAN.md` Q2): the data hierarchy's changed wash, which reads on an
+   * accent-coloured value
+   */
+  changed?: boolean;
+  /** A line appended to the tooltip (the present value while the history cursor is in the past) */
+  tooltipSuffix?: string;
 };
 
 export const Bit16Value = memo(
-  ({ label, tooltip, reg16Label, reg8LLabel, reg8HLabel, value, valueXclass }: Props) => {
+  ({ label, tooltip, reg16Label, reg8LLabel, reg8HLabel, value, valueXclass, changed, tooltipSuffix }: Props) => {
     const ref = useTooltipRef<HTMLDivElement>();
 
     const tooltipText = useMemo(() => {
@@ -56,11 +65,12 @@ export const Bit16Value = memo(
         "{r8Hv}": `${r8HValue.toString()}, ${toBin8(r8HValue)}`
       };
 
-      return tooltip.replace(
+      const text = tooltip.replace(
         /{r16N}|{r8HN}|{r8LN}|{r16v}|{r8Lv}|{r8Hv}/g,
         (match) => replacements[match] || match
       );
-    }, [tooltip, reg16Label, reg8LLabel, reg8HLabel, value]);
+      return tooltipSuffix ? `${text}\n${tooltipSuffix}` : text;
+    }, [tooltip, reg16Label, reg8LLabel, reg8HLabel, value, tooltipSuffix]);
 
     const displayValue = useMemo(() => {
       return value !== undefined ? toHexa4(value) : "----";
@@ -79,7 +89,10 @@ export const Bit16Value = memo(
             content={tooltipText}
           />
         )}
-        <DataValue text={displayValue} xclass={classnames(styles.regValue, valueXclass)} />
+        <DataValue
+          text={displayValue}
+          xclass={classnames(styles.regValue, valueXclass, { [dataStyles.changedWash]: changed })}
+        />
       </DataRow>
     );
   }
@@ -91,9 +104,13 @@ type Bit8Props = {
   tooltip?: string;
   /** See `Props.valueXclass` above. */
   valueXclass?: string;
+  /** See `Props.changed` above. */
+  changed?: boolean;
+  /** See `Props.tooltipSuffix` above. */
+  tooltipSuffix?: string;
 };
 
-export const Bit8Value = memo(({ label, tooltip, value, valueXclass }: Bit8Props) => {
+export const Bit8Value = memo(({ label, tooltip, value, valueXclass, changed, tooltipSuffix }: Bit8Props) => {
   const ref = useTooltipRef<HTMLDivElement>();
 
   const tooltipText = useMemo(() => {
@@ -107,8 +124,9 @@ export const Bit8Value = memo(({ label, tooltip, value, valueXclass }: Bit8Props
       "{r8N}": label
     };
 
-    return tooltip.replace(/{r8v}|{r8N}/g, (match) => replacements[match] || match);
-  }, [tooltip, value]);
+    const text = tooltip.replace(/{r8v}|{r8N}/g, (match) => replacements[match] || match);
+    return tooltipSuffix ? `${text}\n${tooltipSuffix}` : text;
+  }, [tooltip, value, tooltipSuffix]);
 
   const displayValue = useMemo(() => {
     return value !== undefined ? toHexa2(value) : "--";
@@ -127,7 +145,10 @@ export const Bit8Value = memo(({ label, tooltip, value, valueXclass }: Bit8Props
           content={tooltipText}
         />
       )}
-      <DataValue text={displayValue} xclass={classnames(styles.regValue, valueXclass)} />
+      <DataValue
+        text={displayValue}
+        xclass={classnames(styles.regValue, valueXclass, { [dataStyles.changedWash]: changed })}
+      />
     </DataRow>
   );
 });

@@ -11,6 +11,8 @@ import {
 } from "@renderer/controls/ContextMenu";
 import { SpriteCanvas } from "@renderer/controls/Next/sprites/SpritePatternSheet";
 import ScrollViewer from "@renderer/controls/ScrollViewer";
+import { Icon } from "@renderer/controls/Icon";
+import type { SpriteBreakpointState } from "@renderer/features/sprites/useSpriteBreakpoints";
 import { useRowSizes } from "@renderer/theming/useRowSizes";
 import {
   attributesAsDb,
@@ -44,6 +46,13 @@ type Props = {
   /** Pops the row's pattern out into a read-only sprite editor, as the sprite shows it */
   onOpenSnapshot: (row: SpriteRow) => void;
   onCopy: (text: string, what: string) => void;
+  /** The `sp:` breakpoints, by sprite (G3.8, sprite half) */
+  breakpoints: Map<number, SpriteBreakpointState>;
+  /** Adds or removes the sprite's attribute-write breakpoint */
+  onToggleBreakpoint: (sprite: number) => void;
+  onEditBreakpoint: (sprite: number) => void;
+  /** Runs until an attribute byte of the sprite is written (a one-shot `run-to sp:`) */
+  onRunUntilWrite: (sprite: number) => void;
 };
 
 /** A thumbnail cache, keyed by format, pattern and palette offset; rebuilt when the RAM changes. */
@@ -80,7 +89,11 @@ export const SpritesTable = ({
   onSelect,
   onShowPattern,
   onOpenSnapshot,
-  onCopy
+  onCopy,
+  breakpoints,
+  onToggleBreakpoint,
+  onEditBreakpoint,
+  onRunUntilWrite
 }: Props) => {
   const { list: rowHeight } = useRowSizes();
   const thumbnail = useThumbnails(model, patternsVersion);
@@ -160,6 +173,25 @@ export const SpritesTable = ({
                       onContextMenu={(e) => showMenu(row, e)}
                     >
                       <td className={classnames(styles.pinIndex, { [styles.changed]: row.changed })}>
+                        {breakpoints.has(row.index) && (
+                          <span
+                            className={styles.bpMark}
+                            title={`Breaks when an attribute of sprite #${row.index} is written${
+                              breakpoints.get(row.index)!.disabled ? " (disabled)" : ""
+                            }`}
+                          >
+                            <Icon
+                              iconName="circle-filled"
+                              width={8}
+                              height={8}
+                              fill={
+                                breakpoints.get(row.index)!.disabled
+                                  ? "--color-breakpoint-disabled"
+                                  : "--color-breakpoint-binary"
+                              }
+                            />
+                          </span>
+                        )}
                         {row.index}
                         {row.anchor !== undefined && (
                           <span className={styles.anchorBadge} title={`Relative to sprite #${row.anchor}`}>
@@ -273,8 +305,26 @@ export const SpritesTable = ({
           clicked={fromMenu(() => menuRow && onOpenSnapshot(menuRow))}
         />
         <ContextMenuSeparator />
-        {/* --- Reserved for the sprite half of G3.8; until then, nr: breakpoints on $35-$39 */}
-        <ContextMenuItem text="Break on attribute write (coming later)" disabled={true} />
+        {/* --- The sprite half of G3.8: `sp:` breakpoints */}
+        <ContextMenuItem
+          text={
+            menuRow && breakpoints.has(menuRow.index)
+              ? "Remove attribute-write breakpoint"
+              : "Break on attribute write"
+          }
+          clicked={fromMenu(() => menuRow && onToggleBreakpoint(menuRow.index))}
+        />
+        {menuRow && breakpoints.has(menuRow.index) && (
+          <ContextMenuItem
+            text="Edit breakpoint..."
+            iconName="pencil"
+            clicked={fromMenu(() => onEditBreakpoint(menuRow.index))}
+          />
+        )}
+        <ContextMenuItem
+          text="Run until attribute write"
+          clicked={fromMenu(() => menuRow && onRunUntilWrite(menuRow.index))}
+        />
       </ContextMenu>
     </div>
   );

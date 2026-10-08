@@ -1,3 +1,7 @@
+import { WasmHistorySource } from "../history/WasmHistorySource";
+import type { IExecutionHistorySource } from "@emu/abstractions/IExecutionHistorySource";
+import type { ExecutionHistoryInfo, ExecutionHistoryPage } from "@common/history/historyTypes";
+import type { HistoryServiceSpan } from "@common/history/serviceSpans";
 import { conditionStoreOf, type ConditionStore } from "../conditionStore";
 import type { MachineConfigSet, MachineModel } from "@common/machines/info-types";
 import type { MessengerBase } from "@common/messaging/MessengerBase";
@@ -21,6 +25,7 @@ import {
   restoreWasmImage,
   type MachineStateParts
 } from "../state/wasmStateImage";
+import { fillCoreBytes, writeCoreBytes } from "@emu/machines/reverse/coreMemoryWrites";
 
 /** No extra stop address for `zx8081ExecuteUntilStop` */
 const NO_EXTRA_STOP = 0xffff_ffff;
@@ -47,7 +52,40 @@ function isProgramFile(value: unknown): value is ZxProgramFile {
  * memory there (the disassembly) and the instruction executed differ: `getCpuState().opCode` is the
  * executed $00.
  */
-export class Zx8081WasmV2Machine extends Zx8081WasmHost {
+export class Zx8081WasmV2Machine extends Zx8081WasmHost implements IExecutionHistorySource {
+  // ==============================================================================================
+  // Execution history (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`): the shared recorder in the
+  // core, read through the shared reader; the machine id names the context decoder
+
+  get historyMachineId(): string {
+    return this.machineId;
+  }
+
+  private readonly wasmV2History = new WasmHistorySource(
+    () => this.wasmV2Runtime?.exports,
+    () => this.historyMachineId
+  );
+
+  getHistoryInfo(): ExecutionHistoryInfo | undefined {
+    return this.wasmV2History.info();
+  }
+
+  readHistory(fromSequence: number, count: number): ExecutionHistoryPage | undefined {
+    return this.wasmV2History.read(fromSequence, count);
+  }
+
+  getHistoryServiceSpans(): HistoryServiceSpan[] | undefined {
+    return this.wasmV2History.serviceSpans();
+  }
+
+  clearHistory(): void {
+    this.wasmV2History.clear();
+  }
+
+  setHistoryEnabled(enabled: boolean): void {
+    this.wasmV2History.setEnabled(enabled);
+  }
+
   public readonly implementation = "wasm" as const;
   public wasmV2Runtime?: Zx8081WasmV2Runtime;
 
@@ -296,8 +334,8 @@ export class Zx8081WasmV2Machine extends Zx8081WasmHost {
     const hw = this.hardware;
     runtime.exports.zx8081Configure(hw.hardwareZx81 ? 1 : 0, hw.romZx81 ? 1 : 0, hw.ramKb, hw.ntsc ? 1 : 0);
     const rom = await this.loadRomFromResource(hw.romZx81 ? ZX81_ROM : ZX80_ROM);
-    runtime.rom.fill(0);
-    runtime.rom.set(rom.subarray(0, runtime.rom.length));
+    fillCoreBytes(runtime, runtime.rom, 0);
+    writeCoreBytes(runtime, runtime.rom, rom.subarray(0, runtime.rom.length));
     const words = runtime.exports.zx8081GetScreenWidth() * runtime.exports.zx8081GetScreenHeight();
     this.screenPixels = runtime.pixelBuffer.subarray(0, words);
     this.screenPixelBytes = runtime.pixelBufferBytes.subarray(0, words * 4);
@@ -374,7 +412,7 @@ export class Zx8081WasmV2Machine extends Zx8081WasmHost {
     if (bytes.length > runtime.tapeData.length) {
       throw new Error(`The program is too large for the tape: ${bytes.length} bytes.`);
     }
-    runtime.tapeData.set(bytes);
+    writeCoreBytes(runtime, runtime.tapeData, bytes);
     runtime.exports.zx8081TapeSetLength(bytes.length);
     runtime.exports.zx8081TapeSetPlaying(1);
   }
@@ -391,7 +429,9 @@ export class Zx8081WasmV2Machine extends Zx8081WasmHost {
 
   /** Types RUN once the ROM has finished a load the tape-load flow started */
   private checkAutoRun(runtime: Zx8081WasmV2Runtime): void {
-    if (runtime.exports.zx8081TakeAutoRunHit() !== 0) {
+    // --- Taken in a reverse-debugging replay too, but not typed: the live run typed it already, and
+    // --- the journal replays those keys (REVERSE_DEBUGGING_PLAN D13)
+    if (runtime.exports.zx8081TakeAutoRunHit() !== 0 && !this.executionContext.isReplayingHistory?.()) {
       this.typeText(ZX8081_RUN_COMMAND, AUTO_RUN_DELAY_FRAMES);
     }
   }
@@ -412,7 +452,8 @@ export class Zx8081WasmV2Machine extends Zx8081WasmHost {
     runtime.exports.zx8081ExecuteFrame();
     this.syncFrameCounters(runtime);
     this.checkAutoRun(runtime);
-    this.frameCompleted = true;
+    // --- A reverse-debugging stop target can end the call mid-frame (REVERSE_DEBUGGING_PLAN D4)
+    this.frameCompleted = runtime.exports.zx8081GetFrameCompleted() !== 0;
     this.executionContext.lastTerminationReason = FrameTerminationMode.Normal;
     return FrameTerminationMode.Normal;
   }
@@ -460,6 +501,11 @@ export class Zx8081WasmV2Machine extends Zx8081WasmHost {
         instructionsExecuted++;
       }
       super.pc = wasm.zx8081GetCpuPc();
+      // --- A reverse-debugging replay run reached its next journal entry (REVERSE_DEBUGGING_PLAN D11);
+      // --- `zx8081ExecuteUntilStop` stops there too
+      if (this.executionContext.historyStopArmed && wasm.z80HistoryCheckStop() !== 0) {
+        return this.finishDebugLoop(FrameTerminationMode.UntilExecutionPoint);
+      }
       if (watchesBusAccess) {
         this.importBusAccess(runtime);
       }
@@ -656,8 +702,43 @@ export class Zx8081WasmV2Machine extends Zx8081WasmHost {
     const runtime = this.requireWasmV2Runtime();
     return {
       ...captureWasmImage("zx8081", runtime.module, runtime.exports.memory.buffer),
-      host: {}
+      host: this.captureHostState()
     };
+  }
+
+  // ------------------------------------------------------------------------------------------------
+  // Reverse debugging (`.plans/REVERSE_DEBUGGING_PLAN.md` §4.2, `reverse/Timeline.ts`)
+
+  /** The core, as the export contract names it */
+  get reverseCoreId(): string {
+    return "zx8081";
+  }
+
+  get reverseRuntime(): Zx8081WasmV2Runtime | undefined {
+    return this.wasmV2Runtime;
+  }
+
+  readonly reverseFrameExport = "zx8081ExecuteFrame";
+
+  isAtFrameBoundary(): boolean {
+    return this.wasmV2Runtime?.exports.zx8081GetFrameCompleted() !== 0;
+  }
+
+  /** The wrapper keeps no state of its own a keyframe needs: the core holds it all */
+  captureHostState(): Record<string, unknown> {
+    return {};
+  }
+
+  /**
+   * After the core changed under the wrapper (a replay, a return to the present, T7): the mirrors
+   * re-read from the core, nothing pushed, queued keystrokes of the replaced run dropped
+   */
+  restoreHostState(_state: unknown): void {
+    const runtime = this.requireWasmV2Runtime();
+    this.emulatedKeyStrokes.length = 0;
+    this.frameCompleted = runtime.exports.zx8081GetFrameCompleted() !== 0;
+    this.syncFrameCounters(runtime);
+    this.syncCpuFromWasmV2(runtime);
   }
 
   /**
@@ -679,6 +760,11 @@ export class Zx8081WasmV2Machine extends Zx8081WasmHost {
 
   // ==========================================================================================
   // Helpers
+
+  /** Forgets what was last pushed into the core, so the next frame pushes the live state (D8) */
+  invalidateHostSync(): void {
+    this.syncedTargetClockMultiplier = -1;
+  }
 
   private syncTargetClockMultiplier(runtime: Zx8081WasmV2Runtime): void {
     if (this.targetClockMultiplier !== this.syncedTargetClockMultiplier) {

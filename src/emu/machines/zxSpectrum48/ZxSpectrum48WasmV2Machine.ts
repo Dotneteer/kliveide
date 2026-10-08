@@ -1,3 +1,7 @@
+import { WasmHistorySource } from "../history/WasmHistorySource";
+import type { IExecutionHistorySource } from "@emu/abstractions/IExecutionHistorySource";
+import type { ExecutionHistoryInfo, ExecutionHistoryPage } from "@common/history/historyTypes";
+import type { HistoryServiceSpan } from "@common/history/serviceSpans";
 import { conditionStoreOf, type ConditionStore } from "../conditionStore";
 import type { MachineConfigSet, MachineModel } from "@common/machines/info-types";
 import type { CpuState } from "@common/messaging/EmuApi";
@@ -34,6 +38,7 @@ import { RzxCoreBridge } from "../zxSpectrum/rzx/rzxCoreBridge";
 import type { IRzxMachine, IRzxSession } from "../zxSpectrum/rzx/rzxSession";
 import { spectrumWasmBeamPosition } from "../zxSpectrum/WasmSpectrumSupport";
 import type { BeamPosition } from "@common/utils/beamGeometry";
+import { writeCoreBytes } from "@emu/machines/reverse/coreMemoryWrites";
 
 const WASM_AUDIO_SAMPLE_SCALE = 32768.0;
 
@@ -69,7 +74,40 @@ export type Sp48WasmV2Diagnostics = {
  * pixels, and audio, while later migration phases fill in the complete IDE
  * debugger/tape compatibility surface.
  */
-export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost implements IRzxMachine {
+export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost implements IExecutionHistorySource, IRzxMachine {
+  // ==============================================================================================
+  // Execution history (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`): the shared recorder in the
+  // core, read through the shared reader; the machine id names the context decoder
+
+  get historyMachineId(): string {
+    return this.machineId;
+  }
+
+  private readonly wasmV2History = new WasmHistorySource(
+    () => this.wasmV2Runtime?.exports,
+    () => this.historyMachineId
+  );
+
+  getHistoryInfo(): ExecutionHistoryInfo | undefined {
+    return this.wasmV2History.info();
+  }
+
+  readHistory(fromSequence: number, count: number): ExecutionHistoryPage | undefined {
+    return this.wasmV2History.read(fromSequence, count);
+  }
+
+  getHistoryServiceSpans(): HistoryServiceSpan[] | undefined {
+    return this.wasmV2History.serviceSpans();
+  }
+
+  clearHistory(): void {
+    this.wasmV2History.clear();
+  }
+
+  setHistoryEnabled(enabled: boolean): void {
+    this.wasmV2History.setEnabled(enabled);
+  }
+
   public readonly implementation = "wasm" as const;
   public wasmV2Runtime?: Sp48WasmV2Runtime;
   /** The RZX session playing or recording on this machine (`.plans/RZX_PLAN.md` §4.3) */
@@ -711,7 +749,7 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost implements I
     let offset = 0;
     for (let i = 0; i < blocks.length; i++) {
       const block = blocks[i];
-      runtime.tapeData.set(block.data, offset);
+      writeCoreBytes(runtime, runtime.tapeData, block.data, offset);
       if (
         wasm.sp48TapeSetBlock(
           i,
@@ -905,6 +943,11 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost implements I
       }
       // --- In playback a frame completes only at an RZX frame end, above
       this.frameCompleted = rzx?.mode === "play" ? false : wasm.sp48GetFrameCompleted() !== 0;
+
+      // --- A reverse-debugging replay run reached its next journal entry (REVERSE_DEBUGGING_PLAN D11)
+      if (this.executionContext.historyStopArmed && wasm.z80HistoryCheckStop() !== 0) {
+        return this.finishWasmV2DebugLoop(FrameTerminationMode.UntilExecutionPoint);
+      }
 
       if (this.executionContext.frameTerminationMode === FrameTerminationMode.UntilExecutionPoint) {
         const point = this.executionContext.terminationPoint;
@@ -1108,8 +1151,49 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost implements I
     const runtime = this.requireWasmV2Runtime();
     return {
       ...captureWasmImage(this.stateCoreId, runtime.module, runtime.exports.memory.buffer),
-      host: { normalFrames: this.wasmV2NormalFrames }
+      host: this.captureHostState()
     };
+  }
+
+  // ------------------------------------------------------------------------------------------------
+  // Reverse debugging (`.plans/REVERSE_DEBUGGING_PLAN.md` §4.2, `reverse/Timeline.ts`)
+
+  /** The core, as the export contract names it */
+  get reverseCoreId(): string {
+    return this.stateCoreId;
+  }
+
+  get reverseRuntime(): Sp48WasmV2Runtime | undefined {
+    return this.wasmV2Runtime;
+  }
+
+  readonly reverseFrameExport = "sp48ExecuteFrame";
+
+  isAtFrameBoundary(): boolean {
+    return this.wasmV2Runtime?.exports.sp48GetFrameCompleted() !== 0;
+  }
+
+  /** The wrapper's own fields: what a state file and a keyframe keep besides the image */
+  captureHostState(): Record<string, unknown> {
+    return { normalFrames: this.wasmV2NormalFrames };
+  }
+
+  /**
+   * After the core changed under the wrapper (a replay, a return to the present, T7): the wrapper's
+   * fields from `state`, the mirrors re-read from the core. Nothing live is pushed - the controller
+   * calls `invalidateHostSync` when live input resumes - and queued keystrokes of the replaced run go.
+   */
+  restoreHostState(state: unknown): void {
+    const runtime = this.requireWasmV2Runtime();
+    const host = (state ?? {}) as { normalFrames?: number };
+    this.wasmV2NormalFrames = host.normalFrames ?? 0;
+    this.wasmV2AudioSamples.length = 0;
+    this.emulatedKeyStrokes.length = 0;
+    // --- What the core already holds must not be published again as new
+    this.wasmV2SavedTapeRevision = runtime.exports.sp48TapeGetSavedRevision();
+    this.frameCompleted = runtime.exports.sp48GetFrameCompleted() !== 0;
+    this.syncFrameCountersFromWasmV2(runtime);
+    this.syncCpuFromWasmV2(runtime);
   }
 
   /**
@@ -1178,6 +1262,11 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost implements I
     this.frameTacts = this.tacts % this.tactsInCurrentFrame;
     this.currentFrameTact = this.frameTacts;
     this.syncContentionCountersFromWasmV2(runtime);
+  }
+
+  /** Forgets what was last pushed into the core, so the next frame pushes the live state (D8) */
+  invalidateHostSync(): void {
+    this.invalidateWasmV2Sync();
   }
 
   private invalidateWasmV2Sync(): void {

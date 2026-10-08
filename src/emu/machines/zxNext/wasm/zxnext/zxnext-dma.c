@@ -397,8 +397,14 @@ static uint32_t zxnextDmaTransferByte(void) {
   }
 
   // --- write cycle
-  if (destIo) zxnextPortsWrite(dmaDest, value);
-  else zxnextMemoryWriteMapped(dmaDest, value);
+  if (destIo) {
+    /* Labelled so a sprite-attribute breakpoint can say the DMA wrote port $57 (or a NextReg mirror) */
+    zxnextSpriteWriteFromDma = 1u;
+    zxnextPortsWrite(dmaDest, value);
+    zxnextSpriteWriteFromDma = 0u;
+  } else {
+    zxnextMemoryWriteMapped(dmaDest, value);
+  }
   clocks += zxnextDmaCycleClocks(srcIsA ? dmaPortBTiming : dmaPortATiming);
   if (destIo && (dmaDest & 0xffu) == DMA_SPI_DATA_PORT) clocks += DMA_SPI_WAIT_CLOCKS;
 

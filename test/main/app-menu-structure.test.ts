@@ -68,7 +68,7 @@ function pentagonModelId(): string {
   return sp128.models!.find((m) => (m.config?.[MC_DISK_SUPPORT] ?? 0) > 0)!.modelId;
 }
 
-function buildMenu(machineId: string, modelId?: string, focus: "emu" | "ide" = "emu") {
+function buildMenu(machineId: string, modelId?: string, focus: "emu" | "ide" = "emu", advancedDebugging = true) {
   env.emuFocused = focus === "emu";
   env.state = {
     ideFocused: focus === "ide",
@@ -79,7 +79,8 @@ function buildMenu(machineId: string, modelId?: string, focus: "emu" | "ide" = "
       machineState: MachineControllerState.Paused,
       clockMultiplier: 1,
       soundLevel: 0.4,
-      screenRecordingAvailable: true
+      screenRecordingAvailable: true,
+      advancedDebugging
     },
     media: {},
     project: {},
@@ -205,6 +206,47 @@ describe("the application menu", () => {
     expect(labels(submenu(machine, "ZX Spectrum Next"))[0]).toMatch(/^F1 /);
     expect(labels(machine)).not.toContain("Layers");
     expect(labels(menu(template, "Debug"))).toContain("Step Copper");
+    // --- Every machine with MF_EXEC_HISTORY (EXECUTION_HISTORY_VIEWER_PLAN §4.5): every Z80 machine
+    // --- (EXECUTION_HISTORY_ALL_CORES_PLAN), not the C64
+    expect(labels(menu(template, "Debug"))).toContain("Execution History");
+    expect(labels(menu(buildMenu("sp48"), "Debug"))).toContain("Execution History");
+    expect(labels(menu(buildMenu("zx81"), "Debug"))).toContain("Execution History");
+    expect(labels(menu(buildMenu("c64"), "Debug"))).not.toContain("Execution History");
+    // --- Export Execution History... (TRACE_EXPORT_PLAN D13): with the history, not while running (D10)
+    const exportItem = (template: MenuItemConstructorOptions[]) =>
+      menu(template, "Debug").find((i) => i.id === "export_execution_history");
+    expect(exportItem(buildMenu("sp48"))).toMatchObject({ label: "Export Execution History...", enabled: true });
+    expect(exportItem(buildMenu("c64"))).toBeUndefined();
+    const running = buildMenu("sp48");
+    env.state.emulatorState.machineState = MachineControllerState.Running;
+    expect(exportItem(createMenuTemplate(createMenuContext(window, window)))?.enabled).toBe(false);
+    expect(exportItem(running)?.enabled).toBe(true);
+    // --- Debug recordings (DEBUG_SESSION_RECORDING_PLAN D2): saving needs a live timeline (D17)
+    const debugLabels = labels(menu(buildMenu("sp48"), "Debug"));
+    expect(debugLabels).toContain("Save Debug Recording...");
+    expect(debugLabels).toContain("Open Debug Recording...");
+    expect(labels(menu(buildMenu("c64"), "Debug"))).not.toContain("Open Debug Recording...");
+    const saveItem = (template: MenuItemConstructorOptions[]) => menu(template, "Debug").find((i) => i.id === "save_debug_recording");
+    expect(saveItem(buildMenu("sp48"))?.enabled).toBe(false);
+    buildMenu("zxnext");
+    env.state.emulatorState.reverseDebug = { active: true, mode: "live" };
+    expect(saveItem(createMenuTemplate(createMenuContext(window, window)))?.enabled).toBe(true);
+    // --- The advanced-debugging switch off (the default): the whole G4 group is gone, keys included
+    const off = menu(buildMenu("zxnext", undefined, "emu", false), "Debug");
+    for (const id of [
+      "step_back",
+      "step_forward",
+      "step_back_over",
+      "step_back_out",
+      "reverse_continue",
+      "history_present",
+      "show_execution_history",
+      "export_execution_history",
+      "save_debug_recording",
+      "open_debug_recording"
+    ]) {
+      expect(off.find((i) => i.id === id), id).toBeUndefined();
+    }
     expect(labels(submenu(menu(template, "View"), "Machine Views"))).toEqual([
       "Memory",
       "Disassembly",

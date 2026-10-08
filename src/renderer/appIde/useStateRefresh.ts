@@ -61,7 +61,9 @@ class EmuStateListener {
             !this.oldState ||
             this.oldState.state !== newState.state ||
             this.oldState.pcValue !== newState.pcValue ||
-            this.oldState.tacts !== newState.tacts;
+            this.oldState.tacts !== newState.tacts ||
+            // --- A history cursor move (LITE_STEP_BACK_PLAN D3): two steps can share a PC
+            (this.oldState.historyPosition ?? 0) !== (newState.historyPosition ?? 0);
           if (changed) {
             if (newState.state === MachineControllerState.Paused) {
               // --- The machine is paused, refresh the state immediately
