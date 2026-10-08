@@ -125,6 +125,21 @@ class MainApiImpl {
   }
 
   /**
+   * Opens a save dialog on the IDE window and returns the chosen path, or undefined when canceled.
+   * The dialog itself confirms replacing an existing file.
+   * @param _options `defaultPath` is a file name or a full path; with `settingsId` the dialog opens
+   * in the folder used last under that key and remembers the new one
+   */
+  async showSaveFileDialog(_options: {
+    title?: string;
+    defaultPath?: string;
+    filters?: { name: string; extensions: string[] }[];
+    settingsId?: string;
+  }): Promise<string | undefined> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * Gets the directory content, filtered as needed for the project.
    * @param _directory The directory path to list.
    */
@@ -731,6 +746,7 @@ const UNBOUNDED_MAIN_METHODS = [
   "displayMessageBox",
   "showOpenFolderDialog",
   "showOpenFileDialog",
+  "showSaveFileDialog",
   "selectMediaFile",
   "ejectMediaFile",
   // --- File pickers, confirmations and dialogs of their own

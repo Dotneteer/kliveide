@@ -11,6 +11,7 @@ import { SETTING_IDE_SYNC_BREAKPOINTS } from "@common/settings/setting-const";
 import { MF_EXEC_HISTORY } from "@common/machines/constants";
 import { getEmuApi } from "@messaging/MainToEmuMessenger";
 import { getIdeApi } from "@messaging/MainToIdeMessenger";
+import { canExportHistory, exportExecutionHistoryAs } from "@main/history-export";
 import { type MenuContext, windowInfoOf } from "./menu-context";
 import { createBooleanSettingsMenu, submenuContent, tidySeparators } from "./menu-utils";
 
@@ -108,6 +109,15 @@ export function createDebugMenu(context: MenuContext): MenuItemConstructorOption
             label: "Execution History",
             click: async () => {
               await getIdeApi().executeCommand("show-history");
+            }
+          },
+          // --- A trace for a diff tool (`.plans/TRACE_EXPORT_PLAN.md` D13): not while running (D10)
+          {
+            id: "export_execution_history",
+            label: "Export Execution History...",
+            enabled: canExportHistory(context.appState),
+            click: async () => {
+              await exportExecutionHistoryAs(context.focusedWindow());
             }
           }
         ]

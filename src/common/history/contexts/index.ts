@@ -18,8 +18,11 @@ export type HistoryContextDecoder = {
   partitionFor(context: Uint8Array, address: number): number | undefined;
   /** The detail pane's text for an instruction's context */
   describe(context: Uint8Array, partitionLabels?: Record<number, string>): string;
-  /** The row text of a machine-specific event record (the Next's DMA hold), or "" */
-  describeEvent?(record: Pick<HistoryRecord, "repeat" | "context" | "kind">): string;
+  /**
+   * The row text of a machine-specific event record (the Next's DMA hold), or ""; `withTime: false`
+   * leaves out how long it took (a diff-friendly trace, `.plans/TRACE_EXPORT_PLAN.md` T2)
+   */
+  describeEvent?(record: Pick<HistoryRecord, "repeat" | "context" | "kind">, withTime?: boolean): string;
   /** What a record's frame tact counts in */
   frameTactUnit: string;
   /** Frame tacts per CPU T-state at the machine's base clock (the Next's tact is a 28 MHz tick) */

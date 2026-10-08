@@ -18,7 +18,18 @@ import {
 } from "@common/history/historyRecord";
 import { classifyFlow, type FlowKind } from "@common/history/flowKind";
 import { formatRegisterDiff, registerDiff } from "@common/history/registerDiff";
-import { formatHistoryRow, historyRowCells, isSeparatorRecord } from "@common/history/historyRow";
+import { historyRowCells, isSeparatorRecord } from "@common/history/historyRow";
+import {
+  collectTrace,
+  defaultTraceOptions,
+  exportTrace,
+  formatHistoryRow,
+  HISTORY_EXPORT_FOLDER,
+  historyExportCommandText,
+  TRACE_FILE_FILTERS,
+  VIEWER_TRACE_COLUMNS
+} from "@common/history/historyExport";
+import { PANE_ID_BUILD } from "@common/integration/constants";
 import { serviceSpanText, type HistoryServiceSpan } from "@common/history/serviceSpans";
 import { integerSymbolsOf } from "@common/utils/breakpoint-condition/integer-symbols";
 import { SmallIconButton } from "@controls/IconButton";
@@ -43,6 +54,7 @@ import {
 import { FullPanel } from "@renderer/controls/layout/Panels";
 import { VirtualizedList, type VirtualizedListApi } from "@renderer/controls/VirtualizedList";
 import { useEmuApi } from "@renderer/core/EmuApi";
+import { useMainApi } from "@renderer/core/MainApi";
 import { useSelector } from "@renderer/core/RendererProvider";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
@@ -53,6 +65,7 @@ import {
   HistoryDisassemblyCache,
   historyLabelLookup
 } from "@renderer/features/history/historyDisassembly";
+import { createTraceResolvers, historyRegistersOf } from "@renderer/features/history/historyTrace";
 import {
   foldedHistoryRows,
   historyCountText,
@@ -114,7 +127,8 @@ const REGISTER_ROWS: [keyof HistoryRegisters, string][] = [
 
 const ExecutionHistoryPanel = (_props: DocumentProps) => {
   const emuApi = useEmuApi();
-  const { ideCommandsService } = useAppServices();
+  const mainApi = useMainApi();
+  const { ideCommandsService, outputPaneService } = useAppServices();
   const documentHubService = useDocumentHubService();
   const machineId = useSelector((s) => s.emulatorState?.machineId);
   const machineState = useSelector((s) => s.emulatorState?.machineState);
@@ -171,25 +185,7 @@ const ExecutionHistoryPanel = (_props: DocumentProps) => {
       if (newInfo?.count) {
         // --- The state after the newest record is the live one, wherever the history cursor is
         const cpu = (await emuApi.getCpuState({ present: true })) as Z80CpuState;
-        setLiveRegs({
-          pc: cpu.pc,
-          af: cpu.af,
-          bc: cpu.bc,
-          de: cpu.de,
-          hl: cpu.hl,
-          af_: cpu.af_,
-          bc_: cpu.bc_,
-          de_: cpu.de_,
-          hl_: cpu.hl_,
-          ix: cpu.ix,
-          iy: cpu.iy,
-          sp: cpu.sp,
-          ir: cpu.ir,
-          wz: cpu.wz,
-          iff1: cpu.iff1,
-          iff2: cpu.iff2,
-          interruptMode: cpu.interruptMode
-        });
+        setLiveRegs(historyRegistersOf(cpu));
       }
     },
     [emuApi]
@@ -434,30 +430,60 @@ const ExecutionHistoryPanel = (_props: DocumentProps) => {
     );
   };
   const copyText = (text: string) => navigator.clipboard?.writeText(text).catch(() => {});
+  // --- The viewer's columns through the trace exporter: one formatter (TRACE_EXPORT_PLAN D14)
   const copyRows = async (fromSequence: number) => {
     if (!info) return;
     const to = info.newestSequence;
     const from = Math.max(fromSequence, to - MAX_COPY_ROWS + 1);
     const records = await readRecords(from, to);
     const shown = filteredSequences ? new Set(filteredSequences) : undefined;
-    const lines: string[] = [];
-    records.forEach((r, i) => {
-      if (shown && !shown.has(r.sequence)) return;
-      const next = records[i + 1]?.regs ?? (r.sequence === to ? liveRegs : undefined);
-      const instruction = disassembly.peek(r);
-      lines.push(
-        formatHistoryRow({
-          ...rowInput(r),
-          instruction: instruction?.text,
-          length: instruction?.length,
-          changes:
-            next && r.kind === HistoryKind.Instruction
-              ? formatRegisterDiff(registerDiff(r.regs, next))
-              : undefined
-        })
-      );
+    const lines = exportTrace(
+      [records],
+      { machineId: info.machineId, newestSequence: to, afterLast: liveRegs },
+      [],
+      { ...defaultTraceOptions("text"), columns: VIEWER_TRACE_COLUMNS, header: false, repeats: true },
+      createTraceResolvers({
+        machineId,
+        historyMachineId: info.machineId,
+        compilation,
+        partitionLabels,
+        disassembly,
+        include: shown ? (r) => shown.has(r.sequence) : undefined
+      })
+    );
+    const { text } = await collectTrace(lines, { format: "text", bom: false });
+    await copyText(text.replace(/\n$/, ""));
+  };
+
+  // --- Export a trace (`.plans/TRACE_EXPORT_PLAN.md` §4.3): the command, with the document's filter
+  // --- and fold state, so the file holds what the user sees. A filter shows folded rows anyway.
+  const [exporting, setExporting] = useState(false);
+  const exportRows = async (fromSequence?: number) => {
+    const file = await mainApi.showSaveFileDialog({
+      title: "Export Execution History",
+      defaultPath: `${machineId ?? "machine"}-trace.txt`,
+      filters: TRACE_FILE_FILTERS,
+      settingsId: HISTORY_EXPORT_FOLDER
     });
-    await copyText(lines.join("\n"));
+    if (!file) return;
+    setExporting(true);
+    try {
+      const command = historyExportCommandText(file, {
+        from: fromSequence,
+        filter: state.filter,
+        noInterrupts: foldService && !state.filter.trim(),
+        overwrite: true
+      });
+      const result = await ideCommandsService.executeCommand(
+        /\.(csv|txt|log|trace)$/i.test(file) ? command : `${command} -format text`,
+        outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD)
+      );
+      if (!result?.success) {
+        await mainApi.displayMessageBox("error", "Export Execution History", result?.finalMessage ?? "Export failed");
+      }
+    } finally {
+      setExporting(false);
+    }
   };
 
   const selectedRecord =
@@ -538,6 +564,12 @@ const ExecutionHistoryPanel = (_props: DocumentProps) => {
           await ideCommandsService.executeCommand("history-clear");
           await refresh(machineState ?? MachineControllerState.Paused);
         }}
+      />
+      <SmallIconButton
+        iconName="save"
+        title={running ? "Pause the machine to export the history" : "Export the history as a text or CSV trace"}
+        enable={supported && !running && !exporting && !!info?.count}
+        clicked={() => exportRows()}
       />
       <ToolbarSeparator small={true} />
       <PanelFilter
@@ -694,6 +726,11 @@ const ExecutionHistoryPanel = (_props: DocumentProps) => {
         <ContextMenuItem
           text="Copy rows as text (to the newest)"
           clicked={fromMenu((r) => copyRows(r.sequence))}
+        />
+        <ContextMenuItem
+          text="Export rows from here to the newest..."
+          disabled={running || exporting}
+          clicked={fromMenu((r) => exportRows(r.sequence))}
         />
         <ContextMenuSeparator />
         <ContextMenuItem

@@ -1312,6 +1312,36 @@ history [<count>]
 
 The count is 1-10000; it is 20 by default. History is recorded only in debug sessions.
 
+## `history-export`
+
+Use this command to write the [execution history](/working-with-ide/execution-history#exporting-a-trace),
+or a range of it, to a text or CSV trace file, so that two runs can be compared with a diff tool.
+The machine must be paused or stopped.
+
+```
+history-export <file> [-from <-n|#seq>] [-to <-n|#seq>] [-count <n>]
+               [-format text|csv] [-columns default|viewer|all|<id,id,...>]
+               [-absolute] [-repeats] [-nointerrupts] [-nomarkers] [-filter <text>]
+               [-noheader] [-bom] [-f]
+```
+
+- `file`: `.txt`, `.log` or `.trace` writes text, `.csv` writes CSV; `-format` overrides the extension.
+- `-from`, `-to`: the range, inclusive. `-42` is a step back from the present, `#1234` a record's
+  sequence number. By default, the whole history.
+- `-count`: the newest *n* records, or *n* records from `-from`.
+- `-columns`: `default` (`frame tact addr bytes instr changes`), `viewer`, `all`, or a comma-separated
+  list of `seq`, `step`, `frame`, `tact`, `addr`, `bytes`, `instr`, `source`, `changes`, `regs`,
+  `flags`, `ctx`.
+- `-absolute`: absolute frame and sequence numbers (relative to the first exported record by default).
+- `-repeats`: write the `HALT`, display-run and DMA counts (masked as `×*` by default).
+- `-nointerrupts`: leave out interrupt and NMI service; `-nomarkers` leaves out the line that marks
+  each.
+- `-filter`: the Execution History's filter (an address, a range, a label, or text).
+- `-noheader`: no `;` header lines. `-bom`: a UTF-8 byte order mark.
+- `-f`: replace an existing file.
+
+Available aliases: `hexp`
+
 ## `history-clear`
 
 Use this command to empty the execution history.

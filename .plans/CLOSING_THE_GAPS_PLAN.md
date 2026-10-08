@@ -30,8 +30,8 @@ are estimates for prioritising, not commitments.
 | G1 | Conditional breakpoints, hit counts, logpoints | **S–M** | ✅ done (2026-10-03): G1.1–G1.4, G1.5 (DeZog ASSERTION/WPMEM comments) and G1.6 (one-shot breakpoints) |
 | G2 | Load and save snapshots (.sna/.z80/.szx), RZX | **S → L** | ✅ done (2026-10-04): G2.1–G2.8 |
 | G3 | Live Next hardware inspectors | **M** (layers: M–L) | Copper list viewer, sprite table · ✅ G3.1, the Copper half of G3.8 and the `.copper` pragma (G3.9) done (2026-10-05) · ✅ G3.2 and G3.3, the Sprite Inspector, done (2026-10-05) · ✅ G3.4, the Tilemap Inspector, done (2026-10-06) · ✅ G3.5, the Layer 2 Inspector, done (2026-10-06) · ✅ G3.6, layer composition (hide, solo, probe, the Layers document), done (2026-10-06) · ✅ G3.7, the beam position overlay, done (2026-10-06) |
-| G4 | Execution history and reverse debugging | **M → XL** | Read-only history viewer on the Next · ✅ G4.1, the Execution History on the Next, done (2026-10-07) · ✅ G4.2, history in every Z80 core, done (2026-10-07) · ✅ G4.3, lite step back, done (2026-10-07) |
-| G5 | Code coverage, profiler, unit tests | **M → L** | Coverage map in the disassembly |
+| G4 | Execution history and reverse debugging | **M → XL** | Read-only history viewer on the Next · ✅ G4.1, the Execution History on the Next, done (2026-10-07) · ✅ G4.2, history in every Z80 core, done (2026-10-07) · ✅ G4.3, lite step back, done (2026-10-07) · ✅ G4.5, trace export, done (2026-10-08) |
+| G5 | Code coverage, profiler, unit tests | **M → L** | Coverage map in the disassembly · plans ready, decisions recorded (2026-10-08): coverage and heat map, profiler, unit tests, CLI/CI |
 | G6 | Remote debugging, real hardware, external API | **M → XL** | Command API for scripts and CI |
 | G7 | 48K/128K reverse-engineering depth | **M → L** | Generalising the NEX annotation sidecar |
 | G8 | BASIC editor intelligence | **M** | ✅ done (2026-10-03): G8.1–G8.5 |
@@ -200,7 +200,7 @@ then moves the frame trace to a diagnostics build, which shrinks the Next to abo
 | G4.2 History in the other cores ✅ **done** (2026-10-07) | The same trace recording for 48K/128K/+3E (and Z88). Done for every Z80 core: 48K/16K, Timex, 128K/Pentagon/Scorpion, +2A/+3/+2E/+3E, Z88 and ZX80/81, with the ZX80/81's display NOPs merged per line and interrupt service folded in the viewer. | M |
 | G4.3 "Lite" step back ✅ **done** | Step backwards through the trace and show the historical registers and PC in the CPU panel and editor. Memory stays at the present. This is DeZog's "lite" mode. | M, after G4.1 |
 | G4.4 Full reverse debugging ✅ **done** (2026-10-08) | Step back and reverse-continue with exact memory and device state: periodic checkpoints plus deterministic re-execution to the target instruction. Done on every Z80 machine: keyframes, an input journal at each core's export boundary and self-checking replay; Continue from the past, Take over here, reverse watchpoints, the Next's SD card undone on a fork (.plans/REVERSE_DEBUGGING_PLAN.md). | XL (every core needs cheap state capture; input, tape, disk and audio must replay deterministically) |
-| G4.5 Trace export | Save a history range as a text or CSV trace for diffing two runs. | S, after G4.1 |
+| G4.5 Trace export ✅ **done** (2026-10-08) | Save a history range as a text or CSV trace for diffing two runs. Done: `history-export` (`hexp`), Debug › Export Execution History… and the document's Export button; diff-friendly defaults (relative time, masked wait counts, `-nointerrupts`), selectable columns, CSV with a column per register (.plans/TRACE_EXPORT_PLAN.md). | S, after G4.1 |
 | G4.6 Debug session recording | Save a reverse-debugging timeline (keyframes and the input journal, with SD sector data) to a file, so a bug repro replays later with the debugger attached: an RZX for every machine, with breakpoints. Replays only on the same Klive build. | M, after G4.4 works on two cores |
 
 ---
@@ -209,6 +209,23 @@ then moves the frame trace to a diagnostics build, which shrinks the Next to abo
 
 **Why it matters:** DeZog's unit tests and coverage are unique in the field. Klive has a strong
 *internal* test harness (`test/harness/sp48`, `test/harness/zxnext`), but nothing for users.
+
+**Plan (decisions recorded, 2026-10-08: the suggested answers accepted for all four plans):**
+- G5.1 and G5.2 are in [CODE_COVERAGE_AND_HEAT_MAP_PLAN.md](CODE_COVERAGE_AND_HEAT_MAP_PLAN.md).
+  It also builds the shared in-core access profile (`z80-profile.c`: a flag byte per physical byte,
+  plus a counter pool with per-instruction time) that the profiler reads.
+- G5.3 and G5.4 are in [PROFILER_PLAN.md](PROFILER_PLAN.md).
+- G5.5 is in [Z80_UNIT_TESTS_PLAN.md](Z80_UNIT_TESTS_PLAN.md).
+- G5.6 is in [UNIT_TESTS_CLI_PLAN.md](UNIT_TESTS_CLI_PLAN.md).
+
+Research for the plans corrected four assumptions in the table below:
+- **G5.3 is S–M, not M.** The coverage module already measures time per instruction.
+- **G5.4 is M–L, not L.** The shared Z80's shadow-stack functions are ready-made CALL/RET hook
+  points.
+- **G5.5's runner is Electron-free.** It runs in a worker on its own machine instance, not on the
+  user's emulator.
+- **G5.6 does not need G6.1.** CI needs a headless Node process, not a transport into a running
+  IDE. The CLI it adds (`klive test`) becomes the skeleton G6.1 extends.
 
 | Feature | What it does | Size |
 |---|---|---|

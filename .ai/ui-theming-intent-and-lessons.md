@@ -1005,6 +1005,15 @@ headings look like strips of chrome in the content. `SectionHeader` is the primi
 *within* content: a disk track, a memory bank, a breakpoint group. Its own doc comment says so; the
 mistake recurs anyway, which is why it is here too.
 
+## A Header Action The Machine State Forbids Stays, Disabled, And Its Tooltip Says Why
+
+A document-header action that cannot run in the current machine state (the Execution History's
+Export while the machine runs) stays in its place, disabled, and its `title` changes to the reason
+("Pause the machine to export the history") - it does not disappear and reflow the strip. A file
+action in a header is a `SmallIconButton` with the stock `save` glyph, placed after the panel's other
+actions and before its filter; the context menu carries the row-relative variant ("… from here to
+the newest…") rather than a second header button.
+
 ## Verify Geometry In The Running App, Never In A Replica
 
 This is the process lesson from the same work, and it cost two rounds of shipping a "fix" the user

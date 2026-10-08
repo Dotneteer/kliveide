@@ -3,8 +3,9 @@ import { HistoryKind, type HistoryRecord } from "./historyRecord";
 
 /*
  * One history row as text (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.6.1): the document's cells,
- * the `history` command's output lines and, later, G4.5's export all come from here. Pure - the
- * disassembly and the source location are resolved by the caller (the renderer owns both).
+ * and, through `historyExport.ts` (G4.5), the `history` command's lines, "Copy rows as text" and the
+ * exported traces all come from here. Pure - the disassembly and the source location are resolved by
+ * the caller (the renderer owns both).
  */
 
 /** What the caller knows about a row beyond the record */
@@ -24,7 +25,17 @@ export type HistoryRowInput = {
   changes?: string;
   /** The partition label of PC (`R0`, `0A`), when the machine has partitions */
   partitionLabel?: string;
+  /** How HALT, display-run and DMA-hold counts are written (`historyEventText`); "show" by default */
+  repeats?: RepeatText;
 };
+
+/**
+ * How an event row writes its repeat count (`.plans/TRACE_EXPORT_PLAN.md` D6, T2): "show" is the
+ * viewer's `HALT ×1,203`; "mask" writes `HALT ×*`, because the count depends on timing, not on the
+ * program path; "omit" leaves it out (CSV writes it in a column of its own). A DMA hold's held
+ * T-states go with the count.
+ */
+export type RepeatText = "show" | "mask" | "omit";
 
 /** The cells of a row */
 export type HistoryRowCells = {
@@ -41,7 +52,13 @@ export type HistoryRowCells = {
 };
 
 /** The text of an event row, or undefined for an instruction */
-export function historyEventText(record: HistoryRecord, machineId?: string): string | undefined {
+export function historyEventText(
+  record: HistoryRecord,
+  machineId?: string,
+  repeats: RepeatText = "show"
+): string | undefined {
+  const count = (n: number) =>
+    repeats === "show" ? ` ×${n.toLocaleString("en-US")}` : repeats === "mask" ? " ×*" : "";
   switch (record.kind) {
     case HistoryKind.Int: {
       const im = record.regs.interruptMode;
@@ -52,11 +69,14 @@ export function historyEventText(record: HistoryRecord, machineId?: string): str
     case HistoryKind.Nmi:
       return "NMI";
     case HistoryKind.Halt:
-      return `HALT ×${record.repeat.toLocaleString("en-US")}`;
+      return `HALT${count(record.repeat)}`;
     case HistoryKind.ForcedNop:
-      return `Display NOPs ×${record.repeat.toLocaleString("en-US")}`;
+      return `Display NOPs${count(record.repeat)}`;
     case HistoryKind.DmaHold:
-      return historyContextDecoder(machineId)?.describeEvent?.(record) || `DMA held the bus for ${record.repeat} T`;
+      return (
+        historyContextDecoder(machineId)?.describeEvent?.(record, repeats === "show") ||
+        (repeats === "show" ? `DMA held the bus for ${record.repeat} T` : "DMA held the bus")
+      );
   }
   return undefined;
 }
@@ -68,7 +88,7 @@ export function isSeparatorRecord(record: HistoryRecord): boolean {
 
 export function historyRowCells(input: HistoryRowInput): HistoryRowCells {
   const { record } = input;
-  const event = historyEventText(record, input.machineId);
+  const event = historyEventText(record, input.machineId, input.repeats);
   const separator = isSeparatorRecord(record);
   const shownBytes =
     record.kind === HistoryKind.Instruction
@@ -86,23 +106,6 @@ export function historyRowCells(input: HistoryRowInput): HistoryRowCells {
     changes: input.changes ?? "",
     separator
   };
-}
-
-/** One line of text (the `history` command, "Copy rows as text") */
-export function formatHistoryRow(input: HistoryRowInput): string {
-  const c = historyRowCells(input);
-  if (c.separator) return `${c.step.padStart(7)}  ${c.time.padStart(6)}  ${c.instruction}`;
-  return [
-    c.step.padStart(7),
-    c.time.padStart(6),
-    c.address.padEnd(7),
-    c.bytes.padEnd(11),
-    c.instruction.padEnd(22),
-    c.source.padEnd(18),
-    c.changes
-  ]
-    .join("  ")
-    .trimEnd();
 }
 
 function hex(value: number, digits: number): string {

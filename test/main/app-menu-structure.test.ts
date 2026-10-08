@@ -211,6 +211,15 @@ describe("the application menu", () => {
     expect(labels(menu(buildMenu("sp48"), "Debug"))).toContain("Execution History");
     expect(labels(menu(buildMenu("zx81"), "Debug"))).toContain("Execution History");
     expect(labels(menu(buildMenu("c64"), "Debug"))).not.toContain("Execution History");
+    // --- Export Execution History... (TRACE_EXPORT_PLAN D13): with the history, not while running (D10)
+    const exportItem = (template: MenuItemConstructorOptions[]) =>
+      menu(template, "Debug").find((i) => i.id === "export_execution_history");
+    expect(exportItem(buildMenu("sp48"))).toMatchObject({ label: "Export Execution History...", enabled: true });
+    expect(exportItem(buildMenu("c64"))).toBeUndefined();
+    const running = buildMenu("sp48");
+    env.state.emulatorState.machineState = MachineControllerState.Running;
+    expect(exportItem(createMenuTemplate(createMenuContext(window, window)))?.enabled).toBe(false);
+    expect(exportItem(running)?.enabled).toBe(true);
     expect(labels(submenu(menu(template, "View"), "Machine Views"))).toEqual([
       "Memory",
       "Disassembly",

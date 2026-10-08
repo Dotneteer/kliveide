@@ -170,6 +170,78 @@ selects the row.
 
 Stepping back stops at the start of the recorded history and says so; it never wraps.
 
+## Exporting a trace
+
+A trace file answers "where did these two runs part ways?". Record a good run and a bad run, export
+both, compare them with any diff tool (`diff`, `git diff --no-index`, Beyond Compare, VS Code's
+compare), and the first line that differs is where the program took another path.
+
+Pause the machine, then use **Debug → Export Execution History…**, the **Export** button (the disk
+icon) in the document's header, or **Export rows from here to the newest…** in a row's context menu.
+The document's buttons export what it shows: its filter, and its folded interrupts left out. The
+command gives every option:
+
+```
+history-export run1.txt
+```
+
+The file's extension picks the format: `.txt`, `.log` or `.trace` for text, `.csv` for a
+spreadsheet. An existing file is replaced only with `-f`.
+
+### Comparing two runs
+
+1. Set a breakpoint where both runs should still agree, or just after the place where they stop
+   agreeing.
+2. **Start with Debugging**, let it stop at the breakpoint, and export: `history-export good.txt`.
+3. Do the same with the run that goes wrong: `history-export bad.txt`.
+4. Compare the two files:
+
+```bash
+git diff --no-index good.txt bad.txt
+```
+
+The default columns are made for this. Time is written **relative to the first exported record**
+(frame 0), so two runs that started at different moments still match line for line, and a `HALT`
+or a ZX81 display run is written `HALT ×*`: how long the CPU waited is not part of the program's
+path. The header lines start with `;`, and hold no export time, so two exports of the same run are
+identical.
+
+When the files differ almost everywhere but the program did the same thing, the noise is timing:
+
+- The frame interrupt landed at a different instruction in each run, which moves the whole handler.
+  Add **`-nointerrupts`** to leave out every interrupt service (a one-line
+  `… interrupt service, 312 instructions …` marker stays where each was, unless you add `-nomarkers`).
+- The paths agree but the `tact` column does not: the first differing `tact` is where the timing
+  changed. When only the path matters, leave the column out: `-columns addr,bytes,instr,changes`.
+
+### Options
+
+| Option | Does |
+|---|---|
+| `-from <-n \| #seq>`, `-to <-n \| #seq>` | The range, inclusive: `-42` is the 42nd step back (`-1` is the newest record), `#1234` a record's sequence number. By default the whole history. |
+| `-count <n>` | The newest *n* records, or *n* records from `-from`. |
+| `-columns <set>` | `default` (`frame tact addr bytes instr changes`), `viewer` (the document's columns), `all`, or a list such as `frame,addr,instr`: `seq`, `step`, `frame`, `tact`, `addr`, `bytes`, `instr`, `source`, `changes`, `regs`, `flags`, `ctx`. |
+| `-absolute` | Absolute frame and sequence numbers instead of relative ones. |
+| `-repeats` | Write the `HALT`, display-run and DMA counts. |
+| `-nointerrupts`, `-nomarkers` | Leave out interrupt service; leave out its markers too. |
+| `-filter <text>` | The document's filter: an address, a range, a label or text. |
+| `-format text\|csv` | The format, whatever the extension says. |
+| `-noheader` | No `;` header lines. |
+| `-bom` | Start the file with a UTF-8 byte order mark (Excel on Windows needs one). |
+| `-f` | Replace an existing file. |
+
+`regs` is the full register set *before* the instruction (`AF BC DE HL AF' BC' DE' HL' IX IY SP I R
+WZ`) and `flags` is `IFF1 IFF2 IM`; `changes` is the document's Changes column. Labels and source
+lines come from the **current** compilation, as in the document; the header names its main file.
+
+**CSV** has one header row of column names and no other metadata: the range, the machine and the
+options go to the command output instead. The address's bank gets a `part` column of its own, every
+register a column of its own, and a `HALT`'s count a `repeat` column (filled with `-repeats`).
+
+The export covers what the history holds now - at most the last 131,072 records on the Next and
+65,536 on the other machines. An endpoint older than that is moved to the oldest record, with a
+warning.
+
 ## Commands
 
 ```
@@ -177,6 +249,7 @@ show-history          ; open the Execution History
 hide-history          ; close it
 history-clear         ; empty the history
 history 50            ; print the newest 50 records to the command output
+history-export a.txt  ; write the history to a text or CSV trace (hexp)
 step-back             ; step back one instruction (stb)
 step-forward          ; step forward, up to the present (stf)
 step-back-over        ; step back over a call that returned (stbo)

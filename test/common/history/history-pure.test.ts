@@ -9,7 +9,8 @@ import {
 } from "@common/history/historyRecord";
 import { registerDiff, formatRegisterDiff } from "@common/history/registerDiff";
 import { classifyFlow } from "@common/history/flowKind";
-import { formatHistoryRow, historyRowCells } from "@common/history/historyRow";
+import { historyRowCells } from "@common/history/historyRow";
+import { formatHistoryRow } from "@common/history/historyExport";
 import {
   decodeZxNextContext,
   decodeZxNextSlot,

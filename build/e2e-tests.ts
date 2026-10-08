@@ -32,6 +32,7 @@ export const E2E_CORE_TESTS: string[] = [
   "test/emu/conditional-breakpoints-injection-flow.test.ts",
   "test/emu/conditional-breakpoints-real-machine.test.ts",
   "test/emu/execution-history-controller.test.ts",
+  "test/emu/history-export-controller.test.ts",
   "test/emu/reverse-timeline-controller.test.ts",
   "test/emu/reverse-step-back-controller.test.ts",
   "test/emu/reverse-continue-controller.test.ts",

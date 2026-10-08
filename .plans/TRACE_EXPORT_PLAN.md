@@ -1,8 +1,8 @@
 # Trace Export Plan: Saving the Execution History as a Text or CSV Trace
 
-Status: **decisions recorded** (2026-10-08). D1–D14 are the decisions; the author accepted the
-suggested answers to all §8 questions, which the decisions already assumed. Nothing is
-implemented.
+Status: ✅ **done** (2026-10-08). D1–D14 are the decisions; the author accepted the suggested
+answers to all §8 questions, which the decisions already assumed. All four phases are implemented;
+§9 records where the implementation settled details the decisions left open.
 
 Scope:
 - [CLOSING_THE_GAPS_PLAN.md](CLOSING_THE_GAPS_PLAN.md) **G4.5**: save a range of the execution
@@ -272,3 +272,33 @@ button needs an icon, it comes from `src/renderer/assets/icons/` and
    which other features (G7.6 export as source) will want too. The alternative is to route the
    document's button through the main-process menu action, which avoids a new API but cannot carry the
    filter and fold state without one.
+
+---
+
+## 9. Implementation notes (2026-10-08)
+
+- **Where things live.** The exporter is `src/common/history/historyExport.ts` (with
+  `formatHistoryRow`, which moved there from `historyRow.ts`: D14's single formatter), the CSV cell
+  rules are `src/common/history/csv.ts`, the renderer's resolvers are
+  `src/renderer/features/history/historyTrace.ts`, the command is `HistoryExportCommand` in
+  `HistoryCommands.ts`, the save dialog is `src/main/save-file-dialog.ts`, and the menu's export is
+  `src/main/history-export.ts`. D8's filter functions were already free of React and stayed in
+  `historyViewModel.ts`.
+- **Repeat text** is one switch on `historyRowCells`/`historyEventText` (`repeats: "show" | "mask" |
+  "omit"`): text writes `×*` when masked; CSV always omits the count from the text and writes it in
+  the `repeat` column with `-repeats`. The Next's `describeEvent` takes `withTime` for T2.
+- **Columns** are always written in the canonical order of D2, whatever order `-columns` lists them
+  in; `part` and `repeat` are CSV-only columns that come with `addr` and `instr`. A separator or a
+  marker line keeps the `seq`/`step`/`frame`/`tact` columns and puts its text after them, which is
+  exactly `formatHistoryRow`'s old separator layout for the viewer columns.
+- **Relative time** counts from the range's first record, even when `-nointerrupts` drops it.
+- **Markers are left out of a filtered trace**: a filter's trace has gaps anyway, and a marker
+  would not pass an address filter.
+- **A service still running** at the range's end is dropped from its INT on, and its marker says
+  `unfinished`; a span that began before the range is dropped from the range's first record.
+- **CSV cells**: text cells are always quoted; numeric columns (`seq`, `step`, `frame`, `tact`,
+  `repeat`, `IFF1`, `IFF2`, `IM`) are bare so a spreadsheet parses them. The formula guard (T6)
+  applies to text cells only, so a negative step is never prefixed.
+- **A file name without a known extension** from a save dialog is exported as text (`-format text`).
+- **Command output from the document** goes to the Build output pane, as the menu's does
+  (`MainToIdeProcessor.executeCommand`); a failure is also shown in a message box.

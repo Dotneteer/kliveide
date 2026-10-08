@@ -103,12 +103,16 @@ export function describeZxNextContext(context: Uint8Array, partitionLabels: Reco
 }
 
 /** The row text of a DMA hold (D15): "DMA held the bus for 3,072 T ($4000 → $C000, 0 left)" */
-export function describeZxNextDmaHold(record: Pick<HistoryRecord, "repeat" | "context" | "kind">): string {
+export function describeZxNextDmaHold(
+  record: Pick<HistoryRecord, "repeat" | "context" | "kind">,
+  withTime = true
+): string {
   if (record.kind !== HistoryKind.DmaHold) return "";
   const d = decodeZxNextDmaHold(record.context);
   const port = (address: number, io: boolean) => (io ? `port $${hex4(address)}` : `$${hex4(address)}`);
+  // --- Without the held T-states for a diff-friendly trace (`.plans/TRACE_EXPORT_PLAN.md` T2)
   return (
-    `DMA held the bus for ${record.repeat.toLocaleString("en-US")} T ` +
+    `DMA held the bus${withTime ? ` for ${record.repeat.toLocaleString("en-US")} T` : ""} ` +
     `(${port(d.source, d.sourceIsIo)} → ${port(d.destination, d.destinationIsIo)}, ${d.left.toLocaleString("en-US")} left)`
   );
 }

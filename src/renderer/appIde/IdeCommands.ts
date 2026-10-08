@@ -81,6 +81,7 @@ import {
   ClearExecutionHistoryCommand,
   HideHistoryCommand,
   HistoryCommand,
+  HistoryExportCommand,
   HistoryGotoCommand,
   HistoryPresentCommand,
   ReverseContinueCommand,
@@ -191,6 +192,7 @@ export function registerIdeCommands(cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new HideHistoryCommand());
   cmdSrv.registerCommand(new ClearExecutionHistoryCommand());
   cmdSrv.registerCommand(new HistoryCommand());
+  cmdSrv.registerCommand(new HistoryExportCommand());
   // --- Lite step back (`.plans/LITE_STEP_BACK_PLAN.md` §4.5)
   cmdSrv.registerCommand(new StepBackCommand());
   cmdSrv.registerCommand(new StepForwardCommand());
