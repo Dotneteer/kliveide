@@ -15,6 +15,7 @@ import { saveKliveProject } from "./projects";
 import { appSettings, saveAppSettings } from "./settings-utils";
 import { setSelectedTapeFile } from "./machine-menus/zx-specrum-menus";
 import { loadMachineStateFile } from "./machine-menus/state-menus";
+import { openDebugRecordingFile } from "./debug-recording-menus";
 
 /** The settings key of the folder File › Open File… last opened a file from */
 const OPEN_FILE_FOLDER = "openFileFolder";
@@ -32,6 +33,7 @@ export async function pickAndOpenEmulatorFile(window: BrowserWindow): Promise<vo
       { name: "ZX Spectrum snapshots", extensions: ["sna", "z80", "szx"] },
       { name: "Z88 snapshots", extensions: ["z88"] },
       { name: "Klive machine states", extensions: ["kls"] },
+      { name: "Klive debug recordings", extensions: ["klr"] },
       { name: "RZX recordings", extensions: ["rzx"] },
       { name: "Tapes", extensions: ["tap", "tzx"] },
       { name: "All Files", extensions: ["*"] }
@@ -68,6 +70,15 @@ export async function openEmulatorFile(
     const owner = window ?? BrowserWindow.getFocusedWindow();
     if (owner) {
       await loadMachineStateFile(owner, filename);
+      return undefined;
+    }
+    const result = await getIdeApi().executeCommand(action.command);
+    error = result?.success ? undefined : (result?.finalMessage ?? `Could not open ${filename}`);
+  } else if (action.kind === "recording") {
+    // --- The recording flow offers the end state of another build's recording (D16)
+    const owner = window ?? BrowserWindow.getFocusedWindow();
+    if (owner) {
+      await openDebugRecordingFile(owner, filename);
       return undefined;
     }
     const result = await getIdeApi().executeCommand(action.command);

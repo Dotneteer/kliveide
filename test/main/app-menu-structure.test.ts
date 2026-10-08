@@ -220,6 +220,16 @@ describe("the application menu", () => {
     env.state.emulatorState.machineState = MachineControllerState.Running;
     expect(exportItem(createMenuTemplate(createMenuContext(window, window)))?.enabled).toBe(false);
     expect(exportItem(running)?.enabled).toBe(true);
+    // --- Debug recordings (DEBUG_SESSION_RECORDING_PLAN D2): saving needs a live timeline (D17)
+    const debugLabels = labels(menu(buildMenu("sp48"), "Debug"));
+    expect(debugLabels).toContain("Save Debug Recording...");
+    expect(debugLabels).toContain("Open Debug Recording...");
+    expect(labels(menu(buildMenu("c64"), "Debug"))).not.toContain("Open Debug Recording...");
+    const saveItem = (template: MenuItemConstructorOptions[]) => menu(template, "Debug").find((i) => i.id === "save_debug_recording");
+    expect(saveItem(buildMenu("sp48"))?.enabled).toBe(false);
+    buildMenu("zxnext");
+    env.state.emulatorState.reverseDebug = { active: true, mode: "live" };
+    expect(saveItem(createMenuTemplate(createMenuContext(window, window)))?.enabled).toBe(true);
     expect(labels(submenu(menu(template, "View"), "Machine Views"))).toEqual([
       "Memory",
       "Disassembly",

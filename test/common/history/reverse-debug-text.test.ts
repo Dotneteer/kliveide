@@ -40,6 +40,15 @@ describe("reverse debugging: the status bar and the fork confirmation", () => {
     );
   });
 
+  it("names a timeline opened from a debug recording (DEBUG_SESSION_RECORDING D10)", () => {
+    expect(reverseStatusText({ active: true, mode: "live", recording: "bug.klr" })).toBe("Recording: bug.klr");
+    expect(reverseStatusText({ active: true, mode: "navigating", behindSeconds: 1.24, recording: "bug.klr" }, "−42")).toBe(
+      "⟲ −1.24 s · step −42 · bug.klr"
+    );
+    expect(reverseStatusText({ active: true, mode: "live" })).toBeUndefined();
+    expect(reverseStatusTooltip({ active: true, mode: "live", recording: "bug.klr" })).toContain("debug recording bug.klr");
+  });
+
   it("names what a fork reverts and what it leaves", () => {
     const plain = forkConfirmation({ sdWrites: 0, hostFiles: [] });
     expect(plain.message).toBe("Continue from this point in the past?");

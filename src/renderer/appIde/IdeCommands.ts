@@ -141,6 +141,7 @@ import { Z88SnapshotCommand } from "./commands/Z88SnapshotCommand";
 import { SpectrumSnapshotCommand } from "./commands/SpectrumSnapshotCommand";
 import { SpectrumSnapshotSaveCommand } from "./commands/SpectrumSnapshotSaveCommand";
 import { StateLoadCommand, StateSaveCommand } from "./commands/MachineStateCommands";
+import { DebugRecordingLoadCommand, DebugRecordingSaveCommand } from "./commands/DebugRecordingCommands";
 import { TapeLoadCommand } from "./commands/TapeLoadCommand";
 import { RunToCursorCommand } from "./commands/RunToCursorCommand";
 import { NexLabelCommand } from "./commands/NexLabelCommand";
@@ -284,6 +285,8 @@ export function registerIdeCommands(cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new RzxVideoCommand());
   cmdSrv.registerCommand(new StateSaveCommand());
   cmdSrv.registerCommand(new StateLoadCommand());
+  cmdSrv.registerCommand(new DebugRecordingSaveCommand());
+  cmdSrv.registerCommand(new DebugRecordingLoadCommand());
   cmdSrv.registerCommand(new TapeLoadCommand());
   cmdSrv.registerCommand(new RunToCursorCommand());
   cmdSrv.registerCommand(new NexLabelCommand());

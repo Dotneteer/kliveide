@@ -1,9 +1,8 @@
 # Debug Session Recording Plan: Saving and Reopening a Reverse-Debugging Timeline
 
-Status: **decisions recorded** (2026-10-08). D1–D20 are the decisions; the author accepted the
-suggested answers to all §9 questions, which the decisions already assumed. Nothing is
-implemented. **Prerequisite:** G4.4 Phase 6 (the Next's SD journal and undo log) for the Next; the
-48K can go first (§5).
+Status: ✅ **done** (2026-10-08). D1–D20 are the decisions; the author accepted the suggested
+answers to all §9 questions. All five phases are implemented; §10 holds Phase 0's measurements and
+§11 the implementation notes, including what was left out.
 
 Scope:
 - [CLOSING_THE_GAPS_PLAN.md](CLOSING_THE_GAPS_PLAN.md) **G4.6**: save a reverse-debugging timeline
@@ -297,3 +296,109 @@ END   SHA-256 of all preceding bytes
    default so a bug report is always self-contained?
 7. **Q7 — Unsaved extension.** When a loaded recording was continued live and the timeline is about
    to end, ask to save (suggested only for timelines that came from a file), or never ask?
+
+---
+
+## 10. Phase 0 results (2026-10-08)
+
+Measured with `KLIVE_RECORDING_MEASURE=1 npm test -- test/reverse/reverse-spike-measure.test.ts` on an
+Apple Silicon Mac in node: each of G4.4 §10's six workloads ran 60 s (3,000 frames) on a real
+`Timeline` (512 MB budget), was saved full and sparse at deflate levels 1, 6 and 9, and the level-6
+file was opened into a **fresh** machine (`loadMachineState` of the present's `.kls`, then
+`Timeline.fromSnapshot` with the image check) and verified from its start (`Timeline.verify`).
+
+| Workload (60 s) | Pool in memory | Keyframes full / sparse | Level 1 | Level 6 (full / sparse) | Level 9 | Save at 6 | Open | `-verify` |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 48K game (Yankee in Iraq) | 13.1 MB | 61 / 39 | 1.58 MB | **1.49 / 1.31 MB** | 1.48 MB | 152 ms | 42 ms | 1.8 s |
+| 48K BASIC FOR loop | 10.1 MB | 61 / 59 | 0.91 MB | **0.87 / 0.87 MB** | 0.87 MB | 101 ms | 42 ms | 1.7 s |
+| 48K tape at normal speed | 28.9 MB | 61 / 40 | 1.50 MB | **1.40 / 1.28 MB** | 1.34 MB | 278 ms | 45 ms | 2.1 s |
+| Next demo (PAR-005) | 118.2 MB | 232 / 59 | 4.32 MB | **2.45 / 1.31 MB** | 2.32 MB | 970 ms | 121 ms | 24.3 s |
+| Next Layer 2 every frame | 211.1 MB | 232 / 59 | 6.11 MB | **3.61 / 1.92 MB** | 3.53 MB | 1,074 ms | 118 ms | 23.6 s |
+| Next NextZXOS from SD | 24.8 MB | 168 / 50 | 2.49 MB | **2.43 / 1.82 MB** | 2.41 MB | 296 ms | 83 ms | 16.1 s |
+
+- **D6 holds, more than expected:** the pool deflates 15-90×; the history ring (RING, 0.6-1.2 MB
+  deflated) and the `.kls` (110-145 KB) are now most of a small file. Level 6 is the default; level 9
+  buys 1-5% at two to three times the time.
+- **D7's default stays "all retained keyframes" (Q3):** a minute is 1-4 MB, so `-sparse` matters only
+  for long Next sessions (it halves those).
+- **T9 is far away:** a 10-minute Next worst case extrapolates to about 36 MB. The 2 GB limit stays,
+  with its message.
+- **T10:** a save deflates after the machine resumes, but synchronously on the emulator's thread:
+  about 1 s per minute of a Next session at level 6. Not chunked yet (§11).
+- **D14:** the NextZXOS recording opened and verified on a Next with **no SD card** attached.
+
+**Go:** files are small, saving and opening are fast; `-verify` costs about 0.4 s per second of a
+Next session, which is why it is opt-in.
+
+## 11. Implementation notes (2026-10-08)
+
+**Where things live.** The container: `src/common/machineState/chunkedContainer.ts` (`.kls` moved
+onto it; `test/debugRecording/kls-golden.test.ts` pins its bytes). The file: `src/common/debugRecording/`
+(`debugRecordingFile.ts`, `debugRecordingTypes.ts`). The timeline: `Timeline.exportSnapshot`,
+`Timeline.fromSnapshot`, `Timeline.withPresent`, `Timeline.verify`, `KeyframeStore.exportKeyframes` /
+`importKeyframes`, `reverse/timelineRecording.ts` (shapes and T5's re-keying). The controller:
+`MachineController.openTimeline`. The orchestration: `src/renderer/appEmu/machines/debugRecordingFile.ts`.
+Commands: `DebugRecordingCommands.ts` (+ `debugRecordingSources.ts`). Main: `src/main/debug-recording-menus.ts`.
+Viewer: `DocumentPanels/DebugRecording/` + `features/documents/DebugRecordingLaunchMenu.tsx`.
+
+**Decisions the implementation settled.**
+
+- **Opening starts from the present's `.kls`, not the base image.** The machine takes the present's
+  state, the timeline is rebuilt, the machine replays from the last keyframe to the present, and the
+  result must equal the `.kls` image byte for byte (volatile statics, the stack, the scratch and the
+  bus-event fields aside) - a check D9 alone would only make at the next replay. The `.kls` also
+  supplies the picture buffer a lean keyframe leaves out. So D16's `KLS` section is required, not
+  only a fallback.
+- **A `PRES` section** holds what replay cannot rebuild about the present (the wrapper's host
+  fields, the breakpoint counters, the frame counter with its fraction). §4.1 did not list it.
+- **A save from the past** (D10's cursor) replays to the present for the `.kls`, then back
+  (`Timeline.withPresent`); the machine ends where it stood. The default landing is where the file
+  was saved: the cursor when there is one, else the present; `-start` lands at the first keyframe
+  (deep landing when the ring does not reach it).
+- **`-from`** cuts at the last keyframe at or before the record it names; the ring view keeps only
+  records from the new base on (T4).
+- **T5:** annotation-owned breakpoints (`LP:`/`AS:`/`WP:` keys) do change key when re-owned to
+  `session`; the loader maps every recorded key to its new one and re-keys keyframe counters, the hit
+  log and the present's counters (`rekeyTimelineSnapshot`). `-nobreakpoints` drops them all.
+- **D3's contract hash** is a SHA-256 over the sorted journaled export names of the running module.
+  The code hash is stamped by `wasm-layout.cjs` (`codeHash`, outside the fingerprint); the Z88 and
+  Next harnesses now treat a newer `wasm-layout.cjs` as a stale artifact.
+- **The viewer** (D19) knows whether this build opens a file when the emulator runs the file's
+  core (`EmuApi.checkDebugRecording`); otherwise it says so. It reads the file without the END-hash
+  check (`parseDebugRecording`); opening checks it.
+- **Q7:** a timeline opened from a file remembers the present it was opened or last saved at; when
+  it ran on past that, a user Stop, Reset or Restart asks first (`MainToEmuProcessor`). Machine
+  changes and state loads end it without asking.
+- **The status bar** names the file in the reverse-debugging segment (`Recording: bug.klr`, or
+  `… · bug.klr` in the past).
+
+**Left out, with reasons.**
+
+- **T8 (cross-architecture replay) is not proven here:** the recordings were made and replayed on one
+  Apple Silicon Mac. The e2e tests run in CI on x64, but each makes its own recording; a committed
+  recording made on macOS would also pin one build's code hash, so it cannot be a fixture.
+- **`-verify` is neither cancellable nor progress-reporting**, and with `-sparse` it does not
+  re-create the thinned keyframes: it is one synchronous replay (§10: about 0.4 s per second of a Next
+  session).
+- **T10's chunked or worker deflate** is not done: the save deflates synchronously after the machine
+  resumes (§10: about 1 s per minute of a Next session).
+- **D13's compile-from-embedded-sources** (with `-sources`, when no project is open) is not done:
+  embedded sources are kept in the file and listed in the viewer, but not compiled; labels and source
+  lines come from the current compilation, as without them.
+- **D14's "attach the matching card when going live past the end"** is reported, not acted on: the
+  load says whether the current card is the recorded one, and running on uses whatever card the
+  machine has.
+- Found while testing, outside this plan: with a hit-count breakpoint, G4.4's Reverse Continue can
+  give a different answer from the same timeline depending on where transient keyframes sit; it is
+  filed as its own task. The tests compare the original and the opened timeline with the same
+  keyframes.
+
+**Tests.** `test/debugRecording/` (format, `.kls` golden), `test/emu/debug-recording-sp48.test.ts`
+(Phase 2: 1,000 step backs, Reverse Continue to a write, hit counts, `-start`, `-from`, `-sparse`,
+`-verify`, a save from the past, D3's refusal and D16's fallback, a journal edit caught by `-verify`,
+`-nobreakpoints`, Q7), `test/emu/debug-recording-cores.test.ts` (Phase 5 on the 128K, +3E, Timex, Z88,
+ZX81, ZX80 and Next; Phase 4's NextZXOS session without a card, skipped without `~/Klive/ks2.cim`),
+`test/commands/DebugRecordingCommands.test.ts`, `test/renderer/DebugRecordingViewerPanel.test.tsx`,
+`test/main/debug-recording-menus.test.ts`, the menu-structure and file-drop tests, and
+`scripts/debug-recording-ide-check.cjs` (the running IDE on the 48K: save, menu enablement, open,
+the status bar, Step Back).

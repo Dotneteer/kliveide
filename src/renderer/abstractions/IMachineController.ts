@@ -1,3 +1,5 @@
+import type { Timeline, TimelineSnapshot } from "@emu/machines/reverse/Timeline";
+import type { TimelinePosition } from "@emu/machines/reverse/timelinePosition";
 import type { ILiteEvent } from "@abstractions/ILiteEvent";
 import type { IOutputBuffer, OutputColor } from "@appIde/ToolArea/abstractions";
 import type { CodeToInject } from "@abstractions/CodeToInject";
@@ -119,6 +121,20 @@ export interface IMachineController {
 
   /** Ends the reverse-debugging timeline (`.plans/REVERSE_DEBUGGING_PLAN.md` D2): code injection does */
   endTimeline?(): void;
+
+  /** The reverse-debugging timeline of the current debug session, if the machine keeps one */
+  readonly timeline?: Timeline;
+
+  /**
+   * Opens a saved timeline - a debug recording (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` §4.4): the
+   * machine takes the present's state, the timeline is rebuilt around it, and the machine stands
+   * paused in a debug session at `land` (the present when omitted)
+   */
+  openTimeline?(
+    applyState: () => void,
+    snapshot: TimelineSnapshot,
+    options?: { land?: TimelinePosition; description?: string; expectedImage?: Uint8Array; recordingName?: string }
+  ): Promise<void>;
 
   /** Publishes the RZX session's progress to the store */
   publishRzxState(): void;

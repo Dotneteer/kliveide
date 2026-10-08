@@ -14,6 +14,7 @@ export default {
   "spectrum-snapshots": "Using ZX Spectrum Snapshots",
   "rzx-recordings": "Playing and Recording RZX Files",
   "machine-state": "Saving and Restoring the Machine State",
+  "debug-recordings": "Saving and Opening Debug Recordings",
   "z88-snapshots": "Using Z88 Snapshots",
   "zx81": "Using the ZX81 and ZX80"
 };

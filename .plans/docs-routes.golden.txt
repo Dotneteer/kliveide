@@ -45,6 +45,7 @@
 /howto/always-on-top/index.html
 /howto/background-compilation/index.html
 /howto/customize-syntax-colors/index.html
+/howto/debug-recordings/index.html
 /howto/diagnostics/index.html
 /howto/file-extensions/index.html
 /howto/ide-startup/index.html

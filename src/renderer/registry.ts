@@ -12,6 +12,7 @@ import {
   SPECTRUM_SNAPSHOT_VIEWER,
   RZX_VIEWER,
   MACHINE_STATE_VIEWER,
+  DEBUG_RECORDING_VIEWER,
   SCR_VIEWER,
   SHC_VIEWER,
   SHR_VIEWER,
@@ -150,6 +151,11 @@ import {
   machineStateLaunchCommandBarRenderer
 } from "@renderer/features/documents/MachineStateLaunchMenu";
 import { createMachineStateViewerPanel } from "@renderer/appIde/DocumentPanels/MachineState/MachineStateViewerPanel";
+import { createDebugRecordingViewerPanel } from "@renderer/appIde/DocumentPanels/DebugRecording/DebugRecordingViewerPanel";
+import {
+  debugRecordingLaunchCommandBarRenderer,
+  getDebugRecordingContextMenuInfo
+} from "@renderer/features/documents/DebugRecordingLaunchMenu";
 import {
   getZ88SnapshotContextMenuInfo,
   z88SnapshotLaunchCommandBarRenderer
@@ -551,6 +557,12 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     icon: "chip"
   },
   {
+    // --- Debug recordings (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` D19)
+    id: DEBUG_RECORDING_VIEWER,
+    renderer: createDebugRecordingViewerPanel,
+    icon: "history"
+  },
+  {
     id: Z88_SNAPSHOT_VIEWER,
     renderer: createZ88SnapshotViewerPanel,
     icon: "chip",
@@ -939,6 +951,19 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     openPermanent: true,
     documentTabRenderer: machineStateLaunchCommandBarRenderer,
     contextMenuInfo: getMachineStateContextMenuInfo
+  },
+  {
+    // --- Debug recordings (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` D19)
+    matchType: "ends",
+    pattern: ".klr",
+    editor: DEBUG_RECORDING_VIEWER,
+    icon: "history",
+    ignoreCase: true,
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true,
+    documentTabRenderer: debugRecordingLaunchCommandBarRenderer,
+    contextMenuInfo: getDebugRecordingContextMenuInfo
   },
   {
     matchType: "ends",

@@ -84,7 +84,8 @@ import {
   type ForkPreview,
   type ForkResult,
   type TimelineDebugSupport,
-  type TimelineMachine
+  type TimelineMachine,
+  type TimelineSnapshot
 } from "./reverse/Timeline";
 import { ReplayStateProvider } from "./reverse/ReplayStateProvider";
 import { comparePositions, type TimelinePosition } from "./reverse/timelinePosition";
@@ -1408,6 +1409,70 @@ export class MachineController implements IMachineController {
   }
 
   /**
+   * Opens a saved timeline - a debug recording (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` §4.4, D1,
+   * D10): the machine takes the present's state, the timeline is rebuilt around it by replaying from
+   * its last keyframe (which checks itself, D9), and the machine stands paused in a debug session -
+   * at the present, or, with `land`, at the recording's start or the point it was saved at. Every
+   * reverse-debugging command then works on it as on a session that just ran.
+   * @param applyState Puts the present's state into the machine (the recording's `.kls`)
+   * @param snapshot The timeline
+   * @param options `land`: where to stand; `description`: the output line; `expectedImage`: the
+   * present's state image, which the replay must arrive at; `recordingName`: the file, for the
+   * status bar (D10) and the unsaved-extension question (Q7)
+   * @throws When the machine keeps no timeline, or the replay diverged (the machine is then stopped)
+   */
+  async openTimeline(
+    applyState: () => void,
+    snapshot: TimelineSnapshot,
+    options: { land?: TimelinePosition; description?: string; expectedImage?: Uint8Array; recordingName?: string } = {}
+  ): Promise<void> {
+    if (!isTimelineMachine(this.machine)) throw new Error("This machine has no reverse debugging");
+    await this.restoreState(applyState, options.description ?? "Debug recording opened", { attachMedia: false });
+    this.historySource()?.setHistoryEnabled(true);
+    this.isDebugging = true;
+    const settingMb = this.store ? (getGlobalSetting(this.store, SETTING_EMU_REVERSE_DEBUG_MEMORY_MB) as number) : 0;
+    const deviceGb = (globalThis.navigator as { deviceMemory?: number } | undefined)?.deviceMemory;
+    this._reverseDesync = undefined;
+    try {
+      this._timeline = Timeline.fromSnapshot(this.machine, snapshot, {
+        budgetBytes: reverseDebugBudgetBytes(settingMb, deviceGb ? deviceGb * 2 ** 30 : undefined),
+        debugSupport: hasTimelineState(this.debugSupport) ? this.debugSupport : undefined,
+        beforeLeavePresent: () => this.publishHostEffects()
+      }, options.expectedImage ? { image: options.expectedImage } : undefined);
+    } catch (err) {
+      this._timeline = undefined;
+      this.historySource()?.setHistoryEnabled(false);
+      this.isDebugging = false;
+      this.state = MachineControllerState.Stopped;
+      throw err;
+    }
+    if (options.recordingName) {
+      this._timeline.recording = { name: options.recordingName, savedPresent: this._timeline.presentPosition };
+    }
+    this._replayProvider?.forgetPresent();
+    this.store?.dispatch(setDebuggingAction(true), "emu");
+    if (options.land) this.landInTimeline(options.land);
+    this.store?.dispatch(setMachineStateAction(this.state, this.machine.pc), "emu");
+    this.publishReverseState();
+  }
+
+  /** Puts the machine at a point of the timeline: on a record the cursor can name, else a deep landing (D17) */
+  private landInTimeline(target: TimelinePosition): void {
+    const timeline = this.timeline;
+    if (!timeline || comparePositions(target, timeline.presentPosition) >= 0) return;
+    const onRecord =
+      target.phase === 0 && timeline.viewHolds(target.sequence) && timeline.port.recordRepeat(target.sequence) === target.sub;
+    if (onRecord) {
+      this.historyCursor.moveToRecord(target.sequence + 1);
+      return;
+    }
+    this._historyCursor?.clear(false);
+    timeline.landAt(target);
+    this.replayProvider.anchorHere();
+    this.store?.dispatch(setHistoryPositionAction(0, undefined, true), "emu");
+  }
+
+  /**
    * Ends the timeline (D2): a stop, a reset, a restore, a code injection, a machine change, or the
    * recorder going off
    */
@@ -1456,7 +1521,8 @@ export class MachineController implements IMachineController {
         rangeSeconds: start === undefined ? undefined : round((present - start) * secondsPerFrame),
         deepLanding: mode === "navigating" && this._historyCursor?.sequence === undefined ? true : undefined,
         inputsIgnored: timeline.inputsIgnored || undefined,
-        searchedIntervals: this._reverseSearchIntervals
+        searchedIntervals: this._reverseSearchIntervals,
+        recording: timeline.recording?.name
       };
     } else if (this._reverseDesync) {
       state = { active: false, mode: "live", desync: this._reverseDesync };

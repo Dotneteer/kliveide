@@ -13,6 +13,12 @@ export type WasmLayout = {
   version: 1;
   /** The layout fingerprint (hex) */
   fingerprint: string;
+  /**
+   * SHA-256 of the module's code and data sections (hex): changes with any code change, which the
+   * fingerprint deliberately ignores. A debug recording replays only in a core with the same one
+   * (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` D3, T1). Absent in a core built before it was stamped.
+   */
+  codeHash?: string;
   /** The fixed linear memory size, in bytes */
   memorySize: number;
   /** Statics the image leaves out */

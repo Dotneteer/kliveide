@@ -23,13 +23,14 @@
  */
 
 import { installJournal, type JournalHandle } from "./JournalingExports";
-import { InputJournal } from "./InputJournal";
+import { InputJournal, type JournalEntry } from "./InputJournal";
 import { KeyframeStore, type Keyframe, type KeyframeStoreStats, type MemoryRange } from "./KeyframeStore";
 import { ReplayDesyncError, ReplayEngine, type ReplayResult } from "./ReplayEngine";
 import {
   comparePositions,
   HistoryPositionPort,
   type HistoryPositionExports,
+  type PositionSeed,
   type RingSnapshot,
   type TimelinePosition
 } from "./timelinePosition";
@@ -136,6 +137,47 @@ export type TimelineOptions = {
   beforeLeavePresent?: () => void;
 };
 
+/**
+ * A timeline as plain data (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` §4.2, D1): what a debug
+ * recording saves and what `fromSnapshot` rebuilds a timeline from. Pages are references into the
+ * pool - immutable, so a save can write them while the machine runs on (T10).
+ */
+export type TimelineSnapshot = {
+  /** Lasting keyframes in position order; `pages` index `pages` below */
+  keyframes: {
+    seed: PositionSeed;
+    frame: number;
+    journalIndex: number;
+    complete: boolean;
+    pages: Int32Array;
+    meta?: unknown;
+  }[];
+  pages: Uint8Array[];
+  /** From the first keyframe on; keyframe journal indexes count from its start */
+  journal: JournalEntry[];
+  /** Logged breakpoint hits from the first keyframe on; keyframe `hitLogIndex`es count from its start */
+  hits: { position: TimelinePosition; key: string }[];
+  /** Where the live run stood, and what replay cannot rebuild about it */
+  present: {
+    position: TimelinePosition;
+    frames: number;
+    host: unknown;
+    debug?: DebugTimelineState;
+    ring: RingSnapshot;
+  };
+  /** Where the machine stood when the snapshot was taken in the past */
+  cursor?: TimelinePosition;
+  /** Only keyframes about `sparseFrames` apart were kept (D7) */
+  sparse: boolean;
+};
+
+export type TimelineSnapshotOptions = {
+  /** Drop everything before the last keyframe at or before this point (D8) */
+  from?: TimelinePosition;
+  /** Keep only keyframes about this many frames apart, and always the first and the last (D7) */
+  sparseFrames?: number;
+};
+
 /** What a keyframe keeps besides the image */
 type KeyframeMeta = {
   host: unknown;
@@ -204,6 +246,17 @@ export class Timeline {
   /** Bytes a keyframe comparison leaves out (T15: the CPU's bus-event fields) */
   readonly verifyIgnore: MemoryRange[];
 
+  /**
+   * For a timeline opened from a debug recording: the file's name, and the present it was last
+   * opened or saved at (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` D10, Q7)
+   */
+  recording?: { name: string; savedPresent: TimelinePosition };
+
+  /** A timeline opened from a file was run on past what the file holds (Q7: a stop asks first) */
+  get hasUnsavedExtension(): boolean {
+    return !!this.recording && comparePositions(this.presentPosition, this.recording.savedPresent) > 0;
+  }
+
   private constructor(
     private readonly machine: TimelineMachine,
     private readonly debugSupport: TimelineDebugSupport | undefined,
@@ -252,6 +305,210 @@ export class Timeline {
     machine.attachSdUndoLog?.(timeline.sdUndo);
     timeline.takeKeyframe();
     return timeline;
+  }
+
+  /**
+   * Rebuilds a timeline from a snapshot (a loaded debug recording, §4.2): the pool, the keyframes,
+   * the journal and the hit log go in, the machine replays from the last keyframe to the present -
+   * checking itself against the saved ring on the way (D9) - and the timeline goes live there,
+   * exactly as if the session had just run up to it.
+   *
+   * The machine should already hold the present's state (its `.kls`): the replay rewrites every
+   * byte a keyframe holds, and the present's picture and wrapper fields are then right too.
+   * @throws When the snapshot does not fit the core, or the replay diverged (`ReplayDesyncError`)
+   */
+  static fromSnapshot(
+    machine: TimelineMachine,
+    snapshot: TimelineSnapshot,
+    options: TimelineOptions,
+    expected?: { image: Uint8Array }
+  ): Timeline {
+    if (!snapshot.keyframes.length) throw new Error("The recording has no keyframes");
+    const timeline = new Timeline(machine, options.debugSupport, options);
+    try {
+      timeline.port.setEnabled(true);
+      timeline.attachHitLog();
+      machine.attachSdUndoLog?.(timeline.sdUndo);
+      timeline.store.importKeyframes(snapshot.pages, snapshot.keyframes);
+      for (const entry of snapshot.journal) timeline.journal.append(entry);
+      for (const hit of snapshot.hits) timeline.hitLog.push(hit);
+      const present = snapshot.present;
+      const last = timeline.store.keyframes[timeline.store.keyframes.length - 1];
+      if (comparePositions(last.seed.position, present.position) > 0) throw new Error("The recording's present is before its last keyframe");
+      // --- The saved ring first: a replay that rewinds into it compares with what the recorded run wrote
+      timeline.port.restoreRing(present.ring);
+      timeline.runReplay(present.position, false);
+      // --- The replay must arrive at the saved present: every byte a state keeps, the scratch aside
+      if (expected) {
+        const pages = timeline.diffImage(expected.image);
+        if (pages.length) throw new ReplayDesyncError(present.position, "keyframe", pages);
+      }
+      timeline.port.restoreRing(present.ring);
+      machine.restoreHostState(present.host);
+      if (present.debug) timeline.debugSupport?.restoreTimelineState(present.debug);
+      timeline.goLive();
+      return timeline;
+    } catch (err) {
+      timeline.end();
+      throw err;
+    }
+  }
+
+  /**
+   * The timeline as plain data (§4.2): the lasting keyframes up to the present, the journal and hit
+   * log from the first of them, the present's ring and state. From the past, the present is the one
+   * the timeline left, and the cursor is where the machine stands.
+   */
+  exportSnapshot(options: TimelineSnapshotOptions = {}): TimelineSnapshot {
+    this.assertActive();
+    if (this._mode === "replaying") throw new Error("A replay run is in progress");
+    const live = this._mode === "live";
+    const present = live
+      ? {
+          position: this.port.position,
+          frames: this.machineFrames,
+          host: this.machine.captureHostState(),
+          debug: this.debugSupport?.captureTimelineState(),
+          ring: this.port.snapshotRing(),
+          journalLength: this.journal.length
+        }
+      : { ...this.present!, journalLength: this.present!.journalLength };
+    let kept = this.store.keyframes.filter((k) => !k.transient && comparePositions(k.seed.position, present.position) <= 0);
+    if (!kept.length) throw new Error("The timeline has no keyframe");
+    // --- D8: from the last keyframe at or before the requested start
+    if (options.from) {
+      let first = 0;
+      kept.forEach((k, i) => {
+        if (comparePositions(k.seed.position, options.from!) <= 0) first = i;
+      });
+      kept = kept.slice(first);
+    }
+    // --- D7: about `sparseFrames` apart, always the first and the last
+    const sparse = !!options.sparseFrames && options.sparseFrames > 0;
+    if (sparse) {
+      const thin = [kept[0]];
+      for (let i = 1; i < kept.length - 1; i++) {
+        if (kept[i].frame - thin[thin.length - 1].frame >= options.sparseFrames!) thin.push(kept[i]);
+      }
+      if (kept.length > 1) thin.push(kept[kept.length - 1]);
+      kept = thin;
+    }
+    const base = kept[0];
+    const baseHits = (base.meta as KeyframeMeta | undefined)?.hitLogIndex ?? 0;
+    const { pages, tables } = this.store.exportKeyframes(kept);
+    const keyframes = kept.map((k, i) => {
+      const meta = k.meta as KeyframeMeta | undefined;
+      return {
+        seed: k.seed,
+        frame: k.frame,
+        journalIndex: k.journalIndex - base.journalIndex,
+        complete: k.complete,
+        pages: tables[i],
+        meta: meta ? { ...meta, hitLogIndex: meta.hitLogIndex - baseHits } : undefined
+      };
+    });
+    const hits = this.hitLog.slice(baseHits).filter((h) => comparePositions(h.position, present.position) <= 0);
+    // --- The ring keeps only records from the new base on (T4)
+    const ring = present.ring;
+    const span = present.position.sequence - base.seed.position.sequence + 1;
+    const trimmedRing: RingSnapshot =
+      ring.view.count > span ? { view: { ...ring.view, count: Math.max(0, span) }, records: ring.records } : ring;
+    return {
+      keyframes,
+      pages,
+      journal: this.journal.entries.slice(base.journalIndex, present.journalLength),
+      hits,
+      present: {
+        position: present.position,
+        frames: present.frames,
+        host: present.host,
+        debug: present.debug,
+        ring: trimmedRing
+      },
+      cursor: live ? undefined : this.at,
+      sparse
+    };
+  }
+
+  /**
+   * Replays the whole timeline once from its first keyframe to the present, comparing the machine
+   * with every keyframe on the way (D9; a loaded recording's `-verify`). The machine ends at the
+   * present as it was. A desync ends the timeline, as any replay's does.
+   * @throws ReplayDesyncError when the replay diverged
+   */
+  verify(): ReplayResult {
+    this.assertActive();
+    if (this._mode !== "live") throw new Error("Verify a timeline at its present");
+    const first = this.store.keyframes.find((k) => !k.transient);
+    if (!first) throw new Error("The timeline has no keyframe");
+    const position = this.port.position;
+    const ring = this.port.snapshotRing();
+    const host = this.machine.captureHostState();
+    const debug = this.debugSupport?.captureTimelineState();
+    this.replaying = true;
+    try {
+      return this.engine.replayTo(position, { from: first, verifyKeyframes: true, verifyIgnore: this.verifyIgnore });
+    } catch (err) {
+      if (err instanceof ReplayDesyncError) this.cutAtDesync(err);
+      throw err;
+    } finally {
+      this.replaying = false;
+      if (!this.ended) {
+        this.port.restoreRing(ring);
+        this.machine.restoreHostState(host);
+        if (debug) this.debugSupport?.restoreTimelineState(debug);
+        this.machine.invalidateHostSync();
+      }
+    }
+  }
+
+  /**
+   * The 4 KiB pages where the live memory differs from a state image (`captureWasmImage`): the
+   * volatile statics, the C stack, the frame-boundary scratch and the bus-event fields left out
+   */
+  private diffImage(image: Uint8Array): number[] {
+    const live = new Uint8Array(this.memory.buffer);
+    if (image.length !== live.length) return [0];
+    const layout = readWasmLayout(this.machine.reverseRuntime!.module)!;
+    const ignore = [
+      ...layout.volatile,
+      ...(layout.stack ? [layout.stack] : []),
+      ...(layout.scratch ?? []),
+      ...this.verifyIgnore
+    ];
+    const skip = new Uint8Array(live.length);
+    for (const r of ignore) skip.fill(1, r.address, Math.min(live.length, r.address + r.size));
+    const pages: number[] = [];
+    for (let i = 0; i < live.length; i++) {
+      if (live[i] !== image[i] && !skip[i]) {
+        pages.push(Math.floor(i / 4096));
+        i = (Math.floor(i / 4096) + 1) * 4096 - 1;
+      }
+    }
+    return pages;
+  }
+
+  /**
+   * Runs `fn` with the machine at the present: at once while live; from the past, the machine
+   * replays to the present and back to where it stood (the `.kls` of a recording saved in the past,
+   * D16)
+   */
+  withPresent<T>(fn: () => T): T {
+    this.assertActive();
+    if (this._mode === "live") return fn();
+    if (this._mode === "replaying") throw new Error("A replay run is in progress");
+    const present = this.present!;
+    const at = this.at!;
+    const viewRing = this.viewRing ?? present.ring;
+    this.runReplay(present.position, false);
+    this.machine.restoreHostState(present.host);
+    try {
+      return fn();
+    } finally {
+      this.runReplay(at, false);
+      this.at = this.port.position;
+      this.port.restoreRing(viewRing);
+    }
   }
 
   get mode(): TimelineMode {

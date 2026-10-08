@@ -215,3 +215,12 @@ export function classifyExport(coreId: string, name: string): ExportClass | unde
 export function unclassifiedExports(coreId: string, names: readonly string[]): string[] {
   return names.filter((n) => classifyExport(coreId, n) === undefined);
 }
+
+/**
+ * A core's journaled exports, sorted: a debug recording's journal names them, so two builds whose
+ * lists differ cannot replay each other's recordings (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` D3, T2)
+ * @param names The module's export names (`WebAssembly.Module.exports`)
+ */
+export function journaledExportNames(coreId: string, names: readonly string[]): string[] {
+  return names.filter((name) => classifyExport(coreId, name) === "journaled").sort();
+}

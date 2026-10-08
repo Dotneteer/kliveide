@@ -383,6 +383,110 @@ export class KeyframeStore {
     for (const k of [...this.transientOrder]) this.remove(k);
   }
 
+  /**
+   * The pool pages a set of keyframes refers to, each once, and their page tables renumbered into
+   * that list (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` §4.2, D6). Pages are immutable once pooled,
+   * so the arrays are shared, not copied: a save can write them after the machine runs on (T10).
+   */
+  exportKeyframes(keyframes: readonly Keyframe[]): { pages: Uint8Array[]; tables: Int32Array[] } {
+    const index = new Map<number, number>();
+    const pages: Uint8Array[] = [];
+    const tables = keyframes.map((k) => {
+      const table = new Int32Array(this.pageCount);
+      for (let p = 0; p < this.pageCount; p++) {
+        const slot = k.pages[p];
+        if (slot < 0) {
+          table[p] = -1;
+          continue;
+        }
+        let at = index.get(slot);
+        if (at === undefined) {
+          at = pages.length;
+          index.set(slot, at);
+          pages.push(this.pool[slot]!);
+        }
+        table[p] = at;
+      }
+      return table;
+    });
+    return { pages, tables };
+  }
+
+  /**
+   * Puts saved keyframes into an empty store: their pages into the pool, each referenced by every
+   * keyframe that uses it (a loaded debug recording, §4.2). The budget is not enforced here: the
+   * recording's past is what the user opened; new keyframes evict the oldest as usual.
+   * @param pages The saved pages
+   * @param keyframes In position order; `pages` index the saved pages
+   */
+  importKeyframes(
+    pages: readonly Uint8Array[],
+    keyframes: readonly {
+      seed: PositionSeed;
+      frame: number;
+      journalIndex: number;
+      complete: boolean;
+      pages: Int32Array;
+      meta?: unknown;
+    }[]
+  ): Keyframe[] {
+    if (this.frames.length) throw new Error("Keyframes can only be imported into an empty store");
+    const slots = pages.map((page) => {
+      if (page.length !== KEYFRAME_PAGE_SIZE) throw new Error("A saved page has the wrong size");
+      const slot = this.freeSlots.pop() ?? this.pool.length;
+      this.pool[slot] = page;
+      this.refs[slot] = 0;
+      this.poolPageCount++;
+      return slot;
+    });
+    const seen = new Set<number>();
+    for (const k of keyframes) {
+      if (k.pages.length !== this.pageCount) throw new Error("A saved keyframe does not cover this core's memory");
+      if (k.complete === false && !this.hasScratch) throw new Error("A saved keyframe leaves out scratch this core does not have");
+      const table = new Int32Array(this.pageCount);
+      let added = 0;
+      for (let p = 0; p < this.pageCount; p++) {
+        const ref = k.pages[p];
+        if (ref < 0) {
+          table[p] = -1;
+          continue;
+        }
+        const slot = slots[ref];
+        if (slot === undefined) throw new Error("A saved keyframe refers to a page that was not saved");
+        this.refs[slot]++;
+        table[p] = slot;
+        if (!seen.has(ref)) {
+          seen.add(ref);
+          added++;
+        }
+      }
+      this.frames.push({
+        id: this.nextId++,
+        seed: k.seed,
+        frame: k.frame,
+        journalIndex: k.journalIndex,
+        pages: table,
+        newPages: added,
+        captureMs: 0,
+        meta: k.meta,
+        complete: k.complete,
+        transient: false
+      });
+    }
+    for (let i = 1; i < this.frames.length; i++) {
+      if (comparePositions(this.frames[i - 1].seed.position, this.frames[i].seed.position) > 0) {
+        throw new Error("Saved keyframes are not in position order");
+      }
+    }
+    // --- A page no keyframe uses would never be freed
+    for (const slot of slots) {
+      if (this.refs[slot] > 0) continue;
+      this.refs[slot] = 1;
+      this.release(slot);
+    }
+    return this.frames.slice();
+  }
+
   /** Drops every keyframe */
   clear(): void {
     for (const k of [...this.frames]) this.remove(k);

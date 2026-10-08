@@ -32,12 +32,14 @@ export function reverseStatusText(state: ReverseDebugState | undefined, historyS
   if (state.mode === "replaying") {
     return `▶ Replaying · ${formatReverseSeconds(state.behindSeconds ?? 0)} to present`;
   }
+  // --- A timeline opened from a debug recording names its file (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` D10)
+  const file = state.recording ? ` · ${state.recording}` : "";
   if (state.mode === "navigating") {
     const behind = `⟲ −${formatReverseSeconds(state.behindSeconds ?? 0)}`;
-    if (state.deepLanding) return `${behind} · before the history window`;
-    return historyStep ? `${behind} · step ${historyStep}` : behind;
+    if (state.deepLanding) return `${behind} · before the history window${file}`;
+    return `${historyStep ? `${behind} · step ${historyStep}` : behind}${file}`;
   }
-  return undefined;
+  return state.recording ? `Recording: ${state.recording}` : undefined;
 }
 
 /** The status bar's tooltip for a timeline */
@@ -57,6 +59,7 @@ export function reverseStatusTooltip(state: ReverseDebugState | undefined): stri
     lines.push(`Input ignored while in the past (${state.inputsIgnored}): use Take over here to continue from this point.`);
   }
   if (state.rangeSeconds !== undefined) lines.push(`Reverse range: ${formatReverseSeconds(state.rangeSeconds)}`);
+  if (state.recording) lines.push(`Opened from the debug recording ${state.recording}: its past is the file's`);
   return lines.join("\n");
 }
 

@@ -1342,6 +1342,42 @@ history-export <file> [-from <-n|#seq>] [-to <-n|#seq>] [-count <n>]
 
 Available aliases: `hexp`
 
+## `debug-recording-save`
+
+Use this command to save the [reverse-debugging](/working-with-ide/reverse-debugging) session as a
+[debug recording](/howto/debug-recordings) (`.klr`): its keyframes, inputs, breakpoints and watches.
+The machine needs a reverse-debugging timeline (start it with debugging); a running machine runs on.
+
+```
+debug-recording-save <file.klr> [-from <-n|#seq>] [-sparse] [-sources] [-f] [-note <text>]
+```
+
+- `-from`: drop everything before the last keyframe at or before this point: `-42` steps back from
+  the present, `#1234` a record's sequence number.
+- `-sparse`: keep only keyframes about a second apart.
+- `-sources`: embed the compilation's source files (by default only their names and fingerprints).
+- `-f`: replace an existing file.
+- `-note`: a description; the rest of the line.
+
+Available aliases: `drsave`
+
+## `debug-recording-load`
+
+Use this command to open a [debug recording](/howto/debug-recordings): it switches to the machine the
+recording was made on and stands paused where it was saved, with the whole recording to step back
+through.
+
+```
+debug-recording-load <file.klr> [-start] [-verify] [-nobreakpoints] [-y]
+```
+
+- `-start`: stand at the recording's start instead; Continue replays it with breakpoints active.
+- `-verify`: replay the whole recording once, checking every keyframe.
+- `-nobreakpoints`: keep the current breakpoints instead of adding the recording's.
+- `-y`: a recording made by another Klive build cannot be replayed; open its end state instead.
+
+Available aliases: `drload`
+
 ## `history-clear`
 
 Use this command to empty the execution history.

@@ -33,6 +33,7 @@ export const Z88_SNAPSHOT_VIEWER = "Z88SnapshotViewer";
 export const SPECTRUM_SNAPSHOT_VIEWER = "SpectrumSnapshotViewer";
 export const RZX_VIEWER = "RzxViewer";
 export const MACHINE_STATE_VIEWER = "MachineStateViewer";
+export const DEBUG_RECORDING_VIEWER = "DebugRecordingViewer";
 export const SCR_VIEWER = "ScsViewer";
 export const SHC_VIEWER = "ShcViewer";
 export const SHR_VIEWER = "ShrViewer";

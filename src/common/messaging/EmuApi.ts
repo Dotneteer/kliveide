@@ -1,3 +1,10 @@
+import type {
+  DebugRecordingCompatibility,
+  DebugRecordingLoadOptions,
+  DebugRecordingLoadResult,
+  DebugRecordingSaveOptions,
+  DebugRecordingSaveResult
+} from "@common/debugRecording/debugRecordingTypes";
 import { PsgChipState } from "@emu/abstractions/PsgChipState";
 import { MachineCommand } from "@abstractions/MachineCommand";
 import { buildMessagingProxy } from "./MessageProxy";
@@ -264,6 +271,46 @@ class EmuApiImpl {
     _mode: MachineStateLoadMode,
     _options?: { currentSdCard?: SdCardFingerprint; acceptChangedSdCard?: boolean }
   ): Promise<MachineStateLoadResult> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Saves the reverse-debugging timeline as a debug recording (`.klr`;
+   * `.plans/DEBUG_SESSION_RECORDING_PLAN.md` §4.4). A running machine runs on afterwards.
+   * @param _options What to save, and the IDE's part of it (version, watches, sources, SD card)
+   * @returns The file; rejects when the machine keeps no timeline
+   */
+  async saveDebugRecording(_options: DebugRecordingSaveOptions): Promise<DebugRecordingSaveResult> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Opens a debug recording: the machine it was made on, its timeline, paused where it was saved
+   * (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` §4.4, D10)
+   * @param _fileName The file's name, for messages
+   * @param _contents The file
+   * @param _kliveVersion This Klive's version (the same-build message, D3)
+   * @param _options Where to land, `-verify`, `-nobreakpoints`, the end-state fallback, the SD card
+   */
+  async loadDebugRecording(
+    _fileName: string,
+    _contents: Uint8Array,
+    _kliveVersion: string,
+    _options?: DebugRecordingLoadOptions
+  ): Promise<DebugRecordingLoadResult> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Whether this build can replay a debug recording (the viewer, `.plans/DEBUG_SESSION_RECORDING_PLAN.md`
+   * D19): known when the running machine has the recording's core
+   * @param _header The recording's identity
+   * @param _kliveVersion This Klive's version, for the message
+   */
+  async checkDebugRecording(
+    _header: { kliveVersion: string; coreId: string; fingerprint: string; codeHash: string; contractHash: string; memorySize: number },
+    _kliveVersion: string
+  ): Promise<DebugRecordingCompatibility> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 
@@ -1444,7 +1491,10 @@ const UNBOUNDED_EMU_METHODS = [
   "startDiskBoot",
   // --- Script lifetime is controlled by the script/user, not by this call
   "startScript",
-  "stopScript"
+  "stopScript",
+  // --- Scale with the recording: deflating or replaying hundreds of MB (DEBUG_SESSION_RECORDING T9)
+  "saveDebugRecording",
+  "loadDebugRecording"
 ] as const;
 
 export function createEmuApi(messenger: MessengerBase): EmuApiImpl {

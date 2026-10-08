@@ -79,12 +79,21 @@ import type {
   RzxVideoOptions
 } from "@common/spectrum/rzx/rzxCommandTypes";
 import {
+  coreIdOfMachine,
   loadMachineStateFile,
   quickRestoreMachineState,
   quickSaveMachineState,
   saveMachineStateFile,
   type MachineStatePorts
 } from "./machines/machineStateFile";
+import { coreIdentity, loadDebugRecording, recordingMismatch, saveDebugRecording } from "./machines/debugRecordingFile";
+import type {
+  DebugRecordingCompatibility,
+  DebugRecordingLoadOptions,
+  DebugRecordingLoadResult,
+  DebugRecordingSaveOptions,
+  DebugRecordingSaveResult
+} from "@common/debugRecording/debugRecordingTypes";
 import type {
   MachineStateLoadMode,
   MachineStateLoadResult,
@@ -176,11 +185,11 @@ class EmuMessageProcessor {
       case "pause":
         return controller.pause();
       case "stop":
-        return controller.stop();
+        return this.unlessKeepingRecording("Stop", () => controller.stop());
       case "reset":
-        return controller.cpuReset();
+        return this.unlessKeepingRecording("Reset", () => controller.cpuReset());
       case "restart":
-        return controller.restart();
+        return this.unlessKeepingRecording("Restart", () => controller.restart());
       case "debug":
         return controller.startDebug();
       case "stepInto":
@@ -525,6 +534,63 @@ class EmuMessageProcessor {
         : undefined,
       acceptChangedSdCard: options.acceptChangedSdCard
     });
+  }
+
+  /**
+   * Runs a command that ends the timeline - unless the timeline came from a debug recording, was run
+   * on past its end, and the user keeps it (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` Q7, T12)
+   */
+  private async unlessKeepingRecording(what: string, command: () => Promise<unknown>): Promise<unknown> {
+    const timeline = this.machineService.getMachineController()?.timeline;
+    if (timeline?.hasUnsavedExtension) {
+      const discard = await createMainApi(this.mainMessenger).confirmAction(
+        "Debug Recording",
+        `${what} discards what ran after the end of ${timeline.recording!.name}.`,
+        "The recording was continued past its end, and that part is not in the file. Cancel, then use Debug › Save Debug Recording... to keep it.",
+        what
+      );
+      if (!discard) return undefined;
+    }
+    return command();
+  }
+
+  /**
+   * Saves a debug recording (see `EmuApi.saveDebugRecording`).
+   */
+  saveDebugRecording(options: DebugRecordingSaveOptions): Promise<DebugRecordingSaveResult> {
+    return saveDebugRecording(this.machineStatePorts(), options);
+  }
+
+  /**
+   * Opens a debug recording (see `EmuApi.loadDebugRecording`).
+   */
+  loadDebugRecording(
+    fileName: string,
+    contents: Uint8Array,
+    kliveVersion: string,
+    options: DebugRecordingLoadOptions = {}
+  ): Promise<DebugRecordingLoadResult> {
+    return loadDebugRecording(this.machineStatePorts(), fileName, contents, kliveVersion, options);
+  }
+
+  /**
+   * Whether this build can replay a debug recording (see `EmuApi.checkDebugRecording`).
+   */
+  async checkDebugRecording(
+    header: { kliveVersion: string; coreId: string; fingerprint: string; codeHash: string; contractHash: string; memorySize: number },
+    kliveVersion: string
+  ): Promise<DebugRecordingCompatibility> {
+    const machine = this.machineService.getMachineController()?.machine as
+      | { machineId: string; wasmV2Runtime?: { module?: WebAssembly.Module } }
+      | undefined;
+    const liveCoreId = machine ? coreIdOfMachine(machine.machineId) : undefined;
+    if (!machine || liveCoreId !== header.coreId) return { known: false, liveCoreId };
+    try {
+      const live = await coreIdentity(header.coreId, machine.wasmV2Runtime?.module);
+      return { known: true, refusal: recordingMismatch(header, header.coreId, live, kliveVersion) };
+    } catch (err) {
+      return { known: true, refusal: (err as Error).message };
+    }
   }
 
   /**

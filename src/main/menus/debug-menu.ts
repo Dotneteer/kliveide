@@ -8,10 +8,11 @@ import type { MenuItemConstructorOptions } from "electron";
 
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { SETTING_IDE_SYNC_BREAKPOINTS } from "@common/settings/setting-const";
-import { MF_EXEC_HISTORY } from "@common/machines/constants";
+import { MF_EXEC_HISTORY, MF_REVERSE_DEBUG } from "@common/machines/constants";
 import { getEmuApi } from "@messaging/MainToEmuMessenger";
 import { getIdeApi } from "@messaging/MainToIdeMessenger";
 import { canExportHistory, exportExecutionHistoryAs } from "@main/history-export";
+import { canSaveDebugRecording, pickAndOpenDebugRecording, saveDebugRecordingAs } from "@main/debug-recording-menus";
 import { type MenuContext, windowInfoOf } from "./menu-context";
 import { createBooleanSettingsMenu, submenuContent, tidySeparators } from "./menu-utils";
 
@@ -118,6 +119,28 @@ export function createDebugMenu(context: MenuContext): MenuItemConstructorOption
             enabled: canExportHistory(context.appState),
             click: async () => {
               await exportExecutionHistoryAs(context.focusedWindow());
+            }
+          }
+        ]
+      : []),
+    // --- Debug recordings (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` D2): a reverse-debugging session
+    // --- to a file and back; saving needs a timeline, opening switches to the recording's machine
+    ...(context.currentMachine?.features?.[MF_REVERSE_DEBUG]
+      ? [
+          { type: "separator" as const },
+          {
+            id: "save_debug_recording",
+            label: "Save Debug Recording...",
+            enabled: canSaveDebugRecording(context.appState),
+            click: async () => {
+              await saveDebugRecordingAs(context.focusedWindow());
+            }
+          },
+          {
+            id: "open_debug_recording",
+            label: "Open Debug Recording...",
+            click: async () => {
+              await pickAndOpenDebugRecording(context.focusedWindow());
             }
           }
         ]

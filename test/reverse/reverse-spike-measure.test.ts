@@ -5,6 +5,9 @@
  *
  *   KLIVE_REVERSE_SPIKE=1 npm test -- test/reverse/reverse-spike-measure.test.ts
  *
+ * The debug recording's Phase 0 (`.plans/DEBUG_SESSION_RECORDING_PLAN.md`) runs with
+ * `KLIVE_RECORDING_MEASURE=1` (`KLIVE_RECORDING_OUT=<file.json>` writes its results).
+ *
  * Optional: `KLIVE_WASM_MAP_DIR=<folder>` (set it for the core builds as well) attributes changed
  * pages to the core's statics; `KLIVE_REVERSE_SPIKE_OUT=<file.json>` writes the raw results. The
  * NextZXOS workload needs `~/Klive/ks2.cim` (cloned, never written) and is skipped without it.
@@ -26,6 +29,9 @@ import type { SdCardBacking } from "../harness/zxnext/script/sd-card";
 import { ReverseRig, seededRandom, type SpikeCoreId } from "../harness/reverseSupport";
 import { Timeline, type TimelineMachine } from "@emu/machines/reverse/Timeline";
 import { comparePositions } from "@emu/machines/reverse/timelinePosition";
+import { readDebugRecording, writeDebugRecording } from "@common/debugRecording/debugRecordingFile";
+import { writeKliveStateFile } from "@common/machineState/kliveStateFile";
+import { recordingToSnapshot, snapshotToRecordingParts } from "@emu/machines/reverse/timelineRecording";
 
 const ENABLED = process.env.KLIVE_REVERSE_SPIKE === "1";
 const ROOT = join(__dirname, "../..");
@@ -650,5 +656,124 @@ describe.skipIf(!SESSION_ENABLED)("reverse debugging: a 10-minute session (Phase
   afterAll(() => {
     const out = process.env.KLIVE_REVERSE_SPIKE_OUT;
     if (out) writeFileSync(out, JSON.stringify(sessionResults, null, 2));
+  });
+});
+
+// ------------------------------------------------------------------------------------------------
+// Debug recordings, Phase 0 (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` §5): what a recording of each
+// workload costs on disk and to save and open, full and sparse, at deflate levels 1, 6 and 9.
+// KLIVE_RECORDING_MEASURE=1; KLIVE_RECORDING_FRAMES sets the session length (60 s by default).
+
+const RECORDING_ENABLED = process.env.KLIVE_RECORDING_MEASURE === "1";
+const RECORDING_FRAMES = Number(process.env.KLIVE_RECORDING_FRAMES ?? 3000);
+const recordingResults: Result[] = [];
+
+async function freshMachine(coreId: SpikeCoreId): Promise<TimelineMachine & { loadMachineState(p: unknown): void }> {
+  return (coreId === "sp48" ? (await createSp48Session()).machine : (await createNextSession()).machine) as never;
+}
+
+async function measureRecording(w: Workload): Promise<Result> {
+  const session = await w.setup();
+  session.rig.dispose();
+  const machine = session.machine as unknown as TimelineMachine & { saveMachineState(): any };
+  const timeline = Timeline.start(machine, { budgetBytes: 512 * 1048576 });
+  for (let f = 0; f < RECORDING_FRAMES; f++) {
+    await session.frame(f);
+    timeline.afterFrame(true);
+  }
+  const parts = machine.saveMachineState();
+  const kls = writeKliveStateFile({
+    header: {
+      machineId: w.coreId,
+      kliveVersion: "measure",
+      coreId: w.coreId,
+      fingerprint: parts.fingerprint,
+      memorySize: parts.memorySize,
+      savedAt: "",
+      pc: 0
+    },
+    image: parts.image,
+    host: parts.host,
+    media: []
+  });
+  const result: Result = {
+    workload: w.name,
+    frames: RECORDING_FRAMES,
+    poolMb: round(timeline.store.stats.poolBytes / 1048576, 1),
+    journalEntries: timeline.journal.length,
+    klsKb: round(kls.length / 1024, 0)
+  };
+  for (const sparse of [false, true]) {
+    let t0 = performance.now();
+    const snapshot = timeline.exportSnapshot({ sparseFrames: sparse ? 50 : undefined });
+    const exportMs = performance.now() - t0;
+    const recording = {
+      header: {
+        machineId: w.coreId,
+        kliveVersion: "measure",
+        coreId: w.coreId,
+        fingerprint: parts.fingerprint,
+        codeHash: "",
+        contractHash: "",
+        memorySize: parts.memorySize,
+        pageSize: KEYFRAME_PAGE_SIZE,
+        savedAt: "",
+        base: snapshot.keyframes[0].seed.position,
+        present: snapshot.present.position,
+        frames: 0,
+        seconds: 0,
+        records: 0,
+        keyframes: snapshot.keyframes.length,
+        sparse: snapshot.sparse,
+        pc: 0
+      },
+      ...snapshotToRecordingParts(snapshot),
+      media: [] as never[],
+      kls
+    };
+    const variant: Result = { keyframes: snapshot.keyframes.length, pages: snapshot.pages.length, exportMs: round(exportMs, 1) };
+    let bytes6: Uint8Array | undefined;
+    for (const level of [1, 6, 9] as const) {
+      t0 = performance.now();
+      const bytes = await writeDebugRecording(recording, level);
+      variant[`level${level}`] = { mb: round(bytes.length / 1048576, 2), writeMs: round(performance.now() - t0, 0) };
+      if (level === 6) bytes6 = bytes;
+    }
+    // --- Opening at level 6: read, the present's state, the timeline rebuilt by replay, then -verify
+    t0 = performance.now();
+    const read = await readDebugRecording(bytes6!);
+    const readMs = performance.now() - t0;
+    variant.sections = read.sectionSizes;
+    const fresh = await freshMachine(w.coreId);
+    t0 = performance.now();
+    fresh.loadMachineState(parts);
+    const opened = Timeline.fromSnapshot(fresh, recordingToSnapshot(read), { budgetBytes: 512 * 1048576 }, { image: parts.image });
+    const openMs = performance.now() - t0;
+    t0 = performance.now();
+    opened.verify();
+    const verifyMs = performance.now() - t0;
+    expect(opened.position).toEqual(timeline.position);
+    opened.end();
+    Object.assign(variant, { readMs: round(readMs, 0), openMs: round(openMs, 0), verifyMs: round(verifyMs, 0) });
+    result[sparse ? "sparse" : "full"] = variant;
+  }
+  recordingResults.push(result);
+  console.log(JSON.stringify(result, null, 1));
+  timeline.end();
+  session.dispose?.();
+  return result;
+}
+
+describe.skipIf(!RECORDING_ENABLED)("debug recordings: Phase 0 measurements", () => {
+  for (const w of [...workloads48, ...workloadsNext]) {
+    it(w.name, async () => {
+      if (w.coreId === "sp48" && !existsSync(YANKEE)) return;
+      if (w.name.includes("NextZXOS") && !existsSync(KS2)) return;
+      await measureRecording(w);
+    }, 3_600_000);
+  }
+  afterAll(() => {
+    const out = process.env.KLIVE_RECORDING_OUT;
+    if (out) writeFileSync(out, JSON.stringify(recordingResults, null, 2));
   });
 });

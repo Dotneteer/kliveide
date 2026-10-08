@@ -9,6 +9,8 @@
  *  - `.kls`: load the Klive state and debug it, stopping at its PC (`state-load -d`, asking before a
  *    load that needs `-y`);
  *  - `.rzx`: play the RZX recording (`zx-rzx`, `.plans/RZX_PLAN.md`);
+ *  - `.klr`: open the debug recording (`debug-recording-load`, asking before opening only its end
+ *    state, `.plans/DEBUG_SESSION_RECORDING_PLAN.md`);
  *  - anything else: refused with a message.
  */
 
@@ -16,15 +18,17 @@ import { spectrumSnapshotCommandText } from "@common/spectrum/snapshot/spectrumS
 import { z88SnapshotCommandText } from "@common/z88/z88SnapshotLoadTypes";
 import { machineStateLoadCommandText } from "@common/machineState/machineStateTypes";
 import { rzxPlayCommandText } from "@common/spectrum/rzx/rzxCommandTypes";
+import { debugRecordingLoadCommandText } from "@common/debugRecording/debugRecordingTypes";
 
 export type DroppedFileAction =
   | { kind: "command"; command: string }
   | { kind: "tape" }
   | { kind: "state"; command: string }
+  | { kind: "recording"; command: string }
   | { kind: "unsupported"; message: string };
 
 /** The extensions `droppedFileAction` opens, for File › Open File…'s file filter */
-export const EMULATOR_FILE_EXTENSIONS = ["sna", "z80", "szx", "z88", "kls", "rzx", "tap", "tzx"];
+export const EMULATOR_FILE_EXTENSIONS = ["sna", "z80", "szx", "z88", "kls", "klr", "rzx", "tap", "tzx"];
 
 /** The action for a dropped (or opened) file's path */
 export function droppedFileAction(path: string): DroppedFileAction {
@@ -44,10 +48,12 @@ export function droppedFileAction(path: string): DroppedFileAction {
       return { kind: "state", command: machineStateLoadCommandText(path, "debug") };
     case "rzx":
       return { kind: "command", command: rzxPlayCommandText(path) };
+    case "klr":
+      return { kind: "recording", command: debugRecordingLoadCommandText(path) };
     default:
       return {
         kind: "unsupported",
-        message: `Klive cannot open ${ext ? `.${ext}` : "this kind of"} file in the emulator. Open a .sna, .z80, .szx or .z88 snapshot, a .kls machine state, an .rzx recording, or a .tap or .tzx tape.`
+        message: `Klive cannot open ${ext ? `.${ext}` : "this kind of"} file in the emulator. Open a .sna, .z80, .szx or .z88 snapshot, a .kls machine state, a .klr debug recording, an .rzx recording, or a .tap or .tzx tape.`
       };
   }
 }

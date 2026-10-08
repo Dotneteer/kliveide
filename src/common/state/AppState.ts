@@ -156,6 +156,8 @@ export type ReverseDebugState = {
   searchedIntervals?: number;
   /** Why the last timeline ended early (a desync, D9) */
   desync?: string;
+  /** The debug recording the timeline was opened from (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` D10) */
+  recording?: string;
 };
 
 export type RzxState = {

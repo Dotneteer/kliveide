@@ -6,7 +6,7 @@
  * memory has the same layout, so every build stamps its layout into the `.wasm` it produces, as a
  * `klive.layout` custom section that the loaders read with `WebAssembly.Module.customSections`:
  *
- *   { version: 1, fingerprint, memorySize, volatile: [{ symbol, address, size }] }
+ *   { version: 1, fingerprint, codeHash, memorySize, volatile: [{ symbol, address, size }] }
  *
  * The fingerprint is a SHA-256 over:
  *  - every data symbol (initialised, read-only and zero-initialised) with its address and size, from
@@ -178,6 +178,28 @@ function readWasmLayoutFacts(bytes) {
 }
 
 /**
+ * SHA-256 over a module's code and data sections (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` D3, T1):
+ * unlike the fingerprint, it changes with any edit inside a function body, so a debug recording - a
+ * replay of the exact code that made it - opens only in the build that wrote it. Custom sections
+ * (the stamp itself, names) are left out.
+ * @param {Uint8Array} bytes The module, before the stamp is appended
+ */
+function computeCodeHash(bytes) {
+  const hash = createHash("sha256");
+  const state = { offset: 8 };
+  while (state.offset < bytes.length) {
+    const id = bytes[state.offset++];
+    const length = readLeb(bytes, state);
+    if (id === 10 || id === 11) {
+      hash.update(Buffer.from([id]));
+      hash.update(bytes.subarray(state.offset, state.offset + length));
+    }
+    state.offset += length;
+  }
+  return hash.digest("hex");
+}
+
+/**
  * Computes the layout of a built core
  * @param {Uint8Array} wasmBytes The module
  * @param {string} mapText The linker map of the same link
@@ -221,6 +243,8 @@ function computeWasmLayout(wasmBytes, mapText, volatileSymbols = [], scratchSymb
   return {
     version: 1,
     fingerprint: hash.digest("hex").slice(0, 32),
+    // --- Outside the fingerprint: state files survive a code-only change, debug recordings do not
+    codeHash: computeCodeHash(wasmBytes),
     memorySize,
     volatile,
     ...(stack ? { stack } : {}),
@@ -330,6 +354,7 @@ module.exports = {
   parseLinkerMap,
   readWasmLayoutFacts,
   computeWasmLayout,
+  computeCodeHash,
   appendCustomSection,
   stampWasmLayout
 };

@@ -1014,6 +1014,20 @@ action in a header is a `SmallIconButton` with the stock `save` glyph, placed af
 actions and before its filter; the context menu carries the row-relative variant ("… from here to
 the newest…") rather than a second header button.
 
+## Where A Timeline Came From Rides In The Reverse Segment, Not A New One
+
+The IDE status bar has one reverse-debugging segment (`reverseStatusText`). Anything more that
+describes the timeline - such as the debug recording (`.klr`) it was opened from - is appended to
+that segment's text after ` · ` (`⟲ −1.24 s · step −42 · bug.klr`), and at the present, where the
+segment would otherwise be empty, it is the whole text (`Recording: bug.klr`), in words, not a glyph
+that could be read as "recording in progress". It never adds a second segment beside the first: the
+status bar's segments are the machine's facts, and two that change together must not compete. The
+tooltip carries the sentence that explains it.
+
+A file viewer whose file the running build may refuse (a `.klr` replays only in the build that made
+it) says so in one row, **Opens in this build:**, answered in a sentence - yes, no with the reason and
+the fallback, or "not known yet" with why - rather than a flag, because the useful part is the reason.
+
 ## Verify Geometry In The Running App, Never In A Replica
 
 This is the process lesson from the same work, and it cost two rounds of shipping a "fix" the user
