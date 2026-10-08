@@ -1601,6 +1601,50 @@ Use this command to display the Profiler document. Alias: `shprof`. `hide-profil
 show-profiler
 ```
 
+## `test-list`
+
+Use this command to list the [unit tests](/working-with-ide/unit-tests) of the last successful build,
+by suite, with their addresses and links to their labels. Alias: `tl`.
+
+```
+test-list
+```
+
+## `test-run`
+
+Use this command to build the project and run its [unit tests](/working-with-ide/unit-tests). The
+report goes to the **Tests** output pane; the command prints the summary. Alias: `tr`.
+
+```
+test-run [<pattern>] [-failed] [-coverage]
+```
+
+- `pattern`: run only the tests whose `Suite.UT_name` matches; `*` matches any run of characters
+  (`MathTests.*`, `*Overflow*`). All tests (or the project's `unitTests.include`) when omitted.
+- `-failed`: run only the tests that failed or ended in an error in their last run.
+- `-coverage`: record code coverage while the tests run and show it in the editor.
+
+## `test-debug`
+
+Use this command to debug one [unit test](/working-with-ide/unit-tests#debugging-a-test) in the
+emulator: it stops at the test's first instruction, and reaching `TC_END` stops with "passed". Alias:
+`td`.
+
+```
+test-debug <test>
+```
+
+`test` is the test's `Suite.UT_name`, its label alone, or a `*` pattern that names one test.
+
+## `test-init`
+
+Use this command to add unit-test support to the project: Klive's include file next to the build root
+(kept when one is there already), and its include line in the build root.
+
+```
+test-init
+```
+
 ## `show-disassembly`
 
 Use this command to display the machine code disassembly view, and optionally to show an address in

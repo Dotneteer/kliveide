@@ -786,6 +786,7 @@ export class DebugSupport implements IDebugSupport {
         length: bp.length !== undefined && bp.length > 1 ? bp.length : undefined,
         annotationKind: bp.annotationKind,
         annotationText: bp.annotationText,
+        annotationInvokedAt: bp.annotationInvokedAt,
         conditionDialect: bp.conditionDialect,
         watchSymbol: bp.watchSymbol,
         resource: bp.resource,
@@ -2257,7 +2258,15 @@ export class DebugSupport implements IDebugSupport {
     // --- A one-shot takes the slow path too: only there is the definition that fired known, and
     // --- only that definition may be consumed (O3). Annotation breakpoints are named in the stop
     // --- report (S11), which needs the same knowledge.
-    if (hasBreakpointFilters(bp) || isLogpoint(bp) || bp.oneShot || bp.owner?.kind === "annotation") {
+    // --- A unit-test run's own stops (`.plans/Z80_UNIT_TESTS_PLAN.md` D9) are classified by the
+    // --- definition that fired, so they take it as well.
+    if (
+      hasBreakpointFilters(bp) ||
+      isLogpoint(bp) ||
+      bp.oneShot ||
+      bp.owner?.kind === "annotation" ||
+      bp.owner?.kind === "unitTest"
+    ) {
       bpFlags |= COND_BP;
     }
 

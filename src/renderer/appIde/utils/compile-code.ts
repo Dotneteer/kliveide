@@ -104,7 +104,7 @@ export async function compileCode(
   } catch (err) {
     failedMessage = err.message;
   } finally {
-    context.store.dispatch(endCompileAction(result));
+    context.store.dispatch(endCompileAction(result, undefined, Date.now()));
     await refreshSourceCodeBreakpoints(context.store, context.messenger);
     context.store.dispatch(incBreakpointsVersionAction());
   }

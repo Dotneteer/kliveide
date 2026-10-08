@@ -926,6 +926,12 @@ export type SourceAnnotation = {
    * which ends the expression (DeZog's convention).
    */
   text: string;
+  /**
+   * For a comment inside a macro body: the line that invoked the macro - the outermost invocation,
+   * the one the user wrote (`.plans/Z80_UNIT_TESTS_PLAN.md` T2). `fileIndex`/`line` stay the macro
+   * body's, where the comment is; a failure report names this line instead.
+   */
+  invokedAt?: { fileIndex: number; line: number };
 };
 
 /**

@@ -96,6 +96,9 @@ import type { RecordingFormat } from "@common/state/AppState";
 import { copyZxNextStorageFile as copyZxNextStorageFileOnHost } from "./zx-next-storage-copy";
 import { applyEmuContentSizeHints } from "./emu-window-sizing";
 import { emuMachineSizeStore } from "./emu-machine-sizes";
+import type { UnitTestRunRequest, UnitTestRunResponse } from "@common/unit-tests/unitTestTypes";
+import { addUnitTestSupport, type AddUnitTestSupportResult } from "./unit-tests/addUnitTestSupport";
+import { cancelUnitTestRun, rememberCompilation, runUnitTestsInWorker } from "./unit-tests/unitTestService";
 import type { EmuContentSizeHints } from "@common/utils/emu-window-size";
 import type {
   SjasmplusIntegrationApplyRequest,
@@ -763,7 +766,25 @@ class MainMessageProcessor {
     compiler?.setAppState(mainStore.getState());
     const output = (await compiler.compileFile(filename, options, params?.profile)) as KliveCompilerOutput;
     // --- `LOGPOINT` comments that cannot be used become build warnings (`.plans/LOGPOINTS_PLAN.md` L13)
-    return checkSourceAnnotations(output);
+    const checked = checkSourceAnnotations(output);
+    // --- The unit-test runner takes the last build (`.plans/Z80_UNIT_TESTS_PLAN.md` D15)
+    rememberCompilation(filename, language, checked);
+    return checked;
+  }
+
+  /** Runs the last build's unit tests in a worker (`.plans/Z80_UNIT_TESTS_PLAN.md` D6) */
+  async runUnitTests(request: UnitTestRunRequest): Promise<UnitTestRunResponse> {
+    return runUnitTestsInWorker(request, (action) => this.dispatch(action));
+  }
+
+  /** Stops the unit-test run in progress */
+  async cancelUnitTests(): Promise<void> {
+    cancelUnitTestRun();
+  }
+
+  /** Adds Klive's unit-test include to the build root (D4, D5) */
+  async addUnitTestSupport(buildRoot: string, language: string): Promise<AddUnitTestSupportResult> {
+    return addUnitTestSupport(buildRoot, language);
   }
 
   /**

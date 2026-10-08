@@ -21,6 +21,7 @@ export default {
   "reverse-debugging": "Reverse Debugging",
   "code-coverage": "Code Coverage and the Heat Map",
   profiler: "The Profiler",
+  "unit-tests": "Unit Tests",
   memory: "The Memory View",
   disassembly: "The Disassembly View",
   watch: "Watch Expressions",

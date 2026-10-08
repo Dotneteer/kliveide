@@ -4,6 +4,7 @@ import { SideBarPanelState } from "./AppState";
 import { ToolInfo } from "@renderer/abstractions/ToolInfo";
 import { ExportDialogSettings } from "@main/settings";
 import { KliveCompilerOutput } from "@abstractions/CompilerInfo";
+import type { UnitTestEvent } from "@common/unit-tests/unitTestTypes";
 
 export const initGlobalSettingsAction: ActionCreator = (value: Record<string, any>) => ({
   type: "INIT_GLOBAL_SETTINGS",
@@ -361,10 +362,36 @@ export const startCompileAction: ActionCreator = (file: string) => ({
 
 export const endCompileAction: ActionCreator = (
   compileResult: KliveCompilerOutput,
-  failed?: string
+  failed?: string,
+  endedAt?: number
 ) => ({
   type: "END_COMPILE",
-  payload: { compileResult, failed }
+  payload: { compileResult, failed, endedAt }
+});
+
+// --- Unit tests (`.plans/Z80_UNIT_TESTS_PLAN.md` §4.3)
+
+/** A run starts: the tests it runs lose their old results */
+export const unitTestsRunStartedAction: ActionCreator = (ids: string[], startedAt: number) => ({
+  type: "UNIT_TESTS_RUN_STARTED",
+  payload: { ids, startedAt }
+});
+
+/** One event of a run (`UnitTestEvent`; log lines travel inside the result) */
+export const unitTestEventAction: ActionCreator = (event: UnitTestEvent) => ({
+  type: "UNIT_TEST_EVENT",
+  payload: { event }
+});
+
+/** The run ended (finished, cancelled or failed to start) */
+export const unitTestsRunEndedAction: ActionCreator = (finishedAt: number, problem?: string) => ({
+  type: "UNIT_TESTS_RUN_ENDED",
+  payload: { finishedAt, problem }
+});
+
+/** Forgets every result */
+export const unitTestsClearAction: ActionCreator = () => ({
+  type: "UNIT_TESTS_CLEAR"
 });
 
 export const incInjectionVersionAction: ActionCreator = () => ({

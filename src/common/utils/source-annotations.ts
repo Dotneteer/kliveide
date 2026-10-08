@@ -8,7 +8,7 @@ import type { BreakpointInfo, SourceCommentSwitches } from "@abstractions/Breakp
 import type { ConditionSymbols } from "./breakpoint-condition/condition-types";
 
 import { compileLogTemplate } from "./breakpoint-condition/logpoint-template";
-import { integerSymbolsOf } from "./breakpoint-condition/integer-symbols";
+import { integerSymbolsOfOutput } from "./breakpoint-condition/integer-symbols";
 import { compileConditionWith } from "./breakpoint-condition/condition-checker";
 import { parseDezogExpression } from "./breakpoint-condition/dezog/dezog-parser";
 import { parseWpmemArgs } from "./breakpoint-condition/dezog/wpmem-args";
@@ -105,7 +105,7 @@ export function checkSourceAnnotations<T extends KliveCompilerOutput>(output: T)
   const annotations = debuggable?.debugAnnotations;
   if (!annotations?.length) return output;
 
-  const symbols = integerSymbolsOf((output as { symbols?: Record<string, unknown> }).symbols);
+  const symbols = integerSymbolsOfOutput(output);
   const kept: SourceAnnotation[] = [];
   const warnings: AssemblerErrorInfo[] = [];
   for (const annotation of annotations) {
@@ -212,7 +212,7 @@ export function annotationBreakpoints(
 ): BreakpointInfo[] {
   const debuggable = output as unknown as DebuggableOutput;
   const symbols =
-    options.symbols ?? integerSymbolsOf((output as { symbols?: Record<string, unknown> })?.symbols);
+    options.symbols ?? integerSymbolsOfOutput(output);
   const assertionsOn = options.switches?.assertion !== false;
   const wpmemOn = options.switches?.wpmem !== false;
   const result: BreakpointInfo[] = [];
@@ -222,11 +222,18 @@ export function annotationBreakpoints(
     const resource = resourceOf(filename);
     const partition = annotation.partition ?? partitionOf?.(annotation);
     const disabled = !!options.isDisabled?.(annotationStateKey(resource, annotation.line, annotation.kind));
+    // --- A comment in a macro body reports the invocation's line (`.plans/Z80_UNIT_TESTS_PLAN.md` T2)
+    const invokedFile = annotation.invokedAt
+      ? debuggable.sourceFileList?.[annotation.invokedAt.fileIndex]?.filename
+      : undefined;
     const common: BreakpointInfo = {
       owner: { kind: "annotation" },
       resource,
       line: annotation.line,
-      ...(disabled ? { disabled: true } : {})
+      ...(disabled ? { disabled: true } : {}),
+      ...(invokedFile
+        ? { annotationInvokedAt: { resource: resourceOf(invokedFile), line: annotation.invokedAt!.line } }
+        : {})
     };
     switch (annotation.kind) {
       case "LOGPOINT":

@@ -111,6 +111,12 @@ export interface ActionTypes {
   // --- ASSERTION / WPMEM comment switches (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` S6)
   SET_SOURCE_COMMENTS: null;
 
+  // --- Unit tests (`.plans/Z80_UNIT_TESTS_PLAN.md` §4.3)
+  UNIT_TESTS_RUN_STARTED: null;
+  UNIT_TEST_EVENT: null;
+  UNIT_TESTS_RUN_ENDED: null;
+  UNIT_TESTS_CLEAR: null;
+
   // --- Screen recording
   SET_MOUSE_CAPTURED: null;
   // --- The ZX Spectrum Next layer debug view (`.plans/LAYER_COMPOSITION_PLAN.md` §4.4)

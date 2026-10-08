@@ -1,4 +1,4 @@
-import { integerSymbolsOf } from "./breakpoint-condition/integer-symbols";
+import { integerSymbolsOfOutput } from "./breakpoint-condition/integer-symbols";
 import {
   pushConditionSymbols,
   setBuildConditionSymbols
@@ -334,7 +334,7 @@ export async function refreshSourceCodeBreakpoints(
     // --- (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §3.6). This runs after every build path, so it
     // --- is the one place that keeps the emulator's table current.
     setBuildConditionSymbols(
-      integerSymbolsOf((compilation.result as { symbols?: Record<string, unknown> }).symbols)
+      integerSymbolsOfOutput(compilation.result)
     );
     await pushConditionSymbols(emuApi);
 

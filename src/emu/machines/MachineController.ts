@@ -68,6 +68,14 @@ import { machineRegistry } from "@common/machines/machine-registry";
 import { mediaStore } from "./media/media-info";
 import { PANE_ID_EMU } from "@common/integration/constants";
 import { logLineOutput } from "./logOutput";
+import { commentStopLines } from "./commentStopReport";
+import type { UnitTestDebugInfo } from "@abstractions/CodeToInject";
+import {
+  testRunGuards,
+  unitTestGuard,
+  unitTestGuardPurpose,
+  unitTestStopMessage
+} from "@common/unit-tests/unitTestGuards";
 import { createIdeApi } from "@common/messaging/IdeApi";
 import {
   isExecutionHistorySource,
@@ -1028,6 +1036,9 @@ export class MachineController implements IMachineController {
 
     let entryPoint = 0;
     let keepPc = false;
+    // --- A previous Debug-a-test's stops end with any new program (`.plans/Z80_UNIT_TESTS_PLAN.md` D12)
+    this.debugSupport?.resetBreakpointsTo([], { kind: "unitTest" });
+    this._unitTestDebug = undefined;
     for (const step of injectionFlow) {
       this.assertMachineOperationIsCurrent(operationRevision);
       switch (step.type) {
@@ -1173,6 +1184,12 @@ export class MachineController implements IMachineController {
     }
 
     this.assertMachineOperationIsCurrent(operationRevision);
+
+    // --- Debug one unit test (D12): the init code, the patched CALL, the test's stops
+    if (codeToInject?.unitTest) {
+      entryPoint = await this.prepareUnitTestDebug(codeToInject.unitTest, operationRevision);
+      keepPc = false;
+    }
 
     // --- Coverage starts with the program, not with the ROM's boot to the injection point (T11, Q3)
     if (this.flagSetting(SETTING_EMU_PROFILE_RESET_AFTER_INJECTION, true)) this.resetProfile();
@@ -2368,6 +2385,74 @@ export class MachineController implements IMachineController {
    * is the entire content of the stop. The register's documented name comes from the same table
    * the Next Registers panel reads.
    */
+  /** The unit test being debugged (`.plans/Z80_UNIT_TESTS_PLAN.md` D12) */
+  private _unitTestDebug: UnitTestDebugInfo | undefined;
+
+  /**
+   * Debug-a-test (D12), after the program is injected: runs the init code as a subroutine that
+   * returns to the wrapper, writes the test's address into the wrapper's CALL, and arms the test's
+   * stops - its first instruction (`stopAtStart`), the success loop, a RET instead of TC_END and the
+   * stack guards. The user's own breakpoints and the build's comments stay armed (D11).
+   * @returns Where the debugger starts: the wrapper
+   */
+  private async prepareUnitTestDebug(info: UnitTestDebugInfo, operationRevision: number): Promise<number> {
+    const m = this.machine;
+    const { labels } = info;
+    if (labels.stackTop) m.sp = labels.stackTop.address;
+    const sp = (m.sp - 2) & 0xffff;
+    m.doWriteMemory(sp, labels.wrapper.address & 0xff);
+    m.doWriteMemory((sp + 1) & 0xffff, (labels.wrapper.address >> 8) & 0xff);
+    m.sp = sp;
+    m.pc = labels.start.address;
+    await this.sendOutput(`Running the unit-test initialisation code ($${toHexa4(labels.start.address)})`, "blue");
+    await this.run(
+      FrameTerminationMode.UntilExecutionPoint,
+      DebugStepMode.NoDebug,
+      undefined,
+      labels.wrapper.address,
+      operationRevision
+    );
+    await this._machineTask;
+    this.assertMachineOperationIsCurrent(operationRevision);
+
+    // --- The test's address into the CALL, in the wrapper's partition when it has one (T6)
+    for (let i = 0; i < 2; i++) {
+      const byte = (info.testAddress >> (8 * i)) & 0xff;
+      const address = (labels.callAddr.address + 1 + i) & 0xffff;
+      if (labels.callAddr.partition === undefined) {
+        m.doWriteMemory(address, byte);
+      } else {
+        const memory = m.getMemoryPartition(labels.callAddr.partition);
+        memory[address & (memory.length - 1)] = byte;
+      }
+    }
+
+    const stops = testRunGuards(labels);
+    if (info.stopAtStart) {
+      stops.push(
+        unitTestGuard("start", { address: info.testAddress, partition: info.testPartition }, { exec: true, oneShot: true })
+      );
+    }
+    this.debugSupport?.resetBreakpointsTo(stops, { kind: "unitTest" });
+    this._unitTestDebug = info;
+    await this.sendOutput(`Debugging ${info.id}`, "blue");
+    return labels.wrapper.address;
+  }
+
+  /** The report of a stop a Debug-a-test breakpoint caused, or `undefined` */
+  private describeUnitTestStop(): string | undefined {
+    const info = this._unitTestDebug;
+    const ds = this.debugSupport;
+    if (!info || !ds) return undefined;
+    const purpose =
+      ds.lastStopBreakpoints?.map(unitTestGuardPurpose).find((p) => p) ??
+      (this.machine.pc === info.labels.success.address ? "success" : undefined);
+    if (!purpose) return undefined;
+    if (purpose === "start") return `${info.id}: stopped at the test's first instruction`;
+    const pc = ds.lastDecisionPc ?? (this.machine as { opStartAddress?: number }).opStartAddress ?? this.machine.pc;
+    return unitTestStopMessage(purpose, info.id, info.labels, pc);
+  }
+
   /** Set once the Output pane has said how to switch assertions off (R8), once per session. */
   private _assertionHintShown = false;
 
@@ -2381,36 +2466,20 @@ export class MachineController implements IMachineController {
   private describeCommentStop(): string | undefined {
     const ds = this.debugSupport;
     if (!ds?.lastStopBreakpoints?.length) return undefined;
+    // --- The decision runs before every instruction, so its last PC is the instruction that made a
+    // --- WPMEM access; `opStartAddress` is kept only by some cores (the Next, the Z88)
+    const found = commentStopLines(
+      ds,
+      () => ds.lastDecisionPc ?? (this.machine as { opStartAddress?: number }).opStartAddress ?? this.machine.pc
+    );
     const lines: string[] = [];
-    ds.lastStopBreakpoints.forEach((bp, i) => {
-      if (bp.owner?.kind !== "annotation" || !bp.annotationKind) return;
-      const where = `${(bp.resource ?? "").split(/[\\/]/).pop()}:${bp.line}`;
-      if (bp.annotationKind === "ASSERTION") {
-        const text = bp.annotationText ?? "";
-        const values = text ? ds.describeDezogValues(text) : "";
-        lines.push(
-          `ASSERTION failed at ${where}: ${text || "(always)"}${values ? `  (${values})` : ""}`
-        );
-        if (!this._assertionHintShown) {
-          this._assertionHintShown = true;
-          lines.push("  (as-en -d, or the ASSERTION comments switch in the Breakpoints panel, turns assertions off)");
-        }
-      } else {
-        const access = ds.lastStopAccesses?.[i];
-        const address = access?.address ?? bp.address ?? 0;
-        const named = nearestSymbol(ds.conditionSymbolTable, address);
-        // --- The decision runs before every instruction, so its last PC is the instruction that
-        // --- made the access; `opStartAddress` is kept only by some cores (the Next, the Z88)
-        const pc =
-          ds.lastDecisionPc ??
-          (this.machine as { opStartAddress?: number }).opStartAddress ??
-          this.machine.pc;
-        lines.push(
-          `WPMEM ${bp.memoryRead ? "read" : "write"} at $${toHexa4(address)}` +
-            `${named ? ` (${named})` : ""} by PC $${toHexa4(pc)}, ${where}`
-        );
+    for (const line of found) {
+      lines.push(line.text);
+      if (line.kind === "ASSERTION" && !this._assertionHintShown) {
+        this._assertionHintShown = true;
+        lines.push("  (as-en -d, or the ASSERTION comments switch in the Breakpoints panel, turns assertions off)");
       }
-    });
+    }
     return lines.length ? lines.join("\n") : undefined;
   }
 
@@ -2421,6 +2490,9 @@ export class MachineController implements IMachineController {
       const file = s ? this.sourceIndex.info.files[s.fileIndex]?.filename.split(/[\\/]/).pop() : undefined;
       return `Runtime error ${stop?.error?.report ?? ""}${s ? ` at ${file}:${s.startLine}` : ""} (continue to let the ROM report it)`;
     }
+    // --- A Debug-a-test stop says what it means for the test (`.plans/Z80_UNIT_TESTS_PLAN.md` D12)
+    const unitTestStop = this.describeUnitTestStop();
+    if (unitTestStop) return unitTestStop;
     // --- A stop a DeZog comment caused names the comment (S11)
     const commentStop = this.describeCommentStop();
     if (commentStop) return commentStop;
@@ -2492,22 +2564,6 @@ export function describeCopperStop(
   const paged =
     hit.partition === undefined ? "" : ` in ${partitionLabels?.[hit.partition] ?? hit.partition}`;
   return `Copper breakpoint: ${formatCopperIndex(hit.index)} ${what}; CPU at $${toHexa4(hit.pc)}${paged}`;
-}
-
-/**
- * `fill_colors+2`: the closest build symbol at or below an address, within 256 bytes, or
- * `undefined`. Symbols are keyed lower-case, so the name comes back lower-case.
- */
-function nearestSymbol(symbols: Record<string, number> | undefined, address: number): string | undefined {
-  let best: { name: string; value: number } | undefined;
-  for (const [name, value] of Object.entries(symbols ?? {})) {
-    if (name.includes(":") || value > address || address - value > 0xff) continue;
-    if (!best || value > best.value || (value === best.value && name < best.name)) {
-      best = { name, value };
-    }
-  }
-  if (!best) return undefined;
-  return address === best.value ? best.name : `${best.name}+${address - best.value}`;
 }
 
 /** Whether a machine can keep a reverse-debugging timeline (`reverse/Timeline.ts`) */

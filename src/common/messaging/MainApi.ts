@@ -1,6 +1,8 @@
 import { ProjectNodeWithChildren } from "@abstractions/ProjectNode";
 import type { SdCardFingerprint } from "@common/machineState/machineStateTypes";
 import { buildMessagingProxy } from "./MessageProxy";
+import type { UnitTestRunRequest, UnitTestRunResponse } from "@common/unit-tests/unitTestTypes";
+import type { AddUnitTestSupportResult } from "@main/unit-tests/addUnitTestSupport";
 import { MessengerBase } from "./MessengerBase";
 import { CompilerOptions, KliveCompilerOutput } from "@abstractions/CompilerInfo";
 import { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
@@ -407,6 +409,29 @@ class MainApiImpl {
     _options?: CompilerOptions,
     _params?: any
   ): Promise<KliveCompilerOutput> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Runs the unit tests of the last build in a worker (`.plans/Z80_UNIT_TESTS_PLAN.md` D6, D15): the
+   * caller builds first. Results stream into the store; the whole run comes back when it ends.
+   * @param _request Which tests, and how
+   */
+  async runUnitTests(_request: UnitTestRunRequest): Promise<UnitTestRunResponse> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /** Stops the unit-test run in progress, if any */
+  async cancelUnitTests(): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Adds unit-test support to the build root (D4, D5): the include file and the include line
+   * @param _buildRoot The build root's full path
+   * @param _language Its language (`kz80-asm`, `sjasmp`)
+   */
+  async addUnitTestSupport(_buildRoot: string, _language: string): Promise<AddUnitTestSupportResult> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 

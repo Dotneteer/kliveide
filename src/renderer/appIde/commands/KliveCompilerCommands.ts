@@ -6,7 +6,7 @@ import type {
 } from "@abstractions/CompilerInfo";
 import type { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext";
 import type { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
-import type { CodeToInject } from "@abstractions/CodeToInject";
+import type { CodeToInject, UnitTestDebugInfo } from "@abstractions/CodeToInject";
 import { TapeDataBlock } from "@common/structs/TapeDataBlock";
 
 import {
@@ -1088,7 +1088,8 @@ export function writeNexWarnings(out: IOutputBuffer, warnings: readonly string[]
  */
 export async function injectCode(
   context: IdeCommandContext,
-  operationType: CodeInjectionType
+  operationType: CodeInjectionType,
+  unitTestOf?: (result: KliveCompilerOutput) => UnitTestDebugInfo | string
 ): Promise<IdeCommandResult> {
   /*
    * Refused before compiling, not after: there is nothing to do with the output on a machine that
@@ -1141,6 +1142,19 @@ export async function injectCode(
   const compiledOutput = result as CompilerOutput;
   let additionalInfo: any = null;
   const isZxNext = compiledOutput.modelType === SpectrumModelType.Next;
+
+  // --- Debug one unit test (`.plans/Z80_UNIT_TESTS_PLAN.md` D12): the test and its labels
+  let unitTest: UnitTestDebugInfo | undefined;
+  if (unitTestOf) {
+    const resolved = unitTestOf(result);
+    if (typeof resolved === "string") return commandError(resolved);
+    if (isZxNext) {
+      return commandError(
+        "Debugging a unit test in the emulator does not work on the ZX Spectrum Next yet (its builds start through a .nex file); run the tests with test-run."
+      );
+    }
+    unitTest = resolved;
+  }
   if (isZxNext && compiledOutput.nexConfig) {
     // --- Export NEX file for Next model
     const exportCmd = new ExportCodeCommand();
@@ -1175,7 +1189,9 @@ export async function injectCode(
   const codeToInject: CodeToInject = {
     model: modelTypeToMachineType(result.modelType),
     entryAddress: result.entryAddress,
-    subroutine: result.injectOptions["subroutine"],
+    // --- A unit test returns to its wrapper, not to BASIC
+    subroutine: unitTest ? false : result.injectOptions["subroutine"],
+    ...(unitTest ? { unitTest } : {}),
     segments: result.segments.map((s) => ({
       startAddress: s.startAddress,
       bank: s.bank,

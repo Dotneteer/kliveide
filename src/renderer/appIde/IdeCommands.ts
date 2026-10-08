@@ -6,6 +6,12 @@ import {
   RzxStopCommand,
   RzxVideoCommand
 } from "./commands/RzxCommands";
+import {
+  TestDebugCommand,
+  TestInitCommand,
+  TestListCommand,
+  TestRunCommand
+} from "./commands/UnitTestCommands";
 import { IIdeCommandService } from "../abstractions/IIdeCommandService";
 import {
   EraseAllBreakpointsCommand,
@@ -205,6 +211,11 @@ export function registerIdeCommands(cmdSrv: IIdeCommandService): void {
   // --- Code coverage and the heat map (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D15)
   cmdSrv.registerCommand(new CoverageCommand());
   cmdSrv.registerCommand(new CoverageResetCommand());
+  // --- Unit tests (`.plans/Z80_UNIT_TESTS_PLAN.md` D16)
+  cmdSrv.registerCommand(new TestListCommand());
+  cmdSrv.registerCommand(new TestRunCommand());
+  cmdSrv.registerCommand(new TestDebugCommand());
+  cmdSrv.registerCommand(new TestInitCommand());
   // --- The profiler (`.plans/PROFILER_PLAN.md` D16)
   cmdSrv.registerCommand(new ProfileCommand());
   cmdSrv.registerCommand(new ProfileStartCommand());

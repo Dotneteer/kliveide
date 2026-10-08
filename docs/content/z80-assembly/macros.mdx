@@ -538,6 +538,22 @@ The compiler will create this output:
 
 Symbols and variables within the context work exactly as they do with loops. Remember: Symbols are constant values, while variables may change!
 
+A label whose name starts with a dot is the exception: `.Name:` defines `Name` in the **global**
+scope, even inside a macro (or a module). Use it for a macro that lays down a routine the rest of the
+program calls by name, and invoke such a macro only once. The unit-test include's
+`UNITTEST_INITIALIZE()` defines its labels this way (see [Unit Tests](/working-with-ide/unit-tests)):
+
+```z80klive
+Frame: .macro()
+.FrameEntry:
+    di
+    ret
+.endm
+
+    Frame()
+    call FrameEntry   ; FrameEntry is a global label
+```
+
 ## Invoking Macros from Macros
 
 Klive allows you to invoke a macro from another macro, too. Here is a short sample:

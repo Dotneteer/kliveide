@@ -857,6 +857,8 @@ class EmuMessageProcessor {
     // --- With the runtime state (live hit count, condition error/inactive); copies already
     const execBreakpoints = controller.debugSupport
       .listBreakpointsWithState()
+      // --- A unit-test run's own stops are not the user's (`.plans/Z80_UNIT_TESTS_PLAN.md` D9)
+      .filter((bp) => bp.owner?.kind !== "unitTest")
       .sort((a, b) => {
         if (a.address !== undefined) {
           if (b.address != undefined) {

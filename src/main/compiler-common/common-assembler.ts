@@ -1381,6 +1381,13 @@ export abstract class CommonAssembler<
     // --- `ASSERTION` and `WPMEM` (G1.5) follow the same address rule: an assertion on an
     // --- instruction's line is checked before that instruction runs; on its own line, before the
     // --- next one. A WPMEM without an address watches the line's own address.
+    // --- In a macro body, the outermost invocation is the line the user wrote: a failure names it
+    // --- (`.plans/Z80_UNIT_TESTS_PLAN.md` T2)
+    const invocation = this._macroInvocations[0] as unknown as AssemblyLine<TInstruction> | undefined;
+    const invokedAt =
+      invocation && (invocation.fileIndex !== asmLine.fileIndex || invocation.line !== asmLine.line)
+        ? { fileIndex: invocation.fileIndex, line: invocation.line }
+        : undefined;
     for (const { kind, text } of found) {
       this._output.debugAnnotations.push({
         kind,
@@ -1388,7 +1395,8 @@ export abstract class CommonAssembler<
         line: asmLine.line,
         address: (emitted ? addressBefore : this.locationCounter()) & 0xffff,
         segmentIndex: this._output.segments.length - 1,
-        text
+        text,
+        ...(invokedAt ? { invokedAt } : {})
       });
     }
   }
@@ -1669,13 +1677,12 @@ export abstract class CommonAssembler<
     }
 
     if (symbol.startsWith(".")) {
+      // --- A dot-prefixed name is defined in the global scope, even in a macro or a module: the
+      // --- unit-test include lays down DeZog's `UNITTEST_*` labels this way (Z80_UNIT_TESTS_PLAN D4)
       symbol = symbol.substring(1);
-      this._output.symbols[symbol] = new AssemblySymbolInfo(
-        symbol,
-        symbolType,
-        value,
-        locationFromLine(line)
-      );
+      const info = new AssemblySymbolInfo(symbol, symbolType, value, locationFromLine(line));
+      if (displayName.substring(1) !== symbol) info.writtenName = displayName.substring(1);
+      this._output.symbols[symbol] = info;
       return;
     }
 
@@ -5468,6 +5475,8 @@ export abstract class CommonAssembler<
 
     // --- Create a new nested module
     const newModule = new AssemblyModule(this._currentModule, this.isCaseSensitive);
+    // --- The name as written: unit-test suites are named after it (`.plans/Z80_UNIT_TESTS_PLAN.md` T3)
+    newModule.writtenName = moduleName;
     this._currentModule.addNestedModule(moduleName, newModule);
     this._currentModule = newModule;
 

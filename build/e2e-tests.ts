@@ -24,6 +24,7 @@ export const E2E_CORE_TESTS: string[] = [
   "test/timex-hw/**/*.test.ts",
   "test/spectrum-hw/**/*.test.ts",
   "test/harness/**/self-tests/**/*.test.ts",
+  "test/unit-tests/runner-*.test.ts",
 
   // --- Mixed folders: the files that run a core
   "test/audio/AudioIntegration.test.ts",

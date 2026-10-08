@@ -862,5 +862,19 @@ export const componentAliases: Record<string, string> = {
   "--color-tape-segment-pause": "var(--surface-active)",
   "--color-tape-segment-merged": "var(--text-disabled)",
   "--color-tape-segment-unplayable": "var(--status-error)",
-  "--color-tape-segment-selected": "var(--text-primary)"
+  "--color-tape-segment-selected": "var(--text-primary)",
+
+  // --- Unit Tests panel (`.plans/Z80_UNIT_TESTS_PLAN.md` D13) ------------------------------------
+  /*
+   * Status is the only colour in the panel: a passed test's glyph takes success, a failed one error,
+   * one that ended in an error (stack, timeout, HALT) the warning hue, and the message line under a
+   * test that did not pass repeats its glyph's hue. Everything else follows the neutral data
+   * hierarchy; the selected row is marked the way list selections are, with the accent's tint.
+   */
+  "--color-unit-test-passed": "var(--status-success)",
+  "--color-unit-test-failed": "var(--status-error)",
+  "--color-unit-test-error": "var(--status-warning)",
+  "--color-unit-test-running": "var(--accent-solid)",
+  "--color-unit-test-idle": "var(--text-tertiary)",
+  "--bgcolor-unit-test-selected": "var(--accent-subtle)"
 };

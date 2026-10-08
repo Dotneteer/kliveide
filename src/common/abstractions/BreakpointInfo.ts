@@ -34,6 +34,14 @@ export type BreakpointOwner =
        * changes. See `.plans/LOGPOINTS_PLAN.md` L10.
        */
       kind: "annotation";
+    }
+  | {
+      /**
+       * Owned by a unit-test run (`.plans/Z80_UNIT_TESTS_PLAN.md` D9): the private stack's guards and
+       * the success stop. Never persisted, never shown in the Breakpoints panel, removed when the
+       * test ends.
+       */
+      kind: "unitTest";
     };
 
 /**
@@ -58,6 +66,10 @@ export type BreakpointScope =
   | {
       /** The breakpoints the last build read from source comments (`LOGPOINT`, `ASSERTION`, `WPMEM`). */
       kind: "annotation";
+    }
+  | {
+      /** The breakpoints a unit-test run installed (`.plans/Z80_UNIT_TESTS_PLAN.md` D9). */
+      kind: "unitTest";
     };
 
 /**
@@ -136,6 +148,13 @@ export type BreakpointInfo = {
    * Breakpoints panel shows for an `ASSERTION` or `WPMEM` breakpoint.
    */
   annotationText?: string;
+
+  /**
+   * For a comment inside a macro body: the line that invoked the macro (`SourceAnnotation.invokedAt`,
+   * `.plans/Z80_UNIT_TESTS_PLAN.md` T2), as a project resource and line. A stop report names it,
+   * since the comment's own line is the macro's. Not part of the identity.
+   */
+  annotationInvokedAt?: { resource: string; line: number };
 
   /**
    * The language `condition` is written in: `"klive"` (absent; what users type) or `"dezog"` (an

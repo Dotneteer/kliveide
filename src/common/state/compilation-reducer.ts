@@ -30,7 +30,8 @@ export function compilationReducer(
         ...state,
         inProgress: false,
         result: payload?.compileResult,
-        failed: payload?.failed
+        failed: payload?.failed,
+        endedAt: payload?.endedAt
       };
 
     case "INC_INJECTION_VERSION":

@@ -46,7 +46,9 @@ export type NavigationReason =
   | "explorer"
   | "command"
   /** The Profiler document's double-click on a routine (`.plans/PROFILER_PLAN.md` D14). */
-  | "profiler";
+  | "profiler"
+  /** The Unit Tests panel: a test's label or a failure's line (`.plans/Z80_UNIT_TESTS_PLAN.md` D13). */
+  | "unitTest";
 
 /** Every reason, for validating the `nav -r <reason>` option. */
 export const NAVIGATION_REASONS: readonly NavigationReason[] = [
@@ -63,7 +65,8 @@ export const NAVIGATION_REASONS: readonly NavigationReason[] = [
   "tabSwitch",
   "explorer",
   "command",
-  "profiler"
+  "profiler",
+  "unitTest"
 ];
 
 /** A recorded location. */

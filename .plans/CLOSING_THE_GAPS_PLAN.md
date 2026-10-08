@@ -31,7 +31,7 @@ are estimates for prioritising, not commitments.
 | G2 | Load and save snapshots (.sna/.z80/.szx), RZX | **S → L** | ✅ done (2026-10-04): G2.1–G2.8 |
 | G3 | Live Next hardware inspectors | **M** (layers: M–L) | ✅ done (2026-10-05 – 10-08): G3.1–G3.9 (G3.8's sprite half on 2026-10-08) |
 | G4 | Execution history and reverse debugging | **M → XL** | ✅ done (2026-10-07 – 10-08): G4.1–G4.6 |
-| G5 | Code coverage, profiler, unit tests | **M → L** | ✅ G5.1 and G5.2 done (2026-10-08): coverage per bank and the heat map on every Z80 machine · ✅ G5.3 and G5.4 done (2026-10-08): flat and call-graph profiler on every Z80 machine · plans ready for unit tests, CLI/CI |
+| G5 | Code coverage, profiler, unit tests | **M → L** | ✅ G5.1 and G5.2 done (2026-10-08): coverage per bank and the heat map on every Z80 machine · ✅ G5.3 and G5.4 done (2026-10-08): flat and call-graph profiler on every Z80 machine · ✅ G5.5 done (2026-10-08): DeZog-compatible unit tests with both assemblers · plan ready for CLI/CI |
 | G6 | Remote debugging, real hardware, external API | **M → XL** | Command API for scripts and CI |
 | G7 | 48K/128K reverse-engineering depth | **M → L** | Generalising the NEX annotation sidecar |
 | G8 | BASIC editor intelligence | **M** | ✅ done (2026-10-03): G8.1–G8.5 |
@@ -243,7 +243,11 @@ then moves the frame trace to a diagnostics build, which shrinks the Next to abo
   a call tracker in `z80-profile.c` (inclusive/exclusive time, interrupts as their own roots, stack
   switches counted); the `$profiler` document; `profile` commands with `-at`/`-until` windows; editor
   hints; and speedscope, callgrind, CSV and Fuse exports.
-- G5.5 is in [Z80_UNIT_TESTS_PLAN.md](Z80_UNIT_TESTS_PLAN.md).
+- G5.5 is in [Z80_UNIT_TESTS_PLAN.md](Z80_UNIT_TESTS_PLAN.md). **Done (2026-10-08)**: DeZog's labels
+  and macro names with both assemblers (Klive's own includes, written from scratch), an Electron-free
+  runner in a worker on the 48K/16K, 128K, +2A/+3/+2E/+3E and Next (deterministic, T-states per
+  test, emulated-time timeout, stack guards), the Unit Tests panel and Tests pane with click-to-source,
+  `test-*` commands, Debug a test in the emulator (not on the Next yet), and Run with coverage.
 - G5.6 is in [UNIT_TESTS_CLI_PLAN.md](UNIT_TESTS_CLI_PLAN.md).
 
 Research for the plans corrected four assumptions in the table below:
@@ -261,7 +265,7 @@ Research for the plans corrected four assumptions in the table below:
 | G5.2 Memory access heat map ✅ **done** | Read, write and execute counts per address, shown as a heat map in the memory view; also spots self-modifying code. | M, alongside G5.1 |
 | G5.3 Flat profiler ✅ **done** | T-states spent per address, rolled up per label or procedure; a "top routines" table. | M |
 | G5.4 Call-graph profiler ✅ **done** | Inclusive and exclusive time per routine using the call stack. | L |
-| G5.5 Z80 unit tests | **DeZog-compatible** (decision D3): the same test-case labelling and assertion-macro conventions, so DeZog unit-test projects run in Klive unchanged, with both Klive asm and sjasmplus. A runner sets up the machine headlessly, calls each test, checks results, and reports pass/fail in a Test panel with click-to-source. Debug a failing test. | L (assembler support for the conventions, a headless runner, UI; the exact DeZog conventions are researched in this feature's own plan) |
+| G5.5 Z80 unit tests ✅ **done** | **DeZog-compatible** (decision D3): the same test-case labelling and assertion-macro conventions, so DeZog unit-test projects run in Klive unchanged, with both Klive asm and sjasmplus. A runner sets up the machine headlessly, calls each test, checks results, and reports pass/fail in a Test panel with click-to-source. Debug a failing test. | L (assembler support for the conventions, a headless runner, UI; the exact DeZog conventions are researched in this feature's own plan) |
 | G5.6 Tests from the command line / CI | Run the G5.5 tests without the UI (`klive test project/`), with exit codes and JUnit output. | M, after G5.5 and G6.1 |
 
 ---
@@ -403,7 +407,7 @@ and WPMEM comments.
   (2026-10-08). (RZX, G2.7–G2.8, turned out not to need it and is done;
   Klive state files, G2.6, are done too.)
 - ~~G3.6 layer composition~~ (done).
-- G6.4 real Next hardware debugging, with G6.5 send-to-Next as its first milestone.
+- G6.5 send-to-Next over Wi-Fi, on its own; G6.4 real Next hardware debugging is deferred.
 - ~~G9.3 ZX80/81~~ (done).
 - ~~G9.2 +2A/+3 with the Amstrad ROMs~~ (done).
 - ~~G9.1 Pentagon 128~~ (done); ~~G9.1b Beta 128 / TR-DOS~~ (done).

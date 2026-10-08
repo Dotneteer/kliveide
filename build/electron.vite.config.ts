@@ -28,7 +28,9 @@ export default defineConfig({
       rollupOptions: {
         input: {
           index: resolve(__dirname, "../src/main/index.ts"),
-          compilerWorker: resolve(__dirname, "../src/main/compiler-integration/compilerWorker.ts") // Updated to match actual filename
+          compilerWorker: resolve(__dirname, "../src/main/compiler-integration/compilerWorker.ts"), // Updated to match actual filename
+          // --- The unit-test runner (`.plans/Z80_UNIT_TESTS_PLAN.md` D6)
+          unitTestWorker: resolve(__dirname, "../src/main/unit-tests/unitTestWorker.ts")
         },
         // Created separate entry-specific externals
         external: (id, parentId) => {
