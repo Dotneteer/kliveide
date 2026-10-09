@@ -11,10 +11,10 @@ import { profileLayoutOf } from "@common/profile/layouts";
 import { profileLocationOf } from "@common/profile/layouts/profileLayout";
 import type { ProfileStatus } from "@common/profile/profileTypes";
 import { PF_SELF_MODIFIED } from "@common/profile/profileTypes";
-import { parseKcov, toCoverageCsv, toKcov, toLcov, type LcovFile } from "@common/profile/coverageExport";
+import { parseKcov, toCoverageCsv, toKcov, toLcov } from "@common/profile/coverageExport";
 import { findSmcRuns } from "@common/profile/smcReport";
 import { setMemoryHeatModeAction } from "@common/state/actions";
-import { buildCoverageModel, coverageTotals, lineCoverage } from "@renderer/features/coverage/coverageModel";
+import { buildCoverageModel, coverageTotals, lcovFilesOf, lineCoverage } from "@common/profile/coverageModel";
 import { HEAT_MODES, type HeatMode } from "@renderer/features/coverage/heatModel";
 import {
   IdeCommandBase,
@@ -347,29 +347,6 @@ export function coverageStatusLines(status: ProfileStatus): string[] {
     lines.push(`Includes ${n(status.abandonedInstructions)} instructions from an abandoned future (Take over here)`);
   }
   return lines;
-}
-
-/** LCOV's files from the line coverage: paths relative to the project folder, as CI tools want them */
-export function lcovFilesOf(
-  coverage: Map<string, Map<number, { hits?: number; state: string }>>,
-  projectFolder?: string | null
-): LcovFile[] {
-  const files: LcovFile[] = [];
-  for (const [path, lines] of coverage) {
-    files.push({
-      path: relativeTo(path, projectFolder),
-      lines: [...lines].map(([line, c]) => ({ line, hits: c.hits ?? (c.state === "uncovered" ? 0 : 1) }))
-    });
-  }
-  return files.sort((a, b) => a.path.localeCompare(b.path));
-}
-
-function relativeTo(path: string, folder?: string | null): string {
-  if (!folder) return path;
-  const norm = (p: string) => p.replace(/\\/g, "/");
-  const p = norm(path);
-  const f = norm(folder).replace(/\/$/, "");
-  return p.startsWith(`${f}/`) ? p.slice(f.length + 1) : p;
 }
 
 /**

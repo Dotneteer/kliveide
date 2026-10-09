@@ -5,7 +5,9 @@ the departures and the findings). Phases 0–2 - the CLI skeleton's headless ver
 harness move and packaging - are open. D1–D18 are the decisions; the author accepted the suggested
 answers to all §9 questions (2026-10-08), which the decisions already assume.
 **Build order (Q2):** the live half (Phases 3–6) comes first. Phases 0–2 come after it, unless G5.6
-has built the skeleton by then.
+has built the skeleton by then. **G5.6 has (2026-10-09):** `klive test`, `klive build`, the packaged
+launchers and the PATH installers are in place ([UNIT_TESTS_CLI_PLAN.md](UNIT_TESTS_CLI_PLAN.md) §9),
+so what remains here is headless `klive run` and the harness move.
 
 Scope:
 - [CLOSING_THE_GAPS_PLAN.md](CLOSING_THE_GAPS_PLAN.md) **G6.1**: drive Klive from a command line or

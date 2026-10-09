@@ -233,8 +233,14 @@ the assembler's `.`-prefixed labels (`.UNITTEST_START:`), which are global even 
 | `test-run [<pattern>] [-failed] [-coverage]` | `tr` | Builds and runs the tests; a pattern such as `MathTests.*` selects some |
 | `test-debug <test>` | `td` | Debugs one test in the emulator |
 | `test-init` | | Adds unit-test support to the project |
+| `test-junit <file> [-notimestamp]` | | Writes the last run's results as JUnit XML (the Testing activity's **Export results as JUnit...**) |
 
 See the [Commands Reference](/commands-reference#test-list).
+
+## Tests in CI
+
+`klive test` runs the same tests from a terminal or a CI job, without the IDE, and writes JUnit and
+LCOV files for the CI's dashboards. See [Unit Tests on the Command Line](/working-with-ide/unit-tests-cli).
 
 ## Coming from DeZog
 
@@ -246,3 +252,4 @@ See the [Commands Reference](/commands-reference#test-list).
   busy.
 - Klive reports each test's T-states, and runs tests on a machine of their own, so a run never
   disturbs the emulator.
+- DeZog's tests run only inside VS Code; Klive's also run [in CI](/working-with-ide/unit-tests-cli).

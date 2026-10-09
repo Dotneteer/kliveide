@@ -1645,6 +1645,19 @@ Use this command to add unit-test support to the project: Klive's include file n
 test-init
 ```
 
+## `test-junit`
+
+Use this command to write the last [unit-test](/working-with-ide/unit-tests) run's results as JUnit
+XML, the file `klive test --junit` writes in CI ([Unit Tests on the Command Line](/working-with-ide/unit-tests-cli)).
+The Testing activity's **Export results as JUnit...** context-menu item runs it.
+
+```
+test-junit <file> [-notimestamp]
+```
+
+- `file`: the XML file to write.
+- `-notimestamp`: leave the run's time out, so two runs with the same results write the same file.
+
 ## `show-disassembly`
 
 Use this command to display the machine code disassembly view, and optionally to show an address in

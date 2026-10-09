@@ -8,6 +8,12 @@ import { runCli } from "./run-cli";
  *
  *   ELECTRON_RUN_AS_NODE=1 npx electron out/main/cli.js ide status
  */
+// --- A reader that stops early (`klive test | head`) closes the pipe: leave quietly, not with a trace
+process.stdout.on("error", (err: NodeJS.ErrnoException) => {
+  if (err.code === "EPIPE") process.exit(process.exitCode ?? 0);
+  throw err;
+});
+
 runCli(process.argv.slice(2), processIo()).then(
   (code) => {
     process.exitCode = code;

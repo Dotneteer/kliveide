@@ -1,7 +1,8 @@
 # Unit Tests from the Command Line and CI Plan
 
-Status: **decisions recorded** (2026-10-08). D1–D14 are the decisions; the author accepted the suggested answers to all §8 questions, which the decisions already assume.
-Nothing is implemented.
+Status: **implemented** (2026-10-09): Phases 1–4 are done; §9 records what was built, the
+departures and the findings. D1–D14 are the decisions; the author accepted the suggested answers to
+all §8 questions, which the decisions already assume.
 
 Scope:
 - [CLOSING_THE_GAPS_PLAN.md](CLOSING_THE_GAPS_PLAN.md) **G5.6**: run the G5.5 tests without the UI
@@ -210,3 +211,70 @@ No visual change except one menu item; no theming notes are needed.
 6. **Q6: Duplicate WASM outside the asar.** Suggested: yes, about 15 MB extra (T3), for a CLI that
    does not rely on asar patching. The alternative is to rely on Electron's asar support in Node
    mode and save the space, verified in Phase 2.
+
+---
+
+## 9. Implementation notes (2026-10-09)
+
+### What was built
+
+- **The verbs** (`src/cli/`, on the skeleton G6.1's live half had started): `verbs/test.ts`
+  (compile → discover → run in-process → report, D3's exit codes), `verbs/build.ts` (`--out` as a
+  flat binary or Intel HEX), `project.ts` (`klive.project` without Electron, the build root's
+  language), `compile.ts` (the minimal `AppState`, T4's sjasmplus search, gcc-format diagnostics),
+  `headless.ts` (the machine, ROM overrides, finding the cores and ROMs), `coverage.ts` (LCOV and
+  `.kcov`) and `reporters/` (pretty, plain, TAP). `run-cli.ts` dispatches `test` and `build`.
+- **Shared code**: the JUnit writer is `src/common/unit-tests/junit.ts`, used by the CLI and the IDE
+  (D14). `coverageModel.ts` (with `lcovFilesOf`) moved from `src/renderer/features/coverage/` to
+  `src/common/profile/` so the CLI builds LCOV with the IDE's code. The runner's summary carries
+  `clockHz`, the run's clock, for JUnit's `time` (T2).
+- **The IDE**: `test-junit <file> [-notimestamp]` and the Test panel's **Export results as
+  JUnit...**; **Klive IDE › Install Command Line Tool...** (`src/main/cli-install.ts`).
+- **Packaging**: `build/cli/klive` and `klive.cmd`, copied to `resources/cli` by package.json's
+  `extraResources`; `build/installer.nsh` (the user PATH entry, D12); smoke steps in
+  `release-artifacts.yml` that run the packaged launcher on the fixture project on Windows, Linux x64
+  and macOS arm64.
+- **Docs**: `docs/content/working-with-ide/unit-tests-cli.mdx` with the GitHub Actions and GitLab
+  examples; `test-junit` in the commands reference; the automation page's launcher note updated.
+- **Tests**: `test/cli/test-verb.test.ts` (unit tier: the JUnit golden, escaping, error types,
+  reporters, the project loader and option precedence, T4's order, the code writers, dispatch),
+  `test/cli/klive-test-e2e.test.ts` (e2e tier: the fixture projects under `test/cli/fixtures/` on
+  the real 48K core - exit codes 0–4, JUnit, D10's byte identity, `--bail`, TAP, LCOV and `.kcov`,
+  `--rom`, `klive build`, and the IDE's export equal to the CLI's file),
+  `test/unit-tests/unit-test-junit-export.test.ts`, `test/main/cli-install.test.ts` and a menu
+  structure check.
+
+### Departures from the decisions
+
+- **The bundle is `out/main/cli.js`, inside the asar** (D11 named `out/cli/klive-cli.js` outside
+  it). G6.1's live half had already made the CLI an extra input of the main build, which shares
+  chunks with the main bundle, so the file cannot be copied out alone. Electron's Node mode reads the
+  asar (verified with a packaged macOS build), and the launchers run the bundle from
+  `resources/app.asar/out/main/` (or `app/` where the build has no asar, as on Windows).
+- **No duplicate WASM (Q6):** the packaged app already ships every core in `resources/wasm/<core>/`
+  and the ROMs in `resources/roms/`, outside the asar (package.json `extraResources`), so the CLI
+  reads those (T3 holds without the 15 MB copy). `findWasmArtifact` now tries a resources folder
+  first, which the IDE's own unit-test worker uses too.
+- **`--rom <name>=<file>`**, not `<partition>=<file>`: a machine loads ROMs by file name
+  (`roms/sp128-0.rom`), so `<name>` is the ROM it replaces. The project's `unitTests.roms` maps names
+  to paths relative to the project folder.
+- **Windows PATH**: always added, without an installer checkbox (D12's "option, default on"); the
+  uninstaller removes it. The NSIS script compiles with makensis (ANSI; the cached macOS makensis
+  crashes on any Unicode script, a host problem) but an installer was not run on Windows.
+- **Linux**: the project builds only an AppImage, so there is no `.deb`/`.rpm` symlink; the docs give
+  `--appimage-extract` and the launcher's path, as D12 allows for the AppImage.
+- **T1's lock-holder test** was not written: the CLI never loads `main/index.ts`, so there is no lock
+  to contend for; the packaged smoke steps run the launcher, which is the part that could regress.
+- **A crashed core (T8)** is caught by the verb, not inside the runner: the running test becomes an
+  `<error type="internal">` and the exit code is 4.
+- **The repository's push CI** runs the CLI in-process (`npm run test:all`); the packaged launcher
+  runs in the release workflow, which is where packages are built.
+
+### Findings
+
+- **`Pasta80Compiler` read `mainStore`** although it is handed the same state through
+  `setAppState`. That pulled `electron` into every bundle that uses the compiler registry - the CLI's
+  included, where Node mode has no `electron` module in a packaged app. It now reads `this.state`.
+- **Piping the CLI into `head`** ended with an EPIPE stack trace; the entry point now leaves quietly
+  when its reader closes the pipe.
+- A compiler's `startColumn` is 0-based; the gcc format writes columns from 1.

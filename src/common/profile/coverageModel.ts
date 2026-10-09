@@ -3,6 +3,7 @@ import { MI_ZXNEXT } from "@common/machines/constants";
 import { PF_EXECUTED } from "@common/profile/profileTypes";
 import { instructionStarts } from "@common/profile/z80InstructionLength";
 import { resolvedPartitionFor } from "@common/utils/source-breakpoint-partition";
+import type { LcovFile } from "@common/profile/coverageExport";
 
 /*
  * Code coverage of a compilation's source lines (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D11,
@@ -145,4 +146,27 @@ export function coverageTotals(lines: Iterable<LineCoverage>): { lines: number; 
     else if (l.state === "partial") partial++;
   }
   return { lines: count, covered, partial };
+}
+
+/** LCOV's files from the line coverage: paths relative to the project folder, as CI tools want them */
+export function lcovFilesOf(
+  coverage: Map<string, Map<number, { hits?: number; state: string }>>,
+  projectFolder?: string | null
+): LcovFile[] {
+  const files: LcovFile[] = [];
+  for (const [path, lines] of coverage) {
+    files.push({
+      path: relativeTo(path, projectFolder),
+      lines: [...lines].map(([line, c]) => ({ line, hits: c.hits ?? (c.state === "uncovered" ? 0 : 1) }))
+    });
+  }
+  return files.sort((a, b) => a.path.localeCompare(b.path));
+}
+
+function relativeTo(path: string, folder?: string | null): string {
+  if (!folder) return path;
+  const norm = (p: string) => p.replace(/\\/g, "/");
+  const p = norm(path);
+  const f = norm(folder).replace(/\/$/, "");
+  return p.startsWith(`${f}/`) ? p.slice(f.length + 1) : p;
 }

@@ -25,10 +25,17 @@ const CORE_FOLDERS: Record<string, string> = {
  * The path of a core's WASM file, or `undefined` when there is none
  * @param artifactName The core's artifact (`zx-spectrum48.wasm`)
  * @param baseDir Where the main bundle runs from (`out/main`)
+ * @param resourcesDir A packaged app's resources folder, whose `wasm/<core>/` copies (package.json
+ * `extraResources`) sit outside the asar; tried first
  */
-export function findWasmArtifact(artifactName: string, baseDir: string): string | undefined {
-  // --- A development build: the sources are above the bundle
+export function findWasmArtifact(artifactName: string, baseDir: string, resourcesDir?: string): string | undefined {
+  // --- A packaged app's plain copy, outside the asar (`.plans/UNIT_TESTS_CLI_PLAN.md` T3)
   const folder = CORE_FOLDERS[artifactName];
+  if (folder && resourcesDir) {
+    const candidate = path.join(resourcesDir, "wasm", folder, artifactName);
+    if (fs.existsSync(candidate)) return candidate;
+  }
+  // --- A development build: the sources are above the bundle
   if (folder) {
     let dir = baseDir;
     for (let i = 0; i < 6; i++) {

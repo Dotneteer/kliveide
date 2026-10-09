@@ -22,6 +22,7 @@ export default {
   "code-coverage": "Code Coverage and the Heat Map",
   profiler: "The Profiler",
   "unit-tests": "Unit Tests",
+  "unit-tests-cli": "Unit Tests on the Command Line",
   automation: "Automation and the Command Line",
   memory: "The Memory View",
   disassembly: "The Disassembly View",

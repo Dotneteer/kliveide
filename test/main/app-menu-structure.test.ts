@@ -131,6 +131,11 @@ describe("the application menu", () => {
     ]);
   });
 
+  it("offers Install Command Line Tool in the Klive menu (UNIT_TESTS_CLI_PLAN D12)", () => {
+    const klive = labels(menu(buildMenu("sp48"), "Klive"));
+    expect(klive.indexOf("Install Command Line Tool...")).toBe(klive.indexOf("Settings...") + 1);
+  });
+
   it("opens every emulator file from one File item, without the old duplicates", () => {
     const file = labels(menu(buildMenu("sp48"), "File"));
     expect(file).toContain("Open File...");

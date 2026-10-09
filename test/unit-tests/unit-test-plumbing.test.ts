@@ -163,6 +163,12 @@ describe("project settings and machines", () => {
     expect(findWasmArtifact("zx-spectrum48.wasm", join(app, "main"))).toBe(join(app, "renderer/assets/zx-spectrum48-AbC123.wasm"));
     expect(findWasmArtifact("zx-timex.wasm", join(app, "main"))).toBeUndefined();
     expect(existsSync(join(app, "main"))).toBe(true);
+    // --- The resources folder's plain copy, outside the asar, comes first (UNIT_TESTS_CLI_PLAN T3)
+    const resources = mkdtempSync(join(tmpdir(), "klive-res-"));
+    mkdirSync(join(resources, "wasm/zxSpectrum48"), { recursive: true });
+    writeFileSync(join(resources, "wasm/zxSpectrum48/zx-spectrum48.wasm"), "x");
+    expect(findWasmArtifact("zx-spectrum48.wasm", join(app, "main"), resources)).toBe(join(resources, "wasm/zxSpectrum48/zx-spectrum48.wasm"));
+    expect(findWasmArtifact("zx-spectrum128.wasm", join(app, "main"), resources)).toBeUndefined();
   });
 });
 

@@ -141,6 +141,7 @@ export async function runUnitTests(
   const labels = program.labels;
   const tests = selectTests(program.tests, options);
   summary.total = tests.length;
+  summary.clockHz = machine.baseClockFrequency * (machine.clockMultiplier || 1);
   if (!tests.length) return finish();
 
   const isNext = machine.machineId === MI_ZXNEXT;

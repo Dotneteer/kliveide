@@ -25,6 +25,8 @@ export const E2E_CORE_TESTS: string[] = [
   "test/spectrum-hw/**/*.test.ts",
   "test/harness/**/self-tests/**/*.test.ts",
   "test/unit-tests/runner-*.test.ts",
+  // --- `klive test` on the fixture projects (`.plans/UNIT_TESTS_CLI_PLAN.md` §6)
+  "test/cli/klive-test-e2e.test.ts",
 
   // --- Mixed folders: the files that run a core
   "test/audio/AudioIntegration.test.ts",

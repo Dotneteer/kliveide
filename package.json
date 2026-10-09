@@ -191,7 +191,8 @@
       "icon": "public/images/512x512.png"
     },
     "nsis": {
-      "artifactName": "KliveIdeSetup-${version}-${arch}.${ext}"
+      "artifactName": "KliveIdeSetup-${version}-${arch}.${ext}",
+      "include": "build/installer.nsh"
     },
     "linux": {
       "target": "AppImage",
@@ -296,6 +297,14 @@
         "to": "wasm/zx8081",
         "filter": [
           "**/*.wasm"
+        ]
+      },
+      {
+        "from": "build/cli",
+        "to": "cli",
+        "filter": [
+          "klive",
+          "klive.cmd"
         ]
       }
     ]

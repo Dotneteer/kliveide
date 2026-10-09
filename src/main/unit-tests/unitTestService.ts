@@ -119,7 +119,8 @@ export async function runUnitTestsInWorker(
   const selected = selectTests(program.tests, options);
 
   const artifactName = artifactNameOf(machineId);
-  const artifactPath = findWasmArtifact(artifactName, __dirname);
+  // --- A packaged app's plain copy in its resources first, then the development tree or the asar
+  const artifactPath = findWasmArtifact(artifactName, __dirname, process.resourcesPath);
   if (!artifactPath) return refuse(`The ${artifactName} machine core was not found next to the app.`);
   const publicFolder = process.env.PUBLIC ?? path.join(__dirname, "../renderer");
 

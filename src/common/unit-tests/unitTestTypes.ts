@@ -48,6 +48,11 @@ export type UnitTestSummary = {
   errors: number;
   /** Stopped before every test ran */
   cancelled?: boolean;
+  /**
+   * The machine's clock in Hz (base clock times multiplier): emulated seconds are T-states divided
+   * by it, the JUnit `time` of `.plans/UNIT_TESTS_CLI_PLAN.md` D7/T2
+   */
+  clockHz?: number;
 };
 
 /**

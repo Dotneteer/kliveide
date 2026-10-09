@@ -4,7 +4,7 @@ import { Z80Assembler } from "@main/z80-compiler/z80-assembler";
 import { AssemblerOptions } from "@main/compiler-common/assembler-in-out";
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
 import { PF_CODE, PF_EXECUTED } from "@common/profile/profileTypes";
-import { buildCoverageModel, coverageTotals, lineCoverage } from "@renderer/features/coverage/coverageModel";
+import { buildCoverageModel, coverageTotals, lineCoverage } from "@common/profile/coverageModel";
 
 /*
  * The coverage model (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D11, D12, T8, Phase 4): asm lines,

@@ -8,7 +8,7 @@ import { machineRegistry } from "@common/machines/machine-registry";
 import { SETTING_IDE_COVERAGE_LINE_TINT } from "@common/settings/setting-const";
 import { useGlobalSetting, useSelector } from "@renderer/core/RendererProvider";
 import { useEmuApi } from "@renderer/core/EmuApi";
-import { buildCoverageModel, lineCoverage, type CoverageModel, type LineCoverage } from "./coverageModel";
+import { buildCoverageModel, lineCoverage, type CoverageModel, type LineCoverage } from "@common/profile/coverageModel";
 
 /*
  * The editor's coverage strip (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D12): its own decorations

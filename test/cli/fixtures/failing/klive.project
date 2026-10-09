@@ -1,0 +1,8 @@
+{
+  "kliveVersion": "0.50.0",
+  "machineType": "sp48",
+  "modelId": "pal",
+  "builder": {
+    "roots": ["code/main.kz80.asm"]
+  }
+}

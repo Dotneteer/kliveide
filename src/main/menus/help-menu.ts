@@ -12,6 +12,7 @@ import { createAboutDialogData } from "@messaging/about-dialog";
 import type { MenuContext } from "./menu-context";
 import { automationMenuItems, settingsMenuItem } from "./file-menu";
 import { tidySeparators } from "./menu-utils";
+import { installCommandLineTool } from "../cli-install";
 
 export const SYSTEM_MENU_ID = "system_menu";
 export const KLIVE_GITHUB_PAGES = "https://dotneteer.github.io/kliveide";
@@ -41,6 +42,12 @@ export function createAppMenu(context: MenuContext): MenuItemConstructorOptions 
       { type: "separator" },
       settingsMenuItem(context),
       ...automationMenuItems(context),
+      {
+        // --- `/usr/local/bin/klive` (`.plans/UNIT_TESTS_CLI_PLAN.md` D12)
+        id: "install_cli",
+        label: "Install Command Line Tool...",
+        click: async () => await installCommandLineTool(context.focusedWindow())
+      },
       { type: "separator" },
       { role: "hide" },
       { role: "hideOthers" },

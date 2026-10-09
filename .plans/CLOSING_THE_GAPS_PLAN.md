@@ -31,8 +31,8 @@ are estimates for prioritising, not commitments.
 | G2 | Load and save snapshots (.sna/.z80/.szx), RZX | **S → L** | ✅ done (2026-10-04): G2.1–G2.8 |
 | G3 | Live Next hardware inspectors | **M** (layers: M–L) | ✅ done (2026-10-05 – 10-08): G3.1–G3.9 (G3.8's sprite half on 2026-10-08) |
 | G4 | Execution history and reverse debugging | **M → XL** | ✅ done (2026-10-07 – 10-08): G4.1–G4.6 |
-| G5 | Code coverage, profiler, unit tests | **M → L** | ✅ G5.1 and G5.2 done (2026-10-08): coverage per bank and the heat map on every Z80 machine · ✅ G5.3 and G5.4 done (2026-10-08): flat and call-graph profiler on every Z80 machine · ✅ G5.5 done (2026-10-08): DeZog-compatible unit tests with both assemblers · plan ready for CLI/CI |
-| G6 | Remote debugging, real hardware, external API | **M → XL** | ◐ G6.1's live half done (2026-10-09): a local, token-authenticated JSON-RPC automation API and the `klive ide` command line · headless `klive build`/`klive run` still open |
+| G5 | Code coverage, profiler, unit tests | **M → L** | ✅ G5.1 and G5.2 done (2026-10-08): coverage per bank and the heat map on every Z80 machine · ✅ G5.3 and G5.4 done (2026-10-08): flat and call-graph profiler on every Z80 machine · ✅ G5.5 done (2026-10-08): DeZog-compatible unit tests with both assemblers · ✅ G5.6 done (2026-10-09): `klive test` in CI, with exit codes, JUnit and LCOV |
+| G6 | Remote debugging, real hardware, external API | **M → XL** | ◐ G6.1's live half done (2026-10-09): a local, token-authenticated JSON-RPC automation API and the `klive ide` command line · the `klive` launcher and headless `klive build` shipped with G5.6 · headless `klive run` still open |
 | G7 | 48K/128K reverse-engineering depth | **M → L** | Generalising the NEX annotation sidecar |
 | G8 | BASIC editor intelligence | **M** | ✅ done (2026-10-03): G8.1–G8.5 |
 | G9 | Machine breadth (ZX80/81, clones) | **M → XL** | ✅ G9.1 Pentagon 128, G9.1b Beta 128 / TR-DOS, G9.2 +2A/+3, G9.3 ZX80/81, G9.4 Timex TC2048/TC2068/TS2068 and Scorpion done |
@@ -248,7 +248,11 @@ then moves the frame trace to a diagnostics build, which shrinks the Next to abo
   runner in a worker on the 48K/16K, 128K, +2A/+3/+2E/+3E and Next (deterministic, T-states per
   test, emulated-time timeout, stack guards), the Unit Tests panel and Tests pane with click-to-source,
   `test-*` commands, Debug a test in the emulator (not on the Next yet), and Run with coverage.
-- G5.6 is in [UNIT_TESTS_CLI_PLAN.md](UNIT_TESTS_CLI_PLAN.md).
+- G5.6 is in [UNIT_TESTS_CLI_PLAN.md](UNIT_TESTS_CLI_PLAN.md). **Done (2026-10-09)**: `klive test` and
+  `klive build` run headlessly in Klive's own binary in Node mode (exit codes 0–4, pretty/plain/TAP
+  reporters, JUnit with emulated time, LCOV and `.kcov` coverage), launchers in the packaged app, the
+  macOS Install Command Line Tool item and the Windows installer's PATH entry, the Test panel's
+  Export results as JUnit…, and a docs page with GitHub Actions and GitLab examples.
 
 Research for the plans corrected four assumptions in the table below:
 - **G5.3 is S–M, not M.** The coverage module already measures time per instruction.
@@ -266,7 +270,7 @@ Research for the plans corrected four assumptions in the table below:
 | G5.3 Flat profiler ✅ **done** | T-states spent per address, rolled up per label or procedure; a "top routines" table. | M |
 | G5.4 Call-graph profiler ✅ **done** | Inclusive and exclusive time per routine using the call stack. | L |
 | G5.5 Z80 unit tests ✅ **done** | **DeZog-compatible** (decision D3): the same test-case labelling and assertion-macro conventions, so DeZog unit-test projects run in Klive unchanged, with both Klive asm and sjasmplus. A runner sets up the machine headlessly, calls each test, checks results, and reports pass/fail in a Test panel with click-to-source. Debug a failing test. | L (assembler support for the conventions, a headless runner, UI; the exact DeZog conventions are researched in this feature's own plan) |
-| G5.6 Tests from the command line / CI | Run the G5.5 tests without the UI (`klive test project/`), with exit codes and JUnit output. | M, after G5.5 and G6.1 |
+| G5.6 Tests from the command line / CI ✅ **done** | Run the G5.5 tests without the UI (`klive test project/`), with exit codes and JUnit output. | M, after G5.5 (not G6.1: CI needs no transport) |
 
 ---
 
@@ -277,7 +281,7 @@ hardware, where competitors lead.
 
 | Feature | What it does | Size |
 |---|---|---|
-| G6.1 Command line / automation ◐ **live half done** (2026-10-09) | Drive Klive from a CLI or script: build, run, test and read memory headlessly. Scoped to CI and automation, **not** editor integration (decision D1). Done: the automation server and protocol, `klive ide …`, the docs page. Open: headless `klive build`/`klive run` and packaging of the `klive` launcher (the plan's Phases 0–2). | M (the IDE command service already exists; this needs a transport and a security model) |
+| G6.1 Command line / automation ◐ **live half done** (2026-10-09) | Drive Klive from a CLI or script: build, run, test and read memory headlessly. Scoped to CI and automation, **not** editor integration (decision D1). Done: the automation server and protocol, `klive ide …`, the docs page; the CLI skeleton, the packaged `klive` launcher and headless `klive build` came with G5.6. Open: headless `klive run` and the harness move (the plan's Phases 1–2), which add a verb to the existing CLI. | M (the IDE command service already exists; this needs a transport and a security model) |
 | ~~G6.2 Debug-adapter protocol server~~ | **Dropped** (decision D1): Klive stays a standalone IDE. | — |
 | ~~G6.3 DeZog-compatible remote~~ | **Dropped** (decision D1). DeZog compatibility applies to source conventions instead (D3). | — |
 | G6.4 Real Next hardware debugging (**deferred**, 2026-10-08: built only if the future calls for it) | Run and debug on a physical Next over UART **from Klive's own debugger UI**, with an on-Next agent program handling breakpoints and memory. Fits D1: Klive is the client. | XL (hardware, a Z80N agent, timing and banking constraints) |
@@ -292,8 +296,9 @@ hardware, where competitors lead.
 It re-sizes G6.1 to M–L with the headless runner, or M if G5.6 lands first.
 
 **Status (2026-10-09):** the live half (the plan's Phases 3–6) is done: the server in the main
-process, `klive ide …`, and `docs/content/working-with-ide/automation.mdx`. The headless verbs, the
-harness move and the packaged `klive` launcher (Phases 0–2) remain.
+process, `klive ide …`, and `docs/content/working-with-ide/automation.mdx`. G5.6 (2026-10-09) then
+built the CLI skeleton's headless half: `klive test`, `klive build` and the packaged `klive`
+launcher. Headless `klive run` and the harness move remain.
 
 **Plan:** G6.5 is planned on its own in [SEND_TO_NEXT_WIFI_PLAN.md](SEND_TO_NEXT_WIFI_PLAN.md)
 (draft, open questions, 2026-10-08):
@@ -407,7 +412,7 @@ step back~~ (done) · G5.1 coverage · G1.3 memory and value conditions · G1.5 
 and WPMEM comments.
 
 **Wave 3 — depth:**
-- ~~G5.5 DeZog-compatible unit tests~~ (done) and G6.1 CLI (live half done; headless verbs open), which together enable G5.6 (CI).
+- ~~G5.5 DeZog-compatible unit tests~~ (done) and ~~G5.6 tests in CI~~ (done); G6.1 CLI (live half done; headless `klive run` open).
 - G7.1 annotations for any machine, G7.2 ROM annotations written from scratch.
 - ~~G8.x BASIC intelligence~~ (done), ~~G2.4 snapshot saving~~ (done), ~~G5.2–G5.4 heat map and profiler~~ (done).
 - ~~**G4.2 history in every core**~~ (done), which is the groundwork for G4.4.

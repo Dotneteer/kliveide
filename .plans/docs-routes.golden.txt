@@ -96,6 +96,7 @@
 /working-with-ide/system-vars/index.html
 /working-with-ide/tilemap-inspector/index.html
 /working-with-ide/ula/index.html
+/working-with-ide/unit-tests-cli/index.html
 /working-with-ide/unit-tests/index.html
 /working-with-ide/watch/index.html
 /working-with-ide/zxb/index.html

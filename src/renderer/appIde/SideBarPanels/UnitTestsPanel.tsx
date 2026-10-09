@@ -94,6 +94,16 @@ export const UnitTestsPanel = () => {
     await ideCommandsService.executeCommand(command, pane);
     await ideCommandsService.executeCommand(`outp ${PANE_ID_TESTS}`);
   };
+  /** Export results as JUnit… (`.plans/UNIT_TESTS_CLI_PLAN.md` D14): the command line's format */
+  const exportJUnit = async () => {
+    const file = await mainApi.showSaveFileDialog({
+      title: "Export Results as JUnit",
+      defaultPath: "unit-tests.xml",
+      filters: [{ name: "JUnit XML", extensions: ["xml"] }],
+      settingsId: "unitTestJUnitExport"
+    });
+    if (file) await execute(`test-junit "${file}"`);
+  };
   const navigate = (file: string | undefined, line: number | undefined) => {
     if (!file || line === undefined) return;
     void ideCommandsService.executeCommand(`nav "${file}" ${line} -r unitTest`);
@@ -259,6 +269,16 @@ export const UnitTestsPanel = () => {
           clicked={() => {
             menuApi.conceal();
             if (menuTarget) void ideCommandsService.executeCommand(`show-disass $${toHexa4(menuTarget.address)}`);
+          }}
+        />
+        <ContextMenuSeparator />
+        <ContextMenuItem
+          text="Export results as JUnit..."
+          iconName="save"
+          disabled={!Object.keys(results).length || running}
+          clicked={() => {
+            menuApi.conceal();
+            void exportJUnit();
           }}
         />
       </ContextMenu>

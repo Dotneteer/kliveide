@@ -4,9 +4,9 @@ import {
   CoverageResetCommand,
   MemoryHeatCommand,
   coverageFormatOfName,
-  coverageStatusLines,
-  lcovFilesOf
+  coverageStatusLines
 } from "@renderer/appIde/commands/CoverageCommands";
+import { lcovFilesOf } from "@common/profile/coverageModel";
 import { createMockContext, createMockEmuApi, createMockMainApi, createMockStore } from "./test-helpers/mock-context";
 import type { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext";
 import type { ProfileStatus } from "@common/profile/profileTypes";

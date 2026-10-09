@@ -9,6 +9,7 @@ import {
 import {
   TestDebugCommand,
   TestInitCommand,
+  TestJUnitCommand,
   TestListCommand,
   TestRunCommand
 } from "./commands/UnitTestCommands";
@@ -216,6 +217,7 @@ export function registerIdeCommands(cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new TestRunCommand());
   cmdSrv.registerCommand(new TestDebugCommand());
   cmdSrv.registerCommand(new TestInitCommand());
+  cmdSrv.registerCommand(new TestJUnitCommand());
   // --- The profiler (`.plans/PROFILER_PLAN.md` D16)
   cmdSrv.registerCommand(new ProfileCommand());
   cmdSrv.registerCommand(new ProfileStartCommand());

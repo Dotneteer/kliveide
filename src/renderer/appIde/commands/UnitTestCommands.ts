@@ -6,6 +6,7 @@ import type { UnitTestDebugInfo } from "@abstractions/CodeToInject";
 import type { UnitTestCase } from "@common/unit-tests/discovery";
 
 import { discoverUnitTests } from "@common/unit-tests/discovery";
+import { junitOfLastRun } from "@renderer/appIde/unit-tests/unitTestJUnit";
 import { testIdMatches } from "@common/unit-tests/unitTestTypes";
 import { PROJECT_FILE } from "@common/structs/project-const";
 import { getFileTypeEntry } from "@renderer/appIde/project/project-node";
@@ -31,8 +32,9 @@ import { summaryText } from "@renderer/appIde/unit-tests/unitTestTree";
 
 /*
  * The unit-test commands (`.plans/Z80_UNIT_TESTS_PLAN.md` D16): `test-list`, `test-run [<pattern>]
- * [-failed] [-coverage]`, `test-debug <test>` and `test-init`. Patterns match `Suite.UT_name` with
- * `*`. KSX scripts reach them through `executeCommand`.
+ * [-failed] [-coverage]`, `test-debug <test>`, `test-init` and `test-junit <file>`
+ * (`.plans/UNIT_TESTS_CLI_PLAN.md` D14). Patterns match `Suite.UT_name` with `*`. KSX scripts reach
+ * them through `executeCommand`.
  */
 
 /** `test-list`: the tests of the last build, by suite */
@@ -209,6 +211,40 @@ export class TestInitCommand extends IdeCommandBase {
         ? "Next: invoke UNITTEST_INITIALIZE() once, follow it with your init code ending in RET, and write UT_ tests that end with TC_END()."
         : "Next: invoke UNITTEST_INITIALIZE once, follow it with your init code ending in RET, and write UT_ tests that end with TC_END."
     );
+    return commandSuccess;
+  }
+}
+
+type TestJUnitArgs = { file: string; "-notimestamp"?: boolean };
+
+/** `test-junit <file> [-notimestamp]`: the Test panel's "Export results as JUnit…" (D14) */
+export class TestJUnitCommand extends IdeCommandBase<TestJUnitArgs> {
+  readonly id = "test-junit";
+  readonly description = "Exports the last unit-test run's results as JUnit XML";
+  readonly usage = [
+    "test-junit <file> [-notimestamp]",
+    "file: the XML file to write",
+    "-notimestamp: leave the run's time out, so two runs write the same file"
+  ];
+  readonly argumentInfo: CommandArgumentInfo = {
+    mandatory: [{ name: "file", type: "string" }],
+    commandOptions: ["-notimestamp"]
+  };
+
+  async validateCommandArgs(_context: IdeCommandContext, args: TestJUnitArgs): Promise<ValidationMessage[]> {
+    return args.file?.trim() ? [] : [validationError("Name the file to write")];
+  }
+
+  async execute(context: IdeCommandContext, args: TestJUnitArgs): Promise<IdeCommandResult> {
+    const xml = junitOfLastRun(context.store.getState(), currentUnitTests(context), !args["-notimestamp"]);
+    if (!xml.startsWith("<?xml")) return commandError(xml);
+    let written: string;
+    try {
+      written = await context.mainApi.saveTextFile(args.file.trim(), xml);
+    } catch (err) {
+      return commandError(`Could not write ${args.file}: ${err instanceof Error ? err.message : String(err)}`);
+    }
+    writeSuccessMessage(context.output, `Exported the unit-test results (JUnit) to ${written || args.file}`);
     return commandSuccess;
   }
 }

@@ -15,6 +15,8 @@ export type CliIo = {
   writeFile(file: string, data: Uint8Array | string): string;
   env: NodeJS.ProcessEnv;
   cwd: string;
+  /** Standard output is a terminal (`klive test` picks its reporter by it; UNIT_TESTS_CLI_PLAN T6) */
+  isTty?: boolean;
   /**
    * Settles when the user presses Ctrl+C (`events` streams until then). Only `events` asks: a
    * listener for the signal would otherwise stop Ctrl+C from ending any other verb.
@@ -35,6 +37,7 @@ export function processIo(): CliIo {
     },
     env: process.env,
     cwd: process.cwd(),
+    isTty: !!process.stdout.isTTY,
     waitForInterrupt: () =>
       new Promise<void>((resolve) => {
         process.once("SIGINT", () => resolve());
