@@ -19,7 +19,8 @@ import {
   unitTestsRunStartedAction
 } from "@common/state/actions";
 import { mainStore } from "@main/main-store";
-import { artifactNameOf, unsupportedMachineMessage } from "./unitTestMachines";
+import { artifactNameOf } from "@common/headless/headlessMachines";
+import { unsupportedMachineMessage } from "./unitTestMachines";
 import { startUnitTestWorker, type UnitTestWorkerRun } from "./runUnitTestWorker";
 import { readUnitTestSettings } from "./unitTestProjectSettings";
 import { findWasmArtifact } from "./wasmArtifacts";

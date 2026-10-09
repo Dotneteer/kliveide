@@ -6,7 +6,7 @@ import type { IFileProvider } from "@renderer/core/IFileProvider";
 import type { UnitTestEvent } from "@common/unit-tests/unitTestTypes";
 import type { UnitTestWorkerData } from "./unitTestWorkerTypes";
 import { discoverUnitTests } from "@common/unit-tests/discovery";
-import { createHeadlessMachine } from "./HeadlessMachineFactory";
+import { createHeadlessMachine } from "@common/headless/HeadlessMachineFactory";
 import { bootModelFor, runUnitTests } from "./UnitTestRunner";
 
 /*

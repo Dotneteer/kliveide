@@ -1,13 +1,11 @@
 # Command Line and Automation Plan (G6.1)
 
-Status: **live half implemented** (2026-10-09): Phases 3–6 are done (§10 records what was built,
-the departures and the findings). Phases 0–2 - the CLI skeleton's headless verbs, `klive run`, the
-harness move and packaging - are open. D1–D18 are the decisions; the author accepted the suggested
-answers to all §9 questions (2026-10-08), which the decisions already assume.
-**Build order (Q2):** the live half (Phases 3–6) comes first. Phases 0–2 come after it, unless G5.6
-has built the skeleton by then. **G5.6 has (2026-10-09):** `klive test`, `klive build`, the packaged
-launchers and the PATH installers are in place ([UNIT_TESTS_CLI_PLAN.md](UNIT_TESTS_CLI_PLAN.md) §9),
-so what remains here is headless `klive run` and the harness move.
+Status: **done** (2026-10-09). The live half (Phases 3–6) landed first (§10); Phases 0–2 - headless
+`klive run`, the shared headless machine code and packaging - complete the plan (§11). D1–D18 are the
+decisions; the author accepted the suggested answers to all §9 questions (2026-10-08), which the
+decisions already assume. G5.6 had built the skeleton (`klive test`, `klive build`, the packaged
+launchers and the PATH installers; [UNIT_TESTS_CLI_PLAN.md](UNIT_TESTS_CLI_PLAN.md) §9), so Phase 0
+was only the factory's move and Phase 2 only the smoke test.
 
 Scope:
 - [CLOSING_THE_GAPS_PLAN.md](CLOSING_THE_GAPS_PLAN.md) **G6.1**: drive Klive from a command line or
@@ -440,3 +438,89 @@ The only visual change is the status-bar item. If it needs a style decision (e.g
 - **Status published before the IDE window loads is lost**: the server starts at `whenReady`, before
   the IDE renderer can receive actions. The controller re-publishes the status (and says how many log
   lines were held) when the IDE becomes ready.
+
+---
+
+## 11. Implementation notes (2026-10-09: Phases 0–2)
+
+### What was built
+
+- **`klive run`** (`src/cli/verbs/run.ts`, `src/cli/run/inputs.ts`, `src/cli/run/breakpoints.ts`), D15:
+  - inputs: a project folder (built as `klive build` does, then injected through the machine's own
+    code-injection flow, as the IDE's Run does), `.tap`/`.tzx` (the machine's tape-load flow),
+    `.sna`/`.z80`/`.szx` and `.kls` (the IDE's own loaders, `spectrumSnapshotLoad.ts` and
+    `machineStateFile.ts`, against headless ports and a controller that only runs the restore),
+    `.nex` (the direct loader) and `.p`/`.81`/`.o`/`.80` (the ZX80/81 tape-load flow, which RUNs);
+  - stops: `--frames`, `--tstates` (exact: whole frames, then single instructions to the first
+    boundary at or after the target, breakpoints still honoured), `--until-pc` (addresses or labels
+    of the build), `--until-halt` (a HALT with interrupts disabled), `--bp` (a subset of `bp-set`)
+    and `--timeout` (exit code 5);
+  - `--wait-frames`, `--keys`; outputs `--dump-mem`, `--dump-regs`, `--screenshot`, `--save-state`
+    and `--json`.
+- **`src/common/headless/`** (D16): `HeadlessMachineFactory.ts` (moved from `src/main/unit-tests/`,
+  now also the ZX80/ZX81), `headlessMachines.ts` (the machine list and the cores' artifact names;
+  `unitTestMachines.ts` keeps only the unit-test list), `frameRunner.ts` (whole frames, run to an
+  address, and the code-injection flow player that the unit-test runner's boot now uses too),
+  `runToStop.ts` (the stop conditions and the run's `DebugSupport`), `keyboard.ts` (text to key
+  chords, the ZX80/81 through their own typer), `screenImage.ts` (the picture; the emulator's
+  `getScreenImage` and the Next harness's `captureFrame` use it), `tapeBlocks.ts` (TAP/TZX reading;
+  the emulator's tape insert uses it) and `nexLoad.ts` (the direct NEX loader, moved from the Next
+  harness). The PNG encoder had moved to `src/common/imaging/png.ts` with the live half.
+- **Packaging** (Phase 2): the verb is part of the existing `out/main/cli.js` bundle and every core is
+  already in `resources/wasm/`, so the only change is the smoke steps in `release-artifacts.yml`: on
+  Windows, Linux and macOS the packaged launcher runs `klive run test/cli/fixtures/run48 --frames 10
+  --screenshot shot.png` and compares the file with `test/cli/fixtures/run48/expected-frame10.png` (a
+  whole frame: at the HALT itself the picture is mid-frame, the border's colour change half drawn).
+- **Docs**: a `klive run` section in `docs/content/working-with-ide/unit-tests-cli.mdx`, linked from
+  the automation page.
+- **Tests**: `test/cli/run-verb.test.ts` (unit tier: `--bp`, `--keys`, `--dump-mem`, the input
+  kinds, the machine lists, the reports and the usage errors) and `test/cli/klive-run-e2e.test.ts`
+  (e2e tier, on the fixtures `run48`, `returns48`, `run128` and `runnext`, a generated BASIC tape, a
+  generated `.nex` and a tracked ZX81 program): every stop condition, `--keys` (PRINT 1+1 read back
+  off the screen), every output, `.kls` and `.szx` round trips, the 128K's menu, the ZX81, the Next
+  as a project and as a `.nex`, the golden screenshot, exit codes 0/2/3/4/5 and T10's byte identity
+  of every output file between two runs.
+
+### Departures from the decisions
+
+- **D16 shares the machine handling rather than moving the harness wholesale.** What any headless
+  caller needs moved to `src/common/headless/` and the harness, the unit-test runner and the
+  emulator call it there (above). The harness sessions keep their test-only API - snapshots, RZX,
+  execution history, source-level steps, the 128K's ROM-aware `runTo` - which the CLI does not use;
+  moving it would only have moved test code into the product.
+- **`--bp` is the part of `bp-set` a headless run can use**: an address or label, `-r -w -i -o -m
+  -len -once -log -hit -if`. Partition, Copper, sprite and NextReg breakpoints are not offered.
+  Conditions and log templates are the emulator's own; a bad one is exit code 3.
+- **`--dump-mem` reads the CPU's view only**: its `:` separates the length, so `B5:$0100` (T8's
+  partition form) cannot be written there. `--dump-regs` takes a file, or `-` to print, because the
+  argument parser has no optional values.
+- **`--save-state` writes `.sna`/`.z80`/`.szx` too**, by extension; `--no-timestamp` fixes a `.kls`
+  file's save time so runs compare byte for byte. `--json` was added for scripts.
+- **A Next project is injected into a reset machine.** The IDE's run exports a `.nex` and has
+  NextZXOS load it from the SD card, which a CI job does not have; a `.nex` file starts through the
+  direct loader. Both print a note saying what differs from NextZXOS.
+- **A ZX80/ZX81 project is refused** (exit code 3): those machines have no code injection yet. Their
+  program files run.
+- **A run must name a stop condition**, and one that only stops at an address, a HALT or a breakpoint
+  gets a 60-second `--timeout`, so no CI job hangs.
+- **The run always uses the debug loop** (about ten times real time): see the findings.
+- **The Timex machines** are not in the headless list; protocol 1's list is the Spectrums, the Next
+  and the ZX80/81.
+- **The packaged smoke test** runs in the release workflow, as `klive test`'s does; Windows was not
+  run locally.
+
+### Findings
+
+- **Spectrum code injection added phantom T-states.** `ZxSpectrumBase.injectCodeToRun` and the
+  128K/+3's `injectSpectrumCode` wrote through the CPU's contended `writeMemory`, which charged
+  contention to the TypeScript side's T-state counter although the core ran nothing; the next sync
+  moved `tacts` backwards (a 27,223 T jump after a screen clear). The IDE never compared the two
+  counters, so nobody noticed; `--tstates` did. Both now use `doWriteMemory`, as the Next's injection
+  already did.
+- **The fast frame path mirrors only the frame counters.** With no debug mode a WASM machine leaves
+  `halted`, `iff1`, `iff2` and the interrupt mode as they were at the last debug-loop exit, so a
+  dead-HALT test on the fast path saw the HALT only when the budget ran out, and the registers a run
+  reported could be stale. `runToStop` always runs the debug loop, as the unit-test runner does.
+- **Every Spectrum-family core's T-state counter is the core's**: read it after a debug-loop exit or a
+  frame, never after TypeScript-side writes, which is what the finding above came down to.
+

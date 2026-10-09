@@ -29,6 +29,7 @@ import type { RzxPlayer, RzxPlayerOptions } from "@emu/machines/zxSpectrum/rzx/R
 import type { RzxRecorder, RzxRecorderOptions } from "@emu/machines/zxSpectrum/rzx/RzxRecorder";
 import type { RzxStop } from "@emu/machines/zxSpectrum/rzx/rzxSession";
 import * as rzx from "../spectrumRzx";
+import { spectrumChordsOf } from "@common/headless/keyboard";
 import { ScorpionWasmV2Machine } from "@emu/machines/zxSpectrum128/ScorpionWasmV2Machine";
 import { SCORPION_ROM_FILE } from "@emu/machines/machine-props";
 import { AssemblerOptions } from "@main/compiler-common/assembler-in-out";
@@ -383,16 +384,12 @@ export class Sp128TestSession {
     return this;
   }
 
-  /** Types text: letters, digits, space and ENTER (`"\n"`) */
+  /**
+   * Types text: letters, digits, space, ENTER (`"\n"`), the Symbol Shift characters and `{CS+5}`
+   * chords - `klive run --keys`'s mapping (`@common/headless/keyboard`)
+   */
   typeText(text: string, options?: { hold?: number; gap?: number }): this {
-    const chords = [...text].map((ch) => {
-      if (ch === "\n") return ["Enter"];
-      if (ch === " ") return ["Space"];
-      if (/[0-9]/.test(ch)) return [`N${ch}`];
-      if (/[a-z]/i.test(ch)) return [ch.toUpperCase()];
-      throw new Error(`typeText cannot type '${ch}'`);
-    });
-    return this.typeKeys(chords, options);
+    return this.typeKeys(spectrumChordsOf(text), options);
   }
 
   /**

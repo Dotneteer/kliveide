@@ -1,0 +1,8 @@
+{
+  "kliveVersion": "0.64.0",
+  "machineType": "sp128",
+  "modelId": "sp128",
+  "builder": {
+    "roots": ["code/main.kz80.asm"]
+  }
+}

@@ -24,6 +24,11 @@ klive ide regs
 klive ide mem '$5C00' 64
 ```
 
+Both drive the Klive you have open. To run a program **without** the IDE, on a machine of its own in
+a CI job, use [`klive run`](/working-with-ide/unit-tests-cli#klive-run): it builds the project or
+loads a tape, snapshot or NEX file, runs it until a condition, and writes screenshots, memory dumps
+and registers.
+
 ## Turning it on
 
 Automation is **off by default**. Turn it on in **Settings › General › Automation** (*Let scripts

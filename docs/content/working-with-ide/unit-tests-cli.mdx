@@ -1,5 +1,5 @@
 ---
-description: "Run Klive's Z80 unit tests from a terminal or a CI job with klive test: no window, deterministic results, exit codes, JUnit XML and LCOV coverage. GitHub Actions and GitLab CI examples."
+description: "Run Klive's Z80 unit tests and programs from a terminal or a CI job with klive test and klive run: no window, deterministic results, exit codes, JUnit XML, LCOV coverage, screenshots and memory dumps. GitHub Actions and GitLab CI examples."
 ---
 
 import { Callout } from 'nextra/components'
@@ -150,6 +150,96 @@ means in Klive.
 without testing. `--out` writes the code: Intel HEX for a `.hex` file, otherwise a flat binary from
 the lowest to the highest address. It takes `--machine`, `--sjasmplus` and `--use-ide-settings` too,
 and its exit codes are 0, 2, 3 and 4 as above.
+
+## `klive run`
+
+`klive run` starts a program on a machine of its own, without the IDE, runs it until a condition you
+name, and then writes what you ask for: memory, the registers, the picture, a state file. Use it to
+check in CI that a program still draws its title screen, leaves the right bytes in memory or reaches
+a label in time.
+
+```bash
+klive run --until-pc GameLoop --screenshot title.png --dump-mem '$C000:256=state.bin'
+klive run game.tap --frames 500 --screenshot out.png
+klive run game.nex --until-halt --dump-regs regs.json
+```
+
+```
+run48 (code/main.kz80.asm): stopped at $801D (halted with interrupts disabled) after 2 frames, 100,427 T-states
+```
+
+```bash
+klive run [<project-dir> | <file>] [<options>]
+```
+
+### What it starts
+
+| Input | How it starts |
+|---|---|
+| A project folder (the current one when omitted) | Builds the build root as `klive build` does, then injects the code the way the IDE's **Run** does: the machine boots to the injection point (through the 128K's menu, for example) and starts the code. On the ZX Spectrum Next the code goes into a reset machine; the IDE's run boots NextZXOS from an SD card instead. |
+| `.tap`, `.tzx` | Inserts the tape and types `LOAD ""` (the Tape Loader on a 128K), with fast loading |
+| `.sna`, `.z80`, `.szx` | Loads the snapshot as opening it in the IDE does; the snapshot picks the machine |
+| `.kls` | Loads a Klive state file as the IDE does, on the machine it was saved on |
+| `.nex` | Starts the file on a ZX Spectrum Next without NextZXOS: banks, paging, border, SP and PC as the format promises, no loading screen. Klive says what such a start leaves out. |
+| `.p`, `.81`, `.o`, `.80` | Loads the ZX81 (or ZX80) program and lets it `RUN` |
+
+`--machine <id>[:<model>]` picks the machine: `sp48`, `sp128`, `spp3e`, `zxnext`, `zx80` or `zx81`. A
+project's own machine, the file's machine, or the 48K for a tape is the default. `--rom`,
+`--sjasmplus` and `--use-ide-settings` work as for `klive test`.
+
+### When it stops
+
+Give at least one of these; the first one reached stops the run.
+
+| Option | Stops |
+|---|---|
+| `--frames <n>` | after `n` frames |
+| `--tstates <n>` | at the first instruction boundary at or after `n` T-states |
+| `--until-pc <addr>[,…]` | when PC reaches an address or a label of the build, before that instruction runs; may repeat |
+| `--until-halt` | at a `HALT` with interrupts disabled: the program has ended |
+| `--bp "<spec>"` | at a breakpoint, in [`bp-set`](/working-with-ide/breakpoints) syntax: `<addr\|label> [-r] [-w] [-i] [-o] [-m <mask>] [-len <n>] [-once] [-log "<text>"] [-hit <rule>] [-if <condition>]`; may repeat |
+| `--timeout <s>` | after `s` emulated seconds, with exit code 5 |
+
+A run that only stops at an address, a `HALT` or a breakpoint gets a 60-second `--timeout`, so it
+cannot run forever. Logpoints (`-log`) print as `log:` lines. Frames and T-states count from after
+`--keys`.
+
+### Typing
+
+`--keys "<text>"` types at the keyboard after `--wait-frames <n>` frames: letters, digits, space,
+`\n` for ENTER, the Symbol Shift characters (`"`, `+`, `,`…) and chords of named keys such as
+`{CS+5}` or `{SS+P}`. What a letter types depends on the cursor mode, as on the real keyboard: in K
+mode `p` is `PRINT`. Each key is held for 3 frames and released for 3, the timing the ROM expects.
+
+A project whose program returns to BASIC leaves the editor waiting for a key:
+
+```bash
+klive run --wait-frames 50 --keys 'p1+1\n' --frames 50 --screenshot sum.png
+```
+
+### What it writes
+
+| Option | Writes |
+|---|---|
+| `--dump-mem <addr>[:<len>]=<file>` | memory as the CPU sees it, from an address or label (to `$FFFF` without a length); may repeat |
+| `--dump-regs <file.json>` | the registers, named as the automation protocol's `cpu.get` names them; `-` prints them |
+| `--screenshot <file.png>` | the emulated picture, exactly what the Emulator panel shows |
+| `--save-state <file>` | a `.kls` state file, or a `.sna`, `.z80` or `.szx` snapshot of a ZX Spectrum. `--no-timestamp` leaves the save time out of a `.kls` |
+| `--json` | the result on standard output: why it stopped, PC, frames, T-states, the registers and the files |
+
+A run counts only emulated time, so the same input gives the same output on every computer, byte for
+byte: a golden screenshot or memory dump can be compared with `cmp`. Emulation typically runs about
+ten times faster than real time.
+
+### Exit codes
+
+| Code | Meaning |
+|---|---|
+| 0 | The run stopped as asked |
+| 2 | The build has errors |
+| 3 | A usage problem, or an input Klive cannot start (the message says why) |
+| 4 | An internal error, such as a missing machine core |
+| 5 | `--timeout` ran out before any other condition |
 
 ## GitHub Actions
 

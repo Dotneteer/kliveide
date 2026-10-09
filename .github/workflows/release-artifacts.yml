@@ -68,6 +68,9 @@ jobs:
         run: |
           call artifacts\win-unpacked\resources\cli\klive.cmd --version || exit /b 1
           call artifacts\win-unpacked\resources\cli\klive.cmd test test\cli\fixtures\sp48 --junit results.xml --coverage coverage.lcov || exit /b 1
+          rem --- klive run (.plans/COMMAND_LINE_AUTOMATION_PLAN.md Phase 2): the picture must match the golden
+          call artifacts\win-unpacked\resources\cli\klive.cmd run test\cli\fixtures\run48 --frames 10 --screenshot shot.png || exit /b 1
+          fc /b shot.png test\cli\fixtures\run48\expected-frame10.png > nul || exit /b 1
 
       - name: Add install Emulator install kit to artifacts
         uses: actions/upload-artifact@v7
@@ -154,6 +157,9 @@ jobs:
           ./*x86_64.AppImage --appimage-extract > /dev/null
           ./squashfs-root/resources/cli/klive --version
           ./squashfs-root/resources/cli/klive test ../test/cli/fixtures/sp48 --junit results.xml --coverage coverage.lcov
+          # --- klive run (.plans/COMMAND_LINE_AUTOMATION_PLAN.md Phase 2): the picture must match the golden
+          ./squashfs-root/resources/cli/klive run ../test/cli/fixtures/run48 --frames 10 --screenshot shot.png
+          cmp shot.png ../test/cli/fixtures/run48/expected-frame10.png
           rm -rf squashfs-root
 
       - name: Add install Emulator install kit to artifacts
@@ -501,6 +507,9 @@ jobs:
         run: |
           "artifacts/mac-arm64/Klive IDE.app/Contents/Resources/cli/klive" --version
           "artifacts/mac-arm64/Klive IDE.app/Contents/Resources/cli/klive" test test/cli/fixtures/sp48 --junit results.xml --coverage coverage.lcov
+          # --- klive run (.plans/COMMAND_LINE_AUTOMATION_PLAN.md Phase 2): the picture must match the golden
+          "artifacts/mac-arm64/Klive IDE.app/Contents/Resources/cli/klive" run test/cli/fixtures/run48 --frames 10 --screenshot shot.png
+          cmp shot.png test/cli/fixtures/run48/expected-frame10.png
 
       - name: Add install Emulator install kit to artifacts
         uses: actions/upload-artifact@v7

@@ -3,8 +3,6 @@ import type { IAnyMachine } from "@renderer/abstractions/IAnyMachine";
 import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
 import { RenderingPhase } from "@renderer/abstractions/RenderingPhase";
 import { DISK_A_WP, DISK_B_WP, REWIND_REQUESTED } from "@emu/machines/machine-props";
-import { TapReader } from "@emu/machines/tape/TapReader";
-import { TzxReader } from "@emu/machines/tape/TzxReader";
 import { ZxSpectrumBase } from "@emu/machines/ZxSpectrumBase";
 import {
   RequestMessage,
@@ -16,13 +14,14 @@ import { MessengerBase } from "@messaging/MessengerBase";
 import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
 import { TapeDataBlock } from "@common/structs/TapeDataBlock";
-import { BinaryReader } from "@common/utils/BinaryReader";
 import type { ISpectrumPsgDevice } from "@emu/machines/zxSpectrum/ISpectrumPsgDevice";
 import { isZ88IdeMachine } from "@emu/machines/z88/IZ88IdeMachine";
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_DOCK, MEDIA_SD_CARD, MEDIA_TAPE } from "@common/structs/project-const";
 import { dockBankOf, parseDckFile } from "@common/timex/dckFile";
 import { isZx8081ProgramFileName, parseZxProgramFile } from "@emu/machines/zx8081/ZxPFile";
 import { mediaStore } from "@emu/machines/media/media-info";
+import { screenImageOf } from "@common/headless/screenImage";
+import { tapeBlocksOf } from "@common/headless/tapeBlocks";
 import { EmuScriptRunner } from "./ksx/EmuScriptRunner";
 import { getCachedMessenger, getCachedStore } from "@renderer/CachedServices";
 import { isZxNextIdeMachine, type IZxNextIdeMachine } from "@emu/machines/zxNext/IZxNextIdeMachine";
@@ -292,29 +291,19 @@ class EmuMessageProcessor {
       return;
     }
 
-    let dataBlocks: TapeDataBlock[] = [];
-    const reader = new BinaryReader(contents);
-    const tzxReader = new TzxReader(reader);
-    let result = tzxReader.readContent();
-    if (result) {
-      reader.seek(0);
-      const tapReader = new TapReader(reader);
-      result = tapReader.readContent();
-      if (result) {
-        if (!suppressError) {
-          await createMainApi(this.mainMessenger).displayMessageBox(
-            "error",
-            "Tape file error",
-            `Error while processing tape file ${file} (${result})`
-          );
-        }
-        return;
-      } else {
-        dataBlocks = tapReader.dataBlocks;
+    // --- The same reading `klive run` does (TZX first, then TAP)
+    const tape = tapeBlocksOf(contents);
+    if ("error" in tape) {
+      if (!suppressError) {
+        await createMainApi(this.mainMessenger).displayMessageBox(
+          "error",
+          "Tape file error",
+          `Error while processing tape file ${file} (${tape.error})`
+        );
       }
-    } else {
-      dataBlocks = tzxReader.dataBlocks.map((b) => b.getDataBlock()).filter((b) => b);
+      return;
     }
+    const dataBlocks: TapeDataBlock[] = tape.blocks;
 
     // --- Store the tape file in the media store. This is the durable record: whenever a machine
     // --- starts, the controller re-attaches every stored medium to it, so the tape survives a
@@ -1853,15 +1842,8 @@ class EmuMessageProcessor {
     if (!controller) {
       noController();
     }
-    const machine = controller.machine;
-    const width = machine.screenWidthInPixels;
-    const height = machine.screenHeightInPixels;
-    const start = machine.getBufferStartOffset?.() ?? 0;
-    const words = machine.getPixelBuffer().subarray(start, start + width * height);
-    // --- A copy: the live buffer keeps changing while a running machine draws
-    const pixels = new Uint8Array(width * height * 4);
-    pixels.set(new Uint8Array(words.buffer, words.byteOffset, words.byteLength));
-    return { width, height, pixels };
+    // --- The same bytes `klive run --screenshot` writes (a copy: a running machine keeps drawing)
+    return screenImageOf(controller.machine);
   }
 
   /**

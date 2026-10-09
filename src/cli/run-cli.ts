@@ -3,6 +3,7 @@ import { EXIT_OK, EXIT_USAGE } from "./exit-codes";
 import type { CliIo } from "./io";
 import { runIde } from "./verbs/ide";
 import { runBuildVerb } from "./verbs/build";
+import { runRunVerb } from "./verbs/run";
 import { asCliError, runTestVerb } from "./verbs/test";
 
 /*
@@ -17,16 +18,12 @@ export const CLI_HELP = `Usage: klive <verb> [<options>]
 Verbs:
   test [<dir>]     Build the project and run its Z80 unit tests, headless: 'klive test --help'
   build [<dir>]    Compile the project's build root, headless: 'klive build --help'
+  run [<dir|file>] Run a build or a file until it stops, headless: 'klive run --help'
   ide <verb>       Drive a running Klive (build, run, debug, read memory, ...): 'klive ide help'
   help             This text
   --version        Klive's version
 
 Exit codes: 0 ok, 1 failed, 2 build errors, 3 usage or configuration, 4 internal error, 5 timeout.`;
-
-/** The headless verbs this build does not have yet, and what to use instead */
-const NOT_YET: Record<string, string> = {
-  run: "'klive run' (headless) is not available in this build yet. With Klive running, use 'klive ide run'."
-};
 
 /** Runs a headless verb: a `CliError` is its message and exit code, anything else exit code 4 (D3) */
 async function headless(verb: (argv: string[], io: CliIo) => Promise<number>, argv: string[], io: CliIo): Promise<number> {
@@ -59,8 +56,10 @@ export async function runCli(argv: string[], io: CliIo): Promise<number> {
       return await headless(runTestVerb, rest, io);
     case "build":
       return await headless(runBuildVerb, rest, io);
+    case "run":
+      return await headless(runRunVerb, rest, io);
     default:
-      io.err(NOT_YET[verb] ?? `Unknown verb '${verb}'. Run 'klive help' for the list.`);
+      io.err(`Unknown verb '${verb}'. Run 'klive help' for the list.`);
       return EXIT_USAGE;
   }
 }

@@ -2,33 +2,36 @@ import type { MachineConfigSet, MachineModel } from "@common/machines/info-types
 import type { IFileProvider } from "@renderer/core/IFileProvider";
 
 import { machineRegistry } from "@common/machines/machine-registry";
-import { MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48 } from "@common/machines/constants";
-import { artifactNameOf, unsupportedMachineMessage } from "./unitTestMachines";
+import { MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48, MI_ZX80, MI_ZX81 } from "@common/machines/constants";
+import { artifactNameOf, headlessUnsupportedMessage } from "./headlessMachines";
 import { FILE_PROVIDER } from "@emu/machines/machine-props";
 import { ZxSpectrum48WasmV2Machine } from "@emu/machines/zxSpectrum48/ZxSpectrum48WasmV2Machine";
 import { ZxSpectrum128WasmV2Machine } from "@emu/machines/zxSpectrum128/ZxSpectrum128WasmV2Machine";
 import { ZxSpectrumP3eWasmV2Machine } from "@emu/machines/zxSpectrumP3e/ZxSpectrumP3eWasmV2Machine";
 import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
+import { Zx8081WasmV2Machine } from "@emu/machines/zx8081/Zx8081WasmV2Machine";
 import { getSp128Model } from "@emu/machines/zxSpectrum128/sp128Timings";
 
 /*
- * The machines the unit-test runner drives (`.plans/Z80_UNIT_TESTS_PLAN.md` D6, D18): the production
- * `*WasmV2Machine` classes, created the way the test harnesses create them - the WASM core's bytes
- * come from the caller (`readArtifact`) and the ROMs from a file provider - so the runner works in a
- * `worker_threads` worker, in a vitest test and, later, from a command line (G5.6). Nothing here
- * reads settings or imports Electron (T11).
+ * The machines that run without the emulator window (`.plans/Z80_UNIT_TESTS_PLAN.md` D6, D18;
+ * `.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D15, D16): the production `*WasmV2Machine` classes,
+ * created the way the test harnesses create them - the WASM core's bytes come from the caller
+ * (`readArtifact`) and the ROMs from a file provider - so the unit-test runner works in a
+ * `worker_threads` worker and in a vitest test, and `klive test`/`klive run` work from the command
+ * line. Nothing here reads settings or imports Electron (Z80_UNIT_TESTS_PLAN T11).
  */
 
-/** The machines the runner can create */
+/** The machines the factory can create */
 export type HeadlessMachine =
   | ZxSpectrum48WasmV2Machine
   | ZxSpectrum128WasmV2Machine
   | ZxSpectrumP3eWasmV2Machine
-  | ZxNextWasmV2Machine;
+  | ZxNextWasmV2Machine
+  | Zx8081WasmV2Machine;
 
 /** What a headless machine is created from */
 export type HeadlessMachineSpec = {
-  /** The machine id: `sp48`, `sp128`, `spp3e`, `zxnext` */
+  /** The machine id: `sp48`, `sp128`, `spp3e`, `zxnext`, `zx80`, `zx81` */
   machineId: string;
   /** The model id, as the project names it (`pal-16k`, `fdd1`, ...); the machine's first model when absent */
   modelId?: string;
@@ -48,14 +51,14 @@ export function modelOf(machineId: string, modelId: string | undefined): Machine
 
 /**
  * Creates a machine, sets it up and hard-resets it, as the IDE's machine start does
- * @throws Error naming the machine when the runner does not support it
+ * @throws Error naming the machine when it cannot run headless
  */
 export async function createHeadlessMachine(spec: HeadlessMachineSpec): Promise<HeadlessMachine> {
-  const unsupported = unsupportedMachineMessage(spec.machineId);
+  const unsupported = headlessUnsupportedMessage(spec.machineId);
   if (unsupported) throw new Error(unsupported);
   const artifactName = artifactNameOf(spec.machineId);
   const loader = {
-    artifactName: `unit-tests-${artifactName}`,
+    artifactName: `headless-${artifactName}`,
     readArtifact: async (): Promise<BufferSource> => (await spec.readArtifact(artifactName)) as Uint8Array<ArrayBuffer>
   };
   const model =
@@ -74,6 +77,10 @@ export async function createHeadlessMachine(spec: HeadlessMachineSpec): Promise<
       break;
     case MI_SPECTRUM_3E:
       machine = new ZxSpectrumP3eWasmV2Machine(model ? { ...model, config } : undefined, config, loader);
+      break;
+    case MI_ZX80:
+    case MI_ZX81:
+      machine = new Zx8081WasmV2Machine(spec.machineId, model, config, undefined, loader);
       break;
     default:
       machine = new ZxNextWasmV2Machine(model, config, undefined, loader);

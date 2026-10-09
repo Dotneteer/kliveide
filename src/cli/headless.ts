@@ -2,8 +2,8 @@ import fs from "fs";
 import path from "path";
 
 import type { IFileProvider } from "@renderer/core/IFileProvider";
-import { createHeadlessMachine, type HeadlessMachine } from "@main/unit-tests/HeadlessMachineFactory";
-import { artifactNameOf, unsupportedMachineMessage } from "@main/unit-tests/unitTestMachines";
+import { createHeadlessMachine, type HeadlessMachine } from "@common/headless/HeadlessMachineFactory";
+import { artifactNameOf, headlessUnsupportedMessage } from "@common/headless/headlessMachines";
 import { findWasmArtifact } from "@main/unit-tests/wasmArtifacts";
 import { CliError, EXIT_INTERNAL, usageError } from "./exit-codes";
 
@@ -112,7 +112,7 @@ export type CliMachineSpec = {
  * @throws CliError: exit code 3 for an unsupported machine, 4 for a missing core or ROM folder
  */
 export async function createCliMachine(spec: CliMachineSpec): Promise<HeadlessMachine> {
-  const unsupported = unsupportedMachineMessage(spec.machineId);
+  const unsupported = headlessUnsupportedMessage(spec.machineId);
   if (unsupported) throw usageError(unsupported);
   const artifactName = artifactNameOf(spec.machineId);
   const artifactPath = spec.env.KLIVE_CLI_WASM_DIR

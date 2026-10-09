@@ -23,6 +23,7 @@ import { annotationBreakpoints } from "@common/utils/source-annotations";
 import { integerSymbolsOfOutput } from "@common/utils/breakpoint-condition/integer-symbols";
 import { resolvedPartitionFor } from "@common/utils/source-breakpoint-partition";
 import { selectTests } from "@common/unit-tests/unitTestTypes";
+import { playInjectionFlow } from "@common/headless/frameRunner";
 import {
   testRunGuards,
   unitTestGuard,
@@ -104,9 +105,6 @@ export type UnitTestRunInput = {
 export function bootModelFor(machineId: string, modelType: number | undefined): string {
   return modelType === 1 && machineId !== MI_ZXNEXT ? "sp48" : machineId;
 }
-
-/** The frames one injection-flow `ReachExecPoint` may take before the boot is given up */
-const BOOT_MAX_FRAMES = 600;
 
 /** How the outcome of a run segment came out */
 type Stop =
@@ -401,61 +399,7 @@ function installGuards(ds: DebugSupport, guards: BreakpointInfo[]): void {
  * machine's own boot to the point where code is injected (D7)
  */
 export async function bootToInjectionPoint(machine: RunnerMachine, model: string): Promise<void> {
-  const flow = await machine.getCodeInjectionFlow!(model);
-  const runFrames = (count: number) => {
-    for (let i = 0; i < count; i++) runOneFrame(machine);
-  };
-  for (const step of flow) {
-    switch (step.type) {
-      case "ReachExecPoint":
-        runToAddress(machine, step.execPoint, BOOT_MAX_FRAMES);
-        break;
-      case "QueueKey":
-        machine.queueKeystroke?.(0, 5, step.primary, step.secondary, step.ternary);
-        if ((step.wait ?? 100) > 0) runFrames(Math.ceil((step.wait ?? 100) / 20));
-        break;
-      case "Wait":
-        runFrames(Math.ceil((step.duration ?? 100) / 20));
-        break;
-      case "WaitKeyQueue":
-        for (let i = 0; i < BOOT_MAX_FRAMES && (machine.getKeyQueueLength?.() ?? 0) > 0; i++) runOneFrame(machine);
-        break;
-      case "WaitIdle": {
-        let consecutive = 0;
-        for (let i = 0; i < BOOT_MAX_FRAMES && consecutive < (step.samples ?? 12); i++) {
-          runOneFrame(machine);
-          consecutive = machine.pc >= step.fromAddr && machine.pc <= step.toAddr ? consecutive + 1 : 0;
-        }
-        break;
-      }
-      case "Inject":
-        return;
-    }
-  }
-}
-
-function runToAddress(machine: RunnerMachine, address: number, maxFrames: number): void {
-  const ctx = machine.executionContext;
-  ctx.frameTerminationMode = FrameTerminationMode.UntilExecutionPoint;
-  ctx.terminationPoint = address & 0xffff;
-  ctx.terminationPartition = undefined;
-  try {
-    for (let frames = 0; frames < maxFrames; ) {
-      if (machine.executeMachineFrame() === FrameTerminationMode.UntilExecutionPoint) return;
-      if (machine.frameJustCompleted) frames++;
-    }
-    throw new Error(`$${hex4(address)} was not reached in ${maxFrames} frames (PC=$${hex4(machine.pc)})`);
-  } finally {
-    ctx.frameTerminationMode = FrameTerminationMode.Normal;
-    ctx.terminationPoint = undefined;
-  }
-}
-
-function runOneFrame(machine: RunnerMachine): void {
-  for (let guardCount = 0; guardCount < 1000; guardCount++) {
-    machine.executeMachineFrame();
-    if (machine.frameJustCompleted) return;
-  }
+  playInjectionFlow(machine, await machine.getCodeInjectionFlow!(model), { stopAtInject: true });
 }
 
 /** Reads a byte where a label lives: through its partition when it has one (T6) */

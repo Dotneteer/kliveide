@@ -7,7 +7,7 @@ import { captureFrame, frameHash, framePng, summarizeRows, type Frame } from "..
 import { READY_REG, READY_VALUE, type CaseSpec, type KnownFailure, type LoadedCase, type OracleName } from "./case";
 import { compileNexFile } from "../core/compile-nex";
 import { contactSheet } from "../core/images";
-import { loadNexDirect } from "../core/load-nex-direct";
+import { loadNexDirect } from "@common/headless/nexLoad";
 import { createCore, readNextRegDirect, runDisplayedFrame } from "../core/machines";
 
 export { readNextRegDirect };

@@ -4,7 +4,7 @@ import { loadNexFileContents } from "@renderer/appIde/DocumentPanels/Next/nexFil
 import type { IFileProvider } from "@renderer/core/IFileProvider";
 
 import { captureFrame, runDisplayedFrame, type Frame } from "../core/frame";
-import { loadNexDirect } from "../core/load-nex-direct";
+import { loadNexDirect } from "@common/headless/nexLoad";
 import { FrameRunner } from "./frame-runner";
 import { HttpMessenger } from "./http-messenger";
 

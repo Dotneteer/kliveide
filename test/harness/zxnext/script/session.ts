@@ -46,7 +46,7 @@ import { loadNexFileContents, type NexFileContents } from "@renderer/appIde/Docu
 import { framePng } from "../core/capture";
 import { compileNexFile } from "../core/compile-nex";
 import { captureFrame, pixelHex, rowRuns, type Frame, type RowRun } from "../core/frame";
-import { loadNexDirect, readNextReg, writeNextReg } from "../core/load-nex-direct";
+import { loadNexDirect, readNextReg, writeNextReg } from "@common/headless/nexLoad";
 import { createCore, readNextRegDirect } from "../core/machines";
 import { evaluateProbe, type Probe } from "../cases/probes";
 import { InMemorySdMessenger, MemorySdCard, type SdCardBacking } from "./sd-card";

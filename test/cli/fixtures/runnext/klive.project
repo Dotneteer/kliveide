@@ -1,0 +1,7 @@
+{
+  "kliveVersion": "0.64.0",
+  "machineType": "zxnext",
+  "builder": {
+    "roots": ["code/main.kz80.asm"]
+  }
+}

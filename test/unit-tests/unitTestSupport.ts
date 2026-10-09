@@ -8,7 +8,7 @@ import { Z80Assembler } from "@main/z80-compiler/z80-assembler";
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
 import { discoverUnitTests } from "@common/unit-tests/discovery";
 import { checkSourceAnnotations } from "@common/utils/source-annotations";
-import { createHeadlessMachine } from "@main/unit-tests/HeadlessMachineFactory";
+import { createHeadlessMachine } from "@common/headless/HeadlessMachineFactory";
 import { runUnitTests } from "@main/unit-tests/UnitTestRunner";
 import { KLIVE_UNIT_TEST_INCLUDE } from "@main/unit-tests/includes/kliveInclude";
 import { MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48, MI_ZXNEXT } from "@common/machines/constants";

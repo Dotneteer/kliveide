@@ -199,7 +199,7 @@ integration changes.
 - **ZX Spectrum Next harness** (`test/harness/zxnext/`): `createSession()`, `loadCode(source)`
   assembles Klive Z80N source and maps pages `[$FF,$FF,10,11,4,5,0,1]`. **ROM in slots 0–1 is
   whatever hard reset selected, not the 48K BASIC ROM; no system variables; interrupts off**
-  (`core/load-nex-direct.ts`). A real `.nexload` hands over with NextZXOS's 48K BASIC ROM paged
+  (`src/common/headless/nexLoad.ts`, shared with `klive run`). A real `.nexload` hands over with NextZXOS's 48K BASIC ROM paged
   in. Code that needs the ROM cannot run under `loadCode` as it is.
 - **ZX Spectrum 48K harness** (`test/harness/sp48/`, added for Klive BASIC): real 48K ROM
   (`src/public/roms/sp48.rom`), boot to `$12AC`, assemble and load Klive source, call a routine

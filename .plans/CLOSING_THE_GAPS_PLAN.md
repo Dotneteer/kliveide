@@ -32,7 +32,7 @@ are estimates for prioritising, not commitments.
 | G3 | Live Next hardware inspectors | **M** (layers: M–L) | ✅ done (2026-10-05 – 10-08): G3.1–G3.9 (G3.8's sprite half on 2026-10-08) |
 | G4 | Execution history and reverse debugging | **M → XL** | ✅ done (2026-10-07 – 10-08): G4.1–G4.6 |
 | G5 | Code coverage, profiler, unit tests | **M → L** | ✅ G5.1 and G5.2 done (2026-10-08): coverage per bank and the heat map on every Z80 machine · ✅ G5.3 and G5.4 done (2026-10-08): flat and call-graph profiler on every Z80 machine · ✅ G5.5 done (2026-10-08): DeZog-compatible unit tests with both assemblers · ✅ G5.6 done (2026-10-09): `klive test` in CI, with exit codes, JUnit and LCOV |
-| G6 | Remote debugging, real hardware, external API | **M → XL** | ◐ G6.1's live half done (2026-10-09): a local, token-authenticated JSON-RPC automation API and the `klive ide` command line · the `klive` launcher and headless `klive build` shipped with G5.6 · headless `klive run` still open |
+| G6 | Remote debugging, real hardware, external API | **M → XL** | ◐ G6.1 done (2026-10-09): a local, token-authenticated JSON-RPC automation API and the `klive ide` command line, and headless `klive run` (with `klive test`/`klive build` from G5.6) · G6.2–G6.4 open |
 | G7 | 48K/128K reverse-engineering depth | **M → L** | Generalising the NEX annotation sidecar |
 | G8 | BASIC editor intelligence | **M** | ✅ done (2026-10-03): G8.1–G8.5 |
 | G9 | Machine breadth (ZX80/81, clones) | **M → XL** | ✅ G9.1 Pentagon 128, G9.1b Beta 128 / TR-DOS, G9.2 +2A/+3, G9.3 ZX80/81, G9.4 Timex TC2048/TC2068/TS2068 and Scorpion done |
@@ -281,7 +281,7 @@ hardware, where competitors lead.
 
 | Feature | What it does | Size |
 |---|---|---|
-| G6.1 Command line / automation ◐ **live half done** (2026-10-09) | Drive Klive from a CLI or script: build, run, test and read memory headlessly. Scoped to CI and automation, **not** editor integration (decision D1). Done: the automation server and protocol, `klive ide …`, the docs page; the CLI skeleton, the packaged `klive` launcher and headless `klive build` came with G5.6. Open: headless `klive run` and the harness move (the plan's Phases 1–2), which add a verb to the existing CLI. | M (the IDE command service already exists; this needs a transport and a security model) |
+| G6.1 Command line / automation ✅ **done** (2026-10-09) | Drive Klive from a CLI or script: build, run, test and read memory headlessly. Scoped to CI and automation, **not** editor integration (decision D1). Done: the automation server and protocol, `klive ide …`, the docs page; headless `klive run` (projects, tapes, snapshots, state files, NEX files and ZX80/81 programs; frame, T-state, address, HALT, breakpoint and timeout stops; memory, register, screenshot and state outputs) on the machine handling shared with the harness and the unit-test runner in `src/common/headless/`; the CLI skeleton, the packaged `klive` launcher and headless `klive build` came with G5.6. | M (the IDE command service already exists; this needs a transport and a security model) |
 | ~~G6.2 Debug-adapter protocol server~~ | **Dropped** (decision D1): Klive stays a standalone IDE. | — |
 | ~~G6.3 DeZog-compatible remote~~ | **Dropped** (decision D1). DeZog compatibility applies to source conventions instead (D3). | — |
 | G6.4 Real Next hardware debugging (**deferred**, 2026-10-08: built only if the future calls for it) | Run and debug on a physical Next over UART **from Klive's own debugger UI**, with an on-Next agent program handling breakpoints and memory. Fits D1: Klive is the client. | XL (hardware, a Z80N agent, timing and banking constraints) |
@@ -412,7 +412,7 @@ step back~~ (done) · G5.1 coverage · G1.3 memory and value conditions · G1.5 
 and WPMEM comments.
 
 **Wave 3 — depth:**
-- ~~G5.5 DeZog-compatible unit tests~~ (done) and ~~G5.6 tests in CI~~ (done); G6.1 CLI (live half done; headless `klive run` open).
+- ~~G5.5 DeZog-compatible unit tests~~ (done), ~~G5.6 tests in CI~~ (done) and ~~G6.1 CLI and automation~~ (done).
 - G7.1 annotations for any machine, G7.2 ROM annotations written from scratch.
 - ~~G8.x BASIC intelligence~~ (done), ~~G2.4 snapshot saving~~ (done), ~~G5.2–G5.4 heat map and profiler~~ (done).
 - ~~**G4.2 history in every core**~~ (done), which is the groundwork for G4.4.
