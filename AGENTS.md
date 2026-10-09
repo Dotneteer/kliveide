@@ -122,6 +122,18 @@ merely uncoloured, which no route diff can see.
   after the picture was checked by eye (`ZX8081_GOLDENS_PNG=<dir>` writes them).
 - Typed keys need 4 key-free frames between them (the ROM's debounce); see `Zx8081WasmHost.typeText`.
 
+## WASM Cores And The Debugger
+
+- **Read `src/emu/z80/wasm/README.md` before adding a hook, a debugger feature or a core.** Every core
+  shares the Z80, its export forwarders (`z80-cpu-exports.c`) and the debugger's in-core loop
+  (`z80-debug-loop.c`); the hosts share one debug loop (`src/emu/machines/wasmDebugLoop.ts`). The plan
+  and its measurements are `.plans/WASM_CORE_LEAN_AND_DEBUG_PLAN.md`.
+- The rule: the core decides *whether* to stop, TypeScript decides *what a stop means*. A new stop goes
+  in as a core candidate, with `test/wasm/debug-loop-equivalence.test.ts` proving the in-core run stops
+  exactly where the instruction-by-instruction one does.
+- Anything a debug run writes in a core and a fast frame does not must be volatile, or replays stop
+  matching the runs they replay.
+
 ## Current Useful Commands
 
 - Type-check: `npm run build:check` - runs `scripts/check-types.cjs`, which type-checks both
