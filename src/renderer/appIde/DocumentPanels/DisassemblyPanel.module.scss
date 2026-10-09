@@ -274,6 +274,19 @@
 }
 
 /*
+ * A region a tool wrote — detection (`origin: "auto"`) or a SkoolKit import — and nothing the user
+ * authored on the row: a dotted rail in tertiary text. Provenance, not a kind of data, so it is
+ * quieter than the authored rail and never a hue of its own; the tooltip says which tool.
+ */
+.item .annotationRail.toolRegion {
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--color-annotation-auto) 0 2px,
+    transparent 2px 4px
+  );
+}
+
+/*
  * The branch verdict gutter.
  *
  * Rendered on every row whenever the listing is showing verdicts at all — lit only where the row

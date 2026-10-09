@@ -103,6 +103,15 @@ the ZX81's on the ZX81 ROM, the ZX80 upgrade included.
 - In conditions, `<bank>:<name>` reads an annotation label on every bank-space machine
   and `ROM:<name>` a ROM label.
 - Breakpoint owners: `{ kind: "sidecar", sidecar }` (the former `nex` kind is read as it).
+- `ann-detect [<bank>|rom|all] [-mode fill|replace|clear] [-reach] [-text] [-words] [-unknown
+  keep|bytes] [-noscreen] [-apply]` and `ann-detect -undo`: code/data detection from coverage
+  (`src/common/reverse/classify.ts`, `reach.ts`, `proposal.ts`; the orchestration is
+  `src/renderer/appIde/reverse/detection.ts`). The *Detect code and data* dialog is the same run.
+- `gfx [<address>] [-w] [-h] [-layout] [-bank]`: the graphics finder over the paused machine.
+- `export-asm <file> [<from> <to>] [-bank <n>] [-skip data|gap] [-open] [-noverify]`: source export,
+  verified by assembling it in the main process (`MainApi.assembleText`).
+- `skool-import <file> [-ctl] [-mode fill|replace] [-apply]` and `skool-export <file> [-ctl] [<from>
+  <to>] [-bank <n>|all] [-split]`: SkoolKit files (`src/common/reverse/skool/`).
 
 ## ROM Annotations
 
@@ -345,7 +354,11 @@ Regions can be:
 - `words`: generate `.defw` lines with up to two words per line;
 - `skip`: generate a `.skip` line;
 - `copper`: generate one `.copper` row per big-endian word (a Copper list);
-- `dma`: generate one `.dma` row per register write (a zxnDMA program).
+- `dma`: generate one `.dma` row per register write (a zxnDMA program);
+- `text`: printable runs as `.defm` rows (the ZX80/ZX81's own character set as `.defb` with the
+  text in the comment); a row breaks at `$0D`, `$00` and a byte with bit 7 set;
+- `graphic`: one `.defb` row per pixel row (binary up to two bytes, hex beyond), the pixels drawn
+  in the comment, laid out by the bank's matching `graphics` entry.
 
 Data rows normally start at a labelled byte, so a label inside a table gets a row
 of its own. A `bytes` region may instead set `rowBytes` (1–4) to lay its data out
@@ -391,3 +404,27 @@ See `.plans/NEX_DMA_COPPER_REGIONS_PLAN.md`. The decoders are pure shared module
   never collapsed; the region dialogs suggest trimming a DMA range that ends in 8 or more `$00`
   bytes (cut at a command boundary).
 - Neither kind is cut at the program counter (only `disassemble` regions are).
+
+### The Reverse-Engineering Tools' Keys
+
+`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §3. Every one is a key a shipped build ignores (R2); no
+schema bump, and Next files stay at version 2.
+
+- **`text` and `graphic` regions** are stored as `bytes` + `decode`, like Copper and DMA. A
+  graphic keeps its stored `rowBytes` (`min(width, 4)`), so an older build lists it a pixel row per
+  line where it can. Both are offered on every machine.
+- **`origin`** on a region: absent for the user's, `"auto"` for code/data detection, `"skool"` for
+  a SkoolKit import. It takes part in `sameRegionLayout`, so a tool's region never merges into the
+  user's; `withRegion` takes it as an optional argument and the editor never passes it, so a region
+  the user touches becomes theirs. The listing marks a tool's rows with a dotted rail
+  (`regionOrigin` on the row metadata). Code over the default gap is no change, so it carries none.
+- **`graphics`** on a bank: the named graphics (`offset`, `width` 1–32, `height` 1–256, `count`,
+  `layout` `linear|cells|columns|screen`, optional `mask` and `label`). Naming a graphic
+  (`withNamedGraphic`) writes the label, the `graphic` region and the entry in one update;
+  retyping or clearing the region drops its entry (`pruneGraphics`). A bad entry is a warning.
+- **`endComment`** on a line annotation: lines after the row (SkoolKit's end comment). A line
+  annotation with only an end comment is kept.
+- **`interop.skool`** on a bank: what a SkoolKit file said that Klive does not model — unknown
+  `@` directives, non-entry text, braced spans, `*` entry points, block characters, each entry's
+  header shape, ignored entries, hex addresses — written back by the export so an unedited file
+  round-trips. Only its shape is checked; Klive never acts on it.

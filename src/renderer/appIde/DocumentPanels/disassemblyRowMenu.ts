@@ -84,7 +84,7 @@ export function annotationRowMenuItems(args: {
 }
 
 export type RowMenuItem = {
-  id: "toggle" | "addOnce" | "makeOnce" | "keepAfterStop" | "runTo" | "edit";
+  id: "toggle" | "addOnce" | "makeOnce" | "keepAfterStop" | "runTo" | "edit" | "showGraphics";
   text: string;
   /** The gesture that does the same. */
   hint?: string;
@@ -130,5 +130,12 @@ export function disassemblyRowMenuItems(
     command: `run-to $${toHexa4(target.address)}`
   });
   items.push({ id: "edit", text: "Edit Breakpoint...", hint: "Double-Click", disabled: !bp });
+  // --- The graphics finder at the row (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §5.3)
+  items.push({
+    id: "showGraphics",
+    text: "Show as Graphics",
+    separatorBefore: true,
+    command: `gfx $${toHexa4(target.address)}`
+  });
   return items;
 }

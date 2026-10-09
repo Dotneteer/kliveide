@@ -39,6 +39,7 @@ const REGION_TYPES: Array<{ value: AnnotationRegionType; label: string }> = [
   { value: "words", label: "Words" },
   { value: "copper", label: "Copper" },
   { value: "dma", label: "DMA" },
+  { value: "text", label: "Text" },
   { value: "skip", label: "Skip" }
 ];
 
@@ -266,6 +267,13 @@ export function formatRegionPreview(
       if (commands.length > PREVIEW_LINE_LIMIT) lines.push("...");
       return lines.join("\n");
     }
+    case "text":
+      return createPreviewLines(start, end, 16, (offset, values) => {
+        const printable = values.every((v) => v >= 0x20 && v < 0x7f && v !== 0x22 && v !== 0x5c);
+        return printable
+          ? `${formatRegionOffset(offset)}  .defm "${String.fromCharCode(...values)}"`
+          : `${formatRegionOffset(offset)}  .defb ${values.map((v) => `$${toHexa2(v)}`).join(", ")}`;
+      });
     case "skip":
       return `${formatRegionOffset(start)}  .skip ${formatRegionOffset(length)}`;
     default:

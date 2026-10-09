@@ -688,6 +688,13 @@ export const componentAliases: Record<string, string> = {
    */
   "--color-nex-mix-copper": "var(--status-success)",
   "--color-nex-mix-dma": "var(--mark-favorite)",
+  /*
+   * Text and graphics borrow the listing's syntax hues - a string is a string in the bar as in the
+   * Monaco editor, and a graphic is literal data like a number - so they stay apart from the accent
+   * pair and the status hues the other segments already take, under every accent.
+   */
+  "--color-nex-mix-text": "var(--syntax-string)",
+  "--color-nex-mix-graphic": "var(--syntax-number)",
 
   // --- Changed since the previous stop (`.plans/SPRITE_INSPECTOR_PLAN.md` D16) -------------------
   /*
@@ -716,6 +723,29 @@ export const componentAliases: Record<string, string> = {
   "--color-sprite-map-clip": "var(--status-warning)",
   "--color-sprite-map-outline": "var(--color-state-value)",
   "--bgcolor-sprite-map-selected": "var(--accent-solid)",
+
+  // --- Graphics finder (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §5, G-T3) ----------------------
+  /*
+   * The machine's pixels are hardware colours (ink and paper from the ZX palette); everything drawn
+   * over them is chrome, and takes these. The selection is the primary accent, as on every other
+   * pixel view; a named graphic's frame the secondary accent (a second thing that must stay apart
+   * from the selection); the band over bytes the listing decodes as code the warning hue, because it
+   * marks a disagreement between the picture and the disassembly. The hovered byte is outlined in
+   * the strong border, so it never competes with the selection.
+   */
+  "--color-graphics-selected": "var(--accent-solid)",
+  "--color-graphics-named": "var(--accent-secondary-solid)",
+  "--color-graphics-code": "var(--status-warning)",
+  "--color-graphics-hover": "var(--border-strong)",
+  "--color-graphics-label": "var(--text-primary)",
+  "--bgcolor-graphics-label": "var(--surface-canvas)",
+  "--bgcolor-graphics-view": "var(--surface-canvas)",
+  /*
+   * A region auto-detection wrote (`origin: "auto"`, G7.3): a quiet marker in the listing's region
+   * column. Tertiary text, not a hue — it is provenance, not a kind of data, and must not read as a
+   * fourth annotation colour beside label, comment and operand.
+   */
+  "--color-annotation-auto": "var(--text-tertiary)",
 
   // --- Tilemap Inspector (`.plans/TILEMAP_INSPECTOR_PLAN.md` §4.5) ------------------------------
   /*

@@ -9,6 +9,7 @@ import { Text } from "@renderer/controls/layout/Text";
 import { PanelHeader, PanelHeaderGroup } from "@renderer/controls/data";
 import type { PartitionOption } from "@renderer/features/memory/memoryViewModel";
 import { toHexa4 } from "../services/ide-commands";
+import type { ReactNode } from "react";
 
 export function createDisassemblyOffsetOptions(decimalView: boolean): DropdownOption[] {
   const options: DropdownOption[] = [];
@@ -46,6 +47,8 @@ type DisassemblyToolbarProps = {
   hasRomAnnotations?: boolean;
   romLabels?: boolean;
   topAddress: number;
+  /** The reverse-engineering tools menu (`ReverseToolsMenu`), when the listing offers it. */
+  reverseTools?: ReactNode;
 };
 
 export const DisassemblyToolbar = ({
@@ -69,7 +72,8 @@ export const DisassemblyToolbar = ({
   sysVarNames,
   hasRomAnnotations,
   romLabels,
-  topAddress
+  topAddress,
+  reverseTools
 }: DisassemblyToolbarProps) => (
   <PanelHeader>
     <PanelHeaderGroup>
@@ -145,6 +149,7 @@ export const DisassemblyToolbar = ({
         }}
       />
     </PanelHeaderGroup>
+    {reverseTools && <PanelHeaderGroup>{reverseTools}</PanelHeaderGroup>}
   </PanelHeader>
 );
 

@@ -163,7 +163,7 @@ export type StaticDumpNavigationDeps = {
     options: {
       disassemblyEnabled?: boolean;
       disassOffset?: number;
-      viewMode?: "memory" | "disassembly" | "sprites";
+      viewMode?: "memory" | "disassembly" | "sprites" | "graphics";
       annotationPath?: string;
       annotationBank?: number;
       disassemblyFlavor?: "z88";

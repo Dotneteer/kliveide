@@ -34,6 +34,7 @@ describe("bankContentMix", () => {
       copper: 0,
       dma: 0,
       text: 0,
+      graphic: 0,
       skip: 0x800
     });
     expect(contentMixPercent(mix, "bytes")).toBe(50);

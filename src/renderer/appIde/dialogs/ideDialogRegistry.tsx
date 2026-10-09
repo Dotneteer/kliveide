@@ -8,7 +8,8 @@ import {
   NEW_PROJECT_DIALOG,
   SJASMPLUS_INTEGRATION_DIALOG,
   MACHINE_SELECT_DIALOG,
-  SETTINGS_DIALOG
+  SETTINGS_DIALOG,
+  DETECT_CODE_DATA_DIALOG
 } from "@messaging/dialog-ids";
 import type { AboutDialogData } from "@common/messaging/about-dialog";
 import { AboutDialog, AboutDialogResult } from "./AboutDialog";
@@ -38,6 +39,7 @@ import {
 } from "./sjasmplus/SjasmplusIntegrationDialog";
 
 import { SettingsDialog, type SettingsDialogResult } from "./settings/SettingsDialog";
+import { DetectDialog, type DetectDialogResult } from "./detect/DetectDialog";
 
 export type IdeDialogResult =
   | NewProjectDialogResult
@@ -47,7 +49,8 @@ export type IdeDialogResult =
   | AboutDialogResult
   | SjasmplusIntegrationDialogResult
   | MachineSelectDialogResult
-  | SettingsDialogResult;
+  | SettingsDialogResult
+  | DetectDialogResult;
 
 export type IdeDialogRenderer = (
   data: any,
@@ -79,5 +82,8 @@ export const ideDialogRegistry: Record<number, IdeDialogRenderer> = {
   [MACHINE_SELECT_DIALOG]: (data, controls) => (
     <MachineSelectDialog data={data} onResult={(result) => controls.close(result)} onClose={controls.cancel} />
   ),
-  [SETTINGS_DIALOG]: (data, controls) => <SettingsDialog data={data} onClose={controls.cancel} />
+  [SETTINGS_DIALOG]: (data, controls) => <SettingsDialog data={data} onClose={controls.cancel} />,
+  [DETECT_CODE_DATA_DIALOG]: (data, controls) => (
+    <DetectDialog skoolPath={data?.skoolPath} onClose={(result) => controls.close(result)} />
+  )
 };

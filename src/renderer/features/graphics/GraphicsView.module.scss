@@ -1,0 +1,158 @@
+@use "@styles/core.scss" as *;
+
+/*
+ * The graphics finder (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §5). The pixels are hardware
+ * colours drawn by `IndexedImageCanvas`; everything here is chrome, from tokens (G-T3).
+ */
+
+.graphicsView {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  background: var(--bgcolor-graphics-view);
+}
+
+.main {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.candidates {
+  flex: 0 0 auto;
+  width: 30ch;
+  margin: 0;
+  padding: var(--space-1);
+  overflow: auto;
+  list-style: none;
+  border-left: 1px solid var(--border-subtle);
+  font-size: var(--font-size-100);
+}
+
+.candidatesNote {
+  color: var(--text-tertiary);
+  padding: var(--space-0_5) 0;
+}
+
+.candidate,
+.candidateToggle {
+  border: none;
+  background: none;
+  padding: var(--space-0_5) 0;
+  color: var(--accent-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  @include focus-ring;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.candidateToggle {
+  margin-right: var(--space-2);
+}
+
+.scroller {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  /* The drawn window moves inside the spacer as it scrolls; the browser's scroll anchoring would
+     "correct" the position for that move and land a Go to a row off. The view keeps its own. */
+  overflow-anchor: none;
+  outline: none;
+  @include focus-ring;
+}
+
+/* As tall as the whole sheet, so the native scrollbar spans every frame row (G-T4). */
+.spacer {
+  position: relative;
+  width: 100%;
+}
+
+/* The frame rows in view, placed where they sit in the sheet. */
+.window {
+  position: absolute;
+  left: var(--space-1);
+}
+
+.hitArea {
+  position: absolute;
+  inset: 0;
+  cursor: crosshair;
+}
+
+.overlay {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+}
+
+.statusLine {
+  flex: 0 0 auto;
+  padding: var(--space-0_5) var(--space-2);
+  border-top: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-100);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// ─── Toolbar pieces ──────────────────────────────────────────────────────────
+
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-0_5);
+}
+
+.nudge {
+  padding: 0 var(--space-1);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--bgcolor-input);
+  color: var(--text-primary);
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-100);
+  line-height: 1.5;
+  cursor: pointer;
+  @include focus-ring;
+
+  &:hover:not(:disabled) {
+    background: var(--surface-hover);
+  }
+
+  &:disabled {
+    color: var(--text-disabled);
+    cursor: default;
+  }
+}
+
+.numberInput {
+  width: 4ch;
+  padding: 0 var(--space-1);
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius-sm);
+  background: var(--bgcolor-input);
+  color: var(--color-input);
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-100);
+  line-height: 1.5;
+  text-align: right;
+  outline: none;
+  @include focus-ring;
+
+  &:disabled {
+    color: var(--text-disabled);
+  }
+}
+
+.disabledSwitch {
+  opacity: 0.5;
+}

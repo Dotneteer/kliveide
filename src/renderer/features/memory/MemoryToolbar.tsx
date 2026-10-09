@@ -1,3 +1,4 @@
+import { SmallIconButton } from "@renderer/controls/IconButton";
 import { AddressInput } from "@renderer/controls/AddressInput";
 import Dropdown from "@renderer/controls/Dropdown";
 import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";
@@ -30,6 +31,8 @@ type MemoryToolbarProps = {
   onGoToAddress: (address: number) => void;
   onRefreshPauseChanged: (paused: boolean) => void;
   onViewModeChanged: (viewMode: DumpViewMode) => void;
+  /** Opens the graphics finder at the top of the view (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §5.3). */
+  onShowAsGraphics?: () => void;
 };
 
 export const MemoryToolbar = ({
@@ -45,7 +48,8 @@ export const MemoryToolbar = ({
   onDecimalViewChanged,
   onGoToAddress,
   onRefreshPauseChanged,
-  onViewModeChanged
+  onViewModeChanged,
+  onShowAsGraphics
 }: MemoryToolbarProps) => {
   return (
     <>
@@ -109,6 +113,12 @@ export const MemoryToolbar = ({
           onRefreshPauseChanged(false);
         }}
       />
+      {onShowAsGraphics && (
+        <>
+          <LabelSeparator width={8} />
+          <SmallIconButton iconName="sprite" title="Show as graphics" clicked={onShowAsGraphics} />
+        </>
+      )}
     </>
   );
 };

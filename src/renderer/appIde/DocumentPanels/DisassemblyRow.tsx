@@ -615,8 +615,19 @@ export const DisassemblyRow = memo(function DisassemblyRow({
         */}
       {annotated && (
         <span
-          className={classnames(styles.annotationRail, { [styles.authored]: showRail })}
+          className={classnames(styles.annotationRail, {
+            [styles.authored]: showRail,
+            [styles.toolRegion]: !!item.annotation?.regionOrigin && !showRail
+          })}
           data-authored={showRail ? "true" : undefined}
+          data-region-origin={item.annotation?.regionOrigin}
+          title={
+            item.annotation?.regionOrigin === "auto"
+              ? "Detected from coverage"
+              : item.annotation?.regionOrigin === "skool"
+                ? "Imported from a SkoolKit file"
+                : undefined
+          }
         />
       )}
       {isPrefixComment ? (

@@ -480,6 +480,9 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
           onGoToAddress={goToAddressRecorded}
           onRefreshPauseChanged={handleRefreshPauseChanged}
           onViewModeChanged={handleViewModeChanged}
+          onShowAsGraphics={() =>
+            void ideCommandsService.executeCommand(`gfx $${navAddress.current.toString(16).padStart(4, "0")}`)
+          }
         />
       </PanelHeader>
       <HistoryPresentBanner />

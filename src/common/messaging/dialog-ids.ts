@@ -9,6 +9,8 @@ export const SJASMPLUS_INTEGRATION_DIALOG = 6;
 export const MACHINE_SELECT_DIALOG = 7;
 // --- Shown in whichever window has the focus too (`.plans/MENU_REDESIGN_PLAN.md` §4)
 export const SETTINGS_DIALOG = 8;
+// --- Detect code and data (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §4.6)
+export const DETECT_CODE_DATA_DIALOG = 9;
 
 // --- Emulator dialogs
 export const EMU_DIALOG_BASE = 1000;

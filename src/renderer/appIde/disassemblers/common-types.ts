@@ -138,7 +138,8 @@ export type DisassemblyAnnotationRegionType =
   | "skip"
   | "copper"
   | "dma"
-  | "text";
+  | "text"
+  | "graphic";
 
 export type DisassemblyAnnotationMetadata = {
   /**
@@ -169,6 +170,12 @@ export type DisassemblyAnnotationMetadata = {
    * Region type that produced the generated row.
    */
   regionType?: DisassemblyAnnotationRegionType;
+
+  /**
+   * Who wrote the region the row is in, when not the user: code/data detection (`auto`) or a
+   * SkoolKit import (`skool`). The listing marks such rows quietly.
+   */
+  regionOrigin?: "auto" | "skool";
 
   /**
    * True when the row has a synopsis or end-of-line annotation.

@@ -8,6 +8,11 @@ for routine *names* only — a conventional name list (Q1). Every entry records 
 came from (`observed`, `manual`, `derived`). The full rules for authors, human or AI, are
 in `README.md` beside this file.
 
+**SkoolKit files (R8 of `.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md`).** A published skool or
+control file of a Spectrum ROM is never imported into, compared with, or used for a shipped
+sidecar. A *user* may import any skool file into their own annotation set or their own ROM layer
+(`skool-import`): that is their data, and the import writes only there.
+
 ## Session log
 
 Each authoring session adds an entry: the date, the sidecar, what was added, and the

@@ -1,4 +1,6 @@
 import type {
+  BankGraphic,
+  AnnotationRegionOrigin,
   AnnotationBankView,
   AnnotationLabel,
   AnnotationLabelScope,
@@ -11,7 +13,16 @@ import type {
   LineAnnotation
 } from "./programAnnotations";
 
-import { getBankAnnotation, normalizeMultilineComment, sameRegionLayout } from "./programAnnotations";
+import {
+  ANNOTATION_BANK_LAST_OFFSET,
+  ANNOTATION_LABEL_MAX_LENGTH,
+  MAX_ROW_BYTES,
+  bankGraphicLength,
+  getBankAnnotation,
+  isValidLabelName,
+  normalizeMultilineComment,
+  sameRegionLayout
+} from "./programAnnotations";
 
 /*
  * The pure edits behind the NEX annotation UI: label bookkeeping, region algebra, and the operand
@@ -67,7 +78,8 @@ export function replaceAnnotationRegion(
   regions: AnnotationRegion[],
   start: number,
   end: number,
-  type: AnnotationRegionType
+  type: AnnotationRegionType,
+  extra: { origin?: AnnotationRegionOrigin; rowBytes?: number } = {}
 ): AnnotationRegion[] {
   const nextRegions: AnnotationRegion[] = [];
   for (const region of regions) {
@@ -83,7 +95,13 @@ export function replaceAnnotationRegion(
       nextRegions.push({ ...region, start: end + 1 });
     }
   }
-  nextRegions.push({ start, end, type });
+  nextRegions.push({
+    start,
+    end,
+    type,
+    ...(extra.rowBytes !== undefined ? { rowBytes: extra.rowBytes } : {}),
+    ...(extra.origin ? { origin: extra.origin } : {})
+  });
   return mergeAnnotationRegions(nextRegions);
 }
 
@@ -261,7 +279,7 @@ export function withLineAnnotation(
   const nextLine = update({ ...(currentLines[offsetKey] ?? {}) });
 
   const nextLines = { ...currentLines };
-  if (nextLine.synopsis || nextLine.comment) {
+  if (nextLine.synopsis || nextLine.comment || nextLine.endComment) {
     nextLines[offsetKey] = nextLine;
   } else {
     delete nextLines[offsetKey];
@@ -418,23 +436,51 @@ export function withEndOfLineComment(
   });
 }
 
-/** Retype a span of the bank as disassembly, bytes, words, Copper, DMA or skip. */
+/**
+ * Retype a span of the bank as disassembly, bytes, words, Copper, DMA, text, a graphic or skip.
+ *
+ * `origin` is for the writers that are not the user — detection, a SkoolKit import. The editor's own
+ * edits never pass it, so any region the user touches becomes the user's (§3 of
+ * `.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md`).
+ */
 export function withRegion(
   annotations: ProgramAnnotations,
   bank: number,
   start: number,
   end: number,
-  type: AnnotationRegionType
+  type: AnnotationRegionType,
+  origin?: AnnotationRegionOrigin
 ): ProgramAnnotations | undefined {
   const bankAnnotation = getBankAnnotation(annotations, bank);
   if (!bankAnnotation) return undefined;
   // --- A Copper list is whole 2-byte words. The region dialog refuses an odd span; this refuses
   // --- one that arrives without it (a span gesture), rather than writing it.
   if (type === "copper" && (end - start + 1) % 2 !== 0) return undefined;
-  return withBank(annotations, bank, {
-    ...bankAnnotation,
-    regions: replaceAnnotationRegion(bankAnnotation.regions, start, end, type)
-  });
+  if (type === "words" && (end - start + 1) % 2 !== 0) return undefined;
+  return withBank(
+    annotations,
+    bank,
+    pruneGraphics({
+      ...bankAnnotation,
+      regions: replaceAnnotationRegion(bankAnnotation.regions, start, end, type, { origin })
+    })
+  );
+}
+
+/**
+ * Drop the `graphics` entries whose start is no longer in a `graphic` region: deleting or retyping
+ * the region deletes the graphic it laid out (§5.5).
+ */
+export function pruneGraphics(bank: BankAnnotation): BankAnnotation {
+  if (!bank.graphics) return bank;
+  const kept = bank.graphics.filter((graphic) =>
+    bank.regions.some((r) => r.type === "graphic" && graphic.offset >= r.start && graphic.offset <= r.end)
+  );
+  if (kept.length === bank.graphics.length) return bank;
+  const next: BankAnnotation = { ...bank };
+  if (kept.length > 0) next.graphics = kept;
+  else delete next.graphics;
+  return next;
 }
 
 /**
@@ -468,12 +514,12 @@ export function withClearedRowAnnotations(
   );
   if (!clearedALine && !resetRegion) return undefined;
 
-  const next: BankAnnotation = {
+  const next: BankAnnotation = pruneGraphics({
     ...bankAnnotation,
     regions: resetRegion
       ? replaceAnnotationRegion(bankAnnotation.regions, start, end, "disassemble")
       : bankAnnotation.regions
-  };
+  });
   if (clearedALine) {
     if (Object.keys(nextLines).length > 0) {
       next.lineAnnotations = nextLines;
@@ -665,4 +711,57 @@ export function listLabelsForBank(
     ...(annotations.globalLabels ?? []).map((label) => entry(label, "global")),
     ...(bankAnnotation?.localLabels ?? []).map((label) => entry(label, "local"))
   ];
+}
+
+/**
+ * Name a graphic the finder found (§5.5 of `.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md`, R6): a local
+ * label at its start, a `graphic` region over its bytes (the user's: no origin) and a `graphics`
+ * entry that lays them out — one model, so it is published as one session update.
+ *
+ * A graphic already starting inside the span is replaced; the label moves if the name was on
+ * another offset of this bank.
+ */
+export function withNamedGraphic(
+  annotations: ProgramAnnotations,
+  bank: number,
+  graphic: BankGraphic & { label: string }
+): { annotations: ProgramAnnotations } | { error: string } {
+  const bankAnnotation = getBankAnnotation(annotations, bank);
+  if (!bankAnnotation) return { error: "This bank has no annotations to name a graphic in." };
+  const name = graphic.label.trim();
+  if (!isValidLabelName(name)) {
+    return { error: `Use an identifier of up to ${ANNOTATION_LABEL_MAX_LENGTH} characters.` };
+  }
+  if ((annotations.globalLabels ?? []).some((label) => label.name === name)) {
+    return { error: `${name} is already a global label.` };
+  }
+  const length = bankGraphicLength(graphic);
+  const end = graphic.offset + length - 1;
+  if (graphic.offset < 0 || end > ANNOTATION_BANK_LAST_OFFSET) {
+    return { error: `The graphic (${length} bytes) runs past the end of the bank.` };
+  }
+
+  const entry: BankGraphic = {
+    offset: graphic.offset,
+    width: graphic.width,
+    height: graphic.height,
+    count: graphic.count,
+    layout: graphic.layout,
+    ...(graphic.mask && graphic.mask !== "none" ? { mask: graphic.mask } : {}),
+    label: name
+  };
+  const localLabels = (bankAnnotation.localLabels ?? []).filter((label) => label.name !== name);
+  localLabels.push({ name, value: graphic.offset });
+  const next: BankAnnotation = pruneGraphics({
+    ...bankAnnotation,
+    localLabels,
+    regions: replaceAnnotationRegion(bankAnnotation.regions, graphic.offset, end, "graphic", {
+      rowBytes: Math.min(graphic.width, MAX_ROW_BYTES)
+    }),
+    graphics: [
+      ...(bankAnnotation.graphics ?? []).filter((g) => g.offset < graphic.offset || g.offset > end),
+      entry
+    ].sort((a, b) => a.offset - b.offset)
+  });
+  return { annotations: withBank(annotations, bank, next) };
 }

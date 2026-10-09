@@ -92,6 +92,7 @@ const REGION_NAMES: Record<AnnotationRegionType, string> = {
   copper: "Copper",
   dma: "DMA",
   text: "Text",
+  graphic: "Graphics",
   skip: "Skip"
 };
 

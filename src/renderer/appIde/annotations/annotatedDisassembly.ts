@@ -8,9 +8,11 @@ import {
 } from "@renderer/appIde/disassemblers/common-types";
 import { resolveOperandLabel } from "./goToDefinition";
 import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z80-disassembler";
+import { bytePicture } from "@common/reverse/graphicsDecode";
 import {
   AnnotationRegion,
   BankAnnotation,
+  BankGraphic,
   ProgramAnnotations,
   ANNOTATION_BANK_LAST_OFFSET,
   MAX_ROW_BYTES,
@@ -174,6 +176,11 @@ export type AnnotatedDisassemblyOptions = {
   ) => { name: string; origin?: string; source?: "build" | "annotation" | "rom"; alternatives?: string[] } | undefined;
   /** How a `text` region's bytes read: the machine's character set. ASCII when absent. */
   charSet?: (code: number) => string | undefined;
+  /**
+   * Write unnamed operands as numbers (`$8014`) rather than as the listing's generated labels
+   * (`L8014`). Source export (G7.6) sets it: a generated label has no definition to assemble against.
+   */
+  noLabelPrefix?: boolean;
 };
 
 export async function createAnnotatedDisassemblyItems({
@@ -189,7 +196,8 @@ export async function createAnnotatedDisassemblyItems({
   allowExtendedSet = true,
   prepareDisassembler,
   rowLabel,
-  charSet
+  charSet,
+  noLabelPrefix
 }: AnnotatedDisassemblyOptions): Promise<DisassemblyItem[] | undefined> {
   const bankAnnotation = getBankAnnotation(annotations, bank);
   if (!bankAnnotation) {
@@ -206,6 +214,7 @@ export async function createAnnotatedDisassemblyItems({
   const labelOffsets = getLabelBankOffsets(annotations, bankAnnotation, addressOffset);
 
   for (const region of regions) {
+    const firstItem = items.length;
     let start = clampBankOffset(region.start, contents.length);
     let end = clampBankOffset(region.end, contents.length);
     if (range) {
@@ -233,7 +242,8 @@ export async function createAnnotatedDisassemblyItems({
               addressOffset,
               fallbackOperandLabelResolver,
               allowExtendedSet,
-              prepareDisassembler
+              prepareDisassembler,
+              noLabelPrefix
             ))
           );
         }
@@ -275,6 +285,21 @@ export async function createAnnotatedDisassemblyItems({
         );
         break;
 
+      case "graphic":
+        items.push(
+          ...createGraphicItems(
+            contents,
+            start,
+            end,
+            decimalView,
+            addressOffset,
+            labelOffsets,
+            graphicForRegion(bankAnnotation, region),
+            region.rowBytes
+          )
+        );
+        break;
+
       case "skip":
         // --- The screen overlay is the one skip that explains itself; an authored skip does not.
         items.push(
@@ -283,6 +308,13 @@ export async function createAnnotatedDisassemblyItems({
             : createSkipItem(start, end, decimalView, addressOffset)
         );
         break;
+    }
+    // --- A region a tool wrote carries its origin to every row, for the listing's quiet marker
+    if (region.origin) {
+      for (let i = firstItem; i < items.length; i++) {
+        const annotation = items[i].annotation;
+        if (annotation) annotation.regionOrigin = region.origin;
+      }
     }
   }
 
@@ -300,7 +332,8 @@ async function createInstructionItems(
   addressOffset: number,
   fallbackOperandLabelResolver?: DisassemblyOperandLabelResolver,
   allowExtendedSet = true,
-  prepareDisassembler?: (disassembler: Z80Disassembler) => void
+  prepareDisassembler?: (disassembler: Z80Disassembler) => void,
+  noLabelPrefix = false
 ): Promise<DisassemblyItem[]> {
   const disassembler = new Z80Disassembler(
     [new MemorySection(start, end, MemorySectionType.Disassemble)],
@@ -309,6 +342,7 @@ async function createInstructionItems(
     {
       allowExtendedSet,
       decimalMode: decimalView,
+      noLabelPrefix,
       operandLabelResolver: chainOperandLabelResolvers(
         createAnnotationOperandLabelResolver(annotations, bankAnnotation, bank, addressOffset),
         fallbackOperandLabelResolver
@@ -547,6 +581,58 @@ function createTextItems(
       annotation: createAnnotationMetadata(undefined, offset, length, "text")
     });
     offset += length;
+  }
+  return items;
+}
+
+/** The named graphic a `graphic` region lays out: the entry that starts inside it. */
+export function graphicForRegion(
+  bankAnnotation: BankAnnotation,
+  region: Pick<AnnotationRegion, "start" | "end">
+): BankGraphic | undefined {
+  return bankAnnotation.graphics?.find((g) => g.offset >= region.start && g.offset <= region.end);
+}
+
+/**
+ * How many bytes one listing row of a graphic holds: a whole pixel row where its bytes are
+ * contiguous in memory (linear and screen order), one byte otherwise (cells, columns) — a `.defb`
+ * row must cover consecutive bytes to reassemble. An interleaved mask doubles it.
+ */
+export function graphicRowBytes(graphic: Pick<BankGraphic, "width" | "layout" | "mask">): number {
+  const pixelRow = graphic.layout === "linear" || graphic.layout === "screen" ? graphic.width : 1;
+  return graphic.mask === "interleaved" ? pixelRow * 2 : pixelRow;
+}
+
+/**
+ * A `graphic` region (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §3): one `.defb` row per pixel row,
+ * in binary when the row is at most two bytes and in hex otherwise, with the pixels drawn in the
+ * comment column (`..####..`). Without its `graphics` entry — a file edited by hand — the region's
+ * stored row size is used, so the rows still reassemble.
+ */
+function createGraphicItems(
+  contents: Uint8Array,
+  start: number,
+  end: number,
+  decimalView: boolean,
+  addressOffset: number,
+  labelOffsets: number[],
+  graphic: BankGraphic | undefined,
+  storedRowBytes?: number
+): DisassemblyItem[] {
+  const rowBytes = graphic ? graphicRowBytes(graphic) : (storedRowBytes ?? MAX_ROW_BYTES);
+  const items: DisassemblyItem[] = [];
+  for (let offset = start, rowLength = 0; offset <= end; offset += rowLength) {
+    rowLength = dataRowLength(offset, start, end, rowBytes, labelOffsets, rowBytes);
+    const values = Array.from(contents.subarray(offset, offset + rowLength));
+    const text = values.map((value) =>
+      decimalView ? toDecimal3(value) : rowLength <= 2 ? `%${value.toString(2).padStart(8, "0")}` : `$${toHexa2(value)}`
+    );
+    items.push({
+      address: effectiveAddress(offset, addressOffset),
+      instruction: `.defb ${text.join(", ")}`,
+      hardComment: values.map(bytePicture).join(" "),
+      annotation: createAnnotationMetadata(undefined, offset, rowLength, "graphic")
+    });
   }
   return items;
 }

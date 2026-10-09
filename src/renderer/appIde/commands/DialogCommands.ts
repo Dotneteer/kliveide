@@ -2,7 +2,8 @@ import {
   NEW_PROJECT_DIALOG,
   EXPORT_CODE_DIALOG,
   CREATE_DISK_DIALOG,
-  SJASMPLUS_INTEGRATION_DIALOG
+  SJASMPLUS_INTEGRATION_DIALOG,
+  DETECT_CODE_DATA_DIALOG
 } from "@common/messaging/dialog-ids";
 import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
 import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
@@ -51,5 +52,6 @@ export const publicDialogIds: Record<string, PublicDialogInfo> = {
   newProject: { source: "ide", dialogId: NEW_PROJECT_DIALOG },
   export: { source: "ide", dialogId: EXPORT_CODE_DIALOG },
   sjasmplusIntegration: { source: "ide", dialogId: SJASMPLUS_INTEGRATION_DIALOG },
+  detectCodeData: { source: "ide", dialogId: DETECT_CODE_DATA_DIALOG },
   createDisk: { source: "emu", dialogId: CREATE_DISK_DIALOG }
 };

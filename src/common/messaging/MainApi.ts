@@ -266,6 +266,28 @@ class MainApiImpl {
   }
 
   /**
+   * Assembles Klive Z80 source held in memory and returns its segments and errors, with no file
+   * I/O: how source export (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §7.5, R10) proves its output
+   * reassembles to the bytes it came from.
+   * @param _source The source text (it names its own `.model`)
+   */
+  async assembleText(_source: string): Promise<AssembledText> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Assembles instructions one by one, each at its own address, and returns each one's bytes or
+   * why it does not assemble: the byte check of a SkoolKit import
+   * (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` S-T2). The assembler lives in the main process.
+   */
+  async assembleLines(
+    _lines: { text: string; address: number }[],
+    _z80n: boolean
+  ): Promise<({ bytes: number[] } | { error: string })[]> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * Saves binary data to a file and returns the file path.
    * @param _path The file path to save to.
    * @param _data The binary data to write.
@@ -777,6 +799,12 @@ class MainApiImpl {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 }
+
+/** The result of `MainApi.assembleText`. */
+export type AssembledText = {
+  errors: { line: number; message: string; isWarning?: boolean }[];
+  segments: { startAddress: number; bank?: number; emittedCode: number[] }[];
+};
 
 export type MainApi = MainApiImpl;
 

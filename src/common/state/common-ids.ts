@@ -21,6 +21,9 @@ export const HISTORY_PANEL_ID = "$history";
 export const HISTORY_EDITOR = "ExecutionHistory";
 export const PROFILER_PANEL_ID = "$profiler";
 export const PROFILER_EDITOR = "Profiler";
+// --- The graphics finder over the paused machine (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §5.3)
+export const GRAPHICS_PANEL_ID = "$graphics";
+export const GRAPHICS_EDITOR = "GraphicsFinder";
 export const UNKNOWN_EDITOR = "Unknown";
 export const COMMAND_RESULT_EDITOR = "CommandResult";
 export const STATIC_MEMORY_DUMP_VIEWER = "StaticMemoryDumpViewer";

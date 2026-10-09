@@ -1,0 +1,20 @@
+@use "@styles/core.scss" as *;
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.summary {
+  margin-top: var(--space-1);
+  color: var(--data-secondary);
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-100);
+}
+
+.error {
+  margin-top: var(--space-1);
+  color: var(--status-error);
+  font-size: var(--font-size-100);
+}

@@ -76,10 +76,13 @@
 /working-with-ide/commands/index.html
 /working-with-ide/copper/index.html
 /working-with-ide/cpu/index.html
+/working-with-ide/detecting-code-data/index.html
 /working-with-ide/disassembly/index.html
 /working-with-ide/editing-code/index.html
 /working-with-ide/execution-history/index.html
 /working-with-ide/exporting-code/index.html
+/working-with-ide/exporting-source/index.html
+/working-with-ide/graphics-finder/index.html
 /working-with-ide/ide-settings/index.html
 /working-with-ide/layer2-inspector/index.html
 /working-with-ide/layers/index.html
@@ -92,6 +95,7 @@
 /working-with-ide/run-debug/index.html
 /working-with-ide/settings/index.html
 /working-with-ide/sjasmp/index.html
+/working-with-ide/skoolkit/index.html
 /working-with-ide/sprite-inspector/index.html
 /working-with-ide/system-vars/index.html
 /working-with-ide/tilemap-inspector/index.html

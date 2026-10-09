@@ -83,29 +83,32 @@ export type AnnotationRegionType =
   | "skip"
   | "copper"
   | "dma"
-  | "text";
+  | "text"
+  | "graphic";
 
 /**
  * The region kinds stored as `bytes` + `decode` on disk. `copper`/`dma` are the Next's; `text` is
- * the ZX80/ZX81's, decoded with the machine's own character set (§4.7 of the reverse-engineering
- * annotations plan).
+ * printable runs, decoded with the machine's own character set on the ZX80/ZX81 (§4.7 of the
+ * reverse-engineering annotations plan) and as ASCII elsewhere; `graphic` is bytes laid out by the
+ * bank's matching `graphics` entry (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §3).
  */
-export type DecodedRegionType = Extract<AnnotationRegionType, "copper" | "dma" | "text">;
+export type DecodedRegionType = Extract<AnnotationRegionType, "copper" | "dma" | "text" | "graphic">;
 
 /** The decoded region types a bank space offers. Every other type is offered everywhere. */
 export function decodedRegionTypesFor(machine: AnnotationMachine): DecodedRegionType[] {
   switch (machine) {
     case "next":
-      return ["copper", "dma"];
-    case "zx80":
-    case "zx81":
-      return ["text"];
-    case "rom":
-      return ["text"];
+      return ["copper", "dma", "text", "graphic"];
     default:
-      return [];
+      return ["text", "graphic"];
   }
 }
+
+/**
+ * Who wrote a region. Absent: the user. `auto`: code/data detection (G7.3); `skool`: a SkoolKit
+ * import (G7.5). An additive key that a shipped build ignores (R2).
+ */
+export type AnnotationRegionOrigin = "auto" | "skool";
 
 /** A region as the sidecar stores it: only the types every shipped build accepts. */
 export type SidecarRegion = {
@@ -114,6 +117,7 @@ export type SidecarRegion = {
   type: "disassemble" | "bytes" | "words" | "skip";
   rowBytes?: number;
   decode?: DecodedRegionType;
+  origin?: AnnotationRegionOrigin;
 };
 export type AnnotationLabelScope = "global" | "local";
 export type AnnotationBankView = "memory" | "disassembly";
@@ -142,8 +146,12 @@ export type AnnotationRegion = {
    * For a `bytes` region: how many bytes each `.defb` row holds, 1..`MAX_ROW_BYTES`. Omitted means
    * the default of four. Set it when the data has a record structure the rows should follow — a
    * copper list is two-byte instructions, so `rowBytes: 2` gives each instruction its own row.
+   * A `graphic` region keeps the value it is stored with (`min(width, 4)`), so an older build lists
+   * it one pixel row per `.defb` where it can.
    */
   rowBytes?: number;
+  /** Who wrote it; see `AnnotationRegionOrigin`. Absent: the user. */
+  origin?: AnnotationRegionOrigin;
 };
 
 /** The most values a `.defb` row holds, and the row size when a region does not set `rowBytes`. */
@@ -159,10 +167,17 @@ export function getRegionRowBytes(region: Pick<AnnotationRegion, "rowBytes">): n
  * Type alone is not enough: two `bytes` regions with different row sizes must stay apart.
  */
 export function sameRegionLayout(
-  a: Pick<AnnotationRegion, "type" | "rowBytes">,
-  b: Pick<AnnotationRegion, "type" | "rowBytes">
+  a: Pick<AnnotationRegion, "type" | "rowBytes" | "origin">,
+  b: Pick<AnnotationRegion, "type" | "rowBytes" | "origin">
 ): boolean {
-  return a.type === b.type && getRegionRowBytes(a) === getRegionRowBytes(b);
+  // --- `origin` takes part, so a detected region never merges into one the user wrote (§3). Two
+  // --- graphics never merge: each is its own named thing, laid out by its own `graphics` entry.
+  return (
+    a.type === b.type &&
+    a.type !== "graphic" &&
+    getRegionRowBytes(a) === getRegionRowBytes(b) &&
+    a.origin === b.origin
+  );
 }
 
 /**
@@ -172,13 +187,23 @@ export function sameRegionLayout(
  * whole file over an unknown type.
  */
 export function toSidecarRegion(region: AnnotationRegion): SidecarRegion {
+  const origin = region.origin ? { origin: region.origin } : {};
   switch (region.type) {
     case "copper":
-      return { start: region.start, end: region.end, type: "bytes", rowBytes: 2, decode: "copper" };
+      return { start: region.start, end: region.end, type: "bytes", rowBytes: 2, decode: "copper", ...origin };
     case "dma":
-      return { start: region.start, end: region.end, type: "bytes", decode: "dma" };
+      return { start: region.start, end: region.end, type: "bytes", decode: "dma", ...origin };
     case "text":
-      return { start: region.start, end: region.end, type: "bytes", decode: "text" };
+      return { start: region.start, end: region.end, type: "bytes", decode: "text", ...origin };
+    case "graphic":
+      return {
+        start: region.start,
+        end: region.end,
+        type: "bytes",
+        ...(region.rowBytes !== undefined && region.rowBytes !== MAX_ROW_BYTES ? { rowBytes: region.rowBytes } : {}),
+        decode: "graphic",
+        ...origin
+      };
     default:
       return { ...region, type: region.type };
   }
@@ -199,7 +224,69 @@ export function toSidecarBanks(
 export type LineAnnotation = {
   synopsis?: string;
   comment?: string;
+  /**
+   * Lines after the row: SkoolKit's end comment, which has nowhere else to go (G7.5). Additive; a
+   * shipped build ignores it.
+   */
+  endComment?: string;
 };
+
+/** How a named graphic's bytes are laid out (`graphicsDecode.ts`). */
+export type BankGraphicLayout = "linear" | "cells" | "columns" | "screen";
+export type BankGraphicMask = "none" | "interleaved" | "before" | "after";
+
+/**
+ * A graphic the finder named (G7.4, R6): the label, the `graphic` region over its bytes and this
+ * entry together. The entry is what the finder, the listing, the source export and the SkoolKit
+ * export all lay the bytes out by.
+ */
+export type BankGraphic = {
+  /** Where it starts, bank-relative. */
+  offset: number;
+  /** Bytes per pixel row, 1..32. */
+  width: number;
+  /** Pixel rows per frame, 1..256. */
+  height: number;
+  /** Frames laid out one after another. */
+  count: number;
+  layout: BankGraphicLayout;
+  mask?: BankGraphicMask;
+  /** The label it is named by (also a local or global label). */
+  label?: string;
+};
+
+/** The bytes a named graphic covers. */
+export function bankGraphicLength(graphic: Pick<BankGraphic, "width" | "height" | "count" | "mask">): number {
+  const frame = graphic.width * graphic.height;
+  return frame * graphic.count * (graphic.mask && graphic.mask !== "none" ? 2 : 1);
+}
+
+/**
+ * What a SkoolKit file says that Klive does not model, kept so an unedited file round-trips (G7.5,
+ * S5). Keys are bank offsets, as strings.
+ */
+export type SkoolInterop = {
+  /** ASM directives Klive does not apply, by the offset they stand before (`name=value`). */
+  directives?: Record<string, string[]>;
+  /** Non-entry text, by the offset it stands before. */
+  nonEntry?: Record<string, string[]>;
+  /** A braced comment's span: the offset of its last instruction, by its first. */
+  braces?: Record<string, number>;
+  /** Entry points (`*`) without a label. */
+  entryPoints?: number[];
+  /** The block character of each entry, by its first offset, when it is not the region's own. */
+  blocks?: Record<string, string>;
+  /** The entries a file had: by first offset, how its synopsis splits back into the header's sections. */
+  entries?: Record<string, { title: boolean; desc: number; regs: number; start: number }>;
+  /** ASM directives written above an entry's header, by the entry's offset. */
+  entryDirectives?: Record<string, string[]>;
+  /** An ignored (`i`) entry's lines, by its offset. */
+  ignored?: Record<string, string[]>;
+  /** The file wrote its addresses in hex (`$8000`) rather than decimal. */
+  hex?: boolean;
+};
+
+export type BankInterop = { skool?: SkoolInterop };
 
 export type OperandReference = {
   operandIndex: number;
@@ -245,6 +332,10 @@ export type BankAnnotation = {
   comment?: string;
   /** How the Sprites view reads this bank. See `BankSprites`. */
   sprites?: BankSprites;
+  /** The graphics the finder named, in offset order (G7.4). */
+  graphics?: BankGraphic[];
+  /** What another tool's file said that Klive does not model (G7.5). */
+  interop?: BankInterop;
 };
 
 /** A breakpoint as the sidecar stores it: an offset in a bank, and what kind it is. */
@@ -368,7 +459,10 @@ const REGION_TYPES = new Set<AnnotationRegionType>([
   "words",
   "skip"
 ]);
-const DECODED_REGION_TYPES = new Set<DecodedRegionType>(["copper", "dma", "text"]);
+const DECODED_REGION_TYPES = new Set<DecodedRegionType>(["copper", "dma", "text", "graphic"]);
+const REGION_ORIGINS = new Set<AnnotationRegionOrigin>(["auto", "skool"]);
+const GRAPHIC_LAYOUTS = new Set<BankGraphicLayout>(["linear", "cells", "columns", "screen"]);
+const GRAPHIC_MASKS = new Set<BankGraphicMask>(["none", "interleaved", "before", "after"]);
 const LABEL_SCOPES = new Set<AnnotationLabelScope>(["global", "local"]);
 const BANK_VIEWS = new Set<AnnotationBankView>(["memory", "disassembly"]);
 /**
@@ -862,6 +956,8 @@ function readBankAnnotation(
   const lineAnnotations = readLineAnnotations(value.lineAnnotations, `${path}.lineAnnotations`, diagnostics);
   const comment = readBankComment(value.comment, `${path}.comment`, diagnostics);
   const sprites = readBankSprites(value.sprites, `${path}.sprites`, diagnostics);
+  const graphics = readBankGraphics(value.graphics, `${path}.graphics`, diagnostics);
+  const interop = readBankInterop(value.interop, `${path}.interop`, diagnostics);
   const operandReferences = readOperandReferences(
     value.operandReferences,
     `${path}.operandReferences`,
@@ -899,7 +995,86 @@ function readBankAnnotation(
   if (sprites !== undefined) {
     annotation.sprites = sprites;
   }
+  if (graphics !== undefined) {
+    annotation.graphics = graphics;
+  }
+  if (interop !== undefined) {
+    annotation.interop = interop;
+  }
   return annotation;
+}
+
+/**
+ * A bank's named graphics. Every problem is a warning and drops only the bad entry, as with
+ * `sprites`: losing a bank's labels over one graphic's description would be absurd.
+ */
+function readBankGraphics(
+  value: unknown,
+  path: string,
+  diagnostics: AnnotationDiagnostic[]
+): BankGraphic[] | undefined {
+  if (value === undefined) return undefined;
+  if (!Array.isArray(value)) {
+    diagnostics.push(warning(path, "graphics must be an array; it is ignored."));
+    return undefined;
+  }
+  const graphics: BankGraphic[] = [];
+  value.forEach((item, index) => {
+    const itemPath = `${path}[${index}]`;
+    if (
+      !isRecord(item) ||
+      !isBankOffset(item.offset) ||
+      !isIntegerInRange(item.width, 1, 32) ||
+      !isIntegerInRange(item.height, 1, 256) ||
+      !isIntegerInRange(item.count, 1, ANNOTATION_BANK_SIZE) ||
+      !GRAPHIC_LAYOUTS.has(item.layout as BankGraphicLayout)
+    ) {
+      diagnostics.push(warning(itemPath, "A graphic needs offset, width 1..32, height 1..256, count and layout; it is ignored."));
+      return;
+    }
+    const graphic: BankGraphic = {
+      offset: item.offset,
+      width: item.width,
+      height: item.height,
+      count: item.count,
+      layout: item.layout as BankGraphicLayout
+    };
+    if (item.mask !== undefined) {
+      if (GRAPHIC_MASKS.has(item.mask as BankGraphicMask)) {
+        if (item.mask !== "none") graphic.mask = item.mask as BankGraphicMask;
+      } else {
+        diagnostics.push(warning(`${itemPath}.mask`, "Graphic mask is not supported; it is ignored."));
+      }
+    }
+    if (item.label !== undefined) {
+      if (typeof item.label === "string" && isValidLabelName(item.label)) graphic.label = item.label;
+      else diagnostics.push(warning(`${itemPath}.label`, "Graphic label must be a label name; it is ignored."));
+    }
+    graphics.push(graphic);
+  });
+  return graphics.length > 0 ? graphics.sort((a, b) => a.offset - b.offset) : undefined;
+}
+
+/**
+ * Another tool's passthrough, kept as it was written. Only its shape is checked: it is data Klive
+ * writes back, never data it acts on.
+ */
+function readBankInterop(
+  value: unknown,
+  path: string,
+  diagnostics: AnnotationDiagnostic[]
+): BankInterop | undefined {
+  if (value === undefined) return undefined;
+  if (!isRecord(value)) {
+    diagnostics.push(warning(path, "interop must be an object; it is ignored."));
+    return undefined;
+  }
+  const interop: BankInterop = {};
+  if (value.skool !== undefined) {
+    if (isRecord(value.skool)) interop.skool = JSON.parse(JSON.stringify(value.skool)) as SkoolInterop;
+    else diagnostics.push(warning(`${path}.skool`, "interop.skool must be an object; it is ignored."));
+  }
+  return Object.keys(interop).length > 0 ? interop : undefined;
 }
 
 /**
@@ -1119,15 +1294,27 @@ function normalizeRegions(
         type = item.decode as DecodedRegionType;
       }
     }
+    let origin: AnnotationRegionOrigin | undefined;
+    if (item.origin !== undefined) {
+      if (REGION_ORIGINS.has(item.origin as AnnotationRegionOrigin)) {
+        origin = item.origin as AnnotationRegionOrigin;
+      } else {
+        diagnostics.push(warning(`${itemPath}.origin`, "Region origin is not supported; it is ignored."));
+      }
+    }
     regions.push({
       start: item.start,
       end: item.end,
       type,
       // --- Only when it says something: the default row size is written as no field at all. A
-      // --- decoded region lays out its own rows, so the stored `rowBytes` is not carried over.
-      ...(type === "bytes" && item.rowBytes !== undefined && item.rowBytes !== MAX_ROW_BYTES
+      // --- decoded region lays out its own rows, so the stored `rowBytes` is not carried over —
+      // --- except a graphic's, which is written back as it was so the file round-trips.
+      ...((type === "bytes" || type === "graphic") &&
+      item.rowBytes !== undefined &&
+      item.rowBytes !== MAX_ROW_BYTES
         ? { rowBytes: item.rowBytes as number }
-        : {})
+        : {}),
+      ...(origin ? { origin } : {})
     });
   });
 
@@ -1268,7 +1455,18 @@ function readLineAnnotations(
         annotation.comment = annotationValue.comment;
       }
     }
-    if (annotation.synopsis !== undefined || annotation.comment !== undefined) {
+    if (annotationValue.endComment !== undefined) {
+      if (typeof annotationValue.endComment !== "string") {
+        diagnostics.push(warning(`${itemPath}.endComment`, "End comment must be a string; it is ignored."));
+      } else if (annotationValue.endComment.length > 0) {
+        annotation.endComment = annotationValue.endComment;
+      }
+    }
+    if (
+      annotation.synopsis !== undefined ||
+      annotation.comment !== undefined ||
+      annotation.endComment !== undefined
+    ) {
       annotations[offsetKey] = annotation;
     }
   }

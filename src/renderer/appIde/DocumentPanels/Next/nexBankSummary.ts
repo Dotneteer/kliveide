@@ -21,11 +21,21 @@ export const NEX_REGION_TYPES: AnnotationRegionType[] = [
   "copper",
   "dma",
   "text",
+  "graphic",
   "skip"
 ];
 
 export function bankContentMix(regions: AnnotationRegion[] | undefined): NexBankContentMix {
-  const mix: NexBankContentMix = { disassemble: 0, bytes: 0, words: 0, copper: 0, dma: 0, text: 0, skip: 0 };
+  const mix: NexBankContentMix = {
+    disassemble: 0,
+    bytes: 0,
+    words: 0,
+    copper: 0,
+    dma: 0,
+    text: 0,
+    graphic: 0,
+    skip: 0
+  };
   for (const region of regions ?? []) {
     const start = Math.max(0, region.start);
     const end = Math.min(ANNOTATION_BANK_SIZE - 1, region.end);
@@ -36,16 +46,16 @@ export function bankContentMix(regions: AnnotationRegion[] | undefined): NexBank
 
 /**
  * The region types a bank's mix names in its legend and tooltip: the four everyday kinds always,
- * Copper, DMA and text only when the bank has some, so the common bank does not list two zeros.
+ * Copper, DMA, text and graphics only when the bank has some, so the common bank does not list two zeros.
  */
 export function mixLegendTypes(mix: NexBankContentMix): AnnotationRegionType[] {
-  return NEX_REGION_TYPES.filter((type) => (type !== "copper" && type !== "dma" && type !== "text") || mix[type] > 0);
+  return NEX_REGION_TYPES.filter((type) => (type !== "copper" && type !== "dma" && type !== "text" && type !== "graphic") || (mix[type] ?? 0) > 0);
 }
 
 /** A share of the bank, as a whole percentage, for display. */
 export function contentMixPercent(mix: NexBankContentMix, type: AnnotationRegionType): number {
-  const total = NEX_REGION_TYPES.reduce((sum, t) => sum + mix[t], 0);
-  return total ? Math.round((mix[type] * 100) / total) : 0;
+  const total = NEX_REGION_TYPES.reduce((sum, t) => sum + (mix[t] ?? 0), 0);
+  return total ? Math.round(((mix[type] ?? 0) * 100) / total) : 0;
 }
 
 /**

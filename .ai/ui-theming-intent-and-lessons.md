@@ -484,6 +484,31 @@ colouring one never touches the others or the still-neutral panels. Full role ta
   both its scalars and its individual array bytes this way, and pins the class in a test, because
   "simplify this to `changed`" is precisely the tidy-up that would remove the only visible half.
 
+## The Graphics Finder: Hardware Pixels Under Token Chrome
+
+The graphics finder (`features/graphics/`, `.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §5) draws
+memory as ZX bitmaps. The pixels are the machine's: ink and paper are `SPECTRUM_48_COLORS` entries
+the user picks (default `INK 0: PAPER 7`), never tokens. Everything drawn *over* them is chrome, on
+one overlay canvas, from `--color-graphics-*` aliases read off the element: the selection takes the
+primary accent, a named graphic the secondary (two things on one surface that must stay apart),
+the band over bytes the listing decodes as code the warning hue (it marks a disagreement), the
+hovered byte only the strong border, so hover never competes with the selection.
+
+- **A region a tool wrote is marked by provenance, not by kind.** A row in a region detection or a
+  SkoolKit import wrote (`origin`) gets a dotted rail in `--color-annotation-auto` (tertiary text):
+  quieter than the authored rail, never a hue of its own, and the tooltip names the tool. A fourth
+  annotation hue beside label, comment and operand would read as another data column.
+- **A view whose scroll position *is* an address scrolls natively.** The finder is virtualised: a
+  spacer as tall as the whole sheet, only the frame rows in view decoded. That needs the real
+  `scrollTop`, so it is the one place a bare `overflow: auto` is right rather than `ScrollViewer`.
+  It also needs **`overflow-anchor: none`**: the drawn window moves inside the spacer as it scrolls,
+  and the browser's scroll anchoring "corrects" for that move.
+- **State a re-layout reads in the same commit as a jump lives in a ref.** A Go to sets the frame
+  alignment and scrolls; the panel's first measurement (no scrollbar yet, so one more column) and
+  the next (with one) re-run the layout in the same commit. A `useState` value read there is the old
+  one, and the jump landed a row off. Keep the jump's alignment in a ref, and do not let the
+  view's *own* scroll events overwrite the remembered top byte.
+
 ## Colour That Belongs To The Machine, Not To The Theme
 
 Two rules, both learned on the Next palette, both general.
@@ -2246,6 +2271,10 @@ the default blue accent's hue to the digit. Any fixed hue sits near some accent 
 gold near Ember), so the colour is only a cue: the bar's `aria-label`/`title` and the legend name
 every segment. **Rare kinds are named only when present** (`mixLegendTypes`), so a typical bank's
 legend does not grow a row of `0%` entries for every kind that exists.
+When the fixed status hues run out too (text and graphics regions), **borrow the listing's syntax
+hues**: `--color-nex-mix-text` → `--syntax-string`, `--color-nex-mix-graphic` → `--syntax-number`. A
+string is a string in the bar as in the editor, and the syntax table is already held clear of the
+keyword hue under all six accents, so the bar inherits that separation for free.
 
 ### A listing column sized for one row kind wraps the next kind into its neighbour
 

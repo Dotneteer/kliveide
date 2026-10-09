@@ -262,6 +262,10 @@ async function renderMemoryPanel({
       );
     }
   }));
+  // --- The toolbar's Show as graphics button draws an icon, which needs the theme
+  vi.doMock("@renderer/controls/Icon", () => ({
+    Icon: ({ iconName }: { iconName: string }) => <span data-testid={`icon-${iconName}`} />
+  }));
   vi.doMock("@renderer/controls/LabeledSwitch", () => ({
     LabeledSwitch: ({
       clicked,

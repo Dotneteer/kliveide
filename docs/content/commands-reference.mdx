@@ -1074,6 +1074,62 @@ project, a command), its machine, and how many labels, comments, regions and bre
 It also lists the ROM annotations in use for each ROM page: the ones Klive ships, your own, and,
 for a ROM Klive does not know, how many of the shipped labels apply to its bytes.
 
+## `ann-detect`
+
+Detects code and data from code coverage and proposes regions for the active annotations. See
+[Detecting Code and Data](./working-with-ide/detecting-code-data).
+
+```
+ann-detect [<bank>|rom|all] [-mode fill|replace|clear] [-reach] [-text] [-words]
+           [-unknown keep|bytes] [-noscreen] [-apply]
+ann-detect -undo
+```
+
+Without a bank, it works on the banks paged in now; `rom` writes to your own ROM annotations. Without
+`-apply` it only reports, in the output and a result document. `-undo` puts back the annotations from
+before the last apply.
+
+Available aliases: `detect`
+
+## `gfx`
+
+Opens the graphics finder over the paused machine, optionally at an address. See
+[The Graphics Finder](./working-with-ide/graphics-finder).
+
+```
+gfx [<address>] [-w <width>] [-h <height>] [-layout linear|cells|columns|screen] [-bank <n>]
+```
+
+`-bank` shows one bank (partition) instead of the 64K view.
+
+Available aliases: `show-graphics`
+
+## `export-asm`
+
+Exports an annotated range of the 64K view, or a bank, as Klive Z80 source that reassembles to the
+same bytes, and verifies it. See [Exporting Source](./working-with-ide/exporting-source).
+
+```
+export-asm <file> [<from> <to>] [-bank <n>] [-skip data|gap] [-dialect klive] [-open] [-noverify]
+```
+
+## `skool-import`
+
+Imports a SkoolKit skool or control file into the active annotations, checking its instructions
+against the machine's bytes. See [SkoolKit Files](./working-with-ide/skoolkit).
+
+```
+skool-import <file> [-ctl] [-mode fill|replace] [-apply]
+```
+
+## `skool-export`
+
+Exports the active annotations as a SkoolKit skool or control file.
+
+```
+skool-export <file> [-ctl] [<from> <to>] [-bank <n>|all] [-split]
+```
+
 ## `newp`
 
 This project creates a new Klive project and optionally opens it.
@@ -1725,10 +1781,10 @@ that address. The **Show in Disassembly** menu items of the editor and the Break
 
 ## `show-memory`
 
-Use this command to display the memory contents view.
+Use this command to display the memory contents view, optionally at an address (in the 64K view).
 
 ```
-show-memory
+show-memory [<address>]
 ```
 
 Available aliases: `shmem`

@@ -1,0 +1,51 @@
+---
+description: "Export an annotated range or bank as Klive Z80 assembly that reassembles to exactly the same bytes."
+---
+
+import { Callout } from 'nextra/components'
+
+# Exporting Source
+
+Once a program is annotated, you can turn it into **source code**: Klive Z80 assembly with your
+labels, comments and data regions, that reassembles to exactly the bytes it came from.
+
+Use **Export as Source...** from the tools button of the Disassembly view or a bank document, or
+**Export as Source** on a named graphic. The command takes a range of the 64K view or a whole bank:
+
+```
+export-asm game.kz80.asm $8000 $9fff -open
+export-asm bank3.kz80.asm -bank 3
+```
+
+## Proven, not hoped for
+
+After writing the file, Klive assembles it and compares the result with the bytes:
+
+```
+Byte-identical: yes
+```
+
+If anything differs, the first differing addresses are listed instead.
+
+The export takes care of the cases where a disassembly's text would *not* assemble back to the same
+bytes:
+
+- **Non-canonical encodings** — the `NEG` and `RETN` mirrors, the alternative `IM` encodings, the
+  long `LD (nn),HL`, a `DD`/`FD` prefix that has no effect, undefined `ED` opcodes — are written as
+  `.defb` with the instruction in the comment.
+- An instruction that **runs past its region** is written as the bytes the region holds.
+- **Copper** and **DMA** programs, and the ROM's inline `RST $08` / `RST $28` bytes, are `.defb` with
+  their decoding as the comment.
+- A **label** the assembler would not accept (`hl`, `ld`, a name that differs from another only in
+  case) is renamed, and the output says how.
+- A name used in an operand but defined **outside the range** — a ROM routine, a label in another
+  bank — becomes `NAME .equ $NNNN`.
+- A **skip region** is exported as its bytes; `-skip gap` leaves it out and starts a new `.org`
+  instead, and says the result is shorter.
+
+A 128K bank is assembled into its bank with `.model Spectrum128` and `.bank`; a Next export uses
+`.model next` for the Next's own instructions.
+
+<Callout type="info">
+`-noverify` skips the check. The export is always written in Klive's own assembly dialect.
+</Callout>

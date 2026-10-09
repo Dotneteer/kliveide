@@ -166,6 +166,11 @@ it.
 
 ## Limits
 
+- **A fractional device pixel ratio shifts element captures.** On a display at DPR 1.84,
+  `locator.screenshot()` *and* `page.screenshot({ clip: boundingBox })` came out shifted left by
+  part of the sidebar, while a whole-window `page.screenshot()` was right. Look at every staged
+  element shot before publishing; generate published shots on a 2x display.
+
 - **Emulator state is not yet deterministic.** Panels like `cpu-view.png` show live
   register values that differ every run. Pausing at a fixed point (reset, then a known
   frame count) is unsolved here.
@@ -178,6 +183,12 @@ it.
   this evidence; the rest are OS dialogs or annotated illustrations.
 
 ## Coverage so far
+
+- `recipes/reverse-engineering.cjs` — the running-app check of G7.3–G7.6: the graphics finder on the
+  48K ROM's font, compared pixel for pixel with the ROM's bytes; `ann-detect` and its apply; the
+  Detect dialog from the Debug menu (poll for the item: the menu is rebuilt after state changes);
+  `export-asm` verified byte-identical; `skool-export` and `skool-import`. The template project's
+  code is at `$7C00`, in bank 5.
 
 Eleven recipes; the rest of the pages were deliberately left ungenerated.
 

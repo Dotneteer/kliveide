@@ -18,7 +18,9 @@ import {
   HISTORY_PANEL_ID,
   MEMORY_PANEL_ID,
   PROFILER_EDITOR,
-  PROFILER_PANEL_ID
+  PROFILER_PANEL_ID,
+  GRAPHICS_EDITOR,
+  GRAPHICS_PANEL_ID
 } from "@common/state/common-ids";
 import type { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
 
@@ -32,7 +34,8 @@ export type SpecialDocumentId =
   | typeof LAYER2_PANEL_ID
   | typeof LAYERS_PANEL_ID
   | typeof HISTORY_PANEL_ID
-  | typeof PROFILER_PANEL_ID;
+  | typeof PROFILER_PANEL_ID
+  | typeof GRAPHICS_PANEL_ID;
 
 export type SpecialDocumentDefinition = Pick<
   ProjectDocumentState,
@@ -116,6 +119,14 @@ const specialDocumentDefinitions: Record<SpecialDocumentId, SpecialDocumentDefin
     name: "Profiler",
     type: PROFILER_EDITOR,
     iconName: "gauge",
+    workspaceRestorable: true
+  },
+  // --- The graphics finder over the paused machine (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §5.3)
+  [GRAPHICS_PANEL_ID]: {
+    id: GRAPHICS_PANEL_ID,
+    name: "Graphics",
+    type: GRAPHICS_EDITOR,
+    iconName: "sprite",
     workspaceRestorable: true
   }
 };

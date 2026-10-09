@@ -44,6 +44,8 @@ const REGION_TYPE_OPTIONS: DropdownOption[] = [
   { value: "words", label: "Words" },
   { value: "copper", label: "Copper" },
   { value: "dma", label: "DMA" },
+  { value: "text", label: "Text" },
+  { value: "graphic", label: "Graphics" },
   { value: "skip", label: "Skip" }
 ];
 
