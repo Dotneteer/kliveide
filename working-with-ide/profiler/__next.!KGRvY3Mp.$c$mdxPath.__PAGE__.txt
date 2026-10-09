@@ -1,0 +1,277 @@
+1:"$Sreact.fragment"
+2:I[826,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-a25cc0b01a48815c.js"],"TOCProvider"]
+3:I[4637,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-a25cc0b01a48815c.js"],"Sidebar"]
+4:I[6665,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-a25cc0b01a48815c.js"],"ClientWrapper"]
+5:T26ee,---
+description: "The profiler: where the machine's time went, per routine and per instruction, with inclusive and exclusive time from the call graph, interrupts as their own roots, and exports to speedscope, KCachegrind, CSV and Fuse."
+---
+
+import { Callout } from 'nextra/components'
+
+# The Profiler
+
+<Callout type="info">
+This is one of Klive's [advanced debugging features](/howto/advanced-debugging), which are on by
+default; if you turned them off, run `set -u features.advancedDebugging 1` in the IDE, then restart Klive.
+</Callout>
+
+The **profiler** answers *where the time went*. While it runs, the emulator measures every
+instruction exactly: there is no sampling, so a routine that ran once for 40 T-states shows up just
+as surely as the loop that ran a million times. You get:
+
+- a **flat profile**: the time spent in each routine of your program, its share, its calls and its
+  cost per frame;
+- a **call graph** (when you ask for it): each routine's *inclusive* time (its calls included) and
+  *exclusive* time (its own code only), who called it, and what it called;
+- **exports** to [speedscope](https://www.speedscope.app) flame graphs, KCachegrind/QCachegrind
+  (callgrind), CSV, and Fuse's profile format.
+
+<Callout type="info">
+The profiler works on every Z80 machine: the ZX Spectrum 48K and 16K, 128K, Pentagon 128,
++2A/+3/+2E/+3E and Next, the Scorpion ZS-256, the Timex machines, the Cambridge Z88, and the ZX80
+and ZX81. It is built on [code coverage](/working-with-ide/code-coverage)'s counters, so the two share
+one switch: starting the profiler turns coverage on, and resetting one resets the other.
+</Callout>
+
+## A profiling run
+
+A profile covers a **window**: from the moment you start it until you stop it. Inside that window
+the machine may run at full speed, pause, and step.
+
+1. **Debug → Start Profiling** resets the profile and starts a new window, with the call graph on.
+2. Run the part of the program you want to measure.
+3. **Debug → Stop Profiling** freezes the data and opens the **Profiler** document.
+
+**Debug → Profiler** opens the document at any time. Its toolbar starts, stops, clears and exports
+the profile too, and its **Call graph** switch decides whether the next start records the call graph.
+
+### Profiling exactly one pass
+
+To measure one pass of a loop - one frame of a game's main loop, say - let the program start and stop
+the window itself:
+
+```
+profile start -calls -at MainLoop -until MainLoop
+```
+
+Counting starts the first time the program reaches `MainLoop`, and profiling stops the next time it
+gets there. `-at` and `-until` take a label of the current build or an address (`$8000`, `#8000`,
+`0x8000`, `8000h` or decimal), and either can be used alone.
+
+## The Routines tab
+
+![The Routines tab of the Profiler](/images/working-with-ide/profiler-routines.png)
+
+The header line describes the window: whether profiling is running, how many **frames** it covered,
+the total time, the share spent **waiting** in `HALT`, and where the routines came from.
+
+Each row is a **routine**:
+
+| Column | Shows |
+|---|---|
+| Routine | The routine's name. |
+| Part. | The bank (partition) its code lives in, on machines that have banks. |
+| Entry | Its first address. |
+| Self | The time spent in its own instructions, in T-states (28 MHz ticks on the Next). Hover for the wall time. |
+| Self % | Its share, drawn as a bar. |
+| Calls | How often it was called (with the call graph), or how often its first instruction ran (*Entries*, without it). |
+| Instr. | Instructions executed in it. |
+| Per call | Self time per call. |
+| Per frame | Self time per emulated frame: the number a game budgets against. |
+| Source | Where it is defined. |
+
+Click a column heading to sort by it. Double-click a row to jump to the routine's source, or - for
+code without source - to its disassembly.
+
+Rows in italics are time that belongs to no routine: **Interrupt acknowledge**, **DMA bus hold** on
+the Next, **Snooze** on the Z88 and, when **Hide waiting** is off, **HALT (waiting)**. With **Hide
+waiting** on (the default), time in `HALT` is left out of the table and of the percentages, so a game
+that waits 70% of every frame still shows how its working time divides.
+
+### Where routines come from
+
+Klive names routines from the best information the build has, in this order:
+
+1. **Klive BASIC** `SUB`s and `FUNCTION`s, with their exact extents.
+2. The Klive assembler's **`.proc` ... `.endp`** blocks.
+3. **Labels**: a routine runs from a global label up to the next one. Local labels never start a
+   routine: the Klive assembler's temporary `` `labels`` and labels inside a `.proc`, and sjasmplus's
+   `.local` labels. sjasmplus builds on a 128K, +3 or Next device keep each label's page, so the same
+   address in two banks is two routines.
+4. **Call targets** the call graph saw, when the build has no symbols at all.
+5. **256-byte blocks** (`$8000-$80FF`) for whatever is left, such as the ROM.
+
+<Callout type="info">
+Because a global label starts a routine, a global label on a loop inside a routine splits that
+routine in two. Give loops temporary labels (`` `loop``) or wrap the routine in `.proc`, and it stays
+one row. Data after a routine counts toward its size, never toward its time.
+</Callout>
+
+## The Addresses tab
+
+The raw view: every instruction that ran, with its execution count and time, the routine it belongs
+to and its offset in it. It is the same information Fuse's profiler writes.
+
+## The Call tree tab
+
+![The Call tree tab of the Profiler](/images/working-with-ide/profiler-call-tree.png)
+
+With the call graph recorded, the Call tree shows who called whom, top-down. Each row shows the
+calls made from its parent, their **inclusive** time (with everything they called) and their
+**exclusive** time (their own code only). Expand a row to see the routines it called.
+
+The tree has more than one root:
+
+- **(entered before profiling)** holds the code that ran outside every call the profiler saw - the
+  routine that was already running when profiling started, and your main loop if it is not itself
+  called.
+- **Each interrupt handler is a root of its own** - `IM 1 handler at $0038`, `IM 2 → $FDFD (Music)`,
+  `NMI at $0066`. Its time is *not* charged to whatever routine it happened to interrupt, so a music
+  player driven by the frame interrupt shows up as the cost it is, instead of being smeared over the
+  rest of the program.
+
+A recursive call is shown once more, marked `↺`, and not expanded further; its inclusive time is
+counted at the outermost call only.
+
+## The Callers tab
+
+Select a routine in the Routines or Call tree tab, then open **Callers** to see who called it, how
+often, and how much time those calls took - and, below, the routines it called itself.
+
+## How calls are tracked
+
+The profiler follows `CALL`, `RST`, interrupts and every `RET`/`RETI`/`RETN` with a shadow stack. Z80
+programs play tricks with the stack, and the profiler is built to stay robust rather than to guess:
+
+- A `RET` closes every call whose return address it climbed past. That handles a normal return, an
+  error handler that unwinds several levels at once (the 48K ROM's `RST 8`), and a routine that
+  dropped its return address and jumped away.
+- `PUSH HL` / `RET` used as a computed jump is a jump, not a return.
+- A **tail call** (`JP` to another routine instead of `CALL` and `RET`) charges the jumped-to code to
+  the caller, as every stack-based profiler does. The Routines and Addresses tabs still show the
+  truth, because they measure each instruction where it is.
+- When the stack pointer jumps far (`LD SP` to another stack), the profiler starts the call stack
+  again from the root. The header then says how many **stack switches** it saw: the call graph is
+  approximate around them. It also reports calls nested deeper than 256 levels, and calls it had to
+  count under **(other)** when its table of caller/callee pairs was full.
+
+## In the editor
+
+Turn on **Settings › Debugging › Profile hints in the editor** to see each routine's share and
+calls at the end of its first line while a profile is present:
+
+![Profile hints in the editor](/images/working-with-ide/profiler-editor.png)
+
+With a profile present, the disassembly's [coverage cell](/working-with-ide/code-coverage) tooltip
+also shows each instruction's share of the profiled time.
+
+## Exporting a profile
+
+Use the document's **Export** button, or the command:
+
+```
+profile export <file> [-format fuse|csv|callgrind|speedscope] [-addresses] [-f]
+```
+
+The format follows the file name unless `-format` names one:
+
+| File | Format | Open it with |
+|---|---|---|
+| `*.json` | speedscope's sampled profile | [speedscope.app](https://www.speedscope.app) or its offline viewer: a flame graph of the call graph |
+| `callgrind.out.*`, `*.callgrind` | Callgrind | KCachegrind or QCachegrind |
+| `*.csv` | The Routines table (or, with `-addresses`, the Addresses table) | A spreadsheet |
+| `*.prof` | Fuse's profile: `0xADDR,TSTATES` per address | Existing scripts and `profile2map` |
+
+speedscope and callgrind need the call graph. The call graph records which routine called which,
+not every full call path, so below the first level a flame graph splits a routine's calls among its
+callers in proportion to the time each spent in it.
+
+## Commands
+
+| Command | Does |
+|---|---|
+| `profile start [-calls] [-at <addr>] [-until <addr>]` (`pst`) | Reset and start a window; `-calls` records the call graph. |
+| `profile stop` (`psp`) | Stop the window; the profile stays. |
+| `profile reset` | Clear the profile. |
+| `profile status` | The window, the time, the frames, the call graph's counters. |
+| `profile top [n] [-by self\|inclusive\|calls] [-waiting]` | The top routines as a text table in the output. |
+| `profile export <file> ...` | Export, as above. |
+| `show-profiler` (`shprof`), `hide-profiler` | Open or close the Profiler document. |
+
+See the [commands reference](/commands-reference#profile) for the details.a:X
+f:X
+f:C
+0:{"buildId":"dxN_yGp0CSVqjutW30o6Q","data":[{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L2",null,{"value":[{"value":"A profiling run","id":"a-profiling-run","depth":2},{"value":"Profiling exactly one pass","id":"profiling-exactly-one-pass","depth":3},{"value":"The Routines tab","id":"the-routines-tab","depth":2},{"value":"Where routines come from","id":"where-routines-come-from","depth":3},{"value":"The Addresses tab","id":"the-addresses-tab","depth":2},{"value":"The Call tree tab","id":"the-call-tree-tab","depth":2},{"value":"The Callers tab","id":"the-callers-tab","depth":2},{"value":"How calls are tracked","id":"how-calls-are-tracked","depth":2},{"value":"In the editor","id":"in-the-editor","depth":2},{"value":"Exporting a profile","id":"exporting-a-profile","depth":2},{"value":"Commands","id":"commands","depth":2}],"children":[["$","$L3",null,{}],["$","$L4",null,{"metadata":{"description":"The profiler: where the machine's time went, per routine and per instruction, with inclusive and exclusive time from the call graph, interrupts as their own roots, and exports to speedscope, KCachegrind, CSV and Fuse.","title":"The Profiler","filePath":"content/working-with-ide/profiler.mdx","timestamp":1791560646000},"sourceCode":"$5","children":["$L6","$L7"]}]]}]}],null,"$L8"]}],"isPartial":"$@9","staleTime":"$a","varyParams":null},{"rsc":"$Lb","isPartial":"$@c","staleTime":"$a","varyParams":null},{"rsc":"$Ld","isPartial":"$@e","staleTime":"$a","varyParams":"$f"}],"isUpgradeableISRFallback":false,"a":"$@10","rootVaryParams":null,"needsRuntimeRequest":"$@11"}
+12:I[8500,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-a25cc0b01a48815c.js"],""]
+41:I[484,[],"OutletBoundary"]
+42:"$Sreact.suspense"
+44:I[484,[],"ViewportBoundary"]
+45:I[484,[],"MetadataBoundary"]
+46:I[7121,[],""]
+47:I[4581,[],""]
+6:["$","div",null,{"id":"nextra-skip-nav"}]
+7:["$","main",null,{"data-pagefind-body":true,"children":[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["The Profiler","$undefined"]}],"\n",["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["This is one of Klive’s ",["$","$L12",null,{"href":"/howto/advanced-debugging","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"advanced debugging features"}],", which are on by\ndefault; if you turned them off, run ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"set -u features.advancedDebugging 1"}]," in the IDE, then restart Klive."]}]}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","strong",null,{"children":"profiler"}]," answers ",["$","em",null,{"children":"where the time went"}],". While it runs, the emulator measures every\ninstruction exactly: there is no sampling, so a routine that ran once for 40 T-states shows up just\nas surely as the loop that ran a million times. You get:"]}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["a ",["$","strong",null,{"children":"flat profile"}],": the time spent in each routine of your program, its share, its calls and its\ncost per frame;"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["a ",["$","strong",null,{"children":"call graph"}]," (when you ask for it): each routine’s ",["$","em",null,{"children":"inclusive"}]," time (its calls included) and\n",["$","em",null,{"children":"exclusive"}]," time (its own code only), who called it, and what it called;"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"exports"}]," to ",["$","a",null,{"href":"https://www.speedscope.app","target":"_blank","rel":"noreferrer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["speedscope",[" ",["$","svg",null,{"fill":"none","stroke":"currentColor","strokeLinecap":"round","strokeLinejoin":"round","strokeWidth":1.7,"viewBox":"0 0 24 24","height":"1em","className":"x:inline x:align-baseline x:shrink-0","children":[["$","path",null,{"d":"M7 17L17 7"}],["$","path",null,{"d":"M7 7h10v10"}]]}]]]}]," flame graphs, KCachegrind/QCachegrind\n(callgrind), CSV, and Fuse’s profile format."]}],"\n"]}],"\n",["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$7:props:children:2:props:children:0:props:style","data-pagefind-ignore":"all","children":"$7:props:children:2:props:children:0:props:children"}],"$L13"]}],"\n","$L14","\n","$L15","\n","$L16","\n","$L17","\n","$L18","\n","$L19","\n","$L1a","\n","$L1b","\n","$L1c","\n","$L1d","\n","$L1e","\n","$L1f","\n","$L20","\n","$L21","\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40"]}]
+8:["$","$L41",null,{"children":["$","$42",null,{"name":"Next.MetadataOutlet","children":"$@43"}]}]
+b:["$","$1","h",{"children":[null,["$","$L44",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","div",null,{"hidden":true,"children":["$","$L45",null,{"children":["$","$42",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"The Profiler - Klive IDE"}],["$","meta","1",{"name":"description","content":"The profiler: where the machine's time went, per routine and per instruction, with inclusive and exclusive time from the call graph, interrupts as their own roots, and exports to speedscope, KCachegrind, CSV and Fuse."}],["$","meta","2",{"property":"og:title","content":"KliveIDE Documentation"}],["$","meta","3",{"property":"og:description","content":"The comprehensive guide to KliveIDE"}],["$","meta","4",{"name":"twitter:card","content":"summary"}],["$","meta","5",{"name":"twitter:title","content":"KliveIDE Documentation"}],["$","meta","6",{"name":"twitter:description","content":"The comprehensive guide to KliveIDE"}]]}]}]}],null]}]
+d:["$","$1","c",{"children":[null,["$","$L46",null,{"parallelRouterKey":"children","template":["$","$L47",null,{}]}]]}]
+11:true
+48:I[721,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-a25cc0b01a48815c.js"],"HeadingAnchor"]
+49:I[9023,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-a25cc0b01a48815c.js"],"ToggleWordWrapButton"]
+4a:I[7795,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-a25cc0b01a48815c.js"],"ImageZoom"]
+13:["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The profiler works on every Z80 machine: the ZX Spectrum 48K and 16K, 128K, Pentagon 128,\n+2A/+3/+2E/+3E and Next, the Scorpion ZS-256, the Timex machines, the Cambridge Z88, and the ZX80\nand ZX81. It is built on ",["$","$L12",null,{"href":"/working-with-ide/code-coverage","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"code coverage"}],"’s counters, so the two share\none switch: starting the profiler turns coverage on, and resetting one resets the other."]}]}]
+14:["$","h2",null,{"id":"a-profiling-run","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["A profiling run",["$","$L48",null,{"id":"a-profiling-run"}]]}]
+15:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A profile covers a ",["$","strong",null,{"children":"window"}],": from the moment you start it until you stop it. Inside that window\nthe machine may run at full speed, pause, and step."]}]
+16:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Debug → Start Profiling"}]," resets the profile and starts a new window, with the call graph on."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Run the part of the program you want to measure."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Debug → Stop Profiling"}]," freezes the data and opens the ",["$","strong",null,{"children":"Profiler"}]," document."]}],"\n"]}]
+17:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Debug → Profiler"}]," opens the document at any time. Its toolbar starts, stops, clears and exports\nthe profile too, and its ",["$","strong",null,{"children":"Call graph"}]," switch decides whether the next start records the call graph."]}]
+18:["$","h3",null,{"id":"profiling-exactly-one-pass","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Profiling exactly one pass",["$","$L48",null,{"id":"profiling-exactly-one-pass"}]]}]
+19:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"To measure one pass of a loop - one frame of a game’s main loop, say - let the program start and stop\nthe window itself:"}]
+1a:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L49",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"profile start -calls -at MainLoop -until MainLoop"}]}]}]]}]]}]
+1b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Counting starts the first time the program reaches ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"MainLoop"}],", and profiling stops the next time it\ngets there. ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"-at"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"-until"}]," take a label of the current build or an address (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$8000"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"#8000"}],",\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0x8000"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"8000h"}]," or decimal), and either can be used alone."]}]
+1c:["$","h2",null,{"id":"the-routines-tab","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The Routines tab",["$","$L48",null,{"id":"the-routines-tab"}]]}]
+1d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","$L4a",null,{"alt":"The Routines tab of the Profiler","placeholder":"blur","src":{"src":"/kliveide//_next/static/media/profiler-routines.b94878ae.png","height":1074,"width":1990,"blurDataURL":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAECAMAAACEE47CAAAABlBMVEUUFRYeICPBCTJZAAAACXBIWXMAABYlAAAWJQFJUiTwAAAAFElEQVQImWNghAIGRgYGBjADAwAAAYwADv5RWOsAAAAASUVORK5CYII=","blurWidth":8,"blurHeight":4}}]}]
+1e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The header line describes the window: whether profiling is running, how many ",["$","strong",null,{"children":"frames"}]," it covered,\nthe total time, the share spent ",["$","strong",null,{"children":"waiting"}]," in ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"HALT"}],", and where the routines came from."]}]
+1f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Each row is a ",["$","strong",null,{"children":"routine"}],":"]}]
+20:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Column","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Shows","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"Routine","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The routine’s name.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Part.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The bank (partition) its code lives in, on machines that have banks.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Entry","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Its first address.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Self","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The time spent in its own instructions, in T-states (28 MHz ticks on the Next). Hover for the wall time.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Self %","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Its share, drawn as a bar.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Calls","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["How often it was called (with the call graph), or how often its first instruction ran (",["$","em",null,{"children":"Entries"}],", without it)."],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Instr.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Instructions executed in it.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Per call","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],"$L4b"],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$L4c","$L4d"]}]]}]
+21:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Click a column heading to sort by it. Double-click a row to jump to the routine’s source, or - for\ncode without source - to its disassembly."}]
+22:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Rows in italics are time that belongs to no routine: ",["$","strong",null,{"children":"Interrupt acknowledge"}],", ",["$","strong",null,{"children":"DMA bus hold"}]," on\nthe Next, ",["$","strong",null,{"children":"Snooze"}]," on the Z88 and, when ",["$","strong",null,{"children":"Hide waiting"}]," is off, ",["$","strong",null,{"children":"HALT (waiting)"}],". With ",["$","strong",null,{"children":"Hide\nwaiting"}]," on (the default), time in ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"HALT"}]," is left out of the table and of the percentages, so a game\nthat waits 70% of every frame still shows how its working time divides."]}]
+23:["$","h3",null,{"id":"where-routines-come-from","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Where routines come from",["$","$L48",null,{"id":"where-routines-come-from"}]]}]
+24:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Klive names routines from the best information the build has, in this order:"}]
+25:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Klive BASIC"}]," ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"SUB"}],"s and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"FUNCTION"}],"s, with their exact extents."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["The Klive assembler’s ",["$","strong",null,{"children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":".proc"}]," … ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".endp"}]]}]," blocks."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Labels"}],": a routine runs from a global label up to the next one. Local labels never start a\nroutine: the Klive assembler’s temporary ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":" `labels"}]," and labels inside a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".proc"}],", and sjasmplus’s\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".local"}]," labels. sjasmplus builds on a 128K, +3 or Next device keep each label’s page, so the same\naddress in two banks is two routines."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Call targets"}]," the call graph saw, when the build has no symbols at all."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"256-byte blocks"}]," (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$8000-$80FF"}],") for whatever is left, such as the ROM."]}],"\n"]}]
+26:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$7:props:children:2:props:children:0:props:style","data-pagefind-ignore":"all","children":"$7:props:children:2:props:children:0:props:children"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Because a global label starts a routine, a global label on a loop inside a routine splits that\nroutine in two. Give loops temporary labels (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":" `loop"}],") or wrap the routine in ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".proc"}],", and it stays\none row. Data after a routine counts toward its size, never toward its time."]}]}]]}]
+27:["$","h2",null,{"id":"the-addresses-tab","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The Addresses tab",["$","$L48",null,{"id":"the-addresses-tab"}]]}]
+28:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The raw view: every instruction that ran, with its execution count and time, the routine it belongs\nto and its offset in it. It is the same information Fuse’s profiler writes."}]
+29:["$","h2",null,{"id":"the-call-tree-tab","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The Call tree tab",["$","$L48",null,{"id":"the-call-tree-tab"}]]}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","$L4a",null,{"alt":"The Call tree tab of the Profiler","placeholder":"blur","src":{"src":"/kliveide//_next/static/media/profiler-call-tree.c1c5735d.png","height":1074,"width":1990,"blurDataURL":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAECAMAAACEE47CAAAABlBMVEUUFRYdICPDT4wAAAAACXBIWXMAABYlAAAWJQFJUiTwAAAAFElEQVQImWNghAIGRgYQYIRQKAAAAWEADChECFkAAAAASUVORK5CYII=","blurWidth":8,"blurHeight":4}}]}]
+2b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["With the call graph recorded, the Call tree shows who called whom, top-down. Each row shows the\ncalls made from its parent, their ",["$","strong",null,{"children":"inclusive"}]," time (with everything they called) and their\n",["$","strong",null,{"children":"exclusive"}]," time (their own code only). Expand a row to see the routines it called."]}]
+2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The tree has more than one root:"}]
+2d:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"(entered before profiling)"}]," holds the code that ran outside every call the profiler saw - the\nroutine that was already running when profiling started, and your main loop if it is not itself\ncalled."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Each interrupt handler is a root of its own"}]," - ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"IM 1 handler at $0038"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"IM 2 → $FDFD (Music)"}],",\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"NMI at $0066"}],". Its time is ",["$","em",null,{"children":"not"}]," charged to whatever routine it happened to interrupt, so a music\nplayer driven by the frame interrupt shows up as the cost it is, instead of being smeared over the\nrest of the program."]}],"\n"]}]
+2e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A recursive call is shown once more, marked ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"↺"}],", and not expanded further; its inclusive time is\ncounted at the outermost call only."]}]
+2f:["$","h2",null,{"id":"the-callers-tab","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The Callers tab",["$","$L48",null,{"id":"the-callers-tab"}]]}]
+30:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Select a routine in the Routines or Call tree tab, then open ",["$","strong",null,{"children":"Callers"}]," to see who called it, how\noften, and how much time those calls took - and, below, the routines it called itself."]}]
+31:["$","h2",null,{"id":"how-calls-are-tracked","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["How calls are tracked",["$","$L48",null,{"id":"how-calls-are-tracked"}]]}]
+32:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The profiler follows ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"CALL"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RST"}],", interrupts and every ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RET"}],"/",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RETI"}],"/",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RETN"}]," with a shadow stack. Z80\nprograms play tricks with the stack, and the profiler is built to stay robust rather than to guess:"]}]
+33:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["A ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RET"}]," closes every call whose return address it climbed past. That handles a normal return, an\nerror handler that unwinds several levels at once (the 48K ROM’s ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RST 8"}],"), and a routine that\ndropped its return address and jumped away."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"PUSH HL"}]," / ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RET"}]," used as a computed jump is a jump, not a return."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["A ",["$","strong",null,{"children":"tail call"}]," (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"JP"}]," to another routine instead of ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"CALL"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RET"}],") charges the jumped-to code to\nthe caller, as every stack-based profiler does. The Routines and Addresses tabs still show the\ntruth, because they measure each instruction where it is."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["When the stack pointer jumps far (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"LD SP"}]," to another stack), the profiler starts the call stack\nagain from the root. The header then says how many ",["$","strong",null,{"children":"stack switches"}]," it saw: the call graph is\napproximate around them. It also reports calls nested deeper than 256 levels, and calls it had to\ncount under ",["$","strong",null,{"children":"(other)"}]," when its table of caller/callee pairs was full."]}],"\n"]}]
+34:["$","h2",null,{"id":"in-the-editor","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["In the editor",["$","$L48",null,{"id":"in-the-editor"}]]}]
+35:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Turn on ",["$","strong",null,{"children":"Settings › Debugging › Profile hints in the editor"}]," to see each routine’s share and\ncalls at the end of its first line while a profile is present:"]}]
+36:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","$L4a",null,{"alt":"Profile hints in the editor","placeholder":"blur","src":{"src":"/kliveide//_next/static/media/profiler-editor.ea92c032.png","height":1000,"width":1988,"blurDataURL":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAECAMAAACEE47CAAAABlBMVEUVGBkdISFf9dsvAAAACXBIWXMAAAsSAAALEgHS3X78AAAAFElEQVQImWNgYGSAAEYYAy4CYwAAAJAABuNO/I4AAAAASUVORK5CYII=","blurWidth":8,"blurHeight":4}}]}]
+37:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["With a profile present, the disassembly’s ",["$","$L12",null,{"href":"/working-with-ide/code-coverage","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"coverage cell"}]," tooltip\nalso shows each instruction’s share of the profiled time."]}]
+38:["$","h2",null,{"id":"exporting-a-profile","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Exporting a profile",["$","$L48",null,{"id":"exporting-a-profile"}]]}]
+39:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Use the document’s ",["$","strong",null,{"children":"Export"}]," button, or the command:"]}]
+3a:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L49",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"profile export <file> [-format fuse|csv|callgrind|speedscope] [-addresses] [-f]"}]}]}]]}]]}]
+3b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The format follows the file name unless ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"-format"}]," names one:"]}]
+3c:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"File","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Format","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Open it with","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"*.json"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"speedscope’s sampled profile","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","a",null,{"href":"https://www.speedscope.app","target":"_blank","rel":"noreferrer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["speedscope.app",[" ",["$","svg",null,{"fill":"none","stroke":"currentColor","strokeLinecap":"round","strokeLinejoin":"round","strokeWidth":1.7,"viewBox":"0 0 24 24","height":"1em","className":"x:inline x:align-baseline x:shrink-0","children":[["$","path",null,{"d":"M7 17L17 7"}],["$","path",null,{"d":"M7 7h10v10"}]]}]]]}]," or its offline viewer: a flame graph of the call graph"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"callgrind.out.*"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"*.callgrind"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Callgrind","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"KCachegrind or QCachegrind","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"*.csv"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["The Routines table (or, with ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"-addresses"}],", the Addresses table)"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"A spreadsheet","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"*.prof"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["Fuse’s profile: ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0xADDR,TSTATES"}]," per address"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["Existing scripts and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"profile2map"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}]
+3d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"speedscope and callgrind need the call graph. The call graph records which routine called which,\nnot every full call path, so below the first level a flame graph splits a routine’s calls among its\ncallers in proportion to the time each spent in it."}]
+3e:["$","h2",null,{"id":"commands","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Commands",["$","$L48",null,{"id":"commands"}]]}]
+3f:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Command","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Does","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"profile start [-calls] [-at <addr>] [-until <addr>]"}]," (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"pst"}],")"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["Reset and start a window; ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"-calls"}]," records the call graph."],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"profile stop"}]," (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"psp"}],")"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Stop the window; the profile stays.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"profile reset"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Clear the profile.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"profile status"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The window, the time, the frames, the call graph’s counters.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"profile top [n] [-by self|inclusive|calls] [-waiting]"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The top routines as a text table in the output.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"profile export <file> ..."}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Export, as above.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$L4e"]}]]}]
+40:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["See the ",["$","$L12",null,{"href":"/commands-reference#profile","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"commands reference"}]," for the details."]}]
+43:null
+a:300
+4b:["$","td",null,{"children":"Self time per call.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+4c:["$","tr",null,{"children":[["$","td",null,{"children":"Per frame","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Self time per emulated frame: the number a game budgets against.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+4d:["$","tr",null,{"children":[["$","td",null,{"children":"Source","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Where it is defined.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+4e:["$","tr",null,{"children":[["$","td",null,{"children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"show-profiler"}]," (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"shprof"}],"), ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"hide-profiler"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Open or close the Profiler document.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+a:C
+10:0
+c:"$undefined"
+e:"$undefined"
+9:"$undefined"

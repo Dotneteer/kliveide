@@ -1,0 +1,224 @@
+1:"$Sreact.fragment"
+2:I[826,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-a25cc0b01a48815c.js"],"TOCProvider"]
+3:I[4637,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-a25cc0b01a48815c.js"],"Sidebar"]
+4:I[6665,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-a25cc0b01a48815c.js"],"ClientWrapper"]
+5:T1c43,---
+description: "Code coverage and the memory heat map: which source lines ran, how often each byte was executed, read and written, and where the program modified its own code."
+---
+
+import { Callout } from 'nextra/components'
+
+# Code Coverage and the Heat Map
+
+<Callout type="info">
+This is one of Klive's [advanced debugging features](/howto/advanced-debugging), which are on by
+default; if you turned them off, run `set -u features.advancedDebugging 1` in the IDE, then restart Klive.
+</Callout>
+
+**Code coverage** answers *which parts of the program actually ran*. While it is on, the emulator
+remembers, for every byte of ROM and RAM, whether an instruction started there, whether it was
+fetched as code, read or written, and - unless you ask for the leaner mode - how many times. The
+editor marks the source lines that ran, the disassembly marks the instructions, and the memory view
+can draw the counts as a **heat map**.
+
+<Callout type="info">
+Coverage works on every Z80 machine: the ZX Spectrum 48K and 16K, 128K, Pentagon 128,
++2A/+3/+2E/+3E and Next, the Scorpion ZS-256, the Timex TC2048, TC2068 and TS2068, the Cambridge Z88,
+and the ZX80 and ZX81.
+</Callout>
+
+## Turning it on
+
+Use **Debug → Code Coverage**, or the command:
+
+```
+coverage on
+```
+
+Coverage is not tied to debugging: it counts at full speed as well as while you step, so "which code
+did the game actually use?" has an answer. It stays on for the rest of the session - across machine
+switches - until you turn it off with **Debug → Code Coverage** again or `coverage off`. Turning it
+off keeps what it recorded.
+
+**Debug → Reset Coverage** (or `coverage reset`, or `covr`) clears everything. Coverage also starts
+over:
+
+- when the machine starts from Stopped (Settings › Debugging › *Clear coverage when the machine
+  starts*, on by default);
+- after a program is started by code injection, once the ROM has booted to the injection point, so
+  the boot does not show as covered (*Clear coverage after code injection*, on by default).
+
+<Callout type="info">
+Each machine bank has its own coverage. When two `.bank` sections share the same Z80 addresses, a
+line is covered only if *its own* bank's code ran there - not whatever was paged in at that address.
+</Callout>
+
+## In the editor
+
+A narrow strip between the line numbers and the text marks every source line that produced code:
+
+| Mark | Means |
+|---|---|
+| Filled bar | Every instruction of the line ran. |
+| Half bar | Some of the line's instructions ran, some did not: a Klive BASIC statement or a macro whose branch was never taken. |
+| Hollow bar | The line produced code that never ran. |
+| Nothing | The line produced no code (a comment, a label, a data directive). |
+
+Hover over the strip to see how many times the line ran. Settings › Debugging › *Tint covered source
+lines* also gives covered lines a tinted background.
+
+## In the disassembly
+
+Once coverage has recorded anything, the disassembly reserves a narrow column before the branch
+column. An instruction that ran has a bar there; hover over it for its execution count. In banked
+memory, each row's own bank decides.
+
+## The memory heat map
+
+The memory view's toolbar has a **Heat** selector:
+
+| Choice | Draws |
+|---|---|
+| **Off** | Nothing. |
+| **Executed** | Bytes where an instruction started, by how often it ran. |
+| **Read** | Bytes the program read, by how often. |
+| **Written** | Bytes the program wrote, by how often. |
+| **All** | Each byte in the colour of its busiest kind of access. |
+
+The shade has five steps on a logarithmic scale, from "touched once" to "the busiest byte in view",
+so a loop that ran a million times and a routine that ran once are both visible. Hover over a byte for
+its counts: `E 12 · R 340 · W 2`. A byte the program modified after running it, or ran after writing
+it, is outlined (see [self-modifying code](#self-modifying-code)).
+
+The `memory-heat` command sets the selector from a script: `memory-heat exec`.
+
+## Counts and the counter pool
+
+With counts on (the default), the emulator keeps execution, read and write counts and the time spent
+in the instructions that start at each byte. Counts are kept per 8K page of physical memory. The small
+machines keep counts for all their memory; the Next and the Z88, which have megabytes, keep them for
+the first 64 pages (512K) the program touches. Pages after that keep the flags but no counts:
+`coverage status` says how many, and the memory view says "counts not kept for this page".
+
+For the leanest run, turn counts off with Settings › Debugging › *Count executions, reads and
+writes*, or start coverage with `coverage on -nocounts`.
+
+<Callout type="warning">
+Coverage costs nothing while it is off. While it is on, the emulator does extra work on every memory
+access: a few percent on the ZX Spectrum Next, and up to about a third on the fastest-running cores,
+such as the Cambridge Z88's. Turn it off when you do not need it.
+</Callout>
+
+## Self-modifying code
+
+A byte is marked **self-modified** when the program writes a byte it has already run as code, or runs
+code from a byte it wrote. The `coverage smc` command lists the runs of such bytes with the nearest
+label, and how many times they were written and executed:
+
+```
+coverage smc
+```
+
+A program loaded from tape is written into memory by the ROM's loader and then run, so its bytes are
+marked too. Reset coverage once the program has loaded to see only its own modifications. Bytes Klive
+itself wrote - an injected program, a memory edit - are never counted as writes.
+
+On the ZX80 and ZX81, the display file is "executed" by the hardware as it draws the picture, so its
+bytes show as code (and, once the ROM prints to them, as self-modified).
+
+## Reverse debugging and coverage
+
+Stepping back and forward with [reverse debugging](/working-with-ide/reverse-debugging) replays the
+machine, and a replay never counts: the coverage always describes the run that really happened.
+**Take over here** keeps the counts of the abandoned future, because those instructions really ran;
+`coverage status` says how many there were until the next reset.
+
+## Status and exports
+
+```
+coverage status
+```
+
+prints whether coverage is on, how many instructions it counted, how full the counter pool is, how
+the time splits between instructions, HALT, interrupt acknowledges (and on the Next, DMA; on the Z88,
+snooze), and how many lines of the current build are covered.
+
+```
+coverage export <file> [-format lcov|csv|kcov] [-norom] [-f]
+```
+
+writes the coverage to a file. The extension picks the format; `-format` overrides it:
+
+| Format | Extension | Contents |
+|---|---|---|
+| **LCOV** | `.info`, `.lcov` | Line coverage of the current build, per source file, with paths relative to the project. Codecov, Coveralls and GitLab read it. |
+| **CSV** | `.csv` | One row per touched byte: its bank, address, flags (`ECRWSX`), and its execution, read and write counts and time. `-norom` leaves ROM bytes out. |
+| **Klive coverage** | `.kcov` | Everything coverage recorded, which `coverage load` merges back. |
+
+```
+coverage load <file>
+```
+
+merges a `.kcov` file into the current coverage, so several runs add up. The file must come from a
+machine with the same memory layout.a:X
+f:X
+f:C
+0:{"buildId":"dxN_yGp0CSVqjutW30o6Q","data":[{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L2",null,{"value":[{"value":"Turning it on","id":"turning-it-on","depth":2},{"value":"In the editor","id":"in-the-editor","depth":2},{"value":"In the disassembly","id":"in-the-disassembly","depth":2},{"value":"The memory heat map","id":"the-memory-heat-map","depth":2},{"value":"Counts and the counter pool","id":"counts-and-the-counter-pool","depth":2},{"value":"Self-modifying code","id":"self-modifying-code","depth":2},{"value":"Reverse debugging and coverage","id":"reverse-debugging-and-coverage","depth":2},{"value":"Status and exports","id":"status-and-exports","depth":2}],"children":[["$","$L3",null,{}],["$","$L4",null,{"metadata":{"description":"Code coverage and the memory heat map: which source lines ran, how often each byte was executed, read and written, and where the program modified its own code.","title":"Code Coverage and the Heat Map","filePath":"content/working-with-ide/code-coverage.mdx","timestamp":1791560646000},"sourceCode":"$5","children":["$L6","$L7"]}]]}]}],null,"$L8"]}],"isPartial":"$@9","staleTime":"$a","varyParams":null},{"rsc":"$Lb","isPartial":"$@c","staleTime":"$a","varyParams":null},{"rsc":"$Ld","isPartial":"$@e","staleTime":"$a","varyParams":"$f"}],"isUpgradeableISRFallback":false,"a":"$@10","rootVaryParams":null,"needsRuntimeRequest":"$@11"}
+12:I[8500,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-a25cc0b01a48815c.js"],""]
+13:I[721,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-a25cc0b01a48815c.js"],"HeadingAnchor"]
+38:I[484,[],"OutletBoundary"]
+39:"$Sreact.suspense"
+3b:I[484,[],"ViewportBoundary"]
+3c:I[484,[],"MetadataBoundary"]
+3d:I[7121,[],""]
+3e:I[4581,[],""]
+6:["$","div",null,{"id":"nextra-skip-nav"}]
+7:["$","main",null,{"data-pagefind-body":true,"children":[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Code Coverage and the Heat Map","$undefined"]}],"\n",["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["This is one of Klive’s ",["$","$L12",null,{"href":"/howto/advanced-debugging","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"advanced debugging features"}],", which are on by\ndefault; if you turned them off, run ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"set -u features.advancedDebugging 1"}]," in the IDE, then restart Klive."]}]}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Code coverage"}]," answers ",["$","em",null,{"children":"which parts of the program actually ran"}],". While it is on, the emulator\nremembers, for every byte of ROM and RAM, whether an instruction started there, whether it was\nfetched as code, read or written, and - unless you ask for the leaner mode - how many times. The\neditor marks the source lines that ran, the disassembly marks the instructions, and the memory view\ncan draw the counts as a ",["$","strong",null,{"children":"heat map"}],"."]}],"\n",["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$7:props:children:2:props:children:0:props:style","data-pagefind-ignore":"all","children":"$7:props:children:2:props:children:0:props:children"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Coverage works on every Z80 machine: the ZX Spectrum 48K and 16K, 128K, Pentagon 128,\n+2A/+3/+2E/+3E and Next, the Scorpion ZS-256, the Timex TC2048, TC2068 and TS2068, the Cambridge Z88,\nand the ZX80 and ZX81."}]}]]}],"\n",["$","h2",null,{"id":"turning-it-on","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Turning it on",["$","$L13",null,{"id":"turning-it-on"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Use ",["$","strong",null,{"children":"Debug → Code Coverage"}],", or the command:"]}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":["$L14","$L15"]}]]}],"\n","$L16","\n","$L17","\n","$L18","\n","$L19","\n","$L1a","\n","$L1b","\n","$L1c","\n","$L1d","\n","$L1e","\n","$L1f","\n","$L20","\n","$L21","\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37"]}]
+8:["$","$L38",null,{"children":["$","$39",null,{"name":"Next.MetadataOutlet","children":"$@3a"}]}]
+b:["$","$1","h",{"children":[null,["$","$L3b",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","div",null,{"hidden":true,"children":["$","$L3c",null,{"children":["$","$39",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Code Coverage and the Heat Map - Klive IDE"}],["$","meta","1",{"name":"description","content":"Code coverage and the memory heat map: which source lines ran, how often each byte was executed, read and written, and where the program modified its own code."}],["$","meta","2",{"property":"og:title","content":"KliveIDE Documentation"}],["$","meta","3",{"property":"og:description","content":"The comprehensive guide to KliveIDE"}],["$","meta","4",{"name":"twitter:card","content":"summary"}],["$","meta","5",{"name":"twitter:title","content":"KliveIDE Documentation"}],["$","meta","6",{"name":"twitter:description","content":"The comprehensive guide to KliveIDE"}]]}]}]}],null]}]
+d:["$","$1","c",{"children":[null,["$","$L3d",null,{"parallelRouterKey":"children","template":["$","$L3e",null,{}]}]]}]
+11:true
+3f:I[9023,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-a25cc0b01a48815c.js"],"ToggleWordWrapButton"]
+14:["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L3f",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}]
+15:["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"coverage on"}]}]}]
+16:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Coverage is not tied to debugging: it counts at full speed as well as while you step, so “which code\ndid the game actually use?” has an answer. It stays on for the rest of the session - across machine\nswitches - until you turn it off with ",["$","strong",null,{"children":"Debug → Code Coverage"}]," again or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"coverage off"}],". Turning it\noff keeps what it recorded."]}]
+17:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Debug → Reset Coverage"}]," (or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"coverage reset"}],", or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"covr"}],") clears everything. Coverage also starts\nover:"]}]
+18:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["when the machine starts from Stopped (Settings › Debugging › ",["$","em",null,{"children":"Clear coverage when the machine\nstarts"}],", on by default);"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["after a program is started by code injection, once the ROM has booted to the injection point, so\nthe boot does not show as covered (",["$","em",null,{"children":"Clear coverage after code injection"}],", on by default)."]}],"\n"]}]
+19:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$7:props:children:2:props:children:0:props:style","data-pagefind-ignore":"all","children":"$7:props:children:2:props:children:0:props:children"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Each machine bank has its own coverage. When two ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".bank"}]," sections share the same Z80 addresses, a\nline is covered only if ",["$","em",null,{"children":"its own"}]," bank’s code ran there - not whatever was paged in at that address."]}]}]]}]
+1a:["$","h2",null,{"id":"in-the-editor","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["In the editor",["$","$L13",null,{"id":"in-the-editor"}]]}]
+1b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A narrow strip between the line numbers and the text marks every source line that produced code:"}]
+1c:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Mark","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Means","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"Filled bar","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Every instruction of the line ran.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Half bar","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Some of the line’s instructions ran, some did not: a Klive BASIC statement or a macro whose branch was never taken.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Hollow bar","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The line produced code that never ran.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Nothing","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The line produced no code (a comment, a label, a data directive).","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}]
+1d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Hover over the strip to see how many times the line ran. Settings › Debugging › ",["$","em",null,{"children":"Tint covered source\nlines"}]," also gives covered lines a tinted background."]}]
+1e:["$","h2",null,{"id":"in-the-disassembly","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["In the disassembly",["$","$L13",null,{"id":"in-the-disassembly"}]]}]
+1f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Once coverage has recorded anything, the disassembly reserves a narrow column before the branch\ncolumn. An instruction that ran has a bar there; hover over it for its execution count. In banked\nmemory, each row’s own bank decides."}]
+20:["$","h2",null,{"id":"the-memory-heat-map","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The memory heat map",["$","$L13",null,{"id":"the-memory-heat-map"}]]}]
+21:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The memory view’s toolbar has a ",["$","strong",null,{"children":"Heat"}]," selector:"]}]
+22:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Choice","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Draws","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"Off"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Nothing.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"Executed"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Bytes where an instruction started, by how often it ran.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"Read"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Bytes the program read, by how often.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"Written"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Bytes the program wrote, by how often.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"All"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Each byte in the colour of its busiest kind of access.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}]
+23:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The shade has five steps on a logarithmic scale, from “touched once” to “the busiest byte in view”,\nso a loop that ran a million times and a routine that ran once are both visible. Hover over a byte for\nits counts: ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"E 12 · R 340 · W 2"}],". A byte the program modified after running it, or ran after writing\nit, is outlined (see ",["$","a",null,{"href":"#self-modifying-code","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"self-modifying code"}],")."]}]
+24:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"memory-heat"}]," command sets the selector from a script: ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"memory-heat exec"}],"."]}]
+25:["$","h2",null,{"id":"counts-and-the-counter-pool","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Counts and the counter pool",["$","$L13",null,{"id":"counts-and-the-counter-pool"}]]}]
+26:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["With counts on (the default), the emulator keeps execution, read and write counts and the time spent\nin the instructions that start at each byte. Counts are kept per 8K page of physical memory. The small\nmachines keep counts for all their memory; the Next and the Z88, which have megabytes, keep them for\nthe first 64 pages (512K) the program touches. Pages after that keep the flags but no counts:\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"coverage status"}]," says how many, and the memory view says “counts not kept for this page”."]}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["For the leanest run, turn counts off with Settings › Debugging › ",["$","em",null,{"children":"Count executions, reads and\nwrites"}],", or start coverage with ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"coverage on -nocounts"}],"."]}]
+28:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-yellow-50 x:dark:bg-yellow-700/30 x:text-yellow-700 x:dark:text-yellow-500 x:border-yellow-700","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$7:props:children:2:props:children:0:props:style","data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Coverage costs nothing while it is off. While it is on, the emulator does extra work on every memory\naccess: a few percent on the ZX Spectrum Next, and up to about a third on the fastest-running cores,\nsuch as the Cambridge Z88’s. Turn it off when you do not need it."}]}]]}]
+29:["$","h2",null,{"id":"self-modifying-code","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Self-modifying code",["$","$L13",null,{"id":"self-modifying-code"}]]}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A byte is marked ",["$","strong",null,{"children":"self-modified"}]," when the program writes a byte it has already run as code, or runs\ncode from a byte it wrote. The ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"coverage smc"}]," command lists the runs of such bytes with the nearest\nlabel, and how many times they were written and executed:"]}]
+2b:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L3f",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"coverage smc"}]}]}]]}]]}]
+2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A program loaded from tape is written into memory by the ROM’s loader and then run, so its bytes are\nmarked too. Reset coverage once the program has loaded to see only its own modifications. Bytes Klive\nitself wrote - an injected program, a memory edit - are never counted as writes."}]
+2d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"On the ZX80 and ZX81, the display file is “executed” by the hardware as it draws the picture, so its\nbytes show as code (and, once the ROM prints to them, as self-modified)."}]
+2e:["$","h2",null,{"id":"reverse-debugging-and-coverage","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Reverse debugging and coverage",["$","$L13",null,{"id":"reverse-debugging-and-coverage"}]]}]
+2f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Stepping back and forward with ",["$","$L12",null,{"href":"/working-with-ide/reverse-debugging","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"reverse debugging"}]," replays the\nmachine, and a replay never counts: the coverage always describes the run that really happened.\n",["$","strong",null,{"children":"Take over here"}]," keeps the counts of the abandoned future, because those instructions really ran;\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"coverage status"}]," says how many there were until the next reset."]}]
+30:["$","h2",null,{"id":"status-and-exports","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Status and exports",["$","$L13",null,{"id":"status-and-exports"}]]}]
+31:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L3f",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"coverage status"}]}]}]]}]]}]
+32:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"prints whether coverage is on, how many instructions it counted, how full the counter pool is, how\nthe time splits between instructions, HALT, interrupt acknowledges (and on the Next, DMA; on the Z88,\nsnooze), and how many lines of the current build are covered."}]
+33:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L3f",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"coverage export <file> [-format lcov|csv|kcov] [-norom] [-f]"}]}]}]]}]]}]
+34:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["writes the coverage to a file. The extension picks the format; ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"-format"}]," overrides it:"]}]
+35:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Format","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Extension","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Contents","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"LCOV"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":".info"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".lcov"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Line coverage of the current build, per source file, with paths relative to the project. Codecov, Coveralls and GitLab read it.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"CSV"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":".csv"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["One row per touched byte: its bank, address, flags (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ECRWSX"}],"), and its execution, read and write counts and time. ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"-norom"}]," leaves ROM bytes out."],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"Klive coverage"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":".kcov"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["Everything coverage recorded, which ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"coverage load"}]," merges back."],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}]
+36:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L3f",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"coverage load <file>"}]}]}]]}]]}]
+37:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["merges a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".kcov"}]," file into the current coverage, so several runs add up. The file must come from a\nmachine with the same memory layout."]}]
+3a:null
+a:300
+a:C
+10:0
+c:"$undefined"
+e:"$undefined"
+9:"$undefined"
