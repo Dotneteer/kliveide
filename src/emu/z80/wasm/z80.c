@@ -304,7 +304,16 @@ static uint32_t z80AccessLog[Z80_ACCESS_LOG_CAPACITY];
 static uint32_t z80AccessLogCount;
 static uint32_t z80AccessLogOverflows;
 
+/*
+ * A core whose fast frames record the log only part of the time (the ZX80/ZX81, a capture window)
+ * defines `Z80_ACCESS_LOG_NOINLINE`: the write is then one out-of-line call made only while capturing,
+ * instead of being inlined into every memory access of every opcode, which costs ~9 KB of code.
+ */
+#ifdef Z80_ACCESS_LOG_NOINLINE
+static void __attribute__((noinline)) z80LogAccess(uint16_t address, uint8_t value, uint32_t writeBit) {
+#else
 Z80_ALWAYS_INLINE void z80LogAccess(uint16_t address, uint8_t value, uint32_t writeBit) {
+#endif
   if (z80AccessLogCount < Z80_ACCESS_LOG_CAPACITY) {
     z80AccessLog[z80AccessLogCount++] = (uint32_t)address | ((uint32_t)value << 16) | writeBit;
   } else {

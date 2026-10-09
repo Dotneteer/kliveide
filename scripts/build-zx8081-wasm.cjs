@@ -31,6 +31,10 @@ const ZX8081_VOLATILE_SYMBOLS = [
   "z80AccessLogCount",
   "z80AccessLogOverflows",
   "zx8081BreakpointFlags",
+  // --- The rest of the IDE's bus record, and whether it is being recorded: a fast frame records it only
+  // --- near its end, a debug run always (WASM_CORE_LEAN_AND_DEBUG_PLAN Phase 1), so it is no state
+  "zx8081OpStartAddress",
+  "zx8081CaptureBusEvents",
   // --- The execution-history ring, and whether the last M1 read a forced NOP (EXECUTION_HISTORY_ALL_CORES_PLAN)
   ...Z80_HISTORY_VOLATILE_SYMBOLS,
   "zx8081HistoryForcedNop",

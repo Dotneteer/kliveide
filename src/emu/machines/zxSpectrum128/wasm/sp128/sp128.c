@@ -892,6 +892,8 @@ static uint32_t sp128CpuReadPort(uint32_t address);
 #define Z80_READ_PORT(address) ((uint8_t)sp128CpuReadPort((uint32_t)(address)))
 #define Z80_WRITE_PORT(address, value) sp128WritePort((uint32_t)(address), (uint32_t)(value))
 #define Z80_CAPTURE_BUS_EVENTS() sp128CaptureBusEvents
+/* The log is written only while capturing (debug runs): out of line, so it does not grow every opcode (z80.c) */
+#define Z80_ACCESS_LOG_NOINLINE 1
 #define Z80_TACT_PLUS_N(value) tactPlusN128((uint32_t)(value))
 #define Z80_DELAY_MEMORY_READ(address) sp128DelayMemoryAccess((uint32_t)(address))
 #define Z80_DELAY_MEMORY_WRITE(address) sp128DelayMemoryAccess((uint32_t)(address))

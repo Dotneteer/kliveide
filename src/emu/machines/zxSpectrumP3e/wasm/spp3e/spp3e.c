@@ -789,6 +789,8 @@ static uint32_t spp3eCpuReadPort(uint32_t address);
 #define Z80_READ_PORT(address) ((uint8_t)spp3eCpuReadPort((uint32_t)(address)))
 #define Z80_WRITE_PORT(address, value) spp3eWritePort((uint32_t)(address), (uint32_t)(value))
 #define Z80_CAPTURE_BUS_EVENTS() spp3eCaptureBusEvents
+/* The log is written only while capturing (debug runs): out of line, so it does not grow every opcode (z80.c) */
+#define Z80_ACCESS_LOG_NOINLINE 1
 #define Z80_TACT_PLUS_N(value) spp3eTactPlusN((uint32_t)(value))
 #define Z80_DELAY_MEMORY_READ(address) spp3eDelayMemoryAccess((uint32_t)(address))
 #define Z80_DELAY_MEMORY_WRITE(address) spp3eDelayMemoryAccess((uint32_t)(address))

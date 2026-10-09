@@ -40,6 +40,8 @@ static uint8_t zxnextCpuHeldAtFrameEnd;
 /* The access log (z80.c) records in debug steps and traced frames only; the stackless NMI's pushes
    never reach memory, so they are not logged either */
 #define Z80_CAPTURE_BUS_EVENTS() zxnextCaptureBusEvents
+/* The log is written only while capturing (debug runs): out of line, so it does not grow every opcode (z80.c) */
+#define Z80_ACCESS_LOG_NOINLINE 1
 #define Z80_MEMORY_WRITE_SUPPRESSED() zxnextCpuMreqSuppressed
 /* DivMMC: a delayed automap takes effect after the opcode's M1 cycle (ZxNextMachine afterOpcodeFetch) */
 #define Z80_AFTER_OPCODE_FETCH() zxnextDivMmcAfterM1()

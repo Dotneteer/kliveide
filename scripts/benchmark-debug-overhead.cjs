@@ -16,10 +16,15 @@
  * without the host's JavaScript stop test, so a lower bound) and, where the core has one, the
  * in-core `ExecuteUntilStop` the Z88 and ZX80/81 hosts use.
  *
+ * `--reference <git-rev>` adds a fourth build, the production build of that revision's sources
+ * (`git archive`), timed and compared like the others: a change's gain is "reference" against
+ * "baseline", and the fingerprint check proves the change emulates exactly as before.
+ *
  * Usage: node scripts/benchmark-debug-overhead.cjs [--core sp48,zxnext] [--frames 200] [--rounds 7]
- *        [--warmup 50] [--debug-loop] [--json] [--keep]
+ *        [--warmup 50] [--reference HEAD] [--debug-loop] [--json] [--keep]
  */
 const { mkdirSync, mkdtempSync, readFileSync, rmSync } = require("node:fs");
+const { relative } = require("node:path");
 const { tmpdir } = require("node:os");
 const { join, resolve } = require("node:path");
 const { performance } = require("node:perf_hooks");
@@ -228,9 +233,21 @@ const CORES = {
 // ----------------------------------------------------------------------------------------------
 // Building
 
+/* Extracts a revision's C sources (all of `src/emu`) next to the artifacts */
+function extractRevision(rev, outDir) {
+  const dir = join(outDir, "reference-src");
+  mkdirSync(dir, { recursive: true });
+  const archive = spawnSync("git", ["archive", rev, "src/emu"], { cwd: root, maxBuffer: 1 << 30 });
+  if (archive.status !== 0) throw new Error(`git archive ${rev} failed: ${archive.stderr}`);
+  const untar = spawnSync("tar", ["-x", "-C", dir], { input: archive.stdout });
+  if (untar.status !== 0) throw new Error(`tar failed: ${untar.stderr}`);
+  return dir;
+}
+
 function compile(coreId, variant, outDir) {
   const core = CORES[coreId];
   const build = require(`./${core.script}`);
+  const source = variant.sourceRoot ? join(variant.sourceRoot, relative(root, build.source)) : build.source;
   const output = join(outDir, `${coreId}-${variant.id}.wasm`);
   const memory = core.memoryBytes(build);
   const args = [
@@ -247,7 +264,7 @@ function compile(coreId, variant, outDir) {
     `-Wl,--initial-memory=${memory}`,
     `-Wl,--max-memory=${memory}`,
     ...build.productionExports.filter((n) => n !== "memory").map((n) => `-Wl,--export=${n}`),
-    build.source,
+    source,
     "-o",
     output
   ];
@@ -331,7 +348,7 @@ async function benchmarkScenario(coreId, scenarioId, artifacts, options) {
   const p = prefixOf(coreId);
   options = { ...options, frames: options.frames * (core.frameScale ?? 1), warmup: options.warmup * (core.frameScale ?? 1) };
   const machines = [];
-  for (const variant of VARIANTS) {
+  for (const variant of options.variants) {
     const x = await instantiate(artifacts[variant.id].bytes);
     core.boot(x);
     core.scenarios[scenarioId](x);
@@ -354,12 +371,18 @@ async function benchmarkScenario(coreId, scenarioId, artifacts, options) {
   const endIterations = machines.map((m) => iterations(coreId, m.x));
 
   const ms = (m) => Math.min(...m.times) / options.frames;
-  const base = ms(machines[0]);
+  const byId = Object.fromEntries(machines.map((m) => [m.variant, ms(m)]));
+  const base = byId.baseline;
   const result = {
     core: coreId,
     scenario: scenarioId,
-    msPerFrame: Object.fromEntries(machines.map((m) => [m.variant, ms(m)])),
-    gainPercent: Object.fromEntries(machines.slice(1).map((m) => [m.variant, (100 * (base - ms(m))) / base])),
+    msPerFrame: byId,
+    gainPercent: Object.fromEntries(
+      machines.filter((m) => m.variant !== "baseline").map((m) =>
+        // --- The strips are gains over the baseline; the baseline is a gain over the reference
+        m.variant === "reference" ? ["baseline", (100 * (ms(m) - base)) / ms(m)] : [m.variant, (100 * (base - ms(m))) / base]
+      )
+    ),
     identical,
     fingerprints: identical ? undefined : Object.fromEntries(machines.map((m, i) => [m.variant, prints[i]])),
     programIterations:
@@ -395,7 +418,7 @@ async function benchmarkScenario(coreId, scenarioId, artifacts, options) {
 // Driver
 
 function parseArgs(argv) {
-  const options = { cores: Object.keys(CORES), frames: 200, rounds: 7, warmup: 50, debugLoop: false, json: false, keep: false };
+  const options = { cores: Object.keys(CORES), frames: 200, rounds: 7, warmup: 50, debugLoop: false, json: false, keep: false, reference: undefined };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     const next = () => argv[++i];
@@ -406,6 +429,7 @@ function parseArgs(argv) {
     else if (a === "--debug-loop") options.debugLoop = true;
     else if (a === "--json") options.json = true;
     else if (a === "--keep") options.keep = true;
+    else if (a === "--reference") options.reference = next();
     else throw new Error(`Unknown argument '${a}'`);
   }
   for (const c of options.cores) if (!CORES[c]) throw new Error(`Unknown core '${c}': ${Object.keys(CORES).join(", ")}`);
@@ -415,9 +439,14 @@ function parseArgs(argv) {
 function printRow(r) {
   const f = (v) => v.toFixed(3).padStart(7);
   const g = (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)}%`.padStart(7);
+  const ref = r.msPerFrame.reference;
   let line =
-    `${r.core.padEnd(7)} ${r.scenario.padEnd(16)} ${f(r.msPerFrame.baseline)} ${f(r.msPerFrame["strip-stack"])} ` +
-    `${f(r.msPerFrame["strip-all"])}  ${g(r.gainPercent["strip-stack"])} ${g(r.gainPercent["strip-all"])}  ` +
+    `${r.core.padEnd(7)} ${r.scenario.padEnd(16)} ` +
+    (ref !== undefined ? `${f(ref)} ` : "") +
+    `${f(r.msPerFrame.baseline)} ${f(r.msPerFrame["strip-stack"])} ` +
+    `${f(r.msPerFrame["strip-all"])}  ` +
+    (ref !== undefined ? `${g(r.gainPercent.baseline)} ` : "") +
+    `${g(r.gainPercent["strip-stack"])} ${g(r.gainPercent["strip-all"])}  ` +
     `${r.identical ? "same" : "DIFFERENT"}`;
   if (r.programIterations !== undefined) line += `  iter ${r.programIterations}`;
   console.log(line);
@@ -437,14 +466,22 @@ async function main() {
   const outDir = mkdtempSync(join(tmpdir(), "klive-debug-overhead-"));
   const results = [];
   try {
+    options.variants = [...VARIANTS];
+    if (options.reference) {
+      options.variants.push({ id: "reference", defines: [], sourceRoot: extractRevision(options.reference, outDir) });
+    }
     if (!options.json) {
-      console.log(`frames ${options.frames} x ${options.rounds} rounds (min kept), warmup ${options.warmup}; ms per frame`);
-      console.log(`${"core".padEnd(7)} ${"scenario".padEnd(16)} ${"base".padStart(7)} ${"-stack".padStart(7)} ${"-all".padStart(7)}  ${"stack".padStart(7)} ${"all".padStart(7)}`);
+      const r = options.reference !== undefined;
+      console.log(`frames ${options.frames} x ${options.rounds} rounds (min kept), warmup ${options.warmup}; ms per frame` +
+        (r ? `; reference = ${options.reference}` : ""));
+      console.log(`${"core".padEnd(7)} ${"scenario".padEnd(16)} ` + (r ? `${"ref".padStart(7)} ` : "") +
+        `${"base".padStart(7)} ${"-stack".padStart(7)} ${"-all".padStart(7)}  ` + (r ? `${"base".padStart(7)} ` : "") +
+        `${"stack".padStart(7)} ${"all".padStart(7)}`);
     }
     for (const coreId of options.cores) {
       const artifacts = {};
-      for (const variant of VARIANTS) artifacts[variant.id] = compile(coreId, variant, outDir);
-      const sizes = Object.fromEntries(VARIANTS.map((v) => [v.id, artifacts[v.id].bytes.length]));
+      for (const variant of options.variants) artifacts[variant.id] = compile(coreId, variant, outDir);
+      const sizes = Object.fromEntries(options.variants.map((v) => [v.id, artifacts[v.id].bytes.length]));
       for (const scenarioId of Object.keys(CORES[coreId].scenarios)) {
         const r = await benchmarkScenario(coreId, scenarioId, artifacts, options);
         r.sizes = sizes;

@@ -106,6 +106,22 @@ static uint8_t zx8081FrameCompleted = 1u;
 static uint16_t zx8081OpStartAddress;
 static uint8_t zx8081LastSigInt;
 
+/*
+ * Whether an instruction records its bus activity for the IDE: the shared Z80's access log and port
+ * event, and `zx8081OpStartAddress` (`.plans/WASM_CORE_LEAN_AND_DEBUG_PLAN.md` Phase 1). On in the
+ * debugger's paths. A fast frame turns it on only for its last `ZX8081_CAPTURE_WINDOW` T-states - longer
+ * than any instruction, the ULA's WAIT included - so the CPU panel of a machine paused from a plain Run
+ * still shows the frame's last instruction.
+ *
+ * The window depends only on the position in the frame, never on how the frame is run: the record is
+ * part of the CPU state a keyframe saves (`cpu.lastPort*`), so a replay must record exactly what the
+ * straight run did (`test/wasm/reverse/journal-replay-determinism.test.ts`). A reverse-debugging stop
+ * outside the window therefore shows no accesses, as on the Spectrum cores, whose fast frames record
+ * none.
+ */
+static uint8_t zx8081CaptureBusEvents = 1u;
+#define ZX8081_CAPTURE_WINDOW 1024u
+
 #if defined(__clang__) || defined(__GNUC__)
 #define ZX8081_NOINLINE __attribute__((noinline))
 #else
@@ -132,6 +148,9 @@ static void ZX8081_NOINLINE zx8081NmiAckWait(void);
 static void zx8081IntAck(void);
 
 #define Z80_EXTERNAL_BUS 1
+#define Z80_CAPTURE_BUS_EVENTS() zx8081CaptureBusEvents
+/* The log is written only while capturing: out of line, so it does not grow every opcode (z80.c) */
+#define Z80_ACCESS_LOG_NOINLINE 1
 #define Z80_MEMORY_PTR() zx8081CpuMemoryPtr()
 #define Z80_READ_MEMORY(address) zx8081CpuReadMemory((uint16_t)(address))
 #define Z80_WRITE_MEMORY(address, value) zx8081CpuWriteMemory((uint16_t)(address), (uint8_t)(value))
@@ -228,10 +247,10 @@ uint32_t zx8081ExecuteInstruction(void) {
   if (zx8081FrameCompleted) {
     zx8081BeginFrame();
   }
-#ifndef Z80_BENCH_STRIP_DEBUG
-  z80ClearBusEvents();
-  zx8081OpStartAddress = cpu.pc;
-#endif
+  if (zx8081CaptureBusEvents) {
+    z80ClearBusEvents();
+    zx8081OpStartAddress = cpu.pc;
+  }
   if (zx8081TapeTryTrap()) {
     zx8081AfterInstruction();
     return zx8081FrameCompleted;
@@ -282,6 +301,7 @@ uint32_t zx8081ExecuteUntilStop(uint32_t extraStop, uint32_t mask) {
 /* Runs until the current frame completes (a frame stopped midway is finished) */
 uint32_t zx8081ExecuteFrame(void) {
   do {
+    zx8081CaptureBusEvents = zx8081TactsInCurrentFrame - zx8081FrameTacts <= ZX8081_CAPTURE_WINDOW ? 1u : 0u;
     zx8081ExecuteInstruction();
     /*
      * A reverse-debugging stop target (REVERSE_DEBUGGING_PLAN D4), checked on the frame's last
@@ -290,6 +310,7 @@ uint32_t zx8081ExecuteFrame(void) {
      */
     if (z80HistoryStopNow() != 0u) break;
   } while (!zx8081FrameCompleted);
+  zx8081CaptureBusEvents = 1u;
   return 0u;
 }
 

@@ -1,11 +1,12 @@
 # WASM Core Plan: A Lean Path and a Debug Path in One Core
 
-Status: **accepted** (2026-10-09); **Phase 0 done** (2026-10-09, §10). D1–D12 are decisions. The
+Status: **accepted** (2026-10-09); **Phases 0 and 1 done** (2026-10-09, §10); **Phase 5 dropped** by D2's
+rule (§10.4). D1–D12 are decisions. The
 author accepted the suggested answers in §9, which D2, D5, D11 and D12 record.
 
 **Phase 0's verdict, in short:** the debug work on the fast path is real but small (0–4% of a fast
-frame, the step-out stack within noise), so by D2's rule Phase 5 is not expected to be built; Phase 1's
-re-measurement makes it final. The cost the author felt is on the *debug* path: a debug session runs at
+frame, the step-out stack within noise). Phase 1's re-measurement made it final: no core reaches D2's
+5%, so Phase 5 is dropped. The cost the author felt is on the *debug* path: a debug session runs at
 2.1–2.3x the cost of a plain Run on the Spectrums, and a project start at 1.9–3.0x on every machine
 but the Next. Phase 4 is therefore the priority.
 
@@ -278,6 +279,18 @@ Rejected alternatives:
 - **T7. Mid-frame switching.** A frame left mid-way by a stop continues on the next call. The
   variant choice is made per call, so a frame may run partly instrumented and partly lean. That is
   fine under D4, and is the reason D4 is a hard rule.
+- **T9. Debug bookkeeping that lives in the saved state must not depend on how a frame is run.** The
+  reverse-debugging determinism test compares images of a replay (fast frames, a stop target armed) with
+  the straight run (fast frames or the debug loop). The ZX81's instruction start and capture flag had to
+  become volatile, and a capture rule that looked at the armed stop target broke replay. The Z80's own
+  `cpu.lastPort*` live inside `cpu` and cannot be made volatile on their own: they matched in every seed
+  so far, but a gating change that alters what they record between run modes must be checked with that
+  test. Before gating any recording, check whether it is in the state image.
+- **T10. Below about 3%, a speed difference is not measurable here.** Two byte-identical builds measured
+  up to 2.9% apart, and the same change measured +1.5% to +8.5% on the ZX81's idle prompt across runs;
+  inlining decisions move results by several percent (the ZX81 strip-all build ran slower than the build
+  it strips, because the compiler stopped inlining the instruction into the frame loop). Decide on sizes,
+  repeated runs, or differences well above 3%.
 - **T8. The Timex includes `sp48.c` whole.** Any change to the 48K's structure is a Timex change,
   and so is its test.
 
@@ -288,14 +301,14 @@ Rejected alternatives:
 | # | Phase | Work | Done when |
 |---|---|---|---|
 | 0 ✅ | **Measure** (done 2026-10-09, §10) | `scripts/benchmark-debug-overhead.cjs` compiles each core three ways from the same sources: **baseline** (today), **strip-stack** (`-DZ80_BENCH_STRIP_STEP_OUT`: only the shadow stack removed, for D5) and **strip-all** (`-DZ80_BENCH_STRIP_DEBUG`: every hook, the stack, the capture paths and the machine-side items of §1.1 removed). The guards are benchmark-only; a production build is byte-identical with them in the source. strip-all is not a functional debugger, only a speed ceiling, but it must emulate identically: each run checks registers and RAM against baseline. Fast frames per core (ROM workloads where the core boots from raw exports, synthetic RAM programs elsewhere), interleaved rounds, minimum of each. Also, on baseline: the per-instruction loop's boundary cost (`ExecuteInstruction` + `GetCpuPc` + `GetFrameCompleted` per instruction, as the hosts do) against `ExecuteFrame` and, where it exists, `ExecuteUntilStop`. | §10 holds the numbers; D2 and D5 are applied |
-| 1 | **No-regret gating** (then re-run Phase 0's benchmark: D2 compares strip-all with this build) | ZX80/81 gets a capture flag that `ExecuteFrame` clears (as the Spectrums do); the Z88 bus record and per-M1 reset are gated the same way; the Next clears accesses and mirrors `lastPort*` only while capturing, gets an armed flag for the NextReg watch, and tests the trace flag inline before the call; drop the redundant Next `retExecuted` clear; remove or gate the unused `CpuInstructionsExecuted`/`FrameSliceInstructions` counters (check the loaders and tests first); fold RZX play/record + stop-armed + capture into one per-instruction mode word. Delete the `zxnext-debug.c` stub. | All tiers green; Phase 0 benchmark shows the delta |
+| 1 ✅ | **No-regret gating** (done 2026-10-09, §10.4) | Done: the ZX80/81 records its bus activity (access log, port event, instruction start) only in the last 1024 T-states of a fast frame and always in debug runs, so the CPU panel after pausing a plain Run is unchanged (`test/zx8081-hw/bus-capture.test.ts`); `zx8081OpStartAddress` and the capture flag are volatile (T9). `Z80_ACCESS_LOG_NOINLINE` (`z80.c`, opt-in) moves the access-log write out of line on the cores whose fast frames do not log: ZX80/81, 128K, +3E, Next. Measured and **not** done: the Z88 bus record (its whole debug work measured ~0%), the Next's per-instruction access clearing and port mirror (a DMA hold can end a frame before any instruction, so a capture window could not reproduce the panel exactly, for ≤ 2%), the 48K's out-of-line log (3.3–3.6% slower at the idle ROM, so the 48K and Timex keep the inline log), the Spectrum instruction counters (tested exports, 2 increments per instruction), the RZX/stop-mode word, the Next's trace call (already an early return), its NextReg watch flag (NextReg writes are rare). | Done |
 | 2 | **Shared C and build lists** | `z80-cpu-exports.c`, `z80-debug-loop.c` (D7, adopted by Z88 and ZX80/81 first), `zx-spectrum-frame.c`; zero the history context in `z80-history.c` before the hook; shared sp128/spp3e partition peek and profile mapping; the `.cjs` list builders (D8); the contract checker updated (T4). | Binaries export the same names (diff the export lists before/after); all tiers green |
 | 3 | **Shared TypeScript** | D9: the loop helper and shared stop functions; the Next moves to `WasmHistorySource`; stale `MachineFrameRunner` comment fixed. | Each host's debug loop is hooks only; all tiers green |
 | 4a | **In-core debug loop everywhere** (D13, D14) | `z80-debug-loop.c`'s `ExecuteUntilStop` in sp48/sp128/spp3e/Next too; a stop-table compiler in TypeScript (`DebugSupport` → the core's table, pushed on entry, rebuilt when breakpoints change); partition checks in the core; `extraStop` for the execution point, step-over and step-out; error-stop bits; launch-flow suppression in the table build; the statement-tracker marker. The hosts use it for StopAtBreakpoint, StepOver after its first instruction, StepOut and **NoDebug + UntilExecutionPoint** (Z88/ZX80-81 too). Next: the NextReg/Copper/sprite watches and the SD host-command wait end the loop with a stop reason. RZX record/play steps run in the loop. The per-instruction loop stays for step-into and as the fallback. | T6 equivalence tests pass (breakpoints with partitions, step-over/out, error stops, statement tracking, launch flows); D14's 4a rows hold on every core |
 | 4b | **Access breakpoints in the core** (D12) | Read/write bits in the stop table, a port table; the core stops on a flagged access and reports address, value and the instruction's start; the bus mirror is imported only at stops. | Equivalence tests for memory and port breakpoints; D14's 4b row |
 | 4c | **Conditions and hit counts in the core** | At a flagged address the loop runs the breakpoint's condition program and its hit rule, and continues when either says no. Hit counters in the slot table, read back by `DebugSupport` at stops and on panel refresh. Conditions that read host-only facts, and logpoints, stop as now. | Equivalence tests for conditions, every hit-count rule (C11) and DeZog conditions; D14's 4c row |
 | 4d | **Source-step candidates in the core** | During a source step the core stops only at marker addresses and at the step's SP/interrupt-depth exits; `shouldStopAtSourceStep` runs only there. | The Klive BASIC debugger checks (`scripts/kbasic-ide-check.cjs`, the corpus) unchanged; stepping over a long statement no longer runs per instruction |
-| 5 | **Lean and instrumented variants** (only if D2 says go) | D1 split of `z80.c`; D3 selection; D6 machine-side rule; lockstep test per core (D4): the same workload, lean frames vs instrumented frames with every feature idle, state blobs equal after N frames, including a mid-frame switch (T7); then the same with history and profiling on, compared on machine state only. Size budgets raised (T3). | Lean fast frames within noise of Phase 0's stripped ceiling; lockstep tests green on every core; reverse-debugging self-checking replay green |
+| 5 ✗ | **Lean and instrumented variants** — **dropped** by D2 (§10.4); kept here for the record | D1 split of `z80.c`; D3 selection; D6 machine-side rule; lockstep test per core (D4): the same workload, lean frames vs instrumented frames with every feature idle, state blobs equal after N frames, including a mid-frame switch (T7); then the same with history and profiling on, compared on machine state only. Size budgets raised (T3). | Lean fast frames within noise of Phase 0's stripped ceiling; lockstep tests green on every core; reverse-debugging self-checking replay green |
 | 6 | **Docs and guards** | `src/emu/z80/wasm/README` (or a section in each core's README): the variant rule, how to add a hook, what may run in lean. A perf-tier test per core holding the lean frame against a recorded budget. | Merged |
 
 Phases 1–3 are independent and can land in any order. Phase 4a builds on 2 and 3; 4b, 4c and 4d each
@@ -454,3 +467,44 @@ ZX81). So the per-instruction loop's cost is mostly the JavaScript stop tests it
   be functional (T5); they cost a few stores per port or NextReg access.
 - The host loop timings include the hosts' per-frame work, so "run" is not exactly the core's fast
   frame; the ratios, not the absolute values, are what matters.
+
+### 10.4 Phase 1 (2026-10-09)
+
+`benchmark-debug-overhead.cjs --reference HEAD` (the Phase 0 commit): the reference build is the Phase 0
+code, "Phase 1" is the gain of the new production build over it, and "all" is the remaining gain of
+strip-all over the new build (D2's measure). 400 frames x 9 rounds; one full run shown, the ZX81 and the
+Next repeated (below). Every build emulated identically to the reference.
+
+| Core | Workload | Phase 1 | Stack only | All debug work | Size before → after |
+|---|---|---|---|---|---|
+| 48K | ROM idle | −2.9% (identical binary: noise) | 0.4% | 2.8% | 253,031 (unchanged) |
+| 48K | mixed | 0.0% | −3.6% | 0.6% | |
+| 128K | ROM menu | 2.1% | −4.4% | −4.7% | 518,845 → 483,028 (−7%) |
+| 128K | mixed | 1.2% | 0.2% | −2.5% | |
+| +3E | ROM menu | 1.1% | 0.1% | −1.6% | 279,543 → 243,843 (−13%) |
+| +3E | mixed | 1.6% | 0.1% | −0.8% | |
+| Next | mixed, 3.5 MHz | 0.2% | −0.1% | 1.6% | 458,184 → 421,577 (−8%) |
+| Next | mixed, 28 MHz | −1.5% | −0.2% | 2.2% | |
+| Z88 | mixed | −0.1% | 5.6% (noise, see Phase 0) | 3.2% | 187,253 (unchanged) |
+| ZX81 | SLOW, prompt | 1.5% | 7.7% | 1.2% | 231,963 → 202,119 (−13%) |
+| ZX81 | SLOW, `10 GOTO 10` | 1.0% | −0.2% | 0.4% | |
+
+Repeats: the ZX81 prompt measured +6.8%, +7.8%, +8.3% and +8.5% for Phase 1 in four earlier runs; the
+Next at 28 MHz measured 2.3%, 2.4% and 2.6% for "all" in three runs (one earlier run said 5.0%, an
+outlier). The 48K's out-of-line log measured −3.3% and −3.6% at the idle ROM and was not kept.
+
+**What it decides:**
+
+- **D2: Phase 5 is dropped.** After Phase 1 the remaining debug work is at most 2–3% of a fast frame on
+  every core (largest repeatable reading: the Next at 28 MHz, 2.2–2.6%), below the 5% bar and close to
+  the measurement noise (T10).
+- **D5: the stack stays.** Its readings scatter around zero (−4.4% to +7.7%, never repeatable), which is
+  noise (T10), not cost.
+- **Phase 1's own gain** is mostly size: 7–13% smaller binaries on four cores. Speed is within noise
+  except the ZX81's idle prompt (repeatable +7–8% in most runs), where the display file's forced NOPs make
+  per-instruction bookkeeping a large share of the work.
+- **One behaviour difference, accepted:** on the ZX81, a reverse-debugging stop in the middle of a frame,
+  more than 1024 T-states before its end, now shows no bus accesses in the CPU panel - what the Spectrum
+  cores, whose fast frames record none, already show. Recording during the whole frame while a stop
+  target is armed would have broken replay determinism (T9).
+
