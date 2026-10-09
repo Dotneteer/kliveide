@@ -485,7 +485,9 @@ static void zxnextNextRegCpuWrite(uint32_t reg, uint32_t value) {
 
 static void zxnextNextRegSetDirect(uint32_t reg, uint32_t value) {
   uint32_t normalized = reg & 0xffu;
+#ifndef Z80_BENCH_STRIP_DEBUG
   zxnextNextRegCheckWatch(normalized, value & 0xffu);
+#endif
   if (zxnextRasterIsVideoNextReg(normalized)) {
     uint32_t writeTact = zxnextNextRegWriteTactOverride != 0xffffffffu ? zxnextNextRegWriteTactOverride : currentFrameTact;
     /* $26 / $27 then show from the next 8-pixel cell: a pending latch (zxnextUlaSetNextReg) */

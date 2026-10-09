@@ -361,8 +361,11 @@ static void SP48_CPU_NOINLINE sp48CpuDelayAddressBusAccess(uint32_t address);
 /* RZX (`zx-spectrum-rzx.c`): the fetch counter counts every refresh but the INT acknowledge's */
 static inline void rzxCountFetch(void);
 static inline void rzxIntAck(void);
+/* Not under the benchmark-only strip (`z80.c`): no RZX recording, so no fetch count */
+#ifndef Z80_BENCH_STRIP_DEBUG
 #define Z80_REFRESH(address) rzxCountFetch()
 #define Z80_INT_ACK() rzxIntAck()
+#endif
 /* The execution-history recorder's hooks; the recorder and this machine's macros for it are at the
    end of this file (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` Phase 1) */
 #include "../../../../z80/wasm/z80-history.h"
@@ -398,6 +401,9 @@ static void sp48CpuPokeMemory(uint32_t address, uint32_t value) {
 
 /* Every port read the CPU makes; the RZX tap sits here, after all port merging (D7) */
 static uint32_t sp48CpuReadPort(uint32_t address) {
+#ifdef Z80_BENCH_STRIP_DEBUG
+  return sp48ReadPort(address);
+#endif
   if (rzxMode == RZX_MODE_OFF) return sp48ReadPort(address);
   uint32_t value;
   if (rzxMode == RZX_MODE_PLAY && rzxPlayNextIn(&value) != 0u) return value;
@@ -742,16 +748,20 @@ static uint32_t sp48ExecutePlayInstruction(void) {
 }
 
 uint32_t sp48ExecuteInstruction(void) {
+#ifndef Z80_BENCH_STRIP_DEBUG
   if (rzxMode == RZX_MODE_PLAY) {
     return sp48ExecutePlayInstruction();
   }
+#endif
   if (sp48FrameCompleted != 0u) {
     beginMachineFrame();
   }
 
+#ifndef Z80_BENCH_STRIP_DEBUG
   if (sp48CaptureBusEvents != 0u) {
     z80ClearBusEvents();
   }
+#endif
   updateTapeMode();
   const uint8_t intActive = shouldRaiseInterrupt();
   if (intActive != 0u && sp48InterruptLineActive == 0u) {
@@ -762,13 +772,17 @@ uint32_t sp48ExecuteInstruction(void) {
   z80SetTacts(sp48Tacts);
   z80ExecuteCpuCycle();
   sp48Tacts = z80GetTacts();
+#ifndef Z80_BENCH_STRIP_DEBUG
   sp48CpuInstructionsExecuted++;
   sp48CpuFrameSliceInstructions++;
+#endif
   updateTapeMode();
   sp48FrameCompleted = sp48Tacts >= sp48NextFrameStartTact + sp48TactsInCurrentFrame ? 1u : 0u;
+#ifndef Z80_BENCH_STRIP_DEBUG
   if (rzxMode == RZX_MODE_RECORD) {
     rzxRecAfterStep(sp48FrameCompleted);
   }
+#endif
   completeMachineFrame();
   return 0u;
 }

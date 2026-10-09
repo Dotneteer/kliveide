@@ -901,8 +901,11 @@ static uint32_t sp128CpuReadPort(uint32_t address);
 /* RZX (`zx-spectrum-rzx.c`): the fetch counter counts every refresh but the INT acknowledge's */
 static inline void rzxCountFetch(void);
 static inline void rzxIntAck(void);
+/* Not under the benchmark-only strip (`z80.c`): no RZX recording, so no fetch count */
+#ifndef Z80_BENCH_STRIP_DEBUG
 #define Z80_REFRESH(address) rzxCountFetch()
 #define Z80_INT_ACK() rzxIntAck()
+#endif
 /*
  * The Beta 128's paging trap ([BK], plan §9): an M1 fetch from $3D00-$3DFF with the 48K BASIC ROM
  * selected pages the TR-DOS ROM in, before the fetch reads it; an M1 fetch from RAM pages it out.
@@ -933,6 +936,9 @@ static inline void sp128BetaBeforeFetch(uint16_t pc) {
 #include "../../../zxSpectrum/wasm/common/zx-spectrum-rzx.c"
 
 static uint32_t sp128CpuReadPort(uint32_t address) {
+#ifdef Z80_BENCH_STRIP_DEBUG
+  return sp128ReadPort(address);
+#endif
   if (rzxMode == RZX_MODE_OFF) return sp128ReadPort(address);
   uint32_t value;
   if (rzxMode == RZX_MODE_PLAY && rzxPlayNextIn(&value) != 0u) return value;
@@ -1485,16 +1491,20 @@ void sp128RzxSetFrameTact(uint32_t tact) {
 }
 
 uint32_t sp128ExecuteInstruction(void) {
+#ifndef Z80_BENCH_STRIP_DEBUG
   if (rzxMode == RZX_MODE_PLAY) {
     return sp128ExecutePlayInstruction();
   }
+#endif
   if (sp128FrameCompleted != 0u) {
     beginMachineFrame();
   }
 
+#ifndef Z80_BENCH_STRIP_DEBUG
   if (sp128CaptureBusEvents != 0u) {
     z80ClearBusEvents();
   }
+#endif
   updateTapeMode();
   const uint8_t intActive = shouldRaiseInterrupt();
   if (intActive != 0u && sp128InterruptLineActive == 0u) {
@@ -1506,13 +1516,17 @@ uint32_t sp128ExecuteInstruction(void) {
   z80ExecuteCpuCycle();
   sp128Tacts = z80GetTacts();
   updateTapeMode();
+#ifndef Z80_BENCH_STRIP_DEBUG
   sp128CpuInstructionsExecuted++;
   sp128CpuFrameSliceInstructions++;
+#endif
   sp128FrameCompleted =
     sp128Tacts >= sp128NextFrameStartTact + sp128TactsInCurrentFrame ? 1u : 0u;
+#ifndef Z80_BENCH_STRIP_DEBUG
   if (rzxMode == RZX_MODE_RECORD) {
     rzxRecAfterStep(sp128FrameCompleted);
   }
+#endif
   completeMachineFrame();
   return 0u;
 }

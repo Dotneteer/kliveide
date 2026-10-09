@@ -228,8 +228,10 @@ uint32_t zx8081ExecuteInstruction(void) {
   if (zx8081FrameCompleted) {
     zx8081BeginFrame();
   }
+#ifndef Z80_BENCH_STRIP_DEBUG
   z80ClearBusEvents();
   zx8081OpStartAddress = cpu.pc;
+#endif
   if (zx8081TapeTryTrap()) {
     zx8081AfterInstruction();
     return zx8081FrameCompleted;

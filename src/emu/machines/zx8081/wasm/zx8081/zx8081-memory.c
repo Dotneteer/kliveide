@@ -44,7 +44,9 @@ static void zx8081BeforeM1(void) { zx8081M1Fetch = 1u; }
 static uint8_t ZX8081_NOINLINE zx8081CpuReadOpcode(uint16_t address) {
   uint8_t value = zx8081PeekMemory(address);
   zx8081M1Fetch = 0u;
+#ifndef Z80_BENCH_STRIP_DEBUG
   zx8081HistoryForcedNop = 0u;
+#endif
   /*
    * The 64K model: an opcode fetch above 32K reads the lower 32K, as the RAM packs that keep the
    * display working do - the ROM runs the display file (below 32K) through its upper echo, which a
@@ -58,7 +60,9 @@ static uint8_t ZX8081_NOINLINE zx8081CpuReadOpcode(uint16_t address) {
   if ((address & 0x8000u) && address >= zx8081RamBase && !(value & 0x40u)) {
     zx8081LatchedVideoByte = value;
     zx8081HasLatchedVideoByte = 1u;
+#ifndef Z80_BENCH_STRIP_DEBUG
     zx8081HistoryForcedNop = 1u;
+#endif
     value = 0x00u;
   }
   return value;

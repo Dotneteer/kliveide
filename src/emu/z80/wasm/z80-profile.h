@@ -112,6 +112,21 @@ static void Z80_PROFILE_NOINLINE z80ProfileAckEnd(uint32_t nmi);
 static void Z80_PROFILE_NOINLINE z80ProfileHaltEnd(void);
 static void Z80_PROFILE_NOINLINE z80ProfileChargeBucket(uint32_t bucket, uint32_t ticks);
 
+#define Z80_PROFILE_CALLS_ON() ((z80ProfileHeader.enabled & z80ProfileHeader.callsOn) != 0u)
+
+#ifdef Z80_BENCH_STRIP_DEBUG
+/* Benchmark-only (`z80.c`): the hooks compile to nothing */
+#define Z80_PROFILE_FETCH(address, m1) ((void)0)
+#define Z80_PROFILE_READ(address) ((void)0)
+#define Z80_PROFILE_WRITE(address) ((void)0)
+#define Z80_PROFILE_END() ((void)0)
+#define Z80_PROFILE_MARK() ((void)0)
+#define Z80_PROFILE_ACK_END(nmi) ((void)0)
+#define Z80_PROFILE_HALT_END() ((void)0)
+#define Z80_PROFILE_CALL(rst) ((void)0)
+#define Z80_PROFILE_RET() ((void)0)
+#define Z80_PROFILE_INT(nmi) ((void)0)
+#else
 #define Z80_PROFILE_FETCH(address, m1) \
   do { \
     if (z80ProfileHeader.enabled) z80ProfileFetch((uint32_t)(address), (uint32_t)(m1)); \
@@ -142,7 +157,6 @@ static void Z80_PROFILE_NOINLINE z80ProfileChargeBucket(uint32_t bucket, uint32_
   } while (0)
 
 /* The call tracker's hooks (PROFILER_PLAN D9): a load, a compare and a store while it runs */
-#define Z80_PROFILE_CALLS_ON() ((z80ProfileHeader.enabled & z80ProfileHeader.callsOn) != 0u)
 #define Z80_PROFILE_CALL(rst) \
   do { \
     if (Z80_PROFILE_CALLS_ON()) z80ProfileCallEvent = (rst) ? Z80_PROFILE_EV_RST : Z80_PROFILE_EV_CALL; \
@@ -158,5 +172,6 @@ static void Z80_PROFILE_NOINLINE z80ProfileChargeBucket(uint32_t bucket, uint32_
       z80ProfileCallEventTime = z80ProfileHeader.timeTotal; \
     } \
   } while (0)
+#endif
 
 #endif

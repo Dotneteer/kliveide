@@ -25,6 +25,22 @@
 #define Z80_CAPTURE_BUS_EVENTS() 1
 #endif
 
+/*
+ * Benchmark-only switches (`.plans/WASM_CORE_LEAN_AND_DEBUG_PLAN.md` Phase 0). No production build
+ * defines them; `scripts/benchmark-debug-overhead.cjs` passes them with `-D` to measure what the
+ * debugging support costs a fast frame. Builds with them emulate identically but cannot debug:
+ * - `Z80_BENCH_STRIP_STEP_OUT`: no shadow step-out stack (D5's measurement);
+ * - `Z80_BENCH_STRIP_DEBUG`: no debug work at all - the stack, the history and profile hooks, bus
+ *   capture and `retExecuted`, and each core's own debug bookkeeping. It implies the first.
+ */
+#ifdef Z80_BENCH_STRIP_DEBUG
+#ifndef Z80_BENCH_STRIP_STEP_OUT
+#define Z80_BENCH_STRIP_STEP_OUT 1
+#endif
+#undef Z80_CAPTURE_BUS_EVENTS
+#define Z80_CAPTURE_BUS_EVENTS() 0
+#endif
+
 /* 1 while a write cycle does not reach memory (the Next's stackless NMI acknowledge): not logged */
 #ifndef Z80_MEMORY_WRITE_SUPPRESSED
 #define Z80_MEMORY_WRITE_SUPPRESSED() 0
@@ -850,6 +866,7 @@ static inline void pushPair(RegisterPair pairValue) {
 }
 
 static inline void pushStepOutEntry(uint16_t returnAddress, uint8_t isInterrupt) {
+#ifndef Z80_BENCH_STRIP_STEP_OUT
   /* A full buffer overwrites its oldest entry: an interrupt's entry lost that way no longer counts */
   if (cpu.stepOutStackCount == Z80_STEP_OUT_STACK_SIZE && cpu.stepOutIsInterrupt[cpu.stepOutStackPointer] &&
       cpu.interruptDepth > 0u) {
@@ -863,6 +880,7 @@ static inline void pushStepOutEntry(uint16_t returnAddress, uint8_t isInterrupt)
   if (cpu.stepOutStackCount < Z80_STEP_OUT_STACK_SIZE) {
     cpu.stepOutStackCount++;
   }
+#endif
 }
 
 static inline void pushToStepOutStack(uint16_t returnAddress) { pushStepOutEntry(returnAddress, 0); }
@@ -878,12 +896,14 @@ static inline void pushToStepOutStack(uint16_t returnAddress) { pushStepOutEntry
  * call anyway.
  */
 static inline void popFromStepOutStack(void) {
+#ifndef Z80_BENCH_STRIP_STEP_OUT
   if (cpu.stepOutStackCount == 0u) return;
 
   cpu.stepOutStackPointer = (uint16_t)((cpu.stepOutStackPointer + Z80_STEP_OUT_STACK_SIZE - 1u) %
                                        Z80_STEP_OUT_STACK_SIZE);
   cpu.stepOutStackCount--;
   if (cpu.stepOutIsInterrupt[cpu.stepOutStackPointer] && cpu.interruptDepth > 0u) cpu.interruptDepth--;
+#endif
 }
 
 static inline void retCore(void) {
@@ -892,7 +912,9 @@ static inline void retCore(void) {
   cpu.wz.bytes.high = readMemory(cpu.sp);
   cpu.sp = (uint16_t)(cpu.sp + 1);
   cpu.pc = WZ;
+#ifndef Z80_BENCH_STRIP_DEBUG
   cpu.retExecuted = 1;
+#endif
   /* The single choke point for every RET: the conditional ones call this inside their condition
      and RETN/RETI delegate to it, so the shadow stack is balanced here and nowhere else. */
   popFromStepOutStack();
@@ -3329,7 +3351,9 @@ static const Z80Operation indexedBitOps[256] = {
 // -----------------------------------------------------------------------------
 
 void z80ExecuteCpuCycle(void) {
+#ifndef Z80_BENCH_STRIP_DEBUG
   cpu.retExecuted = 0;
+#endif
   cpu.retnExecuted = 0;
 
   if (cpu.eiBacklog > 0) {

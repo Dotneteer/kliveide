@@ -49,6 +49,8 @@
     "benchmark:zxnext-wasm": "node scripts/benchmark-zxnext-wasm.cjs",
     "benchmark:z88-wasm": "node scripts/benchmark-z88-wasm.cjs",
     "benchmark:zx8081-wasm": "node scripts/benchmark-zx8081-wasm.cjs",
+    "benchmark:debug-overhead": "node scripts/benchmark-debug-overhead.cjs",
+    "benchmark:debug-host-loop": "node scripts/benchmark-debug-host-loop.cjs",
     "test:visual": "node test/harness/zxnext/cli/run.cjs",
     "visual:serve": "node test/harness/zxnext/cli/serve.cjs",
     "test:zxnext-wasm-acceptance": "npm test -- --project e2e-cores test/wasm/zxNext/wasm-next-factory-setup.test.ts test/wasm/zxNext/wasm-next-rollout.test.ts test/wasm/zxNext/wasm-next-public-adapter.test.ts test/wasm/zxNext/wasm-next-debug-step.test.ts test/wasm/zxNext/wasm-next-start-menu.test.ts test/wasm/zxNext/wasm-next-frame-runner.test.ts test/wasm/zxNext/wasm-next-performance-boundary.test.ts",

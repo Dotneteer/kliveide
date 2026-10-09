@@ -80,7 +80,9 @@ static inline void zxnextCpuTactPlusN(uint32_t value) {
   tacts += value;
   const uint32_t ticks28 = value * zxnextCpuTactScale();
   frameTacts28 += ticks28;
+#ifndef Z80_BENCH_STRIP_DEBUG
   zxnextProfileTicks28 += ticks28;
+#endif
   while (frameTacts28 >= ZXNEXT_TACTS_IN_FRAME) {
     zxnextCtcOnFrameCompleted();
     zxnextPsgOnFrameWrap(ZXNEXT_TACTS_IN_FRAME);
@@ -111,7 +113,9 @@ static inline void zxnextCpuTactPlusDmaTicks(uint32_t ticks) {
   cpu.tacts += cpuTacts;
   tacts += cpuTacts;
   frameTacts28 += ticks;
+#ifndef Z80_BENCH_STRIP_DEBUG
   zxnextProfileTicks28 += ticks;
+#endif
   /* The DMA holds the bus before the instruction: its time is a header bucket, never an address's
      (D7, trap T5). Every hold reaches the frame through here, so this is the one charge site. */
   if (z80ProfileHeader.enabled) z80ProfileChargeBucket(Z80_PROFILE_BUCKET_DMA, ticks);
@@ -362,13 +366,18 @@ static uint32_t zxnextCpuExecuteInstruction(void) {
   uint32_t cyclesExecuted = 0;
 
   frameCompleted = 0;
+#ifndef Z80_BENCH_STRIP_DEBUG
   if (!wasHalted || nmiSignal || shouldAcceptInt) {
     zxnextCpuClearInstructionAccesses();
   }
+#endif
 
   // --- The DMA goes first, after the INT line is sampled, as in ZxNextMachine.beforeInstructionExecuted.
   cpuTactScale = 8u >> (cpuEffectiveSpeed & 0x03u);
   uint32_t dmaHeld;
+#ifdef Z80_BENCH_STRIP_DEBUG
+  dmaHeld = zxnextCpuRunDma();
+#else
   if (z80HistoryHeader.enabled && zxnextDmaIsActive()) {
     /* A DMA hold is a history record of its own (plan D15): the T-states the CPU waited, where the
        transfer started and how much is left */
@@ -384,6 +393,7 @@ static uint32_t zxnextCpuExecuteInstruction(void) {
   } else {
     dmaHeld = zxnextCpuRunDma();
   }
+#endif
   if (dmaHeld) {
     zxnextCpuHeldAtFrameEnd = 1u;
     return zxnextSharedCpuExecutedInstructions;
@@ -465,10 +475,14 @@ static uint32_t zxnextCpuExecuteInstruction(void) {
     }
   }
   if (isRetnInstruction && !mfWasActive) zxnextDivMmcRetn();
+#ifndef Z80_BENCH_STRIP_DEBUG
   if (z80GetRetExecuted()) {
     z80SetRetExecuted(0);
   }
+#endif
   zxnextPsgCalculateCurrentAudioValue(frameTacts28);
+#ifndef Z80_BENCH_STRIP_DEBUG
   zxnextTraceRecordInstruction(pcBefore);
+#endif
   return zxnextSharedCpuExecutedInstructions;
 }

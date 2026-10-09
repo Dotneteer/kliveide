@@ -798,8 +798,11 @@ static uint32_t spp3eCpuReadPort(uint32_t address);
 /* RZX (`zx-spectrum-rzx.c`): the fetch counter counts every refresh but the INT acknowledge's */
 static inline void rzxCountFetch(void);
 static inline void rzxIntAck(void);
+/* Not under the benchmark-only strip (`z80.c`): no RZX recording, so no fetch count */
+#ifndef Z80_BENCH_STRIP_DEBUG
 #define Z80_REFRESH(address) rzxCountFetch()
 #define Z80_INT_ACK() rzxIntAck()
+#endif
 /* The execution-history recorder's hooks; the recorder and this machine's macros for it are at the
    end of this file (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` Phase 3) */
 #include "../../../../z80/wasm/z80-history.h"
@@ -813,6 +816,9 @@ static inline void rzxIntAck(void);
 #include "../../../zxSpectrum/wasm/common/zx-spectrum-rzx.c"
 
 static uint32_t spp3eCpuReadPort(uint32_t address) {
+#ifdef Z80_BENCH_STRIP_DEBUG
+  return spp3eReadPort(address);
+#endif
   if (rzxMode == RZX_MODE_OFF) return spp3eReadPort(address);
   uint32_t value;
   if (rzxMode == RZX_MODE_PLAY && rzxPlayNextIn(&value) != 0u) return value;
@@ -1934,16 +1940,20 @@ void spp3eRzxSetFrameTact(uint32_t tact) {
 }
 
 uint32_t spp3eExecuteInstruction(void) {
+#ifndef Z80_BENCH_STRIP_DEBUG
   if (rzxMode == RZX_MODE_PLAY) {
     return spp3eExecutePlayInstruction();
   }
+#endif
   if (spp3eFrameCompleted != 0u) {
     spp3eBeginMachineFrame();
   }
 
+#ifndef Z80_BENCH_STRIP_DEBUG
   if (spp3eCaptureBusEvents != 0u) {
     z80ClearBusEvents();
   }
+#endif
   spp3eUpdateTapeMode();
   const uint8_t intActive = spp3eUlaShouldRaiseInterrupt();
   if (intActive != 0u && spp3eInterruptLineActive == 0u) {
@@ -1956,13 +1966,17 @@ uint32_t spp3eExecuteInstruction(void) {
   spp3eTacts = z80GetTacts();
   spp3eSetNextAudioSample();
   spp3eUpdateTapeMode();
+#ifndef Z80_BENCH_STRIP_DEBUG
   spp3eCpuInstructionsExecuted++;
   spp3eCpuFrameSliceInstructions++;
+#endif
   spp3eFrameCompleted =
     spp3eTacts >= spp3eNextFrameStartTact + spp3eTactsInFrame ? 1u : 0u;
+#ifndef Z80_BENCH_STRIP_DEBUG
   if (rzxMode == RZX_MODE_RECORD) {
     rzxRecAfterStep(spp3eFrameCompleted);
   }
+#endif
   spp3eCompleteMachineFrame();
   return 0u;
 }
