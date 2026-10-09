@@ -138,6 +138,9 @@ static inline void z88BusNewInstruction(void);
    file (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D1, D4) */
 #include "../../../../z80/wasm/z80-profile.h"
 #include "../../../../z80/wasm/z80.c"
+/* The CPU's registers and debugger state, exported as `z88GetCpuAf` ... (WASM_CORE_LEAN_AND_DEBUG_PLAN D8) */
+#define Z80_EXPORT_PREFIX z88
+#include "../../../../z80/wasm/z80-cpu-exports.c"
 
 // -----------------------------------------------------------------------------
 // Z88 parts
@@ -225,33 +228,9 @@ uint32_t z88ExecuteInstruction(void) {
   return z88FrameCompleted;
 }
 
-/*
- * The debugger's per-address breakpoint flags (`DebugSupport.breakpointFlags`), copied in by the host
- * when a debug run starts. The core does not interpret them beyond the mask it is given.
- */
-static uint16_t z88BreakpointFlags[0x10000];
-
-uint32_t z88BreakpointFlagsPtr(void) { return (uint32_t)(uintptr_t)z88BreakpointFlags; }
-
-/*
- * The debugger's fast path: runs instructions until the frame completes or the PC reaches a place the
- * stop policy may stop at - an address whose flags meet `mask`, or `extraStop` (a run-to point, a
- * step-over or step-out target; any value above $FFFF means none). Returns how many instructions ran.
- * The host then applies the whole stop policy at that PC, exactly as after a single instruction, so a
- * candidate that is not a stop (a disabled breakpoint, another partition) only costs a boundary call.
- */
-uint32_t z88ExecuteUntilStop(uint32_t extraStop, uint32_t mask) {
-  uint32_t executed = 0u;
-  do {
-    z88ExecuteInstruction();
-    executed++;
-    /* A reverse-debugging stop target (REVERSE_DEBUGGING_PLAN D4): the host asks the recorder after the call */
-    if (z80HistoryStopNow() != 0u) break;
-    const uint16_t pc = (uint16_t)z80GetPc();
-    if ((z88BreakpointFlags[pc] & mask) || pc == extraStop) break;
-  } while (!z88FrameCompleted);
-  return executed;
-}
+/* The debugger's breakpoint flags and in-core loop, `z88ExecuteUntilStop` (z80-debug-loop.c) */
+#define Z80_DEBUG_LOOP_PREFIX z88
+#include "../../../../z80/wasm/z80-debug-loop.c"
 
 /*
  * Runs until the current frame completes (a frame stopped midway is finished; a completed one
@@ -373,42 +352,6 @@ void z88SetTargetClockMultiplier(uint32_t value) { z88TargetClockMultiplier = va
 // CPU
 // -----------------------------------------------------------------------------
 
-uint32_t z88GetCpuAf(void) { return z80GetAf(); }
-void z88SetCpuAf(uint32_t v) { z80SetAf(v); }
-uint32_t z88GetCpuBc(void) { return z80GetBc(); }
-void z88SetCpuBc(uint32_t v) { z80SetBc(v); }
-uint32_t z88GetCpuDe(void) { return z80GetDe(); }
-void z88SetCpuDe(uint32_t v) { z80SetDe(v); }
-uint32_t z88GetCpuHl(void) { return z80GetHl(); }
-void z88SetCpuHl(uint32_t v) { z80SetHl(v); }
-uint32_t z88GetCpuAfAlt(void) { return z80GetAfAlt(); }
-void z88SetCpuAfAlt(uint32_t v) { z80SetAfAlt(v); }
-uint32_t z88GetCpuBcAlt(void) { return z80GetBcAlt(); }
-void z88SetCpuBcAlt(uint32_t v) { z80SetBcAlt(v); }
-uint32_t z88GetCpuDeAlt(void) { return z80GetDeAlt(); }
-void z88SetCpuDeAlt(uint32_t v) { z80SetDeAlt(v); }
-uint32_t z88GetCpuHlAlt(void) { return z80GetHlAlt(); }
-void z88SetCpuHlAlt(uint32_t v) { z80SetHlAlt(v); }
-uint32_t z88GetCpuIx(void) { return z80GetIx(); }
-void z88SetCpuIx(uint32_t v) { z80SetIx(v); }
-uint32_t z88GetCpuIy(void) { return z80GetIy(); }
-void z88SetCpuIy(uint32_t v) { z80SetIy(v); }
-uint32_t z88GetCpuIr(void) { return z80GetIr(); }
-void z88SetCpuIr(uint32_t v) { z80SetIr(v); }
-uint32_t z88GetCpuWz(void) { return z80GetWz(); }
-void z88SetCpuWz(uint32_t v) { z80SetWz(v); }
-uint32_t z88GetCpuPc(void) { return z80GetPc(); }
-void z88SetCpuPc(uint32_t v) { z80SetPc(v); }
-uint32_t z88GetCpuSp(void) { return z80GetSp(); }
-void z88SetCpuSp(uint32_t v) { z80SetSp(v); }
-uint32_t z88GetCpuIff1(void) { return z80GetIff1(); }
-void z88SetCpuIff1(uint32_t v) { z80SetIff1(v); }
-uint32_t z88GetCpuIff2(void) { return z80GetIff2(); }
-void z88SetCpuIff2(uint32_t v) { z80SetIff2(v); }
-uint32_t z88GetCpuInterruptMode(void) { return z80GetInterruptMode(); }
-void z88SetCpuInterruptMode(uint32_t v) { z80SetInterruptMode(v); }
-uint32_t z88GetCpuHalted(void) { return z80GetHalted(); }
-uint32_t z88GetCpuPrefix(void) { return z80GetPrefix(); }
 uint32_t z88GetCpuSnoozed(void) { return z80IsCpuSnoozed(); }
 void z88SetCpuSnoozed(uint32_t v) {
   if (v) {
@@ -417,9 +360,6 @@ void z88SetCpuSnoozed(uint32_t v) {
     z80AwakeCpu();
   }
 }
-uint32_t z88GetStepOutAddress(void) { return z80GetStepOutAddress(); }
-/* --- Running interrupt handlers (z80.c): source stepping runs them outside the step */
-uint32_t z88GetInterruptDepth(void) { return z80GetInterruptDepth(); }
 /* The INT line the CPU saw at the start of the last instruction (`Z80Cpu.sigINT`) */
 uint32_t z88GetCpuSigInt(void) { return z80GetSigInt(); }
 

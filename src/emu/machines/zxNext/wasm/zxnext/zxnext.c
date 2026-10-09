@@ -436,55 +436,9 @@ void zxnextSetTacts(uint32_t value) {
   zxnextBeeperResyncWindow(value);
 }
 
-uint32_t zxnextGetCpuAf(void) { return z80GetAf(); }
-void zxnextSetCpuAf(uint32_t value) { z80SetAf(value); }
-uint32_t zxnextGetCpuBc(void) { return z80GetBc(); }
-void zxnextSetCpuBc(uint32_t value) { z80SetBc(value); }
-uint32_t zxnextGetCpuDe(void) { return z80GetDe(); }
-void zxnextSetCpuDe(uint32_t value) { z80SetDe(value); }
-uint32_t zxnextGetCpuHl(void) { return z80GetHl(); }
-void zxnextSetCpuHl(uint32_t value) { z80SetHl(value); }
-uint32_t zxnextGetCpuAfAlt(void) { return z80GetAfAlt(); }
-void zxnextSetCpuAfAlt(uint32_t value) { z80SetAfAlt(value); }
-uint32_t zxnextGetCpuBcAlt(void) { return z80GetBcAlt(); }
-void zxnextSetCpuBcAlt(uint32_t value) { z80SetBcAlt(value); }
-uint32_t zxnextGetCpuDeAlt(void) { return z80GetDeAlt(); }
-void zxnextSetCpuDeAlt(uint32_t value) { z80SetDeAlt(value); }
-uint32_t zxnextGetCpuHlAlt(void) { return z80GetHlAlt(); }
-void zxnextSetCpuHlAlt(uint32_t value) { z80SetHlAlt(value); }
-uint32_t zxnextGetCpuIx(void) { return z80GetIx(); }
-void zxnextSetCpuIx(uint32_t value) { z80SetIx(value); }
-uint32_t zxnextGetCpuIy(void) { return z80GetIy(); }
-void zxnextSetCpuIy(uint32_t value) { z80SetIy(value); }
-uint32_t zxnextGetCpuIr(void) { return z80GetIr(); }
-void zxnextSetCpuIr(uint32_t value) { z80SetIr(value); }
-uint32_t zxnextGetCpuWz(void) { return z80GetWz(); }
-void zxnextSetCpuWz(uint32_t value) { z80SetWz(value); }
-/* --- The return address of the most recent CALL/RST, for step-out. See the shadow stack
-   --- in z80.c: without it this machine has no step-out target at all, because the
-   --- TypeScript CPU's push never runs when execution happens inside the core. */
-uint32_t zxnextGetStepOutAddress(void) { return z80GetStepOutAddress(); }
-/* --- Running interrupt handlers (z80.c): source stepping runs them outside the step */
-uint32_t zxnextGetInterruptDepth(void) { return z80GetInterruptDepth(); }
-
-uint32_t zxnextGetCpuPc(void) { return z80GetPc(); }
-void zxnextSetCpuPc(uint32_t value) { z80SetPc(value); }
-uint32_t zxnextGetCpuSp(void) { return z80GetSp(); }
-void zxnextSetCpuSp(uint32_t value) { z80SetSp(value); }
-uint32_t zxnextGetCpuHalted(void) { return z80GetHalted(); }
-uint32_t zxnextGetCpuPrefix(void) { return z80GetPrefix(); }
-uint32_t zxnextGetCpuIff1(void) { return z80GetIff1(); }
-void zxnextSetCpuIff1(uint32_t value) { z80SetIff1(value); }
-uint32_t zxnextGetCpuIff2(void) { return z80GetIff2(); }
-void zxnextSetCpuIff2(uint32_t value) { z80SetIff2(value); }
-uint32_t zxnextGetCpuInterruptMode(void) { return z80GetInterruptMode(); }
-void zxnextSetCpuInterruptMode(uint32_t value) { z80SetInterruptMode(value); }
 uint32_t zxnextGetSharedZ80NMode(void) { return z80GetZ80NMode(); }
 
-/* The CPU's per-instruction data-access log (z80.c) */
-uint32_t zxnextGetAccessLogPtr(void) { return z80AccessLogPtr(); }
-uint32_t zxnextGetAccessLogCount(void) { return z80GetAccessLogCount(); }
-uint32_t zxnextGetAccessLogOverflows(void) { return z80GetAccessLogOverflows(); }
+/* The last port access: the Next's own record (zxnext-ports.c), not the shared core's */
 uint32_t zxnextGetLastPortAddress(void) { return lastPortAddress; }
 uint32_t zxnextGetLastPortValue(void) { return lastPortValue; }
 uint32_t zxnextGetLastPortAccessed(void) { return lastPortAccessed; }

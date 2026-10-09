@@ -175,6 +175,9 @@ static void zx8081IntAck(void);
    file (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §2.2) */
 #include "../../../../z80/wasm/z80-profile.h"
 #include "../../../../z80/wasm/z80.c"
+/* The CPU's registers and debugger state, exported as `zx8081GetCpuAf` ... (WASM_CORE_LEAN_AND_DEBUG_PLAN D8) */
+#define Z80_EXPORT_PREFIX zx8081
+#include "../../../../z80/wasm/z80-cpu-exports.c"
 
 // -----------------------------------------------------------------------------
 // The keyboard: the Sinclair 8x5 matrix, shared with the Spectrum cores (decision D3)
@@ -272,31 +275,9 @@ uint32_t zx8081ExecuteInstruction(void) {
   return zx8081FrameCompleted;
 }
 
-/*
- * The debugger's per-address breakpoint flags (`DebugSupport.breakpointFlags`), copied in by the host
- * when a debug run starts.
- */
-static uint16_t zx8081BreakpointFlags[0x10000];
-
-uint32_t zx8081BreakpointFlagsPtr(void) { return (uint32_t)(uintptr_t)zx8081BreakpointFlags; }
-
-/*
- * The debugger's fast path (as `z88ExecuteUntilStop`): runs instructions until the frame completes or
- * the PC reaches an address whose flags meet `mask`, or `extraStop` (above $FFFF: none). Returns how
- * many instructions ran.
- */
-uint32_t zx8081ExecuteUntilStop(uint32_t extraStop, uint32_t mask) {
-  uint32_t executed = 0u;
-  do {
-    zx8081ExecuteInstruction();
-    executed++;
-    /* A reverse-debugging stop target (REVERSE_DEBUGGING_PLAN D4): the host asks the recorder after the call */
-    if (z80HistoryStopNow() != 0u) break;
-    const uint16_t pc = cpu.pc;
-    if ((zx8081BreakpointFlags[pc] & mask) || pc == extraStop) break;
-  } while (!zx8081FrameCompleted);
-  return executed;
-}
+/* The debugger's breakpoint flags and in-core loop, `zx8081ExecuteUntilStop` (z80-debug-loop.c) */
+#define Z80_DEBUG_LOOP_PREFIX zx8081
+#include "../../../../z80/wasm/z80-debug-loop.c"
 
 /* Runs until the current frame completes (a frame stopped midway is finished) */
 uint32_t zx8081ExecuteFrame(void) {
@@ -405,55 +386,10 @@ void zx8081SetTargetClockMultiplier(uint32_t value) { zx8081TargetClockMultiplie
 // CPU
 // -----------------------------------------------------------------------------
 
-uint32_t zx8081GetCpuAf(void) { return z80GetAf(); }
-void zx8081SetCpuAf(uint32_t v) { z80SetAf(v); }
-uint32_t zx8081GetCpuBc(void) { return z80GetBc(); }
-void zx8081SetCpuBc(uint32_t v) { z80SetBc(v); }
-uint32_t zx8081GetCpuDe(void) { return z80GetDe(); }
-void zx8081SetCpuDe(uint32_t v) { z80SetDe(v); }
-uint32_t zx8081GetCpuHl(void) { return z80GetHl(); }
-void zx8081SetCpuHl(uint32_t v) { z80SetHl(v); }
-uint32_t zx8081GetCpuAfAlt(void) { return z80GetAfAlt(); }
-void zx8081SetCpuAfAlt(uint32_t v) { z80SetAfAlt(v); }
-uint32_t zx8081GetCpuBcAlt(void) { return z80GetBcAlt(); }
-void zx8081SetCpuBcAlt(uint32_t v) { z80SetBcAlt(v); }
-uint32_t zx8081GetCpuDeAlt(void) { return z80GetDeAlt(); }
-void zx8081SetCpuDeAlt(uint32_t v) { z80SetDeAlt(v); }
-uint32_t zx8081GetCpuHlAlt(void) { return z80GetHlAlt(); }
-void zx8081SetCpuHlAlt(uint32_t v) { z80SetHlAlt(v); }
-uint32_t zx8081GetCpuIx(void) { return z80GetIx(); }
-void zx8081SetCpuIx(uint32_t v) { z80SetIx(v); }
-uint32_t zx8081GetCpuIy(void) { return z80GetIy(); }
-void zx8081SetCpuIy(uint32_t v) { z80SetIy(v); }
-uint32_t zx8081GetCpuIr(void) { return z80GetIr(); }
-void zx8081SetCpuIr(uint32_t v) { z80SetIr(v); }
-uint32_t zx8081GetCpuWz(void) { return z80GetWz(); }
-void zx8081SetCpuWz(uint32_t v) { z80SetWz(v); }
-uint32_t zx8081GetCpuPc(void) { return z80GetPc(); }
-void zx8081SetCpuPc(uint32_t v) { z80SetPc(v); }
-uint32_t zx8081GetCpuSp(void) { return z80GetSp(); }
-void zx8081SetCpuSp(uint32_t v) { z80SetSp(v); }
-uint32_t zx8081GetCpuIff1(void) { return z80GetIff1(); }
-void zx8081SetCpuIff1(uint32_t v) { z80SetIff1(v); }
-uint32_t zx8081GetCpuIff2(void) { return z80GetIff2(); }
-void zx8081SetCpuIff2(uint32_t v) { z80SetIff2(v); }
-uint32_t zx8081GetCpuInterruptMode(void) { return z80GetInterruptMode(); }
-void zx8081SetCpuInterruptMode(uint32_t v) { z80SetInterruptMode(v); }
-uint32_t zx8081GetCpuHalted(void) { return z80GetHalted(); }
-uint32_t zx8081GetCpuPrefix(void) { return z80GetPrefix(); }
 /* The opcode the CPU executed last: $00 for a display-file byte the ULA forced to NOP */
 uint32_t zx8081GetCpuOpCode(void) { return cpu.opCode; }
-uint32_t zx8081GetStepOutAddress(void) { return z80GetStepOutAddress(); }
-uint32_t zx8081GetInterruptDepth(void) { return z80GetInterruptDepth(); }
 uint32_t zx8081GetCpuSigInt(void) { return zx8081LastSigInt; }
 uint32_t zx8081GetOpStartAddress(void) { return zx8081OpStartAddress; }
-
-/* The bus record: the shared core's data-access log and last port event */
-uint32_t zx8081GetAccessLogPtr(void) { return z80AccessLogPtr(); }
-uint32_t zx8081GetAccessLogCount(void) { return z80GetAccessLogCount(); }
-uint32_t zx8081GetLastPortAddress(void) { return z80GetLastPortAddress(); }
-uint32_t zx8081GetLastPortValue(void) { return z80GetLastPortValue(); }
-uint32_t zx8081GetLastPortIsWrite(void) { return z80GetLastPortIsWrite(); }
 
 // -----------------------------------------------------------------------------
 // Breakpoint conditions: the shared evaluator, reading memory through the map without side effects

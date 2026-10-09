@@ -21,6 +21,7 @@ import {
 import { checkZ88WasmSize, DEFAULT_MAX_BYTES, parseMaxBytes } from "../../scripts/check-z88-wasm-size.cjs";
 import { z88WasmV2RequiredExports } from "@emu/machines/z88/wasm/Z88WasmV2Loader";
 import { z88WasmArtifactBytes } from "../harness/z88";
+import { sharedZ80Functions } from "../wasmSharedExports";
 
 /*
  * The Cambridge Z88 WASM build (Step 1 of `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`).
@@ -115,9 +116,12 @@ describe("Cambridge Z88 WASM build", () => {
     // --- ... and the shared access profile (CODE_COVERAGE_AND_HEAT_MAP_PLAN D1), and exports it
     const profile = readFileSync(join(folder, "../../../../z80/wasm/z80-profile.c"), "utf8");
     const profileFunctions = [...profile.matchAll(/^(?:uint32_t|void) (z80Profile[A-Za-z0-9]+)\([^)]*\)\s*\{/gm)].map((m) => m[1]);
-    expect(productionExports.filter((name) => name !== "memory").sort()).toEqual(
-      [...cFunctions, ...condFunctions, ...historyFunctions, ...profileFunctions].sort()
-    );
+    const own = [...cFunctions, ...condFunctions, ...historyFunctions, ...profileFunctions];
+    // --- The shared prefix-pasted files define a superset for every core; the export list picks
+    const shared = sharedZ80Functions("z88");
+    const exported = productionExports.filter((name) => name !== "memory");
+    expect(own.filter((n) => !exported.includes(n))).toEqual([]);
+    expect(exported.filter((n) => !own.includes(n) && !shared.includes(n))).toEqual([]);
   });
 
   it("exports everything the loader requires", () => {

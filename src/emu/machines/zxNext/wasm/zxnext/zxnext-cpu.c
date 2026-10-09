@@ -61,6 +61,11 @@ static void zxnextHistoryDmaHold(uint32_t cpuTacts, uint16_t src, uint16_t dest,
 #include "../../../../z80/wasm/z80-profile.h"
 
 #include "../../../../z80/wasm/z80.c"
+/* The CPU's registers and debugger state, exported as `zxnextGetCpuAf` ... (WASM_CORE_LEAN_AND_DEBUG_PLAN D8) */
+#define Z80_EXPORT_PREFIX zxnext
+/* The Next keeps its own last-port record (zxnext-ports.c) */
+#define Z80_EXPORT_NO_LAST_PORT 1
+#include "../../../../z80/wasm/z80-cpu-exports.c"
 
 static inline uint32_t zxnextCpuTactScale(void) {
   return cpuTactScale;

@@ -10,6 +10,8 @@ const {
   stampWasmLayout
 } = require("./wasm-layout.cjs");
 const { RZX_VOLATILE_SYMBOLS, rzxExports } = require("./rzx-core-exports.cjs");
+const { cpuExports, Z80_ACCESS_LOG_VOLATILE_SYMBOLS } = require("./z80-cpu-exports.cjs");
+const { Z80_CONDITION_EXPORTS, Z80_CONDITION_VOLATILE_SYMBOLS } = require("./z80-condition-exports.cjs");
 const { Z80_HISTORY_EXPORTS, Z80_HISTORY_VOLATILE_SYMBOLS } = require("./z80-history-exports.cjs");
 const { Z80_PROFILE_EXPORTS, Z80_PROFILE_VOLATILE_SYMBOLS } = require("./z80-profile-exports.cjs");
 
@@ -30,14 +32,8 @@ const SP48_SCRATCH_SYMBOLS = ["sp48AudioSamples"];
 const SP48_VOLATILE_SYMBOLS = [
   // --- The IDE's breakpoint conditions and the per-instruction access log they read: debugging
   // --- state, not machine state, so a restore never brings back old breakpoints
-  "condArena",
-  "condSlots",
-  "condToken",
-  "condLastStatus",
-  "condEnv",
-  "z80AccessLog",
-  "z80AccessLogCount",
-  "z80AccessLogOverflows",
+  ...Z80_CONDITION_VOLATILE_SYMBOLS,
+  ...Z80_ACCESS_LOG_VOLATILE_SYMBOLS,
   // --- An RZX session in progress (`zx-spectrum-rzx.c`)
   ...RZX_VOLATILE_SYMBOLS,
   // --- The execution-history ring and the model byte of its contexts (EXECUTION_HISTORY_ALL_CORES_PLAN)
@@ -63,18 +59,7 @@ const optimizationProfiles = {
 
 const productionExports = [
   // --- Breakpoint condition evaluator (`src/emu/z80/wasm/z80-condition.c`)
-  "condArenaPtr",
-  "condArenaCapacity",
-  "condSlotTablePtr",
-  "condSlotCapacity",
-  "condMaxProgramWords",
-  "condGetToken",
-  "condSetToken",
-  "condGetLastStatus",
-  "condEvaluate",
-  "condEvaluateValue",
-  "condSetEnv",
-  "condPeek",
+  ...Z80_CONDITION_EXPORTS,
   // --- Execution history recorder (`src/emu/z80/wasm/z80-history.c`)
   ...Z80_HISTORY_EXPORTS,
   // --- Access profile (`src/emu/z80/wasm/z80-profile.c`)
@@ -151,36 +136,7 @@ const productionExports = [
   "sp48GetCpuInstructionsExecuted",
   "sp48GetCpuFrameSliceInstructions",
   "sp48GetCpuTacts",
-  "sp48GetCpuAf",
-  "sp48SetCpuAf",
-  "sp48GetCpuBc",
-  "sp48SetCpuBc",
-  "sp48GetCpuDe",
-  "sp48SetCpuDe",
-  "sp48GetCpuHl",
-  "sp48SetCpuHl",
-  "sp48GetCpuIx",
-  "sp48SetCpuIx",
-  "sp48GetCpuIy",
-  "sp48SetCpuIy",
-  "sp48GetCpuAfAlt",
-  "sp48SetCpuAfAlt",
-  "sp48GetCpuBcAlt",
-  "sp48SetCpuBcAlt",
-  "sp48GetCpuDeAlt",
-  "sp48SetCpuDeAlt",
-  "sp48GetCpuHlAlt",
-  "sp48SetCpuHlAlt",
-  "sp48GetCpuIr",
-  "sp48SetCpuIr",
-  "sp48GetCpuWz",
-  "sp48SetCpuWz",
-  "sp48GetCpuPc",
-  "sp48GetStepOutAddress",
-  "sp48GetInterruptDepth",
-  "sp48SetCpuPc",
-  "sp48GetCpuSp",
-  "sp48SetCpuSp",
+  ...cpuExports("sp48", { snapshotState: true, accessLog: true, accessLogOverflows: true, lastPort: true }),
   "sp48TapeClear",
   "sp48TapeSetFileNameByte",
   "sp48TapeBeginUpload",
@@ -237,25 +193,6 @@ const productionExports = [
   "sp48TapeGetBlockEndSyncPulseLength",
   "sp48TapeGetBlockLastByteUsedBits",
   "sp48TapeGetBlockPilotPulseCount",
-  "sp48GetCpuHalted",
-  "sp48SetCpuHalted",
-  "sp48GetCpuEiBacklog",
-  "sp48SetCpuEiBacklog",
-  "sp48GetCpuIff2",
-  "sp48SetCpuIff2",
-  "sp48GetCpuPrefix",
-  "sp48GetCpuIff1",
-  "sp48SetCpuIff1",
-  "sp48GetCpuInterruptMode",
-  "sp48SetCpuInterruptMode",
-  "sp48GetCpuRetExecuted",
-  "sp48GetCpuRetnExecuted",
-  "sp48GetAccessLogPtr",
-  "sp48GetAccessLogCount",
-  "sp48GetAccessLogOverflows",
-  "sp48GetLastPortAddress",
-  "sp48GetLastPortValue",
-  "sp48GetLastPortIsWrite",
   "sp48GetKeyboardLine",
   "sp48GetPortFeValue",
   "sp48GetBorderColor",

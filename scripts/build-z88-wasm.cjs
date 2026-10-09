@@ -3,6 +3,8 @@ const { dirname, relative, resolve, sep } = require("node:path");
 const { spawnSync } = require("node:child_process");
 
 const { acquireWasmBuildLock, waitForWasmBuildLock } = require("./wasm-build-lock.cjs");
+const { cpuExports } = require("./z80-cpu-exports.cjs");
+const { Z80_CONDITION_EXPORTS, Z80_CONDITION_VOLATILE_SYMBOLS } = require("./z80-condition-exports.cjs");
 const { Z80_HISTORY_EXPORTS, Z80_HISTORY_VOLATILE_SYMBOLS } = require("./z80-history-exports.cjs");
 const { Z80_PROFILE_EXPORTS, Z80_PROFILE_VOLATILE_SYMBOLS } = require("./z80-profile-exports.cjs");
 const {
@@ -22,11 +24,7 @@ const {
 const Z88_VOLATILE_SYMBOLS = [
   // --- The IDE's breakpoint conditions and the per-instruction access log they read: debugging
   // --- state, not machine state, so a restore never brings back old breakpoints
-  "condArena",
-  "condSlots",
-  "condToken",
-  "condLastStatus",
-  "condEnv",
+  ...Z80_CONDITION_VOLATILE_SYMBOLS,
   "z88BreakpointFlags",
   // --- What the Z88 sent to TXD, held until the host shows it: output the guest never reads back, not
   // --- machine state (a reverse-debugging replay must not depend on when the host emptied it)
@@ -63,18 +61,7 @@ const optimizationProfiles = {
 
 const productionExports = [
   // --- Breakpoint condition evaluator (`src/emu/z80/wasm/z80-condition.c`)
-  "condArenaPtr",
-  "condArenaCapacity",
-  "condSlotTablePtr",
-  "condSlotCapacity",
-  "condMaxProgramWords",
-  "condGetToken",
-  "condSetToken",
-  "condGetLastStatus",
-  "condEvaluate",
-  "condEvaluateValue",
-  "condSetEnv",
-  "condPeek",
+  ...Z80_CONDITION_EXPORTS,
   // --- Execution history recorder (`src/emu/z80/wasm/z80-history.c`)
   ...Z80_HISTORY_EXPORTS,
   // --- Access profile (`src/emu/z80/wasm/z80-profile.c`)
@@ -187,46 +174,9 @@ const productionExports = [
   "z88SetSbf",
   "z88DrawLcd",
   // --- CPU and bus events
-  "z88GetCpuAf",
-  "z88SetCpuAf",
-  "z88GetCpuBc",
-  "z88SetCpuBc",
-  "z88GetCpuDe",
-  "z88SetCpuDe",
-  "z88GetCpuHl",
-  "z88SetCpuHl",
-  "z88GetCpuAfAlt",
-  "z88SetCpuAfAlt",
-  "z88GetCpuBcAlt",
-  "z88SetCpuBcAlt",
-  "z88GetCpuDeAlt",
-  "z88SetCpuDeAlt",
-  "z88GetCpuHlAlt",
-  "z88SetCpuHlAlt",
-  "z88GetCpuIx",
-  "z88SetCpuIx",
-  "z88GetCpuIy",
-  "z88SetCpuIy",
-  "z88GetCpuIr",
-  "z88SetCpuIr",
-  "z88GetCpuWz",
-  "z88SetCpuWz",
-  "z88GetCpuPc",
-  "z88SetCpuPc",
-  "z88GetCpuSp",
-  "z88SetCpuSp",
-  "z88GetCpuIff1",
-  "z88SetCpuIff1",
-  "z88GetCpuIff2",
-  "z88SetCpuIff2",
-  "z88GetCpuInterruptMode",
-  "z88SetCpuInterruptMode",
-  "z88GetCpuHalted",
-  "z88GetCpuPrefix",
+  ...cpuExports("z88"),
   "z88GetCpuSnoozed",
   "z88SetCpuSnoozed",
-  "z88GetStepOutAddress",
-  "z88GetInterruptDepth",
   "z88GetCpuSigInt",
   // --- Test hooks (in the allow-list, not required by the loader)
   "z88TestResetRtc",

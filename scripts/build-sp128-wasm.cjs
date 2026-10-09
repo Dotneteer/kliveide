@@ -10,6 +10,8 @@ const {
   stampWasmLayout
 } = require("./wasm-layout.cjs");
 const { RZX_VOLATILE_SYMBOLS, rzxExports } = require("./rzx-core-exports.cjs");
+const { cpuExports, Z80_ACCESS_LOG_VOLATILE_SYMBOLS } = require("./z80-cpu-exports.cjs");
+const { Z80_CONDITION_EXPORTS, Z80_CONDITION_VOLATILE_SYMBOLS } = require("./z80-condition-exports.cjs");
 const { Z80_HISTORY_EXPORTS, Z80_HISTORY_VOLATILE_SYMBOLS } = require("./z80-history-exports.cjs");
 const { Z80_PROFILE_EXPORTS, Z80_PROFILE_VOLATILE_SYMBOLS } = require("./z80-profile-exports.cjs");
 
@@ -21,14 +23,8 @@ const { Z80_PROFILE_EXPORTS, Z80_PROFILE_VOLATILE_SYMBOLS } = require("./z80-pro
 const SP128_VOLATILE_SYMBOLS = [
   // --- The IDE's breakpoint conditions and the per-instruction access log they read: debugging
   // --- state, not machine state, so a restore never brings back old breakpoints
-  "condArena",
-  "condSlots",
-  "condToken",
-  "condLastStatus",
-  "condEnv",
-  "z80AccessLog",
-  "z80AccessLogCount",
-  "z80AccessLogOverflows",
+  ...Z80_CONDITION_VOLATILE_SYMBOLS,
+  ...Z80_ACCESS_LOG_VOLATILE_SYMBOLS,
   // --- An RZX session in progress (`zx-spectrum-rzx.c`)
   ...RZX_VOLATILE_SYMBOLS,
   // --- The execution-history ring (EXECUTION_HISTORY_ALL_CORES_PLAN)
@@ -53,18 +49,7 @@ const optimizationProfiles = {
 
 const productionExports = [
   // --- Breakpoint condition evaluator (`src/emu/z80/wasm/z80-condition.c`)
-  "condArenaPtr",
-  "condArenaCapacity",
-  "condSlotTablePtr",
-  "condSlotCapacity",
-  "condMaxProgramWords",
-  "condGetToken",
-  "condSetToken",
-  "condGetLastStatus",
-  "condEvaluate",
-  "condEvaluateValue",
-  "condSetEnv",
-  "condPeek",
+  ...Z80_CONDITION_EXPORTS,
   // --- Execution history recorder (`src/emu/z80/wasm/z80-history.c`)
   ...Z80_HISTORY_EXPORTS,
   // --- Access profile (`src/emu/z80/wasm/z80-profile.c`)
@@ -187,55 +172,7 @@ const productionExports = [
   "sp128GetInterruptsRaised",
   "sp128GetInterruptLineActive",
   "sp128GetCpuTacts",
-  "sp128GetCpuAf",
-  "sp128SetCpuAf",
-  "sp128GetCpuAfAlt",
-  "sp128SetCpuAfAlt",
-  "sp128GetCpuBcAlt",
-  "sp128SetCpuBcAlt",
-  "sp128GetCpuDeAlt",
-  "sp128SetCpuDeAlt",
-  "sp128GetCpuHlAlt",
-  "sp128SetCpuHlAlt",
-  "sp128GetCpuBc",
-  "sp128SetCpuBc",
-  "sp128GetCpuDe",
-  "sp128SetCpuDe",
-  "sp128GetCpuHl",
-  "sp128SetCpuHl",
-  "sp128GetCpuIx",
-  "sp128SetCpuIx",
-  "sp128GetCpuIy",
-  "sp128SetCpuIy",
-  "sp128GetCpuIr",
-  "sp128SetCpuIr",
-  "sp128GetCpuWz",
-  "sp128SetCpuWz",
-  "sp128GetCpuPc",
-  "sp128GetStepOutAddress",
-  "sp128GetInterruptDepth",
-  "sp128SetCpuPc",
-  "sp128GetCpuSp",
-  "sp128SetCpuSp",
-  "sp128GetCpuHalted",
-  "sp128SetCpuHalted",
-  "sp128GetCpuEiBacklog",
-  "sp128SetCpuEiBacklog",
-  "sp128GetCpuPrefix",
-  "sp128GetCpuIff1",
-  "sp128SetCpuIff1",
-  "sp128GetCpuIff2",
-  "sp128SetCpuIff2",
-  "sp128GetCpuInterruptMode",
-  "sp128SetCpuInterruptMode",
-  "sp128GetCpuRetExecuted",
-  "sp128GetCpuRetnExecuted",
-  "sp128GetAccessLogPtr",
-  "sp128GetAccessLogCount",
-  "sp128GetAccessLogOverflows",
-  "sp128GetLastPortAddress",
-  "sp128GetLastPortValue",
-  "sp128GetLastPortIsWrite",
+  ...cpuExports("sp128", { snapshotState: true, accessLog: true, accessLogOverflows: true, lastPort: true }),
   "sp128GetKeyboardLine",
   "sp128GetPortFeValue",
   "sp128GetBorderColor",
