@@ -118,6 +118,7 @@ export const E2E_KBASIC_TESTS: string[] = [
   "test/kbasic/codegen/source-errors.test.ts",
   "test/kbasic/codegen/source-jmc.test.ts",
   "test/kbasic/codegen/source-level.test.ts",
+  "test/kbasic/codegen/source-step-in-core.test.ts",
   "test/kbasic/codegen/source-step.test.ts",
   "test/kbasic/codegen/source-variables.test.ts",
   "test/kbasic/codegen/stdlib.test.ts",

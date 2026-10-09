@@ -15,7 +15,11 @@
  *                 whose condition is never true (D14's 4c row; machines without the mixed loop skip it).
  * The workload is `benchmark-debug-overhead.cjs`'s mixed RAM loop (ROM-booted on the Spectrums).
  *
+ * `--source-step` instead times a Klive BASIC Step Over of a call that runs 2,000 loop iterations, in the
+ * core (stops at statement entries and return points only, Phase 4d) and instruction by instruction.
+ *
  * Usage: node scripts/benchmark-debug-host-loop.cjs [--core sp48,zxnext] [--frames 100] [--rounds 5] [--json]
+ *        node scripts/benchmark-debug-host-loop.cjs --source-step [--rounds 5]
  */
 const { existsSync, readFileSync } = require("node:fs");
 const { dirname, resolve } = require("node:path");
@@ -236,6 +240,51 @@ function registerTsRuntime() {
   };
 }
 
+/* Step Over a call to a SUB that loops 2,000 times, on the 48K, in the core and instruction by instruction */
+async function benchmarkSourceStep(rounds) {
+  const { startBasic } = require("../test/kbasic/codegen/run-kit.ts");
+  const { SourceDebugIndex } = require("../src/emu/machines/SourceStepDecision.ts");
+  const { wasmDebugLoopOptions } = require("../src/emu/machines/wasmDebugLoop.ts");
+  const source = [
+    "SUB Heavy()",
+    "  DIM i AS UInteger",
+    "  DIM s AS ULong",
+    "  FOR i = 1 TO 2000",
+    "    s = s + i",
+    "  NEXT i",
+    "END SUB",
+    "DO",
+    "  Heavy",
+    "LOOP",
+    ""
+  ].join("\n");
+  const { session, generated } = await startBasic(source);
+  const index = new SourceDebugIndex(generated.debug.sourceLevel);
+  session.attachDebugSupport();
+  // --- To the call statement (`Heavy`); from there Step Over alternates between the whole call and `LOOP`
+  session.sourceStep(index, "into", { maxFrames: 2000 });
+  const time = (inCore, steps) => {
+    wasmDebugLoopOptions.inCore = inCore;
+    const start = performance.now();
+    for (let i = 0; i < steps; i++) session.sourceStep(index, "over", { maxFrames: 2000 });
+    wasmDebugLoopOptions.inCore = true;
+    return (performance.now() - start) / steps;
+  };
+  time(true, 4);
+  time(false, 4);
+  const results = { inCore: [], perInstruction: [] };
+  for (let r = 0; r < rounds; r++) {
+    results.inCore.push(time(true, 10));
+    results.perInstruction.push(time(false, 10));
+  }
+  const min = (a) => Math.min(...a);
+  console.log(
+    `source Step Over (half of them a 2,000-iteration call): in the core ${min(results.inCore).toFixed(2)} ms, ` +
+      `instruction by instruction ${min(results.perInstruction).toFixed(2)} ms ` +
+      `(x${(min(results.perInstruction) / min(results.inCore)).toFixed(1)} faster)`
+  );
+}
+
 async function main() {
   const options = { cores: Object.keys(HOSTS), frames: 100, rounds: 5, json: false };
   const argv = process.argv.slice(2);
@@ -244,9 +293,11 @@ async function main() {
     else if (argv[i] === "--frames") options.frames = Number(argv[++i]);
     else if (argv[i] === "--rounds") options.rounds = Number(argv[++i]);
     else if (argv[i] === "--json") options.json = true;
+    else if (argv[i] === "--source-step") options.sourceStep = true;
     else throw new Error(`Unknown argument '${argv[i]}'`);
   }
   registerTsRuntime();
+  if (options.sourceStep) return benchmarkSourceStep(options.rounds);
   const results = [];
   for (const id of options.cores) {
     const r = await benchmarkHost(id, options);

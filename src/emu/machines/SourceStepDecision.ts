@@ -135,17 +135,18 @@ export class SourceDebugIndex {
   private trackedCache?: number[];
 
   /**
-   * Every CPU address the statement tracker acts at - statement entries and call-site return
-   * addresses, in any partition - so a debug loop running in the core can stop there and let the tracker
-   * observe (`.plans/WASM_CORE_LEAN_AND_DEBUG_PLAN.md` D13). A banked address is listed whatever its
-   * partition; the tracker resolves the partition when it observes.
+   * Every CPU address `entryAt` or `returnSiteAt` can answer for - statement entries and call-site
+   * return addresses, in any partition. The statement tracker and a source step act nowhere else
+   * (`shouldStopAtSourceStep` returns at once elsewhere), so a debug loop running in the core stops at
+   * these and lets them decide (`.plans/WASM_CORE_LEAN_AND_DEBUG_PLAN.md` D13, Phases 4a and 4d).
+   * Read from the debug info rather than the maps' keys: a banked statement of unknown partition is keyed
+   * by no address at all. A superset is harmless - the decision at a stop is the TypeScript one.
    */
   trackedAddresses(): readonly number[] {
     if (!this.trackedCache) {
       const addresses = new Set<number>();
-      for (const key of [...this.entries.keys(), ...this.returnSites.keys()]) {
-        if (key >= 0) addresses.add(key & 0xffff);
-      }
+      for (const s of this.info.statements) addresses.add(s.startAddress & 0xffff);
+      for (const site of this.info.extensions?.callSites ?? []) addresses.add(site.returnAddress & 0xffff);
       this.trackedCache = [...addresses];
     }
     return this.trackedCache;

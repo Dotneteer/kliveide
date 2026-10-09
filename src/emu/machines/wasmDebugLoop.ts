@@ -228,7 +228,8 @@ export function runWasmDebugLoop(host: WasmDebugLoopHost): FrameTerminationMode 
 /**
  * The core's own bit in its stop table: an address where the stop policy acts although no breakpoint
  * is set - an error stop (`errorStopAddress`, `romErrorAddress`), or an address the BASIC statement
- * tracker observes. `DebugSupport.breakpointFlags` uses bits 0-12; this one exists only in the copy.
+ * tracker observes or a source step decides at. `DebugSupport.breakpointFlags` uses bits 0-12 and the
+ * conditions bit 14 (`CORE_STOP_CONDITION`); this one exists only in the copy.
  */
 export const CORE_STOP_CANDIDATE = 0x8000;
 
@@ -255,6 +256,9 @@ export function buildCoreStopTable(debugSupport: IDebugSupport, plan?: Uint32Arr
   mark(debugSupport.errorStopAddress);
   mark(debugSupport.romErrorAddress);
   for (const address of debugSupport.statementTracker?.stopAddresses?.() ?? []) mark(address);
+  // --- A source step decides only at statement entries and return addresses (Phase 4d); its index may be
+  // --- an older one than the tracker's, which a rebuild leaves the step in progress
+  for (const address of debugSupport.sourceStep?.index.trackedAddresses() ?? []) mark(address);
   if (plan) writeConditionPlan(debugSupport, plan);
   return coreStopTable;
 }
@@ -308,6 +312,10 @@ export function fastPathStop(
     }
     case DebugStepMode.StepOut:
       return another(host.stepOutAddress);
+    case DebugStepMode.SourceStep:
+      // --- The step decides only at statement entries and return addresses, which the stop table marks
+      // --- (Phase 4d); its first stop test, before any instruction, runs before the loop
+      return extra;
     default:
       return undefined;
   }
