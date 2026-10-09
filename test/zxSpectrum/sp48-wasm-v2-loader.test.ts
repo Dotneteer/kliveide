@@ -336,6 +336,7 @@ function fakeV2Instance(overrides: Partial<Sp48WasmV2Exports> = {}): Promise<Sp4
       sp48BreakpointFlagsPtr: () => 0x50000,
       sp48ExecuteUntilStop: () => 0,
       sp48GetDebugOpStart: () => 0,
+      sp48CondPlanPtr: () => 0x70000,
       sp48GetAccessLogCount: () => 0,
       sp48GetAccessLogOverflows: () => 0,
       sp48GetLastPortAddress: () => 0,

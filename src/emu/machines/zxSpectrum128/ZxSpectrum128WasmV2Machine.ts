@@ -1211,6 +1211,7 @@ export class ZxSpectrum128WasmV2Machine
       executeUntilStop: (extraStop, mask, accessMask) => wasm.sp128ExecuteUntilStop(extraStop, mask, accessMask),
       lastOpStart: () => wasm.sp128GetDebugOpStart(),
       pushBreakpointFlags: (flags) => runtime.breakpointFlags.set(flags),
+      conditionPlan: () => runtime.condPlan,
       canRunInCore: () => rzx === undefined,
       // --- In playback a frame completes only at an RZX frame end
       coreFrameCompleted: () => (rzx?.mode === "play" ? false : wasm.sp128GetFrameCompleted() !== 0),

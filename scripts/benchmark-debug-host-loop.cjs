@@ -10,7 +10,9 @@
  *                 (`ReachExecPoint`) before it arrives;
  *   - history:    the debug session with execution history recording (advanced debugging), the
  *                 recorder on only for this mode;
- *   - access:     the debug session with a memory-read and a port-write breakpoint never hit (D14's 4b row).
+ *   - access:     the debug session with a memory-read and a port-write breakpoint never hit (D14's 4b row);
+ *   - cond:       the debug session with a conditional breakpoint on the mixed loop's hottest instruction
+ *                 whose condition is never true (D14's 4c row; machines without the mixed loop skip it).
  * The workload is `benchmark-debug-overhead.cjs`'s mixed RAM loop (ROM-booted on the Spectrums).
  *
  * Usage: node scripts/benchmark-debug-host-loop.cjs [--core sp48,zxnext] [--frames 100] [--rounds 5] [--json]
@@ -113,17 +115,17 @@ const HOSTS = {
   }
 };
 
-function setMode(machine, mode, debugSupport, accessSupport) {
+function setMode(machine, mode, debugSupport, accessSupport, condSupport) {
   const ctx = machine.executionContext;
   machine.setHistoryEnabled?.(mode === "history");
   if (mode === "run") {
     ctx.debugStepMode = DSM.NoDebug;
     ctx.frameTerminationMode = FTM.Normal;
     ctx.debugSupport = undefined;
-  } else if (mode === "debug" || mode === "history" || mode === "access") {
+  } else if (mode === "debug" || mode === "history" || mode === "access" || mode === "cond") {
     ctx.debugStepMode = DSM.StopAtBreakpoint;
     ctx.frameTerminationMode = FTM.DebugEvent;
-    ctx.debugSupport = mode === "access" ? accessSupport : debugSupport;
+    ctx.debugSupport = mode === "access" ? accessSupport : mode === "cond" ? condSupport : debugSupport;
   } else {
     ctx.debugStepMode = DSM.NoDebug;
     ctx.frameTerminationMode = FTM.UntilExecutionPoint;
@@ -143,6 +145,7 @@ function timeFrames(machine, frames) {
 
 async function benchmarkHost(id, options) {
   const { DebugSupport } = require("../src/emu/machines/DebugSupport.ts");
+  const { connectConditionSupport } = require("../src/emu/machines/conditionStore.ts");
   const host = await HOSTS[id].create();
   const { machine, prefix } = host;
   if (!host.noMixed) loadMixed(machine.wasmV2Runtime.exports, prefix, host.di);
@@ -154,17 +157,26 @@ async function benchmarkHost(id, options) {
   accessSupport.addBreakpoint({ address: 0xbfff, memoryRead: true });
   accessSupport.addBreakpoint({ address: 0x1234, ioWrite: true });
   host.prepare?.(accessSupport);
+  // --- The mixed loop's inner `add a,b` runs 32 times an iteration with B from 32 down to 1: never 0
+  const code = mixedProgram({ port: 0, di: false });
+  const hot = 0x8000 + code.findIndex((v, i) => v === 0x06 && code[i + 1] === 0x20) + 2;
+  const condSupport = new DebugSupport(undefined, []);
+  if (!host.noMixed) {
+    connectConditionSupport(condSupport, machine);
+    condSupport.addBreakpoint({ address: hot, exec: true, condition: "B == 0" });
+  }
+  host.prepare?.(condSupport);
 
-  const modes = ["run", "debug", "exec-point", "history", "access"];
+  const modes = ["run", "debug", "exec-point", "history", "access", "cond"];
   const times = Object.fromEntries(modes.map((m) => [m, []]));
   for (const m of modes) {
-    setMode(machine, m, debugSupport, accessSupport);
+    setMode(machine, m, debugSupport, accessSupport, condSupport);
     timeFrames(machine, Math.ceil(options.frames / 5));
   }
   for (let round = 0; round < options.rounds; round++) {
     for (let i = 0; i < modes.length; i++) {
       const m = modes[(i + round) % modes.length];
-      setMode(machine, m, debugSupport, accessSupport);
+      setMode(machine, m, debugSupport, accessSupport, condSupport);
       times[m].push(timeFrames(machine, options.frames));
     }
   }
@@ -173,7 +185,7 @@ async function benchmarkHost(id, options) {
   return {
     core: id,
     msPerFrame: Object.fromEntries(modes.map((m) => [m, ms(m)])),
-    slowdown: { debug: ms("debug") / ms("run"), "exec-point": ms("exec-point") / ms("run"), history: ms("history") / ms("run"), access: ms("access") / ms("run") }
+    slowdown: { debug: ms("debug") / ms("run"), "exec-point": ms("exec-point") / ms("run"), history: ms("history") / ms("run"), access: ms("access") / ms("run"), cond: ms("cond") / ms("run") }
   };
 }
 
@@ -245,7 +257,8 @@ async function main() {
         `${id.padEnd(7)} run ${m.run.toFixed(3)} ms   debug ${m.debug.toFixed(3)} ms (x${r.slowdown.debug.toFixed(1)})   ` +
           `exec-point ${m["exec-point"].toFixed(3)} ms (x${r.slowdown["exec-point"].toFixed(1)})   ` +
           `history ${m.history.toFixed(3)} ms (x${r.slowdown.history.toFixed(2)})   ` +
-          `access ${m.access.toFixed(3)} ms (x${r.slowdown.access.toFixed(2)})`
+          `access ${m.access.toFixed(3)} ms (x${r.slowdown.access.toFixed(2)})   ` +
+          `cond ${m.cond.toFixed(3)} ms (x${r.slowdown.cond.toFixed(2)})`
       );
     }
   }

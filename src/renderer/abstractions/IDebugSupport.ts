@@ -61,6 +61,12 @@ export interface IDebugSupport {
   hasAccessBreakpoints(): boolean;
 
   /**
+   * The execution addresses whose conditions an in-core debug loop may decide itself, with their program
+   * slots (`DebugSupport.coreConditionPlan`, WASM_CORE_LEAN_AND_DEBUG_PLAN Phase 4c)
+   */
+  coreConditionPlan?(): { address: number; slots: number[] }[];
+
+  /**
    * Does any breakpoint watch a Next Register write?
    *
    * The ZX Spectrum Next counterpart of `hasAccessBreakpoints`, asked once per debug-loop entry for

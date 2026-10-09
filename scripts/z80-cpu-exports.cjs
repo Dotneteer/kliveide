@@ -59,12 +59,12 @@ const Z80_ACCESS_LOG_VOLATILE_SYMBOLS = ["z80AccessLog", "z80AccessLogCount", "z
 
 /**
  * The debugger's in-core loop (`src/emu/z80/wasm/z80-debug-loop.c`): where the host writes the breakpoint
- * flags, the loop itself, and where the last instruction it ran started (the stop policy's last decision
- * point, and the instruction an access-breakpoint hit is reported against)
+ * flags, the loop itself, where the last instruction it ran started (the stop policy's last decision
+ * point, and the instruction an access-breakpoint hit is reported against), and its condition plan
  * @param {string} prefix The core's export prefix
  */
 function debugLoopExports(prefix) {
-  return [`${prefix}BreakpointFlagsPtr`, `${prefix}ExecuteUntilStop`, `${prefix}GetDebugOpStart`];
+  return [`${prefix}BreakpointFlagsPtr`, `${prefix}ExecuteUntilStop`, `${prefix}GetDebugOpStart`, `${prefix}CondPlanPtr`];
 }
 
 /**
@@ -74,7 +74,7 @@ function debugLoopExports(prefix) {
  * @param {string} prefix The core's export prefix
  */
 function debugLoopVolatileSymbols(prefix) {
-  return [`${prefix}BreakpointFlags`, `${prefix}DebugOpStart`];
+  return [`${prefix}BreakpointFlags`, `${prefix}DebugOpStart`, `${prefix}CondPlan`];
 }
 
 module.exports = { CPU_REGISTERS, cpuExports, debugLoopExports, debugLoopVolatileSymbols, Z80_ACCESS_LOG_VOLATILE_SYMBOLS };

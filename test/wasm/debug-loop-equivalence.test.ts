@@ -19,8 +19,8 @@ import { createZx81Session } from "../harness/zx81";
  * step-overs and step-outs: once as the IDE runs it (in the core wherever it can), once instruction by
  * instruction (`wasmDebugLoopOptions.inCore = false`). Every stop must be the same: PC, registers and
  * T-states. The breakpoints: an execution breakpoint with a condition and one with a hit-count rule
- * (Phase 4a), and memory-read, memory-write and port-read breakpoints, one of them with a hit-count rule
- * (Phase 4b).
+ * (Phase 4a), memory-read, memory-write and port-read breakpoints, one of them with a hit-count rule
+ * (Phase 4b), and a condition with a hit rule (Phase 4c: the core decides the conditions while false).
  */
 
 type Machine = {
@@ -142,6 +142,8 @@ async function stops(id: string, inCore: boolean): Promise<Stop[]> {
   ds.addBreakpoint({ address: p.sub, exec: true, condition: "B == 3" });
   // --- Every third time the outer loop starts
   ds.addBreakpoint({ address: p.start, exec: true, hitMode: "every", hitCount: 3 });
+  // --- A condition with a hit rule, decided in the core while false (Phase 4c): every other pass with B < 4
+  ds.addBreakpoint({ address: p.loop, exec: true, condition: "B < 4", hitMode: "every", hitCount: 2 });
   // --- Every other read of the round counter, every write of its high byte, the port's every read
   ds.addBreakpoint({ address: counter, memoryRead: true, hitMode: "every", hitCount: 2 });
   ds.addBreakpoint({ address: counter + 1, memoryWrite: true });

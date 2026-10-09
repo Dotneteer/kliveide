@@ -561,6 +561,7 @@ export class Zx8081WasmV2Machine extends Zx8081WasmHost implements IExecutionHis
       executeUntilStop: (extraStop, mask, accessMask) => wasm.zx8081ExecuteUntilStop(extraStop, mask, accessMask),
       lastOpStart: () => wasm.zx8081GetDebugOpStart(),
       pushBreakpointFlags: (flags) => runtime.breakpointFlags.set(flags),
+      conditionPlan: () => runtime.condPlan,
       coreFrameCompleted: () => wasm.zx8081GetFrameCompleted() !== 0,
       // --- Past this class's `pc` setter, which would push the value just read from the core back into it
       mirrorPc: () => {

@@ -6,6 +6,7 @@
  * The shape follows `Sp48WasmV2Loader.ts`. See `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`.
  */
 
+import { WASM_CORE_CONDITION_PLAN_WORDS } from "@emu/machines/wasmDebugLoopLayout";
 import { CONDITION_CORE_EXPORTS, type ConditionCoreExports } from "@emu/machines/conditionStore";
 import { Z80_HISTORY_CORE_EXPORTS, type Z80HistoryCoreExports } from "@emu/machines/history/WasmHistoryReader";
 
@@ -62,6 +63,8 @@ export type Z88WasmV2Views = {
   readonly audioSamples: Float64Array;
   /** The debugger's breakpoint flags, one word per address (`DebugSupport.breakpointFlags`) */
   readonly breakpointFlags: Uint16Array;
+  /** The debugger's condition plan (`z80-debug-loop.c`, `WASM_CORE_CONDITION_PLAN_WORDS` words) */
+  readonly condPlan: Uint32Array;
 };
 
 export type Z88WasmV2Runtime = Z88WasmV2Views & {
@@ -101,6 +104,7 @@ export const z88WasmV2RequiredExports = [
   "z88ExecuteInstruction",
   "z88ExecuteUntilStop",
   "z88GetDebugOpStart",
+  "z88CondPlanPtr",
   // --- Timing
   "z88GetBaseClockFrequency",
   "z88GetTactsInFrame",
@@ -298,6 +302,7 @@ export function createZ88WasmV2Views(
   );
   assertViewRange(artifactName, "audioSamples", exports.z88AudioSamplesPtr(), audioWords * 8, memoryBuffer);
   assertViewRange(artifactName, "breakpointFlags", exports.z88BreakpointFlagsPtr(), 0x1_0000 * 2, memoryBuffer);
+  assertViewRange(artifactName, "condPlan", exports.z88CondPlanPtr(), WASM_CORE_CONDITION_PLAN_WORDS * 4, memoryBuffer);
 
   return {
     memoryBuffer,
@@ -306,7 +311,8 @@ export function createZ88WasmV2Views(
     pixelBufferBytes: new Uint8ClampedArray(memoryBuffer, exports.z88PixelBufferPtr(), pixelWords * 4),
     keyboardLines: new Uint8Array(memoryBuffer, exports.z88KeyboardLinesPtr(), Z88_WASM_V2_KEYBOARD_LINE_COUNT),
     audioSamples: new Float64Array(memoryBuffer, exports.z88AudioSamplesPtr(), audioWords),
-    breakpointFlags: new Uint16Array(memoryBuffer, exports.z88BreakpointFlagsPtr(), 0x1_0000)
+    breakpointFlags: new Uint16Array(memoryBuffer, exports.z88BreakpointFlagsPtr(), 0x1_0000),
+    condPlan: new Uint32Array(memoryBuffer, exports.z88CondPlanPtr(), WASM_CORE_CONDITION_PLAN_WORDS)
   };
 }
 

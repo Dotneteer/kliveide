@@ -1016,6 +1016,7 @@ function fakeV2Instance(overrides: Partial<Sp128WasmV2Exports> = {}): Promise<Sp
       sp128BreakpointFlagsPtr: () => 0xc0000,
       sp128ExecuteUntilStop: () => 0,
       sp128GetDebugOpStart: () => 0,
+      sp128CondPlanPtr: () => 0xe0000,
       sp128GetAccessLogCount: () => 0,
       sp128GetAccessLogOverflows: () => 0,
       sp128GetLastPortAddress: () => 0,

@@ -1,3 +1,4 @@
+import { WASM_CORE_CONDITION_PLAN_WORDS } from "@emu/machines/wasmDebugLoopLayout";
 import { CONDITION_CORE_EXPORTS, type ConditionCoreExports } from "@emu/machines/conditionStore";
 import { Z80_HISTORY_CORE_EXPORTS, type Z80HistoryCoreExports } from "@emu/machines/history/WasmHistoryReader";
 import { WASM_ACCESS_LOG_CAPACITY } from "../../wasmAccessLog";
@@ -122,6 +123,7 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Z
   zxnextBreakpointFlagsPtr: ZxNextWasmV2ExportFunction;
   zxnextExecuteUntilStop: ZxNextWasmV2ExportFunction;
   zxnextGetDebugOpStart: ZxNextWasmV2ExportFunction;
+  zxnextCondPlanPtr: ZxNextWasmV2ExportFunction;
   zxnextGetAccessLogCount: ZxNextWasmV2ExportFunction;
   zxnextGetAccessLogOverflows: ZxNextWasmV2ExportFunction;
   zxnextGetLastPortAddress: ZxNextWasmV2ExportFunction;
@@ -415,6 +417,8 @@ export type ZxNextWasmV2Runtime = {
   readonly accessLog: Uint32Array;
   /** The debugger's breakpoint flags, one word per address, written on every debug run */
   readonly breakpointFlags: Uint16Array;
+  /** The debugger's condition plan (`z80-debug-loop.c`, `WASM_CORE_CONDITION_PLAN_WORDS` words) */
+  readonly condPlan: Uint32Array;
   readonly flatMemory: Uint8Array;
   readonly pixelBuffer: Uint32Array;
   readonly pixelBufferBytes: Uint8ClampedArray;
@@ -554,6 +558,7 @@ const requiredV2Exports = [
   "zxnextBreakpointFlagsPtr",
   "zxnextExecuteUntilStop",
   "zxnextGetDebugOpStart",
+  "zxnextCondPlanPtr",
   "zxnextGetAccessLogCount",
   "zxnextGetAccessLogOverflows",
   "zxnextGetLastPortAddress",
@@ -895,6 +900,7 @@ export function createZxNextWasmV2Views(
   assertViewRange(artifactName, "memory", exports.zxnextMemoryPtr(), memorySize, memoryBuffer);
   assertViewRange(artifactName, "accessLog", exports.zxnextGetAccessLogPtr(), WASM_ACCESS_LOG_CAPACITY * 4, memoryBuffer);
   assertViewRange(artifactName, "breakpointFlags", exports.zxnextBreakpointFlagsPtr(), 0x1_0000 * 2, memoryBuffer);
+  assertViewRange(artifactName, "condPlan", exports.zxnextCondPlanPtr(), WASM_CORE_CONDITION_PLAN_WORDS * 4, memoryBuffer);
   assertViewRange(artifactName, "flatMemory", exports.zxnextMemoryPtr(), flatMemorySize, memoryBuffer);
   assertViewRange(artifactName, "pixelBuffer", exports.zxnextPixelBufferPtr(), pixelBytes, memoryBuffer);
   assertViewRange(artifactName, "keyboardLines", exports.zxnextKeyboardLinesPtr(), keyboardLineCount, memoryBuffer);
@@ -913,6 +919,7 @@ export function createZxNextWasmV2Views(
     memory: new Uint8Array(memoryBuffer, exports.zxnextMemoryPtr(), memorySize),
     accessLog: new Uint32Array(memoryBuffer, exports.zxnextGetAccessLogPtr(), WASM_ACCESS_LOG_CAPACITY),
     breakpointFlags: new Uint16Array(memoryBuffer, exports.zxnextBreakpointFlagsPtr(), 0x1_0000),
+    condPlan: new Uint32Array(memoryBuffer, exports.zxnextCondPlanPtr(), WASM_CORE_CONDITION_PLAN_WORDS),
     flatMemory: new Uint8Array(memoryBuffer, exports.zxnextMemoryPtr(), flatMemorySize),
     pixelBuffer: new Uint32Array(memoryBuffer, exports.zxnextPixelBufferPtr(), pixelWords),
     pixelBufferBytes: new Uint8ClampedArray(memoryBuffer, exports.zxnextPixelBufferPtr(), pixelBytes),

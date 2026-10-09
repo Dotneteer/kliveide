@@ -634,6 +634,7 @@ export class Z88WasmV2Machine extends Z88WasmHost implements IExecutionHistorySo
       executeUntilStop: (extraStop, mask, accessMask) => wasm.z88ExecuteUntilStop(extraStop, mask, accessMask),
       lastOpStart: () => wasm.z88GetDebugOpStart(),
       pushBreakpointFlags: (flags) => runtime.breakpointFlags.set(flags),
+      conditionPlan: () => runtime.condPlan,
       coreFrameCompleted: () => wasm.z88GetFrameCompleted() !== 0,
       // --- Past this class's `pc` setter, which would push the value just read from the core back into it
       mirrorPc: () => {

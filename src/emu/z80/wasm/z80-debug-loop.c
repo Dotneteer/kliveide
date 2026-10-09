@@ -16,7 +16,8 @@
  *     given;
  *   - `<prefix>BreakpointFlagsPtr`, where the host writes it;
  *   - `<prefix>ExecuteUntilStop(extraStop, mask, accessMask)`;
- *   - `<prefix>GetDebugOpStart`, where the last instruction the loop ran started.
+ *   - `<prefix>GetDebugOpStart`, where the last instruction the loop ran started;
+ *   - `<prefix>CondPlanPtr`, the conditions the loop may decide itself (Phase 4c, below).
  */
 
 #ifndef Z80_DEBUG_LOOP_PREFIX
@@ -51,6 +52,46 @@ uint32_t Z80D(GetDebugOpStart)(void) { return Z80D(DebugOpStart); }
 #define Z80_DEBUG_FLAG_MEM_WRITE 0x10u
 #define Z80_DEBUG_FLAG_IO_READ 0x20u
 #define Z80_DEBUG_FLAG_IO_WRITE 0x40u
+
+/*
+ * Conditions decided in the core (Phase 4c). A false condition neither counts a hit nor stops nor logs,
+ * so where every breakpoint at an address has a condition, the loop may run past the address when all
+ * of them are false. The host marks such an address with `Z80_DEBUG_FLAG_CONDITION` instead of its
+ * execution bits and lists its condition programs (slots of `z80-condition.c`) in the plan; anything
+ * else - a true condition, an error, an address missing from the plan - stops, and the host decides and
+ * counts as it does for every stop.
+ *
+ * The plan, in 32-bit words: [0] the entry count; then `Z80_DEBUG_COND_ENTRIES` entries of three words
+ * (the address, the first slot index, the slot count); then `Z80_DEBUG_COND_SLOTS` slot numbers.
+ */
+#define Z80_DEBUG_FLAG_CONDITION 0x4000u
+#define Z80_DEBUG_COND_ENTRIES 128u
+#define Z80_DEBUG_COND_SLOTS 256u
+#define Z80_DEBUG_COND_SLOT_BASE (1u + 3u * Z80_DEBUG_COND_ENTRIES)
+/* `ConditionResult.FALSE`, `COND_RESULT_FALSE` in z80-condition.c (included after this file) */
+#define Z80_DEBUG_COND_FALSE 0u
+
+uint32_t condEvaluate(uint32_t slot, uint32_t accessValue, uint32_t accessAddress);
+
+static uint32_t Z80D(CondPlan)[Z80_DEBUG_COND_SLOT_BASE + Z80_DEBUG_COND_SLOTS];
+
+uint32_t Z80D(CondPlanPtr)(void) { return (uint32_t)(uintptr_t)Z80D(CondPlan); }
+
+/* Whether every condition the plan lists for `pc` is false now: then the loop runs on */
+static uint32_t Z80D(ConditionsAllFalse)(uint16_t pc) {
+  const uint32_t *plan = Z80D(CondPlan);
+  const uint32_t entries = plan[0] < Z80_DEBUG_COND_ENTRIES ? plan[0] : Z80_DEBUG_COND_ENTRIES;
+  for (uint32_t i = 0u; i < entries; i++) {
+    const uint32_t *entry = &plan[1u + 3u * i];
+    if (entry[0] != pc) continue;
+    if (entry[2] == 0u || entry[1] + entry[2] > Z80_DEBUG_COND_SLOTS) return 0u;
+    for (uint32_t k = 0u; k < entry[2]; k++) {
+      if (condEvaluate(plan[Z80_DEBUG_COND_SLOT_BASE + entry[1] + k], 0u, 0u) != Z80_DEBUG_COND_FALSE) return 0u;
+    }
+    return 1u;
+  }
+  return 0u;
+}
 
 #ifndef Z80_DEBUG_LOOP_ACCESS_HIT
 /*
@@ -94,7 +135,9 @@ uint32_t Z80D(ExecuteUntilStop)(uint32_t extraStop, uint32_t mask, uint32_t acce
     /* A reverse-debugging stop target (REVERSE_DEBUGGING_PLAN D4): the host asks the recorder after the call */
     if (z80HistoryStopNow() != 0u) break;
     const uint16_t pc = cpu.pc;
-    if ((Z80D(BreakpointFlags)[pc] & mask) || pc == extraStop) break;
+    const uint32_t flags = Z80D(BreakpointFlags)[pc] & mask;
+    if ((flags & ~Z80_DEBUG_FLAG_CONDITION) != 0u || pc == extraStop) break;
+    if ((flags & Z80_DEBUG_FLAG_CONDITION) != 0u && !Z80D(ConditionsAllFalse)(pc)) break;
     if (accessMask != 0u && Z80_DEBUG_LOOP_ACCESS_HIT(accessMask)) break;
     if (Z80_DEBUG_LOOP_STOP()) break;
   } while (!Z80_DEBUG_LOOP_FRAME_COMPLETED);

@@ -1,3 +1,4 @@
+import { WASM_CORE_CONDITION_PLAN_WORDS } from "@emu/machines/wasmDebugLoopLayout";
 import { CONDITION_CORE_EXPORTS, type ConditionCoreExports } from "@emu/machines/conditionStore";
 import { Z80_HISTORY_CORE_EXPORTS, type Z80HistoryCoreExports } from "@emu/machines/history/WasmHistoryReader";
 import { WASM_ACCESS_LOG_CAPACITY } from "../../wasmAccessLog";
@@ -230,6 +231,7 @@ export type SpP3eWasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Z8
   spp3eBreakpointFlagsPtr: SpP3eWasmV2ExportFunction;
   spp3eExecuteUntilStop: SpP3eWasmV2ExportFunction;
   spp3eGetDebugOpStart: SpP3eWasmV2ExportFunction;
+  spp3eCondPlanPtr: SpP3eWasmV2ExportFunction;
   spp3eGetAccessLogCount: SpP3eWasmV2ExportFunction;
   spp3eGetAccessLogOverflows: SpP3eWasmV2ExportFunction;
   spp3eGetLastPortAddress: SpP3eWasmV2ExportFunction;
@@ -273,6 +275,8 @@ export type SpP3eWasmV2Runtime = {
   readonly accessLog: Uint32Array;
   /** The debugger's breakpoint flags, one word per address, written on every debug run */
   readonly breakpointFlags: Uint16Array;
+  /** The debugger's condition plan (`z80-debug-loop.c`, `WASM_CORE_CONDITION_PLAN_WORDS` words) */
+  readonly condPlan: Uint32Array;
   readonly ram: Uint8Array;
   readonly rom: Uint8Array;
   readonly pixelBuffer: Uint32Array;
@@ -505,6 +509,7 @@ const requiredV2Exports = [
   "spp3eBreakpointFlagsPtr",
   "spp3eExecuteUntilStop",
   "spp3eGetDebugOpStart",
+  "spp3eCondPlanPtr",
   "spp3eGetAccessLogCount",
   "spp3eGetAccessLogOverflows",
   "spp3eGetLastPortAddress",
@@ -590,6 +595,7 @@ export function createSpP3eWasmV2Views(
   assertViewRange(artifactName, "memory", exports.spp3eMemoryPtr(), memorySize, memoryBuffer);
   assertViewRange(artifactName, "accessLog", exports.spp3eGetAccessLogPtr(), WASM_ACCESS_LOG_CAPACITY * 4, memoryBuffer);
   assertViewRange(artifactName, "breakpointFlags", exports.spp3eBreakpointFlagsPtr(), 0x1_0000 * 2, memoryBuffer);
+  assertViewRange(artifactName, "condPlan", exports.spp3eCondPlanPtr(), WASM_CORE_CONDITION_PLAN_WORDS * 4, memoryBuffer);
   assertViewRange(artifactName, "ram", exports.spp3eRamPtr(), ramSize, memoryBuffer);
   assertViewRange(artifactName, "rom", exports.spp3eRomPtr(), romSize, memoryBuffer);
   assertViewRange(artifactName, "pixelBuffer", exports.spp3ePixelBufferPtr(), pixelBytes, memoryBuffer);
@@ -607,6 +613,7 @@ export function createSpP3eWasmV2Views(
     memory: new Uint8Array(memoryBuffer, exports.spp3eMemoryPtr(), memorySize),
     accessLog: new Uint32Array(memoryBuffer, exports.spp3eGetAccessLogPtr(), WASM_ACCESS_LOG_CAPACITY),
     breakpointFlags: new Uint16Array(memoryBuffer, exports.spp3eBreakpointFlagsPtr(), 0x1_0000),
+    condPlan: new Uint32Array(memoryBuffer, exports.spp3eCondPlanPtr(), WASM_CORE_CONDITION_PLAN_WORDS),
     ram: new Uint8Array(memoryBuffer, exports.spp3eRamPtr(), ramSize),
     rom: new Uint8Array(memoryBuffer, exports.spp3eRomPtr(), romSize),
     pixelBuffer: new Uint32Array(memoryBuffer, exports.spp3ePixelBufferPtr(), pixelWords),

@@ -479,6 +479,64 @@ export class DebugSupport implements IDebugSupport {
   }
 
   /**
+   * The execution addresses whose stop an in-core debug loop may decide itself
+   * (`.plans/WASM_CORE_LEAN_AND_DEBUG_PLAN.md` Phase 4c), with the program slots of their conditions.
+   *
+   * A false condition neither counts a hit, nor stops, nor logs (`passesFilters`, `handleHit`), so where
+   * every enabled execution definition claiming an address has a condition compiled into a slot, the
+   * core may run past the address while all of them are false. An address with any other definition -
+   * no condition (a plain breakpoint, a bare hit-count rule), a condition that does not compile (C15),
+   * one that reads a host-only fact (`cpufreq()`, `frame()`), one the store had no room for - is left
+   * out: the core stops there and `shouldStopAt` decides, as before. A definition whose condition is
+   * inactive (a missing label, C14) never counts and adds no slot.
+   */
+  coreConditionPlan(): { address: number; slots: number[] }[] {
+    const execAddresses = (bp: BreakpointInfo): number[] => {
+      const site = effectiveBankSite(bp);
+      if (site) return bankRelativeAddresses(site.bankOffset);
+      const start = bp.address ?? bp.resolvedAddress;
+      return start === undefined ? [] : [start];
+    };
+    const addresses = new Set<number>();
+    for (const bp of this.breakpointDefs.values()) {
+      if (bp.disabled || !bp.exec || !bp.condition?.trim()) continue;
+      for (const address of execAddresses(bp)) addresses.add(address & 0xffff);
+    }
+    if (addresses.size === 0) return [];
+
+    // --- Every execution definition at those addresses, compiled before the programs are placed
+    const atAddress = new Map<number, string[]>();
+    for (const [key, bp] of this.breakpointDefs) {
+      if (bp.disabled || !kindMatches(bp, "exec")) continue;
+      for (const address of addresses) {
+        if (!this.claimsAddress(bp, address)) continue;
+        this.runtimeFor(key, bp, "exec");
+        const keys = atAddress.get(address) ?? [];
+        keys.push(key);
+        atAddress.set(address, keys);
+      }
+    }
+    if (!this.syncConditionStore()) return [];
+
+    const plan: { address: number; slots: number[] }[] = [];
+    for (const [address, keys] of atAddress) {
+      const slots: number[] = [];
+      let decidable = true;
+      for (const key of keys) {
+        const state = this.runtime.get(key);
+        if (state?.compiled?.inactiveReason) continue;
+        if (!state?.compiled || state.error || state.conditionUsesEnv || state.slot === undefined) {
+          decidable = false;
+          break;
+        }
+        slots.push(state.slot);
+      }
+      if (decidable && slots.length > 0) plan.push({ address, slots });
+    }
+    return plan;
+  }
+
+  /**
    * Does any breakpoint in this set watch memory or I/O access?
    *
    * The per-instruction debug loops of the WASM-backed machines call this once per entry to decide

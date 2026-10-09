@@ -1094,6 +1094,7 @@ export class ZxNextWasmV2Machine
       },
       lastOpStart: () => wasm.zxnextGetDebugOpStart(),
       pushBreakpointFlags: (flags) => runtime.breakpointFlags.set(flags),
+      conditionPlan: () => runtime.condPlan,
       canRunInCore: () => !(watchesNextReg || watchesCopper || watchesSprites),
       coreFrameCompleted: () => wasm.zxnextGetFrameCompleted() !== 0,
       // --- Past this class's `pc` setter, which would push the value just read from the core back into it

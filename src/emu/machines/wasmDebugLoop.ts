@@ -5,6 +5,12 @@ import type { IDebugSupport } from "@renderer/abstractions/IDebugSupport";
 import { shouldStopAtDebugPoint } from "./DebugStepDecision";
 import { EXEC_BP, IO_READ_BP, IO_WRITE_BP, MEM_READ_BP, MEM_WRITE_BP, PART_BP } from "./DebugSupport";
 import type { ReturnRegisters } from "./SourceStepDecision";
+import {
+  CORE_STOP_CONDITION,
+  WASM_CORE_CONDITION_PLAN_ENTRIES,
+  WASM_CORE_CONDITION_PLAN_SLOT_BASE,
+  WASM_CORE_CONDITION_PLAN_SLOTS
+} from "./wasmDebugLoopLayout";
 
 /*
  * The debug loop every WASM machine host runs outside a plain Run (`.plans/WASM_CORE_LEAN_AND_DEBUG_PLAN.md`
@@ -72,6 +78,8 @@ export interface WasmDebugLoopHost {
   lastOpStart?(): number;
   /** Copies the stop table (`buildCoreStopTable`) into the core's breakpoint flags (with `executeUntilStop`) */
   pushBreakpointFlags?(flags: Uint16Array): void;
+  /** The core's condition plan (`<prefix>CondPlanPtr`), which `buildCoreStopTable` writes */
+  conditionPlan?(): Uint32Array;
   /**
    * Whether this run may use `executeUntilStop`, asked after `enter`: a host whose run needs work around
    * every instruction says no (an RZX session, the Next's NextReg, Copper and sprite watches)
@@ -134,8 +142,8 @@ export function runWasmDebugLoop(host: WasmDebugLoopHost): FrameTerminationMode 
     (debugSupport === undefined || flagsUsable) &&
     context.debugStepMode !== DebugStepMode.StepInto &&
     (host.canRunInCore?.() ?? true);
-  if (fastPath && debugSupport) host.pushBreakpointFlags?.(buildCoreStopTable(debugSupport));
-  const stopMask = debugSupport ? EXEC_BP | PART_BP | CORE_STOP_CANDIDATE : 0;
+  if (fastPath && debugSupport) host.pushBreakpointFlags?.(buildCoreStopTable(debugSupport, host.conditionPlan?.()));
+  const stopMask = debugSupport ? EXEC_BP | PART_BP | CORE_STOP_CANDIDATE | CORE_STOP_CONDITION : 0;
   const accessMask = watchesBusAccess ? MEM_READ_BP | MEM_WRITE_BP | IO_READ_BP | IO_WRITE_BP : 0;
 
   if (debugSupport && host.pc !== debugSupport.lastStartupBreakpoint) {
@@ -232,8 +240,12 @@ const coreStopTable = new Uint16Array(0x1_0000);
  * breakpoint flags, plus `CORE_STOP_CANDIDATE` wherever `shouldStopAtDebugPoint` acts per instruction
  * without a breakpoint. The core stops at every candidate and the TypeScript policy decides there, so
  * running in the core decides exactly as running instruction by instruction does.
+ *
+ * With `plan` (the core's condition plan, Phase 4c), an address whose conditions the core can decide
+ * (`coreConditionPlan`) carries `CORE_STOP_CONDITION` instead of its execution bits, and its slots go into
+ * the plan: the core runs past it while they are all false. What does not fit keeps its execution bits.
  */
-export function buildCoreStopTable(debugSupport: IDebugSupport): Uint16Array {
+export function buildCoreStopTable(debugSupport: IDebugSupport, plan?: Uint32Array): Uint16Array {
   const flags = debugSupport.breakpointFlags;
   if (flags) coreStopTable.set(flags);
   else coreStopTable.fill(0);
@@ -243,7 +255,25 @@ export function buildCoreStopTable(debugSupport: IDebugSupport): Uint16Array {
   mark(debugSupport.errorStopAddress);
   mark(debugSupport.romErrorAddress);
   for (const address of debugSupport.statementTracker?.stopAddresses?.() ?? []) mark(address);
+  if (plan) writeConditionPlan(debugSupport, plan);
   return coreStopTable;
+}
+
+/* Writes the condition plan into the core and marks its addresses in the stop table */
+function writeConditionPlan(debugSupport: IDebugSupport, plan: Uint32Array): void {
+  let entries = 0;
+  let used = 0;
+  for (const { address, slots } of debugSupport.coreConditionPlan?.() ?? []) {
+    if (entries >= WASM_CORE_CONDITION_PLAN_ENTRIES || used + slots.length > WASM_CORE_CONDITION_PLAN_SLOTS) break;
+    const at = 1 + 3 * entries;
+    plan[at] = address;
+    plan[at + 1] = used;
+    plan[at + 2] = slots.length;
+    for (const slot of slots) plan[WASM_CORE_CONDITION_PLAN_SLOT_BASE + used++] = slot;
+    coreStopTable[address] = (coreStopTable[address] & ~(EXEC_BP | PART_BP)) | CORE_STOP_CONDITION;
+    entries++;
+  }
+  plan[0] = entries;
 }
 
 /**
