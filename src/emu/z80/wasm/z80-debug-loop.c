@@ -3,7 +3,12 @@
  * Phase 2, D7; Phase 4a brings it to every core and widens what it decides, D13).
  *
  * A core defines `Z80_DEBUG_LOOP_PREFIX` (its export prefix) and includes this file after its
- * `<prefix>ExecuteInstruction` and `<prefix>FrameCompleted` exist. It provides:
+ * `<prefix>ExecuteInstruction` and `<prefix>FrameCompleted` exist. Optionally:
+ *   - `Z80_DEBUG_LOOP_FRAME_COMPLETED`: the frame-completed expression, when it is not
+ *     `<prefix>FrameCompleted` (the Next's is `frameCompleted`);
+ *   - `Z80_DEBUG_LOOP_STOP()`: nonzero when the loop must return for the host after an instruction, as
+ *     the core's own frame loop does (the Next's SD host command and reset request).
+ * It provides:
  *   - `<prefix>BreakpointFlags`, a 64K table of per-address flags (`DebugSupport.breakpointFlags`), copied
  *     in by the host when a debug run starts; the core does not interpret them beyond the mask it is
  *     given;
@@ -18,6 +23,12 @@
 #define Z80D_PASTE2(a, b) a##b
 #define Z80D_PASTE(a, b) Z80D_PASTE2(a, b)
 #define Z80D(name) Z80D_PASTE(Z80_DEBUG_LOOP_PREFIX, name)
+#ifndef Z80_DEBUG_LOOP_FRAME_COMPLETED
+#define Z80_DEBUG_LOOP_FRAME_COMPLETED Z80D(FrameCompleted)
+#endif
+#ifndef Z80_DEBUG_LOOP_STOP
+#define Z80_DEBUG_LOOP_STOP() 0
+#endif
 
 static uint16_t Z80D(BreakpointFlags)[0x10000];
 
@@ -39,7 +50,8 @@ uint32_t Z80D(ExecuteUntilStop)(uint32_t extraStop, uint32_t mask) {
     if (z80HistoryStopNow() != 0u) break;
     const uint16_t pc = cpu.pc;
     if ((Z80D(BreakpointFlags)[pc] & mask) || pc == extraStop) break;
-  } while (!Z80D(FrameCompleted));
+    if (Z80_DEBUG_LOOP_STOP()) break;
+  } while (!Z80_DEBUG_LOOP_FRAME_COMPLETED);
   return executed;
 }
 
@@ -47,3 +59,5 @@ uint32_t Z80D(ExecuteUntilStop)(uint32_t extraStop, uint32_t mask) {
 #undef Z80D_PASTE
 #undef Z80D_PASTE2
 #undef Z80_DEBUG_LOOP_PREFIX
+#undef Z80_DEBUG_LOOP_FRAME_COMPLETED
+#undef Z80_DEBUG_LOOP_STOP

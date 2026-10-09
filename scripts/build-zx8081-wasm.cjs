@@ -3,7 +3,7 @@ const { dirname, relative, resolve, sep } = require("node:path");
 const { spawnSync } = require("node:child_process");
 
 const { acquireWasmBuildLock, waitForWasmBuildLock } = require("./wasm-build-lock.cjs");
-const { cpuExports, Z80_ACCESS_LOG_VOLATILE_SYMBOLS } = require("./z80-cpu-exports.cjs");
+const { cpuExports, debugLoopExports, debugLoopVolatileSymbols, Z80_ACCESS_LOG_VOLATILE_SYMBOLS } = require("./z80-cpu-exports.cjs");
 const { Z80_CONDITION_EXPORTS, Z80_CONDITION_VOLATILE_SYMBOLS } = require("./z80-condition-exports.cjs");
 const { Z80_HISTORY_EXPORTS, Z80_HISTORY_VOLATILE_SYMBOLS } = require("./z80-history-exports.cjs");
 const { Z80_PROFILE_EXPORTS, Z80_PROFILE_VOLATILE_SYMBOLS } = require("./z80-profile-exports.cjs");
@@ -25,8 +25,8 @@ const ZX8081_VOLATILE_SYMBOLS = [
   // --- The IDE's breakpoint conditions and the per-instruction access log they read: debugging
   // --- state, not machine state, so a restore never brings back old breakpoints
   ...Z80_CONDITION_VOLATILE_SYMBOLS,
+  ...debugLoopVolatileSymbols("zx8081"),
   ...Z80_ACCESS_LOG_VOLATILE_SYMBOLS,
-  "zx8081BreakpointFlags",
   // --- The rest of the IDE's bus record, and whether it is being recorded: a fast frame records it only
   // --- near its end, a debug run always (WASM_CORE_LEAN_AND_DEBUG_PLAN Phase 1), so it is no state
   "zx8081OpStartAddress",
@@ -70,12 +70,12 @@ const productionExports = [
   ...Z80_PROFILE_EXPORTS,
   "memory",
   "zx8081ArmAutoRun",
-  "zx8081BreakpointFlagsPtr",
   "zx8081Configure",
   "zx8081ExecuteFrame",
   "zx8081ExecuteInstruction",
-  "zx8081ExecuteUntilStop",
   ...cpuExports("zx8081", { accessLog: true, lastPort: true }),
+  // --- The debugger's in-core loop (`z80-debug-loop.c`)
+  ...debugLoopExports("zx8081"),
   "zx8081GetBaseClockFrequency",
   "zx8081GetBeamY",
   "zx8081GetClockMultiplier",

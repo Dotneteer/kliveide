@@ -327,6 +327,16 @@ uint32_t zxnextExecuteInstruction(void) {
   return zxnextCpuExecuteInstruction();
 }
 
+/*
+ * The debugger's breakpoint flags and in-core loop, `zxnextExecuteUntilStop` (z80-debug-loop.c). It
+ * returns where the fast frame loop does too: an SD command waiting for the host, a reset request.
+ */
+#define Z80_DEBUG_LOOP_PREFIX zxnext
+#define Z80_DEBUG_LOOP_FRAME_COMPLETED frameCompleted
+#define Z80_DEBUG_LOOP_STOP() \
+  (zxnextSdGetHostCommand() != ZXNEXT_SD_HOST_COMMAND_NONE || zxnextResetRequest != 0u)
+#include "../../../../z80/wasm/z80-debug-loop.c"
+
 uint32_t zxnextRenderInstantScreen(void) {
   /* The paused view shows the current state: pending ULA latches included, without applying them */
   uint8_t shown[ZXNEXT_ULA_LATCH_COUNT];

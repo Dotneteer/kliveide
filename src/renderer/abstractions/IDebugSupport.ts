@@ -162,7 +162,12 @@ export interface IDebugSupport {
   romErrorGuard?: () => boolean;
 
   /** Follows the running source statement through a debug run (`CurrentStatementTracker`). */
-  statementTracker?: { observe(pc: number, getPartition?: (address: number) => number | undefined): void; current: number };
+  statementTracker?: {
+    observe(pc: number, getPartition?: (address: number) => number | undefined): void;
+    current: number;
+    /** The addresses `observe` acts at; a debug loop in the core stops there for it (WASM_CORE_LEAN_AND_DEBUG_PLAN D13) */
+    stopAddresses?(): readonly number[];
+  };
 
   /**
    * Erases all breakpoints

@@ -10,7 +10,7 @@ const {
   stampWasmLayout
 } = require("./wasm-layout.cjs");
 const { RZX_VOLATILE_SYMBOLS, rzxExports } = require("./rzx-core-exports.cjs");
-const { cpuExports, Z80_ACCESS_LOG_VOLATILE_SYMBOLS } = require("./z80-cpu-exports.cjs");
+const { cpuExports, debugLoopExports, debugLoopVolatileSymbols, Z80_ACCESS_LOG_VOLATILE_SYMBOLS } = require("./z80-cpu-exports.cjs");
 const { Z80_CONDITION_EXPORTS, Z80_CONDITION_VOLATILE_SYMBOLS } = require("./z80-condition-exports.cjs");
 const { Z80_HISTORY_EXPORTS, Z80_HISTORY_VOLATILE_SYMBOLS } = require("./z80-history-exports.cjs");
 const { Z80_PROFILE_EXPORTS, Z80_PROFILE_VOLATILE_SYMBOLS } = require("./z80-profile-exports.cjs");
@@ -24,6 +24,7 @@ const SPP3E_VOLATILE_SYMBOLS = [
   // --- The IDE's breakpoint conditions and the per-instruction access log they read: debugging
   // --- state, not machine state, so a restore never brings back old breakpoints
   ...Z80_CONDITION_VOLATILE_SYMBOLS,
+  ...debugLoopVolatileSymbols("spp3e"),
   ...Z80_ACCESS_LOG_VOLATILE_SYMBOLS,
   // --- An RZX session in progress (`zx-spectrum-rzx.c`)
   ...RZX_VOLATILE_SYMBOLS,
@@ -228,6 +229,8 @@ const productionExports = [
   "spp3eGetInterruptLineActive",
   "spp3eGetCpuTacts",
   ...cpuExports("spp3e", { snapshotState: true, accessLog: true, accessLogOverflows: true, lastPort: true }),
+  // --- The debugger's in-core loop (`z80-debug-loop.c`)
+  ...debugLoopExports("spp3e"),
   "spp3eGetKeyboardLine",
   "spp3eGetPortFeValue",
   "spp3eGetBorderColor",

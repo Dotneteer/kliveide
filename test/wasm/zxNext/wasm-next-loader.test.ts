@@ -179,6 +179,8 @@ function createViewExports(
     zxnextGetCpuInterruptMode: fn,
     zxnextSetCpuInterruptMode: fn,
     zxnextGetAccessLogPtr: fn,
+    zxnextBreakpointFlagsPtr: fn,
+    zxnextExecuteUntilStop: fn,
     zxnextGetAccessLogCount: fn,
     zxnextGetAccessLogOverflows: fn,
     zxnextGetLastPortAddress: fn,

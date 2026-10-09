@@ -9,7 +9,7 @@ const {
   stagingWasmOutput,
   stampWasmLayout
 } = require("./wasm-layout.cjs");
-const { cpuExports, Z80_ACCESS_LOG_VOLATILE_SYMBOLS } = require("./z80-cpu-exports.cjs");
+const { cpuExports, debugLoopExports, debugLoopVolatileSymbols, Z80_ACCESS_LOG_VOLATILE_SYMBOLS } = require("./z80-cpu-exports.cjs");
 const { Z80_CONDITION_EXPORTS, Z80_CONDITION_VOLATILE_SYMBOLS } = require("./z80-condition-exports.cjs");
 const { Z80_HISTORY_EXPORTS, Z80_HISTORY_VOLATILE_SYMBOLS } = require("./z80-history-exports.cjs");
 const { Z80_PROFILE_EXPORTS, Z80_PROFILE_VOLATILE_SYMBOLS } = require("./z80-profile-exports.cjs");
@@ -32,6 +32,7 @@ const ZXNEXT_VOLATILE_SYMBOLS = [
   // --- The IDE's breakpoint conditions and the per-instruction access log they read: debugging
   // --- state, not machine state, so a restore never brings back old breakpoints
   ...Z80_CONDITION_VOLATILE_SYMBOLS,
+  ...debugLoopVolatileSymbols("zxnext"),
   ...Z80_ACCESS_LOG_VOLATILE_SYMBOLS,
   "zxnextNextRegWatch",
   "zxnextNextRegHit",
@@ -178,6 +179,8 @@ const productionExports = [
   "zxnextGetDaisyInService",
   "zxnextSetTacts",
   ...cpuExports("zxnext", { accessLog: true, accessLogOverflows: true, lastPort: true }),
+  // --- The debugger's in-core loop (`z80-debug-loop.c`)
+  ...debugLoopExports("zxnext"),
   "zxnextGetSharedZ80NMode",
   "zxnextGetLastPortAccessed",
   "zxnextTraceGetStartOffset",

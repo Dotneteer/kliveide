@@ -16,8 +16,13 @@ import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { MEDIA_TAPE } from "@common/structs/project-const";
 import { FAST_LOAD, REWIND_REQUESTED } from "../machine-props";
-import { shouldStopAtDebugPoint } from "../DebugStepDecision";
-import { EXEC_BP, PART_BP } from "../DebugSupport";
+import {
+  hasWasmAccessBreakpoint,
+  runWasmDebugLoop,
+  type WasmDebugLoopHost,
+  shouldStopAtWasmBreakpoint,
+  stepOutAddressFromCore
+} from "../wasmDebugLoop";
 import { importAccessLog } from "../wasmAccessLog";
 import { loadZx8081WasmV2 } from "./wasm/Zx8081WasmV2Loader";
 import { Zx8081WasmHost } from "./Zx8081WasmHost";
@@ -29,9 +34,6 @@ import {
   type MachineStateParts
 } from "../state/wasmStateImage";
 import { fillCoreBytes, writeCoreBytes } from "@emu/machines/reverse/coreMemoryWrites";
-
-/** No extra stop address for `zx8081ExecuteUntilStop` */
-const NO_EXTRA_STOP = 0xffff_ffff;
 
 /** Frames between the end of a load and the typed RUN: the ROM is still printing its report */
 const AUTO_RUN_DELAY_FRAMES = 25;
@@ -515,104 +517,63 @@ export class Zx8081WasmV2Machine extends Zx8081WasmHost implements IExecutionHis
   }
 
   /** The debug path, as the Z88's: one instruction at a time, or on to the next candidate stop */
+  private debugLoopHost?: { runtime: Zx8081WasmV2Runtime; host: WasmDebugLoopHost };
+
   private executeDebugLoop(runtime: Zx8081WasmV2Runtime): FrameTerminationMode {
-    const wasm = runtime.exports;
-    const debugSupport = this.executionContext.debugSupport;
-    let instructionsExecuted = 0;
-    this.executionContext.lastTerminationReason = undefined;
-    if (this.frameCompleted) {
-      this.frameCompleted = false;
+    if (this.debugLoopHost?.runtime !== runtime) {
+      this.debugLoopHost = { runtime, host: this.createDebugLoopHost(runtime) };
     }
-    this.syncCpuFromWasmV2(runtime);
-    this.emulateKeystroke();
-    this.syncTargetClockMultiplier(runtime);
-
-    const watchesBusAccess = debugSupport?.hasAccessBreakpoints() ?? false;
-    const flags = debugSupport?.breakpointFlags;
-    const fastPath =
-      flags instanceof Uint16Array &&
-      flags.length === 0x1_0000 &&
-      !watchesBusAccess &&
-      this.executionContext.debugStepMode !== DebugStepMode.StepInto;
-    if (fastPath) {
-      runtime.breakpointFlags.set(flags);
-    }
-
-    if (debugSupport && this.pc !== debugSupport.lastStartupBreakpoint) {
-      if (this.shouldStopAtBreakpoint(instructionsExecuted)) {
-        return this.finishDebugLoop(FrameTerminationMode.DebugEvent);
-      }
-    }
-    if (debugSupport) {
-      debugSupport.lastStartupBreakpoint = undefined;
-    }
-
-    while (!this.frameCompleted) {
-      const extraStop = fastPath ? this.fastPathStop(instructionsExecuted) : undefined;
-      if (extraStop !== undefined) {
-        instructionsExecuted += wasm.zx8081ExecuteUntilStop(extraStop, EXEC_BP | PART_BP);
-        this.frameCompleted = wasm.zx8081GetFrameCompleted() !== 0;
-      } else {
-        this.frameCompleted = wasm.zx8081ExecuteInstruction() !== 0;
-        instructionsExecuted++;
-      }
-      super.pc = wasm.zx8081GetCpuPc();
-      // --- A reverse-debugging replay run reached its next journal entry (REVERSE_DEBUGGING_PLAN D11);
-      // --- `zx8081ExecuteUntilStop` stops there too
-      if (this.executionContext.historyStopArmed && wasm.z80HistoryCheckStop() !== 0) {
-        return this.finishDebugLoop(FrameTerminationMode.UntilExecutionPoint);
-      }
-      if (watchesBusAccess) {
-        this.importBusAccess(runtime);
-      }
-      if (this.executionContext.frameTerminationMode === FrameTerminationMode.UntilExecutionPoint) {
-        const point = this.executionContext.terminationPoint;
-        if (point != null && this.pc === (point & 0xffff)) {
-          return this.finishDebugLoop(FrameTerminationMode.UntilExecutionPoint);
-        }
-      }
-      if (watchesBusAccess && this.hasAccessBreakpoint()) {
-        return this.finishDebugLoop(FrameTerminationMode.DebugEvent);
-      }
-      if (this.shouldStopAtBreakpoint(instructionsExecuted)) {
-        return this.finishDebugLoop(FrameTerminationMode.DebugEvent);
-      }
-      if (this.executionContext.debugStepMode === DebugStepMode.StepInto) {
-        debugSupport && (debugSupport.imminentBreakpoint = undefined);
-        return this.finishDebugLoop(FrameTerminationMode.DebugEvent);
-      }
-      if (this.getFrameCommand()) {
-        return this.finishDebugLoop(FrameTerminationMode.Normal);
-      }
-    }
-    this.checkAutoRun(runtime);
-    return this.finishDebugLoop(FrameTerminationMode.Normal);
+    return runWasmDebugLoop(this.debugLoopHost.host);
   }
 
-  /** See `Z88WasmV2Machine.wasmV2FastPathStop` */
-  private fastPathStop(instructionsExecuted: number): number | undefined {
-    if (this.getFrameCommand()) return undefined;
-    const context = this.executionContext;
-    let extra = NO_EXTRA_STOP;
-    if (context.frameTerminationMode === FrameTerminationMode.UntilExecutionPoint) {
-      if (context.terminationPoint == null) return undefined;
-      extra = context.terminationPoint & 0xffff;
-    }
-    const another = (address: number | undefined): number | undefined =>
-      address === undefined || address < 0 ? extra : extra === NO_EXTRA_STOP ? address & 0xffff : undefined;
-    switch (context.debugStepMode) {
-      case DebugStepMode.NoDebug:
-      case DebugStepMode.StopAtBreakpoint:
-        return extra;
-      case DebugStepMode.StepOver: {
-        const imminent = context.debugSupport?.imminentBreakpoint;
-        return instructionsExecuted > 0 && imminent !== undefined ? another(imminent) : undefined;
-      }
-      case DebugStepMode.StepOut:
-        return another(this.stepOutAddress);
-      default:
+  private createDebugLoopHost(runtime: Zx8081WasmV2Runtime): WasmDebugLoopHost {
+    const wasm = runtime.exports;
+    const self = this;
+    return {
+      get executionContext() {
+        return self.executionContext;
+      },
+      get frameCompleted() {
+        return self.frameCompleted;
+      },
+      set frameCompleted(value: boolean) {
+        self.frameCompleted = value;
+      },
+      get pc() {
+        return self.pc;
+      },
+      get stepOutAddress() {
+        return self.stepOutAddress;
+      },
+      getFrameCommand: () => this.getFrameCommand(),
+      enter: () => {
+        if (this.frameCompleted) {
+          this.frameCompleted = false;
+        }
+        this.syncCpuFromWasmV2(runtime);
+        this.emulateKeystroke();
+        this.syncTargetClockMultiplier(runtime);
         return undefined;
-    }
+      },
+      // --- The instruction export returns whether the frame completed
+      executeInstruction: () => wasm.zx8081ExecuteInstruction() !== 0,
+      // --- The core's own loop runs to the next place the stop policy may stop at (z80-debug-loop.c)
+      executeUntilStop: (extraStop, mask) => wasm.zx8081ExecuteUntilStop(extraStop, mask),
+      pushBreakpointFlags: (flags) => runtime.breakpointFlags.set(flags),
+      coreFrameCompleted: () => wasm.zx8081GetFrameCompleted() !== 0,
+      // --- Past this class's `pc` setter, which would push the value just read from the core back into it
+      mirrorPc: () => {
+        const pc = wasm.zx8081GetCpuPc();
+        this.setPcMirror(pc);
+        return pc;
+      },
+      historyStopReached: () => wasm.z80HistoryCheckStop() !== 0,
+      importBusAccess: () => this.importBusAccess(runtime),
+      hasAccessBreakpoint: () => this.hasAccessBreakpoint(),
+      shouldStopAtBreakpoint: (instructionsExecuted) => this.shouldStopAtBreakpoint(instructionsExecuted),
+      onFrameEnd: () => this.checkAutoRun(runtime),
+      finish: (termination) => this.finishDebugLoop(termination)
+    };
   }
 
   private finishDebugLoop(termination: FrameTerminationMode): FrameTerminationMode {
@@ -628,47 +589,26 @@ export class Zx8081WasmV2Machine extends Zx8081WasmHost implements IExecutionHis
   }
 
   override markStepOutAddress(): void {
-    const address = this.requireWasmV2Runtime().exports.zx8081GetStepOutAddress();
-    this.stepOutAddress = address === 0xffffffff ? -1 : address;
+    this.stepOutAddress = stepOutAddressFromCore(this.requireWasmV2Runtime().exports.zx8081GetStepOutAddress());
   }
 
   private shouldStopAtBreakpoint(instructionsExecuted: number): boolean {
-    const debugSupport = this.executionContext.debugSupport;
-    if (!debugSupport) return false;
-    return shouldStopAtDebugPoint({
-      debugSupport,
-      debugStepMode: this.executionContext.debugStepMode,
-      pc: this.pc,
+    return shouldStopAtWasmBreakpoint(
+      this,
       instructionsExecuted,
-      getPartition: (address) => this.getPartition(address),
-      getCallInstructionLength: () => this.getCallInstructionLength(),
-      getSp: () => this.sp,
-      getInterruptDepth: () => this.getInterruptDepth(),
-      getRegisters: () => ({ af: this.af, bc: this.bc, de: this.de, hl: this.hl }),
-      stepOutAddress: this.stepOutAddress,
-      retExecuted: false
-    });
+      () => this.sp,
+      () => ({ af: this.af, bc: this.bc, de: this.de, hl: this.hl })
+    );
   }
 
   private hasAccessBreakpoint(): boolean {
-    const debugSupport = this.executionContext.debugSupport;
-    if (!debugSupport) return false;
-    const partitionOf = (addr: number) => this.getPartition(addr);
-    const read = debugSupport.hasMemoryRead(
-      this.lastMemoryReads,
-      this.lastMemoryReadsCount,
-      partitionOf,
-      this.lastMemoryReadValues
-    );
-    const written = debugSupport.hasMemoryWrite(
-      this.lastMemoryWrites,
-      this.lastMemoryWritesCount,
-      partitionOf,
+    return hasWasmAccessBreakpoint(
+      this.executionContext.debugSupport,
+      this,
+      (address) => this.getPartition(address),
+      this.lastMemoryReadValues,
       this.lastMemoryWriteValues
     );
-    const portRead = debugSupport.hasIoRead(this.lastIoReadPort, this.lastIoReadValue);
-    const portWritten = debugSupport.hasIoWrite(this.lastIoWritePort, this.lastIoWriteValue);
-    return read || written || portRead || portWritten;
   }
 
   /** The shared core's data-access log and last port event, into the fields `Z80Cpu` keeps */

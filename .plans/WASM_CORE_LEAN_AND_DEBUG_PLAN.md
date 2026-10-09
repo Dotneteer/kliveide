@@ -1,6 +1,6 @@
 # WASM Core Plan: A Lean Path and a Debug Path in One Core
 
-Status: **accepted** (2026-10-09); **Phases 0, 1 and 2 done** (2026-10-09, §10); **Phase 5 dropped** by D2's
+Status: **accepted** (2026-10-09); **Phases 0, 1, 2, 3 and 4a done** (2026-10-09, §10); **Phase 5 dropped** by D2's
 rule (§10.4). D1–D12 are decisions. The
 author accepted the suggested answers in §9, which D2, D5, D11 and D12 record.
 
@@ -291,6 +291,14 @@ Rejected alternatives:
   inlining decisions move results by several percent (the ZX81 strip-all build ran slower than the build
   it strips, because the compiler stopped inlining the instruction into the frame loop). Decide on sizes,
   repeated runs, or differences well above 3%.
+- **T11. A shared per-instruction loop costs what hand-written loops did not.** The JIT does not
+  inline a generic loop's hooks as it did each host's own loop: the shared loop is 15–30% slower per
+  instruction even with one machine in the process and its hook object reused, and a fresh hook object
+  per frame cost another 20%. Two traps on top: a `super.x = ...` store is not optimized by V8 (it
+  cost a third of the loop until `setPcMirror`), and every extra hook that crosses into the core (a
+  `coreFrameCompleted` the instruction export already answered, a `pc` read back through a getter)
+  adds a boundary call per instruction. The cure is structural, not micro: keep the per-instruction
+  path rare - Phase 4a runs the common modes in the core, where the loop turns once per stop or frame.
 - **T8. The Timex includes `sp48.c` whole.** Any change to the 48K's structure is a Timex change,
   and so is its test.
 
@@ -303,8 +311,8 @@ Rejected alternatives:
 | 0 ✅ | **Measure** (done 2026-10-09, §10) | `scripts/benchmark-debug-overhead.cjs` compiles each core three ways from the same sources: **baseline** (today), **strip-stack** (`-DZ80_BENCH_STRIP_STEP_OUT`: only the shadow stack removed, for D5) and **strip-all** (`-DZ80_BENCH_STRIP_DEBUG`: every hook, the stack, the capture paths and the machine-side items of §1.1 removed). The guards are benchmark-only; a production build is byte-identical with them in the source. strip-all is not a functional debugger, only a speed ceiling, but it must emulate identically: each run checks registers and RAM against baseline. Fast frames per core (ROM workloads where the core boots from raw exports, synthetic RAM programs elsewhere), interleaved rounds, minimum of each. Also, on baseline: the per-instruction loop's boundary cost (`ExecuteInstruction` + `GetCpuPc` + `GetFrameCompleted` per instruction, as the hosts do) against `ExecuteFrame` and, where it exists, `ExecuteUntilStop`. | §10 holds the numbers; D2 and D5 are applied |
 | 1 ✅ | **No-regret gating** (done 2026-10-09, §10.4) | Done: the ZX80/81 records its bus activity (access log, port event, instruction start) only in the last 1024 T-states of a fast frame and always in debug runs, so the CPU panel after pausing a plain Run is unchanged (`test/zx8081-hw/bus-capture.test.ts`); `zx8081OpStartAddress` and the capture flag are volatile (T9). `Z80_ACCESS_LOG_NOINLINE` (`z80.c`, opt-in) moves the access-log write out of line on the cores whose fast frames do not log: ZX80/81, 128K, +3E, Next. Measured and **not** done: the Z88 bus record (its whole debug work measured ~0%), the Next's per-instruction access clearing and port mirror (a DMA hold can end a frame before any instruction, so a capture window could not reproduce the panel exactly, for ≤ 2%), the 48K's out-of-line log (3.3–3.6% slower at the idle ROM, so the 48K and Timex keep the inline log), the Spectrum instruction counters (tested exports, 2 increments per instruction), the RZX/stop-mode word, the Next's trace call (already an early return), its NextReg watch flag (NextReg writes are rare). | Done |
 | 2 ✅ | **Shared C and build lists** (done 2026-10-09) | Done: `src/emu/z80/wasm/z80-cpu-exports.c` (every core's register, step-out, interrupt-depth, access-log and last-port forwarders, prefix-pasted; the Next keeps its own last-port record, `Z80_EXPORT_NO_LAST_PORT`); `src/emu/z80/wasm/z80-debug-loop.c` (the breakpoint flags and `ExecuteUntilStop`, used by the Z88 and ZX80/81 until Phase 4a brings it to every core); `src/emu/machines/zxSpectrum/wasm/common/zx-spectrum-frame.c` (the 48K/128K/+3E frame loop and RZX playback steps, with hook macros for the +3E's FDC and audio); `scripts/z80-cpu-exports.cjs` (`cpuExports(prefix, options)`, `Z80_ACCESS_LOG_VOLATILE_SYMBOLS`) and `scripts/z80-condition-exports.cjs` (`Z80_CONDITION_EXPORTS`, `Z80_CONDITION_VOLATILE_SYMBOLS`) in every build script and the evaluator's test build. 928 C lines removed from the cores for 335 shared (net −593), and 403 build-script lines for 122 (net −281). The Z88 and ZX80/81 build tests that compare a core's exports with its C functions now take the shared files into account (`test/wasmSharedExports.ts`). Verified: every core's export list and volatile-symbol list identical, every core emulating identically to the Phase 1 build (`--reference`), the contract check and all test tiers green. Not done, on purpose: zeroing the history context in `z80-history.c` (a 16-byte store per recorded instruction on the recorder's hot path, to save a few lines per core) and a shared 128K/+3E partition peek (their ROM rules differ). The contract checker needed no change: the hook includes it checks stay literal in each core. | Done |
-| 3 | **Shared TypeScript** | D9: the loop helper and shared stop functions; the Next moves to `WasmHistorySource`; stale `MachineFrameRunner` comment fixed. | Each host's debug loop is hooks only; all tiers green |
-| 4a | **In-core debug loop everywhere** (D13, D14) | `z80-debug-loop.c`'s `ExecuteUntilStop` in sp48/sp128/spp3e/Next too; a stop-table compiler in TypeScript (`DebugSupport` → the core's table, pushed on entry, rebuilt when breakpoints change); partition checks in the core; `extraStop` for the execution point, step-over and step-out; error-stop bits; launch-flow suppression in the table build; the statement-tracker marker. The hosts use it for StopAtBreakpoint, StepOver after its first instruction, StepOut and **NoDebug + UntilExecutionPoint** (Z88/ZX80-81 too). Next: the NextReg/Copper/sprite watches and the SD host-command wait end the loop with a stop reason. RZX record/play steps run in the loop. The per-instruction loop stays for step-into and as the fallback. | T6 equivalence tests pass (breakpoints with partitions, step-over/out, error stops, statement tracking, launch flows); D14's 4a rows hold on every core |
+| 3 ✅ | **Shared TypeScript** (done 2026-10-09, §10.5) | Done: `src/emu/machines/wasmDebugLoop.ts` - `runWasmDebugLoop` (the loop and its stop order once, with hooks: `enter`, `beforeInstruction`, `afterInstruction` for RZX, `afterStep` for the Next's watches and reset, `onFrameEnd` for the ZX81's auto-run, the optional in-core `executeUntilStop`), `fastPathStop`, `shouldStopAtWasmBreakpoint`, `hasWasmAccessBreakpoint`, `stepOutAddressFromCore`. All six hosts run it; each builds its hook object once per core instance (and RZX session) and reuses it. `Z80Cpu.setPcMirror` replaces the hosts' per-instruction `super.pc` stores. The Next uses `WasmHistorySource`; `MachineFrameRunner`'s stale `retExecuted` comment is fixed. **Taken from Phase 4a early:** without a debugger (a project start), the loop uses the in-core path with an empty breakpoint mask, so the Z88 and ZX80/81 run to the execution point in the core. Code: the hosts −300 lines net, the shared module +312 (mostly comments). **Cost, accepted until Phase 4a:** the per-instruction path the Spectrums and the Next still run is 15–30% slower than their hand-written loops were (§10.5, T11). | All test tiers green; §10.5 |
+| 4a ✅ | **In-core debug loop everywhere** (done 2026-10-09, §10.6) | Done: `z80-debug-loop.c` in the 48K (and Timex), 128K, +3E and Next, with `Z80_DEBUG_LOOP_FRAME_COMPLETED` and `Z80_DEBUG_LOOP_STOP()` (the Next returns for an SD host command or a reset request, as its frame loop does); `debugLoopExports`/`debugLoopVolatileSymbols` in the build scripts; a `breakpointFlags` view in every loader. The shared loop builds the core's stop table (`buildCoreStopTable`): the breakpoint flags plus `CORE_STOP_CANDIDATE` (bit 15, the copy's own) at the error stops and at every address the BASIC statement tracker observes (`SourceDebugIndex.trackedAddresses`), so the core stops wherever `shouldStopAtDebugPoint` acts and the TypeScript policy decides there, exactly as before. Without a debugger (a project start) the mask is empty and only the execution point stops. A host keeps a run in TypeScript with `canRunInCore` (an RZX session; the Next's NextReg, Copper or sprite watches); memory/I/O breakpoints and step-into keep it there too. The Next counts in-core instructions in its diagnostics. Departure from D13: the tracker's addresses are stop candidates (the core stops and the tracker observes there) rather than recorded without stopping - exact, and within the BASIC budget. `test/wasm/debug-loop-equivalence.test.ts` (T6): on all six cores, continues, step-overs and step-outs with a conditional and a hit-count breakpoint stop at the same PC, registers and T-states in the core as instruction by instruction (it fails on every core if the core ignores the table). | Done; D14's 4a rows hold except two recorded in §10.6 |
 | 4b | **Access breakpoints in the core** (D12) | Read/write bits in the stop table, a port table; the core stops on a flagged access and reports address, value and the instruction's start; the bus mirror is imported only at stops. | Equivalence tests for memory and port breakpoints; D14's 4b row |
 | 4c | **Conditions and hit counts in the core** | At a flagged address the loop runs the breakpoint's condition program and its hit rule, and continues when either says no. Hit counters in the slot table, read back by `DebugSupport` at stops and on panel refresh. Conditions that read host-only facts, and logpoints, stop as now. | Equivalence tests for conditions, every hit-count rule (C11) and DeZog conditions; D14's 4c row |
 | 4d | **Source-step candidates in the core** | During a source step the core stops only at marker addresses and at the step's SP/interrupt-depth exits; `shouldStopAtSourceStep` runs only there. | The Klive BASIC debugger checks (`scripts/kbasic-ide-check.cjs`, the corpus) unchanged; stepping over a long statement no longer runs per instruction |
@@ -507,4 +515,64 @@ outlier). The 48K's out-of-line log measured −3.3% and −3.6% at the idle ROM
   more than 1024 T-states before its end, now shows no bus accesses in the CPU panel - what the Spectrum
   cores, whose fast frames record none, already show. Recording during the whole frame while a stop
   target is armed would have broken replay determinism (T9).
+
+### 10.5 Phase 3 (2026-10-09)
+
+`benchmark-debug-host-loop.cjs`, the hosts on the production cores, ms per frame and the multiple of a
+plain Run. "Old" is the Phase 2 commit (a separate worktree, alternated with the new code; its Next
+core was not built there, so the Next's old figures are Phase 0's). Two runs each:
+
+| Host | Debug session, old → new | Project start, old → new |
+|---|---|---|
+| 48K | 2.2x / 2.2x → 2.6x / 2.6x | 2.0x / 2.0x → 2.3x / 2.4x |
+| 128K | 2.2x / 2.1x → 2.7x / 2.5x | 2.0x / 1.9x → 2.5x / 2.2x |
+| +3E | 2.1x / 2.1x → 2.8x / 2.6x | 2.0x / 1.9x → 2.4x / 2.2x |
+| Next | 1.4x (Phase 0) → 1.7x / 1.7x | 1.3x (Phase 0) → 1.6x / 1.6x |
+| Z88 | 1.2x / 1.2x → 1.3x / 1.2x | 2.7x / 2.8x → **1.2x / 1.2x** |
+| ZX81 | 1.1x / 1.1x → 1.1x / 1.0x | 2.9x / 3.2x → **1.1x / 1.0x** |
+
+The Z88 and ZX81 project starts meet D14's 4a budget already (the in-core path without a debugger). The
+Spectrums' and the Next's per-instruction path is slower than before (T11). How the gap closed on the way:
+the first shared version measured 3.4x on the 48K; moving the `super.pc` store out of the hooks
+(`setPcMirror`) gave 2.7x, reusing the hook object and keeping the PC the hook returns gave 2.6x. With
+one machine alone in the process the 48K's debug session measured 1.20 ms against 1.02 ms (+18%), the
+ZX81's project start (before the in-core path) 1.25 ms against 0.89 ms (+41%).
+
+**What it decides:** Phase 4a comes next, for the Spectrum family and the Next, and its D14 budgets now
+also recover this regression: in the core, the shared loop turns once per stop or frame.
+
+### 10.6 Phase 4a (2026-10-09)
+
+`benchmark-debug-host-loop.cjs`, the production cores through their hosts, the multiple of a plain Run
+(two runs; "kbasic" is a Klive BASIC loop on the 48K under the source debugger - statement tracker and
+error stops wired as `MachineController` wires them):
+
+| Host | Debug session | Project start | With history recording |
+|---|---|---|---|
+| 48K | 1.0x / 1.0x | 1.0x / 1.0x | 1.11x / 1.09x |
+| 128K | 1.0x / 1.0x | 1.0x / 1.0x | 1.13x / 1.13x |
+| +3E | 1.0x / 1.0x | 1.0x / 1.0x | 1.13x / 1.14x |
+| Next | 1.0x / 1.0x | 1.0x / 1.0x | 1.06x / 1.06x |
+| Z88 | 1.3x / 1.3x | 1.2x / 1.1x | 1.54x / 1.56x |
+| ZX81 | 1.1x / 1.1x | 1.0x / 1.0x | 1.30x / 1.28x |
+| Klive BASIC (48K) | 1.2x / 1.2x | 1.0x / 1.0x | 1.36x / 1.37x |
+
+Against Phase 0 (§10.1) the Spectrums' debug session went from 2.1-2.3x to 1.0x, the Next's from 1.4x to
+1.0x, and every project start to 1.0x (from 1.3-3.0x). Phase 3's regression (§10.5) is gone with it.
+
+**D14, row by row:**
+
+- **Debug session ≤ 1.15x, project start ≤ 1.05x:** held on the Spectrums, the Next and the ZX81.
+  **Missed on the Z88** (1.3x, 1.1-1.2x): the stop table is rebuilt and copied into the core on every entry,
+  about 10 µs, against a Z88 frame of 0.04 ms of emulation (the Z88 did the same copy before 4a, at
+  1.2x). In real time it is 0.2% of the Z88's 5 ms frame. `DebugSupport` keeps no change counter, so
+  rebuilding only after an edit needs one in every place that writes `breakpointFlags`; not worth it for
+  this.
+- **History recording ≤ 1.25x:** held on the Spectrums and the Next. **Missed on the ZX81 (1.3x) and the
+  Z88 (1.55x):** the loop costs nothing there (1.0-1.1x without history); the cost is the recorder's own
+  work per instruction in C, which weighs more on cores whose instructions are cheap (the ZX81's forced
+  display NOPs, the Z88's short frames). A recorder optimization, not a debug-loop one; out of this plan.
+- **Klive BASIC under the source debugger ≤ 1.2x:** held (1.2x): the core stops at every statement
+  boundary for the tracker.
+- **Access breakpoints (4b) and conditions at hot addresses (4c):** not measured yet; their phases.
 

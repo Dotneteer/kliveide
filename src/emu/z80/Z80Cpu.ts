@@ -333,6 +333,17 @@ export class Z80Cpu implements IZ80Cpu {
   }
 
   /**
+   * Sets the program counter's field without a subclass's `pc` setter. A WASM machine mirrors its core's
+   * PC this way after every instruction of its debug loop (`wasmDebugLoop.ts`): the core already holds
+   * the value, so the setter that pushes it back is not wanted, and a `super.pc = ...` store, the other
+   * way past it, is not optimized by V8 - it cost the loop a third of its time
+   * (`.plans/WASM_CORE_LEAN_AND_DEBUG_PLAN.md` §10.5).
+   */
+  protected setPcMirror(value: number): void {
+    this._pc = value & 0xffff;
+  }
+
+  /**
    * The Stack Pointer register
    */
   get sp(): number {

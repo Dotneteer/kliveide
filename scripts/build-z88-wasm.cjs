@@ -3,7 +3,7 @@ const { dirname, relative, resolve, sep } = require("node:path");
 const { spawnSync } = require("node:child_process");
 
 const { acquireWasmBuildLock, waitForWasmBuildLock } = require("./wasm-build-lock.cjs");
-const { cpuExports } = require("./z80-cpu-exports.cjs");
+const { cpuExports, debugLoopExports, debugLoopVolatileSymbols } = require("./z80-cpu-exports.cjs");
 const { Z80_CONDITION_EXPORTS, Z80_CONDITION_VOLATILE_SYMBOLS } = require("./z80-condition-exports.cjs");
 const { Z80_HISTORY_EXPORTS, Z80_HISTORY_VOLATILE_SYMBOLS } = require("./z80-history-exports.cjs");
 const { Z80_PROFILE_EXPORTS, Z80_PROFILE_VOLATILE_SYMBOLS } = require("./z80-profile-exports.cjs");
@@ -25,7 +25,7 @@ const Z88_VOLATILE_SYMBOLS = [
   // --- The IDE's breakpoint conditions and the per-instruction access log they read: debugging
   // --- state, not machine state, so a restore never brings back old breakpoints
   ...Z80_CONDITION_VOLATILE_SYMBOLS,
-  "z88BreakpointFlags",
+  ...debugLoopVolatileSymbols("z88"),
   // --- What the Z88 sent to TXD, held until the host shows it: output the guest never reads back, not
   // --- machine state (a reverse-debugging replay must not depend on when the host emptied it)
   "z88UartTx",
@@ -68,7 +68,6 @@ const productionExports = [
   ...Z80_PROFILE_EXPORTS,
   "memory",
   // --- Buffers
-  "z88BreakpointFlagsPtr",
   "z88MemoryPtr",
   "z88GetMemorySize",
   "z88PixelBufferPtr",
@@ -92,7 +91,6 @@ const productionExports = [
   "z88HardReset",
   "z88ExecuteFrame",
   "z88ExecuteInstruction",
-  "z88ExecuteUntilStop",
   // --- Timing
   "z88GetBaseClockFrequency",
   "z88GetTactsInFrame",
@@ -175,6 +173,8 @@ const productionExports = [
   "z88DrawLcd",
   // --- CPU and bus events
   ...cpuExports("z88"),
+  // --- The debugger's in-core loop (`z80-debug-loop.c`)
+  ...debugLoopExports("z88"),
   "z88GetCpuSnoozed",
   "z88SetCpuSnoozed",
   "z88GetCpuSigInt",

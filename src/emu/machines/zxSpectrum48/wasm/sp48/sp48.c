@@ -667,6 +667,9 @@ void sp48RenderInstantScreen(void) {
 #define ZXS_RENDER_UNTIL_CURRENT_TACT() renderUlaUntilCurrentTact()
 #define ZXS_TACT_REBASE_THRESHOLD SP48_TACT_REBASE_THRESHOLD
 #include "../../../zxSpectrum/wasm/common/zx-spectrum-frame.c"
+/* The debugger's breakpoint flags and in-core loop, `sp48ExecuteUntilStop` (z80-debug-loop.c) */
+#define Z80_DEBUG_LOOP_PREFIX sp48
+#include "../../../../z80/wasm/z80-debug-loop.c"
 
 uint32_t sp48ExecuteInstruction(void) {
 #ifndef Z80_BENCH_STRIP_DEBUG

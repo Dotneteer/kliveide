@@ -226,6 +226,9 @@ export type SpP3eWasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Z8
   spp3eGetCpuRetExecuted: SpP3eWasmV2ExportFunction;
   spp3eGetCpuRetnExecuted: SpP3eWasmV2ExportFunction;
   spp3eGetAccessLogPtr: SpP3eWasmV2ExportFunction;
+  /** The debugger's in-core loop and its breakpoint flags (`z80-debug-loop.c`) */
+  spp3eBreakpointFlagsPtr: SpP3eWasmV2ExportFunction;
+  spp3eExecuteUntilStop: SpP3eWasmV2ExportFunction;
   spp3eGetAccessLogCount: SpP3eWasmV2ExportFunction;
   spp3eGetAccessLogOverflows: SpP3eWasmV2ExportFunction;
   spp3eGetLastPortAddress: SpP3eWasmV2ExportFunction;
@@ -267,6 +270,8 @@ export type SpP3eWasmV2Runtime = {
   readonly memory: Uint8Array;
   /** The CPU's per-instruction data-access log (`wasmAccessLog.ts`) */
   readonly accessLog: Uint32Array;
+  /** The debugger's breakpoint flags, one word per address, written on every debug run */
+  readonly breakpointFlags: Uint16Array;
   readonly ram: Uint8Array;
   readonly rom: Uint8Array;
   readonly pixelBuffer: Uint32Array;
@@ -496,6 +501,8 @@ const requiredV2Exports = [
   "spp3eGetCpuRetExecuted",
   "spp3eGetCpuRetnExecuted",
   "spp3eGetAccessLogPtr",
+  "spp3eBreakpointFlagsPtr",
+  "spp3eExecuteUntilStop",
   "spp3eGetAccessLogCount",
   "spp3eGetAccessLogOverflows",
   "spp3eGetLastPortAddress",
@@ -580,6 +587,7 @@ export function createSpP3eWasmV2Views(
 
   assertViewRange(artifactName, "memory", exports.spp3eMemoryPtr(), memorySize, memoryBuffer);
   assertViewRange(artifactName, "accessLog", exports.spp3eGetAccessLogPtr(), WASM_ACCESS_LOG_CAPACITY * 4, memoryBuffer);
+  assertViewRange(artifactName, "breakpointFlags", exports.spp3eBreakpointFlagsPtr(), 0x1_0000 * 2, memoryBuffer);
   assertViewRange(artifactName, "ram", exports.spp3eRamPtr(), ramSize, memoryBuffer);
   assertViewRange(artifactName, "rom", exports.spp3eRomPtr(), romSize, memoryBuffer);
   assertViewRange(artifactName, "pixelBuffer", exports.spp3ePixelBufferPtr(), pixelBytes, memoryBuffer);
@@ -596,6 +604,7 @@ export function createSpP3eWasmV2Views(
     memoryBuffer,
     memory: new Uint8Array(memoryBuffer, exports.spp3eMemoryPtr(), memorySize),
     accessLog: new Uint32Array(memoryBuffer, exports.spp3eGetAccessLogPtr(), WASM_ACCESS_LOG_CAPACITY),
+    breakpointFlags: new Uint16Array(memoryBuffer, exports.spp3eBreakpointFlagsPtr(), 0x1_0000),
     ram: new Uint8Array(memoryBuffer, exports.spp3eRamPtr(), ramSize),
     rom: new Uint8Array(memoryBuffer, exports.spp3eRomPtr(), romSize),
     pixelBuffer: new Uint32Array(memoryBuffer, exports.spp3ePixelBufferPtr(), pixelWords),

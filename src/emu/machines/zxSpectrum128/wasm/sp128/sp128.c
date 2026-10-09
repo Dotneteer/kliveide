@@ -1412,6 +1412,9 @@ void sp128HardReset(uint32_t timing, uint32_t beta128) {
 #define ZXS_RENDER_UNTIL_CURRENT_TACT() sp128UlaRenderUntilCurrentTact()
 #define ZXS_TACT_REBASE_THRESHOLD SP128_TACT_REBASE_THRESHOLD
 #include "../../../zxSpectrum/wasm/common/zx-spectrum-frame.c"
+/* The debugger's breakpoint flags and in-core loop, `sp128ExecuteUntilStop` (z80-debug-loop.c) */
+#define Z80_DEBUG_LOOP_PREFIX sp128
+#include "../../../../z80/wasm/z80-debug-loop.c"
 
 uint32_t sp128ExecuteInstruction(void) {
 #ifndef Z80_BENCH_STRIP_DEBUG

@@ -57,4 +57,22 @@ function cpuExports(prefix, { snapshotState = false, accessLog = false, accessLo
  */
 const Z80_ACCESS_LOG_VOLATILE_SYMBOLS = ["z80AccessLog", "z80AccessLogCount", "z80AccessLogOverflows"];
 
-module.exports = { CPU_REGISTERS, cpuExports, Z80_ACCESS_LOG_VOLATILE_SYMBOLS };
+/**
+ * The debugger's in-core loop (`src/emu/z80/wasm/z80-debug-loop.c`): where the host writes the breakpoint
+ * flags, and the loop itself
+ * @param {string} prefix The core's export prefix
+ */
+function debugLoopExports(prefix) {
+  return [`${prefix}BreakpointFlagsPtr`, `${prefix}ExecuteUntilStop`];
+}
+
+/**
+ * The loop's breakpoint flags: debugging state the host pushes on every debug run, so a restore keeps
+ * the live core's bytes
+ * @param {string} prefix The core's export prefix
+ */
+function debugLoopVolatileSymbols(prefix) {
+  return [`${prefix}BreakpointFlags`];
+}
+
+module.exports = { CPU_REGISTERS, cpuExports, debugLoopExports, debugLoopVolatileSymbols, Z80_ACCESS_LOG_VOLATILE_SYMBOLS };

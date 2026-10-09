@@ -7,7 +7,9 @@
  *   - debug:      StopAtBreakpoint + DebugEvent with one execution breakpoint that is never hit - a
  *                 debug session running freely;
  *   - exec-point: NoDebug + UntilExecutionPoint at an address never reached - the project-start boot
- *                 (`ReachExecPoint`) before it arrives.
+ *                 (`ReachExecPoint`) before it arrives;
+ *   - history:    the debug session with execution history recording (advanced debugging), the
+ *                 recorder on only for this mode.
  * The workload is `benchmark-debug-overhead.cjs`'s mixed RAM loop (ROM-booted on the Spectrums).
  *
  * Usage: node scripts/benchmark-debug-host-loop.cjs [--core sp48,zxnext] [--frames 100] [--rounds 5] [--json]
@@ -69,6 +71,37 @@ const HOSTS = {
       return { machine: s.machine, prefix: "z88", di: true };
     }
   },
+  // --- A Klive BASIC program on the 48K under the source debugger: the statement tracker and the
+  // --- error stops wired as MachineController wires them (D14's BASIC row)
+  kbasic: {
+    async create() {
+      const { startBasic } = require("../test/kbasic/codegen/run-kit.ts");
+      const { CurrentStatementTracker, SourceDebugIndex } = require("../src/emu/machines/SourceStepDecision.ts");
+      const source = [
+        "DIM i AS UInteger",
+        "DIM s AS ULong",
+        "DO",
+        "  FOR i = 1 TO 1000",
+        "    s = s + i",
+        "  NEXT i",
+        "LOOP",
+        ""
+      ].join("\n");
+      const { session, generated } = await startBasic(source);
+      const info = generated.debug.sourceLevel;
+      const index = new SourceDebugIndex(info);
+      return {
+        machine: session.machine,
+        prefix: "sp48",
+        noMixed: true,
+        prepare(debugSupport) {
+          debugSupport.errorStopAddress = info.extensions.errorEntry;
+          debugSupport.romErrorAddress = 0x0008;
+          debugSupport.statementTracker = new CurrentStatementTracker(index);
+        }
+      };
+    }
+  },
   zx8081: {
     async create() {
       const s = await require("../test/harness/zx81/index.ts").createZx81Session();
@@ -81,11 +114,12 @@ const HOSTS = {
 
 function setMode(machine, mode, debugSupport) {
   const ctx = machine.executionContext;
+  machine.setHistoryEnabled?.(mode === "history");
   if (mode === "run") {
     ctx.debugStepMode = DSM.NoDebug;
     ctx.frameTerminationMode = FTM.Normal;
     ctx.debugSupport = undefined;
-  } else if (mode === "debug") {
+  } else if (mode === "debug" || mode === "history") {
     ctx.debugStepMode = DSM.StopAtBreakpoint;
     ctx.frameTerminationMode = FTM.DebugEvent;
     ctx.debugSupport = debugSupport;
@@ -113,8 +147,9 @@ async function benchmarkHost(id, options) {
   if (!host.noMixed) loadMixed(machine.wasmV2Runtime.exports, prefix, host.di);
   const debugSupport = new DebugSupport(undefined, []);
   debugSupport.addBreakpoint({ address: NEVER, exec: true });
+  host.prepare?.(debugSupport);
 
-  const modes = ["run", "debug", "exec-point"];
+  const modes = ["run", "debug", "exec-point", "history"];
   const times = Object.fromEntries(modes.map((m) => [m, []]));
   for (const m of modes) {
     setMode(machine, m, debugSupport);
@@ -132,7 +167,7 @@ async function benchmarkHost(id, options) {
   return {
     core: id,
     msPerFrame: Object.fromEntries(modes.map((m) => [m, ms(m)])),
-    slowdown: { debug: ms("debug") / ms("run"), "exec-point": ms("exec-point") / ms("run") }
+    slowdown: { debug: ms("debug") / ms("run"), "exec-point": ms("exec-point") / ms("run"), history: ms("history") / ms("run") }
   };
 }
 
@@ -202,7 +237,8 @@ async function main() {
       const m = r.msPerFrame;
       console.log(
         `${id.padEnd(7)} run ${m.run.toFixed(3)} ms   debug ${m.debug.toFixed(3)} ms (x${r.slowdown.debug.toFixed(1)})   ` +
-          `exec-point ${m["exec-point"].toFixed(3)} ms (x${r.slowdown["exec-point"].toFixed(1)})`
+          `exec-point ${m["exec-point"].toFixed(3)} ms (x${r.slowdown["exec-point"].toFixed(1)})   ` +
+          `history ${m.history.toFixed(3)} ms (x${r.slowdown.history.toFixed(2)})`
       );
     }
   }

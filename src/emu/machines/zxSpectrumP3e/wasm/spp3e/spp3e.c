@@ -1865,6 +1865,9 @@ void spp3eHardReset(void) {
   } while (0)
 #define ZXS_AFTER_PLAY_CYCLE() spp3eSetNextAudioSample()
 #include "../../../zxSpectrum/wasm/common/zx-spectrum-frame.c"
+/* The debugger's breakpoint flags and in-core loop, `spp3eExecuteUntilStop` (z80-debug-loop.c) */
+#define Z80_DEBUG_LOOP_PREFIX spp3e
+#include "../../../../z80/wasm/z80-debug-loop.c"
 
 uint32_t spp3eExecuteInstruction(void) {
 #ifndef Z80_BENCH_STRIP_DEBUG
