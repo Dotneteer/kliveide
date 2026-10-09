@@ -4,6 +4,7 @@ import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { DebugSupport } from "@emu/machines/DebugSupport";
 import { connectConditionSupport } from "@emu/machines/conditionStore";
+import { wasmDebugLoopOptions } from "@emu/machines/wasmDebugLoop";
 import { createSp48Session } from "../harness/sp48";
 import { createSp128Session } from "../harness/sp128";
 import { createSession as createNextSession } from "../harness/zxnext";
@@ -12,13 +13,14 @@ import { createZx81Session } from "../harness/zx81";
 
 /**
  * The debugger's in-core loop decides exactly as the instruction-by-instruction loop does
- * (`.plans/WASM_CORE_LEAN_AND_DEBUG_PLAN.md` Phase 4a, T6).
+ * (`.plans/WASM_CORE_LEAN_AND_DEBUG_PLAN.md` Phases 4a and 4b, T6).
  *
- * Each machine runs the same program twice, with the same breakpoints - a conditional one and one with
- * a hit-count rule - through a sequence of continues, step-overs and step-outs. The second run adds a
- * memory-read breakpoint at an address the program never reads: it never fires, but a memory or I/O
- * breakpoint keeps the debug loop instruction by instruction (`runWasmDebugLoop`). Every stop must be
- * the same: PC, registers and T-states.
+ * Each machine runs the same program twice, with the same breakpoints, through a sequence of continues,
+ * step-overs and step-outs: once as the IDE runs it (in the core wherever it can), once instruction by
+ * instruction (`wasmDebugLoopOptions.inCore = false`). Every stop must be the same: PC, registers and
+ * T-states. The breakpoints: an execution breakpoint with a condition and one with a hit-count rule
+ * (Phase 4a), and memory-read, memory-write and port-read breakpoints, one of them with a hit-count rule
+ * (Phase 4b).
  */
 
 type Machine = {
@@ -37,8 +39,11 @@ type Machine = {
   wasmV2Runtime?: { exports: Record<string, (...args: number[]) => number> };
 };
 
-/** A loop that calls a routine ten times, then counts its rounds; `di` keeps it off interrupt handlers */
-function program(base: number, counter: number, di: boolean) {
+/**
+ * A loop that calls a routine ten times, then counts its rounds and reads a port; `di` keeps it off
+ * interrupt handlers
+ */
+function program(base: number, counter: number, di: boolean, port: number) {
   const code: number[] = [];
   const at = () => base + code.length;
   const word = (v: number) => code.push(v & 0xff, (v >> 8) & 0xff);
@@ -53,6 +58,8 @@ function program(base: number, counter: number, di: boolean) {
   code.push(0x2a); word(counter); // ld hl,(counter)
   code.push(0x23); // inc hl
   code.push(0x22); word(counter); // ld (counter),hl
+  code.push(0x01); word(port); // ld bc,port
+  code.push(0xed, 0x78); // in a,(c)
   code.push(0x18, (start - (at() + 2)) & 0xff); // jr start
   const sub = at();
   code[callAt] = sub & 0xff;
@@ -61,27 +68,27 @@ function program(base: number, counter: number, di: boolean) {
   return { code, start, loop, sub, entry: base };
 }
 
-type Setup = { machine: Machine; prefix: string; base: number; counter: number; di: boolean };
+type Setup = { machine: Machine; prefix: string; base: number; counter: number; di: boolean; port: number };
 
 const MACHINES: Record<string, () => Promise<Setup>> = {
   sp48: async () => {
     const s = await createSp48Session();
     s.bootToBasic();
-    return { machine: s.machine as unknown as Machine, prefix: "sp48", base: 0x8000, counter: 0x9000, di: false };
+    return { machine: s.machine as unknown as Machine, prefix: "sp48", base: 0x8000, counter: 0x9000, di: false, port: 0x7ffe };
   },
   sp128: async () => {
     const s = await createSp128Session("sp128");
     s.runFrames(150);
-    return { machine: s.machine as unknown as Machine, prefix: "sp128", base: 0x8000, counter: 0x9000, di: false };
+    return { machine: s.machine as unknown as Machine, prefix: "sp128", base: 0x8000, counter: 0x9000, di: false, port: 0x7ffe };
   },
   spp3e: async () => {
     const s = await createSp128Session("nofdd");
     s.runFrames(150);
-    return { machine: s.machine as unknown as Machine, prefix: "spp3e", base: 0x8000, counter: 0x9000, di: false };
+    return { machine: s.machine as unknown as Machine, prefix: "spp3e", base: 0x8000, counter: 0x9000, di: false, port: 0x7ffe };
   },
   zxnext: async () => {
     const s = await createNextSession();
-    return { machine: s.machine as unknown as Machine, prefix: "zxnext", base: 0x8000, counter: 0x9000, di: true };
+    return { machine: s.machine as unknown as Machine, prefix: "zxnext", base: 0x8000, counter: 0x9000, di: true, port: 0x7ffe };
   },
   z88: async () => {
     const s = await createZ88Session({ audioSampleRate: 44100 });
@@ -90,16 +97,16 @@ const MACHINES: Record<string, () => Promise<Setup>> = {
     [Z88_FLAT_RAM_LAYOUT.SR0, Z88_FLAT_RAM_LAYOUT.SR1, Z88_FLAT_RAM_LAYOUT.SR2, Z88_FLAT_RAM_LAYOUT.SR3].forEach((b, i) =>
       x.z88SetSr(i, b)
     );
-    return { machine: s.machine as unknown as Machine, prefix: "z88", base: 0x8000, counter: 0x9000, di: true };
+    return { machine: s.machine as unknown as Machine, prefix: "z88", base: 0x8000, counter: 0x9000, di: true, port: 0xffb2 };
   },
   zx81: async () => {
     const s = await createZx81Session();
     s.bootToBasic();
-    return { machine: s.machine as unknown as Machine, prefix: "zx8081", base: 0x6000, counter: 0x6200, di: true };
+    return { machine: s.machine as unknown as Machine, prefix: "zx8081", base: 0x6000, counter: 0x6200, di: true, port: 0xfffe };
   }
 };
 
-type Stop = { action: string; pc: number; bc: number; af: number; sp: number; tacts: number };
+type Stop = { action: string; pc: number; bc: number; af: number; sp: number; tacts: number; decision?: number };
 
 /** Runs a debugger action to its stop, as the controller does */
 function debug(m: Machine, action: "continue" | "stepOver" | "stepOut"): void {
@@ -118,10 +125,10 @@ function debug(m: Machine, action: "continue" | "stepOver" | "stepOut"): void {
   }
 }
 
-async function stops(id: string, forcePerInstruction: boolean): Promise<Stop[]> {
-  const { machine: m, prefix, base, counter, di } = await MACHINES[id]();
+async function stops(id: string, inCore: boolean): Promise<Stop[]> {
+  const { machine: m, prefix, base, counter, di, port } = await MACHINES[id]();
   const w = m.wasmV2Runtime!.exports;
-  const p = program(base, counter, di);
+  const p = program(base, counter, di, port);
   p.code.forEach((v, i) => w[`${prefix}WriteMemory`](base + i, v));
   w[`${prefix}WriteMemory`](counter, 0);
   w[`${prefix}WriteMemory`](counter + 1, 0);
@@ -135,18 +142,27 @@ async function stops(id: string, forcePerInstruction: boolean): Promise<Stop[]> 
   ds.addBreakpoint({ address: p.sub, exec: true, condition: "B == 3" });
   // --- Every third time the outer loop starts
   ds.addBreakpoint({ address: p.start, exec: true, hitMode: "every", hitCount: 3 });
-  // --- Never fires; keeps the loop instruction by instruction
-  if (forcePerInstruction) ds.addBreakpoint({ address: 0x3fff, memoryRead: true });
+  // --- Every other read of the round counter, every write of its high byte, the port's every read
+  ds.addBreakpoint({ address: counter, memoryRead: true, hitMode: "every", hitCount: 2 });
+  ds.addBreakpoint({ address: counter + 1, memoryWrite: true });
+  ds.addBreakpoint({ address: port, ioRead: true });
 
+  wasmDebugLoopOptions.inCore = inCore;
   const out: Stop[] = [];
-  const record = (action: string) => out.push({ action, pc: m.pc, bc: m.bc, af: m.af, sp: m.sp, tacts: m.tacts });
+  // --- `decision`: the stop policy's last decision point, which an access stop reports as its instruction
+  const record = (action: string) =>
+    out.push({ action, pc: m.pc, bc: m.bc, af: m.af, sp: m.sp, tacts: m.tacts, decision: ds.lastDecisionPc });
   const actions: ("continue" | "stepOver" | "stepOut")[] = [
     "continue", "continue", "continue", "stepOver", "stepOver", "stepOut", "continue",
     "stepOver", "stepOver", "stepOver", "continue", "stepOut", "continue", "continue"
   ];
-  for (const action of actions) {
-    debug(m, action);
-    record(action);
+  try {
+    for (const action of actions) {
+      debug(m, action);
+      record(action);
+    }
+  } finally {
+    wasmDebugLoopOptions.inCore = true;
   }
   return out;
 }
@@ -154,8 +170,8 @@ async function stops(id: string, forcePerInstruction: boolean): Promise<Stop[]> 
 describe("debug loop: in the core = instruction by instruction", () => {
   for (const id of Object.keys(MACHINES)) {
     it(id, async () => {
-      const inCore = await stops(id, false);
-      const perInstruction = await stops(id, true);
+      const inCore = await stops(id, true);
+      const perInstruction = await stops(id, false);
       expect(inCore).toEqual(perInstruction);
       // --- The program reached both breakpoints and the steps moved
       expect(new Set(inCore.map((s) => s.pc)).size).toBeGreaterThan(3);

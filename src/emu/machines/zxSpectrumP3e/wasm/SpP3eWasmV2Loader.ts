@@ -229,6 +229,7 @@ export type SpP3eWasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Z8
   /** The debugger's in-core loop and its breakpoint flags (`z80-debug-loop.c`) */
   spp3eBreakpointFlagsPtr: SpP3eWasmV2ExportFunction;
   spp3eExecuteUntilStop: SpP3eWasmV2ExportFunction;
+  spp3eGetDebugOpStart: SpP3eWasmV2ExportFunction;
   spp3eGetAccessLogCount: SpP3eWasmV2ExportFunction;
   spp3eGetAccessLogOverflows: SpP3eWasmV2ExportFunction;
   spp3eGetLastPortAddress: SpP3eWasmV2ExportFunction;
@@ -503,6 +504,7 @@ const requiredV2Exports = [
   "spp3eGetAccessLogPtr",
   "spp3eBreakpointFlagsPtr",
   "spp3eExecuteUntilStop",
+  "spp3eGetDebugOpStart",
   "spp3eGetAccessLogCount",
   "spp3eGetAccessLogOverflows",
   "spp3eGetLastPortAddress",

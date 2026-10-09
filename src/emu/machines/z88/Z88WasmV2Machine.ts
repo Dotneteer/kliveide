@@ -631,7 +631,8 @@ export class Z88WasmV2Machine extends Z88WasmHost implements IExecutionHistorySo
       // --- The instruction export returns whether the frame completed
       executeInstruction: () => wasm.z88ExecuteInstruction() !== 0,
       // --- The core's own loop runs to the next place the stop policy may stop at (z80-debug-loop.c)
-      executeUntilStop: (extraStop, mask) => wasm.z88ExecuteUntilStop(extraStop, mask),
+      executeUntilStop: (extraStop, mask, accessMask) => wasm.z88ExecuteUntilStop(extraStop, mask, accessMask),
+      lastOpStart: () => wasm.z88GetDebugOpStart(),
       pushBreakpointFlags: (flags) => runtime.breakpointFlags.set(flags),
       coreFrameCompleted: () => wasm.z88GetFrameCompleted() !== 0,
       // --- Past this class's `pc` setter, which would push the value just read from the core back into it

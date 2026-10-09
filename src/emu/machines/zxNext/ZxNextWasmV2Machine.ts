@@ -1084,12 +1084,15 @@ export class ZxNextWasmV2Machine
       // --- The core's own loop runs to the next place the stop policy may stop at (z80-debug-loop.c);
       // --- the NextReg, Copper and sprite watches need the instruction's start tracked around every
       // --- instruction (`beforeInstruction`), so a run with one keeps to TypeScript
-      executeUntilStop: (extraStop, mask) => {
+      executeUntilStop: (extraStop, mask, accessMask) => {
         // --- The diagnostics count every instruction the debugger ran, in the core or one by one
-        const executed = wasm.zxnextExecuteUntilStop(extraStop, mask);
+        const executed = wasm.zxnextExecuteUntilStop(extraStop, mask, accessMask);
         this.wasmV2DebugSteps += executed;
+        // --- A memory/I/O breakpoint hit is reported against the instruction that touched it
+        if (watchesBusAccess && executed > 0) this.opStartAddress = wasm.zxnextGetDebugOpStart();
         return executed;
       },
+      lastOpStart: () => wasm.zxnextGetDebugOpStart(),
       pushBreakpointFlags: (flags) => runtime.breakpointFlags.set(flags),
       canRunInCore: () => !(watchesNextReg || watchesCopper || watchesSprites),
       coreFrameCompleted: () => wasm.zxnextGetFrameCompleted() !== 0,

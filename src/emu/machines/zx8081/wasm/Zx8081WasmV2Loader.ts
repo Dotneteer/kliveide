@@ -72,6 +72,7 @@ export const zx8081WasmV2RequiredExports = [
   "zx8081ExecuteFrame",
   "zx8081ExecuteInstruction",
   "zx8081ExecuteUntilStop",
+  "zx8081GetDebugOpStart",
   "zx8081GetAccessLogCount",
   "zx8081GetAccessLogPtr",
   "zx8081GetBaseClockFrequency",

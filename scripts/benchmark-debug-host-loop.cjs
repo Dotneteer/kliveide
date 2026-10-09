@@ -9,7 +9,8 @@
  *   - exec-point: NoDebug + UntilExecutionPoint at an address never reached - the project-start boot
  *                 (`ReachExecPoint`) before it arrives;
  *   - history:    the debug session with execution history recording (advanced debugging), the
- *                 recorder on only for this mode.
+ *                 recorder on only for this mode;
+ *   - access:     the debug session with a memory-read and a port-write breakpoint never hit (D14's 4b row).
  * The workload is `benchmark-debug-overhead.cjs`'s mixed RAM loop (ROM-booted on the Spectrums).
  *
  * Usage: node scripts/benchmark-debug-host-loop.cjs [--core sp48,zxnext] [--frames 100] [--rounds 5] [--json]
@@ -112,17 +113,17 @@ const HOSTS = {
   }
 };
 
-function setMode(machine, mode, debugSupport) {
+function setMode(machine, mode, debugSupport, accessSupport) {
   const ctx = machine.executionContext;
   machine.setHistoryEnabled?.(mode === "history");
   if (mode === "run") {
     ctx.debugStepMode = DSM.NoDebug;
     ctx.frameTerminationMode = FTM.Normal;
     ctx.debugSupport = undefined;
-  } else if (mode === "debug" || mode === "history") {
+  } else if (mode === "debug" || mode === "history" || mode === "access") {
     ctx.debugStepMode = DSM.StopAtBreakpoint;
     ctx.frameTerminationMode = FTM.DebugEvent;
-    ctx.debugSupport = debugSupport;
+    ctx.debugSupport = mode === "access" ? accessSupport : debugSupport;
   } else {
     ctx.debugStepMode = DSM.NoDebug;
     ctx.frameTerminationMode = FTM.UntilExecutionPoint;
@@ -148,17 +149,22 @@ async function benchmarkHost(id, options) {
   const debugSupport = new DebugSupport(undefined, []);
   debugSupport.addBreakpoint({ address: NEVER, exec: true });
   host.prepare?.(debugSupport);
+  const accessSupport = new DebugSupport(undefined, []);
+  accessSupport.addBreakpoint({ address: NEVER, exec: true });
+  accessSupport.addBreakpoint({ address: 0xbfff, memoryRead: true });
+  accessSupport.addBreakpoint({ address: 0x1234, ioWrite: true });
+  host.prepare?.(accessSupport);
 
-  const modes = ["run", "debug", "exec-point", "history"];
+  const modes = ["run", "debug", "exec-point", "history", "access"];
   const times = Object.fromEntries(modes.map((m) => [m, []]));
   for (const m of modes) {
-    setMode(machine, m, debugSupport);
+    setMode(machine, m, debugSupport, accessSupport);
     timeFrames(machine, Math.ceil(options.frames / 5));
   }
   for (let round = 0; round < options.rounds; round++) {
     for (let i = 0; i < modes.length; i++) {
       const m = modes[(i + round) % modes.length];
-      setMode(machine, m, debugSupport);
+      setMode(machine, m, debugSupport, accessSupport);
       times[m].push(timeFrames(machine, options.frames));
     }
   }
@@ -167,7 +173,7 @@ async function benchmarkHost(id, options) {
   return {
     core: id,
     msPerFrame: Object.fromEntries(modes.map((m) => [m, ms(m)])),
-    slowdown: { debug: ms("debug") / ms("run"), "exec-point": ms("exec-point") / ms("run"), history: ms("history") / ms("run") }
+    slowdown: { debug: ms("debug") / ms("run"), "exec-point": ms("exec-point") / ms("run"), history: ms("history") / ms("run"), access: ms("access") / ms("run") }
   };
 }
 
@@ -238,7 +244,8 @@ async function main() {
       console.log(
         `${id.padEnd(7)} run ${m.run.toFixed(3)} ms   debug ${m.debug.toFixed(3)} ms (x${r.slowdown.debug.toFixed(1)})   ` +
           `exec-point ${m["exec-point"].toFixed(3)} ms (x${r.slowdown["exec-point"].toFixed(1)})   ` +
-          `history ${m.history.toFixed(3)} ms (x${r.slowdown.history.toFixed(2)})`
+          `history ${m.history.toFixed(3)} ms (x${r.slowdown.history.toFixed(2)})   ` +
+          `access ${m.access.toFixed(3)} ms (x${r.slowdown.access.toFixed(2)})`
       );
     }
   }

@@ -1388,7 +1388,8 @@ export class ZxSpectrumP3eWasmV2Machine
       afterInstruction: rzx ? () => rzx.afterInstruction() : undefined,
       // --- The core's own loop runs to the next place the stop policy may stop at (z80-debug-loop.c);
       // --- an RZX session decides around every instruction call, so it keeps the run in TypeScript
-      executeUntilStop: (extraStop, mask) => wasm.spp3eExecuteUntilStop(extraStop, mask),
+      executeUntilStop: (extraStop, mask, accessMask) => wasm.spp3eExecuteUntilStop(extraStop, mask, accessMask),
+      lastOpStart: () => wasm.spp3eGetDebugOpStart(),
       pushBreakpointFlags: (flags) => runtime.breakpointFlags.set(flags),
       canRunInCore: () => rzx === undefined,
       // --- In playback a frame completes only at an RZX frame end

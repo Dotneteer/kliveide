@@ -558,7 +558,8 @@ export class Zx8081WasmV2Machine extends Zx8081WasmHost implements IExecutionHis
       // --- The instruction export returns whether the frame completed
       executeInstruction: () => wasm.zx8081ExecuteInstruction() !== 0,
       // --- The core's own loop runs to the next place the stop policy may stop at (z80-debug-loop.c)
-      executeUntilStop: (extraStop, mask) => wasm.zx8081ExecuteUntilStop(extraStop, mask),
+      executeUntilStop: (extraStop, mask, accessMask) => wasm.zx8081ExecuteUntilStop(extraStop, mask, accessMask),
+      lastOpStart: () => wasm.zx8081GetDebugOpStart(),
       pushBreakpointFlags: (flags) => runtime.breakpointFlags.set(flags),
       coreFrameCompleted: () => wasm.zx8081GetFrameCompleted() !== 0,
       // --- Past this class's `pc` setter, which would push the value just read from the core back into it

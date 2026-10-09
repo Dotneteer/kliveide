@@ -181,6 +181,7 @@ function createViewExports(
     zxnextGetAccessLogPtr: fn,
     zxnextBreakpointFlagsPtr: fn,
     zxnextExecuteUntilStop: fn,
+    zxnextGetDebugOpStart: fn,
     zxnextGetAccessLogCount: fn,
     zxnextGetAccessLogOverflows: fn,
     zxnextGetLastPortAddress: fn,

@@ -1,6 +1,6 @@
 # WASM Core Plan: A Lean Path and a Debug Path in One Core
 
-Status: **accepted** (2026-10-09); **Phases 0, 1, 2, 3 and 4a done** (2026-10-09, §10); **Phase 5 dropped** by D2's
+Status: **accepted** (2026-10-09); **Phases 0, 1, 2, 3, 4a and 4b done** (2026-10-09, §10); **Phase 5 dropped** by D2's
 rule (§10.4). D1–D12 are decisions. The
 author accepted the suggested answers in §9, which D2, D5, D11 and D12 record.
 
@@ -313,7 +313,7 @@ Rejected alternatives:
 | 2 ✅ | **Shared C and build lists** (done 2026-10-09) | Done: `src/emu/z80/wasm/z80-cpu-exports.c` (every core's register, step-out, interrupt-depth, access-log and last-port forwarders, prefix-pasted; the Next keeps its own last-port record, `Z80_EXPORT_NO_LAST_PORT`); `src/emu/z80/wasm/z80-debug-loop.c` (the breakpoint flags and `ExecuteUntilStop`, used by the Z88 and ZX80/81 until Phase 4a brings it to every core); `src/emu/machines/zxSpectrum/wasm/common/zx-spectrum-frame.c` (the 48K/128K/+3E frame loop and RZX playback steps, with hook macros for the +3E's FDC and audio); `scripts/z80-cpu-exports.cjs` (`cpuExports(prefix, options)`, `Z80_ACCESS_LOG_VOLATILE_SYMBOLS`) and `scripts/z80-condition-exports.cjs` (`Z80_CONDITION_EXPORTS`, `Z80_CONDITION_VOLATILE_SYMBOLS`) in every build script and the evaluator's test build. 928 C lines removed from the cores for 335 shared (net −593), and 403 build-script lines for 122 (net −281). The Z88 and ZX80/81 build tests that compare a core's exports with its C functions now take the shared files into account (`test/wasmSharedExports.ts`). Verified: every core's export list and volatile-symbol list identical, every core emulating identically to the Phase 1 build (`--reference`), the contract check and all test tiers green. Not done, on purpose: zeroing the history context in `z80-history.c` (a 16-byte store per recorded instruction on the recorder's hot path, to save a few lines per core) and a shared 128K/+3E partition peek (their ROM rules differ). The contract checker needed no change: the hook includes it checks stay literal in each core. | Done |
 | 3 ✅ | **Shared TypeScript** (done 2026-10-09, §10.5) | Done: `src/emu/machines/wasmDebugLoop.ts` - `runWasmDebugLoop` (the loop and its stop order once, with hooks: `enter`, `beforeInstruction`, `afterInstruction` for RZX, `afterStep` for the Next's watches and reset, `onFrameEnd` for the ZX81's auto-run, the optional in-core `executeUntilStop`), `fastPathStop`, `shouldStopAtWasmBreakpoint`, `hasWasmAccessBreakpoint`, `stepOutAddressFromCore`. All six hosts run it; each builds its hook object once per core instance (and RZX session) and reuses it. `Z80Cpu.setPcMirror` replaces the hosts' per-instruction `super.pc` stores. The Next uses `WasmHistorySource`; `MachineFrameRunner`'s stale `retExecuted` comment is fixed. **Taken from Phase 4a early:** without a debugger (a project start), the loop uses the in-core path with an empty breakpoint mask, so the Z88 and ZX80/81 run to the execution point in the core. Code: the hosts −300 lines net, the shared module +312 (mostly comments). **Cost, accepted until Phase 4a:** the per-instruction path the Spectrums and the Next still run is 15–30% slower than their hand-written loops were (§10.5, T11). | All test tiers green; §10.5 |
 | 4a ✅ | **In-core debug loop everywhere** (done 2026-10-09, §10.6) | Done: `z80-debug-loop.c` in the 48K (and Timex), 128K, +3E and Next, with `Z80_DEBUG_LOOP_FRAME_COMPLETED` and `Z80_DEBUG_LOOP_STOP()` (the Next returns for an SD host command or a reset request, as its frame loop does); `debugLoopExports`/`debugLoopVolatileSymbols` in the build scripts; a `breakpointFlags` view in every loader. The shared loop builds the core's stop table (`buildCoreStopTable`): the breakpoint flags plus `CORE_STOP_CANDIDATE` (bit 15, the copy's own) at the error stops and at every address the BASIC statement tracker observes (`SourceDebugIndex.trackedAddresses`), so the core stops wherever `shouldStopAtDebugPoint` acts and the TypeScript policy decides there, exactly as before. Without a debugger (a project start) the mask is empty and only the execution point stops. A host keeps a run in TypeScript with `canRunInCore` (an RZX session; the Next's NextReg, Copper or sprite watches); memory/I/O breakpoints and step-into keep it there too. The Next counts in-core instructions in its diagnostics. Departure from D13: the tracker's addresses are stop candidates (the core stops and the tracker observes there) rather than recorded without stopping - exact, and within the BASIC budget. `test/wasm/debug-loop-equivalence.test.ts` (T6): on all six cores, continues, step-overs and step-outs with a conditional and a hit-count breakpoint stop at the same PC, registers and T-states in the core as instruction by instruction (it fails on every core if the core ignores the table). | Done; D14's 4a rows hold except two recorded in §10.6 |
-| 4b | **Access breakpoints in the core** (D12) | Read/write bits in the stop table, a port table; the core stops on a flagged access and reports address, value and the instruction's start; the bus mirror is imported only at stops. | Equivalence tests for memory and port breakpoints; D14's 4b row |
+| 4b ✅ | **Access breakpoints in the core** (D12; done 2026-10-09, §10.7) | Done: `<prefix>ExecuteUntilStop(extraStop, mask, accessMask)` also returns after an instruction that read or wrote an address, or accessed a port, whose flags meet `accessMask` (the host's MEM_READ/MEM_WRITE/IO_READ/IO_WRITE bits; a port breakpoint's flags are already set at every port its mask matches). The default test reads the shared Z80's access log and port event; the Z88 tests its own bus record and the Next its own port record (which the DMA's port writes reach) through `Z80_DEBUG_LOOP_ACCESS_HIT`. TypeScript then imports the bus record and decides as before (disabled, partitions, conditions, hit counts). `<prefix>GetDebugOpStart` (every core) is where the loop's last instruction started: the loop sets `lastDecisionPc` from it after every in-core run, as the per-instruction policy had it, and the Next reports access hits against it. `wasmDebugLoopOptions.inCore` is the test seam that forces the per-instruction path. The equivalence test adds memory-read (with a hit-count rule), memory-write and port-read breakpoints, and compares `lastDecisionPc` too. | Done; D14's 4b row holds except the Z88 (§10.7) |
 | 4c | **Conditions and hit counts in the core** | At a flagged address the loop runs the breakpoint's condition program and its hit rule, and continues when either says no. Hit counters in the slot table, read back by `DebugSupport` at stops and on panel refresh. Conditions that read host-only facts, and logpoints, stop as now. | Equivalence tests for conditions, every hit-count rule (C11) and DeZog conditions; D14's 4c row |
 | 4d | **Source-step candidates in the core** | During a source step the core stops only at marker addresses and at the step's SP/interrupt-depth exits; `shouldStopAtSourceStep` runs only there. | The Klive BASIC debugger checks (`scripts/kbasic-ide-check.cjs`, the corpus) unchanged; stepping over a long statement no longer runs per instruction |
 | 5 ✗ | **Lean and instrumented variants** — **dropped** by D2 (§10.4); kept here for the record | D1 split of `z80.c`; D3 selection; D6 machine-side rule; lockstep test per core (D4): the same workload, lean frames vs instrumented frames with every feature idle, state blobs equal after N frames, including a mid-frame switch (T7); then the same with history and profiling on, compared on machine state only. Size budgets raised (T3). | Lean fast frames within noise of Phase 0's stripped ceiling; lockstep tests green on every core; reverse-debugging self-checking replay green |
@@ -575,4 +575,35 @@ Against Phase 0 (§10.1) the Spectrums' debug session went from 2.1-2.3x to 1.0x
 - **Klive BASIC under the source debugger ≤ 1.2x:** held (1.2x): the core stops at every statement
   boundary for the tracker.
 - **Access breakpoints (4b) and conditions at hot addresses (4c):** not measured yet; their phases.
+
+### 10.7 Phase 4b (2026-10-09)
+
+The host benchmark's "access" mode: a debug session with a memory-read and a port-write breakpoint that
+are never hit (two runs; multiples of a plain Run):
+
+| Host | Debug session | With access breakpoints |
+|---|---|---|
+| 48K | 1.0x / 1.0x | 1.05x / 1.07x |
+| 128K | 1.0x / 1.0x | 1.05x / 1.05x |
+| +3E | 1.1x / 1.0x | 1.05x / 1.06x |
+| Next | 1.0x / 1.0x | 1.02x / 1.03x |
+| Z88 | 1.3x / 1.3x | 1.34x / 1.35x |
+| ZX81 | 1.1x / 1.1x | 1.11x / 1.09x |
+| Klive BASIC (48K) | 1.2x / 1.2x | 1.32x / 1.32x |
+
+Before 4b any access breakpoint kept a session instruction by instruction (Phase 0: 2.1-2.3x on the
+Spectrums and more with the bus mirrored). **D14's 4b row (≤ 1.3x) holds** on every core but the Z88,
+whose 1.35x is its fixed per-entry cost (§10.6) plus 0.05x; the BASIC program under the source debugger
+with access breakpoints, a combination outside the D14 rows, measures 1.32x.
+
+**Two bugs the tests caught, both fixed:**
+
+- `<prefix>DebugOpStart` was written by debug runs only but was part of the state image: every
+  reverse-debugging test that compares a replay with a debug run failed (51 tests). It is volatile now
+  (`debugLoopVolatileSymbols`) - T9 again: any static a debug run writes and a fast frame does not must be
+  volatile.
+- The WPMEM stop report's PC is the stop policy's last decision point (`lastDecisionPc`), which the
+  per-instruction loop sets before every instruction and an in-core run did not: an access stop named
+  the instruction the run started at. The loop now sets it from `<prefix>GetDebugOpStart` after every
+  in-core run, and the equivalence test compares it (it fails on all six cores without the fix).
 

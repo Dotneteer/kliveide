@@ -163,6 +163,7 @@ export type Sp128WasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Z8
   /** The debugger's in-core loop and its breakpoint flags (`z80-debug-loop.c`) */
   sp128BreakpointFlagsPtr: Sp128WasmV2ExportFunction;
   sp128ExecuteUntilStop: Sp128WasmV2ExportFunction;
+  sp128GetDebugOpStart: Sp128WasmV2ExportFunction;
   sp128GetAccessLogCount: Sp128WasmV2ExportFunction;
   sp128GetAccessLogOverflows: Sp128WasmV2ExportFunction;
   sp128GetLastPortAddress: Sp128WasmV2ExportFunction;
@@ -375,6 +376,7 @@ const requiredV2Exports = [
   "sp128GetAccessLogPtr",
   "sp128BreakpointFlagsPtr",
   "sp128ExecuteUntilStop",
+  "sp128GetDebugOpStart",
   "sp128GetAccessLogCount",
   "sp128GetAccessLogOverflows",
   "sp128GetLastPortAddress",

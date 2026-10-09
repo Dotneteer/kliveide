@@ -121,6 +121,7 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Z
   /** The debugger's in-core loop and its breakpoint flags (`z80-debug-loop.c`) */
   zxnextBreakpointFlagsPtr: ZxNextWasmV2ExportFunction;
   zxnextExecuteUntilStop: ZxNextWasmV2ExportFunction;
+  zxnextGetDebugOpStart: ZxNextWasmV2ExportFunction;
   zxnextGetAccessLogCount: ZxNextWasmV2ExportFunction;
   zxnextGetAccessLogOverflows: ZxNextWasmV2ExportFunction;
   zxnextGetLastPortAddress: ZxNextWasmV2ExportFunction;
@@ -552,6 +553,7 @@ const requiredV2Exports = [
   "zxnextGetAccessLogPtr",
   "zxnextBreakpointFlagsPtr",
   "zxnextExecuteUntilStop",
+  "zxnextGetDebugOpStart",
   "zxnextGetAccessLogCount",
   "zxnextGetAccessLogOverflows",
   "zxnextGetLastPortAddress",

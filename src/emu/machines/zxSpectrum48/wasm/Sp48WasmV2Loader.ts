@@ -127,6 +127,7 @@ export type Sp48WasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Z80
   /** The debugger's in-core loop and its breakpoint flags (`z80-debug-loop.c`) */
   sp48BreakpointFlagsPtr: Sp48WasmV2ExportFunction;
   sp48ExecuteUntilStop: Sp48WasmV2ExportFunction;
+  sp48GetDebugOpStart: Sp48WasmV2ExportFunction;
   sp48GetAccessLogCount: Sp48WasmV2ExportFunction;
   sp48GetAccessLogOverflows: Sp48WasmV2ExportFunction;
   sp48GetLastPortAddress: Sp48WasmV2ExportFunction;
@@ -324,6 +325,7 @@ const requiredV2Exports = [
   "sp48GetAccessLogPtr",
   "sp48BreakpointFlagsPtr",
   "sp48ExecuteUntilStop",
+  "sp48GetDebugOpStart",
   "sp48GetAccessLogCount",
   "sp48GetAccessLogOverflows",
   "sp48GetLastPortAddress",

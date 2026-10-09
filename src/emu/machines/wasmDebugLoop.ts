@@ -3,7 +3,7 @@ import type { ExecutionContext } from "@emu/abstractions/ExecutionContext";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import type { IDebugSupport } from "@renderer/abstractions/IDebugSupport";
 import { shouldStopAtDebugPoint } from "./DebugStepDecision";
-import { EXEC_BP, PART_BP } from "./DebugSupport";
+import { EXEC_BP, IO_READ_BP, IO_WRITE_BP, MEM_READ_BP, MEM_WRITE_BP, PART_BP } from "./DebugSupport";
 import type { ReturnRegisters } from "./SourceStepDecision";
 
 /*
@@ -16,6 +16,12 @@ import type { ReturnRegisters } from "./SourceStepDecision";
  * (`executeUntilStop`); a host that offers it already (the Z88 and the ZX80/81) runs whole stretches
  * there.
  */
+
+/**
+ * A test seam: `inCore: false` keeps every run instruction by instruction, so a test can compare the
+ * in-core loop with it (`test/wasm/debug-loop-equivalence.test.ts`). Always on in the IDE.
+ */
+export const wasmDebugLoopOptions = { inCore: true };
 
 /** `extraStop` for `<prefix>ExecuteUntilStop` when there is none: any value above $FFFF */
 export const NO_EXTRA_STOP = 0xffff_ffff;
@@ -54,10 +60,16 @@ export interface WasmDebugLoopHost {
   /** What the call did, for an RZX-aware host; `undefined` for an ordinary instruction */
   afterInstruction?(): WasmStepOutcome;
   /**
-   * The in-core loop, when the core has one: runs until the frame ends or the PC reaches an address
-   * whose breakpoint flags meet `mask`, or `extraStop`. Returns the instructions run.
+   * The in-core loop, when the core has one: runs until the frame ends, the PC reaches an address whose
+   * breakpoint flags meet `mask` or `extraStop`, or an instruction touches an address or port whose flags
+   * meet `accessMask`. Returns the instructions run.
    */
-  executeUntilStop?(extraStop: number, mask: number): number;
+  executeUntilStop?(extraStop: number, mask: number, accessMask: number): number;
+  /**
+   * Where the last instruction `executeUntilStop` ran started (`<prefix>GetDebugOpStart`): the stop
+   * policy's last decision point, had the run gone instruction by instruction
+   */
+  lastOpStart?(): number;
   /** Copies the stop table (`buildCoreStopTable`) into the core's breakpoint flags (with `executeUntilStop`) */
   pushBreakpointFlags?(flags: Uint16Array): void;
   /**
@@ -109,20 +121,22 @@ export function runWasmDebugLoop(host: WasmDebugLoopHost): FrameTerminationMode 
   // --- only ever read by the memory/IO breakpoint test, so decide once whether it is needed
   const watchesBusAccess = debugSupport?.hasAccessBreakpoints() ?? false;
 
-  // --- The in-core loop needs the stop table in the core and no memory or I/O breakpoint (those are
-  // --- tested after every instruction); a step-into is one instruction, so it never uses it. Without a
-  // --- debugger (a project's start runs to its execution point) no flag can stop the run: the mask is
-  // --- empty, so a table a past debug run left in the core is ignored.
+  // --- The in-core loop needs the stop table in the core; a step-into is one instruction, so it never
+  // --- uses it. A memory or I/O breakpoint makes the core stop after every instruction that touched a
+  // --- flagged address or port, where the test below decides (`accessMask`). Without a debugger (a
+  // --- project's start runs to its execution point) no flag can stop the run: the masks are empty, so a
+  // --- table a past debug run left in the core is ignored.
   const flags = debugSupport?.breakpointFlags;
   const flagsUsable = flags instanceof Uint16Array && flags.length === 0x1_0000;
   const fastPath =
+    wasmDebugLoopOptions.inCore &&
     host.executeUntilStop !== undefined &&
     (debugSupport === undefined || flagsUsable) &&
-    !watchesBusAccess &&
     context.debugStepMode !== DebugStepMode.StepInto &&
     (host.canRunInCore?.() ?? true);
   if (fastPath && debugSupport) host.pushBreakpointFlags?.(buildCoreStopTable(debugSupport));
   const stopMask = debugSupport ? EXEC_BP | PART_BP | CORE_STOP_CANDIDATE : 0;
+  const accessMask = watchesBusAccess ? MEM_READ_BP | MEM_WRITE_BP | IO_READ_BP | IO_WRITE_BP : 0;
 
   if (debugSupport && host.pc !== debugSupport.lastStartupBreakpoint) {
     if (host.shouldStopAtBreakpoint(instructionsExecuted)) {
@@ -141,7 +155,11 @@ export function runWasmDebugLoop(host: WasmDebugLoopHost): FrameTerminationMode 
     const extraStop = fastPath ? fastPathStop(host, instructionsExecuted) : undefined;
     if (extraStop !== undefined) {
       // --- Up to the next place the policy below may stop at, or the end of the frame
-      instructionsExecuted += host.executeUntilStop!(extraStop, stopMask);
+      const executed = host.executeUntilStop!(extraStop, stopMask, accessMask);
+      instructionsExecuted += executed;
+      // --- Instruction by instruction, the policy decided before every instruction, so its last decision
+      // --- was at the start of the last one: an access stop reports that instruction (`lastDecisionPc`)
+      if (executed > 0 && debugSupport && host.lastOpStart) debugSupport.lastDecisionPc = host.lastOpStart();
     } else {
       frameEnded = host.executeInstruction();
       const outcome = host.afterInstruction?.();

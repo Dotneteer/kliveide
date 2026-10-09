@@ -100,6 +100,7 @@ export const z88WasmV2RequiredExports = [
   "z88ExecuteFrame",
   "z88ExecuteInstruction",
   "z88ExecuteUntilStop",
+  "z88GetDebugOpStart",
   // --- Timing
   "z88GetBaseClockFrequency",
   "z88GetTactsInFrame",

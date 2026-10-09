@@ -331,11 +331,31 @@ uint32_t zxnextExecuteInstruction(void) {
  * The debugger's breakpoint flags and in-core loop, `zxnextExecuteUntilStop` (z80-debug-loop.c). It
  * returns where the fast frame loop does too: an SD command waiting for the host, a reset request.
  */
+/* The Next's own port record (zxnext-ports.c, which the DMA's port writes also reach) is what its I/O
+   breakpoints read; memory accesses are the shared Z80's log */
+static uint32_t zxnextDebugAccessHit(uint32_t accessMask);
+#define Z80_DEBUG_LOOP_ACCESS_HIT(accessMask) zxnextDebugAccessHit(accessMask)
 #define Z80_DEBUG_LOOP_PREFIX zxnext
 #define Z80_DEBUG_LOOP_FRAME_COMPLETED frameCompleted
 #define Z80_DEBUG_LOOP_STOP() \
   (zxnextSdGetHostCommand() != ZXNEXT_SD_HOST_COMMAND_NONE || zxnextResetRequest != 0u)
 #include "../../../../z80/wasm/z80-debug-loop.c"
+
+/* The access-breakpoint test of the last instruction: the shared log's memory accesses, the Next's port record */
+static uint32_t zxnextDebugAccessHit(uint32_t accessMask) {
+  const uint16_t *flags = zxnextBreakpointFlags;
+  const uint32_t count = z80AccessLogCount < Z80_ACCESS_LOG_CAPACITY ? z80AccessLogCount : Z80_ACCESS_LOG_CAPACITY;
+  for (uint32_t i = 0u; i < count; i++) {
+    const uint32_t entry = z80AccessLog[i];
+    const uint32_t bit = (entry & Z80_ACCESS_LOG_WRITE) != 0u ? Z80_DEBUG_FLAG_MEM_WRITE : Z80_DEBUG_FLAG_MEM_READ;
+    if ((flags[entry & 0xffffu] & bit & accessMask) != 0u) return 1u;
+  }
+  if (lastPortAccessed) {
+    const uint32_t bit = lastPortIsWrite ? Z80_DEBUG_FLAG_IO_WRITE : Z80_DEBUG_FLAG_IO_READ;
+    if ((flags[lastPortAddress] & bit & accessMask) != 0u) return 1u;
+  }
+  return 0u;
+}
 
 uint32_t zxnextRenderInstantScreen(void) {
   /* The paused view shows the current state: pending ULA latches included, without applying them */

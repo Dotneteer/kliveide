@@ -229,8 +229,34 @@ uint32_t z88ExecuteInstruction(void) {
 }
 
 /* The debugger's breakpoint flags and in-core loop, `z88ExecuteUntilStop` (z80-debug-loop.c) */
+/* The Z88's own bus record (z88-memory.c) is what its access breakpoints read */
+static uint32_t z88DebugAccessHit(uint32_t accessMask);
+#define Z80_DEBUG_LOOP_ACCESS_HIT(accessMask) z88DebugAccessHit(accessMask)
 #define Z80_DEBUG_LOOP_PREFIX z88
 #include "../../../../z80/wasm/z80-debug-loop.c"
+
+/*
+ * The access-breakpoint test of the last instruction on the Z88's bus record: the addresses it read and
+ * wrote (the first `Z88_BUS_LIST_SIZE` of each, as the host imports them) and the ports it accessed
+ */
+static uint32_t z88DebugAccessHit(uint32_t accessMask) {
+  const uint16_t *flags = z88BreakpointFlags;
+  const uint32_t reads = z88BusReadCount < Z88_BUS_LIST_SIZE ? z88BusReadCount : Z88_BUS_LIST_SIZE;
+  for (uint32_t i = 0u; i < reads; i++) {
+    if ((flags[z88BusReads[i]] & Z80_DEBUG_FLAG_MEM_READ & accessMask) != 0u) return 1u;
+  }
+  const uint32_t writes = z88BusWriteCount < Z88_BUS_LIST_SIZE ? z88BusWriteCount : Z88_BUS_LIST_SIZE;
+  for (uint32_t i = 0u; i < writes; i++) {
+    if ((flags[z88BusWrites[i]] & Z80_DEBUG_FLAG_MEM_WRITE & accessMask) != 0u) return 1u;
+  }
+  if ((z88BusFlags & Z88_BUS_IO_READ_PORT) != 0u && (flags[z88BusIoReadPort] & Z80_DEBUG_FLAG_IO_READ & accessMask) != 0u) {
+    return 1u;
+  }
+  if ((z88BusFlags & Z88_BUS_IO_WRITE_PORT) != 0u && (flags[z88BusIoWritePort] & Z80_DEBUG_FLAG_IO_WRITE & accessMask) != 0u) {
+    return 1u;
+  }
+  return 0u;
+}
 
 /*
  * Runs until the current frame completes (a frame stopped midway is finished; a completed one

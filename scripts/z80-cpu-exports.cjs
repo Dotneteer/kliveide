@@ -59,20 +59,22 @@ const Z80_ACCESS_LOG_VOLATILE_SYMBOLS = ["z80AccessLog", "z80AccessLogCount", "z
 
 /**
  * The debugger's in-core loop (`src/emu/z80/wasm/z80-debug-loop.c`): where the host writes the breakpoint
- * flags, and the loop itself
+ * flags, the loop itself, and where the last instruction it ran started (the stop policy's last decision
+ * point, and the instruction an access-breakpoint hit is reported against)
  * @param {string} prefix The core's export prefix
  */
 function debugLoopExports(prefix) {
-  return [`${prefix}BreakpointFlagsPtr`, `${prefix}ExecuteUntilStop`];
+  return [`${prefix}BreakpointFlagsPtr`, `${prefix}ExecuteUntilStop`, `${prefix}GetDebugOpStart`];
 }
 
 /**
- * The loop's breakpoint flags: debugging state the host pushes on every debug run, so a restore keeps
- * the live core's bytes
+ * The loop's breakpoint flags and the start of the last instruction it ran: debugging state, written by
+ * debug runs only, so a restore keeps the live core's bytes and a replay (fast frames) records the same
+ * image as the debug run it replays (WASM_CORE_LEAN_AND_DEBUG_PLAN T9)
  * @param {string} prefix The core's export prefix
  */
 function debugLoopVolatileSymbols(prefix) {
-  return [`${prefix}BreakpointFlags`];
+  return [`${prefix}BreakpointFlags`, `${prefix}DebugOpStart`];
 }
 
 module.exports = { CPU_REGISTERS, cpuExports, debugLoopExports, debugLoopVolatileSymbols, Z80_ACCESS_LOG_VOLATILE_SYMBOLS };
