@@ -25,6 +25,22 @@
 #define Z80_CAPTURE_BUS_EVENTS() 1
 #endif
 
+/*
+ * Benchmark-only switches (`.plans/WASM_CORE_LEAN_AND_DEBUG_PLAN.md` Phase 0). No production build
+ * defines them; `scripts/benchmark-debug-overhead.cjs` passes them with `-D` to measure what the
+ * debugging support costs a fast frame. Builds with them emulate identically but cannot debug:
+ * - `Z80_BENCH_STRIP_STEP_OUT`: no shadow step-out stack (D5's measurement);
+ * - `Z80_BENCH_STRIP_DEBUG`: no debug work at all - the stack, the history and profile hooks, bus
+ *   capture and `retExecuted`, and each core's own debug bookkeeping. It implies the first.
+ */
+#ifdef Z80_BENCH_STRIP_DEBUG
+#ifndef Z80_BENCH_STRIP_STEP_OUT
+#define Z80_BENCH_STRIP_STEP_OUT 1
+#endif
+#undef Z80_CAPTURE_BUS_EVENTS
+#define Z80_CAPTURE_BUS_EVENTS() 0
+#endif
+
 /* 1 while a write cycle does not reach memory (the Next's stackless NMI acknowledge): not logged */
 #ifndef Z80_MEMORY_WRITE_SUPPRESSED
 #define Z80_MEMORY_WRITE_SUPPRESSED() 0
@@ -103,6 +119,57 @@
 #endif
 #ifndef Z80_HISTORY_COMMIT
 #define Z80_HISTORY_COMMIT() ((void)0)
+#endif
+
+/*
+ * The access profile (`z80-profile.c`, `.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §4.1). A core that
+ * profiles includes `z80-profile.h` before this file, which defines all seven; every other core keeps
+ * these no-ops and pays nothing.
+ *
+ * - `Z80_PROFILE_FETCH(address, m1)`: a code byte fetched; `m1` at an instruction's first byte,
+ *   where it also opens the instruction's span (D7) - one call and one mapping per instruction
+ *   rather than two (trap T10);
+ * - `Z80_PROFILE_READ(address)` / `Z80_PROFILE_WRITE(address)`: a CPU data access - only the CPU's
+ *   own funnels below, never the cores' memory functions, which also serve the debugger (trap T1);
+ * - `Z80_PROFILE_END()`: an instruction's span ends (D7), once no prefix is pending;
+ * - `Z80_PROFILE_MARK()` with `Z80_PROFILE_ACK_END(nmi)` or `Z80_PROFILE_HALT_END()`: an interrupt
+ *   acknowledge's or a HALTed cycle's time.
+ */
+#ifndef Z80_PROFILE_FETCH
+#define Z80_PROFILE_FETCH(address, m1) ((void)0)
+#endif
+#ifndef Z80_PROFILE_READ
+#define Z80_PROFILE_READ(address) ((void)0)
+#endif
+#ifndef Z80_PROFILE_WRITE
+#define Z80_PROFILE_WRITE(address) ((void)0)
+#endif
+#ifndef Z80_PROFILE_END
+#define Z80_PROFILE_END() ((void)0)
+#endif
+#ifndef Z80_PROFILE_MARK
+#define Z80_PROFILE_MARK() ((void)0)
+#endif
+#ifndef Z80_PROFILE_ACK_END
+#define Z80_PROFILE_ACK_END(nmi) ((void)0)
+#endif
+#ifndef Z80_PROFILE_HALT_END
+#define Z80_PROFILE_HALT_END() ((void)0)
+#endif
+/*
+ * The call tracker (`.plans/PROFILER_PLAN.md` D9), at the same four shadow-stack choke points as
+ * step-out: `Z80_PROFILE_CALL(rst)` in `callCore`/`rstCore`, `Z80_PROFILE_RET()` in `retCore` and
+ * `Z80_PROFILE_INT(nmi)` after an interrupt's push. Each only notes the event; the instruction's end
+ * settles it.
+ */
+#ifndef Z80_PROFILE_CALL
+#define Z80_PROFILE_CALL(rst) ((void)0)
+#endif
+#ifndef Z80_PROFILE_RET
+#define Z80_PROFILE_RET() ((void)0)
+#endif
+#ifndef Z80_PROFILE_INT
+#define Z80_PROFILE_INT(nmi) ((void)0)
 #endif
 
 #ifndef Z80_ALWAYS_INLINE
@@ -237,7 +304,16 @@ static uint32_t z80AccessLog[Z80_ACCESS_LOG_CAPACITY];
 static uint32_t z80AccessLogCount;
 static uint32_t z80AccessLogOverflows;
 
+/*
+ * A core whose fast frames record the log only part of the time (the ZX80/ZX81, a capture window)
+ * defines `Z80_ACCESS_LOG_NOINLINE`: the write is then one out-of-line call made only while capturing,
+ * instead of being inlined into every memory access of every opcode, which costs ~9 KB of code.
+ */
+#ifdef Z80_ACCESS_LOG_NOINLINE
+static void __attribute__((noinline)) z80LogAccess(uint16_t address, uint8_t value, uint32_t writeBit) {
+#else
 Z80_ALWAYS_INLINE void z80LogAccess(uint16_t address, uint8_t value, uint32_t writeBit) {
+#endif
   if (z80AccessLogCount < Z80_ACCESS_LOG_CAPACITY) {
     z80AccessLog[z80AccessLogCount++] = (uint32_t)address | ((uint32_t)value << 16) | writeBit;
   } else {
@@ -393,11 +469,8 @@ Z80_ALWAYS_INLINE void removeFromHaltedState(void) {
   }
 }
 
-/*
- * A code byte - an opcode, a displacement or an operand. It has a memory read's timing and side
- * effects, but it is not a data access, so it is never logged.
- */
-Z80_ALWAYS_INLINE uint8_t readCodeMemory(uint16_t address) {
+/* A memory read cycle: its timing and the byte, with no profiling (the callers below say what it is) */
+Z80_ALWAYS_INLINE uint8_t readBusMemory(uint16_t address) {
   delayMemoryRead(address);
 #ifdef Z80_READ_MEMORY
   return Z80_READ_MEMORY(address);
@@ -406,9 +479,36 @@ Z80_ALWAYS_INLINE uint8_t readCodeMemory(uint16_t address) {
 #endif
 }
 
+/*
+ * A code byte - an opcode, a displacement or an operand. It has a memory read's timing and side
+ * effects, but it is not a data access, so it is never logged. `m1` marks an instruction's first byte
+ * for the access profile. The profile hook runs before the read: a machine whose fetch pages memory
+ * after the byte is read (the Next's delayed DivMMC automap) is still credited to the bank it read.
+ * It runs before the read's delay too, so an instruction's span (D7) starts before its M1 cycle.
+ */
+Z80_ALWAYS_INLINE uint8_t readOpcodeMemory(uint16_t address, uint8_t m1) {
+  Z80_PROFILE_FETCH(address, m1);
+  delayMemoryRead(address);
+#ifdef Z80_READ_MEMORY
+  return Z80_READ_MEMORY(address);
+#else
+  return memory[address];
+#endif
+}
+
+Z80_ALWAYS_INLINE uint8_t readCodeMemory(uint16_t address) {
+  return readOpcodeMemory(address, 0u);
+}
+
 /* A data read: logged while the machine captures bus events */
 Z80_ALWAYS_INLINE uint8_t readMemory(uint16_t address) {
-  uint8_t value = readCodeMemory(address);
+  delayMemoryRead(address);
+  Z80_PROFILE_READ(address);
+#ifdef Z80_READ_MEMORY
+  uint8_t value = Z80_READ_MEMORY(address);
+#else
+  uint8_t value = memory[address];
+#endif
   if (Z80_CAPTURE_BUS_EVENTS()) {
     z80LogAccess(address, value, 0u);
   }
@@ -417,6 +517,7 @@ Z80_ALWAYS_INLINE uint8_t readMemory(uint16_t address) {
 
 Z80_ALWAYS_INLINE void writeMemory(uint16_t address, uint8_t value) {
   delayMemoryWrite(address);
+  if (!Z80_MEMORY_WRITE_SUPPRESSED()) Z80_PROFILE_WRITE(address);
 #ifdef Z80_WRITE_MEMORY
   Z80_WRITE_MEMORY(address, value);
 #else
@@ -473,6 +574,7 @@ static inline void tbBlueOut(uint8_t address, uint8_t value) {
 
 Z80_ALWAYS_INLINE uint8_t fetchCodeByte(void) {
 #ifdef Z80_FETCH_CODE_BYTE
+  Z80_PROFILE_FETCH(cpu.pc, 0u);
   uint8_t value = Z80_FETCH_CODE_BYTE(cpu.pc);
 #else
   uint8_t value = readCodeMemory(cpu.pc);
@@ -773,6 +875,7 @@ static inline void pushPair(RegisterPair pairValue) {
 }
 
 static inline void pushStepOutEntry(uint16_t returnAddress, uint8_t isInterrupt) {
+#ifndef Z80_BENCH_STRIP_STEP_OUT
   /* A full buffer overwrites its oldest entry: an interrupt's entry lost that way no longer counts */
   if (cpu.stepOutStackCount == Z80_STEP_OUT_STACK_SIZE && cpu.stepOutIsInterrupt[cpu.stepOutStackPointer] &&
       cpu.interruptDepth > 0u) {
@@ -786,6 +889,7 @@ static inline void pushStepOutEntry(uint16_t returnAddress, uint8_t isInterrupt)
   if (cpu.stepOutStackCount < Z80_STEP_OUT_STACK_SIZE) {
     cpu.stepOutStackCount++;
   }
+#endif
 }
 
 static inline void pushToStepOutStack(uint16_t returnAddress) { pushStepOutEntry(returnAddress, 0); }
@@ -801,12 +905,14 @@ static inline void pushToStepOutStack(uint16_t returnAddress) { pushStepOutEntry
  * call anyway.
  */
 static inline void popFromStepOutStack(void) {
+#ifndef Z80_BENCH_STRIP_STEP_OUT
   if (cpu.stepOutStackCount == 0u) return;
 
   cpu.stepOutStackPointer = (uint16_t)((cpu.stepOutStackPointer + Z80_STEP_OUT_STACK_SIZE - 1u) %
                                        Z80_STEP_OUT_STACK_SIZE);
   cpu.stepOutStackCount--;
   if (cpu.stepOutIsInterrupt[cpu.stepOutStackPointer] && cpu.interruptDepth > 0u) cpu.interruptDepth--;
+#endif
 }
 
 static inline void retCore(void) {
@@ -815,14 +921,18 @@ static inline void retCore(void) {
   cpu.wz.bytes.high = readMemory(cpu.sp);
   cpu.sp = (uint16_t)(cpu.sp + 1);
   cpu.pc = WZ;
+#ifndef Z80_BENCH_STRIP_DEBUG
   cpu.retExecuted = 1;
+#endif
   /* The single choke point for every RET: the conditional ones call this inside their condition
      and RETN/RETI delegate to it, so the shadow stack is balanced here and nowhere else. */
   popFromStepOutStack();
+  Z80_PROFILE_RET();
 }
 
 static inline void callCore(void) {
   pushToStepOutStack(cpu.pc);
+  Z80_PROFILE_CALL(0);
   tactPlus1WithAddress(cpu.pc);
   cpu.sp = (uint16_t)(cpu.sp - 1);
   writeMemory(cpu.sp, hi(cpu.pc));
@@ -833,6 +943,7 @@ static inline void callCore(void) {
 
 static inline void rstCore(uint16_t address) {
   pushToStepOutStack(cpu.pc);
+  Z80_PROFILE_CALL(1);
   tactPlus1WithAddress(IR);
   cpu.sp = (uint16_t)(cpu.sp - 1);
   writeMemory(cpu.sp, hi(cpu.pc));
@@ -894,6 +1005,7 @@ static inline void processNmi(void) {
   cpu.iff1 = 0;
   applyAfterLdAIRInterruptQuirk();
   pushPcForInterrupt();
+  Z80_PROFILE_INT(1);
   Z80_REFRESH(IR);
   refreshMemory();
   cpu.pc = 0x0066;
@@ -909,6 +1021,7 @@ static inline void processInt(void) {
   cpu.iff2 = 0;
   applyAfterLdAIRInterruptQuirk();
   pushPcForInterrupt();
+  Z80_PROFILE_INT(0);
   Z80_REFRESH(IR);
   refreshMemory();
 
@@ -3247,7 +3360,9 @@ static const Z80Operation indexedBitOps[256] = {
 // -----------------------------------------------------------------------------
 
 void z80ExecuteCpuCycle(void) {
+#ifndef Z80_BENCH_STRIP_DEBUG
   cpu.retExecuted = 0;
+#endif
   cpu.retnExecuted = 0;
 
   if (cpu.eiBacklog > 0) {
@@ -3264,13 +3379,17 @@ void z80ExecuteCpuCycle(void) {
 
   if (cpu.sigNmi && cpu.prefix == PREFIX_NONE) {
     Z80_HISTORY_EVENT(Z80_HISTORY_KIND_NMI);
+    Z80_PROFILE_MARK();
     processNmi();
+    Z80_PROFILE_ACK_END(1u);
     return;
   }
 
   if (cpu.sigInt && cpu.prefix == PREFIX_NONE && cpu.iff1 && cpu.eiBacklog == 0) {
     Z80_HISTORY_EVENT(Z80_HISTORY_KIND_INT);
+    Z80_PROFILE_MARK();
     processInt();
+    Z80_PROFILE_ACK_END(0u);
     return;
   }
 
@@ -3278,10 +3397,12 @@ void z80ExecuteCpuCycle(void) {
 
   if (cpu.halted) {
     Z80_HISTORY_EVENT(Z80_HISTORY_KIND_HALT);
+    Z80_PROFILE_MARK();
     delayMemoryRead(cpu.pc);
     Z80_REFRESH(IR);
     refreshMemory();
     tactPlus1WithAddress(IR);
+    Z80_PROFILE_HALT_END();
     return;
   }
 
@@ -3290,7 +3411,9 @@ void z80ExecuteCpuCycle(void) {
     Z80_HISTORY_BEGIN();
     Z80_BEFORE_OPCODE_FETCH();
   }
-  cpu.opCode = readCodeMemory(cpu.pc);
+  /* The profile's fetch hook runs after the fetch-time paging of BEFORE_OPCODE_FETCH (the 128K's
+     TR-DOS ROM), so the instruction is credited to the ROM it runs from */
+  cpu.opCode = readOpcodeMemory(cpu.pc, m1Active);
   if (m1Active) {
     Z80_REFRESH(IR);
     refreshMemory();
@@ -3371,6 +3494,8 @@ void z80ExecuteCpuCycle(void) {
       cpu.prefix = PREFIX_NONE;
       break;
   }
+  /* A prefixed instruction is one span: it ends in the cycle that leaves no prefix pending (D7) */
+  if (cpu.prefix == PREFIX_NONE) Z80_PROFILE_END();
 }
 
 // -----------------------------------------------------------------------------

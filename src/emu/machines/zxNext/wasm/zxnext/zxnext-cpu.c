@@ -40,6 +40,8 @@ static uint8_t zxnextCpuHeldAtFrameEnd;
 /* The access log (z80.c) records in debug steps and traced frames only; the stackless NMI's pushes
    never reach memory, so they are not logged either */
 #define Z80_CAPTURE_BUS_EVENTS() zxnextCaptureBusEvents
+/* The log is written only while capturing (debug runs): out of line, so it does not grow every opcode (z80.c) */
+#define Z80_ACCESS_LOG_NOINLINE 1
 #define Z80_MEMORY_WRITE_SUPPRESSED() zxnextCpuMreqSuppressed
 /* DivMMC: a delayed automap takes effect after the opcode's M1 cycle (ZxNextMachine afterOpcodeFetch) */
 #define Z80_AFTER_OPCODE_FETCH() zxnextDivMmcAfterM1()
@@ -54,8 +56,16 @@ static inline void zxnextCpuDelayContendedMemory(uint32_t address, uint32_t memo
    itself and this machine's macros for it are at the end of zxnext.c */
 #include "../../../../z80/wasm/z80-history.h"
 static void zxnextHistoryDmaHold(uint32_t cpuTacts, uint16_t src, uint16_t dest, uint32_t frame, uint32_t frameTact);
+/* The access profile's hooks (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`); the module and this
+   machine's mapping for it are at the end of zxnext.c */
+#include "../../../../z80/wasm/z80-profile.h"
 
 #include "../../../../z80/wasm/z80.c"
+/* The CPU's registers and debugger state, exported as `zxnextGetCpuAf` ... (WASM_CORE_LEAN_AND_DEBUG_PLAN D8) */
+#define Z80_EXPORT_PREFIX zxnext
+/* The Next keeps its own last-port record (zxnext-ports.c) */
+#define Z80_EXPORT_NO_LAST_PORT 1
+#include "../../../../z80/wasm/z80-cpu-exports.c"
 
 static inline uint32_t zxnextCpuTactScale(void) {
   return cpuTactScale;
@@ -75,7 +85,11 @@ static inline void zxnextCpuMarkFrameCompleted(void) {
 static inline void zxnextCpuTactPlusN(uint32_t value) {
   cpu.tacts += value;
   tacts += value;
-  frameTacts28 += value * zxnextCpuTactScale();
+  const uint32_t ticks28 = value * zxnextCpuTactScale();
+  frameTacts28 += ticks28;
+#ifndef Z80_BENCH_STRIP_DEBUG
+  zxnextProfileTicks28 += ticks28;
+#endif
   while (frameTacts28 >= ZXNEXT_TACTS_IN_FRAME) {
     zxnextCtcOnFrameCompleted();
     zxnextPsgOnFrameWrap(ZXNEXT_TACTS_IN_FRAME);
@@ -106,6 +120,12 @@ static inline void zxnextCpuTactPlusDmaTicks(uint32_t ticks) {
   cpu.tacts += cpuTacts;
   tacts += cpuTacts;
   frameTacts28 += ticks;
+#ifndef Z80_BENCH_STRIP_DEBUG
+  zxnextProfileTicks28 += ticks;
+#endif
+  /* The DMA holds the bus before the instruction: its time is a header bucket, never an address's
+     (D7, trap T5). Every hold reaches the frame through here, so this is the one charge site. */
+  if (z80ProfileHeader.enabled) z80ProfileChargeBucket(Z80_PROFILE_BUCKET_DMA, ticks);
   while (frameTacts28 >= ZXNEXT_TACTS_IN_FRAME) {
     zxnextCtcOnFrameCompleted();
     zxnextPsgOnFrameWrap(ZXNEXT_TACTS_IN_FRAME);
@@ -353,13 +373,18 @@ static uint32_t zxnextCpuExecuteInstruction(void) {
   uint32_t cyclesExecuted = 0;
 
   frameCompleted = 0;
+#ifndef Z80_BENCH_STRIP_DEBUG
   if (!wasHalted || nmiSignal || shouldAcceptInt) {
     zxnextCpuClearInstructionAccesses();
   }
+#endif
 
   // --- The DMA goes first, after the INT line is sampled, as in ZxNextMachine.beforeInstructionExecuted.
   cpuTactScale = 8u >> (cpuEffectiveSpeed & 0x03u);
   uint32_t dmaHeld;
+#ifdef Z80_BENCH_STRIP_DEBUG
+  dmaHeld = zxnextCpuRunDma();
+#else
   if (z80HistoryHeader.enabled && zxnextDmaIsActive()) {
     /* A DMA hold is a history record of its own (plan D15): the T-states the CPU waited, where the
        transfer started and how much is left */
@@ -375,6 +400,7 @@ static uint32_t zxnextCpuExecuteInstruction(void) {
   } else {
     dmaHeld = zxnextCpuRunDma();
   }
+#endif
   if (dmaHeld) {
     zxnextCpuHeldAtFrameEnd = 1u;
     return zxnextSharedCpuExecutedInstructions;
@@ -456,10 +482,14 @@ static uint32_t zxnextCpuExecuteInstruction(void) {
     }
   }
   if (isRetnInstruction && !mfWasActive) zxnextDivMmcRetn();
+#ifndef Z80_BENCH_STRIP_DEBUG
   if (z80GetRetExecuted()) {
     z80SetRetExecuted(0);
   }
+#endif
   zxnextPsgCalculateCurrentAudioValue(frameTacts28);
+#ifndef Z80_BENCH_STRIP_DEBUG
   zxnextTraceRecordInstruction(pcBefore);
+#endif
   return zxnextSharedCpuExecutedInstructions;
 }

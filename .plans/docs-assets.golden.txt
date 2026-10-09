@@ -100,6 +100,9 @@
 /images/working-with-ide/mem-view.png
 /images/working-with-ide/new-sjasmp-project.png
 /images/working-with-ide/next-mem-view.png
+/images/working-with-ide/profiler-call-tree.png
+/images/working-with-ide/profiler-editor.png
+/images/working-with-ide/profiler-routines.png
 /images/working-with-ide/reverse-continue.png
 /images/working-with-ide/running-sjasmp-code.png
 /images/working-with-ide/select-start-mode.png

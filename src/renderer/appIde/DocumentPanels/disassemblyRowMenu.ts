@@ -1,6 +1,6 @@
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 
-import { breakpointCommandSpec } from "@renderer/appIde/commands/BreakpointCommands";
+import { breakpointCommandSpec } from "@common/utils/breakpoint-spec";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 import { ONE_SHOT_GESTURE } from "@renderer/features/editor/monaco/marginBreakpointMenu";
 

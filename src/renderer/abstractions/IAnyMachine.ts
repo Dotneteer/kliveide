@@ -335,6 +335,16 @@ export interface IAnyMachine extends IAnyCpu, IMachineEventHandler {
   getMemoryPartition(index: number): Uint8Array;
 
   /**
+   * Writes one byte of a partition (a RAM bank or page) whatever is paged in. Use this, not a
+   * write into `getMemoryPartition`'s array: a core may keep a copy of the paged-in memory (the
+   * 128K's and the +2A/+3's flat 64K) that a write into the bank's own storage would leave stale.
+   * @param index Partition index, as for `getMemoryPartition`
+   * @param offset Offset within the partition
+   * @param value Byte to write
+   */
+  writeMemoryPartition?(index: number, offset: number, value: number): void;
+
+  /**
    * Gets the current partition values for all 16K/8K partitions
    */
   getCurrentPartitions(): number[];

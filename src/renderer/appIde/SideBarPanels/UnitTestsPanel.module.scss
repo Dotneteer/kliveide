@@ -1,0 +1,102 @@
+@use "@styles/core.scss" as *;
+
+/*
+ * The Unit Tests panel (`.plans/Z80_UNIT_TESTS_PLAN.md` D13): a toolbar, a status line, the filter
+ * and the test tree. Built on the data primitives; status is the only colour (componentAliases).
+ */
+
+.panel {
+  @include fill-parent-flex;
+  box-sizing: border-box;
+  flex-direction: column;
+  user-select: none;
+  font-size: var(--panel-font-size);
+  line-height: var(--panel-line-height);
+}
+
+.toolbar {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-0_5) var(--space-1);
+  border-bottom: 1px solid var(--color-panel-border);
+  flex-shrink: 0;
+}
+
+/* The build's time and the last run's summary, or the reason tests cannot run */
+.status {
+  flex-shrink: 0;
+  padding: var(--space-0_5) var(--space-2);
+  color: var(--data-label);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.problem {
+  flex-shrink: 0;
+  padding: var(--space-0_5) var(--space-2);
+  color: var(--color-unit-test-failed);
+  white-space: normal;
+}
+
+.list {
+  flex: 1 1 auto;
+  min-height: 0;
+  font-family: var(--monospace-font);
+}
+
+.selected {
+  background: var(--bgcolor-unit-test-selected);
+}
+
+.suiteName {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--data-label);
+  font-weight: 600;
+}
+
+.testName {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A test inside a suite sits one glyph further in than the suite's own glyph */
+.indented {
+  padding-left: calc(var(--space-2) + var(--icon-sm));
+}
+
+.tstates {
+  flex: 0 0 auto;
+  color: var(--data-label);
+}
+
+.message {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.messageFailed {
+  color: var(--color-unit-test-failed);
+}
+
+.messageError {
+  color: var(--color-unit-test-error);
+}
+
+.messageIndent {
+  padding-left: calc(var(--space-2) + var(--icon-sm) * 2);
+}

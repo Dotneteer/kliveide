@@ -24,6 +24,11 @@ export const E2E_CORE_TESTS: string[] = [
   "test/timex-hw/**/*.test.ts",
   "test/spectrum-hw/**/*.test.ts",
   "test/harness/**/self-tests/**/*.test.ts",
+  "test/unit-tests/runner-*.test.ts",
+  // --- `klive test` on the fixture projects (`.plans/UNIT_TESTS_CLI_PLAN.md` §6)
+  "test/cli/klive-test-e2e.test.ts",
+  // --- `klive run` on the fixtures, every machine and stop condition (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` §6)
+  "test/cli/klive-run-e2e.test.ts",
 
   // --- Mixed folders: the files that run a core
   "test/audio/AudioIntegration.test.ts",
@@ -41,6 +46,7 @@ export const E2E_CORE_TESTS: string[] = [
   "test/emu/reverse-sd-fork-controller.test.ts",
   "test/emu/reverse-cores-controller.test.ts",
   "test/emu/reverse-next-breakpoints-controller.test.ts",
+  "test/emu/profile-controller.test.ts",
   "test/emu/history-step-back-real-machine.test.ts",
   "test/emu/logpoints-real-machine.test.ts",
   "test/emu/one-shot-real-machine.test.ts",
@@ -112,6 +118,7 @@ export const E2E_KBASIC_TESTS: string[] = [
   "test/kbasic/codegen/source-errors.test.ts",
   "test/kbasic/codegen/source-jmc.test.ts",
   "test/kbasic/codegen/source-level.test.ts",
+  "test/kbasic/codegen/source-step-in-core.test.ts",
   "test/kbasic/codegen/source-step.test.ts",
   "test/kbasic/codegen/source-variables.test.ts",
   "test/kbasic/codegen/stdlib.test.ts",

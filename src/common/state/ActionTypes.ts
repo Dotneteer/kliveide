@@ -48,6 +48,9 @@ export interface ActionTypes {
   SET_SOURCE_FRAME: null;
   INC_BPS_VERSION: null;
   INC_BP_HITS_VERSION: null;
+  SET_PROFILING: null;
+  SET_MEMORY_HEAT_MODE: null;
+  INC_PROFILE_VERSION: null;
   INC_TOOL_CMD_SEQ: null;
 
   OPEN_FOLDER: null;
@@ -107,6 +110,14 @@ export interface ActionTypes {
   SET_LOGPOINT_GROUPS: null;
   // --- ASSERTION / WPMEM comment switches (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` S6)
   SET_SOURCE_COMMENTS: null;
+
+  // --- Unit tests (`.plans/Z80_UNIT_TESTS_PLAN.md` §4.3)
+  UNIT_TESTS_RUN_STARTED: null;
+  UNIT_TEST_EVENT: null;
+  UNIT_TESTS_RUN_ENDED: null;
+  UNIT_TESTS_CLEAR: null;
+
+  SET_AUTOMATION_STATUS: null;
 
   // --- Screen recording
   SET_MOUSE_CAPTURED: null;

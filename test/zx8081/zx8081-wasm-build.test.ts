@@ -18,6 +18,7 @@ import {
 } from "../../scripts/build-zx8081-wasm.cjs";
 import { checkZx8081WasmSize, DEFAULT_MAX_BYTES, parseMaxBytes } from "../../scripts/check-zx8081-wasm-size.cjs";
 import { zx8081WasmV2RequiredExports } from "@emu/machines/zx8081/wasm/Zx8081WasmV2Loader";
+import { sharedZ80Functions } from "../wasmSharedExports";
 
 /* The Sinclair ZX80/ZX81 WASM build (`.plans/ZX8081_WASM_PLAN.md`) */
 
@@ -41,7 +42,7 @@ describe("ZX80/ZX81 WASM build", () => {
     }
   });
 
-  it("exports every non-static function of the C core (the keyboard's through its aliases, the recorder's), and nothing else", () => {
+  it("exports every non-static function of the C core (the keyboard's through its aliases, the recorder's, the profile's), and nothing else", () => {
     const folder = dirname(source);
     const cFunctions = readdirSync(folder)
       .filter((f) => f.endsWith(".c"))
@@ -52,9 +53,22 @@ describe("ZX80/ZX81 WASM build", () => {
     // --- ... and the shared execution-history recorder, and exports it
     const recorder = readFileSync(join(folder, "../../../../z80/wasm/z80-history.c"), "utf8");
     const historyFunctions = [...recorder.matchAll(/^(?:uint32_t|void) (z80History[A-Za-z0-9]+)\([^)]*\)\s*\{/gm)].map((m) => m[1]);
-    expect(productionExports.filter((n) => n !== "memory").sort()).toEqual(
-      [...cFunctions, ...condFunctions, ...historyFunctions, "zx8081SetKeyStatus", "zx8081GetKeyboardLine"].sort()
-    );
+    // --- ... and the shared access profile (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §4.1)
+    const profile = readFileSync(join(folder, "../../../../z80/wasm/z80-profile.c"), "utf8");
+    const profileFunctions = [...profile.matchAll(/^(?:uint32_t|void) (z80Profile[A-Za-z0-9]+)\([^)]*\)\s*\{/gm)].map((m) => m[1]);
+    const own = [
+      ...cFunctions,
+      ...condFunctions,
+      ...historyFunctions,
+      ...profileFunctions,
+      "zx8081SetKeyStatus",
+      "zx8081GetKeyboardLine"
+    ];
+    // --- The shared prefix-pasted files define a superset for every core; the export list picks
+    const shared = sharedZ80Functions("zx8081");
+    const exported = productionExports.filter((n) => n !== "memory");
+    expect(own.filter((n) => !exported.includes(n))).toEqual([]);
+    expect(exported.filter((n) => !own.includes(n) && !shared.includes(n))).toEqual([]);
   });
 
   it("exports everything the loader requires", () => {

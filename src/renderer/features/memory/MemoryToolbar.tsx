@@ -4,6 +4,16 @@ import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";
 import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import { Text } from "@renderer/controls/layout/Text";
 import { DumpViewMode, viewModeOptions } from "./memoryViewModel";
+import type { HeatMode } from "@renderer/features/coverage/heatModel";
+
+/** The Heat selector's choices (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D14) */
+export const heatModeOptions = [
+  { value: "off", label: "Off" },
+  { value: "exec", label: "Executed" },
+  { value: "read", label: "Read" },
+  { value: "write", label: "Written" },
+  { value: "all", label: "All" }
+];
 
 type MemoryToolbarProps = {
   bankLabel: boolean;
@@ -11,6 +21,9 @@ type MemoryToolbarProps = {
   charDump: boolean;
   decimalView: boolean;
   viewMode: DumpViewMode;
+  /** The heat map's mode; the selector shows only on a machine that profiles (`MF_PROFILE`) */
+  heatMode?: HeatMode;
+  onHeatModeChanged?: (mode: HeatMode) => void;
   onBankLabelChanged: (value: boolean) => void;
   onCharDumpChanged: (value: boolean) => void;
   onDecimalViewChanged: (value: boolean) => void;
@@ -25,6 +38,8 @@ export const MemoryToolbar = ({
   charDump,
   decimalView,
   viewMode,
+  heatMode,
+  onHeatModeChanged,
   onBankLabelChanged,
   onCharDumpChanged,
   onDecimalViewChanged,
@@ -65,6 +80,21 @@ export const MemoryToolbar = ({
             label="Bank"
             title="Display bank label information?"
             clicked={onBankLabelChanged}
+          />
+        </>
+      )}
+      {heatMode !== undefined && (
+        <>
+          <LabelSeparator width={8} />
+          <Text text="Heat" />
+          <LabelSeparator />
+          <Dropdown
+            ariaLabel="Heat map"
+            options={heatModeOptions}
+            initialValue={heatMode}
+            width={90}
+            onOpenChange={(open) => onRefreshPauseChanged(open)}
+            onChanged={(val) => onHeatModeChanged?.(val as HeatMode)}
           />
         </>
       )}

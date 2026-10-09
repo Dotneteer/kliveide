@@ -1,0 +1,306 @@
+---
+description: "Run Klive's Z80 unit tests and programs from a terminal or a CI job with klive test and klive run: no window, deterministic results, exit codes, JUnit XML, LCOV coverage, screenshots and memory dumps. GitHub Actions and GitLab CI examples."
+---
+
+import { Callout } from 'nextra/components'
+
+# Unit Tests on the Command Line
+
+`klive test` builds a project and runs its [unit tests](/working-with-ide/unit-tests) without the IDE:
+no window, no display, no GPU. It prints a report, exits with a code a script can test, and writes
+**JUnit XML** for CI dashboards and **LCOV** coverage for Codecov, Coveralls and GitLab. It runs the
+same runner as the Testing activity, so a test that passes in the IDE passes in CI, with the same
+T-states.
+
+```bash
+klive test --junit results.xml --coverage coverage.lcov
+```
+
+```
+Math
+  ok    UT_AddSmall  118 T
+  ok    UT_AddWraps  118 T
+Strings
+  ok    UT_Length  344 T
+      log: length is $05
+  ok    UT_Empty  144 T
+
+4 passed of 4 tests (0.12s)
+```
+
+## Getting the `klive` command
+
+`klive` is part of the installed app; it runs Klive's own binary in Node mode, so it needs nothing
+else installed, and it behaves the same whatever Node version a CI runner has.
+
+| System | How |
+|---|---|
+| macOS | **Klive IDE › Install Command Line Tool...** links `/usr/local/bin/klive` to the app (it asks for your password). Run it again after moving the app. |
+| Windows | The installer adds the command's folder, `resources\cli` in the install folder, to your PATH. Open a new terminal after installing. |
+| Linux (AppImage) | Extract the AppImage once (`./KliveIdeSetup-*.AppImage --appimage-extract`) and run `squashfs-root/resources/cli/klive`, or link it into your PATH. |
+
+The launcher finds the app relative to itself, also through a symlink. In a development build, run
+the bundle directly: `ELECTRON_RUN_AS_NODE=1 npx electron out/main/cli.js test`.
+
+<Callout type="info">
+On macOS, an app downloaded outside the installer may be quarantined. If `klive` is refused, run
+`xattr -d com.apple.quarantine "/Applications/Klive IDE.app"` once.
+</Callout>
+
+`klive` runs alongside an open Klive: it never opens a window, so the IDE's "one Klive at a time"
+rule does not apply to it.
+
+## `klive test`
+
+```bash
+klive test [<project-dir>] [<options>]
+```
+
+`<project-dir>` is the folder with `klive.project`; the current folder when omitted.
+
+| Option | Meaning |
+|---|---|
+| `--filter <pattern>` | Only the tests matching it, as in the IDE: `MathTests.*`, `*.UT_parse*`. May repeat. |
+| `--list` | Lists the tests (with `file:line`) and exits |
+| `--junit <file>` | Writes JUnit XML (see below) |
+| `--no-timestamp` | Leaves the run's time out of the JUnit file, so two runs write identical files |
+| `--coverage <file>` | Writes the tests' code coverage, LCOV by default |
+| `--coverage-format lcov\|kcov` | `kcov` is Klive's own format: `coverage load` reads it back into the IDE, to inspect a CI run locally |
+| `--reporter pretty\|plain\|tap` | The console report. `pretty` (colour, ✔/✘) on a terminal; `plain` when the output is not a terminal or `NO_COLOR` or `CI` is set; `tap` is TAP 13 |
+| `--timeout <s>` | Each test's time limit in emulated seconds (default 1) |
+| `--bail` | Stops at the first failed test; the rest are reported as skipped |
+| `--machine <id>[:<model>]` | Runs on another machine: `sp48`, `sp128`, `spp3e`, `zxnext` |
+| `--rom <name>=<file>` | Uses a ROM file in place of the one Klive ships; `<name>` is the ROM it replaces (`sp48`, `sp128-0`, `sp128-1`, ...). May repeat. |
+| `--sjasmplus <path>` | The sjasmplus executable (see below) |
+| `--use-ide-settings` | Also reads your IDE user settings (sjasmplus, language extensions). Off by default, so a CI job behaves the same everywhere |
+
+Options override the project's [`unitTests` section](/working-with-ide/unit-tests#configuration),
+which overrides the defaults. The section may also name ROM files, relative to the project folder:
+
+```json
+{
+  "unitTests": {
+    "timeout": 2,
+    "roms": { "sp48": "roms/my-48.rom" }
+  }
+}
+```
+
+### Exit codes
+
+| Code | Meaning |
+|---|---|
+| 0 | Every selected test passed (or `--list` listed them) |
+| 1 | At least one test failed or ended in an error |
+| 2 | The build has errors |
+| 3 | A usage or configuration problem: no project, no build root, no tests (or none matching `--filter`), an unsupported machine, a missing ROM or sjasmplus |
+| 4 | An internal error, such as a machine core that crashed or could not be found |
+
+A project without tests is exit code 3, not 0, so a misconfigured job never passes by running
+nothing.
+
+### Build errors
+
+The build runs before the tests. Errors and warnings go to the standard error stream in the format
+editors and CI annotators recognise:
+
+```
+code/main.kz80.asm:6:8: error: Z0605: Identifier 'UndefinedSymbol' is not defined yet.
+Build failed: 1 error(s).
+```
+
+### sjasmplus
+
+A sjasmplus project needs the assembler. `klive` looks for it in this order: `--sjasmplus <path>`, the
+`SJASMPLUS` environment variable, the path the project stores (when that file exists), and
+`sjasmplus` on the PATH. The Klive assembler needs nothing.
+
+## JUnit XML
+
+`--junit` writes one `<testsuite>` per suite (`Module.Inner`, or `(root)` for tests outside any
+module) and one `<testcase>` per test:
+
+- `classname` is the suite, `name` the `UT_` label as you wrote it, `file` and `line` where it is
+  defined (relative to the project folder).
+- A failed assertion is a `<failure type="assertion">` whose message has the values: `ASSERTION failed
+  at main.kz80.asm:20: A == B  (A=$07, B=$05)`. The body starts with the failing `file:line`.
+- A test that did not end normally is an `<error>`, typed `stack-overflow`, `stack-underflow`,
+  `timeout`, `halt`, `returned` (it ended with `RET` instead of `TC_END`), `breakpoint` (a `WPMEM`
+  watchpoint), `setup` or `internal`.
+- `LOGPOINT` output goes to the test's `<system-out>`.
+- Tests that did not run (`--bail`) are `<skipped/>`.
+
+**`time` is emulated seconds**: the test's T-states divided by the machine's clock. Emulated time is
+the same on every computer, so the file is too; the exact figure is each test's `tstates` property.
+The console's summary shows the wall time.
+
+The Testing activity writes the same file: right-click a test and choose **Export results as
+JUnit...** (or run `test-junit <file>`).
+
+## Coverage
+
+`--coverage coverage.lcov` records which source lines the tests executed. A line counts as hit when
+its first instruction ran; lines that emitted no code are not listed. Upload the file to your
+coverage service as it is. See [Code Coverage](/working-with-ide/code-coverage) for what coverage
+means in Klive.
+
+## `klive build`
+
+`klive build [<project-dir>] [--out <file>]` only compiles the build root, for jobs that assemble
+without testing. `--out` writes the code: Intel HEX for a `.hex` file, otherwise a flat binary from
+the lowest to the highest address. It takes `--machine`, `--sjasmplus` and `--use-ide-settings` too,
+and its exit codes are 0, 2, 3 and 4 as above.
+
+## `klive run`
+
+`klive run` starts a program on a machine of its own, without the IDE, runs it until a condition you
+name, and then writes what you ask for: memory, the registers, the picture, a state file. Use it to
+check in CI that a program still draws its title screen, leaves the right bytes in memory or reaches
+a label in time.
+
+```bash
+klive run --until-pc GameLoop --screenshot title.png --dump-mem '$C000:256=state.bin'
+klive run game.tap --frames 500 --screenshot out.png
+klive run game.nex --until-halt --dump-regs regs.json
+```
+
+```
+run48 (code/main.kz80.asm): stopped at $801D (halted with interrupts disabled) after 2 frames, 100,427 T-states
+```
+
+```bash
+klive run [<project-dir> | <file>] [<options>]
+```
+
+### What it starts
+
+| Input | How it starts |
+|---|---|
+| A project folder (the current one when omitted) | Builds the build root as `klive build` does, then injects the code the way the IDE's **Run** does: the machine boots to the injection point (through the 128K's menu, for example) and starts the code. On the ZX Spectrum Next the code goes into a reset machine; the IDE's run boots NextZXOS from an SD card instead. |
+| `.tap`, `.tzx` | Inserts the tape and types `LOAD ""` (the Tape Loader on a 128K), with fast loading |
+| `.sna`, `.z80`, `.szx` | Loads the snapshot as opening it in the IDE does; the snapshot picks the machine |
+| `.kls` | Loads a Klive state file as the IDE does, on the machine it was saved on |
+| `.nex` | Starts the file on a ZX Spectrum Next without NextZXOS: banks, paging, border, SP and PC as the format promises, no loading screen. Klive says what such a start leaves out. |
+| `.p`, `.81`, `.o`, `.80` | Loads the ZX81 (or ZX80) program and lets it `RUN` |
+
+`--machine <id>[:<model>]` picks the machine: `sp48`, `sp128`, `spp3e`, `zxnext`, `zx80` or `zx81`. A
+project's own machine, the file's machine, or the 48K for a tape is the default. `--rom`,
+`--sjasmplus` and `--use-ide-settings` work as for `klive test`.
+
+### When it stops
+
+Give at least one of these; the first one reached stops the run.
+
+| Option | Stops |
+|---|---|
+| `--frames <n>` | after `n` frames |
+| `--tstates <n>` | at the first instruction boundary at or after `n` T-states |
+| `--until-pc <addr>[,…]` | when PC reaches an address or a label of the build, before that instruction runs; may repeat |
+| `--until-halt` | at a `HALT` with interrupts disabled: the program has ended |
+| `--bp "<spec>"` | at a breakpoint, in [`bp-set`](/working-with-ide/breakpoints) syntax: `<addr\|label> [-r] [-w] [-i] [-o] [-m <mask>] [-len <n>] [-once] [-log "<text>"] [-hit <rule>] [-if <condition>]`; may repeat |
+| `--timeout <s>` | after `s` emulated seconds, with exit code 5 |
+
+A run that only stops at an address, a `HALT` or a breakpoint gets a 60-second `--timeout`, so it
+cannot run forever. Logpoints (`-log`) print as `log:` lines. Frames and T-states count from after
+`--keys`.
+
+### Typing
+
+`--keys "<text>"` types at the keyboard after `--wait-frames <n>` frames: letters, digits, space,
+`\n` for ENTER, the Symbol Shift characters (`"`, `+`, `,`…) and chords of named keys such as
+`{CS+5}` or `{SS+P}`. What a letter types depends on the cursor mode, as on the real keyboard: in K
+mode `p` is `PRINT`. Each key is held for 3 frames and released for 3, the timing the ROM expects.
+
+A project whose program returns to BASIC leaves the editor waiting for a key:
+
+```bash
+klive run --wait-frames 50 --keys 'p1+1\n' --frames 50 --screenshot sum.png
+```
+
+### What it writes
+
+| Option | Writes |
+|---|---|
+| `--dump-mem <addr>[:<len>]=<file>` | memory as the CPU sees it, from an address or label (to `$FFFF` without a length); may repeat |
+| `--dump-regs <file.json>` | the registers, named as the automation protocol's `cpu.get` names them; `-` prints them |
+| `--screenshot <file.png>` | the emulated picture, exactly what the Emulator panel shows |
+| `--save-state <file>` | a `.kls` state file, or a `.sna`, `.z80` or `.szx` snapshot of a ZX Spectrum. `--no-timestamp` leaves the save time out of a `.kls` |
+| `--json` | the result on standard output: why it stopped, PC, frames, T-states, the registers and the files |
+
+A run counts only emulated time, so the same input gives the same output on every computer, byte for
+byte: a golden screenshot or memory dump can be compared with `cmp`. Emulation typically runs about
+ten times faster than real time.
+
+### Exit codes
+
+| Code | Meaning |
+|---|---|
+| 0 | The run stopped as asked |
+| 2 | The build has errors |
+| 3 | A usage problem, or an input Klive cannot start (the message says why) |
+| 4 | An internal error, such as a missing machine core |
+| 5 | `--timeout` ran out before any other condition |
+
+## GitHub Actions
+
+The job below downloads the Linux build, extracts it and runs the tests. The command line ships with
+Klive 0.64.0 and later; replace the version with the release you want.
+
+```yaml
+name: Z80 tests
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get Klive
+        run: |
+          curl -sSL -o klive.AppImage \
+            https://github.com/Dotneteer/kliveide/releases/download/v0.64.0/KliveIdeSetup-0.64.0-x86_64.AppImage
+          chmod +x klive.AppImage
+          ./klive.AppImage --appimage-extract > /dev/null
+          echo "$PWD/squashfs-root/resources/cli" >> "$GITHUB_PATH"
+
+      - name: Run the unit tests
+        run: klive test --junit results.xml --coverage coverage.lcov
+
+      - name: Publish the results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: z80-test-results
+          path: |
+            results.xml
+            coverage.lcov
+```
+
+Any JUnit report action (`dorny/test-reporter`, `mikepenz/action-junit-report`) reads `results.xml`;
+`codecov/codecov-action` reads `coverage.lcov`.
+
+## GitLab CI
+
+```yaml
+z80-tests:
+  image: ubuntu:24.04
+  before_script:
+    - apt-get update && apt-get install -y curl libnss3 libgbm1 libasound2t64 libgtk-3-0
+    - curl -sSL -o klive.AppImage https://github.com/Dotneteer/kliveide/releases/download/v0.64.0/KliveIdeSetup-0.64.0-x86_64.AppImage
+    - chmod +x klive.AppImage && ./klive.AppImage --appimage-extract > /dev/null
+  script:
+    - squashfs-root/resources/cli/klive test --junit results.xml --coverage coverage.lcov
+  artifacts:
+    when: always
+    reports:
+      junit: results.xml
+    paths:
+      - coverage.lcov
+```
+
+GitLab shows the JUnit report in the merge request. Its coverage visualisation reads Cobertura XML,
+which a converter such as `lcov_cobertura` makes from `coverage.lcov`. A bare container needs the
+libraries Klive's binary links against even without a display, as the `apt-get` line installs;
+GitHub's runners have them already.

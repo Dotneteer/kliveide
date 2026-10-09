@@ -106,6 +106,22 @@ static uint8_t zx8081FrameCompleted = 1u;
 static uint16_t zx8081OpStartAddress;
 static uint8_t zx8081LastSigInt;
 
+/*
+ * Whether an instruction records its bus activity for the IDE: the shared Z80's access log and port
+ * event, and `zx8081OpStartAddress` (`.plans/WASM_CORE_LEAN_AND_DEBUG_PLAN.md` Phase 1). On in the
+ * debugger's paths. A fast frame turns it on only for its last `ZX8081_CAPTURE_WINDOW` T-states - longer
+ * than any instruction, the ULA's WAIT included - so the CPU panel of a machine paused from a plain Run
+ * still shows the frame's last instruction.
+ *
+ * The window depends only on the position in the frame, never on how the frame is run: the record is
+ * part of the CPU state a keyframe saves (`cpu.lastPort*`), so a replay must record exactly what the
+ * straight run did (`test/wasm/reverse/journal-replay-determinism.test.ts`). A reverse-debugging stop
+ * outside the window therefore shows no accesses, as on the Spectrum cores, whose fast frames record
+ * none.
+ */
+static uint8_t zx8081CaptureBusEvents = 1u;
+#define ZX8081_CAPTURE_WINDOW 1024u
+
 #if defined(__clang__) || defined(__GNUC__)
 #define ZX8081_NOINLINE __attribute__((noinline))
 #else
@@ -132,6 +148,9 @@ static void ZX8081_NOINLINE zx8081NmiAckWait(void);
 static void zx8081IntAck(void);
 
 #define Z80_EXTERNAL_BUS 1
+#define Z80_CAPTURE_BUS_EVENTS() zx8081CaptureBusEvents
+/* The log is written only while capturing: out of line, so it does not grow every opcode (z80.c) */
+#define Z80_ACCESS_LOG_NOINLINE 1
 #define Z80_MEMORY_PTR() zx8081CpuMemoryPtr()
 #define Z80_READ_MEMORY(address) zx8081CpuReadMemory((uint16_t)(address))
 #define Z80_WRITE_MEMORY(address, value) zx8081CpuWriteMemory((uint16_t)(address), (uint8_t)(value))
@@ -152,7 +171,13 @@ static void zx8081IntAck(void);
 /* The execution-history recorder's hooks; the recorder and this machine's macros for it are at the
    end of this file (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` Phase 5) */
 #include "../../../../z80/wasm/z80-history.h"
+/* The access profile's hooks; the module and this machine's mapping for it are at the end of this
+   file (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §2.2) */
+#include "../../../../z80/wasm/z80-profile.h"
 #include "../../../../z80/wasm/z80.c"
+/* The CPU's registers and debugger state, exported as `zx8081GetCpuAf` ... (WASM_CORE_LEAN_AND_DEBUG_PLAN D8) */
+#define Z80_EXPORT_PREFIX zx8081
+#include "../../../../z80/wasm/z80-cpu-exports.c"
 
 // -----------------------------------------------------------------------------
 // The keyboard: the Sinclair 8x5 matrix, shared with the Spectrum cores (decision D3)
@@ -225,8 +250,10 @@ uint32_t zx8081ExecuteInstruction(void) {
   if (zx8081FrameCompleted) {
     zx8081BeginFrame();
   }
-  z80ClearBusEvents();
-  zx8081OpStartAddress = cpu.pc;
+  if (zx8081CaptureBusEvents) {
+    z80ClearBusEvents();
+    zx8081OpStartAddress = cpu.pc;
+  }
   if (zx8081TapeTryTrap()) {
     zx8081AfterInstruction();
     return zx8081FrameCompleted;
@@ -248,35 +275,14 @@ uint32_t zx8081ExecuteInstruction(void) {
   return zx8081FrameCompleted;
 }
 
-/*
- * The debugger's per-address breakpoint flags (`DebugSupport.breakpointFlags`), copied in by the host
- * when a debug run starts.
- */
-static uint16_t zx8081BreakpointFlags[0x10000];
-
-uint32_t zx8081BreakpointFlagsPtr(void) { return (uint32_t)(uintptr_t)zx8081BreakpointFlags; }
-
-/*
- * The debugger's fast path (as `z88ExecuteUntilStop`): runs instructions until the frame completes or
- * the PC reaches an address whose flags meet `mask`, or `extraStop` (above $FFFF: none). Returns how
- * many instructions ran.
- */
-uint32_t zx8081ExecuteUntilStop(uint32_t extraStop, uint32_t mask) {
-  uint32_t executed = 0u;
-  do {
-    zx8081ExecuteInstruction();
-    executed++;
-    /* A reverse-debugging stop target (REVERSE_DEBUGGING_PLAN D4): the host asks the recorder after the call */
-    if (z80HistoryStopNow() != 0u) break;
-    const uint16_t pc = cpu.pc;
-    if ((zx8081BreakpointFlags[pc] & mask) || pc == extraStop) break;
-  } while (!zx8081FrameCompleted);
-  return executed;
-}
+/* The debugger's breakpoint flags and in-core loop, `zx8081ExecuteUntilStop` (z80-debug-loop.c) */
+#define Z80_DEBUG_LOOP_PREFIX zx8081
+#include "../../../../z80/wasm/z80-debug-loop.c"
 
 /* Runs until the current frame completes (a frame stopped midway is finished) */
 uint32_t zx8081ExecuteFrame(void) {
   do {
+    zx8081CaptureBusEvents = zx8081TactsInCurrentFrame - zx8081FrameTacts <= ZX8081_CAPTURE_WINDOW ? 1u : 0u;
     zx8081ExecuteInstruction();
     /*
      * A reverse-debugging stop target (REVERSE_DEBUGGING_PLAN D4), checked on the frame's last
@@ -285,6 +291,7 @@ uint32_t zx8081ExecuteFrame(void) {
      */
     if (z80HistoryStopNow() != 0u) break;
   } while (!zx8081FrameCompleted);
+  zx8081CaptureBusEvents = 1u;
   return 0u;
 }
 
@@ -379,55 +386,10 @@ void zx8081SetTargetClockMultiplier(uint32_t value) { zx8081TargetClockMultiplie
 // CPU
 // -----------------------------------------------------------------------------
 
-uint32_t zx8081GetCpuAf(void) { return z80GetAf(); }
-void zx8081SetCpuAf(uint32_t v) { z80SetAf(v); }
-uint32_t zx8081GetCpuBc(void) { return z80GetBc(); }
-void zx8081SetCpuBc(uint32_t v) { z80SetBc(v); }
-uint32_t zx8081GetCpuDe(void) { return z80GetDe(); }
-void zx8081SetCpuDe(uint32_t v) { z80SetDe(v); }
-uint32_t zx8081GetCpuHl(void) { return z80GetHl(); }
-void zx8081SetCpuHl(uint32_t v) { z80SetHl(v); }
-uint32_t zx8081GetCpuAfAlt(void) { return z80GetAfAlt(); }
-void zx8081SetCpuAfAlt(uint32_t v) { z80SetAfAlt(v); }
-uint32_t zx8081GetCpuBcAlt(void) { return z80GetBcAlt(); }
-void zx8081SetCpuBcAlt(uint32_t v) { z80SetBcAlt(v); }
-uint32_t zx8081GetCpuDeAlt(void) { return z80GetDeAlt(); }
-void zx8081SetCpuDeAlt(uint32_t v) { z80SetDeAlt(v); }
-uint32_t zx8081GetCpuHlAlt(void) { return z80GetHlAlt(); }
-void zx8081SetCpuHlAlt(uint32_t v) { z80SetHlAlt(v); }
-uint32_t zx8081GetCpuIx(void) { return z80GetIx(); }
-void zx8081SetCpuIx(uint32_t v) { z80SetIx(v); }
-uint32_t zx8081GetCpuIy(void) { return z80GetIy(); }
-void zx8081SetCpuIy(uint32_t v) { z80SetIy(v); }
-uint32_t zx8081GetCpuIr(void) { return z80GetIr(); }
-void zx8081SetCpuIr(uint32_t v) { z80SetIr(v); }
-uint32_t zx8081GetCpuWz(void) { return z80GetWz(); }
-void zx8081SetCpuWz(uint32_t v) { z80SetWz(v); }
-uint32_t zx8081GetCpuPc(void) { return z80GetPc(); }
-void zx8081SetCpuPc(uint32_t v) { z80SetPc(v); }
-uint32_t zx8081GetCpuSp(void) { return z80GetSp(); }
-void zx8081SetCpuSp(uint32_t v) { z80SetSp(v); }
-uint32_t zx8081GetCpuIff1(void) { return z80GetIff1(); }
-void zx8081SetCpuIff1(uint32_t v) { z80SetIff1(v); }
-uint32_t zx8081GetCpuIff2(void) { return z80GetIff2(); }
-void zx8081SetCpuIff2(uint32_t v) { z80SetIff2(v); }
-uint32_t zx8081GetCpuInterruptMode(void) { return z80GetInterruptMode(); }
-void zx8081SetCpuInterruptMode(uint32_t v) { z80SetInterruptMode(v); }
-uint32_t zx8081GetCpuHalted(void) { return z80GetHalted(); }
-uint32_t zx8081GetCpuPrefix(void) { return z80GetPrefix(); }
 /* The opcode the CPU executed last: $00 for a display-file byte the ULA forced to NOP */
 uint32_t zx8081GetCpuOpCode(void) { return cpu.opCode; }
-uint32_t zx8081GetStepOutAddress(void) { return z80GetStepOutAddress(); }
-uint32_t zx8081GetInterruptDepth(void) { return z80GetInterruptDepth(); }
 uint32_t zx8081GetCpuSigInt(void) { return zx8081LastSigInt; }
 uint32_t zx8081GetOpStartAddress(void) { return zx8081OpStartAddress; }
-
-/* The bus record: the shared core's data-access log and last port event */
-uint32_t zx8081GetAccessLogPtr(void) { return z80AccessLogPtr(); }
-uint32_t zx8081GetAccessLogCount(void) { return z80GetAccessLogCount(); }
-uint32_t zx8081GetLastPortAddress(void) { return z80GetLastPortAddress(); }
-uint32_t zx8081GetLastPortValue(void) { return z80GetLastPortValue(); }
-uint32_t zx8081GetLastPortIsWrite(void) { return z80GetLastPortIsWrite(); }
 
 // -----------------------------------------------------------------------------
 // Breakpoint conditions: the shared evaluator, reading memory through the map without side effects
@@ -467,3 +429,53 @@ static inline void zx8081HistoryContext(uint32_t kind, uint8_t *out) {
 #define Z80_HISTORY_FRAME_TACT() zx8081FrameTacts
 #define Z80_HISTORY_FORCED_NOP() zx8081HistoryForcedNop
 #include "../../../../z80/wasm/z80-history.c"
+
+// -----------------------------------------------------------------------------
+// The access profile (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §2.2, D4): the shared module, with
+// this machine's physical layout. Time is in CPU T-states (D8).
+//
+// The profile offset of a byte is its *canonical address* - the lowest CPU address a data access
+// reaches it at - so the layout (`src/common/profile/layouts/zx8081.ts`) is one fixed map for every
+// model, whose RAM size and ROM are run-time configuration (`zx8081Configure`), not machine ids:
+//   $00000-$01FFF  the ROM, through its mirrors (`& zx8081RomMask`: the 4K ZX80 ROM fills $0000-$0FFF)
+//   $02000-$0FFFF  the RAM: 1K/16K at $4000 + (address & mask), whatever mirror was used; 64K at its
+//                  address ($2000-$FFFF)
+//   $10000-$11FFF  the 64K model's lowest 8K of RAM, which no data access reaches: only an opcode
+//                  fetch above 32K does, through the lower-32K redirect of `zx8081CpuReadMemory`
+// The decode is `zx8081CpuReadMemory`/`zx8081CpuWriteMemory`'s, mirrors included; a write below the
+// RAM reaches nothing (the ROM ignores it), so it maps nowhere.
+//
+// The redirect applies to the M1 opcode read only. `Z80_BEFORE_OPCODE_FETCH` sets `zx8081M1Fetch`
+// before the profile's BEGIN and M1 fetch hooks run, and the read clears it, so the flag tells them
+// apart from the operand and data reads; a HALTed CPU re-fetches its HALT, so its cycles are charged
+// where the HALT's own M1 was.
+//
+// The display file: while the ROM shows a picture the CPU fetches the display file above 32K and the
+// ULA forces those bytes to NOPs. Those fetches are mapped like any other - they *are* M1 cycles at
+// those bytes, the history records them too, and the time the picture costs in SLOW mode is charged
+// where it is spent - so the display file reads as executed code (E/C), and, once the ROM writes it
+// while profiling runs, as self-modified (S, D9). `zx8081-profile.test.ts` pins this down.
+// -----------------------------------------------------------------------------
+
+#define ZX8081_PROFILE_RAM_BASE 0x4000u
+#define ZX8081_PROFILE_HIDDEN_BASE 0x10000u
+
+static inline int32_t zx8081ProfilePhys(uint32_t address, uint32_t write) {
+  const uint32_t a = address & 0xffffu;
+  if (a < zx8081RamBase) return write != 0u ? -1 : (int32_t)(a & zx8081RomMask);
+  if (zx8081RamSizeKb == 64u) {
+    if (write == 0u && (a & 0x8000u) != 0u && (zx8081M1Fetch != 0u || cpu.halted != 0u)) {
+      const uint32_t index = a & 0x7fffu;
+      return (int32_t)(index < 0x2000u ? ZX8081_PROFILE_HIDDEN_BASE + index : index);
+    }
+    return (int32_t)a;
+  }
+  return (int32_t)(ZX8081_PROFILE_RAM_BASE + (a & zx8081RamMask));
+}
+
+#define Z80_PROFILE_FLAG_BYTES 0x12000u
+#define Z80_PROFILE_POOL_PAGES 9u
+#define Z80_PROFILE_PHYS_READ(address) zx8081ProfilePhys((uint32_t)(address), 0u)
+#define Z80_PROFILE_PHYS_WRITE(address) zx8081ProfilePhys((uint32_t)(address), 1u)
+#define Z80_PROFILE_FRAME_TICKS() cpu.tacts
+#include "../../../../z80/wasm/z80-profile.c"

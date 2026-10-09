@@ -244,6 +244,29 @@ export const FAVORITE: Record<Tone, string> = {
   light: "#8A6A00"
 };
 
+/**
+ * The memory heat map's three hues (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D14, T9): executed,
+ * read, written. Fixed across accents, like the status hues: a ramp built from the accent would run
+ * into the changed-byte mark (the secondary accent) and the selection, which share the same rows.
+ * `semantic.ts` derives the five ramp steps from each by mixing it into the panel surface, so both
+ * tones are derived and the steps are monotonic in lightness by construction.
+ *
+ * Kept clear of the status hues (`warning` is hue ~20; execute sits at ~32, between it and the
+ * favourite's gold) and of each other: warm, green-teal and violet.
+ */
+export const HEAT: Record<Tone, Record<"exec" | "read" | "write", string>> = {
+  dark: {
+    exec: "#F0902E",
+    read: "#36C2A0",
+    write: "#A585F0"
+  },
+  light: {
+    exec: "#C25E00",
+    read: "#007F66",
+    write: "#6A3FD0"
+  }
+};
+
 // ---------------------------------------------------------------------------------------------
 // Device surfaces
 // ---------------------------------------------------------------------------------------------

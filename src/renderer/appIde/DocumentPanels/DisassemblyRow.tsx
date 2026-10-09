@@ -5,7 +5,7 @@ import { memo } from "react";
 import type { KeyboardEvent, MouseEvent } from "react";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { getBreakpointAddressSpec } from "@common/utils/breakpoints";
-import { breakpointCommandSpec } from "@renderer/appIde/commands/BreakpointCommands";
+import { breakpointCommandSpec } from "@common/utils/breakpoint-spec";
 import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import { Label } from "@renderer/controls/layout/Label";
 import { Secondary } from "@renderer/controls/layout/Secondary";
@@ -434,6 +434,15 @@ type DisassemblyRowProps = DisassemblyRowViewModelParams & {
    * Undefined on a non-branching row, and on every row when `showBranchGutter` is false.
    */
   verdict?: BranchVerdict;
+  /**
+   * Reserve code coverage's cell (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D13): a property of
+   * the listing, like `showBranchGutter`
+   */
+  showCoverage?: boolean;
+  /** This row's coverage: undefined no data, 0 never started, -1 started (no count), n started n times */
+  coverage?: number;
+  /** The profiled time's share of this row's instruction, in percent (`.plans/PROFILER_PLAN.md` D15) */
+  timeShare?: number;
   selected?: boolean;
   selectedRange?: boolean;
   /**
@@ -474,6 +483,9 @@ export const DisassemblyRow = memo(function DisassemblyRow({
   selectedRange,
   showBranchGutter = false,
   verdict,
+  showCoverage = false,
+  coverage,
+  timeShare,
   ...viewModelParams
 }: DisassemblyRowProps) {
   const breakpoint = viewModelParams.breakpoint;
@@ -670,6 +682,19 @@ export const DisassemblyRow = memo(function DisassemblyRow({
             * from the certain one at PC lives in the stylesheet, keyed off `.execPoint`, so it is
             * not restated per row here.
             */}
+          {showCoverage && (
+            <span
+              className={classnames(styles.coverageCell, { [styles.covered]: !!coverage })}
+              data-coverage={coverage === undefined ? undefined : coverage === 0 ? "none" : "covered"}
+              title={
+                coverage === undefined || coverage === 0
+                  ? undefined
+                  : (coverage > 0
+                      ? `Executed ${coverage.toLocaleString("en-US")} time${coverage === 1 ? "" : "s"}`
+                      : "Executed") + (timeShare !== undefined ? ` · ${timeShare.toFixed(1)}% of the profiled time` : "")
+              }
+            />
+          )}
           {showBranchGutter && (
             <span
               className={styles.branchGutter}

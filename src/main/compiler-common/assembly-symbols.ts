@@ -55,6 +55,12 @@ export class AssemblySymbolInfo implements IAssemblySymbolInfo {
   readonly definitionEndColumn?: number;
 
   /**
+   * The name as the source wrote it, when a case-insensitive build stored it lower-case: the
+   * profiler names routines with it (`.plans/PROFILER_PLAN.md` D6)
+   */
+  writtenName?: string;
+
+  /**
    * Factory method that creates a label
    * @param name Label name
    * @param value Label value

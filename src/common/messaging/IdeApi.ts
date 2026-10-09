@@ -107,6 +107,20 @@ abstract class IdeApiImpl {
   }
 
   /**
+   * Executes a command into a fresh output buffer, mirrored to the Build pane, and returns its
+   * output as plain text lines with the result (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D9).
+   * With `automation`, a command marked `automation: "deny"` is refused instead of run (T5).
+   * @param _commandText The command text to execute.
+   * @param _options Options of the run.
+   */
+  async executeCommandCaptured(
+    _commandText: string,
+    _options?: { automation?: boolean }
+  ): Promise<CapturedCommandResult> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * Saves all files before quitting the IDE.
    */
   async saveAllBeforeQuit(): Promise<boolean> {
@@ -120,6 +134,14 @@ abstract class IdeApiImpl {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 }
+
+/** A command's result with its output (`executeCommandCaptured`) */
+export type CapturedCommandResult = IdeCommandResult & {
+  /** The command's output, colours stripped, one string per line */
+  output: string[];
+  /** The command is not allowed through automation (T5); it did not run */
+  denied?: boolean;
+};
 
 // Internal concrete subclass for proxy instantiation
 class ProxyIdeApiImpl extends IdeApiImpl {}
@@ -135,6 +157,7 @@ const UNBOUNDED_IDE_METHODS = [
   "displayDialog",
   // --- Runs an arbitrary IDE command, which may itself build or run a project
   "executeCommand",
+  "executeCommandCaptured",
   // --- Saves every dirty document on the quit path
   "saveAllBeforeQuit"
 ] as const;

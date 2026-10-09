@@ -180,6 +180,11 @@ export const componentAliases: Record<string, string> = {
   "--bgcolor-errorLabel": "var(--status-error)",
   "--color-statusbar-label": "var(--text-secondary)",
   "--color-statusbar-icon": "var(--text-secondary)",
+  // The automation item (COMMAND_LINE_AUTOMATION_PLAN D4): neutral while it only listens, an accent
+  // chip while a script is connected - something outside the IDE can drive it, so that is state.
+  "--color-statusbar-automation-active": "var(--accent-text)",
+  "--bgcolor-statusbar-automation-active": "var(--accent-subtle)",
+  "--border-statusbar-automation-active": "var(--accent-border)",
 
   // --- Sidebar --------------------------------------------------------
   "--bgcolor-sidebar": "var(--surface-panel)",
@@ -464,6 +469,42 @@ export const componentAliases: Record<string, string> = {
    */
   "--color-memory-highlight": "var(--accent-secondary-text)",
   "--border-memory-highlight": "var(--accent-secondary-border)",
+
+  /*
+   * The memory view's heat map (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D14): a fixed,
+   * accent-independent ramp per kind of access, so it never reads as the changed-byte mark or the
+   * hover (both the secondary accent). A heat cell *fills* - unlike the changed-byte mark, which
+   * must not - because the fill is the information: the whole point of the view is the pattern a
+   * region's bytes make together. The text keeps `--color-memory-value` on every step.
+   */
+  ...Object.fromEntries(
+    (["exec", "read", "write"] as const).flatMap((kind) =>
+      [1, 2, 3, 4, 5].map((step) => [`--color-heat-${kind}-${step}`, `var(--heat-${kind}-${step})`])
+    )
+  ),
+  /* A self-modified byte (D9): outlined in the write hue's hottest step, whatever the mode */
+  "--border-heat-smc": "var(--heat-write-5)",
+
+  /*
+   * Code coverage (D12, D13): the editor's strip and the disassembly's cell. Covered is the success
+   * green (DeZog's convention, and the meaning: "this ran"); never-run code is a hollow mark in the
+   * tertiary text colour - an absence, not a problem, so not a status hue.
+   */
+  "--color-coverage-covered": "var(--status-success)",
+  "--color-coverage-uncovered": "var(--text-tertiary)",
+  "--bgcolor-coverage-line": "var(--status-success-subtle)",
+
+  /*
+   * The Profiler document (`.plans/PROFILER_PLAN.md` D3, D4, D10, D14). The share bar behind a
+   * row's self % is the primary accent's subtle wash - a quantity, drawn like a selection would be
+   * too strong; the pseudo-rows (HALT, acknowledges, DMA, snooze) are time that is no routine's, so
+   * they recede in the secondary data ink, in italics; the call tracker's "approximate" counters
+   * are a warning, not an error.
+   */
+  "--bgcolor-profiler-bar": "var(--accent-subtle)",
+  "--color-profiler-pseudo": "var(--data-secondary)",
+  "--color-profiler-warning": "var(--status-warning)",
+  "--color-profiler-recursive": "var(--text-tertiary)",
 
   /*
    * Disassembly columns: address, opcode bytes, decoded instruction, jump-target label.
@@ -826,5 +867,19 @@ export const componentAliases: Record<string, string> = {
   "--color-tape-segment-pause": "var(--surface-active)",
   "--color-tape-segment-merged": "var(--text-disabled)",
   "--color-tape-segment-unplayable": "var(--status-error)",
-  "--color-tape-segment-selected": "var(--text-primary)"
+  "--color-tape-segment-selected": "var(--text-primary)",
+
+  // --- Unit Tests panel (`.plans/Z80_UNIT_TESTS_PLAN.md` D13) ------------------------------------
+  /*
+   * Status is the only colour in the panel: a passed test's glyph takes success, a failed one error,
+   * one that ended in an error (stack, timeout, HALT) the warning hue, and the message line under a
+   * test that did not pass repeats its glyph's hue. Everything else follows the neutral data
+   * hierarchy; the selected row is marked the way list selections are, with the accent's tint.
+   */
+  "--color-unit-test-passed": "var(--status-success)",
+  "--color-unit-test-failed": "var(--status-error)",
+  "--color-unit-test-error": "var(--status-warning)",
+  "--color-unit-test-running": "var(--accent-solid)",
+  "--color-unit-test-idle": "var(--text-tertiary)",
+  "--bgcolor-unit-test-selected": "var(--accent-subtle)"
 };

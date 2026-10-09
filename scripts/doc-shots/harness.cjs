@@ -78,7 +78,12 @@ async function launchKlive({
    * "1" } }`). Read at startup, so a setting that needs a restart - the advanced-debugging switch -
    * is in force from the first frame. Unset, none.
    */
-  userSettings
+  userSettings,
+  /*
+   * More global `ideViewOptions` (`{ profilerInlays: true }`): IDE view settings are global, which
+   * `set -u` does not reach. Unset, none.
+   */
+  ideViewOptions = {}
 }) {
   if (!fs.existsSync(MAIN)) {
     throw new Error(`No build at ${MAIN} — run \`npx electron-vite build --config build/electron.vite.config.ts\` first.`);
@@ -106,7 +111,8 @@ async function launchKlive({
             showTools: true,
             maximizeTools: false,
             sideBarWidth,
-            toolPanelHeight
+            toolPanelHeight,
+            ...ideViewOptions
           },
           editorOptions: { fontFamily: "iosevka", fontSize: 16 },
           panelOptions: { fontFamily: panelFontFamily, fontSize: panelFontSize }

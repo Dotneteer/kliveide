@@ -16,7 +16,9 @@ import {
   LAYERS_PANEL_ID,
   HISTORY_EDITOR,
   HISTORY_PANEL_ID,
-  MEMORY_PANEL_ID
+  MEMORY_PANEL_ID,
+  PROFILER_EDITOR,
+  PROFILER_PANEL_ID
 } from "@common/state/common-ids";
 import type { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
 
@@ -29,7 +31,8 @@ export type SpecialDocumentId =
   | typeof TILEMAP_PANEL_ID
   | typeof LAYER2_PANEL_ID
   | typeof LAYERS_PANEL_ID
-  | typeof HISTORY_PANEL_ID;
+  | typeof HISTORY_PANEL_ID
+  | typeof PROFILER_PANEL_ID;
 
 export type SpecialDocumentDefinition = Pick<
   ProjectDocumentState,
@@ -105,6 +108,14 @@ const specialDocumentDefinitions: Record<SpecialDocumentId, SpecialDocumentDefin
     name: "Execution History",
     type: HISTORY_EDITOR,
     iconName: "history",
+    workspaceRestorable: true
+  },
+  // --- The profiler (`.plans/PROFILER_PLAN.md` D14)
+  [PROFILER_PANEL_ID]: {
+    id: PROFILER_PANEL_ID,
+    name: "Profiler",
+    type: PROFILER_EDITOR,
+    iconName: "gauge",
     workspaceRestorable: true
   }
 };

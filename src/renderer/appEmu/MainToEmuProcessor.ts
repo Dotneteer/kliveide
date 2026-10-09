@@ -3,8 +3,6 @@ import type { IAnyMachine } from "@renderer/abstractions/IAnyMachine";
 import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
 import { RenderingPhase } from "@renderer/abstractions/RenderingPhase";
 import { DISK_A_WP, DISK_B_WP, REWIND_REQUESTED } from "@emu/machines/machine-props";
-import { TapReader } from "@emu/machines/tape/TapReader";
-import { TzxReader } from "@emu/machines/tape/TzxReader";
 import { ZxSpectrumBase } from "@emu/machines/ZxSpectrumBase";
 import {
   RequestMessage,
@@ -16,17 +14,22 @@ import { MessengerBase } from "@messaging/MessengerBase";
 import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
 import { TapeDataBlock } from "@common/structs/TapeDataBlock";
-import { BinaryReader } from "@common/utils/BinaryReader";
 import type { ISpectrumPsgDevice } from "@emu/machines/zxSpectrum/ISpectrumPsgDevice";
 import { isZ88IdeMachine } from "@emu/machines/z88/IZ88IdeMachine";
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_DOCK, MEDIA_SD_CARD, MEDIA_TAPE } from "@common/structs/project-const";
 import { dockBankOf, parseDckFile } from "@common/timex/dckFile";
 import { isZx8081ProgramFileName, parseZxProgramFile } from "@emu/machines/zx8081/ZxPFile";
 import { mediaStore } from "@emu/machines/media/media-info";
+import { screenImageOf } from "@common/headless/screenImage";
+import { tapeBlocksOf } from "@common/headless/tapeBlocks";
 import { EmuScriptRunner } from "./ksx/EmuScriptRunner";
 import { getCachedMessenger, getCachedStore } from "@renderer/CachedServices";
 import { isZxNextIdeMachine, type IZxNextIdeMachine } from "@emu/machines/zxNext/IZxNextIdeMachine";
 import { isExecutionHistorySource } from "@emu/abstractions/IExecutionHistorySource";
+import { isAccessProfileSource } from "@emu/abstractions/IAccessProfileSource";
+import { profileLayoutOf } from "@common/profile/layouts";
+import { buildProfileView, resolveProfileOffsets, sampleProfile } from "@emu/machines/profile/profileViews";
+import type { ProfileTouchedByte } from "@common/profile/profileTypes";
 import type { CallStackInfo } from "@emu/abstractions/CallStack";
 import { historyContextDecoder } from "@common/history/contexts";
 import { HistoryKind } from "@common/history/historyRecord";
@@ -50,9 +53,13 @@ import {
   type Z80CpuState,
   isMachineNotAvailableError,
   MACHINE_NOT_AVAILABLE_MESSAGE,
+  type MachineStopInfo,
+  type ScreenImage,
   ULA_BORDER_COLOR_NAMES,
   VicState
 } from "@common/messaging/EmuApi";
+import type { BreakpointHit } from "@common/automation/protocol";
+import { breakpointKind } from "@common/utils/breakpoint-spec";
 import { IMemorySection } from "@abstractions/MemorySection";
 import type { RecordingManager } from "./recording/RecordingManager";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
@@ -284,29 +291,19 @@ class EmuMessageProcessor {
       return;
     }
 
-    let dataBlocks: TapeDataBlock[] = [];
-    const reader = new BinaryReader(contents);
-    const tzxReader = new TzxReader(reader);
-    let result = tzxReader.readContent();
-    if (result) {
-      reader.seek(0);
-      const tapReader = new TapReader(reader);
-      result = tapReader.readContent();
-      if (result) {
-        if (!suppressError) {
-          await createMainApi(this.mainMessenger).displayMessageBox(
-            "error",
-            "Tape file error",
-            `Error while processing tape file ${file} (${result})`
-          );
-        }
-        return;
-      } else {
-        dataBlocks = tapReader.dataBlocks;
+    // --- The same reading `klive run` does (TZX first, then TAP)
+    const tape = tapeBlocksOf(contents);
+    if ("error" in tape) {
+      if (!suppressError) {
+        await createMainApi(this.mainMessenger).displayMessageBox(
+          "error",
+          "Tape file error",
+          `Error while processing tape file ${file} (${tape.error})`
+        );
       }
-    } else {
-      dataBlocks = tzxReader.dataBlocks.map((b) => b.getDataBlock()).filter((b) => b);
+      return;
     }
+    const dataBlocks: TapeDataBlock[] = tape.blocks;
 
     // --- Store the tape file in the media store. This is the durable record: whenever a machine
     // --- starts, the controller re-attaches every stored medium to it, so the tape survives a
@@ -853,6 +850,8 @@ class EmuMessageProcessor {
     // --- With the runtime state (live hit count, condition error/inactive); copies already
     const execBreakpoints = controller.debugSupport
       .listBreakpointsWithState()
+      // --- A unit-test run's own stops are not the user's (`.plans/Z80_UNIT_TESTS_PLAN.md` D9)
+      .filter((bp) => bp.owner?.kind !== "unitTest")
       .sort((a, b) => {
         if (a.address !== undefined) {
           if (b.address != undefined) {
@@ -1227,6 +1226,115 @@ class EmuMessageProcessor {
     controller?.clearHistoryCursor?.();
     const machine = controller?.machine;
     if (isExecutionHistorySource(machine)) machine.clearHistory();
+  }
+
+  // --- The access profile (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §4.2): the controller owns
+  // --- the switch and the status, the machine's profile source the data
+
+  /** The controller and its machine's profile source, when the machine profiles */
+  private profileTarget() {
+    const controller = this.machineService.getMachineController();
+    const status = controller?.getProfileStatus?.();
+    const machine = controller?.machine;
+    if (!controller || !status || !isAccessProfileSource(machine)) return undefined;
+    return { controller, status, source: machine };
+  }
+
+  getProfileStatus() {
+    return this.machineService.getMachineController()?.getProfileStatus?.();
+  }
+
+  setProfiling(enabled: boolean, counters?: boolean) {
+    const controller = this.machineService.getMachineController();
+    if (!controller?.setProfiling?.(enabled, counters)) return undefined;
+    return controller.getProfileStatus?.();
+  }
+
+  resetProfile() {
+    this.machineService.getMachineController()?.resetProfile?.();
+  }
+
+  getProfileView(partition?: number, withCounts = true) {
+    const target = this.profileTarget();
+    if (!target) return undefined;
+    const layout = profileLayoutOf(target.source.profileMachineId);
+    if (!layout) return undefined;
+    const machine = target.controller.machine;
+    return buildProfileView(
+      target.source,
+      layout,
+      target.status,
+      (address) => machine.getPartition?.(address),
+      partition,
+      withCounts
+    );
+  }
+
+  getProfileSample(addresses: number[], partitions?: (number | null)[], withCounts = false) {
+    const target = this.profileTarget();
+    if (!target) return undefined;
+    const layout = profileLayoutOf(target.source.profileMachineId);
+    if (!layout) return undefined;
+    const machine = target.controller.machine;
+    const source = target.source;
+    const offsets = resolveProfileOffsets(
+      layout,
+      (address) => machine.getPartition?.(address),
+      addresses,
+      partitions,
+      source.currentProfileOffset ? (address) => source.currentProfileOffset!(address) : undefined
+    );
+    return sampleProfile(target.source, target.status, offsets, withCounts);
+  }
+
+  getProfileTouched(mask?: number) {
+    const target = this.profileTarget();
+    if (!target) return undefined;
+    return { info: target.status, bytes: target.source.readProfileTouched(mask) ?? [] };
+  }
+
+  mergeProfile(bytes: ProfileTouchedByte[], totals: { instructions: number; timeTotal: number }) {
+    const target = this.profileTarget();
+    if (!target) return undefined;
+    target.source.mergeProfile(bytes, totals);
+    return target.controller.getProfileStatus?.();
+  }
+
+  // --- The profiler (`.plans/PROFILER_PLAN.md` D1, D2, D12)
+
+  startProfiling(options?: { calls?: boolean; at?: number; until?: number }) {
+    const controller = this.machineService.getMachineController();
+    if (!controller?.startProfiling?.(options)) return undefined;
+    return controller.getProfileStatus?.();
+  }
+
+  stopProfiling() {
+    const controller = this.machineService.getMachineController();
+    if (!controller?.stopProfiling?.()) return undefined;
+    return controller.getProfileStatus?.();
+  }
+
+  getProfileEdges() {
+    const target = this.profileTarget();
+    if (!target) return undefined;
+    return { info: target.status, edges: target.source.readProfileEdges?.() ?? [] };
+  }
+
+  getProfileSlotOffsets() {
+    const target = this.profileTarget();
+    if (!target) return undefined;
+    const layout = profileLayoutOf(target.source.profileMachineId);
+    if (!layout) return undefined;
+    const machine = target.controller.machine;
+    const addresses = Array.from({ length: 8 }, (_, slot) => slot * 0x2000);
+    const source = target.source;
+    return resolveProfileOffsets(
+      layout,
+      (address) => machine.getPartition?.(address),
+      addresses,
+      undefined,
+      source.currentProfileOffset ? (address) => source.currentProfileOffset!(address) : undefined
+    ).map((offset) => (offset < 0 ? null : offset));
   }
 
   /**
@@ -1669,6 +1777,98 @@ class EmuMessageProcessor {
         }
         break;
     }
+  }
+
+  /**
+   * Writes bytes to memory: the CPU's current view, or one partition whatever is paged in
+   * (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` T8).
+   * @param address The address, or the offset within the partition.
+   * @param bytes The bytes to write.
+   * @param partition The partition, or undefined for the CPU's view.
+   */
+  async setMemoryBytes(address: number, bytes: Uint8Array, partition?: number): Promise<void> {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    if (!(bytes instanceof Uint8Array)) throw new Error("The bytes must be a Uint8Array.");
+    // --- An edit acts on the present (LITE_STEP_BACK_PLAN D5)
+    controller.clearHistoryCursor?.();
+    await controller.interruptRzx?.("memory was edited");
+    const machine = controller.machine;
+    if (partition === undefined) {
+      for (let i = 0; i < bytes.length; i++) {
+        machine.doWriteMemory((address + i) & 0xffff, bytes[i]);
+      }
+      return;
+    }
+    const memory = (machine as IZxSpectrumMachine).getMemoryPartition(partition);
+    if (!memory || address < 0 || address + bytes.length > memory.length) {
+      throw new Error(`The write does not fit partition ${partition} (${memory?.length ?? 0} bytes).`);
+    }
+    // --- A partition that is paged in is written through the CPU's view: some cores (the 128K's)
+    // --- keep a flat copy of the paged-in memory that the CPU reads, which a write into the
+    // --- partition's own array would leave stale. Elsewhere the array is the memory.
+    const pages = machine.getCurrentPartitions?.() ?? [];
+    const romFlags = machine.getRomFlags?.() ?? [];
+    const visible = (offset: number): number | undefined => {
+      for (let page = 0; page < pages.length; page++) {
+        if (pages[page] !== partition) continue;
+        const base = (page * 0x2000) % memory.length;
+        if (offset >= base && offset < base + 0x2000) {
+          if (romFlags[page]) {
+            throw new Error("A ROM partition cannot be written while it is paged in.");
+          }
+          return page * 0x2000 + (offset - base);
+        }
+      }
+      return undefined;
+    };
+    // --- Every target first, so a refused write changes nothing
+    const targets = Array.from(bytes, (_, i) => visible(address + i));
+    for (let i = 0; i < bytes.length; i++) {
+      const cpuAddress = targets[i];
+      if (cpuAddress === undefined) memory[address + i] = bytes[i];
+      else machine.doWriteMemory(cpuAddress, bytes[i]);
+    }
+  }
+
+  /**
+   * The emulated picture as it was last rendered, as RGBA bytes: the visible part of the pixel
+   * buffer, exactly what the emulator panel draws (before its scan-line effect).
+   */
+  getScreenImage(): ScreenImage {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    // --- The same bytes `klive run --screenshot` writes (a copy: a running machine keeps drawing)
+    return screenImageOf(controller.machine);
+  }
+
+  /**
+   * What stopped the machine at its last stop: the breakpoints that fired, or - for a breakpoint
+   * on the fast path, which records only its address - the execution breakpoint at the PC.
+   */
+  getStopInfo(): MachineStopInfo {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    const machine = controller.machine;
+    const pc = machine.pc;
+    const ds = controller.debugSupport;
+    const fired = ds?.lastStopBreakpoints ?? [];
+    const breakpoints: BreakpointHit[] = fired.map((bp, i) => ({
+      address: ds?.lastStopAccesses?.[i]?.address ?? bp.address ?? pc,
+      ...(bp.partition !== undefined ? { partition: bp.partition } : {}),
+      kind: bp.owner?.kind === "annotation" ? "annotation" : breakpointKind(bp)
+    }));
+    if (!breakpoints.length && ds?.lastBreakpoint !== undefined && ds.lastBreakpoint === pc) {
+      const partition = machine.getPartition?.(pc);
+      breakpoints.push({ address: pc, ...(partition !== undefined ? { partition } : {}), kind: "exec" });
+    }
+    return { pc, breakpoints };
   }
 
   /**

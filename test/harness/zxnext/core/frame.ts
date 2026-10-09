@@ -1,4 +1,5 @@
 import type { NextMachine } from "./machines";
+import { screenImageOf } from "@common/headless/screenImage";
 
 /*
  * Browser-safe frame helpers (no Node imports): used by the headless runner and by the browser page.
@@ -12,19 +13,13 @@ export type Frame = {
 };
 
 /**
- * Copies the visible part of the machine's pixel buffer.
- *
- * Mirrors `useEmulatorScreen.displayScreenData`: the buffer is little-endian `0xAABBGGRR` words, so
- * its bytes are already RGBA, and the visible frame starts at `getBufferStartOffset()`. Copied, not
- * viewed: the next frame overwrites the machine's buffer in place.
+ * Copies the visible part of the machine's pixel buffer: `screenImageOf`, the picture `klive run
+ * --screenshot` and the automation server's `screen.capture` take (`@common/headless/screenImage`).
+ * Copied, not viewed: the next frame overwrites the machine's buffer in place.
  */
 export function captureFrame(machine: NextMachine): Frame {
-  const width = machine.screenWidthInPixels;
-  const height = machine.screenHeightInPixels;
-  const words = machine.getPixelBuffer();
-  const start = machine.getBufferStartOffset();
-  const bytes = new Uint8Array(words.buffer, words.byteOffset + start * 4, width * height * 4);
-  return { width, height, rgba: new Uint8Array(bytes) };
+  const image = screenImageOf(machine);
+  return { width: image.width, height: image.height, rgba: image.pixels };
 }
 
 /**

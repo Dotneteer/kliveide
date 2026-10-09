@@ -12,8 +12,14 @@ import type { VirtualizedListApi } from "@renderer/controls/VirtualizedList";
 import { FullPanel, HStack } from "@renderer/controls/layout/Panels";
 import { PanelHeader } from "@renderer/controls/data";
 import {
-  incProjectFileVersionAction
+  incProjectFileVersionAction,
+  setMemoryHeatModeAction
 } from "@common/state/actions";
+import { hasMachineFeature } from "@common/features/advancedDebugging";
+import { MF_PROFILE } from "@common/machines/constants";
+import { machineRegistry } from "@common/machines/machine-registry";
+import type { ProfileView } from "@common/profile/profileTypes";
+import { buildHeatSteps, heatTooltip, HEAT_MODES, type HeatMode } from "@renderer/features/coverage/heatModel";
 import { useMainApi } from "@renderer/core/MainApi";
 import {
   SetMemoryDialog,
@@ -81,6 +87,24 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
   const emuViewVersion = useSelector((s) => s.emulatorState?.emuViewVersion);
 
   const loadedViewState = useLoadedMemoryViewState(documentHubService, document);
+
+  // --- The heat map (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D14): its mode is shared with the
+  // --- `memory-heat` command through the IDE view state; its data is the profile of what is shown
+  const storedHeatMode = useSelector((s) => s.ideView?.memoryHeatMode);
+  const heatMode: HeatMode = HEAT_MODES.includes(storedHeatMode as HeatMode) ? (storedHeatMode as HeatMode) : "off";
+  const heatAvailable = useSelector((s) =>
+    hasMachineFeature(
+      machineRegistry.find((m) => m.machineId === s.emulatorState?.machineId),
+      MF_PROFILE,
+      s
+    )
+  );
+  const profileVersion = useSelector((s) => s.emulatorState?.profileVersion);
+  const [heatView, setHeatView] = useState<ProfileView | undefined>();
+  const heatViewRef = useRef<ProfileView | undefined>(undefined);
+  heatViewRef.current = heatView;
+  // --- Stable across refreshes, so a row's memo comparator does not repaint for the callback alone
+  const heatTooltipOf = useCallback((address: number) => heatTooltip(heatViewRef.current, address), []);
 
   const [topIndex, setTopIndex] = useState<number>(() => loadedViewState?.topIndex ?? 0);
   const [isFullView, setIsFullView] = useState(() => loadedViewState?.isFullView ?? true);
@@ -239,6 +263,41 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
     machineSetup.isInitializing,
     memoryRefresh.refreshMemoryView
   ]);
+
+  // --- The heat map's data follows the profile, the view and the memory refresh
+  useEffect(() => {
+    if (!heatAvailable || heatMode === "off" || machineSetup.isInitializing) {
+      setHeatView(undefined);
+      return undefined;
+    }
+    let cancelled = false;
+    void emuApi
+      .getProfileView(isFullView ? undefined : (currentSegment ?? undefined), true)
+      .then((view) => {
+        if (!cancelled) setHeatView(view);
+      })
+      .catch(() => {
+        if (!cancelled) setHeatView(undefined);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    emuApi,
+    heatAvailable,
+    heatMode,
+    profileVersion,
+    isFullView,
+    currentSegment,
+    memoryRefresh.memoryVersion,
+    machineSetup.isInitializing
+  ]);
+  const heatSteps = useMemo(() => buildHeatSteps(heatView, heatMode), [heatView, heatMode]);
+
+  const handleHeatModeChanged = useCallback(
+    (mode: HeatMode) => dispatch(setMemoryHeatModeAction(mode)),
+    [dispatch]
+  );
 
   // --- Take care of refreshing the screen
   const handleEmuStateChange = useCallback(() => {
@@ -413,6 +472,8 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
           charDump={charDump}
           decimalView={decimalView}
           viewMode={viewMode}
+          heatMode={heatAvailable ? heatMode : undefined}
+          onHeatModeChanged={handleHeatModeChanged}
           onBankLabelChanged={setBankLabel}
           onCharDumpChanged={setCharDump}
           onDecimalViewChanged={setDecimalView}
@@ -498,6 +559,8 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
             // bytes while virtua creates rows during fast scrollbar drags.
             const section1Bytes = memoryRefresh.memory.subarray(section1Address, section1Address + byteCount);
             const section2Bytes = memoryRefresh.memory.subarray(section2Address, section2Address + byteCount);
+            const section1Heat = heatSteps?.subarray(section1Address, section1Address + byteCount);
+            const section2Heat = heatSteps?.subarray(section2Address, section2Address + byteCount);
 
             return (
               <HStack
@@ -512,6 +575,8 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
                   partitionWidthCh={partitionWidthCh}
                   address={section1Address}
                   bytes={section1Bytes}
+                  heatSteps={section1Heat}
+                  heatTooltipOf={heatTooltipOf}
                   characterInfo={memoryCharacterInfo}
                   charDump={charDump}
                   pointedInfo={memoryRefresh.pointedRegs}
@@ -527,6 +592,8 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
                     partitionWidthCh={partitionWidthCh}
                     address={section2Address}
                     bytes={section2Bytes}
+                    heatSteps={section2Heat}
+                    heatTooltipOf={heatTooltipOf}
                     characterInfo={memoryCharacterInfo}
                     pointedInfo={memoryRefresh.pointedRegs}
                     charDump={charDump}

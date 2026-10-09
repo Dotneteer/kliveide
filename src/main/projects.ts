@@ -30,6 +30,7 @@ import {
 } from "@state/actions";
 import { app, BrowserWindow, dialog } from "electron";
 import { mainStore } from "./main-store";
+import { rawUnitTestSection } from "./unit-tests/unitTestProjectSettings";
 import { ExportDialogSettings, KLIVE_HOME_FOLDER } from "./settings";
 import { getKliveHomeBase } from "./portable";
 import {
@@ -440,6 +441,7 @@ function getKliveProjectStructureFromState(breakpoints: BreakpointInfo[]): Klive
       set(globalSettings, key, get(state.globalSettings, key));
     }
   });
+  const unitTests = rawUnitTestSection(state.project?.folderPath);
   return {
     kliveVersion: app.getVersion(),
     machineType: emulatorState.machineId,
@@ -480,6 +482,8 @@ function getKliveProjectStructureFromState(breakpoints: BreakpointInfo[]): Klive
     settings: state.projectSettings,
     exportDialog: state.project?.exportSettings,
     workspaceSettings: state.workspaceSettings,
+    // --- Written by hand, never by the IDE (`.plans/Z80_UNIT_TESTS_PLAN.md` D19): carried over as is
+    ...(unitTests !== undefined ? { unitTests } : {}),
   };
 }
 
@@ -586,6 +590,7 @@ type KliveProjectStructure = {
   settings?: Record<string, any>;
   exportDialog?: ExportDialogSettings;
   workspaceSettings?: Record<string, any>;
+  unitTests?: unknown;
 };
 
 interface ViewOptions {

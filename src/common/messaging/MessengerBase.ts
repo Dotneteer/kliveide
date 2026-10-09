@@ -171,3 +171,17 @@ function describeRequest (message: RequestMessage): string {
   }
   return `message type '${(message as RequestMessage).type}'`;
 }
+
+/**
+ * A request one renderer sends to the other, as main relays it: without the sender's correlation
+ * ID. Main's messenger to the target keeps its own counter and pending-request map; a relayed
+ * message that kept the sender's ID would take a slot in that map under an ID main itself also
+ * uses, overwrite main's own pending request with the same number, and hand the target's answer to
+ * the wrong caller - the other one then waits forever (found by `COMMAND_LINE_AUTOMATION_PLAN.md`'s
+ * live check: `project.debug` never returned while the emulator was writing to the Emulator pane).
+ * The IPC handler (`src/main/index.ts`) puts the sender's ID back on the response.
+ */
+export function relayedRequest(message: RequestMessage): RequestMessage {
+  const { correlationId: _senderId, ...rest } = message;
+  return rest as RequestMessage;
+}

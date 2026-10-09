@@ -1,6 +1,9 @@
 # Real Next Hardware Debugging Plan (G6.4, with G6.5 as its first milestone)
 
-Status: **draft, open questions** (2026-10-08). Nothing is implemented. §9 lists the questions the
+Status: **draft, deferred** (2026-10-08). The project author will build G6.4 only if the future calls
+for it. **G6.5 is no longer part of this plan:** it is planned on its own, over Wi-Fi, in
+[SEND_TO_NEXT_WIFI_PLAN.md](SEND_TO_NEXT_WIFI_PLAN.md). Phase 2 below (send over serial) is replaced
+by that plan; if G6.4 is ever built, a serial send can be added on its link. Nothing is implemented. §9 lists the questions the
 project author must answer before Phase 1. Phase 0 is a feasibility spike with a go/no-go gate.
 
 Scope:

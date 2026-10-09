@@ -115,3 +115,32 @@
     background: var(--bgcolor-history-band);
   }
 }
+
+/*
+ * The automation item (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D4): shown only while the server
+ * listens. Quiet while nobody is connected; an accent chip while a client is, because then
+ * something outside the IDE can drive it. A click opens the Automation output pane.
+ */
+.automation {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font: inherit;
+  font-size: var(--font-size-100);
+  padding: 0 var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-statusbar-label);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--bgcolor-toolbarbutton-hover);
+  }
+
+  &.connected {
+    border-color: var(--border-statusbar-automation-active);
+    background: var(--bgcolor-statusbar-automation-active);
+    color: var(--color-statusbar-automation-active);
+  }
+}

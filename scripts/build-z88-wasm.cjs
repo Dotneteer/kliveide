@@ -3,7 +3,10 @@ const { dirname, relative, resolve, sep } = require("node:path");
 const { spawnSync } = require("node:child_process");
 
 const { acquireWasmBuildLock, waitForWasmBuildLock } = require("./wasm-build-lock.cjs");
+const { cpuExports, debugLoopExports, debugLoopVolatileSymbols } = require("./z80-cpu-exports.cjs");
+const { Z80_CONDITION_EXPORTS, Z80_CONDITION_VOLATILE_SYMBOLS } = require("./z80-condition-exports.cjs");
 const { Z80_HISTORY_EXPORTS, Z80_HISTORY_VOLATILE_SYMBOLS } = require("./z80-history-exports.cjs");
+const { Z80_PROFILE_EXPORTS, Z80_PROFILE_VOLATILE_SYMBOLS } = require("./z80-profile-exports.cjs");
 const {
   discardWasmOutput,
   layoutMapArgs,
@@ -21,18 +24,16 @@ const {
 const Z88_VOLATILE_SYMBOLS = [
   // --- The IDE's breakpoint conditions and the per-instruction access log they read: debugging
   // --- state, not machine state, so a restore never brings back old breakpoints
-  "condArena",
-  "condSlots",
-  "condToken",
-  "condLastStatus",
-  "condEnv",
-  "z88BreakpointFlags",
+  ...Z80_CONDITION_VOLATILE_SYMBOLS,
+  ...debugLoopVolatileSymbols("z88"),
   // --- What the Z88 sent to TXD, held until the host shows it: output the guest never reads back, not
   // --- machine state (a reverse-debugging replay must not depend on when the host emptied it)
   "z88UartTx",
   "z88UartTxCount",
   // --- The execution-history ring (EXECUTION_HISTORY_ALL_CORES_PLAN)
-  ...Z80_HISTORY_VOLATILE_SYMBOLS
+  ...Z80_HISTORY_VOLATILE_SYMBOLS,
+  // --- The access profile: flags, counters and time (CODE_COVERAGE_AND_HEAT_MAP_PLAN T4, T7)
+  ...Z80_PROFILE_VOLATILE_SYMBOLS
 ];
 
 /*
@@ -60,23 +61,13 @@ const optimizationProfiles = {
 
 const productionExports = [
   // --- Breakpoint condition evaluator (`src/emu/z80/wasm/z80-condition.c`)
-  "condArenaPtr",
-  "condArenaCapacity",
-  "condSlotTablePtr",
-  "condSlotCapacity",
-  "condMaxProgramWords",
-  "condGetToken",
-  "condSetToken",
-  "condGetLastStatus",
-  "condEvaluate",
-  "condEvaluateValue",
-  "condSetEnv",
-  "condPeek",
+  ...Z80_CONDITION_EXPORTS,
   // --- Execution history recorder (`src/emu/z80/wasm/z80-history.c`)
   ...Z80_HISTORY_EXPORTS,
+  // --- Access profile (`src/emu/z80/wasm/z80-profile.c`)
+  ...Z80_PROFILE_EXPORTS,
   "memory",
   // --- Buffers
-  "z88BreakpointFlagsPtr",
   "z88MemoryPtr",
   "z88GetMemorySize",
   "z88PixelBufferPtr",
@@ -100,7 +91,6 @@ const productionExports = [
   "z88HardReset",
   "z88ExecuteFrame",
   "z88ExecuteInstruction",
-  "z88ExecuteUntilStop",
   // --- Timing
   "z88GetBaseClockFrequency",
   "z88GetTactsInFrame",
@@ -182,46 +172,11 @@ const productionExports = [
   "z88SetSbf",
   "z88DrawLcd",
   // --- CPU and bus events
-  "z88GetCpuAf",
-  "z88SetCpuAf",
-  "z88GetCpuBc",
-  "z88SetCpuBc",
-  "z88GetCpuDe",
-  "z88SetCpuDe",
-  "z88GetCpuHl",
-  "z88SetCpuHl",
-  "z88GetCpuAfAlt",
-  "z88SetCpuAfAlt",
-  "z88GetCpuBcAlt",
-  "z88SetCpuBcAlt",
-  "z88GetCpuDeAlt",
-  "z88SetCpuDeAlt",
-  "z88GetCpuHlAlt",
-  "z88SetCpuHlAlt",
-  "z88GetCpuIx",
-  "z88SetCpuIx",
-  "z88GetCpuIy",
-  "z88SetCpuIy",
-  "z88GetCpuIr",
-  "z88SetCpuIr",
-  "z88GetCpuWz",
-  "z88SetCpuWz",
-  "z88GetCpuPc",
-  "z88SetCpuPc",
-  "z88GetCpuSp",
-  "z88SetCpuSp",
-  "z88GetCpuIff1",
-  "z88SetCpuIff1",
-  "z88GetCpuIff2",
-  "z88SetCpuIff2",
-  "z88GetCpuInterruptMode",
-  "z88SetCpuInterruptMode",
-  "z88GetCpuHalted",
-  "z88GetCpuPrefix",
+  ...cpuExports("z88"),
+  // --- The debugger's in-core loop (`z80-debug-loop.c`)
+  ...debugLoopExports("z88"),
   "z88GetCpuSnoozed",
   "z88SetCpuSnoozed",
-  "z88GetStepOutAddress",
-  "z88GetInterruptDepth",
   "z88GetCpuSigInt",
   // --- Test hooks (in the allow-list, not required by the loader)
   "z88TestResetRtc",
@@ -230,10 +185,12 @@ const productionExports = [
 
 /*
  * 4 MB of physical memory, an 800x480 pixel buffer (1.5 MB), the audio buffer and the 4 MB
- * execution-history ring (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` D2, D3) fit in 12 MiB;
- * `z88.c` asserts the sum at compile time. Raise this only with a recorded reason.
+ * execution-history ring (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` D2, D3) fit in 12 MiB; the
+ * access profile adds 16 MB - a flag byte per physical byte (4 MB) and a 64-page counter pool (12 MB)
+ * (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D2, D5). `z88.c` asserts the sum at compile time.
+ * Raise this only with a recorded reason.
  */
-const Z88_WASM_MEMORY_BYTES = 12 * 1024 * 1024;
+const Z88_WASM_MEMORY_BYTES = 28 * 1024 * 1024;
 
 const buildModes = {
   production: {

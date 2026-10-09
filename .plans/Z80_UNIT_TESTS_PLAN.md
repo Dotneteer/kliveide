@@ -1,7 +1,7 @@
 # Z80 Unit Tests Plan: DeZog-Compatible Tests, a Headless Runner and a Test Panel
 
-Status: **decisions recorded** (2026-10-08). D1–D20 are the decisions; the author accepted the suggested answers to all §8 questions, which the decisions already assume.
-Nothing is implemented.
+Status: **implemented** (2026-10-08), Phases 0–4. D1–D20 are the decisions; the author accepted the
+suggested answers to all §8 questions. §9 records the findings, the departures and what is left.
 
 Scope:
 - [CLOSING_THE_GAPS_PLAN.md](CLOSING_THE_GAPS_PLAN.md) **G5.5**: Z80 unit tests that are
@@ -330,3 +330,100 @@ When it lands:
 8. **Q8: Klive BASIC tests.** Out of scope here (§1.2). Should a follow-up plan define a BASIC
    convention (`SUB UT_…`, an `ASSERT` statement)? DeZog has nothing to be compatible with, so it
    would be Klive's own.
+
+---
+
+## 9. Implementation record (2026-10-08)
+
+### 9.1 Where it lives
+
+| Part | Files |
+| --- | --- |
+| Discovery (§4.1, T3, T4) | `src/common/unit-tests/discovery.ts`, `src/common/utils/flatten-symbols.ts` (`integerSymbolsOfOutput` makes module labels usable in conditions and ASSERTIONs too) |
+| Shared types and guards | `src/common/unit-tests/unitTestTypes.ts`, `unitTestGuards.ts` (the `unitTest`-owned stops, shared by the runner and Debug), `runnableCompilation.ts` (the plain-data compilation the worker gets) |
+| Includes (D4, D5) | `src/main/unit-tests/includes/kliveInclude.ts`, `sjasmplusInclude.ts`; written by `addUnitTestSupport.ts` |
+| Runner (D3, D6–D11, D20) | `src/main/unit-tests/UnitTestRunner.ts`, `HeadlessMachineFactory.ts`, `unitTestMachines.ts` (light facts the main process needs without loading cores) |
+| Worker and main (D6, D15, D19) | `unitTestWorker.ts`, `runUnitTestWorker.ts`, `unitTestService.ts`, `wasmArtifacts.ts`, `unitTestProjectSettings.ts`; `MainApi.runUnitTests`/`cancelUnitTests`/`addUnitTestSupport` |
+| IDE (D12–D17) | `UnitTestsPanel.tsx`, `UnitTestsBadge.tsx`, `TestingCommands.tsx` (the Testing activity's "…" menu), `commands/UnitTestCommands.ts`, `unit-tests/unitTestRun.ts`, `unitTestTree.ts`; the `unitTests` store slice; the Tests output pane |
+| Debug a test (D12) | `MachineController.prepareUnitTestDebug`/`describeUnitTestStop`; `CodeToInject.unitTest`; `injectCode`'s `unitTestOf` |
+| Shared stop text | `src/emu/machines/commentStopReport.ts` (what `describeCommentStop` printed, now shared with the runner) |
+
+### 9.2 Phase 0 findings
+
+- **T1 (sjasmplus `K` lines per macro expansion) is not verified on this machine:** no sjasmplus is
+  installed. The SLD format puts the *use* site in a line's first two fields and the macro definition
+  in the next two, and `sldAnnotations` reads the first two, so the expectation is that a `K` line
+  names the invocation. `test/unit-tests/runner-sjasmplus.test.ts` checks exactly this (one ASSERTION
+  per expansion, on the invocation line) and runs the compatibility fixture; it skips with a message
+  without sjasmplus (`SJASMPLUS=<exe>` or the PATH). The same test is the first check of Klive's
+  sjasmplus include, whose `TEST_REG`/`TEST_DREG` rely on sjasmplus substituting macro arguments
+  inside a comment - unverified for the same reason.
+- **T2 done.** `SourceAnnotation.invokedAt` is the *outermost* invocation (the line the user wrote);
+  annotation breakpoints carry it as `annotationInvokedAt` (kept by `DebugSupport.addBreakpoint`), and
+  both the debugger's stop text and the runner's message name it. Every ASSERTION/WPMEM in a macro
+  benefits, not only tests.
+- **T5:** the 128K and +2A/+3 injection already wrote banked segments (`injectSpectrumCode`); the
+  48K has no banks. The **Next** host dropped them: it now writes them through the shared
+  `writeCodeSegments` (a 16K bank is pages 2n and 2n+1). Run/Debug of a Next build goes through a
+  `.nex` file, so this mattered for injection only.
+- **The Klive include's global labels** use an existing assembler rule found during the spike: a
+  `.`-prefixed label is defined in the global scope, even inside a macro or a module. It now records
+  its written name (T3) and is documented in the macros page; module names record theirs too
+  (`AssemblyModule.writtenName`), so suites are spelled as written in case-insensitive builds.
+- **A comment of an include must not contain DeZog's keywords** outside its assertion lines: the
+  first header comment said "an ASSERTION stops it" and became a bare, always-failing assertion at the
+  program's first byte. A test now guards both includes.
+
+### 9.3 Departures from the plan
+
+- **RET instead of TC_END** is caught by an execution stop at `UNITTEST_CALL_ADDR + 3` (when that is
+  not the success label), not by the underflow guard: the wrapper's `CALL` pushes its return address
+  *inside* the private stack, so a plain RET never reads `UNITTEST_STACK`. The guard still catches a
+  test that pops more than it pushed. Klive's includes put a loop, not the success label, after the
+  `CALL`; with an include whose success label follows the `CALL` directly, RET passes, as in DeZog.
+- **The init code runs on the private stack** (SP = `UNITTEST_STACK` when the label exists) and its
+  return address is the wrapper itself, so "init returned" and "start the test" are one stop.
+- **Events reach the IDE through store actions** (`UNIT_TEST_EVENT` and friends), not IdeApi
+  notifications: every window sees them with no new messaging. LOGPOINT lines travel inside their
+  result only, so a busy logpoint cannot flood the store; the merged coverage comes back in the run's
+  response, not through the store.
+- **Machines (D18):** the runner drives the 48K/16K, 128K (and Pentagon models), +2A/+3/+2E/+3E and
+  the Next. The Timex and Scorpion need user-supplied ROMs passed as machine properties, and the Z88,
+  ZX80 and ZX81 need their own frames and boot points; they are refused with a message naming the
+  supported machines. The Next defaults to `boot: "none"`.
+- **Debug a test** debugs one test; **Continue to the next test of a suite** is not implemented. It
+  is refused on the Next, whose builds start through a `.nex` file. Debug installs the stops in the
+  emulator with the `unitTest` owner (hidden from the Breakpoints panel and project saves) and clears
+  them with the next program.
+- **The panel's tree is flat**: suite header rows (with the worst member's glyph and a failure count)
+  followed by their tests, no collapsing; the filter covers what collapsing would.
+- **Run with coverage** needs advanced debugging on, like coverage itself, and merges only into an
+  emulator running the same machine.
+- `klive.project`'s `unitTests` section has no editor; it is read at every run and carried over
+  unchanged when the IDE saves the project file. `machine`/`model` are its own fields (D19 named
+  `machine` only).
+
+### 9.4 Tests
+
+- Unit tier: `test/unit-tests/discovery.test.ts`, `includes.test.ts` (every assertion macro yields
+  one ASSERTION per invocation on its invocation line; register-only expressions, T9; the global
+  labels), `unit-test-plumbing.test.ts` (store slice, JSON round trip of the worker's compilation,
+  Add unit-test support, settings, core lookup, panel rows, test lookup), `writeCodeSegments.test.ts`,
+  and `UnitTestsPanel.test.tsx` (jsdom: tree, statuses, click-to-source, toolbar, filter, badge).
+- e2e tier (`build/e2e-tests.ts`): `runner-sp48.test.ts` (the whole outcome matrix, the invocation
+  line, LOGPOINT capture, determinism, selection, `boot: none`, time limit, missing frame, init that
+  never returns, coverage), `runner-machines.test.ts` (banked tests on the 128K and +3, MMU-banked
+  tests across both 8K pages on the Next, the 128K's one-second budget), `runner-sjasmplus.test.ts`
+  (skips without sjasmplus).
+- Running IDE: `scripts/unit-tests-ide-check.cjs` - `test-init`, the panel after `test-run`, the
+  Tests pane, click-to-source onto the invocation line, Debug stopping at the test's first
+  instruction, Continue to "UT_pass passed", a failing assertion under the debugger naming its line,
+  and Run with coverage reaching `coverage status`. All 16 checks pass.
+- The production worker bundle (`out/main/unitTestWorker.js`) was also run in plain Node with a
+  JSON round-tripped compilation.
+
+### 9.5 Left for later
+
+- Verify T1 and the sjasmplus include with an installed sjasmplus (run `runner-sjasmplus.test.ts`).
+- Timex, Scorpion, Z88, ZX80/81 in the runner; Debug a test on the Next; Continue through a suite.
+- G5.6 (UNIT_TESTS_CLI_PLAN.md): the runner and its events are Electron-free and ready for it.

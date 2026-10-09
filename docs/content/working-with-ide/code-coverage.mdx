@@ -1,0 +1,159 @@
+---
+description: "Code coverage and the memory heat map: which source lines ran, how often each byte was executed, read and written, and where the program modified its own code."
+---
+
+import { Callout } from 'nextra/components'
+
+# Code Coverage and the Heat Map
+
+<Callout type="info">
+This is one of Klive's [advanced debugging features](/howto/advanced-debugging), which are on by
+default; if you turned them off, run `set -u features.advancedDebugging 1` in the IDE, then restart Klive.
+</Callout>
+
+**Code coverage** answers *which parts of the program actually ran*. While it is on, the emulator
+remembers, for every byte of ROM and RAM, whether an instruction started there, whether it was
+fetched as code, read or written, and - unless you ask for the leaner mode - how many times. The
+editor marks the source lines that ran, the disassembly marks the instructions, and the memory view
+can draw the counts as a **heat map**.
+
+<Callout type="info">
+Coverage works on every Z80 machine: the ZX Spectrum 48K and 16K, 128K, Pentagon 128,
++2A/+3/+2E/+3E and Next, the Scorpion ZS-256, the Timex TC2048, TC2068 and TS2068, the Cambridge Z88,
+and the ZX80 and ZX81.
+</Callout>
+
+## Turning it on
+
+Use **Debug → Code Coverage**, or the command:
+
+```
+coverage on
+```
+
+Coverage is not tied to debugging: it counts at full speed as well as while you step, so "which code
+did the game actually use?" has an answer. It stays on for the rest of the session - across machine
+switches - until you turn it off with **Debug → Code Coverage** again or `coverage off`. Turning it
+off keeps what it recorded.
+
+**Debug → Reset Coverage** (or `coverage reset`, or `covr`) clears everything. Coverage also starts
+over:
+
+- when the machine starts from Stopped (Settings › Debugging › *Clear coverage when the machine
+  starts*, on by default);
+- after a program is started by code injection, once the ROM has booted to the injection point, so
+  the boot does not show as covered (*Clear coverage after code injection*, on by default).
+
+<Callout type="info">
+Each machine bank has its own coverage. When two `.bank` sections share the same Z80 addresses, a
+line is covered only if *its own* bank's code ran there - not whatever was paged in at that address.
+</Callout>
+
+## In the editor
+
+A narrow strip between the line numbers and the text marks every source line that produced code:
+
+| Mark | Means |
+|---|---|
+| Filled bar | Every instruction of the line ran. |
+| Half bar | Some of the line's instructions ran, some did not: a Klive BASIC statement or a macro whose branch was never taken. |
+| Hollow bar | The line produced code that never ran. |
+| Nothing | The line produced no code (a comment, a label, a data directive). |
+
+Hover over the strip to see how many times the line ran. Settings › Debugging › *Tint covered source
+lines* also gives covered lines a tinted background.
+
+## In the disassembly
+
+Once coverage has recorded anything, the disassembly reserves a narrow column before the branch
+column. An instruction that ran has a bar there; hover over it for its execution count. In banked
+memory, each row's own bank decides.
+
+## The memory heat map
+
+The memory view's toolbar has a **Heat** selector:
+
+| Choice | Draws |
+|---|---|
+| **Off** | Nothing. |
+| **Executed** | Bytes where an instruction started, by how often it ran. |
+| **Read** | Bytes the program read, by how often. |
+| **Written** | Bytes the program wrote, by how often. |
+| **All** | Each byte in the colour of its busiest kind of access. |
+
+The shade has five steps on a logarithmic scale, from "touched once" to "the busiest byte in view",
+so a loop that ran a million times and a routine that ran once are both visible. Hover over a byte for
+its counts: `E 12 · R 340 · W 2`. A byte the program modified after running it, or ran after writing
+it, is outlined (see [self-modifying code](#self-modifying-code)).
+
+The `memory-heat` command sets the selector from a script: `memory-heat exec`.
+
+## Counts and the counter pool
+
+With counts on (the default), the emulator keeps execution, read and write counts and the time spent
+in the instructions that start at each byte. Counts are kept per 8K page of physical memory. The small
+machines keep counts for all their memory; the Next and the Z88, which have megabytes, keep them for
+the first 64 pages (512K) the program touches. Pages after that keep the flags but no counts:
+`coverage status` says how many, and the memory view says "counts not kept for this page".
+
+For the leanest run, turn counts off with Settings › Debugging › *Count executions, reads and
+writes*, or start coverage with `coverage on -nocounts`.
+
+<Callout type="warning">
+Coverage costs nothing while it is off. While it is on, the emulator does extra work on every memory
+access: a few percent on the ZX Spectrum Next, and up to about a third on the fastest-running cores,
+such as the Cambridge Z88's. Turn it off when you do not need it.
+</Callout>
+
+## Self-modifying code
+
+A byte is marked **self-modified** when the program writes a byte it has already run as code, or runs
+code from a byte it wrote. The `coverage smc` command lists the runs of such bytes with the nearest
+label, and how many times they were written and executed:
+
+```
+coverage smc
+```
+
+A program loaded from tape is written into memory by the ROM's loader and then run, so its bytes are
+marked too. Reset coverage once the program has loaded to see only its own modifications. Bytes Klive
+itself wrote - an injected program, a memory edit - are never counted as writes.
+
+On the ZX80 and ZX81, the display file is "executed" by the hardware as it draws the picture, so its
+bytes show as code (and, once the ROM prints to them, as self-modified).
+
+## Reverse debugging and coverage
+
+Stepping back and forward with [reverse debugging](/working-with-ide/reverse-debugging) replays the
+machine, and a replay never counts: the coverage always describes the run that really happened.
+**Take over here** keeps the counts of the abandoned future, because those instructions really ran;
+`coverage status` says how many there were until the next reset.
+
+## Status and exports
+
+```
+coverage status
+```
+
+prints whether coverage is on, how many instructions it counted, how full the counter pool is, how
+the time splits between instructions, HALT, interrupt acknowledges (and on the Next, DMA; on the Z88,
+snooze), and how many lines of the current build are covered.
+
+```
+coverage export <file> [-format lcov|csv|kcov] [-norom] [-f]
+```
+
+writes the coverage to a file. The extension picks the format; `-format` overrides it:
+
+| Format | Extension | Contents |
+|---|---|---|
+| **LCOV** | `.info`, `.lcov` | Line coverage of the current build, per source file, with paths relative to the project. Codecov, Coveralls and GitLab read it. |
+| **CSV** | `.csv` | One row per touched byte: its bank, address, flags (`ECRWSX`), and its execution, read and write counts and time. `-norom` leaves ROM bytes out. |
+| **Klive coverage** | `.kcov` | Everything coverage recorded, which `coverage load` merges back. |
+
+```
+coverage load <file>
+```
+
+merges a `.kcov` file into the current coverage, so several runs add up. The file must come from a
+machine with the same memory layout.

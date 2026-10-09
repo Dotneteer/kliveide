@@ -10,8 +10,10 @@ import { createSession } from "../../harness/zxnext";
  * `npm run test:perf`; not part of the regular tiers, because a timing ratio on a shared CI runner
  * is noise.
  *
- * - On, in the debug loop (Start with Debugging, which already pays a TypeScript round trip per
- *   instruction), it costs at most 8%.
+ * - On, in the debug loop (Start with Debugging), it costs at most 25%: the D14 budget of
+ *   `.plans/WASM_CORE_LEAN_AND_DEBUG_PLAN.md`. The loop runs in C since that plan's Phase 4a and costs
+ *   about a plain Run, so the recorder's unchanged cost is a larger fraction of it than the 8% it was
+ *   of the old loop, which paid a TypeScript round trip per instruction; it measures about 10%.
  * - Off, the hook is one predictable branch per cycle. A plain Run never records (D8); the second
  *   test reports what recording would cost a fast frame, for the record. The "off" cost against a
  *   build without the hook was measured once when the hook landed (the plan's Phase 8 note) - a
@@ -63,10 +65,10 @@ async function timeOffOn(debugLoop: boolean, frames: number, rounds = 12): Promi
 }
 
 describe("execution history: cost (T14)", () => {
-  it("costs at most 8% in the debug loop while recording", async () => {
+  it("costs at most 25% in the debug loop while recording", async () => {
     const { off, on } = await timeOffOn(true, 4);
     console.log(`debug loop: off ${off.toFixed(1)} ms, on ${on.toFixed(1)} ms (${((on / off - 1) * 100).toFixed(1)}%)`);
-    expect(on / off).toBeLessThan(1.08);
+    expect(on / off).toBeLessThan(1.25);
   });
 
   it("reports what recording costs a fast frame (the hook is off in a plain Run, D8)", async () => {

@@ -179,7 +179,7 @@ it.
 
 ## Coverage so far
 
-Ten recipes; the rest of the pages were deliberately left ungenerated.
+Eleven recipes; the rest of the pages were deliberately left ungenerated.
 
 - `recipes/tapes.cjs` — the three `getting-started/tape-viewer*.png` shots. **Verifies before it
   photographs**: it reads the rendered block list, timeline and BASIC preview from the DOM and throws
@@ -247,6 +247,21 @@ Ten recipes; the rest of the pages were deliberately left ungenerated.
   chip (`_historyChip_`), the historical disassembly row (`[data-history-exec="true"]`) and the
   "present" bands (`[role="note"]`) before it photographs. It ends with `em-sti` and checks every band
   is gone: a machine command returns to the present.
+- `recipes/code-coverage.cjs` — the running-app check of code coverage and the heat map on the
+  48K (staged shots only; the page has no images yet). It verifies the editor strip, `coverage
+  status`/`coverage smc`, the disassembly's coverage cell and the memory view's heat cells from the
+  DOM. **A new project's build-root file is open the moment `newp` returns, and its Monaco model
+  outlives `close`/`open`**: overwriting that file leaves the editor showing the template's text
+  under the new program's decorations. Write the program as a *new* file, point
+  `klive.project`'s `builder.roots` at it, then `close` and `open` the project.
+- `recipes/profiler.cjs` — the three `working-with-ide/profiler-*.png` shots, and the running-app
+  check of the profiler on the 48K: `profile start -calls`, `run`, `profile stop`, then `profile top`,
+  `profile export` (read back from disk), the Routines, Call tree and Callers tabs from the DOM, and
+  the editor's inlay hints. Three lessons: **find a table cell by its header, not its index** - a
+  column that appears only on banked machines shifted every index; **Monaco renders an inlay hint's
+  spaces as `&nbsp;`**, so match it with `\s`, not a space; and the harness's new
+  **`ideViewOptions` window option** seeds a global IDE view setting (`profilerInlays`), which
+  `set -u` cannot reach.
 - `recipes/scripting.cjs` — `scripting/script-output-pane.png`. The worked template.
 - `recipes/disassembly.cjs` — `working-with-ide/disass-branch-verdicts.png`. Adds three
   techniques worth reusing:

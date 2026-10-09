@@ -42,6 +42,13 @@ export type IdeCommandInfo = {
   readonly requiresProject?: boolean;
 
   /**
+   * "deny": the automation server's `ide.command` refuses this command
+   * (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` T5) because it would deadlock an unattended run: it
+   * opens a modal dialog, waits for a confirmation, or quits the app.
+   */
+  readonly automation?: "deny";
+
+  /**
    * Optional function to validate the parsed command arguments
    * @param args Parsed command arguments
    * @returns Validation result

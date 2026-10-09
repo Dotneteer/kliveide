@@ -1,7 +1,8 @@
 # Code Coverage and Memory Heat Map Plan
 
-Status: **decisions recorded** (2026-10-08). D1–D16 are the decisions; the author accepted the suggested answers to all §8 questions, which the decisions already assume.
-Nothing is implemented.
+Status: **implemented** (2026-10-08), Phases 0–6, on every Z80 core. D1–D16 are the decisions; the
+author accepted the suggested answers to all §8 questions, which the decisions already assume. §9
+records the measurements and where the implementation departed from the text above, and why.
 
 Scope:
 - [CLOSING_THE_GAPS_PLAN.md](CLOSING_THE_GAPS_PLAN.md) **G5.1**: a per-address (and per-bank)
@@ -354,3 +355,124 @@ When it lands:
    `poolPages` from the header.
 6. **Q6: `.kcov` merge format in this plan, or later?** Suggested: in Phase 6, because G5.5's "tests
    with coverage" merges per-test runs the same way.
+
+---
+
+## 9. Implementation notes (2026-10-08)
+
+### 9.1 Where the code is
+
+| Piece | Where |
+| --- | --- |
+| Core module | `src/emu/z80/wasm/z80-profile.h` (header, hooks), `z80-profile.c` (flags, page map, pool, exports); hooks in `z80.c` (`readOpcodeMemory`, `readMemory`, `writeMemory`, `fetchCodeByte`, the NMI/INT/HALT paths, the end of `z80ExecuteCpuCycle`) |
+| Exports / volatile list | `scripts/z80-profile-exports.cjs`; every build script spreads both |
+| Contract | `scripts/check-wasm-cpu-contract.cjs` (defaults of the seven hooks; a core that profiles includes both files and defines all five machine macros); `exportContract.ts` classifies `z80Profile*` as `debug` |
+| Per-core mapping | the end of `sp48.c` (48K and Timex), `sp128.c`, `spp3e.c`, `zxnext.c`, `z88.c`, `zx8081.c` |
+| Layouts | `src/common/profile/layouts/` (`profileLayoutOf`) |
+| Reader / source | `src/emu/machines/profile/WasmProfileReader.ts`, `WasmProfileSource.ts`, `profileViews.ts`; `IAccessProfileSource` |
+| Emu API | `getProfileStatus`, `setProfiling`, `resetProfile`, `getProfileView`, `getProfileSample`, `getProfileTouched`, `mergeProfile` |
+| Controller | `MachineController` (switch, reset on start / after injection, `profileVersion`, abandoned instructions) |
+| Pure models | `features/coverage/coverageModel.ts`, `heatModel.ts`; `common/profile/coverageExport.ts`, `smcReport.ts`, `z80InstructionLength.ts` |
+| Views | `useCoverageDecorations.ts` (editor), `DisassemblyRow`'s coverage cell, `MemoryDumpSection`'s heat cells, `MemoryToolbar`'s Heat selector |
+| Commands / menu / settings | `CoverageCommands.ts` (`coverage`, `coverage-reset`, `memory-heat`), `debug-menu.ts`, Settings › Debugging › Coverage and profiling |
+| Docs | `docs/content/working-with-ide/code-coverage.mdx` |
+
+### 9.2 Departures from the plan
+
+- **Pool sizes (D5, Q5).** D5's page counts did not match its byte sizes: a pool page is
+  8,192 × 24 B = 192 KB, so 4 MB holds 21 pages, not 170. The pool is instead sized to cover **all**
+  physical memory on the small machines (48K 8 pages, Timex 17, 128K/Pentagon/Scorpion 40, +3E 24,
+  ZX80/81 9), so no page there can lose its counts; the Next and the Z88 take **64 pages (12 MB,
+  512 KB of touched memory)**. `poolPages` is in the header, so Q5's "grow later without a format
+  change" still holds. Linear memory: sp48 12 → 14 MB, Timex 12 → 16, sp128 13 → 21, +3E 12 → 18,
+  Next 40 → 56, Z88 12 → 28, ZX80/81 6 → 8.
+- **No separate BEGIN hook (D7).** The instruction's span opens in the M1 fetch hook, which runs
+  before the M1 read's delay, so the time is the same and each instruction pays one call and one
+  mapping instead of two. Seven hooks remain: FETCH, READ, WRITE, END, MARK, ACK_END, HALT_END.
+- **No `z80ProfileSummarise`.** The reader views the flags, page map and pool directly (as the
+  history reader views its ring) and scans them in TypeScript; a 4 MB flag array scans in a few ms.
+  Two exports were added instead for D16's merge: `z80ProfileMergeByte`, `z80ProfileMergeTotals`.
+- **Header layout.** 128 bytes; the field order differs from §4.1's sketch (offsets in the C
+  comments, `_Static_assert` on the size). It also carries `instructions` (u64) and the offsets of the
+  flags, page map and pool.
+- **Layouts.** `ProfileRegion` takes an optional `size`: the Next's six ROM partitions are 16K among
+  8K pages. The ZX80/81 layout is a fixed map of *canonical* addresses (the ROM through its mirrors at
+  $0000-$1FFF, RAM at its lowest echo, the 64K model's redirected low 8K at $10000), because RAM size
+  and ROM are configured at run time, not by machine id.
+- **The Z88 names no partition per address** (its `getPartition` is the base class's). Its machine
+  answers `currentProfileOffset(address)` from the core's own page map instead, which also handles a
+  small card's mirrors and segment 0's half bank; `getProfileView` and `getProfileSample` use it when
+  present.
+- **Unbanked source lines** are resolved through what is paged at their address *now* (the partition
+  is null in `getProfileSample`), the way an unbanked breakpoint fires whatever is paged in.
+- **The disassembly cell** marks only instructions that ran. A hollow mark on every never-run row
+  (most of a ROM listing) buried the ones that did; the editor strip keeps the hollow bar, because a
+  source file's lines are all the user's own.
+- **The exporters** live in `src/common/profile/`, not `features/coverage/`, so G5.6's CLI can use
+  them without the renderer.
+- **Settings ids** are `emuOptions.profileResetOnStart`, `emuOptions.profileResetAfterInjection`,
+  `emuOptions.profileCounters` and `ideViewOptions.coverageLineTint` (two-level, like every other id).
+  The rows key on a new `when.kind: "feature"` (`hasMachineFeature`, so the advanced-debugging switch
+  applies).
+- **`MF_PROFILE`** is in `ADVANCED_DEBUGGING_FEATURES`: with the switch off the menu items, the Heat
+  selector, the editor strip and the commands are absent, and the controller never turns the profile on.
+
+### 9.3 Measurements (T10)
+
+Machine loaded by parallel builds; medians of several interleaved rounds, ms per frame against the
+core without the profile.
+
+| Core / scenario | Off | Flags only | Counters |
+| --- | --- | --- | --- |
+| Next, nextzxos-idle | +1.8% | +7.4% | +7.7% |
+| Next, screen-heavy | +1.5% | +6.2% | +5.9% |
+| Next, audio-heavy | +0.9% | +5.2% | +6.8% |
+| Z88, lcd-640x480 | ≈0% | +21–28% | +21–31% |
+| Z88, flash-program | ≈0% | +35% | +37% |
+| Z88, cpu-loop | +0.7% | +31–41% | +42% |
+| ZX81, SLOW / FAST | 0–10% (noisy) | — | — |
+
+- **Off: the gate (≤ 2%) holds on every core.** The hooks are one predictable branch each.
+- **On, the Next meets both gates.** Its mapping has a fast path: with no Layer 2 mapping in that
+  direction and no overlay in slots 0-1, the offset is one `pageReadOffset`/`pageWriteOffset` load.
+- **On, the Z88 misses both gates**, and flags-only costs about as much as counters, so it is the
+  per-access call, not the counting. An identity-mapping build put ~30 points in the shared module's
+  out-of-line call path and ~6 in the Z88 mapping; folding BEGIN into FETCH did not move it much.
+  Inlining the hooks would cure it, but grew the 48K core from 235 KB to 390 KB and would exceed the
+  Z88's 200 KB size ceiling. T10's fallback (counting as a second switch) already exists - the
+  *Count executions, reads and writes* setting and `coverage on -nocounts` - and the docs say what
+  coverage costs. Coverage is an explicit, off-by-default switch, so this is accepted for now; a
+  later pass could inline a flags-only fast path for code fetches (the most frequent hook) behind a
+  per-core opt-in.
+- Code size: sp48 235 → 248 KB, sp128 493 → 515 KB, +3E 255 → 275 KB, Next 424 → 456 KB, Z88 165 →
+  182 KB, ZX80/81 192 → 227 KB (its opcode-fetch path had to become `noinline`, or the hooks between
+  reads made the compiler duplicate it at every read: 281 KB, over its 240 KB ceiling). Every size
+  check passes.
+
+### 9.4 Known limits
+
+- **ZX80/81 display fetches.** The ULA's forced NOPs are real fetch cycles at the display file, so
+  those bytes get E/C, and S once the ROM prints to them; `coverage smc` lists the display file. A
+  core macro saying "this fetch is not code" (`Z80_PROFILE_FETCH_IS_CODE`) would separate them, but
+  the decision is made after the byte is read (`Z80_AFTER_OPCODE_FETCH`), so it would need the hook
+  to move; their time is kept on the display file meanwhile, which is right for the profiler.
+- **Tape-loaded programs read as self-modified** (D9: written, then fetched). The docs say to reset
+  after loading.
+- **Coma on the Z88** is a HALT with I = $3F, so it counts as HALT time, not snooze.
+- **Flash and EPROM erases** are not CPU writes and are not flagged; a byte program the chip refuses
+  is still flagged W.
+
+### 9.5 Tests
+
+- Core (`test/wasm/profile/`, e2e tier): 48K, Timex, 128K/Pentagon/Scorpion, +3E, Next, Z88, ZX80/81
+  - flags of a known program, counts and time against a hand count, every paging state's read and
+  write mapping (T2/T3), the Next's DMA hold in `timeDma` (T5), the Z88's snooze, and time per
+  address summing to the total less the buckets (D7); T1 (debugger reads do not count) on the 48K.
+- Controller (`test/emu/profile-controller.test.ts`): 1,000 steps back and forward and Step Into
+  from the past leave every flag and count unchanged (T4), Take over here's abandoned count (D10),
+  the switch and the advanced-debugging gate.
+- Pure: `test/common/profile/` (layouts, instruction lengths, exporters incl. LCOV parsed back,
+  `.kcov` round trip, SMC runs, views over a fake source), `test/renderer/coverage/` (the coverage
+  model on real assembler output: asm, a partly run macro, banked segments, a decoded statement; the
+  heat model), `test/theming/heat-ramp.test.ts` (T9), `test/commands/CoverageCommands.test.ts`.
+

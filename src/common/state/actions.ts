@@ -1,9 +1,11 @@
+import type { AutomationStatusState } from "./AppState";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { ActionCreator } from "./Action";
 import { SideBarPanelState } from "./AppState";
 import { ToolInfo } from "@renderer/abstractions/ToolInfo";
 import { ExportDialogSettings } from "@main/settings";
 import { KliveCompilerOutput } from "@abstractions/CompilerInfo";
+import type { UnitTestEvent } from "@common/unit-tests/unitTestTypes";
 
 export const initGlobalSettingsAction: ActionCreator = (value: Record<string, any>) => ({
   type: "INIT_GLOBAL_SETTINGS",
@@ -25,6 +27,12 @@ export const emuLoadedAction: ActionCreator = () => ({
 
 export const ideLoadedAction: ActionCreator = () => ({
   type: "IDE_LOADED"
+});
+
+/** The automation server's status (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D4) */
+export const setAutomationStatusAction: ActionCreator = (status: AutomationStatusState) => ({
+  type: "SET_AUTOMATION_STATUS",
+  payload: { value: status }
 });
 
 export const dimMenuAction: ActionCreator = (flag: boolean) => ({
@@ -268,6 +276,12 @@ export const setSourceFrameAction: ActionCreator = (frame: number) => ({
   payload: { index: frame }
 });
 
+/** The memory view's heat map mode (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D14) */
+export const setMemoryHeatModeAction: ActionCreator = (mode: string) => ({
+  type: "SET_MEMORY_HEAT_MODE",
+  payload: { text: mode }
+});
+
 export const incBreakpointsVersionAction: ActionCreator = () => ({
   type: "INC_BPS_VERSION"
 });
@@ -280,6 +294,24 @@ export const incBreakpointsVersionAction: ActionCreator = () => ({
  */
 export const incBreakpointHitsVersionAction: ActionCreator = () => ({
   type: "INC_BP_HITS_VERSION"
+});
+
+/**
+ * The access profile's switch (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D6): Debug -> Code
+ * Coverage and `coverage on|off`. One switch per session, not a setting. `calls` is the profiler's
+ * call tracker (`.plans/PROFILER_PLAN.md` D1).
+ */
+export const setProfilingAction: ActionCreator = (enabled: boolean, counters: boolean, calls?: boolean) => ({
+  type: "SET_PROFILING",
+  payload: { value: { enabled, counters, ...(calls ? { calls } : {}) } }
+});
+
+/**
+ * The access profile moved (§4.2): coverage strips, the disassembly cell and the heat map refresh.
+ * Throttled by the machine controller like `incBreakpointHitsVersionAction`.
+ */
+export const incProfileVersionAction: ActionCreator = () => ({
+  type: "INC_PROFILE_VERSION"
 });
 
 export const incToolCommandSeqNoAction: ActionCreator = () => ({
@@ -337,10 +369,36 @@ export const startCompileAction: ActionCreator = (file: string) => ({
 
 export const endCompileAction: ActionCreator = (
   compileResult: KliveCompilerOutput,
-  failed?: string
+  failed?: string,
+  endedAt?: number
 ) => ({
   type: "END_COMPILE",
-  payload: { compileResult, failed }
+  payload: { compileResult, failed, endedAt }
+});
+
+// --- Unit tests (`.plans/Z80_UNIT_TESTS_PLAN.md` §4.3)
+
+/** A run starts: the tests it runs lose their old results */
+export const unitTestsRunStartedAction: ActionCreator = (ids: string[], startedAt: number) => ({
+  type: "UNIT_TESTS_RUN_STARTED",
+  payload: { ids, startedAt }
+});
+
+/** One event of a run (`UnitTestEvent`; log lines travel inside the result) */
+export const unitTestEventAction: ActionCreator = (event: UnitTestEvent) => ({
+  type: "UNIT_TEST_EVENT",
+  payload: { event }
+});
+
+/** The run ended (finished, cancelled or failed to start) */
+export const unitTestsRunEndedAction: ActionCreator = (finishedAt: number, problem?: string) => ({
+  type: "UNIT_TESTS_RUN_ENDED",
+  payload: { finishedAt, problem }
+});
+
+/** Forgets every result */
+export const unitTestsClearAction: ActionCreator = () => ({
+  type: "UNIT_TESTS_CLEAR"
 });
 
 export const incInjectionVersionAction: ActionCreator = () => ({

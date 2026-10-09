@@ -33,7 +33,18 @@ import {
 } from "@messaging/dialog-ids";
 import { mainStore } from "./main-store";
 import { saveKliveProject } from "./projects";
-import { appSettings, getSettingValue, saveAppSettings, setSettingValue } from "./settings-utils";
+import {
+  appSettings,
+  applyUserSetting,
+  getSettingValue,
+  saveAppSettings,
+  setSettingValue
+} from "./settings-utils";
+import {
+  AUTOMATION_ENABLED_SETTING,
+  AUTOMATION_LEVEL_SETTING,
+  AUTOMATION_LEVELS
+} from "@common/automation/protocol";
 import { parseKeyMappings } from "./key-mappings/keymapping-parser";
 import { setClockMultiplier, setSoundLevel } from "./emulator-preferences";
 import {
@@ -242,6 +253,15 @@ export async function runUiAction(actionId: UiActionId, value?: unknown): Promis
     }
     case "set:z88Lcd":
       await setZ88Lcd(String(value));
+      return undefined;
+    // --- The automation server reads these two user settings (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md`
+    // --- D4, D7) and starts, stops or re-levels itself when they change
+    case "set:automationEnabled":
+      applyUserSetting(AUTOMATION_ENABLED_SETTING, value ? "1" : "0");
+      return undefined;
+    case "set:automationLevel":
+      if (!(AUTOMATION_LEVELS as readonly unknown[]).includes(value)) return `Unknown automation level: ${value}`;
+      applyUserSetting(AUTOMATION_LEVEL_SETTING, value);
       return undefined;
     case "rom:sp48:select":
       await selectSp48RomFile(owner);

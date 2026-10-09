@@ -16,6 +16,11 @@ import {
   SETTING_EMU_FAST_LOAD,
   SETTING_EMU_REVERSE_DEBUGGING,
   SETTING_EMU_REVERSE_DEBUG_MEMORY_MB,
+  SETTING_EMU_PROFILE_RESET_ON_START,
+  SETTING_EMU_PROFILE_RESET_AFTER_INJECTION,
+  SETTING_EMU_PROFILE_COUNTERS,
+  SETTING_IDE_COVERAGE_LINE_TINT,
+  SETTING_IDE_PROFILER_INLAYS,
   SETTING_EMU_TRDOS_ROM,
   SETTING_EMU_TC2048_ROM,
   SETTING_EMU_TC2068_ROM,
@@ -320,6 +325,58 @@ const settingDefinitions: Setting[] = [
     defaultValue: 0,
     saveWithIde: true,
     boundTo: "emu"
+  },
+  // --- Code coverage and the heat map (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D6, T11)
+  {
+    id: SETTING_EMU_PROFILE_RESET_ON_START,
+    title: "Clear Coverage When the Machine Starts",
+    description: "Code coverage and the heat map start over when the machine starts from Stopped.",
+    type: "boolean",
+    defaultValue: true,
+    saveWithIde: true,
+    boundTo: "emu"
+  },
+  {
+    id: SETTING_EMU_PROFILE_RESET_AFTER_INJECTION,
+    title: "Clear Coverage After Code Injection",
+    description:
+      "When a program is started by injecting it, coverage starts after the ROM has booted to the " +
+      "injection point, so the boot does not show as covered.",
+    type: "boolean",
+    defaultValue: true,
+    saveWithIde: true,
+    boundTo: "emu"
+  },
+  {
+    id: SETTING_EMU_PROFILE_COUNTERS,
+    title: "Count Executions, Reads and Writes",
+    description:
+      "Coverage also counts how often each byte was executed, read and written, and the time each " +
+      "instruction took. Off: only whether it happened, which costs less.",
+    type: "boolean",
+    defaultValue: true,
+    saveWithIde: true,
+    boundTo: "emu"
+  },
+  {
+    id: SETTING_IDE_COVERAGE_LINE_TINT,
+    title: "Tint Covered Source Lines",
+    description: "Covered source lines get a tinted background as well as the coverage strip.",
+    type: "boolean",
+    defaultValue: false,
+    saveWithIde: true,
+    boundTo: "ide"
+  },
+  {
+    id: SETTING_IDE_PROFILER_INLAYS,
+    title: "Show Profile Hints in the Editor",
+    description:
+      "With a profile present, each routine's first line shows its share of the time and its calls " +
+      "(\"9.4% · 1,204 calls\").",
+    type: "boolean",
+    defaultValue: false,
+    saveWithIde: true,
+    boundTo: "ide"
   },
   // --- Source-level debugging of a compiled program (Klive BASIC, plan §10.2.7, §10.10, §10.12)
   {

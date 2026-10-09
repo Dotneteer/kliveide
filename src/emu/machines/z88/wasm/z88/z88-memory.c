@@ -82,6 +82,10 @@ static uint16_t z88OpStartAddress;
 
 /* A new instruction's M1: the lists restart, the ports are forgotten, the instruction starts here */
 static inline void z88BusNewInstruction(void) {
+#ifdef Z80_BENCH_STRIP_DEBUG
+  /* Benchmark-only (`z80.c`): no bus record */
+  return;
+#endif
   z88BusReadCount = 0u;
   z88BusWriteCount = 0u;
   z88BusFlags &= (uint8_t)~(Z88_BUS_IO_READ_PORT | Z88_BUS_IO_WRITE_PORT);
@@ -270,6 +274,9 @@ static void z88MemoryWrite(uint16_t address, uint8_t value) {
 
 static uint32_t z88CpuReadMemory(uint32_t address) {
   const uint16_t masked = (uint16_t)(address & 0xffffu);
+#ifdef Z80_BENCH_STRIP_DEBUG
+  return z88MemoryRead(masked);
+#endif
   if (z88BusReadCount < Z88_BUS_LIST_SIZE) z88BusReads[z88BusReadCount] = masked;
   z88BusReadCount++;
   const uint8_t value = z88MemoryRead(masked);
@@ -280,10 +287,12 @@ static uint32_t z88CpuReadMemory(uint32_t address) {
 
 static void z88CpuWriteMemory(uint32_t address, uint32_t value) {
   const uint16_t masked = (uint16_t)(address & 0xffffu);
+#ifndef Z80_BENCH_STRIP_DEBUG
   if (z88BusWriteCount < Z88_BUS_LIST_SIZE) z88BusWrites[z88BusWriteCount] = masked;
   z88BusWriteCount++;
   z88BusWriteValue = (uint8_t)value;
   z88BusFlags |= Z88_BUS_WRITE_VALUE;
+#endif
   z88MemoryWrite(masked, (uint8_t)value);
 }
 

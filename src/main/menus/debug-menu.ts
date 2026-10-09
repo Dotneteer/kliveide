@@ -8,7 +8,7 @@ import type { MenuItemConstructorOptions } from "electron";
 
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { SETTING_IDE_SYNC_BREAKPOINTS } from "@common/settings/setting-const";
-import { MF_EXEC_HISTORY, MF_REVERSE_DEBUG } from "@common/machines/constants";
+import { MF_EXEC_HISTORY, MF_PROFILE, MF_REVERSE_DEBUG } from "@common/machines/constants";
 import { hasMachineFeature } from "@common/features/advancedDebugging";
 import { getEmuApi } from "@messaging/MainToEmuMessenger";
 import { getIdeApi } from "@messaging/MainToIdeMessenger";
@@ -120,6 +120,57 @@ export function createDebugMenu(context: MenuContext): MenuItemConstructorOption
             enabled: canExportHistory(context.appState),
             click: async () => {
               await exportExecutionHistoryAs(context.focusedWindow());
+            }
+          }
+        ]
+      : []),
+    // --- Code coverage and the heat map (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D15): the
+    // --- user's switch for the session, not tied to debugging (D6); its state is in the store
+    ...(hasMachineFeature(context.currentMachine, MF_PROFILE, context.appState)
+      ? [
+          { type: "separator" as const },
+          {
+            id: "code_coverage",
+            label: "Code Coverage",
+            type: "checkbox" as const,
+            checked: !!context.appState?.emulatorState?.profiling?.enabled,
+            click: async () => {
+              const on = !context.appState?.emulatorState?.profiling?.enabled;
+              await getIdeApi().executeCommand(on ? "coverage on" : "coverage off");
+            }
+          },
+          {
+            id: "reset_coverage",
+            label: "Reset Coverage",
+            click: async () => {
+              await getIdeApi().executeCommand("coverage reset");
+            }
+          },
+          // --- The profiler (`.plans/PROFILER_PLAN.md` D1): Start turns the flat profile and the
+          // --- call graph on and resets them; Stop freezes the data and opens the Profiler
+          { type: "separator" as const },
+          {
+            id: "start_profiling",
+            label: "Start Profiling",
+            enabled: !context.appState?.emulatorState?.profiling?.enabled,
+            click: async () => {
+              await getIdeApi().executeCommand("profile start -calls");
+            }
+          },
+          {
+            id: "stop_profiling",
+            label: "Stop Profiling",
+            enabled: !!context.appState?.emulatorState?.profiling?.enabled,
+            click: async () => {
+              await getIdeApi().executeCommand("profile stop");
+              await getIdeApi().executeCommand("show-profiler");
+            }
+          },
+          {
+            id: "show_profiler",
+            label: "Profiler",
+            click: async () => {
+              await getIdeApi().executeCommand("show-profiler");
             }
           }
         ]

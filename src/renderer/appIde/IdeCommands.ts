@@ -6,6 +6,13 @@ import {
   RzxStopCommand,
   RzxVideoCommand
 } from "./commands/RzxCommands";
+import {
+  TestDebugCommand,
+  TestInitCommand,
+  TestJUnitCommand,
+  TestListCommand,
+  TestRunCommand
+} from "./commands/UnitTestCommands";
 import { IIdeCommandService } from "../abstractions/IIdeCommandService";
 import {
   EraseAllBreakpointsCommand,
@@ -93,6 +100,14 @@ import {
   StepBackOverCommand,
   StepForwardCommand
 } from "./commands/HistoryCommands";
+import { CoverageCommand, CoverageResetCommand, MemoryHeatCommand } from "./commands/CoverageCommands";
+import {
+  HideProfilerCommand,
+  ProfileCommand,
+  ProfileStartCommand,
+  ProfileStopCommand,
+  ShowProfilerCommand
+} from "./commands/ProfileCommands";
 import {
   ExportPatternsCommand,
   ShowPatternsCommand,
@@ -194,6 +209,22 @@ export function registerIdeCommands(cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new ClearExecutionHistoryCommand());
   cmdSrv.registerCommand(new HistoryCommand());
   cmdSrv.registerCommand(new HistoryExportCommand());
+  // --- Code coverage and the heat map (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D15)
+  cmdSrv.registerCommand(new CoverageCommand());
+  cmdSrv.registerCommand(new CoverageResetCommand());
+  // --- Unit tests (`.plans/Z80_UNIT_TESTS_PLAN.md` D16)
+  cmdSrv.registerCommand(new TestListCommand());
+  cmdSrv.registerCommand(new TestRunCommand());
+  cmdSrv.registerCommand(new TestDebugCommand());
+  cmdSrv.registerCommand(new TestInitCommand());
+  cmdSrv.registerCommand(new TestJUnitCommand());
+  // --- The profiler (`.plans/PROFILER_PLAN.md` D16)
+  cmdSrv.registerCommand(new ProfileCommand());
+  cmdSrv.registerCommand(new ProfileStartCommand());
+  cmdSrv.registerCommand(new ProfileStopCommand());
+  cmdSrv.registerCommand(new ShowProfilerCommand());
+  cmdSrv.registerCommand(new HideProfilerCommand());
+  cmdSrv.registerCommand(new MemoryHeatCommand());
   // --- Lite step back (`.plans/LITE_STEP_BACK_PLAN.md` §4.5)
   cmdSrv.registerCommand(new StepBackCommand());
   cmdSrv.registerCommand(new StepForwardCommand());

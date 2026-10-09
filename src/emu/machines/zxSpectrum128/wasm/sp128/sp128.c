@@ -892,6 +892,8 @@ static uint32_t sp128CpuReadPort(uint32_t address);
 #define Z80_READ_PORT(address) ((uint8_t)sp128CpuReadPort((uint32_t)(address)))
 #define Z80_WRITE_PORT(address, value) sp128WritePort((uint32_t)(address), (uint32_t)(value))
 #define Z80_CAPTURE_BUS_EVENTS() sp128CaptureBusEvents
+/* The log is written only while capturing (debug runs): out of line, so it does not grow every opcode (z80.c) */
+#define Z80_ACCESS_LOG_NOINLINE 1
 #define Z80_TACT_PLUS_N(value) tactPlusN128((uint32_t)(value))
 #define Z80_DELAY_MEMORY_READ(address) sp128DelayMemoryAccess((uint32_t)(address))
 #define Z80_DELAY_MEMORY_WRITE(address) sp128DelayMemoryAccess((uint32_t)(address))
@@ -901,8 +903,11 @@ static uint32_t sp128CpuReadPort(uint32_t address);
 /* RZX (`zx-spectrum-rzx.c`): the fetch counter counts every refresh but the INT acknowledge's */
 static inline void rzxCountFetch(void);
 static inline void rzxIntAck(void);
+/* Not under the benchmark-only strip (`z80.c`): no RZX recording, so no fetch count */
+#ifndef Z80_BENCH_STRIP_DEBUG
 #define Z80_REFRESH(address) rzxCountFetch()
 #define Z80_INT_ACK() rzxIntAck()
+#endif
 /*
  * The Beta 128's paging trap ([BK], plan §9): an M1 fetch from $3D00-$3DFF with the 48K BASIC ROM
  * selected pages the TR-DOS ROM in, before the fetch reads it; an M1 fetch from RAM pages it out.
@@ -923,13 +928,22 @@ static inline void sp128BetaBeforeFetch(uint16_t pc) {
 /* The execution-history recorder's hooks; the recorder and this machine's macros for it are at the
    end of this file (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` Phase 2) */
 #include "../../../../z80/wasm/z80-history.h"
+/* The access profile's hooks; the module and this machine's mapping for it are at the end of this
+   file (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` Phase 2) */
+#include "../../../../z80/wasm/z80-profile.h"
 #include "../../../../z80/wasm/z80.c"
+/* The CPU's registers and debugger state, exported as `sp128GetCpuAf` ... (WASM_CORE_LEAN_AND_DEBUG_PLAN D8) */
+#define Z80_EXPORT_PREFIX sp128
+#include "../../../../z80/wasm/z80-cpu-exports.c"
 #undef Z80_REFRESH
 #undef Z80_INT_ACK
 #define RZX_CORE_PREFIX sp128
 #include "../../../zxSpectrum/wasm/common/zx-spectrum-rzx.c"
 
 static uint32_t sp128CpuReadPort(uint32_t address) {
+#ifdef Z80_BENCH_STRIP_DEBUG
+  return sp128ReadPort(address);
+#endif
   if (rzxMode == RZX_MODE_OFF) return sp128ReadPort(address);
   uint32_t value;
   if (rzxMode == RZX_MODE_PLAY && rzxPlayNextIn(&value) != 0u) return value;
@@ -1391,107 +1405,32 @@ void sp128HardReset(uint32_t timing, uint32_t beta128) {
   sp128Reset();
 }
 
-static uint32_t sp128ExecutePlayInstruction(void);
-
-uint32_t sp128ExecuteFrame(void) {
-  if (rzxMode == RZX_MODE_PLAY) {
-    /* RZX playback: one call plays the current RZX frame to its end or to a desync (see sp48.c) */
-    sp128CaptureBusEvents = 0u;
-    z80ClearBusEvents();
-    while (rzxStatus == RZX_STATUS_OK) {
-      sp128ExecutePlayInstruction();
-    }
-    sp128CaptureBusEvents = 1u;
-    return 0u;
-  }
-
-  /* A frame a stop target or the debug loop left mid-way goes on where it stopped */
-  if (sp128FrameCompleted != 0u || sp128FrameBegun == 0u) beginMachineFrame();
-  sp128CaptureBusEvents = 0u;
-  z80ClearBusEvents();
-
-  /*
-   * The frame's completion ends the loop as well as its end tact: a completion that rebases the
-   * counter moves it back below the end tact computed here (see `sp48ExecuteFrame`).
-   */
-  const uint32_t frameEndTact = sp128NextFrameStartTact + sp128TactsInCurrentFrame;
-  while (sp128Tacts < frameEndTact) {
-    sp128ExecuteInstruction();
-    /* Checked on the frame's last instruction too: the host reads the reached mark after the call */
-    const uint32_t stop = z80HistoryStopNow();
-    if (sp128FrameCompleted != 0u) break;
-    if (stop != 0u) break;
-  }
-  sp128CaptureBusEvents = 1u;
-  return 0u;
-}
-
-/*
- * A playback frame longer than an EI/retrigger frame ended: the picture is complete, and the next
- * frame starts here, so the interrupt falls on frame tact 0 (trap 5, D19). See sp48.c.
- */
-static void sp128CompletePlayPicture(void) {
-  sp128FrameCompleted = 1u;
-  sp128UlaRenderUntilCurrentTact();
-  sp128NextFrameStartTact = sp128Tacts;
-  sp128Frames++;
-  if (sp128NextFrameStartTact >= SP128_TACT_REBASE_THRESHOLD) {
-    const uint32_t rebase = sp128NextFrameStartTact;
-    sp128ShiftTactOrigin(rebase);
-    sp128TactEpoch += rebase;
-  }
-}
-
-/* One playback step: the interrupt comes from the recording, never from the ULA (see sp48.c) */
-static uint32_t sp128ExecutePlayInstruction(void) {
-  const uint32_t step = rzxPlayBeforeStep();
-  if (step == RZX_STEP_NONE) return 0u;
-  if (step == RZX_STEP_BOUNDARY) {
-    if (rzxStatus == RZX_STATUS_FRAME_DONE && rzxPlayTarget > RZX_SHORT_FRAME_FETCHES) {
-      sp128CompletePlayPicture();
-    }
-    return 0u;
-  }
-  if (sp128FrameCompleted != 0u) {
-    beginMachineFrame();
-  }
-  if (sp128CaptureBusEvents != 0u) {
-    z80ClearBusEvents();
-  }
-  const uint8_t intActive = step == RZX_STEP_RUN_INT ? 1u : 0u;
-  if (intActive != 0u) sp128InterruptsRaised++;
-  sp128InterruptLineActive = intActive;
-  z80SetSigInt(intActive);
-  z80SetTacts(sp128Tacts);
-  z80ExecuteCpuCycle();
-  sp128Tacts = z80GetTacts();
-  z80SetSigInt(0u);
-  sp128InterruptLineActive = 0u;
-  sp128CpuInstructionsExecuted++;
-  sp128CpuFrameSliceInstructions++;
-  return 0u;
-}
-
-/* RZX: puts the machine at `tact` of its frame (an input block's T-state field, trap 11) */
-void sp128RzxSetFrameTact(uint32_t tact) {
-  if (tact >= sp128TactsInFrame) return;
-  if (tact > sp128Tacts) {
-    sp128ShiftTactOrigin(-(int64_t)(tact - sp128Tacts));
-  }
-  sp128NextFrameStartTact = sp128Tacts - tact;
-}
+/* The frame loop and the RZX playback steps (zx-spectrum-frame.c) */
+#define ZXS_FRAME_PREFIX sp128
+#define ZXS_BEGIN_FRAME() beginMachineFrame()
+#define ZXS_FRAME_LENGTH sp128TactsInCurrentFrame
+#define ZXS_RENDER_UNTIL_CURRENT_TACT() sp128UlaRenderUntilCurrentTact()
+#define ZXS_TACT_REBASE_THRESHOLD SP128_TACT_REBASE_THRESHOLD
+#include "../../../zxSpectrum/wasm/common/zx-spectrum-frame.c"
+/* The debugger's breakpoint flags and in-core loop, `sp128ExecuteUntilStop` (z80-debug-loop.c) */
+#define Z80_DEBUG_LOOP_PREFIX sp128
+#include "../../../../z80/wasm/z80-debug-loop.c"
 
 uint32_t sp128ExecuteInstruction(void) {
+#ifndef Z80_BENCH_STRIP_DEBUG
   if (rzxMode == RZX_MODE_PLAY) {
     return sp128ExecutePlayInstruction();
   }
+#endif
   if (sp128FrameCompleted != 0u) {
     beginMachineFrame();
   }
 
+#ifndef Z80_BENCH_STRIP_DEBUG
   if (sp128CaptureBusEvents != 0u) {
     z80ClearBusEvents();
   }
+#endif
   updateTapeMode();
   const uint8_t intActive = shouldRaiseInterrupt();
   if (intActive != 0u && sp128InterruptLineActive == 0u) {
@@ -1503,13 +1442,17 @@ uint32_t sp128ExecuteInstruction(void) {
   z80ExecuteCpuCycle();
   sp128Tacts = z80GetTacts();
   updateTapeMode();
+#ifndef Z80_BENCH_STRIP_DEBUG
   sp128CpuInstructionsExecuted++;
   sp128CpuFrameSliceInstructions++;
+#endif
   sp128FrameCompleted =
     sp128Tacts >= sp128NextFrameStartTact + sp128TactsInCurrentFrame ? 1u : 0u;
+#ifndef Z80_BENCH_STRIP_DEBUG
   if (rzxMode == RZX_MODE_RECORD) {
     rzxRecAfterStep(sp128FrameCompleted);
   }
+#endif
   completeMachineFrame();
   return 0u;
 }
@@ -2403,203 +2346,6 @@ uint32_t sp128GetCpuTacts(void) {
   return z80GetTacts() + sp128TactEpoch;
 }
 
-uint32_t sp128GetCpuAf(void) {
-  return z80GetAf();
-}
-
-void sp128SetCpuAf(uint32_t value) {
-  z80SetAf(value);
-}
-
-uint32_t sp128GetCpuAfAlt(void) {
-  return z80GetAfAlt();
-}
-
-void sp128SetCpuAfAlt(uint32_t value) {
-  z80SetAfAlt(value);
-}
-
-uint32_t sp128GetCpuBcAlt(void) {
-  return z80GetBcAlt();
-}
-
-void sp128SetCpuBcAlt(uint32_t value) {
-  z80SetBcAlt(value);
-}
-
-uint32_t sp128GetCpuDeAlt(void) {
-  return z80GetDeAlt();
-}
-
-void sp128SetCpuDeAlt(uint32_t value) {
-  z80SetDeAlt(value);
-}
-
-uint32_t sp128GetCpuHlAlt(void) {
-  return z80GetHlAlt();
-}
-
-void sp128SetCpuHlAlt(uint32_t value) {
-  z80SetHlAlt(value);
-}
-
-uint32_t sp128GetCpuBc(void) {
-  return z80GetBc();
-}
-
-void sp128SetCpuBc(uint32_t value) {
-  z80SetBc(value);
-}
-
-uint32_t sp128GetCpuDe(void) {
-  return z80GetDe();
-}
-
-void sp128SetCpuDe(uint32_t value) {
-  z80SetDe(value);
-}
-
-uint32_t sp128GetCpuHl(void) {
-  return z80GetHl();
-}
-
-void sp128SetCpuHl(uint32_t value) {
-  z80SetHl(value);
-}
-
-uint32_t sp128GetCpuIx(void) {
-  return z80GetIx();
-}
-
-void sp128SetCpuIx(uint32_t value) {
-  z80SetIx(value);
-}
-
-uint32_t sp128GetCpuIy(void) {
-  return z80GetIy();
-}
-
-void sp128SetCpuIy(uint32_t value) {
-  z80SetIy(value);
-}
-
-uint32_t sp128GetCpuIr(void) {
-  return z80GetIr();
-}
-
-void sp128SetCpuIr(uint32_t value) {
-  z80SetIr(value);
-}
-
-uint32_t sp128GetCpuWz(void) {
-  return z80GetWz();
-}
-
-void sp128SetCpuWz(uint32_t value) {
-  z80SetWz(value);
-}
-
-/* --- The return address of the most recent CALL/RST, for step-out. See the shadow stack
-   --- in z80.c: without it this machine has no step-out target at all, because the
-   --- TypeScript CPU's push never runs when execution happens inside the core. */
-uint32_t sp128GetStepOutAddress(void) { return z80GetStepOutAddress(); }
-/* --- Running interrupt handlers (z80.c): source stepping runs them outside the step */
-uint32_t sp128GetInterruptDepth(void) { return z80GetInterruptDepth(); }
-
-uint32_t sp128GetCpuPc(void) {
-  return z80GetPc();
-}
-
-void sp128SetCpuPc(uint32_t value) {
-  z80SetPc(value);
-}
-
-uint32_t sp128GetCpuSp(void) {
-  return z80GetSp();
-}
-
-void sp128SetCpuSp(uint32_t value) {
-  z80SetSp(value);
-}
-
-uint32_t sp128GetCpuHalted(void) {
-  return z80GetHalted();
-}
-
-/* Snapshot loading: the HALT state and the EI delay (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.4) */
-void sp128SetCpuHalted(uint32_t value) {
-  z80SetHalted(value);
-}
-
-uint32_t sp128GetCpuEiBacklog(void) {
-  return z80GetEiBacklog();
-}
-
-void sp128SetCpuEiBacklog(uint32_t value) {
-  z80SetEiBacklog(value);
-}
-
-uint32_t sp128GetCpuPrefix(void) {
-  return z80GetPrefix();
-}
-
-uint32_t sp128GetCpuIff1(void) {
-  return z80GetIff1();
-}
-
-void sp128SetCpuIff1(uint32_t value) {
-  z80SetIff1(value);
-}
-
-uint32_t sp128GetCpuIff2(void) {
-  return z80GetIff2();
-}
-
-void sp128SetCpuIff2(uint32_t value) {
-  z80SetIff2(value);
-}
-
-uint32_t sp128GetCpuInterruptMode(void) {
-  return z80GetInterruptMode();
-}
-
-void sp128SetCpuInterruptMode(uint32_t value) {
-  z80SetInterruptMode(value);
-}
-
-uint32_t sp128GetCpuRetExecuted(void) {
-  return z80GetRetExecuted();
-}
-
-uint32_t sp128GetCpuRetnExecuted(void) {
-  return z80GetRetnExecuted();
-}
-
-/* The per-instruction data-access log (z80.c) */
-uint32_t sp128GetAccessLogPtr(void) {
-  return z80AccessLogPtr();
-}
-
-uint32_t sp128GetAccessLogCount(void) {
-  return z80GetAccessLogCount();
-}
-
-uint32_t sp128GetAccessLogOverflows(void) {
-  return z80GetAccessLogOverflows();
-}
-
-uint32_t sp128GetLastPortAddress(void) {
-  return z80GetLastPortAddress();
-}
-
-uint32_t sp128GetLastPortValue(void) {
-  return z80GetLastPortValue();
-}
-
-uint32_t sp128GetLastPortIsWrite(void) {
-  return z80GetLastPortIsWrite();
-}
-
 uint32_t sp128GetKeyboardLine(uint32_t line) {
   return sp128CommonGetKeyboardLine(line);
 }
@@ -2739,3 +2485,44 @@ static inline void sp128HistoryContext(uint32_t kind, uint8_t *out) {
 #define Z80_HISTORY_FRAME() sp128Frames
 #define Z80_HISTORY_FRAME_TACT() currentFrameTact()
 #include "../../../../z80/wasm/z80-history.c"
+
+// -----------------------------------------------------------------------------
+// The access profile (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §2.2, D4): the shared module, with
+// this machine's physical layout. Time is in CPU T-states (D8).
+//
+// One linear offset space over the physical arrays, shared by the 128K, the Pentagon and the
+// Scorpion: RAM banks 0-15 ($00000-$3FFFF; the 128K and the Pentagon use 0-7), ROMs 0-2
+// ($40000-$4BFFF; ROM 2 is the Scorpion's service ROM) and the TR-DOS ROM ($4C000-$4FFFF).
+// `src/common/profile/layouts/sp128.ts` names them in `getPartition`'s terms.
+//
+// The mapping goes through `sp128MemorySlotBase`, never the flat `sp128Memory` mirror, which would
+// credit bank 5 and bank 7 at $C000 to the same bytes (trap T3). The hooks run after
+// `Z80_BEFORE_OPCODE_FETCH`, so a fetch the Beta 128 pages TR-DOS in for lands on the TR-DOS ROM. A
+// write to a ROM slot does not reach memory, so it maps nowhere (T2).
+// -----------------------------------------------------------------------------
+
+#define SP128_PROFILE_ROM_BASE SP128_RAM_SIZE
+#define SP128_PROFILE_TRDOS_BASE (SP128_RAM_SIZE + SP128_ROM_SIZE)
+
+static inline int32_t sp128ProfilePhys(uint32_t address, uint32_t write) {
+  if (sp128MemorySlotMapInitialized == 0u) rebuildMemorySlotMap();
+  const uint32_t a = address & 0xffffu;
+  const uint32_t slot = a >> 14u;
+  if (write != 0u && sp128MemorySlotWritable[slot] == 0u) return -1;
+  const uintptr_t p = (uintptr_t)sp128MemorySlotBase[slot] + (a & 0x3fffu);
+  const uintptr_t ram = (uintptr_t)sp128Ram;
+  const uintptr_t rom = (uintptr_t)sp128Rom;
+  const uintptr_t trdos = (uintptr_t)sp128TrdosRom;
+  if (p - ram < SP128_RAM_SIZE) return (int32_t)(p - ram);
+  if (p - rom < SP128_ROM_SIZE) return (int32_t)(SP128_PROFILE_ROM_BASE + (p - rom));
+  if (p - trdos < 0x4000u) return (int32_t)(SP128_PROFILE_TRDOS_BASE + (p - trdos));
+  return -1;
+}
+
+/* 320 KB of flags; the pool holds all 40 of its 8K pages, so no page ever loses its counters (T6) */
+#define Z80_PROFILE_FLAG_BYTES (SP128_RAM_SIZE + SP128_ROM_SIZE + 0x4000u)
+#define Z80_PROFILE_POOL_PAGES 40u
+#define Z80_PROFILE_PHYS_READ(address) sp128ProfilePhys((uint32_t)(address), 0u)
+#define Z80_PROFILE_PHYS_WRITE(address) sp128ProfilePhys((uint32_t)(address), 1u)
+#define Z80_PROFILE_FRAME_TICKS() cpu.tacts
+#include "../../../../z80/wasm/z80-profile.c"

@@ -148,6 +148,13 @@ static uint8_t cpuPrefix;
 static uint32_t frames;
 static uint32_t tacts;
 static uint32_t frameTacts28;
+/*
+ * The access profile's clock (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D8): 28 MHz ticks, like
+ * `frameTacts28`, but never wrapped at a frame end, so a 32-bit difference is a duration even across
+ * a frame boundary or a speed change. Advanced wherever `frameTacts28` is advanced by time passing
+ * (CPU cycles and DMA holds), never by the frame-position setters. Volatile, like the profile itself.
+ */
+static uint32_t zxnextProfileTicks28;
 static uint32_t currentFrameTact;
 static uint8_t frameCompleted;
 static uint32_t totalContentionDelaySinceStart;
@@ -320,6 +327,36 @@ uint32_t zxnextExecuteInstruction(void) {
   return zxnextCpuExecuteInstruction();
 }
 
+/*
+ * The debugger's breakpoint flags and in-core loop, `zxnextExecuteUntilStop` (z80-debug-loop.c). It
+ * returns where the fast frame loop does too: an SD command waiting for the host, a reset request.
+ */
+/* The Next's own port record (zxnext-ports.c, which the DMA's port writes also reach) is what its I/O
+   breakpoints read; memory accesses are the shared Z80's log */
+static uint32_t zxnextDebugAccessHit(uint32_t accessMask);
+#define Z80_DEBUG_LOOP_ACCESS_HIT(accessMask) zxnextDebugAccessHit(accessMask)
+#define Z80_DEBUG_LOOP_PREFIX zxnext
+#define Z80_DEBUG_LOOP_FRAME_COMPLETED frameCompleted
+#define Z80_DEBUG_LOOP_STOP() \
+  (zxnextSdGetHostCommand() != ZXNEXT_SD_HOST_COMMAND_NONE || zxnextResetRequest != 0u)
+#include "../../../../z80/wasm/z80-debug-loop.c"
+
+/* The access-breakpoint test of the last instruction: the shared log's memory accesses, the Next's port record */
+static uint32_t zxnextDebugAccessHit(uint32_t accessMask) {
+  const uint16_t *flags = zxnextBreakpointFlags;
+  const uint32_t count = z80AccessLogCount < Z80_ACCESS_LOG_CAPACITY ? z80AccessLogCount : Z80_ACCESS_LOG_CAPACITY;
+  for (uint32_t i = 0u; i < count; i++) {
+    const uint32_t entry = z80AccessLog[i];
+    const uint32_t bit = (entry & Z80_ACCESS_LOG_WRITE) != 0u ? Z80_DEBUG_FLAG_MEM_WRITE : Z80_DEBUG_FLAG_MEM_READ;
+    if ((flags[entry & 0xffffu] & bit & accessMask) != 0u) return 1u;
+  }
+  if (lastPortAccessed) {
+    const uint32_t bit = lastPortIsWrite ? Z80_DEBUG_FLAG_IO_WRITE : Z80_DEBUG_FLAG_IO_READ;
+    if ((flags[lastPortAddress] & bit & accessMask) != 0u) return 1u;
+  }
+  return 0u;
+}
+
 uint32_t zxnextRenderInstantScreen(void) {
   /* The paused view shows the current state: pending ULA latches included, without applying them */
   uint8_t shown[ZXNEXT_ULA_LATCH_COUNT];
@@ -429,55 +466,9 @@ void zxnextSetTacts(uint32_t value) {
   zxnextBeeperResyncWindow(value);
 }
 
-uint32_t zxnextGetCpuAf(void) { return z80GetAf(); }
-void zxnextSetCpuAf(uint32_t value) { z80SetAf(value); }
-uint32_t zxnextGetCpuBc(void) { return z80GetBc(); }
-void zxnextSetCpuBc(uint32_t value) { z80SetBc(value); }
-uint32_t zxnextGetCpuDe(void) { return z80GetDe(); }
-void zxnextSetCpuDe(uint32_t value) { z80SetDe(value); }
-uint32_t zxnextGetCpuHl(void) { return z80GetHl(); }
-void zxnextSetCpuHl(uint32_t value) { z80SetHl(value); }
-uint32_t zxnextGetCpuAfAlt(void) { return z80GetAfAlt(); }
-void zxnextSetCpuAfAlt(uint32_t value) { z80SetAfAlt(value); }
-uint32_t zxnextGetCpuBcAlt(void) { return z80GetBcAlt(); }
-void zxnextSetCpuBcAlt(uint32_t value) { z80SetBcAlt(value); }
-uint32_t zxnextGetCpuDeAlt(void) { return z80GetDeAlt(); }
-void zxnextSetCpuDeAlt(uint32_t value) { z80SetDeAlt(value); }
-uint32_t zxnextGetCpuHlAlt(void) { return z80GetHlAlt(); }
-void zxnextSetCpuHlAlt(uint32_t value) { z80SetHlAlt(value); }
-uint32_t zxnextGetCpuIx(void) { return z80GetIx(); }
-void zxnextSetCpuIx(uint32_t value) { z80SetIx(value); }
-uint32_t zxnextGetCpuIy(void) { return z80GetIy(); }
-void zxnextSetCpuIy(uint32_t value) { z80SetIy(value); }
-uint32_t zxnextGetCpuIr(void) { return z80GetIr(); }
-void zxnextSetCpuIr(uint32_t value) { z80SetIr(value); }
-uint32_t zxnextGetCpuWz(void) { return z80GetWz(); }
-void zxnextSetCpuWz(uint32_t value) { z80SetWz(value); }
-/* --- The return address of the most recent CALL/RST, for step-out. See the shadow stack
-   --- in z80.c: without it this machine has no step-out target at all, because the
-   --- TypeScript CPU's push never runs when execution happens inside the core. */
-uint32_t zxnextGetStepOutAddress(void) { return z80GetStepOutAddress(); }
-/* --- Running interrupt handlers (z80.c): source stepping runs them outside the step */
-uint32_t zxnextGetInterruptDepth(void) { return z80GetInterruptDepth(); }
-
-uint32_t zxnextGetCpuPc(void) { return z80GetPc(); }
-void zxnextSetCpuPc(uint32_t value) { z80SetPc(value); }
-uint32_t zxnextGetCpuSp(void) { return z80GetSp(); }
-void zxnextSetCpuSp(uint32_t value) { z80SetSp(value); }
-uint32_t zxnextGetCpuHalted(void) { return z80GetHalted(); }
-uint32_t zxnextGetCpuPrefix(void) { return z80GetPrefix(); }
-uint32_t zxnextGetCpuIff1(void) { return z80GetIff1(); }
-void zxnextSetCpuIff1(uint32_t value) { z80SetIff1(value); }
-uint32_t zxnextGetCpuIff2(void) { return z80GetIff2(); }
-void zxnextSetCpuIff2(uint32_t value) { z80SetIff2(value); }
-uint32_t zxnextGetCpuInterruptMode(void) { return z80GetInterruptMode(); }
-void zxnextSetCpuInterruptMode(uint32_t value) { z80SetInterruptMode(value); }
 uint32_t zxnextGetSharedZ80NMode(void) { return z80GetZ80NMode(); }
 
-/* The CPU's per-instruction data-access log (z80.c) */
-uint32_t zxnextGetAccessLogPtr(void) { return z80AccessLogPtr(); }
-uint32_t zxnextGetAccessLogCount(void) { return z80GetAccessLogCount(); }
-uint32_t zxnextGetAccessLogOverflows(void) { return z80GetAccessLogOverflows(); }
+/* The last port access: the Next's own record (zxnext-ports.c), not the shared core's */
 uint32_t zxnextGetLastPortAddress(void) { return lastPortAddress; }
 uint32_t zxnextGetLastPortValue(void) { return lastPortValue; }
 uint32_t zxnextGetLastPortAccessed(void) { return lastPortAccessed; }
@@ -1151,3 +1142,69 @@ static void zxnextHistoryDmaHold(uint32_t cpuTacts, uint16_t src, uint16_t dest,
     cpuTacts -= taken;
   }
 }
+
+// -----------------------------------------------------------------------------
+// The access profile (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §2.2, D4): the shared module, with
+// this machine's physical layout. The profile offset is the offset into `zxnextMemory` - Next ROM,
+// DivMMC ROM, Multiface, Alt ROMs, DivMMC RAM, then the 224 Next RAM pages (`nextMemoryLayout.ts`);
+// `src/common/profile/layouts/zxnext.ts` names them by partition. Time is in 28 MHz ticks (D8), from
+// `zxnextProfileTicks28`, which a frame end does not wrap.
+//
+// Reads (and code fetches) and writes resolve apart (trap T2), exactly as `zxnextMemoryPeekMapped` and
+// `zxnextMemoryWriteMapped` do: the Multiface and DivMMC overlays of $0000-$3FFF first, then the
+// Layer 2 mapping - which can map writes only, or reads only, over ROM - then the MMU. A write that
+// reaches no memory (ROM, the DivMMC ROM, mapram's bank 3, an MMU page above $DF) maps nowhere, and
+// so does anything at or above the error page (`OFFS_ERR_PAGE`), which no partition names.
+// -----------------------------------------------------------------------------
+
+#define ZXNEXT_PROFILE_ERR_PAGE (2048u * 1024u)
+
+/*
+ * Both run at every CPU memory access while profiling is on (trap T10), so the common case - no
+ * Layer 2 mapping in that direction, no overlay in slots 0-1 - is one table load, and only the rare
+ * mappings take the general path (the same steps as the core's own read and write paths).
+ */
+Z80_ALWAYS_INLINE int32_t zxnextProfilePhysRead(uint32_t address) {
+  const uint32_t normalized = address & 0xffffu;
+  const uint32_t slot = normalized >> 13u;
+  if (zxnextLayer2EnableMappingForReads == 0u && (slot >= 2u || !zxnextMemoryLowOverlayActive())) {
+    /* MMU offsets are below the error page: RAM page $DF ends at 2 MB */
+    return (int32_t)(pageReadOffset[slot] + (normalized & 0x1fffu));
+  }
+  uint32_t physical = ZXNEXT_NO_WRITE_OFFSET;
+  if (!(slot < 2u && zxnextMemoryLowOverlayActive())) {
+    physical = zxnextMemoryResolveLayer2Offset(normalized, 0u);
+  }
+  if (physical == ZXNEXT_NO_WRITE_OFFSET) {
+    physical = zxnextMemoryResolveReadOffset(slot) + (normalized & 0x1fffu);
+  }
+  return physical < ZXNEXT_PROFILE_ERR_PAGE ? (int32_t)physical : -1;
+}
+
+Z80_ALWAYS_INLINE int32_t zxnextProfilePhysWrite(uint32_t address) {
+  const uint32_t normalized = address & 0xffffu;
+  const uint32_t slot = normalized >> 13u;
+  uint32_t physical = ZXNEXT_NO_WRITE_OFFSET;
+  if (zxnextLayer2EnableMappingForWrites == 0u && (slot >= 2u || !zxnextMemoryLowOverlayActive())) {
+    physical = pageWriteOffset[slot];
+    return physical == ZXNEXT_NO_WRITE_OFFSET ? -1 : (int32_t)(physical + (normalized & 0x1fffu));
+  }
+  if (!(slot < 2u && zxnextMemoryLowOverlayActive())) {
+    physical = zxnextMemoryResolveLayer2Offset(normalized, 1u);
+  }
+  if (physical == ZXNEXT_NO_WRITE_OFFSET) {
+    physical = zxnextMemoryResolveWriteOffset(slot);
+    if (physical == ZXNEXT_NO_WRITE_OFFSET) return -1;
+    physical += normalized & 0x1fffu;
+  }
+  return physical < ZXNEXT_PROFILE_ERR_PAGE ? (int32_t)physical : -1;
+}
+
+/* The whole of `zxnextMemory`, error page included, so an offset is the physical offset unchanged */
+#define Z80_PROFILE_FLAG_BYTES ZXNEXT_MEMORY_SIZE
+/* 64 pages (12 MB): 512K of touched memory with counters; the flags cover all 2 MB regardless (D5, T6) */
+#define Z80_PROFILE_POOL_PAGES 64u
+#define Z80_PROFILE_PHYS_READ(address) zxnextProfilePhysRead((uint32_t)(address))
+#define Z80_PROFILE_PHYS_WRITE(address) zxnextProfilePhysWrite((uint32_t)(address))
+#define Z80_PROFILE_FRAME_TICKS() zxnextProfileTicks28
+#include "../../../../z80/wasm/z80-profile.c"

@@ -10,7 +10,10 @@ const {
   stampWasmLayout
 } = require("./wasm-layout.cjs");
 const { RZX_VOLATILE_SYMBOLS, rzxExports } = require("./rzx-core-exports.cjs");
+const { cpuExports, debugLoopExports, debugLoopVolatileSymbols, Z80_ACCESS_LOG_VOLATILE_SYMBOLS } = require("./z80-cpu-exports.cjs");
+const { Z80_CONDITION_EXPORTS, Z80_CONDITION_VOLATILE_SYMBOLS } = require("./z80-condition-exports.cjs");
 const { Z80_HISTORY_EXPORTS, Z80_HISTORY_VOLATILE_SYMBOLS } = require("./z80-history-exports.cjs");
+const { Z80_PROFILE_EXPORTS, Z80_PROFILE_VOLATILE_SYMBOLS } = require("./z80-profile-exports.cjs");
 
 /**
  * Statics a Klive state file leaves out (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` trap 10):
@@ -20,18 +23,15 @@ const { Z80_HISTORY_EXPORTS, Z80_HISTORY_VOLATILE_SYMBOLS } = require("./z80-his
 const SPP3E_VOLATILE_SYMBOLS = [
   // --- The IDE's breakpoint conditions and the per-instruction access log they read: debugging
   // --- state, not machine state, so a restore never brings back old breakpoints
-  "condArena",
-  "condSlots",
-  "condToken",
-  "condLastStatus",
-  "condEnv",
-  "z80AccessLog",
-  "z80AccessLogCount",
-  "z80AccessLogOverflows",
+  ...Z80_CONDITION_VOLATILE_SYMBOLS,
+  ...debugLoopVolatileSymbols("spp3e"),
+  ...Z80_ACCESS_LOG_VOLATILE_SYMBOLS,
   // --- An RZX session in progress (`zx-spectrum-rzx.c`)
   ...RZX_VOLATILE_SYMBOLS,
   // --- The execution-history ring (EXECUTION_HISTORY_ALL_CORES_PLAN)
-  ...Z80_HISTORY_VOLATILE_SYMBOLS
+  ...Z80_HISTORY_VOLATILE_SYMBOLS,
+  // --- The access profile: flags, counters and time (CODE_COVERAGE_AND_HEAT_MAP_PLAN T4, T7)
+  ...Z80_PROFILE_VOLATILE_SYMBOLS
 ];
 
 const root = resolve(__dirname, "..");
@@ -50,20 +50,11 @@ const optimizationProfiles = {
 
 const productionExports = [
   // --- Breakpoint condition evaluator (`src/emu/z80/wasm/z80-condition.c`)
-  "condArenaPtr",
-  "condArenaCapacity",
-  "condSlotTablePtr",
-  "condSlotCapacity",
-  "condMaxProgramWords",
-  "condGetToken",
-  "condSetToken",
-  "condGetLastStatus",
-  "condEvaluate",
-  "condEvaluateValue",
-  "condSetEnv",
-  "condPeek",
+  ...Z80_CONDITION_EXPORTS,
   // --- Execution history recorder (`src/emu/z80/wasm/z80-history.c`)
   ...Z80_HISTORY_EXPORTS,
+  // --- Access profile (`src/emu/z80/wasm/z80-profile.c`)
+  ...Z80_PROFILE_EXPORTS,
   "memory",
   "spp3eMemoryPtr",
   "spp3eRamPtr",
@@ -237,55 +228,9 @@ const productionExports = [
   "spp3eGetInterruptsRaised",
   "spp3eGetInterruptLineActive",
   "spp3eGetCpuTacts",
-  "spp3eGetCpuAf",
-  "spp3eSetCpuAf",
-  "spp3eGetCpuAfAlt",
-  "spp3eSetCpuAfAlt",
-  "spp3eGetCpuBcAlt",
-  "spp3eSetCpuBcAlt",
-  "spp3eGetCpuDeAlt",
-  "spp3eSetCpuDeAlt",
-  "spp3eGetCpuHlAlt",
-  "spp3eSetCpuHlAlt",
-  "spp3eGetCpuBc",
-  "spp3eSetCpuBc",
-  "spp3eGetCpuDe",
-  "spp3eSetCpuDe",
-  "spp3eGetCpuHl",
-  "spp3eSetCpuHl",
-  "spp3eGetCpuIx",
-  "spp3eSetCpuIx",
-  "spp3eGetCpuIy",
-  "spp3eSetCpuIy",
-  "spp3eGetCpuIr",
-  "spp3eSetCpuIr",
-  "spp3eGetCpuWz",
-  "spp3eSetCpuWz",
-  "spp3eGetCpuPc",
-  "spp3eGetStepOutAddress",
-  "spp3eGetInterruptDepth",
-  "spp3eSetCpuPc",
-  "spp3eGetCpuSp",
-  "spp3eSetCpuSp",
-  "spp3eGetCpuHalted",
-  "spp3eSetCpuHalted",
-  "spp3eGetCpuEiBacklog",
-  "spp3eSetCpuEiBacklog",
-  "spp3eGetCpuPrefix",
-  "spp3eGetCpuIff1",
-  "spp3eSetCpuIff1",
-  "spp3eGetCpuIff2",
-  "spp3eSetCpuIff2",
-  "spp3eGetCpuInterruptMode",
-  "spp3eSetCpuInterruptMode",
-  "spp3eGetCpuRetExecuted",
-  "spp3eGetCpuRetnExecuted",
-  "spp3eGetAccessLogPtr",
-  "spp3eGetAccessLogCount",
-  "spp3eGetAccessLogOverflows",
-  "spp3eGetLastPortAddress",
-  "spp3eGetLastPortValue",
-  "spp3eGetLastPortIsWrite",
+  ...cpuExports("spp3e", { snapshotState: true, accessLog: true, accessLogOverflows: true, lastPort: true }),
+  // --- The debugger's in-core loop (`z80-debug-loop.c`)
+  ...debugLoopExports("spp3e"),
   "spp3eGetKeyboardLine",
   "spp3eGetPortFeValue",
   "spp3eGetBorderColor",
@@ -306,7 +251,9 @@ const buildModes = {
     exports: productionExports,
     sources: [source],
     // --- 12 MB: the 4 MB execution-history ring (EXECUTION_HISTORY_ALL_CORES_PLAN D2, D3)
-    initialMemory: 12 * 1024 * 1024
+    // --- 18 MB: the access profile's 192 KB of flags and its 24-page (4.5 MB) counter pool, which
+    // --- covers all physical memory (CODE_COVERAGE_AND_HEAT_MAP_PLAN D5, T6)
+    initialMemory: 18 * 1024 * 1024
   }
 };
 

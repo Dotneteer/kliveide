@@ -31,6 +31,7 @@ import {
   MEMORY_EDITOR,
   COPPER_EDITOR,
   HISTORY_EDITOR,
+  PROFILER_EDITOR,
   SPRITES_EDITOR,
   TILEMAP_EDITOR,
   LAYER2_EDITOR,
@@ -54,6 +55,7 @@ import { ToolRendererInfo } from "./abstractions/ToolRendererInfo";
 import { createBasicPanel } from "./appIde/DocumentPanels/BasicPanel";
 import { createCopperListPanel } from "./appIde/DocumentPanels/CopperListPanel";
 import { createExecutionHistoryPanel } from "./appIde/DocumentPanels/ExecutionHistoryPanel";
+import { createProfilerPanel } from "./appIde/DocumentPanels/ProfilerPanel";
 import { createSpriteInspectorPanel } from "./appIde/DocumentPanels/SpriteInspector/SpriteInspectorPanel";
 import { createTilemapInspectorPanel } from "./appIde/DocumentPanels/TilemapInspector/TilemapInspectorPanel";
 import { createLayer2InspectorPanel } from "./appIde/DocumentPanels/Layer2Inspector/Layer2InspectorPanel";
@@ -66,6 +68,9 @@ import { asmZxbLanguageProvider } from "./appIde/project/asmZxbLanguageProvider"
 import { zxBasLanguageProvider } from "./appIde/project/zxBasLanguageProvider";
 import { BreakpointsPanel } from "./appIde/SideBarPanels/BreakpointsPanel";
 import { BreakpointsBadge } from "./appIde/SideBarPanels/BreakpointsBadge";
+import { UnitTestsPanel } from "./appIde/SideBarPanels/UnitTestsPanel";
+import { UnitTestsBadge } from "./appIde/SideBarPanels/UnitTestsBadge";
+import { TestingCommands } from "./appIde/SideBarPanels/TestingCommands";
 import { WatchBadge } from "./appIde/SideBarPanels/WatchBadge";
 import { Z80CpuPanel } from "./appIde/SideBarPanels/Z80CpuPanel";
 import { ExplorerPanel } from "@renderer/features/explorer/ExplorerPanel";
@@ -133,6 +138,8 @@ import {
   PANE_ID_BUILD,
   PANE_ID_EMU,
   PANE_ID_LOG,
+  PANE_ID_TESTS,
+  PANE_ID_AUTOMATION,
   PANE_ID_SCRIPTIMG
 } from "@common/integration/constants";
 import { ScriptingHistoryPanel } from "./appIde/SideBarPanels/ScriptingHistoryPanel";
@@ -214,7 +221,9 @@ export const activityRegistry: Activity[] = [
   {
     id: ACTIVITY_TEST_ID,
     title: "Testing",
-    iconName: "beaker"
+    iconName: "beaker",
+    // --- Testing → Add unit-test support, and the runs (`.plans/Z80_UNIT_TESTS_PLAN.md` D4, D16)
+    commands: TestingCommands
   }
 ];
 
@@ -368,6 +377,17 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     restrictTo: [MI_ZXNEXT]
   },
   {
+    // --- The Testing activity's first panel (`.plans/Z80_UNIT_TESTS_PLAN.md` D13)
+    id: "unitTestsPanel",
+    title: "Unit Tests",
+    hostActivity: ACTIVITY_TEST_ID,
+    renderer: UnitTestsPanel,
+    badge: UnitTestsBadge,
+    expandedOnInit: true,
+    // --- Renders a VirtualizedList, which brings its own ScrollViewer.
+    useScrollViewer: false
+  },
+  {
     id: "scriptingHistory",
     title: "Scripting History",
     hostActivity: ACTIVITY_SCRIPTING_ID,
@@ -414,6 +434,16 @@ export const outputPaneRegistry: OutputPaneInfo[] = [
     // --- be cleared without losing build or machine messages
     id: PANE_ID_LOG,
     displayName: "Log"
+  },
+  {
+    // --- Unit-test results (`.plans/Z80_UNIT_TESTS_PLAN.md` D16)
+    id: PANE_ID_TESTS,
+    displayName: "Tests"
+  },
+  {
+    // --- What scripts did through the automation server (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D13)
+    id: PANE_ID_AUTOMATION,
+    displayName: "Automation"
   }
 ];
 
@@ -460,6 +490,11 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     id: HISTORY_EDITOR,
     renderer: createExecutionHistoryPanel,
     icon: "history"
+  },
+  {
+    id: PROFILER_EDITOR,
+    renderer: createProfilerPanel,
+    icon: "gauge"
   },
   {
     id: SPRITES_EDITOR,

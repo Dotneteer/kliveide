@@ -24,7 +24,9 @@ import { ProjectNode } from "@abstractions/ProjectNode";
 import { IOutputPaneService } from "@renderer/abstractions/IOutputPaneService";
 import { IScriptService } from "@renderer/abstractions/IScriptService";
 import { IIdeCommandService } from "@renderer/abstractions/IIdeCommandService";
-import { BufferOperation, OutputSpecification } from "./ToolArea/abstractions";
+import { BufferOperation, IOutputBuffer, OutputSpecification } from "./ToolArea/abstractions";
+import { OutputPaneBuffer } from "./ToolArea/OutputPaneBuffer";
+import type { CapturedCommandResult } from "@common/messaging/IdeApi";
 import { openRendererDialog } from "@renderer/controls/overlay/dialogRequestBridge";
 
 /**
@@ -206,6 +208,50 @@ class IdeMessageProcessor {
   }
 
   /**
+   * Executes a command into a fresh buffer, mirrored to the Build pane, and returns its output as
+   * plain text lines (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D9). With `automation`, a command
+   * marked `automation: "deny"` is refused instead of run (T5).
+   * @param commandText The command text to execute.
+   * @param options Options of the run.
+   */
+  async executeCommandCaptured(
+    commandText: string,
+    options?: { automation?: boolean }
+  ): Promise<CapturedCommandResult> {
+    // Input validation
+    if (typeof commandText !== "string") {
+      return { success: false, finalMessage: "The command must be a string.", output: [] };
+    }
+    // --- Input validated
+    if (options?.automation) {
+      const denied = automationDeniedCommand(this.ideCommandsService, commandText);
+      if (denied) {
+        return {
+          success: false,
+          denied: true,
+          finalMessage:
+            `'${denied}' cannot be run through automation: it needs someone at the IDE ` +
+            "(a dialog, a confirmation, or quitting Klive).",
+          output: []
+        };
+      }
+    }
+    const captured = new OutputPaneBuffer();
+    const buildOutput = this.outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
+    const buffers = buildOutput ? [buildOutput, captured] : [captured];
+    const result = await this.ideCommandsService.executeCommand(
+      commandText,
+      new CompositeOutputBuffer(buffers)
+    );
+    return {
+      success: !!result?.success,
+      ...(result?.finalMessage !== undefined ? { finalMessage: result.finalMessage } : {}),
+      ...(result?.value !== undefined ? { value: result.value } : {}),
+      output: outputBufferLines(captured)
+    };
+  }
+
+  /**
    * Saves all files before quitting the IDE.
    */
   async saveAllBeforeQuit() {
@@ -294,6 +340,24 @@ export async function saveAllBeforeQuit(
   } finally {
     store.dispatch(dimMenuAction(wasDimmed));
   }
+}
+
+/**
+ * The id of the command a text would run, when that command is marked `automation: "deny"`
+ * (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` T5); undefined when it may run.
+ */
+export function automationDeniedCommand(
+  commands: Pick<IIdeCommandService, "getCommandByIdOrAlias">,
+  commandText: string
+): string | undefined {
+  const word = commandText.trim().split(/\s+/)[0] ?? "";
+  const info = word ? commands.getCommandByIdOrAlias(word) : undefined;
+  return info?.automation === "deny" ? info.id : undefined;
+}
+
+/** A buffer's lines as plain text: the spans joined, colours and styles dropped */
+export function outputBufferLines(buffer: IOutputBuffer): string[] {
+  return buffer.getContents().map((line) => line.spans.map((span) => span.text).join(""));
 }
 
 function executeScriptOutput(

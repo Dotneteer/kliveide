@@ -61,6 +61,12 @@ export interface IDebugSupport {
   hasAccessBreakpoints(): boolean;
 
   /**
+   * The execution addresses whose conditions an in-core debug loop may decide itself, with their program
+   * slots (`DebugSupport.coreConditionPlan`, WASM_CORE_LEAN_AND_DEBUG_PLAN Phase 4c)
+   */
+  coreConditionPlan?(): { address: number; slots: number[] }[];
+
+  /**
    * Does any breakpoint watch a Next Register write?
    *
    * The ZX Spectrum Next counterpart of `hasAccessBreakpoints`, asked once per debug-loop entry for
@@ -162,7 +168,12 @@ export interface IDebugSupport {
   romErrorGuard?: () => boolean;
 
   /** Follows the running source statement through a debug run (`CurrentStatementTracker`). */
-  statementTracker?: { observe(pc: number, getPartition?: (address: number) => number | undefined): void; current: number };
+  statementTracker?: {
+    observe(pc: number, getPartition?: (address: number) => number | undefined): void;
+    current: number;
+    /** The addresses `observe` acts at; a debug loop in the core stops there for it (WASM_CORE_LEAN_AND_DEBUG_PLAN D13) */
+    stopAddresses?(): readonly number[];
+  };
 
   /**
    * Erases all breakpoints

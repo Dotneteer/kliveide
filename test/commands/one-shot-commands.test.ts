@@ -5,10 +5,9 @@ import type { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext
 import {
   BreakpointWithAddressCommand,
   RemoveBreakpointCommand,
-  SetBreakpointCommand,
-  breakpointCommandSpec,
-  breakpointStatusText
+  SetBreakpointCommand
 } from "@renderer/appIde/commands/BreakpointCommands";
+import { breakpointCommandSpec, breakpointStatusText } from "@common/utils/breakpoint-spec";
 import { extractArguments, splitRawTail } from "@renderer/appIde/services/ide-commands";
 import { parseCommand } from "@renderer/appIde/services/command-parser";
 import { ValidationMessageType } from "@renderer/abstractions/ValidationMessageType";

@@ -402,6 +402,19 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
   abstract getMemoryPartition(index: number): Uint8Array;
 
   /**
+   * Writes one byte of a partition whatever is paged in. The default writes the partition's
+   * array; a machine whose core keeps a copy of the paged-in memory overrides it to keep that copy
+   * in step.
+   * @param index Partition index, as for `getMemoryPartition`
+   * @param offset Offset within the partition (out-of-range offsets are ignored)
+   * @param value Byte to write
+   */
+  writeMemoryPartition(index: number, offset: number, value: number): void {
+    const memory = this.getMemoryPartition(index);
+    if (offset >= 0 && offset < memory.length) memory[offset] = value & 0xff;
+  }
+
+  /**
    * Gets the current partition values for all 16K/8K partitions
    */
   abstract getCurrentPartitions(): number[];

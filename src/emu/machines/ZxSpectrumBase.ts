@@ -503,13 +503,17 @@ export abstract class ZxSpectrumBase extends Z80MachineBase implements IZxSpectr
    * @returns The start address of the injected code
    */
   injectCodeToRun(codeToInject: CodeToInject): number {
+    // --- Straight to memory (`doWriteMemory`), as the Next's injection does: injecting is not
+    // --- something the emulated CPU does, so it takes no contention and no machine time. The
+    // --- contended `writeMemory` added T-states to the TypeScript side's counter that the core never
+    // --- ran, so `tacts` went backwards at the next sync (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` §10).
     // --- Clear the screen unless otherwise requested
     if (!codeToInject.options.noCls) {
       for (let addr = 0x4000; addr < 0x5800; addr++) {
-        this.writeMemory(addr, 0);
+        this.doWriteMemory(addr, 0);
       }
       for (let addr = 0x5800; addr < 0x5b00; addr++) {
-        this.writeMemory(addr, 0x38);
+        this.doWriteMemory(addr, 0x38);
       }
     }
     for (const segment of codeToInject.segments) {
@@ -518,7 +522,7 @@ export abstract class ZxSpectrumBase extends Z80MachineBase implements IZxSpectr
       } else {
         const addr = segment.startAddress;
         for (let i = 0; i < segment.emittedCode.length; i++) {
-          this.writeMemory(addr + i, segment.emittedCode[i]);
+          this.doWriteMemory(addr + i, segment.emittedCode[i]);
         }
       }
     }
@@ -526,7 +530,7 @@ export abstract class ZxSpectrumBase extends Z80MachineBase implements IZxSpectr
     // --- Prepare the run mode
     if (codeToInject.options.cursorl || codeToInject.options.cursork /* deprecated */) {
       // --- Set the keyboard in "L" mode
-      this.writeMemory(0x5c3b, this.readMemory(0x5c3b) | 0x08);
+      this.doWriteMemory(0x5c3b, this.doReadMemory(0x5c3b) | 0x08);
     }
 
     // --- Use this start point

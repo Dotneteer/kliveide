@@ -8,6 +8,7 @@ import type {
 import { PsgChipState } from "@emu/abstractions/PsgChipState";
 import { MachineCommand } from "@abstractions/MachineCommand";
 import { buildMessagingProxy } from "./MessageProxy";
+import type { BreakpointHit } from "@common/automation/protocol";
 import { MessengerBase } from "./MessengerBase";
 import { BreakpointInfo, BreakpointScope } from "@abstractions/BreakpointInfo";
 import { SysVar } from "@abstractions/SysVar";
@@ -22,6 +23,14 @@ import type { SourceLevelDebugInfo } from "@abstractions/CompilerInfo";
 import type { SourceActivationInfo, SourceStopInfo } from "@abstractions/SourceDebugInfo";
 import type { SourceStepKind } from "@emu/machines/SourceStepDecision";
 import type { ExecutionHistoryInfo, ExecutionHistoryPage } from "@common/history/historyTypes";
+import type {
+  ProfileEdges,
+  ProfileSample,
+  ProfileStatus,
+  ProfileTouched,
+  ProfileTouchedByte,
+  ProfileView
+} from "@common/profile/profileTypes";
 import type { HistoryServiceSpan } from "@common/history/serviceSpans";
 import type { HistoryRegisters } from "@common/history/historyRecord";
 import type {
@@ -626,6 +635,88 @@ class EmuApiImpl {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 
+  // --- The access profile: code coverage and the heat map (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`
+  // --- §4.2). Undefined on a machine whose core does not profile, or with advanced debugging off.
+
+  /** What the profile holds (`coverage status`) */
+  async getProfileStatus(): Promise<ProfileStatus | undefined> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Turns profiling on or off for the session (D6)
+   * @param _counters Keep the counters too; omitted, the setting decides
+   */
+  async setProfiling(_enabled: boolean, _counters?: boolean): Promise<ProfileStatus | undefined> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /** Clears the flags, the counters and the time */
+  async resetProfile(): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * The flags (and counts) of the 64K the CPU sees now, or of one partition (the memory view's heat
+   * map, D14)
+   */
+  async getProfileView(_partition?: number, _withCounts?: boolean): Promise<ProfileView | undefined> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * The flags (and execution counts) at CPU addresses, each in its partition - or, where the
+   * partition is null, in what is paged there now (the editor strip and the disassembly, D11-D13)
+   */
+  async getProfileSample(
+    _addresses: number[],
+    _partitions?: (number | null)[],
+    _withCounts?: boolean
+  ): Promise<ProfileSample | undefined> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /** Every touched byte with one of `mask`'s flags (exports, the SMC report) */
+  async getProfileTouched(_mask?: number): Promise<ProfileTouched | undefined> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /** Merges a saved run into the profile (`coverage load`, D16) */
+  async mergeProfile(
+    _bytes: ProfileTouchedByte[],
+    _totals: { instructions: number; timeTotal: number }
+  ): Promise<ProfileStatus | undefined> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  // --- The profiler (`.plans/PROFILER_PLAN.md` D1, D2, D9-D12)
+
+  /**
+   * Starts a profiling window: resets the profile, turns it on with counters and, with `calls`, the
+   * call tracker; `at`/`until` are CPU addresses where counting starts and profiling stops (D2)
+   */
+  async startProfiling(_options?: { calls?: boolean; at?: number; until?: number }): Promise<ProfileStatus | undefined> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /** Ends the window without a reset (D1): the data stays frozen */
+  async stopProfiling(): Promise<ProfileStatus | undefined> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /** The call graph's edges, open frames folded in (D12); undefined without a profile */
+  async getProfileEdges(): Promise<ProfileEdges | undefined> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * The profile offset each 8K slot of the 64K maps to now, null where nothing backs it: how the
+   * profiler places unbanked code, which runs in whatever is paged (D6)
+   */
+  async getProfileSlotOffsets(): Promise<(number | null)[] | undefined> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
   /**
    * Moves the history cursor (`.plans/LITE_STEP_BACK_PLAN.md` D4): Step Back, Step Forward, Reverse
    * Step Over/Out, Reverse Continue, Return to Present, or to a record. Never changes the machine.
@@ -847,6 +938,33 @@ class EmuApiImpl {
     _size: number,
     _bigEndian: boolean
   ): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Writes bytes to memory: from `_address` in the CPU's current view, or from offset `_address`
+   * of a partition (a ROM page or RAM bank) whatever is paged in
+   * (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` T8).
+   * @param _address The address, or the offset within the partition.
+   * @param _bytes The bytes to write.
+   * @param _partition The partition, or undefined for the CPU's view.
+   */
+  async setMemoryBytes(_address: number, _bytes: Uint8Array, _partition?: number): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * The emulated picture as it was last rendered, as RGBA bytes (automation's `screen.capture`).
+   */
+  async getScreenImage(): Promise<ScreenImage> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * What stopped the machine at its last stop: the PC, and the breakpoints that fired (none for a
+   * pause, a step or a stop).
+   */
+  async getStopInfo(): Promise<MachineStopInfo> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 
@@ -1502,6 +1620,19 @@ export type PaletteDeviceInfo = {
   reg43Value: number;
   reg6bValue: number;
   ulaNextFormat: number;
+};
+
+/** The emulated picture: `width` × `height` pixels, four bytes each (R, G, B, A) */
+export type ScreenImage = {
+  width: number;
+  height: number;
+  pixels: Uint8Array;
+};
+
+/** What stopped the machine (`getStopInfo`) */
+export type MachineStopInfo = {
+  pc: number;
+  breakpoints: BreakpointHit[];
 };
 
 export type EmuApi = EmuApiImpl;

@@ -35,7 +35,7 @@ export { createCore, readNextRegDirect, runDisplayedFrame, type NextMachine } fr
 export { captureFrame, pixelHex, rowRuns, summarizeRows, type Frame, type RowRun } from "./core/frame";
 export { frameHash, framePng } from "./core/capture";
 export { compileNexFile, type CompiledNex } from "./core/compile-nex";
-export { loadNexDirect, readNextReg, writeNextReg } from "./core/load-nex-direct";
+export { loadNexDirect, readNextReg, writeNextReg } from "@common/headless/nexLoad";
 export { copperLineToBufferRow, displayFileAddress, paperXToBufferX, waitHToBufferX } from "./core/beam";
 export { next8ToHex, parseColor, rgb333ToHex, ULA_COLORS } from "./core/colors";
 export { contactSheet, diffPng } from "./core/images";

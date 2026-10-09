@@ -1,3 +1,4 @@
+import { WASM_CORE_CONDITION_PLAN_WORDS } from "@emu/machines/wasmDebugLoopLayout";
 import { CONDITION_CORE_EXPORTS, type ConditionCoreExports } from "@emu/machines/conditionStore";
 import { Z80_HISTORY_CORE_EXPORTS, type Z80HistoryCoreExports } from "@emu/machines/history/WasmHistoryReader";
 import { WASM_ACCESS_LOG_CAPACITY } from "../../wasmAccessLog";
@@ -160,6 +161,11 @@ export type Sp128WasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Z8
   sp128SetCpuInterruptMode: Sp128WasmV2ExportFunction;
   sp128GetCpuPrefix: Sp128WasmV2ExportFunction;
   sp128GetAccessLogPtr: Sp128WasmV2ExportFunction;
+  /** The debugger's in-core loop and its breakpoint flags (`z80-debug-loop.c`) */
+  sp128BreakpointFlagsPtr: Sp128WasmV2ExportFunction;
+  sp128ExecuteUntilStop: Sp128WasmV2ExportFunction;
+  sp128GetDebugOpStart: Sp128WasmV2ExportFunction;
+  sp128CondPlanPtr: Sp128WasmV2ExportFunction;
   sp128GetAccessLogCount: Sp128WasmV2ExportFunction;
   sp128GetAccessLogOverflows: Sp128WasmV2ExportFunction;
   sp128GetLastPortAddress: Sp128WasmV2ExportFunction;
@@ -240,6 +246,10 @@ export type Sp128WasmV2Runtime = {
   readonly memory: Uint8Array;
   /** The CPU's per-instruction data-access log (`wasmAccessLog.ts`) */
   readonly accessLog: Uint32Array;
+  /** The debugger's breakpoint flags, one word per address, written on every debug run */
+  readonly breakpointFlags: Uint16Array;
+  /** The debugger's condition plan (`z80-debug-loop.c`, `WASM_CORE_CONDITION_PLAN_WORDS` words) */
+  readonly condPlan: Uint32Array;
   readonly ram: Uint8Array;
   readonly rom: Uint8Array;
   readonly pixelBuffer: Uint32Array;
@@ -368,6 +378,10 @@ const requiredV2Exports = [
   "sp128SetCpuInterruptMode",
   "sp128GetCpuPrefix",
   "sp128GetAccessLogPtr",
+  "sp128BreakpointFlagsPtr",
+  "sp128ExecuteUntilStop",
+  "sp128GetDebugOpStart",
+  "sp128CondPlanPtr",
   "sp128GetAccessLogCount",
   "sp128GetAccessLogOverflows",
   "sp128GetLastPortAddress",
@@ -489,6 +503,8 @@ export function createSp128WasmV2Views(
 
   assertViewRange(artifactName, "memory", exports.sp128MemoryPtr(), memorySize, memoryBuffer);
   assertViewRange(artifactName, "accessLog", exports.sp128GetAccessLogPtr(), WASM_ACCESS_LOG_CAPACITY * 4, memoryBuffer);
+  assertViewRange(artifactName, "breakpointFlags", exports.sp128BreakpointFlagsPtr(), 0x1_0000 * 2, memoryBuffer);
+  assertViewRange(artifactName, "condPlan", exports.sp128CondPlanPtr(), WASM_CORE_CONDITION_PLAN_WORDS * 4, memoryBuffer);
   assertViewRange(artifactName, "ram", exports.sp128RamPtr(), ramSize, memoryBuffer);
   assertViewRange(artifactName, "rom", exports.sp128RomPtr(), romSize, memoryBuffer);
   assertViewRange(artifactName, "pixelBuffer", exports.sp128PixelBufferPtr(), pixelBytes, memoryBuffer);
@@ -501,6 +517,8 @@ export function createSp128WasmV2Views(
     memoryBuffer,
     memory: new Uint8Array(memoryBuffer, exports.sp128MemoryPtr(), memorySize),
     accessLog: new Uint32Array(memoryBuffer, exports.sp128GetAccessLogPtr(), WASM_ACCESS_LOG_CAPACITY),
+    breakpointFlags: new Uint16Array(memoryBuffer, exports.sp128BreakpointFlagsPtr(), 0x1_0000),
+    condPlan: new Uint32Array(memoryBuffer, exports.sp128CondPlanPtr(), WASM_CORE_CONDITION_PLAN_WORDS),
     ram: new Uint8Array(memoryBuffer, exports.sp128RamPtr(), ramSize),
     rom: new Uint8Array(memoryBuffer, exports.sp128RomPtr(), romSize),
     pixelBuffer: new Uint32Array(memoryBuffer, exports.sp128PixelBufferPtr(), pixelWords),

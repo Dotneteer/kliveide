@@ -47,15 +47,22 @@
 #define Z88_KEYBOARD_LINES 8u
 
 /* The linear memory the build script reserves (Z88_WASM_MEMORY_BYTES in build-z88-wasm.cjs) */
-#define Z88_WASM_LINEAR_MEMORY (12u * 1024u * 1024u)
+#define Z88_WASM_LINEAR_MEMORY (28u * 1024u * 1024u)
 /* The execution-history ring: 65,536 records of 64 bytes (EXECUTION_HISTORY_ALL_CORES_PLAN D2) */
 #define Z88_WASM_HISTORY_RING (65536u * 64u)
+/*
+ * The access profile (CODE_COVERAGE_AND_HEAT_MAP_PLAN D2, D5): a flag byte per physical byte (4 MB),
+ * its page map (a uint16 per 8K page) and the counter pool - Z88_PROFILE_POOL_PAGES 8K pages of
+ * 24-byte entries (12 MB). Defined at the end of this file with the module.
+ */
+#define Z88_PROFILE_POOL_PAGES 64u
+#define Z88_WASM_PROFILE (Z88_MEMORY_SIZE + (Z88_MEMORY_SIZE / 0x2000u) * 2u + Z88_PROFILE_POOL_PAGES * 0x2000u * 24u)
 /* Headroom for the stack, the CPU state and the machine's small variables */
 #define Z88_WASM_RESERVED (512u * 1024u)
 
 _Static_assert(
   Z88_MEMORY_SIZE + Z88_PIXEL_BUFFER_WORDS * 4u + Z88_AUDIO_SAMPLE_CAPACITY * 16u + 0x20000u + Z88_WASM_HISTORY_RING +
-      Z88_WASM_RESERVED <=
+      Z88_WASM_PROFILE + Z88_WASM_RESERVED <=
     Z88_WASM_LINEAR_MEMORY,
   "The Z88 buffers no longer fit the WASM linear memory; raise Z88_WASM_MEMORY_BYTES with a reason");
 
@@ -127,7 +134,13 @@ static inline void z88BusNewInstruction(void);
 /* The execution-history recorder's hooks; the recorder and this machine's macros for it are at the
    end of this file (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` Phase 4) */
 #include "../../../../z80/wasm/z80-history.h"
+/* The access profile's hooks; the module and this machine's mapping for it are at the end of this
+   file (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D1, D4) */
+#include "../../../../z80/wasm/z80-profile.h"
 #include "../../../../z80/wasm/z80.c"
+/* The CPU's registers and debugger state, exported as `z88GetCpuAf` ... (WASM_CORE_LEAN_AND_DEBUG_PLAN D8) */
+#define Z80_EXPORT_PREFIX z88
+#include "../../../../z80/wasm/z80-cpu-exports.c"
 
 // -----------------------------------------------------------------------------
 // Z88 parts
@@ -199,7 +212,11 @@ uint32_t z88ExecuteInstruction(void) {
   z80SetSigInt(z88InterruptSignal);
   do {
     if (z80IsCpuSnoozed()) {
+      /* The snooze is no instruction's time: the profile keeps it in its own bucket (D7). The pause
+         falls between instructions (only a completed IN from $B2 snoozes), so nothing is open. */
+      const uint32_t before = cpu.tacts;
       z80SnoozeCycle();
+      if (z80ProfileHeader.enabled) z80ProfileChargeBucket(Z80_PROFILE_BUCKET_SNOOZE, cpu.tacts - before);
     } else {
       z80ExecuteCpuCycle();
     }
@@ -211,32 +228,34 @@ uint32_t z88ExecuteInstruction(void) {
   return z88FrameCompleted;
 }
 
-/*
- * The debugger's per-address breakpoint flags (`DebugSupport.breakpointFlags`), copied in by the host
- * when a debug run starts. The core does not interpret them beyond the mask it is given.
- */
-static uint16_t z88BreakpointFlags[0x10000];
+/* The debugger's breakpoint flags and in-core loop, `z88ExecuteUntilStop` (z80-debug-loop.c) */
+/* The Z88's own bus record (z88-memory.c) is what its access breakpoints read */
+static uint32_t z88DebugAccessHit(uint32_t accessMask);
+#define Z80_DEBUG_LOOP_ACCESS_HIT(accessMask) z88DebugAccessHit(accessMask)
+#define Z80_DEBUG_LOOP_PREFIX z88
+#include "../../../../z80/wasm/z80-debug-loop.c"
 
-uint32_t z88BreakpointFlagsPtr(void) { return (uint32_t)(uintptr_t)z88BreakpointFlags; }
-
 /*
- * The debugger's fast path: runs instructions until the frame completes or the PC reaches a place the
- * stop policy may stop at - an address whose flags meet `mask`, or `extraStop` (a run-to point, a
- * step-over or step-out target; any value above $FFFF means none). Returns how many instructions ran.
- * The host then applies the whole stop policy at that PC, exactly as after a single instruction, so a
- * candidate that is not a stop (a disabled breakpoint, another partition) only costs a boundary call.
+ * The access-breakpoint test of the last instruction on the Z88's bus record: the addresses it read and
+ * wrote (the first `Z88_BUS_LIST_SIZE` of each, as the host imports them) and the ports it accessed
  */
-uint32_t z88ExecuteUntilStop(uint32_t extraStop, uint32_t mask) {
-  uint32_t executed = 0u;
-  do {
-    z88ExecuteInstruction();
-    executed++;
-    /* A reverse-debugging stop target (REVERSE_DEBUGGING_PLAN D4): the host asks the recorder after the call */
-    if (z80HistoryStopNow() != 0u) break;
-    const uint16_t pc = (uint16_t)z80GetPc();
-    if ((z88BreakpointFlags[pc] & mask) || pc == extraStop) break;
-  } while (!z88FrameCompleted);
-  return executed;
+static uint32_t z88DebugAccessHit(uint32_t accessMask) {
+  const uint16_t *flags = z88BreakpointFlags;
+  const uint32_t reads = z88BusReadCount < Z88_BUS_LIST_SIZE ? z88BusReadCount : Z88_BUS_LIST_SIZE;
+  for (uint32_t i = 0u; i < reads; i++) {
+    if ((flags[z88BusReads[i]] & Z80_DEBUG_FLAG_MEM_READ & accessMask) != 0u) return 1u;
+  }
+  const uint32_t writes = z88BusWriteCount < Z88_BUS_LIST_SIZE ? z88BusWriteCount : Z88_BUS_LIST_SIZE;
+  for (uint32_t i = 0u; i < writes; i++) {
+    if ((flags[z88BusWrites[i]] & Z80_DEBUG_FLAG_MEM_WRITE & accessMask) != 0u) return 1u;
+  }
+  if ((z88BusFlags & Z88_BUS_IO_READ_PORT) != 0u && (flags[z88BusIoReadPort] & Z80_DEBUG_FLAG_IO_READ & accessMask) != 0u) {
+    return 1u;
+  }
+  if ((z88BusFlags & Z88_BUS_IO_WRITE_PORT) != 0u && (flags[z88BusIoWritePort] & Z80_DEBUG_FLAG_IO_WRITE & accessMask) != 0u) {
+    return 1u;
+  }
+  return 0u;
 }
 
 /*
@@ -359,42 +378,6 @@ void z88SetTargetClockMultiplier(uint32_t value) { z88TargetClockMultiplier = va
 // CPU
 // -----------------------------------------------------------------------------
 
-uint32_t z88GetCpuAf(void) { return z80GetAf(); }
-void z88SetCpuAf(uint32_t v) { z80SetAf(v); }
-uint32_t z88GetCpuBc(void) { return z80GetBc(); }
-void z88SetCpuBc(uint32_t v) { z80SetBc(v); }
-uint32_t z88GetCpuDe(void) { return z80GetDe(); }
-void z88SetCpuDe(uint32_t v) { z80SetDe(v); }
-uint32_t z88GetCpuHl(void) { return z80GetHl(); }
-void z88SetCpuHl(uint32_t v) { z80SetHl(v); }
-uint32_t z88GetCpuAfAlt(void) { return z80GetAfAlt(); }
-void z88SetCpuAfAlt(uint32_t v) { z80SetAfAlt(v); }
-uint32_t z88GetCpuBcAlt(void) { return z80GetBcAlt(); }
-void z88SetCpuBcAlt(uint32_t v) { z80SetBcAlt(v); }
-uint32_t z88GetCpuDeAlt(void) { return z80GetDeAlt(); }
-void z88SetCpuDeAlt(uint32_t v) { z80SetDeAlt(v); }
-uint32_t z88GetCpuHlAlt(void) { return z80GetHlAlt(); }
-void z88SetCpuHlAlt(uint32_t v) { z80SetHlAlt(v); }
-uint32_t z88GetCpuIx(void) { return z80GetIx(); }
-void z88SetCpuIx(uint32_t v) { z80SetIx(v); }
-uint32_t z88GetCpuIy(void) { return z80GetIy(); }
-void z88SetCpuIy(uint32_t v) { z80SetIy(v); }
-uint32_t z88GetCpuIr(void) { return z80GetIr(); }
-void z88SetCpuIr(uint32_t v) { z80SetIr(v); }
-uint32_t z88GetCpuWz(void) { return z80GetWz(); }
-void z88SetCpuWz(uint32_t v) { z80SetWz(v); }
-uint32_t z88GetCpuPc(void) { return z80GetPc(); }
-void z88SetCpuPc(uint32_t v) { z80SetPc(v); }
-uint32_t z88GetCpuSp(void) { return z80GetSp(); }
-void z88SetCpuSp(uint32_t v) { z80SetSp(v); }
-uint32_t z88GetCpuIff1(void) { return z80GetIff1(); }
-void z88SetCpuIff1(uint32_t v) { z80SetIff1(v); }
-uint32_t z88GetCpuIff2(void) { return z80GetIff2(); }
-void z88SetCpuIff2(uint32_t v) { z80SetIff2(v); }
-uint32_t z88GetCpuInterruptMode(void) { return z80GetInterruptMode(); }
-void z88SetCpuInterruptMode(uint32_t v) { z80SetInterruptMode(v); }
-uint32_t z88GetCpuHalted(void) { return z80GetHalted(); }
-uint32_t z88GetCpuPrefix(void) { return z80GetPrefix(); }
 uint32_t z88GetCpuSnoozed(void) { return z80IsCpuSnoozed(); }
 void z88SetCpuSnoozed(uint32_t v) {
   if (v) {
@@ -403,9 +386,6 @@ void z88SetCpuSnoozed(uint32_t v) {
     z80AwakeCpu();
   }
 }
-uint32_t z88GetStepOutAddress(void) { return z80GetStepOutAddress(); }
-/* --- Running interrupt handlers (z80.c): source stepping runs them outside the step */
-uint32_t z88GetInterruptDepth(void) { return z80GetInterruptDepth(); }
 /* The INT line the CPU saw at the start of the last instruction (`Z80Cpu.sigINT`) */
 uint32_t z88GetCpuSigInt(void) { return z80GetSigInt(); }
 
@@ -460,3 +440,37 @@ static inline void z88HistoryContext(uint32_t kind, uint8_t *out) {
 #define Z80_HISTORY_FRAME() z88Frames
 #define Z80_HISTORY_FRAME_TACT() z88FrameTacts
 #include "../../../../z80/wasm/z80-history.c"
+
+// -----------------------------------------------------------------------------
+// The access profile (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §2.2, D4): the shared module, with
+// this machine's physical layout. Time is in CPU T-states (D8); the snooze goes to its own bucket
+// (`z88ExecuteInstruction`, D7), and a CPU in coma is HALTed, so its time is the HALT's.
+//
+// The profile offset is the offset in `z88Memory` (slot N at N * 1 MB, internal RAM at $080000), as
+// each 8K page's `z88PageOffset` names it. That offset already carries a small card's mirroring and
+// the half of SR0's bank that segment 0's upper page shows, so a byte is flagged once, at its
+// storage, whichever mirror the CPU reached it through (`src/common/profile/layouts/z88.ts`).
+//
+// Nothing backs a page with no card: its reads are the Blink's random values and its writes are
+// dropped, so both map nowhere. A write reaches memory only on RAM, or on an EPROM or flash card
+// whose chip is about to program this byte (`z88CardWriteProgramsByte`); a ROM ignores it, and a
+// flash chip's command cycles are not stores (trap T2). A read of a flash chip in a command state
+// answers its status, not the array, but it is still that card's byte the CPU addressed, so it maps.
+// -----------------------------------------------------------------------------
+
+static inline int32_t z88ProfilePhys(uint32_t address, uint32_t write) {
+  const uint32_t page = (address & 0xffffu) >> 13;
+  const uint8_t card = z88PageCard[page];
+  if (card == Z88_PAGE_NO_CARD) return -1;
+  if (write != 0u && z88Cards[card].kind != Z88_CARD_RAM && !z88CardWriteProgramsByte(card, z88PageBank[page])) {
+    return -1;
+  }
+  return (int32_t)(z88PageOffset[page] + (address & 0x1fffu));
+}
+
+#define Z80_PROFILE_FLAG_BYTES Z88_MEMORY_SIZE
+#define Z80_PROFILE_POOL_PAGES Z88_PROFILE_POOL_PAGES
+#define Z80_PROFILE_PHYS_READ(address) z88ProfilePhys((uint32_t)(address), 0u)
+#define Z80_PROFILE_PHYS_WRITE(address) z88ProfilePhys((uint32_t)(address), 1u)
+#define Z80_PROFILE_FRAME_TICKS() cpu.tacts
+#include "../../../../z80/wasm/z80-profile.c"

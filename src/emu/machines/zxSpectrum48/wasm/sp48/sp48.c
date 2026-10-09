@@ -361,12 +361,21 @@ static void SP48_CPU_NOINLINE sp48CpuDelayAddressBusAccess(uint32_t address);
 /* RZX (`zx-spectrum-rzx.c`): the fetch counter counts every refresh but the INT acknowledge's */
 static inline void rzxCountFetch(void);
 static inline void rzxIntAck(void);
+/* Not under the benchmark-only strip (`z80.c`): no RZX recording, so no fetch count */
+#ifndef Z80_BENCH_STRIP_DEBUG
 #define Z80_REFRESH(address) rzxCountFetch()
 #define Z80_INT_ACK() rzxIntAck()
+#endif
 /* The execution-history recorder's hooks; the recorder and this machine's macros for it are at the
    end of this file (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` Phase 1) */
 #include "../../../../z80/wasm/z80-history.h"
+/* The access profile's hooks; the module and this machine's mapping for it are at the end of this
+   file (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` Phase 0) */
+#include "../../../../z80/wasm/z80-profile.h"
 #include "../../../../z80/wasm/z80.c"
+/* The CPU's registers and debugger state, exported as `sp48GetCpuAf` ... (WASM_CORE_LEAN_AND_DEBUG_PLAN D8) */
+#define Z80_EXPORT_PREFIX sp48
+#include "../../../../z80/wasm/z80-cpu-exports.c"
 #define RZX_CORE_PREFIX sp48
 #include "../../../zxSpectrum/wasm/common/zx-spectrum-rzx.c"
 
@@ -395,6 +404,9 @@ static void sp48CpuPokeMemory(uint32_t address, uint32_t value) {
 
 /* Every port read the CPU makes; the RZX tap sits here, after all port merging (D7) */
 static uint32_t sp48CpuReadPort(uint32_t address) {
+#ifdef Z80_BENCH_STRIP_DEBUG
+  return sp48ReadPort(address);
+#endif
   if (rzxMode == RZX_MODE_OFF) return sp48ReadPort(address);
   uint32_t value;
   if (rzxMode == RZX_MODE_PLAY && rzxPlayNextIn(&value) != 0u) return value;
@@ -644,111 +656,36 @@ void sp48HardReset(uint32_t is16k, uint32_t isNtsc) {
   sp48Reset();
 }
 
-static uint32_t sp48ExecutePlayInstruction(void);
-
-uint32_t sp48ExecuteFrame(void) {
-  if (rzxMode == RZX_MODE_PLAY) {
-    /*
-     * RZX playback: one call plays the current RZX frame to its end, or to a desync. The frame
-     * starts where the previous one stopped, so no new machine frame is begun here; the step that
-     * follows a completed picture begins it.
-     */
-    sp48CaptureBusEvents = 0u;
-    z80ClearBusEvents();
-    while (rzxStatus == RZX_STATUS_OK) {
-      sp48ExecutePlayInstruction();
-    }
-    sp48CaptureBusEvents = 1u;
-    return 0u;
-  }
-
-  /* A frame a stop target or the debug loop left mid-way goes on where it stopped */
-  if (sp48FrameCompleted != 0u || sp48FrameBegun == 0u) beginMachineFrame();
-  sp48CaptureBusEvents = 0u;
-  z80ClearBusEvents();
-
-  /*
-   * The frame's completion ends the loop as well as its end tact: the instruction that reaches the
-   * end tact is the one that completes the frame, and a completion that rebases the counter (see
-   * `sp48ShiftTactOrigin`) moves the counter back below the end tact computed here.
-   */
-  const uint32_t frameEndTact = sp48NextFrameStartTact + sp48TactsInCurrentFrame;
-  while (sp48Tacts < frameEndTact) {
-    sp48ExecuteInstruction();
-    /* Checked on the frame's last instruction too: the host reads the reached mark after the call */
-    const uint32_t stop = z80HistoryStopNow();
-    if (sp48FrameCompleted != 0u) break;
-    if (stop != 0u) break;
-  }
-  sp48CaptureBusEvents = 1u;
-  return 0u;
-}
-
 void sp48RenderInstantScreen(void) {
   renderUlaDisplay();
 }
 
-/*
- * A playback frame longer than an EI/retrigger frame ended: the picture is complete, and the next
- * frame starts at this tact, so the interrupt falls on frame tact 0 where the ULA expects it
- * (trap 5). Frames of 4 fetches or fewer complete no picture (D19).
- */
-static void completePlayPicture(void) {
-  sp48FrameCompleted = 1u;
-  renderUlaUntilCurrentTact();
-  sp48NextFrameStartTact = sp48Tacts;
-  sp48Frames++;
-  if (sp48NextFrameStartTact >= SP48_TACT_REBASE_THRESHOLD) {
-    const uint32_t rebase = sp48NextFrameStartTact;
-    sp48ShiftTactOrigin(rebase);
-    sp48TactEpoch += rebase;
-  }
-}
-
-/*
- * One playback step (`.plans/RZX_PLAN.md` §4.2): the interrupt comes from the recording, never
- * from the ULA, and a step that reaches the frame's fetch count runs nothing - it ends the frame.
- */
-static uint32_t sp48ExecutePlayInstruction(void) {
-  const uint32_t step = rzxPlayBeforeStep();
-  if (step == RZX_STEP_NONE) return 0u;
-  if (step == RZX_STEP_BOUNDARY) {
-    if (rzxStatus == RZX_STATUS_FRAME_DONE && rzxPlayTarget > RZX_SHORT_FRAME_FETCHES) {
-      completePlayPicture();
-    }
-    return 0u;
-  }
-  if (sp48FrameCompleted != 0u) {
-    beginMachineFrame();
-  }
-  if (sp48CaptureBusEvents != 0u) {
-    z80ClearBusEvents();
-  }
-  const uint8_t intActive = step == RZX_STEP_RUN_INT ? 1u : 0u;
-  if (intActive != 0u) sp48InterruptsRaised++;
-  sp48InterruptLineActive = intActive;
-  z80SetSigInt(intActive);
-  z80SetTacts(sp48Tacts);
-  z80ExecuteCpuCycle();
-  sp48Tacts = z80GetTacts();
-  z80SetSigInt(0u);
-  sp48InterruptLineActive = 0u;
-  sp48CpuInstructionsExecuted++;
-  sp48CpuFrameSliceInstructions++;
-  return 0u;
-}
+/* The frame loop and the RZX playback steps (zx-spectrum-frame.c) */
+#define ZXS_FRAME_PREFIX sp48
+#define ZXS_BEGIN_FRAME() beginMachineFrame()
+#define ZXS_FRAME_LENGTH sp48TactsInCurrentFrame
+#define ZXS_RENDER_UNTIL_CURRENT_TACT() renderUlaUntilCurrentTact()
+#define ZXS_TACT_REBASE_THRESHOLD SP48_TACT_REBASE_THRESHOLD
+#include "../../../zxSpectrum/wasm/common/zx-spectrum-frame.c"
+/* The debugger's breakpoint flags and in-core loop, `sp48ExecuteUntilStop` (z80-debug-loop.c) */
+#define Z80_DEBUG_LOOP_PREFIX sp48
+#include "../../../../z80/wasm/z80-debug-loop.c"
 
 uint32_t sp48ExecuteInstruction(void) {
+#ifndef Z80_BENCH_STRIP_DEBUG
   if (rzxMode == RZX_MODE_PLAY) {
     return sp48ExecutePlayInstruction();
   }
+#endif
   if (sp48FrameCompleted != 0u) {
     beginMachineFrame();
   }
 
+#ifndef Z80_BENCH_STRIP_DEBUG
   if (sp48CaptureBusEvents != 0u) {
     z80ClearBusEvents();
   }
+#endif
   updateTapeMode();
   const uint8_t intActive = shouldRaiseInterrupt();
   if (intActive != 0u && sp48InterruptLineActive == 0u) {
@@ -759,27 +696,19 @@ uint32_t sp48ExecuteInstruction(void) {
   z80SetTacts(sp48Tacts);
   z80ExecuteCpuCycle();
   sp48Tacts = z80GetTacts();
+#ifndef Z80_BENCH_STRIP_DEBUG
   sp48CpuInstructionsExecuted++;
   sp48CpuFrameSliceInstructions++;
+#endif
   updateTapeMode();
   sp48FrameCompleted = sp48Tacts >= sp48NextFrameStartTact + sp48TactsInCurrentFrame ? 1u : 0u;
+#ifndef Z80_BENCH_STRIP_DEBUG
   if (rzxMode == RZX_MODE_RECORD) {
     rzxRecAfterStep(sp48FrameCompleted);
   }
+#endif
   completeMachineFrame();
   return 0u;
-}
-
-/*
- * RZX: puts the machine at `tact` of its frame, from an input block's T-state field (trap 11).
- * Values past the frame's end are ignored.
- */
-void sp48RzxSetFrameTact(uint32_t tact) {
-  if (tact >= sp48TactsInFrame) return;
-  if (tact > sp48Tacts) {
-    sp48ShiftTactOrigin(-(int64_t)(tact - sp48Tacts));
-  }
-  sp48NextFrameStartTact = sp48Tacts - tact;
 }
 
 void sp48DelayAddressBusAccess(uint32_t address) {
@@ -1030,203 +959,6 @@ uint32_t sp48GetCpuTacts(void) {
   return z80GetTacts() + sp48TactEpoch;
 }
 
-uint32_t sp48GetCpuAf(void) {
-  return z80GetAf();
-}
-
-void sp48SetCpuAf(uint32_t value) {
-  z80SetAf(value);
-}
-
-uint32_t sp48GetCpuBc(void) {
-  return z80GetBc();
-}
-
-void sp48SetCpuBc(uint32_t value) {
-  z80SetBc(value);
-}
-
-uint32_t sp48GetCpuDe(void) {
-  return z80GetDe();
-}
-
-void sp48SetCpuDe(uint32_t value) {
-  z80SetDe(value);
-}
-
-uint32_t sp48GetCpuHl(void) {
-  return z80GetHl();
-}
-
-void sp48SetCpuHl(uint32_t value) {
-  z80SetHl(value);
-}
-
-uint32_t sp48GetCpuIx(void) {
-  return z80GetIx();
-}
-
-void sp48SetCpuIx(uint32_t value) {
-  z80SetIx(value);
-}
-
-uint32_t sp48GetCpuIy(void) {
-  return z80GetIy();
-}
-
-void sp48SetCpuIy(uint32_t value) {
-  z80SetIy(value);
-}
-
-uint32_t sp48GetCpuAfAlt(void) {
-  return z80GetAfAlt();
-}
-
-void sp48SetCpuAfAlt(uint32_t value) {
-  z80SetAfAlt(value);
-}
-
-uint32_t sp48GetCpuBcAlt(void) {
-  return z80GetBcAlt();
-}
-
-void sp48SetCpuBcAlt(uint32_t value) {
-  z80SetBcAlt(value);
-}
-
-uint32_t sp48GetCpuDeAlt(void) {
-  return z80GetDeAlt();
-}
-
-void sp48SetCpuDeAlt(uint32_t value) {
-  z80SetDeAlt(value);
-}
-
-uint32_t sp48GetCpuHlAlt(void) {
-  return z80GetHlAlt();
-}
-
-void sp48SetCpuHlAlt(uint32_t value) {
-  z80SetHlAlt(value);
-}
-
-uint32_t sp48GetCpuIr(void) {
-  return z80GetIr();
-}
-
-void sp48SetCpuIr(uint32_t value) {
-  z80SetIr(value);
-}
-
-uint32_t sp48GetCpuWz(void) {
-  return z80GetWz();
-}
-
-void sp48SetCpuWz(uint32_t value) {
-  z80SetWz(value);
-}
-
-/* --- The return address of the most recent CALL/RST, for step-out. See the shadow stack
-   --- in z80.c: without it this machine has no step-out target at all, because the
-   --- TypeScript CPU's push never runs when execution happens inside the core. */
-uint32_t sp48GetStepOutAddress(void) { return z80GetStepOutAddress(); }
-/* --- Running interrupt handlers (z80.c): source stepping runs them outside the step */
-uint32_t sp48GetInterruptDepth(void) { return z80GetInterruptDepth(); }
-
-uint32_t sp48GetCpuPc(void) {
-  return z80GetPc();
-}
-
-void sp48SetCpuPc(uint32_t value) {
-  z80SetPc(value);
-}
-
-uint32_t sp48GetCpuSp(void) {
-  return z80GetSp();
-}
-
-void sp48SetCpuSp(uint32_t value) {
-  z80SetSp(value);
-}
-
-uint32_t sp48GetCpuHalted(void) {
-  return z80GetHalted();
-}
-
-/* Snapshot loading: the HALT state and the EI delay (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.4) */
-void sp48SetCpuHalted(uint32_t value) {
-  z80SetHalted(value);
-}
-
-uint32_t sp48GetCpuEiBacklog(void) {
-  return z80GetEiBacklog();
-}
-
-void sp48SetCpuEiBacklog(uint32_t value) {
-  z80SetEiBacklog(value);
-}
-
-uint32_t sp48GetCpuIff2(void) {
-  return z80GetIff2();
-}
-
-void sp48SetCpuIff2(uint32_t value) {
-  z80SetIff2(value);
-}
-
-uint32_t sp48GetCpuPrefix(void) {
-  return z80GetPrefix();
-}
-
-uint32_t sp48GetCpuIff1(void) {
-  return z80GetIff1();
-}
-
-void sp48SetCpuIff1(uint32_t value) {
-  z80SetIff1(value);
-}
-
-uint32_t sp48GetCpuInterruptMode(void) {
-  return z80GetInterruptMode();
-}
-
-void sp48SetCpuInterruptMode(uint32_t value) {
-  z80SetInterruptMode(value);
-}
-
-uint32_t sp48GetCpuRetExecuted(void) {
-  return z80GetRetExecuted();
-}
-
-uint32_t sp48GetCpuRetnExecuted(void) {
-  return z80GetRetnExecuted();
-}
-
-/* The per-instruction data-access log (z80.c) */
-uint32_t sp48GetAccessLogPtr(void) {
-  return z80AccessLogPtr();
-}
-
-uint32_t sp48GetAccessLogCount(void) {
-  return z80GetAccessLogCount();
-}
-
-uint32_t sp48GetAccessLogOverflows(void) {
-  return z80GetAccessLogOverflows();
-}
-
-uint32_t sp48GetLastPortAddress(void) {
-  return z80GetLastPortAddress();
-}
-
-uint32_t sp48GetLastPortValue(void) {
-  return z80GetLastPortValue();
-}
-
-uint32_t sp48GetLastPortIsWrite(void) {
-  return z80GetLastPortIsWrite();
-}
-
 uint32_t sp48GetPortFeValue(void) {
   return sp48PortFeValue;
 }
@@ -1307,3 +1039,45 @@ static inline void sp48HistoryContext(uint32_t kind, uint8_t *out) {
 #define Z80_HISTORY_FRAME() sp48Frames
 #define Z80_HISTORY_FRAME_TACT() currentFrameTact()
 #include "../../../../z80/wasm/z80-history.c"
+
+// -----------------------------------------------------------------------------
+// The access profile (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §2.2, D4): the shared module, with
+// this machine's physical layout. Time is in CPU T-states (D8).
+//
+// The 48K/16K: the profile offset is the address - `sp48Memory` is the whole machine. A write to the
+// ROM does not reach memory, so it maps nowhere.
+//
+// The Timex: HOME ($00000-$0FFFF), EXROM ($10000-$11FFF), DOCK ($12000-$21FFF), as the chunk map
+// (`timexRebuildChunkMap`) sees them; a chunk with nothing behind it, and a write to a read-only one,
+// map nowhere (`src/common/profile/layouts/timex.ts` names them).
+// -----------------------------------------------------------------------------
+
+#ifdef SP48_SCLD
+#define SP48_PROFILE_EXROM_BASE 0x10000u
+#define SP48_PROFILE_DOCK_BASE 0x12000u
+
+static inline int32_t sp48ProfilePhys(uint32_t address, uint32_t write) {
+  if (sp48TimexChunkMapValid == 0u) timexRebuildChunkMap();
+  const uint32_t a = address & 0xffffu;
+  const uint32_t chunk = a >> 13u;
+  if (write != 0u && sp48TimexChunkWritable[chunk] == 0u) return -1;
+  switch (sp48TimexChunkSource[chunk]) {
+    case TIMEX_CHUNK_HOME: return (int32_t)a;
+    case TIMEX_CHUNK_EXROM: return (int32_t)(SP48_PROFILE_EXROM_BASE + (a & 0x1fffu));
+    case TIMEX_CHUNK_DOCK: return (int32_t)(SP48_PROFILE_DOCK_BASE + a);
+    default: return -1;
+  }
+}
+
+#define Z80_PROFILE_FLAG_BYTES 0x22000u
+#define Z80_PROFILE_POOL_PAGES 17u
+#define Z80_PROFILE_PHYS_READ(address) sp48ProfilePhys((uint32_t)(address), 0u)
+#define Z80_PROFILE_PHYS_WRITE(address) sp48ProfilePhys((uint32_t)(address), 1u)
+#else
+#define Z80_PROFILE_FLAG_BYTES 0x10000u
+#define Z80_PROFILE_POOL_PAGES 8u
+#define Z80_PROFILE_PHYS_READ(address) ((int32_t)((address) & 0xffffu))
+#define Z80_PROFILE_PHYS_WRITE(address) (((address) & 0xffffu) >= 0x4000u ? (int32_t)((address) & 0xffffu) : -1)
+#endif
+#define Z80_PROFILE_FRAME_TICKS() cpu.tacts
+#include "../../../../z80/wasm/z80-profile.c"

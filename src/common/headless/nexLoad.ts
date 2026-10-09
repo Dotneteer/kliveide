@@ -1,5 +1,21 @@
 import type { NexFileContents } from "@renderer/appIde/DocumentPanels/Next/nexFileLoader";
-import type { NextMachine } from "./machines";
+
+/*
+ * Starting a NEX file without NextZXOS (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D16): moved here from
+ * the Next harness, which uses it for its pixel tests, so `klive run game.nex` starts a program the
+ * same way. The IDE's `nex-run` boots NextZXOS and types `.nexload` instead (see below).
+ */
+
+/** The part of the Next machine the loader drives */
+export type NexLoadMachine = {
+  pc: number;
+  sp: number;
+  iff1: boolean;
+  iff2: boolean;
+  doWritePort(port: number, value: number): void;
+  doReadPort(port: number): number;
+  doWriteMemory(address: number, value: number): void;
+};
 
 /** NextReg select / data ports. Writing through them is the hardware path. */
 const NEXTREG_SELECT = 0x243b;
@@ -16,18 +32,18 @@ export type DirectLoadResult = {
   differencesFromNexload: string[];
 };
 
-export function writeNextReg(machine: NextMachine, reg: number, value: number): void {
+export function writeNextReg(machine: NexLoadMachine, reg: number, value: number): void {
   machine.doWritePort(NEXTREG_SELECT, reg & 0xff);
   machine.doWritePort(NEXTREG_DATA, value & 0xff);
 }
 
-export function readNextReg(machine: NextMachine, reg: number): number {
+export function readNextReg(machine: NexLoadMachine, reg: number): number {
   machine.doWritePort(NEXTREG_SELECT, reg & 0xff);
   return machine.doReadPort(NEXTREG_DATA);
 }
 
 /**
- * Test-only NEX loader. **Not** what the IDE does.
+ * A NEX loader without NextZXOS. **Not** what the IDE does.
  *
  * `nex-run` boots NextZXOS and types `.nexload`, which takes seconds of emulated time and needs an
  * SD card image. For a pixel test the interesting part starts at the entry point, so this loader
@@ -39,7 +55,11 @@ export function readNextReg(machine: NextMachine, reg: number): number {
  * interrupt mode, sysvars) is listed in the result. Tier 2 runs the real `nex-run` path to catch
  * a test that silently depends on any of it.
  */
-export function loadNexDirect(machine: NextMachine, nex: NexFileContents): DirectLoadResult {
+export function loadNexDirect(
+  machine: NexLoadMachine,
+  nex: NexFileContents,
+  options: { skipLoadingScreens?: boolean } = {}
+): DirectLoadResult {
   const { header } = nex;
 
   // --- Copy each bank through slot 6/7 ($C000-$FFFF), the one window never needed by the loader.
@@ -53,7 +73,9 @@ export function loadNexDirect(machine: NextMachine, nex: NexFileContents): Direc
 
   // --- The loading screens and palette are not applied: none of the visual tests use them, and
   // --- applying them only here would make Tier 1 and Tier 2 disagree about the first frame.
-  if (header.screenBlockFlags & 0x1f) {
+  // --- `klive run` skips them and says so; a pixel test must not depend on them
+  const hasScreens = !!(header.screenBlockFlags & 0x1f);
+  if (hasScreens && !options.skipLoadingScreens) {
     throw new Error("loadNexDirect does not support NEX loading screens.");
   }
 
@@ -75,7 +97,8 @@ export function loadNexDirect(machine: NextMachine, nex: NexFileContents): Direc
       "ROM in slots 0-1 is whatever hard reset selected, not NextZXOS's 48K BASIC ROM",
       "NextReg values set by the boot firmware and NextZXOS are at hardware reset defaults",
       "interrupts are disabled and the interrupt mode is the reset default",
-      "no system variables are initialised"
+      "no system variables are initialised",
+      ...(hasScreens ? ["the loading screen is not shown"] : [])
     ]
   };
 }

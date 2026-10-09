@@ -5,6 +5,7 @@
  * `Z88WasmV2Loader.ts`. See `.plans/ZX8081_WASM_PLAN.md`.
  */
 
+import { WASM_CORE_CONDITION_PLAN_WORDS } from "@emu/machines/wasmDebugLoopLayout";
 import { CONDITION_CORE_EXPORTS, type ConditionCoreExports } from "@emu/machines/conditionStore";
 import { Z80_HISTORY_CORE_EXPORTS, type Z80HistoryCoreExports } from "@emu/machines/history/WasmHistoryReader";
 import { WASM_ACCESS_LOG_CAPACITY } from "@emu/machines/wasmAccessLog";
@@ -54,6 +55,8 @@ export type Zx8081WasmV2Views = {
   readonly accessLog: Uint32Array;
   /** The debugger's breakpoint flags, one word per address (`DebugSupport.breakpointFlags`) */
   readonly breakpointFlags: Uint16Array;
+  /** The debugger's condition plan (`z80-debug-loop.c`, `WASM_CORE_CONDITION_PLAN_WORDS` words) */
+  readonly condPlan: Uint32Array;
 };
 
 export type Zx8081WasmV2Runtime = Zx8081WasmV2Views & {
@@ -72,6 +75,8 @@ export const zx8081WasmV2RequiredExports = [
   "zx8081ExecuteFrame",
   "zx8081ExecuteInstruction",
   "zx8081ExecuteUntilStop",
+  "zx8081GetDebugOpStart",
+  "zx8081CondPlanPtr",
   "zx8081GetAccessLogCount",
   "zx8081GetAccessLogPtr",
   "zx8081GetBaseClockFrequency",
@@ -241,6 +246,7 @@ export function createZx8081WasmV2Views(
   check("tapeData", exports.zx8081TapeDataPtr(), tapeSize);
   check("accessLog", exports.zx8081GetAccessLogPtr(), WASM_ACCESS_LOG_CAPACITY * 4);
   check("breakpointFlags", exports.zx8081BreakpointFlagsPtr(), 0x1_0000 * 2);
+  check("condPlan", exports.zx8081CondPlanPtr(), WASM_CORE_CONDITION_PLAN_WORDS * 4);
   return {
     memoryBuffer,
     rom: new Uint8Array(memoryBuffer, exports.zx8081RomPtr(), romSize),
@@ -251,7 +257,8 @@ export function createZx8081WasmV2Views(
     keyboardLines: new Uint8Array(memoryBuffer, exports.zx8081KeyboardLinesPtr(), ZX8081_WASM_V2_KEYBOARD_LINE_COUNT),
     tapeData: new Uint8Array(memoryBuffer, exports.zx8081TapeDataPtr(), tapeSize),
     accessLog: new Uint32Array(memoryBuffer, exports.zx8081GetAccessLogPtr(), WASM_ACCESS_LOG_CAPACITY),
-    breakpointFlags: new Uint16Array(memoryBuffer, exports.zx8081BreakpointFlagsPtr(), 0x1_0000)
+    breakpointFlags: new Uint16Array(memoryBuffer, exports.zx8081BreakpointFlagsPtr(), 0x1_0000),
+    condPlan: new Uint32Array(memoryBuffer, exports.zx8081CondPlanPtr(), WASM_CORE_CONDITION_PLAN_WORDS)
   };
 }
 

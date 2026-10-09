@@ -1,0 +1,255 @@
+---
+description: "Z80 unit tests in DeZog's conventions, with the Klive assembler or sjasmplus: a headless, deterministic runner, a Unit Tests panel with click-to-source, T-states per test, Debug a test, and Run with coverage."
+---
+
+import { Callout } from 'nextra/components'
+
+# Unit Tests
+
+Klive runs **Z80 unit tests** written in the conventions of [DeZog](https://github.com/maziac/DeZog),
+the VS Code debugger, so a DeZog unit-test project runs in Klive unchanged. Tests work with both the
+**Klive assembler** and **sjasmplus**.
+
+A test is a small routine of your program. Klive runs every test on a fresh machine of its own, in
+the background, without touching the emulator you are working in, and reports each one as passed,
+failed or in error, with the values that made it fail and the **T-states** it took. A failing test
+can be **debugged** in the emulator, with every debugger feature, reverse debugging included.
+
+## The idea in one example
+
+```z80klive
+#include "unit_tests.kz80.asm"
+
+    .org $8000
+
+; --- The program under test
+Double:
+    add a,a
+    ret
+
+; --- The test frame, and the code that runs before every test
+    UNITTEST_INITIALIZE()
+    ret
+
+; --- The tests
+    .module MathTests
+UT_DoubleOfFive:
+    ld a,5
+    call Double
+    TEST_A(10)
+    TC_END()
+
+UT_DoubleOverflows:
+    ld a,$90
+    call Double
+    TEST_FLAG_NZ()
+    TC_END()
+    .endmodule
+```
+
+- A **test** is a routine whose label starts with `UT_`. It ends with `TC_END()`, never with `RET`.
+- Its **suite** is its module: the two tests above are `MathTests.UT_DoubleOfFive` and
+  `MathTests.UT_DoubleOverflows`. A test outside any module is in the root suite.
+- **Assertions** such as `TEST_A(10)` check a value. A failing one stops the test and names the
+  values: `ASSERTION failed at code.kz80.asm:20: A == B  (A=$0A, B=$0B)`. In every assertion the
+  first register holds the actual value and the second the expected one.
+- `UNITTEST_INITIALIZE()` lays down the test frame once. The code after it, up to its `RET`, is your
+  **initialisation code**: it runs before *every* test, so each test starts from the same state.
+
+## Setting up a project
+
+Open the **Testing** activity (the beaker in the activity bar), open its **…** menu, and choose **Add
+unit-test support**, or run the `test-init` command. It:
+
+- writes Klive's include file next to the build root: `unit_tests.kz80.asm` for the Klive assembler,
+  `unit_tests.inc` for sjasmplus. An existing `unit_tests.inc` (a DeZog project's own) is kept as it
+  is;
+- adds the include line at the top of the build root, and, for sjasmplus, the `SLDOPT COMMENT` line
+  that exports the assertion comments to the SLD file.
+
+Then invoke `UNITTEST_INITIALIZE()` once, follow it with your initialisation code ending in `RET`,
+and write your `UT_` routines.
+
+The include file is part of your project: read it, and adapt it if you need to. Klive's runner
+depends only on the labels it lays down, never on how the macros are written, so any include that
+defines DeZog's labels works, DeZog's own included.
+
+<Callout type="info">
+**sjasmplus** projects keep DeZog's syntax exactly: `TEST_A 10`, `TC_END`, `UNITTEST_INITIALIZE`,
+`MODULE`/`ENDMODULE`. The **Klive assembler** writes the same macros with its own macro syntax, with
+parentheses: `TEST_A(10)`, `TC_END()`. That is the only difference between the two.
+</Callout>
+
+## Running tests
+
+The **Unit Tests** panel shows the tests of the last successful build: suites, tests, their status,
+their T-states and, under a test that did not pass, its message. It refreshes after every build. Its
+toolbar runs and stops tests:
+
+| Button | What it does |
+|---|---|
+| **Run all** | Builds the project, then runs every test |
+| **Run failed** | Runs again the tests that failed or ended in an error last time |
+| **Debug** | Debugs the selected test in the emulator |
+| **Stop** | Stops the run in progress |
+
+- A click on a test goes to its label in the editor; a click on a message goes to the failing line,
+  which for an assertion is the line that invoked the assertion macro.
+- A double-click runs one test. The row menu has **Run**, **Debug**, **Copy result** and **Reveal in
+  Disassembly**.
+- The filter matches test names and messages. The badge on the panel's header counts the tests that
+  did not pass.
+
+Every run also writes its report to the **Tests** output pane: one line per test, the failures with
+links to their lines, the `LOGPOINT` output of each test, and a summary.
+
+The [commands](#commands) do the same from the prompt and from KSX scripts.
+
+### How a test runs
+
+A run first builds the **base state** once: it resets the machine, lets the ROM boot to BASIC (as a
+normal run of your program does, so ROM routines find their system variables), and loads every
+segment of your program, banked segments included. Then, for each test:
+
+1. the machine goes back to the base state;
+2. the initialisation code runs, as a subroutine;
+3. the test's address goes into the `CALL` of the test wrapper (`UNITTEST_CALL_ADDR`);
+4. the wrapper runs: it disables interrupts, switches to the tests' own stack and calls the test.
+
+Interrupts are off while a test runs, as in DeZog. A test that needs them executes `EI` itself.
+
+### Outcomes
+
+| Result | When |
+|---|---|
+| **Passed** | The test reaches `TC_END()` |
+| **Failed** | An assertion fails, in an assertion macro or any other `ASSERTION` comment of the program |
+| **Error: returned** | The test ended with `RET` instead of `TC_END()` |
+| **Error: stack** | The test used up its 50-word stack, or popped more than it pushed |
+| **Error: breakpoint** | A `WPMEM` watchpoint fired |
+| **Error: HALT** | The CPU executed `HALT` with interrupts disabled, so it could never continue |
+| **Error: timeout** | The test did not finish within its time limit |
+| **Error: setup** | The initialisation code did not return |
+
+`ASSERTION`, `WPMEM` and `LOGPOINT` comments are always on during a run, whatever the Breakpoints
+view's switches say. Your own breakpoints are ignored when tests run, and honoured when you debug
+one.
+
+### Deterministic results and T-states
+
+The time limit is **emulated** time: one second of the machine's clock by default (3,500,000 T-states
+on the 48K). A test therefore gets the same result on a fast laptop and on a slow build server, and a
+run gives exactly the same results and T-states every time. The T-states shown for a test count from
+the wrapper's first instruction to `TC_END()`.
+
+## Debugging a test
+
+**Debug** (or `test-debug Suite.UT_name`) runs one test in the emulator under the debugger: the
+program is injected as for `debug`, the initialisation code runs, and the debugger stops at the
+test's **first instruction**. From there you step, set breakpoints, watch values and step back as
+usual. When the test reaches `TC_END()` the machine stops with "UT_name passed"; a failing assertion
+stops on its line, naming the values.
+
+<Callout type="warning">
+Debugging a test works on the ZX Spectrum 48K, 128K and +2A/+3/+2E/+3E. On the ZX Spectrum Next,
+where a build starts through a `.nex` file, run the tests instead; the runner supports the Next.
+</Callout>
+
+## Run with coverage
+
+**Run all tests with coverage** (in the Testing activity's **…** menu, or `test-run -coverage`)
+records [code coverage](/working-with-ide/code-coverage) while the tests run and puts the result into
+the emulator's coverage when the run ends: the editor then shows the lines the tests executed, and
+`coverage status` and `coverage export` report and export it. Coverage is an
+[advanced debugging feature](/howto/advanced-debugging).
+
+## Configuration
+
+A project can set how its tests run in a `unitTests` section of `klive.project`. Every field is
+optional:
+
+```json
+{
+  "unitTests": {
+    "timeout": 2,
+    "boot": "rom",
+    "stopAtStart": true,
+    "machine": "sp128",
+    "model": "pal",
+    "include": ["MathTests.*"]
+  }
+}
+```
+
+| Field | Meaning | Default |
+|---|---|---|
+| `timeout` | The time limit of one test, in seconds of emulated time | `1` |
+| `boot` | `rom`: boot to BASIC before loading the program; `none`: reset only | `rom`; `none` on the Next |
+| `stopAtStart` | Debugging a test stops at its first instruction | `true` |
+| `machine`, `model` | The machine the tests run on | the project's machine |
+| `include` | The tests a run runs by default, as patterns with `*` | every test |
+
+Edit the section by hand; Klive keeps it when it saves the project file.
+
+## Machines
+
+Tests run on the ZX Spectrum 48K and 16K, 128K, +2A/+3/+2E/+3E and the ZX Spectrum Next. On the
+banked machines a test may live in a bank: Klive writes every bank's code into its bank, and your
+initialisation code pages it in (`OUT ($7FFD),A` on the 128K, `NEXTREG $56,n` on the Next).
+
+## The macros
+
+The include defines these labels and macros, with the meaning DeZog documents. The Klive assembler
+writes them with parentheses; sjasmplus without.
+
+| Macro | Checks |
+|---|---|
+| `UNITTEST_INITIALIZE()` | Lays down the test frame; your initialisation code follows it |
+| `TC_END()` | Ends a test |
+| `TEST_A(value)`, `TEST_A_UNEQUAL(value)` | `A` is (is not) `value` |
+| `TEST_REG(reg, value)` | An 8-bit register other than `A` is `value` |
+| `TEST_DREG(dreg, value)` | A register pair other than `IX` is `value` |
+| `TEST_MEMORY_BYTE(addr, value)` | The byte at `addr` is `value` |
+| `TEST_MEMORY_WORD(addr, value)` | The word at `addr` is `value` |
+| `TEST_STRING(addr, string, term0)` | The bytes at `addr` are `string`, followed by a 0 when `term0` is not 0 |
+| `TEST_STRING_PTR(addr, string_addr, term0)` | The same, with the expected string at `string_addr`, 0-terminated |
+| `TEST_MEM_CMP(addr1, addr2, count)` | `count` bytes at `addr1` equal those at `addr2` |
+| `TEST_FLAG_Z()`, `TEST_FLAG_NZ()` | The Z flag is set (clear) |
+| `TEST_FAIL()` | Always fails |
+| `DEFAULT_REGS()` | Loads known values into `A`, `BC`, `DE` and `HL` |
+| `TEST_UNCHANGED_A()` … `TEST_UNCHANGED_BC_DE_HL()` | The registers still hold `DEFAULT_REGS`' values |
+| `USE_ALL_REGS()` | Fills every register, the alternate set and `IX`/`IY` too |
+
+The test frame's labels are `UNITTEST_TEST_WRAPPER`, `UNITTEST_CALL_ADDR`,
+`UNITTEST_TEST_READY_SUCCESS`, `UNITTEST_START`, and the stack's `UNITTEST_STACK_BOTTOM` and
+`UNITTEST_STACK`. In the Klive include, `UNITTEST_INITIALIZE()` defines them in the global scope with
+the assembler's `.`-prefixed labels (`.UNITTEST_START:`), which are global even inside a macro.
+
+## Commands
+
+| Command | Alias | What it does |
+|---|---|---|
+| `test-list` | `tl` | Lists the tests of the last build, by suite |
+| `test-run [<pattern>] [-failed] [-coverage]` | `tr` | Builds and runs the tests; a pattern such as `MathTests.*` selects some |
+| `test-debug <test>` | `td` | Debugs one test in the emulator |
+| `test-init` | | Adds unit-test support to the project |
+| `test-junit <file> [-notimestamp]` | | Writes the last run's results as JUnit XML (the Testing activity's **Export results as JUnit...**) |
+
+See the [Commands Reference](/commands-reference#test-list).
+
+## Tests in CI
+
+`klive test` runs the same tests from a terminal or a CI job, without the IDE, and writes JUnit and
+LCOV files for the CI's dashboards. See [Unit Tests on the Command Line](/working-with-ide/unit-tests-cli).
+
+## Coming from DeZog
+
+- Test sources, labels, suites and macro names are DeZog's. Klive's includes are its own, written for
+  Klive; a DeZog project's `unit_tests.inc` keeps working with sjasmplus.
+- `launch.json` is not read: the `unitTests` section of `klive.project` holds the time limit and the
+  other settings.
+- The time limit is emulated time, not wall time, so a test cannot time out because a computer is
+  busy.
+- Klive reports each test's T-states, and runs tests on a machine of their own, so a run never
+  disturbs the emulator.
+- DeZog's tests run only inside VS Code; Klive's also run [in CI](/working-with-ide/unit-tests-cli).

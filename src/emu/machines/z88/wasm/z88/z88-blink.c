@@ -369,6 +369,10 @@ void z88RaiseBatteryLow(void) {
 
 /* The CPU's port cycles: recorded for the CPU panel and the I/O breakpoints (z88-memory.c) */
 static uint32_t z88CpuReadPort(uint32_t address) {
+#ifdef Z80_BENCH_STRIP_DEBUG
+  /* Benchmark-only (`z80.c`): no bus record */
+  return z88BlinkReadPort(address);
+#endif
   z88BusIoReadPort = (uint16_t)address;
   const uint32_t value = z88BlinkReadPort(address);
   z88BusIoReadValue = (uint8_t)value;
@@ -377,9 +381,11 @@ static uint32_t z88CpuReadPort(uint32_t address) {
 }
 
 static void z88CpuWritePort(uint32_t address, uint32_t value) {
+#ifndef Z80_BENCH_STRIP_DEBUG
   z88BusIoWritePort = (uint16_t)address;
   z88BusIoWriteValue = (uint8_t)value;
   z88BusFlags |= Z88_BUS_IO_WRITE_PORT | Z88_BUS_IO_WRITE_VALUE;
+#endif
   z88BlinkWritePort(address, value);
 }
 

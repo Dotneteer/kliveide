@@ -1,0 +1,39 @@
+#!/bin/sh
+# The `klive` command line (.plans/UNIT_TESTS_CLI_PLAN.md D1, D11): Klive's own binary in Node mode
+# runs the CLI bundle - no window, no GPU, no display. This launcher sits in the app's
+# resources/cli folder and finds the app relative to itself, wherever it was installed, also when it
+# is reached through a symlink (/usr/local/bin/klive, /usr/bin/klive).
+
+# --- Follow symlinks to the real launcher
+SELF="$0"
+while [ -L "$SELF" ]; do
+  LINK=$(readlink "$SELF")
+  case "$LINK" in
+    /*) SELF="$LINK" ;;
+    *) SELF="$(dirname "$SELF")/$LINK" ;;
+  esac
+done
+CLI_DIR=$(cd "$(dirname "$SELF")" && pwd)
+RESOURCES=$(dirname "$CLI_DIR")
+
+# --- The app's binary: KLIVE_ELECTRON, the macOS bundle's, or the Linux install's
+if [ -n "$KLIVE_ELECTRON" ]; then
+  APP="$KLIVE_ELECTRON"
+elif [ -d "$RESOURCES/../MacOS" ]; then
+  APP="$RESOURCES/../MacOS/Klive IDE"
+else
+  APP="$RESOURCES/../klive-ide"
+fi
+if [ ! -x "$APP" ]; then
+  echo "klive: the Klive IDE binary was not found at $APP (set KLIVE_ELECTRON to its path)." >&2
+  exit 4
+fi
+
+# --- The bundle: inside the asar, or in the plain app folder of a build without one
+if [ -e "$RESOURCES/app.asar" ]; then
+  SCRIPT="$RESOURCES/app.asar/out/main/cli.js"
+else
+  SCRIPT="$RESOURCES/app/out/main/cli.js"
+fi
+
+ELECTRON_RUN_AS_NODE=1 exec "$APP" "$SCRIPT" "$@"

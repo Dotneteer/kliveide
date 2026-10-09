@@ -331,6 +331,10 @@ static inline uint32_t z80HistoryCurrentPhase(void) {
  * cycle that reaches the target still reports it.
  */
 static uint32_t z80HistoryStopNow(void) {
+#ifdef Z80_BENCH_STRIP_DEBUG
+  /* Benchmark-only (z80.c): no stop target can be armed */
+  return 0u;
+#endif
   const uint32_t state = z80HistoryHeader.stopState;
   if (state == 0u) return 0u;
   if ((state & Z80_HISTORY_STOP_REACHED) != 0u) return 1u;

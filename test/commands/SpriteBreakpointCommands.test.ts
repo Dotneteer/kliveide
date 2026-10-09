@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { SetBreakpointCommand, breakpointCommandSpec } from "@renderer/appIde/commands/BreakpointCommands";
+import {
+  SetBreakpointCommand
+} from "@renderer/appIde/commands/BreakpointCommands";
+import { breakpointCommandSpec } from "@common/utils/breakpoint-spec";
 import { createMockContext } from "./test-helpers/mock-context";
 import type { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext";
 import { ValidationMessageType } from "@renderer/abstractions/ValidationMessageType";

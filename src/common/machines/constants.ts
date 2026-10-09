@@ -116,6 +116,14 @@ export const MF_EXEC_HISTORY = "execHistory";
  */
 export const MF_REVERSE_DEBUG = "reverseDebug";
 
+/**
+ * Whether the machine's core keeps an access profile: code coverage, the memory heat map and the
+ * profiler's time (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D15). Debug -> Code Coverage, the
+ * `coverage` commands, the editor strip, the disassembly cell and the memory view's Heat selector
+ * gate on this; set per core once its mapping test passes (Phase 2).
+ */
+export const MF_PROFILE = "profile";
+
 // Available custom tool keys
 export const CT_DISASSEMBLER = "disassembler";
 export const CT_CUSTOM_DISASSEMBLER = "customDisassembler";

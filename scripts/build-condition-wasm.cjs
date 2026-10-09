@@ -12,23 +12,11 @@ const { spawnSync } = require("node:child_process");
 const { acquireWasmBuildLock } = require("./wasm-build-lock.cjs");
 
 const root = resolve(__dirname, "..");
+const { Z80_CONDITION_EXPORTS } = require("./z80-condition-exports.cjs");
 const source = resolve(root, "src/emu/z80/wasm/z80-condition.c");
 const output = resolve(root, "src/emu/z80/wasm/dist/condition-test.wasm");
 
-const exportsList = [
-  "condArenaPtr",
-  "condArenaCapacity",
-  "condSlotTablePtr",
-  "condSlotCapacity",
-  "condMaxProgramWords",
-  "condGetToken",
-  "condSetToken",
-  "condGetLastStatus",
-  "condEvaluate",
-  "condEvaluateValue",
-  "condSetEnv",
-  "condPeek"
-];
+const exportsList = Z80_CONDITION_EXPORTS;
 
 function buildConditionWasm({
   compiler = process.env.Z80_WASM_CC || "clang",

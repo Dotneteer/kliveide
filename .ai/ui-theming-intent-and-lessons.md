@@ -39,7 +39,7 @@ These were decided by the project author. Changing them is a product decision, n
 | Sprite editor layout | **Document editors are exempt from the `Layout freedom` rule above, which governs the shell.** The sprite editor was rebuilt as one CSS grid — tool rail, pane-fitted canvas with rulers, right inspector, sheet browser — because its canvas was capped at 513px however wide the pane was, so the editor got *emptier* as the window grew. A workspace whose content cannot use its own pane is not fixable by redrawing. |
 | Modal dialogs | **A floating tool panel, not a lifted card.** Header and footer are flat `--surface-chrome` at `--strip-panelHeader` (30px) with `--border-default` seams — the shared `PanelHeader` idiom — an 11px/600 uppercase title, `--radius-md`, and the accent on **one chip** behind an optional header glyph (`ModalProps.iconName`), never a slab. Dialogs were never in the modernization and had to be brought in wholesale; the four treatments were prototyped and the author chose this one. |
 | Overflow (scroll) shadow | **6px, a 1px hairline over a gradient**, app-wide via `AttachedShadow`. The author chose the height against 14/8/6/4/1px. It says "there is content above", it does not dim the first row. |
-| Sidebar "..." menu and panel badges | **Extension points exist, unused by default** (`Activity.commands`, `SideBarPanelInfo.badge`). An activity with no commands renders **no button at all**. Badges so far: Breakpoints, Watch. |
+| Sidebar "..." menu and panel badges | **Extension points exist, unused by default** (`Activity.commands`, `SideBarPanelInfo.badge`). An activity with no commands renders **no button at all**. The Testing activity is the first with commands (`TestingCommands`: Add unit-test support and the runs). Badges so far: Breakpoints, Watch (neutral counts) and Unit Tests (failures, `tone="error"`, so it is absent when everything passes). |
 | Next palette display | **Four device sections, one fixed-cell grid.** The sidebar panel is ULA / Layer 2 / Sprites / Tilemap — *one palette with two banks each*, never eight peers — each row carrying a 32px thumbnail of its whole palette and a two-segment bank control: the fill is the bank you are *looking at*, an accent ring is the bank the machine is *drawing with*. The ring marks the **exception** — the two coincide by default, so it only becomes visible once the view is pinned away from the hardware. `NextPaletteViewer` has no "small" mode and is **sized from its swatch** (`cellSize`, 14px in the sidebar), never from its container. |
 | Navigation history (Go Back / Forward) | **Toolbar controls, not per-area buttons** (the author chose Option A over buttons in each document header): Back, a narrow chevron that opens the history list, and Forward, grouped with no internal gap at the **start** of the IDE toolbar, then a separator. Neutral `--color-toolbarbutton` glyphs; the tooltip names the target and the shortcut. The list is a portalled popover — see "A Menu-Like List With A Header". |
 | Register/state panel colour | **A third exception, added after Phase 10** at the author's request, panel by panel — Z80 CPU, ULA & I/O, Next Registers, Next Memory Mapping, Call Stack, Watch, Breakpoints, the Copper panel and Copper List, the Sprite Inspector, the Tilemap Inspector, the Layer 2 Inspector, the Layers document and the Execution History (whose plans asked for it). Every *value* takes the primary accent (`--color-state-value`); labels stay `--data-label`. **One hue, plus the secondary (`--color-state-value-alt`) wherever a row carries two kinds of number with nothing but position to tell them apart** — `NextRegPanel`'s previous value, `MemMappingPanel`'s page offsets, `CallStackPanel`'s stack slot beside its return address. Contrast the Z80 shadow bank, which asked for the same treatment and was refused — `AF'` is *named* differently from `AF`, so the hue would buy nothing. Panels that have not been converted stay neutral; convert one by passing `valueXclass`/`iconFill`, never by restyling the shared primitives. |
@@ -197,6 +197,34 @@ borrows the gutter dot's colour rather than picking a position in the local hue 
 
 A changed byte is also not painted as a status: it is the normal result of a program running, and
 finding it is the whole point of the view.
+
+**The heat map is the one per-byte mark that fills**, and the reason is the rule above turned round:
+a changed byte is a fact about *that byte*, while heat is a pattern across a region - a band of fills
+*is* the information. Three things keep it readable:
+
+- **It goes behind the text, not over it.** A heat cell is an empty box at `z-index: -1` inside
+  `.hexValues`, which is already a stacking context (`position: relative; z-index: 1`), so the row's
+  one text node paints on top. No copy of the byte's text, so nothing can drift out of alignment. A
+  cell spans its byte and half the gap each side, so a hot run reads as one band.
+- **Its ramp is fixed and accent-independent** (`HEAT` in L1, three hues: execute warm, read
+  green-teal, write violet). An accent ramp would collide with the changed-byte mark and the hover,
+  which are the secondary accent in the same rows. L2 derives the five steps by mixing each hue into
+  `--surface-panel` (`HEAT_RAMP_PCT`), so the light theme is derived, the steps are monotonic in
+  lightness by construction (lighter in dark, darker in light), and they are opaque - alternate row
+  tints do not change a step's meaning.
+- **The text never changes colour over it.** The ramp stops where `--text-primary` still has 3:1
+  over the hottest step in both tones; `test/theming/heat-ramp.test.ts` holds monotonicity, that
+  contrast, the hues apart at every step and the ramp independent of the accent. A self-modified byte
+  takes an *inset* outline (`box-shadow`), which shows on any step and moves no text.
+
+**Coverage marks say "ran" in one colour everywhere.** The editor strip (Monaco's
+`linesDecorationsClassName` column, so the glyph margin stays the breakpoints') and the disassembly's
+coverage cell both use `--color-coverage-covered` (the success green: DeZog's convention, and the
+meaning). Code that never ran is a hollow mark in `--text-tertiary` - an absence, not a problem, so
+never a status hue - and only where the absence is news: the editor shows it, because every line of a
+source file is the user's own; the disassembly does not, because most of a ROM listing never runs and
+a hollow mark on every such row would bury the ones that did. A cell like this is reserved on every
+row once there is data (the branch gutter's pattern), and absent - no reserved width - before.
 
 ### Two lines of prose about the same problem: colour one, not both
 
@@ -1046,7 +1074,27 @@ A file viewer whose file the running build may refuse (a `.klr` replays only in 
 it) says so in one row, **Opens in this build:**, answered in a sentence - yes, no with the reason and
 the fallback, or "not known yet" with why - rather than a flag, because the useful part is the reason.
 
-## Verify Geometry In The Running App, Never In A Replica
+## A Share Is A Wash Behind Its Figure; Time That Is Nobody's Recedes In Italics
+
+The Profiler (`.plans/PROFILER_PLAN.md` D3, D4, D14) set three rules for tables of measured time:
+
+- **A percentage of a whole is drawn as a bar behind the figure**, in `--bgcolor-profiler-bar`
+  (the primary accent's subtle wash), never as a coloured number or a status hue. The figure stays
+  in the data ink and stays legible over the bar; the bar is the at-a-glance ranking. A heat ramp
+  is for patterns across many cells (the memory view); a single share per row is a bar.
+- **Rows that are time but not a routine** (HALT waiting, interrupt acknowledge, DMA, snooze) and the
+  call tree's roots are **italic in `--color-profiler-pseudo`** (the secondary data ink): present,
+  counted, but not code you can fix. A recursive repeat is `--color-profiler-recursive` with `↺`.
+- **A caveat about the data's accuracy is a warning-ink fact in the header** with its explanation
+  in the tooltip (`--color-profiler-warning`: stack switches, overflowed depth, a full edge table),
+  never an error colour and never a modal - the data is still useful.
+- **A column that can never hold anything on this machine is omitted**, not left blank: the
+  partition column appears only on machines that have banks.
+- **A view with tabs inside a document uses a segmented `role="tablist"`** in the panel header,
+  styled like the Sprite Inspector's (accent fill on the selected segment), so tabs never read as
+  the document tab strip.
+
+
 
 This is the process lesson from the same work, and it cost two rounds of shipping a "fix" the user
 could see was still broken.
@@ -1119,6 +1167,35 @@ It catches more than geometry. This same loop caught a **blank renderer**: repla
 clean, because the field's type says `number | undefined` while the emulator actually sends `null`.
 When you tighten a nullish check, keep it nullish (`== null`, or an explicit both-branches helper),
 and load the panel before believing it.
+
+## A Pass/Fail List Colours Its Status, Nothing Else
+
+The Unit Tests panel is a data list whose one piece of meaning beyond the neutral hierarchy is a
+verdict, so the verdict is the only colour: the status glyph takes `--color-unit-test-passed` /
+`-failed` / `-error` (L4 aliases of `--status-success` / `--status-error` / `--status-warning`), a
+running test the accent, a test not run `--text-tertiary`, and the message line under a test that did
+not pass repeats its glyph's hue. Names, T-states and suite rows stay `--data-label`/text, and the
+selected row takes the accent's tint (`--bgcolor-unit-test-selected`), as list selections do. A suite
+row shows its *worst* member's glyph, so a collapsed reading of the list still finds the failure.
+Do not tint whole rows red or green: the glyph plus the message line already say it, and a coloured
+band would read as a selection. The same applies to any future verdict list (lint results, a CI
+report).
+
+## A Status-Bar Item For Something Outside The IDE Is Quiet Until It Acts
+
+The automation item (`IdeStatusBar`, COMMAND_LINE_AUTOMATION_PLAN D4) exists only while the server
+listens, and it is plain status-bar text (`--color-statusbar-label`, no border) while nobody is
+connected: "listening" is configuration the user chose, not news. While a client is connected it
+becomes an accent chip (`--color-/--bgcolor-/--border-statusbar-automation-active`, L4 aliases of the
+accent's text, subtle and border tones) with the count, because something outside the IDE can now
+drive it - that is state worth seeing from across the screen. Not the error colour (nothing is
+wrong) and not the secondary accent (that means "the past"). The icon paints with `currentColor`, so
+it follows the chip. A future "an external thing is attached" indicator (a hardware link, a remote
+session) should follow the same two steps.
+
+Any state the main process publishes for a renderer must be **re-published when that renderer
+loads**: an action dispatched in main before a window's store exists never reaches it (the item
+was missing until the first client connected).
 
 ## Token Architecture
 

@@ -1,4 +1,11 @@
-import { ACCENTS, ANSI, DEVICE, FAVORITE, NEUTRAL, STATUS, type AccentId, type Tone, DEVICE_INK } from "./palette";
+import { ACCENTS, ANSI, DEVICE, FAVORITE, HEAT, NEUTRAL, STATUS, type AccentId, type Tone, DEVICE_INK } from "./palette";
+
+/**
+ * The heat ramp's five steps: how much of the hue each mixes into the panel surface. Step 5 stops at
+ * 56%, so the row's text (`--text-primary`) keeps at least 3:1 over the hottest byte in both tones
+ * (T9, `test/theming/heat-ramp.test.ts`).
+ */
+export const HEAT_RAMP_PCT = [14, 24, 34, 45, 56] as const;
 
 /**
  * L2 — semantics.
@@ -168,6 +175,18 @@ export function semanticTokens(tone: Tone, accentId: AccentId): Record<string, s
      * move with the tone, so a light-theme danger button drew itself in the dark theme's red.
      */
     "--status-error-hover": alpha(s.error, 88),
+
+    // --- Heat map (the memory view, D14) -------------------------------------------------------
+    /*
+     * Three fixed hues, five steps each, opaque over the panel so a step means the same on every
+     * row (alternate rows tint the panel a little, which a wash would add to). The steps get further
+     * from the surface as the count grows: lighter in dark, darker in light.
+     */
+    ...Object.fromEntries(
+      (["exec", "read", "write"] as const).flatMap((kind) =>
+        HEAT_RAMP_PCT.map((pct, i) => [`--heat-${kind}-${i + 1}`, mix(HEAT[tone][kind], n.panel, pct)])
+      )
+    ),
 
     // --- Marks ---------------------------------------------------------------------------------
     /** Something the user starred (favourite machines). Fixed across accents, like the status hues. */

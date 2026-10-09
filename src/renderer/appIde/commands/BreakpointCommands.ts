@@ -21,9 +21,8 @@ import {
   reinstallAnnotationBreakpoints
 } from "@common/utils/breakpoints";
 import { formatHitSpec, isLogpoint, parseHitSpec } from "@common/utils/breakpoint-filters";
-import { isAnnotationBreakpoint, spriteAttrMaskOf } from "@common/utils/breakpoint-scope";
+import { isAnnotationBreakpoint } from "@common/utils/breakpoint-scope";
 import {
-  formatSpriteAttrList,
   parseSpriteAttrList,
   SPRITE_ATTR_ALL,
   SPRITE_INDEX_MAX
@@ -35,6 +34,11 @@ import {
 import { setLogpointGroupsAction, setSourceCommentsAction } from "@common/state/actions";
 import { kliveConditionText } from "@common/utils/breakpoint-condition/dezog/dezog-printer";
 import { saveProject } from "@renderer/appIde/utils/save-project";
+import {
+  breakpointCommandSpec,
+  breakpointStatusText,
+  quoteLogTemplate
+} from "@common/utils/breakpoint-spec";
 import { compileCondition } from "@common/utils/breakpoint-condition/condition-checker";
 import { conditionMachineFacts } from "@common/utils/breakpoint-condition/condition-machine";
 import type {
@@ -898,55 +902,6 @@ export function conditionErrorMessages(
     { type: ValidationMessageType.Info, message: `  ${condition}` },
     { type: ValidationMessageType.Info, message: `  ${" ".repeat(error.start)}${"^".repeat(width)}` }
   ];
-}
-
-/**
- * A breakpoint as `bp-set` arguments: the address spec, its kind options, the hit rule and the
- * condition. Pasted back into `bp-set` it recreates the breakpoint.
- */
-export function breakpointCommandSpec(
-  bp: BreakpointInfo,
-  partitionLabels: Record<number, string>
-): string {
-  const parts = [getBreakpointAddressSpec(bp, partitionLabels)];
-  if (bp.memoryRead) parts.push("-r");
-  if (bp.memoryWrite) parts.push("-w");
-  if (bp.ioRead) parts.push("-i");
-  if (bp.ioWrite) parts.push("-o");
-  if ((bp.ioRead || bp.ioWrite) && bp.ioMask !== undefined && bp.ioMask !== 0xffff) {
-    parts.push(`-m $${toHexa4(bp.ioMask)}`);
-  }
-  if ((bp.memoryRead || bp.memoryWrite) && bp.length !== undefined && bp.length > 1) {
-    parts.push(`-len ${bp.length}`);
-  }
-  if (bp.nextRegCopper) parts.push("-c");
-  if (bp.spriteIndex !== undefined && spriteAttrMaskOf(bp) !== SPRITE_ATTR_ALL) {
-    parts.push(`-attr ${formatSpriteAttrList(spriteAttrMaskOf(bp))}`);
-  }
-  // --- Before `-hit`/`-if`, so a listed line pastes back (§4.2)
-  if (bp.oneShot && !bp.runTo) parts.push("-once");
-  if (bp.logMessage) parts.push(`-log ${quoteLogTemplate(bp.logMessage)}`);
-  const hitSpec = formatHitSpec(bp);
-  if (hitSpec) parts.push(`-hit ${hitSpec}`);
-  if (bp.condition?.trim()) parts.push(`-if ${bp.condition}`);
-  return parts.join(" ");
-}
-
-/** What `bp-set` cannot say about a breakpoint: disabled, the live count, a condition's state. */
-export function breakpointStatusText(bp: BreakpointInfo): string {
-  const parts: string[] = [];
-  if (bp.disabled) parts.push("<disabled>");
-  if (bp.runTo) parts.push("<run-to target>");
-  if (bp.currentHits !== undefined) parts.push(`(hits: ${bp.currentHits})`);
-  if (bp.conditionInactive) parts.push(`<inactive: ${bp.conditionInactive}>`);
-  if (bp.conditionError) parts.push(`<condition error: ${bp.conditionError}>`);
-  if (bp.logError) parts.push(`<log template error: ${bp.logError}>`);
-  return parts.join(" ");
-}
-
-/** A template as a `-log` value: double-quoted, `"` and `\` escaped (the tokenizer's escapes). */
-export function quoteLogTemplate(template: string): string {
-  return `"${template.replace(/[\\"]/g, (c) => `\\${c}`)}"`;
 }
 
 /** A `-log` value as typed: the tokenizer strips the quotes but leaves `\"` and `\\` escaped. */

@@ -22,6 +22,7 @@ import {
   z80nCallInstructionLength
 } from "./nextMachineInfo";
 import { zxNextSysVars } from "./ZxNextSysVars";
+import { writeCodeSegments } from "../writeCodeSegments";
 
 /**
  * The host side of a ZX Spectrum Next whose hardware is emulated elsewhere - in the WASM core.
@@ -239,14 +240,9 @@ export abstract class ZxNextWasmHost extends Z80MachineBase {
         this.doWriteMemory(addr, 0x38);
       }
     }
-    for (const segment of codeToInject.segments) {
-      if (segment.bank === undefined) {
-        const addr = segment.startAddress;
-        for (let i = 0; i < segment.emittedCode.length; i++) {
-          this.doWriteMemory(addr + i, segment.emittedCode[i]);
-        }
-      }
-    }
+    // --- Banked segments go into their 16K bank (two 8K pages) whatever the MMU maps
+    // --- (`.plans/Z80_UNIT_TESTS_PLAN.md` T5); they were silently dropped before
+    writeCodeSegments(this, codeToInject.segments, true);
 
     // --- Prepare the run mode
     if (codeToInject.options.cursorl || codeToInject.options.cursork /* deprecated */) {

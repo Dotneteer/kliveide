@@ -1,4 +1,5 @@
 import type { ConditionSymbols } from "./condition-types";
+import { flattenSymbols, type SymbolTables } from "../flatten-symbols";
 
 /*
  * The integer symbols of a compiler result - what breakpoint conditions and logpoint templates bind
@@ -20,4 +21,12 @@ export function integerSymbolsOf(symbols: Record<string, unknown> | undefined): 
     }
   }
   return result;
+}
+
+/**
+ * The integer symbols of a whole compilation: the root symbols and every module's, by dotted name
+ * (`.plans/Z80_UNIT_TESTS_PLAN.md` T4), so `Module1.counter` works in a condition or an `ASSERTION`.
+ */
+export function integerSymbolsOfOutput(output: unknown): ConditionSymbols {
+  return integerSymbolsOf(flattenSymbols(output as SymbolTables | undefined));
 }

@@ -379,6 +379,8 @@ class HelpCommand extends IdeCommandBase<HelpArgs> {
  */
 class ExitCommand extends IdeCommandBase<NoCommandArgs> {
   readonly id = "exit";
+  // --- Quits Klive: never through automation (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` T5)
+  readonly automation = "deny" as const;
   readonly description = "Exits Klive IDE.";
   readonly usage = "exit";
 

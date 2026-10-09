@@ -295,10 +295,9 @@ export class MachineFrameRunner implements IMachineFrameRunner {
          * what `DebugStepMode.StepOut` is documented to mean: the RET "when it returns to its
          * caller".
          *
-         * The WASM machines use `retExecuted` because they cannot do this: their CPU runs inside
-         * the core, those TS methods never execute, the stack stays empty and `stepOutAddress` is
-         * permanently -1. There it is the only workable signal, not a refinement. Turning it on
-         * here would trade an exact mechanism for an approximation of itself.
+         * The WASM machines pass `false` too: their cores keep the same shadow stack in C
+         * (`z80.c`), and `stepOutAddress` comes from it (`wasmDebugLoop.ts`). Turning the flag on
+         * would trade an exact mechanism for an approximation of itself.
          */
         retExecuted: false
       });

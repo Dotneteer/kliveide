@@ -789,6 +789,8 @@ static uint32_t spp3eCpuReadPort(uint32_t address);
 #define Z80_READ_PORT(address) ((uint8_t)spp3eCpuReadPort((uint32_t)(address)))
 #define Z80_WRITE_PORT(address, value) spp3eWritePort((uint32_t)(address), (uint32_t)(value))
 #define Z80_CAPTURE_BUS_EVENTS() spp3eCaptureBusEvents
+/* The log is written only while capturing (debug runs): out of line, so it does not grow every opcode (z80.c) */
+#define Z80_ACCESS_LOG_NOINLINE 1
 #define Z80_TACT_PLUS_N(value) spp3eTactPlusN((uint32_t)(value))
 #define Z80_DELAY_MEMORY_READ(address) spp3eDelayMemoryAccess((uint32_t)(address))
 #define Z80_DELAY_MEMORY_WRITE(address) spp3eDelayMemoryAccess((uint32_t)(address))
@@ -798,18 +800,30 @@ static uint32_t spp3eCpuReadPort(uint32_t address);
 /* RZX (`zx-spectrum-rzx.c`): the fetch counter counts every refresh but the INT acknowledge's */
 static inline void rzxCountFetch(void);
 static inline void rzxIntAck(void);
+/* Not under the benchmark-only strip (`z80.c`): no RZX recording, so no fetch count */
+#ifndef Z80_BENCH_STRIP_DEBUG
 #define Z80_REFRESH(address) rzxCountFetch()
 #define Z80_INT_ACK() rzxIntAck()
+#endif
 /* The execution-history recorder's hooks; the recorder and this machine's macros for it are at the
    end of this file (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` Phase 3) */
 #include "../../../../z80/wasm/z80-history.h"
+/* The access profile's hooks; the module and this machine's mapping for it are at the end of this
+   file (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` Phase 2) */
+#include "../../../../z80/wasm/z80-profile.h"
 #include "../../../../z80/wasm/z80.c"
+/* The CPU's registers and debugger state, exported as `spp3eGetCpuAf` ... (WASM_CORE_LEAN_AND_DEBUG_PLAN D8) */
+#define Z80_EXPORT_PREFIX spp3e
+#include "../../../../z80/wasm/z80-cpu-exports.c"
 #undef Z80_REFRESH
 #undef Z80_INT_ACK
 #define RZX_CORE_PREFIX spp3e
 #include "../../../zxSpectrum/wasm/common/zx-spectrum-rzx.c"
 
 static uint32_t spp3eCpuReadPort(uint32_t address) {
+#ifdef Z80_BENCH_STRIP_DEBUG
+  return spp3eReadPort(address);
+#endif
   if (rzxMode == RZX_MODE_OFF) return spp3eReadPort(address);
   uint32_t value;
   if (rzxMode == RZX_MODE_PLAY && rzxPlayNextIn(&value) != 0u) return value;
@@ -1837,110 +1851,39 @@ void spp3eHardReset(void) {
   }
 }
 
-static uint32_t spp3eExecutePlayInstruction(void);
-
-uint32_t spp3eExecuteFrame(void) {
-  if (rzxMode == RZX_MODE_PLAY) {
-    /* RZX playback: one call plays the current RZX frame to its end or to a desync (see sp48.c) */
-    spp3eCaptureBusEvents = 0u;
-    z80ClearBusEvents();
-    while (rzxStatus == RZX_STATUS_OK) {
-      spp3eExecutePlayInstruction();
-    }
-    spp3eCaptureBusEvents = 1u;
-    return 0u;
-  }
-
-  /* A frame a stop target or the debug loop left mid-way goes on where it stopped */
-  if (spp3eFrameCompleted != 0u || spp3eFrameBegun == 0u) spp3eBeginMachineFrame();
-  spp3eCaptureBusEvents = 0u;
-  z80ClearBusEvents();
-
-  /*
-   * The frame's completion ends the loop as well as its end tact: a completion that rebases the
-   * counter moves it back below the end tact computed here (see `sp48ExecuteFrame`).
-   */
-  const uint32_t frameEndTact = spp3eNextFrameStartTact + spp3eTactsInFrame;
-  while (spp3eTacts < frameEndTact) {
-    spp3eExecuteInstruction();
-    /* Checked on the frame's last instruction too: the host reads the reached mark after the call */
-    const uint32_t stop = z80HistoryStopNow();
-    if (spp3eFrameCompleted != 0u) break;
-    if (stop != 0u) break;
-  }
-  spp3eCaptureBusEvents = 1u;
-  return 0;
-}
-
-/*
- * A playback frame longer than an EI/retrigger frame ended: the picture is complete, and the next
- * frame starts here, so the interrupt falls on frame tact 0 (trap 5, D19). See sp48.c.
- */
-static void spp3eCompletePlayPicture(void) {
-  spp3eFrameCompleted = 1u;
-  spp3eUlaRenderUntilCurrentTact();
-  spp3eNextFrameStartTact = spp3eTacts;
-  spp3eFrames++;
-  spp3eCpuFrameSliceInstructions = 0u;
-  spp3eFdcOnFrameCompleted();
-  if (spp3eNextFrameStartTact >= SPP3E_TACT_REBASE_THRESHOLD) {
-    const uint32_t rebase = spp3eNextFrameStartTact;
-    spp3eShiftTactOrigin(rebase);
-    spp3eTactEpoch += rebase;
-  }
-}
-
-/* One playback step: the interrupt comes from the recording, never from the ULA (see sp48.c) */
-static uint32_t spp3eExecutePlayInstruction(void) {
-  const uint32_t step = rzxPlayBeforeStep();
-  if (step == RZX_STEP_NONE) return 0u;
-  if (step == RZX_STEP_BOUNDARY) {
-    if (rzxStatus == RZX_STATUS_FRAME_DONE && rzxPlayTarget > RZX_SHORT_FRAME_FETCHES) {
-      spp3eCompletePlayPicture();
-    }
-    return 0u;
-  }
-  if (spp3eFrameCompleted != 0u) {
-    spp3eBeginMachineFrame();
-  }
-  if (spp3eCaptureBusEvents != 0u) {
-    z80ClearBusEvents();
-  }
-  const uint8_t intActive = step == RZX_STEP_RUN_INT ? 1u : 0u;
-  if (intActive != 0u) spp3eInterruptsRaised++;
-  spp3eInterruptLineActive = intActive;
-  z80SetSigInt(intActive);
-  z80SetTacts(spp3eTacts);
-  z80ExecuteCpuCycle();
-  spp3eTacts = z80GetTacts();
-  spp3eSetNextAudioSample();
-  z80SetSigInt(0u);
-  spp3eInterruptLineActive = 0u;
-  spp3eCpuInstructionsExecuted++;
-  spp3eCpuFrameSliceInstructions++;
-  return 0u;
-}
-
-/* RZX: puts the machine at `tact` of its frame (an input block's T-state field, trap 11) */
-void spp3eRzxSetFrameTact(uint32_t tact) {
-  if (tact >= spp3eTactsInFrame) return;
-  if (tact > spp3eTacts) {
-    spp3eShiftTactOrigin(-(int64_t)(tact - spp3eTacts));
-  }
-  spp3eNextFrameStartTact = spp3eTacts - tact;
-}
+/* The frame loop and the RZX playback steps (zx-spectrum-frame.c) */
+#define ZXS_FRAME_PREFIX spp3e
+#define ZXS_BEGIN_FRAME() spp3eBeginMachineFrame()
+#define ZXS_FRAME_LENGTH spp3eTactsInFrame
+#define ZXS_RENDER_UNTIL_CURRENT_TACT() spp3eUlaRenderUntilCurrentTact()
+#define ZXS_TACT_REBASE_THRESHOLD SPP3E_TACT_REBASE_THRESHOLD
+/* The +2E/+3E: a playback picture also ends the FDC's frame, and every cycle adds an audio sample */
+#define ZXS_ON_PLAY_PICTURE() \
+  do { \
+    spp3eCpuFrameSliceInstructions = 0u; \
+    spp3eFdcOnFrameCompleted(); \
+  } while (0)
+#define ZXS_AFTER_PLAY_CYCLE() spp3eSetNextAudioSample()
+#include "../../../zxSpectrum/wasm/common/zx-spectrum-frame.c"
+/* The debugger's breakpoint flags and in-core loop, `spp3eExecuteUntilStop` (z80-debug-loop.c) */
+#define Z80_DEBUG_LOOP_PREFIX spp3e
+#include "../../../../z80/wasm/z80-debug-loop.c"
 
 uint32_t spp3eExecuteInstruction(void) {
+#ifndef Z80_BENCH_STRIP_DEBUG
   if (rzxMode == RZX_MODE_PLAY) {
     return spp3eExecutePlayInstruction();
   }
+#endif
   if (spp3eFrameCompleted != 0u) {
     spp3eBeginMachineFrame();
   }
 
+#ifndef Z80_BENCH_STRIP_DEBUG
   if (spp3eCaptureBusEvents != 0u) {
     z80ClearBusEvents();
   }
+#endif
   spp3eUpdateTapeMode();
   const uint8_t intActive = spp3eUlaShouldRaiseInterrupt();
   if (intActive != 0u && spp3eInterruptLineActive == 0u) {
@@ -1953,13 +1896,17 @@ uint32_t spp3eExecuteInstruction(void) {
   spp3eTacts = z80GetTacts();
   spp3eSetNextAudioSample();
   spp3eUpdateTapeMode();
+#ifndef Z80_BENCH_STRIP_DEBUG
   spp3eCpuInstructionsExecuted++;
   spp3eCpuFrameSliceInstructions++;
+#endif
   spp3eFrameCompleted =
     spp3eTacts >= spp3eNextFrameStartTact + spp3eTactsInFrame ? 1u : 0u;
+#ifndef Z80_BENCH_STRIP_DEBUG
   if (rzxMode == RZX_MODE_RECORD) {
     rzxRecAfterStep(spp3eFrameCompleted);
   }
+#endif
   spp3eCompleteMachineFrame();
   return 0u;
 }
@@ -2494,80 +2441,11 @@ uint32_t spp3eGetCpuFrameSliceInstructions(void) { return spp3eCpuFrameSliceInst
 uint32_t spp3eGetInterruptsRaised(void) { return spp3eInterruptsRaised; }
 uint32_t spp3eGetInterruptLineActive(void) { return spp3eInterruptLineActive; }
 uint32_t spp3eGetCpuTacts(void) { return z80GetTacts() + spp3eTactEpoch; }
-uint32_t spp3eGetCpuAf(void) { return z80GetAf(); }
-void spp3eSetCpuAf(uint32_t value) { z80SetAf(value); }
-uint32_t spp3eGetCpuAfAlt(void) { return z80GetAfAlt(); }
-void spp3eSetCpuAfAlt(uint32_t value) { z80SetAfAlt(value); }
-uint32_t spp3eGetCpuBcAlt(void) { return z80GetBcAlt(); }
-void spp3eSetCpuBcAlt(uint32_t value) { z80SetBcAlt(value); }
-uint32_t spp3eGetCpuDeAlt(void) { return z80GetDeAlt(); }
-void spp3eSetCpuDeAlt(uint32_t value) { z80SetDeAlt(value); }
-uint32_t spp3eGetCpuHlAlt(void) { return z80GetHlAlt(); }
-void spp3eSetCpuHlAlt(uint32_t value) { z80SetHlAlt(value); }
-uint32_t spp3eGetCpuBc(void) { return z80GetBc(); }
-void spp3eSetCpuBc(uint32_t value) { z80SetBc(value); }
-uint32_t spp3eGetCpuDe(void) { return z80GetDe(); }
-void spp3eSetCpuDe(uint32_t value) { z80SetDe(value); }
-uint32_t spp3eGetCpuHl(void) { return z80GetHl(); }
-void spp3eSetCpuHl(uint32_t value) { z80SetHl(value); }
-uint32_t spp3eGetCpuIx(void) { return z80GetIx(); }
-void spp3eSetCpuIx(uint32_t value) { z80SetIx(value); }
-uint32_t spp3eGetCpuIy(void) { return z80GetIy(); }
-void spp3eSetCpuIy(uint32_t value) { z80SetIy(value); }
-uint32_t spp3eGetCpuIr(void) { return z80GetIr(); }
-void spp3eSetCpuIr(uint32_t value) { z80SetIr(value); }
-uint32_t spp3eGetCpuWz(void) { return z80GetWz(); }
-void spp3eSetCpuWz(uint32_t value) { z80SetWz(value); }
-/* --- The return address of the most recent CALL/RST, for step-out. See the shadow stack
-   --- in z80.c: without it this machine has no step-out target at all, because the
-   --- TypeScript CPU's push never runs when execution happens inside the core. */
-uint32_t spp3eGetStepOutAddress(void) { return z80GetStepOutAddress(); }
-/* --- Running interrupt handlers (z80.c): source stepping runs them outside the step */
-uint32_t spp3eGetInterruptDepth(void) { return z80GetInterruptDepth(); }
-
-uint32_t spp3eGetCpuPc(void) { return z80GetPc(); }
-void spp3eSetCpuPc(uint32_t value) { z80SetPc(value); }
-uint32_t spp3eGetCpuSp(void) { return z80GetSp(); }
-void spp3eSetCpuSp(uint32_t value) { z80SetSp(value); }
-uint32_t spp3eGetCpuHalted(void) { return z80GetHalted(); }
-
-/* Snapshot loading: the HALT state and the EI delay (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.4) */
-void spp3eSetCpuHalted(uint32_t value) {
-  z80SetHalted(value);
-}
-
-uint32_t spp3eGetCpuEiBacklog(void) {
-  return z80GetEiBacklog();
-}
-
-void spp3eSetCpuEiBacklog(uint32_t value) {
-  z80SetEiBacklog(value);
-}
-uint32_t spp3eGetCpuPrefix(void) { return z80GetPrefix(); }
-uint32_t spp3eGetCpuIff1(void) { return z80GetIff1(); }
-void spp3eSetCpuIff1(uint32_t value) { z80SetIff1(value); }
-uint32_t spp3eGetCpuIff2(void) { return z80GetIff2(); }
-void spp3eSetCpuIff2(uint32_t value) { z80SetIff2(value); }
-uint32_t spp3eGetCpuInterruptMode(void) { return z80GetInterruptMode(); }
-void spp3eSetCpuInterruptMode(uint32_t value) { z80SetInterruptMode(value); }
 
 // --- Step-out needs to know when a RET returned to its caller. The shared Z80 core has always
 // --- tracked this; the +3E simply never exposed it, so its step-out could only stop on reaching
 // --- the recorded return address. Mirrors sp48/sp128.
-uint32_t spp3eGetCpuRetExecuted(void) {
-  return z80GetRetExecuted();
-}
 
-uint32_t spp3eGetCpuRetnExecuted(void) {
-  return z80GetRetnExecuted();
-}
-/* The per-instruction data-access log (z80.c) */
-uint32_t spp3eGetAccessLogPtr(void) { return z80AccessLogPtr(); }
-uint32_t spp3eGetAccessLogCount(void) { return z80GetAccessLogCount(); }
-uint32_t spp3eGetAccessLogOverflows(void) { return z80GetAccessLogOverflows(); }
-uint32_t spp3eGetLastPortAddress(void) { return z80GetLastPortAddress(); }
-uint32_t spp3eGetLastPortValue(void) { return z80GetLastPortValue(); }
-uint32_t spp3eGetLastPortIsWrite(void) { return z80GetLastPortIsWrite(); }
 uint32_t spp3eGetPortFeValue(void) { return spp3ePortFeValue; }
 uint32_t spp3eGetBorderColor(void) { return spp3eBorderColor; }
 uint32_t spp3eGetEarBit(void) { return spp3eEarBit; }
@@ -2628,3 +2506,37 @@ static inline void spp3eHistoryContext(uint32_t kind, uint8_t *out) {
 #define Z80_HISTORY_FRAME() spp3eFrames
 #define Z80_HISTORY_FRAME_TACT() spp3eUlaCurrentFrameTact()
 #include "../../../../z80/wasm/z80-history.c"
+
+// -----------------------------------------------------------------------------
+// The access profile (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` §2.2, D4): the shared module, with
+// this machine's physical layout. Time is in CPU T-states (D8).
+//
+// One linear offset space over the physical arrays: RAM banks 0-7 ($00000-$1FFFF), then ROMs 0-3
+// ($20000-$2FFFF). `src/common/profile/layouts/spp3e.ts` names them in `getPartition`'s terms.
+//
+// The mapping goes through `spp3eMemorySlotBase`, which the special (all-RAM) paging modes set too,
+// never the flat `spp3eMemory` mirror (trap T3). A write to a ROM slot does not reach memory, so it
+// maps nowhere (T2); in a special paging mode every slot is RAM, so reads and writes agree.
+// -----------------------------------------------------------------------------
+
+#define SPP3E_PROFILE_ROM_BASE SPP3E_RAM_SIZE
+
+static inline int32_t spp3eProfilePhys(uint32_t address, uint32_t write) {
+  const uint32_t a = address & 0xffffu;
+  const uint32_t slot = a >> 14u;
+  if (write != 0u && spp3eMemorySlotWritable[slot] == 0u) return -1;
+  const uintptr_t p = (uintptr_t)spp3eMemorySlotBase[slot] + (a & 0x3fffu);
+  const uintptr_t ram = (uintptr_t)spp3eRam;
+  const uintptr_t rom = (uintptr_t)spp3eRom;
+  if (p - ram < SPP3E_RAM_SIZE) return (int32_t)(p - ram);
+  if (p - rom < SPP3E_ROM_SIZE) return (int32_t)(SPP3E_PROFILE_ROM_BASE + (p - rom));
+  return -1;
+}
+
+/* 192 KB of flags; the pool holds all 24 of its 8K pages, so no page ever loses its counters (T6) */
+#define Z80_PROFILE_FLAG_BYTES (SPP3E_RAM_SIZE + SPP3E_ROM_SIZE)
+#define Z80_PROFILE_POOL_PAGES 24u
+#define Z80_PROFILE_PHYS_READ(address) spp3eProfilePhys((uint32_t)(address), 0u)
+#define Z80_PROFILE_PHYS_WRITE(address) spp3eProfilePhys((uint32_t)(address), 1u)
+#define Z80_PROFILE_FRAME_TICKS() cpu.tacts
+#include "../../../../z80/wasm/z80-profile.c"

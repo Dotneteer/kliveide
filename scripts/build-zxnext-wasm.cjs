@@ -9,7 +9,10 @@ const {
   stagingWasmOutput,
   stampWasmLayout
 } = require("./wasm-layout.cjs");
+const { cpuExports, debugLoopExports, debugLoopVolatileSymbols, Z80_ACCESS_LOG_VOLATILE_SYMBOLS } = require("./z80-cpu-exports.cjs");
+const { Z80_CONDITION_EXPORTS, Z80_CONDITION_VOLATILE_SYMBOLS } = require("./z80-condition-exports.cjs");
 const { Z80_HISTORY_EXPORTS, Z80_HISTORY_VOLATILE_SYMBOLS } = require("./z80-history-exports.cjs");
+const { Z80_PROFILE_EXPORTS, Z80_PROFILE_VOLATILE_SYMBOLS } = require("./z80-profile-exports.cjs");
 
 /**
  * Statics a Klive state file leaves out (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` trap 10):
@@ -28,14 +31,9 @@ const ZXNEXT_SCRATCH_SYMBOLS = ["zxnextUlaSpriteCoverage"];
 const ZXNEXT_VOLATILE_SYMBOLS = [
   // --- The IDE's breakpoint conditions and the per-instruction access log they read: debugging
   // --- state, not machine state, so a restore never brings back old breakpoints
-  "condArena",
-  "condSlots",
-  "condToken",
-  "condLastStatus",
-  "condEnv",
-  "z80AccessLog",
-  "z80AccessLogCount",
-  "z80AccessLogOverflows",
+  ...Z80_CONDITION_VOLATILE_SYMBOLS,
+  ...debugLoopVolatileSymbols("zxnext"),
+  ...Z80_ACCESS_LOG_VOLATILE_SYMBOLS,
   "zxnextNextRegWatch",
   "zxnextNextRegHit",
   "zxnextNextRegHitOrigin",
@@ -91,7 +89,11 @@ const ZXNEXT_VOLATILE_SYMBOLS = [
   "zxnextBeamLatchesDone",
   "zxnextBeamInfo",
   // --- The execution-history ring (EXECUTION_HISTORY_VIEWER_PLAN D7)
-  ...Z80_HISTORY_VOLATILE_SYMBOLS
+  ...Z80_HISTORY_VOLATILE_SYMBOLS,
+  // --- The access profile: flags, counters, time and its never-wrapping 28 MHz clock
+  // --- (CODE_COVERAGE_AND_HEAT_MAP_PLAN T4, T7, D8)
+  ...Z80_PROFILE_VOLATILE_SYMBOLS,
+  "zxnextProfileTicks28"
 ];
 
 const root = resolve(__dirname, "..");
@@ -111,20 +113,11 @@ const optimizationProfiles = {
 
 const productionExports = [
   // --- Breakpoint condition evaluator (`src/emu/z80/wasm/z80-condition.c`)
-  "condArenaPtr",
-  "condArenaCapacity",
-  "condSlotTablePtr",
-  "condSlotCapacity",
-  "condMaxProgramWords",
-  "condGetToken",
-  "condSetToken",
-  "condGetLastStatus",
-  "condEvaluate",
-  "condEvaluateValue",
-  "condSetEnv",
-  "condPeek",
+  ...Z80_CONDITION_EXPORTS,
   // --- Execution history recorder (`src/emu/z80/wasm/z80-history.c`)
   ...Z80_HISTORY_EXPORTS,
+  // --- Access profile (`src/emu/z80/wasm/z80-profile.c`)
+  ...Z80_PROFILE_EXPORTS,
   "memory",
   "zxnextMemoryPtr",
   "zxnextPixelBufferPtr",
@@ -185,52 +178,11 @@ const productionExports = [
   "zxnextSetDaisyEnabled",
   "zxnextGetDaisyInService",
   "zxnextSetTacts",
-  "zxnextGetCpuAf",
-  "zxnextSetCpuAf",
-  "zxnextGetCpuBc",
-  "zxnextSetCpuBc",
-  "zxnextGetCpuDe",
-  "zxnextSetCpuDe",
-  "zxnextGetCpuHl",
-  "zxnextSetCpuHl",
-  "zxnextGetCpuAfAlt",
-  "zxnextSetCpuAfAlt",
-  "zxnextGetCpuBcAlt",
-  "zxnextSetCpuBcAlt",
-  "zxnextGetCpuDeAlt",
-  "zxnextSetCpuDeAlt",
-  "zxnextGetCpuHlAlt",
-  "zxnextSetCpuHlAlt",
-  "zxnextGetCpuIx",
-  "zxnextSetCpuIx",
-  "zxnextGetCpuIy",
-  "zxnextSetCpuIy",
-  "zxnextGetCpuIr",
-  "zxnextSetCpuIr",
-  "zxnextGetCpuWz",
-  "zxnextSetCpuWz",
-  "zxnextGetCpuPc",
-  "zxnextGetStepOutAddress",
-  "zxnextGetInterruptDepth",
-  "zxnextSetCpuPc",
-  "zxnextGetCpuSp",
-  "zxnextSetCpuSp",
-  "zxnextGetCpuHalted",
-  "zxnextGetCpuPrefix",
-  "zxnextGetCpuIff1",
-  "zxnextSetCpuIff1",
-  "zxnextGetCpuIff2",
-  "zxnextSetCpuIff2",
-  "zxnextGetCpuInterruptMode",
-  "zxnextSetCpuInterruptMode",
+  ...cpuExports("zxnext", { accessLog: true, accessLogOverflows: true, lastPort: true }),
+  // --- The debugger's in-core loop (`z80-debug-loop.c`)
+  ...debugLoopExports("zxnext"),
   "zxnextGetSharedZ80NMode",
-  "zxnextGetAccessLogPtr",
-  "zxnextGetAccessLogCount",
-  "zxnextGetAccessLogOverflows",
-  "zxnextGetLastPortAddress",
-  "zxnextGetLastPortValue",
   "zxnextGetLastPortAccessed",
-  "zxnextGetLastPortIsWrite",
   "zxnextTraceGetStartOffset",
   "zxnextTraceGetHeaderSize",
   "zxnextTraceGetRecordSize",
@@ -498,8 +450,9 @@ const buildModes = {
     exports: productionExports,
     sources: [source],
     // --- 40 MB: the 8 MB execution-history ring did not fit beside the frame trace in 32 MB
-    // --- (EXECUTION_HISTORY_VIEWER_PLAN T9, Q6)
-    initialMemory: 40 * 1024 * 1024
+    // --- (EXECUTION_HISTORY_VIEWER_PLAN T9, Q6). 56 MB: the access profile adds its 2 MB of flags
+    // --- and its 12 MB counter pool (CODE_COVERAGE_AND_HEAT_MAP_PLAN D5)
+    initialMemory: 56 * 1024 * 1024
   }
 };
 

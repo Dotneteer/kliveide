@@ -1,5 +1,8 @@
 import { conditionStoreOf, type ConditionStore } from "../conditionStore";
-import { WasmHistoryReader } from "../history/WasmHistoryReader";
+import { WasmHistorySource } from "../history/WasmHistorySource";
+import { WasmProfileSource } from "../profile/WasmProfileSource";
+import type { IAccessProfileSource } from "@emu/abstractions/IAccessProfileSource";
+import type { ProfileCounts, ProfileEdge, ProfileInfo, ProfileTouchedByte } from "@common/profile/profileTypes";
 import type { IExecutionHistorySource } from "@emu/abstractions/IExecutionHistorySource";
 import type { ExecutionHistoryInfo, ExecutionHistoryPage } from "@common/history/historyTypes";
 import type { HistoryServiceSpan } from "@common/history/serviceSpans";
@@ -46,7 +49,13 @@ import type { NextRegDeviceState, RegValueState } from "./nextRegDescriptors";
 import type { ZxNextWasmV2LoaderOptions, ZxNextWasmV2Runtime } from "./wasm/ZxNextWasmV2Loader";
 
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
-import { shouldStopAtDebugPoint } from "../DebugStepDecision";
+import {
+  hasWasmAccessBreakpoint,
+  runWasmDebugLoop,
+  type WasmDebugLoopHost,
+  shouldStopAtWasmBreakpoint,
+  stepOutAddressFromCore
+} from "../wasmDebugLoop";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { MemorySectionType } from "@abstractions/MemorySection";
 import { TapeMode } from "@emu/abstractions/TapeMode";
@@ -161,7 +170,7 @@ type ZxNextWasmV2Checkpoint = {
 
 export class ZxNextWasmV2Machine
   extends ZxNextWasmHost
-  implements IZxNextIdeMachine, IZxNextHostInputMachine, IExecutionHistorySource
+  implements IZxNextIdeMachine, IZxNextHostInputMachine, IExecutionHistorySource, IAccessProfileSource
 {
   public readonly implementation = "wasm" as const;
   public wasmV2Runtime?: ZxNextWasmV2Runtime;
@@ -807,35 +816,82 @@ export class ZxNextWasmV2Machine
 
   readonly historyMachineId = "zxnext";
 
-  private wasmV2HistoryReader?: { runtime: ZxNextWasmV2Runtime; reader: WasmHistoryReader };
-
-  private historyReader(): WasmHistoryReader | undefined {
-    const runtime = this.wasmV2Runtime;
-    if (runtime == null) return undefined;
-    if (this.wasmV2HistoryReader?.runtime !== runtime) {
-      this.wasmV2HistoryReader = { runtime, reader: new WasmHistoryReader(runtime.exports, this.historyMachineId) };
-    }
-    return this.wasmV2HistoryReader.reader;
-  }
+  private readonly wasmV2History = new WasmHistorySource(
+    () => this.wasmV2Runtime?.exports,
+    () => this.historyMachineId
+  );
 
   getHistoryInfo(): ExecutionHistoryInfo | undefined {
-    return this.historyReader()?.info();
+    return this.wasmV2History.info();
   }
 
   readHistory(fromSequence: number, count: number): ExecutionHistoryPage | undefined {
-    return this.historyReader()?.read(fromSequence, count);
+    return this.wasmV2History.read(fromSequence, count);
   }
 
   getHistoryServiceSpans(): HistoryServiceSpan[] | undefined {
-    return this.historyReader()?.serviceSpans();
+    return this.wasmV2History.serviceSpans();
   }
 
   clearHistory(): void {
-    this.historyReader()?.clear();
+    this.wasmV2History.clear();
   }
 
   setHistoryEnabled(enabled: boolean): void {
-    this.historyReader()?.setEnabled(enabled);
+    this.wasmV2History.setEnabled(enabled);
+  }
+
+  // ==============================================================================================
+  // The access profile (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`): the shared module in the core,
+  // read through the shared reader. Time is in 28 MHz ticks (D8), so it stays comparable across CPU
+  // speed changes; the DMA's bus holds are a header bucket (T5).
+
+  readonly profileMachineId = "zxnext";
+
+  private readonly wasmV2Profile = new WasmProfileSource(
+    () => this.wasmV2Runtime?.exports,
+    () => this.profileMachineId,
+    "28 MHz ticks"
+  );
+
+  getProfileInfo(): ProfileInfo | undefined {
+    return this.wasmV2Profile.info();
+  }
+
+  setProfiling(enabled: boolean, counters: boolean): void {
+    this.wasmV2Profile.setEnabled(enabled, counters);
+  }
+
+  resetProfile(): void {
+    this.wasmV2Profile.reset();
+  }
+
+  readProfileFlags(start: number, length: number): Uint8Array | undefined {
+    return this.wasmV2Profile.flags(start, length);
+  }
+
+  readProfileCounts(start: number, length: number): ProfileCounts | undefined {
+    return this.wasmV2Profile.counts(start, length);
+  }
+
+  readProfileTouched(mask?: number): ProfileTouchedByte[] | undefined {
+    return this.wasmV2Profile.touched(mask);
+  }
+
+  mergeProfile(bytes: readonly ProfileTouchedByte[], totals: { instructions: number; timeTotal: number }): void {
+    this.wasmV2Profile.merge(bytes, totals);
+  }
+
+  setProfileCalls(on: boolean): void {
+    this.wasmV2Profile.setCalls(on);
+  }
+
+  armProfileWindow(start: number | undefined, stop: number | undefined): void {
+    this.wasmV2Profile.arm(start, stop);
+  }
+
+  readProfileEdges(): ProfileEdge[] | undefined {
+    return this.wasmV2Profile.edges();
   }
 
   /**
@@ -866,207 +922,229 @@ export class ZxNextWasmV2Machine
    * per instruction what the stop tests below actually read: the program counter and the frame flag.
    * The full register set is mirrored once, on the way out, by `finishWasmV2DebugLoop()`.
    */
+  /** The debug loop's hooks, built once per core instance: a stable object lets the JIT inline them */
+  private wasmV2DebugLoopHost?: { runtime: ZxNextWasmV2Runtime; host: WasmDebugLoopHost };
+
   private executeWasmV2DebugLoop(runtime: ZxNextWasmV2Runtime): FrameTerminationMode {
+    const cached = this.wasmV2DebugLoopHost;
+    if (cached?.runtime !== runtime) {
+      this.wasmV2DebugLoopHost = { runtime, host: this.createWasmV2DebugLoopHost(runtime) };
+    }
+    return runWasmDebugLoop(this.wasmV2DebugLoopHost!.host);
+  }
+
+  private createWasmV2DebugLoopHost(runtime: ZxNextWasmV2Runtime): WasmDebugLoopHost {
     const wasm = runtime.exports;
-    const debugSupport = this.executionContext.debugSupport;
-    let instructionsExecuted = 0;
-    this.executionContext.lastTerminationReason = undefined;
-
-    /*
-     * The core waits for the host's SD answer before another instruction runs - the fast frame loop
-     * returns at once while a host command is pending - and so does this loop (REVERSE_DEBUGGING_PLAN
-     * T3). A stop right after the instruction that raised the command (a step, a breakpoint) leaves
-     * it unanswered; resuming then must not run on, or the answer lands one instruction late and a
-     * replay - whose fast frames wait - could never apply it where it was journaled. Returning
-     * without running lets the controller answer first. The command is re-read from the core, which
-     * holds it across a state restore that dropped the wrapper's copy - and a copy the core no longer
-     * waits for goes: a reverse-debugging replay applied the journaled answer (D14), and asking the
-     * host again would repeat a write and hand the core a response it does not expect.
-     */
-    if (wasm.zxnextGetSdHostCommand() === 0) this.setFrameCommand(null);
-    this.syncWasmV2StorageFrameCommand(runtime);
-    if (this.getFrameCommand()) {
-      const termination = this.finishWasmV2DebugLoop(runtime, FrameTerminationMode.Normal);
-      // --- No frame ended here: the frame the command interrupted was reported already
-      this.frameCompleted = false;
-      return termination;
-    }
-
-    this.syncCpuFromWasmV2(runtime);
-    if (this.frameCompleted) {
-      this.onInitNewFrame(false);
-      // --- The new frame's audio starts empty, as `zxnextExecuteFrame` begins it. Without this the
-      // --- sample buffers filled in the first frame run here and stayed full: no sound while debugging.
-      wasm.zxnextBeginAudioFrame();
-      this.frameCompleted = false;
-    }
-
-    // --- Queued keystrokes are timed in tacts and held for whole frames, so the fast path above
-    // --- plays them once per frame. Do the same here instead of once per instruction: the queue
-    // --- cannot advance faster than the frame counter it is measured against anyway.
-    this.emulateKeystroke();
-
-    // --- Mirroring the core's bus activity costs ~7 boundary crossings per instruction and is only
-    // --- ever read by the memory/IO breakpoint test, so decide once whether it is needed at all.
-    const watchesBusAccess = debugSupport?.hasAccessBreakpoints() ?? false;
-
-    /*
-     * The NextReg watch table is the core's copy of what this machine's NextReg breakpoints want.
-     * Pushed whole on entry rather than kept in step with every edit - the same arrangement the Z88
-     * core's breakpoint flags use, and correct because every breakpoint edit either pauses the
-     * machine or precedes the next run.
-     *
-     * The `else` matters as much as the `if`: a table left in the core after the last NextReg
-     * breakpoint was deleted would go on stopping the machine forever.
-     */
-    const watchesNextReg = debugSupport?.hasNextRegBreakpoints() ?? false;
-    if (watchesNextReg) {
-      runtime.nextRegWatch.set(debugSupport!.buildNextRegWatch());
-    } else {
-      wasm.zxnextClearNextRegWatch();
-    }
-    // --- Resuming starts a new search; the write the user already looked at is not a current one.
-    this.lastNextRegWrite = undefined;
-
-    /*
-     * The Copper watch (`.plans/COPPER_DEBUGGING_PLAN.md` §4.6): pushed whole on entry like the
-     * NextReg table, and disarmed when nothing watches, so the Copper's hot path stays free (T3).
-     * A pending Copper step arms "any index" as a one-shot.
-     */
-    const watchesCopper = (debugSupport?.hasCopperBreakpoints() ?? false) || this.copperStepPending;
-    if (watchesCopper) {
-      if (debugSupport?.hasCopperBreakpoints()) {
-        runtime.copperWatch.set(debugSupport.buildCopperWatch());
-      } else {
-        runtime.copperWatch.fill(0);
-      }
-      wasm.zxnextSetCopperWatchMode(1, this.copperStepPending ? 1 : 0);
-    } else {
-      wasm.zxnextSetCopperWatchMode(0, 0);
-    }
-    this.lastCopperHit = undefined;
-
-    /*
-     * The sprite-attribute watch (G3.8, sprite half): pushed whole on entry and disarmed when no
-     * `sp:` breakpoint is enabled, so the attribute write paths stay free.
-     */
-    const watchesSprites = debugSupport?.hasSpriteBreakpoints() ?? false;
-    if (watchesSprites) {
-      runtime.spriteWatch.set(debugSupport!.buildSpriteWatch());
-      wasm.zxnextSetSpriteWatchArmed(1);
-    } else {
-      wasm.zxnextSetSpriteWatchArmed(0);
-    }
-    this.lastSpriteWrite = undefined;
-
-    /*
-     * Finish a reset the last run stopped in front of.
-     *
-     * A NextReg write breakpoint on `$02` catches the write that *asks* for a reset, and stops
-     * before the reset is carried out, so the user can see who asked (below). The request is left
-     * standing in the core, and this is where it is honoured - before another instruction runs, or
-     * the machine would execute one more instruction than the program did.
-     *
-     * A no-op when nothing is pending, which is every other entry.
-     */
-    if (this.applyWasmV2ResetRequest(runtime)) {
-      super.pc = wasm.zxnextGetCpuPc();
-      this.frameCompleted = false;
-    }
-
-    if (debugSupport && this.pc !== debugSupport.lastStartupBreakpoint) {
-      if (this.shouldStopAtWasmV2Breakpoint(instructionsExecuted)) {
-        return this.finishWasmV2DebugLoop(runtime, FrameTerminationMode.DebugEvent);
-      }
-    }
-    if (debugSupport) {
-      debugSupport.lastStartupBreakpoint = undefined;
-    }
-
-    while (!this.frameCompleted) {
-      // --- The instruction a memory/I/O breakpoint hit is reported against (the Breakpoints panel):
-      // --- its first byte, as the TypeScript CPU records it - so not while a prefix is pending
-      // --- `|| watchesNextReg`: a NextReg hit is reported against the instruction that wrote, the
-      // --- same way a watchpoint hit is, so it needs this tracked too.
-      if (
-        (watchesBusAccess || watchesNextReg || watchesCopper || watchesSprites) &&
-        wasm.zxnextGetCpuPrefix() === 0
-      ) {
-        this.opStartAddress = this.pc;
-      }
-      wasm.zxnextExecuteInstruction();
-      instructionsExecuted++;
-      this.wasmV2DebugSteps++;
-
-      // --- Assigning through `super` on purpose: this class mirrors `pc` with a setter that pushes
-      // --- every write back into the core, and this value was just read out of that same core.
-      super.pc = wasm.zxnextGetCpuPc();
-      this.frameCompleted = wasm.zxnextGetFrameCompleted() !== 0;
-      // --- A reverse-debugging replay run reached its next journal entry (REVERSE_DEBUGGING_PLAN D11)
-      if (this.executionContext.historyStopArmed && wasm.z80HistoryCheckStop() !== 0) {
-        return this.finishWasmV2DebugLoop(runtime, FrameTerminationMode.UntilExecutionPoint);
-      }
-      if (watchesBusAccess) {
-        this.importWasmV2BusAccess(runtime);
-      }
-      this.syncWasmV2StorageFrameCommand(runtime);
-      this.wasmV2LastStopReason = "debugStep";
-
-      /*
-       * The NextReg test runs **before** the reset request is applied, and that ordering is the
-       * whole value of a breakpoint on `$02`.
-       *
-       * Writing `$02` bit 0 or 1 asks the machine to reset. The core only raises the request; the
-       * reset itself happens in `applyWasmV2ResetRequest` below, and it throws away the two things
-       * the user set the breakpoint to find out - the address of the instruction that wrote, and
-       * the paging it wrote under. Worse, a *hard* reset re-initialises the core's NextReg state
-       * and clears the latch with it, so the breakpoint did not fire at all.
-       *
-       * Stopping first leaves the request standing; the loop entry above honours it on resume.
-       */
-      if (watchesNextReg && this.acceptWasmV2NextRegHit(wasm.zxnextTakeNextRegHit())) {
-        return this.finishWasmV2DebugLoop(runtime, FrameTerminationMode.DebugEvent);
-      }
-      // --- The Copper may complete a watched instruction during any Z80 instruction; the machine
-      // --- stops at the end of it, while the Copper has run on to the end of it (T1).
-      if (watchesCopper && this.acceptWasmV2CopperHit(runtime, wasm.zxnextTakeCopperHit())) {
-        return this.finishWasmV2DebugLoop(runtime, FrameTerminationMode.DebugEvent);
-      }
-      // --- A watched sprite attribute byte was written during this instruction (by the CPU, the
-      // --- DMA it held the bus for, or the Copper); the machine stops at its end.
-      if (watchesSprites && this.acceptWasmV2SpriteHit(wasm.zxnextTakeSpriteHit())) {
-        return this.finishWasmV2DebugLoop(runtime, FrameTerminationMode.DebugEvent);
-      }
-
-      if (this.applyWasmV2ResetRequest(runtime)) {
-        super.pc = wasm.zxnextGetCpuPc();
-        this.frameCompleted = false;
-      }
-
-      if (this.executionContext.frameTerminationMode === FrameTerminationMode.UntilExecutionPoint) {
-        const point = this.executionContext.terminationPoint;
-        if (point != null && this.pc === (point & 0xffff)) {
-          return this.finishWasmV2DebugLoop(runtime, FrameTerminationMode.UntilExecutionPoint);
+    // --- What this run watches, decided on entry (below) and read around every instruction
+    let watchesBusAccess = false;
+    let watchesNextReg = false;
+    let watchesCopper = false;
+    let watchesSprites = false;
+    const self = this;
+    return {
+      get executionContext() {
+        return self.executionContext;
+      },
+      get frameCompleted() {
+        return self.frameCompleted;
+      },
+      set frameCompleted(value: boolean) {
+        self.frameCompleted = value;
+      },
+      get pc() {
+        return self.pc;
+      },
+      get stepOutAddress() {
+        return self.stepOutAddress;
+      },
+      getFrameCommand: () => this.getFrameCommand(),
+      enter: () => {
+        // --- Read per run: the cached hooks outlive one run, and `run()` replaces the debug support
+        const debugSupport = this.executionContext.debugSupport;
+        /*
+         * The core waits for the host's SD answer before another instruction runs - the fast frame loop
+         * returns at once while a host command is pending - and so does this loop (REVERSE_DEBUGGING_PLAN
+         * T3). A stop right after the instruction that raised the command (a step, a breakpoint) leaves
+         * it unanswered; resuming then must not run on, or the answer lands one instruction late and a
+         * replay - whose fast frames wait - could never apply it where it was journaled. Returning
+         * without running lets the controller answer first. The command is re-read from the core, which
+         * holds it across a state restore that dropped the wrapper's copy - and a copy the core no longer
+         * waits for goes: a reverse-debugging replay applied the journaled answer (D14), and asking the
+         * host again would repeat a write and hand the core a response it does not expect.
+         */
+        if (wasm.zxnextGetSdHostCommand() === 0) this.setFrameCommand(null);
+        this.syncWasmV2StorageFrameCommand(runtime);
+        if (this.getFrameCommand()) {
+          const termination = this.finishWasmV2DebugLoop(runtime, FrameTerminationMode.Normal);
+          // --- No frame ended here: the frame the command interrupted was reported already
+          this.frameCompleted = false;
+          return termination;
         }
-      }
-      if (watchesBusAccess && this.hasWasmV2AccessBreakpoint()) {
-        return this.finishWasmV2DebugLoop(runtime, FrameTerminationMode.DebugEvent);
-      }
-      if (this.shouldStopAtWasmV2Breakpoint(instructionsExecuted)) {
-        return this.finishWasmV2DebugLoop(runtime, FrameTerminationMode.DebugEvent);
-      }
-      if (this.executionContext.debugStepMode === DebugStepMode.StepInto) {
-        if (debugSupport) {
-          debugSupport.imminentBreakpoint = undefined;
-        }
-        return this.finishWasmV2DebugLoop(runtime, FrameTerminationMode.DebugEvent);
-      }
-      if (this.getFrameCommand()) {
-        return this.finishWasmV2DebugLoop(runtime, FrameTerminationMode.Normal);
-      }
-    }
 
-    return this.finishWasmV2DebugLoop(runtime, FrameTerminationMode.Normal);
+        this.syncCpuFromWasmV2(runtime);
+        if (this.frameCompleted) {
+          this.onInitNewFrame(false);
+          // --- The new frame's audio starts empty, as `zxnextExecuteFrame` begins it. Without this the
+          // --- sample buffers filled in the first frame run here and stayed full: no sound while debugging.
+          wasm.zxnextBeginAudioFrame();
+          this.frameCompleted = false;
+        }
+
+        // --- Queued keystrokes are timed in tacts and held for whole frames, so the fast path above
+        // --- plays them once per frame. Do the same here instead of once per instruction: the queue
+        // --- cannot advance faster than the frame counter it is measured against anyway.
+        this.emulateKeystroke();
+
+        // --- Mirroring the core's bus activity costs ~7 boundary crossings per instruction and is only
+        // --- ever read by the memory/IO breakpoint test, so decide once whether it is needed at all.
+        watchesBusAccess = debugSupport?.hasAccessBreakpoints() ?? false;
+
+        /*
+         * The NextReg watch table is the core's copy of what this machine's NextReg breakpoints want.
+         * Pushed whole on entry rather than kept in step with every edit - the same arrangement the Z88
+         * core's breakpoint flags use, and correct because every breakpoint edit either pauses the
+         * machine or precedes the next run.
+         *
+         * The `else` matters as much as the `if`: a table left in the core after the last NextReg
+         * breakpoint was deleted would go on stopping the machine forever.
+         */
+        watchesNextReg = debugSupport?.hasNextRegBreakpoints() ?? false;
+        if (watchesNextReg) {
+          runtime.nextRegWatch.set(debugSupport!.buildNextRegWatch());
+        } else {
+          wasm.zxnextClearNextRegWatch();
+        }
+        // --- Resuming starts a new search; the write the user already looked at is not a current one.
+        this.lastNextRegWrite = undefined;
+
+        /*
+         * The Copper watch (`.plans/COPPER_DEBUGGING_PLAN.md` §4.6): pushed whole on entry like the
+         * NextReg table, and disarmed when nothing watches, so the Copper's hot path stays free (T3).
+         * A pending Copper step arms "any index" as a one-shot.
+         */
+        watchesCopper = (debugSupport?.hasCopperBreakpoints() ?? false) || this.copperStepPending;
+        if (watchesCopper) {
+          if (debugSupport?.hasCopperBreakpoints()) {
+            runtime.copperWatch.set(debugSupport.buildCopperWatch());
+          } else {
+            runtime.copperWatch.fill(0);
+          }
+          wasm.zxnextSetCopperWatchMode(1, this.copperStepPending ? 1 : 0);
+        } else {
+          wasm.zxnextSetCopperWatchMode(0, 0);
+        }
+        this.lastCopperHit = undefined;
+
+        /*
+         * The sprite-attribute watch (G3.8, sprite half): pushed whole on entry and disarmed when no
+         * `sp:` breakpoint is enabled, so the attribute write paths stay free.
+         */
+        watchesSprites = debugSupport?.hasSpriteBreakpoints() ?? false;
+        if (watchesSprites) {
+          runtime.spriteWatch.set(debugSupport!.buildSpriteWatch());
+          wasm.zxnextSetSpriteWatchArmed(1);
+        } else {
+          wasm.zxnextSetSpriteWatchArmed(0);
+        }
+        this.lastSpriteWrite = undefined;
+
+        /*
+         * Finish a reset the last run stopped in front of.
+         *
+         * A NextReg write breakpoint on `$02` catches the write that *asks* for a reset, and stops
+         * before the reset is carried out, so the user can see who asked (below). The request is left
+         * standing in the core, and this is where it is honoured - before another instruction runs, or
+         * the machine would execute one more instruction than the program did.
+         *
+         * A no-op when nothing is pending, which is every other entry.
+         */
+        if (this.applyWasmV2ResetRequest(runtime)) {
+          this.setPcMirror(wasm.zxnextGetCpuPc());
+          this.frameCompleted = false;
+        }
+        return undefined;
+      },
+      beforeInstruction: () => {
+        // --- The instruction a memory/I/O breakpoint hit is reported against (the Breakpoints panel):
+        // --- its first byte, as the TypeScript CPU records it - so not while a prefix is pending
+        // --- `|| watchesNextReg`: a NextReg hit is reported against the instruction that wrote, the
+        // --- same way a watchpoint hit is, so it needs this tracked too.
+        if (
+          (watchesBusAccess || watchesNextReg || watchesCopper || watchesSprites) &&
+          wasm.zxnextGetCpuPrefix() === 0
+        ) {
+          this.opStartAddress = this.pc;
+        }
+        return undefined;
+      },
+      executeInstruction: () => {
+        wasm.zxnextExecuteInstruction();
+        this.wasmV2DebugSteps++;
+      },
+      // --- The core's own loop runs to the next place the stop policy may stop at (z80-debug-loop.c);
+      // --- the NextReg, Copper and sprite watches need the instruction's start tracked around every
+      // --- instruction (`beforeInstruction`), so a run with one keeps to TypeScript
+      executeUntilStop: (extraStop, mask, accessMask) => {
+        // --- The diagnostics count every instruction the debugger ran, in the core or one by one
+        const executed = wasm.zxnextExecuteUntilStop(extraStop, mask, accessMask);
+        this.wasmV2DebugSteps += executed;
+        // --- A memory/I/O breakpoint hit is reported against the instruction that touched it
+        if (watchesBusAccess && executed > 0) this.opStartAddress = wasm.zxnextGetDebugOpStart();
+        return executed;
+      },
+      lastOpStart: () => wasm.zxnextGetDebugOpStart(),
+      pushBreakpointFlags: (flags) => runtime.breakpointFlags.set(flags),
+      conditionPlan: () => runtime.condPlan,
+      canRunInCore: () => !(watchesNextReg || watchesCopper || watchesSprites),
+      coreFrameCompleted: () => wasm.zxnextGetFrameCompleted() !== 0,
+      // --- Past this class's `pc` setter, which would push the value just read from the core back into it
+      mirrorPc: () => {
+        const pc = wasm.zxnextGetCpuPc();
+        this.setPcMirror(pc);
+        return pc;
+      },
+      historyStopReached: () => wasm.z80HistoryCheckStop() !== 0,
+      importBusAccess: () => this.importWasmV2BusAccess(runtime),
+      afterStep: () => {
+        this.syncWasmV2StorageFrameCommand(runtime);
+        this.wasmV2LastStopReason = "debugStep";
+
+        /*
+         * The NextReg test runs **before** the reset request is applied, and that ordering is the
+         * whole value of a breakpoint on `$02`.
+         *
+         * Writing `$02` bit 0 or 1 asks the machine to reset. The core only raises the request; the
+         * reset itself happens in `applyWasmV2ResetRequest` below, and it throws away the two things
+         * the user set the breakpoint to find out - the address of the instruction that wrote, and
+         * the paging it wrote under. Worse, a *hard* reset re-initialises the core's NextReg state
+         * and clears the latch with it, so the breakpoint did not fire at all.
+         *
+         * Stopping first leaves the request standing; the loop entry above honours it on resume.
+         */
+        if (watchesNextReg && this.acceptWasmV2NextRegHit(wasm.zxnextTakeNextRegHit())) {
+          return FrameTerminationMode.DebugEvent;
+        }
+        // --- The Copper may complete a watched instruction during any Z80 instruction; the machine
+        // --- stops at the end of it, while the Copper has run on to the end of it (T1).
+        if (watchesCopper && this.acceptWasmV2CopperHit(runtime, wasm.zxnextTakeCopperHit())) {
+          return FrameTerminationMode.DebugEvent;
+        }
+        // --- A watched sprite attribute byte was written during this instruction (by the CPU, the
+        // --- DMA it held the bus for, or the Copper); the machine stops at its end.
+        if (watchesSprites && this.acceptWasmV2SpriteHit(wasm.zxnextTakeSpriteHit())) {
+          return FrameTerminationMode.DebugEvent;
+        }
+
+        if (this.applyWasmV2ResetRequest(runtime)) {
+          this.setPcMirror(wasm.zxnextGetCpuPc());
+          this.frameCompleted = false;
+        }
+        return undefined;
+      },
+      hasAccessBreakpoint: () => this.hasWasmV2AccessBreakpoint(),
+      shouldStopAtBreakpoint: (instructionsExecuted) => this.shouldStopAtWasmV2Breakpoint(instructionsExecuted),
+      finish: (termination) => this.finishWasmV2DebugLoop(runtime, termination)
+    };
   }
 
   /**
@@ -1102,43 +1180,26 @@ export class ZxNextWasmV2Machine
   }
 
   override markStepOutAddress(): void {
-    const address = this.requireWasmV2Runtime().exports.zxnextGetStepOutAddress();
-    this.stepOutAddress = address === 0xffffffff ? -1 : address;
+    this.stepOutAddress = stepOutAddressFromCore(this.requireWasmV2Runtime().exports.zxnextGetStepOutAddress());
   }
 
   private shouldStopAtWasmV2Breakpoint(instructionsExecuted: number): boolean {
-    const debugSupport = this.executionContext.debugSupport;
-    if (!debugSupport) return false;
-
-    return shouldStopAtDebugPoint({
-      debugSupport,
-      debugStepMode: this.executionContext.debugStepMode,
-      pc: this.pc,
+    return shouldStopAtWasmBreakpoint(
+      this,
       instructionsExecuted,
-      getPartition: (address) => this.getPartition(address),
-      getCallInstructionLength: () => this.getCallInstructionLength(),
       /*
        * From the core, not the mirrored fields: the debug loop keeps only PC in step per instruction
        * (the rest is synced when it exits), so `this.sp` would be the SP the run started with and a
        * source step over a call would stop inside the callee.
        */
-      getSp: () => this.wasmV2Runtime?.exports.zxnextGetCpuSp() ?? this.sp,
-      getInterruptDepth: () => this.getInterruptDepth(),
-      getRegisters: () => {
+      () => this.wasmV2Runtime?.exports.zxnextGetCpuSp() ?? this.sp,
+      () => {
         const w = this.wasmV2Runtime?.exports;
         return w
           ? { af: w.zxnextGetCpuAf(), bc: w.zxnextGetCpuBc(), de: w.zxnextGetCpuDe(), hl: w.zxnextGetCpuHl() }
           : { af: this.af, bc: this.bc, de: this.de, hl: this.hl };
-      },
-      stepOutAddress: this.stepOutAddress,
-      /*
-       * `false` now that the core keeps a step-out stack: `stepOutAddress` above is the exact
-       * address this routine returns to, which is what `DebugStepMode.StepOut` means. The flag
-       * fires on the first RET at *any* depth, including one returning from a nested call, so
-       * leaving it on would stop short of the caller. Same reasoning as the interpreted path.
-       */
-      retExecuted: false
-    });
+      }
+    );
   }
 
   /**
@@ -1240,26 +1301,13 @@ export class ZxNextWasmV2Machine
   }
 
   private hasWasmV2AccessBreakpoint(): boolean {
-    const debugSupport = this.executionContext.debugSupport;
-    if (!debugSupport) return false;
-    // --- All four asked, not short-circuited: a conditional breakpoint counts its hits (C11), so
-    // --- a read that stops must not hide a write in the same instruction from its counter.
-    const partitionOf = (addr: number) => this.getPartition(addr);
-    const read = debugSupport.hasMemoryRead(
-      this.lastMemoryReads,
-      this.lastMemoryReadsCount,
-      partitionOf,
-      this.lastMemoryReadValues
-    );
-    const written = debugSupport.hasMemoryWrite(
-      this.lastMemoryWrites,
-      this.lastMemoryWritesCount,
-      partitionOf,
+    return hasWasmAccessBreakpoint(
+      this.executionContext.debugSupport,
+      this,
+      (address) => this.getPartition(address),
+      this.lastMemoryReadValues,
       this.lastMemoryWriteValues
     );
-    const portRead = debugSupport.hasIoRead(this.lastIoReadPort, this.lastIoReadValue);
-    const portWritten = debugSupport.hasIoWrite(this.lastIoWritePort, this.lastIoWriteValue);
-    return read || written || portRead || portWritten;
   }
 
   readScreenMemory(offset: number): number {

@@ -132,6 +132,26 @@ export class SourceDebugIndex {
     return partition === undefined ? -1 : (partition + 1) * 0x10000 + address;
   }
 
+  private trackedCache?: number[];
+
+  /**
+   * Every CPU address `entryAt` or `returnSiteAt` can answer for - statement entries and call-site
+   * return addresses, in any partition. The statement tracker and a source step act nowhere else
+   * (`shouldStopAtSourceStep` returns at once elsewhere), so a debug loop running in the core stops at
+   * these and lets them decide (`.plans/WASM_CORE_LEAN_AND_DEBUG_PLAN.md` D13, Phases 4a and 4d).
+   * Read from the debug info rather than the maps' keys: a banked statement of unknown partition is keyed
+   * by no address at all. A superset is harmless - the decision at a stop is the TypeScript one.
+   */
+  trackedAddresses(): readonly number[] {
+    if (!this.trackedCache) {
+      const addresses = new Set<number>();
+      for (const s of this.info.statements) addresses.add(s.startAddress & 0xffff);
+      for (const site of this.info.extensions?.callSites ?? []) addresses.add(site.returnAddress & 0xffff);
+      this.trackedCache = [...addresses];
+    }
+    return this.trackedCache;
+  }
+
   /** The statement whose entry is `address` (in `partition`, for banked code), or -1. */
   entryAt(address: number, partition?: number): number {
     return this.entries.get(this.key(address, partition)) ?? -1;
@@ -334,6 +354,11 @@ export class CurrentStatementTracker {
   current = -1;
 
   constructor(private readonly index: SourceDebugIndex) {}
+
+  /** The addresses `observe` acts at (`SourceDebugIndex.trackedAddresses`) */
+  stopAddresses(): readonly number[] {
+    return this.index.trackedAddresses();
+  }
 
   observe(pc: number, getPartition?: (address: number) => number | undefined): void {
     const partition = this.index.isBanked(pc) ? getPartition?.(pc) : undefined;

@@ -27,6 +27,7 @@ export const IdeStatusBar = ({ show }: IdeStatusBarProps) => {
   const compilation = useSelector((s) => s.compilation);
   const cursorLine = useSelector((s) => s.ideView?.cursorLine);
   const cursorColumn = useSelector((s) => s.ideView?.cursorColumn);
+  const automation = useSelector((s) => s.automation);
   useSelector((s) => s.ideView?.documentHubState);
 
   const machineState = useMemo(() => {
@@ -118,6 +119,15 @@ export const IdeStatusBar = ({ show }: IdeStatusBarProps) => {
           </Section>
         )}
         <SpaceFiller />
+        {automation?.listening && (
+          <Section>
+            <AutomationItem
+              clients={automation.clients}
+              level={automation.level}
+              open={() => void ideCommandsService.executeCommand("outp automation")}
+            />
+          </Section>
+        )}
         {isMonacoEditor && cursorLine !== undefined && cursorColumn !== undefined && (
           <Section>
             <Label text="Ln" />
@@ -175,6 +185,35 @@ const ReverseDebugSection = ({ text, tooltip, stopped, searching, inThePast, inp
         </button>
       )}
     </Section>
+  );
+};
+
+type AutomationItemProps = {
+  clients: number;
+  level?: string;
+  open: () => void;
+};
+
+/**
+ * The automation server's item (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D4): automation is
+ * listening, and how many clients are connected. A click opens the Automation output pane (D13).
+ */
+const AutomationItem = ({ clients, level, open }: AutomationItemProps) => {
+  const connected = clients > 0;
+  const text = connected ? `Automation · ${clients} client${clients === 1 ? "" : "s"}` : "Automation";
+  const tooltip =
+    `Automation is on${level ? ` (level: ${level})` : ""}: scripts on this computer can drive Klive. ` +
+    `${connected ? `${clients} connected. ` : ""}Click to show the Automation output.`;
+  return (
+    <button
+      type="button"
+      className={classnames(styles.automation, { [styles.connected]: connected })}
+      title={tooltip}
+      onClick={open}
+    >
+      <Icon iconName="plug" width={14} height={14} fill="currentColor" />
+      {text}
+    </button>
   );
 };
 

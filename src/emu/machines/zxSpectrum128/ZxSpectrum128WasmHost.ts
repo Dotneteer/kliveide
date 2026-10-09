@@ -269,28 +269,35 @@ export function parseSpectrumPartitionLabel(label: string, romCount: number): nu
   return partition >= -romCount && partition < 8 ? partition : undefined;
 }
 
+/**
+ * Writes injected code into a 128K-family machine. Straight to memory (`doWriteMemory`): injecting
+ * takes no contention and no machine time, which the contended `writeMemory` added to the TypeScript
+ * side's T-state counter only (`ZxSpectrumBase.injectCodeToRun`).
+ */
 export function injectSpectrumCode(machine: ZxSpectrumBase, codeToInject: CodeToInject): void {
   if (!codeToInject.options.noCls) {
     for (let addr = 0x4000; addr < 0x5800; addr++) {
-      machine.writeMemory(addr, 0);
+      machine.doWriteMemory(addr, 0);
     }
     for (let addr = 0x5800; addr < 0x5b00; addr++) {
-      machine.writeMemory(addr, 0x38);
+      machine.doWriteMemory(addr, 0x38);
     }
   }
   for (const segment of codeToInject.segments) {
     if (segment.bank !== undefined) {
-      const partition = machine.getMemoryPartition(segment.bank);
+      // --- Through the core, so a bank that is paged in shows the code in the flat 64K too
       const baseAddr = segment.bankOffset ?? 0;
-      partition.set(segment.emittedCode, baseAddr);
+      for (let i = 0; i < segment.emittedCode.length; i++) {
+        machine.writeMemoryPartition(segment.bank, baseAddr + i, segment.emittedCode[i]);
+      }
     } else {
       const addr = segment.startAddress;
       for (let i = 0; i < segment.emittedCode.length; i++) {
-        machine.writeMemory(addr + i, segment.emittedCode[i]);
+        machine.doWriteMemory(addr + i, segment.emittedCode[i]);
       }
     }
   }
   if (codeToInject.options.cursorl || codeToInject.options.cursork) {
-    machine.writeMemory(0x5c3b, machine.readMemory(0x5c3b) | 0x08);
+    machine.doWriteMemory(0x5c3b, machine.doReadMemory(0x5c3b) | 0x08);
   }
 }

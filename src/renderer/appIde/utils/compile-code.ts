@@ -9,6 +9,7 @@ import {
 import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
 import { outputNavigateAction, writeErrorMessageWithLinks } from "@common/utils/output-utils";
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
+import type { BuildDiagnostic } from "@common/automation/protocol";
 
 /**
  * Compiling the project's build root, and reporting what went wrong.
@@ -46,6 +47,24 @@ export function modelTypeToMachineType(model: SpectrumModelType): string | null 
     default:
       return null;
   }
+}
+
+/**
+ * A build's diagnostics as the commands' structured result value
+ * (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D10): what `compile`, `run`, `debug`, `inject` and
+ * `expc` return in `value`, so a script reads the errors without parsing the Build pane's text.
+ */
+export function buildDiagnosticsValue(result?: KliveCompilerOutput): { errors: BuildDiagnostic[] } {
+  return {
+    errors: (result?.errors ?? []).map((e) => ({
+      file: e.filename,
+      line: e.line,
+      ...(e.startColumn !== undefined ? { column: e.startColumn } : {}),
+      ...(e.errorCode ? { code: e.errorCode } : {}),
+      message: e.message,
+      ...(e.isWarning ? { warning: true } : {})
+    }))
+  };
 }
 
 /**
@@ -104,7 +123,7 @@ export async function compileCode(
   } catch (err) {
     failedMessage = err.message;
   } finally {
-    context.store.dispatch(endCompileAction(result));
+    context.store.dispatch(endCompileAction(result, undefined, Date.now()));
     await refreshSourceCodeBreakpoints(context.store, context.messenger);
     context.store.dispatch(incBreakpointsVersionAction());
   }

@@ -1515,6 +1515,149 @@ or a record's sequence number (`#1234`).
 history-goto <-n | #sequence>
 ```
 
+## `coverage`
+
+Use this command to control [code coverage and the memory heat map](/working-with-ide/code-coverage).
+Alias: `cov`.
+
+```
+coverage on [-nocounts] | off | reset | status
+coverage export <file> [-format lcov|csv|kcov] [-norom] [-f]
+coverage load <file>
+coverage smc
+```
+
+- `on`, `off`: turn coverage on or off for the session. `-nocounts` keeps only whether each byte was
+  executed, read or written, not how often.
+- `reset`: clear everything coverage recorded.
+- `status`: whether coverage is on, what it counted, how full the counter pool is, the time split and
+  the current build's line coverage.
+- `export`: write LCOV (`.info`, `.lcov`), CSV (`.csv`) or Klive coverage (`.kcov`); `-format`
+  overrides the extension, `-norom` leaves ROM bytes out of a CSV, `-f` replaces an existing file.
+- `load`: merge a `.kcov` file into the current coverage.
+- `smc`: list the self-modified bytes, with the nearest label and their counts.
+
+## `coverage-reset`
+
+Use this command to clear code coverage and the heat map. Alias: `covr`.
+
+```
+coverage-reset
+```
+
+## `memory-heat`
+
+Use this command to set the memory view's heat map, as its **Heat** selector does.
+
+```
+memory-heat <off|exec|read|write|all>
+```
+
+## `profile`
+
+Use this command to control [the profiler](/working-with-ide/profiler). Alias: `prof`.
+
+```
+profile start [-calls] [-at <address|label>] [-until <address|label>]
+profile stop | reset | status
+profile top [n] [-by self|inclusive|calls] [-waiting]
+profile export <file> [-format fuse|csv|callgrind|speedscope] [-addresses] [-f]
+```
+
+- `start`: reset the profile and start a window. `-calls` records the call graph. `-at` starts counting
+  the first time the program reaches the address; `-until` stops profiling the next time it gets
+  there after that.
+- `stop`: stop profiling; the profile stays until the next start or reset.
+- `reset`: clear the profile.
+- `status`: whether profiling is on and armed, the time and frames measured, and the call graph's
+  counters (calls, interrupts, stack switches).
+- `top`: the top `n` routines (10 by default), sorted by self time, inclusive time or calls. `-waiting`
+  keeps time in `HALT` in the table.
+- `export`: write speedscope (`.json`), callgrind (`callgrind.out.*`, `.callgrind`), CSV (`.csv`) or
+  Fuse (`.prof`); `-format` overrides the file name, `-addresses` writes the Addresses table as CSV,
+  `-f` replaces an existing file.
+
+## `profile-start`
+
+Use this command to start profiling, as `profile start` does. Alias: `pst`.
+
+```
+profile-start [-calls] [-at <address|label>] [-until <address|label>]
+```
+
+## `profile-stop`
+
+Use this command to stop profiling, as `profile stop` does. Alias: `psp`.
+
+```
+profile-stop
+```
+
+## `show-profiler`
+
+Use this command to display the Profiler document. Alias: `shprof`. `hide-profiler` (`hprof`) closes it.
+
+```
+show-profiler
+```
+
+## `test-list`
+
+Use this command to list the [unit tests](/working-with-ide/unit-tests) of the last successful build,
+by suite, with their addresses and links to their labels. Alias: `tl`.
+
+```
+test-list
+```
+
+## `test-run`
+
+Use this command to build the project and run its [unit tests](/working-with-ide/unit-tests). The
+report goes to the **Tests** output pane; the command prints the summary. Alias: `tr`.
+
+```
+test-run [<pattern>] [-failed] [-coverage]
+```
+
+- `pattern`: run only the tests whose `Suite.UT_name` matches; `*` matches any run of characters
+  (`MathTests.*`, `*Overflow*`). All tests (or the project's `unitTests.include`) when omitted.
+- `-failed`: run only the tests that failed or ended in an error in their last run.
+- `-coverage`: record code coverage while the tests run and show it in the editor.
+
+## `test-debug`
+
+Use this command to debug one [unit test](/working-with-ide/unit-tests#debugging-a-test) in the
+emulator: it stops at the test's first instruction, and reaching `TC_END` stops with "passed". Alias:
+`td`.
+
+```
+test-debug <test>
+```
+
+`test` is the test's `Suite.UT_name`, its label alone, or a `*` pattern that names one test.
+
+## `test-init`
+
+Use this command to add unit-test support to the project: Klive's include file next to the build root
+(kept when one is there already), and its include line in the build root.
+
+```
+test-init
+```
+
+## `test-junit`
+
+Use this command to write the last [unit-test](/working-with-ide/unit-tests) run's results as JUnit
+XML, the file `klive test --junit` writes in CI ([Unit Tests on the Command Line](/working-with-ide/unit-tests-cli)).
+The Testing activity's **Export results as JUnit...** context-menu item runs it.
+
+```
+test-junit <file> [-notimestamp]
+```
+
+- `file`: the XML file to write.
+- `-notimestamp`: leave the run's time out, so two runs with the same results write the same file.
+
 ## `show-disassembly`
 
 Use this command to display the machine code disassembly view, and optionally to show an address in

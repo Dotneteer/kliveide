@@ -1,5 +1,8 @@
 import { WasmHistorySource } from "../history/WasmHistorySource";
+import { WasmProfileSource } from "../profile/WasmProfileSource";
 import type { IExecutionHistorySource } from "@emu/abstractions/IExecutionHistorySource";
+import type { IAccessProfileSource } from "@emu/abstractions/IAccessProfileSource";
+import type { ProfileCounts, ProfileEdge, ProfileInfo, ProfileTouchedByte } from "@common/profile/profileTypes";
 import type { ExecutionHistoryInfo, ExecutionHistoryPage } from "@common/history/historyTypes";
 import type { HistoryServiceSpan } from "@common/history/serviceSpans";
 import { conditionStoreOf, type ConditionStore } from "../conditionStore";
@@ -9,7 +12,13 @@ import type { Sp128WasmV2LoaderOptions, Sp128WasmV2Runtime } from "./wasm/Sp128W
 import type { TapeDataBlock } from "@common/structs/TapeDataBlock";
 
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
-import { shouldStopAtDebugPoint } from "../DebugStepDecision";
+import {
+  hasWasmAccessBreakpoint,
+  runWasmDebugLoop,
+  type WasmDebugLoopHost,
+  shouldStopAtWasmBreakpoint,
+  stepOutAddressFromCore
+} from "../wasmDebugLoop";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { TapeMode } from "@emu/abstractions/TapeMode";
 import {
@@ -83,7 +92,10 @@ export type Sp128WasmV2Diagnostics = {
 /**
  * Full-machine WASM v2 adapter for the ZX Spectrum 128K migration path.
  */
-export class ZxSpectrum128WasmV2Machine extends ZxSpectrum128WasmHost implements IExecutionHistorySource, IRzxMachine {
+export class ZxSpectrum128WasmV2Machine
+  extends ZxSpectrum128WasmHost
+  implements IExecutionHistorySource, IAccessProfileSource, IRzxMachine
+{
   // ==============================================================================================
   // Execution history (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`): the shared recorder in the
   // core, read through the shared reader; the machine id names the context decoder
@@ -115,6 +127,59 @@ export class ZxSpectrum128WasmV2Machine extends ZxSpectrum128WasmHost implements
 
   setHistoryEnabled(enabled: boolean): void {
     this.wasmV2History.setEnabled(enabled);
+  }
+
+  // ==============================================================================================
+  // The access profile (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`): the shared module in the core,
+  // read through the shared reader; the machine id names the layout (the Scorpion has its own)
+
+  get profileMachineId(): string {
+    return this.machineId;
+  }
+
+  private readonly wasmV2Profile = new WasmProfileSource(
+    () => this.wasmV2Runtime?.exports,
+    () => this.profileMachineId
+  );
+
+  getProfileInfo(): ProfileInfo | undefined {
+    return this.wasmV2Profile.info();
+  }
+
+  setProfiling(enabled: boolean, counters: boolean): void {
+    this.wasmV2Profile.setEnabled(enabled, counters);
+  }
+
+  resetProfile(): void {
+    this.wasmV2Profile.reset();
+  }
+
+  readProfileFlags(start: number, length: number): Uint8Array | undefined {
+    return this.wasmV2Profile.flags(start, length);
+  }
+
+  readProfileCounts(start: number, length: number): ProfileCounts | undefined {
+    return this.wasmV2Profile.counts(start, length);
+  }
+
+  readProfileTouched(mask?: number): ProfileTouchedByte[] | undefined {
+    return this.wasmV2Profile.touched(mask);
+  }
+
+  mergeProfile(bytes: readonly ProfileTouchedByte[], totals: { instructions: number; timeTotal: number }): void {
+    this.wasmV2Profile.merge(bytes, totals);
+  }
+
+  setProfileCalls(on: boolean): void {
+    this.wasmV2Profile.setCalls(on);
+  }
+
+  armProfileWindow(start: number | undefined, stop: number | undefined): void {
+    this.wasmV2Profile.arm(start, stop);
+  }
+
+  readProfileEdges(): ProfileEdge[] | undefined {
+    return this.wasmV2Profile.edges();
   }
 
   public readonly implementation = "wasm" as const;
@@ -655,6 +720,21 @@ export class ZxSpectrum128WasmV2Machine extends ZxSpectrum128WasmHost implements
     return runtime.ram.subarray(bank * 0x4000, (bank + 1) * 0x4000);
   }
 
+  /** A RAM bank goes through the core, which keeps its flat copy of the paged-in memory in step */
+  override writeMemoryPartition(index: number, offset: number, value: number): void {
+    if (index < 0) {
+      super.writeMemoryPartition(index, offset, value);
+      return;
+    }
+    this.writeRamBank(index & 0x07, offset, value);
+  }
+
+  /** Writes a byte of a RAM bank with the core's `sp128WriteRamBank` (no contention, no machine time) */
+  protected writeRamBank(bank: number, offset: number, value: number): void {
+    if (offset < 0 || offset >= 0x4000) return;
+    this.requireWasmV2Runtime().exports.sp128WriteRamBank(bank, offset, value & 0xff);
+  }
+
   override getCurrentPartitions(): number[] {
     const wasm = this.requireWasmV2Runtime().exports;
     const slot0 = wasm.sp128GetCurrentPartition(0);
@@ -1069,98 +1149,84 @@ export class ZxSpectrum128WasmV2Machine extends ZxSpectrum128WasmHost implements
    * instruction what the stop tests below actually read. The full register set is mirrored once, on
    * the way out, by `finishWasmV2DebugLoop()`.
    */
+  /** The debug loop's hooks, built once per core instance and RZX session: a stable object lets the JIT inline them */
+  private wasmV2DebugLoopHost?: { runtime: Sp128WasmV2Runtime; rzx: IRzxSession | undefined; host: WasmDebugLoopHost };
+
   private executeWasmV2DebugLoop(runtime: Sp128WasmV2Runtime): FrameTerminationMode {
-    const wasm = runtime.exports;
-    const debugSupport = this.executionContext.debugSupport;
-    let instructionsExecuted = 0;
-    this.executionContext.lastTerminationReason = undefined;
-
-    if (this.frameCompleted) {
-      this.onInitNewFrame(false);
-      this.frameCompleted = false;
-    }
-
-    this.syncCpuFromWasmV2(runtime);
-
-    // --- Frame-level concerns, done once per entry exactly as the full-frame path above does them.
-    // --- Queued keystrokes are timed in tacts and held for whole frames, so the queue cannot
-    // --- advance faster than the frame counter it is measured against anyway.
-    this.emulateKeystroke();
     const rzx = this.rzxSession?.active ? this.rzxSession : undefined;
-    if (rzx?.mode !== "play") this.syncKeyboardToWasmV2(runtime);
-    this.syncAudioSampleRateToWasmV2(runtime);
-    this.syncTargetClockMultiplierToWasmV2(runtime);
-
-    // --- Mirroring the core's bus activity costs several boundary crossings per instruction and is
-    // --- only ever read by the memory/IO breakpoint test, so decide once whether it is needed.
-    const watchesBusAccess = debugSupport?.hasAccessBreakpoints() ?? false;
-    if (debugSupport && this.pc !== debugSupport.lastStartupBreakpoint) {
-      if (this.shouldStopAtWasmV2Breakpoint(instructionsExecuted)) {
-        return this.finishWasmV2DebugLoop(FrameTerminationMode.DebugEvent);
-      }
+    const cached = this.wasmV2DebugLoopHost;
+    if (cached?.runtime !== runtime || cached.rzx !== rzx) {
+      this.wasmV2DebugLoopHost = { runtime, rzx, host: this.createWasmV2DebugLoopHost(runtime, rzx) };
     }
-    if (debugSupport) {
-      debugSupport.lastStartupBreakpoint = undefined;
-    }
+    return runWasmDebugLoop(this.wasmV2DebugLoopHost!.host);
+  }
 
-    while (!this.frameCompleted) {
-      if (rzx && !rzx.beforeInstruction()) {
-        return this.finishWasmV2DebugLoop(FrameTerminationMode.DebugEvent);
-      }
-      wasm.sp128ExecuteInstruction();
-      if (rzx) {
-        // --- A playback call that ends an RZX frame runs no instruction (`zx-spectrum-rzx.c`)
-        const result = rzx.afterInstruction();
-        if (result === "stopped") {
-          super.pc = wasm.sp128GetCpuPc();
-          return this.finishWasmV2DebugLoop(FrameTerminationMode.DebugEvent);
+  private createWasmV2DebugLoopHost(runtime: Sp128WasmV2Runtime, rzx: IRzxSession | undefined): WasmDebugLoopHost {
+    const wasm = runtime.exports;
+    const self = this;
+    return {
+      get executionContext() {
+        return self.executionContext;
+      },
+      get frameCompleted() {
+        return self.frameCompleted;
+      },
+      set frameCompleted(value: boolean) {
+        self.frameCompleted = value;
+      },
+      get pc() {
+        return self.pc;
+      },
+      get stepOutAddress() {
+        return self.stepOutAddress;
+      },
+      getFrameCommand: () => this.getFrameCommand(),
+      enter: () => {
+        if (this.frameCompleted) {
+          this.onInitNewFrame(false);
+          this.frameCompleted = false;
         }
-        if (result === "picture") {
-          this.frameCompleted = true;
-          break;
-        }
-        if (result === "boundary") continue;
-      }
-      instructionsExecuted++;
 
-      // --- Assigning through `super` on purpose: this class mirrors `pc` with a setter that pushes
-      // --- every write back into the core, and this value was just read out of that same core.
-      super.pc = wasm.sp128GetCpuPc();
-      if (watchesBusAccess) {
-        this.importWasmV2BusAccess(runtime);
-      }
-      // --- In playback a frame completes only at an RZX frame end, above
-      this.frameCompleted = rzx?.mode === "play" ? false : wasm.sp128GetFrameCompleted() !== 0;
+        this.syncCpuFromWasmV2(runtime);
 
-      // --- A reverse-debugging replay run reached its next journal entry (REVERSE_DEBUGGING_PLAN D11)
-      if (this.executionContext.historyStopArmed && wasm.z80HistoryCheckStop() !== 0) {
-        return this.finishWasmV2DebugLoop(FrameTerminationMode.UntilExecutionPoint);
-      }
-
-      if (this.executionContext.frameTerminationMode === FrameTerminationMode.UntilExecutionPoint) {
-        const point = this.executionContext.terminationPoint;
-        if (point != null && this.pc === (point & 0xffff)) {
-          return this.finishWasmV2DebugLoop(FrameTerminationMode.UntilExecutionPoint);
-        }
-      }
-      if (watchesBusAccess && this.hasWasmV2AccessBreakpoint()) {
-        return this.finishWasmV2DebugLoop(FrameTerminationMode.DebugEvent);
-      }
-      if (this.shouldStopAtWasmV2Breakpoint(instructionsExecuted)) {
-        return this.finishWasmV2DebugLoop(FrameTerminationMode.DebugEvent);
-      }
-      if (this.executionContext.debugStepMode === DebugStepMode.StepInto) {
-        if (debugSupport) {
-          debugSupport.imminentBreakpoint = undefined;
-        }
-        return this.finishWasmV2DebugLoop(FrameTerminationMode.DebugEvent);
-      }
-      if (this.getFrameCommand()) {
-        return this.finishWasmV2DebugLoop(FrameTerminationMode.Normal);
-      }
-    }
-
-    return this.finishWasmV2DebugLoop(FrameTerminationMode.Normal);
+        // --- Frame-level concerns, done once per entry exactly as the full-frame path above does them.
+        // --- Queued keystrokes are timed in tacts and held for whole frames, so the queue cannot
+        // --- advance faster than the frame counter it is measured against anyway.
+        this.emulateKeystroke();
+        if (rzx?.mode !== "play") this.syncKeyboardToWasmV2(runtime);
+        this.syncAudioSampleRateToWasmV2(runtime);
+        this.syncTargetClockMultiplierToWasmV2(runtime);
+        return undefined;
+      },
+      // --- An RZX session decides around every instruction call (`zx-spectrum-rzx.c`)
+      beforeInstruction: rzx
+        ? () => (rzx.beforeInstruction() ? undefined : FrameTerminationMode.DebugEvent)
+        : undefined,
+      executeInstruction: () => {
+        wasm.sp128ExecuteInstruction();
+      },
+      afterInstruction: rzx ? () => rzx.afterInstruction() : undefined,
+      // --- The core's own loop runs to the next place the stop policy may stop at (z80-debug-loop.c);
+      // --- an RZX session decides around every instruction call, so it keeps the run in TypeScript
+      executeUntilStop: (extraStop, mask, accessMask) => wasm.sp128ExecuteUntilStop(extraStop, mask, accessMask),
+      lastOpStart: () => wasm.sp128GetDebugOpStart(),
+      pushBreakpointFlags: (flags) => runtime.breakpointFlags.set(flags),
+      conditionPlan: () => runtime.condPlan,
+      canRunInCore: () => rzx === undefined,
+      // --- In playback a frame completes only at an RZX frame end
+      coreFrameCompleted: () => (rzx?.mode === "play" ? false : wasm.sp128GetFrameCompleted() !== 0),
+      // --- Past this class's `pc` setter, which would push the value just read from the core back into it
+      mirrorPc: () => {
+        const pc = wasm.sp128GetCpuPc();
+        this.setPcMirror(pc);
+        return pc;
+      },
+      historyStopReached: () => wasm.z80HistoryCheckStop() !== 0,
+      importBusAccess: () => this.importWasmV2BusAccess(runtime),
+      hasAccessBreakpoint: () => this.hasWasmV2AccessBreakpoint(),
+      shouldStopAtBreakpoint: (instructionsExecuted) => this.shouldStopAtWasmV2Breakpoint(instructionsExecuted),
+      finish: (termination) => this.finishWasmV2DebugLoop(termination)
+    };
   }
 
   /**
@@ -1200,56 +1266,26 @@ export class ZxSpectrum128WasmV2Machine extends ZxSpectrum128WasmHost implements
   }
 
   override markStepOutAddress(): void {
-    const address = this.requireWasmV2Runtime().exports.sp128GetStepOutAddress();
-    this.stepOutAddress = address === 0xffffffff ? -1 : address;
+    this.stepOutAddress = stepOutAddressFromCore(this.requireWasmV2Runtime().exports.sp128GetStepOutAddress());
   }
 
   private shouldStopAtWasmV2Breakpoint(instructionsExecuted: number): boolean {
-    const debugSupport = this.executionContext.debugSupport;
-    if (!debugSupport) return false;
-
-    return shouldStopAtDebugPoint({
-      debugSupport,
-      debugStepMode: this.executionContext.debugStepMode,
-      pc: this.pc,
+    return shouldStopAtWasmBreakpoint(
+      this,
       instructionsExecuted,
-      getPartition: (address) => this.getPartition(address),
-      getCallInstructionLength: () => this.getCallInstructionLength(),
-      getSp: () => this.sp,
-      getInterruptDepth: () => this.getInterruptDepth(),
-      getRegisters: () => ({ af: this.af, bc: this.bc, de: this.de, hl: this.hl }),
-      stepOutAddress: this.stepOutAddress,
-      /*
-       * `false` now that the core keeps a step-out stack: `stepOutAddress` above is the exact
-       * address this routine returns to, which is what `DebugStepMode.StepOut` means. The flag
-       * fires on the first RET at *any* depth, including one returning from a nested call, so
-       * leaving it on would stop short of the caller. Same reasoning as the interpreted path.
-       */
-      retExecuted: false
-    });
+      () => this.sp,
+      () => ({ af: this.af, bc: this.bc, de: this.de, hl: this.hl })
+    );
   }
 
   private hasWasmV2AccessBreakpoint(): boolean {
-    const debugSupport = this.executionContext.debugSupport;
-    if (!debugSupport) return false;
-    // --- All four asked, not short-circuited: a conditional breakpoint counts its hits (C11), so
-    // --- a read that stops must not hide a write in the same instruction from its counter.
-    const partitionOf = (addr: number) => this.getPartition(addr);
-    const read = debugSupport.hasMemoryRead(
-      this.lastMemoryReads,
-      this.lastMemoryReadsCount,
-      partitionOf,
-      this.lastMemoryReadValues
-    );
-    const written = debugSupport.hasMemoryWrite(
-      this.lastMemoryWrites,
-      this.lastMemoryWritesCount,
-      partitionOf,
+    return hasWasmAccessBreakpoint(
+      this.executionContext.debugSupport,
+      this,
+      (address) => this.getPartition(address),
+      this.lastMemoryReadValues,
       this.lastMemoryWriteValues
     );
-    const portRead = debugSupport.hasIoRead(this.lastIoReadPort, this.lastIoReadValue);
-    const portWritten = debugSupport.hasIoWrite(this.lastIoWritePort, this.lastIoWriteValue);
-    return read || written || portRead || portWritten;
   }
 
   /**

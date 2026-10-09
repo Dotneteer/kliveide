@@ -67,10 +67,12 @@
 /project-templates/index.html
 /scripting/overview/index.html
 /scripting/syntax/index.html
+/working-with-ide/automation/index.html
 /working-with-ide/basic/index.html
 /working-with-ide/beam-position/index.html
 /working-with-ide/breakpoints/index.html
 /working-with-ide/build-system/index.html
+/working-with-ide/code-coverage/index.html
 /working-with-ide/commands/index.html
 /working-with-ide/copper/index.html
 /working-with-ide/cpu/index.html
@@ -84,6 +86,7 @@
 /working-with-ide/memory/index.html
 /working-with-ide/navigation/index.html
 /working-with-ide/pasta80/index.html
+/working-with-ide/profiler/index.html
 /working-with-ide/project-explorer/index.html
 /working-with-ide/reverse-debugging/index.html
 /working-with-ide/run-debug/index.html
@@ -93,6 +96,8 @@
 /working-with-ide/system-vars/index.html
 /working-with-ide/tilemap-inspector/index.html
 /working-with-ide/ula/index.html
+/working-with-ide/unit-tests-cli/index.html
+/working-with-ide/unit-tests/index.html
 /working-with-ide/watch/index.html
 /working-with-ide/zxb/index.html
 /z80-assembly/directives/index.html

@@ -367,3 +367,26 @@
     display: none;
   }
 }
+
+/*
+ * Code coverage's cell (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D13): 1ch, reserved on every row
+ * once coverage has data so the columns after it line up. An instruction that ran gets the editor
+ * strip's filled bar in the same token, so the listing and the source say "ran" the same way. An
+ * instruction that never ran is left empty here - most of a ROM listing never runs, and a hollow
+ * mark on every such row would bury the ones that did.
+ */
+.item .coverageCell {
+  flex: 0 0 auto;
+  width: 1ch;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.item .coverageCell.covered::before {
+  content: "";
+  width: 4px;
+  height: 70%;
+  background: var(--color-coverage-covered);
+}

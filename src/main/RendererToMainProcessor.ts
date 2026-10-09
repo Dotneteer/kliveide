@@ -77,7 +77,9 @@ import {
   selectMediaFile as selectMachineMedia,
   setSelectedTapeFile
 } from "./machine-menus/zx-specrum-menus";
-import { appSettings, saveAppSettings, setSettingValue } from "./settings-utils";
+import { appSettings, applyUserSetting, saveAppSettings, setSettingValue } from "./settings-utils";
+import { tapAutomationOutput } from "./automation/automation-controller";
+import { relayedRequest } from "@messaging/MessengerBase";
 import { runBackgroundCompileWorker } from "./compiler-integration/runWorker";
 import { CimFile } from "./fat32/CimFileManager";
 import { Fat32Volume } from "./fat32/Fat32Volume";
@@ -96,6 +98,9 @@ import type { RecordingFormat } from "@common/state/AppState";
 import { copyZxNextStorageFile as copyZxNextStorageFileOnHost } from "./zx-next-storage-copy";
 import { applyEmuContentSizeHints } from "./emu-window-sizing";
 import { emuMachineSizeStore } from "./emu-machine-sizes";
+import type { UnitTestRunRequest, UnitTestRunResponse } from "@common/unit-tests/unitTestTypes";
+import { addUnitTestSupport, type AddUnitTestSupportResult } from "./unit-tests/addUnitTestSupport";
+import { cancelUnitTestRun, rememberCompilation, runUnitTestsInWorker } from "./unit-tests/unitTestService";
 import type { EmuContentSizeHints } from "@common/utils/emu-window-size";
 import type {
   SjasmplusIntegrationApplyRequest,
@@ -619,20 +624,7 @@ class MainMessageProcessor {
    * @param value The value to set (omit to remove).
    */
   applyUserSettings(key: string, value?: any) {
-    if (key) {
-      appSettings.userSettings ??= {};
-      if (value === undefined) {
-        _.unset(appSettings.userSettings, key);
-      } else {
-        _.set(appSettings.userSettings, key, value);
-      }
-      // --- Publish the change to the renderers before saving. Without this the file
-      // --- on disk and the running session disagree until the next start: the `set`
-      // --- command (and `sjasmp-reset`, which builds on it) would write a setting
-      // --- that the IDE keeps reporting as unset.
-      this.dispatch(saveUserSettingAction({ ...appSettings.userSettings }));
-      saveAppSettings();
-    }
+    applyUserSetting(key, value);
   }
 
   /**
@@ -763,7 +755,25 @@ class MainMessageProcessor {
     compiler?.setAppState(mainStore.getState());
     const output = (await compiler.compileFile(filename, options, params?.profile)) as KliveCompilerOutput;
     // --- `LOGPOINT` comments that cannot be used become build warnings (`.plans/LOGPOINTS_PLAN.md` L13)
-    return checkSourceAnnotations(output);
+    const checked = checkSourceAnnotations(output);
+    // --- The unit-test runner takes the last build (`.plans/Z80_UNIT_TESTS_PLAN.md` D15)
+    rememberCompilation(filename, language, checked);
+    return checked;
+  }
+
+  /** Runs the last build's unit tests in a worker (`.plans/Z80_UNIT_TESTS_PLAN.md` D6) */
+  async runUnitTests(request: UnitTestRunRequest): Promise<UnitTestRunResponse> {
+    return runUnitTestsInWorker(request, (action) => this.dispatch(action));
+  }
+
+  /** Stops the unit-test run in progress */
+  async cancelUnitTests(): Promise<void> {
+    cancelUnitTestRun();
+  }
+
+  /** Adds Klive's unit-test include to the build root (D4, D5) */
+  async addUnitTestSupport(buildRoot: string, language: string): Promise<AddUnitTestSupportResult> {
+    return addUnitTestSupport(buildRoot, language);
   }
 
   /**
@@ -1233,10 +1243,17 @@ export async function processRendererToMainMessages(
   const mainMessageProcessor = new MainMessageProcessor(window, dispatch);
 
   if (message.targetId === "emu") {
-    return await sendFromMainToEmu(message);
+    return await sendFromMainToEmu(relayedRequest(message));
   }
   if (message.targetId === "ide") {
-    return await sendFromMainToIde(message);
+    // --- Emulator and Log pane output, for automation's `ide.output` (COMMAND_LINE_AUTOMATION_PLAN D11)
+    if (
+      message.type === "ApiMethodRequest" &&
+      (message.method === "displayOutput" || message.method === "displayOutputBatch")
+    ) {
+      tapAutomationOutput(message.args?.[0]);
+    }
+    return await sendFromMainToIde(relayedRequest(message));
   }
 
   switch (message.type) {

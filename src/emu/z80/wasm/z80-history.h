@@ -65,6 +65,12 @@ static void z80HistoryEvent(uint32_t kind);
 static void z80HistoryBegin(void);
 static void z80HistoryCommit(void);
 
+#ifdef Z80_BENCH_STRIP_DEBUG
+/* Benchmark-only (`z80.c`): the hooks compile to nothing */
+#define Z80_HISTORY_EVENT(kind) ((void)0)
+#define Z80_HISTORY_BEGIN() ((void)0)
+#define Z80_HISTORY_COMMIT() ((void)0)
+#else
 #define Z80_HISTORY_EVENT(kind) \
   do { \
     if (z80HistoryHeader.enabled) z80HistoryEvent(kind); \
@@ -77,5 +83,6 @@ static void z80HistoryCommit(void);
   do { \
     if (z80HistoryHeader.enabled) z80HistoryCommit(); \
   } while (0)
+#endif
 
 #endif

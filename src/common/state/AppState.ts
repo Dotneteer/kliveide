@@ -11,6 +11,7 @@ import {
 } from "@abstractions/CompilerInfo";
 import type { BasicIntelData } from "@abstractions/BasicIntel";
 import { CompilationCompleted } from "@main/compiler-integration/runWorker";
+import type { UnitTestResult, UnitTestSummary } from "@common/unit-tests/unitTestTypes";
 
 /**
  * Represents a watch expression definition
@@ -69,6 +70,40 @@ export type AppState = {
    * Persisted with the project next to `logpointGroups`.
    */
   sourceComments?: SourceCommentSwitches;
+  /** The unit-test results and the run in progress (`.plans/Z80_UNIT_TESTS_PLAN.md` §4.3) */
+  unitTests?: UnitTestsState;
+  /**
+   * The automation server (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D4): whether it listens and
+   * how many clients are connected, for the status-bar item. Absent while it is off.
+   */
+  automation?: AutomationStatusState;
+};
+
+/** The automation server's status */
+export type AutomationStatusState = {
+  listening: boolean;
+  clients: number;
+  level?: "read" | "control" | "full";
+};
+
+/** The unit-test results: by test id, and the run in progress */
+export type UnitTestsState = {
+  /** The last result of every test that ran, by id */
+  results: Record<string, UnitTestResult>;
+  /** A run is in progress */
+  running?: boolean;
+  /** The test running now */
+  runningTest?: string;
+  /** The tests the run in progress (or the last run) selected */
+  runIds?: string[];
+  startedAt?: number;
+  finishedAt?: number;
+  /** The last run's summary */
+  summary?: UnitTestSummary;
+  /** Why the last run could not run (D1's message, an unsupported machine, ...) */
+  problems?: string[];
+  /** Bumped by every change, for listeners that only need to know something changed */
+  version: number;
 };
 
 export type IdeView = {
@@ -87,6 +122,11 @@ export type IdeView = {
   navHistory?: NavigationHistoryState;
   /** The source-level call-stack frame selected in the Call Stack panel (0: innermost); the Variables panel shows its locals. */
   sourceFrame?: number;
+  /**
+   * The memory view's heat map (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D14): "off", "exec",
+   * "read", "write" or "all". Shared by the toolbar's Heat selector and `memory-heat`.
+   */
+  memoryHeatMode?: string;
 };
 
 /**
@@ -201,6 +241,13 @@ export type EmulatorState = {
   breakpointsVersion: number;
   /** Bumped when breakpoint hit counters moved; see `incBreakpointHitsVersionAction`. */
   breakpointHitsVersion?: number;
+  /**
+   * The access profile's switch (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D6): coverage and the
+   * heat map are recorded while `enabled`; `counters` keeps the counts as well as the flags
+   */
+  profiling?: { enabled: boolean; counters: boolean; calls?: boolean };
+  /** Bumped when the access profile moved; see `incProfileVersionAction` */
+  profileVersion?: number;
   emuViewVersion: number;
   /**
    * True while the host mouse is captured by the emulator screen (Pointer Lock).
@@ -220,7 +267,7 @@ export type EmulatorState = {
   screenRecordingAvailable?: boolean;
   /**
    * The advanced-debugging feature switch (G4 + G5; `@common/features/advancedDebugging`): read once
-   * by the main process at startup from `features.advancedDebugging`. Off unless set.
+   * by the main process at startup from `features.advancedDebugging`. On unless turned off.
    */
   advancedDebugging?: boolean;
   /** A quick-saved machine state is held for the current machine (D19 of the state-files plan) */
@@ -293,6 +340,8 @@ export type CompilationState = {
   injectionVersion?: number;
   backgroundInProgress?: boolean;
   backgroundResult?: CompilationCompleted;
+  /** When the last build ended (ms since the epoch): the Unit Tests panel shows it (D14) */
+  endedAt?: number;
   /** Language intelligence data populated after each successful background compile. */
   languageIntel?: LanguageIntelData;
   /**
@@ -356,5 +405,6 @@ export const initialAppState: AppState = {
   watchExpressions: [],
   basicWatches: [],
   logpointGroups: { enabled: true },
-  sourceComments: {}
+  sourceComments: {},
+  unitTests: { results: {}, version: 0 }
 };

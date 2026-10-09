@@ -16,7 +16,6 @@ import {
 import { AppState } from "@common/state/AppState";
 import { CliRunner } from "@main/cli-integration/CliRunner";
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
-import { mainStore } from "@main/main-store";
 import {
   MI_SPECTRUM_128,
   MI_SPECTRUM_3E,
@@ -49,8 +48,9 @@ export class Pasta80Compiler implements IKliveCompiler {
       }
       const execPath = path.join(installFolder, "pasta");
 
-      // --- Set the target according to the current machine's type
-      const emulatorState = mainStore.getState()?.emulatorState;
+      // --- Set the target according to the current machine's type. The state is the one the caller
+      // --- set (the main store's in the IDE, a minimal one in the command line, which has no store)
+      const emulatorState = this.state?.emulatorState;
       const machineId = emulatorState?.machineId;
 
       // --- pasta80 generates code at $8000; ZX Spectrum 16K only has RAM up to $7FFF

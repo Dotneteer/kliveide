@@ -3,6 +3,7 @@ import {
   KliveCompilerOutput,
   LanguageIntelData,
   LineIntelInfo,
+  ProcedureInfo,
   SymbolDefinitionInfo,
   SymbolReferenceInfo
 } from "@abstractions/CompilerInfo";
@@ -33,6 +34,20 @@ export function extractLanguageIntelData(output: KliveCompilerOutput): LanguageI
   // --- Walk module tree for symbols and outline entries
   if ("symbols" in output) {
     visitModule(output as any, "", symbolDefinitions, outline);
+  }
+
+  // --- `.proc`/`.endp` blocks (`.plans/PROFILER_PLAN.md` D7): an outline entry spanning the block
+  const procedures: ProcedureInfo[] =
+    "procedures" in output && Array.isArray((output as any).procedures) ? (output as any).procedures : [];
+  for (const proc of procedures) {
+    outline.push({
+      name: proc.name,
+      kind: "proc",
+      fileIndex: proc.fileIndex,
+      line: proc.startLine,
+      endLine: proc.endLine,
+      children: []
+    });
   }
 
   // Module-local references use their short @Name spelling in source, while

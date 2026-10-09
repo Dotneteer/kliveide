@@ -4,6 +4,7 @@ import { SideBarPanelState } from "./AppState";
 import { DocumentInfo } from "@abstractions/DocumentInfo";
 import { ToolInfo } from "@renderer/abstractions/ToolInfo";
 import { KliveCompilerOutput } from "@abstractions/CompilerInfo";
+import type { UnitTestEvent } from "@common/unit-tests/unitTestTypes";
 
 /**
  * Available action types you can use with state manangement
@@ -45,6 +46,14 @@ export type Payload = {
   watch: any;
   watches: any[];
   symbol: string;
+  /** When a build ended (`END_COMPILE`) */
+  endedAt: number;
+  /** Unit tests (`.plans/Z80_UNIT_TESTS_PLAN.md` §4.3) */
+  ids: string[];
+  startedAt: number;
+  finishedAt: number;
+  problem: string;
+  event: UnitTestEvent;
 };
 
 /**

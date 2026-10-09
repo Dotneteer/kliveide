@@ -28,7 +28,7 @@ these instead of counting pixels), contact sheets, `motion-*.json`, `result.json
 ## The two tiers
 
 - **Tier 1 (headless)** - `test/harness/zxnext/cli/run.ts` under Vite SSR. The WASM core in-process,
-  a **test-only direct NEX loader** (`core/load-nex-direct.ts`), exact frame numbers from load.
+  a **direct NEX loader** (`src/common/headless/nexLoad.ts`, which `klive run game.nex` uses too), exact frame numbers from load.
 - **Tier 2 (browser)** - `server/` plays the main process (assembler, SD card, files); `browser/page.ts`
   runs the production WASM core in Chrome. It boots NextZXOS from a **clone** of `~/Klive/ks2.cim`
   (the real image is never written; the run checks its mtime) and runs the app's own

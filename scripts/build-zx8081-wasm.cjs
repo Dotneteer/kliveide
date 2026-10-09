@@ -3,7 +3,10 @@ const { dirname, relative, resolve, sep } = require("node:path");
 const { spawnSync } = require("node:child_process");
 
 const { acquireWasmBuildLock, waitForWasmBuildLock } = require("./wasm-build-lock.cjs");
+const { cpuExports, debugLoopExports, debugLoopVolatileSymbols, Z80_ACCESS_LOG_VOLATILE_SYMBOLS } = require("./z80-cpu-exports.cjs");
+const { Z80_CONDITION_EXPORTS, Z80_CONDITION_VOLATILE_SYMBOLS } = require("./z80-condition-exports.cjs");
 const { Z80_HISTORY_EXPORTS, Z80_HISTORY_VOLATILE_SYMBOLS } = require("./z80-history-exports.cjs");
+const { Z80_PROFILE_EXPORTS, Z80_PROFILE_VOLATILE_SYMBOLS } = require("./z80-profile-exports.cjs");
 const {
   discardWasmOutput,
   layoutMapArgs,
@@ -21,18 +24,18 @@ const {
 const ZX8081_VOLATILE_SYMBOLS = [
   // --- The IDE's breakpoint conditions and the per-instruction access log they read: debugging
   // --- state, not machine state, so a restore never brings back old breakpoints
-  "condArena",
-  "condSlots",
-  "condToken",
-  "condLastStatus",
-  "condEnv",
-  "z80AccessLog",
-  "z80AccessLogCount",
-  "z80AccessLogOverflows",
-  "zx8081BreakpointFlags",
+  ...Z80_CONDITION_VOLATILE_SYMBOLS,
+  ...debugLoopVolatileSymbols("zx8081"),
+  ...Z80_ACCESS_LOG_VOLATILE_SYMBOLS,
+  // --- The rest of the IDE's bus record, and whether it is being recorded: a fast frame records it only
+  // --- near its end, a debug run always (WASM_CORE_LEAN_AND_DEBUG_PLAN Phase 1), so it is no state
+  "zx8081OpStartAddress",
+  "zx8081CaptureBusEvents",
   // --- The execution-history ring, and whether the last M1 read a forced NOP (EXECUTION_HISTORY_ALL_CORES_PLAN)
   ...Z80_HISTORY_VOLATILE_SYMBOLS,
-  "zx8081HistoryForcedNop"
+  "zx8081HistoryForcedNop",
+  // --- The access profile: flags, counters and time (CODE_COVERAGE_AND_HEAT_MAP_PLAN T4, T7)
+  ...Z80_PROFILE_VOLATILE_SYMBOLS
 ];
 
 /*
@@ -60,53 +63,24 @@ const optimizationProfiles = {
 
 const productionExports = [
   // --- Breakpoint condition evaluator (`src/emu/z80/wasm/z80-condition.c`)
-  "condArenaPtr",
-  "condArenaCapacity",
-  "condSlotTablePtr",
-  "condSlotCapacity",
-  "condMaxProgramWords",
-  "condGetToken",
-  "condSetToken",
-  "condGetLastStatus",
-  "condEvaluate",
-  "condEvaluateValue",
-  "condSetEnv",
-  "condPeek",
+  ...Z80_CONDITION_EXPORTS,
   // --- Execution history recorder (`src/emu/z80/wasm/z80-history.c`)
   ...Z80_HISTORY_EXPORTS,
+  // --- Access profile (`src/emu/z80/wasm/z80-profile.c`)
+  ...Z80_PROFILE_EXPORTS,
   "memory",
   "zx8081ArmAutoRun",
-  "zx8081BreakpointFlagsPtr",
   "zx8081Configure",
   "zx8081ExecuteFrame",
   "zx8081ExecuteInstruction",
-  "zx8081ExecuteUntilStop",
-  "zx8081GetAccessLogCount",
-  "zx8081GetAccessLogPtr",
+  ...cpuExports("zx8081", { accessLog: true, lastPort: true }),
+  // --- The debugger's in-core loop (`z80-debug-loop.c`)
+  ...debugLoopExports("zx8081"),
   "zx8081GetBaseClockFrequency",
   "zx8081GetBeamY",
   "zx8081GetClockMultiplier",
-  "zx8081GetCpuAf",
-  "zx8081GetCpuAfAlt",
-  "zx8081GetCpuBc",
-  "zx8081GetCpuBcAlt",
-  "zx8081GetCpuDe",
-  "zx8081GetCpuDeAlt",
-  "zx8081GetCpuHalted",
-  "zx8081GetCpuHl",
-  "zx8081GetCpuHlAlt",
-  "zx8081GetCpuIff1",
-  "zx8081GetCpuIff2",
-  "zx8081GetCpuInterruptMode",
-  "zx8081GetCpuIr",
-  "zx8081GetCpuIx",
-  "zx8081GetCpuIy",
   "zx8081GetCpuOpCode",
-  "zx8081GetCpuPc",
-  "zx8081GetCpuPrefix",
   "zx8081GetCpuSigInt",
-  "zx8081GetCpuSp",
-  "zx8081GetCpuWz",
   "zx8081GetFirstInkLine",
   "zx8081GetFirstInkX",
   "zx8081GetFrameCompleted",
@@ -114,12 +88,8 @@ const productionExports = [
   "zx8081GetFrames",
   "zx8081GetHcounter",
   "zx8081GetHsync",
-  "zx8081GetInterruptDepth",
   "zx8081GetKeyboardLine",
   "zx8081GetLastFrameLines",
-  "zx8081GetLastPortAddress",
-  "zx8081GetLastPortIsWrite",
-  "zx8081GetLastPortValue",
   "zx8081GetLineCounter",
   "zx8081GetNmiEnabled",
   "zx8081GetOpStartAddress",
@@ -130,7 +100,6 @@ const productionExports = [
   "zx8081GetRomCapacity",
   "zx8081GetScreenHeight",
   "zx8081GetScreenWidth",
-  "zx8081GetStepOutAddress",
   "zx8081GetTacts",
   "zx8081GetTactsInCurrentFrame",
   "zx8081GetTactsInFrame",
@@ -145,23 +114,6 @@ const productionExports = [
   "zx8081ReadPort",
   "zx8081Reset",
   "zx8081RomPtr",
-  "zx8081SetCpuAf",
-  "zx8081SetCpuAfAlt",
-  "zx8081SetCpuBc",
-  "zx8081SetCpuBcAlt",
-  "zx8081SetCpuDe",
-  "zx8081SetCpuDeAlt",
-  "zx8081SetCpuHl",
-  "zx8081SetCpuHlAlt",
-  "zx8081SetCpuIff1",
-  "zx8081SetCpuIff2",
-  "zx8081SetCpuInterruptMode",
-  "zx8081SetCpuIr",
-  "zx8081SetCpuIx",
-  "zx8081SetCpuIy",
-  "zx8081SetCpuPc",
-  "zx8081SetCpuSp",
-  "zx8081SetCpuWz",
   "zx8081SetKeyStatus",
   "zx8081SetTacts",
   "zx8081SetTargetClockMultiplier",
@@ -186,10 +138,11 @@ const productionExports = [
 /*
  * 64K RAM, the 416 x 400 raw raster (650 KB), the 352 x 288 picture (400 KB) and the tape buffer fit
  * in 2 MiB with room for the stack; the 4 MiB execution-history ring
- * (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` D2, D3) makes it 6 MiB. Raise this only with a
- * recorded reason.
+ * (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` D2, D3) makes it 6 MiB; the access profile's 72 KB
+ * of flags and its 1.7 MB counter pool, which covers all of it (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`
+ * D5), make it 8 MiB. Raise this only with a recorded reason.
  */
-const ZX8081_WASM_MEMORY_BYTES = 6 * 1024 * 1024;
+const ZX8081_WASM_MEMORY_BYTES = 8 * 1024 * 1024;
 
 function normalizeOptimization(optimization = process.env.ZX8081_WASM_OPTIMIZATION || "speed") {
   if (optimizationProfiles[optimization] == null) {

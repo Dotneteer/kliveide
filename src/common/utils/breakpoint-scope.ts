@@ -36,6 +36,8 @@ export function breakpointMatchesScope(
       return owner?.kind === "nex" && owner.sidecar === scope.sidecar;
     case "annotation":
       return owner?.kind === "annotation";
+    case "unitTest":
+      return owner?.kind === "unitTest";
     default:
       /*
        * Loud, because the silent version cost real time.
@@ -79,6 +81,8 @@ export function ownerForScope(
       return { kind: "nex", sidecar: scope.sidecar };
     case "annotation":
       return { kind: "annotation" };
+    case "unitTest":
+      return { kind: "unitTest" };
   }
 }
 

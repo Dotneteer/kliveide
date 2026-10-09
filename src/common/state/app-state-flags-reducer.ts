@@ -40,6 +40,9 @@ export function appStateFlagsReducer (
     case "DIM_MENU":
       return { ...state, dimMenu: payload?.flag };
 
+    case "SET_AUTOMATION_STATUS":
+      return { ...state, automation: payload?.value?.listening ? payload.value : undefined };
+
     case "APPLY_PROJECT_SETTING": {
       let newSetting = { ...state?.projectSettings };
       if (payload?.id) {

@@ -87,6 +87,7 @@ import { KLIVE_APP_VERSION } from "./app-version";
 import { EMU_INITIAL_MIN_HEIGHT, EMU_MIN_CONTENT_WIDTH } from "@common/utils/emu-window-size";
 import { emuMachineSizeStore } from "./emu-machine-sizes";
 import { getKliveHomeBase, initPortableMode } from "./portable";
+import { initAutomation, stopAutomationNow } from "./automation/automation-controller";
 
 // --- The Windows zip build keeps its data beside the executable (#1382). This must run before anything reads a Klive
 // --- folder, and before the single-instance lock, which lives in Electron's userData folder.
@@ -601,6 +602,8 @@ async function createAppWindows() {
 app.whenReady().then(() => {
   initializeMachineTypes();
   createAppWindows();
+  // --- The automation server, when the settings or `--automation` ask for it (COMMAND_LINE_AUTOMATION_PLAN D4)
+  initAutomation();
 });
 
 // --- When the user is about to quit the app, allow closing the IDE window
@@ -608,6 +611,8 @@ app.on("before-quit", (_e) => {
   allowCloseIde = true;
   ideWindowStateSaved = true;
   saveAppSettings();
+  // --- The connection file must not outlive the process (COMMAND_LINE_AUTOMATION_PLAN D5)
+  stopAutomationNow();
 });
 
 // --- Close all windows when requested so
@@ -618,7 +623,8 @@ app.on("window-all-closed", () => {
   app.quit();
 });
 
-// --- Focus on the main window if the user tried to open another
+// --- Focus on the main window if the user tried to open another. Its argv is ignored on purpose:
+// --- honouring it would be a second, unauthenticated control channel (COMMAND_LINE_AUTOMATION_PLAN T1)
 app.on("second-instance", () => {
   if (ideWindow) {
     if (ideWindow.isMinimized()) ideWindow.restore();

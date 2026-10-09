@@ -75,10 +75,20 @@ Fast load traps the ZX81 ROM's three calls of IN-BYTE (checked against the ROM l
 ## Building and measuring
 
 `npm run build:zx8081-wasm` (compiler `clang`, or `ZX8081_WASM_CC`; `ZX8081_WASM_OPTIMIZATION` =
-`speed` (default), `size` or `lto`). `npm run check:zx8081-wasm-size`: 185 KB against a 240 KB ceiling.
+`speed` (default), `size` or `lto`). `npm run check:zx8081-wasm-size`: 227 KB against a 240 KB ceiling (185 KB before the access profile's hooks; the M1 path of the memory read is `noinline` so those hooks do not copy it into every access).
 `npm run benchmark:zx8081-wasm`: on an Apple M4 Pro, 0.27 ms per 20 ms frame in SLOW mode at the
 prompt (74x real time), 0.30 ms running BASIC (66x), 0.26 ms in FAST mode (77x). The hooks are
 `noinline`, as the Z88's tact hook is.
+
+## The access profile
+
+Code coverage, the heat map and the profiler's time (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`) use
+the shared `z80-profile.c`; the mapping is at the end of `zx8081.c`. A byte's profile offset is its
+canonical address (the ROM at $0000-$1FFF through its mirrors, the 1K/16K RAM at $4000 up through its
+echoes, the 64K RAM at its address), plus $10000-$11FFF for the 64K's lowest 8K, which only an opcode
+fetch above 32K reaches - so one layout (`src/common/profile/layouts/zx8081.ts`) serves every model.
+The display file's forced NOPs are M1 cycles at its bytes and are profiled as such: it reads as
+executed, and as self-modified once the ROM writes it.
 
 ## Tests
 

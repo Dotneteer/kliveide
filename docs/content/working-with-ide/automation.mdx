@@ -1,0 +1,362 @@
+---
+description: "Drive a running Klive from scripts, editors' task runners and your own tools: the klive ide command line and a local JSON-RPC protocol to build, run, debug, read memory and registers, and wait for breakpoints."
+---
+
+import { Callout } from 'nextra/components'
+
+# Automation
+
+Klive can be driven from **outside the IDE**: from a shell script, an editor's task runner, a test
+harness or a tool of your own. A script can build and run the open project, pause and step the
+machine, read and write memory and registers, set breakpoints, capture the screen, run any IDE
+command, and wait until the machine stops at a breakpoint.
+
+There are two ways in:
+
+- the **`klive ide` command line**, for shell scripts and task runners;
+- the **automation protocol** it is built on: JSON-RPC 2.0 over a local socket, which any
+  language can speak with its standard library. Short [Node](#a-node-client) and
+  [Python](#a-python-client) clients are below.
+
+```bash
+klive ide build && klive ide debug && klive ide wait --timeout 30
+klive ide regs
+klive ide mem '$5C00' 64
+```
+
+Both drive the Klive you have open. To run a program **without** the IDE, on a machine of its own in
+a CI job, use [`klive run`](/working-with-ide/unit-tests-cli#klive-run): it builds the project or
+loads a tape, snapshot or NEX file, runs it until a condition, and writes screenshots, memory dumps
+and registers.
+
+## Turning it on
+
+Automation is **off by default**. Turn it on in **Settings › General › Automation** (*Let scripts
+drive Klive*), or type this in the IDE's command prompt:
+
+```text
+set -u automation.enabled 1
+```
+
+It takes effect at once, without a restart, and turning it off stops it at once too. Klive can also
+be started with the `--automation` switch, which turns it on for that run only; `klive ide --launch`
+uses it (see [below](#starting-klive-from-a-script)).
+
+While automation is on, the IDE's status bar shows an **Automation** item. It turns into an accent
+chip with a count while scripts are connected, and a click shows the **Automation** output pane,
+which logs every connection and every call (memory contents are never printed).
+**Klive › Automation › Disconnect All** (File › Automation on Windows and Linux) drops every
+connected script.
+
+### What scripts may do
+
+The setting **What scripts may do** (`automation.level`) chooses one of three levels:
+
+| Level | Allows |
+| --- | --- |
+| **Read** | the machine's state, registers, memory, breakpoint list, project information and screenshots |
+| **Control** (the default) | everything Read allows, plus start, pause, stop, step, breakpoints, memory and register writes, and building, running, debugging and exporting the open project |
+| **Full** | everything Control allows, plus running **any IDE command** (`klive ide cmd`) and opening a project folder |
+
+```text
+set -u automation.level full
+```
+
+Full is a separate opt-in because IDE commands reach your files: they can write settings, copy
+files to an SD card image and run scripts. A method above the level is refused, and the error names
+the setting to change.
+
+Both settings are **user settings**: a project's own settings cannot turn automation on or raise its
+level, so opening a project someone sent you never does.
+
+### The security model
+
+<Callout type="warning">
+**Any program running as you can drive Klive while automation is on.** This is the same trust
+boundary as your settings files and `~/.ssh`: something that already runs as you could change those
+too. Turn automation on when you use it, and off when you do not.
+</Callout>
+
+- **Local only.** Klive listens on a Unix domain socket (macOS, Linux) or a named pipe (Windows),
+  never on a TCP port. Another machine cannot reach it, and neither can a web page, which is what
+  makes a local HTTP or WebSocket server risky.
+- **A token per start.** When the server starts, it writes a random 32-byte token to a **connection
+  file** that only you can read (`0600` in a `0700` folder). A client must present it before it can
+  do anything; a wrong token closes the connection. The token changes every time Klive starts, and
+  the file is deleted when Klive quits.
+- **Commands that need you are refused.** IDE commands that open a dialog, ask for a confirmation or
+  quit Klive (`exit`, `settings`, `display-dialog`, `history-take-over`) cannot be run through
+  automation: nobody would be there to answer them. `open` needs its folder argument for the same
+  reason.
+
+On Windows, other local users can open the pipe, but they cannot send a request without the token,
+which only you can read.
+
+## The `klive ide` command line
+
+`klive ide <verb>` connects to the running Klive, does one thing and exits with a code a script can
+test. Every verb takes `--json` for machine-readable output.
+
+<Callout type="info">
+[Getting the `klive` command](/working-with-ide/unit-tests-cli#getting-the-klive-command) says how to
+put it on your PATH. A development build runs it with Klive's own Electron binary in Node mode:
+`ELECTRON_RUN_AS_NODE=1 npx electron out/main/cli.js ide status`. The protocol below needs no
+launcher at all.
+</Callout>
+
+| Verb | What it does |
+| --- | --- |
+| `status` (or no verb) | Connection, Klive's version, the level, the machine and its state, the project |
+| `start [--debug]` | Starts the machine; `--debug` stops at breakpoints |
+| `pause`, `stop`, `reset`, `restart` | The Machine menu's commands |
+| `step [into\|over\|out]` | Steps the paused machine |
+| `wait [--paused] [--stopped] [--running]` | Waits until the machine reaches a state. Without one it waits for *paused*, which a Stop also ends, so a script never hangs because someone pressed Stop |
+| `build` | Compiles the build root. Errors print as `file:line:col: error: message`, the format editors and CI annotators recognise |
+| `run`, `debug`, `inject` | Builds, then runs, debugs or injects the code |
+| `export <file>` | Exports the code: `--format tap\|tzx\|hex\|nex`, `--name`, `--auto-start`, `--add-pause`, `--add-clear`, `--single-block`, `--border 0-7`, `--address`, `--screen <file>` |
+| `regs` | The CPU registers |
+| `mem <addr> [<len>]` | Reads memory: `$5C00` in the CPU's current view, or `B5:$0100` in one partition whatever is paged in. `--format hex\|bin\|json`, `--out <file>` |
+| `poke <addr> <byte>...` | Writes bytes, by address or by partition |
+| `bp list`, `bp set …`, `bp rm …`, `bp clear` | Breakpoints. `set` and `rm` take exactly what `bp-set` and `bp-del` take in the command prompt, conditions and hit counts included: `klive ide bp set '$8000' -if 'A == $FF'` |
+| `screenshot <file.png>` | Saves the emulated picture |
+| `cmd "<command>"` | Runs any IDE command (Full level) and prints its output |
+| `events [<event>...]` | Prints notifications until Ctrl+C |
+| `rpc <method> ['<json>']` | A raw protocol call |
+
+Global options, anywhere on the line: `--json`, `--timeout <seconds>` (for `wait`, how long to
+wait), `--launch` and `--connection <file>`.
+
+Quote `$` addresses in a POSIX shell (`'$8000'`), or write them as `0x8000`.
+
+### Exit codes
+
+| Code | Meaning |
+| --- | --- |
+| 0 | Done |
+| 1 | The command ran but reported a failure (`cmd` that failed) |
+| 2 | The build has errors |
+| 3 | A usage problem, no running Klive with automation on, or a level too low (the message says what to change) |
+| 4 | An internal or protocol error |
+| 5 | `wait` ran out of time |
+
+### Starting Klive from a script
+
+`--launch` starts Klive with `--automation --noide` when no running Klive answers, waits for it, and
+leaves it running. If Klive is already running with automation off, a second copy cannot start
+(Klive runs once per user), so `--launch` exits with code 3 and tells you to turn automation on in
+the running one.
+
+## The automation protocol
+
+### Finding Klive
+
+The connection file is `run/automation.json` in the folder of Klive's settings file: normally
+`~/Klive/run/automation.json`, or beside `KLIVE_SETTINGS_FILE` when that variable points elsewhere.
+
+```json
+{
+  "protocol": 1,
+  "socket": "/Users/me/Klive/run/automation.sock",
+  "token": "3f9c…64 hex digits…",
+  "pid": 41237,
+  "version": "0.64.0",
+  "startedAt": "2026-10-09T08:15:02.120Z"
+}
+```
+
+`socket` is a Unix socket path, or a named pipe (`\\.\pipe\klive-…`) on Windows. A file whose `pid`
+is no longer running was left by a Klive that crashed.
+
+### Messages
+
+Each message is one line of JSON (UTF-8, ending in a newline), following JSON-RPC 2.0. The first
+request must be `session.hello` with the token:
+
+```text
+--> {"jsonrpc":"2.0","id":1,"method":"session.hello","params":{"token":"<token>","client":"my-script"}}
+<-- {"jsonrpc":"2.0","id":1,"result":{"protocol":1,"version":"0.64.0","ready":true,"level":"control","machine":{"id":"sp128","model":"pal"}}}
+```
+
+`ready` is false while Klive is still starting; every method that needs the IDE waits until it is
+ready. Requests run **one at a time, in the order they arrive**, across all clients. Each has a
+timeout of 60 seconds, which a request can change with a `timeoutMs` parameter. A timed-out request
+is answered with an error, but the work it started cannot be cancelled and finishes in the
+background.
+
+Binary data (memory, pictures) travels as **base64**. Addresses and lengths are plain numbers;
+parameters that take an address also accept the IDE's notations as strings (`"$8000"`, `"0x8000"`).
+
+```text
+--> {"jsonrpc":"2.0","id":2,"method":"machine.state"}
+<-- {"jsonrpc":"2.0","id":2,"result":{"state":"paused","pc":32768}}
+--> {"jsonrpc":"2.0","id":3,"method":"memory.read","params":{"address":32768,"length":5}}
+<-- {"jsonrpc":"2.0","id":3,"result":{"address":32768,"length":5,"data":"S0xJVkU="}}
+--> {"jsonrpc":"2.0","id":4,"method":"memory.read","params":{"partition":"B5","offset":256,"length":4}}
+<-- {"jsonrpc":"2.0","id":4,"result":{"partition":"B5","offset":256,"length":4,"data":"3q2+7w=="}}
+--> {"jsonrpc":"2.0","id":5,"method":"memory.write","params":{"address":"$C000","data":"AQID"}}
+<-- {"jsonrpc":"2.0","id":5,"result":{"address":49152,"written":3}}
+```
+
+Breakpoints take the command prompt's own syntax, so conditions and hit counts work unchanged:
+
+```text
+--> {"jsonrpc":"2.0","id":6,"method":"breakpoints.set","params":{"spec":"$8000 -if A == $FF"}}
+<-- {"jsonrpc":"2.0","id":6,"result":{"success":true,"output":["Breakpoint at address $8000 set -if A == $FF"]}}
+```
+
+A build returns its errors as data. A failed build is a result, not an error: the build ran and
+reported.
+
+```text
+--> {"jsonrpc":"2.0","id":7,"method":"project.build"}
+<-- {"jsonrpc":"2.0","id":7,"result":{"success":false,"message":"Compilation failed with 1 error.","output":["Start compiling code/main.kz80.asm","Z0605: Identifier 'nosuch' is not defined yet. - code/main.kz80.asm:4:7"],"errors":[{"file":"code/main.kz80.asm","line":4,"column":7,"code":"Z0605","message":"Identifier 'nosuch' is not defined yet."}]}}
+```
+
+### Errors
+
+Errors use JSON-RPC's codes (`-32700` a line that is not JSON, `-32600` not a request, `-32601` an
+unknown method, `-32602` bad parameters) and `-32000` for everything else, with the reason in
+`error.data.kind`: `unauthorized`, `not-ready`, `level-too-low`, `no-project`, `no-machine`,
+`timeout`, `feature-disabled`, `command-denied`, `command-failed` or `invalid-params`.
+
+```text
+--> {"jsonrpc":"2.0","id":8,"method":"ide.command","params":{"text":"help"}}
+<-- {"jsonrpc":"2.0","id":8,"error":{"code":-32000,"message":"'ide.command' needs the 'full' automation level; this connection has 'control'. Change it in Settings › General › Automation, or with 'set -u automation.level full'.","data":{"kind":"level-too-low","required":"full","granted":"control"}}}
+--> {"jsonrpc":"2.0","id":9,"method":"machine.fly"}
+<-- {"jsonrpc":"2.0","id":9,"error":{"code":-32601,"message":"Unknown method 'machine.fly'."}}
+```
+
+### Methods
+
+Method names are a stable contract: a renamed method would come with a new protocol version. The
+text an IDE command prints is not part of the contract, only the methods and their results are.
+
+| Method | Level | Parameters → result |
+| --- | --- | --- |
+| `session.hello` | — | `token`, `client` → `protocol`, `version`, `ready`, `level`, `machine` |
+| `session.info` | read | → the above, plus the machine's state and partition labels, and the project |
+| `session.capabilities` | read | → every method with its level and whether this connection may call it; the events |
+| `machine.state` | read | → `state` (`none`, `running`, `pausing`, `paused`, `stopping`, `stopped`), and `pc` when paused or stopped |
+| `machine.start`, `.pause`, `.stop`, `.reset`, `.restart`, `.debug` | control | → the state afterwards |
+| `machine.step` | control | `kind`: `into`, `over` or `out` → the state afterwards |
+| `machine.wait` | read | `until`: `paused` (which Stop also ends), `stopped`, `running`, or a list; `timeoutMs` → the state, and `breakpoint` (`address`, `partition`, `kind`) when one stopped it. Not queued and without the 60-second limit |
+| `cpu.get` | read | → the registers: `af` … `wz` and their 8-bit halves (`a`, `f`, `b`, …), `interruptMode`, `iff1`, `iff2`, `halted`, `tacts` |
+| `cpu.set` | control | `register` (`A`, `HL`, `PC`, `AF'`, …), `value` → the registers |
+| `memory.read` | read | `address`, or `partition` (`"B5"`, `"R0"`, the Next's 8K pages) and `offset`; `length` (at most 65536, default 256) → `data` |
+| `memory.write` | control | the same location, and `data` (base64, or an array of byte values) → `written` |
+| `breakpoints.list` | read | → `breakpoints`: each with its `spec` (`bp-set` text), `kind`, `address`, `partition`, `enabled`, `hits`, `condition` and `source` |
+| `breakpoints.set`, `.remove` | control | `spec`: the `bp-set` / `bp-del` arguments → the command's `output` |
+| `breakpoints.clear` | control | → the command's `output` |
+| `project.info` | read | → `folder`, `isKliveProject`, `buildRoot`, `files` |
+| `project.build`, `.run`, `.debug`, `.inject` | control | → `success`, `message`, `output`, `errors` (`file`, `line`, `column`, `code`, `message`, `warning`) |
+| `project.export` | control | `file`, and optionally `format`, `name`, `autoStart`, `addPause`, `addClear`, `singleBlock`, `border`, `address`, `screenFile` → like `project.build` |
+| `project.open` | full | `folder` → `folder`, `isKliveProject` |
+| `screen.capture` | read | → `format` (`png`), `width`, `height`, `data`: the emulated picture, not the IDE window |
+| `ide.command` | full | `text` → `success`, `message`, `value`, `output` |
+| `events.subscribe`, `.unsubscribe` | read | `events` (default: all but `ide.output`) → the subscriptions |
+
+### Events
+
+After `events.subscribe`, Klive sends notifications (requests without an `id`):
+
+| Event | Parameters |
+| --- | --- |
+| `machine.stateChanged` | `state`, `pc` |
+| `machine.breakpointHit` | `address`, `partition`, `kind` |
+| `project.built` | `success`, `errorCount` |
+| `ide.output` | `pane`, `text`: lines written to the Emulator and Log panes (machine messages, logpoints). It is noisy, so you ask for it by name |
+
+```json
+{"jsonrpc":"2.0","method":"machine.stateChanged","params":{"state":"paused","pc":33027}}
+{"jsonrpc":"2.0","method":"machine.breakpointHit","params":{"address":33027,"kind":"exec"}}
+```
+
+## A Node client
+
+No packages needed:
+
+```js filename="klive-client.mjs"
+// Reads registers and memory from a running Klive (node klive-client.mjs)
+import fs from "node:fs";
+import net from "node:net";
+import os from "node:os";
+import path from "node:path";
+
+const settings = process.env.KLIVE_SETTINGS_FILE ?? path.join(os.homedir(), "Klive", "klive.settings");
+const info = JSON.parse(fs.readFileSync(path.join(path.dirname(settings), "run", "automation.json"), "utf8"));
+
+const socket = net.connect(info.socket);
+const pending = new Map();
+let nextId = 1;
+let buffer = "";
+socket.on("data", (chunk) => {
+  buffer += chunk;
+  let newline;
+  while ((newline = buffer.indexOf("\n")) >= 0) {
+    const message = JSON.parse(buffer.slice(0, newline));
+    buffer = buffer.slice(newline + 1);
+    const request = pending.get(message.id);
+    if (!request) continue; // a notification
+    pending.delete(message.id);
+    if (message.error) request.reject(new Error(message.error.message));
+    else request.resolve(message.result);
+  }
+});
+const call = (method, params = {}) =>
+  new Promise((resolve, reject) => {
+    const id = nextId++;
+    pending.set(id, { resolve, reject });
+    socket.write(JSON.stringify({ jsonrpc: "2.0", id, method, params }) + "\n");
+  });
+
+await call("session.hello", { token: info.token, client: "node-example" });
+const regs = await call("cpu.get");
+console.log(`PC=$${regs.pc.toString(16).toUpperCase().padStart(4, "0")} A=${regs.a}`);
+const memory = await call("memory.read", { address: 0x8000, length: 5 });
+console.log(Buffer.from(memory.data, "base64").toString("latin1"));
+socket.end();
+```
+
+## A Python client
+
+Standard library only (macOS and Linux; on Windows, open the pipe name from the connection file
+with `open(info["socket"], "r+b", buffering=0)` instead of a socket):
+
+```python filename="klive_client.py"
+# Reads registers and memory from a running Klive (python3 klive_client.py)
+import base64
+import json
+import os
+import socket
+
+home = os.path.expanduser("~")
+settings = os.environ.get("KLIVE_SETTINGS_FILE", os.path.join(home, "Klive", "klive.settings"))
+with open(os.path.join(os.path.dirname(settings), "run", "automation.json")) as f:
+    info = json.load(f)
+
+sock = socket.socket(socket.AF_UNIX)
+sock.connect(info["socket"])
+reader = sock.makefile("r", encoding="utf-8")
+next_id = 0
+
+
+def call(method, **params):
+    global next_id
+    next_id += 1
+    request = {"jsonrpc": "2.0", "id": next_id, "method": method, "params": params}
+    sock.sendall((json.dumps(request) + "\n").encode("utf-8"))
+    while True:
+        message = json.loads(reader.readline())
+        if message.get("id") == next_id:  # anything else is a notification
+            if "error" in message:
+                raise RuntimeError(message["error"]["message"])
+            return message["result"]
+
+
+call("session.hello", token=info["token"], client="python-example")
+regs = call("cpu.get")
+print(f"PC=${regs['pc']:04X} A={regs['a']}")
+memory = call("memory.read", address=0x8000, length=5)
+print(base64.b64decode(memory["data"]).decode("latin-1"))
+sock.close()
+```
