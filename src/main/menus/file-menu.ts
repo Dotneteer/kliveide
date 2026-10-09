@@ -23,6 +23,8 @@ import {
   quickSaveState,
   saveMachineStateAs
 } from "@main/machine-menus/state-menus";
+import { PANE_ID_AUTOMATION } from "@common/integration/constants";
+import { disconnectAllAutomationClients } from "../automation/automation-controller";
 import type { MenuContext } from "./menu-context";
 import { tidySeparators } from "./menu-utils";
 
@@ -41,6 +43,40 @@ export function settingsMenuItem(context: MenuContext): MenuItemConstructorOptio
     accelerator: context.isMac ? SETTINGS_ACCELERATOR : undefined,
     click: async () => await context.openSettings()
   };
+}
+
+/**
+ * Klive › Automation (File › Automation elsewhere): shown while the automation server listens
+ * (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D13), so the user can see and stop what scripts do.
+ */
+export function automationMenuItems(context: MenuContext): MenuItemConstructorOptions[] {
+  const automation = context.appState?.automation;
+  if (!automation?.listening) return [];
+  const clients = automation.clients ?? 0;
+  return [
+    {
+      id: "automation_menu",
+      label: "Automation",
+      submenu: [
+        {
+          id: "automation_show_output",
+          label: "Show Automation Output",
+          click: async () => {
+            context.ensureIdeWindow();
+            await getIdeApi().executeCommand(`outp ${PANE_ID_AUTOMATION}`);
+          }
+        },
+        {
+          id: "automation_disconnect_all",
+          label: clients ? `Disconnect All (${clients})` : "Disconnect All",
+          enabled: clients > 0,
+          click: () => {
+            disconnectAllAutomationClients();
+          }
+        }
+      ]
+    }
+  ];
 }
 
 /** Closes the open folder after saving what needs saving */
@@ -138,6 +174,7 @@ export function createFileMenu(context: MenuContext): MenuItemConstructorOptions
       : ([
           { type: "separator" },
           settingsMenuItem(context),
+          ...automationMenuItems(context),
           { type: "separator" },
           { role: "quit" }
         ] as MenuItemConstructorOptions[]))

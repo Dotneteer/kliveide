@@ -8,6 +8,7 @@ import type {
 import { PsgChipState } from "@emu/abstractions/PsgChipState";
 import { MachineCommand } from "@abstractions/MachineCommand";
 import { buildMessagingProxy } from "./MessageProxy";
+import type { BreakpointHit } from "@common/automation/protocol";
 import { MessengerBase } from "./MessengerBase";
 import { BreakpointInfo, BreakpointScope } from "@abstractions/BreakpointInfo";
 import { SysVar } from "@abstractions/SysVar";
@@ -941,6 +942,33 @@ class EmuApiImpl {
   }
 
   /**
+   * Writes bytes to memory: from `_address` in the CPU's current view, or from offset `_address`
+   * of a partition (a ROM page or RAM bank) whatever is paged in
+   * (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` T8).
+   * @param _address The address, or the offset within the partition.
+   * @param _bytes The bytes to write.
+   * @param _partition The partition, or undefined for the CPU's view.
+   */
+  async setMemoryBytes(_address: number, _bytes: Uint8Array, _partition?: number): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * The emulated picture as it was last rendered, as RGBA bytes (automation's `screen.capture`).
+   */
+  async getScreenImage(): Promise<ScreenImage> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * What stopped the machine at its last stop: the PC, and the breakpoints that fired (none for a
+   * pause, a step or a stop).
+   */
+  async getStopInfo(): Promise<MachineStopInfo> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * Gets the ROM flags array.
    */
   async getRomFlags(): Promise<boolean[]> {
@@ -1592,6 +1620,19 @@ export type PaletteDeviceInfo = {
   reg43Value: number;
   reg6bValue: number;
   ulaNextFormat: number;
+};
+
+/** The emulated picture: `width` × `height` pixels, four bytes each (R, G, B, A) */
+export type ScreenImage = {
+  width: number;
+  height: number;
+  pixels: Uint8Array;
+};
+
+/** What stopped the machine (`getStopInfo`) */
+export type MachineStopInfo = {
+  pc: number;
+  breakpoints: BreakpointHit[];
 };
 
 export type EmuApi = EmuApiImpl;

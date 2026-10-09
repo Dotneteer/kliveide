@@ -54,9 +54,13 @@ import {
   type Z80CpuState,
   isMachineNotAvailableError,
   MACHINE_NOT_AVAILABLE_MESSAGE,
+  type MachineStopInfo,
+  type ScreenImage,
   ULA_BORDER_COLOR_NAMES,
   VicState
 } from "@common/messaging/EmuApi";
+import type { BreakpointHit } from "@common/automation/protocol";
+import { breakpointKind } from "@common/utils/breakpoint-spec";
 import { IMemorySection } from "@abstractions/MemorySection";
 import type { RecordingManager } from "./recording/RecordingManager";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
@@ -1784,6 +1788,105 @@ class EmuMessageProcessor {
         }
         break;
     }
+  }
+
+  /**
+   * Writes bytes to memory: the CPU's current view, or one partition whatever is paged in
+   * (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` T8).
+   * @param address The address, or the offset within the partition.
+   * @param bytes The bytes to write.
+   * @param partition The partition, or undefined for the CPU's view.
+   */
+  async setMemoryBytes(address: number, bytes: Uint8Array, partition?: number): Promise<void> {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    if (!(bytes instanceof Uint8Array)) throw new Error("The bytes must be a Uint8Array.");
+    // --- An edit acts on the present (LITE_STEP_BACK_PLAN D5)
+    controller.clearHistoryCursor?.();
+    await controller.interruptRzx?.("memory was edited");
+    const machine = controller.machine;
+    if (partition === undefined) {
+      for (let i = 0; i < bytes.length; i++) {
+        machine.doWriteMemory((address + i) & 0xffff, bytes[i]);
+      }
+      return;
+    }
+    const memory = (machine as IZxSpectrumMachine).getMemoryPartition(partition);
+    if (!memory || address < 0 || address + bytes.length > memory.length) {
+      throw new Error(`The write does not fit partition ${partition} (${memory?.length ?? 0} bytes).`);
+    }
+    // --- A partition that is paged in is written through the CPU's view: some cores (the 128K's)
+    // --- keep a flat copy of the paged-in memory that the CPU reads, which a write into the
+    // --- partition's own array would leave stale. Elsewhere the array is the memory.
+    const pages = machine.getCurrentPartitions?.() ?? [];
+    const romFlags = machine.getRomFlags?.() ?? [];
+    const visible = (offset: number): number | undefined => {
+      for (let page = 0; page < pages.length; page++) {
+        if (pages[page] !== partition) continue;
+        const base = (page * 0x2000) % memory.length;
+        if (offset >= base && offset < base + 0x2000) {
+          if (romFlags[page]) {
+            throw new Error("A ROM partition cannot be written while it is paged in.");
+          }
+          return page * 0x2000 + (offset - base);
+        }
+      }
+      return undefined;
+    };
+    // --- Every target first, so a refused write changes nothing
+    const targets = Array.from(bytes, (_, i) => visible(address + i));
+    for (let i = 0; i < bytes.length; i++) {
+      const cpuAddress = targets[i];
+      if (cpuAddress === undefined) memory[address + i] = bytes[i];
+      else machine.doWriteMemory(cpuAddress, bytes[i]);
+    }
+  }
+
+  /**
+   * The emulated picture as it was last rendered, as RGBA bytes: the visible part of the pixel
+   * buffer, exactly what the emulator panel draws (before its scan-line effect).
+   */
+  getScreenImage(): ScreenImage {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    const machine = controller.machine;
+    const width = machine.screenWidthInPixels;
+    const height = machine.screenHeightInPixels;
+    const start = machine.getBufferStartOffset?.() ?? 0;
+    const words = machine.getPixelBuffer().subarray(start, start + width * height);
+    // --- A copy: the live buffer keeps changing while a running machine draws
+    const pixels = new Uint8Array(width * height * 4);
+    pixels.set(new Uint8Array(words.buffer, words.byteOffset, words.byteLength));
+    return { width, height, pixels };
+  }
+
+  /**
+   * What stopped the machine at its last stop: the breakpoints that fired, or - for a breakpoint
+   * on the fast path, which records only its address - the execution breakpoint at the PC.
+   */
+  getStopInfo(): MachineStopInfo {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    const machine = controller.machine;
+    const pc = machine.pc;
+    const ds = controller.debugSupport;
+    const fired = ds?.lastStopBreakpoints ?? [];
+    const breakpoints: BreakpointHit[] = fired.map((bp, i) => ({
+      address: ds?.lastStopAccesses?.[i]?.address ?? bp.address ?? pc,
+      ...(bp.partition !== undefined ? { partition: bp.partition } : {}),
+      kind: bp.owner?.kind === "annotation" ? "annotation" : breakpointKind(bp)
+    }));
+    if (!breakpoints.length && ds?.lastBreakpoint !== undefined && ds.lastBreakpoint === pc) {
+      const partition = machine.getPartition?.(pc);
+      breakpoints.push({ address: pc, ...(partition !== undefined ? { partition } : {}), kind: "exec" });
+    }
+    return { pc, breakpoints };
   }
 
   /**

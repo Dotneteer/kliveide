@@ -117,6 +117,8 @@ export interface ActionTypes {
   UNIT_TESTS_RUN_ENDED: null;
   UNIT_TESTS_CLEAR: null;
 
+  SET_AUTOMATION_STATUS: null;
+
   // --- Screen recording
   SET_MOUSE_CAPTURED: null;
   // --- The ZX Spectrum Next layer debug view (`.plans/LAYER_COMPOSITION_PLAN.md` §4.4)

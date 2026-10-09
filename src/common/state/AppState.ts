@@ -72,6 +72,18 @@ export type AppState = {
   sourceComments?: SourceCommentSwitches;
   /** The unit-test results and the run in progress (`.plans/Z80_UNIT_TESTS_PLAN.md` §4.3) */
   unitTests?: UnitTestsState;
+  /**
+   * The automation server (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D4): whether it listens and
+   * how many clients are connected, for the status-bar item. Absent while it is off.
+   */
+  automation?: AutomationStatusState;
+};
+
+/** The automation server's status */
+export type AutomationStatusState = {
+  listening: boolean;
+  clients: number;
+  level?: "read" | "control" | "full";
 };
 
 /** The unit-test results: by test id, and the run in progress */

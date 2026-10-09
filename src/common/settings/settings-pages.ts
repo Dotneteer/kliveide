@@ -21,6 +21,11 @@ import { MOUSE_POINTER_DISPLAYS, MOUSE_SENSITIVITIES } from "./mouse-capture";
 import { ACCENT_MENU_ITEMS, DEFAULT_ACCENT } from "@common/theming/accents";
 import { machineRegistry } from "@common/machines/machine-registry";
 import {
+  DEFAULT_AUTOMATION_LEVEL,
+  parseAutomationLevel,
+  parseAutomationSwitch
+} from "@common/automation/protocol";
+import {
   BEAM_POSITION_MACHINE_IDS,
   MC_DISK_SUPPORT,
   MC_SCREEN_SIZE,
@@ -114,7 +119,9 @@ export type SettingsStateKey =
   | "windowRecordingClicks"
   | "windowRecordingHiDpi"
   | "sp48Rom"
-  | "keyMappingFile";
+  | "keyMappingFile"
+  | "automationEnabled"
+  | "automationLevel";
 
 export type SettingsRowSource =
   | { kind: "setting"; settingId: string }
@@ -238,6 +245,37 @@ export const SETTINGS_ROWS: SettingsRow[] = [
     buttons: [{ label: "Manage...", action: "dialog:excluded-items", closesDialog: true }],
     when: { kind: "kliveProject" },
     replaces: "File › Manage Excluded Items"
+  },
+
+  {
+    // --- `.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D4, D7: user settings only, never a project's
+    id: "automationEnabled",
+    page: "general",
+    group: "Automation",
+    title: "Let scripts drive Klive",
+    description:
+      "A local channel for the klive ide command line and your own scripts. Any program running " +
+      "as you can use it while this is on.",
+    editor: "switch",
+    source: state("automationEnabled"),
+    defaultValue: false
+  },
+  {
+    id: "automationLevel",
+    page: "general",
+    group: "Automation",
+    title: "What scripts may do",
+    description:
+      "Read: state, memory and screenshots. Control: also run, pause, step, edit memory and " +
+      "build. Full: also any IDE command, which can reach your files.",
+    editor: "select",
+    source: state("automationLevel"),
+    options: opts([
+      ["read", "Read"],
+      ["control", "Control"],
+      ["full", "Full"]
+    ]),
+    defaultValue: DEFAULT_AUTOMATION_LEVEL
   },
 
   // --- Appearance
@@ -978,6 +1016,10 @@ export function readSettingsRowValue(row: SettingsRow, appState: AppState | unde
       return emu?.config?.[MC_SP48_ROM_FILE] ?? "";
     case "keyMappingFile":
       return appState?.keyMappingFile ?? "";
+    case "automationEnabled":
+      return parseAutomationSwitch(appState?.userSettings?.automation?.enabled);
+    case "automationLevel":
+      return parseAutomationLevel(appState?.userSettings?.automation?.level);
     default:
       return undefined;
   }

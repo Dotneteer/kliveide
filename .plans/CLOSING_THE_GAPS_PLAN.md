@@ -32,7 +32,7 @@ are estimates for prioritising, not commitments.
 | G3 | Live Next hardware inspectors | **M** (layers: M–L) | ✅ done (2026-10-05 – 10-08): G3.1–G3.9 (G3.8's sprite half on 2026-10-08) |
 | G4 | Execution history and reverse debugging | **M → XL** | ✅ done (2026-10-07 – 10-08): G4.1–G4.6 |
 | G5 | Code coverage, profiler, unit tests | **M → L** | ✅ G5.1 and G5.2 done (2026-10-08): coverage per bank and the heat map on every Z80 machine · ✅ G5.3 and G5.4 done (2026-10-08): flat and call-graph profiler on every Z80 machine · ✅ G5.5 done (2026-10-08): DeZog-compatible unit tests with both assemblers · plan ready for CLI/CI |
-| G6 | Remote debugging, real hardware, external API | **M → XL** | Command API for scripts and CI |
+| G6 | Remote debugging, real hardware, external API | **M → XL** | ◐ G6.1's live half done (2026-10-09): a local, token-authenticated JSON-RPC automation API and the `klive ide` command line · headless `klive build`/`klive run` still open |
 | G7 | 48K/128K reverse-engineering depth | **M → L** | Generalising the NEX annotation sidecar |
 | G8 | BASIC editor intelligence | **M** | ✅ done (2026-10-03): G8.1–G8.5 |
 | G9 | Machine breadth (ZX80/81, clones) | **M → XL** | ✅ G9.1 Pentagon 128, G9.1b Beta 128 / TR-DOS, G9.2 +2A/+3, G9.3 ZX80/81, G9.4 Timex TC2048/TC2068/TS2068 and Scorpion done |
@@ -277,17 +277,36 @@ hardware, where competitors lead.
 
 | Feature | What it does | Size |
 |---|---|---|
-| G6.1 Command line / automation | Drive Klive from a CLI or script: build, run, test and read memory headlessly. Scoped to CI and automation, **not** editor integration (decision D1). | M (the IDE command service already exists; this needs a transport and a security model) |
+| G6.1 Command line / automation ◐ **live half done** (2026-10-09) | Drive Klive from a CLI or script: build, run, test and read memory headlessly. Scoped to CI and automation, **not** editor integration (decision D1). Done: the automation server and protocol, `klive ide …`, the docs page. Open: headless `klive build`/`klive run` and packaging of the `klive` launcher (the plan's Phases 0–2). | M (the IDE command service already exists; this needs a transport and a security model) |
 | ~~G6.2 Debug-adapter protocol server~~ | **Dropped** (decision D1): Klive stays a standalone IDE. | — |
 | ~~G6.3 DeZog-compatible remote~~ | **Dropped** (decision D1). DeZog compatibility applies to source conventions instead (D3). | — |
-| G6.4 Real Next hardware debugging | Run and debug on a physical Next over UART **from Klive's own debugger UI**, with an on-Next agent program handling breakpoints and memory. Fits D1: Klive is the client. | XL (hardware, a Z80N agent, timing and banking constraints) |
-| G6.5 Send to Next | Push a built `.nex` to real hardware over serial or Wi-Fi without debugging. | M |
+| G6.4 Real Next hardware debugging (**deferred**, 2026-10-08: built only if the future calls for it) | Run and debug on a physical Next over UART **from Klive's own debugger UI**, with an on-Next agent program handling breakpoints and memory. Fits D1: Klive is the client. | XL (hardware, a Z80N agent, timing and banking constraints) |
+| G6.5 Send to Next | Push a built `.nex` to real hardware **over Wi-Fi** (the Next's ESP module) and start it, without debugging. Stands alone: it does not need G6.4. | M |
 
-**Plan:** G6.4 and G6.5 are planned together in [NEXT_HARDWARE_DEBUGGING_PLAN.md](NEXT_HARDWARE_DEBUGGING_PLAN.md)
-(draft, open questions, 2026-10-08). Its verdict: feasible. The link it proposes is a UART on a joystick port
-(NextReg `$0B`) through a 3.3 V USB-serial adapter, with Wi-Fi via the ESP kept for send-to-Next only.
-The Next runs a Klive agent, and the whole stack is testable on the WASM core's emulated UART.
-G6.5 is its Phase 2.
+**Plan:** G6.1 is planned in [COMMAND_LINE_AUTOMATION_PLAN.md](COMMAND_LINE_AUTOMATION_PLAN.md)
+(decisions recorded, 2026-10-08: the suggested answers accepted; the live half is built first). It has two halves:
+- headless `klive build`/`klive run` verbs on G5.6's CLI, for CI;
+- a local, token-authenticated JSON-RPC transport into a running IDE (Unix socket or named pipe,
+  off by default, permission levels), with `klive ide …` verbs.
+
+It re-sizes G6.1 to M–L with the headless runner, or M if G5.6 lands first.
+
+**Status (2026-10-09):** the live half (the plan's Phases 3–6) is done: the server in the main
+process, `klive ide …`, and `docs/content/working-with-ide/automation.mdx`. The headless verbs, the
+harness move and the packaged `klive` launcher (Phases 0–2) remain.
+
+**Plan:** G6.5 is planned on its own in [SEND_TO_NEXT_WIFI_PLAN.md](SEND_TO_NEXT_WIFI_PLAN.md)
+(draft, open questions, 2026-10-08):
+- Klive runs a small, off-by-default, read-only HTTP server, and the Next pulls the build over Wi-Fi.
+- The zero-install route uses the stock `.http` command and `.nexload`. The everyday route is a
+  Klive dot command, `.klive -w`, that waits, downloads in checksummed ranges, saves to the SD card
+  and runs the file.
+- The plan also delivers a user guide to setting up Wi-Fi on the Next.
+- A fake ESP on the emulated UART lets the whole path run in CI.
+
+G6.4 is planned in [NEXT_HARDWARE_DEBUGGING_PLAN.md](NEXT_HARDWARE_DEBUGGING_PLAN.md) (draft,
+**deferred**). It uses a joystick-port UART through a USB-serial adapter and a Klive agent on the
+Next. Its Phase 2 (send-to-Next over serial) is replaced by the Wi-Fi plan.
 
 ---
 
@@ -388,7 +407,7 @@ step back~~ (done) · G5.1 coverage · G1.3 memory and value conditions · G1.5 
 and WPMEM comments.
 
 **Wave 3 — depth:**
-- G5.5 DeZog-compatible unit tests and G6.1 CLI, which together enable G5.6 (CI).
+- ~~G5.5 DeZog-compatible unit tests~~ (done) and G6.1 CLI (live half done; headless verbs open), which together enable G5.6 (CI).
 - G7.1 annotations for any machine, G7.2 ROM annotations written from scratch.
 - ~~G8.x BASIC intelligence~~ (done), ~~G2.4 snapshot saving~~ (done), ~~G5.2–G5.4 heat map and profiler~~ (done).
 - ~~**G4.2 history in every core**~~ (done), which is the groundwork for G4.4.

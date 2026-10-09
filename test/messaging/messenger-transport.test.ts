@@ -2,7 +2,8 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   DEFAULT_REQUEST_TIMEOUT_MS,
-  MessengerBase
+  MessengerBase,
+  relayedRequest
 } from "@messaging/MessengerBase";
 import { buildMessagingProxy } from "@messaging/MessageProxy";
 import type { Channel, RequestMessage, ResponseMessage } from "@messaging/messages-core";
@@ -168,5 +169,38 @@ describe("messaging proxy response handling", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe("relaying a request from one renderer to the other", () => {
+  const relayed = (correlationId: number): RequestMessage =>
+    ({ type: "ApiMethodRequest", method: "displayOutput", targetId: "ide", args: [], correlationId }) as RequestMessage;
+
+  it("drops the sender's correlation ID, and only that", () => {
+    const message = relayed(7);
+    expect(relayedRequest(message)).toEqual({ type: "ApiMethodRequest", method: "displayOutput", targetId: "ide", args: [] });
+    // --- The original keeps it: the IPC handler answers the sender with it
+    expect(message.correlationId).toBe(7);
+  });
+
+  it("keeps main's own pending request when a relayed one would have shared its number", async () => {
+    const messenger = new TestMessenger();
+    // --- Main's own request takes number 1 ...
+    const own = messenger.sendMessage({ type: "ApiMethodRequest", method: "executeCommandCaptured", args: [] } as RequestMessage);
+    // --- ... and the emulator's request, relayed, was its number 1 too
+    const relay = messenger.sendMessage(relayedRequest(relayed(1)));
+    expect(messenger.pendingCount()).toBe(2);
+    messenger.respondTo(1, { type: "ApiMethodResponse", result: "relay" } as ResponseMessage);
+    messenger.respondTo(0, { type: "ApiMethodResponse", result: "own" } as ResponseMessage);
+    await expect(own).resolves.toMatchObject({ result: "own" });
+    await expect(relay).resolves.toMatchObject({ result: "relay" });
+  });
+
+  it("would lose main's request without it (the bug this guards)", () => {
+    const messenger = new TestMessenger();
+    void messenger.sendMessage({ type: "ApiMethodRequest", method: "executeCommandCaptured", args: [] } as RequestMessage);
+    void messenger.sendMessage(relayed(1));
+    // --- Both under number 1: the relayed one replaced main's own
+    expect(messenger.pendingCount()).toBe(1);
   });
 });

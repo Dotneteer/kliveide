@@ -67,6 +67,7 @@
 /project-templates/index.html
 /scripting/overview/index.html
 /scripting/syntax/index.html
+/working-with-ide/automation/index.html
 /working-with-ide/basic/index.html
 /working-with-ide/beam-position/index.html
 /working-with-ide/breakpoints/index.html

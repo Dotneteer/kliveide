@@ -10,7 +10,7 @@ import { getIdeApi } from "@messaging/MainToIdeMessenger";
 import { ABOUT_DIALOG, FIRST_STARTUP_DIALOG_EMU, FIRST_STARTUP_DIALOG_IDE } from "@messaging/dialog-ids";
 import { createAboutDialogData } from "@messaging/about-dialog";
 import type { MenuContext } from "./menu-context";
-import { settingsMenuItem } from "./file-menu";
+import { automationMenuItems, settingsMenuItem } from "./file-menu";
 import { tidySeparators } from "./menu-utils";
 
 export const SYSTEM_MENU_ID = "system_menu";
@@ -40,6 +40,7 @@ export function createAppMenu(context: MenuContext): MenuItemConstructorOptions 
       aboutItem(context, `About ${app.name}`),
       { type: "separator" },
       settingsMenuItem(context),
+      ...automationMenuItems(context),
       { type: "separator" },
       { role: "hide" },
       { role: "hideOthers" },

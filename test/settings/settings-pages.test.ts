@@ -183,3 +183,20 @@ describe("settingsRowMatches", () => {
     expect(settingsRowMatches(row("tabSize"), "  ")).toBe(true);
   });
 });
+
+describe("the automation rows (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D4, D7)", () => {
+  it("read the user settings set -u writes, never a project's", () => {
+    const on = stateOf({ userSettings: { automation: { enabled: "1", level: "full" } } });
+    expect(readSettingsRowValue(row("automationEnabled"), on)).toBe(true);
+    expect(readSettingsRowValue(row("automationLevel"), on)).toBe("full");
+    const projectOnly = stateOf({ projectSettings: { automation: { enabled: "1", level: "full" } } });
+    expect(readSettingsRowValue(row("automationEnabled"), projectOnly)).toBe(false);
+    expect(readSettingsRowValue(row("automationLevel"), projectOnly)).toBe("control");
+  });
+
+  it("are found by the words a user would search for", () => {
+    expect(settingsRowMatches(row("automationEnabled"), "automation")).toBe(true);
+    expect(settingsRowMatches(row("automationEnabled"), "scripts")).toBe(true);
+    expect(row("automationLevel").page).toBe("general");
+  });
+});

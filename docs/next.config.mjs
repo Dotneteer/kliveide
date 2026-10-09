@@ -359,6 +359,8 @@ const withNextra = nextra({
             "bash",
             "shell",
             "markdown",
+            // --- The automation page's Python client (working-with-ide/automation.mdx)
+            "python",
             "asm",
             "diff",
             {

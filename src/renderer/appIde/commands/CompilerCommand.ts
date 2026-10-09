@@ -3,7 +3,7 @@ import type { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
 
 import { IdeCommandBase, commandError, commandSuccessWith } from "../services/ide-commands";
 import { setProjectDebuggingAction } from "@common/state/actions";
-import { compileCode } from "@renderer/appIde/utils/compile-code";
+import { buildDiagnosticsValue, compileCode } from "@renderer/appIde/utils/compile-code";
 /*
  * `injectCode` is shared with the `klive.*` commands and lives in their module, because the NEX
  * export step it performs for ZX Next builds calls `ExportCodeCommand`, which is defined there.
@@ -20,9 +20,11 @@ export class CompileCommand extends IdeCommandBase {
 
   async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
     const compileResult = await compileCode(context);
+    // --- The diagnostics as the result value (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D10)
+    const value = buildDiagnosticsValue(compileResult.result);
     return compileResult.message
-      ? commandError(compileResult.message)
-      : commandSuccessWith(`Project file successfully compiled.`);
+      ? commandError(compileResult.message, value)
+      : commandSuccessWith(`Project file successfully compiled.`, value);
   }
 }
 

@@ -38,6 +38,7 @@ import { MF_INJECT_SUPPORT, MI_ZXNEXT } from "@common/machines/constants";
 import { NexFileWriter } from "@main/z80-compiler/nex-file-writer";
 import type { IOutputBuffer } from "@renderer/appIde/ToolArea/abstractions";
 import {
+  buildDiagnosticsValue,
   compileCode,
   modelTypeToMachineType
 } from "@renderer/appIde/utils/compile-code";
@@ -166,7 +167,7 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
       if (errorNo > 0) {
         const message = "Compilation failed with errors.";
         await context.service.ideCommandsService.executeCommand("outp build");
-        return commandError(message);
+        return commandError(message, buildDiagnosticsValue(result));
       }
     }
 
@@ -489,7 +490,7 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
           hexOut,
           `kliveHome:${EXPORT_FILE_FOLDER}`
         );
-        return commandSuccessWith(`Code successfully exported to '${path}'`);
+        return commandSuccessWith(`Code successfully exported to '${path}'`, { file: path });
       } catch (err) {
         return commandError(err.toString());
       }
@@ -922,7 +923,7 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
               writer.buffer,
               `kliveHome:${EXPORT_FILE_FOLDER}`
             );
-            return commandSuccessWith(`Code successfully exported to '${filePath}'`);
+            return commandSuccessWith(`Code successfully exported to '${filePath}'`, { file: filePath });
           } catch (err) {
             return commandError(err.toString());
           }
@@ -1037,7 +1038,7 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
         summary += `\n  Warnings: ${nexWarnings.length}`;
       }
 
-      return commandSuccessWith(summary);
+      return commandSuccessWith(summary, { file: filePath });
     } catch (err) {
       return commandError(`NEX export failed: ${err.toString()}`);
     }
@@ -1130,7 +1131,7 @@ export async function injectCode(
     }
     if (errorNo > 0) {
       await context.service.ideCommandsService.executeCommand("outp build");
-      return commandError("Code compilation failed. No code injected.");
+      return commandError("Code compilation failed. No code injected.", buildDiagnosticsValue(result));
     }
   }
 

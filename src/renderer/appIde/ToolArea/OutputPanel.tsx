@@ -19,6 +19,7 @@ import Dropdown from "@renderer/controls/Dropdown";
 import { SETTING_IDE_ACTIVE_OUTPUT_PANE } from "@common/settings/setting-const";
 import { useMainApi } from "@renderer/core/MainApi";
 import {
+  PANE_ID_AUTOMATION,
   PANE_ID_BUILD,
   PANE_ID_EMU,
   PANE_ID_LOG,
@@ -53,6 +54,15 @@ const EMPTY_STATES: Record<string, { title: string; hint: ReactNode }> = {
         Logpoints write here while a debug run passes them. Set one with{" "}
         <code>bp-set &lt;address&gt; -log "A={"{A}"}"</code>, or add a <code>LOGPOINT</code> comment
         and build.
+      </>
+    )
+  },
+  [PANE_ID_AUTOMATION]: {
+    title: "No automation activity yet",
+    hint: (
+      <>
+        Scripts and the <code>klive ide</code> command line connect here once automation is on: turn
+        it on in Settings › General › Automation, or with <code>set -u automation.enabled 1</code>.
       </>
     )
   },

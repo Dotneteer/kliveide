@@ -1,3 +1,4 @@
+import type { AutomationStatusState } from "./AppState";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { ActionCreator } from "./Action";
 import { SideBarPanelState } from "./AppState";
@@ -26,6 +27,12 @@ export const emuLoadedAction: ActionCreator = () => ({
 
 export const ideLoadedAction: ActionCreator = () => ({
   type: "IDE_LOADED"
+});
+
+/** The automation server's status (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D4) */
+export const setAutomationStatusAction: ActionCreator = (status: AutomationStatusState) => ({
+  type: "SET_AUTOMATION_STATUS",
+  payload: { value: status }
 });
 
 export const dimMenuAction: ActionCreator = (flag: boolean) => ({

@@ -1,7 +1,8 @@
 import fs from "fs";
 import { Setting } from "@abstractions/Setting";
 import { mainStore } from "@main/main-store";
-import { get } from "lodash";
+import { get, set, unset } from "lodash";
+import { saveUserSettingAction } from "@state/actions";
 import { KliveGlobalSettings } from "../common/settings/setting-definitions";
 import { getRecentProjects, saveKliveProject, setRecentProjects } from "./projects";
 import { getKliveHomeBase } from "./portable";
@@ -97,6 +98,26 @@ export function setSettingValue(id: string, value: any): void {
     // --- failures, so it neither loses writes nor rejects.
     void saveKliveProject();
   }
+}
+
+/**
+ * Applies a user setting (as `set -u` does), publishes it to the renderers and saves it.
+ * @param key The setting key (`automation.enabled`)
+ * @param value The value, or undefined to remove it
+ */
+export function applyUserSetting(key: string, value?: any): void {
+  if (!key) return;
+  appSettings.userSettings ??= {};
+  if (value === undefined) {
+    unset(appSettings.userSettings, key);
+  } else {
+    set(appSettings.userSettings, key, value);
+  }
+  // --- Publish the change to the renderers before saving. Without this the file on disk and the
+  // --- running session disagree until the next start: the `set` command (and `sjasmp-reset`,
+  // --- which builds on it) would write a setting that the IDE keeps reporting as unset.
+  mainStore.dispatch(saveUserSettingAction({ ...appSettings.userSettings }));
+  saveAppSettings();
 }
 
 export let appSettings: AppSettings = {};

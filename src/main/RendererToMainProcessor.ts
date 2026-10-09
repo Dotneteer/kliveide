@@ -77,7 +77,9 @@ import {
   selectMediaFile as selectMachineMedia,
   setSelectedTapeFile
 } from "./machine-menus/zx-specrum-menus";
-import { appSettings, saveAppSettings, setSettingValue } from "./settings-utils";
+import { appSettings, applyUserSetting, saveAppSettings, setSettingValue } from "./settings-utils";
+import { tapAutomationOutput } from "./automation/automation-controller";
+import { relayedRequest } from "@messaging/MessengerBase";
 import { runBackgroundCompileWorker } from "./compiler-integration/runWorker";
 import { CimFile } from "./fat32/CimFileManager";
 import { Fat32Volume } from "./fat32/Fat32Volume";
@@ -622,20 +624,7 @@ class MainMessageProcessor {
    * @param value The value to set (omit to remove).
    */
   applyUserSettings(key: string, value?: any) {
-    if (key) {
-      appSettings.userSettings ??= {};
-      if (value === undefined) {
-        _.unset(appSettings.userSettings, key);
-      } else {
-        _.set(appSettings.userSettings, key, value);
-      }
-      // --- Publish the change to the renderers before saving. Without this the file
-      // --- on disk and the running session disagree until the next start: the `set`
-      // --- command (and `sjasmp-reset`, which builds on it) would write a setting
-      // --- that the IDE keeps reporting as unset.
-      this.dispatch(saveUserSettingAction({ ...appSettings.userSettings }));
-      saveAppSettings();
-    }
+    applyUserSetting(key, value);
   }
 
   /**
@@ -1254,10 +1243,17 @@ export async function processRendererToMainMessages(
   const mainMessageProcessor = new MainMessageProcessor(window, dispatch);
 
   if (message.targetId === "emu") {
-    return await sendFromMainToEmu(message);
+    return await sendFromMainToEmu(relayedRequest(message));
   }
   if (message.targetId === "ide") {
-    return await sendFromMainToIde(message);
+    // --- Emulator and Log pane output, for automation's `ide.output` (COMMAND_LINE_AUTOMATION_PLAN D11)
+    if (
+      message.type === "ApiMethodRequest" &&
+      (message.method === "displayOutput" || message.method === "displayOutputBatch")
+    ) {
+      tapAutomationOutput(message.args?.[0]);
+    }
+    return await sendFromMainToIde(relayedRequest(message));
   }
 
   switch (message.type) {

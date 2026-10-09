@@ -180,6 +180,11 @@ export const componentAliases: Record<string, string> = {
   "--bgcolor-errorLabel": "var(--status-error)",
   "--color-statusbar-label": "var(--text-secondary)",
   "--color-statusbar-icon": "var(--text-secondary)",
+  // The automation item (COMMAND_LINE_AUTOMATION_PLAN D4): neutral while it only listens, an accent
+  // chip while a script is connected - something outside the IDE can drive it, so that is state.
+  "--color-statusbar-automation-active": "var(--accent-text)",
+  "--bgcolor-statusbar-automation-active": "var(--accent-subtle)",
+  "--border-statusbar-automation-active": "var(--accent-border)",
 
   // --- Sidebar --------------------------------------------------------
   "--bgcolor-sidebar": "var(--surface-panel)",

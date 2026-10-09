@@ -139,6 +139,7 @@ import {
   PANE_ID_EMU,
   PANE_ID_LOG,
   PANE_ID_TESTS,
+  PANE_ID_AUTOMATION,
   PANE_ID_SCRIPTIMG
 } from "@common/integration/constants";
 import { ScriptingHistoryPanel } from "./appIde/SideBarPanels/ScriptingHistoryPanel";
@@ -438,6 +439,11 @@ export const outputPaneRegistry: OutputPaneInfo[] = [
     // --- Unit-test results (`.plans/Z80_UNIT_TESTS_PLAN.md` D16)
     id: PANE_ID_TESTS,
     displayName: "Tests"
+  },
+  {
+    // --- What scripts did through the automation server (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D13)
+    id: PANE_ID_AUTOMATION,
+    displayName: "Automation"
   }
 ];
 

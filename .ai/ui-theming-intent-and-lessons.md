@@ -1181,6 +1181,22 @@ Do not tint whole rows red or green: the glyph plus the message line already say
 band would read as a selection. The same applies to any future verdict list (lint results, a CI
 report).
 
+## A Status-Bar Item For Something Outside The IDE Is Quiet Until It Acts
+
+The automation item (`IdeStatusBar`, COMMAND_LINE_AUTOMATION_PLAN D4) exists only while the server
+listens, and it is plain status-bar text (`--color-statusbar-label`, no border) while nobody is
+connected: "listening" is configuration the user chose, not news. While a client is connected it
+becomes an accent chip (`--color-/--bgcolor-/--border-statusbar-automation-active`, L4 aliases of the
+accent's text, subtle and border tones) with the count, because something outside the IDE can now
+drive it - that is state worth seeing from across the screen. Not the error colour (nothing is
+wrong) and not the secondary accent (that means "the past"). The icon paints with `currentColor`, so
+it follows the chip. A future "an external thing is attached" indicator (a hardware link, a remote
+session) should follow the same two steps.
+
+Any state the main process publishes for a renderer must be **re-published when that renderer
+loads**: an action dispatched in main before a window's store exists never reaches it (the item
+was missing until the first client connected).
+
 ## Token Architecture
 
 Four layers, in `src/renderer/theming/tokens/`:

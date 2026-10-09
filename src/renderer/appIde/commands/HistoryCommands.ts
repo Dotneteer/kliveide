@@ -617,6 +617,8 @@ export class HistoryPresentCommand extends IdeCommandBase {
  */
 export class HistoryTakeOverCommand extends IdeCommandBase<{ "-y"?: boolean }> {
   readonly id = "history-take-over";
+  // --- Asks for a confirmation: never through automation (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` T5)
+  readonly automation = "deny" as const;
   readonly description = "Takes over at the current point in the past: discards the recorded future (-y: without asking)";
   readonly usage = "history-take-over [-y]";
   readonly aliases = ["htake"];

@@ -170,6 +170,8 @@ type SettingsDialogArgs = {
  */
 export class SettingsDialogCommand extends IdeCommandBase<SettingsDialogArgs> {
   readonly id = "settings";
+  // --- Opens the Settings dialog: never through automation (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` T5)
+  readonly automation = "deny" as const;
   readonly description =
     "Opens the Settings dialog. Pages: " + SETTINGS_PAGES.map((p) => p.id).join(", ");
   readonly usage = "settings [<page>]";

@@ -5,7 +5,7 @@ import { memo } from "react";
 import type { KeyboardEvent, MouseEvent } from "react";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { getBreakpointAddressSpec } from "@common/utils/breakpoints";
-import { breakpointCommandSpec } from "@renderer/appIde/commands/BreakpointCommands";
+import { breakpointCommandSpec } from "@common/utils/breakpoint-spec";
 import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import { Label } from "@renderer/controls/layout/Label";
 import { Secondary } from "@renderer/controls/layout/Secondary";

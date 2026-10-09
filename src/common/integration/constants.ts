@@ -5,3 +5,5 @@ export const PANE_ID_SCRIPTIMG   = "scripting";
 export const PANE_ID_LOG = "log";
 /** The unit-test results (`.plans/Z80_UNIT_TESTS_PLAN.md` D16) */
 export const PANE_ID_TESTS = "tests";
+/** What the automation server did: connections and method calls (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D13) */
+export const PANE_ID_AUTOMATION = "automation";
