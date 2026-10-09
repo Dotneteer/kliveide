@@ -1,3 +1,4 @@
+import type { AnnotationMachine } from "@common/annotations/bankSpace";
 import styles from "./StaticMemoryDump.module.scss";
 import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import { IDocumentHubService } from "@renderer/abstractions/IDocumentHubService";
@@ -47,12 +48,12 @@ import {
   useContextMenuState
 } from "@renderer/controls/ContextMenu";
 import {
-  createAnnotatedNexDisassemblyItems,
+  createAnnotatedDisassemblyItems,
   createScreenSkipItem,
   pcAnchoredRuns,
   SCREEN_AREA_RANGE,
   screenAreaApplies
-} from "@renderer/appIde/DocumentPanels/Next/nexAnnotatedDisassembly";
+} from "@renderer/appIde/annotations/annotatedDisassembly";
 import { useSysVarOperandLabelResolver } from "@renderer/appIde/DocumentPanels/useSysVarOperandLabels";
 // --- The same wording as the live Disassembly view's switch: one control in two places.
 import { SYS_VAR_NAMES_TITLE } from "@renderer/appIde/DocumentPanels/DisassemblyToolbars";
@@ -91,8 +92,8 @@ import {
 } from "@renderer/appIde/DocumentPanels/Next/annotationEditor/NexAnnotationEditorViewModel";
 import {
   getBankAnnotation,
-  getNexBankAddressOffset,
-} from "@renderer/appIde/DocumentPanels/Next/nexAnnotations";
+  getBankAddressOffset,
+} from "@renderer/appIde/annotations/programAnnotations";
 import {
   NexBankCommentChip,
   NexBankCommentStrip
@@ -124,6 +125,16 @@ type MemoryDumpViewState = {
   disassemblyScrollPosition?: number;
   version?: number;
   topAddress?: number;
+  /**
+   * The annotation sidecar and the bank in it this document lists
+   * (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §4.6): a NEX's, a snapshot's, a paused
+   * machine's.
+   */
+  annotationPath?: string;
+  annotationBank?: number;
+  /** The bank space the bank is numbered in; absent means the ZX Spectrum Next. */
+  annotationMachine?: AnnotationMachine;
+  /** The former names of `annotationPath` / `annotationBank`, read so saved layouts reopen. */
   nexAnnotationPath?: string;
   nexAnnotationBank?: number;
   /** Name 16-bit data operands after the machine's system variables. Defaults to on. */
@@ -185,8 +196,9 @@ type StaticMemoryDumpOptions = {
   disassOffset?: number;
   decimalView?: boolean;
   viewMode?: StaticDumpViewMode;
-  nexAnnotationPath?: string;
-  nexAnnotationBank?: number;
+  annotationPath?: string;
+  annotationBank?: number;
+  annotationMachine?: AnnotationMachine;
   disassemblyFlavor?: StaticDisassemblyFlavor;
 
   /**
@@ -255,9 +267,16 @@ const StaticMemoryDump = ({
    *
    * See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.16.
    */
-  const isNexBankDocument = currentViewState.nexAnnotationBank !== undefined;
+  // --- The annotated bank, under its current names or the ones a saved layout may still carry
+  const viewAnnotationPath = currentViewState.annotationPath ?? currentViewState.nexAnnotationPath;
+  const viewAnnotationBank = currentViewState.annotationBank ?? currentViewState.nexAnnotationBank;
+  const annotationMachine: AnnotationMachine = currentViewState.annotationMachine ?? "next";
+  // --- Any annotated bank (a NEX's, a snapshot's) opens on its listing and edits its annotations;
+  // --- the Sprites view, the screen switch and the branch gutter are the Next's alone
+  const isAnnotatedBankDocument = viewAnnotationBank !== undefined;
+  const isNexBankDocument = isAnnotatedBankDocument && annotationMachine === "next";
   const requestedViewMode: StaticDumpViewMode = disassemblyEnabled
-    ? (currentViewState.viewMode ?? (isNexBankDocument ? "disassembly" : "memory"))
+    ? (currentViewState.viewMode ?? (isAnnotatedBankDocument ? "disassembly" : "memory"))
     : "memory";
   const viewMode: StaticDumpViewMode =
     requestedViewMode === "sprites" && !isNexBankDocument ? "memory" : requestedViewMode;
@@ -342,13 +361,13 @@ const StaticMemoryDump = ({
   const [spritesJumpAddress, setSpritesJumpAddress] = useState<{ address: number; version: number }>();
   const navDisassOffset = useRef(0);
   const items = useMemo(() => createRowAddresses(contents.length, 16), [contents.length]);
-  const bankBreakpoints = useNexBankBreakpoints(currentViewState.nexAnnotationBank);
+  const bankBreakpoints = useNexBankBreakpoints(viewAnnotationBank);
   /*
    * `undefined` — not an empty list — when there is nothing to say: no bank, or a machine that is
    * not a ZX Spectrum Next. "Not paged in" is a claim about a machine's current paging, and making
    * it about a machine that is not running would be worse than saying nothing.
    */
-  const bankPlacements = useNexBankLocation(currentViewState.nexAnnotationBank);
+  const bankPlacements = useNexBankLocation(viewAnnotationBank);
 
   /*
    * File bytes or the machine's — and the machine's whenever there is a machine to ask.
@@ -378,7 +397,7 @@ const StaticMemoryDump = ({
    * nothing running, shows exactly what it always did.
    */
   const liveBankWanted = bankPlacements !== undefined;
-  const liveBank = useNexLiveBankBytes(currentViewState.nexAnnotationBank, liveBankWanted);
+  const liveBank = useNexLiveBankBytes(viewAnnotationBank, liveBankWanted);
   const bankDiff = useMemo(() => diffBankBytes(contents, liveBank), [contents, liveBank]);
   const liveBankShown = liveBank !== undefined;
   /*
@@ -545,8 +564,8 @@ const StaticMemoryDump = ({
               {
                 disassemblyEnabled: true,
                 disassOffset: base,
-                nexAnnotationPath: annotationPath,
-                nexAnnotationBank: bank,
+                annotationPath,
+                annotationBank: bank,
                 topAddress,
                 // --- The definition is code being read, so open on the listing rather than the dump.
                 viewMode: "disassembly" as const
@@ -563,8 +582,8 @@ const StaticMemoryDump = ({
 
   const annotationEnv = useMemo<NexAnnotationEditorEnvironment>(
     () => ({
-      annotationPath: currentViewState.nexAnnotationPath,
-      bank: currentViewState.nexAnnotationBank,
+      annotationPath: viewAnnotationPath,
+      bank: viewAnnotationBank,
       viewMode: viewMode === "sprites" ? lastListingView.current : viewMode,
       // --- Only a NEX bank has a Sprites view, so only a NEX bank records whether it is showing.
       ...(isNexBankDocument ? { spritesViewActive: viewMode === "sprites" } : {}),
@@ -580,8 +599,8 @@ const StaticMemoryDump = ({
       machineRunning: machineHasRun(machineState)
     }),
     [
-      currentViewState.nexAnnotationBank,
-      currentViewState.nexAnnotationPath,
+      viewAnnotationBank,
+      viewAnnotationPath,
       decimalView,
       disassOffset,
       isNexBankDocument,
@@ -661,7 +680,7 @@ const StaticMemoryDump = ({
 
   // --- The sidecar is where these breakpoints live between sessions: read once per file, written
   // --- back on every change.
-  useNexSidecarBreakpointSync(currentViewState.nexAnnotationPath, annotationVm.annotations);
+  useNexSidecarBreakpointSync(viewAnnotationPath, annotationVm.annotations);
 
   useEffect(() => {
     void dispatchAnnotation({ type: "opened" });
@@ -683,7 +702,7 @@ const StaticMemoryDump = ({
    * published and nothing re-renders.
    */
   useEffect(() => {
-    const bank = currentViewState.nexAnnotationBank;
+    const bank = viewAnnotationBank;
     const annotations = annotationVm.annotations;
     if (bank === undefined || !annotations) return;
     const bankAnnotation = getBankAnnotation(annotations, bank);
@@ -691,7 +710,7 @@ const StaticMemoryDump = ({
     setCurrentViewState((current) => {
       const next = { ...current };
       let changed = false;
-      const nextDisassOffset = getNexBankAddressOffset(bankAnnotation.offsetIndex);
+      const nextDisassOffset = getBankAddressOffset(bankAnnotation.offsetIndex);
       if (next.disassOffset !== nextDisassOffset) {
         next.disassOffset = nextDisassOffset;
         changed = true;
@@ -713,7 +732,7 @@ const StaticMemoryDump = ({
       }
       return changed ? next : current;
     });
-  }, [annotationVm.annotations, currentViewState.nexAnnotationBank]);
+  }, [annotationVm.annotations, viewAnnotationBank]);
   /*
    * The width every row reserves for its label.
    *
@@ -1179,16 +1198,17 @@ const StaticMemoryDump = ({
 
     (async () => {
       const annotations = annotationVm.annotations;
-      const annotationItems = annotations && currentViewState.nexAnnotationBank !== undefined
-        ? await createAnnotatedNexDisassemblyItems({
+      const annotationItems = annotations && viewAnnotationBank !== undefined
+        ? await createAnnotatedDisassemblyItems({
             annotations,
-            bank: currentViewState.nexAnnotationBank,
+            bank: viewAnnotationBank,
             contents: bankBytes,
             decimalView,
             disassOffset,
             pcBankOffset,
             fallbackOperandLabelResolver: sysVarLabelResolver,
-            hideScreenArea
+            hideScreenArea,
+            allowExtendedSet: annotationMachine === "next"
           })
         : undefined;
       let outputItems = annotationItems;
@@ -1253,7 +1273,8 @@ const StaticMemoryDump = ({
      */
     bankBytes,
     pcBankOffset,
-    currentViewState.nexAnnotationBank,
+    viewAnnotationBank,
+    annotationMachine,
     decimalView,
     disassOffset,
     disassemblyEnabled,
@@ -1446,9 +1467,9 @@ const StaticMemoryDump = ({
           <PanelHeaderGroup>
             {annotationVm.bankComment &&
               !currentViewState.bankCommentPinned &&
-              currentViewState.nexAnnotationBank !== undefined && (
+              viewAnnotationBank !== undefined && (
                 <NexBankCommentChip
-                  bank={currentViewState.nexAnnotationBank}
+                  bank={viewAnnotationBank}
                   comment={annotationVm.bankComment}
                   onEdit={() => dispatchAnnotation({ type: "bankCommentRequested" })}
                   onPin={() => changeViewState((vs) => (vs.bankCommentPinned = true))}
@@ -1637,9 +1658,9 @@ const StaticMemoryDump = ({
                      * and nowhere on the row that made it. See §15.20 of the CSpect plan.
                      */
                     bankScope={
-                      currentViewState.nexAnnotationBank !== undefined && rowBankOffset !== undefined
+                      viewAnnotationBank !== undefined && rowBankOffset !== undefined
                         ? {
-                            bank: currentViewState.nexAnnotationBank,
+                            bank: viewAnnotationBank,
                             bankOffset: rowBankOffset
                           }
                         : undefined
@@ -1686,9 +1707,9 @@ const StaticMemoryDump = ({
             />
           </div>
         ) : null}
-        {contents && viewMode === "sprites" && currentViewState.nexAnnotationBank !== undefined ? (
+        {contents && viewMode === "sprites" && viewAnnotationBank !== undefined ? (
           <NexBankSpritesView
-            bank={currentViewState.nexAnnotationBank}
+            bank={viewAnnotationBank}
             bytes={bankBytes}
             addressBase={disassOffset}
             format={spriteFormat}
@@ -1766,8 +1787,9 @@ export async function openStaticMemoryDump(
         disassOffset: options.disassOffset ?? 0,
         decimalView: options.decimalView,
         viewMode: options.viewMode,
-        nexAnnotationPath: options.nexAnnotationPath,
-        nexAnnotationBank: options.nexAnnotationBank,
+        annotationPath: options.annotationPath,
+        annotationBank: options.annotationBank,
+        ...(options.annotationMachine ? { annotationMachine: options.annotationMachine } : {}),
         disassemblyFlavor: options.disassemblyFlavor,
         topAddress: options.topAddress
       } satisfies MemoryDumpViewState,

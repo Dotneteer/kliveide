@@ -1,3 +1,4 @@
+import { addressSymbolsForState } from "@renderer/appIde/annotations/useAddressSymbols";
 import { COMMAND_RESULT_EDITOR } from "@state/common-ids";
 import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
 import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
@@ -91,11 +92,17 @@ export class DisassemblyCommand extends IdeCommandBase<DisassemblyCommandArgs> {
       new MemorySection(args.startAddress, args.endAddress, MemorySectionType.Disassemble)
     );
 
+    // --- Names from the shared resolver: build symbols, the active annotations, the ROM's labels,
+    // --- under the paging this very read reported (§4.4 of the reverse-engineering plan)
+    const slots = getMemoryResponse.slotPartitions;
+    const { symbols } = addressSymbolsForState(context.store.getState());
+
     // --- Disassemble the specified memory segments
     const decimalMode = args["-d"];
     const disassembler = new Z80Disassembler(memSections, memory, partitions, {
       allowExtendedSet: true,
-      decimalMode
+      decimalMode,
+      operandLabelResolver: symbols.operandResolver(slots)
     });
     const disassItems = (await disassembler.disassemble(args.startAddress, args.endAddress))
       .outputItems;
@@ -113,12 +120,13 @@ export class DisassemblyCommand extends IdeCommandBase<DisassemblyCommandArgs> {
         );
       }
       buffer.color("green");
-      buffer.write(
-        (item.hasLabel
-          ? `L${decimalMode ? toDecimal5(item.address) : toHexa4(item.address)}${args["-lc"] ? ":" : ""}`
-          : ""
-        ).padEnd(12, " ")
-      );
+      const name = symbols.labelAt(item.address, slots)?.name;
+      const label = name
+        ? name
+        : item.hasLabel
+          ? `L${decimalMode ? toDecimal5(item.address) : toHexa4(item.address)}`
+          : "";
+      buffer.write((label && args["-lc"] ? `${label}:` : label).padEnd(12, " "));
       buffer.color("bright-cyan");
       buffer.writeLine(item.instruction);
     });

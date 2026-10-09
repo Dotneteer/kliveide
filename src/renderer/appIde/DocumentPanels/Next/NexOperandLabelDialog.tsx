@@ -6,10 +6,10 @@ import { DialogRow } from "@renderer/controls/DialogRow";
 import { DialogComponentProps } from "@renderer/controls/overlay/DialogProvider";
 import type { DisassemblyOperandInfo } from "@renderer/appIde/disassemblers/common-types";
 import {
-  NEX_BANK_LAST_OFFSET,
-  type NexAnnotationLabelScope,
-  type NexOperandReference
-} from "./nexAnnotations";
+  ANNOTATION_BANK_LAST_OFFSET,
+  type AnnotationLabelScope,
+  type OperandReference
+} from "@renderer/appIde/annotations/programAnnotations";
 import {
   formatNexLabelValue,
   suggestNexLabelName,
@@ -25,7 +25,7 @@ export type NexOperandLabelDialogResult =
   | {
       action: "apply";
       operandIndex: number;
-      scope: NexAnnotationLabelScope;
+      scope: AnnotationLabelScope;
       name: string;
     }
   | {
@@ -35,7 +35,7 @@ export type NexOperandLabelDialogResult =
   | {
       action: "create-label";
       operandIndex: number;
-      scope: NexAnnotationLabelScope;
+      scope: AnnotationLabelScope;
       name: string;
       value: number;
     };
@@ -46,7 +46,7 @@ export type NexOperandLabelDialogProps =
     bankAddressOffset: number;
     instruction: string;
     operands: DisassemblyOperandInfo[];
-    explicitReferences?: NexOperandReference[];
+    explicitReferences?: OperandReference[];
     labels: NexLabelDialogLabel[];
   };
 
@@ -112,7 +112,7 @@ export function NexOperandLabelDialog({
     });
   };
 
-  const createLabel = (scope: NexAnnotationLabelScope) => {
+  const createLabel = (scope: AnnotationLabelScope) => {
     if (!selectedOperand) {
       return;
     }
@@ -243,7 +243,7 @@ export function createCandidates(
 
 export function suggestUniqueLabelName(
   labels: NexLabelDialogLabel[],
-  scope: NexAnnotationLabelScope,
+  scope: AnnotationLabelScope,
   value: number
 ): string {
   const baseName = suggestNexLabelName(scope, value);
@@ -303,7 +303,7 @@ function getCandidateGroup(
 
 function chooseInitialOperandIndex(
   operands: DisassemblyOperandInfo[],
-  explicitReferences: NexOperandReference[]
+  explicitReferences: OperandReference[]
 ): number {
   const explicitOperand = operands.find((operand) =>
     explicitReferences.some((reference) => reference.operandIndex === operand.operandIndex)
@@ -315,7 +315,7 @@ function chooseInitialLabelKey(
   candidates: Candidate[],
   operandValue: number,
   localValue: number | undefined,
-  explicitReference?: NexOperandReference
+  explicitReference?: OperandReference
 ): string | undefined {
   if (explicitReference) {
     const explicitCandidate = candidates.find((candidate) =>
@@ -355,5 +355,5 @@ function getGroupTitle(group: CandidateGroup): string {
 }
 
 function isBankOffset(value: number | undefined): value is number {
-  return Number.isInteger(value) && value >= 0 && value <= NEX_BANK_LAST_OFFSET;
+  return Number.isInteger(value) && value >= 0 && value <= ANNOTATION_BANK_LAST_OFFSET;
 }

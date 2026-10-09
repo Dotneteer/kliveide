@@ -91,7 +91,8 @@ class HarnessScorpionMachine extends ScorpionWasmV2Machine {
   }
 
   protected override async loadRomFromResource(romName: string, page = 0): Promise<Uint8Array> {
-    if (romName === "<harness-scorpion>") return this.scorpionRom!;
+    // --- Recorded under its property's name, so `getRomSources` names its pages by file and page
+    if (romName === "<harness-scorpion>") return this.recordLoadedRom(romName, this.scorpionRom!);
     return new Uint8Array(readFileSync(join(ROM_DIR, `sp128-${page}.rom`)));
   }
 }

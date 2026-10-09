@@ -37,10 +37,14 @@ type DisassemblyToolbarProps = {
   onScreenChanged: (value: boolean) => void;
   onShowBankLabelChanged: (value: boolean) => void;
   onSysVarNamesChanged: (value: boolean) => void;
+  onRomLabelsChanged?: (value: boolean) => void;
   pausedPc: number;
   ram: boolean;
   screen: boolean;
   sysVarNames: boolean;
+  /** Whether the machine has ROM annotations to show; the toggle appears only then. */
+  hasRomAnnotations?: boolean;
+  romLabels?: boolean;
   topAddress: number;
 };
 
@@ -58,10 +62,13 @@ export const DisassemblyToolbar = ({
   onScreenChanged,
   onShowBankLabelChanged,
   onSysVarNamesChanged,
+  onRomLabelsChanged,
   pausedPc,
   ram,
   screen,
   sysVarNames,
+  hasRomAnnotations,
+  romLabels,
   topAddress
 }: DisassemblyToolbarProps) => (
   <PanelHeader>
@@ -80,6 +87,14 @@ export const DisassemblyToolbar = ({
         title={SYS_VAR_NAMES_TITLE}
         clicked={onSysVarNamesChanged}
       />
+      {hasRomAnnotations && onRomLabelsChanged && (
+        <LabeledSwitch
+          value={romLabels ?? true}
+          label="ROM labels"
+          title="Show the ROM's labels, comments and data regions?"
+          clicked={onRomLabelsChanged}
+        />
+      )}
     </PanelHeaderGroup>
     {/* --- The refresh button acts on what "Follow PC" selects, so the two travel together. */}
     <PanelHeaderGroup>

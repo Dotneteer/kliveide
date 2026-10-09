@@ -1,3 +1,4 @@
+import { useAddressSymbols } from "@renderer/appIde/annotations/useAddressSymbols";
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { formatReverseSeconds } from "@common/history/reverseDebugText";
 import type { KeyboardEvent as ReactKeyboardEvent, MouseEvent as ReactMouseEvent } from "react";
@@ -63,7 +64,6 @@ import { locateSource } from "@renderer/appIde/utils/source-location";
 import type { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import {
   HistoryDisassemblyCache,
-  historyLabelLookup
 } from "@renderer/features/history/historyDisassembly";
 import { createTraceResolvers, historyRegistersOf } from "@renderer/features/history/historyTrace";
 import {
@@ -128,7 +128,7 @@ const REGISTER_ROWS: [keyof HistoryRegisters, string][] = [
 const ExecutionHistoryPanel = (_props: DocumentProps) => {
   const emuApi = useEmuApi();
   const mainApi = useMainApi();
-  const { ideCommandsService, outputPaneService } = useAppServices();
+  const { ideCommandsService, outputPaneService, projectService } = useAppServices();
   const documentHubService = useDocumentHubService();
   const machineId = useSelector((s) => s.emulatorState?.machineId);
   const machineState = useSelector((s) => s.emulatorState?.machineState);
@@ -166,9 +166,15 @@ const ExecutionHistoryPanel = (_props: DocumentProps) => {
 
   // --- Disassembly with the current compilation's labels, one cache per compilation (T12)
   const symbols = (compilation as { symbols?: Record<string, unknown> } | undefined)?.symbols;
+  // --- Names from the shared resolver: the build's labels, the active annotations, the ROM's
+  const { symbols: addressSymbols } = useAddressSymbols(projectService);
   const disassembly = useMemo(
-    () => new HistoryDisassemblyCache(machineId === MI_ZXNEXT, historyLabelLookup(symbols)),
-    [machineId, symbols]
+    () =>
+      new HistoryDisassemblyCache(
+        machineId === MI_ZXNEXT,
+        addressSymbols.empty ? undefined : (address) => addressSymbols.labelAt(address, undefined)?.name
+      ),
+    [machineId, addressSymbols]
   );
   const filter = useMemo(
     () => parseHistoryFilter(state.filter, integerSymbolsOf(symbols)),

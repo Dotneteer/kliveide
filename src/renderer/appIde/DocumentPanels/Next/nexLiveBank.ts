@@ -1,6 +1,7 @@
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 
-import { NEX_BANK_SIZE } from "./nexAnnotations";
+import { ANNOTATION_BANK_SIZE } from "@renderer/appIde/annotations/programAnnotations";
+import { nextBankSpace } from "@common/annotations/bankSpace";
 
 /**
  * Whether there is a machine whose memory means anything yet.
@@ -46,7 +47,10 @@ export function machineHasRun(state: MachineControllerState | undefined): boolea
  * function-free arithmetic rather than a second opinion about it.
  */
 export function bankPartitions(bank: number): [number, number] {
-  return [bank * 2, bank * 2 + 1];
+  return [
+    nextBankSpace.partitionOf({ bank, offset: 0 }),
+    nextBankSpace.partitionOf({ bank, offset: 0x2000 })
+  ] as [number, number];
 }
 
 /**
@@ -60,10 +64,10 @@ export function joinBankHalves(
   low: Uint8Array | undefined,
   high: Uint8Array | undefined
 ): Uint8Array | undefined {
-  const half = NEX_BANK_SIZE / 2;
+  const half = ANNOTATION_BANK_SIZE / 2;
   if (!low || !high || low.length !== half || high.length !== half) return undefined;
 
-  const joined = new Uint8Array(NEX_BANK_SIZE);
+  const joined = new Uint8Array(ANNOTATION_BANK_SIZE);
   joined.set(low, 0);
   joined.set(high, half);
   return joined;

@@ -1,6 +1,6 @@
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 
-import type { NexSidecarBreakpointKind } from "./nexAnnotations";
+import type { SidecarBreakpointKind } from "@renderer/appIde/annotations/programAnnotations";
 import { sidecarKindOf } from "./nexBreakpointSync";
 
 /**
@@ -76,7 +76,7 @@ function rowGlyphRank(bp: BreakpointInfo): number {
 }
 
 /** The breakpoint kinds a bank can carry. I/O breakpoints watch ports, so they have no bank. */
-export type BankBreakpointKind = NexSidecarBreakpointKind;
+export type BankBreakpointKind = SidecarBreakpointKind;
 
 /** In the order the bank list and its details show them. */
 export const BANK_BREAKPOINT_KINDS: readonly BankBreakpointKind[] = ["exec", "memRead", "memWrite"];

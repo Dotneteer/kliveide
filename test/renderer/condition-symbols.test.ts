@@ -10,13 +10,13 @@ import {
   setSidecarConditionSymbols,
   sidecarSymbolsOf
 } from "@renderer/appIde/utils/condition-symbols";
-import type { NexFileAnnotations } from "@renderer/appIde/DocumentPanels/Next/nexAnnotations";
+import type { ProgramAnnotations } from "@renderer/appIde/annotations/programAnnotations";
 
 /*
  * The symbol table breakpoint conditions bind to (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §3.6, F3).
  */
 
-const annotations: NexFileAnnotations = {
+const annotations: ProgramAnnotations = {
   schemaVersion: 2,
   globalLabels: [
     { name: "Score", value: 0x8000 },

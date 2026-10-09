@@ -119,7 +119,7 @@ export const SP48_ROM_TRAITS: TimexRomTraits = {
 };
 
 /**
- * The ROMs Klive has run, by the CRC-32 of the whole file. The TS2068 ROM's tape routines are the
+ * The ROMs Klive has run, by the CRC-32 of the whole file (`romCrc32` in `@common/roms/romIdentity`). The TS2068 ROM's tape routines are the
  * 48K's, moved into the EXROM; its main loop is the 48K's MAIN-EXEC, moved to $0E28.
  */
 export const TIMEX_KNOWN_ROMS: Record<string, TimexRomTraits> = {
@@ -130,13 +130,3 @@ export const TIMEX_KNOWN_ROMS: Record<string, TimexRomTraits> = {
     tape: { load: 0x0112, invalidHeader: 0x015c, resume: 0x0188, save: 0x0068, inExrom: true }
   }
 };
-
-/** The CRC-32 (IEEE) of a ROM image, as eight lower-case hex digits */
-export function romCrc32(bytes: Uint8Array): string {
-  let crc = 0xffffffff;
-  for (let i = 0; i < bytes.length; i++) {
-    crc ^= bytes[i];
-    for (let k = 0; k < 8; k++) crc = (crc >>> 1) ^ (0xedb88320 & -(crc & 1));
-  }
-  return ((crc ^ 0xffffffff) >>> 0).toString(16).padStart(8, "0");
-}

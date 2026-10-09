@@ -1,3 +1,4 @@
+import { getActiveAnnotationSet } from "@renderer/appIde/annotations/activeAnnotationSet";
 import { describe, it, expect, vi } from "vitest";
 
 import { MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48, MI_Z88 } from "@common/machines/constants";
@@ -124,6 +125,17 @@ describe("zx-snapshot command", () => {
       const result = await new SpectrumSnapshotCommand().execute(context, { file: " /p/a.sna ", ...options } as any);
       expect(loadSpectrumSnapshot).toHaveBeenCalledWith("/p/a.sna", SNA48, mode, { keepModel: false, disks: [] });
       expect(result).toEqual({ success: true, finalMessage: `SNA snapshot /p/a.sna loaded, ${done} PC $8123.` });
+    });
+
+    it("makes <snapshot>.dis the active annotation set, in the snapshot's bank space", async () => {
+      const { context } = contextFor();
+      await new SpectrumSnapshotCommand().execute(context, { file: "/p/a.sna" } as any);
+      expect(getActiveAnnotationSet()).toEqual({
+        path: "/p/a.sna.dis",
+        hostPath: "/p/a.sna",
+        machine: "sp48",
+        reason: "snapshot"
+      });
     });
 
     it("keeps the project's model when a project is open", async () => {

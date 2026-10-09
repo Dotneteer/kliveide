@@ -1,3 +1,4 @@
+import type { RomSource } from "@common/roms/romIdentity";
 import type {
   DebugRecordingCompatibility,
   DebugRecordingLoadOptions,
@@ -848,6 +849,16 @@ class EmuApiImpl {
   }
 
   /**
+   * Where each ROM partition came from and what it is, keyed by partition (`-1`, `-2`, ...): its
+   * CRC-32 and size, and the file and 16K page holding those bytes
+   * (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §5.3). A machine without partitions reports
+   * its one ROM as `-1`. Empty for a machine whose ROMs carry no annotations.
+   */
+  async getRomSources(_withBytes?: boolean): Promise<Record<number, RomSource>> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * Gets the caption each partition sits under in a chooser, keyed like `getPartitionLabels()`.
    */
   async getPartitionGroups(): Promise<Record<number, string>> {
@@ -1533,6 +1544,12 @@ export type MemoryInfo = {
   ir: number;
   wz: number;
   partitionLabels: string[];
+  /**
+   * The partition at each 8K slot, as `getPartition` answers for the slot's first address — the
+   * paging a bank space reads (`@common/annotations/bankSpace`). Entries are `undefined` on a
+   * machine without partitions.
+   */
+  slotPartitions?: (number | undefined)[];
   selectedRom?: number;
   selectedBank?: number;
   osInitialized: boolean;

@@ -33,7 +33,7 @@ are estimates for prioritising, not commitments.
 | G4 | Execution history and reverse debugging | **M → XL** | ✅ done (2026-10-07 – 10-08): G4.1–G4.6 |
 | G5 | Code coverage, profiler, unit tests | **M → L** | ✅ G5.1 and G5.2 done (2026-10-08): coverage per bank and the heat map on every Z80 machine · ✅ G5.3 and G5.4 done (2026-10-08): flat and call-graph profiler on every Z80 machine · ✅ G5.5 done (2026-10-08): DeZog-compatible unit tests with both assemblers · ✅ G5.6 done (2026-10-09): `klive test` in CI, with exit codes, JUnit and LCOV |
 | G6 | Remote debugging, real hardware, external API | **M → XL** | ◐ G6.1 done (2026-10-09): a local, token-authenticated JSON-RPC automation API and the `klive ide` command line, and headless `klive run` (with `klive test`/`klive build` from G5.6) · G6.2–G6.4 open |
-| G7 | 48K/128K reverse-engineering depth | **M → L** | Generalising the NEX annotation sidecar |
+| G7 | 48K/128K reverse-engineering depth | **M → L** | ✅ G7.1 done (2026-10-09): annotations on every machine with a bank space (Next, 48K, 128K/Pentagon, +2A/+3/+3E, Scorpion, Timex, ZX80, ZX81) · G7.2 in progress: ROM sidecar mechanism, tools and the first `sp48.rom.dis` (R0–R1) done; authoring the ROMs to level 2 (R2–R4b) open |
 | G8 | BASIC editor intelligence | **M** | ✅ done (2026-10-03): G8.1–G8.5 |
 | G9 | Machine breadth (ZX80/81, clones) | **M → XL** | ✅ G9.1 Pentagon 128, G9.1b Beta 128 / TR-DOS, G9.2 +2A/+3, G9.3 ZX80/81, G9.4 Timex TC2048/TC2068/TS2068 and Scorpion done |
 | G10 | Proof points (accuracy evidence) | **S–M** | Publishing results of known test suites |
@@ -322,12 +322,44 @@ the model (labels, comments, regions, sidecar); it just exists for NEX files onl
 
 | Feature | What it does | Size |
 |---|---|---|
-| G7.1 Annotations for any machine | Generalise the `.nex.dis` sidecar: label, comment and region-mark code in a running 48K/128K program and in snapshots (G2), shown in the live disassembly. | M |
-| G7.2 Annotated ROMs | Ship labels and comments for the 48K/128K/+3 ROMs so ROM calls and jumps read by name. | M–L (mostly data, but **written from scratch** (decision D4): existing commented disassemblies are not copied or used as a source, as with Klive BASIC's provenance rule) |
+| G7.1 Annotations for any machine ✅ **done** | Generalise the `.nex.dis` sidecar: label, comment and region-mark code in a running 48K/128K program and in snapshots (G2), shown in the live disassembly. | M |
+| G7.2 Annotated ROMs (R0–R1 ✅ done: ROM sidecars, byte binding, user layers, `ROM:` breakpoints, the tools; R2–R5 authoring open) | Ship labels and comments for the 48K/128K/+3 ROMs so ROM calls and jumps read by name. | M–L (mostly data, but **written from scratch** (decision D4): existing commented disassemblies are not copied or used as a source, as with Klive BASIC's provenance rule) |
 | G7.3 Code/data auto-detection | Use the coverage and heat maps (G5.1–G5.2) to classify executed bytes as code and data-only bytes as data. | M, after G5 |
 | G7.4 Graphics finder | Browse memory as bitmaps at a chosen width (UDGs, sprites, fonts) to find and name graphics. | M |
 | G7.5 SkoolKit import / export | Exchange annotations with SkoolKit's skool files, the community standard for published disassemblies. | M |
 | G7.6 Export as source | Export an annotated region as re-assemblable Klive asm source. | M, after G7.1 |
+
+**Plan:** G7.1 and G7.2 are planned together in
+[REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md](REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md) (decisions
+recorded, 2026-10-09). It covers:
+- one annotation model and a per-machine *bank space* in place of the Next's 8K arithmetic, with
+  the **ZX80 and ZX81 added** by the author (Q4), annotated by canonical address;
+- an active annotation set (NEX, snapshot, project or command) in place of "the launched NEX";
+- a shared address-to-name resolver;
+- the live Disassembly view as an editable annotated listing;
+- ROM annotations as `<rom file>.dis` sidecars: shipped read-only beside the ROMs in
+  `src/public/roms`, the user's own beside their ROM file or in the Klive home folder by CRC, found
+  by CRC and bound to their bytes, and written from scratch under D4. The ZX81 and ZX80 ROMs are
+  targets too. Under Q1, the conventional routine names may be used as interface facts; the
+  comments that come with them may not.
+
+**Plan:** G7.3–G7.6 are planned together in
+[REVERSE_ENGINEERING_TOOLS_PLAN.md](REVERSE_ENGINEERING_TOOLS_PLAN.md) (decisions recorded,
+2026-10-09: the suggested answers accepted). All four write to or read from G7.1's model, and they share one set of model
+additions: `text`/`graphic` regions, a region `origin`, named graphics, an end comment and a SkoolKit
+passthrough. All of them are keys that shipped builds ignore.
+- **G7.3** classifies each bank's bytes from the coverage flags, follows branches from code it has
+  seen run, and *proposes* regions that the user applies. Regions it writes are marked `origin: "auto"`.
+- **G7.4** is a bitmap view: a fourth view mode of the static dump, plus a live document. It knows
+  four byte orders and masks, can dim bytes that were never read, and names graphics.
+- **G7.5** has its own skool/ctl parsers and writers. They are written only from SkoolKit's documented
+  formats; an installed SkoolKit may be run as a local oracle. An import is checked against bytes
+  Klive already has. D4 still keeps published ROM skool files out of the shipped sidecars.
+- **G7.6** emits Klive asm and proves it by reassembling the output. Non-canonical encodings fall
+  back to `.defb`, and an exhaustive test checks that list.
+
+The G7.6 encoding table, the skool parsers and the static graphics view do not depend on G7.1 and
+can start first.
 
 ---
 
@@ -413,7 +445,8 @@ and WPMEM comments.
 
 **Wave 3 — depth:**
 - ~~G5.5 DeZog-compatible unit tests~~ (done), ~~G5.6 tests in CI~~ (done) and ~~G6.1 CLI and automation~~ (done).
-- G7.1 annotations for any machine, G7.2 ROM annotations written from scratch.
+- ~~G7.1 annotations for any machine~~ (done), G7.2 ROM annotations written from scratch (mechanism and
+  tools done; authoring the ROMs open).
 - ~~G8.x BASIC intelligence~~ (done), ~~G2.4 snapshot saving~~ (done), ~~G5.2–G5.4 heat map and profiler~~ (done).
 - ~~**G4.2 history in every core**~~ (done), which is the groundwork for G4.4.
 

@@ -247,6 +247,25 @@ class MainApiImpl {
   }
 
   /**
+   * The absolute path of a file in the Klive home folder (`<home>/Klive`, or the portable data
+   * folder's `Klive`): where a user's annotations of a shipped ROM are kept
+   * (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §5.2).
+   * @param _relative The path inside the Klive home folder
+   */
+  async resolveKliveHomePath(_relative: string): Promise<string> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Whether a file can be written next to the given one (its folder exists and is writable): a
+   * user ROM's sidecar goes beside it when it can, in the Klive home folder when it cannot.
+   * @param _filePath An absolute file path
+   */
+  async canWriteBeside(_filePath: string): Promise<boolean> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * Saves binary data to a file and returns the file path.
    * @param _path The file path to save to.
    * @param _data The binary data to write.

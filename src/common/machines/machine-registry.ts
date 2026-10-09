@@ -46,6 +46,10 @@ import { ZxSpectrum48CustomDisassembler } from "@renderer/appIde/disassemblers/z
 import { ZxSpectrumNextCustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/zx-spectrum-next-disassembler";
 import { Z88CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z88-custom.disassembler";
 import { Zx81CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/zx81-disassembler";
+import {
+  gateOnRom,
+  type CustomDisassemblerFactory
+} from "@renderer/appIde/disassemblers/z80-disassembler/rom-gated-disassembler";
 import { ZX80_MODELS, ZX81_MODELS } from "@emu/machines/zx8081/zx8081MachineInfo";
 import { SCORPION_MODELS, SP128_MODELS } from "@emu/machines/zxSpectrum128/sp128Timings";
 import { P3_MODELS } from "@emu/machines/zxSpectrumP3e/p3RomSets";
@@ -207,6 +211,18 @@ const Z88_MODELS: MachineModel[] = [
 ];
 
 /**
+ * The 48K BASIC ROM's report codes (`RST $08`) and calculator literals (`RST $28`), decoded only in
+ * a ROM page that is a 48K BASIC ROM — which is what lets the 128K, +3 and Scorpion have it, their
+ * other ROM pages being different programs (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §4.5).
+ */
+const spectrum48CustomDisassembler: CustomDisassemblerFactory = (context) =>
+  gateOnRom(new ZxSpectrum48CustomDisassembler(), context, 0x4000);
+
+/** The ZX81 ROM's calculator, decoded only in the ZX81 ROM (also the ZX80's 8K upgrade, §4.7) */
+const zx81CustomDisassembler: CustomDisassemblerFactory = (context) =>
+  gateOnRom(new Zx81CustomDisassembler(), context, 0x2000);
+
+/**
  * The registry of available machine types with their available models
  */
 export const machineRegistry: MachineInfo[] = [
@@ -258,7 +274,7 @@ export const machineRegistry: MachineInfo[] = [
         partitionLabels?: string[],
         options?: DisassemblyOptions
       ) => new Z80Disassembler(memorySections, memoryContents, partitionLabels, options),
-      [CT_CUSTOM_DISASSEMBLER]: () => new ZxSpectrum48CustomDisassembler()
+      [CT_CUSTOM_DISASSEMBLER]: spectrum48CustomDisassembler
     }
   },
   {
@@ -290,7 +306,8 @@ export const machineRegistry: MachineInfo[] = [
         memoryContents: Uint8Array,
         partitionLabels?: string[],
         options?: DisassemblyOptions
-      ) => new Z80Disassembler(memorySections, memoryContents, partitionLabels, options)
+      ) => new Z80Disassembler(memorySections, memoryContents, partitionLabels, options),
+      [CT_CUSTOM_DISASSEMBLER]: spectrum48CustomDisassembler,
     }
   },
   {
@@ -321,7 +338,8 @@ export const machineRegistry: MachineInfo[] = [
         memoryContents: Uint8Array,
         partitionLabels?: string[],
         options?: DisassemblyOptions
-      ) => new Z80Disassembler(memorySections, memoryContents, partitionLabels, options)
+      ) => new Z80Disassembler(memorySections, memoryContents, partitionLabels, options),
+      [CT_CUSTOM_DISASSEMBLER]: spectrum48CustomDisassembler,
     }
   },
   {
@@ -401,7 +419,7 @@ export const machineRegistry: MachineInfo[] = [
         partitionLabels?: string[],
         options?: DisassemblyOptions
       ) => new Z80Disassembler(memorySections, memoryContents, partitionLabels, options),
-      [CT_CUSTOM_DISASSEMBLER]: () => new ZxSpectrum48CustomDisassembler()
+      [CT_CUSTOM_DISASSEMBLER]: spectrum48CustomDisassembler
     }
   },
   {
@@ -433,7 +451,8 @@ export const machineRegistry: MachineInfo[] = [
         memoryContents: Uint8Array,
         partitionLabels?: string[],
         options?: DisassemblyOptions
-      ) => new Z80Disassembler(memorySections, memoryContents, partitionLabels, options)
+      ) => new Z80Disassembler(memorySections, memoryContents, partitionLabels, options),
+      [CT_CUSTOM_DISASSEMBLER]: spectrum48CustomDisassembler,
     }
   },
   {
@@ -498,7 +517,7 @@ export const machineRegistry: MachineInfo[] = [
         partitionLabels?: string[],
         options?: DisassemblyOptions
       ) => new Z80Disassembler(memorySections, memoryContents, partitionLabels, options),
-      [CT_CUSTOM_DISASSEMBLER]: () => new Zx81CustomDisassembler(),
+      [CT_CUSTOM_DISASSEMBLER]: zx81CustomDisassembler,
       [CT_DISASSEMBLER_VIEW]: {
         showRamOption: false,
         showScreenOption: false
@@ -530,6 +549,7 @@ export const machineRegistry: MachineInfo[] = [
         partitionLabels?: string[],
         options?: DisassemblyOptions
       ) => new Z80Disassembler(memorySections, memoryContents, partitionLabels, options),
+      [CT_CUSTOM_DISASSEMBLER]: zx81CustomDisassembler,
       [CT_DISASSEMBLER_VIEW]: {
         showRamOption: false,
         showScreenOption: false
@@ -570,7 +590,7 @@ export const machineRegistry: MachineInfo[] = [
         _?: string[],
         options?: DisassemblyOptions
       ) => new M6510Disassembler(memorySections, memoryContents, options),
-      [CT_CUSTOM_DISASSEMBLER]: () => new ZxSpectrum48CustomDisassembler()
+      [CT_CUSTOM_DISASSEMBLER]: spectrum48CustomDisassembler
     }
   }
 ];

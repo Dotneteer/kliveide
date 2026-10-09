@@ -117,10 +117,28 @@ describe("bp-set bank-relative grammar", () => {
     expect(errors[0].message).toContain("Invalid bank offset");
   });
 
-  it("is refused on machines other than the ZX Spectrum Next", async () => {
-    const { errors } = await validate("05:+$0100", "sp128");
-    expect(errors.length).toEqual(1);
-    expect(errors[0].message).toContain("ZX Spectrum Next only");
+  it("is accepted on every machine with a bank space, in that machine's banks", async () => {
+    // --- The 128K numbers 16K banks 0-7; the 48K names its RAM as banks 5, 2 and 0 (A3).
+    const on128 = await validate("07:+$0100", "sp128");
+    expect(on128.errors).toEqual([]);
+    expect(on128.args).toMatchObject({ bank: 7, bankOffset: 0x0100 });
+    expect((await validate("02:+$0100", "sp48")).errors).toEqual([]);
+    expect((await validate("0F:+$0100", "scorpion")).errors).toEqual([]);
+  });
+
+  it("refuses a bank the machine does not have", async () => {
+    const { errors } = await validate("08:+$0100", "sp128");
+    expect(errors[0].message).toContain("Invalid bank (expected $00-$07)");
+    const on48 = await validate("07:+$0100", "sp48");
+    expect(on48.errors[0].message).toContain("not in this machine's memory");
+  });
+
+  it("is refused on a machine without banks", async () => {
+    for (const machineId of ["zx81", "z88"]) {
+      const { errors } = await validate("01:+$0100", machineId);
+      expect(errors.length).toEqual(1);
+      expect(errors[0].message).toContain("not supported on this machine");
+    }
   });
 
   it("is refused for I/O breakpoints, which watch a port and have no bank", async () => {

@@ -8,8 +8,8 @@ import {
   DialogFooterSpacer
 } from "@renderer/controls/overlay/DialogFooter";
 import styles from "./NexBankCommentDialog.module.scss";
-import { NEX_BANK_COMMENT_SOFT_LIMIT, normalizeMultilineComment } from "./nexAnnotations";
-import { flattenBankComment } from "./nexAnnotationEdits";
+import { BANK_COMMENT_SOFT_LIMIT, normalizeMultilineComment } from "@renderer/appIde/annotations/programAnnotations";
+import { flattenBankComment } from "@renderer/appIde/annotations/annotationEdits";
 
 export type NexBankCommentDialogResult = {
   comment?: string;
@@ -42,7 +42,7 @@ export function NexBankCommentDialog({
   const normalizedComment = useMemo(() => normalizeMultilineComment(comment), [comment]);
   const flattened = useMemo(() => flattenBankComment(normalizedComment), [normalizedComment]);
   const hasExistingComment = initialComment.length > 0;
-  const overLimit = comment.length > NEX_BANK_COMMENT_SOFT_LIMIT;
+  const overLimit = comment.length > BANK_COMMENT_SOFT_LIMIT;
 
   const save = () => controls.close({ comment: normalizedComment });
 
@@ -80,9 +80,9 @@ export function NexBankCommentDialog({
           <span>Enter starts a new line. Ctrl+Enter saves.</span>
           <span
             className={overLimit ? styles.countOver : styles.count}
-            title={`Comments longer than ${NEX_BANK_COMMENT_SOFT_LIMIT} characters are reported when the file is loaded.`}
+            title={`Comments longer than ${BANK_COMMENT_SOFT_LIMIT} characters are reported when the file is loaded.`}
           >
-            {`${comment.length} / ${NEX_BANK_COMMENT_SOFT_LIMIT}`}
+            {`${comment.length} / ${BANK_COMMENT_SOFT_LIMIT}`}
           </span>
         </div>
       </DialogRow>

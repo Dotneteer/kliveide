@@ -494,6 +494,25 @@ class MainMessageProcessor {
    * @param data The text data to write.
    * @param resolveIn Optional base path context.
    */
+  /** The absolute path of a file inside the Klive home folder (`MainApi.resolveKliveHomePath`) */
+  resolveKliveHomePath(relative: string) {
+    if (typeof relative !== "string") {
+      throw new Error("Invalid file path");
+    }
+    return path.join(getKliveHomeBase(), KLIVE_HOME_FOLDER, relative);
+  }
+
+  /** Whether the folder of a file is writable (`MainApi.canWriteBeside`) */
+  canWriteBeside(filePath: string) {
+    if (typeof filePath !== "string" || !path.isAbsolute(filePath)) return false;
+    try {
+      fs.accessSync(path.dirname(filePath), fs.constants.W_OK);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   saveTextFile(savePath: string, data: string, resolveIn?: string) {
     if (typeof savePath !== "string" || !savePath.trim()) {
       throw new Error("Invalid file path");

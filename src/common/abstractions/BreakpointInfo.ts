@@ -14,9 +14,21 @@
  */
 export type BreakpointOwner =
   | {
-      /** Owned by a ZX Spectrum Next `.nex` file, persisted in its `.nex.dis` sidecar. */
+      /**
+       * Owned by an annotation sidecar (`<file>.dis`) — a NEX's, a snapshot's, a project's — and
+       * persisted in its `debug` subtree.
+       */
+      kind: "sidecar";
+      /** Full path of the owning sidecar. Identity: two sidecars are different owners. */
+      sidecar: string;
+    }
+  | {
+      /**
+       * The owner's name before the sidecars were for every machine
+       * (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §4.6). Read as `sidecar`: every reader goes
+       * through `sidecarOfOwner`, and the emulator stores it as `sidecar`.
+       */
       kind: "nex";
-      /** Full path of the owning sidecar. Identity: two NEX files are different owners. */
       sidecar: string;
     }
   | {
@@ -59,7 +71,12 @@ export type BreakpointScope =
       kind: "project";
     }
   | {
-      /** Breakpoints owned by one `.nex.dis` sidecar. */
+      /** Breakpoints owned by one annotation sidecar. */
+      kind: "sidecar";
+      sidecar: string;
+    }
+  | {
+      /** The former name of `sidecar`, read as it. */
       kind: "nex";
       sidecar: string;
     }

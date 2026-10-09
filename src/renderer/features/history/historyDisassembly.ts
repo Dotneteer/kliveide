@@ -20,7 +20,8 @@ export class HistoryDisassemblyCache {
 
   /**
    * @param z80n Whether the Z80N extended instructions are decoded (the Next)
-   * @param labelOf The compilation's label at an address, for operands
+   * @param labelOf The name of an address, for operands: the shared resolver's
+   * (`annotations/symbolResolver.ts`), so build symbols, annotations and ROM labels all name here
    */
   constructor(
     private readonly z80n: boolean,
@@ -64,22 +65,4 @@ export class HistoryDisassemblyCache {
     const b = record.bytes;
     return `${record.regs.pc}:${b[0]}:${b[1]}:${b[2]}:${b[3]}`;
   }
-}
-
-/**
- * The compilation's labels by address, from its symbol table (`symbols`, as the IDE receives it).
- * Labels only - an `.equ` constant that happens to equal an operand would only mislead. Of several
- * labels at one address, the first in table order.
- */
-export function historyLabelLookup(symbols: Record<string, unknown> | undefined): HistoryLabelLookup | undefined {
-  if (!symbols) return undefined;
-  const byAddress = new Map<number, string>();
-  for (const [key, info] of Object.entries(symbols)) {
-    const s = info as { name?: string; type?: number; value?: { _type?: number; _value?: unknown } };
-    const value = s?.value?._value;
-    // --- SymbolType.Label
-    if (s?.type !== 1 || typeof value !== "number" || value < 0 || value > 0xffff) continue;
-    if (!byAddress.has(value)) byAddress.set(value, s.name ?? key);
-  }
-  return byAddress.size ? (address) => byAddress.get(address) : undefined;
 }

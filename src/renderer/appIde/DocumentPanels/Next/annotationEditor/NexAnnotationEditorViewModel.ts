@@ -3,15 +3,15 @@ import type { DisassemblyItem } from "@renderer/appIde/disassemblers/common-type
 
 import {
   getBankAnnotation,
-  type NexAnnotationRegion,
-  type NexAnnotationRegionType,
-  type NexFileAnnotations
-} from "../nexAnnotations";
-import { resolveBankSprites, type ResolvedNexBankSprites } from "../nexAnnotationEdits";
+  type AnnotationRegion,
+  type AnnotationRegionType,
+  type ProgramAnnotations
+} from "@renderer/appIde/annotations/programAnnotations";
+import { resolveBankSprites, type ResolvedBankSprites } from "@renderer/appIde/annotations/annotationEdits";
 import {
   goToDefinitionTarget,
-  type NexGoToDefinitionTarget
-} from "../nexGoToDefinition";
+  type GoToDefinitionTarget
+} from "@renderer/appIde/annotations/goToDefinition";
 import {
   actionRange,
   isAnnotationEnabled,
@@ -77,6 +77,7 @@ export type NexAnnotationMenuAction =
   | "mark-words"
   | "mark-copper"
   | "mark-dma"
+  | "mark-text"
   | "mark-skip"
   | "clear";
 
@@ -101,7 +102,7 @@ export type NexAnnotationEditorViewModel = {
    * The editor does not generate it: a dump with no sidecar still disassembles, plainly, and that
    * path belongs to the component around it. So the model goes out and the rows come back in.
    */
-  annotations?: NexFileAnnotations;
+  annotations?: ProgramAnnotations;
   /**
    * The comment on the whole bank, when it has one.
    *
@@ -113,9 +114,9 @@ export type NexAnnotationEditorViewModel = {
    * How the Sprites view reads this bank, with defaults filled in — or `undefined` when there is no
    * bank annotation to hold it, in which case the view keeps its settings in view state.
    */
-  bankSprites?: ResolvedNexBankSprites;
+  bankSprites?: ResolvedBankSprites;
   /** The bank's regions, for the Sprites view to mark patterns already declared as bytes. */
-  bankRegions?: NexAnnotationRegion[];
+  bankRegions?: AnnotationRegion[];
   /** The load failure to show in place of the listing, when there is one. */
   loadError?: string;
   /**
@@ -308,6 +309,11 @@ const SHORTCUT_HINTS = new Map(
   NEX_ANNOTATION_SHORTCUTS.map((entry) => [entry.action, entry.hint])
 );
 
+/** Each action's shortcut, as the menu writes it: the live view's row menu uses the same table. */
+export function annotationShortcutHints(): Partial<Record<NexAnnotationMenuAction, string>> {
+  return Object.fromEntries(SHORTCUT_HINTS) as Partial<Record<NexAnnotationMenuAction, string>>;
+}
+
 function selectMenu(
   state: NexAnnotationEditorState,
   enabled: boolean
@@ -368,7 +374,7 @@ function selectMenu(
 export function goToDefinitionTargetFor(
   state: NexAnnotationEditorState,
   rowIndex?: number
-): NexGoToDefinitionTarget {
+): GoToDefinitionTarget {
   if (!isAnnotationEnabled(state)) return { kind: "none" };
   const index = rowIndex ?? state.contextTarget?.rowIndex ?? state.selection?.activeIndex;
   if (index === undefined) return { kind: "none" };
@@ -491,7 +497,7 @@ export function deleteLabelConfirmRequest(args: {
 /** The region type a menu action names, or `undefined` for an action that is not a region change. */
 export function regionTypeOfAction(
   action: NexAnnotationMenuAction
-): NexAnnotationRegionType | undefined {
+): AnnotationRegionType | undefined {
   switch (action) {
     case "mark-disassembly":
       return "disassemble";
@@ -501,6 +507,8 @@ export function regionTypeOfAction(
       return "words";
     case "mark-copper":
       return "copper";
+    case "mark-text":
+      return "text";
     case "mark-dma":
       return "dma";
     case "mark-skip":

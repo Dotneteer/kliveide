@@ -7,7 +7,6 @@ import { useEmuApi } from "@renderer/core/EmuApi";
 import type { Z80CpuState } from "@common/messaging/EmuApi";
 import type { BranchCpuSnapshot } from "@renderer/appIde/DocumentPanels/branchVerdict";
 import { useEmuStateListener } from "@renderer/appIde/useStateRefresh";
-import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 
 import {
   bankOffsetOfAddress,
@@ -15,9 +14,6 @@ import {
   type BankPlacement
 } from "./nextBankLocation";
 import { bankPartitions, joinBankHalves, machineHasRun, sameBankBytes } from "./nexLiveBank";
-import { getNexLoad } from "./nexLoadSession";
-import { loadNexAnnotationSidecar } from "./nexAnnotationSidecar";
-import type { NexFileAnnotations } from "./nexAnnotations";
 
 /*
  * What the machine says about the bank a popped-out NEX document is showing: where it is, and what
@@ -263,54 +259,4 @@ export function useNexBranchCpuSnapshot(enabled: boolean): BranchCpuSnapshot | u
   }, [read, machineState]);
 
   return enabled ? snapshot : undefined;
-}
-
-/**
- * The annotations of the NEX launched in this session, for the live Disassembly view.
- *
- * Loaded from the sidecar of whatever `nex-run` last launched (§11.5's load session), so the live
- * view can name addresses with the labels the user wrote in the NEX viewer — `call DrawSprite`
- * rather than `call $C100`, at the moment the name is worth most.
- *
- * `getNexLoad()` is a module singleton and not reactive, which is sound here for the same reason it
- * is in the Memory Mapping panel: its identity only changes when a NEX is launched, and this panel
- * re-renders on the disassembly refresh tick, so a launch is picked up within a tick. It is read
- * during render rather than subscribed to because there is nothing to subscribe to — and adding a
- * subscription for a value that changes once per launch would be machinery for its own sake.
- *
- * `undefined` until the sidecar is read, and if it has none: then the live view renders exactly as
- * it did before, which is what an absent resolver guarantees.
- *
- * See `.plans/NEX_DEBUGGING_PLAN.md` §13.1.
- */
-export function useLaunchedNexAnnotations(): NexFileAnnotations | undefined {
-  const { projectService } = useAppServices();
-  const [annotations, setAnnotations] = useState<NexFileAnnotations | undefined>(undefined);
-  const loaded = getNexLoad();
-
-  const projectServiceRef = useRef(projectService);
-  projectServiceRef.current = projectService;
-
-  useEffect(() => {
-    if (!loaded) {
-      setAnnotations(undefined);
-      return undefined;
-    }
-    let cancelled = false;
-    // --- The sidecar sits beside the NEX, as `.nex.dis`. The banks it declares are passed so the
-    // --- parser can report annotations for banks the file does not contain.
-    loadNexAnnotationSidecar(
-      projectServiceRef.current,
-      { fullPath: `${loaded.path}.dis` },
-      loaded.banks
-    ).then((state) => {
-      if (cancelled) return;
-      setAnnotations(state.status === "loaded" ? state.annotations : undefined);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [loaded]);
-
-  return annotations;
 }

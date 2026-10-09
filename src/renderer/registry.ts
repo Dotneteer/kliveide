@@ -879,9 +879,14 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     isReadOnly: true,
     openPermanent: true
   },
+  /*
+   * Annotation sidecars of every kind (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §4.6):
+   * `game.nex.dis`, `game.z80.dis`, a project's `annotations.dis`, a ROM's `sp48.rom.dis`. Read-only
+   * JSON: they are edited through the annotation dialogs, which keep the file valid.
+   */
   {
     matchType: "ends",
-    pattern: ".nex.dis",
+    pattern: ".dis",
     editor: CODE_EDITOR,
     subType: "json",
     icon: "note",

@@ -1,17 +1,17 @@
 import { describe, expect, it, vi } from "vitest";
 
 import {
-  parseNexAnnotations,
+  parseAnnotations,
   toSidecarRegion,
-  validateNexAnnotations,
-  type NexAnnotationRegion,
-  type NexFileAnnotations
-} from "@renderer/appIde/DocumentPanels/Next/nexAnnotations";
+  validateAnnotations,
+  type AnnotationRegion,
+  type ProgramAnnotations
+} from "@renderer/appIde/annotations/programAnnotations";
 import {
-  formatNexAnnotations,
-  saveNexAnnotationSubtree
-} from "@renderer/appIde/DocumentPanels/Next/nexAnnotationSidecar";
-import { createAnnotatedNexDisassemblyItems } from "@renderer/appIde/DocumentPanels/Next/nexAnnotatedDisassembly";
+  formatAnnotations,
+  saveAnnotationSubtree
+} from "@renderer/appIde/annotations/annotationSidecar";
+import { createAnnotatedDisassemblyItems } from "@renderer/appIde/annotations/annotatedDisassembly";
 import {
   dmaTrimSuggestion,
   formatRegionPreview,
@@ -64,7 +64,7 @@ async function assemble(source: string): Promise<number[]> {
 
 describe("decoded regions in the sidecar (D3)", () => {
   it("reads bytes + decode as Copper and DMA regions", () => {
-    const result = validateNexAnnotations(
+    const result = validateAnnotations(
       sidecarWith([
         { start: 0x1000, end: 0x103f, type: "bytes", rowBytes: 2, decode: "copper" },
         { start: 0x1040, end: 0x105f, type: "bytes", decode: "dma" }
@@ -101,7 +101,7 @@ describe("decoded regions in the sidecar (D3)", () => {
     });
   });
 
-  const model: NexFileAnnotations = {
+  const model: ProgramAnnotations = {
     schemaVersion: 2,
     banks: {
       "5": {
@@ -117,9 +117,9 @@ describe("decoded regions in the sidecar (D3)", () => {
   };
 
   it("round-trips through the file", () => {
-    const text = formatNexAnnotations(model);
+    const text = formatAnnotations(model);
     expect(text).not.toMatch(/"type": "(copper|dma)"/);
-    const parsed = parseNexAnnotations(text);
+    const parsed = parseAnnotations(text);
     expect(parsed.diagnostics).toEqual([]);
     expect(parsed.annotations!.banks["5"].regions).toEqual(model.banks["5"].regions);
     // --- The in-memory model is not touched by writing it
@@ -127,7 +127,7 @@ describe("decoded regions in the sidecar (D3)", () => {
   });
 
   it("writes a file the previous build accepts", () => {
-    const written = JSON.parse(formatNexAnnotations(model));
+    const written = JSON.parse(formatAnnotations(model));
     for (const region of written.banks["5"].regions) {
       expect(previousBuildAccepts(region), JSON.stringify(region)).toBe(true);
     }
@@ -142,7 +142,7 @@ describe("decoded regions in the sidecar (D3)", () => {
         return Promise.resolve();
       })
     };
-    await saveNexAnnotationSubtree(projectService as any, "/p/game.nex.dis", model);
+    await saveAnnotationSubtree(projectService as any, "/p/game.nex.dis", model);
     const written = JSON.parse(saved[0]);
     expect(written.debug).toEqual({ breakpoints: [] });
     expect(written.banks["5"].regions[1]).toEqual({
@@ -161,7 +161,7 @@ describe("decoded regions in the sidecar (D3)", () => {
   });
 
   it("warns about an unknown decode and keeps the file", () => {
-    const result = validateNexAnnotations(
+    const result = validateAnnotations(
       sidecarWith([{ start: 0, end: 7, type: "bytes", decode: "sprites" }])
     );
     expect(result.annotations).toBeDefined();
@@ -176,7 +176,7 @@ describe("decoded regions in the sidecar (D3)", () => {
   });
 
   it("warns about decode on a region that is not bytes, and ignores it", () => {
-    const result = validateNexAnnotations(
+    const result = validateAnnotations(
       sidecarWith([{ start: 0, end: 7, type: "words", decode: "copper" }])
     );
     expect(result.annotations!.banks["5"].regions[0].type).toBe("words");
@@ -184,7 +184,7 @@ describe("decoded regions in the sidecar (D3)", () => {
   });
 
   it("loads an odd Copper region with a warning", () => {
-    const result = validateNexAnnotations(
+    const result = validateAnnotations(
       sidecarWith([{ start: 0, end: 6, type: "bytes", rowBytes: 2, decode: "copper" }])
     );
     expect(result.annotations!.banks["5"].regions[0]).toEqual({ start: 0, end: 6, type: "copper" });
@@ -198,7 +198,7 @@ describe("decoded regions in the sidecar (D3)", () => {
   });
 
   it("never merges a Copper region with a neighbouring two-byte bytes region", () => {
-    const result = validateNexAnnotations(
+    const result = validateAnnotations(
       sidecarWith([
         { start: 0, end: 7, type: "bytes", rowBytes: 2 },
         { start: 8, end: 15, type: "bytes", rowBytes: 2, decode: "copper" }
@@ -224,11 +224,11 @@ async function listing(
   const contents = opts.contents ?? new Uint8Array(0x4000);
   if (!opts.contents) contents.set(data);
   const end = opts.end ?? data.length - 1;
-  const regions: NexAnnotationRegion[] = [
+  const regions: AnnotationRegion[] = [
     { start: 0, end, type },
     { start: end + 1, end: 0x3fff, type: "skip" }
   ];
-  const items = await createAnnotatedNexDisassemblyItems({
+  const items = await createAnnotatedDisassemblyItems({
     annotations: {
       schemaVersion: 2,
       globalLabels: opts.labels?.global ?? [],
@@ -409,7 +409,7 @@ describe("DMA listing", () => {
   it("lets a user comment replace the generated meaning", async () => {
     const contents = new Uint8Array(0x4000);
     contents.set(DMA_PROGRAM);
-    const items = await createAnnotatedNexDisassemblyItems({
+    const items = await createAnnotatedDisassemblyItems({
       annotations: {
         schemaVersion: 2,
         banks: {

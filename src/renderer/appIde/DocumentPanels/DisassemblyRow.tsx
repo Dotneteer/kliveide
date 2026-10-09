@@ -98,6 +98,19 @@ export type DisassemblyRowViewModelParams = {
 export const DEFAULT_LABEL_WIDTH_CH = 10;
 
 /**
+ * What a named label's tooltip says: where the name came from, the other names the address has
+ * (T9), and, on a ZX80/ZX81 mirror row, which canonical address it repeats. `undefined` for a
+ * generated `L1234` or a row without a label.
+ */
+export function describeLabelOrigin(item: DisassemblyItem): string | undefined {
+  if (!item.formattedLabel || !item.labelOrigin) return undefined;
+  const lines = [item.labelOrigin];
+  for (const alternative of item.labelAlternatives ?? []) lines.push(`Also: ${alternative}`);
+  if (item.mirrorOf !== undefined) lines.push(`Mirror of $${toHexa4(item.mirrorOf)}`);
+  return lines.join("\n");
+}
+
+/**
  * The text a row puts in its label column.
  *
  * Exported so a panel can size the shared column from the same rule the row renders with, rather
@@ -457,10 +470,16 @@ type DisassemblyRowProps = DisassemblyRowViewModelParams & {
    * Breakpoint...). Stable across rows; used when no `onContextMenu` is given.
    */
   onRowMenu?: (
-    target: { address: number; spec: string; breakpoint?: BreakpointInfo },
+    target: { address: number; spec: string; breakpoint?: BreakpointInfo; item?: DisassemblyItem },
     event: MouseEvent<HTMLDivElement>
   ) => void;
   onClick?: (event: MouseEvent<HTMLDivElement>) => void;
+  /**
+   * A click on the row, naming its item. Stable across rows (unlike `onClick`), so a listing that
+   * only needs to know *which* row was clicked keeps the rows memoized: the live view's annotation
+   * shortcuts act on the row last clicked.
+   */
+  onRowClick?: (item: DisassemblyItem, event: MouseEvent<HTMLDivElement>) => void;
   onContextMenu?: (event: MouseEvent<HTMLDivElement>) => void;
   onKeyDown?: (event: KeyboardEvent<HTMLDivElement>) => void;
 };
@@ -473,6 +492,7 @@ export const DisassemblyRow = memo(function DisassemblyRow({
   labelWidthCh = DEFAULT_LABEL_WIDTH_CH,
   instructionWidthCh = DEFAULT_INSTRUCTION_WIDTH_CH,
   onClick,
+  onRowClick,
   onContextMenu,
   onEditBreakpoint,
   onRowMenu,
@@ -554,7 +574,7 @@ export const DisassemblyRow = memo(function DisassemblyRow({
             : undefined
       }
       data-synopsis-edge={synopsisEdge}
-      onClick={onClick}
+      onClick={onClick ?? (onRowClick ? (event) => onRowClick(item, event) : undefined)}
       onContextMenu={
         onContextMenu ??
         (onRowMenu && viewModel
@@ -566,7 +586,8 @@ export const DisassemblyRow = memo(function DisassemblyRow({
                     typeof viewModel.breakpointAddress === "number"
                       ? `$${toHexa4(viewModel.breakpointAddress)}`
                       : viewModel.breakpointAddress,
-                  breakpoint
+                  breakpoint,
+                  item
                 },
                 event
               )
@@ -574,7 +595,7 @@ export const DisassemblyRow = memo(function DisassemblyRow({
       }
       onKeyDown={onKeyDown}
       aria-selected={selected || selectedRange || undefined}
-      tabIndex={onClick || onContextMenu || onKeyDown ? 0 : undefined}
+      tabIndex={onClick || onRowClick || onContextMenu || onKeyDown ? 0 : undefined}
       /*
        * The edge rows of a synopsis block are the one kind of row the stylesheet sizes.
        *
@@ -673,7 +694,14 @@ export const DisassemblyRow = memo(function DisassemblyRow({
           <Label
             text={viewModel.labelText}
             width={`${labelWidthCh}ch`}
-            className={annotated ? styles.annotationLabel : styles.disassemblyLabel}
+            tooltip={describeLabelOrigin(item)}
+            className={
+              item.labelSource === "rom"
+                ? styles.romLabel
+                : annotated || item.labelSource
+                  ? styles.annotationLabel
+                  : styles.disassemblyLabel
+            }
           />
           <div className={styles.tstates}>{viewModel.tstates}</div>
           {/*

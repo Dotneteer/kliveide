@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 3,
+  "machine": "rom",
+  "source": {"fileName":"sp48.rom"},
+  "authoring": ".ai/rom-annotations/README.md",
+  "level": 0,
+  "pages": {
+    "0": {"crc32":"ddee531f","name":"ZX Spectrum 48K BASIC ROM"}
+  },
+  "banks": {
+    "0": {
+      "offsetIndex": 0,
+      "regions": [
+        {"start":0,"end":15615,"type":"disassemble"},
+        {"start":15616,"end":16383,"type":"bytes"}
+      ],
+      "localLabels": [
+        {"name":"ERROR_1","value":8},
+        {"name":"FP_CALC","value":40},
+        {"name":"SA_BYTES","value":1218},
+        {"name":"LD_BYTES","value":1366},
+        {"name":"LD_START","value":1388},
+        {"name":"LD_BAD_HEADER","value":1462},
+        {"name":"LD_RESUME","value":1506},
+        {"name":"MAIN_ENTRY","value":4780},
+        {"name":"STK_STO_STR","value":10930},
+        {"name":"STK_STORE","value":10934},
+        {"name":"STK_FETCH","value":11249},
+        {"name":"PRINT_FP","value":11747}
+      ],
+      "lineAnnotations": {
+        "8": {"synopsis":"Reports an error. The byte after the RST holds the report code minus one; the custom disassembler lists it as a .defb."},
+        "40": {"synopsis":"Enters the calculator. The bytes after the RST are its operation codes and literals, up to the end-calculation code; the custom disassembler decodes them."},
+        "1218": {"synopsis":"Saves a block to tape: A = the flag byte, IX = the start, DE = the length. Klive traps it to save to the tape file."},
+        "1366": {"synopsis":"Loads (carry set) or verifies (carry clear) a block from tape: A = the flag byte, IX = the start, DE = the length. Returns with carry set on success."},
+        "1388": {"synopsis":"Where LOAD starts checking the tape input for a pilot pulse. Klive traps it to load a block from the tape file at once."},
+        "1462": {"synopsis":"A RET NZ that leaves LOAD when the header read is not the one asked for. Klive fast load comes here to report a wrong header."},
+        "1506": {"synopsis":"Where LOAD returns after a block has loaded. Klive fast load resumes here."},
+        "4780": {"synopsis":"The BASIC main loop, reached once the ROM has set itself up. The code injection and tape load flows wait for the machine to get here."},
+        "10930": {"synopsis":"Stacks a string for the calculator: A, DE (the start) and BC (the length)."},
+        "10934": {"synopsis":"Stacks a five-byte number held in A, E, D, C and B on the calculator stack."},
+        "11249": {"synopsis":"Takes the top number off the calculator stack into A, E, D, C and B."},
+        "11747": {"synopsis":"Prints the number on top of the calculator stack through the current channel."},
+        "15616": {"synopsis":"The character set: 96 characters of 8 bytes, from the space to the copyright sign, each row one byte with bit 7 the leftmost pixel."}
+      }
+    }
+  },
+  "provenance": {
+    "0:8:label": "observed",
+    "0:8:line": "observed",
+    "0:40:label": "observed",
+    "0:40:line": "observed",
+    "0:1218:label": "observed",
+    "0:1218:line": "observed",
+    "0:1366:label": "observed",
+    "0:1366:line": "observed",
+    "0:1388:label": "observed",
+    "0:1388:line": "observed",
+    "0:1462:label": "observed",
+    "0:1462:line": "observed",
+    "0:1506:label": "observed",
+    "0:1506:line": "observed",
+    "0:4780:label": "observed",
+    "0:4780:line": "observed",
+    "0:10930:label": "observed",
+    "0:10930:line": "observed",
+    "0:10934:label": "observed",
+    "0:10934:line": "observed",
+    "0:11249:label": "observed",
+    "0:11249:line": "observed",
+    "0:11747:label": "observed",
+    "0:11747:line": "observed",
+    "0:15616:line": "observed",
+    "0:15616:region": "observed"
+  }
+}

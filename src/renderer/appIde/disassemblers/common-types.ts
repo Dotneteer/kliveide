@@ -137,13 +137,23 @@ export type DisassemblyAnnotationRegionType =
   | "words"
   | "skip"
   | "copper"
-  | "dma";
+  | "dma"
+  | "text";
 
 export type DisassemblyAnnotationMetadata = {
   /**
    * Optional bank number for bank-relative annotated disassembly.
    */
   bank?: number;
+
+  /**
+   * In the live view: whether the row was listed from a RAM bank's annotations or a ROM page's.
+   * Absent in a bank document, where every row is a bank row.
+   */
+  site?: "bank" | "rom";
+
+  /** In the live view, for a ROM row: the partition its page is paged as. */
+  partition?: number;
 
   /**
    * Offset of the generated row within the source bank or memory block.
@@ -639,6 +649,21 @@ export interface DisassemblyItem {
    * Formatted label
    */
   formattedLabel?: string;
+
+  /**
+   * Where the row's label came from, for its tooltip: "Build", the annotation file's name,
+   * "ROM: sp48.rom", "Your ROM annotations". Absent for a generated `L1234`.
+   */
+  labelOrigin?: string;
+
+  /** Which resolver source named the row (`annotations/symbolResolver.ts`). */
+  labelSource?: "build" | "annotation" | "rom";
+
+  /** Other names for the same address, from lower-precedence sources (T9). */
+  labelAlternatives?: string[];
+
+  /** A ZX80/ZX81 mirror row: the canonical address whose label it repeats. */
+  mirrorOf?: number;
 
   /**
    * Formatted comment

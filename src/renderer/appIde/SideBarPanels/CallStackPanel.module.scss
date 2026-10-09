@@ -71,6 +71,18 @@ span.csCell {
 }
 
 /*
+ * The routine a return address is in (`MAIN+12`), from the shared resolver: build symbols,
+ * annotation labels, ROM labels. A name, so it reads in the label colour `Label` already gives it;
+ * `margin-inline: 0` drops `.legacySpacing` as for the index cell.
+ */
+span.csRoutine {
+  margin-inline: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/*
  * The symbolic call stack of a Klive BASIC program (`SourceCallStack`): a row is a frame the user
  * can select, so it takes the pointer and shows the selection with the same `--surface-selected`
  * the explorer uses. The Run to Frame button sits at the row's end and only appears on hover or on

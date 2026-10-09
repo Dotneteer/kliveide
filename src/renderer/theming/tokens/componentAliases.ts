@@ -592,6 +592,13 @@ export const componentAliases: Record<string, string> = {
    * not the accent — see above.
    */
   "--color-annotation-rail": "var(--syntax-label)",
+  /*
+   * A ROM label in the live Disassembly view (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md`
+   * §5.5): the label hue, because it is a name like any other, distinguished by weight and slant in
+   * the stylesheet rather than by a hue of its own — a fourth hue in the row would read as another
+   * data column.
+   */
+  "--color-disassembly-rom-label": "var(--syntax-label)",
 
   /*
    * The value column of the register/state sidebar panels — Z80 CPU, ULA & I/O, and any other that

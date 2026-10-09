@@ -144,7 +144,7 @@ describe("StaticMemoryDump", () => {
      * the panel now calls `useMainApi`. Mocked here rather than left to the real hook, which reaches
      * for `useRendererContext` — an export this file's `RendererProvider` mock deliberately does not
      * have. No test here follows a cross-bank jump; that decision is asserted without a DOM in
-     * `test/dialogs/nexAnnotationEditor` and `test/renderer/nexGoToDefinition.test.ts`.
+     * `test/dialogs/nexAnnotationEditor` and `test/renderer/goToDefinition.test.ts`.
      */
     vi.doMock("@renderer/core/MainApi", () => ({
       useMainApi: () => ({
@@ -2827,8 +2827,8 @@ describe("StaticMemoryDump", () => {
         disassemblyEnabled: true,
         disassOffset: 0x8000,
         decimalView: true,
-        nexAnnotationPath: "/project/game.nex.dis",
-        nexAnnotationBank: 5,
+        annotationPath: "/project/game.nex.dis",
+        annotationBank: 5,
         viewMode: "disassembly"
       }
     );
@@ -2843,8 +2843,8 @@ describe("StaticMemoryDump", () => {
         disassOffset: 0x8000,
         decimalView: true,
         viewMode: "disassembly",
-        nexAnnotationPath: "/project/game.nex.dis",
-        nexAnnotationBank: 5
+        annotationPath: "/project/game.nex.dis",
+        annotationBank: 5
       }),
       false
     );

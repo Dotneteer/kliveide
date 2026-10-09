@@ -309,6 +309,15 @@ colouring one never touches the others or the still-neutral panels. Full role ta
   every register/state panel has the same single role — "this is a live value". Adding
   `--color-ula-value`, `--color-vic-value` and so on would be a near-identical family per panel.
   Split it the day a panel needs a role the others do not have.
+- **A name in the live disassembly takes the label hue of its *source*, never a hue per source.**
+  The live view labels rows through the shared resolver (build symbols, the active annotation set,
+  the ROM's annotations): a generated `L1234` keeps `--color-disassembly-label` (the address's
+  accent, a name *for* the address), a named row takes the annotated listing's
+  `--color-annotation-label`, and a ROM label takes `--color-disassembly-rom-label` — the same
+  syntax-label hue, set back by **weight and slant** (400, italic) rather than by a fourth hue,
+  because it names the machine's code rather than the program's and a reader scanning for their
+  own routines should not have to read past every ROM call. Which source named the row, and the
+  other names the address has, go in the label's tooltip, not in the colour.
 - **A *predicted* state takes a status hue for the positive case and a neutral for the negative —
   never an error hue for the negative.** The disassembly view's branch gutter
   (`--color-disassembly-branch-taken` / `-fallthrough`) says whether each conditional branch will

@@ -31,6 +31,7 @@ Turn off the **Follow PC** option to disassemble the entire memory (or a selecte
 The Disassembly View provides a few options to display and navigate the memory contents:
 - **Decimal**: Turns on or off the decimal display (off, by default). When turned off, memory addresses, opcodes, and instructions are displayed with decimal numbers; otherwise, they are hexadecimal.
 - **Sys vars**: Names 16-bit data addresses after the machine's system variables (on, by default). See [System Variable Names](#system-variable-names) below.
+- **ROM labels**: Shows the ROM's annotations &mdash; its labels, comments and data regions (on, by default). It appears when the machine's ROM has annotations. See [ROM annotations](#rom-annotations) below.
 - **Ram**: This option (on, by default) allows you to disassemble the RAM's contents.
 - **Screen**: This option (off, by default) lets you disassemble the screen memory's ($4000-$5AFF) contents.
 - **Bank**: This option (on, by default) allows you to turn the display of bank labels on or off in front of memory addresses. This option is available only for models that support memory paging.
@@ -51,7 +52,8 @@ ld (CHANS),hl
 ```
 
 The names come from the same table the [System Variables](./system-vars) panel lists, so each machine
-contributes its own — the ZX Spectrum 48K, 128K and +3, and the ZX Spectrum Next each have one.
+contributes its own — the ZX Spectrum 48K, 128K and +3, the ZX Spectrum Next, the ZX81 and the
+ZX80 each have one.
 Names are spelled so an assembler would accept them: the ROM manuals print several with a space or a
 hyphen (`ATTR P`, `CH-ADD`), and every character that is not a letter, a digit or an underscore
 becomes `_` — so those read `ATTR_P` and `CH_ADD`.
@@ -147,6 +149,54 @@ Three cases show a verdict but no destination, on purpose:
 
 While the machine is free-running rather than paused, the marks follow the CPU state as it is
 sampled, a few times a second. Pause or single-step for a verdict that stands still.
+
+## Annotations on Every Machine
+
+The Disassembly view is an *annotated* listing: rows carry names, synopsis comments above them,
+end-of-line comments beside them, and ranges marked as data list as data. The annotations are kept
+in a file beside the program they describe &mdash; `game.nex.dis`, `jetpac.z80.dis`, `game.p.dis`
+&mdash; and the one in use is the **active annotation set**. It is chosen for you when a program gets
+into the machine:
+
+- **`nex-run`** uses the `.NEX` file's annotations;
+- **`zx-snapshot`** uses `<snapshot>.dis`;
+- **`tape-load`** of a ZX80 or ZX81 program file uses `<file>.dis`;
+- **opening a project** uses `annotations.dis` in the project folder (or the file the project's
+  `annotations` setting names).
+
+The file does not have to exist: your first label or comment creates it. For anything else &mdash; a
+game loaded from a Spectrum tape, say &mdash; use [`ann-new`](/commands-reference#ann-new) or
+[`ann-open`](/commands-reference#ann-open); [`ann-info`](/commands-reference#ann-info) says which set
+is active.
+
+Right-click a row to annotate it: **Label...**, **Synopsis Comment...**, **End-of-Line Comment...**,
+**Operand Label...**, **Mark As Code / Bytes / Words / Skip** (and **Text** on the ZX80 and ZX81),
+and **Go to Definition**. The same keys as in a popped-out `.NEX` bank work on the row you last
+clicked (`L` for a label, `C` for an end-of-line comment, `Shift+C` for a synopsis). The label goes in
+the bank the row is in &mdash; it follows that bank wherever it is paged &mdash; and the
+[`label`](/commands-reference#label) command does the same from the command prompt.
+
+A row shows one name. Where the address has several &mdash; a label from your last build, one from
+the annotations, one from the ROM's &mdash; the build's wins, and the label's tooltip names where it
+came from and lists the others. The same names appear in the Execution History, the Call Stack
+(`MAIN+12`: the routine a return address is in), the Profiler's routines and the `dis` command.
+
+On the ZX80 and ZX81, memory appears at more than one address (the 16K RAM again at `$8000` and
+`$C000`, the ROM again at `$2000`). A label is kept for the byte, not the address, so it shows at every
+mirror, and a mirror row says `(mirror of $4082)`.
+
+### ROM annotations
+
+Calls into the ROM read by name: `call SA_BYTES` rather than `call $04C2`. Klive ships annotations
+for its ROMs, written for Klive, and finds them by the ROM's *bytes* rather than by which ROM slot is
+paged: a copy of the 48K ROM loaded from your own file gets them too, and on a ROM Klive does not know
+(a modified 48K ROM, say) they apply wherever its bytes still match. ROM labels are set in italics so
+your own stand out.
+
+Annotate a ROM row and the result goes into **your own** ROM annotations, never into the shipped ones:
+for a ROM Klive ships, into `RomAnnotations/<crc>.rom.dis` in Klive's home folder, where it survives
+an update; for your own ROM file, into `<file>.dis` beside it. Your names win over the shipped ones.
+Use `bp-set ROM:<name>` to break at a ROM label, and `ROM:<name>` in a breakpoint condition.
 
 ## Banked Disassembly Views
 

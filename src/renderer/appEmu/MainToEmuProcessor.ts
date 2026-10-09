@@ -1,3 +1,4 @@
+import type { RomSource } from "@common/roms/romIdentity";
 import { AppServices } from "@renderer/abstractions/AppServices";
 import type { IAnyMachine } from "@renderer/abstractions/IAnyMachine";
 import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
@@ -937,6 +938,11 @@ class EmuMessageProcessor {
       ir: m.ir,
       wz: m.wz,
       partitionLabels: controller.machine.getCurrentPartitionLabels(),
+      // --- What the breakpoint engine matches against, slot by slot: the bank space's input
+      // --- (`@common/annotations/bankSpace`). Undefined entries on a machine without partitions.
+      slotPartitions: Array.from({ length: 8 }, (_, slot) =>
+        controller.machine.getPartition?.(slot * 0x2000)
+      ),
       selectedRom: controller.machine.getSelectedRomPage?.(),
       selectedBank: controller.machine.getSelectedRamBank?.(),
       memBreakpoints: controller.debugSupport.breakpoints,
@@ -1496,6 +1502,18 @@ class EmuMessageProcessor {
   /**
    * Gets a human-readable name for each partition. Presentation only; the label is the identity.
    */
+  /** Where each ROM partition came from (`IAnyMachine.getRomSources`); none for other machines */
+  getRomSources(withBytes?: boolean) {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    const machine = controller.machine as {
+      getRomSources?: (withBytes?: boolean) => Record<number, RomSource>;
+    };
+    return machine.getRomSources?.(withBytes) ?? {};
+  }
+
   getPartitionDescriptions() {
     const controller = this.machineService.getMachineController();
     if (!controller) {
@@ -1545,7 +1563,11 @@ class EmuMessageProcessor {
         }
       };
     }
-    return controller.machine.getCallStack();
+    const machine = controller.machine;
+    return {
+      ...machine.getCallStack(),
+      slotPartitions: Array.from({ length: 8 }, (_, slot) => machine.getPartition?.(slot * 0x2000))
+    };
   }
 
   setSourceDebugInfo(info?: SourceLevelDebugInfo) {

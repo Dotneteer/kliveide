@@ -120,8 +120,8 @@ describe("NexFileViewerPanel annotations", () => {
             disassOffset: 0x8000,
             decimalView: true,
             viewMode: "disassembly",
-            nexAnnotationPath: "/project/ScrollNutter.nex.dis",
-            nexAnnotationBank: 5
+            annotationPath: "/project/ScrollNutter.nex.dis",
+            annotationBank: 5
           }),
           false
         )
@@ -144,7 +144,7 @@ describe("NexFileViewerPanel annotations", () => {
       await waitFor(() =>
         expect(openDocument).toHaveBeenCalledWith(
           expect.anything(),
-          expect.objectContaining({ viewMode: "sprites", nexAnnotationBank: 5 }),
+          expect.objectContaining({ viewMode: "sprites", annotationBank: 5 }),
           false
         )
       );
@@ -196,7 +196,7 @@ describe("NexFileViewerPanel annotations", () => {
       await waitFor(() =>
         expect(openDocument).toHaveBeenCalledWith(
           expect.anything(),
-          expect.objectContaining({ nexAnnotationPath: undefined, nexAnnotationBank: undefined }),
+          expect.objectContaining({ annotationPath: undefined, annotationBank: undefined }),
           false
         )
       );
@@ -303,10 +303,10 @@ describe("NexFileViewerPanel annotations", () => {
       const row = await bankRow();
       await waitFor(() => expect(row).toHaveTextContent("Before"));
 
-      const session = await import("@renderer/appIde/DocumentPanels/Next/nexAnnotationSession");
-      const current = session.peekNexAnnotationSession("/project/ScrollNutter.nex.dis");
+      const session = await import("@renderer/appIde/annotations/annotationSession");
+      const current = session.peekAnnotationSession("/project/ScrollNutter.nex.dis");
       expect(current).toBeDefined();
-      session.updateNexAnnotationSession("/project/ScrollNutter.nex.dis", {
+      session.updateAnnotationSession("/project/ScrollNutter.nex.dis", {
         ...current!,
         banks: { "5": { ...current!.banks["5"], comment: "After" } }
       });
@@ -557,14 +557,14 @@ async function renderNexViewer({
       disassOffset?: number;
       decimalView?: boolean;
       viewMode?: string;
-      nexAnnotationPath?: string;
+      annotationPath?: string;
     }) => (
       <div
         data-testid={`memory-viewer-bank-${props.bank ?? "none"}`}
         data-offset={props.disassOffset}
         data-decimal-view={String(props.decimalView)}
         data-view-mode={props.viewMode}
-        data-annotation-path={props.nexAnnotationPath}
+        data-annotation-path={props.annotationPath}
       />
     )
   }));

@@ -1,4 +1,4 @@
-import type { NexAnnotationOffsetIndex } from "./nexAnnotations";
+import type { AnnotationOffsetIndex } from "@renderer/appIde/annotations/programAnnotations";
 import type { NexHeader } from "./nexFileLoader";
 
 /*
@@ -66,8 +66,8 @@ export function getDefaultDisassemblyOffsetForBank(bank: number, header: NexHead
 export function getDefaultDisassemblyOffsetIndexForBank(
   bank: number,
   header: NexHeader
-): NexAnnotationOffsetIndex {
-  return (getDefaultDisassemblyOffsetForBank(bank, header) / 0x4000) as NexAnnotationOffsetIndex;
+): AnnotationOffsetIndex {
+  return (getDefaultDisassemblyOffsetForBank(bank, header) / 0x4000) as AnnotationOffsetIndex;
 }
 
 /** The bank the program counter points into when the NEX starts. */

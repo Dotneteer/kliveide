@@ -1,3 +1,6 @@
+import type { SysVar } from "@abstractions/SysVar";
+import { zx81SysVars } from "./Zx81SysVars";
+import { zx80SysVars } from "./Zx80SysVars";
 import type { KeyMapping } from "@abstractions/KeyMapping";
 import type { CodeToInject } from "@abstractions/CodeToInject";
 import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
@@ -120,6 +123,14 @@ export abstract class Zx8081WasmHost extends Z80MachineBase {
 
   getMemoryPartition(_index: number): Uint8Array {
     return new Uint8Array(0x4000);
+  }
+
+  /**
+   * The system variables of the BASIC the ROM runs: the ZX81's for the 8K ROM (also a ZX80 with the
+   * upgrade), the ZX80's for its own 4K ROM.
+   */
+  override get sysVars(): SysVar[] {
+    return this.hardware.romZx81 ? zx81SysVars : zx80SysVars;
   }
 
   getCurrentPartitions(): number[] {

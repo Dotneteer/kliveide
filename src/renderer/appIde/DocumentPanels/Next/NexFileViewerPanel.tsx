@@ -43,17 +43,17 @@ import { useDocumentHubService } from "@renderer/appIde/services/DocumentService
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { openStaticMemoryDump } from "@renderer/features/memory/StaticMemoryDump";
 import {
-  NexAnnotationSidecarPaths,
-  NexAnnotationSidecarState,
-  createNexAnnotationSidecar,
+  AnnotationSidecarPaths,
+  AnnotationSidecarState,
+  createAnnotationSidecar,
   getAnnotatedDecimalViewForBank,
   getAnnotatedDisassemblyOffsetForBank,
   getAnnotatedPopOutViewForBank,
-  getNexAnnotationSidecarPaths,
-  loadNexAnnotationSidecar
-} from "./nexAnnotationSidecar";
-import { getBankAnnotation, NexFileAnnotations } from "./nexAnnotations";
-import { withBankComment } from "./nexAnnotationEdits";
+  getAnnotationSidecarPaths,
+  loadAnnotationSidecar
+} from "@renderer/appIde/annotations/annotationSidecar";
+import { getBankAnnotation, ProgramAnnotations } from "@renderer/appIde/annotations/programAnnotations";
+import { withBankComment } from "@renderer/appIde/annotations/annotationEdits";
 import {
   NexBankBrowser,
   type NexBankBrowserItem,
@@ -62,11 +62,11 @@ import {
 } from "./NexBankBrowser";
 import { bankContentMix, bankLabels, isAnnotatedBank, isEmptyBank } from "./nexBankSummary";
 import {
-  peekNexAnnotationSession,
-  seedNexAnnotationSession,
-  subscribeNexAnnotationSession,
-  updateNexAnnotationSession
-} from "./nexAnnotationSession";
+  peekAnnotationSession,
+  seedAnnotationSession,
+  subscribeAnnotationSession,
+  updateAnnotationSession
+} from "@renderer/appIde/annotations/annotationSession";
 import {
   BANK_COMMENT_DIALOG_TITLE,
   BANK_COMMENT_DIALOG_WIDTH,
@@ -91,11 +91,11 @@ const HEADER_FLAG_NARROW_LABEL_WIDTH = "15ch"; // 92px / 6.4
 const HEADER_FLAG_VALUE_WIDTH = "4ch"; // 22px / 6.4
 
 type NexAnnotationViewerState =
-  | NexAnnotationSidecarState
+  | AnnotationSidecarState
   | {
       status: "loading" | "creating" | "unavailable";
-      paths?: NexAnnotationSidecarPaths;
-      annotations?: NexFileAnnotations;
+      paths?: AnnotationSidecarPaths;
+      annotations?: ProgramAnnotations;
       diagnostics: [];
       message?: string;
     };
@@ -178,7 +178,7 @@ const NexFileViewerContents = ({
     () => fi.palette.map(v => getAbrgForPaletteCode(v)),
     [fi.palette]
   );
-  const sidecarPaths = useMemo(() => getNexAnnotationSidecarPaths(document), [document]);
+  const sidecarPaths = useMemo(() => getAnnotationSidecarPaths(document), [document]);
   const [annotationState, setAnnotationState] = useState<NexAnnotationViewerState>({
     status: sidecarPaths ? "loading" : "unavailable",
     paths: sidecarPaths,
@@ -205,7 +205,7 @@ const NexFileViewerContents = ({
       diagnostics: [],
       message: "Loading annotations..."
     });
-    loadNexAnnotationSidecar(appServices.projectService, sidecarPaths, loadedBanks).then((state) => {
+    loadAnnotationSidecar(appServices.projectService, sidecarPaths, loadedBanks).then((state) => {
       if (!cancelled) {
         setAnnotationState(state);
       }
@@ -224,7 +224,7 @@ const NexFileViewerContents = ({
       message: "Creating annotation file..."
     });
     try {
-      const state = await createNexAnnotationSidecar(appServices.projectService, sidecarPaths, {
+      const state = await createAnnotationSidecar(appServices.projectService, sidecarPaths, {
         nexPath: document.node?.fullPath ?? document.path ?? document.id,
         nexFileName: document.name,
         loadedBanks,
@@ -257,11 +257,11 @@ const NexFileViewerContents = ({
    */
   const loadedSidecarPath =
     annotationState.status === "loaded" ? annotationState.paths?.fullPath : undefined;
-  const [sessionAnnotations, setSessionAnnotations] = useState<NexFileAnnotations>();
+  const [sessionAnnotations, setSessionAnnotations] = useState<ProgramAnnotations>();
   useEffect(() => {
     if (annotationState.status !== "loaded" || !loadedSidecarPath) return undefined;
-    seedNexAnnotationSession(loadedSidecarPath, annotationState.annotations);
-    const unsubscribe = subscribeNexAnnotationSession(
+    seedAnnotationSession(loadedSidecarPath, annotationState.annotations);
+    const unsubscribe = subscribeAnnotationSession(
       appServices.projectService,
       loadedSidecarPath,
       loadedBanks[0] ?? 0,
@@ -288,11 +288,11 @@ const NexFileViewerContents = ({
    */
   const writeBankComment = (bank: number, comment: string | undefined) => {
     if (!loadedSidecarPath) return;
-    const current = peekNexAnnotationSession(loadedSidecarPath) ?? loadedAnnotations;
+    const current = peekAnnotationSession(loadedSidecarPath) ?? loadedAnnotations;
     if (!current) return;
     const next = withBankComment(current, bank, comment);
     if (next) {
-      updateNexAnnotationSession(loadedSidecarPath, next, appServices.projectService);
+      updateAnnotationSession(loadedSidecarPath, next, appServices.projectService);
     }
   };
 
@@ -369,8 +369,8 @@ const NexFileViewerContents = ({
           decimalView: getAnnotatedDecimalViewForBank(loadedAnnotations, bank, false),
           // --- Sprites needs the annotation file; without one the pop-out offers only the listings.
           viewMode: view === "sprites" && !annotated ? "disassembly" : view,
-          nexAnnotationPath: annotated ? sidecarPaths?.fullPath : undefined,
-          nexAnnotationBank: annotated ? bank : undefined
+          annotationPath: annotated ? sidecarPaths?.fullPath : undefined,
+          annotationBank: annotated ? bank : undefined
         }
       )
     );

@@ -24,6 +24,8 @@ export type BankedDisassemblyPanelViewState = {
   bankLabel?: boolean;
   /** Name 16-bit data operands after the machine's system variables. Defaults to on. */
   sysVarNames?: boolean;
+  /** Show the ROM's annotations: labels, comments and regions (§5.5). Defaults to on. */
+  romLabels?: boolean;
 };
 
 export type DisassemblyViewStateValues = {
@@ -37,6 +39,7 @@ export type DisassemblyViewStateValues = {
   disassOffset: number;
   bankLabel: boolean;
   sysVarNames: boolean;
+  romLabels: boolean;
 };
 
 type PersistenceParams = DisassemblyViewStateValues & {
@@ -72,7 +75,8 @@ export function buildDisassemblyPanelViewState(
     ram: values.ram,
     screen: values.screen,
     disassOffset: values.disassOffset,
-    sysVarNames: values.sysVarNames
+    sysVarNames: values.sysVarNames,
+    romLabels: values.romLabels
   };
 }
 
@@ -153,6 +157,7 @@ export function useDisassemblyViewStatePersistence({
     values.screen,
     values.disassOffset,
     values.bankLabel,
-    values.sysVarNames
+    values.sysVarNames,
+    values.romLabels
   ]);
 }

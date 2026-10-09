@@ -6,11 +6,11 @@ import { DialogRow } from "@renderer/controls/DialogRow";
 import { DialogComponentProps } from "@renderer/controls/overlay/DialogProvider";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 import {
-  isValidNexLabelName,
-  NEX_BANK_LAST_OFFSET,
-  NEX_LABEL_MAX_LENGTH,
-  type NexAnnotationLabelScope
-} from "./nexAnnotations";
+  isValidLabelName,
+  ANNOTATION_BANK_LAST_OFFSET,
+  ANNOTATION_LABEL_MAX_LENGTH,
+  type AnnotationLabelScope
+} from "@renderer/appIde/annotations/programAnnotations";
 import styles from "./NexLabelDialog.module.scss";
 import {
   DialogFooter,
@@ -18,7 +18,7 @@ import {
 } from "@renderer/controls/overlay/DialogFooter";
 
 export type NexLabelDialogLabel = {
-  scope: NexAnnotationLabelScope;
+  scope: AnnotationLabelScope;
   bank?: number;
   name: string;
   value: number;
@@ -28,7 +28,7 @@ export type NexLabelDialogLabel = {
 
 export type NexLabelDialogResult = {
   action: "save" | "delete";
-  scope: NexAnnotationLabelScope;
+  scope: AnnotationLabelScope;
   name: string;
   value: number;
   originalLabel?: NexLabelDialogLabel;
@@ -36,7 +36,7 @@ export type NexLabelDialogResult = {
 
 export type NexLabelDialogProps = DialogComponentProps<NexLabelDialogResult> & {
   bank: number;
-  initialScope: NexAnnotationLabelScope;
+  initialScope: AnnotationLabelScope;
   initialGlobalValue: number;
   initialLocalValue: number;
   labels: NexLabelDialogLabel[];
@@ -56,7 +56,7 @@ export function NexLabelDialog({
       : initialLocalValue),
     [initialGlobalValue, initialLocalValue, initialScope, labels]
   );
-  const [scope, setScope] = useState<NexAnnotationLabelScope>(initialScope);
+  const [scope, setScope] = useState<AnnotationLabelScope>(initialScope);
   const [name, setName] = useState(
     initialLabel?.name ?? suggestNexLabelName(
       initialScope,
@@ -81,7 +81,7 @@ export function NexLabelDialog({
     [labels, searchText]
   );
 
-  const setScopeAndDefault = (nextScope: NexAnnotationLabelScope) => {
+  const setScopeAndDefault = (nextScope: AnnotationLabelScope) => {
     const nextValue = nextScope === "global" ? initialGlobalValue : initialLocalValue;
     const nextLabel = findLabelAtValue(labels, nextScope, nextValue);
     setScope(nextScope);
@@ -133,9 +133,9 @@ export function NexLabelDialog({
       <DialogRow label="Name" rows={true}>
         <TextInput
           autoFocus
-          maxLength={NEX_LABEL_MAX_LENGTH}
+          maxLength={ANNOTATION_LABEL_MAX_LENGTH}
           value={name}
-          onChange={(value) => setName(value.slice(0, NEX_LABEL_MAX_LENGTH))}
+          onChange={(value) => setName(value.slice(0, ANNOTATION_LABEL_MAX_LENGTH))}
         />
       </DialogRow>
       <DialogRow label="Value" rows={true}>
@@ -211,8 +211,8 @@ function formatReferenceCount(label: NexLabelDialogLabel): string {
   return count > 0 ? `${count} ref${count === 1 ? "" : "s"}` : "";
 }
 
-export function suggestNexLabelName(scope: NexAnnotationLabelScope, value: number): string {
-  return scope === "global" ? `L_${toHexa4(value)}` : `L_${toHexa4(value & NEX_BANK_LAST_OFFSET)}`;
+export function suggestNexLabelName(scope: AnnotationLabelScope, value: number): string {
+  return scope === "global" ? `L_${toHexa4(value)}` : `L_${toHexa4(value & ANNOTATION_BANK_LAST_OFFSET)}`;
 }
 
 export function formatNexLabelValue(value: number): string {
@@ -245,18 +245,18 @@ export function parseNexLabelValue(valueText: string): number | undefined {
 function validateLabel(
   labels: NexLabelDialogLabel[],
   originalLabel: NexLabelDialogLabel | undefined,
-  scope: NexAnnotationLabelScope,
+  scope: AnnotationLabelScope,
   name: string,
   value: number | undefined
 ): string | undefined {
   const trimmedName = name.trim();
-  if (!isValidNexLabelName(trimmedName)) {
-    return `Use an identifier name up to ${NEX_LABEL_MAX_LENGTH} characters.`;
+  if (!isValidLabelName(trimmedName)) {
+    return `Use an identifier name up to ${ANNOTATION_LABEL_MAX_LENGTH} characters.`;
   }
   if (value === undefined) {
     return "Enter a hexadecimal or decimal value.";
   }
-  const maxValue = scope === "global" ? 0xffff : NEX_BANK_LAST_OFFSET;
+  const maxValue = scope === "global" ? 0xffff : ANNOTATION_BANK_LAST_OFFSET;
   if (value < 0 || value > maxValue) {
     return scope === "global"
       ? "Global label values must be in $0000..$FFFF."
@@ -289,7 +289,7 @@ function filterLabels(labels: NexLabelDialogLabel[], searchText: string): NexLab
 
 function findLabelAtValue(
   labels: NexLabelDialogLabel[],
-  scope: NexAnnotationLabelScope,
+  scope: AnnotationLabelScope,
   value: number
 ): NexLabelDialogLabel | undefined {
   return labels.find((label) => label.scope === scope && label.value === value);

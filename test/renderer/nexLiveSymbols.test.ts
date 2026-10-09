@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import type { NexFileAnnotations } from "@renderer/appIde/DocumentPanels/Next/nexAnnotations";
+import type { ProgramAnnotations } from "@renderer/appIde/annotations/programAnnotations";
 import {
   bankSiteAtAddress,
   createNexLiveOperandLabelResolver,
@@ -19,7 +19,7 @@ import {
 /** Eight 8K slots. Bank 5 is pages 10/11, bank 6 is 12/13. */
 const PAGED_BANK5_AT_C000 = [0, 1, 2, 3, 4, 5, 10, 11];
 
-const annotations: NexFileAnnotations = {
+const annotations: ProgramAnnotations = {
   schemaVersion: 2,
   globalLabels: [{ name: "Entry", value: 0x8000 }],
   banks: {
@@ -91,7 +91,7 @@ describe("findNexLabelForAddress", () => {
      * The more specific claim of the two: a global label names one place in the address space,
      * while a local one names a place in a bank that could be anywhere.
      */
-    const both: NexFileAnnotations = {
+    const both: ProgramAnnotations = {
       ...annotations,
       globalLabels: [{ name: "Global", value: 0xc100 }]
     } as any;

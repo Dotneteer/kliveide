@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import { extractSldInfo, sldPagesArePartitions, sldSymbols } from "@main/sjasmp-integration/SjasmPCompiler";
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
-import { historyLabelLookup } from "@renderer/features/history/historyDisassembly";
+import {
+  buildLabelsOfCompilation,
+  createAddressSymbols
+} from "@renderer/appIde/annotations/symbolResolver";
 
 /*
  * sjasmplus debug info as the profiler needs it (`.plans/PROFILER_PLAN.md` D8): `L` lines are
@@ -37,7 +40,10 @@ describe("sjasmplus symbols for the profiler", () => {
   });
 
   it("lets the Execution History name sjasmplus labels", () => {
-    const lookup = historyLabelLookup(sldSymbols(lines))!;
+    const symbols = createAddressSymbols({
+      buildLabels: buildLabelsOfCompilation({ symbols: sldSymbols(lines) }, undefined)
+    });
+    const lookup = (address: number) => symbols.labelAt(address, undefined)?.name;
     expect(lookup(0x8000)).toBe("Main");
     expect(lookup(0xc000)).toBe("gfx.Plot");
     // --- An EQU and a DEFL are not code addresses

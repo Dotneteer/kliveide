@@ -1,3 +1,4 @@
+import { useMachineBankSpace } from "@renderer/appIde/annotations/useMachineBankSpace";
 import { pushConditionSymbols, setSidecarConditionSymbols } from "@renderer/appIde/utils/condition-symbols";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -7,11 +8,11 @@ import { useEmuApi } from "@renderer/core/EmuApi";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 
 import type {
-  NexFileAnnotations,
-  NexSidecarBreakpoint,
-  NexSidecarLabelBreakpoint
-} from "./nexAnnotations";
-import { saveNexDebugSubtree } from "./nexAnnotationSidecar";
+  ProgramAnnotations,
+  SidecarBreakpoint,
+  SidecarLabelBreakpoint
+} from "@renderer/appIde/annotations/programAnnotations";
+import { saveDebugSubtree } from "@renderer/appIde/annotations/annotationSidecar";
 import {
   fromSidecarBreakpoints,
   fromSidecarLabelBreakpoints,
@@ -121,8 +122,8 @@ export function useNexBankBreakpointCounts(): Map<number, BankBreakpointSummary>
 // --- Per sidecar, so two popped-out banks of one NEX install it once between them rather than
 // --- racing to install the same set twice.
 const installedSidecars = new Set<string>();
-const lastWritten = new Map<string, NexSidecarBreakpoint[]>();
-const lastLabelsWritten = new Map<string, NexSidecarLabelBreakpoint[]>();
+const lastWritten = new Map<string, SidecarBreakpoint[]>();
+const lastLabelsWritten = new Map<string, SidecarLabelBreakpoint[]>();
 
 /** Forget what has been installed. For tests, which must not leak state between cases. */
 export function resetNexBreakpointSyncForTests(): void {
@@ -134,12 +135,12 @@ export function resetNexBreakpointSyncForTests(): void {
 /**
  * Install a sidecar's stored breakpoints once, then write back every change.
  *
- * Scoped to `{ kind: "nex", sidecar }` throughout, so installing cannot disturb the project's
+ * Scoped to `{ kind: "sidecar", sidecar }` throughout, so installing cannot disturb the project's
  * breakpoints and a project open cannot disturb these.
  */
 export function useNexSidecarBreakpointSync(
   sidecar: string | undefined,
-  annotations: NexFileAnnotations | undefined
+  annotations: ProgramAnnotations | undefined
 ): void {
   const emuApi = useEmuApi();
   const { projectService } = useAppServices();
@@ -149,6 +150,10 @@ export function useNexSidecarBreakpointSync(
   emuApiRef.current = emuApi;
   const projectServiceRef = useRef(projectService);
   projectServiceRef.current = projectService;
+  // --- How a bank label resolves on this machine: a bank site, or (ZX80/ZX81) an address
+  const bankSpace = useMachineBankSpace();
+  const bankSpaceRef = useRef(bankSpace);
+  bankSpaceRef.current = bankSpace;
 
   // --- Install, once per sidecar.
   useEffect(() => {
@@ -167,7 +172,7 @@ export function useNexSidecarBreakpointSync(
           // --- resolved against, which the effect below does on the same `annotations` change.
           ...fromSidecarLabelBreakpoints(storedLabels, sidecar)
         ],
-        { kind: "nex", sidecar }
+        { kind: "sidecar", sidecar }
       )
       .catch(() => {
         // --- No machine yet. The sidecar still holds them, and the next open will try again.
@@ -208,7 +213,7 @@ export function useNexSidecarBreakpointSync(
       }
       if (cancelled) return;
 
-      const resolved = resolveLabelBreakpointsFor(current, sidecar, annotations);
+      const resolved = resolveLabelBreakpointsFor(current, sidecar, annotations, bankSpaceRef.current);
       /*
        * Only write when something actually moved.
        *
@@ -233,8 +238,8 @@ export function useNexSidecarBreakpointSync(
     if (!sidecar || !installedSidecars.has(sidecar)) return undefined;
     let cancelled = false;
     (async () => {
-      let current: NexSidecarBreakpoint[];
-      let currentLabels: NexSidecarLabelBreakpoint[];
+      let current: SidecarBreakpoint[];
+      let currentLabels: SidecarLabelBreakpoint[];
       try {
         const response = await emuApiRef.current.listBreakpoints();
         const live = response?.breakpoints ?? [];
@@ -255,7 +260,7 @@ export function useNexSidecarBreakpointSync(
       lastWritten.set(sidecar, current);
       lastLabelsWritten.set(sidecar, currentLabels);
       try {
-        await saveNexDebugSubtree(projectServiceRef.current, sidecar, {
+        await saveDebugSubtree(projectServiceRef.current, sidecar, {
           breakpoints: current,
           labelBreakpoints: currentLabels
         });

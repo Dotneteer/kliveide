@@ -4,7 +4,7 @@ import { DialogRow } from "@renderer/controls/DialogRow";
 import { DialogComponentProps } from "@renderer/controls/overlay/DialogProvider";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 import styles from "./NexSynopsisCommentDialog.module.scss";
-import { normalizeMultilineComment } from "./nexAnnotations";
+import { normalizeMultilineComment } from "@renderer/appIde/annotations/programAnnotations";
 import {
   DialogFooter,
   DialogFooterSpacer

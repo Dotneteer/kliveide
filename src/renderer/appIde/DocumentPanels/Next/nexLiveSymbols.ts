@@ -1,7 +1,8 @@
 import type { DisassemblyOperandLabelResolver } from "@renderer/appIde/disassemblers/common-types";
-import type { NexFileAnnotations } from "./nexAnnotations";
+import type { ProgramAnnotations } from "@renderer/appIde/annotations/programAnnotations";
 
-import { getBankAnnotation } from "./nexAnnotations";
+import { getBankAnnotation } from "@renderer/appIde/annotations/programAnnotations";
+import { nextBankSpace, type BankSpace } from "@common/annotations/bankSpace";
 
 /*
  * A NEX's hand-made labels, in the **live** disassembly.
@@ -26,26 +27,20 @@ export type LiveBankSite = { bank: number; bankOffset: number };
 /**
  * The 16K bank and offset a Z80 address is currently in, or `undefined` when nothing is paged there.
  *
- * The inverse of the live paging map. `mem64kPartitions` holds one **8K page** per 8K slot — that is
- * what a Next partition is, after Q9 — so the 16K bank is the page halved, and which half of the
- * bank the address is in is the page's low bit. Offsets within an 8K page and within a bank's half
- * are the same thing, which is why only that one bit has to be recovered.
+ * The inverse of the live paging map, in the machine's bank space (the Next's by default: one **8K
+ * page** per slot, so the bank is the page halved and the half is its low bit).
  *
  * @param mem64kPartitions from `resolveMem64kPartitions`: eight entries, one per 8K slot
  */
 export function bankSiteAtAddress(
   mem64kPartitions: (number | undefined)[] | undefined,
-  address: number
+  address: number,
+  space: BankSpace = nextBankSpace
 ): LiveBankSite | undefined {
-  const slot = (address >> 13) & 0x07;
-  const page = mem64kPartitions?.[slot];
-  // --- A negative page is a ROM or DivMMC partition, which is not one of the NEX's banks.
-  if (page === undefined || page < 0) return undefined;
-
-  return {
-    bank: page >> 1,
-    bankOffset: (page & 0x01) * 0x2000 + (address & 0x1fff)
-  };
+  const site = space.siteAt(address & 0xffff, mem64kPartitions);
+  // --- A ROM or DivMMC partition is not one of the program's banks.
+  if (site?.kind !== "bank") return undefined;
+  return { bank: site.bank, bankOffset: site.offset };
 }
 
 /**
@@ -60,9 +55,10 @@ export function bankSiteAtAddress(
  * place in the address space, while a local one names a place in a bank that could be anywhere.
  */
 export function findNexLabelForAddress(
-  annotations: NexFileAnnotations | undefined,
+  annotations: ProgramAnnotations | undefined,
   mem64kPartitions: (number | undefined)[] | undefined,
-  address: number
+  address: number,
+  space: BankSpace = nextBankSpace
 ): string | undefined {
   if (!annotations) return undefined;
 
@@ -70,7 +66,7 @@ export function findNexLabelForAddress(
   const global = annotations.globalLabels?.find((label) => label.value === target);
   if (global) return global.name;
 
-  const site = bankSiteAtAddress(mem64kPartitions, target);
+  const site = bankSiteAtAddress(mem64kPartitions, target, space);
   if (!site) return undefined;
 
   return getBankAnnotation(annotations, site.bank)?.localLabels?.find(
@@ -90,13 +86,14 @@ export function findNexLabelForAddress(
  * keeps the live view byte-for-byte as it was when no NEX is loaded.
  */
 export function createNexLiveOperandLabelResolver(
-  annotations: NexFileAnnotations | undefined,
-  mem64kPartitions: (number | undefined)[] | undefined
+  annotations: ProgramAnnotations | undefined,
+  mem64kPartitions: (number | undefined)[] | undefined,
+  space: BankSpace = nextBankSpace
 ): DisassemblyOperandLabelResolver | undefined {
   if (!annotations) return undefined;
 
   return ({ operandValue }) =>
     operandValue === undefined
       ? undefined
-      : findNexLabelForAddress(annotations, mem64kPartitions, operandValue);
+      : findNexLabelForAddress(annotations, mem64kPartitions, operandValue, space);
 }

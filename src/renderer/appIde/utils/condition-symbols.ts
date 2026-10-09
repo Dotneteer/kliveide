@@ -1,8 +1,8 @@
 import type { EmuApi } from "@common/messaging/EmuApi";
 import type { ConditionSymbols } from "@common/utils/breakpoint-condition/condition-types";
-import type { NexFileAnnotations } from "@renderer/appIde/DocumentPanels/Next/nexAnnotations";
+import type { ProgramAnnotations } from "@renderer/appIde/annotations/programAnnotations";
 
-import { bankLocalSymbolKey } from "@common/utils/breakpoint-condition/condition-types";
+import { bankLocalSymbolKey, romSymbolKey } from "@common/utils/breakpoint-condition/condition-types";
 
 /*
  * The symbol table breakpoint conditions bind their labels to (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md`
@@ -15,9 +15,10 @@ import { bankLocalSymbolKey } from "@common/utils/breakpoint-condition/condition
 
 let buildSymbols: ConditionSymbols = {};
 const sidecarSymbols = new Map<string, ConditionSymbols>();
+let romSymbols: ConditionSymbols = {};
 
 /** The labels of a NEX sidecar: globals by name, bank-locals as `<bank>:<name>` (bank offsets). */
-export function sidecarSymbolsOf(annotations: NexFileAnnotations | undefined): ConditionSymbols {
+export function sidecarSymbolsOf(annotations: ProgramAnnotations | undefined): ConditionSymbols {
   const result: ConditionSymbols = {};
   if (!annotations) return result;
   for (const label of annotations.globalLabels ?? []) {
@@ -33,7 +34,7 @@ export function sidecarSymbolsOf(annotations: NexFileAnnotations | undefined): C
 
 /** Every table merged: sidecar labels first, so where a build defines the same name it wins (§3.6). */
 export function mergedConditionSymbols(): ConditionSymbols {
-  const merged: ConditionSymbols = {};
+  const merged: ConditionSymbols = { ...romSymbols };
   for (const symbols of sidecarSymbols.values()) Object.assign(merged, symbols);
   return Object.assign(merged, buildSymbols);
 }
@@ -46,7 +47,7 @@ export function setBuildConditionSymbols(symbols: ConditionSymbols): void {
 /** Record (or, with no annotations, forget) one sidecar's labels. */
 export function setSidecarConditionSymbols(
   sidecar: string,
-  annotations: NexFileAnnotations | undefined
+  annotations: ProgramAnnotations | undefined
 ): void {
   if (annotations) {
     sidecarSymbols.set(sidecar, sidecarSymbolsOf(annotations));
@@ -55,10 +56,20 @@ export function setSidecarConditionSymbols(
   }
 }
 
+/**
+ * Record the ROM's labels, as `rom:<name>` keys with their ROM address: what `ROM:<name>` reads in
+ * a condition (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §5.5). Replaces the previous ROM's.
+ */
+export function setRomConditionSymbols(labels: readonly { name: string; address: number }[]): void {
+  romSymbols = {};
+  for (const label of labels) romSymbols[romSymbolKey(label.name)] ??= label.address;
+}
+
 /** Forget every table: a project was opened, and the last build was someone else's. */
 export function clearConditionSymbols(): void {
   buildSymbols = {};
   sidecarSymbols.clear();
+  romSymbols = {};
 }
 
 /**

@@ -30,9 +30,9 @@ import { getNumericTokenValue, toHexa2, toHexa4 } from "@renderer/appIde/service
 // --- imports them from the same place for the same grammar, which is the point: one definition of
 // --- what a legal bank and offset are, not one per parser.
 import {
-  NEX_BANK_LAST_OFFSET,
+  ANNOTATION_BANK_LAST_OFFSET,
   NEX_MAX_BANK
-} from "@renderer/appIde/DocumentPanels/Next/nexAnnotations";
+} from "@renderer/appIde/annotations/programAnnotations";
 
 /**
  * The decision logic behind the breakpoint dialog, with no React and no I/O in it.
@@ -168,7 +168,8 @@ export type BreakpointEnvironment = {
   /** Whether the machine declares `MF_ROM` or `MF_BANK`. */
   supportsPartitions: boolean;
   /**
-   * Whether `<bank>:+<offset>` means anything on this machine — the ZX Spectrum Next only.
+   * Whether `<bank>:+<offset>` means anything on this machine: every machine with a bank space
+   * whose banks can be paged or sit at fixed addresses (`BankSpace.bankBreakpoints`).
    *
    * Explicit rather than inferred from the partition count, and enforced here rather than left to
    * the UI: `bp-set` refuses a bank-relative breakpoint on any other machine, so a dialog that
@@ -176,6 +177,8 @@ export type BreakpointEnvironment = {
    * bypasses that rejection.
    */
   supportsBankRelative?: boolean;
+  /** The highest bank `<bank>:+<offset>` may name here; the Next's 111 when absent. */
+  maxBank?: number;
   /**
    * Whether `nr:<register>` means anything on this machine - the ZX Spectrum Next only.
    *
@@ -273,7 +276,10 @@ export function isBankRelativeInput(text: string | undefined): boolean {
  * The bank is plain hexadecimal and deliberately does **not** go through the partition label map:
  * it is a 16K bank, and the map describes 8K pages. See `.plans/NEX_DEBUGGING_PLAN.md` §4.1.
  */
-export function parseBankRelativeInput(text: string | undefined): {
+export function parseBankRelativeInput(
+  text: string | undefined,
+  maxBank: number = NEX_MAX_BANK
+): {
   ok: boolean;
   bank?: number;
   bankOffset?: number;
@@ -290,11 +296,11 @@ export function parseBankRelativeInput(text: string | undefined): {
   // --- the shape is checked before the value.
   if (!/^[0-9a-fA-F]{1,2}$/.test(bankText)) return { ok: false, reason: "bank" };
   const bank = parseInt(bankText, 16);
-  if (bank < 0 || bank > NEX_MAX_BANK) return { ok: false, reason: "bank" };
+  if (bank < 0 || bank > maxBank) return { ok: false, reason: "bank" };
 
   const offset = parseNumericInput(offsetText);
   if (!offset.ok) return { ok: false, reason: "offset" };
-  if (offset.value < 0 || offset.value > NEX_BANK_LAST_OFFSET) {
+  if (offset.value < 0 || offset.value > ANNOTATION_BANK_LAST_OFFSET) {
     return { ok: false, reason: "offset" };
   }
 
@@ -762,16 +768,17 @@ export function validateBreakpointForm(
     // --- report "enter a valid address" for a bank-relative site with one digit wrong, which says
     // --- nothing about the mistake.
     if (!env.supportsBankRelative) {
-      errors.address = "Bank-relative breakpoints are supported on the ZX Spectrum Next only.";
+      errors.address = "Bank-relative breakpoints are not supported on this machine.";
     } else if (isIoKind(form.kind)) {
       errors.address = "An I/O breakpoint watches a port, which is not in a bank.";
     } else {
-      const site = parseBankRelativeInput(addressText);
+      const maxBank = env.maxBank ?? NEX_MAX_BANK;
+      const site = parseBankRelativeInput(addressText, maxBank);
       if (!site.ok) {
         errors.address =
           site.reason === "bank"
-            ? `Enter a 16K bank in hexadecimal, $00 to $${toHexa2(NEX_MAX_BANK).toUpperCase()}.`
-            : `Enter an offset within the bank, $0000 to $${toHexa4(NEX_BANK_LAST_OFFSET)}.`;
+            ? `Enter a 16K bank in hexadecimal, $00 to $${toHexa2(maxBank).toUpperCase()}.`
+            : `Enter an offset within the bank, $0000 to $${toHexa4(ANNOTATION_BANK_LAST_OFFSET)}.`;
       }
     }
   } else {

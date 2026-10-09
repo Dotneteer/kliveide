@@ -1,3 +1,5 @@
+import { activateSidecarOf } from "@renderer/appIde/annotations/activeAnnotationSet";
+import { annotationMachineFor } from "@common/annotations/bankSpace";
 import type { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
 import type { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext";
 import type { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
@@ -157,6 +159,13 @@ export class TapeLoadCommand extends IdeCommandBase<TapeLoadCommandArgs> {
     const insertError = await context.mainApi.setTapeFile(file);
     if (insertError) {
       return commandError(insertError);
+    }
+    // --- A ZX80/ZX81 program loads at a fixed address, so it is a memory image like a snapshot:
+    // --- `<file>.dis` becomes the live annotation set (created on the first edit). A Spectrum tape
+    // --- has no such hook - what it loads, and where, is up to the loader it carries.
+    if (isProgram) {
+      const machine = annotationMachineFor(context.store.getState().emulatorState?.machineId);
+      activateSidecarOf(file, machine === "zx80" ? "zx80" : "zx81", "tape");
     }
     if (analysis && analysis.summary.unplayableCount > 0) {
       writeMessage(

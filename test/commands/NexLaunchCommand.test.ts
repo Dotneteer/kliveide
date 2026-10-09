@@ -1,3 +1,4 @@
+import { getActiveAnnotationSet } from "@renderer/appIde/annotations/activeAnnotationSet";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { MI_ZXNEXT } from "@common/machines/constants";
 import {
@@ -243,6 +244,17 @@ describe("LaunchNexCommand", () => {
         path: "/p/Game.nex",
         fileName: "Game.nex",
         banks: [2, 5, 20]
+      });
+    });
+
+    it("makes the NEX's sidecar the active annotation set", async () => {
+      const { context } = contextFor(MI_ZXNEXT);
+      await new LaunchNexCommand().execute(context, { file: "/p/Game.nex" } as any);
+      expect(getActiveAnnotationSet()).toEqual({
+        path: "/p/Game.nex.dis",
+        hostPath: "/p/Game.nex",
+        machine: "next",
+        reason: "nex-run"
       });
     });
 

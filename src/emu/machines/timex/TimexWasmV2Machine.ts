@@ -1,3 +1,4 @@
+import { romCrc32 } from "@common/roms/romIdentity";
 import type { MachineConfigSet, MachineModel } from "@common/machines/info-types";
 import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import type { Sp48WasmV2LoaderOptions, Sp48WasmV2Runtime } from "../zxSpectrum48/wasm/Sp48WasmV2Loader";
@@ -17,7 +18,6 @@ import {
   SP48_ROM_TRAITS,
   TIMEX_KNOWN_ROMS,
   getTimexModel,
-  romCrc32,
   type TimexModel,
   type TimexModelId,
   type TimexRomTraits
@@ -302,6 +302,17 @@ export class TimexWasmV2Machine extends ZxSpectrum48WasmV2Machine {
   }
 
   /** An 8K partition's bytes, as a view into the core's memory */
+  /**
+   * The HOME ROM as one 16K page at `-1`, the way the ROM annotations name it: its two 8K chunks
+   * (`-1`, `-2`) are halves of one ROM. The EXROM and a DOCK are not annotatable (Q4).
+   */
+  protected override getRomPartitionImages(): Map<number, Uint8Array> {
+    const home = new Uint8Array(0x4000);
+    home.set(this.getMemoryPartition(-1), 0);
+    home.set(this.getMemoryPartition(-2), 0x2000);
+    return new Map([[-1, home]]);
+  }
+
   override getMemoryPartition(index: number): Uint8Array {
     const runtime = this.requireWasmV2Runtime();
     const exports = this.timexExports;

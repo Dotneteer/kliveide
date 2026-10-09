@@ -501,6 +501,15 @@ export const setExportDialogInfoAction: ActionCreator = (value: ExportDialogSett
   payload: { value }
 });
 
+/**
+ * The project's annotation sidecar, relative to its folder (`.kliveproject`'s `annotations`). Absent
+ * means the default, `annotations.dis` (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` Q3).
+ */
+export const setProjectAnnotationsAction: ActionCreator = (value: string | undefined) => ({
+  type: "SET_PROJECT_ANNOTATIONS",
+  payload: { value }
+});
+
 export const setWorkspaceSettingsAction: ActionCreator = (id: string, value: any) => ({
   type: "SET_WORKSPACE_SETTINGS",
   payload: { id, value }

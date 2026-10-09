@@ -171,16 +171,21 @@ async function renderDisassemblyPanel({
    * `project-node` as a value for its path helpers, and that reaches the editor. The failure is
    * `document.queryCommandSupported is not a function`, from Monaco's clipboard contrib.
    *
-   * A mock here rather than a fix there, deliberately: the root cause is that a module doing file
-   * IO carries the editor's dependency graph, and splitting the IO out of `nexAnnotationSidecar`
-   * is a change to a module with its own tests and several importers — worth doing on its own, not
-   * at the tail of this one. Recorded in `.plans/NEX_DEBUGGING_PLAN.md` §13.1.
+   * The root cause — a module doing file IO carrying the editor's dependency graph — has since been
+   * fixed (`annotationSidecarDocument.ts` holds the document helpers). The mock stays because these
+   * tests are about the listing, not about reading a sidecar.
    */
-  vi.doMock("@renderer/appIde/DocumentPanels/Next/nexAnnotationSidecar", () => ({
-    loadNexAnnotationSidecar: vi.fn(() => Promise.resolve({ status: "missing" }))
+  vi.doMock("@renderer/appIde/annotations/annotationSidecar", () => ({
+    loadAnnotationSidecar: vi.fn(() => Promise.resolve({ status: "missing" }))
   }));
   vi.doMock("@renderer/appIde/dialogs/useBreakpointDialog", () => ({
     useBreakpointDialog: () => vi.fn().mockResolvedValue(false)
+  }));
+  // --- The annotation dialogs the live view's row menu opens (`useLiveAnnotationEditing`): no
+  // --- dialog is opened in these tests, but the ports are built on mount
+  vi.doMock("@renderer/controls/overlay/DialogProvider", async (importOriginal) => ({
+    ...(await importOriginal<object>()),
+    useDialogs: () => ({ open: vi.fn() })
   }));
   vi.doMock("@renderer/appIde/DocumentPanels/BreakpointIndicator", () => ({
     BreakpointIndicator: ({

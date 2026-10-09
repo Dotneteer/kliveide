@@ -23,7 +23,7 @@ import {
   useContextMenuState
 } from "@renderer/controls/ContextMenu";
 import { toHexa2, toHexa4 } from "@renderer/appIde/services/ide-commands";
-import type { NexAnnotationRegion, NexAnnotationRegionType } from "./nexAnnotations";
+import type { AnnotationRegion, AnnotationRegionType } from "@renderer/appIde/annotations/programAnnotations";
 import {
   isBlankPattern,
   NEX_SPRITE_TRANSPARENT,
@@ -123,10 +123,10 @@ export function selectionRange(look: Pick<NexSpritesLook, "anchor" | "active">):
 
 /** Is the span entirely inside one region of this type? Regions are normalized, so one suffices. */
 export function spanHasRegionType(
-  regions: NexAnnotationRegion[] | undefined,
+  regions: AnnotationRegion[] | undefined,
   start: number,
   end: number,
-  type: NexAnnotationRegionType
+  type: AnnotationRegionType
 ): boolean {
   return !!regions?.some((r) => r.type === type && r.start <= start && r.end >= end);
 }
@@ -344,11 +344,11 @@ type ViewProps = {
   offset: number;
   look: NexSpritesLook;
   paletteInfo: NexSpritesPaletteInfo;
-  regions?: NexAnnotationRegion[];
+  regions?: AnnotationRegion[];
   /** Whether the sidecar can take region edits. */
   canAnnotate: boolean;
   onLookChange: (patch: Partial<NexSpritesLook>) => void;
-  onMarkSpan: (start: number, end: number, type: NexAnnotationRegionType) => void;
+  onMarkSpan: (start: number, end: number, type: AnnotationRegionType) => void;
   onShowIn: (view: "memory" | "disassembly", bankOffset: number) => void;
   onBankComment?: () => void;
 };
@@ -600,7 +600,7 @@ type InspectorProps = {
   transparentAbgr: number;
   canAnnotate: boolean;
   markedBytes: boolean;
-  onMarkSpan: (start: number, end: number, type: NexAnnotationRegionType) => void;
+  onMarkSpan: (start: number, end: number, type: AnnotationRegionType) => void;
   onShowIn: (view: "memory" | "disassembly", bankOffset: number) => void;
 };
 

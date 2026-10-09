@@ -23,6 +23,8 @@ export const E2E_CORE_TESTS: string[] = [
   "test/sp128-hw/**/*.test.ts",
   "test/timex-hw/**/*.test.ts",
   "test/spectrum-hw/**/*.test.ts",
+  // --- The ROM annotation tools' coverage run (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §6)
+  "test/rom-annotations/**/*.test.ts",
   "test/harness/**/self-tests/**/*.test.ts",
   "test/unit-tests/runner-*.test.ts",
   // --- `klive test` on the fixture projects (`.plans/UNIT_TESTS_CLI_PLAN.md` §6)

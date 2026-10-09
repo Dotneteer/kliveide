@@ -10,7 +10,7 @@ import {
   toSidecarBreakpoints,
   toSidecarLabelBreakpoints
 } from "@renderer/appIde/DocumentPanels/Next/nexBreakpointSync";
-import { validateNexAnnotations } from "@renderer/appIde/DocumentPanels/Next/nexAnnotations";
+import { validateAnnotations } from "@renderer/appIde/annotations/programAnnotations";
 
 const SIDECAR = "/p/Game.nex.dis";
 const OTHER = "/p/Other.nex.dis";
@@ -20,7 +20,7 @@ function owned(over: Partial<BreakpointInfo> = {}, sidecar = SIDECAR): Breakpoin
     bank: 5,
     bankOffset: 0x100,
     exec: true,
-    owner: { kind: "nex", sidecar },
+    owner: { kind: "sidecar", sidecar },
     ...over
   };
 }
@@ -131,7 +131,7 @@ describe("fromSidecarBreakpoints", () => {
       bank: 5,
       bankOffset: 0x100,
       exec: true,
-      owner: { kind: "nex", sidecar: SIDECAR }
+      owner: { kind: "sidecar", sidecar: SIDECAR }
     });
     expect(restored[1].memoryRead).toEqual(true);
     expect(restored[1].exec).toEqual(undefined);
@@ -201,7 +201,7 @@ describe("label-anchored breakpoints are not stored as bank offsets", () => {
       exec: true,
       resolvedBank: 5,
       resolvedBankOffset: 0x0100,
-      owner: { kind: "nex", sidecar: SIDECAR }
+      owner: { kind: "sidecar", sidecar: SIDECAR }
     };
     expect(toSidecarBreakpoints([labelBp], SIDECAR)).toEqual([]);
   });
@@ -212,7 +212,7 @@ describe("label-anchored breakpoints are not stored as bank offsets", () => {
       labelFile: SIDECAR,
       bank: 5,
       exec: true,
-      owner: { kind: "nex", sidecar: SIDECAR }
+      owner: { kind: "sidecar", sidecar: SIDECAR }
     };
     expect(toSidecarBreakpoints([labelBp, owned()], SIDECAR)).toEqual([
       { bank: 5, offset: 0x100, kind: "exec" }
@@ -236,7 +236,7 @@ function labelBp(over: Partial<BreakpointInfo> = {}, sidecar = SIDECAR): Breakpo
     labelFile: sidecar,
     bank: 5,
     exec: true,
-    owner: { kind: "nex", sidecar },
+    owner: { kind: "sidecar", sidecar },
     ...over
   };
 }
@@ -319,7 +319,7 @@ describe("fromSidecarLabelBreakpoints", () => {
       labelFile: SIDECAR,
       bank: 5,
       exec: true,
-      owner: { kind: "nex", sidecar: SIDECAR }
+      owner: { kind: "sidecar", sidecar: SIDECAR }
     });
     expect(restored.resolvedBank).toEqual(undefined);
   });
@@ -403,7 +403,7 @@ describe("conditions and hit rules in the sidecar", () => {
       labelFile: SIDECAR,
       bank: 5,
       memoryWrite: true,
-      owner: { kind: "nex", sidecar: SIDECAR },
+      owner: { kind: "sidecar", sidecar: SIDECAR },
       ...FILTERS,
       ...RUNTIME
     };
@@ -433,7 +433,7 @@ describe("conditions and hit rules in the sidecar", () => {
       label: "Main",
       labelFile: SIDECAR,
       exec: true,
-      owner: { kind: "nex", sidecar: SIDECAR },
+      owner: { kind: "sidecar", sidecar: SIDECAR },
       condition: "B == 0",
       hitCount: 8
     };
@@ -459,7 +459,7 @@ describe("conditions and hit rules in the sidecar", () => {
   });
 
   it("is read back from the file, with a warning for a malformed field", () => {
-    const { annotations, diagnostics } = validateNexAnnotations({
+    const { annotations, diagnostics } = validateAnnotations({
       schemaVersion: 2,
       banks: {},
       debug: {

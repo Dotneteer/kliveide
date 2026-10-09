@@ -8,13 +8,24 @@ describe("NEX annotation file type", () => {
     const entry = getFileTypeEntry("ScrollNutter.nex.dis", createStoreMock() as never);
 
     expect(entry).toMatchObject({
-      pattern: ".nex.dis",
+      pattern: ".dis",
       editor: CODE_EDITOR,
       subType: "json",
       isReadOnly: true
     });
     expect(entry?.isBinary).toBeUndefined();
     expect(entry?.openPermanent).toBeUndefined();
+  });
+
+  it("opens every annotation sidecar the same way: a snapshot's, a project's, a ROM's", () => {
+    for (const name of ["jetpac.z80.dis", "annotations.dis", "sp48.rom.dis", "game.p.dis"]) {
+      expect(getFileTypeEntry(name, createStoreMock() as never)).toMatchObject({
+        pattern: ".dis",
+        editor: CODE_EDITOR,
+        subType: "json",
+        isReadOnly: true
+      });
+    }
   });
 
   it("keeps .nex files on the binary NEX viewer", () => {

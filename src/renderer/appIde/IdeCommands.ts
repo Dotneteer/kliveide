@@ -159,7 +159,13 @@ import { StateLoadCommand, StateSaveCommand } from "./commands/MachineStateComma
 import { DebugRecordingLoadCommand, DebugRecordingSaveCommand } from "./commands/DebugRecordingCommands";
 import { TapeLoadCommand } from "./commands/TapeLoadCommand";
 import { RunToCursorCommand } from "./commands/RunToCursorCommand";
-import { NexLabelCommand } from "./commands/NexLabelCommand";
+import { LabelCommand } from "./commands/LabelCommand";
+import {
+  AnnotationCloseCommand,
+  AnnotationInfoCommand,
+  AnnotationNewCommand,
+  AnnotationOpenCommand
+} from "./commands/AnnotationSetCommands";
 
 let commandsRegistered = false;
 
@@ -320,7 +326,11 @@ export function registerIdeCommands(cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new DebugRecordingLoadCommand());
   cmdSrv.registerCommand(new TapeLoadCommand());
   cmdSrv.registerCommand(new RunToCursorCommand());
-  cmdSrv.registerCommand(new NexLabelCommand());
+  cmdSrv.registerCommand(new LabelCommand());
+  cmdSrv.registerCommand(new AnnotationOpenCommand());
+  cmdSrv.registerCommand(new AnnotationNewCommand());
+  cmdSrv.registerCommand(new AnnotationCloseCommand());
+  cmdSrv.registerCommand(new AnnotationInfoCommand());
 }
 
 export function resetIdeCommandRegistrationForTests(): void {

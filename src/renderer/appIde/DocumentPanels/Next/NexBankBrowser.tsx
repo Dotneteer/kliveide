@@ -15,7 +15,7 @@ import {
   describeBankBreakpoints,
   type BankBreakpointSummary
 } from "./nexBankGutter";
-import { flattenBankComment } from "./nexAnnotationEdits";
+import { flattenBankComment } from "@renderer/appIde/annotations/annotationEdits";
 import {
   contentMixPercent,
   formatMixPercent,
@@ -24,7 +24,7 @@ import {
   type NexBankContentMix,
   type NexBankLabel
 } from "./nexBankSummary";
-import type { NexAnnotationRegionType } from "./nexAnnotations";
+import type { AnnotationRegionType } from "@renderer/appIde/annotations/programAnnotations";
 import styles from "./NexBankBrowser.module.scss";
 
 /*
@@ -85,12 +85,13 @@ export const VIEW_NAMES: Record<NexBankView, string> = {
   sprites: "Sprites"
 };
 
-const REGION_NAMES: Record<NexAnnotationRegionType, string> = {
+const REGION_NAMES: Record<AnnotationRegionType, string> = {
   disassemble: "Code",
   bytes: "Bytes",
   words: "Words",
   copper: "Copper",
   dma: "DMA",
+  text: "Text",
   skip: "Skip"
 };
 

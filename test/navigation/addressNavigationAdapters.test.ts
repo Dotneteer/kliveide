@@ -207,8 +207,8 @@ describe("static dump navigation adapter", () => {
       {
         disassemblyEnabled: true,
         disassOffset: 0xc000,
-        nexAnnotationPath: "/project/build/Game.nex.dis",
-        nexAnnotationBank: 12,
+        annotationPath: "/project/build/Game.nex.dis",
+        annotationBank: 12,
         topAddress: 0xc240,
         viewMode: "disassembly"
       }

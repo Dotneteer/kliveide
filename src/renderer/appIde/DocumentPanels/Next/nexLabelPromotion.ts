@@ -1,14 +1,14 @@
-import type { NexBankAnnotation, NexFileAnnotations } from "./nexAnnotations";
+import type { BankAnnotation, ProgramAnnotations } from "@renderer/appIde/annotations/programAnnotations";
 
 import {
   DEFAULT_REGION,
-  NEX_BANK_LAST_OFFSET,
-  NEX_LABEL_MAX_LENGTH,
+  ANNOTATION_BANK_LAST_OFFSET,
+  ANNOTATION_LABEL_MAX_LENGTH,
   NEX_MAX_BANK,
   getBankAnnotation,
-  isValidNexLabelName
-} from "./nexAnnotations";
-import { withLabelChange } from "./nexAnnotationEdits";
+  isValidLabelName
+} from "@renderer/appIde/annotations/programAnnotations";
+import { withLabelChange } from "@renderer/appIde/annotations/annotationEdits";
 
 /*
  * Turning a discovery into an annotation.
@@ -40,7 +40,7 @@ export type NexLabelTarget = { bank: number; bankOffset: number };
 export type NexLabelPromotion = {
   ok: boolean;
   /** Present when `ok`. */
-  annotations?: NexFileAnnotations;
+  annotations?: ProgramAnnotations;
   /** Present when `ok` and the offset already carried another name. */
   replaced?: string;
   /** Present when not `ok`. */
@@ -56,7 +56,7 @@ export type NexLabelPromotion = {
  * model permits it, and a routine with both a technical and a descriptive name is a real thing.
  */
 export function promoteLabelAt(
-  annotations: NexFileAnnotations | undefined,
+  annotations: ProgramAnnotations | undefined,
   target: NexLabelTarget,
   name: string
 ): NexLabelPromotion {
@@ -65,10 +65,10 @@ export function promoteLabelAt(
   }
 
   const trimmed = name.trim();
-  if (!isValidNexLabelName(trimmed)) {
+  if (!isValidLabelName(trimmed)) {
     return {
       ok: false,
-      error: `Use an identifier name of up to ${NEX_LABEL_MAX_LENGTH} characters.`
+      error: `Use an identifier name of up to ${ANNOTATION_LABEL_MAX_LENGTH} characters.`
     };
   }
   if (!Number.isInteger(target.bank) || target.bank < 0 || target.bank > NEX_MAX_BANK) {
@@ -77,7 +77,7 @@ export function promoteLabelAt(
   if (
     !Number.isInteger(target.bankOffset) ||
     target.bankOffset < 0 ||
-    target.bankOffset > NEX_BANK_LAST_OFFSET
+    target.bankOffset > ANNOTATION_BANK_LAST_OFFSET
   ) {
     return { ok: false, error: "Local label values must be in $0000..$3FFF." };
   }
@@ -98,7 +98,7 @@ export function promoteLabelAt(
    * the entry with the same default a new sidecar uses is the only answer that does not lose the
    * label, and it is what the viewer would have shown for that bank anyway.
    */
-  const withBank: NexFileAnnotations = existing
+  const withBank: ProgramAnnotations = existing
     ? annotations
     : {
         ...annotations,
@@ -107,7 +107,7 @@ export function promoteLabelAt(
           [String(target.bank)]: {
             offsetIndex: 0,
             regions: [{ ...DEFAULT_REGION }]
-          } as NexBankAnnotation
+          } as BankAnnotation
         }
       };
 

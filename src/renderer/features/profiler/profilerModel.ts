@@ -1,3 +1,4 @@
+import type { RoutineLabel } from "@common/profile/routineMap";
 import type { KliveCompilerOutput } from "@abstractions/CompilerInfo";
 import type { EmuApi } from "@common/messaging/EmuApi";
 import { profileLayoutOf } from "@common/profile/layouts";
@@ -105,7 +106,7 @@ export type ProfilerModel = {
 export function buildProfilerModel(
   snapshot: ProfileSnapshot,
   compilation: KliveCompilerOutput | undefined,
-  options: { hideWaiting?: boolean } = {}
+  options: { hideWaiting?: boolean; annotationLabels?: readonly RoutineLabel[] } = {}
 ): ProfilerModel | undefined {
   const { status } = snapshot;
   const layout = profileLayoutOf(status.machineId);
@@ -117,7 +118,8 @@ export function buildProfilerModel(
     offsetOf: offsetResolver(layout, snapshot.slotOffsets),
     machineId: status.machineId,
     edges: snapshot.edges,
-    partitionLabel
+    partitionLabel,
+    annotationLabels: options.annotationLabels
   });
   const flat = rollupFlat(snapshot.bytes, map, status, {
     hideWaiting: options.hideWaiting ?? true,

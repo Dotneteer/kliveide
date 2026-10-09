@@ -213,6 +213,17 @@
   font-weight: 600;
 }
 
+/*
+ * A name the ROM's annotations gave (`--color-disassembly-rom-label`): the label family, set back by
+ * weight and slant, because it names the machine's code rather than the program's — a reader
+ * scanning for their own routines should not have to read past every ROM call to find them.
+ */
+.item .romLabel {
+  color: var(--color-disassembly-rom-label);
+  font-style: italic;
+  font-weight: 400;
+}
+
 .item .annotationDirective {
   color: var(--color-annotation-directive);
   font-weight: 600;

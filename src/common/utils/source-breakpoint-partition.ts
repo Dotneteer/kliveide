@@ -1,5 +1,4 @@
-import { MI_ZXNEXT } from "@common/machines/constants";
-import { bankRelativePartition } from "./breakpoint-scope";
+import { bankSpaceFor } from "@common/annotations/bankSpace";
 
 /*
  * Which memory partition a line of banked source code lives in.
@@ -33,7 +32,10 @@ export type BankedSegmentInfo = {
  *   and which one a line is in depends on its offset — exactly the conversion
  *   `bankRelativePartition` performs for a bank-relative breakpoint;
  * - on the **128K and +3** a partition *is* the 16K bank, so the bank number passes straight
- *   through.
+ *   through;
+ * - on the **48K** there are no partitions, so a `.bank 5` line is partitionless.
+ *
+ * `bankSpaceFor(machineId).partitionOf` makes the choice (`@common/annotations/bankSpace`).
  *
  * Getting this wrong is silent: the breakpoint simply never fires, because the partition test at
  * fire time compares against a number that is never paged anywhere.
@@ -48,12 +50,11 @@ export function resolvedPartitionFor(
 ): number | undefined {
   if (!segment || segment.bank === undefined) return undefined;
 
-  if (machineId !== MI_ZXNEXT) {
-    // --- A 16K partition on the machines that have them; nothing to convert.
-    return segment.bank;
-  }
-
-  return bankRelativePartition(segment.bank, bankOffsetOfLine(segment, address));
+  // --- The bank space knows: an 8K page on the Next, the bank itself on the 128K family, nothing
+  // --- on the 48K (whose banks are at fixed addresses, so the line's address alone decides).
+  const space = bankSpaceFor(machineId);
+  if (!space) return segment.bank;
+  return space.partitionOf({ bank: segment.bank, offset: bankOffsetOfLine(segment, address) });
 }
 
 /**

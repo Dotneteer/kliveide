@@ -20,8 +20,8 @@ type Props = {
   decimalView?: boolean;
   /** The view the popped-out dump opens in. Sprites exists only for NEX banks. */
   viewMode?: "memory" | "disassembly" | "sprites";
-  nexAnnotationPath?: string;
-  nexAnnotationBank?: number;
+  annotationPath?: string;
+  annotationBank?: number;
   iconTitle: string;
   idFactory: (documentSource: string, bank: number) => string;
   titleFactory: (documentSource: string, bank: number) => string;
@@ -40,8 +40,8 @@ export const MemoryDumpViewer = ({
   disassOffset,
   decimalView,
   viewMode,
-  nexAnnotationPath,
-  nexAnnotationBank,
+  annotationPath,
+  annotationBank,
   iconTitle,
   idFactory,
   titleFactory,
@@ -68,8 +68,8 @@ export const MemoryDumpViewer = ({
                   disassOffset,
                   decimalView,
                   viewMode,
-                  nexAnnotationPath,
-                  nexAnnotationBank
+                  annotationPath,
+                  annotationBank
                 }
               )
             );

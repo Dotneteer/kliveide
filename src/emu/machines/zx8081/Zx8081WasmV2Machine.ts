@@ -642,6 +642,12 @@ export class Zx8081WasmV2Machine extends Zx8081WasmHost implements IExecutionHis
   }
 
   /** The 64K the CPU sees, through the memory map (mirrors included) */
+  /** The ROM as one page at `-1`: 8K (the ZX81's, or the ZX80 upgrade) or the ZX80's 4K */
+  protected override getRomPartitionImages(): Map<number, Uint8Array> {
+    const size = this.hardware.romZx81 ? 0x2000 : 0x1000;
+    return new Map([[-1, this.get64KFlatMemory().slice(0, size)]]);
+  }
+
   get64KFlatMemory(): Uint8Array {
     const wasm = this.requireWasmV2Runtime().exports;
     const flat = new Uint8Array(0x1_0000);

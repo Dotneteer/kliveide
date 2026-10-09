@@ -319,6 +319,11 @@ export type IdeProject = {
   hasBuildFile?: boolean;
   buildFileVersion?: number;
   exportSettings?: ExportDialogSettings;
+  /**
+   * The project's annotation sidecar, relative to the project folder, as `.kliveproject` names it.
+   * Absent: `annotations.dis`, created by the first edit.
+   */
+  annotations?: string;
 };
 
 /**
