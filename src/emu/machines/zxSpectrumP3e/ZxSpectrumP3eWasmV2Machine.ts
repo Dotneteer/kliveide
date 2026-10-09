@@ -619,6 +619,15 @@ export class ZxSpectrumP3eWasmV2Machine
     return runtime.ram.subarray(bank * 0x4000, (bank + 1) * 0x4000);
   }
 
+  /** A RAM bank goes through the core, which keeps its flat copy of the paged-in memory in step */
+  override writeMemoryPartition(index: number, offset: number, value: number): void {
+    if (index < 0 || offset < 0 || offset >= 0x4000) {
+      super.writeMemoryPartition(index, offset, value);
+      return;
+    }
+    this.requireWasmV2Runtime().exports.spp3eWriteRamBank(index & 0x07, offset, value & 0xff);
+  }
+
   override getCurrentPartitions(): number[] {
     const wasm = this.requireWasmV2Runtime().exports;
     const slot0 = wasm.spp3eGetCurrentPartition(0);

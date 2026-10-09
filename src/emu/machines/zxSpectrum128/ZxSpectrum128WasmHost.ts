@@ -280,9 +280,11 @@ export function injectSpectrumCode(machine: ZxSpectrumBase, codeToInject: CodeTo
   }
   for (const segment of codeToInject.segments) {
     if (segment.bank !== undefined) {
-      const partition = machine.getMemoryPartition(segment.bank);
+      // --- Through the core, so a bank that is paged in shows the code in the flat 64K too
       const baseAddr = segment.bankOffset ?? 0;
-      partition.set(segment.emittedCode, baseAddr);
+      for (let i = 0; i < segment.emittedCode.length; i++) {
+        machine.writeMemoryPartition(segment.bank, baseAddr + i, segment.emittedCode[i]);
+      }
     } else {
       const addr = segment.startAddress;
       for (let i = 0; i < segment.emittedCode.length; i++) {

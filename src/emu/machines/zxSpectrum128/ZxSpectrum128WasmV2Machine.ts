@@ -714,6 +714,21 @@ export class ZxSpectrum128WasmV2Machine
     return runtime.ram.subarray(bank * 0x4000, (bank + 1) * 0x4000);
   }
 
+  /** A RAM bank goes through the core, which keeps its flat copy of the paged-in memory in step */
+  override writeMemoryPartition(index: number, offset: number, value: number): void {
+    if (index < 0) {
+      super.writeMemoryPartition(index, offset, value);
+      return;
+    }
+    this.writeRamBank(index & 0x07, offset, value);
+  }
+
+  /** Writes a byte of a RAM bank with the core's `sp128WriteRamBank` (no contention, no machine time) */
+  protected writeRamBank(bank: number, offset: number, value: number): void {
+    if (offset < 0 || offset >= 0x4000) return;
+    this.requireWasmV2Runtime().exports.sp128WriteRamBank(bank, offset, value & 0xff);
+  }
+
   override getCurrentPartitions(): number[] {
     const wasm = this.requireWasmV2Runtime().exports;
     const slot0 = wasm.sp128GetCurrentPartition(0);

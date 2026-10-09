@@ -130,6 +130,15 @@ export class ScorpionWasmV2Machine extends ZxSpectrum128WasmV2Machine {
     return runtime.ram.subarray(bank * 0x4000, (bank + 1) * 0x4000);
   }
 
+  /** Its 16 RAM banks (bank 0 also at $0000 under $1FFD) go through the core's mirror-aware write */
+  override writeMemoryPartition(index: number, offset: number, value: number): void {
+    if (index < 0) {
+      super.writeMemoryPartition(index, offset, value);
+      return;
+    }
+    this.writeRamBank(index & 0x0f, offset, value);
+  }
+
   /** One flag per 8K: ROM unless $1FFD put RAM bank 0 at $0000 */
   override getRomFlags(): boolean[] {
     const ramAtZero = (this.requireWasmV2Runtime().exports.sp128GetPort1ffd() & 0x01) !== 0;

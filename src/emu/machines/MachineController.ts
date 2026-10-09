@@ -68,6 +68,7 @@ import { machineRegistry } from "@common/machines/machine-registry";
 import { mediaStore } from "./media/media-info";
 import { PANE_ID_EMU } from "@common/integration/constants";
 import { logLineOutput } from "./logOutput";
+import { writePartitionByte } from "./writeCodeSegments";
 import { commentStopLines } from "./commentStopReport";
 import type { UnitTestDebugInfo } from "@abstractions/CodeToInject";
 import {
@@ -2423,7 +2424,7 @@ export class MachineController implements IMachineController {
         m.doWriteMemory(address, byte);
       } else {
         const memory = m.getMemoryPartition(labels.callAddr.partition);
-        memory[address & (memory.length - 1)] = byte;
+        writePartitionByte(m, labels.callAddr.partition, address & (memory.length - 1), byte);
       }
     }
 

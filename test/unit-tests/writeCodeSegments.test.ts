@@ -38,6 +38,15 @@ describe("writeCodeSegments", () => {
     expect(m.flat[0xc100]).toBe(0);
   });
 
+  it("writes a banked byte through the machine's writeMemoryPartition when it has one", () => {
+    const m = fakeMachine(0x4000);
+    const writes: [number, number, number][] = [];
+    const target = { ...m, writeMemoryPartition: (i: number, o: number, v: number) => void writes.push([i, o, v]) };
+    writeCodeSegments(target, [{ bank: 2, bankOffset: 0x3fff, startAddress: 0xbfff, emittedCode: [0x1ff] }], false);
+    expect(writes).toEqual([[2, 0x3fff, 0xff]]);
+    expect(m.partitions.get(2)).toBeUndefined();
+  });
+
   it("splits a Next bank across its two 8K pages", () => {
     const m = fakeMachine(0x2000);
     const code = new Array(0x2002).fill(0).map((_, i) => i & 0xff);
