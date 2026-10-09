@@ -8,9 +8,9 @@
  *   piece checks `isAdvancedDebuggingEnabled` or gates its machine feature through
  *   `ADVANCED_DEBUGGING_FEATURES`.
  *
- * **Off unless the user opts in**, like `devTools.allow` (`docs/content/howto/diagnostics.mdx`):
+ * **On unless the user opts out**:
  *
- *   set -u features.advancedDebugging 1      (then restart Klive)
+ *   set -u features.advancedDebugging 0      (then restart Klive)
  *
  * The main process reads the setting **once, at startup**, and publishes the result as
  * `emulatorState.advancedDebugging` in the shared store, so the menus, the IDE, the emulator and
@@ -44,8 +44,10 @@ export const ADVANCED_DEBUGGING_OFF_MESSAGE =
   "Execution history and reverse debugging are turned off. Turn them on with " +
   `'set -u ${ADVANCED_DEBUGGING_SETTING} 1', then restart Klive.`;
 
-/** The switch as the user set it; anything but an explicit "on" is off. */
+/** The switch as the user set it; on while unset, off only when the user turned it off. */
 export function readAdvancedDebuggingSetting(reader: ReturnType<typeof createSettingsReader>): boolean {
+  const value = reader.readSetting(ADVANCED_DEBUGGING_SETTING);
+  if (value === undefined || value === null) return true;
   return reader.readBooleanSetting(ADVANCED_DEBUGGING_SETTING);
 }
 

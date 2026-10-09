@@ -16,7 +16,7 @@ import { isSettingsRowApplicable, SETTINGS_ROWS } from "@common/settings/setting
 import { historyEmptyMessage } from "@renderer/features/history/historyViewModel";
 
 /*
- * The advanced-debugging feature switch (G4 + G5): one user setting, off unless set, read once at
+ * The advanced-debugging feature switch (G4 + G5): one user setting, on unless turned off, read once at
  * startup into `emulatorState.advancedDebugging`; off, the group's machine features read as absent.
  */
 
@@ -29,8 +29,9 @@ describe("advanced-debugging switch - the setting", () => {
     expect(ADVANCED_DEBUGGING_SETTING).toBe("features.advancedDebugging");
   });
 
-  it("is off unless the user turns it on", () => {
-    expect(readAdvancedDebuggingSetting(userSetting(undefined))).toBe(false);
+  it("is on unless the user turns it off", () => {
+    expect(readAdvancedDebuggingSetting(userSetting(undefined))).toBe(true);
+    expect(readAdvancedDebuggingSetting(createSettingsReader({} as AppState))).toBe(true);
     for (const off of ["0", "false", "no", 0, false, ""]) expect(readAdvancedDebuggingSetting(userSetting(off))).toBe(false);
     for (const on of ["1", "true", "yes", 1, true]) expect(readAdvancedDebuggingSetting(userSetting(on))).toBe(true);
   });

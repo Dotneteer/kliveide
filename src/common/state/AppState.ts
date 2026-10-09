@@ -267,7 +267,7 @@ export type EmulatorState = {
   screenRecordingAvailable?: boolean;
   /**
    * The advanced-debugging feature switch (G4 + G5; `@common/features/advancedDebugging`): read once
-   * by the main process at startup from `features.advancedDebugging`. Off unless set.
+   * by the main process at startup from `features.advancedDebugging`. On unless turned off.
    */
   advancedDebugging?: boolean;
   /** A quick-saved machine state is held for the current machine (D19 of the state-files plan) */

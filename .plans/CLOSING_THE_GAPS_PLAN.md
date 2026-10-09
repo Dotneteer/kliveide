@@ -167,8 +167,8 @@ overlay now sits on a shared `EmulatorScreenOverlay`, and its render to the beam
 
 ## G4. Execution history and reverse debugging — **M → XL; full reverse debugging is in scope (D2)**
 
-> **Feature switch (G4 and G5):** the whole group is off unless the user runs
-> `set -u features.advancedDebugging 1` and restarts (`docs/content/howto/advanced-debugging.mdx`).
+> **Feature switch (G4 and G5):** the whole group is on unless the user runs
+> `set -u features.advancedDebugging 0` and restarts (`docs/content/howto/advanced-debugging.mdx`).
 > The main process reads it once at startup into `emulatorState.advancedDebugging`;
 > `src/common/features/advancedDebugging.ts` is the one gate. Off, `MF_EXEC_HISTORY` and
 > `MF_REVERSE_DEBUG` read as absent (`hasMachineFeature`) and the machine controller never starts the
@@ -218,8 +218,8 @@ then moves the frame trace to a diagnostics build, which shrinks the Next to abo
 
 ## G5. Coverage, profiling and unit tests — **M → L**
 
-> **Feature switch (G4 and G5):** the whole group is off unless the user runs
-> `set -u features.advancedDebugging 1` and restarts (`docs/content/howto/advanced-debugging.mdx`).
+> **Feature switch (G4 and G5):** the whole group is on unless the user runs
+> `set -u features.advancedDebugging 0` and restarts (`docs/content/howto/advanced-debugging.mdx`).
 > The main process reads it once at startup into `emulatorState.advancedDebugging`;
 > `src/common/features/advancedDebugging.ts` is the one gate. Off, `MF_EXEC_HISTORY` and
 > `MF_REVERSE_DEBUG` read as absent (`hasMachineFeature`) and the machine controller never starts the
