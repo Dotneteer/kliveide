@@ -104,9 +104,17 @@ function image(coreId: string, runtime: Runtime): Uint8Array {
   return image;
 }
 
+/**
+ * The first byte where the images differ, or -1. The images are tens of MB (the Next's is 56 MB)
+ * and nearly every call leaves them equal, so a native compare decides first: a JS byte loop over
+ * every call made the Next case alone take about a minute and time out on CI runners.
+ */
 function firstDifference(a: Uint8Array, b: Uint8Array): number {
+  if (Buffer.from(a.buffer, a.byteOffset, a.byteLength).equals(Buffer.from(b.buffer, b.byteOffset, b.byteLength))) {
+    return -1;
+  }
   for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return i;
-  return -1;
+  return a.length === b.length ? -1 : Math.min(a.length, b.length);
 }
 
 describe("export contract", () => {
@@ -131,14 +139,17 @@ describe("export contract", () => {
         const cls = classifyExport(coreId, name);
         if (cls !== "pure" && cls !== "debug") continue;
         const fn = runtime.exports[name] as (...args: number[]) => unknown;
+        let before = image(coreId, runtime);
         for (const value of ARGUMENT_SETS) {
-          const before = image(coreId, runtime);
           try {
             fn(...new Array(fn.length).fill(value));
           } catch {
             // --- A trap on a nonsense argument is not a state change
           }
-          const at = firstDifference(before, image(coreId, runtime));
+          // --- An unchanged image is the next call's "before"; a changed one ends this export
+          const after = image(coreId, runtime);
+          const at = firstDifference(before, after);
+          before = after;
           if (at >= 0) {
             offenders.push(`${name}(${value}) [${cls}] changed byte ${at}`);
             break;
