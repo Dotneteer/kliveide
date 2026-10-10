@@ -1,0 +1,86 @@
+1:"$Sreact.fragment"
+2:I[826,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-a25cc0b01a48815c.js"],"TOCProvider"]
+3:I[4637,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-a25cc0b01a48815c.js"],"Sidebar"]
+4:I[6665,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-a25cc0b01a48815c.js"],"ClientWrapper"]
+5:T85b,---
+description: "Export an annotated range or bank as Klive Z80 assembly that reassembles to exactly the same bytes."
+---
+
+import { Callout } from 'nextra/components'
+
+# Exporting Source
+
+Once a program is annotated, you can turn it into **source code**: Klive Z80 assembly with your
+labels, comments and data regions, that reassembles to exactly the bytes it came from.
+
+Use **Export as Source...** from the tools button of the Disassembly view or a bank document, or
+**Export as Source** on a named graphic. The command takes a range of the 64K view or a whole bank:
+
+```
+export-asm game.kz80.asm $8000 $9fff -open
+export-asm bank3.kz80.asm -bank 3
+```
+
+## Proven, not hoped for
+
+After writing the file, Klive assembles it and compares the result with the bytes:
+
+```
+Byte-identical: yes
+```
+
+If anything differs, the first differing addresses are listed instead.
+
+The export takes care of the cases where a disassembly's text would *not* assemble back to the same
+bytes:
+
+- **Non-canonical encodings** — the `NEG` and `RETN` mirrors, the alternative `IM` encodings, the
+  long `LD (nn),HL`, a `DD`/`FD` prefix that has no effect, undefined `ED` opcodes — are written as
+  `.defb` with the instruction in the comment.
+- An instruction that **runs past its region** is written as the bytes the region holds.
+- **Copper** and **DMA** programs, and the ROM's inline `RST $08` / `RST $28` bytes, are `.defb` with
+  their decoding as the comment.
+- A **label** the assembler would not accept (`hl`, `ld`, a name that differs from another only in
+  case) is renamed, and the output says how.
+- A name used in an operand but defined **outside the range** — a ROM routine, a label in another
+  bank — becomes `NAME .equ $NNNN`.
+- A **skip region** is exported as its bytes; `-skip gap` leaves it out and starts a new `.org`
+  instead, and says the result is shorter.
+
+A 128K bank is assembled into its bank with `.model Spectrum128` and `.bank`; a Next export uses
+`.model next` for the Next's own instructions.
+
+<Callout type="info">
+`-noverify` skips the check. The export is always written in Klive's own assembly dialect.
+</Callout>11:X
+16:X
+16:C
+0:{"buildId":"UKcfi3vdmoWAsMvTfpQvX","data":[{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L2",null,{"value":[{"value":"Proven, not hoped for","id":"proven-not-hoped-for","depth":2}],"children":[["$","$L3",null,{}],["$","$L4",null,{"metadata":{"description":"Export an annotated range or bank as Klive Z80 assembly that reassembles to exactly the same bytes.","title":"Exporting Source","filePath":"content/working-with-ide/exporting-source.mdx","timestamp":1791607692000},"sourceCode":"$5","children":[["$","div",null,{"id":"nextra-skip-nav"}],["$","main",null,{"data-pagefind-body":true,"children":[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Exporting Source","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Once a program is annotated, you can turn it into ",["$","strong",null,{"children":"source code"}],": Klive Z80 assembly with your\nlabels, comments and data regions, that reassembles to exactly the bytes it came from."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Use ",["$","strong",null,{"children":"Export as Source…"}]," from the tools button of the Disassembly view or a bank document, or\n",["$","strong",null,{"children":"Export as Source"}]," on a named graphic. The command takes a range of the 64K view or a whole bank:"]}],"\n","$L6","\n","$L7","\n","$L8","\n","$L9","\n","$La","\n","$Lb","\n","$Lc","\n","$Ld","\n","$Le"]}]]}]]}]}],null,"$Lf"]}],"isPartial":"$@10","staleTime":"$11","varyParams":null},{"rsc":"$L12","isPartial":"$@13","staleTime":"$11","varyParams":null},{"rsc":"$L14","isPartial":"$@15","staleTime":"$11","varyParams":"$16"}],"isUpgradeableISRFallback":false,"a":"$@17","rootVaryParams":null,"needsRuntimeRequest":"$@18"}
+19:I[9023,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-a25cc0b01a48815c.js"],"ToggleWordWrapButton"]
+1a:I[721,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-a25cc0b01a48815c.js"],"HeadingAnchor"]
+1b:I[484,[],"OutletBoundary"]
+1c:"$Sreact.suspense"
+1e:I[484,[],"ViewportBoundary"]
+1f:I[484,[],"MetadataBoundary"]
+20:I[7121,[],""]
+21:I[4581,[],""]
+6:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L19",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"export-asm game.kz80.asm $8000 $9fff -open"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"export-asm bank3.kz80.asm -bank 3"}]}]]}]]}]]}]
+7:["$","h2",null,{"id":"proven-not-hoped-for","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Proven, not hoped for",["$","$L1a",null,{"id":"proven-not-hoped-for"}]]}]
+8:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"After writing the file, Klive assembles it and compares the result with the bytes:"}]
+9:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L19",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"Byte-identical: yes"}]}]}]]}]]}]
+a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If anything differs, the first differing addresses are listed instead."}]
+b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The export takes care of the cases where a disassembly’s text would ",["$","em",null,{"children":"not"}]," assemble back to the same\nbytes:"]}]
+c:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Non-canonical encodings"}]," — the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"NEG"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RETN"}]," mirrors, the alternative ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"IM"}]," encodings, the\nlong ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"LD (nn),HL"}],", a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"DD"}],"/",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"FD"}]," prefix that has no effect, undefined ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ED"}]," opcodes — are written as\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".defb"}]," with the instruction in the comment."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["An instruction that ",["$","strong",null,{"children":"runs past its region"}]," is written as the bytes the region holds."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Copper"}]," and ",["$","strong",null,{"children":"DMA"}]," programs, and the ROM’s inline ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RST $08"}]," / ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RST $28"}]," bytes, are ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".defb"}]," with\ntheir decoding as the comment."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["A ",["$","strong",null,{"children":"label"}]," the assembler would not accept (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"hl"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ld"}],", a name that differs from another only in\ncase) is renamed, and the output says how."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["A name used in an operand but defined ",["$","strong",null,{"children":"outside the range"}]," — a ROM routine, a label in another\nbank — becomes ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"NAME .equ $NNNN"}],"."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["A ",["$","strong",null,{"children":"skip region"}]," is exported as its bytes; ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"-skip gap"}]," leaves it out and starts a new ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".org"}],"\ninstead, and says the result is shorter."]}],"\n"]}]
+d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A 128K bank is assembled into its bank with ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".model Spectrum128"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".bank"}],"; a Next export uses\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".model next"}]," for the Next’s own instructions."]}]
+e:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"-noverify"}]," skips the check. The export is always written in Klive’s own assembly dialect."]}]}]]}]
+f:["$","$L1b",null,{"children":["$","$1c",null,{"name":"Next.MetadataOutlet","children":"$@1d"}]}]
+12:["$","$1","h",{"children":[null,["$","$L1e",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","div",null,{"hidden":true,"children":["$","$L1f",null,{"children":["$","$1c",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Exporting Source - Klive IDE"}],["$","meta","1",{"name":"description","content":"Export an annotated range or bank as Klive Z80 assembly that reassembles to exactly the same bytes."}],["$","meta","2",{"property":"og:title","content":"KliveIDE Documentation"}],["$","meta","3",{"property":"og:description","content":"The comprehensive guide to KliveIDE"}],["$","meta","4",{"name":"twitter:card","content":"summary"}],["$","meta","5",{"name":"twitter:title","content":"KliveIDE Documentation"}],["$","meta","6",{"name":"twitter:description","content":"The comprehensive guide to KliveIDE"}]]}]}]}],null]}]
+14:["$","$1","c",{"children":[null,["$","$L20",null,{"parallelRouterKey":"children","template":["$","$L21",null,{}]}]]}]
+18:true
+1d:null
+11:300
+11:C
+17:0
+13:"$undefined"
+15:"$undefined"
+10:"$undefined"

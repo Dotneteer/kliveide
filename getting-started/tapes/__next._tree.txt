@@ -5,4 +5,4 @@
 :HL["/kliveide/images/getting-started/tape-header-bytes.png","image"]
 :HL["/kliveide/images/getting-started/tape-viewer-commands.png","image"]
 :HL["/kliveide/images/getting-started/tape-viewer-loaded.png","image"]
-0:{"tree":{"name":"","param":null,"prefetchHints":4176,"slots":{"children":{"name":"(docs)","param":null,"prefetchHints":4144,"slots":{"children":{"name":"mdxPath","param":{"type":"c","key":"getting-started/tapes","siblings":["_not-found","_global-error"]},"prefetchHints":4160,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}}}}}},"staleTime":300,"buildId":"dxN_yGp0CSVqjutW30o6Q"}
+0:{"tree":{"name":"","param":null,"prefetchHints":4176,"slots":{"children":{"name":"(docs)","param":null,"prefetchHints":4144,"slots":{"children":{"name":"mdxPath","param":{"type":"c","key":"getting-started/tapes","siblings":["_not-found","_global-error"]},"prefetchHints":4160,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}}}}}},"staleTime":300,"buildId":"UKcfi3vdmoWAsMvTfpQvX"}

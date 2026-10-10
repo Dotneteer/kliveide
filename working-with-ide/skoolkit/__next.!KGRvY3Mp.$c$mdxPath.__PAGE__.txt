@@ -1,0 +1,105 @@
+1:"$Sreact.fragment"
+2:I[826,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-a25cc0b01a48815c.js"],"TOCProvider"]
+3:I[4637,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-a25cc0b01a48815c.js"],"Sidebar"]
+4:I[6665,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-a25cc0b01a48815c.js"],"ClientWrapper"]
+5:Tb01,---
+description: "Import and export SkoolKit skool and control files: exchange annotated disassemblies with the community standard."
+---
+
+import { Callout } from 'nextra/components'
+
+# SkoolKit Files
+
+[SkoolKit](https://skoolkit.ca) is the community standard for published Spectrum disassemblies.
+Klive reads and writes its two file formats: **skool** files (a full annotated disassembly) and
+**control** files (`.ctl`, the structure and comments, which SkoolKit combines with a snapshot).
+
+<Callout type="info">
+Klive's skool and ctl readers and writers are its own, written from SkoolKit's documented file
+formats. SkoolKit itself is not needed.
+</Callout>
+
+## Importing
+
+Open the program first — a snapshot, a NEX file, your project — so its bytes are in the machine.
+Then use **Import SkoolKit File...** from the tools button of the Disassembly view, or:
+
+```
+skool-import game.skool -apply
+```
+
+Klive never builds memory from a skool file. It assembles each instruction at its address and
+compares it with the bytes it already has; an entry that does not match keeps its comments and labels
+but not its regions, and is listed. A control file has no instructions, so it is checked by length
+only.
+
+What comes in:
+
+| SkoolKit | Klive |
+|---|---|
+| `c`, `b`, `w`, `t` entries and sub-blocks | code, bytes, words and text regions |
+| `s`, `g`, `u` entries | bytes regions |
+| `i` entries | skip regions |
+| `@label=` | a label |
+| An entry's title, description, registers and start comment | the synopsis on its first address |
+| Instruction comments | end-of-line comments (a `{...}` comment on its first instruction) |
+| Mid-block comments | the synopsis of the instruction they precede |
+| End comments | lines after the entry's last instruction |
+
+Skool macros such as `#R32768` are kept as text. What Klive does not model — other `@` directives,
+text between entries, `*` entry points — is kept with the bank, so exporting an unedited import
+gives the file back. Two labels that differ only in case are imported as `NAME` and `NAME_2`.
+
+`@bank` switches the bank at `$C000` in a 128K file. Addresses in the ROM go to *your* ROM
+annotations only, never to the ones Klive ships.
+
+## Exporting
+
+**Export as SkoolKit** from the tools button, or:
+
+```
+skool-export game.skool -bank all
+skool-export game.ctl -ctl $8000 $9fff
+```
+
+The export uses SkoolKit's conventional style: upper case, `$` hex, numeric operands, and `@label=`
+lines for names. A new entry starts at every region boundary and at every address with a synopsis.
+A 48K export is one file; a 128K export adds every other annotated bank as an `@bank` section at
+`$C000` (or one file per bank with `-split`). A Next bank exports as its own file at `$C000`. A named
+graphic becomes a `b` entry whose description draws it with a `#UDGARRAY` macro.a:X
+f:X
+f:C
+0:{"buildId":"UKcfi3vdmoWAsMvTfpQvX","data":[{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L2",null,{"value":[{"value":"Importing","id":"importing","depth":2},{"value":"Exporting","id":"exporting","depth":2}],"children":[["$","$L3",null,{}],["$","$L4",null,{"metadata":{"description":"Import and export SkoolKit skool and control files: exchange annotated disassemblies with the community standard.","title":"SkoolKit Files","filePath":"content/working-with-ide/skoolkit.mdx","timestamp":1791607692000},"sourceCode":"$5","children":["$L6","$L7"]}]]}]}],null,"$L8"]}],"isPartial":"$@9","staleTime":"$a","varyParams":null},{"rsc":"$Lb","isPartial":"$@c","staleTime":"$a","varyParams":null},{"rsc":"$Ld","isPartial":"$@e","staleTime":"$a","varyParams":"$f"}],"isUpgradeableISRFallback":false,"a":"$@10","rootVaryParams":null,"needsRuntimeRequest":"$@11"}
+12:I[721,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-a25cc0b01a48815c.js"],"HeadingAnchor"]
+13:I[9023,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-a25cc0b01a48815c.js"],"ToggleWordWrapButton"]
+1e:I[484,[],"OutletBoundary"]
+1f:"$Sreact.suspense"
+21:I[484,[],"ViewportBoundary"]
+22:I[484,[],"MetadataBoundary"]
+23:I[7121,[],""]
+24:I[4581,[],""]
+6:["$","div",null,{"id":"nextra-skip-nav"}]
+7:["$","main",null,{"data-pagefind-body":true,"children":[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["SkoolKit Files","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","a",null,{"href":"https://skoolkit.ca","target":"_blank","rel":"noreferrer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["SkoolKit",[" ",["$","svg",null,{"fill":"none","stroke":"currentColor","strokeLinecap":"round","strokeLinejoin":"round","strokeWidth":1.7,"viewBox":"0 0 24 24","height":"1em","className":"x:inline x:align-baseline x:shrink-0","children":[["$","path",null,{"d":"M7 17L17 7"}],["$","path",null,{"d":"M7 7h10v10"}]]}]]]}]," is the community standard for published Spectrum disassemblies.\nKlive reads and writes its two file formats: ",["$","strong",null,{"children":"skool"}]," files (a full annotated disassembly) and\n",["$","strong",null,{"children":"control"}]," files (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".ctl"}],", the structure and comments, which SkoolKit combines with a snapshot)."]}],"\n",["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Klive’s skool and ctl readers and writers are its own, written from SkoolKit’s documented file\nformats. SkoolKit itself is not needed."}]}]]}],"\n",["$","h2",null,{"id":"importing","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Importing",["$","$L12",null,{"id":"importing"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Open the program first — a snapshot, a NEX file, your project — so its bytes are in the machine.\nThen use ",["$","strong",null,{"children":"Import SkoolKit File…"}]," from the tools button of the Disassembly view, or:"]}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L13",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],"$L14"]}]]}],"\n","$L15","\n","$L16","\n","$L17","\n","$L18","\n","$L19","\n","$L1a","\n","$L1b","\n","$L1c","\n","$L1d"]}]
+8:["$","$L1e",null,{"children":["$","$1f",null,{"name":"Next.MetadataOutlet","children":"$@20"}]}]
+b:["$","$1","h",{"children":[null,["$","$L21",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","div",null,{"hidden":true,"children":["$","$L22",null,{"children":["$","$1f",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"SkoolKit Files - Klive IDE"}],["$","meta","1",{"name":"description","content":"Import and export SkoolKit skool and control files: exchange annotated disassemblies with the community standard."}],["$","meta","2",{"property":"og:title","content":"KliveIDE Documentation"}],["$","meta","3",{"property":"og:description","content":"The comprehensive guide to KliveIDE"}],["$","meta","4",{"name":"twitter:card","content":"summary"}],["$","meta","5",{"name":"twitter:title","content":"KliveIDE Documentation"}],["$","meta","6",{"name":"twitter:description","content":"The comprehensive guide to KliveIDE"}]]}]}]}],null]}]
+d:["$","$1","c",{"children":[null,["$","$L23",null,{"parallelRouterKey":"children","template":["$","$L24",null,{}]}]]}]
+11:true
+14:["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"skool-import game.skool -apply"}]}]}]
+15:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Klive never builds memory from a skool file. It assembles each instruction at its address and\ncompares it with the bytes it already has; an entry that does not match keeps its comments and labels\nbut not its regions, and is listed. A control file has no instructions, so it is checked by length\nonly."}]
+16:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"What comes in:"}]
+17:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"SkoolKit","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Klive","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"c"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"b"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"w"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"t"}]," entries and sub-blocks"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"code, bytes, words and text regions","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"s"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"g"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"u"}]," entries"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"bytes regions","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"i"}]," entries"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"skip regions","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"@label="}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"a label","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"An entry’s title, description, registers and start comment","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"the synopsis on its first address","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Instruction comments","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["end-of-line comments (a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"{...}"}]," comment on its first instruction)"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Mid-block comments","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],"$L25"],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$L26"]}]]}]
+18:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Skool macros such as ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"#R32768"}]," are kept as text. What Klive does not model — other ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"@"}]," directives,\ntext between entries, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"*"}]," entry points — is kept with the bank, so exporting an unedited import\ngives the file back. Two labels that differ only in case are imported as ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"NAME"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"NAME_2"}],"."]}]
+19:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"@bank"}]," switches the bank at ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$C000"}]," in a 128K file. Addresses in the ROM go to ",["$","em",null,{"children":"your"}]," ROM\nannotations only, never to the ones Klive ships."]}]
+1a:["$","h2",null,{"id":"exporting","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Exporting",["$","$L12",null,{"id":"exporting"}]]}]
+1b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Export as SkoolKit"}]," from the tools button, or:"]}]
+1c:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L13",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"skool-export game.skool -bank all"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"skool-export game.ctl -ctl $8000 $9fff"}]}]]}]]}]]}]
+1d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The export uses SkoolKit’s conventional style: upper case, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$"}]," hex, numeric operands, and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"@label="}],"\nlines for names. A new entry starts at every region boundary and at every address with a synopsis.\nA 48K export is one file; a 128K export adds every other annotated bank as an ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"@bank"}]," section at\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$C000"}]," (or one file per bank with ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"-split"}],"). A Next bank exports as its own file at ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$C000"}],". A named\ngraphic becomes a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"b"}]," entry whose description draws it with a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"#UDGARRAY"}]," macro."]}]
+20:null
+a:300
+25:["$","td",null,{"children":"the synopsis of the instruction they precede","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+26:["$","tr",null,{"children":[["$","td",null,{"children":"End comments","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"lines after the entry’s last instruction","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+a:C
+10:0
+c:"$undefined"
+e:"$undefined"
+9:"$undefined"
