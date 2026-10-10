@@ -116,6 +116,8 @@ export const Modal = ({
   const doCloseRef = useRef<(result?: any) => void>();
   const restoreFocusElementRef = useRef<HTMLElement | null>(null);
   const hasCapturedRestoreTargetRef = useRef(false);
+  /** Bumped each time the open effect is set up; see its cleanup. */
+  const openGenerationRef = useRef(0);
 
   const doClose = useCallback((result?: any) => {
     if (getModalStackSize() <= 1) {
@@ -194,16 +196,36 @@ export const Modal = ({
       }
     });
 
+    // --- Read through a local: the cleanup wants the ref's *latest* value, which is the point.
+    const generations = openGenerationRef;
+    const generation = ++generations.current;
+
     return () => {
       unregister();
       if (getModalStackSize() === 0) {
         store.dispatch(dimMenuAction(false), messageSource);
       }
-      const elementToRestore = restoreFocusElementRef.current;
-      restoreFocusElementRef.current = null;
-      if (elementToRestore && document.contains(elementToRestore)) {
-        elementToRestore.focus();
-      }
+      /*
+       * Give focus back only when the dialog has really gone — decided a microtask later.
+       *
+       * StrictMode (always on in development) tears every effect down and sets it up again,
+       * synchronously, right after the dialog mounts. Restoring here unconditionally therefore ran
+       * once while the dialog was *opening*: the field its body had just autofocused lost focus to
+       * the opener. That only bit when the opener was still in the document — a NEX listing whose
+       * annotation dialog was opened by a keyboard shortcut — and not when it was a context-menu
+       * item, which is gone by then. So the dialog opened with its text box unfocused.
+       *
+       * A re-run of this effect bumps the generation before the microtask runs, which is how the
+       * remount is told apart from a real close; the restore target is kept for that close.
+       */
+      queueMicrotask(() => {
+        if (generations.current !== generation) return;
+        const elementToRestore = restoreFocusElementRef.current;
+        restoreFocusElementRef.current = null;
+        if (elementToRestore && document.contains(elementToRestore)) {
+          elementToRestore.focus();
+        }
+      });
     };
   }, [isOpen, messageSource, modalId, store]);
 
