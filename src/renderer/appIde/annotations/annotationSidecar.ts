@@ -16,6 +16,7 @@ import {
   parseAnnotations,
   toSidecarBanks
 } from "./programAnnotations";
+import { romSidecarText } from "./romSidecarWriter";
 
 export type AnnotationSidecarPaths = {
   fullPath: string;
@@ -142,8 +143,21 @@ export async function saveAnnotationSubtree(
   annotations: ProgramAnnotations
 ): Promise<void> {
   const raw = await readRawSidecar(projectService, fullPath);
-  const merged: Record<string, unknown> = { ...raw };
   const stored = toSidecarAnnotations(annotations);
+  /*
+   * A ROM sidecar is written the way the CLI writes it: only its banks change, its provenance moves
+   * with them, and the text is the canonical one — so a working copy can be shipped as it is
+   * (`romSidecarWriter.ts`). The generic merge below would drop provenance on new entries.
+   */
+  if ((raw.machine ?? stored.machine) === "rom") {
+    const base = Object.keys(raw).length > 0 ? raw : { ...stored, banks: {} };
+    await projectService.saveFileContent(
+      fullPath,
+      romSidecarText(base, (stored.banks ?? {}) as Record<string, Record<string, unknown>>)
+    );
+    return;
+  }
+  const merged: Record<string, unknown> = { ...raw };
   for (const key of ANNOTATION_KEYS) {
     if (stored[key] === undefined) {
       delete merged[key];

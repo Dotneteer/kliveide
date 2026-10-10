@@ -1,6 +1,6 @@
 # Editing ROM Annotations in the IDE — Implementation Plan
 
-Status: **accepted** (2026-10-10). The author asked for implementation; the suggested answers in §9 are taken as the decisions.
+Status: **implemented** (2026-10-10), phases W-0 to W-5. The suggested answers in §9 are the decisions; §10 records where the implementation differs from the text.
 
 ## 0. The model, in the author's terms
 
@@ -242,3 +242,36 @@ Standing rules on completion:
 | Q2 | Should every new entry default to `observed`, with `manual` chosen in the dialog? Or should the dialog ask each time? | Default to `observed`. Almost every entry is written from the bytes, and asking every time slows down level-1 work. |
 | Q3 | Should the old additive `<crc32>.rom.dis` overlays be migrated automatically (§4.2), or simply ignored? | Migrate them, keeping a `.bak`. The cost is small, and no annotation is lost silently. |
 | Q4 | Should a working copy record the hash of the shipped file it started from, so the editor can say the shipped file has moved on (T5)? | Yes. A Klive update would otherwise put the working copy silently out of date, and copying it back would undo the update. |
+
+## 10. Implementation notes (2026-10-10)
+
+Where the code differs from the plan above, and why:
+
+- **Working copies are found by name, not by an index of the folder (§4.2).** A page's working copy is
+  `RomAnnotations/<shipped sidecar>` when Klive ships one for its CRC, otherwise `<path>.dis` beside a
+  custom ROM (or `RomAnnotations/<file>.dis` when not writable). It applies only when its `pages` name
+  the page's CRC, read from the file because the model does not carry `pages`. The result is the same,
+  with no folder listing: a byte-identical copy of `sp48.rom` still finds `RomAnnotations/sp48.rom.dis`.
+- **Provenance is chosen in the editor's toolbar, not in each dialog (R6).** **New entries:
+  observed | manual** sets what a *created* entry is recorded as. A *changed* entry keeps the
+  provenance it had (fixing a `manual` name's typo must not turn it into `observed`), unless it had none
+  or was `derived`. `rom-ann-provenance` sets an existing entry's. This keeps the seven dialogs
+  unchanged.
+- **The shipped text's CRC is kept in `<working copy>.base`, not in a key of the sidecar (T5),** so a
+  working copy stays byte for byte what `rom:annotations` writes and can be copied without editing.
+- **A custom 48K ROM's working copy still gets `sp48.rom.dis` byte-bound below it (Q7)** when it
+  declares no `inherits`, as an implicit inheritance. Otherwise the first edit would make every shipped
+  name vanish from a ROM that still has the 48K routines.
+- **Next unlabelled target (E10) is a button on each page row of the editor,** which opens the page at
+  the next unlabelled target, cycling. There is no `N` key in the listing.
+- **Open ROM Annotations opens the editor, not the page at the row.** The live view does not hold the
+  page's bytes, and the editor is one click from the page.
+- **A page document lists the file's own entries.** A working copy that `inherits` another sidecar shows
+  the inherited names in the live view and the resolver, but not in its own page document, which edits
+  the file and lists what is in it.
+- **A shipped sidecar opened in the editor is read-only,** through a new `readOnly` flag in the
+  annotation editor's environment (`annotationReadOnly` in the bank document's view state): every
+  editing entry is unavailable, nothing is written (the controller's `publish` refuses), and no warning
+  is shown.
+- **`ann-detect rom` needs a working copy,** like any other edit to a ROM page.
+

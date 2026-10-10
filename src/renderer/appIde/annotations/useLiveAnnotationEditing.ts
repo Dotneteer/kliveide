@@ -23,6 +23,11 @@ import { runLiveAnnotationAction } from "./liveAnnotationEditing";
 import { liveRowTarget, rowsOfTarget, type LiveRowTarget, type LiveRowTargetContext } from "./liveListingPort";
 import { ANNOTATION_BANK_SIZE, decodedRegionTypesFor } from "./programAnnotations";
 import { getRomPartition } from "./romAnnotations";
+import { useMainApi } from "@renderer/core/MainApi";
+import {
+  openRomAnnotationEditor,
+  startEditingRomPartition
+} from "@renderer/appIde/commands/RomAnnotationCommands";
 
 /** The region entries a row menu offers on a machine. */
 function regionActionsFor(space: BankSpace | undefined): { id: NexAnnotationMenuAction; text: string }[] {
@@ -51,6 +56,7 @@ export function useLiveAnnotationEditing(args: {
   navigateToAddress: (address: number) => void;
 }) {
   const { projectService } = useAppServices();
+  const mainApi = useMainApi();
   const activeSet = useActiveAnnotationSet();
   const machineState = useSelector((s) => s.emulatorState?.machineState);
   const machineRunning =
@@ -70,6 +76,12 @@ export function useLiveAnnotationEditing(args: {
     }),
     [activeSet]
   );
+
+  /** The ROM partition a row is in, under the listing's paging, when the IDE has identified it. */
+  const romPartitionAt = useCallback((address: number) => {
+    const site = argsRef.current.bankSpace?.siteAt(address & 0xffff, argsRef.current.memorySnapshot?.slots);
+    return site?.kind === "rom" ? getRomPartition(site.partition) : undefined;
+  }, []);
 
   /** The target's bank as far as the listing read it: its bytes at their own offsets. */
   const bankImage = useCallback((): Uint8Array => {
@@ -106,7 +118,9 @@ export function useLiveAnnotationEditing(args: {
       if (!item || !argsRef.current.bankSpace) return [];
       const target = liveRowTarget(item.address, contextOf());
       const disabledReason = "disabledReason" in target ? target.disabledReason : undefined;
+      const rom = romPartitionAt(item.address);
       return annotationRowMenuItems({
+        ...(rom ? { romEditor: rom.hasWorkingCopy ? "open" : "start" } : {}),
         disabledReason,
         destination: "destination" in target ? target.destination : undefined,
         rom: "kind" in target && target.kind === "rom",
@@ -116,11 +130,26 @@ export function useLiveAnnotationEditing(args: {
         regionActions: regionActionsFor(argsRef.current.bankSpace)
       });
     },
-    [contextOf, hints]
+    [contextOf, hints, romPartitionAt]
   );
 
   const run = useCallback(
     async (item: DisassemblyItem, action: NexAnnotationMenuAction): Promise<void> => {
+      if (action === "open-rom-annotations" || action === "start-rom-annotations") {
+        const rom = romPartitionAt(item.address);
+        if (!rom) return;
+        const hub = projectService.getActiveDocumentHubService();
+        try {
+          if (action === "open-rom-annotations") {
+            await openRomAnnotationEditor(hub, rom.workingPath);
+          } else {
+            await startEditingRomPartition(mainApi, projectService, hub, rom.partition);
+          }
+        } catch (err) {
+          await mainApi.displayMessageBox("error", "ROM annotations", (err as Error).message);
+        }
+        return;
+      }
       const context = contextOf();
       const target = liveRowTarget(item.address, context);
       if (!("annotationPath" in target)) return;
@@ -140,7 +169,7 @@ export function useLiveAnnotationEditing(args: {
         targetRef.current = undefined;
       }
     },
-    [contextOf, machineRunning, ports, projectService]
+    [contextOf, machineRunning, mainApi, ports, projectService, romPartitionAt]
   );
 
   /** The action a key stands for on a row, when its menu entry is enabled there. */

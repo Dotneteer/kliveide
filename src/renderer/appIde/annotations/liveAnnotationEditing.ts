@@ -10,7 +10,6 @@ import type { NexAnnotationEditorIntent } from "@renderer/appIde/DocumentPanels/
 import { NexAnnotationEditorController } from "@renderer/appIde/DocumentPanels/Next/annotationEditor/NexAnnotationEditorController";
 import { loadAnnotationSidecar } from "./annotationSidecar";
 import { peekAnnotationSession, seedAnnotationSession, updateAnnotationSession } from "./annotationSession";
-import { formatAnnotations } from "./annotationSidecar";
 import {
   createDefaultAnnotations,
   DEFAULT_REGION,
@@ -27,8 +26,9 @@ import type { LiveRowTarget } from "./liveListingPort";
  * The controller is the bank document's, **reused unchanged**: for one action it is given the bank
  * the row is in (`liveRowTarget`), the rows of that piece, and the intent; it opens the same dialog
  * and publishes through the same session (T5). Before that, the sidecar — or the bank in it — is
- * created if this is its first annotation: a snapshot's `.dis`, a project's `annotations.dis` and a
- * ROM page's user layer are all made by the first edit.
+ * created if this is its first annotation: a snapshot's `.dis` and a project's `annotations.dis` are
+ * made by the first edit. A ROM page's working copy is not: it is a copy of the shipped sidecar,
+ * made deliberately (`rom-ann-new`), and a ROM row without one is not editable at all.
  */
 
 /** The intent a live row's menu entry or shortcut stands for. */
@@ -79,23 +79,10 @@ export async function ensureAnnotatedBank(
       annotations = state.annotations;
       seedAnnotationSession(target.annotationPath, annotations!);
     } else if (state.status === "missing") {
+      // --- A ROM page is edited only in a working copy that exists (rom-ann-new makes one): the
+      // --- first edit never makes it, or a page would quietly stop showing its shipped annotations
+      if (target.kind === "rom") return undefined;
       annotations = createDefaultAnnotations({ machine: target.create.machine, loadedBanks: [] });
-      // --- A ROM sidecar names the page it describes (§5.1); the subtree writer keeps the key
-      const stored =
-        target.kind === "rom" && target.create.crc32
-          ? {
-              ...JSON.parse(formatAnnotations(annotations)),
-              pages: {
-                [String(target.bank)]: {
-                  crc32: target.create.crc32,
-                  name: target.create.romName ?? target.create.crc32
-                }
-              }
-            }
-          : undefined;
-      if (stored) {
-        await projectService.saveFileContent(target.annotationPath, `${JSON.stringify(stored, null, 2)}\n`);
-      }
     } else {
       // --- A file that does not validate is not overwritten by an edit
       return undefined;

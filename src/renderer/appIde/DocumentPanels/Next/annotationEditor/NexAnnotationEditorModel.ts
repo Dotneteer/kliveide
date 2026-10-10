@@ -46,6 +46,12 @@ export type NexAnnotationEditorEnvironment = {
    * as unavailable rather than guessing from the sidecar's declared paging.
    */
   machineRunning: boolean;
+  /**
+   * The annotations are shown but never written: a shipped ROM sidecar, which is edited only through
+   * a working copy (`.plans/ROM_ANNOTATION_EDITING_PLAN.md`). Every editing action is unavailable;
+   * Go to Definition, which only reads, still works.
+   */
+  readOnly?: boolean;
 };
 
 /**
@@ -191,7 +197,10 @@ export const reduce: UiReducer<NexAnnotationEditorState, NexAnnotationEditorEven
 /** Are annotations available to edit at all? */
 export function isAnnotationEnabled(state: NexAnnotationEditorState): boolean {
   return (
-    !!state.env.annotationPath && state.env.bank !== undefined && !!state.annotations
+    !!state.env.annotationPath &&
+    state.env.bank !== undefined &&
+    !!state.annotations &&
+    !state.env.readOnly
   );
 }
 

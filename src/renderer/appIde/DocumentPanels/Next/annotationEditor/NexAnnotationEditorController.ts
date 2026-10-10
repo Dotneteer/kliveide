@@ -276,8 +276,9 @@ export class NexAnnotationEditorController extends UiController<
 
   /** Publish an edited model, or do nothing when the transform reported no change. */
   private publish(next: ProgramAnnotations | undefined): boolean {
-    const { annotationPath } = this.state.env;
-    if (!next || !annotationPath) return false;
+    const { annotationPath, readOnly } = this.state.env;
+    // --- A read-only listing (a shipped ROM sidecar) writes nothing, not even its view settings
+    if (!next || !annotationPath || readOnly) return false;
     this.ports.session.update(annotationPath, next);
     return true;
   }

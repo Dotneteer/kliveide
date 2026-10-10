@@ -8,6 +8,7 @@ import {
   TAPE_BLOCK_VIEWER,
   DSK_VIEWER,
   NEX_VIEWER,
+  ROM_ANNOTATION_EDITOR,
   Z88_SNAPSHOT_VIEWER,
   SPECTRUM_SNAPSHOT_VIEWER,
   RZX_VIEWER,
@@ -106,6 +107,7 @@ import {
 } from "@common/machines/constants";
 import { BlinkPanel } from "./appIde/SideBarPanels/BlinkPanel";
 import { createNexFileViewerPanel } from "./appIde/DocumentPanels/Next/NexFileViewerPanel";
+import { createRomAnnotationEditorPanel } from "./appIde/DocumentPanels/Rom/RomAnnotationEditorPanel";
 import { createZ88SnapshotViewerPanel } from "./appIde/DocumentPanels/Z88/Z88SnapshotViewerPanel";
 import { createSpectrumSnapshotViewerPanel } from "./appIde/DocumentPanels/Spectrum/SpectrumSnapshotViewerPanel";
 import { createRzxViewerPanel } from "./appIde/DocumentPanels/Spectrum/RzxViewerPanel";
@@ -571,6 +573,12 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     icon: "floppy"
   },
   {
+    // --- A ROM sidecar: its pages, matched to the ROM by CRC, open as editable bank documents
+    id: ROM_ANNOTATION_EDITOR,
+    renderer: createRomAnnotationEditorPanel,
+    icon: "note"
+  },
+  {
     id: NEX_VIEWER,
     renderer: createNexFileViewerPanel,
     icon: "chip",
@@ -902,6 +910,18 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     pattern: ".ctl",
     editor: TEXT_EDITOR,
     icon: "@file-text-txt"
+  },
+  /*
+   * A ROM's annotations (`sp48.rom.dis`): opened in the ROM annotation editor, which edits a working
+   * copy or a custom ROM's sidecar and shows a shipped one read-only. Before `.dis`, which it would
+   * otherwise match. `.plans/ROM_ANNOTATION_EDITING_PLAN.md` R4.
+   */
+  {
+    matchType: "ends",
+    pattern: ".rom.dis",
+    editor: ROM_ANNOTATION_EDITOR,
+    icon: "note",
+    isReadOnly: true
   },
   /*
    * Annotation sidecars of every kind (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §4.6):

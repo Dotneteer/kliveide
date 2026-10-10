@@ -117,28 +117,55 @@ the ZX81's on the ZX81 ROM, the ZX80 upgrade included.
 
 A ROM's annotations are a ROM sidecar: the same model with `machine: "rom"`, `banks`
 keyed by the 16K page within the ROM file, a `pages` map of each page's CRC-32, and no
-`globalLabels` or `debug`. Three places hold them:
+`globalLabels` or `debug`. **One sidecar is in effect for a page**
+(`.plans/ROM_ANNOTATION_EDITING_PLAN.md`):
 
-- **shipped** — `src/public/roms/<rom file>.dis`, read-only, found **by CRC** through
-  `rom-annotations.index.json`;
-- **your annotations of a shipped ROM** — `<Klive home>/RomAnnotations/<crc32>.rom.dis`
-  (`KliveData` when portable);
-- **your annotations of your own ROM file** — `<path>.dis` beside it, or the overlay when
-  that folder is not writable.
+- **a working copy**, when there is one — `<Klive home>/RomAnnotations/<sidecar>` for a ROM
+  Klive ships, named exactly like the shipped file (`RomAnnotations/sp48.rom.dis`), or
+  `<path>.dis` beside a custom ROM file (`RomAnnotations/<file>.dis` when that folder is not
+  writable). It *replaces* the shipped sidecar rather than being laid over it, it is the only
+  editable one, and it applies only when its `pages` name the page's CRC;
+- otherwise **the shipped sidecar** — `src/public/roms/<rom file>.dis`, read-only, found **by
+  CRC** through `rom-annotations.index.json`.
 
-The machine reports where each ROM partition came from (`getRomSources`: CRC, size,
-file and page, found by comparing bytes with the files it loaded).
-`RomAnnotationsHost` loads the layers on every machine or ROM change and on every edit
-of a user layer. A shipped sidecar applied to bytes it does not describe — through its
-`inherits`, or to an unknown ROM in a 48K BASIC position (Q7) — is **byte-bound**: a
-label and its comments apply only where the bytes from it to the next label are
-identical, so a changed routine loses its name rather than being misnamed.
+A page's `inherits` — and, for an unknown ROM in a 48K BASIC position (Q7), `sp48.rom.dis` —
+are added after it **byte-bound**: a label and its comments apply only where the bytes from
+it to the next label are identical, so a changed routine loses its name rather than being
+misnamed. Inherited sidecars resolve through the same lookup, so a working `sp48.rom.dis`
+reaches every ROM that inherits it.
 
-The shipped sidecars are authored in the repository under the rules of
-`.ai/rom-annotations/`. `npm run rom:annotations` formats them and regenerates the
-index (`-- --check` runs in `build:check`), `-- level` reports completeness, `--
-skeleton` lists unlabelled targets, `-- bind` reports a binding, `-- coverage` runs the
-ROM through BASIC with the access profile on.
+The machine reports where each ROM partition came from (`getRomSources`: CRC, size, file
+and page). `RomAnnotationsHost` loads the pages' sidecars on every machine or ROM change, on
+every edit of a working copy, and when one appears (`requestRomAnnotationsReload`). An
+additive `<crc32>.rom.dis` overlay written by an earlier build is migrated once into a
+working copy (its entries winning, recorded `observed`) and kept as `.rom.dis.bak`.
+
+**Editing.** `rom-ann-new <rom>` copies the shipped sidecar into a working copy unchanged
+(or creates an empty one for a ROM without one) and records the shipped text's CRC in
+`<working copy>.base`. Opening a `.rom.dis` file — from the Explorer, `rom-ann-open`, or
+**Open ROM Annotations** on a ROM row of the live Disassembly view — opens the **ROM
+annotation editor** (`DocumentPanels/Rom/`): it matches each page to ROM bytes by CRC
+(beside a custom ROM, the shipped ROM it is named after, any shipped page, the running
+machine's ROMs) and opens a page as a `StaticMemoryDump` with `annotationMachine: "rom"`,
+`disassemblyFlavor: "rom"` (the ROM's own decoding: `prepareRomDisassembler`) and every
+NEX-viewer dialog and shortcut. A shipped sidecar opens read-only (`annotationReadOnly`,
+the editor's `readOnly`); a file no ROM matches shows only a message. Live-view ROM rows
+are editable only when a working copy exists.
+
+**Keeping a working copy shippable.** A ROM sidecar is written by `romSidecarWriter.ts`,
+not the generic subtree writer: only `banks` come from the model, every other key stays as
+on disk, provenance moves with the entries (`provenanceDelta`: a created entry gets the
+editor's **New entries** mode, a changed one keeps its provenance, a removed one loses its
+key), and the text is `formatRomSidecar`'s. `rom-ann-check` and the editor's readiness chip
+run the assertions of `shippedRomSidecars.test.ts` in process (`romSidecarCheck.ts`);
+`rom-ann-provenance` sets an entry's provenance. When the check passes, the working copy is
+copied into `src/public/roms/` by hand.
+
+The shipped sidecars are authored under the rules of `.ai/rom-annotations/`.
+`npm run rom:annotations` formats them and regenerates the index (`-- --check` runs in
+`build:check`), `-- level` reports completeness, `-- skeleton` lists unlabelled targets,
+`-- bind` reports a binding, `-- coverage` runs the ROM through BASIC with the access
+profile on.
 
 ## Viewer Behavior
 

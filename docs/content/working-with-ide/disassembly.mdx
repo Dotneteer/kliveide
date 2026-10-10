@@ -193,10 +193,43 @@ paged: a copy of the 48K ROM loaded from your own file gets them too, and on a R
 (a modified 48K ROM, say) they apply wherever its bytes still match. ROM labels are set in italics so
 your own stand out.
 
-Annotate a ROM row and the result goes into **your own** ROM annotations, never into the shipped ones:
-for a ROM Klive ships, into `RomAnnotations/<crc>.rom.dis` in Klive's home folder, where it survives
-an update; for your own ROM file, into `<file>.dis` beside it. Your names win over the shipped ones.
 Use `bp-set ROM:<name>` to break at a ROM label, and `ROM:<name>` in a breakpoint condition.
+
+#### Editing a ROM's annotations
+
+A ROM's annotations are edited in a **working copy**, never in the shipped file. Make one with
+[`rom-ann-new`](/commands-reference#rom-ann-new), or with **Start Editing ROM Annotations...** on a
+ROM row's context menu:
+
+```text
+rom-ann-new sp48.rom
+```
+
+For a ROM Klive ships, the working copy is an exact copy of its shipped annotations, kept in Klive's
+home folder as `RomAnnotations/sp48.rom.dis`, where it survives an update. For your own ROM file it is
+`<file>.dis` beside it. Once it exists, it **replaces** the shipped annotations for that ROM: you can
+rename, change or remove any shipped label, comment or region, and only the working copy is shown.
+Without a working copy, the shipped annotations are shown and a ROM row cannot be edited.
+
+Opening a working copy &mdash; from **Open ROM Annotations** on a ROM row, with
+[`rom-ann-open`](/commands-reference#rom-ann-open), or by opening the `.rom.dis` file &mdash; shows
+the **ROM annotation editor**. It finds the ROM by its bytes and lists its pages; **Disassembly** opens
+a page with everything a NEX bank has: select rows, right-click for the annotation menu, or use the
+shortcuts (`L` label, `C` end-of-line comment, `Shift+C` synopsis, `O` operand label, `M`/`R` manage
+labels/regions, `B` bank comment). No machine needs to be running. If no ROM matches the file, the
+editor says so and shows nothing else. With a working copy in place, ROM rows of the live view are
+editable too, and every edit shows wherever ROM names appear.
+
+The editor's **Ready** chip says whether the file passes every check a shipped annotation file must
+pass (the same as [`rom-ann-check`](/commands-reference#rom-ann-check)). **New entries** chooses
+whether what you add is recorded as `observed` (worked out from the bytes) or `manual` (an interface
+fact from a manual); [`rom-ann-provenance`](/commands-reference#rom-ann-provenance) changes an existing
+entry. **Next unlabelled** steps through the calls and jumps that still have no label.
+
+<Callout type="info">
+A working copy is written in exactly the format of Klive's own ROM annotation files. When it is
+ready, it can be copied into `src/public/roms/` of a Klive checkout unchanged.
+</Callout>
 
 ## Banked Disassembly Views
 

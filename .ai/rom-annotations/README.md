@@ -97,6 +97,27 @@ Always run the formatter before committing: the files are diffed one entry per l
 `level` measures the label rules; marking every data region is the author's judgement,
 backed by the coverage run. A file never records a level higher than the tool measures.
 
+## Authoring in the IDE
+
+The shipped files can be authored in Klive itself (`.plans/ROM_ANNOTATION_EDITING_PLAN.md`)
+instead of by editing JSON:
+
+1. `rom-ann-new sp48.rom` copies `src/public/roms/sp48.rom.dis` unchanged into
+   `<Klive home>/RomAnnotations/sp48.rom.dis` — the **working copy** — and opens it in the
+   ROM annotation editor. From then on it replaces the shipped file everywhere in the IDE.
+2. Open a page's **Disassembly** and annotate it with the NEX viewer's dialogs and shortcuts.
+   Set **New entries** to `manual` before adding an interface fact or a conventional name, and
+   back to `observed` after; `rom-ann-provenance` corrects an entry afterwards. A changed entry
+   keeps its provenance. **Next unlabelled** walks the level 1 to-do list.
+3. The **Ready** chip (and `rom-ann-check`) runs every check `shippedRomSidecars.test.ts` makes.
+   When it says *Ready to ship*, copy the working copy over the file in `src/public/roms/`
+   **unchanged** and run `npm run rom:annotations -- --check`; it must report nothing to format.
+4. Log the session in `PROVENANCE.md` as for any other authoring session.
+
+The IDE never raises `level`; record it by hand once `npm run rom:annotations -- level`
+measures it. The D4 rule above applies exactly as it does to editing the JSON: the editor
+makes the work faster, not the sources wider.
+
 ## Order of work
 
 `sp48.rom.dis` first (everything else inherits from it), then `sp128-1` and the +3 ROM 3s

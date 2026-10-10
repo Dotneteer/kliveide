@@ -1077,6 +1077,12 @@ file viewers' root type (`--monospace-font` at `--panel-font-size`), so the two 
 family. A snapshot that should outlive the machine freezes its **palette** with its bytes and says so
 in the palette's header ("as taken").
 
+The same holds for an annotated listing shown read-only (a shipped ROM sidecar in the ROM annotation
+editor): its one-line statement of what the file is replaces the editing chrome (no **New entries**
+toggle, no to-do stepping), and the annotation editor raises **no warning glyph** for it. That glyph
+means a load or save failed; read-only is a decision, and dressing it as a failure makes users hunt for
+an error that is not there.
+
 ## A Heading Inside Panel Content Is `SectionHeader`, Not `PanelHeader`
 
 `PanelHeader` is a *panel's own chrome* — a chrome surface with a bottom border. Dropping one into
@@ -1214,6 +1220,12 @@ row shows its *worst* member's glyph, so a collapsed reading of the list still f
 Do not tint whole rows red or green: the glyph plus the message line already say it, and a coloured
 band would read as a selection. The same applies to any future verdict list (lint results, a CI
 report).
+
+A single verdict on a whole file (the ROM annotation editor's **Ready** chip) is a chip in the status
+family's subtle fill: `--status-success` on `--status-success-subtle` when it passes, and
+`--status-warning` on `--status-warning-subtle` - not error - when it does not, because a file still
+being worked on is unfinished, not broken. The chip is the button that lists the reasons, so the
+verdict and its evidence are one click apart and the reasons cost no space until asked for.
 
 ## A Status-Bar Item For Something Outside The IDE Is Quiet Until It Acts
 

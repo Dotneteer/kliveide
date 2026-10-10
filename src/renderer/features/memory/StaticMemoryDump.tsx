@@ -38,6 +38,8 @@ import { SmallIconButton } from "@renderer/controls/IconButton";
 import { Text } from "@renderer/controls/layout/Text";
 import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z80-disassembler";
 import { Z88CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z88-custom.disassembler";
+import { prepareRomDisassembler } from "@renderer/appIde/annotations/romDecoder";
+import type { RomPageKind } from "@common/roms/romIdentity";
 import { MemorySection, type DisassemblyItem } from "@renderer/appIde/disassemblers/common-types";
 import {
   deriveInstructionWidthCh,
@@ -153,6 +155,8 @@ type MemoryDumpViewState = {
   annotationBank?: number;
   /** The bank space the bank is numbered in; absent means the ZX Spectrum Next. */
   annotationMachine?: AnnotationMachine;
+  /** Show the annotations but never write them: a shipped ROM sidecar (see `readOnly` in the editor). */
+  annotationReadOnly?: boolean;
   /** The former names of `annotationPath` / `annotationBank`, read so saved layouts reopen. */
   nexAnnotationPath?: string;
   nexAnnotationBank?: number;
@@ -198,6 +202,12 @@ type MemoryDumpViewState = {
    */
   disassemblyFlavor?: StaticDisassemblyFlavor;
   /**
+   * With `disassemblyFlavor: "rom"`: which ROM page this is, so the bytes after `RST $08` and
+   * `RST $28` (48K BASIC) or their ZX81 equivalents are not decoded as instructions. Absent: plain
+   * Z80.
+   */
+  romPageKind?: RomPageKind;
+  /**
    * How the Graphics view reads the bytes (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §5.3). View
    * state, never the sidecar: sweeping the width is how graphics are *found*, and a write per step
    * would turn browsing into editing. A graphic that has been found is named, which is a write.
@@ -214,7 +224,11 @@ type MemoryDumpViewState = {
  * Never inferred from the current machine: the bytes came from a file and stay Z88 code whichever
  * machine is running. Inferring it would show a Z88 bank as Next code whenever a Next was selected.
  */
-export type StaticDisassemblyFlavor = "z88";
+/**
+ * Whose code the bytes are. `"z88"`: OZ code (`RST 20h` calls). `"rom"`: a ROM page, decoded with
+ * the ROM's own conventions (`romPageKind`) — see `romDecoder.ts`.
+ */
+export type StaticDisassemblyFlavor = "z88" | "rom";
 
 type StaticDumpViewMode = "memory" | "disassembly" | "sprites" | "graphics";
 
@@ -226,7 +240,9 @@ type StaticMemoryDumpOptions = {
   annotationPath?: string;
   annotationBank?: number;
   annotationMachine?: AnnotationMachine;
+  annotationReadOnly?: boolean;
   disassemblyFlavor?: StaticDisassemblyFlavor;
+  romPageKind?: RomPageKind;
 
   /**
    * Address to bring into view when the document opens, in the listing's own numbering — that is,
@@ -309,6 +325,7 @@ const StaticMemoryDump = ({
   const viewAnnotationPath = currentViewState.annotationPath ?? currentViewState.nexAnnotationPath;
   const viewAnnotationBank = currentViewState.annotationBank ?? currentViewState.nexAnnotationBank;
   const annotationMachine: AnnotationMachine = currentViewState.annotationMachine ?? "next";
+  const annotationReadOnly = !!currentViewState.annotationReadOnly;
   // --- Any annotated bank (a NEX's, a snapshot's) opens on its listing and edits its annotations;
   // --- the Sprites view, the screen switch and the branch gutter are the Next's alone
   const isAnnotatedBankDocument = viewAnnotationBank !== undefined;
@@ -506,6 +523,16 @@ const StaticMemoryDump = ({
   // --- A Z88 listing has no system-variable table to name from: the machine's would be the
   // --- Spectrum's (or whatever is running), which names nothing in OZ code.
   const isZ88Listing = currentViewState.disassemblyFlavor === "z88";
+  const isRomListing = currentViewState.disassemblyFlavor === "rom";
+  const romPageKind = currentViewState.romPageKind;
+  // --- A ROM page lists with the ROM's own decoding, in both the annotated and the plain path
+  const prepareRomListing = useMemo(
+    () =>
+      isRomListing
+        ? (disassembler: Z80Disassembler) => prepareRomDisassembler(disassembler, romPageKind)
+        : undefined,
+    [isRomListing, romPageKind]
+  );
   const sysVarLabelResolver =
     sysVarNames && !isZ88Listing ? machineSysVarLabelResolver : undefined;
 
@@ -639,9 +666,11 @@ const StaticMemoryDump = ({
        * MMU query with a default mapping, which would offer a jump that lands somewhere the program
        * never put anything.
        */
-      machineRunning: machineHasRun(machineState)
+      machineRunning: machineHasRun(machineState),
+      ...(annotationReadOnly ? { readOnly: true } : {})
     }),
     [
+      annotationReadOnly,
       viewAnnotationBank,
       viewAnnotationPath,
       decimalView,
@@ -1343,7 +1372,8 @@ const StaticMemoryDump = ({
             pcBankOffset,
             fallbackOperandLabelResolver: sysVarLabelResolver,
             hideScreenArea,
-            allowExtendedSet: annotationMachine === "next"
+            allowExtendedSet: annotationMachine === "next",
+            prepareDisassembler: prepareRomListing
           })
         : undefined;
       let outputItems = annotationItems;
@@ -1369,7 +1399,8 @@ const StaticMemoryDump = ({
             undefined,
             {
               // --- The Next's extra opcodes are not instructions on a Z88.
-              allowExtendedSet: !isZ88Listing,
+              // --- Nor on a Spectrum or ZX81 ROM.
+              allowExtendedSet: !isZ88Listing && !isRomListing,
               decimalMode: decimalView,
               // --- An un-annotated bank has no labels of its own, so the machine's system variables
               // --- are the only names available here — and the only ones this path ever needs.
@@ -1382,6 +1413,7 @@ const StaticMemoryDump = ({
             // --- decoded as instructions and every following line is off.
             disassembler.setCustomDisassembler(new Z88CustomDisassembler());
           }
+          prepareRomListing?.(disassembler);
           const output = await disassembler.disassemble(runStart, runEnd);
           collected.push(...(output?.outputItems ?? []));
         }
@@ -1416,6 +1448,8 @@ const StaticMemoryDump = ({
     annotationVm.annotations,
     hideScreenArea,
     isZ88Listing,
+    isRomListing,
+    prepareRomListing,
     sysVarLabelResolver,
     viewMode
   ]);
@@ -1984,6 +2018,8 @@ export async function openStaticMemoryDump(
         annotationBank: options.annotationBank,
         ...(options.annotationMachine ? { annotationMachine: options.annotationMachine } : {}),
         disassemblyFlavor: options.disassemblyFlavor,
+        ...(options.romPageKind ? { romPageKind: options.romPageKind } : {}),
+        ...(options.annotationReadOnly ? { annotationReadOnly: true } : {}),
         topAddress: options.topAddress
       } satisfies MemoryDumpViewState,
       false

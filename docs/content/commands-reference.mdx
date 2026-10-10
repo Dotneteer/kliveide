@@ -1071,8 +1071,52 @@ Deactivates the active annotation set. Its file is not changed.
 
 Shows the active annotation set: its file, why it is active (a launched NEX, a loaded snapshot, a
 project, a command), its machine, and how many labels, comments, regions and breakpoints it holds.
-It also lists the ROM annotations in use for each ROM page: the ones Klive ships, your own, and,
-for a ROM Klive does not know, how many of the shipped labels apply to its bytes.
+It also lists the ROM annotations in use for each ROM page: its working copy or the shipped file, the
+ones it inherits, whether the page is editable, and, for a ROM Klive does not know, how many of the
+shipped labels apply to its bytes.
+
+## `rom-ann-new`
+
+Makes a working copy of a ROM's annotations and opens it in the ROM annotation editor. See
+[Editing a ROM's annotations](./working-with-ide/disassembly#editing-a-roms-annotations).
+
+```
+rom-ann-new <rom> [-page <n>]
+```
+
+`<rom>` is a ROM Klive ships (`sp48.rom`, `sp128-0.rom`) or the path of a ROM file; `-page` picks a
+16K page of a larger file. For a shipped ROM the working copy is an exact copy of its shipped
+annotations, in `RomAnnotations/` of Klive's home folder; for your own ROM file it is `<file>.dis`
+beside it. An existing working copy is never overwritten.
+
+## `rom-ann-open`
+
+Opens a ROM's annotations in the ROM annotation editor: its working copy, or, when it has none, the
+shipped annotations read-only.
+
+```
+rom-ann-open <rom>|<file.rom.dis> [-page <n>]
+```
+
+## `rom-ann-check`
+
+Checks whether a ROM's working copy passes every check Klive's own ROM annotation files must pass:
+it validates, names its ROM pages by the right CRC, gives every entry a provenance, uses valid and
+unique label names, puts labels on instruction starts, records no higher level than it measures, and
+is in the canonical format.
+
+```
+rom-ann-check <rom>|<file.rom.dis> [-page <n>]
+```
+
+## `rom-ann-provenance`
+
+Sets whether an entry of a working copy is `observed` (worked out from the bytes) or `manual` (an
+interface fact from a manual).
+
+```
+rom-ann-provenance <rom>|<file.rom.dis> <offset> label|line|region observed|manual [-page <n>]
+```
 
 ## `ann-detect`
 
@@ -1085,7 +1129,7 @@ ann-detect [<bank>|rom|all] [-mode fill|replace|clear] [-reach] [-text] [-words]
 ann-detect -undo
 ```
 
-Without a bank, it works on the banks paged in now; `rom` writes to your own ROM annotations. Without
+Without a bank, it works on the banks paged in now; `rom` writes to the ROM's working copy. Without
 `-apply` it only reports, in the output and a result document. `-undo` puts back the annotations from
 before the last apply.
 

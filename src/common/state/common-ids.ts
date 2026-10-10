@@ -34,6 +34,8 @@ export const TAP_VIEWER = "TapViewer";
 export const TAPE_BLOCK_VIEWER = "TapeBlockViewer";
 export const DSK_VIEWER = "DskViewer";
 export const NEX_VIEWER = "NexViewer";
+// --- A ROM sidecar opened for editing (`.plans/ROM_ANNOTATION_EDITING_PLAN.md` R4)
+export const ROM_ANNOTATION_EDITOR = "RomAnnotationEditor";
 export const Z88_SNAPSHOT_VIEWER = "Z88SnapshotViewer";
 export const SPECTRUM_SNAPSHOT_VIEWER = "SpectrumSnapshotViewer";
 export const RZX_VIEWER = "RzxViewer";

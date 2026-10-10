@@ -18,11 +18,14 @@ import type { RomPartitionInfo } from "@renderer/appIde/annotations/romAnnotatio
 import type { NexAnnotationEditorPorts } from "@renderer/appIde/DocumentPanels/Next/annotationEditor/NexAnnotationEditorPorts";
 import type { DisassemblyItem } from "@renderer/appIde/disassemblers/common-types";
 import { annotationRowMenuItems } from "@renderer/appIde/DocumentPanels/disassemblyRowMenu";
+import { freshRomSidecar } from "@renderer/appIde/annotations/romWorkingCopy";
+import { formatRomSidecar } from "@common/roms/romAnnotationTools";
 
 /*
  * Editing annotations from the live Disassembly view
  * (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §4.5): a row is turned into the bank site the
- * annotation editor works in, and the editor's own controller does the rest.
+ * annotation editor works in, and the editor's own controller does the rest. A ROM row is edited in
+ * its page's working copy (`.plans/ROM_ANNOTATION_EDITING_PLAN.md`), and only when there is one.
  */
 
 function fileSystem(files: Record<string, string> = {}) {
@@ -48,8 +51,9 @@ const PAGING_128 = [-2, -2, 5, 5, 2, 2, 7, 7];
 const ROM: RomPartitionInfo = {
   partition: -2,
   source: { crc32: "b96a36be", size: 0x4000, path: "roms/sp128-1.rom", page: 0 },
-  userPath: "/home/Klive/RomAnnotations/b96a36be.rom.dis",
-  userPage: 0,
+  workingPath: "/home/Klive/RomAnnotations/sp128-1.rom.dis",
+  workingPage: 0,
+  hasWorkingCopy: true,
   layers: [],
   bindings: []
 };
@@ -76,14 +80,21 @@ describe("liveRowTarget", () => {
     });
   });
 
-  it("sends a ROM row to the page's user layer, never the shipped sidecar (Q6)", () => {
+  it("sends a ROM row to the page's working copy, never the shipped sidecar", () => {
     expect(liveRowTarget(0x0d6b, context())).toMatchObject({
       kind: "rom",
-      annotationPath: ROM.userPath,
+      annotationPath: ROM.workingPath,
       bank: 0,
       offset: 0x0d6b,
       create: { machine: "rom", crc32: "b96a36be" },
-      destination: "your ROM annotations"
+      destination: "sp128-1.rom.dis working copy"
+    });
+  });
+
+  it("does not edit a ROM page that has no working copy (R2)", () => {
+    const shippedOnly = { ...ROM, hasWorkingCopy: false };
+    expect(liveRowTarget(0x0d6b, context({ romPartition: () => shippedOnly }))).toMatchObject({
+      disabledReason: expect.stringContaining("No working copy of sp128-1.rom.dis")
     });
   });
 
@@ -111,8 +122,28 @@ describe("liveRowTarget", () => {
     });
     expect(items.every((item) => item.disabled)).toBe(true);
     expect(items[0]).toMatchObject({ text: "Label...", hint: "Shift+L", tooltip: "No annotation set is active" });
-    const rom = annotationRowMenuItems({ rom: true, hasOperands: false, hasDefinition: false, hints: {}, regionActions: [] });
-    expect(rom[0].text).toBe("Label (your ROM annotations)...");
+    const rom = annotationRowMenuItems({
+      rom: true,
+      hasOperands: false,
+      hasDefinition: false,
+      hints: {},
+      regionActions: [],
+      romEditor: "open"
+    });
+    expect(rom[0].text).toBe("Label (ROM working copy)...");
+    expect(rom[rom.length - 1]).toMatchObject({ id: "open-rom-annotations", text: "Open ROM Annotations" });
+    // --- Without a working copy the row offers to make one, and that entry is never disabled
+    const start = annotationRowMenuItems({
+      disabledReason: "No working copy",
+      rom: false,
+      hasOperands: false,
+      hasDefinition: false,
+      hints: {},
+      regionActions: [],
+      romEditor: "start"
+    });
+    expect(start[start.length - 1]).toMatchObject({ id: "start-rom-annotations", text: "Start Editing ROM Annotations..." });
+    expect(start[start.length - 1].disabled).toBeUndefined();
   });
 
   it("collects the rows of the same bank piece", () => {
@@ -136,19 +167,11 @@ describe("ensureAnnotatedBank", () => {
     expect(JSON.parse(fs.saved[ACTIVE.path])).toMatchObject({ schemaVersion: 3, machine: "sp128" });
   });
 
-  it("creates a ROM user layer naming the page it describes", async () => {
+  it("never makes a ROM working copy: that is rom-ann-new's, deliberately", async () => {
     const fs = fileSystem();
     const target = liveRowTarget(0x0d6b, context()) as any;
-    await ensureAnnotatedBank(target, fs.projectService);
-    await flushAnnotationSession(ROM.userPath);
-    const written = JSON.parse(fs.saved[ROM.userPath]);
-    expect(written).toMatchObject({
-      schemaVersion: 3,
-      machine: "rom",
-      pages: { "0": { crc32: "b96a36be", name: "sp128-1.rom" } },
-      banks: { "0": { offsetIndex: 0 } }
-    });
-    expect(written.globalLabels).toBeUndefined();
+    expect(await ensureAnnotatedBank(target, fs.projectService)).toBeUndefined();
+    expect(fs.saved).toEqual({});
   });
 
   it("does not overwrite a sidecar that does not validate", async () => {
@@ -206,8 +229,15 @@ describe("runLiveAnnotationAction", () => {
     ]);
   });
 
-  it("writes a ROM row's comment to the user layer, and nothing to the shipped sidecar", async () => {
-    const fs = fileSystem();
+  it("writes a ROM row's comment to the working copy, shippable: canonical, with provenance", async () => {
+    const working = freshRomSidecar({
+      workingPath: ROM.workingPath,
+      workingPage: 0,
+      crc32: "b96a36be",
+      size: 0x4000,
+      romName: "sp128-1.rom"
+    });
+    const fs = fileSystem({ [ROM.workingPath]: working });
     const endOfLineComment = vi.fn(async () => ({ comment: "clear the screen" }));
     const target = liveRowTarget(0x0d6b, context()) as any;
     const row = { address: 0x0d6b, instruction: "call $0daf", opCodes: [0xcd, 0xaf, 0x0d] } as DisassemblyItem;
@@ -221,11 +251,17 @@ describe("runLiveAnnotationAction", () => {
       machineRunning: true,
       projectService: fs.projectService
     });
-    await flushAnnotationSession(ROM.userPath);
-    expect(Object.keys(fs.saved)).toEqual([ROM.userPath]);
-    expect(JSON.parse(fs.saved[ROM.userPath]).banks["0"].lineAnnotations).toEqual({
+    await flushAnnotationSession(ROM.workingPath);
+    expect(Object.keys(fs.saved)).toEqual([ROM.workingPath]);
+    const written = JSON.parse(fs.saved[ROM.workingPath]);
+    expect(written.banks["0"].lineAnnotations).toEqual({
       [String(0x0d6b)]: { comment: "clear the screen" }
     });
+    expect(written.provenance).toEqual({ [`0:${0x0d6b}:line`]: "observed" });
+    // --- Everything but the banks and their provenance is the file as it was
+    expect(written.pages).toEqual({ "0": { crc32: "b96a36be", name: "sp128-1.rom" } });
+    expect(written.globalLabels).toBeUndefined();
+    expect(fs.saved[ROM.workingPath]).toBe(formatRomSidecar(written));
   });
 
   it("marks a 48K range as bytes in bank 2", async () => {

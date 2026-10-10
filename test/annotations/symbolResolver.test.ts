@@ -40,11 +40,11 @@ const ANNOTATIONS: ProgramAnnotations = {
   }
 };
 
-function romLayer(kind: "user" | "shipped", labels: { name: string; value: number }[], extra: Partial<RomLayer> = {}): RomLayer {
+function romLayer(kind: "working" | "shipped", labels: { name: string; value: number }[], extra: Partial<RomLayer> = {}): RomLayer {
   return {
     kind,
-    path: kind === "user" ? "/home/Klive/RomAnnotations/x.rom.dis" : "roms/sp128-0.rom.dis",
-    origin: kind === "user" ? "Your ROM annotations" : "ROM: sp128-0.rom",
+    path: kind === "working" ? "/home/Klive/RomAnnotations/x.rom.dis" : "roms/sp128-0.rom.dis",
+    origin: kind === "working" ? "ROM: x.rom (working copy)" : "ROM: sp128-0.rom",
     page: 0,
     annotations: {
       schemaVersion: 3,
@@ -102,7 +102,7 @@ describe("createAddressSymbols", () => {
     const symbols = createAddressSymbols({
       bankSpace: sp48BankSpace,
       romLayersOf: () => [
-        romLayer("user", [{ name: "MINE", value: 0x0010 }]),
+        romLayer("working", [{ name: "MINE", value: 0x0010 }]),
         romLayer("shipped", [{ name: "PRINT_A", value: 0x0010 }])
       ]
     });
@@ -197,7 +197,7 @@ describe("mergeRomLayers", () => {
       { start: 0x1000, end: 0x10ff, type: "bytes" },
       { start: 0x1100, end: 0x3fff, type: "disassemble" }
     ];
-    const user = romLayer("user", [{ name: "MINE", value: 0x2000 }]);
+    const user = romLayer("working", [{ name: "MINE", value: 0x2000 }]);
     user.annotations.banks["0"].regions = [
       { start: 0, end: 0x1fff, type: "disassemble" },
       { start: 0x2000, end: 0x200f, type: "words" },

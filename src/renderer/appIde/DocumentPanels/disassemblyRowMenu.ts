@@ -54,9 +54,14 @@ export function annotationRowMenuItems(args: {
   hasDefinition: boolean;
   hints: Partial<Record<NexAnnotationMenuAction, string>>;
   regionActions: { id: NexAnnotationMenuAction; text: string }[];
+  /**
+   * On a ROM row: open the page's working copy in the ROM annotation editor, or — when there is none,
+   * and the row's other entries are disabled for that reason — make one.
+   */
+  romEditor?: "open" | "start";
 }): AnnotationRowMenuItem[] {
   const disabled = !!args.disabledReason;
-  const suffix = args.rom ? " (your ROM annotations)" : "";
+  const suffix = args.rom ? " (ROM working copy)" : "";
   const entry = (
     id: NexAnnotationMenuAction,
     text: string,
@@ -79,7 +84,12 @@ export function annotationRowMenuItems(args: {
     entry("goto-definition", "Go to Definition", {
       separatorBefore: true,
       ...(args.hasDefinition ? {} : { disabled: true })
-    })
+    }),
+    ...(args.romEditor === "open"
+      ? [{ id: "open-rom-annotations" as const, text: "Open ROM Annotations", separatorBefore: true }]
+      : args.romEditor === "start"
+        ? [{ id: "start-rom-annotations" as const, text: "Start Editing ROM Annotations...", separatorBefore: true }]
+        : [])
   ];
 }
 

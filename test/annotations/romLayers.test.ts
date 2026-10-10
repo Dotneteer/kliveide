@@ -3,10 +3,11 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import {
+  legacyOverlayRelativePath,
   loadRomPartitions,
   resetRomAnnotationCachesForTests,
-  romOverlayRelativePath,
-  userLayerPathOf
+  workingCopyOf,
+  workingCopyRelativePath
 } from "@renderer/appIde/annotations/romAnnotationLoader";
 import { bindRomPage } from "@renderer/appIde/annotations/romBinding";
 import { clearAnnotationSessions } from "@renderer/appIde/annotations/annotationSession";
@@ -15,9 +16,9 @@ import { createAddressSymbols } from "@renderer/appIde/annotations/symbolResolve
 import { sp48BankSpace } from "@common/annotations/bankSpace";
 
 /*
- * Finding a paged ROM page's annotations (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §5.2,
- * §5.3): by its bytes, with the user's own layer over the shipped one, and byte binding where the
- * bytes are another ROM's.
+ * Finding a paged ROM page's annotations (`.plans/ROM_ANNOTATION_EDITING_PLAN.md` §4.2, amending
+ * §5.2-§5.3 of the reverse-engineering plan): by its bytes; a working copy *replacing* the shipped
+ * sidecar when there is one; byte binding where the bytes are another ROM's.
  */
 
 const ROMS = join(__dirname, "../../src/public/roms");
@@ -57,24 +58,33 @@ beforeEach(() => {
   clearAnnotationSessions();
 });
 
-describe("where the user's ROM annotations go (§5.2)", () => {
-  it("a shipped ROM's go to the Klive home folder, named by CRC", async () => {
+describe("where a ROM page's working copy is (R1)", () => {
+  it("a shipped ROM's is in the Klive home folder, named exactly like the shipped sidecar", async () => {
     const d = deps({});
-    expect(await userLayerPathOf(d.files as any, source(SP48, "roms/sp48.rom"))).toEqual({
-      path: "/home/me/Klive/RomAnnotations/ddee531f.rom.dis",
-      page: 0
+    expect(await workingCopyOf(d.files as any, source(SP48, "roms/sp48.rom"))).toEqual({
+      path: "/home/me/Klive/RomAnnotations/sp48.rom.dis",
+      page: 0,
+      shippedSidecar: "sp48.rom.dis"
     });
-    expect(romOverlayRelativePath("ddee531f")).toBe("RomAnnotations/ddee531f.rom.dis");
+    expect(workingCopyRelativePath("sp48.rom.dis")).toBe("RomAnnotations/sp48.rom.dis");
+    expect(legacyOverlayRelativePath("ddee531f")).toBe("RomAnnotations/ddee531f.rom.dis");
   });
 
-  it("a user's ROM file's go beside it, or to the overlay when that folder is not writable", async () => {
-    const userRom = source(SP48, "/roms/my48.rom");
-    expect(await userLayerPathOf(deps({}, { writable: true }).files as any, userRom)).toEqual({
+  it("a file byte-identical to a shipped ROM shares the shipped ROM's working copy", async () => {
+    expect((await workingCopyOf(deps({}).files as any, source(SP48, "/elsewhere/copy.rom"))).path).toBe(
+      "/home/me/Klive/RomAnnotations/sp48.rom.dis"
+    );
+  });
+
+  it("a custom ROM's goes beside it, or into the Klive home folder by its name when not writable", async () => {
+    const custom = new Uint8Array(0x4000).fill(0x76);
+    const userRom = source(custom, "/roms/my48.rom");
+    expect(await workingCopyOf(deps({}, { writable: true }).files as any, userRom)).toEqual({
       path: "/roms/my48.rom.dis",
       page: 0
     });
-    expect(await userLayerPathOf(deps({}, { writable: false }).files as any, userRom)).toEqual({
-      path: "/home/me/Klive/RomAnnotations/ddee531f.rom.dis",
+    expect(await workingCopyOf(deps({}, { writable: false }).files as any, userRom)).toEqual({
+      path: "/home/me/Klive/RomAnnotations/my48.rom.dis",
       page: 0
     });
   });
@@ -90,23 +100,54 @@ describe("loadRomPartitions", () => {
     expect(info.source.bytes).toBeUndefined();
   });
 
-  it("puts the user's layer first, and its name wins at the same offset", async () => {
-    const userPath = "/home/me/Klive/RomAnnotations/ddee531f.rom.dis";
-    const user = JSON.stringify({
-      schemaVersion: 3,
-      machine: "rom",
-      banks: { "0": { regions: [], localLabels: [{ name: "MY_CLS", value: 0x0008 }] } }
-    });
+  it("shows the shipped sidecar read-only when there is no working copy", async () => {
+    const [info] = await loadRomPartitions(deps({ [-1]: source(SP48, "roms/sp48.rom") }) as any);
+    expect(info.hasWorkingCopy).toBe(false);
+    expect(info.workingPath).toBe("/home/me/Klive/RomAnnotations/sp48.rom.dis");
+    expect(info.shippedSidecar).toBe("sp48.rom.dis");
+  });
+
+  it("lets a working copy replace the shipped sidecar, not stack on it (R2)", async () => {
+    const workingPath = "/home/me/Klive/RomAnnotations/sp48.rom.dis";
+    // --- The shipped file, with one label renamed and another removed
+    const working = JSON.parse(JSON.stringify(SHIPPED));
+    const labels = working.banks["0"].localLabels as { name: string; value: number }[];
+    labels.find((label) => label.value === 0x0008)!.name = "MY_ERROR";
+    const removed = labels.find((label) => label.value !== 0x0008)!;
+    working.banks["0"].localLabels = labels.filter((label) => label !== removed);
     const [info] = await loadRomPartitions(
-      deps({ [-1]: source(SP48, "roms/sp48.rom") }, { user: { [userPath]: user } }) as any
+      deps({ [-1]: source(SP48, "roms/sp48.rom") }, { user: { [workingPath]: JSON.stringify(working) } }) as any
     );
-    expect(info.layers.map((layer) => layer.kind)).toEqual(["user", "shipped"]);
-    const symbols = createAddressSymbols({
-      bankSpace: sp48BankSpace,
-      romLayersOf: () => info.layers
-    });
-    expect(symbols.labelAt(0x0008, [])?.name).toBe("MY_CLS");
-    expect(symbols.allAt(0x0008, []).map((hit) => hit.name)).toEqual(["MY_CLS", "ERROR_1"]);
+    expect(info.hasWorkingCopy).toBe(true);
+    expect(info.layers.map((layer) => [layer.kind, layer.path])).toEqual([["working", workingPath]]);
+    const symbols = createAddressSymbols({ bankSpace: sp48BankSpace, romLayersOf: () => info.layers });
+    // --- No shipped name shows through: not the old name, not the removed one
+    expect(symbols.allAt(0x0008, []).map((hit) => hit.name)).toEqual(["MY_ERROR"]);
+    expect(symbols.allAt(removed.value, [])).toEqual([]);
+  });
+
+  it("ignores a working copy that names another ROM's CRC", async () => {
+    const workingPath = "/home/me/Klive/RomAnnotations/sp48.rom.dis";
+    const other = { ...SHIPPED, pages: { "0": { crc32: "00000000", name: "not this one" } } };
+    const [info] = await loadRomPartitions(
+      deps({ [-1]: source(SP48, "roms/sp48.rom") }, { user: { [workingPath]: JSON.stringify(other) } }) as any
+    );
+    expect(info.hasWorkingCopy).toBe(false);
+    expect(info.layers.map((layer) => layer.kind)).toEqual(["shipped"]);
+  });
+
+  it("binds an unknown 48K BASIC page against the *working* sp48 when there is one (R3)", async () => {
+    const workingPath = "/home/me/Klive/RomAnnotations/sp48.rom.dis";
+    const working = JSON.parse(JSON.stringify(SHIPPED));
+    working.banks["0"].localLabels.push({ name: "WORKING_ONLY", value: 0x0000 });
+    const patched = SP48.slice();
+    patched[0x2ab6 + 1] ^= 0xff;
+    const [info] = await loadRomPartitions(
+      deps({ [-1]: source(patched, "/roms/custom.rom") }, { user: { [workingPath]: JSON.stringify(working) } }) as any
+    );
+    expect(info.layers).toHaveLength(1);
+    expect(info.layers[0].kind).toBe("working");
+    expect(info.layers[0].bound?.has(0x0000)).toBe(true);
   });
 
   it("binds an unknown 48K BASIC page against sp48.rom.dis (Q7), reporting how many labels bound", async () => {

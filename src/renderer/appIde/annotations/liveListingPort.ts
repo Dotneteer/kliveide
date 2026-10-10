@@ -11,8 +11,8 @@ import type { RomPartitionInfo } from "./romAnnotationLoader";
  * row is a Z80 address under the current paging. This turns one into the other:
  *
  * - a row in a RAM bank goes to the **active annotation set**, at that bank and offset;
- * - a row in a ROM page goes to the page's **user layer** — the user's own ROM annotations, never
- *   the shipped sidecar (Q6);
+ * - a row in a ROM page goes to the page's **working copy** (`.plans/ROM_ANNOTATION_EDITING_PLAN.md`)
+ *   — and only when one exists: a ROM page without one is shown from its shipped sidecar, read-only;
  * - a row nowhere annotatable (a Timex DOCK chunk, a machine without a bank space) or with no set
  *   active gets a reason instead, which the menu shows on its disabled entries.
  *
@@ -55,10 +55,15 @@ export function liveRowTarget(
   if (site.kind === "rom") {
     const rom = context.romPartition(site.partition);
     if (!rom) return { disabledReason: "This ROM page has not been identified yet." };
+    if (!rom.hasWorkingCopy) {
+      return {
+        disabledReason: `No working copy of ${fileNameOf(rom.workingPath) ?? "this ROM's annotations"}: use Start Editing ROM Annotations, or rom-ann-new.`
+      };
+    }
     return {
       kind: "rom",
-      annotationPath: rom.userPath,
-      bank: rom.userPage,
+      annotationPath: rom.workingPath,
+      bank: rom.workingPage,
       offset: site.offset,
       disassOffset: (address - site.offset) & 0xffff,
       create: {
@@ -67,7 +72,7 @@ export function liveRowTarget(
         crc32: rom.source.crc32,
         romName: fileNameOf(rom.source.path)
       },
-      destination: "your ROM annotations"
+      destination: `${fileNameOf(rom.workingPath) ?? "the ROM's"} working copy`
     };
   }
 

@@ -8,16 +8,17 @@ import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 
 import { subscribeAnnotationSession } from "./annotationSession";
 import { loadRomPartitions } from "./romAnnotationLoader";
-import { setRomPartitions } from "./romAnnotations";
+import { setRomPartitions, subscribeRomAnnotationsReload } from "./romAnnotations";
+import { migrateLegacyOverlays } from "./romWorkingCopy";
 import { mergeRomLayers } from "./symbolResolver";
 import { pushConditionSymbols, setRomConditionSymbols } from "@renderer/appIde/utils/condition-symbols";
 
 /**
  * Keeps the ROM annotations of the machine running now loaded
  * (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §5.3): read again when the machine, its model or
- * configuration changes (a ROM property) or the machine starts, and whenever the user edits one of
- * its ROM pages — the user layers are sessions like any annotation file, so an edit from the live
- * view reaches the listing the way a program edit does.
+ * configuration changes (a ROM property) or the machine starts, whenever a working copy is edited
+ * (working copies are sessions like any annotation file, so an edit reaches the listing the way a
+ * program edit does), and when one is made or removed (`requestRomAnnotationsReload`).
  *
  * Renders nothing.
  */
@@ -34,8 +35,9 @@ export function RomAnnotationsHost() {
     machineState !== null &&
     machineState !== MachineControllerState.None &&
     machineState !== MachineControllerState.Stopped;
-  // --- Bumped by an edit to a user layer
+  // --- Bumped by an edit to a working copy, or when one appears or goes
   const [edits, edited] = useReducer((count: number) => count + 1, 0);
+  useEffect(() => subscribeRomAnnotationsReload(edited), []);
 
   const deps = useRef({ emuApi, mainApi, projectService });
   deps.current = { emuApi, mainApi, projectService };
@@ -51,6 +53,17 @@ export function RomAnnotationsHost() {
         machineId
       });
       if (cancelled) return;
+      // --- An additive overlay an earlier build wrote becomes a working copy, once (§4.2)
+      const migrated = await migrateLegacyOverlays(
+        deps.current.mainApi,
+        deps.current.projectService,
+        infos
+      ).catch(() => []);
+      if (cancelled) return;
+      if (migrated.length > 0) {
+        edited();
+        return;
+      }
       setRomPartitions(infos);
       // --- `ROM:<name>` in conditions reads the paged ROM's labels (§5.5)
       setRomConditionSymbols(
@@ -62,9 +75,15 @@ export function RomAnnotationsHost() {
         )
       );
       void pushConditionSymbols(deps.current.emuApi);
-      // --- Follow the user layers. Only an *edit* re-reads (it publishes a new, dirty model):
-      // --- the session's own loading and writing snapshots change nothing the layers hold.
-      unsubscribes = [...new Set(infos.map((info) => info.userPath))].map((path) => {
+      // --- Follow every working copy in effect — a page's own, and the ones it inherits (an edit to
+      // --- a working sp48 renames on every ROM that inherits it). Only an *edit* re-reads (it
+      // --- publishes a new, dirty model): the session's own loading and writing snapshots change
+      // --- nothing the layers hold.
+      const followed = infos.flatMap((info) => [
+        info.workingPath,
+        ...info.layers.filter((layer) => layer.kind === "working").map((layer) => layer.path)
+      ]);
+      unsubscribes = [...new Set(followed)].map((path) => {
         let seen: unknown;
         return subscribeAnnotationSession(deps.current.projectService, path, undefined, (snapshot) => {
           if (!snapshot.dirty || snapshot.annotations === seen) return;

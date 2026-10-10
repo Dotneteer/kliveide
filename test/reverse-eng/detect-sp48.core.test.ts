@@ -48,8 +48,9 @@ const context: DetectionContext = {
       ? ({
           partition,
           source: { crc32: "00000000", size: 0x4000, page: 0, path: "roms/sp48.rom" },
-          userPath: "/home/roms/sp48.rom.user.dis",
-          userPage: 0,
+          workingPath: "/home/roms/sp48.rom.user.dis",
+          workingPage: 0,
+          hasWorkingCopy: true,
           layers: [],
           bindings: []
         } as unknown as RomPartitionInfo)

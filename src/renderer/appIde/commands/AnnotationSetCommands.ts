@@ -219,7 +219,8 @@ export class AnnotationCloseCommand extends IdeCommandBase {
 // ------------------------------------------------------------------------------------------------
 
 /**
- * What `ann-info` says about the ROM pages (§5.3): each page's identity and layers, and for a page
+ * What `ann-info` says about the ROM pages (§5.3): each page's identity, its sidecar (the working copy
+ * or the shipped one) and the ones it inherits, whether it is editable, and for a page
  * the shipped annotations were byte-bound to (an inheriting ROM, or one Klive does not know, Q7),
  * how many of their labels bound.
  */
@@ -229,11 +230,12 @@ export function romAnnotationInfoLines(partitions: readonly RomPartitionInfo[]):
     const file = info.source.path?.split(/[\\/]/).pop() ?? "unknown file";
     lines.push(`ROM page ${info.partition} (${file}, CRC ${info.source.crc32}):`);
     if (info.layers.length === 0) lines.push("  no ROM annotations");
-    for (const layer of info.layers) {
-      lines.push(`  ${layer.kind === "user" ? "yours" : "shipped"}: ${layer.path}`);
+    for (const [i, layer] of info.layers.entries()) {
+      const role = layer.kind === "working" ? "working copy" : "shipped";
+      lines.push(`  ${i === 0 && !layer.bound ? role : `${role}, inherited`}: ${layer.path}`);
     }
-    if (!info.layers.some((layer) => layer.kind === "user")) {
-      lines.push(`  yours: ${info.userPath} (created by your first ROM label or comment)`);
+    if (!info.hasWorkingCopy) {
+      lines.push(`  working copy: none (rom-ann-new makes ${info.workingPath}, which makes the page editable)`);
     }
     for (const { sidecar, binding } of info.bindings) {
       lines.push(`  ${binding.labelsBound} of ${binding.labelsTotal} labels of ${sidecar} bound to these bytes`);

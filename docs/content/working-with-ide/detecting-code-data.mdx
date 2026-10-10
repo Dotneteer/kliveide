@@ -69,6 +69,6 @@ the dialog (or `ann-detect -undo`) puts back the annotations from before the las
 session; **Clear detected regions** (`-mode clear`) removes every detected region for good.
 
 <Callout type="info">
-`ann-detect rom` writes to *your* ROM annotations only. The ROM annotations Klive ships are never
-changed.
+`ann-detect rom` writes to the ROM's *working copy* only, so it needs one: make it with
+[`rom-ann-new`](/commands-reference#rom-ann-new). The ROM annotations Klive ships are never changed.
 </Callout>
