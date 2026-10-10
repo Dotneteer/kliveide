@@ -1,0 +1,60 @@
+---
+description: "Browse memory as bitmaps to find fonts, sprites and UDGs, name them, and save them as PNG."
+---
+
+import { Callout } from 'nextra/components'
+
+# The Graphics Finder
+
+Games keep their graphics as bytes: a sprite is a few dozen of them, a font a few hundred. The
+**graphics finder** draws memory as pictures, so you can sweep through it and *see* where they are.
+
+Open it with the `gfx` command, the **Show as graphics** button of the Memory view, **Show as
+Graphics** on a Disassembly row, or the **Graphics** view mode of any memory dump (a snapshot's
+banks, a NEX file's, a tape block's):
+
+```
+gfx $3d00 -w 1 -h 8 -layout cells
+```
+
+That shows the ZX Spectrum 48K's character set: every 8×8 character of the ROM font.
+
+## Finding a graphic
+
+The parameter you sweep is the **width** — how many bytes make one pixel row. Press **←** and **→**
+to change it by one byte; a sprite snaps into focus when the width is right. **↑** and **↓** scroll by
+a pixel row, **PgUp** and **PgDn** by a row of frames. *Go to* aligns the frames to the address you
+give, so the graphic you are after starts at a frame's top-left corner.
+
+Games store graphics in different orders, so a frame can be read four ways:
+
+| Order | Meaning |
+|---|---|
+| Linear | Row by row: each pixel row is *width* bytes. |
+| Cells | 8×8 character cells of 8 bytes each, left to right, then down. Fonts and UDGs. |
+| Columns | A column of bytes top to bottom, then the next column. |
+| Screen | The Spectrum display file's own order, for `$4000-$57FF`. |
+
+A **mask** can be interleaved with the graphic (a mask byte before each graphic byte), or stored
+before or after it; *Show mask* draws the mask instead of the pixels. *Ink*, *Paper* and *Invert*
+choose the colours, *Zoom* the size, *Across* how many frames sit side by side.
+
+With [code coverage](./code-coverage) on, **Dim unread** dims every byte the CPU never read.
+Graphics are read data, so they stand out while code and unused buffers recede.
+
+**Show candidates** lists places that look like graphics: fonts, the UDG area, and data the program
+read but never executed or wrote, ranked by how often it was read. They are guesses — check each one.
+
+## Naming it
+
+Select the bytes (drag, or Shift-click), right-click and choose **Name Graphic...**. Give it a name
+and check its width, height, frame count, order and mask. Klive adds a label, marks the bytes as a
+graphic in your annotations, and remembers its shape: the Disassembly view then lists it one pixel
+row per line with the pixels drawn in the comment, and the finder frames it by name.
+
+The same menu has **Show in Memory**, **Show in Disassembly**, **Save as PNG** (at 1:1 or at the
+current zoom) and **Export as Source**.
+
+<Callout type="info">
+The live finder refreshes when the machine pauses, not while you drag a selection.
+</Callout>

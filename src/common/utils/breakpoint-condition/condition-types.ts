@@ -83,6 +83,11 @@ export type ConditionEnvironment = {
   hasPartitions?: boolean;
   /** The ZX Spectrum Next: 16K bank specs and `nr()`. */
   isNext?: boolean;
+  /**
+   * Whether `<bank>:<label>` names an annotation label: every machine with a bank space
+   * (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §4.6). Absent: the Next only, as before.
+   */
+  bankLabels?: boolean;
   /** The machine's partition label parser — the one `bp-set` uses. */
   parsePartitionLabel?: (label: string) => number | undefined;
   /** The partition indexes `page()` can return, for the out-of-range check. */
@@ -103,6 +108,11 @@ export type ConditionSymbols = Record<string, number>;
 /** The symbol-table key of a ZX Spectrum Next bank-local label (`05:Flags`). */
 export function bankLocalSymbolKey(bank: number, name: string): string {
   return `${bank}:${name.toLowerCase()}`;
+}
+
+/** The symbol-table key of a ROM label, `ROM:<name>` in a condition (§5.5 of the plan). */
+export function romSymbolKey(name: string): string {
+  return `rom:${name.toLowerCase()}`;
 }
 
 /**

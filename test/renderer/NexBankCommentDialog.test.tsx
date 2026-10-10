@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { NexBankCommentDialog } from "@renderer/appIde/DocumentPanels/Next/NexBankCommentDialog";
-import { NEX_BANK_COMMENT_SOFT_LIMIT } from "@renderer/appIde/DocumentPanels/Next/nexAnnotations";
+import { BANK_COMMENT_SOFT_LIMIT } from "@renderer/appIde/annotations/programAnnotations";
 
 afterEach(() => {
   cleanup();
@@ -76,6 +76,6 @@ describe("NexBankCommentDialog", () => {
 
   it("counts characters against the soft limit", () => {
     render(<NexBankCommentDialog bank={5} initialComment="abc" controls={createControls()} />);
-    expect(screen.getByText(`3 / ${NEX_BANK_COMMENT_SOFT_LIMIT}`)).toBeInTheDocument();
+    expect(screen.getByText(`3 / ${BANK_COMMENT_SOFT_LIMIT}`)).toBeInTheDocument();
   });
 });

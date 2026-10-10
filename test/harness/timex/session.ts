@@ -46,7 +46,11 @@ export const SPECTRUM_COLORS = [
 ].map((c) => c >>> 0);
 
 class HarnessTimexMachine extends TimexWasmV2Machine {
-  constructor(private readonly rom: Uint8Array, model: TimexModelId, romPath?: string) {
+  constructor(
+    private readonly rom: Uint8Array,
+    model: TimexModelId,
+    private readonly romPath?: string
+  ) {
     super(TIMEX_MODELS.find((m) => m.modelId === model), {}, {
       artifactName: "harness-timex.wasm",
       readArtifact: async () => readFileSync(productionOutput)
@@ -54,8 +58,9 @@ class HarnessTimexMachine extends TimexWasmV2Machine {
     if (romPath) this.setMachineProperty(ROM_PROPERTY[model], romPath);
   }
 
+  /** Recorded as the machine's own loader does, so `getRomSources` names the file */
   protected override async loadRomFromResource(): Promise<Uint8Array> {
-    return this.rom;
+    return this.recordLoadedRom(this.romPath ?? "roms/sp48.rom", this.rom);
   }
 }
 

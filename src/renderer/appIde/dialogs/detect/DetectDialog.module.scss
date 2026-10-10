@@ -1,0 +1,76 @@
+@use "@styles/core.scss" as *;
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  font-size: var(--font-size-200);
+}
+
+.options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.hint {
+  color: var(--text-secondary);
+  font-size: var(--font-size-100);
+}
+
+.problem {
+  color: var(--status-error);
+}
+
+.warning {
+  color: var(--status-warning);
+}
+
+.message {
+  color: var(--status-success);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-100);
+
+  th {
+    text-align: left;
+    color: var(--color-label);
+    font-weight: 500;
+    border-bottom: 1px solid var(--border-subtle);
+    padding: var(--space-0_5) var(--space-1);
+  }
+
+  td {
+    padding: var(--space-0_5) var(--space-1);
+    border-bottom: 1px solid var(--border-subtle);
+    vertical-align: middle;
+  }
+}
+
+.details {
+  margin: 0;
+  padding-left: var(--space-3);
+  max-height: 12rem;
+  overflow: auto;
+}
+
+.linkButton {
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--accent-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  @include focus-ring;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}

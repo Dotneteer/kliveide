@@ -19,7 +19,7 @@ import { isProfileRootKey, PROFILE_KEY_UNMAPPED, type ProfileEdge } from "./prof
  * unbanked breakpoint fires there).
  */
 
-export type RoutineSource = "kbasic" | "proc" | "labels" | "callTargets" | "blocks";
+export type RoutineSource = "kbasic" | "proc" | "labels" | "annotations" | "callTargets" | "blocks";
 
 export type Routine = {
   /** Unique within the map */
@@ -59,6 +59,7 @@ export function routineSourceLabel(map: Pick<RoutineMap, "source" | "compiler">)
     kbasic: "Routines from Klive BASIC SUBs and FUNCTIONs",
     proc: "Routines from .proc blocks",
     labels: "Routines from labels",
+    annotations: "Routines from annotation labels",
     callTargets: "Routines from call targets (no symbols)",
     blocks: "256-byte blocks (no symbols)"
   };
@@ -82,6 +83,12 @@ export type RoutineMapInput = {
   edges?: readonly ProfileEdge[];
   /** A partition's display name (`getPartitionLabels`), for blocks and call targets */
   partitionLabel?: (partition: number) => string;
+  /**
+   * The labels of the active annotation set and the ROM's annotations (D6 (3b),
+   * `.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §4.4): routines between the compilation's
+   * labels and the call targets, each up to the next one in its partition or the end of its 16K slot.
+   */
+  annotationLabels?: readonly RoutineLabel[];
 };
 
 /** A routine as the compilation names it, before its offsets are known */
@@ -161,6 +168,10 @@ export function buildRoutineMap(input: RoutineMapInput): RoutineMap {
   for (const c of procRoutines(compilation?.procedures ?? [], compilation, input.machineId, files)) claim(c);
   // --- (3) Non-local labels, each up to the next
   for (const c of labelRuns(compilationLabels(compilation, input.machineId, files), "labels", compilation)) claim(c);
+  // --- (3b) Annotation and ROM labels: what the user (or the ROM's sidecar) named
+  for (const c of labelRuns(input.annotationLabels ?? [], "annotations", undefined, (address) => (address & 0xc000) + 0x4000)) {
+    claim(c);
+  }
   // --- (4) Call targets, when nothing above named a routine
   if (!best && input.edges?.length) {
     // --- A call target is already a profile offset: it claims up to the next target in its region
@@ -374,7 +385,8 @@ export function compilationLabels(
 function labelRuns(
   labels: readonly RoutineLabel[],
   source: RoutineSource,
-  compilation: Partial<DebuggableOutput> | undefined
+  compilation: Partial<DebuggableOutput> | undefined,
+  lastEnd?: (address: number) => number
 ): Candidate[] {
   const byPartition = new Map<string, RoutineLabel[]>();
   for (const l of labels) {
@@ -389,7 +401,7 @@ function labelRuns(
       const end = s.startAddress + (s.emittedCode?.length ?? 0);
       if (address >= s.startAddress && address < end) return end;
     }
-    return Math.min(0x10000, address + BLOCK);
+    return Math.min(0x10000, lastEnd ? lastEnd(address) : address + BLOCK);
   };
   const result: Candidate[] = [];
   for (const list of byPartition.values()) {

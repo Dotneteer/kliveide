@@ -1,6 +1,7 @@
 import type { MemoryPageInfo } from "@emu/machines/zxNext/nextMemoryLayout";
 
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
+import { nextBankSpace } from "@common/annotations/bankSpace";
 
 /*
  * Where a 16K bank is in the Z80 address space *right now*.
@@ -32,7 +33,10 @@ export type BankPlacement = {
 
 /** The 8K page indices a 16K bank occupies when paged: `2B` is its low half, `2B+1` its high. */
 export function bank16kPages(bank: number): [number, number] {
-  return [bank * 2, bank * 2 + 1];
+  return [
+    nextBankSpace.partitionOf({ bank, offset: 0 }),
+    nextBankSpace.partitionOf({ bank, offset: 0x2000 })
+  ] as [number, number];
 }
 
 /**

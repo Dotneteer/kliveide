@@ -22,6 +22,7 @@ import {
   setMachineSpecificAction,
   setProjectBuildFileAction,
   setExportDialogInfoAction,
+  setProjectAnnotationsAction,
   setWorkspaceSettingsAction,
   setWatchesAction,
   setBasicWatchesAction,
@@ -193,6 +194,11 @@ export async function openFolderByPath(projectFolder: string): Promise<string | 
       disp(setBuildRootAction(projectStruct.builder?.roots, !!projectStruct.builder?.roots));
       disp(saveProjectSettingAction(projectStruct.settings));
       disp(setExportDialogInfoAction(projectStruct.exportDialog));
+      disp(
+        setProjectAnnotationsAction(
+          typeof projectStruct.annotations === "string" ? projectStruct.annotations : undefined
+        )
+      );
       disp(setWorkspaceSettingsAction(undefined, projectStruct.workspaceSettings));
 
       // --- Restore the project's watch expressions. Unlike breakpoints this is not gated on the
@@ -481,6 +487,8 @@ function getKliveProjectStructureFromState(breakpoints: BreakpointInfo[]): Klive
     },
     settings: state.projectSettings,
     exportDialog: state.project?.exportSettings,
+    // --- Only when the project names its own sidecar; the default is written as no key at all
+    ...(state.project?.annotations ? { annotations: state.project.annotations } : {}),
     workspaceSettings: state.workspaceSettings,
     // --- Written by hand, never by the IDE (`.plans/Z80_UNIT_TESTS_PLAN.md` D19): carried over as is
     ...(unitTests !== undefined ? { unitTests } : {}),
@@ -591,6 +599,8 @@ type KliveProjectStructure = {
   exportDialog?: ExportDialogSettings;
   workspaceSettings?: Record<string, any>;
   unitTests?: unknown;
+  /** The project's annotation sidecar, relative to its folder (default `annotations.dis`). */
+  annotations?: string;
 };
 
 interface ViewOptions {

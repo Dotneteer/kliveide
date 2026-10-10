@@ -10,14 +10,14 @@ import {
   formatNexLabelValue,
   type NexLabelDialogLabel
 } from "./NexLabelDialog";
-import type { NexAnnotationLabelScope } from "./nexAnnotations";
+import type { AnnotationLabelScope } from "@renderer/appIde/annotations/programAnnotations";
 import styles from "./NexLabelsDialog.module.scss";
 import {
   DialogFooter,
   DialogFooterSpacer
 } from "@renderer/controls/overlay/DialogFooter";
 
-type NexLabelsScopeFilter = "all" | NexAnnotationLabelScope;
+type NexLabelsScopeFilter = "all" | AnnotationLabelScope;
 type NexLabelsSortMode = "address" | "name" | "references";
 
 const sortOptions: DropdownOption[] = [
@@ -51,7 +51,7 @@ export type NexLabelsDialogProps = DialogComponentProps<NexLabelsDialogResult> &
   bankAddressOffset: number;
   initialScope?: NexLabelsScopeFilter;
   labels: NexLabelDialogLabel[];
-  onAddLabel: (scope: NexAnnotationLabelScope) => Promise<NexLabelDialogLabel[]>;
+  onAddLabel: (scope: AnnotationLabelScope) => Promise<NexLabelDialogLabel[]>;
   onEditLabel: (label: NexLabelDialogLabel) => Promise<NexLabelDialogLabel[]>;
   onDeleteLabel: (label: NexLabelDialogLabel) => Promise<NexLabelDialogLabel[]>;
 };

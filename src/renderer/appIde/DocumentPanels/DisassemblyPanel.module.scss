@@ -213,6 +213,17 @@
   font-weight: 600;
 }
 
+/*
+ * A name the ROM's annotations gave (`--color-disassembly-rom-label`): the label family, set back by
+ * weight and slant, because it names the machine's code rather than the program's — a reader
+ * scanning for their own routines should not have to read past every ROM call to find them.
+ */
+.item .romLabel {
+  color: var(--color-disassembly-rom-label);
+  font-style: italic;
+  font-weight: 400;
+}
+
 .item .annotationDirective {
   color: var(--color-annotation-directive);
   font-weight: 600;
@@ -260,6 +271,19 @@
 
 .item .annotationRail.authored {
   background: var(--color-annotation-rail);
+}
+
+/*
+ * A region a tool wrote — detection (`origin: "auto"`) or a SkoolKit import — and nothing the user
+ * authored on the row: a dotted rail in tertiary text. Provenance, not a kind of data, so it is
+ * quieter than the authored rail and never a hue of its own; the tooltip says which tool.
+ */
+.item .annotationRail.toolRegion {
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--color-annotation-auto) 0 2px,
+    transparent 2px 4px
+  );
 }
 
 /*

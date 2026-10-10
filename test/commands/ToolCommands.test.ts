@@ -131,7 +131,7 @@ describe("ShowMemoryCommand", () => {
     });
 
     it("should have correct usage string", () => {
-      expect(command.usage).toBe("show-memory");
+      expect(command.usage).toBe("show-memory [<address>]");
     });
 
     it("should have alias 'shmem'", () => {

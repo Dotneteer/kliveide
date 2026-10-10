@@ -1,4 +1,6 @@
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
+import type { DisassemblyItem } from "@renderer/appIde/disassemblers/common-types";
+import type { NexAnnotationMenuAction } from "@renderer/appIde/DocumentPanels/Next/annotationEditor/NexAnnotationEditorViewModel";
 
 import { breakpointCommandSpec } from "@common/utils/breakpoint-spec";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
@@ -18,10 +20,71 @@ export type RowMenuTarget = {
   spec: string;
   /** The breakpoint the gutter shows on the row, if any. */
   breakpoint?: BreakpointInfo;
+  /** The row's listing item: what the annotation entries act on. */
+  item?: DisassemblyItem;
 };
 
+/**
+ * The annotation entries of a live row (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §4.5): the
+ * bank document's own, with the same shortcuts, acting on the bank or ROM page the row is in.
+ */
+export type AnnotationRowMenuItem = {
+  id: NexAnnotationMenuAction;
+  text: string;
+  hint?: string;
+  disabled?: boolean;
+  /** Why the entry is disabled: the row's memory cannot be annotated, or no set is active. */
+  tooltip?: string;
+  separatorBefore?: boolean;
+};
+
+/**
+ * The annotation entries for a row.
+ *
+ * @param destination Where the result goes: "your ROM annotations" or the set's file name; absent
+ * with `disabledReason` when the row cannot be annotated
+ * @param hints The shortcut each action has in a bank document (`NEX_ANNOTATION_SHORTCUTS`)
+ * @param regionActions The region kinds this machine offers
+ */
+export function annotationRowMenuItems(args: {
+  destination?: string;
+  disabledReason?: string;
+  rom: boolean;
+  hasOperands: boolean;
+  hasDefinition: boolean;
+  hints: Partial<Record<NexAnnotationMenuAction, string>>;
+  regionActions: { id: NexAnnotationMenuAction; text: string }[];
+}): AnnotationRowMenuItem[] {
+  const disabled = !!args.disabledReason;
+  const suffix = args.rom ? " (your ROM annotations)" : "";
+  const entry = (
+    id: NexAnnotationMenuAction,
+    text: string,
+    extra: Partial<AnnotationRowMenuItem> = {}
+  ): AnnotationRowMenuItem => ({
+    id,
+    text,
+    hint: args.hints[id],
+    ...(disabled ? { disabled: true, tooltip: args.disabledReason } : {}),
+    ...extra
+  });
+  return [
+    entry("local-label", `Label${suffix}...`, { separatorBefore: true }),
+    entry("synopsis", `Synopsis Comment${suffix}...`),
+    entry("comment", `End-of-Line Comment${suffix}...`),
+    entry("operand-label", `Operand Label${suffix}...`, args.hasOperands ? {} : { disabled: true }),
+    ...args.regionActions.map((region, index) =>
+      entry(region.id, region.text, index === 0 ? { separatorBefore: true } : {})
+    ),
+    entry("goto-definition", "Go to Definition", {
+      separatorBefore: true,
+      ...(args.hasDefinition ? {} : { disabled: true })
+    })
+  ];
+}
+
 export type RowMenuItem = {
-  id: "toggle" | "addOnce" | "makeOnce" | "keepAfterStop" | "runTo" | "edit";
+  id: "toggle" | "addOnce" | "makeOnce" | "keepAfterStop" | "runTo" | "edit" | "showGraphics";
   text: string;
   /** The gesture that does the same. */
   hint?: string;
@@ -67,5 +130,12 @@ export function disassemblyRowMenuItems(
     command: `run-to $${toHexa4(target.address)}`
   });
   items.push({ id: "edit", text: "Edit Breakpoint...", hint: "Double-Click", disabled: !bp });
+  // --- The graphics finder at the row (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §5.3)
+  items.push({
+    id: "showGraphics",
+    text: "Show as Graphics",
+    separatorBefore: true,
+    command: `gfx $${toHexa4(target.address)}`
+  });
   return items;
 }

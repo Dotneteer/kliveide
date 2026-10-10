@@ -33,6 +33,8 @@ import { getKliveHomeBase } from "./portable";
 import { mainStore } from "./main-store";
 import { KLIVE_APP_VERSION } from "./app-version";
 import { createHash } from "node:crypto";
+import { Z80Assembler } from "@main/z80-compiler/z80-assembler";
+import { AssemblerOptions } from "@main/compiler-common/assembler-in-out";
 import type { SdCardFingerprint } from "@common/machineState/machineStateTypes";
 import {
   applyProjectSettingAction,
@@ -494,6 +496,56 @@ class MainMessageProcessor {
    * @param data The text data to write.
    * @param resolveIn Optional base path context.
    */
+  /** The absolute path of a file inside the Klive home folder (`MainApi.resolveKliveHomePath`) */
+  resolveKliveHomePath(relative: string) {
+    if (typeof relative !== "string") {
+      throw new Error("Invalid file path");
+    }
+    return path.join(getKliveHomeBase(), KLIVE_HOME_FOLDER, relative);
+  }
+
+  /** Assembles source held in memory (`MainApi.assembleText`, source export's verification) */
+  async assembleText(source: string) {
+    if (typeof source !== "string") throw new Error("Invalid source");
+    const output = await new Z80Assembler().compile(source, new AssemblerOptions());
+    return {
+      errors: output.errors.map((e) => ({ line: e.line, message: e.message, isWarning: e.isWarning })),
+      segments: output.segments.map((segment) => ({
+        startAddress: segment.startAddress,
+        ...(segment.bank !== undefined ? { bank: segment.bank } : {}),
+        emittedCode: [...segment.emittedCode]
+      }))
+    };
+  }
+
+  /** Assembles lines one by one at their addresses (`MainApi.assembleLines`, a SkoolKit import's byte check) */
+  async assembleLines(lines: { text: string; address: number }[], z80n: boolean) {
+    if (!Array.isArray(lines)) throw new Error("Invalid lines");
+    const options = new AssemblerOptions();
+    options.allowNextInstructions = !!z80n;
+    const results: ({ bytes: number[] } | { error: string })[] = [];
+    for (const line of lines) {
+      const output = await new Z80Assembler().compile(`  .org ${line.address & 0xffff}\n  ${line.text}\n`, options);
+      results.push(
+        output.errorCount > 0
+          ? { error: output.errors.find((e) => !e.isWarning)?.message ?? "does not assemble" }
+          : { bytes: output.segments.flatMap((segment) => segment.emittedCode) }
+      );
+    }
+    return results;
+  }
+
+  /** Whether the folder of a file is writable (`MainApi.canWriteBeside`) */
+  canWriteBeside(filePath: string) {
+    if (typeof filePath !== "string" || !path.isAbsolute(filePath)) return false;
+    try {
+      fs.accessSync(path.dirname(filePath), fs.constants.W_OK);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   saveTextFile(savePath: string, data: string, resolveIn?: string) {
     if (typeof savePath !== "string" || !savePath.trim()) {
       throw new Error("Invalid file path");

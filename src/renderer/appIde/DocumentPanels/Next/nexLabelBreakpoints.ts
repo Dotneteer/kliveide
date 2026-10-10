@@ -1,7 +1,8 @@
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
-import type { NexFileAnnotations } from "./nexAnnotations";
+import type { ProgramAnnotations } from "@renderer/appIde/annotations/programAnnotations";
 
-import { getBankAnnotation } from "./nexAnnotations";
+import { getBankAnnotation } from "@renderer/appIde/annotations/programAnnotations";
+import type { BankSpace } from "@common/annotations/bankSpace";
 
 /*
  * Breakpoints anchored to a NEX annotation's labels.
@@ -41,7 +42,7 @@ export type LabelResolution =
  */
 export function resolveLabelBreakpoint(
   bp: BreakpointInfo,
-  annotations: NexFileAnnotations | undefined
+  annotations: ProgramAnnotations | undefined
 ): LabelResolution {
   if (!bp.label || !annotations) return { kind: "unresolved" };
 
@@ -86,6 +87,20 @@ export function patchForResolution(
 }
 
 /**
+ * A bank resolution on a machine without banks (the ZX80/ZX81, §4.7 of
+ * `.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md`): the label's canonical address, and the
+ * breakpoint stays partitionless. Elsewhere the resolution is kept as it is.
+ */
+export function withoutBanks(
+  resolution: LabelResolution,
+  bankSpace: BankSpace | undefined
+): LabelResolution {
+  if (resolution.kind !== "bank" || !bankSpace || bankSpace.bankBreakpoints) return resolution;
+  const address = bankSpace.addressesOf({ bank: resolution.bank, offset: resolution.bankOffset }, undefined)[0];
+  return address === undefined ? { kind: "unresolved" } : { kind: "address", address };
+}
+
+/**
  * Resolve every label-anchored breakpoint belonging to one sidecar.
  *
  * Only that sidecar's: `labelFile` is part of a breakpoint's identity, and another file's labels are
@@ -96,12 +111,15 @@ export function patchForResolution(
 export function resolveLabelBreakpointsFor(
   breakpoints: BreakpointInfo[],
   labelFile: string,
-  annotations: NexFileAnnotations | undefined
+  annotations: ProgramAnnotations | undefined,
+  bankSpace?: BankSpace
 ): BreakpointInfo[] {
   return breakpoints.map((bp) => {
     if (!bp.label || bp.labelFile !== labelFile) return bp;
 
-    const patch = patchForResolution(resolveLabelBreakpoint(bp, annotations));
+    const patch = patchForResolution(
+      withoutBanks(resolveLabelBreakpoint(bp, annotations), bankSpace)
+    );
     /*
      * The previous resolution is cleared whether or not a new one replaces it.
      *

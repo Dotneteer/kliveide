@@ -1,4 +1,8 @@
-import { useMemo } from "react";
+import { AnnotationFileBanner, type AnnotationFileStatus } from "@renderer/appIde/annotations/AnnotationFileBanner";
+import { createAnnotationSidecar, loadAnnotationSidecar } from "@renderer/appIde/annotations/annotationSidecar";
+import { seedAnnotationSession } from "@renderer/appIde/annotations/annotationSession";
+import { annotationMachineFor, bankSpaceForAnnotationMachine } from "@common/annotations/bankSpace";
+import { useMemo, useEffect, useState } from "react";
 
 import type { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import type { GenericFileContext } from "../helpers/GenericFilePanel";
@@ -431,7 +435,57 @@ const VIEWS: SpectrumBankView[] = ["memory", "disassembly"];
 /** Every RAM bank in the shared bank browser; a bank pops out as its own document */
 const BanksSection = ({ ctx, info, fullPath }: SectionProps & { fullPath: string }) => {
   const documentHubService = useDocumentHubService();
-  const { navigationHistoryService } = useAppServices();
+  const { navigationHistoryService, projectService } = useAppServices();
+  /*
+   * The snapshot's annotations (`<snapshot>.dis`, `.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md`
+   * §4.6): a popped-out bank is annotated when the file exists, and the banner creates it, as the
+   * NEX viewer's does. Loading the snapshot into the machine (`zx-snapshot`) makes the same file the
+   * active annotation set.
+   */
+  const annotationMachine = useMemo(
+    () => annotationMachineFor(mapSpectrumSnapshotToKlive(info.snapshot).machineId),
+    [info]
+  );
+  const annotationPath = `${fullPath}.dis`;
+  const [annotationStatus, setAnnotationStatus] = useState<AnnotationFileStatus>("loading");
+  const [annotationDetails, setAnnotationDetails] = useState<string>();
+  useEffect(() => {
+    let cancelled = false;
+    void loadAnnotationSidecar(projectService, { fullPath: annotationPath }).then((state) => {
+      if (cancelled) return;
+      setAnnotationStatus(state.status);
+      setAnnotationDetails(state.message);
+      if (state.status === "loaded" && state.annotations) {
+        seedAnnotationSession(annotationPath, state.annotations);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [annotationPath, projectService]);
+  const createAnnotations = async () => {
+    if (!annotationMachine) return;
+    try {
+      const state = await createAnnotationSidecar(
+        projectService,
+        { fullPath: annotationPath },
+        {
+          machine: annotationMachine,
+          nexPath: fullPath,
+          loadedBanks: [...info.snapshot.ram.keys()],
+          getDefaultOffsetIndex: (bank) =>
+            bankSpaceForAnnotationMachine(annotationMachine)?.defaultOffsetIndex(bank) ?? 3
+        }
+      );
+      setAnnotationStatus(state.status);
+      setAnnotationDetails(state.message);
+      if (state.annotations) seedAnnotationSession(annotationPath, state.annotations);
+    } catch (err) {
+      setAnnotationStatus("error");
+      setAnnotationDetails(err instanceof Error ? err.message : String(err));
+    }
+  };
+  const annotated = annotationStatus === "loaded" && !!annotationMachine;
   const projectFolder = useSelector((s) => s.project?.folderPath);
   const bankView = ctx.viewState?.bankView;
   const items = useMemo(() => spectrumBankItems(info.snapshot, bankView), [info, bankView]);
@@ -449,12 +503,27 @@ const BanksSection = ({ ctx, info, fullPath }: SectionProps & { fullPath: string
         spectrumBankDumpId(fullPath, item.bank),
         spectrumBankDumpTitle(fullPath, item.bank, projectFolder),
         item.bytes,
-        { disassemblyEnabled: true, disassOffset: item.listedAt, viewMode: view }
+        {
+          disassemblyEnabled: true,
+          disassOffset: item.listedAt,
+          viewMode: view,
+          ...(annotated
+            ? { annotationPath, annotationBank: item.bank, annotationMachine }
+            : {})
+        }
       )
     );
   };
 
   return (
+    <>
+    {annotationMachine && (
+      <AnnotationFileBanner
+        status={annotationStatus}
+        details={annotationDetails}
+        onCreate={() => void createAnnotations()}
+      />
+    )}
     <BankBrowser<SpectrumBankItem, SpectrumBankView>
       visibleItems={visible}
       selectedKey={ctx.viewState?.selectedBank === undefined ? undefined : `${ctx.viewState.selectedBank}`}
@@ -502,6 +571,7 @@ const BanksSection = ({ ctx, info, fullPath }: SectionProps & { fullPath: string
       )}
       hint="Pop out a bank from its row's icon, by double-clicking the row, or with Enter."
     />
+    </>
   );
 };
 

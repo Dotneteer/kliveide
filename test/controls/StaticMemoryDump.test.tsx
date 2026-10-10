@@ -144,7 +144,7 @@ describe("StaticMemoryDump", () => {
      * the panel now calls `useMainApi`. Mocked here rather than left to the real hook, which reaches
      * for `useRendererContext` — an export this file's `RendererProvider` mock deliberately does not
      * have. No test here follows a cross-bank jump; that decision is asserted without a DOM in
-     * `test/dialogs/nexAnnotationEditor` and `test/renderer/nexGoToDefinition.test.ts`.
+     * `test/dialogs/nexAnnotationEditor` and `test/renderer/goToDefinition.test.ts`.
      */
     vi.doMock("@renderer/core/MainApi", () => ({
       useMainApi: () => ({
@@ -2290,6 +2290,80 @@ describe("StaticMemoryDump", () => {
     });
   });
 
+  describe("graphics view", () => {
+    // --- `.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §5.3: the graphics finder as a fourth view mode
+    beforeEach(() => {
+      const noop = () => {};
+      vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation((() =>
+        new Proxy(
+          {
+            createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }),
+            measureText: () => ({ width: 10 })
+          } as Record<string, unknown>,
+          { get: (target, key) => (key in target ? target[key as string] : noop) }
+        )) as any);
+    });
+
+    const graphicsSidecar = () =>
+      vi.fn(() =>
+        Promise.resolve(
+          JSON.stringify({
+            schemaVersion: 3,
+            machine: "sp48",
+            globalLabels: [],
+            banks: { "2": { offsetIndex: 2, regions: [{ start: 0, end: 0x3fff, type: "disassemble" }] } }
+          })
+        )
+      );
+
+    it("is offered on a dump with no disassembly, and keeps its look in the view state", async () => {
+      const harness = await renderStaticMemoryDump({});
+      expect(
+        Array.from((screen.getByTestId("view-mode") as HTMLSelectElement).options).map((o) => o.value)
+      ).toEqual(["memory", "graphics"]);
+      fireEvent.change(screen.getByTestId("view-mode"), { target: { value: "graphics" } });
+      expect(await screen.findByRole("img", { name: "Graphics" })).toBeInTheDocument();
+      fireEvent.click(screen.getByRole("button", { name: "Bytes per pixel row: more" }));
+      await waitFor(() =>
+        expect(harness.setDocumentViewState).toHaveBeenLastCalledWith(
+          expect.anything(),
+          expect.objectContaining({ viewMode: "graphics", graphicsLook: { width: 2 } })
+        )
+      );
+    });
+
+    it("names a graphic in one session update: label, region and entry", async () => {
+      const saveFileContent = vi.fn(() => Promise.resolve());
+      const openDialog = vi.fn(() =>
+        Promise.resolve({ offset: 0, width: 1, height: 8, count: 2, layout: "cells", label: "Ship" })
+      );
+      await renderStaticMemoryDump(
+        {
+          disassemblyEnabled: true,
+          viewMode: "graphics",
+          disassOffset: 0x8000,
+          annotationPath: "/project/game.z80.dis",
+          annotationBank: 2,
+          annotationMachine: "sp48"
+        },
+        graphicsSidecar(),
+        saveFileContent,
+        new Uint8Array(0x4000),
+        openDialog
+      );
+      const image = await screen.findByRole("img", { name: "Graphics" });
+      fireEvent.contextMenu(image.parentElement!, { clientX: 1, clientY: 1 });
+      fireEvent.click(await screen.findByText("Name Graphic…"));
+      await waitFor(() => expect(openDialog).toHaveBeenCalledTimes(1));
+      expect(openDialog.mock.calls[0][1]).toMatchObject({ initial: { offset: 0, width: 1, height: 8 }, baseAddress: 0x8000 });
+      await waitFor(() => expect(saveFileContent).toHaveBeenCalled());
+      const saved = JSON.parse(saveFileContent.mock.calls.at(-1)[1]);
+      expect(saved.banks["2"].localLabels).toEqual([{ name: "Ship", value: 0 }]);
+      expect(saved.banks["2"].regions[0]).toEqual({ start: 0, end: 15, type: "bytes", rowBytes: 1, decode: "graphic" });
+      expect(saved.banks["2"].graphics).toEqual([{ offset: 0, width: 1, height: 8, count: 2, layout: "cells", label: "Ship" }]);
+    });
+  });
+
   describe("sprites view", () => {
     beforeEach(() => {
       vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation((() => ({
@@ -2338,10 +2412,10 @@ describe("StaticMemoryDump", () => {
 
     it("is offered for a NEX bank and not for a plain dump", async () => {
       await renderBank(spriteSidecar());
-      expect(viewModes()).toEqual(["memory", "disassembly", "sprites"]);
+      expect(viewModes()).toEqual(["memory", "disassembly", "graphics", "sprites"]);
       cleanup();
       await renderStaticMemoryDump({ disassemblyEnabled: true });
-      expect(viewModes()).toEqual(["memory", "disassembly"]);
+      expect(viewModes()).toEqual(["memory", "disassembly", "graphics"]);
     });
 
     it("falls back to memory when a plain dump's view state asks for sprites", async () => {
@@ -2827,8 +2901,8 @@ describe("StaticMemoryDump", () => {
         disassemblyEnabled: true,
         disassOffset: 0x8000,
         decimalView: true,
-        nexAnnotationPath: "/project/game.nex.dis",
-        nexAnnotationBank: 5,
+        annotationPath: "/project/game.nex.dis",
+        annotationBank: 5,
         viewMode: "disassembly"
       }
     );
@@ -2843,8 +2917,8 @@ describe("StaticMemoryDump", () => {
         disassOffset: 0x8000,
         decimalView: true,
         viewMode: "disassembly",
-        nexAnnotationPath: "/project/game.nex.dis",
-        nexAnnotationBank: 5
+        annotationPath: "/project/game.nex.dis",
+        annotationBank: 5
       }),
       false
     );

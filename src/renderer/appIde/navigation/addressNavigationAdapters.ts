@@ -14,7 +14,7 @@ import {
   spectrumBankDumpId,
   spectrumBankDumpTitle
 } from "../DocumentPanels/Spectrum/spectrumBankDocument";
-import { getNexAnnotationPath } from "../DocumentPanels/Next/nexAnnotations";
+import { getAnnotationPath } from "@renderer/appIde/annotations/programAnnotations";
 import {
   parseTapeBlockDocumentId,
   tapeBlockDumpId,
@@ -163,9 +163,9 @@ export type StaticDumpNavigationDeps = {
     options: {
       disassemblyEnabled?: boolean;
       disassOffset?: number;
-      viewMode?: "memory" | "disassembly" | "sprites";
-      nexAnnotationPath?: string;
-      nexAnnotationBank?: number;
+      viewMode?: "memory" | "disassembly" | "sprites" | "graphics";
+      annotationPath?: string;
+      annotationBank?: number;
       disassemblyFlavor?: "z88";
       topAddress?: number;
     }
@@ -350,8 +350,8 @@ export function createStaticDumpNavigationAdapter(
         {
           disassemblyEnabled: true,
           disassOffset: locator.base ?? 0,
-          nexAnnotationPath: getNexAnnotationPath(nexBank.path),
-          nexAnnotationBank: nexBank.bank,
+          annotationPath: getAnnotationPath(nexBank.path),
+          annotationBank: nexBank.bank,
           topAddress: locator.address,
           viewMode: locator.viewMode
         }

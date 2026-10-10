@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { NexFileAnnotations } from "@renderer/appIde/DocumentPanels/Next/nexAnnotations";
+import type { ProgramAnnotations } from "@renderer/appIde/annotations/programAnnotations";
 import {
   bankContentMix,
   bankLabels,
@@ -17,7 +17,7 @@ const model = (bank: Record<string, unknown> = {}, globals: { name: string; valu
     banks: {
       "5": { offsetIndex: 1, regions: [{ start: 0, end: 0x3fff, type: "disassemble" }], ...bank }
     }
-  }) as NexFileAnnotations;
+  }) as ProgramAnnotations;
 
 describe("bankContentMix", () => {
   it("counts bytes per region type", () => {
@@ -33,6 +33,8 @@ describe("bankContentMix", () => {
       words: 0x800,
       copper: 0,
       dma: 0,
+      text: 0,
+      graphic: 0,
       skip: 0x800
     });
     expect(contentMixPercent(mix, "bytes")).toBe(50);

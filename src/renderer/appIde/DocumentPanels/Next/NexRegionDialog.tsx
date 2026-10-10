@@ -6,10 +6,10 @@ import { DialogRow } from "@renderer/controls/DialogRow";
 import { DialogComponentProps } from "@renderer/controls/overlay/DialogProvider";
 import { toHexa2, toHexa4 } from "@renderer/appIde/services/ide-commands";
 import {
-  NEX_BANK_LAST_OFFSET,
-  type NexAnnotationRegion,
-  type NexAnnotationRegionType
-} from "./nexAnnotations";
+  ANNOTATION_BANK_LAST_OFFSET,
+  type AnnotationRegion,
+  type AnnotationRegionType
+} from "@renderer/appIde/annotations/programAnnotations";
 import { parseNexLabelValue } from "./NexLabelDialog";
 import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z80-disassembler";
 import { MemorySection } from "@renderer/appIde/disassemblers/common-types";
@@ -20,25 +20,26 @@ import { decodeCopperWord, formatCopperSource } from "@common/zxnext/copper/copp
 import { decodeDmaStream, formatDmaCommand } from "@common/zxnext/dma/dmaDecoder";
 
 export type NexRegionDialogResult = {
-  type: NexAnnotationRegionType;
+  type: AnnotationRegionType;
   start: number;
   end: number;
 };
 
 export type NexRegionDialogProps = DialogComponentProps<NexRegionDialogResult> & {
-  initialType: NexAnnotationRegionType;
+  initialType: AnnotationRegionType;
   initialStart: number;
   initialEnd: number;
-  regions: NexAnnotationRegion[];
+  regions: AnnotationRegion[];
   bytes: number[];
 };
 
-const REGION_TYPES: Array<{ value: NexAnnotationRegionType; label: string }> = [
+const REGION_TYPES: Array<{ value: AnnotationRegionType; label: string }> = [
   { value: "disassemble", label: "Disassembly" },
   { value: "bytes", label: "Bytes" },
   { value: "words", label: "Words" },
   { value: "copper", label: "Copper" },
   { value: "dma", label: "DMA" },
+  { value: "text", label: "Text" },
   { value: "skip", label: "Skip" }
 ];
 
@@ -50,7 +51,7 @@ export function NexRegionDialog({
   bytes,
   controls
 }: NexRegionDialogProps) {
-  const [type, setType] = useState<NexAnnotationRegionType>(initialType);
+  const [type, setType] = useState<AnnotationRegionType>(initialType);
   const [startText, setStartText] = useState(formatRegionOffset(initialStart));
   const [endText, setEndText] = useState(formatRegionOffset(initialEnd));
   const start = useMemo(() => parseNexLabelValue(startText), [startText]);
@@ -111,7 +112,7 @@ export function NexRegionDialog({
             value: regionType.value,
             label: regionType.label
           }))}
-          onChange={(next) => setType(next as NexAnnotationRegion["type"])}
+          onChange={(next) => setType(next as AnnotationRegion["type"])}
         />
       </DialogRow>
       <DialogRow label="Start offset" rows={true}>
@@ -125,7 +126,7 @@ export function NexRegionDialog({
             variant="secondary"
             clicked={() => {
               setStartText(formatRegionOffset(0));
-              setEndText(formatRegionOffset(NEX_BANK_LAST_OFFSET));
+              setEndText(formatRegionOffset(ANNOTATION_BANK_LAST_OFFSET));
             }}
           />
         </div>
@@ -204,7 +205,7 @@ const PREVIEW_LINE_LIMIT = 4;
  * with no address offset and its item addresses are already the right ones to print.
  */
 export async function createRegionPreview(
-  type: NexAnnotationRegionType,
+  type: AnnotationRegionType,
   start: number,
   end: number,
   bytes: number[]
@@ -231,7 +232,7 @@ export async function createRegionPreview(
 }
 
 export function formatRegionPreview(
-  type: NexAnnotationRegionType,
+  type: AnnotationRegionType,
   start: number,
   end: number,
   bytes: number[]
@@ -266,6 +267,13 @@ export function formatRegionPreview(
       if (commands.length > PREVIEW_LINE_LIMIT) lines.push("...");
       return lines.join("\n");
     }
+    case "text":
+      return createPreviewLines(start, end, 16, (offset, values) => {
+        const printable = values.every((v) => v >= 0x20 && v < 0x7f && v !== 0x22 && v !== 0x5c);
+        return printable
+          ? `${formatRegionOffset(offset)}  .defm "${String.fromCharCode(...values)}"`
+          : `${formatRegionOffset(offset)}  .defb ${values.map((v) => `$${toHexa2(v)}`).join(", ")}`;
+      });
     case "skip":
       return `${formatRegionOffset(start)}  .skip ${formatRegionOffset(length)}`;
     default:
@@ -331,7 +339,7 @@ export type RegionHint = { text: string; trimEnd?: number };
 
 /** A non-blocking note about a valid region: a DMA zero tail, or a Copper list on an odd offset. */
 export function regionHint(
-  type: NexAnnotationRegionType,
+  type: AnnotationRegionType,
   start: number,
   end: number,
   bytes: ArrayLike<number>
@@ -352,14 +360,14 @@ export function regionHint(
 }
 
 export function validateRegion(
-  type: NexAnnotationRegionType,
+  type: AnnotationRegionType,
   start: number | undefined,
   end: number | undefined
 ): string | undefined {
   if (start === undefined || end === undefined) {
     return "Enter hexadecimal or decimal offsets.";
   }
-  if (start < 0 || start > NEX_BANK_LAST_OFFSET || end < 0 || end > NEX_BANK_LAST_OFFSET) {
+  if (start < 0 || start > ANNOTATION_BANK_LAST_OFFSET || end < 0 || end > ANNOTATION_BANK_LAST_OFFSET) {
     return "Offsets must be in $0000..$3FFF.";
   }
   if (start > end) {
@@ -375,23 +383,23 @@ export function validateRegion(
 }
 
 function getAffectedRegions(
-  regions: NexAnnotationRegion[],
+  regions: AnnotationRegion[],
   start: number,
   end: number
-): NexAnnotationRegion[] {
+): AnnotationRegion[] {
   return regions.filter((region) => region.start <= end && region.end >= start);
 }
 
-function formatRegionLength(region: NexAnnotationRegion): string {
+function formatRegionLength(region: AnnotationRegion): string {
   const length = region.end - region.start + 1;
   return `${formatRegionOffset(length)} (${length})`;
 }
 
 function describeRegionEffect(
-  region: NexAnnotationRegion,
+  region: AnnotationRegion,
   start: number,
   end: number,
-  type: NexAnnotationRegionType
+  type: AnnotationRegionType
 ): string {
   if (region.start >= start && region.end <= end) {
     return region.type === type ? "unchanged" : "replace";

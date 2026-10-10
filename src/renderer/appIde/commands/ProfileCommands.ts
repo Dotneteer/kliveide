@@ -1,3 +1,4 @@
+import { annotationRoutineLabelsForState } from "@renderer/appIde/annotations/useAddressSymbols";
 import type { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext";
 import type { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
 import type { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
@@ -240,7 +241,10 @@ export class ProfileCommand extends IdeCommandBase<ProfileArgs> {
   private async model(context: IdeCommandContext, hideWaiting = true): Promise<ProfilerModel | string> {
     const snapshot = await readProfileSnapshot(context.emuApi);
     if (!snapshot) return NO_PROFILE;
-    const model = buildProfilerModel(snapshot, currentCompilation(context), { hideWaiting });
+    const model = buildProfilerModel(snapshot, currentCompilation(context), {
+      hideWaiting,
+      annotationLabels: annotationRoutineLabelsForState(context.store.getState())
+    });
     return model ?? "This machine's profile layout is unknown";
   }
 

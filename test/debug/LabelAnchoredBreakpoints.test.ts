@@ -87,7 +87,7 @@ describe("identity", () => {
 
   it("is not mistaken for a source breakpoint", () => {
     // --- Both start with a bracketed file. A line number is all digits; a label never is, because
-    // --- `isValidNexLabelName` follows the assembler's identifier convention.
+    // --- `isValidLabelName` follows the assembler's identifier convention.
     expect(getBreakpointStorageKey({ resource: "main.asm", line: 12 })).toEqual("[main.asm]:12");
     expect(getBreakpointStorageKey(globalLabelBp())).toEqual("[Game.nex.dis]:Start");
   });

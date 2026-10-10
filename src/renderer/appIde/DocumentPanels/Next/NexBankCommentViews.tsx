@@ -6,7 +6,7 @@ import { SmallIconButton } from "@renderer/controls/IconButton";
 import { Button } from "@renderer/controls/Button";
 import { getOverlayRoot } from "@renderer/controls/overlay/useOverlayRoot";
 import { toHexa2 } from "@renderer/appIde/services/ide-commands";
-import { flattenBankComment } from "./nexAnnotationEdits";
+import { flattenBankComment } from "@renderer/appIde/annotations/annotationEdits";
 import styles from "./NexBankCommentViews.module.scss";
 
 /*

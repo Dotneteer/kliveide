@@ -47,8 +47,12 @@ import {
 } from "@common/utils/breakpoint-condition/logpoint-template";
 import { ConditionResult } from "./conditionStore";
 import {
-  bankRelativeAddresses,
-  bankRelativePartition,
+  ANY_PARTITION,
+  nextBankSpace,
+  type BankSpace
+} from "@common/annotations/bankSpace";
+import {
+  normalizeBreakpointOwner,
   breakpointMatchesScope,
   effectiveBankSite,
   isBankRelative,
@@ -59,6 +63,14 @@ import {
   spriteAttrMaskOf,
   withScopeOwner
 } from "@common/utils/breakpoint-scope";
+
+/**
+ * Does a partition entry match what is paged? `ANY_PARTITION` is a bank breakpoint on a machine with
+ * no partitions, whose single armed address is the whole test.
+ */
+function partitionMatches(entry: number, paged: number | undefined): boolean {
+  return entry === ANY_PARTITION || entry === paged;
+}
 
 // --- Breakpoint flags
 // --- Execution breakpoint
@@ -324,10 +336,20 @@ export class DebugSupport implements IDebugSupport {
    * Initializes the service using the specified store
    * @param store Application state store
    */
+  /**
+   * How this machine names memory in banks: where a bank breakpoint is armed and which partition it
+   * must match. The Next's by default, which is what every bank breakpoint was before other machines
+   * had them; `MachineService` passes the machine's own (`bankSpaceFor`). A partitionless machine
+   * (the 48K, the ZX80/ZX81) arms its sites at their fixed addresses with `ANY_PARTITION`.
+   */
+  readonly bankSpace: BankSpace;
+
   constructor(
     private readonly store?: Store<AppState>,
-    bps?: BreakpointInfo[]
+    bps?: BreakpointInfo[],
+    bankSpace?: BankSpace
   ) {
+    this.bankSpace = bankSpace ?? nextBankSpace;
     this.suspendVersionIncrement = true;
     try {
       if (bps) {
@@ -399,7 +421,7 @@ export class DebugSupport implements IDebugSupport {
     // --- the *first* would let a disabled one mask an enabled one. The question is whether any
     // --- enabled entry matches, which is also what the single-entry case always meant.
     const partition = partitionResolver(address);
-    return bpData.partitions.some((p) => p[0] === partition && !p[1]);
+    return bpData.partitions.some((p) => partitionMatches(p[0], partition) && !p[1]);
   }
 
   /**
@@ -471,7 +493,7 @@ export class DebugSupport implements IDebugSupport {
         continue;
       }
       const partition = partitionResolver(address);
-      if (bpData.partitions.some((p) => p[0] === partition && !p[1])) {
+      if (bpData.partitions.some((p) => partitionMatches(p[0], partition) && !p[1])) {
         stop = true;
       }
     }
@@ -493,7 +515,7 @@ export class DebugSupport implements IDebugSupport {
   coreConditionPlan(): { address: number; slots: number[] }[] {
     const execAddresses = (bp: BreakpointInfo): number[] => {
       const site = effectiveBankSite(bp);
-      if (site) return bankRelativeAddresses(site.bankOffset);
+      if (site) return this.bankCandidates(site);
       const start = bp.address ?? bp.resolvedAddress;
       return start === undefined ? [] : [start];
     };
@@ -832,7 +854,7 @@ export class DebugSupport implements IDebugSupport {
         // --- Must be carried across: this literal rebuilds the definition field by field, so an
         // --- omitted `owner` would make every breakpoint project-owned the moment it was added,
         // --- and a project save would adopt breakpoints belonging to a `.nex` sidecar.
-        owner: bp.owner,
+        owner: normalizeBreakpointOwner(bp.owner),
         // --- Same reason as `owner`: this literal rebuilds the definition field by field, so a
         // --- bank-relative breakpoint would lose the very fields that make it one.
         bank: bp.bank,
@@ -1074,7 +1096,7 @@ export class DebugSupport implements IDebugSupport {
     // --- eight addresses it armed.
     if (isBankRelative(oldBp)) {
       const owningKey = bpKey;
-      for (const address of bankRelativeAddresses(effectiveBankSite(oldBp)!.bankOffset)) {
+      for (const address of this.bankCandidates(effectiveBankSite(oldBp)!)) {
         const bpData = this.breakpointData.get(address);
         for (const entry of bpData?.partitions ?? []) {
           if (entry[2] === owningKey) {
@@ -1465,7 +1487,7 @@ export class DebugSupport implements IDebugSupport {
       if (bp.disabled || !kindMatches(bp, kind) || !this.claimsAddress(bp, address)) continue;
       const site = effectiveBankSite(bp);
       const partition = site
-        ? bankRelativePartition(site.bank, site.bankOffset)
+        ? this.bankPartition(site)
         : (bp.partition ?? bp.resolvedPartition);
       if (partition !== undefined) {
         if (!resolved) {
@@ -1947,7 +1969,7 @@ export class DebugSupport implements IDebugSupport {
       if (bp.disabled || !bp.exec || bp.runTo || bp.annotationKind || isLogpoint(bp)) continue;
       if (!this.claimsAddress(bp, address)) continue;
       const site = effectiveBankSite(bp);
-      const own = site ? bankRelativePartition(site.bank, site.bankOffset) : (bp.partition ?? bp.resolvedPartition);
+      const own = site ? this.bankPartition(site) : (bp.partition ?? bp.resolvedPartition);
       if (own !== undefined && own !== partition) continue;
       const state = this.runtimeFor(key, bp, "exec");
       if (state.compiled?.inactiveReason) continue;
@@ -2072,6 +2094,16 @@ export class DebugSupport implements IDebugSupport {
     this.breakpointFlags[address] = flags;
   }
 
+  /** Every address a bank site's breakpoint is armed at, in this machine's bank space. */
+  private bankCandidates(site: { bank: number; bankOffset: number }): number[] {
+    return this.bankSpace.candidateAddresses({ bank: site.bank, offset: site.bankOffset });
+  }
+
+  /** The partition a bank site must be paged as, or `undefined` on a machine without partitions. */
+  private bankPartition(site: { bank: number; bankOffset: number }): number | undefined {
+    return this.bankSpace.partitionOf({ bank: site.bank, offset: site.bankOffset });
+  }
+
   /** Does this breakpoint put flags on `address`? */
   private claimsAddress(bp: BreakpointInfo, address: number): boolean {
     if (bp.ioRead || bp.ioWrite) {
@@ -2081,7 +2113,7 @@ export class DebugSupport implements IDebugSupport {
     const site = effectiveBankSite(bp);
     if (site) {
       // --- All eight addresses its bank could be paged to, the same ones `armBankRelative` set.
-      return bankRelativeAddresses(site.bankOffset).includes(address);
+      return this.bankCandidates(site).includes(address);
     }
     const start = bp.address ?? bp.resolvedAddress;
     if (start === undefined) return false;
@@ -2164,7 +2196,7 @@ export class DebugSupport implements IDebugSupport {
       if (bp.owner?.kind !== "session" || bp.disabled) continue;
       const site = effectiveBankSite(bp);
       if (site) {
-        if (bankRelativeAddresses(site.bankOffset).includes(address)) return true;
+        if (this.bankCandidates(site).includes(address)) return true;
         continue;
       }
       if ((bp.address ?? bp.resolvedAddress) === address) return true;
@@ -2231,9 +2263,10 @@ export class DebugSupport implements IDebugSupport {
     // --- The *effective* site: stated by the breakpoint, or filled in by resolution for a
     // --- label-anchored one. The arming cannot tell the difference, and must not.
     const site = effectiveBankSite(bp)!;
-    const partition = bankRelativePartition(site.bank, site.bankOffset);
+    // --- A machine without partitions matches whatever is paged: its site has one fixed address.
+    const partition = this.bankPartition(site) ?? ANY_PARTITION;
     const owningKey = getBreakpointStorageKey(bp);
-    for (const address of bankRelativeAddresses(site.bankOffset)) {
+    for (const address of this.bankCandidates(site)) {
       this.breakpointFlags[address] |= bpFlags;
       this.addPartitionEntry(address, partition, owningKey, !!bp.disabled);
     }
@@ -2242,7 +2275,7 @@ export class DebugSupport implements IDebugSupport {
   /** Drop a bank-relative breakpoint's own entries and flags from all eight of its addresses. */
   private disarmBankRelative(bp: BreakpointInfo, bpFlags: number): void {
     const owningKey = getBreakpointStorageKey(bp);
-    for (const address of bankRelativeAddresses(effectiveBankSite(bp)!.bankOffset)) {
+    for (const address of this.bankCandidates(effectiveBankSite(bp)!)) {
       const bpData = this.breakpointData.get(address);
       if (bpData?.partitions) {
         bpData.partitions = bpData.partitions.filter((p) => p[2] !== owningKey);

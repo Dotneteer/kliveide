@@ -60,7 +60,7 @@ describe("ownerForScope / withScopeOwner", () => {
 
   it("stamps the sidecar for a nex scope", () => {
     const stamped = withScopeOwner({ address: 0x8000 }, NEX_SCOPE);
-    expect(stamped.owner).toEqual({ kind: "nex", sidecar: SIDECAR });
+    expect(stamped.owner).toEqual({ kind: "sidecar", sidecar: SIDECAR });
   });
 
   it("keeps each breakpoint's own owner under the `all` scope", () => {
@@ -99,8 +99,8 @@ describe("DebugSupport.resetBreakpointsTo scoping", () => {
     const ds = seeded();
     expect(keysOf(ds)).toEqual([
       `32768:project:`,
-      `32769:nex:${SIDECAR}`,
-      `32770:nex:${OTHER_SIDECAR}`,
+      `32769:sidecar:${SIDECAR}`,
+      `32770:sidecar:${OTHER_SIDECAR}`,
       `32771:session:`
     ]);
   });
@@ -118,8 +118,8 @@ describe("DebugSupport.resetBreakpointsTo scoping", () => {
 
     // --- Assert: the project's own breakpoint was replaced; the other three survived
     expect(keysOf(ds)).toEqual([
-      `32769:nex:${SIDECAR}`,
-      `32770:nex:${OTHER_SIDECAR}`,
+      `32769:sidecar:${SIDECAR}`,
+      `32770:sidecar:${OTHER_SIDECAR}`,
       `32771:session:`,
       `36864:project:`
     ]);
@@ -135,9 +135,9 @@ describe("DebugSupport.resetBreakpointsTo scoping", () => {
     // --- Assert: the other sidecar, the project and the session are untouched
     expect(keysOf(ds)).toEqual([
       `32768:project:`,
-      `32770:nex:${OTHER_SIDECAR}`,
+      `32770:sidecar:${OTHER_SIDECAR}`,
       `32771:session:`,
-      `36865:nex:${SIDECAR}`
+      `36865:sidecar:${SIDECAR}`
     ]);
   });
 
@@ -147,7 +147,7 @@ describe("DebugSupport.resetBreakpointsTo scoping", () => {
     ds.resetBreakpointsTo([{ address: 0x9000, exec: true }], NEX_SCOPE);
 
     // --- Assert
-    expect(ds.breakpoints[0].owner).toEqual({ kind: "nex", sidecar: SIDECAR });
+    expect(ds.breakpoints[0].owner).toEqual({ kind: "sidecar", sidecar: SIDECAR });
   });
 
   it("overrides an owner that contradicts the installing scope", () => {
@@ -157,7 +157,7 @@ describe("DebugSupport.resetBreakpointsTo scoping", () => {
       [{ address: 0x9000, exec: true, owner: { kind: "nex", sidecar: OTHER_SIDECAR } }],
       NEX_SCOPE
     );
-    expect(ds.breakpoints[0].owner).toEqual({ kind: "nex", sidecar: SIDECAR });
+    expect(ds.breakpoints[0].owner).toEqual({ kind: "sidecar", sidecar: SIDECAR });
   });
 
   it("the `all` scope clears everything, session included", () => {
@@ -181,7 +181,7 @@ describe("DebugSupport.resetBreakpointsTo scoping", () => {
       ],
       ALL_SCOPE
     );
-    expect(keysOf(ds)).toEqual([`32768:project:`, `32769:nex:${SIDECAR}`]);
+    expect(keysOf(ds)).toEqual([`32768:project:`, `32769:sidecar:${SIDECAR}`]);
   });
 
   it("preserves the disabled state of both survivors and installed breakpoints", () => {
@@ -210,5 +210,19 @@ describe("DebugSupport.resetBreakpointsTo scoping", () => {
     ds.resetBreakpointsTo([], PROJECT_SCOPE);
     expect(ds.shouldStopAt(0x8001, () => undefined)).toEqual(true);
     expect(ds.shouldStopAt(0x8000, () => undefined)).toEqual(false);
+  });
+});
+
+describe("the nex -> sidecar owner migration (§4.6 of the reverse-engineering annotations plan)", () => {
+  it("reads the former nex owner and scope as sidecar ones", () => {
+    expect(breakpointMatchesScope({ kind: "nex", sidecar: SIDECAR }, { kind: "sidecar", sidecar: SIDECAR })).toEqual(true);
+    expect(breakpointMatchesScope({ kind: "sidecar", sidecar: SIDECAR }, NEX_SCOPE)).toEqual(true);
+    expect(breakpointMatchesScope({ kind: "sidecar", sidecar: SIDECAR }, PROJECT_SCOPE)).toEqual(false);
+  });
+
+  it("stores a breakpoint handed in with the former owner as sidecar-owned", () => {
+    const ds = new DebugSupport();
+    ds.addBreakpoint({ address: 0x8001, exec: true, owner: { kind: "nex", sidecar: SIDECAR } });
+    expect(ds.breakpoints[0].owner).toEqual({ kind: "sidecar", sidecar: SIDECAR });
   });
 });

@@ -1,10 +1,10 @@
 import type { DisassemblyItem } from "@renderer/appIde/disassemblers/common-types";
 
 import type {
-  NexAnnotationBankView,
-  NexAnnotationLabelScope,
-  NexAnnotationRegionType
-} from "../nexAnnotations";
+  AnnotationBankView,
+  AnnotationLabelScope,
+  AnnotationRegionType
+} from "@renderer/appIde/annotations/programAnnotations";
 import type { NexAnnotationEditorEnvironment } from "./NexAnnotationEditorModel";
 
 /**
@@ -46,7 +46,7 @@ export type NexAnnotationEditorIntent =
   | { type: "toolbarMenuRequested" }
 
   // ─── Per-bank display settings, which persist into the sidecar ──────────────
-  | { type: "viewModeSelected"; view: NexAnnotationBankView }
+  | { type: "viewModeSelected"; view: AnnotationBankView }
   | { type: "decimalViewSelected"; value: boolean }
   | { type: "disassemblyOffsetSelected"; offset: number }
 
@@ -65,13 +65,13 @@ export type NexAnnotationEditorIntent =
   | { type: "synopsisCommentRequested"; rowIndex?: number }
   | { type: "endOfLineCommentRequested"; rowIndex?: number }
   // --- Global and local labels are authored through one dialog, opened on a chosen scope.
-  | { type: "labelRequested"; scope: NexAnnotationLabelScope; rowIndex?: number }
+  | { type: "labelRequested"; scope: AnnotationLabelScope; rowIndex?: number }
   | { type: "manageLabelsRequested" }
   | { type: "operandLabelRequested"; rowIndex?: number }
   | { type: "regionRequested"; rowIndex?: number }
   | { type: "manageRegionsRequested" }
   // --- The one-gesture region changes: "mark this row or range as bytes/words/skip/code".
-  | { type: "regionTypeMarked"; regionType: NexAnnotationRegionType; rowIndex?: number }
+  | { type: "regionTypeMarked"; regionType: AnnotationRegionType; rowIndex?: number }
   | { type: "rowAnnotationsCleared"; rowIndex?: number }
   /*
    * A region change named by bank offsets rather than by listing rows.
@@ -84,7 +84,7 @@ export type NexAnnotationEditorIntent =
       type: "regionSpanMarked";
       start: number;
       end: number;
-      regionType: NexAnnotationRegionType;
+      regionType: AnnotationRegionType;
     }
   // --- How the Sprites view reads this bank: a fact about the data, so it is written to the sidecar.
   | { type: "spriteSettingsChanged"; format?: "8bit" | "4bit"; offset?: number }

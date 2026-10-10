@@ -639,7 +639,13 @@ describe("validateBreakpointForm for a bank-relative address", () => {
     // --- Otherwise the dialog would author a breakpoint the command layer rejects, through a path
     // --- that bypasses that rejection.
     const errors = validateBreakpointForm(aForm({ address: "05:+$0100" }), partitionedEnv());
-    expect(errors.address).toContain("ZX Spectrum Next");
+    expect(errors.address).toContain("not supported on this machine");
+  });
+
+  it("limits the bank to the machine's bank space", () => {
+    const env = { ...partitionedEnv(), supportsBankRelative: true, maxBank: 7 };
+    expect(validateBreakpointForm(aForm({ address: "07:+$0100" }), env).address).toBeUndefined();
+    expect(validateBreakpointForm(aForm({ address: "08:+$0100" }), env).address).toContain("$00 to $07");
   });
 
   it("names the bank when the bank is wrong, and the offset when the offset is", () => {

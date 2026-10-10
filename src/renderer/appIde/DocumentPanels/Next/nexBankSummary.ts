@@ -1,9 +1,9 @@
 import type {
-  NexAnnotationRegion,
-  NexAnnotationRegionType,
-  NexFileAnnotations
-} from "./nexAnnotations";
-import { getBankAnnotation, getNexBankAddressOffset, NEX_BANK_SIZE } from "./nexAnnotations";
+  AnnotationRegion,
+  AnnotationRegionType,
+  ProgramAnnotations
+} from "@renderer/appIde/annotations/programAnnotations";
+import { getBankAnnotation, getBankAddressOffset, ANNOTATION_BANK_SIZE } from "@renderer/appIde/annotations/programAnnotations";
 
 /*
  * What the NEX viewer's bank browser says about each bank, derived without a DOM.
@@ -12,22 +12,33 @@ import { getBankAnnotation, getNexBankAddressOffset, NEX_BANK_SIZE } from "./nex
  */
 
 /** Bytes of a bank per region type. Sums to the bank size (regions cover it completely). */
-export type NexBankContentMix = Record<NexAnnotationRegionType, number>;
+export type NexBankContentMix = Record<AnnotationRegionType, number>;
 
-export const NEX_REGION_TYPES: NexAnnotationRegionType[] = [
+export const NEX_REGION_TYPES: AnnotationRegionType[] = [
   "disassemble",
   "bytes",
   "words",
   "copper",
   "dma",
+  "text",
+  "graphic",
   "skip"
 ];
 
-export function bankContentMix(regions: NexAnnotationRegion[] | undefined): NexBankContentMix {
-  const mix: NexBankContentMix = { disassemble: 0, bytes: 0, words: 0, copper: 0, dma: 0, skip: 0 };
+export function bankContentMix(regions: AnnotationRegion[] | undefined): NexBankContentMix {
+  const mix: NexBankContentMix = {
+    disassemble: 0,
+    bytes: 0,
+    words: 0,
+    copper: 0,
+    dma: 0,
+    text: 0,
+    graphic: 0,
+    skip: 0
+  };
   for (const region of regions ?? []) {
     const start = Math.max(0, region.start);
-    const end = Math.min(NEX_BANK_SIZE - 1, region.end);
+    const end = Math.min(ANNOTATION_BANK_SIZE - 1, region.end);
     if (end >= start) mix[region.type] += end - start + 1;
   }
   return mix;
@@ -35,23 +46,23 @@ export function bankContentMix(regions: NexAnnotationRegion[] | undefined): NexB
 
 /**
  * The region types a bank's mix names in its legend and tooltip: the four everyday kinds always,
- * Copper and DMA only when the bank has some, so the common bank does not list two zeros.
+ * Copper, DMA, text and graphics only when the bank has some, so the common bank does not list two zeros.
  */
-export function mixLegendTypes(mix: NexBankContentMix): NexAnnotationRegionType[] {
-  return NEX_REGION_TYPES.filter((type) => (type !== "copper" && type !== "dma") || mix[type] > 0);
+export function mixLegendTypes(mix: NexBankContentMix): AnnotationRegionType[] {
+  return NEX_REGION_TYPES.filter((type) => (type !== "copper" && type !== "dma" && type !== "text" && type !== "graphic") || (mix[type] ?? 0) > 0);
 }
 
 /** A share of the bank, as a whole percentage, for display. */
-export function contentMixPercent(mix: NexBankContentMix, type: NexAnnotationRegionType): number {
-  const total = NEX_REGION_TYPES.reduce((sum, t) => sum + mix[t], 0);
-  return total ? Math.round((mix[type] * 100) / total) : 0;
+export function contentMixPercent(mix: NexBankContentMix, type: AnnotationRegionType): number {
+  const total = NEX_REGION_TYPES.reduce((sum, t) => sum + (mix[t] ?? 0), 0);
+  return total ? Math.round(((mix[type] ?? 0) * 100) / total) : 0;
 }
 
 /**
  * A share as text: `25%`, or `<1%` for a share that exists but rounds to nothing - a 14-byte Copper
  * list is named in the legend because it is there, and `0%` beside its name would say it is not.
  */
-export function formatMixPercent(mix: NexBankContentMix, type: NexAnnotationRegionType): string {
+export function formatMixPercent(mix: NexBankContentMix, type: AnnotationRegionType): string {
   const percent = contentMixPercent(mix, type);
   return percent === 0 && mix[type] > 0 ? "<1%" : `${percent}%`;
 }
@@ -71,13 +82,13 @@ export type NexBankLabel = {
  * pop-out's disassembly shows, so the labels here are the ones that appear there.
  */
 export function bankLabels(
-  annotations: NexFileAnnotations | undefined,
+  annotations: ProgramAnnotations | undefined,
   bank: number,
   listedAt: number
 ): NexBankLabel[] {
   if (!annotations) return [];
   const bankAnnotation = getBankAnnotation(annotations, bank);
-  const base = bankAnnotation ? getNexBankAddressOffset(bankAnnotation.offsetIndex) : listedAt;
+  const base = bankAnnotation ? getBankAddressOffset(bankAnnotation.offsetIndex) : listedAt;
   const labels: NexBankLabel[] = [
     ...(bankAnnotation?.localLabels ?? []).map((label) => ({
       name: label.name,
@@ -85,7 +96,7 @@ export function bankLabels(
       scope: "local" as const
     })),
     ...(annotations.globalLabels ?? [])
-      .filter((label) => label.value >= base && label.value < base + NEX_BANK_SIZE)
+      .filter((label) => label.value >= base && label.value < base + ANNOTATION_BANK_SIZE)
       .map((label) => ({ name: label.name, address: label.value, scope: "global" as const }))
   ];
   return labels.sort((a, b) => a.address - b.address || a.name.localeCompare(b.name));
@@ -103,7 +114,7 @@ export function isEmptyBank(bytes: ArrayLike<number>): boolean {
  * Whether the annotation file says anything about this bank beyond its defaults: a comment, a local
  * label, or regions other than the single whole-bank disassembly a new sidecar starts with.
  */
-export function isAnnotatedBank(annotations: NexFileAnnotations | undefined, bank: number): boolean {
+export function isAnnotatedBank(annotations: ProgramAnnotations | undefined, bank: number): boolean {
   const bankAnnotation = annotations ? getBankAnnotation(annotations, bank) : undefined;
   if (!bankAnnotation) return false;
   if (bankAnnotation.comment) return true;
@@ -113,6 +124,6 @@ export function isAnnotatedBank(annotations: NexFileAnnotations | undefined, ban
     regions.length === 1 &&
     regions[0].type === "disassemble" &&
     regions[0].start === 0 &&
-    regions[0].end === NEX_BANK_SIZE - 1
+    regions[0].end === ANNOTATION_BANK_SIZE - 1
   );
 }

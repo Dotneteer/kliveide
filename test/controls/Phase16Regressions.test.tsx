@@ -34,6 +34,13 @@ const emuApi = vi.hoisted(() => ({
   setKeyStatus: vi.fn()
 }));
 vi.mock("@renderer/core/EmuApi", () => ({ useEmuApi: () => emuApi }));
+// --- The call stack names return addresses through the shared resolver; nothing to name here
+vi.mock("@renderer/appIde/annotations/useAddressSymbols", () => ({
+  useAddressSymbols: () => ({ symbols: { empty: true, routineAt: () => undefined } })
+}));
+vi.mock("@renderer/appIde/services/AppServicesProvider", () => ({
+  useAppServices: () => ({ projectService: {} })
+}));
 
 // --- Drive the refresh callback by hand rather than on a timer: these tests are about *whether* a
 // --- fetch happens, not when.

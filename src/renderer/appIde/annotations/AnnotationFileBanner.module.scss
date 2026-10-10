@@ -1,0 +1,34 @@
+/*
+ * The one-line banner over a file viewer that says whether the file has an annotation sidecar —
+ * the NEX viewer's, shared by the snapshot viewer (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md`
+ * §4.6). The same tokens as `NexFileViewerPanel.module.scss`'s `.annotationPanel`, so the two read
+ * as one control.
+ */
+.banner {
+  display: flex;
+  gap: var(--space-1);
+  align-items: center;
+  min-height: var(--space-6);
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--border-default);
+  color: var(--color-secondary-label);
+  background-color: var(--surface-chrome);
+}
+
+.error {
+  color: var(--status-error);
+}
+
+.link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--data-value);
+  cursor: pointer;
+  font: inherit;
+  text-decoration: underline;
+
+  &:hover {
+    color: var(--color-command-icon);
+  }
+}

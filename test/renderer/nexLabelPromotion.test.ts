@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import type { NexFileAnnotations } from "@renderer/appIde/DocumentPanels/Next/nexAnnotations";
+import type { ProgramAnnotations } from "@renderer/appIde/annotations/programAnnotations";
 import { promoteLabelAt } from "@renderer/appIde/DocumentPanels/Next/nexLabelPromotion";
 
 /*
@@ -14,7 +14,7 @@ import { promoteLabelAt } from "@renderer/appIde/DocumentPanels/Next/nexLabelPro
  * See `.plans/NEX_DEBUGGING_PLAN.md` §13.3.
  */
 
-function annotations(over: Partial<NexFileAnnotations> = {}): NexFileAnnotations {
+function annotations(over: Partial<ProgramAnnotations> = {}): ProgramAnnotations {
   return {
     schemaVersion: 2,
     globalLabels: [{ name: "Entry", value: 0x8000 }],
@@ -26,10 +26,10 @@ function annotations(over: Partial<NexFileAnnotations> = {}): NexFileAnnotations
       }
     },
     ...over
-  } as NexFileAnnotations;
+  } as ProgramAnnotations;
 }
 
-const localLabelsOf = (result: NexFileAnnotations, bank: number) =>
+const localLabelsOf = (result: ProgramAnnotations, bank: number) =>
   result.banks[String(bank)]?.localLabels;
 
 describe("promoteLabelAt", () => {

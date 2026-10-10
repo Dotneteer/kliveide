@@ -1,11 +1,11 @@
 import type { DisassemblyItem } from "@renderer/appIde/disassemblers/common-types";
-import type { NexFileAnnotations } from "@renderer/appIde/DocumentPanels/Next/nexAnnotations";
+import type { ProgramAnnotations } from "@renderer/appIde/annotations/programAnnotations";
 import type {
   NexAnnotationEditorEnvironment,
   NexAnnotationEditorState
 } from "@renderer/appIde/DocumentPanels/Next/annotationEditor/NexAnnotationEditorModel";
 import { initialState } from "@renderer/appIde/DocumentPanels/Next/annotationEditor/NexAnnotationEditorModel";
-import type { NexAnnotationSessionSnapshot } from "@renderer/appIde/DocumentPanels/Next/annotationEditor/NexAnnotationEditorPorts";
+import type { AnnotationSessionSnapshot } from "@renderer/appIde/DocumentPanels/Next/annotationEditor/NexAnnotationEditorPorts";
 
 /*
  * Deep-merged builders, per `.ai/ui-mvc-guide.md`: a test names only the fields it cares about, and
@@ -29,7 +29,7 @@ export function anEnvironment(
   };
 }
 
-export function anAnnotationModel(over: Partial<NexFileAnnotations> = {}): NexFileAnnotations {
+export function anAnnotationModel(over: Partial<ProgramAnnotations> = {}): ProgramAnnotations {
   return {
     schemaVersion: 1,
     banks: {
@@ -90,7 +90,7 @@ export function aLabelledOperandRow(bankOffset: number, operandValue: number): D
 }
 
 /** An annotation model carrying one label in this bank and one beyond it. */
-export function anAnnotationModelWithLabels(): NexFileAnnotations {
+export function anAnnotationModelWithLabels(): ProgramAnnotations {
   return anAnnotationModel({
     globalLabels: [
       { name: "Nearby", value: 0x4100 },
@@ -117,8 +117,8 @@ export function aState(over: Partial<NexAnnotationEditorState> = {}): NexAnnotat
 }
 
 export function aSnapshot(
-  over: Partial<NexAnnotationSessionSnapshot> = {}
-): NexAnnotationSessionSnapshot {
+  over: Partial<AnnotationSessionSnapshot> = {}
+): AnnotationSessionSnapshot {
   return {
     annotations: anAnnotationModel(),
     dirty: false,

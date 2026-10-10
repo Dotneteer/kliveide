@@ -3,7 +3,7 @@ import type { MemoryPageInfo } from "@emu/machines/zxNext/nextMemoryLayout";
 import { bank16kAtAddress } from "./nextBankLocation";
 import { getNexLoad } from "./nexLoadSession";
 import { loadNexFileContents } from "./nexFileLoader";
-import { getNexAnnotationPath } from "./nexAnnotations";
+import { getAnnotationPath } from "@renderer/appIde/annotations/programAnnotations";
 
 /*
  * Follow the program counter into whichever NEX bank it is in, on every pause.
@@ -165,7 +165,7 @@ export async function revealNexBankAtAddress(
     contents,
     disassOffset: located.baseAddress,
     topAddress: pc,
-    annotationPath: getNexAnnotationPath(session.path)
+    annotationPath: getAnnotationPath(session.path)
   });
   return "revealed";
 }

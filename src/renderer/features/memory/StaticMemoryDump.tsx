@@ -1,3 +1,4 @@
+import type { AnnotationMachine } from "@common/annotations/bankSpace";
 import styles from "./StaticMemoryDump.module.scss";
 import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import { IDocumentHubService } from "@renderer/abstractions/IDocumentHubService";
@@ -47,12 +48,12 @@ import {
   useContextMenuState
 } from "@renderer/controls/ContextMenu";
 import {
-  createAnnotatedNexDisassemblyItems,
+  createAnnotatedDisassemblyItems,
   createScreenSkipItem,
   pcAnchoredRuns,
   SCREEN_AREA_RANGE,
   screenAreaApplies
-} from "@renderer/appIde/DocumentPanels/Next/nexAnnotatedDisassembly";
+} from "@renderer/appIde/annotations/annotatedDisassembly";
 import { useSysVarOperandLabelResolver } from "@renderer/appIde/DocumentPanels/useSysVarOperandLabels";
 // --- The same wording as the live Disassembly view's switch: one control in two places.
 import { SYS_VAR_NAMES_TITLE } from "@renderer/appIde/DocumentPanels/DisassemblyToolbars";
@@ -91,8 +92,8 @@ import {
 } from "@renderer/appIde/DocumentPanels/Next/annotationEditor/NexAnnotationEditorViewModel";
 import {
   getBankAnnotation,
-  getNexBankAddressOffset,
-} from "@renderer/appIde/DocumentPanels/Next/nexAnnotations";
+  getBankAddressOffset,
+} from "@renderer/appIde/annotations/programAnnotations";
 import {
   NexBankCommentChip,
   NexBankCommentStrip
@@ -112,6 +113,25 @@ import {
   type NexSpriteFormat
 } from "@common/zxnext/sprites/spritePatterns";
 import { useSpritePalette } from "@renderer/features/sprite-editor/useSpritePalette";
+import { GraphicsView, type ByteSpan } from "@renderer/features/graphics/GraphicsView";
+import { NameGraphicDialog, NAME_GRAPHIC_DIALOG_TITLE } from "@renderer/features/graphics/NameGraphicDialog";
+import { useDialogs } from "@renderer/controls/overlay/DialogProvider";
+import { updateAnnotationSession } from "@renderer/appIde/annotations/annotationSession";
+import { withNamedGraphic } from "@renderer/appIde/annotations/annotationEdits";
+import { useActiveAnnotationSet } from "@renderer/appIde/annotations/activeAnnotationSet";
+import { ReverseToolsMenu } from "@renderer/appIde/reverse/ReverseToolsMenu";
+import { GraphicsToolbar } from "@renderer/features/graphics/GraphicsToolbar";
+import { findGraphicCandidates } from "@common/reverse/graphicsCandidates";
+import {
+  DEFAULT_GRAPHICS_LOOK,
+  GRAPHICS_PRESETS,
+  type GraphicsLook
+} from "@common/reverse/graphicsDecode";
+import {
+  graphicMarksOf,
+  graphicOfSpan,
+  listingCodeSpans
+} from "@renderer/features/graphics/graphicMarks";
 
 type MemoryDumpViewState = {
   disassemblyEnabled?: boolean;
@@ -124,6 +144,16 @@ type MemoryDumpViewState = {
   disassemblyScrollPosition?: number;
   version?: number;
   topAddress?: number;
+  /**
+   * The annotation sidecar and the bank in it this document lists
+   * (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §4.6): a NEX's, a snapshot's, a paused
+   * machine's.
+   */
+  annotationPath?: string;
+  annotationBank?: number;
+  /** The bank space the bank is numbered in; absent means the ZX Spectrum Next. */
+  annotationMachine?: AnnotationMachine;
+  /** The former names of `annotationPath` / `annotationBank`, read so saved layouts reopen. */
   nexAnnotationPath?: string;
   nexAnnotationBank?: number;
   /** Name 16-bit data operands after the machine's system variables. Defaults to on. */
@@ -167,6 +197,14 @@ type MemoryDumpViewState = {
    * listing this document always produced. Set by the opener and kept with the document.
    */
   disassemblyFlavor?: StaticDisassemblyFlavor;
+  /**
+   * How the Graphics view reads the bytes (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §5.3). View
+   * state, never the sidecar: sweeping the width is how graphics are *found*, and a write per step
+   * would turn browsing into editing. A graphic that has been found is named, which is a write.
+   */
+  graphicsLook?: Partial<GraphicsLook>;
+  /** The byte offset at the top of the Graphics view. */
+  graphicsTop?: number;
 };
 
 /**
@@ -178,15 +216,16 @@ type MemoryDumpViewState = {
  */
 export type StaticDisassemblyFlavor = "z88";
 
-type StaticDumpViewMode = "memory" | "disassembly" | "sprites";
+type StaticDumpViewMode = "memory" | "disassembly" | "sprites" | "graphics";
 
 type StaticMemoryDumpOptions = {
   disassemblyEnabled?: boolean;
   disassOffset?: number;
   decimalView?: boolean;
   viewMode?: StaticDumpViewMode;
-  nexAnnotationPath?: string;
-  nexAnnotationBank?: number;
+  annotationPath?: string;
+  annotationBank?: number;
+  annotationMachine?: AnnotationMachine;
   disassemblyFlavor?: StaticDisassemblyFlavor;
 
   /**
@@ -208,9 +247,18 @@ const STATIC_DISASSEMBLY_FALLBACK_PAGE_ROWS = 16;
  */
 const GO_TO_PC_TITLE = "Go to the PC address in this bank";
 
+const graphicsViewModeOption: DropdownOption = { value: "graphics", label: "Graphics" };
+
+/* --- Any dump can be read as graphics (§5.3); a dump with no disassembly offers just the two. */
+const memoryOnlyViewModeOptions: DropdownOption[] = [
+  { value: "memory", label: "Memory" },
+  graphicsViewModeOption
+];
+
 const staticDumpViewModeOptions: DropdownOption[] = [
   { value: "memory", label: "Memory" },
-  { value: "disassembly", label: "Disassembly" }
+  { value: "disassembly", label: "Disassembly" },
+  graphicsViewModeOption
 ];
 
 /* --- Sprites is offered for NEX banks only: a pattern sheet of an arbitrary dump means nothing. */
@@ -232,7 +280,9 @@ const StaticMemoryDump = ({
   viewState
 }: DocumentProps<MemoryDumpViewState>) => {
   const documentHubService = useDocumentHubService();
-  const { navigationHistoryService } = useAppServices();
+  const { navigationHistoryService, projectService } = useAppServices();
+  const dialogs = useDialogs();
+  const activeAnnotationSet = useActiveAnnotationSet();
   const emuApi = useEmuApi();
   const mainApi = useMainApi();
   const machineState = useSelector((st) => st.emulatorState?.machineState);
@@ -255,10 +305,19 @@ const StaticMemoryDump = ({
    *
    * See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.16.
    */
-  const isNexBankDocument = currentViewState.nexAnnotationBank !== undefined;
+  // --- The annotated bank, under its current names or the ones a saved layout may still carry
+  const viewAnnotationPath = currentViewState.annotationPath ?? currentViewState.nexAnnotationPath;
+  const viewAnnotationBank = currentViewState.annotationBank ?? currentViewState.nexAnnotationBank;
+  const annotationMachine: AnnotationMachine = currentViewState.annotationMachine ?? "next";
+  // --- Any annotated bank (a NEX's, a snapshot's) opens on its listing and edits its annotations;
+  // --- the Sprites view, the screen switch and the branch gutter are the Next's alone
+  const isAnnotatedBankDocument = viewAnnotationBank !== undefined;
+  const isNexBankDocument = isAnnotatedBankDocument && annotationMachine === "next";
   const requestedViewMode: StaticDumpViewMode = disassemblyEnabled
-    ? (currentViewState.viewMode ?? (isNexBankDocument ? "disassembly" : "memory"))
-    : "memory";
+    ? (currentViewState.viewMode ?? (isAnnotatedBankDocument ? "disassembly" : "memory"))
+    : currentViewState.viewMode === "graphics"
+      ? "graphics"
+      : "memory";
   const viewMode: StaticDumpViewMode =
     requestedViewMode === "sprites" && !isNexBankDocument ? "memory" : requestedViewMode;
   /*
@@ -269,9 +328,9 @@ const StaticMemoryDump = ({
    * from, which compares equal and writes nothing. See `.plans/NEX_BANK_SPRITES_VIEW_PLAN.md` §3.
    */
   const lastListingView = useRef<"memory" | "disassembly">(
-    viewMode === "sprites" ? "disassembly" : viewMode
+    viewMode === "sprites" || viewMode === "graphics" ? "disassembly" : viewMode
   );
-  if (viewMode !== "sprites") lastListingView.current = viewMode;
+  if (viewMode !== "sprites" && viewMode !== "graphics") lastListingView.current = viewMode;
   const decimalView = currentViewState.decimalView ?? false;
   // --- On unless the reader turned it off: a named address is the more informative default, and a
   // --- listing that has never been configured should be the readable one.
@@ -336,19 +395,22 @@ const StaticMemoryDump = ({
   const navMemoryTop = useRef<number>(viewState?.topAddress ?? viewState?.disassOffset ?? 0);
   const navDisassemblyTop = useRef<number>(viewState?.topAddress ?? viewState?.disassOffset ?? 0);
   const navViewMode = useRef<StaticDumpViewMode>("memory");
+  // --- The Graphics view's top byte (an address), and its versioned jump.
+  const navGraphicsTop = useRef<number>(viewState?.topAddress ?? viewState?.disassOffset ?? 0);
+  const [graphicsJump, setGraphicsJump] = useState<{ offset: number; version: number }>();
   // --- The address of the selected sprite pattern, for Go Back to return to.
   const navSpritesTop = useRef<number>(viewState?.topAddress ?? viewState?.disassOffset ?? 0);
   // --- Versioned, so going to the same address twice still selects it the second time.
   const [spritesJumpAddress, setSpritesJumpAddress] = useState<{ address: number; version: number }>();
   const navDisassOffset = useRef(0);
   const items = useMemo(() => createRowAddresses(contents.length, 16), [contents.length]);
-  const bankBreakpoints = useNexBankBreakpoints(currentViewState.nexAnnotationBank);
+  const bankBreakpoints = useNexBankBreakpoints(viewAnnotationBank);
   /*
    * `undefined` — not an empty list — when there is nothing to say: no bank, or a machine that is
    * not a ZX Spectrum Next. "Not paged in" is a claim about a machine's current paging, and making
    * it about a machine that is not running would be worse than saying nothing.
    */
-  const bankPlacements = useNexBankLocation(currentViewState.nexAnnotationBank);
+  const bankPlacements = useNexBankLocation(viewAnnotationBank);
 
   /*
    * File bytes or the machine's — and the machine's whenever there is a machine to ask.
@@ -378,7 +440,7 @@ const StaticMemoryDump = ({
    * nothing running, shows exactly what it always did.
    */
   const liveBankWanted = bankPlacements !== undefined;
-  const liveBank = useNexLiveBankBytes(currentViewState.nexAnnotationBank, liveBankWanted);
+  const liveBank = useNexLiveBankBytes(viewAnnotationBank, liveBankWanted);
   const bankDiff = useMemo(() => diffBankBytes(contents, liveBank), [contents, liveBank]);
   const liveBankShown = liveBank !== undefined;
   /*
@@ -545,8 +607,8 @@ const StaticMemoryDump = ({
               {
                 disassemblyEnabled: true,
                 disassOffset: base,
-                nexAnnotationPath: annotationPath,
-                nexAnnotationBank: bank,
+                annotationPath,
+                annotationBank: bank,
                 topAddress,
                 // --- The definition is code being read, so open on the listing rather than the dump.
                 viewMode: "disassembly" as const
@@ -563,9 +625,9 @@ const StaticMemoryDump = ({
 
   const annotationEnv = useMemo<NexAnnotationEditorEnvironment>(
     () => ({
-      annotationPath: currentViewState.nexAnnotationPath,
-      bank: currentViewState.nexAnnotationBank,
-      viewMode: viewMode === "sprites" ? lastListingView.current : viewMode,
+      annotationPath: viewAnnotationPath,
+      bank: viewAnnotationBank,
+      viewMode: viewMode === "sprites" || viewMode === "graphics" ? lastListingView.current : viewMode,
       // --- Only a NEX bank has a Sprites view, so only a NEX bank records whether it is showing.
       ...(isNexBankDocument ? { spritesViewActive: viewMode === "sprites" } : {}),
       decimalView,
@@ -580,8 +642,8 @@ const StaticMemoryDump = ({
       machineRunning: machineHasRun(machineState)
     }),
     [
-      currentViewState.nexAnnotationBank,
-      currentViewState.nexAnnotationPath,
+      viewAnnotationBank,
+      viewAnnotationPath,
       decimalView,
       disassOffset,
       isNexBankDocument,
@@ -661,7 +723,7 @@ const StaticMemoryDump = ({
 
   // --- The sidecar is where these breakpoints live between sessions: read once per file, written
   // --- back on every change.
-  useNexSidecarBreakpointSync(currentViewState.nexAnnotationPath, annotationVm.annotations);
+  useNexSidecarBreakpointSync(viewAnnotationPath, annotationVm.annotations);
 
   useEffect(() => {
     void dispatchAnnotation({ type: "opened" });
@@ -683,7 +745,7 @@ const StaticMemoryDump = ({
    * published and nothing re-renders.
    */
   useEffect(() => {
-    const bank = currentViewState.nexAnnotationBank;
+    const bank = viewAnnotationBank;
     const annotations = annotationVm.annotations;
     if (bank === undefined || !annotations) return;
     const bankAnnotation = getBankAnnotation(annotations, bank);
@@ -691,7 +753,7 @@ const StaticMemoryDump = ({
     setCurrentViewState((current) => {
       const next = { ...current };
       let changed = false;
-      const nextDisassOffset = getNexBankAddressOffset(bankAnnotation.offsetIndex);
+      const nextDisassOffset = getBankAddressOffset(bankAnnotation.offsetIndex);
       if (next.disassOffset !== nextDisassOffset) {
         next.disassOffset = nextDisassOffset;
         changed = true;
@@ -713,7 +775,7 @@ const StaticMemoryDump = ({
       }
       return changed ? next : current;
     });
-  }, [annotationVm.annotations, currentViewState.nexAnnotationBank]);
+  }, [annotationVm.annotations, viewAnnotationBank]);
   /*
    * The width every row reserves for its label.
    *
@@ -934,6 +996,84 @@ const StaticMemoryDump = ({
     [navigationHistoryService]
   );
 
+  // ─── Graphics view (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §5.3) ──────────
+
+  const graphicsLook = useMemo<GraphicsLook>(
+    () => ({ ...DEFAULT_GRAPHICS_LOOK, ...currentViewState.graphicsLook }),
+    [currentViewState.graphicsLook]
+  );
+  const changeGraphicsLook = useCallback(
+    (patch: Partial<GraphicsLook>) =>
+      changeViewState((vs) => (vs.graphicsLook = { ...vs.graphicsLook, ...patch })),
+    [changeViewState]
+  );
+  const goToGraphicsAddress = useCallback(
+    (address: number) =>
+      void navigationHistoryService.recordJump("memoryGoTo", () => {
+        navGraphicsTop.current = address & 0xffff;
+        setGraphicsJump((current) => ({
+          offset: (address & 0xffff) - disassOffset,
+          version: (current?.version ?? 0) + 1
+        }));
+      }),
+    [disassOffset, navigationHistoryService]
+  );
+  const applyGraphicsPreset = useCallback(
+    (id: string) => {
+      const preset = GRAPHICS_PRESETS.find((p) => p.id === id);
+      if (!preset) return;
+      changeGraphicsLook(preset.look);
+      // --- A preset's address only means something where the dump actually holds it
+      const length = contents?.length ?? 0;
+      if (preset.address !== undefined && preset.address >= disassOffset && preset.address < disassOffset + length) {
+        goToGraphicsAddress(preset.address);
+      }
+    },
+    [changeGraphicsLook, contents?.length, disassOffset, goToGraphicsAddress]
+  );
+  const graphicsBank =
+    viewAnnotationBank !== undefined ? annotationVm.annotations?.banks[String(viewAnnotationBank)] : undefined;
+  const graphicMarks = useMemo(() => graphicMarksOf(graphicsBank), [graphicsBank]);
+  const graphicsCandidates = useMemo(
+    () => (viewMode === "graphics" && bankBytes ? findGraphicCandidates({ bytes: bankBytes, base: disassOffset }) : undefined),
+    [bankBytes, disassOffset, viewMode]
+  );
+  const graphicsCodeSpans = useMemo(() => listingCodeSpans(graphicsBank), [graphicsBank]);
+  const graphicsLabelAt = useCallback(
+    (offset: number): string | undefined => {
+      const labels = graphicsBank?.localLabels;
+      if (!labels?.length) return undefined;
+      let best: { name: string; value: number } | undefined;
+      for (const label of labels) {
+        if (label.value <= offset && (!best || label.value > best.value)) best = label;
+      }
+      if (!best) return undefined;
+      return best.value === offset ? best.name : `${best.name}+${offset - best.value}`;
+    },
+    [graphicsBank]
+  );
+  const canNameGraphics =
+    !!viewAnnotationPath && viewAnnotationBank !== undefined && !!graphicsBank && annotationVm.annotationsAvailable;
+  const nameGraphicSpan = useCallback(
+    async (span: ByteSpan) => {
+      if (!viewAnnotationPath || viewAnnotationBank === undefined) return;
+      const result = await dialogs.open(
+        NameGraphicDialog,
+        { initial: graphicOfSpan(span, graphicsLook), baseAddress: disassOffset },
+        { title: NAME_GRAPHIC_DIALOG_TITLE, width: 520 }
+      );
+      const current = annotationVm.annotations;
+      if (!result || !current) return;
+      const named = withNamedGraphic(current, viewAnnotationBank, result);
+      if ("error" in named) {
+        window.alert(named.error);
+        return;
+      }
+      updateAnnotationSession(viewAnnotationPath, named.annotations, projectService);
+    },
+    [annotationVm.annotations, dialogs, disassOffset, graphicsLook, projectService, viewAnnotationBank, viewAnnotationPath]
+  );
+
   useEffect(() => {
     if (document?.id) {
       documentHubService.setDocumentViewState(document.id, currentViewState);
@@ -955,6 +1095,11 @@ const StaticMemoryDump = ({
         setMemoryJumpAddress(address);
         jumpDisassemblyTo(address);
         setSpritesJumpAddress((current) => ({ address, version: (current?.version ?? 0) + 1 }));
+        navGraphicsTop.current = address;
+        setGraphicsJump((current) => ({
+          offset: address - navDisassOffset.current,
+          version: (current?.version ?? 0) + 1
+        }));
       },
       getNavigationLocator: () => ({
         kind: "address",
@@ -963,7 +1108,9 @@ const StaticMemoryDump = ({
             ? navDisassemblyTop.current
             : navViewMode.current === "sprites"
               ? navSpritesTop.current
-              : navMemoryTop.current,
+              : navViewMode.current === "graphics"
+                ? navGraphicsTop.current
+                : navMemoryTop.current,
         viewMode: navViewMode.current,
         base: navDisassOffset.current
       }),
@@ -975,7 +1122,14 @@ const StaticMemoryDump = ({
         setCurrentViewState((current) => ({
           ...current,
           topAddress: locator.address,
-          ...(locator.viewMode && current.disassemblyEnabled ? { viewMode: locator.viewMode } : {})
+          ...(locator.viewMode && (current.disassemblyEnabled || locator.viewMode === "graphics")
+            ? { viewMode: locator.viewMode }
+            : {})
+        }));
+        navGraphicsTop.current = locator.address;
+        setGraphicsJump((current) => ({
+          offset: locator.address - navDisassOffset.current,
+          version: (current?.version ?? 0) + 1
         }));
         setSpritesJumpAddress((current) => ({
           address: locator.address,
@@ -1179,16 +1333,17 @@ const StaticMemoryDump = ({
 
     (async () => {
       const annotations = annotationVm.annotations;
-      const annotationItems = annotations && currentViewState.nexAnnotationBank !== undefined
-        ? await createAnnotatedNexDisassemblyItems({
+      const annotationItems = annotations && viewAnnotationBank !== undefined
+        ? await createAnnotatedDisassemblyItems({
             annotations,
-            bank: currentViewState.nexAnnotationBank,
+            bank: viewAnnotationBank,
             contents: bankBytes,
             decimalView,
             disassOffset,
             pcBankOffset,
             fallbackOperandLabelResolver: sysVarLabelResolver,
-            hideScreenArea
+            hideScreenArea,
+            allowExtendedSet: annotationMachine === "next"
           })
         : undefined;
       let outputItems = annotationItems;
@@ -1253,7 +1408,8 @@ const StaticMemoryDump = ({
      */
     bankBytes,
     pcBankOffset,
-    currentViewState.nexAnnotationBank,
+    viewAnnotationBank,
+    annotationMachine,
     decimalView,
     disassOffset,
     disassemblyEnabled,
@@ -1281,12 +1437,18 @@ const StaticMemoryDump = ({
        --- rows below it are drawn at. */
     <FullPanel fontFamily="--monospace-font" fontSize="--panel-font-size">
       <PanelHeader>
-        {disassemblyEnabled && (
+        {contents && (
           <PanelHeaderGroup>
             <Text text="View" />
             <LabelSeparator />
             <Dropdown
-              options={isNexBankDocument ? nexBankViewModeOptions : staticDumpViewModeOptions}
+              options={
+                !disassemblyEnabled
+                  ? memoryOnlyViewModeOptions
+                  : isNexBankDocument
+                    ? nexBankViewModeOptions
+                    : staticDumpViewModeOptions
+              }
               initialValue={viewMode}
               width={104}
               onChanged={(value) =>
@@ -1348,6 +1510,16 @@ const StaticMemoryDump = ({
             onOffsetChange={(offset) => changeSpriteSettings({ offset })}
             onLookChange={changeSpritesLook}
             onGoToAddress={goToSpriteAddress}
+          />
+        )}
+        {viewMode === "graphics" && (
+          <GraphicsToolbar
+            look={graphicsLook}
+            decimalView={decimalView}
+            dimAvailable={false}
+            onLookChange={changeGraphicsLook}
+            onGoTo={goToGraphicsAddress}
+            onPreset={applyGraphicsPreset}
           />
         )}
         {liveBankShown && (
@@ -1440,15 +1612,28 @@ const StaticMemoryDump = ({
             </span>
           </PanelHeaderGroup>
         )}
+        {/* --- The reverse-engineering tools work on the active set and the machine's bytes, so they
+            --- are offered on the bank document of the active set only */}
+        {viewAnnotationBank !== undefined && viewAnnotationPath && viewAnnotationPath === activeAnnotationSet?.path && (
+          <PanelHeaderGroup>
+            <ReverseToolsMenu
+              scope={{
+                kind: "bank",
+                bank: viewAnnotationBank,
+                hostName: activeAnnotationSet.hostPath?.split(/[\\/]/).pop()?.replace(/\.[^.]+$/, "")
+              }}
+            />
+          </PanelHeaderGroup>
+        )}
         {/* --- Guarded rather than always rendered: `NexAnnotationToolbar` returns null when it has
             --- nothing to show, and an empty group would still claim the header's gap and margin. */}
         {annotationVm.toolbar.visible && (
           <PanelHeaderGroup>
             {annotationVm.bankComment &&
               !currentViewState.bankCommentPinned &&
-              currentViewState.nexAnnotationBank !== undefined && (
+              viewAnnotationBank !== undefined && (
                 <NexBankCommentChip
-                  bank={currentViewState.nexAnnotationBank}
+                  bank={viewAnnotationBank}
                   comment={annotationVm.bankComment}
                   onEdit={() => dispatchAnnotation({ type: "bankCommentRequested" })}
                   onPin={() => changeViewState((vs) => (vs.bankCommentPinned = true))}
@@ -1549,6 +1734,35 @@ const StaticMemoryDump = ({
             }}
           />
         ) : null}
+        {contents && viewMode === "graphics" ? (
+          <GraphicsView
+            bytes={bankBytes}
+            baseAddress={disassOffset}
+            look={graphicsLook}
+            onLookChange={changeGraphicsLook}
+            jump={graphicsJump}
+            initialTopOffset={
+              currentViewState.graphicsTop ??
+              (viewState?.topAddress !== undefined ? viewState.topAddress - disassOffset : 0)
+            }
+            onTopOffsetChange={(offset) => {
+              navGraphicsTop.current = (disassOffset + offset) & 0xffff;
+              changeViewState((vs) => (vs.graphicsTop = offset));
+            }}
+            named={graphicMarks}
+            codeSpans={graphicsCodeSpans}
+            candidates={graphicsCandidates}
+            labelAt={graphicsLabelAt}
+            decimalView={decimalView}
+            menu={{
+              onShowIn: (view, offset) => {
+                if (view === "disassembly" && !disassemblyEnabled) return;
+                showSpriteIn(view, offset);
+              },
+              ...(canNameGraphics ? { onNameGraphic: (span: ByteSpan) => void nameGraphicSpan(span) } : {})
+            }}
+          />
+        ) : null}
         {contents && viewMode === "disassembly" ? (
           <div
             ref={disassemblyListRef}
@@ -1637,9 +1851,9 @@ const StaticMemoryDump = ({
                      * and nowhere on the row that made it. See §15.20 of the CSpect plan.
                      */
                     bankScope={
-                      currentViewState.nexAnnotationBank !== undefined && rowBankOffset !== undefined
+                      viewAnnotationBank !== undefined && rowBankOffset !== undefined
                         ? {
-                            bank: currentViewState.nexAnnotationBank,
+                            bank: viewAnnotationBank,
                             bankOffset: rowBankOffset
                           }
                         : undefined
@@ -1686,9 +1900,9 @@ const StaticMemoryDump = ({
             />
           </div>
         ) : null}
-        {contents && viewMode === "sprites" && currentViewState.nexAnnotationBank !== undefined ? (
+        {contents && viewMode === "sprites" && viewAnnotationBank !== undefined ? (
           <NexBankSpritesView
-            bank={currentViewState.nexAnnotationBank}
+            bank={viewAnnotationBank}
             bytes={bankBytes}
             addressBase={disassOffset}
             format={spriteFormat}
@@ -1766,8 +1980,9 @@ export async function openStaticMemoryDump(
         disassOffset: options.disassOffset ?? 0,
         decimalView: options.decimalView,
         viewMode: options.viewMode,
-        nexAnnotationPath: options.nexAnnotationPath,
-        nexAnnotationBank: options.nexAnnotationBank,
+        annotationPath: options.annotationPath,
+        annotationBank: options.annotationBank,
+        ...(options.annotationMachine ? { annotationMachine: options.annotationMachine } : {}),
         disassemblyFlavor: options.disassemblyFlavor,
         topAddress: options.topAddress
       } satisfies MemoryDumpViewState,

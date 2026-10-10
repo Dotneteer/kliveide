@@ -19,9 +19,9 @@ import {
   NexBankCommentDialog
 } from "../NexBankCommentDialog";
 import {
-  subscribeNexAnnotationSession,
-  updateNexAnnotationSession
-} from "../nexAnnotationSession";
+  subscribeAnnotationSession,
+  updateAnnotationSession
+} from "@renderer/appIde/annotations/annotationSession";
 
 import { NexAnnotationEditorController } from "./NexAnnotationEditorController";
 import type { NexAnnotationEditorEnvironment } from "./NexAnnotationEditorModel";
@@ -67,38 +67,39 @@ export type NexAnnotationEditor = {
   confirmDisposal: () => Promise<boolean>;
 };
 
+/** What the ports read from the component around the editor, through refs (trap 5). */
+export type AnnotationEditorPortArgs = {
+  /** The bank's bytes, which two of the dialogs render a preview from. */
+  contents: () => Uint8Array;
+  onNavigateToAddress: (address: number) => void;
+  onRevealAddressInBank?: (address: number) => Promise<void>;
+  onUnwrittenChanged: (unwritten: boolean) => void;
+  onDialogClosed?: () => void;
+};
+
 /**
- * Wiring only: the ports built from the renderer's services, and the controller over them.
- *
- * Every decision lives in the controller and the model, both of which run without React — so this
- * module is the *only* one that knows an annotation dialog is opened through `useDialogs()` or that
- * the session is reached through `projectService`.
+ * The editor's ports, built from the renderer's services: the session, the annotation dialogs, the
+ * confirmations. Shared by the bank document and the live Disassembly view, which runs the same
+ * controller for a row (`annotations/liveAnnotationEditing.ts`).
  */
-export function useNexAnnotationEditor({
-  env,
-  contents,
-  onNavigateToAddress,
-  onRevealAddressInBank,
-  onUnwrittenChanged,
-  onDialogClosed
-}: UseNexAnnotationEditorArgs): NexAnnotationEditor {
+export function useAnnotationEditorPorts(args: AnnotationEditorPortArgs): NexAnnotationEditorPorts {
   const { projectService } = useAppServices();
   const dialogs = useDialogs();
   const confirm = useConfirmPort();
 
-  // --- The controller holds its ports for its lifetime, so callbacks that the component recreates
-  // --- on every render are read through refs. A captured one would go stale after the first render.
-  // --- Trap 5 in `.ai/ui-mvc-guide.md`.
-  const navigateRef = useRef(onNavigateToAddress);
-  navigateRef.current = onNavigateToAddress;
-  const revealRef = useRef(onRevealAddressInBank);
-  revealRef.current = onRevealAddressInBank;
-  const unwrittenRef = useRef(onUnwrittenChanged);
-  unwrittenRef.current = onUnwrittenChanged;
-  const contentsRef = useRef(contents);
-  contentsRef.current = contents;
-  const dialogClosedRef = useRef(onDialogClosed);
-  dialogClosedRef.current = onDialogClosed;
+  // --- The ports outlive a render, so callbacks the component recreates on every render are read
+  // --- through refs. A captured one would go stale after the first render. Trap 5 in
+  // --- `.ai/ui-mvc-guide.md`.
+  const navigateRef = useRef(args.onNavigateToAddress);
+  navigateRef.current = args.onNavigateToAddress;
+  const revealRef = useRef(args.onRevealAddressInBank);
+  revealRef.current = args.onRevealAddressInBank;
+  const unwrittenRef = useRef(args.onUnwrittenChanged);
+  unwrittenRef.current = args.onUnwrittenChanged;
+  const contentsRef = useRef(args.contents);
+  contentsRef.current = args.contents;
+  const dialogClosedRef = useRef(args.onDialogClosed);
+  dialogClosedRef.current = args.onDialogClosed;
 
   const ports = useMemo<NexAnnotationEditorPorts>(
     () => {
@@ -114,9 +115,9 @@ export function useNexAnnotationEditor({
       return {
       session: {
         subscribe: (annotationPath, bank, listener) =>
-          subscribeNexAnnotationSession(projectService, annotationPath, bank, listener),
+          subscribeAnnotationSession(projectService, annotationPath, bank, listener),
         update: (annotationPath, annotations) =>
-          updateNexAnnotationSession(annotationPath, annotations, projectService)
+          updateAnnotationSession(annotationPath, annotations, projectService)
       },
       dialogs: {
         bankComment: (args) =>
@@ -149,7 +150,7 @@ export function useNexAnnotationEditor({
       // --- existing suite, so routing them through the app's dialog would be a behaviour change
       // --- rather than a refactor. See the note on `nativeConfirm` in the ports.
       nativeConfirm: (message) => window.confirm(message),
-      bankBytes: () => Array.from(contentsRef.current),
+      bankBytes: () => Array.from(contentsRef.current()),
       navigateToAddress: (address) => navigateRef.current(address),
       revealAddressInBank: async (address) => {
         await revealRef.current?.(address);
@@ -159,6 +160,34 @@ export function useNexAnnotationEditor({
     },
     [confirm, dialogs, projectService]
   );
+
+  return ports;
+}
+
+/**
+ * Wiring only: the ports built from the renderer's services, and the controller over them.
+ *
+ * Every decision lives in the controller and the model, both of which run without React — so this
+ * module is the *only* one that knows an annotation dialog is opened through `useDialogs()` or that
+ * the session is reached through `projectService`.
+ */
+export function useNexAnnotationEditor({
+  env,
+  contents,
+  onNavigateToAddress,
+  onRevealAddressInBank,
+  onUnwrittenChanged,
+  onDialogClosed
+}: UseNexAnnotationEditorArgs): NexAnnotationEditor {
+  const contentsRef = useRef(contents);
+  contentsRef.current = contents;
+  const ports = useAnnotationEditorPorts({
+    contents: () => contentsRef.current,
+    onNavigateToAddress,
+    onRevealAddressInBank,
+    onUnwrittenChanged,
+    onDialogClosed
+  });
 
   const controller = useController(() => new NexAnnotationEditorController(ports, env));
   const vm = useViewModel(controller);

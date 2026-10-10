@@ -1,3 +1,4 @@
+import { bankSpaceFor } from "@common/annotations/bankSpace";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import type { BreakpointEnvironment } from "@renderer/appIde/utils/breakpoint-form";
 
@@ -102,10 +103,11 @@ export function useBreakpointDialog() {
         partitionLabels,
         // --- `banksView` is exactly "this machine declares MF_ROM or MF_BANK".
         supportsPartitions: machineSetup.banksView,
-        // --- Next-only, matching `bp-set`'s own guard on the grammar.
-        supportsBankRelative: machineId === MI_ZXNEXT,
-        // --- Same gate, same reason: both forms are ZX Spectrum Next only, and this flag, the
-        // --- command layer's check and `breakpoint-form.ts`'s rule must stay in step.
+        // --- Every machine with a bank space, matching `bp-set`'s own guard on the grammar.
+        supportsBankRelative: !!bankSpaceFor(machineId)?.bankBreakpoints,
+        maxBank: bankSpaceFor(machineId)?.maxBank,
+        // --- Next-only, matching `bp-set`'s own guard: this flag, the command layer's check and
+        // --- `breakpoint-form.ts`'s rule must stay in step.
         supportsNextRegBreakpoints: machineId === MI_ZXNEXT,
         existingKeys: (bpState?.breakpoints ?? []).map((bp) =>
           getBreakpointDisplayKey(bp, partitionLabels)

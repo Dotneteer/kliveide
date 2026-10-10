@@ -14,6 +14,7 @@ import { isNexFilePath, nexSdCardTarget } from "@common/utils/nex-launch-paths";
 import { loadNexFileContents } from "../DocumentPanels/Next/nexFileLoader";
 import { getEntryPointBreakpointSite } from "../DocumentPanels/Next/nexEntryState";
 import { clearNexLoad, recordNexLoad } from "../DocumentPanels/Next/nexLoadSession";
+import { activateSidecarOf } from "@renderer/appIde/annotations/activeAnnotationSet";
 import {
   commandError,
   commandSuccessWith,
@@ -129,6 +130,9 @@ export class LaunchNexCommand extends IdeCommandBase<LaunchNexCommandArgs> {
     } else {
       clearNexLoad();
     }
+    // --- The NEX's sidecar is now the live annotation set, whether or not it exists yet: the live
+    // --- view names addresses from it, and the first label written creates it.
+    activateSidecarOf(hostPath, "next", "nex-run");
 
     if (breakAtEntry) {
       if (header.error) {

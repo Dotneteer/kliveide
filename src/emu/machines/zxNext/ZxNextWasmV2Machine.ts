@@ -1322,6 +1322,11 @@ export class ZxNextWasmV2Machine
     return flat;
   }
 
+  /** The Next's ROMs carry no annotations (G7.2 covers the 48K, 128K, +3, ZX80 and ZX81 ROMs) */
+  protected override getRomPartitionImages(): Map<number, Uint8Array> {
+    return new Map();
+  }
+
   override getMemoryPartition(index: number): Uint8Array {
     const runtime = this.requireWasmV2Runtime();
     let length = 0x2000;

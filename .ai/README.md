@@ -18,6 +18,12 @@ This folder stores durable notes for future AI-assisted work in this repository.
   producing raw and annotated listings, the official Next register and I/O port
   references in `_input/next-fpga/` and how to query them, and the rules that stop a
   hand-written sidecar destroying the breakpoints stored beside the annotations.
+- **Before writing anything into a shipped ROM sidecar (`src/public/roms/*.rom.dis`), read
+  `rom-annotations/README.md` and `rom-annotations/PROVENANCE.md`.** The ROM annotations are
+  written from scratch (decision D4): no commented ROM disassembly may be copied or consulted,
+  from memory included, and every entry records its provenance. Log each authoring session in
+  `PROVENANCE.md`. The machine-neutral annotation model (every machine's bank space, the active
+  annotation set, ROM sidecars) is described in `../.docs/annotations.md`.
 - **Every reverse-engineering session updates `nex-reverse-engineering-guide.md` before
   it finishes** — the project author's standing instruction. Fold the durable learning
   into the section it belongs to, replace what it supersedes, and keep no history: that

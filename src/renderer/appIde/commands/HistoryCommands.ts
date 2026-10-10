@@ -44,7 +44,8 @@ import {
 import { forkConfirmation } from "@common/history/reverseDebugText";
 import { isInThePast } from "./reverseDebugFork";
 import { createSpecialDocument } from "@renderer/features/documents/specialDocuments";
-import { HistoryDisassemblyCache, historyLabelLookup } from "@renderer/features/history/historyDisassembly";
+import { HistoryDisassemblyCache, type HistoryLabelLookup } from "@renderer/features/history/historyDisassembly";
+import { addressSymbolsForState } from "@renderer/appIde/annotations/useAddressSymbols";
 import {
   IdeCommandBase,
   commandError,
@@ -133,6 +134,12 @@ function symbolsOf(compilation: KliveCompilerOutput | undefined): Record<string,
   return (compilation as { symbols?: Record<string, unknown> } | undefined)?.symbols;
 }
 
+/** The shared resolver's names, as the document's disassembly uses them */
+function historyLabelOf(context: IdeCommandContext): HistoryLabelLookup | undefined {
+  const { symbols } = addressSymbolsForState(context.store.getState());
+  return symbols.empty ? undefined : (address) => symbols.labelAt(address, undefined)?.name;
+}
+
 /** The disassembly, source, partition and context resolvers the document uses, for a command */
 async function commandTraceResolvers(
   context: IdeCommandContext,
@@ -147,7 +154,7 @@ async function commandTraceResolvers(
     historyMachineId: info.machineId,
     compilation,
     partitionLabels: labels ?? {},
-    disassembly: new HistoryDisassemblyCache(machineId === MI_ZXNEXT, historyLabelLookup(symbolsOf(compilation))),
+    disassembly: new HistoryDisassemblyCache(machineId === MI_ZXNEXT, historyLabelOf(context)),
     include
   });
 }

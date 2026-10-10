@@ -1,0 +1,65 @@
+---
+description: "Import and export SkoolKit skool and control files: exchange annotated disassemblies with the community standard."
+---
+
+import { Callout } from 'nextra/components'
+
+# SkoolKit Files
+
+[SkoolKit](https://skoolkit.ca) is the community standard for published Spectrum disassemblies.
+Klive reads and writes its two file formats: **skool** files (a full annotated disassembly) and
+**control** files (`.ctl`, the structure and comments, which SkoolKit combines with a snapshot).
+
+<Callout type="info">
+Klive's skool and ctl readers and writers are its own, written from SkoolKit's documented file
+formats. SkoolKit itself is not needed.
+</Callout>
+
+## Importing
+
+Open the program first — a snapshot, a NEX file, your project — so its bytes are in the machine.
+Then use **Import SkoolKit File...** from the tools button of the Disassembly view, or:
+
+```
+skool-import game.skool -apply
+```
+
+Klive never builds memory from a skool file. It assembles each instruction at its address and
+compares it with the bytes it already has; an entry that does not match keeps its comments and labels
+but not its regions, and is listed. A control file has no instructions, so it is checked by length
+only.
+
+What comes in:
+
+| SkoolKit | Klive |
+|---|---|
+| `c`, `b`, `w`, `t` entries and sub-blocks | code, bytes, words and text regions |
+| `s`, `g`, `u` entries | bytes regions |
+| `i` entries | skip regions |
+| `@label=` | a label |
+| An entry's title, description, registers and start comment | the synopsis on its first address |
+| Instruction comments | end-of-line comments (a `{...}` comment on its first instruction) |
+| Mid-block comments | the synopsis of the instruction they precede |
+| End comments | lines after the entry's last instruction |
+
+Skool macros such as `#R32768` are kept as text. What Klive does not model — other `@` directives,
+text between entries, `*` entry points — is kept with the bank, so exporting an unedited import
+gives the file back. Two labels that differ only in case are imported as `NAME` and `NAME_2`.
+
+`@bank` switches the bank at `$C000` in a 128K file. Addresses in the ROM go to *your* ROM
+annotations only, never to the ones Klive ships.
+
+## Exporting
+
+**Export as SkoolKit** from the tools button, or:
+
+```
+skool-export game.skool -bank all
+skool-export game.ctl -ctl $8000 $9fff
+```
+
+The export uses SkoolKit's conventional style: upper case, `$` hex, numeric operands, and `@label=`
+lines for names. A new entry starts at every region boundary and at every address with a synopsis.
+A 48K export is one file; a 128K export adds every other annotated bank as an `@bank` section at
+`$C000` (or one file per bank with `-split`). A Next bank exports as its own file at `$C000`. A named
+graphic becomes a `b` entry whose description draws it with a `#UDGARRAY` macro.

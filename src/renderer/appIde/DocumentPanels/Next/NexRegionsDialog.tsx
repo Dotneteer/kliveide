@@ -6,10 +6,10 @@ import Dropdown, { type DropdownOption } from "@renderer/controls/Dropdown";
 import { DialogRow } from "@renderer/controls/DialogRow";
 import { DialogComponentProps } from "@renderer/controls/overlay/DialogProvider";
 import {
-  NEX_BANK_LAST_OFFSET,
-  type NexAnnotationRegion,
-  type NexAnnotationRegionType
-} from "./nexAnnotations";
+  ANNOTATION_BANK_LAST_OFFSET,
+  type AnnotationRegion,
+  type AnnotationRegionType
+} from "@renderer/appIde/annotations/programAnnotations";
 import {
   createRegionPreview,
   dmaTrimSuggestion,
@@ -22,19 +22,19 @@ import {
   DialogFooterSpacer
 } from "@renderer/controls/overlay/DialogFooter";
 
-type NexRegionTypeFilter = "all" | NexAnnotationRegionType;
+type NexRegionTypeFilter = "all" | AnnotationRegionType;
 
 export type NexRegionsDialogResult =
   | { action: "add" }
-  | { action: "edit"; region: NexAnnotationRegion }
-  | { action: "split"; region: NexAnnotationRegion }
-  | { action: "revert"; region: NexAnnotationRegion }
-  | { action: "go-to"; region: NexAnnotationRegion };
+  | { action: "edit"; region: AnnotationRegion }
+  | { action: "split"; region: AnnotationRegion }
+  | { action: "revert"; region: AnnotationRegion }
+  | { action: "go-to"; region: AnnotationRegion };
 
 export type NexRegionsDialogProps = DialogComponentProps<NexRegionsDialogResult> & {
   activeOffset?: number;
   bytes: number[];
-  regions: NexAnnotationRegion[];
+  regions: AnnotationRegion[];
 };
 
 const REGION_TYPE_OPTIONS: DropdownOption[] = [
@@ -44,6 +44,8 @@ const REGION_TYPE_OPTIONS: DropdownOption[] = [
   { value: "words", label: "Words" },
   { value: "copper", label: "Copper" },
   { value: "dma", label: "DMA" },
+  { value: "text", label: "Text" },
+  { value: "graphic", label: "Graphics" },
   { value: "skip", label: "Skip" }
 ];
 
@@ -257,10 +259,10 @@ export function NexRegionsDialog({
 }
 
 function filterRegions(
-  regions: NexAnnotationRegion[],
+  regions: AnnotationRegion[],
   findAddress: number | undefined,
   typeFilter: NexRegionTypeFilter
-): NexAnnotationRegion[] {
+): AnnotationRegion[] {
   return regions.filter((region) =>
     (typeFilter === "all" || region.type === typeFilter) &&
     // --- Text that is not an address narrows nothing; the field says so instead.
@@ -269,24 +271,24 @@ function filterRegions(
 }
 
 function findRegionAtOffset(
-  regions: NexAnnotationRegion[],
+  regions: AnnotationRegion[],
   offset: number | undefined
-): NexAnnotationRegion | undefined {
+): AnnotationRegion | undefined {
   return offset === undefined
     ? undefined
     : regions.find((region) => region.start <= offset && region.end >= offset);
 }
 
-function formatRegionLength(region: NexAnnotationRegion): string {
+function formatRegionLength(region: AnnotationRegion): string {
   const length = region.end - region.start + 1;
   return `${formatRegionOffset(length)} (${length})`;
 }
 
-function formatRegionType(type: NexAnnotationRegionType): string {
+function formatRegionType(type: AnnotationRegionType): string {
   return type === "disassemble" ? "disassembly" : type;
 }
 
-function estimateRegionLineCount(region: NexAnnotationRegion): string {
+function estimateRegionLineCount(region: AnnotationRegion): string {
   const length = region.end - region.start + 1;
   switch (region.type) {
     case "bytes":
@@ -299,10 +301,10 @@ function estimateRegionLineCount(region: NexAnnotationRegion): string {
     case "skip":
       return "1";
     default:
-      return `<= ${Math.min(length, NEX_BANK_LAST_OFFSET + 1)}`;
+      return `<= ${Math.min(length, ANNOTATION_BANK_LAST_OFFSET + 1)}`;
   }
 }
 
-function getRegionKey(region: NexAnnotationRegion): string {
+function getRegionKey(region: AnnotationRegion): string {
   return `${region.start}:${region.end}:${region.type}`;
 }

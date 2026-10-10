@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
-import type { NexFileAnnotations } from "@renderer/appIde/DocumentPanels/Next/nexAnnotations";
+import type { ProgramAnnotations } from "@renderer/appIde/annotations/programAnnotations";
 import {
   patchForResolution,
   resolveLabelBreakpoint,
@@ -17,7 +17,7 @@ import {
 
 const SIDECAR = "Game.nex.dis";
 
-const annotations: NexFileAnnotations = {
+const annotations: ProgramAnnotations = {
   schemaVersion: 2,
   globalLabels: [
     { name: "Start", value: 0x8000 },
@@ -114,7 +114,7 @@ describe("resolveLabelBreakpoint", () => {
   });
 
   it("resolves bank 0 and offset 0, which are both falsy", () => {
-    const withBank0: NexFileAnnotations = {
+    const withBank0: ProgramAnnotations = {
       schemaVersion: 2,
       banks: { "0": { offsetIndex: 0, regions: [], localLabels: [{ name: "Top", value: 0 }] } }
     } as any;
@@ -190,7 +190,7 @@ describe("resolveLabelBreakpointsFor", () => {
   });
 
   it("re-resolves to the label's new place", () => {
-    const moved: NexFileAnnotations = {
+    const moved: ProgramAnnotations = {
       schemaVersion: 2,
       banks: {
         "5": { offsetIndex: 1, regions: [], localLabels: [{ name: "DrawSprite", value: 0x0180 }] }
@@ -204,7 +204,7 @@ describe("resolveLabelBreakpointsFor", () => {
   it("changes shape when a label moves between scopes", () => {
     // --- A breakpoint that resolved to an address must not keep it once its label is only local.
     const wasGlobal = globalBp({ label: "Shared", resolvedAddress: 0x4321 });
-    const localOnly: NexFileAnnotations = {
+    const localOnly: ProgramAnnotations = {
       schemaVersion: 2,
       banks: { "5": { offsetIndex: 1, regions: [], localLabels: [{ name: "Shared", value: 1 }] } }
     } as any;

@@ -208,7 +208,7 @@ bytes on the same row:
   check the listing and the bank browser's mix bar.
 
 ### Phase 5 — Documentation
-- `.docs/nex-annotations.md`: the Region Rules section (two new kinds, the D3 storage form and its
+- `.docs/annotations.md`: the Region Rules section (two new kinds, the D3 storage form and its
   older-build behaviour, the D5 label rule).
 - User docs: the region kinds wherever the NEX viewer's annotations are described. Link to
   `zx-next-copper.mdx` / `zx-next-dma.mdx`. Then run `npm run doc:build && npm run doc:check`.

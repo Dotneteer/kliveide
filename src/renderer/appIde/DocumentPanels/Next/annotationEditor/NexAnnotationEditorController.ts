@@ -14,15 +14,15 @@ import {
   withOperandLabel,
   withRegion,
   withSynopsisComment,
-  type NexLabelListEntry
-} from "../nexAnnotationEdits";
+  type LabelListEntry
+} from "@renderer/appIde/annotations/annotationEdits";
 import {
   getBankAnnotation,
-  NEX_BANK_LAST_OFFSET,
-  type NexAnnotationLabelScope,
-  type NexAnnotationRegionType,
-  type NexFileAnnotations
-} from "../nexAnnotations";
+  ANNOTATION_BANK_LAST_OFFSET,
+  type AnnotationLabelScope,
+  type AnnotationRegionType,
+  type ProgramAnnotations
+} from "@renderer/appIde/annotations/programAnnotations";
 import type { NexLabelDialogLabel } from "../NexLabelDialog";
 
 import type { NexAnnotationEditorIntent } from "./NexAnnotationEditorIntents";
@@ -57,7 +57,7 @@ import {
  * Two things shape almost every handler here:
  *
  * - **Annotations live in a shared session, not in this controller.** An edit is computed as a pure
- *   transform (`nexAnnotationEdits.ts`) and *published*; the session then broadcasts it back, and
+ *   transform (`annotationEdits.ts`) and *published*; the session then broadcasts it back, and
  *   the resulting snapshot is what updates state. So a handler ends at `session.update`, never by
  *   emitting the new model itself. That is what keeps two popped-out banks of one NEX in agreement.
  * - **A transform returning `undefined` means "nothing changed".** Publishing anyway would mark the
@@ -275,7 +275,7 @@ export class NexAnnotationEditorController extends UiController<
   }
 
   /** Publish an edited model, or do nothing when the transform reported no change. */
-  private publish(next: NexFileAnnotations | undefined): boolean {
+  private publish(next: ProgramAnnotations | undefined): boolean {
     const { annotationPath } = this.state.env;
     if (!next || !annotationPath) return false;
     this.ports.session.update(annotationPath, next);
@@ -379,7 +379,7 @@ export class NexAnnotationEditorController extends UiController<
   // ─── Labels ────────────────────────────────────────────────────────────────
 
   private async openLabelForRow(
-    scope: NexAnnotationLabelScope,
+    scope: AnnotationLabelScope,
     rowIndex: number | undefined
   ): Promise<void> {
     const site = this.editSite(rowIndex);
@@ -398,7 +398,7 @@ export class NexAnnotationEditorController extends UiController<
    * handed both and shows whichever its scope switch is on.
    */
   private async openLabelDialog(
-    initialScope: NexAnnotationLabelScope,
+    initialScope: AnnotationLabelScope,
     initialGlobalValue: number,
     initialLocalValue: number
   ): Promise<void> {
@@ -418,7 +418,7 @@ export class NexAnnotationEditorController extends UiController<
 
   private async applyLabelResult(result: {
     action: "save" | "delete";
-    scope: NexAnnotationLabelScope;
+    scope: AnnotationLabelScope;
     name: string;
     value: number;
     originalLabel?: NexLabelDialogLabel;
@@ -454,7 +454,7 @@ export class NexAnnotationEditorController extends UiController<
         scope: result.scope,
         name: result.name,
         value: result.value,
-        originalLabel: result.originalLabel as NexLabelListEntry | undefined
+        originalLabel: result.originalLabel as LabelListEntry | undefined
       })
     );
   }
@@ -497,7 +497,7 @@ export class NexAnnotationEditorController extends UiController<
           label.scope === "global"
             ? label.value
             : (this.state.env.disassOffset + label.value) & 0xffff,
-          label.scope === "local" ? label.value : label.value & NEX_BANK_LAST_OFFSET
+          label.scope === "local" ? label.value : label.value & ANNOTATION_BANK_LAST_OFFSET
         );
         return labels();
       },
@@ -601,7 +601,7 @@ export class NexAnnotationEditorController extends UiController<
 
   /** The one-gesture "Mark As ..." actions, which skip the region dialog. */
   private async markRegion(
-    regionType: NexAnnotationRegionType,
+    regionType: AnnotationRegionType,
     rowIndex: number | undefined
   ): Promise<void> {
     const span = actionOffsetSpan(this.state, rowIndex);
@@ -613,13 +613,13 @@ export class NexAnnotationEditorController extends UiController<
     this.applyRegionResult(result.start, result.end, result.type ?? regionType);
   }
 
-  private applyRegionResult(start: number, end: number, type: NexAnnotationRegionType): void {
+  private applyRegionResult(start: number, end: number, type: AnnotationRegionType): void {
     const { annotations, env } = this.state;
     if (!annotations || env.bank === undefined) return;
 
     // --- Rewriting the entire bank is easy to do by accident from a range selection, and there is
     // --- no undo.
-    if (start === 0 && end === NEX_BANK_LAST_OFFSET) {
+    if (start === 0 && end === ANNOTATION_BANK_LAST_OFFSET) {
       if (!this.ports.nativeConfirm(WHOLE_BANK_CONFIRM_MESSAGE)) return;
     }
 
@@ -675,7 +675,7 @@ export class NexAnnotationEditorController extends UiController<
       case "add":
         await this.openRegionDialogFor(
           activeOffset,
-          Math.min(NEX_BANK_LAST_OFFSET, activeOffset + activeLength - 1),
+          Math.min(ANNOTATION_BANK_LAST_OFFSET, activeOffset + activeLength - 1),
           getAlternativeRegionType(
             getRegionTypeForSpan(bankAnnotation.regions, activeOffset, activeOffset)
           )
@@ -692,7 +692,7 @@ export class NexAnnotationEditorController extends UiController<
   private async openRegionDialogFor(
     start: number,
     end: number,
-    type: NexAnnotationRegionType
+    type: AnnotationRegionType
   ): Promise<void> {
     const result = await this.openRegionDialog(start, end, type);
     if (!result) return;
@@ -703,7 +703,7 @@ export class NexAnnotationEditorController extends UiController<
   private async openRegionDialog(
     initialStart: number,
     initialEnd: number,
-    initialType: NexAnnotationRegionType
+    initialType: AnnotationRegionType
   ) {
     const { annotations, env } = this.state;
     const regions =
@@ -720,7 +720,7 @@ export class NexAnnotationEditorController extends UiController<
   }
 
   /** The type a span already has, which is what the region dialog should open on. */
-  private regionTypeAt(start: number, end: number): NexAnnotationRegionType {
+  private regionTypeAt(start: number, end: number): AnnotationRegionType {
     const { annotations, env } = this.state;
     if (!annotations || env.bank === undefined) return "disassemble";
     const regions = getBankAnnotation(annotations, env.bank)?.regions ?? [];
@@ -770,7 +770,7 @@ export class NexAnnotationEditorController extends UiController<
    */
   private editSite(rowIndex: number | undefined):
     | {
-        annotations: NexFileAnnotations;
+        annotations: ProgramAnnotations;
         bank: number;
         env: NexAnnotationEditorEnvironment;
         offsetStart: number;

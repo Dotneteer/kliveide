@@ -1,3 +1,5 @@
+import { activateSidecarOf } from "@renderer/appIde/annotations/activeAnnotationSet";
+import { annotationMachineFor } from "@common/annotations/bankSpace";
 import type { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
 import type { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext";
 import type { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
@@ -141,6 +143,9 @@ export class SpectrumSnapshotCommand extends IdeCommandBase<SpectrumSnapshotComm
     if (result.rebuilt) {
       writeMessage(context.output, `Machine switched to the ${result.machineName}.`, "cyan");
     }
+    // --- `<snapshot>.dis` is the live annotation set from now on; the first edit creates it.
+    const machine = annotationMachineFor(mapping.machineId);
+    if (machine) activateSidecarOf(file, machine, "snapshot");
     for (const warning of [...diskWarnings, ...result.warnings]) {
       writeMessage(context.output, `Warning: ${warning}`, "yellow");
     }

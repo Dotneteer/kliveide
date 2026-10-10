@@ -1,3 +1,4 @@
+import { bankSpaceFor } from "@common/annotations/bankSpace";
 import { FileProvider } from "@renderer/core/FileProvider";
 import { MachineController } from "@emu/machines/MachineController";
 import { DebugSupport } from "@emu/machines/DebugSupport";
@@ -124,7 +125,13 @@ class MachineService implements IMachineService {
     const newController = new MachineController(this.store, this.messenger, machine);
 
     // --- Restore the breakpoints from the old machine
-    newController.debugSupport = new DebugSupport(this.store, oldBps);
+    // --- ...in the new machine's bank space: a `5:+$0100` breakpoint is an 8K page on the Next, the
+    // --- bank itself on a 128K, and a fixed address on a 48K.
+    newController.debugSupport = new DebugSupport(
+      this.store,
+      oldBps,
+      bankSpaceFor(machineId, { ...modelInfo?.config, ...config })
+    );
     // --- Conditional breakpoints (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.6): what a condition
     // --- reads, and the machine facts it compiles against - built with the same helper the IDE
     // --- validates with, so both sides agree on what a condition means.

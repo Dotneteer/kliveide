@@ -1,12 +1,13 @@
+import { sidecarOfOwner } from "@common/utils/breakpoint-scope";
 import { isEventBreakpoint } from "@common/utils/breakpoint-scope";
 import { breakpointFiltersOf, sameBreakpointFilters } from "@common/utils/breakpoint-filters";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 
 import type {
-  NexSidecarBreakpoint,
-  NexSidecarBreakpointKind,
-  NexSidecarLabelBreakpoint
-} from "./nexAnnotations";
+  SidecarBreakpoint,
+  SidecarBreakpointKind,
+  SidecarLabelBreakpoint
+} from "@renderer/appIde/annotations/programAnnotations";
 
 /*
  * Translating between a NEX sidecar's breakpoints and the emulator's.
@@ -20,7 +21,7 @@ import type {
  */
 
 /** The sidecar's one-word kind, from a breakpoint's flags. */
-export function sidecarKindOf(bp: BreakpointInfo): NexSidecarBreakpointKind | undefined {
+export function sidecarKindOf(bp: BreakpointInfo): SidecarBreakpointKind | undefined {
   if (bp.memoryRead) return "memRead";
   if (bp.memoryWrite) return "memWrite";
   // --- `exec` is the default, but only for a breakpoint that is not an I/O one — a port has no bank
@@ -48,10 +49,10 @@ export function sidecarKindOf(bp: BreakpointInfo): NexSidecarBreakpointKind | un
 export function toSidecarBreakpoints(
   breakpoints: BreakpointInfo[],
   sidecar: string
-): NexSidecarBreakpoint[] {
-  const stored: NexSidecarBreakpoint[] = [];
+): SidecarBreakpoint[] {
+  const stored: SidecarBreakpoint[] = [];
   for (const bp of breakpoints) {
-    if (bp.owner?.kind !== "nex" || bp.owner.sidecar !== sidecar) continue;
+    if (sidecarOfOwner(bp.owner) !== sidecar) continue;
     /*
      * Stated fields only, and a label-anchored breakpoint is skipped outright.
      *
@@ -67,7 +68,7 @@ export function toSidecarBreakpoints(
     if (bp.bank === undefined || bp.bankOffset === undefined) continue;
     const kind = sidecarKindOf(bp);
     if (!kind) continue;
-    const entry: NexSidecarBreakpoint = { bank: bp.bank, offset: bp.bankOffset, kind };
+    const entry: SidecarBreakpoint = { bank: bp.bank, offset: bp.bankOffset, kind };
     if (bp.disabled) entry.disabled = true;
     stored.push({ ...entry, ...breakpointFiltersOf(bp) });
   }
@@ -76,14 +77,14 @@ export function toSidecarBreakpoints(
 
 /** The emulator breakpoints a sidecar's stored entries describe, owned by that sidecar. */
 export function fromSidecarBreakpoints(
-  stored: NexSidecarBreakpoint[] | undefined,
+  stored: SidecarBreakpoint[] | undefined,
   sidecar: string
 ): BreakpointInfo[] {
   return (stored ?? []).map((entry) => {
     const bp: BreakpointInfo = {
       bank: entry.bank,
       bankOffset: entry.offset,
-      owner: { kind: "nex", sidecar }
+      owner: { kind: "sidecar", sidecar }
     };
     if (entry.kind === "memRead") {
       bp.memoryRead = true;
@@ -104,8 +105,8 @@ export function fromSidecarBreakpoints(
  * they are already sorted and a field-by-field walk is enough — no need to canonicalise again.
  */
 export function sameSidecarBreakpoints(
-  left: NexSidecarBreakpoint[] | undefined,
-  right: NexSidecarBreakpoint[] | undefined
+  left: SidecarBreakpoint[] | undefined,
+  right: SidecarBreakpoint[] | undefined
 ): boolean {
   const a = left ?? [];
   const b = right ?? [];
@@ -138,14 +139,14 @@ export function sameSidecarBreakpoints(
 export function toSidecarLabelBreakpoints(
   breakpoints: BreakpointInfo[],
   sidecar: string
-): NexSidecarLabelBreakpoint[] {
-  const stored: NexSidecarLabelBreakpoint[] = [];
+): SidecarLabelBreakpoint[] {
+  const stored: SidecarLabelBreakpoint[] = [];
   for (const bp of breakpoints) {
     if (!bp.label || bp.labelFile !== sidecar) continue;
     const kind = sidecarKindOf(bp);
     if (!kind) continue;
 
-    const entry: NexSidecarLabelBreakpoint = { label: bp.label, kind };
+    const entry: SidecarLabelBreakpoint = { label: bp.label, kind };
     // --- Absent bank is a global label, which is a state rather than a missing field.
     if (bp.bank !== undefined) entry.bank = bp.bank;
     if (bp.disabled) entry.disabled = true;
@@ -166,14 +167,14 @@ export function toSidecarLabelBreakpoints(
  * source breakpoint follows before its list file is read.
  */
 export function fromSidecarLabelBreakpoints(
-  stored: NexSidecarLabelBreakpoint[] | undefined,
+  stored: SidecarLabelBreakpoint[] | undefined,
   sidecar: string
 ): BreakpointInfo[] {
   return (stored ?? []).map((entry) => {
     const bp: BreakpointInfo = {
       label: entry.label,
       labelFile: sidecar,
-      owner: { kind: "nex", sidecar }
+      owner: { kind: "sidecar", sidecar }
     };
     if (entry.bank !== undefined) bp.bank = entry.bank;
     if (entry.kind === "memRead") {
@@ -190,8 +191,8 @@ export function fromSidecarLabelBreakpoints(
 
 /** Do two stored label-breakpoint sets describe the same thing? */
 export function sameSidecarLabelBreakpoints(
-  left: NexSidecarLabelBreakpoint[] | undefined,
-  right: NexSidecarLabelBreakpoint[] | undefined
+  left: SidecarLabelBreakpoint[] | undefined,
+  right: SidecarLabelBreakpoint[] | undefined
 ): boolean {
   const a = left ?? [];
   const b = right ?? [];

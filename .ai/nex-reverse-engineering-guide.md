@@ -5,7 +5,7 @@ learns in the annotation sidecar. Written against `ScrollNutter.nex`, but nothin
 it except the facts in [ScrollNutter, verified](#scrollnutternex--verified-facts).
 
 Read `../AGENTS.md` first. For the product-level description of what annotations *are*, see
-`../.docs/nex-annotations.md`; this file is the operational companion to it.
+`../.docs/annotations.md`; this file is the operational companion to it.
 
 **This guide is maintained by the sessions that use it.** When you learn something durable, fold it
 into the relevant section before you finish — see [Keeping this guide
@@ -855,6 +855,6 @@ Read these rather than trusting this summary when precision matters:
 | Z80 disassembler API and options | `src/renderer/appIde/disassemblers/z80-disassembler/z80-disassembler.ts` |
 | Bank ↔ address ↔ paging helpers | `src/renderer/appIde/DocumentPanels/Next/nextBankLocation.ts` |
 | Sidecar read/merge/write | `src/renderer/appIde/DocumentPanels/Next/nexAnnotationSidecar.ts` |
-| Product behaviour of annotations | `../.docs/nex-annotations.md` |
+| Product behaviour of annotations | `../.docs/annotations.md` |
 | Design history and rationale | `../.plans/NEX_DEBUGGING_PLAN.md`, `../.plans/NEX_FILE_ANNOTATIONS_PLAN.md` |
 | Commands (`nex-run`, `nex-label`) | `docs/content/commands-reference.mdx` |

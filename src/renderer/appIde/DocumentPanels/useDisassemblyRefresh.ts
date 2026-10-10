@@ -10,6 +10,7 @@ import {
   type DisassemblyOptions
 } from "../disassemblers/common-types";
 import type { ICustomDisassembler } from "../disassemblers/z80-disassembler/custom-disassembly";
+import type { CustomDisassemblyContext } from "../disassemblers/z80-disassembler/rom-gated-disassembler";
 import type { DisassemblyOperandLabelResolver } from "../disassemblers/common-types";
 import type { CachedRefreshState } from "./disassemblyViewState";
 import type { BranchCpuSnapshot } from "./branchVerdict";
@@ -52,13 +53,46 @@ type DisassemblyRefreshParams = {
    * @param mem64kLabels the partition label of each 8K slot, as the emulator just reported it
    */
   operandLabelSource?: (
-    mem64kLabels: string[]
+    mem64kLabels: string[],
+    slots?: (number | undefined)[]
   ) => DisassemblyOperandLabelResolver | undefined;
+  /**
+   * Turns the plain listing into the annotated one (`annotateLiveListing`): annotated banks and ROM
+   * pages re-listed from their regions, every row labelled through the shared resolver. Absent
+   * leaves the listing as the disassembler made it.
+   */
+  annotateItems?: (context: LiveListingContext) => Promise<DisassemblyItem[]>;
+  /**
+   * What the machine's custom disassembler is gated with, for this read's paging: it decodes the
+   * data after `RST $08`/`RST $28` only inside the ROM it describes (`rom-gated-disassembler.ts`).
+   */
+  customDisassemblyContext?: (
+    slots: (number | undefined)[] | undefined,
+    partition: number | undefined
+  ) => CustomDisassemblyContext;
   disassOffset: number;
   disassemblerFactory?: DisassemblerFactory;
   emuApi: Pick<EmuApi, "getDisassemblySections" | "getMemoryContents">;
   machineId: string | undefined;
   onFollowPcTopAddress?: (address: number) => void;
+};
+
+/** What the annotated listing needs from one refresh. */
+export type LiveListingContext = {
+  items: DisassemblyItem[];
+  memory: Uint8Array;
+  /** The address `memory[0]` is listed at. */
+  memoryBase: number;
+  /** The partition shown in a bank view; `undefined` for the 64K view. */
+  partition?: number;
+  /** The code sections as `[start, end]`, in listed addresses. */
+  ranges: [number, number][];
+  /** The partition at each 8K slot, as this read reported it. */
+  slots?: (number | undefined)[];
+  pc: number;
+  decimalView: boolean;
+  /** Sets the machine's custom disassembler on a disassembler instance. */
+  prepareDisassembler: (disassembler: unknown) => void;
 };
 
 /**
@@ -109,8 +143,17 @@ export function createBranchCpuSnapshot(
   };
 }
 
+/** The memory and paging the listing was last made from: what a live annotation edit previews. */
+export type LiveMemorySnapshot = {
+  memory: Uint8Array;
+  memoryBase: number;
+  slots?: (number | undefined)[];
+};
+
 export type DisassemblyRefreshResult = {
   breakpoints: BreakpointInfo[];
+  /** The last read's memory and paging; undefined before the first refresh. */
+  memorySnapshot?: LiveMemorySnapshot;
   breakpointMap: BreakpointsByAddress;
   items: DisassemblyItem[];
   mem64kLabels: string[];
@@ -171,6 +214,8 @@ export function useDisassemblyRefresh({
   cachedRefreshState,
   customDisassembly,
   operandLabelSource,
+  annotateItems,
+  customDisassemblyContext,
   disassOffset,
   disassemblerFactory,
   emuApi,
@@ -185,6 +230,7 @@ export function useDisassemblyRefresh({
   // --- The history cursor's step and the bytes the CPU decoded at its PC (T2)
   const [history, setHistory] = useState<{ position: number; bytes: number[] }>();
   const [cpuSnapshot, setCpuSnapshot] = useState<BranchCpuSnapshot | undefined>(undefined);
+  const [memorySnapshot, setMemorySnapshot] = useState<LiveMemorySnapshot | undefined>(undefined);
   const [refreshVersion, setRefreshVersion] = useState(0);
   const refreshInProgress = useRef(false);
   const refreshPending = useRef(false);
@@ -231,7 +277,10 @@ export function useDisassemblyRefresh({
               allowExtendedSet: machineId === MI_ZXNEXT,
               decimalMode: refreshState.decimalView,
               // --- Built from the paging this very read reported, so a name is never one tick out.
-              operandLabelResolver: operandLabelSource?.(getMemoryResponse.partitionLabels),
+              operandLabelResolver: operandLabelSource?.(
+                getMemoryResponse.partitionLabels,
+                getMemoryResponse.slotPartitions
+              ),
               getRomPage: () => {
                 return refreshState.isFullView
                   ? getMemoryResponse.selectedRom
@@ -250,18 +299,49 @@ export function useDisassemblyRefresh({
             disassembler.setAddressOffset(page);
           }
 
+          const customContext = customDisassemblyContext?.(getMemoryResponse.slotPartitions, partition);
+          const createCustom = () =>
+            (customDisassembly as (context?: CustomDisassemblyContext) => ICustomDisassembler)(
+              customContext
+            );
           if (customDisassembly && typeof customDisassembly === "function") {
-            disassembler.setCustomDisassembler?.(customDisassembly() as ICustomDisassembler);
+            disassembler.setCustomDisassembler?.(createCustom());
           }
 
           const output = await disassembler.disassemble(
             0x0000,
             refreshState.isFullView || refreshState.autoRefresh ? 0xffff : 0x3fff
           );
-          const outputItems = output?.outputItems ?? [];
+          let outputItems = output?.outputItems ?? [];
+          if (annotateItems) {
+            const base =
+              partition !== undefined && !refreshState.autoRefresh ? (disassOffset || 0) : 0;
+            outputItems = await annotateItems({
+              items: outputItems,
+              memory,
+              memoryBase: base,
+              partition,
+              ranges: memSections
+                .filter((section) => section.sectionType === MemorySectionType.Disassemble)
+                .map((section) => [section.startAddress + base, section.endAddress + base]),
+              slots: getMemoryResponse.slotPartitions,
+              pc,
+              decimalView: refreshState.decimalView,
+              prepareDisassembler: (instance) => {
+                if (customDisassembly && typeof customDisassembly === "function") {
+                  (instance as DisassemblerInstance).setCustomDisassembler?.(createCustom());
+                }
+              }
+            });
+          }
           const memoryBreakpoints = getMemoryResponse.memBreakpoints ?? [];
 
           setItems(outputItems);
+          setMemorySnapshot({
+            memory,
+            memoryBase: partition !== undefined && !refreshState.autoRefresh ? disassOffset || 0 : 0,
+            slots: getMemoryResponse.slotPartitions
+          });
           setMem64kLabels(getMemoryResponse.partitionLabels);
           setPausedPc(pc);
           setHistory(history ? { position: history.position, bytes: history.bytes } : undefined);
@@ -294,6 +374,8 @@ export function useDisassemblyRefresh({
     cachedRefreshState,
     customDisassembly,
     operandLabelSource,
+    annotateItems,
+    customDisassemblyContext,
     disassOffset,
     disassemblerFactory,
     emuApi,
@@ -303,6 +385,7 @@ export function useDisassemblyRefresh({
 
   return {
     breakpoints,
+    memorySnapshot,
     breakpointMap,
     cpuSnapshot,
     history,

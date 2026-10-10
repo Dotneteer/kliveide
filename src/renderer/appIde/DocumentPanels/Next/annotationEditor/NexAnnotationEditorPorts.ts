@@ -4,12 +4,12 @@ import type {
 } from "@renderer/appIde/disassemblers/common-types";
 
 import type {
-  NexAnnotationBankView,
-  NexAnnotationRegion,
-  NexAnnotationRegionType,
-  NexFileAnnotations,
-  NexOperandReference
-} from "../nexAnnotations";
+  AnnotationBankView,
+  AnnotationRegion,
+  AnnotationRegionType,
+  ProgramAnnotations,
+  OperandReference
+} from "@renderer/appIde/annotations/programAnnotations";
 import type { NexSynopsisCommentDialogResult } from "../NexSynopsisCommentDialog";
 import type { NexBankCommentDialogResult } from "../NexBankCommentDialog";
 import type { NexEndOfLineCommentDialogResult } from "../NexEndOfLineCommentDialog";
@@ -34,8 +34,8 @@ import type { NexRegionsDialogResult } from "../NexRegionsDialog";
  */
 
 /** A snapshot of the shared session, as the editor observes it. */
-export type NexAnnotationSessionSnapshot = {
-  annotations?: NexFileAnnotations;
+export type AnnotationSessionSnapshot = {
+  annotations?: ProgramAnnotations;
   dirty: boolean;
   loading: boolean;
   loadError?: string;
@@ -52,7 +52,7 @@ export type NexAnnotationSessionPort = {
   subscribe(
     annotationPath: string,
     bank: number,
-    listener: (snapshot: NexAnnotationSessionSnapshot) => void
+    listener: (snapshot: AnnotationSessionSnapshot) => void
   ): () => void;
 
   /**
@@ -61,7 +61,7 @@ export type NexAnnotationSessionPort = {
    * Not awaited, and returns nothing: there is no Save, so an edit is finished the moment it is
    * published. A write that fails comes back through the next snapshot's `saveError`.
    */
-  update(annotationPath: string, annotations: NexFileAnnotations): void;
+  update(annotationPath: string, annotations: ProgramAnnotations): void;
 };
 
 /** The row a dialog is being opened for, resolved from an index before the port is called. */
@@ -123,15 +123,15 @@ export type NexAnnotationDialogsPort = {
     bankAddressOffset: number;
     instruction: string;
     operands: DisassemblyOperandInfo[];
-    explicitReferences?: NexOperandReference[];
+    explicitReferences?: OperandReference[];
     labels: NexLabelDialogLabel[];
   }): Promise<NexOperandLabelDialogResult | undefined>;
 
   region(args: {
-    initialType: NexAnnotationRegionType;
+    initialType: AnnotationRegionType;
     initialStart: number;
     initialEnd: number;
-    regions: NexAnnotationRegion[];
+    regions: AnnotationRegion[];
     bytes: number[];
   }): Promise<NexRegionDialogResult | undefined>;
 
@@ -139,7 +139,7 @@ export type NexAnnotationDialogsPort = {
     activeOffset: number;
     /** The bank's bytes, which the list renders a preview of. */
     bytes: number[];
-    regions: NexAnnotationRegion[];
+    regions: AnnotationRegion[];
   }): Promise<NexRegionsDialogResult | undefined>;
 };
 
@@ -192,4 +192,4 @@ export type NexAnnotationEditorPorts = {
 };
 
 /** What the view mode control offers, kept here so the view and the model agree on the set. */
-export const NEX_BANK_VIEWS: NexAnnotationBankView[] = ["memory", "disassembly"];
+export const NEX_BANK_VIEWS: AnnotationBankView[] = ["memory", "disassembly"];

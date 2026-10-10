@@ -201,7 +201,8 @@ describe("app shell dialog registries and bridges", () => {
       dialogIds.ABOUT_DIALOG,
       dialogIds.SJASMPLUS_INTEGRATION_DIALOG,
       dialogIds.MACHINE_SELECT_DIALOG,
-      dialogIds.SETTINGS_DIALOG
+      dialogIds.SETTINGS_DIALOG,
+      dialogIds.DETECT_CODE_DATA_DIALOG
     ];
     const expectedEmuIds = [
       dialogIds.FIRST_STARTUP_DIALOG_EMU,

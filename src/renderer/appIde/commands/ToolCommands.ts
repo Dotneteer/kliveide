@@ -46,13 +46,21 @@ export class SelectOutputPaneCommand extends IdeCommandBase<SelectOutputArgs> {
   }
 }
 
-export class ShowMemoryCommand extends IdeCommandBase {
+/**
+ * `show-memory [<address>]`: displays the machine memory panel and, with an address, reveals it there
+ * (in the 64K view) — the sibling of `show-disass <address>` the graphics finder's *Show in memory*
+ * runs (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §5.3).
+ */
+export class ShowMemoryCommand extends IdeCommandBase<{ address?: number }> {
   readonly id = "show-memory";
-  readonly description = "Displays the machine memory panel";
-  readonly usage = "show-memory";
+  readonly description = "Displays the machine memory panel, optionally at an address";
+  readonly usage = "show-memory [<address>]";
   readonly aliases = ["shmem"];
+  readonly argumentInfo: CommandArgumentInfo = {
+    optional: [{ name: "address", type: "number", minValue: 0, maxValue: 0xffff }]
+  };
 
-  async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
+  async execute(context: IdeCommandContext, args?: { address?: number }): Promise<IdeCommandResult> {
     const documentHubService = context.service.projectService.getActiveDocumentHubService();
     if (documentHubService.isOpen(MEMORY_PANEL_ID)) {
       await documentHubService.setActiveDocument(MEMORY_PANEL_ID);
@@ -62,6 +70,13 @@ export class ShowMemoryCommand extends IdeCommandBase {
         undefined,
         false
       );
+    }
+    if (args?.address !== undefined) {
+      await revealWhenMounted(documentHubService, MEMORY_PANEL_ID, {
+        kind: "address",
+        address: args.address & 0xffff,
+        fullView: true
+      });
     }
     return commandSuccess;
   }

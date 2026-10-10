@@ -1,3 +1,4 @@
+import { KNOWN_ROM_PAGES, romPageIdentity, type RomSource } from "@common/roms/romIdentity";
 import type { KeyMapping } from "@abstractions/KeyMapping";
 import type { IFileProvider } from "@renderer/core/IFileProvider";
 import type { ExecutionContext } from "../abstractions/ExecutionContext";
@@ -229,7 +230,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
     const filename = isAbsolutePath
       ? romName
       : `roms/${romName}${page === -1 ? "" : "-" + page}.rom`;
-    return await fileProvider.readBinaryFile(filename);
+    return this.recordLoadedRom(filename, await fileProvider.readBinaryFile(filename));
   }
 
   /**
@@ -242,7 +243,82 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
     if (!fileProvider) {
       throw new Error("Could not obtain file provider instance");
     }
-    return await fileProvider.readBinaryFile(filename);
+    return this.recordLoadedRom(filename, await fileProvider.readBinaryFile(filename));
+  }
+
+  /** Every ROM file this machine loaded, newest last: where `getRomSources` finds a page's file. */
+  private readonly _loadedRoms: { path: string; bytes: Uint8Array }[] = [];
+
+  /**
+   * Remember a ROM file this machine loaded, so `getRomSources` can say which file and page a ROM
+   * partition came from. The loaders call it; a subclass that reads ROM bytes some other way calls
+   * it too.
+   */
+  protected recordLoadedRom(path: string, bytes: Uint8Array): Uint8Array {
+    const index = this._loadedRoms.findIndex((rom) => rom.path === path);
+    if (index >= 0) this._loadedRoms.splice(index, 1);
+    this._loadedRoms.push({ path, bytes });
+    return bytes;
+  }
+
+  /**
+   * The bytes of each ROM partition, as the ROM annotations see them: one image per partition a ROM
+   * page is paged as. The default reads every negative partition; a machine without partitions (the
+   * 48K) reports its one ROM as partition `-1`, so the IDE needs no special case (T2).
+   */
+  protected getRomPartitionImages(): Map<number, Uint8Array> {
+    const images = new Map<number, Uint8Array>();
+    const romPartitions = Object.keys(this.getPartitionLabels())
+      .map(Number)
+      .filter((partition) => partition < 0);
+    if (romPartitions.length === 0) {
+      images.set(-1, this.get64KFlatMemory().slice(0, 0x4000));
+      return images;
+    }
+    for (const partition of romPartitions) {
+      images.set(partition, this.getMemoryPartition(partition).slice());
+    }
+    return images;
+  }
+
+  /**
+   * Where each ROM partition came from, and what it is
+   * (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §5.3): its CRC-32 and size, and the file and
+   * 16K page whose bytes it holds. Found by comparing bytes with the ROM files this machine loaded,
+   * so a machine that splits a file into pages (the Scorpion's 64K file) or falls back to another
+   * (the Timex to `sp48.rom`) needs no bookkeeping of its own. A page whose bytes match no loaded
+   * file still has its identity, without a path.
+   */
+  getRomSources(withBytes = false): Record<number, RomSource> {
+    const sources: Record<number, RomSource> = {};
+    for (const [partition, image] of this.getRomPartitionImages()) {
+      const source: RomSource = { ...romPageIdentity(image), page: 0 };
+      if (withBytes) source.bytes = image;
+      // --- A file this machine loaded; else, for bytes Klive ships, the shipped file (a loader that
+      // --- bypassed the recording, or a ROM set put together from shipped pages)
+      const match = this.findRomFilePage(image) ?? shippedRomPageOf(source.crc32);
+      if (match) {
+        source.path = match.path;
+        source.page = match.page;
+      }
+      sources[partition] = source;
+    }
+    return sources;
+  }
+
+  private findRomFilePage(image: Uint8Array): { path: string; page: number } | undefined {
+    for (let i = this._loadedRoms.length - 1; i >= 0; i--) {
+      const { path, bytes } = this._loadedRoms[i];
+      for (let page = 0; page * 0x4000 < bytes.length; page++) {
+        const start = page * 0x4000;
+        const length = Math.min(0x4000, bytes.length - start);
+        if (length !== image.length) continue;
+        let same = true;
+        for (let j = 0; j < length && same; j++) same = bytes[start + j] === image[j];
+        if (same) return { path, page };
+      }
+    }
+    return undefined;
   }
 
   /**
@@ -627,4 +703,10 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
    * @returns The disassembly section.
    */
   abstract getDisassemblySections(_options: Record<string, any>): IMemorySection[];
+}
+
+/** The shipped file holding a ROM page with this CRC, if Klive ships one. */
+function shippedRomPageOf(crc32: string): { path: string; page: number } | undefined {
+  const known = KNOWN_ROM_PAGES[crc32];
+  return known ? { path: `roms/${known.file}`, page: 0 } : undefined;
 }

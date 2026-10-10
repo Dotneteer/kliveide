@@ -1,3 +1,8 @@
+import { bankSpaceFor } from "@common/annotations/bankSpace";
+import { getActiveAnnotationSet } from "@renderer/appIde/annotations/activeAnnotationSet";
+import { getRomPartitions } from "@renderer/appIde/annotations/romAnnotations";
+import { mergeRomLayers } from "@renderer/appIde/annotations/symbolResolver";
+import { machineConfigOf } from "@renderer/appIde/annotations/useMachineBankSpace";
 import type { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext";
 import type { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
 import type { ValidationMessage } from "@renderer/abstractions/ValidationMessage";
@@ -46,10 +51,7 @@ import type {
   ConditionDiagnostic
 } from "@common/utils/breakpoint-condition/condition-types";
 import { mergedConditionSymbols } from "@renderer/appIde/utils/condition-symbols";
-import {
-  NEX_BANK_LAST_OFFSET,
-  NEX_MAX_BANK
-} from "@renderer/appIde/DocumentPanels/Next/nexAnnotations";
+import { ANNOTATION_BANK_LAST_OFFSET } from "@renderer/appIde/annotations/programAnnotations";
 import { parseCommand, TokenType } from "@renderer/appIde/services/command-parser";
 import { MF_BANK, MF_ROM, MI_ZXNEXT } from "@common/machines/constants";
 import { createEmuApi } from "@common/messaging/EmuApi";
@@ -208,6 +210,13 @@ export type BreakpointWithAddressArgs = {
   "-len"?: number;
   /** The build symbol a `WS:<symbol>` spec anchors a watchpoint to (W3). */
   watchSymbol?: string;
+  /**
+   * The annotation label a `<bank>:<label>` spec anchors the breakpoint to, and the sidecar whose
+   * label table it is looked up in: the active annotation set's
+   * (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §4.6).
+   */
+  label?: string;
+  labelFile?: string;
 };
 
 /**
@@ -249,6 +258,7 @@ function breakpointFromArgs(args: BreakpointWithAddressArgs): BreakpointInfo {
     resource: args.resource,
     line: args.line,
     watchSymbol: args.watchSymbol,
+    ...(args.label !== undefined ? { label: args.label, labelFile: args.labelFile } : {}),
     nextReg: args.nextReg,
     nextRegValue: args["-v"],
     // --- `-m` is the port mask for an I/O breakpoint and the value mask for a NextReg one, so each
@@ -270,6 +280,47 @@ function breakpointFromArgs(args: BreakpointWithAddressArgs): BreakpointInfo {
       ? { length: args["-len"] }
       : {})
   };
+}
+
+/**
+ * What a label spec names: a ROM label resolved now to its address (and, on a machine with
+ * partitions, the ROM partition it is paged as), or a bank label left to resolve against the active
+ * annotation set's labels as they change — a label-anchored breakpoint, persisted in that sidecar.
+ */
+function resolveAnnotationLabelSpec(
+  context: IdeCommandContext,
+  machineId: string,
+  firstPart: string,
+  name: string
+): Partial<BreakpointWithAddressArgs> | { error: string } {
+  const emu = context.store.getState().emulatorState;
+  const bankSpace = bankSpaceFor(machineId, machineConfigOf(machineId, emu?.modelId, emu?.config));
+  if (!bankSpace) return { error: "This machine's memory cannot be annotated." };
+
+  if (firstPart.toUpperCase() === "ROM") {
+    for (const info of getRomPartitions()) {
+      const merged = mergeRomLayers(info.layers);
+      const label = merged?.bankAnnotation.localLabels?.find((candidate) => candidate.name === name);
+      if (!label) continue;
+      // --- The ROM is paged at the bottom of the address space on every annotated machine
+      const partitioned = bankSpace.partitionOf({ bank: 0, offset: 0 }) !== undefined;
+      return {
+        address: label.value,
+        ...(partitioned ? { partition: info.partition } : {})
+      };
+    }
+    return { error: `No ROM label named ${name}.` };
+  }
+
+  const bank = /^[0-9A-Fa-f]{1,2}$/.test(firstPart) ? parseInt(firstPart, 16) : undefined;
+  if (bank === undefined || bank > bankSpace.maxBank) {
+    return { error: `Invalid bank (expected $00-$${toHexa2(bankSpace.maxBank)}, or ROM)` };
+  }
+  const active = getActiveAnnotationSet();
+  if (!active) {
+    return { error: "No annotation set is active: use ann-new, or open a project." };
+  }
+  return { label: name, labelFile: active.path, bank };
 }
 
 export abstract class BreakpointWithAddressCommand extends IdeCommandBase<BreakpointWithAddressArgs> {
@@ -357,6 +408,31 @@ export abstract class BreakpointWithAddressCommand extends IdeCommandBase<Breakp
             const segments = addrArg.toLowerCase().split(":");
             if (segments.length === 2) {
               const { machine } = context.service.machineService.getMachineInfo();
+
+              /*
+               * `ROM:<name>` and `<bank>:<label>` - a breakpoint named by an annotation label
+               * (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §4.6, §5.5). Told apart from
+               * `<partition>:<address>` by the second part being an identifier: an address literal
+               * starts with `$`, `%` or a digit.
+               */
+              const [firstPart, namePart] = addrArg.split(":");
+              if (
+                /^(rom|[0-9a-f]{1,2})$/i.test(firstPart) &&
+                /^[A-Za-z_][A-Za-z0-9_]*$/.test(namePart)
+              ) {
+                const resolved = resolveAnnotationLabelSpec(
+                  context,
+                  machine.machineId,
+                  firstPart,
+                  namePart
+                );
+                if ("error" in resolved) {
+                  messages = [validationError(resolved.error)];
+                  break;
+                }
+                Object.assign(args, resolved);
+                break;
+              }
 
               /*
                * `nr:<register>` - a NextReg write breakpoint.
@@ -491,37 +567,32 @@ export abstract class BreakpointWithAddressCommand extends IdeCommandBase<Breakp
                 break;
               }
 
-              // --- Check for partition support
-              const roms = machine.features?.[MF_ROM] ?? 0;
-              const banks = machine.features?.[MF_BANK] ?? 0;
-              if (!roms && !banks) {
-                messages = [
-                  {
-                    type: ValidationMessageType.Error,
-                    message: "This model does not support partitions"
-                  }
-                ];
-                break;
-              }
-
-              // --- `<bank>:+<offset>` — bank-relative: an offset inside a ZX Spectrum Next 16K
-              // --- bank, firing wherever that bank is paged. `+` cannot begin an address literal
-              // --- (`$`, a digit or `%`), so this cannot be confused with the absolute
-              // --- `<partition>:<address>` form, and no existing spelling changes meaning.
+              // --- `<bank>:+<offset>` — bank-relative: an offset inside a 16K bank, firing
+              // --- wherever that bank is paged. `+` cannot begin an address literal (`$`, a digit
+              // --- or `%`), so this cannot be confused with the absolute `<partition>:<address>`
+              // --- form, and no existing spelling changes meaning. Every machine with a bank space
+              // --- has them: the Next, the 128K family, the 48K and the Timex (banks 5, 2, 0).
               if (segments[1].startsWith("+")) {
-                if (machine.machineId !== MI_ZXNEXT) {
+                const bankSpace = bankSpaceFor(machine.machineId);
+                if (!bankSpace?.bankBreakpoints) {
                   messages = [
-                    validationError("Bank-relative breakpoints are supported on the ZX Spectrum Next only")
+                    validationError("Bank-relative breakpoints are not supported on this machine")
                   ];
                   break;
                 }
 
-                // --- The bank is a 16K bank number in plain hex, *not* a partition label: the
-                // --- label map describes 8K pages, and routing a bank through it is how the two
-                // --- index spaces got confused. See `.plans/NEX_DEBUGGING_PLAN.md` §4.1.
+                // --- The bank is a 16K bank number in plain hex, *not* a partition label: on the
+                // --- Next the label map describes 8K pages, and routing a bank through it is how
+                // --- the two index spaces got confused. See `.plans/NEX_DEBUGGING_PLAN.md` §4.1.
                 const bank = parseInt(segments[0], 16);
-                if (!Number.isInteger(bank) || bank < 0 || bank > NEX_MAX_BANK) {
-                  messages = [validationError(`Invalid bank (expected $00-$${toHexa2(NEX_MAX_BANK)})`)];
+                if (!Number.isInteger(bank) || bank < 0 || bank > bankSpace.maxBank) {
+                  messages = [
+                    validationError(`Invalid bank (expected $00-$${toHexa2(bankSpace.maxBank)})`)
+                  ];
+                  break;
+                }
+                if (bankSpace.candidateAddresses({ bank, offset: 0 }).length === 0) {
+                  messages = [validationError(`Bank $${toHexa2(bank)} is not in this machine's memory`)];
                   break;
                 }
 
@@ -545,15 +616,28 @@ export abstract class BreakpointWithAddressCommand extends IdeCommandBase<Breakp
                   break;
                 }
                 const offsetInfo = { value: offsetValue };
-                if (offsetInfo.value < 0 || offsetInfo.value > NEX_BANK_LAST_OFFSET) {
+                if (offsetInfo.value < 0 || offsetInfo.value > ANNOTATION_BANK_LAST_OFFSET) {
                   messages = [
-                    validationError(`Bank offset must be between $0000 and $${toHexa4(NEX_BANK_LAST_OFFSET)}`)
+                    validationError(`Bank offset must be between $0000 and $${toHexa4(ANNOTATION_BANK_LAST_OFFSET)}`)
                   ];
                   break;
                 }
 
                 args.bank = bank;
                 args.bankOffset = offsetInfo.value;
+                break;
+              }
+
+              // --- Check for partition support
+              const roms = machine.features?.[MF_ROM] ?? 0;
+              const banks = machine.features?.[MF_BANK] ?? 0;
+              if (!roms && !banks) {
+                messages = [
+                  {
+                    type: ValidationMessageType.Error,
+                    message: "This model does not support partitions"
+                  }
+                ];
                 break;
               }
 
@@ -796,6 +880,10 @@ export class SetBreakpointCommand extends BreakpointWithAddressCommand {
     if (args["-once"]) {
       bpDef.oneShot = true;
       bpDef.owner = { kind: "session" };
+    } else if (bpDef.label && bpDef.labelFile) {
+      // --- A label-anchored breakpoint lives in the sidecar whose label it names, like one set from
+      // --- a bank document's gutter: the sync writes it into that file's `debug` subtree
+      bpDef.owner = { kind: "sidecar", sidecar: bpDef.labelFile };
     }
     const flag = await context.emuApi.setBreakpoint(bpDef);
     let addrKey = getBreakpointDisplayKey(bpDef, this.partitionLabels);

@@ -2,12 +2,12 @@ import type { UiReducer } from "@mvc/core/types";
 import type { DisassemblyItem } from "@renderer/appIde/disassemblers/common-types";
 
 import type {
-  NexAnnotationBankView,
-  NexAnnotationOffsetIndex,
-  NexFileAnnotations
-} from "../nexAnnotations";
-import { getNexBankOffsetIndex } from "../nexAnnotations";
-import type { NexAnnotationSessionSnapshot } from "./NexAnnotationEditorPorts";
+  AnnotationBankView,
+  AnnotationOffsetIndex,
+  ProgramAnnotations
+} from "@renderer/appIde/annotations/programAnnotations";
+import { getBankOffsetIndex } from "@renderer/appIde/annotations/programAnnotations";
+import type { AnnotationSessionSnapshot } from "./NexAnnotationEditorPorts";
 
 // ─── Vocabulary ──────────────────────────────────────────────────────────────
 
@@ -29,7 +29,7 @@ export type NexAnnotationEditorEnvironment = {
    * Sprites view is showing, this is the listing view it was switched from, and `spritesViewActive`
    * says the rest.
    */
-  viewMode: NexAnnotationBankView;
+  viewMode: AnnotationBankView;
   /**
    * The Sprites view is showing. Remembered as the bank's `sprites.active`, so a reopened bank shows
    * it again. Absent for a document that has no Sprites view, which then never writes the flag.
@@ -79,7 +79,7 @@ export const NO_ANNOTATIONS_MESSAGE = "This bank has no annotation sidecar.";
 
 export type NexAnnotationEditorState = {
   env: NexAnnotationEditorEnvironment;
-  annotations?: NexFileAnnotations;
+  annotations?: ProgramAnnotations;
   loading: boolean;
   loadError?: string;
   saveError?: string;
@@ -104,7 +104,7 @@ export function initialState(env: NexAnnotationEditorEnvironment): NexAnnotation
 export type NexAnnotationEditorEvent =
   | { type: "envReplaced"; env: NexAnnotationEditorEnvironment }
   // --- The shared session reported a new snapshot: annotations, dirty flag, or an error.
-  | { type: "sessionSnapshotReceived"; snapshot: NexAnnotationSessionSnapshot }
+  | { type: "sessionSnapshotReceived"; snapshot: AnnotationSessionSnapshot }
   // --- The listing the surrounding component generated, annotated or plain.
   | { type: "listingSettled"; items: DisassemblyItem[] }
   | { type: "selectionChanged"; selection: NexAnnotationSelection }
@@ -260,8 +260,8 @@ export function offsetSpanOf(
 /** The offset index the current display offset corresponds to, for writing back to the sidecar. */
 export function offsetIndexOf(
   state: NexAnnotationEditorState
-): NexAnnotationOffsetIndex | undefined {
-  return getNexBankOffsetIndex(state.env.disassOffset);
+): AnnotationOffsetIndex | undefined {
+  return getBankOffsetIndex(state.env.disassOffset);
 }
 
 // ─── Equality helpers ────────────────────────────────────────────────────────

@@ -32,6 +32,7 @@ import {
   COPPER_EDITOR,
   HISTORY_EDITOR,
   PROFILER_EDITOR,
+  GRAPHICS_EDITOR,
   SPRITES_EDITOR,
   TILEMAP_EDITOR,
   LAYER2_EDITOR,
@@ -56,6 +57,7 @@ import { createBasicPanel } from "./appIde/DocumentPanels/BasicPanel";
 import { createCopperListPanel } from "./appIde/DocumentPanels/CopperListPanel";
 import { createExecutionHistoryPanel } from "./appIde/DocumentPanels/ExecutionHistoryPanel";
 import { createProfilerPanel } from "./appIde/DocumentPanels/ProfilerPanel";
+import { createGraphicsPanel } from "./features/graphics/GraphicsPanel";
 import { createSpriteInspectorPanel } from "./appIde/DocumentPanels/SpriteInspector/SpriteInspectorPanel";
 import { createTilemapInspectorPanel } from "./appIde/DocumentPanels/TilemapInspector/TilemapInspectorPanel";
 import { createLayer2InspectorPanel } from "./appIde/DocumentPanels/Layer2Inspector/Layer2InspectorPanel";
@@ -497,6 +499,11 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     icon: "gauge"
   },
   {
+    id: GRAPHICS_EDITOR,
+    renderer: createGraphicsPanel,
+    icon: "sprite"
+  },
+  {
     id: SPRITES_EDITOR,
     renderer: createSpriteInspectorPanel,
     icon: "sprites"
@@ -879,9 +886,31 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     isReadOnly: true,
     openPermanent: true
   },
+  /*
+   * SkoolKit files (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §6.4): plain text in the editor;
+   * `skool-import` reads them. `.ctl` is registered only as text, because the extension is generic.
+   * Monaco colouring for skool files is a later follow-up.
+   */
   {
     matchType: "ends",
-    pattern: ".nex.dis",
+    pattern: ".skool",
+    editor: TEXT_EDITOR,
+    icon: "@file-text-txt"
+  },
+  {
+    matchType: "ends",
+    pattern: ".ctl",
+    editor: TEXT_EDITOR,
+    icon: "@file-text-txt"
+  },
+  /*
+   * Annotation sidecars of every kind (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §4.6):
+   * `game.nex.dis`, `game.z80.dis`, a project's `annotations.dis`, a ROM's `sp48.rom.dis`. Read-only
+   * JSON: they are edited through the annotation dialogs, which keep the file valid.
+   */
+  {
+    matchType: "ends",
+    pattern: ".dis",
     editor: CODE_EDITOR,
     subType: "json",
     icon: "note",

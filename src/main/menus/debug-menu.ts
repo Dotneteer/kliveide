@@ -1,3 +1,4 @@
+import { DETECT_CODE_DATA_DIALOG } from "@messaging/dialog-ids";
 /*
  * The Debug menu (`.plans/MENU_REDESIGN_PLAN.md` §3): starting with the debugger, stepping, the
  * Execution History, the machine's own debugging commands (Step Copper on the Next), and the source
@@ -144,6 +145,14 @@ export function createDebugMenu(context: MenuContext): MenuItemConstructorOption
             label: "Reset Coverage",
             click: async () => {
               await getIdeApi().executeCommand("coverage reset");
+            }
+          },
+          // --- Code/data detection from the coverage (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §4.6)
+          {
+            id: "detect_code_data",
+            label: "Detect Code and Data...",
+            click: async () => {
+              await getIdeApi().displayDialog(DETECT_CODE_DATA_DIALOG);
             }
           },
           // --- The profiler (`.plans/PROFILER_PLAN.md` D1): Start turns the flat profile and the

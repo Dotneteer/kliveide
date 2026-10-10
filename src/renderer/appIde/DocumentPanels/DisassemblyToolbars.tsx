@@ -9,6 +9,7 @@ import { Text } from "@renderer/controls/layout/Text";
 import { PanelHeader, PanelHeaderGroup } from "@renderer/controls/data";
 import type { PartitionOption } from "@renderer/features/memory/memoryViewModel";
 import { toHexa4 } from "../services/ide-commands";
+import type { ReactNode } from "react";
 
 export function createDisassemblyOffsetOptions(decimalView: boolean): DropdownOption[] {
   const options: DropdownOption[] = [];
@@ -37,11 +38,17 @@ type DisassemblyToolbarProps = {
   onScreenChanged: (value: boolean) => void;
   onShowBankLabelChanged: (value: boolean) => void;
   onSysVarNamesChanged: (value: boolean) => void;
+  onRomLabelsChanged?: (value: boolean) => void;
   pausedPc: number;
   ram: boolean;
   screen: boolean;
   sysVarNames: boolean;
+  /** Whether the machine has ROM annotations to show; the toggle appears only then. */
+  hasRomAnnotations?: boolean;
+  romLabels?: boolean;
   topAddress: number;
+  /** The reverse-engineering tools menu (`ReverseToolsMenu`), when the listing offers it. */
+  reverseTools?: ReactNode;
 };
 
 export const DisassemblyToolbar = ({
@@ -58,11 +65,15 @@ export const DisassemblyToolbar = ({
   onScreenChanged,
   onShowBankLabelChanged,
   onSysVarNamesChanged,
+  onRomLabelsChanged,
   pausedPc,
   ram,
   screen,
   sysVarNames,
-  topAddress
+  hasRomAnnotations,
+  romLabels,
+  topAddress,
+  reverseTools
 }: DisassemblyToolbarProps) => (
   <PanelHeader>
     <PanelHeaderGroup>
@@ -80,6 +91,14 @@ export const DisassemblyToolbar = ({
         title={SYS_VAR_NAMES_TITLE}
         clicked={onSysVarNamesChanged}
       />
+      {hasRomAnnotations && onRomLabelsChanged && (
+        <LabeledSwitch
+          value={romLabels ?? true}
+          label="ROM labels"
+          title="Show the ROM's labels, comments and data regions?"
+          clicked={onRomLabelsChanged}
+        />
+      )}
     </PanelHeaderGroup>
     {/* --- The refresh button acts on what "Follow PC" selects, so the two travel together. */}
     <PanelHeaderGroup>
@@ -130,6 +149,7 @@ export const DisassemblyToolbar = ({
         }}
       />
     </PanelHeaderGroup>
+    {reverseTools && <PanelHeaderGroup>{reverseTools}</PanelHeaderGroup>}
   </PanelHeader>
 );
 

@@ -1,3 +1,7 @@
+import {
+  annotationRoutineLabelsForState,
+  useAddressSymbols
+} from "@renderer/appIde/annotations/useAddressSymbols";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { MouseEvent as ReactMouseEvent } from "react";
 import classnames from "classnames";
@@ -16,7 +20,7 @@ import { FullPanel } from "@renderer/controls/layout/Panels";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { useMainApi } from "@renderer/core/MainApi";
-import { useSelector } from "@renderer/core/RendererProvider";
+import { useSelector, useRendererContext } from "@renderer/core/RendererProvider";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import type { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import {
@@ -55,12 +59,15 @@ const n = (v: number) => Math.round(v).toLocaleString("en-US");
 const ProfilerPanel = (_props: DocumentProps) => {
   const emuApi = useEmuApi();
   const mainApi = useMainApi();
-  const { ideCommandsService, outputPaneService } = useAppServices();
+  const { ideCommandsService, outputPaneService, projectService } = useAppServices();
   const machineId = useSelector((s) => s.emulatorState?.machineId);
   const profileVersion = useSelector((s) => s.emulatorState?.profileVersion);
   const profiling = useSelector((s) => s.emulatorState?.profiling);
   const advancedDebugging = useSelector((s) => s.emulatorState?.advancedDebugging) === true;
   const compilation = useSelector((s) => s.compilation?.result) as KliveCompilerOutput | undefined;
+  const { store } = useRendererContext();
+  // --- The annotation and ROM labels name routines too; re-read when any of them changes
+  const { symbols: addressSymbols } = useAddressSymbols(projectService);
   const supported =
     advancedDebugging && !!machineRegistry.find((m) => m.machineId === machineId)?.features?.[MF_PROFILE];
 
@@ -85,12 +92,19 @@ const ProfilerPanel = (_props: DocumentProps) => {
       try {
         const snapshot = await readProfileSnapshot(emuApi);
         if (mine !== generation.current) return;
-        setModel(snapshot ? buildProfilerModel(snapshot, compilation, { hideWaiting }) : undefined);
+        setModel(
+          snapshot
+            ? buildProfilerModel(snapshot, compilation, {
+                hideWaiting,
+                annotationLabels: annotationRoutineLabelsForState(store.getState())
+              })
+            : undefined
+        );
       } catch {
         if (mine === generation.current) setModel(undefined);
       }
     })();
-  }, [emuApi, supported, profileVersion, compilation, hideWaiting, machineId]);
+  }, [emuApi, supported, profileVersion, compilation, hideWaiting, machineId, addressSymbols, store]);
 
   const routineRows = useMemo(() => {
     if (!model) return [];

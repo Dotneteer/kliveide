@@ -1,3 +1,4 @@
+import { bankSpaceFor } from "@common/annotations/bankSpace";
 import type { ConditionEnvironment } from "./condition-types";
 
 /*
@@ -33,6 +34,8 @@ export function conditionMachineFacts(
     isZ80: machineId !== MACHINE_C64,
     hasPartitions: indexes.length > 0,
     isNext,
+    // --- Annotation labels are bank-local on every machine with a bank space (the plan's §4.6)
+    bankLabels: !!bankSpaceFor(machineId),
     parsePartitionLabel: (label) => {
       const upper = label.toUpperCase();
       const exact = byLabel.get(upper);

@@ -4,6 +4,8 @@ import type {
   BreakpointScope
 } from "@abstractions/BreakpointInfo";
 
+import { nextBankSpace } from "@common/annotations/bankSpace";
+
 /*
  * Breakpoint ownership, kept deliberately free of dependencies.
  *
@@ -32,8 +34,9 @@ export function breakpointMatchesScope(
       return true;
     case "project":
       return owner === undefined;
+    case "sidecar":
     case "nex":
-      return owner?.kind === "nex" && owner.sidecar === scope.sidecar;
+      return sidecarOfOwner(owner) === scope.sidecar;
     case "annotation":
       return owner?.kind === "annotation";
     case "unitTest":
@@ -77,13 +80,29 @@ export function ownerForScope(
       return current;
     case "project":
       return undefined;
+    case "sidecar":
     case "nex":
-      return { kind: "nex", sidecar: scope.sidecar };
+      return { kind: "sidecar", sidecar: scope.sidecar };
     case "annotation":
       return { kind: "annotation" };
     case "unitTest":
       return { kind: "unitTest" };
   }
+}
+
+/**
+ * The sidecar that owns a breakpoint, or `undefined` when no sidecar does. Reads the former `nex`
+ * owner as the `sidecar` one (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §4.6).
+ */
+export function sidecarOfOwner(owner: BreakpointOwner | undefined): string | undefined {
+  return owner?.kind === "sidecar" || owner?.kind === "nex" ? owner.sidecar : undefined;
+}
+
+/** An owner in its current form: the former `nex` kind becomes `sidecar`. */
+export function normalizeBreakpointOwner(
+  owner: BreakpointOwner | undefined
+): BreakpointOwner | undefined {
+  return owner?.kind === "nex" ? { kind: "sidecar", sidecar: owner.sidecar } : owner;
 }
 
 /**
@@ -193,24 +212,27 @@ export function isEventBreakpoint(bp: BreakpointInfo): boolean {
 }
 
 /**
- * The 8K partition a bank-relative breakpoint must match.
+ * The 8K partition a bank-relative breakpoint must match **on the ZX Spectrum Next**.
+ *
+ * Kept for the Next's callers; the arithmetic lives in `nextBankSpace`, and every other machine's in
+ * its own bank space (`@common/annotations/bankSpace`).
  *
  * A NEX bank is 16K and a Next partition is an 8K page, so the offset decides which half of the
  * bank — and therefore which partition — the breakpoint lives in. **This is the only place the
  * 16K-to-8K conversion happens.**
  */
 export function bankRelativePartition(bank: number, bankOffset: number): number {
-  return bank * 2 + ((bankOffset >> 13) & 0x01);
+  return nextBankSpace.partitionOf({ bank, offset: bankOffset });
 }
 
 /**
- * Every Z80 address at which a bank-relative breakpoint could appear.
+ * Every Z80 address at which a bank-relative breakpoint could appear on the ZX Spectrum Next
+ * (`nextBankSpace.candidateAddresses`).
  *
  * Its bank may be paged into any of the eight 8K slots, so the flag has to be armed at all eight
  * candidate addresses; the partition test at fire time is what picks out the one that is real. Eight
  * entries per breakpoint, against the 65,536 an I/O breakpoint already fans out to.
  */
 export function bankRelativeAddresses(bankOffset: number): number[] {
-  const pageOffset = bankOffset & 0x1fff;
-  return Array.from({ length: 8 }, (_, slot) => slot * 0x2000 + pageOffset);
+  return nextBankSpace.candidateAddresses({ bank: 0, offset: bankOffset });
 }

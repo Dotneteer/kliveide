@@ -168,8 +168,8 @@ export const IdeEventsHandler = () => {
             {
               disassemblyEnabled: true,
               disassOffset,
-              nexAnnotationPath: annotationPath,
-              nexAnnotationBank: bank,
+              annotationPath: annotationPath,
+              annotationBank: bank,
               topAddress,
               // --- Explicit rather than relying on the NEX default: this document is being opened
               // --- to show the instruction the machine stopped on.

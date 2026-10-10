@@ -1,4 +1,5 @@
 import styles from "./DisassemblyPanel.module.scss";
+import { ReverseToolsMenu } from "@renderer/appIde/reverse/ReverseToolsMenu";
 import { useRowSizes } from "@renderer/theming/useRowSizes";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
@@ -31,15 +32,21 @@ import {
 import { useDisassemblyMachineSetup } from "./useDisassemblyMachineSetup";
 import {
   type DisassemblerFactory,
+  type LiveListingContext,
   useDisassemblyRefresh
 } from "./useDisassemblyRefresh";
 import { DisassemblyRow } from "./DisassemblyRow";
 import { hasMachineFeature } from "@common/features/advancedDebugging";
 import { MF_PROFILE } from "@common/machines/constants";
 import { PF_EXECUTED } from "@common/profile/profileTypes";
-import { useLaunchedNexAnnotations } from "./Next/useNexLiveBank";
-import { createNexLiveOperandLabelResolver } from "./Next/nexLiveSymbols";
-import { chainOperandLabelResolvers } from "../disassemblers/sys-var-operand-labels";
+import { useAddressSymbols } from "@renderer/appIde/annotations/useAddressSymbols";
+import { getRomPartition, useRomLayersOf } from "@renderer/appIde/annotations/romAnnotations";
+import { customDisassemblyContextFor } from "@renderer/appIde/annotations/romDisassemblyGate";
+import {
+  annotateLiveListing,
+  partitionSite
+} from "@renderer/appIde/annotations/liveAnnotatedDisassembly";
+import { machineCharSetOf } from "@renderer/appIde/annotations/machineCharSet";
 import { useSysVarOperandLabelResolver } from "./useSysVarOperandLabels";
 import { evaluateBranch, type BranchVerdict } from "./branchVerdict";
 import {
@@ -51,7 +58,9 @@ import {
 import { derivePartitionWidthCh } from "@renderer/controls/data/partitionWidth";
 import { toHexa4 } from "../services/ide-commands";
 import { useBreakpointDialog } from "../dialogs/useBreakpointDialog";
-import type { MouseEvent as ReactMouseEvent } from "react";
+import type { KeyboardEvent as ReactKeyboardEvent, MouseEvent as ReactMouseEvent } from "react";
+import type { DisassemblyItem } from "../disassemblers/common-types";
+import { useLiveAnnotationEditing } from "@renderer/appIde/annotations/useLiveAnnotationEditing";
 import {
   ContextMenu,
   ContextMenuItem,
@@ -92,7 +101,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
    * named, on a right-click anywhere on the row outside the gutter (which keeps its own right-click
    * toggle). Stable, so the memoized rows are not re-rendered by it.
    */
-  const { ideCommandsService } = useAppServices();
+  const { ideCommandsService, projectService } = useAppServices();
   const [rowMenuState, rowMenuApi] = useContextMenuState();
   const [rowMenuTarget, setRowMenuTarget] = useState<RowMenuTarget | undefined>(undefined);
   const openRowMenu = useCallback(
@@ -146,6 +155,8 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
   const [sysVarNames, setSysVarNames] = useState(
     loadedViewState?.sysVarNames ?? true
   );
+  // --- The ROM's annotations (§5.5), on unless the reader turned them off
+  const [romLabels, setRomLabels] = useState(loadedViewState?.romLabels ?? true);
 
   const disassemblerFactory = machineInfo?.toolInfo?.[CT_DISASSEMBLER] as
     | DisassemblerFactory
@@ -183,44 +194,92 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
     [machineSetup.partitionLabels]
   );
   /*
-   * The launched NEX's labels, for naming operands in the live listing.
+   * The machine's system variables, the last source of operand names.
    *
-   * A factory over the paging rather than a finished resolver: `mem64kPartitions` below is derived
-   * from what `useDisassemblyRefresh` *returns*, so handing it a resolver built from that would be
-   * a cycle — and resolving from the previous refresh's paging would name from banks that have
-   * since moved. The hook calls this with the paging it just read.
-   *
-   * Memoized on the annotations and the label map, because the hook depends on its identity: a
-   * fresh function every render would re-disassemble 64K every render.
-   */
-  const launchedAnnotations = useLaunchedNexAnnotations();
-  /*
-   * The machine's system variables, as the second source of operand names.
-   *
-   * Independent of any NEX: every machine has one of these tables, so this is the source that makes
-   * `ld (LAST_K),a` appear in an ordinary ZX Spectrum session. It is asked **after** the NEX labels
-   * — see `chainOperandLabelResolvers` — because a label the user wrote about this program is a
-   * more specific claim than a fact about the machine.
+   * Independent of any program: every machine has one of these tables, so this is the source that
+   * makes `ld (LAST_K),a` appear in an ordinary ZX Spectrum session. It is asked **after** every
+   * label source — a label someone wrote about this program or ROM is a more specific claim than a
+   * fact about the machine.
    */
   const machineSysVarLabelResolver = useSysVarOperandLabelResolver();
   // --- Withheld rather than filtered when the switch is off: an absent resolver is exactly the
   // --- listing as it was before the feature, with no naming path to go wrong.
   const sysVarLabelResolver = sysVarNames ? machineSysVarLabelResolver : undefined;
+  /*
+   * The shared resolver (`annotations/symbolResolver.ts`): build symbols, the active annotation set,
+   * the ROM's annotations and the system variables, in that order (A8). It follows the active set's
+   * session, so a label added from anywhere is on screen at the next refresh.
+   */
+  const { symbols, bankSpace } = useAddressSymbols(projectService, {
+    romLabels,
+    sysVarResolver: sysVarLabelResolver
+  });
+  const hasRomAnnotations = !!useRomLayersOf();
+  const machineCharSet = useMemo(() => machineCharSetOf(machineId), [machineId]);
+  /*
+   * A factory over the paging rather than a finished resolver: the paging arrives with the memory
+   * read `useDisassemblyRefresh` performs, and naming from the previous refresh's paging would name
+   * from banks that have since moved. Memoized on the resolver, because the hook depends on its
+   * identity: a fresh function every render would re-disassemble 64K every render.
+   */
   const operandLabelSource = useMemo(
     () =>
-      launchedAnnotations || sysVarLabelResolver
-        ? (labels: string[]) =>
-            chainOperandLabelResolvers(
-              launchedAnnotations
-                ? createNexLiveOperandLabelResolver(
-                    launchedAnnotations,
-                    resolveMem64kPartitions(labels, partitionIndexByLabel)
-                  )
+      symbols.empty && !sysVarLabelResolver
+        ? undefined
+        : (labels: string[], slots?: (number | undefined)[]) =>
+            symbols.operandResolver(slots ?? resolveMem64kPartitions(labels, partitionIndexByLabel)),
+    [symbols, sysVarLabelResolver, partitionIndexByLabel]
+  );
+  // --- The custom disassembler decodes RST data only inside the ROM it describes (§4.5)
+  const romLayersVersion = useRomLayersOf();
+  const customDisassemblyContext = useCallback(
+    (slots: (number | undefined)[] | undefined, partition: number | undefined) =>
+      customDisassemblyContextFor(
+        machineId,
+        bankSpace,
+        slots,
+        (rom) => getRomPartition(rom)?.source,
+        partition
+      ),
+    // --- The ROM identities arrive with the layers
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [machineId, bankSpace, romLayersVersion]
+  );
+  // --- The annotated listing: banks and ROM pages re-listed from their regions (§4.5)
+  const annotateItems = useMemo(
+    () =>
+      symbols.empty || !bankSpace
+        ? undefined
+        : (context: LiveListingContext) => {
+            const slots = context.slots;
+            const site =
+              context.partition !== undefined ? partitionSite(context.partition, bankSpace) : undefined;
+            return annotateLiveListing({
+              items: context.items,
+              memory: context.memory,
+              memoryBase: context.memoryBase,
+              ranges: context.ranges,
+              pieces: site
+                ? [
+                    {
+                      start: context.memoryBase,
+                      end: context.memoryBase + context.memory.length - 1,
+                      site
+                    }
+                  ]
                 : undefined,
-              sysVarLabelResolver
-            )
-        : undefined,
-    [launchedAnnotations, partitionIndexByLabel, sysVarLabelResolver]
+              space: bankSpace,
+              slots,
+              symbols,
+              decimalView: context.decimalView,
+              pc: context.partition === undefined ? context.pc : undefined,
+              allowExtendedSet: bankSpace.extendedSet,
+              prepareDisassembler: context.prepareDisassembler,
+              fallbackOperandLabelResolver: operandLabelSource?.([], slots),
+              charSet: machineCharSet
+            });
+          },
+    [symbols, bankSpace, operandLabelSource, machineCharSet]
   );
 
   const {
@@ -229,6 +288,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
     history,
     items,
     mem64kLabels,
+    memorySnapshot,
     pausedPc,
     refreshDisassembly,
     refreshVersion
@@ -240,8 +300,44 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
     emuApi,
     machineId,
     operandLabelSource,
+    annotateItems,
+    customDisassemblyContext,
     onFollowPcTopAddress: setFollowPcTopAddress
   });
+
+  /*
+   * Editing annotations from the listing (§4.5): the row menu's annotation entries and the bank
+   * document's shortcuts, acting on the bank or ROM page a row is in. The shortcuts act on the row
+   * last clicked; a handled key stops propagating, because the emulated keyboard listens on
+   * `window` while a machine runs.
+   */
+  // --- `jumpTo` is declared further down; the editor reaches it through a ref
+  const jumpToRef = useRef<(address: number) => void>();
+  const annotationEditing = useLiveAnnotationEditing({
+    items,
+    memorySnapshot,
+    bankSpace,
+    decimalView,
+    navigateToAddress: (address) => void jumpToRef.current?.(address)
+  });
+  const [annotationRow, setAnnotationRow] = useState<DisassemblyItem | undefined>(undefined);
+  const selectAnnotationRow = useCallback((item: DisassemblyItem) => setAnnotationRow(item), []);
+  const handleAnnotationKeyDown = useCallback(
+    (event: ReactKeyboardEvent<HTMLDivElement>) => {
+      if (event.metaKey || event.altKey) return;
+      const action = annotationEditing.actionForKey(
+        annotationRow,
+        event.key,
+        event.shiftKey,
+        event.ctrlKey
+      );
+      if (!action || !annotationRow) return;
+      event.preventDefault();
+      event.stopPropagation();
+      void annotationEditing.run(annotationRow, action);
+    },
+    [annotationEditing, annotationRow]
+  );
 
   const mem64kPartitions = useMemo(
     () => resolveMem64kPartitions(mem64kLabels, partitionIndexByLabel),
@@ -264,6 +360,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
     ram,
     screen,
     sysVarNames,
+    romLabels,
     topAddress
   });
 
@@ -302,6 +399,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
     setToScroll(address);
     setScrollVersion((version) => version + 1);
   }, []);
+  jumpToRef.current = jumpTo;
 
   /*
    * A reveal that turned Follow PC off has to wait for the listing to be disassembled again: while
@@ -416,6 +514,19 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
       }
     })();
   }, [machineState]);
+
+  // --- Re-list when a name source changes: a label added from a bank document, the live view or
+  // --- the `label` command, a compilation, the ROM's annotations. Skips the first render, which the
+  // --- effects below already refresh.
+  const namesSeen = useRef(false);
+  useEffect(() => {
+    if (!namesSeen.current) {
+      namesSeen.current = true;
+      return;
+    }
+    void refreshDisassembly();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [annotateItems, operandLabelSource]);
 
   // --- Refresh when the follow PC option changes
   useEffect(() => {
@@ -603,6 +714,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
     /* --- M1: `0.8em` gave 12.8px here; see `MemoryPanel`. Follows the panel font size now. */
     <FullPanel fontFamily="--monospace-font" fontSize="--panel-font-size">
       <DisassemblyToolbar
+        reverseTools={<ReverseToolsMenu scope={{ kind: "range", from: 0x4000, to: 0xffff }} />}
         autoRefresh={autoRefresh}
         bankLabel={bankLabel}
         decimalView={decimalView}
@@ -638,6 +750,9 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
         onScreenChanged={setScreen}
         onShowBankLabelChanged={setBankLabel}
         onSysVarNamesChanged={setSysVarNames}
+        onRomLabelsChanged={setRomLabels}
+        hasRomAnnotations={hasRomAnnotations}
+        romLabels={romLabels}
         pausedPc={pausedPc}
         ram={ram}
         screen={screen}
@@ -661,7 +776,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
         partitionOptions={machineSetup.partitionOptions}
       />
       {items.length > 0 && (
-        <div className={styles.disassemblyWrapper}>
+        <div className={styles.disassemblyWrapper} onKeyDown={handleAnnotationKeyDown}>
           <VirtualizedList
             items={items}
             apiLoaded={(api) => (vlApi.current = api)}
@@ -710,6 +825,8 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
                   mem64kLabels={mem64kLabels}
                   onEditBreakpoint={editBreakpoint}
                   onRowMenu={openRowMenu}
+                  onRowClick={selectAnnotationRow}
+                  selected={item === annotationRow}
                   partitionLabels={machineSetup.partitionLabels}
                   partitionWidthCh={partitionWidthCh}
                   pausedPc={pausedPc}
@@ -729,9 +846,29 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
       )}
       <ContextMenu state={rowMenuState} onClickOutside={() => rowMenuApi.conceal()}>
         {rowMenuTarget &&
-          disassemblyRowMenuItems(rowMenuTarget, machineSetup.partitionLabels).map((item) => (
+          annotationEditing.menuItemsFor(rowMenuTarget.item).map((entry) => (
+            <span key={entry.id} style={{ display: "contents" }}>
+              {entry.separatorBefore && <ContextMenuSeparator />}
+              <ContextMenuItem
+                text={entry.text}
+                trailing={entry.hint}
+                disabled={entry.disabled}
+                clicked={() => {
+                  rowMenuApi.conceal();
+                  if (rowMenuTarget.item) {
+                    void annotationEditing.run(rowMenuTarget.item, entry.id);
+                  }
+                }}
+              />
+            </span>
+          ))}
+        {rowMenuTarget &&
+          disassemblyRowMenuItems(rowMenuTarget, machineSetup.partitionLabels).map((item, index) => (
             <span key={item.id} style={{ display: "contents" }}>
-              {item.separatorBefore && <ContextMenuSeparator />}
+              {(item.separatorBefore ||
+                (index === 0 && annotationEditing.menuItemsFor(rowMenuTarget.item).length > 0)) && (
+                <ContextMenuSeparator />
+              )}
               <ContextMenuItem
                 text={item.text}
                 trailing={item.hint}

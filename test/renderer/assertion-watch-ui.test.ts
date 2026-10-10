@@ -55,7 +55,8 @@ describe("the disassembly row menu (§4.2)", () => {
       ["Add Breakpoint", "bp-set $8000", false],
       ["Add One-Shot Breakpoint", "bp-set $8000 -once", false],
       ["Run to Here", "run-to $8000", false],
-      ["Edit Breakpoint...", undefined, true]
+      ["Edit Breakpoint...", undefined, true],
+      ["Show as Graphics", "gfx $8000", false]
     ]);
   });
 

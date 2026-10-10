@@ -230,6 +230,8 @@ The address is any expression: `w[HL]`, `[IX+3]`, `w[score]`.
 - `b[0A:+$0100]` (ZX Spectrum Next) reads 16K bank `0A` at offset `$0100`.
 - `b[05:Flags]` (ZX Spectrum Next) reads the bank-local label `Flags` of a `.nex.dis` sidecar in
   bank `05`. Write `b[05:(score)]` to use a global label as a partition offset instead.
+- Outside brackets, `05:Flags` is the value of an annotation label in bank `05` on every machine with
+  banks, and `ROM:SA_BYTES` the address of a ROM label.
 - On a machine without banks, the part before the colon is ignored.
 
 Reading memory in a condition has no side effects on the machine.
@@ -472,7 +474,7 @@ checkbox on each section's header switches that kind on or off for the project &
 default (DeZog starts with them off), and the first assertion stop reminds you how to switch them
 off.
 
-## Bank-Relative Breakpoints (ZX Spectrum Next)
+## Bank-Relative Breakpoints
 
 A partition-scoped breakpoint sits at one Z80 address and fires only while a particular partition is
 paged there. That is the wrong shape for code that moves a bank around: the same routine appears at a
@@ -485,9 +487,18 @@ that bank is paged:
 bp-set 05:+$0100
 ```
 
-This breaks at offset `$0100` inside 16K bank 5. The bank is a 16K bank number in hexadecimal (`00`
-to `6F`) and the offset runs from `$0000` to `$3FFF` &mdash; the same units a NEX file and the
-`.bank` pragma use. `bp-del` and `bp-en` take the same form.
+This breaks at offset `$0100` inside 16K bank 5. The bank is a 16K bank number in hexadecimal and the
+offset runs from `$0000` to `$3FFF` &mdash; the same units a NEX file and the `.bank` pragma use.
+`bp-del` and `bp-en` take the same form. Every machine with banks has them: the ZX Spectrum Next
+(banks `00`-`6F`), the 128K, +2A/+3/+3E and Pentagon (`00`-`07`) and the Scorpion (`00`-`0F`). The 48K
+and the Timex name their RAM as the 128K does in 48K mode &mdash; bank 5 at `$4000`, bank 2 at `$8000`,
+bank 0 at `$C000` &mdash; so a breakpoint written for a 48K program keeps its meaning on a 128K. The
+ZX80 and ZX81 have no banks.
+
+A breakpoint can also be anchored to a **label** of the active annotation set (`bp-set 07:MainLoop`):
+it follows the label if the code moves, and it is kept in that annotation file. `bp-set ROM:<name>`
+breaks at a label of the ROM's annotations. See
+[Annotations on Every Machine](./disassembly#annotations-on-every-machine).
 
 <Callout type="info">
 A ZX Next memory *partition* is an 8K page, while a *bank* here is 16K &mdash; so a bank-relative

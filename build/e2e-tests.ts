@@ -23,6 +23,8 @@ export const E2E_CORE_TESTS: string[] = [
   "test/sp128-hw/**/*.test.ts",
   "test/timex-hw/**/*.test.ts",
   "test/spectrum-hw/**/*.test.ts",
+  // --- The ROM annotation tools' coverage run (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §6)
+  "test/rom-annotations/**/*.test.ts",
   "test/harness/**/self-tests/**/*.test.ts",
   "test/unit-tests/runner-*.test.ts",
   // --- `klive test` on the fixture projects (`.plans/UNIT_TESTS_CLI_PLAN.md` §6)
@@ -52,6 +54,8 @@ export const E2E_CORE_TESTS: string[] = [
   "test/emu/one-shot-real-machine.test.ts",
   "test/emu/assertion-wpmem-real-machine.test.ts",
   "test/reverse/**/*.test.ts",
+  // --- Code/data detection on the real cores (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §8)
+  "test/reverse-eng/**/*.core.test.ts",
   "test/machines/hardware-specs-cores.test.ts",
   "test/tape/tape-load-flow.test.ts",
   "test/tape/turbo-block-playback.test.ts",

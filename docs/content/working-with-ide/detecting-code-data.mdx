@@ -1,0 +1,74 @@
+---
+description: "Detect which bytes of a program are code and which are data from code coverage, and turn the result into annotation regions."
+---
+
+import { Callout } from 'nextra/components'
+
+# Detecting Code and Data
+
+A disassembler cannot tell code from data by looking at the bytes: a table of numbers decodes into
+plausible instructions, and a routine that is only reached through a jump table looks like data.
+Klive answers the question from what the program actually *did*. With [code coverage](./code-coverage)
+on, the emulator records, for every byte of every bank, whether it was fetched as code, read or
+written. **Detection** turns that record into regions of your [annotations](./disassembly): code is
+disassembled, data is listed as `.defb`, `.defw` or `.defm`.
+
+<Callout type="info">
+Detection reads code coverage, one of Klive's [advanced debugging features](/howto/advanced-debugging).
+It works on every machine whose memory Klive can annotate: the ZX Spectrum 48K, 128K, +2A/+3, Next,
+the Pentagon, the Scorpion, the Timex machines, the ZX80 and the ZX81.
+</Callout>
+
+## Running it
+
+1. Turn coverage on (**Debug → Code Coverage**, or `coverage on`) and run the program. Play through
+   as much of it as you can: detection only knows about code that ran. You can merge several runs
+   with `coverage load`.
+2. Pause the machine.
+3. Open **Debug → Detect Code and Data...**, or the tools button on the Disassembly view's toolbar.
+
+The dialog lists one row per bank: how much of it is code, data and still unknown, how many
+changes it proposes, and how many of *your* regions it disagrees with. **Show** lists the warnings —
+self-modifying code, instructions that overlap, code bytes that are also read — each with a link to
+the address. Untick a bank to leave it alone, then press **Apply**.
+
+The same thing as a command:
+
+```
+ann-detect -reach
+ann-detect -reach -apply
+```
+
+## What counts as evidence
+
+Detection reports three levels of evidence, and you choose which to use:
+
+- **Observed**: the coverage flags. A byte fetched as code is code — the opcode *and* its operands;
+  a byte only read or written is data. When a byte was both, code wins and a warning says so.
+- **Reached** (*Follow branches*, `-reach`): code that never ran but that the code which did run
+  jumps or calls into, and the instructions after a conditional branch. This recovers error
+  handlers and rarely taken paths. Klive does not simulate registers, so a `JP (HL)` target is
+  found only if it ran.
+- **Inferred**: *Text* (`-text`) proposes printable runs as text; *Pointer tables* (`-words`)
+  proposes a run of words that mostly point at code as `.defw`.
+
+Bytes with no evidence stay as they are, unless you tick *Unknown is data* (`-unknown bytes`) — useful
+for a program you have exercised completely. On the Spectrum machines the screen in bank 5 (and bank
+7 on the 128K) is proposed as *skip*, the same range the listing already hides.
+
+## Your regions are safe
+
+Detection *proposes*; nothing is written until you apply. In the default **Fill gaps** mode it only
+writes where nothing was said yet, or where an earlier detection wrote. A region you marked as data
+yourself is listed as a conflict and kept. **Replace my regions** (`-mode replace`) overwrites them,
+after asking.
+
+Regions detection wrote are marked: the listing shows a dotted rail beside their rows, with the
+tooltip *Detected from coverage*. Editing such a region makes it yours. **Undo last detection** in
+the dialog (or `ann-detect -undo`) puts back the annotations from before the last apply, during the
+session; **Clear detected regions** (`-mode clear`) removes every detected region for good.
+
+<Callout type="info">
+`ann-detect rom` writes to *your* ROM annotations only. The ROM annotations Klive ships are never
+changed.
+</Callout>

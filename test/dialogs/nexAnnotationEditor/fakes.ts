@@ -1,9 +1,9 @@
 import { vi } from "vitest";
 
-import type { NexFileAnnotations } from "@renderer/appIde/DocumentPanels/Next/nexAnnotations";
+import type { ProgramAnnotations } from "@renderer/appIde/annotations/programAnnotations";
 import type {
   NexAnnotationEditorPorts,
-  NexAnnotationSessionSnapshot
+  AnnotationSessionSnapshot
 } from "@renderer/appIde/DocumentPanels/Next/annotationEditor/NexAnnotationEditorPorts";
 
 import { anAnnotationModel } from "./fixtures";
@@ -21,8 +21,8 @@ import { anAnnotationModel } from "./fixtures";
  * snapshot rather than being applied locally.
  */
 export class FakeSession {
-  private listeners = new Map<string, Set<(snapshot: NexAnnotationSessionSnapshot) => void>>();
-  private snapshots = new Map<string, NexAnnotationSessionSnapshot>();
+  private listeners = new Map<string, Set<(snapshot: AnnotationSessionSnapshot) => void>>();
+  private snapshots = new Map<string, AnnotationSessionSnapshot>();
 
   subscribeCalls: { path: string; bank: number }[] = [];
   unsubscribeCount = 0;
@@ -32,16 +32,16 @@ export class FakeSession {
   writeError?: string;
   private writes: Promise<void>[] = [];
 
-  constructor(initial?: Partial<NexAnnotationSessionSnapshot>) {
+  constructor(initial?: Partial<AnnotationSessionSnapshot>) {
     this.seed({ annotations: anAnnotationModel(), dirty: false, loading: false, ...initial });
   }
 
   /** Put a snapshot in place without notifying: the state a subscriber will be told on subscribe. */
-  seed(snapshot: NexAnnotationSessionSnapshot, path = "*"): void {
+  seed(snapshot: AnnotationSessionSnapshot, path = "*"): void {
     this.snapshots.set(path, snapshot);
   }
 
-  snapshotFor(path: string): NexAnnotationSessionSnapshot {
+  snapshotFor(path: string): AnnotationSessionSnapshot {
     return (
       this.snapshots.get(path) ??
       this.snapshots.get("*") ?? { annotations: undefined, dirty: false, loading: false }
@@ -49,7 +49,7 @@ export class FakeSession {
   }
 
   /** Push a snapshot to every subscriber, as the real session does on any change. */
-  broadcast(path: string, snapshot: NexAnnotationSessionSnapshot): void {
+  broadcast(path: string, snapshot: AnnotationSessionSnapshot): void {
     this.snapshots.set(path, snapshot);
     for (const listener of [...(this.listeners.get(path) ?? [])]) {
       listener(snapshot);
@@ -187,6 +187,6 @@ export function createFakePorts(
 
 /** The bank annotation the editor's model holds, for asserting what an edit published. */
 export function publishedBank(session: FakeSession, path: string, bank: number) {
-  const annotations = session.snapshotFor(path).annotations as NexFileAnnotations;
+  const annotations = session.snapshotFor(path).annotations as ProgramAnnotations;
   return annotations?.banks?.[String(bank)];
 }

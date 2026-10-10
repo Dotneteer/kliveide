@@ -262,7 +262,7 @@ breakpoint's is (§4.7, §13.2).
 ### 4.5 The sidecar has two independently-saved subtrees
 
 The sidecar's existing contract is **explicit save**: annotation edits mutate memory and JSON is
-written only when the user asks (`.docs/nex-annotations.md`). Breakpoints cannot work that way — a
+written only when the user asks (`.docs/annotations.md`). Breakpoints cannot work that way — a
 breakpoint you set and then lose because you did not press Save is a bug, not a policy.
 
 So schema v2 splits the file:
@@ -1875,7 +1875,7 @@ Phase 8  symbols + label breakpoints   (last; needs Phase 2's schema and Phase 5
 - **`CHANGELOG.md` — required, not optional.** Q9 changes two user-visible behaviours on the Next
   (§4.1): the Disassembly bank column's numbers, and the meaning of a partition in `bp-set` and in
   saved projects. Both are corrections; neither should arrive unannounced.
-- `.docs/nex-annotations.md` — schema v2 and the two save policies.
+- `.docs/annotations.md` — schema v2 and the two save policies.
 - A new page (or a section of `run-debug.mdx`) for debugging a NEX.
 - `.ai/ui-theming-intent-and-lessons.md` — **required by `AGENTS.md`** for Phases 4, 5 and 6, since
   they are visual changes. Record the durable rule, not the narrative.

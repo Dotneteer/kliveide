@@ -263,13 +263,20 @@ not stop &mdash; and does not count &mdash; until a build defines the label.
 The `address-spec` parameter can be 
 - a 16-bit address (using the number for the address), for example, `$120a` or `32768`;
 - an address with a partition (the partition and the address separated with a colon), for example, `r1:$32ac` (meaning $32ac, provided ROM 1 is paged in) &mdash; see [Machine-Specific Memory Partitions](/working-with-ide/memory#machine-specific-memory-partitions) for the names each machine uses;
-- a **bank-relative** address on the ZX Spectrum Next (the 16K bank, a colon, then `+` and the offset
-  within that bank), for example, `05:+$0100` &mdash; meaning offset `$0100` inside 16K bank 5,
-  wherever that bank happens to be paged in. The bank is a 16K bank number in hexadecimal, `00` to
-  `6F`, and the offset runs from `$0000` to `$3FFF`. Unlike the partition form above, this breakpoint
+- a **bank-relative** address (the 16K bank, a colon, then `+` and the offset within that bank), for
+  example, `05:+$0100` &mdash; meaning offset `$0100` inside 16K bank 5, wherever that bank happens
+  to be paged in. The bank is a 16K bank number in hexadecimal: `00`-`6F` on the ZX Spectrum Next,
+  `00`-`07` on the 128K, the +2A/+3/+3E and the Pentagon, `00`-`0F` on the Scorpion. The 48K and the
+  Timex name their RAM as banks 5 (`$4000`), 2 (`$8000`) and 0 (`$C000`), so `02:+$0100` is `$8100`
+  there. The offset runs from `$0000` to `$3FFF`. Unlike the partition form above, this breakpoint
   follows its bank rather than sitting at one Z80 address, which is what makes it useful for code
-  that pages banks in and out. Not available for the `-i` and `-o` (I/O) breakpoint types, which
-  watch a port rather than memory;
+  that pages banks in and out. Not available on the ZX80 and ZX81, which have no banks, nor for the
+  `-i` and `-o` (I/O) breakpoint types, which watch a port rather than memory;
+- an **annotation label** in a bank (the bank, a colon, then the label), for example, `07:MainLoop`
+  &mdash; a breakpoint anchored to a label of the [active annotation set](/working-with-ide/disassembly#annotations-on-every-machine),
+  which follows the label when it moves and is kept in that annotation file;
+- a **ROM label** (`ROM:` then the name), for example, `ROM:SA_BYTES` &mdash; the address of a label
+  of the paged ROM's annotations, scoped to that ROM page on a machine that pages ROMs;
 - a **NextReg write** on the ZX Spectrum Next (`nr:` then the register number), for example,
   `nr:$07` &mdash; meaning "stop when Next Register `$07` is written". This is the one breakpoint
   that does not name a place: it watches a machine event, so it has no address, no partition and no
@@ -986,42 +993,142 @@ tape-load "tapes/game.tzx"
 tape-load "tapes/game.tzx" -r
 ```
 
-## `nex-label`
+## `label`
 
-This command adds a label to the launched NEX file's annotations, at the address the machine is
-stopped at.
+This command adds a label to the active annotation set, at the address the machine is stopped at
+(or the one you give).
 
 ```
-nex-label <name> [<address>]
+label <name> [<address>]
 ```
 
-Available aliases: `nl`
+Available aliases: `lbl`, `nex-label`, `nl`
 
-Use it when you have just worked out what a routine does: the name goes into the `.nex.dis`
-annotations from the debugger, and the Disassembly view starts using it on its next refresh instead
-of showing a bare address.
+Use it when you have just worked out what a routine does: the name goes into the annotations from
+the debugger, and the Disassembly view uses it straight away instead of showing a bare address.
+It works on every machine whose memory can be annotated: the ZX Spectrum Next, 48K, 128K, +2A/+3/+3E,
+Pentagon, Scorpion, Timex, ZX80 and ZX81.
 
-The label is **local to the bank** the address is currently in, because that is the only thing the
-address means &mdash; the same routine sits somewhere else the next time its bank is paged
-elsewhere. Klive reads the current memory mapping to work out which bank that is, and refuses if the
-launched file does not contain it.
+- An address in **RAM** gets a label **local to the bank** the address is currently in, because
+  that is the only thing the address means &mdash; the same routine sits somewhere else the next
+  time its bank is paged elsewhere. Klive reads the current memory mapping to work out which bank
+  that is. For a launched NEX, it refuses a bank the file does not contain.
+- An address in **ROM** gets a label in *your* annotations of that ROM, kept apart from the ROM
+  annotations Klive ships (see [ROM annotations](/working-with-ide/disassembly#rom-annotations)).
 
 The machine must be **paused**, unless you give an address: a running machine's program counter has
 moved on by the time the command reads it, so "where we are" would name an arbitrary instruction.
 
-The label is written to the `.nex.dis` file straight away. If the NEX file's viewer is open, the
-label joins the edits it is holding first, so neither can overwrite the other.
+The label is written straight away. If the annotation file does not exist yet, this creates it. If
+it is open anywhere (a bank document, the Disassembly view), the label joins the edits it holds, so
+neither can overwrite the other. With no annotation set active, the command says so: launch a
+program, load a snapshot, open a project, or use [`ann-new`](#ann-new).
 
 ```text
-nex-label DrawSprite
-nl ClearScreen
-nex-label VBlankWait $C120
+label DrawSprite
+lbl ClearScreen
+label VBlankWait $C120
 ```
 
 <Callout type="info">
 The name follows the assembler's identifier convention and is limited to 16 characters. A bank
 cannot have two labels with the same name; Klive refuses rather than moving the existing one.
 </Callout>
+
+## `ann-open`
+
+Makes an annotation file (`.dis`) the active annotation set.
+
+```
+ann-open <file>
+```
+
+The file is read and checked first; one that does not validate is refused. If it was written for a
+different machine whose banks mean something else, Klive warns. A 48K file on a 128K is the normal
+case and gets no warning: both name the same memory as banks 5, 2 and 0.
+
+## `ann-new`
+
+Creates an annotation file and makes it the active annotation set.
+
+```
+ann-new <file> [-m <machine>]
+```
+
+`-m` names the machine the file numbers its banks for: `next`, `sp48`, `sp128`, `plus3`, `scorpion`,
+`timex`, `zx81` or `zx80`. Without it, the running machine's is used. The file must not exist yet.
+
+```text
+ann-new annotations/jetpac.dis
+ann-new game.dis -m sp48
+```
+
+## `ann-close`
+
+Deactivates the active annotation set. Its file is not changed.
+
+## `ann-info`
+
+Shows the active annotation set: its file, why it is active (a launched NEX, a loaded snapshot, a
+project, a command), its machine, and how many labels, comments, regions and breakpoints it holds.
+It also lists the ROM annotations in use for each ROM page: the ones Klive ships, your own, and,
+for a ROM Klive does not know, how many of the shipped labels apply to its bytes.
+
+## `ann-detect`
+
+Detects code and data from code coverage and proposes regions for the active annotations. See
+[Detecting Code and Data](./working-with-ide/detecting-code-data).
+
+```
+ann-detect [<bank>|rom|all] [-mode fill|replace|clear] [-reach] [-text] [-words]
+           [-unknown keep|bytes] [-noscreen] [-apply]
+ann-detect -undo
+```
+
+Without a bank, it works on the banks paged in now; `rom` writes to your own ROM annotations. Without
+`-apply` it only reports, in the output and a result document. `-undo` puts back the annotations from
+before the last apply.
+
+Available aliases: `detect`
+
+## `gfx`
+
+Opens the graphics finder over the paused machine, optionally at an address. See
+[The Graphics Finder](./working-with-ide/graphics-finder).
+
+```
+gfx [<address>] [-w <width>] [-h <height>] [-layout linear|cells|columns|screen] [-bank <n>]
+```
+
+`-bank` shows one bank (partition) instead of the 64K view.
+
+Available aliases: `show-graphics`
+
+## `export-asm`
+
+Exports an annotated range of the 64K view, or a bank, as Klive Z80 source that reassembles to the
+same bytes, and verifies it. See [Exporting Source](./working-with-ide/exporting-source).
+
+```
+export-asm <file> [<from> <to>] [-bank <n>] [-skip data|gap] [-dialect klive] [-open] [-noverify]
+```
+
+## `skool-import`
+
+Imports a SkoolKit skool or control file into the active annotations, checking its instructions
+against the machine's bytes. See [SkoolKit Files](./working-with-ide/skoolkit).
+
+```
+skool-import <file> [-ctl] [-mode fill|replace] [-apply]
+```
+
+## `skool-export`
+
+Exports the active annotations as a SkoolKit skool or control file.
+
+```
+skool-export <file> [-ctl] [<from> <to>] [-bank <n>|all] [-split]
+```
 
 ## `newp`
 
@@ -1674,10 +1781,10 @@ that address. The **Show in Disassembly** menu items of the editor and the Break
 
 ## `show-memory`
 
-Use this command to display the memory contents view.
+Use this command to display the memory contents view, optionally at an address (in the 64K view).
 
 ```
-show-memory
+show-memory [<address>]
 ```
 
 Available aliases: `shmem`

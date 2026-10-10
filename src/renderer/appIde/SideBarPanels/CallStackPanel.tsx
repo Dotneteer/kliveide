@@ -1,3 +1,5 @@
+import { useAppServices } from "../services/AppServicesProvider";
+import { useAddressSymbols } from "@renderer/appIde/annotations/useAddressSymbols";
 import { Label } from "@renderer/controls/layout/Label";
 import { Value } from "@renderer/controls/layout/Value";
 import { useSelector } from "@renderer/core/RendererProvider";
@@ -26,6 +28,12 @@ import { HistoricalCallStack } from "../debugger/history/HistoricalCallStack";
  */
 const addressText = (value: number) => `$${toHexa4(value)} (${value})`;
 
+/** A return address as its routine and offset: `MAIN+12`, or `MAIN` at the label itself. */
+export function routineText(routine: { name: string; offset: number } | undefined): string | undefined {
+  if (!routine) return undefined;
+  return routine.offset ? `${routine.name}+${routine.offset}` : routine.name;
+}
+
 /**
  * One call-stack frame: where the return address is stored, and what it points at.
  *
@@ -34,7 +42,17 @@ const addressText = (value: number) => `$${toHexa4(value)} (${value})`;
  * hooks. The tooltip binds to the row, so it answers anywhere along it rather than only over one of
  * the two four-character numbers (see `TipRow` in `MemMappingPanel` for the same shape).
  */
-const CallStackRow = ({ index, slot, frame }: { index: number; slot: number; frame: number }) => {
+const CallStackRow = ({
+  index,
+  slot,
+  frame,
+  routine
+}: {
+  index: number;
+  slot: number;
+  frame: number;
+  routine?: string;
+}) => {
   const ref = useTooltipRef<HTMLDivElement>();
 
   return (
@@ -46,6 +64,7 @@ const CallStackRow = ({ index, slot, frame }: { index: number; slot: number; fra
       />
       <Icon iconName="arrow-small-right" width={16} height={16} fill="--data-label" />
       <Value text={toHexa4(frame)} className={classnames(styles.csCell, regStyles.stateValue)} />
+      {routine && <Label text={routine} className={styles.csRoutine} />}
       <TooltipFactory
         refElement={ref.current}
         placement="right"
@@ -55,7 +74,7 @@ const CallStackRow = ({ index, slot, frame }: { index: number; slot: number; fra
         content={
           `${index ? `Frame ${index}` : "Top of stack"}\n` +
           `Stored at ${addressText(slot)}\n` +
-          `Returns to ${addressText(frame)}`
+          `Returns to ${addressText(frame)}${routine ? `, in ${routine}` : ""}`
         }
       />
     </div>
@@ -77,6 +96,10 @@ export const CallStackPanel = () => {
 
 const RawCallStack = () => {
   const emuApi = useEmuApi();
+  const { projectService } = useAppServices();
+  // --- The shared resolver names each return address: `MAIN+12`, `PRINT_OUT+3`
+  const { symbols } = useAddressSymbols(projectService);
+  const [slots, setSlots] = useState<(number | undefined)[]>();
   const [refreshed, setRefreshed] = useState(false);
   const [spValue, setSpValue] = useState<number>();
   const [frames, setFrames] = useState<number[]>();
@@ -94,6 +117,7 @@ const RawCallStack = () => {
       const callStack = await emuApi.getCallStack();
       setSpValue(callStack.sp);
       setFrames(callStack.frames);
+      setSlots(callStack.slotPartitions);
       setRefreshed(true);
     }
   }, [emuApi, machineState]);
@@ -117,6 +141,7 @@ const RawCallStack = () => {
               index={idx}
               slot={(spValue + idx * 2) & 0xffff}
               frame={frames[idx]}
+              routine={routineText(symbols.routineAt(frames[idx], slots))}
             />
           )}
         />

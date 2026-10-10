@@ -6,7 +6,7 @@ import type {
   ConditionRegister,
   ConditionSymbols
 } from "./condition-types";
-import { bankLocalSymbolKey } from "./condition-types";
+import { bankLocalSymbolKey, romSymbolKey } from "./condition-types";
 import { ConditionSyntaxError } from "./condition-lexer";
 import { parseCondition, type SyntaxNode } from "./condition-parser";
 import { MAX_PROGRAM_WORDS, MAX_STACK_DEPTH, emitCondition, stackDepthOf } from "./condition-bytecode";
@@ -172,7 +172,11 @@ class Checker {
         return this.resolveName(node);
 
       case "bankLabel": {
-        if (!this.env.isNext) {
+        // --- `ROM:<name>`: a label of the paged ROM's annotations, by its ROM address (§5.5)
+        if (node.bank.toUpperCase() === "ROM") {
+          return this.labelSlot(romSymbolKey(node.name), `ROM:${node.name}`, node);
+        }
+        if (!(this.env.bankLabels ?? this.env.isNext)) {
           if (ignoredBankPrefix) return this.labelSlot(node.name.toLowerCase(), node.name, node);
           this.fail(
             `Bank-local labels (${this.source(node)}) exist only on the ZX Spectrum Next`,
