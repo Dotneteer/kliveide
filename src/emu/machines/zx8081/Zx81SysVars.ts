@@ -40,7 +40,7 @@ export const zx81SysVars: SysVar[] = [
   { address: 0x402e, name: "STRLEN", type: SysVarType.Word, description: "The length of the string an assignment is storing." },
   { address: 0x4030, name: "T_ADDR", type: SysVarType.Word, description: "The next item in the syntax table." },
   { address: 0x4032, name: "SEED", type: SysVarType.Word, description: "The seed RND uses; RAND sets it." },
-  { address: 0x4034, name: "FRAMES", type: SysVarType.Word, description: "Counts the frames shown down from 65535; bit 15 is set while PAUSE runs." },
+  { address: 0x4034, name: "FRAMES", type: SysVarType.Word, description: "Counts the frames shown down; bit 15 is set in normal running and clear while PAUSE counts (a PAUSE of 32768 or more keeps it set and waits for a key)." },
   { address: 0x4036, name: "COORDS", type: SysVarType.Word, description: "The x (low byte) and y (high byte) of the last point plotted." },
   { address: 0x4038, name: "PR_CC", type: SysVarType.Byte, description: "The low byte of where LPRINT puts its next character in the printer buffer." },
   { address: 0x4039, name: "S_POSN", type: SysVarType.Word, description: "The column (low byte) and line (high byte) for PRINT." },
