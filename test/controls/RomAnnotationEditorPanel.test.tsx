@@ -36,6 +36,7 @@ async function renderEditor(path: string, files: Record<string, string>) {
     useDocumentHubService: () => ({})
   }));
   const mainApi = {
+    showItemInFolder: vi.fn(async () => {}),
     readTextFile: vi.fn(async (file: string) => readFileSync(join(ROMS, file.replace(/^roms\//, "")), "utf8")),
     readBinaryFile: vi.fn(async (file: string) => {
       if (file.startsWith("roms/")) return new Uint8Array(readFileSync(join(ROMS, file.slice(5))));
@@ -43,6 +44,14 @@ async function renderEditor(path: string, files: Record<string, string>) {
     })
   };
   vi.doMock("@renderer/core/MainApi", () => ({ useMainApi: () => mainApi }));
+  vi.doMock("@renderer/core/RendererProvider", () => ({
+    useSelector: (selector: (state: any) => unknown) => selector({ isWindows: false })
+  }));
+  vi.doMock("@renderer/controls/IconButton", () => ({
+    SmallIconButton: ({ title, clicked }: { title?: string; clicked?: () => void }) => (
+      <button onClick={clicked}>{title}</button>
+    )
+  }));
   vi.doMock("@renderer/core/EmuApi", () => ({
     useEmuApi: () => ({ getRomSources: async () => ({}) })
   }));
@@ -62,7 +71,7 @@ async function renderEditor(path: string, files: Record<string, string>) {
       viewState: { sidecarPath: path }
     })
   );
-  return { opened };
+  return { opened, mainApi };
 }
 
 describe("the ROM annotation editor", () => {
@@ -90,6 +99,12 @@ describe("the ROM annotation editor", () => {
     expect(options.annotationReadOnly).toBeUndefined();
   });
 
+  it("reveals the working copy in the file manager, from beside its name", async () => {
+    const { mainApi } = await renderEditor(WORKING, { [WORKING]: SHIPPED_TEXT });
+    fireEvent.click(await screen.findByRole("button", { name: "Reveal in Finder" }));
+    expect(mainApi.showItemInFolder).toHaveBeenCalledWith(WORKING);
+  });
+
   it("lists the problems that keep a file from being shipped", async () => {
     const raw = JSON.parse(SHIPPED_TEXT);
     raw.provenance["0:1:label"] = "observed";
@@ -104,6 +119,8 @@ describe("the ROM annotation editor", () => {
     const { opened } = await renderEditor("roms/sp48.rom.dis", {});
     await screen.findByText(/Shipped sidecar — read-only/);
     expect(screen.queryByText("New entries:")).not.toBeInTheDocument();
+    // --- `roms/…` is relative to Klive's own folder: nothing on disk to reveal
+    expect(screen.queryByRole("button", { name: /^Reveal in/ })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Disassembly" }));
     await waitFor(() => expect(opened).toHaveLength(1));
     expect(opened[0][4]).toMatchObject({ annotationPath: "roms/sp48.rom.dis", annotationReadOnly: true });

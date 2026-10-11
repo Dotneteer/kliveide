@@ -39,6 +39,8 @@ import { Text } from "@renderer/controls/layout/Text";
 import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z80-disassembler";
 import { Z88CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z88-custom.disassembler";
 import { prepareRomDisassembler } from "@renderer/appIde/annotations/romDecoder";
+import { romSysVarsFor } from "@renderer/appIde/annotations/romSysVars";
+import { createSysVarOperandLabelResolver } from "@renderer/appIde/disassemblers/sys-var-operand-labels";
 import type { RomPageKind } from "@common/roms/romIdentity";
 import { MemorySection, type DisassemblyItem } from "@renderer/appIde/disassemblers/common-types";
 import {
@@ -533,8 +535,14 @@ const StaticMemoryDump = ({
         : undefined,
     [isRomListing, romPageKind]
   );
+  // --- A ROM page names the variables of the machine the ROM belongs to, not the one selected now:
+  // --- a ZX81 ROM opened while a Spectrum runs must not read `$5C3A` names at ZX81 addresses
+  const romSysVarLabelResolver = useMemo(() => {
+    const table = isRomListing ? romSysVarsFor(romPageKind) : undefined;
+    return table ? createSysVarOperandLabelResolver(table) : undefined;
+  }, [isRomListing, romPageKind]);
   const sysVarLabelResolver =
-    sysVarNames && !isZ88Listing ? machineSysVarLabelResolver : undefined;
+    sysVarNames && !isZ88Listing ? (romSysVarLabelResolver ?? machineSysVarLabelResolver) : undefined;
 
   /*
    * The branch gutter, for a popped-out NEX bank.

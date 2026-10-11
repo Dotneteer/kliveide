@@ -116,6 +116,7 @@ export type SidecarRegion = {
   end: number;
   type: "disassemble" | "bytes" | "words" | "skip";
   rowBytes?: number;
+  radix?: ByteRegionRadix;
   decode?: DecodedRegionType;
   origin?: AnnotationRegionOrigin;
 };
@@ -150,9 +151,55 @@ export type AnnotationRegion = {
    * it one pixel row per `.defb` where it can.
    */
   rowBytes?: number;
+  /**
+   * For a `bytes` region: write its values in binary (`%00111100`, all eight digits) instead of
+   * hexadecimal. Absent: hexadecimal. An additive key that a shipped build ignores, listing the
+   * region in hexadecimal instead.
+   */
+  radix?: ByteRegionRadix;
   /** Who wrote it; see `AnnotationRegionOrigin`. Absent: the user. */
   origin?: AnnotationRegionOrigin;
 };
+
+/** The number base a `bytes` region's values are written in, when it is not hexadecimal. */
+export type ByteRegionRadix = "binary";
+
+/**
+ * How a `bytes` region lays out its values, as the region dialog offers it: how many to a row, and
+ * in which base. The four are the only layouts the dialog writes; a sidecar may hold others (three
+ * to a row, say), which the listing still honours.
+ */
+export type ByteRegionFormat = "hex4" | "hex2" | "hex1" | "bin1";
+
+export const BYTE_REGION_FORMATS: { value: ByteRegionFormat; label: string }[] = [
+  { value: "hex4", label: "4 bytes, hex" },
+  { value: "hex2", label: "2 bytes, hex" },
+  { value: "hex1", label: "1 byte, hex" },
+  { value: "bin1", label: "1 byte, binary" }
+];
+
+/** The region fields a format is stored as: the default (four, hexadecimal) is no field at all. */
+export function byteRegionLayoutOf(
+  format: ByteRegionFormat
+): Pick<AnnotationRegion, "rowBytes" | "radix"> {
+  switch (format) {
+    case "hex2":
+      return { rowBytes: 2 };
+    case "hex1":
+      return { rowBytes: 1 };
+    case "bin1":
+      return { rowBytes: 1, radix: "binary" };
+    default:
+      return {};
+  }
+}
+
+/** The dialog's format for a region's layout; a layout the dialog does not offer reads as the default. */
+export function byteRegionFormatOf(region: Pick<AnnotationRegion, "rowBytes" | "radix">): ByteRegionFormat {
+  const rowBytes = getRegionRowBytes(region);
+  if (region.radix === "binary") return "bin1";
+  return rowBytes === 2 ? "hex2" : rowBytes === 1 ? "hex1" : "hex4";
+}
 
 /** The most values a `.defb` row holds, and the row size when a region does not set `rowBytes`. */
 export const MAX_ROW_BYTES = 4;
@@ -167,8 +214,8 @@ export function getRegionRowBytes(region: Pick<AnnotationRegion, "rowBytes">): n
  * Type alone is not enough: two `bytes` regions with different row sizes must stay apart.
  */
 export function sameRegionLayout(
-  a: Pick<AnnotationRegion, "type" | "rowBytes" | "origin">,
-  b: Pick<AnnotationRegion, "type" | "rowBytes" | "origin">
+  a: Pick<AnnotationRegion, "type" | "rowBytes" | "radix" | "origin">,
+  b: Pick<AnnotationRegion, "type" | "rowBytes" | "radix" | "origin">
 ): boolean {
   // --- `origin` takes part, so a detected region never merges into one the user wrote (§3). Two
   // --- graphics never merge: each is its own named thing, laid out by its own `graphics` entry.
@@ -176,6 +223,7 @@ export function sameRegionLayout(
     a.type === b.type &&
     a.type !== "graphic" &&
     getRegionRowBytes(a) === getRegionRowBytes(b) &&
+    a.radix === b.radix &&
     a.origin === b.origin
   );
 }
@@ -1294,6 +1342,17 @@ function normalizeRegions(
         type = item.decode as DecodedRegionType;
       }
     }
+    // --- Like `decode`, an unusable `radix` is a warning: the region loads, in hexadecimal
+    let radix: ByteRegionRadix | undefined;
+    if (item.radix !== undefined) {
+      if (item.type !== "bytes" || item.decode !== undefined) {
+        diagnostics.push(warning(`${itemPath}.radix`, "radix applies only to bytes regions; it is ignored."));
+      } else if (item.radix !== "binary") {
+        diagnostics.push(warning(`${itemPath}.radix`, "radix is not supported; listed in hexadecimal."));
+      } else {
+        radix = "binary";
+      }
+    }
     let origin: AnnotationRegionOrigin | undefined;
     if (item.origin !== undefined) {
       if (REGION_ORIGINS.has(item.origin as AnnotationRegionOrigin)) {
@@ -1314,6 +1373,7 @@ function normalizeRegions(
       item.rowBytes !== MAX_ROW_BYTES
         ? { rowBytes: item.rowBytes as number }
         : {}),
+      ...(radix && type === "bytes" ? { radix } : {}),
       ...(origin ? { origin } : {})
     });
   });

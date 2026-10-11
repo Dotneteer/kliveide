@@ -1083,6 +1083,19 @@ toggle, no to-do stepping), and the annotation editor raises **no warning glyph*
 means a load or save failed; read-only is a decision, and dressing it as a failure makes users hunt for
 an error that is not there.
 
+## A File Path In A Panel Carries Its Reveal Button
+
+Where a document shows the file it edits (the ROM annotation editor's **File** row), a
+`SmallIconButton` with the `folder-opened` icon sits right after the path, titled "Reveal in Finder"
+or "Reveal in File Explorer" from the store's `isWindows` - the same wording as the Explorer's and the
+document tab's context menus, so the action reads the same wherever it is found. It is shown only for a
+path on disk: a path relative to Klive's public folder (`roms/sp48.rom.dis`) has nothing to reveal, and
+a button that does nothing is worse than none.
+
+A choice that only applies to one option of another choice (a bytes region's **Format** in the region
+dialog) appears only while that option is selected, as its own `RadioGroup` row directly below, rather
+than being shown disabled for every other type.
+
 ## A Heading Inside Panel Content Is `SectionHeader`, Not `PanelHeader`
 
 `PanelHeader` is a *panel's own chrome* — a chrome surface with a bottom border. Dropping one into

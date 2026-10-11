@@ -341,7 +341,8 @@ describe("data rows and labels", () => {
     type: "bytes" | "words",
     labels: { global?: { name: string; value: number }[]; local?: { name: string; value: number }[] },
     end = 7,
-    rowBytes?: number
+    rowBytes?: number,
+    extra: { radix?: "binary"; decimalView?: boolean } = {}
   ) {
     const items = await createAnnotatedDisassemblyItems({
       annotations: {
@@ -351,7 +352,7 @@ describe("data rows and labels", () => {
           "2": {
             offsetIndex: 2,
             regions: [
-              { start: 0, end, type, ...(rowBytes ? { rowBytes } : {}) },
+              { start: 0, end, type, ...(rowBytes ? { rowBytes } : {}), ...(extra.radix ? { radix: extra.radix } : {}) },
               { start: end + 1, end: 0x3fff, type: "skip" }
             ],
             localLabels: labels.local ?? []
@@ -360,7 +361,8 @@ describe("data rows and labels", () => {
       },
       bank: 2,
       contents,
-      disassOffset: 0x8000
+      disassOffset: 0x8000,
+      decimalView: extra.decimalView ?? false
     });
     return items!
       .filter((item) => !item.instruction?.startsWith(".skip"))
@@ -424,6 +426,16 @@ describe("data rows and labels", () => {
       ".defb $04, $05, $06",
       ".defb $07"
     ]);
+  });
+
+  it("writes a binary bytes region one byte to a row, all eight digits, whatever the decimal switch", async () => {
+    for (const decimalView of [false, true]) {
+      expect((await rows("bytes", {}, 2, 1, { radix: "binary", decimalView })).map((r) => r.instruction)).toEqual([
+        ".defb %00000001",
+        ".defb %00000010",
+        ".defb %00000011"
+      ]);
+    }
   });
 
   it("keeps a rowBytes record whole around a label inside it, and labels one that starts a record", async () => {

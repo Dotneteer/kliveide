@@ -109,6 +109,13 @@ function createBuildMenu(context: MenuContext): MenuItemConstructorOptions | und
 }
 
 /**
+ * The macOS Edit menu. It stays enabled while a dialog dims the rest of the menu: on macOS a text
+ * field gets Cmd+X/C/V, undo and select-all only through these items, so disabling them took the
+ * clipboard away from every field in every dialog.
+ */
+export const EDIT_MENU_ID = "edit_menu";
+
+/**
  * The whole menu template, in menu-bar order
  */
 export function createMenuTemplate(context: MenuContext): MenuItemConstructorOptions[] {
@@ -117,6 +124,7 @@ export function createMenuTemplate(context: MenuContext): MenuItemConstructorOpt
   template.push(createFileMenu(context));
   if (context.isMac) {
     template.push({
+      id: EDIT_MENU_ID,
       label: "Edit",
       submenu: [
         { role: "undo" },
@@ -260,12 +268,13 @@ export function invalidateMenuCache(): void {
   suppressedMenuUpdates.clear();
 }
 
-// --- Disable all menu items (except the system menu)
-function disableAllMenuItems(
+// --- Disable all menu items while a dialog is open, except the system menu and the Edit menu
+export function disableAllMenuItems(
   items: (Electron.MenuItemConstructorOptions | Electron.MenuItem)[]
 ): void {
   visitMenu(items, (item) => {
-    if (item.id === SYSTEM_MENU_ID) return false;
+    // --- The app menu, and the text editing a dialog's own fields need (`EDIT_MENU_ID`)
+    if (item.id === SYSTEM_MENU_ID || item.id === EDIT_MENU_ID) return false;
     item.enabled = false;
     return true;
   });

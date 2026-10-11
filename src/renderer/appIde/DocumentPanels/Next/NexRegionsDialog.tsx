@@ -7,6 +7,9 @@ import { DialogRow } from "@renderer/controls/DialogRow";
 import { DialogComponentProps } from "@renderer/controls/overlay/DialogProvider";
 import {
   ANNOTATION_BANK_LAST_OFFSET,
+  BYTE_REGION_FORMATS,
+  byteRegionFormatOf,
+  getRegionRowBytes,
   type AnnotationRegion,
   type AnnotationRegionType
 } from "@renderer/appIde/annotations/programAnnotations";
@@ -180,7 +183,7 @@ export function NexRegionsDialog({
               <span>{formatRegionOffset(region.start)}</span>
               <span>{formatRegionOffset(region.end)}</span>
               <span>{formatRegionLength(region)}</span>
-              <span className={styles.type}>{formatRegionType(region.type)}</span>
+              <span className={styles.type}>{formatRegionType(region)}</span>
               <span className={styles.muted}>{estimateRegionLineCount(region)}</span>
               <span className={styles.actions}>
                 <button
@@ -284,14 +287,23 @@ function formatRegionLength(region: AnnotationRegion): string {
   return `${formatRegionOffset(length)} (${length})`;
 }
 
-function formatRegionType(type: AnnotationRegionType): string {
-  return type === "disassemble" ? "disassembly" : type;
+/** A region's type as the list shows it; a bytes region names its format when it is not the default. */
+function formatRegionType(region: AnnotationRegion): string {
+  if (region.type === "disassemble") return "disassembly";
+  if (region.type === "bytes") {
+    const format = byteRegionFormatOf(region);
+    if (format !== "hex4") {
+      return `bytes (${BYTE_REGION_FORMATS.find((option) => option.value === format)?.label})`;
+    }
+  }
+  return region.type;
 }
 
 function estimateRegionLineCount(region: AnnotationRegion): string {
   const length = region.end - region.start + 1;
   switch (region.type) {
     case "bytes":
+      return String(Math.ceil(length / getRegionRowBytes(region)));
     case "words":
       return String(Math.ceil(length / 4));
     case "copper":

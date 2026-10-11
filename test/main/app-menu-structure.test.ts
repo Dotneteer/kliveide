@@ -56,7 +56,7 @@ vi.mock("@main/recording/window-recording/windowRecordingController", () => ({
   toggleWindowRecording: vi.fn()
 }));
 
-import { createMenuContext, createMenuTemplate } from "@main/app-menu";
+import { createMenuContext, createMenuTemplate, disableAllMenuItems, EDIT_MENU_ID } from "@main/app-menu";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { MC_DISK_SUPPORT } from "@common/machines/constants";
@@ -330,3 +330,19 @@ describe("the application menu", () => {
     for (const key of ["F6", "F8", "F9"]) expect(keys("z88"), key).toContain(key);
   });
 });
+
+describe("the menu while a dialog is open", () => {
+  it("keeps the Edit menu enabled, so dialog fields can cut, copy, paste, undo and select all", () => {
+    const template = buildMenu("sp48");
+    disableAllMenuItems(template);
+    const edit = template.find((menu) => menu.id === EDIT_MENU_ID)!;
+    const roles = (edit.submenu as MenuItemConstructorOptions[]).map((item) => item.role).filter(Boolean);
+    expect(roles).toEqual(expect.arrayContaining(["cut", "copy", "paste", "undo", "selectAll"]));
+    expect(edit.enabled).not.toBe(false);
+    expect((edit.submenu as MenuItemConstructorOptions[]).every((item) => item.enabled !== false)).toBe(true);
+    // --- Everything else is still dimmed
+    const file = template.find((menu) => menu.label === "File")!;
+    expect(file.enabled).toBe(false);
+  });
+});
+

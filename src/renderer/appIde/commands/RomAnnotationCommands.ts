@@ -22,7 +22,13 @@ import {
 import { checkRomSidecar } from "@renderer/appIde/annotations/romSidecarCheck";
 import { matchRomPages } from "@renderer/appIde/annotations/romSidecarMatch";
 import { withProvenance } from "@renderer/appIde/annotations/romSidecarWriter";
-import { flushAnnotationSession } from "@renderer/appIde/annotations/annotationSession";
+import {
+  flushAnnotationSession,
+  peekAnnotationSession,
+  updateAnnotationSession
+} from "@renderer/appIde/annotations/annotationSession";
+import { importRomNames, parseRomNameList } from "@renderer/appIde/annotations/romNameImport";
+import { parseAnnotations } from "@renderer/appIde/annotations/programAnnotations";
 import {
   commandError,
   commandSuccess,
@@ -315,3 +321,91 @@ export class RomAnnotationProvenanceCommand extends IdeCommandBase<ProvenanceArg
     return commandSuccessWith(`${key} is now ${args.provenance}.`);
   }
 }
+
+type ImportNamesArgs = RomArgs & { list?: string };
+
+export class RomAnnotationImportNamesCommand extends IdeCommandBase<ImportNamesArgs> {
+  readonly id = "rom-ann-import-names";
+  readonly description =
+    "Adds a list of conventional routine names (NAME ADDRESS lines) to a ROM's working copy, as manual labels";
+  readonly usage = "rom-ann-import-names <rom>|<sidecar.dis> <list file> [-page <n>]";
+  readonly argumentInfo: CommandArgumentInfo = {
+    mandatory: [
+      { name: "rom", type: "string" },
+      { name: "list", type: "string" }
+    ],
+    namedOptions: [{ name: "-page", type: "number" }]
+  };
+
+  async validateCommandArgs(_context: IdeCommandContext, args: ImportNamesArgs): Promise<ValidationMessage[]> {
+    const messages = await validateRom(args, true);
+    if (!args.list?.trim()) messages.push(validationError("Name the file with the NAME ADDRESS list."));
+    return messages;
+  }
+
+  async execute(context: IdeCommandContext, args: ImportNamesArgs): Promise<IdeCommandResult> {
+    const path = await sidecarPathOf(context, args);
+    if (typeof path !== "string") return commandError(path.error);
+    if (path.startsWith(`${SHIPPED_ROM_FOLDER}/`)) return commandError("A shipped sidecar is never edited here.");
+    const page = args["-page"] ?? 0;
+
+    const listPath = resolvePath(context, args.list!);
+    const listText = await Promise.resolve(context.service.projectService.readFileContent(listPath, false))
+      .then((text) => (typeof text === "string" ? text : undefined))
+      .catch(() => undefined);
+    if (listText === undefined) return commandError(`${listPath} cannot be read.`);
+    const list = parseRomNameList(listText);
+    if (list.problems.length > 0) {
+      for (const problem of list.problems) writeMessage(context.output, `  ${problem}`, "yellow");
+      return commandError(`${listPath} is not a NAME ADDRESS list; nothing was imported.`);
+    }
+
+    // --- Provenance lives only in the file, so the file is written first, with no write in flight
+    await flushAnnotationSession(path);
+    const text = await readText(context, path);
+    if (text === undefined) {
+      return commandError(`${path} does not exist: make the working copy first with rom-ann-new ${args.rom}.`);
+    }
+    const raw = JSON.parse(text);
+    const matches = await matchRomPages({ files: context.mainApi, emuApi: context.emuApi }, path, raw.pages ?? {});
+    const bytes = matches.find((m) => m.page === page)?.bytes;
+    if (!bytes) return commandError(`No ROM matches page ${page} of ${path}.`);
+
+    const result = importRomNames(raw, page, bytes.length, list.entries);
+    if (result.text) {
+      await context.service.projectService.saveFileContent(path, result.text);
+      // --- An open page document holds the model: hand it the new one, which writes the same file
+      // --- again (the labels are already there, so they keep their `manual` provenance)
+      if (peekAnnotationSession(path)) {
+        const parsed = parseAnnotations(result.text);
+        if (parsed.annotations) {
+          updateAnnotationSession(path, parsed.annotations, context.service.projectService);
+          await flushAnnotationSession(path);
+        }
+      }
+      requestRomAnnotationsReload();
+    }
+
+    for (const skip of result.skipped) {
+      writeMessage(context.output, `  skipped ${skip.name} ($${toHex4(skip.address)}): ${skip.reason}`, "yellow");
+    }
+    for (const entry of result.added.filter((item) => item.from)) {
+      writeMessage(context.output, `  ${entry.from} is written ${entry.name}`);
+    }
+    if (result.text) {
+      const check = await checkRomSidecar(result.text, (p) => matches.find((m) => m.page === p)?.bytes);
+      for (const problem of check.problems) writeMessage(context.output, `  ${problem}`, "yellow");
+    }
+    writeSuccessMessage(
+      context.output,
+      `Added ${result.added.length} label(s) to ${path} as manual; skipped ${result.skipped.length}. ` +
+        "Name the list's source in .ai/rom-annotations/PROVENANCE.md."
+    );
+    return commandSuccess;
+  }
+}
+
+function toHex4(value: number): string {
+  return value.toString(16).toUpperCase().padStart(4, "0");
+}
+

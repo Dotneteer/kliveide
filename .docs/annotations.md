@@ -147,7 +147,7 @@ working copy (its entries winning, recorded `observed`) and kept as `.rom.dis.ba
 annotation editor** (`DocumentPanels/Rom/`): it matches each page to ROM bytes by CRC
 (beside a custom ROM, the shipped ROM it is named after, any shipped page, the running
 machine's ROMs) and opens a page as a `StaticMemoryDump` with `annotationMachine: "rom"`,
-`disassemblyFlavor: "rom"` (the ROM's own decoding: `prepareRomDisassembler`) and every
+`disassemblyFlavor: "rom"` (the ROM's own decoding, `prepareRomDisassembler`, and the system variables of the ROM's own machine, `romSysVarsFor`) and every
 NEX-viewer dialog and shortcut. A shipped sidecar opens read-only (`annotationReadOnly`,
 the editor's `readOnly`); a file no ROM matches shows only a message. Live-view ROM rows
 are editable only when a working copy exists.
@@ -394,9 +394,19 @@ instruction on its own line. Its rows are never cut at a label: a label naming a
 byte inside a record (the operand a routine patches) still names that address in
 operands, but the record stays whole. `rowBytes` is valid only on `bytes` regions;
 the default of 4 is written as no field, and touching `bytes` regions with
-different row sizes are never merged. It is edited in the sidecar; the Memory
-Region dialog does not set it, but changing a region keeps it on the parts left
+different row sizes are never merged. Changing a region keeps it on the parts left
 either side.
+
+A `bytes` region may also set `radix: "binary"`, which lists its values as `%`
+and all eight digits (`.defb %00111100`) whatever the decimal switch says; the
+Klive assembler reads them back, so `export-asm` round-trips them. It is an
+additive key: an older build ignores it and lists the region in hexadecimal, and
+an unknown value or one on another type is ignored with a warning. Touching
+regions with different radixes are never merged. The Memory Region dialog's
+**Format** choice (shown for Bytes only, `ByteRegionFormat`) writes the four
+layouts it offers: 4 bytes hex (no field), 2 or 1 bytes hex (`rowBytes`), and 1
+byte binary (`rowBytes: 1, radix: "binary"`); it opens on the format of the bytes
+region the span starts in.
 
 The Memory Region dialog validates ranges before applying them. Whole-bank
 changes require confirmation.

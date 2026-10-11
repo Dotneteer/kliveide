@@ -274,4 +274,9 @@ Where the code differs from the plan above, and why:
   editing entry is unavailable, nothing is written (the controller's `publish` refuses), and no warning
   is shown.
 - **`ann-detect rom` needs a working copy,** like any other edit to a ROM page.
+- **A page document names the ROM's own machine's system variables** (2026-10-11, `romSysVars.ts`),
+  not the selected machine's: a ZX81 ROM opened while a Spectrum is selected reads `NXTLIN`, not
+  Spectrum names at ZX81 addresses. 48K BASIC pages get the 48K table, 128K/+3 pages the 128K and 48K
+  tables (as those machines report them), ZX80/ZX81 ROMs theirs; an unknown ROM falls back to the
+  selected machine's.
 

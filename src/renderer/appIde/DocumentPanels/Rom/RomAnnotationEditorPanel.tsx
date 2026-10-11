@@ -3,6 +3,8 @@ import classnames from "classnames";
 
 import type { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import { Button } from "@renderer/controls/Button";
+import { SmallIconButton } from "@renderer/controls/IconButton";
+import { useSelector } from "@renderer/core/RendererProvider";
 import {
   DataLabel,
   DataPanel,
@@ -77,6 +79,11 @@ export function romSidecarLocationOf(path: string): RomSidecarLocation {
   return "custom";
 }
 
+/** Whether a path names a file on disk rather than one relative to Klive's public folder. */
+function isAbsolutePath(path: string): boolean {
+  return /^([A-Za-z]:)?[\\/]/.test(path);
+}
+
 function fileNameOf(path: string): string {
   return path.split(/[\\/]/).pop() ?? path;
 }
@@ -89,6 +96,7 @@ const RomAnnotationEditorPanel = ({ document, viewState }: DocumentProps<RomAnno
   const apis = useRef({ mainApi: useMainApi(), emuApi: useEmuApi() });
   const { mainApi, emuApi } = apis.current;
   const location = romSidecarLocationOf(path);
+  const isWindows = useSelector((s) => !!s.isWindows);
   const readOnly = location === "shipped";
 
   const [loaded, setLoaded] = useState<Loaded>({ status: "loading" });
@@ -292,6 +300,14 @@ const RomAnnotationEditorPanel = ({ document, viewState }: DocumentProps<RomAnno
         <DataRow>
           <DataLabel text="File" />
           <DataValue text={path} />
+          {/* --- Only a file on disk can be revealed: `roms/…` is relative to Klive's own folder */}
+          {isAbsolutePath(path) && (
+            <SmallIconButton
+              iconName="folder-opened"
+              title={`Reveal in ${isWindows ? "File Explorer" : "Finder"}`}
+              clicked={() => void mainApi.showItemInFolder(path)}
+            />
+          )}
         </DataRow>
         <DataRow>
           <DataLabel text="Kind" />

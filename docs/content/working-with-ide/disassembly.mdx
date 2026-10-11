@@ -257,6 +257,20 @@ program counter is in this bank. The button lands on the row carrying the execut
 which follows the listing's own numbering &mdash; so it is right even when the **Offset** dropdown
 lists the bank at an address it is not paged at.
 
+### Byte formats
+
+When you mark a range as **Bytes**, the region dialog also asks how to write it:
+
+- **4 bytes, hex** (the default): `.defb $3C, $42, $81, $FF`
+- **2 bytes, hex**: two values to a row
+- **1 byte, hex**: one value to a row
+- **1 byte, binary**: one value to a row with all eight bits, `.defb %00111100` &mdash; handy for
+  bitmaps, masks and flag tables
+
+The dialog opens on the format the range already has, and the **Manage Regions** list shows any format
+other than the default beside the type. Binary rows stay binary when you switch the listing to decimal,
+and they export to source that the Klive assembler reads back.
+
 ### Copper Lists and DMA Programs
 
 When a `.NEX` file has an annotation file, you can tell the listing what a range of a bank holds. The

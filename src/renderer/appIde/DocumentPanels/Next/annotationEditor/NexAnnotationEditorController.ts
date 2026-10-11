@@ -19,6 +19,9 @@ import {
 import {
   getBankAnnotation,
   ANNOTATION_BANK_LAST_OFFSET,
+  byteRegionFormatOf,
+  byteRegionLayoutOf,
+  type ByteRegionFormat,
   type AnnotationLabelScope,
   type AnnotationRegionType,
   type ProgramAnnotations
@@ -597,7 +600,7 @@ export class NexAnnotationEditorController extends UiController<
       this.regionTypeAt(span.start, span.end)
     );
     if (!result) return;
-    this.applyRegionResult(result.start, result.end, result.type);
+    this.applyRegionResult(result.start, result.end, result.type, result.format);
   }
 
   /** The one-gesture "Mark As ..." actions, which skip the region dialog. */
@@ -611,10 +614,15 @@ export class NexAnnotationEditorController extends UiController<
     if (!result) return;
     // --- The dialog may widen or narrow the span the gesture proposed; its answer wins, but the
     // --- type the gesture asked for is the one applied when the dialog does not change it.
-    this.applyRegionResult(result.start, result.end, result.type ?? regionType);
+    this.applyRegionResult(result.start, result.end, result.type ?? regionType, result.format);
   }
 
-  private applyRegionResult(start: number, end: number, type: AnnotationRegionType): void {
+  private applyRegionResult(
+    start: number,
+    end: number,
+    type: AnnotationRegionType,
+    format?: ByteRegionFormat
+  ): void {
     const { annotations, env } = this.state;
     if (!annotations || env.bank === undefined) return;
 
@@ -624,7 +632,9 @@ export class NexAnnotationEditorController extends UiController<
       if (!this.ports.nativeConfirm(WHOLE_BANK_CONFIRM_MESSAGE)) return;
     }
 
-    if (this.publish(withRegion(annotations, env.bank, start, end, type))) {
+    // --- A bytes region is written in the format the dialog chose; any other type has none
+    const layout = type === "bytes" && format ? byteRegionLayoutOf(format) : {};
+    if (this.publish(withRegion(annotations, env.bank, start, end, type, undefined, layout))) {
       // --- The listing is about to change shape, so the selection it was made against is stale.
       this.emit({ type: "selectionCleared" });
     }
@@ -697,7 +707,7 @@ export class NexAnnotationEditorController extends UiController<
   ): Promise<void> {
     const result = await this.openRegionDialog(start, end, type);
     if (!result) return;
-    this.applyRegionResult(result.start, result.end, result.type ?? type);
+    this.applyRegionResult(result.start, result.end, result.type ?? type, result.format);
   }
 
   /** The region dialog, with the bank's own regions and bytes it renders a preview from. */
@@ -711,10 +721,15 @@ export class NexAnnotationEditorController extends UiController<
       annotations && env.bank !== undefined
         ? getBankAnnotation(annotations, env.bank)?.regions ?? []
         : [];
+    // --- The dialog opens on the format the span already has: a bytes region covering its start
+    const covering = regions.find(
+      (region) => region.type === "bytes" && region.start <= initialStart && region.end >= initialStart
+    );
     return this.ports.dialogs.region({
       initialType,
       initialStart,
       initialEnd,
+      initialFormat: covering ? byteRegionFormatOf(covering) : "hex4",
       regions,
       bytes: this.ports.bankBytes()
     });

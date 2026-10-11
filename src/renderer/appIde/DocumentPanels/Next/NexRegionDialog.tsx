@@ -7,9 +7,14 @@ import { DialogComponentProps } from "@renderer/controls/overlay/DialogProvider"
 import { toHexa2, toHexa4 } from "@renderer/appIde/services/ide-commands";
 import {
   ANNOTATION_BANK_LAST_OFFSET,
+  BYTE_REGION_FORMATS,
+  byteRegionLayoutOf,
+  getRegionRowBytes,
   type AnnotationRegion,
-  type AnnotationRegionType
+  type AnnotationRegionType,
+  type ByteRegionFormat
 } from "@renderer/appIde/annotations/programAnnotations";
+import { formatBinaryByte } from "@renderer/appIde/annotations/annotatedDisassembly";
 import { parseNexLabelValue } from "./NexLabelDialog";
 import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z80-disassembler";
 import { MemorySection } from "@renderer/appIde/disassemblers/common-types";
@@ -23,12 +28,16 @@ export type NexRegionDialogResult = {
   type: AnnotationRegionType;
   start: number;
   end: number;
+  /** For a `bytes` region: how its values are laid out. Absent for any other type. */
+  format?: ByteRegionFormat;
 };
 
 export type NexRegionDialogProps = DialogComponentProps<NexRegionDialogResult> & {
   initialType: AnnotationRegionType;
   initialStart: number;
   initialEnd: number;
+  /** The format a `bytes` region opens with. Default: four hexadecimal bytes to a row. */
+  initialFormat?: ByteRegionFormat;
   regions: AnnotationRegion[];
   bytes: number[];
 };
@@ -47,11 +56,13 @@ export function NexRegionDialog({
   initialType,
   initialStart,
   initialEnd,
+  initialFormat = "hex4",
   regions,
   bytes,
   controls
 }: NexRegionDialogProps) {
   const [type, setType] = useState<AnnotationRegionType>(initialType);
+  const [format, setFormat] = useState<ByteRegionFormat>(initialFormat);
   const [startText, setStartText] = useState(formatRegionOffset(initialStart));
   const [endText, setEndText] = useState(formatRegionOffset(initialEnd));
   const start = useMemo(() => parseNexLabelValue(startText), [startText]);
@@ -85,20 +96,20 @@ export function NexRegionDialog({
       return undefined;
     }
     let cancelled = false;
-    void createRegionPreview(type, start, end, bytes).then((text) => {
+    void createRegionPreview(type, start, end, bytes, format).then((text) => {
       if (!cancelled) setPreview(text);
     });
     return () => {
       cancelled = true;
     };
-  }, [bytes, end, start, type]);
+  }, [bytes, end, format, start, type]);
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (error || start === undefined || end === undefined) {
       return;
     }
-    controls.close({ type, start, end });
+    controls.close({ type, start, end, ...(type === "bytes" ? { format } : {}) });
   };
 
   return (
@@ -115,6 +126,18 @@ export function NexRegionDialog({
           onChange={(next) => setType(next as AnnotationRegion["type"])}
         />
       </DialogRow>
+      {/* --- Only for bytes: the other types lay their rows out themselves */}
+      {type === "bytes" && (
+        <DialogRow label="Format" rows={true}>
+          <RadioGroup
+            ariaLabel="Byte format"
+            columns={BYTE_REGION_FORMATS.length}
+            value={format}
+            options={BYTE_REGION_FORMATS.map((option) => ({ value: option.value, label: option.label }))}
+            onChange={(next) => setFormat(next as ByteRegionFormat)}
+          />
+        </DialogRow>
+      )}
       <DialogRow label="Start offset" rows={true}>
         <TextInput autoFocus value={startText} onChange={setStartText} />
       </DialogRow>
@@ -208,10 +231,11 @@ export async function createRegionPreview(
   type: AnnotationRegionType,
   start: number,
   end: number,
-  bytes: number[]
+  bytes: number[],
+  format?: ByteRegionFormat
 ): Promise<string> {
   if (type !== "disassemble") {
-    return formatRegionPreview(type, start, end, bytes);
+    return formatRegionPreview(type, start, end, bytes, format);
   }
 
   const disassembler = new Z80Disassembler(
@@ -235,14 +259,20 @@ export function formatRegionPreview(
   type: AnnotationRegionType,
   start: number,
   end: number,
-  bytes: number[]
+  bytes: number[],
+  format: ByteRegionFormat = "hex4"
 ): string {
   const length = end - start + 1;
   switch (type) {
-    case "bytes":
-      return createPreviewLines(start, end, 4, (offset, values) =>
-        `${formatRegionOffset(offset)}  .defb ${values.map((value) => `$${toHexa2(value)}`).join(", ")}`
+    case "bytes": {
+      // --- The rows the listing will show, in the format chosen
+      const layout = byteRegionLayoutOf(format);
+      const write = (value: number) =>
+        layout.radix === "binary" ? formatBinaryByte(value) : `$${toHexa2(value)}`;
+      return createPreviewLines(start, end, getRegionRowBytes(layout), (offset, values) =>
+        `${formatRegionOffset(offset)}  .defb ${values.map(write).join(", ")}`
       );
+    }
     case "words":
       return createPreviewLines(start, end, 4, (offset, values) => {
         const words: string[] = [];

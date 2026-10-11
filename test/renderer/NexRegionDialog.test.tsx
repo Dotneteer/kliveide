@@ -86,6 +86,41 @@ describe("NexRegionDialog", () => {
     });
   });
 
+  it("previews a bytes region in each format it offers", () => {
+    const bytes = [0x01, 0x02, 0x78, 0x56, 0xbc, 0x9a];
+    expect(formatRegionPreview("bytes", 0, 3, bytes, "hex2")).toBe("$0000  .defb $01, $02\n$0002  .defb $78, $56");
+    expect(formatRegionPreview("bytes", 0, 1, bytes, "hex1")).toBe("$0000  .defb $01\n$0001  .defb $02");
+    expect(formatRegionPreview("bytes", 2, 3, bytes, "bin1")).toBe("$0002  .defb %01111000\n$0003  .defb %01010110");
+  });
+
+  it("offers a format for bytes only, opens on the one given, and saves the one chosen", async () => {
+    const controls = createControls();
+    render(
+      <NexRegionDialog
+        initialType="bytes"
+        initialStart={0}
+        initialEnd={1}
+        initialFormat="hex2"
+        regions={[{ start: 0, end: 15, type: "bytes", rowBytes: 2 }]}
+        bytes={[0x05, 0xff]}
+        controls={controls}
+      />
+    );
+    expect(screen.getByRole("radio", { name: "2 bytes, hex" })).toBeChecked();
+    fireEvent.click(screen.getByRole("radio", { name: "1 byte, binary" }));
+    await waitFor(() =>
+      expect(screen.getByLabelText("Region preview")).toHaveTextContent(".defb %00000101")
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    expect(controls.close).toHaveBeenCalledWith({ type: "bytes", start: 0, end: 1, format: "bin1" });
+
+    // --- Another type has no format to choose, and saves none
+    fireEvent.click(screen.getByRole("radio", { name: "Words" }));
+    expect(screen.queryByRole("radio", { name: "1 byte, binary" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    expect(controls.close).toHaveBeenLastCalledWith({ type: "words", start: 0, end: 1 });
+  });
+
   it("sets the range to the full bank explicitly", () => {
     const controls = createControls();
 
@@ -109,7 +144,8 @@ describe("NexRegionDialog", () => {
     expect(controls.close).toHaveBeenCalledWith({
       type: "bytes",
       start: 0,
-      end: 0x3fff
+      end: 0x3fff,
+      format: "hex4"
     });
   });
 

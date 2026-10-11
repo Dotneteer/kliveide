@@ -114,6 +114,11 @@ instead of by editing JSON:
    **unchanged** and run `npm run rom:annotations -- --check`; it must report nothing to format.
 4. Log the session in `PROVENANCE.md` as for any other authoring session.
 
+A name list (Q1) goes in with `rom-ann-import-names <rom> <list>`: one `NAME ADDRESS` per line,
+nothing else from the source. Every name becomes a `manual` label; existing labels win, and names
+too long for a label are reported for the author to shorten. Name the list's source in
+`PROVENANCE.md`.
+
 The working copy may also be edited **outside** the IDE (by hand or by an AI author) while Klive
 runs: the main process follows every sidecar an annotation session holds open
 (`src/main/annotation-file-watcher.ts`), and the session re-reads a changed file and publishes it to

@@ -1109,6 +1109,19 @@ is in the canonical format.
 rom-ann-check <rom>|<file.rom.dis> [-page <n>]
 ```
 
+## `rom-ann-import-names`
+
+Adds a list of conventional routine names to a ROM's working copy, as labels recorded `manual`.
+
+```
+rom-ann-import-names <rom>|<file.rom.dis> <list file> [-page <n>]
+```
+
+The list has one `NAME ADDRESS` per line (`$0A2A`, `0x0A2A`, `0A2Ah` or decimal; `#` or `;` starts a
+comment). Names are written as identifiers: `CL-ALL` becomes `CL_ALL`, `STK-STO-$` becomes
+`STK_STO_STR`. Labels you already have are never overwritten, and a name longer than 16 characters is
+reported for you to shorten rather than cut. Running it again adds only what is new.
+
 ## `rom-ann-provenance`
 
 Sets whether an entry of a working copy is `observed` (worked out from the bytes) or `manual` (an
