@@ -29,6 +29,8 @@ export type AnnotationSidecarState = {
   annotations?: ProgramAnnotations;
   diagnostics: AnnotationDiagnostic[];
   message?: string;
+  /** The file's text as read, when it was read: how a session recognises its own writes */
+  text?: string;
 };
 
 export function getAnnotationSidecarPaths(
@@ -132,7 +134,7 @@ async function readRawSidecar(
 }
 
 /**
- * Write the annotation subtree, preserving whatever `debug` is on disk.
+ * Write the annotation subtree, preserving whatever `debug` is on disk. Returns the text written.
  *
  * The version is stamped from the model, which is the current one — so a v1 file becomes v2 here,
  * on the first save, and not merely by being opened.
@@ -141,7 +143,7 @@ export async function saveAnnotationSubtree(
   projectService: Pick<IProjectService, "readFileContent" | "saveFileContent">,
   fullPath: string,
   annotations: ProgramAnnotations
-): Promise<void> {
+): Promise<string> {
   const raw = await readRawSidecar(projectService, fullPath);
   const stored = toSidecarAnnotations(annotations);
   /*
@@ -151,11 +153,9 @@ export async function saveAnnotationSubtree(
    */
   if ((raw.machine ?? stored.machine) === "rom") {
     const base = Object.keys(raw).length > 0 ? raw : { ...stored, banks: {} };
-    await projectService.saveFileContent(
-      fullPath,
-      romSidecarText(base, (stored.banks ?? {}) as Record<string, Record<string, unknown>>)
-    );
-    return;
+    const romText = romSidecarText(base, (stored.banks ?? {}) as Record<string, Record<string, unknown>>);
+    await projectService.saveFileContent(fullPath, romText);
+    return romText;
   }
   const merged: Record<string, unknown> = { ...raw };
   for (const key of ANNOTATION_KEYS) {
@@ -165,7 +165,9 @@ export async function saveAnnotationSubtree(
       merged[key] = stored[key];
     }
   }
-  await projectService.saveFileContent(fullPath, formatRawSidecar(merged));
+  const text = formatRawSidecar(merged);
+  await projectService.saveFileContent(fullPath, text);
+  return text;
 }
 
 /**
@@ -238,7 +240,8 @@ export async function loadAnnotationSidecar(
         status: "loaded",
         paths,
         annotations: parseResult.annotations,
-        diagnostics: parseResult.diagnostics
+        diagnostics: parseResult.diagnostics,
+        text: contents
       };
     }
     return {

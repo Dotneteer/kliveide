@@ -28,6 +28,7 @@ import { BufferOperation, IOutputBuffer, OutputSpecification } from "./ToolArea/
 import { OutputPaneBuffer } from "./ToolArea/OutputPaneBuffer";
 import type { CapturedCommandResult } from "@common/messaging/IdeApi";
 import { openRendererDialog } from "@renderer/controls/overlay/dialogRequestBridge";
+import { reloadAnnotationSessionFromDisk } from "./annotations/annotationSession";
 
 /**
  * Handles IDE-related IPC messages and operations invoked from other processes.
@@ -257,6 +258,17 @@ class IdeMessageProcessor {
   async saveAllBeforeQuit() {
     // --- No input to validate
     return await saveAllBeforeQuit(this.store, this.projectService);
+  }
+
+  /**
+   * An annotation sidecar the IDE follows changed on disk: re-read it into its session.
+   * @param filePath The sidecar's absolute path, as the session is keyed.
+   */
+  async annotationFileChanged(filePath: string) {
+    // Input validation
+    if (typeof filePath !== "string") return;
+    // --- Input validated
+    await reloadAnnotationSessionFromDisk(filePath, this.projectService);
   }
 
   /**

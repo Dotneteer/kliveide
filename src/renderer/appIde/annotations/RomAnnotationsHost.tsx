@@ -18,7 +18,8 @@ import { pushConditionSymbols, setRomConditionSymbols } from "@renderer/appIde/u
  * (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §5.3): read again when the machine, its model or
  * configuration changes (a ROM property) or the machine starts, whenever a working copy is edited
  * (working copies are sessions like any annotation file, so an edit reaches the listing the way a
- * program edit does), and when one is made or removed (`requestRomAnnotationsReload`).
+ * program edit does — and so does a change another program makes to the file, which the session
+ * re-reads), and when one is made or removed (`requestRomAnnotationsReload`).
  *
  * Renders nothing.
  */
@@ -86,7 +87,8 @@ export function RomAnnotationsHost() {
       unsubscribes = [...new Set(followed)].map((path) => {
         let seen: unknown;
         return subscribeAnnotationSession(deps.current.projectService, path, undefined, (snapshot) => {
-          if (!snapshot.dirty || snapshot.annotations === seen) return;
+          // --- An edit here, or the file changed by another program (`reloaded`)
+          if ((!snapshot.dirty && !snapshot.reloaded) || snapshot.annotations === seen) return;
           seen = snapshot.annotations;
           if (!cancelled) edited();
         });

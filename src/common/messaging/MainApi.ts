@@ -257,6 +257,24 @@ class MainApiImpl {
   }
 
   /**
+   * Follow an annotation sidecar (an absolute `.dis` path) for changes made by other programs: the
+   * main process calls `IdeApi.annotationFileChanged` when it changes on disk. Each call is counted;
+   * `unwatchAnnotationFile` releases one. Returns false when the file's folder cannot be watched.
+   * @param _filePath An absolute sidecar path
+   */
+  async watchAnnotationFile(_filePath: string): Promise<boolean> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Release one `watchAnnotationFile` of a sidecar.
+   * @param _filePath An absolute sidecar path
+   */
+  async unwatchAnnotationFile(_filePath: string): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * Whether a file can be written next to the given one (its folder exists and is writable): a
    * user ROM's sidecar goes beside it when it can, in the Klive home folder when it cannot.
    * @param _filePath An absolute file path

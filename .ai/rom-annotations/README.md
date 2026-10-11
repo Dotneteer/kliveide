@@ -114,6 +114,13 @@ instead of by editing JSON:
    **unchanged** and run `npm run rom:annotations -- --check`; it must report nothing to format.
 4. Log the session in `PROVENANCE.md` as for any other authoring session.
 
+The working copy may also be edited **outside** the IDE (by hand or by an AI author) while Klive
+runs: the main process follows every sidecar an annotation session holds open
+(`src/main/annotation-file-watcher.ts`), and the session re-reads a changed file and publishes it to
+the Disassembly view and the editor at once (`reloadAnnotationSessionFromDisk`). No restart is
+needed. A file that does not parse is not taken: the IDE keeps its last good model until the file
+is valid again — so a broken hand edit is overwritten by the next edit made inside the IDE.
+
 The IDE never raises `level`; record it by hand once `npm run rom:annotations -- level`
 measures it. The D4 rule above applies exactly as it does to editing the JSON: the editor
 makes the work faster, not the sources wider.
