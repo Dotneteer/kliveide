@@ -75,6 +75,10 @@ provenance that names nothing.
 
 ## The tools
 
+For the ZX81 ROM, `zx81-authoring-guide.md` beside this file carries the session method, the
+helper scripts in `tools/` (a listing through Klive's disassembler, applying a batch through the
+formatter, the IDE's readiness check, a harness probe template) and the state of the work.
+
 ```
 npm run rom:annotations                    # format every sidecar, regenerate the CRC index
 npm run rom:annotations -- --check         # what build:check runs
@@ -125,6 +129,14 @@ runs: the main process follows every sidecar an annotation session holds open
 the Disassembly view and the editor at once (`reloadAnnotationSessionFromDisk`). No restart is
 needed. A file that does not parse is not taken: the IDE keeps its last good model until the file
 is valid again — so a broken hand edit is overwritten by the next edit made inside the IDE.
+
+**Regions that touch merge.** When the IDE reads a sidecar it merges neighbouring regions of the
+same type and layout (`mergeAdjacentRegions` in `programAnnotations.ts`), and its next save writes
+the merged one. Two tables that touch and share a type (the ZX81's unshifted and shifted key
+tables, say) therefore cannot stay separate regions: mark each table's start with a synopsis
+instead, or give them different layouts (`rowBytes`, `radix`, `decode`). An author editing the file
+outside the IDE should also re-read it before each write: the IDE may have saved the user's own
+edits, or a merge, since the last read.
 
 The IDE never raises `level`; record it by hand once `npm run rom:annotations -- level`
 measures it. The D4 rule above applies exactly as it does to editing the JSON: the editor

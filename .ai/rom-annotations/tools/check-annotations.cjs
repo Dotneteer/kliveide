@@ -1,0 +1,59 @@
+// Runs the IDE's own readiness check (checkRomSidecar, the "Ready" chip / rom-ann-check) on a sidecar.
+// Usage: node .ai/rom-annotations/tools/check-annotations.cjs <sidecar.dis>   ("problems": [] is clean)
+const { existsSync, readFileSync } = require("node:fs");
+const { dirname, join, resolve } = require("node:path");
+const root = resolve(__dirname, "../../..");
+process.chdir(root);
+module.paths.unshift(join(root, "node_modules"));
+function registerTsRuntime() {
+  const esbuild = require(join(root,"node_modules/esbuild"));
+  require.extensions[".ts"] = (module, filename) => {
+    const result = esbuild.transformSync(readFileSync(filename, "utf8"), {
+      format: "cjs",
+      loader: "ts",
+      platform: "node",
+      target: "es2020",
+      tsconfigRaw: { compilerOptions: { esModuleInterop: true, useDefineForClassFields: false } }
+    });
+    module._compile(result.code, filename);
+  };
+  require(join(root,"node_modules/tsconfig-paths")).register({
+    baseUrl: root,
+    paths: {
+      "@abstractions/*": ["src/common/abstractions/*"],
+      "@common/*": ["src/common/*"],
+      "@messaging/*": ["src/common/messaging/*"],
+      "@state/*": ["src/common/state/*"],
+      "@utils/*": ["src/common/utils/*"],
+      "@renderer/*": ["src/renderer/*"],
+      "@emu/*": ["src/emu/*"],
+      "@appIde/*": ["src/renderer/appIde/*"],
+      "@main/*": ["src/main/*"],
+      "@controls/*": ["src/renderer/controls/*"]
+    }
+  });
+  const Module = require("node:module");
+  const original = Module._resolveFilename;
+  Module._resolveFilename = function (request, parent, isMain, opts) {
+    try {
+      return original.call(this, request, parent, isMain, opts);
+    } catch (error) {
+      if (error?.code === "MODULE_NOT_FOUND" && parent?.filename) {
+        const base = request.startsWith(".") ? resolve(dirname(parent.filename), request) : undefined;
+        for (const candidate of base ? [`${base}.ts`, `${base}/index.ts`] : []) {
+          if (existsSync(candidate)) return candidate;
+        }
+      }
+      throw error;
+    }
+  };
+}
+
+registerTsRuntime();
+const { checkRomSidecar } = require(join(root, "src/renderer/appIde/annotations/romSidecarCheck.ts"));
+(async () => {
+  const text = readFileSync(process.argv[2], "utf8");
+  const rom = new Uint8Array(readFileSync(join(root, "src/public/roms/zx81.rom")));
+  const result = await checkRomSidecar(text, (page) => (page === 0 ? rom.subarray(0, 0x4000) : undefined));
+  console.log(JSON.stringify(result, null, 1).slice(0, 3000));
+})();
