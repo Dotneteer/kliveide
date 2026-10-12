@@ -214,6 +214,11 @@ export async function createAnnotatedDisassemblyItems({
   const labelOffsets = getLabelBankOffsets(annotations, bankAnnotation, addressOffset);
 
   for (const region of regions) {
+    // --- A region past the bytes the page has (an 8K ROM in a 16K page) has nothing to show;
+    // --- clamped, it would land on the last byte and decode it a second time.
+    if (region.start > clampBankOffset(region.start, contents.length)) {
+      continue;
+    }
     const firstItem = items.length;
     let start = clampBankOffset(region.start, contents.length);
     let end = clampBankOffset(region.end, contents.length);

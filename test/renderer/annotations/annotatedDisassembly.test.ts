@@ -770,3 +770,43 @@ describe("createAnnotatedDisassemblyItems with the screen hidden", () => {
     expect(inScreen.length).toBe(0x1b00);
   });
 });
+
+describe("regions past the end of a short page", () => {
+  // --- An 8K ROM in a 16K page: the sidecar's last region runs on past the bytes there are
+  const contents = new Uint8Array(0x2000);
+  const items = (regions: { start: number; end: number; type: "disassemble" | "bytes" }[]) =>
+    createAnnotatedDisassemblyItems({
+      annotations: {
+        schemaVersion: 1,
+        banks: { "0": { offsetIndex: 0, regions, localLabels: [], lineAnnotations: {} } }
+      },
+      bank: 0,
+      contents,
+      disassOffset: 0
+    });
+  // --- Every row that covers the page's last byte
+  const lastByteRows = async (regions: Parameters<typeof items>[0]) =>
+    ((await items(regions)) ?? []).filter(({ annotation: a }) => {
+      if (!a) return false;
+      return a.bankOffset <= 0x1fff && 0x1fff < a.bankOffset + a.byteLength;
+    });
+
+  it("does not decode the last byte again for a region that starts past it", async () => {
+    const rows = await lastByteRows([
+      { start: 0x0000, end: 0x1fff, type: "bytes" },
+      { start: 0x2000, end: 0x3fff, type: "disassemble" }
+    ]);
+    expect(rows).toHaveLength(1);
+    expect(rows[0].annotation?.regionType).toBe("bytes");
+  });
+
+  it("keeps a region that ends past the bytes, cut at the last one", async () => {
+    const rows = await lastByteRows([
+      { start: 0x0000, end: 0x1ff7, type: "disassemble" },
+      { start: 0x1ff8, end: 0x2000, type: "bytes" },
+      { start: 0x2001, end: 0x3fff, type: "disassemble" }
+    ]);
+    expect(rows).toHaveLength(1);
+    expect(rows[0].annotation?.regionType).toBe("bytes");
+  });
+});
