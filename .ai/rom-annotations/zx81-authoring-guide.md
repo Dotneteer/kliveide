@@ -78,7 +78,9 @@ Line keys in a batch are hex with `$` (`"$0419"`); a bare number is decimal (an 
 - Put it in `test/zx8081-hw/` (an e2e-cores folder; a core test elsewhere fails in the unit tier)
   and run it with `--project e2e-cores`. vitest swallows `console.log` here: write to a file.
   Delete it afterwards and record only the observed values in `PROVENANCE.md`.
-- Typing: K mode makes the first letter a keyword (P PRINT, L LET, R RUN, G GOTO, M PAUSE,
+- Typing TO: `typeChords([0, 18])` with `runFrames(10)` either side; split the line on it.
+- Typing: K mode makes the first letter a keyword (A NEW, Q PLOT, W UNPLOT, B SCROLL,
+  P PRINT, L LET, R RUN, G GOTO, M PAUSE,
   F FOR, N NEXT, H GOSUB, Y RETURN, I INPUT, O POKE). FUNCTION mode is SHIFT+NEWLINE
   (`typeChords([0, 30])`), then the key; the keys come from the ROM's own tables (function table
   at `$00CC`, key order at `$007E`): Z LN, X EXP, A ASN, S ACS, D ATN, F SGN, G ABS, Q SIN, W COS,
@@ -87,8 +89,23 @@ Line keys in a batch are hex with `$` (`"$0419"`); a bare number is decimal (an 
   `Zx8081KeyCode.ts` (SHIFT+4 TO, SHIFT+H **, SHIFT+D SLOW, SHIFT+F FAST).
 - **The harness drops keys typed right after a chord**, and settles too short to finish a
   command: put `runFrames(10)` around chords and `runFrames(60+)` after a NEWLINE, and check the
-  listing (`screenText()`) before trusting a program run. Twice a probe "contradicted" the code
+  listing (`screenText()`) before trusting a program run. After NEW, press NEWLINE once more to
+  clear its report, or the next line typed is lost. Twice a probe "contradicted" the code
   because two lines had never been stored.
+- **To see where a run goes, use the emulator's breakpoints**: `s.breakpoint(a)` for several
+  addresses, then `s.debug("continue")` in a loop, reading registers at each stop. Typed digits
+  right after a run can be lost; a probe that types a line and expects it listed must check.
+- **Testing a listing without typing keywords**: type a REM line of filler, poke token bytes
+  into its text (the program starts at `$407D`: number, length, then the text), then LIST.
+- **Tape probes**: `s.insertProgram(Zx81TestSession.readProgram("basic/BASE.p"), { fastLoad: false })`
+  makes the ROM read real pulses (fast load traps the byte reads instead);
+  `s.loadProgram(file, { fastLoad: false, autoRun: false })` stops when the load is done. Do not
+  trust the screen after a held BREAK key (it can clear a report): break on the report's address.
+  The core README's tape section names ROM addresses after a commented listing: do not use them.
+- **A program waiting for INPUT swallows what a probe types next**: a case that leaves the
+  machine waiting (an error marker in the answer) must be the last in its session.
+- **Models**: `createZx81Session({ model: "zx81-16k-us" })` for the 60 Hz machine (MARGIN 31),
+  `"zx81-1k"` for RAMTOP below `$4D00` (the collapsed display). CLS is V in K mode.
 - `runTo(address)` with a key held (`keyDown(30)`) stops inside the ROM; registers are on
   `(s as any).machine` (`pc`, `sp`, `af`, `bc`, `hl`, ...).
 
@@ -99,15 +116,22 @@ Line keys in a batch are hex with `$` (`"$0419"`); a bare number is decimal (an 
   (series), are listed as Z80 instructions. Find them by following each jump-true/jump target;
   mark them as a `bytes` region with a synopsis that decodes them. Done so far: `$0E69`,
   `$15EA`, `$1A83`, `$1A96`, `$1C4E`, `$1CB1`, `$1D35`, `$1DEE`.
-- **Entries inside calculator code cannot be labelled.** `sin` (`$1D49`) sits inside cos's codes,
-  atn's |x| < 1 entry (`$1D89`) inside its own: the bytes are an RST $28 and a code when entered,
-  codes jumped over otherwise. The listing shows one reading, so explain it in the synopsis.
+- **Entries inside calculator code.** The level tool restarts its decode at every label, so it
+  would accept a label there, but Klive's disassembler does not restart and shows the label on
+  the code's `.defb` line; `apply-annotations.cjs` refuses it for the same reason.
+  `sin` (`$1D49`) sits inside cos's codes, atn's |x| < 1 entry (`$1D89`) inside its own: the
+  bytes are an RST $28 and a code when entered, codes jumped over
+  otherwise. The listing shows one reading, so explain it in the synopsis.
+  A label can still go there (the author's decision for `$1D89`): add it through
+  `formatRomSidecar` directly, since `apply-annotations.cjs` refuses it.
 - **Tables inside the code area**: key tables `$007E-$0110`, keyword spellings `$0111-$01FB`,
   editing-key jump table `$0562`, syntax tables `$0C29-$0CB9`, operand classes `$0D16`, operator
   priorities `$110F`, calculator constants `$1915` and operation table `$1923-$199C`. Many
   "unlabelled targets" the level tool lists are table bytes read as code: check before labelling.
 - **Flags across instructions**: `RLA`/`RRA` leave S and Z alone (multiply's exponent at
   `$1809`), `RLCA` leaves Z alone (FP_TO_BC at `$15B2`). Trace by hand before describing.
+- **Label names are unique across the page**: the calculator already owns `MULT_*`; the apply
+  tool keeps the old label and skips the new one, so check its "label kept" lines.
 - **Shared tails and fall-throughs**: NEXT_ITEM falls into LEN_DE_TO_HL; division jumps into
   multiply's `EXP_TAIL`; sqr falls into to-power; GOSUB falls into TEST_ROOM. A wrong exit
   description came from missing one; check what follows a routine's last instruction.
@@ -131,24 +155,11 @@ Each was read from code or run, not remembered:
 
 ## State of the work
 
-464 labels, 36 regions; the readiness check is clean; `level` stays 0 (139 unlabelled targets).
-Annotated in full: start-up, the main loop and line editor, KEY_NEWLINE (store/run/report),
-the statement scanner and syntax tables, the expression evaluator, LOOK_VARS, LET, FOR/NEXT,
-GOTO/GOSUB/RETURN/RUN/CONT/RAND/POKE, PRINT and the screen printer, PRINT_FP, the number
-conversions, the whole calculator (interpreter, every operation, series, the functions), the
-display (frame, borders, INT, NMI), SLOW/FAST/PAUSE.
+604 labels, 36 regions; the readiness check is clean; **level 2**, measured and recorded in the
+working copy: every label has a synopsis, every target a label (`$1D89` is `ATN_SMALL`, see
+"Entries inside calculator code"). `npm run rom:annotations -- level` measures the *shipped*
+file, not the working copy: use `check-annotations.cjs` (its `levels`).
 
-Still marked "Not annotated yet" or partial (grep the synopses for "Not annotated"):
-
-- **Commands**: SAVE (`$02F6`), LOAD (`$0340`), LIST (`$0730`)/LLIST, COPY (`$0869`),
-  PLOT/UNPLOT (`$0BAF`), SCROLL (`$0C0E`), DIM (`$1409`); INPUT's rest (`$0EE9`).
-- **Variables**: SUBSCRIPTS past `$11BC`, STR_SLICE (`$1263`), CLASS_1's details, STK_STRING.
-- **Helpers**: KEYBOARD (`$02BB`), SET_PRINT_POS (`$0918`), CLS_COLLAPSED (`$0A52`),
-  LIST_LINES (how a full screen stops it), PRINT_TOKEN/FIND_TOKEN (spacing, carry),
-  PRBUFF_OUT (`$0871`, the printer).
-- Then level 1: label the remaining real targets (`check-annotations.cjs` lists them), and
-  level 2: a synopsis for every label.
-
-Suggested order: SCROLL and PLOT/UNPLOT (short, display file), DIM with SUBSCRIPTS and STR_SLICE
-(arrays and slices together), LIST/LLIST with LIST_LINES and PRINT_TOKEN, then SAVE/LOAD (the
-tape signal; Klive traps LOAD, see the core's README) and the printer (COPY, PRBUFF_OUT).
+The working copy is ready to ship: copy it over `src/public/roms/zx81.rom.dis` unchanged, run
+`npm run rom:annotations` (format and the CRC index) and `npm run rom:annotations -- --check`,
+and commit it with `PROVENANCE.md`. Level 3 (comments on every non-trivial line) is not a goal.
