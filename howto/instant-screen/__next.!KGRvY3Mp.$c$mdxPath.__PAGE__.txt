@@ -1,9 +1,22 @@
-1:"$Sreact.fragment"
-2:I[826,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-a25cc0b01a48815c.js"],"TOCProvider"]
-3:I[4637,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-a25cc0b01a48815c.js"],"Sidebar"]
-4:I[6665,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-a25cc0b01a48815c.js"],"ClientWrapper"]
-:HL["/kliveide/images/howto/instant-screen-in-toolbar.png","image"]
-5:T59e,---
+3:"$Sreact.fragment"
+4:I[7121,[],""]
+5:I[4581,[],""]
+a:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+b:"static/chunks/500-fc3b64d9ff4a32a7.js"
+c:"static/chunks/436-e36c16356dd28f2e.js"
+d:"static/chunks/app/(docs)/%5B...mdxPath%5D/page-afee3ca1911dde29.js"
+e:I[826,["545","$a","500","$b","436","$c","220","$d"],"TOCProvider"]
+f:I[4637,["545","$a","500","$b","436","$c","220","$d"],"Sidebar"]
+10:I[6665,["545","$a","500","$b","436","$c","220","$d"],"ClientWrapper"]
+18:"ViewportBoundary"
+19:I[484,[],"$18"]
+1a:"MetadataBoundary"
+1b:I[484,[],"$1a"]
+1c:"$Sreact.suspense"
+7:X
+7:C
+8:X
+11:T59e,---
 description: "All ZX Spectrum models render the screen simultaneously with the CPU."
 ---
 
@@ -27,27 +40,22 @@ When the Instant Screen is on, the screen rendering is not paused when the debug
 The Instant Screen is only active when the machine is paused.
 </Callout>
 
-While the machine is paused, you can turn on or off the Instant Screen. The turned-off state shows what the real-time screen would look like.b:X
-10:X
-10:C
-0:{"buildId":"B7zEFUieoPWbhwmbYQEYH","data":[{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L2",null,{"value":[],"children":[["$","$L3",null,{}],["$","$L4",null,{"metadata":{"description":"All ZX Spectrum models render the screen simultaneously with the CPU.","title":"Using the Instant Screen","filePath":"content/howto/instant-screen.mdx","timestamp":1791607692000},"sourceCode":"$5","children":[["$","div",null,{"id":"nextra-skip-nav"}],["$","main",null,{"data-pagefind-body":true,"children":[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Using the Instant Screen","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"All ZX Spectrum models render the screen simultaneously with the CPU. The screen rendering follows the virtual electron beam (modern LCD and LED displays do not have a physical electron beam). Writing a value to the screen memory or changing some settings will be rendered only when the hardware processes the pixels behind that screen memory value."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When you debug your app and modify the screen memory, that modification is not immediately reflected on the emulator screen. When the debugging is paused, screen rendering is paused, too."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","strong",null,{"children":"Instant Screen"}]," feature of Klive allows you to check how the screen looks when the screen rendering does not stop with debugging."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You can turn this feature on or off with the highlighted toolbar button:"}],"\n",["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/images/howto/instant-screen-in-toolbar.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/images/howto/instant-screen-in-toolbar.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":640,"height":"auto"}}]}]}],"\n","$L6","\n","$L7","\n","$L8"]}]]}]]}]}],null,"$L9"]}],"isPartial":"$@a","staleTime":"$b","varyParams":null},{"rsc":"$Lc","isPartial":"$@d","staleTime":"$b","varyParams":null},{"rsc":"$Le","isPartial":"$@f","staleTime":"$b","varyParams":"$10"}],"isUpgradeableISRFallback":false,"a":"$@11","rootVaryParams":null,"needsRuntimeRequest":"$@12"}
-13:I[484,[],"OutletBoundary"]
-14:"$Sreact.suspense"
-16:I[484,[],"ViewportBoundary"]
-17:I[484,[],"MetadataBoundary"]
-18:I[7121,[],""]
-19:I[4581,[],""]
-6:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When the Instant Screen is on, the screen rendering is not paused when the debugging is paused. This way, you can see the screen as it would look if the screen rendering was not paused."}]
-7:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":"💡"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The Instant Screen is only active when the machine is paused."}]}]]}]
-8:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"While the machine is paused, you can turn on or off the Instant Screen. The turned-off state shows what the real-time screen would look like."}]
-9:["$","$L13",null,{"children":["$","$14",null,{"name":"Next.MetadataOutlet","children":"$@15"}]}]
-c:["$","$1","h",{"children":[null,["$","$L16",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","div",null,{"hidden":true,"children":["$","$L17",null,{"children":["$","$14",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Using the Instant Screen - Klive IDE"}],["$","meta","1",{"name":"description","content":"All ZX Spectrum models render the screen simultaneously with the CPU."}],["$","meta","2",{"property":"og:title","content":"KliveIDE Documentation"}],["$","meta","3",{"property":"og:description","content":"The comprehensive guide to KliveIDE"}],["$","meta","4",{"name":"twitter:card","content":"summary"}],["$","meta","5",{"name":"twitter:title","content":"KliveIDE Documentation"}],["$","meta","6",{"name":"twitter:description","content":"The comprehensive guide to KliveIDE"}]]}]}]}],null]}]
-e:["$","$1","c",{"children":[null,["$","$L18",null,{"parallelRouterKey":"children","template":["$","$L19",null,{}]}]]}]
-12:true
-15:null
-b:300
-b:C
-11:0
-d:"$undefined"
-f:"$undefined"
-a:"$undefined"
+While the machine is paused, you can turn on or off the Instant Screen. The turned-off state shows what the real-time screen would look like.9:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$3","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Le",null,{"value":[],"children":[["$","$Lf",null,{}],["$","$L10",null,{"metadata":{"description":"All ZX Spectrum models render the screen simultaneously with the CPU.","title":"Using the Instant Screen","filePath":"content/howto/instant-screen.mdx","timestamp":1791607692000},"sourceCode":"$11","children":[["$","div",null,{"id":"nextra-skip-nav"}],["$","main",null,{"data-pagefind-body":true,"children":[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Using the Instant Screen","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"All ZX Spectrum models render the screen simultaneously with the CPU. The screen rendering follows the virtual electron beam (modern LCD and LED displays do not have a physical electron beam). Writing a value to the screen memory or changing some settings will be rendered only when the hardware processes the pixels behind that screen memory value."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When you debug your app and modify the screen memory, that modification is not immediately reflected on the emulator screen. When the debugging is paused, screen rendering is paused, too."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","strong",null,{"children":"Instant Screen"}]," feature of Klive allows you to check how the screen looks when the screen rendering does not stop with debugging."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You can turn this feature on or off with the highlighted toolbar button:"}],"\n",["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/images/howto/instant-screen-in-toolbar.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":"$L12"}]}],"\n","$L13","\n","$L14","\n","$L15"]}]]}]]}]}],null,"$L16"]}],"p":"$@17","v":null,"s":"$8"}}]]
+2:[["children",{"s":{"n":"mdxPath","t":"c","k":"howto/instant-screen","s":["_not-found","_global-error"]},"h":64,"d":{"r":["$","$3","c",{"children":[null,["$","$L4",null,{"parallelRouterKey":"children","template":["$","$L5",null,{}]}]]}],"p":"$@6","v":"$7","s":"$8"},"c":"$Q9"}]]
+1:[["children",{"s":"(docs)","h":48,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":80,"c":"$Q1"},"h":{"r":["$","$3","h",{"children":[null,["$","$L19",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1b",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1c",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Using the Instant Screen - Klive IDE"}],["$","meta","1",{"name":"description","content":"All ZX Spectrum models render the screen simultaneously with the CPU."}],["$","meta","2",{"property":"og:title","content":"KliveIDE Documentation"}],["$","meta","3",{"property":"og:description","content":"The comprehensive guide to KliveIDE"}],["$","meta","4",{"name":"twitter:card","content":"summary"}],["$","meta","5",{"name":"twitter:title","content":"KliveIDE Documentation"}],["$","meta","6",{"name":"twitter:description","content":"The comprehensive guide to KliveIDE"}]]}]}],null]}],null]}],"p":"$@1d","v":null,"s":"$8"}},"a":"$@1e","u":"$@1f","b":"RvP3j5GC6-9LArSODNk2k"}
+20:I[484,[],"OutletBoundary"]
+:HL["/kliveide/images/howto/instant-screen-in-toolbar.png","image"]
+12:["$","img",null,{"src":"/kliveide/images/howto/instant-screen-in-toolbar.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":640,"height":"auto"}}]
+13:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When the Instant Screen is on, the screen rendering is not paused when the debugging is paused. This way, you can see the screen as it would look if the screen rendering was not paused."}]
+14:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":"💡"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The Instant Screen is only active when the machine is paused."}]}]]}]
+15:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"While the machine is paused, you can turn on or off the Instant Screen. The turned-off state shows what the real-time screen would look like."}]
+16:["$","$L20",null,{"children":["$","$1c",null,{"name":"Next.MetadataOutlet","children":"$@21"}]}]
+1f:true
+8:300
+21:null
+8:C
+1e:0
+6:"$undefined"
+1d:"$undefined"
+17:"$undefined"

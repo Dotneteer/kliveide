@@ -5,4 +5,7 @@
 :HL["/kliveide/images/book/05-ctc/measure-2.png","image"]
 :HL["/kliveide/images/book/05-ctc/measure-3.png","image"]
 :HL["/kliveide/images/book/05-ctc/interrupt-timer.png","image"]
-0:{"tree":{"name":"","param":null,"prefetchHints":4176,"slots":{"children":{"name":"(docs)","param":null,"prefetchHints":4144,"slots":{"children":{"name":"mdxPath","param":{"type":"c","key":"book/05-ctc","siblings":["_not-found","_global-error"]},"prefetchHints":4160,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}}}}}},"staleTime":300,"buildId":"B7zEFUieoPWbhwmbYQEYH"}
+3:[["children",{"s":"__PAGE__","h":160}]]
+2:[["children",{"s":{"n":"mdxPath","t":"c","k":"book/05-ctc","s":["_not-found","_global-error"]},"h":64,"c":"$Q3"}]]
+1:[["children",{"s":"(docs)","h":48,"c":"$Q2"}]]
+0:{"b":"RvP3j5GC6-9LArSODNk2k","t":{"t":{"s":"","h":80,"c":"$Q1"}}}

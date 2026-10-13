@@ -1,4 +1,7 @@
 :HL["/kliveide/_next/static/css/11c59cc40cabfed8.css","style"]
 :HL["/kliveide/_next/static/css/75ed199ed4213428.css","style"]
 :HL["/kliveide/images/klive-logo.svg","image"]
-0:{"tree":{"name":"","param":null,"prefetchHints":4176,"slots":{"children":{"name":"(docs)","param":null,"prefetchHints":4144,"slots":{"children":{"name":"mdxPath","param":{"type":"c","key":"scripting/syntax","siblings":["_not-found","_global-error"]},"prefetchHints":4160,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}}}}}},"staleTime":300,"buildId":"B7zEFUieoPWbhwmbYQEYH"}
+3:[["children",{"s":"__PAGE__","h":160}]]
+2:[["children",{"s":{"n":"mdxPath","t":"c","k":"scripting/syntax","s":["_not-found","_global-error"]},"h":64,"c":"$Q3"}]]
+1:[["children",{"s":"(docs)","h":48,"c":"$Q2"}]]
+0:{"b":"RvP3j5GC6-9LArSODNk2k","t":{"t":{"s":"","h":80,"c":"$Q1"}}}

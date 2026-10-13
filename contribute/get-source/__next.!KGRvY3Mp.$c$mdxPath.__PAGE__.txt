@@ -1,8 +1,22 @@
-1:"$Sreact.fragment"
-2:I[826,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-a25cc0b01a48815c.js"],"TOCProvider"]
-3:I[4637,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-a25cc0b01a48815c.js"],"Sidebar"]
-4:I[6665,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-a25cc0b01a48815c.js"],"ClientWrapper"]
-5:T466,---
+3:"$Sreact.fragment"
+4:I[7121,[],""]
+5:I[4581,[],""]
+a:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+b:"static/chunks/500-fc3b64d9ff4a32a7.js"
+c:"static/chunks/436-e36c16356dd28f2e.js"
+d:"static/chunks/app/(docs)/%5B...mdxPath%5D/page-afee3ca1911dde29.js"
+e:I[826,["545","$a","500","$b","436","$c","220","$d"],"TOCProvider"]
+f:I[4637,["545","$a","500","$b","436","$c","220","$d"],"Sidebar"]
+10:I[6665,["545","$a","500","$b","436","$c","220","$d"],"ClientWrapper"]
+1b:"ViewportBoundary"
+1c:I[484,[],"$1b"]
+1d:"MetadataBoundary"
+1e:I[484,[],"$1d"]
+1f:"$Sreact.suspense"
+7:X
+7:C
+8:X
+11:T466,---
 description: "If you want to contribute to Klive, you should get the source code with these steps: 1. Make sure Node."
 ---
 
@@ -16,30 +30,25 @@ If you want to contribute to Klive, you should get the source code with these st
 5. Install the WASM toolchain and build the emulator cores. The compiled `.wasm` files are build outputs and are not part of the repository, so this step is required on every fresh clone — see [Install the WASM toolchain](./wasm-toolchain), then run `npm run build:all-wasm`.
 6. After these steps, Klive should start with `npm run dev`.
 
-When your contribution is ready to submit, create a GitHub Pull Request from your fork's branch to Klive's `master` branch. The team will review it and decide how to merge it.d:X
-12:X
-12:C
-0:{"buildId":"B7zEFUieoPWbhwmbYQEYH","data":[{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L2",null,{"value":[],"children":[["$","$L3",null,{}],["$","$L4",null,{"metadata":{"description":"If you want to contribute to Klive, you should get the source code with these steps: 1. Make sure Node.","title":"Get the Source Code","filePath":"content/contribute/get-source.mdx","timestamp":1791607692000},"sourceCode":"$5","children":[["$","div",null,{"id":"nextra-skip-nav"}],["$","main",null,{"data-pagefind-body":true,"children":[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Get the Source Code","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If you want to contribute to Klive, you should get the source code with these steps:"}],"\n",["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["Make sure Node.js is installed on your machine. If not, download it from ",["$","a",null,{"href":"https://nodejs.org/en/download","target":"_blank","rel":"noreferrer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["https://nodejs.org/en/download",[" ",["$","svg",null,{"fill":"none","stroke":"currentColor","strokeLinecap":"round","strokeLinejoin":"round","strokeWidth":1.7,"viewBox":"0 0 24 24","height":"1em","className":"x:inline x:align-baseline x:shrink-0","children":[["$","path",null,{"d":"M7 17L17 7"}],["$","path",null,{"d":"M7 7h10v10"}]]}]]]}]," (use the LTS version)"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"We recommend using Visual Studio Code. Nonetheless, you can work with your preferred development tool."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Fork the Klive GitHub repository (",["$","a",null,{"href":"https://github.com/Dotneteer/kliveide","target":"_blank","rel":"noreferrer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["https://github.com/Dotneteer/kliveide",[" ",["$","svg",null,{"fill":"none","stroke":"currentColor","strokeLinecap":"round","strokeLinejoin":"round","strokeWidth":1.7,"viewBox":"0 0 24 24","height":"1em","className":"x:inline x:align-baseline x:shrink-0","children":[["$","path",null,{"d":"M7 17L17 7"}],["$","path",null,{"d":"M7 7h10v10"}]]}]]]}],") and clone your fork with ","$L6","."]}],"\n","$L7","\n","$L8","\n","$L9","\n"]}],"\n","$La"]}]]}]]}]}],null,"$Lb"]}],"isPartial":"$@c","staleTime":"$d","varyParams":null},{"rsc":"$Le","isPartial":"$@f","staleTime":"$d","varyParams":null},{"rsc":"$L10","isPartial":"$@11","staleTime":"$d","varyParams":"$12"}],"isUpgradeableISRFallback":false,"a":"$@13","rootVaryParams":null,"needsRuntimeRequest":"$@14"}
-15:I[8500,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-a25cc0b01a48815c.js"],""]
-16:I[484,[],"OutletBoundary"]
-17:"$Sreact.suspense"
-19:I[484,[],"ViewportBoundary"]
-1a:I[484,[],"MetadataBoundary"]
-1b:I[7121,[],""]
-1c:I[4581,[],""]
-6:["$","code",null,{"className":"nextra-code","dir":"ltr","children":"git clone"}]
-7:["$","li",null,{"className":"x:my-[.5em]","children":["Execute ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"npm install"}],"."]}]
-8:["$","li",null,{"className":"x:my-[.5em]","children":["Install the WASM toolchain and build the emulator cores. The compiled ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".wasm"}]," files are build outputs and are not part of the repository, so this step is required on every fresh clone — see ",["$","$L15",null,{"href":"./wasm-toolchain","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Install the WASM toolchain"}],", then run ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"npm run build:all-wasm"}],"."]}]
-9:["$","li",null,{"className":"x:my-[.5em]","children":["After these steps, Klive should start with ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"npm run dev"}],"."]}]
-a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["When your contribution is ready to submit, create a GitHub Pull Request from your fork’s branch to Klive’s ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"master"}]," branch. The team will review it and decide how to merge it."]}]
-b:["$","$L16",null,{"children":["$","$17",null,{"name":"Next.MetadataOutlet","children":"$@18"}]}]
-e:["$","$1","h",{"children":[null,["$","$L19",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","div",null,{"hidden":true,"children":["$","$L1a",null,{"children":["$","$17",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Get the Source Code - Klive IDE"}],["$","meta","1",{"name":"description","content":"If you want to contribute to Klive, you should get the source code with these steps: 1. Make sure Node."}],["$","meta","2",{"property":"og:title","content":"KliveIDE Documentation"}],["$","meta","3",{"property":"og:description","content":"The comprehensive guide to KliveIDE"}],["$","meta","4",{"name":"twitter:card","content":"summary"}],["$","meta","5",{"name":"twitter:title","content":"KliveIDE Documentation"}],["$","meta","6",{"name":"twitter:description","content":"The comprehensive guide to KliveIDE"}]]}]}]}],null]}]
-10:["$","$1","c",{"children":[null,["$","$L1b",null,{"parallelRouterKey":"children","template":["$","$L1c",null,{}]}]]}]
-14:true
-18:null
-d:300
-d:C
-13:0
-f:"$undefined"
-11:"$undefined"
-c:"$undefined"
+When your contribution is ready to submit, create a GitHub Pull Request from your fork's branch to Klive's `master` branch. The team will review it and decide how to merge it.9:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$3","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Le",null,{"value":[],"children":[["$","$Lf",null,{}],["$","$L10",null,{"metadata":{"description":"If you want to contribute to Klive, you should get the source code with these steps: 1. Make sure Node.","title":"Get the Source Code","filePath":"content/contribute/get-source.mdx","timestamp":1791607692000},"sourceCode":"$11","children":[["$","div",null,{"id":"nextra-skip-nav"}],["$","main",null,{"data-pagefind-body":true,"children":[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Get the Source Code","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If you want to contribute to Klive, you should get the source code with these steps:"}],"\n",["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["Make sure Node.js is installed on your machine. If not, download it from ",["$","a",null,{"href":"https://nodejs.org/en/download","target":"_blank","rel":"noreferrer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["https://nodejs.org/en/download",[" ",["$","svg",null,{"fill":"none","stroke":"currentColor","strokeLinecap":"round","strokeLinejoin":"round","strokeWidth":1.7,"viewBox":"0 0 24 24","height":"1em","className":"x:inline x:align-baseline x:shrink-0","children":[["$","path",null,{"d":"M7 17L17 7"}],["$","path",null,{"d":"M7 7h10v10"}]]}]]]}]," (use the LTS version)"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"We recommend using Visual Studio Code. Nonetheless, you can work with your preferred development tool."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Fork the Klive GitHub repository (",["$","a",null,{"href":"https://github.com/Dotneteer/kliveide","target":"_blank","rel":"noreferrer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["https://github.com/Dotneteer/kliveide",[" ",["$","svg",null,{"fill":"none","stroke":"currentColor","strokeLinecap":"round","strokeLinejoin":"round","strokeWidth":1.7,"viewBox":"0 0 24 24","height":"1em","className":"x:inline x:align-baseline x:shrink-0","children":["$L12","$L13"]}]]]}],") and clone your fork with ","$L14","."]}],"\n","$L15","\n","$L16","\n","$L17","\n"]}],"\n","$L18"]}]]}]]}]}],null,"$L19"]}],"p":"$@1a","v":null,"s":"$8"}}]]
+2:[["children",{"s":{"n":"mdxPath","t":"c","k":"contribute/get-source","s":["_not-found","_global-error"]},"h":64,"d":{"r":["$","$3","c",{"children":[null,["$","$L4",null,{"parallelRouterKey":"children","template":["$","$L5",null,{}]}]]}],"p":"$@6","v":"$7","s":"$8"},"c":"$Q9"}]]
+1:[["children",{"s":"(docs)","h":48,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":80,"c":"$Q1"},"h":{"r":["$","$3","h",{"children":[null,["$","$L1c",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1e",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1f",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Get the Source Code - Klive IDE"}],["$","meta","1",{"name":"description","content":"If you want to contribute to Klive, you should get the source code with these steps: 1. Make sure Node."}],["$","meta","2",{"property":"og:title","content":"KliveIDE Documentation"}],["$","meta","3",{"property":"og:description","content":"The comprehensive guide to KliveIDE"}],["$","meta","4",{"name":"twitter:card","content":"summary"}],["$","meta","5",{"name":"twitter:title","content":"KliveIDE Documentation"}],["$","meta","6",{"name":"twitter:description","content":"The comprehensive guide to KliveIDE"}]]}]}],null]}],null]}],"p":"$@20","v":null,"s":"$8"}},"a":"$@21","u":"$@22","b":"RvP3j5GC6-9LArSODNk2k"}
+23:I[8500,["545","$a","500","$b","436","$c","220","$d"],""]
+24:I[484,[],"OutletBoundary"]
+12:["$","path",null,{"d":"M7 17L17 7"}]
+13:["$","path",null,{"d":"M7 7h10v10"}]
+14:["$","code",null,{"className":"nextra-code","dir":"ltr","children":"git clone"}]
+15:["$","li",null,{"className":"x:my-[.5em]","children":["Execute ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"npm install"}],"."]}]
+16:["$","li",null,{"className":"x:my-[.5em]","children":["Install the WASM toolchain and build the emulator cores. The compiled ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".wasm"}]," files are build outputs and are not part of the repository, so this step is required on every fresh clone — see ",["$","$L23",null,{"href":"./wasm-toolchain","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Install the WASM toolchain"}],", then run ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"npm run build:all-wasm"}],"."]}]
+17:["$","li",null,{"className":"x:my-[.5em]","children":["After these steps, Klive should start with ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"npm run dev"}],"."]}]
+18:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["When your contribution is ready to submit, create a GitHub Pull Request from your fork’s branch to Klive’s ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"master"}]," branch. The team will review it and decide how to merge it."]}]
+19:["$","$L24",null,{"children":["$","$1f",null,{"name":"Next.MetadataOutlet","children":"$@25"}]}]
+22:true
+8:300
+25:null
+8:C
+21:0
+6:"$undefined"
+20:"$undefined"
+1a:"$undefined"
