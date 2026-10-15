@@ -124,6 +124,11 @@ Line keys in a batch are hex with `$` (`"$0419"`); a bare number is decimal (an 
   otherwise. The listing shows one reading, so explain it in the synopsis.
   A label can still go there (the author's decision for `$1D89`): add it through
   `formatRomSidecar` directly, since `apply-annotations.cjs` refuses it.
+- **Name a labelled address by its label** in synopses and comments (`then CALC_RESET empties`,
+  not `then $14BC empties`); drop an address already given beside its label
+  (`GET_SUBSCRIPT_A`, not `GET_SUBSCRIPT_A ($12DE)`). Keep the number where it is a value, not a
+  reference to that code: an operand (`LD HL,$0000`), or a base an address is computed from
+  (EDIT_KEY_JUMP's `$0482 + 2A`). A scan for `$XXXX` against the page's labels finds them.
 - **Tables inside the code area**: key tables `$007E-$0110`, keyword spellings `$0111-$01FB`,
   editing-key jump table `$0562`, syntax tables `$0C29-$0CB9`, operand classes `$0D16`, operator
   priorities `$110F`, calculator constants `$1915` and operation table `$1923-$199C`. Many

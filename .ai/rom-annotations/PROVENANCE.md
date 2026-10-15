@@ -659,3 +659,14 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
   (`annotatedDisassembly.ts`, fixed in the same change, with a test). Klive's disassembler
   view now skips such a region; the trim keeps the file within the ROM.
 - **Level:** 2, unchanged (`checkRomSidecar`: no problems).
+
+### 2026-10-12 — `zx81.rom.dis`, labelled addresses named by their labels (working copy)
+
+- **Changed:** 27 mentions of a labelled address in synopses and comments now use the label
+  (for example `$14BC` in ERROR_L's synopsis is `CALC_RESET`), and the syntax table's decoded
+  entries name each command's routine. Kept as numbers, because they are values and not
+  references to the labelled code: `$0482` (EDIT_KEY_JUMP's base, three times) and the operand
+  of `LD HL,$0000`. Two synopses were re-broken to keep their lines short.
+- **Method:** a scan of every synopsis and comment for `$XXXX` against the page's labels, each
+  mention replaced by hand; the author's own edits in the working copy were kept.
+- **Level:** 2, unchanged (`checkRomSidecar`: no problems).
