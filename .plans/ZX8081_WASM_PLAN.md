@@ -338,7 +338,7 @@ buffer with a width, a height and a start offset (`useEmulatorScreen.ts:362-388`
   arrows → SHIFT+5..8, Escape → BREAK = SHIFT+SPACE), and the auto-typer tables from CLK's
   `CharacterMapper`.
 - **Virtual keyboard.** Fully specified in §8.1; the design was approved on 2026-09-27. The
-  ZX80 keyboard (§8.1.9) is not designed yet.
+  ZX80 keyboard is built (§8.1.9).
 
 ### 8.1 The ZX81 virtual keyboard: approved design, not yet built
 
@@ -565,10 +565,25 @@ the static component could land earlier behind the `zx81` type check, since noth
 until the machine is registered.
 
 #### 8.1.9 ZX80
-Not designed. The ZX80 uses the same matrix and the same component structure, but a different
-legend set: keywords printed on the keys, no function mode, and a different shifted-symbol layout.
-It needs its own reference photo and its own key table, built from the **ZX80** ROM key tables.
-Reuse `Zx81Key.tsx` if the legend positions allow it; otherwise add `Zx80Key.tsx`.
+**Built** (`Zx80Key.tsx`, `Zx80Keyboard.tsx`, test `test/controls/Zx80Keyboard.test.tsx`).
+- **Geometry:** the ZX81's key face, gap and row stagger (§8.1.3), at the project author's request; a
+  measurement of the photo below, taken against the membrane edges, agreed within its error
+  (0 / 64 / 97 / 29). Nothing is printed under a ZX80 key, so the cell is 114 units, not 124.6.
+- **Reference photo:** an original 4K-ROM ZX80, top-down, 2048 x 1538 (Tynemouth Software,
+  "ZX80 Keyboard Overlays", <http://blog.tynemouthsoftware.co.uk/2017/05/zx80-keyboard-overlays.html>).
+  Blue keys on a black case; white main legends; amber shifted legends - above the number keys and
+  NEW LINE (EDIT), on the face of the others; white keywords above the letters; BREAK in dark blue
+  above SPACE.
+- **Legends come from the 4K ROM** and the test checks them against it: unshifted keys at `$006C`,
+  shifted at `$0093` (39 bytes each, matrix order without SHIFT), tokens from `$00BA` (`$D4` is the
+  third), and the K-mode rule at `$0346` (`ADD A,$C0`, a keyword when the result is `$E6` or more).
+  The graphics are the character set's (`$0E00`) codes `$02`-`$0B`, drawn amber (ink) on the key.
+  The keyboard prints CONT, GOTO, GOSUB, RET and RAND for the ROM's longer tokens.
+- **Zones:** `main` (the face, the keyword, BREAK) holds the key, SHIFT too on the right button;
+  `shift` (any amber legend, arrow or graphic) holds SHIFT with the key. Every ZX80 legend is one of
+  those two, so nothing is queued.
+- **A ZX80 with the 8K ROM shows the ZX81 keyboard** (`MC_ZX80_ROM8K`): it types as a ZX81, and the
+  upgrade kit shipped with a ZX81 overlay.
 
 ---
 
@@ -809,8 +824,7 @@ frames, LCD, Blink, audio) proved identical under both cores (`src/emu/machines/
 - The ZX80's tape-load flow waits at $013F, found by sampling the PC at the prompt (no listing).
 - `emuOptions.keyboardPanelHeights` has no per-machine default to set; the ZX81 keyboard zooms to fit.
 - The CPU panel has no "last opcode" field; the executed $00 is `machine.opCode` (debugger test).
-- The ZX80 has no virtual keyboard (§8.1.9 is not designed); its panel shows none rather than the
-  Spectrum 128's.
+- The ZX80 has its own virtual keyboard (§8.1.9); with the 8K ROM it shows the ZX81's.
 
 **Docs:** `docs/content/howto/zx81.mdx` and the machine-types entries; the screenshots come from
 `scripts/doc-shots/recipes/zx81.cjs`, which checks the machine in the running app (keyboard, typing,

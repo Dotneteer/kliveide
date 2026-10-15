@@ -233,6 +233,9 @@ export function semanticTokens(tone: Tone, accentId: AccentId): Record<string, s
     "--device-legend-zx81-red": DEVICE.legendZx81Red,
     "--device-body-zx81": DEVICE.zx81Body,
     "--device-glyph-frame-zx81": DEVICE.zx81GlyphFrame,
+    "--device-key-zx80": DEVICE.keyZx80,
+    "--device-legend-zx80-amber": DEVICE.legendZx80Amber,
+    "--device-legend-zx80-dim": DEVICE.legendZx80Dim,
     /*
      * The accent on a device surface, whatever the app's tone: device surfaces have no light mode
      * (§8.2.1), so a highlight on them cannot follow `--accent-solid`'s tone. Each accent's two tone
@@ -243,6 +246,7 @@ export function semanticTokens(tone: Tone, accentId: AccentId): Record<string, s
     "--accent-on-device-light": accent.solid.light,
     "--accent-on-device-dark": accent.solid.dark,
     "--accent-device-pressed": mix(accent.solid.dark, DEVICE.keyZx81, 45),
+    "--accent-device-pressed-zx80": mix(accent.solid.dark, DEVICE.keyZx80, 45),
     ...Object.fromEntries(
       Object.entries(DEVICE_INK).map(([k, v]) => [`--device-ink-${k.toLowerCase()}`, v])
     )

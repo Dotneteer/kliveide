@@ -632,6 +632,11 @@ face, `mix()` in `semantic.ts`). On the ZX81, a hovered legend on the key takes 
 keyword and function print on the black case the second, and a pressed key the third. Reach for
 these for any highlight on a device surface; never `--accent-solid`, whose value depends on a tone
 the device does not have.
+Pick the end by the ground the legend sits on, not by the machine: the ZX80's keys are a mid blue
+(`--device-key-zx80`) with white and amber print, so every hovered legend there - on the key or on
+the case - takes `--accent-on-device-dark`, and a pressed key gets its own tint over its own face
+(`--accent-device-pressed-zx80`), because a tint mixed over the ZX81's white key would read as a
+different key colour, not a pressed one.
 
 ## Alignment In The Register Panels
 
