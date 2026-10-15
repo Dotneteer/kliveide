@@ -28,24 +28,25 @@ article to read carefully, and in order.
 The parts build on each other, from the general idea to the finest detail:
 
 - **The foundations**: how a television draws a picture and why timing is everything
-  ([Part 1](#part-1-how-an-old-television-draws-a-picture)), the chips involved and the registers your
-  programs must leave to the display ([Part 2](#part-2-the-players)), and how the screen is stored in
-  memory ([Part 3](#part-3-the-display-file)).
+  ([Part 1](#part-1-how-an-old-television-draws-a-picture)), the chips and interrupt signals involved
+  ([Part 2](#part-2-the-players)), and how the screen is stored in memory
+  ([Part 3](#part-3-the-display-file)).
 - **The central idea** ([Part 4](#part-4-the-trick--the-cpu-executes-the-screen)): the CPU executes
-  the screen, a whole frame at a glance, and the endless loop that your programs run inside. If you
-  read only one part, read this one.
-- **The timing, line by line and frame by frame** ([Part 5](#part-5-drawing-each-line-eight-times)
-  and [Part 6](#part-6-the-whole-frame)): how every line lasts exactly 207 T-states, and how the
-  frame and its borders are built. These parts carry the real ROM code, with every instruction
-  explained.
+  the screen, then a whole frame at a glance, with the routine that runs it and the endless loop your
+  programs run inside. If you read only one part, read this one.
+- **The text and the borders** ([Part 5](#part-5-drawing-each-line-eight-times) and
+  [Part 6](#part-6-the-borders)): how the text is drawn, every line exactly 207 T-states long, and how
+  the borders are made. These parts carry the real ROM code, with every instruction explained.
 - **Sharing the CPU** ([Part 7](#part-7-sharing-the-cpu)): how your program and the display take
   turns on one Z80. In SLOW mode they are two tasks, switched four times a frame; in FAST mode the
-  display is a subroutine the ROM calls while it waits for a key.
+  display is a subroutine the ROM calls while it waits for a key. The part ends with the rules your
+  programs must follow.
 - **Three stories built on the same machinery**: a keyboard routine that never varies by a T-state
   ([Part 8](#part-8-the-keyboard-in-constant-time)), high-resolution graphics
   ([Part 9](#part-9-high-resolution-graphics)), and the 64K ZX81 ([Part 10](#part-10-the-64k-zx81)).
 - **The emulator** ([Part 11](#part-11-how-klive-follows-the-beam)): how Klive reproduces all of
-  this, and where to read its code. A [Summary](#summary) table closes the article.
+  this, and where to read its code. A table of [all the display routines](#the-display-routines-at-a-glance)
+  and a [Summary](#summary) close the article.
 
 Each part gives you the gist first and then the details. On a first reading you can follow the gist
 and skim the listings; on a second, the listings show you exactly how it is done. Every complete ROM
@@ -227,30 +228,12 @@ From the last one: a character is 8 dots wide, so it takes **4 T-states** to dra
 exactly the time a Z80 needs to execute a **`NOP`**. That coincidence is the whole design. Hold on to
 it.
 
-### Registers your program must leave alone
+### Registers that belong to the display
 
-Because the Z80 draws the picture, some of its **registers belong to the display, not to your
-program**. The display code relies on them even while your program is running, so machine code on
-the ZX81 has to follow rules that a Z80 programmer from other machines would not expect. They are
-listed here up front; the rest of the article shows why each one is needed.
-
-| Register | The rule | Why | Where explained |
-|---|---|---|---|
-| **I** | Keep `$1E`. | The ULA takes the address of the character set from I (`$1E00`). With another value the screen shows the wrong shapes. Some high-resolution programs change it on purpose, for exactly this reason. | [Part 4: every opcode fetch](#what-happens-on-every-opcode-fetch) |
-| **IY** | Keep `$4000`, always. | The ROM reaches every system variable as `(IY+n)`. In SLOW mode the border routine reads `MARGIN` and `CDFLAG` through IY *while your program is running*, so IY must be right at every moment, not just when you call the ROM. | [Part 6: entering the border](#entering-the-border-the-frame-parks-its-place-in-ix) |
-| **IX** | Do not change it in SLOW mode. | It holds the frame routine's bookmark: the last border NMI jumps through it with `JP (IX)`. | [Part 6: entering the border](#entering-the-border-the-frame-parks-its-place-in-ix), [leaving it](#leaving-the-border-nmilast) |
-| **AF′** (A′ and F′) | Do not touch it in SLOW mode. | A′ is the counter of border lines. Every NMI swaps it in with `EX AF,AF'` and counts it up, and your own `EX AF,AF'` would swap it away from the NMIs. | [Part 6: counting the lines](#counting-the-lines) |
-| **HL′** | Restore it before your `USR` code returns. | `USR` is an operation of the ROM's calculator, which keeps its place in HL′ and carries on from there when your code returns. | — |
-| **Interrupts** | Never `EI`; keep interrupt mode 1. | With interrupts on, the A6 trick fires an interrupt as soon as R's bit 6 is clear during a refresh, which happens constantly, and the display's interrupt routine runs with whatever is in your registers. The ROM selects IM 1, so that the display's interrupt goes to `$0038`. | [Part 5: the A6 interrupt](#running-a-line-halt-and-an-interrupt-on-a6), [why no `EI`](#why-the-interrupt-routine-saves-no-registers) |
-| **SP** | Keep some free stack below SP. | In SLOW mode, the NMIs and the display code push onto *your* stack: your PC and four registers, plus a few return addresses on top. | [Part 6: the stack in `NmiLast`](#leaving-the-border-nmilast) |
-
-What *is* free: AF, BC, DE and HL, of course. So are BC′ and DE′, though ROM routines you call may
-change them. R is free too: reading it is a popular way to get a random number, and the display
-reloads it before every line. In FAST mode, IX and AF′ are free as well: there are no NMIs, and the
-border routine sets IX itself whenever the ROM shows a frame.
-
-Hi-res graphics programs break two of these rules on purpose: they change I and IX to take over the
-display. [Part 9](#part-9-high-resolution-graphics) shows how.
+Because the CPU draws the picture, some of its registers belong to the display, not to your
+program: machine code on the ZX81 must leave them alone. Which ones, and why, only makes sense once
+you have seen how the display uses the CPU, so the full list comes at the end of Part 7, under
+[Rules for your programs](#rules-for-your-programs).
 
 ## Part 3: The display file
 
@@ -427,35 +410,6 @@ moment that this is exactly what the ROM wants.
 The rule has a price: real code cannot run above `$8000` on a standard ZX81, because the ULA would turn
 most of its opcodes into `NOP`s.
 
-#### Careful when you write the display file yourself
-
-The rule works in the other direction too, and that is a trap. The ROM's `PRINT` only ever puts
-character codes and `NEWLINE`s in the display file. But nothing stops your own program from writing
-there directly, with `POKE` or with machine code. If it writes a byte with **bit 6 set** (anything
-other than `$76`), the ULA does not steal it. The CPU **executes it as a real instruction**, right in
-the middle of the display code, with the display code's registers. What happens depends on the
-instruction. Three examples, tried on Klive's emulator by poking a byte into the first line of the
-screen:
-
-- **Harmless:** `$40` is `LD B,B`, which changes nothing. The line keeps its exact timing, and the
-  position simply shows no character, because the ULA only draws the bytes it steals.
-- **The picture breaks:** `$78` is `LD A,B`. It overwrites A, which holds the `$DD` that the
-  display code loads into R before every line (Part 5 explains why). With R loaded wrongly, the
-  interrupt that ends a line comes at the wrong moment. Some lines measured only 71 T-states
-  instead of 207, and the picture falls apart.
-- **The machine crashes:** `$C7` is `RST 0`, a jump to `$0000`, the power-on address. But the display
-  code had just enabled interrupts, and the start-up code never disables them, so stray display
-  interrupts keep hijacking the restart. In the test run the machine tumbled through more than
-  300,000 of them before it happened to restart cleanly, with the program gone.
-
-Other bytes with bit 6 set are just as dangerous. The `$C0`–`$FF` range is full of jumps, calls,
-returns and restarts that leave the display file for good. `$CB`, `$DD`, `$ED` and `$FD` are prefixes
-that swallow the next character codes as part of a longer instruction. And the `LD` instructions in
-`$40`–`$7F` can overwrite A, B, C, H or L, which the display code uses to time its lines, count
-them and find them. So write only
-character codes into the display file, and leave its `NEWLINE`s exactly where they are: an extra
-`$76` would end a line early and start one the ROM does not count.
-
 ### A whole frame at a glance
 
 You have now seen how the ULA turns one `NOP` into 8 dots, and how a line of characters becomes a
@@ -465,10 +419,12 @@ frame they live in.
 A frame is more than the 192 lines of text. Around them, the television needs a VSYNC and some
 blank lines at the top and bottom: the **border**. The ROM builds the frame in this order:
 
-1. **VSYNC and the keyboard.** On the ZX81, reading port `$FE` (an `IN` with A0 low) both reads the
-   keyboard *and* starts VSYNC; any `OUT` ends it and resets the line counter. The ROM reads the
-   keyboard, waits in a short delay loop so VSYNC lasts long enough for the television to notice,
-   then sends an `OUT`.
+1. **VSYNC and the keyboard.** On the ZX81, reading port `$FE` (an `IN` with A0 low) reads the
+   keyboard, and while the NMI generator is off, as it is at this point of the frame, it also starts
+   VSYNC; any `OUT` then ends it and resets the line counter. The ROM reads the keyboard, waits in a
+   short delay loop so VSYNC lasts long enough for the television to notice, then sends an `OUT`.
+   (With the NMI generator on, an `IN` from port `$FE` only reads the keys: Part 7 comes back to
+   this.)
 2. **The top border**: blank lines. Their number is the system variable `MARGIN`: 55 on a PAL machine,
    31 on an NTSC one.
 3. **The text**: one blank line for the display file's first `$76`, then 24 text lines of 8 scan lines
@@ -498,6 +454,37 @@ over 50 frames a second.
 <figcaption>One PAL frame, roughly to scale. Blue: the text (Part 5). Orange: the borders, where your program runs in SLOW mode (Part 6).</figcaption>
 </figure>
 
+### The frame routine
+
+These five steps are one ROM routine at `$0229`. Its first half is housekeeping: the `FRAMES`
+counter that `PAUSE` uses, reading the keyboard, and debouncing the keys. It is shortened here to
+the lines that matter for the picture:
+
+```z80klive
+; $0229: one frame of the picture
+DisplayFrame:
+    ld hl,($4034)     ; HL = FRAMES, the frame counter ...
+    dec hl            ; ... counted down every frame (PAUSE uses it)
+    ; ... $022D-$023D: FRAMES bookkeeping
+    call $02BB        ; read the keyboard: its IN starts VSYNC
+    ; ... $0241-$0276: debounce the key, and a DJNZ delay loop
+    ;     that gives VSYNC its length
+    out ($FF),a       ; any OUT ends VSYNC and resets the line counter
+    ld hl,($400C)     ; HL = D_FILE ...
+    set 7,h           ; ... + $8000: the display file's echo
+    call BorderLines  ; the top border
+    ld a,r            ; only for the timing
+    ld bc,$1901       ; B = 25: the opening NEWLINE, then 24 text lines
+                      ; C = 1: one scan line for the opening NEWLINE
+    ld a,$F5          ; R for that first, empty line
+    call DisplayLines ; the text
+    dec hl            ; HL back on the display file's last NEWLINE
+    call BorderLines  ; the bottom border
+    jp DisplayFrame   ; the next frame
+```
+
+The two `CALL BorderLines` make the top and bottom borders, and `CALL DisplayLines` starts the text.
+
 ### One endless loop, and your program as its guest
 
 The frame routine, `DisplayFrame` at `$0229`, ends with a jump back to its own start. In SLOW mode,
@@ -508,11 +495,12 @@ any machine code you call. That is the two orange bands of the picture above, th
 borders.
 
 So the display and your program take turns on one CPU, a little like two tasks in a tiny operating
-system. How they hand the CPU to each other, many times a second, is a story of its own:
-[Part 7](#part-7-sharing-the-cpu) tells it, once Parts 5 and 6 have shown the code involved.
+system. In SLOW mode, each `CALL BorderLines` is where the frame hands the CPU to your program; it
+gets the CPU back only when the border is over.
 
-Part 5 is about the blue band: how the CPU draws the 193 lines of text. Part 6 comes back to the rest
-of the frame.
+The next three parts follow the frame: Part 5 draws the blue band, the 193 lines of text; Part 6
+makes the borders; and [Part 7](#part-7-sharing-the-cpu) puts together how the display and your
+program share the CPU.
 
 ## Part 5: Drawing each line eight times
 
@@ -574,8 +562,14 @@ changes** when R counts: it keeps whatever `LD R,A` put there. So from `$FF` (bi
 step clears bit 6, the bit the interrupt is wired to. Why exactly `$DD`? That needs the interrupt routine,
 which comes next; the answer follows it, under "Why `$DD`?".
 
-The interrupt is the ROM's routine at `$0038` (the Z80 is in interrupt mode 1). Disassembled, with
-names of our own:
+The interrupt is the ROM's routine at `$0038` (the Z80 is in interrupt mode 1). Note what accepting
+the interrupt does first: it **switches interrupts off**. In the words of
+[Zilog's manual](https://www.zilog.com/docs/z80/um0080.pdf), "when the CPU accepts a maskable
+interrupt, both IFF1 and IFF2 are automatically reset, inhibiting further interrupts until the
+programmer issues a new EI instruction". So the routine runs undisturbed and needs no `DI`, and the
+next interrupt can come only after the `EI` in `RunLine`. Even then, the manual adds, not before the
+instruction that follows the `EI` has run, which here is the `JP (HL)` into the line. Disassembled,
+with names of our own:
 
 ```z80klive
 ; $0038: one interrupt per scan line of text
@@ -672,6 +666,20 @@ interrupt to the next:
 **207 T-states: exactly one PAL line.** Only one of the two paths runs on any interrupt, so only one
 of them is counted; both take 27 T-states, which is the point.
 
+**Short lines and empty lines.** The table assumes a full line of 32 characters. On a 1K ZX81 that
+would waste memory, so the ROM *collapses* the display file (Part 3): a line holds its characters only
+up to the last one that is not a space, and an empty line is nothing but its `NEWLINE`, a bare `HALT`.
+Such a line still lasts exactly 207 T-states, because what ends it is not the `HALT` but the R
+countdown. A halted CPU keeps making one M1 cycle every 4 T-states, just as the missing `NOP`s would
+have. A line of 5 characters reaches its `HALT` 27 M1 cycles sooner and spends them inside the `HALT`
+instead; a bare `NEWLINE` spends all 32 there. Either way the interrupt comes at the same moment
+("Why `$DD`?" below counts the cycles). And the ULA draws nothing for the missing characters, because
+it only draws the bytes it steals, so the rest of the line simply shows paper.
+
+Klive shows it on its 1K model. After `PRINT "HELLO"` the whole display file is 33 bytes: 25
+`NEWLINE`s, 5 characters on the first line and 3 on the last (the "0/0" report), with every line in
+between a bare `NEWLINE`. Every text line still lasts exactly 207 T-states.
+
 This is the sum for every line that is drawn, and on those lines neither `RET Z` is taken: a `RET Z`
 that does not return takes 5 T-states. The very last interrupt of the text area is the exception.
 There B reaches 0, the `RET Z` after `DEC B` *is* taken (11 T-states), and `SET 3,C` and `RunLine`
@@ -720,21 +728,9 @@ RunLine:
     jp (hl)          ; "execute" the line: 32 NOPs, then HALT
 ```
 
-Where does A get `$DD`? From `DisplayLines`, the short routine that starts the text, which Part 6
-lists in full:
-
-```z80klive
-; $02B5: start running the display file at HL (the text uses it too)
-DisplayLines:
-    ld r,a           ; R: when the first INT comes
-    ld a,$DD         ; R for every line after it
-    ei
-    jp (hl)
-```
-
-`DisplayLines` loads its own first countdown into R, then leaves `$DD` in A. Nothing in the loop
-changes A after that: the interrupt routine never touches it, and neither do the `NOP`s and the
-`HALT`. So every `LD R,A` in `RunLine`, on every line, loads `$DD`.
+Where does A get `$DD`? Once, from the routine that starts the text, in the next subsection. Nothing
+in the loop changes A after that: the interrupt routine never touches it, and neither do the `NOP`s
+and the `HALT`. So every `LD R,A` in `RunLine`, on every line, loads `$DD`.
 
 The trick is to read that value as **minus the number of M1 cycles to wait**.
 
@@ -755,10 +751,51 @@ with `$100 − n`, and exactly *n* M1 cycles refresh with bit 6 still set; the o
 
 The 36th M1, the first `NOP` inside the `HALT`, fires `INT`.
 
-The count does not care what is in the line, because a halted CPU also makes one M1 every 4 T-states.
-A line of 5 characters (on a 1K machine, say) reaches its `HALT` 27 M1 cycles sooner, and spends those
-27 cycles inside the `HALT` instead. An empty line, just its `$76`, spends 32 there. Either way the
-36th M1 comes at the same moment, so **every line lasts 207 T-states, full, short or empty.**
+The count does not care what is in the line, because a halted CPU also makes one M1 every 4 T-states:
+a short or empty line just spends more of its 35 cycles inside the `HALT`, as shown above. Either way
+the 36th M1 comes at the same moment, so **every line lasts 207 T-states, full, short or empty.**
+
+### Starting the text: `DisplayLines`
+
+The line loop needs a first push: someone has to set its registers and jump to the first line. The
+frame routine does it, with these lines from its listing in Part 4:
+
+```z80klive
+    ld a,r            ; only for the timing
+    ld bc,$1901       ; B = 25: the opening NEWLINE, then 24 text lines
+                      ; C = 1: one scan line for the opening NEWLINE
+    ld a,$F5          ; R for that first, empty line
+    call DisplayLines ; the text
+```
+
+They are the loop's starting values: B counts 25 lines, the display file's opening `NEWLINE` and then
+the 24 text lines; C gives the first of them a single scan line; and A holds the R countdown for that
+first line. HL was set to `D_FILE + $8000`, the opening `NEWLINE`, before the top border. Then
+`DisplayLines` gets the loop going:
+
+```z80klive
+; $02B5: start running the display file at HL (the borders use it too)
+DisplayLines:
+    ld r,a           ; R: when the first INT comes
+    ld a,$DD         ; R for every line after it
+    ei
+    jp (hl)
+```
+
+It loads the first countdown into R, leaves `$DD` in A for every line after the first, enables the
+interrupt and jumps into the display file. The opening `NEWLINE` is a `HALT`, so the first "line"
+draws nothing; its interrupt then runs path 2 of the interrupt routine, which sets C to 8 for the
+first real text line. From there, the interrupt routine runs everything.
+
+**Why `$F5` for the first line?** By the rule of "Why `$DD`?", `$F5` is `$100 − 11`: after `LD R,A`,
+eleven M1 cycles pass (`LD A,$DD`, `EI`, `JP (HL)`, the opening `HALT` and seven `NOP`s inside it),
+and the eighth `NOP` fires `INT`. Why eleven? In SLOW mode the text starts at a precise moment of
+the line, thanks to a `HALT` and the ULA's `WAIT` at the end of the top border (Part 6 shows how). So
+the ROM can choose the count that makes this first, empty line exactly as long as a normal one. You
+can see this in Klive: when the ULA's line timer is read as each interrupt is accepted, the text's
+first interrupt comes at the same point of the line (T-state 202 of 207) as every interrupt after
+it. The hand-over from the border to the text does not leave a single short or long line. After this
+first line, `$DD` does the rest.
 
 ### Why the interrupt routine saves no registers
 
@@ -816,105 +853,26 @@ text. The `RET Z` after `DEC B` returns from *that* call, back into the frame ro
 restarting the line. Those 71 T-states are the left border. Pushing and popping just AF, BC, DE and HL
 would cost 4 × 11 + 4 × 10 = 84 T-states: more than the whole budget.
 
-So where do *your program's* registers go? They are saved once, when your program hands the CPU over
-to the display: the last border NMI (`NmiLast`, in Part 6) pushes AF, BC, DE and HL before the text
-starts. After the text, the border routine pops them again and returns into your program with a
-plain `RET`. Your program never notices that the display code borrowed the registers.
+Your program's own registers are a different story: they are saved while the display runs, and
+Part 7 shows where.
 
-## Part 6: The whole frame
+## Part 6: The borders
 
-Part 4 ended with the map of a frame, and Part 5 zoomed into the text in its middle. This part covers
-everything around the text: the routine that runs the whole frame, the two ways the ZX81 shares the
-CPU with your program, and the borders that make the sharing possible.
+Part 4 ended with the map of a frame, and Part 5 drew the text in its middle. This part makes the
+rest: the blank lines of the top and bottom borders, which in SLOW mode are also when your program
+runs.
 
-### The frame routine
+### Two kinds of border
 
-The five steps of a frame, from the end of Part 4, are one ROM routine at `$0229`. Its first half is housekeeping: the `FRAMES`
-counter that `PAUSE` uses, reading the keyboard, and debouncing the keys. It is shortened here to
-the lines that matter for the picture:
+How a border is made depends on the ZX81's mode, which you choose with the BASIC commands `SLOW` and
+`FAST`, and which bit 7 of the system variable `CDFLAG` records:
 
-```z80klive
-; $0229: one frame of the picture
-DisplayFrame:
-    ld hl,($4034)     ; HL = FRAMES, the frame counter ...
-    dec hl            ; ... counted down every frame (PAUSE uses it)
-    ; ... $022D-$023D: FRAMES bookkeeping
-    call $02BB        ; read the keyboard: its IN starts VSYNC
-    ; ... $0241-$0276: debounce the key, and a DJNZ delay loop
-    ;     that gives VSYNC its length
-    out ($FF),a       ; any OUT ends VSYNC and resets the line counter
-    ld hl,($400C)     ; HL = D_FILE ...
-    set 7,h           ; ... + $8000: the display file's echo
-    call BorderLines  ; the top border
-    ld a,r            ; only for the timing
-    ld bc,$1901       ; B = 25: the opening NEWLINE, then 24 text lines
-                      ; C = 1: one scan line for the opening NEWLINE
-    ld a,$F5          ; R for that first, empty line
-    call DisplayLines ; the text
-    dec hl            ; HL back on the display file's last NEWLINE
-    call BorderLines  ; the bottom border
-    jp DisplayFrame   ; the next frame
-```
+- In **SLOW mode**, the normal one, your program runs during the borders, while the hardware counts
+  the blank lines with NMIs.
+- In **FAST mode** there are no NMIs. The ROM draws frames only while it waits for a key, and it makes
+  their borders with the same line loop that draws the text.
 
-The two `CALL BorderLines` are the top and bottom border, and `CALL DisplayLines` runs the text. Both
-routines are listed later in this part, under "Entering the border". `DisplayLines` only *starts*
-the text: from its first line on, the interrupt routine from Part 5 runs it. Two things about this
-listing are worth keeping in mind:
-
-**HL carries the display file position between the steps.** Before the top border, the frame
-routine sets it to `D_FILE + $8000`, the opening `NEWLINE`:
-
-```z80klive
-    ld hl,($400C)     ; HL = D_FILE ...
-    set 7,h           ; ... + $8000: the display file's echo
-    call BorderLines  ; the top border
-```
-
-After the text, the interrupt routine's last `POP HL` has left HL just past the display file's last
-`NEWLINE`, and `DEC HL` steps it back onto that byte before the bottom border:
-
-```z80klive
-    call DisplayLines ; the text
-    dec hl            ; HL back on the display file's last NEWLINE
-    call BorderLines  ; the bottom border
-```
-
-FAST mode's border needs both values. SLOW mode's border does not, as you will see.
-
-**In SLOW mode, a `CALL BorderLines` does not return the usual way.** It hands the CPU to your
-program, and the frame continues at the next instruction only when the last border NMI jumps back
-there. The next subsections show how.
-
-### SLOW and FAST mode
-
-By now one problem should be obvious: **the Z80 cannot draw the picture and run your program at the
-same time.** During the 193 lines of text it is busy every T-state. The ZX81 gives you two ways to
-share the CPU, and you choose between them with the BASIC commands `SLOW` and `FAST`:
-
-| | SLOW mode | FAST mode |
-|---|---|---|
-| The picture | Always on: every frame is drawn. | Only while the ROM waits for a key, or during `PAUSE`. |
-| Your program runs | Only during the top and bottom borders. | All the time, at full speed. |
-| What you see | A steady picture, but programs run nearly 4 times slower. | The screen goes blank while a program runs, and flashes each time you press a key. |
-
-A ZX81 starts up in **SLOW mode**. The system variable `CDFLAG` remembers the choice: bit 6 means
-"SLOW mode wanted", bit 7 "SLOW mode running". Before it starts SLOW mode, the ROM checks that the
-hardware actually produces display NMIs (the next subsection explains them). A ZX80 fitted with the
-ZX81 ROM has no NMI generator, so it fails this check and stays in FAST mode.
-
-**FAST mode** is simple. The ROM never switches the NMI generator on, so nothing interrupts your
-program. When the ROM has to wait for a key, or for a `PAUSE`, it has nothing better to do, so it
-draws frames until a key arrives. It builds those frames' borders with `HALT` and the A6 interrupt,
-the same trick it uses for the text. [Part 7](#part-7-sharing-the-cpu) follows both modes in detail,
-including why the screen goes blank while a FAST-mode program runs.
-
-**SLOW mode** is the clever one: the borders do two jobs at once. They give the television its blank
-lines, and they give your program its time. The rest of this part shows how.
-
-<Callout type="info">
-The ZX80, the ZX81's predecessor, has no NMI generator at all. It can only ever work like a ZX81 in
-FAST mode: the picture disappears whenever the machine is computing.
-</Callout>
+`BorderLines` handles both. [Part 7](#part-7-sharing-the-cpu) compares the two modes in full.
 
 ### The border: NMIs count the lines while your program runs
 
@@ -929,8 +887,8 @@ count the blank lines while the program runs, and the last NMI takes the CPU bac
 
 #### Entering the border: the frame parks its place in IX
 
-The frame routine draws each border with a `CALL BorderLines` (see its listing above), the routine at
-`$0292`. Here is all of it, with the FAST-mode border and `DisplayLines`, which follow it in the ROM:
+The frame routine draws each border with a `CALL BorderLines` (see its listing in Part 4), the
+routine at `$0292`. Here is all of it, with the FAST-mode border that follows it in the ROM:
 
 ```z80klive
 ; $0292: a border of MARGIN blank lines (SLOW mode)
@@ -959,13 +917,6 @@ FastBorder:
     ex (sp),hl       ; these two cancel out:
     ex (sp),hl       ; they are only here for their timing
     jp (ix)          ; carry on with the frame
-
-; $02B5: start running the display file at HL (the text uses it too)
-DisplayLines:
-    ld r,a           ; R: when the first INT comes
-    ld a,$DD         ; R for every line after it
-    ei
-    jp (hl)
 ```
 
 The rest of this subsection takes the listing a few lines at a time, repeating each piece next to
@@ -1023,8 +974,8 @@ generator on: from the next HSYNC, the NMIs start counting.
 
 With the bookmark taken off the stack in step 1, the stack underneath holds your program's registers
 and the address your program was interrupted at. So these `POP`s and this `RET` return **into your
-program**, not to the frame routine. This is the switch from the display task to the program task,
-described in [Switching tasks](#switching-tasks) in Part 7.
+program**, not to the frame routine. This is the switch from the display task to the program task;
+Part 7 puts all the switches side by side, under [Switching tasks](#switching-tasks).
 
 One side effect: the frame routine had set HL to the display file before the `CALL`, and `POP HL`
 replaces it with your program's HL. That is why `NmiLast` has to load `D_FILE + $8000` into HL again
@@ -1040,7 +991,7 @@ FastBorder:
 ```
 
 **In FAST mode** there are no NMIs, so `BorderLines` keeps the CPU and comes here. It makes the blank
-lines with the text machinery from Part 5: `DisplayLines` (step 6) and the interrupt routine. These
+lines with the text machinery from Part 5: `DisplayLines` and the interrupt routine. These
 first lines do no work of their own; they set up the **parameters** that machinery works with:
 
 - **`LD A,$FC`** passes the starting value for R. `DisplayLines` begins with `LD R,A`, so this `$FC`
@@ -1056,22 +1007,13 @@ first lines do no work of their own; they set up the **parameters** that machine
 - for the **bottom border**, the display file's last `NEWLINE`, because the frame routine stepped HL
   back onto it with `DEC HL` after the text.
 
-The frame routine starts the text the same way, with `LD BC,$1901` and `LD A,$F5` before its own
-`CALL DisplayLines`.
+This is exactly how the frame routine starts the text (Part 5), only with other values.
 
-**Step 6: `DisplayLines` starts the line loop.**
+**Step 6: the line loop runs the blank lines.**
 
-```z80klive
-DisplayLines:
-    ld r,a           ; R: when the first INT comes
-    ld a,$DD         ; R for every line after it
-    ei
-    jp (hl)
-```
-
-`DisplayLines` loads the countdown into R, leaves `$DD` in A for the interrupt routine, enables
-interrupts and jumps to HL. For a border, HL points at a `NEWLINE`, so `JP (HL)` runs straight into a
-`HALT`, and the "line" draws nothing. With B = 1 and C = `MARGIN`, the interrupt routine runs that
+`DisplayLines` (Part 5) loads the countdown into R, leaves `$DD` in A for the interrupt routine,
+enables interrupts and jumps to HL. For a border, HL points at a `NEWLINE`, so `JP (HL)` runs
+straight into a `HALT`, and the "line" draws nothing. With B = 1 and C = `MARGIN`, the interrupt routine runs that
 empty line `MARGIN` times, one scan line each.
 
 The two values for R follow the rule from Part 5: load R with `$100 − n` to let *n* M1 cycles pass
@@ -1089,17 +1031,8 @@ before the one that fires `INT`.
 The first blank line is not a full line. In FAST mode nothing has lined the CPU up with the ULA's
 line timer before this point, so that first interrupt arrives at a different point of the line each
 time. That does not matter: accepting it resets the ULA's line timer, and from then on the CPU and the
-lines run in step.
-
-The frame routine starts the text in the same way, with `LD A,$F5` for its first, empty line, the
-display file's opening `NEWLINE`. `$F5` is `$100 − 11`: after `LD A,$DD`, `EI`, `JP (HL)` and the
-`HALT`, seven `NOP`s pass inside the `HALT`, and the eighth fires `INT`. Here the start is *not*
-random. In SLOW mode the text begins at a precise moment, thanks to the `HALT` and `WAIT` in `NmiLast`
-(explained below). So the ROM can pick a count that makes this first, empty line exactly as long as a
-normal one. You can see this in Klive: when the ULA's line timer is read as each interrupt is
-accepted, the text's first interrupt comes at the same point of the line (T-state 202 of 207) as every
-interrupt after it. The hand-over from the border to the text does not leave a single short or long
-line. After this first line, `$DD` again does the rest.
+lines run in step. The text's first line is the opposite case: there the start is precise, and the ROM
+uses `$F5` instead to make that line exactly as long as all the others (Part 5).
 
 **Step 7: FAST mode, back to the frame.**
 
@@ -1164,9 +1097,9 @@ They save nothing because they need nothing:
 #### Leaving the border: `NmiLast`
 
 When the count reaches 0, the border is over and the NMI routine falls into `NmiLast`, which turns
-the CPU back over to the frame. This is the switch from the program task back to the display task,
-described in [Switching tasks](#switching-tasks) in Part 7. Here is that part of the
-routine again:
+the CPU back over to the frame. This is the switch from the program task back to the display task;
+Part 7 puts all the switches side by side, under [Switching tasks](#switching-tasks). Here is that
+part of the routine again:
 
 ```z80klive
 NmiLast:
@@ -1245,27 +1178,6 @@ current bus cycle. The moment the CPU starts its NMI response it is no longer ha
 until HSYNC ends. "Within 4 T-states" becomes "exactly at the end of HSYNC", the CPU leaves the
 `HALT` at the same T-state of the line every frame, and the text that follows lines up perfectly.
 
-### All the display routines at a glance
-
-Parts 4 to 6 have now introduced almost every piece of code that makes the picture; the two routines
-that start and stop SLOW mode follow in Part 7. Here they are side by
-side, roughly in the order they run in a frame. The names are this article's own; the addresses are
-the ROM's.
-
-| Routine | Address | When it runs | Its job | Listed in |
-|---|---|---|---|---|
-| `DisplayFrame` | `$0229` | Once per frame. In SLOW mode always; in FAST mode only while the ROM waits for a key or a `PAUSE`. | The conductor. Counts `FRAMES`, makes VSYNC around the keyboard read, then calls the top border, the text and the bottom border, and starts again. | [The frame routine](#the-frame-routine) |
-| `Keyboard` | `$02BB` | Once per frame, called by `DisplayFrame`. | Reads the 8 key rows in a constant 772 T-states. Its first `IN` starts VSYNC. Also sets `MARGIN` from the TV standard. | [Part 8](#part-8-the-keyboard-in-constant-time) |
-| `BorderLines` | `$0292` | Twice per frame: top and bottom border. | Starts a border and keeps the frame's place in IX. In SLOW mode it sets A′ to `1 − MARGIN`, switches the NMIs on and returns into your program; in FAST mode it goes on to `FastBorder`. | [Entering the border](#entering-the-border-the-frame-parks-its-place-in-ix) |
-| `Nmi` (the NMI handler) | `$0066` | At every HSYNC while the NMI generator is on: each border line in SLOW mode. | Counts the border line in A′ and returns to your program straight away. | [Counting the lines](#counting-the-lines) |
-| `NmiLast` | `$006F` | At the last line of each SLOW-mode border. | Saves your program's registers, sets HL to the display file, `HALT`s for one more NMI to start in sync, switches the NMIs off, and jumps back into the frame through IX. | [Leaving the border](#leaving-the-border-nmilast) |
-| `DisplayLines` | `$02B5` | At the start of the text, and of each FAST-mode border. | Starts the line loop: loads R for the first line, leaves `$DD` in A, enables interrupts and jumps into the display file. | [Entering the border](#entering-the-border-the-frame-parks-its-place-in-ix) |
-| The display file | `D_FILE + $8000` | Once per scan line of text. | Not a routine anyone wrote, but code all the same: each character runs as a `NOP` that the ULA draws, and the `NEWLINE` runs as a `HALT` that waits for the interrupt. | [Part 4](#what-happens-on-every-opcode-fetch) |
-| `IntDisplay` (the INT handler) | `$0038` | At the end of every scan line of the text and of the FAST-mode borders. | The line loop. Counts scan lines in C and text lines in B, runs the same line again or moves to the next, and reloads R with `$DD`. Leaves through `RET Z` after the last line. | [Running a line](#running-a-line-halt-and-an-interrupt-on-a6) |
-| `FastBorder` | `$02A9` | Each border in FAST mode. | Draws `MARGIN` blank lines by running an empty display-file line through the line loop, then jumps back into the frame through IX. | [Entering the border](#entering-the-border-the-frame-parks-its-place-in-ix) |
-| Stopping SLOW mode | `$02E7` | Whenever the ROM needs every T-state for itself: before `SAVE`, `LOAD` and printing. | Waits for the next border NMI and switches the NMI generator off. The display loop is never resumed; it is simply abandoned. | [Starting and stopping the loop](#starting-and-stopping-the-loop) |
-| Starting SLOW mode | `$0207` | At start-up, after the `SLOW` command, and whenever the ROM has paused the display for its own work: at the end of `SAVE`, `LOAD` and printing, and when it stops with an error report. | Checks that the hardware produces display NMIs, saves your registers as `NmiLast` does, and enters `DisplayFrame` for the first time. | [Starting and stopping the loop](#starting-and-stopping-the-loop) |
-
 ## Part 7: Sharing the CPU
 
 Everything so far has been about the display. But a ZX81 also has to run your program, on the same
@@ -1279,7 +1191,17 @@ it in completely different ways:
 | How the display runs | As a task of its own, taking turns with your program | As an ordinary subroutine, called only while the ROM waits for a key or a `PAUSE` |
 | How the CPU changes hands | A task switch, four times a frame: an NMI takes the CPU from your program, a `RET` gives it back | A `CALL` and a `RET` |
 | What is saved | Your program's PC, AF, BC, DE and HL, on its own stack | Only the `CALL`'s return address |
-| Your program's share of the CPU | About a quarter (measured: 26.7%) | All of it, but no picture while it runs |
+| Your program's share of the CPU | About a quarter on PAL (measured: 26.7%), a sixth on NTSC (17.3%) | All of it, but no picture while it runs |
+| What you see | A steady picture, but programs run nearly 4 times slower (nearly 6 on NTSC) | The screen goes blank while a program runs, and flashes each time you press a key |
+
+A ZX81 starts up in **SLOW mode**. The system variable `CDFLAG` remembers the choice: bit 6 means
+"SLOW mode wanted", bit 7 "SLOW mode running". Before it starts SLOW mode, the ROM checks that the
+hardware actually produces display NMIs ("Starting and stopping the loop" below shows how).
+
+<Callout type="info">
+The ZX80, the ZX81's predecessor, has no NMI generator at all. It can only ever work like a ZX81 in
+FAST mode: the picture disappears whenever the machine is computing.
+</Callout>
 
 ### SLOW mode: two tasks on one CPU
 
@@ -1375,16 +1297,9 @@ at all times: the display task borrows that space twice a frame.
 #### What is not saved
 
 Only PC, AF, BC, DE and HL are saved, because saving costs time, and time is what the program task is
-short of. Everything else the two tasks must simply not fight over. That is where the register rules
-of Part 2 come from:
-
-- **IX** is the display task's place.
-- **AF′** is the display task's border line counter.
-- **IY** must point at the system variables at all times. It is not saved either, and the display
-  task reads `MARGIN` and `CDFLAG` through it.
-- **I** tells the ULA where the character set is.
-- **Interrupts** must stay off in the program task: the display's interrupt routine is not a task
-  switch, and it would run the line loop on your registers.
+short of. Everything else the two tasks must simply not fight over: IX, AF′, IY, I and the interrupt
+setting all belong to the display. [Rules for your programs](#rules-for-your-programs), at the end
+of this part, lists them with their reasons.
 
 #### How much slower?
 
@@ -1406,6 +1321,11 @@ forth at the start and end of every border takes time too.
 Klive can measure it. A machine-code loop (`INC HL`, then `JP` back to it) gets **26.7%** of the
 T-states in SLOW mode and all of them in FAST mode. **FAST mode runs it 3.75 times faster.** BASIC
 is itself machine code in the ROM, so it slows down by about the same factor.
+
+An **NTSC** machine fares worse. It draws the same 193 text lines in a shorter frame, 263 lines with
+31-line borders, so the borders, your program's time, shrink. On paper a program gets at most 18.7%
+of the frame, about 5.4 times slower than in FAST mode. Measured on Klive's NTSC model, the same loop
+gets **17.3%**: **FAST mode runs it 5.8 times faster.**
 
 ### Starting and stopping the loop
 
@@ -1571,10 +1491,32 @@ KwLoop:
     jr z,KwLoop      ; not yet: wait
 ```
 
-In SLOW mode this little loop is where the key wait really waits. It is program-task code, so it
-spins during the borders, while the display task reads the keyboard once a frame, during VSYNC, and
-sets bit 0 of `CDFLAG` when a new key arrives. In FAST mode the `CALL Z` only came back because a key
-has arrived, so the loop's first test succeeds at once.
+In SLOW mode this little loop is where the key wait really waits. But nothing in the loop can ever
+change bit 0 of `CDFLAG`. Something else must, and it does so *between* two of the loop's
+instructions. That is possible because the loop is program-task code: twice a frame, at the end of
+each border, an NMI takes the CPU away from it (see "Switching tasks" above). One of the display task's turns is VSYNC,
+when the frame routine reads the keyboard. Right after that read, and a check that the key is not
+bouncing, comes this code in `DisplayFrame`:
+
+```z80klive
+; $0255: in DisplayFrame, after the keyboard read: the key exit
+    ld hl,$403B      ; HL = CDFLAG
+    res 0,(hl)       ; no new key yet
+    jr nz,$0264      ; the reading changed, or is still bouncing
+    bit 7,(hl)       ; steady: SLOW mode running?
+    set 0,(hl)       ; CDFLAG bit 0: a new, steady key reading
+    ret z            ; FAST mode: return to the key wait with it
+```
+
+`RES 0` clears the bit first: no new key yet. If the reading has changed, or is still bouncing,
+`JR NZ` skips the rest. Once the same reading has stayed steady, `SET 0,(HL)` sets bit 0. In SLOW
+mode `BIT 7` finds SLOW mode running, so `RET Z` is not taken and the frame carries on: VSYNC ends,
+and at the top border `BorderLines` hands the CPU back to the program task. The loop resumes exactly
+where it was stopped, with its own registers restored, so its HL still points at `CDFLAG`. Its next
+`BIT 0,(HL)` finds the bit set, and the key wait goes on to handle the key.
+
+In FAST mode the same lines also end the frame routine's call ("Two ways out" below), so the
+`CALL Z` comes back only once a key has arrived, and the loop's first test succeeds at once.
 
 #### Drawing while waiting
 
@@ -1654,21 +1596,16 @@ So carry comes out clear only when the lower 15 bits have run out *and* bit 15 w
 when a `PAUSE` count has run out. Then `RET NC` returns, and the `PAUSE` is over. In normal running,
 bit 15 is set, carry is set, and the frame carries on.
 
-The second exit comes right after the keyboard has been read and checked for bounce:
+The second exit is in the key code you met under "The wait", right after bit 0 of `CDFLAG` is set:
 
 ```z80klive
-; $0255: in DisplayFrame, after the keyboard read: the key exit
-    ld hl,$403B      ; HL = CDFLAG
-    res 0,(hl)       ; no new key yet
-    jr nz,$0264      ; the reading changed, or is still bouncing
     bit 7,(hl)       ; steady: SLOW mode running?
     set 0,(hl)       ; CDFLAG bit 0: a new, steady key reading
     ret z            ; FAST mode: return to the key wait with it
 ```
 
-When a new key reading has stayed steady, bit 0 of `CDFLAG` is set. In SLOW mode, `BIT 7` finds SLOW
-mode running, `RET Z` is not taken, and the frame carries on. In FAST mode `RET Z` returns, with the
-new key, to the key wait.
+In SLOW mode `RET Z` is not taken, as you saw. In FAST mode `BIT 7` finds SLOW mode *not* running,
+and `RET Z` returns, with the new key, to the key wait.
 
 That return has a visible side effect. It comes *after* the keyboard read, whose `IN` started VSYNC,
 and *before* the frame's `OUT ($FF)` that would have ended it. So `DisplayFrame` returns with **VSYNC
@@ -1680,7 +1617,8 @@ the famous FAST-mode flicker on every key press.
 #### While a program runs in FAST mode
 
 The rest of the time, your program (or the BASIC interpreter running it) has the whole CPU: no NMIs,
-no display interrupts, no display code at all. That is what makes FAST mode nearly 4 times faster.
+no display interrupts, no display code at all. That is what makes FAST mode nearly 4 times faster
+(nearly 6 on an NTSC machine).
 
 Why does the screen go blank while a BASIC program runs in FAST mode, rather than just freezing? The
 answer is VSYNC, which gets **stuck on**. As [Wilf Rigter describes the ZX81 video
@@ -1693,6 +1631,95 @@ ROM's routine at `$0F46`, which reads the keyboard with `IN A,($FE)` and never f
 the first BREAK check starts VSYNC and nothing ends it. The television receives a flat sync level, with
 neither HSYNC nor VSYNC to lock onto, and shows a blank screen until the program stops and the ROM
 draws frames again.
+
+### Rules for your programs
+
+Sharing one CPU with the display comes with a few rules for machine code. They follow from
+everything above, so each one now comes with its reason.
+
+#### Registers
+
+Because the Z80 draws the picture, some of its **registers belong to the display, not to your
+program**. The display code relies on them even while your program is running:
+
+| Register | The rule | Why | Where explained |
+|---|---|---|---|
+| **I** | Keep `$1E`. | The ULA takes the address of the character set from I (`$1E00`). With another value the screen shows the wrong shapes. Some high-resolution programs change it on purpose, for exactly this reason. | [Part 4: every opcode fetch](#what-happens-on-every-opcode-fetch) |
+| **IY** | Keep `$4000`, always. | The ROM reaches every system variable as `(IY+n)`. In SLOW mode the border routine reads `MARGIN` and `CDFLAG` through IY *while your program is running*, so IY must be right at every moment, not just when you call the ROM. | [Part 6: entering the border](#entering-the-border-the-frame-parks-its-place-in-ix) |
+| **IX** | Do not change it in SLOW mode. | It holds the frame routine's bookmark: the last border NMI jumps through it with `JP (IX)`. | [Part 6: entering the border](#entering-the-border-the-frame-parks-its-place-in-ix), [leaving it](#leaving-the-border-nmilast) |
+| **AF′** (A′ and F′) | Do not touch it in SLOW mode. | A′ is the counter of border lines. Every NMI swaps it in with `EX AF,AF'` and counts it up, and your own `EX AF,AF'` would swap it away from the NMIs. | [Part 6: counting the lines](#counting-the-lines) |
+| **HL′** | Restore it before your `USR` code returns. | `USR` is an operation of the ROM's calculator, which keeps its place in HL′ and carries on from there when your code returns. | — |
+| **Interrupts** | No `EI`, unless you set up the display's line loop on purpose (see below); keep interrupt mode 1. | With interrupts on, the A6 trick fires an interrupt as soon as R's bit 6 is clear during a refresh, which in ordinary code happens constantly, and the display's interrupt routine runs with whatever is in your registers. The ROM selects IM 1, so that the display's interrupt goes to `$0038`. | [Part 5: the A6 interrupt](#running-a-line-halt-and-an-interrupt-on-a6), [why no `EI`](#why-the-interrupt-routine-saves-no-registers) |
+| **SP** | Keep some free stack below SP. | In SLOW mode, the NMIs and the display code push onto *your* stack: your PC and four registers, plus a few return addresses on top. | [One stack for both](#one-stack-for-both) |
+
+What *is* free: AF, BC, DE and HL, of course. So are BC′ and DE′, though ROM routines you call may
+change them. R is free too: reading it is a popular way to get a random number, and the display
+reloads it before every line. In FAST mode, IX and AF′ are free as well: there are no NMIs, and the
+border routine sets IX itself whenever the ROM shows a frame.
+
+**About `EI`.** "No `EI`" really means "no `EI` unless you know exactly what will happen". With
+interrupt mode 1, every accepted interrupt lands in the ROM's line routine at `$0038`. That routine
+treats B, C, A and HL as its line counters and the address of a line, and jumps to HL. So interrupts
+are only safe with the CPU set up exactly as that routine expects. The ROM shows how: call
+`DisplayLines` (`$02B5`) with B, C, A and HL set up as Part 5 describes for the start of the text.
+The loop then runs your lines, and when B reaches 0 its `RET Z` returns to the instruction after your
+`CALL`, with interrupts off again. Klive confirms it: a FAST-mode program that called `DisplayLines`
+for one line got back exactly one interrupt later, with interrupts switched off. (In SLOW mode, do not
+try it: the border NMIs keep arriving while your program runs, and they would arrive in the middle
+of your lines.)
+
+Hi-res graphics programs break two of these rules on purpose: they change I and IX to take over the
+display. [Part 9](#part-9-high-resolution-graphics) shows how.
+
+#### Ports
+
+Two of the ULA's port rules matter while SLOW mode runs:
+
+- **Reading the keyboard is safe.** Your program only runs while the NMI generator is on, and then
+  an `IN` from port `$FE` only reads the key rows; it does not touch VSYNC. (This is why BASIC's own
+  BREAK check, which reads port `$FE` between statements, does no harm in SLOW mode.) Often you do
+  not even need to read the port: the display task reads the whole keyboard every frame and leaves
+  the result in the system variable `LAST_K` (`$4025`).
+- **Writing to a port can stop the display.** On output the ULA looks at address lines A0 and A1
+  only, and an `OUT` to any port with **A1 low**, such as `OUT ($FD),A`, switches the NMI generator
+  off. Then the border NMIs stop, the display task never gets the CPU back, and the picture is gone.
+  An `OUT` to a port with **A0 low** switches the generator on.
+
+Klive's emulator shows both. A machine-code loop that keeps reading port `$FE` in SLOW mode leaves
+the frame exactly as it was: the same NMIs, the same display interrupts, the same 311-line frames. A
+single `OUT ($FD),A` stops every NMI and every display interrupt, and the emulated television falls
+back on its flywheel, with no picture.
+
+#### The display file
+
+The ULA's bit 6 rule from Part 4 (steal and draw the bytes with bit 6 clear, let the others through
+as real instructions) has a trap for programs that write the display file themselves. The ROM's
+`PRINT` only ever puts
+character codes and `NEWLINE`s in the display file. But nothing stops your own program from writing
+there directly, with `POKE` or with machine code. If it writes a byte with **bit 6 set** (anything
+other than `$76`), the ULA does not steal it. The CPU **executes it as a real instruction**, right in
+the middle of the display code, with the display code's registers. What happens depends on the
+instruction. Three examples, tried on Klive's emulator by poking a byte into the first line of the
+screen:
+
+- **Harmless:** `$40` is `LD B,B`, which changes nothing. The line keeps its exact timing, and the
+  position simply shows no character, because the ULA only draws the bytes it steals.
+- **The picture breaks:** `$78` is `LD A,B`. It overwrites A, which holds the `$DD` that the
+  display code loads into R before every line (Part 5 explains why). With R loaded wrongly, the
+  interrupt that ends a line comes at the wrong moment. Some lines measured only 71 T-states
+  instead of 207, and the picture falls apart.
+- **The machine crashes:** `$C7` is `RST 0`, a jump to `$0000`, the power-on address. But the display
+  code had just enabled interrupts, and the start-up code never disables them, so stray display
+  interrupts keep hijacking the restart. In the test run the machine tumbled through more than
+  300,000 of them before it happened to restart cleanly, with the program gone.
+
+Other bytes with bit 6 set are just as dangerous. The `$C0`–`$FF` range is full of jumps, calls,
+returns and restarts that leave the display file for good. `$CB`, `$DD`, `$ED` and `$FD` are prefixes
+that swallow the next character codes as part of a longer instruction. And the `LD` instructions in
+`$40`–`$7F` can overwrite A, B, C, H or L, which the display code uses to time its lines, count
+them and find them. So write only
+character codes into the display file, and leave its `NEWLINE`s exactly where they are: an extra
+`$76` would end a line early and start one the ROM does not count.
 
 ## Part 8: The keyboard, in constant time
 
@@ -1989,7 +2016,7 @@ Step by step:
 So the ROM still does everything else: VSYNC, the borders, the keyboard. BASIC keeps running
 underneath and still reads its keys; only its text is no longer drawn.
 
-Hi-res breaks two of the rules from Part 2 on purpose. It changes **I**, because pointing I at RAM is
+Hi-res breaks two of the rules from Part 7 on purpose. It changes **I**, because pointing I at RAM is
 the whole idea, and it changes **IX**, because IX is how it takes over the display. A full screen
 needs 192 × 32 = 6,144 bytes of RAM, so it needs at least the 16K machine.
 
@@ -2093,6 +2120,26 @@ repository. Its `README.md` maps every ULA behaviour onto the Z80 hook that impl
   window.
 
 The ULA logic is ported from Thomas Harte's **Clock Signal** emulator (MIT licence).
+
+## The display routines at a glance
+
+Here are all the routines that make the picture, side by side, roughly in the order they run in a
+frame. The names are this article's own; the addresses are
+the ROM's.
+
+| Routine | Address | When it runs | Its job | Listed in |
+|---|---|---|---|---|
+| `DisplayFrame` | `$0229` | Once per frame. In SLOW mode always; in FAST mode only while the ROM waits for a key or a `PAUSE`. | The conductor. Counts `FRAMES`, makes VSYNC around the keyboard read, then calls the top border, the text and the bottom border, and starts again. | [The frame routine](#the-frame-routine) |
+| `Keyboard` | `$02BB` | Once per frame, called by `DisplayFrame`. | Reads the 8 key rows in a constant 772 T-states. Its first `IN` starts VSYNC. Also sets `MARGIN` from the TV standard. | [Part 8](#part-8-the-keyboard-in-constant-time) |
+| `BorderLines` | `$0292` | Twice per frame: top and bottom border. | Starts a border and keeps the frame's place in IX. In SLOW mode it sets A′ to `1 − MARGIN`, switches the NMIs on and returns into your program; in FAST mode it goes on to `FastBorder`. | [Entering the border](#entering-the-border-the-frame-parks-its-place-in-ix) |
+| `Nmi` (the NMI handler) | `$0066` | At every HSYNC while the NMI generator is on: each border line in SLOW mode. | Counts the border line in A′ and returns to your program straight away. | [Counting the lines](#counting-the-lines) |
+| `NmiLast` | `$006F` | At the last line of each SLOW-mode border. | Saves your program's registers, sets HL to the display file, `HALT`s for one more NMI to start in sync, switches the NMIs off, and jumps back into the frame through IX. | [Leaving the border](#leaving-the-border-nmilast) |
+| `DisplayLines` | `$02B5` | At the start of the text, and of each FAST-mode border. | Starts the line loop: loads R for the first line, leaves `$DD` in A, enables interrupts and jumps into the display file. | [Entering the border](#entering-the-border-the-frame-parks-its-place-in-ix) |
+| The display file | `D_FILE + $8000` | Once per scan line of text. | Not a routine anyone wrote, but code all the same: each character runs as a `NOP` that the ULA draws, and the `NEWLINE` runs as a `HALT` that waits for the interrupt. | [Part 4](#what-happens-on-every-opcode-fetch) |
+| `IntDisplay` (the INT handler) | `$0038` | At the end of every scan line of the text and of the FAST-mode borders. | The line loop. Counts scan lines in C and text lines in B, runs the same line again or moves to the next, and reloads R with `$DD`. Leaves through `RET Z` after the last line. | [Running a line](#running-a-line-halt-and-an-interrupt-on-a6) |
+| `FastBorder` | `$02A9` | Each border in FAST mode. | Draws `MARGIN` blank lines by running an empty display-file line through the line loop, then jumps back into the frame through IX. | [Entering the border](#entering-the-border-the-frame-parks-its-place-in-ix) |
+| Stopping SLOW mode | `$02E7` | Whenever the ROM needs every T-state for itself: before `SAVE`, `LOAD` and printing. | Waits for the next border NMI and switches the NMI generator off. The display loop is never resumed; it is simply abandoned. | [Starting and stopping the loop](#starting-and-stopping-the-loop) |
+| Starting SLOW mode | `$0207` | At start-up, after the `SLOW` command, and whenever the ROM has paused the display for its own work: at the end of `SAVE`, `LOAD` and printing, and when it stops with an error report. | Checks that the hardware produces display NMIs, saves your registers as `NmiLast` does, and enters `DisplayFrame` for the first time. | [Starting and stopping the loop](#starting-and-stopping-the-loop) |
 
 ## Summary
 
