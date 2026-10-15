@@ -65,7 +65,7 @@ export const ActivityBar = ({ order, activities }: Props) => {
       <ActivityButton
         kind="command"
         title="Settings"
-        iconName="settings-gear"
+        iconName="settings"
         clicked={async () => {
           await mainApi.runUiAction("open-settings");
         }}

@@ -5,6 +5,7 @@ import { Icon } from "./Icon";
 import { useOverlayRoot } from "./overlay/useOverlayRoot";
 import styles from "./ToolbarSplitButton.module.scss";
 import { iconSizes } from "@renderer/theming/tokens/dimensions";
+import { PRIMARY_ICON_SIZE } from "./toolbar-constants";
 
 export type ToolbarSplitButtonOption<TValue extends string> = {
   value: TValue;
@@ -118,8 +119,8 @@ export function ToolbarSplitButton<TValue extends string>({
         <Icon
           iconName={selectedOption.iconName}
           fill={enable ? selectedOption.fill : "--bgcolor-toolbarbutton-disabled"}
-          width={24}
-          height={24}
+          width={PRIMARY_ICON_SIZE}
+          height={PRIMARY_ICON_SIZE}
           opacity={enable ? 1.0 : 0.5}
         />
       </button>

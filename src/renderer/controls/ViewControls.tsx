@@ -19,7 +19,8 @@ import {
 } from "@common/settings/setting-const";
 import { MEDIA_TAPE } from "@common/structs/project-const";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { SECONDARY_ICON_SIZE } from "./toolbar-constants";
+import { SECONDARY_ICON_SIZE, TOOLBAR_BUTTON_SIZE } from "./toolbar-constants";
+import { ToolbarSplitAction } from "./ToolbarSplitAction";
 import { SOUND_LEVELS } from "@common/machines/emulator-levels";
 import {
   ContextMenu,
@@ -74,6 +75,8 @@ export const ViewControls = ({ recordingManagerRef }: Props) => {
       <IconButton
         iconName={stayOnTop ? "pinned" : "pin"}
         iconSize={SECONDARY_ICON_SIZE}
+        buttonWidth={TOOLBAR_BUTTON_SIZE}
+        buttonHeight={TOOLBAR_BUTTON_SIZE}
         fill="--color-toolbarbutton"
         selected={stayOnTop}
         title={"Stay on top"}
@@ -85,6 +88,8 @@ export const ViewControls = ({ recordingManagerRef }: Props) => {
       <IconButton
         iconName="vm"
         iconSize={SECONDARY_ICON_SIZE}
+        buttonWidth={TOOLBAR_BUTTON_SIZE}
+        buttonHeight={TOOLBAR_BUTTON_SIZE}
         fill="--color-toolbarbutton"
         selected={showInstantScreen}
         title="Turn on/off instant screen"
@@ -98,6 +103,8 @@ export const ViewControls = ({ recordingManagerRef }: Props) => {
         <IconButton
           iconName="scan-line"
           iconSize={SECONDARY_ICON_SIZE}
+          buttonWidth={TOOLBAR_BUTTON_SIZE}
+          buttonHeight={TOOLBAR_BUTTON_SIZE}
           fill="--color-toolbarbutton"
           selected={showBeamPosition}
           title="Show/Hide the beam position while paused"
@@ -122,6 +129,8 @@ export const ViewControls = ({ recordingManagerRef }: Props) => {
           <IconButton
             iconName={mouseCaptured ? "mouse" : "mouse-off"}
             iconSize={SECONDARY_ICON_SIZE}
+            buttonWidth={TOOLBAR_BUTTON_SIZE}
+            buttonHeight={TOOLBAR_BUTTON_SIZE}
             fill="--color-toolbarbutton"
             selected={mouseCaptured}
             enable={mouseCaptureEnabled}
@@ -142,6 +151,8 @@ export const ViewControls = ({ recordingManagerRef }: Props) => {
       <IconButton
         iconName="keyboard"
         iconSize={SECONDARY_ICON_SIZE}
+        buttonWidth={TOOLBAR_BUTTON_SIZE}
+        buttonHeight={TOOLBAR_BUTTON_SIZE}
         fill="--color-toolbarbutton"
         selected={showKeyboard}
         title="Show/Hide keyboard"
@@ -150,36 +161,16 @@ export const ViewControls = ({ recordingManagerRef }: Props) => {
         }}
       />
       <ToolbarSeparator />
-      {!muted && (
-        <IconButton
-          iconName="mute"
-          iconSize={SECONDARY_ICON_SIZE}
-          fill="--color-toolbarbutton"
-          title="Mute sound"
-          clicked={async () => {
-            dispatch(muteSoundAction(true));
-            await saveProject();
-          }}
-        />
-      )}
-      {muted && (
-        <IconButton
-          iconName="unmute"
-          iconSize={SECONDARY_ICON_SIZE}
-          fill="--color-toolbarbutton"
-          title="Unmute sound"
-          clicked={async () => {
-            dispatch(muteSoundAction(false));
-            await saveProject();
-          }}
-        />
-      )}
-      <IconButton
-        iconName="chevron-down"
-        iconSize={SECONDARY_ICON_SIZE}
+      <ToolbarSplitAction
+        iconName={muted ? "unmute" : "mute"}
         fill="--color-toolbarbutton"
-        title="Sound level"
-        clicked={(e) => soundMenuApi.showAt(e.currentTarget)}
+        title={muted ? "Unmute sound" : "Mute sound"}
+        clicked={async () => {
+          dispatch(muteSoundAction(!muted));
+          await saveProject();
+        }}
+        dropdownTitle="Sound level"
+        dropdownClicked={(e) => soundMenuApi.showAt(e.currentTarget)}
       />
       {soundMenu.contextVisible && (
         <ContextMenu state={soundMenu} onClickOutside={soundMenuApi.conceal}>
@@ -201,6 +192,8 @@ export const ViewControls = ({ recordingManagerRef }: Props) => {
         <IconButton
           iconName="rocket"
           iconSize={SECONDARY_ICON_SIZE}
+          buttonWidth={TOOLBAR_BUTTON_SIZE}
+          buttonHeight={TOOLBAR_BUTTON_SIZE}
           fill="--color-toolbarbutton"
           title="Fast LOAD mode"
           selected={fastLoad}
@@ -213,6 +206,8 @@ export const ViewControls = ({ recordingManagerRef }: Props) => {
         <IconButton
           iconName="reverse-tape"
           iconSize={SECONDARY_ICON_SIZE}
+          buttonWidth={TOOLBAR_BUTTON_SIZE}
+          buttonHeight={TOOLBAR_BUTTON_SIZE}
           fill="--color-toolbarbutton"
           title="Rewind the tape"
           enable={!!tapeFile}
@@ -224,9 +219,8 @@ export const ViewControls = ({ recordingManagerRef }: Props) => {
       )}
       <ToolbarSeparator />
       {recordingAvailable && (
-        <IconButton
-          iconName="record"
-          iconSize={SECONDARY_ICON_SIZE}
+        <ToolbarSplitAction
+          iconName="record-start"
           fill={
             !recState || recState === "idle"
               ? undefined
@@ -251,15 +245,8 @@ export const ViewControls = ({ recordingManagerRef }: Props) => {
               ? () => recordingManagerRef?.current?.arm(undefined, isRunning)
               : () => recordingManagerRef?.current?.disarm()
           }
-        />
-      )}
-      {recordingAvailable && (
-        <IconButton
-          iconName="chevron-down"
-          iconSize={SECONDARY_ICON_SIZE}
-          fill="--color-toolbarbutton"
-          title="Recordings"
-          clicked={(e) => recordMenuApi.showAt(e.currentTarget)}
+          dropdownTitle="Recordings"
+          dropdownClicked={(e) => recordMenuApi.showAt(e.currentTarget)}
         />
       )}
       {recordMenu.contextVisible && (

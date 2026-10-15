@@ -210,22 +210,22 @@ export const activityRegistry: Activity[] = [
   {
     id: ACTIVITY_DEBUG_ID,
     title: "Debug",
-    iconName: "debug-alt"
+    iconName: "debug"
   },
   {
     id: ACTIVITY_MACHINE_INFO_ID,
     title: "Machine info",
-    iconName: "output"
+    iconName: "cpu"
   },
   {
     id: ACTIVITY_SCRIPTING_ID,
     title: "Scripting",
-    iconName: "symbol-event"
+    iconName: "scroll-text"
   },
   {
     id: ACTIVITY_TEST_ID,
     title: "Testing",
-    iconName: "beaker",
+    iconName: "flask-conical",
     // --- Testing → Add unit-test support, and the runs (`.plans/Z80_UNIT_TESTS_PLAN.md` D4, D16)
     commands: TestingCommands
   }

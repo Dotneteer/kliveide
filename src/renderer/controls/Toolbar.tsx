@@ -11,7 +11,7 @@ import { ViewControls } from "./ViewControls";
 import { DISASSEMBLY_PANEL_ID, MEMORY_PANEL_ID } from "@common/state/common-ids";
 import { SETTING_IDE_SYNC_BREAKPOINTS } from "@common/settings/setting-const";
 import type { RecordingManager } from "@renderer/appEmu/recording/RecordingManager";
-import { SECONDARY_ICON_SIZE } from "./toolbar-constants";
+import { SECONDARY_ICON_SIZE, TOOLBAR_BUTTON_SIZE } from "./toolbar-constants";
 import { NavigationControls } from "@renderer/features/navigation/NavigationControls";
 
 type Props = {
@@ -53,10 +53,9 @@ export const Toolbar = ({ ide, kliveProjectLoaded, recordingManagerRef }: Props)
         height="--strip-toolbar"
         backgroundColor="--bgcolor-toolbar"
         paddingHorizontal="--space-2"
-        // 2px, not 4px: with 4px padding a 30px content box would clip the buttons, which are
-        // 32px tall (30 + 1px padding each side). At the 42px strip height (see STRIP.toolbar in
-        // dimensions.ts) 2px padding leaves a 38px content box - 3px of clearance above and below
-        // each button.
+        // 2px, not 4px: the buttons are 26px tall (24 + 1px padding each side). At the 36px strip
+        // height (see STRIP.toolbar in dimensions.ts) 2px padding leaves a 32px content box - 3px
+        // of clearance above and below each button.
         paddingVertical="--space-0_5"
         verticalContentAlignment="center"
         // The buttons used to abut with no gap at all, so the toolbar read as one undifferentiated
@@ -70,8 +69,10 @@ export const Toolbar = ({ ide, kliveProjectLoaded, recordingManagerRef }: Props)
           <>
             <ToolbarSeparator />
             <IconButton
-              iconName="sync-ignored"
+              iconName="crosshair"
               iconSize={SECONDARY_ICON_SIZE}
+              buttonWidth={TOOLBAR_BUTTON_SIZE}
+              buttonHeight={TOOLBAR_BUTTON_SIZE}
               selected={syncSourceBps}
               fill="--color-toolbarbutton-orange"
               title="Sync the source with the current breakpoint"
@@ -81,8 +82,10 @@ export const Toolbar = ({ ide, kliveProjectLoaded, recordingManagerRef }: Props)
             />
             <ToolbarSeparator />
             <IconButton
-              iconName="memory-icon"
+              iconName="binary"
               iconSize={SECONDARY_ICON_SIZE}
+              buttonWidth={TOOLBAR_BUTTON_SIZE}
+              buttonHeight={TOOLBAR_BUTTON_SIZE}
               fill="--color-toolbarbutton-orange"
               title="Show Memory Panel"
               selected={isMemoryOpen}
@@ -95,8 +98,10 @@ export const Toolbar = ({ ide, kliveProjectLoaded, recordingManagerRef }: Props)
               }}
             />
             <IconButton
-              iconName="disassembly-icon"
+              iconName="logs"
               iconSize={SECONDARY_ICON_SIZE}
+              buttonWidth={TOOLBAR_BUTTON_SIZE}
+              buttonHeight={TOOLBAR_BUTTON_SIZE}
               fill="--color-toolbarbutton-orange"
               title="Show Disassembly Panel"
               selected={isDisassemblyOpen}

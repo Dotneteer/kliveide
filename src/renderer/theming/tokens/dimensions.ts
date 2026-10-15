@@ -36,14 +36,14 @@ export const RADIUS = {
  * inversion where the least important strip in the window was the tallest. It only became viable
  * once the `.isMonospace` collision was fixed in Phase 0.4; before that the readouts were 16px.
  *
- * `toolbar` is the one exception to the 38px collapse: its tallest child is a 32px `IconButton`
- * (see `Toolbar.tsx`), and 38px only left 1px of clearance above and below it — indistinguishable
- * from touching, especially for a `selected` button's border ring, which sits right at the button's
- * own edge. 42px gives that button 3px of clearance on each side without changing `Toolbar.tsx`'s
- * padding, and restores the room the strip had pre-modernization.
+ * `toolbar` keeps its own value: its tallest child is a 26px `IconButton` (a 24px box plus 1px
+ * padding; see `TOOLBAR_BUTTON_SIZE` in `controls/toolbar-constants.ts`). Less than 3px of
+ * clearance above and below reads as touching, especially for a `selected` button's border ring,
+ * which sits right at the button's own edge. With `Toolbar.tsx`'s 2px vertical padding, 36px gives
+ * exactly that 3px. It was 42px around 32px buttons until the toolbar was shrunk by 20%.
  */
 export const STRIP = {
-  toolbar: "42px",
+  toolbar: "36px",
   statusbar: "26px",
   tabbar: "36px",
   sidebarHeader: "34px",
