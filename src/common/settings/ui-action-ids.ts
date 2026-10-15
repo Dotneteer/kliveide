@@ -5,6 +5,8 @@
  */
 export type UiActionId =
   | "open-settings"
+  /** The Settings dialog reports the page it shows, so the next page-less open returns to it */
+  | "settings:page-shown"
   | "open-machine-selector"
   | "toggle-ide-emu-recording"
   | "set:clockMultiplier"

@@ -2,15 +2,20 @@ import classnames from "classnames";
 import { noop } from "@renderer/utils/stablerefs";
 import { Icon } from "../../controls/Icon";
 import { TooltipFactory, useTooltipRef } from "../../controls/Tooltip";
-import { Activity } from "../../abstractions/Activity";
 import styles from "./ActivityButton.module.scss";
 
 /**
  * Component properties
  */
 type Props = {
-  activity: Activity;
-  active: boolean;
+  title: string;
+  iconName: string;
+  /**
+   * An activity is a tab (`aria-selected` tracks `active`); a command button at the foot of the
+   * bar, such as Settings, is a plain button and never shows as active.
+   */
+  kind?: "tab" | "command";
+  active?: boolean;
   clicked?: () => void;
 };
 
@@ -25,17 +30,24 @@ type Props = {
  * hover treatment could not transition and lived in a different place from every other hover in the
  * app; `currentColor` now carries it.
  */
-export const ActivityButton = ({ activity, active = false, clicked = noop }: Props) => {
+export const ActivityButton = ({
+  title,
+  iconName,
+  kind = "tab",
+  active = false,
+  clicked = noop
+}: Props) => {
   const ref = useTooltipRef<HTMLButtonElement>();
+  const isTab = kind === "tab";
 
   return (
     <button
       ref={ref}
       type="button"
-      role="tab"
-      aria-selected={active}
-      aria-label={activity.title}
-      className={classnames(styles.activityButton, { [styles.active]: active })}
+      role={isTab ? "tab" : undefined}
+      aria-selected={isTab ? active : undefined}
+      aria-label={title}
+      className={classnames(styles.activityButton, { [styles.active]: isTab && active })}
       onClick={clicked}
     >
       <TooltipFactory
@@ -43,10 +55,10 @@ export const ActivityButton = ({ activity, active = false, clicked = noop }: Pro
         placement="right"
         offsetX={-8}
         offsetY={16}
-        content={activity.title}
+        content={title}
       />
       <div className={styles.iconWrapper}>
-        <Icon iconName={activity.iconName} width={24} height={24} fill="currentColor" />
+        <Icon iconName={iconName} width={24} height={24} fill="currentColor" />
       </div>
     </button>
   );

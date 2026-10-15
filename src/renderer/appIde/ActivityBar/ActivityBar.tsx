@@ -30,20 +30,23 @@ export const ActivityBar = ({ order, activities }: Props) => {
     <div
       className={styles.activityBar}
       style={{ order }}
-      // The buttons are role="tab"; the strip that owns them is the tab list.
-      role="tablist"
-      aria-orientation="vertical"
-      aria-label="Activities"
       onContextMenu={(e) => {
         e.preventDefault();
         menuApi.show(e);
       }}
     >
-      {[
-        ...activities.map((act) => (
+      {/* The activity buttons are role="tab"; the strip that owns them is the tab list. */}
+      <div
+        className={styles.activities}
+        role="tablist"
+        aria-orientation="vertical"
+        aria-label="Activities"
+      >
+        {activities.map((act) => (
           <ActivityButton
             key={act.id}
-            activity={act}
+            title={act.title}
+            iconName={act.iconName}
             active={activeActitity === act.id}
             clicked={async () => {
               if (activeActitity === act.id) {
@@ -56,8 +59,17 @@ export const ActivityBar = ({ order, activities }: Props) => {
               }
             }}
           />
-        ))
-      ]}
+        ))}
+      </div>
+      {/* Pinned to the foot of the bar, outside the tab list: it opens a dialog, not a sidebar */}
+      <ActivityButton
+        kind="command"
+        title="Settings"
+        iconName="settings-gear"
+        clicked={async () => {
+          await mainApi.runUiAction("open-settings");
+        }}
+      />
       {menuState.contextVisible && (
         <ContextMenu state={menuState} onClickOutside={menuApi.conceal}>
           <ContextMenuItem

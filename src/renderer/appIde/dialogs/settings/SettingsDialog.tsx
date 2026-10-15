@@ -38,7 +38,8 @@ export const SettingsDialog = ({ data, onClose }: Props) => {
     const ports: SettingsPorts = {
       setSetting: (settingId, value) => mainApi.setGlobalSettingsValue(settingId, value),
       runAction: (actionId, value) => mainApi.runUiAction(actionId, value),
-      close: () => onCloseRef.current()
+      close: () => onCloseRef.current(),
+      pageShown: (page) => void mainApi.runUiAction("settings:page-shown", page)
     };
     return new SettingsController(ports, data?.page, env);
   });

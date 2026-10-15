@@ -32,6 +32,7 @@ import {
   SJASMPLUS_INTEGRATION_DIALOG
 } from "@messaging/dialog-ids";
 import { mainStore } from "./main-store";
+import { rememberSettingsPage, settingsPageToOpen } from "./settings-page-memory";
 import { saveKliveProject } from "./projects";
 import {
   appSettings,
@@ -82,9 +83,12 @@ export async function displayDialogInFocusedWindow(dialogId: number, data?: unkn
     : await getEmuApi().displayDialog(dialogId, data);
 }
 
-/** Opens the Settings dialog in the focused window */
+/**
+ * Opens the Settings dialog in the focused window, on `page` or, when none is named, on the page
+ * it was last showing
+ */
 export async function openSettingsDialog(page?: SettingsPageId): Promise<void> {
-  const data: SettingsDialogData = { page };
+  const data: SettingsDialogData = { page: settingsPageToOpen(page) };
   await displayDialogInFocusedWindow(SETTINGS_DIALOG, data);
 }
 
@@ -219,6 +223,8 @@ export async function runUiAction(actionId: UiActionId, value?: unknown): Promis
     case "open-settings":
       await openSettingsDialog(value as SettingsPageId | undefined);
       return undefined;
+    case "settings:page-shown":
+      return rememberSettingsPage(value) ? undefined : `Unknown Settings page: ${value}`;
     case "toggle-ide-emu-recording": {
       // --- The same rules as Machine › Record: one recording at a time, and a visible IDE
       const emu = mainStore.getState()?.emulatorState;
