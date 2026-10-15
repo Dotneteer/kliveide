@@ -38,6 +38,13 @@ import { fillCoreBytes, writeCoreBytes } from "@emu/machines/reverse/coreMemoryW
 /** Frames between the end of a load and the typed RUN: the ROM is still printing its report */
 const AUTO_RUN_DELAY_FRAMES = 25;
 
+/**
+ * The lines after which the core's emulated TV ends a frame that got no VSYNC (its vertical
+ * flywheel): `ZX8081_FLYWHEEL_LINES_PAL` and `_NTSC` in `wasm/zx8081/zx8081-video.c`
+ */
+const ZX8081_FLYWHEEL_LINES_PAL = 390;
+const ZX8081_FLYWHEEL_LINES_NTSC = 328;
+
 /** Whether a machine property holds a ZX80/ZX81 program file (a Spectrum tape is an array of blocks) */
 function isProgramFile(value: unknown): value is ZxProgramFile {
   return (
@@ -689,13 +696,27 @@ export class Zx8081WasmV2Machine extends Zx8081WasmHost implements IExecutionHis
     return this.screenPixelBytes!;
   }
 
-  renderInstantScreen(_savedPixelBuffer?: Uint32Array): Uint32Array {
-    return this.getPixelBuffer();
+  /**
+   * No usable sync in the last frame, for the TV noise setting: the TV's vertical flywheel ended it
+   * (no VSYNC came: 390 lines, 328 on NTSC, as in `zx8081-video.c`) and the picture is one flat
+   * level. That is a ZX81 running a program in FAST mode (VSYNC stuck on) or a ZX80 computing. A
+   * picture that still has something on it, such as the stripes of `SAVE` and `LOAD`, is not lost:
+   * a real TV showed those. Reads only, so it never changes the machine.
+   */
+  isVideoSignalLost(): boolean {
+    const runtime = this.requireWasmV2Runtime();
+    const flywheelLines = this.hardware.ntsc ? ZX8081_FLYWHEEL_LINES_NTSC : ZX8081_FLYWHEEL_LINES_PAL;
+    if (runtime.exports.zx8081GetLastFrameLines() < flywheelLines) return false;
+    const pixels = this.screenPixels!;
+    const level = pixels[0];
+    for (let i = 1; i < pixels.length; i++) {
+      if (pixels[i] !== level) return false;
+    }
+    return true;
   }
 
-  /** The TV around the picture: the frame's own white border reaches the edge */
-  getScreenSurroundColor(): number {
-    return 0xffffffff;
+  renderInstantScreen(_savedPixelBuffer?: Uint32Array): Uint32Array {
+    return this.getPixelBuffer();
   }
 
   /**

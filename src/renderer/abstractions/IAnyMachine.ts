@@ -150,6 +150,14 @@ export interface IAnyMachine extends IAnyCpu, IMachineEventHandler {
   getPixelBufferBytes?(): Uint8ClampedArray;
 
   /**
+   * Whether the last complete frame had no usable sync, so that a real television would have shown
+   * noise rather than a picture (a ZX81 running a program in FAST mode, a ZX80 computing). The
+   * screen shows TV noise for it when the setting asks for it. Reading it never changes the
+   * machine; a machine without it always has a picture.
+   */
+  isVideoSignalLost?(): boolean;
+
+  /**
    * This method renders the entire screen frame as the shadow screen
    * @param savedPixelBuffer Optional pixel buffer to save the rendered screen
    * @returns The pixel buffer that represents the previous screen

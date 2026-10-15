@@ -553,6 +553,14 @@ what it last painted rather than COM.LCDON, so frame and picture never disagree)
 `getScreenSurroundColor()`, in the pixel buffer's ABGR packing. It is not a token. It is the
 machine's colour, the same in both themes, and changes with the machine's state.
 
+**An effect that imitates the TV is drawn on the canvas, never into the machine's picture.** The
+scanline effect and the ZX80/81 TV noise (`features/emulator/tvNoiseEffect.ts`, shown when the
+machine reports `isVideoSignalLost()` and the setting is on) are what a television did to the
+signal, not what the machine sent. So they are applied on the way to the screen canvas only: the
+pixel buffer stays exactly as the core made it, and screenshots, recordings and the screen golden
+tests keep comparing the machine's real picture. Their greys are raw levels, not tokens, for the same
+reason as the surround above: they belong to the emulated picture, in both themes alike.
+
 **A user who has learned one control should not have to learn it twice.** The sprite editor's bank
 switch is the sidebar's, deliberately — same two segments, same meaning (*the fill is the bank you
 are looking at, the ring is the bank the machine is drawing with*), same default of following the

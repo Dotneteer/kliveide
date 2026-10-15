@@ -19,6 +19,11 @@ routine the ROM runs. So both of its modes work as they did: SLOW mode computes 
 same time, and FAST mode shows no picture while a program runs. Programs that draw their own
 hi-res graphics also work.
 
+While a FAST-mode program runs, the machine sends the television no usable sync. Klive shows a black
+screen for it by default. Turn on **Settings › Emulator › Show TV noise without sync** to see the
+noise a real television showed instead; a ZX80 gets it too, whenever it computes. The setting changes
+only the display, not the machine.
+
 ## Typing
 
 The ZX81 has no separate keys for its keywords: the key you press means a keyword or a letter

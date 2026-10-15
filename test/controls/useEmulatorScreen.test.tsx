@@ -415,4 +415,123 @@ describe("useEmulatorScreen", () => {
       expect(onHints.mock.calls[1][0].minimum).toEqual(onHints.mock.calls[0][0].minimum);
     });
   });
+
+  /*
+   * TV noise: with the setting on, a machine that reports a lost signal (a ZX81 in FAST mode while a
+   * program runs) is drawn as noise, without reading its pixel buffer. Otherwise nothing changes.
+   */
+  describe("TV noise in place of a picture without sync", () => {
+    async function drawOnce(tvNoise: boolean, signalLost: boolean) {
+      if (typeof ImageData === "undefined") {
+        (globalThis as any).ImageData = class TestImageData {
+          data: Uint8ClampedArray;
+          width: number;
+          height: number;
+          constructor(dataOrWidth: Uint8ClampedArray | number, widthOrHeight: number, height?: number) {
+            if (typeof dataOrWidth === "number") {
+              this.width = dataOrWidth;
+              this.height = widthOrHeight;
+              this.data = new Uint8ClampedArray(this.width * this.height * 4);
+            } else {
+              this.data = dataOrWidth;
+              this.width = widthOrHeight;
+              this.height = height ?? 0;
+            }
+          }
+        };
+      }
+      vi.doMock("@renderer/core/RendererProvider", () => ({
+        useGlobalSetting: (id: string) => (id === "emuOptions.tvNoise" ? tvNoise : "off")
+      }));
+      vi.doMock("@renderer/core/useResizeObserver", () => ({ useResizeObserver: vi.fn() }));
+
+      const drawn: ImageData[] = [];
+      vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(function getMockContext(
+        this: HTMLCanvasElement
+      ) {
+        return {
+          createImageData: vi.fn((width: number, height: number) => new ImageData(width, height)),
+          drawImage: vi.fn(),
+          globalCompositeOperation: "source-over",
+          imageSmoothingEnabled: false,
+          putImageData: vi.fn((image: ImageData) => {
+            if (this.dataset.kind !== "screen") drawn.push(image);
+          })
+        } as unknown as CanvasRenderingContext2D;
+      });
+      const originalCreateElement = document.createElement.bind(document);
+      vi.spyOn(document, "createElement").mockImplementation((tagName: string) => {
+        const element = originalCreateElement(tagName);
+        if (tagName.toLowerCase() === "canvas") (element as HTMLCanvasElement).dataset.kind = "temp";
+        return element;
+      });
+
+      const W = 8;
+      const H = 6;
+      const getPixelBuffer = vi.fn(() => new Uint32Array(W * H).fill(0xff000000));
+      const getPixelBufferBytes = vi.fn(() => new Uint8ClampedArray(W * H * 4));
+      const isVideoSignalLost = vi.fn(() => signalLost);
+      const controllerRef = {
+        current: {
+          machine: {
+            getBufferStartOffset: () => 0,
+            getPixelBuffer,
+            getPixelBufferBytes,
+            isVideoSignalLost,
+            screenHeightInPixels: H,
+            screenWidthInPixels: W
+          }
+        }
+      };
+      const hostDiv = document.createElement("div");
+      Object.defineProperty(hostDiv, "offsetWidth", { value: 40 });
+      Object.defineProperty(hostDiv, "offsetHeight", { value: 40 });
+      document.body.appendChild(hostDiv);
+
+      const { useEmulatorScreen } = await import("@renderer/features/emulator/useEmulatorScreen");
+      const { result } = renderHook(() =>
+        useEmulatorScreen({ current: hostDiv } as unknown as MutableRefObject<HTMLDivElement>, controllerRef as any)
+      );
+      const screenCanvas = document.createElement("canvas");
+      screenCanvas.dataset.kind = "screen";
+      result.current.screenElement.current = screenCanvas;
+      act(() => {
+        result.current.updateScreenDimensions();
+        result.current.displayScreenData();
+      });
+      return { drawn, getPixelBuffer, getPixelBufferBytes, isVideoSignalLost };
+    }
+
+    it("draws noise, not the machine's buffer, when the setting is on and the signal is lost", async () => {
+      const { drawn, getPixelBuffer, getPixelBufferBytes } = await drawOnce(true, true);
+      expect(getPixelBuffer).not.toHaveBeenCalled();
+      expect(getPixelBufferBytes).not.toHaveBeenCalled();
+      // --- Sizing the screen draws too, so count no draws: check that every one of them is noise.
+      // --- Opaque greys that vary, where the machine's own picture was flat black
+      expect(drawn.length).toBeGreaterThan(0);
+      for (const image of drawn) {
+        const data = image.data;
+        const greys = new Set<number>();
+        for (let i = 0; i < data.length; i += 4) {
+          expect(data[i + 1]).toBe(data[i]);
+          expect(data[i + 2]).toBe(data[i]);
+          expect(data[i + 3]).toBe(255);
+          greys.add(data[i]);
+        }
+        expect(greys.size).toBeGreaterThan(4);
+      }
+    });
+
+    it("draws the machine's picture when the signal is fine", async () => {
+      const { getPixelBufferBytes, isVideoSignalLost } = await drawOnce(true, false);
+      expect(isVideoSignalLost).toHaveBeenCalled();
+      expect(getPixelBufferBytes).toHaveBeenCalled();
+    });
+
+    it("draws the machine's picture, and does not even ask, when the setting is off", async () => {
+      const { getPixelBufferBytes, isVideoSignalLost } = await drawOnce(false, true);
+      expect(isVideoSignalLost).not.toHaveBeenCalled();
+      expect(getPixelBufferBytes).toHaveBeenCalled();
+    });
+  });
 });

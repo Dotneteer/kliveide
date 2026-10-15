@@ -4,6 +4,7 @@ import { useResizeObserver } from "@renderer/core/useResizeObserver";
 import { useGlobalSetting } from "@renderer/core/RendererProvider";
 import {
   SETTING_EMU_SCANLINE_EFFECT,
+  SETTING_EMU_TV_NOISE,
   SETTING_EMU_ZOOM_STEP
 } from "@common/settings/setting-const";
 import { normalizeZoomStep, snapToZoomStep } from "@common/settings/zoom-steps";
@@ -17,6 +18,7 @@ import {
   getScanlineDarkening,
   type ScanlineIntensity
 } from "./scanlineEffect";
+import { fillTvNoise, type TvNoiseState } from "./tvNoiseEffect";
 
 /**
  * How long the layout must be still before the window size hints are sent (see `scheduleHints`)
@@ -52,6 +54,8 @@ export function useEmulatorScreen(
   onContentSizeHintsChanged?: (hints: EmuContentSizeHints) => void
 ) {
   const scanlineEffect = useGlobalSetting(SETTING_EMU_SCANLINE_EFFECT);
+  // --- TV noise in place of a picture without sync (ZX80/81); the machine decides when that is
+  const tvNoise = useGlobalSetting(SETTING_EMU_TV_NOISE);
   /*
    * How fine the fit below is allowed to be: whole, half or quarter multiples of the machine's
    * screen. Normalized here rather than trusted, because the value comes from a settings file
@@ -79,6 +83,8 @@ export function useEmulatorScreen(
   const imageBuffer8 = useRef<Uint8Array>();
   const pixelData = useRef<Uint32Array>();
   const currentScanlineEffect = useRef<ScanlineIntensity>("off");
+  const currentTvNoise = useRef(false);
+  const tvNoiseState = useRef<TvNoiseState>({ seed: 0 });
   const screenCtxRef = useRef<CanvasRenderingContext2D | null>(null);
   const screenImageDataRef = useRef<ImageData | null>(null);
   const directScreenImageDataRef = useRef<ImageData | null>(null);
@@ -102,6 +108,10 @@ export function useEmulatorScreen(
   useEffect(() => {
     currentScanlineEffect.current = (scanlineEffect || "off") as ScanlineIntensity;
   }, [scanlineEffect]);
+
+  useEffect(() => {
+    currentTvNoise.current = !!tvNoise;
+  }, [tvNoise]);
 
   const configureScreen = useCallback((): void => {
     const dataLen = (shadowCanvasWidth.current ?? 0) * (shadowCanvasHeight.current ?? 0) * 4;
@@ -334,6 +344,8 @@ export function useEmulatorScreen(
 
   const displayScreenData = useCallback((): void => {
     syncSurroundColor();
+    // --- No usable sync, and the setting asks for TV noise
+    const showTvNoise = currentTvNoise.current && !!controllerRef.current?.machine?.isVideoSignalLost?.();
     if (!pixelData.current) return;
     const screenEl = screenElement.current;
     if (!screenEl) return;
@@ -364,6 +376,21 @@ export function useEmulatorScreen(
     const visiblePixels = shadowCanvasWidth.current * shadowCanvasHeight.current;
     const scanlineIntensity = currentScanlineEffect.current;
     const darkening = getScanlineDarkening(scanlineIntensity);
+
+    // --- No usable sync: draw what a real TV showed, noise, in place of the (flat) picture. Only the
+    // --- canvas changes; the machine's pixel buffer stays as the machine made it.
+    if (showTvNoise) {
+      fillTvNoise(screenImageData.data, screenImageData.width, screenImageData.height, tvNoiseState.current);
+      const tempCanvas = getTempCanvas();
+      if (!tempCanvas) return;
+      if (darkening === 0.0) {
+        renderWithoutScanlines(screenCtx, screenEl, screenImageData, tempCanvas);
+      } else {
+        renderWithScanlines(screenCtx, screenEl, screenImageData, tempCanvas, scanlineIntensity);
+      }
+      return;
+    }
+
     const directScreenBytes = ctrl?.machine?.getPixelBufferBytes?.();
     if (darkening === 0.0 && directScreenBytes) {
       const byteStart = startIndex * 4;
