@@ -825,6 +825,11 @@ frames, LCD, Blink, audio) proved identical under both cores (`src/emu/machines/
 - `emuOptions.keyboardPanelHeights` has no per-machine default to set; the ZX81 keyboard zooms to fit.
 - The CPU panel has no "last opcode" field; the executed $00 is `machine.opCode` (debugger test).
 - The ZX80 has its own virtual keyboard (§8.1.9); with the 8K ROM it shows the ZX81's.
+- The BASIC Listing view lists both machines (`zx8081BasicListing.ts`), following the ROMs' LIST:
+  a line runs to its NEWLINE (the ZX81's length field is not what LIST follows), line numbers print
+  their thousands as one character ($1C + n, so 14393 is `E393`), and each ROM's token spacing
+  (ZX81 TOKENS $094B; ZX80 $0584/$05A8, where printing a space keeps the "space printed" state).
+  `test/zx8081-hw/basic-listing.test.ts` compares the view with the ROMs' own screens.
 
 **Docs:** `docs/content/howto/zx81.mdx` and the machine-types entries; the screenshots come from
 `scripts/doc-shots/recipes/zx81.cjs`, which checks the machine in the running app (keyboard, typing,

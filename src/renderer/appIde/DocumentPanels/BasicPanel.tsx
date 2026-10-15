@@ -13,6 +13,8 @@ import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import { useEmuStateListener } from "../useStateRefresh";
 import { BasicLine, BasicLineSpan, BasicProgramBuffer, getMemoryWord } from "./BasicLine";
 import { decodeBasicProgram } from "./basicListing";
+import { decodeZx8081Program, type Zx8081BasicKind, zx8081ProgramArea } from "./zx8081BasicListing";
+import { MC_ZX80_ROM8K, MI_ZX80, MI_ZX81 } from "@common/machines/constants";
 import styles from "./BasicPanel.module.scss";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
 import classnames from "classnames";
@@ -43,6 +45,18 @@ const BasicPanel = ({ document, viewState }: DocumentProps<BasicViewState>) => {
   const machineState = useSelector((s) => s.emulatorState?.machineState);
   const { machineService } = useAppServices();
   const machineCharSet = machineService.getMachineInfo()?.machine?.charSet;
+  // --- The ZX81 and ZX80 keep their programs in their own formats; a ZX80 with the 8K ROM runs the
+  // --- ZX81's BASIC
+  const machineId = useSelector((s) => s.emulatorState?.machineId);
+  const zx80Rom8k = useSelector((s) => s.emulatorState?.config?.[MC_ZX80_ROM8K] === true);
+  const zx8081Kind: Zx8081BasicKind | undefined =
+    machineId === MI_ZX81 || (machineId === MI_ZX80 && zx80Rom8k)
+      ? "zx81"
+      : machineId === MI_ZX80
+        ? "zx80"
+        : undefined;
+  const zx8081KindRef = useRef(zx8081Kind);
+  zx8081KindRef.current = zx8081Kind;
 
   // --- Use these options to set memory options. As memory view is async, we sometimes
   // --- need to use state changes not yet committed by React.
@@ -62,14 +76,25 @@ const BasicPanel = ({ document, viewState }: DocumentProps<BasicViewState>) => {
   const useCodes = useRef(false);
   const useAutoRefresh = useRef(autoRefresh);
 
-  // --- Lists the program between PROG and VARS (`basicListing.ts`, shared with the tape viewer)
+  // --- Lists the program between PROG and VARS (`basicListing.ts`, shared with the tape viewer), or
+  // --- a ZX81's or ZX80's in its own format (`zx8081BasicListing.ts`)
   const createListing = () => {
     const getWord = (address: number) => getMemoryWord(memory.current, address);
-    const { lines } = decodeBasicProgram(memory.current, getWord(0x5c53), getWord(0x5c4b), {
-      charSet: machineCharSet,
-      showCodes: useCodes.current,
-      buffer: programBuffer.current
-    });
+    const kind = zx8081KindRef.current;
+    let lines: BasicLine[];
+    if (kind) {
+      const { start, end } = zx8081ProgramArea(memory.current, kind);
+      ({ lines } = decodeZx8081Program(memory.current, start, end, kind, {
+        showCodes: useCodes.current,
+        buffer: programBuffer.current
+      }));
+    } else {
+      ({ lines } = decodeBasicProgram(memory.current, getWord(0x5c53), getWord(0x5c4b), {
+        charSet: machineCharSet,
+        showCodes: useCodes.current,
+        buffer: programBuffer.current
+      }));
+    }
     cachedLines.current = lines;
     (async () => {
       await new Promise((r) => setTimeout(r, 500));
@@ -138,10 +163,10 @@ const BasicPanel = ({ document, viewState }: DocumentProps<BasicViewState>) => {
     })();
   }, [machineState]);
 
-  // --- Whenever the state of view options change
+  // --- Whenever the state of view options change, or the machine does
   useEffect(() => {
     refreshBasicView();
-  }, [autoRefresh, showCodes, showSpectrumFont]);
+  }, [autoRefresh, showCodes, showSpectrumFont, zx8081Kind]);
 
   // --- Take care of refreshing the screen
   useEmuStateListener(emuApi, async () => {
@@ -198,8 +223,8 @@ const BasicPanel = ({ document, viewState }: DocumentProps<BasicViewState>) => {
         <ToolbarSeparator small={true} />
         <LabeledSwitch
           value={showSpectrumFont}
-          label="Use ZX Spectrum font:"
-          title="Use ZX Spectrum font to display the list"
+          label={zx8081Kind ? "Use Sinclair font:" : "Use ZX Spectrum font:"}
+          title="Use the ZX Spectrum's font (the Sinclair font) to display the list"
           clicked={setShowSpectrumFont}
         />
       </PanelHeader>
