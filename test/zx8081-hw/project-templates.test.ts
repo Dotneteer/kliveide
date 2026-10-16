@@ -13,7 +13,7 @@ import { createZx81Session } from "../harness/zx81";
  */
 const TEMPLATES = join(__dirname, "../../src/public/project-templates");
 
-async function runTemplate(machineId: "zx81" | "zx80") {
+async function runTemplate(machineId: "zx81" | "zx80", model?: string) {
   const source = readFileSync(join(TEMPLATES, machineId, "default/code/code.kz80.asm"), "utf8");
   const out = await new Z80Assembler().compile(source);
   expect(out.errors).toEqual([]);
@@ -23,7 +23,7 @@ async function runTemplate(machineId: "zx81" | "zx80") {
     segments: out.segments.map((s) => ({ startAddress: s.startAddress, bankOffset: 0, emittedCode: s.emittedCode })),
     options: {}
   };
-  const s = await createZx81Session({ machineId });
+  const s = await createZx81Session({ machineId, model });
   s.bootToBasic();
   playInjectionFlow(s.machine, await s.machine.getCodeInjectionFlow(machineId), { code });
   s.runFrames(200);
@@ -31,11 +31,16 @@ async function runTemplate(machineId: "zx81" | "zx80") {
 }
 
 describe("ZX80/ZX81 project templates", () => {
-  it("the ZX81 template prints its message, the lower case in inverse video", async () => {
-    const s = await runTemplate("zx81");
-    expect(s.screenText()[0]).toBe("WELCOME TO [K][L][I][V][E] [I][D][E]");
-    expect(s.screenText()[23]).toBe("0/2");
-  });
+  it.each(["zx81-16k", "zx81-1k"])(
+    "the ZX81 template prints its welcome in the middle of the screen, the machine in inverse (%s)",
+    async (model) => {
+      const s = await runTemplate("zx81", model);
+      const screen = s.screenText();
+      expect(screen[10]).toBe("      WELCOME TO KLIVE IDE");
+      expect(screen[11]).toBe("        " + [..."(SINCLAIR ZX81)"].map((c) => `[${c}]`).join(""));
+      expect(screen[23]).toBe("0/2");
+    }
+  );
 
   it("the ZX80 template adds up 1 to 10 at 16443", async () => {
     const s = await runTemplate("zx80");

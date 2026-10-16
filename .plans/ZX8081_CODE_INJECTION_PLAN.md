@@ -335,7 +335,9 @@ What the work changed or added against the design above; the tests named here ho
 - **D7 held.** Stepping in the IDE is not disturbed by the SLOW-mode NMI: `scripts/zx81-ide-check.cjs`
   stops at a source breakpoint, steps into, over and out, continues to the breakpoint again and runs
   to the end, all with the execution point on the right source line.
-- **Templates.** `project-templates/zx81/default` prints a message through `RST $10`;
+- **Templates.** `project-templates/zx81/default` mirrors the Spectrum templates: a centred welcome
+  at line 10 and the machine's name in inverse video at line 11, from a message stream with AT and
+  inverse control codes, printed with the ROM's `PRINT-AT` ($08F5) and `PRINT-A` (`RST $10`);
   `zx80/default` adds 1-10 into a byte, because the ZX80's `RST $10` keeps its print position in the
   alternate registers and prints nothing visible from `USR` (`test/zx8081-hw/project-templates.test.ts`).
 - **Harness note.** A tiny program finishes its fast load while the harness is still typing
