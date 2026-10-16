@@ -81,6 +81,41 @@ ROM's stripes show on the screen while it loads.
 A program saved in FAST mode loads in FAST mode, so it shows no picture while it runs. Type `FAST`
 or `SLOW` (SHIFT+F, SHIFT+D at the K cursor) to switch.
 
+## Viewing program files
+
+Open a `.p` (or `.81`) file in the Explorer and Klive shows what is in it, as it does for a `.tap`
+or `.tzx` tape. A strip at the top sums it up: its size, the RAM it needs (1K or 16K), its number of
+BASIC lines, the line it runs from after loading (a program saved by one of its own lines carries on
+from the next line) and whether it loads in FAST or SLOW mode.
+
+Below it are the parts of the file, the way the ZX81 keeps them in memory, each at its own address:
+
+| Part | What the details show | Pops out as |
+|---|---|---|
+| System variables (`$4009`) | `D_FILE`, `VARS`, `E_LINE`, `NXTLIN` and `CDFLAG`, which say where everything else is | Memory |
+| BASIC program (`$407D`) | The number of lines and where the program starts | Listing, Memory, Disassembly |
+| Display file | The screen as it was at the `SAVE`, drawn with the ZX81's own characters | Screen, Memory |
+| Variables | Each variable and its value: numbers, strings, arrays and `FOR` loops | Memory |
+
+Pop a part out from its row's icon, by double-clicking the row, or with Enter. The listing is the
+ZX81's own: its keywords and its spacing. Memory and Disassembly list the bytes at their real
+addresses, so machine code kept in a `REM` line disassembles where it runs. Go Back returns to the
+viewer.
+
+Some programs, mostly small 1K ones, keep machine code in the system variables. Their pointers then
+do not mark out the parts, and the viewer shows everything after the system variables as one part.
+Programs built with an assembler often keep their own data where the variables would be; the
+viewer says so instead of listing variables.
+
+## Saving programs
+
+`SAVE "NAME"` (S at the K cursor) on the ZX81 writes the program to a `NAME.p` file in the saved-files
+folder (see [Saving Files](../getting-started/save-programs)). Characters a file name cannot hold
+become `_`. With *Fast Load* on, the save is instant; with it off, it takes as long as on a real
+machine (about five seconds of lead-in, then some 40 bytes a second) and the ROM's stripes show on
+the screen. Press BREAK (SPACE) while it saves, and no file is written. The ZX80's own 4K ROM does
+not write `.o` files yet.
+
 ## Debugging
 
 Breakpoints, stepping, and the CPU and memory panels work as on the other machines. The

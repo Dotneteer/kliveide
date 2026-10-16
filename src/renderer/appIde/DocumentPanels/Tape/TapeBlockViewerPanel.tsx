@@ -19,6 +19,9 @@ import { BasicLineDisplay } from "../BasicPanel";
 import basicStyles from "../BasicPanel.module.scss";
 import { basicListingText, decodeBasicProgram } from "../basicListing";
 import { createScrPixelData } from "../Next/ScrFileViewerPanel";
+import { decodeZx8081Program } from "../zx8081BasicListing";
+import { zx81DisplayRows, ZX81_PROGRAM_START } from "../PFile/pFileView";
+import { Zx81ScreenView } from "../PFile/Zx81ScreenView";
 
 /*
  * A tape block popped out as a BASIC listing or a screen (`.plans/TAPE_VIEWER_PLAN.md` §4.5): the
@@ -29,11 +32,18 @@ import { createScrPixelData } from "../Next/ScrFileViewerPanel";
  * and a listing from a file needs none of it. What the two share is the decoder (`basicListing.ts`)
  * and the line renderer (`BasicLineDisplay`), so a program reads the same in either.
  *
+ * The ZX81 `.P` viewer pops its program and display file out here too (`format: "zx81"`): the same
+ * document, with the ZX81's detokenizer (`zx8081BasicListing.ts`) and its character-set picture.
+ *
  * Not restored at startup: like a memory dump, it is not a project file.
  */
 
+/** Whose bytes these are: a Spectrum tape block (the default) or a part of a ZX81 `.P` file */
+export type TapeBlockFormat = "spectrum" | "zx81";
+
 export type TapeBlockViewState = {
   view: "basic" | "screen";
+  format?: TapeBlockFormat;
   /** BASIC: where the program ends - the header's variables offset */
   basicEnd?: number;
   autostart?: number;
@@ -48,12 +58,13 @@ type OpenOptions = {
   view: "basic" | "screen";
   basicEnd?: number;
   autostart?: number;
+  format?: TapeBlockFormat;
 };
 
 /** Opens (or brings forward) a block's BASIC listing or screen */
 export async function openTapeBlockView(
   hub: IDocumentHubService,
-  { id, title, bytes, view, basicEnd, autostart }: OpenOptions
+  { id, title, bytes, view, basicEnd, autostart, format }: OpenOptions
 ): Promise<void> {
   if (hub.isOpen(id)) {
     await hub.setActiveDocument(id);
@@ -68,7 +79,7 @@ export async function openTapeBlockView(
       contents: bytes,
       isReadOnly: true
     },
-    { view, basicEnd, autostart, showSpectrumFont: true } satisfies TapeBlockViewState,
+    { view, basicEnd, autostart, format, showSpectrumFont: true } satisfies TapeBlockViewState,
     false
   );
 }
@@ -84,8 +95,13 @@ const TapeBlockViewerPanel = ({
       <EmptyState tone="error" motif={false} message="This block's bytes are not available." />
     );
   }
+  const zx81 = viewState?.format === "zx81";
   return viewState?.view === "screen" ? (
-    <TapeScreen bytes={bytes} />
+    zx81 ? (
+      <Zx81Screen bytes={bytes} />
+    ) : (
+      <TapeScreen bytes={bytes} />
+    )
   ) : (
     <TapeBasicListing documentId={document.id} bytes={bytes} viewState={viewState} />
   );
@@ -105,11 +121,17 @@ const TapeBasicListing = ({
   const [showCodes, setShowCodes] = useState(viewState?.showCodes ?? false);
   const [showSpectrumFont, setShowSpectrumFont] = useState(viewState?.showSpectrumFont ?? true);
   const end = Math.min(viewState?.basicEnd ?? bytes.length, bytes.length);
+  const zx81 = viewState?.format === "zx81";
 
-  const listing = useMemo(
-    () => decodeBasicProgram(bytes, 0, end, { charSet: ZxSpectrumChars, showCodes }),
-    [bytes, end, showCodes]
-  );
+  const listing = useMemo(() => {
+    if (!zx81) return decodeBasicProgram(bytes, 0, end, { charSet: ZxSpectrumChars, showCodes });
+    // --- The ZX81's lines are read where the machine keeps them, after the system variables
+    const memory = new Uint8Array(0x10000);
+    memory.set(bytes.subarray(0, Math.min(end, 0x10000 - ZX81_PROGRAM_START)), ZX81_PROGRAM_START);
+    return decodeZx8081Program(memory, ZX81_PROGRAM_START, ZX81_PROGRAM_START + end, "zx81", {
+      showCodes
+    });
+  }, [bytes, end, showCodes, zx81]);
   const lines = useMemo(() => listing.lines.filter((l) => l.spans.length > 0), [listing]);
 
   useEffect(() => {
@@ -142,8 +164,8 @@ const TapeBasicListing = ({
         <ToolbarSeparator small={true} />
         <LabeledSwitch
           value={showSpectrumFont}
-          label="Use ZX Spectrum font:"
-          title="Use ZX Spectrum font to display the list"
+          label={zx81 ? "Use Sinclair font:" : "Use ZX Spectrum font:"}
+          title={zx81 ? "Use the Sinclair font to display the list" : "Use ZX Spectrum font to display the list"}
           clicked={setShowSpectrumFont}
         />
         <ToolbarSeparator small={true} />
@@ -193,6 +215,16 @@ const TapeScreen = ({ bytes }: { bytes: Uint8Array }) =>
       />
     </FullPanel>
   );
+
+/** A ZX81 display file, drawn with the ROM's character set */
+const Zx81Screen = ({ bytes }: { bytes: Uint8Array }) => {
+  const rows = useMemo(() => zx81DisplayRows(bytes, 0, bytes.length), [bytes]);
+  return (
+    <FullPanel fontSize="--panel-font-size" fontFamily="--monospace-font">
+      <Zx81ScreenView rows={rows} zoomFactor={2} />
+    </FullPanel>
+  );
+};
 
 export const createTapeBlockViewerPanel = ({ document, contents, viewState }: DocumentProps) => (
   <TapeBlockViewerPanel

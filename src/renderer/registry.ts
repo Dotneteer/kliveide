@@ -6,6 +6,7 @@ import {
   BIN_VIEWER,
   TAP_VIEWER,
   TAPE_BLOCK_VIEWER,
+  P_FILE_VIEWER,
   DSK_VIEWER,
   NEX_VIEWER,
   ROM_ANNOTATION_EDITOR,
@@ -92,6 +93,8 @@ import {
 import { createTapeViewerPanel } from "./appIde/DocumentPanels/Tape/TapeViewerPanel";
 import { createTapeBlockViewerPanel } from "./appIde/DocumentPanels/Tape/TapeBlockViewerPanel";
 import { readTapeBlockBytes } from "./appIde/DocumentPanels/Tape/tapeBlockDocument";
+import { createPFileViewerPanel } from "./appIde/DocumentPanels/PFile/PFileViewerPanel";
+import { readPFileRegion } from "./appIde/DocumentPanels/PFile/pFileDocument";
 import { PsgPanel } from "./appIde/SideBarPanels/PsgPanel";
 import { NecUpd765Panel } from "./appIde/SideBarPanels/NecUpd765Panel";
 import { createDskViewerPanel } from "./appIde/DocumentPanels/DskViewerPanel";
@@ -551,7 +554,8 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
       readNexBankBytes,
       readZ88BankBytes,
       readSpectrumBankBytes,
-      readTapeBlockBytes
+      readTapeBlockBytes,
+      readPFileRegion
     })
   },
   {
@@ -566,6 +570,14 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     id: TAPE_BLOCK_VIEWER,
     renderer: createTapeBlockViewerPanel,
     icon: "code"
+  },
+  {
+    // --- A ZX81 program file: its parts, each poppable as memory, disassembly, BASIC or the screen
+    id: P_FILE_VIEWER,
+    renderer: createPFileViewerPanel,
+    icon: "@file-tap-tzx",
+    // --- Its parts pop out into documents, and Go Back must return here
+    navigation: fileDocumentNavigationAdapter
   },
   {
     id: DSK_VIEWER,
@@ -838,7 +850,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     pattern: ".p",
     // --- A ZX80/ZX81 program file, which the machine's tape plays (`.plans/ZX8081_WASM_PLAN.md` §9.1)
     ignoreCase: true,
-    editor: BIN_VIEWER,
+    editor: P_FILE_VIEWER,
     icon: "@file-tap-tzx",
     isBinary: true,
     isReadOnly: true,
@@ -851,7 +863,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     pattern: ".81",
     // --- A ZX80/ZX81 program file, which the machine's tape plays (`.plans/ZX8081_WASM_PLAN.md` §9.1)
     ignoreCase: true,
-    editor: BIN_VIEWER,
+    editor: P_FILE_VIEWER,
     icon: "@file-tap-tzx",
     isBinary: true,
     isReadOnly: true,

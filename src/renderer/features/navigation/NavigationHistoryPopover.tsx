@@ -22,6 +22,7 @@ export const REASON_LABELS: Record<NavigationReason, string> = {
   z88Bank: "bank",
   spectrumBank: "bank",
   tapeBlock: "block",
+  pFileRegion: "part",
   tabSwitch: "tab",
   explorer: "explorer",
   command: "command",

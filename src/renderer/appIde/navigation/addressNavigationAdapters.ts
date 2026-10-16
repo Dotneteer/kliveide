@@ -20,6 +20,12 @@ import {
   tapeBlockDumpId,
   tapeBlockTitle
 } from "../DocumentPanels/Tape/tapeBlockDocument";
+import {
+  parsePFileRegionDocumentId,
+  pFileRegionDumpId,
+  pFileRegionTitle
+} from "../DocumentPanels/PFile/pFileDocument";
+import type { PFileRegionKind } from "../DocumentPanels/PFile/pFileView";
 
 /*
  * Navigation for the address-based views: the live Memory and Disassembly panels, and static memory
@@ -193,6 +199,12 @@ export type StaticDumpNavigationDeps = {
     index: number,
     readFile: (path: string) => Promise<Uint8Array>
   ) => Promise<Uint8Array | undefined>;
+  /** A ZX81 `.P` file part's bytes and address; absent, a closed part dump is not reopened. */
+  readPFileRegion?: (
+    path: string,
+    kind: PFileRegionKind,
+    readFile: (path: string) => Promise<Uint8Array>
+  ) => Promise<{ bytes: Uint8Array; start: number } | undefined>;
 };
 
 /** The NEX file and bank a bank document was opened for, from its id. */
@@ -205,7 +217,8 @@ export function parseNexBankDocumentId(
 
 /**
  * Static memory dumps. Any open dump can be returned to; a *closed* one only when it is a NEX bank,
- * a `.z88` snapshot bank, a ZX Spectrum snapshot RAM bank or a tape block, because those are the kinds whose bytes can be read back —
+ * a `.z88` snapshot bank, a ZX Spectrum snapshot RAM bank, a tape block or a part of a ZX81 `.P`
+ * file, because those are the kinds whose bytes can be read back —
  * from the file its id names.
  */
 export function createStaticDumpNavigationAdapter(
@@ -325,6 +338,32 @@ export function createStaticDumpNavigationAdapter(
           {
             disassemblyEnabled: true,
             disassOffset: locator.base ?? 0,
+            topAddress: locator.address,
+            viewMode: locator.viewMode === "sprites" ? "disassembly" : locator.viewMode
+          }
+        );
+        return true;
+      }
+
+      // --- A part of a ZX81 `.P` file, listed at its own address
+      const pFileRegion = parsePFileRegionDocumentId(entry.documentId);
+      if (pFileRegion) {
+        if (!deps.readPFileRegion) return false;
+        let region: { bytes: Uint8Array; start: number } | undefined;
+        try {
+          region = await deps.readPFileRegion(pFileRegion.path, pFileRegion.kind, env.readBinaryFile);
+        } catch {
+          return false;
+        }
+        if (!region) return false;
+        await deps.openStaticMemoryDump(
+          target,
+          pFileRegionDumpId(pFileRegion.path, pFileRegion.kind),
+          pFileRegionTitle(pFileRegion.path, pFileRegion.kind, env.store.getState()?.project?.folderPath),
+          region.bytes,
+          {
+            disassemblyEnabled: true,
+            disassOffset: locator.base ?? region.start,
             topAddress: locator.address,
             viewMode: locator.viewMode === "sprites" ? "disassembly" : locator.viewMode
           }

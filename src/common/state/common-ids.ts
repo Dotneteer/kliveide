@@ -32,6 +32,8 @@ export const TILE_SNAPSHOT_VIEWER = "TileSnapshot";
 export const TAP_VIEWER = "TapViewer";
 // --- A tape block popped out as a BASIC listing or a screen (`.plans/TAPE_VIEWER_PLAN.md` §4.5)
 export const TAPE_BLOCK_VIEWER = "TapeBlockViewer";
+/** The ZX81 `.P` program file viewer */
+export const P_FILE_VIEWER = "PFileViewer";
 export const DSK_VIEWER = "DskViewer";
 export const NEX_VIEWER = "NexViewer";
 // --- A ROM sidecar opened for editing (`.plans/ROM_ANNOTATION_EDITING_PLAN.md` R4)
