@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { CODE_EDITOR, NEX_VIEWER } from "@common/state/common-ids";
+import { CODE_EDITOR, NEX_VIEWER, ROM_ANNOTATION_EDITOR } from "@common/state/common-ids";
 import { ProjectNodeWithChildren } from "@abstractions/ProjectNode";
 import { buildProjectTree, getFileTypeEntry } from "@renderer/appIde/project/project-node";
 
@@ -17,12 +17,22 @@ describe("NEX annotation file type", () => {
     expect(entry?.openPermanent).toBeUndefined();
   });
 
-  it("opens every annotation sidecar the same way: a snapshot's, a project's, a ROM's", () => {
-    for (const name of ["jetpac.z80.dis", "annotations.dis", "sp48.rom.dis", "game.p.dis"]) {
+  it("opens every program's annotation sidecar the same way: a snapshot's, a project's", () => {
+    for (const name of ["jetpac.z80.dis", "annotations.dis", "game.p.dis"]) {
       expect(getFileTypeEntry(name, createStoreMock() as never)).toMatchObject({
         pattern: ".dis",
         editor: CODE_EDITOR,
         subType: "json",
+        isReadOnly: true
+      });
+    }
+  });
+
+  it("opens a ROM's sidecar in the ROM annotation editor (ROM_ANNOTATION_EDITING_PLAN R4)", () => {
+    for (const name of ["sp48.rom.dis", "my-custom.rom.dis"]) {
+      expect(getFileTypeEntry(name, createStoreMock() as never)).toMatchObject({
+        pattern: ".rom.dis",
+        editor: ROM_ANNOTATION_EDITOR,
         isReadOnly: true
       });
     }

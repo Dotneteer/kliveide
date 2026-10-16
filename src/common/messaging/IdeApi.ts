@@ -128,6 +128,15 @@ abstract class IdeApiImpl {
   }
 
   /**
+   * An annotation sidecar followed with `MainApi.watchAnnotationFile` changed on disk. The IDE
+   * re-reads it into its annotation session unless the file holds what the session already has.
+   * @param _filePath The sidecar's absolute path
+   */
+  async annotationFileChanged(_filePath: string): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * Gets the current project structure.
    */
   async getProjectStructure(): Promise<ProjectStructure> {

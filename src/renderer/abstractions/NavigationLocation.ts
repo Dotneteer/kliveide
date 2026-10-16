@@ -42,6 +42,8 @@ export type NavigationReason =
   | "z88Bank"
   | "spectrumBank"
   | "tapeBlock"
+  /** A part of a ZX81 `.P` file popped out of its viewer. */
+  | "pFileRegion"
   | "tabSwitch"
   | "explorer"
   | "command"
@@ -62,6 +64,7 @@ export const NAVIGATION_REASONS: readonly NavigationReason[] = [
   "z88Bank",
   "spectrumBank",
   "tapeBlock",
+  "pFileRegion",
   "tabSwitch",
   "explorer",
   "command",

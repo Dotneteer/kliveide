@@ -38,11 +38,14 @@ function combine(...renderers: MachineMenuRenderer[]): MachineMenuRenderer {
  * and LCD) are in Settings › Machine, not here.
  */
 export const machineMenuRegistry: Record<string, MachineMenuInfo> = {
+  // --- The BASIC Listing view lists ZX81 and ZX80 programs in their own formats too
   [MI_ZX81]: {
-    devices: { program: zx8081TapeMenuRenderer }
+    devices: { program: zx8081TapeMenuRenderer },
+    viewItems: spectrumIdeRenderer
   },
   [MI_ZX80]: {
-    devices: { program: zx8081TapeMenuRenderer }
+    devices: { program: zx8081TapeMenuRenderer },
+    viewItems: spectrumIdeRenderer
   },
   [MI_SPECTRUM_48]: {
     devices: { tape: tapeMenuRenderer },

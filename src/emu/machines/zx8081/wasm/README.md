@@ -62,6 +62,15 @@ Fast load traps the ZX81 ROM's three calls of IN-BYTE (checked against the ROM l
 ($0347, answered as its silence timeout), IN-NAME ($0366) and IN-PROG ($037C); the ZX80's is CLK's
 ($0220 -> $0248). Bytes after E_LINE are never read: the ROM stops there.
 
+SAVE (ZX81 ROM only) is captured at the byte, not decoded from pulses as on the Spectrum cores: the
+tape output is VSYNC, which the ROM also drives for the picture. The core follows SAVE ($02F6), the
+end of the name ($0313) and OUT-BYTE ($031E), recording the byte at (HL); the program's bytes ($4009
+to E_LINE - 1) are a `.P` file. The last byte copies the file into the saved buffers and counts
+`zx8081TapeGetSavedRevision`; the machine publishes a new revision as `SAVED_TO_TAPE` (`<name>.p`),
+which the controller writes to the save folder, as it does a Spectrum `.tzx`. A BREAK leaves the save
+unfinished and it is dropped. With fast load on, the lead-in loop ($02FF) is skipped and OUT-BYTE
+returns at once. `test/zx8081-hw/tape-save.test.ts` covers it.
+
 ## Models
 
 | | RAM | Notes |

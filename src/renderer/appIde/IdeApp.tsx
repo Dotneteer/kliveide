@@ -21,6 +21,7 @@ import { FullPanel } from "@renderer/controls/layout/Panels";
 import { useMainApi } from "@renderer/core/MainApi";
 import { IdeDialogBridge } from "./IdeDialogBridge";
 import { ActiveAnnotationSetHost } from "./annotations/ActiveAnnotationSetHost";
+import { AnnotationFileWatchHost } from "./annotations/AnnotationFileWatchHost";
 import { RomAnnotationsHost } from "./annotations/RomAnnotationsHost";
 import {
   SETTING_IDE_MAXIMIZE_TOOLS,
@@ -74,6 +75,7 @@ const IdeApp = () => {
     <FullPanel id="appMain" dataAppReady={ideLoaded ? "true" : "false"}>
       <IdeEventsHandler />
       <IdeDialogBridge />
+      <AnnotationFileWatchHost />
       <ActiveAnnotationSetHost />
       <RomAnnotationsHost />
       {showToolbar && <Toolbar ide={true} kliveProjectLoaded={kliveProjectLoaded} />}

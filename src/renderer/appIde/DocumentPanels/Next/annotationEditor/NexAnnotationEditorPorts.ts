@@ -7,6 +7,7 @@ import type {
   AnnotationBankView,
   AnnotationRegion,
   AnnotationRegionType,
+  ByteRegionFormat,
   ProgramAnnotations,
   OperandReference
 } from "@renderer/appIde/annotations/programAnnotations";
@@ -131,6 +132,8 @@ export type NexAnnotationDialogsPort = {
     initialType: AnnotationRegionType;
     initialStart: number;
     initialEnd: number;
+    /** The format a `bytes` region opens with: the span's own, or the default. */
+    initialFormat?: ByteRegionFormat;
     regions: AnnotationRegion[];
     bytes: number[];
   }): Promise<NexRegionDialogResult | undefined>;

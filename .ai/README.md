@@ -24,6 +24,9 @@ This folder stores durable notes for future AI-assisted work in this repository.
   from memory included, and every entry records its provenance. Log each authoring session in
   `PROVENANCE.md`. The machine-neutral annotation model (every machine's bank space, the active
   annotation set, ROM sidecars) is described in `../.docs/annotations.md`.
+  **For the ZX81 ROM, also read `rom-annotations/zx81-authoring-guide.md`**: the working copy and
+  the IDE open on it, the disassembly/apply/check tools in `rom-annotations/tools/`, harness
+  probes, the traps already met, and what is left to annotate.
 - **Every reverse-engineering session updates `nex-reverse-engineering-guide.md` before
   it finishes** — the project author's standing instruction. Fold the durable learning
   into the section it belongs to, replace what it supersedes, and keep no history: that

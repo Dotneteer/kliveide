@@ -19,3 +19,14 @@ If the BASIC listing is not available (or it is corrupted), this view may displa
 - **Machine OS has not been initialized yet**: This message appears while the machine's operating system is booting. It disappears when the machine reaches its main execution cycle.
 - **BASIC program area is empty**: There is no BASIC program to list.
 - **BASIC code corrupted or partially loaded**: When the BASIC program area is corrupted (some unexpected data is found) or the program is being loaded, the view displays this message at the location of the error.
+
+## ZX81 and ZX80
+
+The view lists ZX81 and ZX80 programs too, each in its own format, and spaces the keywords the
+way the machine's own `LIST` does. A ZX80 with the 8K ROM upgrade is listed as a ZX81. On these
+machines the font switch is labelled **Use Sinclair font**.
+
+The ROMs list a line up to its NEW LINE character, so a NEW LINE stored inside a `REM` (machine-code
+loaders often have one) starts a new row, often with an odd line number such as `E393`. The view shows
+it the same way the machine's `LIST` does. A character `LIST` cannot print appears as `?`, or as its
+code when **Show non-printable** is on.

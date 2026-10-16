@@ -84,6 +84,19 @@ export function zx8081StringFromData(data: ArrayLike<number>, isZx81: boolean): 
   return text;
 }
 
+/**
+ * The host file name of a program the ZX81's SAVE wrote: its tape name (ZX81 characters, bit 7 set on
+ * the last) as text, with the characters a file name cannot hold replaced, and the `.p` extension.
+ * A name with nothing usable in it becomes `export.p`, as a nameless Spectrum SAVE becomes
+ * `export.tzx`.
+ */
+export function zx81SavedFileName(nameBytes: ArrayLike<number>): string {
+  const text = zx8081StringFromData(nameBytes, true)
+    .replace(/[\\/:*?"<>|\u2580-\u259f£]/g, "_")
+    .trim();
+  return `${text.length > 0 && /[^_.]/.test(text) ? text : "export"}.p`;
+}
+
 const word = (data: Uint8Array, offset: number) => data[offset] | (data[offset + 1] << 8);
 
 /**

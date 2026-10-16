@@ -3,13 +3,13 @@
 .splitButton {
   display: flex;
   align-items: center;
-  height: 30px;
+  height: 26px;
   border-radius: 6px;
 }
 
 .primaryButton,
 .dropdownButton {
-  height: 30px;
+  height: 26px;
   border: 0;
   padding: 0;
   color: inherit;
@@ -34,17 +34,33 @@
 }
 
 .primaryButton {
-  width: 30px;
+  width: 28px;
   border-radius: 6px 0 0 6px;
 }
 
 .dropdownButton {
-  width: 16px;
+  width: 14px;
   border-radius: 0 6px 6px 0;
 }
 
 .disabled {
   opacity: 1;
+}
+
+/* `ToolbarSplitAction`'s pressed ring - the same 2px inner border `IconButton` draws when selected. */
+.ring {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(100% - 2px);
+  height: calc(100% - 2px);
+  border: 2px solid transparent;
+  border-radius: var(--radius-sm);
+  pointer-events: none;
+}
+
+.ringSelected {
+  border-color: var(--color-toolbarbutton-selected);
 }
 
 .menu {

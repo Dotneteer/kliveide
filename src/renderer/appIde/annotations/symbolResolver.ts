@@ -296,11 +296,13 @@ export function createAddressSymbols(input: AddressSymbolsInput): AddressSymbols
 /**
  * A ROM page's layers as one bank the listing generator can read.
  *
- * Labels, comments and operand references come from the first layer that has them at an offset, so
- * the user's own win; a byte-bound layer contributes only the offsets that survived binding. Regions
- * start from the shipped layer (its unbound data regions dropped back to code) and the user's data
- * regions are laid over them — a user who has only added a label has a whole-page `disassemble`
- * region, which must not hide the shipped data regions.
+ * The first layer is the page's own sidecar (its working copy, or the shipped one); the rest are
+ * the sidecars it inherits, byte-bound. Labels, comments and operand references come from the first
+ * layer that has them at an offset, so the page's own win; a byte-bound layer contributes only the
+ * offsets that survived binding. Regions start from the last layer (unbound data regions dropped back
+ * to code) and each earlier layer's data regions are laid over them — a sidecar that authors only
+ * what differs from the one it inherits has a whole-page `disassemble` region, which must not hide
+ * the inherited data regions.
  */
 export function mergeRomLayers(
   layers: readonly RomLayer[]
@@ -357,7 +359,7 @@ export function mergeRomLayers(
     annotations: { schemaVersion: 3, machine: "rom", banks: { [String(page)]: bankAnnotation } },
     bank: page,
     bankAnnotation,
-    origin: banks.find((entry) => entry.layer.kind === "user")?.layer.path ?? first.layer.path
+    origin: first.layer.path
   };
 }
 

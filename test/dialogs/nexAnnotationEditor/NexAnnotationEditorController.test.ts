@@ -812,6 +812,34 @@ describe("regions", () => {
     ]);
   });
 
+  it("writes a bytes region in the format the dialog chose", async () => {
+    const controller = await opened();
+    fakes.dialogs.answerWith("region", { start: 2, end: 2, type: "bytes", format: "bin1" });
+    await controller.dispatch({ type: "regionTypeMarked", regionType: "bytes", rowIndex: 2 });
+    await controller.settle();
+
+    // --- A fresh span opens on the default format
+    expect(fakes.dialogs.callsTo("region")[0]).toMatchObject({ initialFormat: "hex4" });
+    expect(publishedBank(fakes.session, SIDECAR, BANK)?.regions).toEqual([
+      { start: 0, end: 1, type: "disassemble" },
+      { start: 2, end: 2, type: "bytes", rowBytes: 1, radix: "binary" },
+      { start: 3, end: 0x3fff, type: "disassemble" }
+    ]);
+  });
+
+  it("writes the default format as no fields at all, and ignores a format for any other type", async () => {
+    const controller = await opened();
+    fakes.dialogs.answerWith("region", { start: 2, end: 2, type: "bytes", format: "hex4" });
+    await controller.dispatch({ type: "regionTypeMarked", regionType: "bytes", rowIndex: 2 });
+    await controller.settle();
+    expect(publishedBank(fakes.session, SIDECAR, BANK)?.regions[1]).toEqual({ start: 2, end: 2, type: "bytes" });
+
+    fakes.dialogs.answerWith("region", { start: 2, end: 3, type: "words", format: "bin1" });
+    await controller.dispatch({ type: "regionTypeMarked", regionType: "words", rowIndex: 2 });
+    await controller.settle();
+    expect(publishedBank(fakes.session, SIDECAR, BANK)?.regions[1]).toEqual({ start: 2, end: 3, type: "words" });
+  });
+
   it("marks the whole selection when the row is inside it", async () => {
     const controller = await opened();
     await controller.dispatch({ type: "rowSelected", index: 1, extend: false });

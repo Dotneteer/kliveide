@@ -6,3 +6,12 @@
   flex-direction: column;
   background: var(--bgcolor-activitybar);
 }
+
+/* The activity tabs take the free height, which pins the Settings button to the foot of the bar */
+.activities {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}

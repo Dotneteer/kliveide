@@ -14,18 +14,20 @@ import { bindRomPage, type RomBinding } from "./romBinding";
 import type { RomLayer } from "./romLayer";
 
 /*
- * Finding a paged ROM page's sidecars (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §5.2-§5.3).
+ * Finding a ROM page's sidecar (`.plans/ROM_ANNOTATION_EDITING_PLAN.md` §4.2, which amends §5.2-§5.3
+ * of `.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md`).
  *
- * For each ROM partition the machine reports (`getRomSources`), up to two layers stack:
+ * **One sidecar is in effect for a page**, chosen in this order:
  *
- * 1. **the user layer** — for a shipped ROM file (a relative `roms/…` source), the overlay
- *    `<Klive home>/RomAnnotations/<crc32>.rom.dis`; for a user ROM file, `<path>.dis` beside it,
- *    falling back to the overlay when that folder is not writable. It is the layer the IDE edits,
- *    and it exists only once something is written into it.
- * 2. **the shipped layer** — found **by CRC in the shipped index**, not by file name, so a user file
- *    byte-identical to `sp48.rom` still gets it. A shipped sidecar's `inherits` add byte-bound layers
- *    after it. A page whose CRC is unknown, in a 48K BASIC position, gets `sp48.rom.dis` byte-bound
- *    (Q7).
+ * 1. **a working copy** — `<Klive home>/RomAnnotations/<sidecar>` for a ROM Klive ships (named
+ *    exactly like the shipped file, so it can be copied into `src/public/roms/` unchanged), or
+ *    `<path>.dis` beside a custom ROM file. It is the only editable one, and it *replaces* the shipped
+ *    sidecar rather than being laid over it. It applies only when its `pages` name this page's CRC.
+ * 2. **the shipped sidecar**, found by CRC in the shipped index, read-only.
+ *
+ * Its `inherits` are added after it, byte-bound, and resolved through the same lookup — so a working
+ * copy of `sp48.rom.dis` reaches every ROM that inherits it. A 48K BASIC page whose CRC is unknown
+ * (Q7) gets the effective `sp48.rom.dis` byte-bound in the same way.
  */
 
 /** Where the shipped sidecars and their index are, relative to the public folder. */
@@ -41,13 +43,17 @@ export type ShippedRomIndex = Record<string, { sidecar: string; page: number }>;
 export type RomPartitionInfo = {
   partition: number;
   source: RomSource;
-  /** Where the user's own annotations of this page are (or will be) written. */
-  userPath: string;
-  /** The page within `userPath`'s banks. */
-  userPage: number;
-  /** The layers, user first. */
+  /** Where this page's working copy is, or would be made by `rom-ann-new`. */
+  workingPath: string;
+  /** The page within the working copy's banks. */
+  workingPage: number;
+  /** Whether the working copy exists (and names this page): only then can the page be edited. */
+  hasWorkingCopy: boolean;
+  /** The shipped sidecar that describes this page, when Klive ships one (`sp48.rom.dis`). */
+  shippedSidecar?: string;
+  /** The layers in effect: the page's sidecar first, then its byte-bound inherited ones. */
   layers: RomLayer[];
-  /** For a byte-bound shipped layer: how many labels bound, for `ann-info`. */
+  /** For a byte-bound layer: how many labels bound, for `ann-info`. */
   bindings: { sidecar: string; binding: RomBinding }[];
 };
 
@@ -63,9 +69,20 @@ export type RomLoaderDeps = {
   machineId: string | undefined;
 };
 
-/** The overlay of a ROM page in the Klive home folder, by its CRC-32. */
-export function romOverlayRelativePath(crc32: string): string {
-  return `RomAnnotations/${crc32}.rom.dis`;
+/** The folder of the working copies, in the Klive home folder. */
+export const WORKING_ROM_FOLDER = "RomAnnotations";
+
+/** A working copy in the Klive home folder, by its file name (`sp48.rom.dis`). */
+export function workingCopyRelativePath(sidecar: string): string {
+  return `${WORKING_ROM_FOLDER}/${sidecar}`;
+}
+
+/**
+ * The additive overlay earlier builds wrote, by CRC (`RomAnnotations/<crc32>.rom.dis`). Read once,
+ * to migrate it into a working copy (`romWorkingCopy.ts`), and never written again.
+ */
+export function legacyOverlayRelativePath(crc32: string): string {
+  return `${WORKING_ROM_FOLDER}/${crc32}.rom.dis`;
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -74,9 +91,13 @@ export function romOverlayRelativePath(crc32: string): string {
 let shippedIndex: Promise<ShippedRomIndex> | undefined;
 const shippedSidecars = new Map<string, Promise<ProgramAnnotations | undefined>>();
 const shippedRomBytes = new Map<string, Promise<Uint8Array | undefined>>();
-const bindingCache = new Map<string, RomBinding>();
+// --- Keyed by the sidecar model too: an edited working copy is a new model, and its bindings follow
+const bindingCache = new WeakMap<ProgramAnnotations, Map<string, RomBinding>>();
 
-function readShippedIndex(files: RomLoaderFiles): Promise<ShippedRomIndex> {
+/** The shipped index, read once. */
+export function readShippedIndex(
+  files: Pick<RomLoaderFiles, "readTextFile">
+): Promise<ShippedRomIndex> {
   shippedIndex ??= files
     .readTextFile(SHIPPED_ROM_INDEX)
     .then((text) => JSON.parse(text) as ShippedRomIndex)
@@ -124,70 +145,139 @@ export function resetRomAnnotationCachesForTests(): void {
   shippedIndex = undefined;
   shippedSidecars.clear();
   shippedRomBytes.clear();
-  bindingCache.clear();
 }
 
 // ------------------------------------------------------------------------------------------------
 // Loading
 
-/** Where a partition's user layer is written. */
-export async function userLayerPathOf(
+/** The file name of a path, either separator. */
+function fileNameOf(path: string): string {
+  return path.split(/[\\/]/).pop() ?? path;
+}
+
+/**
+ * Where a page's working copy is (or would be made), and the shipped sidecar it would start from.
+ *
+ * A page Klive ships a sidecar for is named after that sidecar — whichever file the bytes were
+ * loaded from — so the working copy is the one file that can be copied back. A custom ROM's goes
+ * beside it, falling back to the Klive home folder when that folder is not writable.
+ */
+export async function workingCopyOf(
   files: RomLoaderFiles,
-  source: RomSource
-): Promise<{ path: string; page: number }> {
+  source: RomSource,
+  index?: ShippedRomIndex
+): Promise<{ path: string; page: number; shippedSidecar?: string }> {
+  const shipped = (index ?? (await readShippedIndex(files)))[source.crc32];
+  if (shipped) {
+    return {
+      path: await files.resolveKliveHomePath(workingCopyRelativePath(shipped.sidecar)),
+      page: shipped.page,
+      shippedSidecar: shipped.sidecar
+    };
+  }
   if (source.path && !isShippedRomPath(source.path)) {
     const beside = `${source.path}.dis`;
     try {
       if (await files.canWriteBeside(beside)) return { path: beside, page: source.page };
     } catch {
-      // --- Fall back to the overlay
+      // --- Fall back to the Klive home folder
     }
   }
-  return { path: await files.resolveKliveHomePath(romOverlayRelativePath(source.crc32)), page: 0 };
+  const name = source.path ? `${fileNameOf(source.path)}.dis` : `${source.crc32}.rom.dis`;
+  return { path: await files.resolveKliveHomePath(workingCopyRelativePath(name)), page: source.page };
 }
 
-async function readUserLayer(
+/** A ROM sidecar read through its session (an edit in flight is what counts), or `undefined`. */
+export async function readRomSidecarFile(
   projectService: Pick<IProjectService, "readFileContent">,
   path: string
 ): Promise<ProgramAnnotations | undefined> {
   const inSession = peekAnnotationSession(path);
-  if (inSession) return inSession;
+  if (inSession) return annotationMachineOf(inSession) === "rom" ? inSession : undefined;
   const state = await loadAnnotationSidecar(projectService, { fullPath: path });
   return state.status === "loaded" && state.annotations && annotationMachineOf(state.annotations) === "rom"
     ? state.annotations
     : undefined;
 }
 
-/** A shipped layer applied by byte binding, cached by (sidecar, page, target CRC). */
-async function boundShippedLayer(
-  files: RomLoaderFiles,
+/**
+ * The CRC a ROM sidecar records for a page, when it records one.
+ *
+ * Read from the file, not the model: `pages` is a ROM sidecar's own key, which the annotation model
+ * does not carry — and no edit changes it, so the file is always current for it.
+ */
+export async function pageCrcOf(
+  projectService: Pick<IProjectService, "readFileContent">,
+  path: string,
+  page: number
+): Promise<string | undefined> {
+  try {
+    const text = await projectService.readFileContent(path, false);
+    if (typeof text !== "string") return undefined;
+    return JSON.parse(text)?.pages?.[String(page)]?.crc32;
+  } catch {
+    return undefined;
+  }
+}
+
+/** The `inherits` a ROM sidecar declares. */
+function inheritsOf(annotations: ProgramAnnotations): { sidecar: string; page: number }[] {
+  return (annotations as ProgramAnnotations & { inherits?: { sidecar: string; page: number }[] }).inherits ?? [];
+}
+
+/** A shipped sidecar's effective model: its working copy when there is one, else the shipped file. */
+async function effectiveSidecar(
+  deps: RomLoaderDeps,
+  sidecar: string
+): Promise<{ annotations: ProgramAnnotations; path: string; working: boolean } | undefined> {
+  const workingPath = await deps.files.resolveKliveHomePath(workingCopyRelativePath(sidecar));
+  const working = await readRomSidecarFile(deps.projectService, workingPath);
+  if (working) return { annotations: working, path: workingPath, working: true };
+  const shipped = await readShippedSidecar(deps.files, sidecar);
+  return shipped ? { annotations: shipped, path: `${SHIPPED_ROM_FOLDER}/${sidecar}`, working: false } : undefined;
+}
+
+/** A sidecar applied by byte binding: inherited (`inherits`) or for an unknown 48K BASIC page (Q7). */
+async function boundLayer(
+  deps: RomLoaderDeps,
   sidecar: string,
   page: number,
   source: RomSource
 ): Promise<{ layer: RomLayer; binding: RomBinding } | undefined> {
-  const annotations = await readShippedSidecar(files, sidecar);
-  const bank = annotations?.banks[String(page)];
-  if (!annotations || !bank || !source.bytes) return undefined;
+  const effective = await effectiveSidecar(deps, sidecar);
+  const bank = effective?.annotations.banks[String(page)];
+  if (!effective || !bank || !source.bytes) return undefined;
   const key = `${sidecar}:${page}:${source.crc32}`;
-  let binding = bindingCache.get(key);
+  let bindings = bindingCache.get(effective.annotations);
+  if (!bindings) {
+    bindings = new Map();
+    bindingCache.set(effective.annotations, bindings);
+  }
+  let binding = bindings.get(key);
   if (!binding) {
-    const described = await readShippedRomPage(files, sidecar, page);
+    // --- Bound against the bytes the sidecar was written for: its ROM is the shipped one either way
+    const described = await readShippedRomPage(deps.files, sidecar, page);
     if (!described) return undefined;
     binding = bindRomPage(bank, described, source.bytes);
-    bindingCache.set(key, binding);
+    bindings.set(key, binding);
   }
   return {
     layer: {
-      kind: "shipped",
-      path: `${SHIPPED_ROM_FOLDER}/${sidecar}`,
-      origin: `ROM: ${sidecar.replace(/\.dis$/i, "")}`,
-      annotations,
+      kind: effective.working ? "working" : "shipped",
+      path: effective.path,
+      origin: originOf(sidecar, effective.working),
+      annotations: effective.annotations,
       page,
       bound: binding.bound,
       boundRegions: binding.boundRegions
     },
     binding
   };
+}
+
+/** What a tooltip says a name came from: "ROM: sp48.rom (working copy)", "ROM: sp48.rom". */
+function originOf(sidecar: string, working: boolean): string {
+  return `ROM: ${fileNameOf(sidecar).replace(/\.dis$/i, "")}${working ? " (working copy)" : ""}`;
 }
 
 /** Every ROM partition's layers, for the machine running now. */
@@ -206,53 +296,66 @@ export async function loadRomPartitions(deps: RomLoaderDeps): Promise<RomPartiti
     const layers: RomLayer[] = [];
     const bindings: RomPartitionInfo["bindings"] = [];
 
-    // --- 1. The user's own
-    const user = await userLayerPathOf(deps.files, source);
-    const userAnnotations = await readUserLayer(deps.projectService, user.path);
-    if (userAnnotations) {
+    // --- 1. The working copy, when it describes these very bytes
+    const working = await workingCopyOf(deps.files, source, index);
+    const workingAnnotations = await readRomSidecarFile(deps.projectService, working.path);
+    const recordedCrc = workingAnnotations
+      ? await pageCrcOf(deps.projectService, working.path, working.page)
+      : undefined;
+    const hasWorkingCopy = !!workingAnnotations && (!recordedCrc || recordedCrc === source.crc32);
+    let primary: ProgramAnnotations | undefined;
+    if (hasWorkingCopy) {
+      primary = workingAnnotations;
       layers.push({
-        kind: "user",
-        path: user.path,
-        origin: "Your ROM annotations",
-        annotations: userAnnotations,
-        page: user.page
+        kind: "working",
+        path: working.path,
+        origin: originOf(working.shippedSidecar ?? fileNameOf(working.path), true),
+        annotations: workingAnnotations!,
+        page: working.page
       });
-    }
-
-    // --- 2. The shipped one, by CRC; its inherited sidecars byte-bound after it
-    const entry = index[source.crc32];
-    if (entry) {
-      const shipped = await readShippedSidecar(deps.files, entry.sidecar);
+    } else if (working.shippedSidecar) {
+      // --- 2. Otherwise the shipped one, by CRC
+      const shipped = await readShippedSidecar(deps.files, working.shippedSidecar);
       if (shipped) {
+        primary = shipped;
         layers.push({
           kind: "shipped",
-          path: `${SHIPPED_ROM_FOLDER}/${entry.sidecar}`,
-          origin: `ROM: ${entry.sidecar.replace(/\.dis$/i, "")}`,
+          path: `${SHIPPED_ROM_FOLDER}/${working.shippedSidecar}`,
+          origin: originOf(working.shippedSidecar, false),
           annotations: shipped,
-          page: entry.page
+          page: working.page
         });
-        const inherits = (shipped as ProgramAnnotations & { inherits?: { sidecar: string; page: number }[] })
-          .inherits;
-        for (const inherited of inherits ?? []) {
-          const bound = await boundShippedLayer(deps.files, inherited.sidecar, inherited.page, source);
-          if (bound) {
-            layers.push(bound.layer);
-            bindings.push({ sidecar: inherited.sidecar, binding: bound.binding });
-          }
-        }
       }
-    } else if (isBasic48RomPage(deps.machineId, partition, source)) {
-      // --- Q7: an unknown 48K BASIC page gets the 48K ROM's annotations where the bytes match
-      const bound = await boundShippedLayer(deps.files, SP48_SIDECAR, 0, source);
-      if (bound) {
-        layers.push(bound.layer);
-        bindings.push({ sidecar: SP48_SIDECAR, binding: bound.binding });
+    }
+
+    // --- Its inherited sidecars, byte-bound after it; an unknown 48K BASIC page gets sp48 (Q7)
+    const inherited = primary ? inheritsOf(primary) : [];
+    const bound =
+      inherited.length > 0
+        ? inherited
+        : !working.shippedSidecar && isBasic48RomPage(deps.machineId, partition, source)
+          ? [{ sidecar: SP48_SIDECAR, page: 0 }]
+          : [];
+    for (const entry of bound) {
+      const layer = await boundLayer(deps, entry.sidecar, entry.page, source);
+      if (layer) {
+        layers.push(layer.layer);
+        bindings.push({ sidecar: entry.sidecar, binding: layer.binding });
       }
     }
 
     // --- The bytes were needed for binding only; the store keeps the identity
     const { bytes: _bytes, ...identity } = source;
-    result.push({ partition, source: identity, userPath: user.path, userPage: user.page, layers, bindings });
+    result.push({
+      partition,
+      source: identity,
+      workingPath: working.path,
+      workingPage: working.page,
+      hasWorkingCopy,
+      ...(working.shippedSidecar ? { shippedSidecar: working.shippedSidecar } : {}),
+      layers,
+      bindings
+    });
   }
   return result;
 }

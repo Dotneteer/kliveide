@@ -31,6 +31,8 @@ export type SettingsPorts = {
   runAction: (actionId: UiActionId, value?: unknown) => Promise<string | undefined>;
   /** Closes the dialog */
   close: () => void;
+  /** Tells the main process the page shown, so a page-less reopen returns to it */
+  pageShown: (page: SettingsPageId) => void;
 };
 
 export type SettingsIntent =
@@ -55,6 +57,7 @@ export class SettingsController extends UiController<SettingsState, SettingsInte
     switch (intent.type) {
       case "pageSelected":
         this.emit({ type: "pageSelected", page: intent.page });
+        this.ports.pageShown(this.state.page);
         return;
       case "queryChanged":
         this.emit({ type: "queryChanged", query: intent.query });

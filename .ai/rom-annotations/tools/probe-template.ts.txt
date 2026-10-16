@@ -1,0 +1,37 @@
+// A throwaway ZX81 probe: copy to test/zx8081-hw/zz-<name>-probe.test.ts (that folder is in the
+// e2e-cores tier; a core test anywhere else fails in the unit tier), run it, read OUT, delete it.
+//   npx vitest run --config build/vitest.config.ts --project e2e-cores test/zx8081-hw/zz-<name>-probe.test.ts
+// vitest swallows console.log in this config: write results to a file. Record only what you observed
+// (the values) in PROVENANCE.md; never keep the probe.
+import { it } from "vitest";
+import { appendFileSync, writeFileSync } from "node:fs";
+import { createZx81Session } from "../harness/zx81";
+const OUT = "<scratchpad>/probe.txt";
+
+it("probes something", async () => {
+  writeFileSync(OUT, "");
+  const s = await createZx81Session();
+  s.bootToBasic();
+  const m: any = (s as any).machine; // m.pc, m.sp, m.a, m.b, m.bc, m.hl ... for register reads
+
+  // K mode turns the first letter into a keyword: P = PRINT, L = LET, R = RUN, G = GOTO, M = PAUSE,
+  // F = FOR, N = NEXT, H = GOSUB, Y = RETURN, I = INPUT, O = POKE. Symbols map through the typer
+  // (Zx8081Typer.ts): '"' + - * / = < > , ; . $ are SHIFT chords there.
+  s.typeKeys('P"HELLO"\n', { settle: 30 });
+  s.runFrames(60); // let the ROM finish before reading anything
+  appendFileSync(OUT, s.screenText()[0].trimEnd() + "  [" + s.screenText()[23].trimEnd() + "]\n");
+  s.typeKeys("\n", { settle: 20 }); s.runFrames(30); // clear the report before the next command
+
+  // A FUNCTION-mode key (SHIFT+NEWLINE, then the key: X EXP, Q SIN, R INT, J VAL ... see the guide):
+  s.typeKeys("P", { settle: 10 }); s.runFrames(10); s.typeChords([0, 30]); s.runFrames(10);
+  s.typeKeys("X1\n", { settle: 30 }); s.runFrames(80);
+  // A SHIFT token not in the typer (TO = SHIFT+4, ** = SHIFT+H, SLOW = SHIFT+D ...): typeChords([0, code]),
+  // codes from Zx8081KeyCode.ts (Shift 0, NewLine 30, H 34, N4 18, D 7, F 8). Pause 10 frames around it,
+  // or the harness may drop the next keys.
+
+  // Stop at a ROM address with a key held, then read registers and memory:
+  s.typeKeys("R", { settle: 10 }); s.keyDown(30);
+  s.runTo(0x0e27, { maxFrames: 100 });
+  appendFileSync(OUT, `a=${(m.af >> 8).toString(16)} sp=${m.sp.toString(16)} ERR_SP=${s.peekWord(0x4002).toString(16)}\n`);
+  s.keyUp(30);
+});

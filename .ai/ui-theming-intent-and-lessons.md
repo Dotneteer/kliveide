@@ -39,6 +39,11 @@ These were decided by the project author. Changing them is a product decision, n
 | Sprite editor layout | **Document editors are exempt from the `Layout freedom` rule above, which governs the shell.** The sprite editor was rebuilt as one CSS grid — tool rail, pane-fitted canvas with rulers, right inspector, sheet browser — because its canvas was capped at 513px however wide the pane was, so the editor got *emptier* as the window grew. A workspace whose content cannot use its own pane is not fixable by redrawing. |
 | Modal dialogs | **A floating tool panel, not a lifted card.** Header and footer are flat `--surface-chrome` at `--strip-panelHeader` (30px) with `--border-default` seams — the shared `PanelHeader` idiom — an 11px/600 uppercase title, `--radius-md`, and the accent on **one chip** behind an optional header glyph (`ModalProps.iconName`), never a slab. Dialogs were never in the modernization and had to be brought in wholesale; the four treatments were prototyped and the author chose this one. |
 | Overflow (scroll) shadow | **6px, a 1px hairline over a gradient**, app-wide via `AttachedShadow`. The author chose the height against 14/8/6/4/1px. It says "there is content above", it does not dim the first row. |
+| Activity bar foot | **Commands sit at the foot of the bar, outside its tab list.** The activity buttons are `role="tab"` inside an inner `role="tablist"` that takes the free height; a command such as the Settings gear is the same `ActivityButton` with `kind="command"` — a plain button, same size, hover and colour, but **never the active treatment** (no accent bar, no `aria-selected`), because it opens a dialog and selects nothing. Put any further foot command beside it, never inside the tab list. |
+| Activity bar glyphs | **Every activity-bar glyph is a stroked Lucide icon** saved verbatim in `assets/icons/` — Explorer `files`, Machine info `cpu`, Scripting `scroll-text`, Testing `flask-conical`, the Settings foot command `settings` — **except Debug, which reuses the toolbar's start-with-debugging `debug.svg`** so the activity and the action that enters it share one mark. Never mix a filled codicon from `icon-defs.ts` into the bar: beside 2px strokes it reads heavier and out of family. Its stock `files` entry was deleted when `files.svg` replaced it (the registry test forbids a shadowed stock entry). A new activity picks a Lucide glyph for what the panel *is*, not a generic one — `info`/`output` said nothing about machine state. |
+| Toolbar glyphs | **Toolbar buttons in both windows use stroked Lucide-style icons too.** In the IDE, the sync-source-with-breakpoint toggle is `crosshair`, show-memory is `binary` and show-disassembly is `logs`. Those two sit side by side, so they must read as a pair: raw bytes beside a column listing. The author picked `logs` over `code`, `square-code`, `scan-text` and `list-ordered`. **The emulator's record button is `record-start`**, a Lucide-style redraw of the stock `record` codicon: a 2px ring at r=10 around a filled dot at r=6. The author turned down Lucide's `circle-dot` and kept the original's look. The redraw keeps the codicon's proportions: the ring-to-dot gap is one eighth of the icon. A Lucide-*like* glyph may fill an inner shape with `currentColor` and `stroke="none"`; it still follows the theme and the armed/recording `fill`. A swap goes to a *new* icon name at the toolbar call site and never re-points a stock name that other panels share: `memory-icon`, `disassembly-icon` and `record` still serve dialogs, snapshot viewers and the RZX menu. `chevron-down` is the exception that cannot be scoped: an `.svg` with that name replaces the chevron everywhere, so it is still the stock glyph. |
+| Toolbar size | **The main toolbar is compact: 16px secondary icons and 20px primary ones (run/debug split button, pause), all in 24px button boxes, on a 36px strip.** The author asked for a 20% cut so more buttons fit. **Shrink the box with the glyph:** a smaller icon in the old 30px box saves no width. The numbers live in `controls/toolbar-constants.ts` (`SECONDARY_ICON_SIZE`, `PRIMARY_ICON_SIZE`, `TOOLBAR_BUTTON_SIZE`), and a new toolbar `IconButton` passes all three rather than relying on `IconButton`'s 24/30 defaults. `ToolbarSplitButton.module.scss` mirrors the box by hand (26px tall, 28px primary, 14px chevron), so change it together with the constant. The strip height follows the buttons: it keeps exactly 3px of clearance above and below them (`STRIP.toolbar`). |
+| Toolbar split groups | **Any "action + chevron" pair in the toolbar is one split button, never two `IconButton`s.** The run/debug start button, the emulator's sound group (mute/unmute plus the sound-level menu) and its recording group (record plus the recordings menu) share one frame: a 28px main half and a 14px chevron half with a 12px (`xs`) chevron. The frame comes from `ToolbarSplitButton.module.scss`. Use `ToolbarSplitButton` when the menu chooses what the main button runs, and `ToolbarSplitAction` when the main button toggles and the menu is something else; that component leaves both clicks, and the menu, to the caller. A chevron drawn as a full-size `IconButton` reads as a third peer button rather than as part of its neighbour. |
 | Sidebar "..." menu and panel badges | **Extension points exist, unused by default** (`Activity.commands`, `SideBarPanelInfo.badge`). An activity with no commands renders **no button at all**. The Testing activity is the first with commands (`TestingCommands`: Add unit-test support and the runs). Badges so far: Breakpoints, Watch (neutral counts) and Unit Tests (failures, `tone="error"`, so it is absent when everything passes). |
 | Next palette display | **Four device sections, one fixed-cell grid.** The sidebar panel is ULA / Layer 2 / Sprites / Tilemap — *one palette with two banks each*, never eight peers — each row carrying a 32px thumbnail of its whole palette and a two-segment bank control: the fill is the bank you are *looking at*, an accent ring is the bank the machine is *drawing with*. The ring marks the **exception** — the two coincide by default, so it only becomes visible once the view is pinned away from the hardware. `NextPaletteViewer` has no "small" mode and is **sized from its swatch** (`cellSize`, 14px in the sidebar), never from its container. |
 | Navigation history (Go Back / Forward) | **Toolbar controls, not per-area buttons** (the author chose Option A over buttons in each document header): Back, a narrow chevron that opens the history list, and Forward, grouped with no internal gap at the **start** of the IDE toolbar, then a separator. Neutral `--color-toolbarbutton` glyphs; the tooltip names the target and the shortcut. The list is a portalled popover — see "A Menu-Like List With A Header". |
@@ -553,6 +558,14 @@ what it last painted rather than COM.LCDON, so frame and picture never disagree)
 `getScreenSurroundColor()`, in the pixel buffer's ABGR packing. It is not a token. It is the
 machine's colour, the same in both themes, and changes with the machine's state.
 
+**An effect that imitates the TV is drawn on the canvas, never into the machine's picture.** The
+scanline effect and the ZX80/81 TV noise (`features/emulator/tvNoiseEffect.ts`, shown when the
+machine reports `isVideoSignalLost()` and the setting is on) are what a television did to the
+signal, not what the machine sent. So they are applied on the way to the screen canvas only: the
+pixel buffer stays exactly as the core made it, and screenshots, recordings and the screen golden
+tests keep comparing the machine's real picture. Their greys are raw levels, not tokens, for the same
+reason as the surround above: they belong to the emulated picture, in both themes alike.
+
 **A user who has learned one control should not have to learn it twice.** The sprite editor's bank
 switch is the sidebar's, deliberately — same two segments, same meaning (*the fill is the bank you
 are looking at, the ring is the bank the machine is drawing with*), same default of following the
@@ -624,6 +637,11 @@ face, `mix()` in `semantic.ts`). On the ZX81, a hovered legend on the key takes 
 keyword and function print on the black case the second, and a pressed key the third. Reach for
 these for any highlight on a device surface; never `--accent-solid`, whose value depends on a tone
 the device does not have.
+Pick the end by the ground the legend sits on, not by the machine: the ZX80's keys are a mid blue
+(`--device-key-zx80`) with white and amber print, so every hovered legend there - on the key or on
+the case - takes `--accent-on-device-dark`, and a pressed key gets its own tint over its own face
+(`--accent-device-pressed-zx80`), because a tint mixed over the ZX81's white key would read as a
+different key colour, not a pressed one.
 
 ## Alignment In The Register Panels
 
@@ -1077,6 +1095,25 @@ file viewers' root type (`--monospace-font` at `--panel-font-size`), so the two 
 family. A snapshot that should outlive the machine freezes its **palette** with its bytes and says so
 in the palette's header ("as taken").
 
+The same holds for an annotated listing shown read-only (a shipped ROM sidecar in the ROM annotation
+editor): its one-line statement of what the file is replaces the editing chrome (no **New entries**
+toggle, no to-do stepping), and the annotation editor raises **no warning glyph** for it. That glyph
+means a load or save failed; read-only is a decision, and dressing it as a failure makes users hunt for
+an error that is not there.
+
+## A File Path In A Panel Carries Its Reveal Button
+
+Where a document shows the file it edits (the ROM annotation editor's **File** row), a
+`SmallIconButton` with the `folder-opened` icon sits right after the path, titled "Reveal in Finder"
+or "Reveal in File Explorer" from the store's `isWindows` - the same wording as the Explorer's and the
+document tab's context menus, so the action reads the same wherever it is found. It is shown only for a
+path on disk: a path relative to Klive's public folder (`roms/sp48.rom.dis`) has nothing to reveal, and
+a button that does nothing is worse than none.
+
+A choice that only applies to one option of another choice (a bytes region's **Format** in the region
+dialog) appears only while that option is selected, as its own `RadioGroup` row directly below, rather
+than being shown disabled for every other type.
+
 ## A Heading Inside Panel Content Is `SectionHeader`, Not `PanelHeader`
 
 `PanelHeader` is a *panel's own chrome* — a chrome surface with a bottom border. Dropping one into
@@ -1214,6 +1251,12 @@ row shows its *worst* member's glyph, so a collapsed reading of the list still f
 Do not tint whole rows red or green: the glyph plus the message line already say it, and a coloured
 band would read as a selection. The same applies to any future verdict list (lint results, a CI
 report).
+
+A single verdict on a whole file (the ROM annotation editor's **Ready** chip) is a chip in the status
+family's subtle fill: `--status-success` on `--status-success-subtle` when it passes, and
+`--status-warning` on `--status-warning-subtle` - not error - when it does not, because a file still
+being worked on is unfinished, not broken. The chip is the button that lists the reasons, so the
+verdict and its evidence are one click apart and the reasons cost no space until asked for.
 
 ## A Status-Bar Item For Something Outside The IDE Is Quiet Until It Acts
 

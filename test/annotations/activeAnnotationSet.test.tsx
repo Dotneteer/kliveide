@@ -236,8 +236,9 @@ describe("ann-* commands", () => {
       {
         partition: -1,
         source: { crc32: "12345678", size: 0x4000, path: "/roms/custom.rom", page: 0 },
-        userPath: "/roms/custom.rom.dis",
-        userPage: 0,
+        workingPath: "/roms/custom.rom.dis",
+        workingPage: 0,
+        hasWorkingCopy: false,
         layers: [
           {
             kind: "shipped",
@@ -258,8 +259,8 @@ describe("ann-* commands", () => {
     ]);
     expect(lines).toEqual([
       "ROM page -1 (custom.rom, CRC 12345678):",
-      "  shipped: roms/sp48.rom.dis",
-      "  yours: /roms/custom.rom.dis (created by your first ROM label or comment)",
+      "  shipped, inherited: roms/sp48.rom.dis",
+      "  working copy: none (rom-ann-new makes /roms/custom.rom.dis, which makes the page editable)",
       "  7 of 12 labels of sp48.rom.dis bound to these bytes"
     ]);
   });

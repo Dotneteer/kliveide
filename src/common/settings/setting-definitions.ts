@@ -39,6 +39,7 @@ import {
   SETTING_EMU_STOP_ON_ERRORS,
   SETTING_EMU_JUST_MY_CODE,
   SETTING_EMU_SCANLINE_EFFECT,
+  SETTING_EMU_TV_NOISE,
   SETTING_EMU_ZOOM_STEP,
   SETTING_EMU_MOUSE_CAPTURE,
   SETTING_EMU_MOUSE_SHOW_POINTER,
@@ -168,6 +169,18 @@ const settingDefinitions: Setting[] = [
     description: "Intensity of the CRT scanline effect (off, 50%, 25%, or 12.5%).",
     type: "string",
     defaultValue: "off",
+    saveWithIde: true,
+    boundTo: "emu"
+  },
+  {
+    id: SETTING_EMU_TV_NOISE,
+    title: "Show TV Noise Without Sync",
+    description:
+      "When a ZX80 or ZX81 sends no usable sync (a ZX81 running a program in FAST mode, a ZX80 " +
+      "while it computes), show the noise a real television showed instead of a black screen. " +
+      "Only the display changes: the machine and its picture are not affected.",
+    type: "boolean",
+    defaultValue: false,
     saveWithIde: true,
     boundTo: "emu"
   },

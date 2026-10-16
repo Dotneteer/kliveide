@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { ReactNode } from "react";
+import { ReactNode, StrictMode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 
@@ -27,7 +27,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-async function renderPanel() {
+async function renderPanel(strict = false) {
   vi.resetModules();
 
   const documentHubService = {
@@ -134,7 +134,9 @@ async function renderPanel() {
   const { DialogProvider } = await import("@renderer/controls/overlay/DialogProvider");
   const { createStaticMemoryDump } = await import("@renderer/features/memory/StaticMemoryDump");
 
+  const Wrapper = strict ? StrictMode : ({ children }: { children: ReactNode }) => <>{children}</>;
   const result = render(
+    <Wrapper>
     <DialogProvider>
       {createStaticMemoryDump({
         document: { editVersionCount: 0, id: "static-dump-doc", savedVersionCount: 0 },
@@ -152,6 +154,7 @@ async function renderPanel() {
         }
       } as any)}
     </DialogProvider>
+    </Wrapper>
   );
 
   await waitFor(() =>
@@ -187,6 +190,45 @@ describe("annotation shortcuts against the real dialog stack", () => {
 
     fireEvent.keyDown(list, { key: "c" });
     await waitFor(() => expect(screen.getByLabelText("End-of-line preview")).toBeInTheDocument());
+  });
+
+  it("keeps the dialog's field focused when a shortcut opens it under StrictMode", async () => {
+    /*
+     * StrictMode — always on in development — tears a fresh dialog's effects down and sets them up
+     * again. `Modal`'s close cleanup used to "restore" focus during that remount, and a shortcut's
+     * opener is the listing, which is still in the document: the text box lost focus the moment
+     * it got it. A context-menu opener is gone by then, which is why only the shortcut path broke.
+     *
+     * The listing must never be refocused while the dialog opens. Asserting only the end state is
+     * not enough: in jsdom the modal's first-focusable fallback happened to hand focus back.
+     */
+    const { list } = await renderPanel(true);
+    const focused: HTMLElement[] = [];
+    const realFocus = HTMLElement.prototype.focus;
+    HTMLElement.prototype.focus = function (this: HTMLElement, ...args: any[]) {
+      focused.push(this);
+      return realFocus.apply(this, args as any);
+    };
+
+    try {
+      fireEvent.keyDown(list, { key: "c" });
+      await waitFor(() =>
+        expect(screen.getByLabelText("End-of-line preview")).toBeInTheDocument()
+      );
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    } finally {
+      HTMLElement.prototype.focus = realFocus;
+    }
+
+    expect(focused).not.toContain(list);
+    expect(document.activeElement?.tagName).toBe("INPUT");
+
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    await waitFor(() =>
+      expect(screen.queryByLabelText("End-of-line preview")).not.toBeInTheDocument()
+    );
+    // --- The real close still gives focus back to the listing.
+    await waitFor(() => expect(document.activeElement).toBe(list));
   });
 
   it("takes focus back even when nothing restores it", async () => {

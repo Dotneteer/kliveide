@@ -2,21 +2,22 @@ import type { BankAnnotation, ProgramAnnotations } from "./programAnnotations";
 
 /*
  * One layer of a ROM page's annotations: a ROM sidecar (`<rom file>.dis`, `machine: "rom"`) seen
- * from the page it describes (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §5).
+ * from the page it describes (`.plans/ROM_ANNOTATION_EDITING_PLAN.md` §4.2).
  *
- * A paged ROM page has up to two: the **user** layer (the user's own labels, written by the IDE)
- * and the **shipped** layer (authored in the repository, read-only). The user layer wins at the same
- * offset. A shipped layer applied by byte binding (`inherits`, or a ROM whose CRC is unknown) names
- * only the offsets whose bytes it was checked against.
+ * A page has **one** sidecar of its own: its **working** copy (editable, in
+ * `<Klive home>/RomAnnotations/` or beside a custom ROM file) when there is one, otherwise the
+ * **shipped** sidecar (read-only). The layers after it are the sidecars it inherits, applied by byte
+ * binding: such a layer names only the offsets whose bytes it was checked against. An earlier layer
+ * wins at the same offset.
  */
 
-export type RomLayerKind = "user" | "shipped";
+export type RomLayerKind = "working" | "shipped";
 
 export type RomLayer = {
   kind: RomLayerKind;
   /** The sidecar file. */
   path: string;
-  /** What a tooltip says the name came from: "ROM: sp48.rom", "Your ROM annotations". */
+  /** What a tooltip says the name came from: "ROM: sp48.rom", "ROM: sp48.rom (working copy)". */
   origin: string;
   /** The sidecar. */
   annotations: ProgramAnnotations;
@@ -41,5 +42,5 @@ export function romLayerApplies(layer: RomLayer, offset: number): boolean {
   return !layer.bound || layer.bound.has(offset);
 }
 
-/** The ROM layers of a ROM partition (user first), or none. */
+/** The ROM layers of a ROM partition (its own sidecar first), or none. */
 export type RomLayersOf = (partition: number) => readonly RomLayer[];

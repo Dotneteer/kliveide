@@ -11,7 +11,12 @@ import {
   BANK_COMMENT_SOFT_LIMIT,
   normalizeMultilineComment,
   parseAnnotations,
-  validateAnnotations
+  validateAnnotations,
+  toSidecarRegion,
+  sameRegionLayout,
+  byteRegionFormatOf,
+  byteRegionLayoutOf,
+  BYTE_REGION_FORMATS
 } from "@renderer/appIde/annotations/programAnnotations";
 
 describe("NEX annotations", () => {
@@ -219,6 +224,50 @@ describe("NEX annotations", () => {
       { start: 16, end: 23, type: "bytes" },
       { start: 24, end: 0x3fff, type: "disassemble" }
     ]);
+  });
+
+  it("reads a binary bytes region, keeps it apart from hexadecimal neighbours, and stores it as it is", () => {
+    const result = validateAnnotations({
+      schemaVersion: 2,
+      banks: {
+        "5": {
+          offsetIndex: 0,
+          regions: [
+            { start: 0, end: 7, type: "bytes", rowBytes: 1, radix: "binary" },
+            { start: 8, end: 15, type: "bytes", rowBytes: 1 }
+          ]
+        }
+      }
+    });
+    expect(result.diagnostics).toEqual([]);
+    const regions = result.annotations!.banks["5"].regions;
+    expect(regions.slice(0, 2)).toEqual([
+      { start: 0, end: 7, type: "bytes", rowBytes: 1, radix: "binary" },
+      { start: 8, end: 15, type: "bytes", rowBytes: 1 }
+    ]);
+    expect(toSidecarRegion(regions[0])).toEqual({ start: 0, end: 7, type: "bytes", rowBytes: 1, radix: "binary" });
+    expect(sameRegionLayout(regions[0], regions[1])).toBe(false);
+  });
+
+  it("ignores, with a warning, a radix that is unknown or not on a bytes region", () => {
+    const check = (region: Record<string, unknown>) =>
+      validateAnnotations({ schemaVersion: 2, banks: { "5": { offsetIndex: 0, regions: [region] } } });
+    const unknown = check({ start: 0, end: 7, type: "bytes", radix: "octal" });
+    expect(unknown.annotations!.banks["5"].regions[0]).toEqual({ start: 0, end: 7, type: "bytes" });
+    expect(unknown.diagnostics).toContainEqual(expect.objectContaining({ severity: "warning", path: "$.banks.5.regions[0].radix" }));
+    const onWords = check({ start: 0, end: 7, type: "words", radix: "binary" });
+    expect(onWords.annotations!.banks["5"].regions[0]).toEqual({ start: 0, end: 7, type: "words" });
+    expect(onWords.diagnostics).toContainEqual(expect.objectContaining({ severity: "warning", path: "$.banks.5.regions[0].radix" }));
+  });
+
+  it("maps each format the region dialog offers to its stored layout and back", () => {
+    for (const { value } of BYTE_REGION_FORMATS) {
+      expect(byteRegionFormatOf(byteRegionLayoutOf(value))).toBe(value);
+    }
+    expect(byteRegionLayoutOf("hex4")).toEqual({});
+    expect(byteRegionLayoutOf("bin1")).toEqual({ rowBytes: 1, radix: "binary" });
+    // --- A layout the dialog does not offer reads as the default
+    expect(byteRegionFormatOf({ rowBytes: 3 })).toBe("hex4");
   });
 
   it("rejects rowBytes outside 1..4 or on a region that is not bytes", () => {

@@ -51,6 +51,10 @@ export type Zx8081WasmV2Views = {
   readonly keyboardLines: Uint8Array;
   /** The tape file bytes (the pulse synthesizer and the fast-load traps read them) */
   readonly tapeData: Uint8Array;
+  /** The name of the last SAVE that ended, as the ROM sent it (ZX81 characters, bit 7 on the last) */
+  readonly savedName: Uint8Array;
+  /** The program of the last SAVE that ended: a `.P` file's bytes, from $4009 */
+  readonly savedData: Uint8Array;
   /** The shared core's per-instruction data-access log */
   readonly accessLog: Uint32Array;
   /** The debugger's breakpoint flags, one word per address (`DebugSupport.breakpointFlags`) */
@@ -169,8 +173,16 @@ export const zx8081WasmV2RequiredExports = [
   "zx8081TapeGetMotor",
   "zx8081TapeGetPlaying",
   "zx8081TapeGetPulsePosition",
+  "zx8081TapeGetSaveDataCapacity",
+  "zx8081TapeGetSavedDataLength",
+  "zx8081TapeGetSavedNameLength",
+  "zx8081TapeGetSavedRevision",
+  "zx8081TapeGetSaveNameCapacity",
+  "zx8081TapeGetSavePhase",
   "zx8081TapeGetTraps",
   "zx8081TapeRewind",
+  "zx8081TapeSavedDataPtr",
+  "zx8081TapeSavedNamePtr",
   "zx8081TapeSetAutoMotor",
   "zx8081TapeSetFastLoad",
   "zx8081TapeSetLength",
@@ -237,6 +249,8 @@ export function createZx8081WasmV2Views(
   const ramSize = exports.zx8081GetRamCapacity();
   const pixelWords = exports.zx8081GetPixelBufferCapacity();
   const tapeSize = exports.zx8081GetTapeCapacity();
+  const savedNameSize = exports.zx8081TapeGetSaveNameCapacity();
+  const savedDataSize = exports.zx8081TapeGetSaveDataCapacity();
   const check = (name: string, offset: number, byteLength: number) =>
     assertViewRange(artifactName, name, offset, byteLength, memoryBuffer);
   check("rom", exports.zx8081RomPtr(), romSize);
@@ -244,6 +258,8 @@ export function createZx8081WasmV2Views(
   check("pixelBuffer", exports.zx8081PixelBufferPtr(), pixelWords * 4);
   check("keyboardLines", exports.zx8081KeyboardLinesPtr(), ZX8081_WASM_V2_KEYBOARD_LINE_COUNT);
   check("tapeData", exports.zx8081TapeDataPtr(), tapeSize);
+  check("savedName", exports.zx8081TapeSavedNamePtr(), savedNameSize);
+  check("savedData", exports.zx8081TapeSavedDataPtr(), savedDataSize);
   check("accessLog", exports.zx8081GetAccessLogPtr(), WASM_ACCESS_LOG_CAPACITY * 4);
   check("breakpointFlags", exports.zx8081BreakpointFlagsPtr(), 0x1_0000 * 2);
   check("condPlan", exports.zx8081CondPlanPtr(), WASM_CORE_CONDITION_PLAN_WORDS * 4);
@@ -256,6 +272,8 @@ export function createZx8081WasmV2Views(
     pixelBufferBytes: new Uint8ClampedArray(memoryBuffer, exports.zx8081PixelBufferPtr(), pixelWords * 4),
     keyboardLines: new Uint8Array(memoryBuffer, exports.zx8081KeyboardLinesPtr(), ZX8081_WASM_V2_KEYBOARD_LINE_COUNT),
     tapeData: new Uint8Array(memoryBuffer, exports.zx8081TapeDataPtr(), tapeSize),
+    savedName: new Uint8Array(memoryBuffer, exports.zx8081TapeSavedNamePtr(), savedNameSize),
+    savedData: new Uint8Array(memoryBuffer, exports.zx8081TapeSavedDataPtr(), savedDataSize),
     accessLog: new Uint32Array(memoryBuffer, exports.zx8081GetAccessLogPtr(), WASM_ACCESS_LOG_CAPACITY),
     breakpointFlags: new Uint16Array(memoryBuffer, exports.zx8081BreakpointFlagsPtr(), 0x1_0000),
     condPlan: new Uint32Array(memoryBuffer, exports.zx8081CondPlanPtr(), WASM_CORE_CONDITION_PLAN_WORDS)

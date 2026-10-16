@@ -11,6 +11,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const FLOAT_SPY = new Uint8Array(readFileSync(join(__dirname, "../testfiles/floatspy.tap")));
 // --- Block 1's payload: the flag and checksum stripped; the program is its first 5,476 bytes
 const PROGRAM = FLOAT_SPY.subarray(2 + 19 + 2 + 1, 2 + 19 + 2 + 1 + 5476);
+// --- A ZX81 program's parts, as the `.P` viewer pops them out: the BASIC lines and the display file
+const CHARACTERS = new Uint8Array(readFileSync(join(__dirname, "../../_input/zx81-tapes/basic/Characters.P")));
+const ZX81_PROGRAM = CHARACTERS.subarray(0x407d - 0x4009, 0x40f3 - 0x4009);
+const ZX81_DISPLAY = CHARACTERS.subarray(0x40f3 - 0x4009, 0x440c - 0x4009);
+const ZX81_ROM = new Uint8Array(readFileSync(join(__dirname, "../../src/public/roms/zx81.rom")));
 
 beforeEach(() => {
   Object.defineProperty(document, "queryCommandSupported", {
@@ -59,6 +64,9 @@ async function renderPanel(contents: Uint8Array, viewState: Record<string, unkno
   vi.doMock("@renderer/controls/Next/ScreenCanvas", () => ({
     ScreenCanvas: () => <div data-testid="screen-canvas" />
   }));
+  vi.doMock("@renderer/core/MainApi", () => ({
+    useMainApi: () => ({ readBinaryFile: () => Promise.resolve(ZX81_ROM) })
+  }));
   const { createTapeBlockViewerPanel } =
     await import("@renderer/appIde/DocumentPanels/Tape/TapeBlockViewerPanel");
   render(
@@ -104,5 +112,26 @@ describe("TapeBlockViewerPanel", () => {
     vi.resetModules();
     await renderPanel(new Uint8Array(100), { view: "screen" });
     expect(screen.getByText(/A screen is 6,912 bytes; this block holds 100/)).toBeInTheDocument();
+  });
+
+  it("lists a ZX81 program in the ZX81's own format", async () => {
+    const { writeText } = await renderPanel(ZX81_PROGRAM, {
+      view: "basic",
+      format: "zx81",
+      basicEnd: ZX81_PROGRAM.length
+    });
+    expect(screen.getByText("6 lines")).toBeInTheDocument();
+    expect(screen.getByText("Use Sinclair font:")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Copy to clipboard" }));
+    await waitFor(() => expect(writeText).toHaveBeenCalled());
+    const text = (writeText.mock.calls[0] as unknown as [string])[0];
+    // --- ZX81 tokens, not the Spectrum's: the same bytes read as a Spectrum program would not list
+    expect(text).toMatch(/^ {2}10 /m);
+    expect(text).toContain("PRINT");
+  });
+
+  it("draws a ZX81 display file with the ROM's characters", async () => {
+    await renderPanel(ZX81_DISPLAY, { view: "screen", format: "zx81" });
+    expect(await screen.findByTestId("screen-canvas")).toBeInTheDocument();
   });
 });

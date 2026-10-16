@@ -844,6 +844,54 @@ describe("StaticMemoryDump", () => {
     });
   });
 
+  /*
+   * A ROM page document (`.plans/ROM_ANNOTATION_EDITING_PLAN.md` §10) names the variables of the
+   * machine the ROM belongs to. The selected machine here reports the Spectrum's `LAST-K` at `$5C08`.
+   */
+  describe("a ROM page listing", () => {
+    /** `ld hl,$4029` (the ZX81's NXTLIN), then `ld hl,$5C08` (the Spectrum's LAST_K). */
+    const ROM_CODE = () => {
+      const contents = new Uint8Array(0x2000);
+      contents.set([0x21, 0x29, 0x40, 0x21, 0x08, 0x5c]);
+      return contents;
+    };
+
+    const renderRom = (viewState: Record<string, unknown>) =>
+      renderStaticMemoryDump(
+        { disassemblyEnabled: true, viewMode: "disassembly", disassOffset: 0, disassemblyFlavor: "rom", ...viewState },
+        undefined,
+        undefined,
+        ROM_CODE()
+      );
+
+    it("names a ZX81 ROM's operands after the ZX81's variables, whatever machine is selected", async () => {
+      await renderRom({ romPageKind: "zx81" });
+
+      expect(await screen.findByText("ld hl,NXTLIN")).toBeInTheDocument();
+      expect(screen.getByText("ld hl,$5C08")).toBeInTheDocument();
+      expect(screen.queryByText("ld hl,LAST_K")).not.toBeInTheDocument();
+    });
+
+    it("names a 48K ROM's after the 48K's", async () => {
+      await renderRom({ romPageKind: "sp48-basic" });
+
+      expect(await screen.findByText("ld hl,LAST_K")).toBeInTheDocument();
+      expect(screen.getByText("ld hl,$4029")).toBeInTheDocument();
+    });
+
+    it("falls back to the selected machine's for a ROM Klive does not know", async () => {
+      await renderRom({});
+
+      expect(await screen.findByText("ld hl,LAST_K")).toBeInTheDocument();
+    });
+
+    it("names nothing when the switch is off", async () => {
+      await renderRom({ romPageKind: "zx81", sysVarNames: false });
+
+      expect(await screen.findByText("ld hl,$4029")).toBeInTheDocument();
+    });
+  });
+
   /**
    * The label column is sized to the listing, not to `L1234:`.
    *

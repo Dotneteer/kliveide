@@ -17,6 +17,8 @@
  * A `.P` file has no name, so the host puts the nameless marker $80 in front of it, which `LOAD ""`
  * accepts. The ZX80 ROM's trap is CLK's: at $0220 the byte goes to (HL) and execution resumes at
  * $0248. When the bytes run out the traps stop, and the ROM sees a silent tape.
+ *
+ * The ZX81 ROM's SAVE is captured as a `.P` file (the section "SAVE" below).
  */
 
 #define ZX8081_TAPE_LEADER_TACTS 3250000u /* 1 s */
@@ -150,6 +152,144 @@ static uint8_t zx8081TapeTryTrap(void) {
   zx8081AdvanceTacts(4u);
   return 1u;
 }
+
+// -----------------------------------------------------------------------------
+// SAVE: the ZX81 ROM's SAVE captured as a `.P` file
+// -----------------------------------------------------------------------------
+
+/*
+ * The Spectrum cores decode their SAVE from the MIC pulses; the ZX81's tape signal is VSYNC, which the
+ * ROM toggles for the picture too, so this capture listens one level up: at the byte each call of
+ * OUT-BYTE sends. The ZX81 ROM's SAVE (checked against the ROM bytes):
+ * - $02F6 SAVE: NAME ($03A8) checks the name (report F if empty) and turns the picture off;
+ * - $02FF: the ~5 s lead-in, a delay loop counting DE down with a BREAK check;
+ * - $030B OUT-NAME: OUT-BYTE for every name character, the last with bit 7 set;
+ * - $0313: `LD HL,$4009`, then $0316 OUT-PROG: OUT-BYTE for every byte from VERSN up to E_LINE - 1
+ *   (LOAD/SAVE at $01FC ends the loop when HL + 1 reaches E_LINE);
+ * - $031E OUT-BYTE: sends the byte at (HL).
+ * The bytes of OUT-PROG are exactly a `.P` file. A SAVE stopped by BREAK (report D) never completes
+ * and is dropped. With fast load on, the lead-in is skipped and OUT-BYTE returns at once - the same
+ * bytes, without the minutes of pulses a 16K program takes. A SAVE that ends is copied into the saved
+ * buffers and the revision counted; the host publishes it when the revision changes.
+ */
+
+#define ZX8081_SAVE_NAME_CAPACITY 0x100u
+#define ZX8081_SAVE_DATA_CAPACITY 0x10000u
+
+#define ZX8081_SAVE_PHASE_NONE 0u
+#define ZX8081_SAVE_PHASE_NAME 1u
+#define ZX8081_SAVE_PHASE_PROGRAM 2u
+
+/* The SAVE in progress */
+static uint8_t zx8081SaveName[ZX8081_SAVE_NAME_CAPACITY];
+static uint8_t zx8081SaveData[ZX8081_SAVE_DATA_CAPACITY];
+static uint32_t zx8081SaveNameLength;
+static uint32_t zx8081SaveDataLength;
+static uint8_t zx8081SavePhase;
+/* HL of the last byte recorded: an OUT-BYTE entered again at the same byte is not a new one */
+static uint32_t zx8081SaveLastHl;
+
+/* The last SAVE that ended */
+static uint8_t zx8081SavedName[ZX8081_SAVE_NAME_CAPACITY];
+static uint8_t zx8081SavedData[ZX8081_SAVE_DATA_CAPACITY];
+static uint32_t zx8081SavedNameLength;
+static uint32_t zx8081SavedDataLength;
+static uint32_t zx8081SavedRevision;
+
+static void zx8081SaveComplete(void) {
+  for (uint32_t i = 0u; i < zx8081SaveNameLength; i++) zx8081SavedName[i] = zx8081SaveName[i];
+  for (uint32_t i = 0u; i < zx8081SaveDataLength; i++) zx8081SavedData[i] = zx8081SaveData[i];
+  zx8081SavedNameLength = zx8081SaveNameLength;
+  zx8081SavedDataLength = zx8081SaveDataLength;
+  zx8081SavedRevision++;
+  zx8081SavePhase = ZX8081_SAVE_PHASE_NONE;
+}
+
+/* OUT-BYTE is about to send the byte at (HL): records it, and ends the SAVE at its last byte */
+static void zx8081SaveRecordByte(void) {
+  const uint16_t hl = cpu.hl.word;
+  if (hl == zx8081SaveLastHl) return;
+  zx8081SaveLastHl = hl;
+  const uint8_t value = zx8081PeekMemory(hl);
+  if (zx8081SavePhase == ZX8081_SAVE_PHASE_NAME) {
+    if (zx8081SaveNameLength < ZX8081_SAVE_NAME_CAPACITY) zx8081SaveName[zx8081SaveNameLength++] = value;
+    return;
+  }
+  if (zx8081SaveDataLength < ZX8081_SAVE_DATA_CAPACITY) zx8081SaveData[zx8081SaveDataLength++] = value;
+  const uint32_t eLine = (uint32_t)zx8081PeekMemory(0x4014u) | ((uint32_t)zx8081PeekMemory(0x4015u) << 8);
+  if ((uint32_t)hl + 1u >= eLine) zx8081SaveComplete();
+}
+
+/*
+ * At an instruction boundary in the ZX81 ROM's SAVE ($02F6-$031E): follows the routine, records the
+ * bytes OUT-BYTE sends, and with fast load skips the lead-in and the pulses. Returns 1 when it ran
+ * the instruction in place of the CPU.
+ */
+static uint8_t zx8081TapeSaveTrap(void) {
+  const uint16_t pc = cpu.pc;
+  if (!zx8081RomIsZx81 || (uint16_t)(pc - 0x02f6u) > 0x28u || cpu.prefix != PREFIX_NONE) return 0u;
+  switch (pc) {
+    case 0x02f6u:
+      /* SAVE: a new file; one stopped by BREAK earlier is forgotten */
+      zx8081SavePhase = ZX8081_SAVE_PHASE_NAME;
+      zx8081SaveNameLength = 0u;
+      zx8081SaveDataLength = 0u;
+      zx8081SaveLastHl = 0x10000u;
+      return 0u;
+
+    case 0x02ffu:
+      /* The lead-in's delay loop: done at once (DE and B as the loop leaves them) */
+      if (!zx8081TapeFastLoad || zx8081SavePhase != ZX8081_SAVE_PHASE_NAME) return 0u;
+      cpu.de.word = 0u;
+      cpu.bc.bytes.high = 0u;
+      cpu.pc = 0x030bu;
+      break;
+
+    case 0x0313u:
+      /* The name is out: the program follows from $4009 */
+      if (zx8081SavePhase == ZX8081_SAVE_PHASE_NAME) {
+        zx8081SavePhase = ZX8081_SAVE_PHASE_PROGRAM;
+        zx8081SaveLastHl = 0x10000u;
+      }
+      return 0u;
+
+    case 0x031eu: {
+      if (zx8081SavePhase == ZX8081_SAVE_PHASE_NONE) return 0u;
+      zx8081SaveRecordByte();
+      if (!zx8081TapeFastLoad) return 0u;
+      /* OUT-BYTE returned: E shifted empty, Z set (its RET Z); the callers use neither */
+      const uint16_t sp = cpu.sp;
+      cpu.pc = (uint16_t)(zx8081PeekMemory(sp) | (zx8081PeekMemory((uint16_t)(sp + 1u)) << 8));
+      cpu.sp = (uint16_t)(sp + 2u);
+      cpu.de.bytes.low = 0u;
+      cpu.af.bytes.low |= FLAG_Z;
+      break;
+    }
+
+    default:
+      return 0u;
+  }
+  zx8081TapeTraps++;
+  /* A NOP's time, so the frame keeps moving */
+  zx8081AdvanceTacts(4u);
+  return 1u;
+}
+
+/* A reset forgets a SAVE in progress (one that ended stays for the host) */
+static void zx8081TapeResetSave(void) {
+  zx8081SavePhase = ZX8081_SAVE_PHASE_NONE;
+  zx8081SaveNameLength = 0u;
+  zx8081SaveDataLength = 0u;
+}
+
+uint32_t zx8081TapeGetSavedRevision(void) { return zx8081SavedRevision; }
+uint32_t zx8081TapeGetSavedNameLength(void) { return zx8081SavedNameLength; }
+uint32_t zx8081TapeGetSavedDataLength(void) { return zx8081SavedDataLength; }
+uint32_t zx8081TapeSavedNamePtr(void) { return (uint32_t)(uintptr_t)zx8081SavedName; }
+uint32_t zx8081TapeSavedDataPtr(void) { return (uint32_t)(uintptr_t)zx8081SavedData; }
+uint32_t zx8081TapeGetSaveNameCapacity(void) { return ZX8081_SAVE_NAME_CAPACITY; }
+uint32_t zx8081TapeGetSaveDataCapacity(void) { return ZX8081_SAVE_DATA_CAPACITY; }
+uint32_t zx8081TapeGetSavePhase(void) { return zx8081SavePhase; }
 
 /* The host has written `length` bytes at `zx8081TapeDataPtr()` (a `.P` with its $80 marker) */
 void zx8081TapeSetLength(uint32_t length) {

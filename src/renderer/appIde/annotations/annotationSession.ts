@@ -1,5 +1,6 @@
 import type { IProjectService } from "@renderer/abstractions/IProjectService";
 import {
+  formatAnnotations,
   loadAnnotationSidecar,
   saveAnnotationSubtree
 } from "./annotationSidecar";
@@ -31,6 +32,11 @@ export type AnnotationSessionSnapshot = {
   missing?: boolean;
   loadError?: string;
   saveError?: string;
+  /**
+   * This snapshot is the file as another program changed it (`reloadAnnotationSessionFromDisk`),
+   * not an edit made here. Set on that one snapshot only. Nothing needs writing: the file has it.
+   */
+  reloaded?: boolean;
 };
 
 type AnnotationSessionListener = (snapshot: AnnotationSessionSnapshot) => void;
@@ -46,7 +52,34 @@ type AnnotationSession = AnnotationSessionSnapshot & {
   writeQueued: boolean;
   /** How to write. Captured from the first subscriber, since the session outlives any one panel. */
   writer?: Pick<IProjectService, "readFileContent" | "saveFileContent">;
+  /** The banks the first load validated against, so a reload reads the file the same way */
+  loadBanks?: number[];
+  /** A re-read in flight, so a burst of outside changes is read one after the other */
+  reloading?: Promise<void>;
+  /** The main process follows this file for outside changes */
+  watched?: boolean;
+  /**
+   * The file's text as this session last read or wrote it. A change report whose file still holds
+   * exactly this is the session's own write (or a touch), not news.
+   */
+  diskText?: string;
+  /**
+   * Counts the models published here. A re-read that started under one revision and finished under
+   * another overlapped an edit: what it read may be older than that edit, so it is dropped.
+   */
+  revision: number;
 };
+
+/**
+ * How a session asks for its file to be followed for changes made outside the IDE. Installed by
+ * `AnnotationFileWatchHost` with the main process's watcher; absent in tests and before start-up.
+ */
+export type AnnotationFileWatch = {
+  watch(annotationPath: string): void;
+  unwatch(annotationPath: string): void;
+};
+
+let fileWatch: AnnotationFileWatch | undefined;
 
 const sessions = new Map<string, AnnotationSession>();
 
@@ -61,6 +94,8 @@ export function subscribeAnnotationSession(
   // --- Subscribing is also how the session learns to write: it outlives every panel that edits it,
   // --- so it holds its own writer rather than being handed one per edit.
   session.writer = projectService;
+  // --- A session someone follows is one whose file another program may change under it
+  watchSession(annotationPath, session);
   ensureSessionLoaded(projectService, annotationPath, bank, session);
   listener(createSnapshot(session));
   return () => {
@@ -86,6 +121,7 @@ export function seedAnnotationSession(
   const session = getOrCreateSession(annotationPath);
   if (session.annotations || session.loadStarted || session.loadError) return;
   session.annotations = annotations;
+  session.revision++;
   session.loadStarted = true;
   session.loading = false;
   session.dirty = false;
@@ -113,6 +149,7 @@ export function updateAnnotationSession(
     throw new Error(`${annotationPath} is read-only.`);
   }
   session.annotations = annotations;
+  session.revision++;
   session.dirty = true;
   session.missing = false;
   session.loadError = undefined;
@@ -152,7 +189,9 @@ async function writeSession(
       try {
         // --- Only the annotation keys: the `debug` subtree beside them is written by the breakpoint
         // --- path and must survive this write untouched. See `annotationSidecar.ts`.
-        await saveAnnotationSubtree(session.writer, annotationPath, annotations);
+        const written = await saveAnnotationSubtree(session.writer, annotationPath, annotations);
+        // --- What the file holds now, unless an edit has gone out behind it (the next pass writes it)
+        session.diskText = written;
         // --- Only clean if nothing arrived while that write was in the air.
         session.dirty = session.writeQueued;
         session.saveError = undefined;
@@ -204,7 +243,134 @@ export function peekAnnotationSession(
 }
 
 export function clearAnnotationSessions(): void {
+  for (const [annotationPath, session] of sessions) unwatchSession(annotationPath, session);
   sessions.clear();
+}
+
+/**
+ * Install (or, with `undefined`, remove) how sessions have their files followed for outside changes.
+ * Every session that exists already is followed at once; each new one from its creation.
+ */
+export function setAnnotationFileWatch(watch: AnnotationFileWatch | undefined): void {
+  for (const [annotationPath, session] of sessions) unwatchSession(annotationPath, session);
+  fileWatch = watch;
+  for (const [annotationPath, session] of sessions) watchSession(annotationPath, session);
+}
+
+/**
+ * Read a session's file again because another program changed it, and publish what it now holds.
+ *
+ * The IDE's own writes are reported by the watcher too, and so are ignored by what they write: a
+ * file holding the model the session already has changes nothing. Nor is the file read while this
+ * session owes a write (`dirty`, or one in flight): the file is then a write behind the model, and
+ * the write that follows puts the newest model there anyway.
+ *
+ * A file that does not parse — another program caught half-way through a save, or a typo in a hand
+ * edit — is not published: the session keeps the last good model, and the next change is read
+ * again. A file that was deleted publishes as missing.
+ */
+export function reloadAnnotationSessionFromDisk(
+  annotationPath: string,
+  projectService?: Pick<IProjectService, "readFileContent">
+): Promise<void> {
+  const session = sessions.get(annotationPath);
+  if (!session || session.readOnly) return Promise.resolve();
+  const reader = projectService ?? session.writer;
+  if (!reader) return Promise.resolve();
+  const reload = (session.reloading ?? Promise.resolve())
+    .then(() => rereadSession(annotationPath, session, reader))
+    .catch(() => {
+      // --- A read that failed changes nothing; the next change is read again
+    });
+  session.reloading = reload;
+  void reload.then(() => {
+    if (session.reloading === reload) session.reloading = undefined;
+  });
+  return reload;
+}
+
+async function rereadSession(
+  annotationPath: string,
+  session: AnnotationSession,
+  reader: Pick<IProjectService, "readFileContent">
+): Promise<void> {
+  if (owesWrite(session)) return;
+  const revision = session.revision;
+  const state = await loadAnnotationSidecar(reader, { fullPath: annotationPath }, session.loadBanks);
+  // --- Gone, or edited here while the file was being read — even an edit whose write has already
+  // --- finished: what was read may predate it, and publishing it would undo the edit
+  if (sessions.get(annotationPath) !== session || owesWrite(session) || session.revision !== revision) {
+    return;
+  }
+  if (state.status === "loaded") {
+    // --- The session's own write, reported like any other change
+    if (state.text !== undefined && state.text === session.diskText) return;
+    session.diskText = state.text;
+    const next = withViewSettingsOf(session.annotations, state.annotations!);
+    if (session.annotations && sameModel(session.annotations, next)) return;
+    session.annotations = next;
+    session.missing = false;
+  } else if (state.status === "missing") {
+    session.diskText = undefined;
+    if (session.missing && !session.annotations) return;
+    session.annotations = undefined;
+    session.missing = true;
+  } else {
+    return;
+  }
+  session.revision++;
+  session.loadError = undefined;
+  session.saveError = undefined;
+  session.loadStarted = true;
+  session.loading = false;
+  session.dirty = false;
+  emitSession(session, true);
+}
+
+function owesWrite(session: AnnotationSession): boolean {
+  return session.dirty || !!session.writing;
+}
+
+/**
+ * A ROM sidecar does not store how its page was last shown (`romSidecarWriter.ts` drops `lastView`
+ * and `decimalView`), so a model read back from one has none. Those the session holds are kept: they
+ * belong to the open documents, not to the file, and losing them would switch a page's view.
+ */
+function withViewSettingsOf(
+  current: ProgramAnnotations | undefined,
+  read: ProgramAnnotations
+): ProgramAnnotations {
+  if (!current || read.machine !== "rom") return read;
+  let banks: ProgramAnnotations["banks"] | undefined;
+  for (const [key, bank] of Object.entries(read.banks)) {
+    const held = current.banks[key];
+    if (!held || (held.lastView === undefined && held.decimalView === undefined)) continue;
+    if (bank.lastView !== undefined || bank.decimalView !== undefined) continue;
+    banks ??= { ...read.banks };
+    banks[key] = {
+      ...bank,
+      ...(held.lastView !== undefined ? { lastView: held.lastView } : {}),
+      ...(held.decimalView !== undefined ? { decimalView: held.decimalView } : {})
+    };
+  }
+  return banks ? { ...read, banks } : read;
+}
+
+/** Two models are the same when they would be written as the same file */
+function sameModel(left: ProgramAnnotations, right: ProgramAnnotations | undefined): boolean {
+  return !!right && formatAnnotations(left) === formatAnnotations(right);
+}
+
+function watchSession(annotationPath: string, session: AnnotationSession): void {
+  if (!fileWatch || session.watched || session.readOnly) return;
+  session.watched = true;
+  fileWatch.watch(annotationPath);
+}
+
+function unwatchSession(annotationPath: string, session: AnnotationSession): void {
+  if (!fileWatch || !session.watched) return;
+  session.watched = false;
+  fileWatch.unwatch(annotationPath);
 }
 
 /**
@@ -218,7 +384,10 @@ export function seedReadOnlyAnnotationSession(
 ): void {
   const session = getOrCreateSession(annotationPath);
   session.readOnly = true;
+  // --- Shipped files are not edited while the IDE runs
+  unwatchSession(annotationPath, session);
   session.annotations = annotations;
+  session.revision++;
   session.loadStarted = true;
   session.loading = false;
   session.dirty = false;
@@ -233,6 +402,7 @@ export function seedReadOnlyAnnotationSession(
 export function forgetMissingAnnotationSession(annotationPath: string): void {
   const session = sessions.get(annotationPath);
   if (!session || session.annotations || session.writing || session.listeners.size > 0) return;
+  unwatchSession(annotationPath, session);
   sessions.delete(annotationPath);
 }
 
@@ -247,6 +417,7 @@ function getOrCreateSession(annotationPath: string): AnnotationSession {
     loading: false,
     loadStarted: false,
     writeQueued: false,
+    revision: 0,
     listeners: new Set()
   };
   sessions.set(annotationPath, session);
@@ -265,6 +436,7 @@ function ensureSessionLoaded(
 
   session.loadStarted = true;
   session.loading = true;
+  session.loadBanks = bank === undefined ? undefined : [bank];
   emitSession(session);
   loadAnnotationSidecar(
     projectService,
@@ -279,6 +451,8 @@ function ensureSessionLoaded(
     }
     if (state.status === "loaded") {
       session.annotations = state.annotations;
+      session.diskText = state.text;
+      session.revision++;
       session.loadError = undefined;
       session.missing = false;
     } else {
@@ -293,8 +467,9 @@ function ensureSessionLoaded(
   });
 }
 
-function emitSession(session: AnnotationSession): void {
+function emitSession(session: AnnotationSession, reloaded = false): void {
   const snapshot = createSnapshot(session);
+  if (reloaded) snapshot.reloaded = true;
   session.listeners.forEach((listener) => listener(snapshot));
 }
 

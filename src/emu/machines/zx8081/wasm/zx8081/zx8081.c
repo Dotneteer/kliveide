@@ -254,7 +254,7 @@ uint32_t zx8081ExecuteInstruction(void) {
     z80ClearBusEvents();
     zx8081OpStartAddress = cpu.pc;
   }
-  if (zx8081TapeTryTrap()) {
+  if (zx8081TapeTryTrap() || zx8081TapeSaveTrap()) {
     zx8081AfterInstruction();
     return zx8081FrameCompleted;
   }
@@ -352,6 +352,7 @@ static void zx8081ResetMachine(void) {
   zx8081UlaReset();
   zx8081VideoReset();
   zx8081TapeResetPlayback();
+  zx8081TapeResetSave();
 }
 
 /* The reset button (the ZX80/81 has none; the IDE's soft reset): CPU registers kept as on a Z80 */

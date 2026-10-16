@@ -75,6 +75,10 @@ provenance that names nothing.
 
 ## The tools
 
+For the ZX81 ROM, `zx81-authoring-guide.md` beside this file carries the session method, the
+helper scripts in `tools/` (a listing through Klive's disassembler, applying a batch through the
+formatter, the IDE's readiness check, a harness probe template) and the state of the work.
+
 ```
 npm run rom:annotations                    # format every sidecar, regenerate the CRC index
 npm run rom:annotations -- --check         # what build:check runs
@@ -96,6 +100,47 @@ Always run the formatter before committing: the files are diffed one entry per l
 
 `level` measures the label rules; marking every data region is the author's judgement,
 backed by the coverage run. A file never records a level higher than the tool measures.
+
+## Authoring in the IDE
+
+The shipped files can be authored in Klive itself (`.plans/ROM_ANNOTATION_EDITING_PLAN.md`)
+instead of by editing JSON:
+
+1. `rom-ann-new sp48.rom` copies `src/public/roms/sp48.rom.dis` unchanged into
+   `<Klive home>/RomAnnotations/sp48.rom.dis` — the **working copy** — and opens it in the
+   ROM annotation editor. From then on it replaces the shipped file everywhere in the IDE.
+2. Open a page's **Disassembly** and annotate it with the NEX viewer's dialogs and shortcuts.
+   Set **New entries** to `manual` before adding an interface fact or a conventional name, and
+   back to `observed` after; `rom-ann-provenance` corrects an entry afterwards. A changed entry
+   keeps its provenance. **Next unlabelled** walks the level 1 to-do list.
+3. The **Ready** chip (and `rom-ann-check`) runs every check `shippedRomSidecars.test.ts` makes.
+   When it says *Ready to ship*, copy the working copy over the file in `src/public/roms/`
+   **unchanged** and run `npm run rom:annotations -- --check`; it must report nothing to format.
+4. Log the session in `PROVENANCE.md` as for any other authoring session.
+
+A name list (Q1) goes in with `rom-ann-import-names <rom> <list>`: one `NAME ADDRESS` per line,
+nothing else from the source. Every name becomes a `manual` label; existing labels win, and names
+too long for a label are reported for the author to shorten. Name the list's source in
+`PROVENANCE.md`.
+
+The working copy may also be edited **outside** the IDE (by hand or by an AI author) while Klive
+runs: the main process follows every sidecar an annotation session holds open
+(`src/main/annotation-file-watcher.ts`), and the session re-reads a changed file and publishes it to
+the Disassembly view and the editor at once (`reloadAnnotationSessionFromDisk`). No restart is
+needed. A file that does not parse is not taken: the IDE keeps its last good model until the file
+is valid again — so a broken hand edit is overwritten by the next edit made inside the IDE.
+
+**Regions that touch merge.** When the IDE reads a sidecar it merges neighbouring regions of the
+same type and layout (`mergeAdjacentRegions` in `programAnnotations.ts`), and its next save writes
+the merged one. Two tables that touch and share a type (the ZX81's unshifted and shifted key
+tables, say) therefore cannot stay separate regions: mark each table's start with a synopsis
+instead, or give them different layouts (`rowBytes`, `radix`, `decode`). An author editing the file
+outside the IDE should also re-read it before each write: the IDE may have saved the user's own
+edits, or a merge, since the last read.
+
+The IDE never raises `level`; record it by hand once `npm run rom:annotations -- level`
+measures it. The D4 rule above applies exactly as it does to editing the JSON: the editor
+makes the work faster, not the sources wider.
 
 ## Order of work
 

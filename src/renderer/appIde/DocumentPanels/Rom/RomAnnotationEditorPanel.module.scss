@@ -1,0 +1,93 @@
+// --- The ROM annotation editor (`.plans/ROM_ANNOTATION_EDITING_PLAN.md` §4.1).
+// --- Every colour is a token; the readiness chip uses the status family, which is what it reports.
+
+.panel {
+  overflow: auto;
+}
+
+.summary {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.pages {
+  display: flex;
+  flex-direction: column;
+}
+
+.pageRow {
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.actions {
+  display: inline-flex;
+  gap: var(--space-2);
+  margin-left: auto;
+}
+
+.missing {
+  color: var(--status-error);
+}
+
+.chip {
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: 0 var(--space-2);
+  font: inherit;
+  cursor: pointer;
+}
+
+.chipReady {
+  color: var(--status-success);
+  background: var(--status-success-subtle);
+}
+
+.chipProblems {
+  color: var(--status-warning);
+  background: var(--status-warning-subtle);
+}
+
+.problems {
+  margin: var(--space-1) var(--space-4);
+  padding-left: var(--space-4);
+  color: var(--text-secondary);
+}
+
+.notice {
+  margin: var(--space-1) var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  color: var(--status-warning);
+  background: var(--status-warning-subtle);
+}
+
+.rule {
+  margin: var(--space-1) var(--space-2);
+  color: var(--text-tertiary);
+}
+
+.mode {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--text-secondary);
+}
+
+.modeButton {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 0 var(--space-2);
+  font: inherit;
+  color: var(--text-secondary);
+  background: transparent;
+  cursor: pointer;
+}
+
+.modeActive {
+  color: var(--accent-text);
+  border-color: var(--accent-border);
+  background: var(--accent-subtle);
+}

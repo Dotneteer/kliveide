@@ -79,7 +79,7 @@ export function replaceAnnotationRegion(
   start: number,
   end: number,
   type: AnnotationRegionType,
-  extra: { origin?: AnnotationRegionOrigin; rowBytes?: number } = {}
+  extra: { origin?: AnnotationRegionOrigin; rowBytes?: number; radix?: AnnotationRegion["radix"] } = {}
 ): AnnotationRegion[] {
   const nextRegions: AnnotationRegion[] = [];
   for (const region of regions) {
@@ -100,6 +100,7 @@ export function replaceAnnotationRegion(
     end,
     type,
     ...(extra.rowBytes !== undefined ? { rowBytes: extra.rowBytes } : {}),
+    ...(extra.radix ? { radix: extra.radix } : {}),
     ...(extra.origin ? { origin: extra.origin } : {})
   });
   return mergeAnnotationRegions(nextRegions);
@@ -449,7 +450,9 @@ export function withRegion(
   start: number,
   end: number,
   type: AnnotationRegionType,
-  origin?: AnnotationRegionOrigin
+  origin?: AnnotationRegionOrigin,
+  /** How a `bytes` region lays out its values (`byteRegionLayoutOf`); ignored for any other type. */
+  layout: Pick<AnnotationRegion, "rowBytes" | "radix"> = {}
 ): ProgramAnnotations | undefined {
   const bankAnnotation = getBankAnnotation(annotations, bank);
   if (!bankAnnotation) return undefined;
@@ -462,7 +465,10 @@ export function withRegion(
     bank,
     pruneGraphics({
       ...bankAnnotation,
-      regions: replaceAnnotationRegion(bankAnnotation.regions, start, end, type, { origin })
+      regions: replaceAnnotationRegion(bankAnnotation.regions, start, end, type, {
+        origin,
+        ...(type === "bytes" ? layout : {})
+      })
     })
   );
 }

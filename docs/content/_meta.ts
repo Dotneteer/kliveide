@@ -10,6 +10,7 @@ export default {
   scripting: "Scripting",
   "commands-reference": "Commands Reference",
   "machine-types": "Machine Types",
+  "emulator-internals": "Emulator Internals",
   book: {
     display: "hidden"
   }

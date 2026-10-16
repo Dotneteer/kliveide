@@ -341,7 +341,8 @@ describe("data rows and labels", () => {
     type: "bytes" | "words",
     labels: { global?: { name: string; value: number }[]; local?: { name: string; value: number }[] },
     end = 7,
-    rowBytes?: number
+    rowBytes?: number,
+    extra: { radix?: "binary"; decimalView?: boolean } = {}
   ) {
     const items = await createAnnotatedDisassemblyItems({
       annotations: {
@@ -351,7 +352,7 @@ describe("data rows and labels", () => {
           "2": {
             offsetIndex: 2,
             regions: [
-              { start: 0, end, type, ...(rowBytes ? { rowBytes } : {}) },
+              { start: 0, end, type, ...(rowBytes ? { rowBytes } : {}), ...(extra.radix ? { radix: extra.radix } : {}) },
               { start: end + 1, end: 0x3fff, type: "skip" }
             ],
             localLabels: labels.local ?? []
@@ -360,7 +361,8 @@ describe("data rows and labels", () => {
       },
       bank: 2,
       contents,
-      disassOffset: 0x8000
+      disassOffset: 0x8000,
+      decimalView: extra.decimalView ?? false
     });
     return items!
       .filter((item) => !item.instruction?.startsWith(".skip"))
@@ -424,6 +426,16 @@ describe("data rows and labels", () => {
       ".defb $04, $05, $06",
       ".defb $07"
     ]);
+  });
+
+  it("writes a binary bytes region one byte to a row, all eight digits, whatever the decimal switch", async () => {
+    for (const decimalView of [false, true]) {
+      expect((await rows("bytes", {}, 2, 1, { radix: "binary", decimalView })).map((r) => r.instruction)).toEqual([
+        ".defb %00000001",
+        ".defb %00000010",
+        ".defb %00000011"
+      ]);
+    }
   });
 
   it("keeps a rowBytes record whole around a label inside it, and labels one that starts a record", async () => {
@@ -756,5 +768,45 @@ describe("createAnnotatedDisassemblyItems with the screen hidden", () => {
     // --- Zeros decode as `nop`, one per byte, so the screen range alone is 6,912 rows.
     const inScreen = (items ?? []).filter((item) => item.address >= 0x4000 && item.address <= 0x5aff);
     expect(inScreen.length).toBe(0x1b00);
+  });
+});
+
+describe("regions past the end of a short page", () => {
+  // --- An 8K ROM in a 16K page: the sidecar's last region runs on past the bytes there are
+  const contents = new Uint8Array(0x2000);
+  const items = (regions: { start: number; end: number; type: "disassemble" | "bytes" }[]) =>
+    createAnnotatedDisassemblyItems({
+      annotations: {
+        schemaVersion: 1,
+        banks: { "0": { offsetIndex: 0, regions, localLabels: [], lineAnnotations: {} } }
+      },
+      bank: 0,
+      contents,
+      disassOffset: 0
+    });
+  // --- Every row that covers the page's last byte
+  const lastByteRows = async (regions: Parameters<typeof items>[0]) =>
+    ((await items(regions)) ?? []).filter(({ annotation: a }) => {
+      if (!a) return false;
+      return a.bankOffset <= 0x1fff && 0x1fff < a.bankOffset + a.byteLength;
+    });
+
+  it("does not decode the last byte again for a region that starts past it", async () => {
+    const rows = await lastByteRows([
+      { start: 0x0000, end: 0x1fff, type: "bytes" },
+      { start: 0x2000, end: 0x3fff, type: "disassemble" }
+    ]);
+    expect(rows).toHaveLength(1);
+    expect(rows[0].annotation?.regionType).toBe("bytes");
+  });
+
+  it("keeps a region that ends past the bytes, cut at the last one", async () => {
+    const rows = await lastByteRows([
+      { start: 0x0000, end: 0x1ff7, type: "disassemble" },
+      { start: 0x1ff8, end: 0x2000, type: "bytes" },
+      { start: 0x2001, end: 0x3fff, type: "disassemble" }
+    ]);
+    expect(rows).toHaveLength(1);
+    expect(rows[0].annotation?.regionType).toBe("bytes");
   });
 });

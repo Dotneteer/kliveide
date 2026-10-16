@@ -192,6 +192,11 @@ it.
 
 Eleven recipes; the rest of the pages were deliberately left ungenerated.
 
+- `recipes/p-files.cjs` — the ZX81 `.P` viewer: verifies the parts list, the BASIC summary, the
+  display file's picture (counts ink and paper pixels off the canvas, so a missing ROM font fails)
+  and the popped-out listing, then stages `zx81/p-file-viewer.png` and `zx81/p-file-listing.png`.
+  Not published yet: on a display with a fractional DPR the element shots come out cropped (see
+  "Limits").
 - `recipes/tapes.cjs` — the three `getting-started/tape-viewer*.png` shots. **Verifies before it
   photographs**: it reads the rendered block list, timeline and BASIC preview from the DOM and throws
   if they are wrong, so a broken viewer fails the run instead of publishing a picture of itself. It

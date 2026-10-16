@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import { IconButton } from "@renderer/controls/IconButton";
 import { ToolbarSeparator } from "@renderer/controls/ToolbarSeparator";
-import { SECONDARY_ICON_SIZE } from "@renderer/controls/toolbar-constants";
+import { SECONDARY_ICON_SIZE, TOOLBAR_BUTTON_SIZE } from "@renderer/controls/toolbar-constants";
 import { iconSizes } from "@renderer/theming/tokens/dimensions";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { useRendererContext, useSelector } from "@renderer/core/RendererProvider";
@@ -44,6 +44,8 @@ export const NavigationControls = () => {
         <IconButton
           iconName="arrow-left"
           iconSize={SECONDARY_ICON_SIZE}
+          buttonWidth={TOOLBAR_BUTTON_SIZE}
+          buttonHeight={TOOLBAR_BUTTON_SIZE}
           fill="--color-toolbarbutton"
           title={navigationTitle(
             "Back",
@@ -58,6 +60,7 @@ export const NavigationControls = () => {
           iconName="chevron-down"
           iconSize={iconSizes.xs}
           buttonWidth={12}
+          buttonHeight={TOOLBAR_BUTTON_SIZE}
           fill="--color-toolbarbutton"
           title="Show navigation history"
           enable={hasEntries}
@@ -66,6 +69,8 @@ export const NavigationControls = () => {
         <IconButton
           iconName="arrow-right"
           iconSize={SECONDARY_ICON_SIZE}
+          buttonWidth={TOOLBAR_BUTTON_SIZE}
+          buttonHeight={TOOLBAR_BUTTON_SIZE}
           fill="--color-toolbarbutton"
           title={navigationTitle(
             "Forward",

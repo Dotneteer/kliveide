@@ -79,7 +79,11 @@ export type NexAnnotationMenuAction =
   | "mark-dma"
   | "mark-text"
   | "mark-skip"
-  | "clear";
+  | "clear"
+  // --- The live Disassembly view's ROM rows only (`.plans/ROM_ANNOTATION_EDITING_PLAN.md` §4.1):
+  // --- open the page's working copy in the ROM annotation editor, or make one first
+  | "open-rom-annotations"
+  | "start-rom-annotations";
 
 export type NexAnnotationEditorViewModel = {
   toolbar: NexAnnotationToolbarViewModel;
@@ -188,7 +192,11 @@ function selectWarning(
   enabled: boolean
 ): NexAnnotationWarningViewModel {
   // --- While a load is still running there is nothing to warn about yet.
-  const failed = !!state.saveError || !!state.loadError || (!state.loading && !enabled);
+  // --- Read-only is a decision, not a failure: nothing to warn about
+  const failed =
+    !!state.saveError ||
+    !!state.loadError ||
+    (!state.loading && !enabled && !state.env.readOnly);
   if (!failed) return { kind: "none" };
   return {
     kind: "warning",

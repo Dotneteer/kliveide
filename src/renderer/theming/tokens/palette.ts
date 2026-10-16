@@ -303,7 +303,16 @@ export const DEVICE = {
   legendZx81Ink: "#111111",
   legendZx81Red: "#d42020",
   zx81Body: "#0a0a0a",
-  zx81GlyphFrame: "#555555"
+  zx81GlyphFrame: "#555555",
+  /*
+   * The Sinclair ZX80's keyboard: blue keys on the same black case, white main legends and keyword
+   * print, amber shifted legends and graphics, and BREAK in a dark blue that barely shows (sampled from
+   * a photo of an original machine and lifted for its underexposure; `.plans/ZX8081_WASM_PLAN.md`
+   * §8.1.9). The key face is dark, so its highlight is the accent's light end.
+   */
+  keyZx80: "#1c45b0",
+  legendZx80Amber: "#e8a935",
+  legendZx80Dim: "#2b3d78"
 } as const;
 
 /**

@@ -99,6 +99,7 @@ import {
 import type { RecordingFormat } from "@common/state/AppState";
 import { copyZxNextStorageFile as copyZxNextStorageFileOnHost } from "./zx-next-storage-copy";
 import { applyEmuContentSizeHints } from "./emu-window-sizing";
+import { AnnotationFileWatcher } from "./annotation-file-watcher";
 import { emuMachineSizeStore } from "./emu-machine-sizes";
 import type { UnitTestRunRequest, UnitTestRunResponse } from "@common/unit-tests/unitTestTypes";
 import { addUnitTestSupport, type AddUnitTestSupportResult } from "./unit-tests/addUnitTestSupport";
@@ -126,6 +127,15 @@ const compilerRegistry = createCompilerRegistry();
 
 // Module-level so it survives across per-message MainMessageProcessor instances.
 let _recordingBackend: IRecordingBackend | null = null;
+
+// --- One watcher for the app: the IDE follows the sidecars its annotation sessions hold open
+const annotationFileWatcher = new AnnotationFileWatcher((filePath) => {
+  void Promise.resolve()
+    .then(() => getIdeApi().annotationFileChanged(filePath))
+    .catch(() => {
+      // --- No IDE window to tell: it reads the file afresh when it opens it
+    });
+});
 
 class MainMessageProcessor {
   /**
@@ -533,6 +543,16 @@ class MainMessageProcessor {
       );
     }
     return results;
+  }
+
+  /** Follow a sidecar for outside changes (`MainApi.watchAnnotationFile`) */
+  watchAnnotationFile(filePath: string) {
+    return annotationFileWatcher.watch(filePath);
+  }
+
+  /** Release one follow of a sidecar (`MainApi.unwatchAnnotationFile`) */
+  unwatchAnnotationFile(filePath: string) {
+    annotationFileWatcher.unwatch(filePath);
   }
 
   /** Whether the folder of a file is writable (`MainApi.canWriteBeside`) */

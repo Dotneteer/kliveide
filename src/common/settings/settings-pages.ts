@@ -27,6 +27,7 @@ import {
 } from "@common/automation/protocol";
 import {
   BEAM_POSITION_MACHINE_IDS,
+  TV_NOISE_MACHINE_IDS,
   MC_DISK_SUPPORT,
   MC_SCREEN_SIZE,
   MC_SP48_ROM_FILE,
@@ -58,6 +59,7 @@ import {
   SETTING_EMU_MOUSE_SENSITIVITY,
   SETTING_EMU_MOUSE_SHOW_POINTER,
   SETTING_EMU_SCANLINE_EFFECT,
+  SETTING_EMU_TV_NOISE,
   SETTING_EMU_SCORPION_ROM,
   SETTING_EMU_SHOW_BEAM_POSITION,
   SETTING_EMU_SHOW_INSTANT_SCREEN,
@@ -502,6 +504,16 @@ export const SETTINGS_ROWS: SettingsRow[] = [
       ["12.5%", "12.5%"]
     ]),
     replaces: "Machine › Scanline Effect"
+  },
+  {
+    id: "tvNoise",
+    page: "emulator",
+    group: "Screen",
+    title: "Show TV noise without sync",
+    description: "ZX80 and ZX81: noise instead of a black screen while the picture has no sync",
+    editor: "switch",
+    source: setting(SETTING_EMU_TV_NOISE),
+    when: { kind: "machine", machineIds: TV_NOISE_MACHINE_IDS }
   },
   {
     id: "instantScreen",

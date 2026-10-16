@@ -57,8 +57,9 @@ async function validate(addrSpec: string, machineId: string) {
 const ROM_LAYERED = (partition: number): RomPartitionInfo => ({
   partition,
   source: { crc32: "ddee531f", size: 0x4000, path: "roms/sp48.rom", page: 0 },
-  userPath: "/home/Klive/RomAnnotations/ddee531f.rom.dis",
-  userPage: 0,
+  workingPath: "/home/Klive/RomAnnotations/sp48.rom.dis",
+  workingPage: 0,
+  hasWorkingCopy: true,
   bindings: [],
   layers: [
     {

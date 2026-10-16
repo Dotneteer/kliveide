@@ -8,6 +8,11 @@ export const SETTING_EMU_SHOW_NEXT_LAYERS = "emuViewOptions.showNextLayers";
 /** The beam position overlay on the paused screen (`.plans/BEAM_POSITION_OVERLAY_PLAN.md` D8) */
 export const SETTING_EMU_SHOW_BEAM_POSITION = "emuViewOptions.showBeamPosition";
 export const SETTING_EMU_SCANLINE_EFFECT = "emuOptions.scanlineEffect";
+/**
+ * Show TV noise instead of a black screen when the ZX80/81 sends no usable sync (a ZX81 running a
+ * program in FAST mode, a ZX80 computing): what a real television showed. Off by default.
+ */
+export const SETTING_EMU_TV_NOISE = "emuOptions.tvNoise";
 export const SETTING_EMU_ZOOM_STEP = "emuOptions.zoomStep";
 export const SETTING_EMU_MOUSE_CAPTURE = "emuOptions.mouseCapture";
 export const SETTING_EMU_MOUSE_SHOW_POINTER = "emuOptions.mouseShowPointer";

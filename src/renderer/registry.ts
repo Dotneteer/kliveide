@@ -6,8 +6,10 @@ import {
   BIN_VIEWER,
   TAP_VIEWER,
   TAPE_BLOCK_VIEWER,
+  P_FILE_VIEWER,
   DSK_VIEWER,
   NEX_VIEWER,
+  ROM_ANNOTATION_EDITOR,
   Z88_SNAPSHOT_VIEWER,
   SPECTRUM_SNAPSHOT_VIEWER,
   RZX_VIEWER,
@@ -91,6 +93,8 @@ import {
 import { createTapeViewerPanel } from "./appIde/DocumentPanels/Tape/TapeViewerPanel";
 import { createTapeBlockViewerPanel } from "./appIde/DocumentPanels/Tape/TapeBlockViewerPanel";
 import { readTapeBlockBytes } from "./appIde/DocumentPanels/Tape/tapeBlockDocument";
+import { createPFileViewerPanel } from "./appIde/DocumentPanels/PFile/PFileViewerPanel";
+import { readPFileRegion } from "./appIde/DocumentPanels/PFile/pFileDocument";
 import { PsgPanel } from "./appIde/SideBarPanels/PsgPanel";
 import { NecUpd765Panel } from "./appIde/SideBarPanels/NecUpd765Panel";
 import { createDskViewerPanel } from "./appIde/DocumentPanels/DskViewerPanel";
@@ -106,6 +110,7 @@ import {
 } from "@common/machines/constants";
 import { BlinkPanel } from "./appIde/SideBarPanels/BlinkPanel";
 import { createNexFileViewerPanel } from "./appIde/DocumentPanels/Next/NexFileViewerPanel";
+import { createRomAnnotationEditorPanel } from "./appIde/DocumentPanels/Rom/RomAnnotationEditorPanel";
 import { createZ88SnapshotViewerPanel } from "./appIde/DocumentPanels/Z88/Z88SnapshotViewerPanel";
 import { createSpectrumSnapshotViewerPanel } from "./appIde/DocumentPanels/Spectrum/SpectrumSnapshotViewerPanel";
 import { createRzxViewerPanel } from "./appIde/DocumentPanels/Spectrum/RzxViewerPanel";
@@ -208,22 +213,22 @@ export const activityRegistry: Activity[] = [
   {
     id: ACTIVITY_DEBUG_ID,
     title: "Debug",
-    iconName: "debug-alt"
+    iconName: "debug"
   },
   {
     id: ACTIVITY_MACHINE_INFO_ID,
     title: "Machine info",
-    iconName: "output"
+    iconName: "cpu"
   },
   {
     id: ACTIVITY_SCRIPTING_ID,
     title: "Scripting",
-    iconName: "symbol-event"
+    iconName: "scroll-text"
   },
   {
     id: ACTIVITY_TEST_ID,
     title: "Testing",
-    iconName: "beaker",
+    iconName: "flask-conical",
     // --- Testing → Add unit-test support, and the runs (`.plans/Z80_UNIT_TESTS_PLAN.md` D4, D16)
     commands: TestingCommands
   }
@@ -549,7 +554,8 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
       readNexBankBytes,
       readZ88BankBytes,
       readSpectrumBankBytes,
-      readTapeBlockBytes
+      readTapeBlockBytes,
+      readPFileRegion
     })
   },
   {
@@ -566,9 +572,23 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     icon: "code"
   },
   {
+    // --- A ZX81 program file: its parts, each poppable as memory, disassembly, BASIC or the screen
+    id: P_FILE_VIEWER,
+    renderer: createPFileViewerPanel,
+    icon: "@file-tap-tzx",
+    // --- Its parts pop out into documents, and Go Back must return here
+    navigation: fileDocumentNavigationAdapter
+  },
+  {
     id: DSK_VIEWER,
     renderer: createDskViewerPanel,
     icon: "floppy"
+  },
+  {
+    // --- A ROM sidecar: its pages, matched to the ROM by CRC, open as editable bank documents
+    id: ROM_ANNOTATION_EDITOR,
+    renderer: createRomAnnotationEditorPanel,
+    icon: "note"
   },
   {
     id: NEX_VIEWER,
@@ -830,7 +850,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     pattern: ".p",
     // --- A ZX80/ZX81 program file, which the machine's tape plays (`.plans/ZX8081_WASM_PLAN.md` §9.1)
     ignoreCase: true,
-    editor: BIN_VIEWER,
+    editor: P_FILE_VIEWER,
     icon: "@file-tap-tzx",
     isBinary: true,
     isReadOnly: true,
@@ -843,7 +863,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     pattern: ".81",
     // --- A ZX80/ZX81 program file, which the machine's tape plays (`.plans/ZX8081_WASM_PLAN.md` §9.1)
     ignoreCase: true,
-    editor: BIN_VIEWER,
+    editor: P_FILE_VIEWER,
     icon: "@file-tap-tzx",
     isBinary: true,
     isReadOnly: true,
@@ -902,6 +922,18 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     pattern: ".ctl",
     editor: TEXT_EDITOR,
     icon: "@file-text-txt"
+  },
+  /*
+   * A ROM's annotations (`sp48.rom.dis`): opened in the ROM annotation editor, which edits a working
+   * copy or a custom ROM's sidecar and shows a shipped one read-only. Before `.dis`, which it would
+   * otherwise match. `.plans/ROM_ANNOTATION_EDITING_PLAN.md` R4.
+   */
+  {
+    matchType: "ends",
+    pattern: ".rom.dis",
+    editor: ROM_ANNOTATION_EDITOR,
+    icon: "note",
+    isReadOnly: true
   },
   /*
    * Annotation sidecars of every kind (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §4.6):

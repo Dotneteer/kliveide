@@ -39,6 +39,13 @@ export const BEAM_POSITION_MACHINE_IDS: string[] = [
   MI_ZXNEXT
 ];
 
+/**
+ * The machines whose screen can lose its sync, so that a real television showed noise: the ZX81 in
+ * FAST mode while a program runs, and the ZX80 whenever it computes. The TV noise setting applies
+ * only to these.
+ */
+export const TV_NOISE_MACHINE_IDS: string[] = [MI_ZX80, MI_ZX81];
+
 // Available machine configuration keys
 export const MC_DISK_SUPPORT = "diskSupport";
 export const MC_SCREEN_FREQ = "screenFreq";

@@ -1,11 +1,8 @@
 {
   "kliveVersion": "0.64.0",
-  "machineType": "zx81",
-  "modelId": "zx81-16k",
-  "config": {
-    "memSize": 16,
-    "screenFreq": "pal"
-  },
+  "machineType": "zxnext",
+  "modelId": "standard",
+  "config": {},
   "clockMultiplier": 1,
   "soundLevel": 0.8,
   "soundMuted": false,
@@ -58,15 +55,18 @@
           "areaId": "document-area-1",
           "documents": [
             {
-              "type": "ExecutionHistory",
-              "id": "$history",
+              "type": "NexViewer",
+              "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/disann/ScrollNutter.nex",
               "position": {
                 "line": 0,
                 "column": 0
+              },
+              "viewState": {
+                "scrollPosition": 217.71971130371094
               }
             }
           ],
-          "activeDocumentId": "$history"
+          "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/disann/ScrollNutter.nex"
         }
       ]
     }

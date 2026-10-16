@@ -10,7 +10,7 @@ import { useMainApi } from "@renderer/core/MainApi";
 import { useIdeApi } from "@renderer/core/IdeApi";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import type { MachineCommand } from "@common/abstractions/MachineCommand";
-import { SECONDARY_ICON_SIZE } from "./toolbar-constants";
+import { PRIMARY_ICON_SIZE, SECONDARY_ICON_SIZE, TOOLBAR_BUTTON_SIZE } from "./toolbar-constants";
 import { hasSourceLevelDebug } from "@renderer/appIde/utils/compiler-utils";
 import { canSourceStepOut, STEP_OUT_IN_MAIN, stepIntoTargets } from "@renderer/appIde/debugger/source/step-targets";
 import { SETTING_EMU_JUST_MY_CODE } from "@common/settings/setting-const";
@@ -319,6 +319,9 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
       />
       <IconButton
         iconName="pause"
+        iconSize={PRIMARY_ICON_SIZE}
+        buttonWidth={TOOLBAR_BUTTON_SIZE}
+        buttonHeight={TOOLBAR_BUTTON_SIZE}
         fill="--color-toolbarbutton-blue"
         title="Pause (Shift+F5)"
         enable={canPause}
@@ -335,6 +338,8 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
       <IconButton
         iconName="stop"
         iconSize={SECONDARY_ICON_SIZE}
+        buttonWidth={TOOLBAR_BUTTON_SIZE}
+        buttonHeight={TOOLBAR_BUTTON_SIZE}
         fill="--color-toolbarbutton-red"
         title="Stop (F4)"
         enable={canStopOrRestart}
@@ -343,6 +348,8 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
       <IconButton
         iconName="restart"
         iconSize={SECONDARY_ICON_SIZE}
+        buttonWidth={TOOLBAR_BUTTON_SIZE}
+        buttonHeight={TOOLBAR_BUTTON_SIZE}
         fill="--color-toolbarbutton-green"
         title="Restart (Shift+F4)"
         enable={canStopOrRestart}
@@ -369,6 +376,8 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
         <IconButton
           iconName="step-into"
           iconSize={SECONDARY_ICON_SIZE}
+          buttonWidth={TOOLBAR_BUTTON_SIZE}
+          buttonHeight={TOOLBAR_BUTTON_SIZE}
           fill="--color-toolbarbutton-blue"
           title={`Step Into (${stepIntoKey})${fromPresent}`}
           enable={canStep}
@@ -378,6 +387,8 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
       <IconButton
         iconName="step-over"
         iconSize={SECONDARY_ICON_SIZE}
+        buttonWidth={TOOLBAR_BUTTON_SIZE}
+        buttonHeight={TOOLBAR_BUTTON_SIZE}
         fill="--color-toolbarbutton-blue"
         title={`Step Over (${stepOverKey})${fromPresent}`}
         enable={canStep}
@@ -386,6 +397,8 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
       <IconButton
         iconName="step-out"
         iconSize={SECONDARY_ICON_SIZE}
+        buttonWidth={TOOLBAR_BUTTON_SIZE}
+        buttonHeight={TOOLBAR_BUTTON_SIZE}
         fill="--color-toolbarbutton-blue"
         title={sourceStepping && !stepOutPossible ? STEP_OUT_IN_MAIN : `Step Out (${stepOutKey})${fromPresent}`}
         enable={canStep && (!sourceStepping || stepOutPossible)}
@@ -396,6 +409,8 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
           <IconButton
             iconName="step-over-line"
             iconSize={SECONDARY_ICON_SIZE}
+            buttonWidth={TOOLBAR_BUTTON_SIZE}
+            buttonHeight={TOOLBAR_BUTTON_SIZE}
             fill="--color-toolbarbutton-blue"
             title="Step Over Line (Shift+F10)"
             enable={canStep && sourceMode}
@@ -404,6 +419,8 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
           <IconButton
             iconName={sourceMode ? "step-mode-source" : "step-mode-z80"}
             iconSize={SECONDARY_ICON_SIZE}
+            buttonWidth={TOOLBAR_BUTTON_SIZE}
+            buttonHeight={TOOLBAR_BUTTON_SIZE}
             fill="--color-toolbarbutton-blue"
             title={
               sourceMode
@@ -420,6 +437,8 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
           <IconButton
             iconName="step-back"
             iconSize={SECONDARY_ICON_SIZE}
+            buttonWidth={TOOLBAR_BUTTON_SIZE}
+            buttonHeight={TOOLBAR_BUTTON_SIZE}
             fill="--color-toolbarbutton-blue"
             title={`Step Back through the history (${reverseKeys?.stepBack ?? ""})`}
             enable={canStep}
@@ -428,6 +447,8 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
           <IconButton
             iconName="step-forward-history"
             iconSize={SECONDARY_ICON_SIZE}
+            buttonWidth={TOOLBAR_BUTTON_SIZE}
+            buttonHeight={TOOLBAR_BUTTON_SIZE}
             fill="--color-toolbarbutton-blue"
             title={`Step Forward through the history (${reverseKeys?.stepForward ?? ""})`}
             enable={canStep && !!historyPosition}
@@ -436,6 +457,8 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
           <IconButton
             iconName="history-present"
             iconSize={SECONDARY_ICON_SIZE}
+            buttonWidth={TOOLBAR_BUTTON_SIZE}
+            buttonHeight={TOOLBAR_BUTTON_SIZE}
             fill="--color-toolbarbutton-blue"
             title="Return to the present"
             enable={canStep && !!historyPosition}

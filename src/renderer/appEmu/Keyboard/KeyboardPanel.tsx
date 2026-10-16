@@ -4,10 +4,12 @@ import { Sp128Keyboard } from "./Sp128Keyboard";
 import { useResizeObserver } from "@renderer/core/useResizeObserver";
 import styles from "./KeyboardPanel.module.scss";
 import { Z88Keyboard } from "./Z88Keyboard";
-import { useGlobalSetting } from "@renderer/core/RendererProvider";
 import { NextKeyboard } from "./NextKeyboard";
 import { Zx81Keyboard } from "./Zx81Keyboard";
+import { Zx80Keyboard } from "./Zx80Keyboard";
 import { SETTING_EMU_KEYBOARD_LAYOUT } from "@common/settings/setting-const";
+import { useGlobalSetting, useSelector } from "@renderer/core/RendererProvider";
+import { MC_ZX80_ROM8K } from "@common/machines/constants";
 
 export type KeyboardApi = {
   signKeyStatus: (code: number, down: boolean) => void;
@@ -30,6 +32,9 @@ export const KeyboardPanel = ({
   const [height, setHeight] = useState(0);
   const hostElement = useRef<HTMLDivElement>();
   const layout = useGlobalSetting(SETTING_EMU_KEYBOARD_LAYOUT);
+  // --- A ZX80 with the 8K ROM types as a ZX81 (the upgrade kit came with a ZX81 overlay)
+  const zx80Rom8k = useSelector((s) => s.emulatorState?.config?.[MC_ZX80_ROM8K] === true);
+  const zx81Legends = type === "zx81" || (type === "zx80" && zx80Rom8k);
 
   // --- Handle resizing
   useResizeObserver(hostElement, () => {
@@ -49,11 +54,12 @@ export const KeyboardPanel = ({
       {type === "zxnext" && (
         <NextKeyboard width={width} height={height} apiLoaded={apiLoaded} />
       )}
-      {type === "zx81" && (
+      {zx81Legends && (
         <Zx81Keyboard width={width} height={height} apiLoaded={apiLoaded} />
       )}
-      {/* --- The ZX80 keyboard is not designed yet (`.plans/ZX8081_WASM_PLAN.md` §8.1.9): no keyboard,
-          rather than the Spectrum 128's legends */}
+      {type === "zx80" && !zx80Rom8k && (
+        <Zx80Keyboard width={width} height={height} apiLoaded={apiLoaded} />
+      )}
       {type !== "sp48" && type !== "timex" && type !== "z88" && type !== "zxnext" && type !== "zx81" && type !== "zx80" && (
         <Sp128Keyboard width={width} height={height} apiLoaded={apiLoaded} />
       )}

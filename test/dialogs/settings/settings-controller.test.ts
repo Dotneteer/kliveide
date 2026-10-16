@@ -26,7 +26,8 @@ function open(page?: string, appState: Record<string, unknown> = { emulatorState
   const ports = {
     setSetting: vi.fn<SettingsPorts["setSetting"]>(() => Promise.resolve()),
     runAction: vi.fn<SettingsPorts["runAction"]>(() => Promise.resolve(undefined)),
-    close: vi.fn()
+    close: vi.fn(),
+    pageShown: vi.fn<SettingsPorts["pageShown"]>()
   };
   const controller = new SettingsController(ports, page, envOf(appState));
   return harnessFor(controller, { ports });
@@ -40,6 +41,13 @@ describe("the Settings dialog — pages", () => {
     expect(open().vm.nav.find((p) => p.selected)?.id).toBe("general");
     expect(open("recording").vm.nav.find((p) => p.selected)?.id).toBe("recording");
     expect(open("no-such-page").vm.nav.find((p) => p.selected)?.id).toBe("general");
+  });
+
+  it("reports each page it switches to, so a page-less reopen can return to it", async () => {
+    const h = open("recording");
+    await h.dispatch({ type: "pageSelected", page: "editor" });
+    await h.dispatch({ type: "pageSelected", page: "debugging" });
+    expect(h.ports.pageShown.mock.calls.map((c) => c[0])).toEqual(["editor", "debugging"]);
   });
 
   it("shows the selected page's rows in their groups", async () => {

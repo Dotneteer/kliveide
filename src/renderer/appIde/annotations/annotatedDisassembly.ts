@@ -214,6 +214,11 @@ export async function createAnnotatedDisassemblyItems({
   const labelOffsets = getLabelBankOffsets(annotations, bankAnnotation, addressOffset);
 
   for (const region of regions) {
+    // --- A region past the bytes the page has (an 8K ROM in a 16K page) has nothing to show;
+    // --- clamped, it would land on the last byte and decode it a second time.
+    if (region.start > clampBankOffset(region.start, contents.length)) {
+      continue;
+    }
     const firstItem = items.length;
     let start = clampBankOffset(region.start, contents.length);
     let end = clampBankOffset(region.end, contents.length);
@@ -258,7 +263,8 @@ export async function createAnnotatedDisassemblyItems({
             decimalView,
             addressOffset,
             labelOffsets,
-            region.rowBytes
+            region.rowBytes,
+            region.radix
           )
         );
         break;
@@ -452,6 +458,14 @@ function dataRowLength(
   return length;
 }
 
+/**
+ * A byte in binary as the Klive assembler reads it back: `%` and all eight digits, leading zeros
+ * included, so a bit pattern lines up from row to row.
+ */
+export function formatBinaryByte(value: number): string {
+  return `%${(value & 0xff).toString(2).padStart(8, "0")}`;
+}
+
 function createByteItems(
   contents: Uint8Array,
   start: number,
@@ -459,7 +473,8 @@ function createByteItems(
   decimalView: boolean,
   addressOffset: number,
   labelOffsets: number[] = [],
-  rowBytes?: number
+  rowBytes?: number,
+  radix?: AnnotationRegion["radix"]
 ): DisassemblyItem[] {
   const items: DisassemblyItem[] = [];
   // --- An explicit row size makes each row a record that a label cannot split; the default keeps
@@ -470,7 +485,10 @@ function createByteItems(
     const values: string[] = [];
     for (let idx = 0; idx < rowLength; idx++) {
       const value = contents[offset + idx];
-      values.push(decimalView ? toDecimal3(value) : `$${toHexa2(value)}`);
+      // --- Binary is the region's own choice, so it wins over the view's decimal switch
+      values.push(
+        radix === "binary" ? formatBinaryByte(value) : decimalView ? toDecimal3(value) : `$${toHexa2(value)}`
+      );
     }
     items.push({
       address: effectiveAddress(offset, addressOffset),

@@ -60,7 +60,8 @@ const ANNOTATIONS = {
         { start: 0x50, end: 0x55, type: "bytes", decode: "text" },
         { start: 0x56, end: 0x5f, type: "bytes" },
         { start: 0x60, end: 0x63, type: "bytes", rowBytes: 1, decode: "graphic" },
-        { start: 0x64, end: 0x6f, type: "bytes" },
+        // --- A binary bytes region: `%` rows the assembler reads back
+        { start: 0x64, end: 0x6f, type: "bytes", rowBytes: 1, radix: "binary" },
         { start: 0x70, end: 0x74, type: "skip" },
         { start: 0x75, end: 0x7d, type: "bytes" },
         { start: 0x7e, end: 0x7f, type: "disassemble" },
@@ -112,6 +113,7 @@ describe("exportSource", () => {
     expect(source).toMatch(/L_hl:/);
     expect(source).toMatch(/table_2:/);
     expect(source).toMatch(/Ship:\s+\.defb %00111100\s+; \.\.####\.\./);
+    expect(source).toMatch(/^\s+\.defb %00000000$/m);
     expect(source).toMatch(/\.defb \$01,\$02,\$03,\$04,\$05\s+; skip region/);
     expect(result.notes).toContain("The label hl is exported as L_hl.");
   });

@@ -593,6 +593,16 @@ function buildZx8081Chars(isZx81: boolean): Record<number, CharDescriptor> {
     chars[0x40] = { c: "token", t: "RND" };
     chars[0x41] = { c: "token", t: "INKEY$" };
     chars[0x42] = { c: "token", t: "PI" };
+  } else {
+    // --- The 4K ROM's tokens, $D4-$FF, in its table at $00BB (`?` is an unused slot). Functions
+    // --- (PEEK, CHR$...) are not tokens on the ZX80: they are stored letter by letter.
+    const tokens = [
+      '"', "THEN", "TO", ";", ",", ")", "(", "NOT", "-", "+", "*", "/", "AND", "OR", "**", "=", ">", "<",
+      "LIST", "RETURN", "CLS", "DIM", "SAVE", "FOR", "GO TO", "POKE", "INPUT", "RANDOMISE", "LET", "?",
+      "?", "NEXT", "PRINT", "?", "NEW", "RUN", "STOP", "CONTINUE", "IF", "GO SUB", "LOAD", "CLEAR", "REM",
+      "?"
+    ];
+    tokens.forEach((t, i) => (chars[0xd4 + i] = { c: "token", t }));
   }
   return chars;
 }

@@ -72,10 +72,26 @@ export function useRomLayersOf(): RomLayersOf | undefined {
   return useSyncExternalStore(subscribeRomLayers, getRomLayersOf, getRomLayersOf);
 }
 
+// --- A working copy appeared or went (`rom-ann-new`, a hand copy, a delete): the host reloads
+const reloadListeners = new Set<Listener>();
+
+/** Ask the ROM annotation host to read every page's sidecar again. */
+export function requestRomAnnotationsReload(): void {
+  reloadListeners.forEach((listener) => listener());
+}
+
+export function subscribeRomAnnotationsReload(listener: Listener): () => void {
+  reloadListeners.add(listener);
+  return () => {
+    reloadListeners.delete(listener);
+  };
+}
+
 /** For tests, which must not leak state between cases. */
 export function resetRomLayersForTests(): void {
   layers = new Map();
   partitions = [];
   layersOf = undefined;
   listeners.clear();
+  reloadListeners.clear();
 }
