@@ -4,14 +4,15 @@ import {
   INITIAL_MACHINE_ID,
   INITIAL_MODEL_ID,
   INITIAL_TEMPLATE_ID,
-  MACHINE_OPTIONS,
+  MACHINE_TYPES,
+  OTHER_FAMILY,
+  defaultModelOf,
   folderErrorOf,
   initialState,
   isComplete,
-  machineOptionValue,
-  machineValueOf,
+  machineTypeOptionsOf,
+  modelOptionsOf,
   openFolderErrorMessage,
-  parseMachineOption,
   projectFolderPathOf,
   projectNameErrorOf,
   reduce,
@@ -21,67 +22,59 @@ import {
   withTimeout
 } from "@renderer/appIde/dialogs/newProject/NewProjectModel";
 
+import { getAllMachineModels } from "@common/machines/machine-registry";
+
 import { aState, anEnv, rejectingValidation } from "./fakes";
 
-describe("NewProjectModel — machine options", () => {
-  it("offers the machine registry", () => {
-    expect(MACHINE_OPTIONS.length).toBeGreaterThan(0);
-    expect(MACHINE_OPTIONS.every((option) => option.value && option.label)).toBe(true);
+describe("NewProjectModel — machine types and models", () => {
+  it("offers each machine type once, grouped by family in family order", () => {
+    expect(MACHINE_TYPES.map((t) => t.machineId)).toEqual([
+      "sp48", "sp128", "spp3e", "zxnext", "timex", "scorpion", "zx81", "zx80", "z88", "c64"
+    ]);
+    expect(machineTypeOptionsOf(aState())[0]).toEqual({ value: "sp48", label: "ZX Spectrum 48K", group: "ZX Spectrum" });
+    expect(MACHINE_TYPES.find((t) => t.machineId === "c64")?.family).toBe(OTHER_FAMILY);
   });
 
-  it("joins machine and model into the one value a dropdown can carry", () => {
-    expect(machineOptionValue("sp48", "pal")).toBe("sp48:pal");
-  });
-
-  it("omits the separator for a machine with no model", () => {
-    expect(machineOptionValue("z88")).toBe("z88");
-  });
-
-  it("splits a dropdown value back into machine and model", () => {
-    expect(parseMachineOption("spp3e:floppy")).toEqual({
-      machineId: "spp3e",
-      modelId: "floppy"
-    });
-  });
-
-  it("reads a model-less value back without inventing one", () => {
-    expect(parseMachineOption("z88")).toEqual({ machineId: "z88", modelId: undefined });
+  it("keeps every model of the registry under its type", () => {
+    const models = MACHINE_TYPES.flatMap((t) => t.models.map((m) => `${t.machineId}:${m.modelId ?? ""}`));
+    const registry = getAllMachineModels().map((m) => `${m.machineId}:${m.modelId ?? ""}`);
+    expect(models.sort()).toEqual(registry.sort());
   });
 
   it("offers the Amstrad +2A/+3 models next to the +2E/+3E ones", () => {
-    const p3 = MACHINE_OPTIONS.filter((option) => option.value.startsWith("spp3e:")).map((option) => option.value);
-    expect(p3).toEqual(
-      expect.arrayContaining(["spp3e:nofdd", "spp3e:fdd1", "spp3e:plus2a", "spp3e:plus3-fdd1", "spp3e:plus3-es-fdd2"])
-    );
-    expect(MACHINE_OPTIONS.find((option) => option.value === "spp3e:plus3-v40-fdd1")?.label).toContain(
-      "ZX Spectrum +3 v4.0 (1 FDD)"
-    );
+    const p3 = modelOptionsOf(aState({ machineId: "spp3e" })).map((o) => o.value);
+    expect(p3).toEqual(expect.arrayContaining(["nofdd", "fdd1", "plus2a", "plus3-fdd1", "plus3-es-fdd2"]));
   });
 
   it("offers the 128K and the Pentagon 128 as models of the 128K machine", () => {
-    const sp128 = MACHINE_OPTIONS.filter((option) => option.value.startsWith("sp128"));
-    expect(sp128.map((option) => option.value)).toEqual(["sp128:sp128", "sp128:pentagon"]);
+    const sp128 = modelOptionsOf(aState({ machineId: "sp128" }));
+    expect(sp128.map((o) => o.value)).toEqual(["sp128", "pentagon"]);
     expect(sp128[1].label).toContain("Pentagon 128");
   });
 
-  it("round-trips every option the dropdown can offer", () => {
-    for (const option of MACHINE_OPTIONS) {
-      const parsed = parseMachineOption(option.value);
-      expect(machineOptionValue(parsed.machineId, parsed.modelId)).toBe(option.value);
-    }
+  it("offers a one-model type its single model", () => {
+    expect(modelOptionsOf(aState({ machineId: "zxnext" })).length).toBe(1);
+  });
+
+  it("offers only the types that have templates, once that is known", () => {
+    const state = aState({ availableMachineIds: ["sp48", "zx81"] });
+    expect(machineTypeOptionsOf(state).map((o) => o.value)).toEqual(["sp48", "zx81"]);
   });
 });
 
-describe("NewProjectModel — initial state", () => {
-  it("opens on the default machine, model and template", () => {
-    const state = initialState(anEnv());
+describe("NewProjectModel — the default model of a type", () => {
+  const favorites = [{ machineId: "spp3e", modelId: "plus3-fdd1" }, { machineId: "z88", modelId: "OZ47" }];
 
-    expect(state.machineId).toBe(INITIAL_MACHINE_ID);
-    expect(state.modelId).toBe(INITIAL_MODEL_ID);
-    expect(state.templateId).toBe(INITIAL_TEMPLATE_ID);
-    expect(machineValueOf(state)).toBe("sp48:pal");
-    expect(state.templates).toEqual([]);
-    expect(state.busy).toBe(false);
+  it("is the running model when that machine runs", () => {
+    expect(defaultModelOf("spp3e", { running: { machineId: "spp3e", modelId: "plus2a" }, favorites })).toBe("plus2a");
+  });
+
+  it("is the first favourite of the type otherwise", () => {
+    expect(defaultModelOf("spp3e", { running: { machineId: "sp48", modelId: "pal" }, favorites })).toBe("plus3-fdd1");
+  });
+
+  it("is the type's first model without a favourite", () => {
+    expect(defaultModelOf("zx81", { favorites })).toBe(MACHINE_TYPES.find((t) => t.machineId === "zx81")?.models[0].modelId);
   });
 });
 

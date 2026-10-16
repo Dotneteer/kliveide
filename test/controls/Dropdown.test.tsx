@@ -43,6 +43,28 @@ describe("Dropdown", () => {
     expect(screen.getByRole("combobox")).toHaveTextContent("ZX Spectrum 128K");
   });
 
+  it("shows group headings above consecutive options of a group", async () => {
+    const user = userEvent.setup();
+    render(
+      <Dropdown
+        options={[
+          { value: "sp48", label: "ZX Spectrum 48K", group: "ZX Spectrum" },
+          { value: "zxnext", label: "ZX Spectrum Next", group: "ZX Spectrum" },
+          { value: "zx81", label: "Sinclair ZX81", group: "Other Z80 machines" }
+        ]}
+        initialValue="sp48"
+      />
+    );
+
+    await user.click(screen.getByRole("combobox"));
+    const groups = screen.getAllByRole("group");
+    expect(groups).toHaveLength(2);
+    expect(groups[0]).toHaveTextContent(/^ZX Spectrum/);
+    expect(groups[1]).toHaveTextContent("Other Z80 machines");
+    // --- A heading is not an option
+    expect(screen.getAllByRole("option")).toHaveLength(3);
+  });
+
   it("syncs its selected item when the initial value changes externally", () => {
     const { rerender } = render(<Dropdown options={options} initialValue="sp48:pal" />);
 

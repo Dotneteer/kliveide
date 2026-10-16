@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
 import type { NewProjectIntent } from "@renderer/appIde/dialogs/newProject/NewProjectIntents";
-import { MACHINE_OPTIONS } from "@renderer/appIde/dialogs/newProject/NewProjectModel";
 import { NewProjectView } from "@renderer/appIde/dialogs/newProject/NewProjectView";
 import type { NewProjectViewModel } from "@renderer/appIde/dialogs/newProject/NewProjectViewModel";
 
@@ -50,10 +49,17 @@ describe("NewProjectView — rendering", () => {
     // --- `getAllBy`, because the dropdown renders the label twice — once in the
     // --- visible trigger and once in the hidden native select it keeps for
     // --- accessibility — and two registry entries share this display name.
-    const selected = MACHINE_OPTIONS.find((option) => option.value === "sp48:pal");
-    renderView({ machine: { value: selected.value } });
+    renderView({ machineType: { value: "zx81" } });
 
-    expect(screen.getAllByText(selected.label).length).toBeGreaterThan(0);
+    expect(
+      within(screen.getByTestId("new-project-machine-types")).getAllByText("Sinclair ZX81").length
+    ).toBeGreaterThan(0);
+  });
+
+  it("disables the model dropdown of a one-model type", () => {
+    renderView({ machineType: { value: "zxnext" }, model: { options: [{ value: "", label: "ZX Spectrum Next" }], value: "", enabled: false } });
+
+    expect(screen.getByRole("combobox", { name: "Model" })).toBeDisabled();
   });
 
   it("shows the selected template", () => {

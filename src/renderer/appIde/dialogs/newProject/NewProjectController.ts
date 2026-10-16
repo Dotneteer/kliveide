@@ -6,14 +6,16 @@ import type { NewProjectIntent } from "./NewProjectIntents";
 import {
   CREATE_ERROR_TITLE,
   NEW_PROJECT_FOLDER_SETTINGS_KEY,
+  MACHINE_TYPES,
   PROJECT_CREATION_TIMEOUT_MS,
+  defaultModelOf,
   initialState,
   isComplete,
   openFolderErrorMessage,
-  parseMachineOption,
   reduce,
   requestOf,
   withTimeout,
+  type NewProjectContext,
   type NewProjectEnvironment,
   type NewProjectEvent,
   type NewProjectState
@@ -25,6 +27,9 @@ export type NewProjectControllerOptions = {
   // --- Overridable so a test can drive the timeout path without waiting the
   // --- real thirty seconds for each of the four steps.
   timeoutMs?: number;
+  // --- The running machine and the favourite models, for the opening machine
+  // --- and the default model of a type.
+  context?: NewProjectContext;
 };
 
 /**
@@ -52,26 +57,35 @@ export class NewProjectController extends UiController<
     env: NewProjectEnvironment,
     options: NewProjectControllerOptions = {}
   ) {
-    super(initialState(env), reduce, selectViewModel);
+    super(initialState(env, options.context), reduce, selectViewModel);
     this.timeoutMs = options.timeoutMs ?? PROJECT_CREATION_TIMEOUT_MS;
   }
 
   protected async handle(intent: NewProjectIntent): Promise<void> {
     switch (intent.type) {
       case "opened":
-        await this.loadTemplates();
+        await Promise.all([this.loadAvailableMachineTypes(), this.loadTemplates()]);
         return;
 
       case "environmentChanged":
         this.emit({ type: "envReplaced", env: intent.env });
         return;
 
-      case "machineSelected": {
-        const { machineId, modelId } = parseMachineOption(intent.value);
-        this.emit({ type: "machineChanged", machineId, modelId });
+      case "machineTypeSelected": {
+        if (intent.machineId === this.state.machineId) return;
+        const modelId = defaultModelOf(intent.machineId, this.state.context);
+        this.emit({ type: "machineChanged", machineId: intent.machineId, modelId });
         await this.loadTemplates();
         return;
       }
+
+      case "modelSelected":
+        this.emit({
+          type: "machineChanged",
+          machineId: this.state.machineId,
+          modelId: intent.modelId || undefined
+        });
+        return;
 
       case "templateSelected":
         this.emit({ type: "templateChanged", templateId: intent.templateId });
@@ -99,6 +113,31 @@ export class NewProjectController extends UiController<
         this.ports.close.cancelled();
         return;
     }
+  }
+
+  /**
+   * Asks for every machine type's templates, so the types without any (nothing can be created for
+   * them) drop out of the list. A type whose lookup fails stays: the list is not the place to report
+   * a broken install. If the dialog opened over a type without templates, the reducer moves to the
+   * first one that has some, and that one's templates are loaded.
+   */
+  private async loadAvailableMachineTypes(): Promise<void> {
+    const results = await Promise.all(
+      MACHINE_TYPES.map(async (t) => {
+        try {
+          const templates = await this.ports.service.getTemplateDirectories(t.machineId);
+          return (templates ?? []).length > 0;
+        } catch {
+          return true;
+        }
+      })
+    );
+    const before = this.state.machineId;
+    this.emit({
+      type: "machineTypesSettled",
+      available: MACHINE_TYPES.filter((_, i) => results[i]).map((t) => t.machineId)
+    });
+    if (this.state.machineId !== before) await this.loadTemplates();
   }
 
   private async loadTemplates(): Promise<void> {

@@ -61,9 +61,10 @@ describe("NewProjectController — choosing a machine", () => {
   it("reloads the templates for the machine that was picked", async () => {
     const h = await openNewProjectDialog();
 
-    await h.dispatch({ type: "machineSelected", value: "z88" });
+    await h.dispatch({ type: "machineTypeSelected", machineId: "z88" });
 
-    expect(h.state).toMatchObject({ machineId: "z88", modelId: undefined });
+    // --- The type's first model: no machine runs and there are no favourites here
+    expect(h.state).toMatchObject({ machineId: "z88", modelId: "OZ50" });
     expect(h.ports.service.getTemplateDirectories).toHaveBeenLastCalledWith("z88");
   });
 
@@ -71,7 +72,7 @@ describe("NewProjectController — choosing a machine", () => {
     const h = await openNewProjectDialog();
     await h.dispatch({ type: "templateSelected", templateId: "advanced" });
 
-    await h.dispatch({ type: "machineSelected", value: "z88" });
+    await h.dispatch({ type: "machineTypeSelected", machineId: "z88" });
 
     expect(h.vm.template.value).toBe("advanced");
   });
@@ -81,7 +82,7 @@ describe("NewProjectController — choosing a machine", () => {
     await h.dispatch({ type: "templateSelected", templateId: "advanced" });
     h.ports.service.getTemplateDirectories.mockResolvedValue(["default", "zxbasic"]);
 
-    await h.dispatch({ type: "machineSelected", value: "z88" });
+    await h.dispatch({ type: "machineTypeSelected", machineId: "z88" });
 
     expect(h.vm.template.value).toBe("default");
   });
@@ -97,14 +98,75 @@ describe("NewProjectController — choosing a machine", () => {
       .mockReturnValueOnce(slow.promise)
       .mockReturnValueOnce(fast.promise);
 
-    void h.send({ type: "machineSelected", value: "z88" });
-    void h.send({ type: "machineSelected", value: "spp3e:floppy" });
+    void h.send({ type: "machineTypeSelected", machineId: "z88" });
+    void h.send({ type: "machineTypeSelected", machineId: "spp3e" });
 
     fast.resolve(["floppy-template"]);
     slow.resolve(["z88-template"]);
     await h.settle();
 
     expect(h.vm.template.options.map((option) => option.value)).toEqual(["floppy-template"]);
+  });
+});
+
+describe("NewProjectController — machine types and models", () => {
+  it("starts a picked type on its default model: the running one, else a favourite", async () => {
+    const h = await openNewProjectDialog({
+      context: {
+        running: { machineId: "zx81", modelId: "zx81-1k" },
+        favorites: [{ machineId: "spp3e", modelId: "plus3-fdd1" }]
+      }
+    });
+    expect(h.state).toMatchObject({ machineId: "zx81", modelId: "zx81-1k" });
+
+    await h.dispatch({ type: "machineTypeSelected", machineId: "spp3e" });
+    expect(h.state.modelId).toBe("plus3-fdd1");
+
+    await h.dispatch({ type: "machineTypeSelected", machineId: "zx81" });
+    expect(h.state.modelId).toBe("zx81-1k");
+  });
+
+  it("changes only the model when a model is picked", async () => {
+    const h = await openNewProjectDialog();
+    await h.dispatch({ type: "machineTypeSelected", machineId: "sp128" });
+    const calls = h.ports.service.getTemplateDirectories.mock.calls.length;
+
+    await h.dispatch({ type: "modelSelected", modelId: "pentagon" });
+
+    expect(h.state).toMatchObject({ machineId: "sp128", modelId: "pentagon" });
+    expect(h.ports.service.getTemplateDirectories.mock.calls.length).toBe(calls);
+  });
+
+  it("drops the types without templates from the list", async () => {
+    const h = await openNewProjectDialog({
+      service: { getTemplateDirectories: async (id: string) => (id === "c64" ? [] : ["default"]) }
+    });
+
+    expect(h.vm.machineType.options.map((o) => o.value)).not.toContain("c64");
+    expect(h.vm.machineType.options.map((o) => o.value)).toContain("zx81");
+  });
+
+  it("keeps a type whose template lookup fails", async () => {
+    const h = await openNewProjectDialog({
+      service: {
+        getTemplateDirectories: async (id: string) => {
+          if (id === "z88") throw new Error("unreadable");
+          return ["default"];
+        }
+      }
+    });
+
+    expect(h.vm.machineType.options.map((o) => o.value)).toContain("z88");
+  });
+
+  it("moves to a type with templates when it opened over one without", async () => {
+    const h = await openNewProjectDialog({
+      context: { running: { machineId: "c64" }, favorites: [] },
+      service: { getTemplateDirectories: async (id: string) => (id === "c64" ? [] : ["default"]) }
+    });
+
+    expect(h.state.machineId).toBe("sp48");
+    expect(h.vm.template.options.map((o) => o.value)).toEqual(["default"]);
   });
 });
 

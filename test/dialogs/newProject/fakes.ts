@@ -4,6 +4,7 @@ import { NewProjectController } from "@renderer/appIde/dialogs/newProject/NewPro
 import type { NewProjectIntent } from "@renderer/appIde/dialogs/newProject/NewProjectIntents";
 import {
   initialState,
+  type NewProjectContext,
   type NewProjectEnvironment,
   type NewProjectEvent,
   type NewProjectState
@@ -76,6 +77,8 @@ export type NewProjectHarnessOptions = {
   pickFolder?: string;
   // --- Short by default so a timeout test does not wait thirty seconds.
   timeoutMs?: number;
+  // --- The running machine and the favourite models the dialog opens over.
+  context?: NewProjectContext;
 };
 
 export function fakeNewProjectPorts(
@@ -125,7 +128,8 @@ export function createNewProjectDialog(
   const ports = fakeNewProjectPorts(over);
   const env = anEnv(over.env);
   const controller = new NewProjectController(ports as unknown as NewProjectPorts, env, {
-    timeoutMs: over.timeoutMs
+    timeoutMs: over.timeoutMs,
+    context: over.context
   });
   // --- Never spread the harness: `state`, `vm` and `events` are live getters.
   return harnessFor(controller, { ports, env });

@@ -1,8 +1,8 @@
 import {
-  MACHINE_OPTIONS,
   folderErrorOf,
   isComplete,
-  machineValueOf,
+  machineTypeOptionsOf,
+  modelOptionsOf,
   projectNameErrorOf,
   type MachineOption,
   type NewProjectState
@@ -16,9 +16,16 @@ export type TextFieldViewModel = {
 };
 
 export type NewProjectViewModel = {
-  machine: {
+  machineType: {
+    // --- Grouped by family (`MachineOption.group`).
     options: MachineOption[];
     value: string;
+  };
+  model: {
+    options: MachineOption[];
+    value: string;
+    // --- Disabled, not hidden, for a type with one model: the form never moves.
+    enabled: boolean;
   };
   template: {
     options: MachineOption[];
@@ -37,9 +44,14 @@ export type NewProjectViewModel = {
 
 export function selectViewModel(state: NewProjectState): NewProjectViewModel {
   return {
-    machine: {
-      options: MACHINE_OPTIONS,
-      value: machineValueOf(state)
+    machineType: {
+      options: machineTypeOptionsOf(state),
+      value: state.machineId
+    },
+    model: {
+      options: modelOptionsOf(state),
+      value: state.modelId ?? "",
+      enabled: modelOptionsOf(state).length > 1
     },
     template: {
       // --- A template directory is its own label; there is nothing to pretty up.

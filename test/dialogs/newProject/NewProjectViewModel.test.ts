@@ -1,16 +1,25 @@
 import { describe, expect, it } from "vitest";
 
-import { MACHINE_OPTIONS } from "@renderer/appIde/dialogs/newProject/NewProjectModel";
 import { selectViewModel } from "@renderer/appIde/dialogs/newProject/NewProjectViewModel";
 
 import { aState, anEnv, rejectingValidation } from "./fakes";
 
 describe("NewProjectViewModel — dropdowns", () => {
-  it("offers the machine registry and marks the selection", () => {
-    const vm = selectViewModel(aState({ machineId: "z88", modelId: undefined }));
+  it("offers the machine types and the selected type's models", () => {
+    const vm = selectViewModel(aState({ machineId: "z88", modelId: "OZ47" }));
 
-    expect(vm.machine.options).toEqual(MACHINE_OPTIONS);
-    expect(vm.machine.value).toBe("z88");
+    expect(vm.machineType.value).toBe("z88");
+    expect(vm.machineType.options.length).toBe(10);
+    expect(vm.model.value).toBe("OZ47");
+    expect(vm.model.options.length).toBe(10);
+    expect(vm.model.enabled).toBe(true);
+  });
+
+  it("disables, rather than hides, the model of a one-model type", () => {
+    const vm = selectViewModel(aState({ machineId: "zxnext", modelId: undefined }));
+
+    expect(vm.model.options.length).toBe(1);
+    expect(vm.model.enabled).toBe(false);
   });
 
   it("turns the template directories into options", () => {

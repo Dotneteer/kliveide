@@ -6,7 +6,10 @@ import { useViewModel } from "@mvc/react/useViewModel";
 import { useFilePickerPort } from "@mvc/dialogs/useDialogPorts";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { useMainApi } from "@renderer/core/MainApi";
-import { useRendererContext } from "@renderer/core/RendererProvider";
+import { getGlobalSetting, useRendererContext } from "@renderer/core/RendererProvider";
+import { normalizeMachineFavorites } from "@common/machines/machine-favorites";
+import { machineRegistry } from "@common/machines/machine-registry";
+import { SETTING_EMU_MACHINE_FAVORITES } from "@common/settings/setting-const";
 
 import {
   ensureBuildRootsLoaded,
@@ -14,7 +17,7 @@ import {
   ensureWorkspaceLoaded
 } from "../../IdeEventsHandler";
 import { NewProjectController } from "./NewProjectController";
-import type { NewProjectEnvironment } from "./NewProjectModel";
+import type { NewProjectContext, NewProjectEnvironment } from "./NewProjectModel";
 import type { NewProjectDialogResult, NewProjectPorts } from "./NewProjectPorts";
 import { NewProjectView } from "./NewProjectView";
 
@@ -85,7 +88,21 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
     [files, ideCommandsService, mainApi, projectService, store]
   );
 
-  const controller = useController(() => new NewProjectController(ports, env));
+  // --- Read once, at open: the machine the dialog starts on and the default models
+  const context = useMemo<NewProjectContext>(() => {
+    const emulator = store.getState()?.emulatorState;
+    return {
+      running: emulator?.machineId
+        ? { machineId: emulator.machineId, modelId: emulator.modelId }
+        : undefined,
+      favorites: normalizeMachineFavorites(
+        getGlobalSetting(store, SETTING_EMU_MACHINE_FAVORITES),
+        machineRegistry
+      )
+    };
+  }, [store]);
+
+  const controller = useController(() => new NewProjectController(ports, env, { context }));
   const vm = useViewModel(controller);
 
   useEffect(() => {
