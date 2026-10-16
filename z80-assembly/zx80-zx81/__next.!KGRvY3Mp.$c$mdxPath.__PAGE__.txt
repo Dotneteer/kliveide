@@ -1,0 +1,203 @@
+3:"$Sreact.fragment"
+4:I[7121,[],""]
+5:I[4581,[],""]
+a:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+b:"static/chunks/500-fc3b64d9ff4a32a7.js"
+c:"static/chunks/436-e36c16356dd28f2e.js"
+d:"static/chunks/app/(docs)/%5B...mdxPath%5D/page-afee3ca1911dde29.js"
+e:I[826,["545","$a","500","$b","436","$c","220","$d"],"TOCProvider"]
+f:I[4637,["545","$a","500","$b","436","$c","220","$d"],"Sidebar"]
+10:I[6665,["545","$a","500","$b","436","$c","220","$d"],"ClientWrapper"]
+16:"ViewportBoundary"
+17:I[484,[],"$16"]
+18:"MetadataBoundary"
+19:I[484,[],"$18"]
+1a:"$Sreact.suspense"
+7:X
+7:C
+8:X
+11:T1313,---
+description: "Assemble, run, debug, and export machine code for the Sinclair ZX80 and ZX81 with the Klive assembler."
+---
+
+# ZX80 and ZX81 Development
+
+Klive assembles machine code for the Sinclair ZX81 and ZX80, runs it in the emulated machine, debugs it at the source level, and exports it as a `.p` (ZX81) or `.o` (ZX80) program file that loads on other emulators and on real hardware.
+
+## Quick Start
+
+Create a project for the ZX81 (or the ZX80) and its `code/code.kz80.asm` starts like this:
+
+```z80klive
+    .model ZX81
+
+PRINT_AT .equ $08F5     ; ROM: move the print position to line B (0-21), column C (0-31)
+
+; --- Control codes in the message, outside the ZX81 character set
+CTL_AT   .equ $70       ; followed by line, column
+CTL_INV  .equ $71       ; inverse video on/off
+CTL_END  .equ $FF       ; end of the message
+
+Start:
+    ld hl,Message       ; HL points to the message
+    ld e,0              ; E is OR-ed into each character: $80 prints it in inverse video
+NextCh:
+    ld a,(hl)           ; get the next code
+    inc hl
+    cp CTL_END
+    ret z               ; back to BASIC when terminated (report 0/2)
+    cp CTL_AT
+    jr z,SetPosition
+    cp CTL_INV
+    jr z,Invert
+    or e
+    push hl
+    push de
+    rst $10             ; display the character (PRINT-A)
+    pop de
+    pop hl
+    jr NextCh           ; next code
+
+SetPosition:
+    ld b,(hl)           ; line
+    inc hl
+    ld c,(hl)           ; column
+    inc hl
+    push hl
+    push de
+    call PRINT_AT
+    pop de
+    pop hl
+    jr NextCh
+
+Invert:
+    ld a,e
+    xor $80             ; toggle inverse video
+    ld e,a
+    jr NextCh
+
+Message:
+    .defb CTL_AT, 10, 6         ; AT 10, 6
+    .defzx "WELCOME TO KLIVE IDE"
+    .defb CTL_AT, 11, 8         ; AT 11, 8
+    .defb CTL_INV               ; inverse video on
+    .defzx "(SINCLAIR ZX81)"
+    .defb CTL_INV               ; inverse video off
+    .defb CTL_END               ; terminate
+```
+
+**Run** prints the welcome in the middle of the screen, with the machine's name in inverse video below it, like the ZX Spectrum templates; **Debug** stops at the breakpoints you set in the source, and steps through it. `PRINT-AT` ($08F5) and `PRINT-A` (`RST $10`) are the ROM's own routines, so the code needs no display handling of its own.
+
+## How the code gets into the machine
+
+A ZX81 program lives in BASIC, so Klive builds one around your code:
+
+```
+   1 REM <your code>
+   2 RAND USR 16514
+```
+
+The body of the `1 REM` line starts at 16514 ($4082), the classic home of ZX81 machine code; on the ZX80 it is 16427 ($402B), and line 2 is `RANDOMISE USR(16427)`. **Run** and **Debug** boot the machine to the editor, write this program into memory with consistent system variables, and type `RUN`. Your code is then called through `USR`, exactly as after a LOAD on real hardware, and `RET` returns to BASIC.
+
+- Code with no `.org` starts at the REM line's body. You can `.org` anywhere above it; the gap is zero-filled.
+- `.ent` (or the first byte of the code) is the address `RAND USR` calls.
+- **Inject** only writes the program: type `RUN` yourself.
+- The program must fit the machine's RAM with room left for the ROM's workspace; a 1K machine gets a collapsed display file.
+
+### Spelling out the whole program
+
+If your code starts at the program image's base — $4009 (VERSN) on the ZX81, $4000 on the ZX80 — Klive takes it as the complete program, with the system variables, BASIC lines and display file written by you in `.defb`/`.defw`, as many ZX81 sources are. Klive then only checks that `E_LINE`, `VARS` and `D_FILE` agree with the image.
+
+## Rules of the machines
+
+- **Below $8000.** The ZX80/ZX81 display hardware turns every instruction fetched at $8000 or above into a `NOP`; code there cannot run. The assembler warns about it.
+- **IX, IY and AF'.** In SLOW mode the ROM's display routine runs on every frame and needs `IY = $4000`, `IX` and the alternate `AF` intact. Save and restore them if you use them.
+- **No $76 in a ZX80 REM line.** The ZX80 finds the end of a BASIC line by its `$76` (NEWLINE) byte, so the REM line cannot hold one — `HALT` and `LD (HL),(HL)` among others. Klive reports the address; spell out the whole program to avoid it. The ZX81 walks lines by their length and has no such limit.
+- **The character set.** Use `.defzx` for text: the machines do not use ASCII.
+- **No banks.** `.bank` is not available under these models.
+
+## Exporting
+
+**Export** (or `expc <file> -f p`) writes a `.p` file for ZX81 code and `.o` (`-f o`) for ZX80 code; with no `-f`, the build's model decides. On a `.p` file, `-as` (the dialog's *Run the program when loaded*) makes the program run itself once loaded. The file is the same image Run executes, and it loads back in Klive through the tape deck.
+
+## The ZX80 with the 8K ROM
+
+A ZX80 fitted with the 8K ROM runs ZX81 BASIC, so it runs ZX81 code (`.model ZX81`) and `.p` files.9:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$3","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Le",null,{"value":[{"value":"Quick Start","id":"quick-start","depth":2},{"value":"How the code gets into the machine","id":"how-the-code-gets-into-the-machine","depth":2},{"value":"Spelling out the whole program","id":"spelling-out-the-whole-program","depth":3},{"value":"Rules of the machines","id":"rules-of-the-machines","depth":2},{"value":"Exporting","id":"exporting","depth":2},{"value":"The ZX80 with the 8K ROM","id":"the-zx80-with-the-8k-rom","depth":2}],"children":[["$","$Lf",null,{}],["$","$L10",null,{"metadata":{"description":"Assemble, run, debug, and export machine code for the Sinclair ZX80 and ZX81 with the Klive assembler.","title":"ZX80 and ZX81 Development","filePath":"content/z80-assembly/zx80-zx81.mdx","timestamp":1792162584000},"sourceCode":"$11","children":["$L12","$L13"]}]]}]}],null,"$L14"]}],"p":"$@15","v":null,"s":"$8"}}]]
+2:[["children",{"s":{"n":"mdxPath","t":"c","k":"z80-assembly/zx80-zx81","s":["_not-found","_global-error"]},"h":64,"d":{"r":["$","$3","c",{"children":[null,["$","$L4",null,{"parallelRouterKey":"children","template":["$","$L5",null,{}]}]]}],"p":"$@6","v":"$7","s":"$8"},"c":"$Q9"}]]
+1:[["children",{"s":"(docs)","h":48,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":80,"c":"$Q1"},"h":{"r":["$","$3","h",{"children":[null,["$","$L17",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L19",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1a",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"ZX80 and ZX81 Development - Klive IDE"}],["$","meta","1",{"name":"description","content":"Assemble, run, debug, and export machine code for the Sinclair ZX80 and ZX81 with the Klive assembler."}],["$","meta","2",{"property":"og:title","content":"KliveIDE Documentation"}],["$","meta","3",{"property":"og:description","content":"The comprehensive guide to KliveIDE"}],["$","meta","4",{"name":"twitter:card","content":"summary"}],["$","meta","5",{"name":"twitter:title","content":"KliveIDE Documentation"}],["$","meta","6",{"name":"twitter:description","content":"The comprehensive guide to KliveIDE"}]]}]}],null]}],null]}],"p":"$@1b","v":null,"s":"$8"}},"a":"$@1c","u":"$@1d","b":"gxmpkUjozW8n014OYA51V"}
+1e:I[721,["545","$a","500","$b","436","$c","220","$d"],"HeadingAnchor"]
+1f:"ToggleWordWrapButton"
+20:I[9023,["545","$a","500","$b","436","$c","220","$d"],"$1f"]
+5d:I[484,[],"OutletBoundary"]
+12:["$","div",null,{"id":"nextra-skip-nav"}]
+13:["$","main",null,{"data-pagefind-body":true,"children":[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["ZX80 and ZX81 Development","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Klive assembles machine code for the Sinclair ZX81 and ZX80, runs it in the emulated machine, debugs it at the source level, and exports it as a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".p"}]," (ZX81) or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".o"}]," (ZX80) program file that loads on other emulators and on real hardware."]}],"\n",["$","h2",null,{"id":"quick-start","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Quick Start",["$","$L1e",null,{"id":"quick-start"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Create a project for the ZX81 (or the ZX80) and its ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"code/code.kz80.asm"}]," starts like this:"]}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L20",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":"    .model"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" ZX81"}]]}],"\n",["$","span",null,{"children":" "}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"PRINT_AT"}],["$","span",null,{"style":{"color":"#C586C0"},"children":" .equ"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" $08F5"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"     ; ROM: move the print position to line B (0-21), column C (0-31)"}]]}],"\n",["$","span",null,{"children":" "}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"; --- Control codes in the message, outside the ZX81 character set"}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"CTL_AT"}],["$","span",null,{"style":{"color":"#C586C0"},"children":"   .equ"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" $70"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"       ; followed by line, column"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"CTL_INV"}],["$","span",null,{"style":{"color":"#C586C0"},"children":"  .equ"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" $71"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"       ; inverse video on/off"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"CTL_END"}],["$","span",null,{"style":{"color":"#C586C0"},"children":"  .equ"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" $FF"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"       ; end of the message"}]]}],"\n",["$","span",null,{"children":" "}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"Start"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" hl"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],"$L21","$L22"]}],"\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49","\n","$L4a","\n","$L4b","\n","$L4c","\n","$L4d","\n","$L4e"]}]]}]]}],"\n","$L4f","\n","$L50","\n","$L51","\n","$L52","\n","$L53","\n","$L54","\n","$L55","\n","$L56","\n","$L57","\n","$L58","\n","$L59","\n","$L5a","\n","$L5b","\n","$L5c"]}]
+14:["$","$L5d",null,{"children":["$","$1a",null,{"name":"Next.MetadataOutlet","children":"$@5e"}]}]
+1d:true
+8:300
+21:["$","span",null,{"style":{"color":"#B5890F"},"children":"Message"}]
+22:["$","span",null,{"style":{"color":"#6A9955"},"children":"       ; HL points to the message"}]
+23:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" e"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"0"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"              ; E is OR-ed into each character: $80 prints it in inverse video"}]]}]
+24:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"NextCh"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}]]}]
+25:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":",("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"hl"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":")           "}],["$","span",null,{"style":{"color":"#6A9955"},"children":"; get the next code"}]]}]
+26:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    inc"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" hl"}]]}]
+27:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    cp"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" CTL_END"}]]}]
+28:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    ret"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" z"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"               ; back to BASIC when terminated (report 0/2)"}]]}]
+29:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    cp"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" CTL_AT"}]]}]
+2a:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    jr"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" z"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#B5890F"},"children":"SetPosition"}]]}]
+2b:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    cp"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" CTL_INV"}]]}]
+2c:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    jr"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" z"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#B5890F"},"children":"Invert"}]]}]
+2d:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    or"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" e"}]]}]
+2e:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    push"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" hl"}]]}]
+2f:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    push"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" de"}]]}]
+30:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    rst"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" $10"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"             ; display the character (PRINT-A)"}]]}]
+31:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    pop"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" de"}]]}]
+32:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    pop"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" hl"}]]}]
+33:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    jr"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" NextCh"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"           ; next code"}]]}]
+34:["$","span",null,{"children":" "}]
+35:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"SetPosition"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}]]}]
+36:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" b"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":",("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"hl"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":")           "}],["$","span",null,{"style":{"color":"#6A9955"},"children":"; line"}]]}]
+37:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    inc"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" hl"}]]}]
+38:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":",("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"hl"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":")           "}],["$","span",null,{"style":{"color":"#6A9955"},"children":"; column"}]]}]
+39:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    inc"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" hl"}]]}]
+3a:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    push"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" hl"}]]}]
+3b:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    push"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" de"}]]}]
+3c:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    call"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" PRINT_AT"}]]}]
+3d:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    pop"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" de"}]]}]
+3e:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    pop"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" hl"}]]}]
+3f:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    jr"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" NextCh"}]]}]
+40:["$","span",null,{"children":" "}]
+41:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"Invert"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}]]}]
+42:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"e"}]]}]
+43:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    xor"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" $80"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"             ; toggle inverse video"}]]}]
+44:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" e"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}]]}]
+45:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    jr"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" NextCh"}]]}]
+46:["$","span",null,{"children":" "}]
+47:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"Message"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}]]}]
+48:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":"    .defb"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" CTL_AT"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":", "}],["$","span",null,{"style":{"color":"#4D8061"},"children":"10"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":", "}],["$","span",null,{"style":{"color":"#4D8061"},"children":"6"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"         ; AT 10, 6"}]]}]
+49:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"    .defzx"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" \"WELCOME TO KLIVE IDE\""}]]}]
+4a:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":"    .defb"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" CTL_AT"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":", "}],["$","span",null,{"style":{"color":"#4D8061"},"children":"11"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":", "}],["$","span",null,{"style":{"color":"#4D8061"},"children":"8"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"         ; AT 11, 8"}]]}]
+4b:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":"    .defb"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" CTL_INV"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"               ; inverse video on"}]]}]
+4c:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"    .defzx"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" \"(SINCLAIR ZX81)\""}]]}]
+4d:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":"    .defb"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" CTL_INV"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"               ; inverse video off"}]]}]
+4e:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":"    .defb"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" CTL_END"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"               ; terminate"}]]}]
+4f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Run"}]," prints the welcome in the middle of the screen, with the machine’s name in inverse video below it, like the ZX Spectrum templates; ",["$","strong",null,{"children":"Debug"}]," stops at the breakpoints you set in the source, and steps through it. ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"PRINT-AT"}]," ($08F5) and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"PRINT-A"}]," (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RST $10"}],") are the ROM’s own routines, so the code needs no display handling of its own."]}]
+50:["$","h2",null,{"id":"how-the-code-gets-into-the-machine","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["How the code gets into the machine",["$","$L1e",null,{"id":"how-the-code-gets-into-the-machine"}]]}]
+51:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A ZX81 program lives in BASIC, so Klive builds one around your code:"}]
+52:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L20",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"   1 REM <your code>"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"   2 RAND USR 16514"}]}]]}]]}]]}]
+53:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The body of the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"1 REM"}]," line starts at 16514 ($4082), the classic home of ZX81 machine code; on the ZX80 it is 16427 ($402B), and line 2 is ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RANDOMISE USR(16427)"}],". ",["$","strong",null,{"children":"Run"}]," and ",["$","strong",null,{"children":"Debug"}]," boot the machine to the editor, write this program into memory with consistent system variables, and type ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RUN"}],". Your code is then called through ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"USR"}],", exactly as after a LOAD on real hardware, and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RET"}]," returns to BASIC."]}]
+54:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["Code with no ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".org"}]," starts at the REM line’s body. You can ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".org"}]," anywhere above it; the gap is zero-filled."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":".ent"}]," (or the first byte of the code) is the address ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RAND USR"}]," calls."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Inject"}]," only writes the program: type ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RUN"}]," yourself."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"The program must fit the machine’s RAM with room left for the ROM’s workspace; a 1K machine gets a collapsed display file."}],"\n"]}]
+55:["$","h3",null,{"id":"spelling-out-the-whole-program","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Spelling out the whole program",["$","$L1e",null,{"id":"spelling-out-the-whole-program"}]]}]
+56:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["If your code starts at the program image’s base — $4009 (VERSN) on the ZX81, $4000 on the ZX80 — Klive takes it as the complete program, with the system variables, BASIC lines and display file written by you in ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".defb"}],"/",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".defw"}],", as many ZX81 sources are. Klive then only checks that ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"E_LINE"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"VARS"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"D_FILE"}]," agree with the image."]}]
+57:["$","h2",null,{"id":"rules-of-the-machines","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Rules of the machines",["$","$L1e",null,{"id":"rules-of-the-machines"}]]}]
+58:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Below $8000."}]," The ZX80/ZX81 display hardware turns every instruction fetched at $8000 or above into a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"NOP"}],"; code there cannot run. The assembler warns about it."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"IX, IY and AF’."}]," In SLOW mode the ROM’s display routine runs on every frame and needs ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"IY = $4000"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"IX"}]," and the alternate ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"AF"}]," intact. Save and restore them if you use them."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"No $76 in a ZX80 REM line."}]," The ZX80 finds the end of a BASIC line by its ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$76"}]," (NEWLINE) byte, so the REM line cannot hold one — ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"HALT"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"LD (HL),(HL)"}]," among others. Klive reports the address; spell out the whole program to avoid it. The ZX81 walks lines by their length and has no such limit."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"The character set."}]," Use ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".defzx"}]," for text: the machines do not use ASCII."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"No banks."}]," ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".bank"}]," is not available under these models."]}],"\n"]}]
+59:["$","h2",null,{"id":"exporting","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Exporting",["$","$L1e",null,{"id":"exporting"}]]}]
+5a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Export"}]," (or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"expc <file> -f p"}],") writes a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".p"}]," file for ZX81 code and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".o"}]," (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"-f o"}],") for ZX80 code; with no ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"-f"}],", the build’s model decides. On a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".p"}]," file, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"-as"}]," (the dialog’s ",["$","em",null,{"children":"Run the program when loaded"}],") makes the program run itself once loaded. The file is the same image Run executes, and it loads back in Klive through the tape deck."]}]
+5b:["$","h2",null,{"id":"the-zx80-with-the-8k-rom","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The ZX80 with the 8K ROM",["$","$L1e",null,{"id":"the-zx80-with-the-8k-rom"}]]}]
+5c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A ZX80 fitted with the 8K ROM runs ZX81 BASIC, so it runs ZX81 code (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".model ZX81"}],") and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".p"}]," files."]}]
+5e:null
+8:C
+1c:0
+6:"$undefined"
+1b:"$undefined"
+15:"$undefined"
