@@ -37,6 +37,7 @@
 /contribute/improve-docs/index.html
 /contribute/wasm-toolchain/index.html
 /emulator-internals/zx81-display/index.html
+/emulator-internals/zx81-tape/index.html
 /getting-started/creating-project/index.html
 /getting-started/first-run/index.html
 /getting-started/installation/index.html
