@@ -1,0 +1,7 @@
+:HL["/kliveide/_next/static/css/11c59cc40cabfed8.css","style"]
+:HL["/kliveide/_next/static/css/75ed199ed4213428.css","style"]
+:HL["/kliveide/images/klive-logo.svg","image"]
+3:[["children",{"s":"__PAGE__","h":160}]]
+2:[["children",{"s":{"n":"mdxPath","t":"c","k":"emulator-internals/zx81-tape","s":["_not-found","_global-error"]},"h":64,"c":"$Q3"}]]
+1:[["children",{"s":"(docs)","h":48,"c":"$Q2"}]]
+0:{"b":"b3xSaYBB7O5Q4GslMnfAV","t":{"t":{"s":"","h":80,"c":"$Q1"}}}
