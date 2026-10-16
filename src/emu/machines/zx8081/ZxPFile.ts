@@ -11,6 +11,8 @@
  * machines and its block graphics in the wrong order (an upstream TODO).
  */
 
+import { ZX80_CHARSET, ZX81_CHARSET, ZX81_TOKENS } from "@common/zx8081/charset";
+
 /** A recognised program file */
 export type ZxProgramFile = {
   /** ZX81 (`.P`) or ZX80 (`.O`) */
@@ -23,51 +25,6 @@ export type ZxProgramFile = {
   ramKb: 1 | 16;
 };
 
-/** The ZX81 character set, codes $00-$3F (bit 7 = inverse) */
-export const ZX81_CHARSET: readonly string[] = [
-  " ", "▘", "▝", "▀", "▖", "▌", "▞", "▛", "▒", "▄", "▀", '"',
-  "£", "$", ":", "?", "(", ")", ">", "<", "=", "+", "-", "*", "/", ";", ",", ".",
-  "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
-  "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
-  "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"
-];
-
-/**
- * Plain-text stand-ins of the ZX81 chequered graphics, which Unicode has only in its legacy-computing
- * block: $08 is the full chequer, $09 its bottom half, $0A its top half
- */
-export const ZX81_GRAPHIC_NAMES: Readonly<Record<number, string>> = {
-  0x08: "chequer",
-  0x09: "chequer, bottom half",
-  0x0a: "chequer, top half"
-};
-
-/** The ZX80 character set, codes $00-$3F (bit 7 = inverse) */
-export const ZX80_CHARSET: readonly string[] = [
-  " ", '"', "▌", "▄", "▘", "▝", "▖", "▗", "▞", "▒", "▄", "▀",
-  "£", "$", ":", "?", "(", ")", "-", "+", "*", "/", "=", ">", "<", ";", ",", ".",
-  "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
-  "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
-  "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"
-];
-
-/**
- * The ZX81's keyword tokens: codes $C0-$FF (the ROM's TOKENS table at $0111, entries 1-64), and
- * $40-$42
- */
-export const ZX81_TOKENS: Readonly<Record<number, string>> = (() => {
-  const high = [
-    '""', "AT ", "TAB ", "?", "CODE ", "VAL ", "LEN ", "SIN ", "COS ", "TAN ", "ASN ", "ACS ", "ATN ",
-    "LN ", "EXP ", "INT ", "SQR ", "SGN ", "ABS ", "PEEK ", "USR ", "STR$ ", "CHR$ ", "NOT ", "**",
-    " OR ", " AND ", "<=", ">=", "<>", " THEN ", " TO ", " STEP ", " LPRINT ", " LLIST ", " STOP ",
-    " SLOW ", " FAST ", " NEW ", " SCROLL ", " CONT ", " DIM ", " REM ", " FOR ", " GOTO ", " GOSUB ",
-    " INPUT ", " LOAD ", " LIST ", " LET ", " PAUSE ", " NEXT ", " POKE ", " PRINT ", " PLOT ", " RUN ",
-    " SAVE ", " RAND ", " IF ", " CLS ", " UNPLOT ", " CLEAR ", " RETURN ", " COPY "
-  ];
-  const tokens: Record<number, string> = { 0x40: "RND", 0x41: "INKEY$", 0x42: "PI" };
-  high.forEach((t, i) => (tokens[0xc0 + i] = t));
-  return tokens;
-})();
 
 /** The text of a ZX81 or ZX80 character code: printable codes, inverse ones, ZX81 tokens */
 export function zx8081CharText(code: number, isZx81: boolean): string | undefined {

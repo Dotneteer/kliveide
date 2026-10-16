@@ -7,6 +7,8 @@ import {
   MI_SPECTRUM_3E,
   MI_SPECTRUM_48,
   MI_Z88,
+  MI_ZX80,
+  MI_ZX81,
   MI_ZXNEXT
 } from "@common/machines/constants";
 
@@ -37,7 +39,10 @@ describe("MF_INJECT_SUPPORT", () => {
     ["ZX Spectrum 48K", MI_SPECTRUM_48],
     ["ZX Spectrum 128K", MI_SPECTRUM_128],
     ["ZX Spectrum +3E", MI_SPECTRUM_3E],
-    ["Commodore 64", MI_C64]
+    ["Commodore 64", MI_C64],
+    // --- A 1 REM program and RUN (`.plans/ZX8081_CODE_INJECTION_PLAN.md`)
+    ["Sinclair ZX81", MI_ZX81],
+    ["Sinclair ZX80", MI_ZX80]
   ])("is declared true for %s", (_name, machineId) => {
     expect(featureOf(machineId)).toBe(true);
   });

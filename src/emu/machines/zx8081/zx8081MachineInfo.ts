@@ -28,6 +28,12 @@ export const ZX81_E_LINE = 0x4014;
 /** SLOW-DISP: the editor's wait-for-key loop (where the tape-load flow starts typing) */
 export const ZX81_KEY_WAIT = 0x04cf;
 /**
+ * The 8K ROM's FAST-mode display call, reached once a frame while the editor waits for a key. A ZX80
+ * with the 8K ROM has no NMI generator, so the ROM stays in FAST mode and never reaches SLOW-DISP;
+ * found by sampling the PC at its prompt (`test/zx8081-hw/inject.test.ts` checks it).
+ */
+export const ZX81_FAST_KEY_WAIT = 0x0229;
+/**
  * The ZX80 ROM's display-and-keyboard loop at the prompt, reached once a frame. There is no commented
  * ZX80 listing in the repository: this was found by sampling the PC at the prompt, and
  * `test/zx8081-hw/zx80.test.ts` checks that typing works from it.

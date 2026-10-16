@@ -498,8 +498,8 @@ export const machineRegistry: MachineInfo[] = [
     features: {
       [MF_Z80]: true,
       [MF_TAPE_SUPPORT]: true,
-      // --- Programs arrive as .P files the ROM loads; code injection is a follow-up (plan §14)
-      [MF_INJECT_SUPPORT]: false,
+      // --- Built code goes in as a 1 REM program and RUN (`.plans/ZX8081_CODE_INJECTION_PLAN.md`)
+      [MF_INJECT_SUPPORT]: true,
       [MF_ALLOW_SCAN_LINES]: false,
       // --- The shared execution-history recorder (EXECUTION_HISTORY_ALL_CORES_PLAN)
       [MF_EXEC_HISTORY]: true,
@@ -531,7 +531,8 @@ export const machineRegistry: MachineInfo[] = [
     features: {
       [MF_Z80]: true,
       [MF_TAPE_SUPPORT]: true,
-      [MF_INJECT_SUPPORT]: false,
+      // --- As the ZX81's (`.plans/ZX8081_CODE_INJECTION_PLAN.md`)
+      [MF_INJECT_SUPPORT]: true,
       [MF_ALLOW_SCAN_LINES]: false,
       // --- The shared execution-history recorder (EXECUTION_HISTORY_ALL_CORES_PLAN)
       [MF_EXEC_HISTORY]: true,

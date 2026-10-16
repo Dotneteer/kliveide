@@ -81,7 +81,7 @@ export const ExportCodeView = ({ vm, dispatch }: ExportCodeViewProps) => {
           <Checkbox
             initialValue={vm.loader.checked}
             right={true}
-            label="Create BASIC loader"
+            label={vm.loader.label}
             onChange={(startBlock) => edit({ startBlock })}
           />
         </DialogRow>

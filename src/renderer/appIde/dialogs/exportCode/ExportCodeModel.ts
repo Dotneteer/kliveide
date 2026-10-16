@@ -15,6 +15,23 @@ export const FORMAT_OPTIONS: SelectOption[] = [
   { value: "hex", label: "Intel HEX format" }
 ];
 
+// --- The ZX80 and ZX81 have their own program files (`.plans/ZX8081_CODE_INJECTION_PLAN.md` D8);
+// --- a ZX80 with the 8K ROM runs ZX81 programs, so it is offered both.
+export const ZX81_PROGRAM_FORMAT = "p";
+export const ZX80_PROGRAM_FORMAT = "o";
+const ZX81_OPTION: SelectOption = { value: ZX81_PROGRAM_FORMAT, label: "ZX81 program (.p)" };
+const ZX80_OPTION: SelectOption = { value: ZX80_PROGRAM_FORMAT, label: "ZX80 program (.o)" };
+const HEX_OPTION: SelectOption = { value: "hex", label: "Intel HEX format" };
+export const ZX81_FORMAT_OPTIONS: SelectOption[] = [ZX81_OPTION, HEX_OPTION];
+export const ZX80_FORMAT_OPTIONS: SelectOption[] = [ZX80_OPTION, ZX81_OPTION, HEX_OPTION];
+
+/** The formats the running machine's code exports as */
+export function formatOptionsFor(machineId: string | undefined): SelectOption[] {
+  if (machineId === "zx81") return ZX81_FORMAT_OPTIONS;
+  if (machineId === "zx80") return ZX80_FORMAT_OPTIONS;
+  return FORMAT_OPTIONS;
+}
+
 // --- "none" is not a colour: it means "leave the border alone", and is why the
 // --- value is a string here and a number|undefined in the saved settings.
 export const NO_BORDER = "none";
@@ -77,6 +94,8 @@ export type ExportCodeSettings = {
 
 export type ExportCodeEnvironment = {
   validation: IValidationService;
+  /** The formats to offer (`formatOptionsFor`); the Spectrum's when absent */
+  formats?: SelectOption[];
 };
 
 export type ExportCodeState = {
@@ -149,7 +168,9 @@ export function initialState(
 export const reduce: UiReducer<ExportCodeState, ExportCodeEvent> = (state, event) => {
   switch (event.type) {
     case "envReplaced":
-      return event.env.validation === state.env.validation ? state : { ...state, env: event.env };
+      return event.env.validation === state.env.validation && event.env.formats === state.env.formats
+        ? state
+        : { ...state, env: event.env };
 
     case "settingsChanged": {
       // --- A patch that changes nothing must not wake a subscriber; the view
@@ -198,18 +219,39 @@ export function canExport(state: ExportCodeState): boolean {
   );
 }
 
-// --- A HEX file has no tape blocks, so there is no loader to create.
-export function supportsLoader(state: ExportCodeState): boolean {
-  return state.settings.formatId !== HEX_FORMAT;
+/** The formats on offer */
+export function formatOptionsOf(state: ExportCodeState): SelectOption[] {
+  return state.env.formats ?? FORMAT_OPTIONS;
 }
 
-// --- The startup options only exist to configure the loader.
+// --- A saved format the machine does not offer (TZX on a ZX81) gives way to its first one.
+export function effectiveFormatOf(state: ExportCodeState): string {
+  const options = formatOptionsOf(state);
+  return options.some((o) => o.value === state.settings.formatId)
+    ? state.settings.formatId
+    : options[0].value;
+}
+
+// --- A HEX file has no tape blocks, so there is no loader to create; a ZX80 program cannot start
+// --- itself. On a ZX81 program the checkbox makes it run once loaded.
+export function supportsLoader(state: ExportCodeState): boolean {
+  const format = effectiveFormatOf(state);
+  return format !== HEX_FORMAT && format !== ZX80_PROGRAM_FORMAT;
+}
+
+export function loaderLabelOf(state: ExportCodeState): string {
+  return effectiveFormatOf(state) === ZX81_PROGRAM_FORMAT ? "Run the program when loaded" : "Create BASIC loader";
+}
+
+// --- The startup options only exist to configure the Spectrum's BASIC loader.
 export function showsStartupOptions(state: ExportCodeState): boolean {
-  return supportsLoader(state) && state.settings.startBlock;
+  return (
+    supportsLoader(state) && state.settings.startBlock && effectiveFormatOf(state) !== ZX81_PROGRAM_FORMAT
+  );
 }
 
 export function commandOf(state: ExportCodeState): { command: string; fullFilename: string } {
-  return buildExportCodeCommand({ ...state.settings });
+  return buildExportCodeCommand({ ...state.settings, formatId: effectiveFormatOf(state) });
 }
 
 /**

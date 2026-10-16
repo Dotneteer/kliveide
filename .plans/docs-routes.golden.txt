@@ -119,3 +119,4 @@
 /z80-assembly/zx-next-copper/index.html
 /z80-assembly/zx-next-dma/index.html
 /z80-assembly/zx-next/index.html
+/z80-assembly/zx80-zx81/index.html

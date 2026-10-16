@@ -19,6 +19,7 @@ import {
   DefHPragma,
   DefineDirective,
   DefMPragma,
+  DefZxPragma,
   DefNPragma,
   DefSPragma,
   DefWPragma,
@@ -634,6 +635,11 @@ export abstract class CommonAsmParser<
           type: "DefMPragma",
           value: defmExpr
         } as DefMPragma<TInstruction, TToken>;
+      case CommonTokens.DefzxPragma:
+        return {
+          type: "DefZxPragma",
+          value: this.getExpression()
+        } as DefZxPragma<TInstruction, TToken>;
       case CommonTokens.DefnPragma:
         const defnExpr = this.getExpression();
         return {
@@ -1258,6 +1264,7 @@ export abstract class CommonAsmParser<
       case CommonTokens.DefcPragma:
       case CommonTokens.DefmPragma:
       case CommonTokens.DefnPragma:
+      case CommonTokens.DefzxPragma:
       case CommonTokens.DefhPragma:
       case CommonTokens.DefsPragma:
       case CommonTokens.FillbPragma:

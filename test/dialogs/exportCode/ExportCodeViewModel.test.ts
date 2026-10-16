@@ -34,7 +34,7 @@ describe("ExportCodeViewModel — the loader section", () => {
   it("shows the loader checkbox for a tape format", () => {
     const vm = selectViewModel(aState({ settings: { formatId: "tzx", startBlock: true } }));
 
-    expect(vm.loader).toEqual({ kind: "shown", checked: true });
+    expect(vm.loader).toEqual({ kind: "shown", checked: true, label: "Create BASIC loader" });
   });
 
   it("hides the loader checkbox for Intel HEX", () => {

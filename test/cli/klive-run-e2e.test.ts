@@ -5,7 +5,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import type { CliIo } from "../../src/cli/io";
 import { runCli } from "../../src/cli/run-cli";
-import { ZX81_CHARSET } from "@emu/machines/zx8081/ZxPFile";
+import { ZX81_CHARSET } from "@common/zx8081/charset";
 import { compileNexFile } from "../harness/zxnext/core/compile-nex";
 import { buildSp48Wasm } from "../../scripts/build-sp48-wasm.cjs";
 import { buildSp128Wasm } from "../../scripts/build-sp128-wasm.cjs";
@@ -121,6 +121,15 @@ describe("klive run: stop conditions on the 48K", () => {
     const regs = JSON.parse(fs.readFileSync(file("regs.json"), "utf8"));
     expect(regs.bc >> 8).toBe(0);
     expect(regs.halted).toBe(false);
+  }, 60_000);
+
+  it("builds a ZX81 project into a 1 REM program and runs it through RUN", async () => {
+    // --- `.plans/ZX8081_CODE_INJECTION_PLAN.md`: the machine's own flow types RUN, RAND USR calls the code
+    const run = await kliveJson(["run", "runzx81", "--until-pc", "Done", "--dump-mem", `Counter:1=${file("zx81.bin")}`]);
+    expect(run.code).toBe(0);
+    expect(run.result.stop).toBe("pc");
+    expect(bytesOf("zx81.bin")).toEqual(new Uint8Array([10]));
+    expect(run.result.registers.pc).toBe(0x4082 + 8);
   }, 60_000);
 
   it("stops at a conditional breakpoint", async () => {
