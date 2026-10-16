@@ -18,7 +18,8 @@ import {
   ZX81_LOAD_FINISHED,
   ZX81_MODELS
 } from "@emu/machines/zx8081/zx8081MachineInfo";
-import { parseZxProgramFile, ZX80_CHARSET, ZX81_CHARSET, type ZxProgramFile } from "@emu/machines/zx8081/ZxPFile";
+import { ZX80_CHARSET, ZX81_CHARSET } from "@common/zx8081/charset";
+import { parseZxProgramFile, type ZxProgramFile } from "@emu/machines/zx8081/ZxPFile";
 
 import { buildZx8081Wasm, productionOutput } from "../../../scripts/build-zx8081-wasm.cjs";
 

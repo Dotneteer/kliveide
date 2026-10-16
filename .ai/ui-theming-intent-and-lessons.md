@@ -762,6 +762,30 @@ Disk dialog's fixed 200px fitted the +3's CPC labels and clipped the Pentagon's 
 as `` `${longest label length + 4}ch` `` (the 4ch hold the chevron); the open list takes the trigger's
 width (`--radix-select-trigger-width`), so one value sizes both.
 
+## A Long Choice Is Two Short Ones; A Field With One Answer Stays, Disabled
+
+A dropdown nobody can scan (the New Project dialog's 41 machine models) is split by what decides
+the choice: the machine *type* first, then its *model*. Group a list of more than a screenful with
+`DropdownOption.group` - consecutive options with one group sit under a heading drawn as secondary
+label text (`--color-secondary-label`, `--font-size-100`, 600), which is not an option and takes no
+highlight. Do not invent headings as disabled options.
+
+**A dependent field with a single answer stays in place, disabled, showing that answer** - the
+model of a one-model machine - rather than disappearing. A field that comes and goes moves every
+field below it each time the choice above changes, which reads as the dialog jumping under the
+pointer. The same holds for anything else whose size follows the choice (a hint, a button label):
+keep it to one fixed size, or keep it constant.
+
+## A Dialog Row Is Spaced Once
+
+Inside a `DialogForm`, the form body's gap (`--space-4`) is what separates one `DialogRow` from the
+next; `DialogRow`'s own top margin (`--space-3`) is for rows stacked without a form, and the form
+cancels it. Both applying put rows 28px apart against 6px between a label and its control, and
+every field read as floating on its own. The same goes for a wrapper around a control: it carries
+no padding of its own, because the row already spaces it - the 8px a dropdown wrapper added above
+and below doubled the gap again. When a dialog looks too airy, measure the computed margins and
+gaps before adding or removing any: the excess is almost always two layers spacing the same edge.
+
 ## A Hint Under A Field Needs Its Own Top Margin
 
 `TextInput` carries no bottom margin — `DialogRow` owns the gap between a label and its field, and

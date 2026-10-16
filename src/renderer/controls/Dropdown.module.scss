@@ -121,3 +121,16 @@
   color: var(--color-secondary-label);
   font-size: var(--font-size-100);
 }
+
+/*
+ * The heading of a group of options (`DropdownOption.group`): a label, not an option, so it takes no
+ * pointer and no highlight, and reads as secondary text above the options it introduces.
+ */
+.SelectGroupLabel {
+  padding: var(--space-1) var(--space-1) 2px;
+  color: var(--color-secondary-label);
+  font-size: var(--font-size-100);
+  font-weight: 600;
+  cursor: default;
+  user-select: none;
+}

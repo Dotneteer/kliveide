@@ -171,9 +171,6 @@ async function loadProjectInput(folder: string, options: RunInputOptions, io: Cl
   const project = loadProject(folder, io.cwd);
   const machine = machineOf({ ...project, unitTests: {} }, options.machine);
   if (!machine.machineId) throw usageError("The project names no machine; pass --machine <id>.");
-  if (machine.machineId === MI_ZX80 || machine.machineId === MI_ZX81) {
-    throw usageError(`Code built in Klive cannot be injected into the ${machine.machineId.toUpperCase()}; run a .p or .o file instead.`);
-  }
   const roms = romOverrides(options.roms, project.roms, project.folder, io.cwd);
   const build = await compileProject(
     project,

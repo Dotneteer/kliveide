@@ -1,0 +1,107 @@
+---
+description: "Assemble, run, debug, and export machine code for the Sinclair ZX80 and ZX81 with the Klive assembler."
+---
+
+# ZX80 and ZX81 Development
+
+Klive assembles machine code for the Sinclair ZX81 and ZX80, runs it in the emulated machine, debugs it at the source level, and exports it as a `.p` (ZX81) or `.o` (ZX80) program file that loads on other emulators and on real hardware.
+
+## Quick Start
+
+Create a project for the ZX81 (or the ZX80) and its `code/code.kz80.asm` starts like this:
+
+```z80klive
+    .model ZX81
+
+PRINT_AT .equ $08F5     ; ROM: move the print position to line B (0-21), column C (0-31)
+
+; --- Control codes in the message, outside the ZX81 character set
+CTL_AT   .equ $70       ; followed by line, column
+CTL_INV  .equ $71       ; inverse video on/off
+CTL_END  .equ $FF       ; end of the message
+
+Start:
+    ld hl,Message       ; HL points to the message
+    ld e,0              ; E is OR-ed into each character: $80 prints it in inverse video
+NextCh:
+    ld a,(hl)           ; get the next code
+    inc hl
+    cp CTL_END
+    ret z               ; back to BASIC when terminated (report 0/2)
+    cp CTL_AT
+    jr z,SetPosition
+    cp CTL_INV
+    jr z,Invert
+    or e
+    push hl
+    push de
+    rst $10             ; display the character (PRINT-A)
+    pop de
+    pop hl
+    jr NextCh           ; next code
+
+SetPosition:
+    ld b,(hl)           ; line
+    inc hl
+    ld c,(hl)           ; column
+    inc hl
+    push hl
+    push de
+    call PRINT_AT
+    pop de
+    pop hl
+    jr NextCh
+
+Invert:
+    ld a,e
+    xor $80             ; toggle inverse video
+    ld e,a
+    jr NextCh
+
+Message:
+    .defb CTL_AT, 10, 6         ; AT 10, 6
+    .defzx "WELCOME TO KLIVE IDE"
+    .defb CTL_AT, 11, 8         ; AT 11, 8
+    .defb CTL_INV               ; inverse video on
+    .defzx "(SINCLAIR ZX81)"
+    .defb CTL_INV               ; inverse video off
+    .defb CTL_END               ; terminate
+```
+
+**Run** prints the welcome in the middle of the screen, with the machine's name in inverse video below it, like the ZX Spectrum templates; **Debug** stops at the breakpoints you set in the source, and steps through it. `PRINT-AT` ($08F5) and `PRINT-A` (`RST $10`) are the ROM's own routines, so the code needs no display handling of its own.
+
+## How the code gets into the machine
+
+A ZX81 program lives in BASIC, so Klive builds one around your code:
+
+```
+   1 REM <your code>
+   2 RAND USR 16514
+```
+
+The body of the `1 REM` line starts at 16514 ($4082), the classic home of ZX81 machine code; on the ZX80 it is 16427 ($402B), and line 2 is `RANDOMISE USR(16427)`. **Run** and **Debug** boot the machine to the editor, write this program into memory with consistent system variables, and type `RUN`. Your code is then called through `USR`, exactly as after a LOAD on real hardware, and `RET` returns to BASIC.
+
+- Code with no `.org` starts at the REM line's body. You can `.org` anywhere above it; the gap is zero-filled.
+- `.ent` (or the first byte of the code) is the address `RAND USR` calls.
+- **Inject** only writes the program: type `RUN` yourself.
+- The program must fit the machine's RAM with room left for the ROM's workspace; a 1K machine gets a collapsed display file.
+
+### Spelling out the whole program
+
+If your code starts at the program image's base — $4009 (VERSN) on the ZX81, $4000 on the ZX80 — Klive takes it as the complete program, with the system variables, BASIC lines and display file written by you in `.defb`/`.defw`, as many ZX81 sources are. Klive then only checks that `E_LINE`, `VARS` and `D_FILE` agree with the image.
+
+## Rules of the machines
+
+- **Below $8000.** The ZX80/ZX81 display hardware turns every instruction fetched at $8000 or above into a `NOP`; code there cannot run. The assembler warns about it.
+- **IX, IY and AF'.** In SLOW mode the ROM's display routine runs on every frame and needs `IY = $4000`, `IX` and the alternate `AF` intact. Save and restore them if you use them.
+- **No $76 in a ZX80 REM line.** The ZX80 finds the end of a BASIC line by its `$76` (NEWLINE) byte, so the REM line cannot hold one — `HALT` and `LD (HL),(HL)` among others. Klive reports the address; spell out the whole program to avoid it. The ZX81 walks lines by their length and has no such limit.
+- **The character set.** Use `.defzx` for text: the machines do not use ASCII.
+- **No banks.** `.bank` is not available under these models.
+
+## Exporting
+
+**Export** (or `expc <file> -f p`) writes a `.p` file for ZX81 code and `.o` (`-f o`) for ZX80 code; with no `-f`, the build's model decides. On a `.p` file, `-as` (the dialog's *Run the program when loaded*) makes the program run itself once loaded. The file is the same image Run executes, and it loads back in Klive through the tape deck.
+
+## The ZX80 with the 8K ROM
+
+A ZX80 fitted with the 8K ROM runs ZX81 BASIC, so it runs ZX81 code (`.model ZX81`) and `.p` files.

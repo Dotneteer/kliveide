@@ -13,6 +13,17 @@
 }
 
 /*
+ * The body's gap already separates one row from the next. `DialogRow` brings its own top margin for
+ * dialogs that stack rows without a form, and here the two added up: rows stood 28px apart, more
+ * than twice the 6px between a label and its control, so every field read as floating on its own.
+ * Inside a form the gap alone spaces the rows. Three selectors' worth of specificity so it wins over
+ * `.dialogRow:not(:first-child)` whatever order the two stylesheets load in.
+ */
+.form .body > [data-dialog-row] {
+  margin-top: 0;
+}
+
+/*
  * The form's own footer reaches out to the dialog's edges with negative margins, so it has to match
  * `Modal`'s `.dialogFooter` exactly — same surface, same seam, same padding, same corner radii.
  * The magic numbers are `--space-4`, the body padding it is cancelling.

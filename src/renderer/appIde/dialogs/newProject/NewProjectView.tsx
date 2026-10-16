@@ -25,13 +25,27 @@ export const NewProjectView = ({ vm, dispatch }: NewProjectViewProps) => (
     onCancel={() => dispatch({ type: "cancelRequested" })}
   >
     <DialogRow label="Machine type: *">
-      <div className={styles.dropdownWrapper}>
+      <div className={styles.dropdownWrapper} data-testid="new-project-machine-types">
         <Dropdown
           placeholder="Select..."
-          options={vm.machine.options}
-          initialValue={vm.machine.value}
+          ariaLabel="Machine type"
+          options={vm.machineType.options}
+          initialValue={vm.machineType.value}
           width={468}
-          onChanged={(value) => dispatch({ type: "machineSelected", value })}
+          onChanged={(machineId) => dispatch({ type: "machineTypeSelected", machineId })}
+        />
+      </div>
+    </DialogRow>
+    <DialogRow label="Model:">
+      <div className={styles.dropdownWrapper} data-testid="new-project-models">
+        <Dropdown
+          placeholder="Select..."
+          ariaLabel="Model"
+          options={vm.model.options}
+          initialValue={vm.model.value}
+          enabled={vm.model.enabled}
+          width={468}
+          onChanged={(modelId) => dispatch({ type: "modelSelected", modelId })}
         />
       </div>
     </DialogRow>

@@ -121,6 +121,9 @@ merely uncoloured, which no route diff can see.
   loading, the debugger); hardware tests go in `test/zx8081-hw/`. Screen goldens are recorded only
   after the picture was checked by eye (`ZX8081_GOLDENS_PNG=<dir>` writes them).
 - Typed keys need 4 key-free frames between them (the ROM's debounce); see `Zx8081WasmHost.typeText`.
+- Machine code for them (`.model ZX80`/`ZX81`, `.defzx`, Run/Debug as a `1 REM` program, `.p`/`.o`
+  export) is `.plans/ZX8081_CODE_INJECTION_PLAN.md`; its §8 records how it works. The program image is
+  built in one place, `src/common/zx8081/programImage.ts`, for injection and export alike.
 
 ## WASM Cores And The Debugger
 

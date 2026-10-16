@@ -115,6 +115,12 @@ export type ErrorCodes =
   // --- Next model warnings
   | "Z0370"
 
+  // --- ZX80/ZX81 models
+  | "Z0378"
+  | "Z0379"
+  | "Z0380"
+  | "Z0381"
+
   // --- Instructions
   | "Z0401"
   | "Z0402"
@@ -238,7 +244,7 @@ export const errorMessages: Record<string, string> = {
   Z0204: "Error reading include file: '{0}' ({1})",
   Z0205: "Missing #endif directive",
   Z0206:
-    "An #ifmod or #ifnmod directive cen be used only with these identifiers: 'SPECTRUM48', 'SPECTRUM128', 'SPECTRUMP3', 'NEXT'.",
+    "An #ifmod or #ifnmod directive cen be used only with these identifiers: 'SPECTRUM48', 'SPECTRUM128', 'SPECTRUMP3', 'NEXT', 'ZX80', 'ZX81'.",
   Z0207: "Unexpected #else directive",
   Z0208: "Unexpected #endif directive",
   Z0209: "The #line directive needs a positive integer line number.",
@@ -246,7 +252,7 @@ export const errorMessages: Record<string, string> = {
   // --- Pragma messages
   Z0302: "A .model pragma can be used only once.",
   Z0303:
-    "A .model pragma can have only these values: 'SPECTRUM48', 'SPECTRUM128', 'SPECTRUMP3', 'NEXT'.",
+    "A .model pragma can have only these values: 'SPECTRUM48', 'SPECTRUM128', 'SPECTRUMP3', 'NEXT', 'ZX80', 'ZX81'.",
   Z0304: "An .equ pragma must have a label",
   Z0305: "The .bank pragma cannot have a label.",
   Z0306: "The .bank pragma's value must be between 0 and 7 (Spectrum 128) or 0 and 111 (Next).",
@@ -320,6 +326,13 @@ export const errorMessages: Record<string, string> = {
 
   // --- Next model warnings
   Z0370: "Unbanked code address ${0} exceeds typical bank 2 range ($8000-$bfff). This will create a gap in bank 2 when exporting to NEX. Consider using explicit .bank for separate bank layout.",
+
+  // --- ZX80/ZX81 models (`.plans/ZX8081_CODE_INJECTION_PLAN.md`)
+  Z0378:
+    "Code at ${0} is above $7FFF: on a ZX80/ZX81, instructions fetched from there execute as NOPs. Keep the code below $8000.",
+  Z0379: "The .defzx pragma can be used only with .model ZX80 or ZX81.",
+  Z0380: ".defzx pragma requires a string argument.",
+  Z0381: "The {0} character set has no '{1}'.",
 
   // --- Instructions
   Z0401: "Unexpected error when emitting code for mnemonic '{0}'.",

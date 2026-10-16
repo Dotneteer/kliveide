@@ -737,7 +737,9 @@ All tests run the real WASM machine.
 - TZX ZX81 blocks (block `$19`), and TZX/WAV fast load through a port of CLK's pulse parser.
 - CHR$128 and UDG boards.
 - The Timex TS1000/TS1500 and the Lambda 8300.
-- Assembler support: a `.model zx81`, `.P` export, and code injection via a REM line or direct PC.
+- ~~Assembler support: a `.model zx81`, `.P` export, and code injection via a REM line or direct PC.~~
+  Done (2026-10-16) in [ZX8081_CODE_INJECTION_PLAN.md](ZX8081_CODE_INJECTION_PLAN.md): `.model ZX80`/`ZX81`,
+  `.defzx`, a `1 REM` program image, Run/Debug by typing RUN, `.p`/`.o` export.
 - Checkpoints: copy the whole linear memory, as `ZxNextWasmV2Machine.ts:595-650` does. That is
   cheap here.
 

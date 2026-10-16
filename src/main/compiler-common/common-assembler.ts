@@ -61,6 +61,7 @@ import {
   DefGxPragma,
   DefHPragma,
   DefMPragma,
+  DefZxPragma,
   DefNPragma,
   DefSPragma,
   DefWPragma,
@@ -138,7 +139,13 @@ import { readTextFile } from "@main/compiler-common/utils";
 import { CommonTokenType } from "./common-tokens";
 import { CommonTokenStream } from "./common-token-stream";
 import { CommonAsmParser } from "./common-asm-parser";
-import { findModelTypeByName } from "@main/z80-compiler/SpectrumModelTypes";
+import {
+  findModelTypeByName,
+  isZx8081ModelType,
+  SpectrumModelType
+} from "@main/z80-compiler/SpectrumModelTypes";
+import { zx8081CharCode } from "@common/zx8081/charset";
+import { ZX80_REM_BODY, ZX81_REM_BODY } from "@common/zx8081/programImage";
 import { convertSpectrumString } from "@main/z80-compiler/z80-utils";
 
 /**
@@ -1077,6 +1084,25 @@ export abstract class CommonAssembler<
    * Checks if current unbanked code exceeds typical bank 2 range
    * Emits a warning if address exceeds $bfff
    */
+  /**
+   * On a ZX80/ZX81, an instruction fetched at $8000 or above executes as a NOP (the ULA's display
+   * trick), so code there cannot run. Warned once per segment: data may legitimately live there.
+   */
+  protected checkZx8081CodeRange(): void {
+    const model = this._output.modelType ?? this._options.currentModel;
+    if (!isZx8081ModelType(model) || !this._currentSegment) return;
+    const currentAddress = this.getCurrentAssemblyAddress();
+    if (currentAddress > 0x7fff && !(this._currentSegment as any).zx8081RangeWarned) {
+      this.reportAssemblyWarning(
+        "Z0378",
+        this._currentSourceLine,
+        null,
+        currentAddress.toString(16).toUpperCase()
+      );
+      (this._currentSegment as any).zx8081RangeWarned = true;
+    }
+  }
+
   protected checkUnbankedCodeRange(): void {
     // Only check if in Next auto mode and current segment is unbanked
     if (!this._output.isNextAutoMode || !this._currentSegment || this._currentSegment.bank !== undefined) {
@@ -1304,6 +1330,21 @@ export abstract class CommonAssembler<
   // Code emission methods
 
   /**
+   * Where code with no `.org` goes: $8000, except on the ZX80/ZX81, where nothing executes there and
+   * code lives in the `1 REM` line (`.plans/ZX8081_CODE_INJECTION_PLAN.md` D3)
+   */
+  private modelDefaultStartAddress(): number {
+    switch (this._output.modelType ?? this._options?.currentModel) {
+      case SpectrumModelType.ZX81:
+        return ZX81_REM_BODY;
+      case SpectrumModelType.ZX80:
+        return ZX80_REM_BODY;
+      default:
+        return 0x8000;
+    }
+  }
+
+  /**
    * Ensures that there is a code segment into which to emit the code
    * @param defaultAddress Default start address of the segment
    * @param maxLength Maximum segment length
@@ -1315,7 +1356,7 @@ export abstract class CommonAssembler<
     const segment = new BinarySegment();
     segment.startAddress =
       (defaultAddress === undefined
-        ? this._options?.defaultStartAddress ?? 0x8000
+        ? this._options?.defaultStartAddress ?? this.modelDefaultStartAddress()
         : defaultAddress) & 0xffff;
     segment.currentInstructionOffset = 0;
     segment.maxCodeLength = maxLength & 0xffff;
@@ -1906,6 +1947,13 @@ export abstract class CommonAssembler<
           this.processDefMNCPragma(pragmaLine, this.emitStructByte);
         } else {
           this.processDefMNCPragma(pragmaLine);
+        }
+        break;
+      case "DefZxPragma":
+        if (this._currentStructInvocation) {
+          this.processDefZxPragma(pragmaLine, this.emitStructByte);
+        } else {
+          this.processDefZxPragma(pragmaLine);
         }
         break;
       case "DefHPragma":
@@ -2575,6 +2623,43 @@ export abstract class CommonAssembler<
         pragma.type === "DefNPragma",
         emitAction
       );
+    }
+  }
+
+  /**
+   * Processes the .defzx pragma: text in the ZX80's or ZX81's character set, a lower-case letter
+   * giving the inverse-video capital (`.plans/ZX8081_CODE_INJECTION_PLAN.md` D2)
+   * @param pragma Pragma to process
+   * @param emitAction Action to emit a code byte
+   */
+  processDefZxPragma(pragma: DefZxPragma<TInstruction, TToken>, emitAction?: (b: number) => void): void {
+    const model = this._output.modelType ?? this._options.currentModel;
+    if (!isZx8081ModelType(model)) {
+      this.reportAssemblyError("Z0379", pragma);
+      return;
+    }
+    const message = this.evaluateExprImmediate(pragma.value);
+    if (!message.isValid) return;
+    if (message.type !== ExpressionValueType.String) {
+      this.reportAssemblyError("Z0380", pragma);
+      return;
+    }
+    const isZx81 = model === SpectrumModelType.ZX81;
+    const codes: number[] = [];
+    for (const ch of message.asString()) {
+      const code = zx8081CharCode(ch, isZx81);
+      if (code === undefined) {
+        this.reportAssemblyError("Z0381", pragma, null, isZx81 ? "ZX81" : "ZX80", ch);
+        return;
+      }
+      codes.push(code);
+    }
+    for (const code of codes) {
+      if (emitAction) {
+        emitAction.call(this, code);
+      } else {
+        this.emitByte(code);
+      }
     }
   }
 
@@ -4538,6 +4623,10 @@ export abstract class CommonAssembler<
           this.processDefMNCPragma(pragma, emitAction);
           break;
 
+        case "DefZxPragma":
+          this.processDefZxPragma(pragma, emitAction);
+          break;
+
         case "DefHPragma":
           this.processDefHPragma(pragma, emitAction);
           break;
@@ -5656,6 +5745,7 @@ export abstract class CommonAssembler<
   protected emitByte(data: number): void {
     this.ensureCodeSegment();
     this.checkUnbankedCodeRange();
+    this.checkZx8081CodeRange();
     const overflow = this._currentSegment.emitByte(data);
     if (overflow) {
       this.reportAssemblyError(overflow, this._currentSourceLine);
@@ -6310,6 +6400,7 @@ function isByteEmittingPragma<TInstruction extends TypedObject>(
     case "DefCPragma":
     case "DefMPragma":
     case "DefNPragma":
+    case "DefZxPragma":
     case "DefHPragma":
     case "DefSPragma":
     case "FillbPragma":

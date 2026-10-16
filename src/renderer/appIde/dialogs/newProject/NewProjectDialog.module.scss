@@ -3,7 +3,11 @@
   flex-direction: row;
 }
 
+/*
+ * No padding of its own: `DialogRow` already spaces a label from its control and one row from the
+ * next. The 8px this used to add above and below every dropdown doubled those gaps, so the dropdown
+ * rows stood further apart than the text fields of the same dialog.
+ */
 .dropdownWrapper {
-    display: flex;
-    padding: 8px 0;
+  display: flex;
 }

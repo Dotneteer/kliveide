@@ -143,7 +143,8 @@ export const CommonTokens = {
   StringLiteral: 126,
 
   PagePragma: 127,
-  CopperPragma: 128
+  CopperPragma: 128,
+  DefzxPragma: 129
 }
 
 export type CommonTokenType = typeof CommonTokens[keyof typeof CommonTokens];
@@ -227,6 +228,11 @@ export const commonResolverHash: { [key: string]: CommonTokenType } = {
   ".DN": CommonTokens.DefnPragma,
   dn: CommonTokens.DefnPragma,
   DN: CommonTokens.DefnPragma,
+
+  ".defzx": CommonTokens.DefzxPragma,
+  ".DEFZX": CommonTokens.DefzxPragma,
+  defzx: CommonTokens.DefzxPragma,
+  DEFZX: CommonTokens.DefzxPragma,
 
   ".defh": CommonTokens.DefhPragma,
   ".DEFH": CommonTokens.DefhPragma,
@@ -687,6 +693,7 @@ commonTokenTraits.set(CommonTokens.DefmPragma, { pragma: true });
 commonTokenTraits.set(CommonTokens.DefnPragma, { pragma: true });
 commonTokenTraits.set(CommonTokens.DefsPragma, { pragma: true });
 commonTokenTraits.set(CommonTokens.DefwPragma, { pragma: true });
+commonTokenTraits.set(CommonTokens.DefzxPragma, { pragma: true });
 commonTokenTraits.set(CommonTokens.DispPragma, { pragma: true });
 commonTokenTraits.set(CommonTokens.DmaPragma, { pragma: true });
 commonTokenTraits.set(CommonTokens.Divide, {});

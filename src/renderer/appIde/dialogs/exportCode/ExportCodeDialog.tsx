@@ -11,7 +11,7 @@ import { useMainApi } from "@renderer/core/MainApi";
 import { useDispatch, useRendererContext } from "@renderer/core/RendererProvider";
 
 import { ExportCodeController } from "./ExportCodeController";
-import type { ExportCodeEnvironment } from "./ExportCodeModel";
+import { formatOptionsFor, type ExportCodeEnvironment } from "./ExportCodeModel";
 import type { ExportCodeDialogResult, ExportCodePorts } from "./ExportCodePorts";
 import { ExportCodeView } from "./ExportCodeView";
 
@@ -37,9 +37,11 @@ export const ExportCodeDialog = ({ onClose, onExport }: Props) => {
   // --- re-seeding from the store mid-edit would fight the user.
   const savedRef = useRef(store.getState()?.project?.exportSettings ?? {});
 
+  // --- The formats follow the machine the code is built for, read once at open as the settings are
+  const machineId = useRef(store.getState()?.emulatorState?.machineId).current;
   const env = useMemo<ExportCodeEnvironment>(
-    () => ({ validation: validationService }),
-    [validationService]
+    () => ({ validation: validationService, formats: formatOptionsFor(machineId) }),
+    [validationService, machineId]
   );
 
   const callbacksRef = useRef({ onClose, onExport });

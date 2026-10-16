@@ -14,7 +14,23 @@ export type DropdownOption = {
    * identity — while the open list has room to explain it ("R0" / "ROM 0").
    */
   description?: string;
+  /**
+   * The heading of the group the option belongs to. Consecutive options with the same group are
+   * shown under one heading; options without one stand on their own.
+   */
+  group?: string;
 };
+
+/** Consecutive options sharing a `group`, in order */
+function groupRuns(options: DropdownOption[]): { group?: string; options: DropdownOption[] }[] {
+  const runs: { group?: string; options: DropdownOption[] }[] = [];
+  for (const option of options) {
+    const last = runs[runs.length - 1];
+    if (last && last.group === option.group) last.options.push(option);
+    else runs.push({ group: option.group, options: [option] });
+  }
+  return runs;
+}
 
 type Props = {
   options: DropdownOption[];
@@ -93,14 +109,24 @@ export default function Dropdown({
         <Select.Content className={styles.SelectContent} position="popper" sideOffset={4}
           style={{ maxHeight }}>
           <Select.Viewport>
-            {options.map((option) => (
-              <Select.Item key={option.value} value={option.value} className={styles.SelectItem}>
-                <Select.ItemText>{option.label}</Select.ItemText>
-                {option.description && (
-                  <span className={styles.SelectItemDescription}>{option.description}</span>
-                )}
-              </Select.Item>
-            ))}
+            {groupRuns(options).map((run, index) => {
+              const items = run.options.map((option) => (
+                <Select.Item key={option.value} value={option.value} className={styles.SelectItem}>
+                  <Select.ItemText>{option.label}</Select.ItemText>
+                  {option.description && (
+                    <span className={styles.SelectItemDescription}>{option.description}</span>
+                  )}
+                </Select.Item>
+              ));
+              return run.group === undefined ? (
+                items
+              ) : (
+                <Select.Group key={`${index}:${run.group}`}>
+                  <Select.Label className={styles.SelectGroupLabel}>{run.group}</Select.Label>
+                  {items}
+                </Select.Group>
+              );
+            })}
           </Select.Viewport>
         </Select.Content>
       </Select.Portal>

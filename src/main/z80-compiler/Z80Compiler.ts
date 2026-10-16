@@ -10,6 +10,8 @@ import { Z80TokenStream } from "./z80-token-stream";
 import { Z80AsmParser } from "./z80-asm-parser";
 import { Z80Node } from "@main/z80-compiler/assembler-tree-nodes";
 import { AppState } from "@common/state/AppState";
+import { AssemblerOptions } from "../compiler-common/assembler-in-out";
+import { defaultModelTypeForMachine } from "./SpectrumModelTypes";
 
 /**
  * Wraps the built-in Klive Z80 Compiler
@@ -40,8 +42,23 @@ export class Z80Compiler implements IKliveCompiler {
    * @returns Output of the compilation
    */
   async compileFile(filename: string, options?: Record<string, any>): Promise<KliveCompilerOutput> {
-    const output = await new Z80CompilerService().compileFile(filename, options as CompilerOptions);
+    const output = await new Z80CompilerService().compileFile(
+      filename,
+      (options ?? this.defaultOptions()) as CompilerOptions
+    );
     return output;
+  }
+
+  /**
+   * The options of a build that names none (the IDE's): a source with no `.model` is assembled for
+   * the running machine (`.plans/ZX8081_CODE_INJECTION_PLAN.md` §7, Q1)
+   */
+  private defaultOptions(): AssemblerOptions {
+    const options = new AssemblerOptions();
+    const emulator = this._state?.emulatorState;
+    const model = defaultModelTypeForMachine(emulator?.machineId, emulator?.config);
+    if (model !== undefined) options.currentModel = model;
+    return options;
   }
 
   /**

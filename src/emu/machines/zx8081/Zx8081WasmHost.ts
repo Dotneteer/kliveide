@@ -15,18 +15,32 @@ import { Zx8081KeyCode } from "./Zx8081KeyCode";
 import { zx80KeyMappings, zx81KeyMappings } from "./Zx8081KeyMappings";
 import { zx8081KeysForText } from "./Zx8081Typer";
 import {
+  buildZx8081ProgramImage,
+  ZX80_LAYOUT_SYSVARS,
+  ZX80_PROGRAM,
+  ZX81_LAYOUT_SYSVARS,
+  ZX81_PROGRAM
+} from "@common/zx8081/programImage";
+import {
   resolveZx8081Hardware,
   ZX8081_BASE_CLOCK_FREQUENCY,
   ZX8081_TACTS_IN_FRAME_NTSC,
   ZX8081_TACTS_IN_FRAME_PAL,
   ZX80_KEY_WAIT,
+  ZX81_FAST_KEY_WAIT,
   ZX81_KEY_WAIT,
   type Zx8081Hardware
 } from "./zx8081MachineInfo";
 
-/** Code injection is a follow-up (`.plans/ZX8081_WASM_PLAN.md` §14) */
-export const ZX8081_NO_CODE_INJECTION =
-  "The ZX80 and ZX81 cannot run code from the IDE yet: load a .P or .O file instead.";
+/** The edit line the ROM keeps at E_LINE while it waits for a key: the cursor and NEWLINE */
+const ZX81_EMPTY_EDIT_LINE = [0x7f, 0x76];
+
+/** The ZX80 system variables the injection moves with its edit line and display file */
+const ZX80_P_PTR = 0x4004;
+const ZX80_E_LINE = 0x400a;
+const ZX80_D_FILE = 0x400c;
+const ZX80_DF_EA = 0x400e;
+const ZX80_DF_END = 0x4010;
 
 /**
  * How long a typed key is held and released, in frames. The ROM scans the keyboard once a frame and
@@ -222,14 +236,116 @@ export abstract class Zx8081WasmHost extends Z80MachineBase {
   }
 
   // ==========================================================================================
-  // Code injection (a follow-up) and tape loading
+  // Code injection (`.plans/ZX8081_CODE_INJECTION_PLAN.md` D4) and tape loading
 
-  async getCodeInjectionFlow(_model: string): Promise<CodeInjectionFlow> {
-    throw new Error(ZX8081_NO_CODE_INJECTION);
+  /**
+   * The code model this machine runs: the ROM decides, so a ZX80 with the 8K ROM runs ZX81 code
+   */
+  get codeModel(): "zx81" | "zx80" {
+    return this.hardware.romZx81 ? "zx81" : "zx80";
   }
 
-  injectCodeToRun(_codeToInject: CodeToInject): number {
-    throw new Error(ZX8081_NO_CODE_INJECTION);
+  /**
+   * Runs code the way a ZX81 programmer does: the program (`1 REM <code>`, `2 RAND USR <entry>`) is
+   * put into memory while the editor waits for a key, and `RUN` is typed. The code then starts
+   * through `USR`, with the registers and stacks the ROM sets up, and `RET` goes back to BASIC.
+   *
+   * `model` is the compiled code's model, or this machine's id for code with no `.model`.
+   */
+  async getCodeInjectionFlow(model: string): Promise<CodeInjectionFlow> {
+    if (model !== this.codeModel && model !== this.machineId) {
+      throw new Error(`Code for machine model '${model}' cannot run on this virtual machine.`);
+    }
+    const K = Zx8081KeyCode;
+    return [
+      ...this.keyWaitStep(),
+      { type: "Inject" },
+      { type: "KeepPc" },
+      { type: "Start" },
+      { type: "QueueKey", primary: K.R, wait: 300, message: "RUN" },
+      { type: "QueueKey", primary: K.NewLine, wait: 0, message: "NEW LINE" }
+    ];
+  }
+
+  /**
+   * Writes the program image (`programImage.ts`) into memory and returns where the code starts. The
+   * system variables that say where things are come from the image; the ones that describe the
+   * running machine (the keyboard, the frame counter, FAST or SLOW) are left as they are. The
+   * machine should be waiting for a key in the editor, where the flow puts it.
+   */
+  injectCodeToRun(codeToInject: CodeToInject): number {
+    const isZx81 = this.hardware.romZx81;
+    const image = buildZx8081ProgramImage(codeToInject.segments, codeToInject.entryAddress, isZx81, {
+      ramKb: this.hardware.ramKb,
+      autoRun: false
+    });
+    const writeBlock = (address: number, bytes: ArrayLike<number>) => {
+      for (let i = 0; i < bytes.length; i++) this.doWriteMemory(address + i, bytes[i]);
+    };
+    const readWord = (address: number) => this.doReadMemory(address) | (this.doReadMemory(address + 1) << 8);
+    const imageByte = (address: number) => image.data[address - image.base];
+
+    if (isZx81) {
+      writeBlock(ZX81_PROGRAM, image.data.subarray(ZX81_PROGRAM - image.base));
+      writeBlock(image.eLine, ZX81_EMPTY_EDIT_LINE);
+      for (const sysVar of ZX81_LAYOUT_SYSVARS) {
+        writeBlock(sysVar, [imageByte(sysVar), imageByte(sysVar + 1)]);
+      }
+    } else {
+      // --- The ZX80 keeps its edit line and display file after E_LINE, outside the image: they move
+      // --- along with E_LINE as they are (the ROM rebuilds them at the next key), and so do the
+      // --- system variables that point into them
+      const liveELine = readWord(ZX80_E_LINE);
+      const pointers = [ZX80_P_PTR, ZX80_D_FILE, ZX80_DF_EA, ZX80_DF_END].map((sysVar) => ({
+        sysVar,
+        live: readWord(sysVar)
+      }));
+      const liveEnd = readWord(ZX80_DF_END) + 1;
+      const moved: number[] = [];
+      for (let address = liveELine; address < liveEnd; address++) moved.push(this.doReadMemory(address));
+
+      writeBlock(ZX80_PROGRAM, image.data.subarray(ZX80_PROGRAM - image.base));
+      writeBlock(image.eLine, moved);
+      for (const sysVar of ZX80_LAYOUT_SYSVARS) {
+        writeBlock(sysVar, [imageByte(sysVar), imageByte(sysVar + 1)]);
+      }
+      const delta = image.eLine - liveELine;
+      for (const { sysVar, live } of pointers) {
+        if (live < liveELine) continue; // --- P_PTR inside the program: the image's value stands
+        const value = live + delta;
+        writeBlock(sysVar, [value & 0xff, (value >> 8) & 0xff]);
+      }
+    }
+    return image.entry ?? image.base;
+  }
+
+  /** The flow step that waits until the editor waits for a key */
+  private keyWaitStep(): CodeInjectionFlow {
+    if (this.hardware.romZx81 && !this.hardware.hardwareZx81) {
+      return [
+        {
+          type: "ReachExecPoint",
+          rom: 0,
+          execPoint: ZX81_FAST_KEY_WAIT,
+          message: "The editor is waiting for a key (FAST mode, $0229)"
+        }
+      ];
+    }
+    return [
+      this.hardware.romZx81
+        ? {
+            type: "ReachExecPoint",
+            rom: 0,
+            execPoint: ZX81_KEY_WAIT,
+            message: "The editor is waiting for a key (SLOW-DISP, $04CF)"
+          }
+        : {
+            type: "ReachExecPoint",
+            rom: 0,
+            execPoint: ZX80_KEY_WAIT,
+            message: "The editor is waiting for a key ($013F)"
+          }
+    ];
   }
 
   /**
@@ -251,22 +367,7 @@ export abstract class Zx8081WasmHost extends Z80MachineBase {
           { type: "QueueKey", primary: K.W, wait: 300, message: "LOAD" },
           { type: "QueueKey", primary: K.NewLine, wait: 0, message: "NEW LINE" }
         ];
-    const reach: CodeInjectionFlow = [
-      this.hardware.romZx81
-        ? {
-            type: "ReachExecPoint",
-            rom: 0,
-            execPoint: ZX81_KEY_WAIT,
-            message: "The editor is waiting for a key (SLOW-DISP, $04CF)"
-          }
-        : {
-            type: "ReachExecPoint",
-            rom: 0,
-            execPoint: ZX80_KEY_WAIT,
-            message: "The editor is waiting for a key ($013F)"
-          }
-    ];
-    return [...reach, { type: "KeepPc" }, { type: "Start" }, ...keys];
+    return [...this.keyWaitStep(), { type: "KeepPc" }, { type: "Start" }, ...keys];
   }
 
   /** Asks the core to report the end of the next load (the subclass types RUN then) */

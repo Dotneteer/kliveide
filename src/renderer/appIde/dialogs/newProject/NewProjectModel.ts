@@ -1,6 +1,5 @@
-import { split } from "lodash";
-
-import { getAllMachineModels } from "@common/machines/machine-registry";
+import type { MachineFavorite } from "@common/machines/machine-favorites";
+import { machineRegistry } from "@common/machines/machine-registry";
 import type { UiReducer } from "@mvc/core/types";
 import type { IValidationService } from "@renderer/core/ValidationService";
 
@@ -21,24 +20,61 @@ export const PROJECT_CREATION_TIMEOUT_MS = 30_000;
 
 export const CREATE_ERROR_TITLE = "New Klive Project Error";
 
-export type MachineOption = { value: string; label: string };
+export type MachineOption = { value: string; label: string; group?: string };
 
-// --- The machine registry is static data, so the option list is built once.
-export const MACHINE_OPTIONS: MachineOption[] = getAllMachineModels().map((model) => ({
-  value: machineOptionValue(model.machineId, model.modelId),
-  label: model.displayName
-}));
+/**
+ * A machine type and its models, as the dialog offers them: the type first, then (when it has more
+ * than one) the model. Picking from 41 models in one list was the problem this replaced.
+ */
+export type MachineType = {
+  machineId: string;
+  label: string;
+  family: string;
+  models: { modelId?: string; label: string }[];
+};
 
-// --- Machine and model travel through the dropdown as one string, because a
-// --- dropdown has one value.
-export function machineOptionValue(machineId: string, modelId?: string): string {
-  return `${machineId}${modelId ? `:${modelId}` : ""}`;
+/**
+ * The families the type list is grouped into, in order. A machine not named here goes into "Other",
+ * last, so a new registry entry still shows up.
+ */
+export const MACHINE_FAMILIES: readonly { label: string; machineIds: readonly string[] }[] = [
+  { label: "ZX Spectrum", machineIds: ["sp48", "sp128", "spp3e", "zxnext"] },
+  { label: "Spectrum compatibles", machineIds: ["timex", "scorpion"] },
+  { label: "Other Z80 machines", machineIds: ["zx81", "zx80", "z88"] }
+];
+export const OTHER_FAMILY = "Other";
+
+function familyOf(machineId: string): string {
+  return MACHINE_FAMILIES.find((f) => f.machineIds.includes(machineId))?.label ?? OTHER_FAMILY;
 }
 
-export function parseMachineOption(value: string): { machineId: string; modelId?: string } {
-  const [machineId, modelId] = split(value, ":");
-  return { machineId, modelId };
+// --- The machine registry is static data, so the type list is built once, in family order.
+export const MACHINE_TYPES: MachineType[] = (() => {
+  const types: MachineType[] = machineRegistry.map((machine) => ({
+    machineId: machine.machineId,
+    label: machine.displayName,
+    family: familyOf(machine.machineId),
+    models: machine.models?.length
+      ? machine.models.map((m) => ({ modelId: m.modelId, label: m.displayName }))
+      : [{ label: machine.displayName }]
+  }));
+  const order = [...MACHINE_FAMILIES.map((f) => f.label), OTHER_FAMILY];
+  const rank = (t: MachineType) => {
+    const family = MACHINE_FAMILIES.find((f) => f.label === t.family);
+    return order.indexOf(t.family) * 100 + (family ? family.machineIds.indexOf(t.machineId) : 0);
+  };
+  return types.sort((a, b) => rank(a) - rank(b));
+})();
+
+export function machineTypeOf(machineId: string): MachineType | undefined {
+  return MACHINE_TYPES.find((t) => t.machineId === machineId);
 }
+
+/** What the dialog knows about the machine it opens over: what runs, and the favourite models */
+export type NewProjectContext = {
+  running?: { machineId: string; modelId?: string };
+  favorites: readonly MachineFavorite[];
+};
 
 // ─── State ───────────────────────────────────────────────────────────────────
 
@@ -48,6 +84,12 @@ export type NewProjectEnvironment = {
 
 export type NewProjectState = {
   env: NewProjectEnvironment;
+  context: NewProjectContext;
+  /**
+   * The machine types that have project templates; undefined until known. A type with none cannot
+   * make a project, so it is not offered.
+   */
+  availableMachineIds?: string[];
   machineId: string;
   modelId?: string;
   projectFolder: string;
@@ -63,6 +105,7 @@ export type NewProjectState = {
 export type NewProjectEvent =
   | { type: "envReplaced"; env: NewProjectEnvironment }
   | { type: "machineChanged"; machineId: string; modelId?: string }
+  | { type: "machineTypesSettled"; available: string[] }
   | { type: "projectFolderChanged"; folder: string }
   | { type: "projectNameChanged"; name: string }
   | { type: "templateChanged"; templateId: string }
@@ -76,11 +119,38 @@ export type NewProjectEvent =
 
 // ─── Initial state ───────────────────────────────────────────────────────────
 
-export function initialState(env: NewProjectEnvironment): NewProjectState {
+const NO_CONTEXT: NewProjectContext = { favorites: [] };
+
+/**
+ * The model a machine type starts on: the running model when that machine runs, else the first of
+ * the user's favourite models (the Machine type menu) of that type, else the type's first model.
+ */
+export function defaultModelOf(machineId: string, context: NewProjectContext): string | undefined {
+  const type = machineTypeOf(machineId);
+  if (!type) return undefined;
+  const has = (modelId?: string) => type.models.some((m) => m.modelId === modelId);
+  if (context.running?.machineId === machineId && has(context.running.modelId)) {
+    return context.running.modelId;
+  }
+  const favorite = context.favorites.find((f) => f.machineId === machineId && has(f.modelId));
+  if (favorite) return favorite.modelId;
+  return type.models[0].modelId;
+}
+
+export function initialState(
+  env: NewProjectEnvironment,
+  context: NewProjectContext = NO_CONTEXT
+): NewProjectState {
+  // --- The dialog opens on the running machine; on the 48K when nothing (known) runs
+  const machineId =
+    context.running && machineTypeOf(context.running.machineId)
+      ? context.running.machineId
+      : INITIAL_MACHINE_ID;
   return {
     env,
-    machineId: INITIAL_MACHINE_ID,
-    modelId: INITIAL_MODEL_ID,
+    context,
+    machineId,
+    modelId: defaultModelOf(machineId, context) ?? INITIAL_MODEL_ID,
     projectFolder: "",
     projectName: "",
     templates: [],
@@ -111,6 +181,14 @@ export const reduce: UiReducer<NewProjectState, NewProjectEvent> = (state, event
   switch (event.type) {
     case "envReplaced":
       return event.env.validation === state.env.validation ? state : { ...state, env: event.env };
+
+    case "machineTypesSettled": {
+      const next = { ...state, availableMachineIds: event.available };
+      // --- Opened over a machine with no templates (the C64): move to the first type that has some
+      if (event.available.length === 0 || event.available.includes(state.machineId)) return next;
+      const first = machineTypeOptionsOf(next)[0]?.value;
+      return first ? { ...next, machineId: first, modelId: defaultModelOf(first, state.context) } : next;
+    }
 
     case "machineChanged":
       return event.machineId === state.machineId && event.modelId === state.modelId
@@ -179,8 +257,22 @@ export function isComplete(state: NewProjectState): boolean {
   return !folderErrorOf(state) && !projectNameErrorOf(state);
 }
 
-export function machineValueOf(state: NewProjectState): string {
-  return machineOptionValue(state.machineId, state.modelId);
+/** The machine types on offer, grouped by family: those with templates, once that is known */
+export function machineTypeOptionsOf(state: NewProjectState): MachineOption[] {
+  const available = state.availableMachineIds;
+  return MACHINE_TYPES.filter((t) => !available || available.includes(t.machineId)).map((t) => ({
+    value: t.machineId,
+    label: t.label,
+    group: t.family
+  }));
+}
+
+/** The models of the selected type; a type with one model has one option (the field is disabled) */
+export function modelOptionsOf(state: NewProjectState): MachineOption[] {
+  return (machineTypeOf(state.machineId)?.models ?? []).map((m) => ({
+    value: m.modelId ?? "",
+    label: m.label
+  }));
 }
 
 export type NewProjectRequest = {

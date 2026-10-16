@@ -34,7 +34,12 @@ import { hasSourceLevelDebug, isInjectableCompilerOutput } from "@renderer/appId
 import { createSourceDebugSidecar, sidecarProgramOf, sourceDebugSidecarPath } from "@common/utils/source-debug-sidecar";
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
 import { machineRegistry } from "@common/machines/machine-registry";
-import { MF_INJECT_SUPPORT, MI_ZXNEXT } from "@common/machines/constants";
+import { MF_INJECT_SUPPORT, MI_ZX80, MI_ZX81, MI_ZXNEXT } from "@common/machines/constants";
+import {
+  zx8081ExportFile,
+  zx8081ExportFormatOf,
+  zx8081InjectionProblem
+} from "@renderer/appIde/utils/zx8081-code";
 import { NexFileWriter } from "@main/z80-compiler/nex-file-writer";
 import type { IOutputBuffer } from "@renderer/appIde/ToolArea/abstractions";
 import {
@@ -139,7 +144,7 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
   readonly id = "expc";
   readonly description = "Export the code of the current project";
   readonly usage =
-    "expc filename [-n name] [-f format] [-as] [-p] [-c] [-b border] [-sb] [-addr address] [-scr screenfile]";
+    "expc filename [-n name] [-f tap|tzx|hex|nex|p|o] [-as] [-p] [-c] [-b border] [-sb] [-addr address] [-scr screenfile]";
 
   readonly argumentInfo: CommandArgumentInfo = {
     mandatory: [{ name: "filename" }],
@@ -183,6 +188,41 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
     output: KliveCompilerOutput,
     args: ExportCommandArgs
   ): Promise<IdeCommandResult> {
+    // --- A ZX80/ZX81 program exports as the machine's own program file (`ZX8081_CODE_INJECTION_PLAN.md` D8)
+    const emulatorState = context.store.getState().emulatorState;
+    const zxFormat = zx8081ExportFormatOf(
+      (output as CompilerOutput).modelType,
+      emulatorState?.machineId,
+      emulatorState?.config
+    );
+    const format = args["-f"] ?? zxFormat;
+    if (format === "p" || format === "o") {
+      const file = zx8081ExportFile(
+        format,
+        output as CompilerOutput,
+        emulatorState?.machineId,
+        emulatorState?.config,
+        !!args["-as"]
+      );
+      if ("error" in file) return commandError(file.error);
+      try {
+        const filePath = await context.mainApi.saveBinaryFile(
+          args.filename,
+          file.data,
+          `kliveHome:${EXPORT_FILE_FOLDER}`
+        );
+        return commandSuccessWith(`Code successfully exported to '${filePath}'`, { file: filePath });
+      } catch (err) {
+        return commandError(err.toString());
+      }
+    }
+    if (zxFormat && format !== "hex") {
+      return commandError(
+        `A ${zxFormat === "p" ? "ZX81" : "ZX80"} program exports as a .${zxFormat} file (-f ${zxFormat}) ` +
+          "or as Intel HEX (-f hex)."
+      );
+    }
+
     // --- Check if this is a NEX file export (based on explicit format or .savenex pragma)
     // --- Respect explicit format choice: only use NEX if format is "nex" or if no format is specified and nexConfig exists
     if (args["-f"] === "nex" || ((output as CompilerOutput).nexConfig && !args["-f"])) {
@@ -1175,6 +1215,18 @@ export async function injectCode(
     return commandSuccessWith("Code length is 0, no code injected");
   }
 
+  // --- The ZX80/ZX81 put the code in a 1 REM line: refuse here what the machine could not lay out
+  const emulatorState = context.store.getState().emulatorState;
+  const isZx8081 = emulatorState?.machineId === MI_ZX80 || emulatorState?.machineId === MI_ZX81;
+  const zx8081Problem = zx8081InjectionProblem(
+    emulatorState?.machineId,
+    emulatorState?.config,
+    result.segments,
+    result.entryAddress,
+    !!unitTest
+  );
+  if (zx8081Problem) return commandError(zx8081Problem);
+
   if (isZxNext && operationType === "inject") {
     if (context.store.getState().emulatorState?.machineState !== MachineControllerState.Paused) {
       return commandError("Machine must be in paused state.");
@@ -1228,7 +1280,7 @@ export async function injectCode(
       } from start address $${codeToInject.segments[0].startAddress
         .toString(16)
         .padStart(4, "0")
-        .toUpperCase()}`;
+        .toUpperCase()}${isZx8081 ? " as a 1 REM program. Type RUN to start it." : ""}`;
       break;
 
     case "run": {

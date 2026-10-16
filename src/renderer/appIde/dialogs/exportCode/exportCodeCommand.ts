@@ -20,6 +20,11 @@ export function buildExportCodeCommand(options: ExportCodeCommandOptions) {
   if (!exportExt || exportExt === ".") filename += `.${options.formatId}`;
   const fullFilename = (options.exportFolder ? `${options.exportFolder}/${filename}` : filename)
     .replaceAll("\\", "/");
+  // --- A ZX80/ZX81 program file has none of the Spectrum's tape and loader options
+  if (options.formatId === "p" || options.formatId === "o") {
+    const autoRun = options.formatId === "p" && options.startBlock ? " -as" : "";
+    return { command: `expc "${fullFilename}" -f ${options.formatId}${autoRun}`, fullFilename };
+  }
   const programName = options.programName || getNodeName(options.exportName);
   const command = `expc "${fullFilename}" -n ${programName} -f ${options.formatId}${
     options.startBlock ? " -as" : ""

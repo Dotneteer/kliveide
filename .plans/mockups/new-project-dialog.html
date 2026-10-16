@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>New Project Dialog</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* The New Project dialog: today's 41-entry machine dropdown against a two-step picker (machine type
+   tiles, then a model only when the type has more than one) and template cards. Real registry data
+   (2026-10-16). Tokens follow mockups/machine-select-dialog.html. */
+:root {
+  --page: #e9ebee; --panel: #f7f8f9; --chrome: #f1f2f4; --canvas: #ffffff; --raised: #ffffff;
+  --hover: #e8eaee; --selected: #e2e6ec; --border-subtle: #e5e7ea; --border: #d5d8dd; --border-strong: #b9bec6;
+  --text: #1b1d21; --text-2: #565c65; --text-3: #6b717a; --text-dis: #9aa0a8;
+  --accent: #0A6FB8; --on-accent: #ffffff; --accent-wash: #0A6FB81c; --star: #8A6A00; --note: #fff8e1; --note-border: #e8d48a;
+  --font-ui: "IBM Plex Sans", -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page: #0e0f11; --panel: #17191c; --chrome: #1b1d21; --canvas: #141517; --raised: #202329;
+  --hover: #24272e; --selected: #2a2e36; --border-subtle: #24272b; --border: #2e3238; --border-strong: #3d424a;
+  --text: #e4e6ea; --text-2: #949aa4; --text-3: #7f8690; --text-dis: #5a606a;
+  --accent: #45A5E6; --on-accent: #0e0f11; --accent-wash: #45A5E624; --star: #FFC933; --note: #2a2618; --note-border: #5a4d22;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --page: #0e0f11; --panel: #17191c; --chrome: #1b1d21; --canvas: #141517; --raised: #202329;
+  --hover: #24272e; --selected: #2a2e36; --border-subtle: #24272b; --border: #2e3238; --border-strong: #3d424a;
+  --text: #e4e6ea; --text-2: #949aa4; --text-3: #7f8690; --text-dis: #5a606a;
+  --accent: #45A5E6; --on-accent: #0e0f11; --accent-wash: #45A5E624; --star: #FFC933; --note: #2a2618; --note-border: #5a4d22;
+  color-scheme: dark; }
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page); color: var(--text); font: 13px/1.4 var(--font-ui); padding: 24px 16px 48px; }
+.wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 18px; }
+header.page h1 { font-size: 18px; font-weight: 600; margin: 0 0 4px; }
+header.page p { margin: 0; color: var(--text-2); max-width: 86ch; }
+.tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+.tab { border: 1px solid var(--border); background: var(--raised); color: var(--text-2); border-radius: 4px; padding: 5px 12px; font: 13px var(--font-ui); cursor: pointer; }
+.tab[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 500; }
+.theme { margin-left: auto; }
+.stage { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; align-items: start; }
+@media (max-width: 1000px) { .stage { grid-template-columns: minmax(0, 1fr); } }
+
+/* --- Dialog frame */
+.dlg { background: var(--panel); border: 1px solid var(--border-strong); border-radius: 6px; box-shadow: 0 12px 40px #0005; overflow: hidden; min-width: 0; }
+.dlg-head { background: var(--chrome); border-bottom: 1px solid var(--border); padding: 8px 12px; display: flex; align-items: center; font-weight: 600; gap: 8px; }
+.dlg-head .x { margin-left: auto; color: var(--text-3); font-size: 16px; }
+.dlg-body { padding: 14px 16px; display: grid; gap: 14px; }
+.dlg-foot { background: var(--chrome); border-top: 1px solid var(--border); padding: 8px 12px; display: flex; gap: 8px; justify-content: flex-end; }
+.btn { border: 1px solid var(--border-strong); background: var(--raised); color: var(--text); border-radius: 4px; padding: 5px 14px; font: 13px var(--font-ui); cursor: pointer; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 500; }
+
+.field { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 8px; align-items: start; }
+@media (max-width: 640px) { .field { grid-template-columns: minmax(0, 1fr); gap: 4px; } }
+.field > label, .field > .lbl { padding-top: 5px; color: var(--text-2); }
+.input, select.input:disabled { color: var(--text-3); background: var(--chrome); cursor: default; }
+select.input { width: 100%; background: var(--canvas); border: 1px solid var(--border); color: var(--text); border-radius: 4px; padding: 5px 8px; font: inherit; min-width: 0; }
+.input.with-btn { display: flex; padding: 0; }
+.input.with-btn span { flex: 1; padding: 5px 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.input.with-btn b { border-left: 1px solid var(--border); padding: 5px 9px; font-weight: 400; color: var(--text-2); }
+.hint { color: var(--text-3); font-size: 12px; margin-top: 4px; }
+/* --- One line whatever it says, so the form below never moves */
+.hint.line { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* --- Today: the dropdown, drawn open */
+.dd { position: relative; }
+.dd-list { margin-top: 2px; border: 1px solid var(--border-strong); background: var(--raised); border-radius: 4px; max-height: 360px; overflow: auto; box-shadow: 0 8px 24px #0004; }
+.dd-list div { padding: 3px 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dd-list div:hover { background: var(--hover); }
+.dd-list div.sel { background: var(--accent); color: var(--on-accent); }
+.count { font: 11px var(--font-mono); color: var(--text-3); }
+
+/* --- Proposed: machine type tiles */
+.fam { display: grid; gap: 6px; }
+.fam + .fam { margin-top: 10px; }
+.fam h4 { margin: 0; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-2); font-weight: 600; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
+.tile { text-align: left; border: 1px solid var(--border); background: var(--raised); color: var(--text); border-radius: 5px; padding: 7px 9px; cursor: pointer; display: grid; gap: 1px; font: inherit; min-height: 50px; position: relative; }
+.tile:hover { border-color: var(--border-strong); background: var(--hover); }
+.tile[aria-checked="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); background: var(--accent-wash); }
+.tile .t { font-weight: 600; padding-right: 54px; }
+.tile .s { color: var(--text-3); font-size: 11.5px; }
+.pill { position: absolute; top: 6px; right: 6px; font-size: 9.5px; text-transform: uppercase; letter-spacing: .05em; padding: 1px 6px; border-radius: 8px; background: var(--accent-wash); color: var(--accent); font-weight: 600; }
+.tile:focus-visible, .card:focus-visible, .btn:focus-visible, .tab:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* --- Proposed: template cards */
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 6px; }
+.card { text-align: left; border: 1px solid var(--border); background: var(--raised); color: var(--text); border-radius: 5px; padding: 7px 9px 7px 30px; cursor: pointer; font: inherit; position: relative; display: grid; gap: 1px; }
+.card::before { content: ""; position: absolute; left: 10px; top: 10px; width: 12px; height: 12px; border-radius: 50%; border: 1px solid var(--border-strong); background: var(--canvas); }
+.card[aria-checked="true"] { border-color: var(--accent); background: var(--accent-wash); }
+.card[aria-checked="true"]::before { border: 4px solid var(--accent); }
+.card .t { font-weight: 600; }
+.card .s { color: var(--text-3); font-size: 11.5px; }
+.card .ext { font-family: var(--font-mono); font-size: 11px; color: var(--text-2); }
+
+/* --- Side notes */
+.notes { display: grid; gap: 10px; }
+.note { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; }
+.note h3 { margin: 0 0 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-2); }
+.note ul, .note ol { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.note.warn { background: var(--note); border-color: var(--note-border); }
+.note code { font-family: var(--font-mono); font-size: 11.5px; }
+.metric { display: flex; gap: 14px; flex-wrap: wrap; }
+.metric div { display: grid; }
+.metric b { font: 600 20px var(--font-mono); }
+.metric span { color: var(--text-3); font-size: 11.5px; }
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="page">
+    <h1>New Project — choosing among 41 machine models</h1>
+    <p>The machine registry now has 10 machine types and 41 models, all in one dropdown. A project needs a
+      <em>machine type</em> (it decides the templates and the build target) much more than an exact model,
+      which the Machine type menu changes at any time and saves into the project. The proposal picks the
+      type first, asks for a model only when the type has more than one, and turns the template list
+      into cards that say what each one is.</p>
+  </header>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" aria-selected="false" data-view="today">Today</button>
+    <button class="tab" role="tab" aria-selected="true" data-view="proposed">Proposed</button>
+    <button class="tab" role="tab" aria-selected="false" data-view="compact">Compact alternative</button>
+    <button class="tab theme" id="theme" title="Toggle light/dark">◐ Theme</button>
+  </div>
+
+  <div class="stage">
+    <!-- ================= TODAY ================= -->
+    <section data-pane="today" hidden>
+      <div class="dlg" role="dialog" aria-label="New Klive Project (today)">
+        <div class="dlg-head">New Klive Project <span class="x">×</span></div>
+        <div class="dlg-body">
+          <div class="field"><label>Machine type: *</label>
+            <div class="dd">
+              <div class="input">ZX Spectrum 48K ▾</div>
+              <div class="dd-list" id="todayList"></div>
+              <div class="hint"><span class="count" id="todayCount"></span> entries, one flat list, in registry order</div>
+            </div>
+          </div>
+          <div class="field"><label>Project Template: *</label><div class="input">default ▾</div></div>
+          <div class="field"><label>Project folder:</label><div class="input with-btn"><span>~/KliveProjects</span><b>📁</b></div></div>
+          <div class="field"><label>Project name:</label><input class="input" value="my-game"></div>
+        </div>
+        <div class="dlg-foot"><button class="btn">Cancel</button><button class="btn primary">Create</button></div>
+      </div>
+    </section>
+
+    <!-- ================= PROPOSED ================= -->
+    <section data-pane="proposed">
+      <div class="dlg" role="dialog" aria-label="New Klive Project (proposed)">
+        <div class="dlg-head">New Klive Project <span class="x">×</span></div>
+        <div class="dlg-body">
+          <div class="field"><span class="lbl">Machine:</span>
+            <div id="families" role="radiogroup" aria-label="Machine type"></div>
+          </div>
+          <div class="field" id="modelRow"><label for="model">Model:</label>
+            <div>
+              <select class="input" id="model"></select>
+              <div class="hint line" id="modelHint"></div>
+            </div>
+          </div>
+          <div class="field"><span class="lbl">Template:</span>
+            <div class="cards" id="cards" role="radiogroup" aria-label="Project template"></div>
+          </div>
+          <div class="field"><label>Project folder:</label><div class="input with-btn"><span>~/KliveProjects</span><b>📁</b></div></div>
+          <div class="field"><label for="pname">Project name:</label><input class="input" id="pname" value="my-game"></div>
+        </div>
+        <div class="dlg-foot"><button class="btn">Cancel</button><button class="btn primary" id="create">Create</button></div>
+      </div>
+    </section>
+
+    <!-- ================= COMPACT ================= -->
+    <section data-pane="compact" hidden>
+      <div class="dlg" role="dialog" aria-label="New Klive Project (compact alternative)">
+        <div class="dlg-head">New Klive Project <span class="x">×</span></div>
+        <div class="dlg-body">
+          <div class="field"><label for="ctype">Machine type: *</label><select class="input" id="ctype"></select></div>
+          <div class="field" id="cmodelRow"><label for="cmodel">Model:</label><select class="input" id="cmodel"></select></div>
+          <div class="field"><label for="ctpl">Project Template: *</label><select class="input" id="ctpl"></select></div>
+          <div class="field"><label>Project folder:</label><div class="input with-btn"><span>~/KliveProjects</span><b>📁</b></div></div>
+          <div class="field"><label>Project name:</label><input class="input" value="my-game"></div>
+        </div>
+        <div class="dlg-foot"><button class="btn">Cancel</button><button class="btn primary">Create</button></div>
+      </div>
+      <p class="hint">Same rules as the proposal, no new controls: the type list is 9 entries grouped by family,
+        the model list at most 11, disabled when the type has one. Cheapest to build; loses the template descriptions.</p>
+    </section>
+
+    <!-- ================= NOTES ================= -->
+    <aside class="notes">
+      <div class="note">
+        <h3>Longest list the user scans</h3>
+        <div class="metric">
+          <div><b>41</b><span>today</span></div>
+          <div><b>9</b><span>proposed: types</span></div>
+          <div><b>≤ 11</b><span>then models</span></div>
+        </div>
+      </div>
+      <div class="note">
+        <h3>Rules</h3>
+        <ol>
+          <li><b>Type first.</b> Tiles grouped into families. The Model field is always there; for a type with one model (Next, Scorpion) it shows that model, disabled, so the form never shifts.</li>
+          <li><b>Model defaults</b> to the running model if it is of that type, else the first Machine type menu favourite of that type, else the type's first model.</li>
+          <li><b>Opens on the running machine</b>, marked “Running”, so Create is one click for the common case.</li>
+          <li><b>Templates follow the type</b>, as cards: language, file type, one line on the toolchain. The current default stays selected.</li>
+          <li><b>No templates, no tile.</b> Commodore 64 has none today, so it is left out instead of offering an empty template list.</li>
+        </ol>
+      </div>
+      <div class="note">
+        <h3>Keyboard</h3>
+        <ul>
+          <li>Arrow keys move between tiles (one radio group), Tab moves to Model, then the template cards.</li>
+          <li>Typing a letter on the tiles jumps to the next type starting with it.</li>
+          <li>Enter creates the project from anywhere once the form is valid.</li>
+        </ul>
+      </div>
+      <div class="note warn">
+        <h3>What it needs</h3>
+        <ul>
+          <li>A <code>family</code> on each registry entry (or a small table) for the tile groups.</li>
+          <li>Template descriptions: a short <code>template.json</code> per template folder, falling back to the folder name.</li>
+          <li><code>NewProjectModel</code> already splits <code>machineId</code> and <code>modelId</code>; only the view and view model change.</li>
+        </ul>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+// --- Registry data as of 2026-10-16 (getAllMachineModels, project-templates/<machineId>)
+const MACHINES = [
+  { id: "sp48", name: "ZX Spectrum 48K", fam: "ZX Spectrum", models: ["ZX Spectrum 48K", "ZX Spectrum 48K (NTSC)", "ZX Spectrum 16K"], tpl: ["default", "sjasmplus", "zx-basic", "pasta-80", "z88-dk"] },
+  { id: "sp128", name: "ZX Spectrum 128K", fam: "ZX Spectrum", models: ["ZX Spectrum 128K", "Pentagon 128"], tpl: ["default", "sjasmplus", "zx-basic", "pasta-80"] },
+  { id: "spp3e", name: "ZX Spectrum +2A/+3/+3E", fam: "ZX Spectrum", models: ["ZX Spectrum +2E", "ZX Spectrum +3E (1 FDD)", "ZX Spectrum +3E (2 FDDs)", "ZX Spectrum +2A", "ZX Spectrum +2A (Spanish)", "ZX Spectrum +3 (1 FDD)", "ZX Spectrum +3 (2 FDDs)", "ZX Spectrum +3 v4.0 (1 FDD)", "ZX Spectrum +3 v4.0 (2 FDDs)", "ZX Spectrum +3 (Spanish, 1 FDD)", "ZX Spectrum +3 (Spanish, 2 FDDs)"], tpl: ["default", "sjasmplus", "pasta-80"], fav: "ZX Spectrum +3E (1 FDD)" },
+  { id: "zxnext", name: "ZX Spectrum Next", fam: "ZX Spectrum", models: ["ZX Spectrum Next"], tpl: ["default", "zx-basic"] },
+  { id: "timex", name: "Timex TC2048/TC2068/TS2068", fam: "Spectrum compatibles", models: ["Timex Computer 2048", "Timex Computer 2068", "Timex Sinclair 2068"], tpl: ["default", "sjasmplus", "zx-basic", "pasta-80", "z88-dk"] },
+  { id: "scorpion", name: "Scorpion ZS-256", fam: "Spectrum compatibles", models: ["Scorpion ZS-256"], tpl: ["default", "sjasmplus", "zx-basic", "pasta-80"] },
+  { id: "zx81", name: "Sinclair ZX81", fam: "Other Z80 machines", models: ["Sinclair ZX81 (16K)", "Sinclair ZX81 (1K)", "Sinclair ZX81 (64K)", "Timex Sinclair 1000 / ZX81 US (16K, NTSC)", "ZX81 US (1K, NTSC)"], tpl: ["default"] },
+  { id: "zx80", name: "Sinclair ZX80", fam: "Other Z80 machines", models: ["Sinclair ZX80 (16K)", "Sinclair ZX80 (1K)", "Sinclair ZX80 with the 8K ROM (16K)"], tpl: ["default"] },
+  { id: "z88", name: "Cambridge Z88", fam: "Other Z80 machines", models: ["Cambridge Z88 (OZ v5.0B Int.)", "Cambridge Z88 (OZ v4.7 Int.)", "Cambridge Z88 (OZ v4.0 UK)", "Cambridge Z88 (OZ v4.01 SE/FI)", "Cambridge Z88 (OZ v3.0 UK)", "Cambridge Z88 (OZ v3.23 IT)", "Cambridge Z88 (OZ v3.26 FR)", "Cambridge Z88 (OZ v3.19 ES)", "Cambridge Z88 (OZ v3.21 DK)", "Cambridge Z88 (OZ v3.18 DE)"], tpl: ["default"] },
+  { id: "c64", name: "Commodore 64 (experimental)", fam: "Other", models: ["Commodore 64 (experimental)", "Commodore 64 (experimental, NTSC)"], tpl: [] }
+];
+const TEMPLATES = {
+  "default": { t: "Klive Z80 Assembly", ext: ".kz80.asm", s: "The built-in assembler: inject, run, source-level debug, export." },
+  "sjasmplus": { t: "sjasmplus", ext: ".asm", s: "Assembly built by your installed sjasmplus." },
+  "zx-basic": { t: "ZX BASIC", ext: ".zxbas", s: "Compiled by Klive BASIC or Boriel's zxbc." },
+  "pasta-80": { t: "Pascal (Pasta/80)", ext: ".pas", s: "Turbo Pascal–style code, compiled by Pasta/80." },
+  "z88-dk": { t: "C (z88dk)", ext: ".c", s: "C compiled by your installed z88dk." }
+};
+const RUNNING = { id: "zx81", model: "Sinclair ZX81 (16K)" };
+const offered = MACHINES.filter((m) => m.tpl.length > 0);
+
+// --- Today: the flat list
+const todayList = document.getElementById("todayList");
+const flat = MACHINES.flatMap((m) => m.models);
+todayList.innerHTML = flat.map((n, i) => `<div class="${i === 0 ? "sel" : ""}">${n}</div>`).join("");
+document.getElementById("todayCount").textContent = flat.length;
+
+// --- Proposed
+const state = { type: RUNNING.id, model: RUNNING.model, tpl: "default" };
+const defaultModel = (m) =>
+  m.id === RUNNING.id ? RUNNING.model : m.fav && m.models.includes(m.fav) ? m.fav : m.models[0];
+
+function renderProposed() {
+  const fams = [...new Set(offered.map((m) => m.fam))];
+  document.getElementById("families").innerHTML = fams.map((f) => `
+    <div class="fam"><h4>${f}</h4><div class="tiles">${offered.filter((m) => m.fam === f).map((m) => `
+      <button class="tile" role="radio" aria-checked="${m.id === state.type}" tabindex="${m.id === state.type ? 0 : -1}" data-id="${m.id}">
+        ${m.id === RUNNING.id ? '<span class="pill">Running</span>' : ""}
+        <span class="t">${m.name}</span>
+        <span class="s">${m.models.length === 1 ? "1 model" : m.models.length + " models"} · ${m.tpl.length} template${m.tpl.length === 1 ? "" : "s"}</span>
+      </button>`).join("")}</div></div>`).join("");
+  const m = MACHINES.find((x) => x.id === state.type);
+  // --- The field stays in place, disabled, for a one-model type: switching tiles never moves the form
+  const model = document.getElementById("model");
+  model.disabled = m.models.length < 2;
+  document.getElementById("modelHint").innerHTML = m.models.length < 2
+    ? "The only model of this machine."
+    : "Change it later in <b>Machine › Machine type</b>.";
+  model.innerHTML = m.models.map((n) => `<option ${n === state.model ? "selected" : ""}>${n}</option>`).join("");
+  if (!m.tpl.includes(state.tpl)) state.tpl = m.tpl[0];
+  document.getElementById("cards").innerHTML = m.tpl.map((id) => {
+    const t = TEMPLATES[id];
+    return `<button class="card" role="radio" aria-checked="${id === state.tpl}" tabindex="${id === state.tpl ? 0 : -1}" data-tpl="${id}">
+      <span class="t">${t.t} <span class="ext">${t.ext}</span></span><span class="s">${t.s}</span></button>`;
+  }).join("");
+}
+document.getElementById("families").addEventListener("click", (e) => {
+  const tile = e.target.closest(".tile");
+  if (!tile) return;
+  state.type = tile.dataset.id;
+  state.model = defaultModel(MACHINES.find((x) => x.id === state.type));
+  renderProposed();
+  document.querySelector(`.tile[data-id="${state.type}"]`).focus();
+});
+document.getElementById("families").addEventListener("keydown", (e) => {
+  const tiles = [...document.querySelectorAll(".tile")];
+  const i = tiles.indexOf(document.activeElement);
+  if (i < 0) return;
+  let j = -1;
+  if (e.key === "ArrowRight" || e.key === "ArrowDown") j = (i + 1) % tiles.length;
+  else if (e.key === "ArrowLeft" || e.key === "ArrowUp") j = (i - 1 + tiles.length) % tiles.length;
+  else if (/^[a-z0-9]$/i.test(e.key)) {
+    const k = e.key.toLowerCase();
+    for (let n = 1; n <= tiles.length; n++) {
+      const c = tiles[(i + n) % tiles.length];
+      if (c.querySelector(".t").textContent.toLowerCase().replace(/^(zx spectrum|sinclair|cambridge|timex) /, "").startsWith(k) ||
+          c.querySelector(".t").textContent.toLowerCase().startsWith(k)) { j = (i + n) % tiles.length; break; }
+    }
+  }
+  if (j >= 0) { e.preventDefault(); tiles[j].click(); }
+});
+document.getElementById("model").addEventListener("change", (e) => { state.model = e.target.value; renderProposed(); });
+document.getElementById("cards").addEventListener("click", (e) => {
+  const card = e.target.closest(".card");
+  if (!card) return;
+  state.tpl = card.dataset.tpl;
+  renderProposed();
+  document.querySelector(`.card[data-tpl="${state.tpl}"]`).focus();
+});
+renderProposed();
+
+// --- Compact alternative
+const ctype = document.getElementById("ctype"), cmodel = document.getElementById("cmodel"), ctpl = document.getElementById("ctpl");
+ctype.innerHTML = [...new Set(offered.map((m) => m.fam))].map((f) =>
+  `<optgroup label="${f}">${offered.filter((m) => m.fam === f).map((m) =>
+    `<option value="${m.id}" ${m.id === RUNNING.id ? "selected" : ""}>${m.name}</option>`).join("")}</optgroup>`).join("");
+function renderCompact() {
+  const m = MACHINES.find((x) => x.id === ctype.value);
+  cmodel.disabled = m.models.length < 2;
+  const d = defaultModel(m);
+  cmodel.innerHTML = m.models.map((n) => `<option ${n === d ? "selected" : ""}>${n}</option>`).join("");
+  ctpl.innerHTML = m.tpl.map((id) => `<option value="${id}">${TEMPLATES[id].t} (${TEMPLATES[id].ext})</option>`).join("");
+}
+ctype.addEventListener("change", renderCompact);
+renderCompact();
+
+// --- Tabs and theme
+document.querySelectorAll(".tab[data-view]").forEach((tab) => tab.addEventListener("click", () => {
+  document.querySelectorAll(".tab[data-view]").forEach((t) => t.setAttribute("aria-selected", String(t === tab)));
+  document.querySelectorAll("[data-pane]").forEach((p) => (p.hidden = p.dataset.pane !== tab.dataset.view));
+}));
+document.getElementById("theme").addEventListener("click", () => {
+  const root = document.documentElement;
+  const dark = root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  root.dataset.theme = dark ? "light" : "dark";
+});
+</script>
+</body>
+</html>

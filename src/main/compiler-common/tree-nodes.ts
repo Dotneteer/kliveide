@@ -37,6 +37,7 @@ export type ByteEmittingPragma<TInstruction extends TypedObject, TToken extends 
   | DefCPragma<TInstruction, TToken>
   | DefMPragma<TInstruction, TToken>
   | DefNPragma<TInstruction, TToken>
+  | DefZxPragma<TInstruction, TToken>
   | DefHPragma<TInstruction, TToken>
   | DefSPragma<TInstruction, TToken>
   | FillbPragma<TInstruction, TToken>
@@ -787,6 +788,20 @@ export interface DefNPragma<TNode extends TypedObject, TToken extends CommonToke
 export interface DefMPragma<TNode extends TypedObject, TToken extends CommonTokenType>
   extends PartialAssemblyLine<TNode> {
   type: "DefMPragma";
+
+  /**
+   * Pragma value
+   */
+  value: Expression<TNode, TToken>;
+}
+
+/**
+ * `.defzx "TEXT"`: text in the ZX80's or ZX81's own character set (`.model ZX80`/`ZX81` only);
+ * a lower-case letter gives the inverse-video capital
+ */
+export interface DefZxPragma<TNode extends TypedObject, TToken extends CommonTokenType>
+  extends PartialAssemblyLine<TNode> {
+  type: "DefZxPragma";
 
   /**
    * Pragma value

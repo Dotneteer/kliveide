@@ -11,7 +11,7 @@ type DialogRowProps = {
 
 export const DialogRow = ({ label = "", children, rows }: DialogRowProps) => {
   return (
-    <div className={styles.dialogRow}>
+    <div className={styles.dialogRow} data-dialog-row="">
       {label && <DialogLabel text={label} />}
       <div className={classnames(styles.childWrapper, { [styles.rows]: rows })}>
         {children}

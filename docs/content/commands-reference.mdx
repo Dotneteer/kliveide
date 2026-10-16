@@ -550,7 +550,10 @@ These are the input arguments and options:
   - `hex`: Intel HEX format
   - `tzx`: TZX file format
   - `tap`: TAP file format
-- `-as`: Autostart the exported code after loading it
+  - `nex`: ZX Spectrum Next NEX file
+  - `p`: ZX81 program file (the default for ZX81 code); only `-as` applies to it
+  - `o`: ZX80 program file (the default for ZX80 code); none of the other options apply to it
+- `-as`: Autostart the exported code after loading it (on a `.p` file: the program runs itself once loaded)
 - `-p`: Add a PAUSE statement into the loader (before starting the loaded code)
 - `-c`: Add a clear statement to keep the end of the BASIC code before the start address of the exported code
 - `-b`: Specifies the border color to set when the loader program starts

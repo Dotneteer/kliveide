@@ -44,6 +44,10 @@ export function modelTypeToMachineType(model: SpectrumModelType): string | null 
       return "spp3e";
     case SpectrumModelType.Next:
       return "next";
+    case SpectrumModelType.ZX80:
+      return "zx80";
+    case SpectrumModelType.ZX81:
+      return "zx81";
     default:
       return null;
   }

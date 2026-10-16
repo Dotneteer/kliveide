@@ -9,6 +9,7 @@ import {
   SCREEN_FILE_FILTERS,
   canExport,
   commandOf,
+  effectiveFormatOf,
   exportFailureMessage,
   exportSuccessMessage,
   initialState,
@@ -142,7 +143,7 @@ export class ExportCodeController extends UiController<
       await this.ports.close.exported({
         command,
         fullFilename,
-        formatId: settings.formatId,
+        formatId: effectiveFormatOf(state),
         exportName: settings.exportName,
         exportFolder: settings.exportFolder,
         programName: settings.programName,

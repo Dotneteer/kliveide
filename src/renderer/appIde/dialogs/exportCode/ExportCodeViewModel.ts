@@ -1,7 +1,9 @@
 import {
   BORDER_OPTIONS,
-  FORMAT_OPTIONS,
   canExport,
+  effectiveFormatOf,
+  formatOptionsOf,
+  loaderLabelOf,
   exportNameErrorOf,
   folderErrorOf,
   screenFileErrorOf,
@@ -45,7 +47,7 @@ export type ExportCodeViewModel = {
   exportName: TextFieldViewModel;
   programName: TextFieldViewModel;
   // --- The "Create BASIC loader" checkbox, absent for formats with no tape.
-  loader: { kind: "hidden" } | { kind: "shown"; checked: boolean };
+  loader: { kind: "hidden" } | { kind: "shown"; checked: boolean; label: string };
   startup: StartupOptionsViewModel;
   submitLabel: string;
   submitEnabled: boolean;
@@ -57,14 +59,14 @@ export type ExportCodeViewModel = {
 export function selectViewModel(state: ExportCodeState): ExportCodeViewModel {
   const settings = state.settings;
   return {
-    format: { options: FORMAT_OPTIONS, value: settings.formatId },
+    format: { options: formatOptionsOf(state), value: effectiveFormatOf(state) },
     exportFolder: { value: settings.exportFolder, error: folderErrorOf(state) },
     exportName: { value: settings.exportName, error: exportNameErrorOf(state) },
     // --- No rule of its own: an empty program name falls back to the file name
     // --- when the command is built.
     programName: { value: settings.programName },
     loader: supportsLoader(state)
-      ? { kind: "shown", checked: settings.startBlock }
+      ? { kind: "shown", checked: settings.startBlock, label: loaderLabelOf(state) }
       : { kind: "hidden" },
     startup: showsStartupOptions(state)
       ? {
