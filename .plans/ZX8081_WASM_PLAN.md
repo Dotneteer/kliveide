@@ -732,7 +732,8 @@ All tests run the real WASM machine.
 ## 14. Follow-ups (not in this plan)
 - The Chroma 81 colour interface.
 - The ZonX AY and Quicksilva sound boards, and the VSYNC buzz.
-- SAVE to `.P`, by trapping `OUT-BYTE` `$031E`.
+- ~~SAVE to `.P`, by trapping `OUT-BYTE` `$031E`.~~ Done: `zx8081-tape.c` ("SAVE"), published as
+  `SAVED_TO_TAPE`; `test/zx8081-hw/tape-save.test.ts`.
 - TZX ZX81 blocks (block `$19`), and TZX/WAV fast load through a port of CLK's pulse parser.
 - CHR$128 and UDG boards.
 - The Timex TS1000/TS1500 and the Lambda 8300.

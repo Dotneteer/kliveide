@@ -1,5 +1,5 @@
 ---
-description: "How the Sinclair ZX81 stores programs on an ordinary cassette recorder: how tape recording works, the bursts-and-silence signal, what a .P file holds, the ROM's SAVE and LOAD routines instruction by instruction, and how Klive's emulator plays a tape."
+description: "How the Sinclair ZX81 stores programs on an ordinary cassette recorder: how tape recording works, the bursts-and-silence signal, what a .P file holds, the ROM's SAVE and LOAD routines instruction by instruction, and how Klive's emulator plays a tape and records a SAVE."
 ---
 
 import { Callout } from 'nextra/components'
@@ -33,8 +33,8 @@ see why.
 - **The ROM**: the `SAVE` routine ([Part 5](#part-5-save)) and the `LOAD` routine
   ([Part 6](#part-6-load)), with every instruction explained. Part 7 collects the
   [practical consequences](#part-7-living-with-the-format) of the design.
-- **The emulator** ([Part 8](#part-8-how-klive-plays-a-tape)): how Klive plays a tape, and how it
-  can skip the waiting. A table of [all the tape routines](#the-tape-routines-at-a-glance) and a
+- **The emulator** ([Part 8](#part-8-how-klive-plays-and-records-a-tape)): how Klive plays a tape,
+  how it records a `SAVE` as a `.P` file, and how it can skip the waiting. A table of [all the tape routines](#the-tape-routines-at-a-glance) and a
   [Summary](#summary) close the article.
 
 Every complete ROM listing here follows the real ROM byte for byte; the names in it are this
@@ -44,7 +44,8 @@ T-state is about 0.31 µs).
 <Callout type="info">
 Everything below is how the real machine works **and** how Klive emulates it. Klive runs the ROM's
 own `SAVE` and `LOAD` code on its Z80; for loading, it feeds the ULA's tape input a signal built
-from the program file, pulse by pulse. The last part shows where each piece lives in the source.
+from the program file, pulse by pulse, and for saving, it records the bytes the ROM sends as a `.P`
+file. The last part shows where each piece lives in the source.
 </Callout>
 
 ## Part 1: How a cassette recorder works
@@ -870,7 +871,7 @@ down.
 **`LOAD ""` takes the first program.** With an empty name every name matches, so `LOAD ""` loads
 whatever program comes next on the tape.
 
-## Part 8: How Klive plays a tape
+## Part 8: How Klive plays and records a tape
 
 Klive's ZX81 runs the real ROM, so `LOAD` is the ROM's own `LOAD`, sampling bit 7 of port `$FE`. All
 the emulator has to provide is the signal on that bit, at the right T-state. It does so in one of two
@@ -929,18 +930,36 @@ than at `$035F`, because no `CALL` was made, so there is no return address for t
 When you choose *Load and Run*, Klive resets the machine, types `LOAD ""` for you, and waits for the
 ROM to finish the command. Then it types `RUN`, unless the program started itself (Part 7).
 
-### What Klive does not do (yet)
+### Saving: listening to OUT-BYTE
 
-Klive does not record what `SAVE` sends. You can run `SAVE` in the emulator, and the ROM makes its
-leader and its bursts, with the stripes on the screen to prove it, but the signal goes nowhere: there
-is no tape to write it to.
+A `SAVE` in Klive writes a `.P` file. The Spectrum cores decode their `SAVE` from the pulses on the
+MIC bit; the ZX81's tape signal is VSYNC, which the same ROM also toggles to draw the picture, so
+Klive listens one level up, at the byte. The core follows the ROM's `SAVE` (Part 5) through four
+addresses:
+
+| ROM address | What the core does |
+|---|---|
+| `$02F6` | `SAVE`: starts a new file; one stopped by BREAK earlier is forgotten. |
+| `$0313` | `LD HL,$4009`: the name is out, the program follows. |
+| `$031E` | `OutByte`: records the byte at (HL), the name's or the program's. |
+| `$02FF` | The lead-in loop (fast only, below). |
+
+The program's bytes, from `$4009` up to `E_LINE − 1`, are exactly a `.P` file (Part 4). When the last
+one is out, the core hands the file to the IDE, which names it after the tape name and writes it to
+the saved-files folder. A `SAVE` stopped by BREAK never reaches its last byte, and writes nothing.
+
+With *Fast Load* off, the ROM's own code runs: five seconds of lead-in, every burst on the screen,
+the bytes recorded as `OutByte` sends them. With it on, the core skips the lead-in loop and returns
+from `OutByte` at once, so the same bytes are written in a fraction of a second. Only the ROM's
+`SAVE` is heard: a program with its own tape routine writes nothing.
 
 ### Where to read the code
 
 The ZX81 core lives in `src/emu/machines/zx8081/wasm/` of the Klive repository. Its `README.md` has a
 section on the tape, and:
 
-- `zx8081/zx8081-tape.c` holds the pulse synthesizer, the automatic motor and the fast-load traps;
+- `zx8081/zx8081-tape.c` holds the pulse synthesizer, the automatic motor, the fast-load traps and
+  the `SAVE` capture;
 - `zx8081/zx8081-ula.c` puts the tape level into bit 7 of port `$FE`, and starts and ends VSYNC on
   `IN` and `OUT`;
 - `src/emu/machines/zx8081/ZxPFile.ts` recognises `.P` and `.O` files and adds the `$80` name.
@@ -978,6 +997,7 @@ The tape logic is ported from Thomas Harte's **Clock Signal** emulator (MIT lice
 | What if the tape stops mid-program? | The machine starts afresh, as after `NEW`: half a program cannot be kept. |
 | Is a load checked for errors? | No. There is no checksum. |
 | How does Klive load a tape? | In real time, by synthesizing the signal from the file into bit 7 of port `$FE`; or at once, by trapping the ROM's three calls of `InByte`. |
+| How does Klive record a `SAVE`? | It follows the ROM's `SAVE` and records each byte as `OutByte` starts to send it; the bytes from `$4009` are written out as a `.P` file. With *Fast Load* on, it skips the leader and the bursts. |
 
 For the other half of the ZX81's hardware story, see
 [How the Screen Is Drawn](/emulator-internals/zx81-display). To load programs in Klive, see

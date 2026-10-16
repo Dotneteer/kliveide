@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { parseZxProgramFile, isZx8081ProgramFileName, zx8081CharText } from "@emu/machines/zx8081/ZxPFile";
+import { parseZxProgramFile, isZx8081ProgramFileName, zx8081CharText, zx81SavedFileName } from "@emu/machines/zx8081/ZxPFile";
 import { zx8081KeysForText } from "@emu/machines/zx8081/Zx8081Typer";
 import { Zx8081KeyCode } from "@emu/machines/zx8081/Zx8081KeyCode";
 import { resolveZx8081Hardware, zx8081ModelForProgram } from "@emu/machines/zx8081/zx8081MachineInfo";
@@ -93,5 +93,25 @@ describe("ZX80/ZX81 models", () => {
       ntsc: false
     });
     expect(resolveZx8081Hardware("zx80", { memSize: 64 }).ramKb).toBe(16);
+  });
+});
+
+describe("ZX81 SAVE file names", () => {
+  it("turns the tape name into a .p file name", () => {
+    // --- "PROG", bit 7 set on the last character as the ROM sends it
+    expect(zx81SavedFileName([0x35, 0x37, 0x34, 0x2c | 0x80])).toBe("PROG.p");
+    // --- "A B.1"
+    expect(zx81SavedFileName([0x26, 0x00, 0x27, 0x1b, 0x1d | 0x80])).toBe("A B.1.p");
+  });
+
+  it("replaces the characters a file name cannot hold", () => {
+    // --- "A/B:C" and a block graphic
+    expect(zx81SavedFileName([0x26, 0x18, 0x27, 0x0e, 0x28, 0x01 | 0x80])).toBe("A_B_C_.p");
+  });
+
+  it("names a file with nothing usable in it export.p", () => {
+    expect(zx81SavedFileName([])).toBe("export.p");
+    expect(zx81SavedFileName([0x00 | 0x80])).toBe("export.p");
+    expect(zx81SavedFileName([0x18 | 0x80])).toBe("export.p");
   });
 });

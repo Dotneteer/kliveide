@@ -10,12 +10,12 @@ import type { MachineConfigSet, MachineModel } from "@common/machines/info-types
 import type { MessengerBase } from "@common/messaging/MessengerBase";
 import type { CpuState } from "@common/messaging/EmuApi";
 import type { Zx8081WasmV2LoaderOptions, Zx8081WasmV2Runtime } from "./wasm/Zx8081WasmV2Loader";
-import type { ZxProgramFile } from "./ZxPFile";
+import { zx81SavedFileName, type ZxProgramFile } from "./ZxPFile";
 
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { MEDIA_TAPE } from "@common/structs/project-const";
-import { FAST_LOAD, REWIND_REQUESTED } from "../machine-props";
+import { FAST_LOAD, REWIND_REQUESTED, SAVED_TO_TAPE } from "../machine-props";
 import {
   hasWasmAccessBreakpoint,
   runWasmDebugLoop,
@@ -157,6 +157,8 @@ export class Zx8081WasmV2Machine extends Zx8081WasmHost implements IExecutionHis
   private screenPixels?: Uint32Array;
   private screenPixelBytes?: Uint8ClampedArray;
   private syncedTargetClockMultiplier = -1;
+  /** The core's SAVE revision already published (`zx8081TapeGetSavedRevision`) */
+  private savedProgramRevision = 0;
 
   constructor(
     machineId: string,
@@ -406,6 +408,7 @@ export class Zx8081WasmV2Machine extends Zx8081WasmHost implements IExecutionHis
     this.screenPixelBytes = runtime.pixelBufferBytes.subarray(0, words * 4);
     this.setTactsInFrame(runtime.exports.zx8081GetTactsInFrame());
     runtime.exports.zx8081HardReset();
+    this.savedProgramRevision = runtime.exports.zx8081TapeGetSavedRevision();
     this.syncTapeFromProperties(runtime);
     this.syncCpuFromWasmV2(runtime);
   }
@@ -488,6 +491,24 @@ export class Zx8081WasmV2Machine extends Zx8081WasmHost implements IExecutionHis
     this.uploadTape(runtime, this.getMachineProperty(MEDIA_TAPE));
   }
 
+  /**
+   * Hands a SAVE the ROM finished to the host as a `.P` file (`SAVED_TO_TAPE`), as the Spectrum
+   * machines hand over their `.tzx`: the core captures the bytes OUT-BYTE sent (`zx8081-tape.c`,
+   * "SAVE"); a new revision means a new file. The controller writes it to the save folder.
+   */
+  private publishSavedProgram(runtime: Zx8081WasmV2Runtime): void {
+    const wasm = runtime.exports;
+    const revision = wasm.zx8081TapeGetSavedRevision();
+    if (revision === this.savedProgramRevision) return;
+    this.savedProgramRevision = revision;
+    const nameLength = wasm.zx8081TapeGetSavedNameLength();
+    const dataLength = wasm.zx8081TapeGetSavedDataLength();
+    super.setMachineProperty(SAVED_TO_TAPE, {
+      name: zx81SavedFileName(runtime.savedName.subarray(0, nameLength)),
+      contents: new Uint8Array(runtime.savedData.subarray(0, dataLength))
+    });
+  }
+
   protected armAutoRun(): void {
     this.wasmV2Runtime?.exports.zx8081ArmAutoRun(1);
   }
@@ -517,6 +538,7 @@ export class Zx8081WasmV2Machine extends Zx8081WasmHost implements IExecutionHis
     runtime.exports.zx8081ExecuteFrame();
     this.syncFrameCounters(runtime);
     this.checkAutoRun(runtime);
+    this.publishSavedProgram(runtime);
     // --- A reverse-debugging stop target can end the call mid-frame (REVERSE_DEBUGGING_PLAN D4)
     this.frameCompleted = runtime.exports.zx8081GetFrameCompleted() !== 0;
     this.executionContext.lastTerminationReason = FrameTerminationMode.Normal;
@@ -589,6 +611,7 @@ export class Zx8081WasmV2Machine extends Zx8081WasmHost implements IExecutionHis
     const runtime = this.requireWasmV2Runtime();
     this.syncCpuFromWasmV2(runtime);
     this.importBusAccess(runtime);
+    this.publishSavedProgram(runtime);
     this.executionContext.lastTerminationReason = termination;
     return termination;
   }
@@ -761,6 +784,8 @@ export class Zx8081WasmV2Machine extends Zx8081WasmHost implements IExecutionHis
   restoreHostState(_state: unknown): void {
     const runtime = this.requireWasmV2Runtime();
     this.emulatedKeyStrokes.length = 0;
+    // --- What the core already holds must not be published again as new
+    this.savedProgramRevision = runtime.exports.zx8081TapeGetSavedRevision();
     this.frameCompleted = runtime.exports.zx8081GetFrameCompleted() !== 0;
     this.syncFrameCounters(runtime);
     this.syncCpuFromWasmV2(runtime);
@@ -775,6 +800,8 @@ export class Zx8081WasmV2Machine extends Zx8081WasmHost implements IExecutionHis
     const runtime = this.requireWasmV2Runtime();
     restoreWasmImage(parts, "zx8081", runtime.module, runtime.exports.memory.buffer);
     this.syncedTargetClockMultiplier = -1;
+    // --- What the core already holds must not be published again as new
+    this.savedProgramRevision = runtime.exports.zx8081TapeGetSavedRevision();
     this.syncCpuFromWasmV2(runtime);
   }
 
