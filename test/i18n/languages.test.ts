@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   LANGUAGES,
   offeredLanguages,
+  selectableLanguages,
   resolveSystemLanguage,
   resolveUiLanguage
 } from "@common/i18n/languages";
@@ -33,6 +34,18 @@ describe("offeredLanguages", () => {
     expect(ids(offeredLanguages(false, ["it"], table))).toEqual(["en"]);
     expect(ids(offeredLanguages(true, ["it"], table))).toEqual(["en", "qps", "it"]);
     expect(ids(offeredLanguages(true, [], table))).toEqual(["en", "qps"]);
+  });
+});
+
+describe("selectableLanguages", () => {
+  it("is what the dropdown lists: the offered languages without the pseudo-locale", () => {
+    const ALL = ["es", "pt-BR", "pt-PT", "de", "hu"];
+    expect(ids(selectableLanguages(true, ALL))).toEqual(["en", ...ALL]);
+    expect(ids(selectableLanguages(false, ALL))).toEqual(["en", ...ALL]);
+  });
+
+  it("keeps the pseudo-locale usable as a setting in a dev build", () => {
+    expect(resolveUiLanguage("qps", ["en-GB"], true, [])).toEqual({ current: "qps", system: "en" });
   });
 });
 

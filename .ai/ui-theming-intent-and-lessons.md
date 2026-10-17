@@ -1292,8 +1292,9 @@ dialog's comment claiming otherwise is stale).
 ## Translated Text Is ~40 % Longer: Check New UI In The `qps` Locale
 
 UI text goes through `t()` (`.plans/LOCALIZATION_PLAN.md`), and German/Hungarian run about 35-40 %
-longer than English. In a dev build, Settings › Language › *Pseudo-locale (qps)* switches the whole
-UI live to accented, padded, bracketed text (`[Ðîšþļåý ļåñĝûåĝé~~~~]`): unaccented text was never
+longer than English. In a dev build, the setting `ideViewOptions.language: "qps"` (set in the
+settings file; the Language dropdown no longer lists it) switches the whole
+UI to accented, padded, bracketed text (`[Ðîšþļåý ļåñĝûåĝé~~~~]`): unaccented text was never
 extracted, and a missing `]` means the text was clipped. Look at any new label, button, column
 header or status-bar item in `qps` before calling it done.
 

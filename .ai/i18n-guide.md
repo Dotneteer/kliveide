@@ -40,8 +40,9 @@ translators is `src/common/i18n/locales/README.md`.
 10. **Never write translations for other languages** as part of a feature change. New English is
    picked up by `npm run i18n:todo -- <lang>` in the next translation round (`README.md` §3–4).
 11. **Tests pin English** (`test/vitest.setup.ts`), so English assertions keep working. To check a
-    new screen for missed text, switch to the pseudo-locale: `setLanguage("qps")` in a test, or
-    Settings › Language › *Pseudo-locale (qps)* in a dev build — anything not `[Åççéñţéð~~]` was
+    new screen for missed text, switch to the pseudo-locale: `setLanguage("qps")` in a test, or in a
+    dev build `ideViewOptions.language: "qps"` in the settings file (the Language dropdown does not
+    list it; `scripts/doc-shots/harness.cjs` takes `ideViewOptions`) — anything not `[Åççéñţéð~~]` was
     missed. `test/main/app-menu-structure.test.ts` and `test/settings/settings-i18n.test.ts` do this
     for the menus and the Settings dialog.
 12. **Tests never hard-code the list of offered languages.** A disabled language appears in dev
