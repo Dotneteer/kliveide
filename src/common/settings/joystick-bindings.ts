@@ -7,6 +7,9 @@
  * joymap. So one table serves every joystick mode, and it keeps working when a program changes
  * `$05` mid-game. Nothing here knows or cares which mode is selected.
  */
+import { labelRecord, withLabels } from "@common/i18n/labels";
+import { tEnglish } from "@common/i18n/i18n";
+import type { MessageKey } from "@common/i18n/keys.generated";
 
 /**
  * The connector's pins, in bit order. Matches `IZxNextHostInputMachine`'s `JOY_*` constants and the
@@ -30,20 +33,21 @@ export const JOYSTICK_BUTTONS = [
 export type JoystickButton = (typeof JOYSTICK_BUTTONS)[number];
 
 /** What a pin is called in the UI. `B` and `C` are pins 6 and 9 - fire 1 and fire 2. */
-export const JOYSTICK_BUTTON_LABELS: Record<JoystickButton, string> = {
-  RIGHT: "Right",
-  LEFT: "Left",
-  DOWN: "Down",
-  UP: "Up",
-  B: "Fire 1 (B)",
-  C: "Fire 2 (C)",
-  A: "A (MD)",
-  START: "Start (MD)",
-  Y: "Y (MD 6-button)",
-  Z: "Z (MD 6-button)",
-  X: "X (MD 6-button)",
-  MODE: "Mode (MD 6-button)"
-};
+/** Translated each time a label is read (`labelRecord`) */
+export const JOYSTICK_BUTTON_LABELS: Readonly<Record<JoystickButton, string>> = labelRecord<JoystickButton>({
+  RIGHT: "dialog.joystick.pin.right",
+  LEFT: "dialog.joystick.pin.left",
+  DOWN: "dialog.joystick.pin.down",
+  UP: "dialog.joystick.pin.up",
+  B: "dialog.joystick.pin.b",
+  C: "dialog.joystick.pin.c",
+  A: "dialog.joystick.pin.a",
+  START: "dialog.joystick.pin.start",
+  Y: "dialog.joystick.pin.y",
+  Z: "dialog.joystick.pin.z",
+  X: "dialog.joystick.pin.x",
+  MODE: "dialog.joystick.pin.mode"
+});
 
 /** The bit a pin occupies in the 12-bit connector word. */
 export function joystickButtonBit(button: JoystickButton): number {
@@ -54,19 +58,26 @@ export function joystickButtonBit(button: JoystickButton): number {
 export type JoystickSide = "left" | "right";
 export const JOYSTICK_SIDES: JoystickSide[] = ["left", "right"];
 
-export const JOYSTICK_SIDE_LABELS: Record<JoystickSide, string> = {
-  left: "Joystick 1 (left)",
-  right: "Joystick 2 (right)"
-};
+/** Translated each time a label is read (`labelRecord`) */
+export const JOYSTICK_SIDE_LABELS: Readonly<Record<JoystickSide, string>> = labelRecord<JoystickSide>({
+  left: "common.joystick.side.left",
+  right: "common.joystick.side.right"
+});
+
+/** A connector's English name, for log output (D9) */
+export function englishSide(side: JoystickSide): string {
+  return tEnglish(side === "left" ? "common.joystick.side.left" : "common.joystick.side.right");
+}
 
 /** Where a connector's pins come from. */
 export type JoystickSource = "off" | "keyboard" | "gamepad";
 
-export const JOYSTICK_SOURCES: { label: string; value: JoystickSource }[] = [
-  { label: "Not connected", value: "off" },
-  { label: "Host keyboard", value: "keyboard" },
-  { label: "Host gamepad", value: "gamepad" }
-];
+/** `label` is translated each time it is read (`withLabels`) */
+export const JOYSTICK_SOURCES = withLabels<{ labelKey: MessageKey; value: JoystickSource }>([
+  { labelKey: "common.joystick.source.off", value: "off" },
+  { labelKey: "common.joystick.source.keyboard", value: "keyboard" },
+  { labelKey: "common.joystick.source.gamepad", value: "gamepad" }
+]);
 
 export type JoystickSideBindings = {
   source: JoystickSource;

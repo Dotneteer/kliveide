@@ -3,6 +3,7 @@ import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
 import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
 import { commandSuccessWith, IdeCommandBase } from "../services/ide-commands";
 import { Z88DK_ALL, Z88DK_INSTALL_FOLDER } from "@main/z88dk-integration/z88dk-config";
+import { t } from "@common/i18n/i18n";
 
 type ResetZ88DkCommandArgs = {
   z88dkPath: string;
@@ -10,7 +11,9 @@ type ResetZ88DkCommandArgs = {
 
 export class ResetZ88DkCommand extends IdeCommandBase<ResetZ88DkCommandArgs> {
   readonly id = "z88dk-reset";
-  readonly description = "Resets Z88DK settings with the provided installation folder";
+  get description() {
+    return t("commands.z88dk.resetDescription");
+  }
   readonly usage = "z88dk-reset <Full ZXBC executable path>";
   readonly aliases = ["z88dkr"];
 
@@ -26,11 +29,10 @@ export class ResetZ88DkCommand extends IdeCommandBase<ResetZ88DkCommandArgs> {
       await context.service.ideCommandsService.executeCommand(
         `set ${Z88DK_INSTALL_FOLDER} "${args.z88dkPath}"`
       );
-      let cmdMessage = `Z88DK install folder set to ${args.z88dkPath}`;
-      return commandSuccessWith(cmdMessage);
+      return commandSuccessWith(t("commands.z88dk.folderSet", { path: args.z88dkPath }));
     } else {
       await context.service.ideCommandsService.executeCommand(`set ${Z88DK_ALL}`);
-      return commandSuccessWith("Z88DK settings removed");
+      return commandSuccessWith(t("commands.z88dk.removed"));
     }
   }
 }

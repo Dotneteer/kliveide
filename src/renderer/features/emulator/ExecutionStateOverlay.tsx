@@ -1,5 +1,6 @@
 import { TooltipFactory, useTooltipRef } from "@renderer/controls/Tooltip";
 import styles from "./ExecutionStateOverlay.module.scss";
+import { useT } from "@common/i18n/useT";
 
 type Props = {
   text: string;
@@ -10,6 +11,7 @@ type Props = {
  * Represents the overlay of the emulator's panel
  */
 export const ExecutionStateOverlay = ({ text, clicked }: Props) => {
+  const t = useT();
   const ref = useTooltipRef();
 
   if (text) {
@@ -27,7 +29,7 @@ export const ExecutionStateOverlay = ({ text, clicked }: Props) => {
           refElement={ref.current}
           placement="top"
           showDelay={1000}
-          content="Hide overlay (click to show again)"
+          content={t("panels.feature.emulator.hideOverlay")}
         />
       </div>
     );

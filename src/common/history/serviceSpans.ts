@@ -1,3 +1,4 @@
+import { t } from "@common/i18n/i18n";
 import { classifyFlow } from "./flowKind";
 import { HistoryKind, type HistoryRecord } from "./historyRecord";
 
@@ -96,11 +97,12 @@ export function findServiceSpans(records: readonly ServiceSpanInput[]): HistoryS
 
 /** The text of a folded service row: "NMI service, 14 instructions, 96 T" */
 export function serviceSpanText(span: HistoryServiceSpan, frameTactsPerBaseT = 1): string {
-  const what = span.kind === HistoryKind.Nmi ? "NMI service" : "Interrupt service";
-  const count = `${span.instructions.toLocaleString("en-US")} instruction${span.instructions === 1 ? "" : "s"}`;
-  const time =
-    span.frameTacts === undefined
-      ? ""
-      : `, ${Math.round(span.frameTacts / frameTactsPerBaseT).toLocaleString("en-US")} T`;
-  return `${what}, ${count}${time}`;
+  const nmi = span.kind === HistoryKind.Nmi;
+  const count = span.instructions;
+  if (span.frameTacts === undefined) {
+    return nmi ? t("debug.serviceSpan.nmi", { count }) : t("debug.serviceSpan.int", { count });
+  }
+  // --- T-states are a timing figure, copied and compared: invariant
+  const tstates = Math.round(span.frameTacts / frameTactsPerBaseT).toLocaleString("en-US");
+  return nmi ? t("debug.serviceSpan.nmiTimed", { count, tstates }) : t("debug.serviceSpan.intTimed", { count, tstates });
 }

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { RAM_CHANGE_WARNING } from "@renderer/appEmu/dialogs/z88/changeRam/Z88ChangeRamModel";
+import { ramChangeWarning } from "@renderer/appEmu/dialogs/z88/changeRam/Z88ChangeRamViewModel";
 
 import { deferred } from "../../../mvc/deferred";
 import { MC_Z88_INTRAM, openChangeRamDialog } from "./fakes";
@@ -225,6 +225,6 @@ describe("Z88ChangeRamController — environment", () => {
       env: { config: {}, machineState: MachineControllerState.Running }
     });
 
-    expect(h.vm.warning).toBe(RAM_CHANGE_WARNING);
+    expect(h.vm.warning).toBe(ramChangeWarning());
   });
 });

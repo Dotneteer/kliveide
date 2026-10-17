@@ -5,6 +5,8 @@ import type { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
 import type { AppState } from "@common/state/AppState";
 import type { Store } from "@common/state/redux-light";
 import { setMachineConfigAction } from "@common/state/actions";
+import { t } from "@common/i18n/i18n";
+import type { MessageKey } from "@common/i18n/keys.generated";
 
 /**
  * The key a card slot is stored under in the machine configuration.
@@ -41,7 +43,15 @@ const amdFlashTypeFallback = [
 
 export type CardTypeData = {
   value: CardIds;
-  label: string;
+  /** The card type's name, translated on each read (e.g. "RAM", "Intel Flash 28F004S5") */
+  readonly typeName: string;
+  /** The capacity as the tool area shows it ("32K", "1M"); units are invariant. None for ROM. */
+  sizeLabel?: string;
+  /**
+   * The name and capacity joined by a "*" ("RAM*32K"), which the insert-card dialog reads as prose
+   * by replacing the "*". Translated on each read, like `typeName`.
+   */
+  readonly label: string;
   size: number;
   getFile: boolean;
   allowInSlot0?: boolean;
@@ -49,104 +59,138 @@ export type CardTypeData = {
   noUi?: boolean;
 };
 
+/** The text-free description of a card type; `card()` adds the translating `typeName`/`label` */
+type CardTypeSpec = Omit<CardTypeData, "typeName" | "label"> & {
+  typeKey: MessageKey;
+  /** Hardware part numbers that go into the name, never translated */
+  typeArgs?: Record<string, string>;
+};
+
+function card(spec: CardTypeSpec): CardTypeData {
+  const { typeKey, typeArgs, ...data } = spec;
+  const result = { ...data } as CardTypeData;
+  Object.defineProperty(result, "typeName", { enumerable: true, get: () => t(typeKey, typeArgs) });
+  Object.defineProperty(result, "label", {
+    enumerable: true,
+    get: () => (data.sizeLabel ? `${t(typeKey, typeArgs)}*${data.sizeLabel}` : t(typeKey, typeArgs))
+  });
+  return result;
+}
+
 export const cardTypes: CardTypeData[] = [
-  {
+  card({
     value: CardIds.ANYROM,
-    label: "ROM",
+    typeKey: "emu.z88.card.rom",
     size: 1024,
     getFile: false,
     allowInSlot0: false,
     noUi: true
-  },
-  {
+  }),
+  card({
     value: CardIds.RAM32,
-    label: "RAM*32K",
+    typeKey: "emu.z88.card.ram",
+    sizeLabel: "32K",
     size: 32,
     getFile: false,
     allowInSlot0: false
-  },
-  {
+  }),
+  card({
     value: CardIds.RAM128,
-    label: "RAM*128K",
+    typeKey: "emu.z88.card.ram",
+    sizeLabel: "128K",
     size: 128,
     getFile: false,
     allowInSlot0: false
-  },
-  {
+  }),
+  card({
     value: CardIds.RAM256,
-    label: "RAM*256K",
+    typeKey: "emu.z88.card.ram",
+    sizeLabel: "256K",
     size: 256,
     getFile: false,
     allowInSlot0: false
-  },
-  {
+  }),
+  card({
     value: CardIds.RAM512,
-    label: "RAM*512K",
+    typeKey: "emu.z88.card.ram",
+    sizeLabel: "512K",
     size: 512,
     getFile: false,
     allowInSlot0: false
-  },
-  {
+  }),
+  card({
     value: CardIds.RAM1024,
-    label: "RAM*1M",
+    typeKey: "emu.z88.card.ram",
+    sizeLabel: "1M",
     size: 1024,
     getFile: false,
     allowInSlot0: false
-  },
-  {
+  }),
+  card({
     value: CardIds.EPROMUV32,
-    label: "EPROM UV*32K",
+    typeKey: "emu.z88.card.epromUv",
+    sizeLabel: "32K",
     size: 32,
     getFile: true,
     allowInSlot0: true,
     fallback: epromTypeFallback
-  },
-  {
+  }),
+  card({
     value: CardIds.EPROMUV128,
-    label: "EPROM UV*128K",
+    typeKey: "emu.z88.card.epromUv",
+    sizeLabel: "128K",
     size: 128,
     getFile: true,
     allowInSlot0: true,
     fallback: epromTypeFallback
-  },
-  {
+  }),
+  card({
     value: CardIds.EPROMUV256,
-    label: "EPROM UV*256K",
+    typeKey: "emu.z88.card.epromUv",
+    sizeLabel: "256K",
     size: 256,
     getFile: true,
     allowInSlot0: true,
     fallback: epromTypeFallback
-  },
-  {
+  }),
+  card({
     value: CardIds.IF28F004S5,
-    label: "Intel Flash 28F004S5*512K",
+    typeKey: "emu.z88.card.intelFlash",
+    typeArgs: { chip: "28F004S5" },
+    sizeLabel: "512K",
     size: 512,
     getFile: true,
     allowInSlot0: true,
     fallback: intelFlashTypeFallback
-  },
-  {
+  }),
+  card({
     value: CardIds.IF28F008S5,
-    label: "Intel Flash 28F008S5*1M",
+    typeKey: "emu.z88.card.intelFlash",
+    typeArgs: { chip: "28F008S5" },
+    sizeLabel: "1M",
     size: 1024,
     getFile: true,
     fallback: intelFlashTypeFallback
-  },
-  {
+  }),
+  card({
     value: CardIds.AMDF29F040B,
-    label: "AMD Flash 29F040B*512K",
+    typeKey: "emu.z88.card.amdFlash",
+    typeArgs: { chip: "29F040B" },
+    sizeLabel: "512K",
     size: 512,
     getFile: true,
     allowInSlot0: true,
     fallback: amdFlashTypeFallback
-  },
-  {
+  }),
+  card({
     value: CardIds.AMDF29F080B,
-    label: "AMD Flash 29F080B*1M",
+    typeKey: "emu.z88.card.amdFlash",
+    typeArgs: { chip: "29F080B" },
+    sizeLabel: "1M",
     size: 512,
     getFile: true,
     fallback: amdFlashTypeFallback
-  }
+  })
 ];
 
 export async function applyCardStateChange (

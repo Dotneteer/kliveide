@@ -3,6 +3,7 @@ import { GenericFileContext } from "@renderer/appIde/DocumentPanels/helpers/Gene
 import { SprFileContents, SprFileViewState, SpriteTools, migrateTool } from "./sprite-common";
 import { NextPaletteViewer } from "@renderer/controls/NextPaletteViewer";
 import { SmallIconButton } from "@renderer/controls/IconButton";
+import { useT } from "@common/i18n/useT";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { DEFAULT_SPRITE_TRANSPARENCY, serializeSprFile } from "./sprite-file";
 import {
@@ -99,6 +100,7 @@ type FloatingPatch = {
 };
 
 export const SpriteEditor = ({ context, readOnly }: Props) => {
+  const t = useT();
   const isReadOnly = !!readOnly;
   const readOnlyRef = useRef(isReadOnly);
   readOnlyRef.current = isReadOnly;
@@ -698,7 +700,7 @@ export const SpriteEditor = ({ context, readOnly }: Props) => {
   const onionSprite =
     showOnionSkin && selectedSpriteIndex > 0 ? sprites[selectedSpriteIndex - 1] : undefined;
 
-  const spriteLabel = `Sprite ${selectedSpriteIndex + 1} of ${sprites.length} \u00b7 16\u00d716 \u00b7 8bpp`;
+  const spriteLabel = t("panels.spriteEditor.spriteLabel", { index: selectedSpriteIndex + 1, count: sprites.length });
 
   return (
     /*
@@ -716,14 +718,14 @@ export const SpriteEditor = ({ context, readOnly }: Props) => {
       style={{ "--sheet-height": `${sheetHeight}px` } as React.CSSProperties}
     >
       {readOnly ? (
-        <div className={styles.sheetToolbar} role="toolbar" aria-label="Read-only snapshot">
-          <span className={styles.readOnlyBadge}>Read-only</span>
+        <div className={styles.sheetToolbar} role="toolbar" aria-label={t("panels.spriteEditor.readOnlyBar")}>
+          <span className={styles.readOnlyBadge}>{t("panels.spriteEditor.readOnly")}</span>
           <span className={styles.readOnlyTitle}>{readOnly.title}</span>
           {readOnly.detail && <span className={styles.readOnlyDetail}>{readOnly.detail}</span>}
           <span className={styles.statusSpacer} />
           <SmallIconButton
             iconName="spr-copy"
-            title="Copy the selection, or the sprite (Ctrl+C)"
+            title={t("panels.spriteEditor.copyAny")}
             enable={true}
             clicked={handleCopy}
           />
@@ -819,7 +821,7 @@ export const SpriteEditor = ({ context, readOnly }: Props) => {
         <div className={styles.colorsPane}>
             <div className={styles.colorPair}>
               <span className={styles.colorSlot}>
-                <span className={styles.colorSlotLabel}>Pen</span>
+                <span className={styles.colorSlotLabel}>{t("panels.spriteEditor.pen")}</span>
                 <ColorSample
                   color={palette[pencilColorIndex]}
                   isTransparency={pencilColorIndex === transparencyIndex}
@@ -828,12 +830,12 @@ export const SpriteEditor = ({ context, readOnly }: Props) => {
               </span>
               <SmallIconButton
                 iconName="spr-swap"
-                title="Swap pen and fill colors (X)"
+                title={t("panels.spriteEditor.swap")}
                 enable={true}
                 clicked={handleSwapColors}
               />
               <span className={styles.colorSlot}>
-                <span className={styles.colorSlotLabel}>Fill</span>
+                <span className={styles.colorSlotLabel}>{t("panels.spriteEditor.fill")}</span>
                 <ColorSample
                   color={palette[fillColorIndex]}
                   isTransparency={fillColorIndex === transparencyIndex}
@@ -870,7 +872,7 @@ export const SpriteEditor = ({ context, readOnly }: Props) => {
           </div>
         </div>
         <div className={styles.inspectorSection}>
-          <div className={styles.sectionHeader}>Preview</div>
+          <div className={styles.sectionHeader}>{t("panels.spriteEditor.preview")}</div>
           <SpritePreview
             sprites={sprites}
             selectedIndex={selectedSpriteIndex}

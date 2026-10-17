@@ -42,6 +42,9 @@ import {
 import { NEXT_REG_DESCRIPTORS } from "@emu/machines/zxNext/nextRegDescriptors";
 import { SPRITE_ATTRIBUTE_LABELS } from "@common/zxnext/sprites/spriteBreakpoints";
 import styles from "./BreakpointDialog.module.scss";
+import { t as translate } from "@common/i18n/i18n";
+import { useT } from "@common/i18n/useT";
+import { withLabels } from "@common/i18n/labels";
 
 /**
  * Authors a binary (address-bound) breakpoint, and edits the condition and hit rule of any
@@ -56,22 +59,28 @@ import styles from "./BreakpointDialog.module.scss";
  * anything. This component decides only what to *show*.
  */
 
-const KIND_OPTIONS: RadioGroupOption[] = [
-  { value: "exec", label: "Execution" },
-  { value: "memRead", label: "Memory read" },
-  { value: "memWrite", label: "Memory write" },
-  { value: "ioRead", label: "I/O read" },
-  { value: "ioWrite", label: "I/O write" }
-];
+const KIND_OPTIONS: RadioGroupOption[] = withLabels([
+  { value: "exec", labelKey: "dialog.breakpoint.kind.exec" },
+  { value: "memRead", labelKey: "dialog.breakpoint.kind.memRead" },
+  { value: "memWrite", labelKey: "dialog.breakpoint.kind.memWrite" },
+  { value: "ioRead", labelKey: "dialog.breakpoint.kind.ioRead" },
+  { value: "ioWrite", labelKey: "dialog.breakpoint.kind.ioWrite" }
+]);
 
 /** The sixth option, offered only on a machine that has Next Registers. */
-const NEXT_REG_OPTION: RadioGroupOption = { value: "nextRegWrite", label: "NextReg write" };
+const [NEXT_REG_OPTION]: RadioGroupOption[] = withLabels([
+  { value: "nextRegWrite", labelKey: "dialog.breakpoint.kind.nextRegWrite" }
+]);
 
 /** The seventh, on the same machines: the Copper completes a list instruction. */
-const COPPER_OPTION: RadioGroupOption = { value: "copper", label: "Copper instruction" };
+const [COPPER_OPTION]: RadioGroupOption[] = withLabels([
+  { value: "copper", labelKey: "dialog.breakpoint.kind.copper" }
+]);
 
 /** The eighth, on the same machines: an attribute byte of a sprite is written. */
-const SPRITE_OPTION: RadioGroupOption = { value: "sprite", label: "Sprite attribute write" };
+const [SPRITE_OPTION]: RadioGroupOption[] = withLabels([
+  { value: "sprite", labelKey: "dialog.breakpoint.kind.sprite" }
+]);
 
 /**
  * The Copper index field's hint: the instruction at that index in the live list RAM, decoded, or
@@ -86,10 +95,10 @@ const describeCopperIndex = (text: string, ram: Uint8Array | undefined): string 
 };
 
 /** What the breakpoint does when its filters pass (`.plans/LOGPOINTS_PLAN.md` §4.5). */
-const ACTION_OPTIONS: RadioGroupOption[] = [
-  { value: "stop", label: "Stop" },
-  { value: "log", label: "Log message" }
-];
+const ACTION_OPTIONS: RadioGroupOption[] = withLabels([
+  { value: "stop", labelKey: "dialog.breakpoint.action.stop" },
+  { value: "log", labelKey: "dialog.breakpoint.action.log" }
+]);
 
 /**
  * What the register field says beneath itself: the register's documented name, or that it has none.
@@ -103,7 +112,9 @@ const describeNextReg = (text: string): string | undefined => {
   if (!parsed.ok || parsed.value < 0 || parsed.value > 0xff) return undefined;
   const hex = `$${parsed.value.toString(16).toUpperCase().padStart(2, "0")}`;
   const described = NEXT_REG_DESCRIPTORS.find((d) => d.id === parsed.value);
-  return described ? `${hex} — ${described.description}` : `${hex} — undocumented register`;
+  return described
+    ? `${hex} — ${described.description}`
+    : translate("dialog.breakpoint.nextReg.undocumented", { register: hex });
 };
 
 const isIoKind = (kind: BreakpointKind) => kind === "ioRead" || kind === "ioWrite";
@@ -123,15 +134,24 @@ const WORD_FIELD = "20ch";
 const BYTE_FIELD = "12ch";
 
 /** The hit-count rules, in the order §4.4.1 lists them. */
-const HIT_MODE_OPTIONS: DropdownOption[] = [
-  { value: "always", label: "Always" },
-  { value: "eq", label: "Equal to" },
-  { value: "gt", label: "Greater than" },
-  { value: "ge", label: "At least" },
-  { value: "lt", label: "Less than" },
-  { value: "le", label: "At most" },
-  { value: "every", label: "Every" }
-];
+const HIT_MODE_OPTIONS: DropdownOption[] = withLabels([
+  { value: "always", labelKey: "dialog.breakpoint.hitMode.always" },
+  { value: "eq", labelKey: "dialog.breakpoint.hitMode.eq" },
+  { value: "gt", labelKey: "dialog.breakpoint.hitMode.gt" },
+  { value: "ge", labelKey: "dialog.breakpoint.hitMode.ge" },
+  { value: "lt", labelKey: "dialog.breakpoint.hitMode.lt" },
+  { value: "le", labelKey: "dialog.breakpoint.hitMode.le" },
+  { value: "every", labelKey: "dialog.breakpoint.hitMode.every" }
+]);
+
+/** Log-template syntax shown in the message field's hint and placeholder; not translated. */
+const LOG_EXPR = "{expr}";
+const LOG_EXPR_HEX = "{expr:hex8}";
+const LOG_EXAMPLE = "[LOOP] B={B} HL={HL:hex16} score={w[score]}";
+
+/** Condition syntax shown in the condition field's placeholder; not translated. */
+const CONDITION_EXAMPLE_1 = "A == $FF && !ZF";
+const CONDITION_EXAMPLE_2 = "w[score] >= 100";
 
 /** The docs section the condition field's "Syntax" link opens. */
 const CONDITION_SYNTAX_PAGE = "/working-with-ide/breakpoints#conditions-and-hit-counts";
@@ -169,6 +189,7 @@ export const BreakpointDialog = ({
   controls
 }: Props) => {
   const mainApi = useMainApi();
+  const t = useT();
   // --- The live count as it was when the dialog opened; Reset shows the zero it set
   const [hits, setHits] = useState<number | undefined>(initial?.currentHits);
   const [form, setForm] = useState<BreakpointFormState>(() => {
@@ -244,7 +265,7 @@ export const BreakpointDialog = ({
     const indices = Object.keys(env.partitionLabels ?? {}).map(Number);
     return indices.length ? Math.min(...indices) : 0;
   }, [env.partitionLabels]);
-  const addressLabel = ioKind ? "Port" : "Address";
+  const addressLabel = ioKind ? t("dialog.breakpoint.portLabel") : t("dialog.breakpoint.addressLabel");
   // --- The place rows (type, partition, register, address, port mask) are the editor's in source
   // --- mode; the first editable field takes the focus instead.
   const focusCondition =
@@ -262,21 +283,21 @@ export const BreakpointDialog = ({
 
   return (
     <DialogForm
-      submitLabel={editing ? "Save" : "Add"}
+      submitLabel={editing ? t("dialog.breakpoint.save") : t("dialog.breakpoint.add")}
       submitDisabled={submitted && !valid}
       onSubmit={submit}
       onCancel={controls.cancel}
     >
       {sourceMode && (
-        <DialogRow rows={true} label="Location">
+        <DialogRow rows={true} label={t("dialog.breakpoint.locationLabel")}>
           <div className={styles.location}>{sourceLocationText(form.source!)}</div>
         </DialogRow>
       )}
 
       {!sourceMode && (
-      <DialogRow rows={true} label="Type">
+      <DialogRow rows={true} label={t("dialog.breakpoint.typeLabel")}>
         <RadioGroup
-          ariaLabel="Breakpoint type"
+          ariaLabel={t("dialog.breakpoint.typeAria")}
           options={kindOptions}
           value={form.kind}
           columns={2}
@@ -286,7 +307,7 @@ export const BreakpointDialog = ({
       )}
 
       {!sourceMode && env.supportsPartitions && !nextRegKind && !copperKind && !spriteKind && (
-        <DialogRow rows={true} label="Partition">
+        <DialogRow rows={true} label={t("dialog.breakpoint.partitionLabel")}>
           {/*
             * Opt in, rather than a "(none)" entry in the picker.
             *
@@ -298,7 +319,7 @@ export const BreakpointDialog = ({
             key={`partition-${partitionEnabled}`}
             initialValue={form.partition !== undefined}
             enabled={partitionEnabled}
-            label="Break only in a specific partition"
+            label={t("dialog.breakpoint.partitionCheckbox")}
             right={true}
             onChange={(on) => {
               setTouched((t) => ({ ...t, partition: true }));
@@ -320,8 +341,8 @@ export const BreakpointDialog = ({
           {!partitionEnabled && (
             <div className={styles.hint}>
               {bankRelative && !ioKind
-                ? "A bank-relative address already names its bank."
-                : "An I/O breakpoint watches a port, not a partition."}
+                ? t("dialog.breakpoint.partitionHint.bankRelative")
+                : t("dialog.breakpoint.partitionHint.io")}
             </div>
           )}
           {shows("partition") && errors.partition && (
@@ -334,7 +355,7 @@ export const BreakpointDialog = ({
 
       {!sourceMode && nextRegKind && (
         <>
-          <DialogRow rows={true} label="Register *">
+          <DialogRow rows={true} label={t("dialog.breakpoint.registerLabel")}>
             <TextInput
               value={form.nextReg}
               width={BYTE_FIELD}
@@ -346,16 +367,16 @@ export const BreakpointDialog = ({
               }}
             />
             <div className={styles.hint}>
-              {describeNextReg(form.nextReg) ?? `Accepts ${"$07"}, 7 or %00000111.`}
+              {describeNextReg(form.nextReg) ?? t("dialog.breakpoint.registerHint")}
             </div>
           </DialogRow>
 
           {/* Names the whole group - a toggle and, when it is on, two fields - rather than the
             * first field in it, which carries its own name. */}
-          <DialogRow rows={true} label="Value filter">
+          <DialogRow rows={true} label={t("dialog.breakpoint.valueFilterLabel")}>
             <Checkbox
               initialValue={form.filterValue}
-              label="Break only on a specific value"
+              label={t("dialog.breakpoint.valueFilterCheckbox")}
               right={true}
               onChange={(on) => {
                 setTouched((t) => ({ ...t, nextRegValue: true }));
@@ -375,7 +396,7 @@ export const BreakpointDialog = ({
                   <TextInput
                     value={form.nextRegValue}
                     width={BYTE_FIELD}
-                    ariaLabel="Value"
+                    ariaLabel={t("dialog.breakpoint.valueAria")}
                     error={errorFor("nextRegValue")}
                     onChange={(nextRegValue) => {
                       setTouched((t) => ({ ...t, nextRegValue: true }));
@@ -388,7 +409,7 @@ export const BreakpointDialog = ({
                   <TextInput
                     value={form.nextRegMask}
                     width={BYTE_FIELD}
-                    ariaLabel="Mask"
+                    ariaLabel={t("dialog.breakpoint.maskAria")}
                     error={errorFor("nextRegMask")}
                     onChange={(nextRegMask) => {
                       setTouched((t) => ({ ...t, nextRegMask: true }));
@@ -399,8 +420,7 @@ export const BreakpointDialog = ({
                 {/* No backticks: this is a plain text node, not Markdown, and they render as
                   * themselves. */}
                 <div className={styles.hint}>
-                  The value, then an optional mask &mdash; written =$03/$0F in the breakpoint&apos;s
-                  key. Leave the mask empty to compare every bit.
+                  {t("dialog.breakpoint.valueFilterHint")}
                 </div>
               </>
             )}
@@ -409,7 +429,7 @@ export const BreakpointDialog = ({
           <DialogRow>
             <Checkbox
               initialValue={form.nextRegCopper}
-              label="Also break on copper writes"
+              label={t("dialog.breakpoint.nextRegCopper")}
               right={true}
               onChange={(nextRegCopper) => update({ nextRegCopper })}
             />
@@ -418,7 +438,7 @@ export const BreakpointDialog = ({
       )}
 
       {!sourceMode && copperKind && (
-        <DialogRow rows={true} label="List index *">
+        <DialogRow rows={true} label={t("dialog.breakpoint.copperIndexLabel")}>
           <TextInput
             value={form.copperIndex}
             width={BYTE_FIELD}
@@ -431,14 +451,14 @@ export const BreakpointDialog = ({
           />
           <div className={styles.hint}>
             {describeCopperIndex(form.copperIndex, copperRam) ??
-              "Accepts $00B, 11 or %1011 ($000-$3FF). A WAIT stops when it is satisfied; a MOVE when it is issued."}
+              t("dialog.breakpoint.copperIndexHint")}
           </div>
         </DialogRow>
       )}
 
       {!sourceMode && spriteKind && (
         <>
-          <DialogRow rows={true} label="Sprite *">
+          <DialogRow rows={true} label={t("dialog.breakpoint.spriteLabel")}>
             <TextInput
               value={form.spriteIndex}
               width={BYTE_FIELD}
@@ -449,10 +469,14 @@ export const BreakpointDialog = ({
                 update({ spriteIndex });
               }}
             />
-            <div className={styles.hint}>Accepts $0C, 12 or %1100 ($00-$7F).</div>
+            <div className={styles.hint}>{t("dialog.breakpoint.spriteHint")}</div>
           </DialogRow>
-          <DialogRow rows={true} label="Attribute bytes">
-            <div className={styles.attrBytes} role="group" aria-label="Attribute bytes">
+          <DialogRow rows={true} label={t("dialog.breakpoint.attrBytesLabel")}>
+            <div
+              className={styles.attrBytes}
+              role="group"
+              aria-label={t("dialog.breakpoint.attrBytesLabel")}
+            >
               {SPRITE_ATTRIBUTE_LABELS.map((label, attr) => (
                 <Checkbox
                   key={attr}
@@ -481,7 +505,7 @@ export const BreakpointDialog = ({
       )}
 
       {!sourceMode && !nextRegKind && !copperKind && !spriteKind && (
-      <DialogRow rows={true} label={`${addressLabel} *`}>
+      <DialogRow rows={true} label={t("dialog.breakpoint.requiredLabel", { label: addressLabel })}>
         <TextInput
           value={form.address}
           width={WORD_FIELD}
@@ -498,21 +522,19 @@ export const BreakpointDialog = ({
             * what `bp-set` accepts, so there is one syntax to learn, and the Type selector above is
             * then all a bank *watchpoint* needs. See `breakpoint-form.ts`.
             */}
-          {ioKind
-            ? "Accepts $8000, 32768 or %1000000000000000."
-            : env.supportsBankRelative
-              ? "Accepts $8000, 32768 or %1000000000000000 — or 05:+$0100 for an offset inside a 16K bank, wherever that bank is paged."
-              : "Accepts $8000, 32768 or %1000000000000000."}
+          {!ioKind && env.supportsBankRelative
+            ? t("dialog.breakpoint.addressHintBank")
+            : t("dialog.breakpoint.addressHint")}
         </div>
       </DialogRow>
       )}
 
       {!sourceMode && (form.kind === "memRead" || form.kind === "memWrite") && (
-        <DialogRow rows={true} label="Length">
+        <DialogRow rows={true} label={t("dialog.breakpoint.lengthLabel")}>
           <TextInput
             value={form.length}
             width={BYTE_FIELD}
-            ariaLabel="Length"
+            ariaLabel={t("dialog.breakpoint.lengthLabel")}
             error={errorFor("length")}
             onChange={(length) => {
               setTouched((t) => ({ ...t, length: true }));
@@ -520,13 +542,13 @@ export const BreakpointDialog = ({
             }}
           />
           <div className={styles.hint}>
-            How many bytes to watch from the address. Leave empty for one.
+            {t("dialog.breakpoint.lengthHint")}
           </div>
         </DialogRow>
       )}
 
       {!sourceMode && ioKind && (
-        <DialogRow rows={true} label="Port mask">
+        <DialogRow rows={true} label={t("dialog.breakpoint.portMaskLabel")}>
           <TextInput
             value={form.ioMask}
             width={WORD_FIELD}
@@ -537,14 +559,14 @@ export const BreakpointDialog = ({
             }}
           />
           <div className={styles.hint}>
-            Leave empty to match the port exactly.
+            {t("dialog.breakpoint.portMaskHint")}
           </div>
         </DialogRow>
       )}
 
-      <DialogRow rows={true} label="Action">
+      <DialogRow rows={true} label={t("dialog.breakpoint.actionLabel")}>
         <RadioGroup
-          ariaLabel="Breakpoint action"
+          ariaLabel={t("dialog.breakpoint.actionAria")}
           options={ACTION_OPTIONS}
           value={form.action}
           columns={2}
@@ -553,7 +575,7 @@ export const BreakpointDialog = ({
       </DialogRow>
 
       {logging && (
-        <DialogRow rows={true} label="Message">
+        <DialogRow rows={true} label={t("dialog.breakpoint.messageLabel")}>
           {/*
             * The template, validated on every keystroke by the compiler the emulator arms it with
             * (the Klive dialect): column-accurate errors once touched, label warnings at once.
@@ -562,8 +584,8 @@ export const BreakpointDialog = ({
             value={form.logMessage}
             error={errorFor("logMessage")}
             autoFocus={focus === "logMessage"}
-            ariaLabel="Log message"
-            placeholder="e.g. [LOOP] B={B} HL={HL:hex16} score={w[score]}"
+            ariaLabel={t("dialog.breakpoint.messageAria")}
+            placeholder={t("dialog.breakpoint.example", { example: LOG_EXAMPLE })}
             onChange={(logMessage) => {
               setTouched((t) => ({ ...t, logMessage: true }));
               update({ logMessage });
@@ -575,20 +597,19 @@ export const BreakpointDialog = ({
             </div>
           )}
           <div className={styles.hint}>
-            Logs to the Log pane and continues. {"{expr}"} or {"{expr:hex8}"} fills in a value; a
-            leading [GROUP] names its group.{" "}
+            {t("dialog.breakpoint.messageHint", { expr: LOG_EXPR, exprHex: LOG_EXPR_HEX })}{" "}
             <button
               type="button"
               className={styles.link}
               onClick={() => void mainApi.showWebsite(LOGPOINT_SYNTAX_PAGE)}
             >
-              Syntax
+              {t("dialog.breakpoint.syntaxLink")}
             </button>
           </div>
         </DialogRow>
       )}
 
-      <DialogRow rows={true} label="Condition">
+      <DialogRow rows={true} label={t("dialog.breakpoint.conditionLabel")}>
         {/*
           * Validated on every keystroke, by the same checker the emulator arms with. Errors show
           * once the field has been touched; warnings (an unknown label) show at once, because the
@@ -598,8 +619,11 @@ export const BreakpointDialog = ({
           value={form.condition}
           error={errorFor("condition")}
           autoFocus={focusCondition}
-          ariaLabel="Condition"
-          placeholder="e.g. A == $FF && !ZF   or   w[score] >= 100"
+          ariaLabel={t("dialog.breakpoint.conditionLabel")}
+          placeholder={t("dialog.breakpoint.conditionExample", {
+            first: CONDITION_EXAMPLE_1,
+            second: CONDITION_EXAMPLE_2
+          })}
           onChange={(condition) => {
             setTouched((t) => ({ ...t, condition: true }));
             update({ condition });
@@ -611,31 +635,32 @@ export const BreakpointDialog = ({
           </div>
         )}
         <div className={styles.hint}>
-          {logging ? "Logs" : "Stops"} only when true. Registers, flags (ZF, CF, …), memory ([HL], w[$5C3A]),{" "}
-          {copperKind
-            ? "VAL (the instruction word) and ADDR (the list index), "
-            : spriteKind
-            ? "VAL (the byte written) and ADDR (the attribute byte, 0-4), "
-            : nextRegKind || !(form.kind === "exec" || sourceMode)
-              ? "VAL and ADDR, "
-              : ""}
-          labels.{" "}
+          {t("dialog.breakpoint.conditionHint", {
+            action: logging ? "log" : "stop",
+            operands: copperKind
+              ? "copper"
+              : spriteKind
+                ? "sprite"
+                : nextRegKind || !(form.kind === "exec" || sourceMode)
+                  ? "valAddr"
+                  : "none"
+          })}{" "}
           <button
             type="button"
             className={styles.link}
             onClick={() => void mainApi.showWebsite(CONDITION_SYNTAX_PAGE)}
           >
-            Syntax
+            {t("dialog.breakpoint.syntaxLink")}
           </button>
         </div>
       </DialogRow>
 
-      <DialogRow rows={true} label="Hit count">
+      <DialogRow rows={true} label={t("dialog.breakpoint.hitCountLabel")}>
         <div className={styles.hitFields}>
           <Dropdown
             options={HIT_MODE_OPTIONS}
             initialValue={form.hitMode}
-            ariaLabel="Hit count rule"
+            ariaLabel={t("dialog.breakpoint.hitRuleAria")}
             width="14ch"
             onChanged={(hitMode) => {
               setTouched((t) => ({ ...t, hitCount: true }));
@@ -646,7 +671,7 @@ export const BreakpointDialog = ({
             <TextInput
               value={form.hitCount}
               width={BYTE_FIELD}
-              ariaLabel="Hit count"
+              ariaLabel={t("dialog.breakpoint.hitCountLabel")}
               autoFocus={focus === "hitCount"}
               error={errorFor("hitCount")}
               onChange={(hitCount) => {
@@ -657,19 +682,19 @@ export const BreakpointDialog = ({
           )}
         </div>
         <div className={styles.hint}>
-          Counts the hits where the condition is true.
+          {t("dialog.breakpoint.hitCountHint")}
         </div>
       </DialogRow>
 
       {editing && hits !== undefined && (
-        <DialogRow rows={true} label="Hits so far">
+        <DialogRow rows={true} label={t("dialog.breakpoint.hitsSoFar")}>
           <div className={styles.hitsRow}>
             <span className={styles.hits} data-testid="breakpoint-hits">
               {hits}
             </span>
             {onResetHits && (
               <Button
-                text="Reset"
+                text={t("dialog.breakpoint.resetHits")}
                 variant="secondary"
                 clicked={() => {
                   void onResetHits().then(() => setHits(0));
@@ -683,7 +708,7 @@ export const BreakpointDialog = ({
       <DialogRow>
         <Checkbox
           initialValue={!form.disabled}
-          label="Enabled"
+          label={t("dialog.breakpoint.enabled")}
           right={true}
           onChange={(enabled) => update({ disabled: !enabled })}
         />
@@ -691,7 +716,7 @@ export const BreakpointDialog = ({
         {!logging && (
           <Checkbox
             initialValue={form.oneShot}
-            label="Remove after it stops"
+            label={t("dialog.breakpoint.oneShot")}
             right={true}
             onChange={(oneShot) => update({ oneShot })}
           />
@@ -706,8 +731,7 @@ export const BreakpointDialog = ({
             * so here stops the feature reading as a write-veto.
             */}
           <div className={styles.hint}>
-            Stops after the instruction that wrote the register, reporting its previous and new
-            values.
+            {t("dialog.breakpoint.nextRegStopNote")}
           </div>
         </DialogRow>
       )}
@@ -715,8 +739,7 @@ export const BreakpointDialog = ({
       {!sourceMode && copperKind && (
         <DialogRow rows={true}>
           <div className={styles.hint}>
-            Stops after the Z80 instruction during which the Copper completed it. The Copper keeps
-            running to the end of that instruction, so its PC may already be past the index.
+            {t("dialog.breakpoint.copperStopNote")}
           </div>
         </DialogRow>
       )}
@@ -724,9 +747,7 @@ export const BreakpointDialog = ({
       {!sourceMode && spriteKind && (
         <DialogRow rows={true}>
           <div className={styles.hint}>
-            Stops after the instruction during which the byte was written &mdash; through port $57
-            (by the CPU or the DMA) or the $35-$39/$75-$79 NextReg mirrors (by the CPU or the
-            Copper) &mdash; reporting its previous and new values.
+            {t("dialog.breakpoint.spriteStopNote")}
           </div>
         </DialogRow>
       )}
@@ -751,6 +772,6 @@ export function sourceLocationText(bp: BreakpointInfo): string {
   const column = bp.column !== undefined ? `:${bp.column + 1}` : "";
   const place = `${bp.resource}:${bp.line}${column}`;
   return bp.resolvedAddress === undefined
-    ? `${place} (not resolved - build the project)`
+    ? translate("dialog.breakpoint.location.unresolved", { place })
     : `${place} ($${bp.resolvedAddress.toString(16).toUpperCase().padStart(4, "0")})`;
 }

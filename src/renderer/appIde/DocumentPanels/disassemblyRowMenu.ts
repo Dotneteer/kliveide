@@ -5,6 +5,7 @@ import type { NexAnnotationMenuAction } from "@renderer/appIde/DocumentPanels/Ne
 import { breakpointCommandSpec } from "@common/utils/breakpoint-spec";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 import { ONE_SHOT_GESTURE } from "@renderer/features/editor/monaco/marginBreakpointMenu";
+import { t } from "@common/i18n/i18n";
 
 /*
  * The live disassembly view's row menu (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §4.2): the
@@ -61,7 +62,7 @@ export function annotationRowMenuItems(args: {
   romEditor?: "open" | "start";
 }): AnnotationRowMenuItem[] {
   const disabled = !!args.disabledReason;
-  const suffix = args.rom ? " (ROM working copy)" : "";
+  const rom = args.rom;
   const entry = (
     id: NexAnnotationMenuAction,
     text: string,
@@ -74,21 +75,27 @@ export function annotationRowMenuItems(args: {
     ...extra
   });
   return [
-    entry("local-label", `Label${suffix}...`, { separatorBefore: true }),
-    entry("synopsis", `Synopsis Comment${suffix}...`),
-    entry("comment", `End-of-Line Comment${suffix}...`),
-    entry("operand-label", `Operand Label${suffix}...`, args.hasOperands ? {} : { disabled: true }),
+    entry("local-label", t(rom ? "panels.doc.rowMenu.labelRom" : "panels.doc.rowMenu.label"), {
+      separatorBefore: true
+    }),
+    entry("synopsis", t(rom ? "panels.doc.rowMenu.synopsisRom" : "panels.doc.rowMenu.synopsis")),
+    entry("comment", t(rom ? "panels.doc.rowMenu.commentRom" : "panels.doc.rowMenu.comment")),
+    entry(
+      "operand-label",
+      t(rom ? "panels.doc.rowMenu.operandLabelRom" : "panels.doc.rowMenu.operandLabel"),
+      args.hasOperands ? {} : { disabled: true }
+    ),
     ...args.regionActions.map((region, index) =>
       entry(region.id, region.text, index === 0 ? { separatorBefore: true } : {})
     ),
-    entry("goto-definition", "Go to Definition", {
+    entry("goto-definition", t("panels.doc.rowMenu.gotoDefinition"), {
       separatorBefore: true,
       ...(args.hasDefinition ? {} : { disabled: true })
     }),
     ...(args.romEditor === "open"
-      ? [{ id: "open-rom-annotations" as const, text: "Open ROM Annotations", separatorBefore: true }]
+      ? [{ id: "open-rom-annotations" as const, text: t("panels.doc.rowMenu.openRomAnnotations"), separatorBefore: true }]
       : args.romEditor === "start"
-        ? [{ id: "start-rom-annotations" as const, text: "Start Editing ROM Annotations...", separatorBefore: true }]
+        ? [{ id: "start-rom-annotations" as const, text: t("panels.doc.rowMenu.startRomAnnotations"), separatorBefore: true }]
         : [])
   ];
 }
@@ -118,32 +125,32 @@ export function disassemblyRowMenuItems(
   const spec = bp && !owned ? breakpointCommandSpec(bp, partitionLabels) : undefined;
   const items: RowMenuItem[] = [];
   if (bp && !owned) {
-    items.push({ id: "toggle", text: "Remove Breakpoint", hint: "Right-Click", command: `bp-del ${spec}` });
+    items.push({ id: "toggle", text: t("panels.doc.rowMenu.removeBreakpoint"), hint: "Right-Click", command: `bp-del ${spec}` });
     if (!bp.logMessage) {
       items.push(
         bp.oneShot
-          ? { id: "keepAfterStop", text: "Keep After It Stops", command: `bp-set ${breakpointCommandSpec({ ...bp, oneShot: false }, partitionLabels)}` }
-          : { id: "makeOnce", text: "Remove After It Stops", hint: ONE_SHOT_GESTURE, command: `bp-set ${breakpointCommandSpec({ ...bp, oneShot: true }, partitionLabels)}` }
+          ? { id: "keepAfterStop", text: t("panels.doc.rowMenu.keepAfterStop"), command: `bp-set ${breakpointCommandSpec({ ...bp, oneShot: false }, partitionLabels)}` }
+          : { id: "makeOnce", text: t("panels.doc.rowMenu.removeAfterStop"), hint: ONE_SHOT_GESTURE, command: `bp-set ${breakpointCommandSpec({ ...bp, oneShot: true }, partitionLabels)}` }
       );
     }
   } else {
     items.push(
-      { id: "toggle", text: "Add Breakpoint", hint: "Right-Click", disabled: owned, command: `bp-set ${target.spec}` },
-      { id: "addOnce", text: "Add One-Shot Breakpoint", hint: ONE_SHOT_GESTURE, disabled: owned, command: `bp-set ${target.spec} -once` }
+      { id: "toggle", text: t("panels.doc.rowMenu.addBreakpoint"), hint: "Right-Click", disabled: owned, command: `bp-set ${target.spec}` },
+      { id: "addOnce", text: t("panels.doc.rowMenu.addOneShot"), hint: ONE_SHOT_GESTURE, disabled: owned, command: `bp-set ${target.spec} -once` }
     );
   }
   items.push({
     id: "runTo",
-    text: "Run to Here",
+    text: t("panels.doc.rowMenu.runToHere"),
     hint: `${runToModifier}+Click`,
     separatorBefore: true,
     command: `run-to $${toHexa4(target.address)}`
   });
-  items.push({ id: "edit", text: "Edit Breakpoint...", hint: "Double-Click", disabled: !bp });
+  items.push({ id: "edit", text: t("panels.doc.rowMenu.editBreakpoint"), hint: "Double-Click", disabled: !bp });
   // --- The graphics finder at the row (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §5.3)
   items.push({
     id: "showGraphics",
-    text: "Show as Graphics",
+    text: t("panels.doc.rowMenu.showAsGraphics"),
     separatorBefore: true,
     command: `gfx $${toHexa4(target.address)}`
   });

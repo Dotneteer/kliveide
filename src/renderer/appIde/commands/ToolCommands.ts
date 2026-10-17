@@ -16,6 +16,7 @@ import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
 import { SETTING_IDE_ACTIVE_OUTPUT_PANE, SETTING_IDE_ACTIVE_TOOL, SETTING_IDE_SHOW_TOOLS } from "@common/settings/setting-const";
 import { createSpecialDocument } from "@renderer/features/documents/specialDocuments";
 import { revealWhenMounted } from "@renderer/appIde/navigation/addressNavigationAdapters";
+import { t } from "@common/i18n/i18n";
 
 type SelectOutputArgs = {
   paneId: string;
@@ -23,7 +24,9 @@ type SelectOutputArgs = {
 
 export class SelectOutputPaneCommand extends IdeCommandBase<SelectOutputArgs> {
   readonly id = "outp";
-  readonly description = "Selects the specified output panel and navigates there";
+  get description() {
+    return t("commands.outp.description");
+  }
   readonly usage = "outp <paneId>";
   readonly argumentInfo?: CommandArgumentInfo = {
     mandatory: [{ name: "paneId" }]
@@ -32,7 +35,7 @@ export class SelectOutputPaneCommand extends IdeCommandBase<SelectOutputArgs> {
   async execute(context: IdeCommandContext, args: SelectOutputArgs): Promise<IdeCommandResult> {
     // --- Check if the specified panel exists
     if (!outputPaneRegistry.find((p) => p.id === args.paneId)) {
-      return commandError(`Unknown output pane '${args.paneId}'`);
+      return commandError(t("commands.outp.unknown", { id: args.paneId }));
     }
 
     // --- Select the panel
@@ -41,7 +44,7 @@ export class SelectOutputPaneCommand extends IdeCommandBase<SelectOutputArgs> {
     await context.mainApi.setGlobalSettingsValue(SETTING_IDE_ACTIVE_TOOL, "output");
 
     // --- Done.
-    writeSuccessMessage(context.output, `Output panel ${args.paneId} is displayed.`);
+    writeSuccessMessage(context.output, t("commands.outp.displayed", { id: args.paneId }));
     return commandSuccess;
   }
 }
@@ -53,7 +56,9 @@ export class SelectOutputPaneCommand extends IdeCommandBase<SelectOutputArgs> {
  */
 export class ShowMemoryCommand extends IdeCommandBase<{ address?: number }> {
   readonly id = "show-memory";
-  readonly description = "Displays the machine memory panel, optionally at an address";
+  get description() {
+    return t("commands.memoryPanel.showDescription");
+  }
   readonly usage = "show-memory [<address>]";
   readonly aliases = ["shmem"];
   readonly argumentInfo: CommandArgumentInfo = {
@@ -84,7 +89,9 @@ export class ShowMemoryCommand extends IdeCommandBase<{ address?: number }> {
 
 export class HideMemoryCommand extends IdeCommandBase {
   readonly id = "hide-memory";
-  readonly description = "Hides the machine memory panel";
+  get description() {
+    return t("commands.memoryPanel.hideDescription");
+  }
   readonly usage = "hide-memory";
   readonly aliases = ["hmem"];
 
@@ -102,7 +109,9 @@ export class HideMemoryCommand extends IdeCommandBase {
  */
 export class ShowDisassemblyCommand extends IdeCommandBase<{ address?: number }> {
   readonly id = "show-disass";
-  readonly description = "Displays the disassembly panel, optionally at an address";
+  get description() {
+    return t("commands.disass.showDescription");
+  }
   readonly usage = "show-disass [<address>]";
   readonly aliases = ["shdis"];
   readonly argumentInfo: CommandArgumentInfo = {
@@ -133,7 +142,9 @@ export class ShowDisassemblyCommand extends IdeCommandBase<{ address?: number }>
 
 export class HideDisassemblyCommand extends IdeCommandBase {
   readonly id = "hide-disass";
-  readonly description = "Hides the disassembly panel";
+  get description() {
+    return t("commands.disass.hideDescription");
+  }
   readonly usage = "hide-disass";
   readonly aliases = ["hdis"];
 

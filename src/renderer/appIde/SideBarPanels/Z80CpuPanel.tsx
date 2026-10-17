@@ -14,6 +14,7 @@ import {
 import { DataPanel, DataRow } from "@renderer/controls/data";
 import regStyles from "@renderer/controls/data/Registers.module.scss";
 import { HistoryCpuBanner } from "../debugger/history/HistoryBanner";
+import { useT } from "@common/i18n/useT";
 
 const hex4 = (value: number) => value.toString(16).toUpperCase().padStart(4, "0");
 const hex2 = (value: number) => value.toString(16).toUpperCase().padStart(2, "0");
@@ -23,6 +24,7 @@ const REG16_ONLY_TOOLTIP = "{r16N}: {r16v}";
 const REG8_TOOLTIP = "{r8N}: {r8v}";
 
 export const Z80CpuPanel = () => {
+  const t = useT();
   const emuApi = useEmuApi();
   const [cpuState, setCpuState] = useState<Z80CpuState>(null);
   // --- The live state, while the history cursor shows the past (for the "Now:" tooltips)
@@ -46,9 +48,10 @@ export const Z80CpuPanel = () => {
   const changed = (key: Word) => !!previous && !!cpuState && previous[key] !== cpuState[key];
   const irChanged = (shift: 8 | 0) =>
     !!previous && !!cpuState && ((previous.ir >> shift) & 0xff) !== ((cpuState.ir >> shift) & 0xff);
-  const now = (key: Word) => (present ? `Now: $${hex4(present[key])}` : undefined);
+  const now = (key: Word) =>
+    present ? t("panels.side.cpu.nowValue", { value: `$${hex4(present[key])}` }) : undefined;
   const nowByte = (value: number | undefined) =>
-    present && value !== undefined ? `Now: $${hex2(value)}` : undefined;
+    present && value !== undefined ? t("panels.side.cpu.nowValue", { value: `$${hex2(value)}` }) : undefined;
   const unknown = <T,>(value: T): T | undefined => (history ? undefined : value);
 
   return (
@@ -59,49 +62,49 @@ export const Z80CpuPanel = () => {
         <VerticalFlagValue
           label="S"
           value={toFlag(cpuState?.af, 7)}
-          tooltip="Sign"
+          tooltip={t("panels.side.cpu.flag.sign")}
           iconFill="--color-state-value"
         />
         <VerticalFlagValue
           label="Z"
           value={toFlag(cpuState?.af, 6)}
-          tooltip="Zero"
+          tooltip={t("panels.side.cpu.flag.zero")}
           iconFill="--color-state-value"
         />
         <VerticalFlagValue
           label="5"
           value={toFlag(cpuState?.af, 5)}
-          tooltip="Bit 5"
+          tooltip={t("panels.side.cpu.flag.bit5")}
           iconFill="--color-state-value"
         />
         <VerticalFlagValue
           label="H"
           value={toFlag(cpuState?.af, 4)}
-          tooltip="Half Carry"
+          tooltip={t("panels.side.cpu.flag.halfCarry")}
           iconFill="--color-state-value"
         />
         <VerticalFlagValue
           label="3"
           value={toFlag(cpuState?.af, 3)}
-          tooltip="Bit 3"
+          tooltip={t("panels.side.cpu.flag.bit3")}
           iconFill="--color-state-value"
         />
         <VerticalFlagValue
           label="P"
           value={toFlag(cpuState?.af, 2)}
-          tooltip="Parity/Overflow"
+          tooltip={t("panels.side.cpu.flag.parityOverflow")}
           iconFill="--color-state-value"
         />
         <VerticalFlagValue
           label="N"
           value={toFlag(cpuState?.af, 1)}
-          tooltip="Subtract"
+          tooltip={t("panels.side.cpu.flag.subtract")}
           iconFill="--color-state-value"
         />
         <VerticalFlagValue
           label="C"
           value={toFlag(cpuState?.af, 0)}
-          tooltip="Carry"
+          tooltip={t("panels.side.cpu.flag.carry")}
           iconFill="--color-state-value"
         />
       </DataRow>
@@ -278,13 +281,13 @@ export const Z80CpuPanel = () => {
         <Bit8Value
           label="LMR"
           value={unknown(cpuState?.lastMemoryReadValue ?? 0)}
-          tooltip={"Last value read from memory:\n{r8v}"}
+          tooltip={t("panels.side.cpu.lastMemoryRead", { value: "{r8v}" })}
           valueXclass={regStyles.stateValue}
         />
         <Bit8Value
           label="LMW"
           value={unknown(cpuState?.lastMemoryWriteValue ?? 0)}
-          tooltip={"Last value written to memory:\n{r8v}"}
+          tooltip={t("panels.side.cpu.lastMemoryWrite", { value: "{r8v}" })}
           valueXclass={regStyles.stateValue}
         />
       </DataRow>
@@ -292,13 +295,13 @@ export const Z80CpuPanel = () => {
         <Bit8Value
           label="IRV"
           value={unknown(cpuState?.lastIoReadValue ?? 0)}
-          tooltip={"Last value read from the I/O port:\n{r8v}"}
+          tooltip={t("panels.side.cpu.lastIoRead", { value: "{r8v}" })}
           valueXclass={regStyles.stateValue}
         />
         <Bit8Value
           label="IWV"
           value={unknown(cpuState?.lastIoWriteValue ?? 0)}
-          tooltip={"Last value written to the I/O port:\n{r8v}"}
+          tooltip={t("panels.side.cpu.lastIoWrite", { value: "{r8v}" })}
           valueXclass={regStyles.stateValue}
         />
       </DataRow>
@@ -307,13 +310,13 @@ export const Z80CpuPanel = () => {
         <SimpleValue
           label="IM"
           value={cpuState?.interruptMode ?? 0}
-          tooltip="Interrupt Mode"
+          tooltip={t("panels.side.cpu.interruptMode")}
           valueXclass={regStyles.stateValue}
         />
         <FlagValue
           label="SNZ"
           value={unknown(cpuState?.snoozed)}
-          tooltip="Is the CPU snoozed?"
+          tooltip={t("panels.side.cpu.snoozed")}
           iconFill="--color-state-value"
         />
       </DataRow>
@@ -321,13 +324,13 @@ export const Z80CpuPanel = () => {
         <FlagValue
           label="IF1"
           value={cpuState?.iff1}
-          tooltip="Interrupt flip-flop #1"
+          tooltip={t("panels.side.cpu.iff1")}
           iconFill="--color-state-value"
         />
         <FlagValue
           label="IF2"
           value={cpuState?.iff2}
-          tooltip="Interrupt flip-flop #2"
+          tooltip={t("panels.side.cpu.iff2")}
           iconFill="--color-state-value"
         />
       </DataRow>
@@ -335,13 +338,13 @@ export const Z80CpuPanel = () => {
         <FlagValue
           label="INT"
           value={cpuState?.sigINT}
-          tooltip="Interrupt signal"
+          tooltip={t("panels.side.cpu.interruptSignal")}
           iconFill="--color-state-value"
         />
         <FlagValue
           label="HLT"
           value={cpuState?.halted}
-          tooltip="Halted"
+          tooltip={t("panels.side.cpu.halted")}
           iconFill="--color-state-value"
         />
       </DataRow>
@@ -349,7 +352,7 @@ export const Z80CpuPanel = () => {
         <SimpleValue
           label="CLK"
           value={unknown(cpuState?.tacts ?? 0)}
-          tooltip="Current CPU clock"
+          tooltip={t("panels.side.cpu.clock")}
           fullWidth
           valueXclass={regStyles.stateValue}
         />
@@ -358,7 +361,7 @@ export const Z80CpuPanel = () => {
         <SimpleValue
           label="TSP"
           value={unknown((cpuState?.tacts ?? 0) - (cpuState?.tactsAtLastStart ?? 0))}
-          tooltip="T-States since last start after pause"
+          tooltip={t("panels.side.cpu.tStatesSinceStart")}
           fullWidth
           valueXclass={regStyles.stateValue}
         />

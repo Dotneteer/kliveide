@@ -1,3 +1,4 @@
+import { useT } from "@common/i18n/useT";
 import { useDispatch, useGlobalSetting, useSelector } from "@renderer/core/RendererProvider";
 import { toolPanelRegistry } from "@renderer/registry";
 import { incToolCommandSeqNoAction } from "@state/actions";
@@ -20,6 +21,7 @@ type Props = {
 };
 
 export const ToolsHeader = ({ tool, topPosition }: Props) => {
+  const t = useT();
   const mainApi = useMainApi();
   const tools = useSelector((s) => s.ideView?.tools);
   const activeTool = useGlobalSetting(SETTING_IDE_ACTIVE_TOOL);
@@ -35,12 +37,19 @@ export const ToolsHeader = ({ tool, topPosition }: Props) => {
       className={styles.toolsHeader}
       // The tabs are role="tab"; the strip that owns them is the tab list.
       role="tablist"
-      aria-label="Tool panels"
+      aria-label={t("panels.toolArea.label")}
     >
       {(tools ?? [])
-        .filter((t) => t.visible ?? true)
+        .filter((tl) => tl.visible ?? true)
         .map((d) => (
-          <ToolTab id={d.id} key={d.id} name={d.name} isActive={d.id === activeTool} />
+          <ToolTab
+            id={d.id}
+            key={d.id}
+            // --- The state keeps the name of the moment the tools were registered; the registry
+            // --- translates on every read
+            name={toolPanelRegistry.find((p) => p.id === d.id)?.name ?? d.name}
+            isActive={d.id === activeTool}
+          />
         ))}
       <SpaceFiller />
       {panelRenderer?.headerRenderer && <div className={styles.headerBar}>{headerElement}</div>}
@@ -49,7 +58,7 @@ export const ToolsHeader = ({ tool, topPosition }: Props) => {
           iconName="layout-panel"
           useSpace={true}
           rotate={topPosition ? 0 : 180}
-          title={topPosition ? "Display at the bottom" : "Display at the top"}
+          title={t(topPosition ? "panels.toolArea.displayAtBottom" : "panels.toolArea.displayAtTop")}
           clicked={async () => {
             await mainApi.setGlobalSettingsValue(SETTING_IDE_TOOLS_ON_TOP, !topPosition);
             dispatch(incToolCommandSeqNoAction());
@@ -57,7 +66,7 @@ export const ToolsHeader = ({ tool, topPosition }: Props) => {
         />
         <TabButton
           iconName={maximized ? "chevron-down" : "chevron-up"}
-          title={(maximized ? "Restore" : "Maximize") + " Command and Output"}
+          title={t(maximized ? "panels.toolArea.restore" : "panels.toolArea.maximize")}
           useSpace={true}
           clicked={async () => {
             await mainApi.setGlobalSettingsValue(SETTING_IDE_MAXIMIZE_TOOLS, !maximized);

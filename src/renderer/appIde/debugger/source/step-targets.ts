@@ -1,5 +1,6 @@
 import type { SourceLevelDebugInfo } from "@abstractions/CompilerInfo";
 import type { SourceActivationInfo, SourceStopInfo } from "@abstractions/SourceDebugInfo";
+import { t } from "@common/i18n/i18n";
 
 /**
  * Step Into Target (plan §10.2.4): the routines the statement at the execution point calls, in
@@ -37,4 +38,6 @@ export function canSourceStepOut(chain: SourceActivationInfo[] | undefined): boo
 }
 
 /** The toolbar's tooltip when Step Out has nowhere to go. */
-export const STEP_OUT_IN_MAIN = "Step Out: the main program has nothing to return to";
+export function stepOutInMainText(): string {
+  return t("toolbar.step.outInMain");
+}

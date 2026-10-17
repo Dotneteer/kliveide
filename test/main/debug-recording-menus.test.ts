@@ -28,8 +28,13 @@ import {
 } from "@main/debug-recording-menus";
 
 const window = {} as any;
-const REFUSAL =
-  "The recording was recorded by Klive 0.1.0 (build 00000000); this build differs. Use -y to open only its end state, without its past.";
+const REASON = "The recording was recorded by Klive 0.1.0 (build 00000000); this build differs";
+// --- The menu reads the reason from the command's value, never from its (translated) message
+const REFUSAL = {
+  success: false,
+  finalMessage: `${REASON}. Use -y to open only its end state, without its past.`,
+  value: { fallbackRefusal: REASON }
+};
 
 beforeEach(() => {
   for (const f of [env.showSaveDialog, env.showOpenDialog, env.showMessageBox, env.executeCommand]) f.mockReset();
@@ -64,19 +69,19 @@ describe("debug recording menus", () => {
   });
 
   it("offers another build's recording as its end state, and opens that with -y when asked", async () => {
-    env.executeCommand.mockResolvedValueOnce({ success: false, finalMessage: REFUSAL }).mockResolvedValueOnce({ success: true });
+    env.executeCommand.mockResolvedValueOnce(REFUSAL).mockResolvedValueOnce({ success: true });
     env.showMessageBox.mockResolvedValue({ response: 0 });
     await openDebugRecordingFile(window, "/r/bug.klr");
     expect(env.showMessageBox.mock.calls[0][1]).toMatchObject({
       type: "warning",
-      message: "The recording was recorded by Klive 0.1.0 (build 00000000); this build differs.",
+      message: REASON,
       buttons: ["Open End State", "Cancel"]
     });
     expect(env.executeCommand).toHaveBeenLastCalledWith('debug-recording-load "/r/bug.klr" -y');
   });
 
   it("does nothing more when the user cancels the end state", async () => {
-    env.executeCommand.mockResolvedValue({ success: false, finalMessage: REFUSAL });
+    env.executeCommand.mockResolvedValue(REFUSAL);
     env.showMessageBox.mockResolvedValue({ response: 1 });
     await openDebugRecordingFile(window, "/r/bug.klr");
     expect(env.executeCommand).toHaveBeenCalledTimes(1);

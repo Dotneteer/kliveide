@@ -203,7 +203,7 @@ describe("ann-* commands", () => {
     await new AnnotationInfoCommand().execute(context);
     const text = lines.join("\n");
     expect(text).toContain("/proj/g.dis");
-    expect(text).toContain("1 label(s)");
+    expect(text).toContain("1 label,");
     await new AnnotationCloseCommand().execute();
     expect(getActiveAnnotationSet()).toBeUndefined();
   });

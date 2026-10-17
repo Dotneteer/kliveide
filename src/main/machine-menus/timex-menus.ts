@@ -26,6 +26,9 @@ import {
 import { getTimexModel, type TimexModelId } from "@emu/machines/timex/timexModels";
 import { MEDIA_DOCK } from "@common/structs/project-const";
 import { saveKliveProject } from "@main/projects";
+import { t } from "@common/i18n/i18n";
+import { englishLabel } from "@common/i18n/labels";
+import { englishSide } from "@common/settings/joystick-bindings";
 
 /** The setting that names each model's ROM file */
 const ROM_SETTING: Record<TimexModelId, string> = {
@@ -70,7 +73,9 @@ export const timexJoystickMenuRenderer: MachineMenuRenderer = (_, __, modelInfo)
   const sides: JoystickSide[] = model.is2068 ? JOYSTICK_SIDES : ["left"];
   const sourceMenu = (side: JoystickSide): MachineMenuItem => ({
     id: `timex_joy_${side}_source`,
-    label: model.is2068 ? `${JOYSTICK_SIDE_LABELS[side]}: driven by` : "Driven by",
+    label: model.is2068
+      ? t("menu.timex.sideDrivenBy", { joystick: JOYSTICK_SIDE_LABELS[side] })
+      : t("menu.timex.drivenBy"),
     submenu: JOYSTICK_SOURCES.map((option) => ({
       id: `timex_joy_${side}_source_${option.value}`,
       label: option.label,
@@ -81,20 +86,21 @@ export const timexJoystickMenuRenderer: MachineMenuRenderer = (_, __, modelInfo)
           ...bindings,
           [side]: { ...bindings[side], source: option.value }
         });
-        await logEmuEvent(`${JOYSTICK_SIDE_LABELS[side]}: ${option.label.toLowerCase()}`);
+        // --- The log stays English (D9)
+        await logEmuEvent(`${englishSide(side)}: ${englishLabel(option).toLowerCase()}`);
       }
     }))
   });
   return [
     {
       id: "timex_joystick",
-      label: model.is2068 ? "Joysticks" : "Kempston Joystick",
+      label: model.is2068 ? t("menu.timex.joysticks") : t("menu.timex.kempstonJoystick"),
       submenu: [
         ...sides.map(sourceMenu),
         { type: "separator" },
         {
           id: "timex_joy_bindings",
-          label: "Configure bindings...",
+          label: t("menu.joystick.configureBindings"),
           click: async () => {
             await getEmuApi().displayDialog(JOYSTICK_BINDINGS_DIALOG);
           }
@@ -115,7 +121,9 @@ export const timexDockMenuRenderer: MachineMenuRenderer = (windowInfo, _, modelI
   return [
     {
       id: "timex_dock_insert",
-      label: dockFile ? `Change Cartridge (${path.basename(dockFile)})...` : "Insert Cartridge...",
+      label: dockFile
+        ? t("menu.timex.changeCartridge", { file: path.basename(dockFile) })
+        : t("menu.timex.insertCartridge"),
       click: async () => {
         await selectDockFile(windowInfo.emuWindow);
         await saveKliveProject();
@@ -123,7 +131,7 @@ export const timexDockMenuRenderer: MachineMenuRenderer = (windowInfo, _, modelI
     },
     {
       id: "timex_dock_eject",
-      label: "Eject Cartridge",
+      label: t("menu.timex.ejectCartridge"),
       enabled: !!dockFile,
       click: async () => {
         await ejectDock();
@@ -138,11 +146,11 @@ export const timexDockMenuRenderer: MachineMenuRenderer = (windowInfo, _, modelI
 export async function selectDockFile(emuWindow: BrowserWindow): Promise<void> {
   const current = mainStore.getState()?.media?.[MEDIA_DOCK] as string | undefined;
   const dialogResult = await dialog.showOpenDialog(emuWindow, {
-    title: "Insert a Timex Cartridge",
+    title: t("messages.timex.insertCartridge"),
     defaultPath: appSettings?.folders?.[DOCK_FILE_FOLDER] || (current ? path.dirname(current) : app.getPath("home")),
     filters: [
-      { name: "Timex Cartridges", extensions: ["dck"] },
-      { name: "All Files", extensions: ["*"] }
+      { name: t("common.filter.timexCartridges"), extensions: ["dck"] },
+      { name: t("common.filter.allFiles"), extensions: ["*"] }
     ],
     properties: ["openFile"]
   });
@@ -163,7 +171,7 @@ export async function setDockFile(filename: string, showErrors = true): Promise<
     return undefined;
   } catch (err) {
     if (showErrors) {
-      dialog.showErrorBox("Cannot insert the cartridge", `${filename}: ${(err as Error).message}`);
+      dialog.showErrorBox(t("messages.timex.cannotInsert"), t("messages.fileError", { file: filename, error: (err as Error).message }));
     }
     return (err as Error).message;
   }
@@ -180,11 +188,11 @@ async function selectTimexRomFile(emuWindow: BrowserWindow, model: TimexModelId,
   const name = model.toUpperCase();
   const current = getSettingValue(ROM_SETTING[model]) as string | undefined;
   const dialogResult = await dialog.showOpenDialog(emuWindow, {
-    title: `Select the ${name} ROM (${size / 1024}K)`,
+    title: t("messages.rom.selectModelRom", { model: name, kilobytes: size / 1024 }),
     defaultPath: current ? path.dirname(current) : app.getPath("home"),
     filters: [
-      { name: "ROM Files", extensions: ["rom", "bin"] },
-      { name: "All Files", extensions: ["*"] }
+      { name: t("common.filter.romFiles"), extensions: ["rom", "bin"] },
+      { name: t("common.filter.allFiles"), extensions: ["*"] }
     ],
     properties: ["openFile"]
   });
@@ -192,9 +200,10 @@ async function selectTimexRomFile(emuWindow: BrowserWindow, model: TimexModelId,
   const filename = dialogResult.filePaths[0];
   const actual = fs.statSync(filename).size;
   if (actual !== size) {
+    const args = { model: name, size, file: filename, actual };
     dialog.showErrorBox(
-      `Not a ${name} ROM`,
-      `The ${name} ROM is ${size} bytes${size === 0x6000 ? " (the 16K HOME ROM followed by the 8K EXROM)" : ""}; ${filename} has ${actual}.`
+      t("messages.rom.notModelRom", { model: name }),
+      size === 0x6000 ? t("messages.rom.wrongTs2068Size", args) : t("messages.rom.wrongModelSize", args)
     );
     return;
   }

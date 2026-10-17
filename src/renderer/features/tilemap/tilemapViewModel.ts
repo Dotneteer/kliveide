@@ -1,4 +1,5 @@
 import type { NextTilemapState } from "@common/messaging/EmuApi";
+import { t } from "@common/i18n/i18n";
 import {
   BANK5_PHYSICAL,
   BANK7_PHYSICAL,
@@ -20,7 +21,8 @@ import { paletteOffsetFromMap, tileUsage, usageCount, type TileUsage } from "@co
 
 /*
  * The Tilemap Inspector's view model (`.plans/TILEMAP_INSPECTOR_PLAN.md` §4.4-§4.5). Pure: the
- * document turns a snapshot into this once per version and renders from it.
+ * document turns a snapshot into this once per version and renders from it. The text it returns is
+ * translated when the functions run, which is at render time.
  */
 
 export type TilemapModel = {
@@ -121,7 +123,7 @@ export function addressOf(state: Pick<NextTilemapState, "slotOffsets">, bank7: b
 
 /** How an address reads in one line: `5:$2C00 · $6C00`, or `· not mapped`. */
 export function addressLine(a: TilemapAddress): string {
-  return `${a.bankText} · ${a.z80Text ?? "not mapped"}`;
+  return `${a.bankText} · ${a.z80Text ?? t("panels.graphics.inspector.notMapped")}`;
 }
 
 // --- The globals strip (§4.4)
@@ -142,65 +144,97 @@ export function globalsStrip(model: TilemapModel): GlobalItem[] {
   const map = addressOf(state, r.mapBank7, vramOffset(r.mapBank7, r.mapMsb, 0));
   const defs = addressOf(state, r.defBank7, vramOffset(r.defBank7, r.defMsb, 0));
   const clip = effectiveClip(r, mode);
+  const notMapped = t("panels.graphics.inspector.notMapped");
   const items: GlobalItem[] = [
     ...model.diagnostics.map((d) => ({ key: d.id, value: d.chip, title: d.sentence, flag: d.level })),
     {
+      // --- The layer's hardware name, kept as the Next documentation spells it
       key: "Tilemap",
-      value: r.enabled ? "on" : "off",
+      value: r.enabled ? t("panels.graphics.inspector.on") : t("panels.graphics.inspector.off"),
       primary: true,
       title: `$6B = ${hex(r.control, 2)}`
     },
-    { key: "Size", value: `${mode.columns}×32`, primary: true, title: "$6B bit 6" },
+    { key: t("panels.tilemap.global.size"), value: `${mode.columns}×32`, primary: true, title: "$6B bit 6" },
     {
-      key: "Entries",
-      value: mode.attributeLess ? `1-byte, $6C=${hex(r.defaultAttr, 2)}` : "2-byte",
+      key: t("panels.tilemap.global.entries"),
+      value: mode.attributeLess
+        ? t("panels.tilemap.global.entries1", { attr: hex(r.defaultAttr, 2) })
+        : t("panels.tilemap.global.entries2"),
       primary: true,
       title: mode.attributeLess
-        ? "$6B bit 5: one byte per entry; every cell's attribute is $6C"
-        : "Tile byte, then attribute byte"
+        ? t("panels.tilemap.global.entries1Title")
+        : t("panels.tilemap.global.entries2Title")
     },
     {
-      key: "Tiles",
-      value: `${model.tileCount} · ${mode.textMode ? "text 1-bit" : "4-bit"}`,
+      key: t("panels.tilemap.global.tiles"),
+      value: mode.textMode
+        ? t("panels.tilemap.global.tilesText", { count: model.tileCount })
+        : t("panels.tilemap.global.tiles4bit", { count: model.tileCount }),
       primary: true,
       title: [
-        mode.tiles512 ? "$6B bit 1: 512 tiles, attribute bit 0 is tile bit 8" : "256 tiles",
-        mode.textMode ? "$6B bit 3: text mode, 8 bytes per tile, 7-bit palette offset" : "32 bytes per tile"
+        mode.tiles512 ? t("panels.tilemap.global.tiles512Title") : t("panels.tilemap.global.tiles256Title"),
+        mode.textMode ? t("panels.tilemap.global.textModeTitle") : t("panels.tilemap.global.bytes32Title")
       ].join("\n")
     },
     {
-      key: "Map",
+      key: t("panels.tilemap.global.map"),
       value: map.bankText,
       primary: true,
-      title: `$6E = ${hex((r.mapBank7 ? 0x80 : 0) | r.mapMsb, 2)}\nPhysical ${map.physicalText}\nZ80 ${map.z80Text ?? "not mapped"}`
+      title: t("panels.tilemap.global.whereTitle", {
+        reg: "6E",
+        value: hex((r.mapBank7 ? 0x80 : 0) | r.mapMsb, 2),
+        physical: map.physicalText,
+        z80: map.z80Text ?? notMapped
+      })
     },
     {
-      key: "Defs",
+      key: t("panels.tilemap.global.defs"),
       value: defs.bankText,
       primary: true,
-      title: `$6F = ${hex((r.defBank7 ? 0x80 : 0) | r.defMsb, 2)}\nPhysical ${defs.physicalText}\nZ80 ${defs.z80Text ?? "not mapped"}`
+      title: t("panels.tilemap.global.whereTitle", {
+        reg: "6F",
+        value: hex((r.defBank7 ? 0x80 : 0) | r.defMsb, 2),
+        physical: defs.physicalText,
+        z80: defs.z80Text ?? notMapped
+      })
     },
-    { key: "Scroll", value: `${r.scrollX},${r.scrollY}`, title: "$2F/$30 (X, 10 bits) and $31 (Y)" },
     {
-      key: "Clip",
+      key: t("panels.graphics.inspector.globalScroll"),
+      value: `${r.scrollX},${r.scrollY}`,
+      title: t("panels.tilemap.global.scrollTitle")
+    },
+    {
+      key: t("panels.graphics.inspector.globalClip"),
       value: r.clip.join(","),
-      title: `$1B: x1, x2, y1, y2 (next write sets ${["x1", "x2", "y1", "y2"][r.clipIndex & 3]})\nIn layer pixels: x ${clip.x1}-${clip.x2}, y ${clip.y1}-${clip.y2}`
+      title: t("panels.graphics.inspector.clipTitle", {
+        reg: "1B",
+        next: ["x1", "x2", "y1", "y2"][r.clipIndex & 3],
+        x1: clip.x1,
+        x2: clip.x2,
+        y1: clip.y1,
+        y2: clip.y2
+      })
     },
     mode.textMode
       ? {
           key: "$14",
           value: hex(r.globalTransparency, 2),
-          title: "Text mode: a pixel whose colour equals the global transparency colour $14 is transparent"
+          title: t("panels.tilemap.global.textTransparencyTitle")
         }
-      : { key: "$4C", value: hex(r.transparencyIndex, 1), title: "The transparent nibble" },
-    { key: "Priority", value: priorityText(model), title: priorityTitle(mode) },
-    { key: "Palette", value: mode.secondPalette ? "second" : "first", title: "$6B bit 4" }
+      : { key: "$4C", value: hex(r.transparencyIndex, 1), title: t("panels.tilemap.global.nibbleTitle") },
+    { key: t("panels.tilemap.global.priority"), value: priorityText(model), title: priorityTitle(mode) },
+    {
+      key: t("panels.graphics.inspector.globalPalette"),
+      value: mode.secondPalette ? t("panels.tilemap.global.paletteSecond") : t("panels.tilemap.global.paletteFirst"),
+      title: "$6B bit 4"
+    }
   ];
   if (state.copperRunning) {
     items.push({
+      // --- The Next's display co-processor, by its hardware name
       key: "Copper",
-      value: "running",
-      title: "The Copper may change these registers per line; the values shown are the ones at the stop"
+      value: t("panels.graphics.inspector.copperGlobalValue"),
+      title: t("panels.graphics.inspector.copperGlobalTitle")
     });
   }
   return items;
@@ -208,16 +242,20 @@ export function globalsStrip(model: TilemapModel): GlobalItem[] {
 
 function priorityText(model: TilemapModel): string {
   const { mode, cells } = model;
-  if (mode.forceOnTop) return "over ULA";
-  if (mode.tiles512) return "below ULA";
+  if (mode.forceOnTop) return t("panels.tilemap.overUla");
+  if (mode.tiles512) return t("panels.tilemap.belowUla");
   const below = cells.filter((c) => c.below).length;
-  return below === 0 ? "over ULA" : below === cells.length ? "below ULA" : `${below} cells below`;
+  return below === 0
+    ? t("panels.tilemap.overUla")
+    : below === cells.length
+      ? t("panels.tilemap.belowUla")
+      : t("panels.tilemap.global.cellsBelow", { count: below });
 }
 
 function priorityTitle(mode: TilemapMode): string {
-  if (mode.forceOnTop) return "$6B bit 0 forces the tilemap over the ULA";
-  if (mode.tiles512) return "512-tile mode: attribute bit 0 is tile bit 8, so every cell is below the ULA (T3)";
-  return "Attribute bit 0 puts a cell below the ULA";
+  if (mode.forceOnTop) return t("panels.tilemap.global.forceOnTopTitle");
+  if (mode.tiles512) return t("panels.tilemap.global.tiles512PriorityTitle");
+  return t("panels.tilemap.global.attrPriorityTitle");
 }
 
 /** Flags first, then the primary items, then the rest (the strip collapses to flags and primary). */
@@ -277,52 +315,87 @@ export function tileSheetOffset(model: TilemapModel, choice: "fromMap" | number)
 
 // --- The inspector (§4.5.3)
 
-export type InspectorField = { name: string; value: string; title?: string; muted?: boolean };
+export type InspectorField = {
+  /** A stable identity: React keys and tests use it, never the (translated) name */
+  id: string;
+  name: string;
+  value: string;
+  title?: string;
+  muted?: boolean;
+};
+
+/** A tile's rotate and mirrors as a list of words, or `undefined` for none */
+export function transformText(c: { rotate: boolean; xmirror: boolean; ymirror: boolean }): string | undefined {
+  const words = [
+    c.rotate && t("panels.tilemap.transform.rotate"),
+    c.xmirror && t("panels.tilemap.transform.xMirror"),
+    c.ymirror && t("panels.tilemap.transform.yMirror")
+  ].filter(Boolean);
+  return words.length ? words.join(", ") : undefined;
+}
 
 export function cellFields(model: TilemapModel, cell: DecodedCell): InspectorField[] {
   const { mode, state } = model;
   const a = addressOf(state, state.regs.mapBank7, cell.entryOffset);
   const fields: InspectorField[] = [
     {
-      name: "Raw",
+      id: "raw",
+      name: t("panels.tilemap.field.raw"),
       value: cell.raw.map((b) => hex(b, 2)).join(" "),
-      title: mode.attributeLess ? "Attribute-less mode: one byte, the attribute is $6C" : "Tile byte, attribute byte"
+      title: mode.attributeLess ? t("panels.tilemap.field.rawAttrLessTitle") : t("panels.tilemap.field.rawTitle")
     },
     {
-      name: "Tile",
-      value: mode.tiles512 && cell.tile & 0x100 ? `${cell.tile} (bit 8 from attr)` : String(cell.tile),
-      title: mode.tiles512 ? "512-tile mode: attribute bit 0 is tile bit 8" : undefined
+      id: "tile",
+      name: t("panels.tilemap.field.tile"),
+      value: mode.tiles512 && cell.tile & 0x100 ? t("panels.tilemap.field.tileBit8", { tile: cell.tile }) : String(cell.tile),
+      title: mode.tiles512 ? t("panels.tilemap.field.tile512Title") : undefined
     },
     {
-      name: "Attribute",
-      value: `${hex(cell.attr, 2)}${mode.attributeLess ? " ($6C)" : ""}`
+      id: "attribute",
+      name: t("panels.tilemap.field.attribute"),
+      value: mode.attributeLess
+        ? t("panels.tilemap.field.attributeDefault", { attr: hex(cell.attr, 2) })
+        : hex(cell.attr, 2)
     },
     {
-      name: "Palette offset",
+      id: "paletteOffset",
+      name: t("panels.tilemap.field.paletteOffset"),
       value: String(cell.paletteOffset),
-      title: mode.textMode ? "Text mode: attribute bits 7-1" : "Attribute bits 7-4"
+      title: mode.textMode ? t("panels.tilemap.field.paletteOffsetText") : t("panels.tilemap.field.paletteOffset4bit")
     }
   ];
   if (!mode.textMode) {
-    const t = [cell.rotate && "rotate", cell.xmirror && "X mirror", cell.ymirror && "Y mirror"].filter(Boolean);
-    fields.push({ name: "Transform", value: t.length ? t.join(", ") : "none", muted: !t.length });
+    const transform = transformText(cell);
+    fields.push({
+      id: "transform",
+      name: t("panels.tilemap.field.transform"),
+      value: transform ?? t("panels.graphics.inspector.none"),
+      muted: !transform
+    });
   }
   fields.push({
-    name: "Priority",
+    id: "priority",
+    name: t("panels.tilemap.global.priority"),
     value: mode.tiles512
       ? mode.forceOnTop
-        ? "over ULA ($6B bit 0)"
-        : "below ULA (512-tile mode)"
+        ? t("panels.tilemap.field.overUlaForced")
+        : t("panels.tilemap.field.belowUla512")
       : cell.below
-        ? "below ULA (bit 0)"
+        ? t("panels.tilemap.field.belowUlaBit")
         : mode.forceOnTop && cell.ulaOnTop
-          ? "over ULA ($6B bit 0)"
-          : "over ULA"
+          ? t("panels.tilemap.field.overUlaForced")
+          : t("panels.tilemap.overUla")
   });
   fields.push(
-    { name: "Entry", value: a.bankText, title: "The entry's bank and offset" },
-    { name: "Physical", value: a.physicalText },
-    { name: "Z80", value: a.z80Text ?? "not mapped", muted: a.z80 === undefined, title: "Where the entry's page is mapped now" }
+    { id: "entry", name: t("panels.tilemap.field.entry"), value: a.bankText, title: t("panels.tilemap.field.entryTitle") },
+    { id: "physical", name: t("panels.graphics.inspector.physical"), value: a.physicalText },
+    {
+      id: "z80",
+      name: "Z80",
+      value: a.z80Text ?? t("panels.graphics.inspector.notMapped"),
+      muted: a.z80 === undefined,
+      title: t("panels.tilemap.field.z80Title")
+    }
   );
   return fields;
 }
@@ -372,19 +445,19 @@ export function coloursUsed(indices: Int16Array): number[] {
 export function invisibilityReasons(model: TilemapModel, cell: DecodedCell, indices: Int16Array): string[] {
   const { state, mode } = model;
   const reasons: string[] = [];
-  if (!state.regs.enabled) reasons.push("The tilemap is disabled ($6B bit 7).");
+  if (!state.regs.enabled) reasons.push(t("panels.tilemap.reason.disabled"));
   if (!isCellVisible(state.regs, mode, cell.col, cell.row)) {
-    reasons.push("Outside the visible window: the scroll and the clip window ($1B) leave it off screen.");
+    reasons.push(t("panels.tilemap.reason.outside"));
   }
   if (indices.every((i) => i === TILE_TRANSPARENT)) {
     reasons.push(
       mode.textMode
-        ? "Every pixel is transparent: its colour equals the global transparency colour $14."
-        : `Every pixel is transparent: each nibble equals $4C (${hex(state.regs.transparencyIndex, 1)}).`
+        ? t("panels.tilemap.reason.transparentText")
+        : t("panels.tilemap.reason.transparentNibble", { nibble: hex(state.regs.transparencyIndex, 1) })
     );
   }
   if (cell.below && !state.regs.ulaDisabled) {
-    reasons.push("Below the ULA: hidden wherever the ULA pixel is opaque.");
+    reasons.push(t("panels.tilemap.reason.belowUla"));
   }
   return reasons;
 }
@@ -392,7 +465,7 @@ export function invisibilityReasons(model: TilemapModel, cell: DecodedCell, indi
 /** One line for the inspector's header. */
 export function cellSummary(model: TilemapModel, cell: DecodedCell): string {
   const users = usageCount(model.usage, cell.tile);
-  return `Cell (${cell.col}, ${cell.row}) · tile ${cell.tile} · ${users} cell${users === 1 ? "" : "s"} use it`;
+  return t("panels.tilemap.pane.cellSummary", { col: cell.col, row: cell.row, tile: cell.tile, users });
 }
 
 /** The cells that use a tile, as `(col, row)` pairs. */

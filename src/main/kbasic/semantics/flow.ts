@@ -1,4 +1,6 @@
 import type { DiagnosticBag } from "../diagnostics";
+import { t as tr } from "@common/i18n/i18n";
+import type { MessageKey } from "@common/i18n/keys.generated";
 import type { BoundProgram, BoundStatement } from "./bound";
 import type { Scope, Symbol } from "./symbols";
 
@@ -13,16 +15,16 @@ export function checkFlow(program: BoundProgram, globals: Scope, optimize: numbe
     if (s.kind !== "routine") continue;
     const r = s.routine;
     if (r.kind === "function" && completes(s.body)) {
-      diagnostics.warning("W190", `FUNCTION ${r.name} can reach its end without RETURN`, r.span);
+      diagnostics.warning("W190", tr("compiler.basic.W190", { name: r.name }), r.span);
     }
   }
   if (optimize > 0) {
     for (const r of program.routines) {
-      if (r.definedAt && !r.called && r.uses.length === 0) diagnostics.warning("W170", `${r.kind === "sub" ? "SUB" : "FUNCTION"} ${r.name} is never called; it is left out`, r.span);
+      if (r.definedAt && !r.called && r.uses.length === 0) diagnostics.warning("W170", tr(r.kind === "sub" ? "compiler.basic.W170.sub" : "compiler.basic.W170.function", { name: r.name }), r.span);
     }
     const scopes = [globals, ...program.routines.map((r) => r.scope).filter((s): s is Scope => !!s)];
     for (const scope of scopes) {
-      for (const symbol of scope.symbols) if (unused(symbol)) diagnostics.warning("W150", `${describe(symbol)} '${symbol.name}' is never used`, symbol.span);
+      for (const symbol of scope.symbols) if (unused(symbol)) diagnostics.warning("W150", tr(unusedKey(symbol), { name: symbol.name }), symbol.span);
     }
   }
   checkBanks(program.statements, diagnostics);
@@ -34,9 +36,9 @@ function unused(s: Symbol): boolean {
   return false;
 }
 
-function describe(s: Symbol): string {
-  if (s.kind === "variable" && s.storage === "param") return "Parameter";
-  return s.kind === "array" ? "Array" : "Variable";
+function unusedKey(s: Symbol): MessageKey {
+  if (s.kind === "variable" && s.storage === "param") return "compiler.basic.W150.parameter";
+  return s.kind === "array" ? "compiler.basic.W150.array" : "compiler.basic.W150.variable";
 }
 
 // =================================================================================================
@@ -66,7 +68,7 @@ function checkBlock(block: BoundStatement[], diagnostics: DiagnosticBag): void {
     }
     // --- Definitions and DATA do not run where they stand
     if (s.kind === "routine" || s.kind === "codebank" || s.kind === "data") continue;
-    if (dead) diagnostics.warning("W180", "This code is never reached", s.span);
+    if (dead) diagnostics.warning("W180", tr("compiler.basic.W180"), s.span);
     dead = ends(s);
   }
 }
@@ -136,7 +138,7 @@ function checkBanks(block: BoundStatement[], diagnostics: DiagnosticBag, bank = 
         if (m) current = m[1].startsWith("$") ? parseInt(m[1].slice(1), 16) : Number(m[1]);
       }
       if (current !== bank) {
-        diagnostics.error("E454", `The ASM block ends in bank ${current}: it must switch back to bank ${bank}, where it started`, s.span);
+        diagnostics.error("E454", tr("compiler.basic.E454", { current: String(current), bank: String(bank) }), s.span);
       }
     }
     for (const c of children(s)) checkBanks(c, diagnostics, bank);

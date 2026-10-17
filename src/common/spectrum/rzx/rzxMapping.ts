@@ -8,6 +8,7 @@
  * grey +2 on the 128K ROM is safe: only the menu text differs.
  */
 
+import { t } from "@common/i18n/i18n";
 import { parseSpectrumSnapshot } from "../snapshot/parseSpectrumSnapshot";
 import { mapSpectrumSnapshotToKlive, type SpectrumSnapshotMapping } from "../snapshot/spectrumSnapshotMapping";
 import type { SpectrumSnapshot } from "../snapshot/spectrumSnapshot";
@@ -15,9 +16,10 @@ import { p3ModelRomSet } from "@emu/machines/zxSpectrumP3e/p3RomSets";
 import { RzxError, type RzxFile } from "./rzxModel";
 import { rzxSegments, type RzxSegment } from "./rzxSegments";
 
-/** The warning for a +2A/+3 recording that plays on the +E ROMs */
-export const RZX_E_ROM_WARNING =
-  "The recording was made on a +2A/+3, and plays here with the +E ROMs: a program that calls ROM routines the +E ROMs moved will desync";
+/** The warning for a +2A/+3 recording that plays on the +E ROMs, in the display language */
+export function rzxERomWarning(): string {
+  return t("media.rzx.eRomWarning");
+}
 
 export type RzxMachineMapping = {
   segment: RzxSegment;
@@ -33,17 +35,20 @@ export type RzxMachineMapping = {
  */
 export function mapRzxToKlive(file: RzxFile, segmentIndex = 0): RzxMachineMapping {
   const segment = rzxSegments(file)[segmentIndex];
-  if (!segment) throw new RzxError(`The recording has no segment ${segmentIndex + 1}`);
+  if (!segment) throw new RzxError(t("media.rzx.noSegment", { segment: segmentIndex + 1 }));
   let snapshot: SpectrumSnapshot;
   try {
     snapshot = parseSpectrumSnapshot(`recording.${segment.snapshot.extension}`, segment.snapshot.bytes);
   } catch (err) {
     throw new RzxError(
-      `The recording's .${segment.snapshot.extension} snapshot cannot be read: ${err instanceof Error ? err.message : String(err)}`
+      t("media.rzx.snapshotUnreadable", {
+        extension: segment.snapshot.extension,
+        message: err instanceof Error ? err.message : String(err)
+      })
     );
   }
   const base = mapSpectrumSnapshotToKlive(snapshot);
-  if (base.errors.length) throw new RzxError(`The recording cannot be played: ${base.errors.join("; ")}`);
+  if (base.errors.length) throw new RzxError(t("media.rzx.cannotPlay", { reasons: base.errors.join("; ") }));
 
   if (!base.eRomWarning) return { segment, snapshot, mapping: base };
   // --- A +2A/+3 recording: the Amstrad models first
@@ -52,10 +57,11 @@ export function mapRzxToKlive(file: RzxFile, segmentIndex = 0): RzxMachineMappin
   const modelIds = [...amstrad, ...others];
   const onE = modelIds[0] === undefined || !p3ModelRomSet(modelIds[0]).amstrad;
   const warnings = base.warnings.filter((w) => w !== base.eRomWarning);
-  if (onE) warnings.push(RZX_E_ROM_WARNING);
+  const eRomWarning = onE ? rzxERomWarning() : undefined;
+  if (eRomWarning) warnings.push(eRomWarning);
   return {
     segment,
     snapshot,
-    mapping: { ...base, modelIds, warnings, eRomWarning: onE ? RZX_E_ROM_WARNING : undefined }
+    mapping: { ...base, modelIds, warnings, eRomWarning }
   };
 }

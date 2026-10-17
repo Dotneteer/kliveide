@@ -22,10 +22,11 @@ import type { SpectrumSnapshotSaveResult } from "@common/spectrum/snapshot/spect
 import type { SpectrumSnapshotCaptureMedia } from "@emu/machines/zxSpectrum/spectrumSnapshotCapture";
 
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { SnapshotRefusedError } from "@common/spectrum/snapshot/snapshotBytes";
+import { isInsidePrefixRefusal } from "@common/spectrum/snapshot/snapshotBytes";
 import { kliveSpectrumName } from "@common/spectrum/snapshot/spectrumSnapshotMapping";
 import { writeSpectrumSnapshot } from "@common/spectrum/snapshot/writeSpectrumSnapshot";
 import type { SzxCreator } from "@common/spectrum/snapshot/szxWriter";
+import { t } from "@common/i18n/i18n";
 
 /** The services the save uses */
 export type SpectrumSnapshotSavePorts = {
@@ -50,10 +51,6 @@ function isCapturable(machine: unknown): machine is SpectrumSnapshotMachine {
   return typeof (machine as SpectrumSnapshotMachine)?.captureSnapshotState === "function";
 }
 
-/** Is this the capture's "inside a prefixed instruction" refusal? */
-function isPrefixRefusal(err: unknown): boolean {
-  return err instanceof SnapshotRefusedError && /prefix/.test(err.message);
-}
 
 /**
  * Saves the machine as a snapshot
@@ -70,15 +67,15 @@ export async function saveSpectrumSnapshot(
 ): Promise<SpectrumSnapshotSaveResult> {
   const controller = ports.getMachineController();
   if (!controller) {
-    throw new Error("There is no machine to save");
+    throw new Error(t("emu.machine.noMachineToSave"));
   }
   const machine = controller.machine as unknown;
   if (!isCapturable(machine)) {
-    throw new Error("Only a ZX Spectrum 48K, 128K or +2E/+3E can be saved as a snapshot");
+    throw new Error(t("emu.snapshot.saveUnsupportedMachine"));
   }
   const state = controller.state;
   if (state !== MachineControllerState.Running && state !== MachineControllerState.Paused) {
-    throw new Error("The machine has no state to save; start it first");
+    throw new Error(t("emu.machine.noStateToSave"));
   }
 
   const media = ports.getMediaFiles();
@@ -93,7 +90,7 @@ export async function saveSpectrumSnapshot(
       try {
         snapshot = machine.captureSnapshotState(media);
       } catch (err) {
-        if (!isPrefixRefusal(err) || attempt >= PREFIX_RETRIES) {
+        if (!isInsidePrefixRefusal(err) || attempt >= PREFIX_RETRIES) {
           await resume(controller, debugging);
           throw err;
         }

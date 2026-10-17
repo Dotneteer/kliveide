@@ -3,6 +3,7 @@ import { SmallIconButton } from "@renderer/controls/IconButton";
 import { ToolbarSeparator } from "@renderer/controls/ToolbarSeparator";
 import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import { Text } from "@renderer/controls/layout/Text";
+import { useT } from "@common/i18n/useT";
 import styles from "./SpriteEditor.module.scss";
 
 type Props = {
@@ -57,14 +58,16 @@ export const SpriteSheetToolbar = memo(
     onMoveRight,
     onAdd,
     onToggleSeparated
-  }: Props) => (
-    <div className={styles.sheetToolbar} role="toolbar" aria-label="Sheet">
-      <SmallIconButton iconName="undo" title={"Undo (Ctrl+Z)"} enable={canUndo} clicked={onUndo} />
-      <SmallIconButton iconName="redo" title={"Redo (Ctrl+Shift+Z)"} enable={canRedo} clicked={onRedo} />
+  }: Props) => {
+    const t = useT();
+    return (
+    <div className={styles.sheetToolbar} role="toolbar" aria-label={t("panels.spriteEditor.sheet")}>
+      <SmallIconButton iconName="undo" title={t("panels.spriteEditor.undo")} enable={canUndo} clicked={onUndo} />
+      <SmallIconButton iconName="redo" title={t("panels.spriteEditor.redo")} enable={canRedo} clicked={onRedo} />
       <ToolbarSeparator small={true} />
       <SmallIconButton
         iconName="spr-duplicate"
-        title={"Duplicate sprite"}
+        title={t("panels.spriteEditor.duplicate")}
         enable={spriteCount > 0}
         clicked={onDuplicate}
       />
@@ -79,52 +82,52 @@ export const SpriteSheetToolbar = memo(
         iconName="spr-cut"
         title={
           hasSelection
-            ? "Cut region (Ctrl+X)"
-            : "Cut sprite (Ctrl+X)\nMark a region with the select tool to cut pixels instead"
+            ? t("panels.spriteEditor.cutRegion")
+            : t("panels.spriteEditor.cutSprite")
         }
         enable={hasSelection || spriteCount > 1}
         clicked={onCut}
       />
       <SmallIconButton
         iconName="spr-copy"
-        title={hasSelection ? "Copy region (Ctrl+C)" : "Copy sprite (Ctrl+C)"}
+        title={hasSelection ? t("panels.spriteEditor.copyRegion") : t("panels.spriteEditor.copySprite")}
         enable={true}
         clicked={onCopy}
       />
       <SmallIconButton
         iconName="spr-paste"
-        title={"Paste (Ctrl+V)\nA pasted region floats until you place it"}
+        title={t("panels.spriteEditor.paste")}
         enable={canPaste}
         clicked={onPaste}
       />
       <SmallIconButton
         iconName="spr-delete"
-        title={hasSelection ? "Clear region (Delete)" : "Delete sprite"}
+        title={hasSelection ? t("panels.spriteEditor.clearRegion") : t("panels.spriteEditor.deleteSprite")}
         enable={hasSelection || spriteCount > 1}
         clicked={onDelete}
       />
       <SmallIconButton
         iconName="spr-move-left"
-        title={"Move sprite left\nSelect the previous sprite with ["}
+        title={t("panels.spriteEditor.moveLeft")}
         enable={selectedIndex > 0}
         clicked={onMoveLeft}
       />
       <SmallIconButton
         iconName="spr-move-right"
-        title={"Move sprite right\nSelect the next sprite with ]"}
+        title={t("panels.spriteEditor.moveRight")}
         enable={selectedIndex < spriteCount - 1}
         clicked={onMoveRight}
       />
       <SmallIconButton
         iconName="plus"
-        title={"Add new sprite"}
+        title={t("panels.spriteEditor.add")}
         enable={spriteCount > 0}
         clicked={onAdd}
       />
       <ToolbarSeparator small={true} />
       <SmallIconButton
         iconName="spr-separate"
-        title={`${separated ? "Merge" : "Separate"} sprites vertically`}
+        title={separated ? t("panels.spriteEditor.merge") : t("panels.spriteEditor.separate")}
         selected={separated}
         enable={true}
         clicked={onToggleSeparated}
@@ -133,9 +136,10 @@ export const SpriteSheetToolbar = memo(
         <>
           <ToolbarSeparator small={true} />
           <LabelSeparator width={8} />
-          <Text text={`Sprite #${selectedIndex + 1} of ${spriteCount}`} />
+          <Text text={t("panels.spriteEditor.position", { index: selectedIndex + 1, count: spriteCount })} />
         </>
       )}
     </div>
-  )
+    );
+  }
 );

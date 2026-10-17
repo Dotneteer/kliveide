@@ -16,6 +16,8 @@ import {
 } from "@renderer/appIde/DocumentPanels/Next/nexLoadSession";
 import regStyles from "@renderer/controls/data/Registers.module.scss";
 import { HistoryPresentBanner } from "../debugger/history/HistoryPresentBanner";
+import { useT, type TFunction } from "@common/i18n/useT";
+import type { MessageKey } from "@common/i18n/keys.generated";
 
 /** The token every value in this panel is drawn with; labels stay on `--data-label`. */
 const VALUE_FILL = "--color-state-value";
@@ -34,19 +36,44 @@ const BANKS_WIDTH = "5ch";
  * field they read. They were ten near-identical blocks; `tip` is the tooltip heading, since "Port
  * 7FFD" on its own does not say what the number under the cursor is.
  */
+/** A row text: a message key, or a hardware name that stays English (D9) */
+type RowText = { key: MessageKey } | { text: string };
+const rowText = (t: TFunction, value: RowText) => ("key" in value ? t(value.key) : value.text);
+
 const BYTE_ROWS: {
-  label: string;
-  tip: string;
+  id: string;
+  label: RowText;
+  tip: RowText;
   get: (m: NextMemoryMapping | null) => number | undefined;
 }[] = [
-  { label: "Current ROM:", tip: "Selected ROM", get: (m) => m?.selectedRom },
-  { label: "Current Bank:", tip: "Selected bank", get: (m) => m?.selectedBank },
-  { label: "Port 7FFD:", tip: "Port $7FFD", get: (m) => m?.port7ffd },
-  { label: "Port 1FFD:", tip: "Port $1FFD", get: (m) => m?.port1ffd },
-  { label: "Port DFFD:", tip: "Port $DFFD", get: (m) => m?.portDffd },
-  { label: "Port EFF7:", tip: "Port $EFF7", get: (m) => m?.portEff7 },
-  { label: "Port L2:", tip: "Layer 2 port", get: (m) => m?.portLayer2 },
-  { label: "Port Timex:", tip: "Timex port", get: (m) => m?.portTimex }
+  {
+    id: "rom",
+    label: { key: "panels.side.memMapping.currentRom" },
+    tip: { key: "panels.side.memMapping.selectedRom" },
+    get: (m) => m?.selectedRom
+  },
+  {
+    id: "bank",
+    label: { key: "panels.side.memMapping.currentBank" },
+    tip: { key: "panels.side.memMapping.selectedBank" },
+    get: (m) => m?.selectedBank
+  },
+  { id: "7ffd", label: { text: "Port 7FFD:" }, tip: { text: "Port $7FFD" }, get: (m) => m?.port7ffd },
+  { id: "1ffd", label: { text: "Port 1FFD:" }, tip: { text: "Port $1FFD" }, get: (m) => m?.port1ffd },
+  { id: "dffd", label: { text: "Port DFFD:" }, tip: { text: "Port $DFFD" }, get: (m) => m?.portDffd },
+  { id: "eff7", label: { text: "Port EFF7:" }, tip: { text: "Port $EFF7" }, get: (m) => m?.portEff7 },
+  {
+    id: "l2",
+    label: { text: "Port L2:" },
+    tip: { key: "panels.side.memMapping.layer2Port" },
+    get: (m) => m?.portLayer2
+  },
+  {
+    id: "timex",
+    label: { text: "Port Timex:" },
+    tip: { key: "panels.side.memMapping.timexPort" },
+    get: (m) => m?.portTimex
+  }
 ];
 
 type PageInfo = NextMemoryMapping["pageInfo"][number];
@@ -74,8 +101,8 @@ const bankText = (bank: number | null | undefined): string =>
   isMissing(bank) || bank < 0 ? "--" : toHexa2(bank);
 
 /** The same bank, spelled out for the tooltip: hex and decimal, or `none`. */
-const bankTooltipText = (bank: number | null | undefined): string =>
-  isMissing(bank) || bank < 0 ? "none" : `$${toHexa2(bank)} (${bank})`;
+const bankTooltipText = (t: TFunction, bank: number | null | undefined): string =>
+  isMissing(bank) || bank < 0 ? t("panels.side.memMapping.none") : `$${toHexa2(bank)} (${bank})`;
 
 /**
  * The four unlabelled numbers in a page row, named.
@@ -84,19 +111,23 @@ const bankTooltipText = (bank: number | null | undefined): string =>
  * which is which, so the tooltip is where that is spelled out — the same job the memory dump's byte
  * tooltip does for its columns.
  */
-const pageTooltip = (page: number, info: PageInfo, provenance?: string): string =>
+const pageTooltip = (t: TFunction, page: number, info: PageInfo, provenance?: string): string =>
   [
-    `Page ${page}`,
-    `8K bank: ${bankTooltipText(info.bank8k)}`,
+    t("panels.side.memMapping.page", { page }),
+    t("panels.side.memMapping.bank8k", { bank: bankTooltipText(t, info.bank8k) }),
     // A ROM page has no 16K bank; the row shows `--` and this spells it out. Hex-formatting the
     // emulator's -1 would read `$-1`, which looks like data.
-    `16K bank: ${bankTooltipText(info.bank16k)}`,
+    t("panels.side.memMapping.bank16k", { bank: bankTooltipText(t, info.bank16k) }),
     // --- Where that bank's contents came from, when a NEX was launched in this session. A fact
     // --- about the *file*, not a claim about the bank's current contents — see `nexLoadSession.ts`.
     ...(provenance ? [provenance] : []),
-    `Read offset: ${isMissing(info.readOffset) ? "none" : `$${toHexa6(info.readOffset)}`}`,
+    t("panels.side.memMapping.readOffset", {
+      offset: isMissing(info.readOffset) ? t("panels.side.memMapping.none") : `$${toHexa6(info.readOffset)}`
+    }),
     // Likewise: an absent write offset is the row's `?? 0xff` placeholder, not an address.
-    `Write offset: ${isMissing(info.writeOffset) ? "none" : `$${toHexa6(info.writeOffset)}`}`
+    t("panels.side.memMapping.writeOffset", {
+      offset: isMissing(info.writeOffset) ? t("panels.side.memMapping.none") : `$${toHexa6(info.writeOffset)}`
+    })
   ].join("\n");
 
 /**
@@ -129,6 +160,7 @@ const TipRow = ({ tooltip, children }: { tooltip: string; children: ReactNode })
 };
 
 export const MemMappingPanel = () => {
+  const t = useT();
   const emuApi = useEmuApi();
   const [mappingState, setMappingState] = useState<NextMemoryMapping | null>(null);
 
@@ -155,28 +187,30 @@ export const MemMappingPanel = () => {
 
   let allRamValue = mappingState?.allRamBanks
     ? `[${mappingState.allRamBanks.map((i) => toHexa2(i)).join(", ")}]`
-    : "Off";
+    : t("panels.side.memMapping.off");
   return (
     <div className={styles.memMappingPanel}>
-      <HistoryPresentBanner what="The memory mapping" />
+      <HistoryPresentBanner subject="memoryMapping" />
       <DataRow hoverable dense xclass={styles.memMapRow}>
-        <Label text="All RAM:" className={styles.memMapLabel} />
+        <Label text={t("panels.side.memMapping.allRam")} className={styles.memMapLabel} />
         <Value text={allRamValue} className={regStyles.stateValue} />
       </DataRow>
-      {BYTE_ROWS.map(({ label, get, tip }) => {
+      {BYTE_ROWS.map(({ id, label, get, tip }) => {
         const value = get(mappingState) ?? 0;
         return (
-          <TipRow key={label} tooltip={byteTooltip(tip, value)}>
-            <Label text={label} className={styles.memMapLabel} />
+          <TipRow key={id} tooltip={byteTooltip(rowText(t, tip), value)}>
+            <Label text={rowText(t, label)} className={styles.memMapLabel} />
             <Value text={toHexa2(value)} className={regStyles.stateValue} />
           </TipRow>
         );
       })}
-      <TipRow tooltip={byteTooltip("DivMMC control", mappingState?.divMmc ?? 0)}>
+      <TipRow tooltip={byteTooltip(t("panels.side.memMapping.divMmcControl"), mappingState?.divMmc ?? 0)}>
         <Label text="DivMMC:" className={styles.memMapLabel} />
         <Value text={toHexa2(mappingState?.divMmc ?? 0)} className={regStyles.stateValue} />
       </TipRow>
-      <TipRow tooltip={`DivMMC paged in\n${mappingState?.divMmcIn ? "yes" : "no"}`}>
+      <TipRow
+        tooltip={t(mappingState?.divMmcIn ? "panels.side.memMapping.divMmcPagedIn" : "panels.side.memMapping.divMmcNotPagedIn")}
+      >
         <Label text="DivMMC In:" className={styles.memMapLabel} />
         {/*
          * No `width` and `adjustLeft={false}`: both are inline styles on `Flag` and would beat
@@ -194,8 +228,8 @@ export const MemMappingPanel = () => {
         if (!info) return null;
         const provenance = describeNexBankProvenance(nexLoad, info.bank16k);
         return (
-          <TipRow key={page} tooltip={pageTooltip(page, info, provenance)}>
-            <Label text={`Page ${page}:`} className={styles.memMapLabel} />
+          <TipRow key={page} tooltip={pageTooltip(t, page, info, provenance)}>
+            <Label text={t("panels.side.memMapping.pageLabel", { page })} className={styles.memMapLabel} />
             {/*
              * Two cells, not one string: the banks and the offsets are different kinds of number
              * (a bank index against an address into memory), so they take the two accent hues —

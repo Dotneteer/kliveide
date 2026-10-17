@@ -6,6 +6,7 @@ export interface ActionTypes {
   EMU_LOADED: null;
   IDE_LOADED: null;
   IS_WINDOWS: null;
+  SET_UI_LANGUAGE: null;
   SET_THEME: null;
   SET_ACCENT: null;
   IDE_FOCUSED: null,

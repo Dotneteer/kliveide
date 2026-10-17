@@ -1,4 +1,6 @@
 import { Label } from "@renderer/controls/layout/Label";
+import type { MessageKey } from "@common/i18n/keys.generated";
+import { useT } from "@common/i18n/useT";
 import { Separator } from "@renderer/controls/layout/Separator";
 import { useState } from "react";
 import { useEmuStateListener } from "../useStateRefresh";
@@ -39,6 +41,7 @@ const VALUE_FILL = "--color-state-value";
  */
 
 export const BlinkPanel = () => {
+  const t = useT();
   const emuApi = useEmuApi();
   const [blinkState, setBlinkState] = useState<BlinkState>(null);
 
@@ -48,120 +51,123 @@ export const BlinkPanel = () => {
     <DataPanel autoHeight>
       <FlagFieldRow
         label="COM"
-        tooltip="Command Register handles LCD, Beeper, Clock ticking, UV Eprom in slot 3 and if lower 8K of S0 in slot 0 is ROM or RAM"
+        tooltip={t("panels.side.blink.reg.com")}
         value={blinkState?.COM}
-        flagDescriptions={COMDescription}
+        flagDescriptions={COMDescription.map((key) => t(key))}
         iconFill={VALUE_FILL}
         tooltipBelow
       />
       <FlagFieldRow
         label="INT"
-        tooltip="Controls which interrupts are enabled"
+        tooltip={t("panels.side.blink.reg.int")}
         value={blinkState?.INT}
-        flagDescriptions={INTDescription}
+        flagDescriptions={INTDescription.map((key) => t(key))}
         iconFill={VALUE_FILL}
         tooltipBelow
       />
       <FlagFieldRow
         label="STA"
-        tooltip="Provides information about which interrupt has actually occurred"
+        tooltip={t("panels.side.blink.reg.sta")}
         value={blinkState?.STA}
-        flagDescriptions={STADescription}
+        flagDescriptions={STADescription.map((key) => t(key))}
         iconFill={VALUE_FILL}
         tooltipBelow
       />
       <Separator />
       <ValueFieldRow
         label="SR0"
-        tooltip="Segment Register 0 (Upper/lower 8K of Bank bound into 2000-3FFF"
+        tooltip={t("panels.side.blink.reg.sr0")}
         value={blinkState?.SR0}
       />
       <ValueFieldRow
         label="SR1"
-        tooltip="Segment Register 1 (16K Bank bound into 4000-7FFF)"
+        tooltip={t("panels.side.blink.reg.sr1")}
         value={blinkState?.SR1}
       />
       <ValueFieldRow
         label="SR2"
-        tooltip="Segment Register 2 (16K Bank bound into 8000-BFFF)"
+        tooltip={t("panels.side.blink.reg.sr2")}
         value={blinkState?.SR2}
       />
       <ValueFieldRow
         label="SR3"
-        tooltip="Segment Register 3 (16K Bank bound into C000-FFFF)"
+        tooltip={t("panels.side.blink.reg.sr3")}
         value={blinkState?.SR3}
       />
       <Separator />
       <PointerFieldRow
         label="SBF"
-        tooltip={`Screen Base File - ${z88SbfSize(blinkState?.SBF ?? 0) / 1024}K (${z88SbfSize(blinkState?.SBF ?? 0) / 256} text rows of 256 bytes) of character/attribute pairs, typically in RAM. It runs from its offset to the end of the bank, so the offset sets its size. In brackets: the bank and offset it points at.`}
+        tooltip={t("panels.side.blink.reg.sbf", {
+          size: z88SbfSize(blinkState?.SBF ?? 0) / 1024,
+          rows: z88SbfSize(blinkState?.SBF ?? 0) / 256
+        })}
         value={blinkState?.SBF}
         decode={z88SbfAddress}
       />
       <Separator />
       <PointerFieldRow
         label="PB0"
-        tooltip="Pixel Base 0 - Point to LORES0 (64 characters, 6 by 8 pixel) user defined font bitmap (typically) in RAM. In brackets: the bank and offset it points at."
+        tooltip={t("panels.side.blink.reg.pb0")}
         value={blinkState?.PB0}
         decode={z88Pb0Address}
       />
       <PointerFieldRow
         label="PB1"
-        tooltip="Pixel Base 1 - Point to LORES1 (448 characters, 6 by 8 pixel) font bitmap (typically) in ROM. In brackets: the bank and offset it points at."
+        tooltip={t("panels.side.blink.reg.pb1")}
         value={blinkState?.PB1}
         decode={z88Pb1Address}
       />
       <PointerFieldRow
         label="PB2"
-        tooltip='Pixel Base 2 - Point to HIRES0 (768 characters, 8 by 8 pixel) "PipeDream" map (typically) in RAM. In brackets: the bank and offset it points at.'
+        tooltip={t("panels.side.blink.reg.pb2")}
         value={blinkState?.PB2}
         decode={z88Pb2Address}
       />
       <PointerFieldRow
         label="PB3"
-        tooltip='Pixel Base 3 - Point to HIRES1 (256 characters, 8 by 8 pixel) "OZ" font bitmap (typically) in ROM. In brackets: the bank and offset it points at.'
+        tooltip={t("panels.side.blink.reg.pb3")}
         value={blinkState?.PB3}
         decode={z88Pb3Address}
       />
       <Separator />
       <ValueFieldRow
         label="TIM0"
-        tooltip="5ms period counter register (0-199)"
+        tooltip={t("panels.side.blink.reg.tim0")}
         value={blinkState?.TIM0}
       />
       <ValueFieldRow
         label="TIM1"
-        tooltip="1sec period counter register (0-59)"
+        tooltip={t("panels.side.blink.reg.tim1")}
         value={blinkState?.TIM1}
       />
       <ValueFieldRow
         label="TIM2"
-        tooltip="1min period counter register (0-255)"
+        tooltip={t("panels.side.blink.reg.tim2")}
         value={blinkState?.TIM2}
       />
       <ValueFieldRow
         label="TIM3"
-        tooltip="256min period counter register (0-255)"
+        tooltip={t("panels.side.blink.reg.tim3")}
         value={blinkState?.TIM3}
       />
       <ValueFieldRow
         label="TIM4"
-        tooltip="64Kmin period counter register (0-31)"
+        tooltip={t("panels.side.blink.reg.tim4")}
         value={blinkState?.TIM4}
       />
       <FlagFieldRow
         label="TSTA"
-        tooltip="Timer Interrupt Status"
+        tooltip={t("panels.side.blink.reg.tsta")}
         value={blinkState?.TSTA}
-        flagDescriptions={TSTADescription}
+        flagDescriptions={TSTADescription.map((key) => t(key))}
         iconFill={VALUE_FILL}
         tooltipBelow
       />
       <FlagFieldRow
         label="TMK"
-        tooltip="Timer Interrupt Mask"
+        tooltip={t("panels.side.blink.reg.tmk")}
         value={blinkState?.TMK}
-        flagDescriptions={TMKDescription}
+        flagDescriptions={TMKDescription.map((key) => t(key))}
         iconFill={VALUE_FILL}
         tooltipBelow
       />
@@ -169,7 +175,7 @@ export const BlinkPanel = () => {
       <DataRow dense>
         <KeyboardLine
           text="A15#7"
-          tooltip="Keyboard address line A15 (#7) from KBD register"
+          tooltip={t("panels.side.blink.keyboardLine", { line: "A15", index: 7 })}
           value={blinkState?.keyLines?.[7]}
           titles={["\u00a3", "/", ".", "CAPS LOCK", "INDEX", "ESC", "\u25fb", "SHIFT (right)"]}
         />
@@ -177,7 +183,7 @@ export const BlinkPanel = () => {
       <DataRow dense>
         <KeyboardLine
           text="A14#6"
-          tooltip="Keyboard address line A14 (#6) from KBD register"
+          tooltip={t("panels.side.blink.keyboardLine", { line: "A14", index: 6 })}
           value={blinkState?.keyLines?.[6]}
           titles={["'", ";", ",", "MENU", "\u25c7", "TAB", "SHIFT (left)", "HELP"]}
         />
@@ -185,7 +191,7 @@ export const BlinkPanel = () => {
       <DataRow dense>
         <KeyboardLine
           text="A13#5"
-          tooltip="Keyboard address line A13 (#5) from KBD register"
+          tooltip={t("panels.side.blink.keyboardLine", { line: "A13", index: 5 })}
           value={blinkState?.keyLines?.[5]}
           titles={["0", "L", "Z", "A", "Q", "1", "SPACE", "["]}
         />
@@ -193,7 +199,7 @@ export const BlinkPanel = () => {
       <DataRow dense>
         <KeyboardLine
           text="A12#4"
-          tooltip="Keyboard address line A12 (#4) from KBD register"
+          tooltip={t("panels.side.blink.keyboardLine", { line: "A12", index: 4 })}
           value={blinkState?.keyLines?.[4]}
           titles={["P", "M", "X", "S", "W", "2", "⬅︎", "]"]}
         />
@@ -201,7 +207,7 @@ export const BlinkPanel = () => {
       <DataRow dense>
         <KeyboardLine
           text="A11#3"
-          tooltip="Keyboard address line A11 (#3) from KBD register"
+          tooltip={t("panels.side.blink.keyboardLine", { line: "A11", index: 3 })}
           value={blinkState?.keyLines?.[3]}
           titles={["9", "K", "C", "D", "E", "3", "➡︎", "-"]}
         />
@@ -209,7 +215,7 @@ export const BlinkPanel = () => {
       <DataRow dense>
         <KeyboardLine
           text="A10#2"
-          tooltip="Keyboard address line A10 (#2) from KBD register"
+          tooltip={t("panels.side.blink.keyboardLine", { line: "A10", index: 2 })}
           value={blinkState?.keyLines?.[2]}
           titles={["O", "J", "V", "F", "R", "4", "⬇︎", "="]}
         />
@@ -217,7 +223,7 @@ export const BlinkPanel = () => {
       <DataRow dense>
         <KeyboardLine
           text="A09#1"
-          tooltip="Keyboard address line A9 (#1) from KBD register"
+          tooltip={t("panels.side.blink.keyboardLine", { line: "A9", index: 1 })}
           value={blinkState?.keyLines?.[1]}
           titles={["I", "U", "B", "G", "T", "5", "⬆︎", "\\"]}
         />
@@ -225,7 +231,7 @@ export const BlinkPanel = () => {
       <DataRow dense>
         <KeyboardLine
           text="A08#0"
-          tooltip="Keyboard address line A8 (#0) from KBD register"
+          tooltip={t("panels.side.blink.keyboardLine", { line: "A8", index: 0 })}
           value={blinkState?.keyLines?.[0]}
           titles={["8", "7", "N", "H", "Y", "6", "ENTER", "DEL"]}
         />
@@ -334,57 +340,57 @@ const PointerFieldRow = ({ label, tooltip, value, decode }: PointerFieldProps) =
   );
 };
 
-const COMDescription = [
-  "LCDON - Set to turn LCD ON, clear to turn LCD OFF", // bit 0
-  "VPPON - Set to turn programming voltage ON",
-  "RAMS - Binding of lower 8K of segment 0: 0=bank 0, 1=bank 20",
-  "PROGRAM - Set to enable EPROM programming",
-  "RESTIM - Set to reset the RTC, clear to continue",
-  "OVERP - Set to overprogram EPROMs",
-  "SBIT - SRUN=0: 0=low, 1=high; SRUN=1: 0=3200 Hz, 1=TxD",
-  "SRUN - Speaker source (0=SBIT, 1=TxD or 3200 Hz)" // bit 7
+const COMDescription: readonly MessageKey[] = [
+  "panels.side.blink.bit.com0", // bit 0
+  "panels.side.blink.bit.com1",
+  "panels.side.blink.bit.com2",
+  "panels.side.blink.bit.com3",
+  "panels.side.blink.bit.com4",
+  "panels.side.blink.bit.com5",
+  "panels.side.blink.bit.com6",
+  "panels.side.blink.bit.com7", // bit 7
 ];
 
-const INTDescription = [
-  "GINT - If clear (0), no interrupts get out of Blink", // bit 0
-  "TIME - If set (1), Real Time Clock interrupts are enabled",
-  "KEY - If set (1), keyboard interrupts (Snooze or Coma) are enabled",
-  "BTL - If set (1), battery low interrupts are enabled",
-  "UART - If set (1), UART interrupts are enabled",
-  "FLAP - If set (1), flap interrupts are enabled",
-  "A19 - If set (1), an active high on A19 will exit Coma",
-  "KWAIT - If set (1), reading the keyboard will Snooze CPU" // bit 7
+const INTDescription: readonly MessageKey[] = [
+  "panels.side.blink.bit.int0", // bit 0
+  "panels.side.blink.bit.int1",
+  "panels.side.blink.bit.int2",
+  "panels.side.blink.bit.int3",
+  "panels.side.blink.bit.int4",
+  "panels.side.blink.bit.int5",
+  "panels.side.blink.bit.int6",
+  "panels.side.blink.bit.int7", // bit 7
 ];
 
-const STADescription = [
-  "TIME - If set (1), an enabled TIME interrupt is active", // bit 0
-  "Not Used",
-  "KEY - If set (1), a column has gone low in snooze (or coma)",
-  "BTL - If set (1), battery low pin is active",
-  "UART - If set (1), an enabled UART interrupt is active",
-  "FLAP - If set (1), positive edge has occurred on FLAPOPEN",
-  "A19 - If set (1), high level on A19 occurred during coma",
-  "FLAPOPEN - If set (1), flap open else flap closed" // bit 7
+const STADescription: readonly MessageKey[] = [
+  "panels.side.blink.bit.sta0", // bit 0
+  "panels.side.blink.bitNotUsed",
+  "panels.side.blink.bit.sta2",
+  "panels.side.blink.bit.sta3",
+  "panels.side.blink.bit.sta4",
+  "panels.side.blink.bit.sta5",
+  "panels.side.blink.bit.sta6",
+  "panels.side.blink.bit.sta7", // bit 7
 ];
 
-const TSTADescription = [
-  "TICK - If set (1), a tick interrupt has occurred", // bit 0
-  "SEC - If Set (1), a second interrupt has occurred",
-  "MIN - If set (1), a minute interrupt has occurred",
-  "Not Used",
-  "Not Used",
-  "Not Used",
-  "Not Used",
-  "Not Used" // bit 7
+const TSTADescription: readonly MessageKey[] = [
+  "panels.side.blink.bit.tsta0", // bit 0
+  "panels.side.blink.bit.tsta1",
+  "panels.side.blink.bit.tsta2",
+  "panels.side.blink.bitNotUsed",
+  "panels.side.blink.bitNotUsed",
+  "panels.side.blink.bitNotUsed",
+  "panels.side.blink.bitNotUsed",
+  "panels.side.blink.bitNotUsed", // bit 7
 ];
 
-const TMKDescription = [
-  "TICK - If set (1), enable tick interrupts", // bit 0
-  "SEC - If Set (1), enable second interrupts",
-  "MIN - If set (1), enable minute interrupts",
-  "Not Used",
-  "Not Used",
-  "Not Used",
-  "Not Used",
-  "Not Used" // bit 7
+const TMKDescription: readonly MessageKey[] = [
+  "panels.side.blink.bit.tmk0", // bit 0
+  "panels.side.blink.bit.tmk1",
+  "panels.side.blink.bit.tmk2",
+  "panels.side.blink.bitNotUsed",
+  "panels.side.blink.bitNotUsed",
+  "panels.side.blink.bitNotUsed",
+  "panels.side.blink.bitNotUsed",
+  "panels.side.blink.bitNotUsed", // bit 7
 ];

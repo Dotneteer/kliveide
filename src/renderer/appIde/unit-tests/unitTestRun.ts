@@ -12,10 +12,11 @@ export { summaryText } from "./unitTestTree";
 import { compileCode } from "@renderer/appIde/utils/compile-code";
 import { outputNavigateAction } from "@common/utils/output-utils";
 import { PANE_ID_TESTS } from "@common/integration/constants";
-import { isAdvancedDebuggingEnabled } from "@common/features/advancedDebugging";
+import { ADVANCED_DEBUGGING_SETTING, isAdvancedDebuggingEnabled } from "@common/features/advancedDebugging";
 import { discoverUnitTests, type UnitTestProgram } from "@common/unit-tests/discovery";
 import { getFileTypeEntry } from "@renderer/appIde/project/project-node";
 import { summaryText } from "./unitTestTree";
+import { t, uiLocale } from "@common/i18n/i18n";
 
 /*
  * The IDE's side of a unit-test run (`.plans/Z80_UNIT_TESTS_PLAN.md` D13-D17): build first (D15),
@@ -29,12 +30,12 @@ const TEST_LANGUAGES = ["kz80-asm", "sjasmp"];
 /** Why the build root cannot hold tests, or `undefined` when it can (D14) */
 export function buildRootTestProblem(context: Pick<IdeCommandContext, "store">): string | undefined {
   const state = context.store.getState();
-  if (!state.project?.isKliveProject) return "Open a Klive project to run its unit tests.";
+  if (!state.project?.isKliveProject) return t("debug.unitTest.problem.noProject");
   const buildRoot = state.project.buildRoots?.[0];
-  if (!buildRoot) return "Select a build root: the tests come from the build root's compilation.";
+  if (!buildRoot) return t("debug.unitTest.problem.noBuildRoot");
   const language = getFileTypeEntry(`${state.project.folderPath}/${buildRoot}`, context.store)?.subType;
   if (!language || !TEST_LANGUAGES.includes(language)) {
-    return "The build root's language has no DeZog-style unit tests; they need the Klive Z80 assembler or sjasmplus.";
+    return t("debug.unitTest.problem.noTestLanguage");
   }
   return undefined;
 }
@@ -71,7 +72,7 @@ export async function buildAndRunUnitTests(
 
   const out = testsPane ?? context.output;
   out.color("bright-blue");
-  out.writeLine(`Running unit tests (${new Date().toLocaleTimeString()})...`);
+  out.writeLine(t("debug.unitTest.running", { time: new Date().toLocaleTimeString(uiLocale()) }));
   out.resetStyle();
   const response = await context.mainApi.runUnitTests({ options });
   writeRunReport(out, response);
@@ -82,7 +83,7 @@ export async function buildAndRunUnitTests(
       context.output.resetStyle();
     }
     if (response.summary.total) {
-      context.output.writeLine(`${summaryText(response.summary)} (details in the Tests pane: outp tests)`);
+      context.output.writeLine(t("debug.unitTest.summaryWithDetails", { summary: summaryText(response.summary) }));
     }
   }
 
@@ -92,10 +93,10 @@ export async function buildAndRunUnitTests(
     out.color(merged ? "cyan" : "yellow");
     out.writeLine(
       merged
-        ? "The tests' coverage is in the editor and the memory views (coverage status, coverage export)."
+        ? t("debug.unitTest.coverage.shown")
         : isAdvancedDebuggingEnabled(context.store.getState())
-          ? "The tests' coverage could not be shown: the emulator runs another machine, or has no coverage."
-          : "The tests' coverage is shown with advanced debugging on (set -u features.advancedDebugging 1, then restart Klive)."
+          ? t("debug.unitTest.coverage.notShown")
+          : t("debug.unitTest.coverage.switchedOff", { command: `set -u ${ADVANCED_DEBUGGING_SETTING} 1` })
     );
     out.resetStyle();
   }

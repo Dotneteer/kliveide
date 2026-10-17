@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 
+import { RAM_SIZES } from "@renderer/appEmu/dialogs/z88/changeRam/Z88ChangeRamModel";
 import {
-  RAM_CHANGE_WARNING,
-  RAM_SIZES
-} from "@renderer/appEmu/dialogs/z88/changeRam/Z88ChangeRamModel";
-import { selectViewModel } from "@renderer/appEmu/dialogs/z88/changeRam/Z88ChangeRamViewModel";
+  ramChangeWarning,
+  selectViewModel
+} from "@renderer/appEmu/dialogs/z88/changeRam/Z88ChangeRamViewModel";
 
 import { MC_Z88_INTRAM, aRunningEnv, aState, anEnv } from "./fakes";
 
@@ -19,7 +19,7 @@ describe("Z88ChangeRamViewModel", () => {
   it("carries the warning text when a running machine would be rebuilt", () => {
     const vm = selectViewModel(aState({ selectedSize: "32" }, aRunningEnv()));
 
-    expect(vm.warning).toBe(RAM_CHANGE_WARNING);
+    expect(vm.warning).toBe(ramChangeWarning());
   });
 
   it("omits the warning entirely when the row is not earned", () => {

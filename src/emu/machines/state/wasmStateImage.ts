@@ -12,6 +12,7 @@
  * module (`wasmLayout.ts`), and a restore refuses any other.
  */
 
+import { t } from "@common/i18n/i18n";
 import { readWasmLayout, type WasmLayout } from "./wasmLayout";
 
 /** The machine-independent part of a saved machine state */
@@ -41,7 +42,7 @@ function requireLayout(module: WebAssembly.Module | undefined, coreId: string): 
   const layout = readWasmLayout(module);
   if (!layout) {
     throw new MachineStateMismatchError(
-      `The ${coreId} core was built without a memory-layout stamp, so its state cannot be saved or restored`
+      t("media.state.noLayoutStampSave", { core: coreId })
     );
   }
   return layout;
@@ -59,14 +60,14 @@ export function stateMismatch(
   module: WebAssembly.Module | undefined
 ): string | undefined {
   if (parts.coreId !== coreId) {
-    return `The state belongs to the ${parts.coreId} core, not the ${coreId} core`;
+    return t("media.state.otherCore", { saved: parts.coreId, core: coreId });
   }
   const layout = readWasmLayout(module);
   if (!layout) {
-    return `The ${coreId} core was built without a memory-layout stamp`;
+    return t("media.state.noLayoutStamp", { core: coreId });
   }
   if (parts.fingerprint !== layout.fingerprint || parts.memorySize !== layout.memorySize) {
-    return `The state was saved by a ${coreId} core with another memory layout (this version of Klive has changed it)`;
+    return t("media.state.otherLayout", { core: coreId });
   }
   return undefined;
 }
@@ -112,7 +113,7 @@ export function restoreWasmImage(
   const live = new Uint8Array(memory);
   if (parts.image.length !== live.length) {
     throw new MachineStateMismatchError(
-      `The state's memory image is ${parts.image.length} bytes; the core has ${live.length}`
+      t("media.state.imageSize", { saved: parts.image.length, size: live.length })
     );
   }
   let from = 0;

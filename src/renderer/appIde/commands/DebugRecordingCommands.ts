@@ -3,13 +3,12 @@ import type { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext
 import type { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
 import type { ValidationMessage } from "@renderer/abstractions/ValidationMessage";
 import type { DebugRecordingFrom } from "@common/debugRecording/debugRecordingTypes";
-import { DEBUG_RECORDING_FALLBACK_HINT } from "@common/debugRecording/debugRecordingTypes";
 import type { WatchInfo } from "@common/state/AppState";
 
 import { MF_REVERSE_DEBUG, MI_ZXNEXT } from "@common/machines/constants";
 import { machineRegistry } from "@common/machines/machine-registry";
 import {
-  ADVANCED_DEBUGGING_OFF_MESSAGE,
+  advancedDebuggingOffMessage,
   isAdvancedDebuggingEnabled
 } from "@common/features/advancedDebugging";
 import { isDebugRecordingPath, readDebugRecording } from "@common/debugRecording/debugRecordingFile";
@@ -25,6 +24,7 @@ import {
   validationError,
   writeMessage
 } from "../services/ide-commands";
+import { t, uiLocale } from "@common/i18n/i18n";
 
 /*
  * Debug recordings (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` §4.5): `debug-recording-save` writes the
@@ -34,8 +34,12 @@ import {
  */
 
 /** The D18 notice: what a recording may give away */
-export const RECORDING_PRIVACY_NOTICE =
-  "A debug recording holds everything the machine was given - every key typed, every tape and SD card sector read - and, with -sources, the source files.";
+export function recordingPrivacyNotice(): string {
+  return t("commands.debugRecording.privacyNotice");
+}
+
+/** The `value` of a `debug-recording-load` that can open only the end state: why (the menu asks with it) */
+export type DebugRecordingFallback = { fallbackRefusal: string };
 
 export type DebugRecordingSaveArgs = {
   file: string;
@@ -64,8 +68,9 @@ function hasReverseDebugging(context: IdeCommandContext): boolean {
 /** `debug-recording-save <file>`: saves the reverse-debugging timeline */
 export class DebugRecordingSaveCommand extends IdeCommandBase<DebugRecordingSaveArgs> {
   readonly id = "debug-recording-save";
-  readonly description =
-    "Saves the reverse-debugging session as a debug recording (.klr) that replays with the debugger attached (-f overwrites)";
+  get description() {
+    return t("commands.debugRecording.save.description");
+  }
   readonly aliases = ["drsave"];
   readonly usage = "debug-recording-save <file.klr> [-from <-n|#seq>] [-sparse] [-sources] [-f] [-note <text>]";
 
@@ -78,20 +83,20 @@ export class DebugRecordingSaveCommand extends IdeCommandBase<DebugRecordingSave
 
   async validateCommandArgs(context: IdeCommandContext, args: DebugRecordingSaveArgs): Promise<ValidationMessage[]> {
     const messages: ValidationMessage[] = [];
-    if (!args.file?.trim()) messages.push(validationError("The recording's file path cannot be empty."));
-    else if (!isDebugRecordingPath(args.file)) messages.push(validationError("A debug recording must have the .klr extension."));
+    if (!args.file?.trim()) messages.push(validationError(t("commands.debugRecording.emptyPath")));
+    else if (!isDebugRecordingPath(args.file)) messages.push(validationError(t("commands.debugRecording.save.wrongType")));
     if (args["-from"] !== undefined && !parseRecordingFrom(String(args["-from"]))) {
-      messages.push(validationError("-from: use a step back (-42) or a sequence number (#1234)"));
+      messages.push(validationError(t("commands.debugRecording.save.fromInvalid")));
     }
-    if (!isAdvancedDebuggingEnabled(context.store.getState())) messages.push(validationError(ADVANCED_DEBUGGING_OFF_MESSAGE));
-    else if (!hasReverseDebugging(context)) messages.push(validationError("This machine has no reverse debugging to record."));
+    if (!isAdvancedDebuggingEnabled(context.store.getState())) messages.push(validationError(advancedDebuggingOffMessage()));
+    else if (!hasReverseDebugging(context)) messages.push(validationError(t("commands.debugRecording.save.unsupported")));
     return messages;
   }
 
   async execute(context: IdeCommandContext, args: DebugRecordingSaveArgs): Promise<IdeCommandResult> {
     const file = args.file.trim();
     if (!args["-f"] && (await fileExists(context, file))) {
-      return commandError(`${file} already exists; use -f to replace it.`);
+      return commandError(t("commands.debugRecording.fileExists", { file }));
     }
     const state = context.store.getState();
     let result: Awaited<ReturnType<typeof context.emuApi.saveDebugRecording>>;
@@ -107,20 +112,37 @@ export class DebugRecordingSaveCommand extends IdeCommandBase<DebugRecordingSave
         sources: await collectRecordingSources(context, !!args["-sources"])
       });
     } catch (err) {
-      return commandError(`Could not save the recording: ${messageOf(err)}`);
+      return commandError(t("commands.debugRecording.save.failed", { error: messageOf(err) }));
     }
     try {
       await context.mainApi.saveBinaryFile(file, result.bytes);
     } catch (err) {
-      return commandError(`Could not write ${file}: ${messageOf(err)}`);
+      return commandError(t("commands.debugRecording.writeFailed", { file, error: messageOf(err) }));
     }
-    for (const warning of result.warnings) writeMessage(context.output, `Warning: ${warning}`, "yellow");
-    writeMessage(context.output, RECORDING_PRIVACY_NOTICE, "cyan");
-    const size = result.bytes.length >= 1048576 ? `${(result.bytes.length / 1048576).toFixed(1)} MB` : `${Math.ceil(result.bytes.length / 1024)} KB`;
+    for (const warning of result.warnings) {
+      writeMessage(context.output, t("commands.debugRecording.warning", { warning }), "yellow");
+    }
+    writeMessage(context.output, recordingPrivacyNotice(), "cyan");
+    const locale = uiLocale();
+    const size =
+      result.bytes.length >= 1048576
+        ? t("commands.debugRecording.save.sizeMb", {
+            size: (result.bytes.length / 1048576).toLocaleString(locale, {
+              minimumFractionDigits: 1,
+              maximumFractionDigits: 1
+            })
+          })
+        : t("commands.debugRecording.save.sizeKb", { size: Math.ceil(result.bytes.length / 1024) });
+    const saved = {
+      file,
+      machine: result.machineName,
+      time: formatReverseSeconds(result.seconds),
+      records: result.records,
+      keyframes: result.keyframes,
+      size
+    };
     return commandSuccessWith(
-      `Debug recording ${file} saved (${result.machineName}): ${formatReverseSeconds(result.seconds)} of machine time, ` +
-        `${result.records.toLocaleString("en-US")} instructions, ${result.keyframes} keyframes, ${size}` +
-        `${result.fromPast ? "; it opens where the machine stands now, in the past" : ""}.`,
+      result.fromPast ? t("commands.debugRecording.save.savedFromPast", saved) : t("commands.debugRecording.save.saved", saved),
       { records: result.records, keyframes: result.keyframes, bytes: result.bytes.length }
     );
   }
@@ -137,8 +159,9 @@ export type DebugRecordingLoadArgs = {
 /** `debug-recording-load <file>`: opens a debug recording */
 export class DebugRecordingLoadCommand extends IdeCommandBase<DebugRecordingLoadArgs> {
   readonly id = "debug-recording-load";
-  readonly description =
-    "Opens a debug recording (.klr): its machine, paused where it was saved, with its whole past (-start: at its start)";
+  get description() {
+    return t("commands.debugRecording.load.description");
+  }
   readonly aliases = ["drload"];
   readonly usage = "debug-recording-load <file.klr> [-start] [-verify] [-nobreakpoints] [-y]";
 
@@ -149,9 +172,9 @@ export class DebugRecordingLoadCommand extends IdeCommandBase<DebugRecordingLoad
 
   async validateCommandArgs(context: IdeCommandContext, args: DebugRecordingLoadArgs): Promise<ValidationMessage[]> {
     const messages: ValidationMessage[] = [];
-    if (!isAdvancedDebuggingEnabled(context.store.getState())) messages.push(validationError(ADVANCED_DEBUGGING_OFF_MESSAGE));
-    else if (!args.file?.trim()) messages.push(validationError("The recording's file path cannot be empty."));
-    else if (!isDebugRecordingPath(args.file)) messages.push(validationError("The file to open must be a debug recording (.klr)."));
+    if (!isAdvancedDebuggingEnabled(context.store.getState())) messages.push(validationError(advancedDebuggingOffMessage()));
+    else if (!args.file?.trim()) messages.push(validationError(t("commands.debugRecording.emptyPath")));
+    else if (!isDebugRecordingPath(args.file)) messages.push(validationError(t("commands.debugRecording.load.wrongType")));
     return messages;
   }
 
@@ -161,7 +184,7 @@ export class DebugRecordingLoadCommand extends IdeCommandBase<DebugRecordingLoad
     try {
       bytes = await context.mainApi.readBinaryFile(file);
     } catch (err) {
-      return commandError(`Could not read ${file}: ${messageOf(err)}`);
+      return commandError(t("commands.debugRecording.readFailed", { file, error: messageOf(err) }));
     }
     let machineId: string;
     let hasSdCard: boolean;
@@ -170,10 +193,10 @@ export class DebugRecordingLoadCommand extends IdeCommandBase<DebugRecordingLoad
       machineId = read.header.machineId;
       hasSdCard = read.media.some((m) => m.kind === "sd");
     } catch (err) {
-      return commandError(`${file} is not a valid debug recording: ${messageOf(err)}`);
+      return commandError(t("commands.debugRecording.load.invalid", { file, error: messageOf(err) }));
     }
-    const guard = machineStateProjectGuard(context.store.getState(), machineId);
-    if (guard) return commandError(guard.replace("this state was saved", "this recording was made"));
+    const guard = machineStateProjectGuard(context.store.getState(), machineId, "recording");
+    if (guard) return commandError(guard);
 
     let result: Awaited<ReturnType<typeof context.emuApi.loadDebugRecording>>;
     try {
@@ -186,16 +209,23 @@ export class DebugRecordingLoadCommand extends IdeCommandBase<DebugRecordingLoad
         currentSdCard
       });
     } catch (err) {
-      return commandError(`Could not open ${file}: ${messageOf(err)}`);
+      return commandError(t("commands.debugRecording.load.failed", { file, error: messageOf(err) }));
     }
     if (result.path === "refused") {
-      return commandError(`${result.refusal}. ${DEBUG_RECORDING_FALLBACK_HINT}`);
+      // --- The refusal travels in `value` too: the File menu offers the end state with it (no text matching)
+      return commandError(t("commands.debugRecording.load.refused", { reason: result.refusal ?? "" }), {
+        fallbackRefusal: result.refusal ?? ""
+      } satisfies DebugRecordingFallback);
     }
-    if (result.rebuilt) writeMessage(context.output, `Machine switched to the ${result.machineName}.`, "cyan");
-    for (const warning of result.warnings) writeMessage(context.output, `Warning: ${warning}`, "yellow");
+    if (result.rebuilt) {
+      writeMessage(context.output, t("commands.debugRecording.machineSwitched", { machine: result.machineName }), "cyan");
+    }
+    for (const warning of result.warnings) {
+      writeMessage(context.output, t("commands.debugRecording.warning", { warning }), "yellow");
+    }
     if (result.path === "state") {
       return commandSuccessWith(
-        `${result.refusal}. Opened its end state only (no past), stopped at PC $${toHexa4(result.pc)}.`
+        t("commands.debugRecording.load.endStateOnly", { reason: result.refusal ?? "", pc: `$${toHexa4(result.pc)}` })
       );
     }
 
@@ -210,24 +240,38 @@ export class DebugRecordingLoadCommand extends IdeCommandBase<DebugRecordingLoad
     }
     // --- Sources that differ are said before the first step (D13, T11)
     for (const line of await compareRecordingSources(context, result.sources)) {
-      writeMessage(context.output, `Warning: ${line}`, "yellow");
+      writeMessage(context.output, t("commands.debugRecording.warning", { warning: line }), "yellow");
     }
     if (result.verified) {
       writeMessage(
         context.output,
-        `Verified: replayed from its start through ${result.verified.keyframes} keyframes in ${(result.verified.ms / 1000).toFixed(1)} s`,
+        t("commands.debugRecording.load.verified", {
+          keyframes: result.verified.keyframes,
+          seconds: (result.verified.ms / 1000).toLocaleString(uiLocale(), {
+            minimumFractionDigits: 1,
+            maximumFractionDigits: 1
+          })
+        }),
         "cyan"
       );
     }
-    const where =
-      result.landed === "start" ? "at its start" : result.landed === "saved" ? "where it was saved, in its past" : "at its end";
-    const extras = [
-      result.breakpointsAdded ? `${result.breakpointsAdded} breakpoint${result.breakpointsAdded === 1 ? "" : "s"}` : "",
-      addedWatches ? `${addedWatches} watch${addedWatches === 1 ? "" : "es"}` : ""
-    ].filter(Boolean);
     return commandSuccessWith(
-      `Debug recording ${file} opened: ${formatReverseSeconds(result.seconds ?? 0)} of machine time, ` +
-        `${result.keyframes} keyframes${extras.length ? `, with ${extras.join(" and ")}` : ""}; paused ${where} (PC $${toHexa4(result.pc)}).`
+      t("commands.debugRecording.load.opened", {
+        file,
+        time: formatReverseSeconds(result.seconds ?? 0),
+        keyframes: result.keyframes,
+        breakpoints: result.breakpointsAdded ?? 0,
+        watches: addedWatches,
+        extras: result.breakpointsAdded
+          ? addedWatches
+            ? "both"
+            : "breakpoints"
+          : addedWatches
+            ? "watches"
+            : "none",
+        landed: result.landed === "start" || result.landed === "saved" ? result.landed : "end",
+        pc: `$${toHexa4(result.pc)}`
+      })
     );
   }
 }

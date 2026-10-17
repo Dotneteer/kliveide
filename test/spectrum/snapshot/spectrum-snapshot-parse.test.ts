@@ -218,7 +218,7 @@ describe(".z80", () => {
   it("refuses a missing bank, a truncated block and a short file", () => {
     const t = state48();
     t.ram.delete(0);
-    expect(() => parseZ80File(buildZ80(t, { version: 3 }))).toThrow(/bank\(s\) 0/);
+    expect(() => parseZ80File(buildZ80(t, { version: 3 }))).toThrow(/lacks RAM bank 0/);
     const full = buildZ80(state48(), { version: 3 });
     expect(() => parseZ80File(full.subarray(0, full.length - 10))).toThrow(/truncated/);
     expect(() => parseZ80File(new Uint8Array(20))).toThrow(/30-byte/);
@@ -362,7 +362,7 @@ describe(".szx", () => {
 
   it("refuses a missing Z80R, a missing RAM page, a truncated block and a bad zlib stream", () => {
     expect(() => parseSzxFile(buildSzx(state48(), { machineId: 1, omit: ["Z80R"] }))).toThrow(/Z80R/);
-    expect(() => parseSzxFile(buildSzx(state48(), { machineId: 1, omit: ["RAMP2"] }))).toThrow(/page\(s\) 2/);
+    expect(() => parseSzxFile(buildSzx(state48(), { machineId: 1, omit: ["RAMP2"] }))).toThrow(/lacks RAM page 2/);
     const full = buildSzx(state48(), { machineId: 1 });
     expect(() => parseSzxFile(full.subarray(0, full.length - 5))).toThrow(/truncated/);
     const bad = buildSzx(state48(), { machineId: 1, extra: [szxBlock("RAMP", [1, 0, 7, 1, 2, 3, 4])] });

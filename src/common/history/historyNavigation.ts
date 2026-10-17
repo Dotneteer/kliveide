@@ -1,5 +1,7 @@
 import type { HistoryRegisters } from "./historyRecord";
 import type { HistoryWalkReason } from "./reverseStep";
+import { t } from "@common/i18n/i18n";
+import type { MessageKey } from "@common/i18n/keys.generated";
 
 /*
  * The history cursor as it crosses the Emu API (`.plans/LITE_STEP_BACK_PLAN.md` §4.3). Navigation
@@ -76,26 +78,28 @@ export function historyReasonText(
   result: Pick<HistoryNavigationResult, "reason">,
   recorded?: number
 ): string | undefined {
-  const count = recorded === undefined ? "" : ` (${recorded.toLocaleString("en-US")} instructions)`;
+  // --- With the ring's size, or without it: two whole messages each
+  const withCount = (plain: MessageKey, counted: MessageKey) =>
+    recorded === undefined ? t(plain) : t(counted, { count: recorded });
   switch (result.reason) {
     case "start":
-      return `Start of recorded history${count}`;
+      return withCount("commands.history.reason.start", "commands.history.reason.startCount");
     case "noHit":
-      return `No breakpoint hit in the recorded history: stopped at its start${count}`;
+      return withCount("commands.history.reason.noHit", "commands.history.reason.noHitCount");
     case "noCall":
-      return `No call entered this routine within the recorded history: stopped at its start${count}`;
+      return withCount("commands.history.reason.noCall", "commands.history.reason.noCallCount");
     case "present":
-      return "Already at the present";
+      return t("commands.history.reason.present");
     case "empty":
-      return "No execution history recorded yet";
+      return t("commands.history.reason.empty");
     case "running":
-      return "The machine must be paused to step through its history";
+      return t("commands.history.reason.running");
     case "noHistory":
-      return "This machine does not record execution history";
+      return t("commands.history.reason.noHistory");
     case "gone":
-      return "That record is no longer in the history";
+      return t("commands.history.reason.gone");
     case "canceled":
-      return "Reverse continue canceled: back where it started";
+      return t("commands.history.reason.canceled");
   }
   return undefined;
 }

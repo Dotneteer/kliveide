@@ -13,6 +13,7 @@ import { SETTING_IDE_SYNC_BREAKPOINTS } from "@common/settings/setting-const";
 import type { RecordingManager } from "@renderer/appEmu/recording/RecordingManager";
 import { SECONDARY_ICON_SIZE, TOOLBAR_BUTTON_SIZE } from "./toolbar-constants";
 import { NavigationControls } from "@renderer/features/navigation/NavigationControls";
+import { useT } from "@common/i18n/useT";
 
 type Props = {
   ide: boolean;
@@ -37,6 +38,7 @@ export const keepFocusOffToolbarButtons = (event: MouseEvent<HTMLElement>) => {
 };
 
 export const Toolbar = ({ ide, kliveProjectLoaded, recordingManagerRef }: Props) => {
+  const t = useT();
   const mainApi = useMainApi();
   const syncSourceBps = useGlobalSetting(SETTING_IDE_SYNC_BREAKPOINTS);
   const { ideCommandsService, projectService } = useAppServices();
@@ -75,7 +77,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded, recordingManagerRef }: Props)
               buttonHeight={TOOLBAR_BUTTON_SIZE}
               selected={syncSourceBps}
               fill="--color-toolbarbutton-orange"
-              title="Sync the source with the current breakpoint"
+              title={t("toolbar.syncBreakpoints")}
               clicked={async () => {
                 await mainApi.setGlobalSettingsValue(SETTING_IDE_SYNC_BREAKPOINTS, !syncSourceBps);
               }}
@@ -87,7 +89,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded, recordingManagerRef }: Props)
               buttonWidth={TOOLBAR_BUTTON_SIZE}
               buttonHeight={TOOLBAR_BUTTON_SIZE}
               fill="--color-toolbarbutton-orange"
-              title="Show Memory Panel"
+              title={t("toolbar.showMemory")}
               selected={isMemoryOpen}
               clicked={async () => {
                 if (isMemoryOpen) {
@@ -103,7 +105,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded, recordingManagerRef }: Props)
               buttonWidth={TOOLBAR_BUTTON_SIZE}
               buttonHeight={TOOLBAR_BUTTON_SIZE}
               fill="--color-toolbarbutton-orange"
-              title="Show Disassembly Panel"
+              title={t("toolbar.showDisassembly")}
               selected={isDisassemblyOpen}
               clicked={async () => {
                 if (isDisassemblyOpen) {

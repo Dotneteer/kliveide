@@ -96,9 +96,6 @@ export function debugRecordingLoadCommandText(
   return `debug-recording-load "${path.replace(/"/g, "")}"${options.start ? " -start" : ""}${options.acceptFallback ? " -y" : ""}`;
 }
 
-/** The end of the message `debug-recording-load` refuses a recording of another build with (D16) */
-export const DEBUG_RECORDING_FALLBACK_HINT = "Use -y to open only its end state, without its past.";
-
 /** Whether this build can replay a recording (the viewer, D19) */
 export type DebugRecordingCompatibility = {
   /** The running core is the recording's, so the answer is known */

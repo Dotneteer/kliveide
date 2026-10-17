@@ -1,5 +1,7 @@
 import type { CodebankDebugInfo, SourceReturnRegisters, SourceValueType, VariableDebugInfo } from "@abstractions/SourceDebugInfo";
 import { fromNumber, toNumber, type Float40 } from "@main/kbasic/semantics/float40";
+// --- `t` is a local name in this file (the trimmed text): the translator is `translate`
+import { t as translate } from "@common/i18n/i18n";
 
 /**
  * Decoding a Klive BASIC value from emulator memory or registers (plan §10.7), in the
@@ -211,33 +213,33 @@ const RANGES: Partial<Record<SourceValueType, [number, number]>> = {
  */
 export function encodeValue(type: SourceValueType, text: string): { bytes: number[] } | { error: string } {
   const t = text.trim();
-  if (type === "string") return { error: "Strings cannot be edited" };
+  if (type === "string") return { error: translate("panels.side.variables.edit.stringsReadOnly") };
   if (type === "boolean") {
     const upper = t.toUpperCase();
     if (upper === "TRUE" || upper === "FALSE") return { bytes: [upper === "TRUE" ? 1 : 0] };
   }
   const hex = /^\$([0-9a-f]+)$/i.exec(t);
   const x = hex ? parseInt(hex[1], 16) : t === "" ? NaN : Number(t);
-  if (!Number.isFinite(x)) return { error: `'${text}' is not a number` };
+  if (!Number.isFinite(x)) return { error: translate("panels.side.variables.edit.notANumber", { text }) };
   const le = (value: number, size: number) => Array.from({ length: size }, (_, i) => Math.floor(value / 2 ** (8 * i)) & 0xff);
   switch (type) {
     case "boolean":
       return { bytes: [x ? 1 : 0] };
     case "fixed": {
       const raw = Math.round(x * 0x10000);
-      if (raw < -0x80000000 || raw > 0x7fffffff) return { error: "Out of the Fixed range" };
+      if (raw < -0x80000000 || raw > 0x7fffffff) return { error: translate("panels.side.variables.edit.outOfFixed") };
       return { bytes: le(raw >>> 0, 4) };
     }
     case "float":
       try {
         return { bytes: [...fromNumber(x)] };
       } catch {
-        return { error: "Out of the Float range" };
+        return { error: translate("panels.side.variables.edit.outOfFloat") };
       }
     default: {
       const [lo, hi] = RANGES[type]!;
-      if (!Number.isInteger(x)) return { error: `${typeName(type)} takes whole numbers` };
-      if (x < lo || x > hi) return { error: `${typeName(type)} holds ${lo} to ${hi}` };
+      if (!Number.isInteger(x)) return { error: translate("panels.side.variables.edit.wholeNumbers", { type: typeName(type) }) };
+      if (x < lo || x > hi) return { error: translate("panels.side.variables.edit.range", { type: typeName(type), lo, hi }) };
       const size = valueSize(type);
       return { bytes: le(x < 0 ? x + 2 ** (8 * size) : x, size) };
     }

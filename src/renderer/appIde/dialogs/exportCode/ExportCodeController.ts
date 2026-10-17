@@ -5,13 +5,10 @@ import { UiController } from "@mvc/core/UiController";
 import type { ExportCodeIntent } from "./ExportCodeIntents";
 import {
   EXPORT_CODE_FOLDER_SETTINGS_KEY,
-  EXPORT_TITLE,
   SCREEN_FILE_FILTERS,
   canExport,
   commandOf,
   effectiveFormatOf,
-  exportFailureMessage,
-  exportSuccessMessage,
   initialState,
   reduce,
   savedSettingsOf,
@@ -20,7 +17,13 @@ import {
   type ExportCodeState
 } from "./ExportCodeModel";
 import type { ExportCodePorts } from "./ExportCodePorts";
-import { selectViewModel, type ExportCodeViewModel } from "./ExportCodeViewModel";
+import {
+  exportFailureMessage,
+  exportSuccessMessage,
+  exportTitle,
+  selectViewModel,
+  type ExportCodeViewModel
+} from "./ExportCodeViewModel";
 
 /**
  * Orchestrates the Export Code dialog.
@@ -127,7 +130,7 @@ export class ExportCodeController extends UiController<
         // --- The dialog stays open: the form is what the user needs to fix.
         await this.ports.service.notify(
           "error",
-          EXPORT_TITLE,
+          exportTitle(),
           exportFailureMessage(result.finalMessage)
         );
         return;
@@ -135,7 +138,7 @@ export class ExportCodeController extends UiController<
 
       await this.ports.service.notify(
         "info",
-        EXPORT_TITLE,
+        exportTitle(),
         exportSuccessMessage(result.finalMessage)
       );
       if (!token.isCurrent()) return;

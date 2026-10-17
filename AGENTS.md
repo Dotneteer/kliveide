@@ -60,6 +60,16 @@ internal link, and asserts the Z80 syntax highlighting actually rendered. The
 last of those exists because a lost grammar leaves every page present and
 merely uncoloured, which no route diff can see.
 
+## Localization (UI languages)
+
+- **Every new user-facing text goes through `t()`** with an English entry and translator context in
+  `src/common/i18n/locales/en/`; read `.ai/i18n-guide.md` before adding or changing UI text. No
+  string concatenation or hand-made plurals; keys at definition, text at display.
+- Run `npm run i18n:keys` after adding keys; `npm run i18n:check` (part of `build:check`) is the gate.
+- Never write translations for other languages in a feature change: they come through
+  `npm run i18n:todo` / `i18n:merge` (`src/common/i18n/locales/README.md`). The plan is
+  `.plans/LOCALIZATION_PLAN.md`.
+
 ## Feature Roadmap And Competitive Analysis
 
 - `.plans/CLOSING_THE_GAPS_PLAN.md` is the roadmap for features where Klive is weaker than other

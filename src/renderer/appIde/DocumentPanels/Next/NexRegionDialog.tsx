@@ -20,6 +20,9 @@ import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler
 import { MemorySection } from "@renderer/appIde/disassemblers/common-types";
 import { MemorySectionType } from "@abstractions/MemorySection";
 import styles from "./NexRegionDialog.module.scss";
+import { t } from "@common/i18n/i18n";
+import { useT } from "@common/i18n/useT";
+import type { MessageKey } from "@common/i18n/keys.generated";
 import { DialogFooter } from "@renderer/controls/overlay/DialogFooter";
 import { decodeCopperWord, formatCopperSource } from "@common/zxnext/copper/copperDecoder";
 import { decodeDmaStream, formatDmaCommand } from "@common/zxnext/dma/dmaDecoder";
@@ -42,16 +45,19 @@ export type NexRegionDialogProps = DialogComponentProps<NexRegionDialogResult> &
   bytes: number[];
 };
 
-const REGION_TYPES: Array<{ value: AnnotationRegionType; label: string }> = [
-  { value: "disassemble", label: "Disassembly" },
-  { value: "bytes", label: "Bytes" },
-  { value: "words", label: "Words" },
-  { value: "copper", label: "Copper" },
-  { value: "dma", label: "DMA" },
-  { value: "text", label: "Text" },
-  { value: "skip", label: "Skip" }
+/**
+ * The region types this dialog offers, by key (D7). Copper and DMA are chip names, which are not
+ * translated, so they carry their name instead of a key.
+ */
+const REGION_TYPES: Array<{ value: AnnotationRegionType; labelKey?: MessageKey; name?: string }> = [
+  { value: "disassemble", labelKey: "panels.next.regionType.disassembly" },
+  { value: "bytes", labelKey: "panels.next.regionType.bytes" },
+  { value: "words", labelKey: "panels.next.regionType.words" },
+  { value: "copper", name: "Copper" },
+  { value: "dma", name: "DMA" },
+  { value: "text", labelKey: "panels.next.regionType.text" },
+  { value: "skip", labelKey: "panels.next.regionType.skip" }
 ];
-
 export function NexRegionDialog({
   initialType,
   initialStart,
@@ -61,6 +67,7 @@ export function NexRegionDialog({
   bytes,
   controls
 }: NexRegionDialogProps) {
+  const t = useT();
   const [type, setType] = useState<AnnotationRegionType>(initialType);
   const [format, setFormat] = useState<ByteRegionFormat>(initialFormat);
   const [startText, setStartText] = useState(formatRegionOffset(initialStart));
@@ -76,14 +83,9 @@ export function NexRegionDialog({
       : [],
     [end, regions, start]
   );
-  const error = useMemo(
-    () => validateRegion(type, start, end),
-    [end, start, type]
-  );
-  const hint = useMemo(
-    () => (error ? undefined : regionHint(type, start!, end!, bytes)),
-    [bytes, end, error, start, type]
-  );
+  // --- Not memoized: both are cheap, and their text is in the display language, which can change
+  const error = validateRegion(type, start, end);
+  const hint = error ? undefined : regionHint(type, start!, end!, bytes);
   /*
    * The preview is awaited, because previewing a `disassemble` region means really disassembling it.
    * The guard drops a result that arrives after the range has moved on — the user types into the
@@ -114,23 +116,23 @@ export function NexRegionDialog({
 
   return (
     <form onSubmit={submit}>
-      <DialogRow label="Type" rows={true}>
+      <DialogRow label={t("panels.next.region.type")} rows={true}>
         <RadioGroup
-          ariaLabel="Region type"
+          ariaLabel={t("panels.next.region.typeAria")}
           columns={REGION_TYPES.length}
           value={type}
           options={REGION_TYPES.map((regionType) => ({
             value: regionType.value,
-            label: regionType.label
+            label: regionType.labelKey ? t(regionType.labelKey) : regionType.name!
           }))}
           onChange={(next) => setType(next as AnnotationRegion["type"])}
         />
       </DialogRow>
       {/* --- Only for bytes: the other types lay their rows out themselves */}
       {type === "bytes" && (
-        <DialogRow label="Format" rows={true}>
+        <DialogRow label={t("panels.next.region.format")} rows={true}>
           <RadioGroup
-            ariaLabel="Byte format"
+            ariaLabel={t("panels.next.region.formatAria")}
             columns={BYTE_REGION_FORMATS.length}
             value={format}
             options={BYTE_REGION_FORMATS.map((option) => ({ value: option.value, label: option.label }))}
@@ -138,14 +140,14 @@ export function NexRegionDialog({
           />
         </DialogRow>
       )}
-      <DialogRow label="Start offset" rows={true}>
+      <DialogRow label={t("panels.next.region.startOffset")} rows={true}>
         <TextInput autoFocus value={startText} onChange={setStartText} />
       </DialogRow>
-      <DialogRow label="End offset" rows={true}>
+      <DialogRow label={t("panels.next.region.endOffset")} rows={true}>
         <div className={styles.rangeInputRow}>
           <TextInput value={endText} onChange={setEndText} />
           <Button
-            text="Entire bank"
+            text={t("panels.next.region.entireBank")}
             variant="secondary"
             clicked={() => {
               setStartText(formatRegionOffset(0));
@@ -154,7 +156,7 @@ export function NexRegionDialog({
           />
         </div>
       </DialogRow>
-      <DialogRow label="Length" rows={true}>
+      <DialogRow label={t("panels.next.region.length")} rows={true}>
         <div className={styles.readOnlyValue}>
           {length !== undefined ? `${formatRegionOffset(length)} (${length})` : ""}
         </div>
@@ -173,14 +175,14 @@ export function NexRegionDialog({
           <span>{hint.text}</span>
           {hint.trimEnd !== undefined && (
             <Button
-              text={`Trim to ${formatRegionOffset(hint.trimEnd)}`}
+              text={t("panels.next.region.trimTo", { offset: formatRegionOffset(hint.trimEnd) })}
               variant="secondary"
               clicked={() => setEndText(formatRegionOffset(hint.trimEnd!))}
             />
           )}
         </div>
       )}
-      <DialogRow label="Affected regions" rows={true}>
+      <DialogRow label={t("panels.next.region.affected")} rows={true}>
         <div className={styles.regionList}>
           {affectedRegions.map((region) => (
             <div className={styles.regionItem} key={`${region.start}:${region.end}:${region.type}`}>
@@ -192,18 +194,18 @@ export function NexRegionDialog({
             </div>
           ))}
           {affectedRegions.length === 0 && (
-            <div className={styles.emptyList}>No affected regions</div>
+            <div className={styles.emptyList}>{t("panels.next.region.noAffected")}</div>
           )}
         </div>
       </DialogRow>
-      <DialogRow label="Preview" rows={true}>
-        <div className={styles.preview} aria-label="Region preview">
+      <DialogRow label={t("panels.next.field.preview")} rows={true}>
+        <div className={styles.preview} aria-label={t("panels.next.region.previewLabel")}>
           {preview}
         </div>
       </DialogRow>
       <DialogFooter>
-        <Button text="Save" type="submit" disabled={!!error} />
-        <Button variant="secondary" text="Cancel" clicked={controls.cancel} />
+        <Button text={t("panels.next.button.save")} type="submit" disabled={!!error} />
+        <Button variant="secondary" text={t("common.button.cancel")} clicked={controls.cancel} />
       </DialogFooter>
     </form>
   );
@@ -378,13 +380,13 @@ export function regionHint(
     const trimEnd = dmaTrimSuggestion(bytes, start, end);
     if (trimEnd !== undefined) {
       return {
-        text: `The range ends in ${end - trimEnd} zero bytes, each listed as a WR2 write.`,
+        text: t("panels.next.region.hint.dmaZeroTail", { count: end - trimEnd }),
         trimEnd
       };
     }
   }
   if (type === "copper" && start % 2 !== 0) {
-    return { text: "Copper words are read from the region start, which is on an odd offset." };
+    return { text: t("panels.next.region.hint.copperOdd") };
   }
   return undefined;
 }
@@ -395,19 +397,19 @@ export function validateRegion(
   end: number | undefined
 ): string | undefined {
   if (start === undefined || end === undefined) {
-    return "Enter hexadecimal or decimal offsets.";
+    return t("panels.next.region.error.offsets");
   }
   if (start < 0 || start > ANNOTATION_BANK_LAST_OFFSET || end < 0 || end > ANNOTATION_BANK_LAST_OFFSET) {
-    return "Offsets must be in $0000..$3FFF.";
+    return t("panels.next.region.error.range");
   }
   if (start > end) {
-    return "Start offset must be less than or equal to end offset.";
+    return t("panels.next.region.error.order");
   }
   if (type === "words" && (end - start + 1) % 2 !== 0) {
-    return "Word regions must contain an even number of bytes.";
+    return t("panels.next.region.error.wordsEven");
   }
   if (type === "copper" && (end - start + 1) % 2 !== 0) {
-    return "Copper regions must contain an even number of bytes.";
+    return t("panels.next.region.error.copperEven");
   }
   return undefined;
 }
@@ -432,7 +434,9 @@ function describeRegionEffect(
   type: AnnotationRegionType
 ): string {
   if (region.start >= start && region.end <= end) {
-    return region.type === type ? "unchanged" : "replace";
+    return region.type === type
+      ? t("panels.next.region.effect.unchanged")
+      : t("panels.next.region.effect.replace");
   }
-  return "split";
+  return t("panels.next.region.effect.split");
 }

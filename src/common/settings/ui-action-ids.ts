@@ -37,4 +37,6 @@ export type UiActionId =
   | "dialog:joystick-bindings"
   | "dialog:sjasmplus"
   | "dialog:boriel"
-  | "dialog:excluded-items";
+  | "dialog:excluded-items"
+  /** Opens the translators' guide in the browser (`.plans/LOCALIZATION_PLAN.md` §7) */
+  | "open:translation-guide";

@@ -18,6 +18,7 @@ import regStyles from "@renderer/controls/data/Registers.module.scss";
 import { hasSourceLevelDebug } from "../utils/compiler-utils";
 import { SourceCallStack } from "../debugger/source/SourceCallStack";
 import { HistoricalCallStack } from "../debugger/history/HistoricalCallStack";
+import { useT } from "@common/i18n/useT";
 
 /**
  * A stack address, in hex and decimal.
@@ -53,11 +54,12 @@ const CallStackRow = ({
   frame: number;
   routine?: string;
 }) => {
+  const t = useT();
   const ref = useTooltipRef<HTMLDivElement>();
 
   return (
     <div ref={ref} className={styles.item}>
-      <Label text={`${index ? index : "Top"}:`} className={styles.csIndex} />
+      <Label text={index ? `${index}:` : t("panels.side.callStack.topIndex")} className={styles.csIndex} />
       <Value
         text={toHexa4(slot)}
         className={classnames(styles.csCell, regStyles.stateValueAlt)}
@@ -72,9 +74,11 @@ const CallStackRow = ({
         offsetY={0}
         showDelay={100}
         content={
-          `${index ? `Frame ${index}` : "Top of stack"}\n` +
-          `Stored at ${addressText(slot)}\n` +
-          `Returns to ${addressText(frame)}${routine ? `, in ${routine}` : ""}`
+          `${index ? t("panels.side.callStack.frame", { index }) : t("panels.side.callStack.top")}\n` +
+          `${t("panels.side.callStack.storedAt", { address: addressText(slot) })}\n` +
+          (routine
+            ? t("panels.side.callStack.returnsToIn", { address: addressText(frame), routine })
+            : t("panels.side.callStack.returnsTo", { address: addressText(frame) }))
         }
       />
     </div>
@@ -95,6 +99,7 @@ export const CallStackPanel = () => {
 };
 
 const RawCallStack = () => {
+  const t = useT();
   const emuApi = useEmuApi();
   const { projectService } = useAppServices();
   // --- The shared resolver names each return address: `MAIN+12`, `PRINT_OUT+3`
@@ -146,11 +151,11 @@ const RawCallStack = () => {
           )}
         />
       )}
-      {!refreshed && <EmptyState message="Call stack not available" />}
+      {!refreshed && <EmptyState message={t("panels.side.callStack.notAvailable")} />}
       {/* --- An empty-but-loaded stack is a fact worth stating. Before this, a refresh that landed
           --- with no frames rendered an empty list and said nothing, which reads as a broken panel
           --- rather than as an empty one. */}
-      {refreshed && !frames?.length && <EmptyState message="The call stack is empty" />}
+      {refreshed && !frames?.length && <EmptyState message={t("panels.side.callStack.empty")} />}
     </div>
   );
 };

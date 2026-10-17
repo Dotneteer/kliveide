@@ -4,6 +4,7 @@ import { effectiveHitMode, hasBreakpointFilters, isLogpoint } from "@common/util
 import { isAnnotationBreakpoint } from "@common/utils/breakpoint-scope";
 import { logGroupOf } from "@common/utils/breakpoint-condition/logpoint-template";
 import { kliveConditionText } from "@common/utils/breakpoint-condition/dezog/dezog-printer";
+import { t } from "@common/i18n/i18n";
 
 /*
  * How a breakpoint's condition, hit rule and their runtime state read to a person - one wording for
@@ -96,20 +97,20 @@ export function breakpointGlyphIcon(glyph: BreakpointGlyph): string {
 
 /** The hit rule in words: "Stops on every 4th hit". `undefined` without a rule. */
 export function describeHitRule(bp: BreakpointInfo): string | undefined {
-  const n = bp.hitCount;
+  const count = bp.hitCount;
   switch (effectiveHitMode(bp)) {
     case "eq":
-      return `Stops on hit ${n}`;
+      return t("debug.hitRule.eq", { count });
     case "gt":
-      return `Stops after hit ${n}`;
+      return t("debug.hitRule.gt", { count });
     case "ge":
-      return `Stops from hit ${n} on`;
+      return t("debug.hitRule.ge", { count });
     case "lt":
-      return `Stops before hit ${n}`;
+      return t("debug.hitRule.lt", { count });
     case "le":
-      return `Stops up to hit ${n}`;
+      return t("debug.hitRule.le", { count });
     case "every":
-      return n === 1 ? "Stops on every hit" : `Stops on every ${ordinal(n!)} hit`;
+      return count === 1 ? t("debug.hitRule.everyHit") : t("debug.hitRule.every", { count });
     default:
       return undefined;
   }
@@ -120,52 +121,43 @@ export function breakpointFilterLines(bp: BreakpointInfo): string[] {
   const lines: string[] = [];
   if (isLogpoint(bp)) {
     if (isAnnotationBreakpoint(bp)) {
-      lines.push("From a LOGPOINT comment - edit the comment and rebuild to change it, or disable it");
+      lines.push(t("debug.bpTip.logpointComment"));
     }
-    lines.push(`Logs: ${bp.logMessage}`);
-    lines.push(`Group: ${logGroupOf(bp.logMessage)}`);
+    lines.push(t("debug.bpTip.logs", { message: bp.logMessage }));
+    lines.push(t("debug.bpTip.group", { group: logGroupOf(bp.logMessage) }));
     if (isAnnotationBreakpoint(bp) && bp.address !== undefined) {
-      lines.push(`At: $${bp.address.toString(16).toUpperCase().padStart(4, "0")}`);
+      lines.push(t("debug.bpTip.at", { address: `$${bp.address.toString(16).toUpperCase().padStart(4, "0")}` }));
     }
   }
-  if (bp.oneShot && !bp.runTo) lines.push("One-shot: removed after it stops");
-  if (bp.runTo) lines.push("Run-to target: removed when the machine gets there");
+  if (bp.oneShot && !bp.runTo) lines.push(t("debug.bpTip.oneShot"));
+  if (bp.runTo) lines.push(t("debug.bpTip.runTo"));
   if (bp.annotationKind === "ASSERTION") {
-    lines.push("From an ASSERTION comment - stops when the expression is false");
-    lines.push(`Asserts: ${bp.annotationText || "false (always stops)"}`);
-    if (bp.annotationText) lines.push(`Read as: ${kliveConditionText(bp.annotationText)}`);
+    lines.push(t("debug.bpTip.assertionComment"));
+    lines.push(
+      bp.annotationText
+        ? t("debug.bpTip.asserts", { expression: bp.annotationText })
+        : t("debug.bpTip.assertsAlways")
+    );
+    if (bp.annotationText) lines.push(t("debug.bpTip.readAs", { condition: kliveConditionText(bp.annotationText) }));
   } else if (bp.annotationKind === "WPMEM") {
-    lines.push(`From a WPMEM comment: ${bp.annotationText ? `WPMEM ${bp.annotationText}` : "WPMEM"}`);
+    lines.push(t("debug.bpTip.wpmemComment", { comment: bp.annotationText ? `WPMEM ${bp.annotationText}` : "WPMEM" }));
   }
-  if (bp.condition?.trim() && !bp.annotationKind) lines.push(`Condition: ${bp.condition.trim()}`);
+  if (bp.condition?.trim() && !bp.annotationKind) {
+    lines.push(t("debug.bpTip.condition", { condition: bp.condition.trim() }));
+  }
   const rule = describeHitRule(bp);
   if (rule) lines.push(rule);
   if (bp.currentHits !== undefined && (bp.condition?.trim() || rule || isLogpoint(bp))) {
-    lines.push(`Hits so far: ${bp.currentHits}`);
+    lines.push(t("debug.bpTip.hits", { count: bp.currentHits }));
   }
   if (bp.conditionInactive) {
-    lines.push(`Inactive: ${bp.conditionInactive} - it will not stop until a build defines it`);
+    lines.push(t("debug.bpTip.inactive", { label: bp.conditionInactive }));
   }
   if (bp.conditionError) {
-    lines.push(`Condition error (${bp.conditionError}) - it stops every time`);
+    lines.push(t("debug.bpTip.conditionError", { error: bp.conditionError }));
   }
   if (bp.logError) {
-    lines.push(`Log message error (${bp.logError}) - it logs the error instead`);
+    lines.push(t("debug.bpTip.logError", { error: bp.logError }));
   }
   return lines;
-}
-
-function ordinal(n: number): string {
-  const tens = n % 100;
-  if (tens >= 11 && tens <= 13) return `${n}th`;
-  switch (n % 10) {
-    case 1:
-      return `${n}st`;
-    case 2:
-      return `${n}nd`;
-    case 3:
-      return `${n}rd`;
-    default:
-      return `${n}th`;
-  }
 }

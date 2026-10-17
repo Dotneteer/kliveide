@@ -14,6 +14,7 @@ import {
   validationError,
   writeMessage
 } from "../services/ide-commands";
+import { t } from "@common/i18n/i18n";
 
 export type SpectrumSnapshotSaveCommandArgs = {
   file: string;
@@ -33,8 +34,9 @@ const SPECTRUM_MACHINES = [MI_SPECTRUM_48, MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_T
  */
 export class SpectrumSnapshotSaveCommand extends IdeCommandBase<SpectrumSnapshotSaveCommandArgs> {
   readonly id = "zx-snapshot-save";
-  readonly description =
-    "Saves the ZX Spectrum as a .szx, .z80 or .sna snapshot (the extension picks the format; -f overwrites)";
+  get description() {
+    return t("commands.snapshotSave.description");
+  }
   readonly aliases = ["zxsave"];
   readonly usage = "zx-snapshot-save <snapshot-file> [-f]";
 
@@ -50,15 +52,13 @@ export class SpectrumSnapshotSaveCommand extends IdeCommandBase<SpectrumSnapshot
     const messages: ValidationMessage[] = [];
     const file = args.file?.trim();
     if (!file) {
-      messages.push(validationError("The snapshot file path cannot be empty."));
+      messages.push(validationError(t("commands.snapshotSave.emptyPath")));
     } else if (!/\.(sna|z80|szx)$/i.test(file)) {
-      messages.push(validationError("The file to save must be a .szx, .z80 or .sna snapshot."));
+      messages.push(validationError(t("commands.snapshotSave.wrongType")));
     }
     const machineId = context.store.getState()?.emulatorState?.machineId;
     if (!machineId || !SPECTRUM_MACHINES.includes(machineId)) {
-      messages.push(
-        validationError("Only a ZX Spectrum 48K, 128K or +2E/+3E can be saved as a snapshot.")
-      );
+      messages.push(validationError(t("commands.snapshotSave.machines")));
     }
     return messages;
   }
@@ -71,27 +71,32 @@ export class SpectrumSnapshotSaveCommand extends IdeCommandBase<SpectrumSnapshot
     const format = snapshotFormatOfName(file)!;
 
     if (!args["-f"] && (await fileExists(context, file))) {
-      return commandError(`${file} already exists; use -f to replace it.`);
+      return commandError(t("commands.snapshotSave.fileExists", { file }));
     }
 
     let result: Awaited<ReturnType<typeof context.emuApi.saveSpectrumSnapshot>>;
     try {
       result = await context.emuApi.saveSpectrumSnapshot(format, await creatorOf(context));
     } catch (err) {
-      return commandError(`Could not save ${file}: ${messageOf(err)}`);
+      return commandError(t("commands.snapshotSave.saveFailed", { file, error: messageOf(err) }));
     }
 
     try {
       await context.mainApi.saveBinaryFile(file, result.bytes);
     } catch (err) {
-      return commandError(`Could not write ${file}: ${messageOf(err)}`);
+      return commandError(t("commands.snapshotSave.writeFailed", { file, error: messageOf(err) }));
     }
 
     for (const loss of result.losses) {
-      writeMessage(context.output, `Warning: ${loss}`, "yellow");
+      writeMessage(context.output, t("commands.snapshotSave.warning", { warning: loss }), "yellow");
     }
     return commandSuccessWith(
-      `${format.toUpperCase()} snapshot ${file} saved (${result.machineName}, PC $${toHexa4(result.pc)}).`,
+      t("commands.snapshotSave.saved", {
+        format: format.toUpperCase(),
+        file,
+        machine: result.machineName,
+        pc: `$${toHexa4(result.pc)}`
+      }),
       { format, losses: result.losses }
     );
   }

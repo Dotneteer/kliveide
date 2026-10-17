@@ -17,6 +17,7 @@ import { canExportHistory, exportExecutionHistoryAs } from "@main/history-export
 import { canSaveDebugRecording, pickAndOpenDebugRecording, saveDebugRecordingAs } from "@main/debug-recording-menus";
 import { type MenuContext, windowInfoOf } from "./menu-context";
 import { createBooleanSettingsMenu, submenuContent, tidySeparators } from "./menu-utils";
+import { t } from "@common/i18n/i18n";
 
 export function createDebugMenu(context: MenuContext): MenuItemConstructorOptions {
   const execState = context.appState?.emulatorState?.machineState;
@@ -32,7 +33,7 @@ export function createDebugMenu(context: MenuContext): MenuItemConstructorOption
   const items: MenuItemConstructorOptions[] = [
     {
       id: "debug",
-      label: "Start with Debugging",
+      label: t("menu.debug.startDebugging"),
       enabled: machineWaits,
       accelerator: "Ctrl+F5",
       click: async () => {
@@ -42,7 +43,7 @@ export function createDebugMenu(context: MenuContext): MenuItemConstructorOption
     { type: "separator" },
     {
       id: "step_into",
-      label: "Step Into",
+      label: t("menu.debug.stepInto"),
       enabled: machinePaused,
       accelerator: context.shortcuts.stepInto,
       click: async () => {
@@ -51,7 +52,7 @@ export function createDebugMenu(context: MenuContext): MenuItemConstructorOption
     },
     {
       id: "step_over",
-      label: "Step Over",
+      label: t("menu.debug.stepOver"),
       enabled: machinePaused,
       accelerator: context.shortcuts.stepOver,
       click: async () => {
@@ -60,7 +61,7 @@ export function createDebugMenu(context: MenuContext): MenuItemConstructorOption
     },
     {
       id: "step_out",
-      label: "Step Out",
+      label: t("menu.debug.stepOut"),
       enabled: machinePaused,
       accelerator: context.shortcuts.stepOut,
       click: async () => {
@@ -69,7 +70,7 @@ export function createDebugMenu(context: MenuContext): MenuItemConstructorOption
     },
     {
       id: "step_over_line",
-      label: "Step Over Line",
+      label: t("menu.debug.stepOverLine"),
       enabled: machinePaused,
       accelerator: context.shortcuts.stepOverLine,
       click: async () => {
@@ -82,20 +83,20 @@ export function createDebugMenu(context: MenuContext): MenuItemConstructorOption
     ...(hasMachineFeature(context.currentMachine, MF_EXEC_HISTORY, context.appState)
       ? [
           { type: "separator" as const },
-          reverseItem("step_back", "Step Back", context.shortcuts.stepBack, "step-back", machinePaused),
-          reverseItem("step_forward", "Step Forward", context.shortcuts.stepForward, "step-forward", machinePaused),
-          reverseItem("step_back_over", "Reverse Step Over", context.shortcuts.stepBackOver, "step-back-over", machinePaused),
-          reverseItem("step_back_out", "Reverse Step Out", context.shortcuts.stepBackOut, "step-back-out", machinePaused),
+          reverseItem("step_back", t("menu.debug.stepBack"), context.shortcuts.stepBack, "step-back", machinePaused),
+          reverseItem("step_forward", t("menu.debug.stepForward"), context.shortcuts.stepForward, "step-forward", machinePaused),
+          reverseItem("step_back_over", t("menu.debug.reverseStepOver"), context.shortcuts.stepBackOver, "step-back-over", machinePaused),
+          reverseItem("step_back_out", t("menu.debug.reverseStepOut"), context.shortcuts.stepBackOut, "step-back-out", machinePaused),
           reverseItem(
             "reverse_continue",
-            "Reverse Continue",
+            t("menu.debug.reverseContinue"),
             context.shortcuts.reverseContinue,
             "reverse-continue",
             machinePaused
           ),
           reverseItem(
             "history_present",
-            "Return to Present",
+            t("menu.debug.returnToPresent"),
             undefined,
             "history-present",
             machinePaused && !!context.appState?.emulatorState?.historyPosition
@@ -109,7 +110,7 @@ export function createDebugMenu(context: MenuContext): MenuItemConstructorOption
       ? [
           {
             id: "show_execution_history",
-            label: "Execution History",
+            label: t("menu.debug.executionHistory"),
             click: async () => {
               await getIdeApi().executeCommand("show-history");
             }
@@ -117,7 +118,7 @@ export function createDebugMenu(context: MenuContext): MenuItemConstructorOption
           // --- A trace for a diff tool (`.plans/TRACE_EXPORT_PLAN.md` D13): not while running (D10)
           {
             id: "export_execution_history",
-            label: "Export Execution History...",
+            label: t("menu.debug.exportHistory"),
             enabled: canExportHistory(context.appState),
             click: async () => {
               await exportExecutionHistoryAs(context.focusedWindow());
@@ -132,7 +133,7 @@ export function createDebugMenu(context: MenuContext): MenuItemConstructorOption
           { type: "separator" as const },
           {
             id: "code_coverage",
-            label: "Code Coverage",
+            label: t("menu.debug.codeCoverage"),
             type: "checkbox" as const,
             checked: !!context.appState?.emulatorState?.profiling?.enabled,
             click: async () => {
@@ -142,7 +143,7 @@ export function createDebugMenu(context: MenuContext): MenuItemConstructorOption
           },
           {
             id: "reset_coverage",
-            label: "Reset Coverage",
+            label: t("menu.debug.resetCoverage"),
             click: async () => {
               await getIdeApi().executeCommand("coverage reset");
             }
@@ -150,7 +151,7 @@ export function createDebugMenu(context: MenuContext): MenuItemConstructorOption
           // --- Code/data detection from the coverage (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §4.6)
           {
             id: "detect_code_data",
-            label: "Detect Code and Data...",
+            label: t("menu.debug.detectCodeData"),
             click: async () => {
               await getIdeApi().displayDialog(DETECT_CODE_DATA_DIALOG);
             }
@@ -160,7 +161,7 @@ export function createDebugMenu(context: MenuContext): MenuItemConstructorOption
           { type: "separator" as const },
           {
             id: "start_profiling",
-            label: "Start Profiling",
+            label: t("menu.debug.startProfiling"),
             enabled: !context.appState?.emulatorState?.profiling?.enabled,
             click: async () => {
               await getIdeApi().executeCommand("profile start -calls");
@@ -168,7 +169,7 @@ export function createDebugMenu(context: MenuContext): MenuItemConstructorOption
           },
           {
             id: "stop_profiling",
-            label: "Stop Profiling",
+            label: t("menu.debug.stopProfiling"),
             enabled: !!context.appState?.emulatorState?.profiling?.enabled,
             click: async () => {
               await getIdeApi().executeCommand("profile stop");
@@ -177,7 +178,7 @@ export function createDebugMenu(context: MenuContext): MenuItemConstructorOption
           },
           {
             id: "show_profiler",
-            label: "Profiler",
+            label: t("menu.debug.profiler"),
             click: async () => {
               await getIdeApi().executeCommand("show-profiler");
             }
@@ -191,7 +192,7 @@ export function createDebugMenu(context: MenuContext): MenuItemConstructorOption
           { type: "separator" as const },
           {
             id: "save_debug_recording",
-            label: "Save Debug Recording...",
+            label: t("menu.debug.saveDebugRecording"),
             enabled: canSaveDebugRecording(context.appState),
             click: async () => {
               await saveDebugRecordingAs(context.focusedWindow());
@@ -199,7 +200,7 @@ export function createDebugMenu(context: MenuContext): MenuItemConstructorOption
           },
           {
             id: "open_debug_recording",
-            label: "Open Debug Recording...",
+            label: t("menu.debug.openDebugRecording"),
             click: async () => {
               await pickAndOpenDebugRecording(context.focusedWindow());
             }
@@ -210,16 +211,16 @@ export function createDebugMenu(context: MenuContext): MenuItemConstructorOption
     { type: "separator" },
     // --- Shown in both windows: it is a debugger behaviour, not a part of one window
     createBooleanSettingsMenu(SETTING_IDE_SYNC_BREAKPOINTS, {
-      label: "Sync Source with Breakpoint",
+      label: t("menu.debug.syncSource"),
       visibleFn: () => true
     }),
     {
       id: "debugger_settings",
-      label: "Debugger Settings...",
+      label: t("menu.debug.debuggerSettings"),
       click: async () => await context.openSettings("debugging")
     }
   ];
-  return { label: "Debug", submenu: tidySeparators(items) };
+  return { label: t("menu.debug.title"), submenu: tidySeparators(items) };
 }
 
 /** A reverse-stepping item: runs its IDE command */

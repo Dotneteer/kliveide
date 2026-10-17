@@ -4,6 +4,7 @@ import { isZxNextIdeMachine } from "@emu/machines/zxNext/IZxNextIdeMachine";
 import type { IAnyMachine } from "@renderer/abstractions/IAnyMachine";
 import { copperHitTact, type BeamOverlayState, type CopperMarker } from "./beamOverlayModel";
 import type { BeamPosition } from "@common/utils/beamGeometry";
+import { t } from "@common/i18n/i18n";
 
 type Options = {
   /** The machine is paused (the overlay is hidden while it runs: D1) */
@@ -26,7 +27,7 @@ export function copperMarkerOf(machine: IAnyMachine, beam: BeamPosition): Copper
   if (!copper.startMode || !hit) return undefined;
   const tact = copperHitTact(beam, hit, copper.lineOffset);
   const index = hit.index.toString(16).toUpperCase().padStart(3, "0");
-  return { tact, label: `Copper hit $${index}` };
+  return { tact, label: t("panels.feature.beam.copperHit", { index: `$${index}` }) };
 }
 
 /**

@@ -22,6 +22,7 @@ import {
   validationError,
   writeMessage
 } from "../services/ide-commands";
+import { t } from "@common/i18n/i18n";
 
 export type SpectrumSnapshotCommandArgs = {
   file: string;
@@ -54,8 +55,9 @@ export function isSpectrumSnapshotPath(path: string | undefined): boolean {
  */
 export class SpectrumSnapshotCommand extends IdeCommandBase<SpectrumSnapshotCommandArgs> {
   readonly id = "zx-snapshot";
-  readonly description =
-    "Loads a ZX Spectrum .sna, .z80 or .szx snapshot and debugs it, stopping at its PC (-r runs it)";
+  get description() {
+    return t("commands.snapshot.description");
+  }
   readonly aliases = ["zxsnap"];
   readonly usage = "zx-snapshot <snapshot-file> [-r | -d]";
 
@@ -70,12 +72,12 @@ export class SpectrumSnapshotCommand extends IdeCommandBase<SpectrumSnapshotComm
   ): Promise<ValidationMessage[]> {
     const messages: ValidationMessage[] = [];
     if (!args.file?.trim()) {
-      messages.push(validationError("The snapshot file path cannot be empty."));
+      messages.push(validationError(t("commands.snapshot.emptyPath")));
     } else if (!isSpectrumSnapshotPath(args.file)) {
-      messages.push(validationError("The file to load must be a .sna, .z80 or .szx snapshot."));
+      messages.push(validationError(t("commands.snapshot.wrongType")));
     }
     if (args["-r"] && args["-d"]) {
-      messages.push(validationError("Use only one of -r and -d."));
+      messages.push(validationError(t("commands.snapshot.oneMode")));
     }
     const guard = spectrumSnapshotProjectGuard(context.store.getState());
     if (guard) {
@@ -95,7 +97,7 @@ export class SpectrumSnapshotCommand extends IdeCommandBase<SpectrumSnapshotComm
     try {
       bytes = await context.mainApi.readBinaryFile(file);
     } catch (err) {
-      return commandError(`Could not read ${file}: ${messageOf(err)}`);
+      return commandError(t("commands.snapshot.readFailed", { file, error: messageOf(err) }));
     }
 
     // --- Parse here too: the project guard needs the snapshot's machine, and disks need reading
@@ -103,11 +105,11 @@ export class SpectrumSnapshotCommand extends IdeCommandBase<SpectrumSnapshotComm
     try {
       snapshot = parseSpectrumSnapshot(file, bytes);
     } catch (err) {
-      return commandError(`${file} is not a valid snapshot: ${messageOf(err)}`);
+      return commandError(t("commands.snapshot.invalid", { file, error: messageOf(err) }));
     }
     const mapping = mapSpectrumSnapshotToKlive(snapshot);
     if (mapping.errors.length) {
-      return commandError(`${file} cannot be loaded: ${mapping.errors.join("; ")}`);
+      return commandError(t("commands.snapshot.cannotLoad", { file, errors: mapping.errors.join("; ") }));
     }
     const state = context.store.getState();
     const guard = spectrumSnapshotProjectGuard(state, mapping.machineId);
@@ -121,7 +123,11 @@ export class SpectrumSnapshotCommand extends IdeCommandBase<SpectrumSnapshotComm
     const diskWarnings: string[] = [];
     for (const disk of [...(snapshot.peripherals.plus3?.disks ?? []), ...(snapshot.peripherals.beta128?.disks ?? [])]) {
       if (disk.embedded) {
-        disks.push({ drive: disk.drive, fileName: `drive ${disk.drive ? "B" : "A"} (embedded)`, contents: disk.embedded });
+        disks.push({
+          drive: disk.drive,
+          fileName: t("commands.snapshot.embeddedDisk", { drive: disk.drive ? "B" : "A" }),
+          contents: disk.embedded
+        });
         continue;
       }
       if (!disk.fileName) continue;
@@ -129,7 +135,9 @@ export class SpectrumSnapshotCommand extends IdeCommandBase<SpectrumSnapshotComm
       if (read) {
         disks.push({ drive: disk.drive, fileName: read.path, contents: read.bytes });
       } else {
-        diskWarnings.push(`The disk ${disk.fileName} the snapshot links was not found; drive ${disk.drive ? "B" : "A"} is left as it is`);
+        diskWarnings.push(
+          t("commands.snapshot.diskNotFound", { disk: disk.fileName, drive: disk.drive ? "B" : "A" })
+        );
       }
     }
 
@@ -137,21 +145,21 @@ export class SpectrumSnapshotCommand extends IdeCommandBase<SpectrumSnapshotComm
     try {
       result = await context.emuApi.loadSpectrumSnapshot(file, bytes, mode, { keepModel, disks });
     } catch (err) {
-      return commandError(`Could not load ${file}: ${messageOf(err)}`);
+      return commandError(t("commands.snapshot.loadFailed", { file, error: messageOf(err) }));
     }
 
     if (result.rebuilt) {
-      writeMessage(context.output, `Machine switched to the ${result.machineName}.`, "cyan");
+      writeMessage(context.output, t("commands.snapshot.machineSwitched", { machine: result.machineName }), "cyan");
     }
     // --- `<snapshot>.dis` is the live annotation set from now on; the first edit creates it.
     const machine = annotationMachineFor(mapping.machineId);
     if (machine) activateSidecarOf(file, machine, "snapshot");
     for (const warning of [...diskWarnings, ...result.warnings]) {
-      writeMessage(context.output, `Warning: ${warning}`, "yellow");
+      writeMessage(context.output, t("commands.snapshot.warning", { warning }), "yellow");
     }
-    const done = mode === "run" ? "running" : "stopped at";
+    const loaded = { format: result.format.toUpperCase(), file, pc: `$${toHexa4(result.pc)}` };
     return commandSuccessWith(
-      `${result.format.toUpperCase()} snapshot ${file} loaded, ${done} PC $${toHexa4(result.pc)}.`
+      mode === "run" ? t("commands.snapshot.loadedRunning", loaded) : t("commands.snapshot.loadedStopped", loaded)
     );
   }
 }
@@ -164,31 +172,29 @@ export class SpectrumSnapshotCommand extends IdeCommandBase<SpectrumSnapshotComm
  * Spectrum type too, naming both machines.
  * @param state The IDE's state (the parts read here)
  * @param snapshotMachineId The machine the snapshot maps to
+ * @param kind What is being loaded: a snapshot, or an RZX recording (which starts from one)
  */
 export function spectrumSnapshotProjectGuard(
   state: {
     project?: { folderPath?: string | null; isKliveProject?: boolean };
     emulatorState?: { machineId?: string };
   },
-  snapshotMachineId?: string
+  snapshotMachineId?: string,
+  kind: "snapshot" | "recording" = "snapshot"
 ): string | undefined {
   const machineId = state.emulatorState?.machineId;
   if (!state.project?.isKliveProject) {
     return undefined;
   }
   const nameOf = (id: string | undefined) =>
-    machineRegistry.find((m) => m.machineId === id)?.displayName ?? id ?? "another machine";
+    machineRegistry.find((m) => m.machineId === id)?.displayName ?? id ?? t("commands.snapshot.anotherMachine");
   if (!machineId || !SPECTRUM_MACHINES.includes(machineId)) {
-    return (
-      `The open project targets ${nameOf(machineId)}; loading a ZX Spectrum snapshot would switch ` +
-      "it to a ZX Spectrum. Close the project or open a ZX Spectrum project first."
-    );
+    const args = { machine: nameOf(machineId) };
+    return kind === "recording" ? t("commands.rzx.guard.notSpectrum", args) : t("commands.snapshot.guard.notSpectrum", args);
   }
   if (snapshotMachineId && snapshotMachineId !== machineId) {
-    return (
-      `The open project targets the ${nameOf(machineId)}, but this snapshot needs the ` +
-      `${nameOf(snapshotMachineId)}. Close the project or open a project for that machine.`
-    );
+    const args = { machine: nameOf(machineId), needed: nameOf(snapshotMachineId) };
+    return kind === "recording" ? t("commands.rzx.guard.otherModel", args) : t("commands.snapshot.guard.otherModel", args);
   }
   return undefined;
 }

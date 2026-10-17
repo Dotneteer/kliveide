@@ -9,26 +9,32 @@ import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { useSelector } from "@renderer/core/RendererProvider";
 import type { NavigationReason } from "@renderer/abstractions/NavigationLocation";
 import styles from "./NavigationControls.module.scss";
+import { useT } from "@common/i18n/useT";
+import { labelRecord } from "@common/i18n/labels";
+import type { MessageKey } from "@common/i18n/keys.generated";
 
 /** How each reason reads in the list. */
-export const REASON_LABELS: Record<NavigationReason, string> = {
-  definition: "definition",
-  outputLink: "output link",
-  breakpoint: "breakpoint",
-  memoryGoTo: "go to",
-  disassemblyGoTo: "go to",
-  nexLabel: "label",
-  nexBank: "bank",
-  z88Bank: "bank",
-  spectrumBank: "bank",
-  tapeBlock: "block",
-  pFileRegion: "part",
-  tabSwitch: "tab",
-  explorer: "explorer",
-  command: "command",
-  profiler: "profiler",
-  unitTest: "unit test"
+const REASON_KEYS: Record<NavigationReason, MessageKey> = {
+  definition: "panels.feature.navigation.reason.definition",
+  outputLink: "panels.feature.navigation.reason.outputLink",
+  breakpoint: "panels.feature.navigation.reason.breakpoint",
+  memoryGoTo: "panels.feature.navigation.reason.goTo",
+  disassemblyGoTo: "panels.feature.navigation.reason.goTo",
+  nexLabel: "panels.feature.navigation.reason.label",
+  nexBank: "panels.feature.navigation.reason.bank",
+  z88Bank: "panels.feature.navigation.reason.bank",
+  spectrumBank: "panels.feature.navigation.reason.bank",
+  tapeBlock: "panels.feature.navigation.reason.block",
+  pFileRegion: "panels.feature.navigation.reason.part",
+  tabSwitch: "panels.feature.navigation.reason.tab",
+  explorer: "panels.feature.navigation.reason.explorer",
+  command: "panels.feature.navigation.reason.command",
+  profiler: "panels.feature.navigation.reason.profiler",
+  unitTest: "panels.feature.navigation.reason.unitTest"
 };
+
+/** How each reason reads in the list (translated on each read) */
+export const REASON_LABELS: Readonly<Record<NavigationReason, string>> = labelRecord(REASON_KEYS);
 
 type Props = {
   /** The element the list hangs from. */
@@ -47,6 +53,7 @@ type Props = {
  * See `.plans/NAVIGATION_HISTORY_PLAN.md` §6.
  */
 export const NavigationHistoryPopover = ({ anchor, shortcuts, onClose }: Props) => {
+  const t = useT();
   const { navigationHistoryService: history } = useAppServices();
   useSelector((s) => s.ideView?.navHistory);
   const overlayRoot = useOverlayRoot();
@@ -111,11 +118,11 @@ export const NavigationHistoryPopover = ({ anchor, shortcuts, onClose }: Props) 
       className={styles.popover}
       style={{ top: position.top, left: position.left }}
       role="dialog"
-      aria-label="Navigation history"
+      aria-label={t("panels.feature.navigation.history")}
       onKeyDown={onKeyDown}
     >
       <div className={styles.popoverHeader}>
-        <span className={styles.popoverTitle}>Navigation history</span>
+        <span className={styles.popoverTitle}>{t("panels.feature.navigation.history")}</span>
         <span className={styles.popoverCount}>{entries.length}</span>
         <span className={styles.popoverSpacer} />
         <button
@@ -127,15 +134,15 @@ export const NavigationHistoryPopover = ({ anchor, shortcuts, onClose }: Props) 
             onClose();
           }}
         >
-          Clear
+          {t("panels.feature.navigation.clear")}
         </button>
       </div>
       {rows.length === 0 ? (
         <div className={styles.emptyHistory}>
-          No locations yet. Go to Definition, an output link, or switching tabs adds one.
+          {t("panels.feature.navigation.empty")}
         </div>
       ) : (
-        <div className={styles.historyList} role="listbox" aria-label="Locations">
+        <div className={styles.historyList} role="listbox" aria-label={t("panels.feature.navigation.locations")}>
           {rows.map(({ entry, i }) => {
             const position = history.describe(entry);
             const preview = history.preview(entry);
@@ -177,10 +184,10 @@ export const NavigationHistoryPopover = ({ anchor, shortcuts, onClose }: Props) 
       )}
       <div className={styles.popoverFooter}>
         <span>
-          <kbd>{shortcuts.back}</kbd> back
+          <kbd>{shortcuts.back}</kbd> {t("panels.feature.navigation.footerBack")}
         </span>
         <span>
-          <kbd>{shortcuts.forward}</kbd> forward
+          <kbd>{shortcuts.forward}</kbd> {t("panels.feature.navigation.footerForward")}
         </span>
       </div>
     </div>

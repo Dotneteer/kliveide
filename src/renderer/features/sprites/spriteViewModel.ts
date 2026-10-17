@@ -1,9 +1,13 @@
 /*
  * The Sprite Inspector's view model (`.plans/SPRITE_INSPECTOR_PLAN.md` §4.4-§4.5). Pure: a snapshot
  * in, rows, cells, strip items and map shapes out, so the document's logic is tested without React.
+ * The text it returns is translated when the functions run, which is at render time; the logic
+ * keys off the `id` fields, never the text.
  */
 
 import type { NextSpriteState } from "@common/messaging/EmuApi";
+import { t } from "@common/i18n/i18n";
+import type { MessageKey } from "@common/i18n/keys.generated";
 import {
   decodeResolvedSprites,
   decodeSpriteSlots,
@@ -87,6 +91,8 @@ export function diagnosticsOf(model: SpriteModel, index: number): SpriteDiagnost
 const LAYER_ORDERS = ["SLU", "LSU", "SUL", "LUS", "USL", "ULS", "S(U+L)", "S(U-L)"];
 
 export type GlobalsItem = {
+  /** A stable identity: the logic and React keys use it, never the (translated) label */
+  id: string;
   key: string;
   value: string;
   title?: string;
@@ -108,79 +114,102 @@ export function orderGlobals(items: GlobalsItem[]): GlobalsItem[] {
 export function globalsStrip(model: SpriteModel): GlobalsItem[] {
   const { state, clip } = model;
   const [x1, x2, y1, y2] = state.clip;
-  const statusFlags = [state.status.tooMany && "too many", state.status.collision && "collision"].filter(
-    Boolean
-  ) as string[];
+  const statusFlags = [
+    state.status.tooMany && t("panels.sprites.global.statusTooMany"),
+    state.status.collision && t("panels.sprites.global.statusCollision")
+  ].filter(Boolean) as string[];
   const u = state.upload;
   return [
     {
-      key: "Sprites",
-      value: model.enabled ? "ON" : "OFF",
+      id: "sprites",
+      key: t("panels.sprites.global.sprites"),
+      value: model.enabled ? t("panels.sprites.global.spritesOn") : t("panels.sprites.global.spritesOff"),
       flag: !model.enabled,
       primary: true,
-      title: "NextReg $15 bit 0: the sprite layer is shown"
+      title: t("panels.sprites.global.spritesTitle")
     },
     {
-      key: "Over border",
-      value: model.overBorder ? "yes" : "no",
-      title: "NextReg $15 bit 1: sprites are drawn over the border"
+      id: "overBorder",
+      key: t("panels.sprites.global.overBorder"),
+      value: model.overBorder ? t("panels.graphics.inspector.yes") : t("panels.graphics.inspector.no"),
+      title: t("panels.sprites.global.overBorderTitle")
     },
     {
-      key: "Clip",
+      id: "clip",
+      key: t("panels.graphics.inspector.globalClip"),
       primary: true,
       value: model.overBorder && !model.clippingEnabled
-        ? "off (whole 320×256)"
+        ? t("panels.sprites.global.clipOff")
         : `(${clip.x1},${clip.y1})-(${clip.x2},${clip.y2})`,
-      title:
-        `The effective clip window in sprite space.\n$19 = ${x1}, ${x2}, ${y1}, ${y2} (x1, x2, y1, y2); next write sets #${state.clipIndex}.\n` +
-        (model.overBorder
+      title: [
+        t("panels.sprites.global.clipTitle"),
+        t("panels.sprites.global.clipRegs", { x1, x2, y1, y2, next: state.clipIndex }),
+        model.overBorder
           ? model.clippingEnabled
-            ? "Over border with clipping ($15 bit 5): X is doubled."
-            : "Over border without clipping ($15 bit 5 clear): no clip."
-          : "Without over border the window is paper-relative (+32), and Y stops at 223.")
+            ? t("panels.sprites.global.clipDoubled")
+            : t("panels.sprites.global.clipNone")
+          : t("panels.sprites.global.clipPaper")
+      ].join("\n")
     },
     {
-      key: "Order",
+      id: "order",
+      key: t("panels.sprites.global.order"),
       value: LAYER_ORDERS[model.layerPriority],
-      title: "NextReg $15 bits 4-2: the layer order, top first (S sprites, L Layer 2, U ULA)"
+      title: t("panels.sprites.global.orderTitle")
     },
     {
-      key: "On top",
+      id: "onTop",
+      key: t("panels.sprites.global.onTop"),
       value: model.sprite0OnTop ? "#0" : "#127",
-      title: "NextReg $15 bit 6: which sprite wins where two overlap"
+      title: t("panels.sprites.global.onTopTitle")
     },
     {
+      id: "transparency",
       key: "$4B",
       value: hex2(state.transparencyIndex),
-      title: "The sprite transparency index (4-bit sprites use its low nibble)"
+      title: t("panels.sprites.global.transparencyTitle")
     },
     {
-      key: "Last visible",
+      id: "lastVisible",
+      key: t("panels.sprites.global.lastVisible"),
       primary: true,
-      value: state.lastVisible < 0 ? "none" : `#${state.lastVisible}`,
-      title: "The highest slot with its visible bit set: the engine does not look past it"
+      value: state.lastVisible < 0 ? t("panels.graphics.inspector.none") : `#${state.lastVisible}`,
+      title: t("panels.sprites.global.lastVisibleTitle")
     },
     {
-      key: "Status",
-      value: statusFlags.length ? statusFlags.join(", ") : "clear",
+      id: "status",
+      key: t("panels.sprites.global.status"),
+      value: statusFlags.length ? statusFlags.join(", ") : t("panels.sprites.global.statusClear"),
       flag: statusFlags.length > 0,
-      title: "Port $303B, peeked: reading it here does not clear it for the program"
+      title: t("panels.sprites.global.statusTitle")
     },
     {
-      key: "Upload",
-      value: `#${u.spriteIndex}.${u.spriteSub} pat ${u.patternIndex}.${hex2(u.patternSub)}`,
-      title:
-        `Port $57 writes attribute byte ${u.spriteSub} of sprite #${u.spriteIndex}.\n` +
-        `Port $5B writes byte ${hex2(u.patternSub)} of pattern slot ${u.patternIndex} (pattern RAM ${hex4(
-          (u.patternIndex << 8) | u.patternSub
-        )}).`
+      id: "upload",
+      key: t("panels.sprites.global.upload"),
+      value: t("panels.sprites.global.uploadValue", {
+        sprite: u.spriteIndex,
+        byte: u.spriteSub,
+        pattern: u.patternIndex,
+        offset: hex2(u.patternSub)
+      }),
+      title: [
+        t("panels.sprites.global.uploadSprite", { byte: u.spriteSub, sprite: u.spriteIndex }),
+        t("panels.sprites.global.uploadPattern", {
+          offset: hex2(u.patternSub),
+          pattern: u.patternIndex,
+          address: hex4((u.patternIndex << 8) | u.patternSub)
+        })
+      ].join("\n")
     },
     {
-      key: "Mirror",
-      value: `#${u.mirrorIndex & 0x7f}${u.tied ? " (tied)" : ""}`,
-      title:
-        "NextReg $34: the sprite the attribute mirrors ($35-$39, $75-$79) write." +
-        (u.tied ? "\nNextReg $09 bit 4 ties it to the port $57 upload index." : "")
+      id: "mirror",
+      key: t("panels.sprites.global.mirror"),
+      value: u.tied
+        ? t("panels.sprites.global.mirrorTied", { sprite: u.mirrorIndex & 0x7f })
+        : `#${u.mirrorIndex & 0x7f}`,
+      title: u.tied
+        ? `${t("panels.sprites.global.mirrorTitle")}\n${t("panels.sprites.global.mirrorTiedTitle")}`
+        : t("panels.sprites.global.mirrorTitle")
     }
   ];
 }
@@ -189,11 +218,12 @@ export function globalsStrip(model: SpriteModel): GlobalsItem[] {
 
 export type SpriteFilter = "all" | "upToLastVisible" | "visible" | "nonEmpty";
 
-export const SPRITE_FILTERS: { value: SpriteFilter; label: string }[] = [
-  { value: "upToLastVisible", label: "Up to last visible" },
-  { value: "all", label: "All 128" },
-  { value: "visible", label: "Visible only" },
-  { value: "nonEmpty", label: "Non-empty" }
+/** The filter choices; the document translates `labelKey` when it shows them */
+export const SPRITE_FILTERS: readonly { value: SpriteFilter; labelKey: MessageKey }[] = [
+  { value: "upToLastVisible", labelKey: "panels.sprites.filter.upToLastVisible" },
+  { value: "all", labelKey: "panels.sprites.filter.all" },
+  { value: "visible", labelKey: "panels.sprites.filter.visible" },
+  { value: "nonEmpty", labelKey: "panels.sprites.filter.nonEmpty" }
 ];
 
 export type SpriteRow = {
@@ -493,6 +523,8 @@ export function hashBytes(bytes: ArrayLike<number>): number {
 // --- The inspector (§4.5.3)
 
 export type SpriteField = {
+  /** A stable identity: the pane keys off it, never the (translated) name */
+  id: "type" | "visible" | "x" | "y" | "pattern" | "format" | "palette" | "transform" | "scale";
   name: string;
   /** The effective value: what the engine draws */
   value: string;
@@ -501,7 +533,9 @@ export type SpriteField = {
 };
 
 const SCALE_FACTORS = ["1", "2", "4", "8"];
-const yesNo = (v: boolean | undefined) => (v ? "yes" : "no");
+const yesNo = (v: boolean | undefined) => (v ? t("panels.graphics.inspector.yes") : t("panels.graphics.inspector.no"));
+const own = (value: string) => t("panels.sprites.own.value", { value });
+const formatName = (fourBit: boolean) => (fourBit ? t("panels.sprites.format.4bit") : t("panels.sprites.format.8bit"));
 const xform = (r: { rotate: boolean; xmirror: boolean; ymirror: boolean }) =>
   `${r.rotate ? "R" : "-"}${r.xmirror ? "X" : "-"}${r.ymirror ? "Y" : "-"}`;
 
@@ -516,43 +550,70 @@ export function spriteFields(model: SpriteModel, index: number): SpriteField[] {
   const anchor = findAnchor(model.slots, index);
   const fields: SpriteField[] = [];
   fields.push({
-    name: "Type",
-    value: slot.kind === "anchor4" ? "anchor, 4-byte" : slot.kind === "anchor5" ? "anchor, 5-byte" : "relative",
+    id: "type",
+    name: t("panels.sprites.field.type"),
+    value:
+      slot.kind === "anchor4"
+        ? t("panels.sprites.value.anchor4")
+        : slot.kind === "anchor5"
+          ? t("panels.sprites.value.anchor5")
+          : t("panels.sprites.value.relative"),
     own: relative
       ? anchor === undefined
-        ? "no anchor"
-        : `anchor #${anchor}, ${model.slots[anchor].relType}`
+        ? t("panels.sprites.own.noAnchor")
+        : t("panels.sprites.own.anchor", { anchor, kind: model.slots[anchor].relType })
       : slot.kind === "anchor5"
-        ? `relatives ${slot.relType}`
+        ? t("panels.sprites.own.relatives", { kind: slot.relType })
         : undefined
   });
   fields.push({
-    name: "Visible",
+    id: "visible",
+    name: t("panels.sprites.field.visible"),
     value: yesNo(r.visible),
-    own: slot.visibleBit !== r.visible ? `own bit ${yesNo(slot.visibleBit)}` : undefined
+    own: slot.visibleBit !== r.visible ? t("panels.sprites.own.bit", { value: yesNo(slot.visibleBit) }) : undefined
   });
-  fields.push({ name: "X", value: String(r.x), own: relative ? `own Δ${signed(slot.dx!)}` : undefined });
-  fields.push({ name: "Y", value: String(r.y), own: relative ? `own Δ${signed(slot.dy!)}` : undefined });
+  fields.push({ id: "x", name: "X", value: String(r.x), own: relative ? own(`Δ${signed(slot.dx!)}`) : undefined });
+  fields.push({ id: "y", name: "Y", value: String(r.y), own: relative ? own(`Δ${signed(slot.dy!)}`) : undefined });
+  const ownPatternNumber = `${slot.pattern6}${slot.n6 ? "+N6" : ""}`;
   const ownPattern = relative
-    ? `own ${slot.pattern6}${slot.n6 ? "+N6" : ""}${slot.patternRelative ? " + anchor's" : ""}`
+    ? slot.patternRelative
+      ? t("panels.sprites.own.patternAnchor", { value: ownPatternNumber })
+      : own(ownPatternNumber)
     : undefined;
   const effectivePattern = formatSpritePattern(r.fourBit, r.pattern7);
   fields.push({
-    name: "Pattern",
+    id: "pattern",
+    name: t("panels.sprites.field.pattern"),
     value: effectivePattern,
     own: relative && (slot.patternRelative || slot.pattern6 !== patternSlotOf(r)) ? ownPattern : undefined
   });
-  fields.push({ name: "Format", value: r.fourBit ? "4-bit" : "8-bit", own: relative ? "from anchor" : undefined });
   fields.push({
-    name: "Palette",
+    id: "format",
+    name: t("panels.sprites.field.format"),
+    value: formatName(r.fourBit),
+    own: relative ? t("panels.sprites.own.fromAnchor") : undefined
+  });
+  fields.push({
+    id: "palette",
+    name: t("panels.sprites.field.palette"),
     value: String(r.paletteOffset),
-    own: relative && slot.paletteRelative ? `own +${slot.paletteOffset}` : undefined
+    own: relative && slot.paletteRelative ? own(`+${slot.paletteOffset}`) : undefined
   });
   const ownXform = xform(slot);
-  fields.push({ name: "Transform", value: xform(r), own: ownXform !== xform(r) ? `own ${ownXform}` : undefined });
+  fields.push({
+    id: "transform",
+    name: t("panels.sprites.field.transform"),
+    value: xform(r),
+    own: ownXform !== xform(r) ? own(ownXform) : undefined
+  });
   const scale = `${SCALE_FACTORS[r.scaleX]}×${SCALE_FACTORS[r.scaleY]}`;
   const ownScale = `${SCALE_FACTORS[slot.scaleX]}×${SCALE_FACTORS[slot.scaleY]}`;
-  fields.push({ name: "Scale", value: scale, own: ownScale !== scale ? `own ${ownScale}` : undefined });
+  fields.push({
+    id: "scale",
+    name: t("panels.sprites.field.scale"),
+    value: scale,
+    own: ownScale !== scale ? own(ownScale) : undefined
+  });
   return fields;
 }
 
@@ -561,9 +622,9 @@ export function spriteSummary(model: SpriteModel, index: number): string {
   const r = model.resolved[index];
   const hidden = diagnosticsOf(model, index).some((d) => d.level === "hidden");
   return [
-    r.visible && !hidden ? "drawn" : "hidden",
+    r.visible && !hidden ? t("panels.sprites.summary.drawn") : t("panels.sprites.summary.hidden"),
     `${r.x},${r.y}`,
-    `pattern ${formatSpritePattern(r.fourBit, r.pattern7)}`,
-    r.fourBit ? "4-bit" : "8-bit"
+    t("panels.sprites.summary.pattern", { pattern: formatSpritePattern(r.fourBit, r.pattern7) }),
+    formatName(r.fourBit)
   ].join(" · ");
 }

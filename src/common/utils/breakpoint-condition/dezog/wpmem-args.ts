@@ -2,6 +2,7 @@ import type { ConditionSymbols } from "../condition-types";
 import type { SyntaxNode } from "../condition-parser";
 import { ConditionSyntaxError } from "../condition-lexer";
 import { parseDezogExpression } from "./dezog-parser";
+import { t } from "@common/i18n/i18n";
 
 /*
  * The arguments of a DeZog `WPMEM` comment (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §2.2,
@@ -41,40 +42,40 @@ const MAX_LENGTH = 0x1_0000;
 export function parseWpmemArgs(text: string, symbols: ConditionSymbols = {}): WpmemParseResult {
   const parts = splitTopLevel(text.trim());
   if (parts.length > 3) {
-    return { error: "WPMEM takes at most three arguments: address, length, access" };
+    return { error: t("debug.wpmem.tooManyArgs") };
   }
   const [addrText = "", lengthText = "", accessText = ""] = parts.map((p) => p.trim());
 
   let address: number | undefined;
   if (addrText) {
-    const folded = foldText(addrText, symbols, "address");
+    const folded = foldText(addrText, symbols, "debug.wpmem.addressInvalid");
     if ("error" in folded) return folded;
     if (folded.value < 0 || folded.value > 0xffff) {
-      return { error: `the address ${addrText} is outside $0000-$FFFF` };
+      return { error: t("debug.wpmem.addressRange", { text: addrText }) };
     }
     address = folded.value;
   }
 
   let length = 1;
   if (lengthText) {
-    const folded = foldText(lengthText, symbols, "length");
+    const folded = foldText(lengthText, symbols, "debug.wpmem.lengthInvalid");
     if ("error" in folded) return folded;
     if (folded.value < 1 || folded.value > MAX_LENGTH) {
-      return { error: `the length ${lengthText} must be between 1 and 65536` };
+      return { error: t("debug.wpmem.lengthRange", { text: lengthText }) };
     }
     length = folded.value;
   } else if (parts.length > 1 && accessText) {
-    return { error: "the length is missing before the access" };
+    return { error: t("debug.wpmem.lengthMissing") };
   }
   if (address !== undefined && address + length > MAX_LENGTH) {
-    return { error: "the range runs past $FFFF" };
+    return { error: t("debug.wpmem.pastEnd") };
   }
 
   let access: WpmemAccess = "rw";
   if (accessText) {
     const lower = accessText.toLowerCase();
     if (lower !== "r" && lower !== "w" && lower !== "rw") {
-      return { error: `the access '${accessText}' must be r, w or rw` };
+      return { error: t("debug.wpmem.badAccess", { text: accessText }) };
     }
     access = lower;
   }
@@ -104,13 +105,13 @@ function splitTopLevel(text: string): string[] {
 function foldText(
   text: string,
   symbols: ConditionSymbols,
-  what: string
+  message: "debug.wpmem.addressInvalid" | "debug.wpmem.lengthInvalid"
 ): { value: number } | { error: string } {
   try {
     return { value: foldConstant(parseDezogExpression(text), symbols) };
   } catch (err) {
     if (err instanceof ConditionSyntaxError || err instanceof FoldError) {
-      return { error: `the ${what} ${text}: ${err.message}` };
+      return { error: t(message, { text, reason: err.message }) };
     }
     throw err;
   }
@@ -127,9 +128,9 @@ export function foldConstant(node: SyntaxNode, symbols: ConditionSymbols): numbe
     case "num":
       return node.v;
     case "name": {
-      if (!node.quoted) throw new FoldError(`a register (${node.name}) is not a constant`);
+      if (!node.quoted) throw new FoldError(t("debug.wpmem.registerNotConstant", { name: node.name }));
       const value = symbols[node.name.toLowerCase()];
-      if (value === undefined) throw new FoldError(`unknown label ${node.name}`);
+      if (value === undefined) throw new FoldError(t("debug.wpmem.unknownLabel", { name: node.name }));
       return value;
     }
     case "un": {
@@ -155,10 +156,10 @@ export function foldConstant(node: SyntaxNode, symbols: ConditionSymbols): numbe
         case "*":
           return Math.imul(l, r);
         case "/":
-          if (r === 0) throw new FoldError("division by zero");
+          if (r === 0) throw new FoldError(t("debug.wpmem.divisionByZero"));
           return Math.trunc(l / r);
         case "%":
-          if (r === 0) throw new FoldError("division by zero");
+          if (r === 0) throw new FoldError(t("debug.wpmem.divisionByZero"));
           return l % r;
         case "&":
           return l & r;
@@ -192,9 +193,9 @@ export function foldConstant(node: SyntaxNode, symbols: ConditionSymbols): numbe
       break;
     }
     case "mem":
-      throw new FoldError("a memory read is not a constant");
+      throw new FoldError(t("debug.wpmem.memoryRead"));
     case "machine":
-      throw new FoldError("a machine value is not a constant");
+      throw new FoldError(t("debug.wpmem.machineValue"));
   }
-  throw new FoldError("not a constant");
+  throw new FoldError(t("debug.wpmem.notConstant"));
 }

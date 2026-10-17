@@ -1,3 +1,4 @@
+import { useT } from "@common/i18n/useT";
 import { useDispatch, useGlobalSetting, useSelector } from "@renderer/core/RendererProvider";
 import { selectActivityAction } from "@state/actions";
 import { Activity } from "../../abstractions/Activity";
@@ -18,6 +19,7 @@ type Props = {
 };
 
 export const ActivityBar = ({ order, activities }: Props) => {
+  const t = useT();
   const mainApi = useMainApi();
   const dispatch = useDispatch();
   const activeActitity = useSelector((s) => s.ideView?.activity);
@@ -40,7 +42,7 @@ export const ActivityBar = ({ order, activities }: Props) => {
         className={styles.activities}
         role="tablist"
         aria-orientation="vertical"
-        aria-label="Activities"
+        aria-label={t("panels.activityBar.label")}
       >
         {activities.map((act) => (
           <ActivityButton
@@ -64,7 +66,7 @@ export const ActivityBar = ({ order, activities }: Props) => {
       {/* Pinned to the foot of the bar, outside the tab list: it opens a dialog, not a sidebar */}
       <ActivityButton
         kind="command"
-        title="Settings"
+        title={t("panels.activityBar.settings")}
         iconName="settings"
         clicked={async () => {
           await mainApi.runUiAction("open-settings");
@@ -73,14 +75,14 @@ export const ActivityBar = ({ order, activities }: Props) => {
       {menuState.contextVisible && (
         <ContextMenu state={menuState} onClickOutside={menuApi.conceal}>
           <ContextMenuItem
-            text={sideBarToRight ? "Move Sidebar to the Left" : "Move Sidebar to the Right"}
+            text={t(sideBarToRight ? "panels.activityBar.moveSidebarLeft" : "panels.activityBar.moveSidebarRight")}
             clicked={async () => {
               menuApi.conceal();
               await mainApi.setGlobalSettingsValue(SETTING_IDE_SIDEBAR_TO_RIGHT, !sideBarToRight);
             }}
           />
           <ContextMenuItem
-            text={sideBarVisible ? "Hide Sidebar" : "Show Sidebar"}
+            text={t(sideBarVisible ? "panels.activityBar.hideSidebar" : "panels.activityBar.showSidebar")}
             clicked={async () => {
               menuApi.conceal();
               await mainApi.setGlobalSettingsValue(SETTING_IDE_SHOW_SIDEBAR, !sideBarVisible);
@@ -88,7 +90,7 @@ export const ActivityBar = ({ order, activities }: Props) => {
           />
           <ContextMenuSeparator />
           <ContextMenuItem
-            text="Appearance Settings..."
+            text={t("panels.activityBar.appearanceSettings")}
             clicked={async () => {
               menuApi.conceal();
               await mainApi.runUiAction("open-settings", "appearance");

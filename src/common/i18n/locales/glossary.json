@@ -1,0 +1,1367 @@
+{
+  "_about": "Klive's translation glossary (LOCALIZATION_PLAN §8). Seeded by AI from the English catalogs; each language column still needs review by a native speaker. Translators and the AI follow it; extend it in the same change that adds or fixes a language. See README.md. The translation rounds (LOCALIZATION_PLAN step 10, and its rerun after steps 11–13) added the terms their translators had to settle on themselves.",
+  "reviewed": {
+    "es": false,
+    "pt-BR": false,
+    "pt-PT": false,
+    "de": false,
+    "hu": false
+  },
+  "style": {
+    "es": "Address the user as 'tú' (informal, the current software convention). Menu items and buttons: infinitive ('Abrir archivo'). Sentence case: only the first word and proper names capitalized.",
+    "pt-BR": "Brazilian Portuguese. Address the user as 'você'. Menu items and buttons: infinitive ('Abrir arquivo'). Sentence case. Never use European-only words (see variantOnly.pt-PT).",
+    "pt-PT": "European Portuguese, Acordo Ortográfico 1990 spelling. Avoid pronouns; use impersonal phrasing or the infinitive ('Abrir ficheiro'). Gerunds become 'a' + infinitive ('a carregar'). Sentence case. Never use Brazilian-only words (see variantOnly.pt-BR).",
+    "de": "Address the user as 'Sie'. Menu items and buttons: infinitive at the end ('Datei öffnen'). Capitalize nouns as German requires; no English title case. Prefer short compounds; respect maxChars with a shorter synonym, not an abbreviation nobody uses.",
+    "hu": "Impersonal UI style: avoid 'Ön' and 'te' where possible. Menu items and buttons: nominal forms ('Megnyitás', 'Mentés') or short infinitives. Sentence case. Never attach a suffix to a placeholder: phrase around it ('A(z) {name} fájl törlése?')."
+  },
+  "doNotTranslate": [
+    "Klive",
+    "Klive IDE",
+    "Klive BASIC",
+    "Boriel BASIC",
+    "SjasmPlus",
+    "Pasta/80",
+    "z88dk",
+    "zxbc",
+    "ZX Spectrum",
+    "ZX Spectrum 48K",
+    "ZX Spectrum 128K",
+    "ZX Spectrum Next",
+    "ZX80",
+    "ZX81",
+    "Cambridge Z88",
+    "Z88",
+    "Timex",
+    "TC2048",
+    "TC2068",
+    "TS2068",
+    "Pentagon",
+    "Scorpion",
+    "Commodore 64",
+    "C64",
+    "NextZXOS",
+    "NextReg",
+    "Copper",
+    "Layer 2",
+    "Tilemap",
+    "ULA",
+    "BLINK",
+    "VIC",
+    "PSG",
+    "AY-3-8912",
+    "DivMMC",
+    "Multiface",
+    "TR-DOS",
+    "Beta 128",
+    "OZ",
+    "BBC BASIC",
+    "Z80",
+    "6510",
+    "ROM",
+    "RAM",
+    "BASIC",
+    "NMI",
+    "CPU",
+    "Kempston",
+    "Sinclair",
+    "Protek",
+    "HiDPI",
+    "MP4",
+    "WebM",
+    "MKV",
+    "H.264",
+    "H.265",
+    "VP9",
+    "CSV",
+    "RZX",
+    "SD",
+    "register and flag names (A, F, BC, DE, HL, IX, IY, SP, PC, I, R, AF', Z, C, P/V, S, N, H)",
+    "Z80/6502 mnemonics (LD, CALL, RET, JP, ...)",
+    "assembler directives (.org, .defb, ...)",
+    "BASIC keywords (PRINT, LOAD, ...)",
+    "IDE command names and their options (outp, set -u, run, debug, ...)",
+    "file extensions (.tap, .tzx, .sna, .z80, .szx, .kls, .klr, .rzx, .dck, .trd, .scl, .dsk, .p, .o, .cim, .keymap)",
+    "keyboard shortcuts (Ctrl+F5, Shift+F4, Cmd+O)",
+    "hexadecimal values ($1F, $05)"
+  ],
+  "variantOnly": {
+    "pt-BR": [
+      "arquivo",
+      "arquivos",
+      "salvar",
+      "salve",
+      "salva",
+      "tela",
+      "telas",
+      "usuário",
+      "usuários",
+      "registro",
+      "registros",
+      "contato",
+      "mouse",
+      "tela cheia",
+      "barra de status"
+    ],
+    "pt-PT": [
+      "ficheiro",
+      "ficheiros",
+      "ecrã",
+      "ecrãs",
+      "utilizador",
+      "utilizadores",
+      "registo",
+      "registos",
+      "rato",
+      "contacto"
+    ]
+  },
+  "terms": [
+    {
+      "en": "file",
+      "note": "A file on disk",
+      "es": "archivo",
+      "pt-BR": "arquivo",
+      "pt-PT": "ficheiro",
+      "de": "Datei",
+      "hu": "fájl"
+    },
+    {
+      "en": "folder",
+      "es": "carpeta",
+      "pt-BR": "pasta",
+      "pt-PT": "pasta",
+      "de": "Ordner",
+      "hu": "mappa"
+    },
+    {
+      "en": "project",
+      "note": "A Klive project folder",
+      "es": "proyecto",
+      "pt-BR": "projeto",
+      "pt-PT": "projeto",
+      "de": "Projekt",
+      "hu": "projekt"
+    },
+    {
+      "en": "open (command)",
+      "note": "Menu/button verb",
+      "es": "abrir",
+      "pt-BR": "abrir",
+      "pt-PT": "abrir",
+      "de": "öffnen",
+      "hu": "megnyitás"
+    },
+    {
+      "en": "save",
+      "es": "guardar",
+      "pt-BR": "salvar",
+      "pt-PT": "guardar",
+      "de": "speichern",
+      "hu": "mentés"
+    },
+    {
+      "en": "save as",
+      "es": "guardar como",
+      "pt-BR": "salvar como",
+      "pt-PT": "guardar como",
+      "de": "speichern unter",
+      "hu": "mentés másként"
+    },
+    {
+      "en": "close",
+      "es": "cerrar",
+      "pt-BR": "fechar",
+      "pt-PT": "fechar",
+      "de": "schließen",
+      "hu": "bezárás"
+    },
+    {
+      "en": "delete",
+      "es": "eliminar",
+      "pt-BR": "excluir",
+      "pt-PT": "eliminar",
+      "de": "löschen",
+      "hu": "törlés"
+    },
+    {
+      "en": "rename",
+      "es": "cambiar nombre",
+      "pt-BR": "renomear",
+      "pt-PT": "mudar o nome (button: renomear)",
+      "de": "umbenennen",
+      "hu": "átnevezés"
+    },
+    {
+      "en": "settings",
+      "note": "The Settings dialog. Where space is tight, a short verb form is acceptable (es/pt-BR: Configurar).",
+      "es": "configuración",
+      "pt-BR": "configurações",
+      "pt-PT": "definições",
+      "de": "Einstellungen",
+      "hu": "beállítások"
+    },
+    {
+      "en": "OK",
+      "note": "Dialog button",
+      "es": "Aceptar",
+      "pt-BR": "OK",
+      "pt-PT": "OK",
+      "de": "OK",
+      "hu": "OK"
+    },
+    {
+      "en": "Cancel",
+      "note": "Dialog button",
+      "es": "Cancelar",
+      "pt-BR": "Cancelar",
+      "pt-PT": "Cancelar",
+      "de": "Abbrechen",
+      "hu": "Mégse"
+    },
+    {
+      "en": "Yes / No",
+      "note": "Dialog buttons",
+      "es": "Sí / No",
+      "pt-BR": "Sim / Não",
+      "pt-PT": "Sim / Não",
+      "de": "Ja / Nein",
+      "hu": "Igen / Nem"
+    },
+    {
+      "en": "browse",
+      "note": "Pick a file or folder",
+      "es": "examinar",
+      "pt-BR": "procurar",
+      "pt-PT": "procurar",
+      "de": "durchsuchen",
+      "hu": "tallózás"
+    },
+    {
+      "en": "reset (to defaults)",
+      "note": "Restore default values",
+      "es": "restablecer",
+      "pt-BR": "redefinir",
+      "pt-PT": "repor",
+      "de": "zurücksetzen",
+      "hu": "visszaállítás"
+    },
+    {
+      "en": "soft reset",
+      "note": "Machine reset keeping memory",
+      "es": "reinicio en caliente",
+      "pt-BR": "reinicialização a quente",
+      "pt-PT": "reinício a quente",
+      "de": "Warmstart",
+      "hu": "meleg újraindítás"
+    },
+    {
+      "en": "hard reset",
+      "note": "Machine reset clearing memory",
+      "es": "reinicio en frío",
+      "pt-BR": "reinicialização a frio",
+      "pt-PT": "reinício a frio",
+      "de": "Kaltstart",
+      "hu": "hideg újraindítás"
+    },
+    {
+      "en": "restart",
+      "es": "reiniciar",
+      "pt-BR": "reiniciar",
+      "pt-PT": "reiniciar",
+      "de": "neu starten",
+      "hu": "újraindítás"
+    },
+    {
+      "en": "start",
+      "note": "Start the machine",
+      "es": "iniciar",
+      "pt-BR": "iniciar",
+      "pt-PT": "iniciar",
+      "de": "starten",
+      "hu": "indítás"
+    },
+    {
+      "en": "stop",
+      "note": "Stop the machine",
+      "es": "detener",
+      "pt-BR": "parar",
+      "pt-PT": "parar",
+      "de": "anhalten",
+      "hu": "leállítás"
+    },
+    {
+      "en": "pause",
+      "es": "pausar",
+      "pt-BR": "pausar",
+      "pt-PT": "pausar",
+      "de": "pausieren",
+      "hu": "szüneteltetés"
+    },
+    {
+      "en": "continue",
+      "es": "continuar",
+      "pt-BR": "continuar",
+      "pt-PT": "continuar",
+      "de": "fortsetzen",
+      "hu": "folytatás"
+    },
+    {
+      "en": "machine",
+      "note": "The emulated computer",
+      "es": "máquina",
+      "pt-BR": "máquina",
+      "pt-PT": "máquina",
+      "de": "Maschine",
+      "hu": "gép"
+    },
+    {
+      "en": "emulator",
+      "es": "emulador",
+      "pt-BR": "emulador",
+      "pt-PT": "emulador",
+      "de": "Emulator",
+      "hu": "emulátor"
+    },
+    {
+      "en": "debugger",
+      "es": "depurador",
+      "pt-BR": "depurador",
+      "pt-PT": "depurador",
+      "de": "Debugger",
+      "hu": "hibakereső"
+    },
+    {
+      "en": "debugging",
+      "es": "depuración",
+      "pt-BR": "depuração",
+      "pt-PT": "depuração",
+      "de": "Debugging",
+      "hu": "hibakeresés"
+    },
+    {
+      "en": "breakpoint",
+      "es": "punto de interrupción (where space is tight: punto de parada)",
+      "pt-BR": "ponto de interrupção",
+      "pt-PT": "ponto de interrupção",
+      "de": "Haltepunkt",
+      "hu": "töréspont"
+    },
+    {
+      "en": "step into",
+      "note": "Debugger command",
+      "es": "entrar",
+      "pt-BR": "intervir",
+      "pt-PT": "entrar",
+      "de": "hineinspringen",
+      "hu": "belépés"
+    },
+    {
+      "en": "step over",
+      "note": "Debugger command",
+      "es": "saltar",
+      "pt-BR": "contornar",
+      "pt-PT": "passar por cima",
+      "de": "überspringen",
+      "hu": "átlépés"
+    },
+    {
+      "en": "step out",
+      "note": "Debugger command",
+      "es": "salir",
+      "pt-BR": "sair",
+      "pt-PT": "sair",
+      "de": "herausspringen",
+      "hu": "kilépés"
+    },
+    {
+      "en": "step back",
+      "note": "Reverse debugging: one instruction back",
+      "es": "retroceder",
+      "pt-BR": "voltar",
+      "pt-PT": "recuar",
+      "de": "zurückgehen",
+      "hu": "visszalépés"
+    },
+    {
+      "en": "memory",
+      "es": "memoria",
+      "pt-BR": "memória",
+      "pt-PT": "memória",
+      "de": "Speicher",
+      "hu": "memória"
+    },
+    {
+      "en": "disassembly",
+      "note": "The disassembled code view",
+      "es": "desensamblado",
+      "pt-BR": "desmontagem",
+      "pt-PT": "desmontagem",
+      "de": "Disassemblierung",
+      "hu": "visszafejtés"
+    },
+    {
+      "en": "assembler",
+      "note": "Program that assembles Z80 code",
+      "es": "ensamblador",
+      "pt-BR": "montador",
+      "pt-PT": "assemblador",
+      "de": "Assembler",
+      "hu": "assembler"
+    },
+    {
+      "en": "compiler",
+      "es": "compilador",
+      "pt-BR": "compilador",
+      "pt-PT": "compilador",
+      "de": "Compiler",
+      "hu": "fordító"
+    },
+    {
+      "en": "build (noun)",
+      "note": "The project build",
+      "es": "compilación",
+      "pt-BR": "compilação",
+      "pt-PT": "compilação",
+      "de": "Build",
+      "hu": "fordítás"
+    },
+    {
+      "en": "export",
+      "es": "exportar",
+      "pt-BR": "exportar",
+      "pt-PT": "exportar",
+      "de": "exportieren",
+      "hu": "exportálás"
+    },
+    {
+      "en": "import",
+      "es": "importar",
+      "pt-BR": "importar",
+      "pt-PT": "importar",
+      "de": "importieren",
+      "hu": "importálás"
+    },
+    {
+      "en": "tape",
+      "note": "Cassette tape of a Spectrum",
+      "es": "cinta",
+      "pt-BR": "fita",
+      "pt-PT": "cassete",
+      "de": "Kassette",
+      "hu": "kazetta"
+    },
+    {
+      "en": "floppy disk",
+      "es": "disquete",
+      "pt-BR": "disquete",
+      "pt-PT": "disquete",
+      "de": "Diskette",
+      "hu": "floppylemez"
+    },
+    {
+      "en": "disk image",
+      "note": "A disk image file",
+      "es": "imagen de disco",
+      "pt-BR": "imagem de disco",
+      "pt-PT": "imagem de disco",
+      "de": "Diskettenabbild",
+      "hu": "lemezkép"
+    },
+    {
+      "en": "drive",
+      "note": "Disk drive",
+      "es": "unidad",
+      "pt-BR": "unidade",
+      "pt-PT": "unidade",
+      "de": "Laufwerk",
+      "hu": "meghajtó"
+    },
+    {
+      "en": "eject",
+      "note": "Remove a tape/disk/card",
+      "es": "expulsar",
+      "pt-BR": "ejetar",
+      "pt-PT": "ejetar",
+      "de": "auswerfen",
+      "hu": "kiadás"
+    },
+    {
+      "en": "insert",
+      "note": "Put in a tape/disk/card",
+      "es": "insertar",
+      "pt-BR": "inserir",
+      "pt-PT": "inserir",
+      "de": "einlegen",
+      "hu": "behelyezés"
+    },
+    {
+      "en": "rewind",
+      "note": "Tape",
+      "es": "rebobinar",
+      "pt-BR": "rebobinar",
+      "pt-PT": "rebobinar",
+      "de": "zurückspulen",
+      "hu": "visszatekerés"
+    },
+    {
+      "en": "snapshot",
+      "note": "A saved machine image (.sna, .z80, .szx)",
+      "es": "instantánea",
+      "pt-BR": "snapshot",
+      "pt-PT": "snapshot",
+      "de": "Snapshot",
+      "hu": "pillanatkép"
+    },
+    {
+      "en": "machine state",
+      "note": "Klive's full state file (.kls)",
+      "es": "estado de la máquina",
+      "pt-BR": "estado da máquina",
+      "pt-PT": "estado da máquina",
+      "de": "Maschinenzustand",
+      "hu": "gépállapot"
+    },
+    {
+      "en": "recording",
+      "note": "Video or input recording",
+      "es": "grabación",
+      "pt-BR": "gravação",
+      "pt-PT": "gravação",
+      "de": "Aufnahme",
+      "hu": "felvétel"
+    },
+    {
+      "en": "record (verb)",
+      "es": "grabar",
+      "pt-BR": "gravar",
+      "pt-PT": "gravar",
+      "de": "aufnehmen",
+      "hu": "rögzítés"
+    },
+    {
+      "en": "screen",
+      "note": "The emulated display",
+      "es": "pantalla",
+      "pt-BR": "tela",
+      "pt-PT": "ecrã",
+      "de": "Bildschirm",
+      "hu": "képernyő"
+    },
+    {
+      "en": "full screen",
+      "es": "pantalla completa",
+      "pt-BR": "tela cheia",
+      "pt-PT": "ecrã inteiro",
+      "de": "Vollbild",
+      "hu": "teljes képernyő"
+    },
+    {
+      "en": "window",
+      "es": "ventana",
+      "pt-BR": "janela",
+      "pt-PT": "janela",
+      "de": "Fenster",
+      "hu": "ablak"
+    },
+    {
+      "en": "toolbar",
+      "es": "barra de herramientas",
+      "pt-BR": "barra de ferramentas",
+      "pt-PT": "barra de ferramentas",
+      "de": "Symbolleiste",
+      "hu": "eszköztár"
+    },
+    {
+      "en": "status bar",
+      "es": "barra de estado",
+      "pt-BR": "barra de status",
+      "pt-PT": "barra de estado",
+      "de": "Statusleiste",
+      "hu": "állapotsor"
+    },
+    {
+      "en": "sidebar",
+      "es": "barra lateral",
+      "pt-BR": "barra lateral",
+      "pt-PT": "barra lateral",
+      "de": "Seitenleiste",
+      "hu": "oldalsáv"
+    },
+    {
+      "en": "panel",
+      "es": "panel",
+      "pt-BR": "painel",
+      "pt-PT": "painel",
+      "de": "Bereich",
+      "hu": "panel"
+    },
+    {
+      "en": "tab",
+      "note": "Document/editor tab",
+      "es": "pestaña",
+      "pt-BR": "guia",
+      "pt-PT": "separador",
+      "de": "Registerkarte",
+      "hu": "lap"
+    },
+    {
+      "en": "menu",
+      "es": "menú",
+      "pt-BR": "menu",
+      "pt-PT": "menu",
+      "de": "Menü",
+      "hu": "menü"
+    },
+    {
+      "en": "dialog",
+      "es": "cuadro de diálogo",
+      "pt-BR": "caixa de diálogo",
+      "pt-PT": "caixa de diálogo",
+      "de": "Dialogfeld",
+      "hu": "párbeszédablak"
+    },
+    {
+      "en": "command",
+      "note": "An IDE command typed in the prompt",
+      "es": "comando",
+      "pt-BR": "comando",
+      "pt-PT": "comando",
+      "de": "Befehl",
+      "hu": "parancs"
+    },
+    {
+      "en": "command prompt",
+      "note": "The IDE's command line",
+      "es": "línea de comandos",
+      "pt-BR": "prompt de comando",
+      "pt-PT": "linha de comandos",
+      "de": "Befehlszeile",
+      "hu": "parancssor"
+    },
+    {
+      "en": "output",
+      "note": "Output pane",
+      "es": "salida",
+      "pt-BR": "saída",
+      "pt-PT": "saída",
+      "de": "Ausgabe",
+      "hu": "kimenet"
+    },
+    {
+      "en": "editor",
+      "es": "editor",
+      "pt-BR": "editor",
+      "pt-PT": "editor",
+      "de": "Editor",
+      "hu": "szerkesztő"
+    },
+    {
+      "en": "source code",
+      "es": "código fuente",
+      "pt-BR": "código-fonte",
+      "pt-PT": "código-fonte",
+      "de": "Quellcode",
+      "hu": "forráskód"
+    },
+    {
+      "en": "line",
+      "note": "Source line",
+      "es": "línea",
+      "pt-BR": "linha",
+      "pt-PT": "linha",
+      "de": "Zeile",
+      "hu": "sor"
+    },
+    {
+      "en": "address",
+      "note": "Memory address",
+      "es": "dirección",
+      "pt-BR": "endereço",
+      "pt-PT": "endereço",
+      "de": "Adresse",
+      "hu": "cím"
+    },
+    {
+      "en": "register",
+      "note": "CPU register (names like HL stay English)",
+      "es": "registro",
+      "pt-BR": "registrador",
+      "pt-PT": "registo",
+      "de": "Register",
+      "hu": "regiszter"
+    },
+    {
+      "en": "flag",
+      "note": "CPU flag (names like Z, C stay English)",
+      "es": "indicador",
+      "pt-BR": "flag",
+      "pt-PT": "flag",
+      "de": "Flag",
+      "hu": "jelzőbit"
+    },
+    {
+      "en": "interrupt",
+      "es": "interrupción",
+      "pt-BR": "interrupção",
+      "pt-PT": "interrupção",
+      "de": "Interrupt",
+      "hu": "megszakítás"
+    },
+    {
+      "en": "instruction",
+      "note": "A Z80 instruction",
+      "es": "instrucción",
+      "pt-BR": "instrução",
+      "pt-PT": "instrução",
+      "de": "Instruktion",
+      "hu": "utasítás"
+    },
+    {
+      "en": "execution history",
+      "es": "historial de ejecución",
+      "pt-BR": "histórico de execução",
+      "pt-PT": "histórico de execução",
+      "de": "Ausführungsverlauf",
+      "hu": "végrehajtási előzmények"
+    },
+    {
+      "en": "code coverage",
+      "es": "cobertura de código",
+      "pt-BR": "cobertura de código",
+      "pt-PT": "cobertura de código",
+      "de": "Codeabdeckung",
+      "hu": "kódlefedettség"
+    },
+    {
+      "en": "profiler",
+      "es": "perfilador",
+      "pt-BR": "profiler",
+      "pt-PT": "profiler",
+      "de": "Profiler",
+      "hu": "profilozó"
+    },
+    {
+      "en": "watch",
+      "note": "Watched expression",
+      "es": "inspección",
+      "pt-BR": "inspeção",
+      "pt-PT": "inspeção",
+      "de": "Überwachung",
+      "hu": "figyelő"
+    },
+    {
+      "en": "call stack",
+      "es": "pila de llamadas",
+      "pt-BR": "pilha de chamadas",
+      "pt-PT": "pilha de chamadas",
+      "de": "Aufrufliste",
+      "hu": "hívási verem"
+    },
+    {
+      "en": "variable",
+      "es": "variable",
+      "pt-BR": "variável",
+      "pt-PT": "variável",
+      "de": "Variable",
+      "hu": "változó"
+    },
+    {
+      "en": "label",
+      "note": "Assembly symbol",
+      "es": "etiqueta",
+      "pt-BR": "rótulo",
+      "pt-PT": "etiqueta",
+      "de": "Label",
+      "hu": "címke"
+    },
+    {
+      "en": "keyboard",
+      "es": "teclado",
+      "pt-BR": "teclado",
+      "pt-PT": "teclado",
+      "de": "Tastatur",
+      "hu": "billentyűzet"
+    },
+    {
+      "en": "virtual keyboard",
+      "note": "On-screen keyboard",
+      "es": "teclado virtual",
+      "pt-BR": "teclado virtual",
+      "pt-PT": "teclado virtual",
+      "de": "virtuelle Tastatur",
+      "hu": "virtuális billentyűzet"
+    },
+    {
+      "en": "key",
+      "note": "Keyboard key",
+      "es": "tecla",
+      "pt-BR": "tecla",
+      "pt-PT": "tecla",
+      "de": "Taste",
+      "hu": "billentyű"
+    },
+    {
+      "en": "key mapping",
+      "note": "Host key to machine key assignment",
+      "es": "asignación de teclas",
+      "pt-BR": "mapeamento de teclas",
+      "pt-PT": "mapeamento de teclas",
+      "de": "Tastenbelegung",
+      "hu": "billentyű-hozzárendelés"
+    },
+    {
+      "en": "mouse",
+      "es": "ratón",
+      "pt-BR": "mouse",
+      "pt-PT": "rato",
+      "de": "Maus",
+      "hu": "egér"
+    },
+    {
+      "en": "gamepad",
+      "es": "mando",
+      "pt-BR": "controle",
+      "pt-PT": "comando",
+      "de": "Gamepad",
+      "hu": "játékvezérlő"
+    },
+    {
+      "en": "host",
+      "note": "The real computer Klive runs on",
+      "es": "anfitrión",
+      "pt-BR": "host",
+      "pt-PT": "anfitrião",
+      "de": "Host",
+      "hu": "gazdagép"
+    },
+    {
+      "en": "sound",
+      "es": "sonido",
+      "pt-BR": "som",
+      "pt-PT": "som",
+      "de": "Ton",
+      "hu": "hang"
+    },
+    {
+      "en": "speed",
+      "note": "Emulation speed",
+      "es": "velocidad",
+      "pt-BR": "velocidade",
+      "pt-PT": "velocidade",
+      "de": "Geschwindigkeit",
+      "hu": "sebesség"
+    },
+    {
+      "en": "zoom",
+      "es": "zoom",
+      "pt-BR": "zoom",
+      "pt-PT": "zoom",
+      "de": "Zoom",
+      "hu": "nagyítás"
+    },
+    {
+      "en": "theme",
+      "note": "Colour theme",
+      "es": "tema",
+      "pt-BR": "tema",
+      "pt-PT": "tema",
+      "de": "Design",
+      "hu": "téma"
+    },
+    {
+      "en": "font",
+      "es": "fuente",
+      "pt-BR": "fonte",
+      "pt-PT": "tipo de letra",
+      "de": "Schriftart",
+      "hu": "betűtípus"
+    },
+    {
+      "en": "language",
+      "note": "Display language",
+      "es": "idioma",
+      "pt-BR": "idioma",
+      "pt-PT": "idioma",
+      "de": "Sprache",
+      "hu": "nyelv"
+    },
+    {
+      "en": "help",
+      "es": "ayuda",
+      "pt-BR": "ajuda",
+      "pt-PT": "ajuda",
+      "de": "Hilfe",
+      "hu": "súgó"
+    },
+    {
+      "en": "default",
+      "note": "Default value",
+      "es": "predeterminado",
+      "pt-BR": "padrão",
+      "pt-PT": "predefinido",
+      "de": "Standard",
+      "hu": "alapértelmezett"
+    },
+    {
+      "en": "enable / disable",
+      "es": "activar / desactivar",
+      "pt-BR": "ativar / desativar",
+      "pt-PT": "ativar / desativar",
+      "de": "aktivieren / deaktivieren",
+      "hu": "engedélyezés / letiltás"
+    },
+    {
+      "en": "show / hide",
+      "es": "mostrar / ocultar",
+      "pt-BR": "mostrar / ocultar",
+      "pt-PT": "mostrar / ocultar",
+      "de": "anzeigen / ausblenden",
+      "hu": "megjelenítés / elrejtés"
+    },
+    {
+      "en": "error",
+      "es": "error",
+      "pt-BR": "erro",
+      "pt-PT": "erro",
+      "de": "Fehler",
+      "hu": "hiba"
+    },
+    {
+      "en": "warning",
+      "es": "advertencia",
+      "pt-BR": "aviso",
+      "pt-PT": "aviso",
+      "de": "Warnung",
+      "hu": "figyelmeztetés"
+    },
+    {
+      "en": "overwrite",
+      "es": "sobrescribir",
+      "pt-BR": "substituir",
+      "pt-PT": "substituir",
+      "de": "überschreiben",
+      "hu": "felülírás"
+    },
+    {
+      "en": "SD card",
+      "es": "tarjeta SD",
+      "pt-BR": "cartão SD",
+      "pt-PT": "cartão SD",
+      "de": "SD-Karte",
+      "hu": "SD-kártya"
+    },
+    {
+      "en": "cartridge",
+      "note": "Timex DOCK cartridge",
+      "es": "cartucho",
+      "pt-BR": "cartucho",
+      "pt-PT": "cartucho",
+      "de": "Steckmodul",
+      "hu": "cartridge"
+    },
+    {
+      "en": "card",
+      "note": "Cambridge Z88 memory card",
+      "es": "tarjeta",
+      "pt-BR": "cartão",
+      "pt-PT": "cartão",
+      "de": "Karte",
+      "hu": "kártya"
+    },
+    {
+      "en": "layer",
+      "note": "Video layer",
+      "es": "capa",
+      "pt-BR": "camada",
+      "pt-PT": "camada",
+      "de": "Ebene",
+      "hu": "réteg"
+    },
+    {
+      "en": "sprite",
+      "es": "sprite",
+      "pt-BR": "sprite",
+      "pt-PT": "sprite",
+      "de": "Sprite",
+      "hu": "sprite"
+    },
+    {
+      "en": "palette",
+      "es": "paleta",
+      "pt-BR": "paleta",
+      "pt-PT": "paleta",
+      "de": "Palette",
+      "hu": "paletta"
+    },
+    {
+      "en": "unit test",
+      "es": "prueba unitaria",
+      "pt-BR": "teste de unidade",
+      "pt-PT": "teste unitário",
+      "de": "Unit-Test",
+      "hu": "egységteszt"
+    },
+    {
+      "en": "script",
+      "es": "script",
+      "pt-BR": "script",
+      "pt-PT": "script",
+      "de": "Skript",
+      "hu": "szkript"
+    },
+    {
+      "en": "automation",
+      "note": "Scripts driving Klive",
+      "es": "automatización",
+      "pt-BR": "automação",
+      "pt-PT": "automatização",
+      "de": "Automatisierung",
+      "hu": "automatizálás"
+    },
+    {
+      "en": "integration",
+      "note": "External tool integration",
+      "es": "integración",
+      "pt-BR": "integração",
+      "pt-PT": "integração",
+      "de": "Integration",
+      "hu": "integráció"
+    },
+    {
+      "en": "configure",
+      "es": "configurar",
+      "pt-BR": "configurar",
+      "pt-PT": "configurar",
+      "de": "konfigurieren",
+      "hu": "beállítás"
+    },
+    {
+      "en": "select",
+      "es": "seleccionar",
+      "pt-BR": "selecionar",
+      "pt-PT": "selecionar",
+      "de": "auswählen",
+      "hu": "kiválasztás"
+    },
+    {
+      "en": "Explorer",
+      "note": "The project file tree panel",
+      "es": "Explorador",
+      "pt-BR": "Explorador",
+      "pt-PT": "Explorador",
+      "de": "Explorer",
+      "hu": "Intéző"
+    },
+    {
+      "en": "scanline",
+      "note": "CRT scanline effect",
+      "es": "línea de barrido",
+      "pt-BR": "linha de varredura",
+      "pt-PT": "linha de varrimento",
+      "de": "Scanline",
+      "hu": "pásztázósor"
+    },
+    {
+      "en": "beam position",
+      "note": "The raster beam",
+      "es": "posición del haz",
+      "pt-BR": "posição do feixe",
+      "pt-PT": "posição do feixe",
+      "de": "Strahlposition",
+      "hu": "sugárpozíció"
+    },
+    {
+      "en": "frame",
+      "note": "Video frame",
+      "es": "fotograma",
+      "pt-BR": "quadro",
+      "pt-PT": "fotograma",
+      "de": "Bild (Frame)",
+      "hu": "képkocka"
+    },
+    {
+      "en": "logpoint",
+      "note": "A breakpoint that logs instead of stopping",
+      "es": "punto de registro",
+      "pt-BR": "logpoint",
+      "pt-PT": "logpoint",
+      "de": "Logpoint",
+      "hu": "naplópont"
+    },
+    {
+      "en": "build root",
+      "note": "The project file built by Build",
+      "es": "raíz de compilación",
+      "pt-BR": "raiz de compilação",
+      "pt-PT": "raiz de compilação",
+      "de": "Build-Root",
+      "hu": "fordítási gyökér"
+    },
+    {
+      "en": "release",
+      "note": "A published version of an external tool",
+      "es": "versión",
+      "pt-BR": "versão",
+      "pt-PT": "versão",
+      "de": "Release",
+      "hu": "kiadás"
+    },
+    {
+      "en": "executable",
+      "note": "An external tool's program file",
+      "es": "ejecutable",
+      "pt-BR": "executável",
+      "pt-PT": "executável",
+      "de": "Programmdatei",
+      "hu": "programfájl"
+    },
+    {
+      "en": "template",
+      "note": "A New Project template (not a machine model)",
+      "es": "plantilla",
+      "pt-BR": "template",
+      "pt-PT": "modelo",
+      "de": "Vorlage",
+      "hu": "sablon"
+    },
+    {
+      "en": "exclude (from the project)",
+      "note": "Explorer: hide an item from the project and the build (pt-BR: 'excluir' means delete — avoid)",
+      "es": "excluir del proyecto",
+      "pt-BR": "ocultar do projeto",
+      "pt-PT": "retirar do projeto",
+      "de": "aus dem Projekt ausschließen",
+      "hu": "kizárás a projektből"
+    },
+    {
+      "en": "frame rate",
+      "es": "velocidad de fotogramas",
+      "pt-BR": "taxa de quadros",
+      "pt-PT": "taxa de fotogramas",
+      "de": "Bildrate",
+      "hu": "képfrekvencia"
+    },
+    {
+      "en": "Open Editors",
+      "note": "The panel listing open documents",
+      "es": "Editores abiertos",
+      "pt-BR": "Editores abertos",
+      "pt-PT": "Editores abertos",
+      "de": "Geöffnete Editoren",
+      "hu": "nyitott lapok"
+    },
+    {
+      "en": "hit count",
+      "note": "How many times a breakpoint was hit",
+      "es": "contador de activaciones",
+      "pt-BR": "ocorrências",
+      "pt-PT": "contagem de ocorrências",
+      "de": "Trefferanzahl",
+      "hu": "találatszám"
+    },
+    {
+      "en": "Log (output pane)",
+      "note": "An output pane name; not a CPU register",
+      "es": "registro",
+      "pt-BR": "log",
+      "pt-PT": "Log",
+      "de": "Protokoll",
+      "hu": "napló"
+    },
+    {
+      "en": "image (SD card / disk)",
+      "note": "An image file of an SD card or disk",
+      "es": "imagen",
+      "pt-BR": "imagem",
+      "pt-PT": "imagem",
+      "de": "Abbild",
+      "hu": "képfájl"
+    },
+    {
+      "en": "bank",
+      "note": "Memory bank (128K/Next/Z88)",
+      "es": "banco",
+      "pt-BR": "banco",
+      "pt-PT": "banco",
+      "de": "Bank",
+      "hu": "bank"
+    },
+    {
+      "en": "page",
+      "note": "Memory page",
+      "es": "página",
+      "pt-BR": "página",
+      "pt-PT": "página",
+      "de": "Seite",
+      "hu": "lap"
+    },
+    {
+      "en": "offset",
+      "es": "desplazamiento",
+      "pt-BR": "deslocamento",
+      "pt-PT": "deslocamento",
+      "de": "Offset",
+      "hu": "eltolás"
+    },
+    {
+      "en": "region (annotation)",
+      "note": "A code/data region of an annotation file",
+      "es": "región",
+      "pt-BR": "região",
+      "pt-PT": "região",
+      "de": "Region",
+      "hu": "terület"
+    },
+    {
+      "en": "slot (Z88 card)",
+      "note": "A Cambridge Z88 card slot; an 8K MMU slot stays 'slot'",
+      "es": "ranura",
+      "pt-BR": "slot",
+      "pt-PT": "ranhura",
+      "de": "Steckplatz",
+      "hu": "kártyahely"
+    },
+    {
+      "en": "sidecar",
+      "note": "An annotation file next to a binary",
+      "es": "archivo complementario",
+      "pt-BR": "arquivo auxiliar",
+      "pt-PT": "ficheiro auxiliar",
+      "de": "Begleitdatei",
+      "hu": "kísérőfájl"
+    },
+    {
+      "en": "working copy",
+      "note": "An editable copy of a shipped file",
+      "es": "copia de trabajo",
+      "pt-BR": "cópia de trabalho",
+      "pt-PT": "cópia de trabalho",
+      "de": "Arbeitskopie",
+      "hu": "munkapéldány"
+    },
+    {
+      "en": "annotation set",
+      "es": "conjunto de anotaciones",
+      "pt-BR": "conjunto de anotações",
+      "pt-PT": "conjunto de anotações",
+      "de": "Annotationssatz",
+      "hu": "annotációkészlet"
+    },
+    {
+      "en": "provenance",
+      "note": "Where an annotation came from",
+      "es": "procedencia",
+      "pt-BR": "procedência",
+      "pt-PT": "proveniência",
+      "de": "Herkunftsangabe",
+      "hu": "eredetjelölés"
+    },
+    {
+      "en": "keyframe",
+      "note": "A saved machine state on the reverse-debugging timeline",
+      "es": "fotograma clave",
+      "pt-BR": "keyframe",
+      "pt-PT": "fotograma-chave",
+      "de": "Keyframe",
+      "hu": "kulcskocka"
+    },
+    {
+      "en": "T-state",
+      "note": "A Z80 clock cycle",
+      "es": "estado T",
+      "pt-BR": "T-state",
+      "pt-PT": "estado T",
+      "de": "T-State",
+      "hu": "T-ciklus"
+    },
+    {
+      "en": "pop out",
+      "note": "Open a bank or block as its own document",
+      "es": "separar",
+      "pt-BR": "destacar",
+      "pt-PT": "destacar",
+      "de": "abkoppeln",
+      "hu": "leválasztás"
+    },
+    {
+      "en": "watchpoint",
+      "note": "A breakpoint on a memory read or write",
+      "es": "punto de vigilancia",
+      "pt-BR": "watchpoint",
+      "pt-PT": "ponto de vigilância",
+      "de": "Watchpoint",
+      "hu": "figyelési pont"
+    },
+    {
+      "en": "one-shot (breakpoint)",
+      "note": "Removed after its first hit",
+      "es": "de un solo uso",
+      "pt-BR": "de uso único",
+      "pt-PT": "de uso único",
+      "de": "einmalig",
+      "hu": "egyszeri"
+    },
+    {
+      "en": "clip window",
+      "note": "Next layer clipping rectangle",
+      "es": "ventana de recorte",
+      "pt-BR": "janela de recorte",
+      "pt-PT": "janela de recorte",
+      "de": "Clip-Fenster",
+      "hu": "vágóablak"
+    },
+    {
+      "en": "ink / paper",
+      "note": "Spectrum attribute colours",
+      "es": "tinta / papel",
+      "pt-BR": "tinta / papel",
+      "pt-PT": "tinta / papel",
+      "de": "Tinte / Papier",
+      "hu": "tinta / papír"
+    },
+    {
+      "en": "tile",
+      "note": "A tilemap tile",
+      "es": "tile",
+      "pt-BR": "tile",
+      "pt-PT": "tile",
+      "de": "Kachel",
+      "hu": "csempe"
+    },
+    {
+      "en": "solo (a layer)",
+      "note": "Show only this layer",
+      "es": "aislar",
+      "pt-BR": "isolar",
+      "pt-PT": "isolar",
+      "de": "solo schalten",
+      "hu": "szóló"
+    },
+    {
+      "en": "heat map",
+      "note": "Coverage colouring",
+      "es": "mapa de calor",
+      "pt-BR": "mapa de calor",
+      "pt-PT": "mapa de calor",
+      "de": "Heatmap",
+      "hu": "hőtérkép"
+    },
+    {
+      "en": "emulator core",
+      "es": "núcleo",
+      "pt-BR": "núcleo",
+      "pt-PT": "núcleo",
+      "de": "Kern",
+      "hu": "mag"
+    },
+    {
+      "en": "reset (machine) vs restart",
+      "note": "Reset keeps running state; restart stops and starts again",
+      "es": "reiniciar / volver a iniciar",
+      "pt-BR": "resetar / reiniciar",
+      "pt-PT": "repor / reiniciar",
+      "de": "zurücksetzen / neu starten",
+      "hu": "alaphelyzet / újraindítás"
+    }
+  ]
+}

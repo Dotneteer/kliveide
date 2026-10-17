@@ -11,6 +11,7 @@ import {
   IdeCommandBase
 } from "@renderer/appIde/services/ide-commands";
 import { SETTINGS_PAGES } from "@common/settings/settings-pages";
+import { t } from "@common/i18n/i18n";
 
 type SettingsArgs = {
   "-p"?: boolean;
@@ -21,9 +22,9 @@ type SettingsArgs = {
 
 export class SettingCommand extends IdeCommandBase<SettingsArgs> {
   readonly id = "set";
-  readonly description =
-    "Specifies the value of a particular Klive setting" +
-    "Options: '-u': user setting; '-p': project setting";
+  get description() {
+    return t("commands.set.description");
+  }
   readonly usage = "set [-p] [-u] <key> [<value>]";
   readonly aliases = [];
   readonly argumentInfo: CommandArgumentInfo = {
@@ -39,7 +40,7 @@ export class SettingCommand extends IdeCommandBase<SettingsArgs> {
       if (!kliveProject) {
         return {
           success: false,
-          finalMessage: "The -p option can be used only with an open Klive project"
+          finalMessage: t("commands.set.projectOptionNeedsProject")
         };
       }
     }
@@ -49,7 +50,7 @@ export class SettingCommand extends IdeCommandBase<SettingsArgs> {
     } else {
       await context.mainApi.applyProjectSettings(args.key, args.value);
     }
-    writeSuccessMessage(context.output, `Command successfully executed`);
+    writeSuccessMessage(context.output, t("commands.common.success"));
     return commandSuccess;
   }
 }
@@ -62,7 +63,9 @@ type ListSettingsArgs = {
 
 export class ListSettingsCommand extends IdeCommandBase<ListSettingsArgs> {
   readonly id = "setl";
-  readonly description = "Lists the values of the specified settings";
+  get description() {
+    return t("commands.setl.description");
+  }
   readonly usage = "setl [-u] [-p] [<setting>]";
   readonly aliases = [];
 
@@ -79,20 +82,20 @@ export class ListSettingsCommand extends IdeCommandBase<ListSettingsArgs> {
     // --- Use the appropriate settings store
     if (args["-u"]) {
       settings = await readUserSettings();
-      writeMessage(context.output, "User settings:", "bright-magenta");
+      writeMessage(context.output, t("commands.setl.userSettings"), "bright-magenta");
     } else if (args["-p"]) {
       if (!kliveProject) {
-        return commandError("There is no Klove project open");
+        return commandError(t("commands.setl.noProject"));
       } else {
         settings = await readProjectSettings();
-        writeMessage(context.output, "Project settings:", "bright-magenta");
+        writeMessage(context.output, t("commands.setl.projectSettings"), "bright-magenta");
       }
     } else {
       settings = {
         ...(await readUserSettings()),
         ...(await readProjectSettings())
       };
-      writeMessage(context.output, "Merged settings:", "bright-magenta");
+      writeMessage(context.output, t("commands.setl.mergedSettings"), "bright-magenta");
     }
 
     // --- Filter settings
@@ -111,7 +114,7 @@ export class ListSettingsCommand extends IdeCommandBase<ListSettingsArgs> {
     // --- Display the settings
     const lines = JSON.stringify(filteredSetting, null, 2).split("\n");
     lines.forEach((l) => writeMessage(context.output, l, "bright-cyan"));
-    writeSuccessMessage(context.output, `Command successfully executed`);
+    writeSuccessMessage(context.output, t("commands.common.success"));
     return commandSuccess;
 
     async function readUserSettings() {
@@ -132,9 +135,9 @@ type MoveSettingsArgs = {
 
 export class MoveSettingsCommand extends IdeCommandBase<MoveSettingsArgs> {
   readonly id = "setm";
-  readonly description =
-    "Moves user/project settings. " +
-    "Options: '-pull': user --> project; '-push': project --> user; '-c': copy (not merge)";
+  get description() {
+    return t("commands.setm.description");
+  }
   readonly usage = "setm [-pull] [-push] [-c]";
   readonly aliases = [];
   readonly argumentInfo: CommandArgumentInfo = {
@@ -144,11 +147,11 @@ export class MoveSettingsCommand extends IdeCommandBase<MoveSettingsArgs> {
 
   async validateCommandArgs(_: IdeCommandContext, args: any): Promise<ValidationMessage[]> {
     if (!args["-pull"] && !args["-push"]) {
-      return [validationError("You must use one of '-pull' or '-push'")];
+      return [validationError(t("commands.setm.pullOrPushRequired"))];
     }
 
     if (args["-pull"] && args["-push"]) {
-      return [validationError("Use only one of '-pull' or '-push'")];
+      return [validationError(t("commands.setm.pullAndPush"))];
     }
 
     return [];
@@ -156,7 +159,7 @@ export class MoveSettingsCommand extends IdeCommandBase<MoveSettingsArgs> {
 
   async execute(context: IdeCommandContext, args: MoveSettingsArgs): Promise<IdeCommandResult> {
     await context.mainApi.moveSettings(!!args["-pull"], !!args["-c"]);
-    writeSuccessMessage(context.output, `Command successfully executed`);
+    writeSuccessMessage(context.output, t("commands.common.success"));
     return commandSuccess;
   }
 }
@@ -172,8 +175,9 @@ export class SettingsDialogCommand extends IdeCommandBase<SettingsDialogArgs> {
   readonly id = "settings";
   // --- Opens the Settings dialog: never through automation (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` T5)
   readonly automation = "deny" as const;
-  readonly description =
-    "Opens the Settings dialog. Pages: " + SETTINGS_PAGES.map((p) => p.id).join(", ");
+  get description() {
+    return t("commands.settings.description", { pages: SETTINGS_PAGES.map((p) => p.id).join(", ") });
+  }
   readonly usage = "settings [<page>]";
   readonly aliases = [];
   readonly argumentInfo: CommandArgumentInfo = {
@@ -187,7 +191,10 @@ export class SettingsDialogCommand extends IdeCommandBase<SettingsDialogArgs> {
     if (args.page !== undefined && !SETTINGS_PAGES.some((p) => p.id === args.page)) {
       return [
         validationError(
-          `Unknown page '${args.page}'. Use one of: ${SETTINGS_PAGES.map((p) => p.id).join(", ")}`
+          t("commands.settings.unknownPage", {
+            page: args.page,
+            pages: SETTINGS_PAGES.map((p) => p.id).join(", ")
+          })
         )
       ];
     }

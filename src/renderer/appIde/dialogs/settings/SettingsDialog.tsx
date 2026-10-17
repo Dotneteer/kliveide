@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from "react";
 
 import type { SettingsDialogData } from "@common/settings/settings-dialog";
 import { Modal } from "@renderer/controls/Modal";
+import { useT } from "@common/i18n/useT";
 import { useMainApi } from "@renderer/core/MainApi";
 import { useSelector } from "@renderer/core/RendererProvider";
 import { useController, useViewModel } from "@renderer/mvc";
@@ -24,10 +25,14 @@ type Props = {
  */
 export const SettingsDialog = ({ data, onClose }: Props) => {
   const mainApi = useMainApi();
+  const t = useT();
   const appState = useSelector((s) => s);
   const tone = appState?.theme === "light" ? "light" : "dark";
   const env = useMemo<SettingsEnvironment>(
-    () => ({ appState, platform: { isWindows: !!appState?.isWindows } }),
+    () => ({
+      appState,
+      platform: { isWindows: !!appState?.isWindows, uiLanguage: appState?.uiLanguage }
+    }),
     [appState]
   );
 
@@ -51,14 +56,14 @@ export const SettingsDialog = ({ data, onClose }: Props) => {
 
   return (
     <Modal
-      title="Settings"
+      title={t("settings.title")}
       iconName="settings-gear"
       isOpen={true}
       width={860}
       onClose={onClose}
-      primaryLabel="Close"
+      primaryLabel={t("common.button.close")}
       onPrimaryClicked={async () => false}
-      secondaryLabel="Reset Page to Defaults"
+      secondaryLabel={t("settings.reset")}
       secondaryVisible={true}
       secondaryEnabled={vm.resetEnabled}
       onSecondaryClicked={async () => {

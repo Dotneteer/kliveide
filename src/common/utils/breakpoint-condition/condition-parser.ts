@@ -6,6 +6,7 @@ import type {
   MachineFunction
 } from "./condition-types";
 import { ConditionSyntaxError, type Token, tokenizeCondition } from "./condition-lexer";
+import { t } from "@common/i18n/i18n";
 
 /*
  * The condition parser (plan §3.2): text to a syntax tree that still carries names, strings and
@@ -84,18 +85,16 @@ export const RESERVED_NAMES = new Set<string>([
 export function parseCondition(text: string): SyntaxNode {
   const tokens = tokenizeCondition(text);
   if (tokens.length === 1) {
-    throw new ConditionSyntaxError("The condition is empty", 0, text.length);
+    throw new ConditionSyntaxError(t("debug.condition.empty"), 0, text.length);
   }
   const parser = new Parser(tokens);
   const tree = parser.condition();
   const rest = parser.peek();
   if (rest.kind !== "eof") {
     throw new ConditionSyntaxError(
-      rest.kind === "op" && rest.text === ")"
-        ? "Unbalanced ')'"
-        : rest.kind === "op" && rest.text === "]"
-          ? "Unbalanced ']'"
-          : `Unexpected '${describe(rest)}'`,
+      rest.kind === "op" && (rest.text === ")" || rest.text === "]")
+        ? t("debug.condition.unbalanced", { token: rest.text })
+        : unexpectedToken(rest),
       rest.start,
       rest.end
     );
@@ -103,8 +102,11 @@ export function parseCondition(text: string): SyntaxNode {
   return tree;
 }
 
-function describe(token: Token): string {
-  return token.kind === "eof" ? "end of condition" : token.text;
+/** "Unexpected 'x'", or the end-of-condition wording when the condition stopped short */
+function unexpectedToken(token: Token): string {
+  return token.kind === "eof"
+    ? t("debug.condition.unexpectedEnd")
+    : t("debug.condition.unexpectedToken", { token: token.text });
 }
 
 class Parser {
@@ -132,13 +134,15 @@ class Parser {
     if (token.kind === "op" && token.text === text) return this.next();
     if (opening) {
       throw new ConditionSyntaxError(
-        `Missing '${text}' to close the '${opening.text}' at column ${opening.start + 1}`,
+        t("debug.condition.missingClose", { close: text, open: opening.text, column: opening.start + 1 }),
         token.start,
         token.end
       );
     }
     throw new ConditionSyntaxError(
-      `Expected '${text}' but found '${describe(token)}'`,
+      token.kind === "eof"
+        ? t("debug.condition.expectedButEnd", { expected: text })
+        : t("debug.condition.expectedButFound", { expected: text, found: token.text }),
       token.start,
       token.end
     );
@@ -161,7 +165,7 @@ class Parser {
     const after = this.peek();
     if (after.kind === "op" && RELATIONAL.has(after.text)) {
       throw new ConditionSyntaxError(
-        "Comparisons cannot be chained; join them with && (a < b && b < c)",
+        t("debug.condition.chainedComparison"),
         after.start,
         after.end
       );
@@ -246,7 +250,7 @@ class Parser {
           const close = this.peek();
           if (!(close.kind === "op" && close.text === ")")) {
             throw new ConditionSyntaxError(
-              `${lower}() takes no argument`,
+              t("debug.condition.takesNoArgument", { fn: `${lower}()` }),
               close.start,
               close.end
             );
@@ -281,13 +285,13 @@ class Parser {
           return this.memAccess({ ...ACCESS_TYPES.b, name: "b" }, token.start);
         }
         throw new ConditionSyntaxError(
-          `Unexpected '${token.text}'; expected a value`,
+          t("debug.condition.expectedValue", { token: token.text }),
           token.start,
           token.end
         );
       default:
         throw new ConditionSyntaxError(
-          "The condition ends where a value is expected",
+          t("debug.condition.endsBeforeValue"),
           token.start,
           token.end
         );
@@ -301,7 +305,7 @@ class Parser {
     const name = this.peek();
     if (name.kind !== "ident" && name.kind !== "quoted") {
       throw new ConditionSyntaxError(
-        `'${spec.text}:' must be followed by a label here; a partition or bank address is only valid inside [ ]`,
+        t("debug.condition.bankPrefixNeedsLabel", { prefix: `${spec.text}:` }),
         spec.start,
         name.end
       );

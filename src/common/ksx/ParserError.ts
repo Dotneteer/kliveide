@@ -1,3 +1,5 @@
+import { t, translator } from "@common/i18n/i18n";
+import { SOURCE_CATALOG } from "@common/i18n/catalogs";
 /**
  * The common root error class
  */
@@ -54,39 +56,15 @@ export type ErrorCodes =
   | "K027";
 
 /**
- * Represents a parser error message descriptions
+ * The text of a KSX parser error, in the display language (`.plans/LOCALIZATION_PLAN.md` step 13):
+ * `compiler.ksx.<code>` in `src/common/i18n/locales/en/compiler.json`, with `{0}`, `{1}`... filled
+ * from `params` in order.
  */
-type ErrorText = Record<ErrorCodes, string>;
-
-/**
- * Parser error messages
- */
-export const errorMessages: ErrorText = {
-  K001: "An expression expected",
-  K002: "Unexpected token: '{0}'",
-  K003: "An identifier expected",
-  K004: "'}' expected",
-  K005: "']' expected",
-  K006: "')' expected",
-  K007: "Invalid object property name type",
-  K008: "':' expected",
-  K009: "'=' expected",
-  K010: "Invalid arrow expression argument list",
-  K011: "For loop variable must be initialized",
-  K012: "'{' expected",
-  K013: "'catch' or 'finally' expected",
-  K014: "'(' or expected",
-  K015: "'case' or 'default' expected",
-  K016: "'default' case can be used only once within a switch statement",
-  K017: "Invalid sequence expression",
-  K018: "Invalid object literal",
-  K019: "'function' or 'const' expected",
-  K020: "'from' expected",
-  K021: "A string literal expected",
-  K022: "Identifier '{0}' is already imported",
-  K023: "Function '{0}' is already defined in the module",
-  K024: "'{0}' is already exported from the module",
-  K025: "Cannot find module '{0}'",
-  K026: "Module '{0}' does not export '{1}'",
-  K027: "Cannot find package '{0}'",
-};
+// i18n-dynamic: compiler.ksx.
+export function ksxErrorMessage(code: ErrorCodes, params?: readonly unknown[]): string {
+  const key = `compiler.ksx.${code}`;
+  if (SOURCE_CATALOG[key] === undefined) return t("compiler.asm.unknownError");
+  const args: Record<string, string> = {};
+  (params ?? []).forEach((p, i) => (args[String(i)] = String(p)));
+  return translator.t(key, args);
+}

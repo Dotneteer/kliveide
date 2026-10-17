@@ -1,3 +1,4 @@
+import { t } from "@common/i18n/i18n";
 import type { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext";
 import type { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
 import type { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
@@ -28,7 +29,9 @@ import { BreakpointWithAddressCommand, type BreakpointWithAddressArgs } from "./
  */
 export class RunToCursorCommand extends BreakpointWithAddressCommand {
   readonly id = "run-to";
-  readonly description = "Runs the machine until it reaches the given address, then stops";
+  get description() {
+    return t("commands.runToCursor.description");
+  }
   readonly usage = "run-to <address> | run-to cu:<index> | run-to sp:<sprite>";
   readonly aliases = ["rtc"];
 
@@ -57,10 +60,7 @@ export class RunToCursorCommand extends BreakpointWithAddressCommand {
     // --- issuing `debug` would do nothing and the one-shot would sit there never firing. Say so
     // --- instead of arming a breakpoint that cannot work.
     if (isRunning && !emuState?.isDebugging) {
-      return commandError(
-        "The machine is running in normal mode. Pause it (or start it with debugging) before " +
-          "running to an address."
-      );
+      return commandError(t("commands.runToCursor.normalMode"));
     }
 
     // --- `run-to cu:<index>`: run until the Copper completes that list instruction (the Copper
@@ -103,7 +103,7 @@ export class RunToCursorCommand extends BreakpointWithAddressCommand {
     if (isRunning) {
       // --- Already executing in debug mode: the one-shot is live from the next instruction, and
       // --- resuming an already-running machine is not a thing to do.
-      writeSuccessMessage(context.output, `Running to ${addrKey}`);
+      writeSuccessMessage(context.output, t("commands.runToCursor.running", { target: addrKey }));
       return commandSuccess;
     }
 
@@ -112,8 +112,8 @@ export class RunToCursorCommand extends BreakpointWithAddressCommand {
     writeSuccessMessage(
       context.output,
       machineState === MachineControllerState.Paused
-        ? `Running to ${addrKey}`
-        : `Started, running to ${addrKey}`
+        ? t("commands.runToCursor.running", { target: addrKey })
+        : t("commands.runToCursor.started", { target: addrKey })
     );
     return commandSuccess;
   }

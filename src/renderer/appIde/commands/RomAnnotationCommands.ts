@@ -38,6 +38,7 @@ import {
   writeMessage,
   writeSuccessMessage
 } from "../services/ide-commands";
+import { t } from "@common/i18n/i18n";
 
 /*
  * The `rom-ann-*` commands (`.plans/ROM_ANNOTATION_EDITING_PLAN.md` R7, R8).
@@ -88,9 +89,9 @@ export async function romTargetOf(
     path = resolvePath(context, rom);
     bytes = await mainApi.readBinaryFile(path).catch(() => undefined);
   }
-  if (!bytes) return { error: `${rom} is neither a ROM Klive ships nor a ROM file that can be read.` };
+  if (!bytes) return { error: t("commands.romAnn.unknownRom", { rom }) };
   const pageBytes = pageOf(bytes, page);
-  if (!pageBytes) return { error: `${rom} has no page ${page}.` };
+  if (!pageBytes) return { error: t("commands.romAnn.noPage", { rom, page: String(page) }) };
 
   const identity = romPageIdentity(pageBytes);
   const source = { ...identity, path, page };
@@ -130,7 +131,7 @@ export async function startEditingRomPartition(
   partition: number
 ): Promise<string> {
   const info = getRomPartitions().find((candidate) => candidate.partition === partition);
-  if (!info) throw new Error("This ROM page has not been identified yet.");
+  if (!info) throw new Error(t("commands.romAnn.notIdentified"));
   const target = workingCopyTargetOf(info);
   const result = await createWorkingCopy(mainApi, projectService, target);
   if ("reason" in result && !info.hasWorkingCopy) throw new Error(result.reason);
@@ -150,18 +151,19 @@ const ROM_ARGUMENTS: CommandArgumentInfo = {
 
 async function validateRom(args: RomArgs, mandatory: boolean): Promise<ValidationMessage[]> {
   const messages: ValidationMessage[] = [];
-  if (mandatory && !args.rom?.trim()) messages.push(validationError("Name a ROM (sp48.rom) or a ROM file."));
+  if (mandatory && !args.rom?.trim()) messages.push(validationError(t("commands.romAnn.nameRom")));
   const page = args["-page"];
   if (page !== undefined && (!Number.isInteger(page) || page < 0 || page > 15)) {
-    messages.push(validationError("-page: a page number from 0 to 15"));
+    messages.push(validationError(t("commands.romAnn.pageValues")));
   }
   return messages;
 }
 
 export class RomAnnotationNewCommand extends IdeCommandBase<RomArgs> {
   readonly id = "rom-ann-new";
-  readonly description =
-    "Makes a working copy of a ROM's annotations (in <Klive home>/RomAnnotations) and opens it for editing";
+  get description() {
+    return t("commands.romAnn.newDescription");
+  }
   readonly usage = "rom-ann-new <rom> [-page <n>]";
   readonly argumentInfo = ROM_ARGUMENTS;
 
@@ -173,21 +175,22 @@ export class RomAnnotationNewCommand extends IdeCommandBase<RomArgs> {
     const target = await romTargetOf(context, args.rom!, args["-page"] ?? 0);
     if ("error" in target) return commandError(target.error);
     const result = await createWorkingCopy(context.mainApi, context.service.projectService, target);
-    if ("reason" in result) return commandError(`${result.reason} Open it with rom-ann-open ${args.rom}.`);
+    if ("reason" in result) return commandError(t("commands.romAnn.newRefused", { reason: result.reason, rom: args.rom }));
     requestRomAnnotationsReload();
     await openRomAnnotationEditor(context.service.projectService.getActiveDocumentHubService(), result.path);
     return commandSuccessWith(
       result.from === "shipped"
-        ? `Copied the shipped ${target.shippedSidecar} to ${result.path}. Its ROM pages are now edited there.`
-        : `Created ${result.path}, an empty sidecar for ${target.romName}. Its ROM page is now edited there.`
+        ? t("commands.romAnn.copiedShipped", { sidecar: target.shippedSidecar, path: result.path })
+        : t("commands.romAnn.createdEmpty", { path: result.path, rom: target.romName })
     );
   }
 }
 
 export class RomAnnotationOpenCommand extends IdeCommandBase<RomArgs> {
   readonly id = "rom-ann-open";
-  readonly description =
-    "Opens a ROM's annotations in the ROM annotation editor: its working copy, or the shipped sidecar read-only";
+  get description() {
+    return t("commands.romAnn.openDescription");
+  }
   readonly usage = "rom-ann-open <rom>|<sidecar.dis> [-page <n>]";
   readonly argumentInfo = ROM_ARGUMENTS;
 
@@ -214,17 +217,17 @@ export class RomAnnotationOpenCommand extends IdeCommandBase<RomArgs> {
     if (target.shippedSidecar) {
       await openRomAnnotationEditor(hub, `${SHIPPED_ROM_FOLDER}/${target.shippedSidecar}`);
       return commandSuccessWith(
-        `${target.shippedSidecar} opened read-only. rom-ann-new ${args.rom} makes a working copy to edit.`
+        t("commands.romAnn.openedReadOnly", { sidecar: target.shippedSidecar, rom: args.rom })
       );
     }
-    return commandError(`${args.rom} has no annotations yet. rom-ann-new ${args.rom} creates them.`);
+    return commandError(t("commands.romAnn.noAnnotations", { rom: args.rom }));
   }
 }
 
 /** The sidecar a `rom-ann-check` / `rom-ann-provenance` argument names. */
 async function sidecarPathOf(context: IdeCommandContext, args: RomArgs): Promise<string | { error: string }> {
   if (args.rom && /\.dis$/i.test(args.rom)) return resolvePath(context, args.rom);
-  if (!args.rom) return { error: "Name a ROM (sp48.rom), a ROM file or a sidecar." };
+  if (!args.rom) return { error: t("commands.romAnn.nameRomOrSidecar") };
   const target = await romTargetOf(context, args.rom, args["-page"] ?? 0);
   return "error" in target ? target : target.workingPath;
 }
@@ -240,8 +243,9 @@ async function readText(context: IdeCommandContext, path: string): Promise<strin
 
 export class RomAnnotationCheckCommand extends IdeCommandBase<RomArgs> {
   readonly id = "rom-ann-check";
-  readonly description =
-    "Checks whether a ROM's working copy could be copied into src/public/roms as it is (the checks CI makes)";
+  get description() {
+    return t("commands.romAnn.checkDescription");
+  }
   readonly usage = "rom-ann-check <rom>|<sidecar.dis> [-page <n>]";
   readonly argumentInfo = ROM_ARGUMENTS;
 
@@ -254,25 +258,33 @@ export class RomAnnotationCheckCommand extends IdeCommandBase<RomArgs> {
     if (typeof path !== "string") return commandError(path.error);
     await flushAnnotationSession(path);
     const text = await readText(context, path);
-    if (text === undefined) return commandError(`${path} cannot be read. rom-ann-new makes a working copy.`);
+    if (text === undefined) return commandError(t("commands.romAnn.cannotReadMakeCopy", { path }));
     let raw: Record<string, any>;
     try {
       raw = JSON.parse(text);
     } catch (err) {
-      return commandError(`${path} is not valid JSON: ${(err as Error).message}`);
+      return commandError(t("commands.romAnn.invalidJson", { path, message: (err as Error).message }));
     }
     const matches = await matchRomPages({ files: context.mainApi, emuApi: context.emuApi }, path, raw.pages ?? {});
     const check = await checkRomSidecar(text, (page) => matches.find((m) => m.page === page)?.bytes);
     const levels = Object.entries(check.levels)
-      .map(([page, level]) => `page ${page}: level ${level}`)
+      .map(([page, level]) => t("commands.romAnn.pageLevel", { page, level: String(level) }))
       .join(", ");
-    writeMessage(context.output, `${path} (${levels || "no page measured"}; records level ${check.recordedLevel})`, "cyan");
+    writeMessage(
+      context.output,
+      t("commands.romAnn.checkHeader", {
+        path,
+        levels: levels || t("commands.romAnn.noPageMeasured"),
+        recorded: String(check.recordedLevel)
+      }),
+      "cyan"
+    );
     if (check.problems.length === 0) {
-      writeSuccessMessage(context.output, "Ready to ship: copy it into src/public/roms/ unchanged.");
+      writeSuccessMessage(context.output, t("commands.romAnn.readyToShip"));
       return commandSuccess;
     }
     for (const problem of check.problems) writeMessage(context.output, `  ${problem}`, "yellow");
-    return commandError(`${check.problems.length} problem(s) keep it from being shipped as it is.`);
+    return commandError(t("commands.romAnn.problems", { count: check.problems.length }));
   }
 }
 
@@ -280,8 +292,9 @@ type ProvenanceArgs = RomArgs & { offset?: number; kind?: string; provenance?: s
 
 export class RomAnnotationProvenanceCommand extends IdeCommandBase<ProvenanceArgs> {
   readonly id = "rom-ann-provenance";
-  readonly description =
-    "Sets the provenance (observed or manual) of a label, line comment or region in a ROM's working copy";
+  get description() {
+    return t("commands.romAnn.provenanceDescription");
+  }
   readonly usage = "rom-ann-provenance <rom>|<sidecar.dis> <offset> label|line|region observed|manual [-page <n>]";
   readonly argumentInfo: CommandArgumentInfo = {
     mandatory: [
@@ -296,10 +309,10 @@ export class RomAnnotationProvenanceCommand extends IdeCommandBase<ProvenanceArg
   async validateCommandArgs(_context: IdeCommandContext, args: ProvenanceArgs): Promise<ValidationMessage[]> {
     const messages = await validateRom(args, true);
     if (!["label", "line", "region"].includes(String(args.kind))) {
-      messages.push(validationError("The entry kind is label, line or region."));
+      messages.push(validationError(t("commands.romAnn.kindValues")));
     }
     if (!["observed", "manual"].includes(String(args.provenance))) {
-      messages.push(validationError("The provenance is observed or manual (derived is the formatter's)."));
+      messages.push(validationError(t("commands.romAnn.provenanceValues")));
     }
     return messages;
   }
@@ -307,18 +320,18 @@ export class RomAnnotationProvenanceCommand extends IdeCommandBase<ProvenanceArg
   async execute(context: IdeCommandContext, args: ProvenanceArgs): Promise<IdeCommandResult> {
     const path = await sidecarPathOf(context, args);
     if (typeof path !== "string") return commandError(path.error);
-    if (path.startsWith(`${SHIPPED_ROM_FOLDER}/`)) return commandError("A shipped sidecar is never edited here.");
+    if (path.startsWith(`${SHIPPED_ROM_FOLDER}/`)) return commandError(t("commands.romAnn.shippedReadOnly"));
     // --- Provenance is not in the model: the file is the only copy, so no write may be in flight
     await flushAnnotationSession(path);
     const text = await readText(context, path);
-    if (text === undefined) return commandError(`${path} cannot be read.`);
+    if (text === undefined) return commandError(t("commands.romAnn.cannotRead", { path }));
     const raw = JSON.parse(text);
     const page = args["-page"] ?? 0;
     const key = `${page}:${args.offset}:${args.kind}`;
     const next = withProvenance(raw, key, args.provenance as Exclude<Provenance, "derived">);
-    if (!next) return commandError(`${path} has no ${args.kind} at page ${page}, offset ${args.offset}.`);
+    if (!next) return commandError(t("commands.romAnn.noEntry", { path, kind: args.kind, page: String(page), offset: String(args.offset) }));
     await context.service.projectService.saveFileContent(path, formatRomSidecar(next));
-    return commandSuccessWith(`${key} is now ${args.provenance}.`);
+    return commandSuccessWith(t("commands.romAnn.provenanceSet", { key, provenance: args.provenance }));
   }
 }
 
@@ -326,8 +339,9 @@ type ImportNamesArgs = RomArgs & { list?: string };
 
 export class RomAnnotationImportNamesCommand extends IdeCommandBase<ImportNamesArgs> {
   readonly id = "rom-ann-import-names";
-  readonly description =
-    "Adds a list of conventional routine names (NAME ADDRESS lines) to a ROM's working copy, as manual labels";
+  get description() {
+    return t("commands.romAnn.importDescription");
+  }
   readonly usage = "rom-ann-import-names <rom>|<sidecar.dis> <list file> [-page <n>]";
   readonly argumentInfo: CommandArgumentInfo = {
     mandatory: [
@@ -339,37 +353,37 @@ export class RomAnnotationImportNamesCommand extends IdeCommandBase<ImportNamesA
 
   async validateCommandArgs(_context: IdeCommandContext, args: ImportNamesArgs): Promise<ValidationMessage[]> {
     const messages = await validateRom(args, true);
-    if (!args.list?.trim()) messages.push(validationError("Name the file with the NAME ADDRESS list."));
+    if (!args.list?.trim()) messages.push(validationError(t("commands.romAnn.nameList")));
     return messages;
   }
 
   async execute(context: IdeCommandContext, args: ImportNamesArgs): Promise<IdeCommandResult> {
     const path = await sidecarPathOf(context, args);
     if (typeof path !== "string") return commandError(path.error);
-    if (path.startsWith(`${SHIPPED_ROM_FOLDER}/`)) return commandError("A shipped sidecar is never edited here.");
+    if (path.startsWith(`${SHIPPED_ROM_FOLDER}/`)) return commandError(t("commands.romAnn.shippedReadOnly"));
     const page = args["-page"] ?? 0;
 
     const listPath = resolvePath(context, args.list!);
     const listText = await Promise.resolve(context.service.projectService.readFileContent(listPath, false))
       .then((text) => (typeof text === "string" ? text : undefined))
       .catch(() => undefined);
-    if (listText === undefined) return commandError(`${listPath} cannot be read.`);
+    if (listText === undefined) return commandError(t("commands.romAnn.cannotRead", { path: listPath }));
     const list = parseRomNameList(listText);
     if (list.problems.length > 0) {
       for (const problem of list.problems) writeMessage(context.output, `  ${problem}`, "yellow");
-      return commandError(`${listPath} is not a NAME ADDRESS list; nothing was imported.`);
+      return commandError(t("commands.romAnn.notList", { path: listPath }));
     }
 
     // --- Provenance lives only in the file, so the file is written first, with no write in flight
     await flushAnnotationSession(path);
     const text = await readText(context, path);
     if (text === undefined) {
-      return commandError(`${path} does not exist: make the working copy first with rom-ann-new ${args.rom}.`);
+      return commandError(t("commands.romAnn.noWorkingCopy", { path, rom: args.rom }));
     }
     const raw = JSON.parse(text);
     const matches = await matchRomPages({ files: context.mainApi, emuApi: context.emuApi }, path, raw.pages ?? {});
     const bytes = matches.find((m) => m.page === page)?.bytes;
-    if (!bytes) return commandError(`No ROM matches page ${page} of ${path}.`);
+    if (!bytes) return commandError(t("commands.romAnn.noMatch", { page: String(page), path }));
 
     const result = importRomNames(raw, page, bytes.length, list.entries);
     if (result.text) {
@@ -387,10 +401,14 @@ export class RomAnnotationImportNamesCommand extends IdeCommandBase<ImportNamesA
     }
 
     for (const skip of result.skipped) {
-      writeMessage(context.output, `  skipped ${skip.name} ($${toHex4(skip.address)}): ${skip.reason}`, "yellow");
+      writeMessage(
+        context.output,
+        t("commands.romAnn.skipped", { name: skip.name, address: toHex4(skip.address), reason: skip.reason }),
+        "yellow"
+      );
     }
     for (const entry of result.added.filter((item) => item.from)) {
-      writeMessage(context.output, `  ${entry.from} is written ${entry.name}`);
+      writeMessage(context.output, t("commands.romAnn.renamed", { from: entry.from, name: entry.name }));
     }
     if (result.text) {
       const check = await checkRomSidecar(result.text, (p) => matches.find((m) => m.page === p)?.bytes);
@@ -398,8 +416,7 @@ export class RomAnnotationImportNamesCommand extends IdeCommandBase<ImportNamesA
     }
     writeSuccessMessage(
       context.output,
-      `Added ${result.added.length} label(s) to ${path} as manual; skipped ${result.skipped.length}. ` +
-        "Name the list's source in .ai/rom-annotations/PROVENANCE.md."
+      t("commands.romAnn.imported", { added: result.added.length, path, skipped: result.skipped.length })
     );
     return commandSuccess;
   }

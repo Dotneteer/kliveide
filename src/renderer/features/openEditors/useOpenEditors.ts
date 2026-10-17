@@ -2,6 +2,8 @@ import { useMemo } from "react";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { useSelector } from "@renderer/core/RendererProvider";
 import { getDocumentTabLabels } from "@renderer/features/documents/DocumentTabs";
+import { documentDisplayName } from "@renderer/features/documents/specialDocuments";
+import { useT } from "@common/i18n/useT";
 import type { IDocumentHubService } from "@renderer/abstractions/IDocumentHubService";
 import type { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
 
@@ -59,6 +61,9 @@ export function useOpenEditors(): OpenEditorEntry[] {
   // --- Folder paths are shown relative to the project root when there is one.
   const folderPath = useSelector((s) => s.project?.folderPath);
 
+  // --- A built-in document's name is translated: a language switch changes the labels
+  const t = useT();
+
   return useMemo(() => {
     const hubs = projectService?.getDocumentHubServiceInstances() ?? [];
     const activeHub = projectService?.getActiveDocumentHubService();
@@ -76,7 +81,7 @@ export function useOpenEditors(): OpenEditorEntry[] {
           isCurrent: isActive && hub === activeHub,
           isDirty: document.editVersionCount !== document.savedVersionCount,
           isTemporary: !!document.isTemporary,
-          label: document.name
+          label: documentDisplayName(document)
         });
       });
     }
@@ -91,7 +96,7 @@ export function useOpenEditors(): OpenEditorEntry[] {
     // --- for the whole project-relative folder, a tab has only the width of its own name.
     const tabLabels = getDocumentTabLabels(entries.map((entry) => entry.document));
     for (const entry of entries) {
-      if (tabLabels.get(entry.document.id) !== entry.document.name) {
+      if (tabLabels.get(entry.document.id) !== entry.label) {
         entry.detail = getDocumentFolder(entry.document, folderPath);
       }
     }
@@ -103,7 +108,7 @@ export function useOpenEditors(): OpenEditorEntry[] {
     return entries.sort((a, b) => rank(b) - rank(a));
     // `documentHubState` and `editorVersion` are not read in the body: they are the store signals
     // that the hub-owned data below has changed, and hence the reason to recompute.
-  }, [documentHubState, editorVersion, folderPath, projectService]);
+  }, [documentHubState, editorVersion, folderPath, projectService, t]);
 }
 
 /**

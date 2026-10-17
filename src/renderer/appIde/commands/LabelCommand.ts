@@ -26,6 +26,7 @@ import { getRomPartition } from "@renderer/appIde/annotations/romAnnotations";
 import { machineConfigOf } from "@renderer/appIde/annotations/useMachineBankSpace";
 import { getNexLoad } from "../DocumentPanels/Next/nexLoadSession";
 import { promoteLabelAt } from "../DocumentPanels/Next/nexLabelPromotion";
+import { t } from "@common/i18n/i18n";
 
 export type LabelCommandArgs = {
   name: string;
@@ -50,8 +51,9 @@ export type LabelCommandArgs = {
  */
 export class LabelCommand extends IdeCommandBase<LabelCommandArgs> {
   readonly id = "label";
-  readonly description =
-    "Adds a label to the active annotations at the address the machine is stopped at (or the one given)";
+  get description() {
+    return t("commands.label.description");
+  }
   readonly aliases = ["lbl", "nex-label", "nl"];
   readonly usage = "label <name> [<address>]";
 
@@ -67,12 +69,12 @@ export class LabelCommand extends IdeCommandBase<LabelCommandArgs> {
     const messages: ValidationMessage[] = [];
 
     if (!args.name?.trim()) {
-      messages.push(validationError("The label name cannot be empty."));
+      messages.push(validationError(t("commands.label.emptyName")));
     }
 
     const emuState = context.store.getState().emulatorState;
     if (!bankSpaceFor(emuState?.machineId)) {
-      messages.push(validationError("This machine's memory cannot be annotated."));
+      messages.push(validationError(t("commands.common.notAnnotatable")));
     }
 
     /*
@@ -82,11 +84,7 @@ export class LabelCommand extends IdeCommandBase<LabelCommandArgs> {
      * reading it, so naming "where we are" would name an arbitrary instruction.
      */
     if (args.address === undefined && emuState?.machineState !== MachineControllerState.Paused) {
-      messages.push(
-        validationError(
-          "Pause the machine, or give an address — a running machine is not at one address."
-        )
-      );
+      messages.push(validationError(t("commands.label.pauseOrAddress")));
     }
 
     return messages;
@@ -103,11 +101,11 @@ export class LabelCommand extends IdeCommandBase<LabelCommandArgs> {
       try {
         address = (await context.emuApi.getCpuStateChunk())?.pcValue;
       } catch (err) {
-        return commandError(`Could not read the program counter: ${messageOf(err)}`);
+        return commandError(t("commands.label.cannotReadPc", { message: messageOf(err) }));
       }
     }
     if (address === undefined) {
-      return commandError("Could not determine which address to name.");
+      return commandError(t("commands.label.noAddress"));
     }
     address &= 0xffff;
 
@@ -117,7 +115,7 @@ export class LabelCommand extends IdeCommandBase<LabelCommandArgs> {
     try {
       slots = (await context.emuApi.getMemoryContents())?.slotPartitions;
     } catch (err) {
-      return commandError(`Could not read the memory paging: ${messageOf(err)}`);
+      return commandError(t("commands.label.cannotReadPaging", { message: messageOf(err) }));
     }
 
     const activeSet = activeSetOf();
@@ -131,7 +129,7 @@ export class LabelCommand extends IdeCommandBase<LabelCommandArgs> {
       const site = bankSpace?.siteAt(address, slots);
       return commandError(
         site?.kind === "rom" || !site
-          ? `$${toHexa4(address)} is not in a RAM bank — there is no bank offset to name.`
+          ? t("commands.label.notInRam", { address: toHexa4(address) })
           : target.disabledReason
       );
     }
@@ -141,8 +139,11 @@ export class LabelCommand extends IdeCommandBase<LabelCommandArgs> {
     if (target.kind === "bank" && nex && activeSet?.path === getAnnotationPath(nex.path)) {
       if (!nex.banks.includes(target.bank)) {
         return commandError(
-          `Bank $${toHexa2(target.bank)} is paged in at $${toHexa4(address)}, but ${nex.fileName} ` +
-            "does not contain it."
+          t("commands.label.bankNotInNex", {
+            bank: toHexa2(target.bank),
+            address: toHexa4(address),
+            file: nex.fileName
+          })
         );
       }
     }
@@ -152,10 +153,10 @@ export class LabelCommand extends IdeCommandBase<LabelCommandArgs> {
     try {
       annotations = await ensureAnnotatedBank(target, projectService);
     } catch (err) {
-      return commandError(`Could not create ${target.annotationPath}: ${messageOf(err)}`);
+      return commandError(t("commands.label.cannotCreate", { path: target.annotationPath, message: messageOf(err) }));
     }
     if (!annotations) {
-      return commandError(`${target.annotationPath} cannot be read, so no label was added to it.`);
+      return commandError(t("commands.label.cannotRead", { path: target.annotationPath }));
     }
 
     // --- The session's copy wins: a viewer may have published an edit whose write has not landed
@@ -168,12 +169,21 @@ export class LabelCommand extends IdeCommandBase<LabelCommandArgs> {
     updateAnnotationSession(target.annotationPath, promoted.annotations!, projectService);
     await flushAnnotationSession(target.annotationPath);
 
-    const where =
-      target.kind === "rom"
-        ? `ROM offset $${toHexa4(target.offset)} in your ROM annotations (address $${toHexa4(address)})`
-        : `bank $${toHexa2(target.bank)} offset $${toHexa4(target.offset)} (address $${toHexa4(address)})`;
-    const alsoNamed = promoted.replaced ? ` It is also named ${promoted.replaced}.` : "";
-    return commandSuccessWith(`${args.name.trim()} added at ${where}.${alsoNamed}`);
+    const placeArgs = {
+      name: args.name.trim(),
+      bank: target.kind === "rom" ? "" : toHexa2(target.bank),
+      offset: toHexa4(target.offset),
+      address: toHexa4(address),
+      other: promoted.replaced ?? ""
+    };
+    if (target.kind === "rom") {
+      return commandSuccessWith(
+        promoted.replaced ? t("commands.label.addedRomAlso", placeArgs) : t("commands.label.addedRom", placeArgs)
+      );
+    }
+    return commandSuccessWith(
+      promoted.replaced ? t("commands.label.addedBankAlso", placeArgs) : t("commands.label.addedBank", placeArgs)
+    );
   }
 }
 

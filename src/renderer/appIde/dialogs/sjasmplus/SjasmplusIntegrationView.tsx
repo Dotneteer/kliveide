@@ -1,5 +1,7 @@
 import classnames from "classnames";
 
+import { useT } from "@common/i18n/useT";
+
 import type { SjasmplusIntent } from "./SjasmplusIntents";
 import type { SjasmplusViewModel } from "./SjasmplusViewModel";
 import { ApplyBlock } from "./parts/ApplyBlock";
@@ -19,7 +21,9 @@ export type SjasmplusIntegrationViewProps = {
  * The SJASMPLUS dialog body. It renders the view model and reports what the
  * user did; every decision behind those fields belongs to the model.
  */
-export const SjasmplusIntegrationView = ({ vm, dispatch }: SjasmplusIntegrationViewProps) => (
+export const SjasmplusIntegrationView = ({ vm, dispatch }: SjasmplusIntegrationViewProps) => {
+  const t = useT();
+  return (
   <div className={styles.body}>
     <StatusBlock status={vm.status} />
 
@@ -35,34 +39,34 @@ export const SjasmplusIntegrationView = ({ vm, dispatch }: SjasmplusIntegrationV
       * in the app. This dialog is the MVC pattern's reference implementation and was the one place
       * still hand-rolling its fields.
       */}
-    <Row label="Source">
+    <Row label={t("dialog.sjasmplus.row.source")}>
       <RadioGroup
-        ariaLabel="SjasmPlus source"
+        ariaLabel={t("dialog.sjasmplus.source.ariaLabel")}
         columns={2}
         enabled={!vm.source.disabled}
         value={vm.source.mode}
         options={[
-          { value: "local", label: "Local executable" },
-          { value: "online", label: "Online release" }
+          { value: "local", label: t("dialog.sjasmplus.source.local") },
+          { value: "online", label: t("dialog.sjasmplus.source.online") }
         ]}
         onChange={(mode) =>
           dispatch({ type: "setupModeSelected", mode: mode as "local" | "online" })
         }
       />
     </Row>
-    <Row label="Save to">
+    <Row label={t("dialog.sjasmplus.row.saveTo")}>
       <RadioGroup
-        ariaLabel="Save settings to"
+        ariaLabel={t("dialog.sjasmplus.scope.ariaLabel")}
         columns={2}
         enabled={!vm.scopeChoice.disabled}
         value={vm.scopeChoice.value}
         options={[
-          { value: "user", label: "User settings" },
+          { value: "user", label: t("dialog.sjasmplus.scope.user") },
           // --- Per-option, not per-group: a project scope is unavailable with no project open,
           // --- while "User settings" stays selectable. `RadioGroup` supports exactly this.
           {
             value: "project",
-            label: "Project settings",
+            label: t("dialog.sjasmplus.scope.project"),
             disabled: !vm.scopeChoice.projectEnabled
           }
         ]}
@@ -95,4 +99,5 @@ export const SjasmplusIntegrationView = ({ vm, dispatch }: SjasmplusIntegrationV
 
     <ApplyBlock apply={vm.apply} />
   </div>
-);
+  );
+};

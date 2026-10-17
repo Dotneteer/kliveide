@@ -17,31 +17,34 @@
  * Both menus are built from here by `createFontSizeMenu` in `main/app-menu.ts`, so a rung added
  * here shows up in the menu with nothing else to change.
  */
+import { withLabels } from "@common/i18n/labels";
+import type { MessageKey } from "@common/i18n/keys.generated";
 
 export type FontSizeOption = {
-  /** Label shown in the menu. */
-  label: string;
+  /** Label shown in Settings; translated each time it is read (`withLabels`). */
+  readonly label: string;
+  readonly labelKey: MessageKey;
   /** Size in pixels, persisted in the settings file. */
   value: number;
 };
 
 /** The editor's ladder. `Medium` matches the 16px Monaco has always defaulted to. */
-export const EDITOR_FONT_SIZES: FontSizeOption[] = [
-  { label: "Smallest", value: 12 },
-  { label: "Small", value: 14 },
-  { label: "Medium", value: 16 },
-  { label: "Large", value: 20 },
-  { label: "Largest", value: 24 }
-];
+export const EDITOR_FONT_SIZES: FontSizeOption[] = withLabels<{ labelKey: MessageKey; value: number }>([
+  { labelKey: "settings.fontSize.smallest", value: 12 },
+  { labelKey: "settings.fontSize.small", value: 14 },
+  { labelKey: "settings.fontSize.medium", value: 16 },
+  { labelKey: "settings.fontSize.large", value: 20 },
+  { labelKey: "settings.fontSize.largest", value: 24 }
+]);
 
 /** The panels' ladder. `Medium` is 12px, what every data panel rendered at before it was settable. */
-export const PANEL_FONT_SIZES: FontSizeOption[] = [
-  { label: "Smallest", value: 10 },
-  { label: "Small", value: 11 },
-  { label: "Medium", value: 12 },
-  { label: "Large", value: 14 },
-  { label: "Largest", value: 16 }
-];
+export const PANEL_FONT_SIZES: FontSizeOption[] = withLabels<{ labelKey: MessageKey; value: number }>([
+  { labelKey: "settings.fontSize.smallest", value: 10 },
+  { labelKey: "settings.fontSize.small", value: 11 },
+  { labelKey: "settings.fontSize.medium", value: 12 },
+  { labelKey: "settings.fontSize.large", value: 14 },
+  { labelKey: "settings.fontSize.largest", value: 16 }
+]);
 
 /** 16px: Monaco's own default, and what the editor rendered at before the setting existed. */
 export const DEFAULT_EDITOR_FONT_SIZE = 16;

@@ -7,34 +7,35 @@
  */
 
 import type { SpectrumSnapshot } from "./spectrumSnapshot";
+import { t } from "@common/i18n/i18n";
 
-/** The losses `.sna` and `.z80` share (`.sna` also loses the frame position) */
+/** The losses `.sna` and `.z80` share (`.sna` also loses the frame position), translated */
 export function commonLosses(s: SpectrumSnapshot, format: "sna" | "z80"): string[] {
   const losses: string[] = [];
   if (format === "sna" && s.ula.frameTact) {
-    losses.push(
-      `A .sna has no frame position (the machine was at T-state ${s.ula.frameTact} of the frame); the program resumes at the start of a frame`
-    );
+    losses.push(t("media.snapshot.loss.snaFramePosition", { tact: String(s.ula.frameTact) }));
   }
   if (s.cpu.suppressInterrupt) {
-    losses.push(
-      `The CPU had just run EI (or a DD/FD prefix), so no interrupt was due before the next instruction; a .${format} cannot say so`
-    );
+    losses.push(t("media.snapshot.loss.eiDelay", { format }));
   }
   const tape = s.peripherals.tape;
   if (tape) {
-    losses.push(`A .${format} does not record the tape${tape.fileName ? ` (${tape.fileName})` : ""}`);
+    losses.push(
+      tape.fileName
+        ? t("media.snapshot.loss.tapeFile", { format, file: tape.fileName })
+        : t("media.snapshot.loss.tape", { format })
+    );
   }
   const disks = [...(s.peripherals.plus3?.disks ?? []), ...(s.peripherals.beta128?.disks ?? [])];
   if (disks.length) {
-    losses.push(`A .${format} does not record the inserted disk${disks.length > 1 ? "s" : ""}`);
+    losses.push(t("media.snapshot.loss.disks", { format, count: disks.length }));
   }
   // --- The Beta 128: a .sna keeps only whether TR-DOS was paged in, a .z80 nothing at all
   if (s.peripherals.beta128) {
     losses.push(
       format === "sna"
-        ? "A .sna keeps only whether TR-DOS was paged in, not the disk controller's state"
-        : "A .z80 does not record the Beta 128 disk interface"
+        ? t("media.snapshot.loss.snaTrdos")
+        : t("media.snapshot.loss.z80Beta128")
     );
   }
   return losses;

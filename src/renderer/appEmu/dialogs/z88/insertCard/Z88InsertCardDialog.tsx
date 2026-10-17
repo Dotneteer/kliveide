@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from "react";
 
 import { Modal } from "@renderer/controls/Modal";
 import { useMainApi } from "@renderer/core/MainApi";
+import { t } from "@common/i18n/i18n";
 import { useController } from "@mvc/react/useController";
 import { useViewModel } from "@mvc/react/useViewModel";
 
@@ -45,12 +46,12 @@ export const Z88InsertCardDialog = ({ slot, onClose, onInsert }: Props) => {
           (await mainApi.showOpenFileDialog(
             forSlot === SLOT0
               ? [
-                  { name: "ROM files", extensions: ["bin", "rom"] },
-                  { name: "All Files", extensions: ["*"] }
+                  { name: t("dialog.z88.insertCard.filter.romFiles"), extensions: ["bin", "rom"] },
+                  { name: t("common.filter.allFiles"), extensions: ["*"] }
                 ]
               : [
-                  { name: "EPROM files", extensions: ["epr"] },
-                  { name: "All Files", extensions: ["*"] }
+                  { name: t("dialog.z88.insertCard.filter.epromFiles"), extensions: ["epr"] },
+                  { name: t("common.filter.allFiles"), extensions: ["*"] }
                 ],
             Z88_CARDS_FOLDER_SETTINGS_KEY
           )) || undefined,

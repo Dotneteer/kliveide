@@ -12,6 +12,8 @@ import { Secondary } from "@renderer/controls/layout/Secondary";
 import { Value } from "@renderer/controls/layout/Value";
 import { Icon } from "@controls/Icon";
 import { TooltipFactory, useTooltipRef } from "@controls/Tooltip";
+import { t as translate, uiLocale } from "@common/i18n/i18n";
+import { useT, type TFunction } from "@common/i18n/useT";
 import { BreakpointIndicator } from "./BreakpointIndicator";
 import {
   breakpointFilterLines,
@@ -105,8 +107,12 @@ export const DEFAULT_LABEL_WIDTH_CH = 10;
 export function describeLabelOrigin(item: DisassemblyItem): string | undefined {
   if (!item.formattedLabel || !item.labelOrigin) return undefined;
   const lines = [item.labelOrigin];
-  for (const alternative of item.labelAlternatives ?? []) lines.push(`Also: ${alternative}`);
-  if (item.mirrorOf !== undefined) lines.push(`Mirror of $${toHexa4(item.mirrorOf)}`);
+  for (const alternative of item.labelAlternatives ?? []) {
+    lines.push(translate("panels.doc.disassemblyRow.alsoNamed", { name: alternative }));
+  }
+  if (item.mirrorOf !== undefined) {
+    lines.push(translate("panels.doc.disassemblyRow.mirrorOf", { address: `$${toHexa4(item.mirrorOf)}` }));
+  }
   return lines.join("\n");
 }
 
@@ -367,6 +373,8 @@ function BranchReadout({
   decimalView: boolean;
 }) {
   const ref = useTooltipRef();
+  // --- Subscribes to the language, so the readout's prose follows a language switch
+  useT();
   const { long, short } = formatBranchReadout(verdict, decimalView);
   return (
     <span
@@ -484,6 +492,22 @@ type DisassemblyRowProps = DisassemblyRowViewModelParams & {
   onKeyDown?: (event: KeyboardEvent<HTMLDivElement>) => void;
 };
 
+/** The coverage cell's tooltip: how often the row ran and, when profiled, its share of the time */
+function coverageTitle(t: TFunction, coverage: number, timeShare: number | undefined): string {
+  const share =
+    timeShare === undefined
+      ? undefined
+      : timeShare.toLocaleString(uiLocale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  if (coverage > 0) {
+    return share === undefined
+      ? t("panels.doc.disassemblyRow.executedTimes", { count: coverage })
+      : t("panels.doc.disassemblyRow.executedTimesShare", { count: coverage, share });
+  }
+  return share === undefined
+    ? t("panels.doc.disassemblyRow.executed")
+    : t("panels.doc.disassemblyRow.executedShare", { share });
+}
+
 export const DisassemblyRow = memo(function DisassemblyRow({
   annotated = false,
   commentWidthCh,
@@ -508,6 +532,7 @@ export const DisassemblyRow = memo(function DisassemblyRow({
   timeShare,
   ...viewModelParams
 }: DisassemblyRowProps) {
+  const t = useT();
   const breakpoint = viewModelParams.breakpoint;
   // --- Address-bound and bank-relative breakpoints are both editable: the dialog authors either
   // --- shape. A source-bound one is not — it belongs to the editor's glyph margin, which places
@@ -568,9 +593,9 @@ export const DisassemblyRow = memo(function DisassemblyRow({
       data-history-exec={viewModel?.historical ? "true" : undefined}
       title={
         viewModel?.codeChanged
-          ? "History: the code here has changed since this instruction ran. The listing shows the present bytes."
+          ? t("panels.doc.disassemblyRow.historyCodeChanged")
           : viewModel?.historical
-            ? "History: the instruction the history cursor is on. The bytes are the present's."
+            ? t("panels.doc.disassemblyRow.historyCursor")
             : undefined
       }
       data-synopsis-edge={synopsisEdge}
@@ -623,9 +648,9 @@ export const DisassemblyRow = memo(function DisassemblyRow({
           data-region-origin={item.annotation?.regionOrigin}
           title={
             item.annotation?.regionOrigin === "auto"
-              ? "Detected from coverage"
+              ? t("panels.doc.disassemblyRow.regionFromCoverage")
               : item.annotation?.regionOrigin === "skool"
-                ? "Imported from a SkoolKit file"
+                ? t("panels.doc.disassemblyRow.regionFromSkool")
                 : undefined
           }
         />
@@ -728,9 +753,7 @@ export const DisassemblyRow = memo(function DisassemblyRow({
               title={
                 coverage === undefined || coverage === 0
                   ? undefined
-                  : (coverage > 0
-                      ? `Executed ${coverage.toLocaleString("en-US")} time${coverage === 1 ? "" : "s"}`
-                      : "Executed") + (timeShare !== undefined ? ` · ${timeShare.toFixed(1)}% of the profiled time` : "")
+                  : coverageTitle(t, coverage, timeShare)
               }
             />
           )}

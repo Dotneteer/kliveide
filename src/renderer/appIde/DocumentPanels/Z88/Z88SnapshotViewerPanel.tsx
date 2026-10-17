@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { t as translate, uiLocale } from "@common/i18n/i18n";
+import { useT } from "@common/i18n/useT";
 
 import type { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import type { GenericFileContext } from "../helpers/GenericFilePanel";
@@ -86,7 +88,9 @@ export function loadZ88SnapshotFileContents(contents: Uint8Array): {
     const snapshot = parseZ88Snapshot(contents);
     return { fileInfo: { snapshot, mapping: mapZ88SnapshotToKlive(snapshot) } };
   } catch (err) {
-    return { error: `Invalid Z88 snapshot: ${err instanceof Error ? err.message : String(err)}` };
+    return {
+      error: translate("panels.z88.error.invalid", { reason: err instanceof Error ? err.message : String(err) })
+    };
   }
 }
 
@@ -137,18 +141,19 @@ const SnapshotView = ({ ctx, documentSource, fullPath }: ViewProps) => {
 type SectionProps = { ctx: ViewContext; info: Z88SnapshotFileInfo };
 
 const SummarySection = ({ ctx, info }: SectionProps) => {
+  const t = useT();
   const { snapshot, mapping } = info;
   const now = useMemo(() => Date.now(), []);
   const loadable = mapping.errors.length === 0;
   return (
     <ExpandableRow
-      heading="Snapshot"
+      heading={t("panels.helpers.heading.snapshot")}
       initialExpanded={ctx.viewState?.summaryExpanded ?? true}
       onExpanded={(exp) => ctx.changeViewState((vs) => (vs.summaryExpanded = exp))}
     >
       <Row>
-        <LabeledFlag label="Loadable:" labelWidth={LABEL_WIDTH} value={loadable} />
-        <LabeledFlag label="Autorun:" labelWidth={LABEL_WIDTH} value={snapshot.autorun} />
+        <LabeledFlag label={t("panels.helpers.label.loadable")} labelWidth={LABEL_WIDTH} value={loadable} />
+        <LabeledFlag label={t("panels.z88.label.autorun")} labelWidth={LABEL_WIDTH} value={snapshot.autorun} />
       </Row>
       {mapping.errors.map((error, index) => (
         <Row key={`error${index}`}>
@@ -162,20 +167,24 @@ const SummarySection = ({ ctx, info }: SectionProps) => {
       ))}
       <Row>
         <LabeledText
-          label="Saved at:"
+          label={t("panels.z88.label.savedAt")}
           labelWidth={LABEL_WIDTH}
-          value={snapshot.stoppedAt !== undefined ? new Date(snapshot.stoppedAt).toLocaleString() : "not recorded"}
+          value={
+            snapshot.stoppedAt !== undefined
+              ? new Date(snapshot.stoppedAt).toLocaleString(uiLocale())
+              : t("panels.z88.notRecorded")
+          }
         />
       </Row>
       <Row>
-        <LabeledText label="RTC saved:" labelWidth={LABEL_WIDTH} value={formatZ88Rtc(snapshot.blink.tim)} />
+        <LabeledText label={t("panels.z88.label.rtcSaved")} labelWidth={LABEL_WIDTH} value={formatZ88Rtc(snapshot.blink.tim)} />
       </Row>
       <Row>
         <LabeledText
-          label="RTC on load:"
+          label={t("panels.z88.label.rtcOnLoad")}
           labelWidth={LABEL_WIDTH}
           value={formatZ88Rtc(adjustZ88LostTime(snapshot.blink.tim, snapshot.stoppedAt, now))}
-          valueTooltip="The saved RTC advanced by the time the file has spent on disk"
+          valueTooltip={t("panels.z88.rtcOnLoadTooltip")}
         />
       </Row>
       {/* --- One entry per row: a data value never wraps, and the archive's members on one line
@@ -183,9 +192,9 @@ const SummarySection = ({ ctx, info }: SectionProps) => {
       {snapshot.entries.map((entry, index) => (
         <Row key={entry.name}>
           <LabeledText
-            label={index === 0 ? "Contents:" : ""}
+            label={index === 0 ? t("panels.z88.label.contents") : ""}
             labelWidth={LABEL_WIDTH}
-            value={`${entry.name} (${entry.size} bytes)`}
+            value={t("panels.z88.entry", { name: entry.name, count: entry.size })}
           />
         </Row>
       ))}
@@ -196,6 +205,7 @@ const SummarySection = ({ ctx, info }: SectionProps) => {
 
 /** The LCD picture OZvm saved; cosmetic, as in OZvm */
 const LcdPicture = ({ png }: { png: Uint8Array }) => {
+  const t = useT();
   const [url, setUrl] = useState<string>();
   useEffect(() => {
     const created = URL.createObjectURL(new Blob([png.slice()], { type: "image/png" }));
@@ -206,7 +216,7 @@ const LcdPicture = ({ png }: { png: Uint8Array }) => {
     <Row>
       <img
         src={url}
-        alt="The LCD when the snapshot was saved"
+        alt={t("panels.z88.lcdAlt")}
         style={{ imageRendering: "pixelated", maxWidth: "100%" }}
       />
     </Row>
@@ -223,10 +233,11 @@ const Register = ({ label, value }: { label: string; value: number }) => (
 );
 
 const CpuSection = ({ ctx, info }: SectionProps) => {
+  const t = useT();
   const cpu = info.snapshot.cpu;
   return (
     <ExpandableRow
-      heading="Z80 Registers"
+      heading={t("panels.helpers.heading.z80Registers")}
       initialExpanded={ctx.viewState?.cpuExpanded ?? true}
       onExpanded={(exp) => ctx.changeViewState((vs) => (vs.cpuExpanded = exp))}
     >
@@ -271,6 +282,7 @@ const BitRegister = ({ name, value }: { name: Z88BlinkBitRegister; value: number
 );
 
 const BlinkSection = ({ ctx, info }: SectionProps) => {
+  const t = useT();
   const blink = info.snapshot.blink;
   return (
     <ExpandableRow
@@ -328,7 +340,7 @@ const BlinkSection = ({ ctx, info }: SectionProps) => {
         <LabeledText
           label="LCD:"
           labelWidth={REG_LABEL_WIDTH}
-          value={`${blink.scw * 8} x ${blink.sch * 8} pixels`}
+          value={t("panels.z88.lcdSize", { width: blink.scw * 8, height: blink.sch * 8 })}
         />
       </Row>
     </ExpandableRow>
@@ -336,6 +348,7 @@ const BlinkSection = ({ ctx, info }: SectionProps) => {
 };
 
 const PagingSection = ({ ctx, info, documentSource }: SectionProps & { documentSource: string }) => {
+  const t = useT();
   const documentHubService = useDocumentHubService();
   const { snapshot } = info;
   const pc = snapshot.cpu.pc;
@@ -349,24 +362,24 @@ const PagingSection = ({ ctx, info, documentSource }: SectionProps & { documentS
     openStaticMemoryDump(
       documentHubService,
       `z88Snapshot${documentSource}`,
-      `${documentSource} - 64K at PC`,
+      t("panels.helpers.addressSpaceTitle", { source: documentSource }),
       space,
       { disassemblyEnabled: true, disassOffset: 0, viewMode, topAddress: pc, disassemblyFlavor: "z88" }
     );
 
   return (
     <ExpandableRow
-      heading="Address Space at PC"
+      heading={t("panels.z88.addressSpaceHeading")}
       headingAction={
         <>
           <SmallIconButton
             iconName="memory-icon"
-            title="Memory dump at PC"
+            title={t("panels.helpers.memoryAtPc")}
             clicked={() => openAtPc("memory")}
           />
           <SmallIconButton
             iconName="disassembly-icon"
-            title="Disassembly at PC"
+            title={t("panels.helpers.disassemblyAtPc")}
             clicked={() => openAtPc("disassembly")}
           />
         </>
@@ -378,7 +391,11 @@ const PagingSection = ({ ctx, info, documentSource }: SectionProps & { documentS
         <LabeledText
           label="PC:"
           labelWidth={LABEL_WIDTH}
-          value={`$${toHexa4(pc)} = bank $${toHexa2(location.bank)}, offset $${toHexa4(location.offset)}`}
+          value={t("panels.spectrum.pcInBank", {
+            pc: `$${toHexa4(pc)}`,
+            bank: `$${toHexa2(location.bank)}`,
+            offset: `$${toHexa4(location.offset)}`
+          })}
         />
       </Row>
       {z88PagedRanges(snapshot).map((range) => (
@@ -387,9 +404,13 @@ const PagingSection = ({ ctx, info, documentSource }: SectionProps & { documentS
             label={`$${toHexa4(range.start)}-$${toHexa4(range.end)}:`}
             labelWidth={LABEL_WIDTH}
             value={
-              `bank $${toHexa2(range.bank)} (${range.owner})` +
               // --- SR0 shows half a bank: bit 0 of the bank number picks the half
-              (range.start === 0x2000 ? `, ${range.offset ? "upper" : "lower"} 8K` : "")
+              range.start === 0x2000
+                ? t(range.offset ? "panels.z88.rangeUpper" : "panels.z88.rangeLower", {
+                    bank: `$${toHexa2(range.bank)}`,
+                    owner: range.owner
+                  })
+                : t("panels.z88.range", { bank: `$${toHexa2(range.bank)}`, owner: range.owner })
             }
           />
         </Row>
@@ -448,16 +469,17 @@ const SlotsSection = ({ ctx, info, fullPath }: SectionProps & { fullPath: string
 };
 
 const BreakpointsSection = ({ ctx, info }: SectionProps) => {
+  const t = useT();
   const breakpoints = info.snapshot.breakpoints;
   return (
     <ExpandableRow
-      heading={`Breakpoints (${breakpoints.length})`}
+      heading={t("panels.z88.breakpointsHeading", { count: breakpoints.length })}
       initialExpanded={ctx.viewState?.breakpointsExpanded ?? false}
       onExpanded={(exp) => ctx.changeViewState((vs) => (vs.breakpointsExpanded = exp))}
     >
       {breakpoints.length === 0 ? (
         <Row>
-          <Text text="The snapshot has no breakpoints." />
+          <Text text={t("panels.z88.noBreakpoints")} />
         </Row>
       ) : (
         breakpoints.map((bp, index) => (
@@ -465,7 +487,7 @@ const BreakpointsSection = ({ ctx, info }: SectionProps) => {
             <LabeledText
               label={`$${toHexa2(bp.bank)}:$${toHexa4(bp.offset)}`}
               labelWidth={LABEL_WIDTH}
-              value={bp.display ? "display only" : "stops"}
+              value={bp.display ? t("panels.z88.bpDisplay") : t("panels.z88.bpStops")}
             />
           </Row>
         ))

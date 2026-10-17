@@ -1,3 +1,4 @@
+import { useT } from "@common/i18n/useT";
 import { SideBarBadge } from "@renderer/appIde/SideBar/SideBarBadge";
 import { useOpenEditors } from "./useOpenEditors";
 import type { SideBarPanelBadgeProps } from "@renderer/abstractions/SideBarPanelInfo";
@@ -11,8 +12,7 @@ import type { SideBarPanelBadgeProps } from "@renderer/abstractions/SideBarPanel
  * header stays quiet while nothing is open.
  */
 export const OpenEditorsBadge = ({}: SideBarPanelBadgeProps) => {
+  const t = useT();
   const count = useOpenEditors().length;
-  return (
-    <SideBarBadge count={count} title={`${count} open editor${count === 1 ? "" : "s"}`} />
-  );
+  return <SideBarBadge count={count} title={t("explorer.openEditors.badge", { count })} />;
 };

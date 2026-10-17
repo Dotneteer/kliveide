@@ -1,5 +1,7 @@
 import { classifyBank } from "./classify";
 import type { GraphicsLook } from "./graphicsDecode";
+import { t, type MessageArgs } from "@common/i18n/i18n";
+import type { MessageKey } from "@common/i18n/keys.generated";
 
 /*
  * Where graphics probably are (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §5.4, phase G4). Heuristics,
@@ -22,8 +24,10 @@ export type GraphicCandidate = {
   end: number;
   /** Higher is more likely; comparable only within a kind. */
   score: number;
-  /** What the side list says. */
-  description: string;
+  /** What the side list says: translates `descriptionKey` on each read (D7). */
+  readonly description: string;
+  descriptionKey: MessageKey;
+  descriptionArgs: MessageArgs;
   /** The look to show it with. */
   look: Partial<GraphicsLook>;
 };
@@ -56,6 +60,14 @@ export function fontScore(bytes: ArrayLike<number>, offset: number): number {
   return drawn / (FONT_CHARS - 1);
 }
 
+/** A candidate whose `description` is a getter reading its key in the current language */
+function candidate(item: Omit<GraphicCandidate, "description">): GraphicCandidate {
+  return Object.defineProperty({ ...item }, "description", {
+    enumerable: true,
+    get: () => t(item.descriptionKey, item.descriptionArgs)
+  }) as GraphicCandidate;
+}
+
 export function findGraphicCandidates(input: {
   bytes: Uint8Array;
   /** The address `bytes[0]` is at. */
@@ -75,14 +87,17 @@ export function findGraphicCandidates(input: {
   for (let offset = 0; offset + FONT_BYTES <= bytes.length; offset++) {
     const score = fontScore(bytes, offset);
     if (score === 0) continue;
-    candidates.push({
-      kind: "font",
-      start: offset,
-      end: offset + FONT_BYTES - 1,
-      score,
-      description: `Font at ${hex(base + offset)} (96 characters)`,
-      look: { width: 1, height: 8, layout: "cells", mask: "none" }
-    });
+    candidates.push(
+      candidate({
+        kind: "font",
+        start: offset,
+        end: offset + FONT_BYTES - 1,
+        score,
+        descriptionKey: "gfxCommon.graphics.candidate.font",
+        descriptionArgs: { address: hex(base + offset) },
+        look: { width: 1, height: 8, layout: "cells", mask: "none" }
+      })
+    );
     offset += FONT_BYTES - 1;
   }
 
@@ -90,14 +105,17 @@ export function findGraphicCandidates(input: {
   if (udg >= 0 && udg + UDG_BYTES <= bytes.length) {
     const area = bytes.subarray(udg, udg + UDG_BYTES);
     if (area.some((b) => b !== 0)) {
-      candidates.push({
-        kind: "udg",
-        start: udg,
-        end: udg + UDG_BYTES - 1,
-        score: 1,
-        description: `UDG area at ${hex(UDG_ADDRESS)} (21 graphics)`,
-        look: { width: 1, height: 8, layout: "cells", mask: "none" }
-      });
+      candidates.push(
+        candidate({
+          kind: "udg",
+          start: udg,
+          end: udg + UDG_BYTES - 1,
+          score: 1,
+          descriptionKey: "gfxCommon.graphics.candidate.udg",
+          descriptionArgs: { address: hex(UDG_ADDRESS) },
+          look: { width: 1, height: 8, layout: "cells", mask: "none" }
+        })
+      );
     }
   }
 
@@ -115,14 +133,17 @@ export function findGraphicCandidates(input: {
       }
       if (written || reads === 0) continue;
       if (candidates.some((c) => c.kind === "font" && run.start <= c.end && run.end >= c.start)) continue;
-      candidates.push({
-        kind: "data",
-        start: run.start,
-        end: run.end,
-        score: reads,
-        description: `Read-only data at ${hex(base + run.start)}, ${run.end - run.start + 1} bytes, read ${reads}×`,
-        look: {}
-      });
+      candidates.push(
+        candidate({
+          kind: "data",
+          start: run.start,
+          end: run.end,
+          score: reads,
+          descriptionKey: "gfxCommon.graphics.candidate.data",
+          descriptionArgs: { address: hex(base + run.start), bytes: run.end - run.start + 1, reads },
+          look: {}
+        })
+      );
     }
   }
 

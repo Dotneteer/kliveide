@@ -23,6 +23,7 @@ import { buildVariableSections, type VariableNode } from "./variables-model";
 import { evaluateWatch } from "./watch-expression";
 import styles from "./VariablesPanel.module.scss";
 import { HistoryPresentBanner } from "../history/HistoryPresentBanner";
+import { useT, type TFunction } from "@common/i18n/useT";
 
 type Snapshot = { chain: SourceActivationInfo[]; stop?: SourceStopInfo; mem: MemoryView };
 
@@ -33,14 +34,16 @@ type Snapshot = { chain: SourceActivationInfo[]; stop?: SourceStopInfo; mem: Mem
  * when the machine stops.
  */
 export const VariablesPanel = () => {
+  const t = useT();
   const result = useSelector((s) => s.compilation?.result);
   if (!hasSourceLevelDebug(result)) {
-    return <EmptyState message="Build a Klive BASIC program to see its variables" />;
+    return <EmptyState message={t("panels.side.variables.noProgram")} />;
   }
   return <SourceVariables info={result.sourceLevelDebug} />;
 };
 
 const SourceVariables = ({ info }: { info: SourceLevelDebugInfo }) => {
+  const t = useT();
   const emuApi = useEmuApi();
   const mainApi = useMainApi();
   const store = useStore();
@@ -117,7 +120,7 @@ const SourceVariables = ({ info }: { info: SourceLevelDebugInfo }) => {
       return;
     }
     // --- An edit in the past changes the past: take over there first, after asking (REVERSE_DEBUGGING_PLAN D12)
-    if (!(await takeOverBeforeEdit({ store, emuApi, mainApi }, `Edit ${node.name}`))) {
+    if (!(await takeOverBeforeEdit({ store, emuApi, mainApi }, { kind: "editVariable", name: node.name }))) {
       setEditing(undefined);
       return;
     }
@@ -153,7 +156,7 @@ const SourceVariables = ({ info }: { info: SourceLevelDebugInfo }) => {
             {editing?.id === node.id ? (
               <input
                 className={styles.valueEditor}
-                aria-label={`New value of ${node.name}`}
+                aria-label={t("panels.side.variables.newValue", { name: node.name })}
                 autoFocus
                 value={editing.text}
                 title={editing.error}
@@ -169,7 +172,7 @@ const SourceVariables = ({ info }: { info: SourceLevelDebugInfo }) => {
               <DataValue
                 text={node.value}
                 xclass={styles.value}
-                title={`${node.address !== undefined ? `At $${toHexa4(node.address)} (${node.address})` : ""}${node.bank !== undefined ? ` in CODEBANK ${node.bank}` : ""}${editable(node) ? "\nDouble-click to change" : ""}`}
+                title={valueTitle(t, node, editable(node))}
               />
             )}
             {editing?.id === node.id && editing.error && <span className={styles.watchError}>{editing.error}</span>}
@@ -184,28 +187,28 @@ const SourceVariables = ({ info }: { info: SourceLevelDebugInfo }) => {
 
   return (
     <DataPanel xclass={styles.variablesPanel}>
-      <HistoryPresentBanner what="Variables" plural />
-      {!sections && <EmptyState message="Pause the machine to see variables" />}
+      <HistoryPresentBanner subject="variables" />
+      {!sections && <EmptyState message={t("panels.side.variables.pause")} />}
       {sections && sections.returned.length > 0 && (
         <>
-          <SectionHeader title="Returned" />
+          <SectionHeader title={t("panels.side.variables.returned")} />
           {renderNodes(sections.returned, 0)}
         </>
       )}
       {sections?.locals && (
         <>
-          <SectionHeader title={`Locals — ${frameName}`} />
-          {sections.localsNote && <EmptyState message={sections.localsNote} motif={false} />}
+          <SectionHeader title={t("panels.side.variables.locals", { frame: frameName })} />
+          {sections.localsFrameNotSetUp && <EmptyState message={t("panels.side.variables.frameNotSetUp")} motif={false} />}
           {renderNodes(sections.locals, 0)}
         </>
       )}
       {sections && (
         <>
-          <SectionHeader title="Globals" />
-          {sections.globals.length ? renderNodes(sections.globals, 0) : <EmptyState message="No globals" motif={false} />}
+          <SectionHeader title={t("panels.side.variables.globals")} />
+          {sections.globals.length ? renderNodes(sections.globals, 0) : <EmptyState message={t("panels.side.variables.noGlobals")} motif={false} />}
         </>
       )}
-      <SectionHeader title="Watch" />
+      <SectionHeader title={t("panels.side.variables.watch")} />
       {(watches ?? []).map((text, i) => {
         const r = ctx ? evaluateWatch(text, ctx) : undefined;
         return (
@@ -224,7 +227,7 @@ const SourceVariables = ({ info }: { info: SourceLevelDebugInfo }) => {
                 buttonWidth={16}
                 buttonHeight={16}
                 noPadding
-                title="Remove this watch"
+                title={t("panels.side.variables.removeWatch")}
                 clicked={() => dispatch(removeBasicWatchAction(i))}
               />
             </span>
@@ -236,8 +239,8 @@ const SourceVariables = ({ info }: { info: SourceLevelDebugInfo }) => {
         <input
           className={dataStyles.panelFilterInput}
           type="text"
-          aria-label="Add a BASIC watch expression"
-          placeholder="Add watch: a BASIC expression"
+          aria-label={t("panels.side.variables.addWatchLabel")}
+          placeholder={t("panels.side.variables.addWatchPlaceholder")}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={addWatch}
@@ -246,3 +249,17 @@ const SourceVariables = ({ info }: { info: SourceLevelDebugInfo }) => {
     </DataPanel>
   );
 };
+
+/** A value's tooltip: where it lives, and whether a double-click edits it */
+function valueTitle(t: TFunction, node: VariableNode, editable: boolean): string {
+  const address = node.address !== undefined ? `$${toHexa4(node.address)} (${node.address})` : undefined;
+  const where =
+    address === undefined
+      ? node.bank !== undefined
+        ? t("panels.side.variables.inBank", { bank: node.bank })
+        : ""
+      : node.bank !== undefined
+        ? t("panels.side.variables.atInBank", { address, bank: node.bank })
+        : t("panels.side.variables.at", { address });
+  return editable ? `${where}\n${t("panels.side.variables.doubleClickToChange")}` : where;
+}

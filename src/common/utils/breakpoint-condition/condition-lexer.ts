@@ -1,4 +1,5 @@
 import type { ConditionDiagnostic } from "./condition-types";
+import { t } from "@common/i18n/i18n";
 
 /*
  * The condition lexer (plan §3.2-§3.5).
@@ -148,9 +149,9 @@ export function tokenizeCondition(text: string): Token[] {
 
     if (c === "`") {
       const close = text.indexOf("`", pos + 1);
-      if (close < 0) throw new ConditionSyntaxError("Unterminated backtick label", start, text.length);
+      if (close < 0) throw new ConditionSyntaxError(t("debug.condition.unterminatedBacktick"), start, text.length);
       const name = text.substring(pos + 1, close);
-      if (!name.trim()) throw new ConditionSyntaxError("Empty backtick label", start, close + 1);
+      if (!name.trim()) throw new ConditionSyntaxError(t("debug.condition.emptyBacktick"), start, close + 1);
       tokens.push({ kind: "quoted", text: name, start, end: close + 1 });
       pos = close + 1;
       continue;
@@ -160,7 +161,7 @@ export function tokenizeCondition(text: string): Token[] {
       let end = pos + 1;
       while (end < text.length && isAlnum(text[end])) end++;
       if (end === pos + 1) {
-        throw new ConditionSyntaxError("A partition literal needs a label after @", start, end);
+        throw new ConditionSyntaxError(t("debug.condition.partitionNeedsLabel"), start, end);
       }
       tokens.push({ kind: "part", text: text.substring(pos + 1, end), start, end });
       pos = end;
@@ -173,8 +174,8 @@ export function tokenizeCondition(text: string): Token[] {
         if (codes.length !== 1) {
           throw new ConditionSyntaxError(
             codes.length === 0
-              ? "Empty character literal; a character literal holds exactly one character"
-              : `A character literal holds exactly one character; use "${text.substring(pos + 1, end - 1)}" for a string`,
+              ? t("debug.condition.emptyCharLiteral")
+              : t("debug.condition.charLiteralTooLong", { string: `"${text.substring(pos + 1, end - 1)}"` }),
             start,
             end
           );
@@ -193,7 +194,7 @@ export function tokenizeCondition(text: string): Token[] {
       pos += op.length;
       continue;
     }
-    throw new ConditionSyntaxError(`Unexpected character '${c}'`, start, start + 1);
+    throw new ConditionSyntaxError(t("debug.condition.unexpectedChar", { char: c }), start, start + 1);
   }
 
   tokens.push({ kind: "eof", text: "", start: text.length, end: text.length });
@@ -230,12 +231,12 @@ function readNumber(text: string, pos: number, tokens: Token[]): number {
   const valid =
     radix === 16 ? /^[0-9a-f]+$/i : radix === 2 ? /^[01]+$/ : /^[0-9]+$/;
   if (!digits || !valid.test(digits) || raw.startsWith("_") || raw.endsWith("_")) {
-    throw new ConditionSyntaxError(`Invalid number '${text.substring(start, end)}'`, start, end);
+    throw new ConditionSyntaxError(t("debug.condition.invalidNumber", { number: text.substring(start, end) }), start, end);
   }
   const value = parseInt(digits, radix);
   if (value > MAX_LITERAL) {
     throw new ConditionSyntaxError(
-      `${text.substring(start, end)} is larger than $FFFFFFFF`,
+      t("debug.condition.numberTooLarge", { number: text.substring(start, end), max: "$FFFFFFFF" }),
       start,
       end
     );
@@ -252,7 +253,7 @@ function readQuoted(text: string, pos: number): { codes: number[]; end: number }
   while (true) {
     if (i >= text.length) {
       throw new ConditionSyntaxError(
-        quote === "'" ? "Unterminated character literal" : "Unterminated string",
+        quote === "'" ? t("debug.condition.unterminatedChar") : t("debug.condition.unterminatedString"),
         pos,
         text.length
       );
@@ -281,7 +282,7 @@ function readQuoted(text: string, pos: number): { codes: number[]; end: number }
         continue;
       }
       throw new ConditionSyntaxError(
-        "Invalid escape; use \\\\, \\', \\\", \\n, \\r, \\t, \\0 or \\xHH",
+        t("debug.condition.invalidEscape"),
         i,
         Math.min(text.length, i + 2)
       );
@@ -291,7 +292,7 @@ function readQuoted(text: string, pos: number): { codes: number[]; end: number }
     const code = zxCharCode(chr);
     if (code === undefined) {
       throw new ConditionSyntaxError(
-        `'${chr}' has no ZX Spectrum character code; write it as \\xHH`,
+        t("debug.condition.noZxCharCode", { char: chr }),
         i,
         i + chr.length
       );

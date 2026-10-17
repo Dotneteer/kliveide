@@ -15,6 +15,7 @@ import {
   validationError,
   writeMessage
 } from "../services/ide-commands";
+import { t } from "@common/i18n/i18n";
 
 export type Z88SnapshotCommandArgs = {
   file: string;
@@ -49,8 +50,9 @@ export function isZ88SnapshotPath(path: string | undefined): boolean {
  */
 export class Z88SnapshotCommand extends IdeCommandBase<Z88SnapshotCommandArgs> {
   readonly id = "z88-snapshot";
-  readonly description =
-    "Loads a .z88 snapshot into the Cambridge Z88 and debugs it, stopping at its PC (-r runs it, -a follows its Autorun flag)";
+  get description() {
+    return t("commands.z88Snapshot.description");
+  }
   readonly aliases = ["z88snap"];
   readonly usage = "z88-snapshot <z88-file> [-r | -d | -a]";
 
@@ -66,14 +68,14 @@ export class Z88SnapshotCommand extends IdeCommandBase<Z88SnapshotCommandArgs> {
     const messages: ValidationMessage[] = [];
 
     if (!args.file?.trim()) {
-      messages.push(validationError("The snapshot file path cannot be empty."));
+      messages.push(validationError(t("commands.z88Snapshot.emptyPath")));
     } else if (!isZ88SnapshotPath(args.file)) {
-      messages.push(validationError("The file to load must be a .z88 snapshot."));
+      messages.push(validationError(t("commands.z88Snapshot.wrongType")));
     }
 
     const modes = ["-r", "-d", "-a"].filter((option) => args[option]);
     if (modes.length > 1) {
-      messages.push(validationError(`Use only one of -r, -d and -a (got ${modes.join(", ")}).`));
+      messages.push(validationError(t("commands.z88Snapshot.oneMode", { options: modes.join(", ") })));
     }
 
     const guard = z88SnapshotProjectGuard(context.store.getState());
@@ -93,7 +95,7 @@ export class Z88SnapshotCommand extends IdeCommandBase<Z88SnapshotCommandArgs> {
     try {
       bytes = await context.mainApi.readBinaryFile(file);
     } catch (err) {
-      return commandError(`Could not read ${file}: ${messageOf(err)}`);
+      return commandError(t("commands.z88Snapshot.readFailed", { file, error: messageOf(err) }));
     }
 
     // --- -a needs the file's Autorun flag before the load decides what to do
@@ -102,7 +104,7 @@ export class Z88SnapshotCommand extends IdeCommandBase<Z88SnapshotCommandArgs> {
       try {
         mode = parseZ88Snapshot(bytes).autorun ? "run" : "debug";
       } catch (err) {
-        return commandError(`${file} is not a valid Z88 snapshot: ${messageOf(err)}`);
+        return commandError(t("commands.z88Snapshot.invalid", { file, error: messageOf(err) }));
       }
     }
 
@@ -110,17 +112,19 @@ export class Z88SnapshotCommand extends IdeCommandBase<Z88SnapshotCommandArgs> {
     try {
       result = await context.emuApi.loadZ88Snapshot(bytes, mode);
     } catch (err) {
-      return commandError(`Could not load ${file}: ${messageOf(err)}`);
+      return commandError(t("commands.z88Snapshot.loadFailed", { file, error: messageOf(err) }));
     }
 
     if (result.rebuilt) {
-      writeMessage(context.output, "The Z88 was set up again to fit the snapshot.", "cyan");
+      writeMessage(context.output, t("commands.z88Snapshot.rebuilt"), "cyan");
     }
     for (const warning of result.warnings) {
-      writeMessage(context.output, `Warning: ${warning}`, "yellow");
+      writeMessage(context.output, t("commands.z88Snapshot.warning", { warning }), "yellow");
     }
-    const done = mode === "run" ? "running" : "stopped at";
-    return commandSuccessWith(`Z88 snapshot ${file} loaded, ${done} PC $${toHexa4(result.pc)}.`);
+    const loaded = { file, pc: `$${toHexa4(result.pc)}` };
+    return commandSuccessWith(
+      mode === "run" ? t("commands.z88Snapshot.loadedRunning", loaded) : t("commands.z88Snapshot.loadedStopped", loaded)
+    );
   }
 }
 
@@ -139,11 +143,10 @@ export function z88SnapshotProjectGuard(state: {
     return undefined;
   }
   const machineName =
-    machineRegistry.find((m) => m.machineId === machineId)?.displayName ?? machineId ?? "another machine";
-  return (
-    `The open project targets ${machineName}; loading a Z88 snapshot would switch it to the ` +
-    "Cambridge Z88. Close the project or open a Z88 project first."
-  );
+    machineRegistry.find((m) => m.machineId === machineId)?.displayName ??
+    machineId ??
+    t("commands.z88Snapshot.anotherMachine");
+  return t("commands.z88Snapshot.guard", { machine: machineName });
 }
 
 /** An error's message; one that crossed the process boundary arrives as "Error: ..." text */

@@ -3,6 +3,8 @@ import classnames from "classnames";
 
 import { Icon } from "@renderer/controls/Icon";
 import { PanelFilter } from "@renderer/controls/data";
+import { t as translate } from "@common/i18n/i18n";
+import { useT } from "@common/i18n/useT";
 import type { MachineSelectEvent } from "./MachineSelectModel";
 import type {
   FavoriteRowVm,
@@ -33,6 +35,7 @@ const favoriteNav = (key: string) => `favorite:${key}`;
  * Dumb: it renders the view model and turns gestures into `MachineSelectEvent`s.
  */
 export const MachineSelectView = ({ vm, filter, dispatch, onSwitchRequested }: Props) => {
+  const t = useT();
   const treeRef = useRef<HTMLDivElement>(null);
   const [focusNav, setFocusNav] = useState<string>();
   const [dragKey, setDragKey] = useState<string>();
@@ -136,8 +139,8 @@ export const MachineSelectView = ({ vm, filter, dispatch, onSwitchRequested }: P
     <button
       type="button"
       className={classnames(styles.star, { [styles.starOn]: on })}
-      title={on ? "Remove from the Machine type menu" : "Add to the Machine type menu"}
-      aria-label={on ? "Remove from favourites" : "Add to favourites"}
+      title={on ? t("dialog.machineSelect.star.removeTitle") : t("dialog.machineSelect.star.addTitle")}
+      aria-label={on ? t("dialog.machineSelect.star.removeAria") : t("dialog.machineSelect.star.addAria")}
       aria-pressed={on}
       tabIndex={-1}
       onClick={(e) => {
@@ -163,7 +166,7 @@ export const MachineSelectView = ({ vm, filter, dispatch, onSwitchRequested }: P
     >
       {leafTitle && <span className={styles.chevronSpace} />}
       <span className={styles.name}>{leafTitle ?? row.name}</span>
-      {row.running ? <span className={styles.pill}>Running</span> : <span />}
+      {row.running ? <span className={styles.pill}>{t("dialog.machineSelect.running")}</span> : <span />}
       {starButton(row.key, row.favorite)}
     </div>
   );
@@ -209,20 +212,22 @@ export const MachineSelectView = ({ vm, filter, dispatch, onSwitchRequested }: P
         </span>
         <span className={styles.name}>{row.name}</span>
         <span className={styles.rowActions}>
-          {rowAction("arrow-up", "Move up (Alt+↑)", !row.canMoveUp, () =>
+          {rowAction("arrow-up", t("dialog.machineSelect.moveUp"), !row.canMoveUp, () =>
             dispatch({ type: "favoriteMoved", key: row.key, delta: -1 })
           )}
-          {rowAction("arrow-down", "Move down (Alt+↓)", !row.canMoveDown, () =>
+          {rowAction("arrow-down", t("dialog.machineSelect.moveDown"), !row.canMoveDown, () =>
             dispatch({ type: "favoriteMoved", key: row.key, delta: 1 })
           )}
           {rowAction(
             "separator-horizontal",
-            row.separatorAfter ? "Remove the separator after this item" : "Add a separator after this item",
+            row.separatorAfter
+              ? t("dialog.machineSelect.separator.remove")
+              : t("dialog.machineSelect.separator.add"),
             !row.canToggleSeparator,
             () => dispatch({ type: "separatorToggled", key: row.key }),
             row.separatorAfter
           )}
-          {rowAction("close", "Remove from favourites (Delete)", false, () =>
+          {rowAction("close", t("dialog.machineSelect.removeFavorite"), false, () =>
             dispatch({ type: "favoriteRemoved", key: row.key })
           )}
         </span>
@@ -258,9 +263,9 @@ export const MachineSelectView = ({ vm, filter, dispatch, onSwitchRequested }: P
             <Icon iconName="chevron-right" width={12} height={12} fill="currentColor" />
           </span>
           <span className={styles.name}>
-            {isFavorites ? "Favourites · menu order" : s.title}
+            {isFavorites ? t("dialog.machineSelect.favoritesHeader") : s.title}
             {!isFavorites && s.containsRunning && !s.open && (
-              <span className={styles.runningDot} title="The running model is in here" />
+              <span className={styles.runningDot} title={t("dialog.machineSelect.containsRunning")} />
             )}
           </span>
           <span className={styles.count}>{s.rows.length}</span>
@@ -270,7 +275,7 @@ export const MachineSelectView = ({ vm, filter, dispatch, onSwitchRequested }: P
             {isFavorites
               ? s.rows.length
                 ? s.rows.map((r) => favoriteRow(r as FavoriteRowVm))
-                : <div className={styles.hint}>Star a model to add it to the Machine type menu.</div>
+                : <div className={styles.hint}>{t("dialog.machineSelect.favoritesEmpty")}</div>
               : s.rows.map((r) => modelRow(r as ModelRowVm))}
           </div>
         )}
@@ -284,19 +289,21 @@ export const MachineSelectView = ({ vm, filter, dispatch, onSwitchRequested }: P
         <PanelFilter
           value={filter}
           onChange={(text) => dispatch({ type: "filterChanged", text })}
-          placeholder="Name, 128K, NTSC, disk…"
-          label="Filter machines"
+          placeholder={t("dialog.machineSelect.filterPlaceholder")}
+          label={t("dialog.machineSelect.filterLabel")}
         />
         <div
           ref={treeRef}
           className={styles.tree}
           role="tree"
-          aria-label="Machines"
+          aria-label={t("dialog.machineSelect.treeAria")}
           data-testid="machine-tree"
           onKeyDown={onTreeKeyDown}
         >
           {vm.sections.map(section)}
-          {vm.noMatch && <div className={styles.hint}>No machine matches “{filter}”.</div>}
+          {vm.noMatch && (
+            <div className={styles.hint}>{t("dialog.machineSelect.noMatch", { filter })}</div>
+          )}
         </div>
         <div className={styles.navFooter}>
           <button
@@ -305,9 +312,9 @@ export const MachineSelectView = ({ vm, filter, dispatch, onSwitchRequested }: P
             data-testid="restore-default-favorites"
             onClick={() => dispatch({ type: "defaultsRestored" })}
           >
-            Restore default favourites
+            {t("dialog.machineSelect.restoreDefaults")}
           </button>
-          {vm.dirty && <span className={styles.dirtyNote}>Unsaved menu changes</span>}
+          {vm.dirty && <span className={styles.dirtyNote}>{t("dialog.machineSelect.unsaved")}</span>}
         </div>
       </div>
       <div className={styles.sheetPane} data-testid="hardware-sheet">
@@ -317,7 +324,7 @@ export const MachineSelectView = ({ vm, filter, dispatch, onSwitchRequested }: P
             onFavoriteToggled={() => dispatch({ type: "favoriteToggled", key: vm.sheet!.key })}
           />
         ) : (
-          <div className={styles.hint}>Select a model to see its hardware.</div>
+          <div className={styles.hint}>{t("dialog.machineSelect.noSelection")}</div>
         )}
       </div>
     </div>
@@ -349,7 +356,7 @@ const HardwareSheet = ({ sheet, onFavoriteToggled }: { sheet: SheetVm; onFavorit
     <div className={styles.sheetHead}>
       <div className={styles.sheetTitle}>
         <span className={styles.sheetName}>{sheet.name}</span>
-        {sheet.running && <span className={styles.pill}>Running</span>}
+        {sheet.running && <span className={styles.pill}>{translate("dialog.machineSelect.running")}</span>}
       </div>
       <button
         type="button"
@@ -361,7 +368,9 @@ const HardwareSheet = ({ sheet, onFavoriteToggled }: { sheet: SheetVm; onFavorit
         <span className={styles.favoriteToggleIcon}>
           <Icon iconName={sheet.favorite ? "star-filled" : "star"} width={13} height={13} fill="currentColor" />
         </span>
-        {sheet.favorite ? "In Machine type menu" : "Add to Machine type menu"}
+        {sheet.favorite
+          ? translate("dialog.machineSelect.sheet.inMenu")
+          : translate("dialog.machineSelect.sheet.addToMenu")}
       </button>
       <div className={styles.sheetSub}>
         {sheet.machineName} · <code>{sheet.idLabel}</code>

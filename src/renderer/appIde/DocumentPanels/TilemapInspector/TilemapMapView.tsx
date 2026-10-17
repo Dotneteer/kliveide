@@ -2,6 +2,7 @@ import { type MouseEvent, useMemo, useState } from "react";
 import { renderTilemapImage } from "@common/zxnext/tilemap/tilemapDecode";
 import { cellAtLayerPixel } from "@common/zxnext/tilemap/tilemapGeometry";
 import ScrollViewer from "@renderer/controls/ScrollViewer";
+import { useT } from "@common/i18n/useT";
 import { IndexedImageCanvas } from "@renderer/controls/Next/IndexedImageCanvas";
 import { mapOverlay } from "@renderer/features/tilemap/tilemapOverlay";
 import {
@@ -54,6 +55,7 @@ export const TilemapMapView = ({
   onSelectCell,
   onCellMenu
 }: Props) => {
+  const t = useT();
   const { mode, state } = model;
   const image = useMemo(
     () =>
@@ -84,14 +86,13 @@ export const TilemapMapView = ({
   return (
     <div className={styles.pane}>
       <div className={styles.paneHeader}>
-        <span>Map</span>
+        <span>{t("panels.tilemap.tab.map")}</span>
         <span className={styles.paneMeta}>
-          {look.asDisplayed
-            ? "as displayed: scrolled and clipped"
-            : "whole map: the screen's view outlined"}
-          {state.copperRunning &&
-            look.asDisplayed &&
-            " · the Copper is running: per-line changes are not shown"}
+          {!look.asDisplayed
+            ? t("panels.graphics.inspector.metaWhole")
+            : state.copperRunning
+              ? t("panels.graphics.inspector.metaDisplayedCopper")
+              : t("panels.graphics.inspector.metaDisplayed")}
         </span>
       </div>
       <div className={styles.scroller}>
@@ -105,7 +106,7 @@ export const TilemapMapView = ({
               transparentAbgr={transparentAbgr}
               checker={look.checker}
               zoomX={look.zoom}
-              ariaLabel="Tilemap"
+              ariaLabel={t("panels.tilemap.map.label")}
               className={styles.image}
               onPixelMove={(x, y) => setHover({ x, y })}
               onLeave={() => setHover(undefined)}
@@ -134,19 +135,17 @@ export const TilemapMapView = ({
       <div className={styles.hoverLine} aria-live="off">
         {hoveredCell && hover ? (
           <>
+            <span>{t("panels.tilemap.map.hoverCell", { col: hoveredCell.col, row: hoveredCell.row })}</span>
+            <span>{t("panels.tilemap.hoverTile", { tile: hoveredCell.tile })}</span>
             <span>
-              cell ({hoveredCell.col}, {hoveredCell.row})
+              {t("panels.tilemap.map.hoverEntry", {
+                address: addressOf(state, state.regs.mapBank7, hoveredCell.entryOffset).bankText
+              })}
             </span>
-            <span>tile {hoveredCell.tile}</span>
-            <span>
-              entry {addressOf(state, state.regs.mapBank7, hoveredCell.entryOffset).bankText}
-            </span>
-            <span>
-              layer ({hover.x}, {hover.y})
-            </span>
+            <span>{t("panels.tilemap.map.hoverLayer", { x: hover.x, y: hover.y })}</span>
           </>
         ) : (
-          <span className={styles.muted}>Point at a cell; click to inspect it</span>
+          <span className={styles.muted}>{t("panels.tilemap.map.hint")}</span>
         )}
       </div>
     </div>

@@ -1,20 +1,16 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  ADDRESS_RANGE_MESSAGE,
   BORDER_OPTIONS,
   DEFAULT_FORMAT,
-  EXPORT_FAILURE_MESSAGE,
-  EXPORT_SUCCESS_MESSAGE,
   FORMAT_OPTIONS,
   NO_BORDER,
   borderNumberOf,
   canExport,
   commandOf,
-  exportFailureMessage,
   exportNameErrorOf,
-  exportSuccessMessage,
   folderErrorOf,
+  isAddressRangeFailure,
   readExportCodeSettings,
   reduce,
   savedSettingsOf,
@@ -236,23 +232,9 @@ describe("ExportCodeModel — the command", () => {
 });
 
 describe("ExportCodeModel — reporting the outcome", () => {
-  it("translates the command's own complaint about the address switch", () => {
-    expect(exportFailureMessage("Invalid -addr value")).toBe(ADDRESS_RANGE_MESSAGE);
-  });
-
-  it("passes any other failure through", () => {
-    expect(exportFailureMessage("Assembler not found")).toBe("Assembler not found");
-  });
-
-  it("still says something when the failure said nothing", () => {
-    // --- The old dialog called `.includes` on the missing message and threw a
-    // --- TypeError, which replaced the export failure with a crash.
-    expect(exportFailureMessage(undefined)).toBe(EXPORT_FAILURE_MESSAGE);
-    expect(exportFailureMessage("")).toBe(EXPORT_FAILURE_MESSAGE);
-  });
-
-  it("prefers the command's own success message", () => {
-    expect(exportSuccessMessage("Wrote 2 blocks.")).toBe("Wrote 2 blocks.");
-    expect(exportSuccessMessage(undefined)).toBe(EXPORT_SUCCESS_MESSAGE);
+  it("recognises the command's own complaint about the address switch", () => {
+    expect(isAddressRangeFailure("Invalid -addr value")).toBe(true);
+    expect(isAddressRangeFailure("Assembler not found")).toBe(false);
+    expect(isAddressRangeFailure(undefined)).toBe(false);
   });
 });

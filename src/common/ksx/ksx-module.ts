@@ -2,7 +2,7 @@ import type { EvaluationContext, ModuleResolver, PackageResolver } from "./Evalu
 import type { ErrorCodes, ParserErrorMessage } from "./ParserError";
 
 import { Parser } from "./Parser";
-import { errorMessages } from "./ParserError";
+import { ksxErrorMessage } from "./ParserError";
 import { TokenType } from "./TokenType";
 import { obtainClosures } from "./eval-tree-common";
 import {
@@ -95,7 +95,7 @@ export async function parseKsxModule (
       moduleErrors[moduleName] ??= [];
       moduleErrors[moduleName].push({
         code: "K002",
-        text: errorMessages["K002"].replace(/\{(\d+)}/g, () => lastToken.text),
+        text: ksxErrorMessage("K002", [lastToken.text]),
         position: lastToken.location.startLine,
         line: lastToken.location.startLine,
         column: lastToken.location.startColumn
@@ -220,16 +220,9 @@ export async function parseKsxModule (
     stmt: Statement,
     ...args: any[]
   ): ParserErrorMessage {
-    let errorText = errorMessages[code];
-    if (args) {
-      args.forEach(
-        (_, idx) =>
-          (errorText = errorText.replaceAll(`{${idx}}`, args[idx].toString()))
-      );
-    }
     return {
       code,
-      text: errorMessages[code].replace(/\{(\d+)}/g, (_, index) => args[index]),
+      text: ksxErrorMessage(code, args),
       position: stmt.startPosition,
       line: stmt.startLine,
       column: stmt.startColumn

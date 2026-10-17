@@ -11,6 +11,8 @@ import type { INavigationHistoryService } from "@renderer/abstractions/INavigati
 import { NavigationHistoryPopover } from "./NavigationHistoryPopover";
 import { IS_MAC, formatAccelerator } from "./useNavigationShortcuts";
 import styles from "./NavigationControls.module.scss";
+import { t } from "@common/i18n/i18n";
+import { useT } from "@common/i18n/useT";
 
 /**
  * Back, the history list, and Forward — the start of the IDE toolbar (Option A of
@@ -23,6 +25,8 @@ import styles from "./NavigationControls.module.scss";
  * setting change.
  */
 export const NavigationControls = () => {
+  // --- Re-renders on a language change; the titles below call `t` through `navigationTitle`
+  useT();
   const { navigationHistoryService: history } = useAppServices();
   const { store } = useRendererContext();
   useSelector((s) => s.ideView?.navHistory);
@@ -62,7 +66,7 @@ export const NavigationControls = () => {
           buttonWidth={12}
           buttonHeight={TOOLBAR_BUTTON_SIZE}
           fill="--color-toolbarbutton"
-          title="Show navigation history"
+          title={t("panels.feature.navigation.showHistory")}
           enable={hasEntries}
           clicked={() => setOpen((o) => !o)}
         />
@@ -104,7 +108,9 @@ export function navigationTitle(
   history: Pick<INavigationHistoryService, "describe">,
   shortcut: string
 ): string {
-  if (!target) return `Go ${direction} (${shortcut})`;
+  const back = direction === "Back";
+  if (!target) return t(back ? "panels.feature.navigation.goBack" : "panels.feature.navigation.goForward", { shortcut });
   const position = history.describe(target);
-  return `${direction} to ${target.title}${position ? ` · ${position}` : ""} (${shortcut})`;
+  const title = position ? `${target.title} · ${position}` : target.title;
+  return t(back ? "panels.feature.navigation.backTo" : "panels.feature.navigation.forwardTo", { target: title, shortcut });
 }

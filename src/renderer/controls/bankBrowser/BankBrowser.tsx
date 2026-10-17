@@ -19,6 +19,7 @@ import {
 } from "@renderer/controls/ContextMenu";
 import ScrollViewer, { type ScrollViewerApi } from "@renderer/controls/ScrollViewer";
 import { toHexa2 } from "@renderer/appIde/services/ide-commands";
+import { useT } from "@common/i18n/useT";
 import styles from "./BankBrowser.module.scss";
 
 /*
@@ -88,6 +89,13 @@ export type BankBrowserGroup = {
 
 export type BankBrowserFilterOption = { value: string; text: string };
 
+/**
+ * What one item is. An id, not display text: the shell picks a whole translated message for each
+ * kind ("No block matches this filter.", "Pop out Block $00"), because a translated noun pasted
+ * into a sentence cannot be translated (gender, case and word order differ per language).
+ */
+export type BankBrowserItemKind = "bank" | "block" | "part";
+
 type Props<T extends BankBrowserItem<V>, V extends string> = {
   /** All items, to summarise; `visibleItems` is what the filter leaves. */
   visibleItems: T[];
@@ -114,10 +122,11 @@ type Props<T extends BankBrowserItem<V>, V extends string> = {
   renderRowMenuItems?: (item: T, close: () => void) => ReactNode;
   hint?: ReactNode;
   /**
-   * What one item is called, in the details title, the pop-out tooltips, the list's aria label and
-   * the empty-filter text. "Bank" by default; the tape viewer's items are "Block"s.
+   * What one item is, which picks the wording of the details title, the pop-out tooltips, the
+   * list's aria label and the empty-filter text. "bank" by default; the tape viewer's items are
+   * "block"s, a program file's are "part"s.
    */
-  itemNoun?: string;
+  itemKind?: BankBrowserItemKind;
   /**
    * An item's number as the row and the details title show it. `$NN` by default, with the decimal
    * beside it in the details; a caller that supplies this gets no decimal, since its own form is
@@ -158,12 +167,13 @@ export function BankBrowser<T extends BankBrowserItem<V>, V extends string>({
   renderDetails,
   renderRowMenuItems,
   hint,
-  itemNoun = "Bank",
+  itemKind: kind = "bank",
   formatNumber,
   viewsFor,
   beforeBody,
   layout = "auto"
 }: Props<T, V>) {
+  const t = useT();
   const sideBySide = layout === "sideBySide";
   const numberOf = formatNumber ?? defaultNumber;
   const viewsOf = viewsFor ?? (() => views);
@@ -259,7 +269,7 @@ export function BankBrowser<T extends BankBrowserItem<V>, V extends string>({
       <div className={styles.heading}>
         <span className={styles.title}>{heading}</span>
         <span className={styles.summary}>{summary}</span>
-        <span className={styles.filters} role="group" aria-label={`Show ${heading.toLowerCase()}`}>
+        <span className={styles.filters} role="group" aria-label={t("panels.controls.bankBrowser.filters", { heading })}>
           {filters.map((option) => (
             <button
               key={option.value}
@@ -277,7 +287,7 @@ export function BankBrowser<T extends BankBrowserItem<V>, V extends string>({
       {beforeBody}
 
       {visible.length === 0 ? (
-        <div className={styles.none}>{`No ${itemNoun.toLowerCase()} matches this filter.`}</div>
+        <div className={styles.none}>{t("panels.controls.bankBrowser.noMatch", { kind })}</div>
       ) : (
         <div className={styles.body}>
           <ScrollViewer
@@ -290,7 +300,7 @@ export function BankBrowser<T extends BankBrowserItem<V>, V extends string>({
               ref={listRef}
               className={styles.list}
               role="listbox"
-              aria-label={`${itemNoun} list`}
+              aria-label={t("panels.controls.bankBrowser.listLabel", { kind })}
               onKeyDown={listKeyDown}
             >
               {visible.map((item) => {
@@ -308,7 +318,7 @@ export function BankBrowser<T extends BankBrowserItem<V>, V extends string>({
                       item={item}
                       selected={item === selected}
                       number={numberOf(item)}
-                      itemNoun={itemNoun}
+                      kind={kind}
                       canPopOut={canPopOut(item)}
                       viewNames={viewNames}
                       onSelect={onSelect}
@@ -331,9 +341,13 @@ export function BankBrowser<T extends BankBrowserItem<V>, V extends string>({
               <BankDetails
                 item={selected}
                 views={viewsOf(selected)}
-                title={formatNumber ? numberOf(selected) : `${itemNoun} ${numberOf(selected)}`}
+                title={
+                  formatNumber
+                    ? numberOf(selected)
+                    : t("panels.controls.bankBrowser.itemTitle", { kind, number: numberOf(selected) })
+                }
                 decimal={formatNumber ? undefined : `(${selected.bank})`}
-                itemNoun={itemNoun}
+                kind={kind}
                 viewNames={viewNames}
                 marks={renderDetailsMarks?.(selected)}
                 hint={hint}
@@ -349,9 +363,9 @@ export function BankBrowser<T extends BankBrowserItem<V>, V extends string>({
       <ContextMenu state={rowMenuState} onClickOutside={rowMenuApi.conceal}>
         {(!rowMenuItem.current || canPopOut(rowMenuItem.current)) && (
           <ContextMenuItem
-            text={`Pop Out in ${
-              rowMenuItem.current ? viewNames[rowMenuItem.current.lastView] : viewNames[views[0]]
-            }`}
+            text={t("panels.controls.bankBrowser.menuPopOutIn", {
+              view: rowMenuItem.current ? viewNames[rowMenuItem.current.lastView] : viewNames[views[0]]
+            })}
             clicked={() => {
               rowMenuApi.conceal();
               const item = rowMenuItem.current;
@@ -376,7 +390,7 @@ function BankRow<T extends BankBrowserItem<V>, V extends string>({
   item,
   selected,
   number,
-  itemNoun,
+  kind,
   canPopOut,
   viewNames,
   onSelect,
@@ -387,7 +401,7 @@ function BankRow<T extends BankBrowserItem<V>, V extends string>({
   item: T;
   selected: boolean;
   number: string;
-  itemNoun: string;
+  kind: BankBrowserItemKind;
   canPopOut: boolean;
   viewNames: Record<V, string>;
   onSelect: (item: T) => void;
@@ -395,6 +409,7 @@ function BankRow<T extends BankBrowserItem<V>, V extends string>({
   onContextMenu: (item: T, event: MouseEvent<HTMLElement>) => void;
   children: ReactNode;
 }) {
+  const t = useT();
   return (
     <div
       role="option"
@@ -404,7 +419,9 @@ function BankRow<T extends BankBrowserItem<V>, V extends string>({
       data-bank={item.bank}
       className={classnames(styles.row, { [styles.rowSelected]: selected })}
       title={
-        canPopOut ? `Double-click or Enter to pop out in ${viewNames[item.lastView]}` : undefined
+        canPopOut
+          ? t("panels.controls.bankBrowser.rowHint", { view: viewNames[item.lastView] })
+          : undefined
       }
       onClick={() => onSelect(item)}
       onDoubleClick={() => canPopOut && onPopOut(item, item.lastView)}
@@ -416,8 +433,12 @@ function BankRow<T extends BankBrowserItem<V>, V extends string>({
         <button
           type="button"
           className={styles.rowPopOut}
-          title={`Pop out ${itemNoun} ${number} (${viewNames[item.lastView]})`}
-          aria-label={`Pop out ${itemNoun} ${number}`}
+          title={t("panels.controls.bankBrowser.rowPopOut.title", {
+            kind,
+            number,
+            view: viewNames[item.lastView]
+          })}
+          aria-label={t("panels.controls.bankBrowser.rowPopOut.label", { kind, number })}
           onClick={(event) => {
             event.stopPropagation();
             onPopOut(item, item.lastView);
@@ -445,7 +466,7 @@ function BankDetails<T extends BankBrowserItem<V>, V extends string>({
   views,
   title,
   decimal,
-  itemNoun,
+  kind,
   viewNames,
   marks,
   hint,
@@ -456,18 +477,19 @@ function BankDetails<T extends BankBrowserItem<V>, V extends string>({
   views: V[];
   title: string;
   decimal?: string;
-  itemNoun: string;
+  kind: BankBrowserItemKind;
   viewNames: Record<V, string>;
   marks?: ReactNode;
   hint?: ReactNode;
   onPopOut: (item: T, view: V) => void;
   children: ReactNode;
 }) {
+  const t = useT();
   const [menuState, menuApi] = useContextMenuState();
   const moreRef = useRef<HTMLButtonElement | null>(null);
 
   return (
-    <aside className={styles.details} aria-label={`${title} details`}>
+    <aside className={styles.details} aria-label={t("panels.controls.bankBrowser.detailsLabel", { title })}>
       <div className={styles.detailsHead}>
         <span className={styles.detailsTitle}>
           <span className={styles.bankNumber}>{title}</span>
@@ -479,8 +501,8 @@ function BankDetails<T extends BankBrowserItem<V>, V extends string>({
             <button
               type="button"
               className={styles.splitMain}
-              title={`Open this ${itemNoun.toLowerCase()} as its own document`}
-              aria-label={`Pop out in ${viewNames[item.lastView]}`}
+              title={t("panels.controls.bankBrowser.openAsDocument", { kind })}
+              aria-label={t("panels.controls.bankBrowser.popOutIn", { view: viewNames[item.lastView] })}
               onClick={() => onPopOut(item, item.lastView)}
             >
               <Icon
@@ -489,7 +511,7 @@ function BankDetails<T extends BankBrowserItem<V>, V extends string>({
                 height={14}
                 fill="--text-on-accent"
               />
-              Pop out
+              {t("panels.controls.bankBrowser.popOut")}
               <span className={styles.splitView}>{`· ${viewNames[item.lastView]}`}</span>
             </button>
             <button
@@ -497,8 +519,8 @@ function BankDetails<T extends BankBrowserItem<V>, V extends string>({
               type="button"
               className={styles.splitMore}
               aria-haspopup="menu"
-              aria-label="Pop out in another view"
-              title="Pop out in another view"
+              aria-label={t("panels.controls.bankBrowser.popOutOther")}
+              title={t("panels.controls.bankBrowser.popOutOther")}
               onClick={() => menuApi.showAt(moreRef.current)}
             >
               <Icon iconName="chevron-down" width={14} height={14} fill="--text-on-accent" />
@@ -509,9 +531,9 @@ function BankDetails<T extends BankBrowserItem<V>, V extends string>({
           {views.map((view) => (
             <ContextMenuItem
               key={view}
-              text={`Pop Out in ${viewNames[view]}`}
+              text={t("panels.controls.bankBrowser.menuPopOutIn", { view: viewNames[view] })}
               selected={item.lastView === view}
-              trailing={item.lastView === view ? "last used" : undefined}
+              trailing={item.lastView === view ? t("panels.controls.bankBrowser.lastUsed") : undefined}
               clicked={() => {
                 menuApi.conceal();
                 onPopOut(item, view);

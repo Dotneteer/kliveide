@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from "react";
 
 import { Modal } from "@renderer/controls/Modal";
+import { useT } from "@common/i18n/useT";
 import { useController } from "@mvc/react/useController";
 import { useViewModel } from "@mvc/react/useViewModel";
 
@@ -22,6 +23,7 @@ type Props = {
  * modal frame around the view.
  */
 export const Z88RemoveCardDialog = ({ slot, onClose, onRemove }: Props) => {
+  const t = useT();
   const machine = useZ88MachinePort();
   const env = useZ88Environment();
 
@@ -52,7 +54,7 @@ export const Z88RemoveCardDialog = ({ slot, onClose, onRemove }: Props) => {
   return (
     <Modal
       isOpen={true}
-      title="Remove Z88 Card"
+      title={t("dialog.z88.removeCard.title")}
       iconName="chip"
       translateY={0}
       primaryEnabled={vm.removeEnabled}

@@ -122,6 +122,6 @@ describe("Tilemap Inspector document", () => {
     expect(screen.getByLabelText("Inspector").textContent).toContain("5:$1852");
     fireEvent.click(screen.getByText("Show tile 7 and its users"));
     await waitFor(() => expect(screen.getByRole("img", { name: "Tile definitions" })).toBeTruthy());
-    expect(screen.getByText(/Tile 7 · 1 cell use it/)).toBeTruthy();
+    expect(screen.getByText(/Tile 7 · 1 cell uses it/)).toBeTruthy();
   });
 });

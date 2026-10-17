@@ -1,0 +1,2334 @@
+{
+  "dialog.validation.enterFileName": "Enter a file name.",
+  "@dialog.validation.enterFileName": {
+    "context": "Validation message under a dialog's text field; a short imperative sentence ending in a full stop. The field is empty."
+  },
+  "dialog.validation.enterValidFileName": "Enter a valid file name.",
+  "@dialog.validation.enterValidFileName": {
+    "context": "Validation message under a dialog's text field; a short imperative sentence ending in a full stop. The name contains characters a file name cannot have."
+  },
+  "dialog.validation.chooseFolder": "Choose a folder.",
+  "@dialog.validation.chooseFolder": {
+    "context": "Validation message under a dialog's text field; a short imperative sentence ending in a full stop. The folder field is empty."
+  },
+  "dialog.validation.enterValidFolder": "Enter a valid folder path.",
+  "@dialog.validation.enterValidFolder": {
+    "context": "Validation message under a dialog's text field; a short imperative sentence ending in a full stop."
+  },
+  "dialog.validation.enterValidPath": "Enter a valid path.",
+  "@dialog.validation.enterValidPath": {
+    "context": "Validation message under a dialog's text field; a short imperative sentence ending in a full stop."
+  },
+  "dialog.validation.nameExists": "An item with this name already exists.",
+  "@dialog.validation.nameExists": {
+    "context": "Validation message under a dialog's text field; a short imperative sentence ending in a full stop. A file or folder of that name is already there (Explorer: new or renamed item)."
+  },
+  "dialog.validation.enterDifferentName": "Enter a different name.",
+  "@dialog.validation.enterDifferentName": {
+    "context": "Validation message under a dialog's text field; a short imperative sentence ending in a full stop. Renaming: the new name equals the old one."
+  },
+  "dialog.validation.enterDecimalAddress": "Enter a decimal address.",
+  "@dialog.validation.enterDecimalAddress": {
+    "context": "Validation message under a dialog's text field; a short imperative sentence ending in a full stop. The memory address must be a decimal number."
+  },
+  "dialog.about.title": "About Klive IDE",
+  "@dialog.about.title": {
+    "context": "Title of the About dialog (Help > About). 'Klive IDE' is the product name.",
+    "maxChars": 21
+  },
+  "dialog.about.visitWebsite": "Visit website",
+  "@dialog.about.visitWebsite": {
+    "context": "Button in the About dialog that opens the Klive website in the browser.",
+    "maxChars": 19
+  },
+  "dialog.about.description": "Klive IDE is a retro computer emulator and Integrated Development Environment.",
+  "@dialog.about.description": {
+    "context": "First paragraph of the About dialog, describing the product."
+  },
+  "dialog.about.versionLabel": "Version:",
+  "@dialog.about.versionLabel": {
+    "context": "Label in the About dialog, followed by the Klive version number shown in bold.",
+    "maxChars": 12
+  },
+  "dialog.about.electronVersion": "Electron version: {version}",
+  "@dialog.about.electronVersion": {
+    "context": "Line in the About dialog showing the version of Electron, the framework Klive runs on.",
+    "placeholders": {
+      "version": "Version number, e.g. '33.2.1'"
+    }
+  },
+  "dialog.about.osVersion": "OS version: {version}",
+  "@dialog.about.osVersion": {
+    "context": "Line in the About dialog showing the operating system version.",
+    "placeholders": {
+      "version": "Operating system name/version text, shown verbatim"
+    }
+  },
+  "dialog.delete.confirmFile": "Are you sure you want to delete the file {name}?",
+  "@dialog.delete.confirmFile": {
+    "context": "Confirmation question in the dialog shown before deleting a file in the Explorer. The name is shown highlighted.",
+    "placeholders": {
+      "name": "File name, shown verbatim and highlighted"
+    }
+  },
+  "dialog.delete.confirmFolder": "Are you sure you want to delete the folder {name} and everything in it?",
+  "@dialog.delete.confirmFolder": {
+    "context": "Confirmation question in the dialog shown before deleting a folder (with all its contents) in the Explorer. The name is shown highlighted.",
+    "placeholders": {
+      "name": "Folder name, shown verbatim and highlighted"
+    }
+  },
+  "dialog.delete.submit": "Delete",
+  "@dialog.delete.submit": {
+    "context": "Confirm button of the delete-file/folder dialog in the Explorer (a destructive action).",
+    "maxChars": 9
+  },
+  "dialog.newItem.promptFile": "Name of the new file to create in {path}:",
+  "@dialog.newItem.promptFile": {
+    "context": "Prompt above the name field of the dialog that creates a new file in the Explorer.",
+    "placeholders": {
+      "path": "Folder path, shown verbatim and highlighted"
+    }
+  },
+  "dialog.newItem.promptFolder": "Name of the new folder to create in {path}:",
+  "@dialog.newItem.promptFolder": {
+    "context": "Prompt above the name field of the dialog that creates a new folder in the Explorer.",
+    "placeholders": {
+      "path": "Parent folder path, shown verbatim and highlighted"
+    }
+  },
+  "dialog.newItem.submit": "Add",
+  "@dialog.newItem.submit": {
+    "context": "Confirm button of the new-file/new-folder dialog in the Explorer; creates the item.",
+    "maxChars": 8
+  },
+  "dialog.rename.prompt": "Rename {name} to:",
+  "@dialog.rename.prompt": {
+    "context": "Prompt above the name field of the dialog that renames a file or folder in the Explorer.",
+    "placeholders": {
+      "name": "Current file or folder name, shown verbatim and highlighted"
+    }
+  },
+  "dialog.rename.submit": "Rename",
+  "@dialog.rename.submit": {
+    "context": "Confirm button of the rename dialog in the Explorer.",
+    "maxChars": 12
+  },
+  "dialog.firstStart.title": "Welcome to Klive!",
+  "@dialog.firstStart.title": {
+    "context": "Title of the welcome dialog shown the first time Klive IDE starts.",
+    "maxChars": 24
+  },
+  "dialog.firstStart.visitWebsite": "Visit the Klive website",
+  "@dialog.firstStart.visitWebsite": {
+    "context": "Button in the first-start welcome dialog that opens the Klive website.",
+    "maxChars": 33
+  },
+  "dialog.firstStart.intro": "Klive IDE is a retro computer emulator and Integrated Development Environment running on Mac, Windows, and Linux.",
+  "@dialog.firstStart.intro": {
+    "context": "First paragraph of the first-start welcome dialog."
+  },
+  "dialog.firstStart.purpose": "You can not only run your favorite retro machines but also create programs and games for them.",
+  "@dialog.firstStart.purpose": {
+    "context": "Second paragraph of the first-start welcome dialog. 'Run' means run emulated machines."
+  },
+  "dialog.firstStart.getStarted": "Visit the Klive website to get started!",
+  "@dialog.firstStart.getStarted": {
+    "context": "Last paragraph of the first-start welcome dialog, pointing to the website button."
+  },
+  "dialog.setMemory.title": "Set Memory Content",
+  "@dialog.setMemory.title": {
+    "context": "Title of the dialog that writes a value into emulated memory, opened from the Memory view.",
+    "maxChars": 26
+  },
+  "dialog.setMemory.sizeOption": "{count, plural, one {# byte} other {# bytes}}",
+  "@dialog.setMemory.sizeOption": {
+    "context": "Option of the 'Content size' dropdown in the Set Memory Content dialog: how many bytes the value is written as.",
+    "maxChars": 63,
+    "placeholders": {
+      "count": "Number of bytes, 1 to 4"
+    }
+  },
+  "dialog.setMemory.invalidValue": "Enter a valid numeric value.",
+  "@dialog.setMemory.invalidValue": {
+    "context": "Error under the value field of the Set Memory Content dialog when the typed value is not a number."
+  },
+  "dialog.setMemory.writeFailed": "The memory could not be written.",
+  "@dialog.setMemory.writeFailed": {
+    "context": "Error in the Set Memory Content dialog when writing the value into emulated memory failed for an unknown reason."
+  },
+  "dialog.setMemory.romWarning": "This memory location is read-only (ROM) and cannot be modified.",
+  "@dialog.setMemory.romWarning": {
+    "context": "Warning shown instead of the form in the Set Memory Content dialog when the chosen address is in ROM."
+  },
+  "dialog.setMemory.submit": "Set",
+  "@dialog.setMemory.submit": {
+    "context": "Confirm button of the Set Memory Content dialog; writes the value into memory.",
+    "maxChars": 8
+  },
+  "dialog.setMemory.contentLabel": "Memory content at {address} ({decimal}): *",
+  "@dialog.setMemory.contentLabel": {
+    "context": "Label of the value field in the Set Memory Content dialog. The asterisk marks a required field.",
+    "placeholders": {
+      "address": "Hexadecimal address with a $ prefix, e.g. '$8000'",
+      "decimal": "The same address in decimal, e.g. '32768'"
+    }
+  },
+  "dialog.setMemory.sizeLabel": "Content size",
+  "@dialog.setMemory.sizeLabel": {
+    "context": "Label of the dropdown in the Set Memory Content dialog that picks how many bytes are written (1-4).",
+    "maxChars": 17
+  },
+  "dialog.setMemory.sizePlaceholder": "Select...",
+  "@dialog.setMemory.sizePlaceholder": {
+    "context": "Placeholder of the content-size dropdown in the Set Memory Content dialog, shown when nothing is chosen.",
+    "maxChars": 13
+  },
+  "dialog.setMemory.bigEndian": "Big-endian write",
+  "@dialog.setMemory.bigEndian": {
+    "context": "Checkbox in the Set Memory Content dialog: write a multi-byte value with the most significant byte first.",
+    "maxChars": 23
+  },
+  "dialog.breakpoint.openFailed": "Cannot open the breakpoint dialog: {error}",
+  "@dialog.breakpoint.openFailed": {
+    "context": "Status-bar error when the breakpoint dialog cannot open because the emulator did not answer.",
+    "placeholders": {
+      "error": "Error message from the emulator, in English, shown verbatim"
+    }
+  },
+  "dialog.breakpoint.openFailedNoResponse": "Cannot open the breakpoint dialog: the emulator did not respond",
+  "@dialog.breakpoint.openFailedNoResponse": {
+    "context": "Status-bar error when the breakpoint dialog cannot open because the emulator did not answer and gave no error message."
+  },
+  "dialog.breakpoint.addTitle": "Add breakpoint",
+  "@dialog.breakpoint.addTitle": {
+    "context": "Title of the breakpoint dialog when adding a new breakpoint (a debugger stop point, not a line break).",
+    "maxChars": 32
+  },
+  "dialog.breakpoint.editTitle": "Edit breakpoint",
+  "@dialog.breakpoint.editTitle": {
+    "context": "Title of the breakpoint dialog when editing an existing breakpoint.",
+    "maxChars": 29
+  },
+  "dialog.breakpoint.kind.exec": "Execution",
+  "@dialog.breakpoint.kind.exec": {
+    "context": "Option of the breakpoint Type radio group in the breakpoint dialog: stop when the CPU executes the instruction at the address.",
+    "maxChars": 13
+  },
+  "dialog.breakpoint.kind.memRead": "Memory read",
+  "@dialog.breakpoint.kind.memRead": {
+    "context": "Option of the breakpoint Type radio group in the breakpoint dialog: stop when the CPU reads memory.",
+    "maxChars": 16
+  },
+  "dialog.breakpoint.kind.memWrite": "Memory write",
+  "@dialog.breakpoint.kind.memWrite": {
+    "context": "Option of the breakpoint Type radio group in the breakpoint dialog: stop when the CPU writes memory.",
+    "maxChars": 17
+  },
+  "dialog.breakpoint.kind.ioRead": "I/O read",
+  "@dialog.breakpoint.kind.ioRead": {
+    "context": "Option of the breakpoint Type radio group in the breakpoint dialog: stop when the CPU reads an I/O port.",
+    "maxChars": 12
+  },
+  "dialog.breakpoint.kind.ioWrite": "I/O write",
+  "@dialog.breakpoint.kind.ioWrite": {
+    "context": "Option of the breakpoint Type radio group in the breakpoint dialog: stop when the CPU writes an I/O port.",
+    "maxChars": 13
+  },
+  "dialog.breakpoint.kind.nextRegWrite": "NextReg write",
+  "@dialog.breakpoint.kind.nextRegWrite": {
+    "context": "Option of the breakpoint Type radio group in the breakpoint dialog: stop when a ZX Spectrum Next register is written; 'NextReg' is a technical name, keep it.",
+    "maxChars": 19
+  },
+  "dialog.breakpoint.kind.copper": "Copper instruction",
+  "@dialog.breakpoint.kind.copper": {
+    "context": "Option of the breakpoint Type radio group in the breakpoint dialog: stop when the Next's Copper (a display co-processor; keep the name) completes a list instruction.",
+    "maxChars": 26
+  },
+  "dialog.breakpoint.kind.sprite": "Sprite attribute write",
+  "@dialog.breakpoint.kind.sprite": {
+    "context": "Option of the breakpoint Type radio group in the breakpoint dialog: stop when an attribute byte of a Next hardware sprite is written.",
+    "maxChars": 31
+  },
+  "dialog.breakpoint.action.stop": "Stop",
+  "@dialog.breakpoint.action.stop": {
+    "context": "Option of the Action radio group in the breakpoint dialog: pause the machine when the breakpoint hits.",
+    "maxChars": 8
+  },
+  "dialog.breakpoint.action.log": "Log message",
+  "@dialog.breakpoint.action.log": {
+    "context": "Option of the Action radio group in the breakpoint dialog: write a message to the Log pane and keep running (a logpoint). 'Log' is a verb here.",
+    "maxChars": 19
+  },
+  "dialog.breakpoint.nextReg.undocumented": "{register} — undocumented register",
+  "@dialog.breakpoint.nextReg.undocumented": {
+    "context": "Hint under the Register field of the breakpoint dialog when the typed ZX Spectrum Next register number has no documented name.",
+    "placeholders": {
+      "register": "Register number in hex, e.g. '$07'"
+    }
+  },
+  "dialog.breakpoint.hitMode.always": "Always",
+  "@dialog.breakpoint.hitMode.always": {
+    "context": "Option of the hit-count rule dropdown in the breakpoint dialog, followed by a number field: stop on every hit.",
+    "maxChars": 9
+  },
+  "dialog.breakpoint.hitMode.eq": "Equal to",
+  "@dialog.breakpoint.hitMode.eq": {
+    "context": "Option of the hit-count rule dropdown in the breakpoint dialog, followed by a number field: stop when the hit count equals the number.",
+    "maxChars": 12
+  },
+  "dialog.breakpoint.hitMode.gt": "Greater than",
+  "@dialog.breakpoint.hitMode.gt": {
+    "context": "Option of the hit-count rule dropdown in the breakpoint dialog, followed by a number field: stop when the hit count is greater than the number.",
+    "maxChars": 17
+  },
+  "dialog.breakpoint.hitMode.ge": "At least",
+  "@dialog.breakpoint.hitMode.ge": {
+    "context": "Option of the hit-count rule dropdown in the breakpoint dialog, followed by a number field: stop when the hit count is at least the number.",
+    "maxChars": 12
+  },
+  "dialog.breakpoint.hitMode.lt": "Less than",
+  "@dialog.breakpoint.hitMode.lt": {
+    "context": "Option of the hit-count rule dropdown in the breakpoint dialog, followed by a number field: stop when the hit count is less than the number.",
+    "maxChars": 13
+  },
+  "dialog.breakpoint.hitMode.le": "At most",
+  "@dialog.breakpoint.hitMode.le": {
+    "context": "Option of the hit-count rule dropdown in the breakpoint dialog, followed by a number field: stop when the hit count is at most the number.",
+    "maxChars": 10
+  },
+  "dialog.breakpoint.hitMode.every": "Every",
+  "@dialog.breakpoint.hitMode.every": {
+    "context": "Option of the hit-count rule dropdown in the breakpoint dialog, followed by a number field: stop on every Nth hit.",
+    "maxChars": 8
+  },
+  "dialog.breakpoint.portLabel": "Port",
+  "@dialog.breakpoint.portLabel": {
+    "context": "Label text of the location field in the breakpoint dialog for an I/O breakpoint (an I/O port number). Used inside 'dialog.breakpoint.requiredLabel'.",
+    "maxChars": 8
+  },
+  "dialog.breakpoint.addressLabel": "Address",
+  "@dialog.breakpoint.addressLabel": {
+    "context": "Label text of the location field in the breakpoint dialog for a memory/execution breakpoint (a memory address). Used inside 'dialog.breakpoint.requiredLabel'.",
+    "maxChars": 10
+  },
+  "dialog.breakpoint.requiredLabel": "{label} *",
+  "@dialog.breakpoint.requiredLabel": {
+    "context": "Field label in the breakpoint dialog with an asterisk marking it required. Keep the asterisk.",
+    "maxChars": 13,
+    "placeholders": {
+      "label": "The field's translated name: 'Address' or 'Port'"
+    }
+  },
+  "dialog.breakpoint.save": "Save",
+  "@dialog.breakpoint.save": {
+    "context": "Confirm button of the breakpoint dialog when editing an existing breakpoint.",
+    "maxChars": 11
+  },
+  "dialog.breakpoint.add": "Add",
+  "@dialog.breakpoint.add": {
+    "context": "Confirm button of the breakpoint dialog when adding a new breakpoint.",
+    "maxChars": 8
+  },
+  "dialog.breakpoint.locationLabel": "Location",
+  "@dialog.breakpoint.locationLabel": {
+    "context": "Field label in the breakpoint dialog for a source-code breakpoint: shows the file and line it is set on (read-only).",
+    "maxChars": 12
+  },
+  "dialog.breakpoint.typeLabel": "Type",
+  "@dialog.breakpoint.typeLabel": {
+    "context": "Field label in the breakpoint dialog above the radio group choosing what the breakpoint watches (execution, memory, I/O...).",
+    "maxChars": 8
+  },
+  "dialog.breakpoint.typeAria": "Breakpoint type",
+  "@dialog.breakpoint.typeAria": {
+    "context": "Screen-reader name of the breakpoint type radio group in the breakpoint dialog."
+  },
+  "dialog.breakpoint.partitionLabel": "Partition",
+  "@dialog.breakpoint.partitionLabel": {
+    "context": "Field label in the breakpoint dialog for restricting the breakpoint to one memory partition (a ROM or RAM bank).",
+    "maxChars": 13
+  },
+  "dialog.breakpoint.partitionCheckbox": "Break only in a specific partition",
+  "@dialog.breakpoint.partitionCheckbox": {
+    "context": "Checkbox in the breakpoint dialog: the breakpoint stops only when the address is in the chosen ROM/RAM bank. 'Break' = stop the program."
+  },
+  "dialog.breakpoint.partitionHint.bankRelative": "A bank-relative address already names its bank.",
+  "@dialog.breakpoint.partitionHint.bankRelative": {
+    "context": "Hint in the breakpoint dialog explaining why the partition checkbox is disabled: the typed address (e.g. 05:+$0100) already includes the bank."
+  },
+  "dialog.breakpoint.partitionHint.io": "An I/O breakpoint watches a port, not a partition.",
+  "@dialog.breakpoint.partitionHint.io": {
+    "context": "Hint in the breakpoint dialog explaining why the partition checkbox is disabled for an I/O breakpoint."
+  },
+  "dialog.breakpoint.registerLabel": "Register *",
+  "@dialog.breakpoint.registerLabel": {
+    "context": "Field label in the breakpoint dialog for a ZX Spectrum Next register number (NextReg breakpoint). The asterisk marks a required field.",
+    "maxChars": 14
+  },
+  "dialog.breakpoint.registerHint": "Accepts $07, 7 or %00000111.",
+  "@dialog.breakpoint.registerHint": {
+    "context": "Hint under the Register field of the breakpoint dialog listing the accepted number formats (hex, decimal, binary). Keep the numbers as they are."
+  },
+  "dialog.breakpoint.valueFilterLabel": "Value filter",
+  "@dialog.breakpoint.valueFilterLabel": {
+    "context": "Field label in the breakpoint dialog for an optional filter on the value written to a Next register.",
+    "maxChars": 17
+  },
+  "dialog.breakpoint.valueFilterCheckbox": "Break only on a specific value",
+  "@dialog.breakpoint.valueFilterCheckbox": {
+    "context": "Checkbox in the breakpoint dialog: a NextReg breakpoint stops only when a particular value is written. 'Break' = stop the program."
+  },
+  "dialog.breakpoint.valueAria": "Value",
+  "@dialog.breakpoint.valueAria": {
+    "context": "Screen-reader name of the value field of the NextReg value filter in the breakpoint dialog."
+  },
+  "dialog.breakpoint.maskAria": "Mask",
+  "@dialog.breakpoint.maskAria": {
+    "context": "Screen-reader name of the bit-mask field of the NextReg value filter in the breakpoint dialog."
+  },
+  "dialog.breakpoint.valueFilterHint": "The value, then an optional mask — written =$03/$0F in the breakpoint's key. Leave the mask empty to compare every bit.",
+  "@dialog.breakpoint.valueFilterHint": {
+    "context": "Hint under the NextReg value/mask fields in the breakpoint dialog. '=$03/$0F' is syntax; keep it as is."
+  },
+  "dialog.breakpoint.nextRegCopper": "Also break on copper writes",
+  "@dialog.breakpoint.nextRegCopper": {
+    "context": "Checkbox in the breakpoint dialog: a NextReg breakpoint also stops when the Copper (Next display co-processor; keep the name) writes the register."
+  },
+  "dialog.breakpoint.copperIndexLabel": "List index *",
+  "@dialog.breakpoint.copperIndexLabel": {
+    "context": "Field label in the breakpoint dialog for the index of an instruction in the Copper list. The asterisk marks a required field.",
+    "maxChars": 17
+  },
+  "dialog.breakpoint.copperIndexHint": "Accepts $00B, 11 or %1011 ($000-$3FF). A WAIT stops when it is satisfied; a MOVE when it is issued.",
+  "@dialog.breakpoint.copperIndexHint": {
+    "context": "Hint under the Copper list index field in the breakpoint dialog. WAIT and MOVE are Copper instruction names; keep them and the numbers as they are."
+  },
+  "dialog.breakpoint.spriteLabel": "Sprite *",
+  "@dialog.breakpoint.spriteLabel": {
+    "context": "Field label in the breakpoint dialog for the number of a Next hardware sprite. The asterisk marks a required field.",
+    "maxChars": 12
+  },
+  "dialog.breakpoint.spriteHint": "Accepts $0C, 12 or %1100 ($00-$7F).",
+  "@dialog.breakpoint.spriteHint": {
+    "context": "Hint under the Sprite field of the breakpoint dialog listing accepted number formats and the range. Keep the numbers as they are."
+  },
+  "dialog.breakpoint.attrBytesLabel": "Attribute bytes",
+  "@dialog.breakpoint.attrBytesLabel": {
+    "context": "Field label (and group name) in the breakpoint dialog above checkboxes choosing which of a sprite's attribute bytes the breakpoint watches.",
+    "maxChars": 21
+  },
+  "dialog.breakpoint.addressHint": "Accepts $8000, 32768 or %1000000000000000.",
+  "@dialog.breakpoint.addressHint": {
+    "context": "Hint under the Address/Port field of the breakpoint dialog listing accepted number formats. Keep the numbers as they are."
+  },
+  "dialog.breakpoint.addressHintBank": "Accepts $8000, 32768 or %1000000000000000 — or 05:+$0100 for an offset inside a 16K bank, wherever that bank is paged.",
+  "@dialog.breakpoint.addressHintBank": {
+    "context": "Hint under the Address field of the breakpoint dialog on machines with memory banks. '05:+$0100' is bank-relative address syntax; keep it as is."
+  },
+  "dialog.breakpoint.lengthLabel": "Length",
+  "@dialog.breakpoint.lengthLabel": {
+    "context": "Field label (and screen-reader name) in the breakpoint dialog for how many bytes a memory breakpoint watches.",
+    "maxChars": 9
+  },
+  "dialog.breakpoint.lengthHint": "How many bytes to watch from the address. Leave empty for one.",
+  "@dialog.breakpoint.lengthHint": {
+    "context": "Hint under the Length field of the breakpoint dialog."
+  },
+  "dialog.breakpoint.portMaskLabel": "Port mask",
+  "@dialog.breakpoint.portMaskLabel": {
+    "context": "Field label in the breakpoint dialog for a bit mask applied to the I/O port number.",
+    "maxChars": 13
+  },
+  "dialog.breakpoint.portMaskHint": "Leave empty to match the port exactly.",
+  "@dialog.breakpoint.portMaskHint": {
+    "context": "Hint under the Port mask field of the breakpoint dialog."
+  },
+  "dialog.breakpoint.actionLabel": "Action",
+  "@dialog.breakpoint.actionLabel": {
+    "context": "Field label in the breakpoint dialog above the choice between stopping and logging a message.",
+    "maxChars": 9
+  },
+  "dialog.breakpoint.actionAria": "Breakpoint action",
+  "@dialog.breakpoint.actionAria": {
+    "context": "Screen-reader name of the Stop/Log message radio group in the breakpoint dialog."
+  },
+  "dialog.breakpoint.messageLabel": "Message",
+  "@dialog.breakpoint.messageLabel": {
+    "context": "Field label in the breakpoint dialog for the text a logpoint writes to the Log pane.",
+    "maxChars": 10
+  },
+  "dialog.breakpoint.messageAria": "Log message",
+  "@dialog.breakpoint.messageAria": {
+    "context": "Screen-reader name of the logpoint message field in the breakpoint dialog. 'Log' is a noun modifier here: the message to be logged."
+  },
+  "dialog.breakpoint.example": "e.g. {example}",
+  "@dialog.breakpoint.example": {
+    "context": "Placeholder text of the logpoint message field in the breakpoint dialog, introducing an example template.",
+    "placeholders": {
+      "example": "Example log template in Klive's template syntax, shown verbatim"
+    }
+  },
+  "dialog.breakpoint.messageHint": "Logs to the Log pane and continues. {expr} or {exprHex} fills in a value; a leading [GROUP] names its group.",
+  "@dialog.breakpoint.messageHint": {
+    "context": "Hint under the logpoint message field in the breakpoint dialog, followed by a 'Syntax' link. '[GROUP]' is template syntax; keep it.",
+    "placeholders": {
+      "expr": "Template syntax '{expr}', shown verbatim",
+      "exprHex": "Template syntax '{expr:hex8}', shown verbatim"
+    }
+  },
+  "dialog.breakpoint.syntaxLink": "Syntax",
+  "@dialog.breakpoint.syntaxLink": {
+    "context": "Link in the breakpoint dialog hints that opens the documentation of the condition or log-message syntax.",
+    "maxChars": 9
+  },
+  "dialog.breakpoint.conditionLabel": "Condition",
+  "@dialog.breakpoint.conditionLabel": {
+    "context": "Field label (and screen-reader name) in the breakpoint dialog for an expression that must be true for the breakpoint to act.",
+    "maxChars": 13
+  },
+  "dialog.breakpoint.conditionExample": "e.g. {first}   or   {second}",
+  "@dialog.breakpoint.conditionExample": {
+    "context": "Placeholder of the Condition field in the breakpoint dialog showing two example expressions. Keep the extra spaces around 'or'.",
+    "placeholders": {
+      "first": "Example condition expression, shown verbatim",
+      "second": "Second example condition expression, shown verbatim"
+    }
+  },
+  "dialog.breakpoint.conditionHint": "{action, select, log {Logs} other {Stops}} only when true. Registers, flags (ZF, CF, …), memory ([HL], w[$5C3A]), {operands, select, copper {VAL (the instruction word) and ADDR (the list index), } sprite {VAL (the byte written) and ADDR (the attribute byte, 0-4), } valAddr {VAL and ADDR, } other {}}labels.",
+  "@dialog.breakpoint.conditionHint": {
+    "context": "Hint under the Condition field of the breakpoint dialog listing what a condition may use, followed by a 'Syntax' link. VAL, ADDR, ZF, CF, [HL], w[$5C3A] are syntax; keep them. Keep each select branch's trailing ', ' so the list reads correctly.",
+    "placeholders": {
+      "action": "Selector: 'log' for a logpoint, otherwise stop",
+      "operands": "Selector of the breakpoint kind: 'copper', 'sprite', 'valAddr' or other (none)"
+    }
+  },
+  "dialog.breakpoint.hitCountLabel": "Hit count",
+  "@dialog.breakpoint.hitCountLabel": {
+    "context": "Field label (and screen-reader name of the number field) in the breakpoint dialog for the hit-count rule.",
+    "maxChars": 13
+  },
+  "dialog.breakpoint.hitRuleAria": "Hit count rule",
+  "@dialog.breakpoint.hitRuleAria": {
+    "context": "Screen-reader name of the hit-count rule dropdown (Always, Equal to, ...) in the breakpoint dialog."
+  },
+  "dialog.breakpoint.hitCountHint": "Counts the hits where the condition is true.",
+  "@dialog.breakpoint.hitCountHint": {
+    "context": "Hint under the Hit count row of the breakpoint dialog."
+  },
+  "dialog.breakpoint.hitsSoFar": "Hits so far",
+  "@dialog.breakpoint.hitsSoFar": {
+    "context": "Field label in the breakpoint dialog showing how many times the breakpoint has been hit.",
+    "maxChars": 16
+  },
+  "dialog.breakpoint.resetHits": "Reset",
+  "@dialog.breakpoint.resetHits": {
+    "context": "Button in the breakpoint dialog that sets the breakpoint's hit counter back to zero.",
+    "maxChars": 8
+  },
+  "dialog.breakpoint.enabled": "Enabled",
+  "@dialog.breakpoint.enabled": {
+    "context": "Checkbox in the breakpoint dialog: whether the breakpoint is active.",
+    "maxChars": 10
+  },
+  "dialog.breakpoint.oneShot": "Remove after it stops",
+  "@dialog.breakpoint.oneShot": {
+    "context": "Checkbox in the breakpoint dialog: a one-shot breakpoint deleted after it first stops the machine."
+  },
+  "dialog.breakpoint.nextRegStopNote": "Stops after the instruction that wrote the register, reporting its previous and new values.",
+  "@dialog.breakpoint.nextRegStopNote": {
+    "context": "Note at the bottom of the breakpoint dialog for a NextReg breakpoint, explaining when it stops."
+  },
+  "dialog.breakpoint.copperStopNote": "Stops after the Z80 instruction during which the Copper completed it. The Copper keeps running to the end of that instruction, so its PC may already be past the index.",
+  "@dialog.breakpoint.copperStopNote": {
+    "context": "Note at the bottom of the breakpoint dialog for a Copper breakpoint. Copper, Z80 and PC are technical names; keep them."
+  },
+  "dialog.breakpoint.spriteStopNote": "Stops after the instruction during which the byte was written — through port $57 (by the CPU or the DMA) or the $35-$39/$75-$79 NextReg mirrors (by the CPU or the Copper) — reporting its previous and new values.",
+  "@dialog.breakpoint.spriteStopNote": {
+    "context": "Note at the bottom of the breakpoint dialog for a sprite-attribute breakpoint. Keep the port/register numbers and technical names (CPU, DMA, NextReg, Copper)."
+  },
+  "dialog.breakpoint.location.unresolved": "{place} (not resolved - build the project)",
+  "@dialog.breakpoint.location.unresolved": {
+    "context": "Location shown in the breakpoint dialog for a source-code breakpoint that has no machine address yet because the project has not been built.",
+    "placeholders": {
+      "place": "Source file and line, e.g. 'main.asm:42', shown verbatim"
+    }
+  },
+  "dialog.excludedItems.title": "Excluded Items",
+  "@dialog.excludedItems.title": {
+    "context": "Title of the dialog listing the files and folders excluded from the project (Project > Excluded Items).",
+    "maxChars": 20
+  },
+  "dialog.excludedItems.projectList": "{project} Excludes:",
+  "@dialog.excludedItems.projectList": {
+    "context": "Label of the list of items excluded from this project, in the Excluded Items dialog.",
+    "maxChars": 27,
+    "placeholders": {
+      "project": "Project (folder) name, shown verbatim, or the translated 'Unnamed'"
+    }
+  },
+  "dialog.excludedItems.unnamedProject": "Unnamed",
+  "@dialog.excludedItems.unnamedProject": {
+    "context": "Stands in for the project name in the Excluded Items dialog when no project folder is open; used inside 'dialog.excludedItems.projectList'.",
+    "maxChars": 10
+  },
+  "dialog.excludedItems.globalList": "Global Excludes:",
+  "@dialog.excludedItems.globalList": {
+    "context": "Label of the list of items excluded in every project (application-wide), in the Excluded Items dialog.",
+    "maxChars": 23
+  },
+  "dialog.machineSelect.title": "Select Machine",
+  "@dialog.machineSelect.title": {
+    "context": "Title of the Select Machine dialog (Machine > Machine type > Select machine...), which lists the emulated machines and their hardware.",
+    "maxChars": 20
+  },
+  "dialog.machineSelect.save": "Save",
+  "@dialog.machineSelect.save": {
+    "context": "Button of the Select Machine dialog that saves the edited favourites (the Machine type menu) without switching machine.",
+    "maxChars": 11
+  },
+  "dialog.machineSelect.switchTo": "Switch to {name}",
+  "@dialog.machineSelect.switchTo": {
+    "context": "Primary button of the Select Machine dialog: start emulating the selected machine model.",
+    "maxChars": 23,
+    "placeholders": {
+      "name": "Machine model name, shown verbatim, e.g. 'ZX Spectrum 128K'"
+    }
+  },
+  "dialog.machineSelect.switch": "Switch",
+  "@dialog.machineSelect.switch": {
+    "context": "Primary button of the Select Machine dialog, disabled, when no other model is selected.",
+    "maxChars": 9
+  },
+  "dialog.machineSelect.favorites": "Favourites",
+  "@dialog.machineSelect.favorites": {
+    "context": "Name of the section in the Select Machine dialog holding the favourite machine models, which form the Machine type menu.",
+    "maxChars": 14
+  },
+  "dialog.machineSelect.favoritesHeader": "Favourites · menu order",
+  "@dialog.machineSelect.favoritesHeader": {
+    "context": "Header of the favourites section in the Select Machine dialog; the list order is the order in the Machine type menu.",
+    "maxChars": 33
+  },
+  "dialog.machineSelect.screen.withBorder": "{size} with border",
+  "@dialog.machineSelect.screen.withBorder": {
+    "context": "Caption under the screen drawing in the Select Machine dialog: the visible picture size including the border around the paper.",
+    "maxChars": 26,
+    "placeholders": {
+      "size": "Picture size in pixels, e.g. '352 × 296'"
+    }
+  },
+  "dialog.machineSelect.group.processor": "Processor",
+  "@dialog.machineSelect.group.processor": {
+    "context": "Heading of a group on the hardware sheet of the Select Machine dialog, which lists the selected machine's specifications.",
+    "maxChars": 13
+  },
+  "dialog.machineSelect.group.memory": "Memory",
+  "@dialog.machineSelect.group.memory": {
+    "context": "Heading of a group on the hardware sheet of the Select Machine dialog, which lists the selected machine's specifications.",
+    "maxChars": 9
+  },
+  "dialog.machineSelect.group.display": "Display",
+  "@dialog.machineSelect.group.display": {
+    "context": "Heading of a group on the hardware sheet of the Select Machine dialog, which lists the selected machine's specifications.",
+    "maxChars": 10
+  },
+  "dialog.machineSelect.group.timing": "Frame timing",
+  "@dialog.machineSelect.group.timing": {
+    "context": "Heading of a group on the hardware sheet of the Select Machine dialog, which lists the selected machine's specifications.",
+    "maxChars": 17
+  },
+  "dialog.machineSelect.group.sound": "Sound",
+  "@dialog.machineSelect.group.sound": {
+    "context": "Heading of a group on the hardware sheet of the Select Machine dialog, which lists the selected machine's specifications.",
+    "maxChars": 8
+  },
+  "dialog.machineSelect.group.io": "Storage & input",
+  "@dialog.machineSelect.group.io": {
+    "context": "Heading of a group on the hardware sheet of the Select Machine dialog, which lists the selected machine's specifications.",
+    "maxChars": 21
+  },
+  "dialog.machineSelect.row.clock": "Clock",
+  "@dialog.machineSelect.row.clock": {
+    "context": "Row label on the hardware sheet of the Select Machine dialog; its value is the CPU clock frequency.",
+    "maxChars": 8
+  },
+  "dialog.machineSelect.row.turbo": "Turbo",
+  "@dialog.machineSelect.row.turbo": {
+    "context": "Row label on the hardware sheet of the Select Machine dialog; its value is the available faster CPU speeds.",
+    "maxChars": 8
+  },
+  "dialog.machineSelect.row.clockMultiplier": "Clock multiplier",
+  "@dialog.machineSelect.row.clockMultiplier": {
+    "context": "Row label on the hardware sheet of the Select Machine dialog; its value is the range of emulation speed multipliers.",
+    "maxChars": 23
+  },
+  "dialog.machineSelect.row.banks": "Banks",
+  "@dialog.machineSelect.row.banks": {
+    "context": "Row label on the hardware sheet of the Select Machine dialog; its value is the number and size of memory banks.",
+    "maxChars": 8
+  },
+  "dialog.machineSelect.row.addressSpace": "Address space",
+  "@dialog.machineSelect.row.addressSpace": {
+    "context": "Row label on the hardware sheet of the Select Machine dialog; its value is the size of the addressable memory.",
+    "maxChars": 19
+  },
+  "dialog.machineSelect.row.resolution": "Resolution",
+  "@dialog.machineSelect.row.resolution": {
+    "context": "Row label on the hardware sheet of the Select Machine dialog; its value is the screen size in pixels.",
+    "maxChars": 14
+  },
+  "dialog.machineSelect.row.colours": "Colours",
+  "@dialog.machineSelect.row.colours": {
+    "context": "Row label on the hardware sheet of the Select Machine dialog; its value is the number of colours.",
+    "maxChars": 10
+  },
+  "dialog.machineSelect.row.attributes": "Attributes",
+  "@dialog.machineSelect.row.attributes": {
+    "context": "Row label on the hardware sheet of the Select Machine dialog; its value is how colour attributes are applied.",
+    "maxChars": 14
+  },
+  "dialog.machineSelect.row.text": "Text",
+  "@dialog.machineSelect.row.text": {
+    "context": "Row label on the hardware sheet of the Select Machine dialog; its value is the text-mode size.",
+    "maxChars": 8
+  },
+  "dialog.machineSelect.row.layers": "Layers",
+  "@dialog.machineSelect.row.layers": {
+    "context": "Row label on the hardware sheet of the Select Machine dialog; its value is the display layers.",
+    "maxChars": 9
+  },
+  "dialog.machineSelect.row.videoChip": "Video chip",
+  "@dialog.machineSelect.row.videoChip": {
+    "context": "Row label on the hardware sheet of the Select Machine dialog; its value is the display hardware.",
+    "maxChars": 14
+  },
+  "dialog.machineSelect.row.otherSizes": "Other sizes",
+  "@dialog.machineSelect.row.otherSizes": {
+    "context": "Row label on the hardware sheet of the Select Machine dialog; its value is other screen resolutions.",
+    "maxChars": 16
+  },
+  "dialog.machineSelect.row.standard": "Standard",
+  "@dialog.machineSelect.row.standard": {
+    "context": "Row label on the hardware sheet of the Select Machine dialog; its value is the TV standard, e.g. PAL or NTSC.",
+    "maxChars": 12
+  },
+  "dialog.machineSelect.row.linesPerFrame": "Lines / frame",
+  "@dialog.machineSelect.row.linesPerFrame": {
+    "context": "Row label on the hardware sheet of the Select Machine dialog; its value is the number of scan lines in one frame.",
+    "maxChars": 19
+  },
+  "dialog.machineSelect.row.frameRate": "Frame rate",
+  "@dialog.machineSelect.row.frameRate": {
+    "context": "Row label on the hardware sheet of the Select Machine dialog; its value is frames per second.",
+    "maxChars": 14
+  },
+  "dialog.machineSelect.row.devices": "Devices",
+  "@dialog.machineSelect.row.devices": {
+    "context": "Row label on the hardware sheet of the Select Machine dialog; its value is the sound devices.",
+    "maxChars": 10
+  },
+  "dialog.machineSelect.row.media": "Media",
+  "@dialog.machineSelect.row.media": {
+    "context": "Row label on the hardware sheet of the Select Machine dialog; its value is the storage media, e.g. tape or disk.",
+    "maxChars": 8
+  },
+  "dialog.machineSelect.row.perLine": "{unit} / line",
+  "@dialog.machineSelect.row.perLine": {
+    "context": "Row label on the hardware sheet of the Select Machine dialog: the clock cycles in one scan line.",
+    "maxChars": 19,
+    "placeholders": {
+      "unit": "Timing unit, shown verbatim, e.g. 'T-states'"
+    }
+  },
+  "dialog.machineSelect.row.perFrame": "{unit} / frame",
+  "@dialog.machineSelect.row.perFrame": {
+    "context": "Row label on the hardware sheet of the Select Machine dialog: the clock cycles in one frame.",
+    "maxChars": 20,
+    "placeholders": {
+      "unit": "Timing unit, shown verbatim, e.g. 'T-states'"
+    }
+  },
+  "dialog.machineSelect.row.frameRateEither": "50 or 60 Hz",
+  "@dialog.machineSelect.row.frameRateEither": {
+    "context": "Value of the Frame rate row in the Select Machine dialog for a machine that runs at either rate.",
+    "maxChars": 16
+  },
+  "dialog.machineSelect.row.lcdRefresh": "LCD refresh {rate} Hz",
+  "@dialog.machineSelect.row.lcdRefresh": {
+    "context": "Note beside the Frame rate value in the Select Machine dialog: how often the machine's LCD screen is redrawn.",
+    "maxChars": 30,
+    "placeholders": {
+      "rate": "Refresh rate number, e.g. '100'"
+    }
+  },
+  "dialog.machineSelect.row.noDevices": "None",
+  "@dialog.machineSelect.row.noDevices": {
+    "context": "Value of the sound Devices row in the Select Machine dialog for a machine without sound hardware.",
+    "maxChars": 8
+  },
+  "dialog.machineSelect.star.removeTitle": "Remove from the Machine type menu",
+  "@dialog.machineSelect.star.removeTitle": {
+    "context": "Tooltip of the filled star button beside a model in the Select Machine dialog. 'Machine type' is the name of a menu."
+  },
+  "dialog.machineSelect.star.addTitle": "Add to the Machine type menu",
+  "@dialog.machineSelect.star.addTitle": {
+    "context": "Tooltip of the empty star button beside a model in the Select Machine dialog. 'Machine type' is the name of a menu."
+  },
+  "dialog.machineSelect.star.removeAria": "Remove from favourites",
+  "@dialog.machineSelect.star.removeAria": {
+    "context": "Screen-reader name of the filled star button beside a model in the Select Machine dialog."
+  },
+  "dialog.machineSelect.star.addAria": "Add to favourites",
+  "@dialog.machineSelect.star.addAria": {
+    "context": "Screen-reader name of the empty star button beside a model in the Select Machine dialog."
+  },
+  "dialog.machineSelect.running": "Running",
+  "@dialog.machineSelect.running": {
+    "context": "Badge in the Select Machine dialog marking the machine model currently being emulated.",
+    "maxChars": 10
+  },
+  "dialog.machineSelect.moveUp": "Move up (Alt+↑)",
+  "@dialog.machineSelect.moveUp": {
+    "context": "Tooltip of a button on a favourite in the Select Machine dialog that moves it one place up in the menu order. Keep the shortcut."
+  },
+  "dialog.machineSelect.moveDown": "Move down (Alt+↓)",
+  "@dialog.machineSelect.moveDown": {
+    "context": "Tooltip of a button on a favourite in the Select Machine dialog that moves it one place down in the menu order. Keep the shortcut."
+  },
+  "dialog.machineSelect.separator.remove": "Remove the separator after this item",
+  "@dialog.machineSelect.separator.remove": {
+    "context": "Tooltip of a toggle button on a favourite in the Select Machine dialog: removes the menu separator line below it."
+  },
+  "dialog.machineSelect.separator.add": "Add a separator after this item",
+  "@dialog.machineSelect.separator.add": {
+    "context": "Tooltip of a toggle button on a favourite in the Select Machine dialog: adds a menu separator line below it."
+  },
+  "dialog.machineSelect.removeFavorite": "Remove from favourites (Delete)",
+  "@dialog.machineSelect.removeFavorite": {
+    "context": "Tooltip of the close button on a favourite in the Select Machine dialog. 'Delete' is the keyboard key that does the same."
+  },
+  "dialog.machineSelect.containsRunning": "The running model is in here",
+  "@dialog.machineSelect.containsRunning": {
+    "context": "Tooltip of a dot on a collapsed machine section in the Select Machine dialog: the model currently emulated is inside."
+  },
+  "dialog.machineSelect.favoritesEmpty": "Star a model to add it to the Machine type menu.",
+  "@dialog.machineSelect.favoritesEmpty": {
+    "context": "Hint in the empty favourites section of the Select Machine dialog. 'Star' is a verb: click the star button."
+  },
+  "dialog.machineSelect.filterPlaceholder": "Name, 128K, NTSC, disk…",
+  "@dialog.machineSelect.filterPlaceholder": {
+    "context": "Placeholder of the filter box of the Select Machine dialog, giving example search words.",
+    "maxChars": 33
+  },
+  "dialog.machineSelect.filterLabel": "Filter machines",
+  "@dialog.machineSelect.filterLabel": {
+    "context": "Screen-reader label of the filter box of the Select Machine dialog."
+  },
+  "dialog.machineSelect.treeAria": "Machines",
+  "@dialog.machineSelect.treeAria": {
+    "context": "Screen-reader name of the machine list (tree) in the Select Machine dialog."
+  },
+  "dialog.machineSelect.noMatch": "No machine matches “{filter}”.",
+  "@dialog.machineSelect.noMatch": {
+    "context": "Message in the Select Machine dialog when the filter text matches no machine model.",
+    "placeholders": {
+      "filter": "The text typed into the filter box, shown verbatim"
+    }
+  },
+  "dialog.machineSelect.restoreDefaults": "Restore default favourites",
+  "@dialog.machineSelect.restoreDefaults": {
+    "context": "Link button under the machine list of the Select Machine dialog that resets the favourites to the built-in set.",
+    "maxChars": 37
+  },
+  "dialog.machineSelect.unsaved": "Unsaved menu changes",
+  "@dialog.machineSelect.unsaved": {
+    "context": "Note in the Select Machine dialog footer when the favourites were edited but not saved yet.",
+    "maxChars": 28
+  },
+  "dialog.machineSelect.noSelection": "Select a model to see its hardware.",
+  "@dialog.machineSelect.noSelection": {
+    "context": "Hint in the hardware-sheet pane of the Select Machine dialog when no model is selected."
+  },
+  "dialog.machineSelect.sheet.inMenu": "In Machine type menu",
+  "@dialog.machineSelect.sheet.inMenu": {
+    "context": "Toggle button on the hardware sheet of the Select Machine dialog, on: this model is a favourite in the Machine type menu.",
+    "maxChars": 28
+  },
+  "dialog.machineSelect.sheet.addToMenu": "Add to Machine type menu",
+  "@dialog.machineSelect.sheet.addToMenu": {
+    "context": "Toggle button on the hardware sheet of the Select Machine dialog, off: click to add this model to the Machine type menu.",
+    "maxChars": 34
+  },
+  "dialog.sjasmplus.title": "SJASMPLUS Integration",
+  "@dialog.sjasmplus.title": {
+    "context": "Title of the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler). SJASMPLUS is a product name.",
+    "maxChars": 30
+  },
+  "dialog.sjasmplus.button.apply": "Apply",
+  "@dialog.sjasmplus.button.apply": {
+    "context": "Primary button of the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler): saves the tested executable to the settings.",
+    "maxChars": 8
+  },
+  "dialog.sjasmplus.button.testAgain": "Test again",
+  "@dialog.sjasmplus.button.testAgain": {
+    "context": "Secondary button of the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler): re-runs the smoke-test compile on the selected executable.",
+    "maxChars": 14
+  },
+  "dialog.sjasmplus.button.selectExecutable": "Select executable...",
+  "@dialog.sjasmplus.button.selectExecutable": {
+    "context": "Button in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler) (Local executable source) that opens a file picker for the assembler program.",
+    "maxChars": 28
+  },
+  "dialog.sjasmplus.button.selectFolder": "Select folder...",
+  "@dialog.sjasmplus.button.selectFolder": {
+    "context": "Button in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler) (Online release source) that picks the folder to download the release into.",
+    "maxChars": 23
+  },
+  "dialog.sjasmplus.button.download": "Download...",
+  "@dialog.sjasmplus.button.download": {
+    "context": "Button in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler) that downloads the selected SJASMPLUS release asset from GitHub.",
+    "maxChars": 16
+  },
+  "dialog.sjasmplus.button.refresh": "Refresh",
+  "@dialog.sjasmplus.button.refresh": {
+    "context": "Button in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler) that reloads the list of SJASMPLUS releases from GitHub.",
+    "maxChars": 10
+  },
+  "dialog.sjasmplus.row.inUse": "In use",
+  "@dialog.sjasmplus.row.inUse": {
+    "context": "Row label in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler), left column: the assembler Klive currently uses.",
+    "maxChars": 9
+  },
+  "dialog.sjasmplus.row.source": "Source",
+  "@dialog.sjasmplus.row.source": {
+    "context": "Row label in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler), left column, before the choice between a local executable and an online release. 'Source' as in where the assembler comes from, not source code.",
+    "maxChars": 9
+  },
+  "dialog.sjasmplus.row.saveTo": "Save to",
+  "@dialog.sjasmplus.row.saveTo": {
+    "context": "Row label in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler), left column, before the choice of user or project settings.",
+    "maxChars": 10
+  },
+  "dialog.sjasmplus.row.toApply": "To apply",
+  "@dialog.sjasmplus.row.toApply": {
+    "context": "Row label in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler), left column: the executable that pressing Apply would save.",
+    "maxChars": 12
+  },
+  "dialog.sjasmplus.row.executable": "Executable",
+  "@dialog.sjasmplus.row.executable": {
+    "context": "Row label in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler), left column, before the button that selects the assembler program file.",
+    "maxChars": 14
+  },
+  "dialog.sjasmplus.row.onPath": "On PATH",
+  "@dialog.sjasmplus.row.onPath": {
+    "context": "Row label in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler), left column, before shortcuts to assembler programs found on the system PATH. PATH is the environment variable name; keep it as is.",
+    "maxChars": 10
+  },
+  "dialog.sjasmplus.row.downloads": "Downloads",
+  "@dialog.sjasmplus.row.downloads": {
+    "context": "Row label in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler), left column, shown when no download exists for this operating system.",
+    "maxChars": 13
+  },
+  "dialog.sjasmplus.row.project": "Project",
+  "@dialog.sjasmplus.row.project": {
+    "context": "Row label in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler), left column, before a link to the SJASMPLUS project's repository on GitHub. 'Project' as in the open-source project, not a Klive project.",
+    "maxChars": 10
+  },
+  "dialog.sjasmplus.row.release": "Release",
+  "@dialog.sjasmplus.row.release": {
+    "context": "Row label in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler), left column, before the dropdown of published SJASMPLUS versions.",
+    "maxChars": 10
+  },
+  "dialog.sjasmplus.row.asset": "Asset",
+  "@dialog.sjasmplus.row.asset": {
+    "context": "Row label in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler), left column, before the dropdown of downloadable files of the selected release.",
+    "maxChars": 8
+  },
+  "dialog.sjasmplus.row.folder": "Folder",
+  "@dialog.sjasmplus.row.folder": {
+    "context": "Row label in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler), left column, before the download-folder picker.",
+    "maxChars": 9
+  },
+  "dialog.sjasmplus.source.ariaLabel": "SjasmPlus source",
+  "@dialog.sjasmplus.source.ariaLabel": {
+    "context": "Accessible name (screen readers) of the radio group choosing where the assembler comes from, in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler)."
+  },
+  "dialog.sjasmplus.source.local": "Local executable",
+  "@dialog.sjasmplus.source.local": {
+    "context": "Radio option in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler): use an assembler program already on this computer. Also quoted inside the help step 'choose Local executable'.",
+    "maxChars": 23
+  },
+  "dialog.sjasmplus.source.online": "Online release",
+  "@dialog.sjasmplus.source.online": {
+    "context": "Radio option in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler): download a published SJASMPLUS release from GitHub.",
+    "maxChars": 20
+  },
+  "dialog.sjasmplus.scope.ariaLabel": "Save settings to",
+  "@dialog.sjasmplus.scope.ariaLabel": {
+    "context": "Accessible name (screen readers) of the radio group choosing where the setup is saved, in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler)."
+  },
+  "dialog.sjasmplus.scope.user": "User settings",
+  "@dialog.sjasmplus.scope.user": {
+    "context": "Radio option and scope name in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler): the setup is saved in the user's own settings (all projects). Also shown in the status line 'Configured in User settings'.",
+    "maxChars": 19
+  },
+  "dialog.sjasmplus.scope.project": "Project settings",
+  "@dialog.sjasmplus.scope.project": {
+    "context": "Radio option and scope name in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler): the setup is saved in the open Klive project's settings. Also shown in the status line 'Configured in Project settings'.",
+    "maxChars": 23
+  },
+  "dialog.sjasmplus.scope.none": "None",
+  "@dialog.sjasmplus.scope.none": {
+    "context": "Scope name in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler) when no settings hold an SJASMPLUS setup.",
+    "maxChars": 8
+  },
+  "dialog.sjasmplus.scope.noProject": "(no Klive project is open)",
+  "@dialog.sjasmplus.scope.noProject": {
+    "context": "Muted note next to the save-scope radio buttons in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler), explaining why 'Project settings' is disabled."
+  },
+  "dialog.sjasmplus.apply.nothingSelected": "Nothing selected yet",
+  "@dialog.sjasmplus.apply.nothingSelected": {
+    "context": "Shown in the 'To apply' row of the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler) when no executable has been picked."
+  },
+  "dialog.sjasmplus.local.useSuggestion": "Use {path}",
+  "@dialog.sjasmplus.local.useSuggestion": {
+    "context": "Tooltip of a shortcut button in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler) that selects an assembler program found on PATH.",
+    "placeholders": {
+      "path": "Full file path of the program, shown verbatim"
+    }
+  },
+  "dialog.sjasmplus.online.windowsOnly": "Windows binaries only — no build is published for this system.",
+  "@dialog.sjasmplus.online.windowsOnly": {
+    "context": "Text in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler) (Online release source) on macOS and Linux: SJASMPLUS publishes ready-made programs for Windows only."
+  },
+  "dialog.sjasmplus.online.stepBuild": "1. Build SJASMPLUS from source (see INSTALL.md in the repository).",
+  "@dialog.sjasmplus.online.stepBuild": {
+    "context": "First of two numbered help steps in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler) on systems without a download. 'Build from source' means compile the program yourself. INSTALL.md is a file name; keep it."
+  },
+  "dialog.sjasmplus.online.stepSelect": "2. Come back, choose {localExecutable}, and select the binary you built.",
+  "@dialog.sjasmplus.online.stepSelect": {
+    "context": "Second numbered help step in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler) on systems without a download. 'Binary' is the compiled program file.",
+    "placeholders": {
+      "localExecutable": "The translated name of the 'Local executable' radio option, shown emphasized"
+    }
+  },
+  "dialog.sjasmplus.online.releaseAriaLabel": "SjasmPlus release",
+  "@dialog.sjasmplus.online.releaseAriaLabel": {
+    "context": "Accessible name (screen readers) of the release dropdown in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler)."
+  },
+  "dialog.sjasmplus.online.assetAriaLabel": "SjasmPlus asset",
+  "@dialog.sjasmplus.online.assetAriaLabel": {
+    "context": "Accessible name (screen readers) of the dropdown of downloadable files in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler)."
+  },
+  "dialog.sjasmplus.online.noReleases": "No releases",
+  "@dialog.sjasmplus.online.noReleases": {
+    "context": "Only entry of the release dropdown in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler) when no release is listed.",
+    "maxChars": 16
+  },
+  "dialog.sjasmplus.online.noAssets": "No assets",
+  "@dialog.sjasmplus.online.noAssets": {
+    "context": "Only entry of the downloadable-file dropdown in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler) when the release has no usable file.",
+    "maxChars": 13
+  },
+  "dialog.sjasmplus.online.showPrereleases": "Show prereleases",
+  "@dialog.sjasmplus.online.showPrereleases": {
+    "context": "Checkbox in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler): also list test (pre-release) versions of SJASMPLUS.",
+    "maxChars": 23
+  },
+  "dialog.sjasmplus.online.folderNotSelected": "Not selected",
+  "@dialog.sjasmplus.online.folderNotSelected": {
+    "context": "Placeholder in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler) where the download folder's path appears, before one is chosen.",
+    "maxChars": 17
+  },
+  "dialog.sjasmplus.status.noneText": "No SJASMPLUS assembler is set up yet",
+  "@dialog.sjasmplus.status.noneText": {
+    "context": "Status line of the 'In use' row in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler) when nothing is configured."
+  },
+  "dialog.sjasmplus.status.noneHint": "Klive cannot assemble SJASMPLUS sources until you set one up below.",
+  "@dialog.sjasmplus.status.noneHint": {
+    "context": "Hint under the status line in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler) when nothing is configured."
+  },
+  "dialog.sjasmplus.status.badgeNotUsable": "SJASMPLUS is not usable",
+  "@dialog.sjasmplus.status.badgeNotUsable": {
+    "context": "Accessible name of the warning badge icon in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler)'s 'In use' row: the configured assembler fails its test."
+  },
+  "dialog.sjasmplus.status.badgeSetUp": "SJASMPLUS is set up",
+  "@dialog.sjasmplus.status.badgeSetUp": {
+    "context": "Accessible name of the check-mark badge icon in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler)'s 'In use' row."
+  },
+  "dialog.sjasmplus.status.badgeSetUpTitle": "SJASMPLUS is set up and passed its last test",
+  "@dialog.sjasmplus.status.badgeSetUpTitle": {
+    "context": "Tooltip of the check-mark badge in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler)'s 'In use' row."
+  },
+  "dialog.sjasmplus.status.configured": "Configured",
+  "@dialog.sjasmplus.status.configured": {
+    "context": "Status word in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler)'s 'In use' row: the settings point at an assembler. Shown as {headline} in 'dialog.sjasmplus.status.headlineInScope'.",
+    "maxChars": 14
+  },
+  "dialog.sjasmplus.status.notWorking": "Not working",
+  "@dialog.sjasmplus.status.notWorking": {
+    "context": "Status word in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler)'s 'In use' row: the configured assembler failed its test. Shown as {headline} in 'dialog.sjasmplus.status.headlineInScope'.",
+    "maxChars": 16
+  },
+  "dialog.sjasmplus.status.headlineInScope": "{headline} in {scope}",
+  "@dialog.sjasmplus.status.headlineInScope": {
+    "context": "Status line in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler)'s 'In use' row, e.g. 'Configured in User settings'.",
+    "placeholders": {
+      "headline": "The translated status word: 'Configured' or 'Not working'",
+      "scope": "The translated settings scope: 'User settings' or 'Project settings'"
+    }
+  },
+  "dialog.sjasmplus.status.versionUnknown": "version unknown",
+  "@dialog.sjasmplus.status.versionUnknown": {
+    "context": "Shown in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler)'s 'In use' row in place of the assembler's version number when it is not known.",
+    "maxChars": 21
+  },
+  "dialog.sjasmplus.status.notResolved": "Not resolved",
+  "@dialog.sjasmplus.status.notResolved": {
+    "context": "Placeholder in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler)'s 'In use' row where the executable's path appears, when the path could not be determined.",
+    "maxChars": 17
+  },
+  "dialog.sjasmplus.validation.probing": "Checking selected path...",
+  "@dialog.sjasmplus.validation.probing": {
+    "context": "Progress label in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler)'s 'To apply' row while the picked file is examined.",
+    "maxChars": 35
+  },
+  "dialog.sjasmplus.validation.downloading": "Downloading release...",
+  "@dialog.sjasmplus.validation.downloading": {
+    "context": "Progress label in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler)'s 'To apply' row during a download.",
+    "maxChars": 31
+  },
+  "dialog.sjasmplus.validation.testing": "Running smoke test...",
+  "@dialog.sjasmplus.validation.testing": {
+    "context": "Progress label in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler)'s 'To apply' row while a tiny test program is assembled to check the executable works.",
+    "maxChars": 30
+  },
+  "dialog.sjasmplus.validation.saving": "Saving...",
+  "@dialog.sjasmplus.validation.saving": {
+    "context": "Progress label in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler)'s 'To apply' row while the settings are written.",
+    "maxChars": 13
+  },
+  "dialog.sjasmplus.validation.notTested": "Not tested",
+  "@dialog.sjasmplus.validation.notTested": {
+    "context": "Test-result label in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler)'s 'To apply' row before the executable is tested.",
+    "maxChars": 14
+  },
+  "dialog.sjasmplus.validation.passed": "Passed",
+  "@dialog.sjasmplus.validation.passed": {
+    "context": "Test-result label in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler)'s 'To apply' row: the smoke test succeeded.",
+    "maxChars": 9
+  },
+  "dialog.sjasmplus.validation.failed": "Failed",
+  "@dialog.sjasmplus.validation.failed": {
+    "context": "Test-result label in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler)'s 'To apply' row: the smoke test failed.",
+    "maxChars": 9
+  },
+  "dialog.sjasmplus.hint.pickExecutable": "Pick a local executable or download a release below.",
+  "@dialog.sjasmplus.hint.pickExecutable": {
+    "context": "Hint in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler)'s 'To apply' row when nothing is selected."
+  },
+  "dialog.sjasmplus.hint.testAgain": "Press Test again to check this executable.",
+  "@dialog.sjasmplus.hint.testAgain": {
+    "context": "Hint in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler)'s 'To apply' row. 'Test again' is the name of the dialog's button (dialog.sjasmplus.button.testAgain)."
+  },
+  "dialog.sjasmplus.message.configuredFailed": "The configured SJASMPLUS executable is missing or failed its test.",
+  "@dialog.sjasmplus.message.configuredFailed": {
+    "context": "Generic reason in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler)'s 'In use' row when the configured assembler fails its test without a more specific error. The compiler reports the same sentence (in English) when a build fails."
+  },
+  "dialog.sjasmplus.message.configuredPassed": "The configured executable passed its test.",
+  "@dialog.sjasmplus.message.configuredPassed": {
+    "context": "Message in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler)'s 'To apply' row after the configured assembler was re-tested successfully."
+  },
+  "dialog.sjasmplus.message.configuredFailedHint": "Pick a working executable below, or restore the missing one and press Test again.",
+  "@dialog.sjasmplus.message.configuredFailedHint": {
+    "context": "Message in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler)'s 'To apply' row when the configured assembler fails its test. 'Test again' is the name of the dialog's button."
+  },
+  "dialog.sjasmplus.message.replacementReady": "Press Apply to replace it with the executable below.",
+  "@dialog.sjasmplus.message.replacementReady": {
+    "context": "Note in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler)'s 'In use' row when the configured assembler is broken but a newly tested one works. 'Apply' is the name of the dialog's button."
+  },
+  "dialog.sjasmplus.message.candidateRejected": "Unchanged — the executable below failed its test.",
+  "@dialog.sjasmplus.message.candidateRejected": {
+    "context": "Note in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler)'s 'In use' row when the setup works but the newly tested executable does not, so nothing changes."
+  },
+  "dialog.sjasmplus.message.validationPassed": "The smoke-test compile succeeded, press Apply to save it.",
+  "@dialog.sjasmplus.message.validationPassed": {
+    "context": "Message in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler)'s 'To apply' row after a picked executable assembled the test program. 'Apply' is the name of the dialog's button."
+  },
+  "dialog.sjasmplus.message.validationFailed": "The smoke-test compile failed, so this executable cannot be saved.",
+  "@dialog.sjasmplus.message.validationFailed": {
+    "context": "Message in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler)'s 'To apply' row when a picked executable failed to assemble the test program and no specific error was reported."
+  },
+  "dialog.sjasmplus.message.probeFailed": "The selected path is not a valid SJASMPLUS candidate.",
+  "@dialog.sjasmplus.message.probeFailed": {
+    "context": "Error in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler)'s 'To apply' row when the picked file is not an SJASMPLUS program."
+  },
+  "dialog.sjasmplus.message.downloadFailed": "SJASMPLUS release download failed.",
+  "@dialog.sjasmplus.message.downloadFailed": {
+    "context": "Error in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler)'s 'To apply' row when a download failed without a specific reason."
+  },
+  "dialog.sjasmplus.message.applySaved": "SJASMPLUS integration saved.",
+  "@dialog.sjasmplus.message.applySaved": {
+    "context": "Confirmation in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler) after Apply wrote the settings."
+  },
+  "dialog.sjasmplus.discard.title": "Discard SJASMPLUS setup?",
+  "@dialog.sjasmplus.discard.title": {
+    "context": "Title of the confirmation asked when the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler) is closed with an unapplied selection."
+  },
+  "dialog.sjasmplus.discard.notApplied": "This setup has not been applied yet:",
+  "@dialog.sjasmplus.discard.notApplied": {
+    "context": "Line of the discard confirmation of the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler), followed by the selected executable's path."
+  },
+  "dialog.sjasmplus.discard.unchanged": "Closing now leaves SJASMPLUS unchanged.",
+  "@dialog.sjasmplus.discard.unchanged": {
+    "context": "Line of the discard confirmation of the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler), after the executable's path."
+  },
+  "dialog.sjasmplus.discard.confirm": "Discard",
+  "@dialog.sjasmplus.discard.confirm": {
+    "context": "Confirm button of the discard confirmation of the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler): close without saving.",
+    "maxChars": 10
+  },
+  "dialog.sjasmplus.discard.keepEditing": "Keep editing",
+  "@dialog.sjasmplus.discard.keepEditing": {
+    "context": "Cancel button of the discard confirmation of the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler): return to the dialog.",
+    "maxChars": 17
+  },
+  "dialog.sjasmplus.filter.executable": "SJASMPLUS executable",
+  "@dialog.sjasmplus.filter.executable": {
+    "context": "File-type filter name in the file picker opened by 'Select executable...' in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler).",
+    "maxChars": 28
+  },
+  "dialog.sjasmplus.releases.checking": "Checking GitHub releases...",
+  "@dialog.sjasmplus.releases.checking": {
+    "context": "Status in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler)'s GitHub row while the release list loads."
+  },
+  "dialog.sjasmplus.releases.notChecked": "Not checked",
+  "@dialog.sjasmplus.releases.notChecked": {
+    "context": "Status in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler)'s GitHub row before the release list was loaded.",
+    "maxChars": 16
+  },
+  "dialog.sjasmplus.releases.noneFound": "No releases found",
+  "@dialog.sjasmplus.releases.noneFound": {
+    "context": "Status in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler)'s GitHub row when GitHub lists no release."
+  },
+  "dialog.sjasmplus.releases.suggested": "Suggested {tag}",
+  "@dialog.sjasmplus.releases.suggested": {
+    "context": "Status in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler)'s GitHub row naming the release Klive recommends.",
+    "placeholders": {
+      "tag": "Release tag (version name), shown verbatim, e.g. 'v1.20.3'"
+    }
+  },
+  "dialog.sjasmplus.releases.noBinaryFor": "SJASMPLUS publishes no {platform} binary — build it from source, then use Local executable.",
+  "@dialog.sjasmplus.releases.noBinaryFor": {
+    "context": "Status in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler)'s GitHub row when no release has a ready-made program for this operating system. 'Local executable' is the name of a radio option in the dialog.",
+    "placeholders": {
+      "platform": "Operating system name, shown verbatim: 'Windows', 'macOS' or 'Linux'"
+    }
+  },
+  "dialog.sjasmplus.releases.noBinary": "No downloadable build matches this system — use Local executable instead.",
+  "@dialog.sjasmplus.releases.noBinary": {
+    "context": "Status in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler)'s GitHub row when no release has a program for this (unrecognized) system. 'Local executable' is the name of a radio option in the dialog."
+  },
+  "dialog.sjasmplus.release.label": "{tag}{prerelease, select, yes { (prerelease)} other {}} — {count, plural, =0 {nothing for {platform}} one {# build for {platform}} other {# builds for {platform}}}",
+  "@dialog.sjasmplus.release.label": {
+    "context": "Entry of the release dropdown in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler): the version, whether it is a test version, and how many downloadable programs it has for this operating system.",
+    "placeholders": {
+      "tag": "Release tag (version name), shown verbatim, e.g. 'v1.20.3'",
+      "prerelease": "'yes' for a test (pre-release) version, otherwise 'no'; selects the ' (prerelease)' mark",
+      "count": "Number of downloadable programs for this system",
+      "platform": "Operating system name, shown verbatim: 'Windows', 'macOS' or 'Linux'"
+    }
+  },
+  "dialog.sjasmplus.release.labelThisSystem": "{tag}{prerelease, select, yes { (prerelease)} other {}} — {count, plural, =0 {nothing for this system} one {# build for this system} other {# builds for this system}}",
+  "@dialog.sjasmplus.release.labelThisSystem": {
+    "context": "Entry of the release dropdown in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler) when the operating system is not recognized: the version, whether it is a test version, and how many downloadable programs it has.",
+    "placeholders": {
+      "tag": "Release tag (version name), shown verbatim, e.g. 'v1.20.3'",
+      "prerelease": "'yes' for a test (pre-release) version, otherwise 'no'; selects the ' (prerelease)' mark",
+      "count": "Number of downloadable programs for this system"
+    }
+  },
+  "dialog.sjasmplus.asset.label": "{name} — {content}",
+  "@dialog.sjasmplus.asset.label": {
+    "context": "Entry of the downloadable-file dropdown in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler).",
+    "placeholders": {
+      "name": "File name, shown verbatim",
+      "content": "Translated description of the file, e.g. 'Windows x64 build'"
+    }
+  },
+  "dialog.sjasmplus.asset.labelWithSize": "{name} — {content} · {size}",
+  "@dialog.sjasmplus.asset.labelWithSize": {
+    "context": "Entry of the downloadable-file dropdown in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler), with the file's size.",
+    "placeholders": {
+      "name": "File name, shown verbatim",
+      "content": "Translated description of the file, e.g. 'Windows x64 build'",
+      "size": "File size with unit, e.g. '1.2 MB'"
+    }
+  },
+  "dialog.sjasmplus.asset.source": "source code, needs compiling",
+  "@dialog.sjasmplus.asset.source": {
+    "context": "Description of a downloadable file in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler)'s dropdown: an archive of source code that must be compiled before use. Lowercase: it follows the file name."
+  },
+  "dialog.sjasmplus.asset.unrecognized": "unrecognized build",
+  "@dialog.sjasmplus.asset.unrecognized": {
+    "context": "Description of a downloadable file in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler)'s dropdown whose operating system is unknown. Lowercase: it follows the file name."
+  },
+  "dialog.sjasmplus.asset.build": "{platform} build",
+  "@dialog.sjasmplus.asset.build": {
+    "context": "Description of a downloadable file in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler)'s dropdown: a ready-made program for an operating system.",
+    "placeholders": {
+      "platform": "Operating system name, shown verbatim: 'Windows', 'macOS' or 'Linux'"
+    }
+  },
+  "dialog.sjasmplus.asset.buildWithArch": "{platform} {arch} build",
+  "@dialog.sjasmplus.asset.buildWithArch": {
+    "context": "Description of a downloadable file in the SJASMPLUS Integration dialog (sets up the external SJASMPLUS Z80 assembler)'s dropdown: a ready-made program for an operating system and processor type.",
+    "placeholders": {
+      "platform": "Operating system name, shown verbatim: 'Windows', 'macOS' or 'Linux'",
+      "arch": "Processor architecture, shown verbatim, e.g. 'x64', 'x86', 'arm64'"
+    }
+  },
+  "dialog.boriel.intro": "Klive comes with Boriel BASIC {version}, a ZX BASIC compiler you can use instead of Klive BASIC. Install it now? You can also do it later from Settings › Integrations.",
+  "@dialog.boriel.intro": {
+    "context": "Opening paragraph of the Boriel BASIC setup dialog (installs or picks the external Boriel BASIC compiler) when it is offered at startup. Boriel BASIC and Klive BASIC are product names. 'Settings › Integrations' names a page of the Settings dialog; use its translated name.",
+    "placeholders": {
+      "version": "Version of the bundled compiler, shown verbatim, e.g. '2.0.0-beta25'"
+    }
+  },
+  "dialog.boriel.kit.bundled": "Boriel BASIC {version} (bundled with Klive)",
+  "@dialog.boriel.kit.bundled": {
+    "context": "Value of the 'Bundled' row in the Boriel BASIC setup dialog (installs or picks the external Boriel BASIC compiler): the compiler version that ships with Klive.",
+    "placeholders": {
+      "version": "Version of the bundled compiler, shown verbatim, e.g. '2.0.0-beta25'"
+    }
+  },
+  "dialog.boriel.button.notNow": "Not now",
+  "@dialog.boriel.button.notNow": {
+    "context": "Cancel button of the Boriel BASIC setup dialog (installs or picks the external Boriel BASIC compiler) when offered at startup: close and ask again at the next start.",
+    "maxChars": 10
+  },
+  "dialog.boriel.button.install": "Install",
+  "@dialog.boriel.button.install": {
+    "context": "Primary button of the Boriel BASIC setup dialog (installs or picks the external Boriel BASIC compiler) when no compiler is installed.",
+    "maxChars": 14
+  },
+  "dialog.boriel.button.repair": "Repair",
+  "@dialog.boriel.button.repair": {
+    "context": "Primary button of the Boriel BASIC setup dialog (installs or picks the external Boriel BASIC compiler) when the installed compiler is broken: reinstall it.",
+    "maxChars": 12
+  },
+  "dialog.boriel.button.update": "Update",
+  "@dialog.boriel.button.update": {
+    "context": "Primary button of the Boriel BASIC setup dialog (installs or picks the external Boriel BASIC compiler) when a newer bundled version is available.",
+    "maxChars": 12
+  },
+  "dialog.boriel.button.reinstall": "Reinstall",
+  "@dialog.boriel.button.reinstall": {
+    "context": "Primary button of the Boriel BASIC setup dialog (installs or picks the external Boriel BASIC compiler) when the installed compiler is working and current.",
+    "maxChars": 18
+  },
+  "dialog.boriel.button.browse": "Browse...",
+  "@dialog.boriel.button.browse": {
+    "context": "Button in the Boriel BASIC setup dialog (installs or picks the external Boriel BASIC compiler) that picks the installation folder.",
+    "maxChars": 13
+  },
+  "dialog.boriel.button.useExisting": "Use an existing installation...",
+  "@dialog.boriel.button.useExisting": {
+    "context": "Button in the Boriel BASIC setup dialog (installs or picks the external Boriel BASIC compiler) that picks a folder where Boriel BASIC is already installed, instead of installing it."
+  },
+  "dialog.boriel.useBoriel.label": "Use Boriel BASIC to build BASIC programs",
+  "@dialog.boriel.useBoriel.label": {
+    "context": "Checkbox in the Boriel BASIC setup dialog (installs or picks the external Boriel BASIC compiler): build .bas/.zxbas programs with Boriel BASIC instead of Klive's own BASIC compiler."
+  },
+  "dialog.boriel.useBoriel.projectNote": "The open project chooses its own compiler: this changes the project's choice.",
+  "@dialog.boriel.useBoriel.projectNote": {
+    "context": "Muted note under the 'Use Boriel BASIC' checkbox in the Boriel BASIC setup dialog (installs or picks the external Boriel BASIC compiler) when the open project's settings decide the compiler."
+  },
+  "dialog.boriel.dontAskAgain": "Don't offer this again",
+  "@dialog.boriel.dontAskAgain": {
+    "context": "Checkbox in the Boriel BASIC setup dialog (installs or picks the external Boriel BASIC compiler) when offered at startup: never show the offer again."
+  },
+  "dialog.boriel.folder.ariaLabel": "Installation folder",
+  "@dialog.boriel.folder.ariaLabel": {
+    "context": "Accessible name (screen readers) of the installation-folder text box in the Boriel BASIC setup dialog (installs or picks the external Boriel BASIC compiler)."
+  },
+  "dialog.boriel.licenceNote": "Boriel BASIC 2.0 beta, redistributed with the author's permission.",
+  "@dialog.boriel.licenceNote": {
+    "context": "Muted licence note at the bottom of the Boriel BASIC setup dialog (installs or picks the external Boriel BASIC compiler). '2.0 beta' is the compiler's version."
+  },
+  "dialog.boriel.row.inUse": "In use",
+  "@dialog.boriel.row.inUse": {
+    "context": "Row label in the Boriel BASIC setup dialog (installs or picks the external Boriel BASIC compiler), left column: the compiler installation Klive currently uses.",
+    "maxChars": 9
+  },
+  "dialog.boriel.row.bundled": "Bundled",
+  "@dialog.boriel.row.bundled": {
+    "context": "Row label in the Boriel BASIC setup dialog (installs or picks the external Boriel BASIC compiler), left column: the compiler version that ships with Klive.",
+    "maxChars": 10
+  },
+  "dialog.boriel.row.folder": "Folder",
+  "@dialog.boriel.row.folder": {
+    "context": "Row label in the Boriel BASIC setup dialog (installs or picks the external Boriel BASIC compiler), left column, before the installation folder.",
+    "maxChars": 9
+  },
+  "dialog.boriel.status.cannotCheck": "Cannot check Boriel BASIC",
+  "@dialog.boriel.status.cannotCheck": {
+    "context": "Status in the Boriel BASIC setup dialog (installs or picks the external Boriel BASIC compiler)'s 'In use' row when the installation could not be examined; the reason follows below."
+  },
+  "dialog.boriel.status.checking": "Checking...",
+  "@dialog.boriel.status.checking": {
+    "context": "Status in the Boriel BASIC setup dialog (installs or picks the external Boriel BASIC compiler)'s 'In use' row while the installation is examined.",
+    "maxChars": 16
+  },
+  "dialog.boriel.status.notInstalled": "Not installed",
+  "@dialog.boriel.status.notInstalled": {
+    "context": "Status in the Boriel BASIC setup dialog (installs or picks the external Boriel BASIC compiler)'s 'In use' row when Boriel BASIC is not set up.",
+    "maxChars": 19
+  },
+  "dialog.boriel.status.notInstalledDetail": "Klive BASIC builds your BASIC programs.",
+  "@dialog.boriel.status.notInstalledDetail": {
+    "context": "Detail under 'Not installed' in the Boriel BASIC setup dialog (installs or picks the external Boriel BASIC compiler)'s 'In use' row: Klive's own compiler is used. Klive BASIC is a product name."
+  },
+  "dialog.boriel.status.notWorking": "Not working",
+  "@dialog.boriel.status.notWorking": {
+    "context": "Status in the Boriel BASIC setup dialog (installs or picks the external Boriel BASIC compiler)'s 'In use' row when the installed compiler is broken; the error follows below.",
+    "maxChars": 16
+  },
+  "dialog.boriel.status.updateAvailable": "{path} · version {version} is available",
+  "@dialog.boriel.status.updateAvailable": {
+    "context": "Detail in the Boriel BASIC setup dialog (installs or picks the external Boriel BASIC compiler)'s 'In use' row when a newer bundled version can be installed.",
+    "placeholders": {
+      "path": "Path of the installed compiler program, shown verbatim",
+      "version": "Version of the bundled compiler, shown verbatim, e.g. '2.0.0-beta25'"
+    }
+  },
+  "dialog.boriel.progress.installing": "Installing Boriel BASIC...",
+  "@dialog.boriel.progress.installing": {
+    "context": "Progress message at the bottom of the Boriel BASIC setup dialog (installs or picks the external Boriel BASIC compiler) during an install."
+  },
+  "dialog.boriel.progress.checkingExisting": "Checking the selected installation...",
+  "@dialog.boriel.progress.checkingExisting": {
+    "context": "Progress message at the bottom of the Boriel BASIC setup dialog (installs or picks the external Boriel BASIC compiler) while a picked existing installation is examined."
+  },
+  "dialog.boriel.outcome.installed": "Boriel BASIC {version} is installed in {folder}.",
+  "@dialog.boriel.outcome.installed": {
+    "context": "Success message at the bottom of the Boriel BASIC setup dialog (installs or picks the external Boriel BASIC compiler) after an install.",
+    "placeholders": {
+      "version": "Installed compiler version, shown verbatim",
+      "folder": "Installation folder path, shown verbatim"
+    }
+  },
+  "dialog.boriel.outcome.usingExisting": "Klive now uses Boriel BASIC {version} in {folder}.",
+  "@dialog.boriel.outcome.usingExisting": {
+    "context": "Success message at the bottom of the Boriel BASIC setup dialog (installs or picks the external Boriel BASIC compiler) after the user picked an existing installation.",
+    "placeholders": {
+      "version": "Compiler version, shown verbatim",
+      "folder": "Installation folder path, shown verbatim"
+    }
+  },
+  "dialog.detect.title.detect": "Detect code and data",
+  "@dialog.detect.title.detect": {
+    "context": "Title of the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file)."
+  },
+  "dialog.detect.title.skool": "Import SkoolKit file",
+  "@dialog.detect.title.skool": {
+    "context": "Title of the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file) when it imports a SkoolKit annotation file. SkoolKit is a product name."
+  },
+  "dialog.detect.button.apply": "Apply",
+  "@dialog.detect.button.apply": {
+    "context": "Primary button of the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file): writes the proposed regions to the annotation files.",
+    "maxChars": 8
+  },
+  "dialog.detect.button.import": "Import",
+  "@dialog.detect.button.import": {
+    "context": "Primary button of the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file) when importing a SkoolKit file.",
+    "maxChars": 9
+  },
+  "dialog.detect.button.clearDetected": "Clear detected",
+  "@dialog.detect.button.clearDetected": {
+    "context": "Primary button of the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file) in 'Clear detected regions' mode: removes regions an earlier detection added.",
+    "maxChars": 20
+  },
+  "dialog.detect.button.undo": "Undo last detection",
+  "@dialog.detect.button.undo": {
+    "context": "Secondary button of the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file): restores the annotations from before the last applied detection.",
+    "maxChars": 27
+  },
+  "dialog.detect.button.detect": "Detect",
+  "@dialog.detect.button.detect": {
+    "context": "Button in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file) that runs the detection again with the chosen options.",
+    "maxChars": 9
+  },
+  "dialog.detect.button.readAgain": "Read again",
+  "@dialog.detect.button.readAgain": {
+    "context": "Button in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file) (SkoolKit import) that re-reads the file.",
+    "maxChars": 14
+  },
+  "dialog.detect.button.coverageOn": "Turn on coverage",
+  "@dialog.detect.button.coverageOn": {
+    "context": "Button in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file) shown when there is no coverage: starts recording which addresses the program executes.",
+    "maxChars": 23
+  },
+  "dialog.detect.button.loadKcov": "Load .kcov…",
+  "@dialog.detect.button.loadKcov": {
+    "context": "Button in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file) shown when there is no coverage: loads a saved coverage run. '.kcov' is a file extension; keep it.",
+    "maxChars": 16
+  },
+  "dialog.detect.busy.detect": "Reading coverage and classifying...",
+  "@dialog.detect.busy.detect": {
+    "context": "Progress hint in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file) while detection runs."
+  },
+  "dialog.detect.busy.apply": "Writing the annotations...",
+  "@dialog.detect.busy.apply": {
+    "context": "Progress hint in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file) while the proposed regions are saved."
+  },
+  "dialog.detect.busy.undo": "Restoring...",
+  "@dialog.detect.busy.undo": {
+    "context": "Progress hint in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file) while the last detection is undone."
+  },
+  "dialog.detect.busy.coverage": "Updating coverage...",
+  "@dialog.detect.busy.coverage": {
+    "context": "Progress hint in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file) while coverage is turned on or loaded."
+  },
+  "dialog.detect.replaceWarning": "Replace mode overwrites {count, plural, one {# of your own regions} other {# of your own regions}}; Apply asks first.",
+  "@dialog.detect.replaceWarning": {
+    "context": "Warning in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file) when the proposal would overwrite regions the user marked. 'Apply' is the name of the dialog's button.",
+    "placeholders": {
+      "count": "Number of the user's own regions that would be overwritten"
+    }
+  },
+  "dialog.detect.notPausedHint": "Pause the machine first: a running program pages and writes while it is read.",
+  "@dialog.detect.notPausedHint": {
+    "context": "Hint in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file) when the emulated machine is running. 'Pages' means switches memory banks."
+  },
+  "dialog.detect.conflict.kept": "{start}-{end}: yours is {yours}, detected {detected} (kept)",
+  "@dialog.detect.conflict.kept": {
+    "context": "Detail line in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file)'s expanded notes: an address range the user marked differently from what detection found; in Fill gaps mode the user's region is kept.",
+    "placeholders": {
+      "start": "Start address, hex, e.g. '$4000'",
+      "end": "End address, hex, e.g. '$40FF'",
+      "yours": "The user's region type, an identifier shown verbatim (e.g. 'code', 'data')",
+      "detected": "The detected region type, an identifier shown verbatim (e.g. 'code', 'data')"
+    }
+  },
+  "dialog.detect.conflict.replaced": "{start}-{end}: yours is {yours}, detected {detected}",
+  "@dialog.detect.conflict.replaced": {
+    "context": "Detail line in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file)'s expanded notes: an address range the user marked differently from what detection found.",
+    "placeholders": {
+      "start": "Start address, hex, e.g. '$4000'",
+      "end": "End address, hex, e.g. '$40FF'",
+      "yours": "The user's region type, an identifier shown verbatim (e.g. 'code', 'data')",
+      "detected": "The detected region type, an identifier shown verbatim (e.g. 'code', 'data')"
+    }
+  },
+  "dialog.detect.replace.title": "Replace your regions?",
+  "@dialog.detect.replace.title": {
+    "context": "Title of the confirmation asked by Apply in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file) when the proposal overwrites regions the user marked."
+  },
+  "dialog.detect.replace.overwrites": "Replace mode overwrites {count, plural, one {# region} other {# regions}} you marked yourself.",
+  "@dialog.detect.replace.overwrites": {
+    "context": "Line of the replace confirmation in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file).",
+    "placeholders": {
+      "count": "Number of the user's own regions that would be overwritten"
+    }
+  },
+  "dialog.detect.replace.undoHint": "Undo last detection puts them back during this session.",
+  "@dialog.detect.replace.undoHint": {
+    "context": "Line of the replace confirmation in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file). 'Undo last detection' is the name of the dialog's button."
+  },
+  "dialog.detect.replace.confirm": "Replace",
+  "@dialog.detect.replace.confirm": {
+    "context": "Confirm button of the replace confirmation in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file).",
+    "maxChars": 10
+  },
+  "dialog.detect.apply.nothingWritten": "Nothing was written.",
+  "@dialog.detect.apply.nothingWritten": {
+    "context": "Error in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file) when Apply saved no file."
+  },
+  "dialog.detect.apply.written": "Written to {files}.",
+  "@dialog.detect.apply.written": {
+    "context": "Message in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file) after Apply saved the annotation files.",
+    "placeholders": {
+      "files": "Comma-separated file names, shown verbatim"
+    }
+  },
+  "dialog.detect.apply.writtenWithProblems": "Written to {files}. {problems}",
+  "@dialog.detect.apply.writtenWithProblems": {
+    "context": "Message in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file) after Apply saved some files and reported problems.",
+    "placeholders": {
+      "files": "Comma-separated file names, shown verbatim",
+      "problems": "Problem sentences reported by the save, shown verbatim"
+    }
+  },
+  "dialog.detect.undo.restored": "The annotations before the last detection are back.",
+  "@dialog.detect.undo.restored": {
+    "context": "Message in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file) after 'Undo last detection'."
+  },
+  "dialog.detect.undo.nothing": "There was nothing to undo.",
+  "@dialog.detect.undo.nothing": {
+    "context": "Message in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file) when 'Undo last detection' found nothing to restore."
+  },
+  "dialog.detect.error.cannotAnnotate": "This machine's memory cannot be annotated.",
+  "@dialog.detect.error.cannotAnnotate": {
+    "context": "Error in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file) when the current machine has no annotation support."
+  },
+  "dialog.detect.coverage.turnOnFailed": "Coverage could not be turned on.",
+  "@dialog.detect.coverage.turnOnFailed": {
+    "context": "Error in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file) when turning on coverage (recording of executed addresses) failed without a reason."
+  },
+  "dialog.detect.coverage.turnedOn": "Coverage is on. Run the program, pause, then Detect.",
+  "@dialog.detect.coverage.turnedOn": {
+    "context": "Message in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file) after coverage was turned on. 'Detect' is the name of the dialog's button."
+  },
+  "dialog.detect.coverage.loadFailed": "The run could not be loaded.",
+  "@dialog.detect.coverage.loadFailed": {
+    "context": "Error in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file) when a saved coverage run (.kcov file) failed to load. 'Run' is a recorded execution, not the act of running."
+  },
+  "dialog.detect.coverage.loaded": "The saved run is merged. Detect again.",
+  "@dialog.detect.coverage.loaded": {
+    "context": "Message in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file) after a saved coverage run was loaded. 'Run' is a recorded execution; 'Detect' is the name of the dialog's button."
+  },
+  "dialog.detect.filter.coverageRun": "Coverage run",
+  "@dialog.detect.filter.coverageRun": {
+    "context": "File-type filter name in the file picker opened by 'Load .kcov…' in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file). A recorded execution coverage, not the act of running.",
+    "maxChars": 17
+  },
+  "dialog.detect.scope.ariaLabel": "Which banks",
+  "@dialog.detect.scope.ariaLabel": {
+    "context": "Accessible name (screen readers) of the dropdown choosing which memory banks to examine, in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file)."
+  },
+  "dialog.detect.scope.paged": "Banks paged in",
+  "@dialog.detect.scope.paged": {
+    "context": "Option of the which-banks dropdown in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file): the memory banks currently switched into the address space.",
+    "maxChars": 20
+  },
+  "dialog.detect.scope.all": "All banks with coverage",
+  "@dialog.detect.scope.all": {
+    "context": "Option of the which-banks dropdown in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file): every memory bank that has execution coverage.",
+    "maxChars": 33
+  },
+  "dialog.detect.scope.rom": "The ROM (your ROM annotations)",
+  "@dialog.detect.scope.rom": {
+    "context": "Option of the which-banks dropdown in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file): the ROM, written to the user's ROM annotation file.",
+    "maxChars": 42
+  },
+  "dialog.detect.mode.ariaLabel": "Mode",
+  "@dialog.detect.mode.ariaLabel": {
+    "context": "Accessible name (screen readers) of the mode dropdown in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file)."
+  },
+  "dialog.detect.mode.fill": "Fill gaps",
+  "@dialog.detect.mode.fill": {
+    "context": "Mode option in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file): only add regions where the user marked nothing.",
+    "maxChars": 13
+  },
+  "dialog.detect.mode.replace": "Replace my regions",
+  "@dialog.detect.mode.replace": {
+    "context": "Mode option in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file): overwrite the user's own regions with the detected ones.",
+    "maxChars": 26
+  },
+  "dialog.detect.mode.clear": "Clear detected regions",
+  "@dialog.detect.mode.clear": {
+    "context": "Mode option in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file): remove regions an earlier detection added.",
+    "maxChars": 31
+  },
+  "dialog.detect.option.reach": "Follow branches (reached)",
+  "@dialog.detect.option.reach": {
+    "context": "Checkbox in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file): also treat code reachable through jumps and calls as code, not only executed code.",
+    "maxChars": 35
+  },
+  "dialog.detect.option.text": "Text",
+  "@dialog.detect.option.text": {
+    "context": "Checkbox in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file): detect text (character strings) in data.",
+    "maxChars": 8
+  },
+  "dialog.detect.option.words": "Pointer tables",
+  "@dialog.detect.option.words": {
+    "context": "Checkbox in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file): detect tables of 16-bit addresses in data.",
+    "maxChars": 20
+  },
+  "dialog.detect.option.screen": "Screen as skip",
+  "@dialog.detect.option.screen": {
+    "context": "Checkbox in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file): mark the screen memory as a region to skip in the disassembly.",
+    "maxChars": 20
+  },
+  "dialog.detect.option.unknownAsData": "Unknown is data",
+  "@dialog.detect.option.unknownAsData": {
+    "context": "Checkbox in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file): mark bytes neither executed nor reached as data.",
+    "maxChars": 21
+  },
+  "dialog.detect.skool.hint": "Importing {fileName}: its instructions are checked against the machine's bytes.",
+  "@dialog.detect.skool.hint": {
+    "context": "Hint at the top of the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file) when importing a SkoolKit file.",
+    "placeholders": {
+      "fileName": "SkoolKit file name, shown verbatim"
+    }
+  },
+  "dialog.detect.column.include": "Include",
+  "@dialog.detect.column.include": {
+    "context": "Column header of the proposal table in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file): switch that includes the bank's proposal in Apply.",
+    "maxChars": 10
+  },
+  "dialog.detect.column.where": "Where",
+  "@dialog.detect.column.where": {
+    "context": "Column header of the proposal table in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file): name of the memory bank or ROM.",
+    "maxChars": 8
+  },
+  "dialog.detect.column.code": "Code",
+  "@dialog.detect.column.code": {
+    "context": "Column header of the proposal table in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file): share of the bank detected as code, a percentage.",
+    "maxChars": 8
+  },
+  "dialog.detect.column.data": "Data",
+  "@dialog.detect.column.data": {
+    "context": "Column header of the proposal table in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file): share of the bank detected as data, a percentage.",
+    "maxChars": 8
+  },
+  "dialog.detect.column.unknown": "Unknown",
+  "@dialog.detect.column.unknown": {
+    "context": "Column header of the proposal table in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file): share of the bank neither code nor data, a percentage.",
+    "maxChars": 10
+  },
+  "dialog.detect.column.changes": "Changes",
+  "@dialog.detect.column.changes": {
+    "context": "Column header of the proposal table in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file): number of region changes proposed.",
+    "maxChars": 10
+  },
+  "dialog.detect.column.conflicts": "Conflicts",
+  "@dialog.detect.column.conflicts": {
+    "context": "Column header of the proposal table in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file): number of places where the user's regions disagree with detection.",
+    "maxChars": 13
+  },
+  "dialog.detect.column.notes": "Notes",
+  "@dialog.detect.column.notes": {
+    "context": "Column header of the proposal table in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file): button showing the warnings and notes of the bank.",
+    "maxChars": 8
+  },
+  "dialog.detect.importNotes": "Import notes",
+  "@dialog.detect.importNotes": {
+    "context": "Accessible name (screen readers) of the list of notes a SkoolKit import produced, in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file)."
+  },
+  "dialog.detect.notes.show": "Show {count}",
+  "@dialog.detect.notes.show": {
+    "context": "Link button in the Notes column of the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file)'s table that expands the bank's warnings and notes.",
+    "maxChars": 17,
+    "placeholders": {
+      "count": "Number of warnings and notes"
+    }
+  },
+  "dialog.detect.notes.hide": "Hide {count}",
+  "@dialog.detect.notes.hide": {
+    "context": "Link button in the Notes column of the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file)'s table that collapses the bank's warnings and notes.",
+    "maxChars": 17,
+    "placeholders": {
+      "count": "Number of warnings and notes"
+    }
+  },
+  "dialog.detect.notes.goTo": "Go to",
+  "@dialog.detect.notes.goTo": {
+    "context": "Tooltip of a warning line in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file): shows the address in the disassembly.",
+    "maxChars": 8
+  },
+  "dialog.newProject.title": "Create a new Klive project",
+  "@dialog.newProject.title": {
+    "context": "Title bar of the New Project dialog (File > New Project), which creates a Klive project folder from a machine type and a project template. Klive is the product name."
+  },
+  "dialog.newProject.submit": "Create",
+  "@dialog.newProject.submit": {
+    "context": "Submit button of the New Project dialog (File > New Project), which creates a Klive project folder from a machine type and a project template.",
+    "maxChars": 10
+  },
+  "dialog.newProject.selectPlaceholder": "Select...",
+  "@dialog.newProject.selectPlaceholder": {
+    "context": "Placeholder shown in the empty dropdowns (machine type, model, template) of the New Project dialog.",
+    "maxChars": 14
+  },
+  "dialog.newProject.field.machineType": "Machine type: *",
+  "@dialog.newProject.field.machineType": {
+    "context": "Field label in the New Project dialog for the dropdown that picks the kind of emulated computer (ZX Spectrum 48K, ZX81, ...). The asterisk marks a required field; keep it.",
+    "maxChars": 22
+  },
+  "dialog.newProject.field.machineTypeAria": "Machine type",
+  "@dialog.newProject.field.machineTypeAria": {
+    "context": "Accessible name (screen readers) of the machine type dropdown in the New Project dialog."
+  },
+  "dialog.newProject.field.model": "Model:",
+  "@dialog.newProject.field.model": {
+    "context": "Field label in the New Project dialog for the dropdown that picks the model (variant) of the chosen machine type, e.g. PAL or NTSC.",
+    "maxChars": 14
+  },
+  "dialog.newProject.field.modelAria": "Model",
+  "@dialog.newProject.field.modelAria": {
+    "context": "Accessible name (screen readers) of the model dropdown in the New Project dialog."
+  },
+  "dialog.newProject.field.template": "Project Template: *",
+  "@dialog.newProject.field.template": {
+    "context": "Field label in the New Project dialog for the dropdown that picks the project template (starter files). The asterisk marks a required field; keep it.",
+    "maxChars": 28
+  },
+  "dialog.newProject.field.folder": "Project folder:",
+  "@dialog.newProject.field.folder": {
+    "context": "Field label in the New Project dialog for the folder in which the new project folder is created.",
+    "maxChars": 22
+  },
+  "dialog.newProject.field.folderBrowse": "Select the root project folder",
+  "@dialog.newProject.field.folderBrowse": {
+    "context": "Tooltip of the folder-browse button next to the Project folder field in the New Project dialog."
+  },
+  "dialog.newProject.field.name": "Project name:",
+  "@dialog.newProject.field.name": {
+    "context": "Field label in the New Project dialog for the name of the new project (also its folder name).",
+    "maxChars": 20
+  },
+  "dialog.newProject.family.zxSpectrum": "ZX Spectrum",
+  "@dialog.newProject.family.zxSpectrum": {
+    "context": "Group heading in the machine type dropdown of the New Project dialog: the Sinclair ZX Spectrum family (48K, 128K, +3E, Next). A product name; usually kept as is.",
+    "maxChars": 20
+  },
+  "dialog.newProject.family.spectrumCompatibles": "Spectrum compatibles",
+  "@dialog.newProject.family.spectrumCompatibles": {
+    "context": "Group heading in the machine type dropdown of the New Project dialog: third-party clones compatible with the ZX Spectrum (Timex, Scorpion).",
+    "maxChars": 28
+  },
+  "dialog.newProject.family.otherZ80": "Other Z80 machines",
+  "@dialog.newProject.family.otherZ80": {
+    "context": "Group heading in the machine type dropdown of the New Project dialog: other computers with a Z80 processor (ZX80, ZX81, Cambridge Z88).",
+    "maxChars": 26
+  },
+  "dialog.newProject.family.other": "Other",
+  "@dialog.newProject.family.other": {
+    "context": "Group heading in the machine type dropdown of the New Project dialog for machines that belong to no named family.",
+    "maxChars": 10
+  },
+  "dialog.newProject.error.title": "New Klive Project Error",
+  "@dialog.newProject.error.title": {
+    "context": "Title of the error message box shown when creating a new project fails."
+  },
+  "dialog.newProject.error.openFolder": "Error opening folder: {error}",
+  "@dialog.newProject.error.openFolder": {
+    "context": "Error message box text shown when the newly created project folder could not be opened.",
+    "placeholders": {
+      "error": "The error reported by the main process, shown verbatim (usually English)"
+    }
+  },
+  "dialog.newProject.timeout.create": "Creating the Klive project timed out after {seconds} seconds.",
+  "@dialog.newProject.timeout.create": {
+    "context": "Error shown when creating the project's files took longer than the time limit.",
+    "placeholders": {
+      "seconds": "The time limit in seconds, a number such as 30"
+    }
+  },
+  "dialog.newProject.timeout.open": "Opening the new Klive project timed out after {seconds} seconds.",
+  "@dialog.newProject.timeout.open": {
+    "context": "Error shown when opening the newly created project in the IDE took longer than the time limit.",
+    "placeholders": {
+      "seconds": "The time limit in seconds, a number such as 30"
+    }
+  },
+  "dialog.newProject.timeout.loadProject": "Loading the new Klive project timed out after {seconds} seconds.",
+  "@dialog.newProject.timeout.loadProject": {
+    "context": "Error shown when the IDE did not finish loading the newly created project within the time limit.",
+    "placeholders": {
+      "seconds": "The time limit in seconds, a number such as 30"
+    }
+  },
+  "dialog.newProject.timeout.loadWorkspace": "Loading the new Klive workspace timed out after {seconds} seconds.",
+  "@dialog.newProject.timeout.loadWorkspace": {
+    "context": "Error shown when the IDE did not finish loading the workspace (open editors and layout) of the newly created project within the time limit.",
+    "placeholders": {
+      "seconds": "The time limit in seconds, a number such as 30"
+    }
+  },
+  "dialog.exportCode.title": "Export Code",
+  "@dialog.exportCode.title": {
+    "context": "Title bar of the Export Code dialog, which writes the compiled program to a tape file (TAP/TZX), a ZX80/ZX81 program file or an Intel HEX file. 'Export' is a verb here.",
+    "maxChars": 20
+  },
+  "dialog.exportCode.submit": "Export",
+  "@dialog.exportCode.submit": {
+    "context": "Submit button of the Export Code dialog, which writes the compiled program to a tape file (TAP/TZX), a ZX80/ZX81 program file or an Intel HEX file.",
+    "maxChars": 10
+  },
+  "dialog.exportCode.selectPlaceholder": "Select...",
+  "@dialog.exportCode.selectPlaceholder": {
+    "context": "Placeholder shown in the empty dropdowns (format, border colour) of the Export Code dialog.",
+    "maxChars": 14
+  },
+  "dialog.exportCode.field.format": "Export format:",
+  "@dialog.exportCode.field.format": {
+    "context": "Field label in the Export Code dialog for the dropdown that picks the output file format.",
+    "maxChars": 20
+  },
+  "dialog.exportCode.field.folder": "Export folder:",
+  "@dialog.exportCode.field.folder": {
+    "context": "Field label in the Export Code dialog for the folder the exported file is written to.",
+    "maxChars": 20
+  },
+  "dialog.exportCode.field.folderBrowse": "Select the export folder",
+  "@dialog.exportCode.field.folderBrowse": {
+    "context": "Tooltip of the browse button next to the Export Code dialog's output-folder field: picks the folder the exported file goes to."
+  },
+  "dialog.exportCode.field.fileName": "Export file name: *",
+  "@dialog.exportCode.field.fileName": {
+    "context": "Field label in the Export Code dialog for the name of the exported file. The asterisk marks a required field; keep it.",
+    "maxChars": 24
+  },
+  "dialog.exportCode.field.programName": "Program name:",
+  "@dialog.exportCode.field.programName": {
+    "context": "Field label in the Export Code dialog for the program name stored in the tape header (at most 10 characters), the name LOAD shows on the Spectrum.",
+    "maxChars": 20
+  },
+  "dialog.exportCode.field.startupOptions": "Startup options:",
+  "@dialog.exportCode.field.startupOptions": {
+    "context": "Section heading in the Export Code dialog above the options of the BASIC loader that starts the code.",
+    "maxChars": 22
+  },
+  "dialog.exportCode.field.border": "Set border color:",
+  "@dialog.exportCode.field.border": {
+    "context": "Field label in the Export Code dialog for the dropdown that picks the screen border colour the BASIC loader sets.",
+    "maxChars": 24
+  },
+  "dialog.exportCode.field.screenFile": "Screen file:",
+  "@dialog.exportCode.field.screenFile": {
+    "context": "Field label in the Export Code dialog for an optional loading-screen picture file added to the tape.",
+    "maxChars": 18
+  },
+  "dialog.exportCode.field.screenFileBrowse": "Select the screen file",
+  "@dialog.exportCode.field.screenFileBrowse": {
+    "context": "Tooltip of the file-browse button next to the Screen file field in the Export Code dialog."
+  },
+  "dialog.exportCode.field.startAddress": "Code start address:",
+  "@dialog.exportCode.field.startAddress": {
+    "context": "Field label in the Export Code dialog for the memory address (decimal) where the code is loaded and started.",
+    "maxChars": 24
+  },
+  "dialog.exportCode.option.addClear": "Add CLEAR",
+  "@dialog.exportCode.option.addClear": {
+    "context": "Checkbox in the Export Code dialog: the BASIC loader gets a CLEAR statement. CLEAR is a ZX Spectrum BASIC keyword; keep it untranslated.",
+    "maxChars": 16
+  },
+  "dialog.exportCode.option.addPause": "Add PAUSE 0",
+  "@dialog.exportCode.option.addPause": {
+    "context": "Checkbox in the Export Code dialog: the BASIC loader waits for a key press with PAUSE 0. 'PAUSE 0' is ZX Spectrum BASIC code; keep it untranslated.",
+    "maxChars": 18
+  },
+  "dialog.exportCode.option.singleBlock": "Use a single code block",
+  "@dialog.exportCode.option.singleBlock": {
+    "context": "Checkbox in the Export Code dialog: write all code into one tape block instead of one block per memory segment.",
+    "maxChars": 34
+  },
+  "dialog.exportCode.loader.createBasicLoader": "Create BASIC loader",
+  "@dialog.exportCode.loader.createBasicLoader": {
+    "context": "Checkbox in the Export Code dialog: add a BASIC program to the tape that loads and starts the code.",
+    "maxChars": 28
+  },
+  "dialog.exportCode.loader.runProgram": "Run the program when loaded",
+  "@dialog.exportCode.loader.runProgram": {
+    "context": "Checkbox in the Export Code dialog shown for a ZX81 program file (.p): the program starts by itself once loaded.",
+    "maxChars": 38
+  },
+  "dialog.exportCode.format.tap": "TAP format",
+  "@dialog.exportCode.format.tap": {
+    "context": "Option in the Export format dropdown of the Export Code dialog. TAP is a tape image file type; keep the name.",
+    "maxChars": 14
+  },
+  "dialog.exportCode.format.tzx": "TZX format",
+  "@dialog.exportCode.format.tzx": {
+    "context": "Option in the Export format dropdown of the Export Code dialog. TZX is a tape image file type; keep the name.",
+    "maxChars": 14
+  },
+  "dialog.exportCode.format.hex": "Intel HEX format",
+  "@dialog.exportCode.format.hex": {
+    "context": "Option in the Export format dropdown of the Export Code dialog. Intel HEX is a file format name; keep it.",
+    "maxChars": 22
+  },
+  "dialog.exportCode.format.zx81Program": "ZX81 program (.p)",
+  "@dialog.exportCode.format.zx81Program": {
+    "context": "Option in the Export format dropdown of the Export Code dialog. A ZX81 program file; keep the machine name and the extension.",
+    "maxChars": 24
+  },
+  "dialog.exportCode.format.zx80Program": "ZX80 program (.o)",
+  "@dialog.exportCode.format.zx80Program": {
+    "context": "Option in the Export format dropdown of the Export Code dialog. A ZX80 program file; keep the machine name and the extension.",
+    "maxChars": 24
+  },
+  "dialog.exportCode.border.none": "None",
+  "@dialog.exportCode.border.none": {
+    "context": "Option in the border colour dropdown of the Export Code dialog: the loader leaves the border colour unchanged.",
+    "maxChars": 10
+  },
+  "dialog.exportCode.border.black": "Black",
+  "@dialog.exportCode.border.black": {
+    "context": "Option in the border colour dropdown of the Export Code dialog: a ZX Spectrum border colour.",
+    "maxChars": 10
+  },
+  "dialog.exportCode.border.blue": "Blue",
+  "@dialog.exportCode.border.blue": {
+    "context": "Option in the border colour dropdown of the Export Code dialog: a ZX Spectrum border colour.",
+    "maxChars": 10
+  },
+  "dialog.exportCode.border.red": "Red",
+  "@dialog.exportCode.border.red": {
+    "context": "Option in the border colour dropdown of the Export Code dialog: a ZX Spectrum border colour.",
+    "maxChars": 10
+  },
+  "dialog.exportCode.border.magenta": "Magenta",
+  "@dialog.exportCode.border.magenta": {
+    "context": "Option in the border colour dropdown of the Export Code dialog: a ZX Spectrum border colour.",
+    "maxChars": 10
+  },
+  "dialog.exportCode.border.green": "Green",
+  "@dialog.exportCode.border.green": {
+    "context": "Option in the border colour dropdown of the Export Code dialog: a ZX Spectrum border colour.",
+    "maxChars": 10
+  },
+  "dialog.exportCode.border.cyan": "Cyan",
+  "@dialog.exportCode.border.cyan": {
+    "context": "Option in the border colour dropdown of the Export Code dialog: a ZX Spectrum border colour.",
+    "maxChars": 10
+  },
+  "dialog.exportCode.border.yellow": "Yellow",
+  "@dialog.exportCode.border.yellow": {
+    "context": "Option in the border colour dropdown of the Export Code dialog: a ZX Spectrum border colour.",
+    "maxChars": 10
+  },
+  "dialog.exportCode.border.white": "White",
+  "@dialog.exportCode.border.white": {
+    "context": "Option in the border colour dropdown of the Export Code dialog: a ZX Spectrum border colour.",
+    "maxChars": 10
+  },
+  "dialog.exportCode.filter.tapeFiles": "Tape files",
+  "@dialog.exportCode.filter.tapeFiles": {
+    "context": "File type filter in the file picker of the Export Code dialog's Screen file field (TAP and TZX tape images).",
+    "maxChars": 20
+  },
+  "dialog.exportCode.filter.screenFiles": "Screen files",
+  "@dialog.exportCode.filter.screenFiles": {
+    "context": "File type filter in the file picker of the Export Code dialog's Screen file field (.scr loading-screen pictures).",
+    "maxChars": 20
+  },
+  "dialog.exportCode.notify.title": "Exporting code",
+  "@dialog.exportCode.notify.title": {
+    "context": "Title of the message box reporting whether the Export Code dialog's export succeeded or failed."
+  },
+  "dialog.exportCode.notify.succeeded": "Code successfully exported.",
+  "@dialog.exportCode.notify.succeeded": {
+    "context": "Message box text after a successful code export, when the export command reported nothing itself."
+  },
+  "dialog.exportCode.notify.failed": "Code export failed",
+  "@dialog.exportCode.notify.failed": {
+    "context": "Message box text after a failed code export, when the export command gave no reason."
+  },
+  "dialog.exportCode.notify.addressRange": "Code start address must be between 16384 and 65535.",
+  "@dialog.exportCode.notify.addressRange": {
+    "context": "Error message box text when the Export Code dialog's Code start address is out of range. The numbers are decimal memory addresses."
+  },
+  "dialog.z88ExportCard.title": "Export the Content of Z88 Card in Slot {slot}",
+  "@dialog.z88ExportCard.title": {
+    "context": "Title of the dialog for exporting the contents of a Cambridge Z88 memory card (Emulator window).",
+    "placeholders": {
+      "slot": "Card slot number, 1 to 3"
+    }
+  },
+  "dialog.z88ExportCard.notImplemented": "This function is not implemented yet.",
+  "@dialog.z88ExportCard.notImplemented": {
+    "context": "Body text of the Z88 Export Card dialog: the export feature does not exist yet."
+  },
+  "dialog.createDisk.title": "Create a new disk file",
+  "@dialog.createDisk.title": {
+    "context": "Title of the dialog that creates a blank floppy-disk image file for the emulated machine."
+  },
+  "dialog.createDisk.diskType.label": "Disk type",
+  "@dialog.createDisk.diskType.label": {
+    "context": "Label above the dropdown choosing the disk format in the Create Disk dialog.",
+    "maxChars": 16
+  },
+  "dialog.createDisk.selectPlaceholder": "Select...",
+  "@dialog.createDisk.selectPlaceholder": {
+    "context": "Placeholder of the disk-type dropdown in the Create Disk dialog before a choice is made.",
+    "maxChars": 14
+  },
+  "dialog.createDisk.folder.label": "Disk file folder:",
+  "@dialog.createDisk.folder.label": {
+    "context": "Label of the text field for the folder the new disk image file goes into (Create Disk dialog).",
+    "maxChars": 24
+  },
+  "dialog.createDisk.folder.browseTooltip": "Select the folder for the disk file",
+  "@dialog.createDisk.folder.browseTooltip": {
+    "context": "Tooltip of the browse button next to the Create Disk dialog's folder field: picks the folder the new disk file goes to."
+  },
+  "dialog.createDisk.filename.label": "Disk file name:",
+  "@dialog.createDisk.filename.label": {
+    "context": "Label of the text field for the new disk image's file name (Create Disk dialog).",
+    "maxChars": 22
+  },
+  "dialog.createDisk.create": "Create",
+  "@dialog.createDisk.create": {
+    "context": "Submit button of the Create Disk dialog: writes the new disk image file.",
+    "maxChars": 10
+  },
+  "dialog.createDisk.created.title": "Disk created",
+  "@dialog.createDisk.created.title": {
+    "context": "Title of the message box confirming that the disk image file was written.",
+    "maxChars": 30
+  },
+  "dialog.createDisk.created.message": "Disk file successfully created: {path}",
+  "@dialog.createDisk.created.message": {
+    "context": "Message box text confirming a new disk image file was written.",
+    "placeholders": {
+      "path": "Full path of the new disk file, shown verbatim"
+    }
+  },
+  "dialog.createDisk.error.title": "Create Disk File Error",
+  "@dialog.createDisk.error.title": {
+    "context": "Title of the error message box when writing the disk image file failed; the body is the system's error text.",
+    "maxChars": 36
+  },
+  "dialog.createDisk.diskType.ss": "Single-sided CPC (180K)",
+  "@dialog.createDisk.diskType.ss": {
+    "context": "Option in the Create Disk dialog's disk-type dropdown: a single-sided Amstrad CPC-format (DSK) disk of 180 KB. Keep CPC, ECPC, TR-DOS and the size untranslated; the dropdown grows to fit the longest option.",
+    "maxChars": 32
+  },
+  "dialog.createDisk.diskType.ds": "Double-sided CPC (360K)",
+  "@dialog.createDisk.diskType.ds": {
+    "context": "Option in the Create Disk dialog's disk-type dropdown: a double-sided Amstrad CPC-format (DSK) disk of 360 KB. Keep CPC, ECPC, TR-DOS and the size untranslated; the dropdown grows to fit the longest option.",
+    "maxChars": 32
+  },
+  "dialog.createDisk.diskType.sse": "Single-sided ECPC (180K)",
+  "@dialog.createDisk.diskType.sse": {
+    "context": "Option in the Create Disk dialog's disk-type dropdown: a single-sided extended CPC-format (EDSK) disk of 180 KB. Keep CPC, ECPC, TR-DOS and the size untranslated; the dropdown grows to fit the longest option.",
+    "maxChars": 34
+  },
+  "dialog.createDisk.diskType.dse": "Double-sided ECPC (360K)",
+  "@dialog.createDisk.diskType.dse": {
+    "context": "Option in the Create Disk dialog's disk-type dropdown: a double-sided extended CPC-format (EDSK) disk of 360 KB. Keep CPC, ECPC, TR-DOS and the size untranslated; the dropdown grows to fit the longest option.",
+    "maxChars": 34
+  },
+  "dialog.createDisk.diskType.trd80ds": "TR-DOS 80 tracks, double-sided (640K)",
+  "@dialog.createDisk.diskType.trd80ds": {
+    "context": "Option in the Create Disk dialog's disk-type dropdown: a TR-DOS disk (Beta 128 interface), 80 tracks, double-sided, 640 KB. Keep CPC, ECPC, TR-DOS and the size untranslated; the dropdown grows to fit the longest option.",
+    "maxChars": 52
+  },
+  "dialog.createDisk.diskType.trd40ds": "TR-DOS 40 tracks, double-sided (320K)",
+  "@dialog.createDisk.diskType.trd40ds": {
+    "context": "Option in the Create Disk dialog's disk-type dropdown: a TR-DOS disk (Beta 128 interface), 40 tracks, double-sided, 320 KB. Keep CPC, ECPC, TR-DOS and the size untranslated; the dropdown grows to fit the longest option.",
+    "maxChars": 52
+  },
+  "dialog.createDisk.diskType.trd80ss": "TR-DOS 80 tracks, single-sided (320K)",
+  "@dialog.createDisk.diskType.trd80ss": {
+    "context": "Option in the Create Disk dialog's disk-type dropdown: a TR-DOS disk (Beta 128 interface), 80 tracks, single-sided, 320 KB. Keep CPC, ECPC, TR-DOS and the size untranslated; the dropdown grows to fit the longest option.",
+    "maxChars": 52
+  },
+  "dialog.createDisk.diskType.trd40ss": "TR-DOS 40 tracks, single-sided (160K)",
+  "@dialog.createDisk.diskType.trd40ss": {
+    "context": "Option in the Create Disk dialog's disk-type dropdown: a TR-DOS disk (Beta 128 interface), 40 tracks, single-sided, 160 KB. Keep CPC, ECPC, TR-DOS and the size untranslated; the dropdown grows to fit the longest option.",
+    "maxChars": 52
+  },
+  "dialog.joystick.title": "Joystick bindings",
+  "@dialog.joystick.title": {
+    "context": "Title of the dialog that assigns host keyboard keys to the pins of the emulated joystick connectors.",
+    "maxChars": 32
+  },
+  "dialog.joystick.save": "Save",
+  "@dialog.joystick.save": {
+    "context": "Primary button of the Joystick bindings dialog: stores the edited key assignments.",
+    "maxChars": 10
+  },
+  "dialog.joystick.reset": "Reset",
+  "@dialog.joystick.reset": {
+    "context": "Link-style button in a joystick connector's column header: restores that connector's default key assignments.",
+    "maxChars": 10
+  },
+  "dialog.joystick.drivenBy": "Driven by",
+  "@dialog.joystick.drivenBy": {
+    "context": "Label before the dropdown choosing what drives a joystick connector (off, the keyboard, or a gamepad).",
+    "maxChars": 16
+  },
+  "dialog.joystick.pressKey": "Press a key…",
+  "@dialog.joystick.pressKey": {
+    "context": "Text on a key-binding button while it waits for the user to press the host key to assign; Escape cancels.",
+    "maxChars": 18
+  },
+  "dialog.joystick.takes": "takes {keys}",
+  "@dialog.joystick.takes": {
+    "context": "Note beside a joystick pin's binding: the assigned host key is taken away from the emulated machine's keyboard. Lower-case on purpose: a short note, not a sentence.",
+    "maxChars": 24,
+    "placeholders": {
+      "keys": "Emulated machine key names joined with ' + ', shown verbatim (e.g. 'Q' or 'CAPS SHIFT + 5')"
+    }
+  },
+  "dialog.joystick.takesTooltip": "This key will no longer reach the machine's keyboard",
+  "@dialog.joystick.takesTooltip": {
+    "context": "Tooltip of the 'takes ...' note in the Joystick bindings dialog: binding a key to a joystick pin removes it from the emulated keyboard."
+  },
+  "dialog.joystick.clear": "Clear",
+  "@dialog.joystick.clear": {
+    "context": "Link-style button on a joystick pin's row: removes the key bound to that pin.",
+    "maxChars": 10
+  },
+  "dialog.z88.selectPlaceholder": "Select...",
+  "@dialog.z88.selectPlaceholder": {
+    "context": "Placeholder of a dropdown in the Z88 Change RAM and Insert Card dialogs before a choice is made.",
+    "maxChars": 14
+  },
+  "dialog.z88.changeRam.title": "Change Z88 RAM size",
+  "@dialog.z88.changeRam.title": {
+    "context": "Title of the dialog that sets the Cambridge Z88's internal RAM size.",
+    "maxChars": 32
+  },
+  "dialog.z88.changeRam.sizeLabel": "Z88 internal RAM size:",
+  "@dialog.z88.changeRam.sizeLabel": {
+    "context": "Label of the dropdown choosing the Z88's internal RAM size (32K, 128K or 512K).",
+    "maxChars": 30
+  },
+  "dialog.z88.changeRam.warning": "Changing the RAM will stop the machine! Click OK when you are ready to proceed.",
+  "@dialog.z88.changeRam.warning": {
+    "context": "Warning in the Change Z88 RAM size dialog when applying the new size would stop the running emulated machine. 'Ok' names the dialog's OK button."
+  },
+  "dialog.z88.changeRam.changed": "Z88 internal RAM size changed to {size}K",
+  "@dialog.z88.changeRam.changed": {
+    "context": "Line written to the Emulator's output pane after the Z88's internal RAM size was changed.",
+    "placeholders": {
+      "size": "The new RAM size in kilobytes: 32, 128 or 512"
+    }
+  },
+  "dialog.z88.removeCard.title": "Remove Z88 Card",
+  "@dialog.z88.removeCard.title": {
+    "context": "Title of the dialog confirming removal of a Cambridge Z88 memory card from a slot.",
+    "maxChars": 30
+  },
+  "dialog.z88.removeCard.question": "Are you sure you want to remove card from Slot {slot}?",
+  "@dialog.z88.removeCard.question": {
+    "context": "Confirmation question in the Remove Z88 Card dialog.",
+    "placeholders": {
+      "slot": "Card slot number, 0 to 3 (0 is the internal ROM)"
+    }
+  },
+  "dialog.z88.insertCard.title.insert": "Insert Z88 Card - Slot {slot}",
+  "@dialog.z88.insertCard.title.insert": {
+    "context": "Title of the dialog inserting a Cambridge Z88 memory card into an empty card slot.",
+    "maxChars": 40,
+    "placeholders": {
+      "slot": "Card slot number, 1 to 3"
+    }
+  },
+  "dialog.z88.insertCard.title.replace": "Replace Z88 Card - Slot {slot}",
+  "@dialog.z88.insertCard.title.replace": {
+    "context": "Title of the same dialog for slot 0, the internal ROM socket, which always holds a card, so its card is replaced rather than inserted.",
+    "maxChars": 40,
+    "placeholders": {
+      "slot": "Card slot number, always 0 here"
+    }
+  },
+  "dialog.z88.insertCard.cardTypeLabel": "Card type:",
+  "@dialog.z88.insertCard.cardTypeLabel": {
+    "context": "Label of the dropdown choosing the kind of Z88 card (RAM, EPROM, flash, ROM) in the Insert Card dialog.",
+    "maxChars": 18
+  },
+  "dialog.z88.insertCard.fileLabel": "Select the card file:",
+  "@dialog.z88.insertCard.fileLabel": {
+    "context": "Label of the row choosing the image file whose contents the Z88 card is loaded with.",
+    "maxChars": 30
+  },
+  "dialog.z88.insertCard.selectFileTooltip": "Select card file",
+  "@dialog.z88.insertCard.selectFileTooltip": {
+    "context": "Tooltip of the icon button that opens a file picker for the Z88 card image file.",
+    "maxChars": 28
+  },
+  "dialog.z88.insertCard.usePristineTooltip": "Use pristine card",
+  "@dialog.z88.insertCard.usePristineTooltip": {
+    "context": "Tooltip of the icon button that clears the chosen card image file, so a blank (pristine, never-written) card is inserted.",
+    "maxChars": 28
+  },
+  "dialog.z88.insertCard.pristineHint": "Use pristine card (or click to select a file)",
+  "@dialog.z88.insertCard.pristineHint": {
+    "context": "Clickable text in the card-file row when no file is chosen for a card slot: a blank (pristine) card will be inserted; clicking opens a file picker."
+  },
+  "dialog.z88.insertCard.fileRequiredHint": "You must select a card file - click here",
+  "@dialog.z88.insertCard.fileRequiredHint": {
+    "context": "Clickable warning (in red) in the card-file row for slot 0, the internal ROM, which cannot be blank; clicking opens a file picker."
+  },
+  "dialog.z88.insertCard.invalidCard.title": "Invalid Z88 Card",
+  "@dialog.z88.insertCard.invalidCard.title": {
+    "context": "Title of the error message box when the chosen Z88 card image file cannot be used.",
+    "maxChars": 30
+  },
+  "dialog.z88.insertCard.invalidCard.size": "The size of the selected card is {bytes} bytes ({kbytes} KBytes), which is not allowed in this slot.",
+  "@dialog.z88.insertCard.invalidCard.size": {
+    "context": "Error message box text: the chosen card image file has a size that the selected card type or slot does not accept.",
+    "placeholders": {
+      "bytes": "File size in bytes, a number",
+      "kbytes": "File size in kilobytes, rounded down, a number"
+    }
+  },
+  "dialog.z88.insertCard.filter.romFiles": "ROM files",
+  "@dialog.z88.insertCard.filter.romFiles": {
+    "context": "File-type filter name in the open-file dialog for a Z88 internal ROM image (.bin, .rom).",
+    "maxChars": 24
+  },
+  "dialog.z88.insertCard.filter.epromFiles": "EPROM files",
+  "@dialog.z88.insertCard.filter.epromFiles": {
+    "context": "File-type filter name in the open-file dialog for a Z88 EPROM card image (.epr).",
+    "maxChars": 24
+  },
+  "dialog.joystick.pin.right": "Right",
+  "@dialog.joystick.pin.right": {
+    "context": "Name of a joystick connector pin in the joystick bindings dialog (ZX Spectrum Next). 'MD' is the Mega Drive pad; keep it and the button letters.",
+    "maxChars": 22
+  },
+  "dialog.joystick.pin.left": "Left",
+  "@dialog.joystick.pin.left": {
+    "context": "Name of a joystick connector pin in the joystick bindings dialog (ZX Spectrum Next). 'MD' is the Mega Drive pad; keep it and the button letters.",
+    "maxChars": 22
+  },
+  "dialog.joystick.pin.down": "Down",
+  "@dialog.joystick.pin.down": {
+    "context": "Name of a joystick connector pin in the joystick bindings dialog (ZX Spectrum Next). 'MD' is the Mega Drive pad; keep it and the button letters.",
+    "maxChars": 22
+  },
+  "dialog.joystick.pin.up": "Up",
+  "@dialog.joystick.pin.up": {
+    "context": "Name of a joystick connector pin in the joystick bindings dialog (ZX Spectrum Next). 'MD' is the Mega Drive pad; keep it and the button letters.",
+    "maxChars": 22
+  },
+  "dialog.joystick.pin.b": "Fire 1 (B)",
+  "@dialog.joystick.pin.b": {
+    "context": "Name of a joystick connector pin in the joystick bindings dialog (ZX Spectrum Next). 'MD' is the Mega Drive pad; keep it and the button letters.",
+    "maxChars": 22
+  },
+  "dialog.joystick.pin.c": "Fire 2 (C)",
+  "@dialog.joystick.pin.c": {
+    "context": "Name of a joystick connector pin in the joystick bindings dialog (ZX Spectrum Next). 'MD' is the Mega Drive pad; keep it and the button letters.",
+    "maxChars": 22
+  },
+  "dialog.joystick.pin.a": "A (MD)",
+  "@dialog.joystick.pin.a": {
+    "context": "Name of a joystick connector pin in the joystick bindings dialog (ZX Spectrum Next). 'MD' is the Mega Drive pad; keep it and the button letters.",
+    "maxChars": 22
+  },
+  "dialog.joystick.pin.start": "Start (MD)",
+  "@dialog.joystick.pin.start": {
+    "context": "Name of a joystick connector pin in the joystick bindings dialog (ZX Spectrum Next). 'MD' is the Mega Drive pad; keep it and the button letters.",
+    "maxChars": 22
+  },
+  "dialog.joystick.pin.y": "Y (MD 6-button)",
+  "@dialog.joystick.pin.y": {
+    "context": "Name of a joystick connector pin in the joystick bindings dialog (ZX Spectrum Next). 'MD' is the Mega Drive pad; keep it and the button letters.",
+    "maxChars": 22
+  },
+  "dialog.joystick.pin.z": "Z (MD 6-button)",
+  "@dialog.joystick.pin.z": {
+    "context": "Name of a joystick connector pin in the joystick bindings dialog (ZX Spectrum Next). 'MD' is the Mega Drive pad; keep it and the button letters.",
+    "maxChars": 22
+  },
+  "dialog.joystick.pin.x": "X (MD 6-button)",
+  "@dialog.joystick.pin.x": {
+    "context": "Name of a joystick connector pin in the joystick bindings dialog (ZX Spectrum Next). 'MD' is the Mega Drive pad; keep it and the button letters.",
+    "maxChars": 22
+  },
+  "dialog.joystick.pin.mode": "Mode (MD 6-button)",
+  "@dialog.joystick.pin.mode": {
+    "context": "Name of a joystick connector pin in the joystick bindings dialog (ZX Spectrum Next). 'MD' is the Mega Drive pad; keep it and the button letters.",
+    "maxChars": 22
+  }
+}

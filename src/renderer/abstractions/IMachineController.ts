@@ -16,7 +16,7 @@ import type { SourceStepKind } from "@emu/machines/SourceStepDecision";
 import type { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import type { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
-import type { IRzxSession, RzxStop } from "@emu/machines/zxSpectrum/rzx/rzxSession";
+import type { IRzxSession, RzxInterruptReason, RzxStop } from "@emu/machines/zxSpectrum/rzx/rzxSession";
 import type { RzxState } from "@state/AppState";
 import { IAnyMachine } from "./IAnyMachine";
 import type { HistoryCursor } from "@emu/machines/history/HistoryCursor";
@@ -118,7 +118,7 @@ export interface IMachineController {
   detachRzxSession(stopMessage?: string): void;
 
   /** Ends an active RZX session because the IDE changed the machine from outside the CPU (trap 4) */
-  interruptRzx(reason: string): Promise<void>;
+  interruptRzx(reason: RzxInterruptReason, register?: string): Promise<void>;
 
   /** Ends the reverse-debugging timeline (`.plans/REVERSE_DEBUGGING_PLAN.md` D2): code injection does */
   endTimeline?(): void;

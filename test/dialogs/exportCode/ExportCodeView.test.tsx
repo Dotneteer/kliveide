@@ -119,7 +119,7 @@ describe("ExportCodeView — intents", () => {
   it("reports a request to browse for the export folder", () => {
     const dispatch = renderView();
 
-    fireEvent.click(screen.getByRole("button", { name: "Select the root project folder" }));
+    fireEvent.click(screen.getByRole("button", { name: "Select the export folder" }));
 
     expect(dispatch).toHaveBeenCalledWith({ type: "selectExportFolderRequested" });
   });

@@ -1,3 +1,4 @@
+import { t } from "@common/i18n/i18n";
 import { documentSourceName } from "../helpers/documentSourceName";
 
 /*
@@ -29,12 +30,12 @@ export function nexBankDumpId(nexFullPath: string, bank: number): string {
 
 /** The tab title of a NEX bank's document. */
 export function nexBankDumpTitle(nexFullPath: string, bank: number, projectFolder?: string): string {
-  return `${documentSourceName(nexFullPath, projectFolder)} - Bank: ${bank}`;
+  return t("panels.next.dumpTitle.bank", { source: documentSourceName(nexFullPath, projectFolder), bank });
 }
 
 /** The tab title of a NEX's Layer 2 loading screen document. */
 export function nexLayer2ScreenDumpTitle(nexFullPath: string, projectFolder?: string): string {
-  return `${documentSourceName(nexFullPath, projectFolder)} - Layer2`;
+  return t("panels.next.dumpTitle.layer2", { source: documentSourceName(nexFullPath, projectFolder) });
 }
 
 /** The dump id of the Layer 2 loading screen of the NEX at `nexFullPath`. */

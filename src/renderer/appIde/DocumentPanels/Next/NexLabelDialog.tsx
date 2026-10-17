@@ -12,6 +12,8 @@ import {
   type AnnotationLabelScope
 } from "@renderer/appIde/annotations/programAnnotations";
 import styles from "./NexLabelDialog.module.scss";
+import { t } from "@common/i18n/i18n";
+import { useT } from "@common/i18n/useT";
 import {
   DialogFooter,
   DialogFooterSpacer
@@ -50,6 +52,7 @@ export function NexLabelDialog({
   labels,
   controls
 }: NexLabelDialogProps) {
+  const t = useT();
   const initialLabel = useMemo(
     () => findLabelAtValue(labels, initialScope, initialScope === "global"
       ? initialGlobalValue
@@ -72,10 +75,8 @@ export function NexLabelDialog({
   );
 
   const parsedValue = useMemo(() => parseNexLabelValue(valueText), [valueText]);
-  const error = useMemo(
-    () => validateLabel(labels, originalLabel, scope, name, parsedValue),
-    [labels, name, originalLabel, parsedValue, scope]
-  );
+  // --- Not memoized: cheap, and its message is in the display language, which can change
+  const error = validateLabel(labels, originalLabel, scope, name, parsedValue);
   const filteredLabels = useMemo(
     () => filterLabels(labels, searchText),
     [labels, searchText]
@@ -118,19 +119,19 @@ export function NexLabelDialog({
         * "Global" / "Local to Bank 5" here against "Bank 5" / "Global" there — two namings and two
         * orders for one pair of concepts, in two dialogs that open one on top of the other.
         */}
-      <DialogRow label="Scope" rows={true}>
+      <DialogRow label={t("panels.next.field.scope")} rows={true}>
         <RadioGroup
-          ariaLabel="Label scope"
+          ariaLabel={t("panels.next.label.scopeAria")}
           columns={2}
           value={scope}
           options={[
-            { value: "local", label: `Bank ${bank}` },
-            { value: "global", label: "Global" }
+            { value: "local", label: t("panels.next.scope.bank", { bank }) },
+            { value: "global", label: t("panels.next.scope.global") }
           ]}
           onChange={(next) => setScopeAndDefault(next as "local" | "global")}
         />
       </DialogRow>
-      <DialogRow label="Name" rows={true}>
+      <DialogRow label={t("panels.next.field.name")} rows={true}>
         <TextInput
           autoFocus
           maxLength={ANNOTATION_LABEL_MAX_LENGTH}
@@ -138,7 +139,7 @@ export function NexLabelDialog({
           onChange={(value) => setName(value.slice(0, ANNOTATION_LABEL_MAX_LENGTH))}
         />
       </DialogRow>
-      <DialogRow label="Value" rows={true}>
+      <DialogRow label={t("panels.next.field.value")} rows={true}>
         {/* --- No `error` prop: this dialog validates the name and the value together and shows
             --- one message below both. Passing it here would render the same sentence twice. */}
         <TextInput value={valueText} onChange={setValueText} />
@@ -151,10 +152,10 @@ export function NexLabelDialog({
           {error}
         </div>
       )}
-      <DialogRow label="Existing labels" rows={true}>
+      <DialogRow label={t("panels.next.label.existing")} rows={true}>
         <TextInput
-          placeholder="Search labels"
-          ariaLabel="Search labels"
+          placeholder={t("panels.next.search.labels")}
+          ariaLabel={t("panels.next.search.labels")}
           value={searchText}
           onChange={setSearchText}
         />
@@ -168,7 +169,7 @@ export function NexLabelDialog({
             >
               <span className={styles.labelName}>{label.name}</span>
               <span>{formatNexLabelValue(label.value)}</span>
-              <span>{label.scope === "global" ? "Global" : `Bank ${label.bank ?? bank}`}</span>
+              <span>{scopeText(label, bank)}</span>
               {/*
                 * A count, as the Labels list shows for the same fact — but spelled out, because
                 * this list has no column header to say what a bare number would mean.
@@ -177,18 +178,18 @@ export function NexLabelDialog({
             </button>
           ))}
           {filteredLabels.length === 0 && (
-            <div className={styles.emptyList}>No matching labels</div>
+            <div className={styles.emptyList}>{t("panels.next.empty.noMatchingLabels")}</div>
           )}
         </div>
       </DialogRow>
       <DialogFooter>
-        <Button text="Save" type="submit" disabled={!!error} />
-        <Button variant="secondary" text="Cancel" clicked={controls.cancel} />
+        <Button text={t("panels.next.button.save")} type="submit" disabled={!!error} />
+        <Button variant="secondary" text={t("common.button.cancel")} clicked={controls.cancel} />
         {originalLabel && (
           <>
             <DialogFooterSpacer />
             <Button
-              text="Delete"
+              text={t("panels.next.button.delete")}
               isDanger
               clicked={() => controls.close({
                 action: "delete",
@@ -208,7 +209,14 @@ export function NexLabelDialog({
 /** How many operands point at a label, in the same terms the Labels list counts them. */
 function formatReferenceCount(label: NexLabelDialogLabel): string {
   const count = label.referenceCount ?? (label.referenced ? 1 : 0);
-  return count > 0 ? `${count} ref${count === 1 ? "" : "s"}` : "";
+  return count > 0 ? t("panels.next.label.refs", { count }) : "";
+}
+
+/** A label's scope as the label lists show it: `Global`, or the bank it belongs to. */
+export function scopeText(label: Pick<NexLabelDialogLabel, "scope" | "bank">, bank: number): string {
+  return label.scope === "global"
+    ? t("panels.next.scope.global")
+    : t("panels.next.scope.bank", { bank: label.bank ?? bank });
 }
 
 export function suggestNexLabelName(scope: AnnotationLabelScope, value: number): string {
@@ -251,23 +259,23 @@ function validateLabel(
 ): string | undefined {
   const trimmedName = name.trim();
   if (!isValidLabelName(trimmedName)) {
-    return `Use an identifier name up to ${ANNOTATION_LABEL_MAX_LENGTH} characters.`;
+    return t("panels.next.label.error.name", { max: ANNOTATION_LABEL_MAX_LENGTH });
   }
   if (value === undefined) {
-    return "Enter a hexadecimal or decimal value.";
+    return t("panels.next.label.error.value");
   }
   const maxValue = scope === "global" ? 0xffff : ANNOTATION_BANK_LAST_OFFSET;
   if (value < 0 || value > maxValue) {
     return scope === "global"
-      ? "Global label values must be in $0000..$FFFF."
-      : "Local label values must be in $0000..$3FFF.";
+      ? t("panels.next.label.error.globalRange")
+      : t("panels.next.label.error.localRange");
   }
   const duplicate = labels.some((label) =>
     label.scope === scope &&
     label.name === trimmedName &&
     !isSameLabel(label, originalLabel)
   );
-  return duplicate ? "A label with this name already exists in this scope." : undefined;
+  return duplicate ? t("panels.next.label.error.duplicate") : undefined;
 }
 
 function filterLabels(labels: NexLabelDialogLabel[], searchText: string): NexLabelDialogLabel[] {
@@ -281,7 +289,9 @@ function filterLabels(labels: NexLabelDialogLabel[], searchText: string): NexLab
       formatNexLabelValue(label.value),
       label.value.toString(10),
       label.scope,
-      label.scope === "local" ? `bank ${label.bank ?? ""}` : "global"
+      label.scope === "local" ? `bank ${label.bank ?? ""}` : "global",
+      // --- The scope as shown, too, so a search in the display language finds it
+      label.scope === "local" && label.bank === undefined ? "" : scopeText(label, label.bank ?? 0)
     ];
     return searchValues.some((value) => value.toLowerCase().includes(normalizedSearch));
   });

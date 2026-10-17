@@ -32,6 +32,7 @@ import { machineRegistry } from "@common/machines/machine-registry";
 import { z88InternalRamSizeInBytes } from "@emu/machines/z88/z88CardCatalog";
 import { parseZ88Snapshot } from "@common/z88/z88Snapshot";
 import { mapZ88SnapshotToKlive } from "@common/z88/z88SnapshotMapping";
+import { t } from "@common/i18n/i18n";
 
 /** The LCD size a configuration without `MC_SCREEN_SIZE` has (`z88LcdSizeRegisters`) */
 const DEFAULT_SCREEN_SIZE = "640x64";
@@ -78,7 +79,7 @@ export async function loadZ88Snapshot(
   const snapshot = parseZ88Snapshot(bytes);
   const mapping = mapZ88SnapshotToKlive(snapshot);
   if (mapping.errors.length > 0) {
-    throw new Error(`The snapshot cannot be loaded: ${mapping.errors.join("; ")}`);
+    throw new Error(t("emu.snapshot.cannotLoad", { errors: mapping.errors.join("; ") }));
   }
 
   // --- 2. Make the machine fit
@@ -86,7 +87,7 @@ export async function loadZ88Snapshot(
   if (fit.rebuild) {
     const live = await ports.setMachineType(MI_Z88, fit.modelId, fit.config);
     if (!live) {
-      throw new Error("The machine change was superseded by another one; the snapshot was not loaded");
+      throw new Error(t("emu.machine.supersededSnapshot"));
     }
   } else {
     ports.setMachineConfig(fit.config);
@@ -94,7 +95,7 @@ export async function loadZ88Snapshot(
   const controller = ports.getMachineController();
   const machine = controller?.machine;
   if (!controller || !isZ88SnapshotMachine(machine)) {
-    throw new Error("The emulator is not running a Cambridge Z88");
+    throw new Error(t("emu.machine.notRunningA", { machine: "Cambridge Z88" }));
   }
   if (!fit.rebuild) {
     // --- The cards the dialogs and a later configure() see; restoreState inserts the real ones

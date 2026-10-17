@@ -45,6 +45,14 @@ export const isWindowsAction: ActionCreator = (flag: boolean) => ({
   payload: { flag }
 });
 
+/** The resolved display language (`.plans/LOCALIZATION_PLAN.md` §5), published by main */
+export const setUiLanguageAction: ActionCreator = (
+  value: import("@common/i18n/languages").UiLanguageState
+) => ({
+  type: "SET_UI_LANGUAGE",
+  payload: { value }
+});
+
 export const emuFocusedAction: ActionCreator = (flag: boolean) => ({
   type: "EMU_FOCUSED",
   payload: { flag }

@@ -19,6 +19,7 @@ import { CODE_EDITOR } from "@common/state/common-ids";
 import { isLibraryPath, LIBRARY_FOLDER, libraryFile } from "@main/kbasic/stdlib";
 import { getDocumentAreaCommandTarget } from "@renderer/features/documents/documentAreaCommandTarget";
 import { type DocumentAreaGridApi } from "@renderer/features/documents/DocumentAreaGrid";
+import { t } from "@common/i18n/i18n";
 
 type NavigateToDocumentCommandArgs = {
   filename: string;
@@ -29,11 +30,15 @@ type NavigateToDocumentCommandArgs = {
 
 export class NavigateToDocumentCommand extends IdeCommandBase<NavigateToDocumentCommandArgs> {
   readonly id = "nav";
-  readonly description = "Navigates to the specified document";
-  readonly usage = [
-    "nav projectFile [line] [column] [-r reason]",
-    `-r: record the jump in the navigation history (Go Back / Go Forward); reason is one of ${NAVIGATION_REASONS.join(", ")}`
-  ];
+  get description() {
+    return t("commands.navDoc.description");
+  }
+  get usage(): string[] {
+    return [
+      "nav projectFile [line] [column] [-r reason]",
+      t("commands.usage.nav.record", { reasons: NAVIGATION_REASONS.join(", ") })
+    ];
+  }
 
   readonly argumentInfo: CommandArgumentInfo = {
     mandatory: [{ name: "filename", type: "string" }],
@@ -50,7 +55,7 @@ export class NavigateToDocumentCommand extends IdeCommandBase<NavigateToDocument
   ): Promise<ValidationMessage[]> {
     const reason = args["-r"];
     if (reason !== undefined && !NAVIGATION_REASONS.includes(reason as NavigationReason)) {
-      return [validationError(`Unknown navigation reason '${reason}'.`)];
+      return [validationError(t("commands.navDoc.unknownReason", { reason }))];
     }
     return [];
   }
@@ -62,7 +67,7 @@ export class NavigateToDocumentCommand extends IdeCommandBase<NavigateToDocument
     // --- Check if a project node exists
     const projState = context.store.getState()?.project;
     if (!projState?.folderPath) {
-      return commandError("No project is open.");
+      return commandError(t("commands.navDoc.noProject"));
     }
 
     // --- A Klive BASIC library file (plan §10.12): no project node, a read-only view of its text
@@ -71,7 +76,7 @@ export class NavigateToDocumentCommand extends IdeCommandBase<NavigateToDocument
     // --- Get the project node
     const projNode = context.service.projectService.getNodeForFile(args.filename);
     if (!projNode) {
-      return commandError(`File '${args.filename}' not found in the project.`);
+      return commandError(t("commands.navDoc.notFound", { file: args.filename }));
     }
 
     // --- Move there; with `-r`, as a jump the navigation history records.
@@ -86,11 +91,13 @@ export class NavigateToDocumentCommand extends IdeCommandBase<NavigateToDocument
     // --- Done.
     writeSuccessMessage(
       context.output,
-      `Navigate to ${args.filename}${
-        args.lineNo != undefined || args.columnNo != undefined
-          ? ` (${args.lineNo}:${args.columnNo})`
-          : ""
-      } `
+      args.lineNo != undefined || args.columnNo != undefined
+        ? t("commands.navDoc.navigatedAt", {
+            file: args.filename,
+            line: String(args.lineNo),
+            column: String(args.columnNo)
+          })
+        : t("commands.navDoc.navigated", { file: args.filename })
     );
     return commandSuccess;
   }
@@ -102,7 +109,7 @@ export class NavigateToDocumentCommand extends IdeCommandBase<NavigateToDocument
   private async openLibraryFile(context: IdeCommandContext, args: NavigateToDocumentCommandArgs): Promise<IdeCommandResult> {
     const name = args.filename.slice(LIBRARY_FOLDER.length + 1);
     const file = libraryFile(name);
-    if (!file) return commandError(`No library file '${name}'.`);
+    if (!file) return commandError(t("commands.navDoc.noLibraryFile", { name }));
     const docService = context.service.projectService.getActiveDocumentHubService();
     if (docService.getDocument(args.filename)) {
       await docService.setActiveDocument(args.filename);
@@ -110,7 +117,7 @@ export class NavigateToDocumentCommand extends IdeCommandBase<NavigateToDocument
       await docService.openDocument(
         {
           id: args.filename,
-          name: `${name} (library)`,
+          name: t("commands.navDoc.libraryDocumentName", { name }),
           type: CODE_EDITOR,
           language: "zxbas",
           contents: file.text,
@@ -131,7 +138,7 @@ export class NavigateToDocumentCommand extends IdeCommandBase<NavigateToDocument
       const api = docService.getDocumentApi(args.filename) as EditorApi | undefined;
       if (typeof api?.setPosition === "function") api.setPosition(args.lineNo, Math.max((args.columnNo ?? 0) - 1, 0));
     }
-    writeSuccessMessage(context.output, `Navigate to ${args.filename}`);
+    writeSuccessMessage(context.output, t("commands.navDoc.navigated", { file: args.filename }));
     return commandSuccess;
   }
 
@@ -185,13 +192,15 @@ abstract class DocumentAreaCommandBase extends IdeCommandBase {
   }
 
   protected noTargetError(): IdeCommandResult {
-    return commandError("No document area is active.");
+    return commandError(t("commands.doc.noArea"));
   }
 }
 
 export class SplitEditorRightCommand extends DocumentAreaCommandBase {
   readonly id = "doc-split-right";
-  readonly description = "Document: Split Right";
+  get description() {
+    return t("commands.doc.splitRight");
+  }
   readonly usage = "doc-split-right";
 
   async execute(): Promise<IdeCommandResult> {
@@ -204,7 +213,9 @@ export class SplitEditorRightCommand extends DocumentAreaCommandBase {
 
 export class SplitEditorDownCommand extends DocumentAreaCommandBase {
   readonly id = "doc-split-down";
-  readonly description = "Document: Split Down";
+  get description() {
+    return t("commands.doc.splitDown");
+  }
   readonly usage = "doc-split-down";
 
   async execute(): Promise<IdeCommandResult> {
@@ -217,7 +228,9 @@ export class SplitEditorDownCommand extends DocumentAreaCommandBase {
 
 export class MoveEditorToNextAreaCommand extends DocumentAreaCommandBase {
   readonly id = "doc-move-next-area";
-  readonly description = "Document: Move Editor To Next Area";
+  get description() {
+    return t("commands.doc.moveNextArea");
+  }
   readonly usage = "doc-move-next-area";
 
   async execute(): Promise<IdeCommandResult> {
@@ -230,7 +243,9 @@ export class MoveEditorToNextAreaCommand extends DocumentAreaCommandBase {
 
 export class MoveEditorToPreviousAreaCommand extends DocumentAreaCommandBase {
   readonly id = "doc-move-previous-area";
-  readonly description = "Document: Move Editor To Previous Area";
+  get description() {
+    return t("commands.doc.movePreviousArea");
+  }
   readonly usage = "doc-move-previous-area";
 
   async execute(): Promise<IdeCommandResult> {
@@ -243,7 +258,9 @@ export class MoveEditorToPreviousAreaCommand extends DocumentAreaCommandBase {
 
 export class CloseEditorAreaCommand extends DocumentAreaCommandBase {
   readonly id = "doc-close-area";
-  readonly description = "Document: Close Editor Area";
+  get description() {
+    return t("commands.doc.closeArea");
+  }
   readonly usage = "doc-close-area";
 
   async execute(): Promise<IdeCommandResult> {
@@ -256,7 +273,9 @@ export class CloseEditorAreaCommand extends DocumentAreaCommandBase {
 
 export class CloseEditorsInOtherAreasCommand extends DocumentAreaCommandBase {
   readonly id = "doc-close-other-areas";
-  readonly description = "Document: Close Editors In Other Areas";
+  get description() {
+    return t("commands.doc.closeOtherAreas");
+  }
   readonly usage = "doc-close-other-areas";
 
   async execute(): Promise<IdeCommandResult> {

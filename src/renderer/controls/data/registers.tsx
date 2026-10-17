@@ -6,6 +6,7 @@ import styles from "./Registers.module.scss";
 import dataStyles from "./Data.module.scss";
 import { useMemo, memo, useState } from "react";
 import classnames from "classnames";
+import { useT } from "@common/i18n/useT";
 
 /**
  * Register and CPU-state displays.
@@ -351,22 +352,29 @@ export const FlagRow = ({
   iconFill,
   xclass,
   onHoverBit
-}: FlagRowProps) => (
-  <div
-    className={classnames(styles.flagStrip, xclass)}
-    onMouseLeave={onHoverBit ? () => onHoverBit(null) : undefined}
-  >
-    {[7, 6, 5, 4, 3, 2, 1, 0].map((bit) => (
-      <BitValue
-        key={bit}
-        value={value & (1 << bit)}
-        iconFill={iconFill}
-        tooltip={onHoverBit ? undefined : `Bit ${bit}: ${flagDescriptions?.[bit] ?? ""}`}
-        onHover={onHoverBit ? (hovered) => onHoverBit(hovered ? bit : null) : undefined}
-      />
-    ))}
-  </div>
-);
+}: FlagRowProps) => {
+  const t = useT();
+  return (
+    <div
+      className={classnames(styles.flagStrip, xclass)}
+      onMouseLeave={onHoverBit ? () => onHoverBit(null) : undefined}
+    >
+      {[7, 6, 5, 4, 3, 2, 1, 0].map((bit) => (
+        <BitValue
+          key={bit}
+          value={value & (1 << bit)}
+          iconFill={iconFill}
+          tooltip={
+            onHoverBit
+              ? undefined
+              : t("panels.controls.registers.bitTooltip", { bit, description: flagDescriptions?.[bit] ?? "" })
+          }
+          onHover={onHoverBit ? (hovered) => onHoverBit(hovered ? bit : null) : undefined}
+        />
+      ))}
+    </div>
+  );
+};
 
 type FlagFieldRowProps = {
   label: string;
@@ -403,13 +411,20 @@ export const FlagFieldRow = ({
   iconFill,
   tooltipBelow = false
 }: FlagFieldRowProps) => {
+  const t = useT();
   const ref = useTooltipRef<HTMLDivElement>();
   const [hoveredBit, setHoveredBit] = useState<number | null>(null);
 
   const content =
     hoveredBit === null
       ? tooltip
-      : [tooltip, `Bit ${hoveredBit}: ${flagDescriptions?.[hoveredBit] ?? ""}`]
+      : [
+          tooltip,
+          t("panels.controls.registers.bitTooltip", {
+            bit: hoveredBit,
+            description: flagDescriptions?.[hoveredBit] ?? ""
+          })
+        ]
           .filter(Boolean)
           .join("\n");
 

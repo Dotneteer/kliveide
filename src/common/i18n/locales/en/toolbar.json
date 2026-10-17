@@ -1,0 +1,261 @@
+{
+  "toolbar.syncBreakpoints": "Sync the source with the current breakpoint",
+  "@toolbar.syncBreakpoints": {
+    "context": "Tooltip of the IDE toolbar toggle button that makes the code editor follow the breakpoint the machine stopped at."
+  },
+  "toolbar.showMemory": "Show Memory Panel",
+  "@toolbar.showMemory": {
+    "context": "Tooltip of the IDE toolbar toggle button that opens or closes the Memory panel.",
+    "maxChars": 24
+  },
+  "toolbar.showDisassembly": "Show Disassembly Panel",
+  "@toolbar.showDisassembly": {
+    "context": "Tooltip of the IDE toolbar toggle button that opens or closes the Disassembly panel.",
+    "maxChars": 31
+  },
+  "toolbar.stayOnTop": "Stay on top",
+  "@toolbar.stayOnTop": {
+    "context": "Tooltip of the emulator toolbar toggle button that keeps the emulator window above other windows.",
+    "maxChars": 16
+  },
+  "toolbar.instantScreen": "Turn on/off instant screen",
+  "@toolbar.instantScreen": {
+    "context": "Tooltip of the emulator toolbar toggle button for the instant screen, which shows the screen memory's current content immediately instead of the beam-accurate picture.",
+    "maxChars": 37
+  },
+  "toolbar.beamPosition": "Show/Hide the beam position while paused",
+  "@toolbar.beamPosition": {
+    "context": "Tooltip of the emulator toolbar toggle button that overlays the raster (electron) beam position on the screen while the machine is paused."
+  },
+  "toolbar.mouse.captured": "Mouse captured – press Esc to release",
+  "@toolbar.mouse.captured": {
+    "context": "Tooltip of the emulator toolbar mouse button while the emulated machine has captured the host mouse pointer. Esc is the key name."
+  },
+  "toolbar.mouse.capture": "Capture the mouse (Esc releases it)",
+  "@toolbar.mouse.capture": {
+    "context": "Tooltip of the emulator toolbar button that captures the host mouse pointer for the emulated machine's mouse. Esc is the key name."
+  },
+  "toolbar.mouse.disabled": "Mouse capture is switched off in the Machine | Mouse menu",
+  "@toolbar.mouse.disabled": {
+    "context": "Tooltip of the disabled emulator toolbar mouse-capture button. 'Machine | Mouse' is the menu path (Machine menu, Mouse submenu); translate it the way those menus are translated."
+  },
+  "toolbar.keyboard": "Show/Hide keyboard",
+  "@toolbar.keyboard": {
+    "context": "Tooltip of the emulator toolbar toggle button that shows or hides the virtual keyboard of the emulated machine.",
+    "maxChars": 26
+  },
+  "toolbar.sound.mute": "Mute sound",
+  "@toolbar.sound.mute": {
+    "context": "Tooltip of the emulator toolbar sound button while sound is on: a click mutes it.",
+    "maxChars": 14
+  },
+  "toolbar.sound.unmute": "Unmute sound",
+  "@toolbar.sound.unmute": {
+    "context": "Tooltip of the emulator toolbar sound button while sound is muted: a click turns it back on.",
+    "maxChars": 17
+  },
+  "toolbar.sound.level": "Sound level",
+  "@toolbar.sound.level": {
+    "context": "Tooltip of the small drop-down arrow next to the emulator toolbar's sound button; it opens the list of volume levels.",
+    "maxChars": 16
+  },
+  "toolbar.fastLoad": "Fast LOAD mode",
+  "@toolbar.fastLoad": {
+    "context": "Tooltip of the emulator toolbar toggle button for fast tape loading. LOAD is the ZX Spectrum BASIC keyword and stays in English capitals.",
+    "maxChars": 20
+  },
+  "toolbar.rewindTape": "Rewind the tape",
+  "@toolbar.rewindTape": {
+    "context": "Tooltip of the emulator toolbar button that rewinds the emulated cassette tape to its start.",
+    "maxChars": 21
+  },
+  "toolbar.record.start": "Start video recording — the arrow next to it has the other recordings",
+  "@toolbar.record.start": {
+    "context": "Tooltip of the emulator toolbar record button while nothing is recording: a click starts a screen video recording; the drop-down arrow beside it offers the other kinds of recording."
+  },
+  "toolbar.record.armed": "Ready – waiting for machine to run (click to cancel)",
+  "@toolbar.record.armed": {
+    "context": "Tooltip of the emulator toolbar record button while a video recording is armed and will start when the emulated machine runs."
+  },
+  "toolbar.record.recording": "Recording... (click to stop)",
+  "@toolbar.record.recording": {
+    "context": "Tooltip of the emulator toolbar record button while a video recording runs."
+  },
+  "toolbar.record.paused": "Recording paused (click to stop)",
+  "@toolbar.record.paused": {
+    "context": "Tooltip of the emulator toolbar record button while a video recording is paused (the machine is paused)."
+  },
+  "toolbar.record.menu": "Recordings",
+  "@toolbar.record.menu": {
+    "context": "Tooltip of the drop-down arrow next to the emulator toolbar's record button; it opens a menu of recording commands.",
+    "maxChars": 14
+  },
+  "toolbar.record.startIdeEmu": "Start IDE + Emulator Recording",
+  "@toolbar.record.startIdeEmu": {
+    "context": "Item of the record button's drop-down menu on the emulator toolbar: starts a video recording of both the IDE and emulator windows.",
+    "maxChars": 42
+  },
+  "toolbar.record.stopIdeEmu": "Stop IDE + Emulator Recording",
+  "@toolbar.record.stopIdeEmu": {
+    "context": "Item of the record button's drop-down menu on the emulator toolbar: stops the running IDE + emulator window recording.",
+    "maxChars": 41
+  },
+  "toolbar.record.ideEmuTitle": "IDE + Emulator Recording",
+  "@toolbar.record.ideEmuTitle": {
+    "context": "Title of the message box that explains why the IDE + emulator window recording could not start or stop.",
+    "maxChars": 34
+  },
+  "toolbar.start.debugMachine": "Debug Machine (Ctrl+F5)",
+  "@toolbar.start.debugMachine": {
+    "context": "Emulator toolbar: tooltip of the start button, and its drop-down menu item, that starts the emulated machine in debug mode (breakpoints active). Ctrl+F5 is the shortcut.",
+    "maxChars": 33
+  },
+  "toolbar.start.runMachine": "Run Machine (F5)",
+  "@toolbar.start.runMachine": {
+    "context": "Emulator toolbar: tooltip of the start button, and its drop-down menu item, that starts the emulated machine normally. 'Run' as in execute. F5 is the shortcut.",
+    "maxChars": 23
+  },
+  "toolbar.start.debugProject": "Debug Project (Ctrl+F5)",
+  "@toolbar.start.debugProject": {
+    "context": "IDE toolbar: tooltip of the start button, and its drop-down menu item, that builds the project and runs it in debug mode (breakpoints active). Ctrl+F5 is the shortcut.",
+    "maxChars": 33
+  },
+  "toolbar.start.runProject": "Run Project (F5)",
+  "@toolbar.start.runProject": {
+    "context": "IDE toolbar: tooltip of the start button, and its drop-down menu item, that builds the project and runs it normally. 'Run' as in execute. F5 is the shortcut.",
+    "maxChars": 23
+  },
+  "toolbar.start.chooseMode": "Choose start mode",
+  "@toolbar.start.chooseMode": {
+    "context": "Tooltip of the drop-down arrow next to the toolbar's start button; it chooses between running and debugging.",
+    "maxChars": 24
+  },
+  "toolbar.resume.continue": "Continue (F5)",
+  "@toolbar.resume.continue": {
+    "context": "Toolbar: tooltip of the resume button, and its drop-down menu item, that continues a paused machine normally. F5 is the shortcut.",
+    "maxChars": 19
+  },
+  "toolbar.resume.continueDebugging": "Continue Debugging (Ctrl+F5)",
+  "@toolbar.resume.continueDebugging": {
+    "context": "Toolbar: tooltip of the resume button, and its drop-down menu item, that continues a paused machine in debug mode. Ctrl+F5 is the shortcut.",
+    "maxChars": 40
+  },
+  "toolbar.resume.chooseMode": "Choose resume mode",
+  "@toolbar.resume.chooseMode": {
+    "context": "Tooltip of the drop-down arrow next to the toolbar's resume (continue) button; it chooses between continuing normally and continuing in debug mode.",
+    "maxChars": 26
+  },
+  "toolbar.resume.chooseModeFromPresent": "Choose resume mode - resumes from the present",
+  "@toolbar.resume.chooseModeFromPresent": {
+    "context": "Tooltip of the drop-down arrow next to the toolbar's resume button, in the execution history (the past). Shown while the debugger is in the execution history (the past): stepping acts on the live machine, so the text says it resumes from the present."
+  },
+  "toolbar.pause": "Pause (Shift+F5)",
+  "@toolbar.pause": {
+    "context": "Tooltip of the toolbar button that pauses the running emulated machine. Shift+F5 is the shortcut.",
+    "maxChars": 26
+  },
+  "toolbar.stop": "Stop (F4)",
+  "@toolbar.stop": {
+    "context": "Tooltip of the toolbar button that stops (turns off) the emulated machine. F4 is the shortcut.",
+    "maxChars": 16
+  },
+  "toolbar.restart": "Restart (Shift+F4)",
+  "@toolbar.restart": {
+    "context": "Tooltip of the toolbar button that restarts the emulated machine (or rebuilds and reruns the project). Shift+F4 is the shortcut.",
+    "maxChars": 26
+  },
+  "toolbar.step.into": "Step Into ({shortcut})",
+  "@toolbar.step.into": {
+    "context": "Tooltip of the toolbar debugger button that executes one instruction or statement, entering called routines.",
+    "maxChars": 31,
+    "placeholders": {
+      "shortcut": "Keyboard shortcut, shown verbatim, e.g. 'F10' or 'Shift+F12'"
+    }
+  },
+  "toolbar.step.intoFromPresent": "Step Into ({shortcut}) - resumes from the present",
+  "@toolbar.step.intoFromPresent": {
+    "context": "Tooltip of the toolbar Step Into button in the execution history. Shown while the debugger is in the execution history (the past): stepping acts on the live machine, so the text says it resumes from the present.",
+    "placeholders": {
+      "shortcut": "Keyboard shortcut, shown verbatim, e.g. 'F10' or 'Shift+F12'"
+    }
+  },
+  "toolbar.step.intoTarget": "Step Into {name}",
+  "@toolbar.step.intoTarget": {
+    "context": "Item of the Step Into drop-down on the toolbar: steps into the named routine that the current BASIC statement calls.",
+    "maxChars": 23,
+    "placeholders": {
+      "name": "Name of a SUB or FUNCTION in the user's program, shown verbatim"
+    }
+  },
+  "toolbar.step.intoTargetMenu": "Step Into Target",
+  "@toolbar.step.intoTargetMenu": {
+    "context": "Tooltip of the drop-down arrow next to the toolbar's Step Into button; it lists the routines the current statement calls, to step into one of them.",
+    "maxChars": 23
+  },
+  "toolbar.step.over": "Step Over ({shortcut})",
+  "@toolbar.step.over": {
+    "context": "Tooltip of the toolbar debugger button that executes one instruction or statement, running called routines without stopping in them.",
+    "maxChars": 31,
+    "placeholders": {
+      "shortcut": "Keyboard shortcut, shown verbatim, e.g. 'F10' or 'Shift+F12'"
+    }
+  },
+  "toolbar.step.overFromPresent": "Step Over ({shortcut}) - resumes from the present",
+  "@toolbar.step.overFromPresent": {
+    "context": "Tooltip of the toolbar Step Over button in the execution history. Shown while the debugger is in the execution history (the past): stepping acts on the live machine, so the text says it resumes from the present.",
+    "placeholders": {
+      "shortcut": "Keyboard shortcut, shown verbatim, e.g. 'F10' or 'Shift+F12'"
+    }
+  },
+  "toolbar.step.out": "Step Out ({shortcut})",
+  "@toolbar.step.out": {
+    "context": "Tooltip of the toolbar debugger button that runs until the current routine returns to its caller.",
+    "maxChars": 30,
+    "placeholders": {
+      "shortcut": "Keyboard shortcut, shown verbatim, e.g. 'F10' or 'Shift+F12'"
+    }
+  },
+  "toolbar.step.outFromPresent": "Step Out ({shortcut}) - resumes from the present",
+  "@toolbar.step.outFromPresent": {
+    "context": "Tooltip of the toolbar Step Out button in the execution history. Shown while the debugger is in the execution history (the past): stepping acts on the live machine, so the text says it resumes from the present.",
+    "placeholders": {
+      "shortcut": "Keyboard shortcut, shown verbatim, e.g. 'F10' or 'Shift+F12'"
+    }
+  },
+  "toolbar.step.overLine": "Step Over Line (Shift+F10)",
+  "@toolbar.step.overLine": {
+    "context": "Tooltip of the toolbar debugger button that runs a whole BASIC source line (all its statements). Shift+F10 is the shortcut.",
+    "maxChars": 37
+  },
+  "toolbar.stepMode.source": "Stepping source statements (click to step Z80 instructions)",
+  "@toolbar.stepMode.source": {
+    "context": "Tooltip of the toolbar toggle that chooses what the step buttons step: currently BASIC source statements. Z80 is the processor's name."
+  },
+  "toolbar.stepMode.z80": "Stepping Z80 instructions (click to step source statements)",
+  "@toolbar.stepMode.z80": {
+    "context": "Tooltip of the toolbar toggle that chooses what the step buttons step: currently single Z80 machine-code instructions. Z80 is the processor's name."
+  },
+  "toolbar.history.stepBack": "Step Back through the history ({shortcut})",
+  "@toolbar.history.stepBack": {
+    "context": "Tooltip of the toolbar button that moves one instruction back in the recorded execution history (reverse debugging).",
+    "placeholders": {
+      "shortcut": "Keyboard shortcut, shown verbatim, e.g. 'F10' or 'Shift+F12'"
+    }
+  },
+  "toolbar.history.stepForward": "Step Forward through the history ({shortcut})",
+  "@toolbar.history.stepForward": {
+    "context": "Tooltip of the toolbar button that moves one instruction forward in the recorded execution history, toward the present.",
+    "placeholders": {
+      "shortcut": "Keyboard shortcut, shown verbatim, e.g. 'F10' or 'Shift+F12'"
+    }
+  },
+  "toolbar.history.present": "Return to the present",
+  "@toolbar.history.present": {
+    "context": "Tooltip of the toolbar button that leaves the execution history and returns to the machine's live (present) state.",
+    "maxChars": 30
+  },
+  "toolbar.step.outInMain": "Step Out: the main program has nothing to return to",
+  "@toolbar.step.outInMain": {
+    "context": "Tooltip of the disabled Step Out button while source-level stepping in the main program. 'Step Out' is the button's name."
+  }
+}

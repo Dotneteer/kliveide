@@ -1,4 +1,5 @@
 import type { IValidationService } from "@renderer/core/ValidationService";
+import { t } from "@common/i18n/i18n";
 
 export type FieldValidator = (value: string | null | undefined) => string | undefined;
 
@@ -7,8 +8,8 @@ export function requiredFilename(
   value: string | null | undefined
 ): string | undefined {
   const normalizedValue = (value ?? "").trim();
-  if (!normalizedValue.trim()) return "Enter a file name.";
-  return validationService.isValidFilename(normalizedValue) ? undefined : "Enter a valid file name.";
+  if (!normalizedValue.trim()) return t("dialog.validation.enterFileName");
+  return validationService.isValidFilename(normalizedValue) ? undefined : t("dialog.validation.enterValidFileName");
 }
 
 export function requiredPath(
@@ -16,15 +17,15 @@ export function requiredPath(
   value: string | null | undefined
 ): string | undefined {
   const normalizedValue = (value ?? "").trim();
-  if (!normalizedValue.trim()) return "Choose a folder.";
-  return validationService.isValidPath(normalizedValue, false) ? undefined : "Enter a valid folder path.";
+  if (!normalizedValue.trim()) return t("dialog.validation.chooseFolder");
+  return validationService.isValidPath(normalizedValue, false) ? undefined : t("dialog.validation.enterValidFolder");
 }
 
 export function optionalPath(
   validationService: IValidationService,
   value: string | null | undefined
 ): string | undefined {
-  return validationService.isValidPath((value ?? "").trim(), true) ? undefined : "Enter a valid path.";
+  return validationService.isValidPath((value ?? "").trim(), true) ? undefined : t("dialog.validation.enterValidPath");
 }
 
 export function newItemName(
@@ -34,7 +35,7 @@ export function newItemName(
 ): string | undefined {
   const filenameError = requiredFilename(validationService, value);
   if (filenameError) return filenameError;
-  return existingNames.includes(value) ? "An item with this name already exists." : undefined;
+  return existingNames.includes(value) ? t("dialog.validation.nameExists") : undefined;
 }
 
 export function renamedItemName(
@@ -42,11 +43,11 @@ export function renamedItemName(
   oldName: string,
   value: string
 ): string | undefined {
-  if (value === oldName) return "Enter a different name.";
+  if (value === oldName) return t("dialog.validation.enterDifferentName");
   return requiredFilename(validationService, value);
 }
 
 export function decimalAddress(value: string | null | undefined): string | undefined {
   const normalizedValue = (value ?? "").trim();
-  return !normalizedValue.trim() || /^\d+$/.test(normalizedValue) ? undefined : "Enter a decimal address.";
+  return !normalizedValue.trim() || /^\d+$/.test(normalizedValue) ? undefined : t("dialog.validation.enterDecimalAddress");
 }

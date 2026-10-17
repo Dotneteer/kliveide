@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { t } from "@common/i18n/i18n";
 import type { SjasmplusProbeResult } from "@common/messaging/SjasmplusIntegration";
 import {
   CANDIDATE_REJECTED_MESSAGE,
@@ -311,7 +312,7 @@ describe("re-testing", () => {
     expect(h.vm.status).toMatchObject({
       badge: "none",
       headline: "Configured",
-      detail: { kind: "note", text: CANDIDATE_REJECTED_MESSAGE }
+      detail: { kind: "note", text: t(CANDIDATE_REJECTED_MESSAGE) }
     });
     expect(h.vm.buttons.applyEnabled).toBe(false);
   });
@@ -334,7 +335,7 @@ describe("re-testing", () => {
     // --- The fix is a click away, so the stale error stops being the headline
     expect(h.vm.status).toMatchObject({
       badge: "none",
-      detail: { kind: "note", text: REPLACEMENT_READY_MESSAGE }
+      detail: { kind: "note", text: t(REPLACEMENT_READY_MESSAGE) }
     });
     expect(h.vm.buttons.applyEnabled).toBe(true);
   });

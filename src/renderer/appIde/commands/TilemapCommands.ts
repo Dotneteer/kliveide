@@ -16,6 +16,7 @@ import {
   commandSuccess,
   validationError
 } from "@renderer/appIde/services/ide-commands";
+import { t } from "@common/i18n/i18n";
 
 /*
  * The Tilemap Inspector's commands (`.plans/TILEMAP_INSPECTOR_PLAN.md` §4.4, Q2): two commands, one
@@ -28,7 +29,7 @@ async function openTilemapInspector(
 ): Promise<IdeCommandResult> {
   const machineId = context.service.machineService.getMachineInfo()?.machine?.machineId;
   if (machineId !== MI_ZXNEXT) {
-    return commandError("The tilemap exists on the ZX Spectrum Next only");
+    return commandError(t("commands.tilemap.nextOnly"));
   }
   requestTilemapReveal(request);
   const documentHubService = context.service.projectService.getActiveDocumentHubService();
@@ -43,7 +44,9 @@ async function openTilemapInspector(
 /** `show-tilemap [<col> <row>]`: opens the Tilemap Inspector on its Map view, selecting a cell. */
 export class ShowTilemapCommand extends IdeCommandBase<{ col?: number; row?: number }> {
   readonly id = "show-tilemap";
-  readonly description = "Displays the Tilemap Inspector's map, optionally selecting a cell";
+  get description() {
+    return t("commands.tilemap.mapDescription");
+  }
   readonly usage = "show-tilemap [<col> <row>]";
   readonly aliases = ["shtm"];
   readonly argumentInfo: CommandArgumentInfo = {
@@ -58,7 +61,7 @@ export class ShowTilemapCommand extends IdeCommandBase<{ col?: number; row?: num
     args: { col?: number; row?: number }
   ): Promise<ValidationMessage[]> {
     return args.col !== undefined && args.row === undefined
-      ? [validationError("Give both a column and a row")]
+      ? [validationError(t("commands.tilemap.colAndRow"))]
       : [];
   }
 
@@ -71,7 +74,9 @@ export class ShowTilemapCommand extends IdeCommandBase<{ col?: number; row?: num
 /** `show-tiles [<index>]`: opens the Tilemap Inspector on its Tiles view, selecting a tile. */
 export class ShowTilesCommand extends IdeCommandBase<{ index?: number }> {
   readonly id = "show-tiles";
-  readonly description = "Displays the Tilemap Inspector's tile definitions, optionally selecting a tile (0-511)";
+  get description() {
+    return t("commands.tilemap.tilesDescription");
+  }
   readonly usage = "show-tiles [<index>]";
   readonly aliases = ["shtl"];
   readonly argumentInfo: CommandArgumentInfo = {

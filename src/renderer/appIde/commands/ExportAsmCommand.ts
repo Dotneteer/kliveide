@@ -25,6 +25,7 @@ import { getRomPartition } from "../annotations/romAnnotations";
 import { customDisassemblyContextFor } from "../annotations/romDisassemblyGate";
 import { buildExport, type ExportContext, type ExportScope } from "../reverse/exportRun";
 import { activeSetForEditing } from "../reverse/detectionEnvironment";
+import { t } from "@common/i18n/i18n";
 
 type ExportAsmArgs = {
   file: string;
@@ -75,7 +76,9 @@ export function exportContextFor(state: AppState, context: IdeCommandContext): E
  */
 export class ExportAsmCommand extends IdeCommandBase<ExportAsmArgs> {
   readonly id = "export-asm";
-  readonly description = "Exports an annotated range or bank as Klive Z80 source that reassembles to the same bytes";
+  get description() {
+    return t("commands.exportAsm.description");
+  }
   readonly aliases = [];
   readonly usage = "export-asm <file> [<from> <to>] [-bank <n>] [-skip data|gap] [-dialect klive] [-open] [-noverify]";
   readonly argumentInfo: CommandArgumentInfo = {
@@ -95,23 +98,23 @@ export class ExportAsmCommand extends IdeCommandBase<ExportAsmArgs> {
   async validateCommandArgs(context: IdeCommandContext, args: ExportAsmArgs): Promise<ValidationMessage[]> {
     const messages: ValidationMessage[] = [];
     const emu = context.store.getState().emulatorState;
-    if (!bankSpaceFor(emu?.machineId)) messages.push(validationError("This machine's memory cannot be annotated."));
+    if (!bankSpaceFor(emu?.machineId)) messages.push(validationError(t("commands.common.notAnnotatable")));
     if (args["-bank"] === undefined && (args.from === undefined || args.to === undefined)) {
-      messages.push(validationError("Give a range (<from> <to>) or a bank (-bank <n>)."));
+      messages.push(validationError(t("commands.exportAsm.rangeOrBank")));
     }
     if (args.from !== undefined && args.to !== undefined && args.from > args.to) {
-      messages.push(validationError("The range's start is after its end."));
+      messages.push(validationError(t("commands.exportAsm.startAfterEnd")));
     }
     const skip = args["-skip"]?.toLowerCase();
-    if (skip !== undefined && skip !== "data" && skip !== "gap") messages.push(validationError("-skip: use data or gap"));
-    if (!dialectOf(args["-dialect"]?.toLowerCase())) messages.push(validationError("-dialect: only klive is supported"));
+    if (skip !== undefined && skip !== "data" && skip !== "gap") messages.push(validationError(t("commands.exportAsm.skipValues")));
+    if (!dialectOf(args["-dialect"]?.toLowerCase())) messages.push(validationError(t("commands.exportAsm.dialectValues")));
     return messages;
   }
 
   async execute(context: IdeCommandContext, args: ExportAsmArgs): Promise<IdeCommandResult> {
     const state = context.store.getState();
     const exportContext = exportContextFor(state, context);
-    if (!exportContext) return commandError("This machine's memory cannot be annotated.");
+    if (!exportContext) return commandError(t("commands.common.notAnnotatable"));
     const scope: ExportScope =
       args["-bank"] !== undefined
         ? {
@@ -120,6 +123,7 @@ export class ExportAsmCommand extends IdeCommandBase<ExportAsmArgs> {
             ...(args.from !== undefined && args.to !== undefined ? { start: args.from & 0x3fff, end: args.to & 0x3fff } : {})
           }
         : { kind: "range", from: args.from!, to: args.to! };
+    // --- `where` goes into the exported file's header comment, which stays English
     const where =
       scope.kind === "bank" ? `bank ${scope.bank}` : `$${toHexa4(scope.from)}-$${toHexa4(scope.to)}`;
 
@@ -133,16 +137,27 @@ export class ExportAsmCommand extends IdeCommandBase<ExportAsmArgs> {
         ]
       });
     } catch (err) {
-      return commandError(`Export failed: ${err instanceof Error ? err.message : String(err)}`);
+      return commandError(t("commands.exportAsm.failed", { message: err instanceof Error ? err.message : String(err) }));
     }
     const dialect = dialectOf(args["-dialect"]?.toLowerCase())!;
     const text = dialect.render(result.lines);
     try {
       await context.mainApi.saveTextFile(args.file, text);
     } catch (err) {
-      return commandError(`Cannot write ${args.file}: ${err instanceof Error ? err.message : String(err)}`);
+      return commandError(
+        t("commands.exportAsm.cannotWrite", { file: args.file, message: err instanceof Error ? err.message : String(err) })
+      );
     }
-    writeSuccessMessage(context.output, `Exported ${where} to ${args.file}`);
+    writeSuccessMessage(
+      context.output,
+      scope.kind === "bank"
+        ? t("commands.exportAsm.exportedBank", { bank: String(scope.bank), file: args.file })
+        : t("commands.exportAsm.exportedRange", {
+            from: toHexa4(scope.from),
+            to: toHexa4(scope.to),
+            file: args.file
+          })
+    );
     result.notes.forEach((note) => writeInfoMessage(context.output, note));
 
     if (!args["-noverify"]) {
@@ -151,7 +166,7 @@ export class ExportAsmCommand extends IdeCommandBase<ExportAsmArgs> {
     }
     if (args["-open"]) {
       const opened = await context.service.ideCommandsService.executeCommand(`nav "${args.file}"`);
-      if (!opened.success) writeInfoMessage(context.output, "The file is not in the open project, so it was not opened.");
+      if (!opened.success) writeInfoMessage(context.output, t("commands.exportAsm.notOpened"));
     }
     return commandSuccess;
   }
@@ -167,16 +182,17 @@ export async function verifyExport(
     const assembled = await context.mainApi.assembleText(text);
     const errors = assembled.errors.filter((e) => !e.isWarning);
     if (errors.length > 0) {
-      return `Byte-identical: no — the export does not assemble (line ${errors[0].line}: ${errors[0].message}).`;
+      return t("commands.exportAsm.verifyNotAssembled", { line: String(errors[0].line), message: errors[0].message });
     }
     const verdict = compareAssembly(expected, assembled.segments);
-    if (verdict.identical) return "Byte-identical: yes";
+    if (verdict.identical) return t("commands.exportAsm.verifyIdentical");
     const hex2 = (n?: number) => (n === undefined ? "--" : n.toString(16).toUpperCase().padStart(2, "0"));
-    return (
-      "Byte-identical: no — first differences: " +
-      verdict.differences.map((d) => `$${toHexa4(d.address)} (${hex2(d.expected)} -> ${hex2(d.actual)})`).join(", ")
-    );
+    return t("commands.exportAsm.verifyDifferent", {
+      differences: verdict.differences
+        .map((d) => `$${toHexa4(d.address)} (${hex2(d.expected)} -> ${hex2(d.actual)})`)
+        .join(", ")
+    });
   } catch (err) {
-    return `Could not verify the export: ${err instanceof Error ? err.message : String(err)}`;
+    return t("commands.exportAsm.verifyFailed", { message: err instanceof Error ? err.message : String(err) });
   }
 }

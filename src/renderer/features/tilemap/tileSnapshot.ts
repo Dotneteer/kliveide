@@ -9,7 +9,8 @@ import {
   transformTile,
   type DecodedCell
 } from "@common/zxnext/tilemap/tilemapDecode";
-import { tileAddress, type TilemapModel } from "./tilemapViewModel";
+import { t, uiLocale } from "@common/i18n/i18n";
+import { tileAddress, transformText, type TilemapModel } from "./tilemapViewModel";
 
 /*
  * A tilemap tile popped out of the Tilemap Inspector into a read-only tile viewer: the tile's
@@ -83,7 +84,7 @@ export function tileSnapshotOf(
       globalTransparency: state.regs.globalTransparency & 0xff,
       cell: c ? { col: c.col, row: c.row, rotate: c.rotate, xmirror: c.xmirror, ymirror: c.ymirror } : undefined,
       address: tileAddress(model, tile).bankText,
-      takenAt: at.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+      takenAt: at.toLocaleTimeString(uiLocale(), { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
       palette: palette.deviceValues.slice(0, 256),
       paletteBank: palette.bank
     }
@@ -133,15 +134,19 @@ export const isTransparent = (p: SnapshotPixel) => p.index === TILE_TRANSPARENT;
 /** The read-only bar's text. */
 export function tileSnapshotTitle(info: TileSnapshotInfo): { title: string; detail: string } {
   const c = info.cell;
-  const transform = c ? [c.rotate && "rotate", c.xmirror && "X mirror", c.ymirror && "Y mirror"].filter(Boolean) : [];
   const facts = [
-    c ? `as cell (${c.col}, ${c.row}) shows it` : undefined,
-    `palette ${info.paletteBank + 1}, offset ${info.paletteOffset}`,
-    transform.length ? transform.join(", ") : undefined,
+    c ? t("panels.tilemap.snapshot.asCell", { col: c.col, row: c.row }) : undefined,
+    t("panels.tilemap.snapshot.palette", { bank: info.paletteBank + 1, offset: info.paletteOffset }),
+    c ? transformText(c) : undefined,
     info.address,
-    `taken ${info.takenAt}`
+    t("panels.tilemap.snapshot.taken", { time: info.takenAt })
   ].filter(Boolean);
-  return { title: `Tile ${info.tile} · ${info.textMode ? "text 1-bit" : "4-bit"}`, detail: facts.join(" · ") };
+  return {
+    title: info.textMode
+      ? t("panels.tilemap.snapshot.titleText", { tile: info.tile })
+      : t("panels.tilemap.snapshot.title4bit", { tile: info.tile }),
+    detail: facts.join(" · ")
+  };
 }
 
 /** The tile's bytes as `.db` source. */
@@ -168,7 +173,7 @@ export async function openTileSnapshot(
   await hub.openDocument(
     {
       id,
-      name: `Tile ${snapshot.info.tile} (snapshot)`,
+      name: t("panels.tilemap.snapshot.name", { tile: snapshot.info.tile }),
       type: TILE_SNAPSHOT_VIEWER,
       iconName: "tilemap",
       contents: snapshot.bytes

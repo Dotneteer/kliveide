@@ -58,6 +58,7 @@ import {
   stateMachineOf,
   type MachineStatePorts
 } from "./machineStateFile";
+import { t, uiLocale } from "@common/i18n/i18n";
 
 /** The breakpoint schema a recording's BRKP section holds (D11) */
 export const RECORDING_BREAKPOINT_SCHEMA = 1;
@@ -91,8 +92,8 @@ export async function coreIdentity(
   module: WebAssembly.Module | undefined
 ): Promise<{ fingerprint: string; codeHash: string; contractHash: string; memorySize: number }> {
   const layout = readWasmLayout(module);
-  if (!layout) throw new Error(`The ${coreId} core has no layout stamp`);
-  if (!layout.codeHash) throw new Error(`The ${coreId} core was built without a code hash; rebuild it`);
+  if (!layout) throw new Error(t("emu.debugRecording.noLayoutStamp", { core: coreId }));
+  if (!layout.codeHash) throw new Error(t("emu.debugRecording.noCodeHash", { core: coreId }));
   const names = WebAssembly.Module.exports(module!).map((e) => e.name);
   const contractHash = await sha256Hex(new TextEncoder().encode(journaledExportNames(coreId, names).join("\n")));
   return { fingerprint: layout.fingerprint, codeHash: layout.codeHash, contractHash, memorySize: layout.memorySize };
@@ -109,16 +110,22 @@ export function recordingMismatch(
   live: { fingerprint: string; codeHash: string; contractHash: string; memorySize: number },
   kliveVersion: string
 ): string | undefined {
-  const build = `recorded by Klive ${header.kliveVersion} (build ${header.codeHash.slice(0, 8)})`;
-  if (header.coreId !== coreId) return `The recording belongs to the ${header.coreId} core, not the ${coreId} core`;
+  const recorded = { version: header.kliveVersion, build: header.codeHash.slice(0, 8), core: coreId };
+  if (header.coreId !== coreId) {
+    return t("emu.debugRecording.mismatch.core", { recordedCore: header.coreId, core: coreId });
+  }
   if (header.fingerprint !== live.fingerprint || header.memorySize !== live.memorySize) {
-    return `The recording was ${build}; this build's ${coreId} core has another memory layout`;
+    return t("emu.debugRecording.mismatch.layout", recorded);
   }
   if (header.contractHash !== live.contractHash) {
-    return `The recording was ${build}; this build's ${coreId} core takes its inputs through other exports`;
+    return t("emu.debugRecording.mismatch.contract", recorded);
   }
   if (header.codeHash !== live.codeHash) {
-    return `The recording was ${build}; this build (Klive ${kliveVersion}, build ${live.codeHash.slice(0, 8)}) differs`;
+    return t("emu.debugRecording.mismatch.build", {
+      ...recorded,
+      liveVersion: kliveVersion,
+      liveBuild: live.codeHash.slice(0, 8)
+    });
   }
   return undefined;
 }
@@ -139,13 +146,13 @@ export async function saveDebugRecording(
 ): Promise<DebugRecordingSaveResult> {
   const controller = ports.getMachineController();
   const machine = stateMachineOf(controller) as (ReturnType<typeof stateMachineOf> & RecordingMachine) | undefined;
-  if (!controller || !machine) throw new Error("This machine cannot save a debug recording");
+  if (!controller || !machine) throw new Error(t("emu.debugRecording.cannotSave"));
   const state = controller.state;
   if (state !== MachineControllerState.Running && state !== MachineControllerState.Paused) {
-    throw new Error("Start the machine with debugging; recordings come from reverse debugging");
+    throw new Error(t("emu.debugRecording.startWithDebugging"));
   }
   if (!controller.timeline) {
-    throw new Error("Start the machine with debugging; recordings come from reverse debugging");
+    throw new Error(t("emu.debugRecording.startWithDebugging"));
   }
   const coreId = coreIdOfMachine(machine.machineId);
   const identity = await coreIdentity(coreId, machine.wasmV2Runtime?.module);
@@ -164,7 +171,7 @@ export async function saveDebugRecording(
   if (running) await controller.pause();
   try {
     const timeline = controller.timeline;
-    if (!timeline) throw new Error("The reverse-debugging timeline ended");
+    if (!timeline) throw new Error(t("emu.debugRecording.timelineEnded"));
     from = fromPosition(options.from, timeline.presentPosition.sequence);
     const snapshot = timeline.exportSnapshot({
       from,
@@ -236,7 +243,9 @@ export async function saveDebugRecording(
   const bytes = await writeDebugRecording(recording, level);
   if (bytes.length > MAX_RECORDING_BYTES) {
     throw new Error(
-      `The recording would be ${(bytes.length / 1024 ** 3).toFixed(1)} GB, more than Klive can write; save less of it with -from or -sparse`
+      t("emu.debugRecording.tooLargeToWrite", {
+        size: (bytes.length / 1024 ** 3).toLocaleString(uiLocale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+      })
     );
   }
   const sectionSizes = sectionSizesOf(bytes);
@@ -293,7 +302,7 @@ export async function loadDebugRecording(
   kliveVersion: string,
   options: DebugRecordingLoadOptions = {}
 ): Promise<DebugRecordingLoadResult> {
-  if (bytes.length > MAX_RECORDING_BYTES) throw new Error("The recording is larger than Klive can read (2 GB)");
+  if (bytes.length > MAX_RECORDING_BYTES) throw new Error(t("emu.debugRecording.tooLargeToRead"));
   const recording = await readDebugRecording(bytes);
   const header = recording.header;
   const warnings: string[] = [];
@@ -309,15 +318,15 @@ export async function loadDebugRecording(
     configDiffers(emulator.config, header.config)
   ) {
     const done = await ports.setMachineType(header.machineId, header.modelId, (header.config ?? {}) as MachineConfigSet);
-    if (!done) throw new Error("Another machine change superseded opening the recording");
+    if (!done) throw new Error(t("emu.debugRecording.superseded"));
     rebuilt = true;
   }
   const controller = ports.getMachineController();
   const machine = stateMachineOf(controller) as (ReturnType<typeof stateMachineOf> & RecordingMachine) | undefined;
   if (!controller || !machine || machine.machineId !== header.machineId) {
-    throw new Error(`The emulator is not running the ${machineName}`);
+    throw new Error(t("emu.machine.notRunningThe", { machine: machineName }));
   }
-  if (!controller.openTimeline) throw new Error(`The ${machineName} has no reverse debugging`);
+  if (!controller.openTimeline) throw new Error(t("emu.debugRecording.noReverseDebugging", { machine: machineName }));
 
   // --- 2. Same build only (D3); the end state is the fallback (D16)
   const coreId = coreIdOfMachine(header.machineId);
@@ -325,7 +334,7 @@ export async function loadDebugRecording(
   const refusal = recordingMismatch(header, coreId, live, kliveVersion);
   if (refusal) {
     if (!options.acceptFallback || !recording.kls) {
-      return { ...base, rebuilt, path: "refused", refusal: recording.kls ? refusal : `${refusal}, and it holds no end state` };
+      return { ...base, rebuilt, path: "refused", refusal: recording.kls ? refusal : t("emu.debugRecording.refusalNoEndState", { reason: refusal }) };
     }
     const state = await loadMachineStateFile(ports, `${fileName}.kls`, recording.kls, "debug", {
       currentSdCard: options.currentSdCard ? { ...options.currentSdCard, id: MEDIA_SD_CARD } : undefined,
@@ -340,7 +349,7 @@ export async function loadDebugRecording(
       warnings: [...warnings, ...state.warnings]
     };
   }
-  if (!recording.kls) throw new Error("The recording holds no state of its present (KLS section)");
+  if (!recording.kls) throw new Error(t("emu.debugRecording.noKls"));
   const klsFile = readKliveStateFile(recording.kls);
   const parts: MachineStateParts = {
     coreId: klsFile.header.coreId,
@@ -372,15 +381,15 @@ export async function loadDebugRecording(
     landing === "start" ? snapshot.keyframes[0].seed.position : landing === "saved" ? snapshot.cursor : undefined;
   await controller.openTimeline(() => machine.loadMachineState(parts), snapshot, {
     land,
-    description: `Debug recording ${fileName} opened`,
+    description: t("emu.debugRecording.opened", { file: fileName }),
     expectedImage: parts.image,
     recordingName: fileName.split(/[\\/]/).pop()
   });
   const timeline = controller.timeline;
-  if (!timeline) throw new Error("The recording's timeline did not start");
+  if (!timeline) throw new Error(t("emu.debugRecording.timelineNotStarted"));
   if (timeline.store.stats.poolBytes > timeline.store.budgetBytes) {
     warnings.push(
-      "The recording is larger than the reverse-debugging memory budget: its oldest keyframes go as the machine runs on"
+      t("emu.debugRecording.overBudget")
     );
   }
 
@@ -388,7 +397,7 @@ export async function loadDebugRecording(
   let verified: DebugRecordingLoadResult["verified"];
   if (options.verify) {
     if (timeline.mode !== "live") {
-      warnings.push("-verify checks a recording opened at its present; it was opened in the past and not checked");
+      warnings.push(t("emu.debugRecording.verifySkipped"));
     } else {
       const t0 = performance.now();
       timeline.verify();
@@ -398,24 +407,24 @@ export async function loadDebugRecording(
 
   // --- 6. Media: in the recording, never written back (D14, D15)
   for (const m of recording.media) {
-    if (m.id === MEDIA_TAPE) warnings.push(`The tape is the one in the recording (${m.fileName})`);
+    if (m.id === MEDIA_TAPE) warnings.push(t("emu.debugRecording.tape", { file: m.fileName }));
     if (m.id === MEDIA_DISK_A || m.id === MEDIA_DISK_B) {
       warnings.push(
-        `Disk ${m.id === MEDIA_DISK_A ? "A" : "B"} is the one in the recording (${m.fileName}); it is detached from that file, so replaying never writes to it`
+        t("emu.debugRecording.disk", { drive: m.id === MEDIA_DISK_A ? "A" : "B", file: m.fileName })
       );
     }
     if (m.id === MEDIA_SD_CARD) {
       const current = options.currentSdCard;
       warnings.push(
         current?.fingerprint && current.fingerprint === m.fingerprint
-          ? `The SD card (${m.fileName}) is the one the recording was made with: running on past its end uses it`
-          : `Every SD card sector the recording read is in it, so it replays without the card; running on past its end uses ${
-              current ? `the current card (${current.fileName}), which is not the recorded one (${m.fileName})` : "no card"
-            }`
+          ? t("emu.debugRecording.sdCard.same", { file: m.fileName })
+          : current
+            ? t("emu.debugRecording.sdCard.other", { file: current.fileName, recorded: m.fileName })
+            : t("emu.debugRecording.sdCard.none")
       );
     }
   }
-  if (header.sparse) warnings.push("The recording keeps only keyframes about a second apart: the first step back into a stretch replays longer");
+  if (header.sparse) warnings.push(t("emu.debugRecording.sparse"));
 
   const landed = landing === "start" ? "start" : landing === "saved" && snapshot.cursor ? "saved" : "present";
   return {

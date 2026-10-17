@@ -21,6 +21,7 @@ import regStyles from "@renderer/controls/data/Registers.module.scss";
 import styles from "@renderer/appIde/SideBarPanels/CallStackPanel.module.scss";
 
 import { buildSourceCallStack, type RuntimeRow, type SourceFrameRow } from "./call-stack-model";
+import { useT } from "@common/i18n/useT";
 
 const baseName = (path?: string) => path?.split(/[\\/]/).pop() ?? "";
 
@@ -30,6 +31,7 @@ const baseName = (path?: string) => path?.split(/[\\/]/).pop() ?? "";
  * statement; the button on an outer row runs until control is back in that frame (Run to Frame).
  */
 export const SourceCallStack = ({ info }: { info: SourceLevelDebugInfo }) => {
+  const t = useT();
   const emuApi = useEmuApi();
   const dispatch = useDispatch();
   const { ideCommandsService } = useAppServices();
@@ -85,7 +87,7 @@ export const SourceCallStack = ({ info }: { info: SourceLevelDebugInfo }) => {
   const runToFrame = (frame: number) => void emuApi.sourceStep("runToFrame", { targetFrame: frame });
   const symbolOf = (address: number) => runtimeSymbolAt(info, address);
 
-  if (!rows) return <EmptyState message="Pause the machine to see the call stack" />;
+  if (!rows) return <EmptyState message={t("panels.side.sourceCallStack.pause")} />;
   return (
     <div className={styles.callStackPanel}>
       {rows.map((row) =>
@@ -101,7 +103,11 @@ export const SourceCallStack = ({ info }: { info: SourceLevelDebugInfo }) => {
                 />
               </span>
               <Secondary
-                text={row.error ? `runtime error: ${row.error}` : `runtime code at $${toHexa4(row.pc)}${symbolOf(row.pc)}`}
+                text={
+                  row.error
+                    ? t("panels.side.sourceCallStack.runtimeError", { error: row.error })
+                    : t("panels.side.sourceCallStack.runtimeCode", { address: `$${toHexa4(row.pc)}${symbolOf(row.pc)}` })
+                }
               />
             </div>
             {runtimeOpen &&
@@ -124,7 +130,7 @@ export const SourceCallStack = ({ info }: { info: SourceLevelDebugInfo }) => {
               menuApi.show(e);
             }}
           >
-            <Label text={row.frame ? `${row.frame}:` : "Top:"} className={styles.csIndex} />
+            <Label text={row.frame ? `${row.frame}:` : t("panels.side.callStack.topIndex")} className={styles.csIndex} />
             <Value text={row.name} className={classnames(styles.csCell, regStyles.stateValue)} />
             {row.line !== undefined && <Secondary text={`${baseName(row.filename)}:${row.line}`} />}
             {row.frame > 0 && (
@@ -135,7 +141,7 @@ export const SourceCallStack = ({ info }: { info: SourceLevelDebugInfo }) => {
                   buttonWidth={16}
                   buttonHeight={16}
                   noPadding
-                  title="Run to this frame"
+                  title={t("panels.side.sourceCallStack.runToFrame")}
                   clicked={(e) => {
                     e.stopPropagation();
                     runToFrame(row.frame);
@@ -148,14 +154,14 @@ export const SourceCallStack = ({ info }: { info: SourceLevelDebugInfo }) => {
       )}
       <ContextMenu state={menuState} onClickOutside={() => menuApi.conceal()}>
         <ContextMenuItem
-          text="Go to this frame"
+          text={t("panels.side.sourceCallStack.goToFrame")}
           clicked={() => {
             menuApi.conceal();
             if (menuRow) void select(menuRow);
           }}
         />
         <ContextMenuItem
-          text="Run to this frame"
+          text={t("panels.side.sourceCallStack.runToFrame")}
           iconName="step-out"
           disabled={!menuRow?.frame}
           clicked={() => {

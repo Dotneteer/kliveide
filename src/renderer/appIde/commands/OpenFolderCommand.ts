@@ -3,6 +3,7 @@ import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
 import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
 import { writeSuccessMessage, commandSuccess, IdeCommandBase } from "../services/ide-commands";
 import { delay } from "@renderer/utils/timing";
+import { t } from "@common/i18n/i18n";
 
 type OpenFolderArgs = {
   folder: string;
@@ -10,7 +11,9 @@ type OpenFolderArgs = {
 
 export class OpenFolderCommand extends IdeCommandBase<OpenFolderArgs> {
   readonly id = "open";
-  readonly description = "Opens a folder in the IDE";
+  get description() {
+    return t("commands.open.description");
+  }
   readonly usage = "open <project folder>";
   readonly aliases = ["op"];
 
@@ -34,7 +37,7 @@ export class OpenFolderCommand extends IdeCommandBase<OpenFolderArgs> {
         if (count >= 100) {
           return {
             success: false,
-            finalMessage: "Timeout while closing the last project"
+            finalMessage: t("commands.open.closeTimeout")
           };
         }
       }
@@ -43,10 +46,10 @@ export class OpenFolderCommand extends IdeCommandBase<OpenFolderArgs> {
     if (errorMessage) {
       return {
         success: false,
-        finalMessage: `Error opening folder: ${errorMessage}`
+        finalMessage: t("commands.common.openFolderError", { message: errorMessage })
       };
     } else {
-      writeSuccessMessage(context.output, `Project in folder ${args.folder} opened.`);
+      writeSuccessMessage(context.output, t("commands.open.opened", { path: args.folder }));
       return commandSuccess;
     }
   }

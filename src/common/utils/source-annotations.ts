@@ -12,6 +12,7 @@ import { integerSymbolsOfOutput } from "./breakpoint-condition/integer-symbols";
 import { compileConditionWith } from "./breakpoint-condition/condition-checker";
 import { parseDezogExpression } from "./breakpoint-condition/dezog/dezog-parser";
 import { parseWpmemArgs } from "./breakpoint-condition/dezog/wpmem-args";
+import { t } from "@common/i18n/i18n";
 
 /*
  * DeZog-style source annotations (`.plans/LOGPOINTS_PLAN.md` §4.7): the `LOGPOINT` comments a build
@@ -125,7 +126,7 @@ export function checkSourceAnnotations<T extends KliveCompilerOutput>(output: T)
     if (annotation.kind === "WPMEM") {
       const parsed = parseWpmemArgs(annotation.text, symbols);
       if ("error" in parsed) {
-        warn(`WPMEM ignored: ${parsed.error}`);
+        warn(t("debug.annotation.wpmemIgnored", { reason: parsed.error }));
         continue;
       }
       kept.push(annotation);
@@ -140,10 +141,10 @@ export function checkSourceAnnotations<T extends KliveCompilerOutput>(output: T)
         );
         if (!result.compiled) {
           const first = result.errors[0];
-          warn(`ASSERTION ignored: ${first.message} (column ${first.start + 1} of the expression)`);
+          warn(t("debug.annotation.assertionIgnored", { reason: first.message, column: String(first.start + 1) }));
           continue;
         }
-        for (const warning of result.warnings) warn(`ASSERTION: ${warning.message}`);
+        for (const warning of result.warnings) warn(t("debug.annotation.assertionWarning", { message: warning.message }));
       }
       kept.push(annotation);
       continue;
@@ -151,10 +152,10 @@ export function checkSourceAnnotations<T extends KliveCompilerOutput>(output: T)
     const result = compileLogTemplate(annotation.text, "dezog", { accessKind: "exec", symbols });
     if (!result.template) {
       const first = result.errors[0];
-      warn(`LOGPOINT ignored: ${first.message} (column ${first.start + 1} of the message)`);
+      warn(t("debug.annotation.logpointIgnored", { reason: first.message, column: String(first.start + 1) }));
       continue;
     }
-    for (const warning of result.warnings) warn(`LOGPOINT: ${warning.message}`);
+    for (const warning of result.warnings) warn(t("debug.annotation.logpointWarning", { message: warning.message }));
     kept.push(annotation);
   }
   return {

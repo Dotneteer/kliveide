@@ -1,0 +1,19 @@
+{
+  "commands.usage.bpSet.len": "-len: un punto de interrupción de memoria (-r/-w) que abarca este número de bytes, p. ej. bp-set $8000 -w -len 5",
+  "commands.usage.bpSet.copper": "cu:<index>: (ZX Spectrum Next) se detiene cuando el Copper completa el índice de lista $000-$3FF; un WAIT, cuando se cumple, p. ej. bp-set cu:$00B -hit 50",
+  "commands.usage.bpSet.sprite": "sp:<sprite>: (ZX Spectrum Next) se detiene cuando se escribe un byte de atributo del sprite $00-$7F; -attr elige los bytes, p. ej. bp-set sp:$0C -attr 0,1",
+  "commands.usage.bpSet.once": "-once: un punto de interrupción de un solo uso, que se elimina la primera vez que detiene la máquina; nunca se guarda",
+  "commands.usage.bpSet.log": "-log: registra el mensaje y continúa en lugar de detenerse (un punto de registro), p. ej. {example}",
+  "commands.usage.bpSet.hit": "-hit: se detiene en la activación N (N o =N), después de ella (>N), desde ella (>=N), antes de ella (<N), hasta ella (<=N), cada N-ésima (*N)",
+  "commands.usage.bpSet.if": "-if: debe ir al final; el resto de la línea es la condición, p. ej. -if A == $FF && !ZF",
+  "commands.usage.lpEnable.groups": "sin grupos: registran todos los puntos de registro (-d: ninguno); con grupos: solo registran esos (-d: esos dejan de registrar)",
+  "commands.usage.annotationEnable.disable": "-d: los desactiva; se guarda con el proyecto",
+  "commands.usage.nav.record": "-r: registra el salto en el historial de navegación (Atrás / Adelante); el motivo es uno de {reasons}",
+  "commands.usage.testRun.pattern": "pattern: Suite.UT_name, con * como comodín (todas las pruebas si se omite)",
+  "commands.usage.testRun.failed": "-failed: solo las pruebas que fallaron o terminaron con error la última vez",
+  "commands.usage.testRun.coverage": "-coverage: combina la cobertura de código de las pruebas con la vista de cobertura del editor",
+  "commands.usage.testDebug.test": "test: Suite.UT_name, o un patrón con * que designe una sola prueba",
+  "commands.usage.testJunit.file": "file: el archivo XML que se escribe",
+  "commands.usage.testJunit.noTimestamp": "-notimestamp: omite la hora de la ejecución, de modo que dos ejecuciones escriben el mismo archivo",
+  "commands.usage.watchAdd.types": ">: usa el valor directo del símbolo\n<type>:\n  b=byte,\n  w=16 bits little-endian, -w=16 bits big-endian,\n  l=32 bits little-endian, -l=32 bits big-endian,\n  f=indicador,\n  a=matriz (usa la longitud, por defecto: 8), s=cadena (usa la longitud, por defecto: 8)"
+}

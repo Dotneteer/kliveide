@@ -27,6 +27,7 @@ import { PANE_ID_AUTOMATION } from "@common/integration/constants";
 import { disconnectAllAutomationClients } from "../automation/automation-controller";
 import type { MenuContext } from "./menu-context";
 import { tidySeparators } from "./menu-utils";
+import { t } from "@common/i18n/i18n";
 
 /*
  * macOS only: elsewhere these are Ctrl+letter, and the emulator reads Ctrl as a machine key (the
@@ -39,7 +40,7 @@ export const SETTINGS_ACCELERATOR = "Cmd+,";
 export function settingsMenuItem(context: MenuContext): MenuItemConstructorOptions {
   return {
     id: "open_settings",
-    label: "Settings...",
+    label: t("menu.file.settings"),
     accelerator: context.isMac ? SETTINGS_ACCELERATOR : undefined,
     click: async () => await context.openSettings()
   };
@@ -56,11 +57,11 @@ export function automationMenuItems(context: MenuContext): MenuItemConstructorOp
   return [
     {
       id: "automation_menu",
-      label: "Automation",
+      label: t("menu.automation.title"),
       submenu: [
         {
           id: "automation_show_output",
-          label: "Show Automation Output",
+          label: t("menu.automation.showOutput"),
           click: async () => {
             context.ensureIdeWindow();
             await getIdeApi().executeCommand(`outp ${PANE_ID_AUTOMATION}`);
@@ -68,7 +69,9 @@ export function automationMenuItems(context: MenuContext): MenuItemConstructorOp
         },
         {
           id: "automation_disconnect_all",
-          label: clients ? `Disconnect All (${clients})` : "Disconnect All",
+          label: clients
+            ? t("menu.automation.disconnectAllCount", { count: clients })
+            : t("menu.automation.disconnectAll"),
           enabled: clients > 0,
           click: () => {
             disconnectAllAutomationClients();
@@ -106,7 +109,7 @@ export function createFileMenu(context: MenuContext): MenuItemConstructorOptions
   const items: MenuItemConstructorOptions[] = [
     {
       id: "new_project",
-      label: "New Project...",
+      label: t("menu.file.newProject"),
       click: async () => {
         context.ensureIdeWindow();
         await getIdeApi().displayDialog(NEW_PROJECT_DIALOG);
@@ -114,48 +117,48 @@ export function createFileMenu(context: MenuContext): MenuItemConstructorOptions
     },
     {
       id: "open_folder",
-      label: "Open Folder...",
+      label: t("menu.file.openFolder"),
       click: async () => {
         context.ensureIdeWindow();
         await openFolder(context.ideWindow);
       }
     },
     ...(recentProjects.length > 0
-      ? [{ id: "recent_projects", label: "Open Recent", submenu: recentProjects }]
+      ? [{ id: "recent_projects", label: t("menu.file.openRecent"), submenu: recentProjects }]
       : []),
     { type: "separator" },
     {
       // --- Snapshots, states, RZX recordings and tapes, routed by extension like a dropped file
       id: "open_file",
-      label: "Open File...",
+      label: t("menu.file.openFile"),
       accelerator: context.isMac ? OPEN_FILE_ACCELERATOR : undefined,
       click: async () => await pickAndOpenEmulatorFile(context.focusedWindow())
     },
     {
       // --- Enabled only while a ZX Spectrum has a state to save
       id: "save_spectrum_snapshot",
-      label: "Save Snapshot...",
+      label: t("menu.file.saveSnapshot"),
       enabled: canSaveSpectrumSnapshot(appState),
       click: async () => await saveSpectrumSnapshotAs(context.focusedWindow())
     },
     {
       // --- Any machine with a state (.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md §4.9)
       id: "save_machine_state",
-      label: "Save Machine State...",
+      label: t("menu.file.saveMachineState"),
       enabled: canSaveMachineState(appState),
       click: async () => await saveMachineStateAs(context.focusedWindow())
     },
     { type: "separator" },
     {
       id: "machine_quick_save_state",
-      label: "Quick Save State",
+      label: t("menu.file.quickSaveState"),
       accelerator: QUICK_SAVE_ACCELERATOR,
       enabled: canSaveMachineState(appState),
       click: async () => await quickSaveState(context.emuWindow)
     },
     {
       id: "machine_quick_restore_state",
-      label: "Quick Restore State",
+      label: t("menu.file.quickRestoreState"),
       accelerator: QUICK_RESTORE_ACCELERATOR,
       enabled: canQuickRestoreMachineState(appState),
       click: async () => await quickRestoreState(context.emuWindow)
@@ -163,7 +166,7 @@ export function createFileMenu(context: MenuContext): MenuItemConstructorOptions
     { type: "separator" },
     {
       id: "close_folder",
-      label: "Close Folder",
+      label: t("menu.file.closeFolder"),
       enabled: !!appState?.project?.folderPath,
       click: async () => {
         await closeCurrentFolder(context);
@@ -176,8 +179,10 @@ export function createFileMenu(context: MenuContext): MenuItemConstructorOptions
           settingsMenuItem(context),
           ...automationMenuItems(context),
           { type: "separator" },
-          { role: "quit" }
+          // --- Explicit label, or the OS labels it in its own language (Electron says "Exit" on
+          // --- Windows and "Quit" on Linux)
+          { role: "quit", label: process.platform === "win32" ? t("menu.file.exit") : t("menu.file.quit") }
         ] as MenuItemConstructorOptions[]))
   ];
-  return { label: "File", submenu: tidySeparators(items) };
+  return { label: t("menu.file.title"), submenu: tidySeparators(items) };
 }

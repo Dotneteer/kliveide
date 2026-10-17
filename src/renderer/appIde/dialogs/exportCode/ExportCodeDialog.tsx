@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 
+import { useT } from "@common/i18n/useT";
 import { PANE_ID_BUILD } from "@common/integration/constants";
 import { incProjectFileVersionAction, setExportDialogInfoAction } from "@common/state/actions";
 import { Modal } from "@controls/Modal";
@@ -27,6 +28,7 @@ type Props = {
  * the view.
  */
 export const ExportCodeDialog = ({ onClose, onExport }: Props) => {
+  const t = useT();
   const dispatch = useDispatch();
   const { store } = useRendererContext();
   const mainApi = useMainApi();
@@ -88,7 +90,7 @@ export const ExportCodeDialog = ({ onClose, onExport }: Props) => {
 
   return (
     <Modal
-      title="Export Code"
+      title={t("dialog.exportCode.title")}
       iconName="repo-push"
       isOpen={true}
       fullScreen={false}

@@ -10,10 +10,13 @@ import { buildDiagnosticsValue, compileCode } from "@renderer/appIde/utils/compi
  * See the note on the function itself.
  */
 import { injectCode } from "./KliveCompilerCommands";
+import { t } from "@common/i18n/i18n";
 
 export class CompileCommand extends IdeCommandBase {
   readonly id = "compile";
-  readonly description = "Compiles the current project";
+  get description() {
+    return t("commands.build.compileDescription");
+  }
   readonly usage = "compile";
   readonly aliases = ["co"];
   readonly requiresProject = true;
@@ -24,13 +27,15 @@ export class CompileCommand extends IdeCommandBase {
     const value = buildDiagnosticsValue(compileResult.result);
     return compileResult.message
       ? commandError(compileResult.message, value)
-      : commandSuccessWith(`Project file successfully compiled.`, value);
+      : commandSuccessWith(t("commands.build.compiled"), value);
   }
 }
 
 export class InjectCodeCommand extends IdeCommandBase {
   readonly id = "inject";
-  readonly description = "Injects the current projec code into the machine";
+  get description() {
+    return t("commands.build.injectDescription");
+  }
   readonly usage = "inject";
   readonly aliases = ["inj"];
   readonly requiresProject = true;
@@ -42,7 +47,9 @@ export class InjectCodeCommand extends IdeCommandBase {
 
 export class RunCodeCommand extends IdeCommandBase {
   readonly id = "run";
-  readonly description = "Runs the current project's code in the virtual machine";
+  get description() {
+    return t("commands.build.runDescription");
+  }
   readonly usage = "run";
   readonly aliases = ["r"];
   readonly requiresProject = true;
@@ -55,7 +62,9 @@ export class RunCodeCommand extends IdeCommandBase {
 
 export class DebugCodeCommand extends IdeCommandBase {
   readonly id = "debug";
-  readonly description = "Runs the current project's code in the virtual machine with debugging";
+  get description() {
+    return t("commands.build.debugDescription");
+  }
   readonly usage = "debug";
   readonly aliases = ["rd"];
 

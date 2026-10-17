@@ -28,6 +28,7 @@ import {
   ContextMenuSeparator,
   useContextMenuState
 } from "./ContextMenu";
+import { useT } from "@common/i18n/useT";
 
 type Props = {
   recordingManagerRef?: MutableRefObject<RecordingManager | null>;
@@ -35,6 +36,7 @@ type Props = {
 
 
 export const ViewControls = ({ recordingManagerRef }: Props) => {
+  const t = useT();
   const dispatch = useDispatch();
   const emuApi = useEmuApi();
   const mainApi = useMainApi();
@@ -79,7 +81,7 @@ export const ViewControls = ({ recordingManagerRef }: Props) => {
         buttonHeight={TOOLBAR_BUTTON_SIZE}
         fill="--color-toolbarbutton"
         selected={stayOnTop}
-        title={"Stay on top"}
+        title={t("toolbar.stayOnTop")}
         clicked={async () => {
           await mainApi.setGlobalSettingsValue(SETTING_EMU_STAY_ON_TOP, !stayOnTop);
         }}
@@ -92,7 +94,7 @@ export const ViewControls = ({ recordingManagerRef }: Props) => {
         buttonHeight={TOOLBAR_BUTTON_SIZE}
         fill="--color-toolbarbutton"
         selected={showInstantScreen}
-        title="Turn on/off instant screen"
+        title={t("toolbar.instantScreen")}
         clicked={async () => {
           await mainApi.setGlobalSettingsValue(SETTING_EMU_SHOW_INSTANT_SCREEN, !showInstantScreen);
         }}
@@ -107,7 +109,7 @@ export const ViewControls = ({ recordingManagerRef }: Props) => {
           buttonHeight={TOOLBAR_BUTTON_SIZE}
           fill="--color-toolbarbutton"
           selected={showBeamPosition}
-          title="Show/Hide the beam position while paused"
+          title={t("toolbar.beamPosition")}
           clicked={async () => {
             await mainApi.setGlobalSettingsValue(SETTING_EMU_SHOW_BEAM_POSITION, !showBeamPosition);
           }}
@@ -137,9 +139,9 @@ export const ViewControls = ({ recordingManagerRef }: Props) => {
             title={
               mouseCaptureEnabled
                 ? mouseCaptured
-                  ? "Mouse captured \u2013 press Esc to release"
-                  : "Capture the mouse (Esc releases it)"
-                : "Mouse capture is switched off in the Machine | Mouse menu"
+                  ? t("toolbar.mouse.captured")
+                  : t("toolbar.mouse.capture")
+                : t("toolbar.mouse.disabled")
             }
             clicked={() => {
               requestMouseCapture();
@@ -155,7 +157,7 @@ export const ViewControls = ({ recordingManagerRef }: Props) => {
         buttonHeight={TOOLBAR_BUTTON_SIZE}
         fill="--color-toolbarbutton"
         selected={showKeyboard}
-        title="Show/Hide keyboard"
+        title={t("toolbar.keyboard")}
         clicked={async () => {
           await mainApi.setGlobalSettingsValue(SETTING_EMU_SHOW_KEYBOARD, !showKeyboard);
         }}
@@ -164,12 +166,12 @@ export const ViewControls = ({ recordingManagerRef }: Props) => {
       <ToolbarSplitAction
         iconName={muted ? "unmute" : "mute"}
         fill="--color-toolbarbutton"
-        title={muted ? "Unmute sound" : "Mute sound"}
+        title={muted ? t("toolbar.sound.unmute") : t("toolbar.sound.mute")}
         clicked={async () => {
           dispatch(muteSoundAction(!muted));
           await saveProject();
         }}
-        dropdownTitle="Sound level"
+        dropdownTitle={t("toolbar.sound.level")}
         dropdownClicked={(e) => soundMenuApi.showAt(e.currentTarget)}
       />
       {soundMenu.contextVisible && (
@@ -195,7 +197,7 @@ export const ViewControls = ({ recordingManagerRef }: Props) => {
           buttonWidth={TOOLBAR_BUTTON_SIZE}
           buttonHeight={TOOLBAR_BUTTON_SIZE}
           fill="--color-toolbarbutton"
-          title="Fast LOAD mode"
+          title={t("toolbar.fastLoad")}
           selected={fastLoad}
           clicked={async () => {
             await mainApi.setGlobalSettingsValue(SETTING_EMU_FAST_LOAD, !fastLoad);
@@ -209,7 +211,7 @@ export const ViewControls = ({ recordingManagerRef }: Props) => {
           buttonWidth={TOOLBAR_BUTTON_SIZE}
           buttonHeight={TOOLBAR_BUTTON_SIZE}
           fill="--color-toolbarbutton"
-          title="Rewind the tape"
+          title={t("toolbar.rewindTape")}
           enable={!!tapeFile}
           clicked={async () => {
             await mainApi.reloadTapeFile();
@@ -233,36 +235,36 @@ export const ViewControls = ({ recordingManagerRef }: Props) => {
           selected={recState === "recording" || recState === "armed"}
           title={
             !recState || recState === "idle"
-              ? "Start video recording \u2014 the arrow next to it has the other recordings"
+              ? t("toolbar.record.start")
               : recState === "armed"
-                ? "Ready \u2013 waiting for machine to run (click to cancel)"
+                ? t("toolbar.record.armed")
                 : recState === "recording"
-                  ? "Recording... (click to stop)"
-                  : "Recording paused (click to stop)"
+                  ? t("toolbar.record.recording")
+                  : t("toolbar.record.paused")
           }
           clicked={
             !recState || recState === "idle"
               ? () => recordingManagerRef?.current?.arm(undefined, isRunning)
               : () => recordingManagerRef?.current?.disarm()
           }
-          dropdownTitle="Recordings"
+          dropdownTitle={t("toolbar.record.menu")}
           dropdownClicked={(e) => recordMenuApi.showAt(e.currentTarget)}
         />
       )}
       {recordMenu.contextVisible && (
         <ContextMenu state={recordMenu} onClickOutside={recordMenuApi.conceal}>
           <ContextMenuItem
-            text={windowRecording ? "Stop IDE + Emulator Recording" : "Start IDE + Emulator Recording"}
+            text={windowRecording ? t("toolbar.record.stopIdeEmu") : t("toolbar.record.startIdeEmu")}
             disabled={!windowRecording && !!recState && recState !== "idle"}
             clicked={async () => {
               recordMenuApi.conceal();
               const problem = await mainApi.runUiAction("toggle-ide-emu-recording");
-              if (problem) await mainApi.displayMessageBox("info", "IDE + Emulator Recording", problem);
+              if (problem) await mainApi.displayMessageBox("info", t("toolbar.record.ideEmuTitle"), problem);
             }}
           />
           <ContextMenuSeparator />
           <ContextMenuItem
-            text="Recording Settings..."
+            text={t("menu.machine.recordingSettings")}
             clicked={async () => {
               recordMenuApi.conceal();
               await mainApi.runUiAction("open-settings", "recording");

@@ -2,7 +2,7 @@ import type { AppState } from "@common/state/AppState";
 import type { Store } from "@common/state/redux-light";
 import type { EmuApi } from "@common/messaging/EmuApi";
 import type { MainApi } from "@common/messaging/MainApi";
-import { forkConfirmation } from "@common/history/reverseDebugText";
+import { forkConfirmation, type ForkAction } from "@common/history/reverseDebugText";
 
 /** What the fork confirmation needs: the store, and the two APIs */
 export type ForkDeps = {
@@ -20,10 +20,13 @@ export function isInThePast(store: Store<AppState>): boolean {
 /**
  * Asks before forking (`.plans/REVERSE_DEBUGGING_PLAN.md` D12, T4) - naming what the discarded future
  * takes with it - and forks when the user agrees
- * @param action What forks: "Take over here", or an edit ("Edit a register")
+ * @param action What forks: Take over here, or an edit (an id: the dialog's question is a whole message per action)
  * @returns true when the machine forked, false when the user declined
  */
-export async function confirmAndTakeOver(deps: ForkDeps, action = "Take over here"): Promise<boolean> {
+export async function confirmAndTakeOver(
+  deps: ForkDeps,
+  action: ForkAction = { kind: "takeOver" }
+): Promise<boolean> {
   const text = forkConfirmation(await deps.emuApi.getForkPreview(), action);
   if (!(await deps.mainApi.confirmAction(text.title, text.message, text.detail, text.confirmLabel))) return false;
   return await deps.emuApi.takeOverHere();
@@ -34,7 +37,7 @@ export async function confirmAndTakeOver(deps: ForkDeps, action = "Take over her
  * a confirmation. At the present, or without a timeline, there is nothing to ask.
  * @returns false when the user declined: the edit must not happen
  */
-export async function takeOverBeforeEdit(deps: ForkDeps, action: string): Promise<boolean> {
+export async function takeOverBeforeEdit(deps: ForkDeps, action: ForkAction): Promise<boolean> {
   if (!isInThePast(deps.store)) return true;
   if (!(await confirmAndTakeOver(deps, action))) return false;
   return true;

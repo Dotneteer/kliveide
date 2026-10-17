@@ -20,6 +20,7 @@ import {
 } from "./spectrumSnapshot";
 import { SnapshotBytes, SnapshotRefusedError, type SnapshotWriteResult } from "./snapshotBytes";
 import { commonLosses } from "./snapshotLosses";
+import { t } from "@common/i18n/i18n";
 
 /** The 27-byte header shared by both layouts */
 function writeHeader(out: SnapshotBytes, s: SpectrumSnapshot, sp: number): void {
@@ -52,13 +53,11 @@ function bank(s: SpectrumSnapshot, index: number): Uint8Array {
  */
 export function writeSnaFile(s: SpectrumSnapshot): SnapshotWriteResult {
   if (typeof s.machine === "object") {
-    throw new SnapshotRefusedError(`A ${s.machine.unsupported} snapshot cannot be saved`);
+    throw new SnapshotRefusedError(t("media.snapshot.refused.unsupported", { machine: s.machine.unsupported }));
   }
   const losses = commonLosses(s, "sna");
   if (s.cpu.iff1 !== s.cpu.iff2) {
-    losses.push(
-      `IFF1 (${s.cpu.iff1 ? 1 : 0}) differs from IFF2 (${s.cpu.iff2 ? 1 : 0}); a .sna keeps only IFF2, which becomes IFF1 on load`
-    );
+    losses.push(t("media.snapshot.loss.snaIff", { iff1: s.cpu.iff1 ? "1" : "0", iff2: s.cpu.iff2 ? "1" : "0" }));
   }
   return isPagedSnapshotMachine(s.machine)
     ? { bytes: write128(s, losses), losses }
@@ -67,25 +66,27 @@ export function writeSnaFile(s: SpectrumSnapshot): SnapshotWriteResult {
 
 function write48(s: SpectrumSnapshot, losses: string[]): Uint8Array {
   if (s.machine === "16k") {
-    losses.push("A .sna has no 16K layout; the file loads as a 48K");
+    losses.push(t("media.snapshot.loss.sna16k"));
   } else if (s.machine === "48k-ntsc") {
-    losses.push("A .sna has no NTSC layout; the file loads as a PAL 48K");
+    losses.push(t("media.snapshot.loss.snaNtsc"));
   } else if (s.machine === "tc2048" || s.machine === "tc2068" || s.machine === "ts2068") {
     losses.push(
-      `A .sna has no Timex layout; the file loads as a 48K${(s.timex?.portFf ?? 0) !== 0 ? ", without the SCLD's port $FF (screen mode " + hex(s.timex!.portFf) + ")" : ""}`
+      (s.timex?.portFf ?? 0) !== 0
+        ? t("media.snapshot.loss.snaTimexScreenMode", { mode: hex(s.timex!.portFf) })
+        : t("media.snapshot.loss.snaTimex")
     );
-    if (s.timex?.portF4) losses.push(`A .sna has no chunk map: port $F4 (${hex(s.timex.portF4)}) is lost`);
-    if (s.timex?.dock?.length) losses.push("A .sna does not record the cartridge in the DOCK");
+    if (s.timex?.portF4) losses.push(t("media.snapshot.loss.snaChunkMap", { value: hex(s.timex.portF4) }));
+    if (s.timex?.dock?.length) losses.push(t("media.snapshot.loss.snaDock"));
   }
   if (s.ay?.on48k || (s.ay && (s.machine === "tc2068" || s.machine === "ts2068"))) {
-    losses.push("A 48K .sna has no AY registers; they are not saved");
+    losses.push(t("media.snapshot.loss.sna48Ay"));
   }
 
   // --- Push PC: the low byte at SP-2, the high byte at SP-1
   const sp = (s.cpu.sp - 2) & 0xffff;
   if (sp < 0x4000 || sp === 0xffff) {
     throw new SnapshotRefusedError(
-      `SP is ${hex(s.cpu.sp, 4)}: a 48K .sna stores PC on the stack, and ${hex(sp, 4)} is not RAM it could be stored in`
+      t("media.snapshot.refused.sna48Stack", { sp: hex(s.cpu.sp, 4), pushAt: hex(sp, 4) })
     );
   }
   const ram = new Uint8Array(3 * SPECTRUM_BANK_SIZE);
@@ -104,24 +105,20 @@ function write128(s: SpectrumSnapshot, losses: string[]): Uint8Array {
   if (isPlus3SnapshotMachine(s.machine)) {
     const port1ffd = s.paging?.port1ffd ?? 0;
     if (port1ffd & 0x01) {
-      throw new SnapshotRefusedError(
-        `The machine is in +3 special paging mode ($1FFD = ${hex(port1ffd)}), which a .sna cannot hold; save it as .szx or .z80`
-      );
+      throw new SnapshotRefusedError(t("media.snapshot.refused.snaPlus3Special", { value: hex(port1ffd) }));
     }
-    losses.push("A .sna has no $1FFD port and no +2A/+3 layout; the file loads as a ZX Spectrum 128K");
+    losses.push(t("media.snapshot.loss.snaPlus3"));
   } else if (s.machine === "plus2") {
-    losses.push("A .sna has no +2 layout; the file loads as a ZX Spectrum 128K");
+    losses.push(t("media.snapshot.loss.snaPlus2"));
   } else if (s.machine === "scorpion") {
     const port1ffd = s.paging?.port1ffd ?? 0;
     if (port1ffd & 0x13) {
-      throw new SnapshotRefusedError(
-        `The Scorpion's $1FFD is ${hex(port1ffd)} (RAM at $0000, the service ROM or a bank above 7), which a .sna cannot hold; save it as .szx or .z80`
-      );
+      throw new SnapshotRefusedError(t("media.snapshot.refused.snaScorpion", { value: hex(port1ffd) }));
     }
-    losses.push("A .sna has no Scorpion layout; the file loads as a 128K, without RAM banks 8-15");
+    losses.push(t("media.snapshot.loss.snaScorpion"));
   }
   if (s.ay && s.ay.regs.some((r) => r !== 0)) {
-    losses.push("A .sna has no AY registers; the sound chip starts silent");
+    losses.push(t("media.snapshot.loss.snaAy"));
   }
 
   const paged = port7ffd & 0x07;

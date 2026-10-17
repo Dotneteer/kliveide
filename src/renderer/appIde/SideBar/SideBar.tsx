@@ -1,3 +1,4 @@
+import { useT } from "@common/i18n/useT";
 import styles from "./SideBar.module.scss";
 import { ReactNode, useEffect, useRef } from "react";
 import { SideBarHeader } from "./SideBarHeader";
@@ -21,6 +22,8 @@ type Props = {
  * This function renders the Side Bar component of the IDE
  */
 export const SideBar = ({ order }: Props) => {
+  // --- Re-render on a language switch: the activity and panel titles are translated on read
+  useT();
   const dispatch = useDispatch();
   const { machineService } = useAppServices();
 

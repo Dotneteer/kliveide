@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 
 import {
   actionOffsetSpan,
-  ANNOTATION_LOAD_FAILED_MESSAGE,
+  annotationLoadFailedMessage,
   canAssignOperandLabel,
   deleteLabelConfirmRequest,
   discardConfirmMessage,
@@ -65,7 +65,7 @@ describe("toolbar", () => {
     const vm = selectViewModel(aState({ loading: false, annotations: undefined }));
     expect(vm.toolbar.warning).toEqual({
       kind: "warning",
-      title: ANNOTATION_LOAD_FAILED_MESSAGE
+      title: annotationLoadFailedMessage()
     });
   });
 

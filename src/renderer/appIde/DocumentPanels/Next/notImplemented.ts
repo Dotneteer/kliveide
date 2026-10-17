@@ -7,7 +7,12 @@
  *
  * The words live here rather than in each panel because these seven are the app's strongest
  * candidate for a seventh being written by copying a sixth — which is exactly how the NEX
- * annotation dialog family drifted into three spellings of the same thing. One constant, and the
+ * annotation dialog family drifted into three spellings of the same thing. One function, and the
  * seventh inherits the wording for free.
  */
-export const NOT_IMPLEMENTED_MESSAGE = "Not implemented yet";
+import { t } from "@common/i18n/i18n";
+
+/** The message, in the display language (D7: read at display time). */
+export function notImplementedMessage(): string {
+  return t("panels.next.notImplemented");
+}

@@ -8,6 +8,8 @@
  * Every problem is collected, so the viewer can list them all.
  */
 
+import { t } from "@common/i18n/i18n";
+import type { MessageKey } from "@common/i18n/keys.generated";
 import { MI_SCORPION, MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48, MI_TIMEX } from "@common/machines/constants";
 import { TIMEX_MODELS } from "@emu/machines/timex/timexModels";
 import { P3_MODELS } from "@emu/machines/zxSpectrumP3e/p3RomSets";
@@ -45,7 +47,7 @@ const TARGETS: Record<
     machineId: string;
     modelIds: (string | undefined)[];
     kliveName: string;
-    warning?: string;
+    warning?: MessageKey;
     /** The warning is about the +E ROMs, and does not hold on an Amstrad model */
     eRoms?: boolean;
   }
@@ -68,7 +70,7 @@ const TARGETS: Record<
     machineId: MI_SPECTRUM_128,
     modelIds: ["sp128", "pentagon"],
     kliveName: "ZX Spectrum 128K",
-    warning: "A ZX Spectrum +2 snapshot runs on Klive's 128K (the +2 ROM differs only in its menu)"
+    warning: "media.snapshot.warning.plus2"
   },
   // --- The +E models come first, so a snapshot opens on them by default (plan Q4); a project
   // --- already on an Amstrad model keeps it (`fitSpectrumMachine`)
@@ -76,8 +78,7 @@ const TARGETS: Record<
     machineId: MI_SPECTRUM_3E,
     modelIds: ["nofdd", "fdd1", "fdd2", "plus2a", "plus2a-es"],
     kliveName: "ZX Spectrum +2E",
-    warning:
-      "A ZX Spectrum +2A snapshot runs on Klive's +2E, with the +E ROMs instead of the Amstrad ones",
+    warning: "media.snapshot.warning.plus2a",
     eRoms: true
   },
   plus3: {
@@ -93,8 +94,7 @@ const TARGETS: Record<
       "plus3-es-fdd2"
     ],
     kliveName: "ZX Spectrum +3E",
-    warning:
-      "A ZX Spectrum +3 snapshot runs on Klive's +3E, with the +E ROMs instead of the Amstrad ones",
+    warning: "media.snapshot.warning.plus3",
     eRoms: true
   },
   plus3e: { machineId: MI_SPECTRUM_3E, modelIds: ["fdd1", "fdd2"], kliveName: "ZX Spectrum +3E" },
@@ -134,35 +134,36 @@ export function mapSpectrumSnapshotToKlive(snapshot: SpectrumSnapshot): Spectrum
   if (typeof machine === "object") {
     return {
       modelIds: [],
-      errors: [`Klive cannot emulate the ${machine.unsupported}`],
+      errors: [t("media.snapshot.error.cannotEmulate", { machine: machine.unsupported })],
       warnings
     };
   }
   const target = TARGETS[machine];
   let modelIds = [...target.modelIds];
-  if (target.warning) warnings.push(target.warning);
-  const eRomWarning = target.eRoms ? target.warning : undefined;
+  const targetWarning = target.warning ? t(target.warning) : undefined;
+  if (targetWarning) warnings.push(targetWarning);
+  const eRomWarning = target.eRoms ? targetWarning : undefined;
 
   const p = snapshot.peripherals;
   if (snapshot.ay?.on48k) {
-    warnings.push("The snapshot uses an AY chip on a 48K, which Klive's 48K does not have");
+    warnings.push(t("media.snapshot.warning.ayOn48k"));
   }
-  if (p.interface1) warnings.push("Interface 1 is not emulated; its state is ignored");
-  if (p.mgt) warnings.push("The M.G.T. (Disciple/Plus D) interface is not emulated");
+  if (p.interface1) warnings.push(t("media.snapshot.warning.interface1"));
+  if (p.mgt) warnings.push(t("media.snapshot.warning.mgt"));
   // --- The Beta 128 (TR-DOS) is the Pentagon's: such a snapshot opens on it
   if (p.trdosPaged || p.beta128) {
     if (target.machineId === MI_SPECTRUM_128) {
       modelIds = ["pentagon", ...modelIds.filter((m) => m !== "pentagon")];
     } else if (target.machineId !== MI_SCORPION) {
-      warnings.push("The snapshot uses the Beta 128 (TR-DOS), which only Klive's Pentagon 128 and Scorpion ZS-256 have");
+      warnings.push(t("media.snapshot.warning.beta128"));
     }
   }
-  if (p.issue2) warnings.push("The snapshot asks for an Issue 2 keyboard, which Klive does not emulate");
+  if (p.issue2) warnings.push(t("media.snapshot.warning.issue2"));
   if (snapshot.ula.alternateTimings) {
-    warnings.push("The snapshot uses the alternate (late) ULA timings; Klive uses the standard ones");
+    warnings.push(t("media.snapshot.warning.alternateTimings"));
   }
   if (p.customRomSize) {
-    warnings.push("The snapshot carries a custom ROM, which Klive does not install");
+    warnings.push(t("media.snapshot.warning.customRom"));
   }
   if (machine === "plus3e" && snapshot.format === "szx" && !p.plus3) {
     // --- A +3e zx-state without a +3 block has no drives: Klive writes its +2E that way
@@ -181,7 +182,7 @@ export function mapSpectrumSnapshotToKlive(snapshot: SpectrumSnapshot): Spectrum
     if (bank !== undefined) {
       const bytes = snapshot.ram.get(bank);
       if (bytes && bytes[pc & 0x3fff] !== 0x76) {
-        warnings.push("The CPU is halted, but PC does not point at a HALT instruction");
+        warnings.push(t("media.snapshot.warning.haltedNoHalt"));
       }
     }
   }
@@ -218,6 +219,6 @@ export function describeSnapshotMapping(
 ): string {
   const name = snapshotMachineName(snapshot.machine);
   return mapping.kliveName && mapping.kliveName.toLowerCase() !== name.toLowerCase()
-    ? `${name}, loads as ${mapping.kliveName}`
+    ? t("media.snapshot.loadsAs", { name, klive: mapping.kliveName })
     : name;
 }

@@ -9,6 +9,7 @@ import {
   type TapeTimelineSegment
 } from "./tapeView";
 import styles from "./TapeTimeline.module.scss";
+import { useT } from "@common/i18n/useT";
 
 /*
  * The tape in play order, one thin bar (`.plans/TAPE_VIEWER_PLAN.md` §4.4.1).
@@ -28,6 +29,7 @@ type Props = {
 };
 
 export const TapeTimeline = ({ blocks, selectedIndex, onSelect }: Props) => {
+  const t = useT();
   const ref = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
 
@@ -51,14 +53,19 @@ export const TapeTimeline = ({ blocks, selectedIndex, onSelect }: Props) => {
     const first = blocks[segment.first];
     const last = blocks[segment.last];
     const end = starts[segment.last] + last.durationMs;
-    const span = `${formatPlayTime(starts[segment.first])}–${formatPlayTime(end)}`;
-    const approx = blocks.slice(segment.first, segment.last + 1).some((b) => b.durationApprox)
-      ? " (approx.)"
-      : "";
+    const exact = `${formatPlayTime(starts[segment.first])}–${formatPlayTime(end)}`;
+    const span = blocks.slice(segment.first, segment.last + 1).some((b) => b.durationApprox)
+      ? t("panels.tape.fact.playsApprox", { span: exact })
+      : exact;
     if (segment.first !== segment.last) {
-      return `#${segment.first}–#${segment.last} · ${segment.last - segment.first + 1} blocks · ${span}${approx}`;
+      return t("panels.tape.timeline.merged", {
+        first: segment.first,
+        last: segment.last,
+        count: segment.last - segment.first + 1,
+        span
+      });
     }
-    return `#${first.index} · ${first.kindName} · ${first.groupLabel} · ${span}${approx}`;
+    return `#${first.index} · ${first.kindName} · ${first.groupLabel} · ${span}`;
   };
 
   return (

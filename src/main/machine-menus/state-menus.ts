@@ -28,6 +28,7 @@ import { getIdeApi } from "@messaging/MainToIdeMessenger";
 import { mainStore } from "@main/main-store";
 import { appSettings, saveAppSettings } from "@main/settings-utils";
 import { logEmuEvent } from "@main/registeredMachines";
+import { t } from "@common/i18n/i18n";
 
 /** The settings key of the folder the last state file was saved to or loaded from */
 const MACHINE_STATE_FOLDER = "machineStateFolder";
@@ -78,7 +79,7 @@ export function defaultStateFileName(state: AppState, now = new Date()): string 
 
 /** Shows a failed command's message */
 async function showError(window: BrowserWindow, message: string): Promise<void> {
-  await dialog.showMessageBox(window, { type: "error", title: "Machine State", message });
+  await dialog.showMessageBox(window, { type: "error", title: t("messages.state.title"), message });
 }
 
 /**
@@ -88,9 +89,9 @@ async function showError(window: BrowserWindow, message: string): Promise<void> 
 export async function saveMachineStateAs(browserWindow: BrowserWindow): Promise<void> {
   const folder = appSettings?.folders?.[MACHINE_STATE_FOLDER] || app.getPath("home");
   const result = await dialog.showSaveDialog(browserWindow, {
-    title: "Save Machine State",
+    title: t("messages.state.saveTitle"),
     defaultPath: path.join(folder, defaultStateFileName(mainStore.getState())),
-    filters: [{ name: "Klive machine state", extensions: ["kls"] }],
+    filters: [{ name: t("common.filter.machineState"), extensions: ["kls"] }],
     properties: ["showOverwriteConfirmation", "createDirectory"]
   });
   if (result.canceled || !result.filePath) return;
@@ -103,7 +104,7 @@ export async function saveMachineStateAs(browserWindow: BrowserWindow): Promise<
   // --- The dialog has already confirmed any overwrite
   const done = await getIdeApi().executeCommand(machineStateSaveCommandText(filename, true));
   if (!done?.success) {
-    await showError(browserWindow, done?.finalMessage ?? `Could not save ${filename}`);
+    await showError(browserWindow, done?.finalMessage ?? t("messages.couldNotSave", { file: filename }));
   }
 }
 
@@ -113,13 +114,15 @@ export async function saveMachineStateAs(browserWindow: BrowserWindow): Promise<
  */
 export async function loadMachineStateFile(browserWindow: BrowserWindow, filename: string): Promise<void> {
   let done = await getIdeApi().executeCommand(machineStateLoadCommandText(filename, "debug"));
-  if (!done?.success && /Use -y to load it anyway/.test(done?.finalMessage ?? "")) {
+  // --- A state that needs `-y` says why in the command's `value` (`StateLoadConfirmation`)
+  const reason = (done?.value as { needsConfirmation?: unknown } | undefined)?.needsConfirmation;
+  if (!done?.success && typeof reason === "string") {
     const answer = await dialog.showMessageBox(browserWindow, {
       type: "warning",
-      title: "Machine State",
-      message: (done.finalMessage ?? "").replace(/ Use -y to load it anyway\.$/, ""),
-      detail: "Load the state anyway?",
-      buttons: ["Load", "Cancel"],
+      title: t("messages.state.title"),
+      message: reason,
+      detail: t("messages.state.loadAnyway"),
+      buttons: [t("common.button.load"), t("common.button.cancel")],
       defaultId: 1,
       cancelId: 1
     });
@@ -127,7 +130,7 @@ export async function loadMachineStateFile(browserWindow: BrowserWindow, filenam
     done = await getIdeApi().executeCommand(`${machineStateLoadCommandText(filename, "debug")} -y`);
   }
   if (!done?.success) {
-    await showError(browserWindow, done?.finalMessage ?? `Could not load ${filename}`);
+    await showError(browserWindow, done?.finalMessage ?? t("messages.couldNotLoad", { file: filename }));
   }
 }
 

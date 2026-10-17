@@ -5,6 +5,7 @@ import { Modal } from "@controls/Modal";
 import { useController } from "@mvc/react/useController";
 import { useViewModel } from "@mvc/react/useViewModel";
 import { useDispatch, useRendererContext, useSelector } from "@renderer/core/RendererProvider";
+import { useT } from "@common/i18n/useT";
 
 import { getNodeFile } from "../../project/project-paths";
 import { saveProject } from "../../utils/save-project";
@@ -34,6 +35,7 @@ type Props = {
 export const ExcludedProjectItemsDialog = ({ onClose, onApply }: Props) => {
   const { messenger, store } = useRendererContext();
   const dispatch = useDispatch();
+  const t = useT();
 
   // --- A primitive, so the shallow-equal selector can do its job.
   const projectName = useSelector((state) =>
@@ -83,12 +85,12 @@ export const ExcludedProjectItemsDialog = ({ onClose, onApply }: Props) => {
 
   return (
     <Modal
-      title="Excluded Items"
+      title={t("dialog.excludedItems.title")}
       iconName="exclude"
       isOpen={true}
       fullScreen={false}
       width={500}
-      primaryLabel="OK"
+      primaryLabel={t("common.button.ok")}
       primaryEnabled={vm.applyEnabled}
       initialFocus="none"
       onPrimaryClicked={async () => {

@@ -159,7 +159,7 @@ describe("Z88SnapshotViewerPanel", () => {
   it("lists the archive's members one per row, so a long list cannot widen the viewer", async () => {
     await renderViewer(SAMPLE);
     expect(await screen.findByText("Contents:")).toBeInTheDocument();
-    for (const member of ["rom.bin (524288 bytes)", "ram.bin (131072 bytes)", "slot2.bin (32768 bytes)"]) {
+    for (const member of ["rom.bin (524,288 bytes)", "ram.bin (131,072 bytes)", "slot2.bin (32,768 bytes)"]) {
       expect(screen.getByText(member)).toBeInTheDocument();
     }
   });

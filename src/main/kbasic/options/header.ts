@@ -1,4 +1,6 @@
 import { DiagnosticBag, type Span } from "../diagnostics";
+import { t as tr } from "@common/i18n/i18n";
+import type { MessageKey } from "@common/i18n/keys.generated";
 import type { SourceFile } from "../syntax/source";
 import {
   defaultOptions,
@@ -38,18 +40,19 @@ const NEXTBUILD_ALIASES: Record<string, string> = {
 };
 
 /** NextBuild header options Klive does not take, with what to use instead. */
-const NEXTBUILD_UNSUPPORTED: Record<string, string> = {
-  copy: "copy the output with a build script step instead",
-  exe: "run the program with Klive's Run command",
-  hdf: "Klive exports NEX files; use the NEX export",
-  nb: "not needed",
-  nosys: "not needed",
-  module: "not supported",
-  master: "use the project's build root",
-  origin: "use '@origin",
-  asm: "use '@emit-asm",
-  nonex: "use '@output",
-  noemu: "not needed"
+/** The K011 message of each unsupported NextBuild option, and the Klive option to use instead. */
+const NEXTBUILD_UNSUPPORTED: Record<string, { key: MessageKey; option?: string }> = {
+  copy: { key: "compiler.basic.K011.copy" },
+  exe: { key: "compiler.basic.K011.exe" },
+  hdf: { key: "compiler.basic.K011.hdf" },
+  nb: { key: "compiler.basic.K011.notNeeded" },
+  nosys: { key: "compiler.basic.K011.notNeeded" },
+  module: { key: "compiler.basic.K011.module" },
+  master: { key: "compiler.basic.K011.master" },
+  origin: { key: "compiler.basic.K011.useOption", option: "origin" },
+  asm: { key: "compiler.basic.K011.useOption", option: "emit-asm" },
+  nonex: { key: "compiler.basic.K011.useOption", option: "output" },
+  noemu: { key: "compiler.basic.K011.notNeeded" }
 };
 
 /**
@@ -84,8 +87,9 @@ export function readHeader(file: SourceFile, diagnostics: DiagnosticBag): Header
       const value = stripComment(nextBuild[2] ?? "");
       if (name) options.push({ name, ...(value !== "" ? { value } : {}), span, alias });
       else if (alias in NEXTBUILD_UNSUPPORTED) {
-        diagnostics.warning("K011", `NextBuild's '!${alias} is not supported: ${NEXTBUILD_UNSUPPORTED[alias]}`, span);
-      } else diagnostics.warning("K010", `Unknown NextBuild option '!${alias}`, span);
+        const { key, option } = NEXTBUILD_UNSUPPORTED[alias];
+        diagnostics.warning("K011", tr(key, { alias, option }), span);
+      } else diagnostics.warning("K010", tr("compiler.basic.K010.nextBuild", { alias }), span);
     }
   }
   return options;
@@ -98,7 +102,7 @@ export function readHeader(file: SourceFile, diagnostics: DiagnosticBag): Header
 export function reportIgnoredHeader(file: SourceFile, diagnostics: DiagnosticBag): void {
   const first = readHeader(file, new DiagnosticBag())[0];
   if (first) {
-    diagnostics.info("K012", "Header options are read only from the build root; use #pragma in an included file", first.span);
+    diagnostics.info("K012", tr("compiler.basic.K012"), first.span);
   }
 }
 
@@ -129,12 +133,12 @@ export function applyHeader(base: KBasicOptions, header: HeaderOption[], diagnos
     const spec = OPTIONS_BY_NAME.get(h.name);
     if (!spec) {
       const guess = suggestion(h.name);
-      diagnostics.warning("K010", `Unknown option '@${h.name}'${guess ? `; did you mean '@${guess}'?` : ""}`, h.span);
+      diagnostics.warning("K010", guess ? tr("compiler.basic.K010.withGuess", { name: h.name, guess }) : tr("compiler.basic.K010.unknown", { name: h.name }), h.span);
       continue;
     }
     const value = parseValue(spec, h.value);
     if (value === undefined) {
-      diagnostics.error("E001", `Invalid value '${h.value ?? ""}' for '@${h.name}': expected ${expectation(spec)}`, h.span);
+      diagnostics.error("E001", invalidValue(spec, h.value ?? "", h.name), h.span);
       continue;
     }
     spec.apply(options, value);
@@ -172,21 +176,22 @@ function parseValue(spec: OptionSpec, raw: string | undefined): OptionValue | un
   }
 }
 
-function expectation(spec: OptionSpec): string {
+/** E001: the option's value does not fit, with what the option expects. */
+function invalidValue(spec: OptionSpec, value: string, name: string): string {
   const v = spec.value;
   switch (v.kind) {
     case "flag":
-      return "on or off";
+      return tr("compiler.basic.E001.flag", { value, name });
     case "int":
-      return `a number from ${v.min} to ${v.max}`;
+      return tr("compiler.basic.E001.int", { value, name, min: String(v.min), max: String(v.max) });
     case "enum":
-      return v.values.join(", ");
+      return tr("compiler.basic.E001.enum", { value, name, values: v.values.join(", ") });
     case "text":
-      return "a value";
+      return tr("compiler.basic.E001.text", { value, name });
     case "version":
-      return "a version such as 3.0.0";
+      return tr("compiler.basic.E001.version", { value, name });
     case "list":
-      return "a comma-separated list";
+      return tr("compiler.basic.E001.list", { value, name });
   }
 }
 

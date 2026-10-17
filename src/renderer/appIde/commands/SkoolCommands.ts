@@ -16,6 +16,7 @@ import { applyDetection } from "../reverse/detection";
 import { detectionContextFor } from "../reverse/detectionEnvironment";
 import { buildSkoolExport, buildSkoolImport, type SkoolExportScope } from "../reverse/skoolRun";
 import { exportContextFor } from "./ExportAsmCommand";
+import { t } from "@common/i18n/i18n";
 
 /*
  * SkoolKit import and export (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §6.4, G7.5). The formats
@@ -28,7 +29,9 @@ type SkoolImportArgs = { file: string; "-ctl"?: boolean; "-mode"?: string; "-app
 
 export class SkoolImportCommand extends IdeCommandBase<SkoolImportArgs> {
   readonly id = "skool-import";
-  readonly description = "Imports a SkoolKit skool or control file into the active annotations";
+  get description() {
+    return t("commands.skool.importDescription");
+  }
   readonly aliases = [];
   readonly usage = "skool-import <file> [-ctl] [-mode fill|replace] [-apply]";
   readonly argumentInfo: CommandArgumentInfo = {
@@ -40,18 +43,20 @@ export class SkoolImportCommand extends IdeCommandBase<SkoolImportArgs> {
   async validateCommandArgs(_context: IdeCommandContext, args: SkoolImportArgs): Promise<ValidationMessage[]> {
     const mode = args["-mode"]?.toLowerCase();
     return mode !== undefined && mode !== "fill" && mode !== "replace"
-      ? [validationError("-mode: use fill or replace")]
+      ? [validationError(t("commands.skool.modeValues"))]
       : [];
   }
 
   async execute(context: IdeCommandContext, args: SkoolImportArgs): Promise<IdeCommandResult> {
     const detection = detectionContextFor(context.store.getState(), context.service.projectService);
-    if (!detection) return commandError("This machine's memory cannot be annotated.");
+    if (!detection) return commandError(t("commands.common.notAnnotatable"));
     let text: string;
     try {
       text = await context.mainApi.readTextFile(args.file);
     } catch (err) {
-      return commandError(`Cannot read ${args.file}: ${err instanceof Error ? err.message : String(err)}`);
+      return commandError(
+        t("commands.common.cannotReadFile", { file: args.file, message: err instanceof Error ? err.message : String(err) })
+      );
     }
     // --- The format follows the extension, unless -ctl says otherwise
     const path = args["-ctl"] && !/\.ctl$/i.test(args.file) ? `${args.file}.ctl` : args.file;
@@ -65,13 +70,13 @@ export class SkoolImportCommand extends IdeCommandBase<SkoolImportArgs> {
       writeInfoMessage(context.output, describeProposal(target.proposal, target.name)[0]);
     }
     if (!args["-apply"]) {
-      writeInfoMessage(context.output, "Nothing was written. Add -apply to import.");
+      writeInfoMessage(context.output, t("commands.skool.dryRun"));
       return commandSuccess;
     }
     const { written, problems } = await applyDetection(run.targets, detection);
     problems.forEach((problem) => writeInfoMessage(context.output, problem));
-    if (!written.length) return commandError("Nothing was written.");
-    writeSuccessMessage(context.output, `Imported into ${written.join(", ")}. Undo with 'ann-detect -undo'.`);
+    if (!written.length) return commandError(t("commands.common.nothingWritten"));
+    writeSuccessMessage(context.output, t("commands.skool.imported", { paths: written.join(", ") }));
     return commandSuccess;
   }
 }
@@ -87,7 +92,9 @@ type SkoolExportArgs = {
 
 export class SkoolExportCommand extends IdeCommandBase<SkoolExportArgs> {
   readonly id = "skool-export";
-  readonly description = "Exports the active annotations as a SkoolKit skool or control file";
+  get description() {
+    return t("commands.skool.exportDescription");
+  }
   readonly aliases = [];
   readonly usage = "skool-export <file> [-ctl] [<from> <to>] [-bank <n>|all] [-split]";
   readonly argumentInfo: CommandArgumentInfo = {
@@ -103,18 +110,18 @@ export class SkoolExportCommand extends IdeCommandBase<SkoolExportArgs> {
   async validateCommandArgs(_context: IdeCommandContext, args: SkoolExportArgs): Promise<ValidationMessage[]> {
     const messages: ValidationMessage[] = [];
     if (args["-bank"] === undefined && (args.from === undefined || args.to === undefined)) {
-      messages.push(validationError("Give a range (<from> <to>), a bank (-bank <n>) or every bank (-bank all)."));
+      messages.push(validationError(t("commands.skool.rangeOrBank")));
     }
     const bank = args["-bank"];
     if (bank !== undefined && bank !== "all" && !/^(\$[0-9a-f]+|[0-9]+)$/i.test(String(bank))) {
-      messages.push(validationError("-bank: a bank number, or all"));
+      messages.push(validationError(t("commands.skool.bankValues")));
     }
     return messages;
   }
 
   async execute(context: IdeCommandContext, args: SkoolExportArgs): Promise<IdeCommandResult> {
     const exportContext = exportContextFor(context.store.getState(), context);
-    if (!exportContext) return commandError("This machine's memory cannot be annotated.");
+    if (!exportContext) return commandError(t("commands.common.notAnnotatable"));
     const bankArg = args["-bank"] !== undefined ? String(args["-bank"]) : undefined;
     const scope: SkoolExportScope =
       bankArg === "all"
@@ -127,12 +134,12 @@ export class SkoolExportCommand extends IdeCommandBase<SkoolExportArgs> {
     try {
       files = await buildSkoolExport(context.emuApi, exportContext, scope, format, !!args["-split"]);
     } catch (err) {
-      return commandError(`Export failed: ${err instanceof Error ? err.message : String(err)}`);
+      return commandError(t("commands.exportAsm.failed", { message: err instanceof Error ? err.message : String(err) }));
     }
     for (const file of files) {
       const path = file.suffix ? args.file.replace(/(\.[^./\\]+)?$/, (ext) => `${file.suffix}${ext}`) : args.file;
       await context.mainApi.saveTextFile(path, file.text);
-      writeSuccessMessage(context.output, `Exported ${format} to ${path}`);
+      writeSuccessMessage(context.output, t("commands.skool.exported", { format, path }));
     }
     return commandSuccess;
   }

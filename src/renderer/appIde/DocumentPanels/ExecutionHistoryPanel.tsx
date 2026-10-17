@@ -27,7 +27,7 @@ import {
   formatHistoryRow,
   HISTORY_EXPORT_FOLDER,
   historyExportCommandText,
-  TRACE_FILE_FILTERS,
+  traceFileFilters,
   VIEWER_TRACE_COLUMNS
 } from "@common/history/historyExport";
 import { PANE_ID_BUILD } from "@common/integration/constants";
@@ -84,6 +84,7 @@ import {
 } from "@renderer/features/history/historyViewModel";
 import { useEmuStateListener } from "../useStateRefresh";
 import styles from "./ExecutionHistoryPanel.module.scss";
+import { useT } from "@common/i18n/useT";
 
 /**
  * The Execution History document (`$history`, `.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.6, G4.1):
@@ -126,6 +127,7 @@ const REGISTER_ROWS: [keyof HistoryRegisters, string][] = [
 ];
 
 const ExecutionHistoryPanel = (_props: DocumentProps) => {
+  const t = useT();
   const emuApi = useEmuApi();
   const mainApi = useMainApi();
   const { ideCommandsService, outputPaneService, projectService } = useAppServices();
@@ -466,9 +468,9 @@ const ExecutionHistoryPanel = (_props: DocumentProps) => {
   const [exporting, setExporting] = useState(false);
   const exportRows = async (fromSequence?: number) => {
     const file = await mainApi.showSaveFileDialog({
-      title: "Export Execution History",
+      title: t("panels.doc.history.exportTitle"),
       defaultPath: `${machineId ?? "machine"}-trace.txt`,
-      filters: TRACE_FILE_FILTERS,
+      filters: traceFileFilters(),
       settingsId: HISTORY_EXPORT_FOLDER
     });
     if (!file) return;
@@ -485,7 +487,11 @@ const ExecutionHistoryPanel = (_props: DocumentProps) => {
         outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD)
       );
       if (!result?.success) {
-        await mainApi.displayMessageBox("error", "Export Execution History", result?.finalMessage ?? "Export failed");
+        await mainApi.displayMessageBox(
+          "error",
+          t("panels.doc.history.exportTitle"),
+          result?.finalMessage ?? t("panels.doc.history.exportFailed")
+        );
       }
     } finally {
       setExporting(false);
@@ -529,33 +535,33 @@ const ExecutionHistoryPanel = (_props: DocumentProps) => {
       <ToolbarSeparator small={true} />
       <span
         className={classnames(styles.recording, { [styles.recordingOn]: info?.enabled })}
-        title="History is recorded in debug sessions only: Start with Debugging and the steps"
+        title={t("panels.doc.history.recordingTitle")}
       >
-        {info?.enabled ? "● Recording" : "○ Not recording"}
+        {t(info?.enabled ? "panels.doc.history.recording" : "panels.doc.history.notRecording")}
       </span>
       {reverseRange !== undefined && (
         <>
           <ToolbarSeparator small={true} />
           <span
             className={styles.count}
-            title="How far back the machine itself can go (full reverse debugging): the rows reach as far as the history holds"
+            title={t("panels.doc.history.reverseRangeTitle")}
           >
-            Reverse range {formatReverseSeconds(reverseRange)}
+            {t("panels.doc.history.reverseRange", { range: formatReverseSeconds(reverseRange) })}
           </span>
         </>
       )}
       <ToolbarSeparator small={true} />
       <LabeledSwitch
         value={state.followNewest}
-        label="Follow newest:"
-        title="Keep the newest record in view after every stop"
+        label={t("panels.doc.history.followNewest")}
+        title={t("panels.doc.history.followNewestTitle")}
         clicked={(follow) => dispatch({ type: "followChanged", follow })}
       />
       <ToolbarSeparator small={true} />
       <LabeledSwitch
         value={foldService}
-        label="Fold interrupts:"
-        title="Show each interrupt and its service routine as one row you can open"
+        label={t("panels.doc.history.foldInterrupts")}
+        title={t("panels.doc.history.foldInterruptsTitle")}
         clicked={(fold) => {
           setFoldService(fold);
           writeFoldPreference(machineId, fold);
@@ -564,7 +570,7 @@ const ExecutionHistoryPanel = (_props: DocumentProps) => {
       <ToolbarSeparator small={true} />
       <SmallIconButton
         iconName="clear-all"
-        title="Clear the execution history"
+        title={t("panels.doc.history.clear")}
         enable={supported && !!info?.count}
         clicked={async () => {
           await ideCommandsService.executeCommand("history-clear");
@@ -573,7 +579,7 @@ const ExecutionHistoryPanel = (_props: DocumentProps) => {
       />
       <SmallIconButton
         iconName="save"
-        title={running ? "Pause the machine to export the history" : "Export the history as a text or CSV trace"}
+        title={t(running ? "panels.doc.history.exportPause" : "panels.doc.history.export")}
         enable={supported && !running && !exporting && !!info?.count}
         clicked={() => exportRows()}
       />
@@ -581,10 +587,10 @@ const ExecutionHistoryPanel = (_props: DocumentProps) => {
       <PanelFilter
         value={state.filter}
         onChange={(value) => dispatch({ type: "filterChanged", filter: value })}
-        placeholder="$8000-$80FF, label, or text"
-        label="Filter the execution history"
+        placeholder={t("panels.doc.history.filterPlaceholder")}
+        label={t("panels.doc.history.filterLabel")}
         status={
-          filteredSequences ? `${filteredSequences.length.toLocaleString("en-US")} rows` : undefined
+          filteredSequences ? t("panels.doc.history.filterRows", { count: filteredSequences.length }) : undefined
         }
       />
     </PanelHeader>
@@ -630,7 +636,7 @@ const ExecutionHistoryPanel = (_props: DocumentProps) => {
           [styles.cursorRow]: sequence === historySequence,
           [styles.frameStart]: newFrame
         })}
-        title={newFrame ? `Frame ${record.frame}` : undefined}
+        title={newFrame ? t("panels.doc.history.frameTitle", { frame: String(record.frame) }) : undefined}
         onClick={() => select(sequence)}
         onDoubleClick={() => void goToSource(record)}
         onContextMenu={(e: ReactMouseEvent) => {
@@ -648,7 +654,7 @@ const ExecutionHistoryPanel = (_props: DocumentProps) => {
                 className={styles.fold}
                 role="button"
                 aria-expanded={!isFolded}
-                title={isFolded ? "Show the service's instructions" : "Fold the service into this row"}
+                title={t(isFolded ? "panels.doc.history.unfoldService" : "panels.doc.history.foldService")}
                 onClick={(e) => {
                   e.stopPropagation();
                   toggleSpan(span.first);
@@ -668,7 +674,7 @@ const ExecutionHistoryPanel = (_props: DocumentProps) => {
               {hex4(record.regs.pc)}
             </span>
             <span className={styles.bytes}>{cells.bytes}</span>
-            <span className={styles.flow} title={flow.taken === false ? "not taken" : flow.kind}>
+            <span className={styles.flow} title={flow.taken === false ? t("panels.doc.history.notTaken") : flow.kind}>
               {flow.taken === false ? "" : (FLOW_ICONS[flow.kind] ?? "")}
             </span>
             <span className={styles.instruction}>{cells.instruction}</span>
@@ -721,26 +727,26 @@ const ExecutionHistoryPanel = (_props: DocumentProps) => {
         )}
       </div>
       <ContextMenu state={menuState} onClickOutside={() => menuApi.conceal()}>
-        <ContextMenuItem text="Go to source" clicked={fromMenu(goToSource)} />
-        <ContextMenuItem text="Show in disassembly" clicked={fromMenu(showInDisassembly)} />
-        <ContextMenuItem text="Show in memory" clicked={fromMenu(showInMemory)} />
+        <ContextMenuItem text={t("panels.doc.history.menu.goToSource")} clicked={fromMenu(goToSource)} />
+        <ContextMenuItem text={t("panels.doc.history.menu.showInDisassembly")} clicked={fromMenu(showInDisassembly)} />
+        <ContextMenuItem text={t("panels.doc.history.menu.showInMemory")} clicked={fromMenu(showInMemory)} />
         <ContextMenuSeparator />
         <ContextMenuItem
-          text="Copy row"
+          text={t("panels.doc.history.menu.copyRow")}
           clicked={fromMenu((r) => copyText(formatHistoryRow(rowInput(r))))}
         />
         <ContextMenuItem
-          text="Copy rows as text (to the newest)"
+          text={t("panels.doc.history.menu.copyRows")}
           clicked={fromMenu((r) => copyRows(r.sequence))}
         />
         <ContextMenuItem
-          text="Export rows from here to the newest..."
+          text={t("panels.doc.history.menu.exportRows")}
           disabled={running || exporting}
           clicked={fromMenu((r) => exportRows(r.sequence))}
         />
         <ContextMenuSeparator />
         <ContextMenuItem
-          text="Set breakpoint here"
+          text={t("panels.doc.history.menu.setBreakpoint")}
           clicked={fromMenu((r) =>
             r.kind === HistoryKind.Instruction ? setBreakpoint(r) : undefined
           )}
@@ -766,17 +772,26 @@ const HistoryDetail = ({
   newest: boolean;
   step: number;
 }) => {
+  const t = useT();
   if (!record) return <div className={styles.detail} />;
   const before = record.regs;
+  const stepText = String(step).replace("-", "−");
   return (
     <div className={styles.detail}>
       <SectionHeader
-        title={`Step ${String(step).replace("-", "−")}${isSeparatorRecord(record) ? "" : ` at $${hex4(before.pc)}`}`}
+        title={
+          isSeparatorRecord(record)
+            ? t("panels.doc.history.detail.step", { step: stepText })
+            : t("panels.doc.history.detail.stepAt", { step: stepText, address: `$${hex4(before.pc)}` })
+        }
       />
       <DataRow dense={true}>
-        <DataLabel text="Reg" width="5ch" />
-        <DataValue text="Before" width="6ch" />
-        <DataValue text={newest ? "After (now)" : "After"} width="11ch" />
+        <DataLabel text={t("panels.doc.history.detail.register")} width="5ch" />
+        <DataValue text={t("panels.doc.history.detail.before")} width="6ch" />
+        <DataValue
+          text={t(newest ? "panels.doc.history.detail.afterNow" : "panels.doc.history.detail.after")}
+          width="11ch"
+        />
       </DataRow>
       {REGISTER_ROWS.map(([key, name]) => {
         const a = before[key] as number;
@@ -811,9 +826,9 @@ const HistoryDetail = ({
           changed={!!after && after.interruptMode !== before.interruptMode}
         />
       </DataRow>
-      <SectionHeader title="When" />
+      <SectionHeader title={t("panels.doc.history.detail.when")} />
       <DataRow dense={true}>
-        <DataLabel text="Frame" width="7ch" />
+        <DataLabel text={t("panels.doc.history.detail.frame")} width="7ch" />
         <DataValue text={record.frame.toLocaleString("en-US")} />
       </DataRow>
       <DataRow dense={true}>
@@ -824,7 +839,10 @@ const HistoryDetail = ({
       </DataRow>
       {record.repeat > 1 && (
         <DataRow dense={true}>
-          <DataLabel text={record.kind === HistoryKind.DmaHold ? "Held" : "Repeats"} width="7ch" />
+          <DataLabel
+            text={t(record.kind === HistoryKind.DmaHold ? "panels.doc.history.detail.held" : "panels.doc.history.detail.repeats")}
+            width="7ch"
+          />
           <DataValue
             text={`${record.repeat.toLocaleString("en-US")}${record.kind === HistoryKind.DmaHold ? " T" : ""}`}
           />
@@ -832,7 +850,7 @@ const HistoryDetail = ({
       )}
       {context && record.kind === HistoryKind.Instruction && (
         <>
-          <SectionHeader title="Memory map" />
+          <SectionHeader title={t("panels.doc.history.detail.memoryMap")} />
           <div className={styles.context}>{context}</div>
         </>
       )}

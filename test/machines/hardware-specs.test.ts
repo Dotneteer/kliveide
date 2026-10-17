@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { machineRegistry } from "@common/machines/machine-registry";
 import { getHardwareSpec } from "@common/machines/hardware-specs";
+import { setLanguage } from "@common/i18n/i18n";
 import { P3_MODELS } from "@emu/machines/zxSpectrumP3e/p3RomSets";
 import { ZxSpectrumP3eWasmV2Machine } from "@emu/machines/zxSpectrumP3e/ZxSpectrumP3eWasmV2Machine";
 import { C64Machine } from "@emu/machines/c64/C64Machine";
@@ -99,5 +100,46 @@ describe("hardware specs", () => {
       machine.screenWidthInPixels,
       machine.screenHeightInPixels
     ]);
+  });
+});
+
+describe("hardware specs in another language", () => {
+  // --- Technical values the table keeps verbatim: chip, product and ROM names, sizes
+  const VERBATIM = new Set(["4 MB", "16", "AY-3-8912 PSG", "TurboSound (3 × AY)", "SID", "DivMMC", "Multiface", "BASIC", "KERNAL", "OZ", "Kempston", "C64"]);
+  const isPseudo = (text: string) => /^\[.*~+\]$/s.test(text);
+
+  it("names each medium's chip without matching its text", () => {
+    const get = (machineId: string, modelId?: string) =>
+      getHardwareSpec(machineRegistry.find((m) => m.machineId === machineId)!, modelId)!;
+    expect(get("spp3e", "nofdd").mediaChips).toEqual(["Tape"]);
+    expect(get("spp3e", "fdd2").mediaChips).toEqual(["Tape", "Floppy disk drives A and B"]);
+    expect(get("timex", "tc2068").mediaChips).toEqual(["Tape", "Cartridge"]);
+    expect(get("zxnext", "standard").mediaChips).toEqual(["SD card"]);
+  });
+
+  it("translates every plain-word text in the pseudo-locale", () => {
+    setLanguage("qps");
+    const problems: string[] = [];
+    const check = (where: string, text: string | undefined) => {
+      if (text !== undefined && !VERBATIM.has(text) && !isPseudo(text)) problems.push(`${where}: ${text}`);
+    };
+    for (const { machine, modelId } of allModels) {
+      const spec = getHardwareSpec(machine, modelId)!;
+      const at = `${machine.machineId}/${modelId ?? ""}`;
+      check(`${at} turbo`, spec.turbo);
+      check(`${at} address space`, spec.addressSpace);
+      spec.rom.forEach((r) => check(`${at} rom ${r.id}`, r.role));
+      const d = spec.display;
+      for (const text of [d.rasterLabel, d.colours, d.attributes, d.text, d.layers, d.otherSizes]) check(`${at} display`, text);
+      check(`${at} timing`, spec.timing.note);
+      spec.sound.forEach((s) => check(`${at} sound`, s));
+      spec.media.forEach((m) => check(`${at} media`, m));
+      spec.mediaChips.forEach((m) => check(`${at} chip`, m));
+      spec.input.forEach((i) => {
+        check(`${at} input label`, i.label);
+        check(`${at} input value`, i.value);
+      });
+    }
+    expect(problems).toEqual([]);
   });
 });

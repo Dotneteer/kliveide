@@ -8,6 +8,7 @@ import { BrowserWindow, Menu, MenuItem, MenuItemConstructorOptions, dialog } fro
 import { __DARWIN__, __LINUX__ } from "./electron-utils";
 import { readReverseShortcuts } from "@common/settings/reverse-shortcuts";
 import { mainStore } from "./main-store";
+import { t } from "@common/i18n/i18n";
 import { dimMenuAction } from "@state/actions";
 import { getIdeApi } from "@messaging/MainToIdeMessenger";
 import { readNavigationShortcuts } from "@common/utils/navigationShortcuts";
@@ -105,7 +106,7 @@ function createBuildMenu(context: MenuContext): MenuItemConstructorOptions | und
       }
     });
   }
-  return buildTasks.length > 0 ? { label: "Build", submenu: buildTasks } : undefined;
+  return buildTasks.length > 0 ? { label: t("menu.build.title"), submenu: buildTasks } : undefined;
 }
 
 /**
@@ -125,17 +126,19 @@ export function createMenuTemplate(context: MenuContext): MenuItemConstructorOpt
   if (context.isMac) {
     template.push({
       id: EDIT_MENU_ID,
-      label: "Edit",
+      label: t("menu.edit.title"),
+      // --- Explicit labels: a role item without one is labelled by Electron/the OS in the *OS*
+      // --- language, which would mix languages in one menu (LOCALIZATION_PLAN step 3)
       submenu: [
-        { role: "undo" },
-        { role: "redo" },
+        { role: "undo", label: t("menu.edit.undo") },
+        { role: "redo", label: t("menu.edit.redo") },
         { type: "separator" },
-        { role: "cut" },
-        { role: "copy" },
-        { role: "paste" },
-        { role: "pasteAndMatchStyle" },
-        { role: "delete" },
-        { role: "selectAll" }
+        { role: "cut", label: t("menu.edit.cut") },
+        { role: "copy", label: t("menu.edit.copy") },
+        { role: "paste", label: t("menu.edit.paste") },
+        { role: "pasteAndMatchStyle", label: t("menu.edit.pasteAndMatchStyle") },
+        { role: "delete", label: t("menu.edit.delete") },
+        { role: "selectAll", label: t("menu.edit.selectAll") }
       ]
     });
   }
@@ -314,12 +317,12 @@ export async function executeIdeCommand(
       await showMessage(
         window,
         "info",
-        title ?? "Command execution",
-        response.finalMessage ?? "Command successfully executed."
+        title ?? t("messages.command.title"),
+        response.finalMessage ?? t("messages.command.succeeded")
       );
     }
   } else {
-    await showMessage(window, "error", title, response.finalMessage ?? "Error executing command.");
+    await showMessage(window, "error", title, response.finalMessage ?? t("messages.command.failed"));
   }
   return response;
 }

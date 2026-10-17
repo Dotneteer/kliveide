@@ -1,6 +1,7 @@
 import type { MemoryPageInfo } from "@emu/machines/zxNext/nextMemoryLayout";
 
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
+import { t } from "@common/i18n/i18n";
 import { nextBankSpace } from "@common/annotations/bankSpace";
 
 /*
@@ -207,47 +208,58 @@ export function formatBankLocation(
   placements: BankPlacement[],
   pcOffset?: number
 ): { text: string; title: string } {
-  const pcText = pcOffset === undefined ? "" : " · PC";
   const pcTitle =
     pcOffset === undefined
       ? ""
-      : ` The program counter is in this bank, at offset $${toHexa4(pcOffset)}; that line is ` +
-        "highlighted in the disassembly.";
+      : ` ${t("panels.next.location.pcTitle", { offset: toHexa4(pcOffset) })}`;
 
   if (placements.length === 0) {
     return {
-      text: "not paged in",
-      title:
-        "This bank is not in the Z80 address space at the moment. A breakpoint in it stays armed " +
-        "and will fire once the bank is paged in."
+      text: t("panels.next.location.notPaged"),
+      title: t("panels.next.location.notPagedTitle")
     };
   }
 
   if (isContiguousPlacement(placements)) {
     const start = placements[0].address;
+    const address = toHexa4(start);
     return {
-      text: `at $${toHexa4(start)}${pcText}`,
+      text:
+        pcOffset === undefined
+          ? t("panels.next.location.at", { address })
+          : t("panels.next.location.atPc", { address }),
       title:
-        `This bank is paged in at $${toHexa4(start)}-$${toHexa4(start + 0x3fff)} ` +
-        `(8K slots ${placements[0].page} and ${placements[1].page}).` +
-        pcTitle
+        t("panels.next.location.contiguousTitle", {
+          start: address,
+          end: toHexa4(start + 0x3fff),
+          low: placements[0].page,
+          high: placements[1].page
+        }) + pcTitle
     };
   }
 
-  const describe = (p: BankPlacement) => `$${toHexa4(p.address)} (${p.half})`;
+  const describe = (p: BankPlacement) =>
+    t(p.half === "low" ? "panels.next.location.halfLow" : "panels.next.location.halfHigh", {
+      address: toHexa4(p.address)
+    });
   const halves = new Set(placements.map((p) => p.half));
+  const slots = placements
+    .map((p) =>
+      t(p.half === "low" ? "panels.next.location.slotLow" : "panels.next.location.slotHigh", {
+        slot: p.page,
+        address: toHexa4(p.address)
+      })
+    )
+    .join("; ");
 
   return {
-    text: `${placements.map(describe).join(", ")}${pcText}`,
+    text: `${placements.map(describe).join(", ")}${pcOffset === undefined ? "" : " · PC"}`,
     title:
       (halves.size === 1
-        ? `Only this bank's ${[...halves][0]} 8K half is paged in. `
-        : "This bank's two 8K halves are not paged in as one contiguous block. ") +
-      "Each 8K slot is listed with the address it starts at: " +
-      placements
-        .map((p) => `slot ${p.page} at $${toHexa4(p.address)} holds the ${p.half} half`)
-        .join("; ") +
-      "." +
+        ? t([...halves][0] === "low" ? "panels.next.location.onlyLow" : "panels.next.location.onlyHigh")
+        : t("panels.next.location.notContiguous")) +
+      " " +
+      t("panels.next.location.slots", { slots }) +
       pcTitle
   };
 }

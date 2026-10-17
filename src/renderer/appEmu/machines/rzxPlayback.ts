@@ -36,6 +36,7 @@ import { kliveSpectrumName } from "@common/spectrum/snapshot/spectrumSnapshotMap
 import { RzxPlayer } from "@emu/machines/zxSpectrum/rzx/RzxPlayer";
 import { isRzxMachine } from "@emu/machines/zxSpectrum/rzx/rzxSession";
 import { fitSpectrumMachine } from "./spectrumSnapshotLoad";
+import { t } from "@common/i18n/i18n";
 
 /** The services playback uses */
 export type RzxPlaybackPorts = {
@@ -80,17 +81,17 @@ async function setUpPlayback(
   const warnings = [...file.notes, ...snapshot.warnings, ...mapping.warnings, ...fit.warnings];
   if (fit.rebuild) {
     const live = await ports.setMachineType(fit.machineId, fit.modelId, fit.config);
-    if (!live) throw new Error("The machine change was superseded by another one; the recording was not played");
+    if (!live) throw new Error(t("emu.machine.supersededRecording"));
   }
   const controller = ports.getMachineController();
   const machine = controller?.machine;
   if (!controller || !isRzxMachine(machine)) {
-    throw new Error(`The emulator is not running a ${kliveSpectrumName(fit.machineId, fit.modelId)}`);
+    throw new Error(t("emu.machine.notRunningA", { machine: kliveSpectrumName(fit.machineId, fit.modelId) }));
   }
 
   // --- 3. The player loads the snapshot inside the restore (which also ends any running session)
   const player = new RzxPlayer(machine, file, { segment, fileName: baseName(fileName) });
-  await controller.restoreState(() => player.start(), `RZX recording ${baseName(fileName)} loaded`);
+  await controller.restoreState(() => player.start(), t("emu.rzx.loaded", { file: baseName(fileName) }));
 
   // --- 4. Attach it
   controller.attachRzxSession(player, { mode, file: fileName });
@@ -154,9 +155,9 @@ export async function renderRzxToVideo(
   onFinished?: (stop: RzxStop | undefined, videoFile: string | undefined) => void
 ): Promise<RzxPlayResult> {
   const recorder = ports.getRecorder();
-  if (!recorder) throw new Error("The emulator has no screen recorder");
+  if (!recorder) throw new Error(t("emu.rzx.noScreenRecorder"));
   if (recorder.state !== "idle") {
-    throw new Error("A screen recording is already armed or running; stop it first");
+    throw new Error(t("emu.rzx.screenRecordingBusy"));
   }
   const { controller, result } = await setUpPlayback(ports, fileName, bytes, options, "rendering");
 
@@ -165,7 +166,7 @@ export async function renderRzxToVideo(
   controller.frameGate = () => {
     if (recorder.state === "recording") return undefined;
     if (Date.now() - started > RECORDER_START_TIMEOUT_MS) {
-      return controller.interruptRzx("the screen recorder did not start");
+      return controller.interruptRzx("screenRecorderFailed");
     }
     return new Promise<void>((resolve) => setTimeout(resolve, 10));
   };

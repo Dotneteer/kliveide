@@ -2,6 +2,7 @@ import { useSelector } from "@renderer/core/RendererProvider";
 import { isScriptCompleted } from "@common/utils/script-utils";
 import { SideBarBadge } from "../SideBar/SideBarBadge";
 import type { SideBarPanelBadgeProps } from "@renderer/abstractions/SideBarPanelInfo";
+import { useT } from "@common/i18n/useT";
 
 /**
  * How many scripts are still running.
@@ -18,6 +19,7 @@ import type { SideBarPanelBadgeProps } from "@renderer/abstractions/SideBarPanel
  * contract to get wrong. Compare `BreakpointsBadge`, whose data lives in the emulator.
  */
 export const ScriptingHistoryBadge = ({}: SideBarPanelBadgeProps) => {
+  const t = useT();
   // --- The count, not the array: a number compares by value, so an unrelated store update cannot
   // --- re-render this header. `ScriptingHistoryPanel` selects the list because it draws the items.
   const running = useSelector(
@@ -30,7 +32,7 @@ export const ScriptingHistoryBadge = ({}: SideBarPanelBadgeProps) => {
     <SideBarBadge
       count={running}
       tone="accent"
-      title={`${running} script${running === 1 ? "" : "s"} running`}
+      title={t("panels.side.badge.scriptsRunning", { count: running })}
     />
   );
 };

@@ -1,3 +1,4 @@
+import { useT } from "@common/i18n/useT";
 import { Button } from "@renderer/controls/Button";
 
 import type { SjasmplusIntent } from "../SjasmplusIntents";
@@ -10,11 +11,13 @@ type Props = {
   dispatch: (intent: SjasmplusIntent) => void;
 };
 
-export const SourcePanelLocal = ({ source, dispatch }: Props) => (
+export const SourcePanelLocal = ({ source, dispatch }: Props) => {
+  const t = useT();
+  return (
   <>
-    <Row label="Executable">
+    <Row label={t("dialog.sjasmplus.row.executable")}>
       <Button
-        text="Select executable..."
+        text={t("dialog.sjasmplus.button.selectExecutable")}
         variant="secondary"
         disabled={source.disabled}
         clicked={() => dispatch({ type: "selectExecutableRequested" })}
@@ -24,7 +27,7 @@ export const SourcePanelLocal = ({ source, dispatch }: Props) => (
         --- list, not a verdict on the user's own selection, so it stays hidden
         --- when PATH holds nothing. */}
     {source.local.suggestions.length > 0 && (
-      <Row label="On PATH">
+      <Row label={t("dialog.sjasmplus.row.onPath")}>
         <div className={styles.suggestions}>
           {source.local.suggestions.map((path) => (
             <button
@@ -32,7 +35,7 @@ export const SourcePanelLocal = ({ source, dispatch }: Props) => (
               type="button"
               className={styles.suggestionButton}
               disabled={source.disabled}
-              title={`Use ${path}`}
+              title={t("dialog.sjasmplus.local.useSuggestion", { path })}
               onClick={() => dispatch({ type: "suggestionPicked", executablePath: path })}
             >
               {path}
@@ -43,4 +46,5 @@ export const SourcePanelLocal = ({ source, dispatch }: Props) => (
     )}
     <div className={styles.spacer} />
   </>
-);
+  );
+};

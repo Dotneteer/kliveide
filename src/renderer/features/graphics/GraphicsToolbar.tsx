@@ -1,4 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+import { useT, type TFunction } from "@common/i18n/useT";
+import type { MessageKey } from "@common/i18n/keys.generated";
 
 import { PanelHeaderGroup } from "@renderer/controls/data";
 import Dropdown, { type DropdownOption } from "@renderer/controls/Dropdown";
@@ -27,38 +30,52 @@ import styles from "./GraphicsView.module.scss";
  * Sprites view's toolbar is.
  */
 
-const LAYOUT_LABELS: Record<GraphicLayout, string> = {
-  linear: "Linear",
-  cells: "Cells",
-  columns: "Columns",
-  screen: "Screen"
+const LAYOUT_LABELS: Record<GraphicLayout, MessageKey> = {
+  linear: "panels.graphics.layout.linear",
+  cells: "panels.graphics.layout.cells",
+  columns: "panels.graphics.layout.columns",
+  screen: "panels.graphics.layout.screen"
 };
 
-const MASK_LABELS: Record<GraphicMask, string> = {
-  none: "No mask",
-  interleaved: "Interleaved",
-  before: "Mask before",
-  after: "Mask after"
+/** The mask choices, shared with the Name graphic dialog */
+export const MASK_LABELS: Record<GraphicMask, MessageKey> = {
+  none: "panels.graphics.mask.none",
+  interleaved: "panels.graphics.mask.interleaved",
+  before: "panels.graphics.mask.before",
+  after: "panels.graphics.mask.after"
 };
 
-const ZX_COLOUR_NAMES = ["Black", "Blue", "Red", "Magenta", "Green", "Cyan", "Yellow", "White"];
-
-const colourOptions: DropdownOption[] = Array.from({ length: 16 }, (_, i) => ({
-  value: String(i),
-  label: `${i >= 8 ? "Bright " : ""}${ZX_COLOUR_NAMES[i & 7]}`
-}));
-
-const layoutOptions: DropdownOption[] = GRAPHIC_LAYOUTS.map((value) => ({ value, label: LAYOUT_LABELS[value] }));
-const maskOptions: DropdownOption[] = GRAPHIC_MASKS.map((value) => ({ value, label: MASK_LABELS[value] }));
-const zoomOptions: DropdownOption[] = GRAPHIC_ZOOMS.map((zoom) => ({ value: String(zoom), label: `${zoom}×` }));
-const columnOptions: DropdownOption[] = [
-  { value: "0", label: "Fit" },
-  ...[1, 2, 4, 8, 16, 32].map((n) => ({ value: String(n), label: String(n) }))
+const ZX_COLOUR_NAMES: readonly MessageKey[] = [
+  "panels.graphics.colour.0",
+  "panels.graphics.colour.1",
+  "panels.graphics.colour.2",
+  "panels.graphics.colour.3",
+  "panels.graphics.colour.4",
+  "panels.graphics.colour.5",
+  "panels.graphics.colour.6",
+  "panels.graphics.colour.7"
 ];
-const presetOptions: DropdownOption[] = GRAPHICS_PRESETS.map((preset) => ({
-  value: preset.id,
-  label: preset.label
-}));
+
+/** The option lists, in the current language */
+function toolbarOptions(t: TFunction) {
+  return {
+    colours: Array.from({ length: 16 }, (_, i): DropdownOption => {
+      const name = t(ZX_COLOUR_NAMES[i & 7]);
+      return { value: String(i), label: i >= 8 ? t("panels.graphics.brightColour", { colour: name }) : name };
+    }),
+    layouts: GRAPHIC_LAYOUTS.map((value): DropdownOption => ({ value, label: t(LAYOUT_LABELS[value]) })),
+    masks: GRAPHIC_MASKS.map((value): DropdownOption => ({ value, label: t(MASK_LABELS[value]) })),
+    columns: [
+      { value: "0", label: t("panels.graphics.fit") },
+      ...[1, 2, 4, 8, 16, 32].map((n) => ({ value: String(n), label: String(n) }))
+    ] as DropdownOption[]
+  };
+}
+
+const zoomOptions: DropdownOption[] = GRAPHIC_ZOOMS.map((zoom) => ({ value: String(zoom), label: `${zoom}×` }));
+// --- A function, read at render time: the preset names translate when read (`graphicsDecode.ts`)
+const presetOptions = (): DropdownOption[] =>
+  GRAPHICS_PRESETS.map((preset) => ({ value: preset.id, label: preset.label }));
 
 type Props = {
   look: GraphicsLook;
@@ -78,27 +95,32 @@ export const GraphicsToolbar = ({
   onGoTo,
   onPreset
 }: Props) => {
+  const t = useT();
+  const { colours: colourOptions, layouts: layoutOptions, masks: maskOptions, columns: columnOptions } = useMemo(
+    () => toolbarOptions(t),
+    [t]
+  );
   const l = normalizeLook(look);
   const fixedShape = l.layout === "screen";
   return (
     <>
       <PanelHeaderGroup>
-        <Text text="Width" />
+        <Text text={t("panels.graphics.width")} />
         <LabelSeparator />
         <Stepper
-          ariaLabel="Bytes per pixel row"
-          title="Bytes per pixel row (← / →)"
+          ariaLabel={t("panels.graphics.widthLabel")}
+          title={t("panels.graphics.widthTitle")}
           value={l.width}
           min={1}
           max={MAX_GRAPHIC_WIDTH}
           enabled={!fixedShape}
           onChange={(width) => onLookChange({ width })}
         />
-        <Text text="Height" />
+        <Text text={t("panels.graphics.height")} />
         <LabelSeparator />
         <Stepper
-          ariaLabel="Pixel rows per frame"
-          title="Pixel rows per frame"
+          ariaLabel={t("panels.graphics.heightLabel")}
+          title={t("panels.graphics.heightLabel")}
           value={l.height}
           min={1}
           max={MAX_GRAPHIC_HEIGHT}
@@ -109,14 +131,14 @@ export const GraphicsToolbar = ({
       </PanelHeaderGroup>
       <PanelHeaderGroup>
         <Dropdown
-          ariaLabel="Byte order"
+          ariaLabel={t("panels.graphics.byteOrder")}
           options={layoutOptions}
           initialValue={l.layout}
           width={92}
           onChanged={(value) => onLookChange({ layout: value as GraphicLayout })}
         />
         <Dropdown
-          ariaLabel="Mask"
+          ariaLabel={t("panels.graphics.mask")}
           options={maskOptions}
           initialValue={l.mask}
           width={110}
@@ -124,61 +146,61 @@ export const GraphicsToolbar = ({
         />
         {l.mask !== "none" && (
           <LabeledSwitch
-            label="Show mask"
-            title="Show the mask plane instead of the pixels?"
+            label={t("panels.graphics.showMask")}
+            title={t("panels.graphics.showMaskTitle")}
             value={l.showMask}
             clicked={(showMask) => onLookChange({ showMask })}
           />
         )}
       </PanelHeaderGroup>
       <PanelHeaderGroup>
-        <Text text="Ink" />
+        <Text text={t("panels.graphics.ink")} />
         <LabelSeparator />
         <Dropdown
-          ariaLabel="Ink colour"
+          ariaLabel={t("panels.graphics.inkColour")}
           options={colourOptions}
           initialValue={String(l.ink)}
           width={120}
           onChanged={(value) => onLookChange({ ink: parseInt(value, 10) })}
         />
-        <Text text="Paper" />
+        <Text text={t("panels.graphics.paper")} />
         <LabelSeparator />
         <Dropdown
-          ariaLabel="Paper colour"
+          ariaLabel={t("panels.graphics.paperColour")}
           options={colourOptions}
           initialValue={String(l.paper)}
           width={120}
           onChanged={(value) => onLookChange({ paper: parseInt(value, 10) })}
         />
         <LabeledSwitch
-          label="Invert"
-          title="Swap ink and paper?"
+          label={t("panels.graphics.invert")}
+          title={t("panels.graphics.invertTitle")}
           value={l.invert}
           clicked={(invert) => onLookChange({ invert })}
         />
       </PanelHeaderGroup>
       <PanelHeaderGroup>
-        <Text text="Zoom" />
+        <Text text={t("panels.graphics.zoom")} />
         <LabelSeparator />
         <Dropdown
-          ariaLabel="Zoom"
+          ariaLabel={t("panels.graphics.zoom")}
           options={zoomOptions}
           initialValue={String(l.zoom)}
           width={56}
           onChanged={(value) => onLookChange({ zoom: parseInt(value, 10) as GraphicZoom })}
         />
-        <Text text="Across" />
+        <Text text={t("panels.graphics.across")} />
         <LabelSeparator />
         <Dropdown
-          ariaLabel="Frames side by side"
+          ariaLabel={t("panels.graphics.acrossLabel")}
           options={columnOptions}
           initialValue={String(l.columns)}
           width={56}
           onChanged={(value) => onLookChange({ columns: parseInt(value, 10) })}
         />
         <LabeledSwitch
-          label="Gaps"
-          title="Leave a pixel between frames?"
+          label={t("panels.graphics.gaps")}
+          title={t("panels.graphics.gapsTitle")}
           value={l.frameGap}
           clicked={(frameGap) => onLookChange({ frameGap })}
         />
@@ -186,12 +208,12 @@ export const GraphicsToolbar = ({
           className={dimAvailable ? undefined : styles.disabledSwitch}
           title={
             dimAvailable
-              ? "Dim the bytes the CPU never read: graphics are read data, so they stand out"
-              : "Dimming needs coverage: turn it on with `coverage on`, run the program, then pause"
+              ? t("panels.graphics.dimTitle")
+              : t("panels.graphics.dimUnavailable")
           }
         >
           <LabeledSwitch
-            label="Dim unread"
+            label={t("panels.graphics.dimUnread")}
             value={dimAvailable && l.dimUnread}
             clicked={(dimUnread) => dimAvailable && onLookChange({ dimUnread })}
           />
@@ -199,13 +221,13 @@ export const GraphicsToolbar = ({
       </PanelHeaderGroup>
       <PanelHeaderGroup>
         <Dropdown
-          ariaLabel="Presets"
-          placeholder="Presets"
-          options={presetOptions}
+          ariaLabel={t("panels.graphics.presets")}
+          placeholder={t("panels.graphics.presets")}
+          options={presetOptions()}
           width={150}
           onChanged={(value) => onPreset(value)}
         />
-        <AddressInput label="Go to" clearOnEnter={true} decimalView={decimalView} onAddressSent={async (address) => onGoTo(address)} />
+        <AddressInput label={t("panels.graphics.goTo")} clearOnEnter={true} decimalView={decimalView} onAddressSent={async (address) => onGoTo(address)} />
       </PanelHeaderGroup>
     </>
   );
@@ -231,6 +253,7 @@ const Stepper = ({
   enabled?: boolean;
   onChange: (value: number) => void;
 }) => {
+  const t = useT();
   const [text, setText] = useState(String(value));
   useEffect(() => setText(String(value)), [value]);
   const clamp = (v: number) => Math.max(min, Math.min(max, v));
@@ -244,7 +267,7 @@ const Stepper = ({
       <button
         type="button"
         className={styles.nudge}
-        aria-label={`${ariaLabel}: less`}
+        aria-label={t("panels.graphics.less", { name: ariaLabel })}
         disabled={!enabled || value <= min}
         onClick={() => onChange(clamp(value - step))}
       >
@@ -267,7 +290,7 @@ const Stepper = ({
       <button
         type="button"
         className={styles.nudge}
-        aria-label={`${ariaLabel}: more`}
+        aria-label={t("panels.graphics.more", { name: ariaLabel })}
         disabled={!enabled || value >= max}
         onClick={() => onChange(clamp(value + step))}
       >

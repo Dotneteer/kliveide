@@ -24,6 +24,7 @@ import {
 } from "@renderer/appIde/annotations/annotationSession";
 import { SCREEN_AREA_RANGE } from "@renderer/appIde/annotations/annotatedDisassembly";
 import { applySkoolBank, type SkoolBankImport } from "@common/reverse/skool/skoolToAnnotations";
+import { t } from "@common/i18n/i18n";
 
 /*
  * Code/data auto-detection against the running machine (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md`
@@ -81,7 +82,7 @@ export const DEFAULT_DETECTION_REQUEST: DetectionRequest = {
 
 /** One bank's (or ROM page's) proposal, and where applying it writes. */
 export type DetectionTarget = {
-  /** How the user calls it: "bank 5", "ROM". */
+  /** How the user calls it (translated, for display): "bank 5", "ROM". */
   name: string;
   /** Where it is written and how to create it (`ensureAnnotatedBank`). */
   write: LiveRowTarget;
@@ -90,10 +91,15 @@ export type DetectionTarget = {
   skool?: SkoolBankImport;
 };
 
+/** Why a detection run has nothing to propose: a stable code, whatever the display language. */
+export type DetectionProblemCode = "no-coverage" | "no-active-set" | "no-rom" | "not-writable" | "no-bank";
+
 export type DetectionRun = {
   targets: DetectionTarget[];
-  /** Why there is nothing to propose, when there is not. */
+  /** Why there is nothing to propose, when there is not (translated text, for display). */
   problem?: string;
+  /** What kind of problem `problem` is, for code that acts on it (never match the text). */
+  problemCode?: DetectionProblemCode;
   /** What else the run has to say: a SkoolKit import's mismatches and renames. */
   notes?: string[];
 };
@@ -119,9 +125,8 @@ export async function runDetection(
   if (!touched || touched.bytes.length === 0) {
     return {
       targets: [],
-      problem:
-        "There is no coverage to detect from. Turn it on with `coverage on`, run the program, and " +
-        "pause — or load a saved run with `coverage load <file>`."
+      problem: t("commands.detection.noCoverage"),
+      problemCode: "no-coverage"
     };
   }
   const flagsByOffset = new Map<number, number>();
@@ -154,7 +159,7 @@ export async function runDetection(
   }
 
   if (request.scope.kind !== "rom" && !context.activeSet) {
-    return { targets: [], problem: "No annotation set is active: use ann-new, or open a project." };
+    return { targets: [], problem: t("commands.detection.noActiveSet"), problemCode: "no-active-set" };
   }
 
   for (const bank of banks) {
@@ -172,7 +177,7 @@ export async function runDetection(
     const screen = request.screen && SCREEN_BANKS[bankSpace.id]?.includes(bank) ? { ...SCREEN_AREA_RANGE } : undefined;
     targets.push(
       await detectOne({
-        name: `bank ${bank}`,
+        name: t("media.annotations.bankTarget", { bank }),
         write,
         evidence,
         request,
@@ -189,13 +194,15 @@ export async function runDetection(
 
   if (request.scope.kind === "rom") {
     const site = bankSpace.siteAt(0, slots);
-    if (!site || site.kind !== "rom") return { targets: [], problem: "No ROM is paged in at $0000." };
+    if (!site || site.kind !== "rom") {
+      return { targets: [], problem: t("commands.detection.noRom"), problemCode: "no-rom" };
+    }
     const write = liveRowTarget(0, { bankSpace, slots, activeSet: context.activeSet, romPartition: context.romPartition });
-    if (!("annotationPath" in write)) return { targets: [], problem: write.disabledReason };
+    if (!("annotationPath" in write)) return { targets: [], problem: write.disabledReason, problemCode: "not-writable" };
     const evidence = readRomEvidence(context, memory, site.partition, flagsByOffset);
     targets.push(
       await detectOne({
-        name: "ROM",
+        name: t("media.annotations.romTarget"),
         write,
         evidence,
         request,
@@ -209,7 +216,7 @@ export async function runDetection(
     );
   }
 
-  return targets.length > 0 ? { targets } : { targets, problem: "No bank to detect in." };
+  return targets.length > 0 ? { targets } : { targets, problem: t("commands.detection.noBank"), problemCode: "no-bank" };
 }
 
 type Evidence = {
@@ -420,8 +427,8 @@ async function detectOne(args: {
       kind: c.kind === "data" ? ("data-conflict" as const) : ("overlap" as const),
       message:
         c.kind === "data"
-          ? "Reachable code runs into bytes observed as data."
-          : "Reachable code lands inside another instruction."
+          ? t("commands.detection.dataConflict")
+          : t("commands.detection.overlap")
     }))
   ];
   return {
@@ -475,7 +482,7 @@ export async function applyDetection(
       if (!created) break;
     }
     if (!created) {
-      problems.push(`${path} cannot be read, so nothing was written to it.`);
+      problems.push(t("commands.detection.cannotRead", { path }));
       continue;
     }
     const before = peekAnnotationSession(path) ?? created;
@@ -483,7 +490,7 @@ export async function applyDetection(
     const offsetIndex = (bank: number) => context.bankSpace.defaultOffsetIndex(bank);
     let after = applyProposals(
       before,
-      group.filter((t) => !t.skool).map((t) => t.proposal),
+      group.filter((item) => !item.skool).map((item) => item.proposal),
       offsetIndex
     );
     for (const target of group) {

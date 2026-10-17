@@ -1,0 +1,19 @@
+{
+  "commands.usage.bpSet.len": "-len: memória-töréspont (-r/-w) ennyi bájtra, pl. bp-set $8000 -w -len 5",
+  "commands.usage.bpSet.copper": "cu:<index>: (ZX Spectrum Next) megáll, amikor a Copper befejezi a $000-$3FF listaindexet; WAIT esetén, amikor az teljesül, pl. bp-set cu:$00B -hit 50",
+  "commands.usage.bpSet.sprite": "sp:<sprite>: (ZX Spectrum Next) megáll, amikor a $00-$7F sprite egy attribútumbájtja íródik; a -attr választja ki a bájtokat, pl. bp-set sp:$0C -attr 0,1",
+  "commands.usage.bpSet.once": "-once: egyszeri töréspont, amely az első megállásnál törlődik; sosem mentődik",
+  "commands.usage.bpSet.log": "-log: megállás helyett naplózza az üzenetet és továbbfut (naplópont), pl. {example}",
+  "commands.usage.bpSet.hit": "-hit: megállás az N-edik találatnál (N vagy =N), utána (>N), attól kezdve (>=N), előtte (<N), addig (<=N), minden N-ediknél (*N)",
+  "commands.usage.bpSet.if": "-if: az utolsó kell legyen; a sor többi része a feltétel, pl. -if A == $FF && !ZF",
+  "commands.usage.lpEnable.groups": "csoportok nélkül: minden naplópont naplóz (-d: egyik sem); csoportokkal: csak azok naplóznak (-d: azok abbahagyják)",
+  "commands.usage.annotationEnable.disable": "-d: kikapcsolja őket; a projekttel mentődik",
+  "commands.usage.nav.record": "-r: a navigációs előzményekbe rögzíti az ugrást (Vissza / Előre); az ok a következők egyike: {reasons}",
+  "commands.usage.testRun.pattern": "pattern: Suite.UT_name, * helyettesítő karakterrel (elhagyva az összes teszt)",
+  "commands.usage.testRun.failed": "-failed: csak a legutóbb sikertelen vagy hibával végződött tesztek",
+  "commands.usage.testRun.coverage": "-coverage: a tesztek kódlefedettségét a szerkesztő lefedettségi nézetébe olvasztja",
+  "commands.usage.testDebug.test": "test: Suite.UT_name, vagy egyetlen tesztet megnevező * minta",
+  "commands.usage.testJunit.file": "file: a kiírandó XML-fájl",
+  "commands.usage.testJunit.noTimestamp": "-notimestamp: kihagyja a futás időpontját, így két futás ugyanazt a fájlt írja",
+  "commands.usage.watchAdd.types": ">: a szimbólum közvetlen értékét használja\n<type>:\n  b=bájt,\n  w=16 bites little-endian, -w=16 bites big-endian,\n  l=32 bites little-endian, -l=32 bites big-endian,\n  f=jelzőbit,\n  a=tömb (a hosszt használja, alapértelmezés: 8), s=karakterlánc (a hosszt használja, alapértelmezés: 8)"
+}

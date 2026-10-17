@@ -1,3 +1,6 @@
+import { translator } from "@common/i18n/i18n";
+import { SOURCE_CATALOG } from "@common/i18n/catalogs";
+
 export type ErrorCodes =
   // --- Z80 Compiler Error Codes
   // --- Missing or faulty tokens
@@ -210,221 +213,18 @@ export type ErrorCodes =
   | "M1008"
   | "M1009";
 
-export const errorMessages: Record<string, string> = {
-  // --- Missing or faulty tokens
-  Z0001: "Invalid token at the end of the line: {0}",
-  Z0002: "A line cannot start with this token: {0}",
-  Z0003: "A comma expected",
-  Z0004: "'(' expected",
-  Z0005: "')' expected",
-  Z0006: "'}}' expected",
-  Z0007: "'=' expected",
-  Z0008: "'to' expected",
-
-  // --- Missing or faulty language elements
-  Z0101: "Register A expected",
-  Z0102: "Register B expected",
-  Z0103: "Register DE expected",
-  Z0104: "Register D expected",
-  Z0105: "Register E expected",
-  Z0106: "BC, DE, HL, or SP expected",
-  Z0107: "An identifier expected",
-  Z0108: "A string literal expected",
-  Z0109: "The lreg and hreg functions accept only a bc, de, hl, ix, or iy as their argument.",
-  Z0110: "A byte-emitting pragma expected",
-  Z0111: "An expression expected",
-  Z0112: "A mnemonic, a register, or a register indirection expression expected.",
-  Z0113: "Operand expected",
-  Z0114: "Cannot parse an integer literal",
-
-  // --- Directive error messages
-  Z0201: "Cannot find include file: '{0}'",
-  Z0202: "Include file '{0}' is included more than once into the same parent source file",
-  Z0203: "Include file '{0}' causes circular file reference",
-  Z0204: "Error reading include file: '{0}' ({1})",
-  Z0205: "Missing #endif directive",
-  Z0206:
-    "An #ifmod or #ifnmod directive cen be used only with these identifiers: 'SPECTRUM48', 'SPECTRUM128', 'SPECTRUMP3', 'NEXT', 'ZX80', 'ZX81'.",
-  Z0207: "Unexpected #else directive",
-  Z0208: "Unexpected #endif directive",
-  Z0209: "The #line directive needs a positive integer line number.",
-
-  // --- Pragma messages
-  Z0302: "A .model pragma can be used only once.",
-  Z0303:
-    "A .model pragma can have only these values: 'SPECTRUM48', 'SPECTRUM128', 'SPECTRUMP3', 'NEXT', 'ZX80', 'ZX81'.",
-  Z0304: "An .equ pragma must have a label",
-  Z0305: "The .bank pragma cannot have a label.",
-  Z0306: "The .bank pragma's value must be between 0 and 7 (Spectrum 128) or 0 and 111 (Next).",
-  Z0307: "The .bank pragma's offset value must be between 0 and #03fff.",
-  Z0308: "The .bank pragma cannot be used with the current model type.",
-  Z0309: "You have already used the .bank pragma for bank {0}.",
-  Z0310: "The {0} pragma can be used only in the global scope.",
-  Z0311: "A .var pragma must have a label",
-  Z0312: "A .var pragma cannot redefine a non-.var-created symbol",
-  Z0313: ".skip to {0} is invalid, as this address is less then the current address, {1}",
-  Z0314: "Only one .xorg pragma can be used within a code segment.",
-  Z0315: ".defm/.defn pragma requires a string argument.",
-  Z0316: ".defh pragma requires a string argument.",
-  Z0317: ".defh pragma requires a string with even hexadecimal digits.",
-  Z0318:
-    ".align pragma must be used with a parameter value between 1 and #4000; {0} is an invalid value.",
-  Z0319: ".includebin pragma requires a string argument.",
-  Z0320: "Invalid .includebin offset value (negative, or greater than the file length).",
-  Z0321: "Invalid .includebin length value (negative, or segment exceends the file length).",
-  Z0322: "Cannot open file '{0}' used in .includebin pragma ({0}).",
-  Z0323: "Emitting the .includebin segment would overflow the current segment.",
-  Z0324: ".defgx pragma requires a string argument.",
-  Z0325: "Cannot use an empty pattern with .defg/.defgx pragma.",
-  Z0326: "The .comparebin pragma expects a string as its first argument.",
-  Z0327: "Invalid .comparebin offset value (negative, or greater than the file length).",
-  Z0328: "Invalid .comparebin length value (negative, or segment exceends the file length).",
-  Z0329: "Cannot open file '{0}' used in .comparebin pragma ({1}).",
-  Z0330: ".comparebin fails: {0}.",
-  Z0331: "The 'noexport' flag in .bank pragma can only be used with .model Next.",
-  Z0332: "The .page pragma cannot have a label.",
-  Z0333: "The .page pragma can only be used with .model Next.",
-  Z0334: "The .page pragma's page must be between 0 and 223.",
-  Z0335: "The .page pragma's address must be between 0 and #ffff.",
-  Z0336: "The .page pragma's page count must be 1 or 2.",
-  Z0337: "A two-page .page must start on an even page, at an address on an 8K boundary no higher than #c000.",
-
-  // --- SaveNex pragma errors
-  Z0340: "The .savenex pragma can only be used with .model Next.",
-  Z0341: "The .savenex file pragma requires a string filename.",
-  Z0342: "The .savenex ram pragma requires 768 or 1792 as the RAM size.",
-  Z0343: "The .savenex border pragma requires a color value between 0 and 7.",
-  Z0344: "The .savenex core pragma requires major (0-15), minor (0-15), and subminor (0-255) version numbers.",
-  Z0345: "The .savenex entrybank pragma requires a bank number between 0 and 111.",
-  Z0346: "Unknown .savenex subcommand: '{0}'.",
-  Z0347: "The .savenex screen pragma requires a valid screen type (l2/layer2/ula/lores/hires/hicolor/l2_320/l2_640).",
-  Z0348: "The .savenex bar pragma requires 'on' or 'off' as the first parameter.",
-  Z0349: "The .savenex filehandle pragma requires 'close', 'bc', or an address value.",
-  Z0350: "The .savenex preserve pragma requires 'on' or 'off'.",
-  Z0351: "Invalid color value {0} for loading bar (must be 0-255).",
-  Z0352: "Invalid delay value {0} (must be 0-255).",
-
-  // --- DMA pragma errors
-  Z0360: "Unknown .dma sub-command: '{0}'.",
-  Z0361: "Expected direction: 'a_to_b' or 'b_to_a'.",
-  Z0362: "Expected transfer type: 'transfer', 'search', or 'search_transfer'.",
-  Z0363: "Expected port type: 'memory' or 'io'.",
-  Z0364: "Expected address mode: 'increment', 'decrement', or 'fixed'.",
-  Z0365: "Expected cycle length: '2t', '3t', or '4t'.",
-  Z0366: "Expected operating mode: 'byte', 'continuous', or 'burst'.",
-  Z0367: "Prescaler requires cycle length to be specified.",
-  Z0368: "The .dma pragma requires the Next model (.model next).",
-
-  // --- Copper pragma errors
-  Z0371: "Unknown .copper sub-command: '{0}'.",
-  Z0372: "The .copper pragma requires the Next model (.model next).",
-  Z0373: "Copper WAIT line {0} is out of range (0..511).",
-  Z0374: "Copper WAIT horizontal position {0} is out of range (0..63).",
-  Z0375: "Copper MOVE can write only NextRegs $00..$7F, not {0}.",
-  Z0376: "Copper MOVE value {0} does not fit in 8 bits.",
-  Z0377: "Copper block at {0} is {1} instructions long; the Copper holds at most 1024.",
-
-  // --- Next model warnings
-  Z0370: "Unbanked code address ${0} exceeds typical bank 2 range ($8000-$bfff). This will create a gap in bank 2 when exporting to NEX. Consider using explicit .bank for separate bank layout.",
-
-  // --- ZX80/ZX81 models (`.plans/ZX8081_CODE_INJECTION_PLAN.md`)
-  Z0378:
-    "Code at ${0} is above $7FFF: on a ZX80/ZX81, instructions fetched from there execute as NOPs. Keep the code below $8000.",
-  Z0379: "The .defzx pragma can be used only with .model ZX80 or ZX81.",
-  Z0380: ".defzx pragma requires a string argument.",
-  Z0381: "The {0} character set has no '{1}'.",
-
-  // --- Instructions
-  Z0401: "Unexpected error when emitting code for mnemonic '{0}'.",
-  Z0402: "The jr instructions cannot be used with the pe, po, p, or m conditions.",
-  Z0403: "Relative jump distance should be between -128 and 127. {0} is invalid.",
-  Z0404:
-    "The rst instruction can be used only with #00, #08, #10, #18, #20, #28, #30, or #38 arguments. #{0} is invalid.",
-  Z0405: "Interrupt mode can only be 0, 1, or 2. '{0}' is invalid.",
-  Z0406: "Output value can only be 0",
-  Z0407: "Bit index should be between 0 and 7. '{0}' is invalid",
-  Z0408: "The first operand must be 'a' when using the two-argument form of the ALU operation.",
-  Z0409: "The first argument of an 8-bit ALU operation can only be 'a'.",
-  Z0410: "The current assembly address overflew $FFFF",
-  Z0411: "The emitted code overflows the segment/bank.",
-  Z0412: "The pop instruction cannot be used with an expression operand",
-  Z0413: "The push and pop instructions can use only these registers: af, bc, de, hl, ix, and iy.",
-  Z0414:
-    "To use this Spectrum Next-specific instruction, you need to set .model type to NEXT explicitly.",
-
-  // --- Labels and symbols
-  Z0501: "Label '{0}' is already defined",
-  Z0502: "Variable {0} is already declared, it cannot be used as a .for-loop variable again.",
-  Z0503: "The {0} section in .if/.ifused/.ifnused cannot have a label.",
-  Z0504: "You cannot define a local symbol with a temporary name ({0}).",
-  Z0505: "This local symbol is already declared: ({0}).",
-
-  // --- Expressions and operands
-  Z0601: "A string value is used where a numeric value is expected.",
-  Z0602: "An integral value is expected.",
-  Z0603: "A numeric expression expected.",
-  Z0604: "Invalid operand",
-  Z0605: "Identifier '{0}' is not defined yet.",
-  Z0606: "Expression evaluation error: {0}",
-
-  // --- Statements
-  Z0701: "Missing end statement for {0}.",
-  Z0702: "Loop counter cannot be greater than 65535 (#FFFF).",
-  Z0703: "Too many errors detected while compiling a loop, further processing aborted.",
-  Z0704: "Orphan '{0}' statement found without a corresponding '{1}' statement.",
-  Z0705: "$CNT cannot be used outside of loop constructs.",
-  Z0706: "The .step value in a .for-loop cannot be zero.",
-  Z0707: ".break cannot be used outside of loop constructs.",
-  Z0708: ".continue cannot be used outside of loop constructs.",
-  Z0709: ".if/.ifused/.ifnused cannot have an {0} section after a detected .else section.",
-
-  // --- Structs
-  Z0801: "The .struct size of {0} is {1} byte(s). The invocation wants to emit {2} bytes.",
-  Z0802: "The .struct definition of {0} does not have a field named {1}.",
-  Z0803: "Field assignment instruction cannot be used outside of .struct invocation.",
-  Z0804: "You cannot define a struct without a name.",
-  Z0805: "You cannot define a struct with a temporary name ({0}).",
-  Z0806: "Structure name '{0}' has already been declared.",
-  Z0807: "The .ends statement cannot have a label.",
-  Z0808: "Structures can use only pragmas that emit bytes, words, strings, or reserve space.",
-  Z0809: "A .struct invocation ({0}) cannot have arguments.",
-  Z0810: "Duplicated field label {0} in a .struct definition.",
-
-  // --- Modules
-  Z0901: "You cannot define a module without a name.",
-  Z0902: "You cannot define a module with a temporary name ({0}).",
-  Z0903: "Module with name '{0}' already exists.",
-
-  // --- Macros
-  Z1001: "Duplicated .macro argument: {0}.",
-  Z1002: "You cannot define a macro without a name.",
-  Z1003: "You cannot define a macro with a temporary name ({0}).",
-  Z1004: "Macro name '{0}' has already been declared.",
-  Z1005: "Macro definition cannot be nested into another macro definition.",
-  Z1006: "Unknown macro argument ('{0}') is used in a macro definition.",
-  Z1007: "Unknown macro: {0}.",
-  Z1008:
-    "The declaration of macro {0} contains {1} argument(s), but it is invoked with more parameters ({2}).",
-  Z1009: "A macro-time function accepts only macro parameters.",
-  Z1010: "Cannot pass a macro parameter template in a macro argument.",
-  Z1011: "Macro parameter can only be used within a macro declaration.",
-  Z1012: "Error in macro invocation",
-  Z1013:
-    "The '{0}' label matches a structure name. If you want to invoke it, use parentheses like '{0}(...)'.",
-  Z1014:
-    "The '{0}' label matches a macro name. If you want to invoke it, use parentheses like '{0}(...)'.",
-
-  // --- Others
-  Z2000: "ERROR: {0}",
-
-  // --- M6510 Compiler Error Codes
-  M1001: "Unexpected error when emitting code for mnemonic '{0}'.",
-  M1002: "The {0} instruction does not support immediate addressing.",
-  M1003: "The {0} instruction does not support indexing with register X.",
-  M1004: "The {0} instruction does not support indirect addressing",
-  M1005: "The {0} instruction cannot use A as its operand.",
-  M1006: "The {0} instruction does not support indexing with register Y.",
-  M1007: "The {0} instruction does not support indirect indexing without register X or Y.",
-  M1008: "The {0} instruction does not support zero page or absolute addressing.",
-  M1009: "Invalid operand for the {0} instruction.",
-};
+/**
+ * The text of an assembler error or warning, in the display language
+ * (`.plans/LOCALIZATION_PLAN.md` step 13). The English is `compiler.asm.<code>` in
+ * `src/common/i18n/locales/en/compiler.json`; `{0}`, `{1}`... are the parameters, in order. A
+ * compile in the worker thread sets the worker's language from the app state it receives.
+ * @returns undefined for a code without a message
+ */
+// i18n-dynamic: compiler.asm.
+export function assemblerMessage(code: string, params?: readonly unknown[]): string | undefined {
+  const key = `compiler.asm.${code}`;
+  if (SOURCE_CATALOG[key] === undefined) return undefined;
+  const args: Record<string, string> = {};
+  (params ?? []).forEach((p, i) => (args[String(i)] = String(p)));
+  return translator.t(key, args);
+}

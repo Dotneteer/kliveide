@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { renderTileSheet } from "@common/zxnext/tilemap/tilemapDecode";
 import { usageCount } from "@common/zxnext/tilemap/tilemapUsage";
 import ScrollViewer from "@renderer/controls/ScrollViewer";
+import { useT } from "@common/i18n/useT";
 import { IndexedImageCanvas } from "@renderer/controls/Next/IndexedImageCanvas";
 import {
   tileAtPixel,
@@ -49,6 +50,7 @@ export const TilemapTilesView = ({
   selectedTile,
   onSelectTile
 }: Props) => {
+  const t = useT();
   const { mode, state } = model;
   const sheet = useMemo(
     () =>
@@ -78,9 +80,11 @@ export const TilemapTilesView = ({
   return (
     <div className={styles.pane}>
       <div className={styles.paneHeader}>
-        <span>Tiles</span>
+        <span>{t("panels.tilemap.tab.tiles")}</span>
         <span className={styles.paneMeta}>
-          {model.tileCount} × {mode.textMode ? "8 bytes, text" : "32 bytes, 4-bit"} · {used} used
+          {mode.textMode
+            ? t("panels.tilemap.tiles.metaText", { count: model.tileCount, used })
+            : t("panels.tilemap.tiles.meta4bit", { count: model.tileCount, used })}
         </span>
       </div>
       <div className={styles.scroller}>
@@ -95,7 +99,7 @@ export const TilemapTilesView = ({
               checker={checker}
               zoomX={zoom}
               dim={dim}
-              ariaLabel="Tile definitions"
+              ariaLabel={t("panels.tilemap.tiles.label")}
               className={styles.image}
               onPixelMove={(x, y) => setHover(tileAtPixel(x, y, TILES_PER_ROW, model.tileCount))}
               onLeave={() => setHover(undefined)}
@@ -117,14 +121,12 @@ export const TilemapTilesView = ({
       <div className={styles.hoverLine} aria-live="off">
         {hover !== undefined ? (
           <>
-            <span>tile {hover}</span>
+            <span>{t("panels.tilemap.hoverTile", { tile: hover })}</span>
             <span>{tileAddress(model, hover).bankText}</span>
-            <span>
-              {usageCount(model.usage, hover)} cell{usageCount(model.usage, hover) === 1 ? "" : "s"}
-            </span>
+            <span>{t("panels.tilemap.cellCount", { count: usageCount(model.usage, hover) })}</span>
           </>
         ) : (
-          <span className={styles.muted}>Point at a tile; click to see where it is used</span>
+          <span className={styles.muted}>{t("panels.tilemap.tiles.hint")}</span>
         )}
       </div>
     </div>

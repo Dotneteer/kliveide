@@ -14,6 +14,8 @@ import {
 import { WatchInfo } from "@common/state/AppState";
 import { addWatchAction, removeWatchAction, clearWatchAction } from "@common/state/actions";
 import { saveProject } from "@renderer/appIde/utils/save-project";
+import { t } from "@common/i18n/i18n";
+import type { MessageKey } from "@common/i18n/keys.generated";
 
 // --- Watch type definitions
 export type WatchType = "a" | "b" | "w" | "l" | "-w" | "-l" | "f" | "s";
@@ -29,6 +31,23 @@ type WatchSpecArgs = {
 type WatchSymbolArgs = {
   symbol: string;
 };
+
+/** The catalog key of each watch type's description */
+const WATCH_TYPE_KEYS: Record<WatchType, MessageKey> = {
+  a: "commands.watch.type.array",
+  b: "commands.watch.type.byte",
+  w: "commands.watch.type.word",
+  l: "commands.watch.type.long",
+  "-w": "commands.watch.type.wordBe",
+  "-l": "commands.watch.type.longBe",
+  f: "commands.watch.type.flag",
+  s: "commands.watch.type.string"
+};
+
+/** A watch type as `w-add` and `w-list` describe it */
+function watchTypeDescription(type: WatchType): string {
+  return t(WATCH_TYPE_KEYS[type] ?? "commands.watch.type.unknown");
+}
 
 /**
  * Writes the project file after a watch has been added, removed or cleared.
@@ -67,7 +86,7 @@ abstract class WatchWithSpecCommand extends IdeCommandBase<WatchSpecArgs> {
     const spec = args.watchSpec?.trim() ?? "";
 
     if (!spec) {
-      return [validationError("Watch specification cannot be empty")];
+      return [validationError(t("commands.watch.specEmpty"))];
     }
 
     // Check for optional direct flag ('>') at the beginning
@@ -77,27 +96,27 @@ abstract class WatchWithSpecCommand extends IdeCommandBase<WatchSpecArgs> {
       direct = true;
       specBody = spec.substring(1).trim();
       if (!specBody) {
-        return [validationError("Symbol name cannot be empty after '>'")];
+        return [validationError(t("commands.watch.symbolEmptyAfterDirect"))];
       }
     }
 
     // Parse the watch specification: <name>[:<type>[:<length>]]
     const parts = specBody.split(":");
     if (parts.length < 1 || parts.length > 3) {
-      return [validationError("Invalid watch format. Use: [>]<symbol>[:<type>[:<length>]]")];
+      return [validationError(t("commands.watch.invalidFormat"))];
     }
 
     const [symbol, type = "b", lengthStr] = parts;
 
     // Validate symbol name (basic identifier validation)
     if (!this.isValidSymbol(symbol)) {
-      return [validationError("Invalid symbol name. Must be a valid identifier")];
+      return [validationError(t("commands.watch.invalidSymbol"))];
     }
 
     // Validate type
     const validTypes: WatchType[] = ["a", "b", "w", "l", "-w", "-l", "f", "s"];
     if (!validTypes.includes(type as WatchType)) {
-      return [validationError("Invalid type. Valid types: a, b, w, l, -w, -l, f, s")];
+      return [validationError(t("commands.watch.invalidType"))];
     }
 
     const watchType = type as WatchType;
@@ -108,13 +127,13 @@ abstract class WatchWithSpecCommand extends IdeCommandBase<WatchSpecArgs> {
       // Length is only allowed for array ("a") and string ("s") types
       if (watchType !== "a" && watchType !== "s") {
         return [
-          validationError("Length specification is only allowed for array (a) and string (s) types")
+          validationError(t("commands.watch.lengthNotAllowed"))
         ];
       }
 
       length = parseInt(lengthStr, 10);
       if (isNaN(length) || length <= 0 || length > 1024) {
-        return [validationError("Length must be a positive number between 1 and 1024")];
+        return [validationError(t("commands.watch.lengthRange"))];
       }
     } else {
       // Default length for array and string types when omitted
@@ -144,14 +163,12 @@ abstract class WatchWithSpecCommand extends IdeCommandBase<WatchSpecArgs> {
  */
 export class AddWatchCommand extends WatchWithSpecCommand {
   readonly id = "w-add";
-  readonly description = "Adds a watch expression for a symbol";
-  readonly usage =
-    "w-add [>]<symbol>[:<type>[:<length>]]\n" + 
-    ">: use direct symbol value\n" +
-    "<type>:\n  b=byte,\n  " +
-    "w=16-bit little-endian, -w=16-bit big-endian,\n  " +
-    "l=32-bit little-endian, -l=32-bit big-endian,\n  " +
-    "f=flag,\n  a=array (use length, default: 8), s=string (use length, default: 8)";
+  get description() {
+    return t("commands.watch.add.description");
+  }
+  get usage(): string {
+    return "w-add [>]<symbol>[:<type>[:<length>]]\n" + t("commands.usage.watchAdd.types");
+  }
   readonly aliases = ["w"];
 
   async execute(context: IdeCommandContext, args: WatchSpecArgs): Promise<IdeCommandResult> {
@@ -167,38 +184,18 @@ export class AddWatchCommand extends WatchWithSpecCommand {
 
     persistWatches(context);
 
-    let typeDesc = this.getTypeDescription(watch.type);
-    if (watch.length) {
-      typeDesc += ` (${watch.length} bytes)`;
-    }
-
-    writeSuccessMessage(context.output, `Watch added: ${watch.symbol.toUpperCase()} [${typeDesc}]`);
+    const symbol = watch.symbol.toUpperCase();
+    const type = watchTypeDescription(watch.type);
+    writeSuccessMessage(
+      context.output,
+      watch.length
+        ? t("commands.watch.addedLength", { symbol, type, length: watch.length })
+        : t("commands.watch.added", { symbol, type })
+    );
 
     return commandSuccess;
   }
 
-  private getTypeDescription(type: WatchType): string {
-    switch (type) {
-      case "a":
-        return "byte array";
-      case "b":
-        return "8-bit";
-      case "w":
-        return "16-bit little-endian";
-      case "l":
-        return "32-bit little-endian";
-      case "-w":
-        return "16-bit big-endian";
-      case "-l":
-        return "32-bit big-endian";
-      case "f":
-        return "flag";
-      case "s":
-        return "string";
-      default:
-        return "unknown";
-    }
-  }
 }
 
 /**
@@ -206,7 +203,9 @@ export class AddWatchCommand extends WatchWithSpecCommand {
  */
 export class RemoveWatchCommand extends IdeCommandBase<WatchSymbolArgs> {
   readonly id = "w-del";
-  readonly description = "Removes a watch expression by symbol name";
+  get description() {
+    return t("commands.watch.remove.description");
+  }
   readonly usage = "w-del <symbol>";
   readonly aliases = ["wd"];
 
@@ -225,13 +224,13 @@ export class RemoveWatchCommand extends IdeCommandBase<WatchSymbolArgs> {
     const symbol = args.symbol?.trim() ?? "";
 
     if (!symbol) {
-      return [validationError("Symbol name cannot be empty")];
+      return [validationError(t("commands.watch.symbolEmpty"))];
     }
 
     // Basic identifier validation
     const identifierRegex = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
     if (!identifierRegex.test(symbol)) {
-      return [validationError("Invalid symbol name. Must be a valid identifier")];
+      return [validationError(t("commands.watch.invalidSymbol"))];
     }
 
     return [];
@@ -242,7 +241,7 @@ export class RemoveWatchCommand extends IdeCommandBase<WatchSymbolArgs> {
     context.store.dispatch(removeWatchAction(args.symbol), "ide");
     persistWatches(context);
 
-    writeSuccessMessage(context.output, `Watch removed: ${args.symbol.toUpperCase()}`);
+    writeSuccessMessage(context.output, t("commands.watch.removed", { symbol: args.symbol.toUpperCase() }));
 
     return commandSuccess;
   }
@@ -253,7 +252,9 @@ export class RemoveWatchCommand extends IdeCommandBase<WatchSymbolArgs> {
  */
 export class ListWatchCommand extends IdeCommandBase {
   readonly id = "w-list";
-  readonly description = "Lists all defined watch expressions";
+  get description() {
+    return t("commands.watch.list.description");
+  }
   readonly usage = "w-list";
   readonly aliases = ["wl"];
 
@@ -266,17 +267,17 @@ export class ListWatchCommand extends IdeCommandBase {
     const partitionLabels = await context.emuApi.getPartitionLabels();
 
     if (watchExpressions.length === 0) {
-      writeMessage(context.output, "No watch expressions defined", "bright-blue");
+      writeMessage(context.output, t("commands.watch.list.none"), "bright-blue");
     } else {
-      writeMessage(context.output, "Defined watch expressions:", "bright-blue");
+      writeMessage(context.output, t("commands.watch.list.header"), "bright-blue");
 
       watchExpressions.forEach((w, idx) => {
         writeMessage(context.output, `[${idx + 1}]: `, "bright-blue", false);
         writeMessage(context.output, w.symbol.toUpperCase(), "bright-magenta", false);
-        writeMessage(context.output, ` (${this.getTypeDescription(w.type)}`, "cyan", false);
+        writeMessage(context.output, ` (${watchTypeDescription(w.type)}`, "cyan", false);
 
         if (w.length) {
-          writeMessage(context.output, `, ${w.length} bytes`, "cyan", false);
+          writeMessage(context.output, `, ${t("commands.watch.list.length", { length: w.length })}`, "cyan", false);
         }
 
         if (w.address !== undefined) {
@@ -284,9 +285,9 @@ export class ListWatchCommand extends IdeCommandBase {
           // --- print the partition *after* the address, and as a raw index.
           const partition =
             w.partition !== undefined ? `${partitionLabels?.[w.partition] ?? "?"}:` : "";
-          writeMessage(context.output, `, addr: ${partition}$${toHexa4(w.address)}`, "yellow", false);
+          writeMessage(context.output, `, ${t("commands.watch.list.address", { address: `${partition}$${toHexa4(w.address)}` })}`, "yellow", false);
         } else {
-          writeMessage(context.output, `, unresolved`, "red", false);
+          writeMessage(context.output, `, ${t("commands.watch.list.unresolved")}`, "red", false);
         }
 
         writeMessage(context.output, ")", "cyan");
@@ -294,7 +295,7 @@ export class ListWatchCommand extends IdeCommandBase {
 
       writeMessage(
         context.output,
-        `${watchExpressions.length} watch expression${watchExpressions.length !== 1 ? "s" : ""} defined`,
+        t("commands.watch.list.count", { count: watchExpressions.length }),
         "bright-blue"
       );
     }
@@ -302,28 +303,6 @@ export class ListWatchCommand extends IdeCommandBase {
     return commandSuccess;
   }
 
-  private getTypeDescription(type: WatchType): string {
-    switch (type) {
-      case "a":
-        return "byte array";
-      case "b":
-        return "8-bit";
-      case "w":
-        return "16-bit little-endian";
-      case "l":
-        return "32-bit little-endian";
-      case "-w":
-        return "16-bit big-endian";
-      case "-l":
-        return "32-bit big-endian";
-      case "f":
-        return "flag";
-      case "s":
-        return "string";
-      default:
-        return "unknown";
-    }
-  }
 }
 
 /**
@@ -331,7 +310,9 @@ export class ListWatchCommand extends IdeCommandBase {
  */
 export class EraseAllWatchCommand extends IdeCommandBase {
   readonly id = "w-ea";
-  readonly description = "Erases all watch expressions";
+  get description() {
+    return t("commands.watch.eraseAll.description");
+  }
   readonly usage = "w-ea";
   readonly aliases = ["wea"];
 
@@ -346,7 +327,7 @@ export class EraseAllWatchCommand extends IdeCommandBase {
 
     writeMessage(
       context.output,
-      `${removedCount} watch expression${removedCount > 1 ? "s" : ""} removed.`,
+      t("commands.watch.eraseAll.done", { count: removedCount }),
       "green"
     );
 

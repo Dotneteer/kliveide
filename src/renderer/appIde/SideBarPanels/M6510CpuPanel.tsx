@@ -13,6 +13,7 @@ import {
 } from "@renderer/controls/data/registers";
 import { DataPanel, DataRow } from "@renderer/controls/data";
 import regStyles from "@renderer/controls/data/Registers.module.scss";
+import { useT } from "@common/i18n/useT";
 
 /*
  * The C64 CPU panel takes the same colouring as the Z80 one (Phase 18).
@@ -27,6 +28,7 @@ const REG16_ONLY_TOOLTIP = "{r16N}: {r16v}";
 const REG8_TOOLTIP = "{r8N}: {r8v}";
 
 export const M6510CpuPanel = () => {
+  const t = useT();
   const emuApi = useEmuApi();
   const [cpuState, setCpuState] = useState<M6510CpuState>(null);
 
@@ -44,49 +46,49 @@ export const M6510CpuPanel = () => {
         <VerticalFlagValue
           label="N"
           value={toFlag(cpuState?.p, 7)}
-          tooltip="Negative"
+          tooltip={t("panels.side.cpu.flag.negative")}
           iconFill={VALUE_FILL}
         />
         <VerticalFlagValue
           label="V"
           value={toFlag(cpuState?.p, 6)}
-          tooltip="Overflow"
+          tooltip={t("panels.side.cpu.flag.overflow")}
           iconFill={VALUE_FILL}
         />
         <VerticalFlagValue
           label="-"
           value={toFlag(cpuState?.p, 5)}
-          tooltip="Unused (always set)"
+          tooltip={t("panels.side.cpu.flag.unusedSet")}
           iconFill={VALUE_FILL}
         />
         <VerticalFlagValue
           label="B"
           value={toFlag(cpuState?.p, 4)}
-          tooltip="Break"
+          tooltip={t("panels.side.cpu.flag.break")}
           iconFill={VALUE_FILL}
         />
         <VerticalFlagValue
           label="D"
           value={toFlag(cpuState?.p, 3)}
-          tooltip="Decimal mode"
+          tooltip={t("panels.side.cpu.flag.decimal")}
           iconFill={VALUE_FILL}
         />
         <VerticalFlagValue
           label="I"
           value={toFlag(cpuState?.p, 2)}
-          tooltip="Interrupt mask"
+          tooltip={t("panels.side.cpu.flag.interruptMask")}
           iconFill={VALUE_FILL}
         />
         <VerticalFlagValue
           label="Z"
           value={toFlag(cpuState?.p, 1)}
-          tooltip="Zero"
+          tooltip={t("panels.side.cpu.flag.zero")}
           iconFill={VALUE_FILL}
         />
         <VerticalFlagValue
           label="C"
           value={toFlag(cpuState?.p, 0)}
-          tooltip="Carry"
+          tooltip={t("panels.side.cpu.flag.carry")}
           iconFill={VALUE_FILL}
         />
       </DataRow>
@@ -133,13 +135,13 @@ export const M6510CpuPanel = () => {
         <Bit8Value
           label="LMR"
           value={cpuState?.lastMemoryReadValue ?? 0}
-          tooltip={"Last value read from memory:\n{r8v}"}
+          tooltip={t("panels.side.cpu.lastMemoryRead", { value: "{r8v}" })}
           valueXclass={regStyles.stateValue}
         />
         <Bit8Value
           label="LMW"
           value={cpuState?.lastMemoryWriteValue ?? 0}
-          tooltip={"Last value written to memory:\n{r8v}"}
+          tooltip={t("panels.side.cpu.lastMemoryWrite", { value: "{r8v}" })}
           valueXclass={regStyles.stateValue}
         />
       </DataRow>
@@ -148,13 +150,13 @@ export const M6510CpuPanel = () => {
         <FlagValue
           label="IRQ"
           value={cpuState?.irqRequested}
-          tooltip="IRQ requested"
+          tooltip={t("panels.side.cpu.irqRequested")}
           iconFill={VALUE_FILL}
         />
         <FlagValue
           label="NMI"
           value={cpuState?.nmiRequested}
-          tooltip="NMI requested"
+          tooltip={t("panels.side.cpu.nmiRequested")}
           iconFill={VALUE_FILL}
         />
       </DataRow>
@@ -162,13 +164,13 @@ export const M6510CpuPanel = () => {
         <FlagValue
           label="STL"
           value={cpuState?.stalled}
-          tooltip="CPU stalled"
+          tooltip={t("panels.side.cpu.stalled")}
           iconFill={VALUE_FILL}
         />
         <FlagValue
           label="JAM"
           value={cpuState?.jammed}
-          tooltip="CPU jammed"
+          tooltip={t("panels.side.cpu.jammed")}
           iconFill={VALUE_FILL}
         />
       </DataRow>
@@ -177,7 +179,7 @@ export const M6510CpuPanel = () => {
         <SimpleValue
           label="CLK"
           value={cpuState?.tacts ?? 0}
-          tooltip="Current CPU clock"
+          tooltip={t("panels.side.cpu.clock")}
           fullWidth
           valueXclass={regStyles.stateValue}
         />
@@ -186,7 +188,7 @@ export const M6510CpuPanel = () => {
         <SimpleValue
           label="TSP"
           value={(cpuState?.tacts ?? 0) - (cpuState?.tactsAtLastStart ?? 0)}
-          tooltip="T-States since last start after pause"
+          tooltip={t("panels.side.cpu.tStatesSinceStart")}
           fullWidth
           valueXclass={regStyles.stateValue}
         />

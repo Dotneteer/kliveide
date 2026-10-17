@@ -1,3 +1,5 @@
+import { t } from "@common/i18n/i18n";
+import { useT } from "@common/i18n/useT";
 import {
   TabButton,
   TabButtonSeparator,
@@ -26,6 +28,7 @@ type Props = {
  * reflecting the current script state from the shared script service.
  */
 const ScriptingCommandBar = ({ path }: Props) => {
+  const t = useT();
   const { ideCommandsService, scriptService } = useAppServices();
   const scriptsInfo = useSelector(s => s.scripts);
   const [scriptRunning, setScriptRunning] = useState(false);
@@ -45,7 +48,7 @@ const ScriptingCommandBar = ({ path }: Props) => {
       {!scriptRunning && (
         <TabButton
           iconName='play'
-          title='Run this script file'
+          title={t("documents.script.button.run")}
           clicked={async () => {
             await runScript(ideCommandsService, scriptService, path);
             setScriptEverStarted(true);
@@ -55,14 +58,14 @@ const ScriptingCommandBar = ({ path }: Props) => {
       {scriptRunning && (
         <TabButton
           iconName='stop'
-          title='Stop this script file'
+          title={t("documents.script.button.stop")}
           clicked={async () => await stopScript(ideCommandsService, path)}
         />
       )}
       <TabButtonSpace />
       <TabButton
         iconName='note'
-        title='Show script output'
+        title={t("documents.script.showOutput")}
         disabled={!scriptEverStarted}
         clicked={async () => await showScriptOutput(ideCommandsService, scriptService, path)}
       />
@@ -76,21 +79,21 @@ export function getScriptingContextMenuIfo (
   const { ideCommandsService, scriptService } = services;
   return [
     {
-      text: "Run script",
+      text: t("documents.script.menu.run"),
       disabled: (store: Store<AppState>, item: string) => {
         return !!findRunningScript(store.getState().scripts, item);
       },
       clicked: async (item: string) => await runScript(ideCommandsService, scriptService, item)
     },
     {
-      text: "Stop script",
+      text: t("documents.script.menu.stop"),
       disabled: (store: Store<AppState>, item: string) => {
         return !findRunningScript(store.getState().scripts, item);
       },
       clicked: async (item: string) => await stopScript(ideCommandsService, item)
     },
     {
-      text: "Show script output",
+      text: t("documents.script.showOutput"),
       disabled: (_, item: string) => {
         const scriptId = scriptService.getLatestScriptId(item);
         return scriptId < 0;

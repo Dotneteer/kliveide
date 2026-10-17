@@ -7,6 +7,7 @@ import { TabButton } from "@controls/TabButton";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { OpenEditorEntry, useOpenEditors } from "./useOpenEditors";
 import styles from "./OpenEditorsPanel.module.scss";
+import { useT } from "@common/i18n/useT";
 
 /**
  * Size of the file-type glyph on a row.
@@ -28,6 +29,7 @@ const DIRTY_MARKER_SIZE = iconSizes.xs;
  * activation.
  */
 export const OpenEditorsPanel = () => {
+  const t = useT();
   const { projectService, navigationHistoryService } = useAppServices();
   const entries = useOpenEditors();
 
@@ -64,7 +66,7 @@ export const OpenEditorsPanel = () => {
   };
 
   if (entries.length === 0) {
-    return <div className={styles.empty}>No open editors</div>;
+    return <div className={styles.empty}>{t("explorer.openEditors.empty")}</div>;
   }
 
   return (
@@ -76,7 +78,7 @@ export const OpenEditorsPanel = () => {
      * what they do. `group` with a label supplies the missing context (a screen reader otherwise
      * hears N unrelated buttons) without misdescribing the rows.
      */
-    <div className={styles.openEditorsPanel} role="group" aria-label="Open editors">
+    <div className={styles.openEditorsPanel} role="group" aria-label={t("explorer.openEditors.groupLabel")}>
       {entries.map((entry) => (
         <OpenEditorRow
           // A document can be open in both halves of a split view, so the hub is part of its
@@ -112,9 +114,10 @@ type OpenEditorRowProps = {
  * on `aria-label`, because a tooltip is not an accessible name.
  */
 const OpenEditorRow = ({ entry, onActivate, onMakePermanent, onClose }: OpenEditorRowProps) => {
+  const t = useT();
   const ref = useTooltipRef<HTMLDivElement>();
   const path = entry.document.path ?? entry.document.name;
-  const tooltip = entry.isDirty ? `${path}\nUnsaved changes` : path;
+  const tooltip = entry.isDirty ? t("explorer.openEditors.unsavedTooltip", { path }) : path;
 
   return (
     <div
@@ -158,7 +161,7 @@ const OpenEditorRow = ({ entry, onActivate, onMakePermanent, onClose }: OpenEdit
         <TabButton
           iconName="close"
           xclass={styles.closeButton}
-          title={`Close ${entry.document.name}`}
+          title={t("explorer.openEditors.close", { name: entry.label })}
           clicked={onClose}
         />
       </div>
@@ -175,7 +178,7 @@ const OpenEditorRow = ({ entry, onActivate, onMakePermanent, onClose }: OpenEdit
       <div
         className={styles.marker}
         role={entry.isDirty ? "img" : undefined}
-        aria-label={entry.isDirty ? "Unsaved changes" : undefined}
+        aria-label={entry.isDirty ? t("explorer.openEditors.unsaved") : undefined}
       >
         {entry.isDirty && (
           <Icon

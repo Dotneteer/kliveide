@@ -3,6 +3,7 @@ import { ContextMenuItem, ContextMenuSeparator } from "@controls/ContextMenu";
 import { useSelector } from "@renderer/core/RendererProvider";
 import { useAppServices } from "@appIde/services/AppServicesProvider";
 import { PANE_ID_TESTS } from "@common/integration/constants";
+import { useT } from "@common/i18n/useT";
 
 /**
  * The Testing activity's "..." menu (`.plans/Z80_UNIT_TESTS_PLAN.md` D4, D16): Add unit-test support,
@@ -10,6 +11,7 @@ import { PANE_ID_TESTS } from "@common/integration/constants";
  * the Tests pane.
  */
 export const TestingCommands = ({ close }: SideBarCommandsProps) => {
+  const t = useT();
   const { ideCommandsService, outputPaneService } = useAppServices();
   const hasProject = useSelector((s) => !!s.project?.isKliveProject && !!s.project?.buildRoots?.length);
   const running = useSelector((s) => !!s.unitTests?.running);
@@ -26,19 +28,19 @@ export const TestingCommands = ({ close }: SideBarCommandsProps) => {
   return (
     <>
       <ContextMenuItem
-        text="Add unit-test support"
+        text={t("panels.side.unitTests.menu.addSupport")}
         disabled={!hasProject || running}
         clicked={() => run("test-init")}
       />
       <ContextMenuSeparator />
-      <ContextMenuItem text="Run all tests" disabled={!hasProject || running} clicked={() => run("test-run")} />
+      <ContextMenuItem text={t("panels.side.unitTests.menu.runAll")} disabled={!hasProject || running} clicked={() => run("test-run")} />
       <ContextMenuItem
-        text="Run failed tests"
+        text={t("panels.side.unitTests.menu.runFailed")}
         disabled={!hasProject || running || !anyFailed}
         clicked={() => run("test-run -failed")}
       />
       <ContextMenuItem
-        text="Run all tests with coverage"
+        text={t("panels.side.unitTests.menu.runWithCoverage")}
         disabled={!hasProject || running}
         clicked={() => run("test-run -coverage")}
       />

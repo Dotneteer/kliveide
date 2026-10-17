@@ -7,6 +7,9 @@
  * `ZXNEXT_LAYER_BIT_*`, `ZXNEXT_WHY_*`, `ZXNEXT_RECOMPOSE_*` and `zxnextMixParamsPack`.
  */
 
+import { t } from "@common/i18n/i18n";
+import { translatedList } from "../translatedTexts";
+
 /** The four layers, in the order of their mask bits */
 export type NextLayerId = "ula" | "tm" | "l2" | "spr";
 
@@ -80,15 +83,24 @@ export function soloLayerId(solo: number): NextLayerId | undefined {
  */
 export function describeLayerDebug(d: NextLayerDebug | undefined): string | undefined {
   if (!isLayerDebugActive(d)) return undefined;
-  const parts: string[] = [];
+  // --- The layer names are hardware names and stay English; each combination is a whole message
   const solo = soloLayerId(d!.solo);
+  const transparency = d!.showTransparent;
   if (solo) {
-    parts.push(`${NEXT_LAYER_SHORT_NAMES[solo]} solo`);
-  } else if (d!.hidden & 0x0f) {
-    parts.push(`${layerIdsOf(d!.hidden).map((id) => NEXT_LAYER_SHORT_NAMES[id]).join(", ")} hidden`);
+    const layer = NEXT_LAYER_SHORT_NAMES[solo];
+    return transparency
+      ? t("gfxCommon.layers.pill.soloTransparency", { layer })
+      : t("gfxCommon.layers.pill.solo", { layer });
   }
-  if (d!.showTransparent) parts.push("transparency shown");
-  return `Layers: ${parts.join("; ")}`;
+  if (d!.hidden & 0x0f) {
+    const layers = layerIdsOf(d!.hidden)
+      .map((id) => NEXT_LAYER_SHORT_NAMES[id])
+      .join(", ");
+    return transparency
+      ? t("gfxCommon.layers.pill.hiddenTransparency", { layers })
+      : t("gfxCommon.layers.pill.hidden", { layers });
+  }
+  return t("gfxCommon.layers.pill.transparency");
 }
 
 // ─── The mixer's inputs ──────────────────────────────────────────────────────────────────────
@@ -126,8 +138,20 @@ export function unpackMixParams(v: number): MixParams {
   };
 }
 
-/** `$15` bits 4-2 as the Next documentation names them */
-export const PRIORITY_NAMES = ["SLU", "LSU", "SUL", "LUS", "USL", "ULS", "Blend (add)", "Blend (add - 5)"];
+/**
+ * `$15` bits 4-2 as the Next documentation names them. The letter codes are not translated; the two
+ * blend modes' names are read in the current language on each read.
+ */
+export const PRIORITY_NAMES: readonly string[] = translatedList([
+  "SLU",
+  "LSU",
+  "SUL",
+  "LUS",
+  "USL",
+  "ULS",
+  { key: "gfxCommon.layers.priority.blendAdd" },
+  { key: "gfxCommon.layers.priority.blendSub" }
+]);
 
 /**
  * The layers top to bottom for a `$15` priority mode, for the strip's chips. U is the ULA/tilemap
@@ -142,14 +166,23 @@ export function layerStackOrder(priorities: number): NextLayerId[] {
   return name.split("").flatMap((c) => letter[c]);
 }
 
-/** The blend source `$68` bits 6-5 selects (zxnext.vhd `ula_blend_mode`) */
-export const BLEND_SOURCE_NAMES = ["ULA", "none", "ULA + tilemap", "tilemap"];
+/**
+ * The blend source `$68` bits 6-5 selects (zxnext.vhd `ula_blend_mode`). The layer names stay
+ * English; "none" is read in the current language.
+ */
+export const BLEND_SOURCE_NAMES: readonly string[] = translatedList([
+  "ULA",
+  { key: "gfxCommon.layers.blendSource.none" },
+  "ULA + tilemap",
+  "tilemap"
+]);
 
 /** "Blend (add): Layer 2 + ULA" for 110/111, undefined otherwise */
 export function describeBlend(priorities: number, blendMode: number): string | undefined {
-  if ((priorities & 7) < 6) return undefined;
+  const mode = priorities & 7;
+  if (mode < 6) return undefined;
   const source = BLEND_SOURCE_NAMES[blendMode & 3];
-  return `${PRIORITY_NAMES[priorities & 7]}: Layer 2 + ${source}`;
+  return mode === 6 ? t("gfxCommon.layers.blendAdd", { source }) : t("gfxCommon.layers.blendSub", { source });
 }
 
 // ─── Why a pixel shows what it shows (D7, T5) ────────────────────────────────────────────────
@@ -165,19 +198,19 @@ export const WHY_STENCIL = 7;
 export const WHY_BLEND_ADD = 8;
 export const WHY_BLEND_SUB = 9;
 
-/** The rule behind each `ZXNEXT_WHY_*`, as the probe says it */
-export const WHY_TEXT = [
-  "fallback $4A: no layer is opaque here",
-  "ULA: the top opaque layer in this order",
-  "tilemap: the top opaque layer in this order",
-  "Layer 2: the top opaque layer in this order",
-  "Layer 2 priority bit: Layer 2 over every other layer",
-  "sprites: the top opaque layer in this order",
-  "sprite over the border: a sprite shows over the ULA border where the tilemap is transparent",
-  "stencil: ULA AND tilemap ($68 bit 0)",
-  "blend: Layer 2 + the blend source, saturated ($15 110)",
-  "blend: Layer 2 + the blend source - 5 ($15 111)"
-];
+/** The rule behind each `ZXNEXT_WHY_*`, as the probe says it, in the current language on each read */
+export const WHY_TEXT: readonly string[] = translatedList([
+  { key: "gfxCommon.layers.why.fallback" },
+  { key: "gfxCommon.layers.why.ula" },
+  { key: "gfxCommon.layers.why.tilemap" },
+  { key: "gfxCommon.layers.why.layer2" },
+  { key: "gfxCommon.layers.why.layer2Priority" },
+  { key: "gfxCommon.layers.why.sprites" },
+  { key: "gfxCommon.layers.why.border" },
+  { key: "gfxCommon.layers.why.stencil" },
+  { key: "gfxCommon.layers.why.blendAdd" },
+  { key: "gfxCommon.layers.why.blendSub" }
+]);
 
 /** The layer a `why` names, if it names one */
 export function whyLayer(why: number): NextLayerId | undefined {

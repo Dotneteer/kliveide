@@ -47,6 +47,7 @@ import {
   compileCode,
   modelTypeToMachineType
 } from "@renderer/appIde/utils/compile-code";
+import { t } from "@common/i18n/i18n";
 
 const EXPORT_FILE_FOLDER = "KliveExports";
 
@@ -54,8 +55,9 @@ export type CodeInjectionType = "inject" | "run" | "debug";
 
 export class KliveBuildCommand extends IdeCommandBase {
   readonly id = "klive.build";
-  readonly description =
-    "Compiles the current project with the Klive Z80 Compiler and runs the optional build commands";
+  get description() {
+    return t("commands.compile.build.description");
+  }
   readonly usage = "klive.build";
   readonly aliases = ["kl.b"];
   //readonly noInteractiveUsage = true;
@@ -66,13 +68,15 @@ export class KliveBuildCommand extends IdeCommandBase {
       return commandError(compileResult.message);
     }
 
-    return commandSuccessWith(`Project file successfully compiled.`);
+    return commandSuccessWith(t("commands.compile.compiled"));
   }
 }
 
 export class KliveCompileCommand extends IdeCommandBase {
   readonly id = "klive.compile";
-  readonly description = "Compiles the current project with the Klive Z80 Compiler";
+  get description() {
+    return t("commands.compile.compile.description");
+  }
   readonly usage = "klive.compile";
   readonly aliases = ["kl.co"];
   readonly noInteractiveUsage = true;
@@ -81,14 +85,15 @@ export class KliveCompileCommand extends IdeCommandBase {
     const compileResult = await compileCode(context);
     return compileResult.message
       ? commandError(compileResult.message)
-      : commandSuccessWith(`Project file successfully compiled.`);
+      : commandSuccessWith(t("commands.compile.compiled"));
   }
 }
 
 export class KliveInjectCodeCommand extends IdeCommandBase {
   readonly id = "klive.inject";
-  readonly description =
-    "Injects the current project code into the machine (using the Klive Z80 Compiler)";
+  get description() {
+    return t("commands.compile.inject.description");
+  }
   readonly usage = "klive.inject";
   readonly aliases = ["kl.inj"];
   readonly noInteractiveUsage = true;
@@ -100,8 +105,9 @@ export class KliveInjectCodeCommand extends IdeCommandBase {
 
 export class KliveRunCodeCommand extends IdeCommandBase {
   readonly id = "klive.run";
-  readonly description =
-    "Runs the current project's code in the virtual machine (using the Klive Z80 Compiler)";
+  get description() {
+    return t("commands.compile.run.description");
+  }
   readonly usage = "klive.run";
   readonly aliases = ["kl.r"];
   readonly noInteractiveUsage = true;
@@ -115,8 +121,9 @@ export class KliveRunCodeCommand extends IdeCommandBase {
 
 export class KliveDebugCodeCommand extends IdeCommandBase {
   readonly id = "klive.debug";
-  readonly description =
-    "Runs the current project's code in the virtual machine with debugging (using the Klive Z80 Compiler)";
+  get description() {
+    return t("commands.compile.debug.description");
+  }
   readonly usage = "klive.debug";
   readonly aliases = ["kl.rd"];
   readonly noInteractiveUsage = true;
@@ -142,7 +149,9 @@ type ExportCommandArgs = {
 
 export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
   readonly id = "expc";
-  readonly description = "Export the code of the current project";
+  get description() {
+    return t("commands.compile.export.description");
+  }
   readonly usage =
     "expc filename [-n name] [-f tap|tzx|hex|nex|p|o] [-as] [-p] [-c] [-b border] [-sb] [-addr address] [-scr screenfile]";
 
@@ -170,14 +179,13 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
         return commandError(message);
       }
       if (errorNo > 0) {
-        const message = "Compilation failed with errors.";
         await context.service.ideCommandsService.executeCommand("outp build");
-        return commandError(message, buildDiagnosticsValue(result));
+        return commandError(t("commands.compile.failedWithErrors"), buildDiagnosticsValue(result));
       }
     }
 
     if (!isInjectableCompilerOutput(result)) {
-      return commandError("Compiled code is not injectable.");
+      return commandError(t("commands.compile.notInjectable"));
     }
 
     return this.exportCompiledCode(context, result, args);
@@ -211,15 +219,14 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
           file.data,
           `kliveHome:${EXPORT_FILE_FOLDER}`
         );
-        return commandSuccessWith(`Code successfully exported to '${filePath}'`, { file: filePath });
+        return commandSuccessWith(t("commands.compile.exported", { file: filePath }), { file: filePath });
       } catch (err) {
         return commandError(err.toString());
       }
     }
     if (zxFormat && format !== "hex") {
       return commandError(
-        `A ${zxFormat === "p" ? "ZX81" : "ZX80"} program exports as a .${zxFormat} file (-f ${zxFormat}) ` +
-          "or as Intel HEX (-f hex)."
+        t("commands.compile.zx8081Format", { machine: zxFormat === "p" ? "ZX81" : "ZX80", format: zxFormat })
       );
     }
 
@@ -246,7 +253,7 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
       context.service.projectService.forgetFile(screenFile);
       screenFileType = checkScreenFileType(scrContent);
       if (!screenFileType) {
-        return commandError(`File '${screenFile}' is not a valid screen file`);
+        return commandError(t("commands.compile.invalidScreenFile", { file: screenFile }));
       }
     }
 
@@ -278,14 +285,16 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
     const prebuiltTape = (output as { prebuiltTape?: number[] }).prebuiltTape;
     if (prebuiltTape) {
       const blocks = readTapeData(new Uint8Array(prebuiltTape));
-      if (!blocks) return commandError("The tape the compiler wrote cannot be read.");
+      if (!blocks) return commandError(t("commands.compile.prebuiltTapeUnreadable"));
       const ignored = ["-as", "-n", "-b", "-scr", "-c", "-p", "-sb", "-addr"].filter((o) => {
         const value = (args as Record<string, unknown>)[o];
         return value !== undefined && value !== false;
       });
       if (ignored.length) {
         context.output.color("yellow");
-        context.output.writeLine(`The compiler wrote this tape with its own loader; ${ignored.join(", ")} has no effect.`);
+        context.output.writeLine(
+          t("commands.compile.prebuiltTapeIgnored", { options: ignored.join(", "), count: ignored.length })
+        );
         context.output.resetStyle();
       }
       blocksToSave.push(...blocks.map((b) => b.data));
@@ -549,7 +558,7 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
           hexOut,
           `kliveHome:${EXPORT_FILE_FOLDER}`
         );
-        return commandSuccessWith(`Code successfully exported to '${path}'`, { file: path });
+        return commandSuccessWith(t("commands.compile.exported", { file: path }), { file: path });
       } catch (err) {
         return commandError(err.toString());
       }
@@ -982,7 +991,7 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
               writer.buffer,
               `kliveHome:${EXPORT_FILE_FOLDER}`
             );
-            return commandSuccessWith(`Code successfully exported to '${filePath}'`, { file: filePath });
+            return commandSuccessWith(t("commands.compile.exported", { file: filePath }), { file: filePath });
           } catch (err) {
             return commandError(err.toString());
           }
@@ -1008,29 +1017,25 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
 
       // --- Ensure we're targeting Next model
       if (compiledOutput.modelType !== SpectrumModelType.Next) {
-        return commandError("NEX file export requires .model Next in the source code.");
+        return commandError(t("commands.compile.nexNeedsModel"));
       }
 
       // --- Ensure we have NEX configuration
       if (!compiledOutput.nexConfig) {
-        return commandError(
-          "NEX file export requires .savenex pragma configuration in the source code."
-        );
+        return commandError(t("commands.compile.nexNeedsSavenex"));
       }
 
       // --- Determine output filename
       const filename = args.filename || compiledOutput.nexConfig.filename;
       if (!filename) {
-        return commandError(
-          "NEX file export requires a filename (use .savenex file or provide filename argument)."
-        );
+        return commandError(t("commands.compile.nexNeedsFilename"));
       }
 
       // --- Get the base directory for resolving relative paths
       const state = context.store.getState();
       const projectRoot = state.project?.folderPath;
       if (!projectRoot) {
-        return commandError("No active project found.");
+        return commandError(t("commands.compile.noProject"));
       }
 
       // --- A compiler that writes its own NEX (Boriel BASIC's zxbc) hands over the file's bytes
@@ -1043,16 +1048,21 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
         );
         await context.mainApi.copyToSdCard(prebuiltPath, "_klive/" + compiledOutput.nexConfig.filename);
         // --- The same debug sidecar Klive BASIC's NEX gets, so `nex-run -d` debugs it at source level
-        let prebuiltSidecar = "";
         if (hasSourceLevelDebug(output)) {
           const sidecarFile = await context.mainApi.saveTextFile(
             sourceDebugSidecarPath(prebuiltPath),
             createSourceDebugSidecar(new Uint8Array(prebuiltNex), output.sourceLevelDebug, sidecarProgramOf(output))
           );
-          prebuiltSidecar = `, debug sidecar ${sidecarFile}`;
+          return commandSuccessWith(
+            t("commands.compile.prebuiltNexWithSidecar", {
+              file: prebuiltPath,
+              bytes: prebuiltNex.length,
+              sidecar: sidecarFile
+            })
+          );
         }
         return commandSuccessWith(
-          `NEX file exported to ${prebuiltPath} (${prebuiltNex.length} bytes, written by the compiler${prebuiltSidecar}).`
+          t("commands.compile.prebuiltNex", { file: prebuiltPath, bytes: prebuiltNex.length })
         );
       }
 
@@ -1095,34 +1105,27 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
       const hasPalette = compiledOutput.nexConfig.paletteFile !== undefined;
       const hasCopper = compiledOutput.nexConfig.copperFile !== undefined;
 
-      let summary = `NEX file successfully exported to '${filePath}'`;
-      summary += `\n  Size: ${nexData.length} bytes`;
-      summary += `\n  RAM: ${compiledOutput.nexConfig.ramSize}K`;
-      summary += `\n  Banks: ${bankCount}`;
-      summary += `\n  Entry: 0x${(compiledOutput.nexConfig.entryAddr ?? compiledOutput.entryAddress ?? 0).toString(16).toUpperCase()}`;
-
-      if (hasScreens) {
-        summary += `\n  Loading screen: Yes`;
-      }
-      if (hasPalette) {
-        summary += `\n  Palette: Yes`;
-      }
-      if (hasCopper) {
-        summary += `\n  Copper code: Yes`;
-      }
-      if (compiledOutput.nexConfig.loadingBar.enabled) {
-        summary += `\n  Loading bar: Yes`;
-      }
-      if (sidecarPath) {
-        summary += `\n  Source-level debug info: ${sidecarPath}`;
-      }
-      if (nexWarnings.length > 0) {
-        summary += `\n  Warnings: ${nexWarnings.length}`;
-      }
+      // --- One line per fact; the RAM, bank and entry values are invariant figures
+      const lines = [
+        t("commands.compile.nex.exported", { file: filePath }),
+        t("commands.compile.nex.size", { bytes: nexData.length }),
+        t("commands.compile.nex.ram", { size: compiledOutput.nexConfig.ramSize }),
+        t("commands.compile.nex.banks", { count: bankCount }),
+        t("commands.compile.nex.entry", {
+          address: `0x${(compiledOutput.nexConfig.entryAddr ?? compiledOutput.entryAddress ?? 0).toString(16).toUpperCase()}`
+        })
+      ];
+      if (hasScreens) lines.push(t("commands.compile.nex.loadingScreen"));
+      if (hasPalette) lines.push(t("commands.compile.nex.palette"));
+      if (hasCopper) lines.push(t("commands.compile.nex.copper"));
+      if (compiledOutput.nexConfig.loadingBar.enabled) lines.push(t("commands.compile.nex.loadingBar"));
+      if (sidecarPath) lines.push(t("commands.compile.nex.sidecar", { file: sidecarPath }));
+      if (nexWarnings.length > 0) lines.push(t("commands.compile.nex.warnings", { count: nexWarnings.length }));
+      const summary = lines.join("\n  ");
 
       return commandSuccessWith(summary, { file: filePath });
     } catch (err) {
-      return commandError(`NEX export failed: ${err.toString()}`);
+      return commandError(t("commands.compile.nexFailed", { error: err.toString() }));
     }
   }
 }
@@ -1139,7 +1142,7 @@ export function writeNexWarnings(out: IOutputBuffer, warnings: readonly string[]
     out.severity("warning");
     out.color("yellow");
     out.bold(true);
-    out.write("NEX export: ");
+    out.write(`${t("commands.compile.nexWarningPrefix")} `);
     out.bold(false);
     out.write(warning);
     out.writeLine();
@@ -1191,15 +1194,13 @@ export async function injectCode(
     if (machine && machine.features?.[MF_INJECT_SUPPORT] === false) {
       if (operationType === "inject") {
         return commandError(
-          `${machine.displayName} does not support injecting code into its memory. ` +
-            (machine.machineId === MI_ZXNEXT ? "Use run or debug instead." : "")
+          machine.machineId === MI_ZXNEXT
+            ? t("commands.compile.noInjectUseRun", { machine: machine.displayName })
+            : t("commands.compile.noInject", { machine: machine.displayName })
         );
       }
       if (machine.machineId !== MI_ZXNEXT) {
-        return commandError(
-          `${machine.displayName} cannot run code built in the IDE: there is no route to deliver ` +
-            "it into the machine. Put the program on a card instead."
-        );
+        return commandError(t("commands.compile.noRoute", { machine: machine.displayName }));
       }
     }
   }
@@ -1213,12 +1214,12 @@ export async function injectCode(
     }
     if (errorNo > 0) {
       await context.service.ideCommandsService.executeCommand("outp build");
-      return commandError("Code compilation failed. No code injected.", buildDiagnosticsValue(result));
+      return commandError(t("commands.compile.failedNoInjection"), buildDiagnosticsValue(result));
     }
   }
 
   if (!isInjectableCompilerOutput(result)) {
-    return commandError("Compiled code is not injectable.");
+    return commandError(t("commands.compile.notInjectable"));
   }
 
   // --- Handle ZX Spectrum Next: export NEX file instead of code injection
@@ -1232,9 +1233,7 @@ export async function injectCode(
     const resolved = unitTestOf(result);
     if (typeof resolved === "string") return commandError(resolved);
     if (isZxNext) {
-      return commandError(
-        "Debugging a unit test in the emulator does not work on the ZX Spectrum Next yet (its builds start through a .nex file); run the tests with test-run."
-      );
+      return commandError(t("commands.compile.unitTestOnNext"));
     }
     unitTest = resolved;
   }
@@ -1254,7 +1253,7 @@ export async function injectCode(
   let sumCodeLength = 0;
   result.segments.forEach((s) => (sumCodeLength += s.emittedCode.length));
   if (sumCodeLength === 0) {
-    return commandSuccessWith("Code length is 0, no code injected");
+    return commandSuccessWith(t("commands.compile.emptyCode"));
   }
 
   // --- The ZX80/ZX81 put the code in a 1 REM line: refuse here what the machine could not lay out
@@ -1271,7 +1270,7 @@ export async function injectCode(
 
   if (isZxNext && operationType === "inject") {
     if (context.store.getState().emulatorState?.machineState !== MachineControllerState.Paused) {
-      return commandError("Machine must be in paused state.");
+      return commandError(t("commands.compile.mustBePaused"));
     }
   }
 
@@ -1317,19 +1316,21 @@ export async function injectCode(
   switch (operationType) {
     case "inject":
       await context.emuApi.injectCodeCommand(codeToInject);
-      returnMessage = `Successfully injected ${sumCodeLength} bytes in ${
-        codeToInject.segments.length
-      } segment${
-        codeToInject.segments.length > 1 ? "s" : ""
-      } from start address $${codeToInject.segments[0].startAddress
-        .toString(16)
-        .padStart(4, "0")
-        .toUpperCase()}${isZx8081 ? " as a 1 REM program. Type RUN to start it." : ""}`;
+      {
+        const injected = {
+          bytes: sumCodeLength,
+          segments: codeToInject.segments.length,
+          address: `$${codeToInject.segments[0].startAddress.toString(16).padStart(4, "0").toUpperCase()}`
+        };
+        returnMessage = isZx8081
+          ? t("commands.compile.injectedRem", injected)
+          : t("commands.compile.injected", injected);
+      }
       break;
 
     case "run": {
       await context.emuApi.runCodeCommand(codeToInject, additionalInfo, false, false);
-      returnMessage = `Code injected and started.`;
+      returnMessage = t("commands.compile.started");
       break;
     }
 
@@ -1338,14 +1339,15 @@ export async function injectCode(
       if (sourceFiles.length === 0) {
         const out = context.output;
         out.color("yellow");
-        out.writeLine("No debug information available.");
+        out.writeLine(t("commands.compile.noDebugInfo"));
         out.resetStyle();
         await context.emuApi.runCodeCommand(codeToInject, additionalInfo, false, false);
-        returnMessage = `$W:Code injected and started without debugging.`;
+        // --- "$W:" is a marker the command service reads (a warning), not text
+        returnMessage = `$W:${t("commands.compile.startedNoDebug")}`;
         break;
       }
       await context.emuApi.runCodeCommand(codeToInject, additionalInfo, true, true);
-      returnMessage = `Code injected and started in debug mode.`;
+      returnMessage = t("commands.compile.startedDebug");
       break;
     }
   }

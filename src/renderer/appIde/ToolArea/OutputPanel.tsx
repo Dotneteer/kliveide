@@ -9,7 +9,9 @@ import {
   incToolCommandSeqNoAction,
   setIdeStatusMessageAction
 } from "@state/actions";
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { Fragment, type ReactNode, useEffect, useRef, useState } from "react";
+import { useT, type TFunction } from "@common/i18n/useT";
+import type { MessageKey } from "@common/i18n/keys.generated";
 import { TabButton, TabButtonSpace } from "@controls/TabButton";
 import { IOutputBuffer } from "./abstractions";
 import styles from "./OutputPanel.module.scss";
@@ -33,51 +35,48 @@ import {
  * reader needs is the thing that would put something here, and that differs — the Emulator pane
  * fills itself, the other two want a command.
  */
-const EMPTY_STATES: Record<string, { title: string; hint: ReactNode }> = {
+const EMPTY_STATES: Record<string, { titleKey: MessageKey; hintKey: MessageKey; code?: Record<string, string> }> = {
   [PANE_ID_EMU]: {
-    title: "No emulator output yet",
-    hint: <>Messages from the running machine appear here as it starts, stops and loads media.</>
+    titleKey: "panels.output.empty.emulator.title",
+    hintKey: "panels.output.empty.emulator.hint"
   },
   [PANE_ID_BUILD]: {
-    title: "No build output yet",
-    hint: (
-      <>
-        Run <code>compile</code>, or use the Build command. Output from the last build stays here
-        until you clear it.
-      </>
-    )
+    titleKey: "panels.output.empty.build.title",
+    hintKey: "panels.output.empty.build.hint",
+    code: { command: "compile" }
   },
   [PANE_ID_LOG]: {
-    title: "No logpoint output yet",
-    hint: (
-      <>
-        Logpoints write here while a debug run passes them. Set one with{" "}
-        <code>bp-set &lt;address&gt; -log "A={"{A}"}"</code>, or add a <code>LOGPOINT</code> comment
-        and build.
-      </>
-    )
+    titleKey: "panels.output.empty.log.title",
+    hintKey: "panels.output.empty.log.hint",
+    code: { command: 'bp-set <address> -log "A={A}"', marker: "LOGPOINT" }
   },
   [PANE_ID_AUTOMATION]: {
-    title: "No automation activity yet",
-    hint: (
-      <>
-        Scripts and the <code>klive ide</code> command line connect here once automation is on: turn
-        it on in Settings › General › Automation, or with <code>set -u automation.enabled 1</code>.
-      </>
-    )
+    titleKey: "panels.output.empty.automation.title",
+    hintKey: "panels.output.empty.automation.hint",
+    code: { cli: "klive ide", command: "set -u automation.enabled 1" }
   },
   [PANE_ID_SCRIPTIMG]: {
-    title: "No script output yet",
-    hint: (
-      <>
-        Run a script with <code>script-run &lt;file&gt;</code>. Anything it writes to the console
-        arrives here.
-      </>
-    )
+    titleKey: "panels.output.empty.script.title",
+    hintKey: "panels.output.empty.script.hint",
+    code: { command: "script-run <file>" }
   }
 };
 
+// --- Marks a code placeholder in a translated hint, so the hint can be split around it
+const CODE_MARK = "\u0001";
+
+/** A translated hint whose `code` placeholders render as `<code>` */
+function renderHint(t: TFunction, key: MessageKey, code: Record<string, string> = {}): ReactNode {
+  const marks: Record<string, string> = {};
+  for (const name of Object.keys(code)) marks[name] = `${CODE_MARK}${name}${CODE_MARK}`;
+  const parts = t(key, marks).split(new RegExp(`${CODE_MARK}(\\w+)${CODE_MARK}`));
+  return parts.map((part, i) =>
+    i % 2 === 1 ? <code key={i}>{code[part]}</code> : <Fragment key={i}>{part}</Fragment>
+  );
+}
+
 export const OutputPanel = () => {
+  const t = useT();
   const { outputPaneService } = useAppServices();
   const store = useStore();
   const tool = useRef<ToolInfo>();
@@ -118,8 +117,8 @@ export const OutputPanel = () => {
             empty && (
               <div className={styles.emptyState}>
                 <div className={styles.emptyBox}>
-                  <div className={styles.emptyTitle}>{empty.title}</div>
-                  <div className={styles.emptyHint}>{empty.hint}</div>
+                  <div className={styles.emptyTitle}>{t(empty.titleKey)}</div>
+                  <div className={styles.emptyHint}>{renderHint(t, empty.hintKey, empty.code)}</div>
                 </div>
               </div>
             )
@@ -136,6 +135,7 @@ export const OutputPanel = () => {
 };
 
 export const OutputPanelHeader = () => {
+  const t = useT();
   const dispatch = useDispatch();
   const mainApi = useMainApi();
   const { outputPaneService } = useAppServices();
@@ -147,7 +147,7 @@ export const OutputPanelHeader = () => {
   return (
     <>
       <Dropdown
-        placeholder="Select..."
+        placeholder={t("panels.output.selectPane")}
         options={panes}
         initialValue={activePane}
         // --- A control's width, not a tabular column: M2 governs columns, and px is right here.
@@ -160,7 +160,7 @@ export const OutputPanelHeader = () => {
       <TabButtonSpace />
       <TabButton
         iconName="clear-all"
-        title="Clear"
+        title={t("panels.toolArea.clear")}
         clicked={() => {
           /*
            * `clear()` empties the buffer without going through `onContentsChanged`, which is what
@@ -175,12 +175,12 @@ export const OutputPanelHeader = () => {
       <TabButtonSpace />
       <TabButton
         iconName="copy"
-        title="Copy to clipboard"
+        title={t("panels.toolArea.copyToClipboard")}
         clicked={async () => {
           navigator.clipboard.writeText(
             outputPaneService.getOutputPaneBuffer(activePane).getBufferText()
           );
-          dispatch(setIdeStatusMessageAction("Output copied to the clipboard", true));
+          dispatch(setIdeStatusMessageAction(t("panels.toolArea.outputCopied"), true));
           dispatch(incToolCommandSeqNoAction());
         }}
       />

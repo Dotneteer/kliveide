@@ -1,4 +1,5 @@
 import type { NextLayerRegs } from "@common/messaging/EmuApi";
+import { t } from "@common/i18n/i18n";
 import {
   describeBlend,
   isLayerDebugActive,
@@ -73,17 +74,19 @@ export type LayersCommand = { target?: LayersTarget; action?: LayersAction };
 
 /**
  * `layers [ula|tm|l2|spr|all|transparency] [on|off|solo]`. With no action a layer target means
- * "toggle"; `all` without an action means "all on". Returns an error text for anything else.
+ * "toggle"; `all` without an action means "all on". Returns an error text (in the display language) for anything else.
  */
 export function parseLayersCommand(target?: string, action?: string): LayersCommand | string {
   if (target === undefined) return {};
-  const t = TARGET_ALIASES[target.toLowerCase()];
-  if (!t) return `Unknown layer '${target}': use ula, tm, l2, spr, all or transparency`;
-  if (action === undefined) return { target: t };
+  const resolved = TARGET_ALIASES[target.toLowerCase()];
+  if (!resolved) return t("gfxCommon.layers.command.unknownLayer", { target });
+  if (action === undefined) return { target: resolved };
   const a = action.toLowerCase();
-  if (a !== "on" && a !== "off" && a !== "solo") return `Unknown action '${action}': use on, off or solo`;
-  if (a === "solo" && (t === "all" || t === "transparency")) return `'${target}' cannot be soloed`;
-  return { target: t, action: a };
+  if (a !== "on" && a !== "off" && a !== "solo") return t("gfxCommon.layers.command.unknownAction", { action });
+  if (a === "solo" && (resolved === "all" || resolved === "transparency")) {
+    return t("gfxCommon.layers.command.cannotSolo", { target });
+  }
+  return { target: resolved, action: a };
 }
 
 export function applyLayersCommand(view: NextLayerViewState, cmd: LayersCommand): NextLayerViewState {
@@ -114,10 +117,16 @@ export function describeLayerView(view: NextLayerViewState | undefined): string[
   const v = view ?? EMPTY_LAYER_VIEW;
   const solo = soloLayerId(v.solo);
   const lines = NEXT_LAYER_IDS.map((id) => {
-    const state = solo === id ? "solo" : solo ? "not shown (another layer is solo)" : v.hidden & NEXT_LAYER_BITS[id] ? "hidden" : "shown";
-    return `${NEXT_LAYER_NAMES[id]}: ${state}`;
+    const layer = NEXT_LAYER_NAMES[id];
+    if (solo === id) return t("gfxCommon.layers.view.solo", { layer });
+    if (solo) return t("gfxCommon.layers.view.eclipsed", { layer });
+    return v.hidden & NEXT_LAYER_BITS[id]
+      ? t("gfxCommon.layers.view.hidden", { layer })
+      : t("gfxCommon.layers.view.shown", { layer });
   });
-  lines.push(`Transparency: ${v.showTransparent ? "shown in magenta" : "not marked"}`);
+  lines.push(
+    v.showTransparent ? t("gfxCommon.layers.view.transparencyShown") : t("gfxCommon.layers.view.transparencyNotMarked")
+  );
   return lines;
 }
 

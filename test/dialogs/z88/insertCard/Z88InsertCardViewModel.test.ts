@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  CARD_FILE_REQUIRED_HINT,
-  PRISTINE_CARD_HINT
-} from "@renderer/appEmu/dialogs/z88/insertCard/Z88InsertCardModel";
-import { selectViewModel } from "@renderer/appEmu/dialogs/z88/insertCard/Z88InsertCardViewModel";
+  cardFileRequiredHint,
+  pristineCardHint,
+  selectViewModel
+} from "@renderer/appEmu/dialogs/z88/insertCard/Z88InsertCardViewModel";
 
 import { CardIds, aState, anEnv } from "./fakes";
 
@@ -35,7 +35,7 @@ describe("Z88InsertCardViewModel — the file row", () => {
 
     expect(file).toMatchObject({
       kind: "shown",
-      text: PRISTINE_CARD_HINT,
+      text: pristineCardHint(),
       selected: false,
       warning: false,
       clearable: false
@@ -47,7 +47,7 @@ describe("Z88InsertCardViewModel — the file row", () => {
 
     expect(file).toMatchObject({
       kind: "shown",
-      text: CARD_FILE_REQUIRED_HINT,
+      text: cardFileRequiredHint(),
       // --- Red, because slot 0 with no file is not a choice the user can make.
       warning: true
     });

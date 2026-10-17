@@ -101,7 +101,7 @@ describe("CompilerCommands", () => {
       });
 
       it("should have correct description", () => {
-        expect(command.description).toContain("Injects the current projec code");
+        expect(command.description).toContain("Injects the current project code");
       });
 
       it("should have correct usage string", () => {

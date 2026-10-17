@@ -1,6 +1,8 @@
 import styles from "./SpriteEditor.module.scss";
 import { memo } from "react";
 import { SmallIconButton } from "@renderer/controls/IconButton";
+import { useT } from "@common/i18n/useT";
+import type { MessageKey } from "@common/i18n/keys.generated";
 import { SpriteTools } from "./sprite-common";
 
 type Props = {
@@ -19,19 +21,17 @@ type Props = {
  * to publish one. The right-drag note is the same problem: painting with the fill colour by holding
  * the right button has always worked and has never once been mentioned in the UI.
  */
-const DRAW_HINT = "\nRight-drag paints with the fill colour";
-
-const TOOLS: Array<{ tool: SpriteTools; icon: string; title: string }> = [
+const TOOLS: Array<{ tool: SpriteTools; icon: string; titleKey: MessageKey; draws: boolean }> = [
   // Labelled "Pencil tool" until Phase 1 - a copy-paste that also reached `aria-label`, so a screen
   // reader was offered two indistinguishable buttons - and named for doing nothing until Phase 8.
-  { tool: "select", icon: "spr-pointer", title: "Select tool (M)\nDrag to mark a region" },
-  { tool: "pencil", icon: "spr-pencil", title: "Pencil tool (P)" + DRAW_HINT },
-  { tool: "line", icon: "spr-line", title: "Line tool (L)" + DRAW_HINT },
-  { tool: "rectangle", icon: "spr-rect", title: "Rectangle tool (R)" + DRAW_HINT },
-  { tool: "rectangle-filled", icon: "spr-rect-filled", title: "Filled rectangle tool (Shift+R)" + DRAW_HINT },
-  { tool: "circle", icon: "spr-circle", title: "Circle tool (E)" + DRAW_HINT },
-  { tool: "circle-filled", icon: "spr-circle-filled", title: "Filled circle tool (Shift+E)" + DRAW_HINT },
-  { tool: "paint", icon: "spr-bucket", title: "Paint tool (F)" + DRAW_HINT }
+  { tool: "select", icon: "spr-pointer", titleKey: "panels.spriteEditor.tool.select", draws: false },
+  { tool: "pencil", icon: "spr-pencil", titleKey: "panels.spriteEditor.tool.pencil", draws: true },
+  { tool: "line", icon: "spr-line", titleKey: "panels.spriteEditor.tool.line", draws: true },
+  { tool: "rectangle", icon: "spr-rect", titleKey: "panels.spriteEditor.tool.rectangle", draws: true },
+  { tool: "rectangle-filled", icon: "spr-rect-filled", titleKey: "panels.spriteEditor.tool.rectangleFilled", draws: true },
+  { tool: "circle", icon: "spr-circle", titleKey: "panels.spriteEditor.tool.circle", draws: true },
+  { tool: "circle-filled", icon: "spr-circle-filled", titleKey: "panels.spriteEditor.tool.circleFilled", draws: true },
+  { tool: "paint", icon: "spr-bucket", titleKey: "panels.spriteEditor.tool.paint", draws: true }
 ];
 
 /**
@@ -43,13 +43,15 @@ const TOOLS: Array<{ tool: SpriteTools; icon: string; title: string }> = [
  * height for the thing being edited.
  */
 export const SpriteToolRail = memo(
-  ({ tool, onSelectTool, onRotateCcw, onRotateCw, onFlipHorizontal, onFlipVertical }: Props) => (
-    <div className={styles.toolRail} role="toolbar" aria-orientation="vertical" aria-label="Tools">
+  ({ tool, onSelectTool, onRotateCcw, onRotateCw, onFlipHorizontal, onFlipVertical }: Props) => {
+    const t = useT();
+    return (
+    <div className={styles.toolRail} role="toolbar" aria-orientation="vertical" aria-label={t("panels.spriteEditor.tools")}>
       {TOOLS.map((entry) => (
         <SmallIconButton
           key={entry.tool}
           iconName={entry.icon}
-          title={entry.title}
+          title={entry.draws ? `${t(entry.titleKey)}\n${t("panels.spriteEditor.drawHint")}` : t(entry.titleKey)}
           selected={tool === entry.tool}
           clicked={() => onSelectTool(entry.tool)}
         />
@@ -57,24 +59,25 @@ export const SpriteToolRail = memo(
       <i className={styles.railSeparator} />
       <SmallIconButton
         iconName="spr-rotate-ccw"
-        title={"Rotate counter-clockwise"}
+        title={t("panels.spriteEditor.rotateCcw")}
         clicked={onRotateCcw}
       />
       <SmallIconButton
         iconName="spr-rotate-cw"
-        title={"Rotate clockwise"}
+        title={t("panels.spriteEditor.rotateCw")}
         clicked={onRotateCw}
       />
       {/*
        * These two were crossed: "Flip vertically" mirrored columns (a left-to-right flip) and
        * "Flip horizontally" mirrored rows. Each now does what its label and its icon say.
        */}
-      <SmallIconButton iconName="spr-flip-v" title={"Flip vertically"} clicked={onFlipVertical} />
+      <SmallIconButton iconName="spr-flip-v" title={t("panels.spriteEditor.flipVertical")} clicked={onFlipVertical} />
       <SmallIconButton
         iconName="spr-flip-h"
-        title={"Flip horizontally"}
+        title={t("panels.spriteEditor.flipHorizontal")}
         clicked={onFlipHorizontal}
       />
     </div>
-  )
+    );
+  }
 );

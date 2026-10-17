@@ -1,5 +1,6 @@
 import { DataPanel, EmptyState } from "@renderer/controls/data";
 import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
+import { useT } from "@common/i18n/useT";
 
 /**
  * What the IDE shows for a file it has no viewer for.
@@ -12,11 +13,14 @@ import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
  * The motif stays on here. This is a *state*, not a failure: the file is fine, the IDE simply has
  * nothing to show it with, and `tone="error"` would say the wrong thing.
  */
-const UnknownFileViewerPanel = ({}: DocumentProps) => (
-  <DataPanel>
-    <EmptyState message="This file type has no associated viewer" />
-  </DataPanel>
-);
+const UnknownFileViewerPanel = ({}: DocumentProps) => {
+  const t = useT();
+  return (
+    <DataPanel>
+      <EmptyState message={t("panels.doc.unknownFile.noViewer")} />
+    </DataPanel>
+  );
+};
 
 export const createUnknownFileViewerPanel = ({ document, contents }: DocumentProps) => (
   <UnknownFileViewerPanel document={document} contents={contents} apiLoaded={() => {}} />

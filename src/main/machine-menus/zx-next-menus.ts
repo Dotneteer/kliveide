@@ -19,6 +19,7 @@ import { getIdeApi } from "@messaging/MainToIdeMessenger";
 import { SETTING_EMU_SCANLINE_EFFECT } from "@common/settings/setting-const";
 import { ensureSdCardBackupIfEnabled } from "./sd-card-backup";
 import { withSdCardAccess } from "../sd-card-access";
+import { t } from "@common/i18n/i18n";
 
 export const SD_CARD_FILE_FOLDER = "sdCardFileFolder";
 export const DEFAULT_SD_CARD_FILE = "ks2.cim";
@@ -33,7 +34,7 @@ export const sdCardMenuRenderer: MachineMenuRenderer = (windowInfo) => {
   const appState = mainStore.getState();
   items.push({
     id: "select_sd_card",
-    label: "Select Image...",
+    label: t("menu.next.selectImage"),
     enabled: isMachineStopped(),
     click: async () => {
       await setSdCardFile(emuWindow, appState);
@@ -43,7 +44,7 @@ export const sdCardMenuRenderer: MachineMenuRenderer = (windowInfo) => {
   });
   items.push({
     id: "default_sd_card",
-    label: "Use the Default Image",
+    label: t("menu.next.useDefaultImage"),
     enabled: isMachineStopped(),
     click: async () => {
       // --- Store the last selected tape file
@@ -56,7 +57,7 @@ export const sdCardMenuRenderer: MachineMenuRenderer = (windowInfo) => {
   items.push({ type: "separator" });
   items.push({
     id: "reset_sd_card",
-    label: "Reset the Default Image...",
+    label: t("menu.next.resetDefaultImage"),
     enabled:
       appState.emulatorState?.machineState === MachineControllerState.Stopped ||
       appState.emulatorState?.machineState === MachineControllerState.None,
@@ -64,12 +65,10 @@ export const sdCardMenuRenderer: MachineMenuRenderer = (windowInfo) => {
       // --- Display an electron dialog to confirm the reset. Default is No.
       const result = await dialog.showMessageBox(emuWindow, {
         type: "question",
-        buttons: ["Yes", "No"],
+        buttons: [t("common.button.yes"), t("common.button.no")],
         defaultId: 1,
-        title: "Reset SD Card Image",
-        message:
-          "Do you really want to reset the default SD Card image?" +
-          "\nThis operation will delete all changes made to the current SD Card image."
+        title: t("messages.sdCard.resetTitle"),
+        message: t("messages.sdCard.resetConfirm")
       });
 
       if (result.response === 0) {
@@ -84,11 +83,11 @@ export const hotkeyMenuRenderer: MachineMenuRenderer = () => {
   const items: MachineMenuItem[] = [
     {
       id: "zx_next_hotkeys",
-      label: "Hotkeys",
+      label: t("menu.next.hotkeys"),
       submenu: [
         {
           id: "zx_next_hotkey_f1",
-          label: "F1 - Hard Reset",
+          label: t("menu.next.hotkey.f1"),
           enabled: isMachineRunning(),
           click: async () => {
             await getEmuApi().issueMachineCommand("restart");
@@ -96,7 +95,7 @@ export const hotkeyMenuRenderer: MachineMenuRenderer = () => {
         },
         {
           id: "zx_next_hotkey_f2",
-          label: "F2 - Toggle Scandoubler",
+          label: t("menu.next.hotkey.f2"),
           enabled: isMachineRunning(),
           click: async () => {
             const enabled = await getEmuApi().issueMachineCommand("custom", "toggleScandoubler");
@@ -105,7 +104,7 @@ export const hotkeyMenuRenderer: MachineMenuRenderer = () => {
         },
         {
           id: "zx_next_hotkey_f3",
-          label: "F3 - Toggle 50Hz/60Hz Display",
+          label: t("menu.next.hotkey.f3"),
           enabled: isMachineRunning(),
           click: async () => {
             const hz60Mode = await getEmuApi().issueMachineCommand("custom", "toggle5060Hz");
@@ -114,7 +113,7 @@ export const hotkeyMenuRenderer: MachineMenuRenderer = () => {
         },
         {
           id: "zx_next_hotkey_f4",
-          label: "F4 - Soft Reset",
+          label: t("menu.next.hotkey.f4"),
           enabled: isMachineRunning(),
           click: async () => {
             await getEmuApi().issueMachineCommand("reset");
@@ -122,7 +121,7 @@ export const hotkeyMenuRenderer: MachineMenuRenderer = () => {
         },
         {
           id: "zx_next_hotkey_f5",
-          label: "F5 - Enable Expansion Bus",
+          label: t("menu.next.hotkey.f5"),
           enabled: isMachineRunning(),
           click: async () => {
             const result = await getEmuApi().issueMachineCommand("custom", "enableExpansionBus");
@@ -131,7 +130,7 @@ export const hotkeyMenuRenderer: MachineMenuRenderer = () => {
         },
         {
           id: "zx_next_hotkey_f6",
-          label: "F6 - Disable Expansion Bus",
+          label: t("menu.next.hotkey.f6"),
           enabled: isMachineRunning(),
           click: async () => {
             const result = await getEmuApi().issueMachineCommand("custom", "disableExpansionBus");
@@ -140,7 +139,7 @@ export const hotkeyMenuRenderer: MachineMenuRenderer = () => {
         },
         {
           id: "zx_next_hotkey_f7",
-          label: "F7 - Adjust Scanline Weight",
+          label: t("menu.next.hotkey.f7"),
           enabled: isMachineRunning(),
           click: async () => {
             const values = ["off", "50%", "25%", "12.5%"];
@@ -154,7 +153,7 @@ export const hotkeyMenuRenderer: MachineMenuRenderer = () => {
         },
         {
           id: "zx_next_hotkey_f8",
-          label: "F8 - Cycle CPU Speed",
+          label: t("menu.next.hotkey.f8"),
           enabled: isMachineRunning(),
           click: async () => {
             await getEmuApi().issueMachineCommand("custom", "cycleCpuSpeed");
@@ -162,7 +161,7 @@ export const hotkeyMenuRenderer: MachineMenuRenderer = () => {
         },
         {
           id: "zx_next_hotkey_f9",
-          label: "F9 - Multiface NMI",
+          label: t("menu.next.hotkey.f9"),
           enabled: isMachineRunning(),
           click: async () => {
             await getEmuApi().issueMachineCommand("custom", "multifaceNmi");
@@ -170,7 +169,7 @@ export const hotkeyMenuRenderer: MachineMenuRenderer = () => {
         },
         {
           id: "zx_next_hotkey_f10",
-          label: "F10 - DivMMC NMI",
+          label: t("menu.next.hotkey.f10"),
           enabled: isMachineRunning(),
           click: async () => {
             await getEmuApi().issueMachineCommand("custom", "divmmcNmi");
@@ -323,11 +322,12 @@ async function setSdCardFile(browserWindow: BrowserWindow, state: AppState): Pro
     appSettings?.folders?.[SD_CARD_FILE_FOLDER] ||
     (lastFile ? path.dirname(lastFile) : app.getPath("home"));
   const dialogResult = await dialog.showOpenDialog(browserWindow, {
-    title: "Select Tape File",
+    // --- Was "Select Tape File", a copy-paste slip: this picks the Next's SD card image
+    title: t("messages.sdCard.select"),
     defaultPath,
     filters: [
-      { name: "Compressed Image Files", extensions: ["cim"] },
-      { name: "All Files", extensions: ["*"] }
+      { name: t("common.filter.cimImages"), extensions: ["cim"] },
+      { name: t("common.filter.allFiles"), extensions: ["*"] }
     ],
     properties: ["openFile"]
   });
@@ -378,18 +378,18 @@ function isMachineStopped(): boolean {
  * toggles themselves live on the Layers strip under the screen, which has every one of them.
  */
 export const nextViewsMenuRenderer: MachineMenuRenderer = () => [
-  { id: "show_copper_list", label: "Copper List", click: ideCommand("show-copper") },
-  { id: "show_sprite_inspector", label: "Sprite Inspector", click: ideCommand("show-sprites") },
-  { id: "show_tilemap_inspector", label: "Tilemap Inspector", click: ideCommand("show-tilemap") },
-  { id: "show_layer2_inspector", label: "Layer 2 Inspector", click: ideCommand("show-layer2") },
-  { id: "next_layers_document", label: "Layers", click: ideCommand("show-layers") }
+  { id: "show_copper_list", label: t("menu.next.copperList"), click: ideCommand("show-copper") },
+  { id: "show_sprite_inspector", label: t("menu.next.spriteInspector"), click: ideCommand("show-sprites") },
+  { id: "show_tilemap_inspector", label: t("menu.next.tilemapInspector"), click: ideCommand("show-tilemap") },
+  { id: "show_layer2_inspector", label: t("menu.next.layer2Inspector"), click: ideCommand("show-layer2") },
+  { id: "next_layers_document", label: t("menu.next.layers"), click: ideCommand("show-layers") }
 ];
 
 /** Debug › Step Copper on the Next */
 export const nextDebugMenuRenderer: MachineMenuRenderer = () => [
   {
     id: "step_copper",
-    label: "Step Copper",
+    label: t("menu.next.stepCopper"),
     enabled: mainStore.getState()?.emulatorState?.machineState !== MachineControllerState.Running,
     click: ideCommand("step-copper")
   }

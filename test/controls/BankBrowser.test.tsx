@@ -203,7 +203,7 @@ describe("BankBrowser", () => {
         onPopOut={vi.fn()}
         renderRow={() => null}
         renderDetails={() => null}
-        itemNoun="Block"
+        itemKind="block"
         formatNumber={(i) => `#${i.bank}`}
         viewsFor={(i) => (i.bank === 0 ? [] : ["memory"])}
       />
@@ -232,7 +232,7 @@ describe("BankBrowser", () => {
         onPopOut={vi.fn()}
         renderRow={() => null}
         renderDetails={() => null}
-        itemNoun="Block"
+        itemKind="block"
         viewsFor={() => []}
         hint="Pop out a block from its row's icon."
       />

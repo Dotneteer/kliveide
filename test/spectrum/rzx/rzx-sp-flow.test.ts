@@ -199,7 +199,7 @@ describe("RZX on the emulator's controller", () => {
     const emu = await emulator();
     await playRzxRecording(emu.ports, "test.rzx", await recording(), "debug");
     await emu.until(() => emu.controller.state === MachineControllerState.Paused);
-    await emu.controller.interruptRzx("memory was edited");
+    await emu.controller.interruptRzx("memoryEdited");
     expect(emu.output.join("\n")).toMatch(/RZX playback stopped at frame \d+ of \d+: memory was edited/);
     expect(emu.controller.rzxSession).toBeUndefined();
   }, 60_000);

@@ -1,0 +1,476 @@
+{
+  "messages.disk.cannotBoot": "Cannot boot the disk",
+  "@messages.disk.cannotBoot": {
+    "context": "Title of an error box: booting the floppy in drive A through TR-DOS failed (Pentagon/Scorpion)."
+  },
+  "messages.trdos.selectRom": "Select the TR-DOS ROM (16K)",
+  "@messages.trdos.selectRom": {
+    "context": "Title of an Open File dialog picking the TR-DOS ROM file. 'TR-DOS' is a product name."
+  },
+  "messages.trdos.notRom": "Not a TR-DOS ROM",
+  "@messages.trdos.notRom": {
+    "context": "Title of an error box: the chosen file is not a TR-DOS ROM."
+  },
+  "messages.trdos.wrongSize": "The TR-DOS ROM is 16384 bytes; {file} has {size}.",
+  "@messages.trdos.wrongSize": {
+    "context": "Error text: the chosen ROM file has the wrong size.",
+    "placeholders": {
+      "file": "A file path or name, shown verbatim",
+      "size": "The file's size in bytes, a number"
+    }
+  },
+  "messages.trdos.noDisk": "No TR-DOS disk",
+  "@messages.trdos.noDisk": {
+    "context": "Title of an error box: there is no TR-DOS disk in the drive."
+  },
+  "messages.trdos.noDiskInDrive": "There is no TR-DOS disk in drive {drive}.",
+  "@messages.trdos.noDiskInDrive": {
+    "context": "Error text.",
+    "placeholders": {
+      "drive": "Drive letter, 'A' or 'B'"
+    }
+  },
+  "messages.trdos.saveAsTrd": "Save the Disk as .trd",
+  "@messages.trdos.saveAsTrd": {
+    "context": "Title of a Save File dialog saving a floppy as a TR-DOS '.trd' image. Keep '.trd'."
+  },
+  "messages.tape.readErrorTitle": "Error while reading tape file",
+  "@messages.tape.readErrorTitle": {
+    "context": "Title of an error box: a tape file could not be read."
+  },
+  "messages.tape.readError": "Reading file {file} resulted in error: {error}\n\nThe faulty tape file will be ejected after closing this dialog.",
+  "@messages.tape.readError": {
+    "context": "Error text of a tape file that could not be read. Keep the blank line (two newlines).",
+    "placeholders": {
+      "file": "A file path or name, shown verbatim",
+      "error": "The operating system's or the parser's error text, shown verbatim (usually English)"
+    }
+  },
+  "messages.tape.select": "Select Tape File",
+  "@messages.tape.select": {
+    "context": "Title of an Open File dialog picking a tape file."
+  },
+  "messages.tape.ejectTitle": "Eject Tape",
+  "@messages.tape.ejectTitle": {
+    "context": "Title of a confirmation dialog before removing the tape."
+  },
+  "messages.tape.ejectConfirm": "Are you sure you want to eject the tape?",
+  "@messages.tape.ejectConfirm": {
+    "context": "Question of the confirmation dialog before removing the tape; answered Yes/No."
+  },
+  "messages.disk.select": "Select Disk File",
+  "@messages.disk.select": {
+    "context": "Title of an Open File dialog picking a floppy disk image."
+  },
+  "messages.disk.readErrorTitle": "Error while reading disk file",
+  "@messages.disk.readErrorTitle": {
+    "context": "Title of an error box: a disk image could not be read."
+  },
+  "messages.disk.readError": "Reading file {file} resulted in error: {error}\n\nThe faulty disk file will be ejected after closing this dialog.",
+  "@messages.disk.readError": {
+    "context": "Error text of a disk image that could not be read. Keep the blank line.",
+    "placeholders": {
+      "file": "A file path or name, shown verbatim",
+      "error": "The operating system's or the parser's error text, shown verbatim (usually English)"
+    }
+  },
+  "messages.disk.ejectErrorTitle": "Error while ejecting disk file",
+  "@messages.disk.ejectErrorTitle": {
+    "context": "Title of an error box: removing a disk failed."
+  },
+  "messages.disk.ejectError": "Ejecting resulted in error: {error}",
+  "@messages.disk.ejectError": {
+    "context": "Error text: removing a disk failed.",
+    "placeholders": {
+      "error": "The operating system's or the parser's error text, shown verbatim (usually English)"
+    }
+  },
+  "messages.rom.select": "Select ROM File",
+  "@messages.rom.select": {
+    "context": "Title of an Open File dialog picking a ZX Spectrum 48 ROM."
+  },
+  "messages.rom.readErrorTitle": "Error reading ROM file",
+  "@messages.rom.readErrorTitle": {
+    "context": "Title of an error box: the ROM file could not be read."
+  },
+  "messages.rom.readError": "Could not read file {file}: {error}",
+  "@messages.rom.readError": {
+    "context": "Error text: the ROM file could not be read.",
+    "placeholders": {
+      "file": "A file path or name, shown verbatim",
+      "error": "The operating system's or the parser's error text, shown verbatim (usually English)"
+    }
+  },
+  "messages.rom.invalidTitle": "Invalid ROM file",
+  "@messages.rom.invalidTitle": {
+    "context": "Title of an error box: the ROM file has the wrong size."
+  },
+  "messages.rom.invalidSp48": "The selected file is {size} bytes. A ZX Spectrum 48 ROM must be exactly {romSize} bytes (16K).",
+  "@messages.rom.invalidSp48": {
+    "context": "Error text: the ZX Spectrum 48 ROM file has the wrong size.",
+    "placeholders": {
+      "size": "The file's size in bytes",
+      "romSize": "The required size in bytes, 16384"
+    }
+  },
+  "messages.rom.resetTitle": "Reset to Default ROM",
+  "@messages.rom.resetTitle": {
+    "context": "Title of a confirmation dialog before dropping the custom ROM."
+  },
+  "messages.rom.resetConfirm": "Are you sure you want to reset to the default ZX Spectrum 48 ROM?",
+  "@messages.rom.resetConfirm": {
+    "context": "Question of the confirmation dialog; answered Yes/No."
+  },
+  "messages.snapshot.saveTitle": "Save ZX Spectrum Snapshot",
+  "@messages.snapshot.saveTitle": {
+    "context": "Title of a Save File dialog saving a snapshot."
+  },
+  "messages.snapshot.title": "ZX Spectrum Snapshot",
+  "@messages.snapshot.title": {
+    "context": "Title of the message box reporting on a saved snapshot."
+  },
+  "messages.snapshot.couldNotSave": "Could not save {file}",
+  "@messages.snapshot.couldNotSave": {
+    "context": "Error text: the snapshot could not be saved.",
+    "placeholders": {
+      "file": "A file path or name, shown verbatim"
+    }
+  },
+  "messages.snapshot.lossy": "The snapshot is saved, but a .{format} file does not hold everything:",
+  "@messages.snapshot.lossy": {
+    "context": "Warning text above a bullet list of what the snapshot format cannot store. Keep the colon.",
+    "placeholders": {
+      "format": "File extension without the dot, e.g. 'z80' or 'sna'"
+    }
+  },
+  "messages.snapshot.lossyHint": "Save as .szx to keep the whole state.",
+  "@messages.snapshot.lossyHint": {
+    "context": "Advice under the list of what a snapshot format cannot store. Keep '.szx'."
+  },
+  "messages.snapshot.dontShowAgain": "Don't show this again for .{format} files",
+  "@messages.snapshot.dontShowAgain": {
+    "context": "Checkbox in the warning dialog that turns the warning off for one format.",
+    "placeholders": {
+      "format": "File extension without the dot, e.g. 'z80'"
+    }
+  },
+  "messages.timex.insertCartridge": "Insert a Timex Cartridge",
+  "@messages.timex.insertCartridge": {
+    "context": "Title of an Open File dialog picking a Timex 2068 cartridge (.dck)."
+  },
+  "messages.timex.cannotInsert": "Cannot insert the cartridge",
+  "@messages.timex.cannotInsert": {
+    "context": "Title of an error box: the cartridge file could not be inserted."
+  },
+  "messages.fileError": "{file}: {error}",
+  "@messages.fileError": {
+    "context": "Error text naming a file and what went wrong with it. Usually kept as it is.",
+    "placeholders": {
+      "file": "A file path or name, shown verbatim",
+      "error": "The operating system's or the parser's error text, shown verbatim (usually English)"
+    }
+  },
+  "messages.rom.selectModelRom": "Select the {model} ROM ({kilobytes}K)",
+  "@messages.rom.selectModelRom": {
+    "context": "Title of an Open File dialog picking a machine's ROM file.",
+    "placeholders": {
+      "model": "Machine model id, shown verbatim, e.g. 'TC2048', 'TS2068'",
+      "kilobytes": "The ROM's size in kilobytes, e.g. 16 or 24"
+    }
+  },
+  "messages.rom.notModelRom": "Not a {model} ROM",
+  "@messages.rom.notModelRom": {
+    "context": "Title of an error box: the chosen file is not that machine's ROM.",
+    "placeholders": {
+      "model": "Machine model id, shown verbatim, e.g. 'TC2048'"
+    }
+  },
+  "messages.rom.wrongModelSize": "The {model} ROM is {size} bytes; {file} has {actual}.",
+  "@messages.rom.wrongModelSize": {
+    "context": "Error text: the chosen ROM file has the wrong size.",
+    "placeholders": {
+      "model": "Machine model id, e.g. 'TC2048'",
+      "size": "The required size in bytes",
+      "file": "A file path or name, shown verbatim",
+      "actual": "The file's size in bytes"
+    }
+  },
+  "messages.rom.wrongTs2068Size": "The {model} ROM is {size} bytes (the 16K HOME ROM followed by the 8K EXROM); {file} has {actual}.",
+  "@messages.rom.wrongTs2068Size": {
+    "context": "Error text: the chosen Timex 2068 ROM file has the wrong size. 'HOME ROM' and 'EXROM' are the names of the two ROM chips; keep them.",
+    "placeholders": {
+      "model": "Machine model id, e.g. 'TS2068'",
+      "size": "The required size in bytes",
+      "file": "A file path or name, shown verbatim",
+      "actual": "The file's size in bytes"
+    }
+  },
+  "messages.file.overwriteTitle": "Overwrite File",
+  "@messages.file.overwriteTitle": {
+    "context": "Title of a confirmation dialog before replacing an existing file."
+  },
+  "messages.file.overwriteConfirm": "The target file already exists:\n{file}\n\nDo you want to overwrite it?",
+  "@messages.file.overwriteConfirm": {
+    "context": "Question of the confirmation dialog before replacing a file. Keep the line breaks.",
+    "placeholders": {
+      "file": "A file path or name, shown verbatim"
+    }
+  },
+  "messages.file.openFolder": "Open Folder",
+  "@messages.file.openFolder": {
+    "context": "Title of an operating-system dialog picking a folder."
+  },
+  "messages.file.openFile": "Open File",
+  "@messages.file.openFile": {
+    "context": "Title of an operating-system dialog picking a file."
+  },
+  "messages.state.title": "Machine State",
+  "@messages.state.title": {
+    "context": "Title of message boxes about saving or loading a machine state file."
+  },
+  "messages.state.saveTitle": "Save Machine State",
+  "@messages.state.saveTitle": {
+    "context": "Title of a Save File dialog saving the emulated machine's state."
+  },
+  "messages.couldNotSave": "Could not save {file}",
+  "@messages.couldNotSave": {
+    "context": "Error text: a file could not be saved.",
+    "placeholders": {
+      "file": "A file path or name, shown verbatim"
+    }
+  },
+  "messages.couldNotLoad": "Could not load {file}",
+  "@messages.couldNotLoad": {
+    "context": "Error text: a file could not be loaded.",
+    "placeholders": {
+      "file": "A file path or name, shown verbatim"
+    }
+  },
+  "messages.couldNotOpen": "Could not open {file}",
+  "@messages.couldNotOpen": {
+    "context": "Error text: a file could not be opened.",
+    "placeholders": {
+      "file": "A file path or name, shown verbatim"
+    }
+  },
+  "messages.state.loadAnyway": "Load the state anyway?",
+  "@messages.state.loadAnyway": {
+    "context": "Question under a warning that the state file does not match the current setup (e.g. a changed SD card)."
+  },
+  "messages.commandFailed": "The command failed: {command}",
+  "@messages.commandFailed": {
+    "context": "Error text: an IDE command run for a menu item failed.",
+    "placeholders": {
+      "command": "The command line, shown verbatim (English, never translated)"
+    }
+  },
+  "messages.rzx.selectToRender": "Select RZX Recording to Render",
+  "@messages.rzx.selectToRender": {
+    "context": "Title of an Open File dialog picking an RZX recording to turn into a video."
+  },
+  "messages.rzx.videoTitle": "RZX Video",
+  "@messages.rzx.videoTitle": {
+    "context": "Title of an error box about rendering an RZX recording to video."
+  },
+  "messages.rzx.recordingTitle": "RZX Recording",
+  "@messages.rzx.recordingTitle": {
+    "context": "Title of an error box about an RZX recording command."
+  },
+  "messages.rzx.saveTitle": "Save RZX Recording",
+  "@messages.rzx.saveTitle": {
+    "context": "Title of a Save File dialog saving an RZX recording."
+  },
+  "messages.debugRecording.title": "Debug Recording",
+  "@messages.debugRecording.title": {
+    "context": "Title of message boxes about saving or opening a debug recording (a saved reverse-debugging session)."
+  },
+  "messages.debugRecording.saveTitle": "Save Debug Recording",
+  "@messages.debugRecording.saveTitle": {
+    "context": "Title of a Save File dialog saving a debug recording."
+  },
+  "messages.debugRecording.openTitle": "Open Debug Recording",
+  "@messages.debugRecording.openTitle": {
+    "context": "Title of an Open File dialog picking a debug recording."
+  },
+  "messages.debugRecording.offerEndState": "A recording replays only in the Klive build that made it. Open its end state instead, without its past?",
+  "@messages.debugRecording.offerEndState": {
+    "context": "Question in a warning: the recording was made by another Klive version, so only its final machine state can be opened."
+  },
+  "messages.keyMapping.select": "Select Key Mapping File",
+  "@messages.keyMapping.select": {
+    "context": "Title of an Open File dialog picking a key mapping file (which host keys press which emulated keys)."
+  },
+  "messages.keyMapping.readErrorTitle": "Error while reading key mapping file",
+  "@messages.keyMapping.readErrorTitle": {
+    "context": "Title of an error box: the key mapping file could not be read."
+  },
+  "messages.readFileError": "Reading file {file} resulted in error: {error}",
+  "@messages.readFileError": {
+    "context": "Error text: a file could not be read.",
+    "placeholders": {
+      "file": "A file path or name, shown verbatim",
+      "error": "The operating system's or the parser's error text, shown verbatim (usually English)"
+    }
+  },
+  "messages.project.selectFolder": "Select Project Folder",
+  "@messages.project.selectFolder": {
+    "context": "Title of an operating-system dialog picking a project folder."
+  },
+  "messages.project.notLoaded": "The project could not be loaded",
+  "@messages.project.notLoaded": {
+    "context": "Main text of an error box when opening a project failed; the details follow."
+  },
+  "messages.project.loadedIncompletely": "The project in {folder} was not loaded completely: {error}",
+  "@messages.project.loadedIncompletely": {
+    "context": "Details of the error box when opening a project failed.",
+    "placeholders": {
+      "folder": "The project folder's path, shown verbatim",
+      "error": "The operating system's or the parser's error text, shown verbatim (usually English)"
+    }
+  },
+  "messages.file.droppedTitle": "Dropped file",
+  "@messages.file.droppedTitle": {
+    "context": "Title of an error box about a file dragged onto a Klive window."
+  },
+  "messages.file.noTapeDeck": "The {machine} has no tape deck.",
+  "@messages.file.noTapeDeck": {
+    "context": "Error text: a tape file was opened, but the emulated machine has no tape.",
+    "placeholders": {
+      "machine": "Machine name, shown verbatim, e.g. 'Cambridge Z88'"
+    }
+  },
+  "messages.file.noTapeDeckCurrent": "The current machine has no tape deck.",
+  "@messages.file.noTapeDeckCurrent": {
+    "context": "Error text: a tape file was opened, but the emulated machine has no tape."
+  },
+  "messages.file.unsupportedExt": "Klive cannot open .{ext} files in the emulator. Open a .sna, .z80, .szx or .z88 snapshot, a .kls machine state, a .klr debug recording, an .rzx recording, or a .tap or .tzx tape.",
+  "@messages.file.unsupportedExt": {
+    "context": "Error text: a file of an unknown kind was opened or dropped. Keep the file extensions.",
+    "placeholders": {
+      "ext": "The file's extension without the dot, e.g. 'txt'"
+    }
+  },
+  "messages.file.unsupported": "Klive cannot open this kind of file in the emulator. Open a .sna, .z80, .szx or .z88 snapshot, a .kls machine state, a .klr debug recording, an .rzx recording, or a .tap or .tzx tape.",
+  "@messages.file.unsupported": {
+    "context": "Error text: a file without an extension was opened or dropped. Keep the file extensions."
+  },
+  "messages.rom.selectScorpion": "Select the Scorpion ZS-256 ROM (64K)",
+  "@messages.rom.selectScorpion": {
+    "context": "Title of an Open File dialog picking the Scorpion ROM. 'Scorpion ZS-256' is a machine name."
+  },
+  "messages.rom.notScorpion": "Not a Scorpion ROM",
+  "@messages.rom.notScorpion": {
+    "context": "Title of an error box: the chosen file is not the Scorpion's ROM."
+  },
+  "messages.rom.wrongScorpionSize": "The Scorpion ROM is {size} bytes (four 16K pages: the 128K editor, 48K BASIC, the service monitor, TR-DOS); {file} has {actual}.",
+  "@messages.rom.wrongScorpionSize": {
+    "context": "Error text: the Scorpion ROM file has the wrong size. The bracket lists the four ROM pages; keep '128K', '48K BASIC' and 'TR-DOS'.",
+    "placeholders": {
+      "size": "The required size in bytes",
+      "file": "A file path or name, shown verbatim",
+      "actual": "The file's size in bytes"
+    }
+  },
+  "messages.cli.onlyInstalled": "The command line tool is part of the installed app.",
+  "@messages.cli.onlyInstalled": {
+    "context": "Error box: 'Install Command Line Tool' was chosen in a development build."
+  },
+  "messages.cli.devHint": "In a development build, run: {command}",
+  "@messages.cli.devHint": {
+    "context": "Detail of the error box: how to run the tool in a development build.",
+    "placeholders": {
+      "command": "A shell command, shown verbatim"
+    }
+  },
+  "messages.cli.alreadyInstalled": "'klive' is installed already: {path}.",
+  "@messages.cli.alreadyInstalled": {
+    "context": "Info box: the 'klive' terminal command is already installed. Keep 'klive' (the command's name).",
+    "placeholders": {
+      "path": "Where it is installed, e.g. '/usr/local/bin/klive'"
+    }
+  },
+  "messages.cli.tryHelp": "Try 'klive help' in a new terminal.",
+  "@messages.cli.tryHelp": {
+    "context": "Detail of the info box. Keep 'klive help' (a command the user types)."
+  },
+  "messages.cli.installed": "Installed 'klive' as {path}.",
+  "@messages.cli.installed": {
+    "context": "Info box: the 'klive' terminal command was installed.",
+    "placeholders": {
+      "path": "Where it was installed, e.g. '/usr/local/bin/klive'"
+    }
+  },
+  "messages.cli.tryHelpOrTest": "Try 'klive help' or 'klive test' in a new terminal.",
+  "@messages.cli.tryHelpOrTest": {
+    "context": "Detail of the info box. Keep 'klive help' and 'klive test' (commands the user types)."
+  },
+  "messages.cli.failed": "The command line tool could not be installed.",
+  "@messages.cli.failed": {
+    "context": "Error box: installing the 'klive' terminal command failed; the reason follows."
+  },
+  "messages.file.saveFile": "Save File",
+  "@messages.file.saveFile": {
+    "context": "Default title of an operating-system Save File dialog."
+  },
+  "messages.program.select": "Select Program File",
+  "@messages.program.select": {
+    "context": "Title of an Open File dialog picking a ZX80/ZX81 program file."
+  },
+  "messages.history.exportTitle": "Export Execution History",
+  "@messages.history.exportTitle": {
+    "context": "Title of the Save File dialog (and its error box) exporting the recorded instruction trace."
+  },
+  "messages.history.couldNotExport": "Could not export to {file}",
+  "@messages.history.couldNotExport": {
+    "context": "Error text: the trace file could not be written.",
+    "placeholders": {
+      "file": "A file path or name, shown verbatim"
+    }
+  },
+  "messages.recording.title": "IDE + Emulator recording",
+  "@messages.recording.title": {
+    "context": "Title of error boxes about the video recording of both windows."
+  },
+  "messages.recording.ideHidden": "The IDE window must be visible to record the IDE and the emulator.",
+  "@messages.recording.ideHidden": {
+    "context": "Error text: the side-by-side recording needs the IDE window shown."
+  },
+  "messages.recording.couldNotStart": "The recording could not be started.\n\n{error}",
+  "@messages.recording.couldNotStart": {
+    "context": "Error text: the side-by-side recording failed to start. Keep the blank line.",
+    "placeholders": {
+      "error": "The operating system's or the parser's error text, shown verbatim (usually English)"
+    }
+  },
+  "messages.recording.couldNotSave": "The recording could not be saved.\n\n{error}",
+  "@messages.recording.couldNotSave": {
+    "context": "Error text: the side-by-side recording could not be written. Keep the blank line.",
+    "placeholders": {
+      "error": "The operating system's or the parser's error text, shown verbatim (usually English)"
+    }
+  },
+  "messages.sdCard.resetTitle": "Reset SD Card Image",
+  "@messages.sdCard.resetTitle": {
+    "context": "Title of a confirmation dialog before restoring Klive's own SD card image (ZX Spectrum Next)."
+  },
+  "messages.sdCard.resetConfirm": "Do you really want to reset the default SD Card image?\nThis operation will delete all changes made to the current SD Card image.",
+  "@messages.sdCard.resetConfirm": {
+    "context": "Question of the confirmation dialog; answered Yes/No (No is the default). Keep the line break."
+  },
+  "messages.command.title": "Command execution",
+  "@messages.command.title": {
+    "context": "Default title of the message box reporting the result of an IDE command run from a menu."
+  },
+  "messages.command.succeeded": "Command successfully executed.",
+  "@messages.command.succeeded": {
+    "context": "Default text of the message box: the command run from a menu succeeded."
+  },
+  "messages.command.failed": "Error executing command.",
+  "@messages.command.failed": {
+    "context": "Default text of the error box: the command run from a menu failed."
+  },
+  "messages.sdCard.select": "Select SD Card Image",
+  "@messages.sdCard.select": {
+    "context": "Title of an Open File dialog picking an SD card image for the ZX Spectrum Next."
+  }
+}

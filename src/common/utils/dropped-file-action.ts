@@ -19,6 +19,7 @@ import { z88SnapshotCommandText } from "@common/z88/z88SnapshotLoadTypes";
 import { machineStateLoadCommandText } from "@common/machineState/machineStateTypes";
 import { rzxPlayCommandText } from "@common/spectrum/rzx/rzxCommandTypes";
 import { debugRecordingLoadCommandText } from "@common/debugRecording/debugRecordingTypes";
+import { t } from "@common/i18n/i18n";
 
 export type DroppedFileAction =
   | { kind: "command"; command: string }
@@ -53,7 +54,7 @@ export function droppedFileAction(path: string): DroppedFileAction {
     default:
       return {
         kind: "unsupported",
-        message: `Klive cannot open ${ext ? `.${ext}` : "this kind of"} file in the emulator. Open a .sna, .z80, .szx or .z88 snapshot, a .kls machine state, a .klr debug recording, an .rzx recording, or a .tap or .tzx tape.`
+        message: ext ? t("messages.file.unsupportedExt", { ext }) : t("messages.file.unsupported")
       };
   }
 }

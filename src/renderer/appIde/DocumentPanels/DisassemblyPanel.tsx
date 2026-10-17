@@ -57,6 +57,7 @@ import {
 } from "./breakpointRowMatch";
 import { derivePartitionWidthCh } from "@renderer/controls/data/partitionWidth";
 import { toHexa4 } from "../services/ide-commands";
+import { useT } from "@common/i18n/useT";
 import { useBreakpointDialog } from "../dialogs/useBreakpointDialog";
 import type { KeyboardEvent as ReactKeyboardEvent, MouseEvent as ReactMouseEvent } from "react";
 import type { DisassemblyItem } from "../disassemblers/common-types";
@@ -82,6 +83,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
   // --- M3: the row height the virtualizer places by, matching `--row-size-disassembly` in the CSS.
   const { disassembly: disassemblyRowItemSize } = useRowSizes();
   // --- Get the services used in this component
+  const t = useT();
   const dispatch = useDispatch();
   const documentHubService = useDocumentHubService();
   const { navigationHistoryService } = useAppServices();
@@ -493,15 +495,17 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
        */
       dispatch(
         setIdeStatusMessageAction(
-          `$${toHexa4(toScroll)} is outside the disassembled range ` +
-            `($${toHexa4(items[0].address)}-$${toHexa4(items[items.length - 1].address)}). ` +
-            `Turn on the 64K view, or turn off Follow PC, to reach it.`,
+          t("panels.doc.disassembly.outsideRange", {
+            address: `$${toHexa4(toScroll)}`,
+            from: `$${toHexa4(items[0].address)}`,
+            to: `$${toHexa4(items[items.length - 1].address)}`
+          }),
           true
         )
       );
     }
     setToScroll(null);
-  }, [items, scrollVersion, toScroll, dispatch]);
+  }, [items, scrollVersion, toScroll, dispatch, t]);
 
   // --- Whenever machine state changes or breakpoints change, refresh the list
   useEffect(() => {
@@ -744,7 +748,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
         }
         onManualRefresh={async () => {
           await refreshDisassembly();
-          dispatch(setIdeStatusMessageAction("Disassembly refreshed", true));
+          dispatch(setIdeStatusMessageAction(t("panels.doc.disassembly.refreshed"), true));
         }}
         onRamChanged={setRam}
         onScreenChanged={setScreen}
@@ -759,7 +763,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
         sysVarNames={sysVarNames}
         topAddress={topAddress}
       />
-      <HistoryPresentBanner what="The listed bytes" plural />
+      <HistoryPresentBanner subject="listedBytes" />
       <DisassemblyBankToolbar
         allowViews={machineSetup.allowViews}
         autoRefresh={autoRefresh}

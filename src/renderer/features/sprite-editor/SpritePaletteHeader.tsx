@@ -2,6 +2,8 @@ import styles from "./SpriteEditor.module.scss";
 import classnames from "classnames";
 import { memo } from "react";
 import { TooltipFactory, useTooltipRef } from "@renderer/controls/Tooltip";
+import { useT } from "@common/i18n/useT";
+import type { MessageKey } from "@common/i18n/keys.generated";
 import { SpritePaletteSource } from "./useSpritePalette";
 
 type Props = {
@@ -11,7 +13,11 @@ type Props = {
   onPinBank: (bank: 0 | 1) => void;
 };
 
-const BANK_NAMES = ["First", "Second"] as const;
+const BANK_NAMES: readonly MessageKey[] = ["panels.spriteEditor.bankFirst", "panels.spriteEditor.bankSecond"];
+const LIVE_BANK_NAMES: readonly MessageKey[] = [
+  "panels.spriteEditor.bankFirstLive",
+  "panels.spriteEditor.bankSecondLive"
+];
 
 /**
  * Says which palette the editor is drawing with, and lets the user look at the other bank.
@@ -23,22 +29,19 @@ const BANK_NAMES = ["First", "Second"] as const;
  * has learned the sidebar control already knows this one.
  */
 export const SpritePaletteHeader = memo(({ source, shownBank, liveBank, onPinBank }: Props) => {
+  const t = useT();
   const ref = useTooltipRef<HTMLSpanElement>();
 
   if (source === "default") {
     return (
       <div className={styles.paletteHeader}>
         <span ref={ref} className={styles.paletteFallback}>
-          No machine &mdash; default ramp
+          {t("panels.spriteEditor.noMachine")}
         </span>
         <TooltipFactory
           refElement={ref.current}
           placement="bottom"
-          content={
-            "The sprite palette is read from the running machine (Next Reg $43, bit 3).\n" +
-            "With no Next machine running, the editor falls back to the index ramp 0-255,\n" +
-            "which cannot express the Next's low blue bit - so it has no pure white and no pure blue."
-          }
+          content={t("panels.spriteEditor.noMachineTip")}
         />
       </div>
     );
@@ -46,8 +49,8 @@ export const SpritePaletteHeader = memo(({ source, shownBank, liveBank, onPinBan
 
   return (
     <div className={styles.paletteHeader}>
-      <span className={styles.paletteLabel}>Sprite palette</span>
-      <span className={styles.bankSwitch} role="group" aria-label="Sprite palette bank">
+      <span className={styles.paletteLabel}>{t("panels.spriteEditor.palette")}</span>
+      <span className={styles.bankSwitch} role="group" aria-label={t("panels.spriteEditor.paletteBank")}>
         {([0, 1] as const).map((bank) => (
           <BankButton
             key={bank}
@@ -70,6 +73,7 @@ type BankButtonProps = {
 };
 
 const BankButton = ({ bank, isShown, isLive, clicked }: BankButtonProps) => {
+  const t = useT();
   const ref = useTooltipRef<HTMLButtonElement>();
   return (
     <>
@@ -81,7 +85,7 @@ const BankButton = ({ bank, isShown, isLive, clicked }: BankButtonProps) => {
           [styles.bankLive]: isLive
         })}
         aria-pressed={isShown}
-        aria-label={`${BANK_NAMES[bank]} sprite palette${isLive ? " (live)" : ""}`}
+        aria-label={t(isLive ? LIVE_BANK_NAMES[bank] : BANK_NAMES[bank])}
         onClick={clicked}
       >
         {bank + 1}
@@ -89,11 +93,9 @@ const BankButton = ({ bank, isShown, isLive, clicked }: BankButtonProps) => {
       <TooltipFactory
         refElement={ref.current}
         placement="bottom"
-        content={
-          `${BANK_NAMES[bank]} sprite palette\n` +
-          (isLive ? "Live - the machine is drawing with this bank\n" : "") +
-          "Reg $43, bit 3"
-        }
+        content={[t(BANK_NAMES[bank]), ...(isLive ? [t("panels.spriteEditor.bankLiveTip")] : []), "Reg $43, bit 3"].join(
+          "\n"
+        )}
       />
     </>
   );

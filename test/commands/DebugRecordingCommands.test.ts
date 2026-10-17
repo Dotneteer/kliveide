@@ -6,7 +6,7 @@ import {
   DebugRecordingLoadCommand,
   DebugRecordingSaveCommand,
   parseRecordingFrom,
-  RECORDING_PRIVACY_NOTICE
+  recordingPrivacyNotice
 } from "@renderer/appIde/commands/DebugRecordingCommands";
 import { projectRelativePath } from "@renderer/appIde/commands/debugRecordingSources";
 import { extractArguments, splitRawTail } from "@renderer/appIde/services/ide-commands";
@@ -149,7 +149,7 @@ describe("debug-recording-save", () => {
     expect(options.sources.files[0].sha256).toMatch(/^[0-9a-f]{64}$/);
     expect(options.sources.files[0].text).toBeUndefined();
     expect(f.output).toContain("Warning: The state has no portable .szx part");
-    expect(f.output).toContain(RECORDING_PRIVACY_NOTICE);
+    expect(f.output).toContain(recordingPrivacyNotice());
   });
 
   it("embeds the sources with -sources, and asks the Next's SD card", async () => {
@@ -241,6 +241,10 @@ describe("debug-recording-load", () => {
     expect(refused.finalMessage).toBe(
       "The recording was recorded by Klive 0.1.0 (build 00000000); this build differs. Use -y to open only its end state, without its past."
     );
+    // --- The File menu reads the refusal from the value, not from the message's wording
+    expect(refused.value).toEqual({
+      fallbackRefusal: "The recording was recorded by Klive 0.1.0 (build 00000000); this build differs"
+    });
     const state = await run(f, new DebugRecordingLoadCommand(), "drload bug.klr -y");
     expect(state.success).toBe(true);
     expect(state.finalMessage).toMatch(/Opened its end state only \(no past\), stopped at PC \$8000\.$/);

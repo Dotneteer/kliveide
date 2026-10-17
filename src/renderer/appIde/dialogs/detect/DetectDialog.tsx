@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef } from "react";
 
+import { t as translate } from "@common/i18n/i18n";
+import { useT } from "@common/i18n/useT";
 import { Modal } from "@controls/Modal";
 import { useSelector, useRendererContext } from "@renderer/core/RendererProvider";
 import { useEmuApi } from "@renderer/core/EmuApi";
@@ -33,6 +35,7 @@ type Props = {
  * model.
  */
 export const DetectDialog = ({ onClose, skoolPath }: Props) => {
+  const t = useT();
   const mainApi = useMainApi();
   const emuApi = useEmuApi();
   const { store } = useRendererContext();
@@ -58,7 +61,7 @@ export const DetectDialog = ({ onClose, skoolPath }: Props) => {
   const ports = useMemo<DetectPorts>(() => {
     const context = () => {
       const result = detectionContextFor(store.getState(), projectService);
-      if (!result) throw new Error("This machine's memory cannot be annotated.");
+      if (!result) throw new Error(translate("dialog.detect.error.cannotAnnotate"));
       return result;
     };
     return {
@@ -75,13 +78,13 @@ export const DetectDialog = ({ onClose, skoolPath }: Props) => {
       coverage: {
         turnOn: async () => {
           const result = await ideCommandsService.executeCommand("coverage on");
-          if (!result.success) throw new Error(result.finalMessage ?? "Coverage could not be turned on.");
-          return "Coverage is on. Run the program, pause, then Detect.";
+          if (!result.success) throw new Error(result.finalMessage ?? translate("dialog.detect.coverage.turnOnFailed"));
+          return translate("dialog.detect.coverage.turnedOn");
         },
         load: async (path) => {
           const result = await ideCommandsService.executeCommand(`coverage load "${path}"`);
-          if (!result.success) throw new Error(result.finalMessage ?? "The run could not be loaded.");
-          return "The saved run is merged. Detect again.";
+          if (!result.success) throw new Error(result.finalMessage ?? translate("dialog.detect.coverage.loadFailed"));
+          return translate("dialog.detect.coverage.loaded");
         }
       },
       navigate: {
@@ -106,17 +109,17 @@ export const DetectDialog = ({ onClose, skoolPath }: Props) => {
 
   return (
     <Modal
-      title={skoolPath ? "Import SkoolKit file" : "Detect code and data"}
+      title={skoolPath ? t("dialog.detect.title.skool") : t("dialog.detect.title.detect")}
       iconName="disassembly-icon"
       isOpen={true}
       fullScreen={false}
       width={760}
       primaryLabel={vm.applyLabel}
       primaryEnabled={vm.buttons.applyEnabled}
-      secondaryLabel="Undo last detection"
+      secondaryLabel={t("dialog.detect.button.undo")}
       secondaryVisible={true}
       secondaryEnabled={vm.buttons.undoEnabled}
-      cancelLabel="Close"
+      cancelLabel={t("common.button.close")}
       initialFocus="primary"
       closeOnOutsideClick={false}
       onClose={() => void controller.dispatch({ type: "closeRequested" })}

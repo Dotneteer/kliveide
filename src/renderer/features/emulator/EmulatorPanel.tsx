@@ -36,12 +36,34 @@ import { renderMachineAudioFrame } from "./audioFrameRendering";
 import { MEDIA_DISK_A, MEDIA_DISK_B } from "@common/structs/project-const";
 import { applySectorChangesToDiskContents } from "@emu/machines/disk/disk-changes";
 import { mediaStore } from "@emu/machines/media/media-info";
+import { useT } from "@common/i18n/useT";
+import type { MessageKey } from "@common/i18n/keys.generated";
+import type { MessageArgs } from "@common/i18n/i18n";
 
 type Props = {
   keyStatusSet?: (code: number, down: boolean) => void;
 };
 
+/** The execution-state overlay's text: a message key and its arguments, formatted at display */
+type OverlayText = { key: MessageKey; args?: MessageArgs } | "" | null;
+
+/*
+ * One object per distinct text: the overlay used to be a string, which React compared by value, and
+ * a repeated state report must still be a no-op update rather than a fresh object and a re-render.
+ */
+const overlayTexts = new Map<string, OverlayText>();
+function overlayText(key: MessageKey, args?: MessageArgs): OverlayText {
+  const id = `${key}|${JSON.stringify(args ?? {})}`;
+  let text = overlayTexts.get(id);
+  if (!text) {
+    text = { key, args };
+    overlayTexts.set(id, text);
+  }
+  return text;
+}
+
 export const EmulatorPanel = ({ keyStatusSet }: Props) => {
+  const t = useT();
   const store = useStore();
   const mainApi = useMainApi();
 
@@ -77,7 +99,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   // --- Counts the stops, so the beam overlay redraws at each one, stepping included (T9)
   const [stopCount, setStopCount] = useState(0);
 
-  const [overlay, setOverlay] = useState(null);
+  const [overlay, setOverlay] = useState<OverlayText>(null);
   const [showOverlay, setShowOverlay] = useState(true);
 
   const componentStateRef = useRef({
@@ -178,7 +200,9 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   const setPauseOverlay = useCallback((): void => {
     const showInstant = getGlobalSetting(store, SETTING_EMU_SHOW_INSTANT_SCREEN);
     setOverlay(
-      `Paused (PC: $${toHexa4(controllerRef.current?.machine?.pc)})${showInstant ? " - Instant screen" : ""}`
+      overlayText(showInstant ? "panels.feature.emulator.pausedInstant" : "panels.feature.emulator.paused", {
+        pc: `$${toHexa4(controllerRef.current?.machine?.pc)}`
+      })
     );
   }, [store]);
 
@@ -187,7 +211,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     controllerRef.current = ctrl;
     if (!ctrl) return;
 
-    setOverlay("Not yet started. Press F5 to start or Ctrl+F5 to debug machine.");
+    setOverlay(overlayText("panels.feature.emulator.notStarted"));
 
     await initAudio(
       ctrl.machine.tactsInFrame,
@@ -225,7 +249,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
           case MachineControllerState.Running:
             // --- The machine draws again: a picture kept at an earlier pause is no longer its own
             componentStateRef.current.instantSnapshot = null;
-            setOverlay(currentController.isDebugging ? "Debug mode" : "");
+            setOverlay(currentController.isDebugging ? overlayText("panels.feature.emulator.debugMode") : "");
             await beeperRenderer?.current?.play();
             await recordingManagerRef?.current?.onMachineRunning(
               currentController.machine.screenWidthInPixels,
@@ -269,7 +293,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
 
           case MachineControllerState.Stopped:
             componentStateRef.current.instantSnapshot = null;
-            setOverlay(`Stopped (PC: $${toHexa4(currentController.machine.pc)})`);
+            setOverlay(overlayText("panels.feature.emulator.stopped", { pc: `$${toHexa4(currentController.machine.pc)}` }));
             await beeperRenderer?.current?.suspend();
             await recordingManagerRef?.current?.onMachineStopped();
             componentStateRef.current.machineStateHandlerQueue.length = 0;
@@ -443,7 +467,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
    */
   useEffect(() => {
     if (store.getState()?.emulatorState?.machineState !== MachineControllerState.Running) return;
-    setOverlay(isDebugging ? "Debug mode" : "");
+    setOverlay(isDebugging ? overlayText("panels.feature.emulator.debugMode") : "");
   }, [isDebugging, store]);
 
   useEffect(() => {
@@ -488,7 +512,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
             onClick={() => setShowOverlay(true)}
           >
             <EmulatorOverlay
-              overlay={overlay}
+              overlay={overlay && typeof overlay === "object" ? t(overlay.key, overlay.args) : ""}
               showOverlay={showOverlay}
               onDismiss={() => setShowOverlay(false)}
               mouseCaptured={captured}

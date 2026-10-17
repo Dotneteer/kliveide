@@ -6,6 +6,7 @@ import type { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disasse
 import type { RomPartitionInfo } from "@renderer/appIde/annotations/romAnnotationLoader";
 import type { SourceExportResult, SourceLine } from "@common/reverse/sourceExport";
 
+import { t } from "@common/i18n/i18n";
 import { exportSource } from "@common/reverse/sourceExport";
 import {
   DEFAULT_REGION,
@@ -71,7 +72,7 @@ export async function buildExport(
 
   if (scope.kind === "bank") {
     const bytes = await readBankBytes(ports, context.bankSpace, memory, slots, scope.bank);
-    if (!bytes) throw new Error(`Bank ${scope.bank} cannot be read.`);
+    if (!bytes) throw new Error(t("media.export.bankUnreadable", { bank: scope.bank }));
     const annotations = withBank(ram, context.bankSpace, scope.bank);
     const pagedAt = context.bankSpace.addressesOf({ bank: scope.bank, offset: 0 }, slots)[0];
     const listingBase =
@@ -90,7 +91,7 @@ export async function buildExport(
     const last = scope.to & 0xffff;
     while (address <= last) {
       const site = context.bankSpace.siteAt(address, slots);
-      if (!site) throw new Error(`$${address.toString(16)} is not in annotatable memory.`);
+      if (!site) throw new Error(t("media.export.notAnnotatable", { address: `$${address.toString(16)}` }));
       const pieceBase = (address - site.offset) & 0xffff;
       // --- The piece runs to the end of the range or to where the site changes
       let end = address;
@@ -102,7 +103,7 @@ export async function buildExport(
       }
       if (site.kind === "bank") {
         const bytes = await readBankBytes(ports, context.bankSpace, memory, slots, site.bank);
-        if (!bytes) throw new Error(`Bank ${site.bank} cannot be read.`);
+        if (!bytes) throw new Error(t("media.export.bankUnreadable", { bank: site.bank }));
         pieces.push({
           site: "bank",
           bank: site.bank,

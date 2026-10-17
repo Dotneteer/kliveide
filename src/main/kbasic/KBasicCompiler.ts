@@ -1,3 +1,4 @@
+import { t as tr } from "@common/i18n/i18n";
 import fs from "fs";
 
 import type { AssemblerErrorInfo, CompileProfile, DebuggableOutput, IKliveCompiler, SimpleAssemblerOutput } from "@abstractions/CompilerInfo";
@@ -60,7 +61,7 @@ export class KBasicCompiler implements IKliveCompiler {
     try {
       text = fs.readFileSync(filename, "utf8");
     } catch (err) {
-      return { errors: [fileError(filename, "K002", `Cannot read the file: ${(err as Error).message}`)] };
+      return { errors: [fileError(filename, "K002", tr("compiler.basic.K002", { reason: (err as Error).message }))] };
     }
     try {
       const result = runFrontEnd(filename, text, fileSystemReader, base, undefined, { collectDefines: background });
@@ -78,7 +79,7 @@ export class KBasicCompiler implements IKliveCompiler {
       return await this.build(filename, result, capped);
     } catch (err) {
       // --- A worker that throws is reported as a success (plan §2.1), so a compiler bug is an error
-      return { errors: [fileError(filename, "K000", `Internal compiler error: ${(err as Error).message}`)] };
+      return { errors: [fileError(filename, "K000", tr("compiler.basic.K000", { reason: (err as Error).message }))] };
     }
   }
 
@@ -103,7 +104,7 @@ export class KBasicCompiler implements IKliveCompiler {
     const diagnostics = front.diagnostics;
     const model = targetModel(front.options.target);
     if (model === undefined) {
-      diagnostics.error("E502", `Klive BASIC does not generate code for target '${front.options.target}'`, { file: 0, start: 0, end: 0 });
+      diagnostics.error("E502", tr("compiler.basic.E502", { target: front.options.target }), { file: 0, start: 0, end: 0 });
       return { errors: toErrorInfo(diagnostics.items, front.sources) };
     }
     const generated = await generateProgram(front.bound!, front.sources, front.options, programName(filename), diagnostics);
@@ -196,7 +197,7 @@ export function runFrontEnd(
   // --- accepted, and Klive BASIC says they do nothing here
   for (const h of header) {
     if (h.name === "split-modules") {
-      diagnostics.warning("K013", "'@split-modules has no effect with Klive BASIC: it banks code with CODEBANK", h.span);
+      diagnostics.warning("K013", tr("compiler.basic.K013"), h.span);
     }
   }
   const rootFolder = folderOf(rootPath);

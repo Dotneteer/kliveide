@@ -1,3 +1,4 @@
+import { t as tr } from "@common/i18n/i18n";
 import type { StatementKind } from "@abstractions/CompilerInfo";
 import { runtimeBundle } from "../runtime/generated/runtime-bundle";
 import type { DiagnosticBag, Span } from "../diagnostics";
@@ -176,7 +177,7 @@ class Lowering {
   private globalArray(symbol: ArraySymbol): void {
     const type = mtypeOf(symbol.elementType);
     if (!this.supportedType(type)) {
-      this.unsupported(`${symbol.elementType} arrays`, symbol.span);
+      this.unsupported(tr("compiler.basic.E501.arrays", { type: symbol.elementType }), symbol.span);
       return;
     }
     const name = globalName(symbol.name);
@@ -186,7 +187,7 @@ class Lowering {
     const bank = this.inBank(symbol.bank);
     this.module.data.push({ kind: "raw", label: name, lines: [`    .defw ${tables.dims},${name}.data,${tables.lower ?? 0},${tables.upper ?? 0}`], ...bank });
     if (at !== undefined) {
-      if (symbol.initial) this.unsupported("An initialiser for an array placed AT an address", symbol.span);
+      if (symbol.initial) this.unsupported(tr("compiler.basic.E501.arrayInitialiserAt"), symbol.span);
       this.module.data.push({ kind: "equ", label: `${name}.data`, value: at, ...bank });
     } else {
       const init = symbol.initial ? this.arrayImage(symbol, type) : undefined;
@@ -320,12 +321,13 @@ class Lowering {
     this.statementCalls = [];
   }
 
-  private unsupported(what: string, span: Span): void {
-    this.diagnostics.error("E501", `${what} is not supported by the Klive BASIC code generator yet`, span);
+  /** E501, with its whole message (`compiler.basic.E501.*`). */
+  private unsupported(message: string, span: Span): void {
+    this.diagnostics.error("E501", message, span);
   }
 
-  private unsupportedValue(what: string, span: Span): Value {
-    this.unsupported(what, span);
+  private unsupportedValue(message: string, span: Span): Value {
+    this.unsupported(message, span);
     return imm("ptr", 0);
   }
 
@@ -362,7 +364,7 @@ class Lowering {
         this.beginStatement(s.span, "other", [s.value]);
         const code = ATTR_CODES[s.attr];
         if (!code) {
-          this.unsupported(s.attr, s.span);
+          this.unsupported(tr("compiler.basic.E501.keyword", { keyword: s.attr }), s.span);
           return;
         }
         this.emit({ op: "rtcall", name: this.rt("ColourPermanent"), args: [imm("u8", code), this.value(s.value)], sid: this.sid });
@@ -409,7 +411,7 @@ class Lowering {
         if (s.angle) {
           const { arc, angle } = s;
           if (!arc) {
-            this.unsupported("DRAW with an arc", angle.span);
+            this.unsupported(tr("compiler.basic.E501.drawArc"), angle.span);
             return;
           }
           for (const a of s.attrs) this.colourItem(a.attr, a.value);
@@ -524,7 +526,7 @@ class Lowering {
         this.beginStatement(s.span, "other");
         const type = mtypeOf(s.type);
         if (!this.supportedType(type)) {
-          this.unsupported(`POKE ${s.type}`, s.span);
+          this.unsupported(tr("compiler.basic.E501.poke", { type: s.type }), s.span);
           return;
         }
         const address = this.value(s.address);
@@ -557,7 +559,7 @@ class Lowering {
       default: {
         // --- Every kind is handled; a new one reaches here until it is
         const other = s as { kind: string; span: Span };
-        this.unsupported(other.kind.toUpperCase(), other.span);
+        this.unsupported(tr("compiler.basic.E501.keyword", { keyword: other.kind.toUpperCase() }), other.span);
       }
     }
   }
@@ -566,7 +568,7 @@ class Lowering {
     if (target.kind === "element") {
       const type = mtypeOf(target.type);
       if (!this.supportedType(type)) {
-        this.unsupported(`${target.type} arrays`, span);
+        this.unsupported(tr("compiler.basic.E501.arrays", { type: target.type }), span);
         return;
       }
       if (callsRoutine(valueExpr)) {
@@ -601,13 +603,13 @@ class Lowering {
       return;
     }
     if (target.kind !== "variable") {
-      this.unsupported("Assignment to this target", span);
+      this.unsupported(tr("compiler.basic.E501.assignmentTarget"), span);
       return;
     }
     const slot = this.variableSlot(target.symbol, span);
     const type = mtypeOf(target.type);
     if (!slot || !this.supportedType(type)) {
-      if (slot) this.unsupported(`${target.type} variables`, span);
+      if (slot) this.unsupported(tr("compiler.basic.E501.variables", { type: target.type }), span);
       return;
     }
     if (type === "str") {
@@ -653,14 +655,14 @@ class Lowering {
       const slot = this.variableSlot(e.symbol, e.span);
       if (slot) return this.load("str", slot);
     }
-    this.unsupported("Substring assignment to this target", e.span);
+    this.unsupported(tr("compiler.basic.E501.substringAssignment"), e.span);
     return imm("str", 0);
   }
 
   /** `a = b` for whole arrays of the same element type and size: the data copied, Strings duplicated. */
   private copyArray(target: ArraySymbol, source: ArraySymbol, span: Span): void {
     if (target.param || source.param) {
-      this.unsupported("Copying an array parameter", span);
+      this.unsupported(tr("compiler.basic.E501.copyArrayParameter"), span);
       return;
     }
     const src = this.arrayData(source);
@@ -707,7 +709,7 @@ class Lowering {
     if (symbol.storage !== "global") {
       const local = this.frameSlots.get(symbol);
       if (!local) {
-        this.unsupported(`The local '${symbol.name}'`, span);
+        this.unsupported(tr("compiler.basic.E501.local", { name: symbol.name }), span);
         return undefined;
       }
       // --- A BYREF parameter holds the address of the caller's variable
@@ -755,7 +757,7 @@ class Lowering {
           ? this.variableSlot(target.symbol, target.span)
           : undefined;
     if (!slot || !this.supportedType(type)) {
-      this.unsupported(`READ into a ${target.type}`, target.span);
+      this.unsupported(tr("compiler.basic.E501.readInto", { type: target.type }), target.span);
       return;
     }
     if (type === "str") {
@@ -843,11 +845,11 @@ class Lowering {
       } else {
         // --- zxbc rejects a String array and a local array here (syntax errors), so Klive does too
         if ((v.kind !== "variable" && v.kind !== "array") || (v.kind === "array" && v.type === "String")) {
-          this.unsupported(`${s.operation} DATA of a String array`, s.span);
+          this.unsupported(tr("compiler.basic.E501.dataStringArray", { operation: s.operation }), s.span);
           return;
         }
         if (v.kind === "array" && (v.symbol.param || v.symbol.storage !== "global")) {
-          this.unsupported(`${s.operation} DATA of a local array`, s.span);
+          this.unsupported(tr("compiler.basic.E501.dataLocalArray", { operation: s.operation }), s.span);
           return;
         }
         if (v.kind === "array") {
@@ -950,7 +952,7 @@ class Lowering {
     }
     const name = { u8: "PrintU8", bool: "PrintU8", i8: "PrintI8", u16: "PrintU16", i16: "PrintI16", u32: "PrintU32", i32: "PrintI32", flt: "PrintFloat" }[type as "u8"];
     if (!name) {
-      this.unsupported(`PRINT of a ${e.type}`, e.span);
+      this.unsupported(tr("compiler.basic.E501.print", { type: e.type }), e.span);
       return;
     }
     this.emit({ op: "rtcall", name: this.rt(name), args: [this.value(e)], sid: this.sid });
@@ -989,7 +991,7 @@ class Lowering {
     const slot = this.variableSlot(s.variable.symbol, s.header);
     if (!slot) return;
     if (!this.supportedType(type)) {
-      this.unsupported(`A ${s.variable.type} FOR variable`, s.header);
+      this.unsupported(tr("compiler.basic.E501.forVariable", { type: s.variable.type }), s.header);
       return;
     }
     const body = this.newLabel();
@@ -1214,7 +1216,7 @@ class Lowering {
         address = labelName(t);
         break;
       default:
-        return this.unsupportedValue("FARPTR of a routine", e.span);
+        return this.unsupportedValue(tr("compiler.basic.E501.farptrRoutine"), e.span);
     }
     const text = `${address}/${t.bank}`;
     let label = this.farConstants.get(text);
@@ -1300,7 +1302,7 @@ class Lowering {
       const byref = p.byref || p.isArray;
       const type: MType = byref ? "ptr" : mtypeOf(p.type);
       if (unsupportedType(type)) {
-        this.unsupported(`${p.type} parameters`, p.span);
+        this.unsupported(tr("compiler.basic.E501.parameters", { type: p.type }), p.span);
         return;
       }
       if (fastcall && i === 0) {
@@ -1332,7 +1334,7 @@ class Lowering {
       if (symbol.kind !== "variable" || symbol.storage !== "local") continue;
       const type = mtypeOf(symbol.type);
       if (!this.supportedType(type)) {
-        this.unsupported(`${symbol.type} local variables`, symbol.span);
+        this.unsupported(tr("compiler.basic.E501.localVariables", { type: symbol.type }), symbol.span);
         continue;
       }
       const slot = this.allocateLocal(type);
@@ -1340,7 +1342,7 @@ class Lowering {
       this.fn.locals.push({ name: symbol.name, type, offset: (slot as { offset: number }).offset });
     }
     this.resultSlot = returnType ? this.allocateLocal(returnType) : undefined;
-    if (returnType && !this.supportedType(returnType)) this.unsupported(`${r.returnType} FUNCTION results`, r.span);
+    if (returnType && !this.supportedType(returnType)) this.unsupported(tr("compiler.basic.E501.functionResults", { type: r.returnType }), r.span);
     if (fastcall && s.body.length && s.body.some((b) => b.kind === "asm") && s.body.every((b) => (b.kind === "asm" && b.zxbasm) || b.kind === "label") && !this.fn.locals.length && !this.localArrays.size) {
       this.fn.naked = true;
       this.fn.frameSize = 0;
@@ -1384,7 +1386,7 @@ class Lowering {
   private localArray(symbol: ArraySymbol): void {
     const type = mtypeOf(symbol.elementType);
     if (!this.supportedType(type)) {
-      this.unsupported(`${symbol.elementType} arrays`, symbol.span);
+      this.unsupported(tr("compiler.basic.E501.arrays", { type: symbol.elementType }), symbol.span);
       return;
     }
     const slot = this.allocateBytes(8);
@@ -1456,7 +1458,7 @@ class Lowering {
     if (symbol.param) {
       const local = this.frameSlots.get(symbol);
       if (!local) {
-        this.unsupported(`The array parameter '${symbol.name}'`, span);
+        this.unsupported(tr("compiler.basic.E501.arrayParameter", { name: symbol.name }), span);
         return imm("ptr", 0);
       }
       // --- check-bounds: each index against the bounds the descriptor gives, before any is pushed
@@ -1515,7 +1517,7 @@ class Lowering {
       return r;
     }
     if (!this.frameSlots.has(symbol)) {
-      this.unsupported(`The array '${symbol.name}'`, span);
+      this.unsupported(tr("compiler.basic.E501.array", { name: symbol.name }), span);
       return imm("ptr", 0);
     }
     let address: Value = this.load("ptr", this.dataSlot(symbol));
@@ -1592,7 +1594,7 @@ class Lowering {
     if (symbol.storage === "global" && !symbol.param) return { kind: "sym", type: "ptr", name: globalName(symbol.name), offset: 0 };
     const local = this.frameSlots.get(symbol);
     if (!local) {
-      this.unsupported(`The array '${symbol.name}'`, span);
+      this.unsupported(tr("compiler.basic.E501.array", { name: symbol.name }), span);
       return imm("ptr", 0);
     }
     if (local.byref) return this.load("ptr", local.slot);
@@ -1643,7 +1645,7 @@ class Lowering {
       const c = a.param.defaultValue;
       v = c ? this.constantValue(c, mtypeOf(a.param.type), a.param.span) : imm(mtypeOf(a.param.type), 0);
     } else if (a.byref) {
-      v = a.value.kind === "variable" || a.value.kind === "element" || a.value.kind === "array" ? this.address(a.value, a.value.span) : this.unsupportedValue("This BYREF argument", a.value.span);
+      v = a.value.kind === "variable" || a.value.kind === "element" || a.value.kind === "array" ? this.address(a.value, a.value.span) : this.unsupportedValue(tr("compiler.basic.E501.byrefArgument"), a.value.span);
     } else if (mtypeOf(a.param.type) === "str") {
       // --- A by-value String argument is a copy the callee frees (plan §6.7)
       v = this.ownedString(a.value);
@@ -1658,7 +1660,7 @@ class Lowering {
     if (e.kind === "element") return this.elementAddress(e.symbol, e.indices, span);
     if (e.kind === "array") return this.descriptorAddress(e.symbol, span);
     if (e.kind !== "variable") {
-      this.unsupported("This address", span);
+      this.unsupported(tr("compiler.basic.E501.address"), span);
       return imm("ptr", 0);
     }
     const slot = this.variableSlot(e.symbol, span);
@@ -1697,7 +1699,7 @@ class Lowering {
     const type = mtypeOf(e.type);
     if (e.constant) return this.constantValue(e.constant, type, e.span);
     if (!this.supportedType(type)) {
-      this.unsupported(`${e.type} values`, e.span);
+      this.unsupported(tr("compiler.basic.E501.values", { type: e.type }), e.span);
       return imm(type, 0);
     }
     switch (e.kind) {
@@ -1739,7 +1741,7 @@ class Lowering {
       case "farptr":
         return this.farPointer(e);
       default:
-        this.unsupported(`This ${e.kind} expression`, e.span);
+        this.unsupported(tr("compiler.basic.E501.expression", { kind: e.kind }), e.span);
         return imm(type, 0);
     }
   }
@@ -1966,7 +1968,7 @@ class Lowering {
         return r;
       }
       default:
-        this.unsupported(e.name, e.span);
+        this.unsupported(tr("compiler.basic.E501.keyword", { keyword: e.name }), e.span);
         return imm(type, 0);
     }
   }
@@ -2017,7 +2019,7 @@ class Lowering {
       case "fixed":
         return imm(type, v.raw);
       default:
-        this.unsupported(`${c.type} constants`, span);
+        this.unsupported(tr("compiler.basic.E501.constants", { type: c.type }), span);
         return imm(type, 0);
     }
   }

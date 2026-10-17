@@ -1,3 +1,4 @@
+import { t } from "@common/i18n/i18n";
 import { LatestRun } from "@mvc/core/LatestRun";
 import { UiController } from "@mvc/core/UiController";
 import { messageOf } from "@mvc/core/errors";
@@ -85,13 +86,10 @@ export class DetectController extends UiController<DetectState, DetectIntent, De
     const userChanges = targets.reduce((n, t) => n + t.proposal.changes.filter((c) => c.user).length, 0);
     if (userChanges > 0) {
       const ok = await this.ports.confirm.confirm({
-        title: "Replace your regions?",
-        lines: [
-          `Replace mode overwrites ${userChanges} region(s) you marked yourself.`,
-          "Undo last detection puts them back during this session."
-        ],
-        confirmLabel: "Replace",
-        cancelLabel: "Cancel",
+        title: t("dialog.detect.replace.title"),
+        lines: [t("dialog.detect.replace.overwrites", { count: userChanges }), t("dialog.detect.replace.undoHint")],
+        confirmLabel: t("dialog.detect.replace.confirm"),
+        cancelLabel: t("common.button.cancel"),
         danger: true
       });
       if (!ok) return;
@@ -100,13 +98,16 @@ export class DetectController extends UiController<DetectState, DetectIntent, De
     try {
       const { written, problems } = await this.ports.detection.apply(targets);
       if (written.length === 0) {
-        this.emit({ type: "failed", message: problems.join(" ") || "Nothing was written." });
+        this.emit({ type: "failed", message: problems.join(" ") || t("dialog.detect.apply.nothingWritten") });
         return;
       }
       const names = written.map((path) => path.split(/[\\/]/).pop()).join(", ");
+      // --- Worded when it is set: the problems come from elsewhere and pass through as they are
       this.emit({
         type: "applied",
-        message: `Written to ${names}.${problems.length ? ` ${problems.join(" ")}` : ""}`
+        message: problems.length
+          ? t("dialog.detect.apply.writtenWithProblems", { files: names, problems: problems.join(" ") })
+          : t("dialog.detect.apply.written", { files: names })
       });
     } catch (error) {
       this.emit({ type: "failed", message: messageOf(error) });
@@ -119,7 +120,7 @@ export class DetectController extends UiController<DetectState, DetectIntent, De
       const paths = await this.ports.detection.undo();
       this.emit({
         type: "undone",
-        message: paths.length ? "The annotations before the last detection are back." : "There was nothing to undo."
+        message: paths.length ? t("dialog.detect.undo.restored") : t("dialog.detect.undo.nothing")
       });
     } catch (error) {
       this.emit({ type: "failed", message: messageOf(error) });

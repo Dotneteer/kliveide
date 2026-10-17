@@ -60,6 +60,7 @@ import { createMenuContext, createMenuTemplate, disableAllMenuItems, EDIT_MENU_I
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { MC_DISK_SUPPORT } from "@common/machines/constants";
+import { setLanguage } from "@common/i18n/i18n";
 
 const window = { isDestroyed: () => false, isFullScreen: () => false, isFocused: () => true } as any;
 
@@ -346,3 +347,57 @@ describe("the menu while a dialog is open", () => {
   });
 });
 
+
+/*
+ * The menus in another language (`.plans/LOCALIZATION_PLAN.md` step 3): in the pseudo-locale every
+ * label is pseudo text, except the names that are never translated (D9) - the app name, machine
+ * and model names, the Z88's LCD sizes. Untranslated English here is a label that was missed.
+ */
+describe("the menu in the pseudo-locale", () => {
+  const NEVER_TRANSLATED = new Set<string>([
+    "Klive",
+    ...machineRegistry.flatMap((m) => [m.displayName, ...(m.models ?? []).map((mo) => mo.displayName)])
+  ]);
+  const isPseudo = (label: string) => /^\[.*~+\]$/.test(label);
+
+  function walk(items: MenuItemConstructorOptions[], path: string[], out: { path: string; item: MenuItemConstructorOptions }[]) {
+    for (const item of items ?? []) {
+      if (item.type === "separator") continue;
+      const here = [...path, String(item.label ?? item.role)];
+      out.push({ path: here.join(" › "), item });
+      if (Array.isArray(item.submenu)) walk(item.submenu, here, out);
+    }
+    return out;
+  }
+
+  beforeEach(() => {
+    env.settings = {};
+    env.ideVisible = false;
+    setLanguage("qps");
+  });
+
+  it.each([["sp48"], ["sp128", "pentagon"], ["zxnext"], ["z88"], ["zx81"], ["zx80"], ["timex", "tc2068"], ["timex", "ts2068"], ["sp3e"], ["scorpion"]])(
+    "labels every %s item in the current language",
+    (machineId, model) => {
+      const modelId = model === "pentagon" ? pentagonModelId() : model;
+      const all = [
+        ...walk(buildMenu(machineId, modelId, "emu"), [], []),
+        ...walk(buildMenu(machineId, modelId, "ide"), [], [])
+      ];
+      const untranslated = all
+        .filter(({ item }) => {
+          const label = String(item.label ?? "");
+          if (NEVER_TRANSLATED.has(label) || /^\d+ x \d+$/.test(label)) return false;
+          return !isPseudo(label);
+        })
+        .map(({ path }) => path);
+      expect(untranslated).toEqual([]);
+    }
+  );
+
+  it("gives every role item an explicit label, so the OS cannot label it in its own language", () => {
+    const roles = walk(buildMenu("sp48"), [], []).filter(({ item }) => item.role);
+    expect(roles.length).toBeGreaterThan(10);
+    expect(roles.filter(({ item }) => !item.label).map(({ path }) => path)).toEqual([]);
+  });
+});

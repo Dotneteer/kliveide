@@ -1,3 +1,5 @@
+import { translator } from "@common/i18n/i18n";
+
 import { UiStore } from "./UiStore";
 import type { UiReducer, UiSelector, UiListener, Unsubscribe } from "./types";
 
@@ -17,6 +19,7 @@ export abstract class UiController<TState, TIntent, TEvent, TViewModel> {
   private readonly pending = new Set<Promise<void>>();
   private readonly select: UiSelector<TState, TViewModel>;
   private viewModelState?: TState;
+  private viewModelLanguage?: string;
   private viewModelCache?: TViewModel;
   private disposed = false;
 
@@ -37,11 +40,21 @@ export abstract class UiController<TState, TIntent, TEvent, TViewModel> {
    * Memoized on state identity. `useSyncExternalStore` compares snapshots by
    * reference and re-renders whenever they differ, so recomputing the view
    * model on every read would loop forever.
+   *
+   * Also keyed on the display language: selectors word their texts with `t()`,
+   * so a language (or show-keys) switch must produce a fresh view model even
+   * though the state did not change.
    */
   get viewModel(): TViewModel {
     const state = this.state;
-    if (this.viewModelState !== state || this.viewModelCache === undefined) {
+    const language = `${translator.language}|${translator.showingKeys}`;
+    if (
+      this.viewModelState !== state ||
+      this.viewModelLanguage !== language ||
+      this.viewModelCache === undefined
+    ) {
       this.viewModelState = state;
+      this.viewModelLanguage = language;
       this.viewModelCache = this.select(state);
     }
     return this.viewModelCache;
@@ -56,7 +69,15 @@ export abstract class UiController<TState, TIntent, TEvent, TViewModel> {
     return this.store.events;
   }
 
-  subscribe = (listener: UiListener): Unsubscribe => this.store.subscribe(listener);
+  // --- A language switch is a change of the view model too, so subscribers hear it
+  subscribe = (listener: UiListener): Unsubscribe => {
+    const fromStore = this.store.subscribe(listener);
+    const fromTranslator = translator.subscribe(() => listener());
+    return () => {
+      fromStore();
+      fromTranslator();
+    };
+  };
 
   getSnapshot = (): TViewModel => this.viewModel;
 

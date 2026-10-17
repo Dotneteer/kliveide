@@ -10,6 +10,7 @@ import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { locateSource } from "@renderer/appIde/utils/source-location";
 import { useEmuStateListener } from "@renderer/appIde/useStateRefresh";
 import { HistoryPresentBanner } from "./HistoryPresentBanner";
+import { useT } from "@common/i18n/useT";
 
 /*
  * The Call Stack panel while the history cursor is in the past (`.plans/LITE_STEP_BACK_PLAN.md` D6,
@@ -28,6 +29,7 @@ const KIND_TEXT: Record<HistoricalCallStackInfo["frames"][number]["kind"], strin
 const hex4 = (value: number) => value.toString(16).toUpperCase().padStart(4, "0");
 
 export const HistoricalCallStack = () => {
+  const t = useT();
   const emuApi = useEmuApi();
   const { ideCommandsService } = useAppServices();
   const compilation = useSelector((s) => s.compilation?.result) as KliveCompilerOutput | undefined;
@@ -46,9 +48,9 @@ export const HistoricalCallStack = () => {
 
   return (
     <DataPanel>
-      <HistoryPresentBanner what="Stack memory" />
+      <HistoryPresentBanner subject="stackMemory" />
       {stack && stack.frames.length === 0 && !stack.incomplete && (
-        <EmptyState message="No call was active at this point" />
+        <EmptyState message={t("panels.side.historyCallStack.empty")} />
       )}
       {stack?.frames.map((frame, index) => {
         const source = sourceOf(frame.callSite, frame.partition);
@@ -63,23 +65,23 @@ export const HistoricalCallStack = () => {
                 : void ideCommandsService.executeCommand(`show-disass $${hex4(frame.callSite)}`)
             }
           >
-            <DataLabel text={`${index ? index : "Top"}:`} width="5ch" />
+            <DataLabel text={index ? `${index}:` : t("panels.side.callStack.topIndex")} width="5ch" />
             <DataValue text={KIND_TEXT[frame.kind]} width="5ch" />
             <DataValue
               text={hex4(frame.callSite)}
               width="5ch"
               xclass={regStyles.stateValueAlt}
-              title={frame.kind === "int" || frame.kind === "nmi" ? "Interrupted at" : "Called from"}
+              title={t(frame.kind === "int" || frame.kind === "nmi" ? "panels.side.historyCallStack.interruptedAt" : "panels.side.historyCallStack.calledFrom")}
             />
             <DataSecondary text="→" />
-            <DataValue text={hex4(frame.returnAddress)} width="5ch" xclass={regStyles.stateValue} title="Returns to" />
+            <DataValue text={hex4(frame.returnAddress)} width="5ch" xclass={regStyles.stateValue} title={t("panels.side.historyCallStack.returnsTo")} />
             {source && <DataSecondary text={source.text} />}
           </DataRow>
         );
       })}
       {stack?.incomplete && (
         <DataRow dense>
-          <DataSecondary text="… earlier frames before recorded history" />
+          <DataSecondary text={t("panels.side.historyCallStack.incomplete")} />
         </DataRow>
       )}
     </DataPanel>

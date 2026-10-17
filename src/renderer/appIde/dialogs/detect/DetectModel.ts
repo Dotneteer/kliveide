@@ -63,8 +63,6 @@ export type DetectEvent =
   | { type: "coverageChanged"; message: string }
   | { type: "failed"; message: string };
 
-export const NO_COVERAGE_PREFIX = "There is no coverage";
-
 export function initialState(env: DetectEnvironment): DetectState {
   return {
     env,
@@ -111,7 +109,7 @@ export const reduce: UiReducer<DetectState, DetectEvent> = (state, event) => {
         })),
         problem: event.run.problem,
         notes: event.run.notes ?? [],
-        coverageMissing: !!event.run.problem?.startsWith(NO_COVERAGE_PREFIX),
+        coverageMissing: event.run.problemCode === "no-coverage",
         expanded: []
       };
     case "includeToggled":

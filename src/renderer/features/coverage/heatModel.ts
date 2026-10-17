@@ -5,6 +5,7 @@ import {
   PF_WRITTEN,
   type ProfileView
 } from "@common/profile/profileTypes";
+import { t } from "@common/i18n/i18n";
 
 /*
  * The memory view's heat map (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D14). Pure: a profile view
@@ -114,11 +115,11 @@ export function heatTooltip(view: ProfileView | undefined, index: number): strin
     parts.push(`R ${counts.read[index].toLocaleString("en-US")}`);
     parts.push(`W ${counts.write[index].toLocaleString("en-US")}`);
   } else {
-    if (flags & PF_EXECUTED) parts.push("executed");
-    if (flags & PF_READ) parts.push("read");
-    if (flags & PF_WRITTEN) parts.push("written");
-    if (counts) parts.push("counts not kept for this page");
+    if (flags & PF_EXECUTED) parts.push(t("panels.feature.heat.executed"));
+    if (flags & PF_READ) parts.push(t("panels.feature.heat.read"));
+    if (flags & PF_WRITTEN) parts.push(t("panels.feature.heat.written"));
+    if (counts) parts.push(t("panels.feature.heat.countsNotKept"));
   }
-  if (flags & PF_SELF_MODIFIED) parts.push("self-modified");
+  if (flags & PF_SELF_MODIFIED) parts.push(t("panels.feature.heat.selfModified"));
   return parts.join(" · ");
 }

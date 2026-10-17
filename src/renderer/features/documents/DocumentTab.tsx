@@ -14,6 +14,8 @@ import {
 import { useRendererContext } from "@renderer/core/RendererProvider";
 import { useMainApi } from "@renderer/core/MainApi";
 import type { MainApi } from "@common/messaging/MainApi";
+import { t } from "@common/i18n/i18n";
+import { useT } from "@common/i18n/useT";
 
 /**
  * Size of every icon on a document tab: the file-type glyph and the read-only
@@ -112,6 +114,8 @@ export const DocumentTab = ({
   tabDragStart,
   tabDrop
 }: Props) => {
+  // --- Re-render on a language switch: the context menu and badge tooltips are translated below
+  useT();
   // --- Services used in this component
   const { store } = useRendererContext();
   const mainApi = useMainApi();
@@ -268,14 +272,14 @@ function renderDocumentTabContextMenu({
   return (
     <ContextMenu state={contextMenuState} onClickOutside={contextMenuApi.conceal}>
       <ContextMenuItem
-        text="Close"
+        text={t("documents.tab.close")}
         clicked={() => {
           contextMenuApi.conceal();
           tabCloseClicked?.(CloseMode.This);
         }}
       />
       <ContextMenuItem
-        text="Close Others"
+        text={t("documents.tab.closeOthers")}
         disabled={tabsCount < 2}
         clicked={() => {
           contextMenuApi.conceal();
@@ -283,7 +287,7 @@ function renderDocumentTabContextMenu({
         }}
       />
       <ContextMenuItem
-        text="Close All"
+        text={t("documents.tab.closeAll")}
         clicked={() => {
           contextMenuApi.conceal();
           tabCloseClicked?.(CloseMode.All);
@@ -291,7 +295,7 @@ function renderDocumentTabContextMenu({
       />
       <ContextMenuSeparator />
       <ContextMenuItem
-        text="Move Left"
+        text={t("documents.tab.moveLeft")}
         disabled={!canMoveLeft}
         clicked={() => {
           contextMenuApi.conceal();
@@ -299,7 +303,7 @@ function renderDocumentTabContextMenu({
         }}
       />
       <ContextMenuItem
-        text="Move Right"
+        text={t("documents.tab.moveRight")}
         disabled={!canMoveRight}
         clicked={() => {
           contextMenuApi.conceal();
@@ -308,7 +312,7 @@ function renderDocumentTabContextMenu({
       />
       <ContextMenuSeparator />
       <ContextMenuItem
-        text="Move To Previous Editor Area"
+        text={t("documents.tab.moveToPreviousArea")}
         disabled={!canMoveToPreviousArea}
         clicked={() => {
           contextMenuApi.conceal();
@@ -316,7 +320,7 @@ function renderDocumentTabContextMenu({
         }}
       />
       <ContextMenuItem
-        text="Move To Next Editor Area"
+        text={t("documents.tab.moveToNextArea")}
         disabled={!canMoveToNextArea}
         clicked={() => {
           contextMenuApi.conceal();
@@ -325,7 +329,7 @@ function renderDocumentTabContextMenu({
       />
       <ContextMenuSeparator />
       <ContextMenuItem
-        text="Split Editor Right"
+        text={t("documents.tab.splitRight")}
         disabled={!tabSplitRight}
         clicked={() => {
           contextMenuApi.conceal();
@@ -333,7 +337,7 @@ function renderDocumentTabContextMenu({
         }}
       />
       <ContextMenuItem
-        text="Split Editor Down"
+        text={t("documents.tab.splitDown")}
         disabled={!tabSplitDown}
         clicked={() => {
           contextMenuApi.conceal();
@@ -342,7 +346,7 @@ function renderDocumentTabContextMenu({
       />
       <ContextMenuSeparator />
       <ContextMenuItem
-        text={`Reveal in ${isWindows ? "File Explorer" : "Finder"}`}
+        text={t(isWindows ? "documents.tab.revealInFileExplorer" : "documents.tab.revealInFinder")}
         clicked={() => {
           contextMenuApi.conceal();
           mainApi.showItemInFolder(path);
@@ -369,7 +373,7 @@ function renderReadOnlyBadge(
         placement="right"
         offsetX={-16}
         offsetY={28}
-        content="This file is read-only"
+        content={t("documents.tab.readOnly")}
       />
     </div>
   );
@@ -389,7 +393,7 @@ function renderLockedBadge(lockedRef: ReturnType<typeof useTooltipRef<HTMLDivEle
         placement="right"
         offsetX={-16}
         offsetY={28}
-        content="This file is locked while the project is running"
+        content={t("documents.tab.locked")}
       />
     </div>
   );

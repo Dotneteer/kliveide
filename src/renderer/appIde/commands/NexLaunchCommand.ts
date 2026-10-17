@@ -24,6 +24,7 @@ import {
   validationError,
   writeMessage
 } from "../services/ide-commands";
+import { t } from "@common/i18n/i18n";
 
 export type LaunchNexCommandArgs = {
   file: string;
@@ -50,7 +51,9 @@ export type LaunchNexCommandArgs = {
  */
 export class LaunchNexCommand extends IdeCommandBase<LaunchNexCommandArgs> {
   readonly id = "nex-run";
-  readonly description = "Copies a .nex file to the ZX Spectrum Next SD card and runs it";
+  get description() {
+    return t("commands.nexLaunch.description");
+  }
   readonly aliases = ["nexrun"];
   readonly usage = "nex-run <nex-file> [-d] [-e]";
 
@@ -66,18 +69,16 @@ export class LaunchNexCommand extends IdeCommandBase<LaunchNexCommandArgs> {
     const messages: ValidationMessage[] = [];
 
     if (!args.file?.trim()) {
-      messages.push(validationError("The NEX file path cannot be empty."));
+      messages.push(validationError(t("commands.nexLaunch.emptyPath")));
     } else if (!isNexFilePath(args.file)) {
-      messages.push(validationError("The file to launch must be a .nex file."));
+      messages.push(validationError(t("commands.nexLaunch.wrongType")));
     }
 
     // --- NextZXOS is what loads a NEX, so the machine has to be the one that runs it. Silently
     // --- switching machines would throw away whatever the user currently has running.
     const machineId = context.store.getState().emulatorState?.machineId;
     if (machineId !== MI_ZXNEXT) {
-      messages.push(
-        validationError("Running a NEX file requires the current machine to be ZX Spectrum Next.")
-      );
+      messages.push(validationError(t("commands.nexLaunch.needsNext")));
     }
 
     return messages;
@@ -104,13 +105,15 @@ export class LaunchNexCommand extends IdeCommandBase<LaunchNexCommandArgs> {
       await context.mainApi.copyToSdCard(hostPath, sdPath);
     } catch (err) {
       return commandError(
-        `Could not copy ${hostPath} to the SD card as ${sdPath}: ${
-          err instanceof Error ? err.message : String(err)
-        }`
+        t("commands.nexLaunch.copyFailed", {
+          file: hostPath,
+          target: sdPath,
+          error: err instanceof Error ? err.message : String(err)
+        })
       );
     }
 
-    writeMessage(context.output, `${hostPath} copied to the SD card as ${sdPath}.`, "green");
+    writeMessage(context.output, t("commands.nexLaunch.copied", { file: hostPath, target: sdPath }), "green");
 
     /*
      * The header, read once and used for two things.
@@ -184,7 +187,7 @@ export class LaunchNexCommand extends IdeCommandBase<LaunchNexCommandArgs> {
     if (debug) await sendSourceDebug();
 
     return commandSuccessWith(
-      debug ? `${sdPath} started in debug mode.` : `${sdPath} started.`
+      debug ? t("commands.nexLaunch.startedDebug", { file: sdPath }) : t("commands.nexLaunch.started", { file: sdPath })
     );
   }
 
@@ -207,13 +210,21 @@ export class LaunchNexCommand extends IdeCommandBase<LaunchNexCommandArgs> {
       const nex = await context.mainApi.readBinaryFile(hostPath);
       const read = readSourceDebugSidecar(text, nex);
       if ("error" in read) {
-        writeMessage(context.output, `Source-level debug info in ${sidecarPath} is not used: ${read.error}.`, "yellow");
+        writeMessage(
+          context.output,
+          t("commands.nexLaunch.sidecarUnused", { file: sidecarPath, error: read.error }),
+          "yellow"
+        );
         return undefined;
       }
-      writeMessage(context.output, `Source-level debug info loaded from ${sidecarPath}.`, "green");
+      writeMessage(context.output, t("commands.nexLaunch.sidecarLoaded", { file: sidecarPath }), "green");
       return read;
     } catch (err) {
-      writeMessage(context.output, `Could not read ${hostPath}: ${err instanceof Error ? err.message : String(err)}`, "yellow");
+      writeMessage(
+        context.output,
+        t("commands.nexLaunch.readFailed", { file: hostPath, error: err instanceof Error ? err.message : String(err) }),
+        "yellow"
+      );
       return undefined;
     }
   }
@@ -251,12 +262,15 @@ export class LaunchNexCommand extends IdeCommandBase<LaunchNexCommandArgs> {
       const contents = await context.mainApi.readBinaryFile(hostPath);
       const loaded = loadNexFileContents(contents);
       if (loaded.error || !loaded.fileInfo) {
-        return { error: `Could not read the NEX header of ${hostPath}: ${loaded.error}` };
+        return { error: t("commands.nexLaunch.headerFailed", { file: hostPath, error: loaded.error }) };
       }
       return { header: loaded.fileInfo.header };
     } catch (err) {
       return {
-        error: `Could not read ${hostPath}: ${err instanceof Error ? err.message : String(err)}`
+        error: t("commands.nexLaunch.readFailed", {
+          file: hostPath,
+          error: err instanceof Error ? err.message : String(err)
+        })
       };
     }
   }
@@ -287,18 +301,17 @@ export class LaunchNexCommand extends IdeCommandBase<LaunchNexCommandArgs> {
       // --- Not an error: the file is launchable, only its entry point is not somewhere a bank
       // --- breakpoint can name. Running it without the stop is more useful than refusing.
       return {
-        message:
-          `The entry point ($${toHexa4(header.programCounter)}) is below $4000, which is ` +
-          "ROM when the program starts, so there is no bank to break in. Running without the " +
-          "entry-point stop."
+        message: t("commands.nexLaunch.entryInRom", { address: `$${toHexa4(header.programCounter)}` })
       };
     }
 
     return {
       site,
-      message:
-        `Will break at the entry point: bank $${toHexa2(site.bank)}, offset ` +
-        `$${toHexa4(site.bankOffset)} (address $${toHexa4(header.programCounter)}).`
+      message: t("commands.nexLaunch.entryBreak", {
+        bank: `$${toHexa2(site.bank)}`,
+        offset: `$${toHexa4(site.bankOffset)}`,
+        address: `$${toHexa4(header.programCounter)}`
+      })
     };
   }
 }

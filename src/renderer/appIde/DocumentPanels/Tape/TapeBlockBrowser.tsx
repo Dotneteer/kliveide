@@ -18,8 +18,9 @@ import { decodeBasicProgram } from "../basicListing";
 import { createScrPixelData } from "../Next/ScrFileViewerPanel";
 import { TapeTimeline } from "./TapeTimeline";
 import { TapeHeaderBytes } from "./TapeHeaderBytes";
+import { uiLocale } from "@common/i18n/i18n";
+import { useT } from "@common/i18n/useT";
 import {
-  TAPE_BLOCK_FILTERS,
   TAPE_ROLE_NAMES,
   TAPE_VIEW_NAMES,
   blockLoadAddress,
@@ -27,7 +28,9 @@ import {
   blockStartTimes,
   defaultTapeBlockView,
   filterTapeBlocks,
+  formatMs,
   formatPlayTime,
+  tapeBlockFilters,
   tapeBlockViews,
   type TapeAnalysis,
   type TapeBlockInfo,
@@ -98,6 +101,7 @@ export const TapeBlockBrowser = ({
   onInterpretAsBasic,
   onListAt
 }: Props) => {
+  const t = useT();
   const starts = useMemo(() => blockStartTimes(analysis.blocks), [analysis]);
   const items = useMemo<TapeBlockItem[]>(
     () =>
@@ -120,15 +124,13 @@ export const TapeBlockBrowser = ({
     <BankBrowser<TapeBlockItem, TapeBlockView>
       visibleItems={filterTapeBlocks(items, filter)}
       selectedKey={selectedIndex === undefined ? undefined : `${selectedIndex}`}
-      heading="Blocks"
-      summary={`${summary.blockCount} block${summary.blockCount === 1 ? "" : "s"} · ${
-        summary.fileCount
-      } file${summary.fileCount === 1 ? "" : "s"}`}
-      filters={TAPE_BLOCK_FILTERS}
+      heading={t("panels.tape.heading")}
+      summary={t("panels.tape.listSummary", { blocks: summary.blockCount, files: summary.fileCount })}
+      filters={tapeBlockFilters()}
       filter={filter}
       views={["memory", "disassembly", "basic", "screen"]}
       viewNames={TAPE_VIEW_NAMES}
-      itemNoun="Block"
+      itemKind="block"
       layout="sideBySide"
       formatNumber={(item) => `#${item.bank}`}
       viewsFor={(item) => viewsOf(item.block, !!basicOverride?.[item.block.index])}
@@ -162,7 +164,11 @@ export const TapeBlockBrowser = ({
       renderRowMenuItems={(item, close) =>
         item.block.kind === "data" && item.block.bytes && item.block.role !== "basic" ? (
           <ContextMenuItem
-            text={basicOverride?.[item.block.index] ? "Stop Reading as BASIC" : "Read as BASIC"}
+            text={
+              basicOverride?.[item.block.index]
+                ? t("panels.tape.stopReadingAsBasic")
+                : t("panels.tape.readAsBasic")
+            }
             clicked={() => {
               close();
               onInterpretAsBasic(item.block.index, !basicOverride?.[item.block.index]);
@@ -170,7 +176,7 @@ export const TapeBlockBrowser = ({
           />
         ) : null
       }
-      hint="Pop out a block from its row's icon, by double-clicking the row, or with Enter."
+      hint={t("panels.helpers.popOutHint.block")}
     />
   );
 };
@@ -181,27 +187,30 @@ function viewsOf(block: TapeBlockInfo, interpretAsBasic: boolean): TapeBlockView
   return views;
 }
 
+/* --- Byte counts and T-states sit beside hex as data: invariant. Durations are human figures. */
 const fmt = (value: number) => value.toLocaleString("en-US");
 
 /** The row: chip, a short text, and the length (or duration) on the right */
 const Row = ({ block, analysis }: { block: TapeBlockInfo; analysis: TapeAnalysis }) => {
+  const t = useT();
   const header =
     block.headerIndex !== undefined ? analysis.blocks[block.headerIndex].header : undefined;
   let text = block.summary;
   if (block.role === "basic" && header) {
-    text = header.autostart !== undefined ? `LINE ${header.autostart}` : "Program";
+    // --- LINE is the BASIC keyword: not translated
+    text = header.autostart !== undefined ? `LINE ${header.autostart}` : t("panels.tape.summary.program");
   } else if (
     (block.role === "code" || block.role === "screen") &&
     header?.startAddress !== undefined
   ) {
     text = `$${toHexa4(header.startAddress)}`;
   } else if (block.header?.arrayName) {
-    text = `${block.header.typeName} header`;
+    text = t("panels.tape.summary.header", { type: block.header.typeName });
   }
   const right = block.bytes
     ? fmt(block.bytes.length)
     : block.durationMs > 0
-      ? `${fmt(Math.round(block.durationMs))} ms`
+      ? formatMs(block.durationMs)
       : "";
   return (
     <>
@@ -219,35 +228,43 @@ const Row = ({ block, analysis }: { block: TapeBlockInfo; analysis: TapeAnalysis
 };
 
 /** The status chips a row and the details share */
-const Problems = ({ block }: { block: TapeBlockInfo }) => (
-  <>
-    {block.checksumOk === false && (
-      <BankChip tone="warning" title="The block's checksum does not match its bytes">
-        checksum
-      </BankChip>
-    )}
-    {block.lengthMismatch && (
-      <BankChip tone="warning" title="The block's length differs from what its header says">
-        length
-      </BankChip>
-    )}
-    {block.carriesSignal && !block.playable && (
-      <BankChip tone="error" title="Klive's tape player skips this block, so a load may fail">
-        not played
-      </BankChip>
-    )}
-  </>
-);
+const Problems = ({ block }: { block: TapeBlockInfo }) => {
+  const t = useT();
+  return (
+    <>
+      {block.checksumOk === false && (
+        <BankChip tone="warning" title={t("panels.tape.chip.checksumTitle")}>
+          {t("panels.tape.chip.checksum")}
+        </BankChip>
+      )}
+      {block.lengthMismatch && (
+        <BankChip tone="warning" title={t("panels.tape.chip.lengthTitle")}>
+          {t("panels.tape.chip.length")}
+        </BankChip>
+      )}
+      {block.carriesSignal && !block.playable && (
+        <BankChip tone="error" title={t("panels.tape.chip.notPlayedTitle")}>
+          {t("panels.tape.chip.notPlayed")}
+        </BankChip>
+      )}
+    </>
+  );
+};
 
 /** The chips beside the details title */
-const Marks = ({ block }: { block: TapeBlockInfo }) => (
-  <>
-    <BankChip alt={block.kind === "header"}>{block.chip}</BankChip>
-    {block.flag !== undefined && <BankChip alt>{`flag $${toHexa2(block.flag)}`}</BankChip>}
-    {block.blockId === 0x11 && <BankChip>turbo</BankChip>}
-    <Problems block={block} />
-  </>
-);
+const Marks = ({ block }: { block: TapeBlockInfo }) => {
+  const t = useT();
+  return (
+    <>
+      <BankChip alt={block.kind === "header"}>{block.chip}</BankChip>
+      {block.flag !== undefined && (
+        <BankChip alt>{t("panels.tape.chip.flag", { value: `$${toHexa2(block.flag)}` })}</BankChip>
+      )}
+      {block.blockId === 0x11 && <BankChip>{t("panels.tape.chip.turbo")}</BankChip>}
+      <Problems block={block} />
+    </>
+  );
+};
 
 type DetailsProps = {
   analysis: TapeAnalysis;
@@ -268,6 +285,7 @@ const Details = ({
   onListAt,
   onShowAll
 }: DetailsProps) => {
+  const t = useT();
   const fileHeader =
     block.headerIndex !== undefined ? analysis.blocks[block.headerIndex].header : undefined;
   const payload = blockPayload(block);
@@ -278,64 +296,64 @@ const Details = ({
   return (
     <>
       <BankFacts>
-        <dt>Kind</dt>
+        <dt>{t("panels.tape.fact.kind")}</dt>
         <dd>
           {block.kindName}
           {block.blockId !== undefined ? ` ($${toHexa2(block.blockId)})` : ""}
         </dd>
         {block.role && block.kind === "data" && (
           <>
-            <dt>Holds</dt>
+            <dt>{t("panels.tape.fact.holds")}</dt>
             <dd>{TAPE_ROLE_NAMES[block.role]}</dd>
           </>
         )}
         {block.bytes && (
           <>
-            <dt>Length</dt>
+            <dt>{t("panels.helpers.fact.length")}</dt>
             <dd>
-              {`${fmt(block.bytes.length)} bytes`}
               {payload && payload !== block.bytes && !block.header
-                ? ` (${fmt(payload.length)} of data)`
-                : ""}
+                ? t("panels.tape.fact.lengthOfData", { bytes: block.bytes.length, data: payload.length })
+                : t("panels.helpers.bytes", { count: block.bytes.length })}
             </dd>
           </>
         )}
         {block.checksumOk !== undefined && (
           <>
-            <dt>Checksum</dt>
-            <dd>{block.checksumOk ? "OK" : "Does not match"}</dd>
+            <dt>{t("panels.tape.fact.checksum")}</dt>
+            <dd>{block.checksumOk ? t("panels.tape.fact.checksumOk") : t("panels.tape.fact.checksumBad")}</dd>
           </>
         )}
         {block.carriesSignal && (
           <>
-            <dt>Plays</dt>
+            <dt>{t("panels.tape.fact.plays")}</dt>
             <dd>
-              {`${formatPlayTime(startMs)}–${formatPlayTime(end)}`}
-              {block.durationApprox ? " (approx.)" : ""}
+              {block.durationApprox
+                ? t("panels.tape.fact.playsApprox", { span: `${formatPlayTime(startMs)}–${formatPlayTime(end)}` })
+                : `${formatPlayTime(startMs)}–${formatPlayTime(end)}`}
             </dd>
           </>
         )}
         {block.pauseMs > 0 && block.kind !== "pause" && (
           <>
-            <dt>Pause after</dt>
-            <dd>{`${fmt(block.pauseMs)} ms`}</dd>
+            <dt>{t("panels.tape.fact.pauseAfter")}</dt>
+            <dd>{formatMs(block.pauseMs)}</dd>
           </>
         )}
         {block.kind === "pause" && (
           <>
-            <dt>Duration</dt>
-            <dd>{`${fmt(block.pauseMs)} ms`}</dd>
+            <dt>{t("panels.tape.fact.duration")}</dt>
+            <dd>{formatMs(block.pauseMs)}</dd>
           </>
         )}
         {block.carriesSignal && !block.playable && (
           <>
-            <dt>Klive</dt>
-            <dd>Skipped when the tape plays</dd>
+            <dt>{t("panels.tape.fact.klive")}</dt>
+            <dd>{t("panels.tape.fact.skipped")}</dd>
           </>
         )}
         {block.text && block.kind !== "pause" && (
           <>
-            <dt>Text</dt>
+            <dt>{t("panels.tape.fact.text")}</dt>
             <dd className={styles.wrap}>{block.text}</dd>
           </>
         )}
@@ -351,16 +369,19 @@ const Details = ({
 
       {fileHeader && (
         <BankDetailsSection
-          title={`File ${fileHeader.typeName.toLowerCase()} "${fileHeader.name}"`}
+          title={t("panels.tape.fileSection", {
+            type: fileHeader.typeName.toLocaleLowerCase(uiLocale()),
+            name: fileHeader.name
+          })}
         >
           <BankFacts>
-            <dt>Header</dt>
+            <dt>{t("panels.tape.fact.header")}</dt>
             <dd>{`#${block.headerIndex}`}</dd>
-            <dt>Expected</dt>
-            <dd>{`${fmt(fileHeader.dataLength)} bytes`}</dd>
+            <dt>{t("panels.tape.fact.expected")}</dt>
+            <dd>{t("panels.helpers.bytes", { count: fileHeader.dataLength })}</dd>
             {fileHeader.startAddress !== undefined && (
               <>
-                <dt>Loads at</dt>
+                <dt>{t("panels.tape.fact.loadsAt")}</dt>
                 <dd>{`$${toHexa4(fileHeader.startAddress)} (${fileHeader.startAddress})`}</dd>
               </>
             )}
@@ -369,20 +390,20 @@ const Details = ({
       )}
 
       {block.timing && block.blockId !== undefined && block.blockId !== 0x10 && (
-        <BankDetailsSection title="Timing (T-states)">
+        <BankDetailsSection title={t("panels.tape.timingSection")}>
           <BankFacts>
-            <dt>Pilot</dt>
+            <dt>{t("panels.tape.fact.pilot")}</dt>
             <dd>{`${fmt(block.timing.pilotPulse)} × ${fmt(block.timing.pilotCount)}`}</dd>
-            <dt>Sync</dt>
+            <dt>{t("panels.tape.fact.sync")}</dt>
             <dd>{`${fmt(block.timing.sync1)} / ${fmt(block.timing.sync2)}`}</dd>
-            <dt>Bits</dt>
+            <dt>{t("panels.tape.fact.bits")}</dt>
             <dd>{`${fmt(block.timing.bit0)} / ${fmt(block.timing.bit1)}`}</dd>
           </BankFacts>
         </BankDetailsSection>
       )}
 
       {block.archive && block.archive.length > 0 && (
-        <BankDetailsSection title="Archive info">
+        <BankDetailsSection title={t("panels.tape.tzx.archiveInfo")}>
           <BankFacts>
             {block.archive.map((field, i) => (
               <ArchiveField key={i} label={field.label} value={field.value} />
@@ -395,7 +416,7 @@ const Details = ({
       {basic && <BasicSummary source={basic} onShowAll={onShowAll} />}
 
       {block.role === "screen" && payload && payload.length >= 6912 && (
-        <BankDetailsSection title="Screen">
+        <BankDetailsSection title={t("panels.helpers.view.screen")}>
           <div className={styles.screen}>
             <ScreenCanvas
               data={payload}
@@ -412,11 +433,11 @@ const Details = ({
       {/* --- No byte preview: the bytes are in the memory pop-out. A block no header places still
           --- needs an address for its disassembly. */}
       {payload && !placedByHeader && !block.header && (
-        <BankDetailsSection title="Disassembly">
+        <BankDetailsSection title={t("panels.helpers.view.disassembly")}>
           <div className={styles.listAt}>
             <AddressInput
-              label="List at:"
-              tooltip="The address to list this block at in Disassembly (hex). Enter to apply."
+              label={t("panels.tape.listAt")}
+              tooltip={t("panels.tape.listAtTooltip")}
               decimalView={false}
               clearOnEnter={false}
               onAddressSent={async (address) => onListAt(address & 0xffff)}
@@ -444,22 +465,24 @@ const BasicSummary = ({
   source: TapeBasicSource;
   onShowAll: () => void;
 }) => {
+  const t = useT();
   const listing = useMemo(
     () => decodeBasicProgram(source.bytes, 0, source.end, { charSet: ZxSpectrumChars }),
     // --- `source` is rebuilt on every render; what it holds is what matters
     [source.bytes, source.end]
   );
   return (
-    <BankDetailsSection title="BASIC">
+    <BankDetailsSection title={t("panels.helpers.view.basic")}>
       <BankFacts>
-        <dt>Listing</dt>
+        <dt>{t("panels.helpers.fact.listing")}</dt>
         <dd data-testid="tape-basic-summary">
-          {`${fmt(listing.lineCount)} line${listing.lineCount === 1 ? "" : "s"}`}
-          {listing.corrupted ? " (stops early: the program is damaged)" : ""}
+          {listing.corrupted
+            ? t("panels.helpers.lineCountDamaged", { count: listing.lineCount })
+            : t("panels.helpers.lineCount", { count: listing.lineCount })}
         </dd>
       </BankFacts>
       <button type="button" className={styles.more} onClick={onShowAll}>
-        Pop out the listing
+        {t("panels.helpers.popOutListing")}
       </button>
     </BankDetailsSection>
   );

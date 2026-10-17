@@ -1,3 +1,4 @@
+import { withTexts } from "@common/i18n/labels";
 import {
   BASIC_EDITOR,
   COMMAND_RESULT_EDITOR,
@@ -205,40 +206,34 @@ const ACTIVITY_TEST_ID = "test-view";
 
 // --- Set up activities
 export const activityRegistry: Activity[] = [
-  {
+  withTexts({
     id: ACTIVITY_FILE_ID,
-    title: "Explorer",
     iconName: "files"
-  },
-  {
+  }, { title: "panels.activity.explorer" }),
+  withTexts({
     id: ACTIVITY_DEBUG_ID,
-    title: "Debug",
     iconName: "debug"
-  },
-  {
+  }, { title: "panels.activity.debug" }),
+  withTexts({
     id: ACTIVITY_MACHINE_INFO_ID,
-    title: "Machine info",
     iconName: "cpu"
-  },
-  {
+  }, { title: "panels.activity.machineInfo" }),
+  withTexts({
     id: ACTIVITY_SCRIPTING_ID,
-    title: "Scripting",
     iconName: "scroll-text"
-  },
-  {
+  }, { title: "panels.activity.scripting" }),
+  withTexts({
     id: ACTIVITY_TEST_ID,
-    title: "Testing",
     iconName: "flask-conical",
     // --- Testing → Add unit-test support, and the runs (`.plans/Z80_UNIT_TESTS_PLAN.md` D4, D16)
     commands: TestingCommands
-  }
+  }, { title: "panels.activity.testing" })
 ];
 
 // --- Set up side bar panels
 export const sideBarPanelRegistry: SideBarPanelInfo[] = [
-  {
+  withTexts({
     id: "openEditorsPanel",
-    title: "Open Editors",
     hostActivity: ACTIVITY_FILE_ID,
     renderer: OpenEditorsPanel,
     badge: OpenEditorsBadge,
@@ -247,14 +242,13 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     // open-editor count visible while the panel stays shut.
     expandedOnInit: false,
     initialSize: 300
-  },
-  {
+  }, { title: "panels.sideBar.openEditors" }),
+  withTexts({
     id: "explorerPanel",
-    title: "Klive Project",
     hostActivity: ACTIVITY_FILE_ID,
     renderer: ExplorerPanel,
     expandedOnInit: true
-  },
+  }, { title: "panels.sideBar.kliveProject" }),
   {
     id: "z80CpuPanel",
     title: "Z80 CPU",
@@ -271,28 +265,25 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     expandedOnInit: true,
     requireFeature: [MF_M6510]
   },
-  {
+  withTexts({
     id: "callStackPanel",
-    title: "Call Stack",
     hostActivity: ACTIVITY_DEBUG_ID,
     useScrollViewer: false,
     renderer: CallStackPanel,
-  },
-  {
+  }, { title: "panels.sideBar.callStack" }),
+  withTexts({
     id: "nextMemoryMappingPanel",
-    title: "Next Memory Mapping",
     hostActivity: ACTIVITY_DEBUG_ID,
     renderer: MemMappingPanel,
     restrictTo: [MI_ZXNEXT]
-  },
-  {
+  }, { title: "panels.sideBar.nextMemoryMapping" }),
+  withTexts({
     id: "nextRegPanel",
-    title: "Next Registers",
     hostActivity: ACTIVITY_DEBUG_ID,
     useScrollViewer: false,
     renderer: NextRegPanel,
     restrictTo: [MI_ZXNEXT]
-  },
+  }, { title: "panels.sideBar.nextRegisters" }),
   {
     // --- Beside the Next Registers (`.plans/COPPER_DEBUGGING_PLAN.md` D16)
     id: "nextCopperPanel",
@@ -325,39 +316,35 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     initialSize: 500,
     requireFeature: [MF_BLINK]
   },
-  {
+  withTexts({
     id: "variablesPanel",
-    title: "Variables",
     hostActivity: ACTIVITY_DEBUG_ID,
     useScrollViewer: false,
     renderer: VariablesPanel,
     expandedOnInit: false
-  },
-  {
+  }, { title: "panels.sideBar.variables" }),
+  withTexts({
     id: "watchPanel",
-    title: "Watch",
     hostActivity: ACTIVITY_DEBUG_ID,
     useScrollViewer: false,
     renderer: WatchPanel,
     badge: WatchBadge,
     expandedOnInit: true
-  },
-  {
+  }, { title: "panels.sideBar.watch" }),
+  withTexts({
     id: "breakpointsPanel",
-    title: "Breakpoints",
     hostActivity: ACTIVITY_DEBUG_ID,
     useScrollViewer: false,
     renderer: BreakpointsPanel,
     badge: BreakpointsBadge,
     expandedOnInit: true
-  },
-  {
+  }, { title: "panels.sideBar.breakpoints" }),
+  withTexts({
     id: "sysVarsPanel",
-    title: "System Variables",
     hostActivity: ACTIVITY_MACHINE_INFO_ID,
     useScrollViewer: false,
     renderer: SysVarsPanel
-  },
+  }, { title: "panels.sideBar.systemVariables" }),
   {
     id: "psgPanel",
     title: "PSG (AY-3-8912)",
@@ -366,92 +353,80 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     initialSize: 500,
     requireFeature: [MF_PSG]
   },
-  {
+  withTexts({
     id: "necUpd765Panel",
-    title: "NEC UPD 765 Log",
     hostActivity: ACTIVITY_MACHINE_INFO_ID,
     renderer: NecUpd765Panel,
     initialSize: 500,
     // Renders a VirtualizedList, which brings its own ScrollViewer.
     useScrollViewer: false,
     requireConfig: [MC_DISK_SUPPORT]
-  },
-  {
+  }, { title: "panels.sideBar.necUpd765Log" }),
+  withTexts({
     id: "nextPalettePanel",
-    title: "Next Palettes",
     hostActivity: ACTIVITY_MACHINE_INFO_ID,
     renderer: PalettePanel,
     restrictTo: [MI_ZXNEXT]
-  },
-  {
+  }, { title: "panels.sideBar.nextPalettes" }),
+  withTexts({
     // --- The Testing activity's first panel (`.plans/Z80_UNIT_TESTS_PLAN.md` D13)
     id: "unitTestsPanel",
-    title: "Unit Tests",
     hostActivity: ACTIVITY_TEST_ID,
     renderer: UnitTestsPanel,
     badge: UnitTestsBadge,
     expandedOnInit: true,
     // --- Renders a VirtualizedList, which brings its own ScrollViewer.
     useScrollViewer: false
-  },
-  {
+  }, { title: "panels.sideBar.unitTests" }),
+  withTexts({
     id: "scriptingHistory",
-    title: "Scripting History",
     hostActivity: ACTIVITY_SCRIPTING_ID,
     renderer: ScriptingHistoryPanel,
     badge: ScriptingHistoryBadge,
     initialSize: 500,
     // Renders a VirtualizedList, which brings its own ScrollViewer.
     useScrollViewer: false
-  },
+  }, { title: "panels.sideBar.scriptingHistory" }),
 ];
 
 // --- Set up tool panels
 export const toolPanelRegistry: ToolRendererInfo[] = [
-  {
+  withTexts({
     id: "commands",
-    name: "Commands",
     renderer: CommandPanel,
     headerRenderer: CommandPanelHeader
-  },
-  {
+  }, { name: "panels.tool.commands" }),
+  withTexts({
     id: "output",
-    name: "Output",
     renderer: OutputPanel,
     headerRenderer: OutputPanelHeader
-  }
+  }, { name: "panels.tool.output" })
 ];
 
 // --- Set up output panes
 export const outputPaneRegistry: OutputPaneInfo[] = [
-  {
+  withTexts({
     id: PANE_ID_EMU,
-    displayName: "Emulator"
-  },
-  {
+  }, { displayName: "panels.outputPane.emulator" }),
+  withTexts({
     id: PANE_ID_BUILD,
-    displayName: "Build"
-  },
-  {
+  }, { displayName: "panels.outputPane.build" }),
+  withTexts({
     id: PANE_ID_SCRIPTIMG,
-    displayName: "Script Output"
-  },
-  {
+  }, { displayName: "panels.outputPane.scriptOutput" }),
+  withTexts({
     // --- Logpoint output (`.plans/LOGPOINTS_PLAN.md` §4.3): its own pane, so a busy logpoint can
     // --- be cleared without losing build or machine messages
     id: PANE_ID_LOG,
-    displayName: "Log"
-  },
-  {
+  }, { displayName: "panels.outputPane.log" }),
+  withTexts({
     // --- Unit-test results (`.plans/Z80_UNIT_TESTS_PLAN.md` D16)
     id: PANE_ID_TESTS,
-    displayName: "Tests"
-  },
-  {
+  }, { displayName: "panels.outputPane.tests" }),
+  withTexts({
     // --- What scripts did through the automation server (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D13)
     id: PANE_ID_AUTOMATION,
-    displayName: "Automation"
-  }
+  }, { displayName: "panels.outputPane.automation" })
 ];
 
 // --- Set up document panel renderers

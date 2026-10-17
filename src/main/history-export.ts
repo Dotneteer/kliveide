@@ -13,11 +13,12 @@ import { hasMachineFeature } from "@common/features/advancedDebugging";
 import {
   HISTORY_EXPORT_FOLDER,
   historyExportCommandText,
-  TRACE_FILE_FILTERS
+  traceFileFilters
 } from "@common/history/historyExport";
 import { getIdeApi } from "@messaging/MainToIdeMessenger";
 import { mainStore } from "@main/main-store";
 import { displaySaveFileDialog } from "./save-file-dialog";
+import { t } from "@common/i18n/i18n";
 
 /** Whether the history can be exported now: a machine that records it, not running (D10) */
 export function canExportHistory(state: AppState = mainStore.getState()): boolean {
@@ -36,9 +37,9 @@ export function defaultTraceFileName(state: AppState): string {
 /** Asks for a file and exports the whole ring into it */
 export async function exportExecutionHistoryAs(browserWindow: BrowserWindow): Promise<void> {
   const filename = await displaySaveFileDialog(browserWindow, {
-    title: "Export Execution History",
+    title: t("messages.history.exportTitle"),
     defaultPath: defaultTraceFileName(mainStore.getState()),
-    filters: TRACE_FILE_FILTERS,
+    filters: traceFileFilters(),
     settingsId: HISTORY_EXPORT_FOLDER
   });
   if (!filename) return;
@@ -50,8 +51,8 @@ export async function exportExecutionHistoryAs(browserWindow: BrowserWindow): Pr
   if (!done?.success) {
     await dialog.showMessageBox(browserWindow, {
       type: "error",
-      title: "Export Execution History",
-      message: done?.finalMessage ?? `Could not export to ${filename}`
+      title: t("messages.history.exportTitle"),
+      message: done?.finalMessage ?? t("messages.history.couldNotExport", { file: filename })
     });
   }
 }

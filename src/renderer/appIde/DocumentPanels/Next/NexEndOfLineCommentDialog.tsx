@@ -3,6 +3,7 @@ import { Button } from "@renderer/controls/Button";
 import { TextInput } from "@renderer/controls/TextInput";
 import { DialogRow } from "@renderer/controls/DialogRow";
 import { DialogComponentProps } from "@renderer/controls/overlay/DialogProvider";
+import { useT } from "@common/i18n/useT";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 import styles from "./NexEndOfLineCommentDialog.module.scss";
 import {
@@ -33,6 +34,7 @@ export function NexEndOfLineCommentDialog({
   initialComment = "",
   controls
 }: NexEndOfLineCommentDialogProps) {
+  const t = useT();
   const [comment, setComment] = useState(initialComment);
   const normalizedComment = useMemo(() => normalizeEndOfLineComment(comment), [comment]);
   const preview = useMemo(
@@ -52,41 +54,41 @@ export function NexEndOfLineCommentDialog({
 
   return (
     <form onSubmit={submit}>
-      <DialogRow label="Location" rows={true}>
+      <DialogRow label={t("panels.next.field.location")} rows={true}>
         <div className={styles.location}>
-          <span className={styles.locationLabel}>Bank</span>
+          <span className={styles.locationLabel}>{t("panels.next.field.bank")}</span>
           <span>{bank}</span>
-          <span className={styles.locationLabel}>Bank offset</span>
+          <span className={styles.locationLabel}>{t("panels.next.field.bankOffset")}</span>
           <span>{`$${toHexa4(bankOffset)} (${bankOffset})`}</span>
-          <span className={styles.locationLabel}>Address</span>
+          <span className={styles.locationLabel}>{t("panels.next.field.address")}</span>
           <span>{`$${toHexa4(effectiveAddress)} (${effectiveAddress})`}</span>
         </div>
       </DialogRow>
-      <DialogRow label="Instruction" rows={true}>
+      <DialogRow label={t("panels.next.field.instruction")} rows={true}>
         <div className={styles.readOnlyValue}>{instruction}</div>
       </DialogRow>
       {/* --- Kept on show while you type: a user comment replaces this one in the listing, so this
           --- row is what says which note is being given up. */}
       {generatedHardComment && (
-        <DialogRow label="Generated hard comment" rows={true}>
+        <DialogRow label={t("panels.next.eolComment.generated")} rows={true}>
           <div className={styles.readOnlyValue}>{generatedHardComment}</div>
         </DialogRow>
       )}
-      <DialogRow label="User comment" rows={true}>
+      <DialogRow label={t("panels.next.eolComment.user")} rows={true}>
         <TextInput autoFocus value={comment} onChange={setComment} />
       </DialogRow>
-      <DialogRow label="Preview" rows={true}>
-        <div className={styles.preview} aria-label="End-of-line preview">
+      <DialogRow label={t("panels.next.field.preview")} rows={true}>
+        <div className={styles.preview} aria-label={t("panels.next.eolComment.previewLabel")}>
           {preview}
         </div>
       </DialogRow>
       <DialogFooter>
-        <Button text="Save" type="submit" />
-        <Button variant="secondary" text="Cancel" clicked={controls.cancel} />
+        <Button text={t("panels.next.button.save")} type="submit" />
+        <Button variant="secondary" text={t("common.button.cancel")} clicked={controls.cancel} />
         {hasExistingComment && (
           <>
             <DialogFooterSpacer />
-            <Button variant="secondary" text="Clear" clicked={() => closeWithComment(undefined)} />
+            <Button variant="secondary" text={t("panels.next.button.clear")} clicked={() => closeWithComment(undefined)} />
           </>
         )}
       </DialogFooter>

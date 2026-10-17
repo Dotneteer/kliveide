@@ -1,0 +1,1380 @@
+{
+  "commands.cls.description": "Clears the interactive command output",
+  "@commands.cls.description": {
+    "context": "One-line description of the 'cls' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated."
+  },
+  "commands.clearHistory.description": "Clears the command prompt history",
+  "@commands.clearHistory.description": {
+    "context": "One-line description of the 'clh' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated."
+  },
+  "commands.clearHistory.cleared": "Interactive command prompt history cleared.",
+  "@commands.clearHistory.cleared": {
+    "context": "Output line of the 'clh' IDE command in the interactive command prompt."
+  },
+  "commands.num.description": "Converts the specified number to binary, decimal, and hexadecimal",
+  "@commands.num.description": {
+    "context": "One-line description of the 'num' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated."
+  },
+  "commands.num.result": "Number: {decimal}, ${hex}, {binary}",
+  "@commands.num.result": {
+    "context": "Output line of the 'num' IDE command in the interactive command prompt. Shows one number in three notations. Keep the $ before the hex value.",
+    "placeholders": {
+      "decimal": "The number in decimal (invariant)",
+      "hex": "The number in hexadecimal (invariant)",
+      "binary": "The number in binary digits (invariant)"
+    }
+  },
+  "commands.nav.back.description": "Goes back to the previous location in the navigation history",
+  "@commands.nav.back.description": {
+    "context": "One-line description of the 'nav-back' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated."
+  },
+  "commands.nav.forward.description": "Goes forward to the next location in the navigation history",
+  "@commands.nav.forward.description": {
+    "context": "One-line description of the 'nav-forward' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated."
+  },
+  "commands.nav.history.description": "Lists the navigation history, newest first; '>' marks the current location",
+  "@commands.nav.history.description": {
+    "context": "One-line description of the 'nav-history' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated. The '>' is the literal marker character in the listing."
+  },
+  "commands.nav.clear.description": "Clears the navigation history",
+  "@commands.nav.clear.description": {
+    "context": "One-line description of the 'nav-clear' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated."
+  },
+  "commands.nav.back.none": "No location to go back to.",
+  "@commands.nav.back.none": {
+    "context": "Output line of the 'nav-back' IDE command in the interactive command prompt. Shown when there is no earlier location in the navigation history (not an error)."
+  },
+  "commands.nav.forward.none": "No location to go forward to.",
+  "@commands.nav.forward.none": {
+    "context": "Output line of the 'nav-forward' IDE command in the interactive command prompt. Shown when there is no later location in the navigation history (not an error)."
+  },
+  "commands.nav.history.empty": "The navigation history is empty.",
+  "@commands.nav.history.empty": {
+    "context": "Output line of the 'nav-history' IDE command in the interactive command prompt."
+  },
+  "commands.nav.clear.done": "Navigation history cleared.",
+  "@commands.nav.clear.done": {
+    "context": "Output line of the 'nav-clear' IDE command in the interactive command prompt."
+  },
+  "commands.machine.start.description": "Starts the emulated machine",
+  "@commands.machine.start.description": {
+    "context": "One-line description of the 'em-start' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated."
+  },
+  "commands.machine.pause.description": "Pauses the started machine",
+  "@commands.machine.pause.description": {
+    "context": "One-line description of the 'em-pause' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated."
+  },
+  "commands.machine.stop.description": "Stops the started machine",
+  "@commands.machine.stop.description": {
+    "context": "One-line description of the 'em-stop' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated."
+  },
+  "commands.machine.restart.description": "Restarts the started machine",
+  "@commands.machine.restart.description": {
+    "context": "One-line description of the 'em-restart' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated."
+  },
+  "commands.machine.debug.description": "Starts the emulated machine in debug mode",
+  "@commands.machine.debug.description": {
+    "context": "One-line description of the 'em-debug' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated."
+  },
+  "commands.machine.stepInto.description": "Step-into the next machine instruction",
+  "@commands.machine.stepInto.description": {
+    "context": "One-line description of the 'em-sti' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated."
+  },
+  "commands.machine.stepOver.description": "Step-over the next machine instruction",
+  "@commands.machine.stepOver.description": {
+    "context": "One-line description of the 'em-sto' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated."
+  },
+  "commands.machine.stepOut.description": "Step-out from the current machine subroutine",
+  "@commands.machine.stepOut.description": {
+    "context": "One-line description of the 'em-out' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated."
+  },
+  "commands.machine.stepOverLine.description": "Step over the rest of the current source line (statements and the calls they make)",
+  "@commands.machine.stepOverLine.description": {
+    "context": "One-line description of the 'em-stl' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated."
+  },
+  "commands.machine.stepIntoTarget.description": "Step into the named routine the current statement calls, running its other calls through",
+  "@commands.machine.stepIntoTarget.description": {
+    "context": "One-line description of the 'em-sit' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated."
+  },
+  "commands.machine.runToFrame.description": "Run until control returns to the given frame of the call stack (1: the caller)",
+  "@commands.machine.runToFrame.description": {
+    "context": "One-line description of the 'em-rtf' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated."
+  },
+  "commands.machine.errorStops.description": "Turns runtime-error stops on or off: a debug run of a Klive BASIC program stops where it raises a BASIC error",
+  "@commands.machine.errorStops.description": {
+    "context": "One-line description of the 'em-err' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated. 'on' and 'off' are the argument values the user types: keep them."
+  },
+  "commands.machine.justMyCode.description": "Just My Code: on, source stepping runs through the Klive BASIC standard library; off, it stops in the library's statements too",
+  "@commands.machine.justMyCode.description": {
+    "context": "One-line description of the 'em-jmc' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated. 'Just My Code' is the name of the debugger feature. 'on' and 'off' are the argument values the user types: keep them."
+  },
+  "commands.machine.sourceStepping.description": "Selects source stepping (on) or Z80 instruction stepping (off) for programs with source-level debug info; -i also stops inside interrupt handlers",
+  "@commands.machine.sourceStepping.description": {
+    "context": "One-line description of the 'em-src' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated. 'on' and 'off' are the argument values the user types: keep them."
+  },
+  "commands.machine.started": "Machine started",
+  "@commands.machine.started": {
+    "context": "Output line of the 'em-start' IDE command in the interactive command prompt."
+  },
+  "commands.machine.paused": "Machine paused at PC=${pc}",
+  "@commands.machine.paused": {
+    "context": "Output line of the 'em-pause' IDE command in the interactive command prompt.",
+    "placeholders": {
+      "pc": "The program counter as 4 hex digits (invariant)"
+    }
+  },
+  "commands.machine.stopped": "Machine stopped at PC=${pc}",
+  "@commands.machine.stopped": {
+    "context": "Output line of the 'em-stop' IDE command in the interactive command prompt.",
+    "placeholders": {
+      "pc": "The program counter as 4 hex digits (invariant)"
+    }
+  },
+  "commands.machine.restarted": "Machine restarted",
+  "@commands.machine.restarted": {
+    "context": "Output line of the 'em-restart' IDE command in the interactive command prompt."
+  },
+  "commands.machine.startedDebug": "Machine started in debug mode",
+  "@commands.machine.startedDebug": {
+    "context": "Output line of the 'em-debug' IDE command in the interactive command prompt."
+  },
+  "commands.machine.cannotStart": "The machine must be turned off, stopped, or paused to start",
+  "@commands.machine.cannotStart": {
+    "context": "Error message of the 'em-start' and 'em-debug' IDE commands when the machine is already running."
+  },
+  "commands.machine.cannotPause": "The machine must be running to pause it",
+  "@commands.machine.cannotPause": {
+    "context": "Error message of the 'em-pause' IDE command in the interactive command prompt."
+  },
+  "commands.machine.cannotStop": "Machine must be running or paused to stop it",
+  "@commands.machine.cannotStop": {
+    "context": "Error message of the 'em-stop' IDE command in the interactive command prompt."
+  },
+  "commands.machine.cannotRestart": "Machine must be running or paused to restart it",
+  "@commands.machine.cannotRestart": {
+    "context": "Error message of the 'em-restart' IDE command in the interactive command prompt."
+  },
+  "commands.machine.mustBePaused": "The machine must be paused",
+  "@commands.machine.mustBePaused": {
+    "context": "Error message of the stepping IDE commands (em-sti, em-sto, em-out, em-stl, em-sit, em-rtf) when the machine is not paused."
+  },
+  "commands.machine.stepInto.done": "Step into at PC=${pc}",
+  "@commands.machine.stepInto.done": {
+    "context": "Output line of the 'em-sti' IDE command in the interactive command prompt. 'Step into' is the debugger action that ran.",
+    "placeholders": {
+      "pc": "The program counter before the step, as 4 hex digits (invariant)"
+    }
+  },
+  "commands.machine.stepOver.done": "Step over at PC=${pc}",
+  "@commands.machine.stepOver.done": {
+    "context": "Output line of the 'em-sto' IDE command in the interactive command prompt. 'Step over' is the debugger action that ran.",
+    "placeholders": {
+      "pc": "The program counter before the step, as 4 hex digits (invariant)"
+    }
+  },
+  "commands.machine.stepOut.done": "Step out at PC=${pc}",
+  "@commands.machine.stepOut.done": {
+    "context": "Output line of the 'em-out' IDE command in the interactive command prompt. 'Step out' is the debugger action that ran.",
+    "placeholders": {
+      "pc": "The program counter before the step, as 4 hex digits (invariant)"
+    }
+  },
+  "commands.machine.noSourceDebugBuild": "The program has no source-level debug information (build it with Klive BASIC and debug)",
+  "@commands.machine.noSourceDebugBuild": {
+    "context": "Error message of the source-level stepping IDE commands (em-stl, em-rtf) when the compiled program carries no source-level debug info."
+  },
+  "commands.machine.noSourceDebug": "The program has no source-level debug information",
+  "@commands.machine.noSourceDebug": {
+    "context": "Error message of the 'em-sit' IDE command in the interactive command prompt."
+  },
+  "commands.machine.noRoutine": "No routine named ''{routine}''",
+  "@commands.machine.noRoutine": {
+    "context": "Error message of the 'em-sit' IDE command in the interactive command prompt. The quotes around the name are part of the text (written as '' in the message).",
+    "placeholders": {
+      "routine": "The routine name the user typed"
+    }
+  },
+  "commands.machine.stepOverLine.done": "Step over line",
+  "@commands.machine.stepOverLine.done": {
+    "context": "Output line of the 'em-stl' IDE command in the interactive command prompt. Names the source-level step that ran."
+  },
+  "commands.machine.stepIntoTarget.done": "Step into {routine}",
+  "@commands.machine.stepIntoTarget.done": {
+    "context": "Output line of the 'em-sit' IDE command in the interactive command prompt. Names the source-level step that ran.",
+    "placeholders": {
+      "routine": "The name of the routine stepped into"
+    }
+  },
+  "commands.machine.runToFrame.done": "Run to frame {frame}",
+  "@commands.machine.runToFrame.done": {
+    "context": "Output line of the 'em-rtf' IDE command in the interactive command prompt. Names the source-level step that ran.",
+    "placeholders": {
+      "frame": "The call-stack frame number (1 = the caller)"
+    }
+  },
+  "commands.machine.useOnOff": "Use 'on' or 'off'",
+  "@commands.machine.useOnOff": {
+    "context": "Error message of the 'em-err' and 'em-jmc' IDE commands for an argument other than on/off. 'on' and 'off' are the values the user types: keep them."
+  },
+  "commands.machine.errorStops.on": "Debug runs stop at runtime errors",
+  "@commands.machine.errorStops.on": {
+    "context": "Output line of the 'em-err on' IDE command in the interactive command prompt."
+  },
+  "commands.machine.errorStops.off": "Runtime errors go to the ROM's report",
+  "@commands.machine.errorStops.off": {
+    "context": "Output line of the 'em-err off' IDE command in the interactive command prompt. The ROM (of the emulated machine) reports BASIC errors itself."
+  },
+  "commands.machine.justMyCode.on": "Stepping runs through the standard library",
+  "@commands.machine.justMyCode.on": {
+    "context": "Output line of the 'em-jmc on' IDE command in the interactive command prompt. The Klive BASIC standard library."
+  },
+  "commands.machine.justMyCode.off": "Stepping stops in the standard library too",
+  "@commands.machine.justMyCode.off": {
+    "context": "Output line of the 'em-jmc off' IDE command in the interactive command prompt. The Klive BASIC standard library."
+  },
+  "commands.machine.sourceStepping.useOnOff": "Use 'on' (source stepping) or 'off' (Z80 stepping)",
+  "@commands.machine.sourceStepping.useOnOff": {
+    "context": "Error message of the 'em-src' IDE command in the interactive command prompt. 'on' and 'off' are the values the user types: keep them."
+  },
+  "commands.machine.sourceStepping.on": "Source stepping",
+  "@commands.machine.sourceStepping.on": {
+    "context": "Output line of the 'em-src on' IDE command in the interactive command prompt. Stepping now goes by source statement."
+  },
+  "commands.machine.sourceStepping.onInterrupts": "Source stepping, stopping in interrupt handlers",
+  "@commands.machine.sourceStepping.onInterrupts": {
+    "context": "Output line of the 'em-src on -i' IDE command in the interactive command prompt."
+  },
+  "commands.machine.sourceStepping.off": "Z80 instruction stepping",
+  "@commands.machine.sourceStepping.off": {
+    "context": "Output line of the 'em-src off' IDE command in the interactive command prompt. Stepping now goes by Z80 instruction."
+  },
+  "commands.runToCursor.description": "Runs the machine until it reaches the given address, then stops",
+  "@commands.runToCursor.description": {
+    "context": "One-line description of the 'run-to' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated."
+  },
+  "commands.runToCursor.normalMode": "The machine is running in normal mode. Pause it (or start it with debugging) before running to an address.",
+  "@commands.runToCursor.normalMode": {
+    "context": "Error message of the 'run-to' IDE command in the interactive command prompt."
+  },
+  "commands.runToCursor.running": "Running to {target}",
+  "@commands.runToCursor.running": {
+    "context": "Output line of the 'run-to' IDE command in the interactive command prompt.",
+    "placeholders": {
+      "target": "The address or Copper/sprite target, in breakpoint notation (invariant), e.g. $8000"
+    }
+  },
+  "commands.runToCursor.started": "Started, running to {target}",
+  "@commands.runToCursor.started": {
+    "context": "Output line of the 'run-to' IDE command in the interactive command prompt. The machine was stopped, so it started from a reset.",
+    "placeholders": {
+      "target": "The address or Copper/sprite target, in breakpoint notation (invariant), e.g. $8000"
+    }
+  },
+  "commands.memory.description": "Sets the specified 1, 2, 3, or 4 bytes of memory content. Options: -b8, -b16, -b24, -b32: Number of bits; -be: Big-endian",
+  "@commands.memory.description": {
+    "context": "One-line description of the 'setmem' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated."
+  },
+  "commands.memory.oneSize": "Only one of the -b8, -b16, -b24, -b32 options can be used",
+  "@commands.memory.oneSize": {
+    "context": "Error message of the 'setmem' IDE command in the interactive command prompt."
+  },
+  "commands.memory.outOfRange": "Warning: Value ({value}) is out of range; only the last {bits} bit will be used.",
+  "@commands.memory.outOfRange": {
+    "context": "Output line of the 'setmem' IDE command in the interactive command prompt. A warning, shown in yellow.",
+    "placeholders": {
+      "value": "The value the user typed (invariant)",
+      "bits": "8, 16, 24 or 32"
+    }
+  },
+  "commands.memory.canceled": "Memory edit canceled",
+  "@commands.memory.canceled": {
+    "context": "Output line of the 'setmem' IDE command in the interactive command prompt. The user declined the reverse-debugging 'take over' confirmation."
+  },
+  "commands.memory.set": "Memory content set",
+  "@commands.memory.set": {
+    "context": "Output line of the 'setmem' IDE command in the interactive command prompt."
+  },
+  "commands.register.description": "Sets the value of the specified Z80 register",
+  "@commands.register.description": {
+    "context": "One-line description of the 'setz80reg' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated."
+  },
+  "commands.register.mustBePaused": "The machine must be paused to set Z80 registers.",
+  "@commands.register.mustBePaused": {
+    "context": "Error message of the 'setz80reg' IDE command in the interactive command prompt."
+  },
+  "commands.register.invalidName": "Invalid register name: {name}",
+  "@commands.register.invalidName": {
+    "context": "Error message of the 'setz80reg' IDE command in the interactive command prompt.",
+    "placeholders": {
+      "name": "The register name the user typed"
+    }
+  },
+  "commands.register.outOfRange": "Warning: Value ({value}) for {register} is out of range; only the last {bits} bit will be used.",
+  "@commands.register.outOfRange": {
+    "context": "Output line of the 'setz80reg' IDE command in the interactive command prompt. A warning, shown in yellow.",
+    "placeholders": {
+      "value": "The value the user typed (invariant)",
+      "register": "The Z80 register name (HL, A, ...): not translated",
+      "bits": "8 or 16"
+    }
+  },
+  "commands.register.canceled": "Register edit canceled",
+  "@commands.register.canceled": {
+    "context": "Output line of the 'setz80reg' IDE command in the interactive command prompt. The user declined the reverse-debugging 'take over' confirmation."
+  },
+  "commands.register.set": "Z80 {register} register value is set to {value} (${hex}, {binary})",
+  "@commands.register.set": {
+    "context": "Output line of the 'setz80reg' IDE command in the interactive command prompt. Keep the $ before the hex value.",
+    "placeholders": {
+      "register": "The Z80 register name (HL, A, ...): not translated",
+      "value": "The new value in decimal (invariant)",
+      "hex": "The new value in hex digits (invariant)",
+      "binary": "The new value in binary digits (invariant)"
+    }
+  },
+  "commands.fork.title": "Take Over Here",
+  "@commands.fork.title": {
+    "context": "Confirmation dialog of reverse debugging's 'Take over here': the machine stands at a point in the past, and continuing from it discards the recorded future. The dialog title; 'Take Over Here' is the name of the action.",
+    "maxChars": 30
+  },
+  "commands.fork.confirmLabel": "Take Over",
+  "@commands.fork.confirmLabel": {
+    "context": "Confirmation dialog of reverse debugging's 'Take over here': the machine stands at a point in the past, and continuing from it discards the recorded future. The confirm button.",
+    "maxChars": 15
+  },
+  "commands.fork.confirm.takeOver": "Continue from this point in the past?",
+  "@commands.fork.confirm.takeOver": {
+    "context": "Confirmation dialog of reverse debugging's 'Take over here': the machine stands at a point in the past, and continuing from it discards the recorded future. The question, when the user chose Take over here."
+  },
+  "commands.fork.confirm.editMemory": "Edit memory in the past?",
+  "@commands.fork.confirm.editMemory": {
+    "context": "Confirmation dialog of reverse debugging's 'Take over here': the machine stands at a point in the past, and continuing from it discards the recorded future. The question, when the user edits memory (setmem) while the machine stands in the past: the edit forks the timeline."
+  },
+  "commands.fork.confirm.editRegister": "Edit {register} in the past?",
+  "@commands.fork.confirm.editRegister": {
+    "context": "Confirmation dialog of reverse debugging's 'Take over here': the machine stands at a point in the past, and continuing from it discards the recorded future. The question, when the user edits a Z80 register while the machine stands in the past: the edit forks the timeline.",
+    "placeholders": {
+      "register": "The Z80 register name (HL, A, ...): not translated"
+    }
+  },
+  "commands.fork.confirm.editVariable": "Edit {name} in the past?",
+  "@commands.fork.confirm.editVariable": {
+    "context": "Confirmation dialog of reverse debugging's 'Take over here': the machine stands at a point in the past, and continuing from it discards the recorded future. The question, when the user edits a BASIC variable in the Variables panel while the machine stands in the past: the edit forks the timeline.",
+    "placeholders": {
+      "name": "The program variable's name"
+    }
+  },
+  "commands.fork.detail.discard": "The recorded future after this point is discarded: its input, keyframes and history. The machine continues live from here.",
+  "@commands.fork.detail.discard": {
+    "context": "Confirmation dialog of reverse debugging's 'Take over here': the machine stands at a point in the past, and continuing from it discards the recorded future. The first paragraph of the dialog's detail text."
+  },
+  "commands.fork.detail.sdWrites": "{count, plural, one {The SD card's # sector write in that future will be undone.} other {The SD card's # sector writes in that future will be undone.}}",
+  "@commands.fork.detail.sdWrites": {
+    "context": "Confirmation dialog of reverse debugging's 'Take over here': the machine stands at a point in the past, and continuing from it discards the recorded future. A paragraph of the detail text, shown when the future wrote to the emulated SD card.",
+    "placeholders": {
+      "count": "How many SD card sector writes the discarded future made"
+    }
+  },
+  "commands.fork.detail.hostFiles": "Files saved to tape in that future stay on disk: {files}.",
+  "@commands.fork.detail.hostFiles": {
+    "context": "Confirmation dialog of reverse debugging's 'Take over here': the machine stands at a point in the past, and continuing from it discards the recorded future. A paragraph of the detail text, shown when the future saved tape files on the host.",
+    "placeholders": {
+      "files": "A comma-separated list of file names (invariant)"
+    }
+  },
+  "commands.history.reason.start": "Start of recorded history",
+  "@commands.history.reason.start": {
+    "context": "Explains why stepping through the execution history (Step Back, Reverse Continue, history-goto) stopped or did not move; shown in the command output and the debugger. The cursor reached the oldest recorded instruction."
+  },
+  "commands.history.reason.startCount": "Start of recorded history ({count, plural, one {# instruction} other {# instructions}})",
+  "@commands.history.reason.startCount": {
+    "context": "Explains why stepping through the execution history (Step Back, Reverse Continue, history-goto) stopped or did not move; shown in the command output and the debugger. The cursor reached the oldest recorded instruction.",
+    "placeholders": {
+      "count": "How many instructions the history ring holds"
+    }
+  },
+  "commands.history.reason.noHit": "No breakpoint hit in the recorded history: stopped at its start",
+  "@commands.history.reason.noHit": {
+    "context": "Explains why stepping through the execution history (Step Back, Reverse Continue, history-goto) stopped or did not move; shown in the command output and the debugger. Reverse Continue found no breakpoint hit."
+  },
+  "commands.history.reason.noHitCount": "No breakpoint hit in the recorded history: stopped at its start ({count, plural, one {# instruction} other {# instructions}})",
+  "@commands.history.reason.noHitCount": {
+    "context": "Explains why stepping through the execution history (Step Back, Reverse Continue, history-goto) stopped or did not move; shown in the command output and the debugger. Reverse Continue found no breakpoint hit.",
+    "placeholders": {
+      "count": "How many instructions the history ring holds"
+    }
+  },
+  "commands.history.reason.noCall": "No call entered this routine within the recorded history: stopped at its start",
+  "@commands.history.reason.noCall": {
+    "context": "Explains why stepping through the execution history (Step Back, Reverse Continue, history-goto) stopped or did not move; shown in the command output and the debugger. Reverse step out found no CALL."
+  },
+  "commands.history.reason.noCallCount": "No call entered this routine within the recorded history: stopped at its start ({count, plural, one {# instruction} other {# instructions}})",
+  "@commands.history.reason.noCallCount": {
+    "context": "Explains why stepping through the execution history (Step Back, Reverse Continue, history-goto) stopped or did not move; shown in the command output and the debugger. Reverse step out found no CALL.",
+    "placeholders": {
+      "count": "How many instructions the history ring holds"
+    }
+  },
+  "commands.history.reason.present": "Already at the present",
+  "@commands.history.reason.present": {
+    "context": "Explains why stepping through the execution history (Step Back, Reverse Continue, history-goto) stopped or did not move; shown in the command output and the debugger. Step forward at the newest point."
+  },
+  "commands.history.reason.empty": "No execution history recorded yet",
+  "@commands.history.reason.empty": {
+    "context": "Explains why stepping through the execution history (Step Back, Reverse Continue, history-goto) stopped or did not move; shown in the command output and the debugger. "
+  },
+  "commands.history.reason.running": "The machine must be paused to step through its history",
+  "@commands.history.reason.running": {
+    "context": "Explains why stepping through the execution history (Step Back, Reverse Continue, history-goto) stopped or did not move; shown in the command output and the debugger. "
+  },
+  "commands.history.reason.noHistory": "This machine does not record execution history",
+  "@commands.history.reason.noHistory": {
+    "context": "Explains why stepping through the execution history (Step Back, Reverse Continue, history-goto) stopped or did not move; shown in the command output and the debugger. Also the refusal of every history command on such a machine."
+  },
+  "commands.history.reason.gone": "That record is no longer in the history",
+  "@commands.history.reason.gone": {
+    "context": "Explains why stepping through the execution history (Step Back, Reverse Continue, history-goto) stopped or did not move; shown in the command output and the debugger. The record was overwritten in the history ring."
+  },
+  "commands.history.reason.canceled": "Reverse continue canceled: back where it started",
+  "@commands.history.reason.canceled": {
+    "context": "Explains why stepping through the execution history (Step Back, Reverse Continue, history-goto) stopped or did not move; shown in the command output and the debugger. "
+  },
+  "commands.history.show.description": "Displays the Execution History",
+  "@commands.history.show.description": {
+    "context": "One-line description of the 'show-history' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated. 'Execution History' is the name of a document view."
+  },
+  "commands.history.hide.description": "Hides the Execution History",
+  "@commands.history.hide.description": {
+    "context": "One-line description of the 'hide-history' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated. 'Execution History' is the name of a document view."
+  },
+  "commands.history.clear.description": "Clears the execution history",
+  "@commands.history.clear.description": {
+    "context": "One-line description of the 'history-clear' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated."
+  },
+  "commands.history.list.description": "Prints the newest execution history records (20 by default)",
+  "@commands.history.list.description": {
+    "context": "One-line description of the 'history' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated."
+  },
+  "commands.history.export.description": "Exports the execution history as a text or CSV trace (the extension picks the format; -f overwrites)",
+  "@commands.history.export.description": {
+    "context": "One-line description of the 'history-export' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated."
+  },
+  "commands.history.stepBack.description": "Steps back to the previous instruction in the execution history",
+  "@commands.history.stepBack.description": {
+    "context": "One-line description of the 'step-back' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated."
+  },
+  "commands.history.stepForward.description": "Steps forward through the execution history, up to the present",
+  "@commands.history.stepForward.description": {
+    "context": "One-line description of the 'step-forward' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated."
+  },
+  "commands.history.stepBackOver.description": "Steps back over a call that returned, to the call instruction",
+  "@commands.history.stepBackOver.description": {
+    "context": "One-line description of the 'step-back-over' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated."
+  },
+  "commands.history.stepBackOut.description": "Steps back out of the current routine, to the call that entered it",
+  "@commands.history.stepBackOut.description": {
+    "context": "One-line description of the 'step-back-out' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated."
+  },
+  "commands.history.reverseContinue.description": "Goes back to the previous breakpoint hit in the execution history",
+  "@commands.history.reverseContinue.description": {
+    "context": "One-line description of the 'reverse-continue' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated."
+  },
+  "commands.history.reverseContinueCancel.description": "Stops a running Reverse Continue search; the machine goes back where it started",
+  "@commands.history.reverseContinueCancel.description": {
+    "context": "One-line description of the 'reverse-continue-cancel' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated."
+  },
+  "commands.history.present.description": "Returns from the execution history to the present",
+  "@commands.history.present.description": {
+    "context": "One-line description of the 'history-present' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated."
+  },
+  "commands.history.takeOver.description": "Takes over at the current point in the past: discards the recorded future (-y: without asking)",
+  "@commands.history.takeOver.description": {
+    "context": "One-line description of the 'history-take-over' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated."
+  },
+  "commands.history.goto.description": "Moves the history cursor to a step (-42) or a record sequence number (#1234)",
+  "@commands.history.goto.description": {
+    "context": "One-line description of the 'history-goto' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated."
+  },
+  "commands.history.cleared": "Execution history cleared",
+  "@commands.history.cleared": {
+    "context": "Output line of the 'history-clear' IDE command in the interactive command prompt."
+  },
+  "commands.history.noneYet": "No history yet",
+  "@commands.history.noneYet": {
+    "context": "Output of the 'history' and 'history-export' IDE commands when nothing is recorded yet."
+  },
+  "commands.history.notRecording": "No history: it is recorded only when the machine is started with debugging",
+  "@commands.history.notRecording": {
+    "context": "Output of the 'history' and 'history-export' IDE commands when history recording is off."
+  },
+  "commands.history.readFailed": "Could not read the execution history",
+  "@commands.history.readFailed": {
+    "context": "Error message of the execution history IDE commands."
+  },
+  "commands.history.recorded": "{count, number} of {capacity, number} recorded",
+  "@commands.history.recorded": {
+    "context": "Output line of the 'history' IDE command in the interactive command prompt. The heading above the listed records: how full the history ring is.",
+    "placeholders": {
+      "count": "Records in the history ring",
+      "capacity": "The ring's capacity in records"
+    }
+  },
+  "commands.history.overwrittenWhileReading": "The oldest requested records were overwritten while reading",
+  "@commands.history.overwrittenWhileReading": {
+    "context": "Output line of the 'history' IDE command in the interactive command prompt."
+  },
+  "commands.history.range.badTarget": "{option}: use a step (-42) or a sequence number (#1234)",
+  "@commands.history.range.badTarget": {
+    "context": "Error message of the 'history-export' IDE command in the interactive command prompt. -42 and #1234 are syntax examples.",
+    "placeholders": {
+      "option": "The option name, -from or -to (not translated)"
+    }
+  },
+  "commands.history.range.badCount": "-count: use a positive whole number",
+  "@commands.history.range.badCount": {
+    "context": "Error message of the 'history-export' IDE command in the interactive command prompt."
+  },
+  "commands.history.range.toAndCount": "Use -to or -count with -from, not both",
+  "@commands.history.range.toAndCount": {
+    "context": "Error message of the 'history-export' IDE command in the interactive command prompt."
+  },
+  "commands.history.range.gone": "The ring starts at #{oldest}; {count, plural, one {# earlier record is} other {# earlier records are}} gone",
+  "@commands.history.range.gone": {
+    "context": "Output line of the 'history-export' IDE command in the interactive command prompt. A warning: part of the requested range was overwritten. '#' before a number marks a record sequence number.",
+    "placeholders": {
+      "oldest": "The oldest record's sequence number (invariant)",
+      "count": "How many requested records are gone"
+    }
+  },
+  "commands.history.range.newest": "The newest record is #{newest}",
+  "@commands.history.range.newest": {
+    "context": "Output line of the 'history-export' IDE command in the interactive command prompt. A warning: the requested range ran past the newest record.",
+    "placeholders": {
+      "newest": "The newest record's sequence number (invariant)"
+    }
+  },
+  "commands.history.range.empty": "The range is empty",
+  "@commands.history.range.empty": {
+    "context": "Error message of the 'history-export' IDE command in the interactive command prompt."
+  },
+  "commands.history.export.emptyPath": "The trace file path cannot be empty.",
+  "@commands.history.export.emptyPath": {
+    "context": "Validation error of the 'history-export' IDE command (shown before the command runs). Option names and syntax are not translated."
+  },
+  "commands.history.export.badFormat": "-format: use text or csv",
+  "@commands.history.export.badFormat": {
+    "context": "Validation error of the 'history-export' IDE command (shown before the command runs). Option names and syntax are not translated. 'text' and 'csv' are values the user types."
+  },
+  "commands.history.export.badExtension": "Use a .txt, .log, .trace or .csv file, or name the format with -format.",
+  "@commands.history.export.badExtension": {
+    "context": "Validation error of the 'history-export' IDE command (shown before the command runs). Option names and syntax are not translated."
+  },
+  "commands.history.export.pauseFirst": "Pause the machine first: the history changes while it runs",
+  "@commands.history.export.pauseFirst": {
+    "context": "Error message of the 'history-export' IDE command in the interactive command prompt."
+  },
+  "commands.history.export.exists": "{file} already exists; use -f to replace it.",
+  "@commands.history.export.exists": {
+    "context": "Error message of the 'history-export' IDE command in the interactive command prompt.",
+    "placeholders": {
+      "file": "The file path"
+    }
+  },
+  "commands.history.export.overwritten": "Records were overwritten while reading; nothing was written",
+  "@commands.history.export.overwritten": {
+    "context": "Reason the 'history-export' IDE command failed; shown inside 'Could not export the history: ...'."
+  },
+  "commands.history.export.incomplete": "Could not read the whole range; nothing was written",
+  "@commands.history.export.incomplete": {
+    "context": "Reason the 'history-export' IDE command failed; shown inside 'Could not export the history: ...'."
+  },
+  "commands.history.export.failed": "Could not export the history: {error}",
+  "@commands.history.export.failed": {
+    "context": "Error message of the 'history-export' IDE command in the interactive command prompt.",
+    "placeholders": {
+      "error": "Why it failed"
+    }
+  },
+  "commands.history.export.writeFailed": "Could not write {file}: {error}",
+  "@commands.history.export.writeFailed": {
+    "context": "Error message of the 'history-export' IDE command in the interactive command prompt.",
+    "placeholders": {
+      "file": "The file path",
+      "error": "The file system's error message"
+    }
+  },
+  "commands.history.export.progress": "Exporting... {read, number} of {total, number} records",
+  "@commands.history.export.progress": {
+    "context": "Output line of the 'history-export' IDE command in the interactive command prompt. Progress of a long export.",
+    "placeholders": {
+      "read": "Records exported so far",
+      "total": "Records to export"
+    }
+  },
+  "commands.history.export.warning": "Warning: {warning}",
+  "@commands.history.export.warning": {
+    "context": "Output line of the 'history-export' IDE command in the interactive command prompt. A warning line, shown in yellow.",
+    "placeholders": {
+      "warning": "The warning text"
+    }
+  },
+  "commands.history.export.done": "{total, plural, one {Exported # record} other {Exported # records}} (frames {frames}) to {file}",
+  "@commands.history.export.done": {
+    "context": "Output line of the 'history-export' IDE command in the interactive command prompt. Success line.",
+    "placeholders": {
+      "total": "How many records were exported",
+      "frames": "The frame range, such as 0–41 (invariant)",
+      "file": "The file path"
+    }
+  },
+  "commands.history.export.doneLines": "{total, plural, one {Exported # record} other {Exported # records}} (frames {frames}, {lines, plural, one {# line} other {# lines}}) to {file}",
+  "@commands.history.export.doneLines": {
+    "context": "Output line of the 'history-export' IDE command in the interactive command prompt. Success line, when filtering made the line count differ from the record count.",
+    "placeholders": {
+      "total": "How many records were exported",
+      "frames": "The frame range, such as 0–41 (invariant)",
+      "lines": "How many trace lines were written",
+      "file": "The file path"
+    }
+  },
+  "commands.history.op.stepBack": "Step back",
+  "@commands.history.op.stepBack": {
+    "context": "The name of a history navigation, the first part of its result line ('<name>: back at the present').",
+    "maxChars": 30
+  },
+  "commands.history.op.stepForward": "Step forward",
+  "@commands.history.op.stepForward": {
+    "context": "The name of a history navigation, the first part of its result line ('<name>: back at the present').",
+    "maxChars": 30
+  },
+  "commands.history.op.stepBackOver": "Reverse step over",
+  "@commands.history.op.stepBackOver": {
+    "context": "The name of a history navigation, the first part of its result line ('<name>: back at the present').",
+    "maxChars": 30
+  },
+  "commands.history.op.stepBackOut": "Reverse step out",
+  "@commands.history.op.stepBackOut": {
+    "context": "The name of a history navigation, the first part of its result line ('<name>: back at the present').",
+    "maxChars": 30
+  },
+  "commands.history.op.reverseContinue": "Reverse continue",
+  "@commands.history.op.reverseContinue": {
+    "context": "The name of a history navigation, the first part of its result line ('<name>: back at the present').",
+    "maxChars": 30
+  },
+  "commands.history.op.present": "Return to present",
+  "@commands.history.op.present": {
+    "context": "The name of a history navigation, the first part of its result line ('<name>: back at the present').",
+    "maxChars": 30
+  },
+  "commands.history.op.goto": "Go to",
+  "@commands.history.op.goto": {
+    "context": "The name of a history navigation, the first part of its result line ('<name>: back at the present').",
+    "maxChars": 30
+  },
+  "commands.history.nav.cannotMove": "Cannot move in the history",
+  "@commands.history.nav.cannotMove": {
+    "context": "Error message of the history navigation IDE commands when no specific reason is known."
+  },
+  "commands.history.nav.uncertain": "Call/return pairing uncertain here: SP does not match the call",
+  "@commands.history.nav.uncertain": {
+    "context": "Warning of the history navigation IDE commands. SP is the Z80 stack pointer (not translated)."
+  },
+  "commands.history.nav.atPresent": "{action}: back at the present",
+  "@commands.history.nav.atPresent": {
+    "context": "Output of the history navigation IDE commands: the cursor returned to the present (the live machine).",
+    "placeholders": {
+      "action": "The navigation's name, such as 'Step back' (from commands.history.op.*)"
+    }
+  },
+  "commands.history.nav.atStep": "{action}: history step {step} at PC=${pc}",
+  "@commands.history.nav.atStep": {
+    "context": "Output of the history navigation IDE commands: where the history cursor now stands.",
+    "placeholders": {
+      "action": "The navigation's name, such as 'Step back' (from commands.history.op.*)",
+      "step": "The step number back from the present, such as −42 (invariant)",
+      "pc": "The program counter as 4 hex digits (invariant)"
+    }
+  },
+  "commands.history.nav.atStepBreakpoint": "{action}: history step {step} at PC=${pc} (breakpoint {breakpoint})",
+  "@commands.history.nav.atStepBreakpoint": {
+    "context": "Output of the Reverse Continue IDE command: where the history cursor now stands, and the breakpoint that was hit.",
+    "placeholders": {
+      "action": "The navigation's name, such as 'Step back' (from commands.history.op.*)",
+      "step": "The step number back from the present, such as −42 (invariant)",
+      "pc": "The program counter as 4 hex digits (invariant)",
+      "breakpoint": "The breakpoint's address (invariant)"
+    }
+  },
+  "commands.history.reverseContinueCancel.notRunning": "No Reverse Continue search is running",
+  "@commands.history.reverseContinueCancel.notRunning": {
+    "context": "Error message of the 'reverse-continue-cancel' IDE command in the interactive command prompt."
+  },
+  "commands.history.reverseContinueCancel.canceling": "Reverse continue: canceling",
+  "@commands.history.reverseContinueCancel.canceling": {
+    "context": "Output line of the 'reverse-continue-cancel' IDE command in the interactive command prompt."
+  },
+  "commands.history.takeOver.notInPast": "Take over here works in the past of a reverse-debugging session (step back first)",
+  "@commands.history.takeOver.notInPast": {
+    "context": "Error message of the 'history-take-over' IDE command in the interactive command prompt. 'Take over here' is the name of the action."
+  },
+  "commands.history.takeOver.canceled": "Take over here: canceled",
+  "@commands.history.takeOver.canceled": {
+    "context": "Output line of the 'history-take-over' IDE command in the interactive command prompt. The user declined the confirmation."
+  },
+  "commands.history.takeOver.done": "Took over at PC=${pc}: this is the present now",
+  "@commands.history.takeOver.done": {
+    "context": "Output line of the 'history-take-over' IDE command in the interactive command prompt.",
+    "placeholders": {
+      "pc": "The program counter as 4 hex digits (invariant)"
+    }
+  },
+  "commands.history.goto.badTarget": "Use a step (-42) or a sequence number (#1234)",
+  "@commands.history.goto.badTarget": {
+    "context": "Error message of the 'history-goto' IDE command in the interactive command prompt. -42 and #1234 are syntax examples."
+  },
+  "commands.bp.eraseAll.description": "Erase all breakpoints",
+  "@commands.bp.eraseAll.description": {
+    "context": "One-line description of the 'bp-ea' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated."
+  },
+  "commands.bp.list.description": "Lists all breakpoints",
+  "@commands.bp.list.description": {
+    "context": "One-line description of the 'bp-list' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated."
+  },
+  "commands.bp.set.description": "Sets a breakpoint at the specified address",
+  "@commands.bp.set.description": {
+    "context": "One-line description of the 'bp-set' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated."
+  },
+  "commands.bp.resetHits.description": "Resets the hit counter of a breakpoint, or of all breakpoints",
+  "@commands.bp.resetHits.description": {
+    "context": "One-line description of the 'bp-reset-hits' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated."
+  },
+  "commands.bp.lpEnable.description": "Enables or disables logpoint groups",
+  "@commands.bp.lpEnable.description": {
+    "context": "One-line description of the 'lp-en' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated."
+  },
+  "commands.bp.lpGroups.description": "Lists the logpoint groups",
+  "@commands.bp.lpGroups.description": {
+    "context": "One-line description of the 'lp-groups' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated."
+  },
+  "commands.bp.assertionComments.description": "Switches the breakpoints of ASSERTION comments on or off",
+  "@commands.bp.assertionComments.description": {
+    "context": "One-line description of the 'as-en' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated. ASSERTION and WPMEM are source-comment keywords: not translated."
+  },
+  "commands.bp.wpmemComments.description": "Switches the watchpoints of WPMEM comments on or off",
+  "@commands.bp.wpmemComments.description": {
+    "context": "One-line description of the 'wp-en' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated. ASSERTION and WPMEM are source-comment keywords: not translated."
+  },
+  "commands.bp.remove.description": "Removes the breakpoint from the specified address",
+  "@commands.bp.remove.description": {
+    "context": "One-line description of the 'bp-del' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated."
+  },
+  "commands.bp.enable.description": "Enables/disables a breakpoint",
+  "@commands.bp.enable.description": {
+    "context": "One-line description of the 'bp-en' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated."
+  },
+  "commands.bp.eraseAll.done": "{count, plural, one {# breakpoint removed.} other {# breakpoints removed.}}",
+  "@commands.bp.eraseAll.done": {
+    "context": "Output line of the 'bp-ea' IDE command in the interactive command prompt.",
+    "placeholders": {
+      "count": "How many breakpoints were removed"
+    }
+  },
+  "commands.bp.list.count": "{count, plural, one {# breakpoint set} other {# breakpoints set}}",
+  "@commands.bp.list.count": {
+    "context": "Output line of the 'bp-list' IDE command in the interactive command prompt. The summary line after the list.",
+    "placeholders": {
+      "count": "How many breakpoints are set"
+    }
+  },
+  "commands.bp.list.none": "No breakpoints set",
+  "@commands.bp.list.none": {
+    "context": "Output line of the 'bp-list' IDE command in the interactive command prompt."
+  },
+  "commands.bp.list.logpointComments": "LOGPOINT comments (from the last build; edit the comment and rebuild to change one):",
+  "@commands.bp.list.logpointComments": {
+    "context": "Output line of the 'bp-list' IDE command in the interactive command prompt. Heading of the breakpoints read from LOGPOINT source comments. LOGPOINT is a keyword: not translated."
+  },
+  "commands.bp.list.assertionComments": "ASSERTION comments (stop when false; edit the comment and rebuild to change one):",
+  "@commands.bp.list.assertionComments": {
+    "context": "Output line of the 'bp-list' IDE command in the interactive command prompt. Heading of the breakpoints read from ASSERTION source comments. ASSERTION is a keyword: not translated."
+  },
+  "commands.bp.list.wpmemComments": "WPMEM comments (edit the comment and rebuild to change one):",
+  "@commands.bp.list.wpmemComments": {
+    "context": "Output line of the 'bp-list' IDE command in the interactive command prompt. Heading of the watchpoints read from WPMEM source comments. WPMEM is a keyword: not translated."
+  },
+  "commands.bp.list.readAs": "read as: {condition}",
+  "@commands.bp.list.readAs": {
+    "context": "Output line of the 'bp-list' IDE command in the interactive command prompt. Under an ASSERTION comment: how Klive reads its condition (operator precedence made visible).",
+    "placeholders": {
+      "condition": "The condition in Klive's syntax (not translated)"
+    }
+  },
+  "commands.bp.label.notAnnotatable": "This machine's memory cannot be annotated.",
+  "@commands.bp.label.notAnnotatable": {
+    "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated. For a breakpoint named by an annotation label."
+  },
+  "commands.bp.label.noRomLabel": "No ROM label named {name}.",
+  "@commands.bp.label.noRomLabel": {
+    "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated.",
+    "placeholders": {
+      "name": "The label name the user typed"
+    }
+  },
+  "commands.bp.label.invalidBankOrRom": "Invalid bank (expected $00-${maxBank}, or ROM)",
+  "@commands.bp.label.invalidBankOrRom": {
+    "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated. ROM is the literal word the user types.",
+    "placeholders": {
+      "maxBank": "The highest bank number in hex (invariant)"
+    }
+  },
+  "commands.bp.label.noActiveSet": "No annotation set is active: use ann-new, or open a project.",
+  "@commands.bp.label.noActiveSet": {
+    "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated. ann-new is a command name."
+  },
+  "commands.bp.invalidSymbol": "Invalid symbol in {spec}",
+  "@commands.bp.invalidSymbol": {
+    "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated.",
+    "placeholders": {
+      "spec": "The address spec the user typed"
+    }
+  },
+  "commands.bp.watchSymbolNeedsAccess": "A WS:<symbol> breakpoint watches memory: use -r or -w",
+  "@commands.bp.watchSymbolNeedsAccess": {
+    "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated. WS:<symbol> is syntax."
+  },
+  "commands.bp.invalidSourceAddress": "Invalid breakpoint address {spec}",
+  "@commands.bp.invalidSourceAddress": {
+    "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated. For a [file]:line source address.",
+    "placeholders": {
+      "spec": "The address spec the user typed"
+    }
+  },
+  "commands.bp.copper.nextOnly": "Copper breakpoints are supported on the ZX Spectrum Next only",
+  "@commands.bp.copper.nextOnly": {
+    "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated. ZX Spectrum Next is a machine name."
+  },
+  "commands.bp.sprite.nextOnly": "Sprite breakpoints are supported on the ZX Spectrum Next only",
+  "@commands.bp.sprite.nextOnly": {
+    "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated. ZX Spectrum Next is a machine name."
+  },
+  "commands.bp.nextReg.nextOnly": "NextReg breakpoints are supported on the ZX Spectrum Next only",
+  "@commands.bp.nextReg.nextOnly": {
+    "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated. ZX Spectrum Next is a machine name. NextReg (Next register) is a hardware name."
+  },
+  "commands.bp.copper.invalidIndex": "Invalid Copper list index",
+  "@commands.bp.copper.invalidIndex": {
+    "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated. Copper is the ZX Spectrum Next's display coprocessor."
+  },
+  "commands.bp.copper.indexRange": "A Copper list index must be between $000 and $3FF",
+  "@commands.bp.copper.indexRange": {
+    "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated."
+  },
+  "commands.bp.sprite.invalidIndex": "Invalid sprite index",
+  "@commands.bp.sprite.invalidIndex": {
+    "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated."
+  },
+  "commands.bp.sprite.indexRange": "A sprite index must be between $00 and $7F",
+  "@commands.bp.sprite.indexRange": {
+    "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated."
+  },
+  "commands.bp.nextReg.invalidNumber": "Invalid Next Register number",
+  "@commands.bp.nextReg.invalidNumber": {
+    "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated."
+  },
+  "commands.bp.nextReg.numberRange": "A Next Register number must be between $00 and $FF",
+  "@commands.bp.nextReg.numberRange": {
+    "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated."
+  },
+  "commands.bp.nextReg.invalidValueFilter": "Invalid NextReg value filter",
+  "@commands.bp.nextReg.invalidValueFilter": {
+    "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated."
+  },
+  "commands.bp.nextReg.invalidValueMask": "Invalid NextReg value mask",
+  "@commands.bp.nextReg.invalidValueMask": {
+    "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated."
+  },
+  "commands.bp.bank.notSupported": "Bank-relative breakpoints are not supported on this machine",
+  "@commands.bp.bank.notSupported": {
+    "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated."
+  },
+  "commands.bp.bank.invalid": "Invalid bank (expected $00-${maxBank})",
+  "@commands.bp.bank.invalid": {
+    "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated.",
+    "placeholders": {
+      "maxBank": "The highest bank number in hex (invariant)"
+    }
+  },
+  "commands.bp.bank.notInMemory": "Bank ${bank} is not in this machine's memory",
+  "@commands.bp.bank.notInMemory": {
+    "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated.",
+    "placeholders": {
+      "bank": "The bank number in hex (invariant)"
+    }
+  },
+  "commands.bp.bank.invalidOffset": "Invalid bank offset",
+  "@commands.bp.bank.invalidOffset": {
+    "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated."
+  },
+  "commands.bp.bank.offsetRange": "Bank offset must be between $0000 and ${max}",
+  "@commands.bp.bank.offsetRange": {
+    "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated.",
+    "placeholders": {
+      "max": "The last offset in hex (invariant)"
+    }
+  },
+  "commands.bp.noPartitions": "This model does not support partitions",
+  "@commands.bp.noPartitions": {
+    "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated. A partition is a ROM or RAM page in the address spec (R0:$1234)."
+  },
+  "commands.bp.invalidPartition": "Invalid partition",
+  "@commands.bp.invalidPartition": {
+    "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated."
+  },
+  "commands.bp.invalidAddress": "Invalid address",
+  "@commands.bp.invalidAddress": {
+    "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated."
+  },
+  "commands.bp.invalidNumber": "Invalid numeric value",
+  "@commands.bp.invalidNumber": {
+    "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated."
+  },
+  "commands.bp.oneAccessOption": "You can use only one of the -r, -w, -i, -o options",
+  "@commands.bp.oneAccessOption": {
+    "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated."
+  },
+  "commands.bp.copper.noAccessOptions": "A Copper breakpoint watches a list index, not memory, a port or a register",
+  "@commands.bp.copper.noAccessOptions": {
+    "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated."
+  },
+  "commands.bp.sprite.noAccessOptions": "A sprite breakpoint watches a sprite's attribute writes, not memory, a port or a register",
+  "@commands.bp.sprite.noAccessOptions": {
+    "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated."
+  },
+  "commands.bp.attr.spriteOnly": "You can use the -attr option only with a sprite breakpoint (sp:)",
+  "@commands.bp.attr.spriteOnly": {
+    "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated."
+  },
+  "commands.bp.attr.bytes": "The -attr option takes attribute bytes 0-4, e.g. -attr 0,1 or -attr 0-3",
+  "@commands.bp.attr.bytes": {
+    "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated."
+  },
+  "commands.bp.nextReg.noAccessOptions": "A NextReg breakpoint watches a register, not memory or a port",
+  "@commands.bp.nextReg.noAccessOptions": {
+    "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated."
+  },
+  "commands.bp.nextReg.valueOnly": "You can use the -v option only with a NextReg breakpoint",
+  "@commands.bp.nextReg.valueOnly": {
+    "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated."
+  },
+  "commands.bp.nextReg.copperOnly": "You can use the -c option only with a NextReg breakpoint",
+  "@commands.bp.nextReg.copperOnly": {
+    "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated."
+  },
+  "commands.bp.nextReg.maskNeedsValue": "The -m option needs a -v value to mask",
+  "@commands.bp.nextReg.maskNeedsValue": {
+    "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated."
+  },
+  "commands.bp.nextReg.valueRange": "A NextReg value must be between $00 and $FF",
+  "@commands.bp.nextReg.valueRange": {
+    "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated."
+  },
+  "commands.bp.nextReg.maskRange": "A NextReg value mask must be between $00 and $FF",
+  "@commands.bp.nextReg.maskRange": {
+    "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated."
+  },
+  "commands.bp.maskIoOnly": "You can use the -m option only with the -i, -o or nr: forms",
+  "@commands.bp.maskIoOnly": {
+    "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated."
+  },
+  "commands.bp.partitionIo": "You cannot use partition with I/O breakpoints",
+  "@commands.bp.partitionIo": {
+    "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated."
+  },
+  "commands.bp.bankOffsetIo": "You cannot use a bank offset with I/O breakpoints",
+  "@commands.bp.bankOffsetIo": {
+    "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated."
+  },
+  "commands.bp.len.accessOnly": "You can use the -len option only with -r or -w",
+  "@commands.bp.len.accessOnly": {
+    "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated."
+  },
+  "commands.bp.len.range": "The -len option takes a length between 1 and 65536",
+  "@commands.bp.len.range": {
+    "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated."
+  },
+  "commands.bp.len.wrap": "A memory range cannot wrap past $FFFF",
+  "@commands.bp.len.wrap": {
+    "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated."
+  },
+  "commands.bp.log.noOneShot": "A logpoint cannot be a one-shot (-once with -log)",
+  "@commands.bp.log.noOneShot": {
+    "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated. A logpoint logs a message instead of stopping; a one-shot breakpoint is removed when it first stops the machine."
+  },
+  "commands.bp.log.needsTemplate": "The -log option needs a message template",
+  "@commands.bp.log.needsTemplate": {
+    "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated."
+  },
+  "commands.bp.if.needsCondition": "The -if option needs a condition after it",
+  "@commands.bp.if.needsCondition": {
+    "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated."
+  },
+  "commands.bp.conditionError": "Condition error at column {column}: {message}",
+  "@commands.bp.conditionError": {
+    "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated. An error in the -if condition; a caret line under the condition follows.",
+    "placeholders": {
+      "column": "The 1-based column in the typed text",
+      "message": "The diagnostic message"
+    }
+  },
+  "commands.bp.logTemplateError": "Log template error at column {column}: {message}",
+  "@commands.bp.logTemplateError": {
+    "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated. An error in the -log message template; a caret line under the template follows.",
+    "placeholders": {
+      "column": "The 1-based column in the typed text",
+      "message": "The diagnostic message"
+    }
+  },
+  "commands.bp.set.breakpointSet": "Breakpoint at address {address} set{options}",
+  "@commands.bp.set.breakpointSet": {
+    "context": "Output line of the 'bp-set' IDE command in the interactive command prompt. A new one was set.",
+    "placeholders": {
+      "address": "The breakpoint's address spec as the commands print it, e.g. $8000 or R0:$1234 (invariant)",
+      "options": "Empty, or the options bp-set stored, echoed back as syntax (' -log \"...\" -hit 10 -if A == 0'); it starts with a space. Keep it at the end."
+    }
+  },
+  "commands.bp.set.breakpointUpdated": "Breakpoint at address {address} updated{options}",
+  "@commands.bp.set.breakpointUpdated": {
+    "context": "Output line of the 'bp-set' IDE command in the interactive command prompt. An existing one was changed.",
+    "placeholders": {
+      "address": "The breakpoint's address spec as the commands print it, e.g. $8000 or R0:$1234 (invariant)",
+      "options": "Empty, or the options bp-set stored, echoed back as syntax (' -log \"...\" -hit 10 -if A == 0'); it starts with a space. Keep it at the end."
+    }
+  },
+  "commands.bp.set.logpointSet": "Logpoint at address {address} set{options}",
+  "@commands.bp.set.logpointSet": {
+    "context": "Output line of the 'bp-set' IDE command in the interactive command prompt. A new one was set.",
+    "placeholders": {
+      "address": "The breakpoint's address spec as the commands print it, e.g. $8000 or R0:$1234 (invariant)",
+      "options": "Empty, or the options bp-set stored, echoed back as syntax (' -log \"...\" -hit 10 -if A == 0'); it starts with a space. Keep it at the end."
+    }
+  },
+  "commands.bp.set.logpointUpdated": "Logpoint at address {address} updated{options}",
+  "@commands.bp.set.logpointUpdated": {
+    "context": "Output line of the 'bp-set' IDE command in the interactive command prompt. An existing one was changed.",
+    "placeholders": {
+      "address": "The breakpoint's address spec as the commands print it, e.g. $8000 or R0:$1234 (invariant)",
+      "options": "Empty, or the options bp-set stored, echoed back as syntax (' -log \"...\" -hit 10 -if A == 0'); it starts with a space. Keep it at the end."
+    }
+  },
+  "commands.bp.set.oneShotSet": "One-shot breakpoint at address {address} set{options}",
+  "@commands.bp.set.oneShotSet": {
+    "context": "Output line of the 'bp-set' IDE command in the interactive command prompt. A new one was set.",
+    "placeholders": {
+      "address": "The breakpoint's address spec as the commands print it, e.g. $8000 or R0:$1234 (invariant)",
+      "options": "Empty, or the options bp-set stored, echoed back as syntax (' -log \"...\" -hit 10 -if A == 0'); it starts with a space. Keep it at the end."
+    }
+  },
+  "commands.bp.set.oneShotUpdated": "One-shot breakpoint at address {address} updated{options}",
+  "@commands.bp.set.oneShotUpdated": {
+    "context": "Output line of the 'bp-set' IDE command in the interactive command prompt. An existing one was changed.",
+    "placeholders": {
+      "address": "The breakpoint's address spec as the commands print it, e.g. $8000 or R0:$1234 (invariant)",
+      "options": "Empty, or the options bp-set stored, echoed back as syntax (' -log \"...\" -hit 10 -if A == 0'); it starts with a space. Keep it at the end."
+    }
+  },
+  "commands.bp.set.conditionWarning": "Warning (column {column}): {message}",
+  "@commands.bp.set.conditionWarning": {
+    "context": "Output line of the 'bp-set' IDE command in the interactive command prompt. A warning about the -if condition, shown in yellow.",
+    "placeholders": {
+      "column": "The 1-based column in the typed text",
+      "message": "The diagnostic message"
+    }
+  },
+  "commands.bp.set.logWarning": "Warning (log template column {column}): {message}",
+  "@commands.bp.set.logWarning": {
+    "context": "Output line of the 'bp-set' IDE command in the interactive command prompt. A warning about the -log template, shown in yellow.",
+    "placeholders": {
+      "column": "The 1-based column in the typed text",
+      "message": "The diagnostic message"
+    }
+  },
+  "commands.bp.resetHits.all": "All breakpoint hit counters reset",
+  "@commands.bp.resetHits.all": {
+    "context": "Output line of the 'bp-reset-hits' IDE command in the interactive command prompt."
+  },
+  "commands.bp.resetHits.notExist": "Breakpoint {address} does not exist",
+  "@commands.bp.resetHits.notExist": {
+    "context": "Error message of the 'bp-reset-hits' IDE command in the interactive command prompt.",
+    "placeholders": {
+      "address": "The breakpoint's address spec as the commands print it, e.g. $8000 or R0:$1234 (invariant)"
+    }
+  },
+  "commands.bp.resetHits.done": "Hit counter of breakpoint {address} reset",
+  "@commands.bp.resetHits.done": {
+    "context": "Output line of the 'bp-reset-hits' IDE command in the interactive command prompt.",
+    "placeholders": {
+      "address": "The breakpoint's address spec as the commands print it, e.g. $8000 or R0:$1234 (invariant)"
+    }
+  },
+  "commands.bp.logging.off": "Logging: off",
+  "@commands.bp.logging.off": {
+    "context": "Output of the 'lp-en' and 'lp-groups' IDE commands: which logpoint groups log. No logpoint logs."
+  },
+  "commands.bp.logging.all": "Logging: all groups",
+  "@commands.bp.logging.all": {
+    "context": "Output of the 'lp-en' and 'lp-groups' IDE commands: which logpoint groups log."
+  },
+  "commands.bp.logging.only": "Logging: only {groups}",
+  "@commands.bp.logging.only": {
+    "context": "Output of the 'lp-en' and 'lp-groups' IDE commands: which logpoint groups log.",
+    "placeholders": {
+      "groups": "A comma-separated list of group names (not translated)"
+    }
+  },
+  "commands.bp.logging.noGroup": "Logging: no group",
+  "@commands.bp.logging.noGroup": {
+    "context": "Output of the 'lp-en' and 'lp-groups' IDE commands: which logpoint groups log. Group filtering is on, but no group is selected."
+  },
+  "commands.bp.lpGroups.switches": "ASSERTION comments: {assertion, select, off {off} other {on}}; WPMEM comments: {wpmem, select, off {off} other {on}}",
+  "@commands.bp.lpGroups.switches": {
+    "context": "Output line of the 'lp-groups' IDE command in the interactive command prompt. ASSERTION and WPMEM are source-comment keywords: not translated. Translate only the words inside the select branches (off / on).",
+    "placeholders": {
+      "assertion": "'on' or 'off' (a select key, not shown)",
+      "wpmem": "'on' or 'off' (a select key, not shown)"
+    }
+  },
+  "commands.bp.lpGroups.none": "No logpoints set",
+  "@commands.bp.lpGroups.none": {
+    "context": "Output line of the 'lp-groups' IDE command in the interactive command prompt."
+  },
+  "commands.bp.lpGroups.on": "on",
+  "@commands.bp.lpGroups.on": {
+    "context": "Output line of the 'lp-groups' IDE command in the interactive command prompt. A narrow column after a group name: the group logs.",
+    "maxChars": 8
+  },
+  "commands.bp.lpGroups.off": "off",
+  "@commands.bp.lpGroups.off": {
+    "context": "Output line of the 'lp-groups' IDE command in the interactive command prompt. A narrow column after a group name: the group does not log.",
+    "maxChars": 8
+  },
+  "commands.bp.lpGroups.count": "{count, plural, one {# logpoint} other {# logpoints}}",
+  "@commands.bp.lpGroups.count": {
+    "context": "Output line of the 'lp-groups' IDE command in the interactive command prompt. After a group name: how many logpoints it holds.",
+    "placeholders": {
+      "count": "Logpoints in the group"
+    }
+  },
+  "commands.bp.assertionComments.on": "ASSERTION comments on",
+  "@commands.bp.assertionComments.on": {
+    "context": "Output line of the 'as-en' IDE command in the interactive command prompt. ASSERTION is a keyword: not translated."
+  },
+  "commands.bp.assertionComments.off": "ASSERTION comments off",
+  "@commands.bp.assertionComments.off": {
+    "context": "Output line of the 'as-en -d' IDE command in the interactive command prompt. ASSERTION is a keyword: not translated."
+  },
+  "commands.bp.wpmemComments.on": "WPMEM comments on",
+  "@commands.bp.wpmemComments.on": {
+    "context": "Output line of the 'wp-en' IDE command in the interactive command prompt. WPMEM is a keyword: not translated."
+  },
+  "commands.bp.wpmemComments.off": "WPMEM comments off",
+  "@commands.bp.wpmemComments.off": {
+    "context": "Output line of the 'wp-en -d' IDE command in the interactive command prompt. WPMEM is a keyword: not translated."
+  },
+  "commands.bp.remove.done": "Breakpoint at address {address} removed",
+  "@commands.bp.remove.done": {
+    "context": "Output line of the 'bp-del' IDE command in the interactive command prompt.",
+    "placeholders": {
+      "address": "The breakpoint's address spec as the commands print it, e.g. $8000 or R0:$1234 (invariant)"
+    }
+  },
+  "commands.bp.remove.fromComment": "The breakpoint at {address} comes from the {kind} comment at {resource}:{line}. Remove the comment and rebuild, or switch {kind} comments off with {command}.",
+  "@commands.bp.remove.fromComment": {
+    "context": "Error message of the 'bp-del' IDE command in the interactive command prompt. Such a breakpoint cannot be deleted, only switched off.",
+    "placeholders": {
+      "address": "The breakpoint's address spec as the commands print it, e.g. $8000 or R0:$1234 (invariant)",
+      "kind": "ASSERTION or WPMEM (a keyword, not translated)",
+      "resource": "The source file",
+      "line": "The line number",
+      "command": "The command that switches them off: 'as-en -d' or 'wp-en -d'"
+    }
+  },
+  "commands.bp.remove.notSet": "No breakpoint has been set at address {address}",
+  "@commands.bp.remove.notSet": {
+    "context": "Output line of the 'bp-del' IDE command in the interactive command prompt.",
+    "placeholders": {
+      "address": "The breakpoint's address spec as the commands print it, e.g. $8000 or R0:$1234 (invariant)"
+    }
+  },
+  "commands.bp.enable.enabled": "Breakpoint at address {address} enabled",
+  "@commands.bp.enable.enabled": {
+    "context": "Output line of the 'bp-en' IDE command in the interactive command prompt.",
+    "placeholders": {
+      "address": "The breakpoint's address spec as the commands print it, e.g. $8000 or R0:$1234 (invariant)"
+    }
+  },
+  "commands.bp.enable.disabled": "Breakpoint at address {address} disabled",
+  "@commands.bp.enable.disabled": {
+    "context": "Output line of the 'bp-en -d' IDE command in the interactive command prompt.",
+    "placeholders": {
+      "address": "The breakpoint's address spec as the commands print it, e.g. $8000 or R0:$1234 (invariant)"
+    }
+  },
+  "commands.bp.enable.notExist": "Breakpoint {address} does not exist, so it cannot be enabled or disabled",
+  "@commands.bp.enable.notExist": {
+    "context": "Error message of the 'bp-en' IDE command in the interactive command prompt.",
+    "placeholders": {
+      "address": "The breakpoint's address spec as the commands print it, e.g. $8000 or R0:$1234 (invariant)"
+    }
+  },
+  "commands.watch.add.description": "Adds a watch expression for a symbol",
+  "@commands.watch.add.description": {
+    "context": "One-line description of the 'w-add' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated."
+  },
+  "commands.watch.remove.description": "Removes a watch expression by symbol name",
+  "@commands.watch.remove.description": {
+    "context": "One-line description of the 'w-del' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated."
+  },
+  "commands.watch.list.description": "Lists all defined watch expressions",
+  "@commands.watch.list.description": {
+    "context": "One-line description of the 'w-list' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated."
+  },
+  "commands.watch.eraseAll.description": "Erases all watch expressions",
+  "@commands.watch.eraseAll.description": {
+    "context": "One-line description of the 'w-ea' IDE command, shown by 'help' and in command completion. Command names, option names (such as -d, -r) and argument syntax are not translated."
+  },
+  "commands.watch.specEmpty": "Watch specification cannot be empty",
+  "@commands.watch.specEmpty": {
+    "context": "Validation error of the 'w-add' IDE command (shown before the command runs). Option names and syntax are not translated."
+  },
+  "commands.watch.symbolEmptyAfterDirect": "Symbol name cannot be empty after ''>''",
+  "@commands.watch.symbolEmptyAfterDirect": {
+    "context": "Validation error of the 'w-add' IDE command (shown before the command runs). Option names and syntax are not translated. '>' is the literal direct-value marker (written as ''>'' in the message)."
+  },
+  "commands.watch.invalidFormat": "Invalid watch format. Use: [>]<symbol>[:<type>[:<length>]]",
+  "@commands.watch.invalidFormat": {
+    "context": "Validation error of the 'w-add' IDE command (shown before the command runs). Option names and syntax are not translated. The part after 'Use:' is syntax: keep it."
+  },
+  "commands.watch.invalidSymbol": "Invalid symbol name. Must be a valid identifier",
+  "@commands.watch.invalidSymbol": {
+    "context": "Validation error of the 'w-add' and 'w-del' IDE commands."
+  },
+  "commands.watch.invalidType": "Invalid type. Valid types: a, b, w, l, -w, -l, f, s",
+  "@commands.watch.invalidType": {
+    "context": "Validation error of the 'w-add' IDE command (shown before the command runs). Option names and syntax are not translated. The letters are the type codes the user types."
+  },
+  "commands.watch.lengthNotAllowed": "Length specification is only allowed for array (a) and string (s) types",
+  "@commands.watch.lengthNotAllowed": {
+    "context": "Validation error of the 'w-add' IDE command (shown before the command runs). Option names and syntax are not translated. a and s are type codes."
+  },
+  "commands.watch.lengthRange": "Length must be a positive number between 1 and 1024",
+  "@commands.watch.lengthRange": {
+    "context": "Validation error of the 'w-add' IDE command (shown before the command runs). Option names and syntax are not translated."
+  },
+  "commands.watch.symbolEmpty": "Symbol name cannot be empty",
+  "@commands.watch.symbolEmpty": {
+    "context": "Validation error of the 'w-del' IDE command (shown before the command runs). Option names and syntax are not translated."
+  },
+  "commands.watch.type.array": "byte array",
+  "@commands.watch.type.array": {
+    "context": "The data type of a watch expression, in the output of the 'w-add' and 'w-list' IDE commands."
+  },
+  "commands.watch.type.byte": "8-bit",
+  "@commands.watch.type.byte": {
+    "context": "The data type of a watch expression, in the output of the 'w-add' and 'w-list' IDE commands."
+  },
+  "commands.watch.type.word": "16-bit little-endian",
+  "@commands.watch.type.word": {
+    "context": "The data type of a watch expression, in the output of the 'w-add' and 'w-list' IDE commands."
+  },
+  "commands.watch.type.long": "32-bit little-endian",
+  "@commands.watch.type.long": {
+    "context": "The data type of a watch expression, in the output of the 'w-add' and 'w-list' IDE commands."
+  },
+  "commands.watch.type.wordBe": "16-bit big-endian",
+  "@commands.watch.type.wordBe": {
+    "context": "The data type of a watch expression, in the output of the 'w-add' and 'w-list' IDE commands."
+  },
+  "commands.watch.type.longBe": "32-bit big-endian",
+  "@commands.watch.type.longBe": {
+    "context": "The data type of a watch expression, in the output of the 'w-add' and 'w-list' IDE commands."
+  },
+  "commands.watch.type.flag": "flag",
+  "@commands.watch.type.flag": {
+    "context": "The data type of a watch expression, in the output of the 'w-add' and 'w-list' IDE commands."
+  },
+  "commands.watch.type.string": "string",
+  "@commands.watch.type.string": {
+    "context": "The data type of a watch expression, in the output of the 'w-add' and 'w-list' IDE commands."
+  },
+  "commands.watch.type.unknown": "unknown",
+  "@commands.watch.type.unknown": {
+    "context": "The data type of a watch expression, in the output of the 'w-add' and 'w-list' IDE commands."
+  },
+  "commands.watch.added": "Watch added: {symbol} [{type}]",
+  "@commands.watch.added": {
+    "context": "Output line of the 'w-add' IDE command in the interactive command prompt.",
+    "placeholders": {
+      "symbol": "The symbol name (not translated)",
+      "type": "The data type, such as '16-bit little-endian' (from commands.watch.type.*)"
+    }
+  },
+  "commands.watch.addedLength": "Watch added: {symbol} [{type} ({length, plural, one {# byte} other {# bytes}})]",
+  "@commands.watch.addedLength": {
+    "context": "Output line of the 'w-add' IDE command in the interactive command prompt. For an array or string watch.",
+    "placeholders": {
+      "symbol": "The symbol name (not translated)",
+      "type": "The data type, such as 'byte array' (from commands.watch.type.*)",
+      "length": "The watched length in bytes"
+    }
+  },
+  "commands.watch.removed": "Watch removed: {symbol}",
+  "@commands.watch.removed": {
+    "context": "Output line of the 'w-del' IDE command in the interactive command prompt.",
+    "placeholders": {
+      "symbol": "The symbol name (not translated)"
+    }
+  },
+  "commands.watch.list.none": "No watch expressions defined",
+  "@commands.watch.list.none": {
+    "context": "Output line of the 'w-list' IDE command in the interactive command prompt."
+  },
+  "commands.watch.list.header": "Defined watch expressions:",
+  "@commands.watch.list.header": {
+    "context": "Output line of the 'w-list' IDE command in the interactive command prompt. Heading of the list."
+  },
+  "commands.watch.list.length": "{length, plural, one {# byte} other {# bytes}}",
+  "@commands.watch.list.length": {
+    "context": "Output line of the 'w-list' IDE command in the interactive command prompt. One coloured part of a list line such as '[1]: COUNTER (16-bit little-endian, 2 bytes, addr: $8000)'; the parts are joined with ', '.",
+    "placeholders": {
+      "length": "The watched length in bytes"
+    }
+  },
+  "commands.watch.list.address": "addr: {address}",
+  "@commands.watch.list.address": {
+    "context": "Output line of the 'w-list' IDE command in the interactive command prompt. One coloured part of a list line such as '[1]: COUNTER (16-bit little-endian, 2 bytes, addr: $8000)'; the parts are joined with ', '. 'addr' is short for address.",
+    "maxChars": 20,
+    "placeholders": {
+      "address": "The resolved address, e.g. R0:$8000 (invariant)"
+    }
+  },
+  "commands.watch.list.unresolved": "unresolved",
+  "@commands.watch.list.unresolved": {
+    "context": "Output line of the 'w-list' IDE command in the interactive command prompt. One coloured part of a list line such as '[1]: COUNTER (16-bit little-endian, 2 bytes, addr: $8000)'; the parts are joined with ', '. The symbol has no address (not built yet, or unknown).",
+    "maxChars": 15
+  },
+  "commands.watch.list.count": "{count, plural, one {# watch expression defined} other {# watch expressions defined}}",
+  "@commands.watch.list.count": {
+    "context": "Output line of the 'w-list' IDE command in the interactive command prompt. The summary line.",
+    "placeholders": {
+      "count": "How many watch expressions exist"
+    }
+  },
+  "commands.watch.eraseAll.done": "{count, plural, one {# watch expression removed.} other {# watch expressions removed.}}",
+  "@commands.watch.eraseAll.done": {
+    "context": "Output line of the 'w-ea' IDE command in the interactive command prompt.",
+    "placeholders": {
+      "count": "How many watch expressions were removed"
+    }
+  }
+}

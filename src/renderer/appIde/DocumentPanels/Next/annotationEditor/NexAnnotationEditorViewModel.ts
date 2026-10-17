@@ -1,5 +1,8 @@
 import type { ConfirmRequest } from "@mvc/dialogs/DialogPorts";
 import type { DisassemblyItem } from "@renderer/appIde/disassemblers/common-types";
+import { t } from "@common/i18n/i18n";
+import { withTexts } from "@common/i18n/labels";
+import type { MessageKey } from "@common/i18n/keys.generated";
 
 import {
   getBankAnnotation,
@@ -22,8 +25,15 @@ import {
 
 // ─── Messages ────────────────────────────────────────────────────────────────
 
-export const ANNOTATION_LOAD_FAILED_MESSAGE = "Annotation file could not be loaded.";
-export const ANNOTATIONS_MENU_TITLE = "Annotations";
+/** The warning's text when there is no load or save error to quote (D7: read at display time). */
+export function annotationLoadFailedMessage(): string {
+  return t("panels.next.nex.annotationLoadFailed");
+}
+
+/** The tooltip of the toolbar button that opens the annotations menu. */
+export function annotationsMenuTitle(): string {
+  return t("panels.next.annotations.menuTitle");
+}
 
 // ─── View model shape ────────────────────────────────────────────────────────
 
@@ -198,11 +208,11 @@ function selectWarning(
     !!state.loadError ||
     (!state.loading && !enabled && !state.env.readOnly);
   if (!failed) return { kind: "none" };
-  return {
-    kind: "warning",
-    // --- A save failure is the more recent news, so it wins the tooltip.
-    title: state.saveError ?? state.loadError ?? ANNOTATION_LOAD_FAILED_MESSAGE
-  };
+  // --- A save failure is the more recent news, so it wins the tooltip.
+  const error = state.saveError ?? state.loadError;
+  return error !== undefined
+    ? { kind: "warning", title: error }
+    : withTexts({ kind: "warning" as const }, { title: "panels.next.nex.annotationLoadFailed" });
 }
 
 /**
@@ -327,17 +337,22 @@ function selectMenu(
   enabled: boolean
 ): NexAnnotationMenuEntry[] {
   const rowActionsDisabled = !enabled || actionRange(state, undefined) === undefined;
+  // --- `text` is a getter over its key, so the menu reads the current language whenever it is
+  // --- drawn, even from a view model selected before the language changed (D7).
   const item = (
     id: NexAnnotationMenuAction,
-    text: string,
+    textKey: MessageKey,
     disabled = rowActionsDisabled
-  ): NexAnnotationMenuEntry => ({
-    kind: "item",
-    id,
-    text,
-    disabled,
-    shortcut: SHORTCUT_HINTS.get(id)
-  });
+  ): NexAnnotationMenuEntry =>
+    withTexts(
+      {
+        kind: "item" as const,
+        id,
+        disabled,
+        shortcut: SHORTCUT_HINTS.get(id)
+      },
+      { text: textKey }
+    );
 
   return [
     /*
@@ -347,29 +362,29 @@ function selectMenu(
      * and it is the one a reader following a call chain reaches for most often. Grouping it with the
      * label commands beneath would file it as an annotation action, which it is not.
      */
-    item("goto-definition", "Go to Definition", !canGoToDefinition(state)),
+    item("goto-definition", "panels.next.annotations.menu.goToDefinition", !canGoToDefinition(state)),
     { kind: "separator" },
-    item("manage-labels", "Manage Labels...", !enabled),
-    item("manage-regions", "Manage Regions..."),
+    item("manage-labels", "panels.next.annotations.menu.manageLabels", !enabled),
+    item("manage-regions", "panels.next.annotations.menu.manageRegions"),
     // --- About the whole bank, so like Manage Labels it needs annotations but no row.
-    item("bank-comment", "Bank Comment...", !enabled),
+    item("bank-comment", "panels.next.annotations.menu.bankComment", !enabled),
     { kind: "separator" },
-    item("synopsis", "Synopsis Comment..."),
-    item("comment", "End-of-Line Comment..."),
+    item("synopsis", "panels.next.annotations.menu.synopsis"),
+    item("comment", "panels.next.annotations.menu.comment"),
     { kind: "separator" },
-    item("global-label", "Add/Edit Global Label..."),
-    item("local-label", "Add/Edit Local Label..."),
-    item("operand-label", "Assign Operand Label...", !canAssignOperandLabel(state)),
+    item("global-label", "panels.next.annotations.menu.globalLabel"),
+    item("local-label", "panels.next.annotations.menu.localLabel"),
+    item("operand-label", "panels.next.annotations.menu.operandLabel", !canAssignOperandLabel(state)),
     { kind: "separator" },
-    item("mark-disassembly", "Mark As Disassembly"),
-    item("mark-bytes", "Mark As Bytes"),
-    item("mark-words", "Mark As Words"),
+    item("mark-disassembly", "panels.next.annotations.menu.markDisassembly"),
+    item("mark-bytes", "panels.next.annotations.menu.markBytes"),
+    item("mark-words", "panels.next.annotations.menu.markWords"),
     // --- No shortcut keys for these two (plan D7): rare, and marked once per program.
-    item("mark-copper", "Mark As Copper"),
-    item("mark-dma", "Mark As DMA"),
-    item("mark-skip", "Mark As Skip"),
+    item("mark-copper", "panels.next.annotations.menu.markCopper"),
+    item("mark-dma", "panels.next.annotations.menu.markDma"),
+    item("mark-skip", "panels.next.annotations.menu.markSkip"),
     { kind: "separator" },
-    item("clear", "Clear Row Annotations")
+    item("clear", "panels.next.annotations.menu.clear")
   ];
 }
 
@@ -461,16 +476,15 @@ export function actionOffsetSpan(
  * `window.confirm` rather than the app's own dialog — see `nativeConfirm` in the ports for why.
  */
 export function discardConfirmMessage(state: NexAnnotationEditorState): string {
-  const path = state.env.annotationPath ?? "the annotation file";
+  const path = state.env.annotationPath ?? t("panels.next.annotations.theFile");
   const reason = state.saveError ? ` (${state.saveError})` : "";
-  return (
-    `${path} could not be written${reason}.\n\n` +
-    "Closing this bank discards the annotation changes it still holds. Close anyway?"
-  );
+  return t("panels.next.annotations.discardConfirm", { path, reason });
 }
 
-/** The question asked before a region edit rewrites the whole 16K bank. Text preserved verbatim. */
-export const WHOLE_BANK_CONFIRM_MESSAGE = "This changes the entire 16K bank. Continue?";
+/** The question asked before a region edit rewrites the whole 16K bank. */
+export function wholeBankConfirmMessage(): string {
+  return t("panels.next.annotations.wholeBankConfirm");
+}
 
 /**
  * The confirmation shown before deleting a label, through the app's own dialog.
@@ -485,19 +499,17 @@ export function deleteLabelConfirmRequest(args: {
   referenceCount: number;
 }): ConfirmRequest {
   return {
-    title: "Delete label",
-    lines: [`Delete this ${args.scope === "global" ? "global" : "bank"} label?`],
+    title: t("panels.next.labels.deleteTitle"),
+    lines: [
+      t(args.scope === "global" ? "panels.next.labels.deleteGlobal" : "panels.next.labels.deleteBank")
+    ],
     code: args.name,
     linesAfterCode:
       args.referenceCount > 0
-        ? [
-            `${args.referenceCount} operand reference${
-              args.referenceCount === 1 ? "" : "s"
-            } to it will be cleared.`
-          ]
+        ? [t("panels.next.labels.deleteReferences", { count: args.referenceCount })]
         : undefined,
-    confirmLabel: "Delete",
-    cancelLabel: "Cancel",
+    confirmLabel: t("panels.next.button.delete"),
+    cancelLabel: t("common.button.cancel"),
     danger: true
   };
 }

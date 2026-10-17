@@ -13,6 +13,7 @@ import type { MenuContext } from "./menu-context";
 import { automationMenuItems, settingsMenuItem } from "./file-menu";
 import { tidySeparators } from "./menu-utils";
 import { installCommandLineTool } from "../cli-install";
+import { t } from "@common/i18n/i18n";
 
 export const SYSTEM_MENU_ID = "system_menu";
 export const KLIVE_GITHUB_PAGES = "https://dotneteer.github.io/kliveide";
@@ -38,22 +39,23 @@ export function createAppMenu(context: MenuContext): MenuItemConstructorOptions 
     label: app.name,
     id: SYSTEM_MENU_ID,
     submenu: [
-      aboutItem(context, `About ${app.name}`),
+      aboutItem(context, t("menu.app.about", { appName: app.name })),
       { type: "separator" },
       settingsMenuItem(context),
       ...automationMenuItems(context),
       {
         // --- `/usr/local/bin/klive` (`.plans/UNIT_TESTS_CLI_PLAN.md` D12)
         id: "install_cli",
-        label: "Install Command Line Tool...",
+        label: t("menu.app.installCli"),
         click: async () => await installCommandLineTool(context.focusedWindow())
       },
       { type: "separator" },
-      { role: "hide" },
-      { role: "hideOthers" },
-      { role: "unhide" },
+      // --- Explicit labels, or the OS labels these in its own language (LOCALIZATION_PLAN step 3)
+      { role: "hide", label: t("menu.app.hide", { appName: app.name }) },
+      { role: "hideOthers", label: t("menu.app.hideOthers") },
+      { role: "unhide", label: t("menu.app.showAll") },
       { type: "separator" },
-      { role: "quit" }
+      { role: "quit", label: t("menu.app.quit", { appName: app.name }) }
     ]
   };
 }
@@ -61,19 +63,22 @@ export function createAppMenu(context: MenuContext): MenuItemConstructorOptions 
 export function createHelpMenu(context: MenuContext): MenuItemConstructorOptions {
   const links = context.machineMenus?.helpLinks ?? [];
   const linkItems: MenuItemConstructorOptions[] = links.map((hl) =>
-    hl.label ? { label: hl.label, click: () => shell.openExternal(hl.url) } : { type: "separator" }
+    hl.labelKey || hl.label
+      ? { label: hl.labelKey ? t(hl.labelKey) : hl.label, click: () => shell.openExternal(hl.url) }
+      : { type: "separator" }
   );
+  // --- Machine names are never translated (D9)
   const machineName = context.currentMachine?.displayName ?? "Machine";
   const items: MenuItemConstructorOptions[] = [
-    ...(context.isMac ? [] : [aboutItem(context, "About Klive")]),
+    ...(context.isMac ? [] : [aboutItem(context, t("menu.help.aboutKlive"))]),
     {
       id: "help_home_page",
-      label: "Klive IDE Home Page",
+      label: t("menu.help.homePage"),
       click: () => shell.openExternal(KLIVE_GITHUB_PAGES)
     },
     {
       id: "help_welcome",
-      label: "Welcome Screen",
+      label: t("menu.help.welcome"),
       click: async () => {
         if (context.ideFocus) {
           await getIdeApi().displayDialog(FIRST_STARTUP_DIALOG_IDE);
@@ -85,9 +90,13 @@ export function createHelpMenu(context: MenuContext): MenuItemConstructorOptions
     ...(linkItems.length
       ? ([
           { type: "separator" },
-          { id: "help_machine_links", label: `${machineName} Resources`, submenu: tidySeparators(linkItems) }
+          {
+            id: "help_machine_links",
+            label: t("menu.help.machineResources", { machine: machineName }),
+            submenu: tidySeparators(linkItems)
+          }
         ] as MenuItemConstructorOptions[])
       : [])
   ];
-  return { id: "help_menu", label: "Help", submenu: tidySeparators(items) };
+  return { id: "help_menu", label: t("menu.help.title"), submenu: tidySeparators(items) };
 }

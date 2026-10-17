@@ -15,11 +15,6 @@ export const SLOT0 = 0;
 // --- machine rebuild rather than a hot plug.
 export const SLOT0_ACCEPTED_SIZES_KB = [128, 256, 512];
 
-export const PRISTINE_CARD_HINT = "Use pristine card (or click to select a file)";
-export const CARD_FILE_REQUIRED_HINT = "You must select a card file - click here";
-
-export const INVALID_CARD_TITLE = "Invalid Z88 Card";
-
 export type Z88CardCheckResult = {
   content?: Uint8Array;
   message?: string;
@@ -125,13 +120,6 @@ export function isAcceptedSize(acceptedSizesKb: number[], byteLength: number): b
   return acceptedSizesKb.some((size) => size * 1024 === byteLength);
 }
 
-export function invalidSizeMessage(byteLength: number): string {
-  return (
-    `The size of the selected card is ${byteLength} bytes ` +
-    `(${Math.floor(byteLength / 1024)} KBytes), which is not allowed in this slot.`
-  );
-}
-
 /**
  * The card type a file's own size implies.
  *
@@ -190,9 +178,4 @@ export function configWithSlot0(
   slotState: CardSlotState
 ): MachineConfigSet {
   return { ...config, [MC_Z88_SLOT0]: slotState };
-}
-
-export function titleOf(state: Z88InsertCardState): string {
-  // --- Slot 0 always holds something, so its card is replaced, never inserted.
-  return `${state.slot > SLOT0 ? "Insert" : "Replace"} Z88 Card - Slot ${state.slot}`;
 }

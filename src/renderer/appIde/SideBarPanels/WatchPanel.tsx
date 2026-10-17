@@ -37,6 +37,8 @@ import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { DataRow, EmptyState, formatHex } from "@renderer/controls/data";
 import regStyles from "@renderer/controls/data/Registers.module.scss";
 import { HistoryPresentBanner } from "../debugger/history/HistoryPresentBanner";
+import { useT, type TFunction } from "@common/i18n/useT";
+import type { MessageKey } from "@common/i18n/keys.generated";
 
 /**
  * The type icon's colour.
@@ -65,6 +67,7 @@ type WatchEntry = {
 };
 
 export const WatchPanel = () => {
+  const t = useT();
   const emuApi = useEmuApi();
   // (no machine charset usage)
   const [displayedWatches, setDisplayedWatches] = useState<WatchEntry[]>([]);
@@ -87,11 +90,11 @@ export const WatchPanel = () => {
       const toDisplay: WatchEntry[] = [];
 
       for (const watch of watches) {
-        const briefType = getBriefTypeName(watch.type);
+        const briefType = t(briefTypeKey(watch.type));
         const watchEntry: WatchEntry = {
           info: watch,
           symbol: watch.symbol.toUpperCase(),
-          value: "<unknown>",
+          value: t("panels.side.watch.value.unknown"),
           icon: "warning",
           fill: UNRESOLVED_ICON_FILL,
           typeName: briefType,
@@ -112,7 +115,7 @@ export const WatchPanel = () => {
         const symbolInfo = (compRes as any).symbols?.[watch.symbol.toLowerCase()];
         if (!symbolInfo) {
           // --- Symbol not found
-          watchEntry.value = "<not found>";
+          watchEntry.value = t("panels.side.watch.value.notFound");
           continue;
         }
 
@@ -125,7 +128,7 @@ export const WatchPanel = () => {
             watchEntry.unresolved = false;
             break;
           case ExpressionValueType.Integer:
-            watchEntry.value = formatIntegerWatchValue(watch, mem, symbolInfo);
+            watchEntry.value = formatIntegerWatchValue(t, watch, mem, symbolInfo);
             watchEntry.icon = watch.direct ? "symbol-numeric" : "symbol-field";
             watchEntry.fill = TYPE_ICON_FILL;
             watchEntry.unresolved = false;
@@ -147,7 +150,7 @@ export const WatchPanel = () => {
 
       setDisplayedWatches(toDisplay);
     },
-    []
+    [t]
   );
 
   // --- Update the local state when Redux state changes
@@ -221,33 +224,33 @@ export const WatchPanel = () => {
 
   return (
     <div className={styles.watchPanel}>
-      <HistoryPresentBanner what="Watched memory" />
+      <HistoryPresentBanner subject="watchedMemory" />
       <ContextMenu state={menuState} onClickOutside={() => menuApi.conceal()}>
         <ContextMenuItem
-          text="Break on write"
+          text={t("panels.side.watch.menu.breakOnWrite")}
           iconName="bp-mem-write"
           disabled={menuNoMemory}
           clicked={runFromMenu(() => breakOn(menuTarget!, "w"))}
         />
         <ContextMenuItem
-          text="Break on read"
+          text={t("panels.side.watch.menu.breakOnRead")}
           iconName="bp-mem-read"
           disabled={menuNoMemory}
           clicked={runFromMenu(() => breakOn(menuTarget!, "r"))}
         />
         <ContextMenuItem
-          text="Break on access"
+          text={t("panels.side.watch.menu.breakOnAccess")}
           disabled={menuNoMemory}
           clicked={runFromMenu(() => breakOn(menuTarget!, "rw"))}
         />
         <ContextMenuItem
-          text="Remove watchpoint"
+          text={t("panels.side.watch.menu.removeWatchpoint")}
           disabled={!menuTarget || watchpointsOfWatch(menuTarget.info, breakpoints).length === 0}
           clicked={runFromMenu(() => removeWatchpoints(menuTarget!))}
         />
         <ContextMenuSeparator />
         <ContextMenuItem
-          text="Delete watch"
+          text={t("panels.side.watch.menu.deleteWatch")}
           dangerous
           clicked={runFromMenu(async () => {
             // --- What `w-del` does: drop it from the store, save the project
@@ -257,7 +260,7 @@ export const WatchPanel = () => {
         />
       </ContextMenu>
       {displayedWatches.length === 0 && (
-        <EmptyState message="No watch expressions defined" />
+        <EmptyState message={t("panels.side.watch.empty")} />
       )}
       {displayedWatches.length > 0 && (
         <VirtualizedList
@@ -293,6 +296,7 @@ type WatchItemProps = {
   onMenu: (entry: WatchEntry, e: ReactMouseEvent) => void;
 };
 const WatchItem = memo(({ watch, watchpoints, onMenu }: WatchItemProps) => {
+  const t = useT();
   const dispatch = useDispatch();
   const { ideCommandsService } = useAppServices();
   const rowRef = useTooltipRef<HTMLDivElement>();
@@ -313,8 +317,8 @@ const WatchItem = memo(({ watch, watchpoints, onMenu }: WatchItemProps) => {
         watch.symbol,
         `(${watch.typeName})`,
         ...describeWatchpoints(watchpoints),
-        watchpoints.length ? "Click the watchpoint mark to show it in the Breakpoints panel" : "",
-        "Right-click the row for watchpoints; right-click the icon to delete"
+        watchpoints.length ? t("panels.side.watch.tip.watchpointMark") : "",
+        t("panels.side.watch.tip.rightClick")
       ]
         .filter((line) => line)
         .join("\n")
@@ -376,7 +380,7 @@ const WatchItem = memo(({ watch, watchpoints, onMenu }: WatchItemProps) => {
   ) : null;
 });
 
-function formatIntegerWatchValue(watch: WatchInfo, mem: Uint8Array, symbolInfo: any): string {
+function formatIntegerWatchValue(t: TFunction, watch: WatchInfo, mem: Uint8Array, symbolInfo: any): string {
   try {
     const direct = !!watch.direct;
     const wtype = watch.type ?? "b";
@@ -473,44 +477,44 @@ function formatIntegerWatchValue(watch: WatchInfo, mem: Uint8Array, symbolInfo: 
       case "s": {
         const len = Math.max(0, watch.length ?? 0);
         if (len <= 0) {
-          return "<invalid length>";
+          return t("panels.side.watch.value.invalidLength");
         }
         return readAscii(addr, len);
       }
       case "a": {
         const len = Math.max(0, watch.length ?? 0);
         if (len <= 0) {
-          return "<invalid length>";
+          return t("panels.side.watch.value.invalidLength");
         }
         return readArrayHex(addr, len);
       }
       default:
-        return "<unsupported type>";
+        return t("panels.side.watch.value.unsupportedType");
     }
   } catch (err) {
-    return "<error>";
+    return t("panels.side.watch.value.error");
   }
 }
 
-function getBriefTypeName(type: WatchInfo["type"] | undefined): string {
+function briefTypeKey(type: WatchInfo["type"] | undefined): MessageKey {
   switch (type) {
     case "a":
-      return "byte array";
+      return "panels.side.watch.type.byteArray";
     case "b":
-      return "byte";
+      return "panels.side.watch.type.byte";
     case "w":
-      return "word";
+      return "panels.side.watch.type.word";
     case "-w":
-      return "big-endian word";
+      return "panels.side.watch.type.bigEndianWord";
     case "l":
-      return "dword";
+      return "panels.side.watch.type.dword";
     case "-l":
-      return "big-endian dword";
+      return "panels.side.watch.type.bigEndianDword";
     case "f":
-      return "flag";
+      return "panels.side.watch.type.flag";
     case "s":
-      return "string";
+      return "panels.side.watch.type.string";
     default:
-      return "unknown";
+      return "panels.side.watch.type.unknown";
   }
 }

@@ -1,6 +1,7 @@
 import classnames from "classnames";
 import type { ReactNode } from "react";
 
+import { useT } from "@common/i18n/useT";
 import { Button } from "@renderer/controls/Button";
 import { Checkbox } from "@renderer/controls/Checkbox";
 import { TextInput } from "@renderer/controls/TextInput";
@@ -29,7 +30,9 @@ const STATUS_CLASS = {
 } as const;
 
 /** The dialog body: renders the view model and reports what the user did. */
-export const BorielSetupView = ({ vm, dispatch }: BorielSetupViewProps) => (
+export const BorielSetupView = ({ vm, dispatch }: BorielSetupViewProps) => {
+  const t = useT();
+  return (
   <div className={styles.body}>
     {vm.intro && (
       <div className={styles.intro} data-testid="boriel-intro">
@@ -37,7 +40,7 @@ export const BorielSetupView = ({ vm, dispatch }: BorielSetupViewProps) => (
       </div>
     )}
 
-    <Row label="In use">
+    <Row label={t("dialog.boriel.row.inUse")}>
       <div className={styles.stack}>
         <span
           className={classnames(STATUS_CLASS[vm.status.kind as keyof typeof STATUS_CLASS])}
@@ -52,7 +55,7 @@ export const BorielSetupView = ({ vm, dispatch }: BorielSetupViewProps) => (
         )}
       </div>
     </Row>
-    <Row label="Bundled">
+    <Row label={t("dialog.boriel.row.bundled")}>
       <span className={classnames({ [styles.muted]: !vm.kit.available })} data-testid="boriel-kit">
         {vm.kit.text}
       </span>
@@ -60,17 +63,17 @@ export const BorielSetupView = ({ vm, dispatch }: BorielSetupViewProps) => (
 
     <div className={styles.divider} />
 
-    <Row label="Folder">
+    <Row label={t("dialog.boriel.row.folder")}>
       <div className={styles.grow}>
         <TextInput
           value={vm.folder.value}
-          ariaLabel="Installation folder"
+          ariaLabel={t("dialog.boriel.folder.ariaLabel")}
           width="100%"
           onChange={(folder) => dispatch({ type: "folderEdited", folder })}
         />
       </div>
       <Button
-        text="Browse..."
+        text={t("dialog.boriel.button.browse")}
         variant="secondary"
         disabled={!vm.folder.enabled}
         clicked={() => dispatch({ type: "browseFolderRequested" })}
@@ -78,7 +81,7 @@ export const BorielSetupView = ({ vm, dispatch }: BorielSetupViewProps) => (
     </Row>
     <Row label="">
       <Button
-        text="Use an existing installation..."
+        text={t("dialog.boriel.button.useExisting")}
         variant="secondary"
         disabled={!vm.useExisting.enabled}
         clicked={() => dispatch({ type: "useExistingRequested" })}
@@ -89,7 +92,7 @@ export const BorielSetupView = ({ vm, dispatch }: BorielSetupViewProps) => (
       <Row label="">
         <div className={styles.stack}>
           <Checkbox
-            label="Use Boriel BASIC to build BASIC programs"
+            label={t("dialog.boriel.useBoriel.label")}
             initialValue={vm.useBoriel.value}
             enabled={vm.useBoriel.enabled}
             onChange={(value) => dispatch({ type: "useBorielToggled", value })}
@@ -102,7 +105,7 @@ export const BorielSetupView = ({ vm, dispatch }: BorielSetupViewProps) => (
     {vm.dontAskAgain.visible && (
       <Row label="">
         <Checkbox
-          label="Don't offer this again"
+          label={t("dialog.boriel.dontAskAgain")}
           initialValue={vm.dontAskAgain.value}
           enabled={vm.dontAskAgain.enabled}
           onChange={(value) => dispatch({ type: "dontAskAgainToggled", value })}
@@ -127,4 +130,5 @@ export const BorielSetupView = ({ vm, dispatch }: BorielSetupViewProps) => (
       {vm.licenceNote}
     </div>
   </div>
-);
+  );
+};

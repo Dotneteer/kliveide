@@ -1,12 +1,14 @@
 import { DataPanel, EmptyState, PanelHeader } from "@renderer/controls/data";
-import { NOT_IMPLEMENTED_MESSAGE } from "./notImplemented";
+import { notImplementedMessage } from "./notImplemented";
+import { useT } from "@common/i18n/useT";
 import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 
 const ShcFileViewerPanel = ({}: DocumentProps) => {
+  const t = useT();
   return (
     <DataPanel>
-      <PanelHeader title=".SHC Viewer" />
-      <EmptyState message={NOT_IMPLEMENTED_MESSAGE} />
+      <PanelHeader title={t("panels.next.viewerTitle", { extension: ".SHC" })} />
+      <EmptyState message={notImplementedMessage()} />
     </DataPanel>
   );
 };

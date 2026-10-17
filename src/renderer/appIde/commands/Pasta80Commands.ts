@@ -5,6 +5,7 @@ import type { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
 import { commandError, commandSuccessWith, IdeCommandBase, writeMessage } from "../services/ide-commands";
 import { PASTA80_ALL, PASTA80_INSTALL_FOLDER } from "@main/pasta80-integration/pasta80-config";
 import { SJASMP_INSTALL_FOLDER } from "@main/sjasmp-integration/sjasmp-config";
+import { t } from "@common/i18n/i18n";
 
 const PASTA80_CFG_FILENAME = ".pasta80.cfg";
 
@@ -15,7 +16,9 @@ type ResetPasta80CommandArgs = {
 
 export class ResetPasta80Command extends IdeCommandBase<ResetPasta80CommandArgs> {
   readonly id = "pasta80-reset";
-  readonly description = "Resets pasta80 settings with the provided installation folder.";
+  get description() {
+    return t("commands.pasta80.resetDescription");
+  }
   readonly usage = "pasta80-reset <Full path to the pasta80 installation folder> [-p]";
   readonly aliases = ["p80r"];
 
@@ -32,13 +35,13 @@ export class ResetPasta80Command extends IdeCommandBase<ResetPasta80CommandArgs>
     if (args["-p"]) {
       const state = context.store.getState();
       if (!state.project?.isKliveProject) {
-        return commandError("You need a Klive project loaded when running this command with '-p'.");
+        return commandError(t("commands.common.projectOptionNeedsProject"));
       }
     }
 
     if (!args.pasta80Folder) {
       await context.service.ideCommandsService.executeCommand(`set ${PASTA80_ALL}`);
-      return commandSuccessWith("pasta80 settings removed");
+      return commandSuccessWith(t("commands.pasta80.removed"));
     }
 
     // --- Step 1: Check that sjasmplus is configured — it is pasta80's assembler backend
@@ -52,10 +55,7 @@ export class ResetPasta80Command extends IdeCommandBase<ResetPasta80CommandArgs>
       mergedSettings
     )?.toString();
     if (!sjasmInstallFolder || sjasmInstallFolder.trim() === "") {
-      return commandError(
-        "SjasmPlus is not configured. Please run 'sjasmp-reset' first — " +
-        "pasta80 requires SjasmPlus as its assembler backend."
-      );
+      return commandError(t("commands.pasta80.sjasmpMissing"));
     }
 
     // --- Step 2: Derive the sjasmplus executable path from the install folder
@@ -81,36 +81,24 @@ export class ResetPasta80Command extends IdeCommandBase<ResetPasta80CommandArgs>
         "# PASTA/80 config file — created by Klive IDE\n" +
         `assembler = ${sjasmExecutable}\n`;
       await context.mainApi.saveTextFile(PASTA80_CFG_FILENAME, newCfg, "home:");
-      writeMessage(
-        context.output,
-        `Created ~/.pasta80.cfg with assembler = ${sjasmExecutable}`,
-        "bright-blue"
-      );
+      writeMessage(context.output, t("commands.pasta80.cfgCreated", { path: sjasmExecutable }), "bright-blue");
     } else {
       // File exists — check the assembler setting
       const assemblerMatch = cfgContent.match(/^\s*assembler\s*=\s*(.+)$/m);
       if (!assemblerMatch) {
-        writeMessage(
-          context.output,
-          `Warning: ~/.pasta80.cfg exists but has no 'assembler' setting. ` +
-          `pasta80 will look for 'sjasmplus' on PATH. ` +
-          `Consider adding: assembler = ${sjasmExecutable}`,
-          "yellow"
-        );
+        writeMessage(context.output, t("commands.pasta80.cfgNoAssembler", { path: sjasmExecutable }), "yellow");
       } else {
         const cfgPath = assemblerMatch[1].trim();
         if (cfgPath !== sjasmExecutable) {
           writeMessage(
             context.output,
-            `Warning: ~/.pasta80.cfg has 'assembler = ${cfgPath}' ` +
-            `but the configured SjasmPlus path is '${sjasmExecutable}'. ` +
-            `Update ~/.pasta80.cfg if this is wrong.`,
+            t("commands.pasta80.cfgMismatch", { cfgPath, path: sjasmExecutable }),
             "yellow"
           );
         }
       }
     }
 
-    return commandSuccessWith(`pasta80 installation folder set to ${args.pasta80Folder}`);
+    return commandSuccessWith(t("commands.pasta80.folderSet", { path: args.pasta80Folder }));
   }
 }

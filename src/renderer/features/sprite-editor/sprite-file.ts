@@ -1,3 +1,4 @@
+import { t } from "@common/i18n/i18n";
 import { SPRITE_SIZE } from "./sprite-raster";
 
 /**
@@ -53,7 +54,7 @@ export function parseSprFile(
   if (bytes.length === 0) {
     return {
       sprites: [createEmptySprite(fillIndex)],
-      warning: "The file is empty; started with one blank sprite."
+      warning: t("panels.spriteEditor.file.empty")
     };
   }
 
@@ -73,16 +74,14 @@ export function parseSprFile(
     padded.set(trailing, 0);
     return {
       sprites: [padded],
-      warning: `The file holds only ${remainder} byte(s); padded to one sprite.`
+      warning: t("panels.spriteEditor.file.padded", { count: remainder })
     };
   }
 
   return {
     sprites,
     trailing,
-    warning:
-      `${remainder} trailing byte(s) are not part of a complete sprite. ` +
-      `They are preserved and written back unchanged.`
+    warning: t("panels.spriteEditor.file.trailing", { count: remainder })
   };
 }
 

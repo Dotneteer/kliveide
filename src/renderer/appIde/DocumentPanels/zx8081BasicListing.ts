@@ -3,6 +3,7 @@ import type { CharDescriptor } from "@common/machines/info-types";
 import { toHexa2 } from "../services/ide-commands";
 import { BasicProgramBuffer, getMemoryWord, SpectrumColor } from "./BasicLine";
 import type { BasicListing } from "./basicListing";
+import { t } from "@common/i18n/i18n";
 
 /*
  * The ZX81 and ZX80 BASIC detokenizers: a program's bytes into the lines the BASIC Listing view
@@ -199,7 +200,7 @@ export function decodeZx8081Program(
     buffer.paper("white");
     buffer.ink("red");
     buffer.inverse(true);
-    buffer.writeLine("*** BASIC code corrupted or partially loaded ***");
+    buffer.writeLine(t("panels.doc.basic.corrupted"));
   }
 
   return { lines: buffer.getContents(), buffer, corrupted, lineCount };

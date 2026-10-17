@@ -41,6 +41,12 @@ export type AppState = {
 
   /** Selected accent id (see theming/tokens/palette.ts). */
   accent?: string;
+  /**
+   * The display language every window shows (`.plans/LOCALIZATION_PLAN.md` §5): main resolves the
+   * `ideViewOptions.language` setting (and "system") and publishes the result, so main and both
+   * renderers agree.
+   */
+  uiLanguage?: import("@common/i18n/languages").UiLanguageState;
   globalSettings?: Record<string, any>;
   ideView?: IdeView;
   ideSettings?: IdeSettings;

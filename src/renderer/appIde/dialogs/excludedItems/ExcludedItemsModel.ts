@@ -102,7 +102,3 @@ export const reduce: UiReducer<ExcludedItemsState, ExcludedItemsEvent> = (state,
 export function excludedIdsOf(state: ExcludedItemsState): string[] {
   return state.projectItems.map((item) => item.id);
 }
-
-export function projectListLabelOf(state: ExcludedItemsState): string {
-  return `${state.env.projectName} Excludes:`;
-}

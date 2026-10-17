@@ -13,6 +13,7 @@ import {
   validationError,
   writeInfoMessage
 } from "@renderer/appIde/services/ide-commands";
+import { t } from "@common/i18n/i18n";
 
 /** "on"/"off" to a value; undefined for anything else */
 export function parseBeamSwitch(arg: string | undefined): boolean | undefined {
@@ -27,9 +28,9 @@ export function parseBeamSwitch(arg: string | undefined): boolean | undefined {
  */
 export class BeamCommand extends IdeCommandBase<{ state?: string }> {
   readonly id = "beam";
-  readonly description =
-    "Shows or hides the raster beam's position on the emulator screen while the machine is paused. " +
-    "Without an argument, tells whether it is shown.";
+  get description() {
+    return t("commands.beam.description");
+  }
   readonly usage = "beam [on|off]";
   readonly argumentInfo: CommandArgumentInfo = {
     optional: [{ name: "state", type: "string" }]
@@ -37,22 +38,22 @@ export class BeamCommand extends IdeCommandBase<{ state?: string }> {
 
   async validateCommandArgs(_context: IdeCommandContext, args: { state?: string }): Promise<ValidationMessage[]> {
     if (args.state === undefined || parseBeamSwitch(args.state) !== undefined) return [];
-    return [validationError(`Use 'on' or 'off', not '${args.state}'`)];
+    return [validationError(t("commands.beam.onOrOff", { value: args.state }))];
   }
 
   async execute(context: IdeCommandContext, args: { state?: string }): Promise<IdeCommandResult> {
     // --- No raster beam to show: the Z88's LCD, the ZX80/81, the C64
     const machineId = context.service.machineService.getMachineInfo()?.machine?.machineId;
     if (!BEAM_POSITION_MACHINE_IDS.includes(machineId)) {
-      return commandError("This machine has no raster beam to show");
+      return commandError(t("commands.beam.noBeam"));
     }
     const value = parseBeamSwitch(args?.state);
-    if (args?.state !== undefined && value === undefined) return commandError(`Use 'on' or 'off', not '${args.state}'`);
+    if (args?.state !== undefined && value === undefined) return commandError(t("commands.beam.onOrOff", { value: args.state }));
     if (value !== undefined) {
       await context.mainApi.setGlobalSettingsValue(SETTING_EMU_SHOW_BEAM_POSITION, value);
     }
     const shown = value ?? !!getGlobalSetting(context.store, SETTING_EMU_SHOW_BEAM_POSITION);
-    writeInfoMessage(context.output, `Beam position: ${shown ? "shown while paused" : "hidden"}`);
+    writeInfoMessage(context.output, shown ? t("commands.beam.shown") : t("commands.beam.hidden"));
     return commandSuccess;
   }
 }

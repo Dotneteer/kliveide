@@ -3,6 +3,7 @@ import type { MemoryInfo } from "@common/messaging/EmuApi";
 import type { DropdownOption } from "@renderer/controls/Dropdown";
 import { MF_BANK, MF_ROM } from "@common/machines/constants";
 import { machineRegistry } from "@common/machines/machine-registry";
+import { t } from "@common/i18n/i18n";
 
 export type DumpViewMode = "8x1" | "8x2" | "16x1";
 
@@ -23,10 +24,11 @@ export type CachedRefreshState = {
   decimalView: boolean;
 };
 
-export const viewModeOptions: DropdownOption[] = [
-  { value: "8x1", label: "8B / 1 col" },
-  { value: "8x2", label: "8B / 2 col" },
-  { value: "16x1", label: "16B / 1 col" }
+/** The memory view's layout choices, translated at display (call it while rendering) */
+export const viewModeOptions = (): DropdownOption[] => [
+  { value: "8x1", label: t("panels.feature.memory.layout8x1") },
+  { value: "8x2", label: t("panels.feature.memory.layout8x2") },
+  { value: "16x1", label: t("panels.feature.memory.layout16x1") }
 ];
 
 export function resolveViewMode(viewMode?: string, twoColumns?: boolean): DumpViewMode {

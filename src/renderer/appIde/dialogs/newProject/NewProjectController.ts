@@ -1,17 +1,17 @@
+import { t } from "@common/i18n/i18n";
+import type { MessageKey } from "@common/i18n/keys.generated";
 import { LatestRun } from "@mvc/core/LatestRun";
 import { UiController } from "@mvc/core/UiController";
 import { messageOf } from "@mvc/core/errors";
 
 import type { NewProjectIntent } from "./NewProjectIntents";
 import {
-  CREATE_ERROR_TITLE,
   NEW_PROJECT_FOLDER_SETTINGS_KEY,
   MACHINE_TYPES,
   PROJECT_CREATION_TIMEOUT_MS,
   defaultModelOf,
   initialState,
   isComplete,
-  openFolderErrorMessage,
   reduce,
   requestOf,
   withTimeout,
@@ -179,27 +179,29 @@ export class NewProjectController extends UiController<
     try {
       const path = await this.step(
         this.ports.service.createProject(request),
-        "Creating the Klive project"
+        "dialog.newProject.timeout.create"
       );
       if (!token.isCurrent()) return;
 
       const errorMessage = await this.step(
         this.ports.service.openFolder(path),
-        "Opening the new Klive project"
+        "dialog.newProject.timeout.open"
       );
       if (!token.isCurrent()) return;
       // --- The main process reports this failure as a value, not a rejection.
-      if (errorMessage) throw new Error(openFolderErrorMessage(errorMessage));
+      if (errorMessage) {
+        throw new Error(t("dialog.newProject.error.openFolder", { error: errorMessage }));
+      }
 
       await this.step(
         this.ports.service.ensureProjectLoaded(),
-        "Loading the new Klive project"
+        "dialog.newProject.timeout.loadProject"
       );
       if (!token.isCurrent()) return;
 
       await this.step(
         this.ports.service.ensureWorkspaceLoaded(),
-        "Loading the new Klive workspace"
+        "dialog.newProject.timeout.loadWorkspace"
       );
       if (!token.isCurrent()) return;
 
@@ -220,14 +222,15 @@ export class NewProjectController extends UiController<
     }
   }
 
-  private step<T>(work: Promise<T>, operation: string): Promise<T> {
-    return withTimeout(work, this.timeoutMs, operation);
+  // --- Each step names its own whole timeout sentence, formatted when the step starts.
+  private step<T>(work: Promise<T>, timeoutKey: MessageKey): Promise<T> {
+    return withTimeout(work, this.timeoutMs, t(timeoutKey, { seconds: this.timeoutMs / 1000 }));
   }
 
   private async report(error: unknown): Promise<void> {
     console.error("New Klive project creation failed", error);
     try {
-      await this.ports.service.notify("error", CREATE_ERROR_TITLE, messageOf(error));
+      await this.ports.service.notify("error", t("dialog.newProject.error.title"), messageOf(error));
     } catch (messageBoxError) {
       // --- A message box that cannot be shown must not replace the failure it
       // --- was trying to report.

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi, type Mock } from "vitest";
 
+import { t } from "@common/i18n/i18n";
 import type {
   BorielInstallResult,
   BorielSetupStatus
@@ -72,7 +73,7 @@ describe("opening", () => {
     expect(h.vm.folder.value).toBe(HOME_FOLDER);
     expect(h.vm.primary).toEqual({ label: "Install", enabled: true });
     expect(h.vm.kit.text).toBe("Boriel BASIC 2.0.0-beta25 (bundled with Klive)");
-    expect(h.vm.licenceNote).toBe(LICENCE_NOTE);
+    expect(h.vm.licenceNote).toBe(t(LICENCE_NOTE));
   });
 
   it("proposes the configured installation's folder and names the action", async () => {

@@ -3,6 +3,7 @@ import { Icon } from "@renderer/controls/Icon";
 import { useSelector } from "@renderer/core/RendererProvider";
 import { useMainApi } from "@renderer/core/MainApi";
 import { reportMessagingError } from "@renderer/reportError";
+import { useT } from "@common/i18n/useT";
 import { MC_DISK_SUPPORT, MI_TIMEX } from "@common/machines/constants";
 import { MEDIA_DOCK, MEDIA_TAPE } from "@common/structs/project-const";
 import { getTimexModel } from "@emu/machines/timex/timexModels";
@@ -19,6 +20,8 @@ import { describeSpectrumMedia, SpectrumMediaCard } from "./spectrumMedia";
  * `ejectMediaFile`), so the dialogs, confirmations, menus and project all behave the same.
  */
 export const SpectrumMediaToolArea = () => {
+  // --- The cards' titles are translated when described, so a language change re-renders them
+  useT();
   const media = useSelector((s) => s.media);
   const diskDrives = useSelector((s) => s.emulatorState?.config?.[MC_DISK_SUPPORT] ?? 0);
   // --- The Timex 2068s' DOCK
@@ -36,6 +39,7 @@ export const SpectrumMediaToolArea = () => {
 };
 
 const MediaCard = ({ card }: { card: SpectrumMediaCard }) => {
+  const t = useT();
   const mainApi = useMainApi();
   const inserted = !!card.fileName;
   const kind = card.mediaId === MEDIA_TAPE ? "tape" : card.mediaId === MEDIA_DOCK ? "cartridge" : "disk";
@@ -65,9 +69,7 @@ const MediaCard = ({ card }: { card: SpectrumMediaCard }) => {
           fill="--color-display"
         />
         {/* --- The drive letter, on the disk cards only */}
-        {card.mediaId !== MEDIA_TAPE && card.mediaId !== MEDIA_DOCK && (
-          <span className={styles.driveLetter}>{card.title.slice(-1)}</span>
-        )}
+        {card.driveLetter && <span className={styles.driveLetter}>{card.driveLetter}</span>}
       </span>
       {/*
        * Truncated at the *start*: the end of a name (and its extension) is the part that tells
@@ -81,7 +83,7 @@ const MediaCard = ({ card }: { card: SpectrumMediaCard }) => {
         <bdi>{card.fileName ?? card.emptyText}</bdi>
       </span>
       {card.writeProtected && (
-        <span className={styles.badge} title="Write-protected">
+        <span className={styles.badge} title={t("emu.media.writeProtected")}>
           <Icon iconName="lock" width={12} height={12} fill="--color-display-hilite" />
         </span>
       )}
@@ -89,8 +91,8 @@ const MediaCard = ({ card }: { card: SpectrumMediaCard }) => {
         <button
           type="button"
           className={styles.button}
-          title={`Eject ${kind}`}
-          aria-label={`Eject ${kind} (${card.title})`}
+          title={t("emu.media.eject.title", { kind })}
+          aria-label={t("emu.media.eject.label", { kind, card: card.title })}
           onClick={eject}
         >
           <Icon iconName="@eject" width={14} height={14} />
@@ -99,8 +101,12 @@ const MediaCard = ({ card }: { card: SpectrumMediaCard }) => {
       <button
         type="button"
         className={styles.button}
-        title={inserted ? `Change ${kind}...` : `Insert ${kind}...`}
-        aria-label={`${inserted ? "Change" : "Insert"} ${kind} (${card.title})`}
+        title={inserted ? t("emu.media.change.title", { kind }) : t("emu.media.insert.title", { kind })}
+        aria-label={
+          inserted
+            ? t("emu.media.change.label", { kind, card: card.title })
+            : t("emu.media.insert.label", { kind, card: card.title })
+        }
         onClick={insert}
       >
         <Icon iconName={inserted ? "@replace" : "@upload"} width={14} height={14} />

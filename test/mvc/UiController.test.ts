@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { deferred } from "./deferred";
 import { TestController, selectorCalls, type TestPorts } from "./testController";
+import { setLanguage } from "@common/i18n/i18n";
 
 function createController(load?: TestPorts["load"]) {
   const ports: TestPorts = { load: vi.fn(load ?? (async (key: string) => `value:${key}`)) };
@@ -158,5 +159,26 @@ describe("UiController", () => {
     // --- Only the loadStarted before dispose reached the store
     expect(controller.state.value).toBe("");
     expect(listener).toHaveBeenCalledTimes(1);
+  });
+
+  it("builds a fresh view model and notifies subscribers when the display language changes", () => {
+    // --- Selectors word their texts with t(): a language switch must reach the view even when the
+    // --- state did not change (.plans/LOCALIZATION_PLAN.md step 7)
+    const { controller } = createController();
+    const listener = vi.fn();
+    const unsubscribe = controller.subscribe(listener);
+    const before = controller.viewModel;
+    expect(controller.viewModel).toBe(before);
+
+    setLanguage("qps");
+    expect(listener).toHaveBeenCalled();
+    expect(controller.viewModel).not.toBe(before);
+    const after = controller.viewModel;
+    expect(controller.viewModel).toBe(after);
+
+    unsubscribe();
+    listener.mockClear();
+    setLanguage("en");
+    expect(listener).not.toHaveBeenCalled();
   });
 });

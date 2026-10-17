@@ -1,0 +1,559 @@
+{
+  "gfxCommon.graphics.preset.font": "Font (8×8, 96 chars)",
+  "@gfxCommon.graphics.preset.font": {
+    "context": "Graphics finder (memory shown as bitmaps), Presets dropdown in the toolbar: show memory as the ZX Spectrum 48K ROM's character set, 8×8 pixel characters, 96 of them.",
+    "maxChars": 30
+  },
+  "gfxCommon.graphics.preset.udg": "UDG (8×8, 21)",
+  "@gfxCommon.graphics.preset.udg": {
+    "context": "Graphics finder, Presets dropdown in the toolbar: show memory as the 21 user-defined graphics (UDG, a ZX Spectrum term; keep the abbreviation) of 8×8 pixels.",
+    "maxChars": 30
+  },
+  "gfxCommon.graphics.preset.screen": "Screen ($4000)",
+  "@gfxCommon.graphics.preset.screen": {
+    "context": "Graphics finder, Presets dropdown in the toolbar: show memory as the ZX Spectrum's screen (display file) at address $4000.",
+    "maxChars": 30
+  },
+  "gfxCommon.graphics.candidate.font": "Font at {address} (96 characters)",
+  "@gfxCommon.graphics.candidate.font": {
+    "context": "Graphics finder, side list of places where graphics probably are (a heuristic guess): a character set of 96 characters found in memory. Clicking it shows those bytes.",
+    "placeholders": {
+      "address": "The start address in hex, e.g. $3D00"
+    }
+  },
+  "gfxCommon.graphics.candidate.udg": "UDG area at {address} (21 graphics)",
+  "@gfxCommon.graphics.candidate.udg": {
+    "context": "Graphics finder, side list of places where graphics probably are: the ZX Spectrum's user-defined graphics area (UDG, keep the abbreviation), which holds 21 graphics.",
+    "placeholders": {
+      "address": "The start address in hex, e.g. $FF58"
+    }
+  },
+  "gfxCommon.graphics.candidate.data": "Read-only data at {address}, {bytes, plural, one {# byte} other {# bytes}}, read {reads, number}×",
+  "@gfxCommon.graphics.candidate.data": {
+    "context": "Graphics finder, side list of places where graphics probably are: a run of data bytes the program read but never wrote or executed. '×' after the count means 'times'.",
+    "placeholders": {
+      "address": "The start address in hex, e.g. $C200",
+      "bytes": "The length of the run in bytes",
+      "reads": "How many times the CPU read those bytes in total"
+    }
+  },
+
+  "gfxCommon.sprite.type.anchor": "anchor",
+  "@gfxCommon.sprite.type.anchor": {
+    "context": "Sprite Inspector (ZX Spectrum Next), Sprites table, Type column: an anchor sprite (a sprite positioned on its own, which relative sprites attach to). Lower case.",
+    "maxChars": 14
+  },
+  "gfxCommon.sprite.type.anchor4": "anchor·4B",
+  "@gfxCommon.sprite.type.anchor4": {
+    "context": "Sprite Inspector (ZX Spectrum Next), Sprites table, Type column: an anchor sprite defined by 4 attribute bytes instead of 5. '4B' abbreviates '4 bytes'; '·' separates the two parts.",
+    "maxChars": 14
+  },
+  "gfxCommon.sprite.type.relComposite": "rel·composite",
+  "@gfxCommon.sprite.type.relComposite": {
+    "context": "Sprite Inspector (ZX Spectrum Next), Sprites table, Type column: a relative sprite of a composite sprite (positioned relative to its anchor, not scaled or rotated with it). 'rel' abbreviates 'relative'.",
+    "maxChars": 14
+  },
+  "gfxCommon.sprite.type.relUnified": "rel·unified",
+  "@gfxCommon.sprite.type.relUnified": {
+    "context": "Sprite Inspector (ZX Spectrum Next), Sprites table, Type column: a relative sprite of a unified sprite (scaled, mirrored and rotated together with its anchor). 'rel' abbreviates 'relative'.",
+    "maxChars": 14
+  },
+
+  "gfxCommon.sprite.diag.visibleBitClear.chip": "hidden: visible bit clear",
+  "@gfxCommon.sprite.diag.visibleBitClear.chip": {
+    "context": "Sprite Inspector (ZX Spectrum Next): short reason chip in the Sprites table saying why a sprite is not shown. Lower case, like the other chips.",
+    "maxChars": 36
+  },
+  "gfxCommon.sprite.diag.visibleBitClear.sentence": "Hidden: its visible bit (attr3 bit 7) is clear.",
+  "@gfxCommon.sprite.diag.visibleBitClear.sentence": {
+    "context": "Sprite Inspector (ZX Spectrum Next): the inspector's sentence for why the selected sprite is not shown. 'attr3' is the hardware name of attribute byte 3; keep it."
+  },
+  "gfxCommon.sprite.diag.noAnchor.chip": "hidden: no anchor",
+  "@gfxCommon.sprite.diag.noAnchor.chip": {
+    "context": "Sprite Inspector (ZX Spectrum Next): short reason chip in the Sprites table. A relative sprite has no anchor sprite before it to attach to.",
+    "maxChars": 36
+  },
+  "gfxCommon.sprite.diag.noAnchor.sentence": "Hidden: this relative sprite has no anchor before it, so it composes onto an invisible, all-zero anchor.",
+  "@gfxCommon.sprite.diag.noAnchor.sentence": {
+    "context": "Sprite Inspector (ZX Spectrum Next): the inspector's sentence for why the selected sprite is not shown."
+  },
+  "gfxCommon.sprite.diag.anchorHidden.chip": "hidden: anchor #{anchor} not visible",
+  "@gfxCommon.sprite.diag.anchorHidden.chip": {
+    "context": "Sprite Inspector (ZX Spectrum Next): short reason chip in the Sprites table. The relative sprite's anchor sprite is itself not visible.",
+    "maxChars": 36,
+    "placeholders": {
+      "anchor": "The anchor sprite's index, e.g. 12"
+    }
+  },
+  "gfxCommon.sprite.diag.anchorHidden.sentence": "Hidden: its anchor, sprite #{anchor}, is not visible.",
+  "@gfxCommon.sprite.diag.anchorHidden.sentence": {
+    "context": "Sprite Inspector (ZX Spectrum Next): the inspector's sentence for why the selected sprite is not shown.",
+    "placeholders": {
+      "anchor": "The anchor sprite's index, e.g. 12"
+    }
+  },
+  "gfxCommon.sprite.diag.spritesDisabled.chip": "sprites disabled ($15 bit 0)",
+  "@gfxCommon.sprite.diag.spritesDisabled.chip": {
+    "context": "Sprite Inspector (ZX Spectrum Next): short reason chip in the Sprites table. The whole sprite layer is switched off by NextReg $15 bit 0 (keep '$15 bit 0').",
+    "maxChars": 36
+  },
+  "gfxCommon.sprite.diag.spritesDisabled.sentence": "Hidden: the sprite layer is off (NextReg $15 bit 0 is clear).",
+  "@gfxCommon.sprite.diag.spritesDisabled.sentence": {
+    "context": "Sprite Inspector (ZX Spectrum Next): the inspector's sentence for why the selected sprite is not shown. 'NextReg $15' is a hardware register name; keep it."
+  },
+  "gfxCommon.sprite.diag.offScreen.chip": "off screen",
+  "@gfxCommon.sprite.diag.offScreen.chip": {
+    "context": "Sprite Inspector (ZX Spectrum Next): short reason chip in the Sprites table. The sprite is positioned outside the visible area.",
+    "maxChars": 36
+  },
+  "gfxCommon.sprite.diag.offScreen.sentence": "Hidden: it is at ({x}, {y}), outside the 320×256 sprite space.",
+  "@gfxCommon.sprite.diag.offScreen.sentence": {
+    "context": "Sprite Inspector (ZX Spectrum Next): the inspector's sentence for why the selected sprite is not shown.",
+    "placeholders": {
+      "x": "The sprite's X coordinate in sprite space, e.g. 320",
+      "y": "The sprite's Y coordinate in sprite space, e.g. 40"
+    }
+  },
+  "gfxCommon.sprite.diag.outsideClip.chip": "outside clip window",
+  "@gfxCommon.sprite.diag.outsideClip.chip": {
+    "context": "Sprite Inspector (ZX Spectrum Next): short reason chip in the Sprites table. The sprite lies outside the sprite clip window (the rectangle the hardware draws sprites in).",
+    "maxChars": 36
+  },
+  "gfxCommon.sprite.diag.outsideClip.sentence": "Hidden: it lies entirely outside the sprite clip window.",
+  "@gfxCommon.sprite.diag.outsideClip.sentence": {
+    "context": "Sprite Inspector (ZX Spectrum Next): the inspector's sentence for why the selected sprite is not shown."
+  },
+  "gfxCommon.sprite.diag.partlyClipped.chip": "partly clipped",
+  "@gfxCommon.sprite.diag.partlyClipped.chip": {
+    "context": "Sprite Inspector (ZX Spectrum Next): short warning chip in the Sprites table. Part of the sprite is cut off by the clip window or the screen edge.",
+    "maxChars": 36
+  },
+  "gfxCommon.sprite.diag.partlyClipped.sentence": "Partly clipped: {fraction, number, ::percent} of it is outside the clip window or the screen.",
+  "@gfxCommon.sprite.diag.partlyClipped.sentence": {
+    "context": "Sprite Inspector (ZX Spectrum Next): the inspector's warning sentence for the selected sprite.",
+    "placeholders": {
+      "fraction": "The clipped part of the sprite, shown as a percentage, e.g. 25%"
+    }
+  },
+  "gfxCommon.sprite.diag.patternTransparent.chip": "pattern is all transparent",
+  "@gfxCommon.sprite.diag.patternTransparent.chip": {
+    "context": "Sprite Inspector (ZX Spectrum Next): short warning chip in the Sprites table. Every pixel of the sprite's pattern (its image) is the transparent colour.",
+    "maxChars": 36
+  },
+  "gfxCommon.sprite.diag.patternTransparent.sentence": "Its pattern is entirely the transparency colour ($4B), so nothing is drawn.",
+  "@gfxCommon.sprite.diag.patternTransparent.sentence": {
+    "context": "Sprite Inspector (ZX Spectrum Next): the inspector's warning sentence. '$4B' is the NextReg that holds the sprite transparency colour; keep it."
+  },
+  "gfxCommon.sprite.diag.patternBlank.chip": "pattern is blank",
+  "@gfxCommon.sprite.diag.patternBlank.chip": {
+    "context": "Sprite Inspector (ZX Spectrum Next): short warning chip in the Sprites table. The sprite's pattern (its image) is one solid colour.",
+    "maxChars": 36
+  },
+  "gfxCommon.sprite.diag.patternBlank.sentence": "Its pattern is a single solid colour.",
+  "@gfxCommon.sprite.diag.patternBlank.sentence": {
+    "context": "Sprite Inspector (ZX Spectrum Next): the inspector's warning sentence for the selected sprite."
+  },
+  "gfxCommon.sprite.diag.staleAttr4.chip": "4-byte: attr4 ignored",
+  "@gfxCommon.sprite.diag.staleAttr4.chip": {
+    "context": "Sprite Inspector (ZX Spectrum Next): short info chip in the Sprites table. A sprite defined by 4 attribute bytes: its stored fifth byte, attr4 (hardware name, keep it), is not used.",
+    "maxChars": 36
+  },
+  "gfxCommon.sprite.diag.staleAttr4.sentence": "A 4-byte sprite: its stored attr4 ({value}) is left over from an earlier upload and ignored. It would change this sprite if attr3 bit 6 were set.",
+  "@gfxCommon.sprite.diag.staleAttr4.sentence": {
+    "context": "Sprite Inspector (ZX Spectrum Next): the inspector's info sentence. 'attr3'/'attr4' are hardware names of attribute bytes 3 and 4; keep them.",
+    "placeholders": {
+      "value": "The stored byte in hex, e.g. $0A"
+    }
+  },
+
+  "gfxCommon.tilemap.diag.disabled.chip": "tilemap off",
+  "@gfxCommon.tilemap.diag.disabled.chip": {
+    "context": "Tilemap Inspector (ZX Spectrum Next): short info chip in the strip of register values. The tilemap layer is disabled.",
+    "maxChars": 30
+  },
+  "gfxCommon.tilemap.diag.disabled.sentence": "The tilemap is disabled ($6B bit 7 is clear); the inspector shows what it would draw.",
+  "@gfxCommon.tilemap.diag.disabled.sentence": {
+    "context": "Tilemap Inspector (ZX Spectrum Next): tooltip of the chip and the inspector's sentence. '$6B' is a NextReg; keep it."
+  },
+  "gfxCommon.tilemap.diag.overlapMapTiles.chip": "map overlaps tiles",
+  "@gfxCommon.tilemap.diag.overlapMapTiles.chip": {
+    "context": "Tilemap Inspector (ZX Spectrum Next): short warning chip. The tilemap's map bytes share memory with the definitions of the tiles the map uses.",
+    "maxChars": 30
+  },
+  "gfxCommon.tilemap.diag.overlapMapTiles.sentence": "The map overlaps the used tile definitions at {ranges}.",
+  "@gfxCommon.tilemap.diag.overlapMapTiles.sentence": {
+    "context": "Tilemap Inspector (ZX Spectrum Next): tooltip of the overlap chip and the inspector's sentence.",
+    "placeholders": {
+      "ranges": "The overlapping address ranges, e.g. $6000-$61FF, $6400-$64FF"
+    }
+  },
+  "gfxCommon.tilemap.diag.overlapMapUlaBitmap.chip": "map overlaps ULA bitmap",
+  "@gfxCommon.tilemap.diag.overlapMapUlaBitmap.chip": {
+    "context": "Tilemap Inspector (ZX Spectrum Next): short warning chip. The tilemap's map bytes share memory with the ULA screen's pixel bitmap. 'ULA' is a chip name; keep it.",
+    "maxChars": 30
+  },
+  "gfxCommon.tilemap.diag.overlapMapUlaBitmap.sentence": "The map overlaps the ULA bitmap at {ranges}.",
+  "@gfxCommon.tilemap.diag.overlapMapUlaBitmap.sentence": {
+    "context": "Tilemap Inspector (ZX Spectrum Next): tooltip of the overlap chip and the inspector's sentence. 'ULA' is a chip name; keep it.",
+    "placeholders": {
+      "ranges": "The overlapping address ranges, e.g. $4000-$47FF"
+    }
+  },
+  "gfxCommon.tilemap.diag.overlapMapUlaAttributes.chip": "map overlaps ULA attributes",
+  "@gfxCommon.tilemap.diag.overlapMapUlaAttributes.chip": {
+    "context": "Tilemap Inspector (ZX Spectrum Next): short warning chip. The tilemap's map bytes share memory with the ULA screen's colour attributes. 'ULA' is a chip name; keep it.",
+    "maxChars": 30
+  },
+  "gfxCommon.tilemap.diag.overlapMapUlaAttributes.sentence": "The map overlaps the ULA attributes at {ranges}.",
+  "@gfxCommon.tilemap.diag.overlapMapUlaAttributes.sentence": {
+    "context": "Tilemap Inspector (ZX Spectrum Next): tooltip of the overlap chip and the inspector's sentence. 'ULA' is a chip name; keep it.",
+    "placeholders": {
+      "ranges": "The overlapping address ranges, e.g. $5800-$5AFF"
+    }
+  },
+  "gfxCommon.tilemap.diag.overlapTilesUlaBitmap.chip": "tiles overlap ULA bitmap",
+  "@gfxCommon.tilemap.diag.overlapTilesUlaBitmap.chip": {
+    "context": "Tilemap Inspector (ZX Spectrum Next): short warning chip. The definitions of the tiles the map uses share memory with the ULA screen's pixel bitmap. 'ULA' is a chip name; keep it.",
+    "maxChars": 30
+  },
+  "gfxCommon.tilemap.diag.overlapTilesUlaBitmap.sentence": "The used tile definitions overlap the ULA bitmap at {ranges}.",
+  "@gfxCommon.tilemap.diag.overlapTilesUlaBitmap.sentence": {
+    "context": "Tilemap Inspector (ZX Spectrum Next): tooltip of the overlap chip and the inspector's sentence. 'ULA' is a chip name; keep it.",
+    "placeholders": {
+      "ranges": "The overlapping address ranges, e.g. $4000-$47FF"
+    }
+  },
+  "gfxCommon.tilemap.diag.overlapTilesUlaAttributes.chip": "tiles overlap ULA attributes",
+  "@gfxCommon.tilemap.diag.overlapTilesUlaAttributes.chip": {
+    "context": "Tilemap Inspector (ZX Spectrum Next): short warning chip. The definitions of the tiles the map uses share memory with the ULA screen's colour attributes. 'ULA' is a chip name; keep it.",
+    "maxChars": 30
+  },
+  "gfxCommon.tilemap.diag.overlapTilesUlaAttributes.sentence": "The used tile definitions overlap the ULA attributes at {ranges}.",
+  "@gfxCommon.tilemap.diag.overlapTilesUlaAttributes.sentence": {
+    "context": "Tilemap Inspector (ZX Spectrum Next): tooltip of the overlap chip and the inspector's sentence. 'ULA' is a chip name; keep it.",
+    "placeholders": {
+      "ranges": "The overlapping address ranges, e.g. $5800-$5AFF"
+    }
+  },
+  "gfxCommon.tilemap.diag.wrapMap.chip": "map wraps in bank {bank}",
+  "@gfxCommon.tilemap.diag.wrapMap.chip": {
+    "context": "Tilemap Inspector (ZX Spectrum Next): short warning chip. The map runs past the end of its memory bank and continues at the bank's start.",
+    "maxChars": 30,
+    "placeholders": {
+      "bank": "The memory bank, 5 or 7"
+    }
+  },
+  "gfxCommon.tilemap.diag.wrapMap.sentence": "The map runs past the end of bank {bank} and wraps to its start.",
+  "@gfxCommon.tilemap.diag.wrapMap.sentence": {
+    "context": "Tilemap Inspector (ZX Spectrum Next): tooltip of the wrap chip and the inspector's sentence (bank 5, a 16K bank).",
+    "placeholders": {
+      "bank": "The memory bank, 5"
+    }
+  },
+  "gfxCommon.tilemap.diag.wrapMap8k.sentence": "The map runs past the end of bank {bank}'s 8K and wraps to its start.",
+  "@gfxCommon.tilemap.diag.wrapMap8k.sentence": {
+    "context": "Tilemap Inspector (ZX Spectrum Next): tooltip of the wrap chip and the inspector's sentence, for bank 7, of which the tilemap uses only the first 8K.",
+    "placeholders": {
+      "bank": "The memory bank, 7"
+    }
+  },
+  "gfxCommon.tilemap.diag.wrapTiles.chip": "tiles wrap in bank {bank}",
+  "@gfxCommon.tilemap.diag.wrapTiles.chip": {
+    "context": "Tilemap Inspector (ZX Spectrum Next): short warning chip. Tile definitions the map uses run past the end of their memory bank and continue at its start.",
+    "maxChars": 30,
+    "placeholders": {
+      "bank": "The memory bank, 5 or 7"
+    }
+  },
+  "gfxCommon.tilemap.diag.wrapTiles.sentence": "Tiles the map uses run past the end of bank {bank} and wrap to its start.",
+  "@gfxCommon.tilemap.diag.wrapTiles.sentence": {
+    "context": "Tilemap Inspector (ZX Spectrum Next): tooltip of the wrap chip and the inspector's sentence (bank 5, a 16K bank).",
+    "placeholders": {
+      "bank": "The memory bank, 5"
+    }
+  },
+  "gfxCommon.tilemap.diag.wrapTiles8k.sentence": "Tiles the map uses run past the end of bank {bank}'s 8K and wrap to its start.",
+  "@gfxCommon.tilemap.diag.wrapTiles8k.sentence": {
+    "context": "Tilemap Inspector (ZX Spectrum Next): tooltip of the wrap chip and the inspector's sentence, for bank 7, of which the tilemap uses only the first 8K.",
+    "placeholders": {
+      "bank": "The memory bank, 7"
+    }
+  },
+  "gfxCommon.tilemap.diag.wrapDefinitions.chip": "table wraps",
+  "@gfxCommon.tilemap.diag.wrapDefinitions.chip": {
+    "context": "Tilemap Inspector (ZX Spectrum Next): short info chip. A full table of tile definitions would run past the end of its memory bank.",
+    "maxChars": 30
+  },
+  "gfxCommon.tilemap.diag.wrapDefinitions.sentence": "A full table of {tiles} tiles from this base would run past the end of bank {bank}; the tiles in use do not.",
+  "@gfxCommon.tilemap.diag.wrapDefinitions.sentence": {
+    "context": "Tilemap Inspector (ZX Spectrum Next): tooltip of the chip and the inspector's info sentence.",
+    "placeholders": {
+      "tiles": "The table's size in tiles, 256 or 512",
+      "bank": "The memory bank, 5 or 7"
+    }
+  },
+  "gfxCommon.tilemap.diag.below512.chip": "512 tiles: below ULA",
+  "@gfxCommon.tilemap.diag.below512.chip": {
+    "context": "Tilemap Inspector (ZX Spectrum Next): short info chip. In 512-tile mode every tile is drawn below the ULA screen. 'ULA' is a chip name; keep it.",
+    "maxChars": 30
+  },
+  "gfxCommon.tilemap.diag.below512.sentence": "In 512-tile mode attribute bit 0 is tile bit 8, so every cell is below the ULA unless $6B bit 0 forces the tilemap on top.",
+  "@gfxCommon.tilemap.diag.below512.sentence": {
+    "context": "Tilemap Inspector (ZX Spectrum Next): tooltip of the chip and the inspector's info sentence. '$6B' is a NextReg; keep it."
+  },
+
+  "gfxCommon.layer2.diag.off.chip": "Layer 2 off",
+  "@gfxCommon.layer2.diag.off.chip": {
+    "context": "Layer 2 Inspector (ZX Spectrum Next): short info chip in the strip of register values. 'Layer 2' is a hardware layer name; keep it.",
+    "maxChars": 36
+  },
+  "gfxCommon.layer2.diag.off.sentence": "Layer 2 is not displayed: $123B bit 1 and $69 bit 7 are both clear.",
+  "@gfxCommon.layer2.diag.off.sentence": {
+    "context": "Layer 2 Inspector (ZX Spectrum Next): tooltip of the chip. '$123B' is a port and '$69' a NextReg; keep them."
+  },
+  "gfxCommon.layer2.diag.outsideRam.chip": "banks past 2 MB",
+  "@gfxCommon.layer2.diag.outsideRam.chip": {
+    "context": "Layer 2 Inspector (ZX Spectrum Next): short warning chip. The displayed layer uses memory banks beyond the end of the machine's 2 MB RAM.",
+    "maxChars": 36
+  },
+  "gfxCommon.layer2.diag.outsideRam.sentence": "{count, plural, one {Bank {banks} is} other {Banks {banks} are}} past the 2 MB SRAM: the display has no pixels there.",
+  "@gfxCommon.layer2.diag.outsideRam.sentence": {
+    "context": "Layer 2 Inspector (ZX Spectrum Next): tooltip of the chip.",
+    "placeholders": {
+      "count": "How many banks are listed",
+      "banks": "The bank numbers, comma-separated, e.g. 110, 111"
+    }
+  },
+  "gfxCommon.layer2.diag.writesShown.chip": "writes go to the displayed bank",
+  "@gfxCommon.layer2.diag.writesShown.chip": {
+    "context": "Layer 2 Inspector (ZX Spectrum Next): short info chip. The program draws straight into the layer that is on screen.",
+    "maxChars": 36
+  },
+  "gfxCommon.layer2.diag.writesShown.sentence": "The $123B write window maps banks of the displayed layer ($12): drawing shows at once (no double buffering, a tearing risk).",
+  "@gfxCommon.layer2.diag.writesShown.sentence": {
+    "context": "Layer 2 Inspector (ZX Spectrum Next): tooltip of the chip. '$123B' is a port and '$12' a NextReg; keep them."
+  },
+  "gfxCommon.layer2.diag.writesShadow.chip": "write window maps the shadow bank",
+  "@gfxCommon.layer2.diag.writesShadow.chip": {
+    "context": "Layer 2 Inspector (ZX Spectrum Next): short info chip. The program draws into the shadow (back buffer) layer, not the one on screen.",
+    "maxChars": 40
+  },
+  "gfxCommon.layer2.diag.writesShadow.sentence": "$123B bit 3 maps the shadow layer ($13) into the write window: writes there are not displayed until $12 points at it.",
+  "@gfxCommon.layer2.diag.writesShadow.sentence": {
+    "context": "Layer 2 Inspector (ZX Spectrum Next): tooltip of the chip. '$123B' is a port, '$12'/'$13' are NextRegs; keep them."
+  },
+  "gfxCommon.layer2.diag.writesPastRam.chip": "write window past 2 MB",
+  "@gfxCommon.layer2.diag.writesPastRam.chip": {
+    "context": "Layer 2 Inspector (ZX Spectrum Next): short warning chip. The memory window the program writes through points beyond the machine's 2 MB RAM.",
+    "maxChars": 36
+  },
+  "gfxCommon.layer2.diag.writesPastRam.sentence": "The $123B write window maps a bank past the 2 MB SRAM: writes through it are lost.",
+  "@gfxCommon.layer2.diag.writesPastRam.sentence": {
+    "context": "Layer 2 Inspector (ZX Spectrum Next): tooltip of the chip. '$123B' is a port; keep it."
+  },
+  "gfxCommon.layer2.diag.sameBanks.sentence": "The displayed and the shadow layer are the same banks.",
+  "@gfxCommon.layer2.diag.sameBanks.sentence": {
+    "context": "Layer 2 Inspector (ZX Spectrum Next): tooltip of the '$12 = $13' chip (two NextRegs holding the same value)."
+  },
+  "gfxCommon.layer2.diag.readsPastLayer.chip": "scroll reads past the layer",
+  "@gfxCommon.layer2.diag.readsPastLayer.chip": {
+    "context": "Layer 2 Inspector (ZX Spectrum Next): short warning chip. The scroll offset makes the display show memory beyond the layer's own banks.",
+    "maxChars": 36
+  },
+  "gfxCommon.layer2.diag.readsPastLayer.wideSentence": "The X scroll makes the display read source columns 320-511, which come from the three banks after the layer's five (the hardware's X wrap is not a modulo of 320).",
+  "@gfxCommon.layer2.diag.readsPastLayer.wideSentence": {
+    "context": "Layer 2 Inspector (ZX Spectrum Next): tooltip of the chip, for the 320- and 640-pixel-wide modes."
+  },
+  "gfxCommon.layer2.diag.readsPastLayer.tallSentence": "The Y scroll makes the display read source rows 192-254, which come from the bank after the layer's three (the hardware folds rows back by bits 7-6, not modulo 192).",
+  "@gfxCommon.layer2.diag.readsPastLayer.tallSentence": {
+    "context": "Layer 2 Inspector (ZX Spectrum Next): tooltip of the chip, for the 256×192 mode."
+  },
+  "gfxCommon.layer2.diag.clipEmpty.chip": "clip window empty",
+  "@gfxCommon.layer2.diag.clipEmpty.chip": {
+    "context": "Layer 2 Inspector (ZX Spectrum Next): short warning chip. The clip window (the rectangle the layer is drawn in) contains no pixel.",
+    "maxChars": 36
+  },
+  "gfxCommon.layer2.diag.clipEmpty.sentence": "The $18 clip window leaves no pixel of the layer: x1 > x2 or y1 > y2, or it is off the layer.",
+  "@gfxCommon.layer2.diag.clipEmpty.sentence": {
+    "context": "Layer 2 Inspector (ZX Spectrum Next): tooltip of the chip. '$18' is a NextReg; 'x1', 'x2', 'y1', 'y2' are the clip window's coordinates; keep them."
+  },
+  "gfxCommon.layer2.diag.allTransparent.chip": "all visible pixels transparent",
+  "@gfxCommon.layer2.diag.allTransparent.chip": {
+    "context": "Layer 2 Inspector (ZX Spectrum Next): short warning chip. Every pixel of the layer that could show is the transparent colour.",
+    "maxChars": 40
+  },
+  "gfxCommon.layer2.diag.allTransparent.sentence": "Every visible pixel's palette colour equals the global transparency colour $14, so nothing of Layer 2 shows.",
+  "@gfxCommon.layer2.diag.allTransparent.sentence": {
+    "context": "Layer 2 Inspector (ZX Spectrum Next): tooltip of the chip. '$14' is a NextReg and 'Layer 2' a hardware layer name; keep them."
+  },
+
+  "gfxCommon.layers.priority.blendAdd": "Blend (add)",
+  "@gfxCommon.layers.priority.blendAdd": {
+    "context": "ZX Spectrum Next layer mixer: name of layer priority mode 110 of NextReg $15, which adds Layer 2's colour to the ULA/tilemap colour. The other modes are letter codes such as 'SLU' and are not translated.",
+    "maxChars": 20
+  },
+  "gfxCommon.layers.priority.blendSub": "Blend (add - 5)",
+  "@gfxCommon.layers.priority.blendSub": {
+    "context": "ZX Spectrum Next layer mixer: name of layer priority mode 111 of NextReg $15, which adds the colours and subtracts 5 from each component.",
+    "maxChars": 20
+  },
+  "gfxCommon.layers.blendSource.none": "none",
+  "@gfxCommon.layers.blendSource.none": {
+    "context": "ZX Spectrum Next layer mixer: the blend source chosen by NextReg $68 bits 6-5 - here no layer is blended with Layer 2. The other choices are layer names (ULA, tilemap) and stay English. Lower case.",
+    "maxChars": 12
+  },
+  "gfxCommon.layers.blendAdd": "Blend (add): Layer 2 + {source}",
+  "@gfxCommon.layers.blendAdd": {
+    "context": "ZX Spectrum Next: the layer-priority readout in the Layers strip, the Layers document and the pixel probe, for blend mode 110 of NextReg $15. 'Layer 2' is a hardware layer name; keep it.",
+    "maxChars": 44,
+    "placeholders": {
+      "source": "What Layer 2 is blended with: 'ULA', 'tilemap', 'ULA + tilemap' or 'none'"
+    }
+  },
+  "gfxCommon.layers.blendSub": "Blend (add - 5): Layer 2 + {source}",
+  "@gfxCommon.layers.blendSub": {
+    "context": "ZX Spectrum Next: the layer-priority readout, for blend mode 111 of NextReg $15 (add the colours, subtract 5). 'Layer 2' is a hardware layer name; keep it.",
+    "maxChars": 48,
+    "placeholders": {
+      "source": "What Layer 2 is blended with: 'ULA', 'tilemap', 'ULA + tilemap' or 'none'"
+    }
+  },
+
+  "gfxCommon.layers.why.fallback": "fallback $4A: no layer is opaque here",
+  "@gfxCommon.layers.why.fallback": {
+    "context": "ZX Spectrum Next pixel probe tooltip on the emulator screen: why this pixel has its colour. No layer has a colour here, so the fallback colour from NextReg $4A shows (keep '$4A'). Starts lower case."
+  },
+  "gfxCommon.layers.why.ula": "ULA: the top opaque layer in this order",
+  "@gfxCommon.layers.why.ula": {
+    "context": "ZX Spectrum Next pixel probe tooltip: the ULA layer (keep the name) supplies this pixel because it is the topmost layer with a colour in the current priority order."
+  },
+  "gfxCommon.layers.why.tilemap": "tilemap: the top opaque layer in this order",
+  "@gfxCommon.layers.why.tilemap": {
+    "context": "ZX Spectrum Next pixel probe tooltip: the tilemap layer (keep the name) supplies this pixel because it is the topmost layer with a colour in the current priority order."
+  },
+  "gfxCommon.layers.why.layer2": "Layer 2: the top opaque layer in this order",
+  "@gfxCommon.layers.why.layer2": {
+    "context": "ZX Spectrum Next pixel probe tooltip: Layer 2 (keep the name) supplies this pixel because it is the topmost layer with a colour in the current priority order."
+  },
+  "gfxCommon.layers.why.layer2Priority": "Layer 2 priority bit: Layer 2 over every other layer",
+  "@gfxCommon.layers.why.layer2Priority": {
+    "context": "ZX Spectrum Next pixel probe tooltip: Layer 2 (keep the name) wins because its palette entry has the priority bit set, which puts it above all other layers."
+  },
+  "gfxCommon.layers.why.sprites": "sprites: the top opaque layer in this order",
+  "@gfxCommon.layers.why.sprites": {
+    "context": "ZX Spectrum Next pixel probe tooltip: the sprite layer (keep 'sprites' as the layer's name) supplies this pixel because it is the topmost layer with a colour in the current priority order."
+  },
+  "gfxCommon.layers.why.border": "sprite over the border: a sprite shows over the ULA border where the tilemap is transparent",
+  "@gfxCommon.layers.why.border": {
+    "context": "ZX Spectrum Next pixel probe tooltip: why a sprite pixel shows in the screen border. 'ULA' and 'tilemap' are layer names; keep them."
+  },
+  "gfxCommon.layers.why.stencil": "stencil: ULA AND tilemap ($68 bit 0)",
+  "@gfxCommon.layers.why.stencil": {
+    "context": "ZX Spectrum Next pixel probe tooltip: stencil mode is on, so the pixel is the bitwise AND of the ULA and tilemap colours. Keep 'ULA', 'tilemap', 'AND' and '$68 bit 0'."
+  },
+  "gfxCommon.layers.why.blendAdd": "blend: Layer 2 + the blend source, saturated ($15 110)",
+  "@gfxCommon.layers.why.blendAdd": {
+    "context": "ZX Spectrum Next pixel probe tooltip: the pixel is Layer 2's colour added to the blend source's, capped at the maximum. '$15 110' is the NextReg and mode; keep it."
+  },
+  "gfxCommon.layers.why.blendSub": "blend: Layer 2 + the blend source - 5 ($15 111)",
+  "@gfxCommon.layers.why.blendSub": {
+    "context": "ZX Spectrum Next pixel probe tooltip: the pixel is Layer 2's colour added to the blend source's, minus 5. '$15 111' is the NextReg and mode; keep it."
+  },
+
+  "gfxCommon.layers.pill.solo": "Layers: {layer} solo",
+  "@gfxCommon.layers.pill.solo": {
+    "context": "ZX Spectrum Next: pill on the emulator screen telling that the layer debug view changes the picture - one layer is shown alone. Layer names (ULA, tilemap, Layer 2, sprites) stay English.",
+    "maxChars": 48,
+    "placeholders": {
+      "layer": "The layer shown alone, e.g. Layer 2"
+    }
+  },
+  "gfxCommon.layers.pill.soloTransparency": "Layers: {layer} solo; transparency shown",
+  "@gfxCommon.layers.pill.soloTransparency": {
+    "context": "ZX Spectrum Next: pill on the emulator screen - one layer is shown alone, and pixels where no layer has a colour are marked.",
+    "maxChars": 64,
+    "placeholders": {
+      "layer": "The layer shown alone, e.g. Layer 2"
+    }
+  },
+  "gfxCommon.layers.pill.hidden": "Layers: {layers} hidden",
+  "@gfxCommon.layers.pill.hidden": {
+    "context": "ZX Spectrum Next: pill on the emulator screen - some layers are hidden by the debug view.",
+    "maxChars": 64,
+    "placeholders": {
+      "layers": "The hidden layers, comma-separated, e.g. ULA, tilemap"
+    }
+  },
+  "gfxCommon.layers.pill.hiddenTransparency": "Layers: {layers} hidden; transparency shown",
+  "@gfxCommon.layers.pill.hiddenTransparency": {
+    "context": "ZX Spectrum Next: pill on the emulator screen - some layers are hidden, and pixels where no layer has a colour are marked.",
+    "maxChars": 72,
+    "placeholders": {
+      "layers": "The hidden layers, comma-separated, e.g. ULA, tilemap"
+    }
+  },
+  "gfxCommon.layers.pill.transparency": "Layers: transparency shown",
+  "@gfxCommon.layers.pill.transparency": {
+    "context": "ZX Spectrum Next: pill on the emulator screen - pixels where no layer has a colour are marked.",
+    "maxChars": 40
+  },
+
+  "gfxCommon.layers.view.solo": "{layer}: solo",
+  "@gfxCommon.layers.view.solo": {
+    "context": "Output line of the 'layers' IDE command, one per layer: this layer is shown alone. The layer name stays English.",
+    "placeholders": {
+      "layer": "The layer's name: ULA, Tilemap, Layer 2 or Sprites"
+    }
+  },
+  "gfxCommon.layers.view.eclipsed": "{layer}: not shown (another layer is solo)",
+  "@gfxCommon.layers.view.eclipsed": {
+    "context": "Output line of the 'layers' IDE command: this layer is not on screen because another one is shown alone.",
+    "placeholders": {
+      "layer": "The layer's name: ULA, Tilemap, Layer 2 or Sprites"
+    }
+  },
+  "gfxCommon.layers.view.hidden": "{layer}: hidden",
+  "@gfxCommon.layers.view.hidden": {
+    "context": "Output line of the 'layers' IDE command: this layer is hidden by the debug view.",
+    "placeholders": {
+      "layer": "The layer's name: ULA, Tilemap, Layer 2 or Sprites"
+    }
+  },
+  "gfxCommon.layers.view.shown": "{layer}: shown",
+  "@gfxCommon.layers.view.shown": {
+    "context": "Output line of the 'layers' IDE command: this layer is shown.",
+    "placeholders": {
+      "layer": "The layer's name: ULA, Tilemap, Layer 2 or Sprites"
+    }
+  },
+  "gfxCommon.layers.view.transparencyShown": "Transparency: shown in magenta",
+  "@gfxCommon.layers.view.transparencyShown": {
+    "context": "Output line of the 'layers' IDE command: pixels where no layer has a colour are painted magenta."
+  },
+  "gfxCommon.layers.view.transparencyNotMarked": "Transparency: not marked",
+  "@gfxCommon.layers.view.transparencyNotMarked": {
+    "context": "Output line of the 'layers' IDE command: pixels where no layer has a colour are not marked."
+  },
+
+  "gfxCommon.layers.command.unknownLayer": "Unknown layer ''{target}'': use ula, tm, l2, spr, all or transparency",
+  "@gfxCommon.layers.command.unknownLayer": {
+    "context": "Error of the 'layers' IDE command. The quotes around the typed name are part of the text (written as '' in the message). The listed words are command arguments; keep them.",
+    "placeholders": {
+      "target": "The layer name the user typed"
+    }
+  },
+  "gfxCommon.layers.command.unknownAction": "Unknown action ''{action}'': use on, off or solo",
+  "@gfxCommon.layers.command.unknownAction": {
+    "context": "Error of the 'layers' IDE command. The quotes are part of the text (written as '' in the message). 'on', 'off' and 'solo' are command arguments; keep them.",
+    "placeholders": {
+      "action": "The action the user typed"
+    }
+  },
+  "gfxCommon.layers.command.cannotSolo": "''{target}'' cannot be soloed",
+  "@gfxCommon.layers.command.cannotSolo": {
+    "context": "Error of the 'layers' IDE command: 'all' and 'transparency' cannot be combined with the 'solo' action (shown alone). The quotes are part of the text (written as '' in the message).",
+    "placeholders": {
+      "target": "The target the user typed, e.g. all"
+    }
+  }
+}

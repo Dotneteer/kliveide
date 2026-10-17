@@ -13,11 +13,8 @@ import { NexLabelsDialog } from "../NexLabelsDialog";
 import { NexOperandLabelDialog } from "../NexOperandLabelDialog";
 import { NexSynopsisCommentDialog } from "../NexSynopsisCommentDialog";
 import { NexEndOfLineCommentDialog } from "../NexEndOfLineCommentDialog";
-import {
-  BANK_COMMENT_DIALOG_TITLE,
-  BANK_COMMENT_DIALOG_WIDTH,
-  NexBankCommentDialog
-} from "../NexBankCommentDialog";
+import { BANK_COMMENT_DIALOG_WIDTH, NexBankCommentDialog } from "../NexBankCommentDialog";
+import { t } from "@common/i18n/i18n";
 import {
   subscribeAnnotationSession,
   updateAnnotationSession
@@ -122,28 +119,28 @@ export function useAnnotationEditorPorts(args: AnnotationEditorPortArgs): NexAnn
       dialogs: {
         bankComment: (args) =>
           opened(dialogs.open(NexBankCommentDialog, args, {
-            title: BANK_COMMENT_DIALOG_TITLE,
+            title: t("panels.next.bankComment.title"),
             width: BANK_COMMENT_DIALOG_WIDTH
           })),
         synopsisComment: (args) =>
           opened(dialogs.open(NexSynopsisCommentDialog, args, {
-            title: "Synopsis comment",
+            title: t("panels.next.synopsis.title"),
             width: 560
           })),
         endOfLineComment: (args) =>
           opened(dialogs.open(NexEndOfLineCommentDialog, args, {
-            title: "End-of-line comment",
+            title: t("panels.next.eolComment.title"),
             width: 560
           })),
-        label: (args) => opened(dialogs.open(NexLabelDialog, args, { title: "Label", width: 560 })),
+        label: (args) => opened(dialogs.open(NexLabelDialog, args, { title: t("panels.next.label.title"), width: 560 })),
         manageLabels: (args) =>
-          opened(dialogs.open(NexLabelsDialog, args, { title: "Labels", width: 780 })),
+          opened(dialogs.open(NexLabelsDialog, args, { title: t("panels.next.labels.title"), width: 780 })),
         operandLabel: (args) =>
-          opened(dialogs.open(NexOperandLabelDialog, args, { title: "Operand label", width: 640 })),
+          opened(dialogs.open(NexOperandLabelDialog, args, { title: t("panels.next.operandLabel.title"), width: 640 })),
         region: (args) =>
-          opened(dialogs.open(NexRegionDialog, args, { title: "Memory region", width: 640 })),
+          opened(dialogs.open(NexRegionDialog, args, { title: t("panels.next.region.title"), width: 640 })),
         manageRegions: (args) =>
-          opened(dialogs.open(NexRegionsDialog, args, { title: "Regions", width: 840 }))
+          opened(dialogs.open(NexRegionsDialog, args, { title: t("panels.next.regions.title"), width: 840 }))
       },
       confirm,
       // --- Still `window.confirm`: two questions are asserted with their exact wording by the

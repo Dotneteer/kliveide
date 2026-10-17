@@ -10,6 +10,7 @@
  * only to warn that a custom ROM is not installed). Everything else is listed and warned about.
  */
 
+import { t } from "@common/i18n/i18n";
 import { unzlibSync } from "fflate";
 import {
   SPECTRUM_BANK_SIZE,
@@ -150,11 +151,17 @@ function readString(bytes: Uint8Array, offset: number, maxLength: number): strin
 }
 
 /** Inflates a zlib stream, naming the block on failure */
-function inflate(data: Uint8Array, what: string): Uint8Array {
+function inflate(
+  data: Uint8Array,
+  part: "ramPage" | "disk" | "betaDisk" | "tape" | "dockPage",
+  index?: number | string
+): Uint8Array {
   try {
     return unzlibSync(data);
   } catch (err) {
-    throw new Error(`The ${what} cannot be decompressed (${(err as Error).message})`);
+    throw new Error(
+      t("media.snapshot.error.szxInflate", { part, index: index ?? "", message: (err as Error).message })
+    );
   }
 }
 
@@ -176,7 +183,7 @@ export function hasSzxMagic(bytes: Uint8Array): boolean {
  */
 export function parseSzxFile(bytes: Uint8Array): SpectrumSnapshot {
   if (bytes.length < 8 || !hasSzxMagic(bytes)) {
-    throw new Error("Not a zx-state (.szx) file: the ZXST header is missing");
+    throw new Error(t("media.snapshot.error.szxNoMagic"));
   }
   const major = bytes[4];
   const minor = bytes[5];
@@ -186,12 +193,12 @@ export function parseSzxFile(bytes: Uint8Array): SpectrumSnapshot {
   };
   const warnings: string[] = [];
   if (major !== 1) {
-    warnings.push(`zx-state major version ${major} is newer than Klive knows (1)`);
+    warnings.push(t("media.snapshot.warning.szxNewerVersion", { major }));
   }
   const header = [
-    { label: "Version", value: `${major}.${minor}` },
-    { label: "Machine id", value: `${machineId}` },
-    { label: "Alternate timings", value: bytes[7] & 0x01 ? "yes" : "no" }
+    { label: t("media.snapshot.header.version"), value: `${major}.${minor}` },
+    { label: t("media.snapshot.header.machineId"), value: `${machineId}` },
+    { label: t("media.snapshot.header.alternateTimings"), value: bytes[7] & 0x01 ? t("media.snapshot.value.yes") : t("media.snapshot.value.no") }
   ];
   const chunks: SnapshotChunkInfo[] = [];
   const peripherals: SpectrumSnapshotPeripherals = {};
@@ -209,13 +216,13 @@ export function parseSzxFile(bytes: Uint8Array): SpectrumSnapshot {
   let offset = 8;
   while (offset < bytes.length) {
     if (offset + 8 > bytes.length) {
-      throw new Error(`The block header at offset ${offset} is truncated`);
+      throw new Error(t("media.snapshot.error.szxBlockHeaderTruncated", { offset }));
     }
     const id = blockId(bytes, offset);
     const size = readDword(bytes, offset + 4);
     const start = offset + 8;
     if (start + size > bytes.length) {
-      throw new Error(`The ${id || "unnamed"} block at offset ${offset} is truncated`);
+      throw new Error(id ? t("media.snapshot.error.szxBlockTruncated", { id, offset }) : t("media.snapshot.error.szxUnnamedBlockTruncated", { offset }));
     }
     const data = bytes.subarray(start, start + size);
     offset = start + size;
@@ -223,7 +230,7 @@ export function parseSzxFile(bytes: Uint8Array): SpectrumSnapshot {
     chunks.push({ id, size, known });
     const need = (min: number) => {
       if (size < min) {
-        throw new Error(`The ${id} block is ${size} bytes; it needs at least ${min}`);
+        throw new Error(t("media.snapshot.error.szxBlockTooShort", { id, size, min }));
       }
     };
 
@@ -258,12 +265,12 @@ export function parseSzxFile(bytes: Uint8Array): SpectrumSnapshot {
           halted: (flags & 0x02) !== 0,
           suppressInterrupt: (flags & 0x01) !== 0
         };
-        if (data[28] > 2) warnings.push(`Interrupt mode ${data[28]} does not exist; IM 1 is used`);
+        if (data[28] > 2) warnings.push(t("media.snapshot.warning.badInterruptMode", { mode: data[28] }));
         ula.frameTact = readDword(data, 29);
         header.push(
-          { label: "T-states at start", value: `${ula.frameTact}` },
-          { label: "Held interrupt T-states", value: `${data[33]}` },
-          { label: "CPU flags", value: hex(flags) }
+          { label: t("media.snapshot.header.tstatesAtStart"), value: `${ula.frameTact}` },
+          { label: t("media.snapshot.header.heldInterrupt"), value: `${data[33]}` },
+          { label: t("media.snapshot.header.cpuFlags"), value: hex(flags) }
         );
         // --- MEMPTR arrived in 1.4; before that the bytes were chBitReg/chReserved
         if (size >= 37 && (major > 1 || minor >= 4)) {
@@ -282,7 +289,7 @@ export function parseSzxFile(bytes: Uint8Array): SpectrumSnapshot {
           { label: "Border", value: `${data[0]}` },
           { label: "Port $7FFD", value: hex(data[1]) },
           { label: "Port $1FFD", value: hex(data[2]) },
-          { label: "Last port $FE", value: hex(data[3]) }
+          { label: t("media.snapshot.header.lastPortFe"), value: hex(data[3]) }
         );
         break;
       }
@@ -291,15 +298,15 @@ export function parseSzxFile(bytes: Uint8Array): SpectrumSnapshot {
         const compressed = (readWord(data, 0) & 0x01) !== 0;
         const page = data[2];
         const content = compressed
-          ? inflate(data.subarray(3), `RAM page ${page}`)
+          ? inflate(data.subarray(3), "ramPage", page)
           : data.slice(3);
         if (content.length !== SPECTRUM_BANK_SIZE) {
-          throw new Error(`RAM page ${page} holds ${content.length} bytes instead of 16384`);
+          throw new Error(t("media.snapshot.error.szxRamPageSize", { page, size: content.length }));
         }
         if (page >= snapshotBankCount(machine)) {
-          warnings.push(`RAM page ${page} does not exist on a Klive machine; it is ignored`);
+          warnings.push(t("media.snapshot.warning.szxRamPageMissing", { page }));
         } else if (ram.has(page)) {
-          warnings.push(`RAM page ${page} is stored twice; the first copy is used`);
+          warnings.push(t("media.snapshot.warning.szxRamPageTwice", { page }));
         } else {
           ram.set(page, content);
         }
@@ -311,7 +318,7 @@ export function parseSzxFile(bytes: Uint8Array): SpectrumSnapshot {
         ay = { selected: data[1] & 0x0f, regs: data.slice(2, 18) };
         // --- The 2068s' AY is built in, whatever the flags say
         if (flags & 0x03 && !isTimex2068SnapshotMachine(machine)) ay.on48k = true;
-        if (flags & 0x01) warnings.push("The AY chip is a Fuller Box, which Klive does not emulate");
+        if (flags & 0x01) warnings.push(t("media.snapshot.warning.fullerBox"));
         break;
       }
       case "KEYB": {
@@ -326,7 +333,7 @@ export function parseSzxFile(bytes: Uint8Array): SpectrumSnapshot {
         need(6);
         const p1 = SZX_JOYSTICKS[data[4]] ?? `type ${data[4]}`;
         const p2 = SZX_JOYSTICKS[data[5]] ?? `type ${data[5]}`;
-        header.push({ label: "Joysticks", value: `${p1} / ${p2}` });
+        header.push({ label: t("media.snapshot.header.joysticks"), value: `${p1} / ${p2}` });
         if (!peripherals.joystick) peripherals.joystick = p1;
         break;
       }
@@ -350,7 +357,7 @@ export function parseSzxFile(bytes: Uint8Array): SpectrumSnapshot {
         if (flags & 0x04) disk.sideB = true;
         if (flags & 0x02) {
           // --- Reserved by the spec ("not implemented"); read it anyway if a writer uses it
-          disk.embedded = flags & 0x01 ? inflate(payload, `disk in drive ${drive}`) : payload.slice();
+          disk.embedded = flags & 0x01 ? inflate(payload, "disk", drive) : payload.slice();
         } else {
           disk.fileName = readString(payload, 0, Math.min(length, payload.length));
         }
@@ -388,7 +395,7 @@ export function parseSzxFile(bytes: Uint8Array): SpectrumSnapshot {
           writeProtected: (flags & 0x04) !== 0
         };
         if (flags & 0x01) {
-          disk.embedded = flags & 0x02 ? inflate(payload, `Beta disk in drive ${data[4]}`) : payload.slice();
+          disk.embedded = flags & 0x02 ? inflate(payload, "betaDisk", data[4]) : payload.slice();
         } else {
           disk.fileName = readString(payload, 0, payload.length);
         }
@@ -405,11 +412,9 @@ export function parseSzxFile(bytes: Uint8Array): SpectrumSnapshot {
         const extension = readString(data, 12, 16).toLowerCase();
         const payload = data.subarray(28, 28 + compressedSize);
         if (flags & 0x01) {
-          const embedded = flags & 0x02 ? inflate(payload, "embedded tape") : payload.slice();
+          const embedded = flags & 0x02 ? inflate(payload, "tape") : payload.slice();
           if (embedded.length !== uncompressedSize) {
-            warnings.push(
-              `The embedded tape is ${embedded.length} bytes, not the ${uncompressedSize} its block says`
-            );
+            warnings.push(t("media.snapshot.warning.szxTapeSize", { size: embedded.length, expected: uncompressedSize }));
           }
           peripherals.tape = { currentBlock, embedded, extension };
         } else {
@@ -421,9 +426,9 @@ export function parseSzxFile(bytes: Uint8Array): SpectrumSnapshot {
         need(3);
         const flags = readWord(data, 0);
         const page = data[2] & 0x07;
-        const content = (flags & 0x01) !== 0 ? inflate(data.subarray(3), `DOCK page ${page}`) : data.slice(3);
+        const content = (flags & 0x01) !== 0 ? inflate(data.subarray(3), "dockPage", page) : data.slice(3);
         if (content.length !== 0x2000) {
-          throw new Error(`DOCK page ${page} holds ${content.length} bytes instead of 8192`);
+          throw new Error(t("media.snapshot.error.szxDockPageSize", { page, size: content.length }));
         }
         dockPages.push({ page, dock: (flags & 0x04) !== 0, ram: (flags & 0x02) !== 0, data: content });
         break;
@@ -445,17 +450,19 @@ export function parseSzxFile(bytes: Uint8Array): SpectrumSnapshot {
       default: {
         const name = SKIPPED_BLOCK_NAMES[id];
         warnings.push(
-          name ? `The ${name} state (${id}) is not restored` : `Unknown block "${id}" is skipped`
+          name
+            ? t("media.snapshot.warning.szxStateNotRestored", { name, id })
+            : t("media.snapshot.warning.szxUnknownBlock", { id })
         );
       }
     }
   }
 
   if (!cpu) {
-    throw new Error("The .szx file has no Z80 registers (Z80R) block");
+    throw new Error(t("media.snapshot.error.szxNoZ80r"));
   }
   if (!specRegsSeen) {
-    warnings.push("The .szx file has no SPCR block; border and paging default to 0");
+    warnings.push(t("media.snapshot.warning.szxNoSpcr"));
   }
   if (isPagedSnapshotMachine(machine) && !paging) {
     paging = {
@@ -472,10 +479,10 @@ export function parseSzxFile(bytes: Uint8Array): SpectrumSnapshot {
           : [5, 2, 0];
     const missing = required.filter((b) => !ram.has(b));
     if (missing.length) {
-      throw new Error(`The .szx file lacks RAM page(s) ${missing.join(", ")}`);
+      throw new Error(t("media.snapshot.error.szxMissingPages", { count: missing.length, pages: missing.join(", ") }));
     }
   }
-  if (creator) header.unshift({ label: "Creator", value: creator });
+  if (creator) header.unshift({ label: t("media.snapshot.header.creator"), value: creator });
 
   return {
     format: "szx",

@@ -22,6 +22,7 @@ import {
 } from "@common/settings/setting-const";
 import { type MenuContext, windowInfoOf } from "./menu-context";
 import { createBooleanSettingsMenu, filterVisibleItems, tidySeparators } from "./menu-utils";
+import { t } from "@common/i18n/i18n";
 
 /** View › Machine Views: the memory and disassembly views, then the machine's own */
 export function createMachineViewsMenu(context: MenuContext): MenuItemConstructorOptions[] {
@@ -31,7 +32,7 @@ export function createMachineViewsMenu(context: MenuContext): MenuItemConstructo
   return tidySeparators([
     {
       id: "show_memory",
-      label: "Memory",
+      label: t("menu.view.memory"),
       type: "checkbox",
       checked: !!volatileDocs[MEMORY_PANEL_ID],
       click: async () => {
@@ -42,7 +43,7 @@ export function createMachineViewsMenu(context: MenuContext): MenuItemConstructo
     },
     {
       id: "show_banked_disassembly",
-      label: "Disassembly",
+      label: t("menu.view.disassembly"),
       type: "checkbox",
       checked: !!volatileDocs[DISASSEMBLY_PANEL_ID],
       click: async () => {
@@ -65,24 +66,24 @@ export function createViewMenu(context: MenuContext): MenuItemConstructorOptions
   const dark = appState?.theme !== "light";
 
   const items: MenuItemConstructorOptions[] = [
-    { id: "machine_views", label: "Machine Views", submenu: createMachineViewsMenu(context) },
+    { id: "machine_views", label: t("menu.view.machineViews"), submenu: createMachineViewsMenu(context) },
     { type: "separator" },
     // --- The emulator window's parts (shown while it has the focus: `boundTo: "emu"`)
-    createBooleanSettingsMenu(SETTING_EMU_SHOW_TOOLBAR, { label: "Toolbar" }),
-    createBooleanSettingsMenu(SETTING_EMU_SHOW_STATUS_BAR, { label: "Status Bar" }),
-    createBooleanSettingsMenu(SETTING_EMU_SHOW_KEYBOARD, { label: "Virtual Keyboard" }),
+    createBooleanSettingsMenu(SETTING_EMU_SHOW_TOOLBAR, { label: t("menu.view.toolbar") }),
+    createBooleanSettingsMenu(SETTING_EMU_SHOW_STATUS_BAR, { label: t("menu.view.statusBar") }),
+    createBooleanSettingsMenu(SETTING_EMU_SHOW_KEYBOARD, { label: t("menu.view.virtualKeyboard") }),
     // --- The IDE window's parts (`boundTo: "ide"`)
-    createBooleanSettingsMenu(SETTING_IDE_SHOW_TOOLBAR, { label: "Toolbar" }),
-    createBooleanSettingsMenu(SETTING_IDE_SHOW_STATUS_BAR, { label: "Status Bar" }),
-    createBooleanSettingsMenu(SETTING_IDE_SHOW_SIDEBAR, { label: "Sidebar" }),
-    createBooleanSettingsMenu(SETTING_IDE_SHOW_TOOLS, { label: "Command and Output" }),
+    createBooleanSettingsMenu(SETTING_IDE_SHOW_TOOLBAR, { label: t("menu.view.toolbar") }),
+    createBooleanSettingsMenu(SETTING_IDE_SHOW_STATUS_BAR, { label: t("menu.view.statusBar") }),
+    createBooleanSettingsMenu(SETTING_IDE_SHOW_SIDEBAR, { label: t("menu.view.sidebar") }),
+    createBooleanSettingsMenu(SETTING_IDE_SHOW_TOOLS, { label: t("menu.view.commandAndOutput") }),
     { type: "separator" },
     {
       // --- Shrinks the window around the machine's picture: a Z88 hugs its LCD (issue #1377).
       // --- Hints arrive outside the store, so the menu cannot track them; the command no-ops until
       // --- the renderer has reported, which happens as soon as a machine is shown.
       id: "emu_fit_window",
-      label: "Fit Window to Screen",
+      label: t("menu.view.fitWindow"),
       visible: context.emuWindowFocused,
       enabled: emuResizable,
       click: () => fitEmuWindowToScreen(emuWindow)
@@ -90,14 +91,14 @@ export function createViewMenu(context: MenuContext): MenuItemConstructorOptions
     {
       // --- The most compact window for the machine, whatever zoom step it shows now
       id: "emu_fit_window_1x",
-      label: "Fit Window to Screen at 1x",
+      label: t("menu.view.fitWindow1x"),
       visible: context.emuWindowFocused,
       enabled: emuResizable,
       click: () => fitEmuWindowToScreen(emuWindow, "1x")
     },
     {
       id: "show_ide_window",
-      label: "Show IDE",
+      label: t("menu.view.showIde"),
       visible: !context.ideWindowVisible,
       click: () => context.ensureIdeWindow()
     },
@@ -110,7 +111,7 @@ export function createViewMenu(context: MenuContext): MenuItemConstructorOptions
      */
     {
       id: "ide_go_back",
-      label: "Go Back",
+      label: t("menu.view.goBack"),
       accelerator: context.shortcuts.navBack,
       visible: context.ideWindowVisible,
       enabled: !!navHistory?.canGoBack,
@@ -120,7 +121,7 @@ export function createViewMenu(context: MenuContext): MenuItemConstructorOptions
     },
     {
       id: "ide_go_forward",
-      label: "Go Forward",
+      label: t("menu.view.goForward"),
       accelerator: context.shortcuts.navForward,
       visible: context.ideWindowVisible,
       enabled: !!navHistory?.canGoForward,
@@ -132,12 +133,17 @@ export function createViewMenu(context: MenuContext): MenuItemConstructorOptions
     {
       // --- The window's own zoom (the emulator screen fits its panel by itself)
       id: "zoom",
-      label: "Zoom",
-      submenu: [{ role: "resetZoom" }, { role: "zoomIn" }, { role: "zoomOut" }]
+      label: t("menu.view.zoom"),
+      // --- Explicit labels, or the OS labels these in its own language (LOCALIZATION_PLAN step 3)
+      submenu: [
+        { role: "resetZoom", label: t("menu.view.actualSize") },
+        { role: "zoomIn", label: t("menu.view.zoomIn") },
+        { role: "zoomOut", label: t("menu.view.zoomOut") }
+      ]
     },
     {
       id: "toggle_full_screen",
-      label: "Toggle Full Screen",
+      label: t("menu.view.toggleFullScreen"),
       accelerator: context.shortcuts.fullScreen,
       click: () => {
         if (context.ideFocus) {
@@ -151,7 +157,7 @@ export function createViewMenu(context: MenuContext): MenuItemConstructorOptions
     {
       // --- The accent and the fonts are in Settings › Appearance
       id: "toggle_theme",
-      label: dark ? "Switch to Light Theme" : "Switch to Dark Theme",
+      label: dark ? t("menu.view.lightTheme") : t("menu.view.darkTheme"),
       click: async () => {
         mainStore.dispatch(setThemeAction(dark ? "light" : "dark"));
         await saveKliveProject();
@@ -159,7 +165,7 @@ export function createViewMenu(context: MenuContext): MenuItemConstructorOptions
     },
     {
       id: "toggle_devtools",
-      label: "Toggle Developer Tools",
+      label: t("menu.view.toggleDevTools"),
       visible: context.allowDevTools,
       accelerator: "Ctrl+Shift+I",
       click: () => {
@@ -167,5 +173,5 @@ export function createViewMenu(context: MenuContext): MenuItemConstructorOptions
       }
     }
   ];
-  return { label: "View", submenu: tidySeparators(filterVisibleItems(items)) };
+  return { label: t("menu.view.title"), submenu: tidySeparators(filterVisibleItems(items)) };
 }

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 
+import { useT } from "@common/i18n/useT";
 import { Modal } from "@controls/Modal";
 import { useController } from "@mvc/react/useController";
 import { useViewModel } from "@mvc/react/useViewModel";
@@ -33,6 +34,7 @@ type Props = {
  * the view. The creation sequence itself lives in the controller.
  */
 export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
+  const t = useT();
   const mainApi = useMainApi();
   const files = useFilePickerPort();
   const { validationService, projectService, ideCommandsService } = useAppServices();
@@ -115,7 +117,7 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
 
   return (
     <Modal
-      title="Create a new Klive project"
+      title={t("dialog.newProject.title")}
       iconName="file-project"
       isOpen={true}
       fullScreen={false}

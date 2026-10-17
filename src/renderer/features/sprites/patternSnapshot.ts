@@ -6,6 +6,7 @@ import {
   type NexSpriteFormat
 } from "@common/zxnext/sprites/spritePatterns";
 import { serializeSprFile } from "@renderer/features/sprite-editor/sprite-file";
+import { t as translate, uiLocale } from "@common/i18n/i18n";
 
 /*
  * A sprite pattern popped out of the Sprite Inspector into a read-only sprite editor: the pattern as
@@ -49,28 +50,65 @@ export function patternLabel(format: NexSpriteFormat, pattern: number): string {
   return format === "8bit" ? String(pattern) : `${pattern} (${pattern >> 1}·${pattern & 1 ? "hi" : "lo"})`;
 }
 
+/** What the read-only bar describes; its text is formatted at display, in the current language */
+export type PatternSnapshotInfo = {
+  format: NexSpriteFormat;
+  pattern: number;
+  paletteOffset: number;
+  sprite?: number;
+  /** When it was taken, as epoch milliseconds */
+  takenAt: number;
+};
+
 export type PatternSnapshotViewState = {
-  /** The read-only bar's text */
+  /** The read-only bar's text, as it was when taken (the bar prefers `snapshotInfo`) */
   snapshotTitle: string;
   snapshotDetail: string;
+  snapshotInfo?: PatternSnapshotInfo;
   selectedSpriteIndex: number;
 };
+
+/** The read-only bar's title and detail line, in the current language. */
+export function patternSnapshotTexts(
+  info: PatternSnapshotInfo,
+  t: typeof translate = translate
+): { title: string; detail: string } {
+  const time = new Date(info.takenAt).toLocaleTimeString(uiLocale(), {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit"
+  });
+  const facts = [
+    info.sprite !== undefined ? t("panels.sprites.snapshot.asSprite", { sprite: info.sprite }) : undefined,
+    t("panels.sprites.snapshot.paletteOffset", { offset: info.paletteOffset & 0x0f }),
+    t("panels.sprites.snapshot.taken", { time })
+  ].filter(Boolean);
+  return {
+    title: t("panels.sprites.snapshot.title", {
+      pattern: patternLabel(info.format, info.pattern),
+      format: info.format === "8bit" ? t("panels.sprites.format.8bit") : t("panels.sprites.format.4bit")
+    }),
+    detail: facts.join(" · ")
+  };
+}
 
 /** The document id: one per pattern and format, so taking it again refreshes the same tab. */
 export const patternSnapshotId = (format: NexSpriteFormat, pattern: number) =>
   `spritePatternSnapshot-${format}-${pattern}`;
 
 export function patternSnapshotViewState(r: PatternSnapshotRequest): PatternSnapshotViewState {
-  const at = r.takenAt ?? new Date();
-  const time = at.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-  const facts = [
-    r.sprite !== undefined ? `as sprite #${r.sprite} shows it` : undefined,
-    `palette offset ${r.paletteOffset & 0x0f}`,
-    `taken ${time}`
-  ].filter(Boolean);
+  const info: PatternSnapshotInfo = {
+    format: r.format,
+    pattern: r.pattern,
+    paletteOffset: r.paletteOffset,
+    sprite: r.sprite,
+    takenAt: (r.takenAt ?? new Date()).getTime()
+  };
+  const { title, detail } = patternSnapshotTexts(info);
   return {
-    snapshotTitle: `Pattern ${patternLabel(r.format, r.pattern)} · ${r.format === "8bit" ? "8-bit" : "4-bit"}`,
-    snapshotDetail: facts.join(" · "),
+    snapshotTitle: title,
+    snapshotDetail: detail,
+    snapshotInfo: info,
     selectedSpriteIndex: 0
   };
 }
@@ -84,7 +122,10 @@ export async function openPatternSnapshot(hub: IDocumentHubService, r: PatternSn
   await hub.openDocument(
     {
       id,
-      name: `Pattern ${r.format === "8bit" ? r.pattern : `${r.pattern} (4-bit)`} (snapshot)`,
+      name:
+        r.format === "8bit"
+          ? translate("panels.sprites.snapshot.name8", { pattern: r.pattern })
+          : translate("panels.sprites.snapshot.name4", { pattern: r.pattern }),
       type: SPRITE_PATTERN_SNAPSHOT_VIEWER,
       iconName: "sprites",
       contents: serializeSprFile([patternSnapshotBytes(r)])

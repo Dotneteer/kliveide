@@ -15,6 +15,8 @@ import {
   isCopperWaitPark
 } from "@common/zxnext/copper/copperDecoder";
 import { getNextRegDescriptor } from "@emu/machines/zxNext/nextRegDescriptors";
+import { t } from "@common/i18n/i18n";
+import type { MessageKey } from "@common/i18n/keys.generated";
 
 /** The paper is `cvc` 0-191. */
 export const COPPER_PAPER_LINES = 192;
@@ -37,25 +39,26 @@ export function buildCopperModel(state: CopperState): CopperModel {
 // Mode and state
 // ---------------------------------------------------------------------------------------------
 
-const MODE_PHRASES = [
-  "00 · stopped",
-  "01 · loop from index 0",
-  "10 · loop, resume at last point",
-  "11 · loop, restart at (0,0)"
+const MODE_PHRASES: readonly MessageKey[] = [
+  "panels.feature.copper.mode.stopped",
+  "panels.feature.copper.mode.loopFromZero",
+  "panels.feature.copper.mode.loopResume",
+  "panels.feature.copper.mode.loopRestart"
 ];
 
 /** `11 · loop, restart at (0,0)`: the `$62` start mode as a short phrase. */
 export function copperModeText(startMode: number): string {
-  return MODE_PHRASES[startMode & 0x03];
+  return t(MODE_PHRASES[startMode & 0x03]);
 }
 
 /** The `$62` descriptor's full text for the mode, for a tooltip. */
 export function copperModeTooltip(startMode: number): string {
   const slice = getNextRegDescriptor(0x62)?.slices?.[0];
   const text = slice?.valueSet?.[startMode & 0x03];
-  return `NextReg $62 bits 7-6 = ${((startMode & 0x03) >>> 0).toString(2).padStart(2, "0")}${
-    text ? `\n${text}` : ""
-  }`;
+  const heading = t("panels.feature.copper.modeTooltip", {
+    bits: ((startMode & 0x03) >>> 0).toString(2).padStart(2, "0")
+  });
+  return `${heading}${text ? `\n${text}` : ""}`;
 }
 
 /**
@@ -65,24 +68,28 @@ export function copperModeTooltip(startMode: number): string {
 export function copperStateText(model: CopperModel): string {
   const { state, list, summary } = model;
   if ((state.startMode & 0x03) === 0) {
-    return summary.usedLength > 0 ? "Stopped · list retained" : "Stopped";
+    return t(summary.usedLength > 0 ? "panels.feature.copper.state.stoppedRetained" : "panels.feature.copper.state.stopped");
   }
   const current = list[state.pc & 0x3ff];
-  if (current.kind === "halt") return `Halted at ${formatCopperIndex(current.index)}`;
+  if (current.kind === "halt") return t("panels.feature.copper.state.halted", { index: formatCopperIndex(current.index) });
   if (current.kind === "wait" && state.beam.waiting) {
     return isCopperWaitPark(current, model.timing)
-      ? `Parked at ${formatCopperIndex(current.index)} (never matches)`
-      : `Waiting for line ${current.line}, x ${current.paperX}`;
+      ? t("panels.feature.copper.state.parked", { index: formatCopperIndex(current.index) })
+      : t("panels.feature.copper.state.waiting", { line: current.line, x: current.paperX });
   }
-  return "Running";
+  return t("panels.feature.copper.state.running");
 }
 
 /** `22 used · HALT at $015 · 1002 NOP`, or `no HALT` when the list does not end in one (D15). */
 export function copperSummaryText(summary: CopperListSummary): string {
-  if (summary.usedLength === 0) return "empty";
-  const parts = [`${summary.usedLength} used`];
-  parts.push(summary.terminated ? `HALT at ${formatCopperIndex(summary.haltIndex!)}` : "no HALT");
-  if (summary.trailingNops > 0) parts.push(`${summary.trailingNops} NOP`);
+  if (summary.usedLength === 0) return t("panels.feature.copper.summary.empty");
+  const parts = [t("panels.feature.copper.summary.used", { count: summary.usedLength })];
+  parts.push(
+    summary.terminated
+      ? t("panels.feature.copper.summary.haltAt", { index: formatCopperIndex(summary.haltIndex!) })
+      : t("panels.feature.copper.summary.noHalt")
+  );
+  if (summary.trailingNops > 0) parts.push(t("panels.feature.copper.summary.nops", { count: summary.trailingNops }));
   return parts.join(" · ");
 }
 
@@ -90,20 +97,22 @@ export function copperSummaryText(summary: CopperListSummary): string {
 export function copperWarnings(summary: CopperListSummary): string[] {
   const warnings: string[] = [];
   if (summary.usedLength > 0 && !summary.terminated) {
-    warnings.push("The list does not end in a HALT: the Copper runs on into the rest of its RAM.");
+    warnings.push(t("panels.feature.copper.warning.noHalt"));
   }
   if (summary.parks.length) {
     warnings.push(
-      `WAIT${summary.parks.length > 1 ? "s" : ""} at ${summary.parks.map(formatCopperIndex).join(", ")} never match${
-        summary.parks.length > 1 ? "" : "es"
-      } under the current timing.`
+      t("panels.feature.copper.warning.parks", {
+        count: summary.parks.length,
+        indexes: summary.parks.map(formatCopperIndex).join(", ")
+      })
     );
   }
   if (summary.orderWarnings.length) {
     warnings.push(
-      `WAIT${summary.orderWarnings.length > 1 ? "s" : ""} at ${summary.orderWarnings
-        .map(formatCopperIndex)
-        .join(", ")} wait${summary.orderWarnings.length > 1 ? "" : "s"} for an earlier line than the WAIT before: in a looping mode that is the next frame.`
+      t("panels.feature.copper.warning.order", {
+        count: summary.orderWarnings.length,
+        indexes: summary.orderWarnings.map(formatCopperIndex).join(", ")
+      })
     );
   }
   return warnings;

@@ -2,6 +2,8 @@ import { MessengerBase } from "@common/messaging/MessengerBase";
 import type { AppState } from "@common/state/AppState";
 import type { Store } from "@common/state/redux-light";
 import { IAnyMachine } from "@renderer/abstractions/IAnyMachine";
+import { labelRecord } from "@common/i18n/labels";
+import type { MessageKey } from "@common/i18n/keys.generated";
 
 /**
  * This type stores common information about a particular emulated machine
@@ -151,7 +153,11 @@ export type MachineMenuRenderer = (
 /**
  * Represents a machine-specifoc help link item
  */
+/** A Help-menu link; an entry with neither label nor key is a separator */
 export type HelpLinkInfo = {
+  /** Translation key of the link's text (`.plans/LOCALIZATION_PLAN.md` D7) */
+  labelKey?: MessageKey;
+  /** Untranslated text, for a link that has no key */
   label?: string;
   url?: string;
 };
@@ -173,14 +179,16 @@ export const MACHINE_DEVICE_MENUS = ["tape", "program", "disks", "cartridge", "s
 export type MachineDeviceMenuId = (typeof MACHINE_DEVICE_MENUS)[number];
 
 /** The label of each device submenu */
-export const MACHINE_DEVICE_MENU_LABELS: Record<MachineDeviceMenuId, string> = {
-  tape: "Tape",
-  program: "Program",
-  disks: "Disks",
-  cartridge: "Cartridge",
-  sdCard: "SD Card",
-  input: "Input"
-};
+/** Translated each time a label is read (`labelRecord`) */
+export const MACHINE_DEVICE_MENU_LABELS: Readonly<Record<MachineDeviceMenuId, string>> =
+  labelRecord<MachineDeviceMenuId>({
+    tape: "menu.machine.device.tape",
+    program: "menu.machine.device.program",
+    disks: "menu.machine.device.disks",
+    cartridge: "menu.machine.device.cartridge",
+    sdCard: "menu.machine.device.sdCard",
+    input: "menu.machine.device.input"
+  });
 
 /**
  * This type represents a machine-related menu item information

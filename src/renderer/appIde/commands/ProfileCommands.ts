@@ -40,6 +40,7 @@ import {
   writeMessage,
   writeSuccessMessage
 } from "@renderer/appIde/services/ide-commands";
+import { t, uiLocale } from "@common/i18n/i18n";
 
 /*
  * The profiler's commands (`.plans/PROFILER_PLAN.md` D16): `profile start|stop|reset|status|top|
@@ -48,18 +49,18 @@ import {
  */
 
 /** What a profile command says with the advanced-debugging switch off */
-export const PROFILER_OFF_MESSAGE =
-  "The profiler is part of advanced debugging, which is turned off. Turn it on with " +
-  `'set -u ${ADVANCED_DEBUGGING_SETTING} 1', then restart Klive.`;
+export function profilerOffMessage(): string {
+  return t("commands.profile.off", { setting: ADVANCED_DEBUGGING_SETTING });
+}
 
-const NO_PROFILE = "This machine does not keep a profile";
+const noProfile = () => t("commands.profile.notKept");
 
 /** Refuses a command on a machine whose core does not profile */
 function requireProfile(context: IdeCommandContext): IdeCommandResult | undefined {
-  if (!isAdvancedDebuggingEnabled(context.store.getState())) return commandError(PROFILER_OFF_MESSAGE);
+  if (!isAdvancedDebuggingEnabled(context.store.getState())) return commandError(profilerOffMessage());
   const machineId = context.service.machineService.getMachineInfo()?.machine?.machineId;
   const supported = !!machineRegistry.find((m) => m.machineId === machineId)?.features?.[MF_PROFILE];
-  return supported ? undefined : commandError(NO_PROFILE);
+  return supported ? undefined : commandError(noProfile());
 }
 
 function currentCompilation(context: IdeCommandContext): KliveCompilerOutput | undefined {
@@ -71,10 +72,10 @@ function currentCompilation(context: IdeCommandContext): KliveCompilerOutput | u
  * or a label of the current build, a Klive BASIC SUB/FUNCTION included
  */
 export function resolveProfileAddress(text: string, compilation: KliveCompilerOutput | undefined): number | undefined {
-  const t = text.trim();
-  const number = parseAddressLiteral(t);
+  const trimmed = text.trim();
+  const number = parseAddressLiteral(trimmed);
   if (number !== undefined) return number;
-  const name = t.toLowerCase();
+  const name = trimmed.toLowerCase();
   const labels = compilationLabels(compilation as Partial<DebuggableOutput> & { symbols?: Record<string, unknown> }, undefined);
   const label = labels.find((l) => l.name.toLowerCase() === name);
   if (label) return label.address;
@@ -110,16 +111,23 @@ async function startProfiling(context: IdeCommandContext, args: StartArgs): Prom
   const compilation = currentCompilation(context);
   const at = args["-at"] !== undefined ? resolveProfileAddress(args["-at"], compilation) : undefined;
   const until = args["-until"] !== undefined ? resolveProfileAddress(args["-until"], compilation) : undefined;
-  if (args["-at"] !== undefined && at === undefined) return commandError(`-at: unknown address or label '${args["-at"]}'`);
+  if (args["-at"] !== undefined && at === undefined) {
+    return commandError(t("commands.profile.unknownAt", { value: args["-at"] }));
+  }
   if (args["-until"] !== undefined && until === undefined) {
-    return commandError(`-until: unknown address or label '${args["-until"]}'`);
+    return commandError(t("commands.profile.unknownUntil", { value: args["-until"] }));
   }
   const status = await context.emuApi.startProfiling({ calls: !!args["-calls"], at, until });
-  if (!status) return commandError(NO_PROFILE);
-  const parts = [args["-calls"] ? "with the call graph" : "flat profile"];
-  if (at !== undefined) parts.push(`counting from $${toHexa4(at)}`);
-  if (until !== undefined) parts.push(`stopping at $${toHexa4(until)}${at !== undefined ? " after that" : ""}`);
-  writeSuccessMessage(context.output, `Profiling started (${parts.join(", ")})`);
+  if (!status) return commandError(noProfile());
+  writeSuccessMessage(
+    context.output,
+    t("commands.profile.started", {
+      calls: args["-calls"] ? "yes" : "no",
+      at: at !== undefined ? `$${toHexa4(at)}` : "none",
+      until: until !== undefined ? `$${toHexa4(until)}` : "none",
+      after: at !== undefined ? "yes" : "no"
+    })
+  );
   return commandSuccess;
 }
 
@@ -127,8 +135,8 @@ async function stopProfiling(context: IdeCommandContext): Promise<IdeCommandResu
   const refused = requireProfile(context);
   if (refused) return refused;
   const status = await context.emuApi.stopProfiling();
-  if (!status) return commandError(NO_PROFILE);
-  writeSuccessMessage(context.output, `Profiling stopped: ${formatTime(status.timeTotal, status)} measured`);
+  if (!status) return commandError(noProfile());
+  writeSuccessMessage(context.output, t("commands.profile.stopped", { time: formatTime(status.timeTotal, status) }));
   return commandSuccess;
 }
 
@@ -159,7 +167,9 @@ type ProfileArgs = StartArgs & {
  */
 export class ProfileCommand extends IdeCommandBase<ProfileArgs> {
   readonly id = "profile";
-  readonly description = "The profiler: start, stop, reset, status, top routines, export";
+  get description() {
+    return t("commands.profile.description");
+  }
   readonly usage = [
     "profile start [-calls] [-at <address|label>] [-until <address|label>]",
     "profile stop | reset | status",
@@ -181,31 +191,31 @@ export class ProfileCommand extends IdeCommandBase<ProfileArgs> {
 
   async validateCommandArgs(_context: IdeCommandContext, args: ProfileArgs): Promise<ValidationMessage[]> {
     const action = args.action?.toLowerCase() as ProfileSubcommand;
-    if (!SUBCOMMANDS.includes(action)) return [validationError(`Use one of: ${SUBCOMMANDS.join(", ")}`)];
+    if (!SUBCOMMANDS.includes(action)) {
+      return [validationError(t("commands.profile.useOneOf", { choices: SUBCOMMANDS.join(", ") }))];
+    }
     const messages: ValidationMessage[] = [];
     if (action === "top") {
-      if (args.arg !== undefined && !/^[1-9][0-9]*$/.test(args.arg)) messages.push(validationError("top: n must be a positive number"));
+      if (args.arg !== undefined && !/^[1-9][0-9]*$/.test(args.arg)) messages.push(validationError(t("commands.profile.topCount")));
       const by = args["-by"]?.toLowerCase();
       if (by !== undefined && by !== "self" && by !== "inclusive" && by !== "calls") {
-        messages.push(validationError("-by: use self, inclusive or calls"));
+        messages.push(validationError(t("commands.profile.byInvalid")));
       }
     }
     if (action === "export") {
       if (!args.arg?.trim()) {
-        messages.push(validationError("profile export needs a file"));
+        messages.push(validationError(t("commands.profile.exportNeedsFile")));
       } else {
         const format = args["-format"]?.toLowerCase();
         if (format !== undefined && !["fuse", "csv", "callgrind", "speedscope"].includes(format)) {
-          messages.push(validationError("-format: use fuse, csv, callgrind or speedscope"));
+          messages.push(validationError(t("commands.profile.formatInvalid")));
         } else if (format === undefined && !profileFormatOfName(args.arg)) {
-          messages.push(
-            validationError("Use a .prof, .csv, callgrind.out.* or .json file, or name the format with -format.")
-          );
+          messages.push(validationError(t("commands.profile.formatUnknown")));
         }
       }
     }
     if (action !== "start" && (args["-at"] !== undefined || args["-until"] !== undefined || args["-calls"])) {
-      messages.push(validationError("-calls, -at and -until belong to 'profile start'"));
+      messages.push(validationError(t("commands.profile.startOnly")));
     }
     return messages;
   }
@@ -220,7 +230,7 @@ export class ProfileCommand extends IdeCommandBase<ProfileArgs> {
         return stopProfiling(context);
       case "reset":
         await context.emuApi.resetProfile();
-        writeSuccessMessage(context.output, "Profile cleared");
+        writeSuccessMessage(context.output, t("commands.profile.cleared"));
         return commandSuccess;
       case "status":
         return this.status(context);
@@ -233,31 +243,31 @@ export class ProfileCommand extends IdeCommandBase<ProfileArgs> {
 
   private async status(context: IdeCommandContext): Promise<IdeCommandResult> {
     const status = await context.emuApi.getProfileStatus();
-    if (!status) return commandError(NO_PROFILE);
+    if (!status) return commandError(noProfile());
     for (const line of profileStatusLines(status)) writeMessage(context.output, line, "cyan");
     return commandSuccess;
   }
 
   private async model(context: IdeCommandContext, hideWaiting = true): Promise<ProfilerModel | string> {
     const snapshot = await readProfileSnapshot(context.emuApi);
-    if (!snapshot) return NO_PROFILE;
+    if (!snapshot) return noProfile();
     const model = buildProfilerModel(snapshot, currentCompilation(context), {
       hideWaiting,
       annotationLabels: annotationRoutineLabelsForState(context.store.getState())
     });
-    return model ?? "This machine's profile layout is unknown";
+    return model ?? t("commands.profile.layoutUnknown");
   }
 
   private async top(context: IdeCommandContext, args: ProfileArgs): Promise<IdeCommandResult> {
     const model = await this.model(context, !args["-waiting"]);
     if (typeof model === "string") return commandError(model);
     if (!model.flat.rows.length) {
-      writeMessage(context.output, "The profile is empty: start one with 'profile start'", "cyan");
+      writeMessage(context.output, t("commands.profile.empty"), "cyan");
       return commandSuccess;
     }
     const by = (args["-by"]?.toLowerCase() as TopSort | undefined) ?? "self";
     if (by === "inclusive" && !model.graph) {
-      return commandError("Inclusive time needs the call graph: start profiling with 'profile start -calls'");
+      return commandError(t("commands.profile.inclusiveNeedsCalls"));
     }
     for (const line of topTableLines(model, args.arg ? parseInt(args.arg, 10) : 10, by)) writeMessage(context.output, line);
     return commandSuccess;
@@ -267,23 +277,28 @@ export class ProfileCommand extends IdeCommandBase<ProfileArgs> {
     const file = args.arg!.trim();
     const format = ((args["-format"]?.toLowerCase() as ProfileExportFormat | undefined) ?? profileFormatOfName(file))!;
     if (!args["-f"] && (await fileExists(context, file))) {
-      return commandError(`${file} already exists; use -f to replace it.`);
+      return commandError(t("commands.profile.fileExists", { file }));
     }
     const model = await this.model(context, !args["-waiting"]);
     if (typeof model === "string") return commandError(model);
     const { status } = model.snapshot;
     const text = profileExportText(model, format, { addresses: !!args["-addresses"], name: programName(context) });
     if (text === undefined) {
-      return commandError(`${format} needs the call graph: start profiling with 'profile start -calls'`);
+      return commandError(t("commands.profile.formatNeedsCalls", { format }));
     }
     try {
       await context.mainApi.saveTextFile(file, text);
     } catch (err) {
-      return commandError(`Could not write ${file}: ${err instanceof Error ? err.message.replace(/^Error: /, "") : String(err)}`);
+      return commandError(
+        t("commands.profile.writeFailed", {
+          file,
+          error: err instanceof Error ? err.message.replace(/^Error: /, "") : String(err)
+        })
+      );
     }
     writeSuccessMessage(
       context.output,
-      `Exported the profile (${format}, ${formatTime(status.timeTotal, status)}) to ${file}`
+      t("commands.profile.exported", { format, time: formatTime(status.timeTotal, status), file })
     );
     return commandSuccess;
   }
@@ -318,25 +333,51 @@ function programName(context: IdeCommandContext): string | undefined {
 
 /** `profile status`'s lines (pure, so it is tested without an IDE) */
 export function profileStatusLines(status: ProfileStatus): string[] {
-  const n = (v: number) => v.toLocaleString("en-US");
   const lines: string[] = [];
-  let state = status.enabled ? "on" : "off";
-  if (status.enabled && status.armedStart >= 0) state += `, armed: counting starts at $${toHexa4(status.armedStart)}`;
-  if (status.enabled && status.armedStop >= 0) state += `, stops at $${toHexa4(status.armedStop)}`;
-  lines.push(`Profiling is ${state}${status.callsOn ? " (with the call graph)" : ""}` + (status.muted ? "; a replay is running, nothing counts" : ""));
-  lines.push(`Measured: ${formatTime(status.timeTotal, status)}, ${n(status.instructions)} instructions`);
+  lines.push(
+    t("commands.profile.status.state", {
+      enabled: status.enabled ? "yes" : "no",
+      start: status.enabled && status.armedStart >= 0 ? `$${toHexa4(status.armedStart)}` : "none",
+      stop: status.enabled && status.armedStop >= 0 ? `$${toHexa4(status.armedStop)}` : "none",
+      calls: status.callsOn ? "yes" : "no",
+      muted: status.muted ? "yes" : "no"
+    })
+  );
+  lines.push(
+    t("commands.profile.status.measured", {
+      time: formatTime(status.timeTotal, status),
+      count: status.instructions
+    })
+  );
   if (status.frameTicks && status.timeTotal) {
-    lines.push(`Frames: ${(status.timeTotal / status.frameTicks).toFixed(2)} (${n(status.frameTicks)} ${status.timeUnit} each)`);
-  }
-  if (status.timeTotal && status.timeHalt) lines.push(`Waiting in HALT: ${formatPct((100 * status.timeHalt) / status.timeTotal)}`);
-  if (status.calls || status.interrupts || status.callsOn) {
     lines.push(
-      `Call graph: ${n(status.calls)} calls, ${n(status.interrupts)} interrupts, ${n(status.edgesUsed)} caller/callee pairs` +
-        (status.depth ? `, ${n(status.depth)} open` : "")
+      t("commands.profile.status.frames", {
+        frames: (status.timeTotal / status.frameTicks).toLocaleString(uiLocale(), {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        }),
+        ticks: status.frameTicks,
+        unit: status.timeUnit
+      })
     );
-    if (status.stackResyncs) lines.push(`  ${n(status.stackResyncs)} stack switches rebuilt the call stack: the graph is approximate around them`);
-    if (status.depthOverflows) lines.push(`  ${n(status.depthOverflows)} calls deeper than 256 levels were not tracked`);
-    if (status.edgesDropped) lines.push(`  ${n(status.edgesDropped)} calls found the edge table full and count under (other)`);
+  }
+  if (status.timeTotal && status.timeHalt) {
+    lines.push(t("commands.profile.status.halt", { percent: formatPct((100 * status.timeHalt) / status.timeTotal) }));
+  }
+  if (status.calls || status.interrupts || status.callsOn) {
+    const graph = { calls: status.calls, interrupts: status.interrupts, pairs: status.edgesUsed, open: status.depth };
+    lines.push(
+      status.depth ? t("commands.profile.status.graphOpen", graph) : t("commands.profile.status.graph", graph)
+    );
+    if (status.stackResyncs) {
+      lines.push(`  ${t("commands.profile.status.resyncs", { count: status.stackResyncs })}`);
+    }
+    if (status.depthOverflows) {
+      lines.push(`  ${t("commands.profile.status.overflows", { count: status.depthOverflows })}`);
+    }
+    if (status.edgesDropped) {
+      lines.push(`  ${t("commands.profile.status.edgesDropped", { count: status.edgesDropped })}`);
+    }
   }
   return lines;
 }
@@ -344,7 +385,9 @@ export function profileStatusLines(status: ProfileStatus): string[] {
 /** `profile-start` (`pst`): `profile start`, the one profile command worth a short alias */
 export class ProfileStartCommand extends IdeCommandBase<StartArgs> {
   readonly id = "profile-start";
-  readonly description = "Starts profiling: resets the profile and turns it on";
+  get description() {
+    return t("commands.profile.start.description");
+  }
   readonly usage = "profile-start [-calls] [-at <address|label>] [-until <address|label>]";
   readonly aliases = ["pst"];
   readonly argumentInfo = START_ARGS;
@@ -357,7 +400,9 @@ export class ProfileStartCommand extends IdeCommandBase<StartArgs> {
 /** `profile-stop` (`psp`): stops profiling; the data stays */
 export class ProfileStopCommand extends IdeCommandBase {
   readonly id = "profile-stop";
-  readonly description = "Stops profiling; the profile stays until the next start or reset";
+  get description() {
+    return t("commands.profile.stop.description");
+  }
   readonly usage = "profile-stop";
   readonly aliases = ["psp"];
 
@@ -369,7 +414,9 @@ export class ProfileStopCommand extends IdeCommandBase {
 /** `show-profiler`: opens the Profiler document (D14) */
 export class ShowProfilerCommand extends IdeCommandBase {
   readonly id = "show-profiler";
-  readonly description = "Displays the Profiler";
+  get description() {
+    return t("commands.profile.show.description");
+  }
   readonly usage = "show-profiler";
   readonly aliases = ["shprof"];
 
@@ -389,7 +436,9 @@ export class ShowProfilerCommand extends IdeCommandBase {
 /** `hide-profiler`: closes the Profiler document */
 export class HideProfilerCommand extends IdeCommandBase {
   readonly id = "hide-profiler";
-  readonly description = "Hides the Profiler";
+  get description() {
+    return t("commands.profile.hide.description");
+  }
   readonly usage = "hide-profiler";
   readonly aliases = ["hprof"];
 

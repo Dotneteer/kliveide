@@ -1,3 +1,5 @@
+import { t } from "@common/i18n/i18n";
+import { useT } from "@common/i18n/useT";
 import { TabButton, TabButtonSeparator, TabButtonSpace } from "@renderer/controls/TabButton";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { useSelector } from "@renderer/core/RendererProvider";
@@ -16,7 +18,7 @@ import { spectrumSnapshotProjectGuard } from "@renderer/appIde/commands/Spectrum
  */
 
 const recordingGuard = (state: Parameters<typeof spectrumSnapshotProjectGuard>[0]) =>
-  spectrumSnapshotProjectGuard(state)?.replace(/snapshot/g, "recording");
+  spectrumSnapshotProjectGuard(state, undefined, "recording");
 
 /** The Explorer's entries for an `.rzx` file */
 export function getRzxContextMenuInfo(services: AppServices): ContextMenuInfo[] {
@@ -27,14 +29,14 @@ export function getRzxContextMenuInfo(services: AppServices): ContextMenuInfo[] 
     await ideCommandsService.executeCommand(command);
   };
   return [
-    { text: "Play recording", disabled: refused, clicked: async (item: string) => await run(rzxPlayCommandText(item)) },
+    { text: t("documents.rzx.menu.play"), disabled: refused, clicked: async (item: string) => await run(rzxPlayCommandText(item)) },
     {
-      text: "Debug recording (stop at its first instruction)",
+      text: t("documents.rzx.menu.debug"),
       disabled: refused,
       clicked: async (item: string) => await run(rzxPlayCommandText(item, true))
     },
     {
-      text: "Render recording to video",
+      text: t("documents.rzx.menu.video"),
       disabled: (store) => refused(store) || !store.getState()?.emulatorState?.screenRecordingAvailable,
       clicked: async (item: string) => await run(rzxVideoCommandText(item))
     }
@@ -44,12 +46,12 @@ export function getRzxContextMenuInfo(services: AppServices): ContextMenuInfo[] 
 type Props = { path: string };
 
 const RzxLaunchCommandBar = ({ path }: Props) => {
+  const t = useT();
   const { ideCommandsService } = useAppServices();
   const isKliveProject = useSelector((s) => s.project?.isKliveProject);
   const machineId = useSelector((s) => s.emulatorState?.machineId);
   const canRecord = useSelector((s) => s.emulatorState?.screenRecordingAvailable);
   const refusal = recordingGuard({ project: { isKliveProject }, emulatorState: { machineId } });
-  const hint = refusal ? ` (${refusal})` : "";
   const run = async (command: string) => {
     await ideCommandsService.executeCommand(command);
   };
@@ -58,21 +60,29 @@ const RzxLaunchCommandBar = ({ path }: Props) => {
       <TabButtonSeparator />
       <TabButton
         iconName="play"
-        title={`Play this recording${hint}`}
+        title={refusal ? t("documents.rzx.button.playRefused", { reason: refusal }) : t("documents.rzx.button.play")}
         disabled={!!refusal}
         clicked={async () => await run(rzxPlayCommandText(path))}
       />
       <TabButtonSpace />
       <TabButton
         iconName="debug"
-        title={`Play this recording under the debugger, stopping at its first instruction${hint}`}
+        title={
+          refusal ? t("documents.rzx.button.debugRefused", { reason: refusal }) : t("documents.rzx.button.debug")
+        }
         disabled={!!refusal}
         clicked={async () => await run(rzxPlayCommandText(path, true))}
       />
       <TabButtonSpace />
       <TabButton
         iconName="record"
-        title={canRecord ? `Render this recording to video${hint}` : "Screen recording is not available (FFmpeg was not found)"}
+        title={
+          !canRecord
+            ? t("documents.rzx.button.videoUnavailable")
+            : refusal
+              ? t("documents.rzx.button.videoRefused", { reason: refusal })
+              : t("documents.rzx.button.video")
+        }
         disabled={!!refusal || !canRecord}
         clicked={async () => await run(rzxVideoCommandText(path))}
       />

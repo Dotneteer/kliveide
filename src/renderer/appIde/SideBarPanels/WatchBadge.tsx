@@ -1,6 +1,7 @@
 import { useSelector } from "@renderer/core/RendererProvider";
 import { SideBarBadge } from "../SideBar/SideBarBadge";
 import type { SideBarPanelBadgeProps } from "@renderer/abstractions/SideBarPanelInfo";
+import { useT } from "@common/i18n/useT";
 
 /**
  * How many watch expressions are defined, shown on the Watch panel's header.
@@ -16,11 +17,12 @@ import type { SideBarPanelBadgeProps } from "@renderer/abstractions/SideBarPanel
  * and the badge would re-render on every unrelated store update. A number compares by value.
  */
 export const WatchBadge = ({}: SideBarPanelBadgeProps) => {
+  const t = useT();
   const count = useSelector((s) => s.watchExpressions?.length ?? 0);
   return (
     <SideBarBadge
       count={count}
-      title={`${count} watch expression${count === 1 ? "" : "s"}`}
+      title={t("panels.side.badge.watchExpressions", { count })}
     />
   );
 };

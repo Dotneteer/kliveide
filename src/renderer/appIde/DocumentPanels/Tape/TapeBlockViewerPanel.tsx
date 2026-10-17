@@ -23,6 +23,7 @@ import { decodeZx8081Program } from "../zx8081BasicListing";
 import { zx81DisplayRows, ZX81_PROGRAM_START } from "../PFile/pFileView";
 import { ZX80_PROGRAM_START } from "../PFile/oFileView";
 import { Zx81ScreenView } from "../PFile/Zx81ScreenView";
+import { useT } from "@common/i18n/useT";
 
 /*
  * A tape block popped out as a BASIC listing or a screen (`.plans/TAPE_VIEWER_PLAN.md` §4.5): the
@@ -91,11 +92,10 @@ const TapeBlockViewerPanel = ({
   contents,
   viewState
 }: DocumentProps<TapeBlockViewState>) => {
+  const t = useT();
   const bytes = contents instanceof Uint8Array ? contents : undefined;
   if (!bytes) {
-    return (
-      <EmptyState tone="error" motif={false} message="This block's bytes are not available." />
-    );
+    return <EmptyState tone="error" motif={false} message={t("panels.tape.block.noBytes")} />;
   }
   const zx81 = viewState?.format === "zx81" || viewState?.format === "zx80";
   return viewState?.view === "screen" ? (
@@ -118,6 +118,7 @@ const TapeBasicListing = ({
   bytes: Uint8Array;
   viewState?: TapeBlockViewState;
 }) => {
+  const t = useT();
   const dispatch = useDispatch();
   const documentHubService = useDocumentHubService();
   const [showCodes, setShowCodes] = useState(viewState?.showCodes ?? false);
@@ -150,34 +151,35 @@ const TapeBasicListing = ({
       <PanelHeader>
         <SmallIconButton
           iconName="copy"
-          title="Copy to clipboard"
+          title={t("panels.tape.block.copy")}
           clicked={async () => {
             await navigator.clipboard.writeText(basicListingText(listing.lines));
-            dispatch(setIdeStatusMessageAction("BASIC listing copied to the clipboard", true));
+            dispatch(setIdeStatusMessageAction(t("panels.tape.block.copied"), true));
           }}
         />
         <ToolbarSeparator small={true} />
         <LabeledSwitch
           value={showCodes}
-          label="Show Non-Printable:"
-          title="Display the non-printable codes"
+          label={t("panels.tape.block.showCodes")}
+          title={t("panels.tape.block.showCodesTitle")}
           clicked={setShowCodes}
         />
         <ToolbarSeparator small={true} />
         <LabeledSwitch
           value={showSpectrumFont}
-          label={zx81 ? "Use Sinclair font:" : "Use ZX Spectrum font:"}
-          title={zx81 ? "Use the Sinclair font to display the list" : "Use ZX Spectrum font to display the list"}
+          label={zx81 ? t("panels.tape.block.sinclairFont") : t("panels.tape.block.spectrumFont")}
+          title={zx81 ? t("panels.tape.block.sinclairFontTitle") : t("panels.tape.block.spectrumFontTitle")}
           clicked={setShowSpectrumFont}
         />
         <ToolbarSeparator small={true} />
         <span>
-          {`${listing.lineCount} line${listing.lineCount === 1 ? "" : "s"}`}
-          {viewState?.autostart !== undefined ? ` · autostart LINE ${viewState.autostart}` : ""}
+          {viewState?.autostart !== undefined
+            ? t("panels.tape.block.linesAutostart", { count: listing.lineCount, line: viewState.autostart })
+            : t("panels.helpers.lineCount", { count: listing.lineCount })}
         </span>
       </PanelHeader>
       {lines.length === 0 ? (
-        <EmptyState message="This block holds no BASIC lines." />
+        <EmptyState message={t("panels.tape.block.noLines")} />
       ) : (
         <VirtualizedList
           items={lines}
@@ -198,12 +200,13 @@ const TapeBasicListing = ({
   );
 };
 
-const TapeScreen = ({ bytes }: { bytes: Uint8Array }) =>
-  bytes.length < 6912 ? (
+const TapeScreen = ({ bytes }: { bytes: Uint8Array }) => {
+  const t = useT();
+  return bytes.length < 6912 ? (
     <EmptyState
       tone="error"
       motif={false}
-      message={`A screen is 6,912 bytes; this block holds ${bytes.length.toLocaleString("en-US")}.`}
+      message={t("panels.tape.block.shortScreen", { count: bytes.length })}
     />
   ) : (
     <FullPanel fontSize="--panel-font-size" fontFamily="--monospace-font">
@@ -217,6 +220,7 @@ const TapeScreen = ({ bytes }: { bytes: Uint8Array }) =>
       />
     </FullPanel>
   );
+};
 
 /** A ZX81 display file, drawn with the ROM's character set */
 const Zx81Screen = ({ bytes }: { bytes: Uint8Array }) => {

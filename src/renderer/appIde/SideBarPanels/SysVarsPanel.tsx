@@ -28,6 +28,7 @@ import { iconSizes } from "@renderer/theming/tokens/dimensions";
 import { useEmuStateListener } from "../useStateRefresh";
 import styles from "./SysVarsPanel.module.scss";
 import { HistoryPresentBanner } from "../debugger/history/HistoryPresentBanner";
+import { useT, type TFunction } from "@common/i18n/useT";
 
 /**
  * `$5C00` — four hex digits and the prefix. Every machine's system variables live in the 16-bit
@@ -123,18 +124,18 @@ function sample(sysVar: SysVar, memory: Uint8Array, previous: Previous): SysVarS
 }
 
 /** `$5C00 (23552) · 8 bytes` — the second line of every variable's tooltip. */
-function whatItIs(sample: SysVarSample): string {
+function whatItIs(t: TFunction, sample: SysVarSample): string {
   const { sysVar, length } = sample;
   const where = `${formatHex(sysVar.address, 4)} (${sysVar.address})`;
   switch (sysVar.type) {
     case SysVarType.Word:
-      return `${where} · word`;
+      return t("panels.side.sysVars.kindWord", { where });
     case SysVarType.Flags:
-      return `${where} · flags`;
+      return t("panels.side.sysVars.kindFlags", { where });
     case SysVarType.Array:
-      return `${where} · ${length} ${length === 1 ? "byte" : "bytes"}`;
+      return t("panels.side.sysVars.kindArray", { where, count: length });
     default:
-      return `${where} · byte`;
+      return t("panels.side.sysVars.kindByte", { where });
   }
 }
 
@@ -170,6 +171,7 @@ type SysVarRowProps = {
  * This is the other half of that contract.
  */
 const SysVarRow = ({ index, sample: item, expanded, toggle }: SysVarRowProps) => {
+  const t = useT();
   const ref = useTooltipRef<HTMLDivElement>();
   const [hover, setHover] = useState<RowHover>(null);
   const { sysVar, value, bytes, changed, changedBytes } = item;
@@ -189,12 +191,13 @@ const SysVarRow = ({ index, sample: item, expanded, toggle }: SysVarRowProps) =>
     if (hover?.kind === "bit" && value !== undefined) {
       const bit = (value >> hover.index) & 1;
       const description = sysVar.flagDescriptions?.[hover.index];
-      return `${sysVar.name} bit ${hover.index} = ${bit}${description ? `\n${description}` : ""}`;
+      const heading = t("panels.side.sysVars.bitValue", { name: sysVar.name, index: hover.index, bit });
+      return `${heading}${description ? `\n${description}` : ""}`;
     }
-    return `${sysVar.name}\n${whatItIs(item)}${
+    return `${sysVar.name}\n${whatItIs(t, item)}${
       sysVar.description ? `\n${sysVar.description}` : ""
     }`;
-  }, [hover, item, sysVar, value, bytes]);
+  }, [t, hover, item, sysVar, value, bytes]);
 
   const hoverByte = (byteIndex: number | null) =>
     setHover(byteIndex === null ? null : { kind: "byte", index: byteIndex });
@@ -263,7 +266,7 @@ const SysVarRow = ({ index, sample: item, expanded, toggle }: SysVarRowProps) =>
             />
           )}
           {collapsible && (
-            <DataSecondary text={`(${bytes?.length ?? 0} bytes)`} xclass={styles.sysVarCount} />
+            <DataSecondary text={t("panels.side.sysVars.byteCount", { count: bytes?.length ?? 0 })} xclass={styles.sysVarCount} />
           )}
         </div>
       </DataRow>
@@ -285,6 +288,7 @@ const SysVarRow = ({ index, sample: item, expanded, toggle }: SysVarRowProps) =>
 };
 
 export const SysVarsPanel = () => {
+  const t = useT();
   const emuApi = useEmuApi();
   const machineId = useSelector((s) => s.emulatorState?.machineId);
   const [sysVars, setSysVars] = useState<SysVar[]>([]);
@@ -362,19 +366,19 @@ export const SysVarsPanel = () => {
 
   return (
     <DataPanel>
-      <HistoryPresentBanner what="System variables" plural />
+      <HistoryPresentBanner subject="systemVariables" />
       {samples.length > 0 && (
         <PanelFilter
           value={filter}
           onChange={setFilter}
-          placeholder="Name or address"
-          label="Filter system variables"
+          placeholder={t("panels.side.sysVars.filterPlaceholder")}
+          label={t("panels.side.sysVars.filterLabel")}
           status={query ? `${visible.length} / ${samples.length}` : undefined}
         />
       )}
-      {samples.length === 0 && <EmptyState message="No system variables available" />}
+      {samples.length === 0 && <EmptyState message={t("panels.side.sysVars.empty")} />}
       {samples.length > 0 && visible.length === 0 && (
-        <EmptyState message={`No system variable matches "${filter.trim()}"`} motif={false} />
+        <EmptyState message={t("panels.side.sysVars.noMatch", { filter: filter.trim() })} motif={false} />
       )}
       {visible.length > 0 && (
         <VirtualizedList

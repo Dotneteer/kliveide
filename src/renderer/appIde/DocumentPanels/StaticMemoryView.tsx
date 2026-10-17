@@ -4,6 +4,7 @@ import styles from "./StaticMemoryView.module.scss";
 import { LabeledSwitch } from "@controls/LabeledSwitch";
 import { useEffect, useState } from "react";
 import { Label } from "@renderer/controls/layout/Label";
+import { useT } from "@common/i18n/useT";
 
 type MemoryViewProps = {
   memory: Uint8Array;
@@ -14,6 +15,7 @@ type MemoryViewProps = {
 const MAX_BYTES = 64;
 
 export const StaticMemoryView = ({ memory, initialShowAll = false, maxBytesInConciseView = MAX_BYTES }: MemoryViewProps) => {
+  const t = useT();
   const needsLabel = memory.length > maxBytesInConciseView;
   const [showAll, setShowAll] = useState(initialShowAll);
   const [bytesDisplayed, setBytesDisplayed] = useState(0);
@@ -37,11 +39,11 @@ export const StaticMemoryView = ({ memory, initialShowAll = false, maxBytesInCon
           <div className={styles.header}>
             <LabeledSwitch
               value={showAll}
-              label='Show all'
+              label={t("panels.doc.staticMemory.showAll")}
               clicked={v => setShowAll(v)}
             />
             {needsLabel && !showAll && (
-              <Label text={`(Showing only the leading ${maxBytesInConciseView} bytes)`} />
+              <Label text={t("panels.doc.staticMemory.showingLeading", { count: maxBytesInConciseView })} />
             )}
           </div>
         )}

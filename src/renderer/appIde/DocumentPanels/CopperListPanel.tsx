@@ -49,6 +49,7 @@ import { onCopperReveal } from "@renderer/features/copper/copperReveal";
 import { useBreakpointDialog } from "../dialogs/useBreakpointDialog";
 import { useEmuStateListener } from "../useStateRefresh";
 import styles from "./CopperListPanel.module.scss";
+import { useT } from "@common/i18n/useT";
 
 /**
  * The Copper List document (`$copper`, `.plans/COPPER_DEBUGGING_PLAN.md` §4.5, G3.1): all 1024
@@ -63,6 +64,7 @@ const RULER_HEIGHT = 1000;
 type CopperBreakpointState = { disabled: boolean; bp: BreakpointInfo };
 
 const CopperListPanel = (_props: DocumentProps) => {
+  const t = useT();
   const emuApi = useEmuApi();
   const { ideCommandsService } = useAppServices();
   const openBreakpointDialog = useBreakpointDialog();
@@ -187,7 +189,7 @@ const CopperListPanel = (_props: DocumentProps) => {
   if (!model) {
     return (
       <FullPanel fontSize="--panel-font-size" fontFamily="--monospace-font">
-        <EmptyState message="The Copper is available on the ZX Spectrum Next" />
+        <EmptyState message={t("panels.doc.copper.notAvailable")} />
       </FullPanel>
     );
   }
@@ -201,7 +203,7 @@ const CopperListPanel = (_props: DocumentProps) => {
         <div className={classnames(styles.row, styles.nopsRow)} onClick={() => setExpanded(true)}>
           <span className={styles.gutter} />
           <span className={styles.nops}>{copperNopsText(row.from, row.count)}</span>
-          <span className={styles.expandHint}>click to expand</span>
+          <span className={styles.expandHint}>{t("panels.doc.copper.clickToExpand")}</span>
         </div>
       );
     }
@@ -230,8 +232,8 @@ const CopperListPanel = (_props: DocumentProps) => {
           className={styles.gutter}
           title={
             bp
-              ? `Remove the breakpoint on ${formatCopperIndex(index)}`
-              : `Stop when the Copper completes ${formatCopperIndex(index)}`
+              ? t("panels.doc.copper.removeBreakpointOn", { index: formatCopperIndex(index) })
+              : t("panels.doc.copper.stopWhenCompletes", { index: formatCopperIndex(index) })
           }
           onClick={(e) => {
             e.stopPropagation();
@@ -260,9 +262,9 @@ const CopperListPanel = (_props: DocumentProps) => {
           })}
           title={
             park
-              ? "This WAIT never matches under the current timing"
+              ? t("panels.doc.copper.waitNeverMatches")
               : outOfOrder
-                ? "This WAIT is for an earlier line than the WAIT before it: in a looping mode it waits for the next frame"
+                ? t("panels.doc.copper.waitOutOfOrder")
                 : undefined
           }
         >
@@ -271,7 +273,7 @@ const CopperListPanel = (_props: DocumentProps) => {
           {isHit && hit && (
             <span className={styles.hitNote}>
               {" "}
-              · hit at line {hit.line}, hc {hit.hc}
+              {t("panels.doc.copper.hitAt", { line: hit.line, hc: hit.hc })}
             </span>
           )}
         </span>
@@ -280,7 +282,17 @@ const CopperListPanel = (_props: DocumentProps) => {
             className={classnames(styles.source, { [styles.patched]: match?.patched })}
             title={
               match
-                ? `${sourceName(match)}${match.patched ? ` · patched: assembled as ${formatCopperWord(match.sourceWord)}` : ""}\nmatched ${sourceMap!.matchedPerBlock[match.block]} of ${compilation!.copperBlocks![match.block].length} in this block`
+                ? `${
+                    match.patched
+                      ? t("panels.doc.copper.sourcePatched", {
+                          source: sourceName(match),
+                          word: formatCopperWord(match.sourceWord)
+                        })
+                      : sourceName(match)
+                  }\n${t("panels.doc.copper.sourceMatched", {
+                    matched: sourceMap!.matchedPerBlock[match.block],
+                    total: compilation!.copperBlocks![match.block].length
+                  })}`
                 : undefined
             }
           >
@@ -296,28 +308,28 @@ const CopperListPanel = (_props: DocumentProps) => {
       <PanelHeader>
         <LabeledSwitch
           value={followPc}
-          label="Follow PC:"
-          title="Keep the Copper's PC in view"
+          label={t("panels.doc.copper.followPc")}
+          title={t("panels.doc.copper.followPcTitle")}
           clicked={setFollowPc}
         />
         <ToolbarSeparator small={true} />
         <LabeledSwitch
           value={showSource}
-          label="Source:"
-          title="Show the .copper source line each instruction was assembled from"
+          label={t("panels.doc.copper.source")}
+          title={t("panels.doc.copper.sourceTitle")}
           clicked={setShowSource}
         />
         <ToolbarSeparator small={true} />
         <LabeledSwitch
           value={hex}
-          label="Hex WAIT:"
-          title="Show WAIT operands in hexadecimal"
+          label={t("panels.doc.copper.hexWait")}
+          title={t("panels.doc.copper.hexWaitTitle")}
           clicked={setHex}
         />
         <ToolbarSeparator small={true} />
         <SmallIconButton
           iconName="step-into"
-          title="Step Copper: run until the Copper completes its next instruction"
+          title={t("panels.doc.copper.step")}
           clicked={async () => {
             setFollowPc(true);
             await emuApi.stepCopper();
@@ -346,7 +358,10 @@ const CopperListPanel = (_props: DocumentProps) => {
             onHover={(tick) =>
               setRulerHover(
                 tick
-                  ? `${formatCopperIndex(tick.index)} WAIT line ${tick.line}${tick.matches ? "" : " (never matches)"}`
+                  ? t(tick.matches ? "panels.doc.copper.rulerTick" : "panels.doc.copper.rulerTickNeverMatches", {
+                      index: formatCopperIndex(tick.index),
+                      line: tick.line
+                    })
                   : undefined
               )
             }
@@ -362,24 +377,24 @@ const CopperListPanel = (_props: DocumentProps) => {
         <ContextMenuItem
           text={
             menuIndex !== undefined && breakpoints.has(menuIndex)
-              ? "Remove breakpoint"
-              : "Add breakpoint"
+              ? t("panels.doc.copper.menu.removeBreakpoint")
+              : t("panels.doc.copper.menu.addBreakpoint")
           }
           clicked={fromMenu(() => toggleBreakpoint(menuIndex!))}
         />
         {menuIndex !== undefined && breakpoints.has(menuIndex) && (
           <ContextMenuItem
-            text="Edit breakpoint..."
+            text={t("panels.doc.copper.menu.editBreakpoint")}
             iconName="pencil"
             clicked={fromMenu(() => editBreakpoint(menuIndex!))}
           />
         )}
-        <ContextMenuItem text="Run to here" clicked={fromMenu(() => runToHere(menuIndex!))} />
+        <ContextMenuItem text={t("panels.doc.copper.menu.runToHere")} clicked={fromMenu(() => runToHere(menuIndex!))} />
         {menuMatch && (
           <>
             <ContextMenuSeparator />
             <ContextMenuItem
-              text={`Go to source (${sourceName(menuMatch)})`}
+              text={t("panels.doc.copper.menu.goToSource", { source: sourceName(menuMatch) })}
               clicked={fromMenu(() => goToSource(menuMatch))}
             />
           </>

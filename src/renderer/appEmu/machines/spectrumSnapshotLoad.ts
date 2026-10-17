@@ -48,6 +48,7 @@ import {
 } from "@emu/machines/zxSpectrumP3e/p3RomSets";
 import { getSp128Model, getSp128Timing } from "@emu/machines/zxSpectrum128/sp128Timings";
 import { getTimexModel } from "@emu/machines/timex/timexModels";
+import { t } from "@common/i18n/i18n";
 
 /** The services the load uses */
 export type SpectrumSnapshotLoadPorts = {
@@ -99,7 +100,7 @@ export async function loadSpectrumSnapshot(
   const snapshot = parseSpectrumSnapshot(fileName, bytes);
   const mapping = mapSpectrumSnapshotToKlive(snapshot);
   if (mapping.errors.length > 0) {
-    throw new Error(`The snapshot cannot be loaded: ${mapping.errors.join("; ")}`);
+    throw new Error(t("emu.snapshot.cannotLoad", { errors: mapping.errors.join("; ") }));
   }
 
   // --- 2. Make the machine fit
@@ -108,13 +109,13 @@ export async function loadSpectrumSnapshot(
   if (fit.rebuild) {
     const live = await ports.setMachineType(fit.machineId, fit.modelId, fit.config);
     if (!live) {
-      throw new Error("The machine change was superseded by another one; the snapshot was not loaded");
+      throw new Error(t("emu.machine.supersededSnapshot"));
     }
   }
   const controller = ports.getMachineController();
   const machine = controller?.machine;
   if (!controller || !isSpectrumSnapshotMachine(machine)) {
-    throw new Error(`The emulator is not running a ${kliveSpectrumName(fit.machineId, fit.modelId)}`);
+    throw new Error(t("emu.machine.notRunningA", { machine: kliveSpectrumName(fit.machineId, fit.modelId) }));
   }
 
   // --- 3. Media
@@ -124,10 +125,10 @@ export async function loadSpectrumSnapshot(
     if (ext) {
       await ports.setTape(`${baseName(fileName)} (embedded tape).${ext}`, tape.embedded);
     } else {
-      warnings.push(`The embedded .${tape.extension} tape is not a format Klive plays; it was not inserted`);
+      warnings.push(t("emu.snapshot.embeddedTapeUnsupported", { extension: tape.extension }));
     }
   } else if (tape?.fileName) {
-    warnings.push(`The snapshot links the tape ${tape.fileName}; insert it yourself if you need it`);
+    warnings.push(t("emu.snapshot.linkedTape", { file: tape.fileName }));
   }
   // --- The +2A/+3/+3E's drives, or the Pentagon's Beta 128 drives
   const drives =
@@ -136,7 +137,7 @@ export async function loadSpectrumSnapshot(
       : Number(getSp128Model(fit.modelId)?.config?.[MC_DISK_SUPPORT] ?? 0);
   for (const disk of options.disks ?? []) {
     if (disk.drive >= drives) {
-      warnings.push(`The machine has no drive ${disk.drive ? "B" : "A"} for ${disk.fileName}`);
+      warnings.push(t("emu.snapshot.noDrive", { drive: disk.drive ? "B" : "A", file: disk.fileName }));
       continue;
     }
     await ports.setDisk(disk.drive, disk.fileName, disk.contents);
@@ -258,15 +259,16 @@ export function fitSpectrumMachine(
   }
   if (sameMachine && keepModel) {
     if (current.modelId === "pal-16k" && snapshot.machine !== "16k") {
-      throw new Error(
-        "The snapshot needs 48K of RAM, but the project's machine is a ZX Spectrum 16K"
-      );
+      throw new Error(t("emu.snapshot.needs48k"));
     }
     warnings.push(
-      `The snapshot is loaded on the project's ${kliveSpectrumName(machineId, current.modelId)} rather than a ${kliveSpectrumName(machineId, mapping.modelIds[0])}`
+      t("emu.snapshot.keptModel", {
+        machine: kliveSpectrumName(machineId, current.modelId),
+        wanted: kliveSpectrumName(machineId, mapping.modelIds[0])
+      })
     );
     if (machineId === MI_SPECTRUM_3E && p3ModelDrives(current.modelId) === 0 && snapshot.peripherals.plus3?.disks.length) {
-      warnings.push("The project's machine has no disk drives; the snapshot's disks are not inserted");
+      warnings.push(t("emu.snapshot.noDiskDrives"));
     }
     return { rebuild: false, machineId, modelId: current.modelId, config: current.config ?? {}, warnings };
   }

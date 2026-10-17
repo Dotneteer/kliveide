@@ -1,10 +1,12 @@
 import classnames from "classnames";
 
+import { useT } from "@common/i18n/useT";
 import { Icon } from "@renderer/controls/Icon";
 
 import type { StatusViewModel } from "../SjasmplusViewModel";
 import styles from "../SjasmplusIntegrationDialog.module.scss";
 import { PathText } from "./PathText";
+import { richText } from "./richText";
 
 const BADGE_ICON = {
   passed: { iconName: "check", fill: "--color-secondary-label", testId: "sjasmplus-integrated-badge" },
@@ -18,9 +20,11 @@ const DETAIL_TEST_ID = {
 } as const;
 
 // --- What Klive uses right now, as a readable sentence.
-export const StatusBlock = ({ status }: { status: StatusViewModel }) => (
+export const StatusBlock = ({ status }: { status: StatusViewModel }) => {
+  const t = useT();
+  return (
   <div className={classnames(styles.row, styles.block)}>
-    <span className={styles.label}>In use</span>
+    <span className={styles.label}>{t("dialog.sjasmplus.row.inUse")}</span>
     <div className={styles.blockValue}>
       {status.kind === "none" ? (
         <>
@@ -58,7 +62,7 @@ export const StatusBlock = ({ status }: { status: StatusViewModel }) => (
             <PathText
               testId="sjasmplus-executable-path"
               value={status.executablePath}
-              fallback="Not resolved"
+              fallback={t("dialog.sjasmplus.status.notResolved")}
             />
           </div>
           <div
@@ -68,8 +72,10 @@ export const StatusBlock = ({ status }: { status: StatusViewModel }) => (
             })}
             title={status.detailTitle}
           >
-            <span data-testid="sjasmplus-status">{status.headline}</span> in{" "}
-            <span data-testid="sjasmplus-scope">{status.scopeLabel}</span>
+            {richText(t, "dialog.sjasmplus.status.headlineInScope", {
+              headline: <span data-testid="sjasmplus-status">{status.headline}</span>,
+              scope: <span data-testid="sjasmplus-scope">{status.scopeLabel}</span>
+            })}
             <span className={styles.sep}>&middot;</span>
             <span
               className={status.detail.kind === "version" ? undefined : styles.messageText}
@@ -82,4 +88,5 @@ export const StatusBlock = ({ status }: { status: StatusViewModel }) => (
       )}
     </div>
   </div>
-);
+  );
+};

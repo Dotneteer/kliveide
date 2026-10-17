@@ -8,6 +8,7 @@ import Dropdown, { DropdownOption } from "@renderer/controls/Dropdown";
 import { IconButton } from "@renderer/controls/IconButton";
 import ScrollViewer, { ScrollViewerApi } from "@renderer/controls/ScrollViewer";
 import styles from "./ImageViewerPanel.module.scss";
+import { useT, type TFunction } from "@common/i18n/useT";
 
 type FitMode = "original" | "fit-width" | "fit-page";
 
@@ -16,10 +17,10 @@ type ImageViewerViewState = {
   fitMode?: FitMode;
 };
 
-const FIT_OPTIONS: DropdownOption[] = [
-  { value: "original", label: "Original size" },
-  { value: "fit-width", label: "Fit Width" },
-  { value: "fit-page", label: "Fit Page" }
+const fitOptions = (t: TFunction): DropdownOption[] => [
+  { value: "original", label: t("panels.doc.imageViewer.fitOriginal") },
+  { value: "fit-width", label: t("panels.doc.imageViewer.fitWidth") },
+  { value: "fit-page", label: t("panels.doc.imageViewer.fitPage") }
 ];
 
 const ZOOM_LEVELS = [0.125, 0.25, 0.5, 1, 2, 3, 4, 5, 6, 7, 8];
@@ -58,6 +59,7 @@ function mimeTypeForName(name: string): string | undefined {
 }
 
 const ImageViewerPanelComponent = ({ document, contents }: DocumentProps) => {
+  const t = useT();
   const data = contents as Uint8Array;
   const documentHubService = useDocumentHubService();
 
@@ -134,7 +136,7 @@ const ImageViewerPanelComponent = ({ document, contents }: DocumentProps) => {
   }, [data, document?.name]);
 
   if (!data || data.length === 0 || !dataUrl) {
-    return <EmptyState message="No image content." />;
+    return <EmptyState message={t("panels.doc.imageViewer.noContent")} />;
   }
 
   /*
@@ -149,7 +151,11 @@ const ImageViewerPanelComponent = ({ document, contents }: DocumentProps) => {
       <EmptyState
         tone="error"
         motif={false}
-        message={`This file could not be decoded as an image (${document?.name ?? "unknown file"}).`}
+        message={
+          document?.name
+            ? t("panels.doc.imageViewer.decodeFailed", { name: document.name })
+            : t("panels.doc.imageViewer.decodeFailedUnnamed")
+        }
       />
     );
   }
@@ -184,7 +190,7 @@ const ImageViewerPanelComponent = ({ document, contents }: DocumentProps) => {
     <FullPanel>
       <PanelHeader>
         <Dropdown
-          options={FIT_OPTIONS}
+          options={fitOptions(t)}
           initialValue={fitMode}
           width={110}
           onChanged={(v) => setFitMode(v as FitMode)}
@@ -194,13 +200,13 @@ const ImageViewerPanelComponent = ({ document, contents }: DocumentProps) => {
           iconSize={16}
           buttonWidth={24}
           buttonHeight={24}
-          title="Zoom out"
+          title={t("panels.doc.imageViewer.zoomOut")}
           enable={isOriginal && zoomIndex > 0}
           clicked={() => setZoomIndex((i) => Math.max(0, i - 1))}
         />
         <div
           className={styles.zoomLabel}
-          title={isOriginal ? "Click to reset to 100%" : undefined}
+          title={isOriginal ? t("panels.doc.imageViewer.resetZoom") : undefined}
           onClick={() => {
             setFitMode("original");
             setZoomIndex(DEFAULT_ZOOM_INDEX);
@@ -213,7 +219,7 @@ const ImageViewerPanelComponent = ({ document, contents }: DocumentProps) => {
           iconSize={16}
           buttonWidth={24}
           buttonHeight={24}
-          title="Zoom in"
+          title={t("panels.doc.imageViewer.zoomIn")}
           enable={isOriginal && zoomIndex < ZOOM_LEVELS.length - 1}
           clicked={() => setZoomIndex((i) => Math.min(ZOOM_LEVELS.length - 1, i + 1))}
         />
@@ -244,7 +250,7 @@ const ImageViewerPanelComponent = ({ document, contents }: DocumentProps) => {
           >
             <img
               src={dataUrl}
-              alt="Preview"
+              alt={t("panels.doc.imageViewer.previewAlt")}
               style={imgStyle}
               draggable={false}
               onLoad={(e) => {

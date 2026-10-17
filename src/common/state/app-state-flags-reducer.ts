@@ -25,6 +25,9 @@ export function appStateFlagsReducer (
     case "IS_WINDOWS":
       return { ...state, isWindows: payload?.flag };
 
+    case "SET_UI_LANGUAGE":
+      return { ...state, uiLanguage: payload?.value };
+
     case "SET_THEME":
       return { ...state, theme: payload?.id };
 

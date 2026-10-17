@@ -115,6 +115,7 @@ import { publishEditorCursorPosition } from "./monacoCursorPosition";
 import { getNormalizedLineNumberSelection } from "./monacoLineNumberSelection";
 import { pasteTextIntoEditor } from "./monacoClipboard";
 import { BackgroundCompileScheduler } from "./monacoBackgroundCompile";
+import { t } from "@common/i18n/i18n";
 
 export { initializeMonaco } from "./monacoBootstrap";
 
@@ -552,14 +553,14 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
         severity: isWarning
           ? monacoEditor.MarkerSeverity.Warning
           : monacoEditor.MarkerSeverity.Error,
-        message: err.message || "Issue detected",
+        message: err.message || t("panels.feature.editor.issueDetected"),
         startLineNumber: lineNo,
         startColumn: startCol,
         endLineNumber: lineNo,
         endColumn: endCol
       });
 
-      addBadge(lineNo, err.message || "Issue detected", isWarning);
+      addBadge(lineNo, err.message || t("panels.feature.editor.issueDetected"), isWarning);
     });
 
     // Add markers for invocation sites found in macro error message prefixes
@@ -719,7 +720,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
       disposables.push(
         ed.addAction({
           id: "klive.toggleStatementBreakpoint",
-          label: "Toggle Breakpoint at Statement",
+          label: t("panels.feature.editor.action.toggleStatementBreakpoint"),
           contextMenuGroupId: "klive-debug",
           contextMenuOrder: 1,
           run: (target) => {
@@ -729,7 +730,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
         }),
         ed.addAction({
           id: "klive.stopHereOnce",
-          label: "Stop Here Once",
+          label: t("panels.feature.editor.action.stopHereOnce"),
           contextMenuGroupId: "klive-debug",
           contextMenuOrder: 1.5,
           run: (target) => {
@@ -739,7 +740,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
         }),
         ed.addAction({
           id: "klive.runToCursor",
-          label: "Run to Cursor",
+          label: t("panels.feature.editor.action.runToCursor"),
           contextMenuGroupId: "klive-debug",
           contextMenuOrder: 2,
           run: (target) => {
@@ -1335,18 +1336,23 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
             : undefined;
         const at = `$${bp.address.toString(16).toUpperCase().padStart(4, "0")}`;
         // --- An assertion is checked, a logpoint logs, before the instruction at its address
-        const verb = commentKindOf(bp) === "LOGPOINT" ? "Logs" : "Checked";
+        const logs = commentKindOf(bp) === "LOGPOINT";
         lines.push(
           code && item
-            ? `${verb} before \`${code}\`, line ${item.lineNumber}, ${at}`
-            : `${verb} at ${at}`
+            ? t(logs ? "panels.feature.editor.comment.logsBefore" : "panels.feature.editor.comment.checkedBefore", {
+                code,
+                line: item.lineNumber,
+                address: at
+              })
+            : t(logs ? "panels.feature.editor.comment.logsAt" : "panels.feature.editor.comment.checkedAt", { address: at })
         );
       } else if (bp.annotationKind === "WPMEM" && bp.address !== undefined) {
         const from = bp.address;
         const to = from + (bp.length ?? 1) - 1;
         const hex = (v: number) => `$${v.toString(16).toUpperCase().padStart(4, "0")}`;
+        const range = from === to ? hex(from) : `${hex(from)}-${hex(to)}`;
         lines.push(
-          `Watches ${from === to ? hex(from) : `${hex(from)}-${hex(to)}`} for ${bp.memoryRead ? "reads" : "writes"}`
+          t(bp.memoryRead ? "panels.side.breakpoints.watchesReads" : "panels.side.breakpoints.watchesWrites", { range })
         );
       }
     }
@@ -1447,7 +1453,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
           languageInfo.id
         );
         if (!allowBp) {
-          const message = "You cannot create a breakpoint here";
+          const message = t("panels.feature.editor.cannotCreateBreakpoint");
           hoverDecorations.current?.clear();
           hoverDecorations.current = editor.current.createDecorationsCollection([
             createHoverDisabledBreakpointDecoration(lineNo, message)
@@ -1459,20 +1465,25 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
       // --- Display the message: the gesture, the breakpoint's filters, the menu
       hoverDecorations.current?.clear();
       const message = (commentMarks.length ? [
-        `Click to ${commentMarks.every((bp) => bp.disabled) ? "enable" : "disable"} this ${commentKindOf(commentMarks[0])} comment`,
+        t(
+          commentMarks.every((bp) => bp.disabled)
+            ? "panels.feature.editor.hover.enableComment"
+            : "panels.feature.editor.hover.disableComment",
+          { kind: commentKindOf(commentMarks[0]) }
+        ),
         ...describeCommentMark(commentMarks),
         ...breakpointFilterLines(commentMarks[0]),
-        "Right-click for more actions"
+        t("panels.feature.editor.hover.rightClick")
       ] : [
-        `Click to ${existingBp ? "remove the existing" : "add a new"} breakpoint`,
+        t(existingBp ? "panels.feature.editor.hover.removeBreakpoint" : "panels.feature.editor.hover.addBreakpoint"),
         existingBp?.oneShot
-          ? "Shift-click to remove the one-shot"
+          ? t("panels.feature.editor.hover.shiftRemoveOneShot")
           : existingBp
-            ? "Shift-click to make it stop here once"
-            : "Shift-click to stop here once",
+            ? t("panels.feature.editor.hover.shiftMakeOneShot")
+            : t("panels.feature.editor.hover.shiftStopOnce"),
         ...(existingBp ? breakpointFilterLines(existingBp) : []),
         ...(commentBp ? breakpointFilterLines(commentBp) : []),
-        "Right-click for more actions"
+        t("panels.feature.editor.hover.rightClick")
       ]).join("\n\n");
       hoverDecorations.current = editor.current.createDecorationsCollection([
         createHoverBreakpointDecoration(lineNo, message)
@@ -1626,7 +1637,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
     if (!indexes.length) {
       store.dispatch(
         setIdeStatusMessageAction(
-          "This .copper line is not in the Copper's RAM: build, run until the list is uploaded, then click again",
+          t("panels.feature.editor.copperLineNotInRam"),
           false
         )
       );
@@ -1769,7 +1780,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
       range: new monacoEditor.Range(row.line, (row.startColumn ?? 0) + 1, row.endLine ?? row.line, (row.endColumn ?? 0) + 1),
       options: {
         className: styles.selectedFrameStatement,
-        hoverMessage: { value: `Frame ${frame}: ${row.name} is running a call made here` }
+        hoverMessage: { value: t("panels.feature.editor.frameCallHere", { frame, name: row.name }) }
       }
     };
   }
@@ -1832,7 +1843,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
             stepTargetActions.current.push(
               editor.current.addAction({
                 id: `klive.stepIntoTarget.${target.callableIndex}`,
-                label: `Step Into ${target.name}`,
+                label: t("panels.feature.editor.action.stepIntoTarget", { name: target.name }),
                 contextMenuGroupId: "klive-debug",
                 contextMenuOrder: 3 + i,
                 run: () => void emuApi.sourceStep("intoTarget", { targetCallable: target.callableIndex })
@@ -1930,7 +1941,7 @@ function asHistoricalDecoration(decoration: Decoration, position: number): Decor
       className: styles.historyLine,
       glyphMarginClassName: styles.historyMargin,
       hoverMessage: {
-        value: `History step \u2212${position.toLocaleString("en-US")}: the registers here are from the past; memory shows the present`
+        value: t("panels.feature.editor.historyLine", { step: `\u2212${position.toLocaleString("en-US")}` })
       }
     }
   };
@@ -2103,15 +2114,15 @@ function createStatementMarkerDecoration(line: number, column: number, bp?: Brea
           : "\u25cf";
   const hover = bp
     ? [
-        "Click to remove the breakpoint on this statement",
-        bp.oneShot ? "Shift-click to remove the one-shot" : "Shift-click to make it stop here once",
+        t("panels.feature.editor.hover.removeStatementBreakpoint"),
+        bp.oneShot ? t("panels.feature.editor.hover.shiftRemoveOneShot") : t("panels.feature.editor.hover.shiftMakeOneShot"),
         ...breakpointFilterLines(bp),
-        "Right-click for more actions"
+        t("panels.feature.editor.hover.rightClick")
       ]
     : [
-        "Click to add a breakpoint on this statement",
-        "Shift-click to stop here once",
-        "Right-click for more actions"
+        t("panels.feature.editor.hover.addStatementBreakpoint"),
+        t("panels.feature.editor.hover.shiftStopOnce"),
+        t("panels.feature.editor.hover.rightClick")
       ];
   // --- The range covers the statement's first character: Monaco (0.55) draws no `before` text for
   // --- a decoration with an empty range, so an empty one left every marker invisible
@@ -2132,8 +2143,13 @@ function createCurrentStatementDecoration(location: SourceLocation, activeBp?: B
   const startColumn = (location.startColumn ?? 0) + 1;
   const endColumn = location.endColumn !== undefined ? location.endColumn + 1 : startColumn;
   const returnPoint = location.kind === "returnPoint";
-  const note = returnPoint ? `returned from ${location.returnedFrom ?? "a call"}` : undefined;
-  const error = location.kind === "error" ? (location.error ?? "runtime error") : undefined;
+  const note = returnPoint
+    ? location.returnedFrom !== undefined
+      ? t("panels.feature.editor.returnedFrom", { name: location.returnedFrom })
+      : t("panels.feature.editor.returnedFromCall")
+    : undefined;
+  const error =
+    location.kind === "error" ? (location.error ?? t("panels.feature.editor.runtimeError")) : undefined;
   return {
     range: new monacoEditor.Range(location.line, startColumn, location.endLine, endColumn),
     options: {
@@ -2145,13 +2161,13 @@ function createCurrentStatementDecoration(location: SourceLocation, activeBp?: B
         : styles.activeBreakpointMargin,
       ...(note
         ? {
-            hoverMessage: { value: `Execution returned here: ${note}` },
+            hoverMessage: { value: t("panels.feature.editor.executionReturned", { note }) },
             after: { content: `  \u2190 ${note}`, inlineClassName: styles.returnPointNote }
           }
         : {}),
       ...(error
         ? {
-            hoverMessage: { value: `The program stopped on a runtime error: ${error}. Continue to let the ROM report it.` },
+            hoverMessage: { value: t("panels.feature.editor.runtimeErrorStop", { error }) },
             after: { content: `  \u2716 ${error}`, inlineClassName: styles.errorStopNote }
           }
         : {})

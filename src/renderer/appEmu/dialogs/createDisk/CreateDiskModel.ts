@@ -1,6 +1,7 @@
 import type { IValidationService } from "@renderer/core/ValidationService";
 import type { UiReducer } from "@mvc/core/types";
 import { requiredFilename, requiredPath } from "@renderer/appIde/dialogs/dialogValidators";
+import { withLabels } from "@common/i18n/labels";
 
 // ─── Vocabulary ──────────────────────────────────────────────────────────────
 
@@ -8,23 +9,24 @@ export type DiskTypeOption = { value: string; label: string };
 
 // --- The disk geometries the main process knows how to write. Data, not a
 // --- decision, so it lives with the model and the view merely renders it.
-export const DISK_TYPES: DiskTypeOption[] = [
-  { value: "ss", label: "Single-sided CPC (180K)" },
-  { value: "ds", label: "Double-sided CPC (360K)" },
-  { value: "sse", label: "Single-sided ECPC (180K)" },
-  { value: "dse", label: "Double-sided ECPC (360K)" }
-];
+// --- The model holds message keys only; `label` is a getter that translates at display time.
+export const DISK_TYPES: DiskTypeOption[] = withLabels([
+  { labelKey: "dialog.createDisk.diskType.ss", value: "ss" },
+  { labelKey: "dialog.createDisk.diskType.ds", value: "ds" },
+  { labelKey: "dialog.createDisk.diskType.sse", value: "sse" },
+  { labelKey: "dialog.createDisk.diskType.dse", value: "dse" }
+]);
 
 export const DEFAULT_DISK_TYPE = "ss";
 
 // --- TR-DOS disks for the Pentagon's Beta 128 (`.plans/BETA128_TRDOS_PLAN.md` Phase 3): blank,
 // --- TR-DOS-formatted `.trd` images (`createBlankTrd`)
-export const TRD_DISK_TYPES: DiskTypeOption[] = [
-  { value: "trd80ds", label: "TR-DOS 80 tracks, double-sided (640K)" },
-  { value: "trd40ds", label: "TR-DOS 40 tracks, double-sided (320K)" },
-  { value: "trd80ss", label: "TR-DOS 80 tracks, single-sided (320K)" },
-  { value: "trd40ss", label: "TR-DOS 40 tracks, single-sided (160K)" }
-];
+export const TRD_DISK_TYPES: DiskTypeOption[] = withLabels([
+  { labelKey: "dialog.createDisk.diskType.trd80ds", value: "trd80ds" },
+  { labelKey: "dialog.createDisk.diskType.trd40ds", value: "trd40ds" },
+  { labelKey: "dialog.createDisk.diskType.trd80ss", value: "trd80ss" },
+  { labelKey: "dialog.createDisk.diskType.trd40ss", value: "trd40ss" }
+]);
 
 // --- Where the folder picker remembers its last location.
 export const NEW_DISK_FOLDER_SETTINGS_KEY = "newDiskFolder";

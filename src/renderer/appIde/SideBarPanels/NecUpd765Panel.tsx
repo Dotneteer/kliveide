@@ -16,6 +16,7 @@ import {
   EmptyState
 } from "@renderer/controls/data";
 import { iconSizes } from "@renderer/theming/tokens/dimensions";
+import { useT } from "@common/i18n/useT";
 
 /**
  * The glyph for each port operation — and *only* the glyph.
@@ -44,6 +45,7 @@ const OPERATION_ICON: Record<PortOperationType, string> = {
 const UNKNOWN_OPERATION_ICON = "question";
 
 export const NecUpd765Panel = () => {
+  const t = useT();
   const emuApi = useEmuApi();
   const [log, setLog] = useState<FloppyLogEntry[]>([]);
   const logLength = useRef(0);
@@ -68,7 +70,7 @@ export const NecUpd765Panel = () => {
 
   return (
     <div className={styles.necPanel}>
-      {log.length === 0 && <EmptyState message="No log entries collected" />}
+      {log.length === 0 && <EmptyState message={t("panels.side.necUpd765.empty")} />}
       {log.length > 0 && (
         <VirtualizedList
           items={log}

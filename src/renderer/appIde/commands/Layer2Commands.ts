@@ -13,6 +13,7 @@ import {
   commandSuccess,
   validationError
 } from "@renderer/appIde/services/ide-commands";
+import { t } from "@common/i18n/i18n";
 
 /*
  * The Layer 2 Inspector's command (`.plans/LAYER2_INSPECTOR_PLAN.md` §4.4): opens `$layer2`,
@@ -24,8 +25,9 @@ const SOURCES: Layer2Source[] = ["displayed", "shadow", "window"];
 /** `show-layer2 [displayed|shadow|window]`: opens the Layer 2 Inspector. */
 export class ShowLayer2Command extends IdeCommandBase<{ source?: string }> {
   readonly id = "show-layer2";
-  readonly description =
-    "Displays the Layer 2 Inspector, optionally on a source: displayed ($12), shadow ($13) or window (the $123B write window)";
+  get description() {
+    return t("commands.layer2.description");
+  }
   readonly usage = "show-layer2 [displayed|shadow|window]";
   readonly aliases = ["shl2"];
   readonly argumentInfo: CommandArgumentInfo = {
@@ -34,14 +36,14 @@ export class ShowLayer2Command extends IdeCommandBase<{ source?: string }> {
 
   async validateCommandArgs(_context: IdeCommandContext, args: { source?: string }): Promise<ValidationMessage[]> {
     return args.source !== undefined && !SOURCES.includes(args.source.toLowerCase() as Layer2Source)
-      ? [validationError("The source is displayed, shadow or window")]
+      ? [validationError(t("commands.layer2.sourceValues"))]
       : [];
   }
 
   async execute(context: IdeCommandContext, args: { source?: string }): Promise<IdeCommandResult> {
     const machineId = context.service.machineService.getMachineInfo()?.machine?.machineId;
     if (machineId !== MI_ZXNEXT) {
-      return commandError("Layer 2 exists on the ZX Spectrum Next only");
+      return commandError(t("commands.layer2.nextOnly"));
     }
     requestLayer2Reveal({ source: args?.source?.toLowerCase() as Layer2Source | undefined });
     const documentHubService = context.service.projectService.getActiveDocumentHubService();

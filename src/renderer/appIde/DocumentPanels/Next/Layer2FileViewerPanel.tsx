@@ -16,6 +16,7 @@ import ScrollViewer from "@renderer/controls/ScrollViewer";
 import { GenericFilePanel, type GenericFileContext } from "../helpers/GenericFilePanel";
 import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import { Layer2OverlayCanvas } from "../Layer2Inspector/Layer2OverlayCanvas";
+import { useT } from "@common/i18n/useT";
 import styles from "./Layer2FileViewerPanel.module.scss";
 
 /*
@@ -34,6 +35,7 @@ type Layer2FileViewState = {
 };
 
 const Layer2FileBody = ({ ctx }: { ctx: GenericFileContext<Layer2File, Layer2FileViewState> }) => {
+  const t = useT();
   const file = ctx.fileInfo!;
   const wanted = ctx.viewState?.resolution;
   const resolution = wanted !== undefined && file.resolutions.includes(wanted) ? wanted : file.resolutions[0];
@@ -57,16 +59,16 @@ const Layer2FileBody = ({ ctx }: { ctx: GenericFileContext<Layer2File, Layer2Fil
 
   return (
     <div className={styles.root}>
-      <div className={styles.toolbar} role="toolbar" aria-label="Layer 2 picture">
+      <div className={styles.toolbar} role="toolbar" aria-label={t("panels.next.layer2.picture")}>
         {file.resolutions.length > 1 ? (
-          <span className={spriteSegmentedClass} role="group" aria-label="Resolution">
+          <span className={spriteSegmentedClass} role="group" aria-label={t("panels.next.layer2.resolution")}>
             {file.resolutions.map((r) => (
               <button
                 key={r}
                 type="button"
                 className={spriteSegmentClass}
                 aria-pressed={resolution === r}
-                title={r === 1 ? "8 bits a pixel" : "4 bits a pixel, two pixels a byte"}
+                title={r === 1 ? t("panels.next.layer2.res8bit") : t("panels.next.layer2.res4bit")}
                 onClick={() => set({ resolution: r })}
               >
                 {r === 1 ? "320×256" : "640×256"}
@@ -77,18 +79,18 @@ const Layer2FileBody = ({ ctx }: { ctx: GenericFileContext<Layer2File, Layer2Fil
           <span className={styles.value}>256×192</span>
         )}
         <span className={classnames(styles.note, { [styles.muted]: !file.paletteFromFile })}>
-          {file.paletteFromFile ? "palette from the file" : "default Layer 2 palette (the file has none)"}
+          {file.paletteFromFile ? t("panels.next.layer2.paletteFromFile") : t("panels.next.layer2.paletteDefault")}
         </span>
         <span className={styles.spacer} />
-        <span className={spriteSegmentedClass} role="group" aria-label="Overlays">
+        <span className={spriteSegmentedClass} role="group" aria-label={t("panels.next.layer2.overlays")}>
           <button
             type="button"
             className={spriteSegmentClass}
             aria-pressed={banks}
-            title="Outline the 16K banks the picture fills"
+            title={t("panels.next.layer2.banksTitle")}
             onClick={() => set({ banks: !banks })}
           >
-            Banks
+            {t("panels.next.layer2.banks")}
           </button>
         </span>
         <SpriteZoomButtons zoom={zoom} onChange={(z) => set({ zoom: z })} />
@@ -105,7 +107,7 @@ const Layer2FileBody = ({ ctx }: { ctx: GenericFileContext<Layer2File, Layer2Fil
               checker={false}
               zoomX={zoom}
               zoomY={zoomY}
-              ariaLabel="Layer 2 picture"
+              ariaLabel={t("panels.next.layer2.picture")}
             >
               <Layer2OverlayCanvas shapes={shapes} width={size.width} height={size.height} zoomX={zoom} zoomY={zoomY} />
             </IndexedImageCanvas>

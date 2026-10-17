@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 
 import {
-  SOURCE_SPEC_MESSAGE,
+  sourceSpecMessage,
   breakpointFormWarnings,
   breakpointKeyOf,
   breakpointToForm,
@@ -135,7 +135,7 @@ describe("parseNumericInput agrees with the bp-set command parser", () => {
       aForm({ address: "[code/code.kz80.asm]:12" }),
       anEnv()
     );
-    expect(errors.address).toBe(SOURCE_SPEC_MESSAGE);
+    expect(errors.address).toBe(sourceSpecMessage());
   });
 });
 
@@ -171,7 +171,7 @@ describe("validateBreakpointForm - address", () => {
   it("points a source spec at the editor margin", () => {
     expect(
       validateBreakpointForm(aForm({ address: "[code/code.kz80.asm]:12" }), anEnv()).address
-    ).toBe(SOURCE_SPEC_MESSAGE);
+    ).toBe(sourceSpecMessage());
   });
 });
 

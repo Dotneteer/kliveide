@@ -1,4 +1,5 @@
-import { ADVANCED_DEBUGGING_OFF_MESSAGE } from "@common/features/advancedDebugging";
+import { advancedDebuggingOffMessage } from "@common/features/advancedDebugging";
+import { t } from "@common/i18n/i18n";
 import type { ExecutionHistoryInfo } from "@common/history/historyTypes";
 import type { HistoryRecord } from "@common/history/historyRecord";
 import type { HistoryServiceSpan } from "@common/history/serviceSpans";
@@ -305,13 +306,13 @@ export type HistoryEnvironment = {
 
 /** The message the document shows instead of rows, or undefined when it has rows to show */
 export function historyEmptyMessage(env: HistoryEnvironment, info: ExecutionHistoryInfo | undefined): string | undefined {
-  if (env.switchedOff) return ADVANCED_DEBUGGING_OFF_MESSAGE;
-  if (!env.supported) return "This machine does not record execution history";
-  if (env.running) return "Running — history updates at the next stop";
+  if (env.switchedOff) return advancedDebuggingOffMessage();
+  if (!env.supported) return t("panels.feature.history.empty.unsupported");
+  if (env.running) return t("panels.feature.history.empty.running");
   if (!info || info.count === 0) {
     return env.debugging || info?.enabled
-      ? "No history yet"
-      : "History is recorded only when the machine is started with debugging";
+      ? t("panels.feature.history.empty.noHistory")
+      : t("panels.feature.history.empty.notDebugging");
   }
   return undefined;
 }
@@ -319,7 +320,7 @@ export function historyEmptyMessage(env: HistoryEnvironment, info: ExecutionHist
 /** The header's "12,345 of 131,072 recorded" */
 export function historyCountText(info: ExecutionHistoryInfo | undefined): string {
   if (!info) return "";
-  return `${info.count.toLocaleString("en-US")} of ${info.capacity.toLocaleString("en-US")} recorded`;
+  return t("panels.feature.history.count", { count: info.count, capacity: info.capacity });
 }
 
 // ------------------------------------------------------------------------------------------------

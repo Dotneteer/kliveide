@@ -1,3 +1,4 @@
+import { t } from "@common/i18n/i18n";
 import { parseTapeHeader } from "./tapeView";
 
 /*
@@ -21,65 +22,64 @@ export type TapeHeaderField = {
   meaning: string;
 };
 
+/* --- Byte counts in the value column stay invariant: they sit beside hex, as data */
+const fmt = (value: number) => value.toLocaleString("en-US");
 const hex2 = (value: number) => value.toString(16).toUpperCase().padStart(2, "0");
 const hex4 = (value: number) => value.toString(16).toUpperCase().padStart(4, "0");
-const fmt = (value: number) => value.toLocaleString("en-US");
 
 /** How a little-endian word is read, using the field's own bytes as the example */
 function wordReading(lo: number, hi: number): string {
-  return `${hex2(lo)} ${hex2(hi)} is $${hex4(lo | (hi << 8))}: the low byte comes first.`;
+  return t("panels.tape.hdr.wordReading", { lo: hex2(lo), hi: hex2(hi), word: `$${hex4(lo | (hi << 8))}` });
 }
 
 /**
- * The fields of a 19-byte header block.
+ * The fields of a 19-byte header block, worded in the current language (call it at display time).
  * @param bytes The block as recorded: flag, type, name, three words, checksum
  * @param dataIndex The block index of the data block this header describes, if there is one
  */
 export function tapeHeaderFields(bytes: Uint8Array, dataIndex?: number): TapeHeaderField[] {
   const header = parseTapeHeader(bytes);
   const word = (offset: number) => bytes[offset] | (bytes[offset + 1] << 8);
-  const dataBlock =
-    dataIndex === undefined ? "the data block that follows" : `data block #${dataIndex}`;
   let checksum = 0;
   for (let i = 0; i < 18; i++) checksum ^= bytes[i];
   const nameHasCodes = Array.from(bytes.subarray(2, 12)).some((b) => b < 0x20 || b >= 0x80);
+  const lengthReading = wordReading(bytes[12], bytes[13]);
 
   const fields: TapeHeaderField[] = [
     {
       key: "flag",
-      name: "Flag",
+      name: t("panels.tape.hdr.flag"),
       first: 0,
       last: 0,
-      value: `$${hex2(bytes[0])} (header)`,
-      meaning: "Marks this block as a header. The data block after it starts with $FF."
+      value: t("panels.tape.hdr.flagValue", { value: `$${hex2(bytes[0])}` }),
+      meaning: t("panels.tape.hdr.flagMeaning")
     },
     {
       key: "type",
-      name: "Type",
+      name: t("panels.tape.hdr.type"),
       first: 1,
       last: 1,
       value: `${header.type} · ${header.typeName}`,
-      meaning: "0 Program, 1 Number array, 2 Character array, 3 Bytes (code or a screen)."
+      meaning: t("panels.tape.hdr.typeMeaning")
     },
     {
       key: "name",
-      name: "Name",
+      name: t("panels.tape.hdr.name"),
       first: 2,
       last: 11,
       value: `"${header.name}"`,
-      meaning:
-        `Ten characters padded with spaces; LOAD "name" only loads a file whose name matches.` +
-        (nameHasCodes
-          ? " This one holds control codes or tokens, shown in braces: a trick to print something other than the name."
-          : "")
+      meaning: nameHasCodes ? t("panels.tape.hdr.nameMeaningCodes") : t("panels.tape.hdr.nameMeaning")
     },
     {
       key: "length",
-      name: "Length",
+      name: t("panels.tape.hdr.length"),
       first: 12,
       last: 13,
       value: fmt(header.dataLength),
-      meaning: `How many bytes ${dataBlock} holds. ${wordReading(bytes[12], bytes[13])}`
+      meaning:
+        dataIndex === undefined
+          ? t("panels.tape.hdr.lengthMeaningNext", { reading: lengthReading })
+          : t("panels.tape.hdr.lengthMeaning", { index: dataIndex, reading: lengthReading })
     }
   ];
 
@@ -87,33 +87,33 @@ export function tapeHeaderFields(bytes: Uint8Array, dataIndex?: number): TapeHea
     case 0: {
       const program = header.variablesOffset ?? 0;
       const variables = Math.max(0, header.dataLength - program);
+      const reading = wordReading(bytes[14], bytes[15]);
       fields.push(
         {
           key: "param1",
-          name: "Autostart",
+          name: t("panels.tape.hdr.autostart"),
           first: 14,
           last: 15,
+          // --- LINE is the BASIC keyword: not translated
           value:
             header.autostart !== undefined
               ? `LINE ${header.autostart}`
-              : `none ($${hex4(word(14))})`,
+              : t("panels.tape.hdr.autostartNone", { value: `$${hex4(word(14))}` }),
           meaning:
-            (header.autostart !== undefined
-              ? `After loading, the program runs from line ${header.autostart}, as if by GO TO.`
-              : "32768 or more means no autostart: the program loads and stops.") +
-            ` ${wordReading(bytes[14], bytes[15])}`
+            header.autostart !== undefined
+              ? t("panels.tape.hdr.autostartMeaning", { line: header.autostart, reading })
+              : t("panels.tape.hdr.autostartMeaningNone", { reading })
         },
         {
           key: "param2",
-          name: "Program",
+          name: t("panels.tape.hdr.program"),
           first: 16,
           last: 17,
           value: fmt(program),
           meaning:
-            `Where the variables start, counted from the start of the data: the program is ${fmt(program)} bytes and ` +
-            (variables > 0
-              ? `the remaining ${fmt(variables)} are its saved variables.`
-              : "there are no saved variables.")
+            variables > 0
+              ? t("panels.tape.hdr.programMeaning", { program, variables })
+              : t("panels.tape.hdr.programMeaningNoVars", { program })
         }
       );
       break;
@@ -123,57 +123,59 @@ export function tapeHeaderFields(bytes: Uint8Array, dataIndex?: number): TapeHea
       fields.push(
         {
           key: "param1",
-          name: "Array",
+          name: t("panels.tape.hdr.array"),
           first: 14,
           last: 15,
           value: header.arrayName ?? "",
-          meaning: `The array's name is in byte 15, encoded as in the variables area; byte 14 is unused. LOAD "name" DATA ${header.arrayName} restores it.`
+          meaning: t("panels.tape.hdr.arrayMeaning", { name: header.arrayName ?? "" })
         },
         {
           key: "param2",
-          name: "Unused",
+          name: t("panels.tape.hdr.unused"),
           first: 16,
           last: 17,
           value: `$${hex4(word(16))}`,
-          meaning: "Means nothing for an array; SAVE leaves whatever was there."
+          meaning: t("panels.tape.hdr.unusedArrayMeaning")
         }
       );
       break;
-    default:
+    default: {
+      const reading = wordReading(bytes[14], bytes[15]);
       fields.push(
         {
           key: "param1",
-          name: "Start",
+          name: t("panels.tape.hdr.start"),
           first: 14,
           last: 15,
           value: `$${hex4(word(14))} (${word(14)})`,
           meaning:
-            `Where the bytes load unless LOAD "name" CODE gives another address.` +
-            (header.startAddress === 0x4000 && header.dataLength === 6912
-              ? " $4000 and 6,912 bytes: the screen."
-              : "") +
-            ` ${wordReading(bytes[14], bytes[15])}`
+            header.startAddress === 0x4000 && header.dataLength === 6912
+              ? t("panels.tape.hdr.startMeaningScreen", { reading })
+              : t("panels.tape.hdr.startMeaning", { reading })
         },
         {
           key: "param2",
-          name: "Unused",
+          name: t("panels.tape.hdr.unused"),
           first: 16,
           last: 17,
           value: `$${hex4(word(16))}`,
-          meaning: "Means nothing for Bytes; SAVE leaves whatever was there (often 32768 or more)."
+          meaning: t("panels.tape.hdr.unusedBytesMeaning")
         }
       );
+    }
   }
 
   fields.push({
     key: "checksum",
-    name: "Checksum",
+    name: t("panels.tape.hdr.checksum"),
     first: 18,
     last: 18,
-    value: `$${hex2(bytes[18])} · ${header.checksumOk ? "OK" : `should be $${hex2(checksum)}`}`,
+    value: header.checksumOk
+      ? t("panels.tape.hdr.checksumOk", { value: `$${hex2(bytes[18])}` })
+      : t("panels.tape.hdr.checksumBad", { value: `$${hex2(bytes[18])}`, expected: `$${hex2(checksum)}` }),
     meaning: header.checksumOk
-      ? "The XOR of bytes 0–17. The ROM checks it after loading the header."
-      : `The XOR of bytes 0–17 is $${hex2(checksum)}, so the ROM would report R Tape loading error.`
+      ? t("panels.tape.hdr.checksumMeaning")
+      : t("panels.tape.hdr.checksumMeaningBad", { expected: `$${hex2(checksum)}` })
   });
   return fields;
 }

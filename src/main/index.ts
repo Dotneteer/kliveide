@@ -65,6 +65,7 @@ import { readAdvancedDebuggingSetting } from "@common/features/advancedDebugging
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_DOCK, MEDIA_TAPE } from "@common/structs/project-const";
 
 import { invalidateMenuCache, setupMenu } from "./app-menu";
+import { createUiLanguageSync } from "./ui-language";
 import { __WIN32__ } from "./electron-utils";
 import { processRendererToMainMessages } from "./RendererToMainProcessor";
 import { mainStore } from "./main-store";
@@ -200,6 +201,19 @@ let lastBuildMenuVersion = 0;
 // --- Track the previous stay-on-top setting to detect changes
 let lastStayOnTopValue: boolean | undefined = undefined;
 
+// --- The display language: resolved here, published to both renderers (LOCALIZATION_PLAN §5)
+const syncUiLanguage = createUiLanguageSync({
+  getState: () => mainStore.getState(),
+  dispatch: (action) => mainStore.dispatch(action),
+  systemLocales: () => {
+    const preferred = app.getPreferredSystemLanguages?.() ?? [];
+    return preferred.length ? preferred : [app.getLocale()];
+  },
+  devTools: is.dev,
+  // --- The menus are rebuilt only when their signature changes; a new language must rebuild them
+  onChanged: () => invalidateMenuCache()
+});
+
 async function initializeMachineTypes() {
   Object.entries(machineMenuRegistry).forEach(async ([_, machine]) => {
     await machine.initializer?.();
@@ -323,10 +337,13 @@ async function createAppWindows() {
   // --- Prepare the main menu. Update items on application state change
   Menu.setApplicationMenu(null);
   invalidateMenuCache();
+  syncUiLanguage();
   setupMenu(emuWindow, ideWindow);
 
   // --- Respond to state changes
   storeUnsubscribe = mainStore.subscribe(async () => {
+    // --- First, so that everything below (the menus) already uses a changed language
+    syncUiLanguage();
     const state = mainStore.getState();
 
     if (state.emuLoaded && !machineTypeInitialized) {
@@ -344,6 +361,9 @@ async function createAppWindows() {
 
       // --- Store all global settings
       mainStore.dispatch(initGlobalSettingsAction(appSettings.globalSettings ?? {}));
+
+      // --- Publish the display language now that both windows can receive it
+      syncUiLanguage(true);
 
       // --- Re-send the saved user settings. They are dispatched once before the windows
       // --- exist, and that forward reaches no renderer, so the IDE would start with an
@@ -474,7 +494,7 @@ async function createAppWindows() {
 
   // --- Test actively push message to the Electron-Renderer
   ideWindow.webContents.on("did-finish-load", () => {
-    ideWindow?.webContents.send("main-process-message", new Date().toLocaleString());
+    ideWindow?.webContents.send("main-process-message", new Date().toLocaleString("en-US"));
     if (appSettings.windowStates?.ideZoomFactor != undefined) {
       ideWindow.webContents.setZoomFactor(appSettings.windowStates?.ideZoomFactor ?? 1.0);
     }
@@ -542,7 +562,7 @@ async function createAppWindows() {
 
   // --- Test actively push message to the Electron-Renderer
   emuWindow.webContents.on("did-finish-load", () => {
-    emuWindow?.webContents.send("main-process-message", new Date().toLocaleString());
+    emuWindow?.webContents.send("main-process-message", new Date().toLocaleString("en-US"));
     // --- Set emu zoom factor
     if (appSettings.windowStates?.emuZoomFactor != undefined) {
       emuWindow.webContents.setZoomFactor(appSettings.windowStates?.emuZoomFactor ?? 1.0);

@@ -1,3 +1,5 @@
+import { t } from "@common/i18n/i18n";
+import { labelRecord } from "@common/i18n/labels";
 import { Zx81Chars } from "@common/machines/char-codes";
 import type { CharDescriptor } from "@common/machines/info-types";
 import { decodeZx8081Program } from "../zx8081BasicListing";
@@ -27,21 +29,21 @@ export type PFileRegionKind = "sysvars" | "program" | "display" | "variables" | 
 /** How a part pops out */
 export type PFileView = "memory" | "disassembly" | "basic" | "screen";
 
-export const P_FILE_VIEW_NAMES: Record<PFileView, string> = {
-  memory: "Memory",
-  disassembly: "Disassembly",
-  basic: "BASIC",
-  screen: "Screen"
-};
+export const P_FILE_VIEW_NAMES: Readonly<Record<PFileView, string>> = labelRecord({
+  memory: "panels.helpers.view.memory",
+  disassembly: "panels.helpers.view.disassembly",
+  basic: "panels.helpers.view.basic",
+  screen: "panels.helpers.view.screen"
+});
 
-export const P_FILE_REGION_NAMES: Record<PFileRegionKind, string> = {
-  sysvars: "System variables",
-  program: "BASIC program",
-  display: "Display file",
-  variables: "Variables",
-  data: "Program and data",
-  extra: "After E_LINE"
-};
+export const P_FILE_REGION_NAMES: Readonly<Record<PFileRegionKind, string>> = labelRecord({
+  sysvars: "panels.pfile.region.sysvars",
+  program: "panels.pfile.region.program",
+  display: "panels.pfile.region.display",
+  variables: "panels.pfile.region.variables",
+  data: "panels.pfile.region.data",
+  extra: "panels.pfile.region.extra"
+});
 
 /** The chip of each part in the list */
 export const P_FILE_REGION_CHIPS: Record<PFileRegionKind, string> = {
@@ -151,11 +153,11 @@ export function analyzePFile(bytes: Uint8Array): { analysis?: PFileAnalysis; err
   const sysVarsLength = ZX81_PROGRAM_START - P_FILE_START;
   if (bytes.length < sysVarsLength) {
     return {
-      error: `A ZX81 program file starts with ${sysVarsLength} bytes of system variables; this file has ${bytes.length.toLocaleString("en-US")}.`
+      error: t("panels.pfile.error.tooShort", { machine: "ZX81", sysVars: sysVarsLength, count: bytes.length })
     };
   }
   if (P_FILE_START + bytes.length > 0x10000) {
-    return { error: "This file is larger than the ZX81's memory." };
+    return { error: t("panels.pfile.error.tooLarge", { machine: "ZX81" }) };
   }
   const memory = new Uint8Array(0x10000);
   memory.set(bytes, P_FILE_START);
@@ -423,10 +425,14 @@ export function describeZx8081Variable(variable: Zx8081Variable): string {
       return `DIM (${(variable.dims ?? []).join(", ")})`;
     case "forLoop": {
       // --- A ZX80 loop has no STEP
-      const step = variable.step === undefined ? "" : ` STEP ${formatZx81Number(variable.step)}`;
-      return `${formatZx81Number(variable.value ?? 0)} TO ${formatZx81Number(variable.limit ?? 0)}${step}, NEXT goes to line ${
-        variable.line
-      } or the first after it`;
+      const args = {
+        value: formatZx81Number(variable.value ?? 0),
+        limit: formatZx81Number(variable.limit ?? 0),
+        line: variable.line ?? 0
+      };
+      return variable.step === undefined
+        ? t("panels.pfile.forLoop", args)
+        : t("panels.pfile.forLoopStep", { ...args, step: formatZx81Number(variable.step) });
     }
   }
 }
@@ -437,16 +443,16 @@ export function regionText(region: PFileRegion, analysis: PFileAnalysis): string
   switch (region.kind) {
     case "program":
       return summary.lineCount === 0
-        ? "No program"
-        : `${summary.lineCount} line${summary.lineCount === 1 ? "" : "s"}${
-            summary.autorunLine !== undefined ? ` · runs from ${summary.autorunLine}` : ""
-          }`;
+        ? t("panels.pfile.row.noProgram")
+        : summary.autorunLine !== undefined
+          ? t("panels.pfile.row.linesRunFrom", { count: summary.lineCount, line: summary.autorunLine })
+          : t("panels.helpers.lineCount", { count: summary.lineCount });
     case "display":
-      return summary.displayCollapsed ? "Collapsed" : "Full";
+      return summary.displayCollapsed ? t("panels.pfile.row.collapsed") : t("panels.pfile.row.full");
     case "variables":
       return summary.variableCount === 0
-        ? "None"
-        : `${summary.variableCount} variable${summary.variableCount === 1 ? "" : "s"}`;
+        ? t("panels.pfile.row.noVariables")
+        : t("panels.pfile.row.variables", { count: summary.variableCount });
     default:
       return P_FILE_REGION_NAMES[region.kind];
   }

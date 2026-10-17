@@ -1,3 +1,4 @@
+import { t } from "@common/i18n/i18n";
 import { documentSourceName } from "../helpers/documentSourceName";
 import { analyzeTape, blockPayload, type TapeBlockInfo } from "./tapeView";
 
@@ -24,8 +25,12 @@ export function tapeBlockTitle(
   projectFolder?: string,
   view?: "basic" | "screen"
 ): string {
-  const suffix = view === "basic" ? " (BASIC)" : view === "screen" ? " (Screen)" : "";
-  return `${documentSourceName(fullPath, projectFolder)} - Block #${index}${suffix}`;
+  const args = { source: documentSourceName(fullPath, projectFolder), index };
+  return view === "basic"
+    ? t("panels.tape.blockTitleBasic", args)
+    : view === "screen"
+      ? t("panels.tape.blockTitleScreen", args)
+      : t("panels.tape.blockTitle", args);
 }
 
 /** The document id of a block's BASIC listing or screen */

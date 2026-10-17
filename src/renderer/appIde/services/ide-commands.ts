@@ -10,6 +10,7 @@ import { ValidationMessage } from "@renderer/abstractions/ValidationMessage";
 import { ValidationMessageType } from "@renderer/abstractions/ValidationMessageType";
 import { IOutputBuffer, OutputColor } from "@renderer/appIde/ToolArea/abstractions";
 import { Token, TokenType } from "./command-parser";
+import { t } from "@common/i18n/i18n";
 
 export abstract class IdeCommandBase<T = any> implements IdeCommandInfo {
   /**
@@ -23,7 +24,8 @@ export abstract class IdeCommandBase<T = any> implements IdeCommandInfo {
   abstract readonly usage: string | string[];
 
   /**
-   * Concise explanation of the command
+   * Concise explanation of the command. Translated UI text: a subclass implements it as a getter
+   * (`get description() { return t("commands.<area>.description"); }`) so it follows the language.
    */
   abstract readonly description: string;
 
@@ -51,7 +53,7 @@ export abstract class IdeCommandBase<T = any> implements IdeCommandInfo {
   async execute(_context: IdeCommandContext, _args?: T): Promise<IdeCommandResult> {
     return {
       success: true,
-      finalMessage: "This command has been executed successfully."
+      finalMessage: t("commands.common.executedDefault")
     };
   }
 
@@ -70,7 +72,7 @@ export abstract class IdeCommandBase<T = any> implements IdeCommandInfo {
     if (messages.length > 0) {
       renderedMessages.push(<ValidationMessage>{
         type: ValidationMessageType.Info,
-        message: `Usage: ${messages[0]}`
+        message: t("commands.common.usageLine", { usage: messages[0] })
       });
       messages.slice(1).forEach((m) =>
         renderedMessages.push(<ValidationMessage>{
@@ -82,9 +84,10 @@ export abstract class IdeCommandBase<T = any> implements IdeCommandInfo {
     if (this.aliases && this.aliases.length > 0) {
       renderedMessages.push(<ValidationMessage>{
         type: ValidationMessageType.Info,
-        message: `${
-          this.aliases.length === 1 ? "Alias" : "Aliases"
-        }: ${this.aliases.map((a) => getAlias(a)).join(", ")}`
+        message: t("commands.common.aliasesLine", {
+          count: this.aliases.length,
+          aliases: this.aliases.map((a) => getAlias(a)).join(", ")
+        })
       });
     }
     return renderedMessages;
@@ -116,7 +119,7 @@ export function commandSuccessWith(msg: string, value?: any): IdeCommandResult {
 export function expectArgs(count: number): ValidationMessage {
   return {
     type: ValidationMessageType.Error,
-    message: `This command expects ${count} argument${count > 1 ? "s" : ""}`
+    message: t("commands.common.expectArgs", { count })
   };
 }
 
@@ -249,7 +252,7 @@ export function getNumericTokenValue(token: Token): {
     return null;
   } catch {
     return {
-      messages: [{ type: ValidationMessageType.Error, message: "Invalid numeric value" }]
+      messages: [{ type: ValidationMessageType.Error, message: t("commands.common.invalidNumber") }]
     };
   }
 }
@@ -268,7 +271,13 @@ export function getAddressValue(
   if (!value) return { messages };
   if (value < 0 || value > 65535) {
     return {
-      messages: [validationError(`Invalid 16-bit address value ${name ? ` (${name})` : ""}`)]
+      messages: [
+        validationError(
+          name
+            ? t("commands.common.invalidAddress16Named", { name })
+            : t("commands.common.invalidAddress16")
+        )
+      ]
     };
   }
   return { value };
@@ -339,7 +348,7 @@ export function extractArguments(
         if (argInfo?.commandOptions?.includes(optionName)) {
           // --- This is a command option
           if (optionsUsed.has(optionName)) {
-            errors.push(`Option '${optionName}' is already used`);
+            errors.push(t("commands.common.optionAlreadyUsed", { option: optionName }));
             break;
           }
           result[optionName] = true;
@@ -353,12 +362,12 @@ export function extractArguments(
           // --- Found the named options. The next token should be the value.
           tokenIdx++;
           if (tokenIdx >= tokens.length) {
-            errors.push(`Missing value for named option '${optionName}'`);
+            errors.push(t("commands.common.missingOptionValue", { option: optionName }));
             break;
           }
           result[optionName] = getValue(tokens[tokenIdx], namedOption);
         } else {
-          errors.push(`Unknown named option: '${optionName}'`);
+          errors.push(t("commands.common.unknownOption", { option: optionName }));
         }
         break;
       default:
@@ -393,9 +402,9 @@ export function extractArguments(
 
   // --- Check for argument count
   if (argIdx < mandatoryLength) {
-    errors.push(`Missing mandatory argument`);
+    errors.push(t("commands.common.missingMandatory"));
   } else if (tooManyArgs) {
-    errors.push(`Too many arguments`);
+    errors.push(t("commands.common.tooManyArgs"));
   }
 
   // --- Done.
@@ -412,7 +421,7 @@ export function extractArguments(
         // --- Extract the numeric value
         const { value, messages } = getNumericTokenValue(token);
         if (messages && messages.length > 0) {
-          errors.push(`Numeric value expected for argument '${argDesc.name}'`);
+          errors.push(t("commands.common.numericExpected", { name: argDesc.name }));
         }
 
         // --- Check the value range
@@ -421,12 +430,16 @@ export function extractArguments(
           (argDesc.maxValue !== undefined && value > argDesc.maxValue)
         ) {
           if (argDesc.minValue === undefined) {
-            errors.push(`Argument value of '${argDesc.name}' must be up to ${argDesc.maxValue}`);
+            errors.push(t("commands.common.argUpTo", { name: argDesc.name, max: String(argDesc.maxValue) }));
           } else if (argDesc.maxValue === undefined) {
-            errors.push(`Argument value of '${argDesc.name}' must be at least ${argDesc.minValue}`);
+            errors.push(t("commands.common.argAtLeast", { name: argDesc.name, min: String(argDesc.minValue) }));
           } else {
             errors.push(
-              `Argument value of '${argDesc.name}' must be between ${argDesc.minValue} and ${argDesc.maxValue}`
+              t("commands.common.argBetween", {
+                name: argDesc.name,
+                min: String(argDesc.minValue),
+                max: String(argDesc.maxValue)
+              })
             );
           }
           return null;
@@ -434,7 +447,7 @@ export function extractArguments(
           return value;
         }
       default:
-        errors.push(`Numeric value expected for argument '${argDesc.name}'`);
+        errors.push(t("commands.common.numericExpected", { name: argDesc.name }));
         return null;
     }
   }

@@ -4,6 +4,9 @@
  */
 import { isOutsideRam, LAYER2_NO_PIXEL, layer2Size, writeTarget, type Layer2Regs } from "./layer2Decode";
 import { clipOnLayer, readsPastLayer } from "./layer2Geometry";
+import type { MessageArgs } from "@common/i18n/i18n";
+import type { MessageKey } from "@common/i18n/keys.generated";
+import { withTranslatedTexts } from "../translatedTexts";
 
 export type Layer2DiagnosticLevel = "warning" | "info";
 
@@ -11,11 +14,29 @@ export type Layer2Diagnostic = {
   level: Layer2DiagnosticLevel;
   /** Stable key */
   id: string;
-  /** The chip's text */
-  chip: string;
-  /** One sentence for the tooltip and the inspector */
-  sentence: string;
+  /** The chip's text, in the current language on each read */
+  readonly chip: string;
+  /** One sentence for the tooltip and the inspector, in the current language on each read */
+  readonly sentence: string;
 };
+
+/**
+ * A diagnostic with translated texts. `chip` is a key, or fixed text for a chip that is only
+ * register names (`$12 = $13`).
+ */
+function diagnostic(
+  id: string,
+  level: Layer2DiagnosticLevel,
+  chip: MessageKey | { text: string },
+  sentence: MessageKey,
+  args?: MessageArgs
+): Layer2Diagnostic {
+  if (typeof chip === "string") {
+    return withTranslatedTexts({ id, level }, { chip: { key: chip, args }, sentence: { key: sentence, args } });
+  }
+  return withTranslatedTexts({ id, level, chip: chip.text }, { sentence: { key: sentence, args } });
+}
+
 
 export type Layer2DiagnosticInput = {
   regs: Layer2Regs;
@@ -38,79 +59,48 @@ export function layer2Diagnostics({ regs, displayed, isTransparent }: Layer2Diag
   const shown = setBanks(regs.activeBank, regs.resolution);
 
   if (!regs.enabled) {
-    out.push({
-      id: "off",
-      level: "info",
-      chip: "Layer 2 off",
-      sentence: "Layer 2 is not displayed: $123B bit 1 and $69 bit 7 are both clear."
-    });
+    out.push(diagnostic("off", "info", "gfxCommon.layer2.diag.off.chip", "gfxCommon.layer2.diag.off.sentence"));
   }
 
   const past = shown.filter(isOutsideRam);
   if (past.length) {
-    out.push({
-      id: "outsideRam",
-      level: "warning",
-      chip: "banks past 2 MB",
-      sentence: `Bank${past.length > 1 ? "s" : ""} ${past.join(", ")} ${past.length > 1 ? "are" : "is"} past the 2 MB SRAM: the display has no pixels there.`
-    });
+    out.push(
+      diagnostic("outsideRam", "warning", "gfxCommon.layer2.diag.outsideRam.chip", "gfxCommon.layer2.diag.outsideRam.sentence", {
+        count: past.length,
+        banks: past.join(", ")
+      })
+    );
   }
 
   if (target.mappedForWrites) {
     const writes = target.slices.map((s) => s.bank16);
     if (writes.some((b) => shown.includes(b))) {
-      out.push({
-        id: "writesShown",
-        level: "info",
-        chip: "writes go to the displayed bank",
-        sentence:
-          "The $123B write window maps banks of the displayed layer ($12): drawing shows at once (no double buffering, a tearing risk)."
-      });
+      out.push(diagnostic("writesShown", "info", "gfxCommon.layer2.diag.writesShown.chip", "gfxCommon.layer2.diag.writesShown.sentence"));
     } else if (target.useShadow) {
-      out.push({
-        id: "writesShadow",
-        level: "info",
-        chip: "write window maps the shadow bank",
-        sentence: "$123B bit 3 maps the shadow layer ($13) into the write window: writes there are not displayed until $12 points at it."
-      });
+      out.push(diagnostic("writesShadow", "info", "gfxCommon.layer2.diag.writesShadow.chip", "gfxCommon.layer2.diag.writesShadow.sentence"));
     }
     if (target.slices.some((s) => s.outsideRam)) {
-      out.push({
-        id: "writesPastRam",
-        level: "warning",
-        chip: "write window past 2 MB",
-        sentence: "The $123B write window maps a bank past the 2 MB SRAM: writes through it are lost."
-      });
+      out.push(diagnostic("writesPastRam", "warning", "gfxCommon.layer2.diag.writesPastRam.chip", "gfxCommon.layer2.diag.writesPastRam.sentence"));
     }
   }
 
   if (regs.activeBank === regs.shadowBank) {
-    out.push({
-      id: "sameBanks",
-      level: "info",
-      chip: "$12 = $13",
-      sentence: "The displayed and the shadow layer are the same banks."
-    });
+    out.push(diagnostic("sameBanks", "info", { text: "$12 = $13" }, "gfxCommon.layer2.diag.sameBanks.sentence"));
   }
 
   if (readsPastLayer(regs)) {
-    out.push({
-      id: "readsPastLayer",
-      level: "warning",
-      chip: "scroll reads past the layer",
-      sentence: layer2Size(regs.resolution).wide
-        ? "The X scroll makes the display read source columns 320-511, which come from the three banks after the layer's five (the hardware's X wrap is not a modulo of 320)."
-        : "The Y scroll makes the display read source rows 192-254, which come from the bank after the layer's three (the hardware folds rows back by bits 7-6, not modulo 192)."
-    });
+    out.push(
+      diagnostic(
+        "readsPastLayer",
+        "warning",
+        "gfxCommon.layer2.diag.readsPastLayer.chip",
+        layer2Size(regs.resolution).wide ? "gfxCommon.layer2.diag.readsPastLayer.wideSentence" : "gfxCommon.layer2.diag.readsPastLayer.tallSentence"
+      )
+    );
   }
 
   if (!clipOnLayer(regs)) {
-    out.push({
-      id: "clipEmpty",
-      level: "warning",
-      chip: "clip window empty",
-      sentence: "The $18 clip window leaves no pixel of the layer: x1 > x2 or y1 > y2, or it is off the layer."
-    });
+    out.push(diagnostic("clipEmpty", "warning", "gfxCommon.layer2.diag.clipEmpty.chip", "gfxCommon.layer2.diag.clipEmpty.sentence"));
   } else if (regs.enabled && displayed && isTransparent) {
     let any = false;
     let opaque = false;
@@ -123,12 +113,7 @@ export function layer2Diagnostics({ regs, displayed, isTransparent }: Layer2Diag
       }
     }
     if (any && !opaque) {
-      out.push({
-        id: "allTransparent",
-        level: "warning",
-        chip: "all visible pixels transparent",
-        sentence: "Every visible pixel's palette colour equals the global transparency colour $14, so nothing of Layer 2 shows."
-      });
+      out.push(diagnostic("allTransparent", "warning", "gfxCommon.layer2.diag.allTransparent.chip", "gfxCommon.layer2.diag.allTransparent.sentence"));
     }
   }
   return out;

@@ -16,8 +16,14 @@ export type BorielSetupMode = "offer" | "settings";
 
 export type BorielBusy = "install" | "existing" | "compiler" | "closing" | undefined;
 
-/** What the last install or "use existing" did, for the message under the buttons. */
-export type BorielOutcome = { kind: "installed" | "failed"; text: string };
+/**
+ * What the last install or "use existing" did, for the message under the buttons. A success keeps
+ * its facts, not a sentence: the view model words it at display time. A failure carries the text
+ * the service reported, shown as it came.
+ */
+export type BorielOutcome =
+  | { kind: "installed"; action: "install" | "existing"; version: string; folder: string }
+  | { kind: "failed"; text: string };
 
 export type BorielSetupState = {
   mode: BorielSetupMode;
@@ -31,11 +37,6 @@ export type BorielSetupState = {
   busy: BorielBusy;
   outcome?: BorielOutcome;
 };
-
-export const INSTALLED_MESSAGE = (version: string, folder: string) =>
-  `Boriel BASIC ${version} is installed in ${folder}.`;
-export const USING_EXISTING_MESSAGE = (version: string, folder: string) =>
-  `Klive now uses Boriel BASIC ${version} in ${folder}.`;
 
 // ─── Events ──────────────────────────────────────────────────────────────────
 
@@ -102,16 +103,12 @@ export const reduce: UiReducer<BorielSetupState, BorielSetupEvent> = (state, eve
       if (result.kind === "failed") {
         return { ...state, busy: undefined, outcome: { kind: "failed", text: result.error } };
       }
-      const text =
-        event.action === "install"
-          ? INSTALLED_MESSAGE(result.version, result.folder)
-          : USING_EXISTING_MESSAGE(result.version, result.folder);
       return {
         ...state,
         busy: undefined,
         folder: result.folder,
         folderEdited: false,
-        outcome: { kind: "installed", text }
+        outcome: { kind: "installed", action: event.action, version: result.version, folder: result.folder }
       };
     }
     case "actionFailed":

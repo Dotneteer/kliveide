@@ -1,0 +1,1863 @@
+{
+  "commands.coverage.description": "Code coverage and the memory heat map: on, off, reset, status, export, load, smc",
+  "@commands.coverage.description": {
+    "context": "Help text of the 'coverage' IDE command. The words after the colon are its subcommands: keep them exactly."
+  },
+  "commands.coverage.reset.description": "Clears code coverage and the heat map",
+  "@commands.coverage.reset.description": {
+    "context": "Help text of the 'coverage-reset' IDE command."
+  },
+  "commands.coverage.heat.description": "Sets the memory view's heat map: off, exec, read, write or all",
+  "@commands.coverage.heat.description": {
+    "context": "Help text of the 'memory-heat' IDE command. off/exec/read/write/all are its arguments: keep them exactly."
+  },
+  "commands.coverage.off": "Code coverage is part of advanced debugging, which is turned off. Turn it on with 'set -u {setting} 1', then restart Klive.",
+  "@commands.coverage.off": {
+    "context": "Output of the 'coverage' IDE command (code coverage), in the Build/command output pane. Shown when the advanced-debugging switch is off. The quoted text is a command to type: keep it exactly.",
+    "placeholders": {
+      "setting": "The setting's name, e.g. 'debug.advanced'"
+    }
+  },
+  "commands.coverage.notKept": "This machine does not keep code coverage",
+  "@commands.coverage.notKept": {
+    "context": "Output of the 'coverage' IDE command (code coverage), in the Build/command output pane. The current emulated machine cannot record coverage."
+  },
+  "commands.coverage.layoutUnknown": "This machine's coverage layout is unknown",
+  "@commands.coverage.layoutUnknown": {
+    "context": "Output of the 'coverage' IDE command (code coverage), in the Build/command output pane."
+  },
+  "commands.coverage.useOneOf": "Use one of: {choices}",
+  "@commands.coverage.useOneOf": {
+    "context": "Validation error of the 'coverage' and 'memory-heat' IDE commands: the argument is not one of the accepted words.",
+    "placeholders": {
+      "choices": "The accepted subcommands or modes, comma-separated (keywords, not translated)"
+    }
+  },
+  "commands.coverage.needsFile": "coverage {action} needs a file",
+  "@commands.coverage.needsFile": {
+    "context": "Validation error of the 'coverage' IDE command. 'coverage {action}' is the command as typed: keep it.",
+    "placeholders": {
+      "action": "The subcommand: export or load"
+    }
+  },
+  "commands.coverage.formatInvalid": "-format: use lcov, csv or kcov",
+  "@commands.coverage.formatInvalid": {
+    "context": "Validation error of 'coverage export': -format is an option name and lcov/csv/kcov its values; keep them exactly."
+  },
+  "commands.coverage.formatUnknown": "Use a .info/.lcov, .csv or .kcov file, or name the format with -format.",
+  "@commands.coverage.formatUnknown": {
+    "context": "Validation error of 'coverage export': the file extension does not tell the export format. Keep the extensions and '-format'."
+  },
+  "commands.coverage.on": "Code coverage is on",
+  "@commands.coverage.on": {
+    "context": "Output of the 'coverage' IDE command (code coverage), in the Build/command output pane."
+  },
+  "commands.coverage.onFlagsOnly": "Code coverage is on (flags only, no counts)",
+  "@commands.coverage.onFlagsOnly": {
+    "context": "Output of the 'coverage' IDE command (code coverage), in the Build/command output pane. Coverage records only whether each byte was touched, not how many times."
+  },
+  "commands.coverage.offDone": "Code coverage is off; what it recorded stays until a reset",
+  "@commands.coverage.offDone": {
+    "context": "Output of the 'coverage' IDE command (code coverage), in the Build/command output pane."
+  },
+  "commands.coverage.cleared": "Code coverage cleared",
+  "@commands.coverage.cleared": {
+    "context": "Output of the 'coverage' IDE command (code coverage), in the Build/command output pane."
+  },
+  "commands.coverage.source": "Source: {covered, number} of {lines, number} lines covered ({percent}%)",
+  "@commands.coverage.source": {
+    "context": "Output of the 'coverage' IDE command (code coverage), in the Build/command output pane. Line coverage of the current build's source.",
+    "placeholders": {
+      "covered": "Covered source lines",
+      "lines": "All source lines with code",
+      "percent": "Covered share, already formatted with one decimal"
+    }
+  },
+  "commands.coverage.sourcePartial": "Source: {covered, number} of {lines, number} lines covered ({percent}%), {partial, number} partly",
+  "@commands.coverage.sourcePartial": {
+    "context": "Output of the 'coverage' IDE command (code coverage), in the Build/command output pane. Line coverage of the current build's source; some lines ran only partly.",
+    "placeholders": {
+      "covered": "Covered source lines",
+      "lines": "All source lines with code",
+      "percent": "Covered share, already formatted with one decimal",
+      "partial": "Lines only partly covered"
+    }
+  },
+  "commands.coverage.fileExists": "{file} already exists; use -f to replace it.",
+  "@commands.coverage.fileExists": {
+    "context": "Output of the 'coverage' IDE command (code coverage), in the Build/command output pane. '-f' is the command option: keep it.",
+    "placeholders": {
+      "file": "A file path, as the user typed it"
+    }
+  },
+  "commands.coverage.lcovNeedsSource": "LCOV needs source lines: build the program first",
+  "@commands.coverage.lcovNeedsSource": {
+    "context": "Output of the 'coverage' IDE command (code coverage), in the Build/command output pane. LCOV is a file format name."
+  },
+  "commands.coverage.readFailed": "Could not read the coverage",
+  "@commands.coverage.readFailed": {
+    "context": "Output of the 'coverage' IDE command (code coverage), in the Build/command output pane. Reading the recorded coverage from the emulator failed."
+  },
+  "commands.coverage.exportedLcov": "Exported coverage (LCOV, {hit, number} of {lines, number} lines hit in {files, plural, one {# file} other {# files}}) to {file}",
+  "@commands.coverage.exportedLcov": {
+    "context": "Output of the 'coverage' IDE command (code coverage), in the Build/command output pane. Success message of 'coverage export' in LCOV format.",
+    "placeholders": {
+      "hit": "Source lines that ran",
+      "lines": "All source lines",
+      "files": "Source files in the export",
+      "file": "The exported file's path"
+    }
+  },
+  "commands.coverage.exportedBytes": "Exported coverage ({format}, {bytes, plural, one {# touched byte} other {# touched bytes}}) to {file}",
+  "@commands.coverage.exportedBytes": {
+    "context": "Output of the 'coverage' IDE command (code coverage), in the Build/command output pane. Success message of 'coverage export' in CSV or KCOV format.",
+    "placeholders": {
+      "format": "The format name: CSV or KCOV",
+      "bytes": "Memory bytes the program touched",
+      "file": "The exported file's path"
+    }
+  },
+  "commands.coverage.writeFailed": "Could not write {file}: {error}",
+  "@commands.coverage.writeFailed": {
+    "context": "Output of the 'coverage' IDE command (code coverage), in the Build/command output pane.",
+    "placeholders": {
+      "file": "A file path, as the user typed it",
+      "error": "The operating system's or reader's error message (may stay English)"
+    }
+  },
+  "commands.coverage.readFileFailed": "Could not read {file}: {error}",
+  "@commands.coverage.readFileFailed": {
+    "context": "Output of the 'coverage' IDE command (code coverage), in the Build/command output pane.",
+    "placeholders": {
+      "file": "A file path, as the user typed it",
+      "error": "The operating system's or reader's error message (may stay English)"
+    }
+  },
+  "commands.coverage.mergeFailed": "Could not merge the coverage",
+  "@commands.coverage.mergeFailed": {
+    "context": "Output of the 'coverage' IDE command (code coverage), in the Build/command output pane. 'coverage load' adds a saved coverage file to the current one."
+  },
+  "commands.coverage.merged": "Merged {bytes, plural, one {# touched byte} other {# touched bytes}} from {file}",
+  "@commands.coverage.merged": {
+    "context": "Output of the 'coverage' IDE command (code coverage), in the Build/command output pane. Success message of 'coverage load'.",
+    "placeholders": {
+      "bytes": "Memory bytes in the loaded coverage",
+      "file": "A file path, as the user typed it"
+    }
+  },
+  "commands.coverage.smcNone": "No self-modifying code found",
+  "@commands.coverage.smcNone": {
+    "context": "Output of the 'coverage' IDE command (code coverage), in the Build/command output pane. Result of 'coverage smc'."
+  },
+  "commands.coverage.smcNoneNotRecorded": "No self-modifying code found: coverage has not recorded anything (coverage on)",
+  "@commands.coverage.smcNoneNotRecorded": {
+    "context": "Output of the 'coverage' IDE command (code coverage), in the Build/command output pane. Result of 'coverage smc'. '(coverage on)' is the command that starts recording: keep it."
+  },
+  "commands.coverage.smcRuns": "{count, plural, one {# self-modified run} other {# self-modified runs}}:",
+  "@commands.coverage.smcRuns": {
+    "context": "Output of the 'coverage' IDE command (code coverage), in the Build/command output pane. Heading of 'coverage smc': a run is a stretch of consecutive bytes the program both wrote and executed.",
+    "placeholders": {
+      "count": "Number of runs"
+    }
+  },
+  "commands.coverage.smcRun": "{location}, {length, plural, one {# byte} other {# bytes}}{label}",
+  "@commands.coverage.smcRun": {
+    "context": "Output of the 'coverage' IDE command (code coverage), in the Build/command output pane. One line of the 'coverage smc' list.",
+    "placeholders": {
+      "location": "Where the run starts, e.g. '$8003' or 'BANK 5:$8003'",
+      "length": "Length of the run in bytes",
+      "label": "Empty, or a space and the nearest label, e.g. ' Patch+2'"
+    }
+  },
+  "commands.coverage.smcRunCounted": "{location}, {length, plural, one {# byte} other {# bytes}}{label} (written {writes, number}, executed {executions, number})",
+  "@commands.coverage.smcRunCounted": {
+    "context": "Output of the 'coverage' IDE command (code coverage), in the Build/command output pane. One line of the 'coverage smc' list, with how many times the run was written and executed.",
+    "placeholders": {
+      "location": "Where the run starts, e.g. '$8003' or 'BANK 5:$8003'",
+      "length": "Length of the run in bytes",
+      "label": "Empty, or a space and the nearest label, e.g. ' Patch+2'",
+      "writes": "Write count",
+      "executions": "Execution count"
+    }
+  },
+  "commands.coverage.heat.set": "Memory heat map: {mode}",
+  "@commands.coverage.heat.set": {
+    "context": "Output of the 'memory-heat' IDE command.",
+    "placeholders": {
+      "mode": "The mode keyword: off, exec, read, write or all (not translated)"
+    }
+  },
+  "commands.coverage.status.state": "Coverage is {state, select, on {on} flags {on (flags only, no counts)} other {off}}{muted, select, yes {; a replay is running, nothing counts} other {}}",
+  "@commands.coverage.status.state": {
+    "context": "Output of the 'coverage' IDE command (code coverage), in the Build/command output pane. First line of 'coverage status'. Translate each branch; the 'muted' part is shown while a recording replays.",
+    "placeholders": {
+      "state": "on, flags (on without counts) or off: a selector, not shown",
+      "muted": "yes or no: a selector, not shown"
+    }
+  },
+  "commands.coverage.status.instructions": "{count, plural, one {# instruction} other {# instructions}} counted",
+  "@commands.coverage.status.instructions": {
+    "context": "Output of the 'coverage' IDE command (code coverage), in the Build/command output pane. A line of 'coverage status'.",
+    "placeholders": {
+      "count": "Z80 instructions executed while coverage was on"
+    }
+  },
+  "commands.coverage.status.pool": "Counter pool: {used, number} of {total, number} 8K pages used",
+  "@commands.coverage.status.pool": {
+    "context": "Output of the 'coverage' IDE command (code coverage), in the Build/command output pane. A line of 'coverage status': memory set aside for the per-byte counters.",
+    "placeholders": {
+      "used": "Pages in use",
+      "total": "Pages available"
+    }
+  },
+  "commands.coverage.status.dropped": "{count, plural, one {# page} other {# pages}} found the pool full and keep flags only (the first: physical page {first})",
+  "@commands.coverage.status.dropped": {
+    "context": "Output of the 'coverage' IDE command (code coverage), in the Build/command output pane. A line of 'coverage status'.",
+    "placeholders": {
+      "count": "Memory pages without counters",
+      "first": "The first such page's number (invariant)"
+    }
+  },
+  "commands.coverage.status.time": "Time: {parts}",
+  "@commands.coverage.status.time": {
+    "context": "Output of the 'coverage' IDE command (code coverage), in the Build/command output pane. A line of 'coverage status': where the machine time went.",
+    "placeholders": {
+      "parts": "A comma-separated list, e.g. 'total 1,000 T-states, HALT 40.0%'"
+    }
+  },
+  "commands.coverage.status.timeTotal": "total {total, number} {unit}",
+  "@commands.coverage.status.timeTotal": {
+    "context": "Output of the 'coverage' IDE command (code coverage), in the Build/command output pane. First item of the 'Time:' list of 'coverage status'.",
+    "placeholders": {
+      "total": "Measured time",
+      "unit": "The unit: T-states or cycles (not translated)"
+    }
+  },
+  "commands.coverage.status.timeSnooze": "snooze {percent}",
+  "@commands.coverage.status.timeSnooze": {
+    "context": "Output of the 'coverage' IDE command (code coverage), in the Build/command output pane. An item of the 'Time:' list of 'coverage status': time the machine spent snoozing (a ZX Spectrum Next contention state).",
+    "placeholders": {
+      "percent": "A percentage, already formatted, e.g. '12.5%'"
+    }
+  },
+  "commands.coverage.status.abandoned": "Includes {count, number} instructions from an abandoned future (Take over here)",
+  "@commands.coverage.status.abandoned": {
+    "context": "Output of the 'coverage' IDE command (code coverage), in the Build/command output pane. A line of 'coverage status'. 'Take over here' names the reverse-debugging command that abandons a replayed future.",
+    "placeholders": {
+      "count": "Instruction count"
+    }
+  },
+  "commands.profile.description": "The profiler: start, stop, reset, status, top routines, export",
+  "@commands.profile.description": {
+    "context": "Help text of the 'profile' IDE command; the words after the colon name its subcommands (start, stop, reset, status, top, export)."
+  },
+  "commands.profile.start.description": "Starts profiling: resets the profile and turns it on",
+  "@commands.profile.start.description": {
+    "context": "Help text of the 'profile-start' IDE command."
+  },
+  "commands.profile.stop.description": "Stops profiling; the profile stays until the next start or reset",
+  "@commands.profile.stop.description": {
+    "context": "Help text of the 'profile-stop' IDE command."
+  },
+  "commands.profile.show.description": "Displays the Profiler",
+  "@commands.profile.show.description": {
+    "context": "Help text of the 'show-profiler' IDE command. 'Profiler' is the document's name."
+  },
+  "commands.profile.hide.description": "Hides the Profiler",
+  "@commands.profile.hide.description": {
+    "context": "Help text of the 'hide-profiler' IDE command. 'Profiler' is the document's name."
+  },
+  "commands.profile.off": "The profiler is part of advanced debugging, which is turned off. Turn it on with 'set -u {setting} 1', then restart Klive.",
+  "@commands.profile.off": {
+    "context": "Output of the 'profile' IDE command (the Z80 profiler), in the Build/command output pane. Shown when the advanced-debugging switch is off. The quoted text is a command to type: keep it exactly.",
+    "placeholders": {
+      "setting": "The setting's name, e.g. 'debug.advanced'"
+    }
+  },
+  "commands.profile.notKept": "This machine does not keep a profile",
+  "@commands.profile.notKept": {
+    "context": "Output of the 'profile' IDE command (the Z80 profiler), in the Build/command output pane. The current emulated machine cannot profile."
+  },
+  "commands.profile.layoutUnknown": "This machine's profile layout is unknown",
+  "@commands.profile.layoutUnknown": {
+    "context": "Output of the 'profile' IDE command (the Z80 profiler), in the Build/command output pane."
+  },
+  "commands.profile.unknownAt": "-at: unknown address or label ''{value}''",
+  "@commands.profile.unknownAt": {
+    "context": "Output of the 'profile' IDE command (the Z80 profiler), in the Build/command output pane. '-at' is an option name: keep it.",
+    "placeholders": {
+      "value": "The address or label the user typed"
+    }
+  },
+  "commands.profile.unknownUntil": "-until: unknown address or label ''{value}''",
+  "@commands.profile.unknownUntil": {
+    "context": "Output of the 'profile' IDE command (the Z80 profiler), in the Build/command output pane. '-until' is an option name: keep it.",
+    "placeholders": {
+      "value": "The address or label the user typed"
+    }
+  },
+  "commands.profile.started": "Profiling started ({calls, select, yes {with the call graph} other {flat profile}}{at, select, none {} other {, counting from {at}}}{until, select, none {} other {, stopping at {until}{after, select, yes { after that} other {}}}})",
+  "@commands.profile.started": {
+    "context": "Output of the 'profile' IDE command (the Z80 profiler), in the Build/command output pane. Success message of 'profile start'. Translate every branch: 'flat profile' (time per routine) or 'with the call graph' (who called whom), then optional start and stop addresses.",
+    "placeholders": {
+      "calls": "yes or no: a selector, not shown",
+      "at": "The start address, e.g. '$8000', or 'none' (selector)",
+      "until": "The stop address, e.g. '$8010', or 'none' (selector)",
+      "after": "yes when there is a start address too: a selector, not shown"
+    }
+  },
+  "commands.profile.stopped": "Profiling stopped: {time} measured",
+  "@commands.profile.stopped": {
+    "context": "Output of the 'profile' IDE command (the Z80 profiler), in the Build/command output pane.",
+    "placeholders": {
+      "time": "A measured time, already formatted, e.g. '1,000 T (286 µs)'"
+    }
+  },
+  "commands.profile.useOneOf": "Use one of: {choices}",
+  "@commands.profile.useOneOf": {
+    "context": "Validation error of the 'profile' IDE command: the subcommand is unknown.",
+    "placeholders": {
+      "choices": "The subcommands, comma-separated (keywords, not translated)"
+    }
+  },
+  "commands.profile.topCount": "top: n must be a positive number",
+  "@commands.profile.topCount": {
+    "context": "Validation error of 'profile top [n]'. 'top' and 'n' refer to the command syntax: keep them."
+  },
+  "commands.profile.byInvalid": "-by: use self, inclusive or calls",
+  "@commands.profile.byInvalid": {
+    "context": "Validation error of 'profile top': -by is an option and self/inclusive/calls its values; keep them exactly."
+  },
+  "commands.profile.exportNeedsFile": "profile export needs a file",
+  "@commands.profile.exportNeedsFile": {
+    "context": "Validation error. 'profile export' is the command: keep it."
+  },
+  "commands.profile.formatInvalid": "-format: use fuse, csv, callgrind or speedscope",
+  "@commands.profile.formatInvalid": {
+    "context": "Validation error of 'profile export': -format is an option and fuse/csv/callgrind/speedscope its values; keep them exactly."
+  },
+  "commands.profile.formatUnknown": "Use a .prof, .csv, callgrind.out.* or .json file, or name the format with -format.",
+  "@commands.profile.formatUnknown": {
+    "context": "Validation error of 'profile export': the file name does not tell the format. Keep the file patterns and '-format'."
+  },
+  "commands.profile.startOnly": "-calls, -at and -until belong to 'profile start'",
+  "@commands.profile.startOnly": {
+    "context": "Validation error: these options (keep them) work only with the 'profile start' command."
+  },
+  "commands.profile.cleared": "Profile cleared",
+  "@commands.profile.cleared": {
+    "context": "Output of the 'profile' IDE command (the Z80 profiler), in the Build/command output pane."
+  },
+  "commands.profile.empty": "The profile is empty: start one with 'profile start'",
+  "@commands.profile.empty": {
+    "context": "Output of the 'profile' IDE command (the Z80 profiler), in the Build/command output pane. 'profile start' is a command: keep it."
+  },
+  "commands.profile.inclusiveNeedsCalls": "Inclusive time needs the call graph: start profiling with 'profile start -calls'",
+  "@commands.profile.inclusiveNeedsCalls": {
+    "context": "Output of the 'profile' IDE command (the Z80 profiler), in the Build/command output pane. Inclusive time is a routine's time including the routines it calls. Keep the quoted command."
+  },
+  "commands.profile.fileExists": "{file} already exists; use -f to replace it.",
+  "@commands.profile.fileExists": {
+    "context": "Output of the 'profile' IDE command (the Z80 profiler), in the Build/command output pane. '-f' is the command option: keep it.",
+    "placeholders": {
+      "file": "A file path, as the user typed it"
+    }
+  },
+  "commands.profile.formatNeedsCalls": "{format} needs the call graph: start profiling with 'profile start -calls'",
+  "@commands.profile.formatNeedsCalls": {
+    "context": "Output of the 'profile' IDE command (the Z80 profiler), in the Build/command output pane. Keep the quoted command.",
+    "placeholders": {
+      "format": "The export format's name, e.g. 'speedscope'"
+    }
+  },
+  "commands.profile.writeFailed": "Could not write {file}: {error}",
+  "@commands.profile.writeFailed": {
+    "context": "Output of the 'profile' IDE command (the Z80 profiler), in the Build/command output pane.",
+    "placeholders": {
+      "file": "A file path, as the user typed it",
+      "error": "The operating system's error message (may stay English)"
+    }
+  },
+  "commands.profile.exported": "Exported the profile ({format}, {time}) to {file}",
+  "@commands.profile.exported": {
+    "context": "Output of the 'profile' IDE command (the Z80 profiler), in the Build/command output pane. Success message of 'profile export'.",
+    "placeholders": {
+      "format": "The format keyword, e.g. 'csv'",
+      "time": "A measured time, already formatted, e.g. '1,000 T (286 µs)'",
+      "file": "A file path, as the user typed it"
+    }
+  },
+  "commands.profile.status.state": "Profiling is {enabled, select, yes {on} other {off}}{start, select, none {} other {, armed: counting starts at {start}}}{stop, select, none {} other {, stops at {stop}}}{calls, select, yes { (with the call graph)} other {}}{muted, select, yes {; a replay is running, nothing counts} other {}}",
+  "@commands.profile.status.state": {
+    "context": "Output of the 'profile' IDE command (the Z80 profiler), in the Build/command output pane. First line of 'profile status'. Translate every branch; 'armed' means the profiler waits for an address before it counts.",
+    "placeholders": {
+      "enabled": "yes or no: a selector, not shown",
+      "start": "The armed start address, e.g. '$8000', or 'none' (selector)",
+      "stop": "The armed stop address, e.g. '$8010', or 'none' (selector)",
+      "calls": "yes or no: a selector, not shown",
+      "muted": "yes or no: a selector, not shown"
+    }
+  },
+  "commands.profile.status.measured": "Measured: {time}, {count, plural, one {# instruction} other {# instructions}}",
+  "@commands.profile.status.measured": {
+    "context": "Output of the 'profile' IDE command (the Z80 profiler), in the Build/command output pane. A line of 'profile status'.",
+    "placeholders": {
+      "time": "A measured time, already formatted, e.g. '1,000 T (286 µs)'",
+      "count": "Z80 instructions executed"
+    }
+  },
+  "commands.profile.status.frames": "Frames: {frames} ({ticks, number} {unit} each)",
+  "@commands.profile.status.frames": {
+    "context": "Output of the 'profile' IDE command (the Z80 profiler), in the Build/command output pane. A line of 'profile status': how many video frames the measured time spans.",
+    "placeholders": {
+      "frames": "Number of frames, already formatted with two decimals",
+      "ticks": "Length of one frame",
+      "unit": "The unit: T-states or cycles (not translated)"
+    }
+  },
+  "commands.profile.status.halt": "Waiting in HALT: {percent}",
+  "@commands.profile.status.halt": {
+    "context": "Output of the 'profile' IDE command (the Z80 profiler), in the Build/command output pane. A line of 'profile status'. HALT is a Z80 instruction: keep it.",
+    "placeholders": {
+      "percent": "A percentage, already formatted, e.g. '40.0%'"
+    }
+  },
+  "commands.profile.status.graph": "Call graph: {calls, number} calls, {interrupts, number} interrupts, {pairs, number} caller/callee pairs",
+  "@commands.profile.status.graph": {
+    "context": "Output of the 'profile' IDE command (the Z80 profiler), in the Build/command output pane. A line of 'profile status'.",
+    "placeholders": {
+      "calls": "Calls counted",
+      "interrupts": "Interrupts counted",
+      "pairs": "Distinct caller/callee pairs"
+    }
+  },
+  "commands.profile.status.graphOpen": "Call graph: {calls, number} calls, {interrupts, number} interrupts, {pairs, number} caller/callee pairs, {open, number} open",
+  "@commands.profile.status.graphOpen": {
+    "context": "Output of the 'profile' IDE command (the Z80 profiler), in the Build/command output pane. A line of 'profile status'; 'open' are calls that have not returned yet.",
+    "placeholders": {
+      "calls": "Calls counted",
+      "interrupts": "Interrupts counted",
+      "pairs": "Distinct caller/callee pairs",
+      "open": "Calls not returned yet"
+    }
+  },
+  "commands.profile.status.resyncs": "{count, plural, one {# stack switch} other {# stack switches}} rebuilt the call stack: the graph is approximate around them",
+  "@commands.profile.status.resyncs": {
+    "context": "Output of the 'profile' IDE command (the Z80 profiler), in the Build/command output pane. An indented line of 'profile status'.",
+    "placeholders": {
+      "count": "Times the stack pointer jumped"
+    }
+  },
+  "commands.profile.status.overflows": "{count, plural, one {# call} other {# calls}} deeper than 256 levels were not tracked",
+  "@commands.profile.status.overflows": {
+    "context": "Output of the 'profile' IDE command (the Z80 profiler), in the Build/command output pane. An indented line of 'profile status'.",
+    "placeholders": {
+      "count": "Calls not tracked"
+    }
+  },
+  "commands.profile.status.edgesDropped": "{count, plural, one {# call} other {# calls}} found the edge table full and count under (other)",
+  "@commands.profile.status.edgesDropped": {
+    "context": "Output of the 'profile' IDE command (the Z80 profiler), in the Build/command output pane. An indented line of 'profile status'. '(other)' is the name of the catch-all row in the Profiler: keep it as the Profiler shows it.",
+    "placeholders": {
+      "count": "Calls not tracked separately"
+    }
+  },
+  "commands.compile.build.description": "Compiles the current project with the Klive Z80 Compiler and runs the optional build commands",
+  "@commands.compile.build.description": {
+    "context": "Help text of the 'klive.build' IDE command. 'Klive Z80 Compiler' is a product name: keep it."
+  },
+  "commands.compile.compile.description": "Compiles the current project with the Klive Z80 Compiler",
+  "@commands.compile.compile.description": {
+    "context": "Help text of the 'klive.compile' IDE command. 'Klive Z80 Compiler' is a product name: keep it."
+  },
+  "commands.compile.inject.description": "Injects the current project code into the machine (using the Klive Z80 Compiler)",
+  "@commands.compile.inject.description": {
+    "context": "Help text of the 'klive.inject' IDE command: puts the compiled code straight into the emulated machine's memory."
+  },
+  "commands.compile.run.description": "Runs the current project's code in the virtual machine (using the Klive Z80 Compiler)",
+  "@commands.compile.run.description": {
+    "context": "Help text of the 'klive.run' IDE command."
+  },
+  "commands.compile.debug.description": "Runs the current project's code in the virtual machine with debugging (using the Klive Z80 Compiler)",
+  "@commands.compile.debug.description": {
+    "context": "Help text of the 'klive.debug' IDE command."
+  },
+  "commands.compile.export.description": "Export the code of the current project",
+  "@commands.compile.export.description": {
+    "context": "Help text of the 'expc' IDE command (writes the compiled code to a tape, HEX, NEX or ZX80/ZX81 program file)."
+  },
+  "commands.compile.compiled": "Project file successfully compiled.",
+  "@commands.compile.compiled": {
+    "context": "Result message of the IDE's build/run commands (klive.build, klive.inject, klive.run, klive.debug, expc), shown in the command output and in notifications."
+  },
+  "commands.compile.failedWithErrors": "Compilation failed with errors.",
+  "@commands.compile.failedWithErrors": {
+    "context": "Result message of the IDE's build/run commands (klive.build, klive.inject, klive.run, klive.debug, expc), shown in the command output and in notifications."
+  },
+  "commands.compile.notInjectable": "Compiled code is not injectable.",
+  "@commands.compile.notInjectable": {
+    "context": "Result message of the IDE's build/run commands (klive.build, klive.inject, klive.run, klive.debug, expc), shown in the command output and in notifications. The compiler's output cannot be put into the machine's memory."
+  },
+  "commands.compile.exported": "Code successfully exported to ''{file}''",
+  "@commands.compile.exported": {
+    "context": "Result message of the IDE's build/run commands (klive.build, klive.inject, klive.run, klive.debug, expc), shown in the command output and in notifications.",
+    "placeholders": {
+      "file": "The written file's full path"
+    }
+  },
+  "commands.compile.zx8081Format": "A {machine} program exports as a .{format} file (-f {format}) or as Intel HEX (-f hex).",
+  "@commands.compile.zx8081Format": {
+    "context": "Result message of the IDE's build/run commands (klive.build, klive.inject, klive.run, klive.debug, expc), shown in the command output and in notifications. '-f ...' are command options: keep them. Intel HEX is a file format name.",
+    "placeholders": {
+      "machine": "ZX80 or ZX81",
+      "format": "The file extension: p or o"
+    }
+  },
+  "commands.compile.invalidScreenFile": "File ''{file}'' is not a valid screen file",
+  "@commands.compile.invalidScreenFile": {
+    "context": "Result message of the IDE's build/run commands (klive.build, klive.inject, klive.run, klive.debug, expc), shown in the command output and in notifications. The -scr option names a ZX Spectrum screen image (.scr) to load before the code.",
+    "placeholders": {
+      "file": "The screen file's path"
+    }
+  },
+  "commands.compile.prebuiltTapeUnreadable": "The tape the compiler wrote cannot be read.",
+  "@commands.compile.prebuiltTapeUnreadable": {
+    "context": "Result message of the IDE's build/run commands (klive.build, klive.inject, klive.run, klive.debug, expc), shown in the command output and in notifications. An external compiler (Boriel BASIC) wrote its own tape file."
+  },
+  "commands.compile.prebuiltTapeIgnored": "The compiler wrote this tape with its own loader; {count, plural, one {{options} has no effect} other {{options} have no effect}}.",
+  "@commands.compile.prebuiltTapeIgnored": {
+    "context": "Result message of the IDE's build/run commands (klive.build, klive.inject, klive.run, klive.debug, expc), shown in the command output and in notifications. A warning: the external compiler built the tape, so these export options are ignored.",
+    "placeholders": {
+      "options": "The ignored option names, comma-separated, e.g. '-as, -b'",
+      "count": "Number of ignored options"
+    }
+  },
+  "commands.compile.nexNeedsModel": "NEX file export requires .model Next in the source code.",
+  "@commands.compile.nexNeedsModel": {
+    "context": "Result message of the IDE's build/run commands (klive.build, klive.inject, klive.run, klive.debug, expc), shown in the command output and in notifications. '.model Next' is an assembler directive: keep it."
+  },
+  "commands.compile.nexNeedsSavenex": "NEX file export requires .savenex pragma configuration in the source code.",
+  "@commands.compile.nexNeedsSavenex": {
+    "context": "Result message of the IDE's build/run commands (klive.build, klive.inject, klive.run, klive.debug, expc), shown in the command output and in notifications. '.savenex' is an assembler pragma: keep it."
+  },
+  "commands.compile.nexNeedsFilename": "NEX file export requires a filename (use .savenex file or provide filename argument).",
+  "@commands.compile.nexNeedsFilename": {
+    "context": "Result message of the IDE's build/run commands (klive.build, klive.inject, klive.run, klive.debug, expc), shown in the command output and in notifications. '.savenex file' is assembler syntax: keep it."
+  },
+  "commands.compile.noProject": "No active project found.",
+  "@commands.compile.noProject": {
+    "context": "Result message of the IDE's build/run commands (klive.build, klive.inject, klive.run, klive.debug, expc), shown in the command output and in notifications."
+  },
+  "commands.compile.prebuiltNex": "NEX file exported to {file} ({bytes, number} bytes, written by the compiler).",
+  "@commands.compile.prebuiltNex": {
+    "context": "Result message of the IDE's build/run commands (klive.build, klive.inject, klive.run, klive.debug, expc), shown in the command output and in notifications. An external compiler (Boriel BASIC) wrote the NEX file itself.",
+    "placeholders": {
+      "file": "The written file's full path",
+      "bytes": "File size in bytes"
+    }
+  },
+  "commands.compile.prebuiltNexWithSidecar": "NEX file exported to {file} ({bytes, number} bytes, written by the compiler, debug sidecar {sidecar}).",
+  "@commands.compile.prebuiltNexWithSidecar": {
+    "context": "Result message of the IDE's build/run commands (klive.build, klive.inject, klive.run, klive.debug, expc), shown in the command output and in notifications. An external compiler (Boriel BASIC) wrote the NEX file itself; Klive wrote a source-level debug-info file (sidecar) beside it.",
+    "placeholders": {
+      "file": "The written file's full path",
+      "bytes": "File size in bytes",
+      "sidecar": "The sidecar file's path"
+    }
+  },
+  "commands.compile.nex.exported": "NEX file successfully exported to ''{file}''",
+  "@commands.compile.nex.exported": {
+    "context": "Result message of the IDE's build/run commands (klive.build, klive.inject, klive.run, klive.debug, expc), shown in the command output and in notifications. First line of the NEX export summary; the next lines are indented facts.",
+    "placeholders": {
+      "file": "The written file's full path"
+    }
+  },
+  "commands.compile.nex.size": "Size: {bytes, number} bytes",
+  "@commands.compile.nex.size": {
+    "context": "Result message of the IDE's build/run commands (klive.build, klive.inject, klive.run, klive.debug, expc), shown in the command output and in notifications. A line of the NEX export summary.",
+    "placeholders": {
+      "bytes": "File size in bytes"
+    }
+  },
+  "commands.compile.nex.ram": "RAM: {size}K",
+  "@commands.compile.nex.ram": {
+    "context": "Result message of the IDE's build/run commands (klive.build, klive.inject, klive.run, klive.debug, expc), shown in the command output and in notifications. A line of the NEX export summary: the RAM the program needs.",
+    "placeholders": {
+      "size": "RAM size in kilobytes, e.g. 768"
+    }
+  },
+  "commands.compile.nex.banks": "Banks: {count, number}",
+  "@commands.compile.nex.banks": {
+    "context": "Result message of the IDE's build/run commands (klive.build, klive.inject, klive.run, klive.debug, expc), shown in the command output and in notifications. A line of the NEX export summary: how many 16K memory banks the file holds.",
+    "placeholders": {
+      "count": "Number of banks"
+    }
+  },
+  "commands.compile.nex.entry": "Entry: {address}",
+  "@commands.compile.nex.entry": {
+    "context": "Result message of the IDE's build/run commands (klive.build, klive.inject, klive.run, klive.debug, expc), shown in the command output and in notifications. A line of the NEX export summary: the program's start address.",
+    "placeholders": {
+      "address": "A hexadecimal address, e.g. 0x8000"
+    }
+  },
+  "commands.compile.nex.loadingScreen": "Loading screen: Yes",
+  "@commands.compile.nex.loadingScreen": {
+    "context": "Result message of the IDE's build/run commands (klive.build, klive.inject, klive.run, klive.debug, expc), shown in the command output and in notifications. A line of the NEX export summary."
+  },
+  "commands.compile.nex.palette": "Palette: Yes",
+  "@commands.compile.nex.palette": {
+    "context": "Result message of the IDE's build/run commands (klive.build, klive.inject, klive.run, klive.debug, expc), shown in the command output and in notifications. A line of the NEX export summary."
+  },
+  "commands.compile.nex.copper": "Copper code: Yes",
+  "@commands.compile.nex.copper": {
+    "context": "Result message of the IDE's build/run commands (klive.build, klive.inject, klive.run, klive.debug, expc), shown in the command output and in notifications. A line of the NEX export summary. Copper is the ZX Spectrum Next's display co-processor: keep the name."
+  },
+  "commands.compile.nex.loadingBar": "Loading bar: Yes",
+  "@commands.compile.nex.loadingBar": {
+    "context": "Result message of the IDE's build/run commands (klive.build, klive.inject, klive.run, klive.debug, expc), shown in the command output and in notifications. A line of the NEX export summary."
+  },
+  "commands.compile.nex.sidecar": "Source-level debug info: {file}",
+  "@commands.compile.nex.sidecar": {
+    "context": "Result message of the IDE's build/run commands (klive.build, klive.inject, klive.run, klive.debug, expc), shown in the command output and in notifications. A line of the NEX export summary.",
+    "placeholders": {
+      "file": "The debug-info file's path"
+    }
+  },
+  "commands.compile.nex.warnings": "Warnings: {count, number}",
+  "@commands.compile.nex.warnings": {
+    "context": "Result message of the IDE's build/run commands (klive.build, klive.inject, klive.run, klive.debug, expc), shown in the command output and in notifications. A line of the NEX export summary.",
+    "placeholders": {
+      "count": "Number of warnings"
+    }
+  },
+  "commands.compile.nexFailed": "NEX export failed: {error}",
+  "@commands.compile.nexFailed": {
+    "context": "Result message of the IDE's build/run commands (klive.build, klive.inject, klive.run, klive.debug, expc), shown in the command output and in notifications.",
+    "placeholders": {
+      "error": "The error message (may stay English)"
+    }
+  },
+  "commands.compile.nexWarningPrefix": "NEX export:",
+  "@commands.compile.nexWarningPrefix": {
+    "context": "Bold label in front of each NEX export warning in the Build output; the warning text follows after a space.",
+    "maxChars": 20
+  },
+  "commands.compile.noInject": "{machine} does not support injecting code into its memory.",
+  "@commands.compile.noInject": {
+    "context": "Result message of the IDE's build/run commands (klive.build, klive.inject, klive.run, klive.debug, expc), shown in the command output and in notifications.",
+    "placeholders": {
+      "machine": "The machine's display name, e.g. 'Cambridge Z88'"
+    }
+  },
+  "commands.compile.noInjectUseRun": "{machine} does not support injecting code into its memory. Use run or debug instead.",
+  "@commands.compile.noInjectUseRun": {
+    "context": "Result message of the IDE's build/run commands (klive.build, klive.inject, klive.run, klive.debug, expc), shown in the command output and in notifications. 'run' and 'debug' are the IDE's commands.",
+    "placeholders": {
+      "machine": "The machine's display name, e.g. 'ZX Spectrum Next'"
+    }
+  },
+  "commands.compile.noRoute": "{machine} cannot run code built in the IDE: there is no route to deliver it into the machine. Put the program on a card instead.",
+  "@commands.compile.noRoute": {
+    "context": "Result message of the IDE's build/run commands (klive.build, klive.inject, klive.run, klive.debug, expc), shown in the command output and in notifications. 'card' is a memory card of the machine (e.g. the Cambridge Z88's EPROM card).",
+    "placeholders": {
+      "machine": "The machine's display name, e.g. 'Cambridge Z88'"
+    }
+  },
+  "commands.compile.failedNoInjection": "Code compilation failed. No code injected.",
+  "@commands.compile.failedNoInjection": {
+    "context": "Result message of the IDE's build/run commands (klive.build, klive.inject, klive.run, klive.debug, expc), shown in the command output and in notifications."
+  },
+  "commands.compile.unitTestOnNext": "Debugging a unit test in the emulator does not work on the ZX Spectrum Next yet (its builds start through a .nex file); run the tests with test-run.",
+  "@commands.compile.unitTestOnNext": {
+    "context": "Result message of the IDE's build/run commands (klive.build, klive.inject, klive.run, klive.debug, expc), shown in the command output and in notifications. 'test-run' is an IDE command: keep it."
+  },
+  "commands.compile.emptyCode": "Code length is 0, no code injected",
+  "@commands.compile.emptyCode": {
+    "context": "Result message of the IDE's build/run commands (klive.build, klive.inject, klive.run, klive.debug, expc), shown in the command output and in notifications."
+  },
+  "commands.compile.mustBePaused": "Machine must be in paused state.",
+  "@commands.compile.mustBePaused": {
+    "context": "Result message of the IDE's build/run commands (klive.build, klive.inject, klive.run, klive.debug, expc), shown in the command output and in notifications. The emulated machine must be paused before code is injected."
+  },
+  "commands.compile.injected": "Successfully injected {bytes, plural, one {# byte} other {# bytes}} in {segments, plural, one {# segment} other {# segments}} from start address {address}",
+  "@commands.compile.injected": {
+    "context": "Result message of the IDE's build/run commands (klive.build, klive.inject, klive.run, klive.debug, expc), shown in the command output and in notifications.",
+    "placeholders": {
+      "bytes": "Code length in bytes",
+      "segments": "Number of code segments",
+      "address": "The first segment's start address, e.g. '$8000'"
+    }
+  },
+  "commands.compile.injectedRem": "Successfully injected {bytes, plural, one {# byte} other {# bytes}} in {segments, plural, one {# segment} other {# segments}} from start address {address} as a 1 REM program. Type RUN to start it.",
+  "@commands.compile.injectedRem": {
+    "context": "Result message of the IDE's build/run commands (klive.build, klive.inject, klive.run, klive.debug, expc), shown in the command output and in notifications. On a ZX80/ZX81 the code goes into a BASIC '1 REM' line; 'REM' and 'RUN' are BASIC keywords: keep them.",
+    "placeholders": {
+      "bytes": "Code length in bytes",
+      "segments": "Number of code segments",
+      "address": "The first segment's start address, e.g. '$4082'"
+    }
+  },
+  "commands.compile.started": "Code injected and started.",
+  "@commands.compile.started": {
+    "context": "Result message of the IDE's build/run commands (klive.build, klive.inject, klive.run, klive.debug, expc), shown in the command output and in notifications."
+  },
+  "commands.compile.noDebugInfo": "No debug information available.",
+  "@commands.compile.noDebugInfo": {
+    "context": "Result message of the IDE's build/run commands (klive.build, klive.inject, klive.run, klive.debug, expc), shown in the command output and in notifications. A warning in the Build output before a debug run that has no source information."
+  },
+  "commands.compile.startedNoDebug": "Code injected and started without debugging.",
+  "@commands.compile.startedNoDebug": {
+    "context": "Result message of the IDE's build/run commands (klive.build, klive.inject, klive.run, klive.debug, expc), shown in the command output and in notifications. Shown as a warning."
+  },
+  "commands.compile.startedDebug": "Code injected and started in debug mode.",
+  "@commands.compile.startedDebug": {
+    "context": "Result message of the IDE's build/run commands (klive.build, klive.inject, klive.run, klive.debug, expc), shown in the command output and in notifications."
+  },
+  "commands.unitTest.list.description": "Lists the unit tests of the last build",
+  "@commands.unitTest.list.description": {
+    "context": "Help text of the 'test-list' IDE command."
+  },
+  "commands.unitTest.run.description": "Builds the project and runs its unit tests",
+  "@commands.unitTest.run.description": {
+    "context": "Help text of the 'test-run' IDE command."
+  },
+  "commands.unitTest.debug.description": "Debugs one unit test in the emulator",
+  "@commands.unitTest.debug.description": {
+    "context": "Help text of the 'test-debug' IDE command."
+  },
+  "commands.unitTest.init.description": "Adds Klive's unit-test include to the project and the build root",
+  "@commands.unitTest.init.description": {
+    "context": "Help text of the 'test-init' IDE command. The include is a source file with the unit-test macros; the build root is the project's main source file."
+  },
+  "commands.unitTest.junit.description": "Exports the last unit-test run's results as JUnit XML",
+  "@commands.unitTest.junit.description": {
+    "context": "Help text of the 'test-junit' IDE command. JUnit XML is a file format name."
+  },
+  "commands.unitTest.buildFirst": "Build the project first: the tests come from the last successful build.",
+  "@commands.unitTest.buildFirst": {
+    "context": "Output of the unit-test IDE commands (test-list, test-run, test-debug, test-init, test-junit), in the command output pane."
+  },
+  "commands.unitTest.rootSuite": "(root)",
+  "@commands.unitTest.rootSuite": {
+    "context": "Output of the unit-test IDE commands (test-list, test-run, test-debug, test-init, test-junit), in the command output pane. Heading of the tests that are in no suite, in the 'test-list' output.",
+    "maxChars": 16
+  },
+  "commands.unitTest.count": "{count, plural, one {# unit test} other {# unit tests}}",
+  "@commands.unitTest.count": {
+    "context": "Output of the unit-test IDE commands (test-list, test-run, test-debug, test-init, test-junit), in the command output pane. Result of 'test-list'.",
+    "placeholders": {
+      "count": "Number of tests"
+    }
+  },
+  "commands.unitTest.noFailed": "No failed tests to run again.",
+  "@commands.unitTest.noFailed": {
+    "context": "Output of the unit-test IDE commands (test-list, test-run, test-debug, test-init, test-junit), in the command output pane. Result of 'test-run -failed' when the last run had no failures."
+  },
+  "commands.unitTest.didNotRun": "The tests did not run.",
+  "@commands.unitTest.didNotRun": {
+    "context": "Output of the unit-test IDE commands (test-list, test-run, test-debug, test-init, test-junit), in the command output pane."
+  },
+  "commands.unitTest.nameTest": "Name the test to debug",
+  "@commands.unitTest.nameTest": {
+    "context": "Validation error of 'test-debug' without a test name."
+  },
+  "commands.unitTest.noFrame": "The build has no unit-test frame.",
+  "@commands.unitTest.noFrame": {
+    "context": "Output of the unit-test IDE commands (test-list, test-run, test-debug, test-init, test-junit), in the command output pane. The build does not include Klive's unit-test support code."
+  },
+  "commands.unitTest.noSuchTest": "No unit test named ''{name}''. List them with test-list.",
+  "@commands.unitTest.noSuchTest": {
+    "context": "Output of the unit-test IDE commands (test-list, test-run, test-debug, test-init, test-junit), in the command output pane. 'test-list' is an IDE command: keep it.",
+    "placeholders": {
+      "name": "The test name or pattern the user typed"
+    }
+  },
+  "commands.unitTest.ambiguous": "''{name}'' names {count, number} tests ({ids}); name one.",
+  "@commands.unitTest.ambiguous": {
+    "context": "Output of the unit-test IDE commands (test-list, test-run, test-debug, test-init, test-junit), in the command output pane. The pattern given to 'test-debug' matches several tests.",
+    "placeholders": {
+      "name": "The pattern the user typed",
+      "count": "Number of matching tests",
+      "ids": "Up to three test ids, comma-separated, then ', ...' when there are more"
+    }
+  },
+  "commands.unitTest.openProject": "Open a Klive project first.",
+  "@commands.unitTest.openProject": {
+    "context": "Output of the unit-test IDE commands (test-list, test-run, test-debug, test-init, test-junit), in the command output pane."
+  },
+  "commands.unitTest.selectBuildRoot": "Select a build root first.",
+  "@commands.unitTest.selectBuildRoot": {
+    "context": "Output of the unit-test IDE commands (test-list, test-run, test-debug, test-init, test-junit), in the command output pane. The build root is the project's main source file."
+  },
+  "commands.unitTest.wroteInclude": "Wrote {file} next to the build root.",
+  "@commands.unitTest.wroteInclude": {
+    "context": "Output of the unit-test IDE commands (test-list, test-run, test-debug, test-init, test-junit), in the command output pane. Result of 'test-init'.",
+    "placeholders": {
+      "file": "The include file's name"
+    }
+  },
+  "commands.unitTest.keptInclude": "The project has {file} already; it is kept as it is.",
+  "@commands.unitTest.keptInclude": {
+    "context": "Output of the unit-test IDE commands (test-list, test-run, test-debug, test-init, test-junit), in the command output pane. Result of 'test-init'.",
+    "placeholders": {
+      "file": "The include file's name"
+    }
+  },
+  "commands.unitTest.addedInclude": "Added the include line of {file} to {buildRoot}.",
+  "@commands.unitTest.addedInclude": {
+    "context": "Output of the unit-test IDE commands (test-list, test-run, test-debug, test-init, test-junit), in the command output pane. Result of 'test-init'.",
+    "placeholders": {
+      "file": "The include file's name",
+      "buildRoot": "The build root's project-relative path"
+    }
+  },
+  "commands.unitTest.addedSldopt": "Added the SLDOPT COMMENT line to {buildRoot}.",
+  "@commands.unitTest.addedSldopt": {
+    "context": "Output of the unit-test IDE commands (test-list, test-run, test-debug, test-init, test-junit), in the command output pane. Result of 'test-init'. 'SLDOPT COMMENT' is an sjasmplus directive: keep it.",
+    "placeholders": {
+      "buildRoot": "The build root's project-relative path"
+    }
+  },
+  "commands.unitTest.nextKz80": "Next: invoke UNITTEST_INITIALIZE() once, follow it with your init code ending in RET, and write UT_ tests that end with TC_END().",
+  "@commands.unitTest.nextKz80": {
+    "context": "Output of the unit-test IDE commands (test-list, test-run, test-debug, test-init, test-junit), in the command output pane. Next steps after 'test-init' (Klive assembler). UNITTEST_INITIALIZE(), RET, UT_ and TC_END() are code: keep them."
+  },
+  "commands.unitTest.nextSjasm": "Next: invoke UNITTEST_INITIALIZE once, follow it with your init code ending in RET, and write UT_ tests that end with TC_END.",
+  "@commands.unitTest.nextSjasm": {
+    "context": "Output of the unit-test IDE commands (test-list, test-run, test-debug, test-init, test-junit), in the command output pane. Next steps after 'test-init' (sjasmplus). UNITTEST_INITIALIZE, RET, UT_ and TC_END are code: keep them."
+  },
+  "commands.unitTest.nameFile": "Name the file to write",
+  "@commands.unitTest.nameFile": {
+    "context": "Validation error of 'test-junit' without a file name."
+  },
+  "commands.unitTest.writeFailed": "Could not write {file}: {error}",
+  "@commands.unitTest.writeFailed": {
+    "context": "Output of the unit-test IDE commands (test-list, test-run, test-debug, test-init, test-junit), in the command output pane.",
+    "placeholders": {
+      "file": "A file path, as the user typed it",
+      "error": "The operating system's error message (may stay English)"
+    }
+  },
+  "commands.unitTest.exported": "Exported the unit-test results (JUnit) to {file}",
+  "@commands.unitTest.exported": {
+    "context": "Output of the unit-test IDE commands (test-list, test-run, test-debug, test-init, test-junit), in the command output pane. Result of 'test-junit'.",
+    "placeholders": {
+      "file": "The written file's path"
+    }
+  },
+  "commands.snapshot.description": "Loads a ZX Spectrum .sna, .z80 or .szx snapshot and debugs it, stopping at its PC (-r runs it)",
+  "@commands.snapshot.description": {
+    "context": "Help text of the 'zx-snapshot' IDE command. PC is the Z80 register; '-r' is an option: keep both."
+  },
+  "commands.snapshot.emptyPath": "The snapshot file path cannot be empty.",
+  "@commands.snapshot.emptyPath": {
+    "context": "Validation error of the snapshot IDE commands."
+  },
+  "commands.snapshot.wrongType": "The file to load must be a .sna, .z80 or .szx snapshot.",
+  "@commands.snapshot.wrongType": {
+    "context": "Validation error of 'zx-snapshot'."
+  },
+  "commands.snapshot.oneMode": "Use only one of -r and -d.",
+  "@commands.snapshot.oneMode": {
+    "context": "Validation error of 'zx-snapshot': the two options exclude each other. Keep the option names."
+  },
+  "commands.snapshot.readFailed": "Could not read {file}: {error}",
+  "@commands.snapshot.readFailed": {
+    "context": "Output of the 'zx-snapshot' IDE command (loads a ZX Spectrum .sna/.z80/.szx snapshot), in the command output pane.",
+    "placeholders": {
+      "file": "A file path, as the user typed it",
+      "error": "The reader's or operating system's error message (may stay English)"
+    }
+  },
+  "commands.snapshot.invalid": "{file} is not a valid snapshot: {error}",
+  "@commands.snapshot.invalid": {
+    "context": "Output of the 'zx-snapshot' IDE command (loads a ZX Spectrum .sna/.z80/.szx snapshot), in the command output pane.",
+    "placeholders": {
+      "file": "A file path, as the user typed it",
+      "error": "The reader's or operating system's error message (may stay English)"
+    }
+  },
+  "commands.snapshot.cannotLoad": "{file} cannot be loaded: {errors}",
+  "@commands.snapshot.cannotLoad": {
+    "context": "Output of the 'zx-snapshot' IDE command (loads a ZX Spectrum .sna/.z80/.szx snapshot), in the command output pane.",
+    "placeholders": {
+      "file": "A file path, as the user typed it",
+      "errors": "The reasons, separated by semicolons (may stay English)"
+    }
+  },
+  "commands.snapshot.embeddedDisk": "drive {drive} (embedded)",
+  "@commands.snapshot.embeddedDisk": {
+    "context": "Output of the 'zx-snapshot' IDE command (loads a ZX Spectrum .sna/.z80/.szx snapshot), in the command output pane. The name shown for a +3 disk image stored inside the snapshot file, in the disk drive's display.",
+    "placeholders": {
+      "drive": "The drive letter: A or B"
+    }
+  },
+  "commands.snapshot.diskNotFound": "The disk {disk} the snapshot links was not found; drive {drive} is left as it is",
+  "@commands.snapshot.diskNotFound": {
+    "context": "Output of the 'zx-snapshot' IDE command (loads a ZX Spectrum .sna/.z80/.szx snapshot), in the command output pane. A warning: the .szx snapshot refers to a disk image file by name.",
+    "placeholders": {
+      "disk": "The disk image's file name",
+      "drive": "The drive letter: A or B"
+    }
+  },
+  "commands.snapshot.loadFailed": "Could not load {file}: {error}",
+  "@commands.snapshot.loadFailed": {
+    "context": "Output of the 'zx-snapshot' IDE command (loads a ZX Spectrum .sna/.z80/.szx snapshot), in the command output pane.",
+    "placeholders": {
+      "file": "A file path, as the user typed it",
+      "error": "The reader's or operating system's error message (may stay English)"
+    }
+  },
+  "commands.snapshot.machineSwitched": "Machine switched to the {machine}.",
+  "@commands.snapshot.machineSwitched": {
+    "context": "Output of the 'zx-snapshot' IDE command (loads a ZX Spectrum .sna/.z80/.szx snapshot), in the command output pane.",
+    "placeholders": {
+      "machine": "The machine's display name, e.g. 'ZX Spectrum 128K'"
+    }
+  },
+  "commands.snapshot.warning": "Warning: {warning}",
+  "@commands.snapshot.warning": {
+    "context": "Output of the 'zx-snapshot' IDE command (loads a ZX Spectrum .sna/.z80/.szx snapshot), in the command output pane. A warning line in the command output.",
+    "placeholders": {
+      "warning": "The warning text (may stay English)"
+    }
+  },
+  "commands.snapshot.loadedRunning": "{format} snapshot {file} loaded, running PC {pc}.",
+  "@commands.snapshot.loadedRunning": {
+    "context": "Output of the 'zx-snapshot' IDE command (loads a ZX Spectrum .sna/.z80/.szx snapshot), in the command output pane. Success message: the snapshot runs from its saved PC (the Z80 program counter; keep 'PC').",
+    "placeholders": {
+      "format": "SNA, Z80 or SZX",
+      "file": "A file path, as the user typed it",
+      "pc": "The address, e.g. '$8000'"
+    }
+  },
+  "commands.snapshot.loadedStopped": "{format} snapshot {file} loaded, stopped at PC {pc}.",
+  "@commands.snapshot.loadedStopped": {
+    "context": "Output of the 'zx-snapshot' IDE command (loads a ZX Spectrum .sna/.z80/.szx snapshot), in the command output pane. Success message: the debugger stopped at the snapshot's PC (the Z80 program counter; keep 'PC').",
+    "placeholders": {
+      "format": "SNA, Z80 or SZX",
+      "file": "A file path, as the user typed it",
+      "pc": "The address, e.g. '$8000'"
+    }
+  },
+  "commands.snapshot.anotherMachine": "another machine",
+  "@commands.snapshot.anotherMachine": {
+    "context": "Stands for a machine with an unknown name inside the snapshot, recording and state project checks, e.g. 'The open project targets another machine; ...'."
+  },
+  "commands.snapshot.guard.notSpectrum": "The open project targets {machine}; loading a ZX Spectrum snapshot would switch it to a ZX Spectrum. Close the project or open a ZX Spectrum project first.",
+  "@commands.snapshot.guard.notSpectrum": {
+    "context": "Why a ZX Spectrum snapshot cannot be loaded: shown by the 'zx-snapshot' command and as the reason in the snapshot viewer's disabled buttons.",
+    "placeholders": {
+      "machine": "The project's machine display name, e.g. 'Cambridge Z88'"
+    }
+  },
+  "commands.snapshot.guard.otherModel": "The open project targets the {machine}, but this snapshot needs the {needed}. Close the project or open a project for that machine.",
+  "@commands.snapshot.guard.otherModel": {
+    "context": "Why a ZX Spectrum snapshot cannot be loaded, from the 'zx-snapshot' command.",
+    "placeholders": {
+      "machine": "The project's machine display name, e.g. 'ZX Spectrum 48K'",
+      "needed": "The machine the snapshot needs, e.g. 'ZX Spectrum 128K'"
+    }
+  },
+  "commands.rzx.play.description": "Plays an RZX input recording on the ZX Spectrum (-d: under the debugger, stopping at its first instruction; -s n: from segment n)",
+  "@commands.rzx.play.description": {
+    "context": "Help text of the 'zx-rzx' IDE command. Keep the option names -d and -s."
+  },
+  "commands.rzx.record.description": "Starts recording an RZX file from the ZX Spectrum's current state (a running or paused machine)",
+  "@commands.rzx.record.description": {
+    "context": "Help text of the 'zx-rzx-record' IDE command."
+  },
+  "commands.rzx.stop.description": "Stops the RZX recording, finalises it and saves it (-f overwrites)",
+  "@commands.rzx.stop.description": {
+    "context": "Help text of the 'zx-rzx-stop' IDE command. Keep the option name -f."
+  },
+  "commands.rzx.rollback.description": "Rolls the RZX recording back to its latest rollback point (n: the n-th latest); the machine is paused there",
+  "@commands.rzx.rollback.description": {
+    "context": "Help text of the 'zx-rzx-rollback' IDE command; n is its optional argument."
+  },
+  "commands.rzx.point.description": "Inserts a rollback point into the RZX recording at the next frame end",
+  "@commands.rzx.point.description": {
+    "context": "Help text of the 'zx-rzx-point' IDE command."
+  },
+  "commands.rzx.video.description": "Renders an RZX recording to video with the screen recorder's settings, as fast as possible (-t: in real time)",
+  "@commands.rzx.video.description": {
+    "context": "Help text of the 'zx-rzx-video' IDE command. Keep the option name -t."
+  },
+  "commands.rzx.readFailed": "Could not read {file}: {error}",
+  "@commands.rzx.readFailed": {
+    "context": "Output of the RZX IDE commands (zx-rzx, zx-rzx-record, zx-rzx-stop, zx-rzx-rollback, zx-rzx-point, zx-rzx-video). RZX is a file format for ZX Spectrum input recordings: keep the name.",
+    "placeholders": {
+      "file": "A file path, as the user typed it",
+      "error": "The reader's or operating system's error message (may stay English)"
+    }
+  },
+  "commands.rzx.cannotPlay": "{file} cannot be played: {error}",
+  "@commands.rzx.cannotPlay": {
+    "context": "Output of the RZX IDE commands (zx-rzx, zx-rzx-record, zx-rzx-stop, zx-rzx-rollback, zx-rzx-point, zx-rzx-video). RZX is a file format for ZX Spectrum input recordings: keep the name.",
+    "placeholders": {
+      "file": "A file path, as the user typed it",
+      "error": "The reader's or operating system's error message (may stay English)"
+    }
+  },
+  "commands.rzx.emptyPath": "The recording file path cannot be empty.",
+  "@commands.rzx.emptyPath": {
+    "context": "Validation error of the RZX IDE commands."
+  },
+  "commands.rzx.wrongType": "The file must be an .rzx recording.",
+  "@commands.rzx.wrongType": {
+    "context": "Validation error of the RZX IDE commands."
+  },
+  "commands.rzx.machineSwitched": "Machine switched to the {machine}.",
+  "@commands.rzx.machineSwitched": {
+    "context": "Output of the RZX IDE commands (zx-rzx, zx-rzx-record, zx-rzx-stop, zx-rzx-rollback, zx-rzx-point, zx-rzx-video). RZX is a file format for ZX Spectrum input recordings: keep the name.",
+    "placeholders": {
+      "machine": "The machine's display name, e.g. 'ZX Spectrum 128K'"
+    }
+  },
+  "commands.rzx.warning": "Warning: {warning}",
+  "@commands.rzx.warning": {
+    "context": "Output of the RZX IDE commands (zx-rzx, zx-rzx-record, zx-rzx-stop, zx-rzx-rollback, zx-rzx-point, zx-rzx-video). RZX is a file format for ZX Spectrum input recordings: keep the name. A warning line in the command output.",
+    "placeholders": {
+      "warning": "The warning text (may stay English)"
+    }
+  },
+  "commands.rzx.segmentFromOne": "The segment number starts at 1.",
+  "@commands.rzx.segmentFromOne": {
+    "context": "Validation error of 'zx-rzx -s n'."
+  },
+  "commands.rzx.playFailed": "Could not play {file}: {error}",
+  "@commands.rzx.playFailed": {
+    "context": "Output of the RZX IDE commands (zx-rzx, zx-rzx-record, zx-rzx-stop, zx-rzx-rollback, zx-rzx-point, zx-rzx-video). RZX is a file format for ZX Spectrum input recordings: keep the name.",
+    "placeholders": {
+      "file": "A file path, as the user typed it",
+      "error": "The reader's or operating system's error message (may stay English)"
+    }
+  },
+  "commands.rzx.loadedPlaying": "RZX recording {file} ({frames, plural, one {# frame} other {# frames}}, {creator}) loaded on the {machine}, playing.",
+  "@commands.rzx.loadedPlaying": {
+    "context": "Output of the RZX IDE commands (zx-rzx, zx-rzx-record, zx-rzx-stop, zx-rzx-rollback, zx-rzx-point, zx-rzx-video). RZX is a file format for ZX Spectrum input recordings: keep the name.",
+    "placeholders": {
+      "file": "A file path, as the user typed it",
+      "frames": "Video frames in the recording",
+      "creator": "The program that made the recording, e.g. 'Fuse 1.6'",
+      "machine": "The machine's display name"
+    }
+  },
+  "commands.rzx.loadedDebug": "RZX recording {file} ({frames, plural, one {# frame} other {# frames}}, {creator}) loaded on the {machine}, under the debugger, stopped at PC {pc}.",
+  "@commands.rzx.loadedDebug": {
+    "context": "Output of the RZX IDE commands (zx-rzx, zx-rzx-record, zx-rzx-stop, zx-rzx-rollback, zx-rzx-point, zx-rzx-video). RZX is a file format for ZX Spectrum input recordings: keep the name. PC is the Z80 program counter: keep it.",
+    "placeholders": {
+      "file": "A file path, as the user typed it",
+      "frames": "Video frames in the recording",
+      "creator": "The program that made the recording, e.g. 'Fuse 1.6'",
+      "machine": "The machine's display name",
+      "pc": "The address, e.g. '$8000'"
+    }
+  },
+  "commands.rzx.recordMachines": "Only a ZX Spectrum 48K, 128K or +2E/+3E can record an RZX file.",
+  "@commands.rzx.recordMachines": {
+    "context": "Validation error of 'zx-rzx-record'."
+  },
+  "commands.rzx.recordingStarted": "RZX recording started on the {machine} at PC {pc}.",
+  "@commands.rzx.recordingStarted": {
+    "context": "Output of the RZX IDE commands (zx-rzx, zx-rzx-record, zx-rzx-stop, zx-rzx-rollback, zx-rzx-point, zx-rzx-video). RZX is a file format for ZX Spectrum input recordings: keep the name. PC is the Z80 program counter: keep it.",
+    "placeholders": {
+      "machine": "The machine's display name",
+      "pc": "The address, e.g. '$8000'"
+    }
+  },
+  "commands.rzx.recordingTookOver": "RZX recording started on the {machine} at PC {pc}, taking over the playback.",
+  "@commands.rzx.recordingTookOver": {
+    "context": "Output of the RZX IDE commands (zx-rzx, zx-rzx-record, zx-rzx-stop, zx-rzx-rollback, zx-rzx-point, zx-rzx-video). RZX is a file format for ZX Spectrum input recordings: keep the name. Recording started while a recording was playing: the playback stops and the new recording continues from there.",
+    "placeholders": {
+      "machine": "The machine's display name",
+      "pc": "The address, e.g. '$8000'"
+    }
+  },
+  "commands.rzx.recordFailed": "Could not start recording: {error}",
+  "@commands.rzx.recordFailed": {
+    "context": "Output of the RZX IDE commands (zx-rzx, zx-rzx-record, zx-rzx-stop, zx-rzx-rollback, zx-rzx-point, zx-rzx-video). RZX is a file format for ZX Spectrum input recordings: keep the name.",
+    "placeholders": {
+      "error": "The reader's or operating system's error message (may stay English)"
+    }
+  },
+  "commands.rzx.saveWrongType": "The file to save must be an .rzx file.",
+  "@commands.rzx.saveWrongType": {
+    "context": "Validation error of 'zx-rzx-stop'."
+  },
+  "commands.rzx.fileExists": "{file} already exists; use -f to replace it.",
+  "@commands.rzx.fileExists": {
+    "context": "Output of the RZX IDE commands (zx-rzx, zx-rzx-record, zx-rzx-stop, zx-rzx-rollback, zx-rzx-point, zx-rzx-video). RZX is a file format for ZX Spectrum input recordings: keep the name. '-f' is the command option: keep it.",
+    "placeholders": {
+      "file": "A file path, as the user typed it"
+    }
+  },
+  "commands.rzx.stopFailed": "Could not stop the recording: {error}",
+  "@commands.rzx.stopFailed": {
+    "context": "Output of the RZX IDE commands (zx-rzx, zx-rzx-record, zx-rzx-stop, zx-rzx-rollback, zx-rzx-point, zx-rzx-video). RZX is a file format for ZX Spectrum input recordings: keep the name.",
+    "placeholders": {
+      "error": "The reader's or operating system's error message (may stay English)"
+    }
+  },
+  "commands.rzx.writeFailed": "Could not write {file}: {error}",
+  "@commands.rzx.writeFailed": {
+    "context": "Output of the RZX IDE commands (zx-rzx, zx-rzx-record, zx-rzx-stop, zx-rzx-rollback, zx-rzx-point, zx-rzx-video). RZX is a file format for ZX Spectrum input recordings: keep the name.",
+    "placeholders": {
+      "file": "A file path, as the user typed it",
+      "error": "The reader's or operating system's error message (may stay English)"
+    }
+  },
+  "commands.rzx.saved": "RZX recording saved to {file} ({frames, plural, one {# frame} other {# frames}}).",
+  "@commands.rzx.saved": {
+    "context": "Output of the RZX IDE commands (zx-rzx, zx-rzx-record, zx-rzx-stop, zx-rzx-rollback, zx-rzx-point, zx-rzx-video). RZX is a file format for ZX Spectrum input recordings: keep the name.",
+    "placeholders": {
+      "file": "A file path, as the user typed it",
+      "frames": "Video frames recorded"
+    }
+  },
+  "commands.rzx.rolledBack": "Rolled back to frame {frame, number}; {points, plural, one {# rollback point} other {# rollback points}} left. Resume to record on.",
+  "@commands.rzx.rolledBack": {
+    "context": "Output of the RZX IDE commands (zx-rzx, zx-rzx-record, zx-rzx-stop, zx-rzx-rollback, zx-rzx-point, zx-rzx-video). RZX is a file format for ZX Spectrum input recordings: keep the name. 'Resume' means continuing the paused machine.",
+    "placeholders": {
+      "frame": "The frame number rolled back to",
+      "points": "Rollback points still in the recording"
+    }
+  },
+  "commands.rzx.rollbackFailed": "Could not roll back: {error}",
+  "@commands.rzx.rollbackFailed": {
+    "context": "Output of the RZX IDE commands (zx-rzx, zx-rzx-record, zx-rzx-stop, zx-rzx-rollback, zx-rzx-point, zx-rzx-video). RZX is a file format for ZX Spectrum input recordings: keep the name.",
+    "placeholders": {
+      "error": "The reader's or operating system's error message (may stay English)"
+    }
+  },
+  "commands.rzx.pointSet": "A rollback point is set at the next frame end (frame {frame, number}).",
+  "@commands.rzx.pointSet": {
+    "context": "Output of the RZX IDE commands (zx-rzx, zx-rzx-record, zx-rzx-stop, zx-rzx-rollback, zx-rzx-point, zx-rzx-video). RZX is a file format for ZX Spectrum input recordings: keep the name.",
+    "placeholders": {
+      "frame": "The frame number"
+    }
+  },
+  "commands.rzx.pointFailed": "Could not insert a rollback point: {error}",
+  "@commands.rzx.pointFailed": {
+    "context": "Output of the RZX IDE commands (zx-rzx, zx-rzx-record, zx-rzx-stop, zx-rzx-rollback, zx-rzx-point, zx-rzx-video). RZX is a file format for ZX Spectrum input recordings: keep the name.",
+    "placeholders": {
+      "error": "The reader's or operating system's error message (may stay English)"
+    }
+  },
+  "commands.rzx.noScreenRecording": "Screen recording is not available (FFmpeg was not found).",
+  "@commands.rzx.noScreenRecording": {
+    "context": "Validation error of 'zx-rzx-video'. FFmpeg is a program name."
+  },
+  "commands.rzx.renderFailed": "Could not render {file}: {error}",
+  "@commands.rzx.renderFailed": {
+    "context": "Output of the RZX IDE commands (zx-rzx, zx-rzx-record, zx-rzx-stop, zx-rzx-rollback, zx-rzx-point, zx-rzx-video). RZX is a file format for ZX Spectrum input recordings: keep the name.",
+    "placeholders": {
+      "file": "A file path, as the user typed it",
+      "error": "The reader's or operating system's error message (may stay English)"
+    }
+  },
+  "commands.rzx.renderingFast": "Rendering {file} ({frames, plural, one {# frame} other {# frames}}) to video, as fast as the emulator can; the video stops at the recording's end.",
+  "@commands.rzx.renderingFast": {
+    "context": "Output of the RZX IDE commands (zx-rzx, zx-rzx-record, zx-rzx-stop, zx-rzx-rollback, zx-rzx-point, zx-rzx-video). RZX is a file format for ZX Spectrum input recordings: keep the name.",
+    "placeholders": {
+      "file": "A file path, as the user typed it",
+      "frames": "Video frames in the recording"
+    }
+  },
+  "commands.rzx.renderingRealTime": "Rendering {file} ({frames, plural, one {# frame} other {# frames}}) to video in real time; the video stops at the recording's end.",
+  "@commands.rzx.renderingRealTime": {
+    "context": "Output of the RZX IDE commands (zx-rzx, zx-rzx-record, zx-rzx-stop, zx-rzx-rollback, zx-rzx-point, zx-rzx-video). RZX is a file format for ZX Spectrum input recordings: keep the name.",
+    "placeholders": {
+      "file": "A file path, as the user typed it",
+      "frames": "Video frames in the recording"
+    }
+  },
+  "commands.rzx.guard.notSpectrum": "The open project targets {machine}; loading a ZX Spectrum recording would switch it to a ZX Spectrum. Close the project or open a ZX Spectrum project first.",
+  "@commands.rzx.guard.notSpectrum": {
+    "context": "Why an RZX recording cannot be played: shown by the RZX commands and as the reason in the RZX viewer's disabled buttons.",
+    "placeholders": {
+      "machine": "The project's machine display name, e.g. 'Cambridge Z88'"
+    }
+  },
+  "commands.rzx.guard.otherModel": "The open project targets the {machine}, but this recording needs the {needed}. Close the project or open a project for that machine.",
+  "@commands.rzx.guard.otherModel": {
+    "context": "Why an RZX recording cannot be played, from the 'zx-rzx' command.",
+    "placeholders": {
+      "machine": "The project's machine display name, e.g. 'ZX Spectrum 48K'",
+      "needed": "The machine the recording needs, e.g. 'ZX Spectrum 128K'"
+    }
+  },
+  "commands.snapshotSave.description": "Saves the ZX Spectrum as a .szx, .z80 or .sna snapshot (the extension picks the format; -f overwrites)",
+  "@commands.snapshotSave.description": {
+    "context": "Help text of the 'zx-snapshot-save' IDE command. Keep the option name -f."
+  },
+  "commands.snapshotSave.emptyPath": "The snapshot file path cannot be empty.",
+  "@commands.snapshotSave.emptyPath": {
+    "context": "Validation error of 'zx-snapshot-save'."
+  },
+  "commands.snapshotSave.wrongType": "The file to save must be a .szx, .z80 or .sna snapshot.",
+  "@commands.snapshotSave.wrongType": {
+    "context": "Validation error of 'zx-snapshot-save'."
+  },
+  "commands.snapshotSave.machines": "Only a ZX Spectrum 48K, 128K or +2E/+3E can be saved as a snapshot.",
+  "@commands.snapshotSave.machines": {
+    "context": "Validation error of 'zx-snapshot-save'."
+  },
+  "commands.snapshotSave.fileExists": "{file} already exists; use -f to replace it.",
+  "@commands.snapshotSave.fileExists": {
+    "context": "Output of the 'zx-snapshot-save' IDE command (saves the ZX Spectrum as a snapshot file). '-f' is the command option: keep it.",
+    "placeholders": {
+      "file": "A file path, as the user typed it"
+    }
+  },
+  "commands.snapshotSave.saveFailed": "Could not save {file}: {error}",
+  "@commands.snapshotSave.saveFailed": {
+    "context": "Output of the 'zx-snapshot-save' IDE command (saves the ZX Spectrum as a snapshot file).",
+    "placeholders": {
+      "file": "A file path, as the user typed it",
+      "error": "The operating system's or emulator's error message (may stay English)"
+    }
+  },
+  "commands.snapshotSave.writeFailed": "Could not write {file}: {error}",
+  "@commands.snapshotSave.writeFailed": {
+    "context": "Output of the 'zx-snapshot-save' IDE command (saves the ZX Spectrum as a snapshot file).",
+    "placeholders": {
+      "file": "A file path, as the user typed it",
+      "error": "The operating system's or emulator's error message (may stay English)"
+    }
+  },
+  "commands.snapshotSave.warning": "Warning: {warning}",
+  "@commands.snapshotSave.warning": {
+    "context": "Output of the 'zx-snapshot-save' IDE command (saves the ZX Spectrum as a snapshot file). A warning line: something the chosen format cannot hold.",
+    "placeholders": {
+      "warning": "The warning text (may stay English)"
+    }
+  },
+  "commands.snapshotSave.saved": "{format} snapshot {file} saved ({machine}, PC {pc}).",
+  "@commands.snapshotSave.saved": {
+    "context": "Output of the 'zx-snapshot-save' IDE command (saves the ZX Spectrum as a snapshot file). PC is the Z80 program counter: keep it.",
+    "placeholders": {
+      "format": "SZX, Z80 or SNA",
+      "file": "A file path, as the user typed it",
+      "machine": "The machine's display name",
+      "pc": "The address, e.g. '$8000'"
+    }
+  },
+  "commands.z88Snapshot.description": "Loads a .z88 snapshot into the Cambridge Z88 and debugs it, stopping at its PC (-r runs it, -a follows its Autorun flag)",
+  "@commands.z88Snapshot.description": {
+    "context": "Help text of the 'z88-snapshot' IDE command. PC is the Z80 register; Autorun is a flag stored in the snapshot file; keep -r and -a."
+  },
+  "commands.z88Snapshot.emptyPath": "The snapshot file path cannot be empty.",
+  "@commands.z88Snapshot.emptyPath": {
+    "context": "Validation error of 'z88-snapshot'."
+  },
+  "commands.z88Snapshot.wrongType": "The file to load must be a .z88 snapshot.",
+  "@commands.z88Snapshot.wrongType": {
+    "context": "Validation error of 'z88-snapshot'."
+  },
+  "commands.z88Snapshot.oneMode": "Use only one of -r, -d and -a (got {options}).",
+  "@commands.z88Snapshot.oneMode": {
+    "context": "Validation error of 'z88-snapshot': the options exclude each other. Keep the option names.",
+    "placeholders": {
+      "options": "The options given, comma-separated"
+    }
+  },
+  "commands.z88Snapshot.readFailed": "Could not read {file}: {error}",
+  "@commands.z88Snapshot.readFailed": {
+    "context": "Output of the 'z88-snapshot' IDE command (loads a Cambridge Z88 .z88 snapshot).",
+    "placeholders": {
+      "file": "A file path, as the user typed it",
+      "error": "The reader's or operating system's error message (may stay English)"
+    }
+  },
+  "commands.z88Snapshot.invalid": "{file} is not a valid Z88 snapshot: {error}",
+  "@commands.z88Snapshot.invalid": {
+    "context": "Output of the 'z88-snapshot' IDE command (loads a Cambridge Z88 .z88 snapshot).",
+    "placeholders": {
+      "file": "A file path, as the user typed it",
+      "error": "The reader's or operating system's error message (may stay English)"
+    }
+  },
+  "commands.z88Snapshot.loadFailed": "Could not load {file}: {error}",
+  "@commands.z88Snapshot.loadFailed": {
+    "context": "Output of the 'z88-snapshot' IDE command (loads a Cambridge Z88 .z88 snapshot).",
+    "placeholders": {
+      "file": "A file path, as the user typed it",
+      "error": "The reader's or operating system's error message (may stay English)"
+    }
+  },
+  "commands.z88Snapshot.rebuilt": "The Z88 was set up again to fit the snapshot.",
+  "@commands.z88Snapshot.rebuilt": {
+    "context": "Output of the 'z88-snapshot' IDE command (loads a Cambridge Z88 .z88 snapshot). The emulated Z88 was rebuilt with the snapshot's RAM or screen size."
+  },
+  "commands.z88Snapshot.warning": "Warning: {warning}",
+  "@commands.z88Snapshot.warning": {
+    "context": "Output of the 'z88-snapshot' IDE command (loads a Cambridge Z88 .z88 snapshot). A warning line in the command output.",
+    "placeholders": {
+      "warning": "The warning text (may stay English)"
+    }
+  },
+  "commands.z88Snapshot.loadedRunning": "Z88 snapshot {file} loaded, running PC {pc}.",
+  "@commands.z88Snapshot.loadedRunning": {
+    "context": "Output of the 'z88-snapshot' IDE command (loads a Cambridge Z88 .z88 snapshot). The snapshot runs from its saved PC (the Z80 program counter; keep 'PC').",
+    "placeholders": {
+      "file": "A file path, as the user typed it",
+      "pc": "The address, e.g. '$8000'"
+    }
+  },
+  "commands.z88Snapshot.loadedStopped": "Z88 snapshot {file} loaded, stopped at PC {pc}.",
+  "@commands.z88Snapshot.loadedStopped": {
+    "context": "Output of the 'z88-snapshot' IDE command (loads a Cambridge Z88 .z88 snapshot). The debugger stopped at the snapshot's PC (the Z80 program counter; keep 'PC').",
+    "placeholders": {
+      "file": "A file path, as the user typed it",
+      "pc": "The address, e.g. '$8000'"
+    }
+  },
+  "commands.z88Snapshot.anotherMachine": "another machine",
+  "@commands.z88Snapshot.anotherMachine": {
+    "context": "Stands for a machine with an unknown name in the Z88 snapshot's project check: 'The open project targets another machine; ...'."
+  },
+  "commands.z88Snapshot.guard": "The open project targets {machine}; loading a Z88 snapshot would switch it to the Cambridge Z88. Close the project or open a Z88 project first.",
+  "@commands.z88Snapshot.guard": {
+    "context": "Why a Z88 snapshot cannot be loaded: shown by the 'z88-snapshot' command and as the reason in the Z88 snapshot viewer's disabled buttons.",
+    "placeholders": {
+      "machine": "The project's machine display name, e.g. 'ZX Spectrum 48K'"
+    }
+  },
+  "commands.state.save.description": "Saves the machine's complete state as a Klive state file (.kls; -f overwrites)",
+  "@commands.state.save.description": {
+    "context": "Help text of the 'state-save' IDE command. Keep the option name -f."
+  },
+  "commands.state.load.description": "Loads a Klive state file (.kls) and debugs it, stopping at its PC (-r runs it; -y accepts a changed SD card)",
+  "@commands.state.load.description": {
+    "context": "Help text of the 'state-load' IDE command. PC is the Z80 register; keep -r and -y."
+  },
+  "commands.state.emptyPath": "The state file path cannot be empty.",
+  "@commands.state.emptyPath": {
+    "context": "Validation error of 'state-save' and 'state-load'."
+  },
+  "commands.state.save.wrongType": "The state file must have the .kls extension.",
+  "@commands.state.save.wrongType": {
+    "context": "Validation error of 'state-save'."
+  },
+  "commands.state.save.unsupported": "This machine cannot save its state.",
+  "@commands.state.save.unsupported": {
+    "context": "Validation error of 'state-save'."
+  },
+  "commands.state.fileExists": "{file} already exists; use -f to replace it.",
+  "@commands.state.fileExists": {
+    "context": "Output of the machine-state IDE commands (state-save, state-load). A Klive state file (.kls) holds the emulated machine's complete state. '-f' is the command option: keep it.",
+    "placeholders": {
+      "file": "A file path, as the user typed it"
+    }
+  },
+  "commands.state.save.failed": "Could not save the state: {error}",
+  "@commands.state.save.failed": {
+    "context": "Output of the machine-state IDE commands (state-save, state-load). A Klive state file (.kls) holds the emulated machine's complete state.",
+    "placeholders": {
+      "error": "The operating system's or emulator's error message (may stay English)"
+    }
+  },
+  "commands.state.writeFailed": "Could not write {file}: {error}",
+  "@commands.state.writeFailed": {
+    "context": "Output of the machine-state IDE commands (state-save, state-load). A Klive state file (.kls) holds the emulated machine's complete state.",
+    "placeholders": {
+      "file": "A file path, as the user typed it",
+      "error": "The operating system's or emulator's error message (may stay English)"
+    }
+  },
+  "commands.state.readFailed": "Could not read {file}: {error}",
+  "@commands.state.readFailed": {
+    "context": "Output of the machine-state IDE commands (state-save, state-load). A Klive state file (.kls) holds the emulated machine's complete state.",
+    "placeholders": {
+      "file": "A file path, as the user typed it",
+      "error": "The operating system's or emulator's error message (may stay English)"
+    }
+  },
+  "commands.state.warning": "Warning: {warning}",
+  "@commands.state.warning": {
+    "context": "Output of the machine-state IDE commands (state-save, state-load). A Klive state file (.kls) holds the emulated machine's complete state. A warning line in the command output.",
+    "placeholders": {
+      "warning": "The warning text (may stay English)"
+    }
+  },
+  "commands.state.save.saved": "Machine state saved to {file} ({machine}, PC {pc}).",
+  "@commands.state.save.saved": {
+    "context": "Output of the machine-state IDE commands (state-save, state-load). A Klive state file (.kls) holds the emulated machine's complete state. PC is the Z80 program counter: keep it.",
+    "placeholders": {
+      "file": "A file path, as the user typed it",
+      "machine": "The machine's display name",
+      "pc": "The address, e.g. '$8000'"
+    }
+  },
+  "commands.state.load.wrongType": "The file to load must be a Klive state file (.kls).",
+  "@commands.state.load.wrongType": {
+    "context": "Validation error of 'state-load'."
+  },
+  "commands.state.load.oneMode": "Use only one of -r and -d.",
+  "@commands.state.load.oneMode": {
+    "context": "Validation error of 'state-load': the two options exclude each other. Keep the option names."
+  },
+  "commands.state.load.invalid": "{file} is not a valid state file: {error}",
+  "@commands.state.load.invalid": {
+    "context": "Output of the machine-state IDE commands (state-save, state-load). A Klive state file (.kls) holds the emulated machine's complete state.",
+    "placeholders": {
+      "file": "A file path, as the user typed it",
+      "error": "The operating system's or emulator's error message (may stay English)"
+    }
+  },
+  "commands.state.load.failed": "Could not load {file}: {error}",
+  "@commands.state.load.failed": {
+    "context": "Output of the machine-state IDE commands (state-save, state-load). A Klive state file (.kls) holds the emulated machine's complete state.",
+    "placeholders": {
+      "file": "A file path, as the user typed it",
+      "error": "The operating system's or emulator's error message (may stay English)"
+    }
+  },
+  "commands.state.load.needsConfirmation": "{reason}. Use -y to load it anyway.",
+  "@commands.state.load.needsConfirmation": {
+    "context": "Output of the machine-state IDE commands (state-save, state-load). A Klive state file (.kls) holds the emulated machine's complete state. The state was saved with another SD card image; '-y' is the option that accepts it: keep it.",
+    "placeholders": {
+      "reason": "Why the state may not match, e.g. that the SD card image has changed (may stay English)"
+    }
+  },
+  "commands.state.machineSwitched": "Machine switched to the {machine}.",
+  "@commands.state.machineSwitched": {
+    "context": "Output of the machine-state IDE commands (state-save, state-load). A Klive state file (.kls) holds the emulated machine's complete state.",
+    "placeholders": {
+      "machine": "The machine's display name, e.g. 'ZX Spectrum Next'"
+    }
+  },
+  "commands.state.load.modelDiffers": "Warning: the project's machine model differs from the state's; the emulator runs the state's until the project's machine is set again",
+  "@commands.state.load.modelDiffers": {
+    "context": "Output of the machine-state IDE commands (state-save, state-load). A Klive state file (.kls) holds the emulated machine's complete state."
+  },
+  "commands.state.load.loadedRunning": "Machine state {file} loaded{part, select, szx { from its .szx part} other {}}, running PC {pc}.",
+  "@commands.state.load.loadedRunning": {
+    "context": "Output of the machine-state IDE commands (state-save, state-load). A Klive state file (.kls) holds the emulated machine's complete state. The state runs from its saved PC (the Z80 program counter; keep 'PC'). The '.szx part' is a portable snapshot inside the state file, used when the full state cannot be restored.",
+    "placeholders": {
+      "file": "A file path, as the user typed it",
+      "part": "szx or state: a selector, not shown",
+      "pc": "The address, e.g. '$8000'"
+    }
+  },
+  "commands.state.load.loadedStopped": "Machine state {file} loaded{part, select, szx { from its .szx part} other {}}, stopped at PC {pc}.",
+  "@commands.state.load.loadedStopped": {
+    "context": "Output of the machine-state IDE commands (state-save, state-load). A Klive state file (.kls) holds the emulated machine's complete state. The debugger stopped at the state's PC (the Z80 program counter; keep 'PC'). The '.szx part' is a portable snapshot inside the state file, used when the full state cannot be restored.",
+    "placeholders": {
+      "file": "A file path, as the user typed it",
+      "part": "szx or state: a selector, not shown",
+      "pc": "The address, e.g. '$8000'"
+    }
+  },
+  "commands.state.anotherMachine": "another machine",
+  "@commands.state.anotherMachine": {
+    "context": "Stands for a machine with an unknown name in the state file's project check, as in 'The open project targets the {machine}, ...'."
+  },
+  "commands.state.guard": "The open project targets the {machine}, but this state was saved on the {saved}. Close the project or open a project for that machine.",
+  "@commands.state.guard": {
+    "context": "Why a state file cannot be loaded with the open project, from 'state-load'.",
+    "placeholders": {
+      "machine": "The project's machine display name",
+      "saved": "The machine the state was saved on"
+    }
+  },
+  "commands.debugRecording.save.description": "Saves the reverse-debugging session as a debug recording (.klr) that replays with the debugger attached (-f overwrites)",
+  "@commands.debugRecording.save.description": {
+    "context": "Help text of the 'debug-recording-save' IDE command. Keep the option name -f."
+  },
+  "commands.debugRecording.load.description": "Opens a debug recording (.klr): its machine, paused where it was saved, with its whole past (-start: at its start)",
+  "@commands.debugRecording.load.description": {
+    "context": "Help text of the 'debug-recording-load' IDE command. Keep the option name -start."
+  },
+  "commands.debugRecording.privacyNotice": "A debug recording holds everything the machine was given - every key typed, every tape and SD card sector read - and, with -sources, the source files.",
+  "@commands.debugRecording.privacyNotice": {
+    "context": "Output of the debug-recording IDE commands (debug-recording-save, debug-recording-load). A debug recording (.klr) holds a reverse-debugging session that replays with the debugger attached. A notice after saving: what the file may give away when shared. '-sources' is an option: keep it."
+  },
+  "commands.debugRecording.emptyPath": "The recording's file path cannot be empty.",
+  "@commands.debugRecording.emptyPath": {
+    "context": "Validation error of the debug-recording commands."
+  },
+  "commands.debugRecording.save.wrongType": "A debug recording must have the .klr extension.",
+  "@commands.debugRecording.save.wrongType": {
+    "context": "Validation error of 'debug-recording-save'."
+  },
+  "commands.debugRecording.save.fromInvalid": "-from: use a step back (-42) or a sequence number (#1234)",
+  "@commands.debugRecording.save.fromInvalid": {
+    "context": "Validation error of 'debug-recording-save -from'. Keep '-from' and the examples."
+  },
+  "commands.debugRecording.save.unsupported": "This machine has no reverse debugging to record.",
+  "@commands.debugRecording.save.unsupported": {
+    "context": "Validation error of 'debug-recording-save'."
+  },
+  "commands.debugRecording.fileExists": "{file} already exists; use -f to replace it.",
+  "@commands.debugRecording.fileExists": {
+    "context": "Output of the debug-recording IDE commands (debug-recording-save, debug-recording-load). A debug recording (.klr) holds a reverse-debugging session that replays with the debugger attached. '-f' is the command option: keep it.",
+    "placeholders": {
+      "file": "A file path, as the user typed it"
+    }
+  },
+  "commands.debugRecording.save.failed": "Could not save the recording: {error}",
+  "@commands.debugRecording.save.failed": {
+    "context": "Output of the debug-recording IDE commands (debug-recording-save, debug-recording-load). A debug recording (.klr) holds a reverse-debugging session that replays with the debugger attached.",
+    "placeholders": {
+      "error": "The operating system's or emulator's error message (may stay English)"
+    }
+  },
+  "commands.debugRecording.writeFailed": "Could not write {file}: {error}",
+  "@commands.debugRecording.writeFailed": {
+    "context": "Output of the debug-recording IDE commands (debug-recording-save, debug-recording-load). A debug recording (.klr) holds a reverse-debugging session that replays with the debugger attached.",
+    "placeholders": {
+      "file": "A file path, as the user typed it",
+      "error": "The operating system's or emulator's error message (may stay English)"
+    }
+  },
+  "commands.debugRecording.readFailed": "Could not read {file}: {error}",
+  "@commands.debugRecording.readFailed": {
+    "context": "Output of the debug-recording IDE commands (debug-recording-save, debug-recording-load). A debug recording (.klr) holds a reverse-debugging session that replays with the debugger attached.",
+    "placeholders": {
+      "file": "A file path, as the user typed it",
+      "error": "The operating system's or emulator's error message (may stay English)"
+    }
+  },
+  "commands.debugRecording.warning": "Warning: {warning}",
+  "@commands.debugRecording.warning": {
+    "context": "Output of the debug-recording IDE commands (debug-recording-save, debug-recording-load). A debug recording (.klr) holds a reverse-debugging session that replays with the debugger attached. A warning line in the command output.",
+    "placeholders": {
+      "warning": "The warning text"
+    }
+  },
+  "commands.debugRecording.save.sizeMb": "{size} MB",
+  "@commands.debugRecording.save.sizeMb": {
+    "context": "Output of the debug-recording IDE commands (debug-recording-save, debug-recording-load). A debug recording (.klr) holds a reverse-debugging session that replays with the debugger attached. A file size in megabytes, inside the 'saved' message.",
+    "placeholders": {
+      "size": "The size, already formatted with one decimal"
+    }
+  },
+  "commands.debugRecording.save.sizeKb": "{size, number} KB",
+  "@commands.debugRecording.save.sizeKb": {
+    "context": "Output of the debug-recording IDE commands (debug-recording-save, debug-recording-load). A debug recording (.klr) holds a reverse-debugging session that replays with the debugger attached. A file size in kilobytes, inside the 'saved' message.",
+    "placeholders": {
+      "size": "The size in kilobytes"
+    }
+  },
+  "commands.debugRecording.save.saved": "Debug recording {file} saved ({machine}): {time} of machine time, {records, plural, one {# instruction} other {# instructions}}, {keyframes, plural, one {# keyframe} other {# keyframes}}, {size}.",
+  "@commands.debugRecording.save.saved": {
+    "context": "Output of the debug-recording IDE commands (debug-recording-save, debug-recording-load). A debug recording (.klr) holds a reverse-debugging session that replays with the debugger attached. A keyframe is a full machine state the replay restarts from.",
+    "placeholders": {
+      "file": "A file path, as the user typed it",
+      "machine": "The machine's display name",
+      "time": "Emulated time, already formatted, e.g. '12 s'",
+      "records": "Instructions recorded",
+      "keyframes": "Keyframes in the file",
+      "size": "The file size, already formatted, e.g. '1.5 MB'"
+    }
+  },
+  "commands.debugRecording.save.savedFromPast": "Debug recording {file} saved ({machine}): {time} of machine time, {records, plural, one {# instruction} other {# instructions}}, {keyframes, plural, one {# keyframe} other {# keyframes}}, {size}; it opens where the machine stands now, in the past.",
+  "@commands.debugRecording.save.savedFromPast": {
+    "context": "Output of the debug-recording IDE commands (debug-recording-save, debug-recording-load). A debug recording (.klr) holds a reverse-debugging session that replays with the debugger attached. Saved while the debugger was back in the past: the recording opens at that point.",
+    "placeholders": {
+      "file": "A file path, as the user typed it",
+      "machine": "The machine's display name",
+      "time": "Emulated time, already formatted, e.g. '12 s'",
+      "records": "Instructions recorded",
+      "keyframes": "Keyframes in the file",
+      "size": "The file size, already formatted, e.g. '1.5 MB'"
+    }
+  },
+  "commands.debugRecording.load.wrongType": "The file to open must be a debug recording (.klr).",
+  "@commands.debugRecording.load.wrongType": {
+    "context": "Validation error of 'debug-recording-load'."
+  },
+  "commands.debugRecording.load.invalid": "{file} is not a valid debug recording: {error}",
+  "@commands.debugRecording.load.invalid": {
+    "context": "Output of the debug-recording IDE commands (debug-recording-save, debug-recording-load). A debug recording (.klr) holds a reverse-debugging session that replays with the debugger attached.",
+    "placeholders": {
+      "file": "A file path, as the user typed it",
+      "error": "The operating system's or emulator's error message (may stay English)"
+    }
+  },
+  "commands.debugRecording.load.failed": "Could not open {file}: {error}",
+  "@commands.debugRecording.load.failed": {
+    "context": "Output of the debug-recording IDE commands (debug-recording-save, debug-recording-load). A debug recording (.klr) holds a reverse-debugging session that replays with the debugger attached.",
+    "placeholders": {
+      "file": "A file path, as the user typed it",
+      "error": "The operating system's or emulator's error message (may stay English)"
+    }
+  },
+  "commands.debugRecording.load.refused": "{reason}. Use -y to open only its end state, without its past.",
+  "@commands.debugRecording.load.refused": {
+    "context": "Output of the debug-recording IDE commands (debug-recording-save, debug-recording-load). A debug recording (.klr) holds a reverse-debugging session that replays with the debugger attached. The recording was made by another Klive build, so its past cannot replay; '-y' is the option that opens the end state: keep it.",
+    "placeholders": {
+      "reason": "Why, e.g. 'The recording was recorded by Klive 0.60.0 (build 12345678); this build differs' (may stay English)"
+    }
+  },
+  "commands.debugRecording.machineSwitched": "Machine switched to the {machine}.",
+  "@commands.debugRecording.machineSwitched": {
+    "context": "Output of the debug-recording IDE commands (debug-recording-save, debug-recording-load). A debug recording (.klr) holds a reverse-debugging session that replays with the debugger attached.",
+    "placeholders": {
+      "machine": "The machine's display name, e.g. 'ZX Spectrum Next'"
+    }
+  },
+  "commands.debugRecording.load.endStateOnly": "{reason}. Opened its end state only (no past), stopped at PC {pc}.",
+  "@commands.debugRecording.load.endStateOnly": {
+    "context": "Output of the debug-recording IDE commands (debug-recording-save, debug-recording-load). A debug recording (.klr) holds a reverse-debugging session that replays with the debugger attached. PC is the Z80 program counter: keep it.",
+    "placeholders": {
+      "reason": "Why the past cannot replay (may stay English)",
+      "pc": "The address, e.g. '$8000'"
+    }
+  },
+  "commands.debugRecording.load.verified": "Verified: replayed from its start through {keyframes, plural, one {# keyframe} other {# keyframes}} in {seconds} s",
+  "@commands.debugRecording.load.verified": {
+    "context": "Output of the debug-recording IDE commands (debug-recording-save, debug-recording-load). A debug recording (.klr) holds a reverse-debugging session that replays with the debugger attached. Result of 'debug-recording-load -verify'.",
+    "placeholders": {
+      "keyframes": "Keyframes checked",
+      "seconds": "Seconds the check took, already formatted with one decimal"
+    }
+  },
+  "commands.debugRecording.load.opened": "Debug recording {file} opened: {time} of machine time, {keyframes, plural, one {# keyframe} other {# keyframes}}{extras, select, breakpoints {, with {breakpoints, plural, one {# breakpoint} other {# breakpoints}}} watches {, with {watches, plural, one {# watch} other {# watches}}} both {, with {breakpoints, plural, one {# breakpoint} other {# breakpoints}} and {watches, plural, one {# watch} other {# watches}}} other {}}; paused {landed, select, start {at its start} saved {where it was saved, in its past} other {at its end}} (PC {pc}).",
+  "@commands.debugRecording.load.opened": {
+    "context": "Output of the debug-recording IDE commands (debug-recording-save, debug-recording-load). A debug recording (.klr) holds a reverse-debugging session that replays with the debugger attached. Translate every branch. Breakpoints and watches are the ones the recording carried and added to the IDE; PC is the Z80 program counter: keep it.",
+    "placeholders": {
+      "file": "A file path, as the user typed it",
+      "time": "Emulated time, already formatted, e.g. '12 s'",
+      "keyframes": "Keyframes in the file",
+      "extras": "none, breakpoints, watches or both: a selector, not shown",
+      "breakpoints": "Breakpoints added",
+      "watches": "Watch expressions added",
+      "landed": "start, saved or end: a selector, not shown",
+      "pc": "The address, e.g. '$8000'"
+    }
+  },
+  "commands.debugRecording.sources.differ": "Labels and source lines may not match the recording: {count, plural, one {{files} differs} other {{files} differ}}",
+  "@commands.debugRecording.sources.differ": {
+    "context": "Output of the debug-recording IDE commands (debug-recording-save, debug-recording-load). A debug recording (.klr) holds a reverse-debugging session that replays with the debugger attached. A warning: these project files changed since the recording was made.",
+    "placeholders": {
+      "count": "Number of files",
+      "files": "Project-relative paths, comma-separated"
+    }
+  },
+  "commands.debugRecording.sources.missing": "The project lacks {count, plural, one {a file} other {files}} the recording was made with: {files}",
+  "@commands.debugRecording.sources.missing": {
+    "context": "Output of the debug-recording IDE commands (debug-recording-save, debug-recording-load). A debug recording (.klr) holds a reverse-debugging session that replays with the debugger attached. A warning: these files the recording was made with are not in the project.",
+    "placeholders": {
+      "count": "Number of files",
+      "files": "Project-relative paths, comma-separated"
+    }
+  },
+  "commands.debugRecording.sources.stillWorks": "Stepping still works on the disassembly; address breakpoints are exact",
+  "@commands.debugRecording.sources.stillWorks": {
+    "context": "Output of the debug-recording IDE commands (debug-recording-save, debug-recording-load). A debug recording (.klr) holds a reverse-debugging session that replays with the debugger attached. Follows the warnings about changed or missing source files."
+  },
+  "commands.debugRecording.guard": "The open project targets the {machine}, but this recording was made on the {saved}. Close the project or open a project for that machine.",
+  "@commands.debugRecording.guard": {
+    "context": "Why a debug recording cannot be opened with the open project, from 'debug-recording-load'.",
+    "placeholders": {
+      "machine": "The project's machine display name",
+      "saved": "The machine the recording was made on"
+    }
+  },
+  "commands.tapeLoad.description": "Inserts a .tap or .tzx tape (ZX Spectrum) or a .p/.o program (ZX80/ZX81) into the deck (-r resets and loads it, -d does so with breakpoints armed)",
+  "@commands.tapeLoad.description": {
+    "context": "Help text of the 'tape-load' IDE command. Keep the option names -r and -d."
+  },
+  "commands.tapeLoad.guard.tape": "requires a ZX Spectrum 48K, 128K or +2/+3 machine",
+  "@commands.tapeLoad.guard.tape": {
+    "context": "Why a tape cannot be loaded now: shown in brackets after a disabled tape button's tooltip, e.g. 'Insert this tape without a reset (requires a ...)'. Starts in lower case in English because it continues the tooltip."
+  },
+  "commands.tapeLoad.guard.program": "requires a ZX80 or ZX81 machine",
+  "@commands.tapeLoad.guard.program": {
+    "context": "Why a ZX80/ZX81 program file cannot be loaded now: shown in brackets after a disabled button's tooltip. Starts in lower case in English because it continues the tooltip."
+  },
+  "commands.tapeLoad.emptyPath": "The tape file path cannot be empty.",
+  "@commands.tapeLoad.emptyPath": {
+    "context": "Validation error of 'tape-load'."
+  },
+  "commands.tapeLoad.wrongType": "The file to load must be a .tap or .tzx tape, or a ZX80/ZX81 .p, .81, .o or .80 program.",
+  "@commands.tapeLoad.wrongType": {
+    "context": "Validation error of 'tape-load'."
+  },
+  "commands.tapeLoad.oneMode": "Use only one of -r and -d.",
+  "@commands.tapeLoad.oneMode": {
+    "context": "Validation error of 'tape-load': the two options exclude each other. Keep the option names."
+  },
+  "commands.tapeLoad.refusedTape": "Loading a tape requires a ZX Spectrum 48K, 128K or +2/+3 machine; the current machine is {machine}.",
+  "@commands.tapeLoad.refusedTape": {
+    "context": "Validation error of 'tape-load'.",
+    "placeholders": {
+      "machine": "The current machine's display name"
+    }
+  },
+  "commands.tapeLoad.refusedTapeNoMachine": "Loading a tape requires a ZX Spectrum 48K, 128K or +2/+3 machine; no machine is selected.",
+  "@commands.tapeLoad.refusedTapeNoMachine": {
+    "context": "Validation error of 'tape-load'."
+  },
+  "commands.tapeLoad.refusedProgram": "Loading a tape requires a ZX80 or ZX81 machine; the current machine is {machine}.",
+  "@commands.tapeLoad.refusedProgram": {
+    "context": "Validation error of 'tape-load' for a ZX80/ZX81 program file (which loads like a tape).",
+    "placeholders": {
+      "machine": "The current machine's display name"
+    }
+  },
+  "commands.tapeLoad.refusedProgramNoMachine": "Loading a tape requires a ZX80 or ZX81 machine; no machine is selected.",
+  "@commands.tapeLoad.refusedProgramNoMachine": {
+    "context": "Validation error of 'tape-load' for a ZX80/ZX81 program file (which loads like a tape)."
+  },
+  "commands.tapeLoad.readFailed": "Could not read {file}: {error}",
+  "@commands.tapeLoad.readFailed": {
+    "context": "Output of the 'tape-load' IDE command (inserts a ZX Spectrum tape or a ZX80/ZX81 program file and optionally loads it).",
+    "placeholders": {
+      "file": "The file's full path",
+      "error": "The reader's or operating system's error message (may stay English)"
+    }
+  },
+  "commands.tapeLoad.badProgram": "{file} is not a ZX80/ZX81 program Klive can read.",
+  "@commands.tapeLoad.badProgram": {
+    "context": "Output of the 'tape-load' IDE command (inserts a ZX Spectrum tape or a ZX80/ZX81 program file and optionally loads it).",
+    "placeholders": {
+      "file": "The file's full path"
+    }
+  },
+  "commands.tapeLoad.badTape": "{file} is not a tape Klive can read: {error}",
+  "@commands.tapeLoad.badTape": {
+    "context": "Output of the 'tape-load' IDE command (inserts a ZX Spectrum tape or a ZX80/ZX81 program file and optionally loads it).",
+    "placeholders": {
+      "file": "The file's full path",
+      "error": "The reader's or operating system's error message (may stay English)"
+    }
+  },
+  "commands.tapeLoad.unplayable": "Warning: {count, plural, one {# block} other {# blocks}} of this tape will not play in Klive; loading may fail.",
+  "@commands.tapeLoad.unplayable": {
+    "context": "Output of the 'tape-load' IDE command (inserts a ZX Spectrum tape or a ZX80/ZX81 program file and optionally loads it). A tape block is one recorded chunk of the tape.",
+    "placeholders": {
+      "count": "Blocks Klive cannot play"
+    }
+  },
+  "commands.tapeLoad.inserted": "Tape {file} inserted.",
+  "@commands.tapeLoad.inserted": {
+    "context": "Output of the 'tape-load' IDE command (inserts a ZX Spectrum tape or a ZX80/ZX81 program file and optionally loads it).",
+    "placeholders": {
+      "file": "The file's full path"
+    }
+  },
+  "commands.tapeLoad.plus3Note": "The +2A/+3 Loader boots a disk instead of the tape if one is in drive A.",
+  "@commands.tapeLoad.plus3Note": {
+    "context": "Output of the 'tape-load' IDE command (inserts a ZX Spectrum tape or a ZX80/ZX81 program file and optionally loads it). 'Loader' is the ZX Spectrum +2A/+3 menu item that starts loading."
+  },
+  "commands.tapeLoad.startFailed": "Could not start loading {file}: {error}",
+  "@commands.tapeLoad.startFailed": {
+    "context": "Output of the 'tape-load' IDE command (inserts a ZX Spectrum tape or a ZX80/ZX81 program file and optionally loads it).",
+    "placeholders": {
+      "file": "The file's full path",
+      "error": "The reader's or operating system's error message (may stay English)"
+    }
+  },
+  "commands.tapeLoad.loading": "Tape {file} inserted and loading.",
+  "@commands.tapeLoad.loading": {
+    "context": "Output of the 'tape-load' IDE command (inserts a ZX Spectrum tape or a ZX80/ZX81 program file and optionally loads it).",
+    "placeholders": {
+      "file": "The file's full path"
+    }
+  },
+  "commands.tapeLoad.loadingDebug": "Tape {file} inserted and loading (debugging).",
+  "@commands.tapeLoad.loadingDebug": {
+    "context": "Output of the 'tape-load' IDE command (inserts a ZX Spectrum tape or a ZX80/ZX81 program file and optionally loads it). Loading with the debugger's breakpoints armed.",
+    "placeholders": {
+      "file": "The file's full path"
+    }
+  },
+  "commands.nexLaunch.description": "Copies a .nex file to the ZX Spectrum Next SD card and runs it",
+  "@commands.nexLaunch.description": {
+    "context": "Help text of the 'nex-run' IDE command."
+  },
+  "commands.nexLaunch.emptyPath": "The NEX file path cannot be empty.",
+  "@commands.nexLaunch.emptyPath": {
+    "context": "Validation error of 'nex-run'."
+  },
+  "commands.nexLaunch.wrongType": "The file to launch must be a .nex file.",
+  "@commands.nexLaunch.wrongType": {
+    "context": "Validation error of 'nex-run'."
+  },
+  "commands.nexLaunch.needsNext": "Running a NEX file requires the current machine to be ZX Spectrum Next.",
+  "@commands.nexLaunch.needsNext": {
+    "context": "Validation error of 'nex-run'."
+  },
+  "commands.nexLaunch.copyFailed": "Could not copy {file} to the SD card as {target}: {error}",
+  "@commands.nexLaunch.copyFailed": {
+    "context": "Output of the 'nex-run' IDE command (copies a ZX Spectrum Next .nex program to the emulated SD card and runs it).",
+    "placeholders": {
+      "file": "The .nex file's path",
+      "target": "The path on the SD card, e.g. '_klive/game.nex'",
+      "error": "The operating system's or reader's error message (may stay English)"
+    }
+  },
+  "commands.nexLaunch.copied": "{file} copied to the SD card as {target}.",
+  "@commands.nexLaunch.copied": {
+    "context": "Output of the 'nex-run' IDE command (copies a ZX Spectrum Next .nex program to the emulated SD card and runs it).",
+    "placeholders": {
+      "file": "The .nex file's path",
+      "target": "The path on the SD card, e.g. '_klive/game.nex'"
+    }
+  },
+  "commands.nexLaunch.started": "{file} started.",
+  "@commands.nexLaunch.started": {
+    "context": "Output of the 'nex-run' IDE command (copies a ZX Spectrum Next .nex program to the emulated SD card and runs it).",
+    "placeholders": {
+      "file": "The path on the SD card"
+    }
+  },
+  "commands.nexLaunch.startedDebug": "{file} started in debug mode.",
+  "@commands.nexLaunch.startedDebug": {
+    "context": "Output of the 'nex-run' IDE command (copies a ZX Spectrum Next .nex program to the emulated SD card and runs it).",
+    "placeholders": {
+      "file": "The path on the SD card"
+    }
+  },
+  "commands.nexLaunch.sidecarUnused": "Source-level debug info in {file} is not used: {error}.",
+  "@commands.nexLaunch.sidecarUnused": {
+    "context": "Output of the 'nex-run' IDE command (copies a ZX Spectrum Next .nex program to the emulated SD card and runs it). A warning: the debug-info file beside the .nex does not belong to it.",
+    "placeholders": {
+      "file": "The debug-info file's path",
+      "error": "Why (may stay English)"
+    }
+  },
+  "commands.nexLaunch.sidecarLoaded": "Source-level debug info loaded from {file}.",
+  "@commands.nexLaunch.sidecarLoaded": {
+    "context": "Output of the 'nex-run' IDE command (copies a ZX Spectrum Next .nex program to the emulated SD card and runs it).",
+    "placeholders": {
+      "file": "The debug-info file's path"
+    }
+  },
+  "commands.nexLaunch.readFailed": "Could not read {file}: {error}",
+  "@commands.nexLaunch.readFailed": {
+    "context": "Output of the 'nex-run' IDE command (copies a ZX Spectrum Next .nex program to the emulated SD card and runs it).",
+    "placeholders": {
+      "file": "The .nex file's path",
+      "error": "The operating system's or reader's error message (may stay English)"
+    }
+  },
+  "commands.nexLaunch.headerFailed": "Could not read the NEX header of {file}: {error}",
+  "@commands.nexLaunch.headerFailed": {
+    "context": "Output of the 'nex-run' IDE command (copies a ZX Spectrum Next .nex program to the emulated SD card and runs it).",
+    "placeholders": {
+      "file": "The .nex file's path",
+      "error": "The operating system's or reader's error message (may stay English)"
+    }
+  },
+  "commands.nexLaunch.entryInRom": "The entry point ({address}) is below $4000, which is ROM when the program starts, so there is no bank to break in. Running without the entry-point stop.",
+  "@commands.nexLaunch.entryInRom": {
+    "context": "Output of the 'nex-run' IDE command (copies a ZX Spectrum Next .nex program to the emulated SD card and runs it). Shown for 'nex-run -e', which stops at the program's entry point. '$4000' is an address: keep it.",
+    "placeholders": {
+      "address": "The entry address, e.g. '$0100'"
+    }
+  },
+  "commands.nexLaunch.entryBreak": "Will break at the entry point: bank {bank}, offset {offset} (address {address}).",
+  "@commands.nexLaunch.entryBreak": {
+    "context": "Output of the 'nex-run' IDE command (copies a ZX Spectrum Next .nex program to the emulated SD card and runs it). Shown for 'nex-run -e': where the one-time breakpoint goes.",
+    "placeholders": {
+      "bank": "The 16K bank number, e.g. '$05'",
+      "offset": "The offset inside the bank, e.g. '$0100'",
+      "address": "The entry address, e.g. '$C100'"
+    }
+  }
+}

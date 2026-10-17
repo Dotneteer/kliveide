@@ -67,11 +67,8 @@ import {
   subscribeAnnotationSession,
   updateAnnotationSession
 } from "@renderer/appIde/annotations/annotationSession";
-import {
-  BANK_COMMENT_DIALOG_TITLE,
-  BANK_COMMENT_DIALOG_WIDTH,
-  NexBankCommentDialog
-} from "./NexBankCommentDialog";
+import { BANK_COMMENT_DIALOG_WIDTH, NexBankCommentDialog } from "./NexBankCommentDialog";
+import { useT } from "@common/i18n/useT";
 import { useDialogs } from "@renderer/controls/overlay/DialogProvider";
 
 /*
@@ -160,6 +157,7 @@ const NexFileViewerContents = ({
   appServices,
   changeViewState: change
 }: NexFileViewerContentsProps) => {
+  const t = useT();
   const h = fi.header;
   const cvs = viewState;
   const setBankFlagCount = useMemo(() => h.bankFlags.filter(Boolean).length, [h.bankFlags]);
@@ -303,7 +301,7 @@ const NexFileViewerContents = ({
     const result = await dialogs.open(
       NexBankCommentDialog,
       { bank, initialComment: bankAnnotation.comment },
-      { title: BANK_COMMENT_DIALOG_TITLE, width: BANK_COMMENT_DIALOG_WIDTH }
+      { title: t("panels.next.bankComment.title"), width: BANK_COMMENT_DIALOG_WIDTH }
     );
     if (!result) return;
     writeBankComment(bank, result.comment);
@@ -386,14 +384,12 @@ const NexFileViewerContents = ({
    * `validateNexHeader` treats as "skip that check" rather than as zero banks.
    */
   const machineFeatures = appServices.machineService?.getMachineInfo()?.machine?.features;
-  const validationIssues = useMemo(
-    () =>
-      validateNexHeader(h, {
-        coreVersion: EMULATED_CORE_VERSION,
-        bankCount: (machineFeatures?.[MF_BANK] ?? 0) / 2 || undefined
-      }),
-    [h, machineFeatures]
-  );
+  // --- Not memoized: a handful of comparisons, and its messages are in the display language, so a
+  // --- language change (which re-renders through `useT`) must rewrite them.
+  const validationIssues = validateNexHeader(h, {
+    coreVersion: EMULATED_CORE_VERSION,
+    bankCount: (machineFeatures?.[MF_BANK] ?? 0) / 2 || undefined
+  });
 
   return (
     <>
@@ -410,7 +406,7 @@ const NexFileViewerContents = ({
         onCreate={createAnnotation}
       />
       <ExpandableRow
-        heading='Header attributes'
+        heading={t("panels.next.nex.headerAttributes")}
         initialExpanded={cvs?.headerAttrExpanded ?? true}
         onExpanded={exp => change(vs => (vs.headerAttrExpanded = exp))}
       >
@@ -424,10 +420,13 @@ const NexFileViewerContents = ({
       <ExpandableRow
         heading={
           <>
-            Bank flags
+            {t("panels.next.nex.bankFlags")}
             <span
               className={styles.headingChip}
-              title={`${setBankFlagCount} of ${h.bankFlags.length} bank flags set`}
+              title={t("panels.next.nex.bankFlagsSet", {
+                count: setBankFlagCount,
+                total: h.bankFlags.length
+              })}
             >
               {setBankFlagCount}
             </span>
@@ -453,7 +452,7 @@ const NexFileViewerContents = ({
       </ExpandableRow>
       {fi.palette?.length > 0 && (
         <ExpandableRow
-          heading='Palette (Layer2, LoRes or Tilemap screen)'
+          heading={t("panels.next.nex.palette")}
           initialExpanded={cvs?.paletteExpanded ?? false}
           onExpanded={exp =>
             change(vs => (vs.paletteExpanded = exp))
@@ -468,12 +467,12 @@ const NexFileViewerContents = ({
       )}
       {fi.layer2LoadingScreen?.length > 0 && (
         <ExpandableRow
-          heading='Layer 2 Loading Screen'
+          heading={t("panels.next.nex.layer2Screen")}
           headingAction={
             <SmallIconButton
               iconName='square-arrow-out-up-right'
               fill='--color-command-icon'
-              title='Open the loading screen as its own document'
+              title={t("panels.next.nex.openLayer2Screen")}
               clicked={async () => {
                 if (!document.node.fullPath) return;
                 await openRecorded(() =>
@@ -501,7 +500,7 @@ const NexFileViewerContents = ({
       )}
       {fi.ulaLoadingScreen?.length > 0 && (
         <ExpandableRow
-          heading='ULA Loading Screen'
+          heading={t("panels.next.nex.ulaScreen")}
           initialExpanded={cvs?.ulaLoadingScreenExpanded ?? false}
           onExpanded={exp =>
             change(vs => (vs.ulaLoadingScreenExpanded = exp))
@@ -510,19 +509,19 @@ const NexFileViewerContents = ({
           <MemoryDumpViewer
             documentSource={document.node.projectPath}
             contents={fi?.ulaLoadingScreen}
-            iconTitle='Display ULA dump'
+            iconTitle={t("panels.next.nex.showDump", { screen: "ULA" })}
             idFactory={(documentSource: string) =>
               `ulaDump${documentSource}`
             }
             titleFactory={(documentSource: string) =>
-              `${documentSource} - ULA`
+              t("panels.next.dumpTitle.screen", { source: documentSource, screen: "ULA" })
             }
           />
         </ExpandableRow>
       )}
       {fi.loResLoadingScreen?.length > 0 && (
         <ExpandableRow
-          heading='LoRes Loading Screen'
+          heading={t("panels.next.nex.loResScreen")}
           initialExpanded={cvs?.loResLoadingScreenExpanded ?? false}
           onExpanded={exp =>
             change(vs => (vs.loResLoadingScreenExpanded = exp))
@@ -531,19 +530,19 @@ const NexFileViewerContents = ({
           <MemoryDumpViewer
             documentSource={document.node.projectPath}
             contents={fi?.loResLoadingScreen}
-            iconTitle='Display LoRes dump'
+            iconTitle={t("panels.next.nex.showDump", { screen: "LoRes" })}
             idFactory={(documentSource: string) =>
               `loResDump${documentSource}`
             }
             titleFactory={(documentSource: string) =>
-              `${documentSource} - LoRes`
+              t("panels.next.dumpTitle.screen", { source: documentSource, screen: "LoRes" })
             }
           />
         </ExpandableRow>
       )}
       {fi.timexHiResLoadingScreen?.length > 0 && (
         <ExpandableRow
-          heading='Timex HiRes Loading Screen'
+          heading={t("panels.next.nex.timexHiResScreen")}
           initialExpanded={cvs?.timexHiResLoadingScreenExpanded ?? false}
           onExpanded={exp =>
             change(vs => (vs.timexHiResLoadingScreenExpanded = exp))
@@ -552,19 +551,19 @@ const NexFileViewerContents = ({
           <MemoryDumpViewer
             documentSource={document.node.projectPath}
             contents={fi?.timexHiResLoadingScreen}
-            iconTitle='Display Timex HiRes dump'
+            iconTitle={t("panels.next.nex.showDump", { screen: "Timex HiRes" })}
             idFactory={(documentSource: string) =>
               `timexHiResDump${documentSource}`
             }
             titleFactory={(documentSource: string) =>
-              `${documentSource} - Timex HiRes`
+              t("panels.next.dumpTitle.screen", { source: documentSource, screen: "Timex HiRes" })
             }
           />
         </ExpandableRow>
       )}
       {fi.timexHiColLoadingScreen?.length > 0 && (
         <ExpandableRow
-          heading='Timex HiCol Loading Screen'
+          heading={t("panels.next.nex.timexHiColScreen")}
           initialExpanded={cvs?.timexHiColLoadingScreenExpanded ?? false}
           onExpanded={exp =>
             change(vs => (vs.timexHiColLoadingScreenExpanded = exp))
@@ -573,12 +572,12 @@ const NexFileViewerContents = ({
           <MemoryDumpViewer
             documentSource={document.node.projectPath}
             contents={fi?.timexHiColLoadingScreen}
-            iconTitle='Display Timex HiCol dump'
+            iconTitle={t("panels.next.nex.showDump", { screen: "Timex HiCol" })}
             idFactory={(documentSource: string) =>
               `timexHiColDump${documentSource}`
             }
             titleFactory={(documentSource: string) =>
-              `${documentSource} - Timex Hicol`
+              t("panels.next.dumpTitle.screen", { source: documentSource, screen: "Timex Hicol" })
             }
           />
         </ExpandableRow>
@@ -631,16 +630,17 @@ const NexAnnotationPanel = ({
   state,
   onCreate
 }: NexAnnotationPanelProps) => {
+  const t = useT();
   if (state.status === "missing") {
     return (
       <div className={styles.annotationPanel}>
-        <span>No annotation file attached.</span>
+        <span>{t("panels.next.nex.noAnnotationFile")}</span>
         <button
           type='button'
           className={styles.annotationLink}
           onClick={onCreate}
         >
-          Click to create one!
+          {t("panels.next.nex.createAnnotationFile")}
         </button>
       </div>
     );
@@ -656,7 +656,7 @@ const NexAnnotationPanel = ({
 
     return (
       <div className={styles.annotationPanel} title={details || undefined}>
-        <span className={styles.annotationError}>Annotation file could not be loaded.</span>
+        <span className={styles.annotationError}>{t("panels.next.nex.annotationLoadFailed")}</span>
       </div>
     );
   }
@@ -766,86 +766,89 @@ const HeaderFlag = ({ label, value }: HeaderFlagProps) => (
   </Row>
 );
 
-const HeaderAttributes = ({ header: h }: HeaderAttributesProps) => (
-  <div className={styles.headerAttributes}>
-    <HeaderAttributeGroup title='File'>
-      <HeaderText
-        label='Version:'
-        value={`V${h.versionMajor}.${h.versionMinor}`}
-        tooltip='.NEX file version'
-      />
-      <HeaderText
-        label='Required RAM:'
-        value={h.fullRamRequired ? "1792K" : "768K"}
-      />
-      <HeaderText
-        label='16K banks to load:'
-        value={h.numOf16KBanks.toString(10)}
-      />
-      <HeaderText label='Extra files:' value={h.numOfExtraBytes.toString(10)} />
-      <HeaderText
-        label='Required core:'
-        value={`V${h.requiredCoreVersionMajor}.${h.requiredCoreVersionMinor}.${h.requiredCoreVersionSubMinor}`}
-      />
-    </HeaderAttributeGroup>
+const HeaderAttributes = ({ header: h }: HeaderAttributesProps) => {
+  const t = useT();
+  return (
+    <div className={styles.headerAttributes}>
+      <HeaderAttributeGroup title={t("panels.next.nex.group.file")}>
+        <HeaderText
+          label={t("panels.next.nex.attr.version")}
+          value={`V${h.versionMajor}.${h.versionMinor}`}
+          tooltip={t("panels.next.nex.attr.versionTooltip")}
+        />
+        <HeaderText
+          label={t("panels.next.nex.attr.requiredRam")}
+          value={h.fullRamRequired ? "1792K" : "768K"}
+        />
+        <HeaderText
+          label={t("panels.next.nex.attr.banksToLoad")}
+          value={h.numOf16KBanks.toString(10)}
+        />
+        <HeaderText label={t("panels.next.nex.attr.extraFiles")} value={h.numOfExtraBytes.toString(10)} />
+        <HeaderText
+          label={t("panels.next.nex.attr.requiredCore")}
+          value={`V${h.requiredCoreVersionMajor}.${h.requiredCoreVersionMinor}.${h.requiredCoreVersionSubMinor}`}
+        />
+      </HeaderAttributeGroup>
 
-    <HeaderAttributeGroup title='Entry'>
-      <HeaderText
-        label='PC:'
-        value={`$${toHexa4(h.programCounter)} (${h.programCounter.toString(10)})`}
-        valueWidth={HEADER_WIDE_VALUE_WIDTH}
-      />
-      <HeaderText
-        label='SP:'
-        value={`$${toHexa4(h.stackPointer)} (${h.stackPointer.toString(10)})`}
-        valueWidth={HEADER_WIDE_VALUE_WIDTH}
-      />
-      <HeaderText
-        label='Entry bank:'
-        value={`$${toHexa2(h.entryBank)} (${h.entryBank.toString(10)})`}
-      />
-      <HeaderText
-        label='File handle addr:'
-        value={`$${toHexa4(h.fileHandleAddress)} (${h.fileHandleAddress.toString(10)})`}
-        valueWidth={HEADER_WIDE_VALUE_WIDTH}
-      />
-      <HeaderFlag label='Preserve Next regs:' value={!!h.preserveNextRegisters} />
-    </HeaderAttributeGroup>
+      <HeaderAttributeGroup title={t("panels.next.nex.group.entry")}>
+        <HeaderText
+          label='PC:'
+          value={`$${toHexa4(h.programCounter)} (${h.programCounter.toString(10)})`}
+          valueWidth={HEADER_WIDE_VALUE_WIDTH}
+        />
+        <HeaderText
+          label='SP:'
+          value={`$${toHexa4(h.stackPointer)} (${h.stackPointer.toString(10)})`}
+          valueWidth={HEADER_WIDE_VALUE_WIDTH}
+        />
+        <HeaderText
+          label={t("panels.next.nex.attr.entryBank")}
+          value={`$${toHexa2(h.entryBank)} (${h.entryBank.toString(10)})`}
+        />
+        <HeaderText
+          label={t("panels.next.nex.attr.fileHandleAddress")}
+          value={`$${toHexa4(h.fileHandleAddress)} (${h.fileHandleAddress.toString(10)})`}
+          valueWidth={HEADER_WIDE_VALUE_WIDTH}
+        />
+        <HeaderFlag label={t("panels.next.nex.attr.preserveNextRegs")} value={!!h.preserveNextRegisters} />
+      </HeaderAttributeGroup>
 
-    <HeaderAttributeGroup title='Loading'>
-      <HeaderText label='Border color:' value={h.borderColor.toString(10)} />
-      <HeaderFlag label='Layer2 loading bar:' value={!!h.layer2LoadingBar} />
-      <HeaderText
-        label='Bar color:'
-        value={`$${toHexa2(h.loadingBarColorFor)} (${h.loadingBarColorFor.toString(10)})`}
-      />
-      <HeaderText
-        label='Delay per bank:'
-        value={h.loadingDelayPerBank.toString(10)}
-      />
-      <HeaderText label='Start delay:' value={h.startDelay.toString(10)} />
-      <HeaderText
-        label='Timex HiRes color:'
-        value={`$${toHexa2(h.timexHiresModeColor)} (${h.timexHiresModeColor.toString(10)})`}
-      />
-    </HeaderAttributeGroup>
+      <HeaderAttributeGroup title={t("panels.next.nex.group.loading")}>
+        <HeaderText label={t("panels.next.nex.attr.borderColor")} value={h.borderColor.toString(10)} />
+        <HeaderFlag label={t("panels.next.nex.attr.layer2LoadingBar")} value={!!h.layer2LoadingBar} />
+        <HeaderText
+          label={t("panels.next.nex.attr.barColor")}
+          value={`$${toHexa2(h.loadingBarColorFor)} (${h.loadingBarColorFor.toString(10)})`}
+        />
+        <HeaderText
+          label={t("panels.next.nex.attr.delayPerBank")}
+          value={h.loadingDelayPerBank.toString(10)}
+        />
+        <HeaderText label={t("panels.next.nex.attr.startDelay")} value={h.startDelay.toString(10)} />
+        <HeaderText
+          label={t("panels.next.nex.attr.timexHiResColor")}
+          value={`$${toHexa2(h.timexHiresModeColor)} (${h.timexHiresModeColor.toString(10)})`}
+        />
+      </HeaderAttributeGroup>
 
-    <HeaderAttributeGroup title='Loading Screen Blocks'>
-      <Row xclass={`${styles.headerAttributeRow} ${styles.headerFlagRow}`}>
-        <ScreenBlockFlag label='Layer2:' value={!!(h.screenBlockFlags & ScreenBlockFlags.Layer2)} />
-        <ScreenBlockFlag label='ULA:' value={!!(h.screenBlockFlags & ScreenBlockFlags.Ula)} />
-      </Row>
-      <Row xclass={`${styles.headerAttributeRow} ${styles.headerFlagRow}`}>
-        <ScreenBlockFlag label='LoRes:' value={!!(h.screenBlockFlags & ScreenBlockFlags.LoRes)} />
-        <ScreenBlockFlag label='HiRes:' value={!!(h.screenBlockFlags & ScreenBlockFlags.HiRes)} />
-      </Row>
-      <Row xclass={`${styles.headerAttributeRow} ${styles.headerFlagRow}`}>
-        <ScreenBlockFlag label='HiColor:' value={!!(h.screenBlockFlags & ScreenBlockFlags.HiColor)} />
-        <ScreenBlockFlag label='No palette:' value={!!(h.screenBlockFlags & ScreenBlockFlags.NoPalette)} />
-      </Row>
-    </HeaderAttributeGroup>
-  </div>
-);
+      <HeaderAttributeGroup title={t("panels.next.nex.group.screenBlocks")}>
+        <Row xclass={`${styles.headerAttributeRow} ${styles.headerFlagRow}`}>
+          <ScreenBlockFlag label='Layer2:' value={!!(h.screenBlockFlags & ScreenBlockFlags.Layer2)} />
+          <ScreenBlockFlag label='ULA:' value={!!(h.screenBlockFlags & ScreenBlockFlags.Ula)} />
+        </Row>
+        <Row xclass={`${styles.headerAttributeRow} ${styles.headerFlagRow}`}>
+          <ScreenBlockFlag label='LoRes:' value={!!(h.screenBlockFlags & ScreenBlockFlags.LoRes)} />
+          <ScreenBlockFlag label='HiRes:' value={!!(h.screenBlockFlags & ScreenBlockFlags.HiRes)} />
+        </Row>
+        <Row xclass={`${styles.headerAttributeRow} ${styles.headerFlagRow}`}>
+          <ScreenBlockFlag label='HiColor:' value={!!(h.screenBlockFlags & ScreenBlockFlags.HiColor)} />
+          <ScreenBlockFlag label={t("panels.next.nex.attr.noPalette")} value={!!(h.screenBlockFlags & ScreenBlockFlags.NoPalette)} />
+        </Row>
+      </HeaderAttributeGroup>
+    </div>
+  );
+};
 
 export const createNexFileViewerPanel = ({
   document,

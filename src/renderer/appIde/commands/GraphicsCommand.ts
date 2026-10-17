@@ -8,6 +8,7 @@ import { GRAPHIC_LAYOUTS, type GraphicLayout, type GraphicsLook } from "@common/
 import { createSpecialDocument } from "@renderer/features/documents/specialDocuments";
 import { requestGraphicsReveal } from "@renderer/features/graphics/graphicsReveal";
 import { IdeCommandBase, commandSuccess, validationError } from "../services/ide-commands";
+import { t } from "@common/i18n/i18n";
 
 type GfxArgs = {
   address?: number;
@@ -25,7 +26,9 @@ type GfxArgs = {
  */
 export class GraphicsCommand extends IdeCommandBase<GfxArgs> {
   readonly id = "gfx";
-  readonly description = "Shows memory as graphics: the graphics finder, optionally at an address";
+  get description() {
+    return t("commands.gfx.description");
+  }
   readonly aliases = ["show-graphics"];
   readonly usage = "gfx [<address>] [-w <width>] [-h <height>] [-layout linear|cells|columns|screen] [-bank <n>]";
   readonly argumentInfo: CommandArgumentInfo = {
@@ -41,7 +44,7 @@ export class GraphicsCommand extends IdeCommandBase<GfxArgs> {
   async validateCommandArgs(_context: IdeCommandContext, args: GfxArgs): Promise<ValidationMessage[]> {
     const layout = args["-layout"]?.toLowerCase();
     return layout !== undefined && !GRAPHIC_LAYOUTS.includes(layout as GraphicLayout)
-      ? [validationError(`-layout: use ${GRAPHIC_LAYOUTS.join(", ")}`)]
+      ? [validationError(t("commands.gfx.layoutValues", { layouts: GRAPHIC_LAYOUTS.join(", ") }))]
       : [];
   }
 

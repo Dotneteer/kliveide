@@ -1,9 +1,12 @@
+import { t } from "@common/i18n/i18n";
+
 import {
   BORDER_OPTIONS,
   canExport,
   effectiveFormatOf,
   formatOptionsOf,
-  loaderLabelOf,
+  isAddressRangeFailure,
+  loaderRunsProgram,
   exportNameErrorOf,
   folderErrorOf,
   screenFileErrorOf,
@@ -54,6 +57,36 @@ export type ExportCodeViewModel = {
   submitting: boolean;
 };
 
+// ─── Formatting ──────────────────────────────────────────────────────────────
+
+export function loaderLabelOf(state: ExportCodeState): string {
+  return loaderRunsProgram(state)
+    ? t("dialog.exportCode.loader.runProgram")
+    : t("dialog.exportCode.loader.createBasicLoader");
+}
+
+/** The title of the message box that reports the export's outcome */
+export function exportTitle(): string {
+  return t("dialog.exportCode.notify.title");
+}
+
+/**
+ * What to tell the user about a failed export.
+ *
+ * The command reports a rejected start address by echoing the switch it came
+ * from; that gets translated. Anything else is passed through, and a failure
+ * that said nothing at all still gets a sentence — the old dialog called
+ * `.includes` on the missing message and threw a TypeError instead.
+ */
+export function exportFailureMessage(finalMessage?: string): string {
+  if (isAddressRangeFailure(finalMessage)) return t("dialog.exportCode.notify.addressRange");
+  return finalMessage || t("dialog.exportCode.notify.failed");
+}
+
+export function exportSuccessMessage(finalMessage?: string): string {
+  return finalMessage ?? t("dialog.exportCode.notify.succeeded");
+}
+
 // ─── Selector ────────────────────────────────────────────────────────────────
 
 export function selectViewModel(state: ExportCodeState): ExportCodeViewModel {
@@ -79,7 +112,7 @@ export function selectViewModel(state: ExportCodeState): ExportCodeViewModel {
           startAddress: { value: settings.startAddress, error: startAddressErrorOf(state) }
         }
       : { kind: "hidden" },
-    submitLabel: "Export",
+    submitLabel: t("dialog.exportCode.submit"),
     submitEnabled: canExport(state) && !state.busy,
     submitting: state.busy
   };

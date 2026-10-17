@@ -91,7 +91,7 @@ function storeWith(config: Record<string, unknown>, running = false) {
   return store;
 }
 
-const okButton = () => screen.getByRole("button", { name: "Ok" });
+const okButton = () => screen.getByRole("button", { name: "OK" });
 
 describe("Z88ChangeRamDialog — wiring", () => {
   it("opens showing the size the store says the machine is fitted with", () => {

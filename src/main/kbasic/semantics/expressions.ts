@@ -1,4 +1,6 @@
 import type { DiagnosticBag, Span } from "../diagnostics";
+import { t as tr } from "@common/i18n/i18n";
+import type { MessageKey } from "@common/i18n/keys.generated";
 import type { KBasicOptions } from "../options/options";
 import type { Argument, Expression, NameRef, TypeRef } from "../syntax/ast";
 import type { AddressTarget, BoundArgument, BoundExpr } from "./bound";
@@ -22,7 +24,6 @@ import {
 import * as f40 from "./float40";
 import {
   Scope,
-  kindText,
   type ArraySymbol,
   type LabelSymbol,
   type ParamSymbol,
@@ -59,6 +60,20 @@ export type BindSettings = {
 
 /** A place a name refers to a banked symbol, checked once every bank is known (E452, W920). */
 export type BankReference = { span: Span; from: number; routine?: RoutineSymbol; symbol: Symbol | LabelSymbol; how: "call" | "farptr" | "use" };
+
+/** The E426 (strict typing) and W100 messages of an untyped declaration, by what is declared. */
+const UNTYPED: Record<"variable" | "array" | "parameter" | "function", [MessageKey, MessageKey]> = {
+  variable: ["compiler.basic.E426.variable", "compiler.basic.W100.variable"],
+  array: ["compiler.basic.E426.array", "compiler.basic.W100.array"],
+  parameter: ["compiler.basic.E426.parameter", "compiler.basic.W100.parameter"],
+  function: ["compiler.basic.E426.function", "compiler.basic.W100.function"]
+};
+
+/** K403 for ABS and SGN of an unsigned value: of a typed value, of a Boolean. */
+const UNSIGNED_SIGN: Record<"abs" | "sgn", [MessageKey, MessageKey]> = {
+  abs: ["compiler.basic.K403.abs", "compiler.basic.K403.absBoolean"],
+  sgn: ["compiler.basic.K403.sgn", "compiler.basic.K403.sgnBoolean"]
+};
 
 /**
  * The binder's state and its expression half: names, types, conversions and constant folding.
@@ -103,9 +118,9 @@ export class ExpressionBinder {
   }
 
   /** The type an untyped declaration gets: Float, with W100 (an error under strict typing). */
-  protected defaultType(name: string, span: Span, what = "Variable"): KType {
-    if (this.settings.strict) this.error("E426", `${what} '${name}' needs a type (AS ...): strict typing is on`, span);
-    else this.warning("W100", `${what} '${name}' has no type; it is a Float`, span);
+  protected defaultType(name: string, span: Span, what: "variable" | "array" | "parameter" | "function" = "variable"): KType {
+    if (this.settings.strict) this.error("E426", tr(UNTYPED[what][0], { name }), span);
+    else this.warning("W100", tr(UNTYPED[what][1], { name }), span);
     return "Float";
   }
 
@@ -135,13 +150,13 @@ export class ExpressionBinder {
   /** A variable a use creates (spec `types.default_type`): typed by its sigil or the context. */
   protected implicitVariable(ref: NameRef, contextType?: KType): VariableSymbol {
     if (this.settings.explicit) {
-      this.error("E427", `'${ref.name}' is not declared: explicit declarations are on (DIM it first)`, ref.span);
+      this.error("E427", tr("compiler.basic.E427", { name: ref.name }), ref.span);
     }
     let type: KType;
     if (ref.sigil) type = typeOfSigil(ref.sigil);
     else if (contextType) {
       type = contextType === "Boolean" ? "UByte" : contextType;
-      if (this.settings.strict) this.error("E426", `Variable '${ref.name}' needs a type (DIM ... AS): strict typing is on`, ref.span);
+      if (this.settings.strict) this.error("E426", tr("compiler.basic.E426.dim", { name: ref.name }), ref.span);
     } else type = this.settings.explicit ? "Float" : this.defaultType(ref.name, ref.span);
     this.checkFastcallLocal(ref.name, ref.span);
     const symbol: VariableSymbol = {
@@ -163,14 +178,14 @@ export class ExpressionBinder {
   /** E431: a FASTCALL routine has no stack frame, so it cannot have locals (spec subprograms.conventions). */
   protected checkFastcallLocal(name: string, span: Span): void {
     if (this.routine?.convention === "FASTCALL") {
-      this.error("E431", `FASTCALL ${this.routine.name} cannot have the local '${name}': it has no stack frame (use STDCALL, or a global)`, span);
+      this.error("E431", tr("compiler.basic.E431", { routine: this.routine.name, name }), span);
     }
   }
 
   /** Checks a name's sigil against the symbol's type (E422). */
   protected checkSigil(ref: NameRef, type: KType): void {
     if (ref.sigil && typeOfSigil(ref.sigil) !== type) {
-      this.error("E422", `'${ref.name}${ref.sigil}': the '${ref.sigil}' does not fit ${ref.name}'s type, ${type}`, ref.span);
+      this.error("E422", tr("compiler.basic.E422", { name: ref.name, sigil: ref.sigil, type }), ref.span);
     }
   }
 
@@ -199,7 +214,7 @@ export class ExpressionBinder {
         try {
           return this.constantExpr(numberLiteral(e.value, e.text, e.form), e.span);
         } catch {
-          this.error("E425", `The number ${e.text} is too big`, e.span);
+          this.error("E425", tr("compiler.basic.E425.tooBig", { number: e.text }), e.span);
           return this.errorExpr(e.span);
         }
       case "string":
@@ -231,7 +246,7 @@ export class ExpressionBinder {
   value(e: Expression): BoundExpr {
     const bound = this.expr(e);
     if (bound.kind === "array") {
-      this.error("E402", `'${bound.symbol.name}' is an array: it needs subscripts here`, bound.span);
+      this.error("E402", tr("compiler.basic.E402.subscripts", { name: bound.symbol.name }), bound.span);
       return this.errorExpr(bound.span, bound.type);
     }
     return bound;
@@ -241,7 +256,7 @@ export class ExpressionBinder {
   numeric(e: Expression): BoundExpr {
     const bound = this.value(e);
     if (bound.type === "String") {
-      this.error("E409", "A number is needed here, not a String (use VAL)", bound.span);
+      this.error("E409", tr("compiler.basic.E409.number"), bound.span);
       return this.errorExpr(bound.span);
     }
     return bound;
@@ -263,7 +278,7 @@ export class ExpressionBinder {
     if ((e.type === "String") !== (to === "String")) {
       this.error(
         "E409",
-        to === "String" ? `A String is needed here, not ${e.type} (use STR)` : `A number is needed here, not a String (use VAL)`,
+        to === "String" ? tr("compiler.basic.E409.string", { type: e.type }) : tr("compiler.basic.E409.number"),
         e.span
       );
       return this.errorExpr(e.span, to);
@@ -272,13 +287,13 @@ export class ExpressionBinder {
       const converted = convertConstant(e.constant, to);
       if (converted) {
         if (converted.lossy) {
-          this.warning("W120", `${constantText(e.constant)} does not fit ${to} exactly; it becomes ${constantText(converted.constant)}`, e.span);
+          this.warning("W120", tr("compiler.basic.W120", { value: constantText(e.constant), type: to, result: constantText(converted.constant) }), e.span);
         }
         return this.constantExpr(converted.constant, e.span);
       }
     }
     if (truncation && isDecimal(e.type) && isIntegral(to)) {
-      this.warning("W200", `The ${e.type} value is truncated to ${to}`, e.span);
+      this.warning("W200", tr("compiler.basic.W200", { from: e.type, type: to }), e.span);
     }
     return { kind: "convert", span: e.span, type: to, operand: e };
   }
@@ -288,7 +303,7 @@ export class ExpressionBinder {
     if (!symbol) {
       const label = this.findLabel(ref.name);
       if (label) {
-        this.error("E402", `'${ref.name}' is a label, not a value (use @${ref.name} for its address)`, ref.span);
+        this.error("E402", tr("compiler.basic.E402.label", { name: ref.name }), ref.span);
         return this.errorExpr(ref.span);
       }
       const created = this.implicitVariable(ref);
@@ -315,7 +330,7 @@ export class ExpressionBinder {
       case "function":
         return this.callRoutine(symbol, [], ref.span, ref.span);
       case "sub":
-        this.error("E429", `'${ref.name}' is a SUB: it has no value`, ref.span);
+        this.error("E429", tr("compiler.basic.E429.sub", { name: ref.name }), ref.span);
         this.noteUse(symbol, ref.span, "call");
         symbol.called = true;
         return this.errorExpr(ref.span);
@@ -326,7 +341,7 @@ export class ExpressionBinder {
   private readString(symbol: VariableSymbol, span: Span): void {
     if (symbol.type === "String" && !symbol.assigned && symbol.storage !== "param" && !symbol.at && !symbol.warnedUnassigned) {
       symbol.warnedUnassigned = true;
-      this.warning("W101", `String '${symbol.name}' is read before anything is assigned to it`, span);
+      this.warning("W101", tr("compiler.basic.W101", { name: symbol.name }), span);
     }
   }
 
@@ -336,7 +351,7 @@ export class ExpressionBinder {
       const symbol = this.lookup(callee.name);
       if (symbol?.kind === "function") return this.callRoutine(symbol, args, span, callee.span);
       if (symbol?.kind === "sub") {
-        this.error("E429", `'${callee.name}' is a SUB: it has no value`, callee.span);
+        this.error("E429", tr("compiler.basic.E429.sub", { name: callee.name }), callee.span);
         symbol.called = true;
         this.bindArgumentsLoosely(args);
         return this.errorExpr(span);
@@ -349,7 +364,7 @@ export class ExpressionBinder {
       }
       if (!symbol) {
         if (!callee.sigil || callee.sigil !== "$") {
-          this.error("E401", `'${callee.name}' is not declared: an array must be DIMmed before use, and a FUNCTION defined`, callee.span);
+          this.error("E401", tr("compiler.basic.E401.callee", { name: callee.name }), callee.span);
           this.bindArgumentsLoosely(args);
           return this.errorExpr(span);
         }
@@ -357,7 +372,7 @@ export class ExpressionBinder {
     }
     // --- Chained parentheses need a declared array or String: zxbc refuses f$(1)(0) for an unknown f$
     if (callee.kind === "call" && callee.callee.kind === "name" && !this.lookup(callee.callee.name)) {
-      this.error("E401", `'${callee.callee.name}' is not declared: an array must be DIMmed before use, and a FUNCTION defined`, callee.callee.span);
+      this.error("E401", tr("compiler.basic.E401.callee", { name: callee.callee.name }), callee.callee.span);
       this.bindArgumentsLoosely(args);
       return this.errorExpr(span);
     }
@@ -369,13 +384,16 @@ export class ExpressionBinder {
     }
     if (target.kind === "call") {
       // --- ZX BASIC does not slice what a FUNCTION returns: f$(1)(0) is an error there (C4)
-      this.error("E435", `What ${target.routine.name} returns cannot be sliced here: assign it to a variable first`, callee.span);
+      this.error("E435", tr("compiler.basic.E435", { name: target.routine.name }), callee.span);
       this.bindArgumentsLoosely(args);
       return this.errorExpr(span);
     }
     if (target.type !== "String") {
-      const what = target.kind === "variable" ? `'${target.symbol.name}' is ${kindText(target.symbol)} of type ${target.type}` : "This value";
-      this.error("E429", `${what}: it cannot take arguments (it is not an array, a FUNCTION or a String)`, callee.span);
+      const message =
+        target.kind === "variable"
+          ? tr("compiler.basic.E429.namedArguments", { name: target.symbol.name, kind: target.symbol.kind, type: target.type })
+          : tr("compiler.basic.E429.arguments");
+      this.error("E429", message, callee.span);
       this.bindArgumentsLoosely(args);
       return this.errorExpr(span);
     }
@@ -399,12 +417,12 @@ export class ExpressionBinder {
     const extra = symbol.elementType === "String" && dims !== undefined && args.length === dims + 1;
     const subscripts = extra ? args.slice(0, -1) : args;
     if (dims !== undefined && subscripts.length !== dims) {
-      this.error("E428", `Array '${symbol.name}' has ${dims} dimension(s); ${subscripts.length} subscript(s) given`, span);
+      this.error("E428", tr("compiler.basic.E428.subscripts", { name: symbol.name, count: dims, given: subscripts.length }), span);
     }
     const indices: BoundExpr[] = [];
     for (const a of subscripts) {
       if (a.kind !== "arg") {
-        this.error("E428", `An array subscript must be a value${a.kind === "range" ? ", not a range" : ""}`, a.span);
+        this.error("E428", tr(a.kind === "range" ? "compiler.basic.E428.range" : "compiler.basic.E428.value"), a.span);
         continue;
       }
       indices.push(this.valueAs(a.value, "UInteger"));
@@ -416,14 +434,14 @@ export class ExpressionBinder {
   /** `s(i)` and `s(a TO b)`: indices from string_base, made 0-based here. */
   protected sliceExpr(target: BoundExpr, args: Argument[], span: Span): BoundExpr {
     if (args.length !== 1) {
-      this.error("E428", "A string takes one index or one range in parentheses", span);
+      this.error("E428", tr("compiler.basic.E428.string"), span);
       this.bindArgumentsLoosely(args);
       return this.errorExpr(span, "String");
     }
     const a = args[0];
     const index = (e: Expression | undefined) => (e ? this.rebase(this.valueAs(e, "UInteger")) : undefined);
     if (a.kind === "named") {
-      this.error("E417", "A string index cannot be a named argument", a.span);
+      this.error("E417", tr("compiler.basic.E417.stringIndex"), a.span);
       return this.errorExpr(span, "String");
     }
     const single = a.kind === "arg";
@@ -482,17 +500,17 @@ export class ExpressionBinder {
     let positional = 0;
     for (const a of args) {
       if (a.kind === "range") {
-        this.error("E417", "A range is not an argument", a.span);
+        this.error("E417", tr("compiler.basic.E417.range"), a.span);
         continue;
       }
       if (a.kind === "named") {
         named = true;
         const index = params.findIndex((p) => this.sameName(p.name, a.name.name));
         if (index < 0) {
-          this.error("E417", `${routine.name} has no parameter '${a.name.name}'`, a.name.span);
+          this.error("E417", tr("compiler.basic.E417.noParameter", { name: routine.name, parameter: a.name.name }), a.name.span);
           this.expr(a.value);
         } else if (namedIndices.has(index)) {
-          this.error("E417", `Parameter '${params[index].name}' is given twice`, a.name.span);
+          this.error("E417", tr("compiler.basic.E417.twice", { parameter: params[index].name }), a.name.span);
           this.expr(a.value);
         } else {
           namedIndices.add(index);
@@ -502,7 +520,7 @@ export class ExpressionBinder {
         continue;
       }
       if (named) {
-        this.error("E417", "A positional argument cannot follow a named one", a.span);
+        this.error("E417", tr("compiler.basic.E417.positional"), a.span);
         this.expr(a.value);
         continue;
       }
@@ -511,7 +529,7 @@ export class ExpressionBinder {
     }
     if (values.length > params.length) {
       for (const extra of values.slice(params.length)) {
-        this.error("E417", `${routine.name} takes ${params.length} argument(s); too many given`, extra.span);
+        this.error("E417", tr("compiler.basic.E417.tooMany", { name: routine.name, count: params.length }), extra.span);
         this.expr((extra as { value: Expression }).value);
       }
       values.length = params.length;
@@ -528,7 +546,7 @@ export class ExpressionBinder {
       }
       const from = params[defaults[i - values.length]];
       if (!from?.hasDefault) {
-        this.error("E417", `${routine.name} needs an argument for '${(from ?? param).name}'`, span);
+        this.error("E417", tr("compiler.basic.E417.missing", { name: routine.name, parameter: (from ?? param).name }), span);
         result.push({ param, byref: param.byref });
         return;
       }
@@ -552,11 +570,11 @@ export class ExpressionBinder {
     if (param.isArray) {
       const bound = this.expr(e);
       if (bound.kind !== "array") {
-        if (bound.kind !== "error") this.error("E418", `Parameter '${param.name}' needs an array of ${param.type}, passed by its name`, e.span);
+        if (bound.kind !== "error") this.error("E418", tr("compiler.basic.E418.arrayByName", { parameter: param.name, type: param.type }), e.span);
         return this.errorExpr(e.span, param.type);
       }
       if (bound.symbol.elementType !== param.type) {
-        this.error("E418", `Parameter '${param.name}' needs an array of ${param.type}, not of ${bound.symbol.elementType}`, e.span);
+        this.error("E418", tr("compiler.basic.E418.arrayType", { parameter: param.name, type: param.type, given: bound.symbol.elementType }), e.span);
       }
       this.crossBankByref(routine, e.span);
       return bound;
@@ -565,11 +583,11 @@ export class ExpressionBinder {
       const bound = this.expr(e);
       if (bound.kind === "error") return bound;
       if (bound.kind !== "variable" && bound.kind !== "element") {
-        this.error("E418", `Parameter '${param.name}' is BYREF: it needs a variable or an array element, not an expression`, e.span);
+        this.error("E418", tr("compiler.basic.E418.byref", { parameter: param.name }), e.span);
         return this.errorExpr(e.span, param.type);
       }
       if (bound.type !== param.type) {
-        this.error("E418", `Parameter '${param.name}' is a BYREF ${param.type}: the variable must be ${param.type}, not ${bound.type}`, e.span);
+        this.error("E418", tr("compiler.basic.E418.byrefType", { parameter: param.name, type: param.type, given: bound.type }), e.span);
       }
       if (bound.kind === "variable") bound.symbol.assigned = true;
       this.crossBankByref(routine, e.span);
@@ -581,7 +599,7 @@ export class ExpressionBinder {
   /** W900: a reference passed from one bank to a routine in another. */
   private crossBankByref(routine: RoutineSymbol, span: Span): void {
     if (routine.bank !== this.settings.bank && (routine.bank !== 0 || this.settings.bank !== 0)) {
-      this.warning("W900", `The reference crosses banks: ${routine.name} is in bank ${routine.bank}, this call in bank ${this.settings.bank}`, span);
+      this.warning("W900", tr("compiler.basic.W900", { name: routine.name, bank: String(routine.bank), callBank: String(this.settings.bank) }), span);
     }
   }
 
@@ -591,11 +609,11 @@ export class ExpressionBinder {
   protected unaryExpr(op: "-" | "+" | "NOT" | "BNOT", operand: BoundExpr, span: Span): BoundExpr {
     if (operand.kind === "error") return { ...operand, span };
     if (operand.kind === "array") {
-      this.error("E402", `'${operand.symbol.name}' is an array: it needs subscripts here`, operand.span);
+      this.error("E402", tr("compiler.basic.E402.subscripts", { name: operand.symbol.name }), operand.span);
       return this.errorExpr(span);
     }
     if (operand.type === "String") {
-      this.error("E410", `${op === "BNOT" ? "bNOT" : op} does not apply to a String`, span);
+      this.error("E410", tr("compiler.basic.E410.string", { operator: op === "BNOT" ? "bNOT" : op }), span);
       return this.errorExpr(span);
     }
     if (op === "+") return { ...operand, span };
@@ -623,7 +641,7 @@ export class ExpressionBinder {
     if (left.kind === "error" || right.kind === "error") return this.errorExpr(span);
     for (const side of [left, right]) {
       if (side.kind === "array") {
-        this.error("E402", `'${side.symbol.name}' is an array: it needs subscripts here`, side.span);
+        this.error("E402", tr("compiler.basic.E402.subscripts", { name: side.symbol.name }), side.span);
         return this.errorExpr(span);
       }
     }
@@ -631,11 +649,11 @@ export class ExpressionBinder {
     const comparison = op === "=" || op === "<>" || op === "<" || op === ">" || op === "<=" || op === ">=";
     if (strings) {
       if (left.type !== right.type) {
-        this.error("E409", `${left.type === "String" ? "A String" : "A number"} and ${right.type === "String" ? "a String" : "a number"} do not mix (use STR or VAL)`, span);
+        this.error("E409", tr(left.type === "String" ? "compiler.basic.E409.stringAndNumber" : "compiler.basic.E409.numberAndString"), span);
         return this.errorExpr(span);
       }
       if (op !== "+" && !comparison) {
-        this.error("E410", `${op} does not apply to Strings`, span);
+        this.error("E410", tr("compiler.basic.E410.strings", { operator: op }), span);
         return this.errorExpr(span);
       }
     }
@@ -690,7 +708,7 @@ export class ExpressionBinder {
         if (folded) return this.constantExpr(folded, span);
       } catch (e) {
         if (!(e instanceof FoldError)) throw e;
-        this.error("E425", e.problem === "overflow" ? "The constant expression overflows (Number too big)" : "The constant expression divides by zero", span);
+        this.error("E425", e.problem === "overflow" ? tr("compiler.basic.E425.overflow") : tr("compiler.basic.E425.divideByZero"), span);
         return this.errorExpr(span, resultType);
       }
     }
@@ -704,7 +722,7 @@ export class ExpressionBinder {
   /** K406: an integer division by a constant zero (the program gets every bit set, not an error). */
   private checkIntegerDivision(divisor: Constant, operandType: KType, span: Span): void {
     if (isIntegral(operandType) && divisor.value.kind === "int" && divisor.value.value === 0n) {
-      this.warning("K406", "Integer division by zero: the result has every bit set", span);
+      this.warning("K406", tr("compiler.basic.K406"), span);
     }
   }
 
@@ -724,7 +742,7 @@ export class ExpressionBinder {
     if (target.kind === "call" && target.callee.kind === "name") {
       const symbol = this.lookup(target.callee.name);
       if (symbol?.kind !== "array") {
-        this.error("E402", `@${target.callee.name}(...) needs an array`, target.span);
+        this.error("E402", tr("compiler.basic.E402.addressNeedsArray", { name: target.callee.name }), target.span);
         return this.errorExpr(span, "UInteger");
       }
       this.noteUse(symbol, target.callee.span);
@@ -736,7 +754,7 @@ export class ExpressionBinder {
       return make({ kind: "element", symbol, indices: element.indices }, offset !== undefined ? address(`array:${symbol.name}`, offset) : undefined);
     }
     if (target.kind !== "name") {
-      this.error("E302", "Expected a name after '@'", target.span);
+      this.error("E302", tr("compiler.basic.E302.addressName"), target.span);
       return this.errorExpr(span, "UInteger");
     }
     const symbol = this.lookup(target.name);
@@ -749,13 +767,13 @@ export class ExpressionBinder {
           return make({ kind: "variable", symbol }, symbol.storage === "global" ? address(symbol.name) : undefined);
         case "array":
           symbol.read = true;
-          if (this.settings.bank !== 0) this.warning("W920", `@${symbol.name} in a bank gives the address of the array's data in its own bank`, span);
+          if (this.settings.bank !== 0) this.warning("W920", tr("compiler.basic.W920", { name: symbol.name }), span);
           return make({ kind: "array", symbol }, symbol.storage === "global" && !symbol.param ? address(symbol.name) : undefined);
         case "sub":
         case "function":
           return make({ kind: "routine", routine: symbol }, address(symbol.name));
         case "const":
-          this.error("E402", `'${symbol.name}' is a constant: it has no address`, target.span);
+          this.error("E402", tr("compiler.basic.E402.constantAddress", { name: symbol.name }), target.span);
           return this.errorExpr(span, "UInteger");
       }
     }
@@ -768,7 +786,7 @@ export class ExpressionBinder {
     // --- ZX BASIC does not declare a variable for @ - an unknown name is an error - except after
     // --- DIM ... AT (compatibility plan C4)
     if (!this.implicitAddress) {
-      this.error("E434", `@${target.name}: '${target.name}' is not declared`, target.span);
+      this.error("E434", tr("compiler.basic.E434.address", { name: target.name }), target.span);
       return this.errorExpr(span, "UInteger");
     }
     const created = this.implicitVariable(target);
@@ -797,11 +815,11 @@ export class ExpressionBinder {
     const symbol = this.lookup(target.name);
     const label = symbol ? undefined : this.findLabel(target.name);
     if (!symbol && !label) {
-      this.error("E401", `'${target.name}' is not declared`, target.span);
+      this.error("E401", tr("compiler.basic.E401.name", { name: target.name }), target.span);
       return this.errorExpr(span, "ULong");
     }
     if (symbol?.kind === "const") {
-      this.error("E402", `'${target.name}' is a constant: it has no address`, target.span);
+      this.error("E402", tr("compiler.basic.E402.constantAddress", { name: target.name }), target.span);
       return this.errorExpr(span, "ULong");
     }
     const t = (symbol ?? label)!;
@@ -861,7 +879,7 @@ export class ExpressionBinder {
       case "SGN": {
         const a = this.numeric(args[0]);
         if (a.kind === "error") return this.errorExpr(span, name === "SGN" ? "Byte" : "Float");
-        if (!isSigned(a.type)) this.warning("K403", `${name} of an unsigned ${a.type === "Boolean" ? "value" : a.type} is ${name === "ABS" ? "the value itself" : "never negative"}`, span);
+        if (!isSigned(a.type)) this.warning("K403", tr(UNSIGNED_SIGN[name === "ABS" ? "abs" : "sgn"][a.type === "Boolean" ? 1 : 0], { type: a.type }), span);
         const type = name === "SGN" ? "Byte" : a.type === "Boolean" ? "UByte" : a.type;
         if (a.constant?.exact) {
           // --- Of a literal: a literal, whose type comes from its value (ZX BASIC; C4)
@@ -956,7 +974,7 @@ export class ExpressionBinder {
         const ref = args[0] as NameRef;
         const symbol = this.lookup(ref.name);
         if (!symbol || symbol.kind === "sub" || symbol.kind === "function") {
-          this.error(symbol ? "E402" : "E401", symbol ? `SIZEOF needs a type or a variable, not ${kindText(symbol)}` : `'${ref.name}' is not declared`, ref.span);
+          this.error(symbol ? "E402" : "E401", symbol ? tr("compiler.basic.E402.sizeof", { kind: symbol.kind }) : tr("compiler.basic.E401.name", { name: ref.name }), ref.span);
           return this.errorExpr(span, "UInteger");
         }
         if (symbol.kind === "array") {
@@ -970,7 +988,7 @@ export class ExpressionBinder {
         const ref = args[0] as NameRef;
         const symbol = this.lookup(ref.name);
         if (symbol?.kind !== "array") {
-          this.error(symbol ? "E402" : "E401", symbol ? `${name} needs an array, not ${kindText(symbol)}` : `Array '${ref.name}' is not declared`, ref.span);
+          this.error(symbol ? "E402" : "E401", symbol ? tr("compiler.basic.E402.bound", { function: name, kind: symbol.kind }) : tr("compiler.basic.E401.array", { name: ref.name }), ref.span);
           return this.errorExpr(span, "UInteger");
         }
         this.noteUse(symbol, ref.span);
@@ -981,13 +999,13 @@ export class ExpressionBinder {
         if (d === 0) return this.constantExpr(intConstant(BigInt(symbol.bounds.length), "UInteger"), span);
         const b = symbol.bounds[d - 1];
         if (!b) {
-          this.error("E428", `Array '${symbol.name}' has ${symbol.bounds.length} dimension(s), not ${d}`, args[1]!.span);
+          this.error("E428", tr("compiler.basic.E428.dimension", { name: symbol.name, count: symbol.bounds.length, given: String(d) }), args[1]!.span);
           return this.errorExpr(span, "UInteger");
         }
         return this.constantExpr(intConstant(BigInt(name === "LBOUND" ? b.lower : b.upper), "UInteger"), span);
       }
     }
-    this.error("E401", `Unknown function ${name}`, span);
+    this.error("E401", tr("compiler.basic.E401.function", { name }), span);
     return this.errorExpr(span);
   }
 
@@ -999,28 +1017,28 @@ export class ExpressionBinder {
   // Constants
 
   /** A compile-time constant, or undefined after reporting `code` (E425 by default). */
-  protected constantOf(e: Expression, what: string, code = "E425"): Constant | undefined {
+  protected constantOf(e: Expression, notConstant: MessageKey, code = "E425"): Constant | undefined {
     const bound = this.value(e);
     if (bound.kind === "error") return undefined;
     if (!bound.constant) {
-      this.error(code, `${what} must be a constant`, e.span);
+      this.error(code, tr(notConstant), e.span);
       return undefined;
     }
     return bound.constant;
   }
 
   /** A constant whole number (bounds, bank numbers). */
-  protected integerConstant(e: Expression, what: string, code = "E425"): number | undefined {
-    const c = this.constantOf(e, what, code);
+  protected integerConstant(e: Expression, notConstant: MessageKey, notWhole: MessageKey, code = "E425"): number | undefined {
+    const c = this.constantOf(e, notConstant, code);
     if (!c) return undefined;
     if (c.value.kind !== "int") {
       if (c.value.kind === "string" || c.value.kind === "address") {
-        this.error(code, `${what} must be a whole number`, e.span);
+        this.error(code, tr(notWhole), e.span);
         return undefined;
       }
       const x = numericValue(c);
       if (!Number.isInteger(x)) {
-        this.error(code, `${what} must be a whole number`, e.span);
+        this.error(code, tr(notWhole), e.span);
         return undefined;
       }
       return x;

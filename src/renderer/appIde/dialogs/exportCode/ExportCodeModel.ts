@@ -1,3 +1,4 @@
+import { labelled, withLabels, withTexts } from "@common/i18n/labels";
 import type { ExportDialogSettings } from "@main/settings";
 import type { UiReducer } from "@mvc/core/types";
 import type { IValidationService } from "@renderer/core/ValidationService";
@@ -9,19 +10,27 @@ import { buildExportCodeCommand } from "./exportCodeCommand";
 
 export type SelectOption = { value: string; label: string };
 
-export const FORMAT_OPTIONS: SelectOption[] = [
-  { value: "tap", label: "TAP format" },
-  { value: "tzx", label: "TZX format" },
-  { value: "hex", label: "Intel HEX format" }
-];
+// --- The tables hold message keys; `withLabels` turns `label` into a getter that translates at
+// --- display time, so the model itself stays text-free.
+export const FORMAT_OPTIONS: SelectOption[] = withLabels([
+  { value: "tap", labelKey: "dialog.exportCode.format.tap" },
+  { value: "tzx", labelKey: "dialog.exportCode.format.tzx" },
+  { value: "hex", labelKey: "dialog.exportCode.format.hex" }
+]);
 
 // --- The ZX80 and ZX81 have their own program files (`.plans/ZX8081_CODE_INJECTION_PLAN.md` D8);
 // --- a ZX80 with the 8K ROM runs ZX81 programs, so it is offered both.
 export const ZX81_PROGRAM_FORMAT = "p";
 export const ZX80_PROGRAM_FORMAT = "o";
-const ZX81_OPTION: SelectOption = { value: ZX81_PROGRAM_FORMAT, label: "ZX81 program (.p)" };
-const ZX80_OPTION: SelectOption = { value: ZX80_PROGRAM_FORMAT, label: "ZX80 program (.o)" };
-const HEX_OPTION: SelectOption = { value: "hex", label: "Intel HEX format" };
+const ZX81_OPTION: SelectOption = labelled({
+  value: ZX81_PROGRAM_FORMAT,
+  labelKey: "dialog.exportCode.format.zx81Program"
+});
+const ZX80_OPTION: SelectOption = labelled({
+  value: ZX80_PROGRAM_FORMAT,
+  labelKey: "dialog.exportCode.format.zx80Program"
+});
+const HEX_OPTION: SelectOption = labelled({ value: "hex", labelKey: "dialog.exportCode.format.hex" });
 export const ZX81_FORMAT_OPTIONS: SelectOption[] = [ZX81_OPTION, HEX_OPTION];
 export const ZX80_FORMAT_OPTIONS: SelectOption[] = [ZX80_OPTION, ZX81_OPTION, HEX_OPTION];
 
@@ -36,17 +45,17 @@ export function formatOptionsFor(machineId: string | undefined): SelectOption[] 
 // --- value is a string here and a number|undefined in the saved settings.
 export const NO_BORDER = "none";
 
-export const BORDER_OPTIONS: SelectOption[] = [
-  { value: NO_BORDER, label: "None" },
-  { value: "0", label: "Black" },
-  { value: "1", label: "Blue" },
-  { value: "2", label: "Red" },
-  { value: "3", label: "Magenta" },
-  { value: "4", label: "Green" },
-  { value: "5", label: "Cyan" },
-  { value: "6", label: "Yellow" },
-  { value: "7", label: "White" }
-];
+export const BORDER_OPTIONS: SelectOption[] = withLabels([
+  { value: NO_BORDER, labelKey: "dialog.exportCode.border.none" },
+  { value: "0", labelKey: "dialog.exportCode.border.black" },
+  { value: "1", labelKey: "dialog.exportCode.border.blue" },
+  { value: "2", labelKey: "dialog.exportCode.border.red" },
+  { value: "3", labelKey: "dialog.exportCode.border.magenta" },
+  { value: "4", labelKey: "dialog.exportCode.border.green" },
+  { value: "5", labelKey: "dialog.exportCode.border.cyan" },
+  { value: "6", labelKey: "dialog.exportCode.border.yellow" },
+  { value: "7", labelKey: "dialog.exportCode.border.white" }
+]);
 
 // --- Intel HEX carries raw bytes with no tape structure, so none of the
 // --- loader options mean anything for it.
@@ -57,17 +66,13 @@ export const DEFAULT_FORMAT = "tzx";
 export const EXPORT_CODE_FOLDER_SETTINGS_KEY = "exportCodeFolder";
 
 export const SCREEN_FILE_FILTERS = [
-  { name: "Tape files", extensions: ["tap", "tzx"] },
-  { name: "Screen files", extensions: ["scr"] },
-  { name: "All Files", extensions: ["*"] }
+  withTexts({ extensions: ["tap", "tzx"] }, { name: "dialog.exportCode.filter.tapeFiles" }),
+  withTexts({ extensions: ["scr"] }, { name: "dialog.exportCode.filter.screenFiles" }),
+  withTexts({ extensions: ["*"] }, { name: "common.filter.allFiles" })
 ];
 
-export const EXPORT_TITLE = "Exporting code";
-export const EXPORT_SUCCESS_MESSAGE = "Code successfully exported.";
-export const EXPORT_FAILURE_MESSAGE = "Code export failed";
 // --- The command reports an out-of-range address by naming the switch it came
 // --- from; that is not something to show a user.
-export const ADDRESS_RANGE_MESSAGE = "Code start address must be between 16384 and 65535.";
 const ADDRESS_SWITCH = "-addr";
 
 // ─── State ───────────────────────────────────────────────────────────────────
@@ -239,8 +244,9 @@ export function supportsLoader(state: ExportCodeState): boolean {
   return format !== HEX_FORMAT && format !== ZX80_PROGRAM_FORMAT;
 }
 
-export function loaderLabelOf(state: ExportCodeState): string {
-  return effectiveFormatOf(state) === ZX81_PROGRAM_FORMAT ? "Run the program when loaded" : "Create BASIC loader";
+// --- On a ZX81 program the loader checkbox means "run once loaded", not "add a BASIC loader".
+export function loaderRunsProgram(state: ExportCodeState): boolean {
+  return effectiveFormatOf(state) === ZX81_PROGRAM_FORMAT;
 }
 
 // --- The startup options only exist to configure the Spectrum's BASIC loader.
@@ -255,18 +261,11 @@ export function commandOf(state: ExportCodeState): { command: string; fullFilena
 }
 
 /**
- * What to tell the user about a failed export.
+ * Whether a failed export's message is the command's complaint about the start address.
  *
- * The command reports a rejected start address by echoing the switch it came
- * from; that gets translated. Anything else is passed through, and a failure
- * that said nothing at all still gets a sentence — the old dialog called
- * `.includes` on the missing message and threw a TypeError instead.
+ * The command reports a rejected start address by echoing the switch it came from; the view model
+ * replaces that with a sentence (`exportFailureMessage`).
  */
-export function exportFailureMessage(finalMessage?: string): string {
-  if (finalMessage?.includes(ADDRESS_SWITCH)) return ADDRESS_RANGE_MESSAGE;
-  return finalMessage || EXPORT_FAILURE_MESSAGE;
-}
-
-export function exportSuccessMessage(finalMessage?: string): string {
-  return finalMessage ?? EXPORT_SUCCESS_MESSAGE;
+export function isAddressRangeFailure(finalMessage?: string): boolean {
+  return !!finalMessage?.includes(ADDRESS_SWITCH);
 }

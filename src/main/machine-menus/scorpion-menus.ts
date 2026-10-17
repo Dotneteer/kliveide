@@ -8,6 +8,7 @@ import { getSettingValue, saveAppSettings, setSettingValue } from "@main/setting
 import { incMenuVersionAction } from "@state/actions";
 import { SETTING_EMU_SCORPION_ROM } from "@common/settings/setting-const";
 import { SCORPION_ROM_SIZE } from "@emu/machines/zxSpectrum128/ScorpionWasmV2Machine";
+import { t } from "@common/i18n/i18n";
 
 /**
  * The Scorpion ZS-256's 64K ROM (`.plans/TIMEX_SCORPION_PLAN.md` P5): Klive cannot ship it, so the
@@ -23,11 +24,11 @@ export async function forgetScorpionRom(): Promise<void> {
 export async function selectScorpionRomFile(emuWindow: BrowserWindow): Promise<void> {
   const current = getSettingValue(SETTING_EMU_SCORPION_ROM) as string | undefined;
   const dialogResult = await dialog.showOpenDialog(emuWindow, {
-    title: "Select the Scorpion ZS-256 ROM (64K)",
+    title: t("messages.rom.selectScorpion"),
     defaultPath: current ? path.dirname(current) : app.getPath("home"),
     filters: [
-      { name: "ROM Files", extensions: ["rom", "bin"] },
-      { name: "All Files", extensions: ["*"] }
+      { name: t("common.filter.romFiles"), extensions: ["rom", "bin"] },
+      { name: t("common.filter.allFiles"), extensions: ["*"] }
     ],
     properties: ["openFile"]
   });
@@ -36,8 +37,8 @@ export async function selectScorpionRomFile(emuWindow: BrowserWindow): Promise<v
   const size = fs.statSync(filename).size;
   if (size !== SCORPION_ROM_SIZE) {
     dialog.showErrorBox(
-      "Not a Scorpion ROM",
-      `The Scorpion ROM is ${SCORPION_ROM_SIZE} bytes (four 16K pages: the 128K editor, 48K BASIC, the service monitor, TR-DOS); ${filename} has ${size}.`
+      t("messages.rom.notScorpion"),
+      t("messages.rom.wrongScorpionSize", { size: SCORPION_ROM_SIZE, file: filename, actual: size })
     );
     return;
   }

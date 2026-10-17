@@ -121,7 +121,7 @@ describe("zx-rzx", () => {
     const { context, lines, emuApi } = contextFor();
     const result = await new RzxPlayCommand().execute(context, { file: "/r/game.rzx" });
     expect(result.success).toBe(true);
-    expect(result.finalMessage).toMatch(/1 frames, Fuse 1.10\) loaded on the ZX Spectrum 48K, playing/);
+    expect(result.finalMessage).toMatch(/1 frame, Fuse 1.10\) loaded on the ZX Spectrum 48K, playing/);
     expect(emuApi.playRzx).toHaveBeenCalledWith("/r/game.rzx", RZX, "run", { keepModel: false, segment: undefined });
     expect(lines.join("\n")).toMatch(/Machine switched to the ZX Spectrum 48K/);
     expect(lines.join("\n")).toMatch(/Warning: a warning/);
@@ -165,7 +165,7 @@ describe("zx-rzx-record, zx-rzx-stop, zx-rzx-rollback, zx-rzx-point", () => {
   it("rolls back and inserts rollback points", async () => {
     const { context, emuApi } = contextFor();
     expect((await new RzxRollbackCommand().execute(context, { back: 2 })).finalMessage).toMatch(
-      /Rolled back to frame 250; 2 rollback point\(s\) left/
+      /Rolled back to frame 250; 2 rollback points left/
     );
     expect(emuApi.rollbackRzxRecording).toHaveBeenCalledWith(2);
     expect((await new RzxRollbackPointCommand().execute(context)).finalMessage).toMatch(/frame 100/);

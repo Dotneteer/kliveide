@@ -10,6 +10,9 @@ describe("NewProjectViewModel — dropdowns", () => {
 
     expect(vm.machineType.value).toBe("z88");
     expect(vm.machineType.options.length).toBe(10);
+    // --- The model groups by family id; the view model shows the family's label.
+    expect(vm.machineType.options[0].group).toBe("ZX Spectrum");
+    expect(vm.machineType.options.find((o) => o.value === "c64")?.group).toBe("Other");
     expect(vm.model.value).toBe("OZ47");
     expect(vm.model.options.length).toBe(10);
     expect(vm.model.enabled).toBe(true);

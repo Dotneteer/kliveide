@@ -1,0 +1,817 @@
+{
+  "panels.activity.explorer": "Explorer",
+  "@panels.activity.explorer": {
+    "context": "Name of the file-explorer activity (project files and open editors), shown as the tooltip of its icon in the vertical activity bar and as the heading of the side bar when selected.",
+    "maxChars": 12
+  },
+  "panels.activity.debug": "Debug",
+  "@panels.activity.debug": {
+    "context": "Name of the debugger activity (CPU registers, breakpoints, watches), shown as the tooltip of its icon in the vertical activity bar and as the heading of the side bar when selected.",
+    "maxChars": 13
+  },
+  "panels.activity.machineInfo": "Machine info",
+  "@panels.activity.machineInfo": {
+    "context": "Name of the machine-information activity (system variables, sound chip, disk log, palettes), shown as the tooltip of its icon in the vertical activity bar and as the heading of the side bar when selected.",
+    "maxChars": 17
+  },
+  "panels.activity.scripting": "Scripting",
+  "@panels.activity.scripting": {
+    "context": "Name of the scripting activity (history of script runs), shown as the tooltip of its icon in the vertical activity bar and as the heading of the side bar when selected.",
+    "maxChars": 13
+  },
+  "panels.activity.testing": "Testing",
+  "@panels.activity.testing": {
+    "context": "Name of the unit-testing activity (Z80 unit tests), shown as the tooltip of its icon in the vertical activity bar and as the heading of the side bar when selected.",
+    "maxChars": 10
+  },
+  "panels.activityBar.label": "Activities",
+  "@panels.activityBar.label": {
+    "context": "Accessible name (screen readers only) of the vertical strip of activity icons at the edge of the IDE window."
+  },
+  "panels.activityBar.settings": "Settings",
+  "@panels.activityBar.settings": {
+    "context": "Tooltip and accessible name of the gear button at the foot of the activity bar; it opens the Settings dialog.",
+    "maxChars": 15
+  },
+  "panels.activityBar.moveSidebarLeft": "Move Sidebar to the Left",
+  "@panels.activityBar.moveSidebarLeft": {
+    "context": "Context-menu item of the activity bar (right-click), shown while the side bar is on the right; moves it to the left edge."
+  },
+  "panels.activityBar.moveSidebarRight": "Move Sidebar to the Right",
+  "@panels.activityBar.moveSidebarRight": {
+    "context": "Context-menu item of the activity bar (right-click), shown while the side bar is on the left; moves it to the right edge."
+  },
+  "panels.activityBar.hideSidebar": "Hide Sidebar",
+  "@panels.activityBar.hideSidebar": {
+    "context": "Context-menu item of the activity bar (right-click) that hides the side bar."
+  },
+  "panels.activityBar.showSidebar": "Show Sidebar",
+  "@panels.activityBar.showSidebar": {
+    "context": "Context-menu item of the activity bar (right-click) that shows the hidden side bar."
+  },
+  "panels.activityBar.appearanceSettings": "Appearance Settings...",
+  "@panels.activityBar.appearanceSettings": {
+    "context": "Context-menu item of the activity bar (right-click); opens the Settings dialog on its Appearance page."
+  },
+  "panels.sideBar.activityActions": "{activity} actions",
+  "@panels.sideBar.activityActions": {
+    "context": "Tooltip of the '...' button in the side bar's title strip; it opens a menu of commands for the current activity.",
+    "placeholders": {
+      "activity": "The translated name of the current activity, e.g. 'Testing'"
+    }
+  },
+  "panels.sideBar.openEditors": "Open Editors",
+  "@panels.sideBar.openEditors": {
+    "context": "Side-bar panel heading (Explorer activity) listing every document open in the editor area.",
+    "maxChars": 17
+  },
+  "panels.sideBar.kliveProject": "Klive Project",
+  "@panels.sideBar.kliveProject": {
+    "context": "Side-bar panel heading (Explorer activity) above the project's file tree. 'Klive' is the product name.",
+    "maxChars": 19
+  },
+  "panels.sideBar.callStack": "Call Stack",
+  "@panels.sideBar.callStack": {
+    "context": "Side-bar panel heading (Debug activity): the debugger's call stack of the emulated program.",
+    "maxChars": 19
+  },
+  "panels.sideBar.nextMemoryMapping": "Next Memory Mapping",
+  "@panels.sideBar.nextMemoryMapping": {
+    "context": "Side-bar panel heading (Debug activity): how the ZX Spectrum Next's memory banks are paged into the address space. 'Next' is the machine name, keep it.",
+    "maxChars": 27
+  },
+  "panels.sideBar.nextRegisters": "Next Registers",
+  "@panels.sideBar.nextRegisters": {
+    "context": "Side-bar panel heading (Debug activity): the ZX Spectrum Next's hardware registers (NextRegs). 'Next' is the machine name, keep it.",
+    "maxChars": 20
+  },
+  "panels.sideBar.variables": "Variables",
+  "@panels.sideBar.variables": {
+    "context": "Side-bar panel heading (Debug activity): variables of the program being debugged at source level.",
+    "maxChars": 13
+  },
+  "panels.sideBar.watch": "Watch",
+  "@panels.sideBar.watch": {
+    "context": "Side-bar panel heading (Debug activity): user-defined watch expressions, as in a debugger's watch window (a noun, not a verb).",
+    "maxChars": 13
+  },
+  "panels.sideBar.breakpoints": "Breakpoints",
+  "@panels.sideBar.breakpoints": {
+    "context": "Side-bar panel heading (Debug activity): the list of debugger breakpoints.",
+    "maxChars": 23
+  },
+  "panels.sideBar.systemVariables": "System Variables",
+  "@panels.sideBar.systemVariables": {
+    "context": "Side-bar panel heading (Machine info activity): the machine ROM's system variables in memory.",
+    "maxChars": 23
+  },
+  "panels.sideBar.necUpd765Log": "NEC UPD 765 Log",
+  "@panels.sideBar.necUpd765Log": {
+    "context": "Side-bar panel heading (Machine info activity): a log of the NEC uPD765 floppy-disk controller chip's activity. Keep the chip name 'NEC UPD 765' as is; translate only 'Log'.",
+    "maxChars": 21
+  },
+  "panels.sideBar.nextPalettes": "Next Palettes",
+  "@panels.sideBar.nextPalettes": {
+    "context": "Side-bar panel heading (Machine info activity): the ZX Spectrum Next's colour palettes. 'Next' is the machine name, keep it.",
+    "maxChars": 19
+  },
+  "panels.sideBar.unitTests": "Unit Tests",
+  "@panels.sideBar.unitTests": {
+    "context": "Side-bar panel heading (Testing activity): the tree of Z80 unit tests and their results.",
+    "maxChars": 14
+  },
+  "panels.sideBar.scriptingHistory": "Scripting History",
+  "@panels.sideBar.scriptingHistory": {
+    "context": "Side-bar panel heading (Scripting activity): the list of script runs, past and current.",
+    "maxChars": 24
+  },
+  "panels.tool.commands": "Commands",
+  "@panels.tool.commands": {
+    "context": "Tab of the tool area (below the editors) holding the interactive command prompt and its output.",
+    "maxChars": 12
+  },
+  "panels.tool.output": "Output",
+  "@panels.tool.output": {
+    "context": "Tab of the tool area (below the editors) showing the output panes (emulator, build, log...).",
+    "maxChars": 9
+  },
+  "panels.toolArea.label": "Tool panels",
+  "@panels.toolArea.label": {
+    "context": "Accessible name (screen readers only) of the tab strip of the tool area (the Commands and Output tabs)."
+  },
+  "panels.toolArea.displayAtBottom": "Display at the bottom",
+  "@panels.toolArea.displayAtBottom": {
+    "context": "Tooltip of the tool area's layout button while the tool area is above the editors; moves it below them."
+  },
+  "panels.toolArea.displayAtTop": "Display at the top",
+  "@panels.toolArea.displayAtTop": {
+    "context": "Tooltip of the tool area's layout button while the tool area is below the editors; moves it above them."
+  },
+  "panels.toolArea.maximize": "Maximize Command and Output",
+  "@panels.toolArea.maximize": {
+    "context": "Tooltip of the tool area button that enlarges the Commands/Output area to fill the editor space. 'Command and Output' names the tool area's two tabs."
+  },
+  "panels.toolArea.restore": "Restore Command and Output",
+  "@panels.toolArea.restore": {
+    "context": "Tooltip of the tool area button that returns the maximized Commands/Output area to its normal size."
+  },
+  "panels.toolArea.clear": "Clear",
+  "@panels.toolArea.clear": {
+    "context": "Tooltip of the button in the Commands and Output tab headers that empties the displayed output.",
+    "maxChars": 8
+  },
+  "panels.toolArea.copyToClipboard": "Copy to clipboard",
+  "@panels.toolArea.copyToClipboard": {
+    "context": "Tooltip of the button in the Commands and Output tab headers that copies the displayed output text."
+  },
+  "panels.toolArea.outputCopied": "Output copied to the clipboard",
+  "@panels.toolArea.outputCopied": {
+    "context": "Status-bar message after the user copied the Commands or Output text to the clipboard."
+  },
+  "panels.commands.promptLabel": "Interactive command prompt",
+  "@panels.commands.promptLabel": {
+    "context": "Accessible name (screen readers only) of the text box where IDE commands are typed, in the Commands tab."
+  },
+  "panels.commands.executingPlaceholder": "Executing command...",
+  "@panels.commands.executingPlaceholder": {
+    "context": "Placeholder text in the command prompt box while a typed command is running."
+  },
+  "panels.commands.helpPlaceholder": "Type ? + Enter for help",
+  "@panels.commands.helpPlaceholder": {
+    "context": "Placeholder text in the empty command prompt box. '?' is the help command and Enter the key: keep both as they are."
+  },
+  "panels.commands.statusExecuting": "Executing command",
+  "@panels.commands.statusExecuting": {
+    "context": "Status-bar message while a command typed in the Commands tab runs."
+  },
+  "panels.commands.statusExecuted": "Command executed",
+  "@panels.commands.statusExecuted": {
+    "context": "Status-bar message after a command typed in the Commands tab finished successfully."
+  },
+  "panels.commands.statusExecutedWithError": "Command executed with error",
+  "@panels.commands.statusExecutedWithError": {
+    "context": "Status-bar message after a command typed in the Commands tab finished with an error."
+  },
+  "panels.outputPane.emulator": "Emulator",
+  "@panels.outputPane.emulator": {
+    "context": "Output pane name (dropdown in the Output tab and watermark): messages from the emulated machine.",
+    "maxChars": 12
+  },
+  "panels.outputPane.build": "Build",
+  "@panels.outputPane.build": {
+    "context": "Output pane name (dropdown in the Output tab and watermark): compiler/assembler output of the last build (a noun).",
+    "maxChars": 13
+  },
+  "panels.outputPane.scriptOutput": "Script Output",
+  "@panels.outputPane.scriptOutput": {
+    "context": "Output pane name (dropdown in the Output tab and watermark): what running scripts write.",
+    "maxChars": 19
+  },
+  "panels.outputPane.log": "Log",
+  "@panels.outputPane.log": {
+    "context": "Output pane name (dropdown in the Output tab and watermark): output of debugger logpoints.",
+    "maxChars": 8
+  },
+  "panels.outputPane.tests": "Tests",
+  "@panels.outputPane.tests": {
+    "context": "Output pane name (dropdown in the Output tab and watermark): results of unit-test runs.",
+    "maxChars": 8
+  },
+  "panels.outputPane.automation": "Automation",
+  "@panels.outputPane.automation": {
+    "context": "Output pane name (dropdown in the Output tab and watermark): activity of external scripts driving the IDE through its automation server.",
+    "maxChars": 14
+  },
+  "panels.output.selectPane": "Select...",
+  "@panels.output.selectPane": {
+    "context": "Placeholder of the dropdown in the Output tab header that picks which output pane to show.",
+    "maxChars": 13
+  },
+  "panels.output.empty.emulator.title": "No emulator output yet",
+  "@panels.output.empty.emulator.title": {
+    "context": "Heading of the empty Emulator output pane."
+  },
+  "panels.output.empty.emulator.hint": "Messages from the running machine appear here as it starts, stops and loads media.",
+  "@panels.output.empty.emulator.hint": {
+    "context": "Help text in the empty Emulator output pane. 'Media' means tapes, disks and similar."
+  },
+  "panels.output.empty.build.title": "No build output yet",
+  "@panels.output.empty.build.title": {
+    "context": "Heading of the empty Build output pane."
+  },
+  "panels.output.empty.build.hint": "Run {command}, or use the Build command. Output from the last build stays here until you clear it.",
+  "@panels.output.empty.build.hint": {
+    "context": "Help text in the empty Build output pane; 'the Build command' is the IDE's build menu command; the code placeholders are command text shown in a code font; keep them in place and do not translate them.",
+    "placeholders": {
+      "command": "The IDE command 'compile', in code font"
+    }
+  },
+  "panels.output.empty.log.title": "No logpoint output yet",
+  "@panels.output.empty.log.title": {
+    "context": "Heading of the empty Log output pane. A logpoint is a breakpoint that writes a message instead of stopping."
+  },
+  "panels.output.empty.log.hint": "Logpoints write here while a debug run passes them. Set one with {command}, or add a {marker} comment and build.",
+  "@panels.output.empty.log.hint": {
+    "context": "Help text in the empty Log output pane; the code placeholders are command text shown in a code font; keep them in place and do not translate them.",
+    "placeholders": {
+      "command": "An example bp-set command line, in code font",
+      "marker": "The source-comment keyword LOGPOINT, in code font"
+    }
+  },
+  "panels.output.empty.automation.title": "No automation activity yet",
+  "@panels.output.empty.automation.title": {
+    "context": "Heading of the empty Automation output pane (external scripts driving the IDE)."
+  },
+  "panels.output.empty.automation.hint": "Scripts and the {cli} command line connect here once automation is on: turn it on in Settings › General › Automation, or with {command}.",
+  "@panels.output.empty.automation.hint": {
+    "context": "Help text in the empty Automation output pane. 'Settings › General › Automation' is the path to the setting in the Settings dialog: use the same page and group names as that dialog; the code placeholders are command text shown in a code font; keep them in place and do not translate them.",
+    "placeholders": {
+      "cli": "The command-line tool name 'klive ide', in code font",
+      "command": "The IDE command that turns automation on, in code font"
+    }
+  },
+  "panels.output.empty.script.title": "No script output yet",
+  "@panels.output.empty.script.title": {
+    "context": "Heading of the empty Script Output pane."
+  },
+  "panels.output.empty.script.hint": "Run a script with {command}. Anything it writes to the console arrives here.",
+  "@panels.output.empty.script.hint": {
+    "context": "Help text in the empty Script Output pane; the code placeholders are command text shown in a code font; keep them in place and do not translate them.",
+    "placeholders": {
+      "command": "The IDE command 'script-run <file>', in code font"
+    }
+  },
+  "panels.document.machineMemory": "Machine Memory",
+  "@panels.document.machineMemory": {
+    "context": "Document tab title of a built-in view: the memory dump of the emulated machine. Also shown in the Open Editors list.",
+    "maxChars": 20
+  },
+  "panels.document.disassembly": "Disassembly",
+  "@panels.document.disassembly": {
+    "context": "Document tab title of a built-in view: the Z80 disassembly of the emulated machine's memory. Also shown in the Open Editors list.",
+    "maxChars": 16
+  },
+  "panels.document.basicListing": "BASIC Listing",
+  "@panels.document.basicListing": {
+    "context": "Document tab title of a built-in view: the listing of the BASIC program in the emulated machine's memory; keep 'BASIC'. Also shown in the Open Editors list.",
+    "maxChars": 19
+  },
+  "panels.document.copperList": "Copper List",
+  "@panels.document.copperList": {
+    "context": "Document tab title of a built-in view: the ZX Spectrum Next Copper's instruction list; 'Copper' is the name of that coprocessor, keep it. Also shown in the Open Editors list.",
+    "maxChars": 16
+  },
+  "panels.document.spriteInspector": "Sprite Inspector",
+  "@panels.document.spriteInspector": {
+    "context": "Document tab title of a built-in view: the inspector of the ZX Spectrum Next's hardware sprites. Also shown in the Open Editors list.",
+    "maxChars": 23
+  },
+  "panels.document.tilemapInspector": "Tilemap Inspector",
+  "@panels.document.tilemapInspector": {
+    "context": "Document tab title of a built-in view: the inspector of the ZX Spectrum Next's tilemap layer. Also shown in the Open Editors list.",
+    "maxChars": 24
+  },
+  "panels.document.layer2Inspector": "Layer 2 Inspector",
+  "@panels.document.layer2Inspector": {
+    "context": "Document tab title of a built-in view: the inspector of the ZX Spectrum Next's Layer 2 bitmap; 'Layer 2' is a hardware name. Also shown in the Open Editors list.",
+    "maxChars": 24
+  },
+  "panels.document.layers": "Layers",
+  "@panels.document.layers": {
+    "context": "Document tab title of a built-in view: the view of how the ZX Spectrum Next composes its display layers. Also shown in the Open Editors list.",
+    "maxChars": 9
+  },
+  "panels.document.executionHistory": "Execution History",
+  "@panels.document.executionHistory": {
+    "context": "Document tab title of a built-in view: the history of instructions the emulated CPU executed. Also shown in the Open Editors list.",
+    "maxChars": 24
+  },
+  "panels.document.profiler": "Profiler",
+  "@panels.document.profiler": {
+    "context": "Document tab title of a built-in view: the code profiler (where the emulated CPU spends its time). Also shown in the Open Editors list.",
+    "maxChars": 12
+  },
+  "panels.document.graphics": "Graphics",
+  "@panels.document.graphics": {
+    "context": "Document tab title of a built-in view: the graphics finder that looks for images in the paused machine's memory. Also shown in the Open Editors list.",
+    "maxChars": 12
+  },
+  "documents.tab.close": "Close",
+  "@documents.tab.close": {
+    "context": "Context-menu item of a document tab (right-click): closes this document."
+  },
+  "documents.tab.closeOthers": "Close Others",
+  "@documents.tab.closeOthers": {
+    "context": "Context-menu item of a document tab (right-click): closes every other document in this editor area."
+  },
+  "documents.tab.closeAll": "Close All",
+  "@documents.tab.closeAll": {
+    "context": "Context-menu item of a document tab (right-click): closes every document in this editor area."
+  },
+  "documents.tab.moveLeft": "Move Left",
+  "@documents.tab.moveLeft": {
+    "context": "Context-menu item of a document tab (right-click): moves this tab one place to the left."
+  },
+  "documents.tab.moveRight": "Move Right",
+  "@documents.tab.moveRight": {
+    "context": "Context-menu item of a document tab (right-click): moves this tab one place to the right."
+  },
+  "documents.tab.moveToPreviousArea": "Move To Previous Editor Area",
+  "@documents.tab.moveToPreviousArea": {
+    "context": "Context-menu item of a document tab (right-click): moves this document into the previous pane of a split editor."
+  },
+  "documents.tab.moveToNextArea": "Move To Next Editor Area",
+  "@documents.tab.moveToNextArea": {
+    "context": "Context-menu item of a document tab (right-click): moves this document into the next pane of a split editor."
+  },
+  "documents.tab.splitRight": "Split Editor Right",
+  "@documents.tab.splitRight": {
+    "context": "Context-menu item of a document tab (right-click): splits the editor area, opening this document in a new pane on the right."
+  },
+  "documents.tab.splitDown": "Split Editor Down",
+  "@documents.tab.splitDown": {
+    "context": "Context-menu item of a document tab (right-click): splits the editor area, opening this document in a new pane below."
+  },
+  "documents.tab.revealInFileExplorer": "Reveal in File Explorer",
+  "@documents.tab.revealInFileExplorer": {
+    "context": "Context-menu item of a document tab on Windows: shows the file in Windows File Explorer. Use the Windows name of File Explorer in your language."
+  },
+  "documents.tab.revealInFinder": "Reveal in Finder",
+  "@documents.tab.revealInFinder": {
+    "context": "Context-menu item of a document tab on macOS and Linux: shows the file in the system file manager ('Finder' is the macOS name)."
+  },
+  "documents.tab.readOnly": "This file is read-only",
+  "@documents.tab.readOnly": {
+    "context": "Tooltip of the shield icon on a document tab whose file cannot be edited."
+  },
+  "documents.tab.locked": "This file is locked while the project is running",
+  "@documents.tab.locked": {
+    "context": "Tooltip of the lock icon on a document tab: the file cannot be edited while the project's program runs or is debugged."
+  },
+  "documents.header.scrollLeft": "Scroll tabs left",
+  "@documents.header.scrollLeft": {
+    "context": "Tooltip of the arrow button shown when the document tabs do not fit; scrolls the tab strip left."
+  },
+  "documents.header.scrollRight": "Scroll tabs right",
+  "@documents.header.scrollRight": {
+    "context": "Tooltip of the arrow button shown when the document tabs do not fit; scrolls the tab strip right."
+  },
+  "documents.header.showAll": "Show all open documents",
+  "@documents.header.showAll": {
+    "context": "Tooltip of the '...' button at the end of an overflowing tab strip; opens a list of every open document."
+  },
+  "documents.container.noRenderer": "Cannot find renderer",
+  "@documents.container.noRenderer": {
+    "context": "Fallback text in the editor area when Klive has no viewer for a document's type (should not normally appear)."
+  },
+  "documents.buildRoot.compile": "Compile code",
+  "@documents.buildRoot.compile": {
+    "context": "Tooltip of a document tab-bar button (shown for a build-root source file) that compiles the project."
+  },
+  "documents.buildRoot.inject": "Inject code into\nthe virtual machine",
+  "@documents.buildRoot.inject": {
+    "context": "Two-line tooltip of a document tab-bar button (build-root file): compiles and writes the code into the emulated machine's memory. Keep the line break."
+  },
+  "documents.buildRoot.run": "Inject code and start\nthe virtual machine",
+  "@documents.buildRoot.run": {
+    "context": "Two-line tooltip of a document tab-bar button (build-root file): injects the compiled code and starts the emulated machine. Keep the line break."
+  },
+  "documents.buildRoot.debug": "Inject code and start\ndebugging",
+  "@documents.buildRoot.debug": {
+    "context": "Two-line tooltip of a document tab-bar button (build-root file): injects the compiled code and starts it under the debugger. Keep the line break."
+  },
+  "documents.buildRoot.showScriptOutput": "Show script output",
+  "@documents.buildRoot.showScriptOutput": {
+    "context": "Tooltip of a document tab-bar button (build-root file) that shows the output of the last build script run."
+  },
+  "documents.script.button.run": "Run this script file",
+  "@documents.script.button.run": {
+    "context": "Tooltip of the play button in the tab bar of an open script (.ksx) document."
+  },
+  "documents.script.button.stop": "Stop this script file",
+  "@documents.script.button.stop": {
+    "context": "Tooltip of the stop button in the tab bar of a running script (.ksx) document."
+  },
+  "documents.script.menu.run": "Run script",
+  "@documents.script.menu.run": {
+    "context": "Explorer context-menu item for a script (.ksx) file: runs it."
+  },
+  "documents.script.menu.stop": "Stop script",
+  "@documents.script.menu.stop": {
+    "context": "Explorer context-menu item for a running script (.ksx) file: stops it."
+  },
+  "documents.script.showOutput": "Show script output",
+  "@documents.script.showOutput": {
+    "context": "Explorer context-menu item for a script (.ksx) file, and tooltip of the matching tab-bar button: shows what the script's last run wrote."
+  },
+  "documents.nex.menu.run": "Run NEX file",
+  "@documents.nex.menu.run": {
+    "context": "Explorer context-menu item for a .nex program file: loads and runs it on the ZX Spectrum Next. 'NEX' is the file format name."
+  },
+  "documents.nex.menu.debug": "Debug NEX file",
+  "@documents.nex.menu.debug": {
+    "context": "Explorer context-menu item for a .nex program file: runs it under the debugger with breakpoints active."
+  },
+  "documents.nex.menu.entry": "Debug NEX file (break at entry point)",
+  "@documents.nex.menu.entry": {
+    "context": "Explorer context-menu item for a .nex program file: runs it under the debugger and stops at its first instruction."
+  },
+  "documents.nex.button.run": "Run this NEX file",
+  "@documents.nex.button.run": {
+    "context": "Tooltip of the play button in a .nex document's tab bar."
+  },
+  "documents.nex.button.runNotNext": "Run this NEX file (requires the ZX Spectrum Next machine)",
+  "@documents.nex.button.runNotNext": {
+    "context": "Tooltip of the play button in a .nex document's tab bar. This variant is shown when the current machine is not a ZX Spectrum Next (the button is disabled); keep the machine name."
+  },
+  "documents.nex.button.debug": "Debug this NEX file",
+  "@documents.nex.button.debug": {
+    "context": "Tooltip of the debug button in a .nex document's tab bar."
+  },
+  "documents.nex.button.debugNotNext": "Debug this NEX file (requires the ZX Spectrum Next machine)",
+  "@documents.nex.button.debugNotNext": {
+    "context": "Tooltip of the debug button in a .nex document's tab bar. This variant is shown when the current machine is not a ZX Spectrum Next (the button is disabled); keep the machine name."
+  },
+  "documents.nex.button.entry": "Debug this NEX file, breaking at its entry point",
+  "@documents.nex.button.entry": {
+    "context": "Tooltip of the debug-from-entry button in a .nex document's tab bar: stops at the program's first instruction."
+  },
+  "documents.nex.button.entryNotNext": "Debug this NEX file, breaking at its entry point (requires the ZX Spectrum Next machine)",
+  "@documents.nex.button.entryNotNext": {
+    "context": "Tooltip of the debug-from-entry button in a .nex document's tab bar. This variant is shown when the current machine is not a ZX Spectrum Next (the button is disabled); keep the machine name."
+  },
+  "documents.spectrumSnapshot.menu.run": "Run snapshot",
+  "@documents.spectrumSnapshot.menu.run": {
+    "context": "Explorer context-menu item for a ZX Spectrum snapshot file (.sna, .z80, .szx): loads it and runs it. A snapshot is a saved machine state."
+  },
+  "documents.spectrumSnapshot.menu.debug": "Debug snapshot (stop at PC)",
+  "@documents.spectrumSnapshot.menu.debug": {
+    "context": "Explorer context-menu item for a ZX Spectrum snapshot file: loads it paused under the debugger at its saved program counter. 'PC' is the register name, keep it."
+  },
+  "documents.z88Snapshot.menu.run": "Run Z88 snapshot",
+  "@documents.z88Snapshot.menu.run": {
+    "context": "Explorer context-menu item for a Cambridge Z88 snapshot file (.z88): loads it and runs it. 'Z88' is the machine name."
+  },
+  "documents.z88Snapshot.menu.debug": "Debug Z88 snapshot (stop at PC)",
+  "@documents.z88Snapshot.menu.debug": {
+    "context": "Explorer context-menu item for a Cambridge Z88 snapshot file: loads it paused under the debugger at its saved program counter. 'PC' is the register name, keep it."
+  },
+  "documents.spectrumSnapshot.button.run": "Load and run this snapshot",
+  "@documents.spectrumSnapshot.button.run": {
+    "context": "Tooltip of the play button in a ZX Spectrum snapshot (.sna, .z80, .szx) document's tab bar."
+  },
+  "documents.spectrumSnapshot.button.runRefused": "Load and run this snapshot ({reason})",
+  "@documents.spectrumSnapshot.button.runRefused": {
+    "context": "Tooltip of the disabled play button in a ZX Spectrum snapshot (.sna, .z80, .szx) document's tab bar, with the reason it cannot be used.",
+    "placeholders": {
+      "reason": "Why the action is unavailable, already translated text from the command's project check, e.g. that the project is for another machine."
+    }
+  },
+  "documents.spectrumSnapshot.button.debug": "Load this snapshot and debug it, stopping at its PC",
+  "@documents.spectrumSnapshot.button.debug": {
+    "context": "Tooltip of the debug button in a ZX Spectrum snapshot (.sna, .z80, .szx) document's tab bar. 'PC' is the program-counter register, keep it."
+  },
+  "documents.spectrumSnapshot.button.debugRefused": "Load this snapshot and debug it, stopping at its PC ({reason})",
+  "@documents.spectrumSnapshot.button.debugRefused": {
+    "context": "Tooltip of the disabled debug button in a ZX Spectrum snapshot (.sna, .z80, .szx) document's tab bar, with the reason it cannot be used. 'PC' is the program-counter register.",
+    "placeholders": {
+      "reason": "Why the action is unavailable, already translated text from the command's project check, e.g. that the project is for another machine."
+    }
+  },
+  "documents.z88Snapshot.button.run": "Load and run this snapshot",
+  "@documents.z88Snapshot.button.run": {
+    "context": "Tooltip of the play button in a Cambridge Z88 snapshot (.z88) document's tab bar."
+  },
+  "documents.z88Snapshot.button.runRefused": "Load and run this snapshot ({reason})",
+  "@documents.z88Snapshot.button.runRefused": {
+    "context": "Tooltip of the disabled play button in a Cambridge Z88 snapshot (.z88) document's tab bar, with the reason it cannot be used.",
+    "placeholders": {
+      "reason": "Why the action is unavailable, already translated text from the command's project check, e.g. that the project is for another machine."
+    }
+  },
+  "documents.z88Snapshot.button.debug": "Load this snapshot and debug it, stopping at its PC",
+  "@documents.z88Snapshot.button.debug": {
+    "context": "Tooltip of the debug button in a Cambridge Z88 snapshot (.z88) document's tab bar. 'PC' is the program-counter register, keep it."
+  },
+  "documents.z88Snapshot.button.debugRefused": "Load this snapshot and debug it, stopping at its PC ({reason})",
+  "@documents.z88Snapshot.button.debugRefused": {
+    "context": "Tooltip of the disabled debug button in a Cambridge Z88 snapshot (.z88) document's tab bar, with the reason it cannot be used. 'PC' is the program-counter register.",
+    "placeholders": {
+      "reason": "Why the action is unavailable, already translated text from the command's project check, e.g. that the project is for another machine."
+    }
+  },
+  "documents.machineState.menu.run": "Load state and run",
+  "@documents.machineState.menu.run": {
+    "context": "Explorer context-menu item for a Klive machine-state file (.kls): restores the saved machine state and runs it."
+  },
+  "documents.machineState.menu.debug": "Load state and debug (stop at PC)",
+  "@documents.machineState.menu.debug": {
+    "context": "Explorer context-menu item for a Klive machine-state file (.kls): restores it paused under the debugger at its saved program counter. 'PC' is the register name."
+  },
+  "documents.machineState.button.run": "Load this state and run",
+  "@documents.machineState.button.run": {
+    "context": "Tooltip of the play button in a machine-state (.kls) document's tab bar."
+  },
+  "documents.machineState.button.debug": "Load this state and debug it, stopping at its PC",
+  "@documents.machineState.button.debug": {
+    "context": "Tooltip of the debug button in a machine-state (.kls) document's tab bar. 'PC' is the program-counter register."
+  },
+  "documents.debugRecording.menu.open": "Open debug recording",
+  "@documents.debugRecording.menu.open": {
+    "context": "Explorer context-menu item for a debug recording (.klr, a recorded debug session): opens it paused where it was saved."
+  },
+  "documents.debugRecording.menu.openAtStart": "Open debug recording at its start",
+  "@documents.debugRecording.menu.openAtStart": {
+    "context": "Explorer context-menu item for a debug recording (.klr): opens it rewound to the beginning of the recording."
+  },
+  "documents.debugRecording.button.open": "Open this recording, paused where it was saved",
+  "@documents.debugRecording.button.open": {
+    "context": "Tooltip of a button in a debug-recording (.klr) document's tab bar."
+  },
+  "documents.debugRecording.button.openAtStart": "Open this recording at its start: Continue replays it with breakpoints active",
+  "@documents.debugRecording.button.openAtStart": {
+    "context": "Tooltip of a button in a debug-recording (.klr) document's tab bar. 'Continue' is the debugger command of that name."
+  },
+  "documents.rzx.menu.play": "Play recording",
+  "@documents.rzx.menu.play": {
+    "context": "Explorer context-menu item for an RZX input recording (.rzx, a recorded game session): plays it back."
+  },
+  "documents.rzx.menu.debug": "Debug recording (stop at its first instruction)",
+  "@documents.rzx.menu.debug": {
+    "context": "Explorer context-menu item for an RZX input recording: plays it under the debugger, paused at its first instruction."
+  },
+  "documents.rzx.menu.video": "Render recording to video",
+  "@documents.rzx.menu.video": {
+    "context": "Explorer context-menu item for an RZX input recording: plays it and saves the picture as a video file."
+  },
+  "documents.rzx.button.play": "Play this recording",
+  "@documents.rzx.button.play": {
+    "context": "Tooltip of the play button in an RZX recording document's tab bar."
+  },
+  "documents.rzx.button.playRefused": "Play this recording ({reason})",
+  "@documents.rzx.button.playRefused": {
+    "context": "Tooltip of the disabled play button in an RZX recording document's tab bar, with the reason it cannot be used.",
+    "placeholders": {
+      "reason": "Why the action is unavailable, already translated text from the command's project check, e.g. that the project is for another machine."
+    }
+  },
+  "documents.rzx.button.debug": "Play this recording under the debugger, stopping at its first instruction",
+  "@documents.rzx.button.debug": {
+    "context": "Tooltip of the debug button in an RZX recording document's tab bar."
+  },
+  "documents.rzx.button.debugRefused": "Play this recording under the debugger, stopping at its first instruction ({reason})",
+  "@documents.rzx.button.debugRefused": {
+    "context": "Tooltip of the disabled debug button in an RZX recording document's tab bar, with the reason it cannot be used.",
+    "placeholders": {
+      "reason": "Why the action is unavailable, already translated text from the command's project check, e.g. that the project is for another machine."
+    }
+  },
+  "documents.rzx.button.video": "Render this recording to video",
+  "@documents.rzx.button.video": {
+    "context": "Tooltip of the record button in an RZX recording document's tab bar."
+  },
+  "documents.rzx.button.videoRefused": "Render this recording to video ({reason})",
+  "@documents.rzx.button.videoRefused": {
+    "context": "Tooltip of the disabled record button in an RZX recording document's tab bar, with the reason it cannot be used.",
+    "placeholders": {
+      "reason": "Why the action is unavailable, already translated text from the command's project check, e.g. that the project is for another machine."
+    }
+  },
+  "documents.rzx.button.videoUnavailable": "Screen recording is not available (FFmpeg was not found)",
+  "@documents.rzx.button.videoUnavailable": {
+    "context": "Tooltip of the disabled record button in an RZX recording document's tab bar when the FFmpeg video tool is not installed. 'FFmpeg' is a product name."
+  },
+  "documents.tape.menu.run": "Load and run tape",
+  "@documents.tape.menu.run": {
+    "context": "Explorer context-menu item for a tape file (.tap, .tzx, or a ZX80/ZX81 program file): resets the machine and loads the tape."
+  },
+  "documents.tape.menu.insert": "Insert tape",
+  "@documents.tape.menu.insert": {
+    "context": "Explorer context-menu item for a tape file: puts the tape in the virtual tape player without resetting the machine."
+  },
+  "documents.tape.menu.debug": "Load and debug tape",
+  "@documents.tape.menu.debug": {
+    "context": "Explorer context-menu item for a tape file: loads it with the debugger's breakpoints active."
+  },
+  "documents.tape.button.run": "Load and run this tape: reset, then LOAD \"\" — fast load {fastLoad, select, on {on} other {off}}",
+  "@documents.tape.button.run": {
+    "context": "Tooltip of the play button in a tape document's tab bar. 'LOAD \"\"' is the BASIC command, keep it exactly. 'Fast load' is the emulator option that loads tapes instantly; translate the two words on/off inside the braces only.",
+    "placeholders": {
+      "fastLoad": "'on' or 'off' (selects the matching word): whether the fast-load setting is on"
+    }
+  },
+  "documents.tape.button.runRefused": "Load and run this tape: reset, then LOAD \"\" ({reason})",
+  "@documents.tape.button.runRefused": {
+    "context": "Tooltip of the disabled play button in a tape document's tab bar, with the reason it cannot be used. 'LOAD \"\"' is the BASIC command, keep it exactly.",
+    "placeholders": {
+      "reason": "Why the action is unavailable, already translated text from the command's project check, e.g. that the project is for another machine."
+    }
+  },
+  "documents.tape.button.insert": "Insert this tape without a reset",
+  "@documents.tape.button.insert": {
+    "context": "Tooltip of the cassette button in a tape document's tab bar: puts the tape in the player without resetting the machine."
+  },
+  "documents.tape.button.insertRefused": "Insert this tape without a reset ({reason})",
+  "@documents.tape.button.insertRefused": {
+    "context": "Tooltip of the disabled cassette button in a tape document's tab bar, with the reason it cannot be used.",
+    "placeholders": {
+      "reason": "Why the action is unavailable, already translated text from the command's project check, e.g. that the project is for another machine."
+    }
+  },
+  "documents.tape.button.debug": "Load and debug this tape, with breakpoints armed — fast load {fastLoad, select, on {on} other {off}}",
+  "@documents.tape.button.debug": {
+    "context": "Tooltip of the debug button in a tape document's tab bar. 'Fast load' is the emulator option that loads tapes instantly; translate the two words on/off inside the braces only.",
+    "placeholders": {
+      "fastLoad": "'on' or 'off' (selects the matching word): whether the fast-load setting is on"
+    }
+  },
+  "documents.tape.button.debugRefused": "Load and debug this tape, with breakpoints armed ({reason})",
+  "@documents.tape.button.debugRefused": {
+    "context": "Tooltip of the disabled debug button in a tape document's tab bar, with the reason it cannot be used.",
+    "placeholders": {
+      "reason": "Why the action is unavailable, already translated text from the command's project check, e.g. that the project is for another machine."
+    }
+  },
+  "explorer.menu.refresh": "Refresh",
+  "@explorer.menu.refresh": {
+    "context": "Explorer context-menu item (right-click on a project item): re-reads the project folder from disk (on the root node only)."
+  },
+  "explorer.menu.newFile": "New file...",
+  "@explorer.menu.newFile": {
+    "context": "Explorer context-menu item (right-click on a project item): creates a file in this folder; opens a dialog."
+  },
+  "explorer.menu.newFolder": "New folder...",
+  "@explorer.menu.newFolder": {
+    "context": "Explorer context-menu item (right-click on a project item): creates a subfolder in this folder; opens a dialog."
+  },
+  "explorer.menu.expandAll": "Expand all",
+  "@explorer.menu.expandAll": {
+    "context": "Explorer context-menu item (right-click on a project item): expands every folder below this one."
+  },
+  "explorer.menu.collapseAll": "Collapse all",
+  "@explorer.menu.collapseAll": {
+    "context": "Explorer context-menu item (right-click on a project item): collapses every folder below this one."
+  },
+  "explorer.menu.rename": "Rename...",
+  "@explorer.menu.rename": {
+    "context": "Explorer context-menu item (right-click on a project item): renames the file or folder; opens a dialog."
+  },
+  "explorer.menu.exclude": "Exclude",
+  "@explorer.menu.exclude": {
+    "context": "Explorer context-menu item (right-click on a project item): hides the item from the project (adds it to the project's excluded items); a verb."
+  },
+  "explorer.menu.delete": "Delete",
+  "@explorer.menu.delete": {
+    "context": "Explorer context-menu item (right-click on a project item): deletes the file or folder from disk after a confirmation."
+  },
+  "explorer.menu.promoteBuildRoot": "Promote to Build Root",
+  "@explorer.menu.promoteBuildRoot": {
+    "context": "Explorer context-menu item (right-click on a project item): makes this source file the project's build root (the file a build compiles)."
+  },
+  "explorer.menu.demoteBuildRoot": "Demote from Build Root",
+  "@explorer.menu.demoteBuildRoot": {
+    "context": "Explorer context-menu item (right-click on a project item): stops this file being the project's build root."
+  },
+  "explorer.menu.revealInFileExplorer": "Reveal in File Explorer",
+  "@explorer.menu.revealInFileExplorer": {
+    "context": "Explorer context-menu item on Windows: shows the item in Windows File Explorer. Use the Windows name of File Explorer in your language."
+  },
+  "explorer.menu.revealInFinder": "Reveal in Finder",
+  "@explorer.menu.revealInFinder": {
+    "context": "Explorer context-menu item on macOS and Linux: shows the item in the system file manager ('Finder' is the macOS name)."
+  },
+  "explorer.empty.noFolder": "You have not yet opened a folder.",
+  "@explorer.empty.noFolder": {
+    "context": "Text in the empty Explorer panel when no project folder is open, above the Open Folder button."
+  },
+  "explorer.empty.openFolder": "Open Folder",
+  "@explorer.empty.openFolder": {
+    "context": "Button in the empty Explorer panel that opens a folder as the project.",
+    "maxChars": 16
+  },
+  "explorer.empty.or": "or",
+  "@explorer.empty.or": {
+    "context": "The word between the two buttons of the empty Explorer panel ('Open Folder' or 'Create a Klive Project'), on a line of its own.",
+    "maxChars": 8
+  },
+  "explorer.empty.createProject": "Create a Klive Project",
+  "@explorer.empty.createProject": {
+    "context": "Button in the empty Explorer panel that opens the New Project dialog. 'Klive' is the product name.",
+    "maxChars": 31
+  },
+  "explorer.empty.noVisibleItems": "This project has no files to show. Check Excluded Items in the project settings.",
+  "@explorer.empty.noVisibleItems": {
+    "context": "Text in the Explorer panel when a project is open but every item is hidden or it is empty. 'Excluded Items' names the project's list of hidden items."
+  },
+  "explorer.dialog.renameFile": "Rename file",
+  "@explorer.dialog.renameFile": {
+    "context": "Title of the dialog that renames a file, opened from the Explorer.",
+    "maxChars": 16
+  },
+  "explorer.dialog.renameFolder": "Rename folder",
+  "@explorer.dialog.renameFolder": {
+    "context": "Title of the dialog that renames a folder, opened from the Explorer.",
+    "maxChars": 19
+  },
+  "explorer.dialog.deleteFile": "Delete file",
+  "@explorer.dialog.deleteFile": {
+    "context": "Title of the confirmation dialog that deletes a file, opened from the Explorer.",
+    "maxChars": 19
+  },
+  "explorer.dialog.deleteFolder": "Delete folder",
+  "@explorer.dialog.deleteFolder": {
+    "context": "Title of the confirmation dialog that deletes a folder, opened from the Explorer.",
+    "maxChars": 19
+  },
+  "explorer.dialog.addFile": "Add new file",
+  "@explorer.dialog.addFile": {
+    "context": "Title of the dialog that creates a file, opened from the Explorer.",
+    "maxChars": 17
+  },
+  "explorer.dialog.addFolder": "Add new folder",
+  "@explorer.dialog.addFolder": {
+    "context": "Title of the dialog that creates a folder, opened from the Explorer.",
+    "maxChars": 20
+  },
+  "explorer.error.renameTitle": "Rename Error",
+  "@explorer.error.renameTitle": {
+    "context": "Title of the error message box when renaming a file or folder in the Explorer failed; the box shows the system's error text."
+  },
+  "explorer.error.addItemTitle": "Add new item error",
+  "@explorer.error.addItemTitle": {
+    "context": "Title of the error message box when creating a file or folder in the Explorer failed; the box shows the system's error text."
+  },
+  "explorer.openEditors.empty": "No open editors",
+  "@explorer.openEditors.empty": {
+    "context": "Text in the Open Editors panel when no document is open."
+  },
+  "explorer.openEditors.groupLabel": "Open editors",
+  "@explorer.openEditors.groupLabel": {
+    "context": "Accessible name (screen readers only) of the list of rows in the Open Editors panel."
+  },
+  "explorer.openEditors.close": "Close {name}",
+  "@explorer.openEditors.close": {
+    "context": "Tooltip of the close button on a row of the Open Editors panel.",
+    "placeholders": {
+      "name": "The document's name, e.g. a file name, shown verbatim"
+    }
+  },
+  "explorer.openEditors.unsaved": "Unsaved changes",
+  "@explorer.openEditors.unsaved": {
+    "context": "Accessible name (screen readers only) of the dot marking a document with unsaved edits in the Open Editors panel."
+  },
+  "explorer.openEditors.unsavedTooltip": "{path}\nUnsaved changes",
+  "@explorer.openEditors.unsavedTooltip": {
+    "context": "Tooltip of a row in the Open Editors panel for a document with unsaved edits: the file path, then a second line. Keep the line break.",
+    "placeholders": {
+      "path": "The document's full file path, shown verbatim"
+    }
+  },
+  "explorer.openEditors.badge": "{count, plural, one {# open editor} other {# open editors}}",
+  "@explorer.openEditors.badge": {
+    "context": "Tooltip of the count badge on the Open Editors panel header: how many documents are open.",
+    "placeholders": {
+      "count": "Number of open documents"
+    }
+  }
+}

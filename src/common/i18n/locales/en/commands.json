@@ -1,0 +1,1651 @@
+{
+  "commands.common.executedDefault": "This command has been executed successfully.",
+  "@commands.common.executedDefault": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Default success message of a command that does not report anything more specific."
+  },
+  "commands.common.success": "Command successfully executed",
+  "@commands.common.success": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Green line written after a command (e.g. 'set', 'setl', 'setm') finished."
+  },
+  "commands.common.usageLine": "Usage: {usage}",
+  "@commands.common.usageLine": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Shown after an argument error, the command's syntax line.",
+    "placeholders": {
+      "usage": "The command's syntax, e.g. 'set [-p] [-u] <key> [<value>]'; never translated"
+    }
+  },
+  "commands.common.aliasesLine": "{count, plural, one {Alias} other {Aliases}}: {aliases}",
+  "@commands.common.aliasesLine": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Shown after an argument error: the command's short alternative names.",
+    "placeholders": {
+      "count": "Number of aliases",
+      "aliases": "Comma-separated alias names, e.g. 'co, c'; never translated"
+    }
+  },
+  "commands.common.expectArgs": "{count, plural, one {This command expects # argument} other {This command expects # arguments}}",
+  "@commands.common.expectArgs": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Argument validation error: wrong number of arguments.",
+    "placeholders": {
+      "count": "Number of arguments the command expects"
+    }
+  },
+  "commands.common.invalidNumber": "Invalid numeric value",
+  "@commands.common.invalidNumber": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Argument validation error: an argument is not a valid number."
+  },
+  "commands.common.invalidAddress16": "Invalid 16-bit address value",
+  "@commands.common.invalidAddress16": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Argument validation error: the address is outside 0-65535."
+  },
+  "commands.common.invalidAddress16Named": "Invalid 16-bit address value ({name})",
+  "@commands.common.invalidAddress16Named": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Argument validation error: the address argument is outside 0-65535.",
+    "placeholders": {
+      "name": "The argument's name as in the usage line, e.g. 'address'; never translated"
+    }
+  },
+  "commands.common.optionAlreadyUsed": "Option ''{option}'' is already used",
+  "@commands.common.optionAlreadyUsed": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Argument validation error: the same option appears twice in the command line.",
+    "placeholders": {
+      "option": "The option as typed, e.g. '-p'; never translated"
+    }
+  },
+  "commands.common.missingOptionValue": "Missing value for named option ''{option}''",
+  "@commands.common.missingOptionValue": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Argument validation error: an option that takes a value (e.g. '-format bin') has no value after it.",
+    "placeholders": {
+      "option": "The option as typed, e.g. '-format'"
+    }
+  },
+  "commands.common.unknownOption": "Unknown named option: ''{option}''",
+  "@commands.common.unknownOption": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Argument validation error: the command does not have this option.",
+    "placeholders": {
+      "option": "The option as typed, e.g. '-x'"
+    }
+  },
+  "commands.common.missingMandatory": "Missing mandatory argument",
+  "@commands.common.missingMandatory": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Argument validation error: a required argument was not given."
+  },
+  "commands.common.tooManyArgs": "Too many arguments",
+  "@commands.common.tooManyArgs": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Argument validation error: more arguments than the command takes."
+  },
+  "commands.common.numericExpected": "Numeric value expected for argument ''{name}''",
+  "@commands.common.numericExpected": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Argument validation error: the argument must be a number.",
+    "placeholders": {
+      "name": "The argument's name as in the usage line; never translated"
+    }
+  },
+  "commands.common.argUpTo": "Argument value of ''{name}'' must be up to {max}",
+  "@commands.common.argUpTo": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Argument validation error: the number is too large.",
+    "placeholders": {
+      "name": "The argument's name as in the usage line",
+      "max": "The largest allowed value (decimal digits)"
+    }
+  },
+  "commands.common.argAtLeast": "Argument value of ''{name}'' must be at least {min}",
+  "@commands.common.argAtLeast": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Argument validation error: the number is too small.",
+    "placeholders": {
+      "name": "The argument's name as in the usage line",
+      "min": "The smallest allowed value (decimal digits)"
+    }
+  },
+  "commands.common.argBetween": "Argument value of ''{name}'' must be between {min} and {max}",
+  "@commands.common.argBetween": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Argument validation error: the number is out of range.",
+    "placeholders": {
+      "name": "The argument's name as in the usage line",
+      "min": "The smallest allowed value",
+      "max": "The largest allowed value"
+    }
+  },
+  "commands.common.cannotParse": "The command ''{command}'' cannot be parsed.",
+  "@commands.common.cannotParse": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). The typed command line could not be split into words.",
+    "placeholders": {
+      "command": "The command line as typed"
+    }
+  },
+  "commands.common.unknownCommand": "Unknown command ''{command}''.",
+  "@commands.common.unknownCommand": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). The first word of the command line is not a known command.",
+    "placeholders": {
+      "command": "The command name as typed; never translated"
+    }
+  },
+  "commands.common.notInteractive": "Command ''{command}'' cannot be executed interactively",
+  "@commands.common.notInteractive": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). The command exists, but only the IDE itself may run it, not the user at the prompt.",
+    "placeholders": {
+      "command": "The command name"
+    }
+  },
+  "commands.common.requiresProject": "This command requires an open Klive project.",
+  "@commands.common.requiresProject": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). The command needs a Klive project to be open."
+  },
+  "commands.common.failed": "Command execution failed.",
+  "@commands.common.failed": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Generic error when a failed command gives no reason."
+  },
+  "commands.help.description": "Displays help information about commands",
+  "@commands.help.description": {
+    "context": "Description of the 'help' interactive command, shown in the help list."
+  },
+  "commands.help.title": "Available interactive commands:",
+  "@commands.help.title": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Heading of the 'help' command's list of commands."
+  },
+  "commands.help.nonInteractive": " [non-interactive]",
+  "@commands.help.nonInteractive": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Tag after a command name in the 'help' list: the command can only be run by the IDE itself. Keep the leading space and the brackets."
+  },
+  "commands.help.usageLine": "  usage: {usage}",
+  "@commands.help.usageLine": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Line under each command in the 'help' list. Keep the two leading spaces.",
+    "placeholders": {
+      "usage": "The command's syntax; never translated"
+    }
+  },
+  "commands.help.displayed": "{count, plural, one {# command displayed.} other {# commands displayed.}}",
+  "@commands.help.displayed": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Final line of the 'help' command.",
+    "placeholders": {
+      "count": "Number of commands listed"
+    }
+  },
+  "commands.exit.description": "Exits Klive IDE.",
+  "@commands.exit.description": {
+    "context": "Description of the 'exit' interactive command, shown in the help list."
+  },
+  "commands.exit.farewell": "Farewell!",
+  "@commands.exit.farewell": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Message of the 'exit' command as Klive quits."
+  },
+  "commands.set.description": "Specifies the value of a particular Klive setting. Options: '-u': user setting; '-p': project setting",
+  "@commands.set.description": {
+    "context": "Description of the 'set' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.set.projectOptionNeedsProject": "The -p option can be used only with an open Klive project",
+  "@commands.set.projectOptionNeedsProject": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). 'set -p' (project setting) was used with no project open."
+  },
+  "commands.setl.description": "Lists the values of the specified settings",
+  "@commands.setl.description": {
+    "context": "Description of the 'setl' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.setl.userSettings": "User settings:",
+  "@commands.setl.userSettings": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Heading before the JSON list of user settings ('setl -u')."
+  },
+  "commands.setl.projectSettings": "Project settings:",
+  "@commands.setl.projectSettings": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Heading before the JSON list of project settings ('setl -p')."
+  },
+  "commands.setl.mergedSettings": "Merged settings:",
+  "@commands.setl.mergedSettings": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Heading before the JSON list of user and project settings combined ('setl')."
+  },
+  "commands.setl.noProject": "There is no Klive project open",
+  "@commands.setl.noProject": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). 'setl -p' was used with no project open."
+  },
+  "commands.setm.description": "Moves user/project settings. Options: '-pull': user --> project; '-push': project --> user; '-c': copy (not merge)",
+  "@commands.setm.description": {
+    "context": "Description of the 'setm' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.setm.pullOrPushRequired": "You must use one of '-pull' or '-push'",
+  "@commands.setm.pullOrPushRequired": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Argument error of 'setm'. The option names are never translated."
+  },
+  "commands.setm.pullAndPush": "Use only one of '-pull' or '-push'",
+  "@commands.setm.pullAndPush": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Argument error of 'setm': both options were given."
+  },
+  "commands.settings.description": "Opens the Settings dialog. Pages: {pages}",
+  "@commands.settings.description": {
+    "context": "Description of the 'settings' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated.",
+    "placeholders": {
+      "pages": "Comma-separated page ids, e.g. 'general, editor'; never translated"
+    }
+  },
+  "commands.settings.unknownPage": "Unknown page ''{page}''. Use one of: {pages}",
+  "@commands.settings.unknownPage": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Argument error of 'settings'.",
+    "placeholders": {
+      "page": "The page id as typed",
+      "pages": "Comma-separated valid page ids; never translated"
+    }
+  },
+  "commands.beam.description": "Shows or hides the raster beam's position on the emulator screen while the machine is paused. Without an argument, tells whether it is shown.",
+  "@commands.beam.description": {
+    "context": "Description of the 'beam' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.beam.onOrOff": "Use 'on' or 'off', not ''{value}''",
+  "@commands.beam.onOrOff": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Argument error of 'beam'. 'on' and 'off' are the command's literal arguments: never translate them.",
+    "placeholders": {
+      "value": "The argument as typed"
+    }
+  },
+  "commands.beam.noBeam": "This machine has no raster beam to show",
+  "@commands.beam.noBeam": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). 'beam' on a machine without a raster display (e.g. Z88, ZX81)."
+  },
+  "commands.beam.shown": "Beam position: shown while paused",
+  "@commands.beam.shown": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Result of 'beam': the beam position overlay is on."
+  },
+  "commands.beam.hidden": "Beam position: hidden",
+  "@commands.beam.hidden": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Result of 'beam': the beam position overlay is off."
+  },
+  "commands.close.description": "Closes the open IDE folder",
+  "@commands.close.description": {
+    "context": "Description of the 'close' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.close.noFolder": "No folder is open in the IDE.",
+  "@commands.close.noFolder": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). 'close' with nothing open."
+  },
+  "commands.close.cancelled": "Folder close cancelled.",
+  "@commands.close.cancelled": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). The user cancelled closing (e.g. declined to discard unsaved documents)."
+  },
+  "commands.close.closed": "Folder {path} closed.",
+  "@commands.close.closed": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). ",
+    "placeholders": {
+      "path": "Full path of the closed folder"
+    }
+  },
+  "commands.build.compileDescription": "Compiles the current project",
+  "@commands.build.compileDescription": {
+    "context": "Description of the 'compile' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.build.compiled": "Project file successfully compiled.",
+  "@commands.build.compiled": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Result of 'compile'."
+  },
+  "commands.build.injectDescription": "Injects the current project code into the machine",
+  "@commands.build.injectDescription": {
+    "context": "Description of the 'inject' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.build.runDescription": "Runs the current project's code in the virtual machine",
+  "@commands.build.runDescription": {
+    "context": "Description of the 'run' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.build.debugDescription": "Runs the current project's code in the virtual machine with debugging",
+  "@commands.build.debugDescription": {
+    "context": "Description of the 'debug' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.copper.nextOnly": "The Copper exists on the ZX Spectrum Next only",
+  "@commands.copper.nextOnly": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). A Copper command on another machine. 'Copper' is the name of the Next's display co-processor: keep it as a name."
+  },
+  "commands.copper.showDescription": "Displays the Copper List, optionally revealing a list index",
+  "@commands.copper.showDescription": {
+    "context": "Description of the 'show-copper' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.copper.hideDescription": "Hides the Copper List",
+  "@commands.copper.hideDescription": {
+    "context": "Description of the 'hide-copper' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.copper.stepDescription": "Runs until the Copper completes its next instruction",
+  "@commands.copper.stepDescription": {
+    "context": "Description of the 'step-copper' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.copper.runningNormal": "The machine is running in normal mode. Pause it (or start it with debugging) before stepping the Copper.",
+  "@commands.copper.runningNormal": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). 'step-copper' while the machine runs without the debugger."
+  },
+  "commands.copper.stepping": "Running to the Copper's next instruction",
+  "@commands.copper.stepping": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Result of 'step-copper'."
+  },
+  "commands.crd.description": "Creates a new disk file.",
+  "@commands.crd.description": {
+    "context": "Description of the 'crd' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.crd.invalidType": "Invalid disk type ''{type}''. Use one of these: {types}",
+  "@commands.crd.invalidType": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Argument error of 'crd'.",
+    "placeholders": {
+      "type": "The disk type as typed",
+      "types": "Comma-separated quoted disk type ids, e.g. \"'ss', 'ds'\"; never translated"
+    }
+  },
+  "commands.crd.created": "Disk file successfully created: {path}",
+  "@commands.crd.created": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). ",
+    "placeholders": {
+      "path": "Full path of the new disk image file"
+    }
+  },
+  "commands.displayDialog.description": "Displays the specified dialog",
+  "@commands.displayDialog.description": {
+    "context": "Description of the 'display-dialog' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.displayDialog.unknown": "Unknown dialog ID: {id}",
+  "@commands.displayDialog.unknown": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). ",
+    "placeholders": {
+      "id": "The dialog id as given, e.g. 'newProject'"
+    }
+  },
+  "commands.common.resultTitle": "Result of running ''{command}''",
+  "@commands.common.resultTitle": {
+    "context": "Title line at the top of a document that shows a command's output (e.g. the 'dis' disassembly).",
+    "placeholders": {
+      "command": "The command line as typed; never translated"
+    }
+  },
+  "commands.dis.description": "Disassembles the specified memory section. Options: '-d': use decimal numbers; '-c': concise output; '-lc': terminate labels with semicolon",
+  "@commands.dis.description": {
+    "context": "Description of the 'dis' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.dis.documentName": "Disassembly (${from}-${to})",
+  "@commands.dis.documentName": {
+    "context": "Name of the document tab that shows the 'dis' command's output. The '$' before each placeholder marks a hexadecimal number: keep it.",
+    "maxChars": 30,
+    "placeholders": {
+      "from": "Start address, 4 hex digits",
+      "to": "End address, 4 hex digits"
+    }
+  },
+  "commands.dis.created": "Disassembly of address range ${from} - ${to} successfully created",
+  "@commands.dis.created": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Result of 'dis'. Keep the '$' signs (hexadecimal).",
+    "placeholders": {
+      "from": "Start address, 4 hex digits",
+      "to": "End address, 4 hex digits"
+    }
+  },
+  "commands.navDoc.description": "Navigates to the specified document",
+  "@commands.navDoc.description": {
+    "context": "Description of the 'nav' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.navDoc.unknownReason": "Unknown navigation reason ''{reason}''.",
+  "@commands.navDoc.unknownReason": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Argument error of 'nav -r'.",
+    "placeholders": {
+      "reason": "The reason as typed"
+    }
+  },
+  "commands.navDoc.noProject": "No project is open.",
+  "@commands.navDoc.noProject": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). "
+  },
+  "commands.navDoc.notFound": "File ''{file}'' not found in the project.",
+  "@commands.navDoc.notFound": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). ",
+    "placeholders": {
+      "file": "The file name or path as given"
+    }
+  },
+  "commands.navDoc.navigated": "Navigate to {file}",
+  "@commands.navDoc.navigated": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Result of 'nav': the document was opened.",
+    "placeholders": {
+      "file": "The file name or path"
+    }
+  },
+  "commands.navDoc.navigatedAt": "Navigate to {file} ({line}:{column})",
+  "@commands.navDoc.navigatedAt": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Result of 'nav' with a position.",
+    "placeholders": {
+      "file": "The file name or path",
+      "line": "Line number",
+      "column": "Column number"
+    }
+  },
+  "commands.navDoc.noLibraryFile": "No library file ''{name}''.",
+  "@commands.navDoc.noLibraryFile": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). 'nav' to a Klive BASIC standard-library file that does not exist.",
+    "placeholders": {
+      "name": "The library file name"
+    }
+  },
+  "commands.navDoc.libraryDocumentName": "{name} (library)",
+  "@commands.navDoc.libraryDocumentName": {
+    "context": "Name of the document tab of a read-only Klive BASIC standard-library file.",
+    "maxChars": 40,
+    "placeholders": {
+      "name": "The library file name, e.g. 'print.zxbas'"
+    }
+  },
+  "commands.doc.noArea": "No document area is active.",
+  "@commands.doc.noArea": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). A 'doc-*' command (split/move/close editor areas) with no document area to act on."
+  },
+  "commands.doc.splitRight": "Document: Split Right",
+  "@commands.doc.splitRight": {
+    "context": "Description of the 'doc-split-right' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.doc.splitDown": "Document: Split Down",
+  "@commands.doc.splitDown": {
+    "context": "Description of the 'doc-split-down' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.doc.moveNextArea": "Document: Move Editor To Next Area",
+  "@commands.doc.moveNextArea": {
+    "context": "Description of the 'doc-move-next-area' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.doc.movePreviousArea": "Document: Move Editor To Previous Area",
+  "@commands.doc.movePreviousArea": {
+    "context": "Description of the 'doc-move-previous-area' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.doc.closeArea": "Document: Close Editor Area",
+  "@commands.doc.closeArea": {
+    "context": "Description of the 'doc-close-area' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.doc.closeOtherAreas": "Document: Close Editors In Other Areas",
+  "@commands.doc.closeOtherAreas": {
+    "context": "Description of the 'doc-close-other-areas' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.gfx.description": "Shows memory as graphics: the graphics finder, optionally at an address",
+  "@commands.gfx.description": {
+    "context": "Description of the 'gfx' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.gfx.layoutValues": "-layout: use {layouts}",
+  "@commands.gfx.layoutValues": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Argument error of 'gfx -layout'. '-layout' is the option name; never translate it.",
+    "placeholders": {
+      "layouts": "Comma-separated layout ids (linear, cells, ...); never translated"
+    }
+  },
+  "commands.common.notAnnotatable": "This machine's memory cannot be annotated.",
+  "@commands.common.notAnnotatable": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Reverse-engineering command (label, export-asm, ann-detect) on a machine without annotation support."
+  },
+  "commands.exportAsm.description": "Exports an annotated range or bank as Klive Z80 source that reassembles to the same bytes",
+  "@commands.exportAsm.description": {
+    "context": "Description of the 'export-asm' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.exportAsm.rangeOrBank": "Give a range (<from> <to>) or a bank (-bank <n>).",
+  "@commands.exportAsm.rangeOrBank": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Argument error of 'export-asm'. '<from> <to>' and '-bank <n>' are command syntax: keep them."
+  },
+  "commands.exportAsm.startAfterEnd": "The range's start is after its end.",
+  "@commands.exportAsm.startAfterEnd": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Argument error of 'export-asm'."
+  },
+  "commands.exportAsm.skipValues": "-skip: use data or gap",
+  "@commands.exportAsm.skipValues": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Argument error of 'export-asm -skip'. '-skip', 'data' and 'gap' are command syntax: never translate them."
+  },
+  "commands.exportAsm.dialectValues": "-dialect: only klive is supported",
+  "@commands.exportAsm.dialectValues": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Argument error of 'export-asm -dialect'. '-dialect' and 'klive' are command syntax: never translate them."
+  },
+  "commands.exportAsm.failed": "Export failed: {message}",
+  "@commands.exportAsm.failed": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). ",
+    "placeholders": {
+      "message": "The error's own message (English)"
+    }
+  },
+  "commands.exportAsm.cannotWrite": "Cannot write {file}: {message}",
+  "@commands.exportAsm.cannotWrite": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). ",
+    "placeholders": {
+      "file": "The output file path",
+      "message": "The error's own message"
+    }
+  },
+  "commands.exportAsm.exportedBank": "Exported bank {bank} to {file}",
+  "@commands.exportAsm.exportedBank": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Result of 'export-asm -bank'.",
+    "placeholders": {
+      "bank": "Bank number (decimal)",
+      "file": "The output file path"
+    }
+  },
+  "commands.exportAsm.exportedRange": "Exported ${from}-${to} to {file}",
+  "@commands.exportAsm.exportedRange": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Result of 'export-asm' with an address range. Keep the '$' before a hexadecimal placeholder.",
+    "placeholders": {
+      "from": "Start address, 4 hex digits",
+      "to": "End address, 4 hex digits",
+      "file": "The output file path"
+    }
+  },
+  "commands.exportAsm.notOpened": "The file is not in the open project, so it was not opened.",
+  "@commands.exportAsm.notOpened": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). 'export-asm -open' wrote a file outside the project."
+  },
+  "commands.exportAsm.verifyIdentical": "Byte-identical: yes",
+  "@commands.exportAsm.verifyIdentical": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). After 'export-asm' the file is assembled again: it gives exactly the original bytes."
+  },
+  "commands.exportAsm.verifyNotAssembled": "Byte-identical: no — the export does not assemble (line {line}: {message}).",
+  "@commands.exportAsm.verifyNotAssembled": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). After 'export-asm' the file is assembled again: it has an assembler error.",
+    "placeholders": {
+      "line": "Line number of the first error",
+      "message": "The assembler's error message (English)"
+    }
+  },
+  "commands.exportAsm.verifyDifferent": "Byte-identical: no — first differences: {differences}",
+  "@commands.exportAsm.verifyDifferent": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). After 'export-asm' the reassembled bytes differ from the originals.",
+    "placeholders": {
+      "differences": "Comma-separated list like '$8000 (3E -> 00)': address, expected byte -> actual byte; never translated"
+    }
+  },
+  "commands.exportAsm.verifyFailed": "Could not verify the export: {message}",
+  "@commands.exportAsm.verifyFailed": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). ",
+    "placeholders": {
+      "message": "The error's own message"
+    }
+  },
+  "commands.label.description": "Adds a label to the active annotations at the address the machine is stopped at (or the one given)",
+  "@commands.label.description": {
+    "context": "Description of the 'label' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.label.emptyName": "The label name cannot be empty.",
+  "@commands.label.emptyName": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Argument error of 'label'."
+  },
+  "commands.label.pauseOrAddress": "Pause the machine, or give an address — a running machine is not at one address.",
+  "@commands.label.pauseOrAddress": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Argument error of 'label' without an address while the machine runs."
+  },
+  "commands.label.cannotReadPc": "Could not read the program counter: {message}",
+  "@commands.label.cannotReadPc": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). ",
+    "placeholders": {
+      "message": "The error's own message"
+    }
+  },
+  "commands.label.noAddress": "Could not determine which address to name.",
+  "@commands.label.noAddress": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). "
+  },
+  "commands.label.cannotReadPaging": "Could not read the memory paging: {message}",
+  "@commands.label.cannotReadPaging": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). ",
+    "placeholders": {
+      "message": "The error's own message"
+    }
+  },
+  "commands.label.notInRam": "${address} is not in a RAM bank — there is no bank offset to name.",
+  "@commands.label.notInRam": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Keep the '$' before a hexadecimal placeholder.",
+    "placeholders": {
+      "address": "The address, 4 hex digits"
+    }
+  },
+  "commands.label.bankNotInNex": "Bank ${bank} is paged in at ${address}, but {file} does not contain it.",
+  "@commands.label.bankNotInNex": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). The launched NEX program does not own the bank paged at the address. Keep the '$' before a hexadecimal placeholder.",
+    "placeholders": {
+      "bank": "Bank number, 2 hex digits",
+      "address": "The address, 4 hex digits",
+      "file": "The NEX file name"
+    }
+  },
+  "commands.label.cannotCreate": "Could not create {path}: {message}",
+  "@commands.label.cannotCreate": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Creating the annotation file failed.",
+    "placeholders": {
+      "path": "The annotation file path",
+      "message": "The error's own message"
+    }
+  },
+  "commands.label.cannotRead": "{path} cannot be read, so no label was added to it.",
+  "@commands.label.cannotRead": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). ",
+    "placeholders": {
+      "path": "The annotation file path"
+    }
+  },
+  "commands.label.addedBank": "{name} added at bank ${bank} offset ${offset} (address ${address}).",
+  "@commands.label.addedBank": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Result of 'label' in RAM. Keep the '$' before a hexadecimal placeholder.",
+    "placeholders": {
+      "name": "The label name; never translated",
+      "bank": "Bank number, 2 hex digits",
+      "offset": "Offset in the bank, 4 hex digits",
+      "address": "The Z80 address, 4 hex digits"
+    }
+  },
+  "commands.label.addedBankAlso": "{name} added at bank ${bank} offset ${offset} (address ${address}). It is also named {other}.",
+  "@commands.label.addedBankAlso": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Result of 'label' in RAM, when the place already had another name. Keep the '$' before a hexadecimal placeholder.",
+    "placeholders": {
+      "name": "The label name",
+      "bank": "Bank number, 2 hex digits",
+      "offset": "Offset in the bank, 4 hex digits",
+      "address": "The Z80 address, 4 hex digits",
+      "other": "The other label at the same place"
+    }
+  },
+  "commands.label.addedRom": "{name} added at ROM offset ${offset} in your ROM annotations (address ${address}).",
+  "@commands.label.addedRom": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Result of 'label' in ROM. Keep the '$' before a hexadecimal placeholder.",
+    "placeholders": {
+      "name": "The label name",
+      "offset": "Offset in the ROM page, 4 hex digits",
+      "address": "The Z80 address, 4 hex digits"
+    }
+  },
+  "commands.label.addedRomAlso": "{name} added at ROM offset ${offset} in your ROM annotations (address ${address}). It is also named {other}.",
+  "@commands.label.addedRomAlso": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Result of 'label' in ROM, when the place already had another name. Keep the '$' before a hexadecimal placeholder.",
+    "placeholders": {
+      "name": "The label name",
+      "offset": "Offset in the ROM page, 4 hex digits",
+      "address": "The Z80 address, 4 hex digits",
+      "other": "The other label at the same place"
+    }
+  },
+  "commands.layer2.description": "Displays the Layer 2 Inspector, optionally on a source: displayed ($12), shadow ($13) or window (the $123B write window)",
+  "@commands.layer2.description": {
+    "context": "Description of the 'show-layer2' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated. 'displayed', 'shadow' and 'window' are the command's literal arguments: keep them; '$12', '$13' are NextReg numbers, '$123B' a port."
+  },
+  "commands.layer2.sourceValues": "The source is displayed, shadow or window",
+  "@commands.layer2.sourceValues": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Argument error of 'show-layer2'. The three words are the command's literal arguments: never translate them."
+  },
+  "commands.layer2.nextOnly": "Layer 2 exists on the ZX Spectrum Next only",
+  "@commands.layer2.nextOnly": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). 'Layer 2' is the name of a Next video layer."
+  },
+  "commands.layers.description": "Hides, shows or solos a ZX Spectrum Next video layer on the emulator screen (debug view only: the program is unaffected). Without arguments, lists the layers.",
+  "@commands.layers.description": {
+    "context": "Description of the 'layers' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.layers.showDescription": "Displays the ZX Spectrum Next Layers document: the priority stack, each layer's state and clip, and one picture per layer",
+  "@commands.layers.showDescription": {
+    "context": "Description of the 'show-layers' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.layers.nextOnly": "Layers exist on the ZX Spectrum Next only",
+  "@commands.layers.nextOnly": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). A layer command on another machine."
+  },
+  "commands.common.openFolderError": "Error opening folder: {message}",
+  "@commands.common.openFolderError": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Opening a project folder failed ('open', 'newp -o').",
+    "placeholders": {
+      "message": "The reason (English)"
+    }
+  },
+  "commands.common.projectOptionNeedsProject": "You need a Klive project loaded when running this command with '-p'.",
+  "@commands.common.projectOptionNeedsProject": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). The '-p' (project setting) option was used with no project open."
+  },
+  "commands.newp.description": "Creates a new Klive project.",
+  "@commands.newp.description": {
+    "context": "Description of the 'newp' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.newp.created": "Klive project successfully created in {path}",
+  "@commands.newp.created": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). ",
+    "placeholders": {
+      "path": "The new project folder"
+    }
+  },
+  "commands.open.description": "Opens a folder in the IDE",
+  "@commands.open.description": {
+    "context": "Description of the 'open' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.open.closeTimeout": "Timeout while closing the last project",
+  "@commands.open.closeTimeout": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). 'open' had to close the current project first, and that did not finish in time."
+  },
+  "commands.open.opened": "Project in folder {path} opened.",
+  "@commands.open.opened": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). ",
+    "placeholders": {
+      "path": "The opened folder"
+    }
+  },
+  "commands.sh.description": "Opens a file in the shell with its associated program",
+  "@commands.sh.description": {
+    "context": "Description of the 'sh' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.sh.executing": "Executing shell command: {path}",
+  "@commands.sh.executing": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Result of 'sh': the operating system opens the file.",
+    "placeholders": {
+      "path": "The file opened"
+    }
+  },
+  "commands.sjasmp.resetDescription": "Resets SjasmPlus settings with the provided installation folder.",
+  "@commands.sjasmp.resetDescription": {
+    "context": "Description of the 'sjasmp-reset' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated. SjasmPlus is an external assembler's name."
+  },
+  "commands.sjasmp.folderSet": "SjasmPlus install folder set to {path}",
+  "@commands.sjasmp.folderSet": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). ",
+    "placeholders": {
+      "path": "The installation folder"
+    }
+  },
+  "commands.sjasmp.removed": "SjasmPlus settings removed",
+  "@commands.sjasmp.removed": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). "
+  },
+  "commands.z88dk.resetDescription": "Resets Z88DK settings with the provided installation folder",
+  "@commands.z88dk.resetDescription": {
+    "context": "Description of the 'z88dk-reset' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated. Z88DK is an external C compiler's name."
+  },
+  "commands.z88dk.folderSet": "Z88DK install folder set to {path}",
+  "@commands.z88dk.folderSet": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). ",
+    "placeholders": {
+      "path": "The installation folder"
+    }
+  },
+  "commands.z88dk.removed": "Z88DK settings removed",
+  "@commands.z88dk.removed": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). "
+  },
+  "commands.tilemap.nextOnly": "The tilemap exists on the ZX Spectrum Next only",
+  "@commands.tilemap.nextOnly": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). A tilemap command on another machine."
+  },
+  "commands.tilemap.mapDescription": "Displays the Tilemap Inspector's map, optionally selecting a cell",
+  "@commands.tilemap.mapDescription": {
+    "context": "Description of the 'show-tilemap' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.tilemap.colAndRow": "Give both a column and a row",
+  "@commands.tilemap.colAndRow": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Argument error of 'show-tilemap': only a column was given."
+  },
+  "commands.tilemap.tilesDescription": "Displays the Tilemap Inspector's tile definitions, optionally selecting a tile (0-511)",
+  "@commands.tilemap.tilesDescription": {
+    "context": "Description of the 'show-tiles' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.pasta80.resetDescription": "Resets pasta80 settings with the provided installation folder.",
+  "@commands.pasta80.resetDescription": {
+    "context": "Description of the 'pasta80-reset' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated. pasta80 is an external Pascal compiler's name."
+  },
+  "commands.pasta80.removed": "pasta80 settings removed",
+  "@commands.pasta80.removed": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). "
+  },
+  "commands.pasta80.sjasmpMissing": "SjasmPlus is not configured. Please run 'sjasmp-reset' first — pasta80 requires SjasmPlus as its assembler backend.",
+  "@commands.pasta80.sjasmpMissing": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). 'sjasmp-reset' is a command name: keep it."
+  },
+  "commands.pasta80.cfgCreated": "Created ~/.pasta80.cfg with assembler = {path}",
+  "@commands.pasta80.cfgCreated": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts).  '~/.pasta80.cfg' is a file name and 'assembler = ...' a line of that file: keep both exactly.",
+    "placeholders": {
+      "path": "Path of the sjasmplus executable"
+    }
+  },
+  "commands.pasta80.cfgNoAssembler": "Warning: ~/.pasta80.cfg exists but has no 'assembler' setting. pasta80 will look for 'sjasmplus' on PATH. Consider adding: assembler = {path}",
+  "@commands.pasta80.cfgNoAssembler": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts).  '~/.pasta80.cfg' is a file name and 'assembler = ...' a line of that file: keep both exactly. PATH is the environment variable.",
+    "placeholders": {
+      "path": "Path of the sjasmplus executable"
+    }
+  },
+  "commands.pasta80.cfgMismatch": "Warning: ~/.pasta80.cfg has ''assembler = {cfgPath}'' but the configured SjasmPlus path is ''{path}''. Update ~/.pasta80.cfg if this is wrong.",
+  "@commands.pasta80.cfgMismatch": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts).  '~/.pasta80.cfg' is a file name and 'assembler = ...' a line of that file: keep both exactly.",
+    "placeholders": {
+      "cfgPath": "The assembler path in the file",
+      "path": "The sjasmplus path Klive is configured with"
+    }
+  },
+  "commands.pasta80.folderSet": "pasta80 installation folder set to {path}",
+  "@commands.pasta80.folderSet": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). ",
+    "placeholders": {
+      "path": "The installation folder"
+    }
+  },
+  "commands.exclude.listDescription": "Lists the paths of items currently excluded from the project.",
+  "@commands.exclude.listDescription": {
+    "context": "Description of the 'project:excluded-items' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.exclude.none": "There are no excluded items.",
+  "@commands.exclude.none": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). "
+  },
+  "commands.exclude.listTitle": "Excluded items:",
+  "@commands.exclude.listTitle": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Heading before the list of excluded paths."
+  },
+  "commands.exclude.description": "Exclude/restore an item to project or globally.",
+  "@commands.exclude.description": {
+    "context": "Description of the 'project:exclude-item' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.exclude.invalidPath": "{path} is not a valid path",
+  "@commands.exclude.invalidPath": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). ",
+    "placeholders": {
+      "path": "The path as given"
+    }
+  },
+  "commands.exclude.noProject": "Please, open the project first!",
+  "@commands.exclude.noProject": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). "
+  },
+  "commands.exclude.done": "Done.",
+  "@commands.exclude.done": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Result of 'project:exclude-item'."
+  },
+  "commands.outp.description": "Selects the specified output panel and navigates there",
+  "@commands.outp.description": {
+    "context": "Description of the 'outp' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.outp.unknown": "Unknown output pane ''{id}''",
+  "@commands.outp.unknown": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). ",
+    "placeholders": {
+      "id": "The pane id as given; never translated"
+    }
+  },
+  "commands.outp.displayed": "Output panel {id} is displayed.",
+  "@commands.outp.displayed": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). ",
+    "placeholders": {
+      "id": "The pane id, e.g. 'build'"
+    }
+  },
+  "commands.memoryPanel.showDescription": "Displays the machine memory panel, optionally at an address",
+  "@commands.memoryPanel.showDescription": {
+    "context": "Description of the 'show-memory' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.memoryPanel.hideDescription": "Hides the machine memory panel",
+  "@commands.memoryPanel.hideDescription": {
+    "context": "Description of the 'hide-memory' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.disass.showDescription": "Displays the disassembly panel, optionally at an address",
+  "@commands.disass.showDescription": {
+    "context": "Description of the 'show-disass' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.disass.hideDescription": "Hides the disassembly panel",
+  "@commands.disass.hideDescription": {
+    "context": "Description of the 'hide-disass' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.common.cannotWriteFile": "Could not write {file}: {message}",
+  "@commands.common.cannotWriteFile": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). ",
+    "placeholders": {
+      "file": "The file path",
+      "message": "The error's own message"
+    }
+  },
+  "commands.sprites.nextOnly": "Hardware sprites exist on the ZX Spectrum Next only",
+  "@commands.sprites.nextOnly": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). "
+  },
+  "commands.sprites.showDescription": "Displays the Sprite Inspector's sprite table, optionally selecting a sprite",
+  "@commands.sprites.showDescription": {
+    "context": "Description of the 'show-sprites' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.sprites.patternsDescription": "Displays the Sprite Inspector's pattern memory, optionally selecting an 8-bit pattern (0-63)",
+  "@commands.sprites.patternsDescription": {
+    "context": "Description of the 'show-patterns' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.sprites.exportDescription": "Exports the ZX Spectrum Next's sprite pattern RAM as a .spr file",
+  "@commands.sprites.exportDescription": {
+    "context": "Description of the 'export-patterns' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.sprites.notSpr": "The file to write must be a .spr file.",
+  "@commands.sprites.notSpr": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). '.spr' is a file extension: keep it."
+  },
+  "commands.sprites.noProject": "No project is open: give an absolute .spr path.",
+  "@commands.sprites.noProject": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). "
+  },
+  "commands.sprites.exists": "{file} already exists; use -f to replace it.",
+  "@commands.sprites.exists": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). '-f' is the command's option: keep it.",
+    "placeholders": {
+      "file": "The file path"
+    }
+  },
+  "commands.sprites.cannotRead": "Could not read the pattern RAM: {message}",
+  "@commands.sprites.cannotRead": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). ",
+    "placeholders": {
+      "message": "The error's own message"
+    }
+  },
+  "commands.sprites.saved": "Pattern RAM (64 patterns) saved to {file}.",
+  "@commands.sprites.saved": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Result of 'export-patterns'.",
+    "placeholders": {
+      "file": "The written .spr file"
+    }
+  },
+  "commands.ncp.description": "Copies files between the host filesystem and ZX Spectrum Next storage.",
+  "@commands.ncp.description": {
+    "context": "Description of the 'ncp' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.ncp.direction": "Direction must be 'to' or 'from'.",
+  "@commands.ncp.direction": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Argument error of 'ncp'. 'to' and 'from' are the command's literal arguments: never translate them."
+  },
+  "commands.ncp.emptySource": "Source path cannot be empty.",
+  "@commands.ncp.emptySource": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). "
+  },
+  "commands.ncp.emptyDestination": "Destination path cannot be empty.",
+  "@commands.ncp.emptyDestination": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). "
+  },
+  "commands.ncp.cimFile": "The -cim option must specify a .cim file.",
+  "@commands.ncp.cimFile": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). '-cim' is an option and '.cim' a file extension: keep both."
+  },
+  "commands.ncp.mustStop": "The emulator must be stopped before copying storage files.",
+  "@commands.ncp.mustStop": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). "
+  },
+  "commands.ncp.needsNext": "Current-storage mode requires the current machine to be ZX Spectrum Next.",
+  "@commands.ncp.needsNext": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). 'ncp' without '-cim' copies to the running Next's own SD card image."
+  },
+  "commands.ncp.cancelled": "ZX Spectrum Next storage copy cancelled.",
+  "@commands.ncp.cancelled": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). The user declined to overwrite a file."
+  },
+  "commands.ncp.copied": "Copied {count, plural, one {# byte} other {# bytes}} from {from} to {to} using {cim}",
+  "@commands.ncp.copied": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). ",
+    "placeholders": {
+      "count": "Number of bytes copied",
+      "from": "Source path",
+      "to": "Destination path",
+      "cim": "The SD card image (.cim) file used"
+    }
+  },
+  "commands.ncp.completed": "ZX Spectrum Next storage copy completed.",
+  "@commands.ncp.completed": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). "
+  },
+  "commands.common.cannotReadFile": "Cannot read {file}: {message}",
+  "@commands.common.cannotReadFile": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). ",
+    "placeholders": {
+      "file": "The file path",
+      "message": "The error's own message"
+    }
+  },
+  "commands.common.nothingWritten": "Nothing was written.",
+  "@commands.common.nothingWritten": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). A reverse-engineering command found nothing to write into the annotations."
+  },
+  "commands.annDetect.description": "Detects code and data from code coverage and proposes regions for the active annotations",
+  "@commands.annDetect.description": {
+    "context": "Description of the 'ann-detect' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.annDetect.targetValues": "Name a bank number, rom or all.",
+  "@commands.annDetect.targetValues": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Argument error of 'ann-detect'. 'rom' and 'all' are the command's literal arguments: never translate them."
+  },
+  "commands.annDetect.modeValues": "-mode: use fill, replace or clear",
+  "@commands.annDetect.modeValues": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Argument error of 'ann-detect -mode'. Option names (starting with '-'), their values and command names are command syntax: never translate them."
+  },
+  "commands.annDetect.unknownValues": "-unknown: use keep or bytes",
+  "@commands.annDetect.unknownValues": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Argument error of 'ann-detect -unknown'. Option names (starting with '-'), their values and command names are command syntax: never translate them."
+  },
+  "commands.annDetect.nothingToUndo": "There is no detection to undo in this session.",
+  "@commands.annDetect.nothingToUndo": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). "
+  },
+  "commands.annDetect.restored": "Restored the annotations before the last detection: {paths}",
+  "@commands.annDetect.restored": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Result of 'ann-detect -undo'.",
+    "placeholders": {
+      "paths": "Comma-separated annotation file paths"
+    }
+  },
+  "commands.annDetect.failed": "Detection failed: {message}",
+  "@commands.annDetect.failed": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). ",
+    "placeholders": {
+      "message": "The error's own message"
+    }
+  },
+  "commands.annDetect.documentName": "Detected code and data",
+  "@commands.annDetect.documentName": {
+    "context": "Name of the document tab that shows the 'ann-detect' proposal.",
+    "maxChars": 36
+  },
+  "commands.annDetect.dryRun": "Nothing was written. Add -apply to write the proposal.",
+  "@commands.annDetect.dryRun": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). 'ann-detect' without '-apply' only reports. Option names (starting with '-'), their values and command names are command syntax: never translate them."
+  },
+  "commands.annDetect.applied": "Applied to {paths}. Undo with 'ann-detect -undo'; remove detected regions with -mode clear.",
+  "@commands.annDetect.applied": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts).  Option names (starting with '-'), their values and command names are command syntax: never translate them.",
+    "placeholders": {
+      "paths": "Comma-separated annotation file paths"
+    }
+  },
+  "commands.skool.importDescription": "Imports a SkoolKit skool or control file into the active annotations",
+  "@commands.skool.importDescription": {
+    "context": "Description of the 'skool-import' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated. SkoolKit is a product name; 'skool' and 'control' are its file formats."
+  },
+  "commands.skool.modeValues": "-mode: use fill or replace",
+  "@commands.skool.modeValues": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Argument error of 'skool-import -mode'. Option names (starting with '-'), their values and command names are command syntax: never translate them."
+  },
+  "commands.skool.dryRun": "Nothing was written. Add -apply to import.",
+  "@commands.skool.dryRun": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). 'skool-import' without '-apply' only reports. Option names (starting with '-'), their values and command names are command syntax: never translate them."
+  },
+  "commands.skool.imported": "Imported into {paths}. Undo with 'ann-detect -undo'.",
+  "@commands.skool.imported": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts).  Option names (starting with '-'), their values and command names are command syntax: never translate them.",
+    "placeholders": {
+      "paths": "Comma-separated annotation file paths"
+    }
+  },
+  "commands.skool.exportDescription": "Exports the active annotations as a SkoolKit skool or control file",
+  "@commands.skool.exportDescription": {
+    "context": "Description of the 'skool-export' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.skool.rangeOrBank": "Give a range (<from> <to>), a bank (-bank <n>) or every bank (-bank all).",
+  "@commands.skool.rangeOrBank": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Argument error of 'skool-export'. Option names (starting with '-'), their values and command names are command syntax: never translate them."
+  },
+  "commands.skool.bankValues": "-bank: a bank number, or all",
+  "@commands.skool.bankValues": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Argument error of 'skool-export -bank'. '-bank' and 'all' are command syntax."
+  },
+  "commands.skool.exported": "Exported {format} to {path}",
+  "@commands.skool.exported": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Result of 'skool-export'.",
+    "placeholders": {
+      "format": "'skool' or 'ctl', the file format; never translated",
+      "path": "The written file"
+    }
+  },
+  "commands.script.runDescription": "Runs the specified script",
+  "@commands.script.runDescription": {
+    "context": "Description of the 'script-run' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.script.started": "Script {script} (with ID {id}) has been started.",
+  "@commands.script.started": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). ",
+    "placeholders": {
+      "script": "The script file path or build function name",
+      "id": "The script run's numeric ID"
+    }
+  },
+  "commands.script.alreadyRunning": "Script {script} (with ID {id}) is already running.",
+  "@commands.script.alreadyRunning": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). ",
+    "placeholders": {
+      "script": "The script file path or build function name",
+      "id": "The running script's numeric ID"
+    }
+  },
+  "commands.script.cancelDescription": "Cancels the specified running script",
+  "@commands.script.cancelDescription": {
+    "context": "Description of the 'script-cancel' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.script.stopped": "Script {script} has been stopped.",
+  "@commands.script.stopped": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). ",
+    "placeholders": {
+      "script": "The script file path or numeric ID"
+    }
+  },
+  "commands.script.notRunning": "Script {script} did not run.",
+  "@commands.script.notRunning": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). 'script-cancel' on a script that was not running.",
+    "placeholders": {
+      "script": "The script file path or numeric ID"
+    }
+  },
+  "commands.script.outputDescription": "Displays the output of the specified script",
+  "@commands.script.outputDescription": {
+    "context": "Description of the 'script-output' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.script.notFound": "Script with ID {id} not found",
+  "@commands.script.notFound": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). ",
+    "placeholders": {
+      "id": "The script ID as given"
+    }
+  },
+  "commands.script.outputDocumentName": "{script} (ID: {id}) output",
+  "@commands.script.outputDocumentName": {
+    "context": "Name of the document tab that shows a script run's output.",
+    "maxChars": 48,
+    "placeholders": {
+      "script": "The script file name",
+      "id": "The script run's numeric ID"
+    }
+  },
+  "commands.script.outputDisplayed": "Output of script {script} (ID: {id}) displayed.",
+  "@commands.script.outputDisplayed": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). ",
+    "placeholders": {
+      "script": "The script file name",
+      "id": "The script run's numeric ID"
+    }
+  },
+  "commands.script.buildFunctionDescription": "Runs the specified build script function",
+  "@commands.script.buildFunctionDescription": {
+    "context": "Description of the 'run-build-function' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.script.invalidFunctionName": "Invalid function name syntax: ''{name}''",
+  "@commands.script.invalidFunctionName": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). ",
+    "placeholders": {
+      "name": "The function name as given"
+    }
+  },
+  "commands.script.openProject": "Open a project first. Only then you can run scripts.",
+  "@commands.script.openProject": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). "
+  },
+  "commands.script.noBuildFile": "This project has no build file.",
+  "@commands.script.noBuildFile": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). "
+  },
+  "commands.script.functionNotFound": "Function ''{name}'' not found in the build file.",
+  "@commands.script.functionNotFound": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). ",
+    "placeholders": {
+      "name": "The build function name"
+    }
+  },
+  "commands.annSet.openDescription": "Makes an annotation (.dis) file the active annotation set",
+  "@commands.annSet.openDescription": {
+    "context": "Description of the 'ann-open' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated. An 'annotation set' is the .dis file that holds the user's labels and comments for a program."
+  },
+  "commands.annSet.emptyPath": "The annotation file path cannot be empty.",
+  "@commands.annSet.emptyPath": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). "
+  },
+  "commands.annSet.missing": "{path} does not exist; use ann-new to create it.",
+  "@commands.annSet.missing": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). 'ann-new' is a command name: keep it.",
+    "placeholders": {
+      "path": "The annotation file path"
+    }
+  },
+  "commands.annSet.cannotUse": "{path} cannot be used: {problems}",
+  "@commands.annSet.cannotUse": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). ",
+    "placeholders": {
+      "path": "The annotation file path",
+      "problems": "Semicolon-separated problems found in the file (English)"
+    }
+  },
+  "commands.annSet.warning": "Warning: {warning}",
+  "@commands.annSet.warning": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). ",
+    "placeholders": {
+      "warning": "The warning text, e.g. that the file is for another machine"
+    }
+  },
+  "commands.annSet.opened": "{path} is the active annotation set ({machine}).",
+  "@commands.annSet.opened": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts).  An 'annotation set' is the .dis file that holds the user's labels and comments for a program.",
+    "placeholders": {
+      "path": "The annotation file path",
+      "machine": "The bank-space id, e.g. 'sp48', 'next'; never translated"
+    }
+  },
+  "commands.annSet.newDescription": "Creates an annotation (.dis) file and makes it the active annotation set (-m names the bank space)",
+  "@commands.annSet.newDescription": {
+    "context": "Description of the 'ann-new' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated. An 'annotation set' is the .dis file that holds the user's labels and comments for a program."
+  },
+  "commands.annSet.notDis": "An annotation file is named <something>.dis.",
+  "@commands.annSet.notDis": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). '.dis' is the file extension: keep it."
+  },
+  "commands.annSet.machineValues": "-m must be one of {machines}.",
+  "@commands.annSet.machineValues": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). '-m' is an option name.",
+    "placeholders": {
+      "machines": "Comma-separated bank-space ids; never translated"
+    }
+  },
+  "commands.annSet.notAnnotatableGiveM": "This machine's memory cannot be annotated; give -m.",
+  "@commands.annSet.notAnnotatableGiveM": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). '-m' is an option name: keep it."
+  },
+  "commands.annSet.exists": "{path} already exists; use ann-open to make it active.",
+  "@commands.annSet.exists": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). 'ann-open' is a command name.",
+    "placeholders": {
+      "path": "The annotation file path"
+    }
+  },
+  "commands.annSet.created": "{path} created; it is the active annotation set ({machine}).",
+  "@commands.annSet.created": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). ",
+    "placeholders": {
+      "path": "The annotation file path",
+      "machine": "The bank-space id; never translated"
+    }
+  },
+  "commands.annSet.closeDescription": "Deactivates the active annotation set",
+  "@commands.annSet.closeDescription": {
+    "context": "Description of the 'ann-close' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.annSet.noActive": "No annotation set is active.",
+  "@commands.annSet.noActive": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). "
+  },
+  "commands.annSet.closed": "{path} is no longer the active annotation set.",
+  "@commands.annSet.closed": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). ",
+    "placeholders": {
+      "path": "The annotation file path"
+    }
+  },
+  "commands.annSet.unknownFile": "unknown file",
+  "@commands.annSet.unknownFile": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Shown in place of a ROM's file name when it is not known, in 'ROM page 0 (unknown file, CRC ...)'."
+  },
+  "commands.annSet.romPage": "ROM page {page} ({file}, CRC {crc}):",
+  "@commands.annSet.romPage": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Heading of a ROM page in the 'ann-info' report. CRC is the checksum's name.",
+    "placeholders": {
+      "page": "ROM page number",
+      "file": "ROM file name",
+      "crc": "CRC32 checksum, hex digits"
+    }
+  },
+  "commands.annSet.noRomAnnotations": "  no ROM annotations",
+  "@commands.annSet.noRomAnnotations": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). A line of the 'ann-info' report; keep the two leading spaces (indentation under the heading). "
+  },
+  "commands.annSet.layerWorking": "  working copy: {path}",
+  "@commands.annSet.layerWorking": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). A line of the 'ann-info' report; keep the two leading spaces (indentation under the heading). The user's own editable annotations of this ROM page.",
+    "placeholders": {
+      "path": "The annotation file path"
+    }
+  },
+  "commands.annSet.layerWorkingInherited": "  working copy, inherited: {path}",
+  "@commands.annSet.layerWorkingInherited": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). A line of the 'ann-info' report; keep the two leading spaces (indentation under the heading). The user's own annotations of the ROM this one is derived from.",
+    "placeholders": {
+      "path": "The annotation file path"
+    }
+  },
+  "commands.annSet.layerShipped": "  shipped: {path}",
+  "@commands.annSet.layerShipped": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). A line of the 'ann-info' report; keep the two leading spaces (indentation under the heading). The annotations that come with Klive for this ROM page.",
+    "placeholders": {
+      "path": "The annotation file path"
+    }
+  },
+  "commands.annSet.layerShippedInherited": "  shipped, inherited: {path}",
+  "@commands.annSet.layerShippedInherited": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). A line of the 'ann-info' report; keep the two leading spaces (indentation under the heading). The annotations that come with Klive for the ROM this one is derived from.",
+    "placeholders": {
+      "path": "The annotation file path"
+    }
+  },
+  "commands.annSet.noWorkingCopy": "  working copy: none (rom-ann-new makes {path}, which makes the page editable)",
+  "@commands.annSet.noWorkingCopy": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). A line of the 'ann-info' report; keep the two leading spaces (indentation under the heading). 'rom-ann-new' is a command name.",
+    "placeholders": {
+      "path": "The working-copy file the command would create"
+    }
+  },
+  "commands.annSet.labelsBound": "  {bound} of {total, plural, one {# label} other {# labels}} of {sidecar} bound to these bytes",
+  "@commands.annSet.labelsBound": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). A line of the 'ann-info' report; keep the two leading spaces (indentation under the heading). How many shipped labels matched this ROM's bytes.",
+    "placeholders": {
+      "bound": "Number of labels that matched",
+      "total": "Number of labels in the file",
+      "sidecar": "The annotation file name"
+    }
+  },
+  "commands.annSet.infoDescription": "Shows the active annotation set: its file, machine and what it holds, and the ROM annotations in use",
+  "@commands.annSet.infoDescription": {
+    "context": "Description of the 'ann-info' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
+  },
+  "commands.annSet.setLine": "Annotation set: {path}",
+  "@commands.annSet.setLine": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Heading of the 'ann-info' report.",
+    "placeholders": {
+      "path": "The annotation file path"
+    }
+  },
+  "commands.annSet.annotates": "  annotates: {path}",
+  "@commands.annSet.annotates": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). A line of the 'ann-info' report; keep the two leading spaces (indentation under the heading). The program file the annotations belong to.",
+    "placeholders": {
+      "path": "The program file path"
+    }
+  },
+  "commands.annSet.madeActiveBy": "  made active by: {reason}",
+  "@commands.annSet.madeActiveBy": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). A line of the 'ann-info' report; keep the two leading spaces (indentation under the heading). ",
+    "placeholders": {
+      "reason": "What activated the set, an identifier like 'command', 'project', 'nex-run'; never translated"
+    }
+  },
+  "commands.annSet.machine": "  machine: {machine}",
+  "@commands.annSet.machine": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). A line of the 'ann-info' report; keep the two leading spaces (indentation under the heading). ",
+    "placeholders": {
+      "machine": "The bank-space id; never translated"
+    }
+  },
+  "commands.annSet.machineWithCurrent": "  machine: {machine} (this machine: {current})",
+  "@commands.annSet.machineWithCurrent": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). A line of the 'ann-info' report; keep the two leading spaces (indentation under the heading). ",
+    "placeholders": {
+      "machine": "The set's bank-space id",
+      "current": "The running machine's bank-space id"
+    }
+  },
+  "commands.annSet.notCreated": "  not created yet: the first label or comment creates it",
+  "@commands.annSet.notCreated": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). A line of the 'ann-info' report; keep the two leading spaces (indentation under the heading). "
+  },
+  "commands.annSet.cannotRead": "  cannot be read ({status})",
+  "@commands.annSet.cannotRead": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). A line of the 'ann-info' report; keep the two leading spaces (indentation under the heading). ",
+    "placeholders": {
+      "status": "The load status, an identifier like 'invalid'; never translated"
+    }
+  },
+  "commands.annSet.counts": "  {labels, plural, one {# label} other {# labels}}, {comments, plural, one {# comment} other {# comments}}, {regions, plural, one {# region} other {# regions}} in {banks, plural, one {# bank} other {# banks}}; {breakpoints, plural, one {# breakpoint} other {# breakpoints}}",
+  "@commands.annSet.counts": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). A line of the 'ann-info' report; keep the two leading spaces (indentation under the heading). What the set holds.",
+    "placeholders": {
+      "labels": "Number of labels",
+      "comments": "Number of comments",
+      "regions": "Number of memory regions (code/data)",
+      "banks": "Number of memory banks",
+      "breakpoints": "Number of breakpoints"
+    }
+  },
+  "commands.annSet.infoWarning": "  Warning: {warning}",
+  "@commands.annSet.infoWarning": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). A line of the 'ann-info' report; keep the two leading spaces (indentation under the heading). ",
+    "placeholders": {
+      "warning": "The warning text"
+    }
+  },
+  "commands.romAnn.unknownRom": "{rom} is neither a ROM Klive ships nor a ROM file that can be read.",
+  "@commands.romAnn.unknownRom": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). ",
+    "placeholders": {
+      "rom": "The ROM name or path as given"
+    }
+  },
+  "commands.romAnn.noPage": "{rom} has no page {page}.",
+  "@commands.romAnn.noPage": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). ",
+    "placeholders": {
+      "rom": "The ROM name or path",
+      "page": "The 16K page number"
+    }
+  },
+  "commands.romAnn.notIdentified": "This ROM page has not been identified yet.",
+  "@commands.romAnn.notIdentified": {
+    "context": "Error shown when the user starts editing a ROM page's annotations from the live disassembly before Klive has recognised that ROM."
+  },
+  "commands.romAnn.nameRom": "Name a ROM (sp48.rom) or a ROM file.",
+  "@commands.romAnn.nameRom": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Argument error of the rom-ann-* commands. 'sp48.rom' is an example file name: keep it."
+  },
+  "commands.romAnn.pageValues": "-page: a page number from 0 to 15",
+  "@commands.romAnn.pageValues": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Argument error. '-page' is the option name."
+  },
+  "commands.romAnn.newDescription": "Makes a working copy of a ROM's annotations (in <Klive home>/RomAnnotations) and opens it for editing",
+  "@commands.romAnn.newDescription": {
+    "context": "Description of the 'rom-ann-new' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated. A 'sidecar' is the .dis annotation file that sits beside a ROM; a 'working copy' is the user's editable copy of it; 'shipped' ones come with Klive. Command names (rom-ann-new, rom-ann-open) are never translated. 'RomAnnotations' is a folder name."
+  },
+  "commands.romAnn.newRefused": "{reason} Open it with rom-ann-open {rom}.",
+  "@commands.romAnn.newRefused": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts).  A 'sidecar' is the .dis annotation file that sits beside a ROM; a 'working copy' is the user's editable copy of it; 'shipped' ones come with Klive. Command names (rom-ann-new, rom-ann-open) are never translated.",
+    "placeholders": {
+      "reason": "Why no working copy was made: a full sentence, e.g. that it already exists",
+      "rom": "The ROM name as given"
+    }
+  },
+  "commands.romAnn.copiedShipped": "Copied the shipped {sidecar} to {path}. Its ROM pages are now edited there.",
+  "@commands.romAnn.copiedShipped": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts).  A 'sidecar' is the .dis annotation file that sits beside a ROM; a 'working copy' is the user's editable copy of it; 'shipped' ones come with Klive. Command names (rom-ann-new, rom-ann-open) are never translated.",
+    "placeholders": {
+      "sidecar": "The shipped annotation file name",
+      "path": "The new working-copy path"
+    }
+  },
+  "commands.romAnn.createdEmpty": "Created {path}, an empty sidecar for {rom}. Its ROM page is now edited there.",
+  "@commands.romAnn.createdEmpty": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts).  A 'sidecar' is the .dis annotation file that sits beside a ROM; a 'working copy' is the user's editable copy of it; 'shipped' ones come with Klive. Command names (rom-ann-new, rom-ann-open) are never translated.",
+    "placeholders": {
+      "path": "The new working-copy path",
+      "rom": "The ROM's name"
+    }
+  },
+  "commands.romAnn.openDescription": "Opens a ROM's annotations in the ROM annotation editor: its working copy, or the shipped sidecar read-only",
+  "@commands.romAnn.openDescription": {
+    "context": "Description of the 'rom-ann-open' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated. A 'sidecar' is the .dis annotation file that sits beside a ROM; a 'working copy' is the user's editable copy of it; 'shipped' ones come with Klive. Command names (rom-ann-new, rom-ann-open) are never translated."
+  },
+  "commands.romAnn.openedReadOnly": "{sidecar} opened read-only. rom-ann-new {rom} makes a working copy to edit.",
+  "@commands.romAnn.openedReadOnly": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts).  A 'sidecar' is the .dis annotation file that sits beside a ROM; a 'working copy' is the user's editable copy of it; 'shipped' ones come with Klive. Command names (rom-ann-new, rom-ann-open) are never translated.",
+    "placeholders": {
+      "sidecar": "The shipped annotation file name",
+      "rom": "The ROM name as given"
+    }
+  },
+  "commands.romAnn.noAnnotations": "{rom} has no annotations yet. rom-ann-new {rom} creates them.",
+  "@commands.romAnn.noAnnotations": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts).  A 'sidecar' is the .dis annotation file that sits beside a ROM; a 'working copy' is the user's editable copy of it; 'shipped' ones come with Klive. Command names (rom-ann-new, rom-ann-open) are never translated.",
+    "placeholders": {
+      "rom": "The ROM name as given"
+    }
+  },
+  "commands.romAnn.nameRomOrSidecar": "Name a ROM (sp48.rom), a ROM file or a sidecar.",
+  "@commands.romAnn.nameRomOrSidecar": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts).  A 'sidecar' is the .dis annotation file that sits beside a ROM; a 'working copy' is the user's editable copy of it; 'shipped' ones come with Klive. Command names (rom-ann-new, rom-ann-open) are never translated."
+  },
+  "commands.romAnn.checkDescription": "Checks whether a ROM's working copy could be copied into src/public/roms as it is (the checks CI makes)",
+  "@commands.romAnn.checkDescription": {
+    "context": "Description of the 'rom-ann-check' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated. A 'sidecar' is the .dis annotation file that sits beside a ROM; a 'working copy' is the user's editable copy of it; 'shipped' ones come with Klive. Command names (rom-ann-new, rom-ann-open) are never translated. 'src/public/roms' is a folder of the Klive source code."
+  },
+  "commands.romAnn.cannotReadMakeCopy": "{path} cannot be read. rom-ann-new makes a working copy.",
+  "@commands.romAnn.cannotReadMakeCopy": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts).  A 'sidecar' is the .dis annotation file that sits beside a ROM; a 'working copy' is the user's editable copy of it; 'shipped' ones come with Klive. Command names (rom-ann-new, rom-ann-open) are never translated.",
+    "placeholders": {
+      "path": "The annotation file path"
+    }
+  },
+  "commands.romAnn.invalidJson": "{path} is not valid JSON: {message}",
+  "@commands.romAnn.invalidJson": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). ",
+    "placeholders": {
+      "path": "The annotation file path",
+      "message": "The JSON parser's message (English)"
+    }
+  },
+  "commands.romAnn.pageLevel": "page {page}: level {level}",
+  "@commands.romAnn.pageLevel": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). One item of the comma-separated list in the 'rom-ann-check' heading: how completely a ROM page is annotated.",
+    "placeholders": {
+      "page": "ROM page number",
+      "level": "Annotation level number"
+    }
+  },
+  "commands.romAnn.noPageMeasured": "no page measured",
+  "@commands.romAnn.noPageMeasured": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Shown in the 'rom-ann-check' heading in place of the page levels."
+  },
+  "commands.romAnn.checkHeader": "{path} ({levels}; records level {recorded})",
+  "@commands.romAnn.checkHeader": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Heading of the 'rom-ann-check' report: the measured levels and the level the file claims.",
+    "placeholders": {
+      "path": "The annotation file path",
+      "levels": "Comma-separated 'page N: level L' items, or 'no page measured'",
+      "recorded": "The level recorded in the file"
+    }
+  },
+  "commands.romAnn.readyToShip": "Ready to ship: copy it into src/public/roms/ unchanged.",
+  "@commands.romAnn.readyToShip": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). 'src/public/roms/' is a folder of the Klive source code."
+  },
+  "commands.romAnn.problems": "{count, plural, one {# problem keeps it from being shipped as it is.} other {# problems keep it from being shipped as it is.}}",
+  "@commands.romAnn.problems": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Result of 'rom-ann-check' after listing the problems.",
+    "placeholders": {
+      "count": "Number of problems"
+    }
+  },
+  "commands.romAnn.provenanceDescription": "Sets the provenance (observed or manual) of a label, line comment or region in a ROM's working copy",
+  "@commands.romAnn.provenanceDescription": {
+    "context": "Description of the 'rom-ann-provenance' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated. 'observed' and 'manual' are the command's literal arguments: keep them. A 'sidecar' is the .dis annotation file that sits beside a ROM; a 'working copy' is the user's editable copy of it; 'shipped' ones come with Klive. Command names (rom-ann-new, rom-ann-open) are never translated."
+  },
+  "commands.romAnn.kindValues": "The entry kind is label, line or region.",
+  "@commands.romAnn.kindValues": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Argument error of 'rom-ann-provenance'. 'label', 'line' and 'region' are the command's literal arguments: never translate them."
+  },
+  "commands.romAnn.provenanceValues": "The provenance is observed or manual (derived is the formatter's).",
+  "@commands.romAnn.provenanceValues": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Argument error of 'rom-ann-provenance'. 'observed', 'manual' and 'derived' are literal values: never translate them."
+  },
+  "commands.romAnn.shippedReadOnly": "A shipped sidecar is never edited here.",
+  "@commands.romAnn.shippedReadOnly": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts).  A 'sidecar' is the .dis annotation file that sits beside a ROM; a 'working copy' is the user's editable copy of it; 'shipped' ones come with Klive. Command names (rom-ann-new, rom-ann-open) are never translated."
+  },
+  "commands.romAnn.cannotRead": "{path} cannot be read.",
+  "@commands.romAnn.cannotRead": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). ",
+    "placeholders": {
+      "path": "The file path"
+    }
+  },
+  "commands.romAnn.noEntry": "{path} has no {kind} at page {page}, offset {offset}.",
+  "@commands.romAnn.noEntry": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). ",
+    "placeholders": {
+      "path": "The annotation file path",
+      "kind": "'label', 'line' or 'region'; never translated",
+      "page": "ROM page number",
+      "offset": "Offset in the page (decimal)"
+    }
+  },
+  "commands.romAnn.provenanceSet": "{key} is now {provenance}.",
+  "@commands.romAnn.provenanceSet": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Result of 'rom-ann-provenance'.",
+    "placeholders": {
+      "key": "The entry key, e.g. '0:1234:label'",
+      "provenance": "'observed' or 'manual'; never translated"
+    }
+  },
+  "commands.romAnn.importDescription": "Adds a list of conventional routine names (NAME ADDRESS lines) to a ROM's working copy, as manual labels",
+  "@commands.romAnn.importDescription": {
+    "context": "Description of the 'rom-ann-import-names' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated. 'NAME ADDRESS' describes the list file's line format: keep it. A 'sidecar' is the .dis annotation file that sits beside a ROM; a 'working copy' is the user's editable copy of it; 'shipped' ones come with Klive. Command names (rom-ann-new, rom-ann-open) are never translated."
+  },
+  "commands.romAnn.nameList": "Name the file with the NAME ADDRESS list.",
+  "@commands.romAnn.nameList": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). 'NAME ADDRESS' is the list file's line format: keep it."
+  },
+  "commands.romAnn.notList": "{path} is not a NAME ADDRESS list; nothing was imported.",
+  "@commands.romAnn.notList": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). 'NAME ADDRESS' is the list file's line format: keep it.",
+    "placeholders": {
+      "path": "The list file path"
+    }
+  },
+  "commands.romAnn.noWorkingCopy": "{path} does not exist: make the working copy first with rom-ann-new {rom}.",
+  "@commands.romAnn.noWorkingCopy": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts).  A 'sidecar' is the .dis annotation file that sits beside a ROM; a 'working copy' is the user's editable copy of it; 'shipped' ones come with Klive. Command names (rom-ann-new, rom-ann-open) are never translated.",
+    "placeholders": {
+      "path": "The working-copy path",
+      "rom": "The ROM name as given"
+    }
+  },
+  "commands.romAnn.noMatch": "No ROM matches page {page} of {path}.",
+  "@commands.romAnn.noMatch": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). ",
+    "placeholders": {
+      "page": "ROM page number",
+      "path": "The annotation file path"
+    }
+  },
+  "commands.romAnn.skipped": "  skipped {name} (${address}): {reason}",
+  "@commands.romAnn.skipped": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). A line of 'rom-ann-import-names': a name was not imported. Keep the two leading spaces and the '$' (hexadecimal).",
+    "placeholders": {
+      "name": "The routine name",
+      "address": "The address, 4 hex digits",
+      "reason": "Why it was skipped (English)"
+    }
+  },
+  "commands.romAnn.renamed": "  {from} is written {name}",
+  "@commands.romAnn.renamed": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). A line of 'rom-ann-import-names': a name was changed to a valid label spelling. Keep the two leading spaces.",
+    "placeholders": {
+      "from": "The name as in the list",
+      "name": "The label as written"
+    }
+  },
+  "commands.romAnn.imported": "Added {added, plural, one {# label} other {# labels}} to {path} as manual; skipped {skipped, number}. Name the list's source in .ai/rom-annotations/PROVENANCE.md.",
+  "@commands.romAnn.imported": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Result of 'rom-ann-import-names'. 'manual' is a provenance value; the file path is literal.",
+    "placeholders": {
+      "added": "Number of labels added",
+      "path": "The annotation file path",
+      "skipped": "Number of names skipped"
+    }
+  },
+  "commands.detection.noCoverage": "There is no coverage to detect from. Turn it on with `coverage on`, run the program, and pause — or load a saved run with `coverage load <file>`.",
+  "@commands.detection.noCoverage": {
+    "context": "Shown by the 'ann-detect' command (command prompt output) and in the Detect code and data dialog. Code detection needs code-coverage data. The text in backticks is commands: never translate it; keep the backticks."
+  },
+  "commands.detection.noActiveSet": "No annotation set is active: use ann-new, or open a project.",
+  "@commands.detection.noActiveSet": {
+    "context": "Shown by the 'ann-detect' command (command prompt output) and in the Detect code and data dialog. 'ann-new' is a command name."
+  },
+  "commands.detection.noRom": "No ROM is paged in at $0000.",
+  "@commands.detection.noRom": {
+    "context": "Shown by the 'ann-detect' command (command prompt output) and in the Detect code and data dialog. '$0000' is a hexadecimal address."
+  },
+  "commands.detection.noBank": "No bank to detect in.",
+  "@commands.detection.noBank": {
+    "context": "Shown by the 'ann-detect' command (command prompt output) and in the Detect code and data dialog. "
+  },
+  "commands.detection.dataConflict": "Reachable code runs into bytes observed as data.",
+  "@commands.detection.dataConflict": {
+    "context": "Shown by the 'ann-detect' command (command prompt output) and in the Detect code and data dialog. A warning on a proposed code region: following the code from its entry leads into bytes the program read or wrote as data."
+  },
+  "commands.detection.overlap": "Reachable code lands inside another instruction.",
+  "@commands.detection.overlap": {
+    "context": "Shown by the 'ann-detect' command (command prompt output) and in the Detect code and data dialog. A warning on a proposed code region: a jump target is in the middle of another instruction's bytes."
+  },
+  "commands.detection.cannotRead": "{path} cannot be read, so nothing was written to it.",
+  "@commands.detection.cannotRead": {
+    "context": "Shown by the 'ann-detect' command (command prompt output) and in the Detect code and data dialog. ",
+    "placeholders": {
+      "path": "The annotation file path"
+    }
+  },
+  "commands.detection.needsAdvancedDebugging": "Detection reads code coverage, which is part of advanced debugging. Turn it on with 'set -u {setting} 1', then restart Klive.",
+  "@commands.detection.needsAdvancedDebugging": {
+    "context": "Shown by the 'ann-detect' command (command prompt output) and in the Detect code and data dialog. The text in quotes is a command to type: never translate it.",
+    "placeholders": {
+      "setting": "The setting key; never translated"
+    }
+  },
+  "commands.detection.noCoverageSupport": "This machine does not keep code coverage.",
+  "@commands.detection.noCoverageSupport": {
+    "context": "Shown by the 'ann-detect' command (command prompt output) and in the Detect code and data dialog. "
+  }
+}

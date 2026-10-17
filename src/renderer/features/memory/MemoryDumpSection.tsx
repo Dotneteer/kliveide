@@ -10,6 +10,8 @@ import { memo, useRef, useState, useMemo, useCallback } from "react";
 import { EMPTY_OBJECT } from "@renderer/utils/stablerefs";
 import { isWidePartitionLabel } from "@renderer/controls/data/partitionWidth";
 import { HEAT_SMC, heatKind, heatStep } from "@renderer/features/coverage/heatModel";
+import { getLanguage, t } from "@common/i18n/i18n";
+import { useT } from "@common/i18n/useT";
 
 export type MemoryDumpSectionProps = {
   showPartitions?: boolean;
@@ -54,11 +56,11 @@ export type MemoryCharacterInfo = {
 };
 
 const EMPTY_CHARACTER_SET = EMPTY_OBJECT as Record<number, CharDescriptor>;
-const EMPTY_CHARACTER_INFO: MemoryCharacterInfo = {
-  characterSet: EMPTY_CHARACTER_SET,
-  tooltipCache: buildByteTooltipCache(EMPTY_CHARACTER_SET)
-};
-const characterInfoCache = new WeakMap<Record<number, CharDescriptor>, MemoryCharacterInfo>();
+/** Per character set, built once per display language (the tooltips hold translated text) */
+const characterInfoCache = new WeakMap<
+  Record<number, CharDescriptor>,
+  { language: string; info: MemoryCharacterInfo }
+>();
 
 type MemoryDumpSectionViewProps = MemoryDumpSectionProps & {
   characterInfo: MemoryCharacterInfo;
@@ -283,6 +285,7 @@ const HexValuesComponent = ({
   hoveredByteIndex,
   onHoverChange
 }: HexValuesProps) => {
+  const t = useT();
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Build the space-separated hex string for all bytes - memoized
@@ -360,11 +363,11 @@ const HexValuesComponent = ({
     const byteAddress = address + hoveredByteIndex;
     const [valueLine, charDescLine] = (tooltipCache[byteValue] ?? "").split("\n");
     return {
-      header: `Value at $${toHexa4(byteAddress)} (${byteAddress}):`,
+      header: t("panels.feature.memory.valueAt", { address: `$${toHexa4(byteAddress)} (${byteAddress})` }),
       value: valueLine,
       charDesc: charDescLine
     };
-  }, [hoveredByteIndex, address, bytes, tooltipCache]);
+  }, [t, hoveredByteIndex, address, bytes, tooltipCache]);
 
   const pointedHint = hoveredByteIndex != null ? pointedInfo?.[address + hoveredByteIndex] : undefined;
   const heatHint = hoveredByteIndex != null && heatSteps ? heatTooltipOf?.(address + hoveredByteIndex) : undefined;
@@ -566,24 +569,24 @@ const HexValues = memo(HexValuesComponent, (prev, next) => {
 const HEAT_KIND_CLASS = ["Exec", "Read", "Write"];
 
 function useMemoryCharacterInfo(charset?: Record<number, CharDescriptor>) {
+  // --- Re-renders on a language change, which rebuilds the tooltips below
+  useT();
   return getMemoryCharacterInfo(charset);
 }
 
 export function getMemoryCharacterInfo(charset?: Record<number, CharDescriptor>): MemoryCharacterInfo {
-  if (!charset) {
-    return EMPTY_CHARACTER_INFO;
-  }
-
-  const cached = characterInfoCache.get(charset);
-  if (cached) {
-    return cached;
+  const key = charset ?? EMPTY_CHARACTER_SET;
+  const language = getLanguage();
+  const cached = characterInfoCache.get(key);
+  if (cached && cached.language === language) {
+    return cached.info;
   }
 
   const characterInfo = {
-    characterSet: charset,
-    tooltipCache: buildByteTooltipCache(charset)
+    characterSet: key,
+    tooltipCache: buildByteTooltipCache(key)
   };
-  characterInfoCache.set(charset, characterInfo);
+  characterInfoCache.set(key, { language, info: characterInfo });
   return characterInfo;
 }
 
@@ -593,7 +596,7 @@ export function buildByteTooltipCache(charset: Record<number, CharDescriptor>): 
     const valueInfo = charset[i] ?? {};
     let description = valueInfo.t ?? "";
     if (valueInfo.c === "graph") {
-      description = "(graphics)";
+      description = t("panels.feature.memory.graphicsChar");
     } else if (valueInfo.c) {
       description = valueInfo.t ?? "";
     }

@@ -1,0 +1,2847 @@
+{
+  "panels.helpers.fileError.noContents": "This document has no contents to show.",
+  "@panels.helpers.fileError.noContents": {
+    "context": "Error shown in place of a file viewer when its tab has no file behind it."
+  },
+  "panels.helpers.fileError.cannotRead": "{name} could not be read.",
+  "@panels.helpers.fileError.cannotRead": {
+    "context": "Error shown in place of a file viewer when the file's bytes cannot be read from disk.",
+    "placeholders": {
+      "name": "The file's name"
+    }
+  },
+  "panels.helpers.fileError.cannotReadReason": "{name} could not be read: {reason}",
+  "@panels.helpers.fileError.cannotReadReason": {
+    "context": "Error shown in place of a file viewer when reading the file from disk failed.",
+    "placeholders": {
+      "name": "The file's name",
+      "reason": "The operating system's error message, in English"
+    }
+  },
+  "panels.helpers.fileError.unknownFile": "The file",
+  "@panels.helpers.fileError.unknownFile": {
+    "context": "Stands in for the file name in the 'could not be read' errors of a file viewer when the file has no name."
+  },
+  "panels.helpers.fileError.generic": "This file could not be read.",
+  "@panels.helpers.fileError.generic": {
+    "context": "Error shown in place of a file viewer when the file cannot be parsed and the parser gave no reason."
+  },
+  "panels.helpers.view.memory": "Memory",
+  "@panels.helpers.view.memory": {
+    "context": "Name of a view a block, bank or part of a file can be popped out in as its own document: shown in the bank browser's pop-out menu and button tooltips of the tape, .P/.O, ZX Spectrum and Z88 snapshot viewers (a memory dump).",
+    "maxChars": 14
+  },
+  "panels.helpers.view.disassembly": "Disassembly",
+  "@panels.helpers.view.disassembly": {
+    "context": "Name of a view a block, bank or part of a file can be popped out in as its own document: shown in the bank browser's pop-out menu and button tooltips of the tape, .P/.O, ZX Spectrum and Z88 snapshot viewers (a Z80 disassembly).",
+    "maxChars": 16
+  },
+  "panels.helpers.view.basic": "BASIC",
+  "@panels.helpers.view.basic": {
+    "context": "Name of a view a block, bank or part of a file can be popped out in as its own document: shown in the bank browser's pop-out menu and button tooltips of the tape, .P/.O, ZX Spectrum and Z88 snapshot viewers (a BASIC program listing). BASIC is the language's name.",
+    "maxChars": 10
+  },
+  "panels.helpers.view.screen": "Screen",
+  "@panels.helpers.view.screen": {
+    "context": "Name of a view a block, bank or part of a file can be popped out in as its own document: shown in the bank browser's pop-out menu and button tooltips of the tape, .P/.O, ZX Spectrum and Z88 snapshot viewers (the picture the bytes make).",
+    "maxChars": 12
+  },
+  "panels.helpers.filter.all": "All",
+  "@panels.helpers.filter.all": {
+    "context": "Filter button above the list of a file viewer's blocks, banks or parts: show every item.",
+    "maxChars": 10
+  },
+  "panels.helpers.filter.pagedIn": "Paged in",
+  "@panels.helpers.filter.pagedIn": {
+    "context": "Filter button above a snapshot viewer's bank list: show only the banks the snapshot has paged into the 64K address space.",
+    "maxChars": 14
+  },
+  "panels.helpers.popOutHint.block": "Pop out a block from its row's icon, by double-clicking the row, or with Enter.",
+  "@panels.helpers.popOutHint.block": {
+    "context": "Hint under the tape viewer's block list: how to open a block as its own document."
+  },
+  "panels.helpers.popOutHint.part": "Pop out a part from its row's icon, by double-clicking the row, or with Enter.",
+  "@panels.helpers.popOutHint.part": {
+    "context": "Hint under the ZX81 .P / ZX80 .O viewer's list of the file's parts: how to open a part as its own document."
+  },
+  "panels.helpers.popOutHint.bank": "Pop out a bank from its row's icon, by double-clicking the row, or with Enter.",
+  "@panels.helpers.popOutHint.bank": {
+    "context": "Hint under a snapshot viewer's memory bank list: how to open a bank as its own document."
+  },
+  "panels.helpers.popOutListing": "Pop out the listing",
+  "@panels.helpers.popOutListing": {
+    "context": "Button in a file viewer's BASIC details section: opens the program's whole BASIC listing as its own document.",
+    "maxChars": 30
+  },
+  "panels.helpers.lineCount": "{count, plural, one {# line} other {# lines}}",
+  "@panels.helpers.lineCount": {
+    "context": "How many lines a BASIC program has, in a file viewer's details and in a popped-out listing's toolbar.",
+    "placeholders": {
+      "count": "Number of program lines"
+    }
+  },
+  "panels.helpers.lineCountDamaged": "{count, plural, one {# line} other {# lines}} (stops early: the program is damaged)",
+  "@panels.helpers.lineCountDamaged": {
+    "context": "How many lines a BASIC program has, when the listing stopped early because the program's bytes are damaged.",
+    "placeholders": {
+      "count": "Number of lines read before the damage"
+    }
+  },
+  "panels.helpers.bytes": "{count, plural, one {# byte} other {# bytes}}",
+  "@panels.helpers.bytes": {
+    "context": "A size in bytes, in a file viewer's facts (file size, block length, expected length).",
+    "placeholders": {
+      "count": "Number of bytes"
+    }
+  },
+  "panels.helpers.pcChip": "The program counter points into this bank",
+  "@panels.helpers.pcChip": {
+    "context": "Tooltip of the 'PC $nnnn' chip on a snapshot viewer's bank row: the saved Z80 PC is in this bank."
+  },
+  "panels.helpers.spChip": "The stack pointer points into this bank",
+  "@panels.helpers.spChip": {
+    "context": "Tooltip of the 'SP $nnnn' chip on a snapshot viewer's bank row: the saved Z80 SP is in this bank."
+  },
+  "panels.helpers.screenChip": "screen",
+  "@panels.helpers.screenChip": {
+    "context": "Chip on a ZX Spectrum snapshot viewer's bank row: this is the bank the ULA displays. Lower case, a short tag.",
+    "maxChars": 10
+  },
+  "panels.helpers.screenChipTitle": "The ULA shows this bank",
+  "@panels.helpers.screenChipTitle": {
+    "context": "Tooltip of the 'screen' chip on a ZX Spectrum snapshot viewer's bank row. ULA is the chip's name."
+  },
+  "panels.helpers.pagedInAt": "Paged in at {address}",
+  "@panels.helpers.pagedInAt": {
+    "context": "Tooltip of the address chip on a snapshot viewer's bank row.",
+    "placeholders": {
+      "address": "A hex address such as $C000"
+    }
+  },
+  "panels.helpers.empty": "empty",
+  "@panels.helpers.empty": {
+    "context": "Short note on a snapshot viewer's bank row: every byte of the bank holds the same value. Lower case.",
+    "maxChars": 10
+  },
+  "panels.helpers.fact.pagedIn": "Paged in",
+  "@panels.helpers.fact.pagedIn": {
+    "context": "Label in a snapshot viewer's bank details: where the bank is paged into the address space.",
+    "maxChars": 14
+  },
+  "panels.helpers.fact.pagedInAt": "at {address}",
+  "@panels.helpers.fact.pagedInAt": {
+    "context": "Value of the 'Paged in' fact in a ZX Spectrum snapshot viewer's bank details.",
+    "placeholders": {
+      "address": "A hex address such as $C000"
+    }
+  },
+  "panels.helpers.fact.no": "no",
+  "@panels.helpers.fact.no": {
+    "context": "Value of the 'Paged in' fact in a snapshot viewer's bank details: the bank is not paged in. Lower case.",
+    "maxChars": 8
+  },
+  "panels.helpers.fact.listedAt": "Listed at",
+  "@panels.helpers.fact.listedAt": {
+    "context": "Label in a snapshot viewer's bank details: the address the bank's disassembly is listed at.",
+    "maxChars": 14
+  },
+  "panels.helpers.fact.lastView": "Last view",
+  "@panels.helpers.fact.lastView": {
+    "context": "Label in a snapshot viewer's bank details: the view (Memory or Disassembly) the bank last popped out in.",
+    "maxChars": 14
+  },
+  "panels.helpers.fact.contents": "Contents",
+  "@panels.helpers.fact.contents": {
+    "context": "Label in a snapshot viewer's bank details, shown for an empty bank: what every byte holds.",
+    "maxChars": 14
+  },
+  "panels.helpers.fact.length": "Length",
+  "@panels.helpers.fact.length": {
+    "context": "Label in a file viewer's details: the size of a block or part.",
+    "maxChars": 14
+  },
+  "panels.helpers.fact.listing": "Listing",
+  "@panels.helpers.fact.listing": {
+    "context": "Label in a file viewer's BASIC details section: how many lines the program has.",
+    "maxChars": 14
+  },
+  "panels.helpers.memoryAtPc": "Memory dump at PC",
+  "@panels.helpers.memoryAtPc": {
+    "context": "Tooltip of the button in a snapshot viewer's address-space section header: opens the snapshot's 64K as a memory dump at the program counter."
+  },
+  "panels.helpers.disassemblyAtPc": "Disassembly at PC",
+  "@panels.helpers.disassemblyAtPc": {
+    "context": "Tooltip of the button in a snapshot viewer's address-space section header: opens the snapshot's 64K as a disassembly at the program counter."
+  },
+  "panels.helpers.addressSpaceTitle": "{source} - 64K at PC",
+  "@panels.helpers.addressSpaceTitle": {
+    "context": "Tab title of the memory dump a snapshot viewer opens for the whole 64K address space.",
+    "placeholders": {
+      "source": "The snapshot's project path"
+    }
+  },
+  "panels.helpers.bankTitle": "{source} - Bank {bank}",
+  "@panels.helpers.bankTitle": {
+    "context": "Tab title of a snapshot's memory bank opened as its own document.",
+    "placeholders": {
+      "source": "The snapshot's path",
+      "bank": "The bank number, decimal or hex such as $3F"
+    }
+  },
+  "panels.helpers.heading.snapshot": "Snapshot",
+  "@panels.helpers.heading.snapshot": {
+    "context": "Heading of the first expandable section of the ZX Spectrum and Z88 snapshot viewers: what the file holds and whether Klive can load it.",
+    "maxChars": 24
+  },
+  "panels.helpers.heading.z80Registers": "Z80 Registers",
+  "@panels.helpers.heading.z80Registers": {
+    "context": "Heading of a snapshot viewer's section showing the saved Z80 registers. Z80 is the CPU's name.",
+    "maxChars": 24
+  },
+  "panels.helpers.heading.media": "Media",
+  "@panels.helpers.heading.media": {
+    "context": "Heading of the section of the machine-state and debug-recording viewers listing the tape, disks and SD card the machine had.",
+    "maxChars": 24
+  },
+  "panels.helpers.heading.file": "File",
+  "@panels.helpers.heading.file": {
+    "context": "Heading of the section of the machine-state and debug-recording viewers with the file's technical details.",
+    "maxChars": 24
+  },
+  "panels.helpers.label.loadable": "Loadable:",
+  "@panels.helpers.label.loadable": {
+    "context": "Label of a yes/no flag in a snapshot viewer: whether Klive can load the snapshot.",
+    "maxChars": 16
+  },
+  "panels.helpers.label.machine": "Machine:",
+  "@panels.helpers.label.machine": {
+    "context": "Label in a file viewer: the machine the snapshot, state or recording is for.",
+    "maxChars": 16
+  },
+  "panels.helpers.label.saved": "Saved:",
+  "@panels.helpers.label.saved": {
+    "context": "Label in the machine-state and debug-recording viewers: when the file was saved.",
+    "maxChars": 16
+  },
+  "panels.helpers.label.savedBy": "Saved by:",
+  "@panels.helpers.label.savedBy": {
+    "context": "Label in the machine-state and debug-recording viewers: the Klive version that saved the file.",
+    "maxChars": 16
+  },
+  "panels.helpers.label.machineId": "Machine id:",
+  "@panels.helpers.label.machineId": {
+    "context": "Label in the machine-state and debug-recording viewers' File section: the machine's internal id.",
+    "maxChars": 18
+  },
+  "panels.helpers.label.core": "Core:",
+  "@panels.helpers.label.core": {
+    "context": "Label in the machine-state and debug-recording viewers' File section: the id of the emulator core.",
+    "maxChars": 18
+  },
+  "panels.helpers.label.fingerprint": "Layout fingerprint:",
+  "@panels.helpers.label.fingerprint": {
+    "context": "Label in the machine-state and debug-recording viewers' File section: a hash of the core's memory layout.",
+    "maxChars": 28
+  },
+  "panels.helpers.label.unknownSections": "Unknown sections:",
+  "@panels.helpers.label.unknownSections": {
+    "context": "Label in the machine-state and debug-recording viewers' File section: section tags this Klive does not know.",
+    "maxChars": 18
+  },
+  "panels.helpers.media.tape": "Tape:",
+  "@panels.helpers.media.tape": {
+    "context": "Label of a media row in the machine-state and debug-recording viewers: the tape file inserted.",
+    "maxChars": 16
+  },
+  "panels.helpers.media.diskA": "Disk A:",
+  "@panels.helpers.media.diskA": {
+    "context": "Label of a media row in the machine-state and debug-recording viewers: the disk in drive A.",
+    "maxChars": 16
+  },
+  "panels.helpers.media.diskB": "Disk B:",
+  "@panels.helpers.media.diskB": {
+    "context": "Label of a media row in the machine-state and debug-recording viewers: the disk in drive B.",
+    "maxChars": 16
+  },
+  "panels.helpers.media.sdCard": "SD card:",
+  "@panels.helpers.media.sdCard": {
+    "context": "Label of a media row in the machine-state and debug-recording viewers: the SD card image.",
+    "maxChars": 16
+  },
+  "panels.helpers.media.none": "No tape, disk or SD card.",
+  "@panels.helpers.media.none": {
+    "context": "Shown in the Media section of the machine-state and debug-recording viewers when the machine had no media."
+  },
+  "panels.helpers.kliveVersion": "Klive {version}",
+  "@panels.helpers.kliveVersion": {
+    "context": "Value of the 'Saved by' label: the Klive version that saved the file.",
+    "placeholders": {
+      "version": "Version number such as 0.50.0"
+    }
+  },
+  "panels.tape.headerType.program": "Program",
+  "@panels.tape.headerType.program": {
+    "context": "Type of a standard ZX Spectrum tape header, as the ROM names it, shown in the tape viewer (.tap/.tzx files)'s block rows, details and file headings: a BASIC program.",
+    "maxChars": 20
+  },
+  "panels.tape.headerType.numberArray": "Number array",
+  "@panels.tape.headerType.numberArray": {
+    "context": "Type of a standard ZX Spectrum tape header, as the ROM names it, shown in the tape viewer (.tap/.tzx files)'s block rows, details and file headings: a BASIC array of numbers.",
+    "maxChars": 20
+  },
+  "panels.tape.headerType.characterArray": "Character array",
+  "@panels.tape.headerType.characterArray": {
+    "context": "Type of a standard ZX Spectrum tape header, as the ROM names it, shown in the tape viewer (.tap/.tzx files)'s block rows, details and file headings: a BASIC array of strings.",
+    "maxChars": 22
+  },
+  "panels.tape.headerType.bytes": "Bytes",
+  "@panels.tape.headerType.bytes": {
+    "context": "Type of a standard ZX Spectrum tape header, as the ROM names it, shown in the tape viewer (.tap/.tzx files)'s block rows, details and file headings: machine code or other raw bytes (also a screen).",
+    "maxChars": 20
+  },
+  "panels.tape.headerType.other": "Type {type}",
+  "@panels.tape.headerType.other": {
+    "context": "Type of a standard ZX Spectrum tape header, as the ROM names it, shown in the tape viewer (.tap/.tzx files)'s block rows, details and file headings: a type number the ROM does not know.",
+    "maxChars": 20,
+    "placeholders": {
+      "type": "The header's type byte, decimal"
+    }
+  },
+  "panels.tape.role.basic": "BASIC program",
+  "@panels.tape.role.basic": {
+    "context": "What a tape file's data block holds, read from its header: shown as the 'Holds' fact in the tape viewer (.tap/.tzx files)'s block details.",
+    "maxChars": 22
+  },
+  "panels.tape.role.code": "Code",
+  "@panels.tape.role.code": {
+    "context": "What a tape file's data block holds, read from its header: shown as the 'Holds' fact in the tape viewer (.tap/.tzx files)'s block details: machine code or other bytes.",
+    "maxChars": 22
+  },
+  "panels.tape.role.screen": "Screen",
+  "@panels.tape.role.screen": {
+    "context": "What a tape file's data block holds, read from its header: shown as the 'Holds' fact in the tape viewer (.tap/.tzx files)'s block details: a screen picture (6,912 bytes at $4000).",
+    "maxChars": 22
+  },
+  "panels.tape.role.numArray": "Number array",
+  "@panels.tape.role.numArray": {
+    "context": "What a tape file's data block holds, read from its header: shown as the 'Holds' fact in the tape viewer (.tap/.tzx files)'s block details.",
+    "maxChars": 22
+  },
+  "panels.tape.role.charArray": "Character array",
+  "@panels.tape.role.charArray": {
+    "context": "What a tape file's data block holds, read from its header: shown as the 'Holds' fact in the tape viewer (.tap/.tzx files)'s block details.",
+    "maxChars": 22
+  },
+  "panels.tape.role.headerless": "Headerless data",
+  "@panels.tape.role.headerless": {
+    "context": "What a tape file's data block holds, read from its header: shown as the 'Holds' fact in the tape viewer (.tap/.tzx files)'s block details: data no header describes.",
+    "maxChars": 22
+  },
+  "panels.tape.roleCount.basic": "{count, plural, one {# BASIC program} other {# BASIC programs}}",
+  "@panels.tape.roleCount.basic": {
+    "context": "One item of the 'Files' fact in the summary strip of the tape viewer (.tap/.tzx files): how many files of this kind the tape has. The items are joined by commas.",
+    "placeholders": {
+      "count": "Number of BASIC programs"
+    }
+  },
+  "panels.tape.roleCount.code": "{count, number} code",
+  "@panels.tape.roleCount.code": {
+    "context": "One item of the 'Files' fact in the summary strip of the tape viewer (.tap/.tzx files): how many files of this kind the tape has. The items are joined by commas. Machine code files.",
+    "placeholders": {
+      "count": "Number of code files"
+    }
+  },
+  "panels.tape.roleCount.screen": "{count, plural, one {# screen} other {# screens}}",
+  "@panels.tape.roleCount.screen": {
+    "context": "One item of the 'Files' fact in the summary strip of the tape viewer (.tap/.tzx files): how many files of this kind the tape has. The items are joined by commas.",
+    "placeholders": {
+      "count": "Number of screens"
+    }
+  },
+  "panels.tape.roleCount.numArray": "{count, plural, one {# number array} other {# number arrays}}",
+  "@panels.tape.roleCount.numArray": {
+    "context": "One item of the 'Files' fact in the summary strip of the tape viewer (.tap/.tzx files): how many files of this kind the tape has. The items are joined by commas.",
+    "placeholders": {
+      "count": "Number of number arrays"
+    }
+  },
+  "panels.tape.roleCount.charArray": "{count, plural, one {# character array} other {# character arrays}}",
+  "@panels.tape.roleCount.charArray": {
+    "context": "One item of the 'Files' fact in the summary strip of the tape viewer (.tap/.tzx files): how many files of this kind the tape has. The items are joined by commas.",
+    "placeholders": {
+      "count": "Number of character arrays"
+    }
+  },
+  "panels.tape.roleCount.headerless": "{count, plural, one {# headerless block} other {# headerless blocks}}",
+  "@panels.tape.roleCount.headerless": {
+    "context": "One item of the 'Files' fact in the summary strip of the tape viewer (.tap/.tzx files): how many files of this kind the tape has. The items are joined by commas.",
+    "placeholders": {
+      "count": "Number of headerless data blocks"
+    }
+  },
+  "panels.tape.tzx.standardData": "Standard data",
+  "@panels.tape.tzx.standardData": {
+    "context": "Name of a TZX block type (the TZX format's block id), shown as the 'Kind' fact and in the timeline tooltip of the tape viewer (.tap/.tzx files) ($10).",
+    "maxChars": 24
+  },
+  "panels.tape.tzx.turboData": "Turbo data",
+  "@panels.tape.tzx.turboData": {
+    "context": "Name of a TZX block type (the TZX format's block id), shown as the 'Kind' fact and in the timeline tooltip of the tape viewer (.tap/.tzx files) ($11).",
+    "maxChars": 24
+  },
+  "panels.tape.tzx.pureTone": "Pure tone",
+  "@panels.tape.tzx.pureTone": {
+    "context": "Name of a TZX block type (the TZX format's block id), shown as the 'Kind' fact and in the timeline tooltip of the tape viewer (.tap/.tzx files) ($12).",
+    "maxChars": 24
+  },
+  "panels.tape.tzx.pulseSequence": "Pulse sequence",
+  "@panels.tape.tzx.pulseSequence": {
+    "context": "Name of a TZX block type (the TZX format's block id), shown as the 'Kind' fact and in the timeline tooltip of the tape viewer (.tap/.tzx files) ($13).",
+    "maxChars": 24
+  },
+  "panels.tape.tzx.pureData": "Pure data",
+  "@panels.tape.tzx.pureData": {
+    "context": "Name of a TZX block type (the TZX format's block id), shown as the 'Kind' fact and in the timeline tooltip of the tape viewer (.tap/.tzx files) ($14).",
+    "maxChars": 24
+  },
+  "panels.tape.tzx.directRecording": "Direct recording",
+  "@panels.tape.tzx.directRecording": {
+    "context": "Name of a TZX block type (the TZX format's block id), shown as the 'Kind' fact and in the timeline tooltip of the tape viewer (.tap/.tzx files) ($15).",
+    "maxChars": 24
+  },
+  "panels.tape.tzx.c64RomData": "C64 ROM data",
+  "@panels.tape.tzx.c64RomData": {
+    "context": "Name of a TZX block type (the TZX format's block id), shown as the 'Kind' fact and in the timeline tooltip of the tape viewer (.tap/.tzx files) ($16). C64 is the Commodore 64.",
+    "maxChars": 24
+  },
+  "panels.tape.tzx.c64TurboData": "C64 turbo data",
+  "@panels.tape.tzx.c64TurboData": {
+    "context": "Name of a TZX block type (the TZX format's block id), shown as the 'Kind' fact and in the timeline tooltip of the tape viewer (.tap/.tzx files) ($17). C64 is the Commodore 64.",
+    "maxChars": 24
+  },
+  "panels.tape.tzx.cswRecording": "CSW recording",
+  "@panels.tape.tzx.cswRecording": {
+    "context": "Name of a TZX block type (the TZX format's block id), shown as the 'Kind' fact and in the timeline tooltip of the tape viewer (.tap/.tzx files) ($18). CSW is the name of a sound sample format.",
+    "maxChars": 24
+  },
+  "panels.tape.tzx.generalizedData": "Generalized data",
+  "@panels.tape.tzx.generalizedData": {
+    "context": "Name of a TZX block type (the TZX format's block id), shown as the 'Kind' fact and in the timeline tooltip of the tape viewer (.tap/.tzx files) ($19).",
+    "maxChars": 24
+  },
+  "panels.tape.tzx.pause": "Pause",
+  "@panels.tape.tzx.pause": {
+    "context": "Name of a TZX block type (the TZX format's block id), shown as the 'Kind' fact and in the timeline tooltip of the tape viewer (.tap/.tzx files) ($20): a stretch of silence on the tape.",
+    "maxChars": 24
+  },
+  "panels.tape.tzx.groupStart": "Group start",
+  "@panels.tape.tzx.groupStart": {
+    "context": "Name of a TZX block type (the TZX format's block id), shown as the 'Kind' fact and in the timeline tooltip of the tape viewer (.tap/.tzx files) ($21).",
+    "maxChars": 24
+  },
+  "panels.tape.tzx.groupEnd": "Group end",
+  "@panels.tape.tzx.groupEnd": {
+    "context": "Name of a TZX block type (the TZX format's block id), shown as the 'Kind' fact and in the timeline tooltip of the tape viewer (.tap/.tzx files) ($22).",
+    "maxChars": 24
+  },
+  "panels.tape.tzx.jump": "Jump",
+  "@panels.tape.tzx.jump": {
+    "context": "Name of a TZX block type (the TZX format's block id), shown as the 'Kind' fact and in the timeline tooltip of the tape viewer (.tap/.tzx files) ($23): jump to another block.",
+    "maxChars": 24
+  },
+  "panels.tape.tzx.loopStart": "Loop start",
+  "@panels.tape.tzx.loopStart": {
+    "context": "Name of a TZX block type (the TZX format's block id), shown as the 'Kind' fact and in the timeline tooltip of the tape viewer (.tap/.tzx files) ($24).",
+    "maxChars": 24
+  },
+  "panels.tape.tzx.loopEnd": "Loop end",
+  "@panels.tape.tzx.loopEnd": {
+    "context": "Name of a TZX block type (the TZX format's block id), shown as the 'Kind' fact and in the timeline tooltip of the tape viewer (.tap/.tzx files) ($25).",
+    "maxChars": 24
+  },
+  "panels.tape.tzx.callSequence": "Call sequence",
+  "@panels.tape.tzx.callSequence": {
+    "context": "Name of a TZX block type (the TZX format's block id), shown as the 'Kind' fact and in the timeline tooltip of the tape viewer (.tap/.tzx files) ($26).",
+    "maxChars": 24
+  },
+  "panels.tape.tzx.returnFromSequence": "Return from sequence",
+  "@panels.tape.tzx.returnFromSequence": {
+    "context": "Name of a TZX block type (the TZX format's block id), shown as the 'Kind' fact and in the timeline tooltip of the tape viewer (.tap/.tzx files) ($27).",
+    "maxChars": 24
+  },
+  "panels.tape.tzx.selectBlock": "Select block",
+  "@panels.tape.tzx.selectBlock": {
+    "context": "Name of a TZX block type (the TZX format's block id), shown as the 'Kind' fact and in the timeline tooltip of the tape viewer (.tap/.tzx files) ($28).",
+    "maxChars": 24
+  },
+  "panels.tape.tzx.stopIf48k": "Stop if 48K",
+  "@panels.tape.tzx.stopIf48k": {
+    "context": "Name of a TZX block type (the TZX format's block id), shown as the 'Kind' fact and in the timeline tooltip of the tape viewer (.tap/.tzx files) ($2A): stop the tape when the machine is a 48K Spectrum.",
+    "maxChars": 24
+  },
+  "panels.tape.tzx.setSignalLevel": "Set signal level",
+  "@panels.tape.tzx.setSignalLevel": {
+    "context": "Name of a TZX block type (the TZX format's block id), shown as the 'Kind' fact and in the timeline tooltip of the tape viewer (.tap/.tzx files) ($2B).",
+    "maxChars": 24
+  },
+  "panels.tape.tzx.textDescription": "Text description",
+  "@panels.tape.tzx.textDescription": {
+    "context": "Name of a TZX block type (the TZX format's block id), shown as the 'Kind' fact and in the timeline tooltip of the tape viewer (.tap/.tzx files) ($30).",
+    "maxChars": 24
+  },
+  "panels.tape.tzx.message": "Message",
+  "@panels.tape.tzx.message": {
+    "context": "Name of a TZX block type (the TZX format's block id), shown as the 'Kind' fact and in the timeline tooltip of the tape viewer (.tap/.tzx files) ($31): a message to show while the tape plays.",
+    "maxChars": 24
+  },
+  "panels.tape.tzx.archiveInfo": "Archive info",
+  "@panels.tape.tzx.archiveInfo": {
+    "context": "Name of a TZX block type (the TZX format's block id), shown as the 'Kind' fact and in the timeline tooltip of the tape viewer (.tap/.tzx files) ($32): title, publisher, authors and other metadata. Also the title of the details section listing them.",
+    "maxChars": 24
+  },
+  "panels.tape.tzx.hardwareType": "Hardware type",
+  "@panels.tape.tzx.hardwareType": {
+    "context": "Name of a TZX block type (the TZX format's block id), shown as the 'Kind' fact and in the timeline tooltip of the tape viewer (.tap/.tzx files) ($33).",
+    "maxChars": 24
+  },
+  "panels.tape.tzx.emulationInfo": "Emulation info",
+  "@panels.tape.tzx.emulationInfo": {
+    "context": "Name of a TZX block type (the TZX format's block id), shown as the 'Kind' fact and in the timeline tooltip of the tape viewer (.tap/.tzx files) ($34).",
+    "maxChars": 24
+  },
+  "panels.tape.tzx.customInfo": "Custom info",
+  "@panels.tape.tzx.customInfo": {
+    "context": "Name of a TZX block type (the TZX format's block id), shown as the 'Kind' fact and in the timeline tooltip of the tape viewer (.tap/.tzx files) ($35).",
+    "maxChars": 24
+  },
+  "panels.tape.tzx.snapshot": "Snapshot",
+  "@panels.tape.tzx.snapshot": {
+    "context": "Name of a TZX block type (the TZX format's block id), shown as the 'Kind' fact and in the timeline tooltip of the tape viewer (.tap/.tzx files) ($40).",
+    "maxChars": 24
+  },
+  "panels.tape.tzx.glue": "Glue",
+  "@panels.tape.tzx.glue": {
+    "context": "Name of a TZX block type (the TZX format's block id), shown as the 'Kind' fact and in the timeline tooltip of the tape viewer (.tap/.tzx files) ($5A): marks where two TZX files were joined.",
+    "maxChars": 24
+  },
+  "panels.tape.tzx.other": "Block {id}",
+  "@panels.tape.tzx.other": {
+    "context": "Name of a TZX block type (the TZX format's block id), shown as the 'Kind' fact and in the timeline tooltip of the tape viewer (.tap/.tzx files): a block id Klive does not know.",
+    "maxChars": 24,
+    "placeholders": {
+      "id": "The block id in hex, e.g. $4B"
+    }
+  },
+  "panels.tape.kind.header": "Header",
+  "@panels.tape.kind.header": {
+    "context": "Kind of a .tap file block in the tape viewer (.tap/.tzx files): a standard ROM header.",
+    "maxChars": 24
+  },
+  "panels.tape.kind.data": "Data",
+  "@panels.tape.kind.data": {
+    "context": "Kind of a .tap file block in the tape viewer (.tap/.tzx files): a data block.",
+    "maxChars": 24
+  },
+  "panels.tape.kind.stopTape": "Stop the tape",
+  "@panels.tape.kind.stopTape": {
+    "context": "Kind of a TZX pause block with zero length, in the tape viewer (.tap/.tzx files): it stops the tape.",
+    "maxChars": 24
+  },
+  "panels.tape.archive.title": "Title",
+  "@panels.tape.archive.title": {
+    "context": "Label of a TZX archive info field (metadata of the tape), shown in the 'Archive info' details section of the tape viewer (.tap/.tzx files), and in the tape summary strip.",
+    "maxChars": 14
+  },
+  "panels.tape.archive.publisher": "Publisher",
+  "@panels.tape.archive.publisher": {
+    "context": "Label of a TZX archive info field (metadata of the tape), shown in the 'Archive info' details section of the tape viewer (.tap/.tzx files), and in the tape summary strip.",
+    "maxChars": 14
+  },
+  "panels.tape.archive.authors": "Authors",
+  "@panels.tape.archive.authors": {
+    "context": "Label of a TZX archive info field (metadata of the tape), shown in the 'Archive info' details section of the tape viewer (.tap/.tzx files), and in the tape summary strip.",
+    "maxChars": 14
+  },
+  "panels.tape.archive.year": "Year",
+  "@panels.tape.archive.year": {
+    "context": "Label of a TZX archive info field (metadata of the tape), shown in the 'Archive info' details section of the tape viewer (.tap/.tzx files): the year of publication; also in the tape summary strip.",
+    "maxChars": 14
+  },
+  "panels.tape.archive.language": "Language",
+  "@panels.tape.archive.language": {
+    "context": "Label of a TZX archive info field (metadata of the tape), shown in the 'Archive info' details section of the tape viewer (.tap/.tzx files): the language of the program.",
+    "maxChars": 14
+  },
+  "panels.tape.archive.type": "Type",
+  "@panels.tape.archive.type": {
+    "context": "Label of a TZX archive info field (metadata of the tape), shown in the 'Archive info' details section of the tape viewer (.tap/.tzx files): the kind of program (game, utility, ...).",
+    "maxChars": 14
+  },
+  "panels.tape.archive.price": "Price",
+  "@panels.tape.archive.price": {
+    "context": "Label of a TZX archive info field (metadata of the tape), shown in the 'Archive info' details section of the tape viewer (.tap/.tzx files).",
+    "maxChars": 14
+  },
+  "panels.tape.archive.loader": "Loader",
+  "@panels.tape.archive.loader": {
+    "context": "Label of a TZX archive info field (metadata of the tape), shown in the 'Archive info' details section of the tape viewer (.tap/.tzx files): the protection scheme or loader the tape uses.",
+    "maxChars": 14
+  },
+  "panels.tape.archive.origin": "Origin",
+  "@panels.tape.archive.origin": {
+    "context": "Label of a TZX archive info field (metadata of the tape), shown in the 'Archive info' details section of the tape viewer (.tap/.tzx files): where the tape came from (original, budget re-release, ...).",
+    "maxChars": 14
+  },
+  "panels.tape.archive.comment": "Comment",
+  "@panels.tape.archive.comment": {
+    "context": "Label of a TZX archive info field (metadata of the tape), shown in the 'Archive info' details section of the tape viewer (.tap/.tzx files).",
+    "maxChars": 14
+  },
+  "panels.tape.archive.other": "Field {id}",
+  "@panels.tape.archive.other": {
+    "context": "Label of a TZX archive info field (metadata of the tape), shown in the 'Archive info' details section of the tape viewer (.tap/.tzx files): a field type the TZX format does not define.",
+    "maxChars": 14,
+    "placeholders": {
+      "id": "The field type in hex, e.g. $0A"
+    }
+  },
+  "panels.tape.text.pulses": "{count, plural, one {# pulse} other {# pulses}}",
+  "@panels.tape.text.pulses": {
+    "context": "Short description of a TZX pulse sequence or CSW recording block in the tape viewer (.tap/.tzx files)'s block row.",
+    "placeholders": {
+      "count": "Number of pulses"
+    }
+  },
+  "panels.tape.text.perSample": "{tStates}T per sample",
+  "@panels.tape.text.perSample": {
+    "context": "Short description of a TZX direct recording block in the tape viewer (.tap/.tzx files)'s block row. 'T' abbreviates T-states (CPU clock cycles) and stays as it is.",
+    "placeholders": {
+      "tStates": "T-states each sample lasts"
+    }
+  },
+  "panels.tape.text.symbols": "{count, plural, one {# symbol} other {# symbols}}",
+  "@panels.tape.text.symbols": {
+    "context": "Short description of a TZX generalized data block in the tape viewer (.tap/.tzx files)'s block row.",
+    "placeholders": {
+      "count": "Number of data symbols"
+    }
+  },
+  "panels.tape.text.jumpBy": "by {jump}",
+  "@panels.tape.text.jumpBy": {
+    "context": "Short description of a TZX jump block in the tape viewer (.tap/.tzx files)'s block row: how many blocks it jumps (may be negative).",
+    "placeholders": {
+      "jump": "The relative jump, e.g. 2 or -3"
+    }
+  },
+  "panels.tape.text.loops": "{count, plural, one {# time} other {# times}}",
+  "@panels.tape.text.loops": {
+    "context": "Short description of a TZX loop start block in the tape viewer (.tap/.tzx files)'s block row: how many times the loop repeats.",
+    "placeholders": {
+      "count": "Repetitions"
+    }
+  },
+  "panels.tape.text.entries": "{count, plural, one {# entry} other {# entries}}",
+  "@panels.tape.text.entries": {
+    "context": "Short description of a TZX hardware type block in the tape viewer (.tap/.tzx files)'s block row: how many hardware entries it lists.",
+    "placeholders": {
+      "count": "Number of entries"
+    }
+  },
+  "panels.tape.ms": "{ms, number} ms",
+  "@panels.tape.ms": {
+    "context": "A duration in milliseconds in the tape viewer (.tap/.tzx files) (a pause, a block's play time). 'ms' is the unit.",
+    "placeholders": {
+      "ms": "Milliseconds"
+    }
+  },
+  "panels.tape.error.notTape": "This file could not be read as a .tap or .tzx tape.",
+  "@panels.tape.error.notTape": {
+    "context": "Error shown in place of the tape viewer (.tap/.tzx files) when the file is not a tape."
+  },
+  "panels.tape.fileLabel": "{type} \"{name}\"",
+  "@panels.tape.fileLabel": {
+    "context": "Heading of a group of blocks in the tape viewer (.tap/.tzx files) that make one file: the header's type and the file name in quotes.",
+    "placeholders": {
+      "type": "The header type, e.g. 'Program' or 'Bytes'",
+      "name": "The file name stored in the header"
+    }
+  },
+  "panels.tape.group.metadata": "Metadata",
+  "@panels.tape.group.metadata": {
+    "context": "Heading of a group of blocks in the tape viewer (.tap/.tzx files) that carry only text and archive information.",
+    "maxChars": 24
+  },
+  "panels.tape.group.tzxGroup": "Group \"{name}\"",
+  "@panels.tape.group.tzxGroup": {
+    "context": "Heading of a group of blocks in the tape viewer (.tap/.tzx files) that sit inside a named TZX group.",
+    "placeholders": {
+      "name": "The group's name from the tape"
+    }
+  },
+  "panels.tape.group.headerless": "Headerless",
+  "@panels.tape.group.headerless": {
+    "context": "Heading of a group of data blocks in the tape viewer (.tap/.tzx files) that no header describes, and the short description of such a block.",
+    "maxChars": 24
+  },
+  "panels.tape.summary.header": "{type} header",
+  "@panels.tape.summary.header": {
+    "context": "Short description of a header block in the tape viewer (.tap/.tzx files)'s block row.",
+    "placeholders": {
+      "type": "The header type, e.g. 'Program'"
+    }
+  },
+  "panels.tape.summary.program": "Program",
+  "@panels.tape.summary.program": {
+    "context": "Short description of a BASIC data block in the tape viewer (.tap/.tzx files)'s block row when the program has no autostart line.",
+    "maxChars": 24
+  },
+  "panels.tape.summary.array": "Array",
+  "@panels.tape.summary.array": {
+    "context": "Short description of an array data block in the tape viewer (.tap/.tzx files)'s block row.",
+    "maxChars": 24
+  },
+  "panels.tape.summary.fields": "{count, plural, one {# field} other {# fields}}",
+  "@panels.tape.summary.fields": {
+    "context": "Short description of a TZX archive info block in the tape viewer (.tap/.tzx files)'s block row: how many metadata fields it has.",
+    "placeholders": {
+      "count": "Number of fields"
+    }
+  },
+  "panels.tape.filter.data": "Data",
+  "@panels.tape.filter.data": {
+    "context": "Filter button above the tape viewer (.tap/.tzx files)'s block list: show only blocks that hold bytes.",
+    "maxChars": 10
+  },
+  "panels.tape.filter.code": "Code",
+  "@panels.tape.filter.code": {
+    "context": "Filter button above the tape viewer (.tap/.tzx files)'s block list: show only machine code and screen blocks.",
+    "maxChars": 10
+  },
+  "panels.tape.filter.notPlayed": "Not played",
+  "@panels.tape.filter.notPlayed": {
+    "context": "Filter button above the tape viewer (.tap/.tzx files)'s block list: show only the blocks Klive's tape player skips.",
+    "maxChars": 14
+  },
+  "panels.tape.unplayableBanner": "{count, plural, one {# block on this tape will not play in Klive, so loading it may fail. It is marked \"not played\".} other {# blocks on this tape will not play in Klive, so loading it may fail. They are marked \"not played\".}}",
+  "@panels.tape.unplayableBanner": {
+    "context": "Warning banner at the top of the tape viewer (.tap/.tzx files) when some blocks are of a kind Klive's tape player skips. 'not played' quotes the chip shown on those rows.",
+    "placeholders": {
+      "count": "Number of blocks Klive skips"
+    }
+  },
+  "panels.tape.summaryLabel": "Tape summary",
+  "@panels.tape.summaryLabel": {
+    "context": "Accessible name (screen readers) of the summary strip at the top of the tape viewer (.tap/.tzx files)."
+  },
+  "panels.tape.fact.format": "Format",
+  "@panels.tape.fact.format": {
+    "context": "Label in the summary strip of the tape viewer (.tap/.tzx files): TAP or TZX and its version.",
+    "maxChars": 12
+  },
+  "panels.tape.fact.size": "Size",
+  "@panels.tape.fact.size": {
+    "context": "Label in the summary strip of the tape viewer (.tap/.tzx files): the file size.",
+    "maxChars": 12
+  },
+  "panels.tape.fact.blocks": "Blocks",
+  "@panels.tape.fact.blocks": {
+    "context": "Label in the summary strip of the tape viewer (.tap/.tzx files): how many blocks the tape has.",
+    "maxChars": 12
+  },
+  "panels.tape.fact.files": "Files",
+  "@panels.tape.fact.files": {
+    "context": "Label in the summary strip of the tape viewer (.tap/.tzx files): how many files (a header and its data) the tape has.",
+    "maxChars": 12
+  },
+  "panels.tape.fact.filesValue": "{count, number} ({roles})",
+  "@panels.tape.fact.filesValue": {
+    "context": "Value of the 'Files' fact in the summary strip of the tape viewer (.tap/.tzx files): the file count and the counts of each kind.",
+    "placeholders": {
+      "count": "Number of files",
+      "roles": "Comma-separated counts such as '2 BASIC programs, 1 code'"
+    }
+  },
+  "panels.tape.fact.playTime": "Play time",
+  "@panels.tape.fact.playTime": {
+    "context": "Label in the summary strip of the tape viewer (.tap/.tzx files): how long the tape plays (m:ss).",
+    "maxChars": 14
+  },
+  "panels.tape.fact.playTimeApprox": "Some blocks' play time is estimated",
+  "@panels.tape.fact.playTimeApprox": {
+    "context": "Tooltip of the 'Play time' fact in the tape viewer (.tap/.tzx files) when the play time is approximate (shown with ~)."
+  },
+  "panels.tape.fact.listSeparator": ", ",
+  "@panels.tape.fact.listSeparator": {
+    "context": "Separator between the per-kind file counts in the 'Files' fact of the tape viewer (.tap/.tzx files) (e.g. '2 BASIC programs, 1 code')."
+  },
+  "panels.tape.heading": "Blocks",
+  "@panels.tape.heading": {
+    "context": "Heading of the block list in the tape viewer (.tap/.tzx files).",
+    "maxChars": 16
+  },
+  "panels.tape.listSummary": "{blocks, plural, one {# block} other {# blocks}} · {files, plural, one {# file} other {# files}}",
+  "@panels.tape.listSummary": {
+    "context": "Summary beside the heading of the tape viewer (.tap/.tzx files)'s block list.",
+    "placeholders": {
+      "blocks": "Number of blocks",
+      "files": "Number of files (a header and its data)"
+    }
+  },
+  "panels.tape.readAsBasic": "Read as BASIC",
+  "@panels.tape.readAsBasic": {
+    "context": "Context-menu item of a headerless data block in the tape viewer (.tap/.tzx files): list the block's bytes as a BASIC program.",
+    "maxChars": 28
+  },
+  "panels.tape.stopReadingAsBasic": "Stop Reading as BASIC",
+  "@panels.tape.stopReadingAsBasic": {
+    "context": "Context-menu item of a data block in the tape viewer (.tap/.tzx files) that the user asked to read as BASIC: stop doing so.",
+    "maxChars": 28
+  },
+  "panels.tape.chip.checksum": "checksum",
+  "@panels.tape.chip.checksum": {
+    "context": "Warning chip on a block row of the tape viewer (.tap/.tzx files): the block's checksum is wrong. Lower case, a short tag.",
+    "maxChars": 12
+  },
+  "panels.tape.chip.checksumTitle": "The block's checksum does not match its bytes",
+  "@panels.tape.chip.checksumTitle": {
+    "context": "Tooltip of the 'checksum' warning chip in the tape viewer (.tap/.tzx files)."
+  },
+  "panels.tape.chip.length": "length",
+  "@panels.tape.chip.length": {
+    "context": "Warning chip on a block row of the tape viewer (.tap/.tzx files): the block's length differs from its header. Lower case, a short tag.",
+    "maxChars": 12
+  },
+  "panels.tape.chip.lengthTitle": "The block's length differs from what its header says",
+  "@panels.tape.chip.lengthTitle": {
+    "context": "Tooltip of the 'length' warning chip in the tape viewer (.tap/.tzx files)."
+  },
+  "panels.tape.chip.notPlayed": "not played",
+  "@panels.tape.chip.notPlayed": {
+    "context": "Error chip on a block row of the tape viewer (.tap/.tzx files): Klive's tape player skips the block. Lower case, a short tag.",
+    "maxChars": 14
+  },
+  "panels.tape.chip.notPlayedTitle": "Klive's tape player skips this block, so a load may fail",
+  "@panels.tape.chip.notPlayedTitle": {
+    "context": "Tooltip of the 'not played' chip in the tape viewer (.tap/.tzx files)."
+  },
+  "panels.tape.chip.flag": "flag {value}",
+  "@panels.tape.chip.flag": {
+    "context": "Chip beside the details title of a block in the tape viewer (.tap/.tzx files): the block's flag byte.",
+    "placeholders": {
+      "value": "The flag byte in hex, e.g. $FF"
+    }
+  },
+  "panels.tape.chip.turbo": "turbo",
+  "@panels.tape.chip.turbo": {
+    "context": "Chip beside the details title of a TZX turbo data block in the tape viewer (.tap/.tzx files). Lower case, a short tag.",
+    "maxChars": 10
+  },
+  "panels.tape.fact.kind": "Kind",
+  "@panels.tape.fact.kind": {
+    "context": "Label in a block's details in the tape viewer (.tap/.tzx files): the block's type.",
+    "maxChars": 14
+  },
+  "panels.tape.fact.holds": "Holds",
+  "@panels.tape.fact.holds": {
+    "context": "Label in a data block's details in the tape viewer (.tap/.tzx files): what the data is (BASIC program, code, ...).",
+    "maxChars": 14
+  },
+  "panels.tape.fact.lengthOfData": "{bytes, plural, one {# byte} other {# bytes}} ({data, number} of data)",
+  "@panels.tape.fact.lengthOfData": {
+    "context": "Value of the 'Length' fact of a data block in the tape viewer (.tap/.tzx files): the recorded length, and the payload without the flag and checksum bytes.",
+    "placeholders": {
+      "bytes": "Recorded bytes",
+      "data": "Payload bytes"
+    }
+  },
+  "panels.tape.fact.checksum": "Checksum",
+  "@panels.tape.fact.checksum": {
+    "context": "Label in a block's details in the tape viewer (.tap/.tzx files).",
+    "maxChars": 14
+  },
+  "panels.tape.fact.checksumOk": "OK",
+  "@panels.tape.fact.checksumOk": {
+    "context": "Value of the 'Checksum' fact in the tape viewer (.tap/.tzx files): the checksum matches.",
+    "maxChars": 14
+  },
+  "panels.tape.fact.checksumBad": "Does not match",
+  "@panels.tape.fact.checksumBad": {
+    "context": "Value of the 'Checksum' fact in the tape viewer (.tap/.tzx files): the checksum is wrong.",
+    "maxChars": 20
+  },
+  "panels.tape.fact.plays": "Plays",
+  "@panels.tape.fact.plays": {
+    "context": "Label in a block's details in the tape viewer (.tap/.tzx files): when the block plays on the tape (from–to, m:ss).",
+    "maxChars": 14
+  },
+  "panels.tape.fact.playsApprox": "{span} (approx.)",
+  "@panels.tape.fact.playsApprox": {
+    "context": "Value of the 'Plays' fact (and the timeline tooltip's time span) in the tape viewer (.tap/.tzx files) when the time is an estimate.",
+    "placeholders": {
+      "span": "A time span such as 0:05–0:12"
+    }
+  },
+  "panels.tape.fact.pauseAfter": "Pause after",
+  "@panels.tape.fact.pauseAfter": {
+    "context": "Label in a block's details in the tape viewer (.tap/.tzx files): the silence after the block.",
+    "maxChars": 14
+  },
+  "panels.tape.fact.duration": "Duration",
+  "@panels.tape.fact.duration": {
+    "context": "Label in a pause block's details in the tape viewer (.tap/.tzx files).",
+    "maxChars": 14
+  },
+  "panels.tape.fact.klive": "Klive",
+  "@panels.tape.fact.klive": {
+    "context": "Label in a block's details in the tape viewer (.tap/.tzx files) for how Klive treats the block. Klive is the product name.",
+    "maxChars": 14
+  },
+  "panels.tape.fact.skipped": "Skipped when the tape plays",
+  "@panels.tape.fact.skipped": {
+    "context": "Value of the 'Klive' fact in the tape viewer (.tap/.tzx files): the tape player skips this block."
+  },
+  "panels.tape.fact.text": "Text",
+  "@panels.tape.fact.text": {
+    "context": "Label in a text block's details in the tape viewer (.tap/.tzx files): the text the block carries.",
+    "maxChars": 14
+  },
+  "panels.tape.fileSection": "File {type} \"{name}\"",
+  "@panels.tape.fileSection": {
+    "context": "Title of the details section of a data block in the tape viewer (.tap/.tzx files) describing the file its header belongs to.",
+    "placeholders": {
+      "type": "The header type in lower case, e.g. 'program'",
+      "name": "The file name stored in the header"
+    }
+  },
+  "panels.tape.fact.header": "Header",
+  "@panels.tape.fact.header": {
+    "context": "Label in the tape viewer (.tap/.tzx files)'s file details: the block number of the file's header.",
+    "maxChars": 14
+  },
+  "panels.tape.fact.expected": "Expected",
+  "@panels.tape.fact.expected": {
+    "context": "Label in the tape viewer (.tap/.tzx files)'s file details: the length the header promises.",
+    "maxChars": 14
+  },
+  "panels.tape.fact.loadsAt": "Loads at",
+  "@panels.tape.fact.loadsAt": {
+    "context": "Label in the tape viewer (.tap/.tzx files)'s file details: the address the code loads at.",
+    "maxChars": 14
+  },
+  "panels.tape.timingSection": "Timing (T-states)",
+  "@panels.tape.timingSection": {
+    "context": "Title of the details section in the tape viewer (.tap/.tzx files) with a turbo block's pulse lengths. T-states are CPU clock cycles.",
+    "maxChars": 24
+  },
+  "panels.tape.fact.pilot": "Pilot",
+  "@panels.tape.fact.pilot": {
+    "context": "Label in the tape viewer (.tap/.tzx files)'s timing details: the pilot tone's pulse length and count.",
+    "maxChars": 12
+  },
+  "panels.tape.fact.sync": "Sync",
+  "@panels.tape.fact.sync": {
+    "context": "Label in the tape viewer (.tap/.tzx files)'s timing details: the two sync pulse lengths.",
+    "maxChars": 12
+  },
+  "panels.tape.fact.bits": "Bits",
+  "@panels.tape.fact.bits": {
+    "context": "Label in the tape viewer (.tap/.tzx files)'s timing details: the 0 and 1 bit pulse lengths.",
+    "maxChars": 12
+  },
+  "panels.tape.listAt": "List at:",
+  "@panels.tape.listAt": {
+    "context": "Label of the address box in the tape viewer (.tap/.tzx files)'s Disassembly details section for a block no header places.",
+    "maxChars": 12
+  },
+  "panels.tape.listAtTooltip": "The address to list this block at in Disassembly (hex). Enter to apply.",
+  "@panels.tape.listAtTooltip": {
+    "context": "Tooltip of the 'List at' address box in the tape viewer (.tap/.tzx files)."
+  },
+  "panels.tape.block.noBytes": "This block's bytes are not available.",
+  "@panels.tape.block.noBytes": {
+    "context": "Error shown in a popped-out tape block's listing or screen tab when its bytes are gone."
+  },
+  "panels.tape.block.copy": "Copy to clipboard",
+  "@panels.tape.block.copy": {
+    "context": "Tooltip of the copy button in a popped-out BASIC listing's toolbar (tape block or ZX81/ZX80 program)."
+  },
+  "panels.tape.block.copied": "BASIC listing copied to the clipboard",
+  "@panels.tape.block.copied": {
+    "context": "Status bar message after copying a popped-out BASIC listing."
+  },
+  "panels.tape.block.showCodes": "Show Non-Printable:",
+  "@panels.tape.block.showCodes": {
+    "context": "Label of a switch in a popped-out BASIC listing's toolbar.",
+    "maxChars": 24
+  },
+  "panels.tape.block.showCodesTitle": "Display the non-printable codes",
+  "@panels.tape.block.showCodesTitle": {
+    "context": "Tooltip of the 'Show Non-Printable' switch in a popped-out BASIC listing's toolbar."
+  },
+  "panels.tape.block.sinclairFont": "Use Sinclair font:",
+  "@panels.tape.block.sinclairFont": {
+    "context": "Label of a switch in a popped-out ZX81/ZX80 BASIC listing's toolbar.",
+    "maxChars": 24
+  },
+  "panels.tape.block.sinclairFontTitle": "Use the Sinclair font to display the list",
+  "@panels.tape.block.sinclairFontTitle": {
+    "context": "Tooltip of the 'Use Sinclair font' switch in a popped-out ZX81/ZX80 BASIC listing's toolbar."
+  },
+  "panels.tape.block.spectrumFont": "Use ZX Spectrum font:",
+  "@panels.tape.block.spectrumFont": {
+    "context": "Label of a switch in a popped-out ZX Spectrum BASIC listing's toolbar.",
+    "maxChars": 26
+  },
+  "panels.tape.block.spectrumFontTitle": "Use ZX Spectrum font to display the list",
+  "@panels.tape.block.spectrumFontTitle": {
+    "context": "Tooltip of the 'Use ZX Spectrum font' switch in a popped-out ZX Spectrum BASIC listing's toolbar."
+  },
+  "panels.tape.block.linesAutostart": "{count, plural, one {# line} other {# lines}} · autostart LINE {line}",
+  "@panels.tape.block.linesAutostart": {
+    "context": "Line count in a popped-out BASIC listing's toolbar, for a program that runs from a line after loading. LINE is the BASIC keyword.",
+    "placeholders": {
+      "count": "Number of program lines",
+      "line": "The autostart line number"
+    }
+  },
+  "panels.tape.block.noLines": "This block holds no BASIC lines.",
+  "@panels.tape.block.noLines": {
+    "context": "Empty state of a popped-out BASIC listing with no program lines."
+  },
+  "panels.tape.block.shortScreen": "A screen is 6,912 bytes; this block holds {count, number}.",
+  "@panels.tape.block.shortScreen": {
+    "context": "Error shown in a popped-out tape block's screen tab when the block is too short to be a screen.",
+    "placeholders": {
+      "count": "The block's length in bytes"
+    }
+  },
+  "panels.tape.blockTitle": "{source} - Block #{index}",
+  "@panels.tape.blockTitle": {
+    "context": "Tab title of a tape block opened as a memory dump or disassembly.",
+    "placeholders": {
+      "source": "The tape file's path",
+      "index": "The block's number on the tape"
+    }
+  },
+  "panels.tape.blockTitleBasic": "{source} - Block #{index} (BASIC)",
+  "@panels.tape.blockTitleBasic": {
+    "context": "Tab title of a tape block opened as a BASIC listing.",
+    "placeholders": {
+      "source": "The tape file's path",
+      "index": "The block's number on the tape"
+    }
+  },
+  "panels.tape.blockTitleScreen": "{source} - Block #{index} (Screen)",
+  "@panels.tape.blockTitleScreen": {
+    "context": "Tab title of a tape block opened as a screen picture.",
+    "placeholders": {
+      "source": "The tape file's path",
+      "index": "The block's number on the tape"
+    }
+  },
+  "panels.tape.headerBytes": "Header bytes",
+  "@panels.tape.headerBytes": {
+    "context": "Title of the header byte explainer section in the tape viewer (.tap/.tzx files)'s details of a header block.",
+    "maxChars": 24
+  },
+  "panels.tape.headerOffset": "Offset {offset}",
+  "@panels.tape.headerOffset": {
+    "context": "Tooltip of one byte cell in the tape viewer (.tap/.tzx files)'s header byte strip: its offset in the block.",
+    "placeholders": {
+      "offset": "The byte's offset, 0-18"
+    }
+  },
+  "panels.tape.timeline.merged": "#{first}–#{last} · {count, plural, one {# block} other {# blocks}} · {span}",
+  "@panels.tape.timeline.merged": {
+    "context": "Tooltip of a timeline segment in the tape viewer (.tap/.tzx files) that merges several short blocks.",
+    "placeholders": {
+      "first": "First block number",
+      "last": "Last block number",
+      "count": "Number of blocks merged",
+      "span": "The time span, e.g. 0:05–0:12, possibly followed by '(approx.)'"
+    }
+  },
+  "panels.tape.hdr.flag": "Flag",
+  "@panels.tape.hdr.flag": {
+    "context": "Name of a field of a standard tape header's 19 bytes, in the header byte explainer of the tape viewer (.tap/.tzx files): the flag byte.",
+    "maxChars": 12
+  },
+  "panels.tape.hdr.type": "Type",
+  "@panels.tape.hdr.type": {
+    "context": "Name of a field of a standard tape header's 19 bytes, in the header byte explainer of the tape viewer (.tap/.tzx files): the header type byte.",
+    "maxChars": 12
+  },
+  "panels.tape.hdr.name": "Name",
+  "@panels.tape.hdr.name": {
+    "context": "Name of a field of a standard tape header's 19 bytes, in the header byte explainer of the tape viewer (.tap/.tzx files): the file name.",
+    "maxChars": 12
+  },
+  "panels.tape.hdr.length": "Length",
+  "@panels.tape.hdr.length": {
+    "context": "Name of a field of a standard tape header's 19 bytes, in the header byte explainer of the tape viewer (.tap/.tzx files): the data length word.",
+    "maxChars": 12
+  },
+  "panels.tape.hdr.autostart": "Autostart",
+  "@panels.tape.hdr.autostart": {
+    "context": "Name of a field of a standard tape header's 19 bytes, in the header byte explainer of the tape viewer (.tap/.tzx files): a program's autostart line.",
+    "maxChars": 12
+  },
+  "panels.tape.hdr.program": "Program",
+  "@panels.tape.hdr.program": {
+    "context": "Name of a field of a standard tape header's 19 bytes, in the header byte explainer of the tape viewer (.tap/.tzx files): a program's length without its variables.",
+    "maxChars": 12
+  },
+  "panels.tape.hdr.array": "Array",
+  "@panels.tape.hdr.array": {
+    "context": "Name of a field of a standard tape header's 19 bytes, in the header byte explainer of the tape viewer (.tap/.tzx files): an array's name.",
+    "maxChars": 12
+  },
+  "panels.tape.hdr.unused": "Unused",
+  "@panels.tape.hdr.unused": {
+    "context": "Name of a field of a standard tape header's 19 bytes, in the header byte explainer of the tape viewer (.tap/.tzx files): a word this header type does not use.",
+    "maxChars": 12
+  },
+  "panels.tape.hdr.start": "Start",
+  "@panels.tape.hdr.start": {
+    "context": "Name of a field of a standard tape header's 19 bytes, in the header byte explainer of the tape viewer (.tap/.tzx files): the load address of Bytes.",
+    "maxChars": 12
+  },
+  "panels.tape.hdr.checksum": "Checksum",
+  "@panels.tape.hdr.checksum": {
+    "context": "Name of a field of a standard tape header's 19 bytes, in the header byte explainer of the tape viewer (.tap/.tzx files): the XOR checksum byte.",
+    "maxChars": 12
+  },
+  "panels.tape.hdr.flagValue": "{value} (header)",
+  "@panels.tape.hdr.flagValue": {
+    "context": "Decoded value of a tape header's flag byte in the header byte explainer.",
+    "placeholders": {
+      "value": "The byte in hex, $00"
+    }
+  },
+  "panels.tape.hdr.autostartNone": "none ({value})",
+  "@panels.tape.hdr.autostartNone": {
+    "context": "Decoded value of a program header's autostart word when the program has no autostart line.",
+    "placeholders": {
+      "value": "The word in hex, e.g. $8000"
+    }
+  },
+  "panels.tape.hdr.checksumOk": "{value} · OK",
+  "@panels.tape.hdr.checksumOk": {
+    "context": "Decoded value of a tape header's checksum byte when it is right.",
+    "placeholders": {
+      "value": "The byte in hex"
+    }
+  },
+  "panels.tape.hdr.checksumBad": "{value} · should be {expected}",
+  "@panels.tape.hdr.checksumBad": {
+    "context": "Decoded value of a tape header's checksum byte when it is wrong.",
+    "placeholders": {
+      "value": "The byte in hex",
+      "expected": "The right checksum in hex"
+    }
+  },
+  "panels.tape.hdr.wordReading": "{lo} {hi} is {word}: the low byte comes first.",
+  "@panels.tape.hdr.wordReading": {
+    "context": "Sentence added to a header field's explanation: how its two bytes read as a little-endian word.",
+    "placeholders": {
+      "lo": "Low byte in hex, e.g. 0A",
+      "hi": "High byte in hex",
+      "word": "The word in hex, e.g. $000A"
+    }
+  },
+  "panels.tape.hdr.flagMeaning": "Marks this block as a header. The data block after it starts with $FF.",
+  "@panels.tape.hdr.flagMeaning": {
+    "context": "Explanation of a field of a standard tape header, shown under the header byte explainer of the tape viewer (.tap/.tzx files) when the field is pointed at. LOAD, SAVE, DATA, CODE, GO TO and LINE are BASIC keywords and stay as they are."
+  },
+  "panels.tape.hdr.typeMeaning": "0 Program, 1 Number array, 2 Character array, 3 Bytes (code or a screen).",
+  "@panels.tape.hdr.typeMeaning": {
+    "context": "Explanation of a field of a standard tape header, shown under the header byte explainer of the tape viewer (.tap/.tzx files) when the field is pointed at. LOAD, SAVE, DATA, CODE, GO TO and LINE are BASIC keywords and stay as they are. The four names are the header types."
+  },
+  "panels.tape.hdr.nameMeaning": "Ten characters padded with spaces; LOAD \"name\" only loads a file whose name matches.",
+  "@panels.tape.hdr.nameMeaning": {
+    "context": "Explanation of a field of a standard tape header, shown under the header byte explainer of the tape viewer (.tap/.tzx files) when the field is pointed at. LOAD, SAVE, DATA, CODE, GO TO and LINE are BASIC keywords and stay as they are."
+  },
+  "panels.tape.hdr.nameMeaningCodes": "Ten characters padded with spaces; LOAD \"name\" only loads a file whose name matches. This one holds control codes or tokens, shown in braces: a trick to print something other than the name.",
+  "@panels.tape.hdr.nameMeaningCodes": {
+    "context": "Explanation of a field of a standard tape header, shown under the header byte explainer of the tape viewer (.tap/.tzx files) when the field is pointed at. LOAD, SAVE, DATA, CODE, GO TO and LINE are BASIC keywords and stay as they are. Used when the name holds control codes."
+  },
+  "panels.tape.hdr.lengthMeaningNext": "How many bytes the data block that follows holds. {reading}",
+  "@panels.tape.hdr.lengthMeaningNext": {
+    "context": "Explanation of a field of a standard tape header, shown under the header byte explainer of the tape viewer (.tap/.tzx files) when the field is pointed at. LOAD, SAVE, DATA, CODE, GO TO and LINE are BASIC keywords and stay as they are.",
+    "placeholders": {
+      "reading": "A following sentence that shows how the field's two bytes read as a little-endian word, e.g. '0A 00 is $000A: the low byte comes first.'"
+    }
+  },
+  "panels.tape.hdr.lengthMeaning": "How many bytes data block #{index} holds. {reading}",
+  "@panels.tape.hdr.lengthMeaning": {
+    "context": "Explanation of a field of a standard tape header, shown under the header byte explainer of the tape viewer (.tap/.tzx files) when the field is pointed at. LOAD, SAVE, DATA, CODE, GO TO and LINE are BASIC keywords and stay as they are.",
+    "placeholders": {
+      "index": "The data block's number on the tape",
+      "reading": "A following sentence that shows how the field's two bytes read as a little-endian word, e.g. '0A 00 is $000A: the low byte comes first.'"
+    }
+  },
+  "panels.tape.hdr.autostartMeaning": "After loading, the program runs from line {line}, as if by GO TO. {reading}",
+  "@panels.tape.hdr.autostartMeaning": {
+    "context": "Explanation of a field of a standard tape header, shown under the header byte explainer of the tape viewer (.tap/.tzx files) when the field is pointed at. LOAD, SAVE, DATA, CODE, GO TO and LINE are BASIC keywords and stay as they are.",
+    "placeholders": {
+      "line": "The autostart line number",
+      "reading": "A following sentence that shows how the field's two bytes read as a little-endian word, e.g. '0A 00 is $000A: the low byte comes first.'"
+    }
+  },
+  "panels.tape.hdr.autostartMeaningNone": "32768 or more means no autostart: the program loads and stops. {reading}",
+  "@panels.tape.hdr.autostartMeaningNone": {
+    "context": "Explanation of a field of a standard tape header, shown under the header byte explainer of the tape viewer (.tap/.tzx files) when the field is pointed at. LOAD, SAVE, DATA, CODE, GO TO and LINE are BASIC keywords and stay as they are.",
+    "placeholders": {
+      "reading": "A following sentence that shows how the field's two bytes read as a little-endian word, e.g. '0A 00 is $000A: the low byte comes first.'"
+    }
+  },
+  "panels.tape.hdr.programMeaning": "Where the variables start, counted from the start of the data: the program is {program, number} bytes and the remaining {variables, number} are its saved variables.",
+  "@panels.tape.hdr.programMeaning": {
+    "context": "Explanation of a field of a standard tape header, shown under the header byte explainer of the tape viewer (.tap/.tzx files) when the field is pointed at. LOAD, SAVE, DATA, CODE, GO TO and LINE are BASIC keywords and stay as they are.",
+    "placeholders": {
+      "program": "The program's length in bytes",
+      "variables": "The variables' length in bytes"
+    }
+  },
+  "panels.tape.hdr.programMeaningNoVars": "Where the variables start, counted from the start of the data: the program is {program, number} bytes and there are no saved variables.",
+  "@panels.tape.hdr.programMeaningNoVars": {
+    "context": "Explanation of a field of a standard tape header, shown under the header byte explainer of the tape viewer (.tap/.tzx files) when the field is pointed at. LOAD, SAVE, DATA, CODE, GO TO and LINE are BASIC keywords and stay as they are.",
+    "placeholders": {
+      "program": "The program's length in bytes"
+    }
+  },
+  "panels.tape.hdr.arrayMeaning": "The array's name is in byte 15, encoded as in the variables area; byte 14 is unused. LOAD \"name\" DATA {name} restores it.",
+  "@panels.tape.hdr.arrayMeaning": {
+    "context": "Explanation of a field of a standard tape header, shown under the header byte explainer of the tape viewer (.tap/.tzx files) when the field is pointed at. LOAD, SAVE, DATA, CODE, GO TO and LINE are BASIC keywords and stay as they are.",
+    "placeholders": {
+      "name": "The array's name, e.g. a() or a$()"
+    }
+  },
+  "panels.tape.hdr.unusedArrayMeaning": "Means nothing for an array; SAVE leaves whatever was there.",
+  "@panels.tape.hdr.unusedArrayMeaning": {
+    "context": "Explanation of a field of a standard tape header, shown under the header byte explainer of the tape viewer (.tap/.tzx files) when the field is pointed at. LOAD, SAVE, DATA, CODE, GO TO and LINE are BASIC keywords and stay as they are."
+  },
+  "panels.tape.hdr.startMeaning": "Where the bytes load unless LOAD \"name\" CODE gives another address. {reading}",
+  "@panels.tape.hdr.startMeaning": {
+    "context": "Explanation of a field of a standard tape header, shown under the header byte explainer of the tape viewer (.tap/.tzx files) when the field is pointed at. LOAD, SAVE, DATA, CODE, GO TO and LINE are BASIC keywords and stay as they are.",
+    "placeholders": {
+      "reading": "A following sentence that shows how the field's two bytes read as a little-endian word, e.g. '0A 00 is $000A: the low byte comes first.'"
+    }
+  },
+  "panels.tape.hdr.startMeaningScreen": "Where the bytes load unless LOAD \"name\" CODE gives another address. $4000 and 6,912 bytes: the screen. {reading}",
+  "@panels.tape.hdr.startMeaningScreen": {
+    "context": "Explanation of a field of a standard tape header, shown under the header byte explainer of the tape viewer (.tap/.tzx files) when the field is pointed at. LOAD, SAVE, DATA, CODE, GO TO and LINE are BASIC keywords and stay as they are. Used when the header describes a screen dump.",
+    "placeholders": {
+      "reading": "A following sentence that shows how the field's two bytes read as a little-endian word, e.g. '0A 00 is $000A: the low byte comes first.'"
+    }
+  },
+  "panels.tape.hdr.unusedBytesMeaning": "Means nothing for Bytes; SAVE leaves whatever was there (often 32768 or more).",
+  "@panels.tape.hdr.unusedBytesMeaning": {
+    "context": "Explanation of a field of a standard tape header, shown under the header byte explainer of the tape viewer (.tap/.tzx files) when the field is pointed at. LOAD, SAVE, DATA, CODE, GO TO and LINE are BASIC keywords and stay as they are. 'Bytes' is the header type."
+  },
+  "panels.tape.hdr.checksumMeaning": "The XOR of bytes 0–17. The ROM checks it after loading the header.",
+  "@panels.tape.hdr.checksumMeaning": {
+    "context": "Explanation of a field of a standard tape header, shown under the header byte explainer of the tape viewer (.tap/.tzx files) when the field is pointed at. LOAD, SAVE, DATA, CODE, GO TO and LINE are BASIC keywords and stay as they are."
+  },
+  "panels.tape.hdr.checksumMeaningBad": "The XOR of bytes 0–17 is {expected}, so the ROM would report R Tape loading error.",
+  "@panels.tape.hdr.checksumMeaningBad": {
+    "context": "Explanation of a field of a standard tape header, shown under the header byte explainer of the tape viewer (.tap/.tzx files) when the field is pointed at. LOAD, SAVE, DATA, CODE, GO TO and LINE are BASIC keywords and stay as they are. 'R Tape loading error' is the ROM's own error report and stays in English.",
+    "placeholders": {
+      "expected": "The right checksum in hex"
+    }
+  },
+  "panels.pfile.region.sysvars": "System variables",
+  "@panels.pfile.region.sysvars": {
+    "context": "Name of a part of a ZX81/ZX80 program file, in the ZX81 .P / ZX80 .O program file viewer's part list, details and tab titles: the ROM's system variables area.",
+    "maxChars": 24
+  },
+  "panels.pfile.region.program": "BASIC program",
+  "@panels.pfile.region.program": {
+    "context": "Name of a part of a ZX81/ZX80 program file, in the ZX81 .P / ZX80 .O program file viewer's part list, details and tab titles.",
+    "maxChars": 24
+  },
+  "panels.pfile.region.display": "Display file",
+  "@panels.pfile.region.display": {
+    "context": "Name of a part of a ZX81/ZX80 program file, in the ZX81 .P / ZX80 .O program file viewer's part list, details and tab titles: the screen memory (the ZX81's D_FILE).",
+    "maxChars": 24
+  },
+  "panels.pfile.region.variables": "Variables",
+  "@panels.pfile.region.variables": {
+    "context": "Name of a part of a ZX81/ZX80 program file, in the ZX81 .P / ZX80 .O program file viewer's part list, details and tab titles: the BASIC variables area. Also a details section title.",
+    "maxChars": 24
+  },
+  "panels.pfile.region.data": "Program and data",
+  "@panels.pfile.region.data": {
+    "context": "Name of a part of a ZX81/ZX80 program file, in the ZX81 .P / ZX80 .O program file viewer's part list, details and tab titles: everything after the system variables, when the system variables do not describe the file. Also a details section title.",
+    "maxChars": 24
+  },
+  "panels.pfile.region.extra": "After E_LINE",
+  "@panels.pfile.region.extra": {
+    "context": "Name of a part of a ZX81/ZX80 program file, in the ZX81 .P / ZX80 .O program file viewer's part list, details and tab titles: bytes after the end the ROM loads. E_LINE is a system variable's name and stays as it is. Also a details section title.",
+    "maxChars": 24
+  },
+  "panels.pfile.error.tooShort": "A {machine} program file starts with {sysVars} bytes of system variables; this file has {count, number}.",
+  "@panels.pfile.error.tooShort": {
+    "context": "Error shown in place of the ZX81 .P / ZX80 .O program file viewer when the file is too short.",
+    "placeholders": {
+      "machine": "ZX81 or ZX80",
+      "sysVars": "The size of the system variables area",
+      "count": "The file's length in bytes"
+    }
+  },
+  "panels.pfile.error.tooLarge": "This file is larger than the {machine}'s memory.",
+  "@panels.pfile.error.tooLarge": {
+    "context": "Error shown in place of the ZX81 .P / ZX80 .O program file viewer when the file is too large.",
+    "placeholders": {
+      "machine": "ZX81 or ZX80"
+    }
+  },
+  "panels.pfile.forLoop": "{value} TO {limit}, NEXT goes to line {line} or the first after it",
+  "@panels.pfile.forLoop": {
+    "context": "What a FOR loop's control variable holds, in the ZX81 .P / ZX80 .O program file viewer's Variables section (a ZX80 loop, which has no STEP). TO and NEXT are BASIC keywords and stay as they are.",
+    "placeholders": {
+      "value": "The current value",
+      "limit": "The loop's limit",
+      "line": "The line NEXT continues at"
+    }
+  },
+  "panels.pfile.forLoopStep": "{value} TO {limit} STEP {step}, NEXT goes to line {line} or the first after it",
+  "@panels.pfile.forLoopStep": {
+    "context": "What a FOR loop's control variable holds, in the ZX81 .P / ZX80 .O program file viewer's Variables section. TO, STEP and NEXT are BASIC keywords and stay as they are.",
+    "placeholders": {
+      "value": "The current value",
+      "limit": "The loop's limit",
+      "step": "The loop's step",
+      "line": "The line NEXT continues at"
+    }
+  },
+  "panels.pfile.row.noProgram": "No program",
+  "@panels.pfile.row.noProgram": {
+    "context": "Short text of the BASIC program row in the ZX81 .P / ZX80 .O program file viewer when the program has no lines.",
+    "maxChars": 20
+  },
+  "panels.pfile.row.linesRunFrom": "{count, plural, one {# line} other {# lines}} · runs from {line}",
+  "@panels.pfile.row.linesRunFrom": {
+    "context": "Short text of the BASIC program row in the ZX81 .P / ZX80 .O program file viewer.",
+    "placeholders": {
+      "count": "Number of program lines",
+      "line": "The line the program runs from after loading"
+    }
+  },
+  "panels.pfile.row.collapsed": "Collapsed",
+  "@panels.pfile.row.collapsed": {
+    "context": "Short text of the display file row in the ZX81 .P / ZX80 .O program file viewer: lines end at their last character (saved on a 1K machine).",
+    "maxChars": 14
+  },
+  "panels.pfile.row.full": "Full",
+  "@panels.pfile.row.full": {
+    "context": "Short text of the display file row in the ZX81 .P / ZX80 .O program file viewer: all 24 lines of 32 characters.",
+    "maxChars": 14
+  },
+  "panels.pfile.row.noVariables": "None",
+  "@panels.pfile.row.noVariables": {
+    "context": "Short text of the variables row in the ZX81 .P / ZX80 .O program file viewer when there are no variables.",
+    "maxChars": 14
+  },
+  "panels.pfile.row.variables": "{count, plural, one {# variable} other {# variables}}",
+  "@panels.pfile.row.variables": {
+    "context": "Short text of the variables row in the ZX81 .P / ZX80 .O program file viewer.",
+    "placeholders": {
+      "count": "Number of BASIC variables"
+    }
+  },
+  "panels.pfile.row.notVariables": "Data, not BASIC variables",
+  "@panels.pfile.row.notVariables": {
+    "context": "Short text of the variables row in the ZX81 .P / ZX80 .O program file viewer when the area holds a program's own data instead of variables."
+  },
+  "panels.pfile.layoutBanner": "This file's system variables do not describe its parts (1K programs often keep code in them), so everything after them is shown as one part.",
+  "@panels.pfile.layoutBanner": {
+    "context": "Note banner at the top of the ZX81 .P / ZX80 .O program file viewer when the file's layout cannot be read."
+  },
+  "panels.pfile.heading": "Parts",
+  "@panels.pfile.heading": {
+    "context": "Heading of the list of the file's parts in the ZX81 .P / ZX80 .O program file viewer.",
+    "maxChars": 16
+  },
+  "panels.pfile.listSummary": "{count, plural, one {# byte} other {# bytes}} from {address}",
+  "@panels.pfile.listSummary": {
+    "context": "Summary beside the heading of the ZX81 .P / ZX80 .O program file viewer's part list: the file's size and load address.",
+    "placeholders": {
+      "count": "The file's size in bytes",
+      "address": "The load address in hex, e.g. $4009"
+    }
+  },
+  "panels.pfile.summaryLabel": "Program summary",
+  "@panels.pfile.summaryLabel": {
+    "context": "Accessible name (screen readers) of the summary strip at the top of the ZX81 .P / ZX80 .O program file viewer."
+  },
+  "panels.pfile.format": "{machine} program ({extension})",
+  "@panels.pfile.format": {
+    "context": "Value of the 'Format' fact in the ZX81 .P / ZX80 .O program file viewer's summary strip.",
+    "placeholders": {
+      "machine": "ZX81 or ZX80",
+      "extension": "The file extension, .P or .O"
+    }
+  },
+  "panels.pfile.fact.needs": "Needs",
+  "@panels.pfile.fact.needs": {
+    "context": "Label in the ZX81 .P / ZX80 .O program file viewer's summary strip: the memory the program needs.",
+    "maxChars": 12
+  },
+  "panels.pfile.fact.ram": "{kb}K RAM",
+  "@panels.pfile.fact.ram": {
+    "context": "Value of the 'Needs' fact in the ZX81 .P / ZX80 .O program file viewer's summary strip: 1K or 16K of RAM.",
+    "placeholders": {
+      "kb": "1 or 16"
+    }
+  },
+  "panels.pfile.fact.needsTitle": "The file ends at {end}; a 1K {machine}'s RAM ends at $4400",
+  "@panels.pfile.fact.needsTitle": {
+    "context": "Tooltip of the 'Needs' fact in the ZX81 .P / ZX80 .O program file viewer's summary strip.",
+    "placeholders": {
+      "end": "The address after the file, in hex",
+      "machine": "ZX81 or ZX80"
+    }
+  },
+  "panels.pfile.fact.lines": "Lines",
+  "@panels.pfile.fact.lines": {
+    "context": "Label in the ZX81 .P / ZX80 .O program file viewer: the number of program lines (summary strip), or how the display file's lines are stored (Screen details).",
+    "maxChars": 12
+  },
+  "panels.pfile.fact.linesDamaged": "{lines} (damaged)",
+  "@panels.pfile.fact.linesDamaged": {
+    "context": "Value of the 'Lines' fact in the ZX81 .P / ZX80 .O program file viewer's summary strip when the program is damaged.",
+    "placeholders": {
+      "lines": "The number of lines read, already formatted"
+    }
+  },
+  "panels.pfile.fact.runsFrom": "Runs from",
+  "@panels.pfile.fact.runsFrom": {
+    "context": "Label in the ZX81 .P / ZX80 .O program file viewer: where the program runs from after loading.",
+    "maxChars": 14
+  },
+  "panels.pfile.fact.needsRun": "Needs RUN",
+  "@panels.pfile.fact.needsRun": {
+    "context": "Value of the 'Runs from' fact in the ZX81 .P / ZX80 .O program file viewer's summary strip: the program does not start by itself. RUN is the BASIC keyword.",
+    "maxChars": 14
+  },
+  "panels.pfile.fact.zx80LoadTitle": "The ZX80's LOAD stops with its report",
+  "@panels.pfile.fact.zx80LoadTitle": {
+    "context": "Tooltip of the 'Runs from' fact for a ZX80 file in the ZX81 .P / ZX80 .O program file viewer. LOAD is the BASIC keyword."
+  },
+  "panels.pfile.fact.runsFromTitle": "A program saved by a program line carries on from the line after its SAVE",
+  "@panels.pfile.fact.runsFromTitle": {
+    "context": "Tooltip of the 'Runs from' fact for a ZX81 file in the ZX81 .P / ZX80 .O program file viewer. SAVE is the BASIC keyword."
+  },
+  "panels.pfile.fact.mode": "Mode",
+  "@panels.pfile.fact.mode": {
+    "context": "Label in the ZX81 .P / ZX80 .O program file viewer's summary strip: the display mode, SLOW or FAST.",
+    "maxChars": 12
+  },
+  "panels.pfile.fact.modeTitle": "The mode the program loads in (CDFLAG)",
+  "@panels.pfile.fact.modeTitle": {
+    "context": "Tooltip of the 'Mode' fact in the ZX81 .P / ZX80 .O program file viewer's summary strip. CDFLAG is a system variable's name."
+  },
+  "panels.pfile.fact.part": "Part",
+  "@panels.pfile.fact.part": {
+    "context": "Label in the ZX81 .P / ZX80 .O program file viewer's part details: the part's name.",
+    "maxChars": 12
+  },
+  "panels.pfile.fact.address": "Address",
+  "@panels.pfile.fact.address": {
+    "context": "Label in the ZX81 .P / ZX80 .O program file viewer's part details: the part's address range.",
+    "maxChars": 12
+  },
+  "panels.pfile.runsFromLine": "LINE {line}, after LOAD",
+  "@panels.pfile.runsFromLine": {
+    "context": "Value of the 'Runs from' fact in the ZX81 .P / ZX80 .O program file viewer's BASIC details. LINE and LOAD are BASIC keywords.",
+    "placeholders": {
+      "line": "The line number"
+    }
+  },
+  "panels.pfile.stopsAfterLoad": "Stops after LOAD; type RUN",
+  "@panels.pfile.stopsAfterLoad": {
+    "context": "Value of the 'Runs from' fact in the ZX81 .P / ZX80 .O program file viewer's BASIC details when the program does not run by itself. LOAD and RUN are BASIC keywords."
+  },
+  "panels.pfile.dataZx80": "VARS ({vars}) and E_LINE ({eLine}) do not mark out a program and variables in this file. The bytes are its own: open them in Memory or Disassembly.",
+  "@panels.pfile.dataZx80": {
+    "context": "Explanation in the ZX81 .P / ZX80 .O program file viewer's 'Program and data' section for a ZX80 file. VARS and E_LINE are system variable names; Memory and Disassembly are the view names.",
+    "placeholders": {
+      "vars": "Address in hex",
+      "eLine": "Address in hex"
+    }
+  },
+  "panels.pfile.dataZx81": "D_FILE ({dFile}), VARS ({vars}) and E_LINE ({eLine}) do not mark out a program, a display file and variables in this file. The bytes are its own: open them in Memory or Disassembly.",
+  "@panels.pfile.dataZx81": {
+    "context": "Explanation in the ZX81 .P / ZX80 .O program file viewer's 'Program and data' section for a ZX81 file. D_FILE, VARS and E_LINE are system variable names; Memory and Disassembly are the view names.",
+    "placeholders": {
+      "dFile": "Address in hex",
+      "vars": "Address in hex",
+      "eLine": "Address in hex"
+    }
+  },
+  "panels.pfile.extra": "The ROM's LOAD stops at E_LINE, so these bytes never reach the machine.",
+  "@panels.pfile.extra": {
+    "context": "Explanation in the ZX81 .P / ZX80 .O program file viewer's 'After E_LINE' section. LOAD is the BASIC keyword; E_LINE a system variable."
+  },
+  "panels.pfile.keySysVars": "Key system variables",
+  "@panels.pfile.keySysVars": {
+    "context": "Title of the details section in the ZX81 .P / ZX80 .O program file viewer listing the system variables that describe the file.",
+    "maxChars": 28
+  },
+  "panels.pfile.currentLine": "{line} (the current line)",
+  "@panels.pfile.currentLine": {
+    "context": "Value of the E_PPC system variable in the ZX81 .P / ZX80 .O program file viewer.",
+    "placeholders": {
+      "line": "The line number"
+    }
+  },
+  "panels.pfile.endOfFile": "{address} (the end of the file)",
+  "@panels.pfile.endOfFile": {
+    "context": "Value of the E_LINE system variable for a ZX80 file in the ZX81 .P / ZX80 .O program file viewer.",
+    "placeholders": {
+      "address": "Address in hex"
+    }
+  },
+  "panels.pfile.notSaved": "{address} (not saved)",
+  "@panels.pfile.notSaved": {
+    "context": "Value of the D_FILE system variable for a ZX80 file in the ZX81 .P / ZX80 .O program file viewer: the display file is not in the file.",
+    "placeholders": {
+      "address": "Address in hex"
+    }
+  },
+  "panels.pfile.displayCollapsed": "Collapsed: lines end at their last character (saved on a 1K machine)",
+  "@panels.pfile.displayCollapsed": {
+    "context": "Value of the 'Lines' fact in the ZX81 .P / ZX80 .O program file viewer's Screen details."
+  },
+  "panels.pfile.displayFull": "Full: 24 lines of 32 characters",
+  "@panels.pfile.displayFull": {
+    "context": "Value of the 'Lines' fact in the ZX81 .P / ZX80 .O program file viewer's Screen details."
+  },
+  "panels.pfile.variablesNotBasic": "This area does not hold BASIC variables: a program keeps its own data here (machine code or tables), ended by the $80 the ROM expects.",
+  "@panels.pfile.variablesNotBasic": {
+    "context": "Explanation in the ZX81 .P / ZX80 .O program file viewer's Variables section when the area holds no variables."
+  },
+  "panels.pfile.noVariables": "No variables: the program was saved before it set any, or after CLEAR.",
+  "@panels.pfile.noVariables": {
+    "context": "Shown in the ZX81 .P / ZX80 .O program file viewer's Variables section when there are none. CLEAR is the BASIC keyword."
+  },
+  "panels.pfile.andMore": "and {count, number} more",
+  "@panels.pfile.andMore": {
+    "context": "Shown under the first 40 variables in the ZX81 .P / ZX80 .O program file viewer's Variables section.",
+    "placeholders": {
+      "count": "Number of variables not listed"
+    }
+  },
+  "panels.pfile.restNotVariables": "The rest of the area does not read as variables.",
+  "@panels.pfile.restNotVariables": {
+    "context": "Shown under the variables list in the ZX81 .P / ZX80 .O program file viewer when the area is damaged after them."
+  },
+  "panels.pfile.titleListing": "{source} - Listing",
+  "@panels.pfile.titleListing": {
+    "context": "Tab title of a ZX81/ZX80 program's BASIC listing opened from the ZX81 .P / ZX80 .O program file viewer.",
+    "placeholders": {
+      "source": "The file's path"
+    }
+  },
+  "panels.pfile.titleScreen": "{source} - Screen",
+  "@panels.pfile.titleScreen": {
+    "context": "Tab title of a ZX81 display file's picture opened from the ZX81 .P / ZX80 .O program file viewer.",
+    "placeholders": {
+      "source": "The file's path"
+    }
+  },
+  "panels.pfile.titlePart": "{source} - {part}",
+  "@panels.pfile.titlePart": {
+    "context": "Tab title of a part of a ZX81/ZX80 program file opened as a memory dump or disassembly.",
+    "placeholders": {
+      "source": "The file's path",
+      "part": "The part's name, e.g. 'BASIC program'"
+    }
+  },
+  "panels.pfile.readingFont": "Reading the ZX81 character set...",
+  "@panels.pfile.readingFont": {
+    "context": "Shown while the ZX81 screen picture waits for the ROM's character set to load."
+  },
+  "panels.spectrum.error.invalid": "Not a valid snapshot: {reason}",
+  "@panels.spectrum.error.invalid": {
+    "context": "Error shown in place of the ZX Spectrum snapshot viewer (.sna/.z80/.szx) when the file cannot be read.",
+    "placeholders": {
+      "reason": "The parser's reason, in English"
+    }
+  },
+  "panels.spectrum.label.format": "Format:",
+  "@panels.spectrum.label.format": {
+    "context": "Label in the ZX Spectrum snapshot viewer (.sna/.z80/.szx): the file format and version.",
+    "maxChars": 16
+  },
+  "panels.spectrum.suppressInterrupt": "Interrupts are not accepted before the next instruction (after EI).",
+  "@panels.spectrum.suppressInterrupt": {
+    "context": "Note in the ZX Spectrum snapshot viewer (.sna/.z80/.szx)'s Z80 registers section. EI is the Z80 instruction."
+  },
+  "panels.spectrum.frameTactNone": "not recorded (loads at 0)",
+  "@panels.spectrum.frameTactNone": {
+    "context": "Value of the Frame T-state row in the ZX Spectrum snapshot viewer (.sna/.z80/.szx) when the file does not store it."
+  },
+  "panels.spectrum.label.screen": "Screen:",
+  "@panels.spectrum.label.screen": {
+    "context": "Label in the ZX Spectrum snapshot viewer (.sna/.z80/.szx)'s ULA section: the bank the ULA displays.",
+    "maxChars": 16
+  },
+  "panels.spectrum.bank": "bank {bank}",
+  "@panels.spectrum.bank": {
+    "context": "A 16K RAM bank, as a value in the ZX Spectrum snapshot viewer (.sna/.z80/.szx)'s ULA and paging sections. Lower case.",
+    "placeholders": {
+      "bank": "The bank number"
+    }
+  },
+  "panels.spectrum.pagingHeading": "Paging and Address Space at PC",
+  "@panels.spectrum.pagingHeading": {
+    "context": "Heading of the ZX Spectrum snapshot viewer (.sna/.z80/.szx)'s section on memory paging and the 64K address space as the CPU sees it. PC is the program counter.",
+    "maxChars": 36
+  },
+  "panels.spectrum.port7ffdNormal": "{value}: bank {bank}, ROM {rom}, normal screen",
+  "@panels.spectrum.port7ffdNormal": {
+    "context": "Value of the Port $7FFD row in the ZX Spectrum snapshot viewer (.sna/.z80/.szx)'s paging section: the port byte decoded. 'bank' is a 16K RAM bank, ROM the ROM page.",
+    "placeholders": {
+      "value": "The port byte in hex",
+      "bank": "RAM bank at $C000",
+      "rom": "ROM page"
+    }
+  },
+  "panels.spectrum.port7ffdNormalLocked": "{value}: bank {bank}, ROM {rom}, normal screen, locked",
+  "@panels.spectrum.port7ffdNormalLocked": {
+    "context": "Value of the Port $7FFD row in the ZX Spectrum snapshot viewer (.sna/.z80/.szx)'s paging section: the port byte decoded. 'bank' is a 16K RAM bank, ROM the ROM page. 'locked': paging is locked until reset.",
+    "placeholders": {
+      "value": "The port byte in hex",
+      "bank": "RAM bank at $C000",
+      "rom": "ROM page"
+    }
+  },
+  "panels.spectrum.port7ffdShadow": "{value}: bank {bank}, ROM {rom}, shadow screen",
+  "@panels.spectrum.port7ffdShadow": {
+    "context": "Value of the Port $7FFD row in the ZX Spectrum snapshot viewer (.sna/.z80/.szx)'s paging section: the port byte decoded. 'bank' is a 16K RAM bank, ROM the ROM page. 'shadow screen': the ULA shows bank 7.",
+    "placeholders": {
+      "value": "The port byte in hex",
+      "bank": "RAM bank at $C000",
+      "rom": "ROM page"
+    }
+  },
+  "panels.spectrum.port7ffdShadowLocked": "{value}: bank {bank}, ROM {rom}, shadow screen, locked",
+  "@panels.spectrum.port7ffdShadowLocked": {
+    "context": "Value of the Port $7FFD row in the ZX Spectrum snapshot viewer (.sna/.z80/.szx)'s paging section: the port byte decoded. 'bank' is a 16K RAM bank, ROM the ROM page.",
+    "placeholders": {
+      "value": "The port byte in hex",
+      "bank": "RAM bank at $C000",
+      "rom": "ROM page"
+    }
+  },
+  "panels.spectrum.port1ffdSpecialOn": "{value}: special paging, configuration {config}, motor on",
+  "@panels.spectrum.port1ffdSpecialOn": {
+    "context": "Value of the Port $1FFD row in the ZX Spectrum snapshot viewer (.sna/.z80/.szx)'s paging section (+2A/+3): the port byte decoded. The disk motor is on.",
+    "placeholders": {
+      "value": "The port byte in hex",
+      "config": "Special paging configuration 0-3"
+    }
+  },
+  "panels.spectrum.port1ffdSpecialOff": "{value}: special paging, configuration {config}, motor off",
+  "@panels.spectrum.port1ffdSpecialOff": {
+    "context": "Value of the Port $1FFD row in the ZX Spectrum snapshot viewer (.sna/.z80/.szx)'s paging section (+2A/+3): the port byte decoded.",
+    "placeholders": {
+      "value": "The port byte in hex",
+      "config": "Special paging configuration 0-3"
+    }
+  },
+  "panels.spectrum.port1ffdNormalOn": "{value}: normal paging, motor on",
+  "@panels.spectrum.port1ffdNormalOn": {
+    "context": "Value of the Port $1FFD row in the ZX Spectrum snapshot viewer (.sna/.z80/.szx)'s paging section (+2A/+3): the port byte decoded.",
+    "placeholders": {
+      "value": "The port byte in hex"
+    }
+  },
+  "panels.spectrum.port1ffdNormalOff": "{value}: normal paging, motor off",
+  "@panels.spectrum.port1ffdNormalOff": {
+    "context": "Value of the Port $1FFD row in the ZX Spectrum snapshot viewer (.sna/.z80/.szx)'s paging section (+2A/+3): the port byte decoded.",
+    "placeholders": {
+      "value": "The port byte in hex"
+    }
+  },
+  "panels.spectrum.pcInBank": "{pc} = bank {bank}, offset {offset}",
+  "@panels.spectrum.pcInBank": {
+    "context": "Value of the PC row in the ZX Spectrum snapshot viewer (.sna/.z80/.szx)'s paging section: where the program counter is.",
+    "placeholders": {
+      "pc": "PC in hex",
+      "bank": "RAM bank number",
+      "offset": "Offset in the bank, hex"
+    }
+  },
+  "panels.spectrum.pcInRom": "{pc} = ROM {rom}, offset {offset}",
+  "@panels.spectrum.pcInRom": {
+    "context": "Value of the PC row in the ZX Spectrum snapshot viewer (.sna/.z80/.szx)'s paging section when PC is in ROM.",
+    "placeholders": {
+      "pc": "PC in hex",
+      "rom": "ROM page",
+      "offset": "Offset in the ROM, hex"
+    }
+  },
+  "panels.spectrum.romNotInSnapshot": "ROM {rom} (not in the snapshot)",
+  "@panels.spectrum.romNotInSnapshot": {
+    "context": "Value of an address-range row in the ZX Spectrum snapshot viewer (.sna/.z80/.szx)'s paging section: a ROM page, whose bytes a snapshot does not hold.",
+    "placeholders": {
+      "rom": "ROM page"
+    }
+  },
+  "panels.spectrum.ay.selected": "Selected:",
+  "@panels.spectrum.ay.selected": {
+    "context": "Label in the ZX Spectrum snapshot viewer (.sna/.z80/.szx)'s AY section: the register the AY has selected.",
+    "maxChars": 16
+  },
+  "panels.spectrum.ay.channel": "Channel {channel}:",
+  "@panels.spectrum.ay.channel": {
+    "context": "Label of a channel row in the ZX Spectrum snapshot viewer (.sna/.z80/.szx)'s AY section.",
+    "maxChars": 16,
+    "placeholders": {
+      "channel": "A, B or C"
+    }
+  },
+  "panels.spectrum.ay.toneNoiseOn": "tone period {period}, noise on, volume {volume}",
+  "@panels.spectrum.ay.toneNoiseOn": {
+    "context": "Value of a channel row in the ZX Spectrum snapshot viewer (.sna/.z80/.szx)'s AY-3-8912 sound chip section: the channel's tone period, mixer and volume.",
+    "placeholders": {
+      "period": "The tone period (a number)",
+      "volume": "The volume 0-15, or the word for 'envelope'"
+    }
+  },
+  "panels.spectrum.ay.toneNoiseOff": "tone period {period}, noise off, volume {volume}",
+  "@panels.spectrum.ay.toneNoiseOff": {
+    "context": "Value of a channel row in the ZX Spectrum snapshot viewer (.sna/.z80/.szx)'s AY-3-8912 sound chip section: the channel's tone period, mixer and volume.",
+    "placeholders": {
+      "period": "The tone period (a number)",
+      "volume": "The volume 0-15, or the word for 'envelope'"
+    }
+  },
+  "panels.spectrum.ay.toneOffNoiseOn": "tone period {period} (off), noise on, volume {volume}",
+  "@panels.spectrum.ay.toneOffNoiseOn": {
+    "context": "Value of a channel row in the ZX Spectrum snapshot viewer (.sna/.z80/.szx)'s AY-3-8912 sound chip section: the channel's tone period, mixer and volume. '(off)': the tone is switched off in the mixer.",
+    "placeholders": {
+      "period": "The tone period (a number)",
+      "volume": "The volume 0-15, or the word for 'envelope'"
+    }
+  },
+  "panels.spectrum.ay.toneOffNoiseOff": "tone period {period} (off), noise off, volume {volume}",
+  "@panels.spectrum.ay.toneOffNoiseOff": {
+    "context": "Value of a channel row in the ZX Spectrum snapshot viewer (.sna/.z80/.szx)'s AY-3-8912 sound chip section: the channel's tone period, mixer and volume. '(off)': the tone is switched off in the mixer.",
+    "placeholders": {
+      "period": "The tone period (a number)",
+      "volume": "The volume 0-15, or the word for 'envelope'"
+    }
+  },
+  "panels.spectrum.ay.envelope": "envelope",
+  "@panels.spectrum.ay.envelope": {
+    "context": "Stands for a channel's volume in the ZX Spectrum snapshot viewer (.sna/.z80/.szx)'s AY section when the envelope generator drives it. Lower case."
+  },
+  "panels.spectrum.ay.noiseEnv": "Noise / env.:",
+  "@panels.spectrum.ay.noiseEnv": {
+    "context": "Label in the ZX Spectrum snapshot viewer (.sna/.z80/.szx)'s AY section: noise and envelope generator settings ('env.' abbreviates envelope).",
+    "maxChars": 16
+  },
+  "panels.spectrum.ay.noiseEnvValue": "noise period {noise}, envelope period {period}, shape {shape}",
+  "@panels.spectrum.ay.noiseEnvValue": {
+    "context": "Value of the noise/envelope row in the ZX Spectrum snapshot viewer (.sna/.z80/.szx)'s AY section.",
+    "placeholders": {
+      "noise": "Noise period",
+      "period": "Envelope period",
+      "shape": "Envelope shape in hex"
+    }
+  },
+  "panels.spectrum.ay.on48k": "An add-on AY of a 48K (Melodik or Fuller Box).",
+  "@panels.spectrum.ay.on48k": {
+    "context": "Note in the ZX Spectrum snapshot viewer (.sna/.z80/.szx)'s AY section: the 48K machine had an AY sound add-on. Melodik and Fuller Box are product names."
+  },
+  "panels.spectrum.banksHeading": "RAM Banks",
+  "@panels.spectrum.banksHeading": {
+    "context": "Heading of the ZX Spectrum snapshot viewer (.sna/.z80/.szx)'s bank list.",
+    "maxChars": 16
+  },
+  "panels.helpers.banksSummary": "{banks, plural, one {# bank} other {# banks}} · {kb, number} KB · {paged, number} paged in",
+  "@panels.helpers.banksSummary": {
+    "context": "Summary beside the heading of a snapshot viewer's bank list (ZX Spectrum RAM banks, Z88 slots).",
+    "placeholders": {
+      "banks": "Number of banks",
+      "kb": "Their total size in KB",
+      "paged": "How many are paged into the address space"
+    }
+  },
+  "panels.spectrum.filter.allBanks": "All banks",
+  "@panels.spectrum.filter.allBanks": {
+    "context": "Filter button above the ZX Spectrum snapshot viewer (.sna/.z80/.szx)'s bank list: show every bank.",
+    "maxChars": 14
+  },
+  "panels.spectrum.allValue": "All {value}",
+  "@panels.spectrum.allValue": {
+    "context": "Value of the 'Contents' fact of an empty bank in the ZX Spectrum snapshot viewer (.sna/.z80/.szx): every byte holds this value.",
+    "placeholders": {
+      "value": "The byte in hex"
+    }
+  },
+  "panels.spectrum.fileHeading": "File (.{format})",
+  "@panels.spectrum.fileHeading": {
+    "context": "Heading of the ZX Spectrum snapshot viewer (.sna/.z80/.szx)'s section with the file format's own header fields.",
+    "maxChars": 20,
+    "placeholders": {
+      "format": "The file extension: sna, z80 or szx"
+    }
+  },
+  "panels.spectrum.tapeEmbedded": "embedded .{extension} ({count, plural, one {# byte} other {# bytes}}), block {block}",
+  "@panels.spectrum.tapeEmbedded": {
+    "context": "Value of the Tape row in the ZX Spectrum snapshot viewer (.sna/.z80/.szx)'s file section: a tape image stored inside the snapshot.",
+    "placeholders": {
+      "extension": "tap or tzx",
+      "count": "The tape image's size",
+      "block": "The tape block the snapshot was at"
+    }
+  },
+  "panels.spectrum.tapeFile": "{file}, block {block}",
+  "@panels.spectrum.tapeFile": {
+    "context": "Value of the Tape row in the ZX Spectrum snapshot viewer (.sna/.z80/.szx)'s file section: the tape file the snapshot refers to.",
+    "placeholders": {
+      "file": "The tape file name",
+      "block": "The tape block the snapshot was at"
+    }
+  },
+  "panels.spectrum.plus3Drives": "+3 drives:",
+  "@panels.spectrum.plus3Drives": {
+    "context": "Label in the ZX Spectrum snapshot viewer (.sna/.z80/.szx)'s file section: the +3's disk drives.",
+    "maxChars": 16
+  },
+  "panels.spectrum.drivesMotorOn": "{drives}, motor on",
+  "@panels.spectrum.drivesMotorOn": {
+    "context": "Value of the '+3 drives' row in the ZX Spectrum snapshot viewer (.sna/.z80/.szx).",
+    "placeholders": {
+      "drives": "Number of drives"
+    }
+  },
+  "panels.spectrum.drivesMotorOff": "{drives}, motor off",
+  "@panels.spectrum.drivesMotorOff": {
+    "context": "Value of the '+3 drives' row in the ZX Spectrum snapshot viewer (.sna/.z80/.szx).",
+    "placeholders": {
+      "drives": "Number of drives"
+    }
+  },
+  "panels.spectrum.drive": "Drive {drive}:",
+  "@panels.spectrum.drive": {
+    "context": "Label in the ZX Spectrum snapshot viewer (.sna/.z80/.szx)'s file section: a +3 disk drive.",
+    "maxChars": 16,
+    "placeholders": {
+      "drive": "A or B"
+    }
+  },
+  "panels.spectrum.embeddedImage": "embedded image",
+  "@panels.spectrum.embeddedImage": {
+    "context": "Value of a drive row in the ZX Spectrum snapshot viewer (.sna/.z80/.szx) when the disk image is stored inside the snapshot."
+  },
+  "panels.spectrum.chunks": "Blocks:",
+  "@panels.spectrum.chunks": {
+    "context": "Label in the ZX Spectrum snapshot viewer (.sna/.z80/.szx)'s file section, before the list of the .szx file's blocks.",
+    "maxChars": 16
+  },
+  "panels.spectrum.chunk": "{id} ({count, plural, one {# byte} other {# bytes}})",
+  "@panels.spectrum.chunk": {
+    "context": "One .szx block in the ZX Spectrum snapshot viewer (.sna/.z80/.szx)'s file section: its four-letter id and size.",
+    "placeholders": {
+      "id": "The block id, e.g. Z80R",
+      "count": "Its size"
+    }
+  },
+  "panels.spectrum.chunkNotRead": "{id} ({count, plural, one {# byte} other {# bytes}}) - not read",
+  "@panels.spectrum.chunkNotRead": {
+    "context": "One .szx block in the ZX Spectrum snapshot viewer (.sna/.z80/.szx)'s file section that Klive does not read.",
+    "placeholders": {
+      "id": "The block id, e.g. Z80R",
+      "count": "Its size"
+    }
+  },
+  "panels.spectrum.rzx.invalid": "Not a playable RZX file: {reason}",
+  "@panels.spectrum.rzx.invalid": {
+    "context": "Error shown in place of the RZX recording viewer when the file cannot be read.",
+    "placeholders": {
+      "reason": "The parser's reason, in English"
+    }
+  },
+  "panels.spectrum.rzx.heading": "RZX Recording",
+  "@panels.spectrum.rzx.heading": {
+    "context": "Heading of the first section of the RZX recording viewer. RZX is the format's name.",
+    "maxChars": 24
+  },
+  "panels.spectrum.rzx.version": "Version:",
+  "@panels.spectrum.rzx.version": {
+    "context": "Label in the RZX recording viewer: the RZX format version.",
+    "maxChars": 16
+  },
+  "panels.spectrum.rzx.creator": "Creator:",
+  "@panels.spectrum.rzx.creator": {
+    "context": "Label in the RZX recording viewer: the program that made the recording.",
+    "maxChars": 16
+  },
+  "panels.spectrum.rzx.unknownMachine": "unknown",
+  "@panels.spectrum.rzx.unknownMachine": {
+    "context": "Value of the Machine row in the RZX recording viewer when its first snapshot cannot be read.",
+    "maxChars": 16
+  },
+  "panels.spectrum.rzx.frames": "Frames:",
+  "@panels.spectrum.rzx.frames": {
+    "context": "Label in the RZX recording viewer: how many frames it records.",
+    "maxChars": 16
+  },
+  "panels.spectrum.rzx.framesValue": "{frames, number} ({pictures, number} pictures, {duration})",
+  "@panels.spectrum.rzx.framesValue": {
+    "context": "Value of the Frames row in the RZX recording viewer: all frames, the ones that show a picture, and the play time.",
+    "placeholders": {
+      "frames": "All recorded frames",
+      "pictures": "Frames with a picture",
+      "duration": "The play time, e.g. 1:23"
+    }
+  },
+  "panels.spectrum.rzx.segmentsLabel": "Segments:",
+  "@panels.spectrum.rzx.segmentsLabel": {
+    "context": "Label in the RZX recording viewer: how many segments (each starting from a snapshot) it has.",
+    "maxChars": 16
+  },
+  "panels.spectrum.rzx.signed": "Signed:",
+  "@panels.spectrum.rzx.signed": {
+    "context": "Label of a yes/no flag in the RZX recording viewer: the file carries a digital signature.",
+    "maxChars": 16
+  },
+  "panels.spectrum.rzx.playable": "Playable:",
+  "@panels.spectrum.rzx.playable": {
+    "context": "Label of a yes/no flag in the RZX recording viewer: Klive can play it.",
+    "maxChars": 16
+  },
+  "panels.spectrum.rzx.segments": "Segments",
+  "@panels.spectrum.rzx.segments": {
+    "context": "Heading of the RZX recording viewer's list of segments.",
+    "maxChars": 24
+  },
+  "panels.spectrum.rzx.playFrom": "Play from segment {segment}",
+  "@panels.spectrum.rzx.playFrom": {
+    "context": "Tooltip of the play button on a segment row in the RZX recording viewer.",
+    "placeholders": {
+      "segment": "The segment number, 1 first"
+    }
+  },
+  "panels.spectrum.rzx.segment": "frame {first}, {frames, plural, one {# frame} other {# frames}} ({duration}), .{extension} snapshot, {inputs, plural, one {# input block} other {# input blocks}}",
+  "@panels.spectrum.rzx.segment": {
+    "context": "Description of a segment in the RZX recording viewer: where it starts, its length, its snapshot's format and its input blocks.",
+    "placeholders": {
+      "first": "The segment's first frame number",
+      "frames": "Number of frames",
+      "duration": "Play time, e.g. 0:12",
+      "extension": "Snapshot format: sna, z80 or szx",
+      "inputs": "Number of input recording blocks"
+    }
+  },
+  "panels.z88.none": "none",
+  "@panels.z88.none": {
+    "context": "In the Cambridge Z88 snapshot viewer (.z88 files): no Blink register bit is set, or a bank has no mirrors. Lower case.",
+    "maxChars": 10
+  },
+  "panels.z88.slot": "Slot {slot}",
+  "@panels.z88.slot": {
+    "context": "A Z88 card slot, in the Cambridge Z88 snapshot viewer (.z88 files) (card headings, filter buttons and who owns a bank).",
+    "maxChars": 12,
+    "placeholders": {
+      "slot": "Slot number 1-3"
+    }
+  },
+  "panels.z88.card.rom": "Slot 0: ROM area",
+  "@panels.z88.card.rom": {
+    "context": "Heading of the card group for slot 0's ROM in the Cambridge Z88 snapshot viewer (.z88 files)'s Slots browser, and its filter's tooltip."
+  },
+  "panels.z88.card.ram": "Slot 0: internal RAM",
+  "@panels.z88.card.ram": {
+    "context": "Heading of the card group for slot 0's internal RAM in the Cambridge Z88 snapshot viewer (.z88 files)'s Slots browser."
+  },
+  "panels.z88.card.notSupportedSlot0": "not supported in slot 0",
+  "@panels.z88.card.notSupportedSlot0": {
+    "context": "Why Klive cannot load a snapshot's ROM card, shown in the Cambridge Z88 snapshot viewer (.z88 files)'s card heading."
+  },
+  "panels.z88.card.internalRam": "internal RAM",
+  "@panels.z88.card.internalRam": {
+    "context": "The Klive card the snapshot's internal RAM loads as, in the Cambridge Z88 snapshot viewer (.z88 files)'s card heading ('loads as internal RAM')."
+  },
+  "panels.z88.card.sizeNotSupported": "size not supported",
+  "@panels.z88.card.sizeNotSupported": {
+    "context": "Why Klive cannot load a snapshot's internal RAM, shown in the Cambridge Z88 snapshot viewer (.z88 files)'s card heading."
+  },
+  "panels.z88.card.hybridNotSupported": "hybrid cards are not supported",
+  "@panels.z88.card.hybridNotSupported": {
+    "context": "Why Klive cannot load a RAM+Flash hybrid card, shown in the Cambridge Z88 snapshot viewer (.z88 files)'s card heading."
+  },
+  "panels.z88.card.notSupported": "not supported",
+  "@panels.z88.card.notSupported": {
+    "context": "Why Klive cannot load a card type, shown in the Cambridge Z88 snapshot viewer (.z88 files)'s card heading."
+  },
+  "panels.z88.filter.nonEmpty": "Non-empty",
+  "@panels.z88.filter.nonEmpty": {
+    "context": "Filter button above the Cambridge Z88 snapshot viewer (.z88 files)'s bank list: show only banks with something in them.",
+    "maxChars": 14
+  },
+  "panels.z88.mirrorsMany": "{first}, {second}, ... {last} ({count, plural, one {# bank} other {# banks}})",
+  "@panels.z88.mirrorsMany": {
+    "context": "Value of the Mirrors fact in the Cambridge Z88 snapshot viewer (.z88 files) when a bank has many mirrors: the first two, the last, and how many.",
+    "placeholders": {
+      "first": "First mirror bank in hex",
+      "second": "Second mirror bank in hex",
+      "last": "Last mirror bank in hex",
+      "count": "Number of mirror banks"
+    }
+  },
+  "panels.z88.rtcDays": "{days}d {time}",
+  "@panels.z88.rtcDays": {
+    "context": "The Z88's real-time clock as a duration in the Cambridge Z88 snapshot viewer (.z88 files), when it is a day or more: days, then hh:mm:ss.mmm. 'd' abbreviates days.",
+    "placeholders": {
+      "days": "Whole days",
+      "time": "Hours, minutes, seconds and milliseconds, e.g. 02:03:04.250"
+    }
+  },
+  "panels.z88.error.invalid": "Invalid Z88 snapshot: {reason}",
+  "@panels.z88.error.invalid": {
+    "context": "Error shown in place of the Cambridge Z88 snapshot viewer (.z88 files) when the file cannot be read.",
+    "placeholders": {
+      "reason": "The parser's reason, in English"
+    }
+  },
+  "panels.z88.label.autorun": "Autorun:",
+  "@panels.z88.label.autorun": {
+    "context": "Label of a yes/no flag in the Cambridge Z88 snapshot viewer (.z88 files): the snapshot starts running when loaded.",
+    "maxChars": 14
+  },
+  "panels.z88.label.savedAt": "Saved at:",
+  "@panels.z88.label.savedAt": {
+    "context": "Label in the Cambridge Z88 snapshot viewer (.z88 files): when OZvm saved the snapshot.",
+    "maxChars": 14
+  },
+  "panels.z88.notRecorded": "not recorded",
+  "@panels.z88.notRecorded": {
+    "context": "Value of the 'Saved at' row in the Cambridge Z88 snapshot viewer (.z88 files) when the file does not say.",
+    "maxChars": 14
+  },
+  "panels.z88.label.rtcSaved": "RTC saved:",
+  "@panels.z88.label.rtcSaved": {
+    "context": "Label in the Cambridge Z88 snapshot viewer (.z88 files): the real-time clock as saved. RTC is the real-time clock.",
+    "maxChars": 14
+  },
+  "panels.z88.label.rtcOnLoad": "RTC on load:",
+  "@panels.z88.label.rtcOnLoad": {
+    "context": "Label in the Cambridge Z88 snapshot viewer (.z88 files): the real-time clock as it will be when loaded.",
+    "maxChars": 14
+  },
+  "panels.z88.rtcOnLoadTooltip": "The saved RTC advanced by the time the file has spent on disk",
+  "@panels.z88.rtcOnLoadTooltip": {
+    "context": "Tooltip of the 'RTC on load' value in the Cambridge Z88 snapshot viewer (.z88 files)."
+  },
+  "panels.z88.label.contents": "Contents:",
+  "@panels.z88.label.contents": {
+    "context": "Label in the Cambridge Z88 snapshot viewer (.z88 files), before the list of the files in the snapshot archive.",
+    "maxChars": 14
+  },
+  "panels.z88.entry": "{name} ({count, plural, one {# byte} other {# bytes}})",
+  "@panels.z88.entry": {
+    "context": "One file of the snapshot archive in the Cambridge Z88 snapshot viewer (.z88 files).",
+    "placeholders": {
+      "name": "The archive member's name",
+      "count": "Its size"
+    }
+  },
+  "panels.z88.lcdAlt": "The LCD when the snapshot was saved",
+  "@panels.z88.lcdAlt": {
+    "context": "Alternative text (screen readers) of the LCD picture in the Cambridge Z88 snapshot viewer (.z88 files)."
+  },
+  "panels.z88.lcdSize": "{width} x {height} pixels",
+  "@panels.z88.lcdSize": {
+    "context": "Value of the LCD row in the Cambridge Z88 snapshot viewer (.z88 files)'s Blink section: the screen size.",
+    "placeholders": {
+      "width": "Width in pixels",
+      "height": "Height in pixels"
+    }
+  },
+  "panels.z88.addressSpaceHeading": "Address Space at PC",
+  "@panels.z88.addressSpaceHeading": {
+    "context": "Heading of the Cambridge Z88 snapshot viewer (.z88 files)'s section showing which bank each address range holds. PC is the program counter.",
+    "maxChars": 30
+  },
+  "panels.z88.range": "bank {bank} ({owner})",
+  "@panels.z88.range": {
+    "context": "Value of an address-range row in the Cambridge Z88 snapshot viewer (.z88 files): the bank paged in and what holds it.",
+    "placeholders": {
+      "bank": "Bank number in hex",
+      "owner": "ROM, RAM, 'Slot n' or 'empty'"
+    }
+  },
+  "panels.z88.rangeLower": "bank {bank} ({owner}), lower 8K",
+  "@panels.z88.rangeLower": {
+    "context": "Value of the $2000-$3FFF row in the Cambridge Z88 snapshot viewer (.z88 files): the segment shows the lower half of the bank.",
+    "placeholders": {
+      "bank": "Bank number in hex",
+      "owner": "ROM, RAM, 'Slot n' or 'empty'"
+    }
+  },
+  "panels.z88.rangeUpper": "bank {bank} ({owner}), upper 8K",
+  "@panels.z88.rangeUpper": {
+    "context": "Value of the $2000-$3FFF row in the Cambridge Z88 snapshot viewer (.z88 files): the segment shows the upper half of the bank.",
+    "placeholders": {
+      "bank": "Bank number in hex",
+      "owner": "ROM, RAM, 'Slot n' or 'empty'"
+    }
+  },
+  "panels.z88.breakpointsHeading": "Breakpoints ({count, number})",
+  "@panels.z88.breakpointsHeading": {
+    "context": "Heading of the Cambridge Z88 snapshot viewer (.z88 files)'s section listing the breakpoints OZvm saved.",
+    "maxChars": 24,
+    "placeholders": {
+      "count": "Number of breakpoints"
+    }
+  },
+  "panels.z88.noBreakpoints": "The snapshot has no breakpoints.",
+  "@panels.z88.noBreakpoints": {
+    "context": "Shown in the Cambridge Z88 snapshot viewer (.z88 files)'s Breakpoints section when there are none."
+  },
+  "panels.z88.bpDisplay": "display only",
+  "@panels.z88.bpDisplay": {
+    "context": "Kind of an OZvm breakpoint in the Cambridge Z88 snapshot viewer (.z88 files): it only shows a message, it does not stop.",
+    "maxChars": 16
+  },
+  "panels.z88.bpStops": "stops",
+  "@panels.z88.bpStops": {
+    "context": "Kind of an OZvm breakpoint in the Cambridge Z88 snapshot viewer (.z88 files): it stops the machine.",
+    "maxChars": 16
+  },
+  "panels.z88.half.ram": "RAM half",
+  "@panels.z88.half.ram": {
+    "context": "A bank's place in a hybrid (RAM + Flash) card, in the Cambridge Z88 snapshot viewer (.z88 files)'s Slots browser.",
+    "maxChars": 14
+  },
+  "panels.z88.half.flash": "flash half",
+  "@panels.z88.half.flash": {
+    "context": "A bank's place in a hybrid (RAM + Flash) card, in the Cambridge Z88 snapshot viewer (.z88 files)'s Slots browser.",
+    "maxChars": 14
+  },
+  "panels.z88.slotsHeading": "Slots",
+  "@panels.z88.slotsHeading": {
+    "context": "Heading of the Cambridge Z88 snapshot viewer (.z88 files)'s browser of every card's banks.",
+    "maxChars": 16
+  },
+  "panels.z88.cardMetaLoads": "{type}, {kb}K · loads as {klive}",
+  "@panels.z88.cardMetaLoads": {
+    "context": "Detail beside a card's heading in the Cambridge Z88 snapshot viewer (.z88 files)'s Slots browser: the card's OZvm type, size, and the Klive card it loads as.",
+    "placeholders": {
+      "type": "The card's OZvm type name",
+      "kb": "Size in KB",
+      "klive": "Klive's card type name"
+    }
+  },
+  "panels.z88.cardMeta": "{type}, {kb}K · {reason}",
+  "@panels.z88.cardMeta": {
+    "context": "Detail beside a card's heading in the Cambridge Z88 snapshot viewer (.z88 files)'s Slots browser, when Klive cannot load the card.",
+    "placeholders": {
+      "type": "The card's OZvm type name",
+      "kb": "Size in KB",
+      "reason": "Why it cannot be loaded, e.g. 'not supported'"
+    }
+  },
+  "panels.z88.bpChipTitle": "Breakpoints saved in the snapshot by OZvm",
+  "@panels.z88.bpChipTitle": {
+    "context": "Tooltip of the 'BP n' chip on a bank row in the Cambridge Z88 snapshot viewer (.z88 files). OZvm is the emulator that made the file."
+  },
+  "panels.z88.fact.card": "Card",
+  "@panels.z88.fact.card": {
+    "context": "Label in the Cambridge Z88 snapshot viewer (.z88 files)'s bank details: the card the bank is on.",
+    "maxChars": 12
+  },
+  "panels.z88.cardWithHalf": "{card}, {half}",
+  "@panels.z88.cardWithHalf": {
+    "context": "Value of the Card fact in the Cambridge Z88 snapshot viewer (.z88 files) for a bank of a hybrid card.",
+    "placeholders": {
+      "card": "The card's title, e.g. 'Slot 1'",
+      "half": "RAM half or flash half"
+    }
+  },
+  "panels.z88.fact.mirrors": "Mirrors",
+  "@panels.z88.fact.mirrors": {
+    "context": "Label in the Cambridge Z88 snapshot viewer (.z88 files)'s bank details: other bank numbers that show the same bank.",
+    "maxChars": 12
+  },
+  "panels.z88.allZero": "All zero",
+  "@panels.z88.allZero": {
+    "context": "Value of the Contents fact of an empty RAM bank in the Cambridge Z88 snapshot viewer (.z88 files)."
+  },
+  "panels.z88.erased": "Erased (all {value})",
+  "@panels.z88.erased": {
+    "context": "Value of the Contents fact of an empty ROM/Flash bank in the Cambridge Z88 snapshot viewer (.z88 files).",
+    "placeholders": {
+      "value": "The erased byte value in hex, $FF"
+    }
+  },
+  "panels.z88.ozvmBreakpoints": "OZvm breakpoints ({count, number})",
+  "@panels.z88.ozvmBreakpoints": {
+    "context": "Title of the section in the Cambridge Z88 snapshot viewer (.z88 files)'s bank details listing OZvm's breakpoints in that bank.",
+    "maxChars": 28,
+    "placeholders": {
+      "count": "Number of breakpoints"
+    }
+  },
+  "panels.rom.noFile": "This document has no file.",
+  "@panels.rom.noFile": {
+    "context": "Error shown in the ROM annotation editor (a document listing a ROM annotation sidecar file's pages) when the tab has no file behind it."
+  },
+  "panels.rom.notText": "The file is not text.",
+  "@panels.rom.notText": {
+    "context": "Error shown in the ROM annotation editor (a document listing a ROM annotation sidecar file's pages) when the sidecar file is not a text file."
+  },
+  "panels.rom.pageTitle": "{file} · page {page}",
+  "@panels.rom.pageTitle": {
+    "context": "Tab title of a ROM page opened from the ROM annotation editor (a document listing a ROM annotation sidecar file's pages).",
+    "placeholders": {
+      "file": "The ROM file's name",
+      "page": "The ROM page number"
+    }
+  },
+  "panels.rom.loading": "Loading ROM annotations...",
+  "@panels.rom.loading": {
+    "context": "Shown while the ROM annotation editor (a document listing a ROM annotation sidecar file's pages) reads its file."
+  },
+  "panels.rom.notRomSidecar": "{file} is not a ROM annotation file (its machine is not \"rom\").",
+  "@panels.rom.notRomSidecar": {
+    "context": "Error shown in the ROM annotation editor (a document listing a ROM annotation sidecar file's pages) for an annotation file of another machine. \"rom\" is the literal value of the file's machine field and stays as it is.",
+    "placeholders": {
+      "file": "The file's name"
+    }
+  },
+  "panels.rom.lookingForRom": "Looking for the ROM...",
+  "@panels.rom.lookingForRom": {
+    "context": "Shown while the ROM annotation editor (a document listing a ROM annotation sidecar file's pages) searches for the ROM bytes the file describes."
+  },
+  "panels.rom.noMatch": "No ROM matches {file}: no ROM page has CRC {crcs}. Searched: {searched}.",
+  "@panels.rom.noMatch": {
+    "context": "Error shown in the ROM annotation editor (a document listing a ROM annotation sidecar file's pages) when no ROM matches the file's checksums.",
+    "placeholders": {
+      "file": "The file's name",
+      "crcs": "Comma-separated CRC32 values",
+      "searched": "Semicolon-separated places searched"
+    }
+  },
+  "panels.rom.noMatchNothingSearched": "No ROM matches {file}: no ROM page has CRC {crcs}. Searched: nothing to search.",
+  "@panels.rom.noMatchNothingSearched": {
+    "context": "Error shown in the ROM annotation editor (a document listing a ROM annotation sidecar file's pages) when no ROM matches the file's checksums and there was nowhere to search.",
+    "placeholders": {
+      "file": "The file's name",
+      "crcs": "Comma-separated CRC32 values"
+    }
+  },
+  "panels.rom.noCrcs": "none",
+  "@panels.rom.noCrcs": {
+    "context": "Stands in for the CRC list in the ROM annotation editor (a document listing a ROM annotation sidecar file's pages)'s 'No ROM matches' error when the file lists no pages. Lower case."
+  },
+  "panels.rom.checking": "checking...",
+  "@panels.rom.checking": {
+    "context": "Shown in the ROM annotation editor (a document listing a ROM annotation sidecar file's pages)'s Ready row while the file's readiness is checked. Lower case."
+  },
+  "panels.rom.ready": "Ready to ship · level {level}",
+  "@panels.rom.ready": {
+    "context": "Readiness chip in the ROM annotation editor (a document listing a ROM annotation sidecar file's pages): the file passes every check. 'level' is the annotation completeness level.",
+    "placeholders": {
+      "level": "Annotation level 0-2"
+    }
+  },
+  "panels.rom.problems": "{count, plural, one {# problem} other {# problems}} · level {level}",
+  "@panels.rom.problems": {
+    "context": "Readiness chip in the ROM annotation editor (a document listing a ROM annotation sidecar file's pages) when checks fail.",
+    "placeholders": {
+      "count": "Number of problems",
+      "level": "Annotation level 0-2"
+    }
+  },
+  "panels.rom.title": "ROM annotations",
+  "@panels.rom.title": {
+    "context": "Header title of the ROM annotation editor (a document listing a ROM annotation sidecar file's pages).",
+    "maxChars": 24
+  },
+  "panels.rom.modeTitle": "The provenance a new label, comment or region is recorded with",
+  "@panels.rom.modeTitle": {
+    "context": "Tooltip of the 'New entries' mode switch in the ROM annotation editor (a document listing a ROM annotation sidecar file's pages)."
+  },
+  "panels.rom.newEntries": "New entries:",
+  "@panels.rom.newEntries": {
+    "context": "Label of the mode switch in the ROM annotation editor (a document listing a ROM annotation sidecar file's pages)'s header: how new entries record where they came from.",
+    "maxChars": 16
+  },
+  "panels.rom.observed": "observed",
+  "@panels.rom.observed": {
+    "context": "Mode button in the ROM annotation editor (a document listing a ROM annotation sidecar file's pages)'s header: new entries are recorded as observed in the running code. Lower case.",
+    "maxChars": 10
+  },
+  "panels.rom.manual": "manual",
+  "@panels.rom.manual": {
+    "context": "Mode button in the ROM annotation editor (a document listing a ROM annotation sidecar file's pages)'s header: new entries are recorded as written by hand. Lower case.",
+    "maxChars": 10
+  },
+  "panels.rom.revealExplorer": "Reveal in File Explorer",
+  "@panels.rom.revealExplorer": {
+    "context": "Tooltip of the button in the ROM annotation editor (a document listing a ROM annotation sidecar file's pages) that shows the file in the Windows file manager. File Explorer is Windows' name for it."
+  },
+  "panels.rom.revealFinder": "Reveal in Finder",
+  "@panels.rom.revealFinder": {
+    "context": "Tooltip of the button in the ROM annotation editor (a document listing a ROM annotation sidecar file's pages) that shows the file in the macOS file manager. Finder is macOS' name for it."
+  },
+  "panels.rom.kindWorking": "Working copy — edits are written here",
+  "@panels.rom.kindWorking": {
+    "context": "Value of the Kind row in the ROM annotation editor (a document listing a ROM annotation sidecar file's pages) for a working copy in Klive's RomAnnotations folder."
+  },
+  "panels.rom.kindShipped": "Shipped sidecar — read-only; rom-ann-new makes a working copy to edit",
+  "@panels.rom.kindShipped": {
+    "context": "Value of the Kind row in the ROM annotation editor (a document listing a ROM annotation sidecar file's pages) for a sidecar shipped with Klive. rom-ann-new is an IDE command and stays as it is."
+  },
+  "panels.rom.kindCustom": "Custom ROM's sidecar — edits are written here",
+  "@panels.rom.kindCustom": {
+    "context": "Value of the Kind row in the ROM annotation editor (a document listing a ROM annotation sidecar file's pages) for a custom ROM's own .dis file."
+  },
+  "panels.rom.readyLabel": "Ready",
+  "@panels.rom.readyLabel": {
+    "context": "Label of the row in the ROM annotation editor (a document listing a ROM annotation sidecar file's pages) that says whether the file is ready to be shipped with Klive.",
+    "maxChars": 12
+  },
+  "panels.rom.readyTitle": "Passes every check a shipped sidecar must pass",
+  "@panels.rom.readyTitle": {
+    "context": "Tooltip of the readiness chip in the ROM annotation editor (a document listing a ROM annotation sidecar file's pages) when there are no problems."
+  },
+  "panels.rom.showProblems": "Show the problems",
+  "@panels.rom.showProblems": {
+    "context": "Tooltip of the readiness chip in the ROM annotation editor (a document listing a ROM annotation sidecar file's pages) when there are problems: click to list them."
+  },
+  "panels.rom.recordsLevel": "records level {level}",
+  "@panels.rom.recordsLevel": {
+    "context": "Secondary text after the readiness chip in the ROM annotation editor (a document listing a ROM annotation sidecar file's pages): the level the file itself claims. Lower case.",
+    "placeholders": {
+      "level": "Annotation level 0-2"
+    }
+  },
+  "panels.rom.shippedChanged": "The shipped {file} has changed since this working copy was made from it. Copying this file back would undo that change.",
+  "@panels.rom.shippedChanged": {
+    "context": "Notice in the ROM annotation editor (a document listing a ROM annotation sidecar file's pages) when an update changed the shipped sidecar after the working copy was made.",
+    "placeholders": {
+      "file": "The sidecar's file name"
+    }
+  },
+  "panels.rom.rule": "Write only what the code in front of you does: no comment, name or region from a published disassembly (.ai/rom-annotations/README.md).",
+  "@panels.rom.rule": {
+    "context": "Standing rule shown in the ROM annotation editor (a document listing a ROM annotation sidecar file's pages) for editable files. The path in brackets stays as it is."
+  },
+  "panels.rom.page": "Page {page}",
+  "@panels.rom.page": {
+    "context": "Label of a ROM page row in the ROM annotation editor (a document listing a ROM annotation sidecar file's pages).",
+    "maxChars": 12,
+    "placeholders": {
+      "page": "The ROM page number"
+    }
+  },
+  "panels.rom.pageFacts": "{kb}K · {labels, plural, one {# label} other {# labels}} · level {level} · from {from}",
+  "@panels.rom.pageFacts": {
+    "context": "Secondary text of a ROM page row in the ROM annotation editor (a document listing a ROM annotation sidecar file's pages): the page's size, how many labels it has, its annotation level and where its bytes were found.",
+    "placeholders": {
+      "kb": "Size in KB",
+      "labels": "Number of labels",
+      "level": "Annotation level, or ?",
+      "from": "Where the ROM bytes were found (a path)"
+    }
+  },
+  "panels.rom.nextUnlabelled": "Next unlabelled ({address})",
+  "@panels.rom.nextUnlabelled": {
+    "context": "Button on a ROM page row in the ROM annotation editor (a document listing a ROM annotation sidecar file's pages): open the disassembly at the next jump or call target that has no label.",
+    "placeholders": {
+      "address": "The target's address in hex"
+    }
+  },
+  "panels.rom.pageMissing": "No ROM page with CRC {crc} was found. Searched: {searched}.",
+  "@panels.rom.pageMissing": {
+    "context": "Shown on a ROM page row in the ROM annotation editor (a document listing a ROM annotation sidecar file's pages) when no ROM page matches its checksum.",
+    "placeholders": {
+      "crc": "The CRC32 value",
+      "searched": "Semicolon-separated places searched"
+    }
+  },
+  "panels.machineState.invalid": "Not a valid Klive state file: {reason}",
+  "@panels.machineState.invalid": {
+    "context": "Error shown in place of the Klive machine state file viewer (.kls) when the file cannot be read.",
+    "placeholders": {
+      "reason": "The reader's reason, in English"
+    }
+  },
+  "panels.machineState.heading": "Machine State",
+  "@panels.machineState.heading": {
+    "context": "Heading of the first section of the Klive machine state file viewer (.kls).",
+    "maxChars": 24
+  },
+  "panels.machineState.portableSzx": "Portable .szx part:",
+  "@panels.machineState.portableSzx": {
+    "context": "Label of a yes/no flag in the Klive machine state file viewer (.kls): the file also holds a portable .szx snapshot.",
+    "maxChars": 28
+  },
+  "panels.machineState.loadsWithSzx": "Loads exactly into a Klive whose core is unchanged; into another version, from its .szx part.",
+  "@panels.machineState.loadsWithSzx": {
+    "context": "Note in the Klive machine state file viewer (.kls) for a state file with a .szx part."
+  },
+  "panels.machineState.loadsWithoutSzx": "Loads only into a Klive whose core is unchanged since it was saved.",
+  "@panels.machineState.loadsWithoutSzx": {
+    "context": "Note in the Klive machine state file viewer (.kls) for a state file without a .szx part."
+  },
+  "panels.machineState.disksDetached": "The disks' contents are in the state; once loaded, they are detached from these files.",
+  "@panels.machineState.disksDetached": {
+    "context": "Note in the Klive machine state file viewer (.kls)'s Media section when the state has disks."
+  },
+  "panels.machineState.memoryImage": "Memory image:",
+  "@panels.machineState.memoryImage": {
+    "context": "Label in the Klive machine state file viewer (.kls)'s File section.",
+    "maxChars": 18
+  },
+  "panels.machineState.memoryImageValue": "{mib} MiB, {kib, number} KiB compressed",
+  "@panels.machineState.memoryImageValue": {
+    "context": "Value of the Memory image row in the Klive machine state file viewer (.kls): its size and compressed size.",
+    "placeholders": {
+      "mib": "Size in MiB, already formatted with one decimal",
+      "kib": "Compressed size in KiB"
+    }
+  },
+  "panels.debugRecording.invalid": "Not a valid Klive debug recording: {reason}",
+  "@panels.debugRecording.invalid": {
+    "context": "Error shown in place of the Klive debug recording viewer (.klr) when the file cannot be read.",
+    "placeholders": {
+      "reason": "The reader's reason, in English"
+    }
+  },
+  "panels.debugRecording.checking": "Checking...",
+  "@panels.debugRecording.checking": {
+    "context": "Value of the 'Opens in this build' row in the Klive debug recording viewer (.klr) while the emulator checks."
+  },
+  "panels.debugRecording.unknownOtherCore": "Not known yet: the emulator runs the {liveCore} core, not the {core} core. Opening it checks.",
+  "@panels.debugRecording.unknownOtherCore": {
+    "context": "Value of the 'Opens in this build' row in the Klive debug recording viewer (.klr) when the running core differs.",
+    "placeholders": {
+      "liveCore": "The id of the core the emulator runs",
+      "core": "The id of the recording's core"
+    }
+  },
+  "panels.debugRecording.unknownNoMachine": "Not known yet: the emulator runs no machine, not the {core} core. Opening it checks.",
+  "@panels.debugRecording.unknownNoMachine": {
+    "context": "Value of the 'Opens in this build' row in the Klive debug recording viewer (.klr) when no machine runs.",
+    "placeholders": {
+      "core": "The id of the recording's core"
+    }
+  },
+  "panels.debugRecording.refused": "No. {reason}. Its end state can still be opened, without its past.",
+  "@panels.debugRecording.refused": {
+    "context": "Value of the 'Opens in this build' row in the Klive debug recording viewer (.klr) when this build cannot replay it.",
+    "placeholders": {
+      "reason": "The emulator's reason, in English, without a final full stop"
+    }
+  },
+  "panels.debugRecording.compatible": "Yes: this build made it, or one with the same core.",
+  "@panels.debugRecording.compatible": {
+    "context": "Value of the 'Opens in this build' row in the Klive debug recording viewer (.klr) when it can be replayed."
+  },
+  "panels.debugRecording.sizeMb": "{mb} MB",
+  "@panels.debugRecording.sizeMb": {
+    "context": "A file size in megabytes in the Klive debug recording viewer (.klr).",
+    "placeholders": {
+      "mb": "Megabytes, already formatted with one decimal"
+    }
+  },
+  "panels.debugRecording.sizeKb": "{kb, number} KB",
+  "@panels.debugRecording.sizeKb": {
+    "context": "A file size in kilobytes in the Klive debug recording viewer (.klr).",
+    "placeholders": {
+      "kb": "Kilobytes"
+    }
+  },
+  "panels.debugRecording.heading": "Debug Recording",
+  "@panels.debugRecording.heading": {
+    "context": "Heading of the first section of the Klive debug recording viewer (.klr).",
+    "maxChars": 24
+  },
+  "panels.debugRecording.savedBy": "Klive {version} (build {build})",
+  "@panels.debugRecording.savedBy": {
+    "context": "Value of the 'Saved by' row in the Klive debug recording viewer (.klr).",
+    "placeholders": {
+      "version": "Klive version",
+      "build": "The first 8 characters of the build's code hash"
+    }
+  },
+  "panels.debugRecording.length": "Length:",
+  "@panels.debugRecording.length": {
+    "context": "Label in the Klive debug recording viewer (.klr): how long the recording is.",
+    "maxChars": 18
+  },
+  "panels.debugRecording.lengthValue": "{duration} · {frames, plural, one {# frame} other {# frames}} · {instructions, plural, one {# instruction} other {# instructions}}",
+  "@panels.debugRecording.lengthValue": {
+    "context": "Value of the Length row in the Klive debug recording viewer (.klr).",
+    "placeholders": {
+      "duration": "The recorded time, e.g. 12.3 s",
+      "frames": "Recorded frames",
+      "instructions": "Recorded Z80 instructions"
+    }
+  },
+  "panels.debugRecording.keyframes": "Keyframes:",
+  "@panels.debugRecording.keyframes": {
+    "context": "Label in the Klive debug recording viewer (.klr): how many full machine states the recording keeps.",
+    "maxChars": 18
+  },
+  "panels.debugRecording.keyframesValue": "{count, number}",
+  "@panels.debugRecording.keyframesValue": {
+    "context": "Value of the Keyframes row in the Klive debug recording viewer (.klr).",
+    "placeholders": {
+      "count": "Number of keyframes"
+    }
+  },
+  "panels.debugRecording.keyframesSparse": "{count, number} (sparse: about a second apart)",
+  "@panels.debugRecording.keyframesSparse": {
+    "context": "Value of the Keyframes row in the Klive debug recording viewer (.klr) when keyframes are sparse.",
+    "placeholders": {
+      "count": "Number of keyframes"
+    }
+  },
+  "panels.debugRecording.keyframesTrimmed": "{count, number} (front trimmed)",
+  "@panels.debugRecording.keyframesTrimmed": {
+    "context": "Value of the Keyframes row in the Klive debug recording viewer (.klr) when the start of the recording was cut off.",
+    "placeholders": {
+      "count": "Number of keyframes"
+    }
+  },
+  "panels.debugRecording.keyframesSparseTrimmed": "{count, number} (sparse: about a second apart) (front trimmed)",
+  "@panels.debugRecording.keyframesSparseTrimmed": {
+    "context": "Value of the Keyframes row in the Klive debug recording viewer (.klr) when keyframes are sparse and the start was cut off.",
+    "placeholders": {
+      "count": "Number of keyframes"
+    }
+  },
+  "panels.debugRecording.opensAt": "Opens at:",
+  "@panels.debugRecording.opensAt": {
+    "context": "Label in the Klive debug recording viewer (.klr): where in the recording it opens.",
+    "maxChars": 18
+  },
+  "panels.debugRecording.opensAtCursor": "the point it was saved at, in its past (PC {pc} at the end)",
+  "@panels.debugRecording.opensAtCursor": {
+    "context": "Value of the 'Opens at' row in the Klive debug recording viewer (.klr).",
+    "placeholders": {
+      "pc": "The program counter at the end, hex"
+    }
+  },
+  "panels.debugRecording.opensAtEnd": "its end (PC {pc} at the end)",
+  "@panels.debugRecording.opensAtEnd": {
+    "context": "Value of the 'Opens at' row in the Klive debug recording viewer (.klr).",
+    "placeholders": {
+      "pc": "The program counter at the end, hex"
+    }
+  },
+  "panels.debugRecording.fileSize": "File size:",
+  "@panels.debugRecording.fileSize": {
+    "context": "Label in the Klive debug recording viewer (.klr).",
+    "maxChars": 18
+  },
+  "panels.debugRecording.opensInBuild": "Opens in this build:",
+  "@panels.debugRecording.opensInBuild": {
+    "context": "Label in the Klive debug recording viewer (.klr): whether this Klive build can replay the recording.",
+    "maxChars": 20
+  },
+  "panels.debugRecording.note": "Note:",
+  "@panels.debugRecording.note": {
+    "context": "Label in the Klive debug recording viewer (.klr): the note saved with the recording.",
+    "maxChars": 18
+  },
+  "panels.debugRecording.breakpointsHeading": "Breakpoints and Watches",
+  "@panels.debugRecording.breakpointsHeading": {
+    "context": "Heading of the Klive debug recording viewer (.klr)'s section on the saved breakpoints and watches.",
+    "maxChars": 28
+  },
+  "panels.debugRecording.breakpoints": "Breakpoints:",
+  "@panels.debugRecording.breakpoints": {
+    "context": "Label in the Klive debug recording viewer (.klr): how many breakpoints it carries.",
+    "maxChars": 18
+  },
+  "panels.debugRecording.watches": "Watches:",
+  "@panels.debugRecording.watches": {
+    "context": "Label in the Klive debug recording viewer (.klr): how many watch expressions it carries.",
+    "maxChars": 18
+  },
+  "panels.debugRecording.breakpointsNote": "Opened, they are added as session breakpoints: the project's own stay, and none are saved into it.",
+  "@panels.debugRecording.breakpointsNote": {
+    "context": "Note in the Klive debug recording viewer (.klr)'s Breakpoints section."
+  },
+  "panels.debugRecording.sdCardNote": "Every SD card sector the run read is in the recording: it replays without the card.",
+  "@panels.debugRecording.sdCardNote": {
+    "context": "Note in the Klive debug recording viewer (.klr)'s Media section when an SD card was used."
+  },
+  "panels.debugRecording.privateData": "Private data:",
+  "@panels.debugRecording.privateData": {
+    "context": "Label of a yes/no flag in the Klive debug recording viewer (.klr): the recording holds data that may be private.",
+    "maxChars": 18
+  },
+  "panels.debugRecording.privateNote": "A recording holds every key typed and every tape and SD card sector read.",
+  "@panels.debugRecording.privateNote": {
+    "context": "Note in the Klive debug recording viewer (.klr)'s Media section explaining the private data flag."
+  },
+  "panels.debugRecording.sources": "Sources",
+  "@panels.debugRecording.sources": {
+    "context": "Heading of the Klive debug recording viewer (.klr)'s section listing the source files of the debugged program.",
+    "maxChars": 24
+  },
+  "panels.debugRecording.noSources": "No compilation was recorded.",
+  "@panels.debugRecording.noSources": {
+    "context": "Shown in the Klive debug recording viewer (.klr)'s Sources section when there are none."
+  },
+  "panels.debugRecording.mainFile": "Main file:",
+  "@panels.debugRecording.mainFile": {
+    "context": "Label in the Klive debug recording viewer (.klr)'s Sources section.",
+    "maxChars": 18
+  },
+  "panels.debugRecording.embedded": "Embedded:",
+  "@panels.debugRecording.embedded": {
+    "context": "Label of a source file row in the Klive debug recording viewer (.klr): the file's text is stored in the recording.",
+    "maxChars": 18
+  },
+  "panels.debugRecording.identified": "Identified:",
+  "@panels.debugRecording.identified": {
+    "context": "Label of a source file row in the Klive debug recording viewer (.klr): only the file's identity (hash) is stored.",
+    "maxChars": 18
+  },
+  "panels.debugRecording.codeHash": "Code hash:",
+  "@panels.debugRecording.codeHash": {
+    "context": "Label in the Klive debug recording viewer (.klr)'s File section: the hash of the build that made it.",
+    "maxChars": 18
+  },
+  "panels.debugRecording.sections": "Sections:",
+  "@panels.debugRecording.sections": {
+    "context": "Label in the Klive debug recording viewer (.klr)'s File section: the file's sections and their sizes.",
+    "maxChars": 18
+  },
+  "panels.layersDoc.waiting": "Waiting for the ZX Spectrum Next's layer state",
+  "@panels.layersDoc.waiting": {
+    "context": "Empty state of the ZX Spectrum Next Layers document (the display layers' priority stack and per-layer pictures) while it waits for the emulator."
+  },
+  "panels.layersDoc.notNext": "The Layers document shows a running ZX Spectrum Next",
+  "@panels.layersDoc.notNext": {
+    "context": "Empty state of the ZX Spectrum Next Layers document (the display layers' priority stack and per-layer pictures) when the machine is not a ZX Spectrum Next."
+  },
+  "panels.layersDoc.meta": "$15 priority {priority} · fallback $4A {fallback} · transparency $14 {transparency}",
+  "@panels.layersDoc.meta": {
+    "context": "Register summary under the ZX Spectrum Next Layers document (the display layers' priority stack and per-layer pictures)'s heading. $15, $4A and $14 are NextReg numbers and stay as they are.",
+    "placeholders": {
+      "priority": "Three priority bits, e.g. 001",
+      "fallback": "The fallback colour, e.g. $1E3",
+      "transparency": "The global transparency colour in hex"
+    }
+  },
+  "panels.layersDoc.copperRunning": "the Copper is running: registers may change per line",
+  "@panels.layersDoc.copperRunning": {
+    "context": "Added to the register summary of the ZX Spectrum Next Layers document (the display layers' priority stack and per-layer pictures) when the Copper runs. Copper is the Next's co-processor name."
+  },
+  "panels.layersDoc.noCapture": "no capture: the pictures are the last span of each row",
+  "@panels.layersDoc.noCapture": {
+    "context": "Added to the register summary of the ZX Spectrum Next Layers document (the display layers' priority stack and per-layer pictures) when the frame capture is off."
+  },
+  "panels.layersDoc.priority": "Priority, top first",
+  "@panels.layersDoc.priority": {
+    "context": "Section heading in the ZX Spectrum Next Layers document (the display layers' priority stack and per-layer pictures): the layers in priority order.",
+    "maxChars": 28
+  },
+  "panels.layersDoc.fallback": "Fallback colour ($4A)",
+  "@panels.layersDoc.fallback": {
+    "context": "Last row of the ZX Spectrum Next Layers document (the display layers' priority stack and per-layer pictures)'s priority stack: the colour shown where no layer has a pixel. $4A is the NextReg.",
+    "maxChars": 28
+  },
+  "panels.layersDoc.fallbackNote": "where every layer is transparent",
+  "@panels.layersDoc.fallbackNote": {
+    "context": "Note beside the fallback colour row in the ZX Spectrum Next Layers document (the display layers' priority stack and per-layer pictures)."
+  },
+  "panels.layersDoc.layers": "Layers",
+  "@panels.layersDoc.layers": {
+    "context": "Section heading in the ZX Spectrum Next Layers document (the display layers' priority stack and per-layer pictures): one card per layer.",
+    "maxChars": 20
+  },
+  "panels.layersDoc.composite": "Composite (the machine's picture)",
+  "@panels.layersDoc.composite": {
+    "context": "Title of the card in the ZX Spectrum Next Layers document (the display layers' priority stack and per-layer pictures) showing the combined picture."
+  },
+  "panels.layersDoc.compositeTitle": "The machine's own picture, with no layer hidden",
+  "@panels.layersDoc.compositeTitle": {
+    "context": "Tooltip of the composite picture in the ZX Spectrum Next Layers document (the display layers' priority stack and per-layer pictures)."
+  },
+  "panels.layersDoc.show": "Show",
+  "@panels.layersDoc.show": {
+    "context": "Button on a layer card in the ZX Spectrum Next Layers document (the display layers' priority stack and per-layer pictures): stop hiding the layer on the emulator screen.",
+    "maxChars": 10
+  },
+  "panels.layersDoc.hide": "Hide",
+  "@panels.layersDoc.hide": {
+    "context": "Button on a layer card in the ZX Spectrum Next Layers document (the display layers' priority stack and per-layer pictures): hide the layer on the emulator screen.",
+    "maxChars": 10
+  },
+  "panels.layersDoc.endSolo": "End solo",
+  "@panels.layersDoc.endSolo": {
+    "context": "Button on a layer card in the ZX Spectrum Next Layers document (the display layers' priority stack and per-layer pictures): stop showing only this layer.",
+    "maxChars": 12
+  },
+  "panels.layersDoc.solo": "Solo",
+  "@panels.layersDoc.solo": {
+    "context": "Button on a layer card in the ZX Spectrum Next Layers document (the display layers' priority stack and per-layer pictures): show only this layer on the emulator screen.",
+    "maxChars": 10
+  },
+  "panels.layersDoc.soloTitle": "Click to show {layer} alone on the emulator screen",
+  "@panels.layersDoc.soloTitle": {
+    "context": "Tooltip of a layer's picture in the ZX Spectrum Next Layers document (the display layers' priority stack and per-layer pictures).",
+    "placeholders": {
+      "layer": "The layer's name, e.g. Layer 2"
+    }
+  },
+  "panels.layersDoc.program": "Program",
+  "@panels.layersDoc.program": {
+    "context": "Label on a layer card in the ZX Spectrum Next Layers document (the display layers' priority stack and per-layer pictures): whether the running program enabled the layer.",
+    "maxChars": 14
+  },
+  "panels.layersDoc.clip": "Clip",
+  "@panels.layersDoc.clip": {
+    "context": "Label on a layer card in the ZX Spectrum Next Layers document (the display layers' priority stack and per-layer pictures): the layer's clip window.",
+    "maxChars": 14
+  },
+  "panels.layersDoc.debugView": "Debug view",
+  "@panels.layersDoc.debugView": {
+    "context": "Label on a layer card in the ZX Spectrum Next Layers document (the display layers' priority stack and per-layer pictures): whether the IDE hides or solos the layer.",
+    "maxChars": 14
+  },
+  "panels.tileSnapshot.empty": "This tile snapshot has no contents.",
+  "@panels.tileSnapshot.empty": {
+    "context": "Empty state of the tile snapshot document (a ZX Spectrum Next tilemap tile popped out of the Tilemap Inspector, read-only)."
+  },
+  "panels.tileSnapshot.label": "Tile snapshot",
+  "@panels.tileSnapshot.label": {
+    "context": "Accessible name (screen readers) of the tile snapshot document (a ZX Spectrum Next tilemap tile popped out of the Tilemap Inspector, read-only)."
+  },
+  "panels.tileSnapshot.toolbar": "Read-only snapshot",
+  "@panels.tileSnapshot.toolbar": {
+    "context": "Accessible name (screen readers) of the toolbar of the tile snapshot document (a ZX Spectrum Next tilemap tile popped out of the Tilemap Inspector, read-only)."
+  },
+  "panels.tileSnapshot.readOnly": "Read-only",
+  "@panels.tileSnapshot.readOnly": {
+    "context": "Badge in the toolbar of the tile snapshot document (a ZX Spectrum Next tilemap tile popped out of the Tilemap Inspector, read-only).",
+    "maxChars": 12
+  },
+  "panels.tileSnapshot.orientation": "Orientation",
+  "@panels.tileSnapshot.orientation": {
+    "context": "Accessible name of the As stored / As shown button group in the tile snapshot document (a ZX Spectrum Next tilemap tile popped out of the Tilemap Inspector, read-only)."
+  },
+  "panels.tileSnapshot.asStored": "As stored",
+  "@panels.tileSnapshot.asStored": {
+    "context": "Toggle button in the tile snapshot document (a ZX Spectrum Next tilemap tile popped out of the Tilemap Inspector, read-only): show the tile's pixels as stored in memory.",
+    "maxChars": 12
+  },
+  "panels.tileSnapshot.asShown": "As shown",
+  "@panels.tileSnapshot.asShown": {
+    "context": "Toggle button in the tile snapshot document (a ZX Spectrum Next tilemap tile popped out of the Tilemap Inspector, read-only): show the tile rotated and mirrored as its tilemap cell displays it.",
+    "maxChars": 12
+  },
+  "panels.tileSnapshot.asShownTitle": "Rotated, then mirrored, as the cell shows it",
+  "@panels.tileSnapshot.asShownTitle": {
+    "context": "Tooltip of the 'As shown' button in the tile snapshot document (a ZX Spectrum Next tilemap tile popped out of the Tilemap Inspector, read-only)."
+  },
+  "panels.tileSnapshot.copy": "Copy the tile's bytes as .db",
+  "@panels.tileSnapshot.copy": {
+    "context": "Tooltip of the copy button in the tile snapshot document (a ZX Spectrum Next tilemap tile popped out of the Tilemap Inspector, read-only). .db is the assembler directive and stays as it is."
+  },
+  "panels.tileSnapshot.copied": "Tile {tile} copied as .db",
+  "@panels.tileSnapshot.copied": {
+    "context": "Status bar message after copying a tile in the tile snapshot document (a ZX Spectrum Next tilemap tile popped out of the Tilemap Inspector, read-only).",
+    "placeholders": {
+      "tile": "The tile number"
+    }
+  },
+  "panels.tileSnapshot.zoomOut": "Zoom out",
+  "@panels.tileSnapshot.zoomOut": {
+    "context": "Tooltip of a toolbar button in the tile snapshot document (a ZX Spectrum Next tilemap tile popped out of the Tilemap Inspector, read-only)."
+  },
+  "panels.tileSnapshot.zoomIn": "Zoom in",
+  "@panels.tileSnapshot.zoomIn": {
+    "context": "Tooltip of a toolbar button in the tile snapshot document (a ZX Spectrum Next tilemap tile popped out of the Tilemap Inspector, read-only)."
+  },
+  "panels.tileSnapshot.showGrid": "Show grid",
+  "@panels.tileSnapshot.showGrid": {
+    "context": "Tooltip of a toggle button in the tile snapshot document (a ZX Spectrum Next tilemap tile popped out of the Tilemap Inspector, read-only)."
+  },
+  "panels.tileSnapshot.checker": "Checkerboard behind transparent pixels",
+  "@panels.tileSnapshot.checker": {
+    "context": "Tooltip of a toggle button in the tile snapshot document (a ZX Spectrum Next tilemap tile popped out of the Tilemap Inspector, read-only)."
+  },
+  "panels.tileSnapshot.gridShown": "Tile {tile}, as shown",
+  "@panels.tileSnapshot.gridShown": {
+    "context": "Accessible name of the pixel grid in the tile snapshot document (a ZX Spectrum Next tilemap tile popped out of the Tilemap Inspector, read-only) when it shows the tile as its cell displays it.",
+    "placeholders": {
+      "tile": "The tile number"
+    }
+  },
+  "panels.tileSnapshot.gridStored": "Tile {tile}, as stored",
+  "@panels.tileSnapshot.gridStored": {
+    "context": "Accessible name of the pixel grid in the tile snapshot document (a ZX Spectrum Next tilemap tile popped out of the Tilemap Inspector, read-only) when it shows the tile as stored.",
+    "placeholders": {
+      "tile": "The tile number"
+    }
+  },
+  "panels.tileSnapshot.bit": "bit {value}",
+  "@panels.tileSnapshot.bit": {
+    "context": "Status bar of the tile snapshot document (a ZX Spectrum Next tilemap tile popped out of the Tilemap Inspector, read-only): the hovered pixel's bit in a text-mode (1-bit) tile.",
+    "placeholders": {
+      "value": "0 or 1"
+    }
+  },
+  "panels.tileSnapshot.nibble": "nibble {value}",
+  "@panels.tileSnapshot.nibble": {
+    "context": "Status bar of the tile snapshot document (a ZX Spectrum Next tilemap tile popped out of the Tilemap Inspector, read-only): the hovered pixel's 4-bit value.",
+    "placeholders": {
+      "value": "A hex digit"
+    }
+  },
+  "panels.tileSnapshot.transparentText": "transparent (colour = $14)",
+  "@panels.tileSnapshot.transparentText": {
+    "context": "Status bar of the tile snapshot document (a ZX Spectrum Next tilemap tile popped out of the Tilemap Inspector, read-only): the hovered text-mode pixel is transparent. $14 is the NextReg."
+  },
+  "panels.tileSnapshot.transparent": "transparent (= $4C {index})",
+  "@panels.tileSnapshot.transparent": {
+    "context": "Status bar of the tile snapshot document (a ZX Spectrum Next tilemap tile popped out of the Tilemap Inspector, read-only): the hovered pixel is the transparent index. $4C is the NextReg.",
+    "placeholders": {
+      "index": "The transparency index, a hex digit"
+    }
+  },
+  "panels.tileSnapshot.index": "index {index}",
+  "@panels.tileSnapshot.index": {
+    "context": "Status bar of the tile snapshot document (a ZX Spectrum Next tilemap tile popped out of the Tilemap Inspector, read-only): the hovered pixel's palette index.",
+    "placeholders": {
+      "index": "Palette index in hex"
+    }
+  },
+  "panels.tileSnapshot.footer": "Tile {tile} · 8×8 · {depth}",
+  "@panels.tileSnapshot.footer": {
+    "context": "Right side of the status bar of the tile snapshot document (a ZX Spectrum Next tilemap tile popped out of the Tilemap Inspector, read-only).",
+    "placeholders": {
+      "tile": "The tile number",
+      "depth": "1bpp or 4bpp (bits per pixel)"
+    }
+  },
+  "panels.tileSnapshot.palette": "Tilemap palette {palette} (as taken)",
+  "@panels.tileSnapshot.palette": {
+    "context": "Section header in the tile snapshot document (a ZX Spectrum Next tilemap tile popped out of the Tilemap Inspector, read-only): the tilemap palette frozen when the snapshot was taken.",
+    "placeholders": {
+      "palette": "1 or 2"
+    }
+  },
+  "panels.tileSnapshot.preview": "Preview",
+  "@panels.tileSnapshot.preview": {
+    "context": "Section header in the tile snapshot document (a ZX Spectrum Next tilemap tile popped out of the Tilemap Inspector, read-only): the tile at real size and zoomed.",
+    "maxChars": 16
+  }
+}

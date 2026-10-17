@@ -5,6 +5,7 @@ import {
   strayProvenance,
   type RawRomSidecar
 } from "@common/roms/romAnnotationTools";
+import { t } from "@common/i18n/i18n";
 import { knownRomPageKind, romPageIdentity } from "@common/roms/romIdentity";
 
 import { isValidLabelName, parseAnnotations } from "./programAnnotations";
@@ -48,7 +49,7 @@ export async function checkRomSidecar(
     raw = JSON.parse(text);
   } catch (err) {
     return {
-      problems: [`It is not valid JSON: ${(err as Error).message}`],
+      problems: [t("media.romCheck.notJson", { message: (err as Error).message })],
       levels,
       recordedLevel: 0,
       unlabelledTargets
@@ -61,22 +62,22 @@ export async function checkRomSidecar(
   for (const diagnostic of parsed.diagnostics.filter((d) => d.severity === "error")) {
     problems.push(`${diagnostic.path}: ${diagnostic.message}`);
   }
-  if (parsed.annotations && parsed.annotations.machine !== "rom") problems.push('Its machine is not "rom".');
-  if (raw.globalLabels !== undefined) problems.push("It has global labels, which a ROM sidecar may not.");
-  if (raw.debug !== undefined) problems.push("It has a debug subtree, which a ROM sidecar may not.");
+  if (parsed.annotations && parsed.annotations.machine !== "rom") problems.push(t("media.romCheck.machineNotRom"));
+  if (raw.globalLabels !== undefined) problems.push(t("media.romCheck.globalLabels"));
+  if (raw.debug !== undefined) problems.push(t("media.romCheck.debugSubtree"));
 
   // --- It names its pages by CRC, and they are the ROM's
   for (const page of Object.keys(raw.banks ?? {})) {
-    if (!raw.pages?.[page]) problems.push(`Page ${page} has annotations but no entry in "pages".`);
+    if (!raw.pages?.[page]) problems.push(t("media.romCheck.pageNotListed", { page }));
   }
   for (const [page, info] of Object.entries<{ crc32?: string }>(raw.pages ?? {})) {
     const bytes = pageBytes(Number(page));
     if (!bytes) {
-      problems.push(`Page ${page}: the ROM it describes was not found.`);
+      problems.push(t("media.romCheck.romNotFound", { page }));
       continue;
     }
     const crc = romPageIdentity(bytes).crc32;
-    if (crc !== info.crc32) problems.push(`Page ${page}: it names CRC ${info.crc32}, the ROM's is ${crc}.`);
+    if (crc !== info.crc32) problems.push(t("media.romCheck.crcMismatch", { page, named: String(info.crc32), actual: crc }));
   }
 
   // --- Valid, unique identifiers
@@ -84,20 +85,20 @@ export async function checkRomSidecar(
     const names: string[] = (bank.localLabels ?? []).map((label: { name: string }) => label.name);
     const seen = new Set<string>();
     for (const name of names) {
-      if (seen.has(name)) problems.push(`Page ${page}: the label ${name} is used twice.`);
+      if (seen.has(name)) problems.push(t("media.romCheck.duplicateLabel", { page, name }));
       seen.add(name);
-      if (!isValidLabelName(name)) problems.push(`Page ${page}: ${name} is not a valid label name.`);
+      if (!isValidLabelName(name)) problems.push(t("media.romCheck.invalidLabel", { page, name }));
     }
   }
 
   // --- Every entry has a provenance, and no provenance names nothing
   const missing = missingProvenance(raw);
-  if (missing.length > 0) problems.push(`No provenance: ${missing.join(", ")}.`);
+  if (missing.length > 0) problems.push(t("media.romCheck.noProvenance", { entries: missing.join(", ") }));
   const stray = strayProvenance(raw);
-  if (stray.length > 0) problems.push(`Provenance for entries that are not there: ${stray.join(", ")}.`);
+  if (stray.length > 0) problems.push(t("media.romCheck.strayProvenance", { entries: stray.join(", ") }));
   for (const [key, value] of Object.entries(raw.provenance ?? {})) {
     if (!["observed", "manual", "derived"].includes(value as string)) {
-      problems.push(`${key}: "${String(value)}" is not a provenance.`);
+      problems.push(t("media.romCheck.badProvenance", { key, value: String(value) }));
     }
   }
 
@@ -109,15 +110,15 @@ export async function checkRomSidecar(
     levels[page] = report.level;
     unlabelledTargets[page] = report.unlabelledTargets;
     for (const name of report.misplacedLabels) {
-      problems.push(`Page ${page}: the label ${name} is not on an instruction start inside code.`);
+      problems.push(t("media.romCheck.misplacedLabel", { page, name }));
     }
     if (report.level < recordedLevel) {
-      problems.push(`Page ${page}: it records level ${recordedLevel}, but measures ${report.level}.`);
+      problems.push(t("media.romCheck.levelTooHigh", { page, recorded: recordedLevel, measured: report.level }));
     }
   }
 
   // --- The canonical format
-  if (text !== formatRomSidecar(raw)) problems.push("It is not in the format `npm run rom:annotations` writes.");
+  if (text !== formatRomSidecar(raw)) problems.push(t("media.romCheck.notCanonical"));
 
   return { problems, levels, recordedLevel, unlabelledTargets };
 }

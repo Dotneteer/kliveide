@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { t } from "@common/i18n/i18n";
 import {
   CANDIDATE_REJECTED_MESSAGE,
   CONFIGURED_FAILED_MESSAGE,
@@ -48,8 +49,8 @@ describe("status block", () => {
     // statusCheck | tested executable | verdict | badge | note
     ["passed", CONFIGURED_PATH, true, "passed", ""],
     ["failed", CONFIGURED_PATH, false, "failed", ""],
-    ["failed", OTHER_PATH, true, "none", REPLACEMENT_READY_MESSAGE],
-    ["passed", OTHER_PATH, false, "none", CANDIDATE_REJECTED_MESSAGE],
+    ["failed", OTHER_PATH, true, "none", t(REPLACEMENT_READY_MESSAGE)],
+    ["passed", OTHER_PATH, false, "none", t(CANDIDATE_REJECTED_MESSAGE)],
     // --- Agreeing verdicts on different executables keep the badge
     ["passed", OTHER_PATH, true, "passed", ""],
     ["failed", OTHER_PATH, false, "failed", ""]
@@ -95,7 +96,7 @@ describe("status block", () => {
   it("falls back to a generic reason when the failure carries none", () => {
     const status = selectViewModel(aConfiguredState({ statusCheck: "failed" })).status;
 
-    expect(status).toMatchObject({ detail: { text: CONFIGURED_FAILED_MESSAGE } });
+    expect(status).toMatchObject({ detail: { text: t(CONFIGURED_FAILED_MESSAGE) } });
   });
 
   it("shows the version and the scope for a working setup", () => {

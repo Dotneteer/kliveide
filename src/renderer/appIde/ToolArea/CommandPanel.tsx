@@ -9,6 +9,7 @@ import {
 } from "@state/actions";
 import { TabButton, TabButtonSpace } from "@controls/TabButton";
 import { ConsoleOutput } from "../DocumentPanels/helpers/ConsoleOutput";
+import { useT } from "@common/i18n/useT";
 
 /**
  * The prompt sigil, and the prefix every executed command is echoed with.
@@ -23,6 +24,7 @@ import { ConsoleOutput } from "../DocumentPanels/helpers/ConsoleOutput";
 const PROMPT_SIGIL = "\u276f";
 
 export const CommandPanel = () => {
+  const t = useT();
   const dispatch = useDispatch();
   const { ideCommandsService } = useAppServices();
   const inputRef = useRef<HTMLInputElement>();
@@ -67,9 +69,9 @@ export const CommandPanel = () => {
         <input
           ref={inputRef}
           className={styles.prompt}
-          aria-label="Interactive command prompt"
+          aria-label={t("panels.commands.promptLabel")}
           placeholder={
-            executing ? "Executing command..." : "Type ? + Enter for help"
+            t(executing ? "panels.commands.executingPlaceholder" : "panels.commands.helpPlaceholder")
           }
           spellCheck={false}
           onKeyDown={processKey}
@@ -124,7 +126,7 @@ export const CommandPanel = () => {
   // --- Execute the specified command
   async function executeCommand (command: string): Promise<void> {
     setExecuting(true);
-    dispatch(setIdeStatusMessageAction("Executing command"));
+    dispatch(setIdeStatusMessageAction(t("panels.commands.statusExecuting")));
     buffer.resetStyle();
     buffer.writeLine(`${PROMPT_SIGIL} ${command}`);
     const result = await ideCommandsService.executeInteractiveCommand(
@@ -132,15 +134,16 @@ export const CommandPanel = () => {
       buffer
     );
     if (result.success) {
-      dispatch(setIdeStatusMessageAction("Command executed", true));
+      dispatch(setIdeStatusMessageAction(t("panels.commands.statusExecuted"), true));
     } else {
-      dispatch(setIdeStatusMessageAction("Command executed with error", false));
+      dispatch(setIdeStatusMessageAction(t("panels.commands.statusExecutedWithError"), false));
     }
     setExecuting(false);
   }
 };
 
 export const CommandPanelHeader = () => {
+  const t = useT();
   const dispatch = useDispatch();
   const { ideCommandsService: interactiveCommandsService } = useAppServices();
   return (
@@ -148,7 +151,7 @@ export const CommandPanelHeader = () => {
       <TabButtonSpace />
       <TabButton
         iconName='clear-all'
-        title='Clear'
+        title={t("panels.toolArea.clear")}
         clicked={() => {
           interactiveCommandsService.getBuffer().clear();
           dispatch(incToolCommandSeqNoAction());
@@ -157,13 +160,13 @@ export const CommandPanelHeader = () => {
       <TabButtonSpace />
       <TabButton
         iconName='copy'
-        title='Copy to clipboard'
+        title={t("panels.toolArea.copyToClipboard")}
         clicked={async () => {
           navigator.clipboard.writeText(
             interactiveCommandsService.getBuffer().getBufferText()
           );
           dispatch(
-            setIdeStatusMessageAction("Output copied to the clipboard", true)
+            setIdeStatusMessageAction(t("panels.toolArea.outputCopied"), true)
           );
           dispatch(incToolCommandSeqNoAction());
         }}

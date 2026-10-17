@@ -9,7 +9,7 @@ import type { Z80CpuState } from "@common/messaging/EmuApi";
 import { MF_EXEC_HISTORY, MI_ZXNEXT } from "@common/machines/constants";
 import { machineRegistry } from "@common/machines/machine-registry";
 import {
-  ADVANCED_DEBUGGING_OFF_MESSAGE,
+  advancedDebuggingOffMessage,
   isAdvancedDebuggingEnabled
 } from "@common/features/advancedDebugging";
 import { HISTORY_PANEL_ID } from "@common/state/common-ids";
@@ -43,6 +43,8 @@ import {
 } from "@renderer/features/history/historyViewModel";
 import { forkConfirmation } from "@common/history/reverseDebugText";
 import { isInThePast } from "./reverseDebugFork";
+import { t } from "@common/i18n/i18n";
+import type { MessageKey } from "@common/i18n/keys.generated";
 import { createSpecialDocument } from "@renderer/features/documents/specialDocuments";
 import { HistoryDisassemblyCache, type HistoryLabelLookup } from "@renderer/features/history/historyDisassembly";
 import { addressSymbolsForState } from "@renderer/appIde/annotations/useAddressSymbols";
@@ -64,16 +66,18 @@ import {
 
 /** Refuses a command on a machine that does not record history */
 function requireHistory(context: IdeCommandContext): IdeCommandResult | undefined {
-  if (!isAdvancedDebuggingEnabled(context.store.getState())) return commandError(ADVANCED_DEBUGGING_OFF_MESSAGE);
+  if (!isAdvancedDebuggingEnabled(context.store.getState())) return commandError(advancedDebuggingOffMessage());
   const machineId = context.service.machineService.getMachineInfo()?.machine?.machineId;
   const supported = !!machineRegistry.find((m) => m.machineId === machineId)?.features?.[MF_EXEC_HISTORY];
-  return supported ? undefined : commandError("This machine does not record execution history");
+  return supported ? undefined : commandError(t("commands.history.reason.noHistory"));
 }
 
 /** `show-history`: opens the Execution History document. */
 export class ShowHistoryCommand extends IdeCommandBase {
   readonly id = "show-history";
-  readonly description = "Displays the Execution History";
+  get description() {
+    return t("commands.history.show.description");
+  }
   readonly usage = "show-history";
   readonly aliases = ["shhist"];
 
@@ -93,7 +97,9 @@ export class ShowHistoryCommand extends IdeCommandBase {
 /** `hide-history`: closes the Execution History document. */
 export class HideHistoryCommand extends IdeCommandBase {
   readonly id = "hide-history";
-  readonly description = "Hides the Execution History";
+  get description() {
+    return t("commands.history.hide.description");
+  }
   readonly usage = "hide-history";
   readonly aliases = ["hhist"];
 
@@ -107,7 +113,9 @@ export class HideHistoryCommand extends IdeCommandBase {
 /** `history-clear`: empties the history ring. */
 export class ClearExecutionHistoryCommand extends IdeCommandBase {
   readonly id = "history-clear";
-  readonly description = "Clears the execution history";
+  get description() {
+    return t("commands.history.clear.description");
+  }
   readonly usage = "history-clear";
   readonly aliases = ["hclr"];
 
@@ -115,14 +123,14 @@ export class ClearExecutionHistoryCommand extends IdeCommandBase {
     const refused = requireHistory(context);
     if (refused) return refused;
     await context.emuApi.clearHistory();
-    writeSuccessMessage(context.output, "Execution history cleared");
+    writeSuccessMessage(context.output, t("commands.history.cleared"));
     return commandSuccess;
   }
 }
 
 /** The message for a ring with nothing in it, as `history` and `history-export` say it */
 function noHistoryText(info: ExecutionHistoryInfo | undefined): string {
-  return info?.enabled ? "No history yet" : "No history: it is recorded only when the machine is started with debugging";
+  return info?.enabled ? t("commands.history.noneYet") : t("commands.history.notRecording");
 }
 
 /** The compilation the IDE holds now: labels and source lines come from it (TRACE_EXPORT_PLAN D12) */
@@ -162,7 +170,9 @@ async function commandTraceResolvers(
 /** `history [n]`: prints the newest n records (20 by default) to the output. */
 export class HistoryCommand extends IdeCommandBase<{ count?: number }> {
   readonly id = "history";
-  readonly description = "Prints the newest execution history records (20 by default)";
+  get description() {
+    return t("commands.history.list.description");
+  }
   readonly usage = "history [<count>]";
   readonly argumentInfo: CommandArgumentInfo = {
     optional: [{ name: "count", type: "number", minValue: 1, maxValue: 10000 }]
@@ -180,12 +190,12 @@ export class HistoryCommand extends IdeCommandBase<{ count?: number }> {
     const from = info.newestSequence - count + 1;
     // --- One more on each side would be the state after; the newest's is the live CPU
     const page = await context.emuApi.getHistoryRecords(from, count);
-    if (!page) return commandError("Could not read the execution history");
+    if (!page) return commandError(t("commands.history.readFailed"));
     const records = decodeHistoryPage(page);
     const cpu = (await context.emuApi.getCpuState({ present: true })) as Z80CpuState;
     const resolvers = await commandTraceResolvers(context, info);
 
-    writeMessage(context.output, `${info.count.toLocaleString("en-US")} of ${info.capacity.toLocaleString("en-US")} recorded`, "cyan");
+    writeMessage(context.output, t("commands.history.recorded", { count: info.count, capacity: info.capacity }), "cyan");
     // --- The viewer's columns through the exporter: one formatter for every text row (TRACE_EXPORT_PLAN D14)
     const lines = exportTrace(
       [records],
@@ -195,7 +205,7 @@ export class HistoryCommand extends IdeCommandBase<{ count?: number }> {
       resolvers
     );
     for await (const line of lines) writeMessage(context.output, line);
-    if (page.gone) writeInfoMessage(context.output, "The oldest requested records were overwritten while reading");
+    if (page.gone) writeInfoMessage(context.output, t("commands.history.overwrittenWhileReading"));
     return commandSuccess;
   }
 }
@@ -244,7 +254,7 @@ export function resolveExportRange(
   const parse = (text: string | undefined, name: string): number | string | undefined => {
     if (text === undefined) return undefined;
     const value = targetSequence(String(text), newest);
-    return value === undefined ? `${name}: use a step (-42) or a sequence number (#1234)` : value;
+    return value === undefined ? t("commands.history.range.badTarget", { option: name }) : value;
   };
   const fromArg = parse(args["-from"], "-from");
   if (typeof fromArg === "string") return fromArg;
@@ -253,8 +263,8 @@ export function resolveExportRange(
   let count: number | undefined;
   if (args["-count"] !== undefined) {
     count = Number(args["-count"]);
-    if (!Number.isInteger(count) || count < 1) return "-count: use a positive whole number";
-    if (toArg !== undefined && fromArg !== undefined) return "Use -to or -count with -from, not both";
+    if (!Number.isInteger(count) || count < 1) return t("commands.history.range.badCount");
+    if (toArg !== undefined && fromArg !== undefined) return t("commands.history.range.toAndCount");
   }
   let from: number;
   let to: number;
@@ -271,16 +281,14 @@ export function resolveExportRange(
   const warnings: string[] = [];
   if (from < info.oldestSequence) {
     const gone = info.oldestSequence - Math.max(from, 0);
-    warnings.push(
-      `The ring starts at #${info.oldestSequence}; ${gone.toLocaleString("en-US")} earlier record${gone === 1 ? " is" : "s are"} gone`
-    );
+    warnings.push(t("commands.history.range.gone", { oldest: String(info.oldestSequence), count: gone }));
     from = info.oldestSequence;
   }
   if (to > newest) {
-    warnings.push(`The newest record is #${newest}`);
+    warnings.push(t("commands.history.range.newest", { newest: String(newest) }));
     to = newest;
   }
-  if (from > to) return "The range is empty";
+  if (from > to) return t("commands.history.range.empty");
   return { from, to, warnings };
 }
 
@@ -290,8 +298,9 @@ export function resolveExportRange(
  */
 export class HistoryExportCommand extends IdeCommandBase<HistoryExportArgs> {
   readonly id = "history-export";
-  readonly description =
-    "Exports the execution history as a text or CSV trace (the extension picks the format; -f overwrites)";
+  get description() {
+    return t("commands.history.export.description");
+  }
   readonly usage = [
     "history-export <file> [-from <-n|#seq>] [-to <-n|#seq>] [-count <n>]",
     "  [-format text|csv] [-columns default|viewer|all|<id,id,...>]",
@@ -315,12 +324,12 @@ export class HistoryExportCommand extends IdeCommandBase<HistoryExportArgs> {
   async validateCommandArgs(_context: IdeCommandContext, args: HistoryExportArgs): Promise<ValidationMessage[]> {
     const messages: ValidationMessage[] = [];
     const file = args.file?.trim();
-    if (!file) messages.push(validationError("The trace file path cannot be empty."));
+    if (!file) messages.push(validationError(t("commands.history.export.emptyPath")));
     const format = args["-format"]?.toLowerCase();
     if (format !== undefined && format !== "text" && format !== "csv") {
-      messages.push(validationError("-format: use text or csv"));
+      messages.push(validationError(t("commands.history.export.badFormat")));
     } else if (format === undefined && file && !traceFormatOfName(file)) {
-      messages.push(validationError("Use a .txt, .log, .trace or .csv file, or name the format with -format."));
+      messages.push(validationError(t("commands.history.export.badExtension")));
     }
     if (args["-columns"] !== undefined) {
       const columns = parseTraceColumns(String(args["-columns"]));
@@ -334,7 +343,7 @@ export class HistoryExportCommand extends IdeCommandBase<HistoryExportArgs> {
     if (refused) return refused;
     // --- The ring changes on every instruction (D10)
     if (context.store.getState().emulatorState?.machineState === MachineControllerState.Running) {
-      return commandError("Pause the machine first: the history changes while it runs");
+      return commandError(t("commands.history.export.pauseFirst"));
     }
     const file = args.file.trim();
     const format = ((args["-format"]?.toLowerCase() as TraceFormat | undefined) ?? traceFormatOfName(file))!;
@@ -348,7 +357,7 @@ export class HistoryExportCommand extends IdeCommandBase<HistoryExportArgs> {
     const { from, to } = range;
 
     if (!args["-f"] && (await fileExists(context, file))) {
-      return commandError(`${file} already exists; use -f to replace it.`);
+      return commandError(t("commands.history.export.exists", { file }));
     }
 
     const options: TraceExportOptions = {
@@ -405,15 +414,15 @@ export class HistoryExportCommand extends IdeCommandBase<HistoryExportArgs> {
         const page = await context.emuApi.getHistoryRecords(start, count);
         // --- A trace with a hole in it would compare as a divergence that never happened (D11)
         if (!page || page.gone || page.firstSequence !== start) {
-          throw new Error("Records were overwritten while reading; nothing was written");
+          throw new Error(t("commands.history.export.overwritten"));
         }
         const records = decodeHistoryPage(page);
-        if (records.length !== count) throw new Error("Could not read the whole range; nothing was written");
+        if (records.length !== count) throw new Error(t("commands.history.export.incomplete"));
         yield records;
         const before = read;
         read += records.length;
         if (total > EXPORT_PROGRESS && Math.floor(read / EXPORT_PROGRESS) > Math.floor(before / EXPORT_PROGRESS) && read < total) {
-          writeMessage(output, `Exporting... ${read.toLocaleString("en-US")} of ${total.toLocaleString("en-US")} records`, "cyan");
+          writeMessage(output, t("commands.history.export.progress", { read, total }), "cyan");
         }
       }
     }
@@ -424,16 +433,16 @@ export class HistoryExportCommand extends IdeCommandBase<HistoryExportArgs> {
       const resolvers = await commandTraceResolvers(context, info, include);
       ({ text, lines: lineCount } = await collectTrace(exportTrace(pages(), meta, spans, options, resolvers), options));
     } catch (err) {
-      return commandError(`Could not export the history: ${messageOf(err)}`);
+      return commandError(t("commands.history.export.failed", { error: messageOf(err) }));
     }
 
     try {
       await context.mainApi.saveTextFile(file, text);
     } catch (err) {
-      return commandError(`Could not write ${file}: ${messageOf(err)}`);
+      return commandError(t("commands.history.export.writeFailed", { file, error: messageOf(err) }));
     }
 
-    for (const warning of range.warnings) writeMessage(output, `Warning: ${warning}`, "yellow");
+    for (const warning of range.warnings) writeMessage(output, t("commands.history.export.warning", { warning }), "yellow");
     // --- A CSV file has the column row only; its metadata goes here (Q6)
     if (format === "csv") for (const line of traceHeaderLines(meta, options)) writeMessage(output, line, "cyan");
     const headerLines = format === "csv" ? 1 : options.header ? traceHeaderLines(meta, options).length : 0;
@@ -441,10 +450,11 @@ export class HistoryExportCommand extends IdeCommandBase<HistoryExportArgs> {
     const frames = options.absolute
       ? `${edges.first.frame}–${edges.last.frame}`
       : `0–${edges.last.frame - edges.first.frame}`;
-    const rowText = rows !== total ? `, ${rows.toLocaleString("en-US")} line${rows === 1 ? "" : "s"}` : "";
     writeSuccessMessage(
       output,
-      `Exported ${total.toLocaleString("en-US")} record${total === 1 ? "" : "s"} (frames ${frames}${rowText}) to ${file}`
+      rows !== total
+        ? t("commands.history.export.doneLines", { total, frames, lines: rows, file })
+        : t("commands.history.export.done", { total, frames, file })
     );
     return commandSuccess;
   }
@@ -459,13 +469,13 @@ async function rangeEdges(
 ): Promise<{ first: HistoryRecord; last: HistoryRecord; after?: HistoryRegisters }> {
   const read = async (sequence: number, count: number) => {
     const page = await context.emuApi.getHistoryRecords(sequence, count);
-    if (!page || page.gone) throw new Error("Could not read the execution history");
+    if (!page || page.gone) throw new Error(t("commands.history.readFailed"));
     return decodeHistoryPage(page);
   };
   const [first] = await read(from, 1);
   const tail = await read(to, to < info.newestSequence ? 2 : 1);
   const last = tail[0];
-  if (!first || !last) throw new Error("Could not read the execution history");
+  if (!first || !last) throw new Error(t("commands.history.readFailed"));
   const after =
     tail[1]?.regs ??
     (to === info.newestSequence
@@ -498,7 +508,8 @@ function messageOf(err: unknown): string {
 async function navigate(
   context: IdeCommandContext,
   op: HistoryNavigationOp,
-  name: string
+  /** The navigation's name, which starts its result line */
+  nameKey: MessageKey
 ): Promise<IdeCommandResult> {
   const refused = requireHistory(context);
   if (refused) return refused;
@@ -511,23 +522,27 @@ async function navigate(
   const info = await context.emuApi.getHistoryInfo();
   for (const note of result.notes ?? []) writeMessage(context.output, note, "yellow");
   if (result.reason === "running" || result.reason === "noHistory" || result.reason === "empty") {
-    return commandError(historyReasonText(result, info?.count) ?? "Cannot move in the history");
+    return commandError(historyReasonText(result, info?.count) ?? t("commands.history.nav.cannotMove"));
   }
   const reason = historyReasonText(result, info?.count);
   if (reason) writeInfoMessage(context.output, reason);
   if (result.uncertain) {
-    writeMessage(context.output, "Call/return pairing uncertain here: SP does not match the call", "yellow");
+    writeMessage(context.output, t("commands.history.nav.uncertain"), "yellow");
   }
   if (!result.moved) return commandSuccess;
+  const action = t(nameKey);
   if (result.position === 0) {
-    writeSuccessMessage(context.output, `${name}: back at the present`);
+    writeSuccessMessage(context.output, t("commands.history.nav.atPresent", { action }));
     return commandSuccess;
   }
   const cpu = await context.emuApi.getCpuState();
-  const hit = result.breakpoint ? ` (breakpoint ${result.breakpoint})` : "";
+  const step = historyStepText(result.position);
+  const pc = cpu.pc.toString(16).toUpperCase().padStart(4, "0");
   writeSuccessMessage(
     context.output,
-    `${name}: history step ${historyStepText(result.position)} at PC=$${cpu.pc.toString(16).toUpperCase().padStart(4, "0")}${hit}`
+    result.breakpoint
+      ? t("commands.history.nav.atStepBreakpoint", { action, step, pc, breakpoint: result.breakpoint })
+      : t("commands.history.nav.atStep", { action, step, pc })
   );
   return commandSuccess;
 }
@@ -535,73 +550,85 @@ async function navigate(
 /** `step-back`: to the previous instruction (or statement) in the history */
 export class StepBackCommand extends IdeCommandBase {
   readonly id = "step-back";
-  readonly description = "Steps back to the previous instruction in the execution history";
+  get description() {
+    return t("commands.history.stepBack.description");
+  }
   readonly usage = "step-back";
   readonly aliases = ["stb"];
 
   execute(context: IdeCommandContext): Promise<IdeCommandResult> {
-    return navigate(context, "back", "Step back");
+    return navigate(context, "back", "commands.history.op.stepBack");
   }
 }
 
 /** `step-forward`: to the next instruction in the history; past the newest, the present */
 export class StepForwardCommand extends IdeCommandBase {
   readonly id = "step-forward";
-  readonly description = "Steps forward through the execution history, up to the present";
+  get description() {
+    return t("commands.history.stepForward.description");
+  }
   readonly usage = "step-forward";
   readonly aliases = ["stf"];
 
   execute(context: IdeCommandContext): Promise<IdeCommandResult> {
-    return navigate(context, "forward", "Step forward");
+    return navigate(context, "forward", "commands.history.op.stepForward");
   }
 }
 
 /** `step-back-over`: as step-back, but a call that returned is passed over to its CALL */
 export class StepBackOverCommand extends IdeCommandBase {
   readonly id = "step-back-over";
-  readonly description = "Steps back over a call that returned, to the call instruction";
+  get description() {
+    return t("commands.history.stepBackOver.description");
+  }
   readonly usage = "step-back-over";
   readonly aliases = ["stbo"];
 
   execute(context: IdeCommandContext): Promise<IdeCommandResult> {
-    return navigate(context, "backOver", "Reverse step over");
+    return navigate(context, "backOver", "commands.history.op.stepBackOver");
   }
 }
 
 /** `step-back-out`: to the call that entered the current routine */
 export class StepBackOutCommand extends IdeCommandBase {
   readonly id = "step-back-out";
-  readonly description = "Steps back out of the current routine, to the call that entered it";
+  get description() {
+    return t("commands.history.stepBackOut.description");
+  }
   readonly usage = "step-back-out";
   readonly aliases = ["stbu"];
 
   execute(context: IdeCommandContext): Promise<IdeCommandResult> {
-    return navigate(context, "backOut", "Reverse step out");
+    return navigate(context, "backOut", "commands.history.op.stepBackOut");
   }
 }
 
 /** `reverse-continue`: back to the previous hit of an enabled execution breakpoint */
 export class ReverseContinueCommand extends IdeCommandBase {
   readonly id = "reverse-continue";
-  readonly description = "Goes back to the previous breakpoint hit in the execution history";
+  get description() {
+    return t("commands.history.reverseContinue.description");
+  }
   readonly usage = "reverse-continue";
   readonly aliases = ["rcont"];
 
   execute(context: IdeCommandContext): Promise<IdeCommandResult> {
-    return navigate(context, "reverseContinue", "Reverse continue");
+    return navigate(context, "reverseContinue", "commands.history.op.reverseContinue");
   }
 }
 
 /** `reverse-continue-cancel`: stops a running Reverse Continue search */
 export class ReverseContinueCancelCommand extends IdeCommandBase {
   readonly id = "reverse-continue-cancel";
-  readonly description = "Stops a running Reverse Continue search; the machine goes back where it started";
+  get description() {
+    return t("commands.history.reverseContinueCancel.description");
+  }
   readonly usage = "reverse-continue-cancel";
   readonly aliases = ["rcancel"];
 
   async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
-    if (!(await context.emuApi.cancelReverseContinue())) return commandError("No Reverse Continue search is running");
-    writeInfoMessage(context.output, "Reverse continue: canceling");
+    if (!(await context.emuApi.cancelReverseContinue())) return commandError(t("commands.history.reverseContinueCancel.notRunning"));
+    writeInfoMessage(context.output, t("commands.history.reverseContinueCancel.canceling"));
     return commandSuccess;
   }
 }
@@ -609,12 +636,14 @@ export class ReverseContinueCancelCommand extends IdeCommandBase {
 /** `history-present`: leaves the history and shows the live machine again */
 export class HistoryPresentCommand extends IdeCommandBase {
   readonly id = "history-present";
-  readonly description = "Returns from the execution history to the present";
+  get description() {
+    return t("commands.history.present.description");
+  }
   readonly usage = "history-present";
   readonly aliases = ["hpres"];
 
   execute(context: IdeCommandContext): Promise<IdeCommandResult> {
-    return navigate(context, "present", "Return to present");
+    return navigate(context, "present", "commands.history.op.present");
   }
 }
 
@@ -626,7 +655,9 @@ export class HistoryTakeOverCommand extends IdeCommandBase<{ "-y"?: boolean }> {
   readonly id = "history-take-over";
   // --- Asks for a confirmation: never through automation (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` T5)
   readonly automation = "deny" as const;
-  readonly description = "Takes over at the current point in the past: discards the recorded future (-y: without asking)";
+  get description() {
+    return t("commands.history.takeOver.description");
+  }
   readonly usage = "history-take-over [-y]";
   readonly aliases = ["htake"];
   readonly argumentInfo: CommandArgumentInfo = { commandOptions: ["-y"] };
@@ -635,23 +666,23 @@ export class HistoryTakeOverCommand extends IdeCommandBase<{ "-y"?: boolean }> {
     const refused = requireHistory(context);
     if (refused) return refused;
     if (!isInThePast(context.store)) {
-      return commandError("Take over here works in the past of a reverse-debugging session (step back first)");
+      return commandError(t("commands.history.takeOver.notInPast"));
     }
     // --- A fork cannot be undone: ask, naming what the discarded future takes with it (D12, T4)
     if (!args?.["-y"]) {
       const text = forkConfirmation(await context.emuApi.getForkPreview());
       if (!(await context.mainApi.confirmAction(text.title, text.message, text.detail, text.confirmLabel))) {
-        writeInfoMessage(context.output, "Take over here: canceled");
+        writeInfoMessage(context.output, t("commands.history.takeOver.canceled"));
         return commandSuccess;
       }
     }
     if (!(await context.emuApi.takeOverHere())) {
-      return commandError("Take over here works in the past of a reverse-debugging session (step back first)");
+      return commandError(t("commands.history.takeOver.notInPast"));
     }
     const cpu = await context.emuApi.getCpuState();
     writeSuccessMessage(
       context.output,
-      `Took over at PC=$${cpu.pc.toString(16).toUpperCase().padStart(4, "0")}: this is the present now`
+      t("commands.history.takeOver.done", { pc: cpu.pc.toString(16).toUpperCase().padStart(4, "0") })
     );
     return commandSuccess;
   }
@@ -660,7 +691,9 @@ export class HistoryTakeOverCommand extends IdeCommandBase<{ "-y"?: boolean }> {
 /** `history-goto <-n | #seq>`: to a step (−42) or a record's sequence number (#1234) */
 export class HistoryGotoCommand extends IdeCommandBase<{ target: string }> {
   readonly id = "history-goto";
-  readonly description = "Moves the history cursor to a step (-42) or a record sequence number (#1234)";
+  get description() {
+    return t("commands.history.goto.description");
+  }
   readonly usage = "history-goto <-n | #sequence>";
   readonly argumentInfo: CommandArgumentInfo = {
     mandatory: [{ name: "target", type: "string" }]
@@ -668,17 +701,17 @@ export class HistoryGotoCommand extends IdeCommandBase<{ target: string }> {
 
   execute(context: IdeCommandContext, args: { target: string }): Promise<IdeCommandResult> {
     const op = parseHistoryTarget(String(args?.target ?? ""));
-    if (!op) return Promise.resolve(commandError("Use a step (-42) or a sequence number (#1234)"));
-    return navigate(context, op, "Go to");
+    if (!op) return Promise.resolve(commandError(t("commands.history.goto.badTarget")));
+    return navigate(context, op, "commands.history.op.goto");
   }
 }
 
 /** `-42` (or `−42`, or `42`) is a step back from the present; `#1234` a sequence number */
 export function parseHistoryTarget(text: string): HistoryNavigationOp | undefined {
-  const t = text.trim().replace("−", "-");
-  const seq = /^#(\d+)$/.exec(t);
+  const target = text.trim().replace("−", "-");
+  const seq = /^#(\d+)$/.exec(target);
   if (seq) return { toSequence: Number(seq[1]) };
-  const step = /^-?(\d+)$/.exec(t);
+  const step = /^-?(\d+)$/.exec(target);
   if (step) {
     const n = Number(step[1]);
     return n === 0 ? "present" : { toPosition: n };

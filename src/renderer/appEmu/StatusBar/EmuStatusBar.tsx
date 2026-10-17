@@ -28,6 +28,8 @@ import { FrameStats } from "@renderer/abstractions/FrameStats";
 import classnames from "classnames";
 import styles from "./EmuStatusBar.module.scss";
 import { FrameCompletedArgs } from "@renderer/abstractions/IMachineController";
+import { useT } from "@common/i18n/useT";
+import { uiLocale } from "@common/i18n/i18n";
 
 type EmuStatusBarProps = {
   show: boolean;
@@ -39,6 +41,7 @@ type EmuStatusBarProps = {
 }
 
 export const EmuStatusBar = ({ show, showPerformanceInfo = true }: EmuStatusBarProps) => {
+  const t = useT();
   const { machineService } = useAppServices();
   const controller = useMachineController();
   const [frameStats, setFrameStats] = useState<FrameStats>();
@@ -161,7 +164,7 @@ export const EmuStatusBar = ({ show, showPerformanceInfo = true }: EmuStatusBarP
         <button
           type="button"
           className={styles.chip}
-          title="Select machine"
+          title={t("statusbar.selectMachine")}
           onClick={async () => await mainApi.runUiAction("open-machine-selector")}
         >
           {machineName}
@@ -172,7 +175,7 @@ export const EmuStatusBar = ({ show, showPerformanceInfo = true }: EmuStatusBarP
             ref={speedChip}
             type="button"
             className={classnames(styles.chip, styles.isMonospace)}
-            title="Speed"
+            title={t("statusbar.speed")}
             aria-haspopup="menu"
             onClick={() => speedMenuApi.showAt(speedChip.current)}
           >
@@ -200,28 +203,28 @@ export const EmuStatusBar = ({ show, showPerformanceInfo = true }: EmuStatusBarP
       {barMenu.contextVisible && (
         <ContextMenu state={barMenu} placement="top-start" onClickOutside={barMenuApi.conceal}>
           <ContextMenuItem
-            text="Show Performance Info"
+            text={t("statusbar.menu.performanceInfo")}
             selected={showPerformanceInfo}
             clicked={toggle(SETTING_EMU_SHOW_PERFORMANCE_INFO, !showPerformanceInfo)}
           />
           {MEDIA_INFO_MACHINE_IDS.includes(machineId) && (
             <ContextMenuItem
-              text="Show Media Information"
+              text={t("statusbar.menu.mediaInfo")}
               selected={!!showMediaInfo}
               clicked={toggle(SETTING_EMU_SHOW_MEDIA_INFO, !showMediaInfo)}
             />
           )}
           {machineId === MI_ZXNEXT && (
             <ContextMenuItem
-              text="Show the Layers Strip"
+              text={t("statusbar.menu.layersStrip")}
               selected={!!showNextLayers}
               clicked={toggle(SETTING_EMU_SHOW_NEXT_LAYERS, !showNextLayers)}
             />
           )}
           <ContextMenuSeparator />
-          <ContextMenuItem text="Hide Status Bar" clicked={toggle(SETTING_EMU_SHOW_STATUS_BAR, false)} />
+          <ContextMenuItem text={t("statusbar.menu.hide")} clicked={toggle(SETTING_EMU_SHOW_STATUS_BAR, false)} />
           <ContextMenuItem
-            text="Emulator Settings..."
+            text={t("statusbar.menu.emulatorSettings")}
             clicked={async () => {
               barMenuApi.conceal();
               await mainApi.runUiAction("open-settings", "emulator");
@@ -271,8 +274,9 @@ const DataLabel = ({
   minimumIntegerDigits = 2
 }: DataLabelProps) => {
   return (
+    // --- Frame times and the frame count are human figures: the display language's number format
     <Label
-      text={value.toLocaleString(undefined, {
+      text={value.toLocaleString(uiLocale(), {
         minimumFractionDigits,
         maximumFractionDigits,
         minimumIntegerDigits
@@ -291,16 +295,25 @@ const SectionSeparator = () => <div className={styles.sectionSeparator} />;
  * recording waits to be saved. The colours are status tokens: state, not decoration.
  */
 const RzxBadge = () => {
+  const t = useT();
   const rzx = useSelector((s) => s.emulatorState?.rzx);
   if (!rzx || (rzx.mode === "idle" && !rzx.unsaved)) return null;
   const counter = rzx.frames ? `${rzx.frame}/${rzx.frames}` : `${rzx.frame}`;
   const [tag, cls, title] = rzx.unsaved
-    ? ["REC", styles.rzxUnsaved, `The RZX recording stopped and is not saved: ${rzx.stopMessage ?? ""}`]
+    ? [t("statusbar.rzx.tag.rec"), styles.rzxUnsaved, t("statusbar.rzx.unsaved", { message: rzx.stopMessage ?? "" })]
     : rzx.mode === "recording"
-      ? ["REC", styles.rzxRecording, "Recording an RZX file"]
+      ? [t("statusbar.rzx.tag.rec"), styles.rzxRecording, t("statusbar.rzx.recording")]
       : rzx.mode === "rendering"
-        ? ["VIDEO", styles.rzxRendering, `Rendering ${rzx.file ?? "an RZX recording"} to video`]
-        : ["PLAY", styles.rzxPlaying, `Playing ${rzx.file ?? "an RZX recording"}`];
+        ? [
+            t("statusbar.rzx.tag.video"),
+            styles.rzxRendering,
+            rzx.file != null ? t("statusbar.rzx.renderingFile", { file: rzx.file }) : t("statusbar.rzx.rendering")
+          ]
+        : [
+            t("statusbar.rzx.tag.play"),
+            styles.rzxPlaying,
+            rzx.file != null ? t("statusbar.rzx.playingFile", { file: rzx.file }) : t("statusbar.rzx.playing")
+          ];
   return (
     <>
       <div className={classnames(styles.section, styles.rzxBadge, cls)} title={title}>

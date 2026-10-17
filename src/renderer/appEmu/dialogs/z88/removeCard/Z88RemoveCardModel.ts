@@ -54,7 +54,3 @@ export function requiresRestart(state: Z88RemoveCardState): boolean {
 export function configWithEmptySlot0(config: MachineConfigSet): MachineConfigSet {
   return { ...config, [MC_Z88_SLOT0]: EMPTY_CARD_STATE };
 }
-
-export function confirmationOf(state: Z88RemoveCardState): string {
-  return `Are you sure you want to remove card from Slot ${state.slot}?`;
-}

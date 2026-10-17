@@ -6,15 +6,17 @@ import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import { Text } from "@renderer/controls/layout/Text";
 import { DumpViewMode, viewModeOptions } from "./memoryViewModel";
 import type { HeatMode } from "@renderer/features/coverage/heatModel";
+import { useT } from "@common/i18n/useT";
+import { withLabels } from "@common/i18n/labels";
 
 /** The Heat selector's choices (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D14) */
-export const heatModeOptions = [
-  { value: "off", label: "Off" },
-  { value: "exec", label: "Executed" },
-  { value: "read", label: "Read" },
-  { value: "write", label: "Written" },
-  { value: "all", label: "All" }
-];
+export const heatModeOptions = withLabels([
+  { value: "off", labelKey: "panels.feature.memory.heat.off" },
+  { value: "exec", labelKey: "panels.feature.memory.heat.executed" },
+  { value: "read", labelKey: "panels.feature.memory.heat.read" },
+  { value: "write", labelKey: "panels.feature.memory.heat.written" },
+  { value: "all", labelKey: "panels.feature.memory.heat.all" }
+] as const);
 
 type MemoryToolbarProps = {
   bankLabel: boolean;
@@ -51,19 +53,20 @@ export const MemoryToolbar = ({
   onViewModeChanged,
   onShowAsGraphics
 }: MemoryToolbarProps) => {
+  const t = useT();
   return (
     <>
       <LabeledSwitch
         value={decimalView}
-        label="Decimal"
-        title="Use decimal numbers?"
+        label={t("panels.feature.memory.decimal")}
+        title={t("panels.feature.memory.decimalTooltip")}
         clicked={onDecimalViewChanged}
       />
       <LabelSeparator width={8} />
-      <Text text="View" />
+      <Text text={t("panels.feature.memory.view")} />
       <LabelSeparator />
       <Dropdown
-        options={viewModeOptions}
+        options={viewModeOptions()}
         initialValue={viewMode}
         width={90}
         onOpenChange={(open) => onRefreshPauseChanged(open)}
@@ -72,8 +75,8 @@ export const MemoryToolbar = ({
       <LabelSeparator width={8} />
       <LabeledSwitch
         value={charDump}
-        label="Chars"
-        title="Show characters dump?"
+        label={t("panels.feature.memory.chars")}
+        title={t("panels.feature.memory.charsTooltip")}
         clicked={onCharDumpChanged}
       />
       {banksView && (
@@ -81,8 +84,8 @@ export const MemoryToolbar = ({
           <LabelSeparator width={8} />
           <LabeledSwitch
             value={bankLabel}
-            label="Bank"
-            title="Display bank label information?"
+            label={t("panels.feature.memory.bank")}
+            title={t("panels.feature.memory.bankTooltip")}
             clicked={onBankLabelChanged}
           />
         </>
@@ -90,10 +93,10 @@ export const MemoryToolbar = ({
       {heatMode !== undefined && (
         <>
           <LabelSeparator width={8} />
-          <Text text="Heat" />
+          <Text text={t("panels.feature.memory.heat")} />
           <LabelSeparator />
           <Dropdown
-            ariaLabel="Heat map"
+            ariaLabel={t("panels.feature.memory.heatMap")}
             options={heatModeOptions}
             initialValue={heatMode}
             width={90}
@@ -104,7 +107,7 @@ export const MemoryToolbar = ({
       )}
       <LabelSeparator width={8} />
       <AddressInput
-        label="Go To"
+        label={t("panels.feature.memory.goTo")}
         clearOnEnter={true}
         decimalView={decimalView}
         onGotFocus={() => onRefreshPauseChanged(true)}
@@ -116,7 +119,7 @@ export const MemoryToolbar = ({
       {onShowAsGraphics && (
         <>
           <LabelSeparator width={8} />
-          <SmallIconButton iconName="sprite" title="Show as graphics" clicked={onShowAsGraphics} />
+          <SmallIconButton iconName="sprite" title={t("panels.feature.memory.showAsGraphics")} clicked={onShowAsGraphics} />
         </>
       )}
     </>

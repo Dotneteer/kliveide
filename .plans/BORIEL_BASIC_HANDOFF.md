@@ -77,6 +77,9 @@ emulator's.
 
 ## Next steps, in order
 
+0. **New versions and `.dbg` format changes** are tracked by `.plans/BORIEL_BASIC_UPDATE_TRACKING_PLAN.md`
+   (proposed). `2.0.0-beta26` was already published on 2026-10-14; that plan's U6 is the upgrade.
+
 1. **Unverified platforms.** The x86_64 Linux and Windows kits have never been run. Unchecked on
    Windows: Windows `;` as the `-I` separator (`boriel-options.ts`), and skipping the 34.5 MB of
    `.pdb` files.

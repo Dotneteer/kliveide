@@ -10,6 +10,8 @@ import { PanelHeader, PanelHeaderGroup } from "@renderer/controls/data";
 import type { PartitionOption } from "@renderer/features/memory/memoryViewModel";
 import { toHexa4 } from "../services/ide-commands";
 import type { ReactNode } from "react";
+import { t as translate } from "@common/i18n/i18n";
+import { useT } from "@common/i18n/useT";
 
 export function createDisassemblyOffsetOptions(decimalView: boolean): DropdownOption[] {
   const options: DropdownOption[] = [];
@@ -21,8 +23,10 @@ export function createDisassemblyOffsetOptions(decimalView: boolean): DropdownOp
   return options;
 }
 
-export const SYS_VAR_NAMES_TITLE =
-  "Show system variable names in operands?";
+/** The tooltip of the "Sys vars" switch, in the display language (shared with the memory views) */
+export function sysVarNamesTitle(): string {
+  return translate("panels.doc.disassembly.sysVarsTitle");
+}
 
 type DisassemblyToolbarProps = {
   autoRefresh: boolean;
@@ -74,84 +78,92 @@ export const DisassemblyToolbar = ({
   romLabels,
   topAddress,
   reverseTools
-}: DisassemblyToolbarProps) => (
-  <PanelHeader>
-    <PanelHeaderGroup>
-      <LabeledSwitch
-        value={decimalView}
-        label="Decimal"
-        title="Use decimal numbers?"
-        clicked={onDecimalViewChanged}
-      />
-    </PanelHeaderGroup>
-    <PanelHeaderGroup>
-      <LabeledSwitch
-        value={sysVarNames}
-        label="Sys vars"
-        title={SYS_VAR_NAMES_TITLE}
-        clicked={onSysVarNamesChanged}
-      />
-      {hasRomAnnotations && onRomLabelsChanged && (
+}: DisassemblyToolbarProps) => {
+  const t = useT();
+  return (
+    <PanelHeader>
+      <PanelHeaderGroup>
         <LabeledSwitch
-          value={romLabels ?? true}
-          label="ROM labels"
-          title="Show the ROM's labels, comments and data regions?"
-          clicked={onRomLabelsChanged}
+          value={decimalView}
+          label={t("panels.doc.disassembly.decimal")}
+          title={t("panels.doc.disassembly.decimalTitle")}
+          clicked={onDecimalViewChanged}
         />
-      )}
-    </PanelHeaderGroup>
-    {/* --- The refresh button acts on what "Follow PC" selects, so the two travel together. */}
-    <PanelHeaderGroup>
-      <LabeledSwitch
-        value={autoRefresh}
-        label="Follow PC"
-        title="Follow the changes of PC"
-        clicked={onAutoRefreshChanged}
-      />
-      <SmallIconButton
-        iconName="refresh"
-        title={"Refresh now"}
-        clicked={onManualRefresh}
-      />
-    </PanelHeaderGroup>
-    {/* --- Three switches over what the listing covers: one group, so they wrap as a set. */}
-    <PanelHeaderGroup>
-      <LabeledSwitch value={ram} label="RAM:" title="Disassemble RAM?" clicked={onRamChanged} />
-      <LabeledSwitch
-        value={screen}
-        label="Screen:"
-        title="Disassemble screen?"
-        clicked={onScreenChanged}
-      />
-      <LabeledSwitch
-        value={bankLabel}
-        label="Bank"
-        title="Display bank label information?"
-        clicked={onShowBankLabelChanged}
-      />
-    </PanelHeaderGroup>
-    <PanelHeaderGroup>
-      <SmallIconButton
-        iconName={pausedPc < topAddress ? "arrow-circle-up" : "arrow-circle-down"}
-        title={"Go to the PC address"}
-        enable={
-          machineState === MachineControllerState.Paused ||
-          machineState === MachineControllerState.Stopped
-        }
-        clicked={onGoToPc}
-      />
-      <AddressInput
-        label="Go To"
-        clearOnEnter={true}
-        decimalView={false}
-        onAddressSent={async (address) => {
-          await onGoToAddress(address);
-        }}
-      />
-    </PanelHeaderGroup>
-    {reverseTools && <PanelHeaderGroup>{reverseTools}</PanelHeaderGroup>}
-  </PanelHeader>
-);
+      </PanelHeaderGroup>
+      <PanelHeaderGroup>
+        <LabeledSwitch
+          value={sysVarNames}
+          label={t("panels.doc.disassembly.sysVars")}
+          title={t("panels.doc.disassembly.sysVarsTitle")}
+          clicked={onSysVarNamesChanged}
+        />
+        {hasRomAnnotations && onRomLabelsChanged && (
+          <LabeledSwitch
+            value={romLabels ?? true}
+            label={t("panels.doc.disassembly.romLabels")}
+            title={t("panels.doc.disassembly.romLabelsTitle")}
+            clicked={onRomLabelsChanged}
+          />
+        )}
+      </PanelHeaderGroup>
+      {/* --- The refresh button acts on what "Follow PC" selects, so the two travel together. */}
+      <PanelHeaderGroup>
+        <LabeledSwitch
+          value={autoRefresh}
+          label={t("panels.doc.disassembly.followPc")}
+          title={t("panels.doc.disassembly.followPcTitle")}
+          clicked={onAutoRefreshChanged}
+        />
+        <SmallIconButton
+          iconName="refresh"
+          title={t("panels.doc.common.refreshNow")}
+          clicked={onManualRefresh}
+        />
+      </PanelHeaderGroup>
+      {/* --- Three switches over what the listing covers: one group, so they wrap as a set. */}
+      <PanelHeaderGroup>
+        <LabeledSwitch
+          value={ram}
+          label={t("panels.doc.disassembly.ram")}
+          title={t("panels.doc.disassembly.ramTitle")}
+          clicked={onRamChanged}
+        />
+        <LabeledSwitch
+          value={screen}
+          label={t("panels.doc.disassembly.screen")}
+          title={t("panels.doc.disassembly.screenTitle")}
+          clicked={onScreenChanged}
+        />
+        <LabeledSwitch
+          value={bankLabel}
+          label={t("panels.doc.disassembly.bank")}
+          title={t("panels.doc.disassembly.bankTitle")}
+          clicked={onShowBankLabelChanged}
+        />
+      </PanelHeaderGroup>
+      <PanelHeaderGroup>
+        <SmallIconButton
+          iconName={pausedPc < topAddress ? "arrow-circle-up" : "arrow-circle-down"}
+          title={t("panels.doc.disassembly.goToPc")}
+          enable={
+            machineState === MachineControllerState.Paused ||
+            machineState === MachineControllerState.Stopped
+          }
+          clicked={onGoToPc}
+        />
+        <AddressInput
+          label={t("panels.doc.common.goTo")}
+          clearOnEnter={true}
+          decimalView={false}
+          onAddressSent={async (address) => {
+            await onGoToAddress(address);
+          }}
+        />
+      </PanelHeaderGroup>
+      {reverseTools && <PanelHeaderGroup>{reverseTools}</PanelHeaderGroup>}
+    </PanelHeader>
+  );
+};
 
 type DisassemblyBankToolbarProps = {
   allowViews: boolean;
@@ -185,6 +197,7 @@ export const DisassemblyBankToolbar = ({
   partitionOptions,
   segmentOptions
 }: DisassemblyBankToolbarProps) => {
+  const t = useT();
   if (autoRefresh || !allowViews) {
     return null;
   }
@@ -194,21 +207,21 @@ export const DisassemblyBankToolbar = ({
       <PanelHeaderGroup>
         <LabeledSwitch
           value={isFullView}
-          label="64K View"
-          title="Show the full 64K memory"
+          label={t("panels.doc.disassembly.fullView")}
+          title={t("panels.doc.disassembly.fullViewTitle")}
           clicked={onFullViewChanged}
         />
       </PanelHeaderGroup>
       {!isFullView && (
         <>
           <PanelHeaderGroup>
-            <Text text="Select bank" />
+            <Text text={t("panels.doc.disassembly.selectBank")} />
             <LabelSeparator />
             {/*
-              * The same chooser the Memory view and the breakpoint dialog use. This was a third copy
-              * of the machine-id branch, which is how the disassembly view could have ended up
-              * offering a different picker than the view beside it.
-              */}
+             * The same chooser the Memory view and the breakpoint dialog use. This was a third copy
+             * of the machine-id branch, which is how the disassembly view could have ended up
+             * offering a different picker than the view beside it.
+             */}
             <PartitionPicker
               value={currentSegment}
               onChange={onCurrentSegmentChanged}
@@ -219,7 +232,7 @@ export const DisassemblyBankToolbar = ({
             />
           </PanelHeaderGroup>
           <PanelHeaderGroup>
-            <Text text="Offset" />
+            <Text text={t("panels.doc.disassembly.offset")} />
             <LabelSeparator />
             <Dropdown
               options={offsetOptions}

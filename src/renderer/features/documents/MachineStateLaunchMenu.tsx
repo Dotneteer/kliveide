@@ -1,3 +1,5 @@
+import { t } from "@common/i18n/i18n";
+import { useT } from "@common/i18n/useT";
 import { TabButton, TabButtonSeparator, TabButtonSpace } from "@renderer/controls/TabButton";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 
@@ -21,13 +23,14 @@ export function getMachineStateContextMenuInfo(services: AppServices): ContextMe
     await ideCommandsService.executeCommand(machineStateLoadCommandText(item, mode));
   };
   return [
-    { text: "Load state and run", clicked: async (item: string) => await launch(item, "run") },
-    { text: "Load state and debug (stop at PC)", clicked: async (item: string) => await launch(item, "debug") }
+    { text: t("documents.machineState.menu.run"), clicked: async (item: string) => await launch(item, "run") },
+    { text: t("documents.machineState.menu.debug"), clicked: async (item: string) => await launch(item, "debug") }
   ];
 }
 
 /** The two actions in a state document's tab bar */
 const MachineStateLaunchCommandBar = ({ path }: { path: string }) => {
+  const t = useT();
   const { ideCommandsService } = useAppServices();
   const launch = async (mode: MachineStateLoadMode) => {
     await ideCommandsService.executeCommand(machineStateLoadCommandText(path, mode));
@@ -35,11 +38,11 @@ const MachineStateLaunchCommandBar = ({ path }: { path: string }) => {
   return (
     <>
       <TabButtonSeparator />
-      <TabButton iconName="play" title="Load this state and run" clicked={async () => await launch("run")} />
+      <TabButton iconName="play" title={t("documents.machineState.button.run")} clicked={async () => await launch("run")} />
       <TabButtonSpace />
       <TabButton
         iconName="debug"
-        title="Load this state and debug it, stopping at its PC"
+        title={t("documents.machineState.button.debug")}
         clicked={async () => await launch("debug")}
       />
     </>

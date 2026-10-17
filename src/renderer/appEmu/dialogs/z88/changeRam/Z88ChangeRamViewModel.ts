@@ -1,5 +1,5 @@
+import { t } from "@common/i18n/i18n";
 import {
-  RAM_CHANGE_WARNING,
   RAM_SIZES,
   showsRestartWarning,
   type RamSizeOption,
@@ -18,6 +18,13 @@ export type Z88ChangeRamViewModel = {
   applyEnabled: boolean;
 };
 
+// ─── Formatters ──────────────────────────────────────────────────────────────
+
+/** The warning shown when applying the new size would stop a running machine */
+export function ramChangeWarning(): string {
+  return t("dialog.z88.changeRam.warning");
+}
+
 // ─── Selector ────────────────────────────────────────────────────────────────
 
 /**
@@ -31,7 +38,7 @@ export function selectViewModel(state: Z88ChangeRamState): Z88ChangeRamViewModel
       options: RAM_SIZES,
       value: state.selectedSize
     },
-    warning: showsRestartWarning(state) ? RAM_CHANGE_WARNING : undefined,
+    warning: showsRestartWarning(state) ? ramChangeWarning() : undefined,
     // --- Ok stays available for a no-op selection: it is how the user dismisses
     // --- the dialog having decided to change nothing.
     applyEnabled: !state.busy

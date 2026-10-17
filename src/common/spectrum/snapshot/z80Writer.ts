@@ -24,6 +24,7 @@ import {
 import { SnapshotBytes, SnapshotRefusedError, type SnapshotWriteResult } from "./snapshotBytes";
 import { commonLosses } from "./snapshotLosses";
 import { compressZ80DataBlock } from "./z80Compression";
+import { t } from "@common/i18n/i18n";
 
 /** The version 3 hardware mode, and the "modified hardware" bit, of each machine */
 function hardwareMode(
@@ -37,7 +38,7 @@ function hardwareMode(
     case "48k":
       return { mode: 0, modified: false };
     case "48k-ntsc":
-      losses.push("A .z80 has no NTSC 48K; the file names a PAL 48K");
+      losses.push(t("media.snapshot.loss.z80Ntsc"));
       return { mode: 0, modified: false };
     case "128k":
       return { mode: 4, modified: false };
@@ -49,14 +50,10 @@ function hardwareMode(
       return { mode: 7, modified: false };
     case "plus3e":
       if (s.peripherals.plus3) {
-        losses.push(
-          "A .z80 has no +3e; the file names a +3, and other emulators run it with the Amstrad ROMs"
-        );
+        losses.push(t("media.snapshot.loss.z80Plus3e"));
         return { mode: 7, modified: false };
       }
-      losses.push(
-        "A .z80 has no +2E; the file names a +2A, and other emulators run it with the Amstrad ROMs"
-      );
+      losses.push(t("media.snapshot.loss.z80Plus2e"));
       return { mode: 13, modified: false };
     case "pentagon":
       // --- Not in the v3 specification: an extension other emulators share (z80File.ts)
@@ -107,7 +104,7 @@ export function z80TStateCounter(
 export function writeZ80File(s: SpectrumSnapshot): SnapshotWriteResult {
   const machine = s.machine;
   if (typeof machine === "object") {
-    throw new SnapshotRefusedError(`A ${machine.unsupported} snapshot cannot be saved`);
+    throw new SnapshotRefusedError(t("media.snapshot.refused.unsupported", { machine: machine.unsupported }));
   }
   const losses = commonLosses(s, "z80");
   const { mode, modified } = hardwareMode(s, machine, losses);
@@ -130,7 +127,7 @@ export function writeZ80File(s: SpectrumSnapshot): SnapshotWriteResult {
   // --- The 2068s' AY is written as the 48K add-on's (byte 37 bit 2), the only way a v3 header says so
   const ay48 = !paged && (!!ay?.on48k || (isTimex2068SnapshotMachine(machine) && !!ay));
   if (!paged && ay && !ay48) {
-    losses.push(`A 48K .z80 keeps the AY registers only for an add-on AY; they are not saved`);
+    losses.push(t("media.snapshot.loss.z8048Ay"));
   }
   // --- The 55-byte header carries $1FFD: the +2A/+3's, and the Scorpion's
   const long = plus3 || machine === "scorpion";
@@ -149,9 +146,9 @@ export function writeZ80File(s: SpectrumSnapshot): SnapshotWriteResult {
   } else {
     out.fill(17);
   }
-  if (s.timex?.dock?.length) losses.push("A .z80 does not record the cartridge in the DOCK");
-  const t = z80TStateCounter(s.ula.frameTact ?? 0, paged, machine === "ts2068" ? 58688 / 4 : undefined);
-  out.word(t.low).byte(t.high);
+  if (s.timex?.dock?.length) losses.push(t("media.snapshot.loss.z80Dock"));
+  const tc = z80TStateCounter(s.ula.frameTact ?? 0, paged, machine === "ts2068" ? 58688 / 4 : undefined);
+  out.word(tc.low).byte(tc.high);
   out.byte(0 /* Spectator */, 0 /* M.G.T. ROM */, 0 /* Multiface ROM */);
   out.byte(0xff, 0xff); // --- $0000-$3FFF is ROM
   out.fill(10).fill(10); // --- Joystick key mappings and their ASCII words: none
@@ -163,7 +160,7 @@ export function writeZ80File(s: SpectrumSnapshot): SnapshotWriteResult {
     const data = s.ram.get(bank);
     if (!data) {
       throw new SnapshotRefusedError(
-        `The ${snapshotMachineName(machine)} snapshot has no RAM bank ${bank}`
+        t("media.snapshot.refused.noRamBank", { machine: snapshotMachineName(machine), bank })
       );
     }
     const packed = compressZ80DataBlock(data);

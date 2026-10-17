@@ -1,0 +1,930 @@
+{
+  "debug.advancedDebugging.off": "Execution history and reverse debugging are turned off. Turn them on with ''{command}'', then restart Klive.",
+  "@debug.advancedDebugging.off": {
+    "context": "Error shown by history, reverse-debugging and recording commands, and in the Execution History document, while the advanced-debugging feature group is switched off in the settings.",
+    "placeholders": {
+      "command": "the setting command, e.g. set -u features.advancedDebugging 1 (IDE command syntax, never translated)"
+    }
+  },
+  "debug.bpGroup.exec": "Execution",
+  "@debug.bpGroup.exec": {
+    "context": "Group header in the Breakpoints side-bar panel (Debug activity) above the breakpoints of one kind; sentence case, matching the breakpoint dialog's type selector. Breakpoints that stop when the CPU executes an address.",
+    "maxChars": 18
+  },
+  "debug.bpGroup.memRead": "Memory read",
+  "@debug.bpGroup.memRead": {
+    "context": "Group header in the Breakpoints side-bar panel (Debug activity) above the breakpoints of one kind; sentence case, matching the breakpoint dialog's type selector. Breakpoints that stop when memory is read.",
+    "maxChars": 18
+  },
+  "debug.bpGroup.memWrite": "Memory write",
+  "@debug.bpGroup.memWrite": {
+    "context": "Group header in the Breakpoints side-bar panel (Debug activity) above the breakpoints of one kind; sentence case, matching the breakpoint dialog's type selector. Breakpoints that stop when memory is written.",
+    "maxChars": 18
+  },
+  "debug.bpGroup.ioRead": "I/O read",
+  "@debug.bpGroup.ioRead": {
+    "context": "Group header in the Breakpoints side-bar panel (Debug activity) above the breakpoints of one kind; sentence case, matching the breakpoint dialog's type selector. Breakpoints that stop when an I/O port is read (IN).",
+    "maxChars": 14
+  },
+  "debug.bpGroup.ioWrite": "I/O write",
+  "@debug.bpGroup.ioWrite": {
+    "context": "Group header in the Breakpoints side-bar panel (Debug activity) above the breakpoints of one kind; sentence case, matching the breakpoint dialog's type selector. Breakpoints that stop when an I/O port is written (OUT).",
+    "maxChars": 14
+  },
+  "debug.bpGroup.nextRegWrite": "NextReg write",
+  "@debug.bpGroup.nextRegWrite": {
+    "context": "Group header in the Breakpoints side-bar panel (Debug activity) above the breakpoints of one kind; sentence case, matching the breakpoint dialog's type selector. Breakpoints on writes to a ZX Spectrum Next register; 'NextReg' is a hardware name, keep it.",
+    "maxChars": 20
+  },
+  "debug.bpGroup.copper": "Copper",
+  "@debug.bpGroup.copper": {
+    "context": "Group header in the Breakpoints side-bar panel (Debug activity) above the breakpoints of one kind; sentence case, matching the breakpoint dialog's type selector. Breakpoints on the ZX Spectrum Next's Copper co-processor; 'Copper' is the chip's name and is usually kept.",
+    "maxChars": 10
+  },
+  "debug.bpGroup.sprite": "Sprite attribute",
+  "@debug.bpGroup.sprite": {
+    "context": "Group header in the Breakpoints side-bar panel (Debug activity) above the breakpoints of one kind; sentence case, matching the breakpoint dialog's type selector. Breakpoints on writes to a hardware sprite's attribute bytes.",
+    "maxChars": 24
+  },
+  "debug.hitRule.eq": "Stops on hit {count}",
+  "@debug.hitRule.eq": {
+    "context": "Describes a breakpoint's hit-count rule in its tooltip (Breakpoints panel, editor margin, disassembly gutter) and in the margin context menu. The breakpoint stops only on exactly this hit.",
+    "placeholders": {
+      "count": "the hit number the rule names (an integer, 1-65535)"
+    }
+  },
+  "debug.hitRule.gt": "Stops after hit {count}",
+  "@debug.hitRule.gt": {
+    "context": "Describes a breakpoint's hit-count rule in its tooltip (Breakpoints panel, editor margin, disassembly gutter) and in the margin context menu. It stops on every hit after this one.",
+    "placeholders": {
+      "count": "the hit number the rule names (an integer, 1-65535)"
+    }
+  },
+  "debug.hitRule.ge": "Stops from hit {count} on",
+  "@debug.hitRule.ge": {
+    "context": "Describes a breakpoint's hit-count rule in its tooltip (Breakpoints panel, editor margin, disassembly gutter) and in the margin context menu. It stops on this hit and every later one.",
+    "placeholders": {
+      "count": "the hit number the rule names (an integer, 1-65535)"
+    }
+  },
+  "debug.hitRule.lt": "Stops before hit {count}",
+  "@debug.hitRule.lt": {
+    "context": "Describes a breakpoint's hit-count rule in its tooltip (Breakpoints panel, editor margin, disassembly gutter) and in the margin context menu. It stops on every hit before this one.",
+    "placeholders": {
+      "count": "the hit number the rule names (an integer, 1-65535)"
+    }
+  },
+  "debug.hitRule.le": "Stops up to hit {count}",
+  "@debug.hitRule.le": {
+    "context": "Describes a breakpoint's hit-count rule in its tooltip (Breakpoints panel, editor margin, disassembly gutter) and in the margin context menu. It stops on every hit up to and including this one.",
+    "placeholders": {
+      "count": "the hit number the rule names (an integer, 1-65535)"
+    }
+  },
+  "debug.hitRule.everyHit": "Stops on every hit",
+  "@debug.hitRule.everyHit": {
+    "context": "Describes a breakpoint's hit-count rule in its tooltip (Breakpoints panel, editor margin, disassembly gutter) and in the margin context menu. The 'every Nth hit' rule with N = 1."
+  },
+  "debug.hitRule.every": "Stops on every {count, selectordinal, one {#st} two {#nd} few {#rd} other {#th}} hit",
+  "@debug.hitRule.every": {
+    "context": "Describes a breakpoint's hit-count rule in its tooltip (Breakpoints panel, editor margin, disassembly gutter) and in the margin context menu. It stops on every Nth hit (2nd, 3rd, 4th...); uses an ICU ordinal, adapt the categories to your language.",
+    "placeholders": {
+      "count": "the hit number the rule names (an integer, 1-65535)"
+    }
+  },
+  "debug.bpTip.logpointComment": "From a LOGPOINT comment - edit the comment and rebuild to change it, or disable it",
+  "@debug.bpTip.logpointComment": {
+    "context": "One line of a breakpoint's tooltip (Breakpoints panel, editor margin, disassembly gutter). The logpoint comes from a LOGPOINT comment in the source (a DeZog convention; LOGPOINT is a keyword, keep it)."
+  },
+  "debug.bpTip.logs": "Logs: {message}",
+  "@debug.bpTip.logs": {
+    "context": "One line of a breakpoint's tooltip (Breakpoints panel, editor margin, disassembly gutter). The logpoint's message template.",
+    "placeholders": {
+      "message": "the log message template as the user wrote it"
+    }
+  },
+  "debug.bpTip.group": "Group: {group}",
+  "@debug.bpTip.group": {
+    "context": "One line of a breakpoint's tooltip (Breakpoints panel, editor margin, disassembly gutter). The log group the logpoint belongs to.",
+    "placeholders": {
+      "group": "the log group's name, e.g. DEFAULT"
+    }
+  },
+  "debug.bpTip.at": "At: {address}",
+  "@debug.bpTip.at": {
+    "context": "One line of a breakpoint's tooltip (Breakpoints panel, editor margin, disassembly gutter). The address of a logpoint read from a source comment.",
+    "placeholders": {
+      "address": "a hexadecimal address, e.g. $8000"
+    }
+  },
+  "debug.bpTip.oneShot": "One-shot: removed after it stops",
+  "@debug.bpTip.oneShot": {
+    "context": "One line of a breakpoint's tooltip (Breakpoints panel, editor margin, disassembly gutter). A one-shot breakpoint deletes itself after it stops once."
+  },
+  "debug.bpTip.runTo": "Run-to target: removed when the machine gets there",
+  "@debug.bpTip.runTo": {
+    "context": "One line of a breakpoint's tooltip (Breakpoints panel, editor margin, disassembly gutter). The temporary breakpoint of a 'Run to cursor'-style command."
+  },
+  "debug.bpTip.assertionComment": "From an ASSERTION comment - stops when the expression is false",
+  "@debug.bpTip.assertionComment": {
+    "context": "One line of a breakpoint's tooltip (Breakpoints panel, editor margin, disassembly gutter). The breakpoint comes from an ASSERTION comment in the source (a DeZog convention; ASSERTION is a keyword, keep it)."
+  },
+  "debug.bpTip.asserts": "Asserts: {expression}",
+  "@debug.bpTip.asserts": {
+    "context": "One line of a breakpoint's tooltip (Breakpoints panel, editor margin, disassembly gutter). The asserted expression of an ASSERTION comment.",
+    "placeholders": {
+      "expression": "the expression as written in the comment"
+    }
+  },
+  "debug.bpTip.assertsAlways": "Asserts: false (always stops)",
+  "@debug.bpTip.assertsAlways": {
+    "context": "One line of a breakpoint's tooltip (Breakpoints panel, editor margin, disassembly gutter). An ASSERTION comment without an expression, which asserts false and always stops; 'false' is the asserted value."
+  },
+  "debug.bpTip.readAs": "Read as: {condition}",
+  "@debug.bpTip.readAs": {
+    "context": "One line of a breakpoint's tooltip (Breakpoints panel, editor margin, disassembly gutter). The ASSERTION's DeZog expression rewritten in Klive's condition syntax.",
+    "placeholders": {
+      "condition": "the expression in Klive's condition syntax"
+    }
+  },
+  "debug.bpTip.wpmemComment": "From a WPMEM comment: {comment}",
+  "@debug.bpTip.wpmemComment": {
+    "context": "One line of a breakpoint's tooltip (Breakpoints panel, editor margin, disassembly gutter). The watchpoint comes from a WPMEM comment in the source (a DeZog convention; WPMEM is a keyword).",
+    "placeholders": {
+      "comment": "the comment's text, e.g. WPMEM 0x8000, 2"
+    }
+  },
+  "debug.bpTip.condition": "Condition: {condition}",
+  "@debug.bpTip.condition": {
+    "context": "One line of a breakpoint's tooltip (Breakpoints panel, editor margin, disassembly gutter). The breakpoint's condition.",
+    "placeholders": {
+      "condition": "the condition as the user wrote it"
+    }
+  },
+  "debug.bpTip.hits": "Hits so far: {count, number}",
+  "@debug.bpTip.hits": {
+    "context": "One line of a breakpoint's tooltip (Breakpoints panel, editor margin, disassembly gutter). How many times the breakpoint has been hit.",
+    "placeholders": {
+      "count": "the hit counter"
+    }
+  },
+  "debug.bpTip.inactive": "Inactive: {label} - it will not stop until a build defines it",
+  "@debug.bpTip.inactive": {
+    "context": "One line of a breakpoint's tooltip (Breakpoints panel, editor margin, disassembly gutter). The condition names a label the current build does not define.",
+    "placeholders": {
+      "label": "the missing label's name"
+    }
+  },
+  "debug.bpTip.conditionError": "Condition error ({error}) - it stops every time",
+  "@debug.bpTip.conditionError": {
+    "context": "One line of a breakpoint's tooltip (Breakpoints panel, editor margin, disassembly gutter). The condition could not be compiled, so the breakpoint stops on every hit.",
+    "placeholders": {
+      "error": "the condition compiler's message"
+    }
+  },
+  "debug.bpTip.logError": "Log message error ({error}) - it logs the error instead",
+  "@debug.bpTip.logError": {
+    "context": "One line of a breakpoint's tooltip (Breakpoints panel, editor margin, disassembly gutter). The logpoint's message template could not be compiled.",
+    "placeholders": {
+      "error": "the template compiler's message"
+    }
+  },
+  "debug.watchpoint.readComment": "Break on read at {range} (WPMEM comment, {location})",
+  "@debug.watchpoint.readComment": {
+    "context": "One tooltip line of a row in the Watch panel, naming a memory breakpoint (watchpoint) over the watched bytes. A read watchpoint from a WPMEM source comment (WPMEM is a keyword).",
+    "placeholders": {
+      "range": "an address or address range in hex, e.g. $8000 or $8000-$8003",
+      "location": "the source file and line, e.g. main.asm:12"
+    }
+  },
+  "debug.watchpoint.writeComment": "Break on write at {range} (WPMEM comment, {location})",
+  "@debug.watchpoint.writeComment": {
+    "context": "One tooltip line of a row in the Watch panel, naming a memory breakpoint (watchpoint) over the watched bytes. A write watchpoint from a WPMEM source comment (WPMEM is a keyword).",
+    "placeholders": {
+      "range": "an address or address range in hex, e.g. $8000 or $8000-$8003",
+      "location": "the source file and line, e.g. main.asm:12"
+    }
+  },
+  "debug.watchpoint.readWatch": "Break on read at {range} (from the watch on {symbol})",
+  "@debug.watchpoint.readWatch": {
+    "context": "One tooltip line of a row in the Watch panel, naming a memory breakpoint (watchpoint) over the watched bytes. A read watchpoint created from a watch's 'Break on...' menu.",
+    "placeholders": {
+      "range": "an address or address range in hex, e.g. $8000 or $8000-$8003",
+      "symbol": "the watched symbol's name"
+    }
+  },
+  "debug.watchpoint.writeWatch": "Break on write at {range} (from the watch on {symbol})",
+  "@debug.watchpoint.writeWatch": {
+    "context": "One tooltip line of a row in the Watch panel, naming a memory breakpoint (watchpoint) over the watched bytes. A write watchpoint created from a watch's 'Break on...' menu.",
+    "placeholders": {
+      "range": "an address or address range in hex, e.g. $8000 or $8000-$8003",
+      "symbol": "the watched symbol's name"
+    }
+  },
+  "debug.watchpoint.read": "Break on read at {range} (breakpoint)",
+  "@debug.watchpoint.read": {
+    "context": "One tooltip line of a row in the Watch panel, naming a memory breakpoint (watchpoint) over the watched bytes. A read memory breakpoint the user set.",
+    "placeholders": {
+      "range": "an address or address range in hex, e.g. $8000 or $8000-$8003"
+    }
+  },
+  "debug.watchpoint.write": "Break on write at {range} (breakpoint)",
+  "@debug.watchpoint.write": {
+    "context": "One tooltip line of a row in the Watch panel, naming a memory breakpoint (watchpoint) over the watched bytes. A write memory breakpoint the user set.",
+    "placeholders": {
+      "range": "an address or address range in hex, e.g. $8000 or $8000-$8003"
+    }
+  },
+  "debug.hitSpec.empty": "The hit count is empty",
+  "@debug.hitSpec.empty": {
+    "context": "Validation error of the -hit option of the bp-set / bp-add commands (and the breakpoint dialog's hit-count field)."
+  },
+  "debug.hitSpec.invalid": "Invalid hit count ''{text}''; use N, =N, >N, >=N, <N, <=N or *N",
+  "@debug.hitSpec.invalid": {
+    "context": "Validation error of the -hit option of the bp-set / bp-add commands (and the breakpoint dialog's hit-count field). The forms after 'use' are syntax: keep them.",
+    "placeholders": {
+      "text": "what the user typed"
+    }
+  },
+  "debug.hitSpec.range": "The hit count must be between 1 and {max}",
+  "@debug.hitSpec.range": {
+    "context": "Validation error of the -hit option of the bp-set / bp-add commands (and the breakpoint dialog's hit-count field).",
+    "placeholders": {
+      "max": "the largest hit count (65535)"
+    }
+  },
+  "debug.bpStatus.disabled": "<disabled>",
+  "@debug.bpStatus.disabled": {
+    "context": "Status tag appended to a breakpoint's row in the output of the bp-list command, after the breakpoint's command syntax; keep the angle brackets/parentheses. The breakpoint is disabled.",
+    "maxChars": 16
+  },
+  "debug.bpStatus.runTo": "<run-to target>",
+  "@debug.bpStatus.runTo": {
+    "context": "Status tag appended to a breakpoint's row in the output of the bp-list command, after the breakpoint's command syntax; keep the angle brackets/parentheses. The temporary breakpoint of a 'run to' command.",
+    "maxChars": 24
+  },
+  "debug.bpStatus.hits": "(hits: {count, number})",
+  "@debug.bpStatus.hits": {
+    "context": "Status tag appended to a breakpoint's row in the output of the bp-list command, after the breakpoint's command syntax; keep the angle brackets/parentheses. The live hit counter.",
+    "placeholders": {
+      "count": "how many times it was hit"
+    }
+  },
+  "debug.bpStatus.inactive": "<inactive: {label}>",
+  "@debug.bpStatus.inactive": {
+    "context": "Status tag appended to a breakpoint's row in the output of the bp-list command, after the breakpoint's command syntax; keep the angle brackets/parentheses. The condition names a label the build does not define.",
+    "placeholders": {
+      "label": "the missing label"
+    }
+  },
+  "debug.bpStatus.conditionError": "<condition error: {error}>",
+  "@debug.bpStatus.conditionError": {
+    "context": "Status tag appended to a breakpoint's row in the output of the bp-list command, after the breakpoint's command syntax; keep the angle brackets/parentheses. The condition failed to compile.",
+    "placeholders": {
+      "error": "the compiler's message"
+    }
+  },
+  "debug.bpStatus.logError": "<log template error: {error}>",
+  "@debug.bpStatus.logError": {
+    "context": "Status tag appended to a breakpoint's row in the output of the bp-list command, after the breakpoint's command syntax; keep the angle brackets/parentheses. The logpoint's message template failed to compile.",
+    "placeholders": {
+      "error": "the compiler's message"
+    }
+  },
+  "debug.unitTest.result.notRun": "{id}: not run",
+  "@debug.unitTest.result.notRun": {
+    "context": "First line of the text 'Copy result' puts on the clipboard (Unit Tests panel context menu) for a test that has not run.",
+    "placeholders": {
+      "id": "the test's id, e.g. Suite.UT_add"
+    }
+  },
+  "debug.unitTest.result.head": "{id}: {status, select, passed {passed} failed {failed} other {error}}, {tstates}",
+  "@debug.unitTest.result.head": {
+    "context": "First line of the text 'Copy result' puts on the clipboard (Unit Tests panel context menu): the test, its result and its run time.",
+    "placeholders": {
+      "id": "the test's id",
+      "status": "the result: passed, failed or error (an ICU select; translate the words inside the braces)",
+      "tstates": "the run time in T-states, e.g. 1,200 T (invariant)"
+    }
+  },
+  "debug.unitTest.result.headWithKind": "{id}: {status, select, passed {passed} failed {failed} other {error}} ({errorKind}), {tstates}",
+  "@debug.unitTest.result.headWithKind": {
+    "context": "First line of the text 'Copy result' puts on the clipboard, for a test that ended in an error of a known kind.",
+    "placeholders": {
+      "id": "the test's id",
+      "status": "the result: passed, failed or error (an ICU select; translate the words inside the braces)",
+      "errorKind": "the error kind's code word (e.g. timeout), not translated",
+      "tstates": "the run time in T-states, e.g. 1,200 T (invariant)"
+    }
+  },
+  "debug.unitTest.result.at": "at {location}",
+  "@debug.unitTest.result.at": {
+    "context": "Line of the copied test result naming where the test failed.",
+    "placeholders": {
+      "location": "file and line, e.g. tests.asm:12"
+    }
+  },
+  "debug.unitTest.result.log": "log: {line}",
+  "@debug.unitTest.result.log": {
+    "context": "Line of the copied test result holding one line the test logged.",
+    "placeholders": {
+      "line": "the logged text"
+    }
+  },
+  "debug.unitTest.summary": "{total, plural, one {# test} other {# tests}}: {passed, number} passed{failed, plural, =0 {} other {, # failed}}{errors, plural, =0 {} one {, # error} other {, # errors}}{cancelled, select, yes { (cancelled)} other {}}",
+  "@debug.unitTest.summary": {
+    "context": "Summary of a unit-test run: in the Unit Tests panel header, the Tests output pane and the test-run command's result. The failed / errors / cancelled parts appear only when they apply.",
+    "placeholders": {
+      "total": "number of tests run",
+      "passed": "number passed",
+      "failed": "number failed (part omitted at 0)",
+      "errors": "number that ended in an error (part omitted at 0)",
+      "cancelled": "yes when the run was cancelled, else no"
+    }
+  },
+  "debug.unitTest.problem.noProject": "Open a Klive project to run its unit tests.",
+  "@debug.unitTest.problem.noProject": {
+    "context": "Error of the test-run commands and the Unit Tests panel when no Klive project is open."
+  },
+  "debug.unitTest.problem.noBuildRoot": "Select a build root: the tests come from the build root''s compilation.",
+  "@debug.unitTest.problem.noBuildRoot": {
+    "context": "Error of the test-run commands and the Unit Tests panel when the project has no build root."
+  },
+  "debug.unitTest.problem.noTestLanguage": "The build root''s language has no DeZog-style unit tests; they need the Klive Z80 assembler or sjasmplus.",
+  "@debug.unitTest.problem.noTestLanguage": {
+    "context": "Error when the build root is in a language without unit-test support. 'sjasmplus' is a product name."
+  },
+  "debug.unitTest.running": "Running unit tests ({time})...",
+  "@debug.unitTest.running": {
+    "context": "First line written to the Tests output pane when a unit-test run starts.",
+    "placeholders": {
+      "time": "the local time the run started"
+    }
+  },
+  "debug.unitTest.summaryWithDetails": "{summary} (details in the Tests pane: outp tests)",
+  "@debug.unitTest.summaryWithDetails": {
+    "context": "Line written to the command prompt's output after a test run; 'outp tests' is the IDE command that shows the pane, keep it.",
+    "placeholders": {
+      "summary": "the run's summary, e.g. 5 tests: 5 passed"
+    }
+  },
+  "debug.unitTest.coverage.shown": "The tests'' coverage is in the editor and the memory views (coverage status, coverage export).",
+  "@debug.unitTest.coverage.shown": {
+    "context": "Tests pane line after a run with coverage. 'coverage status' and 'coverage export' are IDE command names: keep them."
+  },
+  "debug.unitTest.coverage.notShown": "The tests'' coverage could not be shown: the emulator runs another machine, or has no coverage.",
+  "@debug.unitTest.coverage.notShown": {
+    "context": "Tests pane line after a run with coverage that could not be merged into the emulator's view."
+  },
+  "debug.unitTest.coverage.switchedOff": "The tests'' coverage is shown with advanced debugging on ({command}, then restart Klive).",
+  "@debug.unitTest.coverage.switchedOff": {
+    "context": "Tests pane line after a run with coverage while the advanced-debugging feature group is switched off.",
+    "placeholders": {
+      "command": "the setting command, e.g. set -u features.advancedDebugging 1 (IDE command syntax, never translated)"
+    }
+  },
+  "debug.unitTest.junit.noBuild": "Build the project first: the tests come from the last successful build.",
+  "@debug.unitTest.junit.noBuild": {
+    "context": "Error of the test-junit command (export the last test run as JUnit XML) when there is no successful build."
+  },
+  "debug.unitTest.junit.noResults": "Run the tests first: there are no results to export.",
+  "@debug.unitTest.junit.noResults": {
+    "context": "Error of the test-junit command when no test has run yet."
+  },
+  "debug.beam.line": "line {line}",
+  "@debug.beam.line": {
+    "context": "Part of the beam-position readout over the emulator screen (parts are joined with ' · '). 'line' is the raster line.",
+    "maxChars": 12,
+    "placeholders": {
+      "line": "the raster line number"
+    }
+  },
+  "debug.beam.paperRow": "paper row {row}",
+  "@debug.beam.paperRow": {
+    "context": "Part of the beam-position readout over the emulator screen (parts are joined with ' · '). 'line' is the raster line. The beam is in the paper (the bitmap area); row counts from its top.",
+    "maxChars": 18,
+    "placeholders": {
+      "row": "the row within the paper area"
+    }
+  },
+  "debug.beam.topBorder": "top border",
+  "@debug.beam.topBorder": {
+    "context": "Part of the beam-position readout over the emulator screen (parts are joined with ' · '). 'line' is the raster line. The beam is in the top border.",
+    "maxChars": 18
+  },
+  "debug.beam.bottomBorder": "bottom border",
+  "@debug.beam.bottomBorder": {
+    "context": "Part of the beam-position readout over the emulator screen (parts are joined with ' · '). 'line' is the raster line. The beam is in the bottom border.",
+    "maxChars": 18
+  },
+  "debug.beam.vblank": "VBLANK · {count, plural, one {# line} other {# lines}} to the top border",
+  "@debug.beam.vblank": {
+    "context": "Part of the beam-position readout over the emulator screen (parts are joined with ' · '). 'line' is the raster line. The beam is in vertical blanking; VBLANK is a hardware term, keep it.",
+    "placeholders": {
+      "count": "raster lines until the top border"
+    }
+  },
+  "debug.beam.drawn": "drawn",
+  "@debug.beam.drawn": {
+    "context": "Part of the beam-position readout over the emulator screen (parts are joined with ' · '). 'line' is the raster line. Hover readout: the beam has already drawn the pixel under the mouse this frame.",
+    "maxChars": 10
+  },
+  "debug.beam.until": "in {count} {unit}",
+  "@debug.beam.until": {
+    "context": "Part of the beam-position readout over the emulator screen (parts are joined with ' · '). 'line' is the raster line. Hover readout: how long until the beam draws the pixel under the mouse.",
+    "placeholders": {
+      "count": "the number of time units (invariant digits)",
+      "unit": "the unit, T (T-states) or HC (Next HC units), not translated"
+    }
+  },
+  "debug.serviceSpan.nmi": "NMI service, {count, plural, one {# instruction} other {# instructions}}",
+  "@debug.serviceSpan.nmi": {
+    "context": "Folded row in the Execution History document that stands for a whole interrupt or NMI handler. NMI is the hardware name of the non-maskable interrupt.",
+    "placeholders": {
+      "count": "instructions in the handler"
+    }
+  },
+  "debug.serviceSpan.nmiTimed": "NMI service, {count, plural, one {# instruction} other {# instructions}}, {tstates} T",
+  "@debug.serviceSpan.nmiTimed": {
+    "context": "Folded row in the Execution History document that stands for a whole interrupt or NMI handler. With its length in T-states (T is the unit).",
+    "placeholders": {
+      "count": "instructions in the handler",
+      "tstates": "the length in T-states (invariant digits)"
+    }
+  },
+  "debug.serviceSpan.int": "Interrupt service, {count, plural, one {# instruction} other {# instructions}}",
+  "@debug.serviceSpan.int": {
+    "context": "Folded row in the Execution History document that stands for a whole interrupt or NMI handler. A maskable-interrupt handler.",
+    "placeholders": {
+      "count": "instructions in the handler"
+    }
+  },
+  "debug.serviceSpan.intTimed": "Interrupt service, {count, plural, one {# instruction} other {# instructions}}, {tstates} T",
+  "@debug.serviceSpan.intTimed": {
+    "context": "Folded row in the Execution History document that stands for a whole interrupt or NMI handler. With its length in T-states (T is the unit).",
+    "placeholders": {
+      "count": "instructions in the handler",
+      "tstates": "the length in T-states (invariant digits)"
+    }
+  },
+  "debug.condition.unterminatedBacktick": "Unterminated backtick label",
+  "@debug.condition.unterminatedBacktick": {
+    "context": "Error of the breakpoint condition compiler (bp-set -if, the breakpoint dialog, logpoint placeholders, ASSERTION comments); shown with the column it refers to. Operators, function names, number syntax and quoted code are syntax: keep them. A `label` quoted with backticks has no closing backtick."
+  },
+  "debug.condition.emptyBacktick": "Empty backtick label",
+  "@debug.condition.emptyBacktick": {
+    "context": "Error of the breakpoint condition compiler (bp-set -if, the breakpoint dialog, logpoint placeholders, ASSERTION comments); shown with the column it refers to. Operators, function names, number syntax and quoted code are syntax: keep them. Two backticks with nothing between them."
+  },
+  "debug.condition.partitionNeedsLabel": "A partition literal needs a label after @",
+  "@debug.condition.partitionNeedsLabel": {
+    "context": "Error of the breakpoint condition compiler (bp-set -if, the breakpoint dialog, logpoint placeholders, ASSERTION comments); shown with the column it refers to. Operators, function names, number syntax and quoted code are syntax: keep them. '@' alone, without a partition name after it."
+  },
+  "debug.condition.emptyCharLiteral": "Empty character literal; a character literal holds exactly one character",
+  "@debug.condition.emptyCharLiteral": {
+    "context": "Error of the breakpoint condition compiler (bp-set -if, the breakpoint dialog, logpoint placeholders, ASSERTION comments); shown with the column it refers to. Operators, function names, number syntax and quoted code are syntax: keep them. '' with nothing between the quotes."
+  },
+  "debug.condition.charLiteralTooLong": "A character literal holds exactly one character; use {string} for a string",
+  "@debug.condition.charLiteralTooLong": {
+    "context": "Error of the breakpoint condition compiler (bp-set -if, the breakpoint dialog, logpoint placeholders, ASSERTION comments); shown with the column it refers to. Operators, function names, number syntax and quoted code are syntax: keep them.",
+    "placeholders": {
+      "string": "the same text in double quotes, e.g. \"AB\""
+    }
+  },
+  "debug.condition.unexpectedChar": "Unexpected character ''{char}''",
+  "@debug.condition.unexpectedChar": {
+    "context": "Error of the breakpoint condition compiler (bp-set -if, the breakpoint dialog, logpoint placeholders, ASSERTION comments); shown with the column it refers to. Operators, function names, number syntax and quoted code are syntax: keep them.",
+    "placeholders": {
+      "char": "the character"
+    }
+  },
+  "debug.condition.invalidNumber": "Invalid number ''{number}''",
+  "@debug.condition.invalidNumber": {
+    "context": "Error of the breakpoint condition compiler (bp-set -if, the breakpoint dialog, logpoint placeholders, ASSERTION comments); shown with the column it refers to. Operators, function names, number syntax and quoted code are syntax: keep them.",
+    "placeholders": {
+      "number": "the number as written"
+    }
+  },
+  "debug.condition.numberTooLarge": "{number} is larger than {max}",
+  "@debug.condition.numberTooLarge": {
+    "context": "Error of the breakpoint condition compiler (bp-set -if, the breakpoint dialog, logpoint placeholders, ASSERTION comments); shown with the column it refers to. Operators, function names, number syntax and quoted code are syntax: keep them. Also used by the DeZog-style expressions of logpoints.",
+    "placeholders": {
+      "number": "the number as written",
+      "max": "the largest literal, $FFFFFFFF or 0xFFFFFFFF"
+    }
+  },
+  "debug.condition.unterminatedChar": "Unterminated character literal",
+  "@debug.condition.unterminatedChar": {
+    "context": "Error of the breakpoint condition compiler (bp-set -if, the breakpoint dialog, logpoint placeholders, ASSERTION comments); shown with the column it refers to. Operators, function names, number syntax and quoted code are syntax: keep them. A '...' literal has no closing quote."
+  },
+  "debug.condition.unterminatedString": "Unterminated string",
+  "@debug.condition.unterminatedString": {
+    "context": "Error of the breakpoint condition compiler (bp-set -if, the breakpoint dialog, logpoint placeholders, ASSERTION comments); shown with the column it refers to. Operators, function names, number syntax and quoted code are syntax: keep them. A \"...\" literal has no closing quote."
+  },
+  "debug.condition.invalidEscape": "Invalid escape; use \\\\, \\'', \\\", \\n, \\r, \\t, \\0 or \\xHH",
+  "@debug.condition.invalidEscape": {
+    "context": "Error of the breakpoint condition compiler (bp-set -if, the breakpoint dialog, logpoint placeholders, ASSERTION comments); shown with the column it refers to. Operators, function names, number syntax and quoted code are syntax: keep them. The listed escapes are syntax: keep them exactly."
+  },
+  "debug.condition.noZxCharCode": "''{char}'' has no ZX Spectrum character code; write it as \\xHH",
+  "@debug.condition.noZxCharCode": {
+    "context": "Error of the breakpoint condition compiler (bp-set -if, the breakpoint dialog, logpoint placeholders, ASSERTION comments); shown with the column it refers to. Operators, function names, number syntax and quoted code are syntax: keep them. \\xHH is the hex escape syntax.",
+    "placeholders": {
+      "char": "the character"
+    }
+  },
+  "debug.condition.empty": "The condition is empty",
+  "@debug.condition.empty": {
+    "context": "Error of the breakpoint condition compiler (bp-set -if, the breakpoint dialog, logpoint placeholders, ASSERTION comments); shown with the column it refers to. Operators, function names, number syntax and quoted code are syntax: keep them."
+  },
+  "debug.condition.unbalanced": "Unbalanced ''{token}''",
+  "@debug.condition.unbalanced": {
+    "context": "Error of the breakpoint condition compiler (bp-set -if, the breakpoint dialog, logpoint placeholders, ASSERTION comments); shown with the column it refers to. Operators, function names, number syntax and quoted code are syntax: keep them. A closing bracket without its opening one.",
+    "placeholders": {
+      "token": ") or ]"
+    }
+  },
+  "debug.condition.unexpectedToken": "Unexpected ''{token}''",
+  "@debug.condition.unexpectedToken": {
+    "context": "Error of the breakpoint condition compiler (bp-set -if, the breakpoint dialog, logpoint placeholders, ASSERTION comments); shown with the column it refers to. Operators, function names, number syntax and quoted code are syntax: keep them.",
+    "placeholders": {
+      "token": "the unexpected text"
+    }
+  },
+  "debug.condition.unexpectedEnd": "Unexpected ''end of condition''",
+  "@debug.condition.unexpectedEnd": {
+    "context": "Error of the breakpoint condition compiler (bp-set -if, the breakpoint dialog, logpoint placeholders, ASSERTION comments); shown with the column it refers to. Operators, function names, number syntax and quoted code are syntax: keep them. The condition stopped before it was complete."
+  },
+  "debug.condition.missingClose": "Missing ''{close}'' to close the ''{open}'' at column {column}",
+  "@debug.condition.missingClose": {
+    "context": "Error of the breakpoint condition compiler (bp-set -if, the breakpoint dialog, logpoint placeholders, ASSERTION comments); shown with the column it refers to. Operators, function names, number syntax and quoted code are syntax: keep them.",
+    "placeholders": {
+      "close": "the closing bracket",
+      "open": "the opening bracket",
+      "column": "the 1-based column of the opening bracket"
+    }
+  },
+  "debug.condition.expectedButFound": "Expected ''{expected}'' but found ''{found}''",
+  "@debug.condition.expectedButFound": {
+    "context": "Error of the breakpoint condition compiler (bp-set -if, the breakpoint dialog, logpoint placeholders, ASSERTION comments); shown with the column it refers to. Operators, function names, number syntax and quoted code are syntax: keep them.",
+    "placeholders": {
+      "expected": "the expected symbol",
+      "found": "the text found instead"
+    }
+  },
+  "debug.condition.expectedButEnd": "Expected ''{expected}'' but found ''end of condition''",
+  "@debug.condition.expectedButEnd": {
+    "context": "Error of the breakpoint condition compiler (bp-set -if, the breakpoint dialog, logpoint placeholders, ASSERTION comments); shown with the column it refers to. Operators, function names, number syntax and quoted code are syntax: keep them.",
+    "placeholders": {
+      "expected": "the expected symbol"
+    }
+  },
+  "debug.condition.chainedComparison": "Comparisons cannot be chained; join them with && (a < b && b < c)",
+  "@debug.condition.chainedComparison": {
+    "context": "Error of the breakpoint condition compiler (bp-set -if, the breakpoint dialog, logpoint placeholders, ASSERTION comments); shown with the column it refers to. Operators, function names, number syntax and quoted code are syntax: keep them. The example in parentheses is syntax."
+  },
+  "debug.condition.takesNoArgument": "{fn} takes no argument",
+  "@debug.condition.takesNoArgument": {
+    "context": "Error of the breakpoint condition compiler (bp-set -if, the breakpoint dialog, logpoint placeholders, ASSERTION comments); shown with the column it refers to. Operators, function names, number syntax and quoted code are syntax: keep them.",
+    "placeholders": {
+      "fn": "the function, e.g. tstates()"
+    }
+  },
+  "debug.condition.expectedValue": "Unexpected ''{token}''; expected a value",
+  "@debug.condition.expectedValue": {
+    "context": "Error of the breakpoint condition compiler (bp-set -if, the breakpoint dialog, logpoint placeholders, ASSERTION comments); shown with the column it refers to. Operators, function names, number syntax and quoted code are syntax: keep them. Also used by the DeZog-style expressions of logpoints.",
+    "placeholders": {
+      "token": "the unexpected text"
+    }
+  },
+  "debug.condition.endsBeforeValue": "The condition ends where a value is expected",
+  "@debug.condition.endsBeforeValue": {
+    "context": "Error of the breakpoint condition compiler (bp-set -if, the breakpoint dialog, logpoint placeholders, ASSERTION comments); shown with the column it refers to. Operators, function names, number syntax and quoted code are syntax: keep them."
+  },
+  "debug.condition.bankPrefixNeedsLabel": "''{prefix}'' must be followed by a label here; a partition or bank address is only valid inside [ ]",
+  "@debug.condition.bankPrefixNeedsLabel": {
+    "context": "Error of the breakpoint condition compiler (bp-set -if, the breakpoint dialog, logpoint placeholders, ASSERTION comments); shown with the column it refers to. Operators, function names, number syntax and quoted code are syntax: keep them. '[ ]' is the memory-access bracket syntax.",
+    "placeholders": {
+      "prefix": "the bank or partition prefix, e.g. 05:"
+    }
+  },
+  "debug.condition.z80Only": "Breakpoint conditions are supported on Z80 machines only",
+  "@debug.condition.z80Only": {
+    "context": "Error of the breakpoint condition compiler (bp-set -if, the breakpoint dialog, logpoint placeholders, ASSERTION comments); shown with the column it refers to. Operators, function names, number syntax and quoted code are syntax: keep them."
+  },
+  "debug.condition.tooDeep": "The condition is nested too deeply",
+  "@debug.condition.tooDeep": {
+    "context": "Error of the breakpoint condition compiler (bp-set -if, the breakpoint dialog, logpoint placeholders, ASSERTION comments); shown with the column it refers to. Operators, function names, number syntax and quoted code are syntax: keep them."
+  },
+  "debug.condition.tooLong": "The condition is too long",
+  "@debug.condition.tooLong": {
+    "context": "Error of the breakpoint condition compiler (bp-set -if, the breakpoint dialog, logpoint placeholders, ASSERTION comments); shown with the column it refers to. Operators, function names, number syntax and quoted code are syntax: keep them."
+  },
+  "debug.condition.stringCompare": "A string can only be compared (==, !=) with an unsigned memory access",
+  "@debug.condition.stringCompare": {
+    "context": "Error of the breakpoint condition compiler (bp-set -if, the breakpoint dialog, logpoint placeholders, ASSERTION comments); shown with the column it refers to. Operators, function names, number syntax and quoted code are syntax: keep them."
+  },
+  "debug.condition.noPartitions": "{partition} names a partition, but this machine has none",
+  "@debug.condition.noPartitions": {
+    "context": "Error of the breakpoint condition compiler (bp-set -if, the breakpoint dialog, logpoint placeholders, ASSERTION comments); shown with the column it refers to. Operators, function names, number syntax and quoted code are syntax: keep them.",
+    "placeholders": {
+      "partition": "the partition literal, e.g. @R0"
+    }
+  },
+  "debug.condition.unknownPartition": "Unknown partition {partition}",
+  "@debug.condition.unknownPartition": {
+    "context": "Error of the breakpoint condition compiler (bp-set -if, the breakpoint dialog, logpoint placeholders, ASSERTION comments); shown with the column it refers to. Operators, function names, number syntax and quoted code are syntax: keep them.",
+    "placeholders": {
+      "partition": "the partition as written: @name, or the name in single quotes"
+    }
+  },
+  "debug.condition.bankLabelNextOnly": "Bank-local labels ({label}) exist only on the ZX Spectrum Next",
+  "@debug.condition.bankLabelNextOnly": {
+    "context": "Error of the breakpoint condition compiler (bp-set -if, the breakpoint dialog, logpoint placeholders, ASSERTION comments); shown with the column it refers to. Operators, function names, number syntax and quoted code are syntax: keep them.",
+    "placeholders": {
+      "label": "the label as written, e.g. 05:main"
+    }
+  },
+  "debug.condition.bankSpecNextOnly": "Bank specs ({offsetSpec}, {labelSpec}) exist only on the ZX Spectrum Next",
+  "@debug.condition.bankSpecNextOnly": {
+    "context": "Error of the breakpoint condition compiler (bp-set -if, the breakpoint dialog, logpoint placeholders, ASSERTION comments); shown with the column it refers to. Operators, function names, number syntax and quoted code are syntax: keep them.",
+    "placeholders": {
+      "offsetSpec": "syntax sample, e.g. 05:+offset",
+      "labelSpec": "syntax sample, e.g. 05:label"
+    }
+  },
+  "debug.condition.pageNeedsPartitions": "page() needs a machine with memory partitions",
+  "@debug.condition.pageNeedsPartitions": {
+    "context": "Error of the breakpoint condition compiler (bp-set -if, the breakpoint dialog, logpoint placeholders, ASSERTION comments); shown with the column it refers to. Operators, function names, number syntax and quoted code are syntax: keep them."
+  },
+  "debug.condition.nrNextOnly": "nr() reads a Next register; it exists only on the ZX Spectrum Next",
+  "@debug.condition.nrNextOnly": {
+    "context": "Error of the breakpoint condition compiler (bp-set -if, the breakpoint dialog, logpoint placeholders, ASSERTION comments); shown with the column it refers to. Operators, function names, number syntax and quoted code are syntax: keep them."
+  },
+  "debug.condition.slotsIsText": "slots() is text; it can only be a whole logpoint placeholder ({placeholder})",
+  "@debug.condition.slotsIsText": {
+    "context": "Error of the breakpoint condition compiler (bp-set -if, the breakpoint dialog, logpoint placeholders, ASSERTION comments); shown with the column it refers to. Operators, function names, number syntax and quoted code are syntax: keep them.",
+    "placeholders": {
+      "placeholder": "the placeholder syntax {slots()}"
+    }
+  },
+  "debug.condition.valOnExec": "{name} is the accessed value; an execution breakpoint has none",
+  "@debug.condition.valOnExec": {
+    "context": "Error of the breakpoint condition compiler (bp-set -if, the breakpoint dialog, logpoint placeholders, ASSERTION comments); shown with the column it refers to. Operators, function names, number syntax and quoted code are syntax: keep them. VAL is a reserved name in conditions.",
+    "placeholders": {
+      "name": "VAL"
+    }
+  },
+  "debug.condition.addrOnExec": "{name} is the accessed address; an execution breakpoint has none",
+  "@debug.condition.addrOnExec": {
+    "context": "Error of the breakpoint condition compiler (bp-set -if, the breakpoint dialog, logpoint placeholders, ASSERTION comments); shown with the column it refers to. Operators, function names, number syntax and quoted code are syntax: keep them. ADDR is a reserved name in conditions.",
+    "placeholders": {
+      "name": "ADDR"
+    }
+  },
+  "debug.condition.reservedNameShadows": "{name} is read as the reserved name, not the label; write {quoted} for the label",
+  "@debug.condition.reservedNameShadows": {
+    "context": "Warning of the breakpoint condition compiler (bp-set -if, the breakpoint dialog). A register or flag name hides a label of the same name.",
+    "placeholders": {
+      "name": "the name",
+      "quoted": "the name in backticks"
+    }
+  },
+  "debug.condition.unknownLabel": "Unknown label {label}: the breakpoint is inactive until a build defines it",
+  "@debug.condition.unknownLabel": {
+    "context": "Warning of the breakpoint condition compiler (bp-set -if, the breakpoint dialog).",
+    "placeholders": {
+      "label": "the label"
+    }
+  },
+  "debug.condition.notABank": "''{bank}'' is not a 16K bank (00-6F)",
+  "@debug.condition.notABank": {
+    "context": "Error of the breakpoint condition compiler (bp-set -if, the breakpoint dialog, logpoint placeholders, ASSERTION comments); shown with the column it refers to. Operators, function names, number syntax and quoted code are syntax: keep them.",
+    "placeholders": {
+      "bank": "the bank as written"
+    }
+  },
+  "debug.condition.twoStrings": "Two strings cannot be compared with each other",
+  "@debug.condition.twoStrings": {
+    "context": "Error of the breakpoint condition compiler (bp-set -if, the breakpoint dialog, logpoint placeholders, ASSERTION comments); shown with the column it refers to. Operators, function names, number syntax and quoted code are syntax: keep them."
+  },
+  "debug.condition.stringLength": "String {string} has {count, plural, one {# character} other {# characters}} but {access} compares {width}",
+  "@debug.condition.stringLength": {
+    "context": "Error of the breakpoint condition compiler (bp-set -if, the breakpoint dialog, logpoint placeholders, ASSERTION comments); shown with the column it refers to. Operators, function names, number syntax and quoted code are syntax: keep them.",
+    "placeholders": {
+      "string": "the string literal",
+      "count": "its length",
+      "access": "the memory access, e.g. w[…]",
+      "width": "bytes the access reads"
+    }
+  },
+  "debug.condition.outOfRange": "{value} is out of range for {operand} ({range})",
+  "@debug.condition.outOfRange": {
+    "context": "Error of the breakpoint condition compiler (bp-set -if, the breakpoint dialog, logpoint placeholders, ASSERTION comments); shown with the column it refers to. Operators, function names, number syntax and quoted code are syntax: keep them.",
+    "placeholders": {
+      "value": "the constant",
+      "operand": "the register, flag or access, e.g. A",
+      "range": "the valid range, e.g. 0…255"
+    }
+  },
+  "debug.condition.outOfRangeAccess": "{value} is out of range for the access ({range})",
+  "@debug.condition.outOfRangeAccess": {
+    "context": "Error of the breakpoint condition compiler (bp-set -if, the breakpoint dialog, logpoint placeholders, ASSERTION comments); shown with the column it refers to. Operators, function names, number syntax and quoted code are syntax: keep them.",
+    "placeholders": {
+      "value": "the constant",
+      "range": "the valid range"
+    }
+  },
+  "debug.logTemplate.z80Only": "Logpoints are supported on Z80 machines only",
+  "@debug.logTemplate.z80Only": {
+    "context": "Error of the logpoint message-template compiler (bp-set -log, the breakpoint dialog, LOGPOINT comments)."
+  },
+  "debug.logTemplate.unterminatedPlaceholder": "Unterminated placeholder: ''{open}'' has no ''{close}''",
+  "@debug.logTemplate.unterminatedPlaceholder": {
+    "context": "Error of the logpoint message-template compiler (bp-set -log, the breakpoint dialog, LOGPOINT comments).",
+    "placeholders": {
+      "open": "the opening placeholder mark",
+      "close": "the closing brace"
+    }
+  },
+  "debug.logTemplate.literalBrace": "A literal ''{brace}'' is written ''{escaped}''",
+  "@debug.logTemplate.literalBrace": {
+    "context": "Error of the logpoint message-template compiler (bp-set -log, the breakpoint dialog, LOGPOINT comments).",
+    "placeholders": {
+      "brace": "a closing brace",
+      "escaped": "two closing braces"
+    }
+  },
+  "debug.logTemplate.unknownFormat": "Unknown format ''{format}''; use {formats}",
+  "@debug.logTemplate.unknownFormat": {
+    "context": "Error of the logpoint message-template compiler (bp-set -log, the breakpoint dialog, LOGPOINT comments).",
+    "placeholders": {
+      "format": "the format as written",
+      "formats": "the valid format names, comma-separated"
+    }
+  },
+  "debug.logTemplate.emptyPlaceholder": "Empty placeholder",
+  "@debug.logTemplate.emptyPlaceholder": {
+    "context": "Error of the logpoint message-template compiler (bp-set -log, the breakpoint dialog, LOGPOINT comments)."
+  },
+  "debug.logTemplate.slotsNoFormat": "The slot map is text; it takes no format",
+  "@debug.logTemplate.slotsNoFormat": {
+    "context": "Error of the logpoint message-template compiler (bp-set -log, the breakpoint dialog, LOGPOINT comments)."
+  },
+  "debug.dezog.invalidNumber": "Invalid number ''{number}''; write decimal, 0x1F or 1Fh",
+  "@debug.dezog.invalidNumber": {
+    "context": "Error of the DeZog-style expression parser (LOGPOINT/ASSERTION comments, DeZog-dialect logpoints). Number and access syntax is code: keep it.",
+    "placeholders": {
+      "number": "the number as written"
+    }
+  },
+  "debug.dezog.dollarHex": "DeZog expressions write hex as 0x1F or 1Fh, not $1F",
+  "@debug.dezog.dollarHex": {
+    "context": "Error of the DeZog-style expression parser (LOGPOINT/ASSERTION comments, DeZog-dialect logpoints). Number and access syntax is code: keep it."
+  },
+  "debug.dezog.noStrings": "Character and string literals are not part of DeZog''s expressions",
+  "@debug.dezog.noStrings": {
+    "context": "Error of the DeZog-style expression parser (LOGPOINT/ASSERTION comments, DeZog-dialect logpoints). Number and access syntax is code: keep it."
+  },
+  "debug.dezog.empty": "The expression is empty",
+  "@debug.dezog.empty": {
+    "context": "Error of the DeZog-style expression parser (LOGPOINT/ASSERTION comments, DeZog-dialect logpoints). Number and access syntax is code: keep it."
+  },
+  "debug.dezog.memNeedsParens": "{prefix} must be followed by an address in parentheses: {example}",
+  "@debug.dezog.memNeedsParens": {
+    "context": "Error of the DeZog-style expression parser (LOGPOINT/ASSERTION comments, DeZog-dialect logpoints). Number and access syntax is code: keep it.",
+    "placeholders": {
+      "prefix": "b@ or w@",
+      "example": "e.g. b@(HL)"
+    }
+  },
+  "debug.dezog.unknownSpecial": "Unknown special ''{name}''; use Remote.tStates, Remote.cpuFrequency or Remote.slots",
+  "@debug.dezog.unknownSpecial": {
+    "context": "Error of the DeZog-style expression parser (LOGPOINT/ASSERTION comments, DeZog-dialect logpoints). Number and access syntax is code: keep it.",
+    "placeholders": {
+      "name": "the name as written"
+    }
+  },
+  "debug.dezog.memReadSyntax": "A memory read is written b@(address) or w@(address)",
+  "@debug.dezog.memReadSyntax": {
+    "context": "Error of the DeZog-style expression parser (LOGPOINT/ASSERTION comments, DeZog-dialect logpoints). Number and access syntax is code: keep it."
+  },
+  "debug.dezog.endsBeforeValue": "The expression ends where a value is expected",
+  "@debug.dezog.endsBeforeValue": {
+    "context": "Error of the DeZog-style expression parser (LOGPOINT/ASSERTION comments, DeZog-dialect logpoints). Number and access syntax is code: keep it."
+  },
+  "debug.annotation.wpmemIgnored": "WPMEM ignored: {reason}",
+  "@debug.annotation.wpmemIgnored": {
+    "context": "Build warning (Errors panel, build output) for a DeZog-style source comment that Klive cannot use. WPMEM, ASSERTION and LOGPOINT are comment keywords (never translated).",
+    "placeholders": {
+      "reason": "Why, e.g. 'the range runs past $FFFF'"
+    }
+  },
+  "debug.annotation.assertionIgnored": "ASSERTION ignored: {reason} (column {column} of the expression)",
+  "@debug.annotation.assertionIgnored": {
+    "context": "Build warning (Errors panel, build output) for a DeZog-style source comment that Klive cannot use. WPMEM, ASSERTION and LOGPOINT are comment keywords (never translated).",
+    "placeholders": {
+      "reason": "The expression parser's error",
+      "column": "1-based column in the expression"
+    }
+  },
+  "debug.annotation.assertionWarning": "ASSERTION: {message}",
+  "@debug.annotation.assertionWarning": {
+    "context": "Build warning (Errors panel, build output) for a DeZog-style source comment that Klive cannot use. WPMEM, ASSERTION and LOGPOINT are comment keywords (never translated).",
+    "placeholders": {
+      "message": "The expression checker's warning"
+    }
+  },
+  "debug.annotation.logpointIgnored": "LOGPOINT ignored: {reason} (column {column} of the message)",
+  "@debug.annotation.logpointIgnored": {
+    "context": "Build warning (Errors panel, build output) for a DeZog-style source comment that Klive cannot use. WPMEM, ASSERTION and LOGPOINT are comment keywords (never translated).",
+    "placeholders": {
+      "reason": "The message template parser's error",
+      "column": "1-based column in the message"
+    }
+  },
+  "debug.annotation.logpointWarning": "LOGPOINT: {message}",
+  "@debug.annotation.logpointWarning": {
+    "context": "Build warning (Errors panel, build output) for a DeZog-style source comment that Klive cannot use. WPMEM, ASSERTION and LOGPOINT are comment keywords (never translated).",
+    "placeholders": {
+      "message": "The template checker's warning"
+    }
+  },
+  "debug.wpmem.tooManyArgs": "WPMEM takes at most three arguments: address, length, access",
+  "@debug.wpmem.tooManyArgs": {
+    "context": "Reason a WPMEM source comment is ignored; shown after 'WPMEM ignored:' in a build warning (Errors panel). WPMEM is a comment keyword (never translated); r, w, rw are the access letters as written (never translated)."
+  },
+  "debug.wpmem.addressRange": "the address {text} is outside $0000-$FFFF",
+  "@debug.wpmem.addressRange": {
+    "context": "Reason a WPMEM source comment is ignored; shown after 'WPMEM ignored:' in a build warning (Errors panel). WPMEM is a comment keyword (never translated); r, w, rw are the access letters as written (never translated).",
+    "placeholders": {
+      "text": "The address as written in the comment"
+    }
+  },
+  "debug.wpmem.lengthRange": "the length {text} must be between 1 and 65536",
+  "@debug.wpmem.lengthRange": {
+    "context": "Reason a WPMEM source comment is ignored; shown after 'WPMEM ignored:' in a build warning (Errors panel). WPMEM is a comment keyword (never translated); r, w, rw are the access letters as written (never translated).",
+    "placeholders": {
+      "text": "The length as written in the comment"
+    }
+  },
+  "debug.wpmem.lengthMissing": "the length is missing before the access",
+  "@debug.wpmem.lengthMissing": {
+    "context": "Reason a WPMEM source comment is ignored; shown after 'WPMEM ignored:' in a build warning (Errors panel). WPMEM is a comment keyword (never translated); r, w, rw are the access letters as written (never translated)."
+  },
+  "debug.wpmem.pastEnd": "the range runs past $FFFF",
+  "@debug.wpmem.pastEnd": {
+    "context": "Reason a WPMEM source comment is ignored; shown after 'WPMEM ignored:' in a build warning (Errors panel). WPMEM is a comment keyword (never translated); r, w, rw are the access letters as written (never translated)."
+  },
+  "debug.wpmem.badAccess": "the access ''{text}'' must be r, w or rw",
+  "@debug.wpmem.badAccess": {
+    "context": "Reason a WPMEM source comment is ignored; shown after 'WPMEM ignored:' in a build warning (Errors panel). WPMEM is a comment keyword (never translated); r, w, rw are the access letters as written (never translated). The quotes are part of the text (written as '' in the message).",
+    "placeholders": {
+      "text": "The access as written in the comment"
+    }
+  },
+  "debug.wpmem.addressInvalid": "the address {text}: {reason}",
+  "@debug.wpmem.addressInvalid": {
+    "context": "Reason a WPMEM source comment is ignored; shown after 'WPMEM ignored:' in a build warning (Errors panel). WPMEM is a comment keyword (never translated); r, w, rw are the access letters as written (never translated).",
+    "placeholders": {
+      "text": "The address as written in the comment",
+      "reason": "Why it is not a constant, e.g. 'unknown label foo'"
+    }
+  },
+  "debug.wpmem.lengthInvalid": "the length {text}: {reason}",
+  "@debug.wpmem.lengthInvalid": {
+    "context": "Reason a WPMEM source comment is ignored; shown after 'WPMEM ignored:' in a build warning (Errors panel). WPMEM is a comment keyword (never translated); r, w, rw are the access letters as written (never translated).",
+    "placeholders": {
+      "text": "The length as written in the comment",
+      "reason": "Why it is not a constant"
+    }
+  },
+  "debug.wpmem.registerNotConstant": "a register ({name}) is not a constant",
+  "@debug.wpmem.registerNotConstant": {
+    "context": "Reason a WPMEM comment's address or length is not a constant expression; shown inside a build warning (Errors panel).",
+    "placeholders": {
+      "name": "Register name as written, e.g. HL (not translated)"
+    }
+  },
+  "debug.wpmem.unknownLabel": "unknown label {name}",
+  "@debug.wpmem.unknownLabel": {
+    "context": "Reason a WPMEM comment's address or length is not a constant expression; shown inside a build warning (Errors panel).",
+    "placeholders": {
+      "name": "The label as written"
+    }
+  },
+  "debug.wpmem.divisionByZero": "division by zero",
+  "@debug.wpmem.divisionByZero": {
+    "context": "Reason a WPMEM comment's address or length is not a constant expression; shown inside a build warning (Errors panel)."
+  },
+  "debug.wpmem.memoryRead": "a memory read is not a constant",
+  "@debug.wpmem.memoryRead": {
+    "context": "Reason a WPMEM comment's address or length is not a constant expression; shown inside a build warning (Errors panel)."
+  },
+  "debug.wpmem.machineValue": "a machine value is not a constant",
+  "@debug.wpmem.machineValue": {
+    "context": "Reason a WPMEM comment's address or length is not a constant expression; shown inside a build warning (Errors panel)."
+  },
+  "debug.wpmem.notConstant": "not a constant",
+  "@debug.wpmem.notConstant": {
+    "context": "Reason a WPMEM comment's address or length is not a constant expression; shown inside a build warning (Errors panel)."
+  }
+}

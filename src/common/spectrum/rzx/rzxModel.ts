@@ -7,6 +7,8 @@
  * blocks; every other block is skipped by its length, with a note (D6).
  */
 
+import { t } from "@common/i18n/i18n";
+
 /** "RZX!" */
 export const RZX_SIGNATURE = [0x52, 0x5a, 0x58, 0x21] as const;
 
@@ -93,7 +95,7 @@ export class RzxError extends Error {
 
 /** The display name of a creator: "Fuse 1.10" */
 export function rzxCreatorText(creator?: RzxCreator): string {
-  return creator ? `${creator.name} ${creator.major}.${creator.minor}` : "unknown creator";
+  return creator ? `${creator.name} ${creator.major}.${creator.minor}` : t("media.rzx.unknownCreator");
 }
 
 /** A frame that completes a picture (D19) */

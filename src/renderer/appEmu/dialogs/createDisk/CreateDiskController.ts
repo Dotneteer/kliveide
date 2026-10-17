@@ -1,6 +1,7 @@
 import { LatestRun } from "@mvc/core/LatestRun";
 import { UiController } from "@mvc/core/UiController";
 import { messageOf } from "@mvc/core/errors";
+import { t } from "@common/i18n/i18n";
 
 import type { CreateDiskIntent } from "./CreateDiskIntents";
 import {
@@ -104,8 +105,8 @@ export class CreateDiskController extends UiController<
       this.emit({ type: "createSettled" });
       await this.ports.service.notify(
         "info",
-        "Disk created",
-        `Disk file successfully created: ${path}`
+        t("dialog.createDisk.created.title"),
+        t("dialog.createDisk.created.message", { path })
       );
       if (!token.isCurrent()) return;
       this.ports.close.created({ ...request, path });
@@ -114,7 +115,7 @@ export class CreateDiskController extends UiController<
       // --- The dialog stays open on failure: the user's input is still there
       // --- and the folder is usually the thing to fix.
       this.emit({ type: "createSettled" });
-      await this.ports.service.notify("error", "Create Disk File Error", messageOf(error));
+      await this.ports.service.notify("error", t("dialog.createDisk.error.title"), messageOf(error));
     }
   }
 

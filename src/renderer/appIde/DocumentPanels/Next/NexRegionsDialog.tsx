@@ -20,6 +20,8 @@ import {
 } from "./NexRegionDialog";
 import { parseNexLabelValue } from "./NexLabelDialog";
 import styles from "./NexRegionsDialog.module.scss";
+import { t } from "@common/i18n/i18n";
+import { useT } from "@common/i18n/useT";
 import {
   DialogFooter,
   DialogFooterSpacer
@@ -40,16 +42,17 @@ export type NexRegionsDialogProps = DialogComponentProps<NexRegionsDialogResult>
   regions: AnnotationRegion[];
 };
 
-const REGION_TYPE_OPTIONS: DropdownOption[] = [
-  { value: "all", label: "All Types" },
-  { value: "disassemble", label: "Disassembly" },
-  { value: "bytes", label: "Bytes" },
-  { value: "words", label: "Words" },
+/** Built when drawn, so it follows the display language. Copper and DMA are chip names. */
+const regionTypeOptions = (): DropdownOption[] => [
+  { value: "all", label: t("panels.next.regionType.allTypes") },
+  { value: "disassemble", label: t("panels.next.regionType.disassembly") },
+  { value: "bytes", label: t("panels.next.regionType.bytes") },
+  { value: "words", label: t("panels.next.regionType.words") },
   { value: "copper", label: "Copper" },
   { value: "dma", label: "DMA" },
-  { value: "text", label: "Text" },
-  { value: "graphic", label: "Graphics" },
-  { value: "skip", label: "Skip" }
+  { value: "text", label: t("panels.next.regionType.text") },
+  { value: "graphic", label: t("panels.next.regionType.graphics") },
+  { value: "skip", label: t("panels.next.regionType.skip") }
 ];
 
 export function NexRegionsDialog({
@@ -58,6 +61,7 @@ export function NexRegionsDialog({
   regions,
   controls
 }: NexRegionsDialogProps) {
+  const t = useT();
   const sortedRegions = useMemo(
     () => [...regions].sort((left, right) => left.start - right.start),
     [regions]
@@ -140,27 +144,27 @@ export function NexRegionsDialog({
             --- the hand-rolled pair of those goes with the bare input. */}
         <TextInput
           autoFocus
-          ariaLabel="Find the region covering an address"
-          placeholder="Find address, e.g. $1A00"
-          error={findIsInvalid ? "No region covers that address." : undefined}
+          ariaLabel={t("panels.next.regions.findAria")}
+          placeholder={t("panels.next.regions.findPlaceholder")}
+          error={findIsInvalid ? t("panels.next.regions.findError") : undefined}
           value={findText}
           onChange={setFindText}
         />
         {/* The app's own dropdown, as the Labels list's sort control uses. */}
         <Dropdown
-          ariaLabel="Filter region type"
-          options={REGION_TYPE_OPTIONS}
+          ariaLabel={t("panels.next.regions.filterAria")}
+          options={regionTypeOptions()}
           initialValue={typeFilter}
           onChanged={(value) => setTypeFilter(value as NexRegionTypeFilter)}
         />
       </div>
       <div className={styles.table}>
         <div className={styles.tableHeader}>
-          <span>Start</span>
-          <span>End</span>
-          <span>Length</span>
-          <span>Type</span>
-          <span>Lines</span>
+          <span>{t("panels.next.regions.column.start")}</span>
+          <span>{t("panels.next.regions.column.end")}</span>
+          <span>{t("panels.next.region.length")}</span>
+          <span>{t("panels.next.region.type")}</span>
+          <span>{t("panels.next.regions.column.lines")}</span>
           <span />
         </div>
         {filteredRegions.map((region) => {
@@ -194,7 +198,7 @@ export function NexRegionsDialog({
                     controls.close({ action: "go-to", region });
                   }}
                 >
-                  Go To
+                  {t("panels.next.action.goTo")}
                 </button>
                 <button
                   className={styles.actionButton}
@@ -204,7 +208,7 @@ export function NexRegionsDialog({
                     controls.close({ action: "edit", region });
                   }}
                 >
-                  Edit
+                  {t("panels.next.regions.edit")}
                 </button>
                 <button
                   className={styles.actionButton}
@@ -214,7 +218,7 @@ export function NexRegionsDialog({
                     controls.close({ action: "split", region });
                   }}
                 >
-                  Split
+                  {t("panels.next.regions.split")}
                 </button>
                 <button
                   className={styles.actionButton}
@@ -225,26 +229,26 @@ export function NexRegionsDialog({
                     controls.close({ action: "revert", region });
                   }}
                 >
-                  Revert
+                  {t("panels.next.regions.revert")}
                 </button>
               </span>
             </div>
           );
         })}
         {filteredRegions.length === 0 && (
-          <div className={styles.emptyList}>No matching regions</div>
+          <div className={styles.emptyList}>{t("panels.next.regions.noMatching")}</div>
         )}
       </div>
-      <DialogRow label="Preview" rows={true}>
-        <div className={styles.preview} aria-label="Region preview">
+      <DialogRow label={t("panels.next.field.preview")} rows={true}>
+        <div className={styles.preview} aria-label={t("panels.next.region.previewLabel")}>
           {preview}
         </div>
       </DialogRow>
       {selectedRegion && trimEnd !== undefined && (
         <div className={styles.hint} role="status">
-          <span>{`Ends in ${selectedRegion.end - trimEnd} zero bytes, each listed as a WR2 write.`}</span>
+          <span>{t("panels.next.regions.dmaZeroTail", { count: selectedRegion.end - trimEnd })}</span>
           <Button
-            text={`Trim to ${formatRegionOffset(trimEnd)}`}
+            text={t("panels.next.region.trimTo", { offset: formatRegionOffset(trimEnd) })}
             variant="secondary"
             clicked={() =>
               controls.close({ action: "edit", region: { ...selectedRegion, end: trimEnd } })
@@ -253,9 +257,9 @@ export function NexRegionsDialog({
         </div>
       )}
       <DialogFooter>
-        <Button variant="secondary" text="Close" clicked={controls.cancel} />
+        <Button variant="secondary" text={t("common.button.close")} clicked={controls.cancel} />
         <DialogFooterSpacer />
-        <Button text="Add Region" clicked={() => controls.close({ action: "add" })} />
+        <Button text={t("panels.next.regions.add")} clicked={() => controls.close({ action: "add" })} />
       </DialogFooter>
     </div>
   );

@@ -2,6 +2,7 @@ import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 
 import { isLogpoint, withoutBreakpointRuntimeState } from "@common/utils/breakpoint-filters";
 import { commentKindOf } from "@common/utils/source-annotations";
+import { t } from "@common/i18n/i18n";
 
 /*
  * The editor's breakpoint-margin context menu (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.4.2):
@@ -103,8 +104,12 @@ export function marginMenuItems(target: MarginTarget): MarginMenuItem[] {
   const bp = target.breakpoint;
   if (!bp && target.comments?.length) {
     // --- A comment's breakpoints: no Remove (S3) - remove the comment, or switch the kind off
-    const kind = commentKindOf(target.comments[0]) ?? "comment";
+    const kind = commentKindOf(target.comments[0]);
     const allDisabled = target.comments.every((c) => c.disabled);
+    const toggleText =
+      kind === undefined
+        ? t(allDisabled ? "panels.feature.margin.enableComment" : "panels.feature.margin.disableComment")
+        : t(allDisabled ? "panels.feature.margin.enableKind" : "panels.feature.margin.disableKind", { kind });
     const addresses = [
       ...new Set(
         target.comments
@@ -116,12 +121,15 @@ export function marginMenuItems(target: MarginTarget): MarginMenuItem[] {
     return [
       {
         id: "toggleComment",
-        text: allDisabled ? `Enable ${kind}` : `Disable ${kind}`,
+        text: toggleText,
         hint: "Click"
       },
       ...addresses.map((address, i) => ({
         id: "showInDisassembly" as const,
-        text: addresses.length > 1 ? `Show in Disassembly (${hex4(address)})` : "Show in Disassembly",
+        text:
+          addresses.length > 1
+            ? t("panels.feature.margin.showInDisassemblyAt", { address: hex4(address) })
+            : t("panels.feature.margin.showInDisassembly"),
         address,
         separatorBefore: i === 0
       }))
@@ -129,35 +137,50 @@ export function marginMenuItems(target: MarginTarget): MarginMenuItem[] {
   }
   if (bp) {
     const logpoint = isLogpoint(bp);
-    const noun = logpoint ? "Logpoint" : "Breakpoint";
     const items: MarginMenuItem[] = [
-      ...(logpoint ? [{ id: "editLogMessage" as const, text: "Edit Log Message..." }] : []),
-      { id: "editCondition", text: "Edit Condition..." },
-      { id: "editHitCount", text: "Edit Hit Count..." },
+      ...(logpoint ? [{ id: "editLogMessage" as const, text: t("panels.feature.margin.editLogMessage") }] : []),
+      { id: "editCondition", text: t("panels.feature.margin.editCondition") },
+      { id: "editHitCount", text: t("panels.feature.margin.editHitCount") },
       logpoint
-        ? { id: "toBreakpoint", text: "Convert to Breakpoint" }
-        : { id: "toLogpoint", text: "Convert to Logpoint..." }
+        ? { id: "toBreakpoint", text: t("panels.feature.margin.toBreakpoint") }
+        : { id: "toLogpoint", text: t("panels.feature.margin.toLogpoint") }
     ];
     // --- A logpoint never stops, so it is never a one-shot
     if (!logpoint) {
       items.push(
         bp.oneShot
-          ? { id: "keepAfterStop", text: "Keep After It Stops", separatorBefore: true }
-          : { id: "makeOnce", text: "Remove After It Stops", separatorBefore: true, hint: ONE_SHOT_GESTURE }
+          ? { id: "keepAfterStop", text: t("panels.feature.margin.keepAfterStop"), separatorBefore: true }
+          : {
+              id: "makeOnce",
+              text: t("panels.feature.margin.removeAfterStop"),
+              separatorBefore: true,
+              hint: ONE_SHOT_GESTURE
+            }
       );
     }
     return [
       ...items,
-      { id: "toggle", text: bp.disabled ? `Enable ${noun}` : `Disable ${noun}`, separatorBefore: logpoint },
-      { id: "resetHits", text: "Reset Hit Count" },
-      { id: "remove", text: `Remove ${noun}`, dangerous: true, separatorBefore: true }
+      {
+        id: "toggle",
+        text: logpoint
+          ? t(bp.disabled ? "panels.feature.margin.enableLogpoint" : "panels.feature.margin.disableLogpoint")
+          : t(bp.disabled ? "panels.feature.margin.enableBreakpoint" : "panels.feature.margin.disableBreakpoint"),
+        separatorBefore: logpoint
+      },
+      { id: "resetHits", text: t("panels.feature.margin.resetHits") },
+      {
+        id: "remove",
+        text: t(logpoint ? "panels.feature.margin.removeLogpoint" : "panels.feature.margin.removeBreakpoint"),
+        dangerous: true,
+        separatorBefore: true
+      }
     ];
   }
   return [
-    { id: "add", text: "Add Breakpoint", disabled: !target.canAdd },
-    { id: "addOnce", text: "Add One-Shot Breakpoint", disabled: !target.canAdd, hint: ONE_SHOT_GESTURE },
-    { id: "addConditional", text: "Add Conditional Breakpoint...", disabled: !target.canAdd },
-    { id: "addLogpoint", text: "Add Logpoint...", disabled: !target.canAdd }
+    { id: "add", text: t("panels.feature.margin.add"), disabled: !target.canAdd },
+    { id: "addOnce", text: t("panels.feature.margin.addOnce"), disabled: !target.canAdd, hint: ONE_SHOT_GESTURE },
+    { id: "addConditional", text: t("panels.feature.margin.addConditional"), disabled: !target.canAdd },
+    { id: "addLogpoint", text: t("panels.feature.margin.addLogpoint"), disabled: !target.canAdd }
   ];
 }
 

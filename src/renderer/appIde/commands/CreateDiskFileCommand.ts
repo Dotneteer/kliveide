@@ -10,6 +10,7 @@ import {
   IdeCommandBase
 } from "../services/ide-commands";
 import { DISK_FOLDER } from "@common/structs/project-const";
+import { t } from "@common/i18n/i18n";
 
 // --- CPC DSK disks for the +3, blank TR-DOS disks for the Pentagon (`.plans/BETA128_TRDOS_PLAN.md`)
 const availableDiskTypes = ["ss", "ds", "sse", "dse", "trd80ds", "trd40ds", "trd80ss", "trd40ss"];
@@ -23,7 +24,9 @@ type CreateDiskFileCommandArgs = {
 
 export class CreateDiskFileCommand extends IdeCommandBase<CreateDiskFileCommandArgs> {
   readonly id = "crd";
-  readonly description = "Creates a new disk file.";
+  get description() {
+    return t("commands.crd.description");
+  }
   readonly usage = "crd <disk type> <disk name> [<disk folder>] [-p]";
 
   readonly argumentInfo: CommandArgumentInfo = {
@@ -36,9 +39,10 @@ export class CreateDiskFileCommand extends IdeCommandBase<CreateDiskFileCommandA
     if (!availableDiskTypes.find((dt) => dt === args.diskType)) {
       return [
         validationError(
-          `Invalid disk type '${args.diskType}'. Use one of these: ${availableDiskTypes
-            .map((dt) => `'${dt}'`)
-            .join(", ")}`
+          t("commands.crd.invalidType", {
+            type: args.diskType,
+            types: availableDiskTypes.map((dt) => `'${dt}'`).join(", ")
+          })
         )
       ];
     }
@@ -61,7 +65,7 @@ export class CreateDiskFileCommand extends IdeCommandBase<CreateDiskFileCommandA
     }
     try {
       const result = await context.mainApi.createDiskFile(folder, args.diskName, args.diskType);
-      writeSuccessMessage(context.output, `Disk file successfully created: ${result}`);
+      writeSuccessMessage(context.output, t("commands.crd.created", { path: result }));
       return commandSuccess;
     } catch (err) {
       return commandError(err.toString());

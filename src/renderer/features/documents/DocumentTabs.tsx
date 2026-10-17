@@ -4,6 +4,7 @@ import styles from "./DocumentsHeader.module.scss";
 import { type DragEvent, useState } from "react";
 import { type DocumentAreaId } from "./documentAreaLayout";
 import classnames from "classnames";
+import { documentDisplayName } from "./specialDocuments";
 
 type TabDropPlacement = "before" | "after";
 
@@ -133,7 +134,7 @@ export function DocumentTabs({
       }}
     >
       {openDocs.map((document, idx) => {
-        const docName = tabLabels.get(document.id) ?? document.name;
+        const docName = tabLabels.get(document.id) ?? documentDisplayName(document);
         return (
           <DocumentTab
             key={document.id}
@@ -290,9 +291,10 @@ export function getDocumentTabLabels(openDocs: ProjectDocumentState[]): Map<stri
 
   const byName = new Map<string, ProjectDocumentState[]>();
   for (const document of openDocs) {
-    const group = byName.get(document.name);
+    const name = documentDisplayName(document);
+    const group = byName.get(name);
     if (group) group.push(document);
-    else byName.set(document.name, [document]);
+    else byName.set(name, [document]);
   }
 
   for (const [name, group] of byName) {

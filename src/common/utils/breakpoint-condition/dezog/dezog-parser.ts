@@ -1,4 +1,5 @@
 import type { ConditionBinaryOp, ConditionUnaryOp, MachineFunction } from "../condition-types";
+import { t } from "@common/i18n/i18n";
 import { ConditionSyntaxError } from "../condition-lexer";
 import type { AccessType, SyntaxNode } from "../condition-parser";
 
@@ -75,13 +76,13 @@ function tokenize(text: string): Token[] {
       else if (/^[0-9]+$/.test(raw)) value = parseInt(raw, 10);
       else {
         throw new ConditionSyntaxError(
-          `Invalid number '${raw}'; write decimal, 0x1F or 1Fh`,
+          t("debug.dezog.invalidNumber", { number: raw }),
           start,
           end
         );
       }
       if (value > MAX_LITERAL) {
-        throw new ConditionSyntaxError(`${raw} is larger than 0xFFFFFFFF`, start, end);
+        throw new ConditionSyntaxError(t("debug.condition.numberTooLarge", { number: raw, max: "0xFFFFFFFF" }), start, end);
       }
       tokens.push({ kind: "num", text: raw, value, start, end });
       pos = end;
@@ -103,14 +104,14 @@ function tokenize(text: string): Token[] {
 
     if (c === "$") {
       throw new ConditionSyntaxError(
-        "DeZog expressions write hex as 0x1F or 1Fh, not $1F",
+        t("debug.dezog.dollarHex"),
         start,
         start + 1
       );
     }
     if (c === "'" || c === '"') {
       throw new ConditionSyntaxError(
-        "Character and string literals are not part of DeZog's expressions",
+        t("debug.dezog.noStrings"),
         start,
         start + 1
       );
@@ -122,7 +123,7 @@ function tokenize(text: string): Token[] {
       pos += op.length;
       continue;
     }
-    throw new ConditionSyntaxError(`Unexpected character '${c}'`, start, start + 1);
+    throw new ConditionSyntaxError(t("debug.condition.unexpectedChar", { char: c }), start, start + 1);
   }
   tokens.push({ kind: "eof", text: "", start: text.length, end: text.length });
   return tokens;
@@ -149,7 +150,7 @@ const WORD: AccessType = { width: 2, be: false, signed: false, name: "w@" };
 export function parseDezogExpression(text: string): SyntaxNode {
   const tokens = tokenize(text);
   if (tokens.length === 1) {
-    throw new ConditionSyntaxError("The expression is empty", 0, text.length);
+    throw new ConditionSyntaxError(t("debug.dezog.empty"), 0, text.length);
   }
   let index = 0;
   const peek = (offset = 0) => tokens[Math.min(index + offset, tokens.length - 1)];
@@ -162,12 +163,11 @@ export function parseDezogExpression(text: string): SyntaxNode {
     const token = peek(offset);
     return token.kind === "op" && token.text === op;
   };
-  const describe = (token: Token) => (token.kind === "eof" ? "end of expression" : token.text);
   const expectClose = (open: Token) => {
     const token = peek();
     if (token.kind === "op" && token.text === ")") return next();
     throw new ConditionSyntaxError(
-      `Missing ')' to close the '(' at column ${open.start + 1}`,
+      t("debug.condition.missingClose", { close: ")", open: "(", column: open.start + 1 }),
       token.start,
       token.end
     );
@@ -222,7 +222,7 @@ export function parseDezogExpression(text: string): SyntaxNode {
           const open = peek();
           if (!(open.kind === "op" && open.text === "(")) {
             throw new ConditionSyntaxError(
-              `${lower}@ must be followed by an address in parentheses: ${lower}@(HL)`,
+              t("debug.dezog.memNeedsParens", { prefix: `${lower}@`, example: `${lower}@(HL)` }),
               open.start,
               open.end
             );
@@ -243,7 +243,7 @@ export function parseDezogExpression(text: string): SyntaxNode {
         if (special) return { k: "machine", fn: special, start: token.start, end: token.end };
         if (lower.startsWith("remote.")) {
           throw new ConditionSyntaxError(
-            `Unknown special '${token.text}'; use Remote.tStates, Remote.cpuFrequency or Remote.slots`,
+            t("debug.dezog.unknownSpecial", { name: token.text }),
             token.start,
             token.end
           );
@@ -266,19 +266,19 @@ export function parseDezogExpression(text: string): SyntaxNode {
         }
         if (token.text === "@") {
           throw new ConditionSyntaxError(
-            "A memory read is written b@(address) or w@(address)",
+            t("debug.dezog.memReadSyntax"),
             token.start,
             token.end
           );
         }
         throw new ConditionSyntaxError(
-          `Unexpected '${token.text}'; expected a value`,
+          t("debug.condition.expectedValue", { token: token.text }),
           token.start,
           token.end
         );
       default:
         throw new ConditionSyntaxError(
-          "The expression ends where a value is expected",
+          t("debug.dezog.endsBeforeValue"),
           token.start,
           token.end
         );
@@ -289,7 +289,9 @@ export function parseDezogExpression(text: string): SyntaxNode {
   const rest = peek();
   if (rest.kind !== "eof") {
     throw new ConditionSyntaxError(
-      rest.kind === "op" && rest.text === ")" ? "Unbalanced ')'" : `Unexpected '${describe(rest)}'`,
+      rest.kind === "op" && rest.text === ")"
+        ? t("debug.condition.unbalanced", { token: ")" })
+        : t("debug.condition.unexpectedToken", { token: rest.text }),
       rest.start,
       rest.end
     );

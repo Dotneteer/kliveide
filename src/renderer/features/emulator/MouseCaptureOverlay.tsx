@@ -1,4 +1,5 @@
 import styles from "./MouseCaptureOverlay.module.scss";
+import { useT } from "@common/i18n/useT";
 
 type Props = {
   /** True while the screen holds the pointer lock. */
@@ -20,6 +21,7 @@ type Props = {
  * fails the first time. Saying so is the difference between a quirk and an app that looks broken.
  */
 export const MouseCaptureOverlay = ({ captured, refused }: Props) => {
+  const t = useT();
   if (!captured && !refused) return null;
 
   return (
@@ -27,8 +29,8 @@ export const MouseCaptureOverlay = ({ captured, refused }: Props) => {
       <div className={captured ? styles.captured : styles.refused}>
         <span>
           {captured
-            ? "Mouse captured – press Esc to release"
-            : "Mouse capture refused – try again in a moment"}
+            ? t("panels.feature.emulator.mouseCaptured")
+            : t("panels.feature.emulator.mouseCaptureRefused")}
         </span>
       </div>
     </div>

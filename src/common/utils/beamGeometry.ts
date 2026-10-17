@@ -16,6 +16,8 @@
  * `getBufferStartOffset()`.
  */
 
+import { t as translate } from "@common/i18n/i18n";
+
 /** The frame tact's unit: Z80 T-states (3.5 MHz) on the Spectrum cores, 7 MHz HC units on the Next */
 export type BeamUnit = "T" | "HC";
 
@@ -141,9 +143,9 @@ const lineTactLabel = (unit: BeamUnit) => (unit === "HC" ? "hc" : "tact");
 
 /** "paper row 75", "top border", "bottom border" for a displayed buffer row */
 export function describeRow(t: BeamTiming, y: number): string {
-  if (y < t.paperTop) return "top border";
-  if (y >= t.paperTop + t.paperHeight) return "bottom border";
-  return `paper row ${y - t.paperTop}`;
+  if (y < t.paperTop) return translate("debug.beam.topBorder");
+  if (y >= t.paperTop + t.paperHeight) return translate("debug.beam.bottomBorder");
+  return translate("debug.beam.paperRow", { row: y - t.paperTop });
 }
 
 /**
@@ -151,11 +153,11 @@ export function describeRow(t: BeamTiming, y: number): string {
  * is named (`HBLANK`, `VBLANK · 12 lines to the top border`).
  */
 export function describeBeam(beam: BeamPosition): string {
-  const parts = [`line ${beam.line}`];
+  const parts = [translate("debug.beam.line", { line: beam.line })];
   if (beam.region === "vblank") {
     const firstLine = rasterLineOf(beam, beam.firstVisibleTact).line;
     const toTop = (firstLine - beam.line + beam.linesPerFrame) % beam.linesPerFrame;
-    parts.push(`VBLANK · ${toTop} line${toTop === 1 ? "" : "s"} to the top border`);
+    parts.push(translate("debug.beam.vblank", { count: toTop }));
   } else if (beam.region === "hblank") {
     parts.push("HBLANK");
   } else if (beam.bufferY !== undefined) {
@@ -175,9 +177,9 @@ export function describePixel(beam: BeamPosition, x: number, y: number): string 
   const { line, lineTact } = rasterLineOf(beam, tact);
   return [
     `(${x}, ${y})`,
-    `line ${line}`,
+    translate("debug.beam.line", { line }),
     `${lineTactLabel(beam.unit)} ${lineTact}`,
     `${beam.unit} ${n(tact)}`,
-    until === "drawn" ? "drawn" : `in ${n(until)} ${beam.unit}`
+    until === "drawn" ? translate("debug.beam.drawn") : translate("debug.beam.until", { count: n(until), unit: beam.unit })
   ].join(" · ");
 }

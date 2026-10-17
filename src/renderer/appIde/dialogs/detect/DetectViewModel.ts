@@ -1,3 +1,5 @@
+import { t } from "@common/i18n/i18n";
+
 import type { DetectOptionsState, DetectState } from "./DetectModel";
 
 /*
@@ -51,7 +53,12 @@ export function selectViewModel(state: DetectState): DetectViewModel {
     const { proposal } = row.target;
     const details = [
       ...proposal.conflicts.map((c) => ({
-        text: `${hex(c.start)}-${hex(c.end)}: yours is ${c.from}, detected ${c.type}${state.options.mode === "fill" ? " (kept)" : ""}`,
+        text: t(state.options.mode === "fill" ? "dialog.detect.conflict.kept" : "dialog.detect.conflict.replaced", {
+          start: hex(c.start),
+          end: hex(c.end),
+          yours: c.from,
+          detected: c.type
+        }),
         offset: c.start
       })),
       ...proposal.notedRuns.map((r) => ({ text: `${hex(r.start)}-${hex(r.end)}: ${r.notes!.join(", ")}`, offset: r.start })),
@@ -82,13 +89,13 @@ export function selectViewModel(state: DetectState): DetectViewModel {
     busy,
     busyLabel:
       state.busy === "detect"
-        ? "Reading coverage and classifying..."
+        ? t("dialog.detect.busy.detect")
         : state.busy === "apply"
-          ? "Writing the annotations..."
+          ? t("dialog.detect.busy.apply")
           : state.busy === "undo"
-            ? "Restoring..."
+            ? t("dialog.detect.busy.undo")
             : state.busy === "coverage"
-              ? "Updating coverage..."
+              ? t("dialog.detect.busy.coverage")
               : undefined,
     rows,
     problem: state.problem,
@@ -96,13 +103,17 @@ export function selectViewModel(state: DetectState): DetectViewModel {
     message: state.message,
     error: state.error,
     replaceWarning:
-      userChanges > 0 ? `Replace mode overwrites ${userChanges} of your own region(s); Apply asks first.` : undefined,
-    notPausedHint: state.env.paused ? undefined : "Pause the machine first: a running program pages and writes while it is read.",
+      userChanges > 0 ? t("dialog.detect.replaceWarning", { count: userChanges }) : undefined,
+    notPausedHint: state.env.paused ? undefined : t("dialog.detect.notPausedHint"),
     buttons: {
       detectEnabled: !busy && !state.env.unavailable,
       applyEnabled: !busy && included.length > 0,
       undoEnabled: !busy && state.env.canUndo
     },
-    applyLabel: state.env.skoolPath ? "Import" : state.options.mode === "clear" ? "Clear detected" : "Apply"
+    applyLabel: state.env.skoolPath
+      ? t("dialog.detect.button.import")
+      : state.options.mode === "clear"
+        ? t("dialog.detect.button.clearDetected")
+        : t("dialog.detect.button.apply")
   };
 }

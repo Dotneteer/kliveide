@@ -1,3 +1,5 @@
+import { t } from "@common/i18n/i18n";
+import { useT } from "@common/i18n/useT";
 import { TabButton, TabButtonSeparator, TabButtonSpace } from "@renderer/controls/TabButton";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { useGlobalSetting, useSelector } from "@renderer/core/RendererProvider";
@@ -61,17 +63,17 @@ function launchMenuInfo(services: AppServices, guard: LoadGuard): ContextMenuInf
 
   return [
     {
-      text: "Load and run tape",
+      text: t("documents.tape.menu.run"),
       disabled: refused,
       clicked: async (item: string) => await launch(item, "run")
     },
     {
-      text: "Insert tape",
+      text: t("documents.tape.menu.insert"),
       disabled: refused,
       clicked: async (item: string) => await launch(item, "insert")
     },
     {
-      text: "Load and debug tape",
+      text: t("documents.tape.menu.debug"),
       disabled: refused,
       clicked: async (item: string) => await launch(item, "debug")
     }
@@ -85,12 +87,12 @@ type Props = {
 
 /** The three actions in a tape (or ZX80/ZX81 program) document's tab bar */
 const TapeLaunchCommandBar = ({ path, guard }: Props) => {
+  const t = useT();
   const { ideCommandsService } = useAppServices();
   const machineId = useSelector((s) => s.emulatorState?.machineId);
   const fastLoad = useGlobalSetting(SETTING_EMU_FAST_LOAD);
   const refusal = guard({ emulatorState: { machineId } });
-  const hint = refusal ? ` (${refusal})` : "";
-  const loadHint = refusal ? hint : ` — fast load ${fastLoad === false ? "off" : "on"}`;
+  const fastLoadArg = fastLoad === false ? "off" : "on";
 
   const launch = async (mode: TapeLaunchMode) => {
     await ideCommandsService.executeCommand(tapeLoadCommandText(path, mode));
@@ -101,21 +103,29 @@ const TapeLaunchCommandBar = ({ path, guard }: Props) => {
       <TabButtonSeparator />
       <TabButton
         iconName="play"
-        title={`Load and run this tape: reset, then LOAD ""${loadHint}`}
+        title={
+          refusal
+            ? t("documents.tape.button.runRefused", { reason: refusal })
+            : t("documents.tape.button.run", { fastLoad: fastLoadArg })
+        }
         disabled={!!refusal}
         clicked={async () => await launch("run")}
       />
       <TabButtonSpace />
       <TabButton
         iconName="cassette-tape"
-        title={`Insert this tape without a reset${hint}`}
+        title={refusal ? t("documents.tape.button.insertRefused", { reason: refusal }) : t("documents.tape.button.insert")}
         disabled={!!refusal}
         clicked={async () => await launch("insert")}
       />
       <TabButtonSpace />
       <TabButton
         iconName="debug"
-        title={`Load and debug this tape, with breakpoints armed${loadHint}`}
+        title={
+          refusal
+            ? t("documents.tape.button.debugRefused", { reason: refusal })
+            : t("documents.tape.button.debug", { fastLoad: fastLoadArg })
+        }
         disabled={!!refusal}
         clicked={async () => await launch("debug")}
       />

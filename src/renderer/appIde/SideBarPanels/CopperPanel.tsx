@@ -31,6 +31,7 @@ import {
 } from "@renderer/features/copper/copperViewModel";
 import { useEmuStateListener } from "../useStateRefresh";
 import styles from "./CopperPanel.module.scss";
+import { useT } from "@common/i18n/useT";
 
 /**
  * The Copper side-bar panel (`.plans/COPPER_DEBUGGING_PLAN.md` §4.4, G3.1): the Copper's live
@@ -70,6 +71,7 @@ const FieldRow = ({
 };
 
 export const CopperPanel = () => {
+  const t = useT();
   const emuApi = useEmuApi();
   const { ideCommandsService } = useAppServices();
   const [state, setState] = useState<CopperState>();
@@ -80,7 +82,7 @@ export const CopperPanel = () => {
   useEmuStateListener(emuApi, refresh);
 
   const model = useMemo(() => (state ? buildCopperModel(state) : undefined), [state]);
-  if (!model) return <EmptyState message="The Copper state is not available" />;
+  if (!model) return <EmptyState message={t("panels.side.copper.notAvailable")} />;
 
   const { summary } = model;
   const hit = state.lastHit;
@@ -88,44 +90,47 @@ export const CopperPanel = () => {
 
   return (
     <DataPanel autoHeight xclass={styles.copperPanel}>
-      <FieldRow label="Mode" tooltip={copperModeTooltip(state.startMode)}>
+      <FieldRow label={t("panels.side.copper.mode")} tooltip={copperModeTooltip(state.startMode)}>
         <DataValue text={copperModeText(state.startMode)} xclass={regStyles.stateValue} />
       </FieldRow>
-      <FieldRow label="State">
+      <FieldRow label={t("panels.side.copper.state")}>
         <DataValue text={copperStateText(model)} xclass={regStyles.stateValue} />
       </FieldRow>
-      <FieldRow label="PC" tooltip="The Copper's list address (instruction index)">
+      <FieldRow label="PC" tooltip={t("panels.side.copper.pcTooltip")}>
         <DataValue text={formatCopperIndex(state.pc)} xclass={regStyles.stateValue} />
         {hit && (
           <DataSecondary
-            text={`hit ${formatCopperIndex(hit.index)}`}
+            text={t("panels.side.copper.hitIndex", { index: formatCopperIndex(hit.index) })}
             xclass={regStyles.stateValueAlt}
           />
         )}
       </FieldRow>
-      <FieldRow label="Write ptr" tooltip="The CPU's $60/$63 write pointer, in bytes ($61/$62)">
+      <FieldRow label={t("panels.side.copper.writePtr")} tooltip={t("panels.side.copper.writePtrTooltip")}>
         <DataValue
           text={`$${state.writeAddress.toString(16).toUpperCase().padStart(3, "0")}`}
           xclass={regStyles.stateValue}
         />
-        <DataSecondary text={`index ${formatCopperIndex(state.writeAddress >> 1)}`} />
+        <DataSecondary text={t("panels.side.copper.writeIndex", { index: formatCopperIndex(state.writeAddress >> 1) })} />
       </FieldRow>
-      <FieldRow label="Line offset" tooltip="NextReg $64: the line the Copper counts as cvc 0">
+      <FieldRow label={t("panels.side.copper.lineOffset")} tooltip={t("panels.side.copper.lineOffsetTooltip")}>
         <DataValue
           text={`$${state.lineOffset.toString(16).toUpperCase().padStart(2, "0")}`}
           xclass={regStyles.stateValue}
         />
       </FieldRow>
       <FieldRow
-        label="Beam"
-        tooltip={`The beam in Copper coordinates at the CPU's tact: line (cvc) and hc_ula.\nFrame: ${state.timing.lines} lines × ${state.timing.hcs} hc`}
+        label={t("panels.side.copper.beam")}
+        tooltip={t("panels.side.copper.beamTooltip", { lines: state.timing.lines, hcs: state.timing.hcs })}
       >
         <DataValue
-          text={`line ${state.beam.line}, hc ${state.beam.hc}`}
+          text={t("panels.side.copper.beamValue", { line: state.beam.line, hc: state.beam.hc })}
           xclass={regStyles.stateValue}
         />
         {hit && (
-          <DataSecondary text={`hit ${hit.line}, ${hit.hc}`} xclass={regStyles.stateValueAlt} />
+          <DataSecondary
+            text={t("panels.side.copper.hitBeam", { line: hit.line, hc: hit.hc })}
+            xclass={regStyles.stateValueAlt}
+          />
         )}
       </FieldRow>
 
@@ -166,7 +171,7 @@ export const CopperPanel = () => {
           className={styles.link}
           onClick={() => void ideCommandsService.executeCommand("show-copper")}
         >
-          Open Copper List
+          {t("panels.side.copper.openList")}
         </button>
       </DataRow>
     </DataPanel>

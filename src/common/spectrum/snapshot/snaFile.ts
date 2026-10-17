@@ -12,6 +12,7 @@
  * 5 it is stored twice, which makes the 147,487-byte variant; the first copy is used.
  */
 
+import { t } from "@common/i18n/i18n";
 import {
   SPECTRUM_BANK_SIZE,
   hex,
@@ -38,7 +39,12 @@ export function isSnaSize(length: number): boolean {
 export function parseSnaFile(bytes: Uint8Array): SpectrumSnapshot {
   if (!isSnaSize(bytes.length)) {
     throw new Error(
-      `A .sna file is ${SNA_48K_SIZE}, ${SNA_128K_SIZE} or ${SNA_128K_LONG_SIZE} bytes long; this one is ${bytes.length}`
+      t("media.snapshot.error.snaSize", {
+        size48: SNA_48K_SIZE,
+        size128: SNA_128K_SIZE,
+        size128Long: SNA_128K_LONG_SIZE,
+        length: bytes.length
+      })
     );
   }
   const is128 = bytes.length !== SNA_48K_SIZE;
@@ -65,12 +71,12 @@ export function parseSnaFile(bytes: Uint8Array): SpectrumSnapshot {
     pc: 0
   };
   if (bytes[25] > 2) {
-    warnings.push(`Interrupt mode byte is ${bytes[25]}; IM ${bytes[25] & 0x03} is used`);
+    warnings.push(t("media.snapshot.warning.snaInterruptMode", { value: bytes[25], mode: bytes[25] & 0x03 }));
   }
   const border = bytes[26] & 0x07;
   const header = [
-    { label: "Layout", value: is128 ? "128K" : "48K" },
-    { label: "Interrupt status", value: hex(bytes[19]) },
+    { label: t("media.snapshot.header.layout"), value: is128 ? "128K" : "48K" },
+    { label: t("media.snapshot.header.interruptStatus"), value: hex(bytes[19]) },
     { label: "Border", value: `${bytes[26]}` }
   ];
 
@@ -92,10 +98,10 @@ export function parseSnaFile(bytes: Uint8Array): SpectrumSnapshot {
     };
     cpu.pc = read(cpu.sp) | (read(cpu.sp + 1) << 8);
     if (cpu.sp < 0x4000 || cpu.sp > 0xfffe) {
-      warnings.push(`SP is ${hex(cpu.sp, 4)}, so PC could not be read from RAM`);
+      warnings.push(t("media.snapshot.warning.snaPcNotInRam", { sp: hex(cpu.sp, 4) }));
     }
     cpu.sp = (cpu.sp + 2) & 0xffff;
-    header.push({ label: "PC (from the stack)", value: hex(cpu.pc, 4) });
+    header.push({ label: t("media.snapshot.header.pcFromStack"), value: hex(cpu.pc, 4) });
     return {
       format: "sna",
       formatVersion: "48K",
@@ -122,13 +128,17 @@ export function parseSnaFile(bytes: Uint8Array): SpectrumSnapshot {
   header.push(
     { label: "PC", value: hex(cpu.pc, 4) },
     { label: "Port $7FFD", value: hex(port7ffd) },
-    { label: "TR-DOS ROM paged", value: trdos ? "yes" : "no" }
+    { label: t("media.snapshot.header.trdosPaged"), value: trdos ? t("media.snapshot.value.yes") : t("media.snapshot.value.no") }
   );
 
   const expectedLong = paged === 2 || paged === 5;
   if (expectedLong !== (bytes.length === SNA_128K_LONG_SIZE)) {
     throw new Error(
-      `A 128K .sna with bank ${paged} paged is ${expectedLong ? SNA_128K_LONG_SIZE : SNA_128K_SIZE} bytes long; this one is ${bytes.length}`
+      t("media.snapshot.error.sna128Size", {
+        bank: paged,
+        size: expectedLong ? SNA_128K_LONG_SIZE : SNA_128K_SIZE,
+        length: bytes.length
+      })
     );
   }
   let offset = ext + 4;

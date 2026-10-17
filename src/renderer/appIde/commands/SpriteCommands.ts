@@ -16,6 +16,7 @@ import {
   commandSuccess,
   commandSuccessWith
 } from "@renderer/appIde/services/ide-commands";
+import { t } from "@common/i18n/i18n";
 
 /*
  * The Sprite Inspector's commands (`.plans/SPRITE_INSPECTOR_PLAN.md` D11): two commands, one
@@ -28,7 +29,7 @@ async function openSpriteInspector(
 ): Promise<IdeCommandResult> {
   const machineId = context.service.machineService.getMachineInfo()?.machine?.machineId;
   if (machineId !== MI_ZXNEXT) {
-    return commandError("Hardware sprites exist on the ZX Spectrum Next only");
+    return commandError(t("commands.sprites.nextOnly"));
   }
   requestSpriteReveal(request);
   const documentHubService = context.service.projectService.getActiveDocumentHubService();
@@ -43,7 +44,9 @@ async function openSpriteInspector(
 /** `show-sprites [<index>]`: opens the Sprite Inspector on its Sprites view, selecting a sprite. */
 export class ShowSpritesCommand extends IdeCommandBase<{ index?: number }> {
   readonly id = "show-sprites";
-  readonly description = "Displays the Sprite Inspector's sprite table, optionally selecting a sprite";
+  get description() {
+    return t("commands.sprites.showDescription");
+  }
   readonly usage = "show-sprites [<index>]";
   readonly aliases = ["shspr"];
   readonly argumentInfo: CommandArgumentInfo = {
@@ -58,8 +61,9 @@ export class ShowSpritesCommand extends IdeCommandBase<{ index?: number }> {
 /** `show-patterns [<index>]`: opens the Sprite Inspector on its Patterns view, selecting a pattern. */
 export class ShowPatternsCommand extends IdeCommandBase<{ index?: number }> {
   readonly id = "show-patterns";
-  readonly description =
-    "Displays the Sprite Inspector's pattern memory, optionally selecting an 8-bit pattern (0-63)";
+  get description() {
+    return t("commands.sprites.patternsDescription");
+  }
   readonly usage = "show-patterns [<index>]";
   readonly aliases = ["shpat"];
   readonly argumentInfo: CommandArgumentInfo = {
@@ -95,7 +99,9 @@ export class ExportPatternsCommand extends IdeCommandBase<{
   "-o"?: boolean;
 }> {
   readonly id = "export-patterns";
-  readonly description = "Exports the ZX Spectrum Next's sprite pattern RAM as a .spr file";
+  get description() {
+    return t("commands.sprites.exportDescription");
+  }
   readonly usage = "export-patterns [<file>] [-f] [-o]";
   readonly aliases = ["exppat"];
   readonly argumentInfo: CommandArgumentInfo = {
@@ -109,16 +115,16 @@ export class ExportPatternsCommand extends IdeCommandBase<{
   ): Promise<IdeCommandResult> {
     const machineId = context.service.machineService.getMachineInfo()?.machine?.machineId;
     if (machineId !== MI_ZXNEXT) {
-      return commandError("Hardware sprites exist on the ZX Spectrum Next only");
+      return commandError(t("commands.sprites.nextOnly"));
     }
     const folder = context.store.getState()?.project?.folderPath;
     const requested = args.file?.trim();
     if (requested && !/\.spr$/i.test(requested)) {
-      return commandError("The file to write must be a .spr file.");
+      return commandError(t("commands.sprites.notSpr"));
     }
     const isAbsolute = (p: string) => p.startsWith("/") || /^[a-zA-Z]:[\\/]/.test(p);
     if ((!requested || !isAbsolute(requested)) && !folder) {
-      return commandError("No project is open: give an absolute .spr path.");
+      return commandError(t("commands.sprites.noProject"));
     }
     const inProject = (name: string) => (isAbsolute(name) ? name : `${folder}/${name}`);
 
@@ -126,7 +132,7 @@ export class ExportPatternsCommand extends IdeCommandBase<{
     if (requested) {
       file = inProject(requested);
       if (!args["-f"] && (await fileExists(context, file))) {
-        return commandError(`${file} already exists; use -f to replace it.`);
+        return commandError(t("commands.sprites.exists", { file }));
       }
     } else {
       let n = 1;
@@ -140,18 +146,18 @@ export class ExportPatternsCommand extends IdeCommandBase<{
     try {
       bytes = patternRamAsSpr((await context.emuApi.getNextSpriteState()).patterns);
     } catch (err) {
-      return commandError(`Could not read the pattern RAM: ${messageOf(err)}`);
+      return commandError(t("commands.sprites.cannotRead", { message: messageOf(err) }));
     }
     try {
       await context.mainApi.saveBinaryFile(file, bytes);
     } catch (err) {
-      return commandError(`Could not write ${file}: ${messageOf(err)}`);
+      return commandError(t("commands.common.cannotWriteFile", { file, message: messageOf(err) }));
     }
 
     if (args["-o"] && folder && file.startsWith(`${folder}/`)) {
       await openWhenListed(context, file);
     }
-    return commandSuccessWith(`Pattern RAM (64 patterns) saved to ${file}.`, { file });
+    return commandSuccessWith(t("commands.sprites.saved", { file }), { file });
   }
 }
 

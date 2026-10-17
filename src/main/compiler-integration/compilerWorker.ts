@@ -6,6 +6,7 @@ import { CompilerWorkerData } from "./runWorker";
 import { AppState } from "@common/state/AppState";
 import { KBasicCompiler } from "@main/kbasic/KBasicCompiler";
 import { basicIntelOf } from "./backgroundIntel";
+import { translator } from "@common/i18n/i18n";
 
 async function compileFile(state: AppState, filename: string, language: string, options?: CompilerOptions) {
   const registry = createCompilerRegistry();
@@ -40,6 +41,8 @@ function addActiveFileIntel(state: AppState, result: KliveCompilerOutput, active
 
 if (parentPort) {
   const { filePath, language, options, state, basicActiveFile } = workerData as CompilerWorkerData;
+  // --- A worker has its own translator: messages follow the display language main published
+  if (state?.uiLanguage) translator.setLanguage(state.uiLanguage.current);
   compileFile(state, filePath, language, options)
     .then((result) => {
       parentPort.postMessage(addActiveFileIntel(state, result, basicActiveFile));

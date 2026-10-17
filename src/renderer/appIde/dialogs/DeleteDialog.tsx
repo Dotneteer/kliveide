@@ -2,6 +2,10 @@ import styles from "./DeleteDialog.module.scss";
 import { DialogRow } from "@renderer/controls/DialogRow";
 import { DialogForm } from "@renderer/controls/DialogForm";
 import type { DialogComponentProps } from "@renderer/controls/overlay/DialogProvider";
+import { useT } from "@common/i18n/useT";
+
+/** Stands in for the entry name so the translated sentence can be split around the highlighted span. */
+const NAME_MARK = "\u0001";
 
 type Props = DialogComponentProps<true> & {
   isFolder?: boolean;
@@ -16,18 +20,23 @@ type Props = DialogComponentProps<true> & {
  * does not: a folder takes everything inside it, and that is worth saying before the user confirms.
  */
 export const DeleteDialog = ({ entry, isFolder, controls }: Props) => {
+  const t = useT();
+  const [before, after = ""] = t(
+    isFolder ? "dialog.delete.confirmFolder" : "dialog.delete.confirmFile",
+    { name: NAME_MARK }
+  ).split(NAME_MARK);
   return (
     <DialogForm
-      submitLabel="Delete"
+      submitLabel={t("dialog.delete.submit")}
       submitDanger
       onSubmit={() => controls.close(true)}
       onCancel={controls.cancel}
     >
       <DialogRow>
         <div className={styles.message}>
-          Are you sure you want to delete the {isFolder ? "folder" : "file"}{" "}
+          {before}
           <span className={styles.hilite}>{entry}</span>
-          {isFolder ? " and everything in it?" : "?"}
+          {after}
         </div>
       </DialogRow>
     </DialogForm>

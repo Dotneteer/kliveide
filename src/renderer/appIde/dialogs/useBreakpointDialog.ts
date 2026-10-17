@@ -13,6 +13,7 @@ import { applyBreakpointEdit } from "@renderer/appIde/utils/breakpoint-actions";
 import { BreakpointDialog } from "./BreakpointDialog";
 import { setIdeStatusMessageAction } from "@state/actions";
 import { MI_ZXNEXT } from "@common/machines/constants";
+import { t } from "@common/i18n/i18n";
 
 /**
  * Opens the breakpoint dialog and installs whatever it returns.
@@ -73,9 +74,12 @@ export function useBreakpointDialog() {
           emuApi.listBreakpoints()
         ]);
       } catch (err) {
+        const message = (err as Error)?.message;
         dispatch(
           setIdeStatusMessageAction(
-            `Cannot open the breakpoint dialog: ${(err as Error)?.message ?? "the emulator did not respond"}`,
+            message !== undefined && message !== null
+              ? t("dialog.breakpoint.openFailed", { error: message })
+              : t("dialog.breakpoint.openFailedNoResponse"),
             true
           )
         );
@@ -136,7 +140,7 @@ export function useBreakpointDialog() {
               }
             : undefined
         },
-        { title: initial ? "Edit breakpoint" : "Add breakpoint", width: 420, iconName: "debug-with-bp" }
+        { title: initial ? t("dialog.breakpoint.editTitle") : t("dialog.breakpoint.addTitle"), width: 420, iconName: "debug-with-bp" }
       );
       // --- A dismissed dialog resolves undefined, which is a cancellation, not an empty edit.
       if (!result) return false;

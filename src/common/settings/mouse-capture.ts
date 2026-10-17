@@ -10,13 +10,16 @@
  * The Mouse menu is built from these values by `main/app-menu.ts` and the renderer reads the same
  * ids through `useGlobalSetting`, so the two cannot drift.
  */
+import { withLabels } from "@common/i18n/labels";
+import type { MessageKey } from "@common/i18n/keys.generated";
 
 /** Host-side multiplier applied to the raw pointer movement before it reaches the machine. */
 export type MouseSensitivity = 0.25 | 0.5 | 1 | 1.5 | 2;
 
 export type MouseSensitivityOption = {
-  /** Label shown in the Mouse | Sensitivity submenu. */
-  label: string;
+  /** Label shown in the Mouse | Sensitivity submenu; translated each time it is read (`withLabels`). */
+  readonly label: string;
+  readonly labelKey: MessageKey;
   /** The multiplier, persisted in the settings file. */
   value: MouseSensitivity;
 };
@@ -36,13 +39,13 @@ export type MouseSensitivityOption = {
  * that pairing it means 8x. Anyone who genuinely wants more can reach for it through the guest's
  * own DPI, where the program can see it.
  */
-export const MOUSE_SENSITIVITIES: MouseSensitivityOption[] = [
-  { label: "Very Slow (0.25x)", value: 0.25 },
-  { label: "Slow (0.5x)", value: 0.5 },
-  { label: "Normal (1x)", value: 1 },
-  { label: "Fast (1.5x)", value: 1.5 },
-  { label: "Fastest (2x)", value: 2 }
-];
+export const MOUSE_SENSITIVITIES: MouseSensitivityOption[] = withLabels<{ labelKey: MessageKey; value: MouseSensitivity }>([
+  { labelKey: "common.mouse.sensitivity.verySlow", value: 0.25 },
+  { labelKey: "common.mouse.sensitivity.slow", value: 0.5 },
+  { labelKey: "common.mouse.sensitivity.normal", value: 1 },
+  { labelKey: "common.mouse.sensitivity.fast", value: 1.5 },
+  { labelKey: "common.mouse.sensitivity.fastest", value: 2 }
+]);
 
 /** 1:1 with the host pointer - the machine's own DPI setting does the rest. */
 export const DEFAULT_MOUSE_SENSITIVITY: MouseSensitivity = 1;
@@ -70,15 +73,17 @@ export const DEFAULT_MOUSE_CAPTURE_ENABLED = false;
 export type MousePointerDisplay = "always" | "unused" | "never";
 
 export type MousePointerDisplayOption = {
-  label: string;
+  /** Translated each time it is read (`withLabels`) */
+  readonly label: string;
+  readonly labelKey: MessageKey;
   value: MousePointerDisplay;
 };
 
-export const MOUSE_POINTER_DISPLAYS: MousePointerDisplayOption[] = [
-  { label: "Always", value: "always" },
-  { label: "Only while no program reads the mouse", value: "unused" },
-  { label: "Never", value: "never" }
-];
+export const MOUSE_POINTER_DISPLAYS: MousePointerDisplayOption[] = withLabels<{ labelKey: MessageKey; value: MousePointerDisplay }>([
+  { labelKey: "common.mouse.pointer.always", value: "always" },
+  { labelKey: "common.mouse.pointer.unused", value: "unused" },
+  { labelKey: "common.mouse.pointer.never", value: "never" as MousePointerDisplay }
+]);
 
 export const DEFAULT_MOUSE_POINTER_DISPLAY: MousePointerDisplay = "always";
 

@@ -18,9 +18,10 @@ export const NEW_PROJECT_FOLDER_SETTINGS_KEY = "newProjectFolder";
 // --- worse than one that reports a timeout.
 export const PROJECT_CREATION_TIMEOUT_MS = 30_000;
 
-export const CREATE_ERROR_TITLE = "New Klive Project Error";
-
 export type MachineOption = { value: string; label: string; group?: string };
+
+/** The families the type list is grouped into; the view model turns the id into its label */
+export type MachineFamilyId = "zxSpectrum" | "spectrumCompatibles" | "otherZ80" | "other";
 
 /**
  * A machine type and its models, as the dialog offers them: the type first, then (when it has more
@@ -29,7 +30,7 @@ export type MachineOption = { value: string; label: string; group?: string };
 export type MachineType = {
   machineId: string;
   label: string;
-  family: string;
+  family: MachineFamilyId;
   models: { modelId?: string; label: string }[];
 };
 
@@ -37,15 +38,15 @@ export type MachineType = {
  * The families the type list is grouped into, in order. A machine not named here goes into "Other",
  * last, so a new registry entry still shows up.
  */
-export const MACHINE_FAMILIES: readonly { label: string; machineIds: readonly string[] }[] = [
-  { label: "ZX Spectrum", machineIds: ["sp48", "sp128", "spp3e", "zxnext"] },
-  { label: "Spectrum compatibles", machineIds: ["timex", "scorpion"] },
-  { label: "Other Z80 machines", machineIds: ["zx81", "zx80", "z88"] }
+export const MACHINE_FAMILIES: readonly { id: MachineFamilyId; machineIds: readonly string[] }[] = [
+  { id: "zxSpectrum", machineIds: ["sp48", "sp128", "spp3e", "zxnext"] },
+  { id: "spectrumCompatibles", machineIds: ["timex", "scorpion"] },
+  { id: "otherZ80", machineIds: ["zx81", "zx80", "z88"] }
 ];
-export const OTHER_FAMILY = "Other";
+export const OTHER_FAMILY: MachineFamilyId = "other";
 
-function familyOf(machineId: string): string {
-  return MACHINE_FAMILIES.find((f) => f.machineIds.includes(machineId))?.label ?? OTHER_FAMILY;
+function familyOf(machineId: string): MachineFamilyId {
+  return MACHINE_FAMILIES.find((f) => f.machineIds.includes(machineId))?.id ?? OTHER_FAMILY;
 }
 
 // --- The machine registry is static data, so the type list is built once, in family order.
@@ -58,9 +59,9 @@ export const MACHINE_TYPES: MachineType[] = (() => {
       ? machine.models.map((m) => ({ modelId: m.modelId, label: m.displayName }))
       : [{ label: machine.displayName }]
   }));
-  const order = [...MACHINE_FAMILIES.map((f) => f.label), OTHER_FAMILY];
+  const order = [...MACHINE_FAMILIES.map((f) => f.id), OTHER_FAMILY];
   const rank = (t: MachineType) => {
-    const family = MACHINE_FAMILIES.find((f) => f.label === t.family);
+    const family = MACHINE_FAMILIES.find((f) => f.id === t.family);
     return order.indexOf(t.family) * 100 + (family ? family.machineIds.indexOf(t.machineId) : 0);
   };
   return types.sort((a, b) => rank(a) - rank(b));
@@ -257,8 +258,13 @@ export function isComplete(state: NewProjectState): boolean {
   return !folderErrorOf(state) && !projectNameErrorOf(state);
 }
 
-/** The machine types on offer, grouped by family: those with templates, once that is known */
-export function machineTypeOptionsOf(state: NewProjectState): MachineOption[] {
+/**
+ * The machine types on offer, grouped by family: those with templates, once that is known. `group`
+ * is the family id (`MachineFamilyId`); the view model replaces it with the family's label.
+ */
+export function machineTypeOptionsOf(
+  state: NewProjectState
+): (MachineOption & { group: MachineFamilyId })[] {
   const available = state.availableMachineIds;
   return MACHINE_TYPES.filter((t) => !available || available.includes(t.machineId)).map((t) => ({
     value: t.machineId,
@@ -295,12 +301,9 @@ export function requestOf(state: NewProjectState): NewProjectRequest {
 
 // ─── Timeouts ────────────────────────────────────────────────────────────────
 
-export function timeoutMessage(operation: string, timeoutMs: number): string {
-  return `${operation} timed out after ${timeoutMs / 1000} seconds.`;
-}
-
 /**
- * Rejects if a step takes longer than its budget.
+ * Rejects if a step takes longer than its budget, with `timeoutMessage` (already formatted by the
+ * caller, which owns the wording) as the error's message.
  *
  * The timer is always cleared, including on the winning path: an uncleared
  * 30-second timer keeps the process awake long after the dialog has gone.
@@ -308,19 +311,15 @@ export function timeoutMessage(operation: string, timeoutMs: number): string {
 export function withTimeout<T>(
   promise: Promise<T>,
   timeoutMs: number,
-  operation: string
+  timeoutMessage: string
 ): Promise<T> {
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
   const timeout = new Promise<never>((_, reject) => {
     timeoutId = setTimeout(() => {
-      reject(new Error(timeoutMessage(operation, timeoutMs)));
+      reject(new Error(timeoutMessage));
     }, timeoutMs);
   });
   return Promise.race([promise, timeout]).finally(() => {
     if (timeoutId) clearTimeout(timeoutId);
   });
-}
-
-export function openFolderErrorMessage(errorMessage: string): string {
-  return `Error opening folder: ${errorMessage}`;
 }

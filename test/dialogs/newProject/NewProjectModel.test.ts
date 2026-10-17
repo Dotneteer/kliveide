@@ -12,16 +12,15 @@ import {
   isComplete,
   machineTypeOptionsOf,
   modelOptionsOf,
-  openFolderErrorMessage,
   projectFolderPathOf,
   projectNameErrorOf,
   reduce,
   requestOf,
   resolveTemplateId,
-  timeoutMessage,
   withTimeout
 } from "@renderer/appIde/dialogs/newProject/NewProjectModel";
 
+import { t } from "@common/i18n/i18n";
 import { getAllMachineModels } from "@common/machines/machine-registry";
 
 import { aState, anEnv, rejectingValidation } from "./fakes";
@@ -31,7 +30,7 @@ describe("NewProjectModel — machine types and models", () => {
     expect(MACHINE_TYPES.map((t) => t.machineId)).toEqual([
       "sp48", "sp128", "spp3e", "zxnext", "timex", "scorpion", "zx81", "zx80", "z88", "c64"
     ]);
-    expect(machineTypeOptionsOf(aState())[0]).toEqual({ value: "sp48", label: "ZX Spectrum 48K", group: "ZX Spectrum" });
+    expect(machineTypeOptionsOf(aState())[0]).toEqual({ value: "sp48", label: "ZX Spectrum 48K", group: "zxSpectrum" });
     expect(MACHINE_TYPES.find((t) => t.machineId === "c64")?.family).toBe(OTHER_FAMILY);
   });
 
@@ -251,7 +250,8 @@ describe("NewProjectModel — the request", () => {
 
 describe("NewProjectModel — timeouts", () => {
   it("names the step and its budget in seconds", () => {
-    expect(timeoutMessage("Creating the Klive project", 30_000)).toBe(
+    // --- The controller formats each step's own sentence; the model only carries it.
+    expect(t("dialog.newProject.timeout.create", { seconds: 30_000 / 1000 })).toBe(
       "Creating the Klive project timed out after 30 seconds."
     );
   });
@@ -269,7 +269,7 @@ describe("NewProjectModel — timeouts", () => {
   it("rejects with the timeout message when the work overruns", async () => {
     const never = new Promise<never>(() => undefined);
 
-    await expect(withTimeout(never, 10, "Working")).rejects.toThrow(
+    await expect(withTimeout(never, 10, "Working timed out after 0.01 seconds.")).rejects.toThrow(
       "Working timed out after 0.01 seconds."
     );
   });
@@ -279,7 +279,7 @@ describe("NewProjectModel — messages", () => {
   it("wraps what the main process said about the folder", () => {
     // --- The main process reports this failure as a value rather than a
     // --- rejection, so the dialog has to turn it into one.
-    expect(openFolderErrorMessage("no such directory")).toBe(
+    expect(t("dialog.newProject.error.openFolder", { error: "no such directory" })).toBe(
       "Error opening folder: no such directory"
     );
   });

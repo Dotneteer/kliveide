@@ -4,6 +4,7 @@ import classnames from "classnames";
 import { toBin8 } from "@renderer/appIde/services/ide-commands";
 import { Icon } from "@renderer/controls/Icon";
 import { iconSizes } from "@renderer/theming/tokens/dimensions";
+import { useT } from "@common/i18n/useT";
 import styles from "./Data.module.scss";
 
 /**
@@ -207,43 +208,46 @@ type PanelFilterProps = {
  * `TextInput` was not reused: it is a *dialog* field (8px block margins, a 32px button, and a
  * `font-size: 0.9em` that M1 forbids), and stripping all of that leaves nothing of it.
  */
-export const PanelFilter = ({ value, onChange, placeholder, status, label }: PanelFilterProps) => (
-  <div className={styles.panelFilter}>
-    <Icon iconName="eyeglass" width={iconSizes.sm} height={iconSizes.sm} fill="--data-label" />
-    <input
-      className={styles.panelFilterInput}
-      type="text"
-      value={value}
-      placeholder={placeholder}
-      aria-label={label ?? "Filter"}
-      spellCheck={false}
-      autoComplete="off"
-      onChange={(e) => onChange(e.target.value)}
-      /*
-       * Escape clears rather than blurs. The box is inside a scrolling panel, so a blurred-but-full
-       * filter leaves the list silently truncated with the control that did it scrolled out of
-       * sight.
-       */
-      onKeyDown={(e) => {
-        if (e.key === "Escape" && value) {
-          e.stopPropagation();
-          onChange("");
-        }
-      }}
-    />
-    {status && <span className={styles.panelFilterStatus}>{status}</span>}
-    {value && (
-      <button
-        type="button"
-        className={styles.panelFilterClear}
-        aria-label="Clear filter"
-        onClick={() => onChange("")}
-      >
-        <Icon iconName="close" width={iconSizes.xs} height={iconSizes.xs} fill="--data-label" />
-      </button>
-    )}
-  </div>
-);
+export const PanelFilter = ({ value, onChange, placeholder, status, label }: PanelFilterProps) => {
+  const t = useT();
+  return (
+    <div className={styles.panelFilter}>
+      <Icon iconName="eyeglass" width={iconSizes.sm} height={iconSizes.sm} fill="--data-label" />
+      <input
+        className={styles.panelFilterInput}
+        type="text"
+        value={value}
+        placeholder={placeholder}
+        aria-label={label ?? t("common.filter.label")}
+        spellCheck={false}
+        autoComplete="off"
+        onChange={(e) => onChange(e.target.value)}
+        /*
+         * Escape clears rather than blurs. The box is inside a scrolling panel, so a blurred-but-full
+         * filter leaves the list silently truncated with the control that did it scrolled out of
+         * sight.
+         */
+        onKeyDown={(e) => {
+          if (e.key === "Escape" && value) {
+            e.stopPropagation();
+            onChange("");
+          }
+        }}
+      />
+      {status && <span className={styles.panelFilterStatus}>{status}</span>}
+      {value && (
+        <button
+          type="button"
+          className={styles.panelFilterClear}
+          aria-label={t("common.filter.clear")}
+          onClick={() => onChange("")}
+        >
+          <Icon iconName="close" width={iconSizes.xs} height={iconSizes.xs} fill="--data-label" />
+        </button>
+      )}
+    </div>
+  );
+};
 
 // ---------------------------------------------------------------------------------------------
 // Rows
@@ -521,10 +525,7 @@ export const PartitionPrefix = ({
    * disassembly listing ragged in full view. Nothing paints, so no misleading bare ":" appears.
    */
   <div className={styles.partitionPrefix} style={label ? undefined : { visibility: "hidden" }}>
-    <span
-      className={styles.partitionLabel}
-      style={{ width: `${width}ch` }}
-    >
+    <span className={styles.partitionLabel} style={{ width: `${width}ch` }}>
       {label}
     </span>
     <span className={styles.partitionColon}>:</span>

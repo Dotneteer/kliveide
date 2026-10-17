@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import classnames from "classnames";
 import { BankDetailsSection } from "@renderer/controls/bankBrowser/BankBrowser";
+import { useT } from "@common/i18n/useT";
 import { initialHeaderField, tapeHeaderFields } from "./tapeHeaderFields";
 import styles from "./TapeHeaderBytes.module.scss";
 
@@ -24,12 +25,15 @@ type Props = {
 };
 
 export const TapeHeaderBytes = ({ bytes, dataIndex }: Props) => {
-  const fields = useMemo(() => tapeHeaderFields(bytes, dataIndex), [bytes, dataIndex]);
+  const t = useT();
+  // --- `t` changes with the language, so the fields are worded again
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const fields = useMemo(() => tapeHeaderFields(bytes, dataIndex), [bytes, dataIndex, t]);
   const [active, setActive] = useState(() => initialHeaderField(fields));
   const current = fields.find((f) => f.key === active) ?? fields[0];
 
   return (
-    <BankDetailsSection title="Header bytes">
+    <BankDetailsSection title={t("panels.tape.headerBytes")}>
       <div className={styles.strip} aria-hidden="true" data-testid="tape-header-strip">
         {fields.map((field, index) => (
           <span
@@ -42,7 +46,7 @@ export const TapeHeaderBytes = ({ bytes, dataIndex }: Props) => {
             onMouseEnter={() => setActive(field.key)}
           >
             {Array.from(bytes.subarray(field.first, field.last + 1)).map((b, i) => (
-              <span key={i} className={styles.cell} title={`Offset ${field.first + i}`}>
+              <span key={i} className={styles.cell} title={t("panels.tape.headerOffset", { offset: field.first + i })}>
                 {hex2(b)}
               </span>
             ))}

@@ -1,0 +1,239 @@
+{
+  "common.sound.mute": "Mute",
+  "@common.sound.mute": {
+    "context": "Sound volume choice: no sound. Shown in the Machine menu, the Settings dialog and the toolbar/status bar alike."
+  },
+  "common.sound.low": "Low",
+  "@common.sound.low": {
+    "context": "Sound volume choice. Shown in the Machine menu, the Settings dialog and the toolbar/status bar alike."
+  },
+  "common.sound.medium": "Medium",
+  "@common.sound.medium": {
+    "context": "Sound volume choice. Shown in the Machine menu, the Settings dialog and the toolbar/status bar alike."
+  },
+  "common.sound.high": "High",
+  "@common.sound.high": {
+    "context": "Sound volume choice. Shown in the Machine menu, the Settings dialog and the toolbar/status bar alike."
+  },
+  "common.sound.highest": "Highest",
+  "@common.sound.highest": {
+    "context": "Sound volume choice: full volume. Shown in the Machine menu, the Settings dialog and the toolbar/status bar alike."
+  },
+  "common.speed.normal": "Normal",
+  "@common.speed.normal": {
+    "context": "Emulation speed choice: the real machine's speed (1x). Shown in the Machine menu, the Settings dialog and the toolbar/status bar alike.",
+    "maxChars": 10
+  },
+  "common.speed.multiplier": "{multiplier}x",
+  "@common.speed.multiplier": {
+    "context": "Emulation speed choice: this many times faster than the real machine, e.g. '4x'. Change only if your language writes multipliers differently. Shown in the Machine menu, the Settings dialog and the toolbar/status bar alike.",
+    "maxChars": 6,
+    "placeholders": {
+      "multiplier": "A whole number from 2 to 24"
+    }
+  },
+  "common.mouse.sensitivity.verySlow": "Very Slow (0.25x)",
+  "@common.mouse.sensitivity.verySlow": {
+    "context": "Mouse sensitivity choice (ZX Spectrum Next mouse): how fast the emulated pointer moves; keep the multiplier in brackets. Shown in the Machine menu and the Settings dialog."
+  },
+  "common.mouse.sensitivity.slow": "Slow (0.5x)",
+  "@common.mouse.sensitivity.slow": {
+    "context": "Mouse sensitivity choice (ZX Spectrum Next mouse): how fast the emulated pointer moves; keep the multiplier in brackets. Shown in the Machine menu and the Settings dialog."
+  },
+  "common.mouse.sensitivity.normal": "Normal (1x)",
+  "@common.mouse.sensitivity.normal": {
+    "context": "Mouse sensitivity choice (ZX Spectrum Next mouse): how fast the emulated pointer moves; keep the multiplier in brackets. Shown in the Machine menu and the Settings dialog."
+  },
+  "common.mouse.sensitivity.fast": "Fast (1.5x)",
+  "@common.mouse.sensitivity.fast": {
+    "context": "Mouse sensitivity choice (ZX Spectrum Next mouse): how fast the emulated pointer moves; keep the multiplier in brackets. Shown in the Machine menu and the Settings dialog."
+  },
+  "common.mouse.sensitivity.fastest": "Fastest (2x)",
+  "@common.mouse.sensitivity.fastest": {
+    "context": "Mouse sensitivity choice (ZX Spectrum Next mouse): how fast the emulated pointer moves; keep the multiplier in brackets. Shown in the Machine menu and the Settings dialog."
+  },
+  "common.mouse.pointer.always": "Always",
+  "@common.mouse.pointer.always": {
+    "context": "Choice of when the host's mouse pointer stays visible while the emulated machine has captured the mouse. Shown in the Machine menu and the Settings dialog."
+  },
+  "common.mouse.pointer.unused": "Only while no program reads the mouse",
+  "@common.mouse.pointer.unused": {
+    "context": "Choice of when the host's mouse pointer stays visible while the emulated machine has captured the mouse. Shown in the Machine menu and the Settings dialog."
+  },
+  "common.mouse.pointer.never": "Never",
+  "@common.mouse.pointer.never": {
+    "context": "Choice of when the host's mouse pointer stays visible while the emulated machine has captured the mouse. Shown in the Machine menu and the Settings dialog."
+  },
+  "common.joystick.side.left": "Joystick 1 (left)",
+  "@common.joystick.side.left": {
+    "context": "Name of the first joystick connector of the emulated machine. Shown in the Machine menu and the joystick bindings dialog."
+  },
+  "common.joystick.side.right": "Joystick 2 (right)",
+  "@common.joystick.side.right": {
+    "context": "Name of the second joystick connector of the emulated machine. Shown in the Machine menu and the joystick bindings dialog."
+  },
+  "common.joystick.source.off": "Not connected",
+  "@common.joystick.source.off": {
+    "context": "Choice of which host device plays an emulated joystick. Shown in the Machine menu and the joystick bindings dialog. Here: no device, the joystick is idle."
+  },
+  "common.joystick.source.keyboard": "Host keyboard",
+  "@common.joystick.source.keyboard": {
+    "context": "Choice of which host device plays an emulated joystick. Shown in the Machine menu and the joystick bindings dialog. 'Host' is the computer Klive runs on, as opposed to the emulated machine."
+  },
+  "common.joystick.source.gamepad": "Host gamepad",
+  "@common.joystick.source.gamepad": {
+    "context": "Choice of which host device plays an emulated joystick. Shown in the Machine menu and the joystick bindings dialog. 'Host' is the computer Klive runs on, as opposed to the emulated machine."
+  },
+  "common.button.yes": "Yes",
+  "@common.button.yes": {
+    "context": "Button of a native confirmation/message dialog. Answers the dialog's question positively.",
+    "maxChars": 12
+  },
+  "common.button.no": "No",
+  "@common.button.no": {
+    "context": "Button of a native confirmation/message dialog. Answers the dialog's question negatively.",
+    "maxChars": 12
+  },
+  "common.button.ok": "OK",
+  "@common.button.ok": {
+    "context": "Button that closes a dialog, accepting it.",
+    "maxChars": 12
+  },
+  "common.button.cancel": "Cancel",
+  "@common.button.cancel": {
+    "context": "Button that closes a dialog without doing anything.",
+    "maxChars": 12
+  },
+  "common.button.close": "Close",
+  "@common.button.close": {
+    "context": "Button that closes a dialog or panel.",
+    "maxChars": 12
+  },
+  "common.filter.allFiles": "All Files",
+  "@common.filter.allFiles": {
+    "context": "File-type filter in an operating-system Open/Save file dialog (the drop-down of file types). Shows every file."
+  },
+  "common.filter.romFiles": "ROM Files",
+  "@common.filter.romFiles": {
+    "context": "File-type filter in an operating-system Open/Save file dialog (the drop-down of file types). ROM images of an emulated computer (.rom, .bin)."
+  },
+  "common.filter.trdosDisks": "TR-DOS Disk Images",
+  "@common.filter.trdosDisks": {
+    "context": "File-type filter in an operating-system Open/Save file dialog (the drop-down of file types). TR-DOS floppy images (.trd/.scl)."
+  },
+  "common.filter.tapeFiles": "Tape Files",
+  "@common.filter.tapeFiles": {
+    "context": "File-type filter in an operating-system Open/Save file dialog (the drop-down of file types). Tape images (.tap/.tzx)."
+  },
+  "common.filter.diskFiles": "Disk Files",
+  "@common.filter.diskFiles": {
+    "context": "File-type filter in an operating-system Open/Save file dialog (the drop-down of file types). Floppy disk images (.dsk)."
+  },
+  "common.filter.szxSnapshot": "zx-state snapshot (keeps everything)",
+  "@common.filter.szxSnapshot": {
+    "context": "File-type filter in an operating-system Open/Save file dialog (the drop-down of file types). 'zx-state' is the name of the .szx format; keep it."
+  },
+  "common.filter.z80Snapshot": "Z80 snapshot",
+  "@common.filter.z80Snapshot": {
+    "context": "File-type filter in an operating-system Open/Save file dialog (the drop-down of file types). 'Z80' is the name of the .z80 format."
+  },
+  "common.filter.snaSnapshot": "SNA snapshot",
+  "@common.filter.snaSnapshot": {
+    "context": "File-type filter in an operating-system Open/Save file dialog (the drop-down of file types). 'SNA' is the name of the .sna format."
+  },
+  "common.filter.timexCartridges": "Timex Cartridges",
+  "@common.filter.timexCartridges": {
+    "context": "File-type filter in an operating-system Open/Save file dialog (the drop-down of file types). Timex 2068 cartridge files (.dck)."
+  },
+  "common.button.overwrite": "Overwrite",
+  "@common.button.overwrite": {
+    "context": "Button of a native confirmation/message dialog. Replaces the existing file.",
+    "maxChars": 14
+  },
+  "common.filter.machineState": "Klive machine state",
+  "@common.filter.machineState": {
+    "context": "File-type filter in an operating-system Open/Save file dialog (the drop-down of file types). Klive's own machine state files (.kls)."
+  },
+  "common.filter.machineStates": "Klive machine states",
+  "@common.filter.machineStates": {
+    "context": "File-type filter in an operating-system Open/Save file dialog (the drop-down of file types). Klive's own machine state files (.kls), plural."
+  },
+  "common.button.load": "Load",
+  "@common.button.load": {
+    "context": "Button of a native confirmation/message dialog. Loads the file despite the warning.",
+    "maxChars": 14
+  },
+  "common.filter.rzxRecordings": "RZX input recordings",
+  "@common.filter.rzxRecordings": {
+    "context": "File-type filter in an operating-system Open/Save file dialog (the drop-down of file types). RZX files: recordings of a game's keyboard input. Keep 'RZX'."
+  },
+  "common.filter.rzxRecording": "RZX input recording",
+  "@common.filter.rzxRecording": {
+    "context": "File-type filter in an operating-system Open/Save file dialog (the drop-down of file types). An RZX file: a recording of a game's keyboard input. Keep 'RZX'."
+  },
+  "common.filter.debugRecordings": "Klive debug recordings",
+  "@common.filter.debugRecordings": {
+    "context": "File-type filter in an operating-system Open/Save file dialog (the drop-down of file types). Klive's own reverse-debugging session files (.klr)."
+  },
+  "common.button.openEndState": "Open End State",
+  "@common.button.openEndState": {
+    "context": "Button of a native confirmation/message dialog. Opens only the final machine state of the recording.",
+    "maxChars": 20
+  },
+  "common.filter.keyMappingFiles": "Key Mapping Files",
+  "@common.filter.keyMappingFiles": {
+    "context": "File-type filter in an operating-system Open/Save file dialog (the drop-down of file types). Key mapping files (.keymap)."
+  },
+  "common.filter.emulatorFiles": "Klive emulator files",
+  "@common.filter.emulatorFiles": {
+    "context": "File-type filter in an operating-system Open/Save file dialog (the drop-down of file types). Every file Klive's emulator can open."
+  },
+  "common.filter.spectrumSnapshots": "ZX Spectrum snapshots",
+  "@common.filter.spectrumSnapshots": {
+    "context": "File-type filter in an operating-system Open/Save file dialog (the drop-down of file types). ZX Spectrum snapshot files (.sna/.z80/.szx)."
+  },
+  "common.filter.z88Snapshots": "Z88 snapshots",
+  "@common.filter.z88Snapshots": {
+    "context": "File-type filter in an operating-system Open/Save file dialog (the drop-down of file types). Cambridge Z88 snapshot files (.z88)."
+  },
+  "common.filter.rzxRecordingsShort": "RZX recordings",
+  "@common.filter.rzxRecordingsShort": {
+    "context": "File-type filter in an operating-system Open/Save file dialog (the drop-down of file types). RZX recordings (.rzx)."
+  },
+  "common.filter.tapes": "Tapes",
+  "@common.filter.tapes": {
+    "context": "File-type filter in an operating-system Open/Save file dialog (the drop-down of file types). Tape images (.tap/.tzx)."
+  },
+  "common.filter.zx80Programs": "ZX80 Program Files",
+  "@common.filter.zx80Programs": {
+    "context": "File-type filter in an operating-system Open/Save file dialog (the drop-down of file types). ZX80 program files (.o/.80)."
+  },
+  "common.filter.zx81Programs": "ZX81 Program Files",
+  "@common.filter.zx81Programs": {
+    "context": "File-type filter in an operating-system Open/Save file dialog (the drop-down of file types). ZX81 program files (.p/.81)."
+  },
+  "common.filter.textTrace": "Text trace",
+  "@common.filter.textTrace": {
+    "context": "File-type filter in an operating-system Open/Save file dialog (the drop-down of file types). An instruction trace as plain text."
+  },
+  "common.filter.csvTrace": "CSV trace",
+  "@common.filter.csvTrace": {
+    "context": "File-type filter in an operating-system Open/Save file dialog (the drop-down of file types). An instruction trace as CSV (comma-separated values). Keep 'CSV'."
+  },
+  "common.filter.cimImages": "Compressed Image Files",
+  "@common.filter.cimImages": {
+    "context": "File-type filter in an operating-system Open file dialog: compressed SD card images (.cim)."
+  },
+  "common.button.closeDialog": "Close dialog",
+  "@common.button.closeDialog": {
+    "context": "Accessible name (screen readers, tooltip) of the X button in a dialog's title bar."
+  },
+  "common.filter.label": "Filter",
+  "@common.filter.label": {
+    "context": "Accessible name of the text box that filters a panel's list."
+  },
+  "common.filter.clear": "Clear filter",
+  "@common.filter.clear": {
+    "context": "Accessible name of the small X button that empties a panel's filter box."
+  }
+}

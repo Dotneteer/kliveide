@@ -12,6 +12,7 @@ import { saveKliveProject } from "@main/projects";
 import { appSettings } from "@main/settings-utils";
 import { dialog, app } from "electron";
 import { ejectMediaFile, setSelectedTapeFile } from "./zx-specrum-menus";
+import { t } from "@common/i18n/i18n";
 
 const TAPE_FILE_FOLDER = "tapeFileFolder";
 
@@ -26,22 +27,22 @@ export const zx8081TapeMenuRenderer: MachineMenuRenderer = (windowInfo, machine)
   const appState = mainStore.getState();
   const isZx80 = machine.machineId === MI_ZX80;
   const items: MachineMenuItem[] = [
-    createBooleanSettingsMenu(SETTING_EMU_FAST_LOAD) as any,
+    createBooleanSettingsMenu(SETTING_EMU_FAST_LOAD, { label: t("menu.tape.fastLoad") }) as any,
     {
       id: "select_tape_file",
-      label: "Select Program File...",
+      label: t("menu.program.select"),
       click: async () => {
         const lastFile = mainStore.getState().media?.[MEDIA_TAPE];
         const defaultPath =
           appSettings?.folders?.[TAPE_FILE_FOLDER] || (lastFile ? path.dirname(lastFile) : app.getPath("home"));
         const result = await dialog.showOpenDialog(emuWindow, {
-          title: "Select Program File",
+          title: t("messages.program.select"),
           defaultPath,
           filters: [
             isZx80
-              ? { name: "ZX80 Program Files", extensions: ["o", "80", "p", "81"] }
-              : { name: "ZX81 Program Files", extensions: ["p", "81"] },
-            { name: "All Files", extensions: ["*"] }
+              ? { name: t("common.filter.zx80Programs"), extensions: ["o", "80", "p", "81"] }
+              : { name: t("common.filter.zx81Programs"), extensions: ["p", "81"] },
+            { name: t("common.filter.allFiles"), extensions: ["*"] }
           ],
           properties: ["openFile"]
         });
@@ -52,7 +53,7 @@ export const zx8081TapeMenuRenderer: MachineMenuRenderer = (windowInfo, machine)
     },
     {
       id: "load_tape_program",
-      label: "Load and Run the Program",
+      label: t("menu.program.loadAndRun"),
       enabled: !!appState.media?.[MEDIA_TAPE],
       click: async () => {
         await getEmuApi().startTapeLoad(false);
@@ -60,14 +61,14 @@ export const zx8081TapeMenuRenderer: MachineMenuRenderer = (windowInfo, machine)
     },
     {
       id: "rewind_tape",
-      label: "Rewind Tape",
+      label: t("menu.program.rewind"),
       click: async () => {
         await getEmuApi().issueMachineCommand("rewind");
       }
     },
     {
       id: "eject_tape",
-      label: "Eject Program",
+      label: t("menu.program.eject"),
       enabled: !!appState.media?.[MEDIA_TAPE],
       click: async () => {
         await ejectMediaFile(MEDIA_TAPE);

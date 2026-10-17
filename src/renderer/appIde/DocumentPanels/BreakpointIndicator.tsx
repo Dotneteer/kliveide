@@ -9,6 +9,8 @@ import {
   breakpointGlyphIcon,
   type BreakpointGlyph
 } from "@renderer/appIde/utils/breakpoint-filter-text";
+import { useT } from "@common/i18n/useT";
+import type { MessageKey } from "@common/i18n/keys.generated";
 
 /**
  * The modifier that means "run here", named the way the platform names it.
@@ -137,6 +139,7 @@ export const BreakpointIndicator = ({
   // --- A `LOGPOINT` comment belongs to the build: no gesture here may remove or toggle it
   // --- (and an `ASSERTION`/`WPMEM` comment's: the comment owns it, S3)
   const readOnly = glyph === "logpointComment" || glyph === "assertion" || glyph === "watchpoint";
+  const t = useT();
   const { ideCommandsService } = useAppServices();
   const cbkRef = useTooltipRef();
   const ref = useTooltipRef();
@@ -151,40 +154,43 @@ export const BreakpointIndicator = ({
         : `$${toHexa4(address)}`
       : address;
 
-  let bpType = "execute";
+  let bpType: MessageKey = "panels.doc.breakpoint.type.execute";
   // --- `bp-exec`, not the shared `symbol-event`: that one is a lightning bolt from another icon
   // --- family, it belongs to no set, and `registry.ts` still uses it elsewhere — so the breakpoint
   // --- type icons get their own glyph rather than overriding a shared name.
   let typeIcon = "bp-exec";
   if (memoryRead) {
-    bpType = "memory read";
+    bpType = "panels.doc.breakpoint.type.memoryRead";
     typeIcon = "bp-mem-read";
   } else if (memoryWrite) {
-    bpType = "memory write";
+    bpType = "panels.doc.breakpoint.type.memoryWrite";
     typeIcon = "bp-mem-write";
   } else if (ioRead) {
-    bpType = "I/O read";
+    bpType = "panels.doc.breakpoint.type.ioRead";
     typeIcon = "bp-io-read";
   } else if (ioWrite) {
-    bpType = "I/O write";
+    bpType = "panels.doc.breakpoint.type.ioWrite";
     typeIcon = "bp-io-write";
   } else if (nextReg !== undefined) {
     // --- The sliders glyph carries the family's standard downward write arrow, so "write" reads
     // --- without learning a new sign; only the target below it is new.
-    bpType = "NextReg write";
+    bpType = "panels.doc.breakpoint.type.nextRegWrite";
     typeIcon = "bp-nextreg";
   } else if (copper) {
-    bpType = "Copper instruction";
+    bpType = "panels.doc.breakpoint.type.copper";
     typeIcon = "bp-copper";
   } else if (sprite) {
-    bpType = "Sprite attribute write";
+    bpType = "panels.doc.breakpoint.type.spriteWrite";
     typeIcon = "bp-sprite";
   }
   // --- One colour for all five: the glyphs now carry the read/write distinction the three ANSI
   // --- hues used to. See `--color-breakpoint-type` in componentAliases.ts.
   const typeColor = "--color-breakpoint-type";
 
-  const tooltipCommon = `${addrLabel}${(ioRead || ioWrite) && ioMask ? " /$" + toHexa4(ioMask) : ""} (${bpType})`;
+  const tooltipCommon =
+    (ioRead || ioWrite) && ioMask
+      ? t("panels.doc.breakpoint.headingMasked", { address: addrLabel, mask: `$${toHexa4(ioMask)}`, type: t(bpType) })
+      : t("panels.doc.breakpoint.heading", { address: addrLabel, type: t(bpType) });
   /*
    * A NextReg breakpoint names an event, not a place, so there is nowhere to "run to": `run-to
    * NR:$07` is not a spec any command accepts. The gesture is withdrawn rather than left to fail,
@@ -196,27 +202,27 @@ export const BreakpointIndicator = ({
     `${tooltipCommon}\n` +
     filterText +
     (readOnly
-      ? "Edit the comment and rebuild to change it"
+      ? t("panels.doc.breakpoint.hint.readOnly")
       : hasBreakpoint
-        ? `Right-click to remove this breakpoint`
-        : "Right-click to set a breakpoint") +
-    (hasBreakpoint && onEdit ? "\nDouble-click to edit this breakpoint" : "") +
+        ? t("panels.doc.breakpoint.hint.remove")
+        : t("panels.doc.breakpoint.hint.set")) +
+    (hasBreakpoint && onEdit ? `\n${t("panels.doc.breakpoint.hint.edit")}` : "") +
     // --- The gesture is only discoverable from here, which is why it is listed rather than left to
     // --- be found. See `runToHere`.
-    (canRunTo ? `\n${runToModifierLabel}-click to run here` : "") +
+    (canRunTo ? `\n${t("panels.doc.breakpoint.hint.runHere", { modifier: runToModifierLabel })}` : "") +
     // --- One-shots (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` O1)
     (readOnly || isLogpointGlyph(glyph)
       ? ""
       : oneShot
-        ? "\nShift-click to remove the one-shot"
+        ? `\n${t("panels.doc.breakpoint.hint.removeOneShot")}`
         : hasBreakpoint
           ? oneShotCommand
-            ? "\nShift-click to make it stop here once"
+            ? `\n${t("panels.doc.breakpoint.hint.makeOneShot")}`
             : ""
-          : "\nShift-click to stop here once");
+          : `\n${t("panels.doc.breakpoint.hint.setOneShot")}`);
   const tooltipCheckbox =
     `${tooltipCommon}\n` +
-    (disabled ? `Check to enable this breakpoint` : "Uncheck to disable this breakpoint");
+    t(disabled ? "panels.doc.breakpoint.hint.enable" : "panels.doc.breakpoint.hint.disable");
 
   // --- Select the icon to show
   let iconName = "";

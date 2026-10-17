@@ -12,11 +12,13 @@ import { useEmuApi } from "@renderer/core/EmuApi";
 import type { MachineCommand } from "@common/abstractions/MachineCommand";
 import { PRIMARY_ICON_SIZE, SECONDARY_ICON_SIZE, TOOLBAR_BUTTON_SIZE } from "./toolbar-constants";
 import { hasSourceLevelDebug } from "@renderer/appIde/utils/compiler-utils";
-import { canSourceStepOut, STEP_OUT_IN_MAIN, stepIntoTargets } from "@renderer/appIde/debugger/source/step-targets";
+import { canSourceStepOut, stepOutInMainText, stepIntoTargets } from "@renderer/appIde/debugger/source/step-targets";
 import { SETTING_EMU_JUST_MY_CODE } from "@common/settings/setting-const";
 import { MF_EXEC_HISTORY } from "@common/machines/constants";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { defaultReverseShortcuts, type ReverseShortcuts } from "@common/settings/reverse-shortcuts";
+import { useT } from "@common/i18n/useT";
+import { withTexts } from "@common/i18n/labels";
 
 type Props = {
   ide: boolean;
@@ -35,41 +37,31 @@ type StartOption = {
   cmd: string | null;
 };
 
+// --- The labels are getters that translate at display time (`withTexts`)
 const emuStartOptions = {
-  debug: {
-    value: "debug",
-    label: "Debug Machine (Ctrl+F5)",
-    labelCont: "Continue Debugging (Ctrl+F5)",
-    iconName: "debug",
-    cmd: null
-  },
-  run: {
-    value: "start",
-    label: "Run Machine (F5)",
-    labelCont: "Continue (F5)",
-    iconName: "play",
-    cmd: null
-  }
+  debug: withTexts(
+    { value: "debug" as const, iconName: "debug", cmd: null },
+    { label: "toolbar.start.debugMachine", labelCont: "toolbar.resume.continueDebugging" }
+  ),
+  run: withTexts(
+    { value: "start" as const, iconName: "play", cmd: null },
+    { label: "toolbar.start.runMachine", labelCont: "toolbar.resume.continue" }
+  )
 } satisfies Record<StartAction, StartOption>;
 
 const ideStartOptions = {
-  debug: {
-    value: "debug",
-    label: "Debug Project (Ctrl+F5)",
-    labelCont: "Continue Debugging (Ctrl+F5)",
-    iconName: "debug",
-    cmd: "debug"
-  },
-  run: {
-    value: "start",
-    label: "Run Project (F5)",
-    labelCont: "Continue (F5)",
-    iconName: "play",
-    cmd: "run"
-  }
+  debug: withTexts(
+    { value: "debug" as const, iconName: "debug", cmd: "debug" },
+    { label: "toolbar.start.debugProject", labelCont: "toolbar.resume.continueDebugging" }
+  ),
+  run: withTexts(
+    { value: "start" as const, iconName: "play", cmd: "run" },
+    { label: "toolbar.start.runProject", labelCont: "toolbar.resume.continue" }
+  )
 } satisfies Record<StartAction, StartOption>;
 
 export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
+  const t = useT();
   const emuApi = useEmuApi();
   const ideApi = useIdeApi();
   const mainApi = useMainApi();
@@ -99,7 +91,7 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
     advancedDebugging === true &&
     !!machineRegistry.find((m) => m.machineId === machineId)?.features?.[MF_EXEC_HISTORY];
   // --- In the past, every forward command acts on the live machine (D5): the tooltips say so
-  const fromPresent = historyPosition ? " - resumes from the present" : "";
+  const inThePast = !!historyPosition;
   const mayInjectCode = ide && kliveProjectLoaded;
 
   const startOptions = ide ? ideStartOptions : emuStartOptions;
@@ -314,7 +306,7 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
         options={startSplitOptions}
         selectedValue={startAction}
         enable={canStart}
-        dropdownTitle="Choose start mode"
+        dropdownTitle={t("toolbar.start.chooseMode")}
         onAction={handleStartAction}
       />
       <IconButton
@@ -323,7 +315,7 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
         buttonWidth={TOOLBAR_BUTTON_SIZE}
         buttonHeight={TOOLBAR_BUTTON_SIZE}
         fill="--color-toolbarbutton-blue"
-        title="Pause (Shift+F5)"
+        title={t("toolbar.pause")}
         enable={canPause}
         clicked={handlePause}
       />
@@ -331,7 +323,7 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
         options={resumeSplitOptions}
         selectedValue={resumeAction}
         enable={canContinue}
-        dropdownTitle={`Choose resume mode${fromPresent}`}
+        dropdownTitle={inThePast ? t("toolbar.resume.chooseModeFromPresent") : t("toolbar.resume.chooseMode")}
         onAction={handleResumeAction}
       />
       <ToolbarSeparator />
@@ -341,7 +333,7 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
         buttonWidth={TOOLBAR_BUTTON_SIZE}
         buttonHeight={TOOLBAR_BUTTON_SIZE}
         fill="--color-toolbarbutton-red"
-        title="Stop (F4)"
+        title={t("toolbar.stop")}
         enable={canStopOrRestart}
         clicked={handleStop}
       />
@@ -351,7 +343,7 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
         buttonWidth={TOOLBAR_BUTTON_SIZE}
         buttonHeight={TOOLBAR_BUTTON_SIZE}
         fill="--color-toolbarbutton-green"
-        title="Restart (Shift+F4)"
+        title={t("toolbar.restart")}
         enable={canStopOrRestart}
         clicked={handleRestart}
       />
@@ -359,17 +351,17 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
       {sourceStepping && stepTargets.length > 0 ? (
         <ToolbarSplitButton
           options={[
-            { value: "into", label: `Step Into (${stepIntoKey})`, iconName: "step-into", fill: "--color-toolbarbutton-blue" },
-            ...stepTargets.map((t) => ({
-              value: String(t.callableIndex),
-              label: `Step Into ${t.name}`,
+            { value: "into", label: t("toolbar.step.into", { shortcut: stepIntoKey }), iconName: "step-into", fill: "--color-toolbarbutton-blue" },
+            ...stepTargets.map((target) => ({
+              value: String(target.callableIndex),
+              label: t("toolbar.step.intoTarget", { name: target.name }),
               iconName: "step-into",
               fill: "--color-toolbarbutton-blue"
             }))
           ]}
           selectedValue="into"
           enable={canStep}
-          dropdownTitle="Step Into Target"
+          dropdownTitle={t("toolbar.step.intoTargetMenu")}
           onAction={handleStepIntoAction}
         />
       ) : (
@@ -379,7 +371,7 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
           buttonWidth={TOOLBAR_BUTTON_SIZE}
           buttonHeight={TOOLBAR_BUTTON_SIZE}
           fill="--color-toolbarbutton-blue"
-          title={`Step Into (${stepIntoKey})${fromPresent}`}
+          title={t(inThePast ? "toolbar.step.intoFromPresent" : "toolbar.step.into", { shortcut: stepIntoKey })}
           enable={canStep}
           clicked={handleStepInto}
         />
@@ -390,7 +382,7 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
         buttonWidth={TOOLBAR_BUTTON_SIZE}
         buttonHeight={TOOLBAR_BUTTON_SIZE}
         fill="--color-toolbarbutton-blue"
-        title={`Step Over (${stepOverKey})${fromPresent}`}
+        title={t(inThePast ? "toolbar.step.overFromPresent" : "toolbar.step.over", { shortcut: stepOverKey })}
         enable={canStep}
         clicked={handleStepOver}
       />
@@ -400,7 +392,7 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
         buttonWidth={TOOLBAR_BUTTON_SIZE}
         buttonHeight={TOOLBAR_BUTTON_SIZE}
         fill="--color-toolbarbutton-blue"
-        title={sourceStepping && !stepOutPossible ? STEP_OUT_IN_MAIN : `Step Out (${stepOutKey})${fromPresent}`}
+        title={sourceStepping && !stepOutPossible ? stepOutInMainText() : t(inThePast ? "toolbar.step.outFromPresent" : "toolbar.step.out", { shortcut: stepOutKey })}
         enable={canStep && (!sourceStepping || stepOutPossible)}
         clicked={handleStepOut}
       />
@@ -412,7 +404,7 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
             buttonWidth={TOOLBAR_BUTTON_SIZE}
             buttonHeight={TOOLBAR_BUTTON_SIZE}
             fill="--color-toolbarbutton-blue"
-            title="Step Over Line (Shift+F10)"
+            title={t("toolbar.step.overLine")}
             enable={canStep && sourceMode}
             clicked={handleStepOverLine}
           />
@@ -424,8 +416,8 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
             fill="--color-toolbarbutton-blue"
             title={
               sourceMode
-                ? "Stepping source statements (click to step Z80 instructions)"
-                : "Stepping Z80 instructions (click to step source statements)"
+                ? t("toolbar.stepMode.source")
+                : t("toolbar.stepMode.z80")
             }
             clicked={handleToggleStepMode}
           />
@@ -440,7 +432,7 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
             buttonWidth={TOOLBAR_BUTTON_SIZE}
             buttonHeight={TOOLBAR_BUTTON_SIZE}
             fill="--color-toolbarbutton-blue"
-            title={`Step Back through the history (${reverseKeys?.stepBack ?? ""})`}
+            title={t("toolbar.history.stepBack", { shortcut: reverseKeys?.stepBack ?? "" })}
             enable={canStep}
             clicked={() => runHistoryCommand("step-back")}
           />
@@ -450,7 +442,7 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
             buttonWidth={TOOLBAR_BUTTON_SIZE}
             buttonHeight={TOOLBAR_BUTTON_SIZE}
             fill="--color-toolbarbutton-blue"
-            title={`Step Forward through the history (${reverseKeys?.stepForward ?? ""})`}
+            title={t("toolbar.history.stepForward", { shortcut: reverseKeys?.stepForward ?? "" })}
             enable={canStep && !!historyPosition}
             clicked={() => runHistoryCommand("step-forward")}
           />
@@ -460,7 +452,7 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
             buttonWidth={TOOLBAR_BUTTON_SIZE}
             buttonHeight={TOOLBAR_BUTTON_SIZE}
             fill="--color-toolbarbutton-blue"
-            title="Return to the present"
+            title={t("toolbar.history.present")}
             enable={canStep && !!historyPosition}
             clicked={() => runHistoryCommand("history-present")}
           />

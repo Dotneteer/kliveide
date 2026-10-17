@@ -1,3 +1,4 @@
+import { t } from "@common/i18n/i18n";
 import type { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext";
 import type { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
 import {
@@ -19,31 +20,37 @@ import {
 
 export class NavigateBackCommand extends IdeCommandBase {
   readonly id = "nav-back";
-  readonly description = "Goes back to the previous location in the navigation history";
+  get description() {
+    return t("commands.nav.back.description");
+  }
   readonly usage = "nav-back";
   readonly aliases = ["nb"];
 
   async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
     const moved = await context.service.navigationHistoryService.goBack();
-    return moved ? commandSuccess : commandSuccessWith("No location to go back to.");
+    return moved ? commandSuccess : commandSuccessWith(t("commands.nav.back.none"));
   }
 }
 
 export class NavigateForwardCommand extends IdeCommandBase {
   readonly id = "nav-forward";
-  readonly description = "Goes forward to the next location in the navigation history";
+  get description() {
+    return t("commands.nav.forward.description");
+  }
   readonly usage = "nav-forward";
   readonly aliases = ["nf"];
 
   async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
     const moved = await context.service.navigationHistoryService.goForward();
-    return moved ? commandSuccess : commandSuccessWith("No location to go forward to.");
+    return moved ? commandSuccess : commandSuccessWith(t("commands.nav.forward.none"));
   }
 }
 
 export class NavigationHistoryCommand extends IdeCommandBase {
   readonly id = "nav-history";
-  readonly description = "Lists the navigation history, newest first; '>' marks the current location";
+  get description() {
+    return t("commands.nav.history.description");
+  }
   readonly usage = "nav-history";
   readonly aliases = ["nh"];
 
@@ -51,7 +58,7 @@ export class NavigationHistoryCommand extends IdeCommandBase {
     const history = context.service.navigationHistoryService;
     const { entries, index } = history.getEntries();
     if (entries.length === 0) {
-      writeInfoMessage(context.output, "The navigation history is empty.");
+      writeInfoMessage(context.output, t("commands.nav.history.empty"));
       return commandSuccess;
     }
     for (let i = entries.length - 1; i >= 0; i--) {
@@ -70,11 +77,13 @@ export class NavigationHistoryCommand extends IdeCommandBase {
 
 export class ClearNavigationHistoryCommand extends IdeCommandBase {
   readonly id = "nav-clear";
-  readonly description = "Clears the navigation history";
+  get description() {
+    return t("commands.nav.clear.description");
+  }
   readonly usage = "nav-clear";
 
   async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
     context.service.navigationHistoryService.clear();
-    return commandSuccessWith("Navigation history cleared.");
+    return commandSuccessWith(t("commands.nav.clear.done"));
   }
 }

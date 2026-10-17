@@ -1,5 +1,9 @@
 import { FormEvent, useMemo, useState } from "react";
 
+import { t as translate } from "@common/i18n/i18n";
+import { useT } from "@common/i18n/useT";
+import type { MessageKey } from "@common/i18n/keys.generated";
+
 import { Button } from "@renderer/controls/Button";
 import { TextInput } from "@renderer/controls/TextInput";
 import { DialogRow } from "@renderer/controls/DialogRow";
@@ -16,6 +20,7 @@ import {
   type BankGraphicLayout,
   type BankGraphicMask
 } from "@renderer/appIde/annotations/programAnnotations";
+import { MASK_LABELS } from "./GraphicsToolbar";
 import styles from "./NameGraphicDialog.module.scss";
 
 /*
@@ -32,22 +37,19 @@ export type NameGraphicDialogProps = DialogComponentProps<NameGraphicDialogResul
   baseAddress: number;
 };
 
-export const NAME_GRAPHIC_DIALOG_TITLE = "Name graphic";
+/** The dialog's title, in the current language (read when the dialog opens) */
+export const nameGraphicDialogTitle = () => translate("panels.graphics.nameDialog.title");
 
-const LAYOUTS: { value: BankGraphicLayout; label: string }[] = [
-  { value: "linear", label: "Linear" },
-  { value: "cells", label: "Character cells" },
-  { value: "columns", label: "Columns" },
-  { value: "screen", label: "Screen order" }
+const LAYOUTS: { value: BankGraphicLayout; labelKey: MessageKey }[] = [
+  { value: "linear", labelKey: "panels.graphics.layout.linear" },
+  { value: "cells", labelKey: "panels.graphics.nameDialog.layout.cells" },
+  { value: "columns", labelKey: "panels.graphics.layout.columns" },
+  { value: "screen", labelKey: "panels.graphics.nameDialog.layout.screen" }
 ];
-const MASKS: { value: BankGraphicMask; label: string }[] = [
-  { value: "none", label: "No mask" },
-  { value: "interleaved", label: "Interleaved" },
-  { value: "before", label: "Mask before" },
-  { value: "after", label: "Mask after" }
-];
+const MASKS: BankGraphicMask[] = ["none", "interleaved", "before", "after"];
 
 export function NameGraphicDialog({ initial, baseAddress, controls }: NameGraphicDialogProps) {
+  const t = useT();
   const [name, setName] = useState(initial.label ?? "");
   const [width, setWidth] = useState(String(initial.width));
   const [height, setHeight] = useState(String(initial.height));
@@ -60,11 +62,11 @@ export function NameGraphicDialog({ initial, baseAddress, controls }: NameGraphi
     const h = parseInt(height, 10);
     const c = parseInt(count, 10);
     if (!isValidLabelName(name.trim())) {
-      return { error: `Use an identifier of up to ${ANNOTATION_LABEL_MAX_LENGTH} characters.` };
+      return { error: t("panels.graphics.nameDialog.errorName", { max: ANNOTATION_LABEL_MAX_LENGTH }) };
     }
-    if (!(w >= 1 && w <= 32)) return { error: "Width is 1 to 32 bytes." };
-    if (!(h >= 1 && h <= 256)) return { error: "Height is 1 to 256 pixel rows." };
-    if (!(c >= 1)) return { error: "Count is at least one frame." };
+    if (!(w >= 1 && w <= 32)) return { error: t("panels.graphics.nameDialog.errorWidth") };
+    if (!(h >= 1 && h <= 256)) return { error: t("panels.graphics.nameDialog.errorHeight") };
+    if (!(c >= 1)) return { error: t("panels.graphics.nameDialog.errorCount") };
     const graphic: NameGraphicDialogResult = {
       offset: initial.offset,
       width: w,
@@ -76,10 +78,10 @@ export function NameGraphicDialog({ initial, baseAddress, controls }: NameGraphi
     };
     const length = bankGraphicLength(graphic);
     if (initial.offset + length - 1 > ANNOTATION_BANK_LAST_OFFSET) {
-      return { error: `${length} bytes run past the end of the bank.` };
+      return { error: t("panels.graphics.nameDialog.errorLength", { length }) };
     }
     return { graphic, length };
-  }, [count, height, initial.offset, layout, mask, name, width]);
+  }, [count, height, initial.offset, layout, mask, name, width, t]);
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -89,7 +91,7 @@ export function NameGraphicDialog({ initial, baseAddress, controls }: NameGraphi
   const start = (baseAddress + initial.offset) & 0xffff;
   return (
     <form onSubmit={submit}>
-      <DialogRow label="Name" rows={true}>
+      <DialogRow label={t("panels.graphics.nameDialog.name")} rows={true}>
         <TextInput
           autoFocus
           maxLength={ANNOTATION_LABEL_MAX_LENGTH}
@@ -98,30 +100,30 @@ export function NameGraphicDialog({ initial, baseAddress, controls }: NameGraphi
         />
       </DialogRow>
       <div className={styles.grid}>
-        <DialogRow label="Width (bytes)" rows={true}>
+        <DialogRow label={t("panels.graphics.nameDialog.width")} rows={true}>
           <TextInput value={width} onChange={setWidth} />
         </DialogRow>
-        <DialogRow label="Height (rows)" rows={true}>
+        <DialogRow label={t("panels.graphics.nameDialog.height")} rows={true}>
           <TextInput value={height} onChange={setHeight} />
         </DialogRow>
-        <DialogRow label="Frames" rows={true}>
+        <DialogRow label={t("panels.graphics.nameDialog.frames")} rows={true}>
           <TextInput value={count} onChange={setCount} />
         </DialogRow>
       </div>
       <div className={styles.grid}>
-        <DialogRow label="Byte order" rows={true}>
+        <DialogRow label={t("panels.graphics.byteOrder")} rows={true}>
           <Dropdown
-            ariaLabel="Byte order"
-            options={LAYOUTS}
+            ariaLabel={t("panels.graphics.byteOrder")}
+            options={LAYOUTS.map((o) => ({ value: o.value, label: t(o.labelKey) }))}
             initialValue={layout}
             width={180}
             onChanged={(value) => setLayout(value as BankGraphicLayout)}
           />
         </DialogRow>
-        <DialogRow label="Mask" rows={true}>
+        <DialogRow label={t("panels.graphics.mask")} rows={true}>
           <Dropdown
-            ariaLabel="Mask"
-            options={MASKS}
+            ariaLabel={t("panels.graphics.mask")}
+            options={MASKS.map((value) => ({ value, label: t(MASK_LABELS[value]) }))}
             initialValue={mask}
             width={150}
             onChanged={(value) => setMask(value as BankGraphicMask)}
@@ -130,8 +132,12 @@ export function NameGraphicDialog({ initial, baseAddress, controls }: NameGraphi
       </div>
       <div className={styles.summary}>
         {"length" in result && result.length !== undefined
-          ? `$${toHexa4(start)}-$${toHexa4((start + result.length - 1) & 0xffff)}, ${result.length} bytes`
-          : `From $${toHexa4(start)}`}
+          ? t("panels.graphics.nameDialog.range", {
+              start: `$${toHexa4(start)}`,
+              end: `$${toHexa4((start + result.length - 1) & 0xffff)}`,
+              length: result.length
+            })
+          : t("panels.graphics.nameDialog.from", { start: `$${toHexa4(start)}` })}
       </div>
       {"error" in result && result.error && (
         <div className={styles.error} role="alert">
@@ -139,8 +145,8 @@ export function NameGraphicDialog({ initial, baseAddress, controls }: NameGraphi
         </div>
       )}
       <DialogFooter>
-        <Button text="Name" type="submit" disabled={"error" in result && !!result.error} />
-        <Button variant="secondary" text="Cancel" clicked={controls.cancel} />
+        <Button text={t("panels.graphics.nameDialog.name")} type="submit" disabled={"error" in result && !!result.error} />
+        <Button variant="secondary" text={t("common.button.cancel")} clicked={controls.cancel} />
       </DialogFooter>
     </form>
   );

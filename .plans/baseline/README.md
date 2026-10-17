@@ -9,6 +9,7 @@ diff (§6.0, §7). Nothing in CI catches visual regressions, so these are the on
 |---|---|
 | Branch / commit | `dotneteer/ui-modernize` @ `3aa8abc5e` |
 | Project loaded | `~/KliveProjects/sp48-1`, machine `sp48` / model `pal` |
+| Display language | **English** — `ideViewOptions.language` = `en` (Settings › Language), not "System default", or a non-English OS changes every label |
 | Machine state | **Stopped** ("Not yet started" overlay) — deterministic; a running machine changes every frame |
 | IDE window | **1280 × 860** (CSS viewport 1280 × 828) |
 | Emu window | **720 × 860** (CSS viewport 720 × 828) |

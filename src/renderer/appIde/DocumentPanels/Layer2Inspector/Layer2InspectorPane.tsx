@@ -2,6 +2,8 @@ import classnames from "classnames";
 import { useMemo } from "react";
 import { abgrToCss } from "@renderer/controls/Next/sprites/spriteAbgr";
 import ScrollViewer from "@renderer/controls/ScrollViewer";
+import { useT } from "@common/i18n/useT";
+import type { MessageKey } from "@common/i18n/keys.generated";
 import { IndexedImageCanvas } from "@renderer/controls/Next/IndexedImageCanvas";
 import {
   bankChipLabel,
@@ -41,10 +43,10 @@ type Props = {
 
 const hex = (v: number, digits: number) => `$${v.toString(16).toUpperCase().padStart(digits, "0")}`;
 
-const ROLE_TEXT: Record<string, string> = {
-  displayed: "displayed ($12)",
-  shadow: "shadow ($13)",
-  window: "write window ($123B)"
+const ROLE_TEXT: Record<string, MessageKey> = {
+  displayed: "panels.layer2.pane.roleDisplayed",
+  shadow: "panels.layer2.pane.roleShadow",
+  window: "panels.layer2.pane.roleWindow"
 };
 
 export const Layer2InspectorPane = ({
@@ -61,19 +63,21 @@ export const Layer2InspectorPane = ({
   memoryText,
   breakText
 }: Props) => {
-  const fields = useMemo(() => (pixel ? pixelFields(model, pixel) : []), [model, pixel]);
-  const reasons = useMemo(() => (pixel ? pixelReasons(model, pixel) : []), [model, pixel]);
+  const t = useT();
+  // --- Not memoized: the text is cheap and must follow a language switch
+  const fields = pixel ? pixelFields(model, pixel) : [];
+  const reasons = pixel ? pixelReasons(model, pixel) : [];
   const thumb = useMemo(() => (bank && whole ? bankThumbnail(model, whole, bank) : undefined), [model, whole, bank]);
   const thumbZoom = thumb ? Math.max(1, Math.min(2, Math.floor(256 / Math.max(thumb.width, thumb.height)))) : 1;
 
   return (
-    <div className={classnames(styles.inspector, { [styles.inspectorBand]: layout === "band" })} aria-label="Inspector">
-      {!pixel && !bank && <div className={styles.inspectorEmpty}>Select a pixel on the image or a bank in the strip.</div>}
+    <div className={classnames(styles.inspector, { [styles.inspectorBand]: layout === "band" })} aria-label={t("panels.graphics.inspector.label")}>
+      {!pixel && !bank && <div className={styles.inspectorEmpty}>{t("panels.layer2.pane.empty")}</div>}
 
       {pixel && (
         <>
           <div className={styles.inspectorHeader}>
-            Pixel ({pixel.layer.x}, {pixel.layer.y}) · bank {pixel.address.bank16}
+            {t("panels.layer2.pane.pixel", { x: pixel.layer.x, y: pixel.layer.y, bank: pixel.address.bank16 })}
           </div>
           <div className={styles.inspectorScroll}>
             <ScrollViewer allowHorizontal={false} thinScrollBar={true}>
@@ -83,14 +87,14 @@ export const Layer2InspectorPane = ({
                     <span
                       className={styles.swatch}
                       style={{ background: abgrToCss(abgr[pixel.index & 0xff]) }}
-                      title={`Palette index ${pixel.index}`}
+                      title={t("panels.layer2.pane.paletteIndex", { index: pixel.index })}
                     />
-                    <span className={styles.muted}>palette index {hex(pixel.index, 2)}</span>
+                    <span className={styles.muted}>{t("panels.layer2.pane.paletteIndexHex", { index: hex(pixel.index, 2) })}</span>
                   </div>
                 )}
                 <dl className={styles.fields}>
                   {fields.map((f) => (
-                    <div key={f.name} className={styles.field} title={f.title}>
+                    <div key={f.id} className={styles.field} title={f.title}>
                       <dt>{f.name}</dt>
                       <dd className={classnames({ [styles.muted]: f.muted, [styles.warn]: f.warn })}>{f.value}</dd>
                     </div>
@@ -102,10 +106,7 @@ export const Layer2InspectorPane = ({
                   </p>
                 ))}
                 {model.state.copperRunning && (
-                  <p className={styles.note}>
-                    The Copper is running: it may change the registers per line, so the screen can differ from this
-                    decode.
-                  </p>
+                  <p className={styles.note}>{t("panels.graphics.inspector.copperNote")}</p>
                 )}
                 <button
                   type="button"
@@ -113,12 +114,14 @@ export const Layer2InspectorPane = ({
                   disabled={!memoryText}
                   title={
                     memoryText
-                      ? "Open the Memory view at this byte: at its Z80 address when mapped, otherwise in its 8K page"
-                      : "The byte is past the 2 MB SRAM: there is no memory to show"
+                      ? t("panels.layer2.pane.showInMemoryTitle")
+                      : t("panels.layer2.pane.showInMemoryOutsideTitle")
                   }
                   onClick={onShowInMemory}
                 >
-                  Show in memory{memoryText ? ` (${memoryText})` : ""}
+                  {memoryText
+                    ? t("panels.layer2.menu.showInMemory", { address: memoryText })
+                    : t("panels.layer2.pane.showInMemory")}
                 </button>
                 <button
                   type="button"
@@ -126,12 +129,14 @@ export const Layer2InspectorPane = ({
                   disabled={!breakText}
                   title={
                     breakText
-                      ? "Set a write breakpoint on this byte: bank-relative (wherever the MMU pages the bank in), and on its $123B window address when the window maps writes"
-                      : "The byte is past the 2 MB SRAM: no write can reach it"
+                      ? t("panels.layer2.pane.breakOnWriteTitle")
+                      : t("panels.layer2.pane.breakOnWriteOutsideTitle")
                   }
                   onClick={onBreakOnWrite}
                 >
-                  Break on write{breakText ? ` (${breakText})` : ""}
+                  {breakText
+                    ? t("panels.layer2.menu.breakOnWrite", { targets: breakText })
+                    : t("panels.layer2.pane.breakOnWrite")}
                 </button>
               </div>
             </ScrollViewer>
@@ -147,25 +152,27 @@ export const Layer2InspectorPane = ({
               <div className={styles.inspectorBody}>
                 <dl className={styles.fields}>
                   <div className={styles.field}>
-                    <dt>Role</dt>
+                    <dt>{t("panels.layer2.pane.role")}</dt>
                     <dd className={classnames({ [styles.muted]: !bank.roles.length })}>
-                      {bank.roles.length ? bank.roles.map((r) => ROLE_TEXT[r]).join(", ") : "none"}
+                      {bank.roles.length
+                        ? bank.roles.map((r) => t(ROLE_TEXT[r])).join(", ")
+                        : t("panels.graphics.inspector.none")}
                     </dd>
                   </div>
                   <div className={styles.field}>
-                    <dt>Physical</dt>
+                    <dt>{t("panels.graphics.inspector.physical")}</dt>
                     <dd className={classnames({ [styles.warn]: bank.outsideRam })}>
                       {bank.outsideRam
-                        ? "past 2 MB"
+                        ? t("panels.layer2.role.outside")
                         : `${hex(0x040000 + bank.bank16 * 0x4000, 6)}-${hex(0x040000 + bank.bank16 * 0x4000 + 0x3fff, 6)}`}
                     </dd>
                   </div>
                   <div className={styles.field}>
-                    <dt>Holds</dt>
+                    <dt>{t("panels.layer2.pane.holds")}</dt>
                     <dd>
                       {model.size.wide
-                        ? `columns ${bank.rect.x1}-${bank.rect.x2}`
-                        : `rows ${bank.rect.y1}-${bank.rect.y2}`}
+                        ? t("panels.layer2.pane.columns", { first: bank.rect.x1, last: bank.rect.x2 })
+                        : t("panels.layer2.pane.rows", { first: bank.rect.y1, last: bank.rect.y2 })}
                     </dd>
                   </div>
                 </dl>
@@ -179,9 +186,9 @@ export const Layer2InspectorPane = ({
                       transparentAbgr={transparentAbgr}
                       checker={checker}
                       zoomX={thumbZoom}
-                      ariaLabel={`Bank ${bank.bank16}`}
+                      ariaLabel={t("panels.layer2.pane.bank", { bank: bank.bank16 })}
                     />
-                    <figcaption>bank {bank.bank16}</figcaption>
+                    <figcaption>{t("panels.layer2.pane.bankCaption", { bank: bank.bank16 })}</figcaption>
                   </figure>
                 )}
               </div>
