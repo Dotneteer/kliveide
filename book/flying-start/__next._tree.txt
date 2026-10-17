@@ -1,9 +1,9 @@
-:HL["/kliveide/_next/static/css/11c59cc40cabfed8.css","style"]
-:HL["/kliveide/_next/static/css/75ed199ed4213428.css","style"]
-:HL["/kliveide/images/klive-logo.svg","image"]
-:HL["/kliveide/images/book/flying-start/intro-message.png","image"]
-:HL["/kliveide/images/book/flying-start/print-values.png","image"]
+:HL["/_next/static/css/11c59cc40cabfed8.css","style"]
+:HL["/_next/static/css/75ed199ed4213428.css","style"]
+:HL["/images/klive-logo.svg","image"]
+:HL["/images/book/flying-start/intro-message.png","image"]
+:HL["/images/book/flying-start/print-values.png","image"]
 3:[["children",{"s":"__PAGE__","h":160}]]
 2:[["children",{"s":{"n":"mdxPath","t":"c","k":"book/flying-start","s":["_not-found","_global-error"]},"h":64,"c":"$Q3"}]]
 1:[["children",{"s":"(docs)","h":48,"c":"$Q2"}]]
-0:{"b":"u6qxxpko8lFlvpGM1E1jE","t":{"t":{"s":"","h":80,"c":"$Q1"}}}
+0:{"b":"yH7SimXt76J4CXgEdKrh5","t":{"t":{"s":"","h":80,"c":"$Q1"}}}

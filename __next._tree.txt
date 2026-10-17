@@ -1,6 +1,6 @@
-:HL["/kliveide/_next/static/css/c82fd323971f3252.css","style"]
-:HL["/kliveide/images/klive-logo.svg","image"]
-:HL["/kliveide/images/intro/klive-ide-intro.png","image"]
+:HL["/_next/static/css/c82fd323971f3252.css","style"]
+:HL["/images/klive-logo.svg","image"]
+:HL["/images/intro/klive-ide-intro.png","image"]
 2:[["children",{"s":"__PAGE__","h":160}]]
 1:[["children",{"s":"(landing)","h":112,"c":"$Q2"}]]
-0:{"b":"u6qxxpko8lFlvpGM1E1jE","t":{"t":{"s":"","h":80,"c":"$Q1"}}}
+0:{"b":"yH7SimXt76J4CXgEdKrh5","t":{"t":{"s":"","h":80,"c":"$Q1"}}}
