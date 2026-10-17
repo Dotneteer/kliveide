@@ -40,6 +40,8 @@ same for both compilers.
 `asm-dialect klive` (zxbasm is Boriel's only dialect; `asm-dialect zxbasm` is silent), `debug-info`
 (Boriel builds always write the `.dbg`), `default-byref`, the `codebank-*` options (CODEBANK is Klive
 BASIC syntax; Boriel banks MODULEs with `--split-modules`), `nex-entry`, `nex-loading-screen`, `nex-core`.
+The `CODEBANK` *statement* itself is a zxbc error ("Undeclared function"), so a failed build whose
+root has a CODEBANK block outside ASM also gets a `ZXBC-K` error at that line naming the alternatives.
 
 ## Always added by the compiler
 

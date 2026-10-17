@@ -122,7 +122,7 @@ import {
   borielSetupStatus,
   installBorielKit,
   recordBorielSetupDecision,
-  setBasicCompiler,
+  setEffectiveBasicCompiler,
   useExistingBorielInstallation
 } from "./boriel-integration/boriel-main";
 import {
@@ -833,7 +833,8 @@ class MainMessageProcessor {
 
   async setBasicCompiler(choice: "klive" | "boriel") {
     if (choice !== "klive" && choice !== "boriel") throw new Error("Invalid BASIC compiler choice.");
-    setBasicCompiler(choice);
+    // --- The compiler that builds now: the project's choice when it has one, as the Settings row does
+    await setEffectiveBasicCompiler(choice);
   }
 
   async recordBorielSetupDecision(decision: BorielSetupDecision) {

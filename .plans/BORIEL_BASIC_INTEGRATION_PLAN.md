@@ -1,6 +1,6 @@
 # Boriel BASIC (zxbc 2.0) Integration — Implementation Plan
 
-Status: **approved for implementation; Phases B0-B5 done, B6 not started** (2026-10-17, HEAD `2cebbd732`). Decisions B1, B-L1, B-T1 and B-T2 are settled (§0).
+Status: **approved for implementation; Phases B0-B6 done** (2026-10-17, HEAD `2cebbd732`). Decisions B1, B-L1, B-T1 and B-T2 are settled (§0).
 Inputs: the setup kits, now in `vendor/boriel-basic/` (`kit.json` + git-ignored `kits/`; see §3.1) and the debug
 format published at <https://zxbasic.readthedocs.io/en/v2.0/debug_format/> (pages *Statements &
 Addresses*, *Callables*, *Call Sites*, *Variables*, *Banking*).
@@ -741,7 +741,36 @@ The following need no Boriel-specific code beyond the adapter, once the frame-lo
 
 ---
 
-## 8. Phase B6 — editor, settings UI, templates, docs, tests
+## 8. Phase B6 — editor, settings UI, templates, docs, tests (**done 2026-10-17**)
+
+**As built:**
+
+- **Settings › Integrations › BASIC compilers.** A new row, *Compiler for BASIC programs* (Klive
+  BASIC / Boriel BASIC), shows the **effective** `zxbasic.compiler`. It writes through the
+  `set:basicCompiler` UI action to `setEffectiveBasicCompiler`, which changes the project's setting
+  when the project has one and the user's otherwise. The Boriel BASIC dialog's checkbox now writes the
+  same way (its note says so); before, it wrote the user setting only, which did nothing while a
+  project chose its own compiler. The *Boriel BASIC* row became a `file` row showing the installation
+  folder, or *Not set up*, beside **Configure...**. Decided differently from the text below: no
+  separate project-settings entry, because the one row already changes the project's choice.
+- **Status bar.** While a `.zxbas`/`.bas` file is focused, the IDE status bar names the effective
+  compiler; a click opens the Boriel BASIC dialog.
+- **A store bug found on the way.** `APPLY_PROJECT_SETTING`/`APPLY_USER_SETTING` copied the settings
+  shallowly and then changed the shared nested object in place, so `useSelector` (shallow compare)
+  never saw a changed nested setting: the status bar kept the old compiler after `set -p`. The reducer
+  now copies deeply (`test/common/settings-reducer.test.ts`).
+- **Templates** stay as they are. The Next **zx-basic** template uses CODEBANK, so a Boriel build of
+  it fails; zxbc's own message is "Undeclared function CODEBANK", so a failed Boriel build whose root
+  uses CODEBANK (outside ASM) gets a `ZXBC-K` error at that line naming the alternatives (`MODULE` +
+  `'@split-modules`, or Klive BASIC).
+- **Docs:** `docs/content/working-with-ide/zxb.mdx` (switching, the status bar, modules and banked
+  code, the CODEBANK callout; the stale "Next breakpoints do not stop" sentence removed) and
+  `settings.mdx` (the two rows). `.plans/LANDING_PAGE_COMPETITIVE_ANALYSIS.md` §2, W8 and the landing
+  copy name Boriel BASIC 2.x.
+- **Checks:** `scripts/boriel-ide-check.cjs ui` drives the row, the status bar and the dialog in the app.
+  The tests listed below were written in B1-B5 (the `corpus-debugger` variant became
+  `boriel-debugger.test.ts` and `boriel-banked.test.ts`; `scripts/boriel-check.cjs` became
+  `boriel-ide-check.cjs`).
 
 - **Settings UI.** Add `zxbasic.compiler` (Klive BASIC / Boriel BASIC) and the Boriel
   row (status + "Configure…") to `settings-pages.ts` under Integrations. Add a project-settings entry

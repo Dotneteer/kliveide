@@ -121,6 +121,22 @@
  * listens. Quiet while nobody is connected; an accent chip while a client is, because then
  * something outside the IDE can drive it. A click opens the Automation output pane.
  */
+/* The BASIC compiler of the focused file: a plain label that is also a button (no state colour). */
+.compilerItem {
+  font: inherit;
+  font-size: var(--font-size-100);
+  padding: 0 var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-statusbar-label);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--bgcolor-toolbarbutton-hover);
+  }
+}
+
 .automation {
   display: flex;
   align-items: center;

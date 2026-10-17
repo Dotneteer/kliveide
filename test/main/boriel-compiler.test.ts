@@ -256,6 +256,19 @@ describe("BorielCompiler", () => {
     expect((await slow.compiler.compileFile(source)).errors?.[0].message).toMatch(/did not finish/);
   });
 
+  it("explains a failed build's CODEBANK as Klive BASIC syntax, at its line", async () => {
+    fs.writeFileSync(source, "' header\nASM\n  CODEBANK 2\nEND ASM\nCODEBANK 1\nSUB f\nEND SUB\nEND CODEBANK\n");
+    const failing = compilerWith({ exitCode: 1, diagnostics: `${source}:5: error: [E302] Undeclared function "CODEBANK"\n` });
+    const errors = (await failing.compiler.compileFile(source)).errors!;
+    const hint = errors.find((e) => e.errorCode === "ZXBC-K")!;
+    // --- The one inside ASM is assembler text, not the block
+    expect(hint).toMatchObject({ line: 5, startColumn: 0, filename: source });
+    expect(hint.message).toMatch(/Klive BASIC syntax.*MODULE.*'@split-modules/);
+    // --- A build that succeeds needs no hint
+    const fine = compilerWith({});
+    expect((await fine.compiler.compileFile(source)).errors!.some((e) => e.errorCode === "ZXBC-K")).toBe(false);
+  });
+
   it("searches the source's folder, then the include folders, for USEd modules", async () => {
     const { compiler, calls } = compilerWith({});
     await compiler.compileFile(source);
@@ -408,6 +421,23 @@ describe("BorielCompiler with the real zxbc", () => {
     expect(failed.errors?.[0]).toMatchObject({ errorCode: "E342", filename: source, line: 2 });
     const checked = await compiler.checkFile(source);
     expect(checked.errors?.[0]).toMatchObject({ errorCode: "E342", line: 2 });
+  }, 60_000);
+
+  it.skipIf(!available)("explains why the Next BASIC template, which uses CODEBANK, does not build", async () => {
+    const project = path.join(home, "next-template");
+    fs.mkdirSync(path.join(project, "code"), { recursive: true });
+    const source = path.join(project, "code", "program.zxbas");
+    fs.copyFileSync(path.resolve(__dirname, "../../src/public/project-templates/zxnext/zx-basic/code/program.zxbas"), source);
+    const compiler = new BorielCompiler();
+    compiler.setAppState({
+      userSettings: { zxbasic: { executablePath: zxbcPath } },
+      projectSettings: {},
+      project: { folderPath: project, isKliveProject: true },
+      emulatorState: { machineId: "zxnext" }
+    } as unknown as AppState);
+    const errors = (await compiler.compileFile(source)).errors!;
+    const line = fs.readFileSync(source, "utf8").split("\n").findIndex((l) => /^\s*CODEBANK\s/i.test(l)) + 1;
+    expect(errors.find((e) => e.errorCode === "ZXBC-K")).toMatchObject({ line });
   }, 60_000);
 
   it.skipIf(!available)("builds a banked program (--split-modules) for the 128K and the Next", async () => {

@@ -49,6 +49,7 @@ import {
 } from "@common/automation/protocol";
 import { parseKeyMappings } from "./key-mappings/keymapping-parser";
 import { setClockMultiplier, setSoundLevel } from "./emulator-preferences";
+import { setEffectiveBasicCompiler } from "./boriel-integration/boriel-main";
 import {
   type WindowRecordingPreference,
   windowRecordingPreferenceAction
@@ -269,6 +270,12 @@ export async function runUiAction(actionId: UiActionId, value?: unknown): Promis
     case "set:automationLevel":
       if (!(AUTOMATION_LEVELS as readonly unknown[]).includes(value)) return `Unknown automation level: ${value}`;
       applyUserSetting(AUTOMATION_LEVEL_SETTING, value);
+      return undefined;
+    // --- Klive BASIC or Boriel BASIC for .zxbas/.bas: the setting that decides now (the project's, when
+    // --- it chooses one; else the user's)
+    case "set:basicCompiler":
+      if (value !== "klive" && value !== "boriel") return `Unknown BASIC compiler: ${value}`;
+      await setEffectiveBasicCompiler(value);
       return undefined;
     case "rom:sp48:select":
       await selectSp48RomFile(owner);

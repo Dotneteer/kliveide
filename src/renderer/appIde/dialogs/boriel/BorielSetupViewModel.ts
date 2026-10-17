@@ -65,7 +65,7 @@ export function selectViewModel(state: BorielSetupState): BorielSetupViewModel {
       value: state.status?.compiler === "boriel",
       enabled: ready,
       note: state.status?.compilerFromProject
-        ? "The open project's settings choose the compiler; this changes your user setting only."
+        ? "The open project chooses its own compiler: this changes the project's choice."
         : undefined
     },
     message: messageOf(state),

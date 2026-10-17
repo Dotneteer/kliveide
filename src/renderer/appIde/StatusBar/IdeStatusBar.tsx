@@ -9,6 +9,8 @@ import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { CODE_EDITOR } from "@common/state/common-ids";
 import { historyStepText } from "@common/history/historyNavigation";
 import { reverseStatusText, reverseStatusTooltip } from "@common/history/reverseDebugText";
+import { selectedZxBasicCompiler, type ZxBasicCompilerChoice } from "@main/zxb-integration/zxb-config";
+import { useMainApi } from "@renderer/core/MainApi";
 
 type IdeStatusBarProps = {
   show: boolean;
@@ -28,6 +30,10 @@ export const IdeStatusBar = ({ show }: IdeStatusBarProps) => {
   const cursorLine = useSelector((s) => s.ideView?.cursorLine);
   const cursorColumn = useSelector((s) => s.ideView?.cursorColumn);
   const automation = useSelector((s) => s.automation);
+  // --- The compiler BASIC files build with (a project's choice wins over the user's), so the switch
+  // --- between Klive BASIC and Boriel BASIC is never invisible (`.plans/BORIEL_BASIC_INTEGRATION_PLAN.md` §8)
+  const basicCompiler = useSelector((s) => selectedZxBasicCompiler(s));
+  const mainApi = useMainApi();
   useSelector((s) => s.ideView?.documentHubState);
 
   const machineState = useMemo(() => {
@@ -54,6 +60,8 @@ export const IdeStatusBar = ({ show }: IdeStatusBarProps) => {
   // --- Get active document to check if it's a Monaco editor
   const activeDocument = projectService?.getActiveDocumentHubService()?.getActiveDocument();
   const isMonacoEditor = activeDocument?.type === CODE_EDITOR;
+  const isBasicDocument =
+    isMonacoEditor && (activeDocument?.language === "zxbas" || /\.(zxbas|bas)$/i.test(activeDocument?.path ?? activeDocument?.id ?? ""));
 
   if (!show) return null;
 
@@ -126,6 +134,11 @@ export const IdeStatusBar = ({ show }: IdeStatusBarProps) => {
               level={automation.level}
               open={() => void ideCommandsService.executeCommand("outp automation")}
             />
+          </Section>
+        )}
+        {isBasicDocument && (
+          <Section>
+            <BasicCompilerItem compiler={basicCompiler} open={() => void mainApi.runUiAction("dialog:boriel")} />
           </Section>
         )}
         {isMonacoEditor && cursorLine !== undefined && cursorColumn !== undefined && (
@@ -213,6 +226,29 @@ const AutomationItem = ({ clients, level, open }: AutomationItemProps) => {
     >
       <Icon iconName="plug" width={14} height={14} fill="currentColor" />
       {text}
+    </button>
+  );
+};
+
+type BasicCompilerItemProps = {
+  compiler: ZxBasicCompilerChoice;
+  open: () => void;
+};
+
+/**
+ * Which compiler builds the focused BASIC file. A click opens the Boriel BASIC dialog, where the
+ * compiler is switched and Boriel BASIC is installed.
+ */
+const BasicCompilerItem = ({ compiler, open }: BasicCompilerItemProps) => {
+  const name = compiler === "boriel" ? "Boriel BASIC" : "Klive BASIC";
+  return (
+    <button
+      type="button"
+      className={styles.compilerItem}
+      title={`BASIC programs build with ${name}. Click to choose the compiler or set up Boriel BASIC.`}
+      onClick={open}
+    >
+      {name}
     </button>
   );
 };

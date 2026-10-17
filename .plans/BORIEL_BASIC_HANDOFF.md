@@ -1,6 +1,6 @@
 # Boriel BASIC integration — handoff
 
-For the next AI session. Written 2026-10-17 at the end of Phase B5 on branch `dotneteer/zxbasic-2`.
+For the next AI session. Written 2026-10-17 at the end of Phase B6 on branch `dotneteer/zxbasic-2`. All planned phases are done.
 The plan is `.plans/BORIEL_BASIC_INTEGRATION_PLAN.md`; each phase's section opens with an
 **"As built"** note that records what differs from its design. This file says where things stand and
 what to do next.
@@ -26,13 +26,15 @@ what to do next.
 | B3: `.dbg` adapter, fixtures, source-level debugging | done | `1bc26fcc7` |
 | B4: FASTCALL frames, validator warning, Next error stop, NEX sidecar | done | `8a4d59c93` |
 | B4 fix: Next breakpoints (`.nex` built without `--debug`), in-app export checks | done | `3381503f1` |
-| B5: banked programs (`--split-modules`), 128K bank injection, far-call decoding | done | the commit after this file |
-| B6: settings/status-bar polish, competitive analysis update | not started | — |
+| B5: banked programs (`--split-modules`), 128K bank injection, far-call decoding | done | `0a02b2566` |
+| B6: settings row, status bar, CODEBANK hint, docs, competitive analysis | done | the commit after this file |
 
 **What works (each verified in the running app or on the real cores):**
 
 - Install from the first-run offer or Settings › Integrations › Boriel BASIC (`~/zxbasic2` by default).
-- Switch the compiler: the dialog checkbox, or `set zxbasic.compiler boriel`.
+- Switch the compiler: Settings › Integrations › Compiler for BASIC programs, the dialog checkbox, or
+  `set zxbasic.compiler boriel`. The first two change the project's choice when it has one.
+- The status bar names the compiler of the focused BASIC file; a click opens the Boriel BASIC dialog.
 - Build, run, inject and export on 48K, 128K, +3, Timex, Scorpion and Next.
 - Diagnostics with codes.
 - Source breakpoints, the execution point, Step Into/Over/Out, the call stack (FASTCALL included),
@@ -44,7 +46,7 @@ what to do next.
   breakpoints, the execution point in a module file, and the call stack through far calls.
 
 `scripts/boriel-ide-check.cjs` checks all of this in the running app (parts `run`, `debug`, `next`,
-`export`, `banked`; all pass).
+`export`, `ui`, `banked`; all pass).
 
 ## Two traps found late
 
@@ -62,26 +64,28 @@ the `.bin` image now gets a `ZXBC-D` warning. Details: plan §6 and `.ai/boriel/
 
 ```
 npx electron-vite build --config build/electron.vite.config.ts
-node scripts/boriel-ide-check.cjs [run|debug|next|export|banked]
+node scripts/boriel-ide-check.cjs [run|debug|next|export|ui|banked]
 ```
 
 It needs `~/zxbasic2` or `BORIEL_ROOT`; `next`, `export` and `banked` also need `~/Klive/ks2.cim`. A kit
 unpacked from `vendor/boriel-basic/kits/` works as `BORIEL_ROOT` once `xattr -dr
-com.apple.quarantine` has been run on it. All parts take about seven minutes.
+com.apple.quarantine` has been run on it. All parts take about ten minutes.
 
 ## Next steps, in order
 
-1. **Phase B6:**
-   - the settings row and status bar (plan §8);
-   - the `.plans/LANDING_PAGE_COMPETITIVE_ANALYSIS.md` tables (standing instruction in `AGENTS.md`);
-   - the Next BASIC template uses CODEBANK, which Boriel cannot compile, so it is not yet a shared
-     template.
-2. **Banked gaps** (plan §7 "Not covered"): Step Over/Out across a far call need a core test;
+1. **Banked gaps** (plan §7 "Not covered"): Step Over/Out across a far call need a core test;
    on the Next a routine crossing `$E000` keeps its start's page; exporting a banked 128K build
    (TAP/TZX) is untested.
-3. **Unverified platforms.** The x86_64 Linux and Windows kits have never been run. Unchecked on
+2. **Unverified platforms.** The x86_64 Linux and Windows kits have never been run. Unchecked on
    Windows: Windows `;` as the `-I` separator (`boriel-options.ts`), and skipping the 34.5 MB of
    `.pdb` files.
+3. **Klive sometimes does not quit** under the IDE check's Playwright driver: seen twice, once after
+   the `ui` part and once after a Next session paused at a breakpoint. The check now ends such a
+   session's process after 20 s and says so. Not Boriel-specific as far as known; worth a look.
+4. **The readiness gate** (plan §11) before anyone proposes Boriel as the default: a production
+   licence for a non-beta version, installs on every platform from a fresh `HOME`, and every template
+   and the debugger corpus through `boriel-ide-check.cjs`. The Next template cannot pass while it uses
+   CODEBANK; a Boriel variant of it (a `MODULE` with `'@split-modules`) would.
 
 ## How to work on this
 

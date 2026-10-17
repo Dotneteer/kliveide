@@ -23,6 +23,7 @@ export type UiActionId =
   | "set:windowRecordingHiDpi"
   | "set:automationEnabled"
   | "set:automationLevel"
+  | "set:basicCompiler"
   | "rom:sp48:select"
   | "rom:sp48:reset"
   | "rom:trdos:select"

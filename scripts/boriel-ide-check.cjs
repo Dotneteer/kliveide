@@ -10,11 +10,14 @@
  *   export - a TAP export of an sp48 build holds the injected code; a Next build's NEX export
  *            writes the debug sidecar beside it, and `nex-run -d` of that file stops at a source
  *            breakpoint (needs the card image too);
+ *   ui     - the status bar names the compiler of the open BASIC file (a project's choice wins), the
+ *            Settings row switches it (writing the project's choice), the Boriel row shows the
+ *            installation, and a click on the status bar item opens the Boriel BASIC dialog;
  *   banked - a '@split-modules program (test/boriel/fixtures/banked-128) on the 128K and the Next: a
  *            breakpoint in a module that zxbc put in a RAM bank pauses the machine there.
  *
  *   npx electron-vite build --config build/electron.vite.config.ts
- *   node scripts/boriel-ide-check.cjs [run|debug|next|export|banked ...]
+ *   node scripts/boriel-ide-check.cjs [run|debug|next|export|ui|banked ...]
  *
  * Boriel BASIC comes from BORIEL_ROOT, else ~/zxbasic2 (install it from Klive's setup dialog).
  * Screenshots and the throwaway homes go to `.boriel-ide-check/` (git-ignored). Local only: it needs
@@ -38,6 +41,16 @@ async function session(name, { card = false, ideViewOptions = {} } = {}) {
   fs.mkdirSync(path.join(userHome, "Klive"), { recursive: true });
   if (card) fs.copyFileSync(path.join(os.homedir(), "Klive", "ks2.cim"), path.join(userHome, "Klive", "ks2.cim"));
   const k = await launchKlive({ home: path.join(out, "klive"), userHome, userSettings: { zxbasic: { root: ROOT } }, ideViewOptions });
+  // --- A close that hangs (seen once, after the ui part) must not hang the whole check: give it 20 s,
+  // --- then end this session's own Electron process
+  const close = k.close;
+  k.close = async () => {
+    const done = await Promise.race([close().then(() => true), sleep(20000).then(() => false)]);
+    if (!done) {
+      console.log(`(${name}: the app did not close in 20 s; its process was ended)`);
+      k.app.process().kill("SIGKILL");
+    }
+  };
   const ideText = async () => (await k.ide.evaluate(() => document.body.innerText)).replace(/\s+/g, " ");
   const emuText = async () =>
     (await k.app.windows().find((w) => w.url().includes("?emu")).evaluate(() => document.body.innerText)).replace(/\s+/g, " ");
@@ -136,6 +149,43 @@ const PARTS = {
     check(!!(await n.waitPaused(120000)), "export: nex-run -d of the exported NEX stops at a source breakpoint");
     await n.k.ide.screenshot({ path: path.join(n.out, "nex-run.png") });
     await n.k.close();
+  },
+
+  async ui() {
+    const s = await session("ui");
+    // --- `project()` sets the compiler in the project's settings, which wins over the user's
+    const folder = await s.project("sp48", ['PRINT "status"']);
+    const statusBar = () =>
+      s.k.ide.evaluate(() => [...document.querySelectorAll("[class*=ideStatusBar]")].map((e) => e.textContent).join(" "));
+    check(/Boriel BASIC/.test(await statusBar()), "ui: the status bar names Boriel BASIC for the open BASIC file");
+
+    await s.k.cmd("settings integrations", 2000);
+    const row = s.k.ide.getByTestId("settings-row-basicCompiler");
+    check(/Boriel BASIC/.test(await row.textContent()), "ui: the Settings row shows the project's compiler");
+    const install = await s.k.ide.getByTestId("settings-row-borielBasic").textContent();
+    check(install.includes(path.basename(ROOT)), `ui: the Boriel BASIC row shows the installation folder (${path.basename(ROOT)})`);
+    await s.k.ide.getByTestId("settings-select-basicCompiler").click();
+    await s.k.ide.getByRole("option", { name: "Klive BASIC" }).click();
+    await sleep(1500);
+    await s.k.ide.keyboard.press("Escape");
+    await sleep(800);
+    const saved = JSON.parse(fs.readFileSync(path.join(folder, "klive.project"), "utf8"));
+    check(saved.settings?.zxbasic?.compiler === "klive", "ui: switching in Settings writes the project's choice");
+    check(/Klive BASIC/.test(await statusBar()), "ui: the status bar follows the switch");
+
+    await s.k.ide.getByRole("button", { name: "Klive BASIC" }).click();
+    await sleep(1500);
+    check(/Use Boriel BASIC to build BASIC programs/.test(await s.ideText()), "ui: a click on the status bar item opens the Boriel BASIC dialog");
+    await s.k.ide.screenshot({ path: path.join(s.out, "boriel-dialog.png") });
+    // --- Its checkbox changes the compiler that builds: here the project's choice, as the Settings row does
+    await s.k.ide.getByRole("checkbox", { name: /Use Boriel BASIC/ }).click();
+    await sleep(1500);
+    const ticked = JSON.parse(fs.readFileSync(path.join(folder, "klive.project"), "utf8"));
+    check(ticked.settings?.zxbasic?.compiler === "boriel", "ui: the dialog's checkbox writes the project's choice");
+    await s.k.ide.keyboard.press("Escape");
+    await sleep(800);
+    check(/Boriel BASIC/.test(await statusBar()), "ui: the status bar follows the dialog");
+    await s.k.close();
   },
 
   async banked() {

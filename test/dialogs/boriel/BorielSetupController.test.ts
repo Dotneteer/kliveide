@@ -225,9 +225,9 @@ describe("choosing the compiler", () => {
     expect(h.ports.service.setCompiler).toHaveBeenLastCalledWith("klive");
   });
 
-  it("says when the project overrides the user setting", async () => {
+  it("says when the project chooses its own compiler, which the checkbox then changes", async () => {
     const h = await openDialog({ statuses: [aStatus({ installation: working(), compilerFromProject: true })] });
-    expect(h.vm.useBoriel.note).toMatch(/project's settings choose the compiler/);
+    expect(h.vm.useBoriel.note).toMatch(/project chooses its own compiler: this changes the project's choice/);
   });
 
   it("shows why the setting could not be written", async () => {

@@ -371,6 +371,11 @@ export class BorielCompiler implements IKliveCompiler {
     if (run.exitCode !== 0 && !diagnostics.some((d) => !d.isWarning)) {
       diagnostics.push(buildError(filename, "ZXBC", `zxbc failed (exit code ${run.exitCode}).`));
     }
+    // --- zxbc reads Klive BASIC's CODEBANK as an undeclared function: say what it is instead
+    if (diagnostics.some((d) => !d.isWarning)) {
+      const hint = codebankHint(filename);
+      if (hint) diagnostics.push(hint);
+    }
     return { diagnostics };
   }
 
@@ -435,6 +440,43 @@ function programOf(
   const parts = extractBankedProgram(ram, origin, ids, debugFile.binaryLength, debugFile.binaryChecksum);
   if (typeof parts === "string") return parts;
   return { image: parts.find((p) => p.bank === undefined)?.bytes ?? new Uint8Array(), segments: bankedSegments(parts) };
+}
+
+/**
+ * An error at the build root's first CODEBANK block (or `#pragma codebank`), outside ASM blocks:
+ * that is Klive BASIC syntax (`.plans/BORIEL_BASIC_INTEGRATION_PLAN.md` §10, item 4), which zxbc
+ * reports only as an undeclared function. Undefined when the file has none.
+ */
+export function codebankHint(filename: string): AssemblerErrorInfo | undefined {
+  let text: string;
+  try {
+    text = fs.readFileSync(filename, "utf8");
+  } catch {
+    return undefined;
+  }
+  let inAsm = false;
+  const lines = text.split(/\r?\n/);
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (/^\s*END\s+ASM\b/i.test(line)) inAsm = false;
+    else if (/^\s*ASM\b/i.test(line)) inAsm = true;
+    else if (!inAsm && /^\s*(CODEBANK\s+\S|#\s*pragma\s+codebank\b)/i.test(line)) {
+      const column = line.search(/\S/);
+      return {
+        ...buildError(
+          filename,
+          "ZXBC-K",
+          "CODEBANK is Klive BASIC syntax, which Boriel BASIC does not compile. Put banked code in a " +
+            "MODULE that the program USEs and set '@split-modules, or build with Klive BASIC " +
+            "(Integrations | BASIC compilers)."
+        ),
+        line: i + 1,
+        startColumn: column,
+        endColumn: line.length
+      };
+    }
+  }
+  return undefined;
 }
 
 /** The parsed `.dbg`, or why it cannot be used. */

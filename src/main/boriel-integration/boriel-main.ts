@@ -7,7 +7,9 @@ import type {
   BorielSetupStatus
 } from "@common/messaging/BorielIntegration";
 import { createSettingsReader } from "@common/utils/SettingsReader";
+import { applyProjectSettingAction } from "@state/actions";
 import { mainStore } from "../main-store";
+import { saveKliveProject } from "../projects";
 import { appSettings, applyUserSetting, saveAppSettings } from "../settings-utils";
 import { get } from "lodash";
 import { ZXBC_COMPILER, ZXBC_EXECUTABLE_PATH } from "../zxb-integration/zxb-config";
@@ -40,9 +42,22 @@ export function borielServiceDeps(): BorielServiceDeps {
   };
 }
 
-/** Makes Klive BASIC or Boriel BASIC the compiler of BASIC programs (a user setting). */
-export function setBasicCompiler(choice: "klive" | "boriel"): void {
+/** Makes Klive BASIC or Boriel BASIC the user's compiler of BASIC programs. */
+function setBasicCompiler(choice: "klive" | "boriel"): void {
   applyUserSetting(ZXBC_COMPILER, choice);
+}
+
+/**
+ * Makes `choice` the compiler that builds BASIC programs now (the Settings dialog's row): the open
+ * project's setting when the project chooses one, which wins over the user's; else the user's.
+ */
+export async function setEffectiveBasicCompiler(choice: "klive" | "boriel"): Promise<void> {
+  if (get(mainStore.getState().projectSettings, ZXBC_COMPILER) === undefined) {
+    setBasicCompiler(choice);
+    return;
+  }
+  mainStore.dispatch(applyProjectSettingAction(ZXBC_COMPILER, choice));
+  await saveKliveProject();
 }
 
 export async function borielSetupStatus(): Promise<BorielSetupStatus> {
