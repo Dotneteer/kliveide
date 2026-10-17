@@ -112,7 +112,7 @@
   "dialog.rename.submit": "Rename",
   "@dialog.rename.submit": {
     "context": "Confirm button of the rename dialog in the Explorer.",
-    "maxChars": 9
+    "maxChars": 12
   },
   "dialog.firstStart.title": "Welcome to Klive!",
   "@dialog.firstStart.title": {
@@ -203,12 +203,12 @@
   "dialog.breakpoint.addTitle": "Add breakpoint",
   "@dialog.breakpoint.addTitle": {
     "context": "Title of the breakpoint dialog when adding a new breakpoint (a debugger stop point, not a line break).",
-    "maxChars": 20
+    "maxChars": 32
   },
   "dialog.breakpoint.editTitle": "Edit breakpoint",
   "@dialog.breakpoint.editTitle": {
     "context": "Title of the breakpoint dialog when editing an existing breakpoint.",
-    "maxChars": 21
+    "maxChars": 29
   },
   "dialog.breakpoint.kind.exec": "Execution",
   "@dialog.breakpoint.kind.exec": {
@@ -258,7 +258,7 @@
   "dialog.breakpoint.action.log": "Log message",
   "@dialog.breakpoint.action.log": {
     "context": "Option of the Action radio group in the breakpoint dialog: write a message to the Log pane and keep running (a logpoint). 'Log' is a verb here.",
-    "maxChars": 16
+    "maxChars": 19
   },
   "dialog.breakpoint.nextReg.undocumented": "{register} — undocumented register",
   "@dialog.breakpoint.nextReg.undocumented": {
@@ -323,7 +323,7 @@
   "dialog.breakpoint.save": "Save",
   "@dialog.breakpoint.save": {
     "context": "Confirm button of the breakpoint dialog when editing an existing breakpoint.",
-    "maxChars": 8
+    "maxChars": 11
   },
   "dialog.breakpoint.add": "Add",
   "@dialog.breakpoint.add": {
@@ -585,7 +585,7 @@
   "dialog.machineSelect.save": "Save",
   "@dialog.machineSelect.save": {
     "context": "Button of the Select Machine dialog that saves the edited favourites (the Machine type menu) without switching machine.",
-    "maxChars": 8
+    "maxChars": 11
   },
   "dialog.machineSelect.switchTo": "Switch to {name}",
   "@dialog.machineSelect.switchTo": {
@@ -1311,22 +1311,22 @@
   "dialog.boriel.button.install": "Install",
   "@dialog.boriel.button.install": {
     "context": "Primary button of the Boriel BASIC setup dialog (installs or picks the external Boriel BASIC compiler) when no compiler is installed.",
-    "maxChars": 10
+    "maxChars": 14
   },
   "dialog.boriel.button.repair": "Repair",
   "@dialog.boriel.button.repair": {
     "context": "Primary button of the Boriel BASIC setup dialog (installs or picks the external Boriel BASIC compiler) when the installed compiler is broken: reinstall it.",
-    "maxChars": 9
+    "maxChars": 12
   },
   "dialog.boriel.button.update": "Update",
   "@dialog.boriel.button.update": {
     "context": "Primary button of the Boriel BASIC setup dialog (installs or picks the external Boriel BASIC compiler) when a newer bundled version is available.",
-    "maxChars": 9
+    "maxChars": 12
   },
   "dialog.boriel.button.reinstall": "Reinstall",
   "@dialog.boriel.button.reinstall": {
     "context": "Primary button of the Boriel BASIC setup dialog (installs or picks the external Boriel BASIC compiler) when the installed compiler is working and current.",
-    "maxChars": 13
+    "maxChars": 18
   },
   "dialog.boriel.button.browse": "Browse...",
   "@dialog.boriel.button.browse": {
@@ -1491,7 +1491,7 @@
   "@dialog.detect.busy.coverage": {
     "context": "Progress hint in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file) while coverage is turned on or loaded."
   },
-  "dialog.detect.replaceWarning": "Replace mode overwrites {count, plural, one {# of your own region(s)} other {# of your own region(s)}}; Apply asks first.",
+  "dialog.detect.replaceWarning": "Replace mode overwrites {count, plural, one {# of your own regions} other {# of your own regions}}; Apply asks first.",
   "@dialog.detect.replaceWarning": {
     "context": "Warning in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file) when the proposal would overwrite regions the user marked. 'Apply' is the name of the dialog's button.",
     "placeholders": {
@@ -1526,7 +1526,7 @@
   "@dialog.detect.replace.title": {
     "context": "Title of the confirmation asked by Apply in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file) when the proposal overwrites regions the user marked."
   },
-  "dialog.detect.replace.overwrites": "Replace mode overwrites {count, plural, one {# region(s)} other {# region(s)}} you marked yourself.",
+  "dialog.detect.replace.overwrites": "Replace mode overwrites {count, plural, one {# region} other {# regions}} you marked yourself.",
   "@dialog.detect.replace.overwrites": {
     "context": "Line of the replace confirmation in the Detect code and data dialog (proposes code/data regions of memory banks from execution coverage; also used to import a SkoolKit file).",
     "placeholders": {
@@ -1864,9 +1864,9 @@
     "context": "Field label in the Export Code dialog for the folder the exported file is written to.",
     "maxChars": 20
   },
-  "dialog.exportCode.field.folderBrowse": "Select the root project folder",
+  "dialog.exportCode.field.folderBrowse": "Select the export folder",
   "@dialog.exportCode.field.folderBrowse": {
-    "context": "Tooltip of the folder-browse button next to the Export folder field in the Export Code dialog (picks the folder the file is written to)."
+    "context": "Tooltip of the browse button next to the Export Code dialog's output-folder field: picks the folder the exported file goes to."
   },
   "dialog.exportCode.field.fileName": "Export file name: *",
   "@dialog.exportCode.field.fileName": {
@@ -2053,9 +2053,9 @@
     "context": "Label of the text field for the folder the new disk image file goes into (Create Disk dialog).",
     "maxChars": 24
   },
-  "dialog.createDisk.folder.browseTooltip": "Select the root project folder",
+  "dialog.createDisk.folder.browseTooltip": "Select the folder for the disk file",
   "@dialog.createDisk.folder.browseTooltip": {
-    "context": "Tooltip of the browse button next to the disk folder field in the Create Disk dialog; opens a folder picker."
+    "context": "Tooltip of the browse button next to the Create Disk dialog's folder field: picks the folder the new disk file goes to."
   },
   "dialog.createDisk.filename.label": "Disk file name:",
   "@dialog.createDisk.filename.label": {
@@ -2181,7 +2181,7 @@
     "context": "Label of the dropdown choosing the Z88's internal RAM size (32K, 128K or 512K).",
     "maxChars": 30
   },
-  "dialog.z88.changeRam.warning": "Changing the RAM will stop the machine! Click Ok, when you are ready to proceed.",
+  "dialog.z88.changeRam.warning": "Changing the RAM will stop the machine! Click OK when you are ready to proceed.",
   "@dialog.z88.changeRam.warning": {
     "context": "Warning in the Change Z88 RAM size dialog when applying the new size would stop the running emulated machine. 'Ok' names the dialog's OK button."
   },

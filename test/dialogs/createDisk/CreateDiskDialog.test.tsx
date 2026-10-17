@@ -106,7 +106,7 @@ describe("CreateDiskDialog — wiring", () => {
     mainApiMock.showOpenFolderDialog.mockResolvedValue("/picked");
     renderWithProviders(<CreateDiskDialog onClose={vi.fn()} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Select the root project folder" }));
+    fireEvent.click(screen.getByRole("button", { name: "Select the folder for the disk file" }));
 
     await waitFor(() => {
       expect(screen.getAllByRole("textbox")[0]).toHaveValue("/picked");

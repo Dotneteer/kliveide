@@ -167,7 +167,7 @@ describe("ExportCodeDialog — wiring", () => {
     mainApiMock.showOpenFolderDialog.mockResolvedValue("/out");
     renderWithProviders(<ExportCodeDialog onClose={vi.fn()} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Select the root project folder" }));
+    fireEvent.click(screen.getByRole("button", { name: "Select the export folder" }));
 
     await waitFor(() => expect(screen.getAllByRole("textbox")[0]).toHaveValue("/out"));
     expect(mainApiMock.showOpenFolderDialog).toHaveBeenCalledWith("exportCodeFolder");

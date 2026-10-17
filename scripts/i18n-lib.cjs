@@ -189,6 +189,21 @@ function renderTranslationsFile(localesDir) {
     });
     langs.push(`  ${JSON.stringify(lang)}: mergeNamespaces({ ${nsList.map((ns, i) => `${JSON.stringify(ns)}: ${ids[i]}`).join(", ")} })`);
   }
+  // --- Translation status per language (the Language page's status line, LOCALIZATION_PLAN §7)
+  const { entries } = loadEnglish(localesDir);
+  const status = [];
+  for (const lang of listLanguages(localesDir)) {
+    if (lang === PSEUDO_LANGUAGE) continue;
+    const { texts, sources } = loadLanguage(localesDir, lang);
+    let translated = 0;
+    let outdated = 0;
+    for (const [key, source] of entries) {
+      if (!texts.has(key)) continue;
+      translated++;
+      if (sources[key] !== source.text) outdated++;
+    }
+    if (translated) status.push(`  ${JSON.stringify(lang)}: { translated: ${translated}, total: ${entries.size}, outdated: ${outdated} }`);
+  }
   return (
     header +
     (langs.length
@@ -197,6 +212,10 @@ function renderTranslationsFile(localesDir) {
     (imports.length ? imports.join("\n") + "\n" : "") +
     "\nexport const TRANSLATED_CATALOGS: Readonly<Record<string, Catalog>> = {" +
     (langs.length ? `\n${langs.join(",\n")}\n` : "") +
+    "};\n" +
+    "\n/** How much of English each language translates, and how much of that is outdated */\n" +
+    "export const TRANSLATION_STATUS: Readonly<Record<string, { translated: number; total: number; outdated: number }>> = {" +
+    (status.length ? `\n${status.join(",\n")}\n` : "") +
     "};\n"
   );
 }

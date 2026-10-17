@@ -80,7 +80,7 @@ describe("CreateDiskView — intents", () => {
   it("reports a request to browse for the folder", () => {
     const dispatch = renderView();
 
-    fireEvent.click(screen.getByRole("button", { name: "Select the root project folder" }));
+    fireEvent.click(screen.getByRole("button", { name: "Select the folder for the disk file" }));
 
     expect(dispatch).toHaveBeenCalledWith({ type: "selectFolderRequested" });
   });

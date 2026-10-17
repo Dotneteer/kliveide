@@ -28,9 +28,10 @@ function fakeStore(globalSettings: Record<string, unknown>) {
 describe("computeUiLanguage", () => {
   it("reads the language and show-keys settings", () => {
     const state = { globalSettings: { ideViewOptions: { language: "qps", i18nShowKeys: true } } } as AppState;
+    // --- German is offered, so a German OS resolves "system" to it
     expect(computeUiLanguage(state, ["de-DE"], true)).toEqual({
       current: "qps",
-      system: "en",
+      system: "de",
       showKeys: true,
       devTools: true
     });

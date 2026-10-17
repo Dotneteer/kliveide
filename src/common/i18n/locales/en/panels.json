@@ -7,7 +7,7 @@
   "panels.activity.debug": "Debug",
   "@panels.activity.debug": {
     "context": "Name of the debugger activity (CPU registers, breakpoints, watches), shown as the tooltip of its icon in the vertical activity bar and as the heading of the side bar when selected.",
-    "maxChars": 8
+    "maxChars": 13
   },
   "panels.activity.machineInfo": "Machine info",
   "@panels.activity.machineInfo": {
@@ -31,7 +31,7 @@
   "panels.activityBar.settings": "Settings",
   "@panels.activityBar.settings": {
     "context": "Tooltip and accessible name of the gear button at the foot of the activity bar; it opens the Settings dialog.",
-    "maxChars": 12
+    "maxChars": 15
   },
   "panels.activityBar.moveSidebarLeft": "Move Sidebar to the Left",
   "@panels.activityBar.moveSidebarLeft": {
@@ -73,7 +73,7 @@
   "panels.sideBar.callStack": "Call Stack",
   "@panels.sideBar.callStack": {
     "context": "Side-bar panel heading (Debug activity): the debugger's call stack of the emulated program.",
-    "maxChars": 14
+    "maxChars": 19
   },
   "panels.sideBar.nextMemoryMapping": "Next Memory Mapping",
   "@panels.sideBar.nextMemoryMapping": {
@@ -93,12 +93,12 @@
   "panels.sideBar.watch": "Watch",
   "@panels.sideBar.watch": {
     "context": "Side-bar panel heading (Debug activity): user-defined watch expressions, as in a debugger's watch window (a noun, not a verb).",
-    "maxChars": 8
+    "maxChars": 13
   },
   "panels.sideBar.breakpoints": "Breakpoints",
   "@panels.sideBar.breakpoints": {
     "context": "Side-bar panel heading (Debug activity): the list of debugger breakpoints.",
-    "maxChars": 16
+    "maxChars": 23
   },
   "panels.sideBar.systemVariables": "System Variables",
   "@panels.sideBar.systemVariables": {
@@ -200,7 +200,7 @@
   "panels.outputPane.build": "Build",
   "@panels.outputPane.build": {
     "context": "Output pane name (dropdown in the Output tab and watermark): compiler/assembler output of the last build (a noun).",
-    "maxChars": 8
+    "maxChars": 13
   },
   "panels.outputPane.scriptOutput": "Script Output",
   "@panels.outputPane.scriptOutput": {
@@ -756,7 +756,7 @@
   "explorer.dialog.deleteFile": "Delete file",
   "@explorer.dialog.deleteFile": {
     "context": "Title of the confirmation dialog that deletes a file, opened from the Explorer.",
-    "maxChars": 16
+    "maxChars": 19
   },
   "explorer.dialog.deleteFolder": "Delete folder",
   "@explorer.dialog.deleteFolder": {

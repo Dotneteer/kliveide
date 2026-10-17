@@ -1,5 +1,5 @@
 {
-  "_about": "Klive's translation glossary (LOCALIZATION_PLAN §8). Seeded by AI from the English catalogs; each language column still needs review by a native speaker. Translators and the AI follow it; extend it in the same change that adds or fixes a language. See README.md.",
+  "_about": "Klive's translation glossary (LOCALIZATION_PLAN §8). Seeded by AI from the English catalogs; each language column still needs review by a native speaker. Translators and the AI follow it; extend it in the same change that adds or fixes a language. See README.md. The first translation round (LOCALIZATION_PLAN step 10) added the terms its translators had to settle on themselves.",
   "reviewed": {
     "es": false,
     "pt-BR": false,
@@ -93,8 +93,6 @@
       "salva",
       "tela",
       "telas",
-      "excluir",
-      "exclua",
       "usuário",
       "usuários",
       "registro",
@@ -115,7 +113,6 @@
       "registos",
       "rato",
       "contacto",
-      "separador",
       "definições"
     ]
   },
@@ -191,13 +188,13 @@
       "en": "rename",
       "es": "cambiar nombre",
       "pt-BR": "renomear",
-      "pt-PT": "mudar o nome",
+      "pt-PT": "mudar o nome (button: renomear)",
       "de": "umbenennen",
       "hu": "átnevezés"
     },
     {
       "en": "settings",
-      "note": "The Settings dialog",
+      "note": "The Settings dialog. Where space is tight, a short verb form is acceptable (es/pt-BR: Configurar).",
       "es": "configuración",
       "pt-BR": "configurações",
       "pt-PT": "definições",
@@ -298,7 +295,7 @@
       "es": "pausar",
       "pt-BR": "pausar",
       "pt-PT": "pausar",
-      "de": "anhalten (Pause)",
+      "de": "pausieren",
       "hu": "szüneteltetés"
     },
     {
@@ -344,7 +341,7 @@
     },
     {
       "en": "breakpoint",
-      "es": "punto de interrupción",
+      "es": "punto de interrupción (where space is tight: punto de parada)",
       "pt-BR": "ponto de interrupção",
       "pt-PT": "ponto de interrupção",
       "de": "Haltepunkt",
@@ -749,7 +746,7 @@
       "note": "Watched expression",
       "es": "inspección",
       "pt-BR": "inspeção",
-      "pt-PT": "observação",
+      "pt-PT": "inspeção",
       "de": "Überwachung",
       "hu": "figyelő"
     },
@@ -1002,7 +999,7 @@
       "es": "prueba unitaria",
       "pt-BR": "teste de unidade",
       "pt-PT": "teste unitário",
-      "de": "Komponententest",
+      "de": "Unit-Test",
       "hu": "egységteszt"
     },
     {
@@ -1082,6 +1079,104 @@
       "pt-PT": "fotograma",
       "de": "Bild (Frame)",
       "hu": "képkocka"
+    },
+    {
+      "en": "logpoint",
+      "note": "A breakpoint that logs instead of stopping",
+      "es": "punto de registro",
+      "pt-BR": "logpoint",
+      "pt-PT": "logpoint",
+      "de": "Logpoint",
+      "hu": "naplópont"
+    },
+    {
+      "en": "build root",
+      "note": "The project file built by Build",
+      "es": "raíz de compilación",
+      "pt-BR": "raiz de compilação",
+      "pt-PT": "raiz de compilação",
+      "de": "Build-Root",
+      "hu": "fordítási gyökér"
+    },
+    {
+      "en": "release",
+      "note": "A published version of an external tool",
+      "es": "versión",
+      "pt-BR": "versão",
+      "pt-PT": "versão",
+      "de": "Release",
+      "hu": "kiadás"
+    },
+    {
+      "en": "executable",
+      "note": "An external tool's program file",
+      "es": "ejecutable",
+      "pt-BR": "executável",
+      "pt-PT": "executável",
+      "de": "Programmdatei",
+      "hu": "programfájl"
+    },
+    {
+      "en": "template",
+      "note": "A New Project template (not a machine model)",
+      "es": "plantilla",
+      "pt-BR": "template",
+      "pt-PT": "modelo",
+      "de": "Vorlage",
+      "hu": "sablon"
+    },
+    {
+      "en": "exclude (from the project)",
+      "note": "Explorer: hide an item from the project and the build (pt-BR: 'excluir' means delete — avoid)",
+      "es": "excluir del proyecto",
+      "pt-BR": "ocultar do projeto",
+      "pt-PT": "retirar do projeto",
+      "de": "aus dem Projekt ausschließen",
+      "hu": "kizárás a projektből"
+    },
+    {
+      "en": "frame rate",
+      "es": "velocidad de fotogramas",
+      "pt-BR": "taxa de quadros",
+      "pt-PT": "taxa de fotogramas",
+      "de": "Bildrate",
+      "hu": "képfrekvencia"
+    },
+    {
+      "en": "Open Editors",
+      "note": "The panel listing open documents",
+      "es": "Editores abiertos",
+      "pt-BR": "Editores abertos",
+      "pt-PT": "Editores abertos",
+      "de": "Geöffnete Editoren",
+      "hu": "nyitott lapok"
+    },
+    {
+      "en": "hit count",
+      "note": "How many times a breakpoint was hit",
+      "es": "contador de activaciones",
+      "pt-BR": "ocorrências",
+      "pt-PT": "contagem de ocorrências",
+      "de": "Trefferanzahl",
+      "hu": "találatszám"
+    },
+    {
+      "en": "Log (output pane)",
+      "note": "An output pane name; not a CPU register",
+      "es": "registro",
+      "pt-BR": "log",
+      "pt-PT": "Log",
+      "de": "Protokoll",
+      "hu": "napló"
+    },
+    {
+      "en": "image (SD card / disk)",
+      "note": "An image file of an SD card or disk",
+      "es": "imagen",
+      "pt-BR": "imagem",
+      "pt-PT": "imagem",
+      "de": "Abbild",
+      "hu": "képfájl"
     }
   ]
 }

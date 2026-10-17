@@ -4,7 +4,7 @@ Goal: every user-facing literal in Klive IDE lives in one folder of per-language
 English carries translator context, AI translates English into the other languages, and the app
 shows text in the language chosen in Settings. **English must keep working after every step.**
 
-Status: **steps 1–9 done** (see the "as built" notes under §3); Hungarian has its menus translated as the step 9 dry run. Steps 10–13 open.
+Status: **steps 1–10 done** (see the "as built" notes under §3): Spanish, Brazilian and European Portuguese, German and Hungarian are translated and enabled. Steps 11–13 open; rerun step 10 after each.
 
 ---
 
@@ -347,6 +347,48 @@ app is byte-for-byte English.
   dropdown (`enabled: false` keeps it out of releases). Fixes it led to: the README's PR step now
   lists `.source.json` and `translations.generated.ts`; tests must not hard-code the offered
   languages (two did, and broke when Magyar gained a catalog).
+
+### Step 10 — as built (first translation round)
+
+- **All 1295 English keys translated into es, pt-BR, pt-PT, de and hu** (100 %, 0 outdated) by
+  five AI translator agents in parallel, one per language, each following `TRANSLATING.md` and the
+  glossary namespace by namespace through `i18n:todo` → answer → `i18n:merge`, then a review pass
+  of its whole folder. pt-BR and pt-PT were separate requests, each from English, and neither
+  triggers a variant-word warning. **No native speaker has reviewed them yet** — `glossary.json`
+  keeps `reviewed: false` per language; each translator's "look at this first" list is below.
+- **All five are `enabled: true`.** "System default" now really resolves to them (a German OS
+  starts Klive in German); scripts that drive the app and read its English text must seed
+  `ideViewOptions.language: "en"` as `scripts/doc-shots/harness.cjs` does.
+- **Language page completed (§7)**: a *Translations* row shows "N % translated" (plus "· N entries
+  outdated" when some are) for the current language — counted at build time into
+  `TRANSLATION_STATUS` in `translations.generated.ts` — and a *Help translate* button (UI action
+  `open:translation-guide`) opens `locales/README.md` on GitHub. Rows can now carry a computed
+  `describe(env)` help text.
+- **English fixed from translators' reports** (they flagged the same entries independently):
+  "region(s)" inside plural branches; two browse tooltips that said "Select the root project
+  folder" while picking the export / disk-file folder; "Click Ok," in the Z88 RAM warning; and
+  Monaco's `boundary` whitespace option, described as "At line boundaries" (it is "All but single
+  spaces between words"). Where translators had already rendered the intended meaning,
+  `.source.json` was set to the corrected English; the whitespace option went through the outdated
+  path (`i18n:todo` showed old English, new English and the current translation; re-merged), which
+  proves the update workflow end to end.
+- **`maxChars` were too tight** where the extraction agents guessed ~1.4× English: 19 limits were
+  raised to fit real translations (breakpoint dialog titles, side-bar headings like *Call Stack*,
+  *Watch*, *Breakpoints*, Boriel dialog buttons, …), and three Hungarian texts squeezed into the old
+  limits got their proper form back. Limits now reflect five languages, not a guess.
+- **Glossary grew to 124 terms** with what translators had to settle on (logpoint, build root,
+  release, executable, template, exclude-from-project, frame rate, Open Editors, hit count, Log
+  pane, image) and corrections: de *pause* = "pausieren" (it had equalled *stop*), de *unit test* =
+  "Unit-Test", pt-PT *watch* = "inspeção". Two variant-only words gave false positives and were
+  dropped: "separador" (also a pt-BR word) and "excluir" (pt-PT *exclude*).
+- **For native reviewers, first**: the debugger step names (es *Salir* for Step Out equals
+  *Salir* for Quit; pt-BR *Intervir/Contornar*; coined reverse-step names), short status-bar tags
+  (es/pt "Veloc.", RZX "REPR"/"GRAV"), machine states in the status bar, accent-colour names, the
+  breakpoint kinds (de), "Take over here" (pt-BR *Assumir daqui*, pt-PT *Retomar aqui*), and the
+  Detect dialog's mode labels.
+- **Verified in the running app**, each language launched in turn: the native menu is translated,
+  the Language page shows 100 % and the button, and a DOM scan found no clipped text in the IDE
+  window or the Settings dialog.
 
 ---
 

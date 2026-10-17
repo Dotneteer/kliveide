@@ -20,6 +20,7 @@ import { ZOOM_STEPS } from "./zoom-steps";
 import { t } from "@common/i18n/i18n";
 import { SOURCE_CATALOG } from "@common/i18n/catalogs";
 import { labelled } from "@common/i18n/labels";
+import { TRANSLATION_STATUS } from "@common/i18n/translations.generated";
 import type { MessageKey } from "@common/i18n/keys.generated";
 import {
   LANGUAGE_SYSTEM,
@@ -191,6 +192,8 @@ export type SettingsRow = {
   groupKey: MessageKey;
   titleKey: MessageKey;
   descriptionKey?: MessageKey;
+  /** A help text computed when shown; wins over `descriptionKey` when it returns one */
+  describe?: (env: SettingsPlatform) => string | undefined;
   /**
    * The menu path the row replaces: the search finds the new place by the old one. English on
    * purpose: it names the old menus, which were English.
@@ -351,6 +354,16 @@ export const SETTINGS_ROWS: SettingsRow[] = [
     editor: "select",
     source: setting(SETTING_IDE_LANGUAGE),
     options: languageOptions
+  },
+  {
+    id: "translationStatus",
+    page: "language",
+    groupKey: "settings.language.group",
+    titleKey: "settings.language.help.title",
+    descriptionKey: "settings.language.help.description",
+    describe: translationStatusText,
+    editor: "button",
+    buttons: [{ labelKey: "settings.button.helpTranslate", action: "open:translation-guide" }]
   },
   {
     id: "i18nShowKeys",
@@ -1231,8 +1244,23 @@ export function settingsRowTitle(row: SettingsRow): string {
   return t(row.titleKey);
 }
 
-export function settingsRowDescription(row: SettingsRow): string | undefined {
+export function settingsRowDescription(row: SettingsRow, env?: SettingsPlatform): string | undefined {
+  const computed = env && row.describe?.(env);
+  if (computed) return computed;
   return row.descriptionKey ? t(row.descriptionKey) : undefined;
+}
+
+/**
+ * The current language's translation status (§7): "92 % translated · 14 entries outdated"; nothing
+ * for English or a language without a catalog. Counted at build time (`TRANSLATION_STATUS`).
+ */
+export function translationStatusText(env: SettingsPlatform): string | undefined {
+  const status = TRANSLATION_STATUS[env.uiLanguage?.current ?? ""];
+  if (!status || !status.total) return undefined;
+  const percent = Math.floor((status.translated * 100) / status.total);
+  return status.outdated
+    ? t("settings.language.statusOutdated", { percent, outdated: status.outdated })
+    : t("settings.language.status", { percent });
 }
 
 export function settingsRowGroup(row: SettingsRow): string {

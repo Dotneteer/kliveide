@@ -95,7 +95,7 @@ export function rowViewModel(row: SettingsRow, state: SettingsState): SettingsRo
   return {
     id: row.id,
     title: settingsRowTitle(row),
-    description: settingsRowDescription(row),
+    description: settingsRowDescription(row, state.env.platform),
     replaces: state.query && row.replaces ? t("settings.was", { path: row.replaces }) : undefined,
     editor: row.editor,
     checked: !!value,

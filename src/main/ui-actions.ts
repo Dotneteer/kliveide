@@ -6,7 +6,7 @@
  */
 import fs from "fs";
 import path from "path";
-import { app, BrowserWindow, dialog } from "electron";
+import { app, BrowserWindow, dialog, shell } from "electron";
 
 import type { UiActionId } from "@common/settings/ui-action-ids";
 import type { SettingsPageId } from "@common/settings/settings-pages";
@@ -66,6 +66,10 @@ import { forgetScorpionRom, selectScorpionRomFile } from "./machine-menus/scorpi
 import { toggleWindowRecording } from "./recording/window-recording/windowRecordingController";
 import { focusEmuWindow, getAppWindows, isIdeWindowFocused, isIdeWindowVisible, showIdeWindow } from ".";
 import { t } from "@common/i18n/i18n";
+
+/** The contributor guide the Language page links to (`src/common/i18n/locales/README.md`) */
+export const TRANSLATION_GUIDE_URL =
+  "https://github.com/Dotneteer/kliveide/blob/master/src/common/i18n/locales/README.md";
 
 const KEY_MAPPING_FOLDER = "keyMappingFolder";
 
@@ -325,6 +329,9 @@ export async function runUiAction(actionId: UiActionId, value?: unknown): Promis
     case "dialog:excluded-items":
       showIdeWindow();
       await getIdeApi().displayDialog(EXCLUDED_PROJECT_ITEMS_DIALOG);
+      return undefined;
+    case "open:translation-guide":
+      await shell.openExternal(TRANSLATION_GUIDE_URL);
       return undefined;
     default:
       return `Unknown UI action: ${actionId}`;

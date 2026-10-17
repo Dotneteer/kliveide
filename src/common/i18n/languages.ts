@@ -4,7 +4,8 @@
  * table, so adding a language is "add a row + a folder".
  *
  * A row with `enabled: false` is not offered to users yet (too incomplete); dev builds still list
- * it once it has a catalog. `qps` is the generated pseudo-locale, offered only in dev builds.
+ * it once it has a catalog. The five translated languages are enabled since the first translation
+ * round (`.plans/LOCALIZATION_PLAN.md` step 10). `qps` is the generated pseudo-locale, offered only in dev builds.
  */
 import { PSEUDO_LANGUAGE, SOURCE_LANGUAGE } from "./catalogs-core";
 import { TRANSLATED_CATALOGS } from "./translations.generated";
@@ -26,23 +27,23 @@ export type LanguageInfo = {
 
 export const LANGUAGES: readonly LanguageInfo[] = [
   { id: "en", nativeName: "English", englishName: "English", locale: "en", enabled: true },
-  { id: "es", nativeName: "Español", englishName: "Spanish", locale: "es", enabled: false },
+  { id: "es", nativeName: "Español", englishName: "Spanish", locale: "es", enabled: true },
   {
     id: "pt-BR",
     nativeName: "Português (Brasil)",
     englishName: "Portuguese (Brazil)",
     locale: "pt-BR",
-    enabled: false
+    enabled: true
   },
   {
     id: "pt-PT",
     nativeName: "Português (Portugal)",
     englishName: "Portuguese (Portugal)",
     locale: "pt-PT",
-    enabled: false
+    enabled: true
   },
-  { id: "de", nativeName: "Deutsch", englishName: "German", locale: "de", enabled: false },
-  { id: "hu", nativeName: "Magyar", englishName: "Hungarian", locale: "hu", enabled: false },
+  { id: "de", nativeName: "Deutsch", englishName: "German", locale: "de", enabled: true },
+  { id: "hu", nativeName: "Magyar", englishName: "Hungarian", locale: "hu", enabled: true },
   {
     id: PSEUDO_LANGUAGE,
     nativeName: "Pseudo-locale (qps)",
@@ -78,9 +79,10 @@ export function languageInfo(id: string): LanguageInfo | undefined {
  */
 export function offeredLanguages(
   devTools: boolean,
-  catalogIds: readonly string[] = Object.keys(TRANSLATED_CATALOGS)
+  catalogIds: readonly string[] = Object.keys(TRANSLATED_CATALOGS),
+  table: readonly LanguageInfo[] = LANGUAGES
 ): LanguageInfo[] {
-  return LANGUAGES.filter((l) => {
+  return table.filter((l) => {
     if (l.devOnly) return devTools;
     const hasText = l.id === SOURCE_LANGUAGE || catalogIds.includes(l.id);
     return hasText && (l.enabled || devTools);

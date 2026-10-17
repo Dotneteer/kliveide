@@ -153,9 +153,9 @@
   "@settings.editor.renderWhitespace.option.none": {
     "context": "Choice in the 'Render whitespace' dropdown (Settings dialog, Editor page)."
   },
-  "settings.editor.renderWhitespace.option.boundary": "At line boundaries",
+  "settings.editor.renderWhitespace.option.boundary": "All but single spaces between words",
   "@settings.editor.renderWhitespace.option.boundary": {
-    "context": "Choice in the 'Render whitespace' dropdown (Settings dialog, Editor page)."
+    "context": "Choice in the 'Render whitespace' dropdown (Settings dialog, Editor page): show whitespace characters, except a single space between two words."
   },
   "settings.editor.renderWhitespace.option.selection": "Inside the selection",
   "@settings.editor.renderWhitespace.option.selection": {
@@ -924,5 +924,34 @@
   "settings.accent.phosphorGreen": "Phosphor Green",
   "@settings.accent.phosphorGreen": {
     "context": "Name of a colour accent (Settings dialog, Appearance page, 'Accent' swatches). 'Sinclair' and 'Spectrum' are brand names; keep them."
+  },
+  "settings.language.help.title": "Translations",
+  "@settings.language.help.title": {
+    "context": "Label of the row on the Language page of the Settings dialog that shows how complete the current language's translation is and links to the contributor guide.",
+    "maxChars": 32
+  },
+  "settings.language.help.description": "Fix a translation or add a language: the guide explains how.",
+  "@settings.language.help.description": {
+    "context": "Help text of the 'Translations' row while English is shown: invites the user to contribute translations. 'The guide' is the contributor guide the button opens."
+  },
+  "settings.language.status": "{percent} % translated",
+  "@settings.language.status": {
+    "context": "Help text of the 'Translations' row: how much of Klive's text the current language translates. The rest shows in English.",
+    "placeholders": {
+      "percent": "A whole number from 0 to 100"
+    }
+  },
+  "settings.language.statusOutdated": "{percent} % translated · {outdated, plural, one {# entry outdated} other {# entries outdated}}",
+  "@settings.language.statusOutdated": {
+    "context": "Help text of the 'Translations' row: how much is translated, and how many translations are older than the current English text.",
+    "placeholders": {
+      "percent": "A whole number from 0 to 100",
+      "outdated": "How many translations are outdated, 1 or more"
+    }
+  },
+  "settings.button.helpTranslate": "Help translate",
+  "@settings.button.helpTranslate": {
+    "context": "Button on the 'Translations' row of the Settings dialog: opens the contributor guide (a web page) in the browser.",
+    "maxChars": 20
   }
 }

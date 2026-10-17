@@ -17,17 +17,22 @@ describe("the language table", () => {
 });
 
 describe("offeredLanguages", () => {
-  it("offers English only in a release build until translations exist", () => {
+  const ALL = ["es", "pt-BR", "pt-PT", "de", "hu"];
+
+  it("offers the enabled languages that have a catalog", () => {
     expect(ids(offeredLanguages(false, []))).toEqual(["en"]);
+    expect(ids(offeredLanguages(false, ALL))).toEqual(["en", ...ALL]);
   });
 
   it("adds the pseudo-locale in a dev build", () => {
-    expect(ids(offeredLanguages(true, []))).toEqual(["en", "qps"]);
+    expect(ids(offeredLanguages(true, ALL))).toEqual(["en", ...ALL, "qps"]);
   });
 
   it("offers a disabled language with a catalog only in a dev build", () => {
-    expect(ids(offeredLanguages(false, ["de"]))).toEqual(["en"]);
-    expect(ids(offeredLanguages(true, ["de"]))).toEqual(["en", "de", "qps"]);
+    const table = [...LANGUAGES, { id: "it", nativeName: "Italiano", englishName: "Italian", locale: "it", enabled: false }];
+    expect(ids(offeredLanguages(false, ["it"], table))).toEqual(["en"]);
+    expect(ids(offeredLanguages(true, ["it"], table))).toEqual(["en", "qps", "it"]);
+    expect(ids(offeredLanguages(true, [], table))).toEqual(["en", "qps"]);
   });
 });
 
@@ -49,8 +54,8 @@ describe("resolveSystemLanguage", () => {
 
 describe("resolveUiLanguage", () => {
   it("follows the system for 'system', a missing or an unoffered value", () => {
-    expect(resolveUiLanguage("system", ["hu-HU"], false, ["hu"])).toEqual({ current: "en", system: "en" });
-    expect(resolveUiLanguage("system", ["hu-HU"], true, ["hu"])).toEqual({ current: "hu", system: "hu" });
+    expect(resolveUiLanguage("system", ["hu-HU"], false, ["hu"])).toEqual({ current: "hu", system: "hu" });
+    expect(resolveUiLanguage("system", ["hu-HU"], false, [])).toEqual({ current: "en", system: "en" });
     expect(resolveUiLanguage(undefined, ["en-GB"], false, [])).toEqual({ current: "en", system: "en" });
     expect(resolveUiLanguage("qps", ["en-GB"], false, [])).toEqual({ current: "en", system: "en" });
     expect(resolveUiLanguage(42, ["en-GB"], false, [])).toEqual({ current: "en", system: "en" });

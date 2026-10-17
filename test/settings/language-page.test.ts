@@ -2,11 +2,13 @@ import { describe, expect, it } from "vitest";
 import type { AppState } from "@common/state/AppState";
 import { offeredLanguages, type UiLanguageState } from "@common/i18n/languages";
 import { setLanguage } from "@common/i18n/i18n";
+import { TRANSLATION_STATUS } from "@common/i18n/translations.generated";
 import {
   SETTINGS_PAGES,
   SETTINGS_ROWS,
   isSettingsRowApplicable,
   languageOptions,
+  translationStatusText,
   readSettingsRowValue,
   settingsPageTitle,
   settingsRowMatches,
@@ -36,11 +38,20 @@ describe("the Language page", () => {
     expect(settingsPageTitle("language")).toBe("Language");
   });
 
-  it("offers System default and English in a release build", () => {
+  it("offers System default and the five translated languages in a release build", () => {
     expect(languageOptions({ isWindows: false, uiLanguage: ui() })).toEqual([
       { value: "system", label: "System default (English)" },
-      { value: "en", label: "English" }
+      { value: "en", label: "English" },
+      { value: "es", label: "Español" },
+      { value: "pt-BR", label: "Português (Brasil)" },
+      { value: "pt-PT", label: "Português (Portugal)" },
+      { value: "de", label: "Deutsch" },
+      { value: "hu", label: "Magyar" }
     ]);
+    // --- "System default" names what it gives, in that language's own name
+    expect(languageOptions({ isWindows: false, uiLanguage: ui({ system: "de" }) })[0].label).toBe(
+      "System default (Deutsch)"
+    );
   });
 
   it("adds the pseudo-locale in a dev build", () => {
@@ -90,4 +101,21 @@ describe("the Language page", () => {
       offeredLanguages(true).map((l) => l.nativeName)
     );
   });
+
+  it("shows the current language's translation status, and links to the guide", () => {
+    const env = (current: string) => ({ isWindows: false, uiLanguage: ui({ current }) });
+    expect(translationStatusText(env("en"))).toBeUndefined();
+    expect(translationStatusText(env("qps"))).toBeUndefined();
+    for (const [lang, status] of Object.entries(TRANSLATION_STATUS)) {
+      const percent = Math.floor((status.translated * 100) / status.total);
+      expect(translationStatusText(env(lang))).toBe(
+        status.outdated
+          ? `${percent} % translated · ${status.outdated} ${status.outdated === 1 ? "entry" : "entries"} outdated`
+          : `${percent} % translated`
+      );
+    }
+    const help = row("translationStatus");
+    expect(help.buttons?.map((b) => b.action)).toEqual(["open:translation-guide"]);
+  });
 });
+

@@ -152,12 +152,12 @@
   "toolbar.pause": "Pause (Shift+F5)",
   "@toolbar.pause": {
     "context": "Tooltip of the toolbar button that pauses the running emulated machine. Shift+F5 is the shortcut.",
-    "maxChars": 23
+    "maxChars": 26
   },
   "toolbar.stop": "Stop (F4)",
   "@toolbar.stop": {
     "context": "Tooltip of the toolbar button that stops (turns off) the emulated machine. F4 is the shortcut.",
-    "maxChars": 13
+    "maxChars": 16
   },
   "toolbar.restart": "Restart (Shift+F4)",
   "@toolbar.restart": {
