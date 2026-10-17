@@ -1,6 +1,6 @@
 # Boriel BASIC (zxbc 2.0) Integration — Implementation Plan
 
-Status: **approved for implementation; Phases B0-B3 done, B4 done except one open issue (§6, "Open")** (2026-10-17, HEAD `2cebbd732`). Decisions B1, B-L1, B-T1 and B-T2 are settled (§0).
+Status: **approved for implementation; Phases B0-B4 done, B5-B6 not started** (2026-10-17, HEAD `2cebbd732`). Decisions B1, B-L1, B-T1 and B-T2 are settled (§0).
 Inputs: the setup kits, now in `vendor/boriel-basic/` (`kit.json` + git-ignored `kits/`; see §3.1) and the debug
 format published at <https://zxbasic.readthedocs.io/en/v2.0/debug_format/> (pages *Statements &
 Addresses*, *Callables*, *Call Sites*, *Variables*, *Banking*).
@@ -574,7 +574,7 @@ validator Klive BASIC's builder runs.
 
 ---
 
-## 6. Phase B4 — debugger parity (**done 2026-10-17, one open issue**)
+## 6. Phase B4 — debugger parity (**done 2026-10-17**)
 
 **As built:**
 
@@ -600,33 +600,23 @@ validator Klive BASIC's builder runs.
 - **Fixtures:** `calls-next` is now also a `.nex` (`"nex": true` in `fixture.json`); a new
   `runtime-error-next` fixture exists.
 
-**Open: in an IDE debug run on the Next, breakpoints in a Boriel program do not stop it.**
-Observed in the running app: a Next project, Boriel selected, a breakpoint on `RETURN n * n` inside
-a FUNCTION, then `debug`. NextZXOS loads zxbc's `.nex` and the program runs and prints correctly,
-but the machine never pauses. With Klive BASIC, the same program and breakpoint pause at `$8060`
-(a control run with no breakpoint does not pause, so that was the user breakpoint).
+- **Next breakpoints in an IDE debug run (fixed 2026-10-17).** A breakpoint never paused a Boriel
+  program started through NextZXOS. Cause: **`--debug=FILE` changes the code zxbc generates**
+  (`.ai/boriel/cli-and-diagnostics.md`), and the second zxbc run that wrote the `.nex` did not pass
+  it. The Next ran code shifted by two bytes from `$800D` on, while breakpoints and stepping used
+  the `.bin`'s `.dbg`. The 48K was never affected: it injects the `.bin`. Fix:
+  - `BorielCompiler` passes `--debug=<name>.same-code.dbg` (deleted after the build) to every run
+    after the first: the `.nex`, `@emit-asm`, `@emit-ir`;
+  - a build whose `.nex` does not contain the `.bin` image gets a `ZXBC-D` warning
+    (`nexHoldsImage`);
+  - `scripts/boriel-fixtures.cjs` builds fixture `.nex` files the same way. The old `calls-next`
+    `.nex` held other code, and its test passed by luck; `boriel-next.test.ts` now checks that the
+    loaded memory equals `program.bin` before it debugs.
 
-Ruled out so far:
-
-- **The core.** The same breakpoint in the same `.nex` fires on the Next harness (direct loader after
-  `prepareBasic`, `boriel-next.test.ts`).
-- **Breakpoint resolution.** It resolves the same way for both compilers: no partition, from
-  `listFileItems` and `segments[0]`.
-- **Timing and `suppressUserBreakpointsUntilKeystrokesLand`.** A `PAUSE 750` (15 s) before the
-  call changes nothing, which is past the 10 s suppression deadline.
-- **The renderers.** They log nothing.
-
-Suspects to check next:
-
-- The debug run's Next path (`injectCode` → `exportNexFile`'s `prebuiltNex` early return →
-  `runCodeCommand`). Compare what Klive BASIC's output carries that Boriel's minimal
-  `nexConfig: { filename }` does not.
-- Whether Boriel's zxnext runtime remaps the MMU (slot 4/5), so the program runs from another page
-  while the breakpoint compares against something else.
-- Whether `codeToInject.entryAddress` = `$8000` (the NEX start itself, where Klive BASIC's is past
-  its NEX stub) matters to the Next flow.
-
-The check script used is described in the handoff.
+  `scripts/boriel-ide-check.cjs` passes all parts (`run`, `debug`, `next`, `export`). The `export`
+  part verifies in the app: a TAP export holds zxbc's code in a valid code block; a Next build's
+  NEX export writes zxbc's `.nex` and the debug sidecar; `nex-run -d` of that file stops at a source
+  breakpoint.
 
 
 ### 6.1 Frame locator: `fastcall`

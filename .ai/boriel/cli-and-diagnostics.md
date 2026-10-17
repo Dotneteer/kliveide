@@ -11,6 +11,12 @@ zxbc <abs>/program.zxbas --arch <zx48k|zx128k|zxnext> -f <bin|z80|nex>
 Run it with `cwd` = an empty Klive-owned folder (see `project.ini` below), no shell, stdin closed,
 and a timeout that kills the process.
 
+- **`--debug=FILE` changes the generated code**, not only what is written about it (verified
+  2026-10-17): the same program built with and without it gives images of different lengths
+  (5869 vs 5867 bytes on a Next program; the first difference is a `CALL` target at offset 13), on
+  zx48k and zxnext alike. So **every output that must match the debugged code is built with
+  `--debug`**: the `.nex`, and the `asm`/`ir` listings. The `.dbg` written beside a `-f nex` run is
+  byte-identical to the `-f bin` run's.
 - `--version` prints `zxbc 2.0.0-beta25` and exits 0. It takes about 1 s on a cold launch.
 - **`-d` takes no value. Only `--debug=FILE` sets the path.** `-d=FILE` is an argument error, and so is
   `-d FILE`, because the path is read as the program.

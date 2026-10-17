@@ -43,5 +43,7 @@ BASIC syntax; Boriel banks MODULEs with `--split-modules`), `nex-entry`, `nex-lo
 ## Always added by the compiler
 
 `<absolute source path>`, `-f bin -o …`, `--debug=…`, `-M …`, `-e …`, and on the Next a second run with
-`-f nex -o …`. `-F <project>/project.ini` only when the project has one. Never `--hide-warning-codes`.
+`-f nex -o …`. Every run after the first (the `.nex`, `@emit-asm`, `@emit-ir`) passes
+`--debug=<build folder>/<name>.same-code.dbg` too, deleted afterwards, because the flag changes the
+code (`cli-and-diagnostics.md`). `-F <project>/project.ini` only when the project has one. Never `--hide-warning-codes`.
 zxbc runs with `cwd` = `<project>/_klive/boriel`.

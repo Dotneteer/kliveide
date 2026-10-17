@@ -34,6 +34,10 @@ async function startNex(name: string) {
   // --- The state NextZXOS's .nexload leaves: the 48K BASIC ROM paged in, its system variables set up
   await session.prepareBasic();
   await session.loadProgramFile(path.join(FIXTURES, name, "program.nex"));
+  // --- The .nex must load the code the .dbg describes. zxbc's code differs without --debug, and a
+  // --- .nex built so ran other code than the one debugged: no IDE breakpoint ever fired (plan §6)
+  const image = fs.readFileSync(path.join(FIXTURES, name, "program.bin"));
+  expect(Buffer.from(session.peekBytes(0x8000, image.length))).toEqual(image);
   return session;
 }
 

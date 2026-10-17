@@ -5,11 +5,14 @@
  *
  *   run    - an sp48 project with Boriel selected builds, runs, and a syntax error reports E342;
  *   debug  - a breakpoint inside a SUB pauses the machine at source level;
- *   next   - the same on the ZX Spectrum Next through NextZXOS (needs ~/Klive/ks2.cim, copied).
- *            KNOWN TO FAIL (plan §6, "Open"): the program runs, the breakpoint never stops it.
+ *   next   - the same inside a FUNCTION on the ZX Spectrum Next, through NextZXOS's .nexload of
+ *            zxbc's .nex (needs ~/Klive/ks2.cim, copied);
+ *   export - a TAP export of an sp48 build holds the injected code; a Next build's NEX export
+ *            writes the debug sidecar beside it, and `nex-run -d` of that file stops at a source
+ *            breakpoint (needs the card image too).
  *
  *   npx electron-vite build --config build/electron.vite.config.ts
- *   node scripts/boriel-ide-check.cjs [run|debug|next ...]
+ *   node scripts/boriel-ide-check.cjs [run|debug|next|export ...]
  *
  * Boriel BASIC comes from BORIEL_ROOT, else ~/zxbasic2 (install it from Klive's setup dialog).
  * Screenshots and the throwaway homes go to `.boriel-ide-check/` (git-ignored). Local only: it needs
@@ -97,11 +100,54 @@ const PARTS = {
     await s.k.cmd("bp-set [code/program.zxbas]:2", 1200);
     await s.k.cmd("debug", 5000);
     // --- NextZXOS boots and .nexloads the exported NEX: this takes a while
-    check(!!(await s.waitPaused(120000)), "next: a breakpoint inside a FUNCTION pauses the Next (KNOWN TO FAIL, plan §6 Open)");
+    check(!!(await s.waitPaused(120000)), "next: a breakpoint inside a FUNCTION pauses the Next");
     await s.k.ide.screenshot({ path: path.join(s.out, "ide.png") });
     await s.k.close();
+  },
+
+  async export() {
+    const s = await session("export", { card: true });
+    // --- TAP: a header block naming the code, then a data block holding exactly zxbc's .bin
+    const tapFolder = await s.project("sp48", ['PRINT AT 10, 5; "Boriel TAP"']);
+    const tap = path.join(s.out, "program.tap");
+    await s.k.cmd(`expc "${tap}" -f tap -n boriel`, 6000);
+    const bin = path.join(tapFolder, "_klive", "boriel", "program.bin");
+    const blocks = tapBlocks(fs.existsSync(tap) ? fs.readFileSync(tap) : Buffer.alloc(0));
+    const code = blocks.find((b) => b[0] === 0xff);
+    check(
+      fs.existsSync(bin) && !!code && Buffer.compare(code.subarray(1, -1), fs.readFileSync(bin)) === 0 && blocks.every(tapChecksumOk),
+      "export: the TAP holds zxbc's code in a valid code block"
+    );
+    await s.k.close();
+
+    // --- NEX: zxbc's file and Klive's sidecar, then nex-run -d stops at a source breakpoint
+    const n = await session("export-next", { card: true });
+    await n.project("zxnext", ["FUNCTION Square(n As UByte) As UInteger", "    RETURN n * n", "END FUNCTION", "PRINT AT 11, 2; Square(7)"]);
+    for (let t = Date.now(); !/ZX Spectrum Next/.test(await n.emuText()) && Date.now() - t < 30000; ) await sleep(500);
+    await sleep(3000);
+    const nex = path.join(n.out, "boriel.nex");
+    await n.k.cmd(`expc "${nex}"`, 8000);
+    check(fs.existsSync(nex) && fs.readFileSync(nex).subarray(0, 4).toString() === "Next", "export: the NEX export writes zxbc's .nex");
+    check(fs.existsSync(`${nex}.kbasic-debug.json`), "export: the NEX export writes the debug sidecar beside it");
+    await n.k.cmd("bp-set [code/program.zxbas]:2", 1200);
+    await n.k.cmd(`nex-run "${nex}" -d`, 5000);
+    check(!!(await n.waitPaused(120000)), "export: nex-run -d of the exported NEX stops at a source breakpoint");
+    await n.k.ide.screenshot({ path: path.join(n.out, "nex-run.png") });
+    await n.k.close();
   }
 };
+
+/** A TAP file's blocks, each with its flag byte first and its checksum last. */
+function tapBlocks(bytes) {
+  const blocks = [];
+  for (let i = 0; i + 2 <= bytes.length; ) {
+    const length = bytes[i] | (bytes[i + 1] << 8);
+    blocks.push(bytes.subarray(i + 2, i + 2 + length));
+    i += 2 + length;
+  }
+  return blocks;
+}
+const tapChecksumOk = (block) => block.reduce((x, b) => x ^ b, 0) === 0;
 
 (async () => {
   if (!fs.existsSync(path.join(ROOT, process.platform === "win32" ? "zxbc.exe" : "zxbc"))) {

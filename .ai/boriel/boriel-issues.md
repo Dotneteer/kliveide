@@ -41,8 +41,14 @@ reproduces it. The project author decides what to send.
    that follows the CALL. SUB, GOSUB and ON GOSUB sites are right. A debugger matching stack words
    against return addresses never finds the FUNCTION's activation. Klive's adapter moves it back
    when the code image shows a CALL ending one byte earlier (found in Phase B3).
-10. **Diagnostics have no column**, and argument errors go to stderr even with `-e`.
-11. **Packaging:**
+10. **`--debug=FILE` changes the generated code.** A build with it and one without differ (5869 vs
+    5867 bytes for one small Next program), so a `.nex` built without the flag next to a `.bin`
+    built with it holds other code than the `.dbg` describes. Every breakpoint missed on the Next
+    until Klive passed the flag to the `.nex` run too. Debug information should not change the code.
+11. **A FUNCTION whose body is only `RETURN expr`** gets a zero-length statement
+    (`startAddress == endAddress`), and the previous statement's range covers the routine's prologue.
+12. **Diagnostics have no column**, and argument errors go to stderr even with `-e`.
+13. **Packaging:**
     - the kits have no LICENSE file;
     - extracting with `tar`/Finder leaves `com.apple.quarantine`, and a quarantined first launch
       blocks a non-interactive caller forever (`kit.md`);

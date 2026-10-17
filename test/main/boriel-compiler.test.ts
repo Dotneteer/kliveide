@@ -110,6 +110,10 @@ type FakeBehaviour = {
   timedOut?: boolean;
   /** A .dbg whose data fails the adapter's checks (no main baseline). */
   brokenDebugData?: boolean;
+  /** The code a run without `--debug` writes: the real zxbc generates other code then. */
+  imageWithoutDebug?: number[];
+  /** The code every `.nex` holds, whatever the flags. */
+  nexImage?: number[];
 };
 
 function fakeZxbc(behaviour: FakeBehaviour, calls: { args: string[]; cwd: string }[]): ZxbcRunner {
@@ -123,11 +127,15 @@ function fakeZxbc(behaviour: FakeBehaviour, calls: { args: string[]; cwd: string
     const errFile = value("-e");
     if (errFile && behaviour.diagnostics) fs.writeFileSync(errFile, behaviour.diagnostics);
     if ((behaviour.exitCode ?? 0) === 0) {
-      const image = Buffer.from(behaviour.image ?? [0x3e, 0x01, 0xc9]);
-      const out = value("-o");
-      const format = value("-f");
-      if (out) fs.writeFileSync(out, format === "nex" ? Buffer.concat([Buffer.from("NextV1.1"), image]) : image);
       const debug = args.find((a) => a.startsWith("--debug="))?.slice(8);
+      const format = value("-f");
+      const image = Buffer.from(
+        (format === "nex" ? behaviour.nexImage : undefined) ??
+          (!debug ? behaviour.imageWithoutDebug : undefined) ??
+          behaviour.image ?? [0x3e, 0x01, 0xc9]
+      );
+      const out = value("-o");
+      if (out) fs.writeFileSync(out, format === "nex" ? Buffer.concat([Buffer.from("NextV1.1"), image]) : image);
       if (debug) {
         fs.writeFileSync(
           debug,
@@ -255,6 +263,29 @@ describe("BorielCompiler", () => {
     expect(Buffer.from(output.prebuiltNex).subarray(0, 8).toString()).toBe("NextV1.1");
     expect(calls.map((c) => c.args[c.args.indexOf("-f") + 1])).toEqual(["bin", "nex"]);
     expect(calls[0].args.join(" ")).toContain("--arch zxnext");
+    expect(output.errors).toEqual([]);
+  });
+
+  it("builds the .nex with --debug, which changes zxbc's code, so it holds the debugged program", async () => {
+    // --- zxbc 2.0.0-beta25 generates other code without --debug: the Next ran that while the
+    // --- debugger read the .bin's addresses, so no breakpoint ever fired (plan §6)
+    const { compiler, calls } = compilerWith({ image: [1, 2, 3, 4], imageWithoutDebug: [1, 2, 9, 9, 4] }, "zxnext");
+    const output: any = await compiler.compileFile(source);
+    expect(calls[1].args.some((a) => a.startsWith("--debug="))).toBe(true);
+    expect(calls[1].args).not.toContain(`--debug=${path.join(project, "_klive", "boriel", "program.dbg")}`);
+    expect(Buffer.from(output.prebuiltNex).subarray(8)).toEqual(Buffer.from([1, 2, 3, 4]));
+    expect(output.errors).toEqual([]);
+    // --- That run's .dbg is never read, and does not stay in the build folder
+    expect(fs.existsSync(calls[1].args.find((a) => a.startsWith("--debug="))!.slice(8))).toBe(false);
+  });
+
+  it("warns when the .nex does not hold the debugged code", async () => {
+    const { compiler } = compilerWith({ image: [1, 2, 3, 4], nexImage: [1, 2, 9, 9] }, "zxnext");
+    const output: any = await compiler.compileFile(source);
+    expect(output.errors).toHaveLength(1);
+    expect(output.errors[0]).toMatchObject({ errorCode: "ZXBC-D", isWarning: true });
+    expect(output.errors[0].message).toMatch(/holds other code than the debugged build/);
+    expect(output.prebuiltNex).toBeDefined();
   });
 
   it("maps Klive's machines to zxbc architectures and inject models", async () => {

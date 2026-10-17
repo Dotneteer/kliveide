@@ -11,7 +11,9 @@ what the compiler **actually writes**, checked by running the programs on Klive'
 - **`binaryChecksum` is FNV-1a 32 over the code image** (the `-f bin` bytes). It matched on four
   builds. For a `.nex`, the same image is inside the file; for an unbanked program at `$8000` it
   starts at offset 16896. Compare the checksum against what is loaded, not against the output
-  file.
+  file. **The `.nex` holds that image only when it was built with `--debug` too**: the flag changes
+  the code (`cli-and-diagnostics.md`). `BorielCompiler` warns (`ZXBC-D`) when the `.nex` does not
+  contain the image.
 - **`mainBaselineSymbol`** is the address of the runtime word `.core.__CALL_BACK__` in the `-M` map.
   The word holds exactly the SP seen at every top-level statement entry.
 - **Stack balance (Klive's G4) held** at `-O 0`, `-O 1` and `-O 2` on three programs: within one
@@ -70,6 +72,13 @@ what the compiler **actually writes**, checked by running the programs on Klive'
 13. **A FUNCTION call site's `returnAddress` is one too high** (verified, B3): it points past the
     `PUSH` after the CALL. SUB/GOSUB/ON GOSUB sites are right. The adapter checks each against the
     code image and moves it back when a CALL ends one byte earlier.
+
+14. **A routine's only statement can be zero-length.** `FUNCTION Square(n As UByte) As UInteger` /
+    `RETURN n * n` gives the `RETURN` `startAddress == endAddress == bodyStart` (every `-O`, zx48k and
+    zxnext), and the previous statement in address order runs over the routine's prologue. The
+    start is right (the body's first instruction), so a breakpoint there fires; the adapter gives
+    the statement the range up to the epilogue (correction 2) and clamps the other at the routine's
+    start.
 
 All of these corrections live in `src/main/boriel-integration/dbg-adapter.ts`; the fixtures in
 `test/boriel/fixtures/` and `test/boriel/dbg-adapter.test.ts` pin each one.

@@ -43,8 +43,20 @@ function main() {
       const err = path.join(folder, "program.err");
       throw new Error(`${name}: zxbc failed\n${fs.existsSync(err) ? fs.readFileSync(err, "utf8") : error.message}`);
     }
-    // --- "nex": true also writes the .nex a Next program starts from
-    if (nex) execFileSync(zxbc, ["program.bas", ...args, "-f", "nex", "-o", "program.nex"], { cwd: folder, timeout: 60_000, stdio: ["ignore", "pipe", "pipe"] });
+    // --- "nex": true also writes the .nex a Next program starts from. With --debug, as the .bin:
+    // --- the flag changes zxbc's code, and the .nex must hold the program the .dbg describes
+    if (nex) {
+      const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "boriel-fixture-"));
+      try {
+        execFileSync(zxbc, ["program.bas", ...args, "-f", "nex", "-o", "program.nex", `--debug=${path.join(tmp, "nex.dbg")}`], {
+          cwd: folder,
+          timeout: 60_000,
+          stdio: ["ignore", "pipe", "pipe"]
+        });
+      } finally {
+        fs.rmSync(tmp, { recursive: true, force: true });
+      }
+    }
     const err = path.join(folder, "program.err");
     const warnings = fs.existsSync(err) ? fs.readFileSync(err, "utf8").trim() : "";
     if (!warnings) fs.rmSync(err, { force: true });

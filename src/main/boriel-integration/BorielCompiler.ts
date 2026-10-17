@@ -76,6 +76,17 @@ const MODEL_OF_TARGET: Record<Target, SpectrumModelType> = {
   next: SpectrumModelType.Next
 };
 
+/** The `.dbg` the build's other zxbc runs write only because `--debug` changes the code (never read). */
+const SECOND_DBG = "same-code.dbg";
+
+/**
+ * Whether a `.nex` loads `image`. zxbc lays the program's banks out in the file in load order (5, 2,
+ * 0, ...), which is address order for $4000-$FFFF, so a program the `.nex` holds is one run of bytes.
+ */
+export function nexHoldsImage(nex: Uint8Array, image: Uint8Array): boolean {
+  return image.length > 0 && Buffer.from(nex.buffer, nex.byteOffset, nex.byteLength).indexOf(Buffer.from(image)) >= 0;
+}
+
 /** The output a Boriel build adds to Klive's: the `.nex` zxbc wrote, used instead of Klive's NEX writer. */
 export type BorielBuildOutput = KliveCompilerOutput & { prebuiltNex?: number[] };
 
@@ -146,9 +157,12 @@ export class BorielCompiler implements IKliveCompiler {
 
     const name = programName(filename);
     const out = (ext: string) => path.join(buildFolder, `${name}.${ext}`);
-    for (const ext of ["bin", "dbg", "map", "err", "nex"]) fs.rmSync(out(ext), { force: true });
+    for (const ext of ["bin", "dbg", "map", "err", "nex", SECOND_DBG]) fs.rmSync(out(ext), { force: true });
     const { args, arch } = zxbcArgumentsFor(options, header);
     const common = [...args, ...(projectIni ? ["-F", projectIni] : [])];
+    // --- `--debug` changes the code zxbc generates (`.ai/boriel/dbg-observed.md`): every other
+    // --- output of this build passes it too, or it holds other code than the one debugged
+    const sameCode = [...common, `--debug=${out(SECOND_DBG)}`];
 
     // --- The code image, its debug file and map: what Klive injects and debugs
     const run = await this.invoke(
@@ -220,12 +234,25 @@ export class BorielCompiler implements IKliveCompiler {
     // --- The Next starts programs from a .nex: zxbc writes its own
     let prebuiltNex: number[] | undefined;
     if (arch === "zxnext") {
-      const nexRun = await this.invoke(executable, [filename, ...common, "-f", "nex", "-o", out("nex")], buildFolder, BUILD_TIMEOUT_MS, filename);
+      const nexRun = await this.invoke(executable, [filename, ...sameCode, "-f", "nex", "-o", out("nex")], buildFolder, BUILD_TIMEOUT_MS, filename);
       if ("errors" in nexRun) return { ...nexRun, traceOutput: trace };
-      prebuiltNex = Array.from(fs.readFileSync(out("nex")));
+      const nex = fs.readFileSync(out("nex"));
+      // --- The Next runs the .nex, the debugger reads the .bin's .dbg: they must hold the same code
+      if (!nexHoldsImage(nex, image)) {
+        diagnostics.push({
+          ...buildError(
+            filename,
+            "ZXBC-D",
+            "The .nex zxbc wrote holds other code than the debugged build: breakpoints and stepping will not match it."
+          ),
+          isWarning: true
+        });
+      }
+      prebuiltNex = Array.from(nex);
     }
 
-    await this.writeRequestedFiles(executable, filename, common, options, buildFolder, name, out("map"), trace);
+    await this.writeRequestedFiles(executable, filename, sameCode, options, buildFolder, name, out("map"), trace);
+    fs.rmSync(out(SECOND_DBG), { force: true });
     trace.push(`Boriel BASIC: ${image.length} bytes at $${options.origin.toString(16).toUpperCase().padStart(4, "0")} (${arch})`);
 
     return {
@@ -316,7 +343,10 @@ export class BorielCompiler implements IKliveCompiler {
     return { diagnostics };
   }
 
-  /** `'@emit-map`, `'@emit-asm`, `'@emit-ir`: files beside the source; a failure is a note, not a failed build. */
+  /**
+   * `'@emit-map`, `'@emit-asm`, `'@emit-ir`: files beside the source; a failure is a note, not a failed
+   * build. `common` carries `--debug`, so a listing shows the code that runs.
+   */
   private async writeRequestedFiles(
     executable: string,
     filename: string,
