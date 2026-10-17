@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import type { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import type { GenericFileContext } from "../helpers/GenericFilePanel";
 
@@ -21,8 +21,7 @@ import {
   P_FILE_REGION_CHIPS,
   P_FILE_REGION_NAMES,
   P_FILE_VIEW_NAMES,
-  analyzePFile,
-  describeZx81Variable,
+  describeZx8081Variable,
   regionText,
   zx81DisplayRows,
   type PFileAnalysis,
@@ -30,15 +29,17 @@ import {
   type PFileRegionKind,
   type PFileView
 } from "./pFileView";
+import { analyzeProgramFile } from "./oFileView";
 import { pFileRegionDumpId, pFileRegionTitle, pFileRegionViewDocumentId } from "./pFileDocument";
 import { Zx81ScreenView } from "./Zx81ScreenView";
 import styles from "../Tape/TapeViewerPanel.module.scss";
 
 /*
- * The ZX81 `.P` viewer, built as the `.tap`/`.tzx` viewer is (`../Tape/TapeViewerPanel.tsx`): a
+ * The ZX81 `.P` and ZX80 `.O` viewer, built as the `.tap`/`.tzx` viewer is (`../Tape/TapeViewerPanel.tsx`): a
  * summary strip, then the file's parts in the shared bank browser - system variables, the BASIC
  * program, the display file, the variables - each poppable as memory, disassembly (at its address),
- * a BASIC listing or the screen. The model is `pFileView.ts`.
+ * a BASIC listing or the screen. The models are `pFileView.ts` and, for a ZX80 file (no display
+ * file: it is past E_LINE), `oFileView.ts`.
  */
 
 type PFileViewState = {
@@ -59,27 +60,32 @@ const FILTERS = [{ value: "all", text: "All" }];
 /** How many variables the details list before "and n more" */
 const VARIABLES_SHOWN = 40;
 
-/** Parses a `.P` file for the viewer */
-export function loadPFileContents(contents: Uint8Array): {
+/** Parses a `.P` file - or a `.O` one, the machine told by the file's extension - for the viewer */
+export function loadPFileContents(
+  contents: Uint8Array,
+  fileName = ""
+): {
   fileInfo?: PFileAnalysis;
   error?: string;
 } {
-  const { analysis, error } = analyzePFile(contents);
+  const { analysis, error } = analyzeProgramFile(contents, fileName);
   return analysis ? { fileInfo: analysis } : { error };
 }
 
-const PFileViewerPanel = ({ document, contents, viewState }: DocumentProps<PFileViewState>) => (
-  <GenericFilePanel<PFileAnalysis, PFileViewState>
-    document={document}
-    contents={contents}
-    viewState={viewState}
-    apiLoaded={() => {}}
-    fileLoader={loadPFileContents}
-    validRenderer={(ctx) => (
-      <PFileView ctx={ctx} fullPath={document.node?.fullPath ?? document.path ?? document.id} />
-    )}
-  />
-);
+const PFileViewerPanel = ({ document, contents, viewState }: DocumentProps<PFileViewState>) => {
+  const fullPath = document.node?.fullPath ?? document.path ?? document.id;
+  const fileLoader = useCallback((bytes: Uint8Array) => loadPFileContents(bytes, fullPath), [fullPath]);
+  return (
+    <GenericFilePanel<PFileAnalysis, PFileViewState>
+      document={document}
+      contents={contents}
+      viewState={viewState}
+      apiLoaded={() => {}}
+      fileLoader={fileLoader}
+      validRenderer={(ctx) => <PFileView ctx={ctx} fullPath={fullPath} />}
+    />
+  );
+};
 
 export const createPFileViewerPanel = ({ document, contents, viewState }: DocumentProps) => (
   <PFileViewerPanel
@@ -140,7 +146,7 @@ const PFileView = ({ ctx, fullPath }: { ctx: ViewContext; fullPath: string }) =>
         title: pFileRegionTitle(fullPath, region.kind, projectFolder, view),
         bytes: region.bytes,
         view,
-        format: "zx81",
+        format: analysis.machine,
         basicEnd: region.bytes.length,
         autostart: view === "basic" ? analysis.summary.autorunLine : undefined
       })
@@ -162,7 +168,7 @@ const PFileView = ({ ctx, fullPath }: { ctx: ViewContext; fullPath: string }) =>
         visibleItems={items}
         selectedKey={selectedKey}
         heading="Parts"
-        summary={`${fmt(summary.size)} bytes from ${hex(0x4009)}`}
+        summary={`${fmt(summary.size)} bytes from ${hex(summary.start)}`}
         filters={FILTERS}
         filter={vs.regionFilter ?? "all"}
         views={["memory", "disassembly", "basic", "screen"]}
@@ -198,24 +204,31 @@ const Fact = ({ label, value, title }: { label: string; value: string; title?: s
 
 const Summary = ({ analysis }: { analysis: PFileAnalysis }) => {
   const { summary } = analysis;
+  const zx80 = analysis.machine === "zx80";
   return (
     <div className={styles.summary} aria-label="Program summary">
-      <Fact label="Format" value="ZX81 program (.P)" />
+      <Fact label="Format" value={zx80 ? "ZX80 program (.O)" : "ZX81 program (.P)"} />
       <Fact label="Size" value={`${fmt(summary.size)} bytes`} />
       <Fact
         label="Needs"
         value={`${summary.ramKb}K RAM`}
-        title={`The file ends at ${hex(0x4009 + summary.size)}; a 1K ZX81's RAM ends at $4400`}
+        title={`The file ends at ${hex(summary.start + summary.size)}; a 1K ${zx80 ? "ZX80" : "ZX81"}'s RAM ends at $4400`}
       />
       {summary.layoutValid && (
         <Fact label="Lines" value={`${fmt(summary.lineCount)}${summary.programCorrupted ? " (damaged)" : ""}`} />
       )}
-      <Fact
-        label="Runs from"
-        value={summary.autorunLine !== undefined ? `LINE ${summary.autorunLine}` : "Needs RUN"}
-        title="A program saved by a program line carries on from the line after its SAVE"
-      />
-      <Fact label="Mode" value={summary.slowMode ? "SLOW" : "FAST"} title="The mode the program loads in (CDFLAG)" />
+      {zx80 ? (
+        <Fact label="Runs from" value="Needs RUN" title="The ZX80's LOAD stops with its report" />
+      ) : (
+        <>
+          <Fact
+            label="Runs from"
+            value={summary.autorunLine !== undefined ? `LINE ${summary.autorunLine}` : "Needs RUN"}
+            title="A program saved by a program line carries on from the line after its SAVE"
+          />
+          <Fact label="Mode" value={summary.slowMode ? "SLOW" : "FAST"} title="The mode the program loads in (CDFLAG)" />
+        </>
+      )}
     </div>
   );
 };
@@ -251,7 +264,8 @@ const Details = ({ region, analysis, onShowListing }: DetailsProps) => {
         <dt>Length</dt>
         <dd>{`${fmt(region.bytes.length)} bytes`}</dd>
       </BankFacts>
-      {region.kind === "sysvars" && <SysVarsDetails analysis={analysis} />}
+      {region.kind === "sysvars" &&
+        (analysis.machine === "zx80" ? <Zx80SysVarsDetails analysis={analysis} /> : <SysVarsDetails analysis={analysis} />)}
       {region.kind === "program" && (
         <BankDetailsSection title="BASIC">
           <BankFacts>
@@ -279,9 +293,13 @@ const Details = ({ region, analysis, onShowListing }: DetailsProps) => {
       {region.kind === "data" && (
         <BankDetailsSection title="Program and data">
           <p className={styles.wrap}>
-            {`D_FILE (${hex(summary.dFile)}), VARS (${hex(summary.vars)}) and E_LINE (${hex(
-              summary.eLine
-            )}) do not mark out a program, a display file and variables in this file. The bytes are its own: open them in Memory or Disassembly.`}
+            {analysis.machine === "zx80"
+              ? `VARS (${hex(summary.vars)}) and E_LINE (${hex(
+                  summary.eLine
+                )}) do not mark out a program and variables in this file. The bytes are its own: open them in Memory or Disassembly.`
+              : `D_FILE (${hex(summary.dFile)}), VARS (${hex(summary.vars)}) and E_LINE (${hex(
+                  summary.eLine
+                )}) do not mark out a program, a display file and variables in this file. The bytes are its own: open them in Memory or Disassembly.`}
           </p>
         </BankDetailsSection>
       )}
@@ -317,6 +335,26 @@ const SysVarsDetails = ({ analysis }: { analysis: PFileAnalysis }) => {
         <dd>{hex(word(0x4029))}</dd>
         <dt>CDFLAG</dt>
         <dd>{`$${toHexa2(memory[0x403b])} (${summary.slowMode ? "SLOW" : "FAST"})`}</dd>
+      </BankFacts>
+    </BankDetailsSection>
+  );
+};
+
+/** A ZX80 file's: the display file is not in it, but D_FILE says where it went */
+const Zx80SysVarsDetails = ({ analysis }: { analysis: PFileAnalysis }) => {
+  const { memory, summary } = analysis;
+  const word = (address: number) => memory[address] | (memory[address + 1] << 8);
+  return (
+    <BankDetailsSection title="Key system variables">
+      <BankFacts>
+        <dt>E_PPC</dt>
+        <dd>{`${word(0x4006)} (the current line)`}</dd>
+        <dt>VARS</dt>
+        <dd>{hex(summary.vars)}</dd>
+        <dt>E_LINE</dt>
+        <dd>{`${hex(summary.eLine)} (the end of the file)`}</dd>
+        <dt>D_FILE</dt>
+        <dd>{`${hex(summary.dFile)} (not saved)`}</dd>
       </BankFacts>
     </BankDetailsSection>
   );
@@ -367,7 +405,7 @@ const VariablesDetails = ({ analysis }: { analysis: PFileAnalysis }) => {
     <BankDetailsSection title="Variables">
       <BankFacts>
         {variables.slice(0, VARIABLES_SHOWN).map((variable) => (
-          <VariableFact key={variable.address} name={variable.name} value={describeZx81Variable(variable)} />
+          <VariableFact key={variable.address} name={variable.name} value={describeZx8081Variable(variable)} />
         ))}
       </BankFacts>
       {variables.length > VARIABLES_SHOWN && (

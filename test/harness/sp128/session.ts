@@ -432,7 +432,7 @@ export class Sp128TestSession {
           this.runTo(step.execPoint, { rom: checkRom ? step.rom : undefined, maxFrames });
           break;
         case "QueueKey":
-          this.machine.queueKeystroke(0, 5, step.primary, step.secondary);
+          this.machine.queueKeystroke(step.delayFrames ?? 0, 5, step.primary, step.secondary);
           if ((step.wait ?? 100) > 0) this.runFrames(Math.ceil((step.wait ?? 100) / 20));
           break;
         case "Inject":

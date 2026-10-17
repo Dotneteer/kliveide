@@ -1,3 +1,4 @@
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import type { CodeToInject } from "@abstractions/CodeToInject";
@@ -112,6 +113,27 @@ describe("ZX80 code injection", () => {
     // --- "zx80" stays accepted: it is also this machine's id, which code with no .model arrives as
     await expect(s.machine.getCodeInjectionFlow("sp48")).rejects.toThrow(/cannot run/);
     await runInjected(s, zx81Code(), ZX81_MARKER);
+  });
+
+  /*
+   * The IDE plays its flows on a machine it has just reset, not on one that has sat at the prompt: the
+   * 4K ROM takes a key only after it has seen 4 key-free frames, which a machine that has only just
+   * reached its key wait has not. A first key pressed at once is lost (Load and Run used to stop at
+   * the K cursor).
+   */
+  it("runs injected code on a ZX80 started from a reset, as the IDE starts it", async () => {
+    const s = await createZx81Session({ machineId: "zx80" });
+    await runInjected(s, zx80Code(), ZX80_MARKER);
+    expect(s.screenText().join("\n")).toContain("0/2");
+  });
+
+  it("plays the tape-load flow on a ZX80 started from a reset: LOAD, then RUN", async () => {
+    const s = await createZx81Session({ machineId: "zx80" });
+    s.insertProgram(Zx81TestSession.readProgram(join(__dirname, "fixtures/hi.o")));
+    playInjectionFlow(s.machine, s.machine.getTapeLoadFlow());
+    // --- The ROM finished the load and the machine queued RUN; the program prints HI
+    s.runUntil(() => s.machine.getKeyQueueLength() > 0, { maxFrames: 600 }, "the end of the load");
+    s.runUntil(() => s.screenText()[0] === "HI", { maxFrames: 300 }, "the program to run");
   });
 
   it("plays the tape-load flow on a ZX80 with the 8K ROM (its prompt waits in FAST mode)", async () => {

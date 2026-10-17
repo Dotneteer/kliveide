@@ -338,8 +338,10 @@ What the work changed or added against the design above; the tests named here ho
 - **Templates.** `project-templates/zx81/default` mirrors the Spectrum templates: a centred welcome
   at line 10 and the machine's name in inverse video at line 11, from a message stream with AT and
   inverse control codes, printed with the ROM's `PRINT-AT` ($08F5) and `PRINT-A` (`RST $10`);
-  `zx80/default` adds 1-10 into a byte, because the ZX80's `RST $10` keeps its print position in the
-  alternate registers and prints nothing visible from `USR` (`test/zx8081-hw/project-templates.test.ts`).
+  `zx80/default` prints the same screen. The ZX80's `RST $10` keeps its print state in the alternate
+  registers (DE' = DF_EA, BC' = S_POSN), which `USR` code must load and store back as the ROM's
+  PRINT does ($06E0 / $073A); with no PRINT AT it positions by NEWLINEs, made at run time because a
+  REM line cannot hold $76 (`test/zx8081-hw/project-templates.test.ts`).
 - **Harness note.** A tiny program finishes its fast load while the harness is still typing
   `LOAD ""`, so `loadProgram` never sees the auto-RUN; such tests wait on the program's effect.
 

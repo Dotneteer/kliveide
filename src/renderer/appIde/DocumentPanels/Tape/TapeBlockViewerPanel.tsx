@@ -21,6 +21,7 @@ import { basicListingText, decodeBasicProgram } from "../basicListing";
 import { createScrPixelData } from "../Next/ScrFileViewerPanel";
 import { decodeZx8081Program } from "../zx8081BasicListing";
 import { zx81DisplayRows, ZX81_PROGRAM_START } from "../PFile/pFileView";
+import { ZX80_PROGRAM_START } from "../PFile/oFileView";
 import { Zx81ScreenView } from "../PFile/Zx81ScreenView";
 
 /*
@@ -33,13 +34,14 @@ import { Zx81ScreenView } from "../PFile/Zx81ScreenView";
  * and the line renderer (`BasicLineDisplay`), so a program reads the same in either.
  *
  * The ZX81 `.P` viewer pops its program and display file out here too (`format: "zx81"`): the same
- * document, with the ZX81's detokenizer (`zx8081BasicListing.ts`) and its character-set picture.
+ * document, with the ZX81's detokenizer (`zx8081BasicListing.ts`) and its character-set picture. A
+ * ZX80 `.O` file's program comes as `format: "zx80"`, listed by the 4K ROM's rules (it has no screen).
  *
  * Not restored at startup: like a memory dump, it is not a project file.
  */
 
-/** Whose bytes these are: a Spectrum tape block (the default) or a part of a ZX81 `.P` file */
-export type TapeBlockFormat = "spectrum" | "zx81";
+/** Whose bytes these are: a Spectrum tape block (the default), or a part of a ZX81 `.P` or ZX80 `.O` file */
+export type TapeBlockFormat = "spectrum" | "zx81" | "zx80";
 
 export type TapeBlockViewState = {
   view: "basic" | "screen";
@@ -95,7 +97,7 @@ const TapeBlockViewerPanel = ({
       <EmptyState tone="error" motif={false} message="This block's bytes are not available." />
     );
   }
-  const zx81 = viewState?.format === "zx81";
+  const zx81 = viewState?.format === "zx81" || viewState?.format === "zx80";
   return viewState?.view === "screen" ? (
     zx81 ? (
       <Zx81Screen bytes={bytes} />
@@ -121,17 +123,17 @@ const TapeBasicListing = ({
   const [showCodes, setShowCodes] = useState(viewState?.showCodes ?? false);
   const [showSpectrumFont, setShowSpectrumFont] = useState(viewState?.showSpectrumFont ?? true);
   const end = Math.min(viewState?.basicEnd ?? bytes.length, bytes.length);
-  const zx81 = viewState?.format === "zx81";
+  const format = viewState?.format ?? "spectrum";
+  const zx81 = format !== "spectrum";
 
   const listing = useMemo(() => {
-    if (!zx81) return decodeBasicProgram(bytes, 0, end, { charSet: ZxSpectrumChars, showCodes });
-    // --- The ZX81's lines are read where the machine keeps them, after the system variables
+    if (format === "spectrum") return decodeBasicProgram(bytes, 0, end, { charSet: ZxSpectrumChars, showCodes });
+    // --- A ZX81's or ZX80's lines are read where the machine keeps them, after the system variables
+    const start = format === "zx80" ? ZX80_PROGRAM_START : ZX81_PROGRAM_START;
     const memory = new Uint8Array(0x10000);
-    memory.set(bytes.subarray(0, Math.min(end, 0x10000 - ZX81_PROGRAM_START)), ZX81_PROGRAM_START);
-    return decodeZx8081Program(memory, ZX81_PROGRAM_START, ZX81_PROGRAM_START + end, "zx81", {
-      showCodes
-    });
-  }, [bytes, end, showCodes, zx81]);
+    memory.set(bytes.subarray(0, Math.min(end, 0x10000 - start)), start);
+    return decodeZx8081Program(memory, start, start + end, format, { showCodes });
+  }, [bytes, end, showCodes, format]);
   const lines = useMemo(() => listing.lines.filter((l) => l.spans.length > 0), [listing]);
 
   useEffect(() => {

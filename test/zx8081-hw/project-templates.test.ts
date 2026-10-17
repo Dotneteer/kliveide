@@ -42,9 +42,14 @@ describe("ZX80/ZX81 project templates", () => {
     }
   );
 
-  it("the ZX80 template adds up 1 to 10 at 16443", async () => {
-    const s = await runTemplate("zx80");
-    expect(s.peek(16443)).toBe(55);
-    expect(s.screenText()[23]).toBe("0/2");
-  });
+  it.each(["zx80-16k", "zx80-1k"])(
+    "the ZX80 template prints the same welcome through the ROM's print routine (%s)",
+    async (model) => {
+      const s = await runTemplate("zx80", model);
+      const screen = s.screenText();
+      expect(screen[10]).toBe("      WELCOME TO KLIVE IDE");
+      expect(screen[11]).toBe("        " + [..."(SINCLAIR ZX80)"].map((c) => `[${c}]`).join(""));
+      expect(screen.join("\n")).toContain("0/2");
+    }
+  );
 });

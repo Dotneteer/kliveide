@@ -1,13 +1,14 @@
 import { documentSourceName } from "../helpers/documentSourceName";
-import { P_FILE_REGION_NAMES, analyzePFile, type PFileRegionKind } from "./pFileView";
+import { analyzeProgramFile } from "./oFileView";
+import { P_FILE_REGION_NAMES, type PFileRegionKind } from "./pFileView";
 
 /*
- * The identity of a `.P` file part's pop-out documents, as `Tape/tapeBlockDocument.ts` is for tape
+ * The identity of a `.P` (or ZX80 `.O`) file part's pop-out documents, as `Tape/tapeBlockDocument.ts` is for tape
  * blocks: keyed by the file's full path and the part's kind, which names the same bytes however the
  * file is opened.
  *
  * A memory/disassembly dump goes through `openStaticMemoryDump` (which adds `memoryDump-`), a BASIC
- * listing or a screen through the tape block viewer (`TAPE_BLOCK_VIEWER`) in its ZX81 form.
+ * listing or a screen through the tape block viewer (`TAPE_BLOCK_VIEWER`) in its ZX81 or ZX80 form.
  */
 
 const KINDS: PFileRegionKind[] = ["sysvars", "program", "display", "variables", "data", "extra"];
@@ -59,7 +60,7 @@ export async function readPFileRegion(
   kind: PFileRegionKind,
   readFile: (path: string) => Promise<Uint8Array>
 ): Promise<{ bytes: Uint8Array; start: number } | undefined> {
-  const { analysis } = analyzePFile(await readFile(path));
+  const { analysis } = analyzeProgramFile(await readFile(path), path);
   const region = analysis?.regions.find((r) => r.kind === kind);
   return region ? { bytes: region.bytes, start: region.start } : undefined;
 }

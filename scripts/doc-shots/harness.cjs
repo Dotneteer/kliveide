@@ -83,7 +83,12 @@ async function launchKlive({
    * More global `ideViewOptions` (`{ profilerInlays: true }`): IDE view settings are global, which
    * `set -u` does not reach. Unset, none.
    */
-  ideViewOptions = {}
+  ideViewOptions = {},
+  /*
+   * More global settings, merged at the top of `globalSettings` (`{ emuOptions: { machineFavorites:
+   * [...] } }`, which lists a machine in the Machine type menu). Unset, none.
+   */
+  globalSettings = {}
 }) {
   if (!fs.existsSync(MAIN)) {
     throw new Error(`No build at ${MAIN} — run \`npx electron-vite build --config build/electron.vite.config.ts\` first.`);
@@ -115,7 +120,8 @@ async function launchKlive({
             ...ideViewOptions
           },
           editorOptions: { fontFamily: "iosevka", fontSize: 16 },
-          panelOptions: { fontFamily: panelFontFamily, fontSize: panelFontSize }
+          panelOptions: { fontFamily: panelFontFamily, fontSize: panelFontSize },
+          ...globalSettings
         }
       },
       null,

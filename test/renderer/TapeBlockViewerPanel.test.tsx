@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { zx80VarsFile } from "./pfile/zx80VarsFile";
 
 /*
  * A tape block popped out as a BASIC listing or a screen (`.plans/TAPE_VIEWER_PLAN.md` §4.5).
@@ -15,6 +16,8 @@ const PROGRAM = FLOAT_SPY.subarray(2 + 19 + 2 + 1, 2 + 19 + 2 + 1 + 5476);
 const CHARACTERS = new Uint8Array(readFileSync(join(__dirname, "../../_input/zx81-tapes/basic/Characters.P")));
 const ZX81_PROGRAM = CHARACTERS.subarray(0x407d - 0x4009, 0x40f3 - 0x4009);
 const ZX81_DISPLAY = CHARACTERS.subarray(0x40f3 - 0x4009, 0x440c - 0x4009);
+// --- A ZX80 `.O` file's program: $4028 up to VARS ($406C)
+const ZX80_PROGRAM = zx80VarsFile().subarray(0x28, 0x6c);
 const ZX81_ROM = new Uint8Array(readFileSync(join(__dirname, "../../src/public/roms/zx81.rom")));
 
 beforeEach(() => {
@@ -128,6 +131,19 @@ describe("TapeBlockViewerPanel", () => {
     // --- ZX81 tokens, not the Spectrum's: the same bytes read as a Spectrum program would not list
     expect(text).toMatch(/^ {2}10 /m);
     expect(text).toContain("PRINT");
+  });
+
+  it("lists a ZX80 program by the 4K ROM's rules", async () => {
+    const { writeText } = await renderPanel(ZX80_PROGRAM, {
+      view: "basic",
+      format: "zx80",
+      basicEnd: ZX80_PROGRAM.length
+    });
+    expect(screen.getByText("7 lines")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Copy to clipboard" }));
+    await waitFor(() => expect(writeText).toHaveBeenCalled());
+    const text = (writeText.mock.calls[0] as unknown as [string])[0];
+    expect(text.split("\n")[1].trimEnd()).toBe("  20 LET TOTAL=-25");
   });
 
   it("draws a ZX81 display file with the ROM's characters", async () => {

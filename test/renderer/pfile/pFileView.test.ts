@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import {
   analyzePFile,
   decodeZx81Variables,
-  describeZx81Variable,
+  describeZx8081Variable,
   zx81CodeText,
   zx81DisplayRows,
   zx81DisplayText,
@@ -146,7 +146,7 @@ describe("ZX81 variables", () => {
   });
 
   it("describes each one", () => {
-    expect(variables.map(describeZx81Variable)).toEqual([
+    expect(variables.map(describeZx8081Variable)).toEqual([
       "1",
       "-2.5",
       '"HI"',

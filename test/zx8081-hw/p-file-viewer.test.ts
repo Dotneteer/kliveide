@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { SavedFileInfo } from "@emu/abstractions/ITapeDevice";
 import { SAVED_TO_TAPE } from "@emu/machines/machine-props";
 import { Zx8081KeyCode } from "@emu/machines/zx8081/Zx8081KeyCode";
-import { analyzePFile, describeZx81Variable } from "@renderer/appIde/DocumentPanels/PFile/pFileView";
+import { analyzePFile, describeZx8081Variable } from "@renderer/appIde/DocumentPanels/PFile/pFileView";
 import { createZx81Session, type Zx81TestSession } from "../harness/zx81";
 
 /*
@@ -44,7 +44,7 @@ describe("ZX81 .P viewer model on a saved program", () => {
     // --- Saved by line 70, which has no line after it: NXTLIN points at the display file
     expect(summary.autorunLine).toBeUndefined();
     expect(summary.slowMode).toBe(true);
-    expect(variables.map((v) => `${v.name} = ${describeZx81Variable(v)}`)).toEqual([
+    expect(variables.map((v) => `${v.name} = ${describeZx8081Variable(v)}`)).toEqual([
       "A = 1",
       "TOTAL = -2.5",
       'B$ = "HI"',

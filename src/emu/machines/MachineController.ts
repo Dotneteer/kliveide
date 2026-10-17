@@ -1146,7 +1146,7 @@ export class MachineController implements IMachineController {
         }
 
         case "QueueKey":
-          m.queueKeystroke(0, 5, step.primary, step.secondary, step.ternary);
+          m.queueKeystroke(step.delayFrames ?? 0, 5, step.primary, step.secondary, step.ternary);
           if ((step.wait ?? 100) > 0) {
             await delay(step.wait);
             this.assertMachineOperationIsCurrent(operationRevision);
