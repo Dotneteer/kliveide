@@ -51,6 +51,14 @@ const TYPE_HOLD_FRAMES = 4;
 const TYPE_GAP_FRAMES = 6;
 
 /**
+ * The frames a flow waits before its first key on the ZX80's 4K ROM. The ROM takes a key only after
+ * 4 key-free frames, and the flows reach its key wait ($013F) on a machine just reset, which has not
+ * had them yet: a key pressed at once is lost, and Load and Run stopped at the K cursor. One frame
+ * more than the ROM needs; the ZX81 ROM takes the first key at once.
+ */
+const ZX80_FIRST_KEY_DELAY_FRAMES = 5;
+
+/**
  * The host side of a Sinclair ZX80 or ZX81 whose hardware is emulated in the WASM core: the clock and
  * frame units, the keyboard mapping and the emulated keystroke queue (the typer), the partition and
  * ROM metadata, and the machine-menu commands. It follows the Cambridge Z88's host, the template for
@@ -262,7 +270,7 @@ export abstract class Zx8081WasmHost extends Z80MachineBase {
       { type: "Inject" },
       { type: "KeepPc" },
       { type: "Start" },
-      { type: "QueueKey", primary: K.R, wait: 300, message: "RUN" },
+      { type: "QueueKey", primary: K.R, wait: 300, delayFrames: this.firstKeyDelayFrames, message: "RUN" },
       { type: "QueueKey", primary: K.NewLine, wait: 0, message: "NEW LINE" }
     ];
   }
@@ -319,6 +327,11 @@ export abstract class Zx8081WasmHost extends Z80MachineBase {
     return image.entry ?? image.base;
   }
 
+  /** How long a flow waits before its first key (`ZX80_FIRST_KEY_DELAY_FRAMES`) */
+  private get firstKeyDelayFrames(): number {
+    return this.hardware.romZx81 ? 0 : ZX80_FIRST_KEY_DELAY_FRAMES;
+  }
+
   /** The flow step that waits until the editor waits for a key */
   private keyWaitStep(): CodeInjectionFlow {
     if (this.hardware.romZx81 && !this.hardware.hardwareZx81) {
@@ -364,7 +377,7 @@ export abstract class Zx8081WasmHost extends Z80MachineBase {
           { type: "QueueKey", primary: K.NewLine, wait: 0, message: "NEW LINE" }
         ]
       : [
-          { type: "QueueKey", primary: K.W, wait: 300, message: "LOAD" },
+          { type: "QueueKey", primary: K.W, wait: 300, delayFrames: this.firstKeyDelayFrames, message: "LOAD" },
           { type: "QueueKey", primary: K.NewLine, wait: 0, message: "NEW LINE" }
         ];
     return [...this.keyWaitStep(), { type: "KeepPc" }, { type: "Start" }, ...keys];

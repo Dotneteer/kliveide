@@ -110,7 +110,7 @@ export class FrameRunner {
           await this.runUntil("the key queue to drain", () => m.getKeyQueueLength() === 0, 5_000);
           break;
         case "QueueKey":
-          m.queueKeystroke(0, 5, step.primary, step.secondary);
+          m.queueKeystroke(step.delayFrames ?? 0, 5, step.primary, step.secondary);
           await this.runFrames(msToFrames(step.wait, 100));
           break;
         default:

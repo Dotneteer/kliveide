@@ -69,6 +69,11 @@ pins, all verified by measurement:
 > a fresh file created before launch and pointed at by `KLIVE_SETTINGS_FILE`, which is what
 > the harness does. Use the menu for a running app; seed the file for a scripted one.
 
+Other global settings go in through the launch option `globalSettings`, merged into the seeded
+file's `globalSettings`. The one needed so far: `{ emuOptions: { machineFavorites: [{ machineId:
+"zx80", modelId: "zx80-16k" }] } }` — the Machine type menu lists only favourites, so a recipe can
+select a ZX80 (`machine_zx80_zx80-16k`) only once it is one.
+
 Geometry that is not in settings is set through `app.evaluate` on the `BrowserWindow`:
 `setContentSize(1280, 820)`, `setPosition`, `focus()`, and `hide()` on the EMU window so it
 cannot overlap the IDE. Screenshots come out at the display's DPR — 2x on a retina Mac,

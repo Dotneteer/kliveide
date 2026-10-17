@@ -110,7 +110,7 @@ export function playInjectionFlow(
         runToAddress(machine, step.execPoint, maxFrames);
         break;
       case "QueueKey":
-        machine.queueKeystroke?.(0, 5, step.primary, step.secondary, step.ternary);
+        machine.queueKeystroke?.(step.delayFrames ?? 0, 5, step.primary, step.secondary, step.ternary);
         if ((step.wait ?? 100) > 0) runFrames(machine, framesOfMs(step.wait ?? 100));
         break;
       case "Wait":

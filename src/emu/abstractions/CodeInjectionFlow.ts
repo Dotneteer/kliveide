@@ -47,6 +47,13 @@ interface QueueKeyStep extends CodeInjectionStepBase {
   secondary?: number;
   ternary?: number;
   wait?: number;
+  /**
+   * Emulated frames to wait before the key goes down (default 0). For a ROM that takes a key only
+   * after it has seen some key-free frames - the ZX80's 4K ROM wants 4 - which a machine that has
+   * only just reached its key wait has not. Counted in frames, not in the host's time, so it holds
+   * at any emulation speed.
+   */
+  delayFrames?: number;
 }
 
 interface StartStep extends CodeInjectionStepBase {
