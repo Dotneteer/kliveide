@@ -1,20 +1,26 @@
 import classnames from "classnames";
 
+import { useT } from "@common/i18n/useT";
+
 import type { SjasmplusViewModel } from "../SjasmplusViewModel";
 import styles from "../SjasmplusIntegrationDialog.module.scss";
 import { PathText } from "./PathText";
 
 // --- What Apply would save, with a fixed height so messages never resize the
 // --- dialog.
-export const ApplyBlock = ({ apply }: { apply: SjasmplusViewModel["apply"] }) => (
+export const ApplyBlock = ({ apply }: { apply: SjasmplusViewModel["apply"] }) => {
+  const t = useT();
+  return (
   <div className={classnames(styles.row, styles.block)}>
-    <span className={styles.label}>To apply</span>
+    <span className={styles.label}>{t("dialog.sjasmplus.row.toApply")}</span>
     <div className={styles.blockValue}>
       <div className={styles.blockLine}>
         {apply.candidatePath ? (
           <PathText testId="sjasmplus-candidate-path" value={apply.candidatePath} fallback="" />
         ) : (
-          <span data-testid="sjasmplus-candidate-path">Nothing selected yet</span>
+          <span data-testid="sjasmplus-candidate-path">
+            {t("dialog.sjasmplus.apply.nothingSelected")}
+          </span>
         )}
       </div>
       <div
@@ -33,4 +39,5 @@ export const ApplyBlock = ({ apply }: { apply: SjasmplusViewModel["apply"] }) =>
       </div>
     </div>
   </div>
-);
+  );
+};

@@ -17,13 +17,16 @@
  * The View menu is built from this list by `main/app-menu.ts`, and the renderer reads the same
  * values through `SETTING_EMU_ZOOM_STEP`, so the two cannot drift.
  */
+import { withLabels } from "@common/i18n/labels";
+import type { MessageKey } from "@common/i18n/keys.generated";
 
 /** The zoom step sizes Klive offers. Persisted verbatim as the setting's value. */
 export type ZoomStep = 1 | 0.5 | 0.25;
 
 export type ZoomStepOption = {
-  /** Label shown in View | Screen Zoom Steps. */
-  label: string;
+  /** Label shown in Settings › Emulator; translated each time it is read (`withLabels`). */
+  readonly label: string;
+  readonly labelKey: MessageKey;
   /** The step size, persisted in the settings file. */
   value: ZoomStep;
 };
@@ -34,11 +37,11 @@ export type ZoomStepOption = {
  * The examples are part of the labels on purpose: "Half Steps" alone does not say whether the half
  * is of the zoom or of the screen, and the menu is the only place this is ever explained.
  */
-export const ZOOM_STEPS: ZoomStepOption[] = [
-  { label: "Whole Steps (1x, 2x, 3x)", value: 1 },
-  { label: "Half Steps (1x, 1.5x, 2x)", value: 0.5 },
-  { label: "Quarter Steps (1x, 1.25x, 1.5x)", value: 0.25 }
-];
+export const ZOOM_STEPS: ZoomStepOption[] = withLabels<{ labelKey: MessageKey; value: ZoomStep }>([
+  { labelKey: "settings.zoomStep.whole", value: 1 },
+  { labelKey: "settings.zoomStep.half", value: 0.5 },
+  { labelKey: "settings.zoomStep.quarter", value: 0.25 }
+]);
 
 /** Half steps: a better fit than whole steps, still exact on the HiDPI displays most people use. */
 export const DEFAULT_ZOOM_STEP: ZoomStep = 0.5;

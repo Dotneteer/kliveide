@@ -3,6 +3,7 @@ import { HistoryKind, type HistoryRecord, type HistoryRegisters } from "./histor
 import { historyRowCells, type HistoryRowCells, type HistoryRowInput } from "./historyRow";
 import { formatRegisterDiff, registerDiff } from "./registerDiff";
 import type { HistoryServiceSpan } from "./serviceSpans";
+import { t } from "@common/i18n/i18n";
 
 /*
  * The execution history as a text or CSV trace (`.plans/TRACE_EXPORT_PLAN.md`, G4.5). One pure
@@ -113,10 +114,13 @@ export type TraceMeta = {
 export const HISTORY_EXPORT_FOLDER = "historyExport";
 
 /** The save dialog's file types */
-export const TRACE_FILE_FILTERS = [
-  { name: "Text trace", extensions: ["txt", "log", "trace"] },
-  { name: "CSV trace", extensions: ["csv"] }
-];
+/** The trace files' Save dialog filters, in the current language (a function: LOCALIZATION_PLAN D7) */
+export function traceFileFilters(): { name: string; extensions: string[] }[] {
+  return [
+    { name: t("common.filter.textTrace"), extensions: ["txt", "log", "trace"] },
+    { name: t("common.filter.csvTrace"), extensions: ["csv"] }
+  ];
+}
 
 /** The format a file name asks for (D1), or undefined */
 export function traceFormatOfName(file: string): TraceFormat | undefined {

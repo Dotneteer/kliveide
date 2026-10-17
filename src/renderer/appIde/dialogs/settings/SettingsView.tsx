@@ -10,6 +10,7 @@ import type { SettingsIntent } from "./SettingsController";
 import type { SettingsRowVm, SettingsVm } from "./SettingsViewModel";
 
 import styles from "./SettingsDialog.module.scss";
+import { t } from "@common/i18n/i18n";
 
 type Props = {
   vm: SettingsVm;
@@ -19,16 +20,17 @@ type Props = {
 
 /**
  * The Settings dialog's body: the pages on the left, the selected page (or every search hit) on the
- * right. Dumb: it renders the view model and turns gestures into intents.
+ * right. Dumb: it renders the view model and turns gestures into intents. Its few own texts use
+ * `t()` directly: the dialog subscribes with `useT()`, so a language change re-renders this too.
  */
 export const SettingsView = ({ vm, tone, dispatch }: Props) => (
   <div className={styles.body} data-testid="settings-dialog">
-    <nav className={styles.nav} aria-label="Settings pages">
+    <nav className={styles.nav} aria-label={t("settings.pagesLabel")}>
       <div className={styles.search}>
         <PanelFilter
           value={vm.query}
-          placeholder="Search settings"
-          label="Search settings"
+          placeholder={t("settings.search.placeholder")}
+          label={t("settings.search.placeholder")}
           onChange={(query) => dispatch({ type: "queryChanged", query })}
         />
       </div>

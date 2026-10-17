@@ -27,7 +27,7 @@ import {
   formatHistoryRow,
   HISTORY_EXPORT_FOLDER,
   historyExportCommandText,
-  TRACE_FILE_FILTERS,
+  traceFileFilters,
   VIEWER_TRACE_COLUMNS
 } from "@common/history/historyExport";
 import { PANE_ID_BUILD } from "@common/integration/constants";
@@ -468,7 +468,7 @@ const ExecutionHistoryPanel = (_props: DocumentProps) => {
     const file = await mainApi.showSaveFileDialog({
       title: "Export Execution History",
       defaultPath: `${machineId ?? "machine"}-trace.txt`,
-      filters: TRACE_FILE_FILTERS,
+      filters: traceFileFilters(),
       settingsId: HISTORY_EXPORT_FOLDER
     });
     if (!file) return;

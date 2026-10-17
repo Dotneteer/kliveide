@@ -1,3 +1,4 @@
+import { t } from "@common/i18n/i18n";
 import { EmuApi } from "@common/messaging/EmuApi";
 import { MainApi } from "@common/messaging/MainApi";
 import { AppState } from "@common/state/AppState";
@@ -77,7 +78,7 @@ export async function renameExplorerNode({
     refreshTree();
     setSelectedNode(selectedContextNode);
   } catch (err) {
-    await mainApi.displayMessageBox("error", "Rename Error", err.toString());
+    await mainApi.displayMessageBox("error", t("explorer.error.renameTitle"), err.toString());
   }
 }
 
@@ -142,7 +143,7 @@ export async function addExplorerItem({
 
     return newNode;
   } catch (err) {
-    await mainApi.displayMessageBox("error", "Add new item error", err.toString());
+    await mainApi.displayMessageBox("error", t("explorer.error.addItemTitle"), err.toString());
     return undefined;
   }
 }

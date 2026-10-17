@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 
+import { useT } from "@common/i18n/useT";
 import { Modal } from "@controls/Modal";
 import { useSelector } from "@renderer/core/RendererProvider";
 import { useMainApi } from "@renderer/core/MainApi";
@@ -24,6 +25,7 @@ type Props = {
  * model, both of which run without React.
  */
 export const SjasmplusIntegrationDialog = ({ onClose }: Props) => {
+  const t = useT();
   const mainApi = useMainApi();
   const files = useFilePickerPort();
   const confirm = useConfirmPort();
@@ -79,17 +81,17 @@ export const SjasmplusIntegrationDialog = ({ onClose }: Props) => {
 
   return (
     <Modal
-      title="SJASMPLUS Integration"
+      title={t("dialog.sjasmplus.title")}
       iconName="tools"
       isOpen={true}
       fullScreen={false}
       width={640}
-      primaryLabel="Apply"
+      primaryLabel={t("dialog.sjasmplus.button.apply")}
       primaryEnabled={vm.buttons.applyEnabled}
-      secondaryLabel="Test again"
+      secondaryLabel={t("dialog.sjasmplus.button.testAgain")}
       secondaryVisible={true}
       secondaryEnabled={vm.buttons.testEnabled}
-      cancelLabel="Close"
+      cancelLabel={t("common.button.close")}
       initialFocus="primary"
       closeOnOutsideClick={false}
       onClose={() => {

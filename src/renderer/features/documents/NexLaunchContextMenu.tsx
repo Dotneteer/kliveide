@@ -1,3 +1,5 @@
+import { t } from "@common/i18n/i18n";
+import { useT } from "@common/i18n/useT";
 import { TabButton, TabButtonSeparator, TabButtonSpace } from "@renderer/controls/TabButton";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { useSelector } from "@renderer/core/RendererProvider";
@@ -49,17 +51,17 @@ export function getNexLaunchContextMenuInfo(services: AppServices): ContextMenuI
 
   return [
     {
-      text: "Run NEX file",
+      text: t("documents.nex.menu.run"),
       disabled: notOnNext,
       clicked: async (item: string) => await launch(item, "run")
     },
     {
-      text: "Debug NEX file",
+      text: t("documents.nex.menu.debug"),
       disabled: notOnNext,
       clicked: async (item: string) => await launch(item, "debug")
     },
     {
-      text: "Debug NEX file (break at entry point)",
+      text: t("documents.nex.menu.entry"),
       disabled: notOnNext,
       clicked: async (item: string) => await launch(item, "entry")
     }
@@ -78,10 +80,10 @@ type Props = {
  * state to track, so the buttons only need to know whether the current machine can run a NEX at all.
  */
 const NexLaunchCommandBar = ({ path }: Props) => {
+  const t = useT();
   const { ideCommandsService } = useAppServices();
   const machineId = useSelector((s) => s.emulatorState?.machineId);
   const canLaunch = machineId === MI_ZXNEXT;
-  const notNextHint = " (requires the ZX Spectrum Next machine)";
 
   const launch = async (mode: NexLaunchMode) => {
     await ideCommandsService.executeCommand(`nex-run "${path}"${LAUNCH_MODES[mode]}`);
@@ -92,7 +94,7 @@ const NexLaunchCommandBar = ({ path }: Props) => {
       <TabButtonSeparator />
       <TabButton
         iconName="play"
-        title={`Run this NEX file${canLaunch ? "" : notNextHint}`}
+        title={t(canLaunch ? "documents.nex.button.run" : "documents.nex.button.runNotNext")}
         disabled={!canLaunch}
         clicked={async () => await launch("run")}
       />
@@ -101,16 +103,14 @@ const NexLaunchCommandBar = ({ path }: Props) => {
       <TabButtonSpace />
       <TabButton
         iconName="debug"
-        title={`Debug this NEX file${canLaunch ? "" : notNextHint}`}
+        title={t(canLaunch ? "documents.nex.button.debug" : "documents.nex.button.debugNotNext")}
         disabled={!canLaunch}
         clicked={async () => await launch("debug")}
       />
       <TabButtonSpace />
       <TabButton
         iconName="debug-with-bp"
-        title={`Debug this NEX file, breaking at its entry point${
-          canLaunch ? "" : notNextHint
-        }`}
+        title={t(canLaunch ? "documents.nex.button.entry" : "documents.nex.button.entryNotNext")}
         disabled={!canLaunch}
         clicked={async () => await launch("entry")}
       />

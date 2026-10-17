@@ -6,6 +6,7 @@ import path from "path";
 import { app, dialog, type BrowserWindow } from "electron";
 
 import { appSettings, saveAppSettings } from "@main/settings-utils";
+import { t } from "@common/i18n/i18n";
 
 export type SaveFileDialogOptions = {
   title?: string;
@@ -24,7 +25,7 @@ export async function displaySaveFileDialog(
   const folder = (options.settingsId && appSettings?.folders?.[options.settingsId]) || app.getPath("home");
   const name = options.defaultPath ?? "";
   const result = await dialog.showSaveDialog(browserWindow, {
-    title: options.title ?? "Save File",
+    title: options.title ?? t("messages.file.saveFile"),
     defaultPath: path.isAbsolute(name) ? name : path.join(folder, name),
     filters: options.filters,
     properties: ["showOverwriteConfirmation", "createDirectory"]

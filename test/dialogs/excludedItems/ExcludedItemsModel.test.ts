@@ -3,9 +3,9 @@ import { describe, expect, it } from "vitest";
 import {
   excludedIdsOf,
   initialState,
-  projectListLabelOf,
   reduce
 } from "@renderer/appIde/dialogs/excludedItems/ExcludedItemsModel";
+import { projectListLabelOf } from "@renderer/appIde/dialogs/excludedItems/ExcludedItemsViewModel";
 
 import { aState, anEnv, anItem } from "./fakes";
 

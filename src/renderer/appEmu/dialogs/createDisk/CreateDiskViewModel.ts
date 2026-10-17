@@ -1,3 +1,4 @@
+import { t } from "@common/i18n/i18n";
 import {
   diskTypesOf,
   filenameErrorOf,
@@ -50,7 +51,7 @@ export function selectViewModel(state: CreateDiskState): CreateDiskViewModel {
       value: state.filename,
       error: filenameErrorOf(state)
     },
-    submitLabel: "Create",
+    submitLabel: t("dialog.createDisk.create"),
     // --- Two independent refusals: an incomplete form, and a write already in
     // --- flight. The form disables the button while submitting on its own, but
     // --- the view model states it so a headless test can assert it.

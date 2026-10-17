@@ -1,3 +1,5 @@
+import { documentDisplayName } from "./specialDocuments";
+import { useT } from "@common/i18n/useT";
 import { useDispatch, useRendererContext, useSelector } from "@renderer/core/RendererProvider";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
@@ -36,6 +38,7 @@ import {
  * the hub service, and keeps the active tab visible and persisted in workspace state.
  */
 export const DocumentsHeader = () => {
+  const t = useT();
   const dispatch = useDispatch();
   const { store } = useRendererContext();
   const { projectService, navigationHistoryService } = useAppServices();
@@ -104,7 +107,7 @@ export const DocumentsHeader = () => {
       setOverflow((prev) => (prev === NO_OVERFLOW ? prev : NO_OVERFLOW));
       return;
     }
-    const contentWidth = Math.max(...tabs.map((t) => t.offsetLeft + t.offsetWidth));
+    const contentWidth = Math.max(...tabs.map((tab) => tab.offsetLeft + tab.offsetWidth));
     const clientWidth = api.getClientWidth();
     const scrollLeft = api.getScrollLeft();
     const hidden = new Set<number>();
@@ -362,20 +365,20 @@ export const DocumentsHeader = () => {
         <div className={styles.overflowControls}>
           <SmallIconButton
             iconName="chevron-left"
-            title="Scroll tabs left"
+            title={t("documents.header.scrollLeft")}
             enable={overflow.canLeft}
             clicked={() => scrollTabsBy(-1)}
           />
           <SmallIconButton
             iconName="chevron-right"
-            title="Scroll tabs right"
+            title={t("documents.header.scrollRight")}
             enable={overflow.canRight}
             clicked={() => scrollTabsBy(1)}
           />
           <span ref={tabListAnchor}>
             <SmallIconButton
               iconName="ellipsis"
-              title="Show all open documents"
+              title={t("documents.header.showAll")}
               clicked={() => tabListApi.showAt(tabListAnchor.current)}
             />
           </span>
@@ -393,7 +396,7 @@ export const DocumentsHeader = () => {
                  * Deriving them here instead (from the file type) silently produced no icon at all
                  * for the virtual documents, which have no node.
                  */
-                text={tabLabels.get(doc.id) ?? doc.name}
+                text={tabLabels.get(doc.id) ?? documentDisplayName(doc)}
                 iconName={doc.iconName ?? "file-code"}
                 iconFill={doc.iconFill ?? "--color-doc-icon"}
                 selected={idx === activeDocIndex}

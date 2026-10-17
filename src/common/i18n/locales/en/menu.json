@@ -1,0 +1,788 @@
+{
+  "menu.edit.title": "Edit",
+  "@menu.edit.title": {
+    "context": "Top-level menu in the application menu bar. Keep it one short word. macOS only.",
+    "maxChars": 12
+  },
+  "menu.file.title": "File",
+  "@menu.file.title": {
+    "context": "Top-level menu in the application menu bar. Keep it one short word.",
+    "maxChars": 12
+  },
+  "menu.view.title": "View",
+  "@menu.view.title": {
+    "context": "Top-level menu in the application menu bar. Keep it one short word.",
+    "maxChars": 12
+  },
+  "menu.machine.title": "Machine",
+  "@menu.machine.title": {
+    "context": "Top-level menu in the application menu bar. Keep it one short word. Holds the emulated computer's commands.",
+    "maxChars": 12
+  },
+  "menu.debug.title": "Debug",
+  "@menu.debug.title": {
+    "context": "Top-level menu in the application menu bar. Keep it one short word.",
+    "maxChars": 12
+  },
+  "menu.build.title": "Build",
+  "@menu.build.title": {
+    "context": "Top-level menu in the application menu bar. Keep it one short word. Shown only for a project with a build file.",
+    "maxChars": 12
+  },
+  "menu.help.title": "Help",
+  "@menu.help.title": {
+    "context": "Top-level menu in the application menu bar. Keep it one short word.",
+    "maxChars": 12
+  },
+  "menu.app.about": "About {appName}",
+  "@menu.app.about": {
+    "context": "macOS application menu: opens the About dialog.",
+    "placeholders": {
+      "appName": "The application's name, shown verbatim: 'Klive'"
+    }
+  },
+  "menu.app.installCli": "Install Command Line Tool...",
+  "@menu.app.installCli": {
+    "context": "macOS application menu: installs the 'klive' command for the terminal. The trailing '...' means the item opens a dialog; keep it."
+  },
+  "menu.app.hide": "Hide {appName}",
+  "@menu.app.hide": {
+    "context": "macOS application menu: hides the app's windows (standard macOS item).",
+    "placeholders": {
+      "appName": "The application's name, shown verbatim: 'Klive'"
+    }
+  },
+  "menu.app.hideOthers": "Hide Others",
+  "@menu.app.hideOthers": {
+    "context": "macOS application menu: hides the other applications' windows (standard macOS item)."
+  },
+  "menu.app.showAll": "Show All",
+  "@menu.app.showAll": {
+    "context": "macOS application menu: shows every application's windows again (standard macOS item)."
+  },
+  "menu.app.quit": "Quit {appName}",
+  "@menu.app.quit": {
+    "context": "macOS application menu: quits the app (standard macOS item).",
+    "placeholders": {
+      "appName": "The application's name, shown verbatim: 'Klive'"
+    }
+  },
+  "menu.edit.undo": "Undo",
+  "@menu.edit.undo": {
+    "context": "Edit menu (macOS): undoes the last text edit."
+  },
+  "menu.edit.redo": "Redo",
+  "@menu.edit.redo": {
+    "context": "Edit menu (macOS): redoes the undone text edit."
+  },
+  "menu.edit.cut": "Cut",
+  "@menu.edit.cut": {
+    "context": "Edit menu (macOS): cuts the selected text."
+  },
+  "menu.edit.copy": "Copy",
+  "@menu.edit.copy": {
+    "context": "Edit menu (macOS): copies the selected text."
+  },
+  "menu.edit.paste": "Paste",
+  "@menu.edit.paste": {
+    "context": "Edit menu (macOS): pastes text."
+  },
+  "menu.edit.pasteAndMatchStyle": "Paste and Match Style",
+  "@menu.edit.pasteAndMatchStyle": {
+    "context": "Edit menu (macOS): pastes text without its formatting (standard macOS item)."
+  },
+  "menu.edit.delete": "Delete",
+  "@menu.edit.delete": {
+    "context": "Edit menu (macOS): deletes the selected text."
+  },
+  "menu.edit.selectAll": "Select All",
+  "@menu.edit.selectAll": {
+    "context": "Edit menu (macOS): selects all text."
+  },
+  "menu.file.newProject": "New Project...",
+  "@menu.file.newProject": {
+    "context": "File menu: creates a Klive project folder. The trailing '...' means the item opens a dialog; keep it."
+  },
+  "menu.file.openFolder": "Open Folder...",
+  "@menu.file.openFolder": {
+    "context": "File menu: opens a folder as the IDE's project. The trailing '...' means the item opens a dialog; keep it."
+  },
+  "menu.file.openRecent": "Open Recent",
+  "@menu.file.openRecent": {
+    "context": "File menu: submenu of recently opened project folders."
+  },
+  "menu.file.openFile": "Open File...",
+  "@menu.file.openFile": {
+    "context": "File menu: opens any file the emulator understands (tape, snapshot, disk, state, RZX recording). The trailing '...' means the item opens a dialog; keep it."
+  },
+  "menu.file.saveSnapshot": "Save Snapshot...",
+  "@menu.file.saveSnapshot": {
+    "context": "File menu: saves the ZX Spectrum's memory and registers as a snapshot file (.z80/.sna). The trailing '...' means the item opens a dialog; keep it."
+  },
+  "menu.file.saveMachineState": "Save Machine State...",
+  "@menu.file.saveMachineState": {
+    "context": "File menu: saves the emulated machine's complete state to a file. The trailing '...' means the item opens a dialog; keep it."
+  },
+  "menu.file.quickSaveState": "Quick Save State",
+  "@menu.file.quickSaveState": {
+    "context": "File menu: saves the machine's state into a single in-memory slot, without a dialog."
+  },
+  "menu.file.quickRestoreState": "Quick Restore State",
+  "@menu.file.quickRestoreState": {
+    "context": "File menu: restores the state saved by 'Quick Save State'."
+  },
+  "menu.file.closeFolder": "Close Folder",
+  "@menu.file.closeFolder": {
+    "context": "File menu: closes the project folder open in the IDE."
+  },
+  "menu.file.settings": "Settings...",
+  "@menu.file.settings": {
+    "context": "Opens the Settings dialog. In the File menu on Windows/Linux, in the application menu on macOS. The trailing '...' means the item opens a dialog; keep it."
+  },
+  "menu.file.exit": "Exit",
+  "@menu.file.exit": {
+    "context": "File menu on Windows: closes the application (the standard Windows wording)."
+  },
+  "menu.file.quit": "Quit",
+  "@menu.file.quit": {
+    "context": "File menu on Linux: closes the application."
+  },
+  "menu.automation.title": "Automation",
+  "@menu.automation.title": {
+    "context": "Submenu (application menu on macOS, File menu elsewhere), shown while scripts can control Klive through its automation channel."
+  },
+  "menu.automation.showOutput": "Show Automation Output",
+  "@menu.automation.showOutput": {
+    "context": "Automation submenu: shows the output pane that logs what scripts did."
+  },
+  "menu.automation.disconnectAll": "Disconnect All",
+  "@menu.automation.disconnectAll": {
+    "context": "Automation submenu: disconnects every connected script. Shown when none is connected (then disabled)."
+  },
+  "menu.automation.disconnectAllCount": "Disconnect All ({count})",
+  "@menu.automation.disconnectAllCount": {
+    "context": "Automation submenu: disconnects every connected script; the number is how many are connected.",
+    "placeholders": {
+      "count": "Number of connected scripts, 1 or more"
+    }
+  },
+  "menu.view.machineViews": "Machine Views",
+  "@menu.view.machineViews": {
+    "context": "View menu: submenu of documents that show the emulated machine (memory, disassembly, BASIC listing...)."
+  },
+  "menu.view.memory": "Memory",
+  "@menu.view.memory": {
+    "context": "View › Machine Views: shows the memory dump document (checkbox)."
+  },
+  "menu.view.disassembly": "Disassembly",
+  "@menu.view.disassembly": {
+    "context": "View › Machine Views: shows the disassembly document (checkbox)."
+  },
+  "menu.view.toolbar": "Toolbar",
+  "@menu.view.toolbar": {
+    "context": "View menu checkbox: shows the toolbar of the focused window (IDE or emulator)."
+  },
+  "menu.view.statusBar": "Status Bar",
+  "@menu.view.statusBar": {
+    "context": "View menu checkbox: shows the status bar of the focused window."
+  },
+  "menu.view.virtualKeyboard": "Virtual Keyboard",
+  "@menu.view.virtualKeyboard": {
+    "context": "View menu checkbox (emulator window): shows the on-screen keyboard of the emulated machine."
+  },
+  "menu.view.sidebar": "Sidebar",
+  "@menu.view.sidebar": {
+    "context": "View menu checkbox (IDE window): shows the side bar (explorer, debug panels...)."
+  },
+  "menu.view.commandAndOutput": "Command and Output",
+  "@menu.view.commandAndOutput": {
+    "context": "View menu checkbox (IDE window): shows the bottom panel with the command prompt and the output panes."
+  },
+  "menu.view.fitWindow": "Fit Window to Screen",
+  "@menu.view.fitWindow": {
+    "context": "View menu (emulator window): resizes the window around the emulated screen."
+  },
+  "menu.view.fitWindow1x": "Fit Window to Screen at 1x",
+  "@menu.view.fitWindow1x": {
+    "context": "View menu (emulator window): resizes the window around the emulated screen at its smallest (1x) zoom."
+  },
+  "menu.view.showIde": "Show IDE",
+  "@menu.view.showIde": {
+    "context": "View menu: shows the IDE window when it is hidden."
+  },
+  "menu.view.goBack": "Go Back",
+  "@menu.view.goBack": {
+    "context": "View menu: goes back to the previous location in the IDE's navigation history."
+  },
+  "menu.view.goForward": "Go Forward",
+  "@menu.view.goForward": {
+    "context": "View menu: goes forward in the IDE's navigation history."
+  },
+  "menu.view.zoom": "Zoom",
+  "@menu.view.zoom": {
+    "context": "View menu: submenu that zooms the window's whole user interface."
+  },
+  "menu.view.actualSize": "Actual Size",
+  "@menu.view.actualSize": {
+    "context": "View › Zoom: resets the window's zoom to 100% (standard item)."
+  },
+  "menu.view.zoomIn": "Zoom In",
+  "@menu.view.zoomIn": {
+    "context": "View › Zoom: makes the window's user interface larger."
+  },
+  "menu.view.zoomOut": "Zoom Out",
+  "@menu.view.zoomOut": {
+    "context": "View › Zoom: makes the window's user interface smaller."
+  },
+  "menu.view.toggleFullScreen": "Toggle Full Screen",
+  "@menu.view.toggleFullScreen": {
+    "context": "View menu: switches the focused window into or out of full-screen mode."
+  },
+  "menu.view.lightTheme": "Switch to Light Theme",
+  "@menu.view.lightTheme": {
+    "context": "View menu: switches the colour theme from dark to light."
+  },
+  "menu.view.darkTheme": "Switch to Dark Theme",
+  "@menu.view.darkTheme": {
+    "context": "View menu: switches the colour theme from light to dark."
+  },
+  "menu.view.toggleDevTools": "Toggle Developer Tools",
+  "@menu.view.toggleDevTools": {
+    "context": "View menu, shown only when developer tools are allowed: opens or closes Chromium's developer tools."
+  },
+  "menu.machine.machineType": "Machine Type",
+  "@menu.machine.machineType": {
+    "context": "Machine menu: submenu listing the favourite emulated machines (ZX Spectrum 48K, ZX Spectrum Next...)."
+  },
+  "menu.machine.selectMachine": "Select machine…",
+  "@menu.machine.selectMachine": {
+    "context": "Machine › Machine Type: opens the dialog listing every emulated machine. Keep the ellipsis."
+  },
+  "menu.machine.start": "Start",
+  "@menu.machine.start": {
+    "context": "Machine menu: starts (or continues) running the emulated machine."
+  },
+  "menu.machine.pause": "Pause",
+  "@menu.machine.pause": {
+    "context": "Machine menu: pauses the running emulated machine."
+  },
+  "menu.machine.stop": "Stop",
+  "@menu.machine.stop": {
+    "context": "Machine menu: stops the emulated machine."
+  },
+  "menu.machine.restart": "Restart",
+  "@menu.machine.restart": {
+    "context": "Machine menu: stops and starts the emulated machine again."
+  },
+  "menu.machine.speed": "Speed",
+  "@menu.machine.speed": {
+    "context": "Machine menu: submenu choosing how many times faster than the real hardware the machine runs."
+  },
+  "menu.machine.sound": "Sound",
+  "@menu.machine.sound": {
+    "context": "Machine menu: submenu choosing the sound volume."
+  },
+  "menu.machine.inputSettings": "Input Settings...",
+  "@menu.machine.inputSettings": {
+    "context": "Machine › Input: opens the Input page of the Settings dialog. The trailing '...' means the item opens a dialog; keep it."
+  },
+  "menu.machine.device.tape": "Tape",
+  "@menu.machine.device.tape": {
+    "context": "Machine menu: submenu of the emulated cassette tape (insert, rewind, eject)."
+  },
+  "menu.machine.device.program": "Program",
+  "@menu.machine.device.program": {
+    "context": "Machine menu (ZX80/ZX81): submenu that loads and runs a program file."
+  },
+  "menu.machine.device.disks": "Disks",
+  "@menu.machine.device.disks": {
+    "context": "Machine menu: submenu of the emulated floppy disk drives."
+  },
+  "menu.machine.device.cartridge": "Cartridge",
+  "@menu.machine.device.cartridge": {
+    "context": "Machine menu (Timex 2068): submenu of the cartridge (DOCK) slot."
+  },
+  "menu.machine.device.sdCard": "SD Card",
+  "@menu.machine.device.sdCard": {
+    "context": "Machine menu (ZX Spectrum Next): submenu of the SD card image."
+  },
+  "menu.machine.device.input": "Input",
+  "@menu.machine.device.input": {
+    "context": "Machine menu: submenu of input devices (keyboard settings, joystick, mouse)."
+  },
+  "menu.machine.hardware": "Hardware",
+  "@menu.machine.hardware": {
+    "context": "Machine menu: submenu of the machine's own hardware actions, used when the machine has no name to show instead."
+  },
+  "menu.machine.record": "Record",
+  "@menu.machine.record": {
+    "context": "Machine menu: submenu of the recordings (video, IDE + emulator, RZX). 'Record' is a noun/verb here: the recording commands."
+  },
+  "menu.machine.startVideo": "Start Video Recording",
+  "@menu.machine.startVideo": {
+    "context": "Machine › Record: starts recording the emulated screen to a video file."
+  },
+  "menu.machine.stopVideo": "Stop Video Recording",
+  "@menu.machine.stopVideo": {
+    "context": "Machine › Record: stops the video recording and saves it."
+  },
+  "menu.machine.pauseVideo": "Pause Video Recording",
+  "@menu.machine.pauseVideo": {
+    "context": "Machine › Record: pauses the video recording."
+  },
+  "menu.machine.continueVideo": "Continue Video Recording",
+  "@menu.machine.continueVideo": {
+    "context": "Machine › Record: continues a paused video recording."
+  },
+  "menu.machine.startIdeEmu": "Start IDE + Emulator recording",
+  "@menu.machine.startIdeEmu": {
+    "context": "Machine › Record: starts a video of both windows, the IDE and the emulator, side by side."
+  },
+  "menu.machine.stopIdeEmu": "Stop IDE + Emulator recording",
+  "@menu.machine.stopIdeEmu": {
+    "context": "Machine › Record: stops the video of both windows."
+  },
+  "menu.machine.recordingSettings": "Recording Settings...",
+  "@menu.machine.recordingSettings": {
+    "context": "Machine › Record: opens the Recording page of the Settings dialog. The trailing '...' means the item opens a dialog; keep it."
+  },
+  "menu.debug.startDebugging": "Start with Debugging",
+  "@menu.debug.startDebugging": {
+    "context": "Debug menu: starts the emulated machine with breakpoints active."
+  },
+  "menu.debug.stepInto": "Step Into",
+  "@menu.debug.stepInto": {
+    "context": "Debug menu: executes one Z80 instruction, entering a called subroutine."
+  },
+  "menu.debug.stepOver": "Step Over",
+  "@menu.debug.stepOver": {
+    "context": "Debug menu: executes one instruction; a CALL runs to its return."
+  },
+  "menu.debug.stepOut": "Step Out",
+  "@menu.debug.stepOut": {
+    "context": "Debug menu: runs until the current subroutine returns."
+  },
+  "menu.debug.stepOverLine": "Step Over Line",
+  "@menu.debug.stepOverLine": {
+    "context": "Debug menu: executes one source line (BASIC or assembly) of a program with source-level debug information."
+  },
+  "menu.debug.stepBack": "Step Back",
+  "@menu.debug.stepBack": {
+    "context": "Debug menu: moves back one instruction in the recorded execution history (reverse debugging)."
+  },
+  "menu.debug.stepForward": "Step Forward",
+  "@menu.debug.stepForward": {
+    "context": "Debug menu: moves forward one instruction in the recorded execution history."
+  },
+  "menu.debug.reverseStepOver": "Reverse Step Over",
+  "@menu.debug.reverseStepOver": {
+    "context": "Debug menu: the reverse of Step Over, through the recorded history."
+  },
+  "menu.debug.reverseStepOut": "Reverse Step Out",
+  "@menu.debug.reverseStepOut": {
+    "context": "Debug menu: goes back to where the current subroutine was called, through the recorded history."
+  },
+  "menu.debug.reverseContinue": "Reverse Continue",
+  "@menu.debug.reverseContinue": {
+    "context": "Debug menu: runs backwards through the recorded history to the previous breakpoint."
+  },
+  "menu.debug.returnToPresent": "Return to Present",
+  "@menu.debug.returnToPresent": {
+    "context": "Debug menu: leaves the recorded history and returns to the machine's current state."
+  },
+  "menu.debug.executionHistory": "Execution History",
+  "@menu.debug.executionHistory": {
+    "context": "Debug menu: opens the document listing the recently executed instructions."
+  },
+  "menu.debug.exportHistory": "Export Execution History...",
+  "@menu.debug.exportHistory": {
+    "context": "Debug menu: saves the recorded instruction trace to a file. The trailing '...' means the item opens a dialog; keep it."
+  },
+  "menu.debug.codeCoverage": "Code Coverage",
+  "@menu.debug.codeCoverage": {
+    "context": "Debug menu checkbox: records which memory addresses were executed, read and written."
+  },
+  "menu.debug.resetCoverage": "Reset Coverage",
+  "@menu.debug.resetCoverage": {
+    "context": "Debug menu: clears the recorded code coverage."
+  },
+  "menu.debug.detectCodeData": "Detect Code and Data...",
+  "@menu.debug.detectCodeData": {
+    "context": "Debug menu: marks memory as code or data from the coverage, for disassembly. The trailing '...' means the item opens a dialog; keep it."
+  },
+  "menu.debug.startProfiling": "Start Profiling",
+  "@menu.debug.startProfiling": {
+    "context": "Debug menu: starts measuring where the program spends its time."
+  },
+  "menu.debug.stopProfiling": "Stop Profiling",
+  "@menu.debug.stopProfiling": {
+    "context": "Debug menu: stops measuring and opens the Profiler."
+  },
+  "menu.debug.profiler": "Profiler",
+  "@menu.debug.profiler": {
+    "context": "Debug menu: opens the Profiler document."
+  },
+  "menu.debug.saveDebugRecording": "Save Debug Recording...",
+  "@menu.debug.saveDebugRecording": {
+    "context": "Debug menu: saves the reverse-debugging session to a file. The trailing '...' means the item opens a dialog; keep it."
+  },
+  "menu.debug.openDebugRecording": "Open Debug Recording...",
+  "@menu.debug.openDebugRecording": {
+    "context": "Debug menu: opens a saved reverse-debugging session. The trailing '...' means the item opens a dialog; keep it."
+  },
+  "menu.debug.syncSource": "Sync Source with Breakpoint",
+  "@menu.debug.syncSource": {
+    "context": "Debug menu checkbox: when the machine stops at a breakpoint, the source editor jumps to that line."
+  },
+  "menu.debug.debuggerSettings": "Debugger Settings...",
+  "@menu.debug.debuggerSettings": {
+    "context": "Debug menu: opens the Debugging page of the Settings dialog. The trailing '...' means the item opens a dialog; keep it."
+  },
+  "menu.help.aboutKlive": "About Klive",
+  "@menu.help.aboutKlive": {
+    "context": "Help menu (Windows/Linux): opens the About dialog. 'Klive' is the product name."
+  },
+  "menu.help.homePage": "Klive IDE Home Page",
+  "@menu.help.homePage": {
+    "context": "Help menu: opens Klive's website in the browser."
+  },
+  "menu.help.welcome": "Welcome Screen",
+  "@menu.help.welcome": {
+    "context": "Help menu: shows the welcome dialog shown at the first start."
+  },
+  "menu.help.machineResources": "{machine} Resources",
+  "@menu.help.machineResources": {
+    "context": "Help menu: submenu of web links about the emulated machine.",
+    "placeholders": {
+      "machine": "Machine name, shown verbatim, e.g. 'Cambridge Z88'"
+    }
+  },
+  "menu.help.z88.userGuide": "Cambridge Z88 User Guide",
+  "@menu.help.z88.userGuide": {
+    "context": "Help › Cambridge Z88 Resources: a web link to a document or site. Keep product and document names (Cambridge Z88, BBC BASIC, OZ) as they are."
+  },
+  "menu.help.z88.developersNotes": "Cambridge Z88 Developers' Notes",
+  "@menu.help.z88.developersNotes": {
+    "context": "Help › Cambridge Z88 Resources: a web link to a document or site. Keep product and document names (Cambridge Z88, BBC BASIC, OZ) as they are."
+  },
+  "menu.help.z88.bbcBasicGuide": "BBC BASIC (Z80) Reference Guide for Z88",
+  "@menu.help.z88.bbcBasicGuide": {
+    "context": "Help › Cambridge Z88 Resources: a web link to a document or site. Keep product and document names (Cambridge Z88, BBC BASIC, OZ) as they are."
+  },
+  "menu.help.z88.romSource": "Cambridge Z88 ROM source code",
+  "@menu.help.z88.romSource": {
+    "context": "Help › Cambridge Z88 Resources: a web link to a document or site. Keep product and document names (Cambridge Z88, BBC BASIC, OZ) as they are."
+  },
+  "menu.help.z88.thirdPartyApps": "Cambridge Z88 3rd party apps",
+  "@menu.help.z88.thirdPartyApps": {
+    "context": "Help › Cambridge Z88 Resources: a web link to a document or site. Keep product and document names (Cambridge Z88, BBC BASIC, OZ) as they are."
+  },
+  "menu.help.z88.toolsAndGames": "Cambridge Z88 tools and games",
+  "@menu.help.z88.toolsAndGames": {
+    "context": "Help › Cambridge Z88 Resources: a web link to a document or site. Keep product and document names (Cambridge Z88, BBC BASIC, OZ) as they are."
+  },
+  "menu.help.z88.wikipedia": "Cambridge Z88 on Wikipedia",
+  "@menu.help.z88.wikipedia": {
+    "context": "Help › Cambridge Z88 Resources: a web link to a document or site. Keep product and document names (Cambridge Z88, BBC BASIC, OZ) as they are."
+  },
+  "menu.tape.rewind": "Rewind",
+  "@menu.tape.rewind": {
+    "context": "Machine › Tape: rewinds the emulated cassette tape to its start."
+  },
+  "menu.tape.insert": "Insert Tape...",
+  "@menu.tape.insert": {
+    "context": "Machine › Tape: picks a tape file (.tap/.tzx) to put in the emulated cassette player. The trailing '...' means the item opens a dialog; keep it."
+  },
+  "menu.tape.eject": "Eject",
+  "@menu.tape.eject": {
+    "context": "Machine › Tape: removes the tape from the emulated cassette player."
+  },
+  "menu.tape.fastLoad": "Fast load",
+  "@menu.tape.fastLoad": {
+    "context": "Machine › Tape / Program checkbox: loads programs instantly instead of at the real tape speed."
+  },
+  "menu.program.select": "Select Program File...",
+  "@menu.program.select": {
+    "context": "Machine › Program (ZX80/ZX81): picks the program file (.p/.o) the machine loads. The trailing '...' means the item opens a dialog; keep it."
+  },
+  "menu.program.loadAndRun": "Load and Run the Program",
+  "@menu.program.loadAndRun": {
+    "context": "Machine › Program (ZX80/ZX81): resets the machine, loads the selected program and runs it."
+  },
+  "menu.program.rewind": "Rewind Tape",
+  "@menu.program.rewind": {
+    "context": "Machine › Program (ZX80/ZX81): rewinds the emulated tape that holds the program."
+  },
+  "menu.program.eject": "Eject Program",
+  "@menu.program.eject": {
+    "context": "Machine › Program (ZX80/ZX81): removes the selected program file."
+  },
+  "menu.disk.floppyDisks": "Floppy Disks",
+  "@menu.disk.floppyDisks": {
+    "context": "Machine › Disks: submenu of the emulated floppy drives."
+  },
+  "menu.disk.createDiskFile": "Create Disk File...",
+  "@menu.disk.createDiskFile": {
+    "context": "Machine › Disks: creates an empty floppy disk image file. The trailing '...' means the item opens a dialog; keep it."
+  },
+  "menu.disk.bootDriveA": "Boot Disk in Drive A",
+  "@menu.disk.bootDriveA": {
+    "context": "Machine › Disks (Pentagon, Scorpion): starts the disk in drive A through TR-DOS. 'A' is the drive letter."
+  },
+  "menu.disk.saveAsTrd": "Save Disk in Drive {drive} as .trd...",
+  "@menu.disk.saveAsTrd": {
+    "context": "Machine › Disks: saves the disk in a drive as a TR-DOS '.trd' image file. Keep '.trd'. The trailing '...' means the item opens a dialog; keep it.",
+    "placeholders": {
+      "drive": "Drive letter, shown verbatim: 'A' or 'B'"
+    }
+  },
+  "menu.disk.eject": "Eject Disk from Drive {drive}",
+  "@menu.disk.eject": {
+    "context": "Machine › Disks: removes the disk from a floppy drive.",
+    "placeholders": {
+      "drive": "Drive letter, shown verbatim: 'A' or 'B'"
+    }
+  },
+  "menu.disk.writeProtect": "Write Protect Drive {drive}",
+  "@menu.disk.writeProtect": {
+    "context": "Machine › Disks checkbox: prevents the emulated machine writing to the disk in a drive.",
+    "placeholders": {
+      "drive": "Drive letter, shown verbatim: 'A' or 'B'"
+    }
+  },
+  "menu.disk.change": "Change Disk in Drive {drive}...",
+  "@menu.disk.change": {
+    "context": "Machine › Disks: replaces the disk in a drive with another disk image file. The trailing '...' means the item opens a dialog; keep it.",
+    "placeholders": {
+      "drive": "Drive letter, shown verbatim: 'A' or 'B'"
+    }
+  },
+  "menu.disk.insert": "Insert Disk into Drive {drive}...",
+  "@menu.disk.insert": {
+    "context": "Machine › Disks: puts a disk image file into an empty drive. The trailing '...' means the item opens a dialog; keep it.",
+    "placeholders": {
+      "drive": "Drive letter, shown verbatim: 'A' or 'B'"
+    }
+  },
+  "menu.spectrum.basicListing": "BASIC Listing",
+  "@menu.spectrum.basicListing": {
+    "context": "View › Machine Views checkbox: shows the ZX Spectrum BASIC program in memory as a listing."
+  },
+  "menu.timex.drivenBy": "Driven by",
+  "@menu.timex.drivenBy": {
+    "context": "Machine › Input › Kempston Joystick: submenu choosing which host device (keyboard, gamepad) plays the joystick."
+  },
+  "menu.timex.sideDrivenBy": "{joystick}: driven by",
+  "@menu.timex.sideDrivenBy": {
+    "context": "Machine › Input › Joysticks (Timex 2068): submenu choosing which host device plays one joystick.",
+    "placeholders": {
+      "joystick": "The joystick's name as shown elsewhere, e.g. 'Joystick 1 (left)'"
+    }
+  },
+  "menu.timex.joysticks": "Joysticks",
+  "@menu.timex.joysticks": {
+    "context": "Machine › Input (Timex 2068): submenu of the two joysticks."
+  },
+  "menu.timex.kempstonJoystick": "Kempston Joystick",
+  "@menu.timex.kempstonJoystick": {
+    "context": "Machine › Input (Timex TC2048): submenu of the built-in Kempston joystick port. 'Kempston' is a product name."
+  },
+  "menu.joystick.configureBindings": "Configure bindings...",
+  "@menu.joystick.configureBindings": {
+    "context": "Machine › Input › Joystick: opens the dialog assigning host keys and gamepad buttons to the joystick. The trailing '...' means the item opens a dialog; keep it."
+  },
+  "menu.timex.changeCartridge": "Change Cartridge ({file})...",
+  "@menu.timex.changeCartridge": {
+    "context": "Machine › Cartridge (Timex 2068): replaces the cartridge in the DOCK slot. The trailing '...' means the item opens a dialog; keep it.",
+    "placeholders": {
+      "file": "The inserted cartridge's file name, shown verbatim, e.g. 'game.dck'"
+    }
+  },
+  "menu.timex.insertCartridge": "Insert Cartridge...",
+  "@menu.timex.insertCartridge": {
+    "context": "Machine › Cartridge (Timex 2068): puts a cartridge file (.dck) into the DOCK slot. The trailing '...' means the item opens a dialog; keep it."
+  },
+  "menu.timex.ejectCartridge": "Eject Cartridge",
+  "@menu.timex.ejectCartridge": {
+    "context": "Machine › Cartridge (Timex 2068): removes the cartridge."
+  },
+  "menu.z88.softReset": "Soft Reset",
+  "@menu.z88.softReset": {
+    "context": "Machine › Cambridge Z88: resets the machine keeping its memory (like the reset button)."
+  },
+  "menu.z88.hardReset": "Hard Reset",
+  "@menu.z88.hardReset": {
+    "context": "Machine › Cambridge Z88: resets the machine and clears its memory."
+  },
+  "menu.z88.pressBothShifts": "Press Both SHIFT Keys",
+  "@menu.z88.pressBothShifts": {
+    "context": "Machine › Cambridge Z88: presses both SHIFT keys at once (switches the Z88 on or off). Keep 'SHIFT' as the key's name."
+  },
+  "menu.z88.batteryLow": "Raise Battery Low Signal",
+  "@menu.z88.batteryLow": {
+    "context": "Machine › Cambridge Z88: makes the machine believe its batteries are low (for testing programs)."
+  },
+  "menu.rzx.record": "RZX: Record",
+  "@menu.rzx.record": {
+    "context": "Machine › Record: starts an RZX input recording. 'RZX' is a file format; keep it and the colon."
+  },
+  "menu.rzx.stopAndSave": "RZX: Stop and Save...",
+  "@menu.rzx.stopAndSave": {
+    "context": "Machine › Record: stops the RZX recording and saves it. The trailing '...' means the item opens a dialog; keep it."
+  },
+  "menu.rzx.insertRollbackPoint": "RZX: Insert Rollback Point",
+  "@menu.rzx.insertRollbackPoint": {
+    "context": "Machine › Record: marks a point in the RZX recording that 'Roll Back' can return to."
+  },
+  "menu.rzx.rollBack": "RZX: Roll Back",
+  "@menu.rzx.rollBack": {
+    "context": "Machine › Record: returns the RZX recording (and the machine) to the last rollback point."
+  },
+  "menu.rzx.renderToVideo": "RZX: Render a Recording to Video...",
+  "@menu.rzx.renderToVideo": {
+    "context": "Machine › Record: plays an RZX recording into a video file. The trailing '...' means the item opens a dialog; keep it."
+  },
+  "menu.next.selectImage": "Select Image...",
+  "@menu.next.selectImage": {
+    "context": "Machine › SD Card (ZX Spectrum Next): picks an SD card image file. The trailing '...' means the item opens a dialog; keep it."
+  },
+  "menu.next.useDefaultImage": "Use the Default Image",
+  "@menu.next.useDefaultImage": {
+    "context": "Machine › SD Card: switches back to Klive's own SD card image."
+  },
+  "menu.next.resetDefaultImage": "Reset the Default Image...",
+  "@menu.next.resetDefaultImage": {
+    "context": "Machine › SD Card: restores Klive's own SD card image to its original content (asks first). The trailing '...' means the item opens a dialog; keep it."
+  },
+  "menu.next.hotkeys": "Hotkeys",
+  "@menu.next.hotkeys": {
+    "context": "Machine › ZX Spectrum Next: submenu of the real machine's function-key actions (F1-F10)."
+  },
+  "menu.next.hotkey.f1": "F1 - Hard Reset",
+  "@menu.next.hotkey.f1": {
+    "context": "Machine › ZX Spectrum Next › Hotkeys: the action of a function key on the real machine. Keep the key name and the ' - ' separator."
+  },
+  "menu.next.hotkey.f2": "F2 - Toggle Scandoubler",
+  "@menu.next.hotkey.f2": {
+    "context": "Machine › ZX Spectrum Next › Hotkeys: the action of a function key on the real machine. Keep the key name and the ' - ' separator. The scandoubler doubles the video lines for VGA output."
+  },
+  "menu.next.hotkey.f3": "F3 - Toggle 50Hz/60Hz Display",
+  "@menu.next.hotkey.f3": {
+    "context": "Machine › ZX Spectrum Next › Hotkeys: the action of a function key on the real machine. Keep the key name and the ' - ' separator."
+  },
+  "menu.next.hotkey.f4": "F4 - Soft Reset",
+  "@menu.next.hotkey.f4": {
+    "context": "Machine › ZX Spectrum Next › Hotkeys: the action of a function key on the real machine. Keep the key name and the ' - ' separator."
+  },
+  "menu.next.hotkey.f5": "F5 - Enable Expansion Bus",
+  "@menu.next.hotkey.f5": {
+    "context": "Machine › ZX Spectrum Next › Hotkeys: the action of a function key on the real machine. Keep the key name and the ' - ' separator."
+  },
+  "menu.next.hotkey.f6": "F6 - Disable Expansion Bus",
+  "@menu.next.hotkey.f6": {
+    "context": "Machine › ZX Spectrum Next › Hotkeys: the action of a function key on the real machine. Keep the key name and the ' - ' separator."
+  },
+  "menu.next.hotkey.f7": "F7 - Adjust Scanline Weight",
+  "@menu.next.hotkey.f7": {
+    "context": "Machine › ZX Spectrum Next › Hotkeys: the action of a function key on the real machine. Keep the key name and the ' - ' separator. Scanlines imitate a CRT's dark lines."
+  },
+  "menu.next.hotkey.f8": "F8 - Cycle CPU Speed",
+  "@menu.next.hotkey.f8": {
+    "context": "Machine › ZX Spectrum Next › Hotkeys: the action of a function key on the real machine. Keep the key name and the ' - ' separator."
+  },
+  "menu.next.hotkey.f9": "F9 - Multiface NMI",
+  "@menu.next.hotkey.f9": {
+    "context": "Machine › ZX Spectrum Next › Hotkeys: the action of a function key on the real machine. Keep the key name and the ' - ' separator. 'Multiface' is a product name, 'NMI' the non-maskable interrupt."
+  },
+  "menu.next.hotkey.f10": "F10 - DivMMC NMI",
+  "@menu.next.hotkey.f10": {
+    "context": "Machine › ZX Spectrum Next › Hotkeys: the action of a function key on the real machine. Keep the key name and the ' - ' separator. 'DivMMC' is a product name, 'NMI' the non-maskable interrupt."
+  },
+  "menu.next.copperList": "Copper List",
+  "@menu.next.copperList": {
+    "context": "View › Machine Views (ZX Spectrum Next): opens the Copper program document. 'Copper' is the name of the Next's display coprocessor; keep it."
+  },
+  "menu.next.spriteInspector": "Sprite Inspector",
+  "@menu.next.spriteInspector": {
+    "context": "View › Machine Views (ZX Spectrum Next): opens the panel showing the hardware sprites."
+  },
+  "menu.next.tilemapInspector": "Tilemap Inspector",
+  "@menu.next.tilemapInspector": {
+    "context": "View › Machine Views (ZX Spectrum Next): opens the panel showing the tilemap layer."
+  },
+  "menu.next.layer2Inspector": "Layer 2 Inspector",
+  "@menu.next.layer2Inspector": {
+    "context": "View › Machine Views (ZX Spectrum Next): opens the panel showing the 'Layer 2' bitmap layer. 'Layer 2' is a hardware name; keep it."
+  },
+  "menu.next.layers": "Layers",
+  "@menu.next.layers": {
+    "context": "View › Machine Views (ZX Spectrum Next): opens the document showing how the video layers combine."
+  },
+  "menu.next.stepCopper": "Step Copper",
+  "@menu.next.stepCopper": {
+    "context": "Debug menu (ZX Spectrum Next): runs the Copper display coprocessor one instruction. Keep 'Copper'."
+  },
+  "menu.next.mouse": "Mouse",
+  "@menu.next.mouse": {
+    "context": "Machine › Input (ZX Spectrum Next): submenu of the emulated mouse."
+  },
+  "menu.next.captureMouse": "Capture the mouse",
+  "@menu.next.captureMouse": {
+    "context": "Machine › Input › Mouse checkbox: allows the emulated machine to take over the host mouse."
+  },
+  "menu.next.showCapturedPointer": "Show the captured pointer",
+  "@menu.next.showCapturedPointer": {
+    "context": "Machine › Input › Mouse: submenu choosing when the host's pointer stays visible while the mouse is captured."
+  },
+  "menu.next.sensitivity": "Sensitivity ({level})",
+  "@menu.next.sensitivity": {
+    "context": "Machine › Input › Mouse: submenu choosing the mouse speed; the current choice is in brackets.",
+    "placeholders": {
+      "level": "The current sensitivity as shown in the submenu, e.g. 'Normal (1x)'"
+    }
+  },
+  "menu.next.joystick": "Joystick",
+  "@menu.next.joystick": {
+    "context": "Machine › Input (ZX Spectrum Next): submenu of the two joystick connectors."
+  },
+  "menu.next.drivenBy": "Driven by",
+  "@menu.next.drivenBy": {
+    "context": "Machine › Input › Joystick › one joystick: submenu choosing which host device (keyboard, gamepad) plays it."
+  },
+  "menu.next.setMachineMode": "Set machine mode (NextReg $05, NextZXOS may override)",
+  "@menu.next.setMachineMode": {
+    "context": "Machine › Input › Joystick › one joystick: submenu writing the joystick type into the machine's register. Keep 'NextReg $05' and 'NextZXOS' (technical names)."
+  },
+  "menu.next.joystickMode.sinclair2": "Sinclair 2 (keys 1-5)",
+  "@menu.next.joystickMode.sinclair2": {
+    "context": "Machine › Input › Joystick › Set machine mode: a joystick type of the ZX Spectrum Next. Keep product names (Sinclair, Kempston, Protek, MD) and port numbers like '$1F'."
+  },
+  "menu.next.joystickMode.kempston1": "Kempston 1 (port $1F)",
+  "@menu.next.joystickMode.kempston1": {
+    "context": "Machine › Input › Joystick › Set machine mode: a joystick type of the ZX Spectrum Next. Keep product names (Sinclair, Kempston, Protek, MD) and port numbers like '$1F'."
+  },
+  "menu.next.joystickMode.cursor": "Cursor / Protek",
+  "@menu.next.joystickMode.cursor": {
+    "context": "Machine › Input › Joystick › Set machine mode: a joystick type of the ZX Spectrum Next. Keep product names (Sinclair, Kempston, Protek, MD) and port numbers like '$1F'."
+  },
+  "menu.next.joystickMode.sinclair1": "Sinclair 1 (keys 6-0)",
+  "@menu.next.joystickMode.sinclair1": {
+    "context": "Machine › Input › Joystick › Set machine mode: a joystick type of the ZX Spectrum Next. Keep product names (Sinclair, Kempston, Protek, MD) and port numbers like '$1F'."
+  },
+  "menu.next.joystickMode.kempston2": "Kempston 2 (port $37)",
+  "@menu.next.joystickMode.kempston2": {
+    "context": "Machine › Input › Joystick › Set machine mode: a joystick type of the ZX Spectrum Next. Keep product names (Sinclair, Kempston, Protek, MD) and port numbers like '$1F'."
+  },
+  "menu.next.joystickMode.md1": "MD 1 (port $1F)",
+  "@menu.next.joystickMode.md1": {
+    "context": "Machine › Input › Joystick › Set machine mode: a joystick type of the ZX Spectrum Next. Keep product names (Sinclair, Kempston, Protek, MD) and port numbers like '$1F'. 'MD' is the Mega Drive pad."
+  },
+  "menu.next.joystickMode.md2": "MD 2 (port $37)",
+  "@menu.next.joystickMode.md2": {
+    "context": "Machine › Input › Joystick › Set machine mode: a joystick type of the ZX Spectrum Next. Keep product names (Sinclair, Kempston, Protek, MD) and port numbers like '$1F'. 'MD' is the Mega Drive pad."
+  },
+  "menu.next.joystickMode.userDefined": "User-defined (joymap)",
+  "@menu.next.joystickMode.userDefined": {
+    "context": "Machine › Input › Joystick › Set machine mode: a joystick type of the ZX Spectrum Next. Keep product names (Sinclair, Kempston, Protek, MD) and port numbers like '$1F'. 'joymap' is the name of the key map; keep it."
+  }
+}

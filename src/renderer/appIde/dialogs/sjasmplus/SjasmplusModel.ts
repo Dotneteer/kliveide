@@ -7,8 +7,8 @@ import type {
   SjasmplusReleaseAsset,
   SjasmplusReleaseListResult
 } from "@common/messaging/SjasmplusIntegration";
+import type { MessageKey } from "@common/i18n/keys.generated";
 import {
-  SJASMP_CONFIGURED_FAILED_MESSAGE,
   SJASMP_EXECUTABLE_PATH,
   SJASMP_INSTALL_FOLDER,
   SJASMP_VERSION
@@ -33,20 +33,36 @@ export type ValidationOrigin = "configuredCheck" | "candidate";
 export const DISPLAYED_RELEASE_LIMIT = 20;
 export const SJASMPLUS_REPOSITORY_URL = "https://github.com/z00m128/sjasmplus";
 
-// --- Shared with the compiler, so a failed build says what the dialog says.
-export const CONFIGURED_FAILED_MESSAGE = SJASMP_CONFIGURED_FAILED_MESSAGE;
-export const CONFIGURED_PASSED_HINT = "The configured executable passed its test.";
-export const CONFIGURED_FAILED_HINT =
-  "Pick a working executable below, or restore the missing one and press Test again.";
-export const REPLACEMENT_READY_MESSAGE = "Press Apply to replace it with the executable below.";
-export const CANDIDATE_REJECTED_MESSAGE = "Unchanged — the executable below failed its test.";
-export const VALIDATION_PASSED_MESSAGE =
-  "The smoke-test compile succeeded, press Apply to save it.";
-export const VALIDATION_FAILED_MESSAGE =
-  "The smoke-test compile failed, so this executable cannot be saved.";
-export const PROBE_FAILED_MESSAGE = "The selected path is not a valid SJASMPLUS candidate.";
-export const DOWNLOAD_FAILED_MESSAGE = "SJASMPLUS release download failed.";
-export const APPLY_SAVED_MESSAGE = "SJASMPLUS integration saved.";
+// --- The messages the reducer reports, as translation keys: the model stays
+// --- text-free and the view model translates them at display time. `message`
+// --- and `statusError` hold either one of these keys or text from outside the
+// --- dialog (an error a service reported), which is shown verbatim.
+// --- The configured-failed text matches `SJASMP_CONFIGURED_FAILED_MESSAGE` in
+// --- English, so a failed build says what the dialog says.
+export const CONFIGURED_FAILED_MESSAGE: MessageKey = "dialog.sjasmplus.message.configuredFailed";
+export const CONFIGURED_PASSED_HINT: MessageKey = "dialog.sjasmplus.message.configuredPassed";
+export const CONFIGURED_FAILED_HINT: MessageKey = "dialog.sjasmplus.message.configuredFailedHint";
+export const REPLACEMENT_READY_MESSAGE: MessageKey = "dialog.sjasmplus.message.replacementReady";
+export const CANDIDATE_REJECTED_MESSAGE: MessageKey = "dialog.sjasmplus.message.candidateRejected";
+export const VALIDATION_PASSED_MESSAGE: MessageKey = "dialog.sjasmplus.message.validationPassed";
+export const VALIDATION_FAILED_MESSAGE: MessageKey = "dialog.sjasmplus.message.validationFailed";
+export const PROBE_FAILED_MESSAGE: MessageKey = "dialog.sjasmplus.message.probeFailed";
+export const DOWNLOAD_FAILED_MESSAGE: MessageKey = "dialog.sjasmplus.message.downloadFailed";
+export const APPLY_SAVED_MESSAGE: MessageKey = "dialog.sjasmplus.message.applySaved";
+
+// --- Tells a stored message key from outside text.
+export const MODEL_MESSAGE_KEYS: ReadonlySet<string> = new Set<string>([
+  CONFIGURED_FAILED_MESSAGE,
+  CONFIGURED_PASSED_HINT,
+  CONFIGURED_FAILED_HINT,
+  REPLACEMENT_READY_MESSAGE,
+  CANDIDATE_REJECTED_MESSAGE,
+  VALIDATION_PASSED_MESSAGE,
+  VALIDATION_FAILED_MESSAGE,
+  PROBE_FAILED_MESSAGE,
+  DOWNLOAD_FAILED_MESSAGE,
+  APPLY_SAVED_MESSAGE
+]);
 
 // ─── State ───────────────────────────────────────────────────────────────────
 

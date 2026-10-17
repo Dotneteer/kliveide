@@ -1,9 +1,13 @@
+import { t } from "@common/i18n/i18n";
+import type { MessageKey } from "@common/i18n/keys.generated";
+
 import {
   folderErrorOf,
   isComplete,
   machineTypeOptionsOf,
   modelOptionsOf,
   projectNameErrorOf,
+  type MachineFamilyId,
   type MachineOption,
   type NewProjectState
 } from "./NewProjectModel";
@@ -40,12 +44,29 @@ export type NewProjectViewModel = {
   submitting: boolean;
 };
 
+// ─── Formatting ──────────────────────────────────────────────────────────────
+
+const FAMILY_LABEL_KEYS: Readonly<Record<MachineFamilyId, MessageKey>> = {
+  zxSpectrum: "dialog.newProject.family.zxSpectrum",
+  spectrumCompatibles: "dialog.newProject.family.spectrumCompatibles",
+  otherZ80: "dialog.newProject.family.otherZ80",
+  other: "dialog.newProject.family.other"
+};
+
+/** The label of a machine family, the group heading of the type list */
+export function familyLabelOf(family: MachineFamilyId): string {
+  return t(FAMILY_LABEL_KEYS[family]);
+}
+
 // ─── Selector ────────────────────────────────────────────────────────────────
 
 export function selectViewModel(state: NewProjectState): NewProjectViewModel {
   return {
     machineType: {
-      options: machineTypeOptionsOf(state),
+      options: machineTypeOptionsOf(state).map((option) => ({
+        ...option,
+        group: familyLabelOf(option.group)
+      })),
       value: state.machineId
     },
     model: {
@@ -67,7 +88,7 @@ export function selectViewModel(state: NewProjectState): NewProjectViewModel {
       value: state.projectName,
       error: projectNameErrorOf(state)
     },
-    submitLabel: "Create",
+    submitLabel: t("dialog.newProject.submit"),
     submitEnabled: isComplete(state) && !state.busy,
     submitting: state.busy
   };

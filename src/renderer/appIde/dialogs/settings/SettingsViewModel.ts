@@ -9,11 +9,16 @@ import {
   isSettingsRowApplicable,
   isSettingsRowLocked,
   readSettingsRowValue,
+  settingsPageTitle,
+  settingsRowDescription,
+  settingsRowGroup,
   settingsRowMatches,
-  settingsRowOptions
+  settingsRowOptions,
+  settingsRowTitle
 } from "@common/settings/settings-pages";
 import { machineRegistry } from "@common/machines/machine-registry";
 import type { SettingsState } from "./SettingsModel";
+import { t } from "@common/i18n/i18n";
 
 export type SettingsOptionVm = { value: string; label: string };
 
@@ -71,13 +76,13 @@ export function formatFileValue(path: unknown, emptyText: string): string {
 function emptyFileText(row: SettingsRow): string {
   switch (row.id) {
     case "sp48Rom":
-      return "Built-in ROM";
+      return t("settings.file.builtInRom");
     case "keyMapping":
-      return "None";
+      return t("settings.file.none");
     case "borielBasic":
-      return "Not set up";
+      return t("settings.file.notSetUp");
     default:
-      return "Not set";
+      return t("settings.file.notSet");
   }
 }
 
@@ -89,9 +94,9 @@ export function rowViewModel(row: SettingsRow, state: SettingsState): SettingsRo
   const hasValue = typeof value === "string" ? !!value.trim() : value !== undefined && value !== null;
   return {
     id: row.id,
-    title: row.title,
-    description: row.description,
-    replaces: state.query && row.replaces ? `Was: ${row.replaces}` : undefined,
+    title: settingsRowTitle(row),
+    description: settingsRowDescription(row),
+    replaces: state.query && row.replaces ? t("settings.was", { path: row.replaces }) : undefined,
     editor: row.editor,
     checked: !!value,
     value: optionKey(value),
@@ -101,7 +106,7 @@ export function rowViewModel(row: SettingsRow, state: SettingsState): SettingsRo
     })),
     displayValue: row.editor === "file" ? formatFileValue(value, emptyFileText(row)) : undefined,
     buttons: (row.buttons ?? []).map((b, index) => ({
-      label: b.label,
+      label: t(b.labelKey),
       index,
       enabled: !locked && !busy && (!b.needsValue || hasValue)
     })),
@@ -112,7 +117,7 @@ export function rowViewModel(row: SettingsRow, state: SettingsState): SettingsRo
 function groupsOf(rows: SettingsRowVm[], source: SettingsRow[]): SettingsGroupVm[] {
   const groups: SettingsGroupVm[] = [];
   rows.forEach((vm, i) => {
-    const title = source[i].group;
+    const title = settingsRowGroup(source[i]);
     const last = groups[groups.length - 1];
     if (last?.title === title) last.rows.push(vm);
     else groups.push({ title, rows: [vm] });
@@ -133,14 +138,14 @@ export function selectViewModel(state: SettingsState): SettingsVm {
     const rows = applicableRows(page.id, state).filter((r) => !searching || settingsRowMatches(r, state.query));
     nav.push({
       id: page.id,
-      title: page.title,
+      title: settingsPageTitle(page.id),
       selected: !searching && page.id === state.page,
       matches: searching ? rows.length : undefined
     });
     if (searching ? rows.length > 0 : page.id === state.page) {
       sections.push({
         pageId: page.id,
-        title: page.title,
+        title: settingsPageTitle(page.id),
         groups: groupsOf(
           rows.map((r) => rowViewModel(r, state)),
           rows
@@ -155,12 +160,14 @@ export function selectViewModel(state: SettingsState): SettingsVm {
   const emptyMessage = searching
     ? sections.length
       ? undefined
-      : `No setting matches "${state.query.trim()}".`
+      : t("settings.noMatch", { query: state.query.trim() })
     : pageRows.length
       ? undefined
       : state.page === "machine"
-        ? `The ${machineName ?? "running machine"} has no options of its own.`
-        : "Nothing to set here.";
+        ? machineName
+          ? t("settings.machine.noOptions", { machine: machineName })
+          : t("settings.machine.noOptionsUnknown")
+        : t("settings.empty");
 
   return {
     nav,
@@ -170,7 +177,7 @@ export function selectViewModel(state: SettingsState): SettingsVm {
     emptyMessage,
     machineNote:
       !searching && state.page === "machine" && machineName
-        ? `The options of the running machine, the ${machineName}.`
+        ? t("settings.machine.note", { machine: machineName })
         : undefined,
     error: state.error,
     resetEnabled:

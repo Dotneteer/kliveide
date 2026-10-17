@@ -5,12 +5,15 @@ import type {
   SjasmplusReleaseAsset,
   SjasmplusReleaseListResult
 } from "@common/messaging/SjasmplusIntegration";
+import { t } from "@common/i18n/i18n";
+import type { MessageKey } from "@common/i18n/keys.generated";
 import type { ConfirmRequest } from "@mvc/dialogs/DialogPorts";
 import { isSamePath } from "@utils/path-compare";
 
 import {
   CANDIDATE_REJECTED_MESSAGE,
   CONFIGURED_FAILED_MESSAGE,
+  MODEL_MESSAGE_KEYS,
   REPLACEMENT_READY_MESSAGE,
   SJASMPLUS_REPOSITORY_URL,
   releaseOptionsOf,
@@ -98,6 +101,12 @@ export type SjasmplusViewModel = {
 
 // ─── Selector ────────────────────────────────────────────────────────────────
 
+// --- The model stores its own messages as keys and outside text (an error a
+// --- service reported) as it came; only the keys are translated.
+export function displayText(message: string): string {
+  return message && MODEL_MESSAGE_KEYS.has(message) ? t(message as MessageKey) : message;
+}
+
 export function selectViewModel(state: SjasmplusState): SjasmplusViewModel {
   const { candidate, validation, busy, env } = state;
   const canApply =
@@ -109,7 +118,7 @@ export function selectViewModel(state: SjasmplusState): SjasmplusViewModel {
       value: state.scope,
       projectEnabled: env.isKliveProject,
       disabled: !!busy,
-      note: env.isKliveProject ? undefined : "(no Klive project is open)"
+      note: env.isKliveProject ? undefined : t("dialog.sjasmplus.scope.noProject")
     },
     source: {
       mode: state.setupMode,
@@ -124,10 +133,10 @@ export function selectViewModel(state: SjasmplusState): SjasmplusViewModel {
     apply: {
       candidatePath: candidate?.executablePath,
       validationLabel: formatValidation(validation, busy),
-      message: state.message || nextStepHint(candidate, validation, busy),
+      message: displayText(state.message) || nextStepHint(candidate, validation, busy),
       // --- The tooltip carries the real message only; a fallback hint is
       // --- already fully visible.
-      messageTitle: state.message,
+      messageTitle: displayText(state.message),
       tone: validation?.ok && !busy ? "passed" : validation && !validation.ok ? "failed" : "none"
     },
     buttons: {
@@ -175,10 +184,10 @@ function statusNoteOf(state: SjasmplusState): string {
   if (!testedAnother) return "";
   // --- A working executable is one Apply away, so the old failure is no longer
   // --- what the user has to act on.
-  if (statusCheck === "failed" && validation!.ok) return REPLACEMENT_READY_MESSAGE;
+  if (statusCheck === "failed" && validation!.ok) return t(REPLACEMENT_READY_MESSAGE);
   // --- The tested executable is unusable, so nothing is going to change; saying
   // --- so is more useful than a success badge for a setup nobody asked about.
-  if (statusCheck === "passed" && !validation!.ok) return CANDIDATE_REJECTED_MESSAGE;
+  if (statusCheck === "passed" && !validation!.ok) return t(CANDIDATE_REJECTED_MESSAGE);
   return "";
 }
 
@@ -187,23 +196,28 @@ function selectStatus(state: SjasmplusState): StatusViewModel {
   if (configured.source === "none") {
     return {
       kind: "none",
-      text: "No SJASMPLUS assembler is set up yet",
-      hint: "Klive cannot assemble SJASMPLUS sources until you set one up below."
+      text: t("dialog.sjasmplus.status.noneText"),
+      hint: t("dialog.sjasmplus.status.noneHint")
     };
   }
 
   const badge = selectStatusBadge(state);
   const note = statusNoteOf(state);
-  const error = state.statusError || CONFIGURED_FAILED_MESSAGE;
+  const error = displayText(state.statusError) || t(CONFIGURED_FAILED_MESSAGE);
 
   return {
     kind: "configured",
     badge,
-    badgeLabel: badge === "failed" ? "SJASMPLUS is not usable" : "SJASMPLUS is set up",
-    badgeTitle:
-      badge === "failed" ? error : "SJASMPLUS is set up and passed its last test",
+    badgeLabel:
+      badge === "failed"
+        ? t("dialog.sjasmplus.status.badgeNotUsable")
+        : t("dialog.sjasmplus.status.badgeSetUp"),
+    badgeTitle: badge === "failed" ? error : t("dialog.sjasmplus.status.badgeSetUpTitle"),
     executablePath: configured.executablePath,
-    headline: state.statusCheck === "failed" ? "Not working" : "Configured",
+    headline:
+      state.statusCheck === "failed"
+        ? t("dialog.sjasmplus.status.notWorking")
+        : t("dialog.sjasmplus.status.configured"),
     scopeLabel: formatScope(configured.source),
     // --- What the newer verdict means comes first, then the reason this setup
     // --- is broken; the version is only worth the room when neither of those
@@ -212,8 +226,8 @@ function selectStatus(state: SjasmplusState): StatusViewModel {
       ? { kind: "note", text: note }
       : state.statusCheck === "failed"
         ? { kind: "error", text: error }
-        : { kind: "version", text: configured.version ?? "version unknown" },
-    detailTitle: note || state.statusError || undefined
+        : { kind: "version", text: configured.version ?? t("dialog.sjasmplus.status.versionUnknown") },
+    detailTitle: note || displayText(state.statusError) || undefined
   };
 }
 
@@ -268,12 +282,12 @@ function selectOnline(state: SjasmplusState): OnlineViewModel {
 // --- The question asked before an unapplied selection is dropped.
 export function discardConfirmRequest(state: SjasmplusState): ConfirmRequest {
   return {
-    title: "Discard SJASMPLUS setup?",
-    lines: ["This setup has not been applied yet:"],
+    title: t("dialog.sjasmplus.discard.title"),
+    lines: [t("dialog.sjasmplus.discard.notApplied")],
     code: state.candidate?.executablePath ?? "",
-    linesAfterCode: ["Closing now leaves SJASMPLUS unchanged."],
-    confirmLabel: "Discard",
-    cancelLabel: "Keep editing",
+    linesAfterCode: [t("dialog.sjasmplus.discard.unchanged")],
+    confirmLabel: t("dialog.sjasmplus.discard.confirm"),
+    cancelLabel: t("dialog.sjasmplus.discard.keepEditing"),
     danger: true
   };
 }
@@ -283,11 +297,11 @@ export function discardConfirmRequest(state: SjasmplusState): ConfirmRequest {
 export function formatScope(scope: SettingsScope): string {
   switch (scope) {
     case "project":
-      return "Project settings";
+      return t("dialog.sjasmplus.scope.project");
     case "user":
-      return "User settings";
+      return t("dialog.sjasmplus.scope.user");
     default:
-      return "None";
+      return t("dialog.sjasmplus.scope.none");
   }
 }
 
@@ -297,16 +311,18 @@ export function formatValidation(
 ): string {
   switch (busy) {
     case "probe":
-      return "Checking selected path...";
+      return t("dialog.sjasmplus.validation.probing");
     case "download":
-      return "Downloading release...";
+      return t("dialog.sjasmplus.validation.downloading");
     case "validate":
-      return "Running smoke test...";
+      return t("dialog.sjasmplus.validation.testing");
     case "apply":
-      return "Saving...";
+      return t("dialog.sjasmplus.validation.saving");
     default:
-      if (!validation) return "Not tested";
-      return validation.ok ? "Passed" : "Failed";
+      if (!validation) return t("dialog.sjasmplus.validation.notTested");
+      return validation.ok
+        ? t("dialog.sjasmplus.validation.passed")
+        : t("dialog.sjasmplus.validation.failed");
   }
 }
 
@@ -317,8 +333,8 @@ export function nextStepHint(
   busy: BusyState
 ): string {
   if (busy) return "";
-  if (!candidate?.executablePath) return "Pick a local executable or download a release below.";
-  if (!validation) return "Press Test again to check this executable.";
+  if (!candidate?.executablePath) return t("dialog.sjasmplus.hint.pickExecutable");
+  if (!validation) return t("dialog.sjasmplus.hint.testAgain");
   return "";
 }
 
@@ -334,44 +350,53 @@ export function formatReleaseStatus(
   releaseList: SjasmplusReleaseListResult | undefined,
   releaseOptions: SjasmplusRelease[]
 ): string {
-  if (releaseBusy) return "Checking GitHub releases...";
+  if (releaseBusy) return t("dialog.sjasmplus.releases.checking");
   if (releaseError) return releaseError;
-  if (!releaseList) return "Not checked";
-  if (releaseOptions.length === 0) return "No releases found";
+  if (!releaseList) return t("dialog.sjasmplus.releases.notChecked");
+  if (releaseOptions.length === 0) return t("dialog.sjasmplus.releases.noneFound");
   const suggestedRelease = releaseOptions.find((release) => release.compatibleAssets.length > 0);
-  if (suggestedRelease) return `Suggested ${suggestedRelease.tagName}`;
+  if (suggestedRelease) return t("dialog.sjasmplus.releases.suggested", { tag: suggestedRelease.tagName });
 
   // --- Upstream publishes Windows binaries and source archives only, so this is
   // --- the normal outcome on macOS and Linux. Say what to do instead.
   const platform = PLATFORM_NAMES[releaseList.targetPlatform];
   return platform
-    ? `SJASMPLUS publishes no ${platform} binary — build it from source, then use Local executable.`
-    : "No downloadable build matches this system — use Local executable instead.";
+    ? t("dialog.sjasmplus.releases.noBinaryFor", { platform })
+    : t("dialog.sjasmplus.releases.noBinary");
 }
 
 export function formatReleaseLabel(release: SjasmplusRelease, targetPlatform?: string): string {
-  const prerelease = release.prerelease ? " (prerelease)" : "";
-  const usable = release.compatibleAssets.length;
-  const platform = (targetPlatform && PLATFORM_NAMES[targetPlatform]) || "this system";
-  const suffix =
-    usable > 0 ? `${usable} build${usable > 1 ? "s" : ""} for ${platform}` : `nothing for ${platform}`;
-  return `${release.tagName}${prerelease} — ${suffix}`;
+  const args = {
+    tag: release.tagName,
+    prerelease: release.prerelease ? "yes" : "no",
+    count: release.compatibleAssets.length
+  };
+  const platform = targetPlatform && PLATFORM_NAMES[targetPlatform];
+  return platform
+    ? t("dialog.sjasmplus.release.label", { ...args, platform })
+    : t("dialog.sjasmplus.release.labelThisSystem", args);
 }
 
 export function formatAssetLabel(asset: SjasmplusReleaseAsset): string {
-  const parts = [describeAssetContent(asset)];
-  if (asset.size > 0) parts.push(formatFileSize(asset.size));
-  return `${asset.name} — ${parts.join(" · ")}`;
+  const content = describeAssetContent(asset);
+  return asset.size > 0
+    ? t("dialog.sjasmplus.asset.labelWithSize", {
+        name: asset.name,
+        content,
+        size: formatFileSize(asset.size)
+      })
+    : t("dialog.sjasmplus.asset.label", { name: asset.name, content });
 }
 
 // --- Says what the file actually is, in words a user can act on.
 export function describeAssetContent(asset: SjasmplusReleaseAsset): string {
-  if (asset.kind === "source") return "source code, needs compiling";
+  if (asset.kind === "source") return t("dialog.sjasmplus.asset.source");
 
   const platform = PLATFORM_NAMES[asset.platform];
-  if (!platform) return "unrecognized build";
-  const arch = asset.arch === "unknown" ? "" : ` ${asset.arch}`;
-  return `${platform}${arch} build`;
+  if (!platform) return t("dialog.sjasmplus.asset.unrecognized");
+  return asset.arch === "unknown"
+    ? t("dialog.sjasmplus.asset.build", { platform })
+    : t("dialog.sjasmplus.asset.buildWithArch", { platform, arch: asset.arch });
 }
 
 export function formatFileSize(size: number): string {

@@ -60,11 +60,12 @@ export function hasVisibleItems(items: AnyItem[] | MachineMenuItem[]): boolean {
 
 /**
  * A checkbox bound to a boolean setting. A setting bound to one window (`boundTo`) shows only while
- * that window has the focus.
+ * that window has the focus. The label is the caller's translated text: a setting's own title is
+ * English and belongs to the Settings dialog (`.plans/LOCALIZATION_PLAN.md` step 3).
  */
 export function createBooleanSettingsMenu(
   settingsId: string,
-  options?: { enabledFn?: () => boolean; visibleFn?: () => boolean; label?: string }
+  options: { enabledFn?: () => boolean; visibleFn?: () => boolean; label: string }
 ): MenuItemConstructorOptions {
   const definition = getSettingDefinition(settingsId);
   if (!definition) {
@@ -81,7 +82,7 @@ export function createBooleanSettingsMenu(
         : true;
   return {
     id: `Setting_${settingsId}`,
-    label: options?.label ?? definition.title,
+    label: options.label,
     type: "checkbox",
     enabled: options?.enabledFn?.() ?? true,
     visible,

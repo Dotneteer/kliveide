@@ -4,6 +4,8 @@
 import type { MachineInfo } from "@common/machines/info-types";
 import { favoriteKey } from "@common/machines/machine-favorites";
 import { HardwareSpec, getHardwareSpec } from "@common/machines/hardware-specs";
+import { t as translate } from "@common/i18n/i18n";
+import type { TFunction } from "@common/i18n/useT";
 import {
   FAVORITES_SECTION,
   MachineSelectState,
@@ -132,7 +134,8 @@ export function matchesFilter(entry: CatalogueEntry, filter: string): boolean {
 
 export function selectViewModel(
   state: MachineSelectState,
-  catalogue: readonly CatalogueEntry[]
+  catalogue: readonly CatalogueEntry[],
+  t: TFunction = translate
 ): MachineSelectVm {
   const byKey = new Map(catalogue.map((e) => [e.key, e]));
   const favoriteKeys = new Set(state.favorites.map(favoriteKey));
@@ -168,7 +171,7 @@ export function selectViewModel(
     sections.push({
       kind: "favorites",
       id: FAVORITES_SECTION,
-      title: "Favourites",
+      title: t("dialog.machineSelect.favorites"),
       open: state.openSections.includes(FAVORITES_SECTION),
       rows
     });
@@ -201,18 +204,21 @@ export function selectViewModel(
     sections,
     filterActive,
     noMatch: filterActive && !sections.length,
-    sheet: selected ? selectSheet(selected, state, favoriteKeys) : undefined,
+    sheet: selected ? selectSheet(selected, state, favoriteKeys, t) : undefined,
     dirty,
     saveEnabled: dirty,
     switchEnabled: canSwitch,
-    switchLabel: canSwitch ? `Switch to ${selected!.name}` : "Switch"
+    switchLabel: canSwitch
+      ? t("dialog.machineSelect.switchTo", { name: selected!.name })
+      : t("dialog.machineSelect.switch")
   };
 }
 
 function selectSheet(
   entry: CatalogueEntry,
   state: MachineSelectState,
-  favoriteKeys: Set<string>
+  favoriteKeys: Set<string>,
+  t: TFunction
 ): SheetVm {
   const { machineId, modelId } = parseKey(entry.key);
 
@@ -244,72 +250,80 @@ function selectSheet(
       caption:
         d.kind === "lcd"
           ? `${d.width} × ${d.height} LCD`
-          : `${d.rasterWidth} × ${d.rasterHeight} ${d.rasterLabel ?? "with border"}`
+          : d.rasterLabel
+            ? `${d.rasterWidth} × ${d.rasterHeight} ${d.rasterLabel}`
+            : t("dialog.machineSelect.screen.withBorder", {
+                size: `${d.rasterWidth} × ${d.rasterHeight}`
+              })
     },
     groups: [
       {
         id: "processor",
-        title: "Processor",
+        title: t("dialog.machineSelect.group.processor"),
         rows: [
           { label: "CPU", value: spec.cpu },
-          { label: "Clock", value: `${formatNumber(spec.clockHz)} Hz`, note: `${formatMhz(spec.clockHz)} MHz` },
-          ...(spec.turbo ? [{ label: "Turbo", value: spec.turbo }] : []),
-          { label: "Clock multiplier", value: spec.clockMultiplier ? "1× – 24×" : "—" }
+          { label: t("dialog.machineSelect.row.clock"), value: `${formatNumber(spec.clockHz)} Hz`, note: `${formatMhz(spec.clockHz)} MHz` },
+          ...(spec.turbo ? [{ label: t("dialog.machineSelect.row.turbo"), value: spec.turbo }] : []),
+          { label: t("dialog.machineSelect.row.clockMultiplier"), value: spec.clockMultiplier ? "1× – 24×" : "—" }
         ]
       },
       {
         id: "memory",
-        title: "Memory",
+        title: t("dialog.machineSelect.group.memory"),
         rows: [
           ...(rom.length ? rom.map((value, i) => ({ label: i ? "" : rom.length > 1 ? "ROMs" : "ROM", value })) : []),
           { label: "RAM", value: formatKb(spec.ramKb) },
           ...(spec.bankCount
-            ? [{ label: "Banks", value: spec.bankKb ? `${spec.bankCount} × ${formatKb(spec.bankKb)}` : String(spec.bankCount) }]
+            ? [{ label: t("dialog.machineSelect.row.banks"), value: spec.bankKb ? `${spec.bankCount} × ${formatKb(spec.bankKb)}` : String(spec.bankCount) }]
             : []),
-          ...(spec.addressSpace ? [{ label: "Address space", value: spec.addressSpace }] : [])
+          ...(spec.addressSpace ? [{ label: t("dialog.machineSelect.row.addressSpace"), value: spec.addressSpace }] : [])
         ]
       },
       {
         id: "display",
-        title: "Display",
+        title: t("dialog.machineSelect.group.display"),
         rows: [
-          { label: "Resolution", value: `${d.width} × ${d.height} px` },
-          { label: "Colours", value: d.colours },
-          ...(d.attributes ? [{ label: "Attributes", value: d.attributes }] : []),
-          ...(d.text ? [{ label: "Text", value: d.text }] : []),
-          ...(d.layers ? [{ label: "Layers", value: d.layers }] : []),
-          ...(d.videoChip ? [{ label: "Video chip", value: d.videoChip }] : []),
-          ...(d.otherSizes ? [{ label: "Other sizes", value: d.otherSizes }] : [])
+          { label: t("dialog.machineSelect.row.resolution"), value: `${d.width} × ${d.height} px` },
+          { label: t("dialog.machineSelect.row.colours"), value: d.colours },
+          ...(d.attributes ? [{ label: t("dialog.machineSelect.row.attributes"), value: d.attributes }] : []),
+          ...(d.text ? [{ label: t("dialog.machineSelect.row.text"), value: d.text }] : []),
+          ...(d.layers ? [{ label: t("dialog.machineSelect.row.layers"), value: d.layers }] : []),
+          ...(d.videoChip ? [{ label: t("dialog.machineSelect.row.videoChip"), value: d.videoChip }] : []),
+          ...(d.otherSizes ? [{ label: t("dialog.machineSelect.row.otherSizes"), value: d.otherSizes }] : [])
         ]
       },
       {
         id: "timing",
-        title: "Frame timing",
+        title: t("dialog.machineSelect.group.timing"),
         rows: [
-          { label: "Standard", value: spec.standard },
-          { label: `${unit} / line`, value: formatOptional(spec.timing.perLine) },
-          { label: "Lines / frame", value: formatOptional(spec.timing.linesPerFrame) },
-          { label: `${unit} / frame`, value: formatOptional(spec.timing.perFrame) },
+          { label: t("dialog.machineSelect.row.standard"), value: spec.standard },
+          { label: t("dialog.machineSelect.row.perLine", { unit }), value: formatOptional(spec.timing.perLine) },
+          { label: t("dialog.machineSelect.row.linesPerFrame"), value: formatOptional(spec.timing.linesPerFrame) },
+          { label: t("dialog.machineSelect.row.perFrame", { unit }), value: formatOptional(spec.timing.perFrame) },
           {
-            label: "Frame rate",
-            value: spec.timing.frameHz ? `${formatHz(spec.timing.frameHz)} Hz` : "50 or 60 Hz",
-            note: spec.timing.displayHz ? `LCD refresh ${formatHz(spec.timing.displayHz)} Hz` : undefined
+            label: t("dialog.machineSelect.row.frameRate"),
+            value: spec.timing.frameHz
+              ? `${formatHz(spec.timing.frameHz)} Hz`
+              : t("dialog.machineSelect.row.frameRateEither"),
+            note: spec.timing.displayHz
+              ? t("dialog.machineSelect.row.lcdRefresh", { rate: formatHz(spec.timing.displayHz) })
+              : undefined
           },
           ...(spec.timing.note ? [{ label: "", value: spec.timing.note }] : [])
         ]
       },
       {
         id: "sound",
-        title: "Sound",
+        title: t("dialog.machineSelect.group.sound"),
         rows: spec.sound.length
-          ? spec.sound.map((s, i) => ({ label: i ? "" : "Devices", value: s }))
-          : [{ label: "Devices", value: "None" }]
+          ? spec.sound.map((s, i) => ({ label: i ? "" : t("dialog.machineSelect.row.devices"), value: s }))
+          : [{ label: t("dialog.machineSelect.row.devices"), value: t("dialog.machineSelect.row.noDevices") }]
       },
       {
         id: "io",
-        title: "Storage & input",
+        title: t("dialog.machineSelect.group.io"),
         rows: [
-          ...spec.media.map((m, i) => ({ label: i ? "" : "Media", value: m })),
+          ...spec.media.map((m, i) => ({ label: i ? "" : t("dialog.machineSelect.row.media"), value: m })),
           ...spec.input.map((r) => ({ label: r.label, value: r.value }))
         ]
       }

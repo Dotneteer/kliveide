@@ -6,6 +6,7 @@ import { useMainApi } from "@renderer/core/MainApi";
 import { useController } from "@mvc/react/useController";
 import { useViewModel } from "@mvc/react/useViewModel";
 import { useFilePickerPort } from "@mvc/dialogs/useDialogPorts";
+import { useT } from "@common/i18n/useT";
 
 import { CreateDiskController } from "./CreateDiskController";
 import { TRD_DISK_TYPES, type CreateDiskEnvironment } from "./CreateDiskModel";
@@ -27,6 +28,7 @@ type Props = {
  * run without React.
  */
 export const CreateDiskDialog = ({ onClose, onCreate }: Props) => {
+  const t = useT();
   const mainApi = useMainApi();
   const files = useFilePickerPort();
   const { validationService } = useAppServices();
@@ -78,7 +80,7 @@ export const CreateDiskDialog = ({ onClose, onCreate }: Props) => {
 
   return (
     <Modal
-      title="Create a new disk file"
+      title={t("dialog.createDisk.title")}
       iconName="floppy"
       isOpen={true}
       fullScreen={false}

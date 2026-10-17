@@ -23,6 +23,10 @@ import {
 import { SETTING_EMU_JOYSTICK_BINDINGS } from "@common/settings/setting-const";
 import { logEmuEvent } from "@main/registeredMachines";
 import { getSettingValue, setSettingValue } from "@main/settings-utils";
+import { t } from "@common/i18n/i18n";
+import { englishLabel, withLabels } from "@common/i18n/labels";
+import type { MessageKey } from "@common/i18n/keys.generated";
+import { englishSide } from "@common/settings/joystick-bindings";
 
 /**
  * The Machine | Mouse submenu.
@@ -51,7 +55,7 @@ export const mouseMenuRenderer: MachineMenuRenderer = () => {
     enabled: captureEnabled,
     click: async () => {
       setSettingValue(SETTING_EMU_MOUSE_SHOW_POINTER, option.value);
-      await logEmuEvent(`Captured pointer shown: ${option.label.toLowerCase()}`);
+      await logEmuEvent(`Captured pointer shown: ${englishLabel(option).toLowerCase()}`);
     }
   }));
 
@@ -66,18 +70,18 @@ export const mouseMenuRenderer: MachineMenuRenderer = () => {
     enabled: captureEnabled,
     click: async () => {
       setSettingValue(SETTING_EMU_MOUSE_SENSITIVITY, option.value);
-      await logEmuEvent(`Mouse sensitivity set to ${option.label}`);
+      await logEmuEvent(`Mouse sensitivity set to ${englishLabel(option)}`);
     }
   }));
 
   return [
     {
       id: "zx_next_mouse",
-      label: "Mouse",
+      label: t("menu.next.mouse"),
       submenu: [
         {
           id: "zx_next_mouse_capture",
-          label: "Capture the mouse",
+          label: t("menu.next.captureMouse"),
           type: "checkbox",
           checked: captureEnabled,
           click: async () => {
@@ -91,7 +95,7 @@ export const mouseMenuRenderer: MachineMenuRenderer = () => {
         },
         {
           id: "zx_next_mouse_show_pointer",
-          label: "Show the captured pointer",
+          label: t("menu.next.showCapturedPointer"),
           enabled: captureEnabled,
           submenu: pointerItems
         },
@@ -103,7 +107,7 @@ export const mouseMenuRenderer: MachineMenuRenderer = () => {
           // --- wrong. Note it scales the hand, not the machine's own DPI, so it moves Klive's
           // --- indicator and the machine's pointer together and cannot change the ratio between
           // --- them - NextReg $0A is what sets that.
-          label: `Sensitivity (${sensitivityLabel})`,
+          label: t("menu.next.sensitivity", { level: sensitivityLabel }),
           enabled: captureEnabled,
           submenu: sensitivityItems
         }
@@ -120,16 +124,16 @@ export const mouseMenuRenderer: MachineMenuRenderer = () => {
  * core. The host binds pins either way, so this list changes what the machine *does* with them, not
  * what Klive sends.
  */
-const JOYSTICK_MODES: { label: string; value: number }[] = [
-  { label: "Sinclair 2 (keys 1-5)", value: 0 },
-  { label: "Kempston 1 (port $1F)", value: 1 },
-  { label: "Cursor / Protek", value: 2 },
-  { label: "Sinclair 1 (keys 6-0)", value: 3 },
-  { label: "Kempston 2 (port $37)", value: 4 },
-  { label: "MD 1 (port $1F)", value: 5 },
-  { label: "MD 2 (port $37)", value: 6 },
-  { label: "User-defined (joymap)", value: 7 }
-];
+const JOYSTICK_MODES = withLabels<{ labelKey: MessageKey; value: number }>([
+  { labelKey: "menu.next.joystickMode.sinclair2", value: 0 },
+  { labelKey: "menu.next.joystickMode.kempston1", value: 1 },
+  { labelKey: "menu.next.joystickMode.cursor", value: 2 },
+  { labelKey: "menu.next.joystickMode.sinclair1", value: 3 },
+  { labelKey: "menu.next.joystickMode.kempston2", value: 4 },
+  { labelKey: "menu.next.joystickMode.md1", value: 5 },
+  { labelKey: "menu.next.joystickMode.md2", value: 6 },
+  { labelKey: "menu.next.joystickMode.userDefined", value: 7 }
+]);
 
 /**
  * The Machine | Joystick submenu.
@@ -151,7 +155,7 @@ export const joystickMenuRenderer: MachineMenuRenderer = () => {
     submenu: [
       {
         id: `zx_next_joy_${side}_source`,
-        label: "Driven by",
+        label: t("menu.next.drivenBy"),
         submenu: JOYSTICK_SOURCES.map((option) => ({
           id: `zx_next_joy_${side}_source_${option.value}`,
           label: option.label,
@@ -162,7 +166,7 @@ export const joystickMenuRenderer: MachineMenuRenderer = () => {
               ...bindings,
               [side]: { ...bindings[side], source: option.value }
             });
-            await logEmuEvent(`${JOYSTICK_SIDE_LABELS[side]}: ${option.label.toLowerCase()}`);
+            await logEmuEvent(`${englishSide(side)}: ${englishLabel(option).toLowerCase()}`);
           }
         }))
       },
@@ -170,13 +174,13 @@ export const joystickMenuRenderer: MachineMenuRenderer = () => {
         id: `zx_next_joy_${side}_mode`,
         // --- Not a setting: this writes the machine's own register, and the machine may write it
         // --- back. Naming that in the label is cheaper than a support question.
-        label: "Set machine mode (NextReg $05, NextZXOS may override)",
+        label: t("menu.next.setMachineMode"),
         submenu: JOYSTICK_MODES.map((mode) => ({
           id: `zx_next_joy_${side}_mode_${mode.value}`,
           label: mode.label,
           click: async () => {
             await getEmuApi().issueMachineCommand("custom", `joystickMode:${side}:${mode.value}`);
-            await logEmuEvent(`${JOYSTICK_SIDE_LABELS[side]} mode set to ${mode.label}`);
+            await logEmuEvent(`${englishSide(side)} mode set to ${englishLabel(mode)}`);
           }
         }))
       }
@@ -186,13 +190,13 @@ export const joystickMenuRenderer: MachineMenuRenderer = () => {
   return [
     {
       id: "zx_next_joystick",
-      label: "Joystick",
+      label: t("menu.next.joystick"),
       submenu: [
         ...JOYSTICK_SIDES.map(sideMenu),
         { type: "separator" },
         {
           id: "zx_next_joy_bindings",
-          label: "Configure bindings...",
+          label: t("menu.joystick.configureBindings"),
           click: async () => {
             await getEmuApi().displayDialog(JOYSTICK_BINDINGS_DIALOG);
           }

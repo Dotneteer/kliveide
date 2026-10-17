@@ -4,7 +4,12 @@ import {
   BORDER_OPTIONS,
   FORMAT_OPTIONS
 } from "@renderer/appIde/dialogs/exportCode/ExportCodeModel";
-import { selectViewModel } from "@renderer/appIde/dialogs/exportCode/ExportCodeViewModel";
+import {
+  exportFailureMessage,
+  exportSuccessMessage,
+  exportTitle,
+  selectViewModel
+} from "@renderer/appIde/dialogs/exportCode/ExportCodeViewModel";
 
 import { aState, anEnv, rejectingValidation } from "./fakes";
 
@@ -120,5 +125,33 @@ describe("ExportCodeViewModel — submission", () => {
 
   it("labels the submit button Export", () => {
     expect(selectViewModel(aState()).submitLabel).toBe("Export");
+  });
+});
+
+describe("ExportCodeViewModel — reporting the outcome", () => {
+  it("titles the outcome message box", () => {
+    expect(exportTitle()).toBe("Exporting code");
+  });
+
+  it("translates the command's own complaint about the address switch", () => {
+    expect(exportFailureMessage("Invalid -addr value")).toBe(
+      "Code start address must be between 16384 and 65535."
+    );
+  });
+
+  it("passes any other failure through", () => {
+    expect(exportFailureMessage("Assembler not found")).toBe("Assembler not found");
+  });
+
+  it("still says something when the failure said nothing", () => {
+    // --- The old dialog called `.includes` on the missing message and threw a
+    // --- TypeError, which replaced the export failure with a crash.
+    expect(exportFailureMessage(undefined)).toBe("Code export failed");
+    expect(exportFailureMessage("")).toBe("Code export failed");
+  });
+
+  it("prefers the command's own success message", () => {
+    expect(exportSuccessMessage("Wrote 2 blocks.")).toBe("Wrote 2 blocks.");
+    expect(exportSuccessMessage(undefined)).toBe("Code successfully exported.");
   });
 });

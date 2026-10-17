@@ -82,32 +82,32 @@ export const machineMenuRegistry: Record<string, MachineMenuInfo> = {
     hardwareItems: z88ResetRenderer,
     helpLinks: [
       {
-        label: "Cambridge Z88 User Guide",
+        labelKey: "menu.help.z88.userGuide",
         url: "https://cambridgez88.jira.com/wiki/spaces/UG/"
       },
       {
-        label: "Cambridge Z88 Developers' Notes",
+        labelKey: "menu.help.z88.developersNotes",
         url: "https://cambridgez88.jira.com/wiki/spaces/DN/"
       },
       {
-        label: "BBC BASIC (Z80) Reference Guide for Z88",
+        labelKey: "menu.help.z88.bbcBasicGuide",
         url: "https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI"
       },
       {},
       {
-        label: "Cambridge Z88 ROM source code",
+        labelKey: "menu.help.z88.romSource",
         url: "https://bitbucket.org/cambridge/oz/"
       },
       {
-        label: "Cambridge Z88 3rd party apps",
+        labelKey: "menu.help.z88.thirdPartyApps",
         url: "https://bitbucket.org/cambridge/z88/"
       },
       {
-        label: "Cambridge Z88 tools and games",
+        labelKey: "menu.help.z88.toolsAndGames",
         url: "https://gitlab.com/b4works"
       },
       {
-        label: "Cambridge Z88 on Wikipedia",
+        labelKey: "menu.help.z88.wikipedia",
         url: "https://en.wikipedia.org/wiki/Cambridge_Z88"
       }
     ]

@@ -18,6 +18,7 @@ import {
 import { getIdeApi } from "@messaging/MainToIdeMessenger";
 import { mainStore } from "@main/main-store";
 import { appSettings, saveAppSettings } from "@main/settings-utils";
+import { t } from "@common/i18n/i18n";
 
 /** The settings key of the folder the last RZX file was opened from or saved to */
 const RZX_FOLDER = "rzxFolder";
@@ -57,31 +58,31 @@ export const rzxMenuRenderer: MachineMenuRenderer = (windowInfo) => {
   return [
     {
       id: "rzx_record",
-      label: "RZX: Record",
+      label: t("menu.rzx.record"),
       enabled: canStartRzxRecording(state),
-      click: async () => await runRzxCommand(emuWindow, "zx-rzx-record", "RZX Recording")
+      click: async () => await runRzxCommand(emuWindow, "zx-rzx-record", t("messages.rzx.recordingTitle"))
     },
     {
       id: "rzx_stop",
-      label: "RZX: Stop and Save...",
+      label: t("menu.rzx.stopAndSave"),
       enabled: hasRzxRecording(state),
       click: async () => await saveRzxRecordingAs(emuWindow)
     },
     {
       id: "rzx_point",
-      label: "RZX: Insert Rollback Point",
+      label: t("menu.rzx.insertRollbackPoint"),
       enabled: isRzxRecordingActive(state),
-      click: async () => await runRzxCommand(emuWindow, "zx-rzx-point", "RZX Recording")
+      click: async () => await runRzxCommand(emuWindow, "zx-rzx-point", t("messages.rzx.recordingTitle"))
     },
     {
       id: "rzx_rollback",
-      label: "RZX: Roll Back",
+      label: t("menu.rzx.rollBack"),
       enabled: isRzxRecordingActive(state),
-      click: async () => await runRzxCommand(emuWindow, "zx-rzx-rollback", "RZX Recording")
+      click: async () => await runRzxCommand(emuWindow, "zx-rzx-rollback", t("messages.rzx.recordingTitle"))
     },
     {
       id: "rzx_video",
-      label: "RZX: Render a Recording to Video...",
+      label: t("menu.rzx.renderToVideo"),
       enabled: !!state?.emulatorState?.screenRecordingAvailable,
       click: async () => await renderRzxRecording(emuWindow)
     }
@@ -94,8 +95,8 @@ async function pickRzxFile(browserWindow: BrowserWindow, title: string): Promise
     title,
     defaultPath: appSettings?.folders?.[RZX_FOLDER] || app.getPath("home"),
     filters: [
-      { name: "RZX input recordings", extensions: ["rzx"] },
-      { name: "All Files", extensions: ["*"] }
+      { name: t("common.filter.rzxRecordings"), extensions: ["rzx"] },
+      { name: t("common.filter.allFiles"), extensions: ["*"] }
     ],
     properties: ["openFile"]
   });
@@ -112,7 +113,7 @@ async function runRzxCommand(browserWindow: BrowserWindow, command: string, titl
     await dialog.showMessageBox(browserWindow, {
       type: "error",
       title,
-      message: result?.finalMessage ?? `The command failed: ${command}`
+      message: result?.finalMessage ?? t("messages.commandFailed", { command })
     });
     return false;
   }
@@ -121,8 +122,8 @@ async function runRzxCommand(browserWindow: BrowserWindow, command: string, titl
 
 /** Machine › Record › RZX: Render a Recording to Video... */
 export async function renderRzxRecording(browserWindow: BrowserWindow): Promise<void> {
-  const file = await pickRzxFile(browserWindow, "Select RZX Recording to Render");
-  if (file) await runRzxCommand(browserWindow, rzxVideoCommandText(file), "RZX Video");
+  const file = await pickRzxFile(browserWindow, t("messages.rzx.selectToRender"));
+  if (file) await runRzxCommand(browserWindow, rzxVideoCommandText(file), t("messages.rzx.videoTitle"));
 }
 
 /** A default recording name: the project's (or the machine's) name and the time */
@@ -137,9 +138,9 @@ export function defaultRzxFileName(state: AppState, now = new Date()): string {
 export async function saveRzxRecordingAs(browserWindow: BrowserWindow): Promise<void> {
   const folder = appSettings?.folders?.[RZX_FOLDER] || app.getPath("home");
   const dialogResult = await dialog.showSaveDialog(browserWindow, {
-    title: "Save RZX Recording",
+    title: t("messages.rzx.saveTitle"),
     defaultPath: path.join(folder, defaultRzxFileName(mainStore.getState())),
-    filters: [{ name: "RZX input recording", extensions: ["rzx"] }],
+    filters: [{ name: t("common.filter.rzxRecording"), extensions: ["rzx"] }],
     properties: ["showOverwriteConfirmation", "createDirectory"]
   });
   if (dialogResult.canceled || !dialogResult.filePath) return;
@@ -147,7 +148,7 @@ export async function saveRzxRecordingAs(browserWindow: BrowserWindow): Promise<
   if (!/\.rzx$/i.test(filename)) filename += ".rzx";
   rememberFolder(filename);
   // --- The dialog has already confirmed any overwrite
-  await runRzxCommand(browserWindow, rzxStopCommandText(filename, true), "RZX Recording");
+  await runRzxCommand(browserWindow, rzxStopCommandText(filename, true), t("messages.rzx.recordingTitle"));
 }
 
 function rememberFolder(filename: string): void {

@@ -130,6 +130,7 @@ import {
   SJASMP_INSTALL_FOLDER,
   SJASMP_VERSION
 } from "./sjasmp-integration/sjasmp-config";
+import { t } from "@common/i18n/i18n";
 
 const compilerRegistry = createCompilerRegistry();
 
@@ -218,7 +219,7 @@ class MainMessageProcessor {
     try {
       const result = await dialog.showMessageBox(this.window, {
         type: "question",
-        buttons: [confirmLabel, "Cancel"],
+        buttons: [confirmLabel, t("common.button.cancel")],
         defaultId: 1,
         cancelId: 1,
         title,
@@ -239,11 +240,11 @@ class MainMessageProcessor {
     try {
       const result = await dialog.showMessageBox(this.window, {
         type: "question",
-        buttons: ["Overwrite", "Cancel"],
+        buttons: [t("common.button.overwrite"), t("common.button.cancel")],
         defaultId: 1,
         cancelId: 1,
-        title: "Overwrite File",
-        message: `The target file already exists:\n${targetPath}\n\nDo you want to overwrite it?`
+        title: t("messages.file.overwriteTitle"),
+        message: t("messages.file.overwriteConfirm", { file: targetPath })
       });
       return result.response === 0;
     } finally {
@@ -1179,7 +1180,7 @@ class MainMessageProcessor {
    * @param filename The dropped file's full path
    */
   async openDroppedFile(filename: string): Promise<string | undefined> {
-    return await openEmulatorFile(BrowserWindow.getFocusedWindow() ?? undefined, filename, "Dropped file");
+    return await openEmulatorFile(BrowserWindow.getFocusedWindow() ?? undefined, filename, t("messages.file.droppedTitle"));
   }
 
   /**
@@ -1398,7 +1399,7 @@ async function displayOpenFolderDialog(
 ): Promise<string> {
   const defaultPath = appSettings?.folders?.[settingsId ?? ""] || app.getPath("home");
   const dialogResult = await dialog.showOpenDialog(browserWindow, {
-    title: "Open Folder",
+    title: t("messages.file.openFolder"),
     defaultPath,
     properties: ["openDirectory"]
   });
@@ -1429,7 +1430,7 @@ async function displayOpenFileDialog(
 ): Promise<string> {
   const defaultPath = appSettings?.folders?.[settingsId ?? ""] || app.getPath("home");
   const dialogResult = await dialog.showOpenDialog(browserWindow, {
-    title: "Open File",
+    title: t("messages.file.openFile"),
     defaultPath,
     properties: ["openFile"],
     filters

@@ -1,3 +1,4 @@
+import { useT } from "@common/i18n/useT";
 import { TextInput } from "@controls/TextInput";
 import { Checkbox } from "@renderer/controls/Checkbox";
 import { DialogForm } from "@renderer/controls/DialogForm";
@@ -20,6 +21,7 @@ export type ExportCodeViewProps = {
  * model, where it can be tested without rendering anything.
  */
 export const ExportCodeView = ({ vm, dispatch }: ExportCodeViewProps) => {
+  const t = useT();
   // --- Every form control reports the same way; only the field differs.
   const edit = (patch: Partial<ExportCodeSettings>) =>
     dispatch({ type: "settingEdited", patch });
@@ -32,10 +34,10 @@ export const ExportCodeView = ({ vm, dispatch }: ExportCodeViewProps) => {
       onSubmit={() => dispatch({ type: "exportRequested" })}
       onCancel={() => dispatch({ type: "cancelRequested" })}
     >
-      <DialogRow label="Export format:">
+      <DialogRow label={t("dialog.exportCode.field.format")}>
         <div className={styles.dropdownWrapper} data-testid="export-format">
           <Dropdown
-            placeholder="Select..."
+            placeholder={t("dialog.exportCode.selectPlaceholder")}
             options={vm.format.options}
             initialValue={vm.format.value}
             width={140}
@@ -43,12 +45,12 @@ export const ExportCodeView = ({ vm, dispatch }: ExportCodeViewProps) => {
           />
         </div>
       </DialogRow>
-      <DialogRow label="Export folder:">
+      <DialogRow label={t("dialog.exportCode.field.folder")}>
         <TextInput
           value={vm.exportFolder.value}
           error={vm.exportFolder.error}
           buttonIcon="folder"
-          buttonTitle="Select the root project folder"
+          buttonTitle={t("dialog.exportCode.field.folderBrowse")}
           // --- The controller owns the picker, so browse reports the click and
           // --- resolves empty; the chosen folder arrives back through the view
           // --- model rather than through TextInput's own onChange.
@@ -59,7 +61,7 @@ export const ExportCodeView = ({ vm, dispatch }: ExportCodeViewProps) => {
           onChange={(exportFolder) => edit({ exportFolder })}
         />
       </DialogRow>
-      <DialogRow label="Export file name: *">
+      <DialogRow label={t("dialog.exportCode.field.fileName")}>
         <TextInput
           value={vm.exportName.value}
           error={vm.exportName.error}
@@ -67,7 +69,7 @@ export const ExportCodeView = ({ vm, dispatch }: ExportCodeViewProps) => {
           onChange={(exportName) => edit({ exportName })}
         />
       </DialogRow>
-      <DialogRow label="Program name:">
+      <DialogRow label={t("dialog.exportCode.field.programName")}>
         <TextInput
           value={vm.programName.value}
           width={100}
@@ -89,31 +91,31 @@ export const ExportCodeView = ({ vm, dispatch }: ExportCodeViewProps) => {
 
       {vm.startup.kind === "shown" && (
         <>
-          <DialogRow label="Startup options:" />
+          <DialogRow label={t("dialog.exportCode.field.startupOptions")} />
           <DialogRow rows={true}>
             <Checkbox
               initialValue={vm.startup.addClear}
               right={true}
-              label="Add CLEAR"
+              label={t("dialog.exportCode.option.addClear")}
               onChange={(addClear) => edit({ addClear })}
             />
             <Checkbox
               initialValue={vm.startup.addPause}
               right={true}
-              label="Add PAUSE 0"
+              label={t("dialog.exportCode.option.addPause")}
               onChange={(addPause) => edit({ addPause })}
             />
             <Checkbox
               initialValue={vm.startup.singleBlock}
               right={true}
-              label="Use a single code block"
+              label={t("dialog.exportCode.option.singleBlock")}
               onChange={(singleBlock) => edit({ singleBlock })}
             />
           </DialogRow>
-          <DialogRow label="Set border color:">
+          <DialogRow label={t("dialog.exportCode.field.border")}>
             <div className={styles.dropdownWrapper} data-testid="export-border">
               <Dropdown
-                placeholder="Select..."
+                placeholder={t("dialog.exportCode.selectPlaceholder")}
                 options={vm.startup.border.options}
                 initialValue={vm.startup.border.value}
                 width={92}
@@ -121,12 +123,12 @@ export const ExportCodeView = ({ vm, dispatch }: ExportCodeViewProps) => {
               />
             </div>
           </DialogRow>
-          <DialogRow label="Screen file:">
+          <DialogRow label={t("dialog.exportCode.field.screenFile")}>
             <TextInput
               value={vm.startup.screenFile.value}
               error={vm.startup.screenFile.error}
               buttonIcon="file-code"
-              buttonTitle="Select the screen file"
+              buttonTitle={t("dialog.exportCode.field.screenFileBrowse")}
               browse={async () => {
                 dispatch({ type: "selectScreenFileRequested" });
                 return undefined;
@@ -134,7 +136,7 @@ export const ExportCodeView = ({ vm, dispatch }: ExportCodeViewProps) => {
               onChange={(screenFilename) => edit({ screenFilename })}
             />
           </DialogRow>
-          <DialogRow label="Code start address:">
+          <DialogRow label={t("dialog.exportCode.field.startAddress")}>
             <TextInput
               value={vm.startup.startAddress.value}
               maxLength={5}

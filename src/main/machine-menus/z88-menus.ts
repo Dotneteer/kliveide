@@ -9,6 +9,7 @@ import { saveKliveProject } from "@main/projects";
 import { getModelConfig } from "@common/machines/machine-registry";
 import { MC_SCREEN_SIZE } from "@common/machines/constants";
 import { setMachineType } from "@main/registeredMachines";
+import { t } from "@common/i18n/i18n";
 
 /** The LCD sizes a Z88 can have; the value is the machine configuration's `MC_SCREEN_SIZE` */
 export const Z88_LCD_SIZES: { label: string; value: string }[] = [
@@ -43,7 +44,7 @@ export const z88ResetRenderer: MachineMenuRenderer = () => {
     { type: "separator" },
     {
       id: "z88_reset",
-      label: "Soft Reset",
+      label: t("menu.z88.softReset"),
       accelerator: "F8",
       click: async () => {
         await getEmuApi().issueMachineCommand("reset");
@@ -51,7 +52,7 @@ export const z88ResetRenderer: MachineMenuRenderer = () => {
     },
     {
       id: "z88_hard_reset",
-      label: "Hard Reset",
+      label: t("menu.z88.hardReset"),
       accelerator: "F9",
       click: async () => {
         await getEmuApi().issueMachineCommand("restart");
@@ -60,7 +61,7 @@ export const z88ResetRenderer: MachineMenuRenderer = () => {
     { type: "separator" },
     {
       id: "z88_press_both_shifts",
-      label: "Press Both SHIFT Keys",
+      label: t("menu.z88.pressBothShifts"),
       accelerator: "F6",
       enabled: execState === MachineControllerState.Running,
       click: async () => {
@@ -69,7 +70,7 @@ export const z88ResetRenderer: MachineMenuRenderer = () => {
     },
     {
       id: "z88_battery_low",
-      label: "Raise Battery Low Signal",
+      label: t("menu.z88.batteryLow"),
       enabled: execState === MachineControllerState.Running,
       click: async () => {
         await getEmuApi().issueMachineCommand("custom", "battery_low");

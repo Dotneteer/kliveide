@@ -1,3 +1,4 @@
+import { withTexts } from "@common/i18n/labels";
 import type { ConfirmPort, DialogClosePort, FilePickerPort } from "@mvc/dialogs/DialogPorts";
 import type { DetectionRequest, DetectionRun, DetectionTarget } from "@renderer/appIde/reverse/detection";
 
@@ -23,4 +24,6 @@ export type DetectPorts = {
   close: DialogClosePort<DetectDialogResult>;
 };
 
-export const KCOV_FILTERS = [{ name: "Coverage run", extensions: ["kcov", "json"] }];
+export const KCOV_FILTERS = [
+  withTexts({ name: "", extensions: ["kcov", "json"] }, { name: "dialog.detect.filter.coverageRun" })
+];

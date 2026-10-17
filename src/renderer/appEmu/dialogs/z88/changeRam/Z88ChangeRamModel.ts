@@ -17,9 +17,6 @@ export const RAM_SIZES: RamSizeOption[] = [
 
 export const DEFAULT_RAM_SIZE = "512";
 
-export const RAM_CHANGE_WARNING =
-  "Changing the RAM will stop the machine! Click Ok, when you are ready to proceed.";
-
 // --- The chip mask the emulator stores for each fitted size. 512K is the
 // --- default because it is the largest, and anything unrecognised is treated
 // --- as a full complement rather than as an error.

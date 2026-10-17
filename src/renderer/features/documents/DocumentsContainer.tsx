@@ -1,5 +1,6 @@
 import { documentPanelRegistry } from "@renderer/registry";
 import { memo } from "react";
+import { useT } from "@common/i18n/useT";
 import styles from "./DocumentsContainer.module.scss";
 import { DocumentApi } from "@renderer/abstractions/DocumentApi";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
@@ -24,6 +25,7 @@ const DocumentsContainerComponent = ({
   viewState,
   apiLoaded
 }: DocumentProps) => {
+  const t = useT();
   // --- Get the document's renderer from the registry
   const docRenderer = documentPanelRegistry.find((dp) => dp.id === document?.type);
 
@@ -42,7 +44,7 @@ const DocumentsContainerComponent = ({
         />
       </div>
     ) : (
-      <div className={styles.documentContainer}>Cannot find renderer</div>
+      <div className={styles.documentContainer}>{t("documents.container.noRenderer")}</div>
     )
   ) : null;
 };

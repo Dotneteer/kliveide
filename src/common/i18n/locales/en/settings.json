@@ -1,0 +1,928 @@
+{
+  "settings.page.language": "Language",
+  "@settings.page.language": {
+    "context": "Name of a page in the Settings dialog's page list (left column), and its heading. The page chooses the language of Klive's user interface.",
+    "maxChars": 18
+  },
+  "settings.language.group": "Display",
+  "@settings.language.group": {
+    "context": "Group heading on the Language page of the Settings dialog, above the display-language dropdown. 'Display' as in what the screen shows, not a monitor.",
+    "maxChars": 24
+  },
+  "settings.language.display.title": "Display language",
+  "@settings.language.display.title": {
+    "context": "Label of the dropdown that picks the language of Klive's menus, dialogs and panels. Settings dialog, Language page.",
+    "maxChars": 32
+  },
+  "settings.language.display.description": "The language of menus, dialogs and panels. Technical names - instructions, registers, commands, machine names - stay in English.",
+  "@settings.language.display.description": {
+    "context": "Help text under the display-language dropdown on the Language page of the Settings dialog. Wraps over several lines. 'Instructions' are Z80/6502 assembly instructions."
+  },
+  "settings.language.systemDefault": "System default ({language})",
+  "@settings.language.systemDefault": {
+    "context": "First choice of the display-language dropdown: follow the operating system's language. The placeholder names the language that choice currently gives, in that language's own name.",
+    "maxChars": 40,
+    "placeholders": {
+      "language": "A language's name in itself, shown verbatim, e.g. 'English', 'Deutsch', 'Magyar'"
+    }
+  },
+  "settings.language.devGroup": "For translators",
+  "@settings.language.devGroup": {
+    "context": "Group heading on the Language page of the Settings dialog, shown only in development builds, above tools that help translators.",
+    "maxChars": 24
+  },
+  "settings.language.showKeys.title": "Show translation keys",
+  "@settings.language.showKeys.title": {
+    "context": "Label of an on/off switch on the Language page of the Settings dialog (development builds only). When on, every text of the user interface is replaced by its translation key.",
+    "maxChars": 32
+  },
+  "settings.language.showKeys.description": "Every text shows its translation key instead, so you can find the entry to fix.",
+  "@settings.language.showKeys.description": {
+    "context": "Help text under the 'Show translation keys' switch. 'Translation key' is the identifier of a text in the message files, e.g. menu.file.openFile."
+  },
+  "settings.general.openLastProject.title": "Open the last project at startup",
+  "@settings.general.openLastProject.title": {
+    "context": "Settings dialog, General page, 'Startup' group: label of an on/off switch."
+  },
+  "settings.general.closeEmu.title": "Close the emulator when the IDE is closed",
+  "@settings.general.closeEmu.title": {
+    "context": "Settings dialog, General page, 'Windows' group: label of an on/off switch."
+  },
+  "settings.general.navRecordTabSwitch.title": "Record tab switches in the navigation history",
+  "@settings.general.navRecordTabSwitch.title": {
+    "context": "Settings dialog, General page, 'Navigation' group: label of an on/off switch. Its help text: 'Go Back and Go Forward also step through the tabs you switched between'"
+  },
+  "settings.general.navRecordTabSwitch.description": "Go Back and Go Forward also step through the tabs you switched between",
+  "@settings.general.navRecordTabSwitch.description": {
+    "context": "Help text under the setting 'Record tab switches in the navigation history' (Settings dialog, General page). Wraps over several lines."
+  },
+  "settings.general.excludedItems.title": "Excluded items",
+  "@settings.general.excludedItems.title": {
+    "context": "Settings dialog, General page, 'Project' group: label of a row whose button opens another dialog. Its help text: 'Files and folders the explorer and the build leave out'"
+  },
+  "settings.general.excludedItems.description": "Files and folders the explorer and the build leave out",
+  "@settings.general.excludedItems.description": {
+    "context": "Help text under the setting 'Excluded items' (Settings dialog, General page). Wraps over several lines."
+  },
+  "settings.button.manage": "Manage...",
+  "@settings.button.manage": {
+    "context": "Button on a row of the Settings dialog. It opens a dialog or a file picker; keep the '...'.",
+    "maxChars": 16
+  },
+  "settings.general.automationEnabled.title": "Let scripts drive Klive",
+  "@settings.general.automationEnabled.title": {
+    "context": "Settings dialog, General page, 'Automation' group: label of an on/off switch. Its help text: 'A local channel for the klive ide command line and your own scripts. Any program running as you can use it while this is on.'"
+  },
+  "settings.general.automationEnabled.description": "A local channel for the klive ide command line and your own scripts. Any program running as you can use it while this is on.",
+  "@settings.general.automationEnabled.description": {
+    "context": "Help text under the setting 'Let scripts drive Klive' (Settings dialog, General page). Wraps over several lines."
+  },
+  "settings.general.automationLevel.title": "What scripts may do",
+  "@settings.general.automationLevel.title": {
+    "context": "Settings dialog, General page, 'Automation' group: label of a dropdown. Its help text: 'Read: state, memory and screenshots. Control: also run, pause, step, edit memory and build. Full: also any IDE command, which can reach your files.'"
+  },
+  "settings.general.automationLevel.description": "Read: state, memory and screenshots. Control: also run, pause, step, edit memory and build. Full: also any IDE command, which can reach your files.",
+  "@settings.general.automationLevel.description": {
+    "context": "Help text under the setting 'What scripts may do' (Settings dialog, General page). Wraps over several lines."
+  },
+  "settings.general.automationLevel.option.read": "Read",
+  "@settings.general.automationLevel.option.read": {
+    "context": "Choice in the 'What scripts may do' dropdown (Settings dialog, General page)."
+  },
+  "settings.general.automationLevel.option.control": "Control",
+  "@settings.general.automationLevel.option.control": {
+    "context": "Choice in the 'What scripts may do' dropdown (Settings dialog, General page)."
+  },
+  "settings.general.automationLevel.option.full": "Full",
+  "@settings.general.automationLevel.option.full": {
+    "context": "Choice in the 'What scripts may do' dropdown (Settings dialog, General page)."
+  },
+  "settings.appearance.theme.title": "Tone",
+  "@settings.appearance.theme.title": {
+    "context": "Settings dialog, Appearance page, 'Theme' group: label of a dropdown."
+  },
+  "settings.appearance.theme.option.dark": "Dark",
+  "@settings.appearance.theme.option.dark": {
+    "context": "Choice in the 'Tone' dropdown (Settings dialog, Appearance page)."
+  },
+  "settings.appearance.theme.option.light": "Light",
+  "@settings.appearance.theme.option.light": {
+    "context": "Choice in the 'Tone' dropdown (Settings dialog, Appearance page)."
+  },
+  "settings.appearance.accent.title": "Accent",
+  "@settings.appearance.accent.title": {
+    "context": "Settings dialog, Appearance page, 'Theme' group: label of a row of colour swatches."
+  },
+  "settings.appearance.panelFontFamily.title": "Panel font",
+  "@settings.appearance.panelFontFamily.title": {
+    "context": "Settings dialog, Appearance page, 'Panels' group: label of a dropdown. Its help text: 'Memory, disassembly, registers and the other data panels'"
+  },
+  "settings.appearance.panelFontFamily.description": "Memory, disassembly, registers and the other data panels",
+  "@settings.appearance.panelFontFamily.description": {
+    "context": "Help text under the setting 'Panel font' (Settings dialog, Appearance page). Wraps over several lines."
+  },
+  "settings.appearance.panelFontSize.title": "Panel font size",
+  "@settings.appearance.panelFontSize.title": {
+    "context": "Settings dialog, Appearance page, 'Panels' group: label of a dropdown."
+  },
+  "settings.appearance.sidebarToRight.title": "Sidebar on the right",
+  "@settings.appearance.sidebarToRight.title": {
+    "context": "Settings dialog, Appearance page, 'Layout' group: label of an on/off switch."
+  },
+  "settings.appearance.toolsOnTop.title": "Command and Output on top",
+  "@settings.appearance.toolsOnTop.title": {
+    "context": "Settings dialog, Appearance page, 'Layout' group: label of an on/off switch."
+  },
+  "settings.appearance.maximizeTools.title": "Maximize Command and Output",
+  "@settings.appearance.maximizeTools.title": {
+    "context": "Settings dialog, Appearance page, 'Layout' group: label of an on/off switch."
+  },
+  "settings.editor.editorFontFamily.title": "Font family",
+  "@settings.editor.editorFontFamily.title": {
+    "context": "Settings dialog, Editor page, 'Text' group: label of a dropdown."
+  },
+  "settings.editor.editorFontSize.title": "Font size",
+  "@settings.editor.editorFontSize.title": {
+    "context": "Settings dialog, Editor page, 'Text' group: label of a dropdown."
+  },
+  "settings.editor.renderWhitespace.title": "Render whitespace",
+  "@settings.editor.renderWhitespace.title": {
+    "context": "Settings dialog, Editor page, 'Text' group: label of a dropdown."
+  },
+  "settings.editor.renderWhitespace.option.none": "None",
+  "@settings.editor.renderWhitespace.option.none": {
+    "context": "Choice in the 'Render whitespace' dropdown (Settings dialog, Editor page)."
+  },
+  "settings.editor.renderWhitespace.option.boundary": "At line boundaries",
+  "@settings.editor.renderWhitespace.option.boundary": {
+    "context": "Choice in the 'Render whitespace' dropdown (Settings dialog, Editor page)."
+  },
+  "settings.editor.renderWhitespace.option.selection": "Inside the selection",
+  "@settings.editor.renderWhitespace.option.selection": {
+    "context": "Choice in the 'Render whitespace' dropdown (Settings dialog, Editor page)."
+  },
+  "settings.editor.renderWhitespace.option.all": "All",
+  "@settings.editor.renderWhitespace.option.all": {
+    "context": "Choice in the 'Render whitespace' dropdown (Settings dialog, Editor page)."
+  },
+  "settings.editor.tabSize.title": "Tab size",
+  "@settings.editor.tabSize.title": {
+    "context": "Settings dialog, Editor page, 'Indentation' group: label of a dropdown."
+  },
+  "settings.editor.insertSpaces.title": "Insert spaces instead of tabs",
+  "@settings.editor.insertSpaces.title": {
+    "context": "Settings dialog, Editor page, 'Indentation' group: label of an on/off switch."
+  },
+  "settings.editor.detectIndentation.title": "Detect indentation",
+  "@settings.editor.detectIndentation.title": {
+    "context": "Settings dialog, Editor page, 'Indentation' group: label of an on/off switch."
+  },
+  "settings.editor.autocomplete.title": "Enable autocomplete",
+  "@settings.editor.autocomplete.title": {
+    "context": "Settings dialog, Editor page, 'Assistance' group: label of an on/off switch."
+  },
+  "settings.editor.quickSuggestionDelay.title": "Quick suggestion delay",
+  "@settings.editor.quickSuggestionDelay.title": {
+    "context": "Settings dialog, Editor page, 'Assistance' group: label of a dropdown."
+  },
+  "settings.editor.quickSuggestionDelay.option.n10": "Instantaneous",
+  "@settings.editor.quickSuggestionDelay.option.n10": {
+    "context": "Choice in the 'Quick suggestion delay' dropdown (Settings dialog, Editor page)."
+  },
+  "settings.editor.quickSuggestionDelay.option.n100": "Short (100 ms)",
+  "@settings.editor.quickSuggestionDelay.option.n100": {
+    "context": "Choice in the 'Quick suggestion delay' dropdown (Settings dialog, Editor page)."
+  },
+  "settings.editor.quickSuggestionDelay.option.n200": "Medium (200 ms)",
+  "@settings.editor.quickSuggestionDelay.option.n200": {
+    "context": "Choice in the 'Quick suggestion delay' dropdown (Settings dialog, Editor page)."
+  },
+  "settings.editor.quickSuggestionDelay.option.n500": "Long (500 ms)",
+  "@settings.editor.quickSuggestionDelay.option.n500": {
+    "context": "Choice in the 'Quick suggestion delay' dropdown (Settings dialog, Editor page)."
+  },
+  "settings.editor.quickSuggestionDelay.option.n1000": "Longest (1 s)",
+  "@settings.editor.quickSuggestionDelay.option.n1000": {
+    "context": "Choice in the 'Quick suggestion delay' dropdown (Settings dialog, Editor page)."
+  },
+  "settings.editor.selectionHighlight.title": "Highlight the selection's other occurrences",
+  "@settings.editor.selectionHighlight.title": {
+    "context": "Settings dialog, Editor page, 'Assistance' group: label of an on/off switch."
+  },
+  "settings.editor.occurrencesHighlight.title": "Highlight the symbol's occurrences",
+  "@settings.editor.occurrencesHighlight.title": {
+    "context": "Settings dialog, Editor page, 'Assistance' group: label of an on/off switch."
+  },
+  "settings.editor.backgroundCompile.title": "Compile in the background",
+  "@settings.editor.backgroundCompile.title": {
+    "context": "Settings dialog, Editor page, 'Assistance' group: label of an on/off switch. Its help text: 'Errors appear while you type'"
+  },
+  "settings.editor.backgroundCompile.description": "Errors appear while you type",
+  "@settings.editor.backgroundCompile.description": {
+    "context": "Help text under the setting 'Compile in the background' (Settings dialog, Editor page). Wraps over several lines."
+  },
+  "settings.emulator.zoomStep.title": "Zoom steps",
+  "@settings.emulator.zoomStep.title": {
+    "context": "Settings dialog, Emulator page, 'Screen' group: label of a dropdown. Its help text: 'The screen fits its window, snapped down to this step'"
+  },
+  "settings.emulator.zoomStep.description": "The screen fits its window, snapped down to this step",
+  "@settings.emulator.zoomStep.description": {
+    "context": "Help text under the setting 'Zoom steps' (Settings dialog, Emulator page). Wraps over several lines."
+  },
+  "settings.emulator.scanlineEffect.title": "Scanline effect",
+  "@settings.emulator.scanlineEffect.title": {
+    "context": "Settings dialog, Emulator page, 'Screen' group: label of a dropdown."
+  },
+  "settings.emulator.scanlineEffect.option.off": "Off",
+  "@settings.emulator.scanlineEffect.option.off": {
+    "context": "Choice in the 'Scanline effect' dropdown (Settings dialog, Emulator page)."
+  },
+  "settings.emulator.tvNoise.title": "Show TV noise without sync",
+  "@settings.emulator.tvNoise.title": {
+    "context": "Settings dialog, Emulator page, 'Screen' group: label of an on/off switch. Its help text: 'ZX80 and ZX81: noise instead of a black screen while the picture has no sync'"
+  },
+  "settings.emulator.tvNoise.description": "ZX80 and ZX81: noise instead of a black screen while the picture has no sync",
+  "@settings.emulator.tvNoise.description": {
+    "context": "Help text under the setting 'Show TV noise without sync' (Settings dialog, Emulator page). Wraps over several lines."
+  },
+  "settings.emulator.instantScreen.title": "Show the instant screen",
+  "@settings.emulator.instantScreen.title": {
+    "context": "Settings dialog, Emulator page, 'Screen' group: label of an on/off switch. Its help text: 'Also on the emulator toolbar'"
+  },
+  "settings.emulator.instantScreen.description": "Also on the emulator toolbar",
+  "@settings.emulator.instantScreen.description": {
+    "context": "Help text under the setting 'Show the instant screen' (Settings dialog, Emulator page). Wraps over several lines."
+  },
+  "settings.emulator.beamPosition.title": "Show the beam position while paused",
+  "@settings.emulator.beamPosition.title": {
+    "context": "Settings dialog, Emulator page, 'Screen' group: label of an on/off switch. Its help text: 'Also on the emulator toolbar'"
+  },
+  "settings.emulator.beamPosition.description": "Also on the emulator toolbar",
+  "@settings.emulator.beamPosition.description": {
+    "context": "Help text under the setting 'Show the beam position while paused' (Settings dialog, Emulator page). Wraps over several lines."
+  },
+  "settings.emulator.stayOnTop.title": "Keep the emulator on top",
+  "@settings.emulator.stayOnTop.title": {
+    "context": "Settings dialog, Emulator page, 'Window' group: label of an on/off switch. Its help text: 'Also the pin on the emulator toolbar'"
+  },
+  "settings.emulator.stayOnTop.description": "Also the pin on the emulator toolbar",
+  "@settings.emulator.stayOnTop.description": {
+    "context": "Help text under the setting 'Keep the emulator on top' (Settings dialog, Emulator page). Wraps over several lines."
+  },
+  "settings.emulator.performanceInfo.title": "Show performance info",
+  "@settings.emulator.performanceInfo.title": {
+    "context": "Settings dialog, Emulator page, 'Status bar' group: label of an on/off switch. Its help text: 'Also: right-click the status bar'"
+  },
+  "settings.emulator.performanceInfo.description": "Also: right-click the status bar",
+  "@settings.emulator.performanceInfo.description": {
+    "context": "Help text under the setting 'Show performance info' (Settings dialog, Emulator page). Wraps over several lines."
+  },
+  "settings.emulator.mediaInfo.title": "Show media information",
+  "@settings.emulator.mediaInfo.title": {
+    "context": "Settings dialog, Emulator page, 'Status bar' group: label of an on/off switch. Its help text: 'The tape and disk strip of the Spectrum models'"
+  },
+  "settings.emulator.mediaInfo.description": "The tape and disk strip of the Spectrum models",
+  "@settings.emulator.mediaInfo.description": {
+    "context": "Help text under the setting 'Show media information' (Settings dialog, Emulator page). Wraps over several lines."
+  },
+  "settings.emulator.nextLayers.title": "Show the Layers strip",
+  "@settings.emulator.nextLayers.title": {
+    "context": "Settings dialog, Emulator page, 'Status bar' group: label of an on/off switch. Its help text: 'ZX Spectrum Next: show, solo and probe the layers'"
+  },
+  "settings.emulator.nextLayers.description": "ZX Spectrum Next: show, solo and probe the layers",
+  "@settings.emulator.nextLayers.description": {
+    "context": "Help text under the setting 'Show the Layers strip' (Settings dialog, Emulator page). Wraps over several lines."
+  },
+  "settings.emulator.fastLoad.title": "Fast load",
+  "@settings.emulator.fastLoad.title": {
+    "context": "Settings dialog, Emulator page, 'Tape' group: label of an on/off switch. Its help text: 'Also in Machine › Tape and on the emulator toolbar'"
+  },
+  "settings.emulator.fastLoad.description": "Also in Machine › Tape and on the emulator toolbar",
+  "@settings.emulator.fastLoad.description": {
+    "context": "Help text under the setting 'Fast load' (Settings dialog, Emulator page). Wraps over several lines."
+  },
+  "settings.debugging.stepInInterrupts.title": "Stop in interrupt handlers while stepping",
+  "@settings.debugging.stepInInterrupts.title": {
+    "context": "Settings dialog, Debugging page, 'Stepping' group: label of an on/off switch."
+  },
+  "settings.debugging.justMyCode.title": "Just My Code",
+  "@settings.debugging.justMyCode.title": {
+    "context": "Settings dialog, Debugging page, 'Stepping' group: label of an on/off switch. Its help text: 'Step over code that has no source'"
+  },
+  "settings.debugging.justMyCode.description": "Step over code that has no source",
+  "@settings.debugging.justMyCode.description": {
+    "context": "Help text under the setting 'Just My Code' (Settings dialog, Debugging page). Wraps over several lines."
+  },
+  "settings.debugging.stopOnErrors.title": "Stop at runtime errors",
+  "@settings.debugging.stopOnErrors.title": {
+    "context": "Settings dialog, Debugging page, 'Breakpoints' group: label of an on/off switch."
+  },
+  "settings.debugging.syncBreakpoints.title": "Sync the source with the current breakpoint",
+  "@settings.debugging.syncBreakpoints.title": {
+    "context": "Settings dialog, Debugging page, 'Breakpoints' group: label of an on/off switch. Its help text: 'Also in the Debug menu and on the IDE toolbar'"
+  },
+  "settings.debugging.syncBreakpoints.description": "Also in the Debug menu and on the IDE toolbar",
+  "@settings.debugging.syncBreakpoints.description": {
+    "context": "Help text under the setting 'Sync the source with the current breakpoint' (Settings dialog, Debugging page). Wraps over several lines."
+  },
+  "settings.debugging.groupBreakpoints.title": "Group breakpoints by kind",
+  "@settings.debugging.groupBreakpoints.title": {
+    "context": "Settings dialog, Debugging page, 'Breakpoints' group: label of an on/off switch."
+  },
+  "settings.debugging.reverseDebugging.title": "Reverse debugging",
+  "@settings.debugging.reverseDebugging.title": {
+    "context": "Settings dialog, Debugging page, 'Reverse debugging' group: label of an on/off switch. Its help text: 'Step back with the whole machine in the past; takes effect at the next debug session'"
+  },
+  "settings.debugging.reverseDebugging.description": "Step back with the whole machine in the past; takes effect at the next debug session",
+  "@settings.debugging.reverseDebugging.description": {
+    "context": "Help text under the setting 'Reverse debugging' (Settings dialog, Debugging page). Wraps over several lines."
+  },
+  "settings.debugging.reverseDebugMemory.title": "Memory for the reverse-debugging timeline",
+  "@settings.debugging.reverseDebugMemory.title": {
+    "context": "Settings dialog, Debugging page, 'Reverse debugging' group: label of a dropdown. Its help text: 'More memory reaches further back. Automatic: 512 MB or 1/16 of the computer's memory'"
+  },
+  "settings.debugging.reverseDebugMemory.description": "More memory reaches further back. Automatic: 512 MB or 1/16 of the computer's memory",
+  "@settings.debugging.reverseDebugMemory.description": {
+    "context": "Help text under the setting 'Memory for the reverse-debugging timeline' (Settings dialog, Debugging page). Wraps over several lines."
+  },
+  "settings.debugging.reverseDebugMemory.option.n0": "Automatic",
+  "@settings.debugging.reverseDebugMemory.option.n0": {
+    "context": "Choice in the 'Memory for the reverse-debugging timeline' dropdown (Settings dialog, Debugging page)."
+  },
+  "settings.debugging.profileResetOnStart.title": "Clear coverage when the machine starts",
+  "@settings.debugging.profileResetOnStart.title": {
+    "context": "Settings dialog, Debugging page, 'Coverage and profiling' group: label of an on/off switch. Its help text: 'Coverage and the heat map start over when the machine starts from Stopped'"
+  },
+  "settings.debugging.profileResetOnStart.description": "Coverage and the heat map start over when the machine starts from Stopped",
+  "@settings.debugging.profileResetOnStart.description": {
+    "context": "Help text under the setting 'Clear coverage when the machine starts' (Settings dialog, Debugging page). Wraps over several lines."
+  },
+  "settings.debugging.profileResetAfterInjection.title": "Clear coverage after code injection",
+  "@settings.debugging.profileResetAfterInjection.title": {
+    "context": "Settings dialog, Debugging page, 'Coverage and profiling' group: label of an on/off switch. Its help text: 'The ROM's boot to the injection point does not show as covered'"
+  },
+  "settings.debugging.profileResetAfterInjection.description": "The ROM's boot to the injection point does not show as covered",
+  "@settings.debugging.profileResetAfterInjection.description": {
+    "context": "Help text under the setting 'Clear coverage after code injection' (Settings dialog, Debugging page). Wraps over several lines."
+  },
+  "settings.debugging.profileCounters.title": "Count executions, reads and writes",
+  "@settings.debugging.profileCounters.title": {
+    "context": "Settings dialog, Debugging page, 'Coverage and profiling' group: label of an on/off switch. Its help text: 'Off: only whether each byte was executed, read or written, which costs less'"
+  },
+  "settings.debugging.profileCounters.description": "Off: only whether each byte was executed, read or written, which costs less",
+  "@settings.debugging.profileCounters.description": {
+    "context": "Help text under the setting 'Count executions, reads and writes' (Settings dialog, Debugging page). Wraps over several lines."
+  },
+  "settings.debugging.coverageLineTint.title": "Tint covered source lines",
+  "@settings.debugging.coverageLineTint.title": {
+    "context": "Settings dialog, Debugging page, 'Coverage and profiling' group: label of an on/off switch. Its help text: 'A tinted background as well as the coverage strip'"
+  },
+  "settings.debugging.coverageLineTint.description": "A tinted background as well as the coverage strip",
+  "@settings.debugging.coverageLineTint.description": {
+    "context": "Help text under the setting 'Tint covered source lines' (Settings dialog, Debugging page). Wraps over several lines."
+  },
+  "settings.debugging.profilerInlays.title": "Profile hints in the editor",
+  "@settings.debugging.profilerInlays.title": {
+    "context": "Settings dialog, Debugging page, 'Coverage and profiling' group: label of an on/off switch. Its help text: 'Each routine's first line shows its share of the time and its calls'"
+  },
+  "settings.debugging.profilerInlays.description": "Each routine's first line shows its share of the time and its calls",
+  "@settings.debugging.profilerInlays.description": {
+    "context": "Help text under the setting 'Profile hints in the editor' (Settings dialog, Debugging page). Wraps over several lines."
+  },
+  "settings.machine.sp48Rom.title": "ZX Spectrum 48K ROM",
+  "@settings.machine.sp48Rom.title": {
+    "context": "Settings dialog, Machine page, 'ROM' group: label of a file setting (shows the chosen file's name, with buttons beside it). Its help text: 'Empty: the built-in ROM. Changing it restarts the machine'"
+  },
+  "settings.machine.sp48Rom.description": "Empty: the built-in ROM. Changing it restarts the machine",
+  "@settings.machine.sp48Rom.description": {
+    "context": "Help text under the setting 'ZX Spectrum 48K ROM' (Settings dialog, Machine page). Wraps over several lines."
+  },
+  "settings.button.browse": "Browse...",
+  "@settings.button.browse": {
+    "context": "Button on a row of the Settings dialog. It opens a dialog or a file picker; keep the '...'.",
+    "maxChars": 16
+  },
+  "settings.button.reset": "Reset",
+  "@settings.button.reset": {
+    "context": "Button on a row of the Settings dialog.",
+    "maxChars": 16
+  },
+  "settings.machine.trdosRom.title": "TR-DOS ROM",
+  "@settings.machine.trdosRom.title": {
+    "context": "Settings dialog, Machine page, 'ROM' group: label of a file setting (shows the chosen file's name, with buttons beside it). Its help text: 'The disks stay off without it. Changing it restarts the machine'"
+  },
+  "settings.machine.trdosRom.description": "The disks stay off without it. Changing it restarts the machine",
+  "@settings.machine.trdosRom.description": {
+    "context": "Help text under the setting 'TR-DOS ROM' (Settings dialog, Machine page). Wraps over several lines."
+  },
+  "settings.button.forget": "Forget",
+  "@settings.button.forget": {
+    "context": "Button on a row of the Settings dialog.",
+    "maxChars": 16
+  },
+  "settings.machine.scorpionRom.title": "Scorpion ZS-256 ROM",
+  "@settings.machine.scorpionRom.title": {
+    "context": "Settings dialog, Machine page, 'ROM' group: label of a file setting (shows the chosen file's name, with buttons beside it). Its help text: 'Empty: the 128K ROMs boot. Changing it restarts the machine'"
+  },
+  "settings.machine.scorpionRom.description": "Empty: the 128K ROMs boot. Changing it restarts the machine",
+  "@settings.machine.scorpionRom.description": {
+    "context": "Help text under the setting 'Scorpion ZS-256 ROM' (Settings dialog, Machine page). Wraps over several lines."
+  },
+  "settings.machine.timexRom.title": "Timex ROM",
+  "@settings.machine.timexRom.title": {
+    "context": "Settings dialog, Machine page, 'ROM' group: label of a file setting (shows the chosen file's name, with buttons beside it). Its help text: 'Empty: the 48K ROM boots. Changing it restarts the machine'"
+  },
+  "settings.machine.timexRom.description": "Empty: the 48K ROM boots. Changing it restarts the machine",
+  "@settings.machine.timexRom.description": {
+    "context": "Help text under the setting 'Timex ROM' (Settings dialog, Machine page). Wraps over several lines."
+  },
+  "settings.machine.z88KeyboardLayout.title": "Keyboard layout",
+  "@settings.machine.z88KeyboardLayout.title": {
+    "context": "Settings dialog, Machine page, 'Cambridge Z88' group: label of a dropdown."
+  },
+  "settings.machine.z88Lcd.title": "LCD resolution",
+  "@settings.machine.z88Lcd.title": {
+    "context": "Settings dialog, Machine page, 'Cambridge Z88' group: label of a dropdown. Its help text: 'Changing it restarts the machine'"
+  },
+  "settings.machine.z88Lcd.description": "Changing it restarts the machine",
+  "@settings.machine.z88Lcd.description": {
+    "context": "Help text under the setting 'LCD resolution' (Settings dialog, Machine page). Wraps over several lines."
+  },
+  "settings.input.keyMapping.title": "Key mapping file",
+  "@settings.input.keyMapping.title": {
+    "context": "Settings dialog, Input page, 'Keyboard' group: label of a file setting (shows the chosen file's name, with buttons beside it). Its help text: 'Maps host keys to the machine's keys'"
+  },
+  "settings.input.keyMapping.description": "Maps host keys to the machine's keys",
+  "@settings.input.keyMapping.description": {
+    "context": "Help text under the setting 'Key mapping file' (Settings dialog, Input page). Wraps over several lines."
+  },
+  "settings.input.joystickBindings.title": "Joystick bindings",
+  "@settings.input.joystickBindings.title": {
+    "context": "Settings dialog, Input page, 'Joysticks' group: label of a row whose button opens another dialog. Its help text: 'The host keys and gamepad buttons the joysticks read'"
+  },
+  "settings.input.joystickBindings.description": "The host keys and gamepad buttons the joysticks read",
+  "@settings.input.joystickBindings.description": {
+    "context": "Help text under the setting 'Joystick bindings' (Settings dialog, Input page). Wraps over several lines."
+  },
+  "settings.button.configure": "Configure...",
+  "@settings.button.configure": {
+    "context": "Button on a row of the Settings dialog. It opens a dialog or a file picker; keep the '...'.",
+    "maxChars": 16
+  },
+  "settings.input.mouseCapture.title": "Capture the mouse",
+  "@settings.input.mouseCapture.title": {
+    "context": "Settings dialog, Input page, 'Mouse' group: label of an on/off switch. Its help text: 'The toolbar button or Ctrl+M then captures it'"
+  },
+  "settings.input.mouseCapture.description": "The toolbar button or Ctrl+M then captures it",
+  "@settings.input.mouseCapture.description": {
+    "context": "Help text under the setting 'Capture the mouse' (Settings dialog, Input page). Wraps over several lines."
+  },
+  "settings.input.mousePointer.title": "Show the captured pointer",
+  "@settings.input.mousePointer.title": {
+    "context": "Settings dialog, Input page, 'Mouse' group: label of a dropdown."
+  },
+  "settings.input.mouseSensitivity.title": "Sensitivity",
+  "@settings.input.mouseSensitivity.title": {
+    "context": "Settings dialog, Input page, 'Mouse' group: label of a dropdown."
+  },
+  "settings.recording.recordingFormat.title": "Format",
+  "@settings.recording.recordingFormat.title": {
+    "context": "Settings dialog, Recording page, 'Video recording' group: label of a dropdown."
+  },
+  "settings.recording.recordingFormat.option.mp4": "MP4 (H.264): universal, small files",
+  "@settings.recording.recordingFormat.option.mp4": {
+    "context": "Choice in the 'Format' dropdown (Settings dialog, Recording page)."
+  },
+  "settings.recording.recordingFormat.option.webm": "WebM (VP9): best for web sharing",
+  "@settings.recording.recordingFormat.option.webm": {
+    "context": "Choice in the 'Format' dropdown (Settings dialog, Recording page)."
+  },
+  "settings.recording.recordingFormat.option.mkv": "MKV (H.265): best compression",
+  "@settings.recording.recordingFormat.option.mkv": {
+    "context": "Choice in the 'Format' dropdown (Settings dialog, Recording page)."
+  },
+  "settings.recording.recordingQuality.title": "Quality",
+  "@settings.recording.recordingQuality.title": {
+    "context": "Settings dialog, Recording page, 'Video recording' group: label of a dropdown."
+  },
+  "settings.recording.recordingQuality.option.good": "Best compression",
+  "@settings.recording.recordingQuality.option.good": {
+    "context": "Choice in the 'Quality' dropdown (Settings dialog, Recording page)."
+  },
+  "settings.recording.recordingQuality.option.high": "High",
+  "@settings.recording.recordingQuality.option.high": {
+    "context": "Choice in the 'Quality' dropdown (Settings dialog, Recording page)."
+  },
+  "settings.recording.recordingQuality.option.lossless": "Highest (lossless)",
+  "@settings.recording.recordingQuality.option.lossless": {
+    "context": "Choice in the 'Quality' dropdown (Settings dialog, Recording page)."
+  },
+  "settings.recording.recordingFps.title": "Frame rate",
+  "@settings.recording.recordingFps.title": {
+    "context": "Settings dialog, Recording page, 'Video recording' group: label of a dropdown."
+  },
+  "settings.recording.recordingFps.option.native": "The machine's own",
+  "@settings.recording.recordingFps.option.native": {
+    "context": "Choice in the 'Frame rate' dropdown (Settings dialog, Recording page)."
+  },
+  "settings.recording.recordingFps.option.half": "Half",
+  "@settings.recording.recordingFps.option.half": {
+    "context": "Choice in the 'Frame rate' dropdown (Settings dialog, Recording page)."
+  },
+  "settings.recording.windowRecordingIdePosition.title": "IDE position",
+  "@settings.recording.windowRecordingIdePosition.title": {
+    "context": "Settings dialog, Recording page, 'IDE + Emulator recording' group: label of a dropdown."
+  },
+  "settings.recording.windowRecordingIdePosition.option.left": "Left",
+  "@settings.recording.windowRecordingIdePosition.option.left": {
+    "context": "Choice in the 'IDE position' dropdown (Settings dialog, Recording page)."
+  },
+  "settings.recording.windowRecordingIdePosition.option.right": "Right",
+  "@settings.recording.windowRecordingIdePosition.option.right": {
+    "context": "Choice in the 'IDE position' dropdown (Settings dialog, Recording page)."
+  },
+  "settings.recording.windowRecordingIdePosition.option.top": "Top",
+  "@settings.recording.windowRecordingIdePosition.option.top": {
+    "context": "Choice in the 'IDE position' dropdown (Settings dialog, Recording page)."
+  },
+  "settings.recording.windowRecordingIdePosition.option.bottom": "Bottom",
+  "@settings.recording.windowRecordingIdePosition.option.bottom": {
+    "context": "Choice in the 'IDE position' dropdown (Settings dialog, Recording page)."
+  },
+  "settings.recording.windowRecordingPointer.title": "Include the pointer",
+  "@settings.recording.windowRecordingPointer.title": {
+    "context": "Settings dialog, Recording page, 'IDE + Emulator recording' group: label of an on/off switch."
+  },
+  "settings.recording.windowRecordingClicks.title": "Show mouse clicks",
+  "@settings.recording.windowRecordingClicks.title": {
+    "context": "Settings dialog, Recording page, 'IDE + Emulator recording' group: label of an on/off switch."
+  },
+  "settings.recording.windowRecordingHiDpi.title": "Full resolution (HiDPI)",
+  "@settings.recording.windowRecordingHiDpi.title": {
+    "context": "Settings dialog, Recording page, 'IDE + Emulator recording' group: label of an on/off switch."
+  },
+  "settings.integrations.sjasmplus.title": "SjasmPlus",
+  "@settings.integrations.sjasmplus.title": {
+    "context": "Settings dialog, Integrations page, 'Assemblers' group: label of a row whose button opens another dialog. Its help text: 'The executable, its options and the build integration'"
+  },
+  "settings.integrations.sjasmplus.description": "The executable, its options and the build integration",
+  "@settings.integrations.sjasmplus.description": {
+    "context": "Help text under the setting 'SjasmPlus' (Settings dialog, Integrations page). Wraps over several lines."
+  },
+  "settings.integrations.basicCompiler.title": "Compiler for BASIC programs",
+  "@settings.integrations.basicCompiler.title": {
+    "context": "Settings dialog, Integrations page, 'BASIC compilers' group: label of a dropdown. Its help text: 'Builds .zxbas and .bas files. A project that chooses its own compiler keeps the choice made here in its settings.'"
+  },
+  "settings.integrations.basicCompiler.description": "Builds .zxbas and .bas files. A project that chooses its own compiler keeps the choice made here in its settings.",
+  "@settings.integrations.basicCompiler.description": {
+    "context": "Help text under the setting 'Compiler for BASIC programs' (Settings dialog, Integrations page). Wraps over several lines."
+  },
+  "settings.integrations.borielBasic.title": "Boriel BASIC",
+  "@settings.integrations.borielBasic.title": {
+    "context": "Settings dialog, Integrations page, 'BASIC compilers' group: label of a file setting (shows the chosen file's name, with buttons beside it). Its help text: 'Install the bundled Boriel BASIC 2.x, or use an installation you have'"
+  },
+  "settings.integrations.borielBasic.description": "Install the bundled Boriel BASIC 2.x, or use an installation you have",
+  "@settings.integrations.borielBasic.description": {
+    "context": "Help text under the setting 'Boriel BASIC' (Settings dialog, Integrations page). Wraps over several lines."
+  },
+  "settings.group.startup": "Startup",
+  "@settings.group.startup": {
+    "context": "Group heading in the Settings dialog (General page). The style shows it in capitals; write it in your language's normal case.",
+    "maxChars": 28
+  },
+  "settings.group.windows": "Windows",
+  "@settings.group.windows": {
+    "context": "Group heading in the Settings dialog (General page). The style shows it in capitals; write it in your language's normal case.",
+    "maxChars": 28
+  },
+  "settings.group.navigation": "Navigation",
+  "@settings.group.navigation": {
+    "context": "Group heading in the Settings dialog (General page). The style shows it in capitals; write it in your language's normal case.",
+    "maxChars": 28
+  },
+  "settings.group.project": "Project",
+  "@settings.group.project": {
+    "context": "Group heading in the Settings dialog (General page). The style shows it in capitals; write it in your language's normal case.",
+    "maxChars": 28
+  },
+  "settings.group.automation": "Automation",
+  "@settings.group.automation": {
+    "context": "Group heading in the Settings dialog (General page). The style shows it in capitals; write it in your language's normal case.",
+    "maxChars": 28
+  },
+  "settings.group.theme": "Theme",
+  "@settings.group.theme": {
+    "context": "Group heading in the Settings dialog (Appearance page). The style shows it in capitals; write it in your language's normal case.",
+    "maxChars": 28
+  },
+  "settings.group.panels": "Panels",
+  "@settings.group.panels": {
+    "context": "Group heading in the Settings dialog (Appearance page). The style shows it in capitals; write it in your language's normal case.",
+    "maxChars": 28
+  },
+  "settings.group.layout": "Layout",
+  "@settings.group.layout": {
+    "context": "Group heading in the Settings dialog (Appearance page). The style shows it in capitals; write it in your language's normal case.",
+    "maxChars": 28
+  },
+  "settings.group.text": "Text",
+  "@settings.group.text": {
+    "context": "Group heading in the Settings dialog (Editor page). The style shows it in capitals; write it in your language's normal case.",
+    "maxChars": 28
+  },
+  "settings.group.indentation": "Indentation",
+  "@settings.group.indentation": {
+    "context": "Group heading in the Settings dialog (Editor page). The style shows it in capitals; write it in your language's normal case.",
+    "maxChars": 28
+  },
+  "settings.group.assistance": "Assistance",
+  "@settings.group.assistance": {
+    "context": "Group heading in the Settings dialog (Editor page). The style shows it in capitals; write it in your language's normal case.",
+    "maxChars": 28
+  },
+  "settings.group.screen": "Screen",
+  "@settings.group.screen": {
+    "context": "Group heading in the Settings dialog (Emulator page). The style shows it in capitals; write it in your language's normal case.",
+    "maxChars": 28
+  },
+  "settings.group.window": "Window",
+  "@settings.group.window": {
+    "context": "Group heading in the Settings dialog (Emulator page). The style shows it in capitals; write it in your language's normal case.",
+    "maxChars": 28
+  },
+  "settings.group.statusBar": "Status bar",
+  "@settings.group.statusBar": {
+    "context": "Group heading in the Settings dialog (Emulator page). The style shows it in capitals; write it in your language's normal case.",
+    "maxChars": 28
+  },
+  "settings.group.tape": "Tape",
+  "@settings.group.tape": {
+    "context": "Group heading in the Settings dialog (Emulator page). The style shows it in capitals; write it in your language's normal case.",
+    "maxChars": 28
+  },
+  "settings.group.stepping": "Stepping",
+  "@settings.group.stepping": {
+    "context": "Group heading in the Settings dialog (Debugging page). The style shows it in capitals; write it in your language's normal case.",
+    "maxChars": 28
+  },
+  "settings.group.breakpoints": "Breakpoints",
+  "@settings.group.breakpoints": {
+    "context": "Group heading in the Settings dialog (Debugging page). The style shows it in capitals; write it in your language's normal case.",
+    "maxChars": 28
+  },
+  "settings.group.reverseDebugging": "Reverse debugging",
+  "@settings.group.reverseDebugging": {
+    "context": "Group heading in the Settings dialog (Debugging page). The style shows it in capitals; write it in your language's normal case.",
+    "maxChars": 28
+  },
+  "settings.group.coverageAndProfiling": "Coverage and profiling",
+  "@settings.group.coverageAndProfiling": {
+    "context": "Group heading in the Settings dialog (Debugging page). The style shows it in capitals; write it in your language's normal case.",
+    "maxChars": 28
+  },
+  "settings.group.rom": "ROM",
+  "@settings.group.rom": {
+    "context": "Group heading in the Settings dialog (Machine page). The style shows it in capitals; write it in your language's normal case.",
+    "maxChars": 28
+  },
+  "settings.group.cambridgeZ88": "Cambridge Z88",
+  "@settings.group.cambridgeZ88": {
+    "context": "Group heading in the Settings dialog (Machine page). The style shows it in capitals; write it in your language's normal case.",
+    "maxChars": 28
+  },
+  "settings.group.keyboard": "Keyboard",
+  "@settings.group.keyboard": {
+    "context": "Group heading in the Settings dialog (Input page). The style shows it in capitals; write it in your language's normal case.",
+    "maxChars": 28
+  },
+  "settings.group.joysticks": "Joysticks",
+  "@settings.group.joysticks": {
+    "context": "Group heading in the Settings dialog (Input page). The style shows it in capitals; write it in your language's normal case.",
+    "maxChars": 28
+  },
+  "settings.group.mouse": "Mouse",
+  "@settings.group.mouse": {
+    "context": "Group heading in the Settings dialog (Input page). The style shows it in capitals; write it in your language's normal case.",
+    "maxChars": 28
+  },
+  "settings.group.videoRecording": "Video recording",
+  "@settings.group.videoRecording": {
+    "context": "Group heading in the Settings dialog (Recording page). The style shows it in capitals; write it in your language's normal case.",
+    "maxChars": 28
+  },
+  "settings.group.idePlusEmulatorRecording": "IDE + Emulator recording",
+  "@settings.group.idePlusEmulatorRecording": {
+    "context": "Group heading in the Settings dialog (Recording page). The style shows it in capitals; write it in your language's normal case.",
+    "maxChars": 28
+  },
+  "settings.group.assemblers": "Assemblers",
+  "@settings.group.assemblers": {
+    "context": "Group heading in the Settings dialog (Integrations page). The style shows it in capitals; write it in your language's normal case.",
+    "maxChars": 28
+  },
+  "settings.group.basicCompilers": "BASIC compilers",
+  "@settings.group.basicCompilers": {
+    "context": "Group heading in the Settings dialog (Integrations page). The style shows it in capitals; write it in your language's normal case.",
+    "maxChars": 28
+  },
+  "settings.page.general": "General",
+  "@settings.page.general": {
+    "context": "Name of a page in the Settings dialog's page list (left column), and its heading. The page holds the general settings.",
+    "maxChars": 18
+  },
+  "settings.page.appearance": "Appearance",
+  "@settings.page.appearance": {
+    "context": "Name of a page in the Settings dialog's page list (left column), and its heading. The page holds the appearance settings.",
+    "maxChars": 18
+  },
+  "settings.page.editor": "Editor",
+  "@settings.page.editor": {
+    "context": "Name of a page in the Settings dialog's page list (left column), and its heading. The page holds the editor settings.",
+    "maxChars": 18
+  },
+  "settings.page.emulator": "Emulator",
+  "@settings.page.emulator": {
+    "context": "Name of a page in the Settings dialog's page list (left column), and its heading. The page holds the emulator settings.",
+    "maxChars": 18
+  },
+  "settings.page.debugging": "Debugging",
+  "@settings.page.debugging": {
+    "context": "Name of a page in the Settings dialog's page list (left column), and its heading. The page holds the debugging settings.",
+    "maxChars": 18
+  },
+  "settings.page.machine": "Machine",
+  "@settings.page.machine": {
+    "context": "Name of a page in the Settings dialog's page list (left column), and its heading. The page holds the machine settings.",
+    "maxChars": 18
+  },
+  "settings.page.input": "Input",
+  "@settings.page.input": {
+    "context": "Name of a page in the Settings dialog's page list (left column), and its heading. The page holds the input settings.",
+    "maxChars": 18
+  },
+  "settings.page.recording": "Recording",
+  "@settings.page.recording": {
+    "context": "Name of a page in the Settings dialog's page list (left column), and its heading. The page holds the recording settings.",
+    "maxChars": 18
+  },
+  "settings.page.integrations": "Integrations",
+  "@settings.page.integrations": {
+    "context": "Name of a page in the Settings dialog's page list (left column), and its heading. The page holds the integrations settings.",
+    "maxChars": 18
+  },
+  "settings.machine.z88KeyboardLayout.option.uk": "British & American",
+  "@settings.machine.z88KeyboardLayout.option.uk": {
+    "context": "Choice in the Cambridge Z88's 'Keyboard layout' dropdown (Settings dialog, Machine page): the keyboard's national layout."
+  },
+  "settings.machine.z88KeyboardLayout.option.es": "Spanish",
+  "@settings.machine.z88KeyboardLayout.option.es": {
+    "context": "Choice in the Cambridge Z88's 'Keyboard layout' dropdown (Settings dialog, Machine page): the keyboard's national layout."
+  },
+  "settings.machine.z88KeyboardLayout.option.fr": "French",
+  "@settings.machine.z88KeyboardLayout.option.fr": {
+    "context": "Choice in the Cambridge Z88's 'Keyboard layout' dropdown (Settings dialog, Machine page): the keyboard's national layout."
+  },
+  "settings.machine.z88KeyboardLayout.option.it": "Italian",
+  "@settings.machine.z88KeyboardLayout.option.it": {
+    "context": "Choice in the Cambridge Z88's 'Keyboard layout' dropdown (Settings dialog, Machine page): the keyboard's national layout."
+  },
+  "settings.machine.z88KeyboardLayout.option.de": "German",
+  "@settings.machine.z88KeyboardLayout.option.de": {
+    "context": "Choice in the Cambridge Z88's 'Keyboard layout' dropdown (Settings dialog, Machine page): the keyboard's national layout."
+  },
+  "settings.machine.z88KeyboardLayout.option.dk": "Danish & Norwegian",
+  "@settings.machine.z88KeyboardLayout.option.dk": {
+    "context": "Choice in the Cambridge Z88's 'Keyboard layout' dropdown (Settings dialog, Machine page): the keyboard's national layout."
+  },
+  "settings.machine.z88KeyboardLayout.option.se": "Swedish & Finnish",
+  "@settings.machine.z88KeyboardLayout.option.se": {
+    "context": "Choice in the Cambridge Z88's 'Keyboard layout' dropdown (Settings dialog, Machine page): the keyboard's national layout."
+  },
+  "settings.was": "Was: {path}",
+  "@settings.was": {
+    "context": "Shown under a setting while searching: where the setting used to be in the old menus. The path stays in English (the old menus were English).",
+    "placeholders": {
+      "path": "An old English menu path, shown verbatim, e.g. 'View › Theme'"
+    }
+  },
+  "settings.reset": "Reset Page to Defaults",
+  "@settings.reset": {
+    "context": "Button in the Settings dialog's footer: sets every option of the current page back to its default.",
+    "maxChars": 28
+  },
+  "settings.title": "Settings",
+  "@settings.title": {
+    "context": "Title of the Settings dialog.",
+    "maxChars": 20
+  },
+  "settings.search.placeholder": "Search settings",
+  "@settings.search.placeholder": {
+    "context": "Placeholder of the search box at the top of the Settings dialog's page list.",
+    "maxChars": 24
+  },
+  "settings.noMatch": "No setting matches \"{query}\".",
+  "@settings.noMatch": {
+    "context": "Shown when the Settings dialog's search finds nothing.",
+    "placeholders": {
+      "query": "What the user typed, shown verbatim"
+    }
+  },
+  "settings.machine.noOptions": "The {machine} has no options of its own.",
+  "@settings.machine.noOptions": {
+    "context": "Shown on the Machine page when the running machine has no machine-specific settings.",
+    "placeholders": {
+      "machine": "Machine name, shown verbatim, e.g. 'ZX Spectrum 48K'"
+    }
+  },
+  "settings.machine.noOptionsUnknown": "The running machine has no options of its own.",
+  "@settings.machine.noOptionsUnknown": {
+    "context": "Shown on the Machine page when the running machine has no machine-specific settings and its name is unknown."
+  },
+  "settings.empty": "Nothing to set here.",
+  "@settings.empty": {
+    "context": "Shown on a Settings page that has no options for the current machine or project."
+  },
+  "settings.machine.note": "The options of the running machine, the {machine}.",
+  "@settings.machine.note": {
+    "context": "Note at the top of the Machine page of the Settings dialog.",
+    "placeholders": {
+      "machine": "Machine name, shown verbatim, e.g. 'Cambridge Z88'"
+    }
+  },
+  "settings.file.builtInRom": "Built-in ROM",
+  "@settings.file.builtInRom": {
+    "context": "Shown in the ROM row of the Settings dialog when no ROM file is chosen: the emulator's own ROM is used."
+  },
+  "settings.file.none": "None",
+  "@settings.file.none": {
+    "context": "Shown in the 'Key mapping file' row when no file is chosen."
+  },
+  "settings.file.notSetUp": "Not set up",
+  "@settings.file.notSetUp": {
+    "context": "Shown in the 'Boriel BASIC' row when the compiler is not installed or configured."
+  },
+  "settings.file.notSet": "Not set",
+  "@settings.file.notSet": {
+    "context": "Shown in a file row of the Settings dialog when no file is chosen."
+  },
+  "settings.pagesLabel": "Settings pages",
+  "@settings.pagesLabel": {
+    "context": "Accessible name (screen readers) of the Settings dialog's page list."
+  },
+  "settings.zoomStep.whole": "Whole Steps (1x, 2x, 3x)",
+  "@settings.zoomStep.whole": {
+    "context": "Choice in the 'Zoom steps' dropdown (Settings dialog, Emulator page): how the emulated screen's zoom snaps when the window is resized. Keep the multipliers in brackets."
+  },
+  "settings.zoomStep.half": "Half Steps (1x, 1.5x, 2x)",
+  "@settings.zoomStep.half": {
+    "context": "Choice in the 'Zoom steps' dropdown (Settings dialog, Emulator page): how the emulated screen's zoom snaps when the window is resized. Keep the multipliers in brackets."
+  },
+  "settings.zoomStep.quarter": "Quarter Steps (1x, 1.25x, 1.5x)",
+  "@settings.zoomStep.quarter": {
+    "context": "Choice in the 'Zoom steps' dropdown (Settings dialog, Emulator page): how the emulated screen's zoom snaps when the window is resized. Keep the multipliers in brackets."
+  },
+  "settings.fontSize.smallest": "Smallest",
+  "@settings.fontSize.smallest": {
+    "context": "Choice in a font-size dropdown (Settings dialog: the editor's and the data panels' font size)."
+  },
+  "settings.fontSize.small": "Small",
+  "@settings.fontSize.small": {
+    "context": "Choice in a font-size dropdown (Settings dialog: the editor's and the data panels' font size)."
+  },
+  "settings.fontSize.medium": "Medium",
+  "@settings.fontSize.medium": {
+    "context": "Choice in a font-size dropdown (Settings dialog: the editor's and the data panels' font size)."
+  },
+  "settings.fontSize.large": "Large",
+  "@settings.fontSize.large": {
+    "context": "Choice in a font-size dropdown (Settings dialog: the editor's and the data panels' font size)."
+  },
+  "settings.fontSize.largest": "Largest",
+  "@settings.fontSize.largest": {
+    "context": "Choice in a font-size dropdown (Settings dialog: the editor's and the data panels' font size)."
+  },
+  "settings.accent.sinclairBlue": "Sinclair Blue",
+  "@settings.accent.sinclairBlue": {
+    "context": "Name of a colour accent (Settings dialog, Appearance page, 'Accent' swatches). 'Sinclair' and 'Spectrum' are brand names; keep them."
+  },
+  "settings.accent.spectrumMagenta": "Spectrum Magenta",
+  "@settings.accent.spectrumMagenta": {
+    "context": "Name of a colour accent (Settings dialog, Appearance page, 'Accent' swatches). 'Sinclair' and 'Spectrum' are brand names; keep them."
+  },
+  "settings.accent.ember": "Ember",
+  "@settings.accent.ember": {
+    "context": "Name of a colour accent (Settings dialog, Appearance page, 'Accent' swatches). 'Sinclair' and 'Spectrum' are brand names; keep them."
+  },
+  "settings.accent.ultraviolet": "Ultraviolet",
+  "@settings.accent.ultraviolet": {
+    "context": "Name of a colour accent (Settings dialog, Appearance page, 'Accent' swatches). 'Sinclair' and 'Spectrum' are brand names; keep them."
+  },
+  "settings.accent.deepTeal": "Deep Teal",
+  "@settings.accent.deepTeal": {
+    "context": "Name of a colour accent (Settings dialog, Appearance page, 'Accent' swatches). 'Sinclair' and 'Spectrum' are brand names; keep them."
+  },
+  "settings.accent.phosphorGreen": "Phosphor Green",
+  "@settings.accent.phosphorGreen": {
+    "context": "Name of a colour accent (Settings dialog, Appearance page, 'Accent' swatches). 'Sinclair' and 'Spectrum' are brand names; keep them."
+  }
+}

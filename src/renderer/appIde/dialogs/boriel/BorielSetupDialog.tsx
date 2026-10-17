@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 
+import { useT } from "@common/i18n/useT";
 import { Modal } from "@controls/Modal";
 import { useMainApi } from "@renderer/core/MainApi";
 import { useController } from "@mvc/react/useController";
@@ -24,6 +25,8 @@ type Props = {
  * Every decision lives in the controller and the model.
  */
 export const BorielSetupDialog = ({ mode = "settings", onClose }: Props) => {
+  // --- Subscribes the dialog to language changes; its texts come from the view model
+  useT();
   const mainApi = useMainApi();
   const files = useFilePickerPort();
 

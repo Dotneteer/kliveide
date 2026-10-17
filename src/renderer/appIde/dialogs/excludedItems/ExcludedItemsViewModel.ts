@@ -1,8 +1,6 @@
-import {
-  excludedIdsOf,
-  projectListLabelOf,
-  type ExcludedItemsState
-} from "./ExcludedItemsModel";
+import { t } from "@common/i18n/i18n";
+
+import { excludedIdsOf, UNNAMED_PROJECT, type ExcludedItemsState } from "./ExcludedItemsModel";
 
 // ─── View model shape ────────────────────────────────────────────────────────
 
@@ -30,6 +28,14 @@ export type ExcludedItemsViewModel = {
 
 // ─── Selector ────────────────────────────────────────────────────────────────
 
+// --- The project list's heading. Text lives here rather than in the model, which stays text-free.
+export function projectListLabelOf(state: ExcludedItemsState): string {
+  const name = state.env.projectName;
+  return t("dialog.excludedItems.projectList", {
+    project: name === UNNAMED_PROJECT ? t("dialog.excludedItems.unnamedProject") : name
+  });
+}
+
 export function selectViewModel(state: ExcludedItemsState): ExcludedItemsViewModel {
   return {
     projectList: {
@@ -37,7 +43,7 @@ export function selectViewModel(state: ExcludedItemsState): ExcludedItemsViewMod
       items: state.projectItems.map((item) => ({ ...item, removable: true }))
     },
     globalList: {
-      label: "Global Excludes:",
+      label: t("dialog.excludedItems.globalList"),
       items: state.globalItems.map((item) => ({ ...item, removable: false })),
       loading: state.globalsLoading
     },

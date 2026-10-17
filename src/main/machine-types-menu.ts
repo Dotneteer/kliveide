@@ -2,6 +2,7 @@ import type { MenuItemConstructorOptions } from "electron";
 import type { MachineInfo } from "@common/machines/info-types";
 import { resolveModelId } from "@common/machines/machine-registry";
 import { MachineFavorite, resolveMachineModel } from "@common/machines/machine-favorites";
+import { t } from "@common/i18n/i18n";
 
 /**
  * Selects a machine type (and model) from the machine menu
@@ -74,7 +75,7 @@ export function createMachineTypesMenu(
   if (items.length) items.push({ type: "separator" });
   items.push({
     id: SELECT_MACHINE_ITEM_ID,
-    label: "Select machine…",
+    label: t("menu.machine.selectMachine"),
     accelerator: SELECT_MACHINE_ACCELERATOR,
     click: async () => {
       await openSelector();

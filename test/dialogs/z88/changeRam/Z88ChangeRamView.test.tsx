@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import type { Z88ChangeRamIntent } from "@renderer/appEmu/dialogs/z88/changeRam/Z88ChangeRamIntents";
-import { RAM_CHANGE_WARNING } from "@renderer/appEmu/dialogs/z88/changeRam/Z88ChangeRamModel";
+import { ramChangeWarning } from "@renderer/appEmu/dialogs/z88/changeRam/Z88ChangeRamViewModel";
 import { Z88ChangeRamView } from "@renderer/appEmu/dialogs/z88/changeRam/Z88ChangeRamView";
 import type { Z88ChangeRamViewModel } from "@renderer/appEmu/dialogs/z88/changeRam/Z88ChangeRamViewModel";
 
@@ -29,9 +29,9 @@ describe("Z88ChangeRamView", () => {
   });
 
   it("renders the restart warning the view model carries", () => {
-    renderView({ warning: RAM_CHANGE_WARNING });
+    renderView({ warning: ramChangeWarning() });
 
-    expect(screen.getByTestId("z88-ram-warning")).toHaveTextContent(RAM_CHANGE_WARNING);
+    expect(screen.getByTestId("z88-ram-warning")).toHaveTextContent(ramChangeWarning());
   });
 
   it("renders no warning row when the view model carries none", () => {

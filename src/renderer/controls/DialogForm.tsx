@@ -1,5 +1,6 @@
 import type { FormEvent, ReactNode } from "react";
 import { useRef, useState } from "react";
+import { useT } from "@common/i18n/useT";
 import { Button } from "./Button";
 import styles from "./DialogForm.module.scss";
 
@@ -19,11 +20,13 @@ export function DialogForm({
   submitLabel,
   submitDisabled = false,
   submitDanger = false,
-  cancelLabel = "Cancel",
+  cancelLabel,
   submitting: submittingProp,
   onSubmit,
   onCancel
 }: DialogFormProps) {
+  const t = useT();
+  cancelLabel ??= t("common.button.cancel");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const submitting = submittingProp ?? isSubmitting;

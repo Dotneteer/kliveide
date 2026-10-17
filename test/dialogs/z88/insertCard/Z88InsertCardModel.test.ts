@@ -9,15 +9,17 @@ import {
   configWithSlot0,
   fallbackTypeFor,
   initialState,
-  invalidSizeMessage,
   isAcceptedSize,
   needsFile,
   pickerSizesOf,
   reduce,
   requiresRestart,
-  slotStateOf,
-  titleOf
+  slotStateOf
 } from "@renderer/appEmu/dialogs/z88/insertCard/Z88InsertCardModel";
+import {
+  invalidSizeMessage,
+  titleOf
+} from "@renderer/appEmu/dialogs/z88/insertCard/Z88InsertCardViewModel";
 
 import { CardIds, MC_Z88_SLOT0, aState, anEnv } from "./fakes";
 

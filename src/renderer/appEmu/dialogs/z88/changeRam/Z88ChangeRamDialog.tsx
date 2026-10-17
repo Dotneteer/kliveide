@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from "react";
 
 import { Modal } from "@renderer/controls/Modal";
+import { useT } from "@common/i18n/useT";
 import { useController } from "@mvc/react/useController";
 import { useViewModel } from "@mvc/react/useViewModel";
 
@@ -21,6 +22,7 @@ type Props = {
  * modal frame around the view.
  */
 export const Z88ChangeRamDialog = ({ onClose, onChange }: Props) => {
+  const t = useT();
   const machine = useZ88MachinePort();
   const output = useZ88OutputPort();
   const env = useZ88Environment();
@@ -58,7 +60,7 @@ export const Z88ChangeRamDialog = ({ onClose, onChange }: Props) => {
   return (
     <Modal
       isOpen={true}
-      title="Change Z88 RAM size"
+      title={t("dialog.z88.changeRam.title")}
       iconName="chip"
       width={300}
       translateY={0}

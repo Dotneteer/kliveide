@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 
-import {
-  CREATE_ERROR_TITLE,
-  NEW_PROJECT_FOLDER_SETTINGS_KEY
-} from "@renderer/appIde/dialogs/newProject/NewProjectModel";
+import { t } from "@common/i18n/i18n";
+import { NEW_PROJECT_FOLDER_SETTINGS_KEY } from "@renderer/appIde/dialogs/newProject/NewProjectModel";
+
+const CREATE_ERROR_TITLE = () => t("dialog.newProject.error.title");
 
 import { deferred } from "../../mvc/deferred";
 import {
@@ -279,7 +279,7 @@ describe("NewProjectController — when a step fails", () => {
     await h.dispatch({ type: "createRequested" });
 
     expect(h.ports.service.openFolder).not.toHaveBeenCalled();
-    expect(h.ports.service.notify).toHaveBeenCalledWith("error", CREATE_ERROR_TITLE, "disk full");
+    expect(h.ports.service.notify).toHaveBeenCalledWith("error", CREATE_ERROR_TITLE(), "disk full");
     expect(h.ports.close.created).not.toHaveBeenCalled();
     // --- The dialog stays open with what the user typed still in it.
     expect(h.vm.projectName.value).toBe("MyProject");
@@ -304,7 +304,7 @@ describe("NewProjectController — when a step fails", () => {
     expect(h.ports.service.ensureProjectLoaded).not.toHaveBeenCalled();
     expect(h.ports.service.notify).toHaveBeenCalledWith(
       "error",
-      CREATE_ERROR_TITLE,
+      CREATE_ERROR_TITLE(),
       "Error opening folder: no such directory"
     );
     expect(h.ports.close.created).not.toHaveBeenCalled();
@@ -330,7 +330,7 @@ describe("NewProjectController — when a step fails", () => {
     expect(h.ports.service.ensureWorkspaceLoaded).not.toHaveBeenCalled();
     expect(h.ports.service.notify).toHaveBeenCalledWith(
       "error",
-      CREATE_ERROR_TITLE,
+      CREATE_ERROR_TITLE(),
       "project is corrupt"
     );
     expect(consoleError).toHaveBeenCalledWith(
@@ -351,7 +351,7 @@ describe("NewProjectController — when a step fails", () => {
 
     expect(h.ports.service.notify).toHaveBeenCalledWith(
       "error",
-      CREATE_ERROR_TITLE,
+      CREATE_ERROR_TITLE(),
       "Creating the Klive project timed out after 0.01 seconds."
     );
     // --- And the dialog comes back to life rather than staying stuck busy.

@@ -38,8 +38,10 @@ import {
   renameExplorerNode
 } from "./explorerFileOperations";
 import { handleExplorerKeyboardCommand } from "./explorerKeyboard";
+import { useT } from "@common/i18n/useT";
 
 export const ExplorerPanel = () => {
+  const t = useT();
   // --- Services used in this component
   const { store, messenger } = useRendererContext();
   const mainApi = useMainApi();
@@ -279,7 +281,7 @@ export const ExplorerPanel = () => {
         {
           oldPath
         },
-        { title: nodeIsFolder ? "Rename folder" : "Rename file", width: 500, iconName: "pencil" }
+        { title: t(nodeIsFolder ? "explorer.dialog.renameFolder" : "explorer.dialog.renameFile"), width: 500, iconName: "pencil" }
       );
       if (!result) return;
       await renameExplorerNode({
@@ -304,7 +306,7 @@ export const ExplorerPanel = () => {
         DeleteDialog,
         { isFolder: nodeIsFolder, entry: node.data.projectPath },
         {
-          title: nodeIsFolder ? "Delete folder" : "Delete file",
+          title: t(nodeIsFolder ? "explorer.dialog.deleteFolder" : "explorer.dialog.deleteFile"),
           width: 500,
           dialogRole: "alertdialog",
           iconName: "warning",
@@ -330,7 +332,7 @@ export const ExplorerPanel = () => {
       const result = await dialogs.open<NewItemDialogResult, Omit<ComponentProps<typeof NewItemDialog>, "controls">>(
         NewItemDialog,
         { isFolder: newItemIsFolder, path: node.data?.name, itemNames },
-        { title: `Add new ${newItemIsFolder ? "folder" : "file"}`, width: 500, iconName: "plus" }
+        { title: t(newItemIsFolder ? "explorer.dialog.addFolder" : "explorer.dialog.addFile"), width: 500, iconName: "plus" }
       );
       if (!result) return;
       await addExplorerItem({
@@ -461,7 +463,7 @@ export const ExplorerPanel = () => {
        * with different actions, so this says its own thing rather than reusing it.
        */
       <div className={styles.noVisibleItems}>
-        <EmptyState message="This project has no files to show. Check Excluded Items in the project settings." />
+        <EmptyState message={t("explorer.empty.noVisibleItems")} />
       </div>
     )
   ) : (

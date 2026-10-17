@@ -1,12 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  ADDRESS_RANGE_MESSAGE,
   EXPORT_CODE_FOLDER_SETTINGS_KEY,
-  EXPORT_SUCCESS_MESSAGE,
-  EXPORT_TITLE,
   SCREEN_FILE_FILTERS
 } from "@renderer/appIde/dialogs/exportCode/ExportCodeModel";
+import { exportTitle } from "@renderer/appIde/dialogs/exportCode/ExportCodeViewModel";
 
 import { deferred } from "../../mvc/deferred";
 import type { ExportCommandResult } from "@renderer/appIde/dialogs/exportCode/ExportCodePorts";
@@ -143,8 +141,8 @@ describe("ExportCodeController — exporting", () => {
     );
     expect(h.ports.service.notify).toHaveBeenCalledWith(
       "info",
-      EXPORT_TITLE,
-      EXPORT_SUCCESS_MESSAGE
+      exportTitle(),
+      "Code successfully exported."
     );
     expect(h.ports.close.exported).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -166,7 +164,7 @@ describe("ExportCodeController — exporting", () => {
 
     expect(h.ports.service.notify).toHaveBeenCalledWith(
       "info",
-      EXPORT_TITLE,
+      exportTitle(),
       "Wrote 2 blocks."
     );
   });
@@ -181,7 +179,7 @@ describe("ExportCodeController — exporting", () => {
 
     expect(h.ports.service.notify).toHaveBeenCalledWith(
       "error",
-      EXPORT_TITLE,
+      exportTitle(),
       "Assembler not found"
     );
     expect(h.ports.close.exported).not.toHaveBeenCalled();
@@ -198,8 +196,8 @@ describe("ExportCodeController — exporting", () => {
 
     expect(h.ports.service.notify).toHaveBeenCalledWith(
       "error",
-      EXPORT_TITLE,
-      ADDRESS_RANGE_MESSAGE
+      exportTitle(),
+      "Code start address must be between 16384 and 65535."
     );
   });
 
@@ -215,7 +213,7 @@ describe("ExportCodeController — exporting", () => {
 
     expect(h.ports.service.notify).toHaveBeenCalledWith(
       "error",
-      EXPORT_TITLE,
+      exportTitle(),
       "Code export failed"
     );
     expect(h.vm.submitting).toBe(false);

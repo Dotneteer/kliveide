@@ -1289,6 +1289,21 @@ and the folder field stay neutral. **`--color-secondary-label` is not a green**:
 `--data-secondary`, a grey, so a "working" state painted with it reads as disabled (the SJASMPLUS
 dialog's comment claiming otherwise is stale).
 
+## Translated Text Is ~40 % Longer: Check New UI In The `qps` Locale
+
+UI text goes through `t()` (`.plans/LOCALIZATION_PLAN.md`), and German/Hungarian run about 35-40 %
+longer than English. In a dev build, Settings › Language › *Pseudo-locale (qps)* switches the whole
+UI live to accented, padded, bracketed text (`[Ðîšþļåý ļåñĝûåĝé~~~~]`): unaccented text was never
+extracted, and a missing `]` means the text was clipped. Look at any new label, button, column
+header or status-bar item in `qps` before calling it done.
+
+- Size text containers by content or `min-width`, never by a width fitted to the English string.
+- Capitalization is the translator's, not CSS's: do not add a `text-transform` to make English
+  Title Case or upper case for a *new* element. Group headings that already upper-case
+  (`SETTINGS`, `DISPLAY`) are a settled style; they cope with `ő ű` because Inter's `latin-ext`
+  subset is loaded.
+- A language's name is shown in itself (*Deutsch*, *Magyar*) and never translated.
+
 ## A Status-Bar Item That Names A Choice Stays Plain Text
 
 The BASIC compiler item (`IdeStatusBar`, `.plans/BORIEL_BASIC_INTEGRATION_PLAN.md` §8) shows while a

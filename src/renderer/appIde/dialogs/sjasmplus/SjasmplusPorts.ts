@@ -6,6 +6,7 @@ import type {
   SjasmplusReleaseListRequest,
   SjasmplusReleaseListResult
 } from "@common/messaging/SjasmplusIntegration";
+import { withTexts } from "@common/i18n/labels";
 import type { ConfirmPort, DialogClosePort, FilePickerPort } from "@mvc/dialogs/DialogPorts";
 
 export type SjasmplusIntegrationDialogResult = "close";
@@ -35,7 +36,7 @@ export type SjasmplusPorts = {
 };
 
 export const SJASMPLUS_EXECUTABLE_FILTERS = [
-  { name: "SJASMPLUS executable", extensions: ["exe", "*"] }
+  withTexts({ name: "", extensions: ["exe", "*"] }, { name: "dialog.sjasmplus.filter.executable" })
 ];
 
 export const SJASMPLUS_EXECUTABLE_SETTINGS_KEY = "sjasmplusExecutable";

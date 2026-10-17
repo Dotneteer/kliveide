@@ -4,12 +4,10 @@ import { UiController } from "@mvc/core/UiController";
 import type { Z88Environment } from "../Z88Ports";
 import type { Z88InsertCardIntent } from "./Z88InsertCardIntents";
 import {
-  INVALID_CARD_TITLE,
   canInsert,
   configWithSlot0,
   fallbackTypeFor,
   initialState,
-  invalidSizeMessage,
   isAcceptedSize,
   pickerSizesOf,
   reduce,
@@ -19,7 +17,12 @@ import {
   type Z88InsertCardState
 } from "./Z88InsertCardModel";
 import type { Z88InsertCardPorts } from "./Z88InsertCardPorts";
-import { selectViewModel, type Z88InsertCardViewModel } from "./Z88InsertCardViewModel";
+import {
+  invalidCardTitle,
+  invalidSizeMessage,
+  selectViewModel,
+  type Z88InsertCardViewModel
+} from "./Z88InsertCardViewModel";
 
 /**
  * Orchestrates the Insert Card dialog: pick a file, judge it, maybe substitute
@@ -101,14 +104,14 @@ export class Z88InsertCardController extends UiController<
         this.emit({ type: "fileChanged", file: undefined });
         await this.ports.cardFile.notify(
           "error",
-          INVALID_CARD_TITLE,
+          invalidCardTitle(),
           invalidSizeMessage(byteLength)
         );
         return;
       }
     } else if (check.message) {
       this.emit({ type: "fileChanged", file: undefined });
-      await this.ports.cardFile.notify("error", INVALID_CARD_TITLE, check.message);
+      await this.ports.cardFile.notify("error", invalidCardTitle(), check.message);
       return;
     }
 

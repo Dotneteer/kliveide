@@ -16,11 +16,13 @@ import { getIdeApi } from "@messaging/MainToIdeMessenger";
 import { mainStore } from "@main/main-store";
 import { displaySaveFileDialog } from "./save-file-dialog";
 import { appSettings, saveAppSettings } from "./settings-utils";
+import { t } from "@common/i18n/i18n";
 
 /** The settings key of the folder the last recording was saved to or opened from */
 export const DEBUG_RECORDING_FOLDER = "debugRecordingFolder";
 
-const FILTERS = [{ name: "Klive debug recordings", extensions: ["klr"] }];
+/** A function, so the filter name is in the current language (LOCALIZATION_PLAN D7) */
+const filters = () => [{ name: t("common.filter.debugRecordings"), extensions: ["klr"] }];
 
 /** Whether the machine keeps a reverse-debugging timeline now: Save Debug Recording… needs one (D17) */
 export function canSaveDebugRecording(state: AppState = mainStore.getState()): boolean {
@@ -35,30 +37,30 @@ export function defaultRecordingFileName(state: AppState): string {
 }
 
 async function showError(window: BrowserWindow, message: string): Promise<void> {
-  await dialog.showMessageBox(window, { type: "error", title: "Debug Recording", message });
+  await dialog.showMessageBox(window, { type: "error", title: t("messages.debugRecording.title"), message });
 }
 
 /** Asks for a file and saves the timeline into it */
 export async function saveDebugRecordingAs(window: BrowserWindow): Promise<void> {
   let filename = await displaySaveFileDialog(window, {
-    title: "Save Debug Recording",
+    title: t("messages.debugRecording.saveTitle"),
     defaultPath: defaultRecordingFileName(mainStore.getState()),
-    filters: FILTERS,
+    filters: filters(),
     settingsId: DEBUG_RECORDING_FOLDER
   });
   if (!filename) return;
   if (!/\.klr$/i.test(filename)) filename += ".klr";
   // --- The dialog has already confirmed any overwrite
   const done = await getIdeApi().executeCommand(debugRecordingSaveCommandText(filename, true));
-  if (!done?.success) await showError(window, done?.finalMessage ?? `Could not save ${filename}`);
+  if (!done?.success) await showError(window, done?.finalMessage ?? t("messages.couldNotSave", { file: filename }));
 }
 
 /** Asks for a recording and opens it */
 export async function pickAndOpenDebugRecording(window: BrowserWindow): Promise<void> {
   const result = await dialog.showOpenDialog(window, {
-    title: "Open Debug Recording",
+    title: t("messages.debugRecording.openTitle"),
     defaultPath: appSettings?.folders?.[DEBUG_RECORDING_FOLDER] || undefined,
-    filters: FILTERS,
+    filters: filters(),
     properties: ["openFile"]
   });
   if (result.canceled || result.filePaths.length < 1) return;
@@ -79,15 +81,15 @@ export async function openDebugRecordingFile(window: BrowserWindow, filename: st
   if (!done?.success && message.endsWith(DEBUG_RECORDING_FALLBACK_HINT)) {
     const answer = await dialog.showMessageBox(window, {
       type: "warning",
-      title: "Debug Recording",
+      title: t("messages.debugRecording.title"),
       message: message.slice(0, -DEBUG_RECORDING_FALLBACK_HINT.length).trim(),
-      detail: "A recording replays only in the Klive build that made it. Open its end state instead, without its past?",
-      buttons: ["Open End State", "Cancel"],
+      detail: t("messages.debugRecording.offerEndState"),
+      buttons: [t("common.button.openEndState"), t("common.button.cancel")],
       defaultId: 1,
       cancelId: 1
     });
     if (answer.response !== 0) return;
     done = await getIdeApi().executeCommand(debugRecordingLoadCommandText(filename, { acceptFallback: true }));
   }
-  if (!done?.success) await showError(window, done?.finalMessage ?? `Could not open ${filename}`);
+  if (!done?.success) await showError(window, done?.finalMessage ?? t("messages.couldNotOpen", { file: filename }));
 }

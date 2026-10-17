@@ -1,5 +1,6 @@
 import { DialogRow } from "@renderer/controls/DialogRow";
 import { Modal } from "@renderer/controls/Modal";
+import { useT } from "@common/i18n/useT";
 
 type Props = {
   slot: number;
@@ -27,22 +28,23 @@ export type Z88ExportCardDialogResult = {
  * registry entry passes it and the feature it is reserved for is still intended.
  */
 export const Z88ExportCardDialog = ({ slot, onClose }: Props) => {
+  const t = useT();
   return (
     <Modal
       isOpen={true}
-      title={`Export the Content of Z88 Card in Slot ${slot}`}
+      title={t("dialog.z88ExportCard.title", { slot })}
       iconName="repo-push"
       width={420}
       translateY={0}
       primaryVisible={false}
-      cancelLabel="Close"
+      cancelLabel={t("common.button.close")}
       initialFocus="cancel"
       onClose={() => {
         onClose();
       }}
     >
       <DialogRow>
-        <div>This function is not implemented yet.</div>
+        <div>{t("dialog.z88ExportCard.notImplemented")}</div>
       </DialogRow>
     </Modal>
   );

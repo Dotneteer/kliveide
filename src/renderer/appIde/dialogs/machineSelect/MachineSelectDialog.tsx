@@ -6,6 +6,7 @@ import type {
   MachineSelectDialogResult
 } from "@common/messaging/machine-select-dialog";
 import { Modal } from "@renderer/controls/Modal";
+import { useT } from "@common/i18n/useT";
 import {
   createInitialState,
   reduce,
@@ -33,7 +34,9 @@ type Props = {
 export const MachineSelectDialog = ({ data, onResult, onClose }: Props) => {
   const catalogue = useMemo(() => buildCatalogue(machineRegistry), []);
   const [state, dispatch] = useReducer(reduce, undefined, () => createInitialState(data, machineRegistry));
-  const vm = useMemo(() => selectViewModel(state, catalogue), [state, catalogue]);
+  const t = useT();
+  // --- `t` is passed in so the view model's texts follow a language switch
+  const vm = useMemo(() => selectViewModel(state, catalogue, t), [state, catalogue, t]);
   const stateRef = useRef(state);
   stateRef.current = state;
 
@@ -62,7 +65,7 @@ export const MachineSelectDialog = ({ data, onResult, onClose }: Props) => {
 
   return (
     <Modal
-      title="Select Machine"
+      title={t("dialog.machineSelect.title")}
       iconName="vm"
       isOpen={true}
       width={880}
@@ -70,7 +73,7 @@ export const MachineSelectDialog = ({ data, onResult, onClose }: Props) => {
       primaryLabel={vm.switchLabel}
       primaryEnabled={vm.switchEnabled}
       onPrimaryClicked={switchTo}
-      secondaryLabel="Save"
+      secondaryLabel={t("dialog.machineSelect.save")}
       secondaryVisible={true}
       secondaryEnabled={vm.saveEnabled}
       onSecondaryClicked={save}

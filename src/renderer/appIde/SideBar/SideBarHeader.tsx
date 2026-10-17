@@ -1,3 +1,4 @@
+import { useT } from "@common/i18n/useT";
 import { ForwardedRef, forwardRef, useRef } from "react";
 import { Activity } from "../../abstractions/Activity";
 import { SmallIconButton } from "@renderer/controls/IconButton";
@@ -9,6 +10,7 @@ type Props = {
 };
 
 export const SideBarHeader = forwardRef(({ activity }: Props, ref: ForwardedRef<HTMLDivElement>) => {
+  const t = useT();
   const [menuState, menuApi] = useContextMenuState();
 
   /*
@@ -31,7 +33,7 @@ export const SideBarHeader = forwardRef(({ activity }: Props, ref: ForwardedRef<
           <span ref={menuAnchor}>
             <SmallIconButton
               iconName="ellipsis"
-              title={`${activity.title} actions`}
+              title={t("panels.sideBar.activityActions", { activity: activity.title })}
               clicked={() => menuApi.showAt(menuAnchor.current)}
             />
           </span>

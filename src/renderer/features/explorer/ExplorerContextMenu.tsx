@@ -1,3 +1,4 @@
+import { useT } from "@common/i18n/useT";
 import { AppServices } from "@renderer/abstractions/AppServices";
 import { FileTypeEditor } from "@renderer/abstractions/FileTypePattern";
 import { AppState } from "@common/state/AppState";
@@ -62,42 +63,43 @@ export function ExplorerContextMenu({
   state,
   store
 }: ExplorerContextMenuProps) {
+  const t = useT();
   return (
     <ContextMenu state={state} onClickOutside={onClickOutside}>
       {selectedNodeIsRoot && (
         <>
-          <ContextMenuItem text="Refresh" clicked={async () => runAsync(onRefresh)} />
+          <ContextMenuItem text={t("explorer.menu.refresh")} clicked={async () => runAsync(onRefresh)} />
         </>
       )}
       {selectedContextNodeIsFolder && (
         <>
-          <ContextMenuItem text="New file..." clicked={() => run(onNewFile)} />
-          <ContextMenuItem text="New folder..." clicked={() => run(onNewFolder)} />
+          <ContextMenuItem text={t("explorer.menu.newFile")} clicked={() => run(onNewFile)} />
+          <ContextMenuItem text={t("explorer.menu.newFolder")} clicked={() => run(onNewFolder)} />
           <ContextMenuSeparator />
-          <ContextMenuItem text="Expand all" clicked={() => run(onExpandAll)} />
-          <ContextMenuItem text="Collapse all" clicked={() => run(onCollapseAll)} />
+          <ContextMenuItem text={t("explorer.menu.expandAll")} clicked={() => run(onExpandAll)} />
+          <ContextMenuItem text={t("explorer.menu.collapseAll")} clicked={() => run(onCollapseAll)} />
           <ContextMenuSeparator />
         </>
       )}
       <ContextMenuItem
-        text={`Reveal in ${isWindows ? "File Explorer" : "Finder"}`}
+        text={t(isWindows ? "explorer.menu.revealInFileExplorer" : "explorer.menu.revealInFinder")}
         disabled={!selectedContextNode?.data.fullPath}
         clicked={() => run(onReveal)}
       />
       <ContextMenuSeparator />
       <ContextMenuItem
-        text="Rename..."
+        text={t("explorer.menu.rename")}
         disabled={selectedNodeIsProjectFile || selectedNodeIsRoot}
         clicked={() => run(onRename)}
       />
       <ContextMenuItem
-        text="Exclude"
+        text={t("explorer.menu.exclude")}
         disabled={selectedNodeIsProjectFile || selectedNodeIsRoot || !isKliveProject}
         clicked={async () => runAsync(onExclude)}
       />
       <ContextMenuItem
         dangerous={true}
-        text="Delete"
+        text={t("explorer.menu.delete")}
         disabled={selectedNodeIsProjectFile || selectedNodeIsRoot}
         clicked={() => run(onDelete)}
       />
@@ -105,7 +107,7 @@ export function ExplorerContextMenu({
         <>
           <ContextMenuSeparator />
           <ContextMenuItem
-            text={selectedNodeIsBuildRoot ? "Demote from Build Root" : "Promote to Build Root"}
+            text={t(selectedNodeIsBuildRoot ? "explorer.menu.demoteBuildRoot" : "explorer.menu.promoteBuildRoot")}
             clicked={async () => runAsync(onToggleBuildRoot)}
             disabled={!isKliveProject}
           />

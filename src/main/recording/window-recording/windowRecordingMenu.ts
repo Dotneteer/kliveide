@@ -7,6 +7,7 @@ import {
   setWindowRecordingIdePositionAction,
   setWindowRecordingPointerAction
 } from "@common/state/actions";
+import { t } from "@common/i18n/i18n";
 
 /**
  * The IDE + Emulator recording item of Machine › Record (`.plans/IDE_EMU_RECORDING_PLAN.md` §5.2).
@@ -43,7 +44,7 @@ export function createWindowRecordingMenuItems(
   return [
     {
       id: "recording_ide_emu_start_stop",
-      label: recording ? "Stop IDE + Emulator recording" : "Start IDE + Emulator recording",
+      label: recording ? t("menu.machine.stopIdeEmu") : t("menu.machine.startIdeEmu"),
       accelerator: context.shortcut,
       // --- One recording at a time; the IDE must be visible to be recorded
       enabled: recording || (screenIdle && context.ideWindowVisible),

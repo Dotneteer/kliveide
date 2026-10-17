@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { execFile } from "child_process";
 import { app, dialog, type BrowserWindow } from "electron";
+import { t } from "@common/i18n/i18n";
 
 /*
  * Klive › Install Command Line Tool… (`.plans/UNIT_TESTS_CLI_PLAN.md` D12, macOS): a symlink from
@@ -44,19 +45,19 @@ export function linkPointsTo(link: string, launcher: string): boolean {
 export async function installCommandLineTool(window?: BrowserWindow): Promise<void> {
   const show = (type: "info" | "error", message: string, detail?: string) =>
     window
-      ? dialog.showMessageBox(window, { type, message, detail, buttons: ["OK"] })
-      : dialog.showMessageBox({ type, message, detail, buttons: ["OK"] });
+      ? dialog.showMessageBox(window, { type, message, detail, buttons: [t("common.button.ok")] })
+      : dialog.showMessageBox({ type, message, detail, buttons: [t("common.button.ok")] });
   const launcher = cliLauncherPath();
   if (!launcher) {
     await show(
       "error",
-      "The command line tool is part of the installed app.",
-      "In a development build, run: ELECTRON_RUN_AS_NODE=1 npx electron out/main/cli.js <verb>"
+      t("messages.cli.onlyInstalled"),
+      t("messages.cli.devHint", { command: "ELECTRON_RUN_AS_NODE=1 npx electron out/main/cli.js <verb>" })
     );
     return;
   }
   if (linkPointsTo(CLI_LINK_PATH, launcher)) {
-    await show("info", `'klive' is installed already: ${CLI_LINK_PATH}.`, "Try 'klive help' in a new terminal.");
+    await show("info", t("messages.cli.alreadyInstalled", { path: CLI_LINK_PATH }), t("messages.cli.tryHelp"));
     return;
   }
   const result = await new Promise<{ ok: boolean; cancelled: boolean; message: string }>((resolve) => {
@@ -68,8 +69,8 @@ export async function installCommandLineTool(window?: BrowserWindow): Promise<vo
   });
   if (result.cancelled) return;
   if (result.ok) {
-    await show("info", `Installed 'klive' as ${CLI_LINK_PATH}.`, "Try 'klive help' or 'klive test' in a new terminal.");
+    await show("info", t("messages.cli.installed", { path: CLI_LINK_PATH }), t("messages.cli.tryHelpOrTest"));
   } else {
-    await show("error", "The command line tool could not be installed.", result.message);
+    await show("error", t("messages.cli.failed"), result.message);
   }
 }

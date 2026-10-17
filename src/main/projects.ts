@@ -52,6 +52,7 @@ import { processBuildFile } from "./build";
 import { KliveGlobalSettings } from "@common/settings/setting-definitions";
 import { appSettings, getSettingDefinition, saveAppSettings } from "./settings-utils";
 import { get, set } from "lodash";
+import { t } from "@common/i18n/i18n";
 
 type ProjectCreationResult = {
   path?: string;
@@ -141,7 +142,7 @@ export async function openFolder(browserWindow: BrowserWindow): Promise<void> {
   // --- Open the project
   try {
     const dialogResult = await dialog.showOpenDialog(browserWindow, {
-      title: "Select Project Folder",
+      title: t("messages.project.selectFolder"),
       defaultPath,
       properties: ["openDirectory"]
     });
@@ -273,7 +274,12 @@ export async function openFolderByPath(projectFolder: string): Promise<string | 
         `The project in ${projectFolder} was not loaded completely: ` +
         (err instanceof Error ? err.message : String(err));
       console.error(loadError, err);
-      reportProjectOpenError(loadError);
+      reportProjectOpenError(
+        t("messages.project.loadedIncompletely", {
+          folder: projectFolder,
+          error: err instanceof Error ? err.message : String(err)
+        })
+      );
     }
   }
 
@@ -306,9 +312,9 @@ function reportProjectOpenError(detail: string): void {
   const options = {
     type: "error" as const,
     title: "Klive IDE",
-    message: "The project could not be loaded",
+    message: t("messages.project.notLoaded"),
     detail,
-    buttons: ["OK"]
+    buttons: [t("common.button.ok")]
   };
   const owner = BrowserWindow.getFocusedWindow();
   (owner ? dialog.showMessageBox(owner, options) : dialog.showMessageBox(options)).catch(

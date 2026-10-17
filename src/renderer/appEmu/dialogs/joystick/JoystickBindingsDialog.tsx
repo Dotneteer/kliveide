@@ -22,6 +22,7 @@ import { SETTING_EMU_JOYSTICK_BINDINGS } from "@common/settings/setting-const";
 import { useGlobalSetting } from "@renderer/core/RendererProvider";
 import { useMainApi } from "@renderer/core/MainApi";
 import { Modal } from "@renderer/controls/Modal";
+import { useT } from "@common/i18n/useT";
 
 import styles from "./JoystickBindingsDialog.module.scss";
 
@@ -44,6 +45,7 @@ type Props = {
  * by assigning it.
  */
 export const JoystickBindingsDialog = ({ onSave, onClose }: Props) => {
+  const t = useT();
   const mainApi = useMainApi();
   const stored = normalizeJoystickBindings(useGlobalSetting(SETTING_EMU_JOYSTICK_BINDINGS));
   const [draft, setDraft] = useState<JoystickBindings>(stored);
@@ -85,12 +87,12 @@ export const JoystickBindingsDialog = ({ onSave, onClose }: Props) => {
 
   return (
     <Modal
-      title="Joystick bindings"
+      title={t("dialog.joystick.title")}
       iconName="keyboard"
       isOpen={true}
       width={720}
       onClose={onClose}
-      primaryLabel="Save"
+      primaryLabel={t("dialog.joystick.save")}
       primaryEnabled={!capturing}
       onPrimaryClicked={save}
       /* --- While a row is listening, Escape cancels the capture rather than the dialog. */
@@ -107,12 +109,12 @@ export const JoystickBindingsDialog = ({ onSave, onClose }: Props) => {
                 className={styles.linkButton}
                 onClick={() => setDraft((current) => resetSide(current, side))}
               >
-                Reset
+                {t("dialog.joystick.reset")}
               </button>
             </header>
 
             <label className={styles.sourceRow}>
-              <span className={styles.sourceLabel}>Driven by</span>
+              <span className={styles.sourceLabel}>{t("dialog.joystick.drivenBy")}</span>
               <select
                 className={styles.select}
                 value={draft[side].source}
@@ -147,7 +149,7 @@ export const JoystickBindingsDialog = ({ onSave, onClose }: Props) => {
                           className={listening ? styles.keyListening : styles.key}
                           onClick={() => setCapturing({ side, button })}
                         >
-                          {listening ? "Press a key…" : describeKeyCode(code)}
+                          {listening ? t("dialog.joystick.pressKey") : describeKeyCode(code)}
                         </button>
                       </td>
                       <td className={styles.note}>
@@ -157,8 +159,8 @@ export const JoystickBindingsDialog = ({ onSave, onClose }: Props) => {
                           * kinder than letting it be discovered in a BASIC listing.
                           */}
                         {taken.length > 0 && (
-                          <span title="This key will no longer reach the machine's keyboard">
-                            takes {taken.join(" + ")}
+                          <span title={t("dialog.joystick.takesTooltip")}>
+                            {t("dialog.joystick.takes", { keys: taken.join(" + ") })}
                           </span>
                         )}
                       </td>
@@ -169,7 +171,7 @@ export const JoystickBindingsDialog = ({ onSave, onClose }: Props) => {
                           disabled={!code}
                           onClick={() => setDraft((current) => clearKey(current, side, button))}
                         >
-                          Clear
+                          {t("dialog.joystick.clear")}
                         </button>
                       </td>
                     </tr>

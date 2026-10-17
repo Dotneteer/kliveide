@@ -24,6 +24,7 @@ import { CLOCK_MULTIPLIERS, clockMultiplierLabel, SOUND_LEVELS } from "@common/m
 import { mainStore } from "@main/main-store";
 import { type MenuContext, windowInfoOf } from "./menu-context";
 import { hasVisibleItems, submenuContent, tidySeparators } from "./menu-utils";
+import { t } from "@common/i18n/i18n";
 
 /** Machine › Speed, or nothing for a machine with a fixed clock */
 export function createSpeedMenu(context: MenuContext): MenuItemConstructorOptions[] {
@@ -65,7 +66,7 @@ export function createDeviceMenus(context: MenuContext): MenuItemConstructorOpti
         { type: "separator" },
         {
           id: "input_settings",
-          label: "Input Settings...",
+          label: t("menu.machine.inputSettings"),
           click: async () => await context.openSettings("input")
         }
       );
@@ -83,7 +84,13 @@ export function createHardwareMenu(context: MenuContext): MenuItemConstructorOpt
     context.machineMenus?.hardwareItems?.(windowInfoOf(context), context.currentMachine, context.currentModel) ?? []
   );
   if (!hasVisibleItems(content)) return [];
-  return [{ id: "machine_hardware", label: context.currentMachine?.displayName ?? "Hardware", submenu: content }];
+  return [
+    {
+      id: "machine_hardware",
+      label: context.currentMachine?.displayName ?? t("menu.machine.hardware"),
+      submenu: content
+    }
+  ];
 }
 
 /** Machine › Record: the video, IDE + Emulator and RZX recordings */
@@ -103,14 +110,14 @@ export function createRecordMenu(context: MenuContext): MenuItemConstructorOptio
     items.push(
       {
         id: "recording_start_stop",
-        label: screenIdle ? "Start Video Recording" : "Stop Video Recording",
+        label: screenIdle ? t("menu.machine.startVideo") : t("menu.machine.stopVideo"),
         enabled: !windowRecording,
         click: async () =>
           await getEmuApi().issueRecordingCommand(screenIdle ? "start-recording" : "disarm")
       },
       {
         id: "recording_pause_resume",
-        label: recState === "paused" ? "Continue Video Recording" : "Pause Video Recording",
+        label: recState === "paused" ? t("menu.machine.continueVideo") : t("menu.machine.pauseVideo"),
         enabled: recState === "recording" || recState === "paused",
         click: async () =>
           await getEmuApi().issueRecordingCommand(
@@ -133,11 +140,11 @@ export function createRecordMenu(context: MenuContext): MenuItemConstructorOptio
     { type: "separator" },
     {
       id: "recording_settings",
-      label: "Recording Settings...",
+      label: t("menu.machine.recordingSettings"),
       click: async () => await context.openSettings("recording")
     }
   );
-  return [{ id: "recording_menu", label: "Record", submenu: tidySeparators(items) }];
+  return [{ id: "recording_menu", label: t("menu.machine.record"), submenu: tidySeparators(items) }];
 }
 
 export function createMachineMenu(context: MenuContext): MenuItemConstructorOptions {
@@ -168,11 +175,11 @@ export function createMachineMenu(context: MenuContext): MenuItemConstructorOpti
 
   const speed = createSpeedMenu(context);
   const items: MenuItemConstructorOptions[] = [
-    { id: "machine_types", label: "Machine Type", submenu: machineTypesMenu },
+    { id: "machine_types", label: t("menu.machine.machineType"), submenu: machineTypesMenu },
     { type: "separator" },
     {
       id: "start",
-      label: "Start",
+      label: t("menu.machine.start"),
       enabled: machineWaits,
       accelerator: "F5",
       click: async () => {
@@ -181,7 +188,7 @@ export function createMachineMenu(context: MenuContext): MenuItemConstructorOpti
     },
     {
       id: "pause",
-      label: "Pause",
+      label: t("menu.machine.pause"),
       enabled: machineRuns,
       accelerator: "Shift+F5",
       click: async () => {
@@ -190,7 +197,7 @@ export function createMachineMenu(context: MenuContext): MenuItemConstructorOpti
     },
     {
       id: "stop",
-      label: "Stop",
+      label: t("menu.machine.stop"),
       enabled: machineRestartable,
       accelerator: "F4",
       click: async () => {
@@ -199,7 +206,7 @@ export function createMachineMenu(context: MenuContext): MenuItemConstructorOpti
     },
     {
       id: "restart",
-      label: "Restart",
+      label: t("menu.machine.restart"),
       enabled: machineRestartable,
       accelerator: "Shift+F4",
       click: async () => {
@@ -214,13 +221,13 @@ export function createMachineMenu(context: MenuContext): MenuItemConstructorOpti
       }
     },
     { type: "separator" },
-    ...(speed.length ? [{ id: "clock_mult", label: "Speed", submenu: speed }] : []),
-    { id: "sound_level", label: "Sound", submenu: createSoundMenu(context) },
+    ...(speed.length ? [{ id: "clock_mult", label: t("menu.machine.speed"), submenu: speed }] : []),
+    { id: "sound_level", label: t("menu.machine.sound"), submenu: createSoundMenu(context) },
     { type: "separator" },
     ...createDeviceMenus(context),
     ...createHardwareMenu(context),
     { type: "separator" },
     ...createRecordMenu(context)
   ];
-  return { label: "Machine", submenu: tidySeparators(items) };
+  return { label: t("menu.machine.title"), submenu: tidySeparators(items) };
 }

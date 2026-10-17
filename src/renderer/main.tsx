@@ -19,6 +19,7 @@ import { registerMainToEmuIpc } from "./appEmu/MainToEmuIpc";
 import { registerMainToIdeIpc } from "./appIde/MainToIdeIpc";
 import { setCachedMessenger, setCachedStore } from "./CachedServices";
 import { installMachineRebuildRejectionFilter } from "./machineRebuildRejections";
+import { installUiLanguageSync } from "./core/uiLanguageSync";
 
 // --- Create the application messenger and the store according to the discriminator parameter
 const isEmu = location.search.startsWith("?emu");
@@ -47,6 +48,9 @@ const store = createAppStore(messageSource, async (action, source) => {
 // --- "NotReady" until they exist.
 setCachedStore(store);
 setCachedMessenger(messenger);
+
+// --- Follow the display language main publishes, before anything renders (LOCALIZATION_PLAN §5)
+installUiLanguageSync(store);
 
 // --- Start listening for main-process requests immediately, at module load time - before React
 // --- renders anything, and only once the store above can already receive forwarded state. The

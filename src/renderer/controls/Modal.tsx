@@ -12,6 +12,7 @@ import {
   useState
 } from "react";
 import { createPortal } from "react-dom";
+import { useT } from "@common/i18n/useT";
 import { Button } from "./Button";
 import { Icon } from "./Icon";
 import { getModalStackSize, isTopModal, registerModal } from "./overlay/modalStack";
@@ -90,14 +91,14 @@ export const Modal = ({
   closeOnOutsideClick = true,
   title,
   translateY = 0,
-  primaryLabel = "Ok",
+  primaryLabel,
   primaryEnabled = true,
   primaryVisible = true,
   primaryDanger,
   secondaryLabel = "Secondary",
   secondaryVisible = false,
   secondaryEnabled = true,
-  cancelLabel = "Cancel",
+  cancelLabel,
   cancelEnabled = true,
   cancelVisible = true,
   footerVisible,
@@ -107,6 +108,10 @@ export const Modal = ({
   onSecondaryClicked,
   onCancelClicked
 }: ModalProps) => {
+  // --- The default button texts are the current language's (LOCALIZATION_PLAN step 5)
+  const t = useT();
+  primaryLabel ??= t("common.button.ok");
+  cancelLabel ??= t("common.button.cancel");
   const overlayRoot = useOverlayRoot();
   const root = portalTo ?? overlayRoot ?? getOverlayRoot();
   const titleId = useId();
@@ -360,7 +365,7 @@ export const Modal = ({
                 </span>
                 <button
                   type='button'
-                  aria-label='Close dialog'
+                  aria-label={t("common.button.closeDialog")}
                   className={styles.closeButton}
                   onClick={() => doClose()}
                 >

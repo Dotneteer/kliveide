@@ -68,7 +68,7 @@ describe("advanced-debugging switch - machine features", () => {
 
 describe("advanced-debugging switch - the views", () => {
   it("hides the reverse-debugging settings rows while off", () => {
-    const rows = SETTINGS_ROWS.filter((r) => r.group === "Reverse debugging");
+    const rows = SETTINGS_ROWS.filter((r) => r.groupKey === "settings.group.reverseDebugging");
     expect(rows.length).toBeGreaterThan(0);
     for (const row of rows) {
       expect(isSettingsRowApplicable(row, state(false))).toBe(false);

@@ -11,12 +11,14 @@ import { historyStepText } from "@common/history/historyNavigation";
 import { reverseStatusText, reverseStatusTooltip } from "@common/history/reverseDebugText";
 import { selectedZxBasicCompiler, type ZxBasicCompilerChoice } from "@main/zxb-integration/zxb-config";
 import { useMainApi } from "@renderer/core/MainApi";
+import { useT } from "@common/i18n/useT";
 
 type IdeStatusBarProps = {
   show: boolean;
 };
 
 export const IdeStatusBar = ({ show }: IdeStatusBarProps) => {
+  const t = useT();
   const { projectService, ideCommandsService } = useAppServices();
   // --- The history cursor (`.plans/LITE_STEP_BACK_PLAN.md` D7): "you are in the past", one click back
   const historyPosition = useSelector((s) => s.emulatorState?.historyPosition);
@@ -38,24 +40,24 @@ export const IdeStatusBar = ({ show }: IdeStatusBarProps) => {
 
   const machineState = useMemo(() => {
     switch (execState) {
-      case MachineControllerState.None: return "Turned off";
-      case MachineControllerState.Running: return "Running";
-      case MachineControllerState.Pausing: return "Pausing";
-      case MachineControllerState.Paused: return "Paused";
-      case MachineControllerState.Stopping: return "Stopping";
-      case MachineControllerState.Stopped: return "Stopped";
+      case MachineControllerState.None: return t("statusbar.machine.turnedOff");
+      case MachineControllerState.Running: return t("statusbar.machine.running");
+      case MachineControllerState.Pausing: return t("statusbar.machine.pausing");
+      case MachineControllerState.Paused: return t("statusbar.machine.paused");
+      case MachineControllerState.Stopping: return t("statusbar.machine.stopping");
+      case MachineControllerState.Stopped: return t("statusbar.machine.stopped");
       default: return "";
     }
-  }, [execState]);
+  }, [execState, t]);
 
   const { compileStatus, compileSuccess } = useMemo(() => {
-    if (compilation.inProgress) return { compileStatus: "Compilation in progress...", compileSuccess: true };
-    if (!compilation.result) return { compileStatus: "Not compiled yet", compileSuccess: true };
+    if (compilation.inProgress) return { compileStatus: t("statusbar.compile.inProgress"), compileSuccess: true };
+    if (!compilation.result) return { compileStatus: t("statusbar.compile.notCompiled"), compileSuccess: true };
     // --- Warnings are listed with the errors but do not fail the compilation
     if (compilation.failed || compilation.result?.errors?.some((e) => !e.isWarning))
-      return { compileStatus: "Compilation failed", compileSuccess: false };
-    return { compileStatus: "Compilation successful", compileSuccess: true };
-  }, [compilation]);
+      return { compileStatus: t("statusbar.compile.failed"), compileSuccess: false };
+    return { compileStatus: t("statusbar.compile.success"), compileSuccess: true };
+  }, [compilation, t]);
 
   // --- Get active document to check if it's a Monaco editor
   const activeDocument = projectService?.getActiveDocumentHubService()?.getActiveDocument();
@@ -88,10 +90,10 @@ export const IdeStatusBar = ({ show }: IdeStatusBarProps) => {
             <button
               type="button"
               className={styles.historyChip}
-              title="Showing the execution history: memory shows the present. Click to return to the present."
+              title={t("statusbar.history.tooltip")}
               onClick={() => void ideCommandsService.executeCommand("history-present")}
             >
-              ⟲ History {historyStepText(historyPosition)}
+              {t("statusbar.history.chip", { step: historyStepText(historyPosition) })}
             </button>
           </Section>
         )}
@@ -143,9 +145,9 @@ export const IdeStatusBar = ({ show }: IdeStatusBarProps) => {
         )}
         {isMonacoEditor && cursorLine !== undefined && cursorColumn !== undefined && (
           <Section>
-            <Label text="Ln" />
+            <Label text={t("statusbar.cursor.line")} />
             <Label text={cursorLine.toString()} isMonospace={true} />
-            <Label text="Col" />
+            <Label text={t("statusbar.cursor.column")} />
             <Label text={cursorColumn.toString()} isMonospace={true} />
           </Section>
         )}
@@ -175,6 +177,7 @@ type ReverseDebugSectionProps = {
  * tooltip. The past keeps G4.3's chip colours (the secondary accent).
  */
 const ReverseDebugSection = ({ text, tooltip, stopped, searching, inThePast, inputIgnored, run }: ReverseDebugSectionProps) => {
+  const t = useT();
   const action = searching ? "reverse-continue-cancel" : inThePast ? "history-present" : undefined;
   return (
     <Section>
@@ -184,17 +187,16 @@ const ReverseDebugSection = ({ text, tooltip, stopped, searching, inThePast, inp
         title={tooltip}
         onClick={action ? () => run(action) : undefined}
       >
-        {text}
-        {inputIgnored && !searching ? " · input ignored" : ""}
+        {inputIgnored && !searching ? t("statusbar.reverse.inputIgnored", { text }) : text}
       </button>
       {inThePast && (
         <button
           type="button"
           className={styles.historyAction}
-          title="Continue from this point: the recorded future is discarded (asks first)"
+          title={t("statusbar.reverse.takeOverTooltip")}
           onClick={() => run("history-take-over")}
         >
-          Take over here
+          {t("statusbar.reverse.takeOver")}
         </button>
       )}
     </Section>
@@ -212,11 +214,16 @@ type AutomationItemProps = {
  * listening, and how many clients are connected. A click opens the Automation output pane (D13).
  */
 const AutomationItem = ({ clients, level, open }: AutomationItemProps) => {
+  const t = useT();
   const connected = clients > 0;
-  const text = connected ? `Automation · ${clients} client${clients === 1 ? "" : "s"}` : "Automation";
-  const tooltip =
-    `Automation is on${level ? ` (level: ${level})` : ""}: scripts on this computer can drive Klive. ` +
-    `${connected ? `${clients} connected. ` : ""}Click to show the Automation output.`;
+  const text = connected ? t("statusbar.automation.clients", { clients }) : t("statusbar.automation.label");
+  const tooltip = level
+    ? connected
+      ? t("statusbar.automation.tooltipLevelConnected", { level, clients })
+      : t("statusbar.automation.tooltipLevel", { level })
+    : connected
+      ? t("statusbar.automation.tooltipConnected", { clients })
+      : t("statusbar.automation.tooltip");
   return (
     <button
       type="button"
@@ -240,12 +247,13 @@ type BasicCompilerItemProps = {
  * compiler is switched and Boriel BASIC is installed.
  */
 const BasicCompilerItem = ({ compiler, open }: BasicCompilerItemProps) => {
+  const t = useT();
   const name = compiler === "boriel" ? "Boriel BASIC" : "Klive BASIC";
   return (
     <button
       type="button"
       className={styles.compilerItem}
-      title={`BASIC programs build with ${name}. Click to choose the compiler or set up Boriel BASIC.`}
+      title={t("statusbar.basicCompiler.tooltip", { compiler: name })}
       onClick={open}
     >
       {name}

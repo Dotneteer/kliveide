@@ -8,12 +8,14 @@ import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import Dropdown from "@renderer/controls/Dropdown";
 import { Checkbox } from "@renderer/controls/Checkbox";
 import { DialogForm } from "@renderer/controls/DialogForm";
+import { useT } from "@common/i18n/useT";
 
-const sizeOptions = [
-  { value: "-b8", label: "1 byte" },
-  { value: "-b16", label: "2 bytes" },
-  { value: "-b24", label: "3 bytes" },
-  { value: "-b32", label: "4 bytes" }
+/** The `num` command's size flags and how many bytes each writes. */
+const SIZE_FLAGS = [
+  { value: "-b8", bytes: 1 },
+  { value: "-b16", bytes: 2 },
+  { value: "-b24", bytes: 3 },
+  { value: "-b32", bytes: 4 }
 ];
 
 /** The `num` command's single-byte size flag. Was written as ``{`-b8`}`` at three call sites. */
@@ -43,6 +45,11 @@ export const SetMemoryDialog = ({
   onSetMemory
 }: Props) => {
   const { ideCommandsService } = useAppServices();
+  const t = useT();
+  const sizeOptions = SIZE_FLAGS.map(({ value, bytes }) => ({
+    value,
+    label: t("dialog.setMemory.sizeOption", { count: bytes })
+  }));
   const [memValue, setMemValue] = useState(
     decimal ? currentValue.toString(10) : "$" + toHexa2(currentValue)
   );
@@ -78,26 +85,26 @@ export const SetMemoryDialog = ({
      */
     try {
       if (!(await validate(memValue))) {
-        setSubmitError("Enter a valid numeric value.");
+        setSubmitError(t("dialog.setMemory.invalidValue"));
         return false;
       }
       await onSetMemory?.({ value: memValue, sizeOption, bigEndian: effectiveBigEndian });
       return true;
     } catch (err) {
-      setSubmitError((err as Error)?.message ?? "The memory could not be written.");
+      setSubmitError((err as Error)?.message ?? t("dialog.setMemory.writeFailed"));
       return false;
     }
   };
 
   return (
     <Modal
-      title="Set Memory Content"
+      title={t("dialog.setMemory.title")}
       iconName="memory-icon"
       isOpen={true}
       fullScreen={false}
       width={300}
       footerVisible={isRom}
-      cancelLabel={isRom ? "Close" : "Cancel"}
+      cancelLabel={isRom ? t("common.button.close") : t("common.button.cancel")}
       cancelVisible={isRom}
       initialFocus={isRom ? "cancel" : "none"}
       onClose={() => {
@@ -110,20 +117,20 @@ export const SetMemoryDialog = ({
               --- shade of red that belongs to nothing. `--status-error` is the app's one failure
               --- colour and follows the theme. */}
           <div className={styles.romWarning}>
-            This memory location is read-only (ROM) and cannot be modified.
+            {t("dialog.setMemory.romWarning")}
           </div>
         </DialogRow>
       )}
       {!isRom && (
         <DialogForm
-          submitLabel="Set"
+          submitLabel={t("dialog.setMemory.submit")}
           submitDisabled={false}
           onSubmit={async () => {
             if (await submitMemoryValue()) onClose();
           }}
           onCancel={onClose}
         >
-          <DialogRow rows={true} label={`Memory content at $${toHexa4(address)} (${address}): *`}>
+          <DialogRow rows={true} label={t("dialog.setMemory.contentLabel", { address: `$${toHexa4(address)}`, decimal: address })}>
             <TextInput
               value={memValue}
               error={submitError}
@@ -134,10 +141,10 @@ export const SetMemoryDialog = ({
               }}
             />
           </DialogRow>
-          <DialogRow label="Content size">
+          <DialogRow label={t("dialog.setMemory.sizeLabel")}>
             <div className={styles.sizeRow}>
               <Dropdown
-                placeholder="Select..."
+                placeholder={t("dialog.setMemory.sizePlaceholder")}
                 options={sizeOptions}
                 initialValue={SINGLE_BYTE}
                 width={80}
@@ -151,7 +158,7 @@ export const SetMemoryDialog = ({
             <Checkbox
               enabled={isMultiByte}
               initialValue={bigEndian}
-              label="Big-endian write"
+              label={t("dialog.setMemory.bigEndian")}
               right={true}
               onChange={(value) => {
                 setBigEndian(value);

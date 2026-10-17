@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { INVALID_CARD_TITLE } from "@renderer/appEmu/dialogs/z88/insertCard/Z88InsertCardModel";
+import { invalidCardTitle } from "@renderer/appEmu/dialogs/z88/insertCard/Z88InsertCardViewModel";
 
 import { deferred } from "../../../mvc/deferred";
 import {
@@ -37,7 +37,7 @@ describe("Z88InsertCardController — choosing a card file", () => {
 
     expect(h.ports.cardFile.notify).toHaveBeenCalledWith(
       "error",
-      INVALID_CARD_TITLE,
+      invalidCardTitle(),
       "The size of the selected card is 1048576 bytes (1024 KBytes), which is not allowed in this slot."
     );
     // --- A rejected pick must not look as though it had been taken.
@@ -55,7 +55,7 @@ describe("Z88InsertCardController — choosing a card file", () => {
 
     expect(h.ports.cardFile.notify).toHaveBeenCalledWith(
       "error",
-      INVALID_CARD_TITLE,
+      invalidCardTitle(),
       "Not a card image"
     );
     expect(h.state.file).toBeUndefined();
@@ -97,7 +97,7 @@ describe("Z88InsertCardController — choosing a card file", () => {
 
     expect(h.ports.cardFile.notify).toHaveBeenCalledWith(
       "error",
-      INVALID_CARD_TITLE,
+      invalidCardTitle(),
       expect.stringContaining("32 KBytes")
     );
   });

@@ -6,6 +6,10 @@ import type { DialogComponentProps } from "@renderer/controls/overlay/DialogProv
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { newItemName } from "./dialogValidators";
 import { useState } from "react";
+import { useT } from "@common/i18n/useT";
+
+/** Stands in for the path so the translated sentence can be split around the highlighted span. */
+const PATH_MARK = "\u0001";
 
 type Props = DialogComponentProps<NewItemDialogResult> & {
   isFolder?: boolean;
@@ -23,20 +27,25 @@ export const NewItemDialog = ({
 }: Props) => {
   const { validationService } = useAppServices();
   const [newItem, setNewItem] = useState("");
-  const subject = isFolder ? "folder" : "file";
+  const t = useT();
+  const [before, after = ""] = t(
+    isFolder ? "dialog.newItem.promptFolder" : "dialog.newItem.promptFile",
+    { path: PATH_MARK }
+  ).split(PATH_MARK);
   const error = newItemName(validationService, itemNames, newItem);
 
   return (
     <DialogForm
-        submitLabel="Add"
+        submitLabel={t("dialog.newItem.submit")}
         submitDisabled={Boolean(error)}
         onSubmit={() => controls.close({ name: newItem })}
         onCancel={controls.cancel}
       >
       <DialogRow rows={true}>
         <div>
-          {`Name of the new ${subject} to create in `}
-          <span className={styles.hilite}>{path}</span>:
+          {before}
+          <span className={styles.hilite}>{path}</span>
+          {after}
         </div>
         <TextInput
           value={newItem}

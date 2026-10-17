@@ -1,3 +1,5 @@
+import { t } from "@common/i18n/i18n";
+import type { MessageKey } from "@common/i18n/keys.generated";
 import type { BorielInstallation } from "@common/messaging/BorielIntegration";
 
 import type { BorielOutcome, BorielSetupState } from "./BorielSetupModel";
@@ -27,7 +29,7 @@ export type BorielSetupViewModel = {
   licenceNote: string;
 };
 
-export const LICENCE_NOTE = "Boriel BASIC 2.0 beta, redistributed with the author's permission.";
+export const LICENCE_NOTE: MessageKey = "dialog.boriel.licenceNote";
 
 export function selectViewModel(state: BorielSetupState): BorielSetupViewModel {
   const kit = state.status?.kit;
@@ -39,15 +41,14 @@ export function selectViewModel(state: BorielSetupState): BorielSetupViewModel {
     mode: state.mode,
     intro:
       state.mode === "offer" && kit?.kind === "available"
-        ? `Klive comes with Boriel BASIC ${kit.version}, a ZX BASIC compiler you can use instead of ` +
-          "Klive BASIC. Install it now? You can also do it later from Settings › Integrations."
+        ? t("dialog.boriel.intro", { version: kit.version })
         : undefined,
     status: statusOf(state),
     kit: {
       available: kitAvailable,
       text:
         kit?.kind === "available"
-          ? `Boriel BASIC ${kit.version} (bundled with Klive)`
+          ? t("dialog.boriel.kit.bundled", { version: kit.version })
           : kit?.kind === "unavailable"
             ? kit.reason
             : ""
@@ -58,18 +59,21 @@ export function selectViewModel(state: BorielSetupState): BorielSetupViewModel {
       enabled: ready && kitAvailable && !!state.folder.trim()
     },
     useExisting: { enabled: ready },
-    cancel: { label: state.mode === "offer" ? "Not now" : "Close", enabled: working },
+    cancel: {
+      label: state.mode === "offer" ? t("dialog.boriel.button.notNow") : t("common.button.close"),
+      enabled: working
+    },
     dontAskAgain: { visible: state.mode === "offer", value: state.dontAskAgain, enabled: working },
     useBoriel: {
       visible: installation?.kind === "working",
       value: state.status?.compiler === "boriel",
       enabled: ready,
       note: state.status?.compilerFromProject
-        ? "The open project chooses its own compiler: this changes the project's choice."
+        ? t("dialog.boriel.useBoriel.projectNote")
         : undefined
     },
     message: messageOf(state),
-    licenceNote: LICENCE_NOTE
+    licenceNote: t(LICENCE_NOTE)
   };
 }
 
@@ -77,30 +81,39 @@ export function selectViewModel(state: BorielSetupState): BorielSetupViewModel {
 export function primaryLabel(installation: BorielInstallation | undefined): string {
   switch (installation?.kind) {
     case "broken":
-      return "Repair";
+      return t("dialog.boriel.button.repair");
     case "working":
-      return installation.outdated ? "Update" : "Reinstall";
+      return installation.outdated ? t("dialog.boriel.button.update") : t("dialog.boriel.button.reinstall");
     default:
-      return "Install";
+      return t("dialog.boriel.button.install");
   }
 }
 
 function statusOf(state: BorielSetupState): BorielSetupViewModel["status"] {
-  if (state.loadError) return { kind: "error", headline: "Cannot check Boriel BASIC", detail: state.loadError };
+  if (state.loadError) {
+    return { kind: "error", headline: t("dialog.boriel.status.cannotCheck"), detail: state.loadError };
+  }
   const installation = state.status?.installation;
-  if (state.loading || !installation) return { kind: "loading", headline: "Checking...", detail: "" };
+  if (state.loading || !installation) return { kind: "loading", headline: t("dialog.boriel.status.checking"), detail: "" };
   switch (installation.kind) {
     case "notConfigured":
-      return { kind: "none", headline: "Not installed", detail: "Klive BASIC builds your BASIC programs." };
+      return {
+        kind: "none",
+        headline: t("dialog.boriel.status.notInstalled"),
+        detail: t("dialog.boriel.status.notInstalledDetail")
+      };
     case "broken":
-      return { kind: "broken", headline: "Not working", detail: installation.error };
+      return { kind: "broken", headline: t("dialog.boriel.status.notWorking"), detail: installation.error };
     case "working": {
       const kit = state.status?.kit;
       return installation.outdated && kit?.kind === "available"
         ? {
             kind: "outdated",
             headline: `Boriel BASIC ${installation.version}`,
-            detail: `${installation.executablePath} · version ${kit.version} is available`
+            detail: t("dialog.boriel.status.updateAvailable", {
+              path: installation.executablePath,
+              version: kit.version
+            })
           }
         : { kind: "working", headline: `Boriel BASIC ${installation.version}`, detail: installation.executablePath };
     }
@@ -108,7 +121,17 @@ function statusOf(state: BorielSetupState): BorielSetupViewModel["status"] {
 }
 
 function messageOf(state: BorielSetupState): BorielSetupViewModel["message"] {
-  if (state.busy === "install") return { kind: "progress", text: "Installing Boriel BASIC..." };
-  if (state.busy === "existing") return { kind: "progress", text: "Checking the selected installation..." };
-  return state.outcome;
+  if (state.busy === "install") return { kind: "progress", text: t("dialog.boriel.progress.installing") };
+  if (state.busy === "existing") return { kind: "progress", text: t("dialog.boriel.progress.checkingExisting") };
+  const { outcome } = state;
+  if (!outcome) return undefined;
+  if (outcome.kind === "failed") return { kind: "failed", text: outcome.text };
+  const args = { version: outcome.version, folder: outcome.folder };
+  return {
+    kind: "installed",
+    text:
+      outcome.action === "install"
+        ? t("dialog.boriel.outcome.installed", args)
+        : t("dialog.boriel.outcome.usingExisting", args)
+  };
 }

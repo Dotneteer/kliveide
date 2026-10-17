@@ -124,6 +124,10 @@ async function launchKlive({
             maximizeTools: false,
             sideBarWidth,
             toolPanelHeight,
+            // --- English, whatever the OS language: the docs show the English UI
+            // --- (`.plans/LOCALIZATION_PLAN.md` step 2)
+            language: "en",
+            i18nShowKeys: false,
             ...ideViewOptions
           },
           editorOptions: { fontFamily: "iosevka", fontSize: 16 },

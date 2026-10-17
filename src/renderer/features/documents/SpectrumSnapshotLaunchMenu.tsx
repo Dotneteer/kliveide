@@ -1,3 +1,5 @@
+import { t } from "@common/i18n/i18n";
+import { useT } from "@common/i18n/useT";
 import { TabButton, TabButtonSeparator, TabButtonSpace } from "@renderer/controls/TabButton";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { useSelector } from "@renderer/core/RendererProvider";
@@ -35,12 +37,12 @@ export function getSpectrumSnapshotContextMenuInfo(services: AppServices): Conte
 
   return [
     {
-      text: "Run snapshot",
+      text: t("documents.spectrumSnapshot.menu.run"),
       disabled: refused,
       clicked: async (item: string) => await launch(item, "run")
     },
     {
-      text: "Debug snapshot (stop at PC)",
+      text: t("documents.spectrumSnapshot.menu.debug"),
       disabled: refused,
       clicked: async (item: string) => await launch(item, "debug")
     }
@@ -53,11 +55,11 @@ type Props = {
 
 /** The two actions in a snapshot document's tab bar */
 const SpectrumSnapshotLaunchCommandBar = ({ path }: Props) => {
+  const t = useT();
   const { ideCommandsService } = useAppServices();
   const isKliveProject = useSelector((s) => s.project?.isKliveProject);
   const machineId = useSelector((s) => s.emulatorState?.machineId);
   const refusal = spectrumSnapshotProjectGuard({ project: { isKliveProject }, emulatorState: { machineId } });
-  const hint = refusal ? ` (${refusal})` : "";
 
   const launch = async (option: SpectrumSnapshotCommandOption) => {
     await ideCommandsService.executeCommand(spectrumSnapshotCommandText(path, option));
@@ -68,14 +70,16 @@ const SpectrumSnapshotLaunchCommandBar = ({ path }: Props) => {
       <TabButtonSeparator />
       <TabButton
         iconName="play"
-        title={`Load and run this snapshot${hint}`}
+        title={refusal ? t("documents.spectrumSnapshot.button.runRefused", { reason: refusal }) : t("documents.spectrumSnapshot.button.run")}
         disabled={!!refusal}
         clicked={async () => await launch("run")}
       />
       <TabButtonSpace />
       <TabButton
         iconName="debug"
-        title={`Load this snapshot and debug it, stopping at its PC${hint}`}
+        title={
+          refusal ? t("documents.spectrumSnapshot.button.debugRefused", { reason: refusal }) : t("documents.spectrumSnapshot.button.debug")
+        }
         disabled={!!refusal}
         clicked={async () => await launch("debug")}
       />

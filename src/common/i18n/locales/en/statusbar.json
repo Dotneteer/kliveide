@@ -1,0 +1,326 @@
+{
+  "statusbar.machine.turnedOff": "Turned off",
+  "@statusbar.machine.turnedOff": {
+    "context": "IDE status bar: state of the emulated machine - it is switched off (never started).",
+    "maxChars": 14
+  },
+  "statusbar.machine.running": "Running",
+  "@statusbar.machine.running": {
+    "context": "IDE status bar: state of the emulated machine - it is running (executing).",
+    "maxChars": 10
+  },
+  "statusbar.machine.pausing": "Pausing",
+  "@statusbar.machine.pausing": {
+    "context": "IDE status bar: state of the emulated machine - it is in the middle of pausing.",
+    "maxChars": 10
+  },
+  "statusbar.machine.paused": "Paused",
+  "@statusbar.machine.paused": {
+    "context": "IDE status bar: state of the emulated machine - it is paused.",
+    "maxChars": 9
+  },
+  "statusbar.machine.stopping": "Stopping",
+  "@statusbar.machine.stopping": {
+    "context": "IDE status bar: state of the emulated machine - it is in the middle of stopping.",
+    "maxChars": 12
+  },
+  "statusbar.machine.stopped": "Stopped",
+  "@statusbar.machine.stopped": {
+    "context": "IDE status bar: state of the emulated machine - it has been stopped.",
+    "maxChars": 10
+  },
+  "statusbar.compile.inProgress": "Compilation in progress...",
+  "@statusbar.compile.inProgress": {
+    "context": "IDE status bar: the project's build (compilation) is running.",
+    "maxChars": 37
+  },
+  "statusbar.compile.notCompiled": "Not compiled yet",
+  "@statusbar.compile.notCompiled": {
+    "context": "IDE status bar: the project has not been built (compiled) in this session.",
+    "maxChars": 23
+  },
+  "statusbar.compile.failed": "Compilation failed",
+  "@statusbar.compile.failed": {
+    "context": "IDE status bar, shown in the error colour: the last build of the project had errors.",
+    "maxChars": 26
+  },
+  "statusbar.compile.success": "Compilation successful",
+  "@statusbar.compile.success": {
+    "context": "IDE status bar: the last build of the project succeeded.",
+    "maxChars": 31
+  },
+  "statusbar.history.chip": "⟲ History {step}",
+  "@statusbar.history.chip": {
+    "context": "IDE status bar chip while the debugger shows a point in the recorded execution history. Keep the leading ⟲ symbol. A click returns to the present.",
+    "maxChars": 23,
+    "placeholders": {
+      "step": "How far back in the history, already formatted, e.g. '-3 steps'"
+    }
+  },
+  "statusbar.history.tooltip": "Showing the execution history: memory shows the present. Click to return to the present.",
+  "@statusbar.history.tooltip": {
+    "context": "Tooltip of the IDE status bar's history chip. The registers show the past position; the memory still shows the live (present) state."
+  },
+  "statusbar.reverse.inputIgnored": "{text} · input ignored",
+  "@statusbar.reverse.inputIgnored": {
+    "context": "IDE status bar reverse-debugging chip when keyboard/joystick input was dropped because the machine is replaying the past.",
+    "maxChars": 31,
+    "placeholders": {
+      "text": "The reverse-debugging status, already formatted, e.g. '⟲ -1.24 s · step -3,412'"
+    }
+  },
+  "statusbar.reverse.takeOver": "Take over here",
+  "@statusbar.reverse.takeOver": {
+    "context": "IDE status bar button beside the reverse-debugging chip: continue running from the past point shown, discarding the recorded future.",
+    "maxChars": 20
+  },
+  "statusbar.reverse.takeOverTooltip": "Continue from this point: the recorded future is discarded (asks first)",
+  "@statusbar.reverse.takeOverTooltip": {
+    "context": "Tooltip of the IDE status bar's 'Take over here' button."
+  },
+  "statusbar.automation.label": "Automation",
+  "@statusbar.automation.label": {
+    "context": "IDE status bar item shown while the automation server (scripts driving Klive from outside) is listening and no client is connected.",
+    "maxChars": 14
+  },
+  "statusbar.automation.clients": "Automation · {clients, plural, one {# client} other {# clients}}",
+  "@statusbar.automation.clients": {
+    "context": "IDE status bar item shown while automation clients (external scripts) are connected to Klive.",
+    "maxChars": 33,
+    "placeholders": {
+      "clients": "Number of connected automation clients (1 or more)"
+    }
+  },
+  "statusbar.automation.tooltip": "Automation is on: scripts on this computer can drive Klive. Click to show the Automation output.",
+  "@statusbar.automation.tooltip": {
+    "context": "Tooltip of the IDE status bar's Automation item, no client connected. 'Automation output' is the output pane of that name."
+  },
+  "statusbar.automation.tooltipLevel": "Automation is on (level: {level}): scripts on this computer can drive Klive. Click to show the Automation output.",
+  "@statusbar.automation.tooltipLevel": {
+    "context": "Tooltip of the IDE status bar's Automation item, no client connected, with the permission level the server runs at.",
+    "placeholders": {
+      "level": "Automation permission level identifier, shown verbatim (not translated)"
+    }
+  },
+  "statusbar.automation.tooltipConnected": "Automation is on: scripts on this computer can drive Klive. {clients} connected. Click to show the Automation output.",
+  "@statusbar.automation.tooltipConnected": {
+    "context": "Tooltip of the IDE status bar's Automation item while clients are connected.",
+    "placeholders": {
+      "clients": "Number of connected automation clients (1 or more)"
+    }
+  },
+  "statusbar.automation.tooltipLevelConnected": "Automation is on (level: {level}): scripts on this computer can drive Klive. {clients} connected. Click to show the Automation output.",
+  "@statusbar.automation.tooltipLevelConnected": {
+    "context": "Tooltip of the IDE status bar's Automation item while clients are connected, with the server's permission level.",
+    "placeholders": {
+      "level": "Automation permission level identifier, shown verbatim (not translated)",
+      "clients": "Number of connected automation clients (1 or more)"
+    }
+  },
+  "statusbar.basicCompiler.tooltip": "BASIC programs build with {compiler}. Click to choose the compiler or set up Boriel BASIC.",
+  "@statusbar.basicCompiler.tooltip": {
+    "context": "Tooltip of the IDE status bar item that names the compiler used for the focused BASIC file. Boriel BASIC is a product name.",
+    "placeholders": {
+      "compiler": "Compiler product name, 'Klive BASIC' or 'Boriel BASIC'"
+    }
+  },
+  "statusbar.cursor.line": "Ln",
+  "@statusbar.cursor.line": {
+    "context": "IDE status bar: abbreviation of 'Line' before the code editor's cursor line number.",
+    "maxChars": 8
+  },
+  "statusbar.cursor.column": "Col",
+  "@statusbar.cursor.column": {
+    "context": "IDE status bar: abbreviation of 'Column' before the code editor's cursor column number.",
+    "maxChars": 8
+  },
+  "statusbar.selectMachine": "Select machine",
+  "@statusbar.selectMachine": {
+    "context": "Tooltip of the emulator status bar chip that shows the machine's name; a click opens the machine selector.",
+    "maxChars": 20
+  },
+  "statusbar.speed": "Speed",
+  "@statusbar.speed": {
+    "context": "Tooltip of the emulator status bar chip that shows the CPU clock frequency; a click opens the speed (clock multiplier) menu.",
+    "maxChars": 8
+  },
+  "statusbar.menu.performanceInfo": "Show Performance Info",
+  "@statusbar.menu.performanceInfo": {
+    "context": "Item of the emulator status bar's right-click menu (a toggle): shows the frame times, frame count and PC on the left of the bar.",
+    "maxChars": 30
+  },
+  "statusbar.menu.mediaInfo": "Show Media Information",
+  "@statusbar.menu.mediaInfo": {
+    "context": "Item of the emulator status bar's right-click menu (a toggle): shows the media (tape, disk) information strip.",
+    "maxChars": 31
+  },
+  "statusbar.menu.layersStrip": "Show the Layers Strip",
+  "@statusbar.menu.layersStrip": {
+    "context": "Item of the emulator status bar's right-click menu (a toggle), ZX Spectrum Next only: shows the strip of display layers.",
+    "maxChars": 30
+  },
+  "statusbar.menu.hide": "Hide Status Bar",
+  "@statusbar.menu.hide": {
+    "context": "Item of the emulator status bar's right-click menu: hides the status bar.",
+    "maxChars": 21
+  },
+  "statusbar.menu.emulatorSettings": "Emulator Settings...",
+  "@statusbar.menu.emulatorSettings": {
+    "context": "Item of the emulator status bar's right-click menu: opens the Settings dialog on the emulator page.",
+    "maxChars": 28
+  },
+  "statusbar.rzx.tag.rec": "REC",
+  "@statusbar.rzx.tag.rec": {
+    "context": "Short tag on the emulator status bar's RZX badge while an RZX input recording is being made (or waits to be saved).",
+    "maxChars": 8
+  },
+  "statusbar.rzx.tag.video": "VIDEO",
+  "@statusbar.rzx.tag.video": {
+    "context": "Short tag on the emulator status bar's RZX badge while an RZX recording is rendered to a video file.",
+    "maxChars": 8
+  },
+  "statusbar.rzx.tag.play": "PLAY",
+  "@statusbar.rzx.tag.play": {
+    "context": "Short tag on the emulator status bar's RZX badge while an RZX recording plays back.",
+    "maxChars": 8
+  },
+  "statusbar.rzx.unsaved": "The RZX recording stopped and is not saved: {message}",
+  "@statusbar.rzx.unsaved": {
+    "context": "Tooltip of the emulator status bar's RZX badge when an RZX input recording stopped and waits to be saved. RZX is a file format.",
+    "placeholders": {
+      "message": "Why the recording stopped, from the recorder, shown verbatim (may be empty)"
+    }
+  },
+  "statusbar.rzx.recording": "Recording an RZX file",
+  "@statusbar.rzx.recording": {
+    "context": "Tooltip of the emulator status bar's RZX badge while an RZX input recording is being made. RZX is a file format."
+  },
+  "statusbar.rzx.rendering": "Rendering an RZX recording to video",
+  "@statusbar.rzx.rendering": {
+    "context": "Tooltip of the emulator status bar's RZX badge while an RZX recording (file name unknown) is converted to a video."
+  },
+  "statusbar.rzx.renderingFile": "Rendering {file} to video",
+  "@statusbar.rzx.renderingFile": {
+    "context": "Tooltip of the emulator status bar's RZX badge while an RZX recording is converted to a video.",
+    "placeholders": {
+      "file": "RZX file name, shown verbatim"
+    }
+  },
+  "statusbar.rzx.playing": "Playing an RZX recording",
+  "@statusbar.rzx.playing": {
+    "context": "Tooltip of the emulator status bar's RZX badge while an RZX recording (file name unknown) plays back."
+  },
+  "statusbar.rzx.playingFile": "Playing {file}",
+  "@statusbar.rzx.playingFile": {
+    "context": "Tooltip of the emulator status bar's RZX badge while an RZX recording plays back.",
+    "placeholders": {
+      "file": "RZX file name, shown verbatim"
+    }
+  },
+  "statusbar.reverse.stopped": "⚠ Reverse debugging stopped",
+  "@statusbar.reverse.stopped": {
+    "context": "IDE status bar, reverse-debugging item (single line, no wrapping). Reverse debugging switched itself off. Keep the ⚠ sign.",
+    "maxChars": 36
+  },
+  "statusbar.reverse.searching": "⟲ Searching back… {count, plural, one {# interval} other {# intervals}}",
+  "@statusbar.reverse.searching": {
+    "context": "IDE status bar, reverse-debugging item (single line, no wrapping). Reverse Continue is searching the past, interval by interval. Keep the ⟲ sign.",
+    "maxChars": 40,
+    "placeholders": {
+      "count": "How many keyframe intervals were searched so far"
+    }
+  },
+  "statusbar.reverse.replaying": "▶ Replaying · {time} to present",
+  "@statusbar.reverse.replaying": {
+    "context": "IDE status bar, reverse-debugging item (single line, no wrapping). The machine replays from the past toward the present. Keep the ▶ sign and the ' · ' separator.",
+    "maxChars": 36,
+    "placeholders": {
+      "time": "A machine-time duration as Klive formats it, e.g. '1.24 s', '800 ms'"
+    }
+  },
+  "statusbar.reverse.behind": "⟲ −{time}",
+  "@statusbar.reverse.behind": {
+    "context": "IDE status bar, reverse-debugging item (single line, no wrapping). How far in the past the machine stands. Usually kept as it is.",
+    "maxChars": 8,
+    "placeholders": {
+      "time": "A machine-time duration as Klive formats it, e.g. '1.24 s', '800 ms'"
+    }
+  },
+  "statusbar.reverse.deep": "⟲ −{time} · before the history window",
+  "@statusbar.reverse.deep": {
+    "context": "IDE status bar, reverse-debugging item (single line, no wrapping). The point in the past is older than the recorded instruction history.",
+    "maxChars": 44,
+    "placeholders": {
+      "time": "A machine-time duration as Klive formats it, e.g. '1.24 s', '800 ms'"
+    }
+  },
+  "statusbar.reverse.step": "⟲ −{time} · step {step}",
+  "@statusbar.reverse.step": {
+    "context": "IDE status bar, reverse-debugging item (single line, no wrapping). How far in the past, and which recorded instruction step.",
+    "maxChars": 30,
+    "placeholders": {
+      "time": "A machine-time duration as Klive formats it, e.g. '1.24 s', '800 ms'",
+      "step": "The step back in the history, e.g. '−3,412'"
+    }
+  },
+  "statusbar.reverse.withFile": "{status} · {file}",
+  "@statusbar.reverse.withFile": {
+    "context": "IDE status bar, reverse-debugging item (single line, no wrapping). Joins the status with the debug recording's file name. Usually kept as it is.",
+    "placeholders": {
+      "status": "One of the reverse-debugging status texts",
+      "file": "The debug recording's file name, shown verbatim"
+    }
+  },
+  "statusbar.reverse.recording": "Recording: {file}",
+  "@statusbar.reverse.recording": {
+    "context": "IDE status bar, reverse-debugging item (single line, no wrapping). A reverse-debugging timeline opened from a debug recording file, at the present.",
+    "maxChars": 20,
+    "placeholders": {
+      "file": "The debug recording's file name, shown verbatim"
+    }
+  },
+  "statusbar.reverse.tip.stopped": "Reverse debugging stopped: {reason}",
+  "@statusbar.reverse.tip.stopped": {
+    "context": "Tooltip of the IDE status bar's reverse-debugging item; one line of several.",
+    "placeholders": {
+      "reason": "Why it stopped, shown verbatim (English, technical)"
+    }
+  },
+  "statusbar.reverse.tip.searching": "Reverse Continue is replaying the past, keyframe interval by interval. Click to cancel.",
+  "@statusbar.reverse.tip.searching": {
+    "context": "Tooltip of the IDE status bar's reverse-debugging item; one line of several. 'Reverse Continue' is the name of a Debug menu command."
+  },
+  "statusbar.reverse.tip.replaying": "The machine runs from the past toward the present; the recorded input plays.",
+  "@statusbar.reverse.tip.replaying": {
+    "context": "Tooltip of the IDE status bar's reverse-debugging item; one line of several."
+  },
+  "statusbar.reverse.tip.navigating": "The machine stands in the past: every panel shows that moment. Click to return to the present.",
+  "@statusbar.reverse.tip.navigating": {
+    "context": "Tooltip of the IDE status bar's reverse-debugging item; one line of several."
+  },
+  "statusbar.reverse.tip.deep": "The point is older than the history window: the history shows the run up to it.",
+  "@statusbar.reverse.tip.deep": {
+    "context": "Tooltip of the IDE status bar's reverse-debugging item; one line of several."
+  },
+  "statusbar.reverse.tip.inputIgnored": "Input ignored while in the past ({count}): use Take over here to continue from this point.",
+  "@statusbar.reverse.tip.inputIgnored": {
+    "context": "Tooltip of the IDE status bar's reverse-debugging item; one line of several. 'Take over here' is the name of a command that continues live from the past.",
+    "placeholders": {
+      "count": "How many key presses were ignored"
+    }
+  },
+  "statusbar.reverse.tip.range": "Reverse range: {time}",
+  "@statusbar.reverse.tip.range": {
+    "context": "Tooltip of the IDE status bar's reverse-debugging item; one line of several. How far back the machine can go.",
+    "placeholders": {
+      "time": "A machine-time duration as Klive formats it, e.g. '1.24 s', '800 ms'"
+    }
+  },
+  "statusbar.reverse.tip.recording": "Opened from the debug recording {file}: its past is the file's",
+  "@statusbar.reverse.tip.recording": {
+    "context": "Tooltip of the IDE status bar's reverse-debugging item; one line of several.",
+    "placeholders": {
+      "file": "The debug recording's file name, shown verbatim"
+    }
+  }
+}

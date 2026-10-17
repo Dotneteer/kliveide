@@ -1,4 +1,5 @@
 import { MC_Z88_INTRAM } from "@common/machines/constants";
+import { t } from "@common/i18n/i18n";
 import { LatestRun } from "@mvc/core/LatestRun";
 import { UiController } from "@mvc/core/UiController";
 
@@ -78,7 +79,7 @@ export class Z88ChangeRamController extends UiController<
         [MC_Z88_INTRAM]: ramMask
       });
       if (!token.isCurrent()) return;
-      await this.ports.output.write(`Z88 internal RAM size changed to ${selectedSize}K`);
+      await this.ports.output.write(t("dialog.z88.changeRam.changed", { size: selectedSize }));
       if (!token.isCurrent()) return;
       this.ports.close.settled({ selectedSize, ramMask, changed: true });
     } finally {

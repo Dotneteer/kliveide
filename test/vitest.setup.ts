@@ -3,6 +3,7 @@ import "@testing-library/jest-dom/vitest";
 import fs from "fs";
 import os from "os";
 import path from "path";
+import { translator } from "../src/common/i18n/i18n";
 
 const testHomeRoot = process.env.KLIVE_TEST_HOME ?? path.join(os.tmpdir(), "kliveide-vitest-home");
 const testRunId = `pid-${process.pid}`;
@@ -13,6 +14,10 @@ setTestHome("setup");
 beforeEach((context) => {
   const testFile = context.task.file.filepath ?? context.task.file.name ?? "unknown";
   setTestHome(sanitizePathSegment(testFile));
+  // --- Tests assert English text: pin it whatever a test (or the developer's setting) chose
+  // --- (.plans/LOCALIZATION_PLAN.md step 1)
+  translator.setLanguage("en");
+  translator.setShowKeys(false);
 });
 
 function setTestHome(scope: string): void {

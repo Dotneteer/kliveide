@@ -23,6 +23,7 @@ import {
   GRAPHICS_PANEL_ID
 } from "@common/state/common-ids";
 import type { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
+import { withTexts } from "@common/i18n/labels";
 
 export type SpecialDocumentId =
   | typeof MEMORY_PANEL_ID
@@ -45,90 +46,79 @@ export type SpecialDocumentDefinition = Pick<
 };
 
 const specialDocumentDefinitions: Record<SpecialDocumentId, SpecialDocumentDefinition> = {
-  [MEMORY_PANEL_ID]: {
+  [MEMORY_PANEL_ID]: withTexts({
     id: MEMORY_PANEL_ID,
-    name: "Machine Memory",
     type: MEMORY_EDITOR,
     iconName: "memory-icon",
     workspaceRestorable: true
-  },
-  [DISASSEMBLY_PANEL_ID]: {
+  }, { name: "panels.document.machineMemory" }),
+  [DISASSEMBLY_PANEL_ID]: withTexts({
     id: DISASSEMBLY_PANEL_ID,
-    name: "Disassembly",
     type: DISASSEMBLY_EDITOR,
     iconName: "disassembly-icon",
     workspaceRestorable: true
-  },
-  [BASIC_PANEL_ID]: {
+  }, { name: "panels.document.disassembly" }),
+  [BASIC_PANEL_ID]: withTexts({
     id: BASIC_PANEL_ID,
-    name: "BASIC Listing",
     type: BASIC_EDITOR,
     workspaceRestorable: true
-  },
+  }, { name: "panels.document.basicListing" }),
   // --- The ZX Spectrum Next Copper list (`.plans/COPPER_DEBUGGING_PLAN.md` §4.5)
-  [COPPER_PANEL_ID]: {
+  [COPPER_PANEL_ID]: withTexts({
     id: COPPER_PANEL_ID,
-    name: "Copper List",
     type: COPPER_EDITOR,
     iconName: "bp-copper",
     workspaceRestorable: true
-  },
+  }, { name: "panels.document.copperList" }),
   // --- The ZX Spectrum Next sprites and pattern RAM (`.plans/SPRITE_INSPECTOR_PLAN.md` §4.4)
-  [SPRITES_PANEL_ID]: {
+  [SPRITES_PANEL_ID]: withTexts({
     id: SPRITES_PANEL_ID,
-    name: "Sprite Inspector",
     type: SPRITES_EDITOR,
     iconName: "sprites",
     workspaceRestorable: true
-  },
+  }, { name: "panels.document.spriteInspector" }),
   // --- The ZX Spectrum Next tilemap and its tile definitions (`.plans/TILEMAP_INSPECTOR_PLAN.md` §4.4)
-  [TILEMAP_PANEL_ID]: {
+  [TILEMAP_PANEL_ID]: withTexts({
     id: TILEMAP_PANEL_ID,
-    name: "Tilemap Inspector",
     type: TILEMAP_EDITOR,
     iconName: "tilemap",
     workspaceRestorable: true
-  },
+  }, { name: "panels.document.tilemapInspector" }),
   // --- The ZX Spectrum Next's Layer 2 image, banks and windows (`.plans/LAYER2_INSPECTOR_PLAN.md` §4.4)
-  [LAYER2_PANEL_ID]: {
+  [LAYER2_PANEL_ID]: withTexts({
     id: LAYER2_PANEL_ID,
-    name: "Layer 2 Inspector",
     type: LAYER2_EDITOR,
     iconName: "layer2",
     workspaceRestorable: true
-  },
+  }, { name: "panels.document.layer2Inspector" }),
   // --- The ZX Spectrum Next's layer composition (`.plans/LAYER_COMPOSITION_PLAN.md` D9)
-  [LAYERS_PANEL_ID]: {
+  [LAYERS_PANEL_ID]: withTexts({
     id: LAYERS_PANEL_ID,
-    name: "Layers",
     type: LAYERS_EDITOR,
     iconName: "layers",
     workspaceRestorable: true
-  },
+  }, { name: "panels.document.layers" }),
   // --- The execution history (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.6, D13)
-  [HISTORY_PANEL_ID]: {
+  [HISTORY_PANEL_ID]: withTexts({
     id: HISTORY_PANEL_ID,
-    name: "Execution History",
     type: HISTORY_EDITOR,
     iconName: "history",
     workspaceRestorable: true
-  },
+  }, { name: "panels.document.executionHistory" }),
   // --- The profiler (`.plans/PROFILER_PLAN.md` D14)
-  [PROFILER_PANEL_ID]: {
+  [PROFILER_PANEL_ID]: withTexts({
     id: PROFILER_PANEL_ID,
-    name: "Profiler",
     type: PROFILER_EDITOR,
     iconName: "gauge",
     workspaceRestorable: true
-  },
+  }, { name: "panels.document.profiler" }),
   // --- The graphics finder over the paused machine (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §5.3)
-  [GRAPHICS_PANEL_ID]: {
+  [GRAPHICS_PANEL_ID]: withTexts({
     id: GRAPHICS_PANEL_ID,
-    name: "Graphics",
     type: GRAPHICS_EDITOR,
     iconName: "sprite",
     workspaceRestorable: true
-  }
+  }, { name: "panels.document.graphics" })
 };
 
 export function isSpecialDocumentId(id: string): id is SpecialDocumentId {
@@ -159,4 +149,15 @@ export function getLegacySpecialDocumentWorkspaceSettingIds(): string[] {
   return Object.values(specialDocumentDefinitions)
     .filter((definition) => definition.workspaceRestorable)
     .map((definition) => definition.type);
+}
+
+/**
+ * The name a document shows. A special document's name is stored in the document state when it
+ * opens, so it would stay in the language of that moment; this reads its definition instead, which
+ * translates on every read.
+ */
+export function documentDisplayName(document: Pick<ProjectDocumentState, "id" | "type" | "name">): string {
+  if (!isSpecialDocumentId(document.id)) return document.name;
+  const definition = getSpecialDocumentDefinition(document.id);
+  return definition.type === document.type ? definition.name : document.name;
 }

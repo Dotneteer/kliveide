@@ -16,6 +16,7 @@ import { appSettings, saveAppSettings } from "./settings-utils";
 import { setSelectedTapeFile } from "./machine-menus/zx-specrum-menus";
 import { loadMachineStateFile } from "./machine-menus/state-menus";
 import { openDebugRecordingFile } from "./debug-recording-menus";
+import { t } from "@common/i18n/i18n";
 
 /** The settings key of the folder File › Open File… last opened a file from */
 const OPEN_FILE_FOLDER = "openFileFolder";
@@ -26,17 +27,17 @@ const OPEN_FILE_FOLDER = "openFileFolder";
  */
 export async function pickAndOpenEmulatorFile(window: BrowserWindow): Promise<void> {
   const result = await dialog.showOpenDialog(window, {
-    title: "Open File",
+    title: t("messages.file.openFile"),
     defaultPath: appSettings?.folders?.[OPEN_FILE_FOLDER] || app.getPath("home"),
     filters: [
-      { name: "Klive emulator files", extensions: EMULATOR_FILE_EXTENSIONS },
-      { name: "ZX Spectrum snapshots", extensions: ["sna", "z80", "szx"] },
-      { name: "Z88 snapshots", extensions: ["z88"] },
-      { name: "Klive machine states", extensions: ["kls"] },
-      { name: "Klive debug recordings", extensions: ["klr"] },
-      { name: "RZX recordings", extensions: ["rzx"] },
-      { name: "Tapes", extensions: ["tap", "tzx"] },
-      { name: "All Files", extensions: ["*"] }
+      { name: t("common.filter.emulatorFiles"), extensions: EMULATOR_FILE_EXTENSIONS },
+      { name: t("common.filter.spectrumSnapshots"), extensions: ["sna", "z80", "szx"] },
+      { name: t("common.filter.z88Snapshots"), extensions: ["z88"] },
+      { name: t("common.filter.machineStates"), extensions: ["kls"] },
+      { name: t("common.filter.debugRecordings"), extensions: ["klr"] },
+      { name: t("common.filter.rzxRecordingsShort"), extensions: ["rzx"] },
+      { name: t("common.filter.tapes"), extensions: ["tap", "tzx"] },
+      { name: t("common.filter.allFiles"), extensions: ["*"] }
     ],
     properties: ["openFile"]
   });
@@ -45,7 +46,7 @@ export async function pickAndOpenEmulatorFile(window: BrowserWindow): Promise<vo
   appSettings.folders ??= {};
   appSettings.folders[OPEN_FILE_FOLDER] = path.dirname(filename);
   saveAppSettings();
-  await openEmulatorFile(window, filename, "Open File");
+  await openEmulatorFile(window, filename, t("messages.file.openFile"));
 }
 
 /**
@@ -64,7 +65,7 @@ export async function openEmulatorFile(
   let error: string | undefined;
   if (action.kind === "command") {
     const result = await getIdeApi().executeCommand(action.command);
-    error = result?.success ? undefined : (result?.finalMessage ?? `Could not open ${filename}`);
+    error = result?.success ? undefined : (result?.finalMessage ?? t("messages.couldNotOpen", { file: filename }));
   } else if (action.kind === "state") {
     // --- The state flow asks before a forced load and reports its own problems
     const owner = window ?? BrowserWindow.getFocusedWindow();
@@ -73,7 +74,7 @@ export async function openEmulatorFile(
       return undefined;
     }
     const result = await getIdeApi().executeCommand(action.command);
-    error = result?.success ? undefined : (result?.finalMessage ?? `Could not open ${filename}`);
+    error = result?.success ? undefined : (result?.finalMessage ?? t("messages.couldNotOpen", { file: filename }));
   } else if (action.kind === "recording") {
     // --- The recording flow offers the end state of another build's recording (D16)
     const owner = window ?? BrowserWindow.getFocusedWindow();
@@ -82,12 +83,14 @@ export async function openEmulatorFile(
       return undefined;
     }
     const result = await getIdeApi().executeCommand(action.command);
-    error = result?.success ? undefined : (result?.finalMessage ?? `Could not open ${filename}`);
+    error = result?.success ? undefined : (result?.finalMessage ?? t("messages.couldNotOpen", { file: filename }));
   } else if (action.kind === "tape") {
     const machineId = mainStore.getState()?.emulatorState?.machineId;
     const machine = machineRegistry.find((m) => m.machineId === machineId);
     if (!machine?.features?.[MF_TAPE_SUPPORT]) {
-      error = `The ${machine?.displayName ?? "current machine"} has no tape deck.`;
+      error = machine?.displayName
+        ? t("messages.file.noTapeDeck", { machine: machine.displayName })
+        : t("messages.file.noTapeDeckCurrent");
     } else {
       error = await setSelectedTapeFile(filename, false);
       if (!error) await saveKliveProject();

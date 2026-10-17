@@ -34,6 +34,7 @@ function isBeta128Machine(machineId: string | undefined): boolean {
 }
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { getModelConfig } from "@common/machines/machine-registry";
+import { t } from "@common/i18n/i18n";
 
 const TAPE_FILE_FOLDER = "tapeFileFolder";
 const DISK_FILE_FOLDER = "diskFileFolder";
@@ -53,14 +54,14 @@ export const tapeMenuRenderer: MachineMenuRenderer = (windowInfo, machine) => {
   if (machine.features?.[MF_TAPE_SUPPORT]) {
     items.push({
       id: "rewind_tape",
-      label: "Rewind",
+      label: t("menu.tape.rewind"),
       click: async () => {
         await getEmuApi().issueMachineCommand("rewind");
       }
     });
     items.push({
       id: "select_tape_file",
-      label: "Insert Tape...",
+      label: t("menu.tape.insert"),
       click: async () => {
         await setTapeFile(emuWindow, appState);
         await saveKliveProject();
@@ -68,7 +69,7 @@ export const tapeMenuRenderer: MachineMenuRenderer = (windowInfo, machine) => {
     });
     items.push({
       id: "eject_tape",
-      label: "Eject",
+      label: t("menu.tape.eject"),
       enabled: !!appState.media?.[MEDIA_TAPE],
       click: async () => {
         await ejectTape(true);
@@ -76,7 +77,7 @@ export const tapeMenuRenderer: MachineMenuRenderer = (windowInfo, machine) => {
       }
     });
     items.push({ type: "separator" });
-    items.push(createBooleanSettingsMenu(SETTING_EMU_FAST_LOAD) as any);
+    items.push(createBooleanSettingsMenu(SETTING_EMU_FAST_LOAD, { label: t("menu.tape.fastLoad") }) as any);
   }
   return items;
 };
@@ -95,7 +96,7 @@ export const diskMenuRenderer: MachineMenuRenderer = (windowInfo, _, model) => {
   const floppySubMenu: MachineMenuItem[] = [
     {
       id: "create_disk_file",
-      label: "Create Disk File...",
+      label: t("menu.disk.createDiskFile"),
       click: async () => {
         await getEmuApi().displayDialog(CREATE_DISK_DIALOG);
       }
@@ -106,13 +107,13 @@ export const diskMenuRenderer: MachineMenuRenderer = (windowInfo, _, model) => {
   if (isBeta128Machine(mainStore.getState()?.emulatorState?.machineId)) {
     floppySubMenu.push({
       id: "boot_disk",
-      label: "Boot Disk in Drive A",
+      label: t("menu.disk.bootDriveA"),
       enabled: !!getDiskMediaState(0).diskFile,
       click: async () => {
         try {
           await getEmuApi().startDiskBoot(false);
         } catch (err) {
-          dialog.showErrorBox("Cannot boot the disk", (err as Error)?.message ?? String(err));
+          dialog.showErrorBox(t("messages.disk.cannotBoot"), (err as Error)?.message ?? String(err));
         }
       }
     });
@@ -126,7 +127,7 @@ export const diskMenuRenderer: MachineMenuRenderer = (windowInfo, _, model) => {
     { type: "separator" },
     {
       id: "floppy_menu",
-      label: "Floppy Disks",
+      label: t("menu.disk.floppyDisks"),
       submenu: floppySubMenu
     }
   ];
@@ -138,7 +139,7 @@ export const diskMenuRenderer: MachineMenuRenderer = (windowInfo, _, model) => {
     if (hasDisk && String(state.diskFile).toLowerCase().endsWith(".scl")) {
       floppySubMenu.push({
         id: `save_trd_${suffix}`,
-        label: `Save Disk in Drive ${suffix.toUpperCase()} as .trd...`,
+        label: t("menu.disk.saveAsTrd", { drive: suffix.toUpperCase() }),
         click: async () => {
           await saveTrdosDiskAsTrd(emuWindow, index, suffix);
         }
@@ -148,7 +149,7 @@ export const diskMenuRenderer: MachineMenuRenderer = (windowInfo, _, model) => {
     if (hasDisk) {
       floppySubMenu.push({
         id: `eject_disk_${suffix}`,
-        label: `Eject Disk from Drive ${suffix.toUpperCase()}`,
+        label: t("menu.disk.eject", { drive: suffix.toUpperCase() }),
         click: async () => {
           await ejectDiskFile(index, suffix);
         }
@@ -159,7 +160,7 @@ export const diskMenuRenderer: MachineMenuRenderer = (windowInfo, _, model) => {
       type: "checkbox",
       checked: !!state.writeProtected,
       enabled: hasDisk,
-      label: `Write Protect Drive ${suffix.toUpperCase()}`,
+      label: t("menu.disk.writeProtect", { drive: suffix.toUpperCase() }),
       click: async () => {
         if (!hasDisk) return;
         const writeProtected = !state.writeProtected;
@@ -177,8 +178,8 @@ export const diskMenuRenderer: MachineMenuRenderer = (windowInfo, _, model) => {
     floppySubMenu.push({
       id: `insert_disk_${suffix}`,
       label: state?.diskFile
-        ? `Change Disk in Drive ${suffix.toUpperCase()}...`
-        : `Insert Disk into Drive ${suffix.toUpperCase()}...`,
+        ? t("menu.disk.change", { drive: suffix.toUpperCase() })
+        : t("menu.disk.insert", { drive: suffix.toUpperCase() }),
       click: async () => {
         await setDiskFile(emuWindow, index, suffix);
         await saveKliveProject();
@@ -200,11 +201,11 @@ export async function forgetTrdosRom(): Promise<void> {
 export async function selectTrdosRomFile(emuWindow: BrowserWindow): Promise<void> {
   const current = getSettingValue(SETTING_EMU_TRDOS_ROM) as string | undefined;
   const dialogResult = await dialog.showOpenDialog(emuWindow, {
-    title: "Select the TR-DOS ROM (16K)",
+    title: t("messages.trdos.selectRom"),
     defaultPath: current ? path.dirname(current) : app.getPath("home"),
     filters: [
-      { name: "ROM Files", extensions: ["rom", "bin"] },
-      { name: "All Files", extensions: ["*"] }
+      { name: t("common.filter.romFiles"), extensions: ["rom", "bin"] },
+      { name: t("common.filter.allFiles"), extensions: ["*"] }
     ],
     properties: ["openFile"]
   });
@@ -212,7 +213,7 @@ export async function selectTrdosRomFile(emuWindow: BrowserWindow): Promise<void
   const filename = dialogResult.filePaths[0];
   const size = fs.statSync(filename).size;
   if (size !== ROM_SIZE) {
-    dialog.showErrorBox("Not a TR-DOS ROM", `The TR-DOS ROM is 16384 bytes; ${filename} has ${size}.`);
+    dialog.showErrorBox(t("messages.trdos.notRom"), t("messages.trdos.wrongSize", { file: filename, size }));
     return;
   }
   setSettingValue(SETTING_EMU_TRDOS_ROM, filename);
@@ -232,14 +233,14 @@ async function restartForTrdosRom(message: string): Promise<void> {
 async function saveTrdosDiskAsTrd(emuWindow: BrowserWindow, index: number, suffix: string): Promise<void> {
   const image = await getEmuApi().getTrdosDiskImage(index);
   if (!image) {
-    dialog.showErrorBox("No TR-DOS disk", `There is no TR-DOS disk in drive ${suffix.toUpperCase()}.`);
+    dialog.showErrorBox(t("messages.trdos.noDisk"), t("messages.trdos.noDiskInDrive", { drive: suffix.toUpperCase() }));
     return;
   }
   const current = getDiskMediaState(index).diskFile;
   const result = await dialog.showSaveDialog(emuWindow, {
-    title: "Save the Disk as .trd",
+    title: t("messages.trdos.saveAsTrd"),
     defaultPath: current ? current.replace(/\.scl$/i, ".trd") : undefined,
-    filters: [{ name: "TR-DOS Disk Images", extensions: ["trd"] }]
+    filters: [{ name: t("common.filter.trdosDisks"), extensions: ["trd"] }]
   });
   if (result.canceled || !result.filePath) return;
   fs.writeFileSync(result.filePath, image);
@@ -256,7 +257,7 @@ export const spectrumIdeRenderer: MachineMenuRenderer = () => {
   return [
     {
       id: "show_basic",
-      label: "BASIC Listing",
+      label: t("menu.spectrum.basicListing"),
       type: "checkbox",
       checked: volatileDocs[BASIC_PANEL_ID],
       click: async () => {
@@ -298,9 +299,8 @@ export async function setSelectedTapeFile(
   } catch (err) {
     if (showErrors) {
       dialog.showErrorBox(
-        "Error while reading tape file",
-        `Reading file ${filename} resulted in error: ${err.message}\n\n` +
-          "The faulty tape file will be ejected after closing this dialog."
+        t("messages.tape.readErrorTitle"),
+        t("messages.tape.readError", { file: filename, error: err.message })
       );
     }
     await ejectTape();
@@ -361,11 +361,11 @@ async function setTapeFile(browserWindow: BrowserWindow, state: AppState): Promi
     appSettings?.folders?.[TAPE_FILE_FOLDER] ||
     (lastFile ? path.dirname(lastFile) : app.getPath("home"));
   const dialogResult = await dialog.showOpenDialog(browserWindow, {
-    title: "Select Tape File",
+    title: t("messages.tape.select"),
     defaultPath,
     filters: [
-      { name: "Tape Files", extensions: ["tap", "tzx"] },
-      { name: "All Files", extensions: ["*"] }
+      { name: t("common.filter.tapeFiles"), extensions: ["tap", "tzx"] },
+      { name: t("common.filter.allFiles"), extensions: ["*"] }
     ],
     properties: ["openFile"]
   });
@@ -383,9 +383,9 @@ async function ejectTape(confirm = false): Promise<void> {
   if (confirm) {
     const result = await dialog.showMessageBox({
       type: "question",
-      buttons: ["Yes", "No"],
-      title: "Eject Tape",
-      message: "Are you sure you want to eject the tape?"
+      buttons: [t("common.button.yes"), t("common.button.no")],
+      title: t("messages.tape.ejectTitle"),
+      message: t("messages.tape.ejectConfirm")
     });
     if (result.response !== 0) return;
   }
@@ -413,11 +413,13 @@ async function setDiskFile(
   // --- The Pentagon's and the Scorpion's Beta 128 reads TR-DOS images; the +3 reads CPC DSK
   const trdos = isBeta128Machine(mainStore.getState()?.emulatorState?.machineId);
   const dialogResult = await dialog.showOpenDialog(browserWindow, {
-    title: "Select Disk File",
+    title: t("messages.disk.select"),
     defaultPath,
     filters: [
-      trdos ? { name: "TR-DOS Disk Images", extensions: ["trd", "scl"] } : { name: "Disk Files", extensions: ["dsk"] },
-      { name: "All Files", extensions: ["*"] }
+      trdos
+        ? { name: t("common.filter.trdosDisks"), extensions: ["trd", "scl"] }
+        : { name: t("common.filter.diskFiles"), extensions: ["dsk"] },
+      { name: t("common.filter.allFiles"), extensions: ["*"] }
     ],
     properties: ["openFile"]
   });
@@ -457,9 +459,8 @@ export async function setSelectedDiskFile(
     await logEmuEvent(`Disk file in drive ${suffix.toUpperCase()} set to ${filename}`);
   } catch (err) {
     dialog.showErrorBox(
-      "Error while reading disk file",
-      `Reading file ${filename} resulted in error: ${err.message}\n\n` +
-        "The faulty disk file will be ejected after closing this dialog."
+      t("messages.disk.readErrorTitle"),
+      t("messages.disk.readError", { file: filename, error: err.message })
     );
     await ejectDiskFile(index, suffix);
   }
@@ -478,10 +479,7 @@ async function ejectDiskFile(index: number, suffix: string): Promise<void> {
     await getEmuApi().setDiskFile(index);
     await logEmuEvent(`Disk ejected from drive ${suffix.toUpperCase()}`);
   } catch (err) {
-    dialog.showErrorBox(
-      "Error while ejecting disk file",
-      `Ejecting resulted in error: ${err.message}`
-    );
+    dialog.showErrorBox(t("messages.disk.ejectErrorTitle"), t("messages.disk.ejectError", { error: err.message }));
   }
 }
 
@@ -518,11 +516,11 @@ export async function selectSp48RomFile(emuWindow: BrowserWindow): Promise<void>
     appSettings?.folders?.[ROM_FILE_FOLDER] ?? app.getPath("home");
 
   const dialogResult = await dialog.showOpenDialog(emuWindow, {
-    title: "Select ROM File",
+    title: t("messages.rom.select"),
     defaultPath,
     filters: [
-      { name: "ROM Files", extensions: ["rom", "bin"] },
-      { name: "All Files", extensions: ["*"] }
+      { name: t("common.filter.romFiles"), extensions: ["rom", "bin"] },
+      { name: t("common.filter.allFiles"), extensions: ["*"] }
     ],
     properties: ["openFile"]
   });
@@ -535,16 +533,13 @@ export async function selectSp48RomFile(emuWindow: BrowserWindow): Promise<void>
   try {
     contents = fs.readFileSync(filename);
   } catch (err) {
-    dialog.showErrorBox(
-      "Error reading ROM file",
-      `Could not read file ${filename}: ${err.message}`
-    );
+    dialog.showErrorBox(t("messages.rom.readErrorTitle"), t("messages.rom.readError", { file: filename, error: err.message }));
     return;
   }
   if (contents.length !== ROM_SIZE) {
     dialog.showErrorBox(
-      "Invalid ROM file",
-      `The selected file is ${contents.length} bytes. A ZX Spectrum 48 ROM must be exactly ${ROM_SIZE} bytes (16K).`
+      t("messages.rom.invalidTitle"),
+      t("messages.rom.invalidSp48", { size: contents.length, romSize: ROM_SIZE })
     );
     return;
   }
@@ -570,9 +565,9 @@ export async function selectSp48RomFile(emuWindow: BrowserWindow): Promise<void>
 export async function resetSp48RomFile(): Promise<void> {
   const result = await dialog.showMessageBox({
     type: "question",
-    buttons: ["Yes", "No"],
-    title: "Reset to Default ROM",
-    message: "Are you sure you want to reset to the default ZX Spectrum 48 ROM?"
+    buttons: [t("common.button.yes"), t("common.button.no")],
+    title: t("messages.rom.resetTitle"),
+    message: t("messages.rom.resetConfirm")
   });
   if (result.response !== 0) return;
 
@@ -628,12 +623,12 @@ export async function saveSpectrumSnapshotAs(browserWindow: BrowserWindow): Prom
   const state = mainStore.getState();
   const folder = appSettings?.folders?.[SPECTRUM_SNAPSHOT_FOLDER] || app.getPath("home");
   const dialogResult = await dialog.showSaveDialog(browserWindow, {
-    title: "Save ZX Spectrum Snapshot",
+    title: t("messages.snapshot.saveTitle"),
     defaultPath: path.join(folder, defaultSnapshotFileName(state)),
     filters: [
-      { name: "zx-state snapshot (keeps everything)", extensions: ["szx"] },
-      { name: "Z80 snapshot", extensions: ["z80"] },
-      { name: "SNA snapshot", extensions: ["sna"] }
+      { name: t("common.filter.szxSnapshot"), extensions: ["szx"] },
+      { name: t("common.filter.z80Snapshot"), extensions: ["z80"] },
+      { name: t("common.filter.snaSnapshot"), extensions: ["sna"] }
     ],
     properties: ["showOverwriteConfirmation", "createDirectory"]
   });
@@ -650,8 +645,8 @@ export async function saveSpectrumSnapshotAs(browserWindow: BrowserWindow): Prom
   if (!result?.success) {
     await dialog.showMessageBox(browserWindow, {
       type: "error",
-      title: "ZX Spectrum Snapshot",
-      message: result?.finalMessage ?? `Could not save ${filename}`
+      title: t("messages.snapshot.title"),
+      message: result?.finalMessage ?? t("messages.snapshot.couldNotSave", { file: filename })
     });
     return;
   }
@@ -662,10 +657,10 @@ export async function saveSpectrumSnapshotAs(browserWindow: BrowserWindow): Prom
   if (!losses.length || muted.includes(format)) return;
   const answer = await dialog.showMessageBox(browserWindow, {
     type: "warning",
-    title: "ZX Spectrum Snapshot",
-    message: `The snapshot is saved, but a .${format} file does not hold everything:`,
-    detail: losses.map((l) => `• ${l}`).join("\n") + "\n\nSave as .szx to keep the whole state.",
-    checkboxLabel: `Don't show this again for .${format} files`
+    title: t("messages.snapshot.title"),
+    message: t("messages.snapshot.lossy", { format }),
+    detail: losses.map((l) => `• ${l}`).join("\n") + "\n\n" + t("messages.snapshot.lossyHint"),
+    checkboxLabel: t("messages.snapshot.dontShowAgain", { format })
   });
   if (answer.checkboxChecked) {
     appSettings.snapshotLossNoticesMuted = [...muted, format];

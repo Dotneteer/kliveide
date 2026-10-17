@@ -1,5 +1,6 @@
 import classnames from "classnames";
 
+import { useT } from "@common/i18n/useT";
 import { Button } from "@renderer/controls/Button";
 import Dropdown from "@renderer/controls/Dropdown";
 import { Checkbox } from "@renderer/controls/Checkbox";
@@ -9,6 +10,7 @@ import type { OnlineViewModel } from "../SjasmplusViewModel";
 import styles from "../SjasmplusIntegrationDialog.module.scss";
 import { PathText } from "./PathText";
 import { Row } from "./Row";
+import { richText } from "./richText";
 
 type Props = {
   online: OnlineViewModel;
@@ -16,21 +18,24 @@ type Props = {
   dispatch: (intent: SjasmplusIntent) => void;
 };
 
-export const SourcePanelOnline = ({ online, disabled, dispatch }: Props) =>
-  online.kind === "unavailable" ? (
+export const SourcePanelOnline = ({ online, disabled, dispatch }: Props) => {
+  const t = useT();
+  return online.kind === "unavailable" ? (
     // --- Upstream publishes Windows binaries and source archives only, so there
     // --- is nothing to download here. Explain and point at the repository.
     <>
-      <Row label="Downloads">
-        <span>Windows binaries only — no build is published for this system.</span>
+      <Row label={t("dialog.sjasmplus.row.downloads")}>
+        <span>{t("dialog.sjasmplus.online.windowsOnly")}</span>
       </Row>
       <div className={styles.steps}>
-        <div>1. Build SJASMPLUS from source (see INSTALL.md in the repository).</div>
+        <div>{t("dialog.sjasmplus.online.stepBuild")}</div>
         <div>
-          2. Come back, choose <em>Local executable</em>, and select the binary you built.
+          {richText(t, "dialog.sjasmplus.online.stepSelect", {
+            localExecutable: <em>{t("dialog.sjasmplus.source.local")}</em>
+          })}
         </div>
       </div>
-      <Row label="Project">
+      <Row label={t("dialog.sjasmplus.row.project")}>
         <a
           className={styles.link}
           href={online.repositoryUrl}
@@ -44,7 +49,7 @@ export const SourcePanelOnline = ({ online, disabled, dispatch }: Props) =>
     </>
   ) : (
     <>
-      <Row label="Release">
+      <Row label={t("dialog.sjasmplus.row.release")}>
         {/*
           * The app's `Dropdown`, not a native `<select>`.
           *
@@ -56,10 +61,10 @@ export const SourcePanelOnline = ({ online, disabled, dispatch }: Props) =>
           */}
         <Dropdown
           testId="sjasmplus-release-select"
-          ariaLabel="SjasmPlus release"
+          ariaLabel={t("dialog.sjasmplus.online.releaseAriaLabel")}
           options={
             online.releases.length === 0
-              ? [{ value: "", label: "No releases" }]
+              ? [{ value: "", label: t("dialog.sjasmplus.online.noReleases") }]
               : online.releases
           }
           initialValue={online.selectedTag}
@@ -69,33 +74,33 @@ export const SourcePanelOnline = ({ online, disabled, dispatch }: Props) =>
         {/* --- The shared `Checkbox`, which associates its label with its input; the hand-rolled
             --- pair here did not, so it had no accessible name. */}
         <Checkbox
-          label="Show prereleases"
+          label={t("dialog.sjasmplus.online.showPrereleases")}
           initialValue={online.includePrereleases}
           enabled={!online.prereleasesDisabled}
           onChange={(value) => dispatch({ type: "prereleasesToggled", value })}
         />
         <Button
-          text="Refresh"
+          text={t("dialog.sjasmplus.button.refresh")}
           variant="secondary"
           disabled={online.refreshDisabled}
           clicked={() => dispatch({ type: "refreshReleasesRequested" })}
         />
       </Row>
-      <Row label="Asset">
+      <Row label={t("dialog.sjasmplus.row.asset")}>
         <Dropdown
           testId="sjasmplus-asset-select"
-          ariaLabel="SjasmPlus asset"
+          ariaLabel={t("dialog.sjasmplus.online.assetAriaLabel")}
           options={
-            online.assets.length === 0 ? [{ value: "", label: "No assets" }] : online.assets
+            online.assets.length === 0 ? [{ value: "", label: t("dialog.sjasmplus.online.noAssets") }] : online.assets
           }
           initialValue={online.selectedAssetName}
           enabled={!online.assetSelectDisabled}
           onChanged={(name) => dispatch({ type: "assetSelected", name })}
         />
       </Row>
-      <Row label="Folder">
+      <Row label={t("dialog.sjasmplus.row.folder")}>
         <Button
-          text="Select folder..."
+          text={t("dialog.sjasmplus.button.selectFolder")}
           variant="secondary"
           disabled={disabled}
           clicked={() => dispatch({ type: "selectDownloadFolderRequested" })}
@@ -103,12 +108,12 @@ export const SourcePanelOnline = ({ online, disabled, dispatch }: Props) =>
         <PathText
           testId="sjasmplus-download-folder"
           value={online.downloadFolder}
-          fallback="Not selected"
+          fallback={t("dialog.sjasmplus.online.folderNotSelected")}
           muted
         />
         <span className={styles.pushRight}>
           <Button
-            text="Download..."
+            text={t("dialog.sjasmplus.button.download")}
           variant="secondary"
             disabled={!online.downloadEnabled}
             clicked={() => dispatch({ type: "downloadRequested" })}
@@ -126,3 +131,4 @@ export const SourcePanelOnline = ({ online, disabled, dispatch }: Props) =>
       <div className={styles.spacer} />
     </>
   );
+};

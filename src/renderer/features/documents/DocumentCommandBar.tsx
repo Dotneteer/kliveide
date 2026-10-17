@@ -1,3 +1,4 @@
+import { useT } from "@common/i18n/useT";
 import { TabButton, TabButtonSeparator, TabButtonSpace } from "@controls/TabButton";
 import { PANE_ID_BUILD } from "@common/integration/constants";
 import { FileTypeEditor } from "@renderer/abstractions/FileTypePattern";
@@ -37,6 +38,7 @@ export function DocumentCommandBar({
  * controls availability and the latest script output target.
  */
 function BuildRootCommandBar() {
+  const t = useT();
   const { outputPaneService, ideCommandsService } = useAppServices();
   const compiling = useSelector((s) => s.compilation?.inProgress ?? false);
 
@@ -73,7 +75,7 @@ function BuildRootCommandBar() {
       <TabButtonSeparator />
       <TabButton
         iconName="combine"
-        title="Compile code"
+        title={t("documents.buildRoot.compile")}
         disabled={compiling}
         clicked={async () => await runBuildFunction("buildCode")}
       />
@@ -82,7 +84,7 @@ function BuildRootCommandBar() {
           <TabButtonSpace />
           <TabButton
             iconName="inject"
-            title={"Inject code into\nthe virtual machine"}
+            title={t("documents.buildRoot.inject")}
             disabled={compiling}
             clicked={async () => await runBuildFunction("injectCode")}
           />
@@ -91,21 +93,21 @@ function BuildRootCommandBar() {
       <TabButtonSpace />
       <TabButton
         iconName="play"
-        title={"Inject code and start\nthe virtual machine"}
+        title={t("documents.buildRoot.run")}
         disabled={compiling}
         clicked={async () => await runBuildFunction("runCode")}
       />
       <TabButtonSpace />
       <TabButton
         iconName="debug"
-        title={"Inject code and start\ndebugging"}
+        title={t("documents.buildRoot.debug")}
         disabled={compiling}
         clicked={async () => await runBuildFunction("debugCode")}
       />
       <TabButtonSeparator />
       <TabButton
         iconName="square-arrow-out-up-right"
-        title={"Show script output"}
+        title={t("documents.buildRoot.showScriptOutput")}
         disabled={compiling || !scriptId}
         clicked={async () => {
           if (scriptId > 0) {

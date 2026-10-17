@@ -1,13 +1,39 @@
+import { t } from "@common/i18n/i18n";
 import {
-  CARD_FILE_REQUIRED_HINT,
-  PRISTINE_CARD_HINT,
   SLOT0,
   canInsert,
   cardOptionsFor,
   needsFile,
-  titleOf,
   type Z88InsertCardState
 } from "./Z88InsertCardModel";
+
+// ─── Formatters ──────────────────────────────────────────────────────────────
+
+export function pristineCardHint(): string {
+  return t("dialog.z88.insertCard.pristineHint");
+}
+
+export function cardFileRequiredHint(): string {
+  return t("dialog.z88.insertCard.fileRequiredHint");
+}
+
+export function invalidCardTitle(): string {
+  return t("dialog.z88.insertCard.invalidCard.title");
+}
+
+export function invalidSizeMessage(byteLength: number): string {
+  return t("dialog.z88.insertCard.invalidCard.size", {
+    bytes: byteLength,
+    kbytes: Math.floor(byteLength / 1024)
+  });
+}
+
+export function titleOf(state: Z88InsertCardState): string {
+  // --- Slot 0 always holds something, so its card is replaced, never inserted.
+  return state.slot > SLOT0
+    ? t("dialog.z88.insertCard.title.insert", { slot: state.slot })
+    : t("dialog.z88.insertCard.title.replace", { slot: state.slot });
+}
 
 // ─── View model shape ────────────────────────────────────────────────────────
 
@@ -75,7 +101,7 @@ function selectFile(state: Z88InsertCardState): CardFileViewModel {
   const isCardSlot = state.slot > SLOT0;
   return {
     kind: "shown",
-    text: isCardSlot ? PRISTINE_CARD_HINT : CARD_FILE_REQUIRED_HINT,
+    text: isCardSlot ? pristineCardHint() : cardFileRequiredHint(),
     selected: false,
     warning: !isCardSlot,
     clearable: false

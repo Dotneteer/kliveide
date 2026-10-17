@@ -1,6 +1,7 @@
 import type { AboutDialogData } from "@common/messaging/about-dialog";
 import { Modal } from "@controls/Modal";
 import { useMainApi } from "@renderer/core/MainApi";
+import { useT } from "@common/i18n/useT";
 
 export type AboutDialogResult = "close" | "website";
 
@@ -11,18 +12,19 @@ type Props = {
 
 export function AboutDialog({ about, onClose }: Props) {
   const mainApi = useMainApi();
+  const t = useT();
 
   return (
     <Modal
-      title="About Klive IDE"
+      title={t("dialog.about.title")}
       iconName="question"
       isOpen={true}
       width={460}
       primaryVisible={false}
       secondaryVisible={true}
-      secondaryLabel="Visit website"
+      secondaryLabel={t("dialog.about.visitWebsite")}
       cancelVisible={true}
-      cancelLabel="Close"
+      cancelLabel={t("common.button.close")}
       initialFocus="cancel"
       onSecondaryClicked={async () => {
         await mainApi.showWebsite();
@@ -35,12 +37,12 @@ export function AboutDialog({ about, onClose }: Props) {
       }}
       onClose={() => onClose("close")}
     >
-      <p>Klive IDE is a retro computer emulator and Integrated Development Environment.</p>
+      <p>{t("dialog.about.description")}</p>
       <p>
-        Version: <strong data-testid="about-version">{about.version}</strong>
+        {t("dialog.about.versionLabel")} <strong data-testid="about-version">{about.version}</strong>
       </p>
-      <p>Electron version: {about.electronVersion}</p>
-      <p>OS version: {about.osVersion}</p>
+      <p>{t("dialog.about.electronVersion", { version: about.electronVersion })}</p>
+      <p>{t("dialog.about.osVersion", { version: about.osVersion })}</p>
     </Modal>
   );
 }

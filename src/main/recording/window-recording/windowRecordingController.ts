@@ -13,6 +13,7 @@ import type { FrameImage } from "./WindowFrameSource";
 import type { RecordedWindow } from "./WindowRecordingSession";
 import { WindowRecordingSession } from "./WindowRecordingSession";
 import { READ_THEME_COLORS_SCRIPT, toComposerColors } from "./themeColors";
+import { t } from "@common/i18n/i18n";
 
 /**
  * Starts and stops the IDE + Emulator recording from the main process (plan §5).
@@ -65,7 +66,7 @@ export async function startWindowRecording(
   if (emulatorState?.screenRecordingState && emulatorState.screenRecordingState !== "idle") return;
   if (!emuWindow || emuWindow.isDestroyed() || !ideWindow || ideWindow.isDestroyed()) return;
   if (!ideWindow.isVisible()) {
-    await showError(emuWindow, "The IDE window must be visible to record the IDE and the emulator.");
+    await showError(emuWindow, t("messages.recording.ideHidden"));
     return;
   }
 
@@ -124,7 +125,7 @@ export async function startWindowRecording(
     mainStore.dispatch(setWindowRecordingStateAction("recording", outputPath));
   } catch (err) {
     session = null;
-    await showError(emuWindow, `The recording could not be started.\n\n${(err as Error)?.message ?? err}`);
+    await showError(emuWindow, t("messages.recording.couldNotStart", { error: String((err as Error)?.message ?? err) }));
   } finally {
     starting = false;
   }
@@ -150,7 +151,7 @@ export async function stopWindowRecording(): Promise<string> {
   } catch (err) {
     await showError(
       BrowserWindow.getFocusedWindow() ?? undefined,
-      `The recording could not be saved.\n\n${(err as Error)?.message ?? err}`
+      t("messages.recording.couldNotSave", { error: String((err as Error)?.message ?? err) })
     );
     return "";
   }
@@ -167,7 +168,7 @@ async function readThemeColors(ideWindow: BrowserWindow): Promise<Record<string,
 }
 
 async function showError(window: BrowserWindow | undefined, message: string): Promise<void> {
-  const options = { type: "error" as const, title: "IDE + Emulator recording", message };
+  const options = { type: "error" as const, title: t("messages.recording.title"), message };
   if (window && !window.isDestroyed()) {
     await dialog.showMessageBox(window, options);
   } else {

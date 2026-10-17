@@ -1,3 +1,5 @@
+import { t } from "@common/i18n/i18n";
+import { useT } from "@common/i18n/useT";
 import { TabButton, TabButtonSeparator, TabButtonSpace } from "@renderer/controls/TabButton";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { useSelector } from "@renderer/core/RendererProvider";
@@ -38,12 +40,12 @@ export function getZ88SnapshotContextMenuInfo(services: AppServices): ContextMen
 
   return [
     {
-      text: "Run Z88 snapshot",
+      text: t("documents.z88Snapshot.menu.run"),
       disabled: refused,
       clicked: async (item: string) => await launch(item, "run")
     },
     {
-      text: "Debug Z88 snapshot (stop at PC)",
+      text: t("documents.z88Snapshot.menu.debug"),
       disabled: refused,
       clicked: async (item: string) => await launch(item, "debug")
     }
@@ -56,11 +58,11 @@ type Props = {
 
 /** The two actions in a `.z88` document's tab bar */
 const Z88SnapshotLaunchCommandBar = ({ path }: Props) => {
+  const t = useT();
   const { ideCommandsService } = useAppServices();
   const isKliveProject = useSelector((s) => s.project?.isKliveProject);
   const machineId = useSelector((s) => s.emulatorState?.machineId);
   const refusal = z88SnapshotProjectGuard({ project: { isKliveProject }, emulatorState: { machineId } });
-  const hint = refusal ? ` (${refusal})` : "";
 
   const launch = async (option: Z88SnapshotCommandOption) => {
     await ideCommandsService.executeCommand(z88SnapshotCommandText(path, option));
@@ -71,14 +73,16 @@ const Z88SnapshotLaunchCommandBar = ({ path }: Props) => {
       <TabButtonSeparator />
       <TabButton
         iconName="play"
-        title={`Load and run this snapshot${hint}`}
+        title={refusal ? t("documents.z88Snapshot.button.runRefused", { reason: refusal }) : t("documents.z88Snapshot.button.run")}
         disabled={!!refusal}
         clicked={async () => await launch("run")}
       />
       <TabButtonSpace />
       <TabButton
         iconName="debug"
-        title={`Load this snapshot and debug it, stopping at its PC${hint}`}
+        title={
+          refusal ? t("documents.z88Snapshot.button.debugRefused", { reason: refusal }) : t("documents.z88Snapshot.button.debug")
+        }
         disabled={!!refusal}
         clicked={async () => await launch("debug")}
       />

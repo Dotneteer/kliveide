@@ -4,6 +4,7 @@
  */
 
 import type { ReverseDebugState } from "@common/state/AppState";
+import { t } from "@common/i18n/i18n";
 
 /** What Take over here would leave behind (T4) */
 export type ForkPreview = { sdWrites: number; hostFiles: string[] };
@@ -25,41 +26,44 @@ export function formatReverseSeconds(seconds: number): string {
 /** The status bar's label for a timeline, or undefined at the present with nothing to say */
 export function reverseStatusText(state: ReverseDebugState | undefined, historyStep?: string): string | undefined {
   if (!state) return undefined;
-  if (!state.active) return state.desync ? "⚠ Reverse debugging stopped" : undefined;
+  if (!state.active) return state.desync ? t("statusbar.reverse.stopped") : undefined;
   if (state.searchedIntervals !== undefined) {
-    return `⟲ Searching back… ${state.searchedIntervals} interval${state.searchedIntervals === 1 ? "" : "s"}`;
+    return t("statusbar.reverse.searching", { count: state.searchedIntervals });
   }
   if (state.mode === "replaying") {
-    return `▶ Replaying · ${formatReverseSeconds(state.behindSeconds ?? 0)} to present`;
+    return t("statusbar.reverse.replaying", { time: formatReverseSeconds(state.behindSeconds ?? 0) });
   }
-  // --- A timeline opened from a debug recording names its file (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` D10)
-  const file = state.recording ? ` · ${state.recording}` : "";
   if (state.mode === "navigating") {
-    const behind = `⟲ −${formatReverseSeconds(state.behindSeconds ?? 0)}`;
-    if (state.deepLanding) return `${behind} · before the history window${file}`;
-    return `${historyStep ? `${behind} · step ${historyStep}` : behind}${file}`;
+    const time = formatReverseSeconds(state.behindSeconds ?? 0);
+    const status = state.deepLanding
+      ? t("statusbar.reverse.deep", { time })
+      : historyStep
+        ? t("statusbar.reverse.step", { time, step: historyStep })
+        : t("statusbar.reverse.behind", { time });
+    // --- A timeline opened from a debug recording names its file (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` D10)
+    return state.recording ? t("statusbar.reverse.withFile", { status, file: state.recording }) : status;
   }
-  return state.recording ? `Recording: ${state.recording}` : undefined;
+  return state.recording ? t("statusbar.reverse.recording", { file: state.recording }) : undefined;
 }
 
 /** The status bar's tooltip for a timeline */
 export function reverseStatusTooltip(state: ReverseDebugState | undefined): string | undefined {
   if (!state) return undefined;
-  if (!state.active) return state.desync ? `Reverse debugging stopped: ${state.desync}` : undefined;
+  if (!state.active) return state.desync ? t("statusbar.reverse.tip.stopped", { reason: state.desync }) : undefined;
   const lines: string[] = [];
   if (state.searchedIntervals !== undefined) {
-    lines.push("Reverse Continue is replaying the past, keyframe interval by interval. Click to cancel.");
+    lines.push(t("statusbar.reverse.tip.searching"));
   } else if (state.mode === "replaying") {
-    lines.push("The machine runs from the past toward the present; the recorded input plays.");
+    lines.push(t("statusbar.reverse.tip.replaying"));
   } else if (state.mode === "navigating") {
-    lines.push("The machine stands in the past: every panel shows that moment. Click to return to the present.");
-    if (state.deepLanding) lines.push("The point is older than the history window: the history shows the run up to it.");
+    lines.push(t("statusbar.reverse.tip.navigating"));
+    if (state.deepLanding) lines.push(t("statusbar.reverse.tip.deep"));
   }
-  if (state.inputsIgnored) {
-    lines.push(`Input ignored while in the past (${state.inputsIgnored}): use Take over here to continue from this point.`);
+  if (state.inputsIgnored) lines.push(t("statusbar.reverse.tip.inputIgnored", { count: state.inputsIgnored }));
+  if (state.rangeSeconds !== undefined) {
+    lines.push(t("statusbar.reverse.tip.range", { time: formatReverseSeconds(state.rangeSeconds) }));
   }
-  if (state.rangeSeconds !== undefined) lines.push(`Reverse range: ${formatReverseSeconds(state.rangeSeconds)}`);
-  if (state.recording) lines.push(`Opened from the debug recording ${state.recording}: its past is the file's`);
+  if (state.recording) lines.push(t("statusbar.reverse.tip.recording", { file: state.recording }));
   return lines.join("\n");
 }
 

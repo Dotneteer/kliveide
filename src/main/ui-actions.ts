@@ -65,6 +65,7 @@ import { forgetTimexRom, selectTimexRom } from "./machine-menus/timex-menus";
 import { forgetScorpionRom, selectScorpionRomFile } from "./machine-menus/scorpion-menus";
 import { toggleWindowRecording } from "./recording/window-recording/windowRecordingController";
 import { focusEmuWindow, getAppWindows, isIdeWindowFocused, isIdeWindowVisible, showIdeWindow } from ".";
+import { t } from "@common/i18n/i18n";
 
 const KEY_MAPPING_FOLDER = "keyMappingFolder";
 
@@ -155,11 +156,11 @@ export async function selectKeyMappingFile(browserWindow: BrowserWindow): Promis
     appSettings?.folders?.[KEY_MAPPING_FOLDER] ||
     (lastFile ? path.dirname(lastFile) : app.getPath("home"));
   const dialogResult = await dialog.showOpenDialog(browserWindow, {
-    title: "Select Key Mapping File",
+    title: t("messages.keyMapping.select"),
     defaultPath,
     filters: [
-      { name: "Key Mapping Files", extensions: ["keymap"] },
-      { name: "All Files", extensions: ["*"] }
+      { name: t("common.filter.keyMappingFiles"), extensions: ["keymap"] },
+      { name: t("common.filter.allFiles"), extensions: ["*"] }
     ],
     properties: ["openFile"]
   });
@@ -176,8 +177,8 @@ export async function selectKeyMappingFile(browserWindow: BrowserWindow): Promis
     await saveKliveProject();
   } catch (err) {
     dialog.showErrorBox(
-      "Error while reading key mapping file",
-      `Reading file ${filename} resulted in error: ${(err as Error).message}`
+      t("messages.keyMapping.readErrorTitle"),
+      t("messages.readFileError", { file: filename, error: (err as Error).message })
     );
   }
 }

@@ -50,6 +50,8 @@ import {
   SETTING_IDE_ACTIVE_TOOL,
   SETTING_IDE_CLOSE_EMU,
   SETTING_IDE_NAV_RECORD_TAB_SWITCH,
+  SETTING_IDE_LANGUAGE,
+  SETTING_IDE_I18N_SHOW_KEYS,
   SETTING_EDITOR_FONT_SIZE,
   SETTING_EDITOR_FONT_FAMILY,
   SETTING_PANEL_FONT_FAMILY,
@@ -80,6 +82,13 @@ import {
   SETTING_EDITOR_ALLOW_BACKGROUND_COMPILE
 } from "@common/settings/setting-const";
 
+/*
+ * The registered settings. Their `title` and `description` are English documentation for
+ * developers and are not shown anywhere: the Settings dialog shows its rows' own translated texts
+ * (`settings-pages.ts`, `en/settings.json`), and a menu checkbox passes its own label
+ * (`createBooleanSettingsMenu`). So they are deliberately not translation keys
+ * (`.plans/LOCALIZATION_PLAN.md` step 6).
+ */
 const settingDefinitions: Setting[] = [
   {
     id: SETTING_EMU_SHOW_TOOLBAR,
@@ -606,6 +615,24 @@ const settingDefinitions: Setting[] = [
     defaultValue: true,
     saveWithIde: true,
     boundTo: "ide"
+  },
+  {
+    id: SETTING_IDE_LANGUAGE,
+    title: "Display Language",
+    description:
+      "The language of Klive's menus, dialogs and panels: \"system\" follows the operating system, " +
+      "or a language id (en). Technical names stay in English.",
+    type: "string",
+    defaultValue: "system",
+    saveWithIde: true
+  },
+  {
+    id: SETTING_IDE_I18N_SHOW_KEYS,
+    title: "Show Translation Keys",
+    description: "Show every translated text as its translation key, to find the entry to fix.",
+    type: "boolean",
+    defaultValue: false,
+    saveWithIde: true
   },
   {
     id: SETTING_PANEL_FONT_FAMILY,

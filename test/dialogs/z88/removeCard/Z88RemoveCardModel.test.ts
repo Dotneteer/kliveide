@@ -2,12 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import {
   EMPTY_CARD_STATE,
-  confirmationOf,
   configWithEmptySlot0,
   initialState,
   reduce,
   requiresRestart
 } from "@renderer/appEmu/dialogs/z88/removeCard/Z88RemoveCardModel";
+import { confirmationOf } from "@renderer/appEmu/dialogs/z88/removeCard/Z88RemoveCardViewModel";
 
 import { MC_Z88_SLOT0, aState, anEnv } from "./fakes";
 
