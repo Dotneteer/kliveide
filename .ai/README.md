@@ -52,6 +52,11 @@ This folder stores durable notes for future AI-assisted work in this repository.
   translated — compiler or runtime**; upstream is read only to discover language and interface
   facts. `node scripts/zxbasic-syntax-check.cjs` says whether a new upstream release changed
   anything the spec describes.
+- **Before any work on the external Boriel BASIC 2.x integration (`zxbc`, the `.dbg` adapter, the
+  bundled setup kit, `.plans/BORIEL_BASIC_INTEGRATION_PLAN.md`), read `boriel/README.md`.** It
+  records what the pinned kit actually does: the macOS first-launch trap, the command line and
+  diagnostics, the `.dbg` corrections the adapter needs, and the run-time data layouts verified on
+  the 48K harness.
 - **Before writing any test of ZX Spectrum Next hardware behaviour, read
   `../test/harness/zxnext/README.md`.** The harness runs the real machine (the WASM core) and scripts it
   through ports, NextRegs, memory, registers, picture and audio; it replaces mock-based device tests,
