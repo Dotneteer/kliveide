@@ -93,6 +93,18 @@ merely uncoloured, which no route diff can see.
   `scripts/kbasic-ide-check.cjs` checks breakpoints, the execution point and the source-level debugger
   (stepping, return points, the Call Stack and Variables panels, error stops) in the running IDE.
 
+## Boriel BASIC (the external zxbc 2.x)
+
+- `zxbasic.compiler` picks `klive` (default) or `boriel` for `.zxbas`/`.bas`. The plan is
+  `.plans/BORIEL_BASIC_INTEGRATION_PLAN.md` (each phase opens with an "As built" note); the current
+  state and next steps are in `.plans/BORIEL_BASIC_HANDOFF.md`. Read `.ai/boriel/README.md` before
+  touching `src/main/boriel-integration/`: it records what zxbc 2.0.0-beta25 actually does.
+- The setup kits live in `vendor/boriel-basic/` (`kit.json` tracked, archives fetched and
+  git-ignored). Test fixtures in `test/boriel/fixtures/` are zxbc output: regenerate them with
+  `npm run boriel:fixtures`, never edit them. `scripts/boriel-ide-check.cjs` checks the running IDE.
+- The Klive BASIC provenance rule still applies: the kit's runtime and stdlib are never read to
+  design Klive BASIC.
+
 ## ZX Spectrum Next Test Harness
 
 - **Test ZX Spectrum Next hardware behaviour with the harness in `test/harness/zxnext/`; read its

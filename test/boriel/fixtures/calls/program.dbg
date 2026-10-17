@@ -1,0 +1,804 @@
+{
+  "format": "zx-source-debug",
+  "version": 1,
+  "architecture": "zx48k",
+  "binaryLength": 7312,
+  "binaryChecksum": 4288445343,
+  "sourceLevelDebug": {
+    "language": "basic",
+    "files": [
+      {
+        "index": 0,
+        "filename": "program.bas"
+      }
+    ],
+    "statements": [
+      {
+        "index": 6,
+        "fileIndex": 0,
+        "startLine": 28,
+        "startColumn": 0,
+        "endLine": 28,
+        "endColumn": 15,
+        "startAddress": 37576,
+        "endAddress": 37585,
+        "kind": "normal",
+        "callableIndex": 3,
+        "callTargets": []
+      },
+      {
+        "index": 7,
+        "fileIndex": 0,
+        "startLine": 29,
+        "startColumn": 0,
+        "endLine": 29,
+        "endColumn": 12,
+        "startAddress": 37585,
+        "endAddress": 37599,
+        "kind": "normal",
+        "callableIndex": 3,
+        "callTargets": []
+      },
+      {
+        "index": 8,
+        "fileIndex": 0,
+        "startLine": 30,
+        "startColumn": 0,
+        "endLine": 30,
+        "endColumn": 8,
+        "startAddress": 37599,
+        "endAddress": 37612,
+        "kind": "normal",
+        "callableIndex": 3,
+        "callTargets": []
+      },
+      {
+        "index": 10,
+        "fileIndex": 0,
+        "startLine": 32,
+        "startColumn": 0,
+        "endLine": 32,
+        "endColumn": 9,
+        "startAddress": 37612,
+        "endAddress": 37625,
+        "kind": "normal",
+        "callableIndex": 3,
+        "callTargets": []
+      },
+      {
+        "index": 11,
+        "fileIndex": 0,
+        "startLine": 33,
+        "startColumn": 0,
+        "endLine": 33,
+        "endColumn": 14,
+        "startAddress": 37625,
+        "endAddress": 37635,
+        "kind": "normal",
+        "callableIndex": 3,
+        "callTargets": []
+      },
+      {
+        "index": 12,
+        "fileIndex": 0,
+        "startLine": 34,
+        "startColumn": 0,
+        "endLine": 34,
+        "endColumn": 27,
+        "startAddress": 37635,
+        "endAddress": 37661,
+        "kind": "normal",
+        "callableIndex": 3,
+        "callTargets": []
+      },
+      {
+        "index": 13,
+        "fileIndex": 0,
+        "startLine": 35,
+        "startColumn": 0,
+        "endLine": 35,
+        "endColumn": 14,
+        "startAddress": 37661,
+        "endAddress": 37678,
+        "kind": "normal",
+        "callableIndex": 3,
+        "callTargets": []
+      },
+      {
+        "index": 16,
+        "fileIndex": 0,
+        "startLine": 36,
+        "startColumn": 0,
+        "endLine": 36,
+        "endColumn": 44,
+        "startAddress": 37678,
+        "endAddress": 37687,
+        "kind": "normal",
+        "callableIndex": 3,
+        "callTargets": []
+      },
+      {
+        "index": 14,
+        "fileIndex": 0,
+        "startLine": 36,
+        "startColumn": 14,
+        "endLine": 36,
+        "endColumn": 25,
+        "startAddress": 37687,
+        "endAddress": 37703,
+        "kind": "normal",
+        "callableIndex": 3,
+        "callTargets": []
+      },
+      {
+        "index": 15,
+        "fileIndex": 0,
+        "startLine": 36,
+        "startColumn": 31,
+        "endLine": 36,
+        "endColumn": 44,
+        "startAddress": 37703,
+        "endAddress": 37716,
+        "kind": "normal",
+        "callableIndex": 3,
+        "callTargets": []
+      },
+      {
+        "index": 17,
+        "fileIndex": 0,
+        "startLine": 37,
+        "startColumn": 0,
+        "endLine": 37,
+        "endColumn": 10,
+        "startAddress": 37716,
+        "endAddress": 37719,
+        "kind": "normal",
+        "callableIndex": 3,
+        "callTargets": []
+      },
+      {
+        "index": 18,
+        "fileIndex": 0,
+        "startLine": 38,
+        "startColumn": 0,
+        "endLine": 38,
+        "endColumn": 25,
+        "startAddress": 37719,
+        "endAddress": 37731,
+        "kind": "normal",
+        "callableIndex": 3,
+        "callTargets": []
+      },
+      {
+        "index": 19,
+        "fileIndex": 0,
+        "startLine": 39,
+        "startColumn": 0,
+        "endLine": 39,
+        "endColumn": 11,
+        "startAddress": 37731,
+        "endAddress": 37768,
+        "kind": "normal",
+        "callableIndex": 3,
+        "callTargets": []
+      },
+      {
+        "index": 20,
+        "fileIndex": 0,
+        "startLine": 39,
+        "startColumn": 24,
+        "endLine": 39,
+        "endColumn": 35,
+        "startAddress": 37768,
+        "endAddress": 37784,
+        "kind": "normal",
+        "callableIndex": 3,
+        "callTargets": []
+      },
+      {
+        "index": 21,
+        "fileIndex": 0,
+        "startLine": 40,
+        "startColumn": 0,
+        "endLine": 40,
+        "endColumn": 3,
+        "startAddress": 37784,
+        "endAddress": 37803,
+        "kind": "normal",
+        "callableIndex": 3,
+        "callTargets": []
+      },
+      {
+        "index": 22,
+        "fileIndex": 0,
+        "startLine": 42,
+        "startColumn": 5,
+        "endLine": 42,
+        "endColumn": 17,
+        "startAddress": 37803,
+        "endAddress": 37816,
+        "kind": "normal",
+        "callableIndex": 3,
+        "callTargets": []
+      },
+      {
+        "index": 23,
+        "fileIndex": 0,
+        "startLine": 42,
+        "startColumn": 19,
+        "endLine": 42,
+        "endColumn": 25,
+        "startAddress": 37816,
+        "endAddress": 37817,
+        "kind": "normal",
+        "callableIndex": 3,
+        "callTargets": []
+      },
+      {
+        "index": 24,
+        "fileIndex": 0,
+        "startLine": 43,
+        "startColumn": 5,
+        "endLine": 43,
+        "endColumn": 17,
+        "startAddress": 37817,
+        "endAddress": 37830,
+        "kind": "normal",
+        "callableIndex": 3,
+        "callTargets": []
+      },
+      {
+        "index": 25,
+        "fileIndex": 0,
+        "startLine": 43,
+        "startColumn": 19,
+        "endLine": 43,
+        "endColumn": 25,
+        "startAddress": 37830,
+        "endAddress": 37843,
+        "kind": "normal",
+        "callableIndex": 3,
+        "callTargets": []
+      },
+      {
+        "index": 0,
+        "fileIndex": 0,
+        "startLine": 11,
+        "startColumn": 0,
+        "endLine": 11,
+        "endColumn": 13,
+        "startAddress": 37843,
+        "endAddress": 37861,
+        "kind": "normal",
+        "callableIndex": 0,
+        "callTargets": []
+      },
+      {
+        "index": 1,
+        "fileIndex": 0,
+        "startLine": 12,
+        "startColumn": 4,
+        "endLine": 12,
+        "endColumn": 12,
+        "startAddress": 37861,
+        "endAddress": 37911,
+        "kind": "normal",
+        "callableIndex": 0,
+        "callTargets": []
+      },
+      {
+        "index": 3,
+        "fileIndex": 0,
+        "startLine": 18,
+        "startColumn": 4,
+        "endLine": 20,
+        "endColumn": 10,
+        "startAddress": 37911,
+        "endAddress": 37918,
+        "kind": "normal",
+        "callableIndex": 1,
+        "callTargets": []
+      },
+      {
+        "index": 2,
+        "fileIndex": 0,
+        "startLine": 19,
+        "startColumn": 0,
+        "endLine": 19,
+        "endColumn": 22,
+        "startAddress": 37918,
+        "endAddress": 37958,
+        "kind": "normal",
+        "callableIndex": 1,
+        "callTargets": []
+      },
+      {
+        "index": 4,
+        "fileIndex": 0,
+        "startLine": 21,
+        "startColumn": 0,
+        "endLine": 21,
+        "endColumn": 22,
+        "startAddress": 37958,
+        "endAddress": 38021,
+        "kind": "normal",
+        "callableIndex": 1,
+        "callTargets": []
+      },
+      {
+        "index": 5,
+        "fileIndex": 0,
+        "startLine": 25,
+        "startColumn": 4,
+        "endLine": 25,
+        "endColumn": 16,
+        "startAddress": 38021,
+        "endAddress": 38021,
+        "kind": "normal",
+        "callableIndex": 2,
+        "callTargets": []
+      }
+    ],
+    "callables": [
+      {
+        "index": 0,
+        "name": "Square",
+        "kind": "function",
+        "fileIndex": 0,
+        "line": 9,
+        "entryAddress": 37831,
+        "exitAddresses": [
+          37867
+        ]
+      },
+      {
+        "index": 1,
+        "name": "Fill",
+        "kind": "subroutine",
+        "fileIndex": 0,
+        "line": 15,
+        "entryAddress": 37876,
+        "exitAddresses": [
+          38011
+        ]
+      },
+      {
+        "index": 2,
+        "name": "Twice",
+        "kind": "function",
+        "fileIndex": 0,
+        "line": 24,
+        "entryAddress": 38021,
+        "exitAddresses": [
+          38025
+        ]
+      },
+      {
+        "index": 3,
+        "name": "main",
+        "kind": "entrypoint",
+        "fileIndex": 0,
+        "line": 1,
+        "entryAddress": 32768,
+        "exitAddresses": [
+          37789
+        ]
+      }
+    ],
+    "addressToStatement": [
+      [
+        37576,
+        6
+      ],
+      [
+        37585,
+        7
+      ],
+      [
+        37599,
+        8
+      ],
+      [
+        37612,
+        10
+      ],
+      [
+        37625,
+        11
+      ],
+      [
+        37635,
+        12
+      ],
+      [
+        37661,
+        13
+      ],
+      [
+        37678,
+        16
+      ],
+      [
+        37687,
+        14
+      ],
+      [
+        37703,
+        15
+      ],
+      [
+        37716,
+        17
+      ],
+      [
+        37719,
+        18
+      ],
+      [
+        37731,
+        19
+      ],
+      [
+        37768,
+        20
+      ],
+      [
+        37784,
+        21
+      ],
+      [
+        37803,
+        22
+      ],
+      [
+        37816,
+        23
+      ],
+      [
+        37817,
+        24
+      ],
+      [
+        37830,
+        25
+      ],
+      [
+        37843,
+        0
+      ],
+      [
+        37861,
+        1
+      ],
+      [
+        37911,
+        3
+      ],
+      [
+        37918,
+        2
+      ],
+      [
+        37958,
+        4
+      ],
+      [
+        38021,
+        5
+      ]
+    ],
+    "usesBanking": false,
+    "partitionedAddressMap": [],
+    "extensions": {
+      "frames": [
+        {
+          "callableIndex": 0,
+          "convention": "frame",
+          "returnSlotOffset": 4,
+          "argBytes": 2,
+          "startAddress": 37831,
+          "bodyStart": 37843,
+          "epilogueStart": 37867,
+          "endAddress": 37876,
+          "returnType": "uinteger"
+        },
+        {
+          "callableIndex": 1,
+          "convention": "frame",
+          "returnSlotOffset": 9,
+          "argBytes": 4,
+          "startAddress": 37876,
+          "bodyStart": 37899,
+          "epilogueStart": 37998,
+          "endAddress": 38021
+        },
+        {
+          "callableIndex": 2,
+          "convention": "fastcall",
+          "returnSlotOffset": 0,
+          "argBytes": 2,
+          "startAddress": 38021,
+          "bodyStart": 38021,
+          "epilogueStart": 38025,
+          "endAddress": 38026,
+          "returnType": "ubyte"
+        },
+        {
+          "callableIndex": 3,
+          "convention": "entrypoint",
+          "returnSlotOffset": 0,
+          "argBytes": 0,
+          "startAddress": 32768,
+          "bodyStart": 37576,
+          "epilogueStart": 37789
+        }
+      ],
+      "mainBaselineSymbol": 32790,
+      "callSites": [
+        {
+          "returnAddress": 37635,
+          "statementIndex": 11,
+          "calleeIndex": 1,
+          "kind": "sub",
+          "order": 0,
+          "moreCallsFollow": false
+        },
+        {
+          "returnAddress": 37645,
+          "statementIndex": 12,
+          "calleeIndex": 0,
+          "kind": "function",
+          "order": 0,
+          "moreCallsFollow": true
+        },
+        {
+          "returnAddress": 37652,
+          "statementIndex": 12,
+          "calleeIndex": 0,
+          "kind": "function",
+          "order": 1,
+          "moreCallsFollow": false
+        },
+        {
+          "returnAddress": 37671,
+          "statementIndex": 13,
+          "calleeIndex": 2,
+          "kind": "function",
+          "order": 0,
+          "moreCallsFollow": false
+        },
+        {
+          "returnAddress": 37719,
+          "statementIndex": 17,
+          "kind": "gosub",
+          "order": 0,
+          "moreCallsFollow": false
+        },
+        {
+          "returnAddress": 37731,
+          "statementIndex": 18,
+          "kind": "on-gosub",
+          "order": 0,
+          "moreCallsFollow": false
+        }
+      ],
+      "variables": [
+        {
+          "name": "g",
+          "displayName": "g",
+          "type": "ubyte",
+          "kind": "global",
+          "location": {
+            "at": "absolute",
+            "address": 37560
+          },
+          "byRef": false,
+          "scope": "global",
+          "declaredAt": {
+            "fileIndex": 0,
+            "line": 1
+          }
+        },
+        {
+          "name": "total",
+          "displayName": "total",
+          "type": "long",
+          "kind": "global",
+          "location": {
+            "at": "absolute",
+            "address": 37561
+          },
+          "byRef": false,
+          "scope": "global",
+          "declaredAt": {
+            "fileIndex": 0,
+            "line": 2
+          }
+        },
+        {
+          "name": "name",
+          "displayName": "name$",
+          "type": "string",
+          "kind": "global",
+          "location": {
+            "at": "absolute",
+            "address": 37565
+          },
+          "byRef": false,
+          "scope": "global",
+          "declaredAt": {
+            "fileIndex": 0,
+            "line": 3
+          }
+        },
+        {
+          "name": "ratio",
+          "displayName": "ratio",
+          "type": "float",
+          "kind": "global",
+          "location": {
+            "at": "absolute",
+            "address": 37567
+          },
+          "byRef": false,
+          "scope": "global",
+          "declaredAt": {
+            "fileIndex": 0,
+            "line": 4
+          }
+        },
+        {
+          "name": "fx",
+          "displayName": "fx",
+          "type": "fixed",
+          "kind": "global",
+          "location": {
+            "at": "absolute",
+            "address": 37572
+          },
+          "byRef": false,
+          "scope": "global",
+          "declaredAt": {
+            "fileIndex": 0,
+            "line": 5
+          }
+        },
+        {
+          "name": "n",
+          "displayName": "n",
+          "type": "ubyte",
+          "kind": "parameter",
+          "location": {
+            "at": "frame",
+            "ixOffset": 5
+          },
+          "byRef": false,
+          "scope": {
+            "callableIndex": 0
+          },
+          "declaredAt": {
+            "fileIndex": 0,
+            "line": 9
+          }
+        },
+        {
+          "name": "r",
+          "displayName": "r",
+          "type": "uinteger",
+          "kind": "local",
+          "location": {
+            "at": "frame",
+            "ixOffset": -2
+          },
+          "byRef": false,
+          "scope": {
+            "callableIndex": 0
+          },
+          "declaredAt": {
+            "fileIndex": 0,
+            "line": 10
+          }
+        },
+        {
+          "name": "n",
+          "displayName": "n",
+          "type": "ubyte",
+          "kind": "parameter",
+          "location": {
+            "at": "frame",
+            "ixOffset": 5
+          },
+          "byRef": false,
+          "scope": {
+            "callableIndex": 1
+          },
+          "declaredAt": {
+            "fileIndex": 0,
+            "line": 15
+          }
+        },
+        {
+          "name": "acc",
+          "displayName": "acc",
+          "type": "long",
+          "kind": "parameter",
+          "location": {
+            "at": "frame",
+            "ixOffset": 6
+          },
+          "byRef": true,
+          "scope": {
+            "callableIndex": 1
+          },
+          "declaredAt": {
+            "fileIndex": 0,
+            "line": 15
+          }
+        },
+        {
+          "name": "arr",
+          "displayName": "arr",
+          "type": "ubyte",
+          "kind": "local",
+          "location": {
+            "at": "frame",
+            "ixOffset": -7
+          },
+          "byRef": false,
+          "array": {
+            "elementType": "ubyte",
+            "dimensions": [
+              [
+                0,
+                9
+              ]
+            ]
+          },
+          "scope": {
+            "callableIndex": 1
+          },
+          "declaredAt": {
+            "fileIndex": 0,
+            "line": 16
+          }
+        },
+        {
+          "name": "i",
+          "displayName": "i",
+          "type": "ubyte",
+          "kind": "local",
+          "location": {
+            "at": "frame",
+            "ixOffset": -1
+          },
+          "byRef": false,
+          "scope": {
+            "callableIndex": 1
+          },
+          "declaredAt": {
+            "fileIndex": 0,
+            "line": 17
+          }
+        },
+        {
+          "name": "v",
+          "displayName": "v",
+          "type": "ubyte",
+          "kind": "parameter",
+          "location": {
+            "at": "frame",
+            "ixOffset": 5
+          },
+          "byRef": false,
+          "scope": {
+            "callableIndex": 2
+          },
+          "declaredAt": {
+            "fileIndex": 0,
+            "line": 24
+          }
+        }
+      ]
+    }
+  }
+}

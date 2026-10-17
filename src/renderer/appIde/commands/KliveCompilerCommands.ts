@@ -272,6 +272,25 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
 
     // --- Step #7: Create Auto Start header block, if required
     const blocksToSave: Uint8Array[] = [];
+
+    // --- A compiler that writes its own tape (a banked Boriel BASIC program, whose loader must page
+    // --- the banks as its runtime expects) hands over the tape's bytes: they are saved as they are
+    const prebuiltTape = (output as { prebuiltTape?: number[] }).prebuiltTape;
+    if (prebuiltTape) {
+      const blocks = readTapeData(new Uint8Array(prebuiltTape));
+      if (!blocks) return commandError("The tape the compiler wrote cannot be read.");
+      const ignored = ["-as", "-n", "-b", "-scr", "-c", "-p", "-sb", "-addr"].filter((o) => {
+        const value = (args as Record<string, unknown>)[o];
+        return value !== undefined && value !== false;
+      });
+      if (ignored.length) {
+        context.output.color("yellow");
+        context.output.writeLine(`The compiler wrote this tape with its own loader; ${ignored.join(", ")} has no effect.`);
+        context.output.resetStyle();
+      }
+      blocksToSave.push(...blocks.map((b) => b.data));
+      return await saveDataBlocks();
+    }
     let address = args["-addr"];
     if (address === undefined) {
       address =
@@ -1014,6 +1033,29 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
         return commandError("No active project found.");
       }
 
+      // --- A compiler that writes its own NEX (Boriel BASIC's zxbc) hands over the file's bytes
+      const prebuiltNex = (output as { prebuiltNex?: number[] }).prebuiltNex;
+      if (prebuiltNex) {
+        const prebuiltPath = await context.mainApi.saveBinaryFile(
+          filename,
+          new Uint8Array(prebuiltNex),
+          `kliveHome:${EXPORT_FILE_FOLDER}`
+        );
+        await context.mainApi.copyToSdCard(prebuiltPath, "_klive/" + compiledOutput.nexConfig.filename);
+        // --- The same debug sidecar Klive BASIC's NEX gets, so `nex-run -d` debugs it at source level
+        let prebuiltSidecar = "";
+        if (hasSourceLevelDebug(output)) {
+          const sidecarFile = await context.mainApi.saveTextFile(
+            sourceDebugSidecarPath(prebuiltPath),
+            createSourceDebugSidecar(new Uint8Array(prebuiltNex), output.sourceLevelDebug, sidecarProgramOf(output))
+          );
+          prebuiltSidecar = `, debug sidecar ${sidecarFile}`;
+        }
+        return commandSuccessWith(
+          `NEX file exported to ${prebuiltPath} (${prebuiltNex.length} bytes, written by the compiler${prebuiltSidecar}).`
+        );
+      }
+
       // --- Generate NEX file data. Problems the writer works around (code it drops or may
       // --- truncate) still produce a file, so they are shown as warnings rather than failing.
       const nexWarnings: string[] = [];
@@ -1234,8 +1276,10 @@ export async function injectCode(
   }
 
   // --- Collect files affected by project debugging
+  // --- A compiler without the classic tables has no sourceFileList (plan §1.1 of the Boriel plan)
+  const sourceFiles = result.sourceFileList ?? [];
   if (operationType === "debug") {
-    context.service.projectService.setLockedFiles(result.sourceFileList.map((f) => f.filename));
+    context.service.projectService.setLockedFiles(sourceFiles.map((f) => f.filename));
   }
 
   // --- Create the code to inject into the emulator
@@ -1291,7 +1335,7 @@ export async function injectCode(
 
     case "debug": {
       // --- Check if we have debug information
-      if (result.sourceFileList.length === 0) {
+      if (sourceFiles.length === 0) {
         const out = context.output;
         out.color("yellow");
         out.writeLine("No debug information available.");

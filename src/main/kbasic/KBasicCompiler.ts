@@ -192,6 +192,13 @@ export function runFrontEnd(
   const normalised = rootText.replace(/\r\n?/g, "\n");
   const header = readHeader(new SourceFile(0, rootPath, normalised), diagnostics);
   const options = applyHeader(base, header, diagnostics);
+  // --- Options only Boriel BASIC acts on: one source builds under both compilers, so they are
+  // --- accepted, and Klive BASIC says they do nothing here
+  for (const h of header) {
+    if (h.name === "split-modules") {
+      diagnostics.warning("K013", "'@split-modules has no effect with Klive BASIC: it banks code with CODEBANK", h.span);
+    }
+  }
   const rootFolder = folderOf(rootPath);
   const defines: Record<string, string> = {};
   for (const d of options.defines) defines[d.name] = d.value ?? "";

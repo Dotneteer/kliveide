@@ -62,7 +62,10 @@ describe("SettingsDialog under StrictMode", () => {
         <SettingsDialog data={{ page: "integrations" }} onClose={vi.fn()} />
       </StrictMode>
     );
-    fireEvent.click(screen.getByRole("button", { name: "Configure..." }));
+    // --- The Integrations page lists SjasmPlus first, then Boriel BASIC
+    const [sjasmplus, boriel] = screen.getAllByRole("button", { name: "Configure..." });
+    fireEvent.click(sjasmplus);
     await waitFor(() => expect(mainApiMock.runUiAction).toHaveBeenCalledWith("dialog:sjasmplus", undefined));
+    expect(boriel).toBeDefined();
   });
 });

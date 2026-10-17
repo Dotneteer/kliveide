@@ -79,9 +79,11 @@ export type CallableFrameInfo = {
   /**
    * `frame`: a routine that builds an IX frame (`push ix; ld ix,0; add ix,sp`; locals below IX, the
    * return address at IX+2); `entrypoint`: the main program, whose baseline SP is in
-   * `mainBaselineSymbol`.
+   * `mainBaselineSymbol`; `fastcall`: a routine with no frame (Boriel BASIC's FASTCALL, whose first
+   * argument arrives in registers and whose return address is the stack word at its baseline). Klive
+   * BASIC never emits `fastcall`.
    */
-  convention: "frame" | "entrypoint";
+  convention: "frame" | "entrypoint" | "fastcall";
   /** `frame`: bytes from the baseline SP (every statement entry's SP) to the return-address slot. */
   returnSlotOffset?: number;
   /** `frame`: bytes of stack arguments above the return address, which the routine removes. */
@@ -143,6 +145,15 @@ export type CodebankDebugInfo = {
   shadowStack: number;
   /** Each logical bank's 8K pages, in window order (two for a 16K window). */
   banks: { bank: number; pages: number[] }[];
+  /**
+   * The shadow stack's layout. Absent: Klive BASIC's, 3-byte records `[bank, return]` growing up from
+   * `shadowStack`. `"zxbc"`: Boriel BASIC's (`.ai/boriel/dbg-observed.md`, "Far calls"), 4-byte
+   * records `[return, flags, paging]` pushed downwards; `shadowStack` is the area's end, where the
+   * pointer starts, so the oldest record is the one just below it.
+   */
+  shadowStackKind?: "zxbc";
+  /** zxbc: the saved paging byte masked with this is the logical bank (the 128K saves `BANKM`). */
+  bankMask?: number;
 };
 
 /** The registers a FUNCTION result is decoded from at a return point (§10.2.6). */

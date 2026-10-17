@@ -74,6 +74,8 @@ function emptyFileText(row: SettingsRow): string {
       return "Built-in ROM";
     case "keyMapping":
       return "None";
+    case "borielBasic":
+      return "Not set up";
     default:
       return "Not set";
   }

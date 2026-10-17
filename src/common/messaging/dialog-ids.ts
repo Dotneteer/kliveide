@@ -11,6 +11,9 @@ export const MACHINE_SELECT_DIALOG = 7;
 export const SETTINGS_DIALOG = 8;
 // --- Detect code and data (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §4.6)
 export const DETECT_CODE_DATA_DIALOG = 9;
+// --- Boriel BASIC setup (`.plans/BORIEL_BASIC_INTEGRATION_PLAN.md` §3.3). Both registries render it:
+// --- the first-run offer appears in the emulator window, Settings opens it in the IDE window
+export const BORIEL_SETUP_DIALOG = 10;
 
 // --- Emulator dialogs
 export const EMU_DIALOG_BASE = 1000;

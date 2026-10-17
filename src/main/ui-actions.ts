@@ -29,7 +29,8 @@ import {
   MACHINE_SELECT_DIALOG,
   JOYSTICK_BINDINGS_DIALOG,
   SETTINGS_DIALOG,
-  SJASMPLUS_INTEGRATION_DIALOG
+  SJASMPLUS_INTEGRATION_DIALOG,
+  BORIEL_SETUP_DIALOG
 } from "@messaging/dialog-ids";
 import { mainStore } from "./main-store";
 import { rememberSettingsPage, settingsPageToOpen } from "./settings-page-memory";
@@ -48,6 +49,7 @@ import {
 } from "@common/automation/protocol";
 import { parseKeyMappings } from "./key-mappings/keymapping-parser";
 import { setClockMultiplier, setSoundLevel } from "./emulator-preferences";
+import { setEffectiveBasicCompiler } from "./boriel-integration/boriel-main";
 import {
   type WindowRecordingPreference,
   windowRecordingPreferenceAction
@@ -269,6 +271,12 @@ export async function runUiAction(actionId: UiActionId, value?: unknown): Promis
       if (!(AUTOMATION_LEVELS as readonly unknown[]).includes(value)) return `Unknown automation level: ${value}`;
       applyUserSetting(AUTOMATION_LEVEL_SETTING, value);
       return undefined;
+    // --- Klive BASIC or Boriel BASIC for .zxbas/.bas: the setting that decides now (the project's, when
+    // --- it chooses one; else the user's)
+    case "set:basicCompiler":
+      if (value !== "klive" && value !== "boriel") return `Unknown BASIC compiler: ${value}`;
+      await setEffectiveBasicCompiler(value);
+      return undefined;
     case "rom:sp48:select":
       await selectSp48RomFile(owner);
       return undefined;
@@ -308,6 +316,10 @@ export async function runUiAction(actionId: UiActionId, value?: unknown): Promis
     case "dialog:sjasmplus":
       showIdeWindow();
       await getIdeApi().displayDialog(SJASMPLUS_INTEGRATION_DIALOG);
+      return undefined;
+    case "dialog:boriel":
+      showIdeWindow();
+      await getIdeApi().displayDialog(BORIEL_SETUP_DIALOG, { mode: "settings" });
       return undefined;
     case "dialog:excluded-items":
       showIdeWindow();

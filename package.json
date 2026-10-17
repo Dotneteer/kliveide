@@ -23,12 +23,13 @@
   "homepage": "https://github.com/Dotneteer/kliveide",
   "main": "./out/main/index.js",
   "scripts": {
-    "predev": "install-electron",
+    "predev": "install-electron && node scripts/boriel-kit.cjs fetch --current --optional",
     "dev": "electron-vite dev --config build/electron.vite.config.ts",
     "build": "npm run build:app && electron-builder",
     "build:app": "npm run build:check && electron-vite build --config build/electron.vite.config.ts",
     "build:check": "node scripts/kbasic-runtime-index.cjs --check && node scripts/rom-annotations.cjs --check && node scripts/check-types.cjs",
     "rom:annotations": "node scripts/rom-annotations.cjs",
+    "boriel:fixtures": "node scripts/boriel-fixtures.cjs",
     "kbasic:runtime": "node scripts/kbasic-runtime-index.cjs",
     "kbasic:help": "node scripts/kbasic-help-data.cjs",
     "build:sp48-wasm": "node scripts/build-sp48-wasm.cjs",
@@ -58,14 +59,19 @@
     "test:zxnext-wasm-matrix": "npm test -- --project e2e-cores test/wasm/zxNext",
     "lint:renderer": "eslint src/renderer --ext .ts,.tsx",
     "build:win": "npm run build:all-wasm && npm run build:app && npm run package:win",
+    "prepackage:win": "node scripts/boriel-kit.cjs stage --platform win32 --arch x64",
     "package:win": "electron-builder build --win --x64 --publish never",
     "build:mac": "npm run build:all-wasm && npm run build:app && npm run package:mac",
+    "prepackage:mac": "node scripts/boriel-kit.cjs stage --platform darwin --arch x64",
     "package:mac": "electron-builder build --mac --x64 --publish never",
     "build:mac:arm64": "npm run build:all-wasm && npm run build:app && npm run package:mac:arm64",
+    "prepackage:mac:arm64": "node scripts/boriel-kit.cjs stage --platform darwin --arch arm64",
     "package:mac:arm64": "electron-builder build --mac --arm64 --publish never",
     "build:linux": "npm run build:all-wasm && npm run build:app && npm run package:linux",
+    "prepackage:linux": "node scripts/boriel-kit.cjs stage --platform linux --arch x64",
     "package:linux": "electron-builder build --linux --x64 --publish never",
     "build:linux:arm64": "npm run build:all-wasm && npm run build:app && npm run package:linux:arm64",
+    "prepackage:linux:arm64": "node scripts/boriel-kit.cjs stage --platform linux --arch arm64",
     "package:linux:arm64": "electron-builder build --linux --arm64 --publish never",
     "test:unit": "vitest run --config build/vitest.config.ts --project=node --project=jsdom",
     "test:e2e": "node scripts/run-tests.cjs --e2e",
@@ -214,6 +220,7 @@
       "!.prettierrc.yaml",
       "!.vscode",
       "!_input",
+      "!vendor",
       "!CHANGELOG.md",
       "!pages",
       "!public",
@@ -225,6 +232,13 @@
       "!tsconfig.tsbuildinfo"
     ],
     "extraResources": [
+      {
+        "from": "vendor/boriel-basic/stage",
+        "to": "boriel",
+        "filter": [
+          "**/*"
+        ]
+      },
       {
         "from": "src/public/roms",
         "to": "roms",

@@ -1,7 +1,6 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
-import zlib from "zlib";
 import { execa } from "execa";
 import { Readable } from "stream";
 import { pipeline } from "stream/promises";
@@ -22,6 +21,7 @@ import {
   getSjasmplusExecutableName,
   normalizeExecutablePath
 } from "./sjasmplus-resolver";
+import { extractArchive, safeJoin } from "../tool-install/archive";
 
 const PROBE_SOURCE = [
   "  DEVICE ZXSPECTRUM48",
@@ -417,108 +417,13 @@ function prepareDownloadedAsset(
   isWindows: boolean
 ): void {
   const lowerName = assetName.toLowerCase();
-  if (lowerName.endsWith(".zip")) {
-    extractZip(downloadFile, installFolder);
-    return;
-  }
-
-  if (lowerName.endsWith(".tar.gz") || lowerName.endsWith(".tgz")) {
-    extractTarGz(downloadFile, installFolder);
+  if (lowerName.endsWith(".zip") || lowerName.endsWith(".tar.gz") || lowerName.endsWith(".tgz")) {
+    // --- The download keeps the asset's name (and so its extension), which the helper dispatches on
+    extractArchive(downloadFile, installFolder, { applyModes: !isWindows });
     return;
   }
 
   fs.copyFileSync(downloadFile, safeJoin(installFolder, getSjasmplusExecutableName(isWindows)));
-}
-
-function extractZip(zipFile: string, outputFolder: string): void {
-  const buffer = fs.readFileSync(zipFile);
-  const centralDirectoryOffset = findZipCentralDirectoryOffset(buffer);
-  let offset = centralDirectoryOffset;
-
-  while (offset < buffer.length && buffer.readUInt32LE(offset) === 0x02014b50) {
-    const compressionMethod = buffer.readUInt16LE(offset + 10);
-    const compressedSize = buffer.readUInt32LE(offset + 20);
-    const uncompressedSize = buffer.readUInt32LE(offset + 24);
-    const nameLength = buffer.readUInt16LE(offset + 28);
-    const extraLength = buffer.readUInt16LE(offset + 30);
-    const commentLength = buffer.readUInt16LE(offset + 32);
-    const localHeaderOffset = buffer.readUInt32LE(offset + 42);
-    const entryName = buffer.toString("utf8", offset + 46, offset + 46 + nameLength);
-    offset += 46 + nameLength + extraLength + commentLength;
-
-    if (!entryName || entryName.endsWith("/")) {
-      fs.mkdirSync(safeJoin(outputFolder, entryName), { recursive: true });
-      continue;
-    }
-
-    if (buffer.readUInt32LE(localHeaderOffset) !== 0x04034b50) {
-      throw new Error(`Invalid ZIP local header for ${entryName}.`);
-    }
-    const localNameLength = buffer.readUInt16LE(localHeaderOffset + 26);
-    const localExtraLength = buffer.readUInt16LE(localHeaderOffset + 28);
-    const dataOffset = localHeaderOffset + 30 + localNameLength + localExtraLength;
-    const compressedData = buffer.subarray(dataOffset, dataOffset + compressedSize);
-    let fileData: Buffer;
-    if (compressionMethod === 0) {
-      fileData = compressedData;
-    } else if (compressionMethod === 8) {
-      fileData = zlib.inflateRawSync(compressedData);
-    } else {
-      throw new Error(`Unsupported ZIP compression method ${compressionMethod} for ${entryName}.`);
-    }
-    if (fileData.length !== uncompressedSize) {
-      throw new Error(`Invalid ZIP entry size for ${entryName}.`);
-    }
-
-    const targetPath = safeJoin(outputFolder, entryName);
-    fs.mkdirSync(path.dirname(targetPath), { recursive: true });
-    fs.writeFileSync(targetPath, fileData);
-  }
-}
-
-function findZipCentralDirectoryOffset(buffer: Buffer): number {
-  const minimumOffset = Math.max(0, buffer.length - 65_557);
-  for (let offset = Math.max(minimumOffset, buffer.length - 22); offset >= minimumOffset; offset--) {
-    if (buffer.readUInt32LE(offset) === 0x06054b50) {
-      return buffer.readUInt32LE(offset + 16);
-    }
-  }
-  throw new Error("Invalid ZIP archive. End of central directory not found.");
-}
-
-function extractTarGz(tarGzFile: string, outputFolder: string): void {
-  const buffer = zlib.gunzipSync(fs.readFileSync(tarGzFile));
-  let offset = 0;
-
-  while (offset + 512 <= buffer.length) {
-    const header = buffer.subarray(offset, offset + 512);
-    if (header.every((value) => value === 0)) {
-      break;
-    }
-
-    const name = readTarString(header, 0, 100);
-    const prefix = readTarString(header, 345, 155);
-    const entryName = prefix ? `${prefix}/${name}` : name;
-    const size = parseInt(readTarString(header, 124, 12).trim() || "0", 8);
-    const typeFlag = readTarString(header, 156, 1);
-    offset += 512;
-
-    if (typeFlag === "5") {
-      fs.mkdirSync(safeJoin(outputFolder, entryName), { recursive: true });
-    } else if (typeFlag === "" || typeFlag === "0") {
-      const targetPath = safeJoin(outputFolder, entryName);
-      fs.mkdirSync(path.dirname(targetPath), { recursive: true });
-      fs.writeFileSync(targetPath, buffer.subarray(offset, offset + size));
-    }
-
-    offset += Math.ceil(size / 512) * 512;
-  }
-}
-
-function readTarString(buffer: Buffer, offset: number, length: number): string {
-  const end = buffer.indexOf(0, offset);
-  const safeEnd = end >= offset && end < offset + length ? end : offset + length;
-  return buffer.toString("utf8", offset, safeEnd).trim();
 }
 
 function findSjasmplusExecutable(folder: string, isWindows: boolean): string | undefined {
@@ -542,15 +447,6 @@ function findSjasmplusExecutable(folder: string, isWindows: boolean): string | u
 
 function sanitizePathSegment(value: string): string {
   return value.trim().replace(/[^a-zA-Z0-9._-]+/g, "_") || "release";
-}
-
-function safeJoin(baseFolder: string, itemPath: string): string {
-  const targetPath = path.resolve(baseFolder, itemPath);
-  const resolvedBase = path.resolve(baseFolder);
-  if (targetPath !== resolvedBase && !targetPath.startsWith(`${resolvedBase}${path.sep}`)) {
-    throw new Error(`Archive entry escapes the install folder: ${itemPath}`);
-  }
-  return targetPath;
 }
 
 function mapGithubRelease(

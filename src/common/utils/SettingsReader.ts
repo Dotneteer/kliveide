@@ -35,15 +35,33 @@ function get(obj: any, path: string | string[], defaultValue?: any): any {
   return result;
 }
 
+function isPlainObject(value: unknown): value is Record<string, any> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/** `over`'s keys win; nested objects merge. Neither input is changed. */
+function deepMerge(base: Record<string, any>, over: Record<string, any>): Record<string, any> {
+  const result: Record<string, any> = { ...base };
+  for (const [key, value] of Object.entries(over)) {
+    result[key] = isPlainObject(value) && isPlainObject(result[key]) ? deepMerge(result[key], value) : value;
+  }
+  return result;
+}
+
 class SettingsReader {
   constructor (public readonly state: AppState) {}
 
+  /**
+   * A setting's value: the project's overrides the user's key by key. Both are nested objects, so
+   * a shallow merge of the two would let a project that sets one key of a namespace
+   * (`zxbasic.compiler`) hide every user key of it (`zxbasic.root`). Two object values merge deeply.
+   */
   readSetting (key: string): any {
-    const mergedSettings = {
-      ...(this.state?.userSettings ?? {}),
-      ...(this.state?.projectSettings ?? {})
-    };
-    return get(mergedSettings, key);
+    const projectValue = get(this.state?.projectSettings, key);
+    const userValue = get(this.state?.userSettings, key);
+    if (projectValue === undefined) return userValue;
+    if (isPlainObject(projectValue) && isPlainObject(userValue)) return deepMerge(userValue, projectValue);
+    return projectValue;
   }
 
   readBooleanSetting (key: string): boolean {

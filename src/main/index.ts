@@ -56,7 +56,9 @@ import {
 } from "@state/actions";
 import { isFFmpegAvailable } from "./recording/ffmpegAvailable";
 import { Unsubscribe } from "@state/redux-light";
-import { registerMainToEmuMessenger } from "@messaging/MainToEmuMessenger";
+import { getEmuApi, registerMainToEmuMessenger } from "@messaging/MainToEmuMessenger";
+import { BORIEL_SETUP_DIALOG } from "@messaging/dialog-ids";
+import { scheduleBorielSetupOffer } from "./boriel-integration/boriel-main";
 import { getIdeApi, registerMainToIdeMessenger } from "@messaging/MainToIdeMessenger";
 import { createSettingsReader } from "@utils/SettingsReader";
 import { readAdvancedDebuggingSetting } from "@common/features/advancedDebugging";
@@ -602,6 +604,8 @@ async function createAppWindows() {
 app.whenReady().then(() => {
   initializeMachineTypes();
   createAppWindows();
+  // --- Offer to install the bundled Boriel BASIC kit (`.plans/BORIEL_BASIC_INTEGRATION_PLAN.md` §3.2)
+  scheduleBorielSetupOffer(() => getEmuApi().displayDialog(BORIEL_SETUP_DIALOG, { mode: "offer" }));
   // --- The automation server, when the settings or `--automation` ask for it (COMMAND_LINE_AUTOMATION_PLAN D4)
   initAutomation();
 });

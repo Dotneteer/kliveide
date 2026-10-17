@@ -40,6 +40,9 @@ import {
   MI_ZXNEXT
 } from "@common/machines/constants";
 import { getTimexModel, type TimexModelId } from "@emu/machines/timex/timexModels";
+import { createSettingsReader } from "@common/utils/SettingsReader";
+import { BORIEL_INSTALL_FOLDER } from "@main/boriel-integration/boriel-config";
+import { selectedZxBasicCompiler, ZXBC_EXECUTABLE_PATH } from "@main/zxb-integration/zxb-config";
 import {
   SETTING_EDITOR_ALLOW_BACKGROUND_COMPILE,
   SETTING_EDITOR_AUTOCOMPLETE,
@@ -123,7 +126,9 @@ export type SettingsStateKey =
   | "sp48Rom"
   | "keyMappingFile"
   | "automationEnabled"
-  | "automationLevel";
+  | "automationLevel"
+  | "basicCompiler"
+  | "borielInstallation";
 
 export type SettingsRowSource =
   | { kind: "setting"; settingId: string }
@@ -971,8 +976,46 @@ export const SETTINGS_ROWS: SettingsRow[] = [
     editor: "button",
     buttons: [{ label: "Configure...", action: "dialog:sjasmplus", closesDialog: true }],
     replaces: "IDE › Integrations › SjasmPlus Assembler"
+  },
+  {
+    // --- The compiler that actually builds: a project's `zxbasic.compiler` wins over the user's, and
+    // --- it is the one this row changes then (`set:basicCompiler`)
+    id: "basicCompiler",
+    page: "integrations",
+    group: "BASIC compilers",
+    title: "Compiler for BASIC programs",
+    description: "Builds .zxbas and .bas files. A project that chooses its own compiler keeps the choice made here in its settings.",
+    editor: "select",
+    source: state("basicCompiler"),
+    options: [
+      { label: "Klive BASIC", value: "klive" },
+      { label: "Boriel BASIC", value: "boriel" }
+    ],
+    defaultValue: "klive"
+  },
+  {
+    id: "borielBasic",
+    page: "integrations",
+    group: "BASIC compilers",
+    title: "Boriel BASIC",
+    description: "Install the bundled Boriel BASIC 2.x, or use an installation you have",
+    editor: "file",
+    source: state("borielInstallation"),
+    buttons: [{ label: "Configure...", action: "dialog:boriel", closesDialog: true }]
   }
 ];
+
+/**
+ * The folder of the Boriel BASIC Klive uses: an explicit `zxc` path's folder, else the installation
+ * folder; empty when it is not set up. What the settings say, not whether it still works (the
+ * Configure dialog checks that).
+ */
+export function borielInstallationFolder(appState: AppState | undefined): string {
+  const settings = appState ? createSettingsReader(appState) : undefined;
+  const explicit = String(settings?.readSetting(ZXBC_EXECUTABLE_PATH) ?? "").trim();
+  if (explicit) return explicit.replace(/[\\/][^\\/]*$/, "");
+  return String(settings?.readSetting(BORIEL_INSTALL_FOLDER) ?? "").trim();
+}
 
 /** The setting that holds the running Timex model's ROM */
 export function timexRomSettingIdOf(appState: AppState | undefined): string {
@@ -1032,6 +1075,10 @@ export function readSettingsRowValue(row: SettingsRow, appState: AppState | unde
       return parseAutomationSwitch(appState?.userSettings?.automation?.enabled);
     case "automationLevel":
       return parseAutomationLevel(appState?.userSettings?.automation?.level);
+    case "basicCompiler":
+      return selectedZxBasicCompiler(appState);
+    case "borielInstallation":
+      return borielInstallationFolder(appState);
     default:
       return undefined;
   }

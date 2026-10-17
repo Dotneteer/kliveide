@@ -189,9 +189,23 @@ export class SourceDebugIndex {
   callableAt(address: number, partition?: number): number | undefined {
     const banked = this.isBanked(address);
     for (const r of this.callableRanges) {
-      if (address >= r.start && address < r.end && (!banked || r.partition === partition)) return r.index;
+      if (address >= r.start && address < r.end && (!banked || this.rangePartition(r, address) === partition)) return r.index;
     }
     return undefined;
+  }
+
+  /**
+   * The partition a routine's code at `address` is in. A routine carries its start's partition; in a
+   * 16K window whose banks are two 8K pages (the Next), code past the second slot's start is in the
+   * bank's second page, which the CODEBANK bank table names.
+   */
+  private rangePartition(r: { start: number; partition?: number }, address: number): number | undefined {
+    const cb = this.codebank;
+    if (r.partition === undefined || !cb) return r.partition;
+    const startSlot = (r.start - cb.window) >> 13;
+    const slot = (address - cb.window) >> 13;
+    if (slot === startSlot || startSlot < 0 || slot < 0) return r.partition;
+    return cb.banks.find((b) => b.pages[startSlot] === r.partition)?.pages[slot] ?? r.partition;
   }
 
   /** The partition of `address` in a machine's current paging, read only for a banked slot. */
@@ -242,13 +256,22 @@ export function stackReader(index: SourceDebugIndex, m: MachineView, limit: numb
   const cb = index.codebank;
   const far: { slot: number; ret: number; bank: number }[] = [];
   if (cb && m.readByte) {
-    const records = Math.max(0, Math.floor((m.readWord(cb.shadowStackPointer) - cb.shadowStack) / 3));
+    // --- zxbc pushes 4-byte records downwards from the area's end; Klive's grow up in 3-byte steps
+    const zxbc = cb.shadowStackKind === "zxbc";
+    const pointer = m.readWord(cb.shadowStackPointer);
+    const records = Math.max(0, Math.floor(zxbc ? (cb.shadowStack - pointer) / 4 : (pointer - cb.shadowStack) / 3));
     const slots: number[] = [];
-    for (let p = m.sp; p < limit; p += 2) if (m.readWord(p) === cb.farReturn) slots.push(p);
-    // --- The outermost slot is the oldest record; slots beyond the records (none, normally) stay unpaired
+    // --- zxbc's frames hold byte-sized locals, so a return slot may sit at an odd address: every
+    // --- byte is a candidate there. Klive BASIC keeps the stack word-aligned.
+    const stride = zxbc ? 1 : 2;
+    for (let p = m.sp; p < limit; p += stride) if (m.readWord(p) === cb.farReturn) slots.push(p);
+    // --- The outermost slot is the oldest record. Unpaired: a record without its slot (paused in the
+    // --- far return) and, with zxbc, a slot without its record (paused in the far call, which
+    // --- replaces the slot first); both are the newest, so pairing from the oldest end stays right
     for (let k = 0; k < Math.min(records, slots.length); k++) {
-      const record = cb.shadowStack + 3 * k;
-      far.push({ slot: slots[slots.length - 1 - k], bank: m.readByte(record), ret: m.readWord(record + 1) });
+      const record = zxbc ? cb.shadowStack - 4 * (k + 1) : cb.shadowStack + 3 * k;
+      const bank = zxbc ? m.readByte(record + 3) & (cb.bankMask ?? 0xff) : m.readByte(record);
+      far.push({ slot: slots[slots.length - 1 - k], bank, ret: m.readWord(zxbc ? record : record + 1) });
     }
     far.sort((a, b) => a.slot - b.slot);
   }
@@ -315,11 +338,15 @@ export function locateActivations(index: SourceDebugIndex, m: MachineView): Acti
   };
 
   let low = m.sp;
+  // --- The IX value live in the activation being walked: a FASTCALL routine (Boriel BASIC) builds no
+  // --- frame, so its caller's IX is still in the register, or under the next frame callee's return slot
+  let liveIx = m.ix;
   for (let guard = 0; guard < 1024; guard++) {
     if (callable === main || callable === undefined) break;
     const f = index.frames[callable];
+    const frameless = f?.convention === "fastcall";
     let slot: number | undefined;
-    if (ix !== undefined && isRoutineSite(siteAt(ix + 2), callable)) slot = ix + 2;
+    if (!frameless && ix !== undefined && isRoutineSite(siteAt(ix + 2), callable)) slot = ix + 2;
     else {
       for (let p = low; p < mainBaseline; p += 2) {
         if (isRoutineSite(siteAt(p), callable)) {
@@ -328,15 +355,24 @@ export function locateActivations(index: SourceDebugIndex, m: MachineView): Acti
         }
       }
     }
-    if (slot === undefined || !f || f.convention !== "frame") break;
-    const baseline = slot - (f.returnSlotOffset ?? 2);
+    if (slot === undefined || !f || (f.convention !== "frame" && !frameless)) break;
+    const baseline = slot - (f.returnSlotOffset ?? (frameless ? 0 : 2));
     gosubs(low, baseline, callable);
     const site = siteAt(slot)!;
-    out.push({ callableIndex: callable, kind: "routine", baseline, returnSlot: slot, callSite: site, ix: slot - 2 });
+    out.push({
+      callableIndex: callable,
+      kind: "routine",
+      baseline,
+      returnSlot: slot,
+      callSite: site,
+      ...(frameless ? {} : { ix: slot - 2 })
+    });
     const caller = site.callerIndex;
     const callerFrame = index.frames[caller];
-    ix = callerFrame?.convention === "frame" ? m.readWord(slot - 2) : undefined;
-    low = slot + 2 + (f.argBytes ?? 0);
+    if (!frameless) liveIx = m.readWord(slot - 2);
+    ix = callerFrame?.convention === "frame" ? liveIx : undefined;
+    // --- A FASTCALL routine's first argument comes in registers; the stack holds none of it
+    low = slot + 2 + (frameless ? 0 : (f.argBytes ?? 0));
     callable = caller;
   }
   gosubs(low, mainBaseline, main);

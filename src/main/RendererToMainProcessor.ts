@@ -117,6 +117,14 @@ import {
   probeSjasmplusPath,
   validateSjasmplusExecutable
 } from "./sjasmp-integration/sjasmplus-integration-service";
+import type { BorielSetupDecision } from "@common/messaging/BorielIntegration";
+import {
+  borielSetupStatus,
+  installBorielKit,
+  recordBorielSetupDecision,
+  setEffectiveBasicCompiler,
+  useExistingBorielInstallation
+} from "./boriel-integration/boriel-main";
 import {
   SJASMP_EXECUTABLE_PATH,
   SJASMP_INSTALL_FOLDER,
@@ -807,6 +815,33 @@ class MainMessageProcessor {
     this.dispatch(applyProjectSettingAction(SJASMP_EXECUTABLE_PATH, executablePath));
     this.dispatch(applyProjectSettingAction(SJASMP_VERSION, version));
     await saveKliveProject();
+  }
+
+  async getBorielSetupStatus() {
+    return await borielSetupStatus();
+  }
+
+  async installBoriel(folder: string) {
+    if (typeof folder !== "string") throw new Error("Invalid Boriel BASIC installation folder.");
+    return await installBorielKit(folder);
+  }
+
+  async useExistingBoriel(itemPath: string) {
+    if (typeof itemPath !== "string") throw new Error("Invalid Boriel BASIC path.");
+    return await useExistingBorielInstallation(itemPath);
+  }
+
+  async setBasicCompiler(choice: "klive" | "boriel") {
+    if (choice !== "klive" && choice !== "boriel") throw new Error("Invalid BASIC compiler choice.");
+    // --- The compiler that builds now: the project's choice when it has one, as the Settings row does
+    await setEffectiveBasicCompiler(choice);
+  }
+
+  async recordBorielSetupDecision(decision: BorielSetupDecision) {
+    if (decision !== "declined" && decision !== "postponed") {
+      throw new Error("Invalid Boriel BASIC setup decision.");
+    }
+    recordBorielSetupDecision(decision);
   }
 
   /**

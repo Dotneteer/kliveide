@@ -1,0 +1,1 @@
+{ "description": "A banked 128K program (--split-modules, -f z80 -B -a): resident code, modules in two banks, a far call from a bank into another module", "args": ["--arch", "zx128k", "-O", "1", "-S", "32768", "--split-modules"], "banked": true }

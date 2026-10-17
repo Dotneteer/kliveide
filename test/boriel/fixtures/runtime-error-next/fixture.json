@@ -1,0 +1,1 @@
+{ "description": "An out-of-range array write under --debug-array on the Next, built as a .nex: __ERROR with code 2 before the panic screen", "args": ["--arch", "zxnext", "-O", "2", "-S", "32768", "--debug-array"], "nex": true }

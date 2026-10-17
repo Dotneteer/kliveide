@@ -1,0 +1,99 @@
+// --- The Boriel BASIC setup dialog: label + value rows, as the SJASMPLUS integration dialog.
+// --- Colours only through tokens (`.ai/ui-theming-intent-and-lessons.md`).
+
+$labelWidth: 78px;
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  font-size: 0.9rem;
+
+  button {
+    padding: 4px 10px;
+    min-width: 0;
+    font-size: 0.9rem;
+    white-space: nowrap;
+  }
+}
+
+.intro {
+  line-height: 1.4;
+  margin-bottom: 4px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: $labelWidth minmax(0, 1fr);
+  align-items: center;
+  column-gap: 10px;
+  min-height: 26px;
+  min-width: 0;
+}
+
+.label {
+  color: var(--color-label);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.value {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.grow {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ellipsis {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+// --- Secondary text dims the body colour (--color-label is an accent colour in Klive themes)
+.muted {
+  opacity: 0.7;
+  font-size: 0.85rem;
+}
+
+.divider {
+  height: 0;
+  border-top: var(--border-modal-section);
+  margin: 3px 0;
+}
+
+// --- The installation's verdict is the only colour (`.ai/ui-theming-intent-and-lessons.md`,
+// --- "A Pass/Fail List Colours Its Status"). Not --color-secondary-label: that is a grey.
+.working {
+  color: var(--status-success);
+  font-weight: 500;
+}
+
+.attention {
+  color: var(--status-warning);
+  font-weight: 500;
+}
+
+.failed {
+  color: var(--status-error);
+}
+
+.message {
+  min-height: 1.2rem;
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}

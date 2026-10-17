@@ -1282,6 +1282,24 @@ family's subtle fill: `--status-success` on `--status-success-subtle` when it pa
 being worked on is unfinished, not broken. The chip is the button that lists the reasons, so the
 verdict and its evidence are one click apart and the reasons cost no space until asked for.
 
+A tool setup dialog (the Boriel BASIC setup) colours the same way: the installed tool's status line
+and the outcome message are `--status-success` when it works, `--status-warning` when it works but
+is outdated, `--status-error` when it is broken, and progress text is dimmed body text. Labels, paths
+and the folder field stay neutral. **`--color-secondary-label` is not a green**: it aliases
+`--data-secondary`, a grey, so a "working" state painted with it reads as disabled (the SJASMPLUS
+dialog's comment claiming otherwise is stale).
+
+## A Status-Bar Item That Names A Choice Stays Plain Text
+
+The BASIC compiler item (`IdeStatusBar`, `.plans/BORIEL_BASIC_INTEGRATION_PLAN.md` §8) shows while a
+BASIC file is focused and names the compiler that builds it ("Klive BASIC" / "Boriel BASIC"). It is a
+choice the user made, never news, so it never takes a state colour: plain `--color-statusbar-label`
+text, `--font-size-100`, no border, only the toolbar-button hover background to say it is clickable.
+It names the **effective** value (a project's setting wins over the user's), and whatever it opens
+or whatever control changes it must change that same effective value, or the label and the
+control disagree. A component reading a setting should select the derived value (a string) rather
+than the settings object: `useSelector` compares shallowly.
+
 ## A Status-Bar Item For Something Outside The IDE Is Quiet Until It Acts
 
 The automation item (`IdeStatusBar`, COMMAND_LINE_AUTOMATION_PLAN D4) exists only while the server

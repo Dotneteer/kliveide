@@ -58,6 +58,11 @@ export type AppSettings = {
   excludedProjectItems?: string[];
   keyMappingFile?: string;
   userSettings?: Record<string, any>;
+  /**
+   * The answer to the Boriel BASIC setup offer (`.plans/BORIEL_BASIC_INTEGRATION_PLAN.md` §3.2):
+   * "Don't ask again" holds for the kit version it was given for.
+   */
+  borielSetup?: { offeredVersion?: string; declined?: boolean; installedVersion?: string };
   project?: IdeProject;
   recentProjects?: string[];
 };

@@ -514,7 +514,8 @@ hazard, not checked).
 
 - Diagnostic codes: E0xx options, E1xx lexer, E2xx preprocessor, E3xx parser (Phase 2 takes E4xx
   and up); warnings keep the spec's W-codes; K-codes are Klive's own warnings and notes (K010
-  unknown option, K011 unsupported NextBuild option, K012 header in an included file, K001/K002/
+  unknown option, K011 unsupported NextBuild option, K012 header in an included file, K013 a Boriel-only option
+  (`@split-modules`), K001/K002/
   K000 from `KBasicCompiler`). Errors carry spans; `toErrorInfo` maps them through `#line`.
 - The preprocessor keeps a `#define` body as raw text and reports its lexical problems only where
   the macro is expanded; a macro may be named like a keyword.

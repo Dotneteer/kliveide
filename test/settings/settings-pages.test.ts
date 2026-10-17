@@ -184,6 +184,33 @@ describe("settingsRowMatches", () => {
   });
 });
 
+describe("the BASIC compiler rows (`.plans/BORIEL_BASIC_INTEGRATION_PLAN.md` §8)", () => {
+  it("show the compiler that builds now: the project's choice wins over the user's", () => {
+    expect(readSettingsRowValue(row("basicCompiler"), stateOf({}))).toBe("klive");
+    expect(readSettingsRowValue(row("basicCompiler"), stateOf({ userSettings: { zxbasic: { compiler: "boriel" } } }))).toBe("boriel");
+    const overridden = stateOf({ userSettings: { zxbasic: { compiler: "boriel" } }, projectSettings: { zxbasic: { compiler: "klive" } } });
+    expect(readSettingsRowValue(row("basicCompiler"), overridden)).toBe("klive");
+    expect(settingsRowOptions(row("basicCompiler"), { isWindows: false }).map((o) => o.value)).toEqual(["klive", "boriel"]);
+    expect(settingsRowDefault(row("basicCompiler"), stateOf({}))).toBe("klive");
+  });
+
+  it("show where Boriel BASIC is installed, or nothing when it is not set up", () => {
+    const boriel = row("borielBasic");
+    expect(boriel.editor).toBe("file");
+    expect(readSettingsRowValue(boriel, stateOf({}))).toBe("");
+    expect(readSettingsRowValue(boriel, stateOf({ userSettings: { zxbasic: { root: "/Users/me/zxbasic2" } } }))).toBe("/Users/me/zxbasic2");
+    // --- An explicit zxbc path wins, and names its folder
+    const explicit = stateOf({ userSettings: { zxbasic: { root: "/a", executablePath: "C:\\tools\\zxb\\zxbc.exe" } } });
+    expect(readSettingsRowValue(boriel, explicit)).toBe("C:\\tools\\zxb");
+  });
+
+  it("are found by the words a user would search for", () => {
+    expect(settingsRowMatches(row("basicCompiler"), "compiler")).toBe(true);
+    expect(settingsRowMatches(row("basicCompiler"), "basic")).toBe(true);
+    expect(row("basicCompiler").page).toBe("integrations");
+  });
+});
+
 describe("the automation rows (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D4, D7)", () => {
   it("read the user settings set -u writes, never a project's", () => {
     const on = stateOf({ userSettings: { automation: { enabled: "1", level: "full" } } });

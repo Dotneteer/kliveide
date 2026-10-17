@@ -1,0 +1,621 @@
+{
+  "format": "zx-source-debug",
+  "version": 1,
+  "architecture": "zx48k",
+  "binaryLength": 7961,
+  "binaryChecksum": 3856098379,
+  "sourceLevelDebug": {
+    "language": "basic",
+    "files": [
+      {
+        "index": 0,
+        "filename": "program.bas"
+      }
+    ],
+    "statements": [
+      {
+        "index": 6,
+        "fileIndex": 0,
+        "startLine": 24,
+        "startColumn": 0,
+        "endLine": 24,
+        "endColumn": 15,
+        "startAddress": 37653,
+        "endAddress": 37662,
+        "kind": "normal",
+        "callableIndex": 2,
+        "callTargets": []
+      },
+      {
+        "index": 7,
+        "fileIndex": 0,
+        "startLine": 25,
+        "startColumn": 0,
+        "endLine": 25,
+        "endColumn": 12,
+        "startAddress": 37662,
+        "endAddress": 37676,
+        "kind": "normal",
+        "callableIndex": 2,
+        "callTargets": []
+      },
+      {
+        "index": 8,
+        "fileIndex": 0,
+        "startLine": 26,
+        "startColumn": 0,
+        "endLine": 26,
+        "endColumn": 8,
+        "startAddress": 37676,
+        "endAddress": 37689,
+        "kind": "normal",
+        "callableIndex": 2,
+        "callTargets": []
+      },
+      {
+        "index": 9,
+        "fileIndex": 0,
+        "startLine": 27,
+        "startColumn": 0,
+        "endLine": 27,
+        "endColumn": 15,
+        "startAddress": 37689,
+        "endAddress": 37695,
+        "kind": "normal",
+        "callableIndex": 2,
+        "callTargets": []
+      },
+      {
+        "index": 10,
+        "fileIndex": 0,
+        "startLine": 28,
+        "startColumn": 0,
+        "endLine": 28,
+        "endColumn": 16,
+        "startAddress": 37695,
+        "endAddress": 37704,
+        "kind": "normal",
+        "callableIndex": 2,
+        "callTargets": []
+      },
+      {
+        "index": 11,
+        "fileIndex": 0,
+        "startLine": 29,
+        "startColumn": 0,
+        "endLine": 29,
+        "endColumn": 12,
+        "startAddress": 37704,
+        "endAddress": 37717,
+        "kind": "normal",
+        "callableIndex": 2,
+        "callTargets": []
+      },
+      {
+        "index": 12,
+        "fileIndex": 0,
+        "startLine": 30,
+        "startColumn": 0,
+        "endLine": 30,
+        "endColumn": 14,
+        "startAddress": 37717,
+        "endAddress": 37727,
+        "kind": "normal",
+        "callableIndex": 2,
+        "callTargets": []
+      },
+      {
+        "index": 13,
+        "fileIndex": 0,
+        "startLine": 31,
+        "startColumn": 0,
+        "endLine": 31,
+        "endColumn": 6,
+        "startAddress": 37727,
+        "endAddress": 37733,
+        "kind": "normal",
+        "callableIndex": 2,
+        "callTargets": []
+      },
+      {
+        "index": 14,
+        "fileIndex": 0,
+        "startLine": 32,
+        "startColumn": 0,
+        "endLine": 32,
+        "endColumn": 16,
+        "startAddress": 37733,
+        "endAddress": 37797,
+        "kind": "normal",
+        "callableIndex": 2,
+        "callTargets": []
+      },
+      {
+        "index": 15,
+        "fileIndex": 0,
+        "startLine": 32,
+        "startColumn": 0,
+        "endLine": 33,
+        "endColumn": 0,
+        "startAddress": 37797,
+        "endAddress": 37851,
+        "kind": "normal",
+        "callableIndex": 2,
+        "callTargets": []
+      },
+      {
+        "index": 1,
+        "fileIndex": 0,
+        "startLine": 11,
+        "startColumn": 4,
+        "endLine": 13,
+        "endColumn": 10,
+        "startAddress": 37851,
+        "endAddress": 37858,
+        "kind": "normal",
+        "callableIndex": 0,
+        "callTargets": []
+      },
+      {
+        "index": 0,
+        "fileIndex": 0,
+        "startLine": 12,
+        "startColumn": 0,
+        "endLine": 12,
+        "endColumn": 22,
+        "startAddress": 37858,
+        "endAddress": 37898,
+        "kind": "normal",
+        "callableIndex": 0,
+        "callTargets": []
+      },
+      {
+        "index": 2,
+        "fileIndex": 0,
+        "startLine": 14,
+        "startColumn": 0,
+        "endLine": 14,
+        "endColumn": 22,
+        "startAddress": 37898,
+        "endAddress": 37938,
+        "kind": "normal",
+        "callableIndex": 0,
+        "callTargets": []
+      },
+      {
+        "index": 3,
+        "fileIndex": 0,
+        "startLine": 15,
+        "startColumn": 4,
+        "endLine": 15,
+        "endColumn": 16,
+        "startAddress": 37938,
+        "endAddress": 38361,
+        "kind": "normal",
+        "callableIndex": 0,
+        "callTargets": []
+      },
+      {
+        "index": 4,
+        "fileIndex": 0,
+        "startLine": 20,
+        "startColumn": 0,
+        "endLine": 20,
+        "endColumn": 12,
+        "startAddress": 38361,
+        "endAddress": 38377,
+        "kind": "normal",
+        "callableIndex": 1,
+        "callTargets": []
+      },
+      {
+        "index": 5,
+        "fileIndex": 0,
+        "startLine": 21,
+        "startColumn": 4,
+        "endLine": 21,
+        "endColumn": 14,
+        "startAddress": 38377,
+        "endAddress": 38377,
+        "kind": "normal",
+        "callableIndex": 1,
+        "callTargets": []
+      }
+    ],
+    "callables": [
+      {
+        "index": 0,
+        "name": "Fill",
+        "kind": "subroutine",
+        "fileIndex": 0,
+        "line": 8,
+        "entryAddress": 37816,
+        "exitAddresses": [
+          37971
+        ]
+      },
+      {
+        "index": 1,
+        "name": "Dyn",
+        "kind": "subroutine",
+        "fileIndex": 0,
+        "line": 18,
+        "entryAddress": 37981,
+        "exitAddresses": [
+          38566
+        ]
+      },
+      {
+        "index": 2,
+        "name": "main",
+        "kind": "entrypoint",
+        "fileIndex": 0,
+        "line": 1,
+        "entryAddress": 32768,
+        "exitAddresses": [
+          37802
+        ]
+      }
+    ],
+    "addressToStatement": [
+      [
+        37653,
+        6
+      ],
+      [
+        37662,
+        7
+      ],
+      [
+        37676,
+        8
+      ],
+      [
+        37689,
+        9
+      ],
+      [
+        37695,
+        10
+      ],
+      [
+        37704,
+        11
+      ],
+      [
+        37717,
+        12
+      ],
+      [
+        37727,
+        13
+      ],
+      [
+        37733,
+        14
+      ],
+      [
+        37797,
+        15
+      ],
+      [
+        37851,
+        1
+      ],
+      [
+        37858,
+        0
+      ],
+      [
+        37898,
+        2
+      ],
+      [
+        37938,
+        3
+      ],
+      [
+        38361,
+        4
+      ],
+      [
+        38377,
+        5
+      ]
+    ],
+    "usesBanking": false,
+    "partitionedAddressMap": [],
+    "extensions": {
+      "frames": [
+        {
+          "callableIndex": 0,
+          "convention": "frame",
+          "returnSlotOffset": 9,
+          "argBytes": 4,
+          "startAddress": 37816,
+          "bodyStart": 37839,
+          "epilogueStart": 37958,
+          "endAddress": 37981
+        },
+        {
+          "callableIndex": 1,
+          "convention": "frame",
+          "returnSlotOffset": 8,
+          "argBytes": 2,
+          "startAddress": 37981,
+          "bodyStart": 37995,
+          "epilogueStart": 38401,
+          "endAddress": 38575
+        },
+        {
+          "callableIndex": 2,
+          "convention": "entrypoint",
+          "returnSlotOffset": 0,
+          "argBytes": 0,
+          "startAddress": 32768,
+          "bodyStart": 37653,
+          "epilogueStart": 37802
+        }
+      ],
+      "mainBaselineSymbol": 32790,
+      "callSites": [
+        {
+          "returnAddress": 37727,
+          "statementIndex": 12,
+          "calleeIndex": 0,
+          "kind": "sub",
+          "order": 0,
+          "moreCallsFollow": false
+        },
+        {
+          "returnAddress": 37733,
+          "statementIndex": 13,
+          "calleeIndex": 1,
+          "kind": "sub",
+          "order": 0,
+          "moreCallsFollow": false
+        }
+      ],
+      "variables": [
+        {
+          "name": "total",
+          "displayName": "total",
+          "type": "long",
+          "kind": "global",
+          "location": {
+            "at": "absolute",
+            "address": 37586
+          },
+          "byRef": false,
+          "scope": "global",
+          "declaredAt": {
+            "fileIndex": 0,
+            "line": 1
+          }
+        },
+        {
+          "name": "name",
+          "displayName": "name$",
+          "type": "string",
+          "kind": "global",
+          "location": {
+            "at": "absolute",
+            "address": 37590
+          },
+          "byRef": false,
+          "scope": "global",
+          "declaredAt": {
+            "fileIndex": 0,
+            "line": 2
+          }
+        },
+        {
+          "name": "ratio",
+          "displayName": "ratio",
+          "type": "float",
+          "kind": "global",
+          "location": {
+            "at": "absolute",
+            "address": 37592
+          },
+          "byRef": false,
+          "scope": "global",
+          "declaredAt": {
+            "fileIndex": 0,
+            "line": 3
+          }
+        },
+        {
+          "name": "fx",
+          "displayName": "fx",
+          "type": "fixed",
+          "kind": "global",
+          "location": {
+            "at": "absolute",
+            "address": 37597
+          },
+          "byRef": false,
+          "scope": "global",
+          "declaredAt": {
+            "fileIndex": 0,
+            "line": 4
+          }
+        },
+        {
+          "name": "grid",
+          "displayName": "grid",
+          "type": "uinteger",
+          "kind": "global",
+          "location": {
+            "at": "absolute",
+            "address": 37601
+          },
+          "byRef": false,
+          "array": {
+            "elementType": "uinteger",
+            "dimensions": [
+              [
+                0,
+                2
+              ],
+              [
+                0,
+                3
+              ]
+            ]
+          },
+          "scope": "global",
+          "declaredAt": {
+            "fileIndex": 0,
+            "line": 5
+          }
+        },
+        {
+          "name": "words",
+          "displayName": "words$",
+          "type": "string",
+          "kind": "global",
+          "location": {
+            "at": "absolute",
+            "address": 37638
+          },
+          "byRef": false,
+          "array": {
+            "elementType": "string",
+            "dimensions": [
+              [
+                0,
+                1
+              ]
+            ]
+          },
+          "scope": "global",
+          "declaredAt": {
+            "fileIndex": 0,
+            "line": 6
+          }
+        },
+        {
+          "name": "n",
+          "displayName": "n",
+          "type": "ubyte",
+          "kind": "parameter",
+          "location": {
+            "at": "frame",
+            "ixOffset": 5
+          },
+          "byRef": false,
+          "scope": {
+            "callableIndex": 0
+          },
+          "declaredAt": {
+            "fileIndex": 0,
+            "line": 8
+          }
+        },
+        {
+          "name": "acc",
+          "displayName": "acc",
+          "type": "long",
+          "kind": "parameter",
+          "location": {
+            "at": "frame",
+            "ixOffset": 6
+          },
+          "byRef": true,
+          "scope": {
+            "callableIndex": 0
+          },
+          "declaredAt": {
+            "fileIndex": 0,
+            "line": 8
+          }
+        },
+        {
+          "name": "arr",
+          "displayName": "arr",
+          "type": "ubyte",
+          "kind": "local",
+          "location": {
+            "at": "frame",
+            "ixOffset": -7
+          },
+          "byRef": false,
+          "array": {
+            "elementType": "ubyte",
+            "dimensions": [
+              [
+                0,
+                9
+              ]
+            ]
+          },
+          "scope": {
+            "callableIndex": 0
+          },
+          "declaredAt": {
+            "fileIndex": 0,
+            "line": 9
+          }
+        },
+        {
+          "name": "i",
+          "displayName": "i",
+          "type": "ubyte",
+          "kind": "local",
+          "location": {
+            "at": "frame",
+            "ixOffset": -1
+          },
+          "byRef": false,
+          "scope": {
+            "callableIndex": 0
+          },
+          "declaredAt": {
+            "fileIndex": 0,
+            "line": 10
+          }
+        },
+        {
+          "name": "k",
+          "displayName": "k",
+          "type": "ubyte",
+          "kind": "parameter",
+          "location": {
+            "at": "frame",
+            "ixOffset": 5
+          },
+          "byRef": false,
+          "scope": {
+            "callableIndex": 1
+          },
+          "declaredAt": {
+            "fileIndex": 0,
+            "line": 18
+          }
+        },
+        {
+          "name": "d",
+          "displayName": "d",
+          "type": "ubyte",
+          "kind": "local",
+          "location": {
+            "at": "frame",
+            "ixOffset": -6
+          },
+          "byRef": false,
+          "array": {
+            "elementType": "ubyte"
+          },
+          "scope": {
+            "callableIndex": 1
+          },
+          "declaredAt": {
+            "fileIndex": 0,
+            "line": 19
+          }
+        }
+      ]
+    }
+  }
+}
