@@ -1,8 +1,9 @@
 import { Zx81Chars } from "@common/machines/char-codes";
+import type { CharDescriptor } from "@common/machines/info-types";
 import { decodeZx8081Program } from "../zx8081BasicListing";
 
 /*
- * The model of the ZX81 `.P` viewer: a file read into the parts the ZX81 keeps in memory, the way
+ * The model of the ZX81 `.P` viewer (and, through `oFileView.ts`, of the ZX80 `.O` files it shows too): a file read into the parts the ZX81 keeps in memory, the way
  * the tape viewer's `tapeView.ts` reads a tape into blocks. No DOM; the panel draws what this says.
  *
  * A `.P` file is the bytes the ROM's SAVE sends after the name: memory from VERSN ($4009) up to
@@ -66,8 +67,8 @@ export type PFileRegion = {
   views: PFileView[];
 };
 
-/** A BASIC variable, decoded */
-export type Zx81Variable = {
+/** A BASIC variable, decoded: a ZX81's, or a ZX80's (which has no string arrays and no STEP) */
+export type Zx8081Variable = {
   kind: "number" | "string" | "numberArray" | "stringArray" | "forLoop";
   /** The name as the ROM lists it: `A`, `TOTAL`, `A$`, `A()` */
   name: string;
@@ -92,6 +93,8 @@ export type Zx81Variable = {
 
 export type PFileSummary = {
   size: number;
+  /** The address the file's first byte loads at: $4009 for a ZX81 file, $4000 for a ZX80 one */
+  start: number;
   /** The machine the file needs: 1K when it ends by $4400, else 16K */
   ramKb: 1 | 16;
   /** Whether the system variables describe the file's parts */
@@ -110,20 +113,24 @@ export type PFileSummary = {
   variablesCorrupted: boolean;
   /** Bytes after E_LINE, which the ROM's LOAD never reads */
   extraBytes: number;
-  /** The system variables' pointers, as the file holds them */
+  /** The system variables' pointers, as the file holds them (a ZX80 file's D_FILE is past its end) */
   dFile: number;
   vars: number;
   eLine: number;
 };
 
+/** Whose program file it is: a ZX81 `.P` or a ZX80 `.O` */
+export type ProgramFileMachine = "zx81" | "zx80";
+
 export type PFileAnalysis = {
+  machine: ProgramFileMachine;
   /** The file */
   bytes: Uint8Array;
   /** The file at its address in a 64K image, as the ZX81 holds it after LOAD */
   memory: Uint8Array;
   summary: PFileSummary;
   regions: PFileRegion[];
-  variables: Zx81Variable[];
+  variables: Zx8081Variable[];
 };
 
 /** Where a `.P` file sits */
@@ -200,12 +207,14 @@ export function analyzePFile(bytes: Uint8Array): { analysis?: PFileAnalysis; err
 
   return {
     analysis: {
+      machine: "zx81",
       bytes,
       memory,
       regions,
       variables,
       summary: {
         size: bytes.length,
+        start: P_FILE_START,
         ramKb: dataEnd > ONE_K_END ? 16 : 1,
         layoutValid,
         lineCount: listing?.lineCount ?? 0,
@@ -255,7 +264,7 @@ export function zx81DisplayRows(memory: Uint8Array, dFile: number, end: number):
 
 /** The display as text, one string per row: inverse characters in brackets, as the harness reads it */
 export function zx81DisplayText(rows: number[][]): string[] {
-  return rows.map((row) => row.map(zx81CodeText).join("").trimEnd());
+  return rows.map((row) => row.map((code) => zx81CodeText(code)).join("").trimEnd());
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -279,25 +288,35 @@ export function zx81Number(memory: Uint8Array, address: number): number {
   return b1 & 0x80 ? -value : value;
 }
 
-/** A character's glyph (codes $00-$3F, inverse or not) as text */
-function charText(code: number): string {
-  const v = Zx81Chars[code & 0x3f]?.v;
+/** A character's glyph (codes $00-$3F, inverse or not) as text, in the ZX81's set or another */
+export function zx8081CharText(code: number, charSet: Record<number, CharDescriptor> = Zx81Chars): string {
+  const v = charSet[code & 0x3f]?.v;
   return v === undefined || v === "\xa0" ? " " : v;
 }
 
+const charText = (code: number) => zx8081CharText(code);
+
 /**
  * A character code as text: a glyph, an inverse one in brackets, a keyword token as its text, any
- * other code as `{$NN}`
+ * other code as `{$NN}`. The ZX81's set unless another is given (the ZX80's, for its files).
  */
-export function zx81CodeText(code: number): string {
-  if ((code & 0x40) === 0) return code & 0x80 ? `[${charText(code)}]` : charText(code);
-  const descriptor = Zx81Chars[code];
+export function zx81CodeText(code: number, charSet: Record<number, CharDescriptor> = Zx81Chars): string {
+  if ((code & 0x40) === 0) {
+    const glyph = zx8081CharText(code, charSet);
+    return code & 0x80 ? `[${glyph}]` : glyph;
+  }
+  const descriptor = charSet[code];
   if (descriptor?.c === "token" && descriptor.t) return descriptor.t;
   return `{$${code.toString(16).toUpperCase().padStart(2, "0")}}`;
 }
 
-/** A variable's letter: the low five bits of its first byte, counted from character code $20 */
-const letterOf = (first: number) => charText((first & 0x1f) + 0x20);
+/**
+ * A variable's letter: the low five bits of its first byte, counted from character code $20 - on
+ * both machines, whose letters are $26-$3F
+ */
+export const zx8081LetterOf = (first: number, charSet: Record<number, CharDescriptor> = Zx81Chars) =>
+  zx8081CharText((first & 0x1f) + 0x20, charSet);
+const letterOf = (first: number) => zx8081LetterOf(first);
 
 /**
  * The variables from `start` to `end`, up to the $80 that ends them. The first byte's top three bits
@@ -315,8 +334,8 @@ export function decodeZx81Variables(
   memory: Uint8Array,
   start: number,
   end: number
-): { variables: Zx81Variable[]; corrupted: boolean } {
-  const variables: Zx81Variable[] = [];
+): { variables: Zx8081Variable[]; corrupted: boolean } {
+  const variables: Zx8081Variable[] = [];
   const word = (address: number) => memory[address] | (memory[address + 1] << 8);
   let pos = start;
   while (pos < end) {
@@ -324,7 +343,7 @@ export function decodeZx81Variables(
     if (first === VARIABLES_END) return { variables, corrupted: false };
     const letter = letterOf(first);
     const address = pos;
-    let variable: Zx81Variable;
+    let variable: Zx8081Variable;
     switch (first >> 5) {
       case 0b011:
         variable = { kind: "number", name: letter, address, length: 6, value: zx81Number(memory, pos + 1) };
@@ -342,7 +361,7 @@ export function decodeZx81Variables(
       }
       case 0b010: {
         const length = word(pos + 1);
-        const text = Array.from(memory.subarray(pos + 3, Math.min(pos + 3 + length, end)), zx81CodeText).join("");
+        const text = Array.from(memory.subarray(pos + 3, Math.min(pos + 3 + length, end)), (code) => zx81CodeText(code)).join("");
         variable = { kind: "string", name: `${letter}$`, address, length: 3 + length, text };
         break;
       }
@@ -393,7 +412,7 @@ export function formatZx81Number(value: number): string {
 }
 
 /** What a variable holds, in a few words */
-export function describeZx81Variable(variable: Zx81Variable): string {
+export function describeZx8081Variable(variable: Zx8081Variable): string {
   switch (variable.kind) {
     case "number":
       return formatZx81Number(variable.value ?? 0);
@@ -402,10 +421,13 @@ export function describeZx81Variable(variable: Zx81Variable): string {
     case "numberArray":
     case "stringArray":
       return `DIM (${(variable.dims ?? []).join(", ")})`;
-    case "forLoop":
-      return `${formatZx81Number(variable.value ?? 0)} TO ${formatZx81Number(variable.limit ?? 0)} STEP ${formatZx81Number(
-        variable.step ?? 1
-)}, NEXT goes to line ${variable.line} or the first after it`;
+    case "forLoop": {
+      // --- A ZX80 loop has no STEP
+      const step = variable.step === undefined ? "" : ` STEP ${formatZx81Number(variable.step)}`;
+      return `${formatZx81Number(variable.value ?? 0)} TO ${formatZx81Number(variable.limit ?? 0)}${step}, NEXT goes to line ${
+        variable.line
+      } or the first after it`;
+    }
   }
 }
 

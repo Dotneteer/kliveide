@@ -572,7 +572,8 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     icon: "code"
   },
   {
-    // --- A ZX81 program file: its parts, each poppable as memory, disassembly, BASIC or the screen
+    // --- A ZX81 (or ZX80) program file: its parts, each poppable as memory, disassembly, BASIC or
+    // --- the screen
     id: P_FILE_VIEWER,
     renderer: createPFileViewerPanel,
     icon: "@file-tap-tzx",
@@ -876,7 +877,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     pattern: ".o",
     // --- A ZX80/ZX81 program file, which the machine's tape plays (`.plans/ZX8081_WASM_PLAN.md` §9.1)
     ignoreCase: true,
-    editor: BIN_VIEWER,
+    editor: P_FILE_VIEWER,
     icon: "@file-tap-tzx",
     isBinary: true,
     isReadOnly: true,
@@ -889,7 +890,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     pattern: ".80",
     // --- A ZX80/ZX81 program file, which the machine's tape plays (`.plans/ZX8081_WASM_PLAN.md` §9.1)
     ignoreCase: true,
-    editor: BIN_VIEWER,
+    editor: P_FILE_VIEWER,
     icon: "@file-tap-tzx",
     isBinary: true,
     isReadOnly: true,

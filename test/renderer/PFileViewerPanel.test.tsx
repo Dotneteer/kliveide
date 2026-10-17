@@ -3,9 +3,10 @@ import { join } from "node:path";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { zx80VarsFile } from "./pfile/zx80VarsFile";
 
 /*
- * The ZX81 `.P` viewer: the summary, the parts in the bank browser, their details and the pop-outs.
+ * The ZX81 `.P` (and ZX80 `.O`) viewer: the summary, the parts in the bank browser, their details and the pop-outs.
  * Set up as `TapeViewerPanel.test.tsx` is; the model is tested without a DOM in
  * `test/renderer/pfile/pFileView.test.ts`.
  */
@@ -38,7 +39,11 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-async function renderViewer(contents: Uint8Array, viewState: Record<string, unknown> = {}) {
+async function renderViewer(
+  contents: Uint8Array,
+  viewState: Record<string, unknown> = {},
+  name = "Characters.P"
+) {
   const openDocument = vi.fn(() => Promise.resolve());
   const setDocumentViewState = vi.fn();
   const recordJump = vi.fn(async (_reason: string, jump: () => unknown) => await jump());
@@ -99,15 +104,15 @@ async function renderViewer(contents: Uint8Array, viewState: Record<string, unkn
   render(
     createPFileViewerPanel({
       document: {
-        id: "/project/Characters.P",
-        name: "Characters.P",
+        id: `/project/${name}`,
+        name,
         type: "PFileViewer",
-        path: "/project/Characters.P",
+        path: `/project/${name}`,
         node: {
           isFolder: false,
-          name: "Characters.P",
-          fullPath: "/project/Characters.P",
-          projectPath: "Characters.P"
+          name,
+          fullPath: `/project/${name}`,
+          projectPath: name
         }
       },
       contents,
@@ -201,5 +206,51 @@ describe("PFileViewerPanel", () => {
     await renderViewer(new Uint8Array([1, 2, 3]));
     await waitFor(() => expect(screen.getByText(/116 bytes of system variables/)).toBeInTheDocument());
     expect(screen.queryByRole("listbox")).toBeNull();
+  });
+});
+
+describe("PFileViewerPanel: ZX80 .O files", () => {
+  it("summarises the program, with no screen and no autorun", async () => {
+    await renderViewer(zx80VarsFile(), {}, "VARS.o");
+    const summary = await screen.findByLabelText("Program summary");
+    expect(within(summary).getByText("ZX80 program (.O)")).toBeInTheDocument();
+    expect(within(summary).getByText("1K RAM")).toBeInTheDocument();
+    expect(within(summary).getByText("Needs RUN")).toBeInTheDocument();
+    expect(within(summary).queryByText("FAST")).toBeNull();
+  });
+
+  it("lists the parts from $4000: no display file", async () => {
+    await renderViewer(zx80VarsFile(), {}, "VARS.o");
+    const list = await screen.findByRole("listbox", { name: "Part list" });
+    expect(within(list).getAllByRole("option")).toHaveLength(3);
+    expect(within(list).getByText("$4000")).toBeInTheDocument();
+    expect(within(list).getByText("$4028")).toBeInTheDocument();
+    expect(within(list).getByText("7 lines")).toBeInTheDocument();
+    expect(within(list).getByText("6 variables")).toBeInTheDocument();
+  });
+
+  it("pops the listing out in ZX80 form", async () => {
+    const { openDocument } = await renderViewer(zx80VarsFile(), {}, "VARS.80");
+    expect((await screen.findByTestId("p-file-basic-summary")).textContent).toBe("7 lines");
+    fireEvent.click(screen.getByRole("button", { name: "Pop out the listing" }));
+    await waitFor(() => expect(openDocument).toHaveBeenCalled());
+    const [doc, state] = openDocument.mock.calls[0] as unknown as [any, any];
+    expect(doc.id).toBe("pFileRegion-basic/project/VARS.80:program");
+    expect(state).toMatchObject({ view: "basic", format: "zx80", basicEnd: 0x406c - 0x4028 });
+  });
+
+  it("shows the ZX80's system variables, D_FILE past the file", async () => {
+    await renderViewer(zx80VarsFile(), { selectedRegion: "sysvars" }, "VARS.o");
+    const details = await screen.findByRole("complementary", { name: "$4000 details" });
+    expect(within(details).getByText("$4093 (not saved)")).toBeInTheDocument();
+    expect(within(details).getByText("$4093 (the end of the file)")).toBeInTheDocument();
+  });
+
+  it("lists the variables, a loop without STEP", async () => {
+    await renderViewer(zx80VarsFile(), { selectedRegion: "variables" }, "VARS.o");
+    const details = await screen.findByRole("complementary", { name: "$406C details" });
+    expect(within(details).getByText("TOTAL")).toBeInTheDocument();
+    expect(within(details).getByText("-25")).toBeInTheDocument();
+    expect(within(details).getByText("1 TO 10, NEXT goes to line 51 or the first after it")).toBeInTheDocument();
   });
 });

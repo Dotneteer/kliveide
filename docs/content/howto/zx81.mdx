@@ -107,6 +107,14 @@ do not mark out the parts, and the viewer shows everything after the system vari
 Programs built with an assembler often keep their own data where the variables would be; the
 viewer says so instead of listing variables.
 
+ZX80 program files (`.o` or `.80`) open in the same viewer. A ZX80 file starts at `$4000` and has
+three parts: the system variables (`$4000`, showing `VARS`, `E_LINE` and `D_FILE`), the BASIC
+program (`$4028`, listed with the ZX80's own keywords and spacing) and the variables. It has no
+display file - the ZX80 keeps it after the end of the file, so it is not saved - and the strip has
+no line to run from or FAST/SLOW mode: the ZX80's `LOAD` always stops and waits for `RUN`. Its
+variables are the 4K ROM's: whole numbers from -32768 to 32767, strings, one-dimensional number
+arrays and `FOR` loops (which have no `STEP`).
+
 ## Saving programs
 
 `SAVE "NAME"` (S at the K cursor) on the ZX81 writes the program to a `NAME.p` file in the saved-files
