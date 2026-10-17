@@ -65,7 +65,10 @@ function checkDocsLinks({ verbose = false } = {}) {
   for (const file of files) {
     const html = readFileSync(file, "utf8");
     const page = "/" + relative(outDir, file).split(sep).join("/");
-    for (const m of html.matchAll(/(?:href|src)="([^"]+)"/g)) {
+    // The leading whitespace keeps `data-href` out: Nextra's sidebar folder buttons
+    // carry a non-navigating `data-href="/howto"` that is not a link. A non-empty
+    // basePath used to hide them, because they are emitted without the prefix.
+    for (const m of html.matchAll(/\s(?:href|src)="([^"]+)"/g)) {
       const raw = m[1];
       // Skip external, protocol-relative, anchors, and non-http schemes
       if (/^(https?:)?\/\//.test(raw) || /^(#|mailto:|data:|tel:|javascript:)/.test(raw)) continue;

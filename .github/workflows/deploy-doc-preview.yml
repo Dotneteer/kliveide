@@ -4,7 +4,7 @@
 # repo is a legacy build served from the root of `gh-pages`
 # (`gh api repos/Dotneteer/kliveide/pages`), so there is no second branch a preview
 # could be pointed at. The preview therefore lives at
-# https://dotneteer.github.io/kliveide/preview/<branch>/ and the production deploy
+# https://kliveide.net/preview/<branch>/ and the production deploy
 # in deploy-doc.yml carries `clean-exclude: preview/**` so it can never wipe it.
 #
 # See .plans/NEXTRA_4_NEXT_16_DOCS_MIGRATION_PLAN.md, Phase 3.
@@ -51,7 +51,7 @@ jobs:
       - name: Build the docs site for the preview path
         run: npm run doc:build
         env:
-          NEXT_PUBLIC_BASE_PATH: /kliveide/${{ env.PREVIEW_PATH }}
+          NEXT_PUBLIC_BASE_PATH: /${{ env.PREVIEW_PATH }}
 
       - name: Verify the build against the golden snapshots
         run: npm run doc:check
@@ -95,4 +95,4 @@ jobs:
           commit-message: "docs preview: ${{ env.PREVIEW_PATH }} @ ${{ github.sha }}"
 
       - name: Preview URL
-        run: echo "Published to https://dotneteer.github.io/kliveide/${PREVIEW_PATH}/"
+        run: echo "Published to https://kliveide.net/${PREVIEW_PATH}/"

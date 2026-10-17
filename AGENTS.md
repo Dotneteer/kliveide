@@ -43,8 +43,11 @@ React 19 + Next 16.
   (upstream shuding/nextra#5036; fixed in an unpublished 4.6.2). When
   `patch-package` starts failing, the upstream fix has shipped - delete the
   patch and the `postinstall`.
-- The deployment path is `NEXT_PUBLIC_BASE_PATH` (see `docs/.env.production`),
-  never a hardcoded `/kliveide` and never keyed off `NODE_ENV`.
+- Production is served from the root of the custom domain `https://kliveide.net/`
+  (`docs/public/CNAME`, which must stay: without it the next deploy unbinds the
+  domain). The deployment path is `NEXT_PUBLIC_BASE_PATH` (empty in
+  `docs/.env.production`, `/preview/<branch>` for previews), never a hardcoded
+  path and never keyed off `NODE_ENV`.
 
 - **Screenshots can be generated rather than hand-captured.** `scripts/doc-shots/` launches
   Klive under Playwright's Electron driver, drives it through the IDE's own command prompt,
