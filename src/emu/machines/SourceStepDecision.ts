@@ -189,9 +189,23 @@ export class SourceDebugIndex {
   callableAt(address: number, partition?: number): number | undefined {
     const banked = this.isBanked(address);
     for (const r of this.callableRanges) {
-      if (address >= r.start && address < r.end && (!banked || r.partition === partition)) return r.index;
+      if (address >= r.start && address < r.end && (!banked || this.rangePartition(r, address) === partition)) return r.index;
     }
     return undefined;
+  }
+
+  /**
+   * The partition a routine's code at `address` is in. A routine carries its start's partition; in a
+   * 16K window whose banks are two 8K pages (the Next), code past the second slot's start is in the
+   * bank's second page, which the CODEBANK bank table names.
+   */
+  private rangePartition(r: { start: number; partition?: number }, address: number): number | undefined {
+    const cb = this.codebank;
+    if (r.partition === undefined || !cb) return r.partition;
+    const startSlot = (r.start - cb.window) >> 13;
+    const slot = (address - cb.window) >> 13;
+    if (slot === startSlot || startSlot < 0 || slot < 0) return r.partition;
+    return cb.banks.find((b) => b.pages[startSlot] === r.partition)?.pages[slot] ?? r.partition;
   }
 
   /** The partition of `address` in a machine's current paging, read only for a banked slot. */

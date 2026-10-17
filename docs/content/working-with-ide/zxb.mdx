@@ -200,7 +200,10 @@ tiles.Draw(3)
 
 A call into another bank is written as any other call; the compiler pages the bank in and back out.
 Klive runs and debugs such a program as any other: breakpoints in a module stop only in their own bank,
-the call stack walks back through the calls between banks, and a stop in a module opens its file. The
+the call stack and Step Into, Over and Out work through the calls between banks, and a stop in a
+module opens its file. On the ZX Spectrum 128K, exporting such a program as a TAP or TZX file saves
+the tape `zxbc` writes, whose loader pages the banks in as the program expects; load it from 128 BASIC
+or its Tape Loader. Klive's own loader options (a BASIC loader, a border, a screen) do not apply to it. The
 option has no effect on the 48K, which has no banks to use (Klive warns about it). Klive BASIC accepts
 the option and ignores it, with a warning: it banks code with `CODEBANK`.
 

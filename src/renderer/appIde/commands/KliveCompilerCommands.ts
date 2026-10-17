@@ -272,6 +272,25 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
 
     // --- Step #7: Create Auto Start header block, if required
     const blocksToSave: Uint8Array[] = [];
+
+    // --- A compiler that writes its own tape (a banked Boriel BASIC program, whose loader must page
+    // --- the banks as its runtime expects) hands over the tape's bytes: they are saved as they are
+    const prebuiltTape = (output as { prebuiltTape?: number[] }).prebuiltTape;
+    if (prebuiltTape) {
+      const blocks = readTapeData(new Uint8Array(prebuiltTape));
+      if (!blocks) return commandError("The tape the compiler wrote cannot be read.");
+      const ignored = ["-as", "-n", "-b", "-scr", "-c", "-p", "-sb", "-addr"].filter((o) => {
+        const value = (args as Record<string, unknown>)[o];
+        return value !== undefined && value !== false;
+      });
+      if (ignored.length) {
+        context.output.color("yellow");
+        context.output.writeLine(`The compiler wrote this tape with its own loader; ${ignored.join(", ")} has no effect.`);
+        context.output.resetStyle();
+      }
+      blocksToSave.push(...blocks.map((b) => b.data));
+      return await saveDataBlocks();
+    }
     let address = args["-addr"];
     if (address === undefined) {
       address =

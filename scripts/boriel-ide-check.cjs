@@ -159,6 +159,15 @@ const PARTS = {
       s.k.ide.evaluate(() => [...document.querySelectorAll("[class*=ideStatusBar]")].map((e) => e.textContent).join(" "));
     check(/Boriel BASIC/.test(await statusBar()), "ui: the status bar names Boriel BASIC for the open BASIC file");
 
+    // --- Settings opens in the focused window, and with the app in the background (as under this
+    // --- script) no window is focused and it opens in the emulator's: bring the app and the IDE forward
+    await s.k.app.evaluate(({ app, BrowserWindow }) => {
+      app.focus({ steal: true });
+      const ide = BrowserWindow.getAllWindows().find((w) => !w.webContents.getURL().includes("?emu"));
+      ide?.show();
+      ide?.focus();
+    });
+    await sleep(500);
     await s.k.cmd("settings integrations", 2000);
     const row = s.k.ide.getByTestId("settings-row-basicCompiler");
     check(/Boriel BASIC/.test(await row.textContent()), "ui: the Settings row shows the project's compiler");
@@ -196,6 +205,26 @@ const PARTS = {
     const r128 = await bankedPart(s, "sp128", "sp128");
     check(!!r128.pc && r128.pc === r128.expected, `banked: a breakpoint in a module in RAM bank 1 pauses the 128K (PC $${r128.pc}, Peek3 at $${r128.expected})`);
     check(r128.opened, "banked: the 128K stop opens big3.bas at the execution point");
+    // --- The banked build as a tape: the TAP export hands over zxbc's own tape (its loader pages the
+    // --- banks as zxbc's runtime expects); the 128K's Tape Loader loads it, the program leaves its total
+    const tap = path.join(s.out, "banked.tap");
+    await s.k.cmd("em-stop", 1500);
+    await s.k.cmd(`expc "${tap}" -f tap`, 6000);
+    await s.k.cmd(`tape-load "${tap}" -r`, 3000);
+    await sleep(40000);
+    await s.k.cmd("em-pause", 1500);
+    const snapshot = path.join(s.out, "banked.z80");
+    // --- A pause can land between an instruction prefix and its opcode, which no snapshot holds: retry
+    for (let attempt = 0; attempt < 5 && !fs.existsSync(snapshot); attempt++) {
+      if (attempt) {
+        await s.k.cmd("em-start", 500);
+        await s.k.cmd("em-pause", 1000);
+      }
+      await s.k.cmd(`zx-snapshot-save "${snapshot}"`, 2000);
+    }
+    await s.k.app.windows().find((w) => w.url().includes("?emu")).screenshot({ path: path.join(s.out, "tape-run.png") });
+    const total = z80Word(snapshot, mapAddress(path.join(s.out, "projects", "bcheck", "_klive", "boriel", "program.map"), "_total"));
+    check(total === 311, `banked: the exported TAP loads on the 128K and the program runs (total ${total})`);
     await s.k.close();
     const n = await session("banked-next", { card: true, ideViewOptions: sync });
     const rNext = await bankedPart(n, "zxnext", "zxnext");
@@ -233,6 +262,40 @@ async function bankedPart(s, machine, label) {
   const dbg = JSON.parse(fs.readFileSync(path.join(folder, "_klive", "boriel", "program.dbg"), "utf8")).sourceLevelDebug;
   const peek3 = dbg.extensions.frames.find((f) => dbg.callables[f.callableIndex].name === "Peek3");
   return { pc, opened, expected: peek3 && peek3.bodyStart.toString(16).toUpperCase().padStart(4, "0") };
+}
+
+/** A label's address in zxbc's `-M` map (`BB::HHHH: .name` in a banked build). */
+function mapAddress(mapFile, name) {
+  const line = fs.readFileSync(mapFile, "utf8").split(/\r?\n/).find((l) => l.trim().endsWith(`.${name}`));
+  return line ? parseInt(line.trim().replace(/^[0-9A-Fa-f]+::/, "").slice(0, 4), 16) : undefined;
+}
+
+/**
+ * A word at $4000-$BFFF of a version 2/3 `.z80` snapshot of a 128K: its memory pages are
+ * numbered bank + 3, and compressed ones repeat a byte with `ED ED count byte`.
+ */
+function z80Word(file, address) {
+  if (!fs.existsSync(file) || address === undefined || address < 0x4000 || address >= 0xc000) return undefined;
+  const bytes = fs.readFileSync(file);
+  const bank = address < 0x8000 ? 5 : 2;
+  let i = 32 + (bytes[30] | (bytes[31] << 8));
+  while (i + 3 <= bytes.length) {
+    const length = bytes[i] | (bytes[i + 1] << 8);
+    const page = bytes[i + 2];
+    const raw = bytes.subarray(i + 3, i + 3 + (length === 0xffff ? 0x4000 : length));
+    i += 3 + raw.length;
+    if (page - 3 !== bank) continue;
+    const data = [];
+    for (let j = 0; j < raw.length; ) {
+      if (length !== 0xffff && raw[j] === 0xed && raw[j + 1] === 0xed) {
+        for (let n = 0; n < raw[j + 2]; n++) data.push(raw[j + 3]);
+        j += 4;
+      } else data.push(raw[j++]);
+    }
+    const offset = address & 0x3fff;
+    return data[offset] | (data[offset + 1] << 8);
+  }
+  return undefined;
 }
 
 /** A TAP file's blocks, each with its flag byte first and its checksum last. */

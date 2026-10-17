@@ -116,6 +116,9 @@ All of these corrections live in `src/main/boriel-integration/dbg-adapter.ts`; t
   banks in ascending order, each without its unused tail. No file states the parts' lengths.
 - The 128K snapshot leaves `$7FFD` = `$10`: ROM 1, bank 0 at `$C000`, paging **unlocked**. A
   banked program must start from 128 BASIC; 48 BASIC latches the lock.
+- **zxbc's own banked tape** (`-f tap -B -a`) loads through the 128K's Tape Loader and runs (verified
+  in the app). Klive's 128K tape loader, given the same banks, loads them and the program then
+  crashes into 48 BASIC; so Klive exports zxbc's tape for a banked 128K build.
 
 ## Far calls (verified on the 128K and Next cores, B5)
 
@@ -136,6 +139,11 @@ The plan assumed no shadow stack; there is one.
   stays right in both.
 - zxbc's frames hold byte-sized locals, so IX and return slots can be at **odd** addresses.
 - Within one bank a call is a plain `CALL` (in the fixture, `Weigh` → `Mix`).
+- Step Into/Over/Out need nothing more than the shadow-stack reader: they work across far calls on
+  both machines (verified).
+- A routine's frame carries its start's partition. On the Next a routine can cross `$E000` into
+  its bank's second page (fixture `banked-edge-next`); the index takes each slot's page from the
+  CODEBANK bank table.
 
 ## Run-time data layouts (verified on the 48K)
 

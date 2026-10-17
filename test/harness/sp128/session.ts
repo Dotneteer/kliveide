@@ -11,7 +11,13 @@ import { bankSpaceFor } from "@common/annotations/bankSpace";
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { connectConditionSupport } from "@emu/machines/conditionStore";
 import { DebugSupport } from "@emu/machines/DebugSupport";
-import type { MachineView } from "@emu/machines/SourceStepDecision";
+import {
+  beginSourceStep,
+  type MachineView,
+  type SourceDebugIndex,
+  type SourceStep,
+  type SourceStepKind
+} from "@emu/machines/SourceStepDecision";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { ZxSpectrum48WasmV2Machine } from "@emu/machines/zxSpectrum48/ZxSpectrum48WasmV2Machine";
 import { ZxSpectrum128WasmV2Machine } from "@emu/machines/zxSpectrum128/ZxSpectrum128WasmV2Machine";
@@ -640,6 +646,35 @@ export class Sp128TestSession {
         if (returnTo !== undefined && this.machine.pc === returnTo) {
           throw new Error(`The program returned to ${hex4(returnTo)} without hitting a breakpoint.`);
         }
+      }
+    } finally {
+      ctx.debugStepMode = DebugStepMode.NoDebug;
+    }
+  }
+
+  /**
+   * A source-level step of a compiled program, as the IDE's Step Into/Over/Out run it: starts the
+   * step at the current state and runs in debug mode until it stops. Returns the step; undefined when
+   * the program returned to `returnTo` first.
+   */
+  sourceStep(
+    index: SourceDebugIndex,
+    kind: SourceStepKind,
+    options: { targetFrame?: number; targetCallable?: number; returnTo?: number; stopInInterrupts?: boolean } & RunLimit = {}
+  ): SourceStep | undefined {
+    const { maxFrames = 100, returnTo, ...stepOptions } = options;
+    const ctx = this.machine.executionContext;
+    const debugSupport = ctx.debugSupport;
+    if (!debugSupport) throw new Error("Call attachDebugSupport() first.");
+    const step = beginSourceStep(index, this.machineView(), kind, { ...stepOptions, previous: debugSupport.sourceStep });
+    debugSupport.sourceStep = step;
+    ctx.debugStepMode = DebugStepMode.SourceStep;
+    const limit = this.frames + maxFrames;
+    try {
+      while (true) {
+        if (this.frames >= limit) throw new Error(`The source step did not stop in ${maxFrames} frames (PC=${hex4(this.machine.pc)})`);
+        if (this.execute() === FrameTerminationMode.DebugEvent) return step;
+        if (returnTo !== undefined && this.machine.pc === returnTo) return undefined;
       }
     } finally {
       ctx.debugStepMode = DebugStepMode.NoDebug;

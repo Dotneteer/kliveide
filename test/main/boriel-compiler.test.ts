@@ -476,8 +476,16 @@ describe("BorielCompiler with the real zxbc", () => {
       if (machineId === "zxnext") {
         expect(Buffer.from(output.prebuiltNex).subarray(0, 4).toString()).toBe("Next");
         expect(output.nexConfig).toEqual({ filename: "program.nex" });
+        expect(output.prebuiltTape).toBeUndefined();
       } else {
         expect(output.prebuiltNex).toBeUndefined();
+        // --- zxbc's own tape for the export: a BASIC loader header first, and each bank's code in it
+        const tape = Buffer.from(output.prebuiltTape);
+        expect(tape[2]).toBe(0x00);
+        expect(tape[3]).toBe(0x00);
+        for (const segment of output.segments.filter((sg: any) => sg.bank !== undefined)) {
+          expect(tape.indexOf(Buffer.from(segment.emittedCode))).toBeGreaterThan(0);
+        }
       }
     }
   }, 120_000);

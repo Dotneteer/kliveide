@@ -91,8 +91,8 @@ export function nexHoldsImage(nex: Uint8Array, image: Uint8Array): boolean {
   return image.length > 0 && Buffer.from(nex.buffer, nex.byteOffset, nex.byteLength).indexOf(Buffer.from(image)) >= 0;
 }
 
-/** The output a Boriel build adds to Klive's: the `.nex` zxbc wrote, used instead of Klive's NEX writer. */
-export type BorielBuildOutput = KliveCompilerOutput & { prebuiltNex?: number[] };
+/** The output a Boriel build adds to Klive's (and, for a banked 128K build, zxbc's own tape): the `.nex` zxbc wrote, used instead of Klive's NEX writer. */
+export type BorielBuildOutput = KliveCompilerOutput & { prebuiltNex?: number[]; prebuiltTape?: number[] };
 
 /** Everything a build or a check needs, worked out once. */
 type Prepared = {
@@ -161,7 +161,7 @@ export class BorielCompiler implements IKliveCompiler {
 
     const name = programName(filename);
     const out = (ext: string) => path.join(buildFolder, `${name}.${ext}`);
-    for (const ext of ["bin", "dbg", "map", "err", "nex", "z80", SECOND_DBG]) fs.rmSync(out(ext), { force: true });
+    for (const ext of ["bin", "dbg", "map", "err", "nex", "z80", "tap", SECOND_DBG]) fs.rmSync(out(ext), { force: true });
     const { args, arch } = zxbcArgumentsFor(options, header, undefined, path.dirname(filename));
     const common = [...args, ...(projectIni ? ["-F", projectIni] : [])];
     // --- `--debug` changes the code zxbc generates (`.ai/boriel/dbg-observed.md`): every other
@@ -279,6 +279,15 @@ export class BorielCompiler implements IKliveCompiler {
       prebuiltNex = Array.from(nex);
     }
 
+    // --- A banked 128K program exports as zxbc's own tape: its loader pages the banks in as zxbc's
+    // --- runtime expects, which Klive's 128K loader does not (the program crashed after loading)
+    let prebuiltTape: number[] | undefined;
+    if (banked && arch !== "zxnext") {
+      const tapeRun = await this.invoke(executable, [filename, ...sameCode, "-f", "tap", "-B", "-a", "-o", out("tap")], buildFolder, BUILD_TIMEOUT_MS, filename);
+      if ("errors" in tapeRun) return { ...tapeRun, traceOutput: trace };
+      prebuiltTape = Array.from(fs.readFileSync(out("tap")));
+    }
+
     await this.writeRequestedFiles(executable, filename, sameCode, options, buildFolder, name, out("map"), trace);
     fs.rmSync(out(SECOND_DBG), { force: true });
     trace.push(`Boriel BASIC: ${image.length} bytes at $${options.origin.toString(16).toUpperCase().padStart(4, "0")} (${arch})`);
@@ -297,7 +306,8 @@ export class BorielCompiler implements IKliveCompiler {
       ...(debug
         ? { sourceMap: debug.sourceMap, listFileItems: debug.listFileItems, sourceLevelDebug: debug.sourceLevelDebug }
         : {}),
-      ...(prebuiltNex ? { nexConfig: { filename: `${name}.nex` }, prebuiltNex } : {})
+      ...(prebuiltNex ? { nexConfig: { filename: `${name}.nex` }, prebuiltNex } : {}),
+      ...(prebuiltTape ? { prebuiltTape } : {})
     } as BorielBuildOutput;
   }
 

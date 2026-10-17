@@ -1,0 +1,1 @@
+{ "description": "A banked Next program (--split-modules, -f nex) whose module routine crosses $E000, from the bank's first 8K page into its second", "args": ["--arch", "zxnext", "-O", "1", "-S", "32768", "--split-modules"], "banked": true }

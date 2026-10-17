@@ -720,9 +720,20 @@ The following need no Boriel-specific code beyond the adapter, once the frame-lo
   `continueToBreakpoint` and `machineView`. `scripts/boriel-ide-check.cjs banked` checks both machines
   in the app, including that the stop opens the module's file (with "Sync the Source with the
   Current Breakpoint" on).
-- **Not covered:** a routine whose code crosses `$E000` on the Next keeps its start's page for
-  the whole routine; Step Over/Out across a far call are not exercised by a test yet; exporting a
-  banked 128K build (TAP/TZX through Klive's writer, which receives the bank segments) is untested.
+- **Closed later (2026-10-17):**
+  - **Step Into/Over/Out across far calls** work unchanged through zxbc's helper (the shadow-stack
+    reader covers stepping too); `boriel-banked.test.ts` walks main's far calls and a bank's
+    in-bank call on both machines. The sp128 harness gained `sourceStep`.
+  - **A Next routine crossing `$E000`**: `SourceDebugIndex.callableAt` now takes the page of each
+    8K slot from the CODEBANK bank table (`[p, p+1]` on the Next, `[b, b]` on the 128K), so code
+    past `$E000` belongs to its routine (fixture `banked-edge-next`: `Edge` starts at `$DFE2`).
+  - **Exporting a banked 128K build:** Klive's 128K tape loader loaded the banks, but the program
+    then crashed into 48 BASIC; zxbc's own banked tape, loaded through the 128K's Tape Loader, runs.
+    So a banked 128K build also runs `-f tap -B -a` (with `--debug`) and hands the tape over as
+    `prebuiltTape`; the TAP/TZX export saves its blocks unchanged, and says that `-as`, `-n`, `-b`,
+    `-scr` and the other loader options have no effect on it. `boriel-ide-check.cjs banked` exports,
+    loads and runs it (the program's `total` read from a snapshot). Why Klive's loader fails with
+    zxbc's runtime was not investigated further.
 
 1. **128K.** zxbc refuses `bin` and `sna` for a banked build. It writes only `tap`, `tzx` or `z80`
    (B0). Build `-f z80 -B -a`, read the snapshot with Klive's own `.z80` reader, and turn its RAM banks
@@ -853,7 +864,7 @@ the format or the compiler.
 
 4. **Cross-bank calls (`--split-modules`).** There is no `"far"` call-site kind. **(adapter)** Klive
    decodes zxbc's far-call helper and reads its shadow stack (§7 "As built"), so the call stack walks
-   through bank switches on the 128K and the Next. Step Over/Out across a far call are untested. Also,
+   through bank switches on the 128K and the Next, and Step Into/Over/Out work across far calls. Also,
    **CODEBANK itself is Klive BASIC syntax**: those programs do not compile under Boriel, which uses
    `MODULE`/`USE` with `--split-modules` instead.
 5. **`callTargets` is always `[]`.** No loss, because Klive uses `callSites` for the same information.

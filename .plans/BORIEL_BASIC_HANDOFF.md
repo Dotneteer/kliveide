@@ -27,7 +27,8 @@ what to do next.
 | B4: FASTCALL frames, validator warning, Next error stop, NEX sidecar | done | `8a4d59c93` |
 | B4 fix: Next breakpoints (`.nex` built without `--debug`), in-app export checks | done | `3381503f1` |
 | B5: banked programs (`--split-modules`), 128K bank injection, far-call decoding | done | `0a02b2566` |
-| B6: settings row, status bar, CODEBANK hint, docs, competitive analysis | done | the commit after this file |
+| B6: settings row, status bar, CODEBANK hint, docs, competitive analysis | done | `118d24dd4` |
+| B5 gaps: stepping across far calls, routines crossing `$E000`, banked 128K tape export | done | the commit after this file |
 
 **What works (each verified in the running app or on the real cores):**
 
@@ -43,7 +44,8 @@ what to do next.
 - TAP export; the Next's NEX export with its debug sidecar; `nex-run -d` of that NEX.
 - `USE`d modules (zxbc gets `-m <source folder>`).
 - Banked programs (`'@split-modules`) on the 128K and the Next: build, run, partition-qualified
-  breakpoints, the execution point in a module file, and the call stack through far calls.
+  breakpoints, the execution point in a module file, the call stack and Step Into/Over/Out through
+  far calls, and (128K) a TAP/TZX export that loads and runs: it is zxbc's own tape.
 
 `scripts/boriel-ide-check.cjs` checks all of this in the running app (parts `run`, `debug`, `next`,
 `export`, `ui`, `banked`; all pass).
@@ -69,23 +71,25 @@ node scripts/boriel-ide-check.cjs [run|debug|next|export|ui|banked]
 
 It needs `~/zxbasic2` or `BORIEL_ROOT`; `next`, `export` and `banked` also need `~/Klive/ks2.cim`. A kit
 unpacked from `vendor/boriel-basic/kits/` works as `BORIEL_ROOT` once `xattr -dr
-com.apple.quarantine` has been run on it. All parts take about ten minutes.
+com.apple.quarantine` has been run on it. All parts take about ten minutes. The `ui` part brings Klive
+to the front: Settings opens in the focused window, and with the app in the background that is the
+emulator's.
 
 ## Next steps, in order
 
-1. **Banked gaps** (plan §7 "Not covered"): Step Over/Out across a far call need a core test;
-   on the Next a routine crossing `$E000` keeps its start's page; exporting a banked 128K build
-   (TAP/TZX) is untested.
-2. **Unverified platforms.** The x86_64 Linux and Windows kits have never been run. Unchecked on
+1. **Unverified platforms.** The x86_64 Linux and Windows kits have never been run. Unchecked on
    Windows: Windows `;` as the `-I` separator (`boriel-options.ts`), and skipping the 34.5 MB of
    `.pdb` files.
-3. **Klive sometimes does not quit** under the IDE check's Playwright driver: seen twice, once after
+2. **Klive sometimes does not quit** under the IDE check's Playwright driver: seen twice, once after
    the `ui` part and once after a Next session paused at a breakpoint. The check now ends such a
    session's process after 20 s and says so. Not Boriel-specific as far as known; worth a look.
-4. **The readiness gate** (plan §11) before anyone proposes Boriel as the default: a production
+3. **The readiness gate** (plan §11) before anyone proposes Boriel as the default: a production
    licence for a non-beta version, installs on every platform from a fresh `HOME`, and every template
    and the debugger corpus through `boriel-ide-check.cjs`. The Next template cannot pass while it uses
    CODEBANK; a Boriel variant of it (a `MODULE` with `'@split-modules`) would.
+4. **Small leftovers:** debugging a `.nex` built outside Klive from zxbc's raw `.dbg` (plan §6.4);
+   why Klive's own 128K tape loader crashes a banked zxbc program (Klive exports zxbc's tape
+   instead, plan §7).
 
 ## How to work on this
 
