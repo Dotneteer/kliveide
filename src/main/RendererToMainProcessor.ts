@@ -122,6 +122,7 @@ import {
   borielSetupStatus,
   installBorielKit,
   recordBorielSetupDecision,
+  setBasicCompiler,
   useExistingBorielInstallation
 } from "./boriel-integration/boriel-main";
 import {
@@ -828,6 +829,11 @@ class MainMessageProcessor {
   async useExistingBoriel(itemPath: string) {
     if (typeof itemPath !== "string") throw new Error("Invalid Boriel BASIC path.");
     return await useExistingBorielInstallation(itemPath);
+  }
+
+  async setBasicCompiler(choice: "klive" | "boriel") {
+    if (choice !== "klive" && choice !== "boriel") throw new Error("Invalid BASIC compiler choice.");
+    setBasicCompiler(choice);
   }
 
   async recordBorielSetupDecision(decision: BorielSetupDecision) {

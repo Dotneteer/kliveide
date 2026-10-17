@@ -172,11 +172,13 @@ describe("the zxbas compiler", () => {
   });
   afterAll(() => fs.rmSync(folder, { recursive: true, force: true }));
 
-  it("defaults to Klive BASIC; 'zxbc' selects the external compiler", () => {
+  it("defaults to Klive BASIC; 'boriel' (or the old 'zxbc') selects Boriel BASIC", () => {
     expect(selectedZxBasicCompiler(undefined)).toBe("klive");
     expect(selectedZxBasicCompiler(state({}))).toBe("klive");
     expect(selectedZxBasicCompiler(state({ zxbasic: { compiler: "klive" } }))).toBe("klive");
-    expect(selectedZxBasicCompiler(state({ zxbasic: { compiler: " ZXBC " } }))).toBe("zxbc");
+    expect(selectedZxBasicCompiler(state({ zxbasic: { compiler: "boriel" } }))).toBe("boriel");
+    // --- The removed 1.x integration's value keeps an external compiler: Boriel BASIC 2.x
+    expect(selectedZxBasicCompiler(state({ zxbasic: { compiler: " ZXBC " } }))).toBe("boriel");
     expect(selectedZxBasicCompiler(state({ zxbasic: { compiler: "something" } }))).toBe("klive");
   });
 
@@ -324,9 +326,12 @@ describe("the zxbas compiler", () => {
     expect(await dispatcher.lineCanHaveBreakpoint("PRINT 1")).toBe(true);
   });
 
-  it("keeps zxbc's answers when zxbc is selected", async () => {
+  it("hands requests to Boriel BASIC when it is selected", async () => {
     const dispatcher = new ZxBasicDispatcher();
-    dispatcher.setAppState(state({ zxbasic: { compiler: "zxbc" } }));
+    dispatcher.setAppState(state({ zxbasic: { compiler: "boriel" } }));
+    // --- No breakpoints before the .dbg adapter (Boriel plan B3); no zxbc set up, so a check says so
     expect(await dispatcher.lineCanHaveBreakpoint("PRINT 1")).toBe(false);
+    const output = await dispatcher.checkFile(path.join(folder, "bad.bas"));
+    expect(output.errors?.[0].message).toMatch(/Boriel BASIC is not set up/);
   });
 });

@@ -20,6 +20,8 @@ export type BorielSetupViewModel = {
   useExisting: { enabled: boolean };
   cancel: { label: string; enabled: boolean };
   dontAskAgain: { visible: boolean; value: boolean; enabled: boolean };
+  /** Shown once Boriel BASIC works: whether BASIC programs build with it. */
+  useBoriel: { visible: boolean; value: boolean; enabled: boolean; note?: string };
   /** The install/"use existing" outcome, or a hint while one runs. */
   message?: { kind: "progress" | BorielOutcome["kind"]; text: string };
   licenceNote: string;
@@ -58,6 +60,14 @@ export function selectViewModel(state: BorielSetupState): BorielSetupViewModel {
     useExisting: { enabled: ready },
     cancel: { label: state.mode === "offer" ? "Not now" : "Close", enabled: working },
     dontAskAgain: { visible: state.mode === "offer", value: state.dontAskAgain, enabled: working },
+    useBoriel: {
+      visible: installation?.kind === "working",
+      value: state.status?.compiler === "boriel",
+      enabled: ready,
+      note: state.status?.compilerFromProject
+        ? "The open project's settings choose the compiler; this changes your user setting only."
+        : undefined
+    },
     message: messageOf(state),
     licenceNote: LICENCE_NOTE
   };

@@ -122,7 +122,6 @@
 /images/working-with-ide/ula-view.png
 /images/working-with-ide/watch-panel.png
 /images/working-with-ide/zxb-actions.png
-/images/working-with-ide/zxb-reset.png
 /images/working-with-ide/zxb-running.png
 /images/zx81/zx81-keyboard.png
 /images/zx81/zx81-loaded.png

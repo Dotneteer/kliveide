@@ -14,7 +14,7 @@ import type { UiReducer } from "@mvc/core/types";
 /** "offer": shown at startup, with "Not now" and "Don't ask again". "settings": opened by the user. */
 export type BorielSetupMode = "offer" | "settings";
 
-export type BorielBusy = "install" | "existing" | "closing" | undefined;
+export type BorielBusy = "install" | "existing" | "compiler" | "closing" | undefined;
 
 /** What the last install or "use existing" did, for the message under the buttons. */
 export type BorielOutcome = { kind: "installed" | "failed"; text: string };
@@ -49,6 +49,8 @@ export type BorielSetupEvent =
   | { type: "existingStarted" }
   | { type: "actionSettled"; action: "install" | "existing"; result: BorielInstallResult }
   | { type: "actionFailed"; message: string }
+  | { type: "compilerChangeStarted" }
+  | { type: "compilerChangeSettled"; error?: string }
   | { type: "closingStarted" }
   | { type: "closingFailed"; message: string };
 
@@ -114,6 +116,12 @@ export const reduce: UiReducer<BorielSetupState, BorielSetupEvent> = (state, eve
     }
     case "actionFailed":
       return { ...state, busy: undefined, outcome: { kind: "failed", text: event.message } };
+    case "compilerChangeStarted":
+      return { ...state, busy: "compiler" };
+    case "compilerChangeSettled":
+      return event.error
+        ? { ...state, busy: undefined, outcome: { kind: "failed", text: event.error } }
+        : { ...state, busy: undefined };
     case "closingStarted":
       return { ...state, busy: "closing" };
     case "closingFailed":

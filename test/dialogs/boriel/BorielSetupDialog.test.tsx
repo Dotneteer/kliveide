@@ -17,7 +17,8 @@ const mainApiMock = vi.hoisted(() => ({
   getBorielSetupStatus: vi.fn(),
   installBoriel: vi.fn(),
   useExistingBoriel: vi.fn(),
-  recordBorielSetupDecision: vi.fn()
+  recordBorielSetupDecision: vi.fn(),
+  setBasicCompiler: vi.fn()
 }));
 
 vi.mock("@renderer/core/MainApi", () => ({
@@ -28,7 +29,9 @@ const STATUS = {
   kit: { kind: "available", version: "2.0.0-beta25", file: "kit.tar.gz", platformKey: "darwin-arm64" },
   installation: { kind: "notConfigured" },
   defaultFolder: "/home/me/zxbasic2",
-  declined: false
+  declined: false,
+  compiler: "klive",
+  compilerFromProject: false
 };
 
 describe("BorielSetupDialog wiring", () => {

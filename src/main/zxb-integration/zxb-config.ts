@@ -4,7 +4,6 @@ import { createSettingsReader } from "@common/utils/SettingsReader";
 
 export const ZXBC_ALL = "zxbasic";
 export const ZXBC_EXECUTABLE_PATH = "zxbasic.executablePath";
-export const ZXBC_PYTHON_PATH = "zxbasic.pythonPath";
 export const ZXBC_OPTIMIZATION_LEVEL = "zxbasic.optimizationLevel";
 export const ZXBC_MACHINE_CODE_ORIGIN = "zxbasic.machineCodeOrigin";
 export const ZXBC_SINCLAIR = "zxbasic.sinclair";
@@ -16,19 +15,25 @@ export const ZXBC_DEBUG_ARRAY = "zxbasic.debugArray";
 export const ZXBC_ENABLE_BREAK = "zxbasic.enableBreak";
 export const ZXBC_EXPLICIT_VARIABLES = "zxbasic.explicitVariables";
 export const ZXBC_STRICT_MODE = "zxbasic.strictMode";
-export const ZXBC_STRICT_BOOL = "zxbasic.strictBoolean";
-export const ZXBC_STORE_GENERATED_ASM = "zxbasic.storeGeneratedAsm";
-/** Which compiler builds `.bas` files: "klive" (Klive BASIC, the default) or "zxbc" (the external ZX BASIC compiler). */
+/**
+ * Which compiler builds `.zxbas`/`.bas` files: "klive" (Klive BASIC, the default) or "boriel" (the
+ * external Boriel BASIC 2.x, `.plans/BORIEL_BASIC_INTEGRATION_PLAN.md` B1). A user or project setting.
+ */
 export const ZXBC_COMPILER = "zxbasic.compiler";
 
-export type ZxBasicCompilerChoice = "klive" | "zxbc";
+export type ZxBasicCompilerChoice = "klive" | "boriel";
 
 /**
- * The compiler the `zxbasic.compiler` setting selects: Klive BASIC unless it says `zxbc` (plan §12.1,
- * D9: the default switched to Klive BASIC at the end of Phase 4). The main process's dispatcher and
- * the renderer's background compile both ask this.
+ * The compiler the `zxbasic.compiler` setting selects: Boriel BASIC for "boriel", and for "zxbc", the
+ * value the removed 1.x integration used, so a user who chose the external compiler keeps one;
+ * Klive BASIC for anything else. The main process's dispatcher and the renderer both ask this.
  */
 export function selectedZxBasicCompiler(state: AppState | undefined): ZxBasicCompilerChoice {
-  const value = state ? createSettingsReader(state).readSetting(ZXBC_COMPILER) : undefined;
-  return typeof value === "string" && value.trim().toLowerCase() === "zxbc" ? "zxbc" : "klive";
+  return compilerChoiceOf(state ? createSettingsReader(state).readSetting(ZXBC_COMPILER) : undefined);
+}
+
+/** The compiler a `zxbasic.compiler` value selects. */
+export function compilerChoiceOf(value: unknown): ZxBasicCompilerChoice {
+  const choice = typeof value === "string" ? value.trim().toLowerCase() : "";
+  return choice === "boriel" || choice === "zxbc" ? "boriel" : "klive";
 }

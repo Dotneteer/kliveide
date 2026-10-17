@@ -2216,13 +2216,12 @@ async function startBackgroundCompile(
   const fullPath = buildRoot ? `${state.project.folderPath}/${buildRoot}` : basicActiveFile!;
   const language = buildRoot ? getFileTypeEntry(fullPath, store)?.subType : "zxbas";
 
-  // --- The built-in compilers (the Klive Z80 assembler, and Klive BASIC unless `zxbasic.compiler`
-  // --- selects zxbc) always run background compilation; the flag only gates external compilers
-  // --- (zxbc, SjasmPlus, etc.)
+  // --- The built-in compilers (the Klive Z80 assembler and Klive BASIC) always run background
+  // --- compilation, and so does Boriel BASIC, whose check is `zxbc --parse-only`: cheap, and it writes
+  // --- no files (`.plans/BORIEL_BASIC_INTEGRATION_PLAN.md` §4.3). The flag gates the other external
+  // --- compilers (SjasmPlus, etc.)
   const langInfo = customLanguagesRegistry.find((l) => l.id === language);
-  const isBuiltInCompiler =
-    langInfo?.compiler === "Z80Compiler" ||
-    (language === "zxbas" && selectedZxBasicCompiler(state) === "klive");
+  const isBuiltInCompiler = langInfo?.compiler === "Z80Compiler" || language === "zxbas";
   if (!allowCompile && !isBuiltInCompiler) {
     return true;
   }

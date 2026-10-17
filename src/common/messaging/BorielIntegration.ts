@@ -38,6 +38,10 @@ export type BorielSetupStatus = {
   defaultFolder: string;
   /** The user chose "Don't ask again" for this kit version. */
   declined: boolean;
+  /** The compiler BASIC programs build with now (`zxbasic.compiler`). */
+  compiler: "klive" | "boriel";
+  /** The open project's settings choose the compiler, overriding the user setting this dialog writes. */
+  compilerFromProject: boolean;
 };
 
 export type BorielInstallRequest = { folder: string };

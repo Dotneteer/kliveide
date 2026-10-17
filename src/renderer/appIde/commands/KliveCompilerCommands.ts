@@ -1014,6 +1014,18 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
         return commandError("No active project found.");
       }
 
+      // --- A compiler that writes its own NEX (Boriel BASIC's zxbc) hands over the file's bytes
+      const prebuiltNex = (output as { prebuiltNex?: number[] }).prebuiltNex;
+      if (prebuiltNex) {
+        const prebuiltPath = await context.mainApi.saveBinaryFile(
+          filename,
+          new Uint8Array(prebuiltNex),
+          `kliveHome:${EXPORT_FILE_FOLDER}`
+        );
+        await context.mainApi.copyToSdCard(prebuiltPath, "_klive/" + compiledOutput.nexConfig.filename);
+        return commandSuccessWith(`NEX file exported to ${prebuiltPath} (${prebuiltNex.length} bytes, written by the compiler).`);
+      }
+
       // --- Generate NEX file data. Problems the writer works around (code it drops or may
       // --- truncate) still produce a file, so they are shown as warnings rather than failing.
       const nexWarnings: string[] = [];
@@ -1234,8 +1246,10 @@ export async function injectCode(
   }
 
   // --- Collect files affected by project debugging
+  // --- A compiler without the classic tables has no sourceFileList (plan §1.1 of the Boriel plan)
+  const sourceFiles = result.sourceFileList ?? [];
   if (operationType === "debug") {
-    context.service.projectService.setLockedFiles(result.sourceFileList.map((f) => f.filename));
+    context.service.projectService.setLockedFiles(sourceFiles.map((f) => f.filename));
   }
 
   // --- Create the code to inject into the emulator
@@ -1291,7 +1305,7 @@ export async function injectCode(
 
     case "debug": {
       // --- Check if we have debug information
-      if (result.sourceFileList.length === 0) {
+      if (sourceFiles.length === 0) {
         const out = context.output;
         out.color("yellow");
         out.writeLine("No debug information available.");

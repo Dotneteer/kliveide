@@ -9,7 +9,8 @@ import type {
 import { createSettingsReader } from "@common/utils/SettingsReader";
 import { mainStore } from "../main-store";
 import { appSettings, applyUserSetting, saveAppSettings } from "../settings-utils";
-import { ZXBC_EXECUTABLE_PATH } from "../zxb-integration/zxb-config";
+import { get } from "lodash";
+import { ZXBC_COMPILER, ZXBC_EXECUTABLE_PATH } from "../zxb-integration/zxb-config";
 import { BORIEL_INSTALL_FOLDER, BORIEL_VERSION } from "./boriel-config";
 import {
   decideBorielStartup,
@@ -34,8 +35,14 @@ export function borielServiceDeps(): BorielServiceDeps {
     homeDir: os.homedir(),
     protectedFolders: app.isPackaged ? [process.resourcesPath, app.getAppPath()] : [],
     settings: createSettingsReader(mainStore.getState()),
-    setupRecord: appSettings.borielSetup
+    setupRecord: appSettings.borielSetup,
+    compilerFromProject: get(mainStore.getState().projectSettings, ZXBC_COMPILER) !== undefined
   };
+}
+
+/** Makes Klive BASIC or Boriel BASIC the compiler of BASIC programs (a user setting). */
+export function setBasicCompiler(choice: "klive" | "boriel"): void {
+  applyUserSetting(ZXBC_COMPILER, choice);
 }
 
 export async function borielSetupStatus(): Promise<BorielSetupStatus> {

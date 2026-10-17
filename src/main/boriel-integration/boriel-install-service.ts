@@ -8,6 +8,7 @@ import type {
   BorielSetupStatus
 } from "@common/messaging/BorielIntegration";
 import { extractArchive } from "../tool-install/archive";
+import { compilerChoiceOf, ZXBC_COMPILER } from "../zxb-integration/zxb-config";
 import { BORIEL_DEFAULT_FOLDER_NAME, BORIEL_MARKER_FILE } from "./boriel-config";
 import {
   locateBundledKit,
@@ -43,6 +44,8 @@ export type BorielServiceDeps = {
   protectedFolders: string[];
   settings: SettingsReaderLike;
   setupRecord: BorielSetupRecord | undefined;
+  /** Whether the open project's settings set `zxbasic.compiler`. */
+  compilerFromProject?: boolean;
   runner?: VersionRunner;
   clearQuarantine?: (folder: string) => Promise<void>;
 };
@@ -78,6 +81,8 @@ export async function getBorielSetupStatus(deps: BorielServiceDeps): Promise<Bor
   return {
     kit,
     installation,
+    compiler: compilerChoiceOf(deps.settings.readSetting(ZXBC_COMPILER)),
+    compilerFromProject: !!deps.compilerFromProject,
     defaultFolder: defaultBorielFolder(deps.homeDir),
     // --- "*" declines every version (the Playwright harnesses seed it, so no offer blocks them)
     declined:

@@ -57,6 +57,10 @@ export class BorielSetupController extends UiController<
         this.emit({ type: "dontAskAgainChanged", value: intent.value });
         return;
 
+      case "useBorielToggled":
+        await this.setCompiler(intent.value ? "boriel" : "klive");
+        return;
+
       case "installRequested":
         await this.install();
         return;
@@ -107,6 +111,19 @@ export class BorielSetupController extends UiController<
       this.emit({ type: "actionSettled", action: "existing", result });
     } catch (error) {
       this.emit({ type: "actionFailed", message: messageOf(error) });
+      return;
+    }
+    await this.loadStatus();
+  }
+
+  private async setCompiler(choice: "klive" | "boriel"): Promise<void> {
+    if (this.state.busy || this.state.status?.compiler === choice) return;
+    this.emit({ type: "compilerChangeStarted" });
+    try {
+      await this.ports.service.setCompiler(choice);
+      this.emit({ type: "compilerChangeSettled" });
+    } catch (error) {
+      this.emit({ type: "compilerChangeSettled", error: messageOf(error) });
       return;
     }
     await this.loadStatus();

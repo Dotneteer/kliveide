@@ -13,6 +13,7 @@ export type BorielServicePort = {
   install(folder: string): Promise<BorielInstallResult>;
   useExisting(itemPath: string): Promise<BorielInstallResult>;
   recordDecision(decision: BorielSetupDecision): Promise<void>;
+  setCompiler(choice: "klive" | "boriel"): Promise<void>;
 };
 
 /** Everything outside the dialog its controller may touch: the seam the tests fake. */

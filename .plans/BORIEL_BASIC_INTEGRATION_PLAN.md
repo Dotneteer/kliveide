@@ -1,6 +1,6 @@
 # Boriel BASIC (zxbc 2.0) Integration — Implementation Plan
 
-Status: **approved for implementation; Phases B0 and B1 done** (2026-10-17, HEAD `2cebbd732`). Decisions B1, B-L1, B-T1 and B-T2 are settled (§0).
+Status: **approved for implementation; Phases B0, B1 and B2 done** (2026-10-17, HEAD `2cebbd732`). Decisions B1, B-L1, B-T1 and B-T2 are settled (§0).
 Inputs: the setup kits, now in `vendor/boriel-basic/` (`kit.json` + git-ignored `kits/`; see §3.1) and the debug
 format published at <https://zxbasic.readthedocs.io/en/v2.0/debug_format/> (pages *Statements &
 Addresses*, *Callables*, *Call Sites*, *Variables*, *Banking*).
@@ -376,7 +376,49 @@ Uninstall is **not** offered. Klive never deletes a user folder it did not just 
 
 ---
 
-## 4. Phase B2 — compile, run, inject, export
+## 4. Phase B2 — compile, run, inject, export (**done 2026-10-17**)
+
+**As built.** The design below was implemented, except:
+
+- **zxbc runs through `execa` directly**, behind an injectable `ZxbcRunner`, not through `CliRunner`.
+  That keeps every branch testable with a fake zxbc. Diagnostics come from the `-e` file;
+  argument errors (exit 2) come from stderr.
+- **Options go through Klive's own pipeline** (`optionsFromSettings` → `readHeader` →
+  `applyHeader`), then `boriel-options.ts` maps the merged `KBasicOptions` fields. The real option
+  names differ from the table in §4.2 (`origin`, `check-bounds`, …); `.ai/boriel/options.md` is the
+  table of record.
+- **`include-path` is one `-I` list.** A repeated `-I` keeps only the last folder (verified).
+- **No source-level debug data yet.** Builds return `sourceFileList: []`, so a debug run steps Z80
+  instructions, and `lineCanHaveBreakpoint` is false. The `.dbg` is written and checksum-checked in
+  every build; B3 maps it.
+- **The Next is built twice**: `-f bin` for the image and `.dbg`, and `-f nex` for the file to start.
+  The output carries `prebuiltNex`, and the NEX export copies those bytes instead of running
+  Klive's NEX writer. A minimal `nexConfig` (`{ filename }`) keeps the Next run path.
+- **Machines:**
+
+  | Klive machine | zxbc `--arch` | Inject model |
+  | --- | --- | --- |
+  | 48K, Timex | `zx48k` | 48K |
+  | 128K, Scorpion | `zx128k` | 128K |
+  | +3 | `zx128k` | +3 |
+  | Next | `zxnext` | Next |
+
+  Every other machine is refused before zxbc runs. Scorpion and Timex now get their right
+  architecture, whereas `optionsFromSettings` maps both to `zx48k`.
+- **The "Use Boriel BASIC" switch** is in the setup dialog (deferred from B1). It writes the user
+  setting, and the dialog says when the open project's own setting overrides it.
+- **A shared bug fixed on the way:** `SettingsReader` merged user and project settings shallowly. A
+  project that set `zxbasic.compiler` hid the user's `zxbasic.root`, and the build said "not set
+  up". It now overrides key by key, merging nested objects. One existing test had pinned the
+  shallow behaviour for navigation shortcuts; it now expects the user's other shortcuts to survive.
+- **Docs:** `docs/content/working-with-ide/zxb.mdx` has a "Using Boriel BASIC" section. The
+  `zxb-reset` command, its reference entry and its screenshot are gone.
+
+**Verified in the running app:** a project from the sp48 BASIC template, with Boriel selected,
+builds (6023 bytes at `$8000`), runs, and prints its text on the emulated screen. A syntax error
+reports `E342` in the Build output. The Next run and the TAP/NEX exports are covered by unit tests
+only, not yet in the app.
+
 
 ### 4.1 `BorielCompiler` (`src/main/boriel-integration/BorielCompiler.ts`)
 

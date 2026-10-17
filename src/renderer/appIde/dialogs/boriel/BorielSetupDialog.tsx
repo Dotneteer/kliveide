@@ -39,7 +39,8 @@ export const BorielSetupDialog = ({ mode = "settings", onClose }: Props) => {
         getStatus: () => mainApi.getBorielSetupStatus(),
         install: (folder) => mainApi.installBoriel(folder),
         useExisting: (itemPath) => mainApi.useExistingBoriel(itemPath),
-        recordDecision: (decision) => mainApi.recordBorielSetupDecision(decision)
+        recordDecision: (decision) => mainApi.recordBorielSetupDecision(decision),
+        setCompiler: (choice) => mainApi.setBasicCompiler(choice)
       }
     }),
     [files, mainApi]

@@ -28,13 +28,13 @@ describe("navigation shortcuts", () => {
     expect(
       readNavigationShortcuts({ userSettings: { shortcuts: { navigateBack: "Cmd+[" } } } as any, true)
     ).toEqual({ back: "Cmd+[", forward: "Ctrl+Shift+-" });
-    // --- `SettingsReader` merges the two scopes shallowly: a project `shortcuts` object replaces
-    // --- the user's, as it does for the stepping shortcuts.
+    // --- `SettingsReader` overrides key by key: a project that sets one shortcut keeps the user's
+    // --- others (it used to replace the user's whole `shortcuts` object)
     const state: any = {
       userSettings: { shortcuts: { navigateBack: "Cmd+[" } },
       projectSettings: { shortcuts: { navigateForward: "Cmd+]" } }
     };
-    expect(readNavigationShortcuts(state, true)).toEqual({ back: "Ctrl+-", forward: "Cmd+]" });
+    expect(readNavigationShortcuts(state, true)).toEqual({ back: "Cmd+[", forward: "Cmd+]" });
     expect(readNavigationShortcuts({ userSettings: { shortcuts: { navigateBack: " " } } } as any, false))
       .toEqual({ back: "Alt+Left", forward: "Alt+Right" });
   });

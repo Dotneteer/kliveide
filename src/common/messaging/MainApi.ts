@@ -484,6 +484,14 @@ class MainApiImpl {
   }
 
   /**
+   * Makes Klive BASIC or Boriel BASIC the compiler of BASIC programs (the `zxbasic.compiler` user setting).
+   * @param _choice "klive" or "boriel".
+   */
+  async setBasicCompiler(_choice: "klive" | "boriel"): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * Remembers the user's answer to the Boriel BASIC setup offer.
    * @param _decision "declined" (don't ask again for this kit) or "postponed".
    */

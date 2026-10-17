@@ -127,7 +127,6 @@ import {
   SettingCommand,
   SettingsDialogCommand
 } from "./commands/SettingCommands";
-import { ResetZxbCommand } from "./commands/ZxbCommands";
 import { CreateDiskFileCommand } from "./commands/CreateDiskFileCommand";
 import {
   CancelScriptCommand,
@@ -303,7 +302,6 @@ export function registerIdeCommands(cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new ListSettingsCommand());
   cmdSrv.registerCommand(new SettingsDialogCommand());
   cmdSrv.registerCommand(new MoveSettingsCommand());
-  cmdSrv.registerCommand(new ResetZxbCommand());
 
   cmdSrv.registerCommand(new CreateDiskFileCommand());
 

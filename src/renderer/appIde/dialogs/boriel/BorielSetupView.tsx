@@ -85,6 +85,20 @@ export const BorielSetupView = ({ vm, dispatch }: BorielSetupViewProps) => (
       />
     </Row>
 
+    {vm.useBoriel.visible && (
+      <Row label="">
+        <div className={styles.stack}>
+          <Checkbox
+            label="Use Boriel BASIC to build BASIC programs"
+            initialValue={vm.useBoriel.value}
+            enabled={vm.useBoriel.enabled}
+            onChange={(value) => dispatch({ type: "useBorielToggled", value })}
+          />
+          {vm.useBoriel.note && <span className={styles.muted}>{vm.useBoriel.note}</span>}
+        </div>
+      </Row>
+    )}
+
     {vm.dontAskAgain.visible && (
       <Row label="">
         <Checkbox

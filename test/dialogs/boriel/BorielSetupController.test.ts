@@ -20,6 +20,8 @@ const aStatus = (over: Partial<BorielSetupStatus> = {}): BorielSetupStatus => ({
   installation: { kind: "notConfigured" },
   defaultFolder: HOME_FOLDER,
   declined: false,
+  compiler: "klive",
+  compilerFromProject: false,
   ...over
 });
 const working = (folder = HOME_FOLDER, outdated = false): BorielSetupStatus["installation"] => ({
@@ -49,7 +51,8 @@ async function openDialog(options: Options = {}) {
     getStatus: vi.fn(options.service?.getStatus ?? (async () => statuses.length > 1 ? statuses.shift()! : statuses[0])),
     install: vi.fn(options.service?.install ?? (async (folder: string) => installed(folder))),
     useExisting: vi.fn(options.service?.useExisting ?? (async (folder: string) => installed(folder))),
-    recordDecision: vi.fn(options.service?.recordDecision ?? (async () => undefined))
+    recordDecision: vi.fn(options.service?.recordDecision ?? (async () => undefined)),
+    setCompiler: vi.fn(options.service?.setCompiler ?? (async () => undefined))
   } satisfies Record<keyof BorielServicePort, Mock>;
   const ports = {
     files: { pickFile: vi.fn(async () => undefined), pickFolder: vi.fn(async () => options.pickFolder) },
@@ -197,6 +200,44 @@ describe("closing", () => {
     await h.dispatch({ type: "closeRequested" });
     expect(h.ports.close.close).not.toHaveBeenCalled();
     expect(h.vm.message).toEqual({ kind: "failed", text: "disk full" });
+  });
+});
+
+describe("choosing the compiler", () => {
+  it("offers the switch only once Boriel BASIC works", async () => {
+    const none = await openDialog();
+    expect(none.vm.useBoriel.visible).toBe(false);
+    const ready = await openDialog({ statuses: [aStatus({ installation: working() })] });
+    expect(ready.vm.useBoriel).toMatchObject({ visible: true, value: false, enabled: true });
+  });
+
+  it("makes Boriel BASIC the compiler, then shows the new state", async () => {
+    const h = await openDialog({
+      statuses: [aStatus({ installation: working() }), aStatus({ installation: working(), compiler: "boriel" })]
+    });
+    await h.dispatch({ type: "useBorielToggled", value: true });
+    expect(h.ports.service.setCompiler).toHaveBeenCalledWith("boriel");
+    expect(h.vm.useBoriel.value).toBe(true);
+    // --- Already the chosen compiler: nothing to write
+    await h.dispatch({ type: "useBorielToggled", value: true });
+    expect(h.ports.service.setCompiler).toHaveBeenCalledTimes(1);
+    await h.dispatch({ type: "useBorielToggled", value: false });
+    expect(h.ports.service.setCompiler).toHaveBeenLastCalledWith("klive");
+  });
+
+  it("says when the project overrides the user setting", async () => {
+    const h = await openDialog({ statuses: [aStatus({ installation: working(), compilerFromProject: true })] });
+    expect(h.vm.useBoriel.note).toMatch(/project's settings choose the compiler/);
+  });
+
+  it("shows why the setting could not be written", async () => {
+    const h = await openDialog({
+      statuses: [aStatus({ installation: working() })],
+      service: { setCompiler: async () => Promise.reject(new Error("settings are read-only")) }
+    });
+    await h.dispatch({ type: "useBorielToggled", value: true });
+    expect(h.vm.message).toEqual({ kind: "failed", text: "settings are read-only" });
+    expect(h.vm.primary.enabled).toBe(true);
   });
 });
 
