@@ -47,6 +47,8 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     settingsFile,
     JSON.stringify({
       startScreenDisplayed: true,
+      // --- No Boriel BASIC setup offer over the windows this script drives
+      borielSetup: { declined: true, offeredVersion: "*" },
       windowStates: { showIdeOnStartup: false },
       // --- `full`, so the check can create a project through ide.command; lowered at the end
       userSettings: { automation: { level: "full" } }

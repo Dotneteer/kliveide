@@ -10,7 +10,8 @@ import {
   Z88_REMOVE_CARD_DIALOG,
   JOYSTICK_BINDINGS_DIALOG,
   MACHINE_SELECT_DIALOG,
-  SETTINGS_DIALOG
+  SETTINGS_DIALOG,
+  BORIEL_SETUP_DIALOG
 } from "@common/messaging/dialog-ids";
 import type { AboutDialogData } from "@common/messaging/about-dialog";
 import { AboutDialog, AboutDialogResult } from "@renderer/appIde/dialogs/AboutDialog";
@@ -48,6 +49,10 @@ import {
 } from "./joystick/JoystickBindingsDialog";
 
 import { SettingsDialog, type SettingsDialogResult } from "@renderer/appIde/dialogs/settings/SettingsDialog";
+import {
+  BorielSetupDialog,
+  type BorielSetupDialogResult
+} from "@renderer/appIde/dialogs/boriel/BorielSetupDialog";
 
 export type EmuDialogResult =
   | JoystickBindingsDialogResult
@@ -59,7 +64,8 @@ export type EmuDialogResult =
   | Z88ChangeRamDialogResult
   | AboutDialogResult
   | MachineSelectDialogResult
-  | SettingsDialogResult;
+  | SettingsDialogResult
+  | BorielSetupDialogResult;
 
 export type EmuDialogRenderer = (
   data: any,
@@ -112,5 +118,8 @@ export const emuDialogRegistry: Record<number, EmuDialogRenderer> = {
   [MACHINE_SELECT_DIALOG]: (data, controls) => (
     <MachineSelectDialog data={data} onResult={(result) => controls.close(result)} onClose={controls.cancel} />
   ),
-  [SETTINGS_DIALOG]: (data, controls) => <SettingsDialog data={data} onClose={controls.cancel} />
+  [SETTINGS_DIALOG]: (data, controls) => <SettingsDialog data={data} onClose={controls.cancel} />,
+  [BORIEL_SETUP_DIALOG]: (data, controls) => (
+    <BorielSetupDialog mode={data?.mode} onClose={(result) => controls.close(result)} />
+  )
 };

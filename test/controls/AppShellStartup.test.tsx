@@ -202,7 +202,8 @@ describe("app shell dialog registries and bridges", () => {
       dialogIds.SJASMPLUS_INTEGRATION_DIALOG,
       dialogIds.MACHINE_SELECT_DIALOG,
       dialogIds.SETTINGS_DIALOG,
-      dialogIds.DETECT_CODE_DATA_DIALOG
+      dialogIds.DETECT_CODE_DATA_DIALOG,
+      dialogIds.BORIEL_SETUP_DIALOG
     ];
     const expectedEmuIds = [
       dialogIds.FIRST_STARTUP_DIALOG_EMU,
@@ -214,7 +215,9 @@ describe("app shell dialog registries and bridges", () => {
       dialogIds.JOYSTICK_BINDINGS_DIALOG,
       dialogIds.ABOUT_DIALOG,
       dialogIds.MACHINE_SELECT_DIALOG,
-      dialogIds.SETTINGS_DIALOG
+      dialogIds.SETTINGS_DIALOG,
+      // --- The Boriel BASIC setup offer opens in the emulator window at the first start
+      dialogIds.BORIEL_SETUP_DIALOG
     ];
 
     expect(Object.keys(ideDialogRegistry).map(Number).sort((a, b) => a - b)).toEqual(

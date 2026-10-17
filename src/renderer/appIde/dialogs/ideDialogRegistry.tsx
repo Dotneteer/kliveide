@@ -9,7 +9,8 @@ import {
   SJASMPLUS_INTEGRATION_DIALOG,
   MACHINE_SELECT_DIALOG,
   SETTINGS_DIALOG,
-  DETECT_CODE_DATA_DIALOG
+  DETECT_CODE_DATA_DIALOG,
+  BORIEL_SETUP_DIALOG
 } from "@messaging/dialog-ids";
 import type { AboutDialogData } from "@common/messaging/about-dialog";
 import { AboutDialog, AboutDialogResult } from "./AboutDialog";
@@ -38,6 +39,7 @@ import {
   SjasmplusIntegrationDialogResult
 } from "./sjasmplus/SjasmplusIntegrationDialog";
 
+import { BorielSetupDialog, type BorielSetupDialogResult } from "./boriel/BorielSetupDialog";
 import { SettingsDialog, type SettingsDialogResult } from "./settings/SettingsDialog";
 import { DetectDialog, type DetectDialogResult } from "./detect/DetectDialog";
 
@@ -50,7 +52,8 @@ export type IdeDialogResult =
   | SjasmplusIntegrationDialogResult
   | MachineSelectDialogResult
   | SettingsDialogResult
-  | DetectDialogResult;
+  | DetectDialogResult
+  | BorielSetupDialogResult;
 
 export type IdeDialogRenderer = (
   data: any,
@@ -83,6 +86,9 @@ export const ideDialogRegistry: Record<number, IdeDialogRenderer> = {
     <MachineSelectDialog data={data} onResult={(result) => controls.close(result)} onClose={controls.cancel} />
   ),
   [SETTINGS_DIALOG]: (data, controls) => <SettingsDialog data={data} onClose={controls.cancel} />,
+  [BORIEL_SETUP_DIALOG]: (data, controls) => (
+    <BorielSetupDialog mode={data?.mode} onClose={(result) => controls.close(result)} />
+  ),
   [DETECT_CODE_DATA_DIALOG]: (data, controls) => (
     <DetectDialog skoolPath={data?.skoolPath} onClose={(result) => controls.close(result)} />
   )

@@ -971,6 +971,15 @@ export const SETTINGS_ROWS: SettingsRow[] = [
     editor: "button",
     buttons: [{ label: "Configure...", action: "dialog:sjasmplus", closesDialog: true }],
     replaces: "IDE › Integrations › SjasmPlus Assembler"
+  },
+  {
+    id: "borielBasic",
+    page: "integrations",
+    group: "BASIC compilers",
+    title: "Boriel BASIC",
+    description: "Install the bundled Boriel BASIC 2.x, or use an installation you have",
+    editor: "button",
+    buttons: [{ label: "Configure...", action: "dialog:boriel", closesDialog: true }]
   }
 ];
 

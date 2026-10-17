@@ -1,6 +1,6 @@
 # Boriel BASIC (zxbc 2.0) Integration — Implementation Plan
 
-Status: **approved for implementation; Phase B0 done** (2026-10-17, HEAD `2cebbd732`). Decisions B1, B-L1, B-T1 and B-T2 are settled (§0).
+Status: **approved for implementation; Phases B0 and B1 done** (2026-10-17, HEAD `2cebbd732`). Decisions B1, B-L1, B-T1 and B-T2 are settled (§0).
 Inputs: the setup kits, now in `vendor/boriel-basic/` (`kit.json` + git-ignored `kits/`; see §3.1) and the debug
 format published at <https://zxbasic.readthedocs.io/en/v2.0/debug_format/> (pages *Statements &
 Addresses*, *Callables*, *Call Sites*, *Variables*, *Banking*).
@@ -187,7 +187,42 @@ These checks are part of B1's install tests on CI (§8) rather than a separate g
 
 ---
 
-## 3. Phase B1 — bundle and install
+## 3. Phase B1 — bundle and install (**done 2026-10-17**)
+
+**As built.** The design below was implemented as written, except:
+
+- **The command** is `display-dialog borielSetup`, the existing dialog command, not a new
+  `boriel-setup`.
+- **The offer opens in whichever Klive window has focus**, as the About dialog does (the emulator
+  window at a normal start). Main shows it once per run, after `startScreenDisplayed`. The check runs
+  in the background from `app.whenReady`, so it never delays the start.
+- **The "Use Boriel BASIC" checkbox moves to B2**, together with the `boriel` compiler value it
+  writes. B1 only installs and records the location.
+- **`offeredVersion: "*"` declines every version.** The Playwright harnesses
+  (`scripts/doc-shots/harness.cjs`, `scripts/automation-ide-check.cjs`) seed it, so no offer covers the
+  windows they drive. `launchKlive({ borielSetup: null })` seeds nothing.
+- **A dev run** finds `vendor/boriel-basic` by searching upward from `app.getAppPath()`, which is
+  `out/main` when Electron starts on the built entry.
+- **Windows `.pdb` files are still extracted.** Skipping them waits for the Windows check in §2.
+
+Files:
+
+| Area | Files |
+| --- | --- |
+| Main | `src/main/tool-install/archive.ts` (shared extractor), `src/main/boriel-integration/` (`boriel-config`, `boriel-version`, `boriel-kit`, `boriel-resolver`, `boriel-install-service`, `boriel-main`) |
+| IPC | `src/common/messaging/BorielIntegration.ts` |
+| Dialog | `src/renderer/appIde/dialogs/boriel/` |
+| Script | `scripts/boriel-kit.cjs` |
+| Tests | `test/main/{tool-install-archive,boriel-install-service,boriel-kit-script}.test.ts`, `test/dialogs/boriel/` |
+
+The tests include the real kit installed and the real `zxbc` probed, when the kit is present.
+Verified in the running app (a throwaway home):
+
+1. The offer appears; Install puts the kit in `~/zxbasic2` and records `zxbasic.root`/`borielVersion`.
+2. A restart with an unknown but working `~/zxbasic2` adopts it silently.
+3. "Don't offer this again" holds across restarts.
+4. Settings › Integrations › Boriel BASIC opens the dialog in its settings mode.
+
 
 ### 3.1 Packaging
 

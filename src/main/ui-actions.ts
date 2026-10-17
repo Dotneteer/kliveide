@@ -29,7 +29,8 @@ import {
   MACHINE_SELECT_DIALOG,
   JOYSTICK_BINDINGS_DIALOG,
   SETTINGS_DIALOG,
-  SJASMPLUS_INTEGRATION_DIALOG
+  SJASMPLUS_INTEGRATION_DIALOG,
+  BORIEL_SETUP_DIALOG
 } from "@messaging/dialog-ids";
 import { mainStore } from "./main-store";
 import { rememberSettingsPage, settingsPageToOpen } from "./settings-page-memory";
@@ -308,6 +309,10 @@ export async function runUiAction(actionId: UiActionId, value?: unknown): Promis
     case "dialog:sjasmplus":
       showIdeWindow();
       await getIdeApi().displayDialog(SJASMPLUS_INTEGRATION_DIALOG);
+      return undefined;
+    case "dialog:boriel":
+      showIdeWindow();
+      await getIdeApi().displayDialog(BORIEL_SETUP_DIALOG, { mode: "settings" });
       return undefined;
     case "dialog:excluded-items":
       showIdeWindow();

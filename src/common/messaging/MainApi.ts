@@ -18,6 +18,11 @@ import type {
   SjasmplusReleaseListRequest,
   SjasmplusReleaseListResult
 } from "./SjasmplusIntegration";
+import type {
+  BorielInstallResult,
+  BorielSetupDecision,
+  BorielSetupStatus
+} from "./BorielIntegration";
 
 const NO_PROXY_ERROR = "Method should be implemented by a proxy.";
 
@@ -456,6 +461,37 @@ class MainApiImpl {
   }
 
   /**
+   * Reports the bundled Boriel BASIC kit and the installation the settings point at (probed).
+   */
+  async getBorielSetupStatus(): Promise<BorielSetupStatus> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Installs the bundled Boriel BASIC kit into a folder and, when it works, records it in the settings.
+   * @param _folder The installation folder.
+   */
+  async installBoriel(_folder: string): Promise<BorielInstallResult> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Accepts an existing Boriel BASIC installation (a folder or zxbc itself) and records it.
+   * @param _itemPath The folder or executable.
+   */
+  async useExistingBoriel(_itemPath: string): Promise<BorielInstallResult> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Remembers the user's answer to the Boriel BASIC setup offer.
+   * @param _decision "declined" (don't ask again for this kit) or "postponed".
+   */
+  async recordBorielSetupDecision(_decision: BorielSetupDecision): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * Compiles a file using the specified language and options.
    * @param _filename The file to compile.
    * @param _language The language to use.
@@ -853,6 +889,7 @@ const UNBOUNDED_MAIN_METHODS = [
   // --- Bulk media work whose duration scales with file size
   "copyToSdCard",
   "downloadSjasmplusRelease",
+  "installBoriel",
   "startScreenRecording",
   "stopScreenRecording"
 ] as const;

@@ -88,7 +88,13 @@ async function launchKlive({
    * More global settings, merged at the top of `globalSettings` (`{ emuOptions: { machineFavorites:
    * [...] } }`, which lists a machine in the Machine type menu). Unset, none.
    */
-  globalSettings = {}
+  globalSettings = {},
+  /*
+   * The answer to the Boriel BASIC setup offer, as the settings file records it. The default declines
+   * every version, so no offer covers the windows a recipe drives; `null` seeds nothing, so a run
+   * that checks the offer itself sees it (`.plans/BORIEL_BASIC_INTEGRATION_PLAN.md` §3.2).
+   */
+  borielSetup = { declined: true, offeredVersion: "*" }
 }) {
   if (!fs.existsSync(MAIN)) {
     throw new Error(`No build at ${MAIN} — run \`npx electron-vite build --config build/electron.vite.config.ts\` first.`);
@@ -106,6 +112,7 @@ async function launchKlive({
     JSON.stringify(
       {
         startScreenDisplayed: true,
+        ...(borielSetup ? { borielSetup } : {}),
         theme,
         ...(accent ? { accent } : {}),
         windowStates: { showIdeOnStartup: true },

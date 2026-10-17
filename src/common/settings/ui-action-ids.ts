@@ -35,4 +35,5 @@ export type UiActionId =
   | "keymap:reset"
   | "dialog:joystick-bindings"
   | "dialog:sjasmplus"
+  | "dialog:boriel"
   | "dialog:excluded-items";
