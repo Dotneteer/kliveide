@@ -9,6 +9,8 @@ import type { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
 import type { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
 import type { SourceStepKind } from "@emu/machines/SourceStepDecision";
 import { hasSourceLevelDebug } from "@renderer/appIde/utils/compiler-utils";
+import { t } from "@common/i18n/i18n";
+import type { MessageKey } from "@common/i18n/keys.generated";
 
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import {
@@ -42,7 +44,9 @@ async function getLiveMachineState(
 
 export class StartMachineCommand extends IdeCommandBase {
   readonly id = "em-start";
-  readonly description = "Starts the emulated machine";
+  get description() {
+    return t("commands.machine.start.description");
+  }
   readonly usage = "em-start";
   readonly aliases = [":s"];
 
@@ -54,18 +58,18 @@ export class StartMachineCommand extends IdeCommandBase {
       machineState === MachineControllerState.Stopped
     ) {
       await context.emuApi.issueMachineCommand("start");
-      writeSuccessMessage(context.output, "Machine started");
+      writeSuccessMessage(context.output, t("commands.machine.started"));
       return commandSuccess;
     }
-    return commandError(
-      "The machine must be turned off, stopped, or paused to start"
-    );
+    return commandError(t("commands.machine.cannotStart"));
   }
 }
 
 export class PauseMachineCommand extends IdeCommandBase {
   readonly id = "em-pause";
-  readonly description = "Pauses the started machine";
+  get description() {
+    return t("commands.machine.pause.description");
+  }
   readonly usage = "em-pause";
   readonly aliases = [":p"];
 
@@ -76,17 +80,19 @@ export class PauseMachineCommand extends IdeCommandBase {
       await context.emuApi.issueMachineCommand("pause");
       writeSuccessMessage(
         context.output,
-        `Machine paused at PC=$${toHexa4(cpuState.pc)}`
+        t("commands.machine.paused", { pc: toHexa4(cpuState.pc) })
       );
       return commandSuccess;
     }
-    return commandError("The machine must be running to pause it");
+    return commandError(t("commands.machine.cannotPause"));
   }
 }
 
 export class StopMachineCommand extends IdeCommandBase {
   readonly id = "em-stop";
-  readonly description = "Stops the started machine";
+  get description() {
+    return t("commands.machine.stop.description");
+  }
   readonly usage = "em-stop";
   readonly aliases = [":h"];
 
@@ -100,17 +106,19 @@ export class StopMachineCommand extends IdeCommandBase {
       await context.emuApi.issueMachineCommand("stop");
       writeSuccessMessage(
         context.output,
-        `Machine stopped at PC=$${toHexa4(cpuState.pc)}`
+        t("commands.machine.stopped", { pc: toHexa4(cpuState.pc) })
       );
       return commandSuccess;
     }
-    return commandError("Machine must be running or paused to stop it");
+    return commandError(t("commands.machine.cannotStop"));
   }
 }
 
 export class RestartMachineCommand extends IdeCommandBase {
   readonly id = "em-restart";
-  readonly description = "Restarts the started machine";
+  get description() {
+    return t("commands.machine.restart.description");
+  }
   readonly usage = "em-restart";
   readonly aliases = [":r"];
 
@@ -121,16 +129,18 @@ export class RestartMachineCommand extends IdeCommandBase {
       machineState === MachineControllerState.Paused
     ) {
       await context.emuApi.issueMachineCommand("restart");
-      writeSuccessMessage(context.output, "Machine restarted");
+      writeSuccessMessage(context.output, t("commands.machine.restarted"));
       return commandSuccess;
     }
-    return commandError("Machine must be running or paused to restart it");
+    return commandError(t("commands.machine.cannotRestart"));
   }
 }
 
 export class StartDebugMachineCommand extends IdeCommandBase {
   readonly id = "em-debug";
-  readonly description = "Starts the emulated machine in debug mode";
+  get description() {
+    return t("commands.machine.debug.description");
+  }
   readonly usage = "em-debug";
   readonly aliases = [":d"];
 
@@ -142,52 +152,57 @@ export class StartDebugMachineCommand extends IdeCommandBase {
       machineState === MachineControllerState.Stopped
     ) {
       await context.emuApi.issueMachineCommand("debug");
-      writeSuccessMessage(context.output, "Machine started in debug mode");
+      writeSuccessMessage(context.output, t("commands.machine.startedDebug"));
       return commandSuccess;
     }
-    return commandError(
-      "The machine must be turned off, stopped, or paused to start"
-    );
+    return commandError(t("commands.machine.cannotStart"));
   }
 }
 
 export class StepIntoMachineCommand extends IdeCommandBase {
   readonly id = "em-sti";
-  readonly description = "Step-into the next machine instruction";
+  get description() {
+    return t("commands.machine.stepInto.description");
+  }
   readonly usage = "em-sti";
   readonly aliases = [":"];
 
   async execute (context: IdeCommandContext): Promise<IdeCommandResult> {
-    return stepCommand(context, "stepInto", "Step into");
+    return stepCommand(context, "stepInto", "commands.machine.stepInto.done");
   }
 }
 
 export class StepOverMachineCommand extends IdeCommandBase {
   readonly id = "em-sto";
-  readonly description = "Step-over the next machine instruction";
+  get description() {
+    return t("commands.machine.stepOver.description");
+  }
   readonly usage = "em-sto";
   readonly aliases = ["."];
 
   async execute (context: IdeCommandContext): Promise<IdeCommandResult> {
-    return stepCommand(context, "stepOver", "Step over");
+    return stepCommand(context, "stepOver", "commands.machine.stepOver.done");
   }
 }
 
 export class StepOutMachineCommand extends IdeCommandBase {
   readonly id = "em-out";
-  readonly description = "Step-out from the current machine subroutine";
+  get description() {
+    return t("commands.machine.stepOut.description");
+  }
   readonly usage = "em-out";
   readonly aliases = [":o"];
 
   async execute (context: IdeCommandContext): Promise<IdeCommandResult> {
-    return stepCommand(context, "stepOut", "Step out");
+    return stepCommand(context, "stepOut", "commands.machine.stepOut.done");
   }
 }
 
 async function stepCommand (
   context: IdeCommandContext,
   cmd: MachineCommand,
-  cmdName: string
+  /** The whole result line of this step ("Step into at PC=$...") */
+  doneKey: MessageKey
 ): Promise<IdeCommandResult> {
   const machineState = await getLiveMachineState(context);
   if (machineState === MachineControllerState.Paused) {
@@ -195,11 +210,11 @@ async function stepCommand (
     await context.emuApi.issueMachineCommand(cmd);
     writeSuccessMessage(
       context.output,
-      `${cmdName} at PC=$${toHexa4(cpuState.pc)}`
+      t(doneKey, { pc: toHexa4(cpuState.pc) })
     );
     return commandSuccess;
   }
-  return commandError("The machine must be paused");
+  return commandError(t("commands.machine.mustBePaused"));
 }
 
 // =================================================================================================
@@ -210,13 +225,14 @@ async function stepCommand (
 async function sourceStepCommand(
   context: IdeCommandContext,
   kind: SourceStepKind,
+  /** The result line, already translated */
   name: string,
   options: { targetFrame?: number; targetCallable?: number } = {}
 ): Promise<IdeCommandResult> {
   const machineState = await getLiveMachineState(context);
-  if (machineState !== MachineControllerState.Paused) return commandError("The machine must be paused");
+  if (machineState !== MachineControllerState.Paused) return commandError(t("commands.machine.mustBePaused"));
   if (!hasSourceLevelDebug(context.store.getState().compilation?.result)) {
-    return commandError("The program has no source-level debug information (build it with Klive BASIC and debug)");
+    return commandError(t("commands.machine.noSourceDebugBuild"));
   }
   await context.emuApi.sourceStep(kind, options);
   writeSuccessMessage(context.output, name);
@@ -225,12 +241,14 @@ async function sourceStepCommand(
 
 export class StepOverLineMachineCommand extends IdeCommandBase {
   readonly id = "em-stl";
-  readonly description = "Step over the rest of the current source line (statements and the calls they make)";
+  get description() {
+    return t("commands.machine.stepOverLine.description");
+  }
   readonly usage = "em-stl";
   readonly aliases = [":l"];
 
   async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
-    return sourceStepCommand(context, "overLine", "Step over line");
+    return sourceStepCommand(context, "overLine", t("commands.machine.stepOverLine.done"));
   }
 }
 
@@ -238,7 +256,9 @@ type StepIntoTargetArgs = { routine: string };
 
 export class StepIntoTargetMachineCommand extends IdeCommandBase<StepIntoTargetArgs> {
   readonly id = "em-sit";
-  readonly description = "Step into the named routine the current statement calls, running its other calls through";
+  get description() {
+    return t("commands.machine.stepIntoTarget.description");
+  }
   readonly usage = "em-sit <routine>";
   readonly aliases = [];
 
@@ -248,11 +268,11 @@ export class StepIntoTargetMachineCommand extends IdeCommandBase<StepIntoTargetA
 
   async execute(context: IdeCommandContext, args: StepIntoTargetArgs): Promise<IdeCommandResult> {
     const result = context.store.getState().compilation?.result;
-    if (!hasSourceLevelDebug(result)) return commandError("The program has no source-level debug information");
+    if (!hasSourceLevelDebug(result)) return commandError(t("commands.machine.noSourceDebug"));
     const wanted = args.routine.toLowerCase();
     const target = result.sourceLevelDebug.callables.findIndex((c) => c.name.toLowerCase() === wanted);
-    if (target < 0) return commandError(`No routine named '${args.routine}'`);
-    return sourceStepCommand(context, "intoTarget", `Step into ${result.sourceLevelDebug.callables[target].name}`, {
+    if (target < 0) return commandError(t("commands.machine.noRoutine", { routine: args.routine }));
+    return sourceStepCommand(context, "intoTarget", t("commands.machine.stepIntoTarget.done", { routine: result.sourceLevelDebug.callables[target].name }), {
       targetCallable: target
     });
   }
@@ -262,7 +282,9 @@ type RunToFrameArgs = { frame: number };
 
 export class RunToFrameMachineCommand extends IdeCommandBase<RunToFrameArgs> {
   readonly id = "em-rtf";
-  readonly description = "Run until control returns to the given frame of the call stack (1: the caller)";
+  get description() {
+    return t("commands.machine.runToFrame.description");
+  }
   readonly usage = "em-rtf <frame>";
   readonly aliases = [];
 
@@ -271,7 +293,7 @@ export class RunToFrameMachineCommand extends IdeCommandBase<RunToFrameArgs> {
   };
 
   async execute(context: IdeCommandContext, args: RunToFrameArgs): Promise<IdeCommandResult> {
-    return sourceStepCommand(context, "runToFrame", `Run to frame ${args.frame}`, { targetFrame: args.frame });
+    return sourceStepCommand(context, "runToFrame", t("commands.machine.runToFrame.done", { frame: String(args.frame) }), { targetFrame: args.frame });
   }
 }
 
@@ -279,8 +301,9 @@ type ErrorStopArgs = { mode: string };
 
 export class ErrorStopsMachineCommand extends IdeCommandBase<ErrorStopArgs> {
   readonly id = "em-err";
-  readonly description =
-    "Turns runtime-error stops on or off: a debug run of a Klive BASIC program stops where it raises a BASIC error";
+  get description() {
+    return t("commands.machine.errorStops.description");
+  }
   readonly usage = "em-err <on|off>";
   readonly aliases = [];
 
@@ -290,17 +313,18 @@ export class ErrorStopsMachineCommand extends IdeCommandBase<ErrorStopArgs> {
 
   async execute(context: IdeCommandContext, args: ErrorStopArgs): Promise<IdeCommandResult> {
     const mode = `${args.mode}`.toLowerCase();
-    if (mode !== "on" && mode !== "off") return commandError("Use 'on' or 'off'");
+    if (mode !== "on" && mode !== "off") return commandError(t("commands.machine.useOnOff"));
     await context.mainApi.setGlobalSettingsValue(SETTING_EMU_STOP_ON_ERRORS, mode === "on");
-    writeSuccessMessage(context.output, mode === "on" ? "Debug runs stop at runtime errors" : "Runtime errors go to the ROM's report");
+    writeSuccessMessage(context.output, mode === "on" ? t("commands.machine.errorStops.on") : t("commands.machine.errorStops.off"));
     return commandSuccess;
   }
 }
 
 export class JustMyCodeMachineCommand extends IdeCommandBase<ErrorStopArgs> {
   readonly id = "em-jmc";
-  readonly description =
-    "Just My Code: on, source stepping runs through the Klive BASIC standard library; off, it stops in the library's statements too";
+  get description() {
+    return t("commands.machine.justMyCode.description");
+  }
   readonly usage = "em-jmc <on|off>";
   readonly aliases = [];
 
@@ -310,9 +334,9 @@ export class JustMyCodeMachineCommand extends IdeCommandBase<ErrorStopArgs> {
 
   async execute(context: IdeCommandContext, args: ErrorStopArgs): Promise<IdeCommandResult> {
     const mode = `${args.mode}`.toLowerCase();
-    if (mode !== "on" && mode !== "off") return commandError("Use 'on' or 'off'");
+    if (mode !== "on" && mode !== "off") return commandError(t("commands.machine.useOnOff"));
     await context.mainApi.setGlobalSettingsValue(SETTING_EMU_JUST_MY_CODE, mode === "on");
-    writeSuccessMessage(context.output, mode === "on" ? "Stepping runs through the standard library" : "Stepping stops in the standard library too");
+    writeSuccessMessage(context.output, mode === "on" ? t("commands.machine.justMyCode.on") : t("commands.machine.justMyCode.off"));
     return commandSuccess;
   }
 }
@@ -321,8 +345,9 @@ type SourceSteppingArgs = { mode: string; "-i"?: boolean };
 
 export class SourceSteppingMachineCommand extends IdeCommandBase<SourceSteppingArgs> {
   readonly id = "em-src";
-  readonly description =
-    "Selects source stepping (on) or Z80 instruction stepping (off) for programs with source-level debug info; -i also stops inside interrupt handlers";
+  get description() {
+    return t("commands.machine.sourceStepping.description");
+  }
   readonly usage = "em-src <on|off> [-i]";
   readonly aliases = [];
 
@@ -333,12 +358,14 @@ export class SourceSteppingMachineCommand extends IdeCommandBase<SourceSteppingA
 
   async execute(context: IdeCommandContext, args: SourceSteppingArgs): Promise<IdeCommandResult> {
     const mode = `${args.mode}`.toLowerCase();
-    if (mode !== "on" && mode !== "off") return commandError("Use 'on' (source stepping) or 'off' (Z80 stepping)");
+    if (mode !== "on" && mode !== "off") return commandError(t("commands.machine.sourceStepping.useOnOff"));
     await context.emuApi.setSourceStepping(mode === "on");
     if (mode === "on") await context.mainApi.setGlobalSettingsValue(SETTING_EMU_STEP_IN_INTERRUPTS, !!args["-i"]);
     writeSuccessMessage(
       context.output,
-      mode === "on" ? `Source stepping${args["-i"] ? ", stopping in interrupt handlers" : ""}` : "Z80 instruction stepping"
+      mode === "on"
+        ? t(args["-i"] ? "commands.machine.sourceStepping.onInterrupts" : "commands.machine.sourceStepping.on")
+        : t("commands.machine.sourceStepping.off")
     );
     return commandSuccess;
   }

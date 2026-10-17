@@ -1,5 +1,6 @@
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import type { WatchInfo } from "@common/state/AppState";
+import { t } from "@common/i18n/i18n";
 
 /*
  * The two-way link between a *watch* (a value display) and a *watchpoint* (a memory breakpoint),
@@ -136,11 +137,18 @@ export function describeWatchpoints(bps: readonly BreakpointInfo[]): string[] {
     const range = watchpointRange(bp)!;
     const at =
       range.length > 1 ? `${hex(range.start)}-${hex(range.start + range.length - 1)}` : hex(range.start);
-    const source = bp.annotationKind
-      ? `WPMEM comment, ${bp.resource}:${bp.line}`
-      : bp.watchSymbol
-        ? `from the watch on ${bp.watchSymbol}`
-        : "breakpoint";
-    return `Break on ${bp.memoryRead ? "read" : "write"} at ${at} (${source})`;
+    const read = !!bp.memoryRead;
+    if (bp.annotationKind) {
+      const location = `${bp.resource}:${bp.line}`;
+      return read
+        ? t("debug.watchpoint.readComment", { range: at, location })
+        : t("debug.watchpoint.writeComment", { range: at, location });
+    }
+    if (bp.watchSymbol) {
+      return read
+        ? t("debug.watchpoint.readWatch", { range: at, symbol: bp.watchSymbol })
+        : t("debug.watchpoint.writeWatch", { range: at, symbol: bp.watchSymbol });
+    }
+    return read ? t("debug.watchpoint.read", { range: at }) : t("debug.watchpoint.write", { range: at });
   });
 }

@@ -16,6 +16,7 @@ import {
   validationError,
   writeMessage
 } from "../services/ide-commands";
+import { t } from "@common/i18n/i18n";
 
 export type TapeLoadCommandArgs = {
   file: string;
@@ -41,7 +42,7 @@ export const PROGRAM_LOAD_MACHINES: readonly string[] = [MI_ZX81, MI_ZX80];
  */
 export function programLoadGuard(state: { emulatorState?: { machineId?: string } }): string | undefined {
   const machineId = state.emulatorState?.machineId;
-  return machineId && PROGRAM_LOAD_MACHINES.includes(machineId) ? undefined : "requires a ZX80 or ZX81 machine";
+  return machineId && PROGRAM_LOAD_MACHINES.includes(machineId) ? undefined : t("commands.tapeLoad.guard.program");
 }
 
 /**
@@ -82,7 +83,7 @@ export function tapeLoadGuard(state: {
   const machineId = state.emulatorState?.machineId;
   return machineId && TAPE_LOAD_MACHINES.includes(machineId)
     ? undefined
-    : "requires a ZX Spectrum 48K, 128K or +2/+3 machine";
+    : t("commands.tapeLoad.guard.tape");
 }
 
 /**
@@ -99,8 +100,9 @@ export function tapeLoadGuard(state: {
  */
 export class TapeLoadCommand extends IdeCommandBase<TapeLoadCommandArgs> {
   readonly id = "tape-load";
-  readonly description =
-    "Inserts a .tap or .tzx tape (ZX Spectrum) or a .p/.o program (ZX80/ZX81) into the deck (-r resets and loads it, -d does so with breakpoints armed)";
+  get description() {
+    return t("commands.tapeLoad.description");
+  }
   readonly aliases = ["tapeload"];
   readonly usage = "tape-load <tape-file> [-r | -d]";
 
@@ -116,21 +118,25 @@ export class TapeLoadCommand extends IdeCommandBase<TapeLoadCommandArgs> {
     const messages: ValidationMessage[] = [];
     const isProgram = !!args.file?.trim() && isZx8081ProgramFileName(args.file.trim());
     if (!args.file?.trim()) {
-      messages.push(validationError("The tape file path cannot be empty."));
+      messages.push(validationError(t("commands.tapeLoad.emptyPath")));
     } else if (!isTapeFilePath(args.file) && !isProgram) {
-      messages.push(
-        validationError("The file to load must be a .tap or .tzx tape, or a ZX80/ZX81 .p, .81, .o or .80 program.")
-      );
+      messages.push(validationError(t("commands.tapeLoad.wrongType")));
     }
     if (args["-r"] && args["-d"]) {
-      messages.push(validationError("Use only one of -r and -d."));
+      messages.push(validationError(t("commands.tapeLoad.oneMode")));
     }
     const guard = isProgram ? programLoadGuard(context.store.getState()) : tapeLoadGuard(context.store.getState());
     if (guard) {
       const machineId = context.store.getState().emulatorState?.machineId;
-      const name =
-        machineRegistry.find((m) => m.machineId === machineId)?.displayName ?? machineId ?? "This";
-      messages.push(validationError(`Loading a tape ${guard}; the current machine is ${name}.`));
+      const name = machineRegistry.find((m) => m.machineId === machineId)?.displayName ?? machineId;
+      const key = isProgram
+        ? name
+          ? "commands.tapeLoad.refusedProgram"
+          : "commands.tapeLoad.refusedProgramNoMachine"
+        : name
+          ? "commands.tapeLoad.refusedTape"
+          : "commands.tapeLoad.refusedTapeNoMachine";
+      messages.push(validationError(t(key, { machine: name })));
     }
     return messages;
   }
@@ -144,16 +150,16 @@ export class TapeLoadCommand extends IdeCommandBase<TapeLoadCommandArgs> {
     try {
       bytes = await context.mainApi.readBinaryFile(file);
     } catch (err) {
-      return commandError(`Could not read ${file}: ${messageOf(err)}`);
+      return commandError(t("commands.tapeLoad.readFailed", { file, error: messageOf(err) }));
     }
     // --- A ZX80/ZX81 program goes into the deck as it is; the ROM's LOAD reads it
     const isProgram = isZx8081ProgramFileName(file);
     if (isProgram && !parseZxProgramFile(bytes, file)) {
-      return commandError(`${file} is not a ZX80/ZX81 program Klive can read.`);
+      return commandError(t("commands.tapeLoad.badProgram", { file }));
     }
     const { analysis, error } = isProgram ? { analysis: undefined, error: undefined } : analyzeTape(bytes);
     if (!isProgram && !analysis) {
-      return commandError(`${file} is not a tape Klive can read: ${error}`);
+      return commandError(t("commands.tapeLoad.badTape", { file, error }));
     }
 
     const insertError = await context.mainApi.setTapeFile(file);
@@ -170,27 +176,27 @@ export class TapeLoadCommand extends IdeCommandBase<TapeLoadCommandArgs> {
     if (analysis && analysis.summary.unplayableCount > 0) {
       writeMessage(
         context.output,
-        `Warning: ${analysis.summary.unplayableCount} block(s) of this tape will not play in Klive; loading may fail.`,
+        t("commands.tapeLoad.unplayable", { count: analysis.summary.unplayableCount }),
         "yellow"
       );
     }
 
     const run = args["-r"] || args["-d"];
     if (!run) {
-      return commandSuccessWith(`Tape ${file} inserted.`);
+      return commandSuccessWith(t("commands.tapeLoad.inserted", { file }));
     }
 
     if (context.store.getState().emulatorState?.machineId === MI_SPECTRUM_3E) {
       writeMessage(
         context.output,
-        "The +2A/+3 Loader boots a disk instead of the tape if one is in drive A.",
+        t("commands.tapeLoad.plus3Note"),
         "cyan"
       );
     }
     try {
       await context.emuApi.startTapeLoad(!!args["-d"]);
     } catch (err) {
-      return commandError(`Could not start loading ${file}: ${messageOf(err)}`);
+      return commandError(t("commands.tapeLoad.startFailed", { file, error: messageOf(err) }));
     }
 
     // --- The machine now waits for keys (a game's "press any key", a 128K menu): hand the keyboard
@@ -202,7 +208,7 @@ export class TapeLoadCommand extends IdeCommandBase<TapeLoadCommandArgs> {
       // --- Intentionally ignored
     }
     return commandSuccessWith(
-      `Tape ${file} inserted and loading${args["-d"] ? " (debugging)" : ""}.`
+      args["-d"] ? t("commands.tapeLoad.loadingDebug", { file }) : t("commands.tapeLoad.loading", { file })
     );
   }
 }

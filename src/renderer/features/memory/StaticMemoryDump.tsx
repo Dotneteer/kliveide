@@ -60,7 +60,7 @@ import {
 } from "@renderer/appIde/annotations/annotatedDisassembly";
 import { useSysVarOperandLabelResolver } from "@renderer/appIde/DocumentPanels/useSysVarOperandLabels";
 // --- The same wording as the live Disassembly view's switch: one control in two places.
-import { SYS_VAR_NAMES_TITLE } from "@renderer/appIde/DocumentPanels/DisassemblyToolbars";
+import { sysVarNamesTitle } from "@renderer/appIde/DocumentPanels/DisassemblyToolbars";
 import { useNexAnnotationEditor } from "@renderer/appIde/DocumentPanels/Next/annotationEditor/useNexAnnotationEditor";
 import {
   formatBankLocation,
@@ -118,7 +118,7 @@ import {
 } from "@common/zxnext/sprites/spritePatterns";
 import { useSpritePalette } from "@renderer/features/sprite-editor/useSpritePalette";
 import { GraphicsView, type ByteSpan } from "@renderer/features/graphics/GraphicsView";
-import { NameGraphicDialog, NAME_GRAPHIC_DIALOG_TITLE } from "@renderer/features/graphics/NameGraphicDialog";
+import { NameGraphicDialog, nameGraphicDialogTitle } from "@renderer/features/graphics/NameGraphicDialog";
 import { useDialogs } from "@renderer/controls/overlay/DialogProvider";
 import { updateAnnotationSession } from "@renderer/appIde/annotations/annotationSession";
 import { withNamedGraphic } from "@renderer/appIde/annotations/annotationEdits";
@@ -136,6 +136,8 @@ import {
   graphicOfSpan,
   listingCodeSpans
 } from "@renderer/features/graphics/graphicMarks";
+import { useT, type TFunction } from "@common/i18n/useT";
+import type { MessageKey } from "@common/i18n/keys.generated";
 
 type MemoryDumpViewState = {
   disassemblyEnabled?: boolean;
@@ -263,26 +265,30 @@ const STATIC_DISASSEMBLY_FALLBACK_PAGE_ROWS = 16;
  * is — a popped-out bank is one 16K slice, so "nothing happens" here usually means the program
  * counter is somewhere else entirely rather than that the button is broken.
  */
-const GO_TO_PC_TITLE = "Go to the PC address in this bank";
+const GO_TO_PC_TITLE: MessageKey = "panels.feature.memory.goToPc";
 
-const graphicsViewModeOption: DropdownOption = { value: "graphics", label: "Graphics" };
+/* --- The view choices are translated where the toolbar renders, so these are functions (D7) */
+const graphicsViewModeOption = (t: TFunction): DropdownOption => ({
+  value: "graphics",
+  label: t("panels.feature.memory.viewMode.graphics")
+});
 
 /* --- Any dump can be read as graphics (§5.3); a dump with no disassembly offers just the two. */
-const memoryOnlyViewModeOptions: DropdownOption[] = [
-  { value: "memory", label: "Memory" },
-  graphicsViewModeOption
+const memoryOnlyViewModeOptions = (t: TFunction): DropdownOption[] => [
+  { value: "memory", label: t("panels.feature.memory.viewMode.memory") },
+  graphicsViewModeOption(t)
 ];
 
-const staticDumpViewModeOptions: DropdownOption[] = [
-  { value: "memory", label: "Memory" },
-  { value: "disassembly", label: "Disassembly" },
-  graphicsViewModeOption
+const staticDumpViewModeOptions = (t: TFunction): DropdownOption[] => [
+  { value: "memory", label: t("panels.feature.memory.viewMode.memory") },
+  { value: "disassembly", label: t("panels.feature.memory.viewMode.disassembly") },
+  graphicsViewModeOption(t)
 ];
 
 /* --- Sprites is offered for NEX banks only: a pattern sheet of an arbitrary dump means nothing. */
-const nexBankViewModeOptions: DropdownOption[] = [
-  ...staticDumpViewModeOptions,
-  { value: "sprites", label: "Sprites" }
+const nexBankViewModeOptions = (t: TFunction): DropdownOption[] => [
+  ...staticDumpViewModeOptions(t),
+  { value: "sprites", label: t("panels.feature.memory.viewMode.sprites") }
 ];
 
 function createStaticDisassemblyOffsetOptions(decimalView: boolean): DropdownOption[] {
@@ -297,6 +303,7 @@ const StaticMemoryDump = ({
   contents,
   viewState
 }: DocumentProps<MemoryDumpViewState>) => {
+  const t = useT();
   const documentHubService = useDocumentHubService();
   const { navigationHistoryService, projectService } = useAppServices();
   const dialogs = useDialogs();
@@ -1097,7 +1104,7 @@ const StaticMemoryDump = ({
       const result = await dialogs.open(
         NameGraphicDialog,
         { initial: graphicOfSpan(span, graphicsLook), baseAddress: disassOffset },
-        { title: NAME_GRAPHIC_DIALOG_TITLE, width: 520 }
+        { title: nameGraphicDialogTitle(), width: 520 }
       );
       const current = annotationVm.annotations;
       if (!result || !current) return;
@@ -1486,10 +1493,10 @@ const StaticMemoryDump = ({
             <Dropdown
               options={
                 !disassemblyEnabled
-                  ? memoryOnlyViewModeOptions
+                  ? memoryOnlyViewModeOptions(t)
                   : isNexBankDocument
-                    ? nexBankViewModeOptions
-                    : staticDumpViewModeOptions
+                    ? nexBankViewModeOptions(t)
+                    : staticDumpViewModeOptions(t)
               }
               initialValue={viewMode}
               width={104}
@@ -1504,8 +1511,8 @@ const StaticMemoryDump = ({
             <PanelHeaderGroup>
               <LabeledSwitch
                 value={decimalView}
-                label="Decimal"
-                title="Use decimal numbers?"
+                label={t("panels.feature.memory.decimal")}
+                title={t("panels.feature.memory.decimalTooltip")}
                 clicked={changeDecimalView}
               />
             </PanelHeaderGroup>
@@ -1513,8 +1520,8 @@ const StaticMemoryDump = ({
               <PanelHeaderGroup>
                 <LabeledSwitch
                   value={sysVarNames}
-                  label="Sys vars"
-                  title={SYS_VAR_NAMES_TITLE}
+                  label={t("panels.feature.memory.sysVars")}
+                  title={sysVarNamesTitle()}
                   clicked={changeSysVarNames}
                 />
               </PanelHeaderGroup>
@@ -1523,14 +1530,14 @@ const StaticMemoryDump = ({
               <PanelHeaderGroup>
                 <LabeledSwitch
                   value={disassembleScreen}
-                  label="Screen"
-                  title="Disassemble the screen memory at $4000-$5AFF?"
+                  label={t("panels.feature.memory.screen")}
+                  title={t("panels.feature.memory.screenTooltip")}
                   clicked={changeDisassembleScreen}
                 />
               </PanelHeaderGroup>
             )}
             <PanelHeaderGroup>
-              <Text text="Offset" />
+              <Text text={t("panels.feature.memory.offset")} />
               <LabelSeparator />
               <Dropdown
                 options={createStaticDisassemblyOffsetOptions(decimalView)}
@@ -1576,12 +1583,9 @@ const StaticMemoryDump = ({
               */}
             <span
               className={styles.liveBank}
-              title={
-                "This bank is shown as it is in the machine now, not as the file holds it. " +
-                "The file's bytes are shown when no machine is running."
-              }
+              title={t("panels.feature.memory.liveTooltip")}
             >
-              Live
+              {t("panels.feature.memory.live")}
             </span>
             {diffBadge && (
               <span className={styles.bankDiff} title={diffBadge.title}>
@@ -1593,7 +1597,7 @@ const StaticMemoryDump = ({
         {viewMode === "memory" && (
           <PanelHeaderGroup>
             <AddressInput
-              label="Go to address:"
+              label={t("panels.feature.memory.goToAddress")}
               decimalView={false}
               onAddressSent={async (address) => {
                 await navigationHistoryService.recordJump("memoryGoTo", () => {
@@ -1609,7 +1613,7 @@ const StaticMemoryDump = ({
           <PanelHeaderGroup>
             <SmallIconButton
               iconName={goToPcIcon}
-              title={GO_TO_PC_TITLE}
+              title={t(GO_TO_PC_TITLE)}
               enable={canGoToPc}
               clicked={() =>
                 void navigationHistoryService.recordJump("disassemblyGoTo", () => {
@@ -1619,7 +1623,7 @@ const StaticMemoryDump = ({
               }
             />
             <AddressInput
-              label="Go To"
+              label={t("panels.feature.memory.goTo")}
               clearOnEnter={true}
               decimalView={decimalView}
               onAddressSent={async (address) => {
@@ -1649,7 +1653,7 @@ const StaticMemoryDump = ({
               })}
               title={bankLocation.title}
             >
-              <span className={styles.bankLocationLabel}>Bank</span>
+              <span className={styles.bankLocationLabel}>{t("panels.feature.memory.bankLocation")}</span>
               {bankLocation.text}
             </span>
           </PanelHeaderGroup>

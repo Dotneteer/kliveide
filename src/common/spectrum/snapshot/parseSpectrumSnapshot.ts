@@ -5,6 +5,7 @@
  * failed. A `.z80` has no magic, so "not a snapshot" shows up as a parse error.
  */
 
+import { t } from "@common/i18n/i18n";
 import { parseSnaFile, isSnaSize } from "./snaFile";
 import { parseSzxFile, hasSzxMagic } from "./szxFile";
 import { parseZ80File } from "./z80File";
@@ -29,16 +30,16 @@ export function snapshotFormatOfName(name: string): SpectrumSnapshotFormat | und
 export function detectSnapshotFormat(name: string, bytes: Uint8Array): SpectrumSnapshotFormat {
   const format = snapshotFormatOfName(name);
   if (!format) {
-    throw new Error(`"${name}" is not a .sna, .z80 or .szx file`);
+    throw new Error(t("media.snapshot.error.notSnapshotName", { name }));
   }
   if (format === "szx" && !hasSzxMagic(bytes)) {
-    throw new Error("The file is named .szx but has no ZXST header");
+    throw new Error(t("media.snapshot.error.szxNoHeader"));
   }
   if (format === "sna" && !isSnaSize(bytes.length)) {
-    throw new Error(`The file is named .sna but its length (${bytes.length}) is not a .sna's`);
+    throw new Error(t("media.snapshot.error.snaBadLength", { length: bytes.length }));
   }
   if (format === "z80" && hasSzxMagic(bytes)) {
-    throw new Error("The file is named .z80 but is a zx-state (.szx) file");
+    throw new Error(t("media.snapshot.error.z80IsSzx"));
   }
   return format;
 }

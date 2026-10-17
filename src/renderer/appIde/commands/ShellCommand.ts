@@ -7,6 +7,7 @@ import {
   IdeCommandBase,
   commandError
 } from "../services/ide-commands";
+import { t } from "@common/i18n/i18n";
 
 type ShellCommandArgs = {
   filename: string;
@@ -14,7 +15,9 @@ type ShellCommandArgs = {
 
 export class ShellCommand extends IdeCommandBase<ShellCommandArgs> {
   readonly id = "sh";
-  readonly description = "Opens a file in the shell with its associated program";
+  get description() {
+    return t("commands.sh.description");
+  }
   readonly usage = "sh <filename>";
   readonly aliases = [];
   readonly argumentInfo: CommandArgumentInfo = {
@@ -27,7 +30,7 @@ export class ShellCommand extends IdeCommandBase<ShellCommandArgs> {
       if (result.error) {
         return commandError(result.error);
       }
-      writeSuccessMessage(context.output, `Executing shell command: ${result.path}`);
+      writeSuccessMessage(context.output, t("commands.sh.executing", { path: result.path }));
       return commandSuccess;
     } catch (err) {
       return commandError(err.message);

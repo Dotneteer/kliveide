@@ -25,6 +25,9 @@ import {
   type NexBankLabel
 } from "./nexBankSummary";
 import type { AnnotationRegionType } from "@renderer/appIde/annotations/programAnnotations";
+import { t } from "@common/i18n/i18n";
+import { labelRecord } from "@common/i18n/labels";
+import { useT } from "@common/i18n/useT";
 import styles from "./NexBankBrowser.module.scss";
 
 /*
@@ -79,29 +82,36 @@ type Props = {
   onClearComment: (bank: number) => void;
 };
 
-export const VIEW_NAMES: Record<NexBankView, string> = {
-  memory: "Memory",
-  disassembly: "Disassembly",
-  sprites: "Sprites"
-};
+/** The views' names, translated as they are read (D7). */
+export const VIEW_NAMES: Readonly<Record<NexBankView, string>> = labelRecord({
+  memory: "panels.next.banks.view.memory",
+  disassembly: "panels.next.banks.view.disassembly",
+  sprites: "panels.next.banks.view.sprites"
+});
 
-const REGION_NAMES: Record<AnnotationRegionType, string> = {
-  disassemble: "Code",
-  bytes: "Bytes",
-  words: "Words",
-  copper: "Copper",
-  dma: "DMA",
-  text: "Text",
-  graphic: "Graphics",
-  skip: "Skip"
-};
+/** Region type names for the content mix. Copper and DMA are chip names and stay as they are. */
+const REGION_NAME_KEYS = labelRecord({
+  disassemble: "panels.next.regionType.code",
+  bytes: "panels.next.regionType.bytes",
+  words: "panels.next.regionType.words",
+  text: "panels.next.regionType.text",
+  graphic: "panels.next.regionType.graphics",
+  skip: "panels.next.regionType.skip"
+});
+
+const regionName = (type: AnnotationRegionType): string =>
+  type === "copper" ? "Copper" : type === "dma" ? "DMA" : REGION_NAME_KEYS[type];
+
+const mixEntry = (mix: NexBankContentMix, type: AnnotationRegionType): string =>
+  t("panels.next.banks.detail.mixEntry", { type: regionName(type), percent: formatMixPercent(mix, type) });
 
 const LABELS_SHOWN = 16;
 
-const FILTERS: { value: NexBankFilter; text: string }[] = [
-  { value: "all", text: "All" },
-  { value: "nonEmpty", text: "Non-empty" },
-  { value: "annotated", text: "Annotated" }
+/** Built when drawn, so it follows the display language. */
+const bankFilters = (): { value: NexBankFilter; text: string }[] => [
+  { value: "all", text: t("panels.next.banks.filter.all") },
+  { value: "nonEmpty", text: t("panels.next.banks.filter.nonEmpty") },
+  { value: "annotated", text: t("panels.next.banks.filter.annotated") }
 ];
 
 export function filterBanks(
@@ -129,6 +139,7 @@ export const NexBankBrowser = ({
   onEditComment,
   onClearComment
 }: Props) => {
+  const t = useT();
   const visible = filterBanks(items, filter).map(toShellItem);
   const totalKb = Math.round(items.reduce((sum, item) => sum + item.size, 0) / 1024);
   const withBreakpoints = items.filter((item) => item.breakpoints?.total).length;
@@ -140,14 +151,17 @@ export const NexBankBrowser = ({
     <BankBrowser<NexShellItem, NexBankView>
       visibleItems={visible}
       selectedKey={selectedBank === undefined ? undefined : `${selectedBank}`}
-      heading="Banks"
+      heading={t("panels.next.banks.heading")}
       summary={
-        <>
-          {`${items.length} bank${items.length === 1 ? "" : "s"} · ${totalKb} KB`}
-          {withBreakpoints > 0 && ` · ${withBreakpoints} with breakpoints`}
-        </>
+        withBreakpoints > 0
+          ? t("panels.next.banks.summaryWithBreakpoints", {
+              count: items.length,
+              kb: totalKb,
+              withBreakpoints
+            })
+          : t("panels.next.banks.summary", { count: items.length, kb: totalKb })
       }
-      filters={FILTERS}
+      filters={bankFilters()}
       filter={filter}
       views={views}
       viewNames={VIEW_NAMES}
@@ -158,7 +172,11 @@ export const NexBankBrowser = ({
         <>
           <BankMarks item={item} />
           <BankRowText title={item.comment}>
-            {item.comment ? flattenBankComment(item.comment) : item.empty ? "empty" : ""}
+            {item.comment
+              ? flattenBankComment(item.comment)
+              : item.empty
+                ? t("panels.next.banks.empty")
+                : ""}
           </BankRowText>
           {item.mix && <MixBar mix={item.mix} className={styles.rowBar} />}
         </>
@@ -168,7 +186,7 @@ export const NexBankBrowser = ({
       renderRowMenuItems={(item, close) => (
         <>
           <ContextMenuItem
-            text="Bank Comment..."
+            text={t("panels.next.banks.menu.bankComment")}
             disabled={!item.hasAnnotation}
             clicked={() => {
               close();
@@ -176,7 +194,7 @@ export const NexBankBrowser = ({
             }}
           />
           <ContextMenuItem
-            text="Clear Bank Comment"
+            text={t("panels.next.banks.menu.clearBankComment")}
             disabled={!item.comment}
             clicked={() => {
               close();
@@ -185,7 +203,7 @@ export const NexBankBrowser = ({
           />
         </>
       )}
-      hint="Pop out a bank from its row's icon, by double-clicking the row, or with Enter."
+      hint={t("panels.next.banks.hint")}
     />
   );
 };
@@ -236,16 +254,17 @@ const BankMarks = ({
   item: NexBankBrowserItem;
   withBreakpoints?: boolean;
 }) => {
+  const t = useT();
   return (
     <>
       {withBreakpoints && <BreakpointChip summary={item.breakpoints} />}
       {item.pc !== undefined && (
-        <BankChip title="The program counter points into this bank">
+        <BankChip title={t("panels.next.banks.pcTitle")}>
           {`PC $${toHexa4(item.pc)}`}
         </BankChip>
       )}
       {item.sp !== undefined && (
-        <BankChip alt title="The stack pointer points into this bank">
+        <BankChip alt title={t("panels.next.banks.spTitle")}>
           {`SP $${toHexa4(item.sp)}`}
         </BankChip>
       )}
@@ -257,12 +276,8 @@ const MixBar = ({ mix, className }: { mix: NexBankContentMix; className?: string
   <span
     className={classnames(styles.mixBar, className)}
     role="img"
-    aria-label={mixLegendTypes(mix).map(
-      (t) => `${REGION_NAMES[t]} ${formatMixPercent(mix, t)}`
-    ).join(", ")}
-    title={mixLegendTypes(mix).map((t) => `${REGION_NAMES[t]} ${formatMixPercent(mix, t)}`).join(
-      " · "
-    )}
+    aria-label={mixLegendTypes(mix).map((type) => mixEntry(mix, type)).join(", ")}
+    title={mixLegendTypes(mix).map((type) => mixEntry(mix, type)).join(" · ")}
   >
     {NEX_REGION_TYPES.map((type) => (
       <span
@@ -283,16 +298,21 @@ const BankDetails = ({
   item: NexBankBrowserItem;
   onEditComment: (bank: number) => void;
 }) => {
+  const t = useT();
   const shownLabels = item.labels.slice(0, LABELS_SHOWN);
 
   return (
     <>
       <BankFacts>
-        <dt>Size</dt>
-        <dd>{item.size >= 1024 ? `${Math.round(item.size / 1024)} KB` : `${item.size} B`}</dd>
+        <dt>{t("panels.next.banks.detail.size")}</dt>
+        <dd>
+          {item.size >= 1024
+            ? t("panels.next.banks.detail.sizeKb", { kb: Math.round(item.size / 1024) })
+            : t("panels.next.banks.detail.sizeBytes", { bytes: item.size })}
+        </dd>
         {item.breakpoints && item.breakpoints.total > 0 && (
           <>
-            <dt>Breakpoints</dt>
+            <dt>{t("panels.next.banks.detail.breakpoints")}</dt>
             <dd className={styles.bpKinds}>
               {describeBankBreakpoints(item.breakpoints).map(({ kind, text }) => (
                 <span key={kind} className={styles.bpKind}>
@@ -308,25 +328,29 @@ const BankDetails = ({
             </dd>
           </>
         )}
-        <dt>Listed at</dt>
+        <dt>{t("panels.next.banks.detail.listedAt")}</dt>
         <dd>{`$${toHexa4(item.listedAt)}`}</dd>
-        <dt>Last view</dt>
+        <dt>{t("panels.next.banks.detail.lastView")}</dt>
         <dd>{VIEW_NAMES[item.lastView]}</dd>
         {item.spriteFormat && (
           <>
-            <dt>Sprites</dt>
-            <dd>{item.spriteFormat === "4bit" ? "4-bit" : "8-bit"}</dd>
+            <dt>{t("panels.next.banks.detail.sprites")}</dt>
+            <dd>
+              {item.spriteFormat === "4bit"
+                ? t("panels.next.banks.detail.format4bit")
+                : t("panels.next.banks.detail.format8bit")}
+            </dd>
           </>
         )}
         {item.empty && (
           <>
-            <dt>Contents</dt>
-            <dd>All zero</dd>
+            <dt>{t("panels.next.banks.detail.contents")}</dt>
+            <dd>{t("panels.next.banks.detail.allZero")}</dd>
           </>
         )}
       </BankFacts>
 
-      <BankDetailsSection title="Content mix">
+      <BankDetailsSection title={t("panels.next.banks.detail.contentMix")}>
         {item.mix ? (
           <>
             <MixBar mix={item.mix} className={styles.detailsBar} />
@@ -334,19 +358,17 @@ const BankDetails = ({
               {mixLegendTypes(item.mix).map((type) => (
                 <span key={type}>
                   <span className={classnames(styles.swatch, styles[`mix_${type}`])} />
-                  {`${REGION_NAMES[type]} ${formatMixPercent(item.mix!, type)}`}
+                  {mixEntry(item.mix!, type)}
                 </span>
               ))}
             </div>
           </>
         ) : (
-          <div className={styles.muted}>
-            Regions are recorded in the annotation file, which this NEX does not have yet.
-          </div>
+          <div className={styles.muted}>{t("panels.next.banks.detail.noRegions")}</div>
         )}
       </BankDetailsSection>
 
-      <BankDetailsSection title="Comment">
+      <BankDetailsSection title={t("panels.next.banks.detail.comment")}>
         {item.comment ? (
           <>
             <div className={styles.comment}>{item.comment}</div>
@@ -356,44 +378,48 @@ const BankDetails = ({
                 className={styles.linkButton}
                 onClick={() => onEditComment(item.bank)}
               >
-                Edit comment...
+                {t("panels.next.banks.detail.editComment")}
               </button>
             </div>
           </>
         ) : item.hasAnnotation ? (
           <div>
-            <span className={styles.muted}>No comment. </span>
+            <span className={styles.muted}>{t("panels.next.banks.detail.noComment")} </span>
             <button
               type="button"
               className={styles.linkButton}
               onClick={() => onEditComment(item.bank)}
             >
-              Add comment...
+              {t("panels.next.banks.detail.addComment")}
             </button>
           </div>
         ) : (
-          <div className={styles.muted}>
-            Comments are kept in the annotation file, which this NEX does not have yet.
-          </div>
+          <div className={styles.muted}>{t("panels.next.banks.detail.noCommentFile")}</div>
         )}
       </BankDetailsSection>
 
       {item.labels.length > 0 && (
-        <BankDetailsSection title={`Labels (${item.labels.length})`}>
+        <BankDetailsSection title={t("panels.next.banks.detail.labels", { count: item.labels.length })}>
           <div className={styles.labels}>
             {shownLabels.map((label) => (
               <span
                 key={`${label.scope}:${label.name}`}
-                title={`${label.scope === "global" ? "Global" : "Bank"} label`}
+                title={
+                  label.scope === "global"
+                    ? t("panels.next.banks.detail.globalLabel")
+                    : t("panels.next.banks.detail.bankLabel")
+                }
               >
                 <span className={styles.labelName}>{label.name}</span>
                 {` $${toHexa4(label.address)}`}
               </span>
             ))}
             {item.labels.length > shownLabels.length && (
-              <span
-                className={styles.muted}
-              >{`+${item.labels.length - shownLabels.length} more`}</span>
+              <span className={styles.muted}>
+                {t("panels.next.banks.detail.moreLabels", {
+                  count: item.labels.length - shownLabels.length
+                })}
+              </span>
             )}
           </div>
         </BankDetailsSection>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { mapRzxToKlive, RZX_E_ROM_WARNING } from "@common/spectrum/rzx/rzxMapping";
+import { mapRzxToKlive, rzxERomWarning } from "@common/spectrum/rzx/rzxMapping";
 import { RzxError, type RzxFile } from "@common/spectrum/rzx/rzxModel";
 import { MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48 } from "@common/machines/constants";
 import { buildSzx, state128, state48 } from "../snapshot/builders";
@@ -31,7 +31,7 @@ describe("RZX machine mapping", () => {
     const { mapping } = mapRzxToKlive(fileWith(buildSzx(state128(), { machineId: 3 })));
     expect(mapping.machineId).toBe(MI_SPECTRUM_128);
     expect(mapping.warnings.some((w) => w.includes("+2"))).toBe(true);
-    expect(mapping.warnings).not.toContain(RZX_E_ROM_WARNING);
+    expect(mapping.warnings).not.toContain(rzxERomWarning());
   });
 
   it("prefers the Amstrad models for +2A and +3 recordings, so the ROM matches", () => {

@@ -494,7 +494,7 @@ async function createAppWindows() {
 
   // --- Test actively push message to the Electron-Renderer
   ideWindow.webContents.on("did-finish-load", () => {
-    ideWindow?.webContents.send("main-process-message", new Date().toLocaleString());
+    ideWindow?.webContents.send("main-process-message", new Date().toLocaleString("en-US"));
     if (appSettings.windowStates?.ideZoomFactor != undefined) {
       ideWindow.webContents.setZoomFactor(appSettings.windowStates?.ideZoomFactor ?? 1.0);
     }
@@ -562,7 +562,7 @@ async function createAppWindows() {
 
   // --- Test actively push message to the Electron-Renderer
   emuWindow.webContents.on("did-finish-load", () => {
-    emuWindow?.webContents.send("main-process-message", new Date().toLocaleString());
+    emuWindow?.webContents.send("main-process-message", new Date().toLocaleString("en-US"));
     // --- Set emu zoom factor
     if (appSettings.windowStates?.emuZoomFactor != undefined) {
       emuWindow.webContents.setZoomFactor(appSettings.windowStates?.emuZoomFactor ?? 1.0);

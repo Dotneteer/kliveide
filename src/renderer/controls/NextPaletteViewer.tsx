@@ -9,6 +9,7 @@ import { Tooltip } from "./Tooltip";
 import { useCallback, useEffect, useMemo, useRef, useState, memo } from "react";
 import { KeyHandler } from "./generic/KeyHandler";
 import classnames from "classnames";
+import { useT } from "@common/i18n/useT";
 
 /** A Next palette is always 16x16. */
 const COLUMNS = 16;
@@ -82,6 +83,7 @@ export const NextPaletteViewer = ({
   onOtherKey,
   selectedIndex
 }: Props) => {
+  const t = useT();
   const [selected, setSelected] = useState<number>();
 
   /*
@@ -195,14 +197,19 @@ export const NextPaletteViewer = ({
     const value = palette?.[hovered.index] ?? 0;
     const [r, g, b] = getRgbPartsForPaletteCode(value);
     const flags = [
-      usePriority && !!(value & 0x8000) ? "priority" : null,
-      hovered.index === transparencyIndex ? "transparency" : null
+      usePriority && !!(value & 0x8000) ? t("panels.controls.nextPalette.flag.priority") : null,
+      hovered.index === transparencyIndex
+        ? t("panels.controls.nextPalette.flag.transparency")
+        : null
     ].filter(Boolean);
-    return (
-      `$${toHexa2(hovered.index)} — R: ${r}, G: ${g}, B: ${b}` +
-      (flags.length ? ` (${flags.join(", ")})` : "")
-    );
-  }, [hovered, palette, usePriority, transparencyIndex]);
+    const args = { index: `$${toHexa2(hovered.index)}`, r, g, b };
+    return flags.length
+      ? t("panels.controls.nextPalette.tooltipWithFlags", {
+          ...args,
+          flags: flags.join(t("panels.controls.nextPalette.flagSeparator"))
+        })
+      : t("panels.controls.nextPalette.tooltip", args);
+  }, [hovered, palette, usePriority, transparencyIndex, t]);
 
   return (
     <KeyHandler tabIndex={0} xclass={styles.paletteWrapper} onKey={handleKey}>
@@ -210,7 +217,7 @@ export const NextPaletteViewer = ({
         className={classnames(styles.paletteGrid, { [styles.selectable]: allowSelection })}
         style={{ ["--palette-cell" as any]: `${cellSize}px` }}
         role="grid"
-        aria-label="Next palette"
+        aria-label={t("panels.controls.nextPalette.label")}
       >
         <div className={styles.gridCorner} />
         {INDEXES.map((idx) => (
@@ -387,9 +394,7 @@ const PaletteItem = memo(
         {hasPriority && (
           <span className={styles.priorityMark} style={{ borderTopColor: markColor }} />
         )}
-        {isSelected && (
-          <span className={styles.selectionMark} style={{ borderColor: markColor }} />
-        )}
+        {isSelected && <span className={styles.selectionMark} style={{ borderColor: markColor }} />}
       </div>
     );
   }

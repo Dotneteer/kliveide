@@ -29,9 +29,11 @@ import {
   type BasicViewState,
   useBasicViewStatePersistence
 } from "./basicViewState";
+import { useT } from "@common/i18n/useT";
 
 const BasicPanel = ({ document, viewState }: DocumentProps<BasicViewState>) => {
   // --- Get the services used in this component
+  const t = useT();
   const dispatch = useDispatch();
   const emuApi = useEmuApi();
   const mainApi = useMainApi();
@@ -180,9 +182,9 @@ const BasicPanel = ({ document, viewState }: DocumentProps<BasicViewState>) => {
 
   const message = showListing.current
     ? basicLines && !basicLines.length
-      ? "BASIC program area is empty"
+      ? t("panels.doc.basic.emptyProgram")
       : ""
-    : "Machine OS has not been initialized yet";
+    : t("panels.doc.basic.osNotInitialized");
 
   return (
     /* --- M1: `0.8em` gave 12.8px here; see `MemoryPanel`. Follows the panel font size now - the
@@ -191,40 +193,40 @@ const BasicPanel = ({ document, viewState }: DocumentProps<BasicViewState>) => {
       <PanelHeader>
         <SmallIconButton
           iconName="refresh"
-          title={"Refresh now"}
+          title={t("panels.doc.common.refreshNow")}
           clicked={async () => {
             refreshBasicView();
-            dispatch(setIdeStatusMessageAction("BASIC listing refreshed", true));
+            dispatch(setIdeStatusMessageAction(t("panels.doc.basic.refreshed"), true));
           }}
         />
         <ToolbarSeparator small={true} />
         <SmallIconButton
           iconName="copy"
-          title={"Copy to clipboard"}
+          title={t("panels.doc.common.copyToClipboard")}
           clicked={async () => {
             navigator.clipboard.writeText(programBuffer.current.getBufferText());
-            dispatch(setIdeStatusMessageAction("BASIC listing copied to the clipboard", true));
+            dispatch(setIdeStatusMessageAction(t("panels.doc.basic.copied"), true));
           }}
         />
         <ToolbarSeparator small={true} />
         <LabeledSwitch
           value={autoRefresh}
-          label="Auto Refresh:"
-          title="Refresh the BASIC listing periodically"
+          label={t("panels.doc.basic.autoRefresh")}
+          title={t("panels.doc.basic.autoRefreshTitle")}
           clicked={setAutoRefresh}
         />
         <ToolbarSeparator small={true} />
         <LabeledSwitch
           value={showCodes}
-          label="Show Non-Printable:"
-          title="Display the non-printable codes"
+          label={t("panels.doc.basic.showCodes")}
+          title={t("panels.doc.basic.showCodesTitle")}
           clicked={setShowCodes}
         />
         <ToolbarSeparator small={true} />
         <LabeledSwitch
           value={showSpectrumFont}
-          label={zx8081Kind ? "Use Sinclair font:" : "Use ZX Spectrum font:"}
-          title="Use the ZX Spectrum's font (the Sinclair font) to display the list"
+          label={t(zx8081Kind ? "panels.doc.basic.sinclairFont" : "panels.doc.basic.spectrumFont")}
+          title={t("panels.doc.basic.fontTitle")}
           clicked={setShowSpectrumFont}
         />
       </PanelHeader>

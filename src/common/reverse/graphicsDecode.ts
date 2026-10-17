@@ -18,6 +18,9 @@
  * `before`/`after` put a whole mask frame before or after the graphic frame.
  */
 
+import { withLabels, type Labelled } from "@common/i18n/labels";
+import type { MessageKey } from "@common/i18n/keys.generated";
+
 export type GraphicLayout = "linear" | "cells" | "columns" | "screen";
 export type GraphicMask = "none" | "interleaved" | "before" | "after";
 
@@ -270,10 +273,29 @@ export function bytePicture(value: number): string {
   return text;
 }
 
-/** The preset looks the toolbar offers. */
-export const GRAPHICS_PRESETS: readonly { id: string; label: string; look: Partial<GraphicsLook>; address?: number }[] = [
-  // --- The 48K ROM's character set and the UDG area: where they are when the dump holds them
-  { id: "font", label: "Font (8×8, 96 chars)", look: { width: 1, height: 8, layout: "cells", mask: "none" }, address: 0x3d00 },
-  { id: "udg", label: "UDG (8×8, 21)", look: { width: 1, height: 8, layout: "cells", mask: "none" }, address: 0xff58 },
-  { id: "screen", label: "Screen ($4000)", look: { layout: "screen", mask: "none", columns: 1 }, address: 0x4000 }
-];
+/**
+ * The preset looks the toolbar offers. `label` translates on each read (D7), so a list built from
+ * this table must read it at display time, not copy it once.
+ */
+export const GRAPHICS_PRESETS: readonly Labelled<{ id: string; look: Partial<GraphicsLook>; address?: number }>[] =
+  withLabels<{ id: string; labelKey: MessageKey; look: Partial<GraphicsLook>; address?: number }>([
+    // --- The 48K ROM's character set and the UDG area: where they are when the dump holds them
+    {
+      id: "font",
+      labelKey: "gfxCommon.graphics.preset.font",
+      look: { width: 1, height: 8, layout: "cells", mask: "none" },
+      address: 0x3d00
+    },
+    {
+      id: "udg",
+      labelKey: "gfxCommon.graphics.preset.udg",
+      look: { width: 1, height: 8, layout: "cells", mask: "none" },
+      address: 0xff58
+    },
+    {
+      id: "screen",
+      labelKey: "gfxCommon.graphics.preset.screen",
+      look: { layout: "screen", mask: "none", columns: 1 },
+      address: 0x4000
+    }
+  ]);

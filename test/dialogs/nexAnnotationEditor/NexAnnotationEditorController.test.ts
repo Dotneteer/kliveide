@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 
 import { NexAnnotationEditorController } from "@renderer/appIde/DocumentPanels/Next/annotationEditor/NexAnnotationEditorController";
 import type { NexAnnotationEditorEnvironment } from "@renderer/appIde/DocumentPanels/Next/annotationEditor/NexAnnotationEditorModel";
-import { WHOLE_BANK_CONFIRM_MESSAGE } from "@renderer/appIde/DocumentPanels/Next/annotationEditor/NexAnnotationEditorViewModel";
+import { wholeBankConfirmMessage } from "@renderer/appIde/DocumentPanels/Next/annotationEditor/NexAnnotationEditorViewModel";
 
 import type { DisassemblyItem } from "@renderer/appIde/disassemblers/common-types";
 
@@ -500,7 +500,7 @@ describe("sprites view edits", () => {
     });
     await controller.settle();
 
-    expect(fakes.nativeConfirm).toHaveBeenCalledWith(WHOLE_BANK_CONFIRM_MESSAGE);
+    expect(fakes.nativeConfirm).toHaveBeenCalledWith(wholeBankConfirmMessage());
     expect(fakes.session.writeCalls).toEqual([]);
   });
 });
@@ -869,7 +869,7 @@ describe("regions", () => {
     fakes.dialogs.answerWith("region", { start: 0, end: 0x3fff, type: "skip" });
     await controller.dispatch({ type: "regionRequested", rowIndex: 0 });
     await controller.settle();
-    expect(fakes.nativeConfirm).toHaveBeenCalledWith(WHOLE_BANK_CONFIRM_MESSAGE);
+    expect(fakes.nativeConfirm).toHaveBeenCalledWith(wholeBankConfirmMessage());
   });
 
   it("applies nothing when the whole-bank change is refused", async () => {
@@ -919,7 +919,7 @@ describe("regions", () => {
     await controller.dispatch({ type: "regionTypeMarked", regionType: "copper", rowIndex: 0 });
     await controller.settle();
 
-    expect(fakes.nativeConfirm).toHaveBeenCalledWith(WHOLE_BANK_CONFIRM_MESSAGE);
+    expect(fakes.nativeConfirm).toHaveBeenCalledWith(wholeBankConfirmMessage());
     expect(fakes.session.writeCalls).toEqual([]);
   });
 

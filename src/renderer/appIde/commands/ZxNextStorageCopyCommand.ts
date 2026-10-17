@@ -21,6 +21,7 @@ import {
   validationError,
   writeSuccessMessage
 } from "../services/ide-commands";
+import { t } from "@common/i18n/i18n";
 
 export type ZxNextStorageCopyCommandArgs = {
   direction: string;
@@ -31,7 +32,9 @@ export type ZxNextStorageCopyCommandArgs = {
 
 export class ZxNextStorageCopyCommand extends IdeCommandBase<ZxNextStorageCopyCommandArgs> {
   readonly id = "ncp";
-  readonly description = "Copies files between the host filesystem and ZX Spectrum Next storage.";
+  get description() {
+    return t("commands.ncp.description");
+  }
   readonly aliases = ["next-copy"];
   readonly usage = [
     "ncp to <host-source> <next-destination> [-cim <cim-file>]",
@@ -55,18 +58,18 @@ export class ZxNextStorageCopyCommand extends IdeCommandBase<ZxNextStorageCopyCo
     const direction = args.direction?.toLowerCase();
 
     if (direction !== "to" && direction !== "from") {
-      messages.push(validationError("Direction must be 'to' or 'from'."));
+      messages.push(validationError(t("commands.ncp.direction")));
     }
 
     if (!args.source?.trim()) {
-      messages.push(validationError("Source path cannot be empty."));
+      messages.push(validationError(t("commands.ncp.emptySource")));
     }
     if (!args.destination?.trim()) {
-      messages.push(validationError("Destination path cannot be empty."));
+      messages.push(validationError(t("commands.ncp.emptyDestination")));
     }
 
     if (args["-cim"] !== undefined && !isCimFilePath(args["-cim"])) {
-      messages.push(validationError("The -cim option must specify a .cim file."));
+      messages.push(validationError(t("commands.ncp.cimFile")));
     }
 
     const machineState = context.store.getState().emulatorState?.machineState;
@@ -74,14 +77,14 @@ export class ZxNextStorageCopyCommand extends IdeCommandBase<ZxNextStorageCopyCo
       machineState === MachineControllerState.Running ||
       machineState === MachineControllerState.Paused
     ) {
-      messages.push(validationError("The emulator must be stopped before copying storage files."));
+      messages.push(validationError(t("commands.ncp.mustStop")));
     }
 
     if (args["-cim"] === undefined) {
       const machineId = context.store.getState().emulatorState?.machineId;
       if (machineId !== MI_ZXNEXT) {
         messages.push(
-          validationError("Current-storage mode requires the current machine to be ZX Spectrum Next.")
+          validationError(t("commands.ncp.needsNext"))
         );
       }
     }
@@ -144,7 +147,7 @@ async function executeCopyWithOverwriteConfirmation(
 
     const overwrite = await context.mainApi.confirmFileOverwrite(target);
     if (!overwrite) {
-      return commandError("ZX Spectrum Next storage copy cancelled.");
+      return commandError(t("commands.ncp.cancelled"));
     }
 
     try {
@@ -168,9 +171,9 @@ function copySucceeded(
   const to = request.direction === "to" ? result.storagePath : result.hostPath;
   writeSuccessMessage(
     context.output,
-    `Copied ${result.bytesCopied} byte(s) from ${from} to ${to} using ${result.cimFile}`
+    t("commands.ncp.copied", { count: result.bytesCopied, from, to, cim: result.cimFile })
   );
-  return commandSuccessWith("ZX Spectrum Next storage copy completed.", result);
+  return commandSuccessWith(t("commands.ncp.completed"), result);
 }
 
 function normalizeStorageTargetForRequest(storagePath: string): string {

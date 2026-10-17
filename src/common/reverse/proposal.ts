@@ -10,6 +10,7 @@ import {
   pruneGraphics,
   replaceAnnotationRegion
 } from "@renderer/appIde/annotations/annotationEdits";
+import { t } from "@common/i18n/i18n";
 import { classifiedCounts, type ClassifiedRun, type ClassifyWarning, type Evidence } from "./classify";
 
 /*
@@ -185,32 +186,50 @@ export function describeProposal(proposal: BankProposal, bankName: string): stri
   const lines: string[] = [];
   const { counts } = proposal;
   if (proposal.mode === "clear") {
-    lines.push(`${bankName}: clears ${proposal.changes.length} detected region(s).`);
+    lines.push(t("media.proposal.clears", { bank: bankName, count: proposal.changes.length }));
     return lines;
   }
   lines.push(
-    `${bankName}: code ${counts.code} (observed ${counts.observed}, reached ${counts.reached}, inferred ${counts.inferred}), ` +
-      `data ${counts.data}, unknown ${proposal.unknownBytes} (${proposal.unknownPercent}%). ` +
-      `${proposal.changes.length} change(s), ${proposal.conflicts.length} conflict(s) with your regions.`
+    t("media.proposal.summary", {
+      bank: bankName,
+      code: counts.code,
+      observed: counts.observed,
+      reached: counts.reached,
+      inferred: counts.inferred,
+      data: counts.data,
+      unknown: proposal.unknownBytes,
+      percent: proposal.unknownPercent,
+      changes: proposal.changes.length,
+      conflicts: proposal.conflicts.length
+    })
   );
   const hex = (n: number) => `$${n.toString(16).toUpperCase().padStart(4, "0")}`;
+  const range = (start: number, end: number) => `${hex(start)}-${hex(end)}`;
   for (const change of proposal.changes) {
     lines.push(
-      `  ${hex(change.start)}-${hex(change.end)}  ${change.from} -> ${change.type}` +
-        `${change.evidence ? ` (${change.evidence})` : ""}${change.user ? " [yours]" : ""}`
+      `  ${range(change.start, change.end)}  ${change.from} -> ${change.type}` +
+        `${change.evidence ? ` (${change.evidence})` : ""}${change.user ? ` ${t("media.proposal.yoursMarker")}` : ""}`
     );
   }
   if (proposal.mode === "fill") {
     for (const conflict of proposal.conflicts) {
-      lines.push(`  ${hex(conflict.start)}-${hex(conflict.end)}  yours: ${conflict.from}, detected: ${conflict.type} (kept)`);
+      lines.push(
+        `  ${t("media.proposal.conflict", {
+          range: range(conflict.start, conflict.end),
+          yours: conflict.from,
+          detected: conflict.type
+        })}`
+      );
     }
   }
   for (const run of proposal.notedRuns) {
-    lines.push(`  ${hex(run.start)}-${hex(run.end)}  note: ${run.notes!.join(", ")}`);
+    lines.push(`  ${t("media.proposal.note", { range: range(run.start, run.end), notes: run.notes!.join(", ") })}`);
   }
   for (const warning of proposal.warnings.slice(0, 20)) {
-    lines.push(`  ${hex(warning.offset)}  warning: ${warning.message}`);
+    lines.push(`  ${t("media.proposal.warning", { address: hex(warning.offset), message: warning.message })}`);
   }
-  if (proposal.warnings.length > 20) lines.push(`  ... ${proposal.warnings.length - 20} more warning(s)`);
+  if (proposal.warnings.length > 20) {
+    lines.push(`  ${t("media.proposal.moreWarnings", { count: proposal.warnings.length - 20 })}`);
+  }
   return lines;
 }

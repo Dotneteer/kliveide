@@ -1,9 +1,12 @@
 import type { BreakpointHitMode, BreakpointInfo, LogDialect } from "@abstractions/BreakpointInfo";
 
+import { t } from "@common/i18n/i18n";
+
 /*
  * A breakpoint's two filters — the condition and the hit-count rule — and the runtime state that
- * travels beside them, kept free of dependencies (type imports only) because the main process
- * strips that state from a project save and must not pull in renderer code.
+ * travels beside them, kept free of renderer dependencies (type imports, plus the shared
+ * translator for `parseHitSpec`'s errors) because the main process strips that state from a
+ * project save and must not pull in renderer code.
  *
  * Every persister goes through these helpers, so "which fields are stored" has one answer. See
  * `.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.1 and §4.7.
@@ -223,7 +226,7 @@ export function parseHitSpec(
   text: string
 ): { hitMode: BreakpointHitMode; hitCount: number } | { error: string } {
   const match = /^\s*(>=|<=|=|>|<|\*)?\s*(\S+)\s*$/.exec(text ?? "");
-  if (!match) return { error: "The hit count is empty" };
+  if (!match) return { error: t("debug.hitSpec.empty") };
   const [, prefix = "", numberText] = match;
   const digits = numberText.replace(/_/g, "");
   let value = Number.NaN;
@@ -231,10 +234,10 @@ export function parseHitSpec(
   else if (/^%[01]+$/.test(digits)) value = parseInt(digits.substring(1), 2);
   else if (/^[0-9]+$/.test(digits)) value = parseInt(digits, 10);
   if (Number.isNaN(value)) {
-    return { error: `Invalid hit count '${text.trim()}'; use N, =N, >N, >=N, <N, <=N or *N` };
+    return { error: t("debug.hitSpec.invalid", { text: text.trim() }) };
   }
   if (!isValidBreakpointHitCount(value)) {
-    return { error: `The hit count must be between 1 and ${MAX_BREAKPOINT_HIT_COUNT}` };
+    return { error: t("debug.hitSpec.range", { max: String(MAX_BREAKPOINT_HIT_COUNT) }) };
   }
   const hitMode = (Object.keys(HIT_SPEC_PREFIX) as BreakpointHitMode[]).find(
     (mode) => HIT_SPEC_PREFIX[mode] === (prefix === "=" ? "" : prefix)

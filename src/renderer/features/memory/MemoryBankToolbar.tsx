@@ -3,6 +3,7 @@ import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";
 import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import { Text } from "@renderer/controls/layout/Text";
 import { MemoryMachineSetupState } from "./useMemoryMachineSetup";
+import { useT } from "@common/i18n/useT";
 
 type MemoryBankToolbarProps = {
   currentSegment: number;
@@ -21,6 +22,7 @@ export const MemoryBankToolbar = ({
   onFullViewChanged,
   onSegmentChanged
 }: MemoryBankToolbarProps) => {
+  const t = useT();
   if (!machineSetup.banksView) {
     return null;
   }
@@ -29,14 +31,14 @@ export const MemoryBankToolbar = ({
     <>
       <LabeledSwitch
         value={isFullView}
-        label="64K View"
-        title="Show the full 64K memory"
+        label={t("panels.feature.memory.fullView")}
+        title={t("panels.feature.memory.fullViewTooltip")}
         clicked={onFullViewChanged}
       />
       {!isFullView && (
         <>
           <LabelSeparator />
-          <Text text="Selected bank" />
+          <Text text={t("panels.feature.memory.selectedBank")} />
           <LabelSeparator />
           {/*
             * The three-way branch this used to spell out inline now lives in `PartitionPicker`,

@@ -46,7 +46,7 @@ import {
   discardConfirmMessage,
   goToDefinitionTargetFor,
   selectViewModel,
-  WHOLE_BANK_CONFIRM_MESSAGE,
+  wholeBankConfirmMessage,
   type NexAnnotationEditorViewModel
 } from "./NexAnnotationEditorViewModel";
 
@@ -629,7 +629,7 @@ export class NexAnnotationEditorController extends UiController<
     // --- Rewriting the entire bank is easy to do by accident from a range selection, and there is
     // --- no undo.
     if (start === 0 && end === ANNOTATION_BANK_LAST_OFFSET) {
-      if (!this.ports.nativeConfirm(WHOLE_BANK_CONFIRM_MESSAGE)) return;
+      if (!this.ports.nativeConfirm(wholeBankConfirmMessage())) return;
     }
 
     // --- A bytes region is written in the format the dialog chose; any other type has none

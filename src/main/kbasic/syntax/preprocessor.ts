@@ -1,3 +1,4 @@
+import { t as tr } from "@common/i18n/i18n";
 import { DiagnosticBag, type Span } from "../diagnostics";
 import { isDocumentedLibrary, libraryFile } from "../stdlib";
 import { lex, lexFragment } from "./lexer";
@@ -176,7 +177,7 @@ class Preprocessor {
     }
     flush();
 
-    for (const c of this.conditions) this.error("E201", "This #if has no #endif", c.span);
+    for (const c of this.conditions) this.error("E201", tr("compiler.basic.E201"), c.span);
     this.conditions = outerConditions;
     this.includeStack.pop();
   }
@@ -205,12 +206,12 @@ class Preprocessor {
       }
       case "elif":
         // --- zxbc has no #elif: it is a syntax error there (observed through the oracle, C4)
-        this.error("E208", "Unknown directive #elif: ZX BASIC has none (use #else and a nested #if)", span);
+        this.error("E208", tr("compiler.basic.E208.elif"), span);
         return;
       case "else": {
         const c = this.top("#else", span);
         if (!c) return;
-        if (c.elseSeen) this.error("E202", "A second #else for the same #if", span);
+        if (c.elseSeen) this.error("E202", tr("compiler.basic.E202"), span);
         c.elseSeen = true;
         c.active = c.outer && !c.taken;
         c.taken = true;
@@ -230,7 +231,7 @@ class Preprocessor {
       }
       case "undef": {
         const t = args()[0];
-        if (!t || t.kind !== "identifier") this.error("E203", "#undef needs a macro name", span);
+        if (!t || t.kind !== "identifier") this.error("E203", tr("compiler.basic.E203.undef"), span);
         else {
           this.noteMacroUse(this.macros.get(t.text), t.span);
           this.macros.delete(t.text);
@@ -242,12 +243,12 @@ class Preprocessor {
         return;
       case "line": {
         const m = /^(\d+)\s*(?:"([^"]*)")?$/.exec(rawArgs);
-        if (!m) this.error("E204", '#line needs a line number and an optional "file"', span);
+        if (!m) this.error("E204", tr("compiler.basic.E204"), span);
         else file.addLineDirective(file.position(span.start).line, Number(m[1]), m[2]);
         return;
       }
       case "error":
-        this.error("E205", fullText || "#error", span);
+        this.error("E205", fullText || "#error", span); // --- the program's own text
         return;
       case "warning":
         this.diagnostics.warning("K205", fullText || "#warning", span);
@@ -258,24 +259,24 @@ class Preprocessor {
         return;
       case "require": {
         const m = /^"([^"]+)"$/.exec(rawArgs);
-        if (!m) this.error("E206", '#require needs a "file"', span);
+        if (!m) this.error("E206", tr("compiler.basic.E206"), span);
         else this.requires.push({ name: m[1], span });
         return;
       }
       case "init": {
         const m = /^(?:"([^"]+)"|([A-Za-z_][\w.]*))$/.exec(rawArgs);
-        if (!m) this.error("E207", "#init needs a routine name", span);
+        if (!m) this.error("E207", tr("compiler.basic.E207"), span);
         else this.inits.push({ name: m[1] ?? m[2], span });
         return;
       }
       default:
-        this.error("E208", `Unknown directive #${name}`, span);
+        this.error("E208", tr("compiler.basic.E208.unknown", { directive: name }), span);
     }
   }
 
   private top(what: string, span: Span): Condition | undefined {
     const c = this.conditions[this.conditions.length - 1];
-    if (!c) this.error("E209", `${what} without #if`, span);
+    if (!c) this.error("E209", tr("compiler.basic.E209", { directive: what }), span);
     return c;
   }
 
@@ -286,7 +287,7 @@ class Preprocessor {
     // --- The preprocessor works below the language: a macro may be named like a keyword (upstream too)
     const nameToken = tokens[0];
     if (!nameToken || (nameToken.kind !== "identifier" && nameToken.kind !== "keyword") || nameToken.sigil) {
-      this.error("E203", "#define needs a macro name", span);
+      this.error("E203", tr("compiler.basic.E203.define"), span);
       return;
     }
     const name = nameToken.text;
@@ -299,25 +300,25 @@ class Preprocessor {
         const p = tokens[i];
         // --- A keyword may name a parameter too (#define NextReg(REG, VAL)), as zxbc allows (C5)
         if (p.kind !== "identifier" && p.kind !== "keyword") {
-          this.error("E210", "A macro parameter must be a name", p.span);
+          this.error("E210", tr("compiler.basic.E210.notName"), p.span);
           return;
         }
-        if (params.includes(p.text)) this.error("E211", `Duplicate macro parameter '${p.text}'`, p.span);
+        if (params.includes(p.text)) this.error("E211", tr("compiler.basic.E211", { name: p.text }), p.span);
         params.push(p.text);
         i++;
         if (tokens[i]?.text === ",") i++;
         else if (tokens[i]?.text !== ")") {
-          this.error("E210", "Expected ',' or ')' in the macro's parameters", tokens[i]?.span ?? span);
+          this.error("E210", tr("compiler.basic.E210.separator"), tokens[i]?.span ?? span);
           return;
         }
       }
       if (tokens[i]?.text !== ")") {
-        this.error("E210", "The macro's parameter list has no ')'", span);
+        this.error("E210", tr("compiler.basic.E210.noClose"), span);
         return;
       }
       i++;
     } else if (tokens[1] && !tokens[1].spaceBefore) {
-      this.diagnostics.warning("W520", `No blank after the macro name '${name}'`, tokens[1].span);
+      this.diagnostics.warning("W520", tr("compiler.basic.W520", { name }), tokens[1].span);
     }
 
     const body = tokens.slice(i);
@@ -325,9 +326,9 @@ class Preprocessor {
       ? file.text.slice(body[0].span.start, end).replace(/[_\\][ \t]*\n/g, " ").replace(/\s*'[^"]*$/, "").trim()
       : "";
     const existing = this.macros.get(name);
-    if (existing?.builtin) this.diagnostics.warning("W500", `The built-in macro ${name} is redefined`, nameToken.span);
+    if (existing?.builtin) this.diagnostics.warning("W500", tr("compiler.basic.W500", { name }), nameToken.span);
     else if (existing && !sameBody(existing, body, params)) {
-      this.diagnostics.warning("W510", `The macro ${name} is redefined`, nameToken.span);
+      this.diagnostics.warning("W510", tr("compiler.basic.W510", { name }), nameToken.span);
     }
     const bodyProblems = problems.items.length ? problems : undefined;
     let info: PreprocessDefine | undefined;
@@ -354,7 +355,7 @@ class Preprocessor {
     if (kind === "ifdef" || kind === "ifndef") {
       const t = args()[0];
       if (!t || (t.kind !== "identifier" && t.kind !== "keyword")) {
-        this.error("E212", `#${kind} needs a macro name`, span);
+        this.error("E212", tr("compiler.basic.E212", { directive: kind }), span);
         return false;
       }
       this.noteMacroUse(this.macros.get(t.text), t.span);
@@ -363,7 +364,7 @@ class Preprocessor {
     try {
       return new ConditionEvaluator(rawArgs, (name) => this.macroText(name, 0)).evaluate();
     } catch (e) {
-      this.error("E213", `Invalid #if expression: ${(e as Error).message}`, span);
+      this.error("E213", e instanceof ConditionError ? e.message : tr("compiler.basic.E213.other", { reason: (e as Error).message }), span);
       return false;
     }
   }
@@ -386,7 +387,7 @@ class Preprocessor {
     if (onceMatch) {
       once = true;
       if (onceMatch[2] && onceMatch[2].toLowerCase() !== "arch") {
-        this.error("E214", `Unknown #include modifier '${onceMatch[2]}'`, span);
+        this.error("E214", tr("compiler.basic.E214", { modifier: onceMatch[2] }), span);
         return;
       }
       text = text.slice(onceMatch[0].length);
@@ -394,7 +395,7 @@ class Preprocessor {
     if (/^[A-Za-z_]\w*$/.test(text) && this.macros.has(text)) text = this.macroText(text, 0) ?? text;
     const m = /^(?:<([^>]+)>|"([^"]+)")$/.exec(text);
     if (!m) {
-      this.error("E215", '#include needs <file> or "file"', span);
+      this.error("E215", tr("compiler.basic.E215"), span);
       return;
     }
     const system = m[1] !== undefined;
@@ -402,16 +403,16 @@ class Preprocessor {
     const resolved = this.resolveInclude(name, file.name, system);
     if (!resolved) {
       const message = !system
-        ? `Cannot find the included file "${name}"`
+        ? tr("compiler.basic.E216.notFound", { file: name })
         : isDocumentedLibrary(name)
-          ? `<${name}> is a listing in the ZX BASIC documentation, not a library file: copy it into the program`
-          : `<${name}> is not in Klive BASIC's library, nor in the include path`;
+          ? tr("compiler.basic.E216.documentationListing", { file: name })
+          : tr("compiler.basic.E216.notInLibrary", { file: name });
       this.error("E216", message, span);
       return;
     }
     if (this.includedOnce.has(resolved.path)) return;
     if (this.includeStack.includes(resolved.path)) {
-      this.diagnostics.warning("K216", `"${name}" includes itself (through other files); ignored`, span);
+      this.diagnostics.warning("K216", tr("compiler.basic.K216", { file: name }), span);
       return;
     }
     if (once) {
@@ -475,7 +476,7 @@ class Preprocessor {
       }
       if (!macro.params || tokens[i + 1]?.text === "(") this.noteMacroUse(macro, t.span);
       if (macro.bodyProblems) {
-        for (const d of macro.bodyProblems.items) this.diagnostics.items.push({ ...d, message: `${d.message} (in macro ${macro.name})` });
+        for (const d of macro.bodyProblems.items) this.diagnostics.items.push({ ...d, message: tr("compiler.basic.inMacro", { message: d.message, macro: macro.name }) });
         macro.bodyProblems = undefined;
       }
       if (!macro.params) {
@@ -491,7 +492,7 @@ class Preprocessor {
       }
       const call = collectArguments(tokens, i + 1);
       if (!call) {
-        this.error("E217", `The call of macro ${macro.name} has no ')'`, t.span);
+        this.error("E217", tr("compiler.basic.E217", { macro: macro.name }), t.span);
         result.push(t);
         i++;
         continue;
@@ -499,7 +500,7 @@ class Preprocessor {
       const callSpan = { file: siteSpan(t).file, start: siteSpan(t).start, end: siteSpan(tokens[call.end]).end };
       const args = call.args.length === 1 && call.args[0].length === 0 && macro.params.length === 0 ? [] : call.args;
       if (args.length !== macro.params.length) {
-        this.error("E218", `Macro ${macro.name} takes ${macro.params.length} argument(s), not ${args.length}`, callSpan);
+        this.error("E218", tr("compiler.basic.E218", { macro: macro.name, count: macro.params.length, given: String(args.length) }), callSpan);
         i = call.end + 1;
         continue;
       }
@@ -697,6 +698,9 @@ function joinPath(dir: string, name: string): string {
  * values (non-numeric text counts as 0); a bare name is true when it expands to a non-zero integer,
  * or, failing that, when it is defined.
  */
+/** A malformed `#if` expression; its message is the whole E213 text. */
+class ConditionError extends Error {}
+
 class ConditionEvaluator {
   private readonly tokens: string[];
   private i = 0;
@@ -713,12 +717,12 @@ class ConditionEvaluator {
       this.tokens.push(m[1]);
       at = re.lastIndex;
     }
-    if (text.slice(at).trim() !== "") throw new Error(`unexpected '${text.slice(at).trim()}'`);
+    if (text.slice(at).trim() !== "") throw new ConditionError(tr("compiler.basic.E213.unexpected", { text: text.slice(at).trim() }));
   }
 
   evaluate(): boolean {
     const v = this.or();
-    if (this.i < this.tokens.length) throw new Error(`unexpected '${this.tokens[this.i]}'`);
+    if (this.i < this.tokens.length) throw new ConditionError(tr("compiler.basic.E213.unexpected", { text: this.tokens[this.i] }));
     return truth(v);
   }
 
@@ -746,7 +750,7 @@ class ConditionEvaluator {
     let v = this.unary();
     for (;;) {
       const op = this.tokens[this.i];
-      if (op === "=") throw new Error("'=' does not compare here: use '==' (ZX BASIC)");
+      if (op === "=") throw new ConditionError(tr("compiler.basic.E213.assignment"));
       if (!["==", "!=", "<>", "<", "<=", ">", ">="].includes(op)) return v;
       this.i++;
       const r = this.unary();
@@ -762,11 +766,11 @@ class ConditionEvaluator {
 
   private unary(): Value {
     const t = this.tokens[this.i++];
-    if (t === undefined) throw new Error("the expression ends too early");
+    if (t === undefined) throw new ConditionError(tr("compiler.basic.E213.endsEarly"));
     if (t === "!") return bool(!truth(this.unary()));
     if (t === "(") {
       const v = this.or();
-      if (this.tokens[this.i++] !== ")") throw new Error("missing ')'");
+      if (this.tokens[this.i++] !== ")") throw new ConditionError(tr("compiler.basic.E213.missingParen"));
       return v;
     }
     if (t.startsWith('"')) return { text: t.slice(1, -1), defined: true };

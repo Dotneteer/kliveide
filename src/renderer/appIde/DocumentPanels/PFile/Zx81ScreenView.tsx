@@ -1,3 +1,4 @@
+import { useT } from "@common/i18n/useT";
 import { useCallback, useEffect, useState } from "react";
 import { useMainApi } from "@renderer/core/MainApi";
 import { EmptyState } from "@renderer/controls/data";
@@ -58,6 +59,7 @@ type Props = {
 };
 
 export const Zx81ScreenView = ({ rows, zoomFactor = 1 }: Props) => {
+  const t = useT();
   const font = useZx81Font();
   // --- `ScreenCanvas` redraws when its data or callback changes: both follow the rows and the font
   const createPixelData = useCallback(
@@ -67,7 +69,7 @@ export const Zx81ScreenView = ({ rows, zoomFactor = 1 }: Props) => {
     [rows, font]
   );
   if (font === undefined) {
-    return <EmptyState motif={false} message="Reading the ZX81 character set..." />;
+    return <EmptyState motif={false} message={t("panels.pfile.readingFont")} />;
   }
   if (font === null) {
     // --- No ROM to draw with: the characters as text still show what is on the screen

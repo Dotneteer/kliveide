@@ -8,6 +8,8 @@ import { SourceFile } from "@main/kbasic/syntax/source";
 
 import { decodeValue, formatFloat, memoryFor, spectrumText, typeName, type MemoryView } from "./value-decoder";
 import { arrayLayout, elementAddress, frameIx, variableAddress } from "./variables-model";
+// --- `t` is a local name in this file (an address-of target): the translator is `translate`
+import { t as translate } from "@common/i18n/i18n";
 
 /**
  * BASIC watch expressions (plan §10.8): a watch is parsed by the compiler's own expression parser
@@ -36,7 +38,7 @@ export function parseWatch(text: string): { expression: Expression } | { error: 
   const file = new SourceFile(0, "watch", text);
   const { tokens } = lex(file, diagnostics);
   const expression = diagnostics.hasErrors ? undefined : parseExpression(tokens, diagnostics);
-  if (!expression) return { error: diagnostics.items.find((d) => d.severity === "error")?.message ?? "Invalid expression" };
+  if (!expression) return { error: diagnostics.items.find((d) => d.severity === "error")?.message ?? translate("panels.side.watchExpr.invalidExpression") };
   return { expression };
 }
 
@@ -80,12 +82,12 @@ export function resolveVariable(ctx: WatchContext, name: string): VariableDebugI
 
 /** A variable, its address, and the memory it is read through (its bank's pages for bank-local data). */
 function variableOf(ctx: WatchContext, name: string): { v: VariableDebugInfo; address?: number; mem: MemoryView } {
-  const v = resolveVariable(ctx, name) ?? fail(`Unknown variable '${name}'`);
+  const v = resolveVariable(ctx, name) ?? fail(translate("panels.side.watchExpr.unknownVariable", { name }));
   const mem = memoryFor(ctx.mem, v);
   if (v.location.at === "constant") return { v, mem };
   const ix = v.scope === "global" ? undefined : frameIx(ctx.chain, ctx.frame);
   const address = variableAddress(v, mem, ix);
-  if (address === undefined) fail(`'${name}' cannot be read here: the routine's frame is not set up`);
+  if (address === undefined) fail(translate("panels.side.watchExpr.frameNotSetUp", { name }));
   return { v, address, mem };
 }
 
@@ -96,23 +98,23 @@ function valueAt(mem: MemoryView, type: SourceValueType, address: number): Watch
 
 function num(ctx: WatchContext, e: Expression): number {
   const v = evaluate(e, ctx);
-  if (v.kind !== "number") fail("A number is expected here");
+  if (v.kind !== "number") fail(translate("panels.side.watchExpr.numberExpected"));
   return (v as { value: number }).value;
 }
 
 function elementOf(ctx: WatchContext, name: string, args: Expression[]): { address: number; type: SourceValueType; mem: MemoryView } {
   const { v, address, mem } = variableOf(ctx, name);
-  if (!v.array) fail(`'${name}' is not an array`);
+  if (!v.array) fail(translate("panels.side.watchExpr.notArray", { name }));
   const layout = arrayLayout(v, mem, address!);
-  if (args.length !== layout.dimensions.length) fail(`'${name}' has ${layout.dimensions.length} dimension(s)`);
-  if (!layout.data) fail(`'${name}' is not allocated`);
+  if (args.length !== layout.dimensions.length) fail(translate("panels.side.watchExpr.dimensions", { name, count: layout.dimensions.length }));
+  if (!layout.data) fail(translate("panels.side.watchExpr.notAllocated", { name }));
   const at = elementAddress(layout, args.map((a) => Math.trunc(num(ctx, a))));
-  if (at === undefined) fail("Subscript out of range");
+  if (at === undefined) fail(translate("panels.side.watchExpr.subscriptOutOfRange"));
   return { address: at!, type: layout.elementType, mem };
 }
 
 function callArgs(e: Extract<Expression, { kind: "call" }>): Expression[] {
-  return e.args.map((a) => (a.kind === "arg" ? a.value : fail("Slices and named arguments are not supported in watches")));
+  return e.args.map((a) => (a.kind === "arg" ? a.value : fail(translate("panels.side.watchExpr.slices"))));
 }
 
 const truth = (b: boolean): WatchValue => ({ kind: "number", value: b ? 1 : 0 });
@@ -131,11 +133,11 @@ function evaluate(e: Expression, ctx: WatchContext): WatchValue {
         const c = v.location.value;
         return typeof c === "string" ? { kind: "string", value: c } : { kind: "number", value: c, type: v.type };
       }
-      if (v.array) fail(`'${e.name}' is an array: give its subscripts`);
+      if (v.array) fail(translate("panels.side.watchExpr.isArray", { name: e.name }));
       return valueAt(mem, v.type, address!);
     }
     case "call": {
-      if (e.callee.kind !== "name") return fail("Only array elements can be subscripted");
+      if (e.callee.kind !== "name") return fail(translate("panels.side.watchExpr.onlyArrays"));
       const element = elementOf(ctx, e.callee.name, callArgs(e));
       return valueAt(element.mem, element.type, element.address);
     }
@@ -143,10 +145,10 @@ function evaluate(e: Expression, ctx: WatchContext): WatchValue {
       const t = e.target;
       if (t.kind === "name") {
         const { address } = variableOf(ctx, t.name);
-        if (address === undefined) fail(`'${t.name}' has no address`);
+        if (address === undefined) fail(translate("panels.side.watchExpr.noAddress", { name: t.name }));
         return { kind: "number", value: address!, type: "uinteger" };
       }
-      if (t.callee.kind !== "name") return fail("Invalid address-of target");
+      if (t.callee.kind !== "name") return fail(translate("panels.side.watchExpr.invalidAddressOf"));
       return { kind: "number", value: elementOf(ctx, t.callee.name, callArgs(t)).address, type: "uinteger" };
     }
     case "unary": {
@@ -161,7 +163,7 @@ function evaluate(e: Expression, ctx: WatchContext): WatchValue {
     case "builtin":
       return builtin(e, ctx);
     default:
-      return fail("This expression is not supported in watches");
+      return fail(translate("panels.side.watchExpr.unsupportedExpression"));
   }
 }
 
@@ -169,7 +171,7 @@ function binary(e: Extract<Expression, { kind: "binary" }>, ctx: WatchContext): 
   const l = evaluate(e.left, ctx);
   const r = evaluate(e.right, ctx);
   if (l.kind === "string" || r.kind === "string") {
-    if (l.kind !== r.kind) fail("A String cannot be combined with a number");
+    if (l.kind !== r.kind) fail(translate("panels.side.watchExpr.stringAndNumber"));
     const a = l.value as string;
     const b = r.value as string;
     switch (e.op) {
@@ -188,7 +190,7 @@ function binary(e: Extract<Expression, { kind: "binary" }>, ctx: WatchContext): 
       case ">=":
         return truth(a >= b);
       default:
-        return fail(`'${e.op}' does not apply to Strings`);
+        return fail(translate("panels.side.watchExpr.operatorOnStrings", { op: e.op }));
     }
   }
   const a = l.value;
@@ -202,11 +204,11 @@ function binary(e: Extract<Expression, { kind: "binary" }>, ctx: WatchContext): 
     case "*":
       return n(a * b);
     case "/":
-      return b === 0 ? fail("Division by zero") : n(a / b);
+      return b === 0 ? fail(translate("panels.side.watchExpr.divisionByZero")) : n(a / b);
     case "^":
       return n(a ** b);
     case "MOD":
-      return b === 0 ? fail("Division by zero") : n(a % b);
+      return b === 0 ? fail(translate("panels.side.watchExpr.divisionByZero")) : n(a % b);
     case "=":
       return truth(a === b);
     case "<>":
@@ -251,7 +253,7 @@ const PEEK_TYPES: Record<string, SourceValueType> = {
 };
 
 function builtin(e: Extract<Expression, { kind: "builtin" }>, ctx: WatchContext): WatchValue {
-  const arg = (i = 0) => e.args[i] ?? fail(`${e.name} needs an argument`);
+  const arg = (i = 0) => e.args[i] ?? fail(translate("panels.side.watchExpr.needsArgument", { name: e.name }));
   switch (e.name) {
     case "PEEK": {
       const type = e.type ? PEEK_TYPES[e.type.name] : "ubyte";
@@ -259,11 +261,11 @@ function builtin(e: Extract<Expression, { kind: "builtin" }>, ctx: WatchContext)
     }
     case "LEN": {
       const v = evaluate(arg(), ctx);
-      return v.kind === "string" ? { kind: "number", value: v.value.length } : fail("LEN needs a String");
+      return v.kind === "string" ? { kind: "number", value: v.value.length } : fail(translate("panels.side.watchExpr.needsString", { name: "LEN" }));
     }
     case "CODE": {
       const v = evaluate(arg(), ctx);
-      return v.kind === "string" ? { kind: "number", value: v.value.length ? v.value.charCodeAt(0) : 0 } : fail("CODE needs a String");
+      return v.kind === "string" ? { kind: "number", value: v.value.length ? v.value.charCodeAt(0) : 0 } : fail(translate("panels.side.watchExpr.needsString", { name: "CODE" }));
     }
     case "CHR":
       return { kind: "string", value: e.args.map((a) => String.fromCharCode(num(ctx, a) & 0xff)).join("") };
@@ -274,6 +276,6 @@ function builtin(e: Extract<Expression, { kind: "builtin" }>, ctx: WatchContext)
     case "INT":
       return { kind: "number", value: Math.floor(num(ctx, arg())) };
     default:
-      return fail(`${e.name} is not supported in watches`);
+      return fail(translate("panels.side.watchExpr.unsupportedFunction", { name: e.name }));
   }
 }

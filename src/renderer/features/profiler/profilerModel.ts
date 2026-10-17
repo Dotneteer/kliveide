@@ -20,6 +20,7 @@ import {
   type FlatRow
 } from "@common/profile/profileRollup";
 import { buildRoutineMap, routineSourceLabel, type RoutineMap } from "@common/profile/routineMap";
+import { t } from "@common/i18n/i18n";
 
 /*
  * The Profiler document's and the `profile` commands' model (`.plans/PROFILER_PLAN.md` D3-D5,
@@ -174,47 +175,45 @@ export function profileHeaderFacts(model: ProfilerModel): { text: string; title?
   const facts: { text: string; title?: string; warning?: boolean }[] = [];
   const state = status.enabled
     ? status.armedStart >= 0
-      ? `Armed: waiting for $${hex4(status.armedStart)}`
-      : "Profiling"
+      ? t("panels.feature.profiler.state.armed", { address: `$${hex4(status.armedStart)}` })
+      : t("panels.feature.profiler.state.profiling")
     : status.timeTotal
-      ? "Stopped"
-      : "Not started";
+      ? t("panels.feature.profiler.state.stopped")
+      : t("panels.feature.profiler.state.notStarted");
   facts.push({ text: state });
   if (model.flat.frames !== undefined) {
     facts.push({
-      text: `${model.flat.frames.toFixed(model.flat.frames < 10 ? 2 : 1)} frames`,
-      title: "Emulated frames in the window: the total time over one frame's length (D5)"
+      text: t("panels.feature.profiler.frames", { frames: model.flat.frames.toFixed(model.flat.frames < 10 ? 2 : 1) }),
+      title: t("panels.feature.profiler.framesTooltip")
     });
   }
-  facts.push({ text: `Total ${formatTime(status.timeTotal, status)}` });
+  facts.push({ text: t("panels.feature.profiler.total", { time: formatTime(status.timeTotal, status) }) });
   if (model.flat.waiting && status.timeTotal) {
     facts.push({
-      text: `Waiting ${formatPct((100 * model.flat.waiting) / status.timeTotal)}`,
-      title: "Time spent in HALT. With \"Hide waiting\" on, it is left out of the percentages."
+      text: t("panels.feature.profiler.waiting", { pct: formatPct((100 * model.flat.waiting) / status.timeTotal) }),
+      title: t("panels.feature.profiler.waitingTooltip")
     });
   }
   facts.push({ text: model.sourceLabel });
   if (status.stackResyncs) {
     facts.push({
-      text: `${n(status.stackResyncs)} stack switch${status.stackResyncs === 1 ? "" : "es"}`,
+      text: t("panels.feature.profiler.stackSwitches", { count: status.stackResyncs }),
       warning: true,
-      title:
-        "The stack pointer jumped (LD SP or a far RET), so the call stack was rebuilt from the root. " +
-        "Calls open across a switch are cut there: the call graph is approximate around them."
+      title: t("panels.feature.profiler.stackSwitchesTooltip")
     });
   }
   if (status.depthOverflows) {
     facts.push({
-      text: `${n(status.depthOverflows)} calls too deep`,
+      text: t("panels.feature.profiler.tooDeep", { count: status.depthOverflows }),
       warning: true,
-      title: "Calls nested deeper than 256 levels were not tracked: their time is their caller's."
+      title: t("panels.feature.profiler.tooDeepTooltip")
     });
   }
   if (status.edgesDropped) {
     facts.push({
-      text: `${n(status.edgesDropped)} calls in (other)`,
+      text: t("panels.feature.profiler.edgesDropped", { count: status.edgesDropped }),
       warning: true,
-      title: "The call graph's table was full: further caller/callee pairs were counted under (other)."
+      title: t("panels.feature.profiler.edgesDroppedTooltip")
     });
   }
   return facts;
@@ -227,16 +226,16 @@ export function profilerEmptyMessage(input: {
   model?: ProfilerModel;
 }): string | undefined {
   if (input.switchedOff) {
-    return "The profiler is part of advanced debugging, which is turned off.";
+    return t("panels.feature.profiler.empty.switchedOff");
   }
-  if (!input.supported) return "This machine does not keep a profile.";
+  if (!input.supported) return t("panels.feature.profiler.empty.unsupported");
   const status = input.model?.snapshot.status;
   if (!status || (!status.timeTotal && !status.instructions)) {
     return status?.enabled
       ? status.armedStart >= 0
-        ? `Waiting for the program to reach $${hex4(status.armedStart)}.`
-        : "Profiling: run the machine, then stop profiling to see where the time went."
-      : "No profile yet. Start one with Debug > Start Profiling or 'profile start'.";
+        ? t("panels.feature.profiler.empty.armed", { address: `$${hex4(status.armedStart)}` })
+        : t("panels.feature.profiler.empty.profiling")
+      : t("panels.feature.profiler.empty.noProfile");
   }
   return undefined;
 }

@@ -3,7 +3,7 @@ import { HistoryKind, type HistoryRecord, type HistoryRegisters } from "./histor
 import { historyRowCells, type HistoryRowCells, type HistoryRowInput } from "./historyRow";
 import { formatRegisterDiff, registerDiff } from "./registerDiff";
 import type { HistoryServiceSpan } from "./serviceSpans";
-import { t } from "@common/i18n/i18n";
+import { t, t as translate } from "@common/i18n/i18n";
 
 /*
  * The execution history as a text or CSV trace (`.plans/TRACE_EXPORT_PLAN.md`, G4.5). One pure
@@ -139,10 +139,10 @@ export function parseTraceColumns(text: string): readonly TraceColumn[] | string
   if (t === "viewer") return VIEWER_TRACE_COLUMNS;
   if (t === "all") return TRACE_COLUMNS;
   const ids = t.split(/[,\s]+/).filter((id) => id);
-  if (!ids.length) return "No columns given";
+  if (!ids.length) return translate("panels.doc.traceExport.noColumns");
   for (const id of ids) {
     if (!(TRACE_COLUMNS as readonly string[]).includes(id)) {
-      return `Unknown column '${id}'; use default, viewer, all, or some of ${TRACE_COLUMNS.join(",")}`;
+      return translate("panels.doc.traceExport.unknownColumn", { id, columns: TRACE_COLUMNS.join(",") });
     }
   }
   return TRACE_COLUMNS.filter((c) => ids.includes(c));

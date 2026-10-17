@@ -1,4 +1,5 @@
 import type { NextLayer2State } from "@common/messaging/EmuApi";
+import { t } from "@common/i18n/i18n";
 import {
   isOutsideRam,
   isPriorityEntry,
@@ -29,7 +30,9 @@ import type { Layer2Source } from "./layer2Reveal";
 
 /*
  * The Layer 2 Inspector's view model (`.plans/LAYER2_INSPECTOR_PLAN.md` §4.4-§4.5). Pure: the document
- * turns a snapshot into this once per version and renders from it.
+ * turns a snapshot into this once per version and renders from it. The text it returns is translated
+ * when the functions run, which is at render time; text meant to be pasted (`coordinatesText`, the
+ * `bp-set` commands) stays invariant.
  */
 
 export type Layer2Model = {
@@ -174,16 +177,18 @@ export const resolutionText = (size: Layer2Size) => `${size.width}×${size.heigh
 export function windowText(target: Layer2WriteTarget): string {
   const access =
     target.mappedForWrites && target.mappedForReads
-      ? "reads+writes"
+      ? t("panels.layer2.window.readsWrites")
       : target.mappedForWrites
-        ? "writes"
+        ? t("panels.layer2.window.writes")
         : target.mappedForReads
-          ? "reads"
+          ? t("panels.layer2.window.reads")
           : undefined;
-  if (!access) return "window off";
+  if (!access) return t("panels.layer2.window.off");
   const s = target.slices;
-  const banks = s.length === 1 ? `bank ${s[0].bank16}` : `banks ${s.map((x) => x.bank16).join(", ")}`;
-  return `${access} → ${banks} (${z80Range(s[0].z80Start, s[s.length - 1].z80End)})`;
+  const range = z80Range(s[0].z80Start, s[s.length - 1].z80End);
+  return s.length === 1
+    ? t("panels.layer2.window.bank", { access, bank: s[0].bank16, range })
+    : t("panels.layer2.window.banks", { access, banks: s.map((x) => x.bank16).join(", "), range });
 }
 
 // --- The globals strip (§4.4)
@@ -203,49 +208,71 @@ export function globalsStrip(model: Layer2Model, diagnostics: Layer2Diagnostic[]
   const r = state.regs;
   const banks = (base: number) => {
     const b = setBanks(base, r.resolution);
-    return `${base} (banks ${b[0]}-${b[b.length - 1]})`;
+    return t("panels.layer2.global.banks", { bank: base, first: b[0], last: b[b.length - 1] });
   };
   const clip = effectiveClip(r);
   const items: GlobalItem[] = [
     ...diagnostics.map((d) => ({ key: d.id, value: d.chip, title: d.sentence, flag: d.level })),
-    { key: "Layer 2", value: r.enabled ? "on" : "off", primary: true, title: "$123B bit 1 / $69 bit 7" },
-    { key: "Mode", value: resolutionText(size), primary: true, title: `$70 bits 5-4 = ${r.resolution}` },
-    { key: "$12", value: banks(r.activeBank), primary: true, title: "The displayed layer's first 16K bank" },
-    { key: "$13", value: banks(r.shadowBank), primary: true, title: "The shadow layer's first 16K bank" },
+    // --- "Layer 2" and "Copper" are the hardware's names and stay as they are
+    {
+      key: "Layer 2",
+      value: r.enabled ? t("panels.graphics.inspector.on") : t("panels.graphics.inspector.off"),
+      primary: true,
+      title: "$123B bit 1 / $69 bit 7"
+    },
+    { key: t("panels.layer2.global.mode"), value: resolutionText(size), primary: true, title: `$70 bits 5-4 = ${r.resolution}` },
+    { key: "$12", value: banks(r.activeBank), primary: true, title: t("panels.layer2.global.displayedTitle") },
+    { key: "$13", value: banks(r.shadowBank), primary: true, title: t("panels.layer2.global.shadowTitle") },
     {
       key: "$123B",
       value: `${hex(r.port123B, 2)}: ${windowText(target)}`,
       primary: true,
       title: [
-        "Port $123B as a read returns it",
-        `Bits 7-6: segment ${target.segment}${target.segment === 3 ? " (48K at $0000-$BFFF)" : " (16K at $0000-$3FFF)"}`,
-        `Bit 3: ${target.useShadow ? "maps the shadow layer ($13)" : "maps the displayed layer ($12)"}`,
-        `Bit 2: reads ${target.mappedForReads ? "mapped" : "not mapped"}; bit 0: writes ${target.mappedForWrites ? "mapped" : "not mapped"}`
+        t("panels.layer2.global.portTitle"),
+        target.segment === 3
+          ? t("panels.layer2.global.segment48", { segment: target.segment })
+          : t("panels.layer2.global.segment16", { segment: target.segment }),
+        target.useShadow ? t("panels.layer2.global.mapsShadow") : t("panels.layer2.global.mapsDisplayed"),
+        t("panels.layer2.global.readsWrites", {
+          reads: target.mappedForReads ? t("panels.layer2.global.mapped") : t("panels.graphics.inspector.notMapped"),
+          writes: target.mappedForWrites ? t("panels.layer2.global.mapped") : t("panels.graphics.inspector.notMapped")
+        })
       ].join("\n")
     },
-    { key: "Offset", value: `+${target.bankOffset}`, title: "The bank offset ($123B writes with bit 4 set)" },
-    { key: "Scroll", value: `${r.scrollX},${r.scrollY}`, title: "$16 with $71 bit 0 (X, 9 bits) and $17 (Y)" },
+    { key: t("panels.layer2.global.offset"), value: `+${target.bankOffset}`, title: t("panels.layer2.global.offsetTitle") },
     {
-      key: "Clip",
+      key: t("panels.graphics.inspector.globalScroll"),
+      value: `${r.scrollX},${r.scrollY}`,
+      title: t("panels.layer2.global.scrollTitle")
+    },
+    {
+      key: t("panels.graphics.inspector.globalClip"),
       value: r.clip.join(","),
-      title: `$18: x1, x2, y1, y2 (next write sets ${["x1", "x2", "y1", "y2"][r.clipIndex & 3]})\nIn layer pixels: x ${clip.x1}-${clip.x2}, y ${clip.y1}-${clip.y2}`
+      title: t("panels.graphics.inspector.clipTitle", {
+        reg: "18",
+        next: ["x1", "x2", "y1", "y2"][r.clipIndex & 3],
+        x1: clip.x1,
+        x2: clip.x2,
+        y1: clip.y1,
+        y2: clip.y2
+      })
     },
     {
       key: "$14",
       value: hex(r.globalTransparency, 2),
-      title: "A pixel is transparent when its palette entry's RGB (bits 8-1) equals $14 - the colour, not the index"
+      title: t("panels.layer2.global.transparencyTitle")
     },
     {
-      key: "Palette",
-      value: `${r.secondPalette ? "2" : "1"}, offset ${r.paletteOffset}`,
-      title: "$43 bit 2 picks the Layer 2 palette; $70 bits 3-0 are the palette offset"
+      key: t("panels.graphics.inspector.globalPalette"),
+      value: t("panels.layer2.global.paletteValue", { bank: r.secondPalette ? 2 : 1, offset: r.paletteOffset }),
+      title: t("panels.layer2.global.paletteTitle")
     }
   ];
   if (state.copperRunning) {
     items.push({
       key: "Copper",
-      value: "running",
-      title: "The Copper may change these registers per line; the values shown are the ones at the stop"
+      value: t("panels.graphics.inspector.copperGlobalValue"),
+      title: t("panels.graphics.inspector.copperGlobalTitle")
     });
   }
   return items;
@@ -286,7 +313,8 @@ export function bankChips(model: Layer2Model): BankChip[] {
   });
 }
 
-export const bankChipLabel = (c: BankChip) => `bank ${c.bank16} · pages ${c.pages[0]}–${c.pages[1]}`;
+export const bankChipLabel = (c: BankChip) =>
+  t("panels.layer2.pane.bankChip", { bank: c.bank16, first: c.pages[0], last: c.pages[1] });
 
 /** The bank's pixels cut out of a whole-layer image, for its thumbnail. */
 export function bankThumbnail(model: Layer2Model, whole: Int16Array, chip: BankChip): { pixels: Int16Array; width: number; height: number } {
@@ -419,72 +447,111 @@ export function pixelInfo(
   };
 }
 
-export type InspectorField = { name: string; value: string; title?: string; muted?: boolean; warn?: boolean };
+export type InspectorField = {
+  /** A stable identity: React keys and tests use it, never the (translated) name */
+  id: string;
+  name: string;
+  value: string;
+  title?: string;
+  muted?: boolean;
+  warn?: boolean;
+};
 
 /** RGB333 of a 9-bit entry as `R G B`. */
 const rgbText = (entry: number) => `${(entry >> 6) & 7} ${(entry >> 3) & 7} ${entry & 7}`;
 
 export function pixelFields(model: Layer2Model, p: Layer2PixelInfo): InspectorField[] {
   const r = model.state.regs;
+  const notMapped = t("panels.graphics.inspector.notMapped");
   const fields: InspectorField[] = [
-    { name: "Layer", value: `(${p.layer.x}, ${p.layer.y})`, title: "The pixel in the unscrolled layer" }
+    {
+      id: "layer",
+      name: t("panels.layer2.field.layer"),
+      value: `(${p.layer.x}, ${p.layer.y})`,
+      title: t("panels.layer2.field.layerTitle")
+    }
   ];
   if (p.view.x !== p.layer.x || p.view.y !== p.layer.y) {
-    fields.push({ name: "Display", value: `(${p.view.x}, ${p.view.y})${p.clipped ? " clipped" : ""}`, muted: p.clipped });
+    fields.push({
+      id: "display",
+      name: t("panels.layer2.field.display"),
+      value: p.clipped ? t("panels.layer2.field.clipped", { x: p.view.x, y: p.view.y }) : `(${p.view.x}, ${p.view.y})`,
+      muted: p.clipped
+    });
   }
   if (!model.size.wide) {
     fields.push({
-      name: "Screen",
+      id: "screen",
+      name: t("panels.layer2.field.screen"),
       value: `(${p.layer.x + 32}, ${p.layer.y + 32})`,
-      title: "In the 320×256 layer space, where the paper starts at (32, 32)"
+      title: t("panels.layer2.field.screenTitle")
     });
   }
   fields.push(
     model.size.nibbles
       ? {
-          name: "Stored",
-          value: `${hex(p.stored, 1)} (${p.address.nibble} nibble of ${hex(p.byte, 2)})`,
-          title: "640×256: two 4-bit pixels per byte, the high nibble on the left"
+          id: "stored",
+          name: t("panels.layer2.field.stored"),
+          value: t("panels.layer2.field.storedNibble", {
+            value: hex(p.stored, 1),
+            nibble: p.address.nibble,
+            byte: hex(p.byte, 2)
+          }),
+          title: t("panels.layer2.field.storedNibbleTitle")
         }
-      : { name: "Stored", value: hex(p.stored, 2) },
+      : { id: "stored", name: t("panels.layer2.field.stored"), value: hex(p.stored, 2) },
     {
-      name: "Index",
+      id: "index",
+      name: t("panels.layer2.field.index"),
       value: `${hex(p.index, 2)} (${p.index})`,
       title: model.size.nibbles
-        ? `The palette offset (${r.paletteOffset}) is the high nibble`
-        : `The palette offset (${r.paletteOffset}) is added to the high nibble`
+        ? t("panels.layer2.field.indexHighNibble", { offset: r.paletteOffset })
+        : t("panels.layer2.field.indexAdded", { offset: r.paletteOffset })
     }
   );
   if (p.entry !== undefined) {
     fields.push(
       {
-        name: "Colour",
-        value: `RGB ${rgbText(p.entry)}${p.priority ? " · priority" : ""}`,
-        title: p.priority ? "The entry's priority bit puts this pixel over sprites and the ULA in most $15 orders" : undefined
+        id: "colour",
+        name: t("panels.layer2.field.colour"),
+        value: p.priority
+          ? t("panels.layer2.field.colourPriority", { rgb: rgbText(p.entry) })
+          : `RGB ${rgbText(p.entry)}`,
+        title: p.priority ? t("panels.layer2.field.colourPriorityTitle") : undefined
       },
       {
-        name: "Transparent",
-        value: p.transparent ? `yes: RGB = $14 (${hex(r.globalTransparency, 2)})` : "no",
-        title: "Layer 2 compares the entry's RGB (bits 8-1) with $14, not the index (T6)",
+        id: "transparent",
+        name: t("panels.layer2.field.transparent"),
+        value: p.transparent
+          ? t("panels.layer2.field.transparentYes", { value: hex(r.globalTransparency, 2) })
+          : t("panels.graphics.inspector.no"),
+        title: t("panels.layer2.field.transparentTitle"),
         muted: !p.transparent
       }
     );
   }
   fields.push(
-    { name: "Bank", value: `${p.address.bank16}:${hex(p.address.offset, 4)}`, warn: p.address.outsideRam },
-    { name: "8K page", value: String(p.address.page8k) },
-    { name: "Physical", value: hex(p.address.physical, 6) },
     {
+      id: "bank",
+      name: t("panels.layer2.field.bank"),
+      value: `${p.address.bank16}:${hex(p.address.offset, 4)}`,
+      warn: p.address.outsideRam
+    },
+    { id: "page8k", name: t("panels.layer2.field.page"), value: String(p.address.page8k) },
+    { id: "physical", name: t("panels.graphics.inspector.physical"), value: hex(p.address.physical, 6) },
+    {
+      id: "z80Mmu",
       name: "Z80 (MMU)",
-      value: p.z80Mmu === undefined ? "not mapped" : hex(p.z80Mmu, 4),
+      value: p.z80Mmu === undefined ? notMapped : hex(p.z80Mmu, 4),
       muted: p.z80Mmu === undefined,
-      title: "Where the byte's 8K page is mapped now through the MMU"
+      title: t("panels.layer2.field.mmuTitle")
     },
     {
+      id: "z80Window",
       name: "Z80 ($123B)",
-      value: p.z80Window === undefined ? "not mapped" : hex(p.z80Window, 4),
+      value: p.z80Window === undefined ? notMapped : hex(p.z80Window, 4),
       muted: p.z80Window === undefined,
-      title: "Where the $123B window maps the byte now"
+      title: t("panels.layer2.field.windowTitle")
     }
   );
   return fields;
@@ -494,13 +561,13 @@ export function pixelFields(model: Layer2Model, p: Layer2PixelInfo): InspectorFi
 export function pixelReasons(model: Layer2Model, p: Layer2PixelInfo): string[] {
   const r = model.state.regs;
   const out: string[] = [];
-  if (p.address.outsideRam) out.push("Its bank is past the 2 MB SRAM: the display has no pixel here.");
-  if (!r.enabled) out.push("Layer 2 is off ($123B bit 1, $69 bit 7).");
+  if (p.address.outsideRam) out.push(t("panels.layer2.reason.outside"));
+  if (!r.enabled) out.push(t("panels.layer2.reason.off"));
   if (model.source !== "displayed" && !setBanks(r.activeBank, r.resolution).includes(p.address.bank16)) {
-    out.push("This byte is not in the displayed layer ($12).");
+    out.push(t("panels.layer2.reason.notDisplayed"));
   }
-  if (p.clipped) out.push("Outside the $18 clip window.");
-  if (p.transparent) out.push("Its palette colour equals $14, so it is transparent.");
+  if (p.clipped) out.push(t("panels.layer2.reason.clipped"));
+  if (p.transparent) out.push(t("panels.layer2.reason.transparent"));
   return out;
 }
 
@@ -518,7 +585,7 @@ export function memoryLocation(p: Layer2PixelInfo): Layer2MemoryLocation | undef
   if (p.z80Mmu !== undefined) return { kind: "z80", address: p.z80Mmu, text: hex(p.z80Mmu, 4) };
   const offset = p.address.offset & 0x1fff;
   const page = p.address.page8k.toString(16).toUpperCase().padStart(2, "0");
-  return { kind: "page", page8k: p.address.page8k, offset, text: `page ${page}:${hex(offset, 4)}` };
+  return { kind: "page", page8k: p.address.page8k, offset, text: t("panels.layer2.page", { page, offset: hex(offset, 4) }) };
 }
 
 /**

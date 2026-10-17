@@ -114,7 +114,7 @@ describe("TapeViewerPanel", () => {
     await renderViewer(FLOAT_SPY);
     const summary = await screen.findByLabelText("Tape summary");
     expect(within(summary).getByText("TAP")).toBeInTheDocument();
-    expect(within(summary).getByText("2 (1 basic program, 1 code)")).toBeInTheDocument();
+    expect(within(summary).getByText("2 (1 BASIC program, 1 code)")).toBeInTheDocument();
   });
 
   it("lists every block, grouped by file, numbered #n", async () => {

@@ -18,6 +18,7 @@
  * restores need the machine idle, which it is between frames.
  */
 
+import { t } from "@common/i18n/i18n";
 import { writeSpectrumSnapshot } from "@common/spectrum/snapshot/writeSpectrumSnapshot";
 import { parseSpectrumSnapshot } from "@common/spectrum/snapshot/parseSpectrumSnapshot";
 import type { SzxCreator } from "@common/spectrum/snapshot/szxWriter";
@@ -25,7 +26,7 @@ import { finaliseRzxFile } from "@common/spectrum/rzx/rzxFinalise";
 import { writeRzxFile } from "@common/spectrum/rzx/rzxWriter";
 import { RZX_VERSION_MAJOR, RZX_VERSION_MINOR, type RzxBlock, type RzxCreator, type RzxFile, type RzxFrame } from "@common/spectrum/rzx/rzxModel";
 import { RZX_MODE_OFF, RZX_MODE_RECORD } from "./rzxCoreBridge";
-import type { IRzxMachine, IRzxSession, RzxInstructionResult, RzxStop } from "./rzxSession";
+import type { IRzxMachine, IRzxSession, RzxInstructionResult, RzxInterruptReason, RzxStop } from "./rzxSession";
 
 /** Frames between autosaves: 5 seconds */
 export const RZX_AUTOSAVE_FRAMES = 250;
@@ -125,9 +126,7 @@ export class RzxRecorder implements IRzxSession {
       this.finish({
         kind: "overflow",
         frame: this.recorded,
-        message:
-          `RZX recording stopped at frame ${this.recorded}: the program read more IN values in one frame ` +
-          `than the recorder can hold. Every complete frame is kept; save the recording now.`
+        message: t("media.rzx.recording.overflow", { frame: this.recorded })
       });
       return false;
     }
@@ -140,13 +139,17 @@ export class RzxRecorder implements IRzxSession {
     return true;
   }
 
-  interrupt(reason: string): void {
+  interrupt(reason: RzxInterruptReason, register?: string): void {
     if (!this.active) return;
     this.drain();
     this.finish({
       kind: "interrupted",
       frame: this.recorded,
-      message: `RZX recording stopped at frame ${this.recorded}: ${reason}. Every complete frame is kept; save the recording now.`
+      message: t("media.rzx.recording.interrupted", {
+        frame: this.recorded,
+        reason,
+        register: register?.toUpperCase() ?? ""
+      })
     });
   }
 
@@ -154,7 +157,7 @@ export class RzxRecorder implements IRzxSession {
   end(): void {
     if (!this.active) return;
     this.drain();
-    this.finish({ kind: "ended", frame: this.recorded, message: `RZX recording stopped after ${this.recorded} frames` });
+    this.finish({ kind: "ended", frame: this.recorded, message: t("media.rzx.recording.ended", { frames: this.recorded }) });
   }
 
   takeStop(): RzxStop | undefined {
@@ -178,9 +181,9 @@ export class RzxRecorder implements IRzxSession {
    * @returns The frame the recording stands at
    */
   rollback(back = 1): number {
-    if (!this.active) throw new Error("The recording has stopped");
+    if (!this.active) throw new Error(t("media.rzx.recording.notActive"));
     if (back < 1 || back > this.segments.length) {
-      throw new Error(`There are ${this.segments.length} rollback points; cannot go back ${back}`);
+      throw new Error(t("media.rzx.recording.rollbackRange", { points: this.segments.length, back }));
     }
     const index = this.segments.length - back;
     const segment = this.segments[index];

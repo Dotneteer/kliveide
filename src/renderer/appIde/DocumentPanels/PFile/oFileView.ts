@@ -1,3 +1,4 @@
+import { t } from "@common/i18n/i18n";
 import { Zx80Chars } from "@common/machines/char-codes";
 import { ZX80_FILE_EXTENSIONS } from "@emu/machines/zx8081/ZxPFile";
 import { decodeZx8081Program } from "../zx8081BasicListing";
@@ -57,11 +58,11 @@ export function analyzeOFile(bytes: Uint8Array): { analysis?: PFileAnalysis; err
   const sysVarsLength = ZX80_PROGRAM_START - O_FILE_START;
   if (bytes.length < sysVarsLength) {
     return {
-      error: `A ZX80 program file starts with ${sysVarsLength} bytes of system variables; this file has ${bytes.length.toLocaleString("en-US")}.`
+      error: t("panels.pfile.error.tooShort", { machine: "ZX80", sysVars: sysVarsLength, count: bytes.length })
     };
   }
   if (O_FILE_START + bytes.length > 0x10000) {
-    return { error: "This file is larger than the ZX80's memory." };
+    return { error: t("panels.pfile.error.tooLarge", { machine: "ZX80" }) };
   }
   const memory = new Uint8Array(0x10000);
   memory.set(bytes, O_FILE_START);

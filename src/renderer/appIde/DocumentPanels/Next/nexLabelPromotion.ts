@@ -1,3 +1,4 @@
+import { t } from "@common/i18n/i18n";
 import type { BankAnnotation, ProgramAnnotations } from "@renderer/appIde/annotations/programAnnotations";
 
 import {
@@ -61,32 +62,35 @@ export function promoteLabelAt(
   name: string
 ): NexLabelPromotion {
   if (!annotations) {
-    return { ok: false, error: "This NEX file has no annotations to add a label to." };
+    return { ok: false, error: t("panels.next.promote.noAnnotations") };
   }
 
   const trimmed = name.trim();
   if (!isValidLabelName(trimmed)) {
     return {
       ok: false,
-      error: `Use an identifier name of up to ${ANNOTATION_LABEL_MAX_LENGTH} characters.`
+      error: t("panels.next.promote.invalidName", { max: ANNOTATION_LABEL_MAX_LENGTH })
     };
   }
   if (!Number.isInteger(target.bank) || target.bank < 0 || target.bank > NEX_MAX_BANK) {
-    return { ok: false, error: "That address is not in one of this file's banks." };
+    return { ok: false, error: t("panels.next.promote.notInBank") };
   }
   if (
     !Number.isInteger(target.bankOffset) ||
     target.bankOffset < 0 ||
     target.bankOffset > ANNOTATION_BANK_LAST_OFFSET
   ) {
-    return { ok: false, error: "Local label values must be in $0000..$3FFF." };
+    return { ok: false, error: t("panels.next.label.error.localRange") };
   }
 
   const existing = getBankAnnotation(annotations, target.bank);
   if (existing?.localLabels?.some((label) => label.name === trimmed)) {
     return {
       ok: false,
-      error: `Bank $${target.bank.toString(16).toUpperCase().padStart(2, "0")} already has a label named ${trimmed}.`
+      error: t("panels.next.promote.duplicate", {
+        bank: target.bank.toString(16).toUpperCase().padStart(2, "0"),
+        name: trimmed
+      })
     };
   }
 
@@ -118,7 +122,7 @@ export function promoteLabelAt(
     value: target.bankOffset
   });
   if (!updated) {
-    return { ok: false, error: "The label could not be added to this bank." };
+    return { ok: false, error: t("panels.next.promote.failed") };
   }
 
   // --- Reported, not refused: a second name for an address the user already named.

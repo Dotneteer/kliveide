@@ -8,16 +8,19 @@ import {
   IdeCommandBase
 } from "../services/ide-commands";
 import { saveAllBeforeQuit } from "../MainToIdeProcessor";
+import { t } from "@common/i18n/i18n";
 
 export class CloseFolderCommand extends IdeCommandBase {
   readonly id = "close";
-  readonly description = "Closes the open IDE folder";
+  get description() {
+    return t("commands.close.description");
+  }
   readonly usage = "close";
 
   async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
     const projectPath = context.store.getState()?.project?.folderPath;
     if (!projectPath) {
-      return commandError("No folder is open in the IDE.");
+      return commandError(t("commands.close.noFolder"));
     }
     await saveAllBeforeQuit(context.store, context.service.projectService, {
       checkDocumentDisposal: false
@@ -28,11 +31,11 @@ export class CloseFolderCommand extends IdeCommandBase {
         .map((hub) => hub.closeAllDocuments())
     );
     if (closed.some((result) => result === false)) {
-      return commandError("Folder close cancelled.");
+      return commandError(t("commands.close.cancelled"));
     }
     context.store.dispatch(closeFolderAction(), context.messageSource);
     context.emuApi.eraseAllBreakpoints();
-    writeSuccessMessage(context.output, `Folder ${projectPath} closed.`);
+    writeSuccessMessage(context.output, t("commands.close.closed", { path: projectPath }));
     return commandSuccess;
   }
 }

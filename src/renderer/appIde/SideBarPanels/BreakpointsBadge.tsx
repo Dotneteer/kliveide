@@ -3,6 +3,7 @@ import { useSelector } from "@renderer/core/RendererProvider";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { SideBarBadge } from "../SideBar/SideBarBadge";
 import type { SideBarPanelBadgeProps } from "@renderer/abstractions/SideBarPanelInfo";
+import { useT } from "@common/i18n/useT";
 
 /**
  * How many breakpoints are set, shown on the Breakpoints panel's header.
@@ -24,6 +25,7 @@ import type { SideBarPanelBadgeProps } from "@renderer/abstractions/SideBarPanel
  * an IPC round trip per tick, per open sidebar, forever.
  */
 export const BreakpointsBadge = ({}: SideBarPanelBadgeProps) => {
+  const t = useT();
   const emuApi = useEmuApi();
   const bpsVersion = useSelector((s) => s.emulatorState?.breakpointsVersion);
   // --- A machine change swaps the whole breakpoint set without necessarily bumping the version.
@@ -57,8 +59,8 @@ export const BreakpointsBadge = ({}: SideBarPanelBadgeProps) => {
       count={counts.total}
       title={
         counts.disabled
-          ? `${counts.total} breakpoints, ${counts.disabled} disabled`
-          : `${counts.total} breakpoint${counts.total === 1 ? "" : "s"}`
+          ? t("panels.side.badge.breakpointsDisabled", { count: counts.total, disabled: counts.disabled })
+          : t("panels.side.badge.breakpoints", { count: counts.total })
       }
     />
   );

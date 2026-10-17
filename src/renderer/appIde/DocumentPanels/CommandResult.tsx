@@ -10,6 +10,7 @@ import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
 import { ConsoleOutput } from "./helpers/ConsoleOutput";
 import { DataPanel, EmptyState, PanelHeader } from "@renderer/controls/data";
+import { useT } from "@common/i18n/useT";
 
 type CommandResultViewState = {
   topPosition?: number;
@@ -17,6 +18,7 @@ type CommandResultViewState = {
 
 const CommandResultPanel = ({ document, contents }: DocumentProps) => {
   // --- Get the services used in this component
+  const t = useT();
   const dispatch = useDispatch();
   const documentHubService = useDocumentHubService();
 
@@ -50,7 +52,7 @@ const CommandResultPanel = ({ document, contents }: DocumentProps) => {
     return (
       <DataPanel xclass={styles.panel}>
         <PanelHeader>{title && <Label text={title} />}</PanelHeader>
-        <EmptyState tone="error" motif={false} message="This command produced no output buffer." />
+        <EmptyState tone="error" motif={false} message={t("panels.doc.commandResult.noBuffer")} />
       </DataPanel>
     );
   }
@@ -60,14 +62,14 @@ const CommandResultPanel = ({ document, contents }: DocumentProps) => {
       <PanelHeader>
         <SmallIconButton
           iconName='copy'
-          title={"Copy to clipboard"}
+          title={t("panels.doc.common.copyToClipboard")}
           clicked={async () => {
             // --- No `replaceAll("\xa0", " ")` any more: the buffer stores real spaces, so this
             // --- panel no longer has to undo a substitution the other two copy buttons never did.
             navigator.clipboard.writeText(buffer.getBufferText());
             dispatch(
               setIdeStatusMessageAction(
-                "Command output text copied to the clipboard",
+                t("panels.doc.commandResult.copied"),
                 true
               )
             );

@@ -23,6 +23,7 @@ import { pathStartsWith } from "@common/utils/path-utils";
 import { getIsWindows } from "@renderer/os-utils";
 import { isAbsolutePath } from "@renderer/appIde/project/project-node";
 import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
+import { t } from "@common/i18n/i18n";
 
 type ListExcludedItemArgs = {
   "-global"?: boolean;
@@ -30,7 +31,9 @@ type ListExcludedItemArgs = {
 
 export class ProjectListExcludedItemsCommand extends IdeCommandBase<ListExcludedItemArgs> {
   readonly id = "project:excluded-items";
-  readonly description = "Lists the paths of items currently excluded from the project.";
+  get description() {
+    return t("commands.exclude.listDescription");
+  }
   readonly usage = "project:excluded-items [-global]";
   readonly aliases = ["project:list-excluded", "proj:excluded-items", "proj:list-excluded", "p:lx"];
 
@@ -48,10 +51,10 @@ export class ProjectListExcludedItemsCommand extends IdeCommandBase<ListExcluded
     }
 
     if (result.length <= 0) {
-      writeInfoMessage(context.output, "There are no excluded items.");
+      writeInfoMessage(context.output, t("commands.exclude.none"));
     } else {
-      writeInfoMessage(context.output, "Excluded items:");
-      result.forEach((t) => writeInfoMessage(context.output, `${t.value}`));
+      writeInfoMessage(context.output, t("commands.exclude.listTitle"));
+      result.forEach((item) => writeInfoMessage(context.output, `${item.value}`));
     }
     return commandSuccess;
   }
@@ -66,7 +69,9 @@ type ExcludeItemArgs = {
 
 export class ProjectExcludeItemsCommand extends IdeCommandBase<ExcludeItemArgs> {
   readonly id = "project:exclude-item";
-  readonly description = "Exclude/restore an item to project or globally.";
+  get description() {
+    return t("commands.exclude.description");
+  }
   readonly usage = "project:exclude-item [-global] [-d] <item-path>...";
   readonly aliases = ["project:exclude", "proj:exclude-item", "proj:exclude", "p:x"];
 
@@ -83,11 +88,11 @@ export class ProjectExcludeItemsCommand extends IdeCommandBase<ExcludeItemArgs> 
         // Remove some entries from system-wide exclusion list
         if (args.rest.length > 0) {
           const excludedItems = await getExcludedProjectItemsFromGlobalSettings(context.messenger);
-          args.rest = args.rest.map((t) => t.replace(getIsWindows() ? "\\" : "/", "/"));
+          args.rest = args.rest.map((item) => item.replace(getIsWindows() ? "\\" : "/", "/"));
           await context.mainApi.setGloballyExcludedProjectItems(
             excludedItems
               .map((item) => item.value)
-              ?.filter((p) => !args.rest.some((t) => t.localeCompare(p) === 0))
+              ?.filter((p) => !args.rest.some((item) => item.localeCompare(p) === 0))
           );
         } else {
           await context.mainApi.setGloballyExcludedProjectItems([]);
@@ -98,7 +103,7 @@ export class ProjectExcludeItemsCommand extends IdeCommandBase<ExcludeItemArgs> 
         for (const p of args.rest) {
           if (!p?.length) continue;
           if (!context.service.validationService.isValidPath(p)) {
-            writeMessage(context.output, `${p} is not a valid path`, "red");
+            writeMessage(context.output, t("commands.exclude.invalidPath", { path: p }), "red");
             continue;
           }
 
@@ -112,16 +117,16 @@ export class ProjectExcludeItemsCommand extends IdeCommandBase<ExcludeItemArgs> 
       // Project-specific operation
       const proj = context.store.getState().project;
       if (!proj?.isKliveProject) {
-        return commandError("Please, open the project first!");
+        return commandError(t("commands.exclude.noProject"));
       }
 
       const disp = (a: any) => context.store.dispatch(a, context.messageSource);
       if (args["-d"]) {
         // Remove some entries from project-specific exclusion list
         if (args.rest.length > 0) {
-          args.rest = args.rest.map((t) => t.replace(getIsWindows() ? "\\" : "/", "/"));
+          args.rest = args.rest.map((item) => item.replace(getIsWindows() ? "\\" : "/", "/"));
           const filteredPaths = proj.excludedItems?.filter(
-            (p) => !args.rest.some((t) => t.localeCompare(p) === 0)
+            (p) => !args.rest.some((item) => item.localeCompare(p) === 0)
           );
           disp(setExcludedProjectItemsAction(filteredPaths));
         } else {
@@ -133,7 +138,7 @@ export class ProjectExcludeItemsCommand extends IdeCommandBase<ExcludeItemArgs> 
         for (let p of args.rest) {
           if (!p?.length) continue;
           if (!context.service.validationService.isValidPath(p)) {
-            writeMessage(context.output, `${p} is not a valid path`, "red");
+            writeMessage(context.output, t("commands.exclude.invalidPath", { path: p }), "red");
             continue;
           }
           filteredPaths.push(p);
@@ -144,7 +149,7 @@ export class ProjectExcludeItemsCommand extends IdeCommandBase<ExcludeItemArgs> 
       needSaveProject = true;
     }
 
-    writeSuccessMessage(context.output, "Done.");
+    writeSuccessMessage(context.output, t("commands.exclude.done"));
     if (needSaveProject) await saveProject(context.messenger);
 
     return commandSuccess;
@@ -158,10 +163,10 @@ function beforeExcluded(context: IdeCommandContext, items: string[]): boolean {
   const proj = state.project;
   if (proj?.isKliveProject === true) {
     const root = proj.folderPath;
-    items = items.map((t) => (isAbsolutePath(t) ? t : `${root}/${t})`));
+    items = items.map((item) => (isAbsolutePath(item) ? item : `${root}/${item})`));
 
     const buildRoots = proj.buildRoots?.filter(
-      (b) => !items.some((t) => pathStartsWith(`${root}/${b})`, t))
+      (b) => !items.some((item) => pathStartsWith(`${root}/${b})`, item))
     );
     if (buildRoots && buildRoots.length < proj.buildRoots.length) {
       context.store.dispatch(setBuildRootAction(buildRoots, true), context.messageSource);
@@ -172,7 +177,7 @@ function beforeExcluded(context: IdeCommandContext, items: string[]): boolean {
   const documentHubService = context.service.projectService.getActiveDocumentHubService();
   documentHubService
     .getOpenDocuments()
-    ?.filter((doc) => items.some((t) => pathStartsWith(doc.id, t)))
+    ?.filter((doc) => items.some((item) => pathStartsWith(doc.id, item)))
     .forEach((doc) => documentHubService.closeDocument(doc.id));
 
   return result;

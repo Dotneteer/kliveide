@@ -7,9 +7,10 @@ import {
 } from "@renderer/controls/ContextMenu";
 import type { IContextMenuApi, ContextMenuState } from "@renderer/controls/ContextMenu";
 
+import { useT } from "@common/i18n/useT";
 import type { NexAnnotationEditorIntent } from "./NexAnnotationEditorIntents";
 import {
-  ANNOTATIONS_MENU_TITLE,
+  annotationsMenuTitle,
   regionTypeOfAction,
   type NexAnnotationEditorViewModel,
   type NexAnnotationMenuAction
@@ -34,6 +35,8 @@ export const NexAnnotationToolbar = ({
   vm: NexAnnotationEditorViewModel;
   onMenuRequested: (event: React.MouseEvent) => void;
 }) => {
+  // --- Re-renders on a language change; the menu entries and warning translate as they are read.
+  useT();
   if (!vm.toolbar.visible) return null;
 
   return (
@@ -45,7 +48,7 @@ export const NexAnnotationToolbar = ({
       )}
       <SmallIconButton
         iconName="note"
-        title={ANNOTATIONS_MENU_TITLE}
+        title={annotationsMenuTitle()}
         enable={vm.toolbar.menuEnabled}
         clicked={onMenuRequested}
       />

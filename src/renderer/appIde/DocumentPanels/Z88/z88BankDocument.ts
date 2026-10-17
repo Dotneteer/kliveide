@@ -1,3 +1,4 @@
+import { t } from "@common/i18n/i18n";
 import { toHexa2 } from "@renderer/appIde/services/ide-commands";
 import { documentSourceName } from "../helpers/documentSourceName";
 import { parseZ88Snapshot } from "@common/z88/z88Snapshot";
@@ -21,7 +22,10 @@ export function z88BankDumpId(fullPath: string, bank: number): string {
 
 /** The tab title of a snapshot bank's document: `<path> - Bank $NN`. */
 export function z88BankDumpTitle(fullPath: string, bank: number, projectFolder?: string): string {
-  return `${documentSourceName(fullPath, projectFolder)} - Bank $${toHexa2(bank)}`;
+  return t("panels.helpers.bankTitle", {
+    source: documentSourceName(fullPath, projectFolder),
+    bank: `$${toHexa2(bank)}`
+  });
 }
 
 /** The document id `openStaticMemoryDump` gives a snapshot bank: `memoryDump-` + `z88BankDumpId`. */

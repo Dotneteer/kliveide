@@ -1,3 +1,4 @@
+import { t as tr } from "@common/i18n/i18n";
 import { isZ80Keyword } from "@main/z80-compiler/z80-token-stream";
 
 /**
@@ -106,7 +107,7 @@ export function convertZxbasmBlocks(blocks: AsmLine[][], report: (span: unknown,
     }
     // --- `name: EQU value` is a syntax error to zxbasm (the colon-less `name EQU value` is its form)
     if (it.st[1]?.text === ":" && it.st.length === 2 && items[k + 1]?.st[0]?.kind === "word" && items[k + 1].st[0].text.toLowerCase() === "equ" && items[k + 1].line === it.line) {
-      report(span, "EQU after a label with a colon: zxbasm's form is 'name EQU value'");
+      report(span, tr("compiler.basic.E503.equAfterColon"));
     }
     const chain: Map<string, string>[] = [];
     for (let s = it.scope; s >= 0; s = scopes[s].parent) chain.push(scopes[s].locals);
@@ -223,7 +224,7 @@ function convertNumber(text: string, ctx: Context): string {
     const before = ctx.temps.filter((d) => d.n === n && d.at <= ctx.at);
     const after = ctx.temps.filter((d) => d.n === n && d.at > ctx.at);
     const target = dir === "b" ? before[before.length - 1] : after[0];
-    if (!target) ctx.report(`Undefined temporary label '${text}'`);
+    if (!target) ctx.report(tr("compiler.basic.E503.undefinedTemporaryLabel", { label: text }));
     return target ? target.name : text;
   }
   if (/^\d+$/.test(lower)) {

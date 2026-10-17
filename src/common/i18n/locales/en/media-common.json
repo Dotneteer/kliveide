@@ -1,0 +1,1319 @@
+{
+  "media.proposal.clears": "{bank}: clears {count, plural, one {# detected region} other {# detected regions}}.",
+  "@media.proposal.clears": {
+    "context": "First line of a code-detection proposal in clear mode (the ann-detect / skool-import command output and result document): how many regions the detector wrote before will be reset.",
+    "placeholders": {
+      "bank": "The bank's name as the proposal lists it, e.g. 'bank 5' or 'ROM'",
+      "count": "Number of regions"
+    }
+  },
+  "media.proposal.summary": "{bank}: code {code, number} (observed {observed, number}, reached {reached, number}, inferred {inferred, number}), data {data, number}, unknown {unknown, number} ({percent, number}%). {changes, plural, one {# change} other {# changes}}, {conflicts, plural, one {# conflict} other {# conflicts}} with your regions.",
+  "@media.proposal.summary": {
+    "context": "Summary line of a code-detection proposal for one memory bank (command output and result document). The byte counts are per class: code (split by evidence: seen executed, reached by following jumps, inferred), data, and still unknown bytes with their share of the bank. 'Your regions' are regions the user marked by hand.",
+    "placeholders": {
+      "bank": "The bank's name as the proposal lists it, e.g. 'bank 5' or 'ROM'",
+      "code": "Bytes classified as code",
+      "observed": "Code bytes seen executed",
+      "reached": "Code bytes reached by following control flow",
+      "inferred": "Code bytes inferred from patterns",
+      "data": "Bytes classified as data",
+      "unknown": "Bytes still unclassified",
+      "percent": "Share of the bank still unknown, e.g. 12.5",
+      "changes": "Number of changes applying would make",
+      "conflicts": "Number of user regions the detection disagrees with"
+    }
+  },
+  "media.proposal.yoursMarker": "[yours]",
+  "@media.proposal.yoursMarker": {
+    "context": "Marker at the end of a proposal row (a monospace listing) that changes a region the user created by hand.",
+    "maxChars": 12
+  },
+  "media.proposal.conflict": "{range}  yours: {yours}, detected: {detected} (kept)",
+  "@media.proposal.conflict": {
+    "context": "Row of a detection proposal listing (monospace): a region the user marked by hand that detection disagrees with; it is kept unchanged.",
+    "placeholders": {
+      "range": "An address range, e.g. '$8000-$80FF'",
+      "yours": "The user's region type, e.g. 'data' (an annotation type keyword; not translated)",
+      "detected": "The detected region type, e.g. 'disassemble' (keyword; not translated)"
+    }
+  },
+  "media.proposal.note": "{range}  note: {notes}",
+  "@media.proposal.note": {
+    "context": "Row of a detection proposal listing (monospace): notes about a run of bytes (self-modifying code, the stack, the screen, interrupt code).",
+    "placeholders": {
+      "range": "An address range, e.g. '$8000-$80FF'",
+      "notes": "Comma-separated note codes, e.g. 'smc, stack' (not translated)"
+    }
+  },
+  "media.proposal.warning": "{address}  warning: {message}",
+  "@media.proposal.warning": {
+    "context": "Row of a detection proposal listing (monospace): a warning the classifier raised at an address.",
+    "placeholders": {
+      "address": "Hex address, e.g. '$8010'",
+      "message": "The classifier's warning text"
+    }
+  },
+  "media.proposal.moreWarnings": "... {count, plural, one {# more warning} other {# more warnings}}",
+  "@media.proposal.moreWarnings": {
+    "context": "Last row of a detection proposal listing when there were more than 20 warnings: how many are not listed.",
+    "placeholders": {
+      "count": "Warnings not listed"
+    }
+  },
+  "media.annotations.machineMismatch": "These annotations were written for the {file} bank space; this machine numbers its memory as {current}. Labels may name the wrong bytes.",
+  "@media.annotations.machineMismatch": {
+    "context": "Warning when an annotation set (a sidecar file of labels and comments) is opened on a different machine than the one it was written for.",
+    "placeholders": {
+      "file": "Bank-space id the file was written for, e.g. 'next' (not translated)",
+      "current": "Bank-space id of the current machine, e.g. 'sp128' (not translated)"
+    }
+  },
+  "media.annotations.machineNotAnnotatable": "This machine's memory cannot be annotated.",
+  "@media.annotations.machineNotAnnotatable": {
+    "context": "Tooltip of the disabled annotation entries in the Disassembly view's row context menu (also an error of the label command): the current machine has no annotatable memory map."
+  },
+  "media.annotations.chunkNotAnnotatable": "This memory (a DOCK or EXROM chunk) cannot be annotated.",
+  "@media.annotations.chunkNotAnnotatable": {
+    "context": "Tooltip of the disabled annotation entries in the Disassembly row menu: the row is in a Timex DOCK/EXROM cartridge chunk. DOCK and EXROM are hardware names."
+  },
+  "media.annotations.romNotIdentified": "This ROM page has not been identified yet.",
+  "@media.annotations.romNotIdentified": {
+    "context": "Tooltip of the disabled annotation entries in the Disassembly row menu: the ROM page under the row is not yet recognised."
+  },
+  "media.annotations.noWorkingCopy": "No working copy of {name}: use Start Editing ROM Annotations, or rom-ann-new.",
+  "@media.annotations.noWorkingCopy": {
+    "context": "Tooltip of the disabled annotation entries on a ROM row: the user has no editable copy of the ROM's annotations. 'Start Editing ROM Annotations' is a menu item (translate as that item is translated); rom-ann-new is a command name (never translated).",
+    "placeholders": {
+      "name": "The working copy's file name"
+    }
+  },
+  "media.annotations.noWorkingCopyUnnamed": "No working copy of this ROM's annotations: use Start Editing ROM Annotations, or rom-ann-new.",
+  "@media.annotations.noWorkingCopyUnnamed": {
+    "context": "As media.annotations.noWorkingCopy, when the file has no name to show. rom-ann-new is a command name (never translated)."
+  },
+  "media.annotations.workingCopy": "{name} working copy",
+  "@media.annotations.workingCopy": {
+    "context": "Where an annotation edit on a ROM row is written: the user's working copy of the ROM annotations, named by its file.",
+    "placeholders": {
+      "name": "The ROM annotation file's name"
+    }
+  },
+  "media.annotations.romWorkingCopy": "the ROM's working copy",
+  "@media.annotations.romWorkingCopy": {
+    "context": "Where an annotation edit on a ROM row is written, when the working copy has no file name to show."
+  },
+  "media.annotations.noActiveSet": "No annotation set is active: use ann-new, or open a project.",
+  "@media.annotations.noActiveSet": {
+    "context": "Error/disabled reason: there is no active annotation file to write to. ann-new is a command name (never translated)."
+  },
+  "media.annotations.bankTarget": "bank {bank}",
+  "@media.annotations.bankTarget": {
+    "context": "Name of a memory bank in a detection or skool-import proposal (command output, proposal table).",
+    "maxChars": 16,
+    "placeholders": {
+      "bank": "Bank number"
+    }
+  },
+  "media.romCheck.notJson": "It is not valid JSON: {message}",
+  "@media.romCheck.notJson": {
+    "context": "Reason a ROM annotation working copy cannot be shipped (the ROM annotation editor's check panel and the rom-ann-check command output).",
+    "placeholders": {
+      "message": "The JSON parser's error (English)"
+    }
+  },
+  "media.romCheck.machineNotRom": "Its machine is not \"rom\".",
+  "@media.romCheck.machineNotRom": {
+    "context": "Reason a ROM annotation working copy cannot be shipped (the ROM annotation editor's check panel and the rom-ann-check command output). \"rom\" is a literal JSON value; keep it."
+  },
+  "media.romCheck.globalLabels": "It has global labels, which a ROM sidecar may not.",
+  "@media.romCheck.globalLabels": {
+    "context": "Reason a ROM annotation working copy cannot be shipped (the ROM annotation editor's check panel and the rom-ann-check command output)."
+  },
+  "media.romCheck.debugSubtree": "It has a debug subtree, which a ROM sidecar may not.",
+  "@media.romCheck.debugSubtree": {
+    "context": "Reason a ROM annotation working copy cannot be shipped (the ROM annotation editor's check panel and the rom-ann-check command output)."
+  },
+  "media.romCheck.pageNotListed": "Page {page} has annotations but no entry in \"pages\".",
+  "@media.romCheck.pageNotListed": {
+    "context": "Reason a ROM annotation working copy cannot be shipped (the ROM annotation editor's check panel and the rom-ann-check command output). \"pages\" is a JSON property name; keep it.",
+    "placeholders": {
+      "page": "ROM page number"
+    }
+  },
+  "media.romCheck.romNotFound": "Page {page}: the ROM it describes was not found.",
+  "@media.romCheck.romNotFound": {
+    "context": "Reason a ROM annotation working copy cannot be shipped (the ROM annotation editor's check panel and the rom-ann-check command output).",
+    "placeholders": {
+      "page": "ROM page number"
+    }
+  },
+  "media.romCheck.crcMismatch": "Page {page}: it names CRC {named}, the ROM's is {actual}.",
+  "@media.romCheck.crcMismatch": {
+    "context": "Reason a ROM annotation working copy cannot be shipped (the ROM annotation editor's check panel and the rom-ann-check command output).",
+    "placeholders": {
+      "page": "ROM page number",
+      "named": "CRC32 the file names (hex)",
+      "actual": "CRC32 of the ROM (hex)"
+    }
+  },
+  "media.romCheck.duplicateLabel": "Page {page}: the label {name} is used twice.",
+  "@media.romCheck.duplicateLabel": {
+    "context": "Reason a ROM annotation working copy cannot be shipped (the ROM annotation editor's check panel and the rom-ann-check command output).",
+    "placeholders": {
+      "page": "ROM page number",
+      "name": "Label name"
+    }
+  },
+  "media.romCheck.invalidLabel": "Page {page}: {name} is not a valid label name.",
+  "@media.romCheck.invalidLabel": {
+    "context": "Reason a ROM annotation working copy cannot be shipped (the ROM annotation editor's check panel and the rom-ann-check command output).",
+    "placeholders": {
+      "page": "ROM page number",
+      "name": "Label name"
+    }
+  },
+  "media.romCheck.noProvenance": "No provenance: {entries}.",
+  "@media.romCheck.noProvenance": {
+    "context": "Reason a ROM annotation working copy cannot be shipped (the ROM annotation editor's check panel and the rom-ann-check command output). Provenance records how each entry was established (observed, manual, derived).",
+    "placeholders": {
+      "entries": "Comma-separated entry ids"
+    }
+  },
+  "media.romCheck.strayProvenance": "Provenance for entries that are not there: {entries}.",
+  "@media.romCheck.strayProvenance": {
+    "context": "Reason a ROM annotation working copy cannot be shipped (the ROM annotation editor's check panel and the rom-ann-check command output).",
+    "placeholders": {
+      "entries": "Comma-separated entry ids"
+    }
+  },
+  "media.romCheck.badProvenance": "{key}: \"{value}\" is not a provenance.",
+  "@media.romCheck.badProvenance": {
+    "context": "Reason a ROM annotation working copy cannot be shipped (the ROM annotation editor's check panel and the rom-ann-check command output).",
+    "placeholders": {
+      "key": "Entry id",
+      "value": "The value found"
+    }
+  },
+  "media.romCheck.misplacedLabel": "Page {page}: the label {name} is not on an instruction start inside code.",
+  "@media.romCheck.misplacedLabel": {
+    "context": "Reason a ROM annotation working copy cannot be shipped (the ROM annotation editor's check panel and the rom-ann-check command output).",
+    "placeholders": {
+      "page": "ROM page number",
+      "name": "Label name"
+    }
+  },
+  "media.romCheck.levelTooHigh": "Page {page}: it records level {recorded}, but measures {measured}.",
+  "@media.romCheck.levelTooHigh": {
+    "context": "Reason a ROM annotation working copy cannot be shipped (the ROM annotation editor's check panel and the rom-ann-check command output). The level is the annotation's completeness level.",
+    "placeholders": {
+      "page": "ROM page number",
+      "recorded": "Level the file records",
+      "measured": "Level measured"
+    }
+  },
+  "media.romCheck.notCanonical": "It is not in the format `npm run rom:annotations` writes.",
+  "@media.romCheck.notCanonical": {
+    "context": "Reason a ROM annotation working copy cannot be shipped (the ROM annotation editor's check panel and the rom-ann-check command output). `npm run rom:annotations` is a command; keep it."
+  },
+  "media.export.bankUnreadable": "Bank {bank} cannot be read.",
+  "@media.export.bankUnreadable": {
+    "context": "Error of export-asm / skool-export: a memory bank's bytes could not be read from the machine.",
+    "placeholders": {
+      "bank": "Bank number"
+    }
+  },
+  "media.export.notAnnotatable": "{address} is not in annotatable memory.",
+  "@media.export.notAnnotatable": {
+    "context": "Error of export-asm: the address range reaches memory that cannot be annotated (e.g. a DOCK chunk).",
+    "placeholders": {
+      "address": "Hex address, e.g. '$c000'"
+    }
+  },
+  "media.export.skipLeftOut": "A skip region at {address} was left out ({count, plural, one {# byte} other {# bytes}}): the export reassembles to fewer bytes.",
+  "@media.export.skipLeftOut": {
+    "context": "Note after export-asm with '-skip gap': a skip region was not written to the source file.",
+    "placeholders": {
+      "address": "Hex address",
+      "count": "Region length in bytes"
+    }
+  },
+  "media.export.writtenAsDefb": "{address}: {instruction} is written as .defb ({reason, select, undefinedEd {undefined ED opcode} ignoredPrefix {prefix has no effect} other {non-canonical}}).",
+  "@media.export.writtenAsDefb": {
+    "context": "Note after export-asm: an instruction the assembler would encode differently is exported as raw bytes. .defb is a directive (never translated); each select branch is the reason to translate.",
+    "placeholders": {
+      "address": "Hex address",
+      "instruction": "The Z80 instruction, e.g. 'nop' (never translated)",
+      "reason": "Code of why the encoding is not canonical"
+    }
+  },
+  "media.export.labelRenamed": "The label {name} is exported as {as}.",
+  "@media.export.labelRenamed": {
+    "context": "Note after export-asm: a label the assembler would reject was renamed in the exported source.",
+    "placeholders": {
+      "name": "Original label",
+      "as": "New label"
+    }
+  },
+  "media.skool.lineProblem": "line {line}: {message}",
+  "@media.skool.lineProblem": {
+    "context": "Note of skool-import: a problem on a line of the imported SkoolKit file.",
+    "placeholders": {
+      "line": "Line number",
+      "message": "The problem's text"
+    }
+  },
+  "media.skool.labelRenamed": "The label {from} is imported as {to}.",
+  "@media.skool.labelRenamed": {
+    "context": "Note of skool-import: a SkoolKit label Klive cannot use was renamed.",
+    "placeholders": {
+      "from": "Label in the file",
+      "to": "Label imported"
+    }
+  },
+  "media.skool.romSkipped": "The file's ROM entries are skipped: the ROM page has not been identified.",
+  "@media.skool.romSkipped": {
+    "context": "Note of skool-import: entries in ROM are not imported."
+  },
+  "media.skool.romTarget": "ROM (your ROM annotations)",
+  "@media.skool.romTarget": {
+    "context": "Name of the ROM target in a skool-import proposal (command output and proposal table).",
+    "maxChars": 32
+  },
+  "media.skool.noEntries": "The file has no entries Klive can place in this machine's memory.",
+  "@media.skool.noEntries": {
+    "context": "Error of skool-import: nothing in the SkoolKit file maps to the current machine's memory."
+  },
+  "media.skool.nothingToExport": "There are no annotations to export: no annotation set is active, or it is empty.",
+  "@media.skool.nothingToExport": {
+    "context": "Error of skool-export."
+  },
+  "media.snapshot.loadsAs": "{name}, loads as {klive}",
+  "@media.snapshot.loadsAs": {
+    "context": "Snapshot viewer / load message: the machine a snapshot was made on, and the Klive machine it loads on.",
+    "placeholders": {
+      "name": "Machine the snapshot names, e.g. 'ZX Spectrum +2A' (machine name, not translated)",
+      "klive": "Klive machine it loads as (machine name)"
+    }
+  },
+  "media.snapshot.error.cannotEmulate": "Klive cannot emulate the {machine}",
+  "@media.snapshot.error.cannotEmulate": {
+    "context": "Error when a snapshot was made on a machine Klive has no emulation for.",
+    "placeholders": {
+      "machine": "Machine name, e.g. 'Pentagon 512'"
+    }
+  },
+  "media.snapshot.warning.plus2": "A ZX Spectrum +2 snapshot runs on Klive's 128K (the +2 ROM differs only in its menu)",
+  "@media.snapshot.warning.plus2": {
+    "context": "Warning shown when a ZX Spectrum snapshot file is opened or loaded (snapshot viewer, load output)."
+  },
+  "media.snapshot.warning.plus2a": "A ZX Spectrum +2A snapshot runs on Klive's +2E, with the +E ROMs instead of the Amstrad ones",
+  "@media.snapshot.warning.plus2a": {
+    "context": "Warning shown when a ZX Spectrum snapshot file is opened or loaded (snapshot viewer, load output)."
+  },
+  "media.snapshot.warning.plus3": "A ZX Spectrum +3 snapshot runs on Klive's +3E, with the +E ROMs instead of the Amstrad ones",
+  "@media.snapshot.warning.plus3": {
+    "context": "Warning shown when a ZX Spectrum snapshot file is opened or loaded (snapshot viewer, load output)."
+  },
+  "media.snapshot.warning.ayOn48k": "The snapshot uses an AY chip on a 48K, which Klive's 48K does not have",
+  "@media.snapshot.warning.ayOn48k": {
+    "context": "Warning shown when a ZX Spectrum snapshot file is opened or loaded (snapshot viewer, load output)."
+  },
+  "media.snapshot.warning.interface1": "Interface 1 is not emulated; its state is ignored",
+  "@media.snapshot.warning.interface1": {
+    "context": "Warning shown when a ZX Spectrum snapshot file is opened or loaded (snapshot viewer, load output). Interface 1 is a product name."
+  },
+  "media.snapshot.warning.mgt": "The M.G.T. (Disciple/Plus D) interface is not emulated",
+  "@media.snapshot.warning.mgt": {
+    "context": "Warning shown when a ZX Spectrum snapshot file is opened or loaded (snapshot viewer, load output)."
+  },
+  "media.snapshot.warning.beta128": "The snapshot uses the Beta 128 (TR-DOS), which only Klive's Pentagon 128 and Scorpion ZS-256 have",
+  "@media.snapshot.warning.beta128": {
+    "context": "Warning shown when a ZX Spectrum snapshot file is opened or loaded (snapshot viewer, load output)."
+  },
+  "media.snapshot.warning.issue2": "The snapshot asks for an Issue 2 keyboard, which Klive does not emulate",
+  "@media.snapshot.warning.issue2": {
+    "context": "Warning shown when a ZX Spectrum snapshot file is opened or loaded (snapshot viewer, load output). Issue 2 is a board revision."
+  },
+  "media.snapshot.warning.alternateTimings": "The snapshot uses the alternate (late) ULA timings; Klive uses the standard ones",
+  "@media.snapshot.warning.alternateTimings": {
+    "context": "Warning shown when a ZX Spectrum snapshot file is opened or loaded (snapshot viewer, load output)."
+  },
+  "media.snapshot.warning.customRom": "The snapshot carries a custom ROM, which Klive does not install",
+  "@media.snapshot.warning.customRom": {
+    "context": "Warning shown when a ZX Spectrum snapshot file is opened or loaded (snapshot viewer, load output)."
+  },
+  "media.snapshot.warning.haltedNoHalt": "The CPU is halted, but PC does not point at a HALT instruction",
+  "@media.snapshot.warning.haltedNoHalt": {
+    "context": "Warning shown when a ZX Spectrum snapshot file is opened or loaded (snapshot viewer, load output). PC and HALT are register/mnemonic names."
+  },
+  "media.snapshot.error.notSnapshotName": "\"{name}\" is not a .sna, .z80 or .szx file",
+  "@media.snapshot.error.notSnapshotName": {
+    "context": "Error when a ZX Spectrum snapshot file cannot be read (snapshot viewer, load command).",
+    "placeholders": {
+      "name": "File name"
+    }
+  },
+  "media.snapshot.error.szxNoHeader": "The file is named .szx but has no ZXST header",
+  "@media.snapshot.error.szxNoHeader": {
+    "context": "Error when a ZX Spectrum snapshot file cannot be read (snapshot viewer, load command)."
+  },
+  "media.snapshot.error.snaBadLength": "The file is named .sna but its length ({length}) is not a .sna's",
+  "@media.snapshot.error.snaBadLength": {
+    "context": "Error when a ZX Spectrum snapshot file cannot be read (snapshot viewer, load command).",
+    "placeholders": {
+      "length": "File length in bytes"
+    }
+  },
+  "media.snapshot.error.z80IsSzx": "The file is named .z80 but is a zx-state (.szx) file",
+  "@media.snapshot.error.z80IsSzx": {
+    "context": "Error when a ZX Spectrum snapshot file cannot be read (snapshot viewer, load command). zx-state is the format's name."
+  },
+  "media.snapshot.error.snaSize": "A .sna file is {size48}, {size128} or {size128Long} bytes long; this one is {length}",
+  "@media.snapshot.error.snaSize": {
+    "context": "Error when a ZX Spectrum snapshot file cannot be read (snapshot viewer, load command).",
+    "placeholders": {
+      "size48": "Byte length",
+      "size128": "Byte length",
+      "size128Long": "Byte length",
+      "length": "This file's length"
+    }
+  },
+  "media.snapshot.error.sna128Size": "A 128K .sna with bank {bank} paged is {size} bytes long; this one is {length}",
+  "@media.snapshot.error.sna128Size": {
+    "context": "Error when a ZX Spectrum snapshot file cannot be read (snapshot viewer, load command).",
+    "placeholders": {
+      "bank": "Bank number",
+      "size": "Expected length",
+      "length": "This file's length"
+    }
+  },
+  "media.snapshot.error.szxInflate": "The {part, select, ramPage {RAM page {index}} disk {disk in drive {index}} betaDisk {Beta disk in drive {index}} tape {embedded tape} other {DOCK page {index}}} cannot be decompressed ({message})",
+  "@media.snapshot.error.szxInflate": {
+    "context": "Error when a ZX Spectrum snapshot file cannot be read (snapshot viewer, load command). Each select branch names the part of the file that is broken.",
+    "placeholders": {
+      "part": "Code of the part",
+      "index": "Page or drive number (not in the tape branch)",
+      "message": "The decompressor's error (English)"
+    }
+  },
+  "media.snapshot.error.szxNoMagic": "Not a zx-state (.szx) file: the ZXST header is missing",
+  "@media.snapshot.error.szxNoMagic": {
+    "context": "Error when a ZX Spectrum snapshot file cannot be read (snapshot viewer, load command)."
+  },
+  "media.snapshot.error.szxBlockHeaderTruncated": "The block header at offset {offset} is truncated",
+  "@media.snapshot.error.szxBlockHeaderTruncated": {
+    "context": "Error when a ZX Spectrum snapshot file cannot be read (snapshot viewer, load command).",
+    "placeholders": {
+      "offset": "Byte offset"
+    }
+  },
+  "media.snapshot.error.szxBlockTruncated": "The {id} block at offset {offset} is truncated",
+  "@media.snapshot.error.szxBlockTruncated": {
+    "context": "Error when a ZX Spectrum snapshot file cannot be read (snapshot viewer, load command).",
+    "placeholders": {
+      "id": "Four-letter block id, e.g. 'RAMP'",
+      "offset": "Byte offset"
+    }
+  },
+  "media.snapshot.error.szxUnnamedBlockTruncated": "The unnamed block at offset {offset} is truncated",
+  "@media.snapshot.error.szxUnnamedBlockTruncated": {
+    "context": "Error when a ZX Spectrum snapshot file cannot be read (snapshot viewer, load command).",
+    "placeholders": {
+      "offset": "Byte offset"
+    }
+  },
+  "media.snapshot.error.szxBlockTooShort": "The {id} block is {size} bytes; it needs at least {min}",
+  "@media.snapshot.error.szxBlockTooShort": {
+    "context": "Error when a ZX Spectrum snapshot file cannot be read (snapshot viewer, load command).",
+    "placeholders": {
+      "id": "Block id",
+      "size": "Block size",
+      "min": "Minimum size"
+    }
+  },
+  "media.snapshot.error.szxRamPageSize": "RAM page {page} holds {size} bytes instead of 16384",
+  "@media.snapshot.error.szxRamPageSize": {
+    "context": "Error when a ZX Spectrum snapshot file cannot be read (snapshot viewer, load command).",
+    "placeholders": {
+      "page": "Page number",
+      "size": "Byte count"
+    }
+  },
+  "media.snapshot.error.szxDockPageSize": "DOCK page {page} holds {size} bytes instead of 8192",
+  "@media.snapshot.error.szxDockPageSize": {
+    "context": "Error when a ZX Spectrum snapshot file cannot be read (snapshot viewer, load command).",
+    "placeholders": {
+      "page": "Page number",
+      "size": "Byte count"
+    }
+  },
+  "media.snapshot.error.szxNoZ80r": "The .szx file has no Z80 registers (Z80R) block",
+  "@media.snapshot.error.szxNoZ80r": {
+    "context": "Error when a ZX Spectrum snapshot file cannot be read (snapshot viewer, load command)."
+  },
+  "media.snapshot.error.szxMissingPages": "The .szx file lacks {count, plural, one {RAM page} other {RAM pages}} {pages}",
+  "@media.snapshot.error.szxMissingPages": {
+    "context": "Error when a ZX Spectrum snapshot file cannot be read (snapshot viewer, load command).",
+    "placeholders": {
+      "count": "Number of missing pages",
+      "pages": "Comma-separated page numbers"
+    }
+  },
+  "media.snapshot.error.z80TooShort": "A .z80 file has a 30-byte header; this file is {length} bytes long",
+  "@media.snapshot.error.z80TooShort": {
+    "context": "Error when a ZX Spectrum snapshot file cannot be read (snapshot viewer, load command).",
+    "placeholders": {
+      "length": "File length"
+    }
+  },
+  "media.snapshot.error.z80V1RamSize": "A version 1 .z80 file holds 48K of RAM; this one holds {size} bytes",
+  "@media.snapshot.error.z80V1RamSize": {
+    "context": "Error when a ZX Spectrum snapshot file cannot be read (snapshot viewer, load command).",
+    "placeholders": {
+      "size": "Byte count"
+    }
+  },
+  "media.snapshot.error.z80NoExtraHeader": "The .z80 extra header is missing",
+  "@media.snapshot.error.z80NoExtraHeader": {
+    "context": "Error when a ZX Spectrum snapshot file cannot be read (snapshot viewer, load command)."
+  },
+  "media.snapshot.error.z80ExtraHeaderLength": "The .z80 extra header length is {length}; it should be 23, 54 or 55",
+  "@media.snapshot.error.z80ExtraHeaderLength": {
+    "context": "Error when a ZX Spectrum snapshot file cannot be read (snapshot viewer, load command).",
+    "placeholders": {
+      "length": "Header length"
+    }
+  },
+  "media.snapshot.error.z80ExtraHeaderTruncated": "The .z80 extra header is truncated ({length} bytes)",
+  "@media.snapshot.error.z80ExtraHeaderTruncated": {
+    "context": "Error when a ZX Spectrum snapshot file cannot be read (snapshot viewer, load command).",
+    "placeholders": {
+      "length": "File length"
+    }
+  },
+  "media.snapshot.error.z80BlockHeaderTruncated": "A .z80 memory block header at {offset} is truncated",
+  "@media.snapshot.error.z80BlockHeaderTruncated": {
+    "context": "Error when a ZX Spectrum snapshot file cannot be read (snapshot viewer, load command).",
+    "placeholders": {
+      "offset": "Byte offset"
+    }
+  },
+  "media.snapshot.error.z80BlockTruncated": "The .z80 memory block of page {page} is truncated",
+  "@media.snapshot.error.z80BlockTruncated": {
+    "context": "Error when a ZX Spectrum snapshot file cannot be read (snapshot viewer, load command).",
+    "placeholders": {
+      "page": "Page number"
+    }
+  },
+  "media.snapshot.error.z80BlockSize": "The .z80 memory block of page {page} holds {size} bytes instead of 16384",
+  "@media.snapshot.error.z80BlockSize": {
+    "context": "Error when a ZX Spectrum snapshot file cannot be read (snapshot viewer, load command).",
+    "placeholders": {
+      "page": "Page number",
+      "size": "Byte count"
+    }
+  },
+  "media.snapshot.error.z80MissingBanks": "The .z80 file lacks {count, plural, one {RAM bank} other {RAM banks}} {banks}",
+  "@media.snapshot.error.z80MissingBanks": {
+    "context": "Error when a ZX Spectrum snapshot file cannot be read (snapshot viewer, load command).",
+    "placeholders": {
+      "count": "Number of missing banks",
+      "banks": "Comma-separated bank numbers"
+    }
+  },
+  "media.snapshot.warning.snaInterruptMode": "Interrupt mode byte is {value}; IM {mode} is used",
+  "@media.snapshot.warning.snaInterruptMode": {
+    "context": "Warning shown when a ZX Spectrum snapshot file is opened or loaded (snapshot viewer, load output). IM is the Z80 mnemonic.",
+    "placeholders": {
+      "value": "Byte value",
+      "mode": "Interrupt mode used"
+    }
+  },
+  "media.snapshot.warning.snaPcNotInRam": "SP is {sp}, so PC could not be read from RAM",
+  "@media.snapshot.warning.snaPcNotInRam": {
+    "context": "Warning shown when a ZX Spectrum snapshot file is opened or loaded (snapshot viewer, load output). SP and PC are register names.",
+    "placeholders": {
+      "sp": "Hex value"
+    }
+  },
+  "media.snapshot.warning.szxNewerVersion": "zx-state major version {major} is newer than Klive knows (1)",
+  "@media.snapshot.warning.szxNewerVersion": {
+    "context": "Warning shown when a ZX Spectrum snapshot file is opened or loaded (snapshot viewer, load output).",
+    "placeholders": {
+      "major": "Version number"
+    }
+  },
+  "media.snapshot.warning.badInterruptMode": "Interrupt mode {mode} does not exist; IM 1 is used",
+  "@media.snapshot.warning.badInterruptMode": {
+    "context": "Warning shown when a ZX Spectrum snapshot file is opened or loaded (snapshot viewer, load output). IM is the Z80 mnemonic.",
+    "placeholders": {
+      "mode": "Interrupt mode in the file"
+    }
+  },
+  "media.snapshot.warning.szxRamPageMissing": "RAM page {page} does not exist on a Klive machine; it is ignored",
+  "@media.snapshot.warning.szxRamPageMissing": {
+    "context": "Warning shown when a ZX Spectrum snapshot file is opened or loaded (snapshot viewer, load output).",
+    "placeholders": {
+      "page": "Page number"
+    }
+  },
+  "media.snapshot.warning.szxRamPageTwice": "RAM page {page} is stored twice; the first copy is used",
+  "@media.snapshot.warning.szxRamPageTwice": {
+    "context": "Warning shown when a ZX Spectrum snapshot file is opened or loaded (snapshot viewer, load output).",
+    "placeholders": {
+      "page": "Page number"
+    }
+  },
+  "media.snapshot.warning.fullerBox": "The AY chip is a Fuller Box, which Klive does not emulate",
+  "@media.snapshot.warning.fullerBox": {
+    "context": "Warning shown when a ZX Spectrum snapshot file is opened or loaded (snapshot viewer, load output). Fuller Box is a product name."
+  },
+  "media.snapshot.warning.szxTapeSize": "The embedded tape is {size} bytes, not the {expected} its block says",
+  "@media.snapshot.warning.szxTapeSize": {
+    "context": "Warning shown when a ZX Spectrum snapshot file is opened or loaded (snapshot viewer, load output).",
+    "placeholders": {
+      "size": "Byte count",
+      "expected": "Byte count"
+    }
+  },
+  "media.snapshot.warning.szxStateNotRestored": "The {name} state ({id}) is not restored",
+  "@media.snapshot.warning.szxStateNotRestored": {
+    "context": "Warning shown when a ZX Spectrum snapshot file is opened or loaded (snapshot viewer, load output).",
+    "placeholders": {
+      "name": "Peripheral name, e.g. 'Multiface' (not translated)",
+      "id": "Block id"
+    }
+  },
+  "media.snapshot.warning.szxUnknownBlock": "Unknown block \"{id}\" is skipped",
+  "@media.snapshot.warning.szxUnknownBlock": {
+    "context": "Warning shown when a ZX Spectrum snapshot file is opened or loaded (snapshot viewer, load output).",
+    "placeholders": {
+      "id": "Block id"
+    }
+  },
+  "media.snapshot.warning.szxNoSpcr": "The .szx file has no SPCR block; border and paging default to 0",
+  "@media.snapshot.warning.szxNoSpcr": {
+    "context": "Warning shown when a ZX Spectrum snapshot file is opened or loaded (snapshot viewer, load output)."
+  },
+  "media.snapshot.warning.samRom": "The file asks for the SamRom BASIC switch, which Klive ignores",
+  "@media.snapshot.warning.samRom": {
+    "context": "Warning shown when a ZX Spectrum snapshot file is opened or loaded (snapshot viewer, load output)."
+  },
+  "media.snapshot.warning.z80TstateCounter": "The T-state counter ({value}) is out of range; the frame position is not used",
+  "@media.snapshot.warning.z80TstateCounter": {
+    "context": "Warning shown when a ZX Spectrum snapshot file is opened or loaded (snapshot viewer, load output).",
+    "placeholders": {
+      "value": "Counter value"
+    }
+  },
+  "media.snapshot.warning.multiface": "The Multiface ROM was paged in; the program will probably crash",
+  "@media.snapshot.warning.multiface": {
+    "context": "Warning shown when a ZX Spectrum snapshot file is opened or loaded (snapshot viewer, load output)."
+  },
+  "media.snapshot.warning.z80PageNotRam": "Memory page {page} is not RAM of this machine; it is ignored",
+  "@media.snapshot.warning.z80PageNotRam": {
+    "context": "Warning shown when a ZX Spectrum snapshot file is opened or loaded (snapshot viewer, load output).",
+    "placeholders": {
+      "page": "Page number"
+    }
+  },
+  "media.snapshot.warning.z80PageTwice": "Memory page {page} is stored twice; the first copy is used",
+  "@media.snapshot.warning.z80PageTwice": {
+    "context": "Warning shown when a ZX Spectrum snapshot file is opened or loaded (snapshot viewer, load output).",
+    "placeholders": {
+      "page": "Page number"
+    }
+  },
+  "media.snapshot.header.layout": "Layout",
+  "@media.snapshot.header.layout": {
+    "context": "Label of a field in the snapshot viewer's File section (the file header's contents), a narrow label column.",
+    "maxChars": 12
+  },
+  "media.snapshot.header.interruptStatus": "Interrupt status",
+  "@media.snapshot.header.interruptStatus": {
+    "context": "Label of a field in the snapshot viewer's File section (the file header's contents), a narrow label column.",
+    "maxChars": 24
+  },
+  "media.snapshot.header.pcFromStack": "PC (from the stack)",
+  "@media.snapshot.header.pcFromStack": {
+    "context": "Label of a field in the snapshot viewer's File section (the file header's contents), a narrow label column. PC is a register name.",
+    "maxChars": 28
+  },
+  "media.snapshot.header.trdosPaged": "TR-DOS ROM paged",
+  "@media.snapshot.header.trdosPaged": {
+    "context": "Label of a field in the snapshot viewer's File section (the file header's contents), a narrow label column. TR-DOS is a product name.",
+    "maxChars": 24
+  },
+  "media.snapshot.header.version": "Version",
+  "@media.snapshot.header.version": {
+    "context": "Label of a field in the snapshot viewer's File section (the file header's contents), a narrow label column.",
+    "maxChars": 12
+  },
+  "media.snapshot.header.machineId": "Machine id",
+  "@media.snapshot.header.machineId": {
+    "context": "Label of a field in the snapshot viewer's File section (the file header's contents), a narrow label column.",
+    "maxChars": 15
+  },
+  "media.snapshot.header.alternateTimings": "Alternate timings",
+  "@media.snapshot.header.alternateTimings": {
+    "context": "Label of a field in the snapshot viewer's File section (the file header's contents), a narrow label column. The ULA's alternate (late) timings.",
+    "maxChars": 25
+  },
+  "media.snapshot.header.tstatesAtStart": "T-states at start",
+  "@media.snapshot.header.tstatesAtStart": {
+    "context": "Label of a field in the snapshot viewer's File section (the file header's contents), a narrow label column. T-states: the Z80 clock unit.",
+    "maxChars": 25
+  },
+  "media.snapshot.header.heldInterrupt": "Held interrupt T-states",
+  "@media.snapshot.header.heldInterrupt": {
+    "context": "Label of a field in the snapshot viewer's File section (the file header's contents), a narrow label column.",
+    "maxChars": 34
+  },
+  "media.snapshot.header.cpuFlags": "CPU flags",
+  "@media.snapshot.header.cpuFlags": {
+    "context": "Label of a field in the snapshot viewer's File section (the file header's contents), a narrow label column.",
+    "maxChars": 13
+  },
+  "media.snapshot.header.lastPortFe": "Last port $FE",
+  "@media.snapshot.header.lastPortFe": {
+    "context": "Label of a field in the snapshot viewer's File section (the file header's contents), a narrow label column. The value last written to port $FE ($FE stays).",
+    "maxChars": 19
+  },
+  "media.snapshot.header.joysticks": "Joysticks",
+  "@media.snapshot.header.joysticks": {
+    "context": "Label of a field in the snapshot viewer's File section (the file header's contents), a narrow label column.",
+    "maxChars": 13
+  },
+  "media.snapshot.header.creator": "Creator",
+  "@media.snapshot.header.creator": {
+    "context": "Label of a field in the snapshot viewer's File section (the file header's contents), a narrow label column. The program that wrote the file.",
+    "maxChars": 12
+  },
+  "media.snapshot.header.compressedV1": "Compressed (v1)",
+  "@media.snapshot.header.compressedV1": {
+    "context": "Label of a field in the snapshot viewer's File section (the file header's contents), a narrow label column.",
+    "maxChars": 22
+  },
+  "media.snapshot.header.issue2": "Issue 2 keyboard",
+  "@media.snapshot.header.issue2": {
+    "context": "Label of a field in the snapshot viewer's File section (the file header's contents), a narrow label column.",
+    "maxChars": 24
+  },
+  "media.snapshot.header.doubleInterrupt": "Double interrupt frequency",
+  "@media.snapshot.header.doubleInterrupt": {
+    "context": "Label of a field in the snapshot viewer's File section (the file header's contents), a narrow label column.",
+    "maxChars": 39
+  },
+  "media.snapshot.header.videoSync": "Video sync",
+  "@media.snapshot.header.videoSync": {
+    "context": "Label of a field in the snapshot viewer's File section (the file header's contents), a narrow label column.",
+    "maxChars": 15
+  },
+  "media.snapshot.header.joystick": "Joystick",
+  "@media.snapshot.header.joystick": {
+    "context": "Label of a field in the snapshot viewer's File section (the file header's contents), a narrow label column.",
+    "maxChars": 12
+  },
+  "media.snapshot.header.hardwareMode": "Hardware mode",
+  "@media.snapshot.header.hardwareMode": {
+    "context": "Label of a field in the snapshot viewer's File section (the file header's contents), a narrow label column.",
+    "maxChars": 19
+  },
+  "media.snapshot.header.if1RomPaged": "Interface 1 ROM paged",
+  "@media.snapshot.header.if1RomPaged": {
+    "context": "Label of a field in the snapshot viewer's File section (the file header's contents), a narrow label column.",
+    "maxChars": 31
+  },
+  "media.snapshot.header.rEmulation": "R emulation",
+  "@media.snapshot.header.rEmulation": {
+    "context": "Label of a field in the snapshot viewer's File section (the file header's contents), a narrow label column. R is the Z80 refresh register.",
+    "maxChars": 16
+  },
+  "media.snapshot.header.ldirEmulation": "LDIR emulation",
+  "@media.snapshot.header.ldirEmulation": {
+    "context": "Label of a field in the snapshot viewer's File section (the file header's contents), a narrow label column. LDIR is a mnemonic.",
+    "maxChars": 21
+  },
+  "media.snapshot.header.aySound": "AY sound in use",
+  "@media.snapshot.header.aySound": {
+    "context": "Label of a field in the snapshot viewer's File section (the file header's contents), a narrow label column.",
+    "maxChars": 22
+  },
+  "media.snapshot.header.fullerAudioBox": "Fuller Audio Box",
+  "@media.snapshot.header.fullerAudioBox": {
+    "context": "Label of a field in the snapshot viewer's File section (the file header's contents), a narrow label column. A product name.",
+    "maxChars": 24
+  },
+  "media.snapshot.header.tstateCounter": "T-state counter",
+  "@media.snapshot.header.tstateCounter": {
+    "context": "Label of a field in the snapshot viewer's File section (the file header's contents), a narrow label column.",
+    "maxChars": 22
+  },
+  "media.snapshot.value.yes": "yes",
+  "@media.snapshot.value.yes": {
+    "context": "Value of a field in the snapshot viewer's File section.",
+    "maxChars": 8
+  },
+  "media.snapshot.value.no": "no",
+  "@media.snapshot.value.no": {
+    "context": "Value of a field in the snapshot viewer's File section.",
+    "maxChars": 8
+  },
+  "media.snapshot.value.on": "on",
+  "@media.snapshot.value.on": {
+    "context": "Value of a field in the snapshot viewer's File section. An emulation option is enabled.",
+    "maxChars": 8
+  },
+  "media.snapshot.value.off": "off",
+  "@media.snapshot.value.off": {
+    "context": "Value of a field in the snapshot viewer's File section. An emulation option is disabled.",
+    "maxChars": 8
+  },
+  "media.snapshot.value.syncNormal": "Normal",
+  "@media.snapshot.value.syncNormal": {
+    "context": "Value of a field in the snapshot viewer's File section. Video synchronisation setting of a .z80 file.",
+    "maxChars": 10
+  },
+  "media.snapshot.value.syncHigh": "High",
+  "@media.snapshot.value.syncHigh": {
+    "context": "Value of a field in the snapshot viewer's File section. Video synchronisation setting of a .z80 file.",
+    "maxChars": 10
+  },
+  "media.snapshot.value.syncLow": "Low",
+  "@media.snapshot.value.syncLow": {
+    "context": "Value of a field in the snapshot viewer's File section. Video synchronisation setting of a .z80 file.",
+    "maxChars": 10
+  },
+  "media.rzx.unknownCreator": "unknown creator",
+  "@media.rzx.unknownCreator": {
+    "context": "Shown instead of the program that made an RZX recording when the file does not name it (RZX viewer, playback messages)."
+  },
+  "media.rzx.eRomWarning": "The recording was made on a +2A/+3, and plays here with the +E ROMs: a program that calls ROM routines the +E ROMs moved will desync",
+  "@media.rzx.eRomWarning": {
+    "context": "Warning when an RZX recording from a +2A/+3 plays on Klive's +E ROMs."
+  },
+  "media.rzx.noSegment": "The recording has no segment {segment}",
+  "@media.rzx.noSegment": {
+    "context": "Error: the requested RZX segment does not exist.",
+    "placeholders": {
+      "segment": "Segment number (1-based)"
+    }
+  },
+  "media.rzx.snapshotUnreadable": "The recording's .{extension} snapshot cannot be read: {message}",
+  "@media.rzx.snapshotUnreadable": {
+    "context": "Error when the snapshot inside an RZX recording cannot be parsed.",
+    "placeholders": {
+      "extension": "Snapshot extension, e.g. 'szx'",
+      "message": "The parser's error"
+    }
+  },
+  "media.rzx.cannotPlay": "The recording cannot be played: {reasons}",
+  "@media.rzx.cannotPlay": {
+    "context": "Error when Klive has no machine for an RZX recording's snapshot.",
+    "placeholders": {
+      "reasons": "Semicolon-separated reasons"
+    }
+  },
+  "media.rzx.playback.interrupted": "RZX playback stopped at frame {frame} of {frames}: {reason, select, tapeChanged {the tape was changed} diskChanged {a disk was changed} codeInjected {code was injected} registerEdited {register {register} was edited} memoryEdited {memory was edited} machineStopped {the machine was stopped, reset or reloaded} screenRecorderFailed {the screen recorder did not start} recordingStarts {recording starts from here} other {the IDE changed the machine}}",
+  "@media.rzx.playback.interrupted": {
+    "context": "RZX (input recording) stop message, shown in the emulator status bar tooltip and the output pane. The IDE changed the machine during playback; each select branch says what it did.",
+    "placeholders": {
+      "reason": "Code of what the IDE did; each branch is a clause to translate",
+      "register": "A Z80 register name, e.g. 'HL' (only in the registerEdited branch; never translated)",
+      "frame": "Frame number reached",
+      "frames": "Total frames"
+    }
+  },
+  "media.rzx.recording.interrupted": "RZX recording stopped at frame {frame}: {reason, select, tapeChanged {the tape was changed} diskChanged {a disk was changed} codeInjected {code was injected} registerEdited {register {register} was edited} memoryEdited {memory was edited} machineStopped {the machine was stopped, reset or reloaded} screenRecorderFailed {the screen recorder did not start} recordingStarts {recording starts from here} other {the IDE changed the machine}}. Every complete frame is kept; save the recording now.",
+  "@media.rzx.recording.interrupted": {
+    "context": "RZX (input recording) stop message, shown in the emulator status bar tooltip and the output pane. The IDE changed the machine during recording; each select branch says what it did.",
+    "placeholders": {
+      "reason": "Code of what the IDE did; each branch is a clause to translate",
+      "register": "A Z80 register name, e.g. 'HL' (only in the registerEdited branch; never translated)",
+      "frame": "Frame number reached"
+    }
+  },
+  "media.rzx.playback.ended": "RZX playback ended after {frames, plural, one {# frame} other {# frames}}; the machine is paused (resume to continue live)",
+  "@media.rzx.playback.ended": {
+    "context": "RZX (input recording) stop message, shown in the emulator status bar tooltip and the output pane.",
+    "placeholders": {
+      "frames": "Frames played"
+    }
+  },
+  "media.rzx.playback.endedFile": "RZX playback ended after {frames, plural, one {# frame} other {# frames}} ({file}); the machine is paused (resume to continue live)",
+  "@media.rzx.playback.endedFile": {
+    "context": "RZX (input recording) stop message, shown in the emulator status bar tooltip and the output pane.",
+    "placeholders": {
+      "frames": "Frames played",
+      "file": "Recording's file name"
+    }
+  },
+  "media.rzx.playback.noFrames": "RZX playback ended: the segment has no frames",
+  "@media.rzx.playback.noFrames": {
+    "context": "RZX (input recording) stop message, shown in the emulator status bar tooltip and the output pane."
+  },
+  "media.rzx.playback.desync": "RZX playback desynced at frame {frame} of {frames}: the program read {over, select, over {more than {expected}} other {{actual}}} IN values where the recording has {expected} (recorded by {creator}). The machine is paused at the instruction that desynced; resume to continue live.",
+  "@media.rzx.playback.desync": {
+    "context": "RZX (input recording) stop message, shown in the emulator status bar tooltip and the output pane. IN is the Z80 input instruction.",
+    "placeholders": {
+      "frame": "Frame number",
+      "frames": "Total frames",
+      "over": "'over' when the program read more values than recorded",
+      "actual": "IN values read",
+      "expected": "IN values recorded",
+      "creator": "Program that made the recording, e.g. 'Fuse 1.6'"
+    }
+  },
+  "media.rzx.playback.desyncFile": "RZX playback desynced at frame {frame} of {frames} ({file}): the program read {over, select, over {more than {expected}} other {{actual}}} IN values where the recording has {expected} (recorded by {creator}). The machine is paused at the instruction that desynced; resume to continue live.",
+  "@media.rzx.playback.desyncFile": {
+    "context": "RZX (input recording) stop message, shown in the emulator status bar tooltip and the output pane. IN is the Z80 input instruction.",
+    "placeholders": {
+      "frame": "Frame number",
+      "frames": "Total frames",
+      "over": "'over' when the program read more values than recorded",
+      "actual": "IN values read",
+      "expected": "IN values recorded",
+      "creator": "Program that made the recording, e.g. 'Fuse 1.6'",
+      "file": "Recording's file name"
+    }
+  },
+  "media.rzx.recording.overflow": "RZX recording stopped at frame {frame}: the program read more IN values in one frame than the recorder can hold. Every complete frame is kept; save the recording now.",
+  "@media.rzx.recording.overflow": {
+    "context": "RZX (input recording) stop message, shown in the emulator status bar tooltip and the output pane.",
+    "placeholders": {
+      "frame": "Frame number"
+    }
+  },
+  "media.rzx.recording.ended": "RZX recording stopped after {frames, plural, one {# frame} other {# frames}}",
+  "@media.rzx.recording.ended": {
+    "context": "RZX (input recording) stop message, shown in the emulator status bar tooltip and the output pane.",
+    "placeholders": {
+      "frames": "Frames recorded"
+    }
+  },
+  "media.rzx.recording.notActive": "The recording has stopped",
+  "@media.rzx.recording.notActive": {
+    "context": "Error of an RZX rollback when the recording is no longer running."
+  },
+  "media.rzx.recording.rollbackRange": "There are {points} rollback points; cannot go back {back}",
+  "@media.rzx.recording.rollbackRange": {
+    "context": "Error of an RZX rollback beyond the points recorded.",
+    "placeholders": {
+      "points": "Rollback points",
+      "back": "Points asked to go back"
+    }
+  },
+  "media.tape.tapTruncated": "The file is not a TZX file, and as a TAP file its block {block} runs past the end of the file",
+  "@media.tape.tapTruncated": {
+    "context": "Error of the tape viewer / tape loading when a file is neither a valid TZX nor a valid TAP tape.",
+    "placeholders": {
+      "block": "Block number (1-based)"
+    }
+  },
+  "media.state.otherCore": "The state belongs to the {saved} core, not the {core} core",
+  "@media.state.otherCore": {
+    "context": "Why a saved machine state does not fit this Klive build; shown inside media/emu messages that add a sentence after it, so no final full stop.",
+    "placeholders": {
+      "saved": "Core id, e.g. 'sp48' (not translated)",
+      "core": "Core id"
+    }
+  },
+  "media.state.noLayoutStamp": "The {core} core was built without a memory-layout stamp",
+  "@media.state.noLayoutStamp": {
+    "context": "Why a saved machine state does not fit this Klive build; shown inside media/emu messages that add a sentence after it, so no final full stop.",
+    "placeholders": {
+      "core": "Core id"
+    }
+  },
+  "media.state.otherLayout": "The state was saved by a {core} core with another memory layout (this version of Klive has changed it)",
+  "@media.state.otherLayout": {
+    "context": "Why a saved machine state does not fit this Klive build; shown inside media/emu messages that add a sentence after it, so no final full stop.",
+    "placeholders": {
+      "core": "Core id"
+    }
+  },
+  "media.state.noLayoutStampSave": "The {core} core was built without a memory-layout stamp, so its state cannot be saved or restored",
+  "@media.state.noLayoutStampSave": {
+    "context": "Error when saving or loading a machine state on a core build without a layout stamp.",
+    "placeholders": {
+      "core": "Core id"
+    }
+  },
+  "media.state.imageSize": "The state's memory image is {saved} bytes; the core has {size}",
+  "@media.state.imageSize": {
+    "context": "Error loading a machine state whose memory image size does not match the core.",
+    "placeholders": {
+      "saved": "Byte count",
+      "size": "Byte count"
+    }
+  },
+  "media.annotations.romTarget": "ROM",
+  "@media.annotations.romTarget": {
+    "context": "Name of the ROM target in a code-detection proposal (ann-detect command output, the Detect dialog's table).",
+    "maxChars": 16
+  },
+  "media.snapshot.loss.snaFramePosition": "A .sna has no frame position (the machine was at T-state {tact} of the frame); the program resumes at the start of a frame",
+  "@media.snapshot.loss.snaFramePosition": {
+    "context": "One bullet of the 'snapshot is saved, but a .sna, .z80 or .szx file does not hold everything' list (snapshot-save command output and the save dialog): something the chosen snapshot format cannot store. File extensions (.sna, .z80, .szx), register names, port numbers and machine names are not translated.",
+    "placeholders": {
+      "tact": "T-state within the frame, a plain number"
+    }
+  },
+  "media.snapshot.loss.eiDelay": "The CPU had just run EI (or a DD/FD prefix), so no interrupt was due before the next instruction; a .{format} cannot say so",
+  "@media.snapshot.loss.eiDelay": {
+    "context": "One bullet of the 'snapshot is saved, but a .sna, .z80 or .szx file does not hold everything' list (snapshot-save command output and the save dialog): something the chosen snapshot format cannot store. File extensions (.sna, .z80, .szx), register names, port numbers and machine names are not translated. EI is a Z80 mnemonic.",
+    "placeholders": {
+      "format": "The file extension without the dot: sna or z80"
+    }
+  },
+  "media.snapshot.loss.tape": "A .{format} does not record the tape",
+  "@media.snapshot.loss.tape": {
+    "context": "One bullet of the 'snapshot is saved, but a .sna, .z80 or .szx file does not hold everything' list (snapshot-save command output and the save dialog): something the chosen snapshot format cannot store. File extensions (.sna, .z80, .szx), register names, port numbers and machine names are not translated.",
+    "placeholders": {
+      "format": "The file extension without the dot: sna or z80"
+    }
+  },
+  "media.snapshot.loss.tapeFile": "A .{format} does not record the tape ({file})",
+  "@media.snapshot.loss.tapeFile": {
+    "context": "One bullet of the 'snapshot is saved, but a .sna, .z80 or .szx file does not hold everything' list (snapshot-save command output and the save dialog): something the chosen snapshot format cannot store. File extensions (.sna, .z80, .szx), register names, port numbers and machine names are not translated.",
+    "placeholders": {
+      "format": "The file extension without the dot: sna or z80",
+      "file": "The tape file's name"
+    }
+  },
+  "media.snapshot.loss.disks": "A .{format} does not record the inserted {count, plural, one {disk} other {disks}}",
+  "@media.snapshot.loss.disks": {
+    "context": "One bullet of the 'snapshot is saved, but a .sna, .z80 or .szx file does not hold everything' list (snapshot-save command output and the save dialog): something the chosen snapshot format cannot store. File extensions (.sna, .z80, .szx), register names, port numbers and machine names are not translated.",
+    "placeholders": {
+      "format": "The file extension without the dot: sna or z80",
+      "count": "Number of inserted disks"
+    }
+  },
+  "media.snapshot.loss.snaTrdos": "A .sna keeps only whether TR-DOS was paged in, not the disk controller's state",
+  "@media.snapshot.loss.snaTrdos": {
+    "context": "One bullet of the 'snapshot is saved, but a .sna, .z80 or .szx file does not hold everything' list (snapshot-save command output and the save dialog): something the chosen snapshot format cannot store. File extensions (.sna, .z80, .szx), register names, port numbers and machine names are not translated. TR-DOS is a product name."
+  },
+  "media.snapshot.loss.z80Beta128": "A .z80 does not record the Beta 128 disk interface",
+  "@media.snapshot.loss.z80Beta128": {
+    "context": "One bullet of the 'snapshot is saved, but a .sna, .z80 or .szx file does not hold everything' list (snapshot-save command output and the save dialog): something the chosen snapshot format cannot store. File extensions (.sna, .z80, .szx), register names, port numbers and machine names are not translated. Beta 128 is a product name."
+  },
+  "media.snapshot.loss.snaIff": "IFF1 ({iff1}) differs from IFF2 ({iff2}); a .sna keeps only IFF2, which becomes IFF1 on load",
+  "@media.snapshot.loss.snaIff": {
+    "context": "One bullet of the 'snapshot is saved, but a .sna, .z80 or .szx file does not hold everything' list (snapshot-save command output and the save dialog): something the chosen snapshot format cannot store. File extensions (.sna, .z80, .szx), register names, port numbers and machine names are not translated. IFF1/IFF2 are Z80 interrupt flip-flop names.",
+    "placeholders": {
+      "iff1": "0 or 1",
+      "iff2": "0 or 1"
+    }
+  },
+  "media.snapshot.loss.sna16k": "A .sna has no 16K layout; the file loads as a 48K",
+  "@media.snapshot.loss.sna16k": {
+    "context": "One bullet of the 'snapshot is saved, but a .sna, .z80 or .szx file does not hold everything' list (snapshot-save command output and the save dialog): something the chosen snapshot format cannot store. File extensions (.sna, .z80, .szx), register names, port numbers and machine names are not translated."
+  },
+  "media.snapshot.loss.snaNtsc": "A .sna has no NTSC layout; the file loads as a PAL 48K",
+  "@media.snapshot.loss.snaNtsc": {
+    "context": "One bullet of the 'snapshot is saved, but a .sna, .z80 or .szx file does not hold everything' list (snapshot-save command output and the save dialog): something the chosen snapshot format cannot store. File extensions (.sna, .z80, .szx), register names, port numbers and machine names are not translated."
+  },
+  "media.snapshot.loss.snaTimex": "A .sna has no Timex layout; the file loads as a 48K",
+  "@media.snapshot.loss.snaTimex": {
+    "context": "One bullet of the 'snapshot is saved, but a .sna, .z80 or .szx file does not hold everything' list (snapshot-save command output and the save dialog): something the chosen snapshot format cannot store. File extensions (.sna, .z80, .szx), register names, port numbers and machine names are not translated."
+  },
+  "media.snapshot.loss.snaTimexScreenMode": "A .sna has no Timex layout; the file loads as a 48K, without the SCLD's port $FF (screen mode {mode})",
+  "@media.snapshot.loss.snaTimexScreenMode": {
+    "context": "One bullet of the 'snapshot is saved, but a .sna, .z80 or .szx file does not hold everything' list (snapshot-save command output and the save dialog): something the chosen snapshot format cannot store. File extensions (.sna, .z80, .szx), register names, port numbers and machine names are not translated. SCLD is the Timex chip's name.",
+    "placeholders": {
+      "mode": "Hex value of port $FF, e.g. '$06'"
+    }
+  },
+  "media.snapshot.loss.snaChunkMap": "A .sna has no chunk map: port $F4 ({value}) is lost",
+  "@media.snapshot.loss.snaChunkMap": {
+    "context": "One bullet of the 'snapshot is saved, but a .sna, .z80 or .szx file does not hold everything' list (snapshot-save command output and the save dialog): something the chosen snapshot format cannot store. File extensions (.sna, .z80, .szx), register names, port numbers and machine names are not translated. The chunk map is the Timex memory paging register.",
+    "placeholders": {
+      "value": "Hex value of port $F4, e.g. '$01'"
+    }
+  },
+  "media.snapshot.loss.snaDock": "A .sna does not record the cartridge in the DOCK",
+  "@media.snapshot.loss.snaDock": {
+    "context": "One bullet of the 'snapshot is saved, but a .sna, .z80 or .szx file does not hold everything' list (snapshot-save command output and the save dialog): something the chosen snapshot format cannot store. File extensions (.sna, .z80, .szx), register names, port numbers and machine names are not translated. DOCK is the Timex cartridge bank's name."
+  },
+  "media.snapshot.loss.sna48Ay": "A 48K .sna has no AY registers; they are not saved",
+  "@media.snapshot.loss.sna48Ay": {
+    "context": "One bullet of the 'snapshot is saved, but a .sna, .z80 or .szx file does not hold everything' list (snapshot-save command output and the save dialog): something the chosen snapshot format cannot store. File extensions (.sna, .z80, .szx), register names, port numbers and machine names are not translated. AY is the sound chip's name."
+  },
+  "media.snapshot.loss.snaPlus3": "A .sna has no $1FFD port and no +2A/+3 layout; the file loads as a ZX Spectrum 128K",
+  "@media.snapshot.loss.snaPlus3": {
+    "context": "One bullet of the 'snapshot is saved, but a .sna, .z80 or .szx file does not hold everything' list (snapshot-save command output and the save dialog): something the chosen snapshot format cannot store. File extensions (.sna, .z80, .szx), register names, port numbers and machine names are not translated."
+  },
+  "media.snapshot.loss.snaPlus2": "A .sna has no +2 layout; the file loads as a ZX Spectrum 128K",
+  "@media.snapshot.loss.snaPlus2": {
+    "context": "One bullet of the 'snapshot is saved, but a .sna, .z80 or .szx file does not hold everything' list (snapshot-save command output and the save dialog): something the chosen snapshot format cannot store. File extensions (.sna, .z80, .szx), register names, port numbers and machine names are not translated."
+  },
+  "media.snapshot.loss.snaScorpion": "A .sna has no Scorpion layout; the file loads as a 128K, without RAM banks 8-15",
+  "@media.snapshot.loss.snaScorpion": {
+    "context": "One bullet of the 'snapshot is saved, but a .sna, .z80 or .szx file does not hold everything' list (snapshot-save command output and the save dialog): something the chosen snapshot format cannot store. File extensions (.sna, .z80, .szx), register names, port numbers and machine names are not translated."
+  },
+  "media.snapshot.loss.snaAy": "A .sna has no AY registers; the sound chip starts silent",
+  "@media.snapshot.loss.snaAy": {
+    "context": "One bullet of the 'snapshot is saved, but a .sna, .z80 or .szx file does not hold everything' list (snapshot-save command output and the save dialog): something the chosen snapshot format cannot store. File extensions (.sna, .z80, .szx), register names, port numbers and machine names are not translated. AY is the sound chip's name."
+  },
+  "media.snapshot.loss.z80Ntsc": "A .z80 has no NTSC 48K; the file names a PAL 48K",
+  "@media.snapshot.loss.z80Ntsc": {
+    "context": "One bullet of the 'snapshot is saved, but a .sna, .z80 or .szx file does not hold everything' list (snapshot-save command output and the save dialog): something the chosen snapshot format cannot store. File extensions (.sna, .z80, .szx), register names, port numbers and machine names are not translated."
+  },
+  "media.snapshot.loss.z80Plus3e": "A .z80 has no +3e; the file names a +3, and other emulators run it with the Amstrad ROMs",
+  "@media.snapshot.loss.z80Plus3e": {
+    "context": "One bullet of the 'snapshot is saved, but a .sna, .z80 or .szx file does not hold everything' list (snapshot-save command output and the save dialog): something the chosen snapshot format cannot store. File extensions (.sna, .z80, .szx), register names, port numbers and machine names are not translated."
+  },
+  "media.snapshot.loss.z80Plus2e": "A .z80 has no +2E; the file names a +2A, and other emulators run it with the Amstrad ROMs",
+  "@media.snapshot.loss.z80Plus2e": {
+    "context": "One bullet of the 'snapshot is saved, but a .sna, .z80 or .szx file does not hold everything' list (snapshot-save command output and the save dialog): something the chosen snapshot format cannot store. File extensions (.sna, .z80, .szx), register names, port numbers and machine names are not translated."
+  },
+  "media.snapshot.loss.z8048Ay": "A 48K .z80 keeps the AY registers only for an add-on AY; they are not saved",
+  "@media.snapshot.loss.z8048Ay": {
+    "context": "One bullet of the 'snapshot is saved, but a .sna, .z80 or .szx file does not hold everything' list (snapshot-save command output and the save dialog): something the chosen snapshot format cannot store. File extensions (.sna, .z80, .szx), register names, port numbers and machine names are not translated. AY is the sound chip's name."
+  },
+  "media.snapshot.loss.z80Dock": "A .z80 does not record the cartridge in the DOCK",
+  "@media.snapshot.loss.z80Dock": {
+    "context": "One bullet of the 'snapshot is saved, but a .sna, .z80 or .szx file does not hold everything' list (snapshot-save command output and the save dialog): something the chosen snapshot format cannot store. File extensions (.sna, .z80, .szx), register names, port numbers and machine names are not translated. DOCK is the Timex cartridge bank's name."
+  },
+  "media.snapshot.loss.szx48Ay": "The AY registers of a 48K without an add-on AY are not saved",
+  "@media.snapshot.loss.szx48Ay": {
+    "context": "One bullet of the 'snapshot is saved, but a .sna, .z80 or .szx file does not hold everything' list (snapshot-save command output and the save dialog): something the chosen snapshot format cannot store. File extensions (.sna, .z80, .szx), register names, port numbers and machine names are not translated. AY is the sound chip's name."
+  },
+  "media.snapshot.loss.szxDiskNoFile": "The disk in drive {drive} has no file, and a .szx can only link disks to files",
+  "@media.snapshot.loss.szxDiskNoFile": {
+    "context": "One bullet of the 'snapshot is saved, but a .sna, .z80 or .szx file does not hold everything' list (snapshot-save command output and the save dialog): something the chosen snapshot format cannot store. File extensions (.sna, .z80, .szx), register names, port numbers and machine names are not translated.",
+    "placeholders": {
+      "drive": "Drive letter, A or B"
+    }
+  },
+  "media.snapshot.loss.szxBetaDiskNoFile": "The Beta disk in drive {drive} has no file, and a .szx can only link disks to files",
+  "@media.snapshot.loss.szxBetaDiskNoFile": {
+    "context": "One bullet of the 'snapshot is saved, but a .sna, .z80 or .szx file does not hold everything' list (snapshot-save command output and the save dialog): something the chosen snapshot format cannot store. File extensions (.sna, .z80, .szx), register names, port numbers and machine names are not translated. Beta is the Beta 128 disk interface.",
+    "placeholders": {
+      "drive": "Drive letter, A or B"
+    }
+  },
+  "media.snapshot.refused.unsupported": "A {machine} snapshot cannot be saved",
+  "@media.snapshot.refused.unsupported": {
+    "context": "Reason a snapshot cannot be saved in the chosen format (snapshot-save command error and the save dialog's error box). File extensions, register names, port numbers and machine names are not translated.",
+    "placeholders": {
+      "machine": "The machine's name, e.g. 'ZX Spectrum +3e' (not translated)"
+    }
+  },
+  "media.snapshot.refused.sna48Stack": "SP is {sp}: a 48K .sna stores PC on the stack, and {pushAt} is not RAM it could be stored in",
+  "@media.snapshot.refused.sna48Stack": {
+    "context": "Reason a snapshot cannot be saved in the chosen format (snapshot-save command error and the save dialog's error box). File extensions, register names, port numbers and machine names are not translated. SP and PC are Z80 register names.",
+    "placeholders": {
+      "sp": "Hex value of SP, e.g. '$3FFE'",
+      "pushAt": "Hex address PC would be pushed to"
+    }
+  },
+  "media.snapshot.refused.snaPlus3Special": "The machine is in +3 special paging mode ($1FFD = {value}), which a .sna cannot hold; save it as .szx or .z80",
+  "@media.snapshot.refused.snaPlus3Special": {
+    "context": "Reason a snapshot cannot be saved in the chosen format (snapshot-save command error and the save dialog's error box). File extensions, register names, port numbers and machine names are not translated.",
+    "placeholders": {
+      "value": "Hex value of port $1FFD"
+    }
+  },
+  "media.snapshot.refused.snaScorpion": "The Scorpion's $1FFD is {value} (RAM at $0000, the service ROM or a bank above 7), which a .sna cannot hold; save it as .szx or .z80",
+  "@media.snapshot.refused.snaScorpion": {
+    "context": "Reason a snapshot cannot be saved in the chosen format (snapshot-save command error and the save dialog's error box). File extensions, register names, port numbers and machine names are not translated.",
+    "placeholders": {
+      "value": "Hex value of port $1FFD"
+    }
+  },
+  "media.snapshot.refused.noRamBank": "The {machine} snapshot has no RAM bank {bank}",
+  "@media.snapshot.refused.noRamBank": {
+    "context": "Reason a snapshot cannot be saved in the chosen format (snapshot-save command error and the save dialog's error box). File extensions, register names, port numbers and machine names are not translated.",
+    "placeholders": {
+      "machine": "The machine's name (not translated)",
+      "bank": "RAM bank number"
+    }
+  },
+  "media.snapshot.refused.insidePrefix": "The CPU stands between an instruction prefix and its opcode, which no snapshot format can hold; step once more and save again",
+  "@media.snapshot.refused.insidePrefix": {
+    "context": "Reason a snapshot cannot be saved in the chosen format (snapshot-save command error and the save dialog's error box). File extensions, register names, port numbers and machine names are not translated. Also shown when an RZX recording cannot start."
+  },
+  "media.rzx.read.noSignature": "The file has no \"RZX!\" signature",
+  "@media.rzx.read.noSignature": {
+    "context": "Reason an RZX input recording file cannot be read (RZX viewer, rzx-play command error, the playback dialog). 'block N (offset M)' names a block of the file by its index and byte offset. \"RZX!\" is the literal file signature."
+  },
+  "media.rzx.read.headerTruncated": "The RZX header is truncated",
+  "@media.rzx.read.headerTruncated": {
+    "context": "Reason an RZX input recording file cannot be read (RZX viewer, rzx-play command error, the playback dialog). 'block N (offset M)' names a block of the file by its index and byte offset."
+  },
+  "media.rzx.read.newerVersion": "RZX version {major}.{minor} is newer than 0.13; blocks Klive does not know are skipped.",
+  "@media.rzx.read.newerVersion": {
+    "context": "Note about an RZX input recording file that was read anyway (RZX viewer's notes list and the playback warnings).",
+    "placeholders": {
+      "major": "Major version number",
+      "minor": "Minor version number"
+    }
+  },
+  "media.rzx.read.signed": "The file is signed; Klive does not verify RZX signatures.",
+  "@media.rzx.read.signed": {
+    "context": "Note about an RZX input recording file that was read anyway (RZX viewer's notes list and the playback warnings)."
+  },
+  "media.rzx.read.blockTruncated": "Block {block} at offset {offset} is truncated (no room for its header)",
+  "@media.rzx.read.blockTruncated": {
+    "context": "Reason an RZX input recording file cannot be read (RZX viewer, rzx-play command error, the playback dialog). 'block N (offset M)' names a block of the file by its index and byte offset.",
+    "placeholders": {
+      "block": "Index of the block in the file (0-based)",
+      "offset": "Byte offset of the block in the file"
+    }
+  },
+  "media.rzx.read.blockLength": "Block {block} (ID 0x{id}) at offset {offset} has an invalid length ({length})",
+  "@media.rzx.read.blockLength": {
+    "context": "Reason an RZX input recording file cannot be read (RZX viewer, rzx-play command error, the playback dialog). 'block N (offset M)' names a block of the file by its index and byte offset.",
+    "placeholders": {
+      "block": "Index of the block in the file (0-based)",
+      "offset": "Byte offset of the block in the file",
+      "id": "Block ID as two hex digits",
+      "length": "The declared length in bytes"
+    }
+  },
+  "media.rzx.read.skippedSecurityInfo": "Skipped the security information block (block {block} (offset {offset})); Klive does not verify RZX signatures.",
+  "@media.rzx.read.skippedSecurityInfo": {
+    "context": "Note about an RZX input recording file that was read anyway (RZX viewer's notes list and the playback warnings).",
+    "placeholders": {
+      "block": "Index of the block in the file (0-based)",
+      "offset": "Byte offset of the block in the file"
+    }
+  },
+  "media.rzx.read.skippedSecuritySignature": "Skipped the security signature block (block {block} (offset {offset})); Klive does not verify RZX signatures.",
+  "@media.rzx.read.skippedSecuritySignature": {
+    "context": "Note about an RZX input recording file that was read anyway (RZX viewer's notes list and the playback warnings).",
+    "placeholders": {
+      "block": "Index of the block in the file (0-based)",
+      "offset": "Byte offset of the block in the file"
+    }
+  },
+  "media.rzx.read.skippedUnknown": "Skipped an unknown block with ID 0x{id} (block {block} (offset {offset}), {length} bytes).",
+  "@media.rzx.read.skippedUnknown": {
+    "context": "Note about an RZX input recording file that was read anyway (RZX viewer's notes list and the playback warnings).",
+    "placeholders": {
+      "block": "Index of the block in the file (0-based)",
+      "offset": "Byte offset of the block in the file",
+      "id": "Block ID as two hex digits",
+      "length": "Block length in bytes"
+    }
+  },
+  "media.rzx.read.noSnapshot": "The recording has no snapshot to start from",
+  "@media.rzx.read.noSnapshot": {
+    "context": "Reason an RZX input recording file cannot be read (RZX viewer, rzx-play command error, the playback dialog). 'block N (offset M)' names a block of the file by its index and byte offset."
+  },
+  "media.rzx.read.creatorShort": "The creator block (block {block} (offset {offset})) is too short",
+  "@media.rzx.read.creatorShort": {
+    "context": "Reason an RZX input recording file cannot be read (RZX viewer, rzx-play command error, the playback dialog). 'block N (offset M)' names a block of the file by its index and byte offset.",
+    "placeholders": {
+      "block": "Index of the block in the file (0-based)",
+      "offset": "Byte offset of the block in the file"
+    }
+  },
+  "media.rzx.read.snapshotShort": "The snapshot block (block {block} (offset {offset})) is too short",
+  "@media.rzx.read.snapshotShort": {
+    "context": "Reason an RZX input recording file cannot be read (RZX viewer, rzx-play command error, the playback dialog). 'block N (offset M)' names a block of the file by its index and byte offset.",
+    "placeholders": {
+      "block": "Index of the block in the file (0-based)",
+      "offset": "Byte offset of the block in the file"
+    }
+  },
+  "media.rzx.read.snapshotExternal": "The snapshot block (block {block} (offset {offset})) refers to an external snapshot file; Klive plays only recordings that embed their snapshot",
+  "@media.rzx.read.snapshotExternal": {
+    "context": "Reason an RZX input recording file cannot be read (RZX viewer, rzx-play command error, the playback dialog). 'block N (offset M)' names a block of the file by its index and byte offset.",
+    "placeholders": {
+      "block": "Index of the block in the file (0-based)",
+      "offset": "Byte offset of the block in the file"
+    }
+  },
+  "media.rzx.read.snapshotLength": "The snapshot block (block {block} (offset {offset})) declares {declared} bytes but holds {actual}",
+  "@media.rzx.read.snapshotLength": {
+    "context": "Reason an RZX input recording file cannot be read (RZX viewer, rzx-play command error, the playback dialog). 'block N (offset M)' names a block of the file by its index and byte offset.",
+    "placeholders": {
+      "block": "Index of the block in the file (0-based)",
+      "offset": "Byte offset of the block in the file",
+      "declared": "Declared size in bytes",
+      "actual": "Actual size in bytes"
+    }
+  },
+  "media.rzx.read.snapshotInflate": "Cannot decompress the snapshot block (block {block} (offset {offset})): {error}",
+  "@media.rzx.read.snapshotInflate": {
+    "context": "Reason an RZX input recording file cannot be read (RZX viewer, rzx-play command error, the playback dialog). 'block N (offset M)' names a block of the file by its index and byte offset.",
+    "placeholders": {
+      "block": "Index of the block in the file (0-based)",
+      "offset": "Byte offset of the block in the file",
+      "error": "The decompressor's error (English)"
+    }
+  },
+  "media.rzx.read.inputShort": "The input recording block (block {block} (offset {offset})) is too short",
+  "@media.rzx.read.inputShort": {
+    "context": "Reason an RZX input recording file cannot be read (RZX viewer, rzx-play command error, the playback dialog). 'block N (offset M)' names a block of the file by its index and byte offset.",
+    "placeholders": {
+      "block": "Index of the block in the file (0-based)",
+      "offset": "Byte offset of the block in the file"
+    }
+  },
+  "media.rzx.read.inputProtected": "The input recording block (block {block} (offset {offset})) is protected (encrypted); Klive cannot play it",
+  "@media.rzx.read.inputProtected": {
+    "context": "Reason an RZX input recording file cannot be read (RZX viewer, rzx-play command error, the playback dialog). 'block N (offset M)' names a block of the file by its index and byte offset.",
+    "placeholders": {
+      "block": "Index of the block in the file (0-based)",
+      "offset": "Byte offset of the block in the file"
+    }
+  },
+  "media.rzx.read.inputInflate": "Cannot decompress the input recording block (block {block} (offset {offset})): {error}",
+  "@media.rzx.read.inputInflate": {
+    "context": "Reason an RZX input recording file cannot be read (RZX viewer, rzx-play command error, the playback dialog). 'block N (offset M)' names a block of the file by its index and byte offset.",
+    "placeholders": {
+      "block": "Index of the block in the file (0-based)",
+      "offset": "Byte offset of the block in the file",
+      "error": "The decompressor's error (English)"
+    }
+  },
+  "media.rzx.read.inputEndsEarly": "The input recording block (block {block} (offset {offset})) declares {frames} frames but ends after {read}",
+  "@media.rzx.read.inputEndsEarly": {
+    "context": "Reason an RZX input recording file cannot be read (RZX viewer, rzx-play command error, the playback dialog). 'block N (offset M)' names a block of the file by its index and byte offset.",
+    "placeholders": {
+      "block": "Index of the block in the file (0-based)",
+      "offset": "Byte offset of the block in the file",
+      "frames": "Declared frame count",
+      "read": "Frames actually present"
+    }
+  },
+  "media.rzx.read.repeatFirst": "Frame {frame} of the input recording block (block {block} (offset {offset})) repeats a previous frame, but none precedes it",
+  "@media.rzx.read.repeatFirst": {
+    "context": "Reason an RZX input recording file cannot be read (RZX viewer, rzx-play command error, the playback dialog). 'block N (offset M)' names a block of the file by its index and byte offset.",
+    "placeholders": {
+      "block": "Index of the block in the file (0-based)",
+      "offset": "Byte offset of the block in the file",
+      "frame": "Frame index within the block"
+    }
+  },
+  "media.rzx.read.inPastEnd": "Frame {frame} of the input recording block (block {block} (offset {offset})) declares {count} IN values past the end of the block",
+  "@media.rzx.read.inPastEnd": {
+    "context": "Reason an RZX input recording file cannot be read (RZX viewer, rzx-play command error, the playback dialog). 'block N (offset M)' names a block of the file by its index and byte offset. IN is the Z80 instruction (port reads).",
+    "placeholders": {
+      "block": "Index of the block in the file (0-based)",
+      "offset": "Byte offset of the block in the file",
+      "frame": "Frame index within the block",
+      "count": "Number of IN values"
+    }
+  },
+  "media.rzx.read.trailingBytes": "Ignored {bytes} bytes after the {frames} frames of the input recording block (block {block} (offset {offset})).",
+  "@media.rzx.read.trailingBytes": {
+    "context": "Note about an RZX input recording file that was read anyway (RZX viewer's notes list and the playback warnings).",
+    "placeholders": {
+      "block": "Index of the block in the file (0-based)",
+      "offset": "Byte offset of the block in the file",
+      "bytes": "Number of extra bytes",
+      "frames": "Frame count of the block"
+    }
+  },
+  "media.rzx.recording.started": "RZX recording started (PC: {pc})",
+  "@media.rzx.recording.started": {
+    "context": "Line in the emulator output pane when an RZX input recording starts. PC is the Z80 register name.",
+    "placeholders": {
+      "pc": "Hex program counter, e.g. '$8000'"
+    }
+  }
+}

@@ -3,6 +3,7 @@ import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
 import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
 import { commandError, commandSuccessWith, IdeCommandBase } from "../services/ide-commands";
 import { SJASMP_ALL, SJASMP_INSTALL_FOLDER } from "@main/sjasmp-integration/sjasmp-config";
+import { t } from "@common/i18n/i18n";
 
 type ResetSjasmPlusCommandArgs = {
   sjasmpPath: string;
@@ -11,7 +12,9 @@ type ResetSjasmPlusCommandArgs = {
 
 export class ResetSjasmPlusCommand extends IdeCommandBase<ResetSjasmPlusCommandArgs> {
   readonly id = "sjasmp-reset";
-  readonly description = "Resets SjasmPlus settings with the provided installation folder. ";
+  get description() {
+    return t("commands.sjasmp.resetDescription");
+  }
   readonly usage = "sjasmp-reset <Full path of the SjasmPlus installation folder> [-p]";
   readonly aliases = ["sjasmpr"];
 
@@ -28,18 +31,17 @@ export class ResetSjasmPlusCommand extends IdeCommandBase<ResetSjasmPlusCommandA
     if (args["-p"]) {
       const state = context.store.getState();
       if (!state.project?.isKliveProject) {
-        return commandError("You need a Klive project loaded when running this command with '-p'.");
+        return commandError(t("commands.common.projectOptionNeedsProject"));
       }
     }
     if (args.sjasmpPath) {
       await context.service.ideCommandsService.executeCommand(
         `set ${option} ${SJASMP_INSTALL_FOLDER} "${args.sjasmpPath}"`
       );
-      let cmdMessage = `SjasmPlus install folder set to ${args.sjasmpPath}`;
-      return commandSuccessWith(cmdMessage);
+      return commandSuccessWith(t("commands.sjasmp.folderSet", { path: args.sjasmpPath }));
     } else {
       await context.service.ideCommandsService.executeCommand(`set ${SJASMP_ALL}`);
-      return commandSuccessWith("SjasmPlus settings removed");
+      return commandSuccessWith(t("commands.sjasmp.removed"));
     }
   }
 }

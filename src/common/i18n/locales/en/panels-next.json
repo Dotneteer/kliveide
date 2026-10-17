@@ -1,0 +1,1825 @@
+{
+  "panels.next.button.save": "Save",
+  "@panels.next.button.save": {
+    "context": "Button of the NEX annotation dialogs (comments, labels, regions) that saves the edit and closes the dialog.",
+    "maxChars": 10
+  },
+  "panels.next.button.clear": "Clear",
+  "@panels.next.button.clear": {
+    "context": "Button of the NEX annotation comment dialogs that removes the existing comment and closes the dialog.",
+    "maxChars": 10
+  },
+  "panels.next.button.delete": "Delete",
+  "@panels.next.button.delete": {
+    "context": "Button of the NEX label dialog that deletes the label being edited. Also the confirm button of the 'Delete label' question.",
+    "maxChars": 10
+  },
+  "panels.next.field.location": "Location",
+  "@panels.next.field.location": {
+    "context": "Row label in the NEX annotation dialogs: where in the program the comment goes (bank, offset, address follow).",
+    "maxChars": 14
+  },
+  "panels.next.field.bank": "Bank",
+  "@panels.next.field.bank": {
+    "context": "Small label before a 16K memory bank number in the NEX annotation dialogs' Location row.",
+    "maxChars": 10
+  },
+  "panels.next.field.bankOffset": "Bank offset",
+  "@panels.next.field.bankOffset": {
+    "context": "Small label before a byte offset inside a 16K memory bank, in the NEX annotation dialogs' Location row.",
+    "maxChars": 16
+  },
+  "panels.next.field.address": "Address",
+  "@panels.next.field.address": {
+    "context": "Small label before a Z80 memory address, in the NEX annotation dialogs and the sprite inspector.",
+    "maxChars": 12
+  },
+  "panels.next.field.comment": "Comment",
+  "@panels.next.field.comment": {
+    "context": "Row label of the comment text box in the NEX annotation dialogs.",
+    "maxChars": 14
+  },
+  "panels.next.field.preview": "Preview",
+  "@panels.next.field.preview": {
+    "context": "Row label in the NEX annotation dialogs: how the edited line(s) will look in the disassembly listing.",
+    "maxChars": 14
+  },
+  "panels.next.field.instruction": "Instruction",
+  "@panels.next.field.instruction": {
+    "context": "Row label in the NEX annotation dialogs: the Z80 instruction on the chosen listing row (shown read-only).",
+    "maxChars": 16
+  },
+  "panels.next.field.scope": "Scope",
+  "@panels.next.field.scope": {
+    "context": "Row label / column header in the NEX label dialogs: whether a label belongs to one bank or is global.",
+    "maxChars": 10
+  },
+  "panels.next.field.name": "Name",
+  "@panels.next.field.name": {
+    "context": "Row label / column header in the NEX label dialogs: the label's identifier.",
+    "maxChars": 10
+  },
+  "panels.next.field.value": "Value",
+  "@panels.next.field.value": {
+    "context": "Row label / column header in the NEX label dialogs: the address or bank offset the label names.",
+    "maxChars": 10
+  },
+  "panels.next.scope.bank": "Bank {bank}",
+  "@panels.next.scope.bank": {
+    "context": "Label scope in the NEX label dialogs: a label that names an address inside one 16K bank only. Radio option, list cell and column value.",
+    "maxChars": 12,
+    "placeholders": {
+      "bank": "The bank number in decimal, e.g. '5'"
+    }
+  },
+  "panels.next.scope.global": "Global",
+  "@panels.next.scope.global": {
+    "context": "Label scope in the NEX label dialogs: a label that names a 16-bit address visible from every bank.",
+    "maxChars": 10
+  },
+  "panels.next.scope.all": "All",
+  "@panels.next.scope.all": {
+    "context": "Scope filter option in the NEX Labels list: show bank and global labels alike.",
+    "maxChars": 8
+  },
+  "panels.next.search.labels": "Search labels",
+  "@panels.next.search.labels": {
+    "context": "Placeholder and accessible name of the search box over a list of labels in the NEX label dialogs."
+  },
+  "panels.next.empty.noMatchingLabels": "No matching labels",
+  "@panels.next.empty.noMatchingLabels": {
+    "context": "Shown in a NEX label dialog's list when no label matches the search text."
+  },
+  "panels.next.action.goTo": "Go To",
+  "@panels.next.action.goTo": {
+    "context": "Button in a row of the NEX Labels/Regions lists (and the sprite view's address box): closes the list and scrolls the disassembly to that place.",
+    "maxChars": 8
+  },
+  "panels.next.regionType.disassembly": "Disassembly",
+  "@panels.next.regionType.disassembly": {
+    "context": "Region type in the NEX annotation editor: bytes listed as Z80 instructions. Radio option, filter and list cell.",
+    "maxChars": 14
+  },
+  "panels.next.regionType.code": "Code",
+  "@panels.next.regionType.code": {
+    "context": "Region type name in the NEX viewer's per-bank content-mix legend: bytes listed as Z80 instructions.",
+    "maxChars": 10
+  },
+  "panels.next.regionType.bytes": "Bytes",
+  "@panels.next.regionType.bytes": {
+    "context": "Region type in the NEX annotation editor: bytes listed as .defb data.",
+    "maxChars": 10
+  },
+  "panels.next.regionType.words": "Words",
+  "@panels.next.regionType.words": {
+    "context": "Region type in the NEX annotation editor: bytes listed as 16-bit .defw data.",
+    "maxChars": 10
+  },
+  "panels.next.regionType.text": "Text",
+  "@panels.next.regionType.text": {
+    "context": "Region type in the NEX annotation editor: bytes listed as .defm text strings.",
+    "maxChars": 10
+  },
+  "panels.next.regionType.graphics": "Graphics",
+  "@panels.next.regionType.graphics": {
+    "context": "Region type in the NEX annotation editor: bytes holding graphics (e.g. sprite patterns).",
+    "maxChars": 12
+  },
+  "panels.next.regionType.skip": "Skip",
+  "@panels.next.regionType.skip": {
+    "context": "Region type in the NEX annotation editor: bytes left out of the listing (one .skip line).",
+    "maxChars": 10
+  },
+  "panels.next.regionType.allTypes": "All Types",
+  "@panels.next.regionType.allTypes": {
+    "context": "Filter option of the NEX Regions list: show regions of every type.",
+    "maxChars": 14
+  },
+  "panels.next.notImplemented": "Not implemented yet",
+  "@panels.next.notImplemented": {
+    "context": "Empty-state message of a ZX Spectrum Next file viewer (.shc, .shr, .slr, .vid) that does not exist yet."
+  },
+  "panels.next.viewerTitle": "{extension} Viewer",
+  "@panels.next.viewerTitle": {
+    "context": "Header of a ZX Spectrum Next file viewer that does not exist yet, e.g. '.VID Viewer'.",
+    "placeholders": {
+      "extension": "The file extension, e.g. '.VID'"
+    }
+  },
+  "panels.next.layer2.picture": "Layer 2 picture",
+  "@panels.next.layer2.picture": {
+    "context": "Accessible name of the Layer 2 (.sl2/.nxi) picture viewer's toolbar and of the picture itself. 'Layer 2' is a ZX Spectrum Next screen layer name; keep it."
+  },
+  "panels.next.layer2.resolution": "Resolution",
+  "@panels.next.layer2.resolution": {
+    "context": "Accessible name of the Layer 2 picture viewer's resolution switch (320×256 or 640×256)."
+  },
+  "panels.next.layer2.res8bit": "8 bits a pixel",
+  "@panels.next.layer2.res8bit": {
+    "context": "Tooltip of the 320×256 button in the Layer 2 picture viewer: each byte is one pixel."
+  },
+  "panels.next.layer2.res4bit": "4 bits a pixel, two pixels a byte",
+  "@panels.next.layer2.res4bit": {
+    "context": "Tooltip of the 640×256 button in the Layer 2 picture viewer."
+  },
+  "panels.next.layer2.paletteFromFile": "palette from the file",
+  "@panels.next.layer2.paletteFromFile": {
+    "context": "Note in the Layer 2 picture viewer's toolbar: the colours come from the file's own palette. Lower-case on purpose."
+  },
+  "panels.next.layer2.paletteDefault": "default Layer 2 palette (the file has none)",
+  "@panels.next.layer2.paletteDefault": {
+    "context": "Note in the Layer 2 picture viewer's toolbar: the file has no palette, so the Next's default one is used. Lower-case on purpose."
+  },
+  "panels.next.layer2.overlays": "Overlays",
+  "@panels.next.layer2.overlays": {
+    "context": "Accessible name of the Layer 2 picture viewer's group of overlay switches."
+  },
+  "panels.next.layer2.banks": "Banks",
+  "@panels.next.layer2.banks": {
+    "context": "Toggle button of the Layer 2 picture viewer that outlines the 16K memory banks the picture fills.",
+    "maxChars": 10
+  },
+  "panels.next.layer2.banksTitle": "Outline the 16K banks the picture fills",
+  "@panels.next.layer2.banksTitle": {
+    "context": "Tooltip of the Layer 2 picture viewer's Banks toggle."
+  },
+  "panels.next.scr.showDump": "Display screen data dump",
+  "@panels.next.scr.showDump": {
+    "context": "Tooltip of the button in the .scr (ZX Spectrum screen file) viewer that opens the file's bytes as a memory dump."
+  },
+  "panels.next.dumpTitle.dump": "{source} - Dump",
+  "@panels.next.dumpTitle.dump": {
+    "context": "Title of the document tab that shows a screen file's bytes as a memory dump.",
+    "placeholders": {
+      "source": "The file's name or project path"
+    }
+  },
+  "panels.next.scr.invalidSize": "Invalid file size ({size} bytes): an .SCR file is {expected} bytes long.",
+  "@panels.next.scr.invalidSize": {
+    "context": "Error shown instead of the .scr (ZX Spectrum screen file) viewer when the file has the wrong length.",
+    "placeholders": {
+      "size": "The file's length in bytes",
+      "expected": "The required length, 6912"
+    }
+  },
+  "panels.next.palette.undo": "Undo",
+  "@panels.next.palette.undo": {
+    "context": "Tooltip of the undo button of the ZX Spectrum Next palette (.pal/.npl) editor."
+  },
+  "panels.next.palette.redo": "Redo",
+  "@panels.next.palette.redo": {
+    "context": "Tooltip of the redo button of the ZX Spectrum Next palette (.pal/.npl) editor."
+  },
+  "panels.next.palette.transparencyColor": "Transparency Color:",
+  "@panels.next.palette.transparencyColor": {
+    "context": "Label in the palette editor's toolbar before the palette index used as the transparent colour (.npl files only).",
+    "maxChars": 22
+  },
+  "panels.next.palette.none": "(none)",
+  "@panels.next.palette.none": {
+    "context": "Value shown in the palette editor when no transparency colour is set.",
+    "maxChars": 10
+  },
+  "panels.next.palette.color": "Color ${hex} ({index})",
+  "@panels.next.palette.color": {
+    "context": "Caption on the palette editor's colour bar: the selected palette entry. '$' marks a hex number; keep it.",
+    "placeholders": {
+      "hex": "The entry index as two hex digits, e.g. '1F'",
+      "index": "The entry index in decimal, e.g. '31'"
+    }
+  },
+  "panels.next.palette.noColor": "No color selected",
+  "@panels.next.palette.noColor": {
+    "context": "Shown on the palette editor's colour bar while no palette entry is selected."
+  },
+  "panels.next.palette.red": "Red",
+  "@panels.next.palette.red": {
+    "context": "Caption above the red channel's 0-7 scale in the palette editor.",
+    "maxChars": 8
+  },
+  "panels.next.palette.green": "Green",
+  "@panels.next.palette.green": {
+    "context": "Caption above the green channel's 0-7 scale in the palette editor.",
+    "maxChars": 8
+  },
+  "panels.next.palette.blue": "Blue",
+  "@panels.next.palette.blue": {
+    "context": "Caption above the blue channel's 0-7 scale in the palette editor.",
+    "maxChars": 8
+  },
+  "panels.next.palette.help.clickPalette": "Click palette:",
+  "@panels.next.palette.help.clickPalette": {
+    "context": "Keyboard/mouse help list of the palette editor: the gesture (left column).",
+    "maxChars": 18
+  },
+  "panels.next.palette.help.selectColor": "Select color",
+  "@panels.next.palette.help.selectColor": {
+    "context": "Keyboard/mouse help list of the palette editor: what clicking the palette does.",
+    "maxChars": 20
+  },
+  "panels.next.palette.help.clickChannel": "Click R, G, B:",
+  "@panels.next.palette.help.clickChannel": {
+    "context": "Keyboard/mouse help list of the palette editor: the gesture (left column). R, G, B are the colour channels.",
+    "maxChars": 18
+  },
+  "panels.next.palette.help.selectChannel": "Select channel",
+  "@panels.next.palette.help.selectChannel": {
+    "context": "Keyboard/mouse help list of the palette editor: what clicking a colour scale does.",
+    "maxChars": 20
+  },
+  "panels.next.palette.help.arrows": "Arrows:",
+  "@panels.next.palette.help.arrows": {
+    "context": "Keyboard help list of the palette editor: the arrow keys (left column).",
+    "maxChars": 18
+  },
+  "panels.next.palette.help.changeSelection": "Change selection",
+  "@panels.next.palette.help.changeSelection": {
+    "context": "Keyboard help list of the palette editor: what the arrow keys do.",
+    "maxChars": 20
+  },
+  "panels.next.palette.help.key8": "Key 8:",
+  "@panels.next.palette.help.key8": {
+    "context": "Keyboard help list of the palette editor: the 8 key (left column).",
+    "maxChars": 18
+  },
+  "panels.next.palette.help.use8bit": "Use 8-bit palette",
+  "@panels.next.palette.help.use8bit": {
+    "context": "Keyboard help list of the palette editor: what the 8 key does.",
+    "maxChars": 20
+  },
+  "panels.next.palette.help.key9": "Key 9:",
+  "@panels.next.palette.help.key9": {
+    "context": "Keyboard help list of the palette editor: the 9 key (left column).",
+    "maxChars": 18
+  },
+  "panels.next.palette.help.use9bit": "Use 9-bit palette",
+  "@panels.next.palette.help.use9bit": {
+    "context": "Keyboard help list of the palette editor: what the 9 key does.",
+    "maxChars": 20
+  },
+  "panels.next.palette.help.spaceEnter": "Space/Enter:",
+  "@panels.next.palette.help.spaceEnter": {
+    "context": "Keyboard help list of the palette editor: the Space and Enter keys (left column).",
+    "maxChars": 18
+  },
+  "panels.next.palette.help.togglePriority": "Toggle priority",
+  "@panels.next.palette.help.togglePriority": {
+    "context": "Keyboard help list of the palette editor: Space/Enter toggles the entry's Layer 2 priority bit.",
+    "maxChars": 20
+  },
+  "panels.next.palette.help.keyTC": "Key T, C:",
+  "@panels.next.palette.help.keyTC": {
+    "context": "Keyboard help list of the palette editor: the T and C keys (left column).",
+    "maxChars": 18
+  },
+  "panels.next.palette.help.setResetTransparency": "Set/reset transp.",
+  "@panels.next.palette.help.setResetTransparency": {
+    "context": "Keyboard help list of the palette editor: T sets, C clears the transparency colour. Abbreviated to fit.",
+    "maxChars": 20
+  },
+  "panels.next.palette.help.shiftTab": "(Shift +) TAB:",
+  "@panels.next.palette.help.shiftTab": {
+    "context": "Keyboard help list of the palette editor: Tab and Shift+Tab (left column).",
+    "maxChars": 18
+  },
+  "panels.next.palette.help.moveFocus": "Move focus",
+  "@panels.next.palette.help.moveFocus": {
+    "context": "Keyboard help list of the palette editor: what Tab does.",
+    "maxChars": 20
+  },
+  "panels.next.nex.headerAttributes": "Header attributes",
+  "@panels.next.nex.headerAttributes": {
+    "context": "Heading of a collapsible section of the ZX Spectrum Next .nex file viewer: the values in the file's header."
+  },
+  "panels.next.nex.bankFlags": "Bank flags",
+  "@panels.next.nex.bankFlags": {
+    "context": "Heading of a collapsible section of the ZX Spectrum Next .nex file viewer: which of the 112 16K banks the file contains."
+  },
+  "panels.next.nex.bankFlagsSet": "{count} of {total} bank flags set",
+  "@panels.next.nex.bankFlagsSet": {
+    "context": "Tooltip of the count chip beside the 'Bank flags' heading of the ZX Spectrum Next .nex file viewer.",
+    "placeholders": {
+      "count": "How many flags are set",
+      "total": "How many flags there are (112)"
+    }
+  },
+  "panels.next.nex.palette": "Palette (Layer2, LoRes or Tilemap screen)",
+  "@panels.next.nex.palette": {
+    "context": "Heading of a collapsible section of the ZX Spectrum Next .nex file viewer. Layer2, LoRes and Tilemap are ZX Spectrum Next screen modes; keep them."
+  },
+  "panels.next.nex.layer2Screen": "Layer 2 Loading Screen",
+  "@panels.next.nex.layer2Screen": {
+    "context": "Heading of a collapsible section of the ZX Spectrum Next .nex file viewer. 'Layer 2' is a screen mode name; keep it."
+  },
+  "panels.next.nex.openLayer2Screen": "Open the loading screen as its own document",
+  "@panels.next.nex.openLayer2Screen": {
+    "context": "Tooltip of the pop-out button on the 'Layer 2 Loading Screen' heading of the ZX Spectrum Next .nex file viewer."
+  },
+  "panels.next.nex.ulaScreen": "ULA Loading Screen",
+  "@panels.next.nex.ulaScreen": {
+    "context": "Heading of a collapsible section of the ZX Spectrum Next .nex file viewer. ULA is the chip's name; keep it."
+  },
+  "panels.next.nex.loResScreen": "LoRes Loading Screen",
+  "@panels.next.nex.loResScreen": {
+    "context": "Heading of a collapsible section of the ZX Spectrum Next .nex file viewer. LoRes is a screen mode name; keep it."
+  },
+  "panels.next.nex.timexHiResScreen": "Timex HiRes Loading Screen",
+  "@panels.next.nex.timexHiResScreen": {
+    "context": "Heading of a collapsible section of the ZX Spectrum Next .nex file viewer. Timex HiRes is a screen mode name; keep it."
+  },
+  "panels.next.nex.timexHiColScreen": "Timex HiCol Loading Screen",
+  "@panels.next.nex.timexHiColScreen": {
+    "context": "Heading of a collapsible section of the ZX Spectrum Next .nex file viewer. Timex HiCol is a screen mode name; keep it."
+  },
+  "panels.next.nex.showDump": "Display {screen} dump",
+  "@panels.next.nex.showDump": {
+    "context": "Tooltip of the button in a loading-screen section of the ZX Spectrum Next .nex file viewer that opens the screen's bytes as a memory dump.",
+    "placeholders": {
+      "screen": "The screen mode's name, kept in English: 'ULA', 'LoRes', 'Timex HiRes' or 'Timex HiCol'"
+    }
+  },
+  "panels.next.nex.noAnnotationFile": "No annotation file attached.",
+  "@panels.next.nex.noAnnotationFile": {
+    "context": "Banner of the ZX Spectrum Next .nex file viewer when the file has no annotation sidecar (Klive's notes: labels, comments, regions)."
+  },
+  "panels.next.nex.createAnnotationFile": "Click to create one!",
+  "@panels.next.nex.createAnnotationFile": {
+    "context": "Link-styled button after 'No annotation file attached.' in the ZX Spectrum Next .nex file viewer; creates the annotation file."
+  },
+  "panels.next.nex.annotationLoadFailed": "Annotation file could not be loaded.",
+  "@panels.next.nex.annotationLoadFailed": {
+    "context": "Error banner of the ZX Spectrum Next .nex file viewer (and tooltip of the annotation editor's warning icon) when the annotation file is invalid or unreadable."
+  },
+  "panels.next.nex.group.file": "File",
+  "@panels.next.nex.group.file": {
+    "context": "Group heading in the header attributes of the ZX Spectrum Next .nex file viewer.",
+    "maxChars": 14
+  },
+  "panels.next.nex.group.entry": "Entry",
+  "@panels.next.nex.group.entry": {
+    "context": "Group heading in the header attributes of the ZX Spectrum Next .nex file viewer: where the program starts.",
+    "maxChars": 14
+  },
+  "panels.next.nex.group.loading": "Loading",
+  "@panels.next.nex.group.loading": {
+    "context": "Group heading in the header attributes of the ZX Spectrum Next .nex file viewer: how the loader behaves.",
+    "maxChars": 14
+  },
+  "panels.next.nex.group.screenBlocks": "Loading Screen Blocks",
+  "@panels.next.nex.group.screenBlocks": {
+    "context": "Group heading in the header attributes of the ZX Spectrum Next .nex file viewer: which loading screens the file carries."
+  },
+  "panels.next.nex.attr.version": "Version:",
+  "@panels.next.nex.attr.version": {
+    "context": "Field label in the header attributes of the ZX Spectrum Next .nex file viewer.",
+    "maxChars": 24
+  },
+  "panels.next.nex.attr.versionTooltip": ".NEX file version",
+  "@panels.next.nex.attr.versionTooltip": {
+    "context": "Tooltip of the Version field of the ZX Spectrum Next .nex file viewer."
+  },
+  "panels.next.nex.attr.requiredRam": "Required RAM:",
+  "@panels.next.nex.attr.requiredRam": {
+    "context": "Field label in the header attributes of the ZX Spectrum Next .nex file viewer.",
+    "maxChars": 24
+  },
+  "panels.next.nex.attr.banksToLoad": "16K banks to load:",
+  "@panels.next.nex.attr.banksToLoad": {
+    "context": "Field label in the header attributes of the ZX Spectrum Next .nex file viewer.",
+    "maxChars": 24
+  },
+  "panels.next.nex.attr.extraFiles": "Extra files:",
+  "@panels.next.nex.attr.extraFiles": {
+    "context": "Field label in the header attributes of the ZX Spectrum Next .nex file viewer.",
+    "maxChars": 24
+  },
+  "panels.next.nex.attr.requiredCore": "Required core:",
+  "@panels.next.nex.attr.requiredCore": {
+    "context": "Field label in the header attributes of the ZX Spectrum Next .nex file viewer: the ZX Spectrum Next FPGA core version the file needs.",
+    "maxChars": 24
+  },
+  "panels.next.nex.attr.entryBank": "Entry bank:",
+  "@panels.next.nex.attr.entryBank": {
+    "context": "Field label in the header attributes of the ZX Spectrum Next .nex file viewer.",
+    "maxChars": 24
+  },
+  "panels.next.nex.attr.fileHandleAddress": "File handle addr:",
+  "@panels.next.nex.attr.fileHandleAddress": {
+    "context": "Field label in the header attributes of the ZX Spectrum Next .nex file viewer: address of the open file handle passed to the program. Abbreviated to fit.",
+    "maxChars": 24
+  },
+  "panels.next.nex.attr.preserveNextRegs": "Preserve Next regs:",
+  "@panels.next.nex.attr.preserveNextRegs": {
+    "context": "Flag label in the header attributes of the ZX Spectrum Next .nex file viewer: whether the loader keeps the Next registers. Abbreviated to fit.",
+    "maxChars": 24
+  },
+  "panels.next.nex.attr.borderColor": "Border color:",
+  "@panels.next.nex.attr.borderColor": {
+    "context": "Field label in the header attributes of the ZX Spectrum Next .nex file viewer.",
+    "maxChars": 24
+  },
+  "panels.next.nex.attr.layer2LoadingBar": "Layer2 loading bar:",
+  "@panels.next.nex.attr.layer2LoadingBar": {
+    "context": "Flag label in the header attributes of the ZX Spectrum Next .nex file viewer. 'Layer2' is a screen mode name.",
+    "maxChars": 24
+  },
+  "panels.next.nex.attr.barColor": "Bar color:",
+  "@panels.next.nex.attr.barColor": {
+    "context": "Field label in the header attributes of the ZX Spectrum Next .nex file viewer: the loading bar's colour.",
+    "maxChars": 24
+  },
+  "panels.next.nex.attr.delayPerBank": "Delay per bank:",
+  "@panels.next.nex.attr.delayPerBank": {
+    "context": "Field label in the header attributes of the ZX Spectrum Next .nex file viewer.",
+    "maxChars": 24
+  },
+  "panels.next.nex.attr.startDelay": "Start delay:",
+  "@panels.next.nex.attr.startDelay": {
+    "context": "Field label in the header attributes of the ZX Spectrum Next .nex file viewer.",
+    "maxChars": 24
+  },
+  "panels.next.nex.attr.timexHiResColor": "Timex HiRes color:",
+  "@panels.next.nex.attr.timexHiResColor": {
+    "context": "Field label in the header attributes of the ZX Spectrum Next .nex file viewer. Timex HiRes is a screen mode name.",
+    "maxChars": 24
+  },
+  "panels.next.nex.attr.noPalette": "No palette:",
+  "@panels.next.nex.attr.noPalette": {
+    "context": "Flag label in the loading screen blocks of the ZX Spectrum Next .nex file viewer: the file carries no palette.",
+    "maxChars": 14
+  },
+  "panels.next.nex.error.missingNextToken": "Missing 'Next' token in file header",
+  "@panels.next.nex.error.missingNextToken": {
+    "context": "Error shown instead of the ZX Spectrum Next .nex file viewer when the file does not start with the text 'Next' (keep it)."
+  },
+  "panels.next.nex.error.missingV": "Missing 'V' in version number",
+  "@panels.next.nex.error.missingV": {
+    "context": "Error shown instead of the ZX Spectrum Next .nex file viewer when the header's version is malformed (keep 'V')."
+  },
+  "panels.next.nex.error.missingDot": "Missing '.' in version number",
+  "@panels.next.nex.error.missingDot": {
+    "context": "Error shown instead of the ZX Spectrum Next .nex file viewer when the header's version is malformed."
+  },
+  "panels.next.validation.entryBankMissing": "The entry bank ${bank} is not one of the banks this file contains, so the program would be handed control of memory it never loaded.",
+  "@panels.next.validation.entryBankMissing": {
+    "context": "One line of the validation banner at the top of the ZX Spectrum Next .nex file viewer, also in its tooltip. '$' marks a hex number; keep it.",
+    "placeholders": {
+      "bank": "The bank number as two hex digits"
+    }
+  },
+  "panels.next.validation.entryPointInRom": "The entry point ${address} is below $4000, which is ROM when the program starts — the program's own code is never reached.",
+  "@panels.next.validation.entryPointInRom": {
+    "context": "One line of the validation banner at the top of the ZX Spectrum Next .nex file viewer, also in its tooltip. '$' marks a hex number; keep it.",
+    "placeholders": {
+      "address": "A four-digit hex address"
+    }
+  },
+  "panels.next.validation.entryPointBankMissing": "The entry point ${address} runs from the bank paged at ${slot} (bank ${bank}), which this file does not contain.",
+  "@panels.next.validation.entryPointBankMissing": {
+    "context": "One line of the validation banner at the top of the ZX Spectrum Next .nex file viewer, also in its tooltip. '$' marks a hex number; keep it.",
+    "placeholders": {
+      "address": "A four-digit hex address",
+      "slot": "The slot's start address as four hex digits, 4000 or 8000",
+      "bank": "The bank paged there as two hex digits"
+    }
+  },
+  "panels.next.validation.stackInRom": "The stack pointer ${address} is below $4000, which is ROM when the program starts — pushes would be discarded.",
+  "@panels.next.validation.stackInRom": {
+    "context": "One line of the validation banner at the top of the ZX Spectrum Next .nex file viewer, also in its tooltip. '$' marks a hex number; keep it.",
+    "placeholders": {
+      "address": "A four-digit hex address"
+    }
+  },
+  "panels.next.validation.coreTooOld": "This file asks for core {required}; the emulated core is {emulated}. It may not run correctly.",
+  "@panels.next.validation.coreTooOld": {
+    "context": "One line of the validation banner at the top of the ZX Spectrum Next .nex file viewer, also in its tooltip. '$' marks a hex number; keep it.",
+    "placeholders": {
+      "required": "A version number such as '3.1.10'",
+      "emulated": "A version number such as '3.1.5'"
+    }
+  },
+  "panels.next.validation.notEnoughRam": "This file needs the full 1792K of RAM; the machine has {size}K.",
+  "@panels.next.validation.notEnoughRam": {
+    "context": "One line of the validation banner at the top of the ZX Spectrum Next .nex file viewer, also in its tooltip. '$' marks a hex number; keep it.",
+    "placeholders": {
+      "size": "The machine's RAM in kilobytes"
+    }
+  },
+  "panels.next.validation.bankCountMismatch": "The header says {declared} banks but marks {marked}. The file may have been written incorrectly.",
+  "@panels.next.validation.bankCountMismatch": {
+    "context": "One line of the validation banner at the top of the ZX Spectrum Next .nex file viewer, also in its tooltip. '$' marks a hex number; keep it.",
+    "placeholders": {
+      "declared": "The bank count written in the header",
+      "marked": "How many bank flags the header sets"
+    }
+  },
+  "panels.next.validation.summaryProblems": "This NEX file has {errors, plural, one {# problem} other {# problems}}.",
+  "@panels.next.validation.summaryProblems": {
+    "context": "Summary line of the validation banner at the top of the ZX Spectrum Next .nex file viewer.",
+    "placeholders": {
+      "errors": "How many problems (errors)"
+    }
+  },
+  "panels.next.validation.summaryWarnings": "This NEX file has {warnings, plural, one {# warning} other {# warnings}}.",
+  "@panels.next.validation.summaryWarnings": {
+    "context": "Summary line of the validation banner at the top of the ZX Spectrum Next .nex file viewer.",
+    "placeholders": {
+      "warnings": "How many warnings"
+    }
+  },
+  "panels.next.validation.summaryBoth": "This NEX file has {errors, plural, one {# problem} other {# problems}} and {warnings, plural, one {# warning} other {# warnings}}.",
+  "@panels.next.validation.summaryBoth": {
+    "context": "Summary line of the validation banner at the top of the ZX Spectrum Next .nex file viewer.",
+    "placeholders": {
+      "errors": "How many problems (errors)",
+      "warnings": "How many warnings"
+    }
+  },
+  "panels.next.dumpTitle.bank": "{source} - Bank: {bank}",
+  "@panels.next.dumpTitle.bank": {
+    "context": "Title of the document tab of a NEX file's 16K bank, popped out of the NEX viewer.",
+    "placeholders": {
+      "source": "The NEX file's name or project path",
+      "bank": "The bank number in decimal"
+    }
+  },
+  "panels.next.dumpTitle.layer2": "{source} - Layer2",
+  "@panels.next.dumpTitle.layer2": {
+    "context": "Title of the document tab of a NEX file's Layer 2 loading screen. 'Layer2' is a screen mode name.",
+    "placeholders": {
+      "source": "The NEX file's name or project path"
+    }
+  },
+  "panels.next.dumpTitle.screen": "{source} - {screen}",
+  "@panels.next.dumpTitle.screen": {
+    "context": "Title of the document tab of a NEX file's loading screen bytes.",
+    "placeholders": {
+      "source": "The NEX file's name or project path",
+      "screen": "The screen mode's name, kept in English: 'ULA', 'LoRes', 'Timex HiRes' or 'Timex Hicol'"
+    }
+  },
+  "panels.next.banks.heading": "Banks",
+  "@panels.next.banks.heading": {
+    "context": "Heading of the bank browser of the ZX Spectrum Next .nex file viewer (a list of the file's 16K banks with the selected bank's details).",
+    "maxChars": 12
+  },
+  "panels.next.banks.summary": "{count, plural, one {# bank} other {# banks}} · {kb, number} KB",
+  "@panels.next.banks.summary": {
+    "context": "Summary beside the heading of the bank browser of the ZX Spectrum Next .nex file viewer (a list of the file's 16K banks with the selected bank's details).",
+    "placeholders": {
+      "count": "How many banks the file has",
+      "kb": "Their total size in kilobytes"
+    }
+  },
+  "panels.next.banks.summaryWithBreakpoints": "{count, plural, one {# bank} other {# banks}} · {kb, number} KB · {withBreakpoints, number} with breakpoints",
+  "@panels.next.banks.summaryWithBreakpoints": {
+    "context": "Summary beside the heading of the bank browser of the ZX Spectrum Next .nex file viewer (a list of the file's 16K banks with the selected bank's details), when some banks have breakpoints.",
+    "placeholders": {
+      "count": "How many banks the file has",
+      "kb": "Their total size in kilobytes",
+      "withBreakpoints": "How many banks have breakpoints"
+    }
+  },
+  "panels.next.banks.filter.all": "All",
+  "@panels.next.banks.filter.all": {
+    "context": "Filter button of the bank browser of the ZX Spectrum Next .nex file viewer (a list of the file's 16K banks with the selected bank's details): list every bank.",
+    "maxChars": 10
+  },
+  "panels.next.banks.filter.nonEmpty": "Non-empty",
+  "@panels.next.banks.filter.nonEmpty": {
+    "context": "Filter button of the bank browser of the ZX Spectrum Next .nex file viewer (a list of the file's 16K banks with the selected bank's details): hide banks whose bytes are all zero.",
+    "maxChars": 12
+  },
+  "panels.next.banks.filter.annotated": "Annotated",
+  "@panels.next.banks.filter.annotated": {
+    "context": "Filter button of the bank browser of the ZX Spectrum Next .nex file viewer (a list of the file's 16K banks with the selected bank's details): list only banks the annotation file says something about.",
+    "maxChars": 12
+  },
+  "panels.next.banks.view.memory": "Memory",
+  "@panels.next.banks.view.memory": {
+    "context": "Name of the memory-dump view a bank pops out in (the bank browser of the ZX Spectrum Next .nex file viewer (a list of the file's 16K banks with the selected bank's details) and the bank's own document).",
+    "maxChars": 12
+  },
+  "panels.next.banks.view.disassembly": "Disassembly",
+  "@panels.next.banks.view.disassembly": {
+    "context": "Name of the disassembly view a bank pops out in (the bank browser of the ZX Spectrum Next .nex file viewer (a list of the file's 16K banks with the selected bank's details) and the bank's own document).",
+    "maxChars": 14
+  },
+  "panels.next.banks.view.sprites": "Sprites",
+  "@panels.next.banks.view.sprites": {
+    "context": "Name of the sprite-pattern view a bank pops out in (the bank browser of the ZX Spectrum Next .nex file viewer (a list of the file's 16K banks with the selected bank's details) and the bank's own document).",
+    "maxChars": 12
+  },
+  "panels.next.banks.empty": "empty",
+  "@panels.next.banks.empty": {
+    "context": "Text in a bank row of the bank browser of the ZX Spectrum Next .nex file viewer (a list of the file's 16K banks with the selected bank's details) when the bank's bytes are all zero. Lower-case on purpose.",
+    "maxChars": 10
+  },
+  "panels.next.banks.menu.bankComment": "Bank Comment...",
+  "@panels.next.banks.menu.bankComment": {
+    "context": "Context-menu item of a bank row of the bank browser of the ZX Spectrum Next .nex file viewer (a list of the file's 16K banks with the selected bank's details); opens the bank comment dialog."
+  },
+  "panels.next.banks.menu.clearBankComment": "Clear Bank Comment",
+  "@panels.next.banks.menu.clearBankComment": {
+    "context": "Context-menu item of a bank row of the bank browser of the ZX Spectrum Next .nex file viewer (a list of the file's 16K banks with the selected bank's details); removes the bank's comment."
+  },
+  "panels.next.banks.hint": "Pop out a bank from its row's icon, by double-clicking the row, or with Enter.",
+  "@panels.next.banks.hint": {
+    "context": "Hint line at the foot of the bank browser of the ZX Spectrum Next .nex file viewer (a list of the file's 16K banks with the selected bank's details)."
+  },
+  "panels.next.banks.pcTitle": "The program counter points into this bank",
+  "@panels.next.banks.pcTitle": {
+    "context": "Tooltip of the 'PC $xxxx' chip of a bank in the bank browser of the ZX Spectrum Next .nex file viewer (a list of the file's 16K banks with the selected bank's details)."
+  },
+  "panels.next.banks.spTitle": "The stack pointer points into this bank",
+  "@panels.next.banks.spTitle": {
+    "context": "Tooltip of the 'SP $xxxx' chip of a bank in the bank browser of the ZX Spectrum Next .nex file viewer (a list of the file's 16K banks with the selected bank's details)."
+  },
+  "panels.next.banks.detail.size": "Size",
+  "@panels.next.banks.detail.size": {
+    "context": "Fact label in the bank details of the bank browser of the ZX Spectrum Next .nex file viewer (a list of the file's 16K banks with the selected bank's details).",
+    "maxChars": 14
+  },
+  "panels.next.banks.detail.sizeKb": "{kb, number} KB",
+  "@panels.next.banks.detail.sizeKb": {
+    "context": "Value of the Size fact in the bank details of the bank browser of the ZX Spectrum Next .nex file viewer (a list of the file's 16K banks with the selected bank's details).",
+    "maxChars": 10,
+    "placeholders": {
+      "kb": "Kilobytes"
+    }
+  },
+  "panels.next.banks.detail.sizeBytes": "{bytes, number} B",
+  "@panels.next.banks.detail.sizeBytes": {
+    "context": "Value of the Size fact in the bank details of the bank browser of the ZX Spectrum Next .nex file viewer (a list of the file's 16K banks with the selected bank's details), for a bank under 1 KB.",
+    "maxChars": 10,
+    "placeholders": {
+      "bytes": "Bytes"
+    }
+  },
+  "panels.next.banks.detail.breakpoints": "Breakpoints",
+  "@panels.next.banks.detail.breakpoints": {
+    "context": "Fact label in the bank details of the bank browser of the ZX Spectrum Next .nex file viewer (a list of the file's 16K banks with the selected bank's details).",
+    "maxChars": 14
+  },
+  "panels.next.banks.detail.listedAt": "Listed at",
+  "@panels.next.banks.detail.listedAt": {
+    "context": "Fact label in the bank details of the bank browser of the ZX Spectrum Next .nex file viewer (a list of the file's 16K banks with the selected bank's details): the address the bank's first byte is listed at.",
+    "maxChars": 14
+  },
+  "panels.next.banks.detail.lastView": "Last view",
+  "@panels.next.banks.detail.lastView": {
+    "context": "Fact label in the bank details of the bank browser of the ZX Spectrum Next .nex file viewer (a list of the file's 16K banks with the selected bank's details): the view the bank was last popped out in.",
+    "maxChars": 14
+  },
+  "panels.next.banks.detail.sprites": "Sprites",
+  "@panels.next.banks.detail.sprites": {
+    "context": "Fact label in the bank details of the bank browser of the ZX Spectrum Next .nex file viewer (a list of the file's 16K banks with the selected bank's details): the sprite pattern format recorded for the bank.",
+    "maxChars": 14
+  },
+  "panels.next.banks.detail.format8bit": "8-bit",
+  "@panels.next.banks.detail.format8bit": {
+    "context": "A sprite pattern format: one byte per pixel.",
+    "maxChars": 8
+  },
+  "panels.next.banks.detail.format4bit": "4-bit",
+  "@panels.next.banks.detail.format4bit": {
+    "context": "A sprite pattern format: two pixels per byte.",
+    "maxChars": 8
+  },
+  "panels.next.banks.detail.contents": "Contents",
+  "@panels.next.banks.detail.contents": {
+    "context": "Fact label in the bank details of the bank browser of the ZX Spectrum Next .nex file viewer (a list of the file's 16K banks with the selected bank's details).",
+    "maxChars": 14
+  },
+  "panels.next.banks.detail.allZero": "All zero",
+  "@panels.next.banks.detail.allZero": {
+    "context": "Value of the Contents fact in the bank details of the bank browser of the ZX Spectrum Next .nex file viewer (a list of the file's 16K banks with the selected bank's details): every byte of the bank is 0.",
+    "maxChars": 14
+  },
+  "panels.next.banks.detail.contentMix": "Content mix",
+  "@panels.next.banks.detail.contentMix": {
+    "context": "Section title in the bank details of the bank browser of the ZX Spectrum Next .nex file viewer (a list of the file's 16K banks with the selected bank's details): the share of each region type (code, bytes, ...) in the bank."
+  },
+  "panels.next.banks.detail.mixEntry": "{type} {percent}",
+  "@panels.next.banks.detail.mixEntry": {
+    "context": "One entry of the content-mix legend/tooltip in the bank browser of the ZX Spectrum Next .nex file viewer (a list of the file's 16K banks with the selected bank's details), e.g. 'Code 75%'.",
+    "placeholders": {
+      "type": "The region type's name, e.g. 'Code'",
+      "percent": "The share, e.g. '75%' or '<1%'"
+    }
+  },
+  "panels.next.banks.detail.noRegions": "Regions are recorded in the annotation file, which this NEX does not have yet.",
+  "@panels.next.banks.detail.noRegions": {
+    "context": "Shown in the Content mix section of the bank browser of the ZX Spectrum Next .nex file viewer (a list of the file's 16K banks with the selected bank's details) when there is no annotation file."
+  },
+  "panels.next.banks.detail.comment": "Comment",
+  "@panels.next.banks.detail.comment": {
+    "context": "Section title in the bank details of the bank browser of the ZX Spectrum Next .nex file viewer (a list of the file's 16K banks with the selected bank's details): the bank's comment."
+  },
+  "panels.next.banks.detail.editComment": "Edit comment...",
+  "@panels.next.banks.detail.editComment": {
+    "context": "Link-styled button under the bank's comment in the bank browser of the ZX Spectrum Next .nex file viewer (a list of the file's 16K banks with the selected bank's details)."
+  },
+  "panels.next.banks.detail.noComment": "No comment.",
+  "@panels.next.banks.detail.noComment": {
+    "context": "Shown in the Comment section of the bank browser of the ZX Spectrum Next .nex file viewer (a list of the file's 16K banks with the selected bank's details) when the bank has none; followed by the 'Add comment...' button."
+  },
+  "panels.next.banks.detail.addComment": "Add comment...",
+  "@panels.next.banks.detail.addComment": {
+    "context": "Link-styled button in the Comment section of the bank browser of the ZX Spectrum Next .nex file viewer (a list of the file's 16K banks with the selected bank's details)."
+  },
+  "panels.next.banks.detail.noCommentFile": "Comments are kept in the annotation file, which this NEX does not have yet.",
+  "@panels.next.banks.detail.noCommentFile": {
+    "context": "Shown in the Comment section of the bank browser of the ZX Spectrum Next .nex file viewer (a list of the file's 16K banks with the selected bank's details) when there is no annotation file."
+  },
+  "panels.next.banks.detail.labels": "Labels ({count})",
+  "@panels.next.banks.detail.labels": {
+    "context": "Section title in the bank details of the bank browser of the ZX Spectrum Next .nex file viewer (a list of the file's 16K banks with the selected bank's details): the labels in the bank.",
+    "placeholders": {
+      "count": "How many labels"
+    }
+  },
+  "panels.next.banks.detail.globalLabel": "Global label",
+  "@panels.next.banks.detail.globalLabel": {
+    "context": "Tooltip of a label in the bank details of the bank browser of the ZX Spectrum Next .nex file viewer (a list of the file's 16K banks with the selected bank's details): a label visible from every bank."
+  },
+  "panels.next.banks.detail.bankLabel": "Bank label",
+  "@panels.next.banks.detail.bankLabel": {
+    "context": "Tooltip of a label in the bank details of the bank browser of the ZX Spectrum Next .nex file viewer (a list of the file's 16K banks with the selected bank's details): a label local to this bank."
+  },
+  "panels.next.banks.detail.moreLabels": "+{count} more",
+  "@panels.next.banks.detail.moreLabels": {
+    "context": "Shown after the first 16 labels in the bank details of the bank browser of the ZX Spectrum Next .nex file viewer (a list of the file's 16K banks with the selected bank's details).",
+    "placeholders": {
+      "count": "How many labels are not shown"
+    }
+  },
+  "panels.next.mix.percent": "{percent, number}%",
+  "@panels.next.mix.percent": {
+    "context": "A share of a bank as a whole percentage, in the NEX bank browser's content mix. Change only if your language writes percentages differently.",
+    "maxChars": 8,
+    "placeholders": {
+      "percent": "A whole number from 0 to 100"
+    }
+  },
+  "panels.next.mix.underOnePercent": "<1%",
+  "@panels.next.mix.underOnePercent": {
+    "context": "A share of a bank that exists but rounds to 0%, in the NEX bank browser's content mix.",
+    "maxChars": 8
+  },
+  "panels.next.breakpoints.kind.exec": "{count, plural, other {# execution}}",
+  "@panels.next.breakpoints.kind.exec": {
+    "context": "One kind of breakpoint, counted, in the NEX bank browser's breakpoint chip and details, e.g. '2 execution'.",
+    "placeholders": {
+      "count": "How many execution breakpoints"
+    }
+  },
+  "panels.next.breakpoints.kind.memRead": "{count, plural, other {# memory read}}",
+  "@panels.next.breakpoints.kind.memRead": {
+    "context": "One kind of breakpoint, counted, in the NEX bank browser's breakpoint chip and details, e.g. '2 memory read'.",
+    "placeholders": {
+      "count": "How many memory-read breakpoints"
+    }
+  },
+  "panels.next.breakpoints.kind.memWrite": "{count, plural, other {# memory write}}",
+  "@panels.next.breakpoints.kind.memWrite": {
+    "context": "One kind of breakpoint, counted, in the NEX bank browser's breakpoint chip and details, e.g. '1 memory write'.",
+    "placeholders": {
+      "count": "How many memory-write breakpoints"
+    }
+  },
+  "panels.next.breakpoints.kind.disabled": "{count, plural, other {# disabled}}",
+  "@panels.next.breakpoints.kind.disabled": {
+    "context": "How many breakpoints are disabled, in the tooltip of the NEX bank browser's breakpoint chip and details.",
+    "placeholders": {
+      "count": "How many are disabled"
+    }
+  },
+  "panels.next.breakpoints.inBank": "{total, plural, one {# breakpoint in this bank} other {# breakpoints in this bank}}",
+  "@panels.next.breakpoints.inBank": {
+    "context": "Tooltip of the NEX bank browser's breakpoint chip and details when there is no breakdown.",
+    "placeholders": {
+      "total": "How many breakpoints"
+    }
+  },
+  "panels.next.breakpoints.inBankWithParts": "{total, plural, one {# breakpoint in this bank} other {# breakpoints in this bank}} — {parts}",
+  "@panels.next.breakpoints.inBankWithParts": {
+    "context": "Tooltip of the NEX bank browser's breakpoint chip and details.",
+    "placeholders": {
+      "total": "How many breakpoints",
+      "parts": "A comma-separated breakdown by kind, e.g. '2 execution, 1 disabled'"
+    }
+  },
+  "panels.next.breakpoints.kindAllDisabled": "{kind} (disabled)",
+  "@panels.next.breakpoints.kindAllDisabled": {
+    "context": "A kind's line in the NEX bank browser's breakpoint chip and details when all of that kind are disabled, e.g. '2 execution (disabled)'.",
+    "placeholders": {
+      "kind": "The counted kind, e.g. '2 execution'"
+    }
+  },
+  "panels.next.breakpoints.kindSomeDisabled": "{kind} ({disabled} disabled)",
+  "@panels.next.breakpoints.kindSomeDisabled": {
+    "context": "A kind's line in the NEX bank browser's breakpoint chip and details when some of that kind are disabled, e.g. '2 execution (1 disabled)'.",
+    "placeholders": {
+      "kind": "The counted kind, e.g. '2 execution'",
+      "disabled": "How many of them are disabled"
+    }
+  },
+  "panels.next.bankComment.title": "Bank comment",
+  "@panels.next.bankComment.title": {
+    "context": "Title of the dialog that edits the comment on a whole 16K bank of a NEX file; also the accessible name of its text box and of the pinned comment strip."
+  },
+  "panels.next.bankComment.hint": "Enter starts a new line. Ctrl+Enter saves.",
+  "@panels.next.bankComment.hint": {
+    "context": "Hint under the text box of the bank comment dialog. Key names: keep as your OS writes them."
+  },
+  "panels.next.bankComment.limitTitle": "Comments longer than {limit} characters are reported when the file is loaded.",
+  "@panels.next.bankComment.limitTitle": {
+    "context": "Tooltip of the character counter of the bank comment dialog.",
+    "placeholders": {
+      "limit": "The soft character limit"
+    }
+  },
+  "panels.next.bankComment.headingPreview": "Heading preview",
+  "@panels.next.bankComment.headingPreview": {
+    "context": "Row label and accessible name in the bank comment dialog: how the comment will read as one line in the NEX viewer.",
+    "maxChars": 18
+  },
+  "panels.next.bankComment.previewBank": "Bank ${bank}",
+  "@panels.next.bankComment.previewBank": {
+    "context": "Bank number in the heading preview of the bank comment dialog. '$' marks a hex number; keep it.",
+    "maxChars": 10,
+    "placeholders": {
+      "bank": "The bank number as two hex digits"
+    }
+  },
+  "panels.next.bankComment.chipTitle": "Show this bank's comment",
+  "@panels.next.bankComment.chipTitle": {
+    "context": "Tooltip of the comment chip in a popped-out bank's toolbar; opens a popover with the whole comment."
+  },
+  "panels.next.bankComment.popoverTitle": "Bank ${bank} comment",
+  "@panels.next.bankComment.popoverTitle": {
+    "context": "Title (and accessible name) of the popover that shows a bank's whole comment. '$' marks a hex number; keep it.",
+    "placeholders": {
+      "bank": "The bank number as two hex digits"
+    }
+  },
+  "panels.next.bankComment.edit": "Edit...",
+  "@panels.next.bankComment.edit": {
+    "context": "Button of the bank comment popover; opens the bank comment dialog.",
+    "maxChars": 10
+  },
+  "panels.next.bankComment.pin": "Pin",
+  "@panels.next.bankComment.pin": {
+    "context": "Button of the bank comment popover; shows the comment as a strip under the toolbar.",
+    "maxChars": 8
+  },
+  "panels.next.bankComment.editTitle": "Edit the bank comment",
+  "@panels.next.bankComment.editTitle": {
+    "context": "Tooltip of the pinned bank comment strip's text; clicking it opens the bank comment dialog."
+  },
+  "panels.next.bankComment.collapse": "Show the comment on one line",
+  "@panels.next.bankComment.collapse": {
+    "context": "Tooltip of the chevron button of the pinned bank comment strip, while it is expanded."
+  },
+  "panels.next.bankComment.expand": "Show the whole comment",
+  "@panels.next.bankComment.expand": {
+    "context": "Tooltip of the chevron button of the pinned bank comment strip, while it shows one line."
+  },
+  "panels.next.bankComment.unpin": "Unpin the bank comment",
+  "@panels.next.bankComment.unpin": {
+    "context": "Tooltip of the close button of the pinned bank comment strip; goes back to the toolbar chip."
+  },
+  "panels.next.eolComment.title": "End-of-line comment",
+  "@panels.next.eolComment.title": {
+    "context": "Title of the dialog of the NEX annotation editor (a popped-out bank's disassembly) that edits the comment after an instruction."
+  },
+  "panels.next.eolComment.generated": "Generated hard comment",
+  "@panels.next.eolComment.generated": {
+    "context": "Row label of the end-of-line comment dialog: the comment Klive generates for this line, which a user comment replaces.",
+    "maxChars": 26
+  },
+  "panels.next.eolComment.user": "User comment",
+  "@panels.next.eolComment.user": {
+    "context": "Row label of the end-of-line comment dialog's text box.",
+    "maxChars": 18
+  },
+  "panels.next.eolComment.previewLabel": "End-of-line preview",
+  "@panels.next.eolComment.previewLabel": {
+    "context": "Accessible name of the end-of-line comment dialog's preview."
+  },
+  "panels.next.synopsis.title": "Synopsis comment",
+  "@panels.next.synopsis.title": {
+    "context": "Title of the dialog of the NEX annotation editor (a popped-out bank's disassembly) that edits the comment lines shown above an instruction."
+  },
+  "panels.next.synopsis.previewLabel": "Synopsis preview",
+  "@panels.next.synopsis.previewLabel": {
+    "context": "Accessible name of the synopsis comment dialog's preview."
+  },
+  "panels.next.label.title": "Label",
+  "@panels.next.label.title": {
+    "context": "Title of the dialog of the NEX annotation editor (a popped-out bank's disassembly) that adds or edits one label."
+  },
+  "panels.next.label.scopeAria": "Label scope",
+  "@panels.next.label.scopeAria": {
+    "context": "Accessible name of the scope radio group of the label dialog."
+  },
+  "panels.next.label.existing": "Existing labels",
+  "@panels.next.label.existing": {
+    "context": "Row label of the label dialog's list of labels already defined.",
+    "maxChars": 18
+  },
+  "panels.next.label.refs": "{count, plural, one {# ref} other {# refs}}",
+  "@panels.next.label.refs": {
+    "context": "How many operands refer to a label, in a row of the label dialog's list. 'ref' is short for reference.",
+    "maxChars": 10,
+    "placeholders": {
+      "count": "How many references (at least 1)"
+    }
+  },
+  "panels.next.label.error.name": "Use an identifier name up to {max} characters.",
+  "@panels.next.label.error.name": {
+    "context": "Validation message of the label dialog: the name is not a valid identifier.",
+    "placeholders": {
+      "max": "The maximum length"
+    }
+  },
+  "panels.next.label.error.value": "Enter a hexadecimal or decimal value.",
+  "@panels.next.label.error.value": {
+    "context": "Validation message of the label dialog: the value cannot be read as a number."
+  },
+  "panels.next.label.error.globalRange": "Global label values must be in $0000..$FFFF.",
+  "@panels.next.label.error.globalRange": {
+    "context": "Validation message of the label dialog. '$' marks hex numbers; keep the range as written."
+  },
+  "panels.next.label.error.localRange": "Local label values must be in $0000..$3FFF.",
+  "@panels.next.label.error.localRange": {
+    "context": "Validation message of the label dialog (and of adding a label from the debugger). '$' marks hex numbers; keep the range as written."
+  },
+  "panels.next.label.error.duplicate": "A label with this name already exists in this scope.",
+  "@panels.next.label.error.duplicate": {
+    "context": "Validation message of the label dialog."
+  },
+  "panels.next.labels.title": "Labels",
+  "@panels.next.labels.title": {
+    "context": "Title of the dialog of the NEX annotation editor (a popped-out bank's disassembly) that lists and manages all labels."
+  },
+  "panels.next.labels.intro": "A **bank label** names an address inside bank {bank} alone, so two banks can each have their own `Start`. A **global label** names a 16-bit address anywhere in memory and is visible from every bank.",
+  "@panels.next.labels.intro": {
+    "context": "Introduction at the top of the Labels dialog. Keep the **...** (bold) and `...` (code font) markers around the matching terms; 'Start' is an example label name, keep it.",
+    "placeholders": {
+      "bank": "The bank number in decimal"
+    }
+  },
+  "panels.next.labels.scopeFilterAria": "Label scope filter",
+  "@panels.next.labels.scopeFilterAria": {
+    "context": "Accessible name of the Labels dialog's scope filter."
+  },
+  "panels.next.labels.sortAria": "Sort labels",
+  "@panels.next.labels.sortAria": {
+    "context": "Accessible name of the Labels dialog's sort dropdown."
+  },
+  "panels.next.labels.sort.address": "Address",
+  "@panels.next.labels.sort.address": {
+    "context": "Sort option of the Labels dialog.",
+    "maxChars": 14
+  },
+  "panels.next.labels.sort.name": "Name",
+  "@panels.next.labels.sort.name": {
+    "context": "Sort option of the Labels dialog.",
+    "maxChars": 14
+  },
+  "panels.next.labels.sort.references": "References",
+  "@panels.next.labels.sort.references": {
+    "context": "Sort option of the Labels dialog: most referenced first.",
+    "maxChars": 14
+  },
+  "panels.next.labels.column.address": "Address",
+  "@panels.next.labels.column.address": {
+    "context": "Column header of the Labels dialog: the address a bank label is listed at.",
+    "maxChars": 10
+  },
+  "panels.next.labels.column.refs": "Refs",
+  "@panels.next.labels.column.refs": {
+    "context": "Column header of the Labels dialog: how many operands refer to the label. Short for references.",
+    "maxChars": 6
+  },
+  "panels.next.labels.edit": "Edit {name}",
+  "@panels.next.labels.edit": {
+    "context": "Tooltip of the pencil button in a row of the Labels dialog.",
+    "placeholders": {
+      "name": "The label's name"
+    }
+  },
+  "panels.next.labels.delete": "Delete {name}",
+  "@panels.next.labels.delete": {
+    "context": "Tooltip of the trash button in a row of the Labels dialog.",
+    "placeholders": {
+      "name": "The label's name"
+    }
+  },
+  "panels.next.labels.addGlobal": "Add Global Label",
+  "@panels.next.labels.addGlobal": {
+    "context": "Button of the Labels dialog that adds a global label.",
+    "maxChars": 22
+  },
+  "panels.next.labels.addBank": "Add Bank Label",
+  "@panels.next.labels.addBank": {
+    "context": "Button of the Labels dialog that adds a label local to this bank.",
+    "maxChars": 22
+  },
+  "panels.next.labels.deleteTitle": "Delete label",
+  "@panels.next.labels.deleteTitle": {
+    "context": "Title of the question asked before a label is deleted."
+  },
+  "panels.next.labels.deleteGlobal": "Delete this global label?",
+  "@panels.next.labels.deleteGlobal": {
+    "context": "Question asked before a global label is deleted; the label's name follows on its own line."
+  },
+  "panels.next.labels.deleteBank": "Delete this bank label?",
+  "@panels.next.labels.deleteBank": {
+    "context": "Question asked before a bank label is deleted; the label's name follows on its own line."
+  },
+  "panels.next.labels.deleteReferences": "{count, plural, one {# operand reference to it will be cleared.} other {# operand references to it will be cleared.}}",
+  "@panels.next.labels.deleteReferences": {
+    "context": "Shown under the label name in the delete-label question when operands refer to the label.",
+    "placeholders": {
+      "count": "How many references"
+    }
+  },
+  "panels.next.operandLabel.title": "Operand label",
+  "@panels.next.operandLabel.title": {
+    "context": "Title of the dialog of the NEX annotation editor (a popped-out bank's disassembly) that attaches a label to an instruction's operand."
+  },
+  "panels.next.operandLabel.operand": "Operand",
+  "@panels.next.operandLabel.operand": {
+    "context": "Row label and accessible name of the operand dropdown of the operand label dialog.",
+    "maxChars": 14
+  },
+  "panels.next.operandLabel.operandOption": "Operand {number}: {text}",
+  "@panels.next.operandLabel.operandOption": {
+    "context": "Option of the operand dropdown of the operand label dialog.",
+    "placeholders": {
+      "number": "The operand's position, from 1",
+      "text": "The operand as disassembled, e.g. '$4000'"
+    }
+  },
+  "panels.next.operandLabel.operandValue": "Operand value",
+  "@panels.next.operandLabel.operandValue": {
+    "context": "Row label of the operand label dialog: the operand's value.",
+    "maxChars": 16
+  },
+  "panels.next.operandLabel.candidates": "Candidate labels",
+  "@panels.next.operandLabel.candidates": {
+    "context": "Row label of the operand label dialog's list of labels to choose from.",
+    "maxChars": 18
+  },
+  "panels.next.operandLabel.group.exact": "Exact matches",
+  "@panels.next.operandLabel.group.exact": {
+    "context": "Group heading in the operand label dialog's list: labels with exactly the operand's value."
+  },
+  "panels.next.operandLabel.group.nearby": "Nearby labels",
+  "@panels.next.operandLabel.group.nearby": {
+    "context": "Group heading in the operand label dialog's list: labels close to the operand's value."
+  },
+  "panels.next.operandLabel.group.all": "All labels",
+  "@panels.next.operandLabel.group.all": {
+    "context": "Group heading in the operand label dialog's list: every other label."
+  },
+  "panels.next.operandLabel.createBank": "Create Bank Label",
+  "@panels.next.operandLabel.createBank": {
+    "context": "Button of the operand label dialog: creates a label local to this bank at the operand's value.",
+    "maxChars": 22
+  },
+  "panels.next.operandLabel.createGlobal": "Create Global Label",
+  "@panels.next.operandLabel.createGlobal": {
+    "context": "Button of the operand label dialog: creates a global label at the operand's value.",
+    "maxChars": 22
+  },
+  "panels.next.operandLabel.apply": "Apply Reference",
+  "@panels.next.operandLabel.apply": {
+    "context": "Button of the operand label dialog: shows the chosen label in place of the operand.",
+    "maxChars": 20
+  },
+  "panels.next.operandLabel.clear": "Clear Reference",
+  "@panels.next.operandLabel.clear": {
+    "context": "Button of the operand label dialog: removes the label shown in place of the operand.",
+    "maxChars": 20
+  },
+  "panels.next.region.title": "Memory region",
+  "@panels.next.region.title": {
+    "context": "Title of the dialog of the NEX annotation editor (a popped-out bank's disassembly) that marks a byte range as code, data, text, ..."
+  },
+  "panels.next.region.type": "Type",
+  "@panels.next.region.type": {
+    "context": "Row label of the region dialog (and column header of the Regions list): the region type.",
+    "maxChars": 10
+  },
+  "panels.next.region.typeAria": "Region type",
+  "@panels.next.region.typeAria": {
+    "context": "Accessible name of the region dialog's type radio group."
+  },
+  "panels.next.region.format": "Format",
+  "@panels.next.region.format": {
+    "context": "Row label of the region dialog: how a bytes region lays out its values.",
+    "maxChars": 10
+  },
+  "panels.next.region.formatAria": "Byte format",
+  "@panels.next.region.formatAria": {
+    "context": "Accessible name of the region dialog's byte-format radio group."
+  },
+  "panels.next.region.startOffset": "Start offset",
+  "@panels.next.region.startOffset": {
+    "context": "Row label of the region dialog: the first bank offset of the region.",
+    "maxChars": 16
+  },
+  "panels.next.region.endOffset": "End offset",
+  "@panels.next.region.endOffset": {
+    "context": "Row label of the region dialog: the last bank offset of the region.",
+    "maxChars": 16
+  },
+  "panels.next.region.entireBank": "Entire bank",
+  "@panels.next.region.entireBank": {
+    "context": "Button of the region dialog that sets the range to the whole 16K bank.",
+    "maxChars": 16
+  },
+  "panels.next.region.length": "Length",
+  "@panels.next.region.length": {
+    "context": "Row label of the region dialog (and column header of the Regions list): the region's size in bytes.",
+    "maxChars": 10
+  },
+  "panels.next.region.trimTo": "Trim to {offset}",
+  "@panels.next.region.trimTo": {
+    "context": "Button that shortens a DMA region to end at the suggested offset.",
+    "maxChars": 18,
+    "placeholders": {
+      "offset": "A hex offset such as '$0123'"
+    }
+  },
+  "panels.next.region.affected": "Affected regions",
+  "@panels.next.region.affected": {
+    "context": "Row label of the region dialog: the existing regions the new one overlaps.",
+    "maxChars": 18
+  },
+  "panels.next.region.noAffected": "No affected regions",
+  "@panels.next.region.noAffected": {
+    "context": "Shown in the region dialog when the new region overlaps none."
+  },
+  "panels.next.region.previewLabel": "Region preview",
+  "@panels.next.region.previewLabel": {
+    "context": "Accessible name of the region dialogs' preview."
+  },
+  "panels.next.region.effect.unchanged": "unchanged",
+  "@panels.next.region.effect.unchanged": {
+    "context": "Effect on an overlapped region, in the region dialog's Affected regions list. Lower-case.",
+    "maxChars": 12
+  },
+  "panels.next.region.effect.replace": "replace",
+  "@panels.next.region.effect.replace": {
+    "context": "Effect on an overlapped region, in the region dialog's Affected regions list: it will be replaced. Lower-case.",
+    "maxChars": 12
+  },
+  "panels.next.region.effect.split": "split",
+  "@panels.next.region.effect.split": {
+    "context": "Effect on an overlapped region, in the region dialog's Affected regions list: it will be split. Lower-case.",
+    "maxChars": 12
+  },
+  "panels.next.region.hint.dmaZeroTail": "The range ends in {count} zero bytes, each listed as a WR2 write.",
+  "@panels.next.region.hint.dmaZeroTail": {
+    "context": "Suggestion in the region dialog for a DMA region. WR2 is a DMA register name; keep it.",
+    "placeholders": {
+      "count": "How many trailing zero bytes (8 or more)"
+    }
+  },
+  "panels.next.region.hint.copperOdd": "Copper words are read from the region start, which is on an odd offset.",
+  "@panels.next.region.hint.copperOdd": {
+    "context": "Suggestion in the region dialog for a Copper region. Copper is the ZX Spectrum Next's display co-processor; keep the name."
+  },
+  "panels.next.region.error.offsets": "Enter hexadecimal or decimal offsets.",
+  "@panels.next.region.error.offsets": {
+    "context": "Validation message of the region dialog."
+  },
+  "panels.next.region.error.range": "Offsets must be in $0000..$3FFF.",
+  "@panels.next.region.error.range": {
+    "context": "Validation message of the region dialog. '$' marks hex numbers; keep the range as written."
+  },
+  "panels.next.region.error.order": "Start offset must be less than or equal to end offset.",
+  "@panels.next.region.error.order": {
+    "context": "Validation message of the region dialog."
+  },
+  "panels.next.region.error.wordsEven": "Word regions must contain an even number of bytes.",
+  "@panels.next.region.error.wordsEven": {
+    "context": "Validation message of the region dialog."
+  },
+  "panels.next.region.error.copperEven": "Copper regions must contain an even number of bytes.",
+  "@panels.next.region.error.copperEven": {
+    "context": "Validation message of the region dialog. Copper is a chip name; keep it."
+  },
+  "panels.next.regions.title": "Regions",
+  "@panels.next.regions.title": {
+    "context": "Title of the dialog of the NEX annotation editor (a popped-out bank's disassembly) that lists all regions of the bank."
+  },
+  "panels.next.regions.findAria": "Find the region covering an address",
+  "@panels.next.regions.findAria": {
+    "context": "Accessible name of the address box of the Regions dialog."
+  },
+  "panels.next.regions.findPlaceholder": "Find address, e.g. $1A00",
+  "@panels.next.regions.findPlaceholder": {
+    "context": "Placeholder of the address box of the Regions dialog. Keep '$1A00'."
+  },
+  "panels.next.regions.findError": "No region covers that address.",
+  "@panels.next.regions.findError": {
+    "context": "Error under the address box of the Regions dialog."
+  },
+  "panels.next.regions.filterAria": "Filter region type",
+  "@panels.next.regions.filterAria": {
+    "context": "Accessible name of the Regions dialog's type filter."
+  },
+  "panels.next.regions.column.start": "Start",
+  "@panels.next.regions.column.start": {
+    "context": "Column header of the Regions dialog: the region's first offset.",
+    "maxChars": 8
+  },
+  "panels.next.regions.column.end": "End",
+  "@panels.next.regions.column.end": {
+    "context": "Column header of the Regions dialog: the region's last offset.",
+    "maxChars": 8
+  },
+  "panels.next.regions.column.lines": "Lines",
+  "@panels.next.regions.column.lines": {
+    "context": "Column header of the Regions dialog: how many listing lines the region takes.",
+    "maxChars": 8
+  },
+  "panels.next.regions.edit": "Edit",
+  "@panels.next.regions.edit": {
+    "context": "Button in a row of the Regions dialog: edit the region.",
+    "maxChars": 8
+  },
+  "panels.next.regions.split": "Split",
+  "@panels.next.regions.split": {
+    "context": "Button in a row of the Regions dialog: split the region in two.",
+    "maxChars": 8
+  },
+  "panels.next.regions.revert": "Revert",
+  "@panels.next.regions.revert": {
+    "context": "Button in a row of the Regions dialog: turn the region back into disassembly.",
+    "maxChars": 8
+  },
+  "panels.next.regions.noMatching": "No matching regions",
+  "@panels.next.regions.noMatching": {
+    "context": "Shown in the Regions dialog when no region matches the filter."
+  },
+  "panels.next.regions.dmaZeroTail": "Ends in {count} zero bytes, each listed as a WR2 write.",
+  "@panels.next.regions.dmaZeroTail": {
+    "context": "Suggestion under the Regions dialog's preview for the selected DMA region. WR2 is a DMA register name; keep it.",
+    "placeholders": {
+      "count": "How many trailing zero bytes (8 or more)"
+    }
+  },
+  "panels.next.regions.add": "Add Region",
+  "@panels.next.regions.add": {
+    "context": "Button of the Regions dialog that opens the region dialog for a new region.",
+    "maxChars": 14
+  },
+  "panels.next.annotations.menuTitle": "Annotations",
+  "@panels.next.annotations.menuTitle": {
+    "context": "Tooltip of the toolbar button that opens the Annotations menu of the NEX annotation editor (a popped-out bank's disassembly)."
+  },
+  "panels.next.annotations.menu.goToDefinition": "Go to Definition",
+  "@panels.next.annotations.menu.goToDefinition": {
+    "context": "Item of the Annotations menu of the NEX annotation editor (a popped-out bank's disassembly) (toolbar button and row context menu): jump to the label the row's operand names."
+  },
+  "panels.next.annotations.menu.manageLabels": "Manage Labels...",
+  "@panels.next.annotations.menu.manageLabels": {
+    "context": "Item of the Annotations menu of the NEX annotation editor (a popped-out bank's disassembly) (toolbar button and row context menu); opens the Labels dialog."
+  },
+  "panels.next.annotations.menu.manageRegions": "Manage Regions...",
+  "@panels.next.annotations.menu.manageRegions": {
+    "context": "Item of the Annotations menu of the NEX annotation editor (a popped-out bank's disassembly) (toolbar button and row context menu); opens the Regions dialog."
+  },
+  "panels.next.annotations.menu.bankComment": "Bank Comment...",
+  "@panels.next.annotations.menu.bankComment": {
+    "context": "Item of the Annotations menu of the NEX annotation editor (a popped-out bank's disassembly) (toolbar button and row context menu); opens the bank comment dialog."
+  },
+  "panels.next.annotations.menu.synopsis": "Synopsis Comment...",
+  "@panels.next.annotations.menu.synopsis": {
+    "context": "Item of the Annotations menu of the NEX annotation editor (a popped-out bank's disassembly) (toolbar button and row context menu); opens the dialog for the comment lines above the row."
+  },
+  "panels.next.annotations.menu.comment": "End-of-Line Comment...",
+  "@panels.next.annotations.menu.comment": {
+    "context": "Item of the Annotations menu of the NEX annotation editor (a popped-out bank's disassembly) (toolbar button and row context menu); opens the dialog for the comment after the row's instruction."
+  },
+  "panels.next.annotations.menu.globalLabel": "Add/Edit Global Label...",
+  "@panels.next.annotations.menu.globalLabel": {
+    "context": "Item of the Annotations menu of the NEX annotation editor (a popped-out bank's disassembly) (toolbar button and row context menu)."
+  },
+  "panels.next.annotations.menu.localLabel": "Add/Edit Local Label...",
+  "@panels.next.annotations.menu.localLabel": {
+    "context": "Item of the Annotations menu of the NEX annotation editor (a popped-out bank's disassembly) (toolbar button and row context menu): a label local to the bank."
+  },
+  "panels.next.annotations.menu.operandLabel": "Assign Operand Label...",
+  "@panels.next.annotations.menu.operandLabel": {
+    "context": "Item of the Annotations menu of the NEX annotation editor (a popped-out bank's disassembly) (toolbar button and row context menu); opens the operand label dialog."
+  },
+  "panels.next.annotations.menu.markDisassembly": "Mark As Disassembly",
+  "@panels.next.annotations.menu.markDisassembly": {
+    "context": "Item of the Annotations menu of the NEX annotation editor (a popped-out bank's disassembly) (toolbar button and row context menu): list the selected rows as Z80 instructions."
+  },
+  "panels.next.annotations.menu.markBytes": "Mark As Bytes",
+  "@panels.next.annotations.menu.markBytes": {
+    "context": "Item of the Annotations menu of the NEX annotation editor (a popped-out bank's disassembly) (toolbar button and row context menu): list the selected rows as .defb data."
+  },
+  "panels.next.annotations.menu.markWords": "Mark As Words",
+  "@panels.next.annotations.menu.markWords": {
+    "context": "Item of the Annotations menu of the NEX annotation editor (a popped-out bank's disassembly) (toolbar button and row context menu): list the selected rows as .defw data."
+  },
+  "panels.next.annotations.menu.markCopper": "Mark As Copper",
+  "@panels.next.annotations.menu.markCopper": {
+    "context": "Item of the Annotations menu of the NEX annotation editor (a popped-out bank's disassembly) (toolbar button and row context menu): list the selected rows as Copper instructions. Copper is a chip name; keep it."
+  },
+  "panels.next.annotations.menu.markDma": "Mark As DMA",
+  "@panels.next.annotations.menu.markDma": {
+    "context": "Item of the Annotations menu of the NEX annotation editor (a popped-out bank's disassembly) (toolbar button and row context menu): list the selected rows as DMA commands."
+  },
+  "panels.next.annotations.menu.markSkip": "Mark As Skip",
+  "@panels.next.annotations.menu.markSkip": {
+    "context": "Item of the Annotations menu of the NEX annotation editor (a popped-out bank's disassembly) (toolbar button and row context menu): leave the selected rows out of the listing."
+  },
+  "panels.next.annotations.menu.clear": "Clear Row Annotations",
+  "@panels.next.annotations.menu.clear": {
+    "context": "Item of the Annotations menu of the NEX annotation editor (a popped-out bank's disassembly) (toolbar button and row context menu): remove comments, labels and regions on the selected rows."
+  },
+  "panels.next.annotations.discardConfirm": "{path} could not be written{reason}.\n\nClosing this bank discards the annotation changes it still holds. Close anyway?",
+  "@panels.next.annotations.discardConfirm": {
+    "context": "Question asked when closing a bank of the NEX annotation editor (a popped-out bank's disassembly) whose annotation file could not be saved.",
+    "placeholders": {
+      "path": "The annotation file's path, or the text of panels.next.annotations.theFile",
+      "reason": "Empty, or the error in brackets with a leading space, e.g. ' (EACCES)'"
+    }
+  },
+  "panels.next.annotations.theFile": "the annotation file",
+  "@panels.next.annotations.theFile": {
+    "context": "Stands in for the annotation file's path in the 'could not be written' question when the path is unknown."
+  },
+  "panels.next.annotations.wholeBankConfirm": "This changes the entire 16K bank. Continue?",
+  "@panels.next.annotations.wholeBankConfirm": {
+    "context": "Question asked before a region edit in the NEX annotation editor (a popped-out bank's disassembly) rewrites the whole bank."
+  },
+  "panels.next.sprites.palette": "Palette",
+  "@panels.next.sprites.palette": {
+    "context": "Group label in the toolbar of the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns).",
+    "maxChars": 10
+  },
+  "panels.next.sprites.paletteAria": "Sprite palette",
+  "@panels.next.sprites.paletteAria": {
+    "context": "Accessible name of the palette switch of the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns)."
+  },
+  "panels.next.sprites.primary": "Primary",
+  "@panels.next.sprites.primary": {
+    "context": "The first sprite palette (button and inspector value in the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns)).",
+    "maxChars": 10
+  },
+  "panels.next.sprites.secondary": "Secondary",
+  "@panels.next.sprites.secondary": {
+    "context": "The second sprite palette (button and inspector value in the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns)).",
+    "maxChars": 10
+  },
+  "panels.next.sprites.primaryTitle": "Primary sprite palette (Reg $43, bit 3)",
+  "@panels.next.sprites.primaryTitle": {
+    "context": "Tooltip of the Primary palette button of the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns). 'Reg $43' is a NextReg; keep it."
+  },
+  "panels.next.sprites.secondaryTitle": "Secondary sprite palette (Reg $43, bit 3)",
+  "@panels.next.sprites.secondaryTitle": {
+    "context": "Tooltip of the Secondary palette button of the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns). 'Reg $43' is a NextReg; keep it."
+  },
+  "panels.next.sprites.primaryLiveTitle": "Primary sprite palette (Reg $43, bit 3)\nThe sprite engine is drawing with this palette now.",
+  "@panels.next.sprites.primaryLiveTitle": {
+    "context": "Tooltip of the Primary palette button of the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns) while the machine uses it. 'Reg $43' is a NextReg; keep it."
+  },
+  "panels.next.sprites.secondaryLiveTitle": "Secondary sprite palette (Reg $43, bit 3)\nThe sprite engine is drawing with this palette now.",
+  "@panels.next.sprites.secondaryLiveTitle": {
+    "context": "Tooltip of the Secondary palette button of the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns) while the machine uses it. 'Reg $43' is a NextReg; keep it."
+  },
+  "panels.next.sprites.defaultPalette": "Default palette",
+  "@panels.next.sprites.defaultPalette": {
+    "context": "Note in the toolbar of the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns) when no Next machine runs.",
+    "maxChars": 16
+  },
+  "panels.next.sprites.defaultPaletteTitle": "No ZX Spectrum Next machine is running, so the sprite palettes cannot be read.\nBoth are shown as the palette the Next starts with, and look the same.",
+  "@panels.next.sprites.defaultPaletteTitle": {
+    "context": "Tooltip of the 'Default palette' note of the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns)."
+  },
+  "panels.next.sprites.format": "Format",
+  "@panels.next.sprites.format": {
+    "context": "Group label in the toolbar of the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns).",
+    "maxChars": 10
+  },
+  "panels.next.sprites.formatAria": "Sprite pattern format",
+  "@panels.next.sprites.formatAria": {
+    "context": "Accessible name of the 8-bit/4-bit switch of the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns)."
+  },
+  "panels.next.sprites.format8bitTitle": "8-bit patterns: 256 bytes, one byte per pixel",
+  "@panels.next.sprites.format8bitTitle": {
+    "context": "Tooltip of the 8-bit button of the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns)."
+  },
+  "panels.next.sprites.format4bitTitle": "4-bit patterns: 128 bytes, two pixels per byte (high nibble first)",
+  "@panels.next.sprites.format4bitTitle": {
+    "context": "Tooltip of the 4-bit button of the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns)."
+  },
+  "panels.next.sprites.paletteOffsetAria": "4-bit palette offset",
+  "@panels.next.sprites.paletteOffsetAria": {
+    "context": "Accessible name of the palette offset dropdown of the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns)."
+  },
+  "panels.next.sprites.offset": "Offset",
+  "@panels.next.sprites.offset": {
+    "context": "Group label in the toolbar of the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns): where pattern #0 starts in the bank.",
+    "maxChars": 10
+  },
+  "panels.next.sprites.zoom": "Zoom",
+  "@panels.next.sprites.zoom": {
+    "context": "Group label in the toolbar of the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns).",
+    "maxChars": 10
+  },
+  "panels.next.sprites.checker": "Checker",
+  "@panels.next.sprites.checker": {
+    "context": "Switch label in the toolbar of the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns): show transparent pixels as a checkerboard.",
+    "maxChars": 10
+  },
+  "panels.next.sprites.checkerTitle": "Draw transparent pixels as a checkerboard rather than in the transparency colour",
+  "@panels.next.sprites.checkerTitle": {
+    "context": "Tooltip of the Checker switch of the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns)."
+  },
+  "panels.next.sprites.backPattern": "Back one pattern",
+  "@panels.next.sprites.backPattern": {
+    "context": "Tooltip of the « button of the offset control of the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns)."
+  },
+  "panels.next.sprites.backByte": "Back one byte",
+  "@panels.next.sprites.backByte": {
+    "context": "Tooltip of the ‹ button of the offset control of the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns)."
+  },
+  "panels.next.sprites.forwardByte": "Forward one byte",
+  "@panels.next.sprites.forwardByte": {
+    "context": "Tooltip of the › button of the offset control of the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns)."
+  },
+  "panels.next.sprites.forwardPattern": "Forward one pattern",
+  "@panels.next.sprites.forwardPattern": {
+    "context": "Tooltip of the » button of the offset control of the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns)."
+  },
+  "panels.next.sprites.offsetAria": "Sprite start offset",
+  "@panels.next.sprites.offsetAria": {
+    "context": "Accessible name of the offset box of the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns)."
+  },
+  "panels.next.sprites.offsetTitle": "Bank offset of pattern #0 ($hex or decimal)",
+  "@panels.next.sprites.offsetTitle": {
+    "context": "Tooltip of the offset box of the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns)."
+  },
+  "panels.next.sprites.cellTitle": "Pattern #{index} · bank offset ${offset}",
+  "@panels.next.sprites.cellTitle": {
+    "context": "Tooltip of one pattern in the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns). '$' marks a hex number; keep it.",
+    "placeholders": {
+      "index": "The pattern number",
+      "offset": "Four hex digits"
+    }
+  },
+  "panels.next.sprites.cellTitleMarked": "Pattern #{index} · bank offset ${offset} · marked as bytes",
+  "@panels.next.sprites.cellTitleMarked": {
+    "context": "Tooltip of one pattern in the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns) that is already marked as a bytes region.",
+    "placeholders": {
+      "index": "The pattern number",
+      "offset": "Four hex digits"
+    }
+  },
+  "panels.next.sprites.sheetAria": "Bank ${bank} sprite patterns",
+  "@panels.next.sprites.sheetAria": {
+    "context": "Accessible name of the pattern sheet of the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns).",
+    "placeholders": {
+      "bank": "Two hex digits"
+    }
+  },
+  "panels.next.sprites.noPattern": "No whole pattern fits after this offset.",
+  "@panels.next.sprites.noPattern": {
+    "context": "Shown in the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns) when the offset leaves no room for a pattern."
+  },
+  "panels.next.sprites.markedAsBytes": "Marked as Bytes",
+  "@panels.next.sprites.markedAsBytes": {
+    "context": "Disabled button/menu item of the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns): the selection is already a bytes region."
+  },
+  "panels.next.sprites.markAsBytes": "Mark as Bytes",
+  "@panels.next.sprites.markAsBytes": {
+    "context": "Button/menu item of the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns): record the selected patterns as a bytes region."
+  },
+  "panels.next.sprites.markAsDisassembly": "Mark as Disassembly",
+  "@panels.next.sprites.markAsDisassembly": {
+    "context": "Button/menu item of the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns): turn the selected patterns back into disassembly."
+  },
+  "panels.next.sprites.showInMemory": "Show in Memory",
+  "@panels.next.sprites.showInMemory": {
+    "context": "Button/menu item of the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns): open the bank's memory view at the pattern."
+  },
+  "panels.next.sprites.showInDisassembly": "Show in Disassembly",
+  "@panels.next.sprites.showInDisassembly": {
+    "context": "Button/menu item of the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns): open the bank's disassembly at the pattern."
+  },
+  "panels.next.sprites.inspectorAria": "Pattern inspector",
+  "@panels.next.sprites.inspectorAria": {
+    "context": "Accessible name of the side panel of the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns) that describes the selected pattern(s)."
+  },
+  "panels.next.sprites.patternRange": "Patterns #{first}–#{last} ({count})",
+  "@panels.next.sprites.patternRange": {
+    "context": "Title of the pattern inspector of the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns) for a range of patterns.",
+    "placeholders": {
+      "first": "First pattern number",
+      "last": "Last pattern number",
+      "count": "How many patterns"
+    }
+  },
+  "panels.next.sprites.pattern": "Pattern #{index}",
+  "@panels.next.sprites.pattern": {
+    "context": "Title of the pattern inspector of the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns) for one pattern.",
+    "placeholders": {
+      "index": "The pattern number"
+    }
+  },
+  "panels.next.sprites.bankOffsets": "Bank offsets",
+  "@panels.next.sprites.bankOffsets": {
+    "context": "Fact label in the pattern inspector of the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns) (a range of patterns).",
+    "maxChars": 14
+  },
+  "panels.next.sprites.bankOffset": "Bank offset",
+  "@panels.next.sprites.bankOffset": {
+    "context": "Fact label in the pattern inspector of the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns) (one pattern).",
+    "maxChars": 14
+  },
+  "panels.next.sprites.format4bitValue": "4-bit, palette +${offset}",
+  "@panels.next.sprites.format4bitValue": {
+    "context": "Format value in the pattern inspector of the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns).",
+    "placeholders": {
+      "offset": "The palette offset as two hex digits"
+    }
+  },
+  "panels.next.sprites.paletteDefaultValue": "{palette} (default)",
+  "@panels.next.sprites.paletteDefaultValue": {
+    "context": "Palette value in the pattern inspector of the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns) when no machine runs.",
+    "placeholders": {
+      "palette": "'Primary' or 'Secondary', translated"
+    }
+  },
+  "panels.next.sprites.coloursUsed": "Colours used",
+  "@panels.next.sprites.coloursUsed": {
+    "context": "Section heading in the pattern inspector of the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns)."
+  },
+  "panels.next.sprites.transparentTitle": "Transparent · {count} px",
+  "@panels.next.sprites.transparentTitle": {
+    "context": "Tooltip of the transparent swatch in the pattern inspector of the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns).",
+    "placeholders": {
+      "count": "How many pixels"
+    }
+  },
+  "panels.next.sprites.transparentShort": "transp.",
+  "@panels.next.sprites.transparentShort": {
+    "context": "Caption of the transparent swatch in the pattern inspector of the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns); short for transparent.",
+    "maxChars": 8
+  },
+  "panels.next.sprites.swatchTitle": "Index ${index} · RGB333 {rgb} · {count} px",
+  "@panels.next.sprites.swatchTitle": {
+    "context": "Tooltip of a colour swatch in the pattern inspector of the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns). RGB333 is a colour format; keep it.",
+    "placeholders": {
+      "index": "Two hex digits",
+      "rgb": "Three digits 0-7, e.g. '702'",
+      "count": "How many pixels"
+    }
+  },
+  "panels.next.sprites.markTitle": "Mark ${start}–${end} as a bytes region",
+  "@panels.next.sprites.markTitle": {
+    "context": "Tooltip of the Mark as Bytes button of the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns).",
+    "placeholders": {
+      "start": "Four hex digits",
+      "end": "Four hex digits"
+    }
+  },
+  "panels.next.sprites.noAnnotationFile": "This bank has no annotation file to record regions in",
+  "@panels.next.sprites.noAnnotationFile": {
+    "context": "Tooltip of the disabled Mark as Bytes button of the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns)."
+  },
+  "panels.next.sprites.hint.blankTransparent": "Blank: every pixel is transparent (${index}).",
+  "@panels.next.sprites.hint.blankTransparent": {
+    "context": "Hint in the pattern inspector of the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns).",
+    "placeholders": {
+      "index": "The transparency index as two hex digits"
+    }
+  },
+  "panels.next.sprites.hint.blank": "Blank: every pixel is ${index}.",
+  "@panels.next.sprites.hint.blank": {
+    "context": "Hint in the pattern inspector of the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns).",
+    "placeholders": {
+      "index": "The colour index as two hex digits"
+    }
+  },
+  "panels.next.sprites.hint.noisy": "{colours} colours with little structure: more likely code or packed data than a sprite. Check the format and offset.",
+  "@panels.next.sprites.hint.noisy": {
+    "context": "Hint in the pattern inspector of the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns).",
+    "placeholders": {
+      "colours": "How many colours (many)"
+    }
+  },
+  "panels.next.sprites.hint.normal": "{colours, plural, one {# colour} other {# colours}}, {transparent, plural, one {# transparent pixel} other {# transparent pixels}}.",
+  "@panels.next.sprites.hint.normal": {
+    "context": "Hint in the pattern inspector of the Sprites view of a popped-out NEX bank (the bank's bytes drawn as sprite patterns).",
+    "placeholders": {
+      "colours": "How many colours",
+      "transparent": "How many transparent pixels"
+    }
+  },
+  "panels.next.location.notPaged": "not paged in",
+  "@panels.next.location.notPaged": {
+    "context": "Chip in the toolbar of a popped-out NEX bank: where the bank is in the Z80's 64K address space. Lower-case.",
+    "maxChars": 16
+  },
+  "panels.next.location.notPagedTitle": "This bank is not in the Z80 address space at the moment. A breakpoint in it stays armed and will fire once the bank is paged in.",
+  "@panels.next.location.notPagedTitle": {
+    "context": "Tooltip of the chip in the toolbar of a popped-out NEX bank: where the bank is in the Z80's 64K address space."
+  },
+  "panels.next.location.at": "at ${address}",
+  "@panels.next.location.at": {
+    "context": "Chip in the toolbar of a popped-out NEX bank: where the bank is in the Z80's 64K address space. Lower-case.",
+    "maxChars": 14,
+    "placeholders": {
+      "address": "Four hex digits"
+    }
+  },
+  "panels.next.location.atPc": "at ${address} · PC",
+  "@panels.next.location.atPc": {
+    "context": "Chip in the toolbar of a popped-out NEX bank: where the bank is in the Z80's 64K address space when the program counter (PC) is in the bank. Lower-case; keep PC.",
+    "maxChars": 18,
+    "placeholders": {
+      "address": "Four hex digits"
+    }
+  },
+  "panels.next.location.contiguousTitle": "This bank is paged in at ${start}-${end} (8K slots {low} and {high}).",
+  "@panels.next.location.contiguousTitle": {
+    "context": "Tooltip of the chip in the toolbar of a popped-out NEX bank: where the bank is in the Z80's 64K address space.",
+    "placeholders": {
+      "start": "Four hex digits",
+      "end": "Four hex digits",
+      "low": "Slot number 0-7",
+      "high": "Slot number 0-7"
+    }
+  },
+  "panels.next.location.pcTitle": "The program counter is in this bank, at offset ${offset}; that line is highlighted in the disassembly.",
+  "@panels.next.location.pcTitle": {
+    "context": "Second sentence of the chip's tooltip in the toolbar of a popped-out NEX bank: where the bank is in the Z80's 64K address space.",
+    "placeholders": {
+      "offset": "Four hex digits"
+    }
+  },
+  "panels.next.location.halfLow": "${address} (low)",
+  "@panels.next.location.halfLow": {
+    "context": "Part of the chip in the toolbar of a popped-out NEX bank: where the bank is in the Z80's 64K address space: an 8K slot holding the bank's low half.",
+    "maxChars": 18,
+    "placeholders": {
+      "address": "Four hex digits"
+    }
+  },
+  "panels.next.location.halfHigh": "${address} (high)",
+  "@panels.next.location.halfHigh": {
+    "context": "Part of the chip in the toolbar of a popped-out NEX bank: where the bank is in the Z80's 64K address space: an 8K slot holding the bank's high half.",
+    "maxChars": 18,
+    "placeholders": {
+      "address": "Four hex digits"
+    }
+  },
+  "panels.next.location.onlyLow": "Only this bank's low 8K half is paged in.",
+  "@panels.next.location.onlyLow": {
+    "context": "Tooltip sentence of the chip in the toolbar of a popped-out NEX bank: where the bank is in the Z80's 64K address space."
+  },
+  "panels.next.location.onlyHigh": "Only this bank's high 8K half is paged in.",
+  "@panels.next.location.onlyHigh": {
+    "context": "Tooltip sentence of the chip in the toolbar of a popped-out NEX bank: where the bank is in the Z80's 64K address space."
+  },
+  "panels.next.location.notContiguous": "This bank's two 8K halves are not paged in as one contiguous block.",
+  "@panels.next.location.notContiguous": {
+    "context": "Tooltip sentence of the chip in the toolbar of a popped-out NEX bank: where the bank is in the Z80's 64K address space."
+  },
+  "panels.next.location.slots": "Each 8K slot is listed with the address it starts at: {slots}.",
+  "@panels.next.location.slots": {
+    "context": "Tooltip sentence of the chip in the toolbar of a popped-out NEX bank: where the bank is in the Z80's 64K address space.",
+    "placeholders": {
+      "slots": "A '; '-separated list of panels.next.location.slotLow / slotHigh texts"
+    }
+  },
+  "panels.next.location.slotLow": "slot {slot} at ${address} holds the low half",
+  "@panels.next.location.slotLow": {
+    "context": "One item of the slot list in the chip's tooltip in the toolbar of a popped-out NEX bank: where the bank is in the Z80's 64K address space.",
+    "placeholders": {
+      "slot": "Slot number 0-7",
+      "address": "Four hex digits"
+    }
+  },
+  "panels.next.location.slotHigh": "slot {slot} at ${address} holds the high half",
+  "@panels.next.location.slotHigh": {
+    "context": "One item of the slot list in the chip's tooltip in the toolbar of a popped-out NEX bank: where the bank is in the Z80's 64K address space.",
+    "placeholders": {
+      "slot": "Slot number 0-7",
+      "address": "Four hex digits"
+    }
+  },
+  "panels.next.liveBank.changed": "{count, number} changed",
+  "@panels.next.liveBank.changed": {
+    "context": "Chip in a popped-out NEX bank's toolbar: how many bytes differ from the file.",
+    "maxChars": 14,
+    "placeholders": {
+      "count": "How many bytes"
+    }
+  },
+  "panels.next.liveBank.changedTitle": "{count, number} of {total, number} bytes in this bank differ from the file ({percent, number}%). The program has written to the bank since it was loaded — or the loader decompressed into it. Changed bytes are marked in the memory dump.",
+  "@panels.next.liveBank.changedTitle": {
+    "context": "Tooltip of the 'changed' chip in a popped-out NEX bank's toolbar.",
+    "placeholders": {
+      "count": "How many bytes changed",
+      "total": "The bank's size in bytes",
+      "percent": "The share as a whole number"
+    }
+  },
+  "panels.next.liveBank.changedTitleUnderOne": "{count, number} of {total, number} bytes in this bank differ from the file (<1%). The program has written to the bank since it was loaded — or the loader decompressed into it. Changed bytes are marked in the memory dump.",
+  "@panels.next.liveBank.changedTitleUnderOne": {
+    "context": "Tooltip of the 'changed' chip in a popped-out NEX bank's toolbar, when the share rounds to 0%.",
+    "placeholders": {
+      "count": "How many bytes changed",
+      "total": "The bank's size in bytes"
+    }
+  },
+  "panels.next.provenance": "This is one of {fileName}'s banks, as launched — the program may have changed it since.",
+  "@panels.next.provenance": {
+    "context": "Note in a memory bank's view while the NEX file that loaded it is running.",
+    "placeholders": {
+      "fileName": "The NEX file's name, e.g. 'game.nex'"
+    }
+  },
+  "panels.next.promote.noAnnotations": "This NEX file has no annotations to add a label to.",
+  "@panels.next.promote.noAnnotations": {
+    "context": "Error when adding a local label to a NEX bank from the debugger."
+  },
+  "panels.next.promote.invalidName": "Use an identifier name of up to {max} characters.",
+  "@panels.next.promote.invalidName": {
+    "context": "Error when adding a local label to a NEX bank from the debugger.",
+    "placeholders": {
+      "max": "The maximum length"
+    }
+  },
+  "panels.next.promote.notInBank": "That address is not in one of this file's banks.",
+  "@panels.next.promote.notInBank": {
+    "context": "Error when adding a local label to a NEX bank from the debugger."
+  },
+  "panels.next.promote.duplicate": "Bank ${bank} already has a label named {name}.",
+  "@panels.next.promote.duplicate": {
+    "context": "Error when adding a local label to a NEX bank from the debugger.",
+    "placeholders": {
+      "bank": "Two hex digits",
+      "name": "The label name"
+    }
+  },
+  "panels.next.promote.failed": "The label could not be added to this bank.",
+  "@panels.next.promote.failed": {
+    "context": "Error when adding a local label to a NEX bank from the debugger."
+  }
+}

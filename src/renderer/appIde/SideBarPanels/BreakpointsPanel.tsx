@@ -96,6 +96,8 @@ import {
   isConditionalBreakpoint,
   isInactiveBreakpoint
 } from "../utils/breakpoint-filter-text";
+import { useT, type TFunction } from "@common/i18n/useT";
+import type { MessageKey } from "@common/i18n/keys.generated";
 
 /*
  * M2: `ch`, not px. Capacity preserved from the px widths at the panel's old 12.8px size (px / 6.4),
@@ -131,21 +133,41 @@ const spriteWriteOf = (state?: CpuState): SpriteWriteEvent | undefined =>
   state && "lastSpriteWrite" in state ? state.lastSpriteWrite : undefined;
 
 /** What a sprite breakpoint watches, for its row and tooltip: `attr 0,1 (X, Y)` or `all attributes`. */
-const spriteAttrText = (bp: BreakpointInfo): string => {
+const spriteAttrText = (t: TFunction, bp: BreakpointInfo): string => {
   const mask = spriteAttrMaskOf(bp);
-  if (mask === SPRITE_ATTR_ALL) return "all attributes";
+  if (mask === SPRITE_ATTR_ALL) return t("panels.side.breakpoints.allAttributes");
   const names = SPRITE_ATTRIBUTE_LABELS.filter((_, a) => mask & (1 << a)).join("; ");
   return `attr ${formatSpriteAttrList(mask)} (${names})`;
 };
 
 /** A Next Register's documented name, for the row and the tooltip. */
-const nextRegName = (reg: number | undefined): string => {
+const nextRegName = (t: TFunction, reg: number | undefined): string => {
   if (reg === undefined) return "";
   const described = NEXT_REG_DESCRIPTORS.find((d) => d.id === reg);
-  return described ? described.description : "Undocumented register";
+  return described ? described.description : t("panels.side.breakpoints.undocumentedRegister");
 };
 
+/** The first tooltip line of each breakpoint kind, as a breakpoint and as a logpoint */
+type BreakpointKindId = "nextReg" | "copper" | "sprite" | "memRead" | "memWrite" | "ioRead" | "ioWrite" | "exec";
+const KIND_TITLES: Record<BreakpointKindId, { breakpoint: MessageKey; logpoint: MessageKey }> = {
+  nextReg: { breakpoint: "panels.side.breakpoints.title.nextReg", logpoint: "panels.side.breakpoints.title.nextRegLog" },
+  copper: { breakpoint: "panels.side.breakpoints.title.copper", logpoint: "panels.side.breakpoints.title.copperLog" },
+  sprite: { breakpoint: "panels.side.breakpoints.title.sprite", logpoint: "panels.side.breakpoints.title.spriteLog" },
+  memRead: { breakpoint: "panels.side.breakpoints.title.memRead", logpoint: "panels.side.breakpoints.title.memReadLog" },
+  memWrite: { breakpoint: "panels.side.breakpoints.title.memWrite", logpoint: "panels.side.breakpoints.title.memWriteLog" },
+  ioRead: { breakpoint: "panels.side.breakpoints.title.ioRead", logpoint: "panels.side.breakpoints.title.ioReadLog" },
+  ioWrite: { breakpoint: "panels.side.breakpoints.title.ioWrite", logpoint: "panels.side.breakpoints.title.ioWriteLog" },
+  exec: { breakpoint: "panels.side.breakpoints.title.exec", logpoint: "panels.side.breakpoints.title.execLog" }
+};
+
+/** ` in BANK`: the partition a hit was paged in, or nothing */
+const pagedIn = (t: TFunction, partition: number | undefined, partitionLabels?: Record<number, string>) =>
+  partition === undefined
+    ? undefined
+    : t("panels.side.breakpoints.pagedIn", { partition: partitionLabels?.[partition] ?? partition });
+
 const breakpointTooltip = (
+  t: TFunction,
   bp: BreakpointInfo,
   addrKey: string,
   instruction: string,
@@ -158,108 +180,123 @@ const breakpointTooltip = (
   const nextRegKind = isNextRegBreakpoint(bp);
   const copperKind = isCopperBreakpoint(bp);
   const spriteKind = isSpriteBreakpoint(bp);
-  const kind = nextRegKind
-    ? "NextReg write"
+  const kind: BreakpointKindId = nextRegKind
+    ? "nextReg"
     : copperKind
-      ? "Copper"
+      ? "copper"
       : spriteKind
-      ? "Sprite attribute"
-      : bp.memoryRead
-      ? "Memory read"
-      : bp.memoryWrite
-        ? "Memory write"
-        : bp.ioRead
-          ? "I/O read"
-          : bp.ioWrite
-            ? "I/O write"
-            : "Execution";
-  // --- "at" reads wrong for a shape that is not at anywhere.
+        ? "sprite"
+        : bp.memoryRead
+          ? "memRead"
+          : bp.memoryWrite
+            ? "memWrite"
+            : bp.ioRead
+              ? "ioRead"
+              : bp.ioWrite
+                ? "ioWrite"
+                : "exec";
+  // --- "at" reads wrong for a shape that is not at anywhere: the messages say "on" for those.
   const comment = isAnnotationBreakpoint(bp);
-  const noun = isLogpoint(bp) ? "logpoint" : "breakpoint";
+  const titles = KIND_TITLES[kind];
   const lines = comment
-    ? [`${bp.annotationKind ?? "LOGPOINT"} comment at ${bp.resource}:${bp.line}`]
-    : [`${kind} ${noun} ${nextRegKind || copperKind || spriteKind ? "on" : "at"} ${addrKey}`];
+    ? [
+        t("panels.side.breakpoints.title.comment", {
+          kind: bp.annotationKind ?? "LOGPOINT",
+          file: bp.resource,
+          line: bp.line
+        })
+      ]
+    : [t(isLogpoint(bp) ? titles.logpoint : titles.breakpoint, { target: addrKey })];
   if (spriteKind) {
-    lines.push(`Watches ${spriteAttrText(bp)}`);
-    lines.push("Stops after the instruction during which a watched byte is written (port $57, DMA, NextReg mirror or Copper)");
+    lines.push(t("panels.side.breakpoints.watches", { what: spriteAttrText(t, bp) }));
+    lines.push(t("panels.side.breakpoints.spriteContract"));
     if (spriteWrite?.sprite === bp.spriteIndex) {
-      const paged =
-        spriteWrite.partition === undefined
-          ? ""
-          : ` in ${partitionLabels?.[spriteWrite.partition] ?? spriteWrite.partition}`;
+      const args = {
+        attribute: spriteWrite.attribute,
+        old: `$${toHexa2(spriteWrite.oldValue)}`,
+        new: `$${toHexa2(spriteWrite.newValue)}`,
+        origin: describeSpriteWriteOrigin(spriteWrite.origin),
+        pc: `$${toHexa4(spriteWrite.pc)}`
+      };
+      const paged = pagedIn(t, spriteWrite.partition, partitionLabels);
       lines.push(
-        `attr ${spriteWrite.attribute} $${toHexa2(spriteWrite.oldValue)} -> $${toHexa2(spriteWrite.newValue)} ` +
-          `by ${describeSpriteWriteOrigin(spriteWrite.origin)}; CPU at $${toHexa4(spriteWrite.pc)}${paged}`
+        paged
+          ? t("panels.side.breakpoints.spriteHitPaged", { ...args, paged })
+          : t("panels.side.breakpoints.spriteHit", args)
       );
     }
   }
   if (copperKind) {
     if (instruction) lines.push(instruction);
-    lines.push("Stops when the Copper completes it: a WAIT when satisfied, a MOVE when issued");
+    lines.push(t("panels.side.breakpoints.copperContract"));
     if (copperHit?.index === bp.copperIndex) {
+      const args = { line: copperHit.line, hc: copperHit.hc, pc: `$${toHexa4(copperHit.pc)}` };
+      const paged = pagedIn(t, copperHit.partition, partitionLabels);
       lines.push(
-        `Hit at line ${copperHit.line}, hc ${copperHit.hc}; CPU at $${toHexa4(copperHit.pc)}` +
-          (copperHit.partition === undefined
-            ? ""
-            : ` in ${partitionLabels?.[copperHit.partition] ?? copperHit.partition}`)
+        paged
+          ? t("panels.side.breakpoints.copperHitPaged", { ...args, paged })
+          : t("panels.side.breakpoints.copperHit", args)
       );
     }
   }
   if (nextRegKind) {
-    lines.push(nextRegName(bp.nextReg));
-    lines.push(bp.nextRegCopper ? "Breaks on CPU and copper writes" : "Breaks on CPU writes");
+    lines.push(nextRegName(t, bp.nextReg));
+    lines.push(
+      t(bp.nextRegCopper ? "panels.side.breakpoints.nextRegCpuAndCopper" : "panels.side.breakpoints.nextRegCpuOnly")
+    );
     // --- The contract, in the second place a user can meet it. The dialog says the same.
-    lines.push("Stops after the instruction that wrote the register");
+    lines.push(t("panels.side.breakpoints.nextRegContract"));
     if (lastWrite?.reg === bp.nextReg) {
       // --- Where it came from, while the row is still showing the hit. On `$02` this is the only
       // --- place it survives: resuming applies the reset and takes the address and paging with it.
       const where = `$${toHexa4(lastWrite.pc)}`;
-      const paged =
-        lastWrite.partition === undefined
-          ? ""
-          : ` in ${partitionLabels?.[lastWrite.partition] ?? lastWrite.partition}`;
+      const paged = pagedIn(t, lastWrite.partition, partitionLabels);
+      const byCopper = lastWrite.origin === "copper";
       lines.push(
-        lastWrite.origin === "copper"
-          ? `Written by the copper, CPU at ${where}${paged}`
-          : `Written at ${where}${paged}`
+        paged
+          ? t(byCopper ? "panels.side.breakpoints.writtenByCopperPaged" : "panels.side.breakpoints.writtenAtPaged", {
+              where,
+              paged
+            })
+          : t(byCopper ? "panels.side.breakpoints.writtenByCopper" : "panels.side.breakpoints.writtenAt", { where })
       );
     }
   }
-  if (bp.disabled) lines.push("Disabled");
+  if (bp.disabled) lines.push(t("panels.side.breakpoints.disabled"));
   // --- The condition, the hit rule, the live count and why a condition may not be stopping
   lines.push(...breakpointFilterLines(bp));
   if (bp.resolvedAddress !== undefined) {
-    lines.push(`Resolves to $${toHexa4(bp.resolvedAddress)} (${bp.resolvedAddress})`);
+    lines.push(
+      t("panels.side.breakpoints.resolvesTo", { address: `$${toHexa4(bp.resolvedAddress)} (${bp.resolvedAddress})` })
+    );
   }
   if ((bp.exec || isWatchpoint) && instruction) lines.push(instruction);
   if (bp.resource !== undefined && bp.line !== undefined) {
-    lines.push(`Click the address to go to ${bp.resource.split("/").pop()}:${bp.line}`);
+    lines.push(t("panels.side.breakpoints.clickToGo", { file: bp.resource.split("/").pop(), line: bp.line }));
   }
   // --- A comment's breakpoint is the build's: read-only here, but an ASSERTION or WPMEM one can
   // --- be disabled for the session (S3)
   if (comment) {
     if (bp.annotationKind === "WPMEM" && bp.address !== undefined) {
       const end = bp.address + (bp.length ?? 1) - 1;
+      const range = end === bp.address ? `$${toHexa4(bp.address)}` : `$${toHexa4(bp.address)}-$${toHexa4(end)}`;
       lines.push(
-        `Watches ${end === bp.address ? `$${toHexa4(bp.address)}` : `$${toHexa4(bp.address)}-$${toHexa4(end)}`}` +
-          ` for ${bp.memoryRead ? "reads" : "writes"}`
+        t(bp.memoryRead ? "panels.side.breakpoints.watchesReads" : "panels.side.breakpoints.watchesWrites", { range })
       );
     }
-    lines.push("Double-click the row to go to the comment");
-    lines.push("Right-click the row to disable it or show it in the disassembly");
+    lines.push(t("panels.side.breakpoints.hint.goToComment"));
+    lines.push(t("panels.side.breakpoints.hint.commentMenu"));
     return lines.join("\n");
   }
   // --- The indicator's own action hints, folded in: it renders with `noTooltip` here so that its
   // --- two tooltips do not fire on top of this one.
-  lines.push(bp.disabled ? "Check the box to enable" : "Uncheck the box to disable");
-  lines.push("Right-click the indicator to remove");
+  lines.push(t(bp.disabled ? "panels.side.breakpoints.hint.checkToEnable" : "panels.side.breakpoints.hint.uncheckToDisable"));
+  lines.push(t("panels.side.breakpoints.hint.removeIndicator"));
   // --- The row's own gestures. Every row is editable: a source-bound one opens in source mode,
   // --- where its condition and hit rule are editable and its place stays the editor's.
-  lines.push("Right-click the row for more actions");
+  lines.push(t("panels.side.breakpoints.hint.rowMenu"));
   lines.push(
-    isAuthorableBreakpoint(bp)
-      ? "Double-click the row to edit"
-      : "Double-click the row to edit its condition and hit count"
+    t(isAuthorableBreakpoint(bp) ? "panels.side.breakpoints.hint.doubleClickEdit" : "panels.side.breakpoints.hint.doubleClickEditFilter")
   );
   return lines.join("\n");
 };
@@ -312,6 +349,7 @@ const BreakpointRow = ({
 type BreakpointRowModel = BreakpointInfo & { instruction: string };
 
 export const BreakpointsPanel = () => {
+  const t = useT();
   const emuApi = useEmuApi();
   const confirmPort = useConfirmPort();
   const openBreakpointDialog = useBreakpointDialog();
@@ -476,20 +514,14 @@ export const BreakpointsPanel = () => {
     // --- predict, so the question names the source count rather than asking a bare "Are you sure?".
     const sourceCount = bps.filter((bp) => !isAuthorableBreakpoint(bp)).length;
     const confirmed = await confirmPort.confirm({
-      title: "Remove all breakpoints",
+      title: t("panels.side.breakpoints.removeAll.title"),
       lines: [
-        `Remove all ${bps.length} breakpoint${bps.length === 1 ? "" : "s"}?`,
-        ...(sourceCount
-          ? [
-              `This includes ${sourceCount} source-code breakpoint${
-                sourceCount === 1 ? "" : "s"
-              } set in the editor.`
-            ]
-          : []),
-        "This cannot be undone."
+        t("panels.side.breakpoints.removeAll.question", { count: bps.length }),
+        ...(sourceCount ? [t("panels.side.breakpoints.removeAll.includesSource", { count: sourceCount })] : []),
+        t("panels.side.breakpoints.removeAll.cannotUndo")
       ],
-      confirmLabel: "Remove all",
-      cancelLabel: "Cancel",
+      confirmLabel: t("panels.side.breakpoints.removeAll.confirm"),
+      cancelLabel: t("common.button.cancel"),
       danger: true
     });
     if (!confirmed) return;
@@ -599,7 +631,7 @@ export const BreakpointsPanel = () => {
       <div className={styles.toolbar}>
         <IconButton
           iconName="plus"
-          title="Add breakpoint"
+          title={t("panels.side.breakpoints.toolbar.add")}
           iconSize={16}
           buttonWidth={22}
           buttonHeight={22}
@@ -608,7 +640,7 @@ export const BreakpointsPanel = () => {
         />
         <IconButton
           iconName="list-tree"
-          title={grouped !== false ? "Ungroup breakpoints" : "Group breakpoints by kind"}
+          title={t(grouped !== false ? "panels.side.breakpoints.toolbar.ungroup" : "panels.side.breakpoints.toolbar.group")}
           iconSize={16}
           buttonWidth={22}
           buttonHeight={22}
@@ -620,7 +652,7 @@ export const BreakpointsPanel = () => {
         />
         <IconButton
           iconName="clear-all"
-          title="Remove all breakpoints"
+          title={t("panels.side.breakpoints.toolbar.removeAll")}
           iconSize={16}
           buttonWidth={22}
           buttonHeight={22}
@@ -635,29 +667,29 @@ export const BreakpointsPanel = () => {
           * condition and hit rule while the editor keeps owning where it is (§4.4.2).
           */}
         <ContextMenuItem
-          text="Edit breakpoint..."
+          text={t("panels.side.breakpoints.menu.edit")}
           iconName="pencil"
           clicked={runFromMenu(() => editBreakpoint(menuTarget))}
         />
         {menuTarget && !isLogpoint(menuTarget) && !menuTarget.runTo && (
           <ContextMenuItem
-            text={menuTarget.oneShot ? "Keep after it stops" : "Remove after it stops"}
+            text={t(menuTarget.oneShot ? "panels.side.breakpoints.menu.keepAfterStop" : "panels.side.breakpoints.menu.removeAfterStop")}
             trailing={menuTarget.oneShot ? undefined : ONE_SHOT_GESTURE}
             clicked={runFromMenu(() => toggleOneShot(menuTarget))}
           />
         )}
         <ContextMenuItem
-          text={menuTarget?.disabled ? "Enable breakpoint" : "Disable breakpoint"}
+          text={t(menuTarget?.disabled ? "panels.side.breakpoints.menu.enable" : "panels.side.breakpoints.menu.disable")}
           clicked={runFromMenu(() => toggleBreakpoint(menuTarget))}
         />
         <ContextMenuItem
-          text="Remove breakpoint"
+          text={t("panels.side.breakpoints.menu.remove")}
           dangerous
           clicked={runFromMenu(() => removeBreakpoint(menuTarget))}
         />
         {addToWatchSpec(menuTarget) && (
           <ContextMenuItem
-            text="Add to Watch"
+            text={t("panels.side.breakpoints.menu.addToWatch")}
             clicked={runFromMenu(async () => {
               await ideCommandsService.executeCommand(`w-add ${addToWatchSpec(menuTarget)}`);
             })}
@@ -665,16 +697,16 @@ export const BreakpointsPanel = () => {
         )}
         <ContextMenuSeparator />
         <ContextMenuItem
-          text="Reset hit count"
+          text={t("panels.side.breakpoints.menu.resetHits")}
           clicked={runFromMenu(() => resetHits(menuTarget))}
         />
         <ContextMenuItem
-          text="Reset all hit counts"
+          text={t("panels.side.breakpoints.menu.resetAllHits")}
           clicked={runFromMenu(() => resetHits())}
         />
         <ContextMenuSeparator />
         <ContextMenuItem
-          text="Remove all breakpoints"
+          text={t("panels.side.breakpoints.menu.removeAll")}
           dangerous
           clicked={runFromMenu(removeAllBreakpoints)}
         />
@@ -685,8 +717,8 @@ export const BreakpointsPanel = () => {
             <ContextMenuItem
               text={
                 sameComment(commentMenuTarget).every((b) => b.disabled)
-                  ? `Enable ${commentKindOf(commentMenuTarget)}`
-                  : `Disable ${commentKindOf(commentMenuTarget)}`
+                  ? t("panels.side.breakpoints.menu.enableComment", { kind: commentKindOf(commentMenuTarget) })
+                  : t("panels.side.breakpoints.menu.disableComment", { kind: commentKindOf(commentMenuTarget) })
               }
               clicked={() => {
                 commentMenuApi.conceal();
@@ -698,7 +730,7 @@ export const BreakpointsPanel = () => {
             />
             {addToWatchSpec(commentMenuTarget) && (
               <ContextMenuItem
-                text="Add to Watch"
+                text={t("panels.side.breakpoints.menu.addToWatch")}
                 clicked={() => {
                   commentMenuApi.conceal();
                   void ideCommandsService.executeCommand(`w-add ${addToWatchSpec(commentMenuTarget)}`);
@@ -706,7 +738,7 @@ export const BreakpointsPanel = () => {
               />
             )}
             <ContextMenuItem
-              text="Go to comment"
+              text={t("panels.side.breakpoints.menu.goToComment")}
               clicked={() => {
                 commentMenuApi.conceal();
                 void ideCommandsService.executeCommand(
@@ -724,7 +756,11 @@ export const BreakpointsPanel = () => {
             ].map((address, _i, all) => (
               <ContextMenuItem
                 key={address}
-                text={all.length > 1 ? `Show in disassembly ($${toHexa4(address)})` : "Show in disassembly"}
+                text={
+                  all.length > 1
+                    ? t("panels.side.breakpoints.menu.showInDisassemblyAt", { address: `$${toHexa4(address)}` })
+                    : t("panels.side.breakpoints.menu.showInDisassembly")
+                }
                 clicked={() => {
                   commentMenuApi.conceal();
                   void ideCommandsService.executeCommand(`show-disass $${toHexa4(address)}`);
@@ -738,7 +774,7 @@ export const BreakpointsPanel = () => {
         * The empty test runs on the breakpoints, not on the flattened items: a list of six headers
         * and no rows would otherwise count as a populated panel.
         */}
-      {listItems.length === 0 && <EmptyState message="No breakpoints defined" />}
+      {listItems.length === 0 && <EmptyState message={t("panels.side.breakpoints.empty")} />}
       {listItems.length > 0 && (
         <VirtualizedList
           items={listItems}
@@ -765,8 +801,8 @@ export const BreakpointsPanel = () => {
                       width={16}
                       height={16}
                     />
-                    <span>{assertions ? "ASSERTION comments" : "WPMEM comments"}</span>
-                    <span>{item.on === false ? "off" : item.count}</span>
+                    <span>{t(assertions ? "panels.side.breakpoints.section.assertions" : "panels.side.breakpoints.section.wpmem")}</span>
+                    <span>{item.on === false ? t("panels.side.breakpoints.section.off") : item.count}</span>
                   </SectionHeader>
                 );
               }
@@ -779,7 +815,9 @@ export const BreakpointsPanel = () => {
                       width={16}
                       height={16}
                     />
-                    <span>{item.section === "comments" ? "LOGPOINT comments" : "Log groups"}</span>
+                    <span>
+                      {t(item.section === "comments" ? "panels.side.breakpoints.section.logpointComments" : "panels.side.breakpoints.section.logGroups")}
+                    </span>
                     <span>{item.count}</span>
                   </SectionHeader>
                 );
@@ -797,7 +835,7 @@ export const BreakpointsPanel = () => {
                     </div>
                     <Label text={`[${item.group}]`} className={styles.logGroupLabel} />
                     <Secondary
-                      text={`${item.count} logpoint${item.count === 1 ? "" : "s"}${item.on ? "" : " - off"}`}
+                      text={t(item.on ? "panels.side.breakpoints.logGroupCount" : "panels.side.breakpoints.logGroupCountOff", { count: item.count })}
                       width="auto"
                     />
                   </DataRow>
@@ -867,6 +905,7 @@ export const BreakpointsPanel = () => {
               return (
                 <BreakpointRow
                   tooltip={breakpointTooltip(
+                    t,
                     bp,
                     addrKey,
                     instruction,
@@ -1014,7 +1053,7 @@ export const BreakpointsPanel = () => {
                               />
                             </>
                           )}
-                          <Secondary text={nextRegName(bp.nextReg)} width="auto" />
+                          <Secondary text={nextRegName(t, bp.nextReg)} width="auto" />
                         </>
                       );
                     })()}
@@ -1063,7 +1102,7 @@ export const BreakpointsPanel = () => {
                               />
                             </>
                           )}
-                          <Secondary text={spriteAttrText(bp)} width="auto" />
+                          <Secondary text={spriteAttrText(t, bp)} width="auto" />
                         </>
                       );
                     })()}

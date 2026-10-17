@@ -304,7 +304,7 @@ export async function setSelectedTapeFile(
       );
     }
     await ejectTape();
-    return `Reading file ${filename} resulted in error: ${err.message}`;
+    return t("messages.readFileError", { file: filename, error: err.message });
   }
 }
 

@@ -1,6 +1,7 @@
 import classnames from "classnames";
 import { CSSProperties, memo, MouseEvent, useLayoutEffect, useRef } from "react";
 import { NEX_SPRITE_TRANSPARENT } from "@common/zxnext/sprites/spritePatterns";
+import { useT } from "@common/i18n/useT";
 import styles from "./SpritePatternSheet.module.scss";
 
 /*
@@ -110,53 +111,72 @@ const SpriteCell = memo(
     onSelect,
     onContextMenu,
     onOpen
-  }: CellProps) => (
-    <div
-      id={cell.id}
-      role="option"
-      aria-selected={selected}
-      data-pattern={cell.index}
-      className={classnames(styles.cell, {
-        [styles.cellSelected]: selected,
-        [styles.cellActive]: active,
-        [styles.cellBlank]: cell.dimmed
-      })}
-      title={cell.title}
-      onClick={(event) => onSelect(cell.index, event.shiftKey)}
-      onDoubleClick={() => onOpen?.(cell.index)}
-      onContextMenu={(event) => onContextMenu?.(cell.index, event)}
-    >
-      <span className={styles.cellImage}>
-        <SpriteCanvas
-          pixels={cell.pixels}
-          abgr={abgr}
-          transparentAbgr={transparentAbgr}
-          showTransparent={showTransparent}
-          className={styles.cellCanvas}
-        />
-        {cell.fold && <span className={styles.bytesMark} aria-label="Marked as bytes" />}
-        {cell.warning && <span className={styles.warningMark} aria-label="Mixed formats" />}
-        {cell.markers?.includes("upload") && (
-          <span className={styles.uploadMark} aria-label="Upload cursor" />
-        )}
-        {cell.markers?.includes("selectedSprite") && (
-          <span className={styles.spriteMark} aria-label="The selected sprite's pattern" />
-        )}
-        {cell.badge && (
-          <span
-            className={classnames(styles.badge, { [styles.badgeStrong]: cell.badge.strong })}
-            title={cell.badge.title}
-          >
-            {cell.badge.text}
-          </span>
-        )}
-      </span>
-      <span className={styles.cellLabel}>
-        <span className={styles.cellNumber}>{cell.number}</span>
-        {cell.secondary !== undefined && ` ${cell.secondary}`}
-      </span>
-    </div>
-  )
+  }: CellProps) => {
+    const t = useT();
+    return (
+      <div
+        id={cell.id}
+        role="option"
+        aria-selected={selected}
+        data-pattern={cell.index}
+        className={classnames(styles.cell, {
+          [styles.cellSelected]: selected,
+          [styles.cellActive]: active,
+          [styles.cellBlank]: cell.dimmed
+        })}
+        title={cell.title}
+        onClick={(event) => onSelect(cell.index, event.shiftKey)}
+        onDoubleClick={() => onOpen?.(cell.index)}
+        onContextMenu={(event) => onContextMenu?.(cell.index, event)}
+      >
+        <span className={styles.cellImage}>
+          <SpriteCanvas
+            pixels={cell.pixels}
+            abgr={abgr}
+            transparentAbgr={transparentAbgr}
+            showTransparent={showTransparent}
+            className={styles.cellCanvas}
+          />
+          {cell.fold && (
+            <span
+              className={styles.bytesMark}
+              aria-label={t("panels.controls.spriteSheet.bytesMark")}
+            />
+          )}
+          {cell.warning && (
+            <span
+              className={styles.warningMark}
+              aria-label={t("panels.controls.spriteSheet.mixedFormats")}
+            />
+          )}
+          {cell.markers?.includes("upload") && (
+            <span
+              className={styles.uploadMark}
+              aria-label={t("panels.controls.spriteSheet.uploadCursor")}
+            />
+          )}
+          {cell.markers?.includes("selectedSprite") && (
+            <span
+              className={styles.spriteMark}
+              aria-label={t("panels.controls.spriteSheet.selectedSprite")}
+            />
+          )}
+          {cell.badge && (
+            <span
+              className={classnames(styles.badge, { [styles.badgeStrong]: cell.badge.strong })}
+              title={cell.badge.title}
+            >
+              {cell.badge.text}
+            </span>
+          )}
+        </span>
+        <span className={styles.cellLabel}>
+          <span className={styles.cellNumber}>{cell.number}</span>
+          {cell.secondary !== undefined && ` ${cell.secondary}`}
+        </span>
+      </div>
+    );
+  }
 );
 
 /**
@@ -226,18 +246,25 @@ export const SpriteZoomButtons = ({
 }: {
   zoom: SpriteSheetZoom;
   onChange: (zoom: SpriteSheetZoom) => void;
-}) => (
-  <span className={styles.segmented} role="group" aria-label="Zoom">
-    {SPRITE_SHEET_ZOOMS.map((z) => (
-      <button
-        key={z}
-        type="button"
-        className={styles.segment}
-        aria-pressed={zoom === z}
-        onClick={() => onChange(z)}
-      >
-        {`${z}×`}
-      </button>
-    ))}
-  </span>
-);
+}) => {
+  const t = useT();
+  return (
+    <span
+      className={styles.segmented}
+      role="group"
+      aria-label={t("panels.controls.spriteSheet.zoom")}
+    >
+      {SPRITE_SHEET_ZOOMS.map((z) => (
+        <button
+          key={z}
+          type="button"
+          className={styles.segment}
+          aria-pressed={zoom === z}
+          onClick={() => onChange(z)}
+        >
+          {`${z}×`}
+        </button>
+      ))}
+    </span>
+  );
+};

@@ -1,6 +1,7 @@
 import styles from "./SpriteEditor.module.scss";
 import { memo } from "react";
 import { SmallIconButton } from "@renderer/controls/IconButton";
+import { useT } from "@common/i18n/useT";
 import { SpriteImage } from "./SpriteImage";
 import { useSpriteAnimation } from "./useSpriteAnimation";
 
@@ -25,6 +26,7 @@ type Props = {
  */
 export const SpritePreview = memo(
   ({ sprites, selectedIndex, palette, transparencyIndex, initialFps, onFpsChange }: Props) => {
+    const t = useT();
     const anim = useSpriteAnimation(sprites.length, initialFps, onFpsChange);
     const shown = sprites[anim.frame ?? selectedIndex] ?? sprites[0];
 
@@ -45,7 +47,7 @@ export const SpritePreview = memo(
         <span className={styles.previewControls}>
           <SmallIconButton
             iconName={anim.playing ? "stop" : "play"}
-            title={anim.playing ? "Stop the sheet animation" : "Play the sheet as an animation"}
+            title={anim.playing ? t("panels.spriteEditor.stop") : t("panels.spriteEditor.play")}
             enable={sprites.length > 1}
             clicked={anim.toggle}
           />
@@ -53,9 +55,9 @@ export const SpritePreview = memo(
             type="button"
             className={styles.fpsButton}
             onClick={anim.cycleFps}
-            aria-label={`Animation speed: ${anim.fps} frames per second`}
+            aria-label={t("panels.spriteEditor.fpsLabel", { fps: anim.fps })}
           >
-            {anim.fps} fps
+            {t("panels.spriteEditor.fps", { fps: anim.fps })}
           </button>
         </span>
       </div>

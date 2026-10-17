@@ -23,8 +23,10 @@ import { FloppyDiskFormat } from "@emu/abstractions/FloppyDiskFormat";
 import { DiskDensity } from "@emu/abstractions/DiskDensity";
 import { createDiskSurface } from "@emu/machines/disk/DiskSurface";
 import ScrollViewer from "@renderer/controls/ScrollViewer";
+import { useT } from "@common/i18n/useT";
 
 const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
+  const t = useT();
   const documentHubService = useDocumentHubService();
   const hubVersion = useDocumentHubServiceVersion();
   const [docState, setDocState] = useState({});
@@ -83,7 +85,7 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
       <EmptyState
         tone="error"
         motif={false}
-        message={parsed.error ?? "This file could not be read as a .dsk disk image."}
+        message={parsed.error ?? t("panels.doc.dsk.unreadable")}
       />
     );
   }
@@ -91,12 +93,12 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
     <ScrollViewer allowHorizontal={false}>
       <div className={styles.dskViewerPanel}>
         <div className={styles.header}>
-          <LabeledValue label='Sides:' value={fileInfo.numSides} />
+          <LabeledValue label={t("panels.doc.dsk.sides")} value={fileInfo.numSides} />
           <ToolbarSeparator small={true} />
-          <LabeledValue label='Tracks:' value={fileInfo.numTracks} />
+          <LabeledValue label={t("panels.doc.dsk.tracks")} value={fileInfo.numTracks} />
           <ToolbarSeparator small={true} />
           <LabeledValue
-            label='Disk format:'
+            label={t("panels.doc.dsk.diskFormat")}
             value={
               fileInfo.diskFormat === FloppyDiskFormat.Cpc
                 ? "CPC"
@@ -106,8 +108,8 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
           <ToolbarSeparator small={true} />
           <LabeledSwitch
             value={showPhysical}
-            label='Show surface view'
-            title='Floppy physical surface view'
+            label={t("panels.doc.dsk.showSurface")}
+            title={t("panels.doc.dsk.showSurfaceTitle")}
             clicked={v => {
               setShowPhysical(v);
               documentHubService.setDocumentViewState(document.id, {
@@ -122,7 +124,7 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
           <>
             <DataSection
               key='GDI'
-              title='Generic Disk Info'
+              title={t("panels.doc.dsk.genericInfo")}
               expanded={docState?.["GDI"] ?? true}
               changed={exp => {
                 documentHubService.setDocumentViewState(document.id, {
@@ -135,7 +137,7 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
               <div className={styles.dataSection}>
                 <div className={styles.header}>
                   <LabeledValue
-                    label='Density:'
+                    label={t("panels.doc.dsk.density")}
                     value={DiskDensity[floppyInfo.density]}
                   />
                   <ToolbarSeparator small={true} />
@@ -145,7 +147,7 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
                     * app does not know. A field that is always the same value is not a field.
                     */}
                   <LabeledFlag
-                    label='Has weak sectors'
+                    label={t("panels.doc.dsk.weakSectors")}
                     // --- Was hardwired to `false`. The surface does know: a track with weak-sector
                     // --- data has a non-empty span for it.
                     value={hasWeakSectors}
@@ -153,21 +155,21 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
                 </div>
                 <div className={styles.header}>
                   <LabeledValue
-                    label='Total:'
-                    title='Total physical size in bytes'
+                    label={t("panels.doc.dsk.total")}
+                    title={t("panels.doc.dsk.totalTitle")}
                     // --- Was hardwired to `0`, i.e. a label with no value behind it.
                     value={totalSurfaceBytes}
                   />
                   <ToolbarSeparator small={true} />
                   <LabeledValue
                     label='B/T:'
-                    title='Bytes per track'
+                    title={t("panels.doc.dsk.bytesPerTrackTitle")}
                     value={floppyInfo.bytesPerTrack}
                   />
                   <ToolbarSeparator small={true} />
                   <LabeledValue
                     label='TLen:'
-                    title='Track length in bytes'
+                    title={t("panels.doc.dsk.trackLengthTitle")}
                     // --- Was a second copy of `bytesPerTrack`, so `B/T` and `TLen` were two
                     // --- differently-labelled columns showing the same number. A track's own
                     // --- length is what `TLen` names.
@@ -182,7 +184,7 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
               return (
                 <DataSection
                   key={stateId}
-                  title={`Track #${idx}`}
+                  title={t("panels.doc.dsk.trackTitle", { track: idx })}
                   expanded={docState?.[stateId] ?? false}
                   changed={exp => {
                     documentHubService.setDocumentViewState(document.id, {
@@ -195,7 +197,7 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
                   <div className={styles.dataSection}>
                     <div className={styles.blockHeader}>
                       <Secondary
-                        text={`Track header (GAP0 + Sync + Index + GAP1, ${ti.header.length} bytes)`}
+                        text={t("panels.doc.dsk.trackHeader", { count: ti.header.length })}
                       />
                     </div>
                     <StaticMemoryView key={stateId} memory={ti.header.view()} />
@@ -203,7 +205,7 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
 
                   <div className={styles.sectorSection}>
                     <LabeledGroup
-                      label='Sectors:'
+                      label={t("panels.doc.dsk.sectors")}
                       title=''
                       values={ti.sectors.map((_, sIdx) => sIdx + 1)}
                       marked={-1}
@@ -229,9 +231,10 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
                     <div className={styles.dataSection}>
                       <div className={styles.blockHeader}>
                         <Secondary
-                          text={`Sector #${selectedSectorIdx} (Header + GAP2 + Sync + DM + Data + CRC + GAP3, ${
-                            ti.sectors[selectedSectorIdx - 1].sectordata.length
-                          } bytes) `}
+                          text={t("panels.doc.dsk.sectorLayout", {
+                            sector: selectedSectorIdx,
+                            count: ti.sectors[selectedSectorIdx - 1].sectordata.length
+                          })}
                         />
                       </div>
                       <StaticMemoryView
@@ -243,7 +246,7 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
                   ) : (
                     <div className={styles.dataSection}>
                       <div className={styles.blockHeader}>
-                        <Secondary text='This track holds no sectors.' />
+                        <Secondary text={t("panels.doc.dsk.noSectors")} />
                       </div>
                     </div>
                   )}
@@ -253,19 +256,21 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
           </>
         )}
         {!showPhysical &&
-          fileInfo.tracks.map((t, idx) => {
+          fileInfo.tracks.map((track, idx) => {
             const selectedSectorIdx = docState?.[`TS${idx}`] ?? 1;
-            if (!t.sectors.length) {
+            if (!track.sectors.length) {
               return null;
             } else {
               return (
                 <DataSection
                   key={`T${idx}`}
-                  title={`Track #${t.trackNumber} | Side #${t.sideNumber} | ${
-                    t.sectors.length
-                  } sector${t.sectors.length > 1 ? "s" : ""} | GAP3: ${toHexa2(
-                    t.gap3
-                  )} | Filler: ${toHexa2(t.filler)}`}
+                  title={t("panels.doc.dsk.logicalTrackTitle", {
+                    track: track.trackNumber,
+                    side: track.sideNumber,
+                    count: track.sectors.length,
+                    gap3: toHexa2(track.gap3),
+                    filler: toHexa2(track.filler)
+                  })}
                   expanded={docState?.[`T${idx}`] ?? false}
                   changed={exp => {
                     documentHubService.setDocumentViewState(document.id, {
@@ -277,9 +282,9 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
                 >
                   <div className={styles.sectorSection}>
                     <LabeledGroup
-                      label='Sectors:'
+                      label={t("panels.doc.dsk.sectors")}
                       title=''
-                      values={t.sectors.map((_, sIdx) => sIdx + 1)}
+                      values={track.sectors.map((_, sIdx) => sIdx + 1)}
                       marked={-1}
                       selected={selectedSectorIdx}
                       clicked={v => {
@@ -291,7 +296,7 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
                       }}
                     />
                   </div>
-                  <SectorPanel sector={t.sectors[selectedSectorIdx - 1]} />
+                  <SectorPanel sector={track.sectors[selectedSectorIdx - 1]} />
                 </DataSection>
               );
             }
@@ -338,30 +343,31 @@ type SectorProps = {
 };
 
 const SectorPanel = ({ sector }: SectorProps) => {
+  const t = useT();
   return (
     <>
       <div className={styles.sectorHeader}>
-        <LabeledValue label='C:' title='Cylinder (Track)' value={sector.C} />
+        <LabeledValue label='C:' title={t("panels.doc.dsk.cylinderTitle")} value={sector.C} />
         <ToolbarSeparator small={true} />
-        <LabeledValue label='H:' title='Head (Side)' value={sector.H} />
+        <LabeledValue label='H:' title={t("panels.doc.dsk.headTitle")} value={sector.H} />
         <ToolbarSeparator small={true} />
-        <LabeledValue label='R:' title='Sector ID' value={sector.R} />
+        <LabeledValue label='R:' title={t("panels.doc.dsk.sectorIdTitle")} value={sector.R} />
         <ToolbarSeparator small={true} />
         <LabeledValue
           label='N:'
-          title='Sector size'
+          title={t("panels.doc.dsk.sectorSizeTitle")}
           value={sector.actualLength}
         />
         <ToolbarSeparator small={true} />
         <LabeledValue
           label='SR1:'
-          title='FDD SR1 value'
+          title={t("panels.doc.dsk.sr1Title")}
           value={`${toHexa2(sector.SR1)}`}
         />
         <ToolbarSeparator small={true} />
         <LabeledValue
           label='SR2:'
-          title='FDD SR2 value'
+          title={t("panels.doc.dsk.sr2Title")}
           value={`${toHexa2(sector.SR2)}`}
         />
       </div>

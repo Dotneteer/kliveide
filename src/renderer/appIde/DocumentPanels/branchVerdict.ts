@@ -4,6 +4,8 @@ import type {
   DisassemblyBranchInfo,
   DisassemblyBranchKind
 } from "../disassemblers/common-types";
+import { t } from "@common/i18n/i18n";
+import type { MessageKey } from "@common/i18n/keys.generated";
 
 /**
  * Deciding, from a CPU snapshot, whether a branching instruction will jump.
@@ -325,9 +327,16 @@ export function formatBranchReadout(verdict: BranchVerdict, decimalView: boolean
       : `$${value.toString(16).toUpperCase().padStart(4, "0")}`;
 
   // --- "NC met (C=0)", or nothing at all where the branch is unconditional.
+  // --- The long form is prose (translated); the short form is notation and stays as it is.
   const because = verdict.conditionText
-    ? `${verdict.conditionText} ${verdict.taken ? "met" : "not met"}` +
-      (verdict.reasonText ? ` (${verdict.reasonText})` : "")
+    ? verdict.reasonText
+      ? t(verdict.taken ? "panels.doc.branch.metBecause" : "panels.doc.branch.notMetBecause", {
+          condition: verdict.conditionText,
+          reason: verdict.reasonText
+        })
+      : t(verdict.taken ? "panels.doc.branch.met" : "panels.doc.branch.notMet", {
+          condition: verdict.conditionText
+        })
     : "";
 
   const form = (head: string, parts: string[], separator: string): BranchReadoutForm => {
@@ -347,22 +356,30 @@ export function formatBranchReadout(verdict: BranchVerdict, decimalView: boolean
      * come from an I/O read that has not happened, and performing it here would disturb the very
      * execution being debugged.
      */
-    const why =
-      verdict.unobtainable === "io-port"
-        ? "destination is read from port BC as it executes"
-        : "the stack is outside the memory on display";
     const verb = isCall(verdict.kind) ? "calls" : verdict.direction === "return" ? "returns" : "jumps";
-    return { long: longForm(`${verb} — ${why}`), short: shortForm("→ ?") };
+    const key: MessageKey =
+      verdict.unobtainable === "io-port"
+        ? verb === "calls"
+          ? "panels.doc.branch.callsFromPort"
+          : verb === "returns"
+            ? "panels.doc.branch.returnsFromPort"
+            : "panels.doc.branch.jumpsFromPort"
+        : verb === "calls"
+          ? "panels.doc.branch.callsStackUnreadable"
+          : verb === "returns"
+            ? "panels.doc.branch.returnsStackUnreadable"
+            : "panels.doc.branch.jumpsStackUnreadable";
+    return { long: longForm(t(key)), short: shortForm("→ ?") };
   }
 
   if (!verdict.taken) {
     const to = addr(verdict.nextAddress ?? 0);
-    return { long: longForm(`falls through to ${to}`), short: shortForm(`↓ ${to}`) };
+    return { long: longForm(t("panels.doc.branch.fallsThrough", { address: to })), short: shortForm(`↓ ${to}`) };
   }
 
   const to = addr(verdict.nextAddress ?? 0);
   if (verdict.direction === "return") {
-    return { long: longForm(`returns to ${to}`), short: shortForm(`→ ${to}`) };
+    return { long: longForm(t("panels.doc.branch.returnsTo", { address: to })), short: shortForm(`→ ${to}`) };
   }
 
   /*
@@ -372,9 +389,11 @@ export function formatBranchReadout(verdict: BranchVerdict, decimalView: boolean
    * the sense of a loop closing, which is exactly what a call to a low vector is not.
    */
   if (isCall(verdict.kind)) {
-    return { long: longForm(`calls ${to}`), short: shortForm(`→ ${to}`) };
+    return { long: longForm(t("panels.doc.branch.calls", { address: to })), short: shortForm(`→ ${to}`) };
   }
 
-  const way = verdict.direction === "back" ? "back" : "forward";
-  return { long: longForm(`jumps ${way} to ${to}`), short: shortForm(`→ ${to}`) };
+  const jumps = t(verdict.direction === "back" ? "panels.doc.branch.jumpsBack" : "panels.doc.branch.jumpsForward", {
+    address: to
+  });
+  return { long: longForm(jumps), short: shortForm(`→ ${to}`) };
 }

@@ -21,6 +21,20 @@ import type { RzxCoreBridge } from "./rzxCoreBridge";
 /** Why a session stopped */
 export type RzxStopKind = "ended" | "desync" | "interrupted" | "overflow";
 
+/**
+ * Why the IDE ended an RZX session from outside the CPU (trap 4): a code, so the stop message is one
+ * whole translatable sentence (`media.rzx.playback.interrupted`, `media.rzx.recording.interrupted`).
+ */
+export type RzxInterruptReason =
+  | "tapeChanged"
+  | "diskChanged"
+  | "codeInjected"
+  | "registerEdited"
+  | "memoryEdited"
+  | "machineStopped"
+  | "screenRecorderFailed"
+  | "recordingStarts";
+
 export type RzxStop = {
   kind: RzxStopKind;
   /** The output line that explains it */
@@ -70,7 +84,7 @@ export interface IRzxSession {
   afterRun(frameCompleted: boolean): boolean;
 
   /** Ends the session because the IDE changed the machine from outside the CPU (trap 4) */
-  interrupt(reason: string): void;
+  interrupt(reason: RzxInterruptReason, register?: string): void;
 
   /** The stop not yet reported, which is then cleared */
   takeStop(): RzxStop | undefined;

@@ -26,6 +26,7 @@ import {
   snapshotBankCount
 } from "@common/spectrum/snapshot/spectrumSnapshot";
 import { SnapshotRefusedError } from "@common/spectrum/snapshot/snapshotBytes";
+import { t } from "@common/i18n/i18n";
 
 /** The core exports the capture uses, by their name without the prefix */
 type CoreExports = Record<string, (...args: number[]) => number | void>;
@@ -114,9 +115,7 @@ export function captureSpectrumSnapshot(
   const machine = snapshotMachineOfKlive(core.prefix, modelId, core.romSet, drives);
 
   if (call("GetCpuPrefix") !== 0) {
-    throw new SnapshotRefusedError(
-      "The CPU stands between an instruction prefix and its opcode, which no snapshot format can hold; step once more and save again"
-    );
+    throw new SnapshotRefusedError(t("media.snapshot.refused.insidePrefix"), "inside-prefix");
   }
 
   // --- CPU

@@ -11,6 +11,7 @@
  * from outside the CPU (trap 4).
  */
 
+import { t } from "@common/i18n/i18n";
 import { parseSpectrumSnapshot } from "@common/spectrum/snapshot/parseSpectrumSnapshot";
 import { isPictureFrame, rzxCreatorText, type RzxFile, type RzxFrame } from "@common/spectrum/rzx/rzxModel";
 import { rzxSegments, type RzxSegment } from "@common/spectrum/rzx/rzxSegments";
@@ -22,7 +23,7 @@ import {
   RZX_STATUS_FRAME_DONE,
   RZX_STATUS_OK
 } from "./rzxCoreBridge";
-import type { IRzxMachine, IRzxSession, RzxInstructionResult, RzxStop } from "./rzxSession";
+import type { IRzxMachine, IRzxSession, RzxInstructionResult, RzxInterruptReason, RzxStop } from "./rzxSession";
 
 /** What a desync looked like */
 export type RzxDesync = {
@@ -86,7 +87,7 @@ export class RzxPlayer implements IRzxSession {
   start(): void {
     const index = this.options.segment ?? 0;
     if (index < 0 || index >= this.segments.length) {
-      throw new Error(`The recording has no segment ${index + 1}`);
+      throw new Error(t("media.rzx.noSegment", { segment: index + 1 }));
     }
     this.played = this.segments[index].firstFrame;
     this.enterSegment(index);
@@ -129,12 +130,17 @@ export class RzxPlayer implements IRzxSession {
     return this.active;
   }
 
-  interrupt(reason: string): void {
+  interrupt(reason: RzxInterruptReason, register?: string): void {
     if (!this.active) return;
     this.finish({
       kind: "interrupted",
       frame: this.played,
-      message: `RZX playback stopped at frame ${this.played} of ${this.frames}: ${reason}`
+      message: t("media.rzx.playback.interrupted", {
+        frame: this.played,
+        frames: this.frames,
+        reason,
+        register: register?.toUpperCase() ?? ""
+      })
     });
   }
 
@@ -174,7 +180,9 @@ export class RzxPlayer implements IRzxSession {
     this.finish({
       kind: "ended",
       frame: this.played,
-      message: `RZX playback ended after ${this.frames} frames${this.fileText()}; the machine is paused (resume to continue live)`
+      message: this.options.fileName
+        ? t("media.rzx.playback.endedFile", { frames: this.frames, file: this.options.fileName })
+        : t("media.rzx.playback.ended", { frames: this.frames })
     });
     return false;
   }
@@ -191,7 +199,7 @@ export class RzxPlayer implements IRzxSession {
     this.blockIndex = segment.inputs.findIndex((b) => b.frames.length > 0);
     this.frameIndex = 0;
     if (this.blockIndex < 0) {
-      this.finish({ kind: "ended", frame: this.played, message: "RZX playback ended: the segment has no frames" });
+      this.finish({ kind: "ended", frame: this.played, message: t("media.rzx.playback.noFrames") });
       return;
     }
     core.setFrameTact(segment.inputs[this.blockIndex].tstates);
@@ -210,15 +218,19 @@ export class RzxPlayer implements IRzxSession {
     const over = status === RZX_STATUS_DESYNC_OVER;
     const actual = over ? expected + 1 : status === RZX_STATUS_DESYNC_UNDER ? this.machine.rzxCore.readIndex : expected;
     this.desync = { frame: this.played, expected, actual, over };
-    const read = over ? `more than ${expected}` : `${actual}`;
+    const args = {
+      frame: this.played,
+      frames: this.frames,
+      over: over ? "over" : "under",
+      actual,
+      expected,
+      creator: rzxCreatorText(this.file.creator),
+      file: this.options.fileName ?? ""
+    };
     this.finish({
       kind: "desync",
       frame: this.played,
-      message:
-        `RZX playback desynced at frame ${this.played} of ${this.frames}${this.fileText()}: ` +
-        `the program read ${read} IN values where the recording has ${expected} ` +
-        `(recorded by ${rzxCreatorText(this.file.creator)}). ` +
-        `The machine is paused at the instruction that desynced; resume to continue live.`
+      message: this.options.fileName ? t("media.rzx.playback.desyncFile", args) : t("media.rzx.playback.desync", args)
     });
   }
 
@@ -226,9 +238,5 @@ export class RzxPlayer implements IRzxSession {
     if (this.stopInfo) return;
     this.stopInfo = stop;
     this.machine.rzxCore.setMode(RZX_MODE_OFF);
-  }
-
-  private fileText(): string {
-    return this.options.fileName ? ` (${this.options.fileName})` : "";
   }
 }

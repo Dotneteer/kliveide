@@ -1,3 +1,4 @@
+import { t } from "@common/i18n/i18n";
 import { TapeDataBlock } from "@common/structs/TapeDataBlock";
 import { BinaryReader } from "@utils/BinaryReader";
 
@@ -34,9 +35,9 @@ export class TapReader {
         this.dataBlocks.push(tapBlock);
       }
       return null;
-    } catch (err) {
-      // --- This exception is intentionally ignored
-      return err.message;
+    } catch {
+      // --- A block (or its length word) runs past the end of the file: say which one
+      return t("media.tape.tapTruncated", { block: this.dataBlocks.length + 1 });
     }
   }
 }

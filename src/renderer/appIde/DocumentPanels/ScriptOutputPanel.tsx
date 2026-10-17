@@ -20,6 +20,8 @@ import {
 import { ConsoleOutput } from "./helpers/ConsoleOutput";
 import { createSettingsReader } from "@common/utils/SettingsReader";
 import { DataPanel, PanelHeader } from "@renderer/controls/data";
+import { useT } from "@common/i18n/useT";
+import type { MessageKey } from "@common/i18n/keys.generated";
 
 type ScriptOutputPanelViewState = {
   topPosition?: number;
@@ -28,6 +30,7 @@ type ScriptOutputPanelViewState = {
 
 const ScriptOutputPanel = ({ document, contents }: DocumentProps) => {
   // --- Get the services used in this component
+  const t = useT();
   const dispatch = useDispatch();
   const documentHubService = useDocumentHubService();
   const { ideCommandsService, scriptService } = useAppServices();
@@ -112,20 +115,20 @@ const ScriptOutputPanel = ({ document, contents }: DocumentProps) => {
   useEffect(() => () => clearTimeout(saveHandle.current), []);
 
   let variant = "";
-  let conclusion = "";
+  let conclusion: MessageKey = "panels.doc.scriptOutput.statusRunning";
   if (scriptError) {
     variant = "error";
-    conclusion = "Error";
+    conclusion = "panels.doc.scriptOutput.statusError";
   } else if (!scriptRunning) {
     if (scriptStatus === "stopped") {
       variant = "warning";
-      conclusion = "Stopped";
+      conclusion = "panels.doc.scriptOutput.statusStopped";
     } else if (scriptStatus === "execError") {
       variant = "error";
-      conclusion = "Error";
+      conclusion = "panels.doc.scriptOutput.statusError";
     } else {
       variant = "success";
-      conclusion = "Completed";
+      conclusion = "panels.doc.scriptOutput.statusCompleted";
     }
   }
 
@@ -134,7 +137,7 @@ const ScriptOutputPanel = ({ document, contents }: DocumentProps) => {
       <PanelHeader>
         <SmallIconButton
           iconName='stop'
-          title='Stop this script file'
+          title={t("panels.doc.scriptOutput.stop")}
           enable={scriptRunning}
           clicked={async () => {
             await ideCommandsService.executeCommand(
@@ -144,7 +147,7 @@ const ScriptOutputPanel = ({ document, contents }: DocumentProps) => {
         />
         <SmallIconButton
           iconName='square-arrow-out-up-right'
-          title='Open script file'
+          title={t("panels.doc.scriptOutput.openFile")}
           clicked={async () => {
             if (scriptFileName) {
               documentHubService.setPermanent(document.id);
@@ -157,19 +160,19 @@ const ScriptOutputPanel = ({ document, contents }: DocumentProps) => {
         <ToolbarSeparator small={true} />
         <SmallIconButton
           iconName='clear-all'
-          title='Clear script output'
+          title={t("panels.doc.scriptOutput.clear")}
           clicked={() => {
             scriptBuffer?.clear();
           }}
         />
         <SmallIconButton
           iconName='copy'
-          title='Copy to clipboard'
+          title={t("panels.doc.common.copyToClipboard")}
           clicked={() => {
             navigator.clipboard.writeText(scriptBuffer?.getBufferText());
             dispatch(
               setIdeStatusMessageAction(
-                "Script output copied to the clipboard",
+                t("panels.doc.scriptOutput.copied"),
                 true
               )
             );
@@ -185,16 +188,16 @@ const ScriptOutputPanel = ({ document, contents }: DocumentProps) => {
           */}
         <SmallIconButton
           iconName={scrollLocked ? "unlock" : "lock"}
-          title={`Turn auto scrolling ${scrollLocked ? "on" : "off"}`}
+          title={t(scrollLocked ? "panels.doc.scriptOutput.autoScrollOn" : "panels.doc.scriptOutput.autoScrollOff")}
           clicked={() => setLocked(!scrollLocked)}
         />
         <ToolbarSeparator small={true} />
         {/* --- `?? 0`: before the buffer resolves, this rendered the literal "Lines: undefined". */}
-        <Text text={`Lines: ${scriptBuffer?.getContents()?.length ?? 0}`} />
+        <Text text={t("panels.doc.scriptOutput.lines", { count: scriptBuffer?.getContents()?.length ?? 0 })} />
         <ToolbarSeparator small={true} />
         <Text
           variant={variant}
-          text={`${scriptRunning ? "(Running)" : `(${conclusion})`}`}
+          text={t(scriptRunning ? "panels.doc.scriptOutput.statusRunning" : conclusion)}
         />
       </PanelHeader>
       <ConsoleOutput

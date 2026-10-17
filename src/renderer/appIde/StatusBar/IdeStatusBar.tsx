@@ -125,7 +125,7 @@ export const IdeStatusBar = ({ show }: IdeStatusBarProps) => {
               fill="--color-statusbar-icon"
             />
             <LabelSeparator />
-            <Label text={statusMessage} />
+            <Label text={statusMessage} title={statusMessage} />
           </Section>
         )}
         <SpaceFiller />
@@ -269,11 +269,14 @@ type LabelProps = {
   text: string;
   isMonospace?: boolean;
   isError?: boolean;
+  /** The full text as a tooltip, for a label the one-line status bar can cut off */
+  title?: string;
 };
 
-const Label = ({ text, isMonospace, isError }: LabelProps) => {
+const Label = ({ text, isMonospace, isError, title }: LabelProps) => {
   return (
     <span
+      title={title}
       className={classnames(styles.label, {
         [styles.isMonospace]: isMonospace,
         [styles.isError]: isError

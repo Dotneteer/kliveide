@@ -4,6 +4,7 @@
  * as a duration. The panel only lays these out.
  */
 
+import { t } from "@common/i18n/i18n";
 import type { Z88Snapshot } from "@common/z88/z88Snapshot";
 import type { Z88SnapshotMapping } from "@common/z88/z88SnapshotMapping";
 
@@ -41,7 +42,7 @@ const BIT_NAMES: Record<Z88BlinkBitRegister, string[]> = {
  */
 export function z88BlinkBitNames(register: Z88BlinkBitRegister, value: number): string {
   const names = BIT_NAMES[register].filter((name, index) => name && value & (0x80 >> index));
-  return names.length > 0 ? names.join(" ") : "none";
+  return names.length > 0 ? names.join(" ") : t("panels.z88.none");
 }
 
 /**
@@ -55,7 +56,7 @@ export function z88BankOwner(snapshot: Z88Snapshot, bank: number): string {
   if (slot === 0) {
     return bank < Z88_INTERNAL_RAM_BANK ? "ROM" : "RAM";
   }
-  return snapshot.slots[slot] ? `Slot ${slot}` : "empty";
+  return snapshot.slots[slot] ? t("panels.z88.slot", { slot }) : t("panels.helpers.empty");
 }
 
 /** One address range of the 64K and the bank behind it */
@@ -135,20 +136,21 @@ export function z88ViewedCards(info: Z88SnapshotFileInfo): Z88ViewedCard[] {
   const rom = mapping.slots[0];
   cards.push({
     key: "rom",
-    title: "Slot 0: ROM area",
+    title: t("panels.z88.card.rom"),
     typeName: ozvmCardTypeName(romType),
     sizeK: snapshot.rom.bytes.length / 1024,
-    klive: rom ? rom.cardType : "not supported in slot 0",
+    klive: rom ? rom.cardType : t("panels.z88.card.notSupportedSlot0"),
     loadable: !!rom,
     ozvmType: romType,
     banks: banksOf(snapshot.rom.bytes, 0x00)
   });
   cards.push({
     key: "ram",
-    title: "Slot 0: internal RAM",
+    title: t("panels.z88.card.ram"),
     typeName: ozvmCardTypeName(2),
     sizeK: snapshot.ram.length / 1024,
-    klive: mapping.intRamMask !== undefined ? `internal RAM` : "size not supported",
+    klive:
+      mapping.intRamMask !== undefined ? t("panels.z88.card.internalRam") : t("panels.z88.card.sizeNotSupported"),
     loadable: mapping.intRamMask !== undefined,
     ozvmType: 2,
     banks: banksOf(snapshot.ram, Z88_INTERNAL_RAM_BANK)
@@ -168,10 +170,14 @@ export function z88ViewedCards(info: Z88SnapshotFileInfo): Z88ViewedCard[] {
     const mapped = mapping.slots[slot];
     cards.push({
       key: `slot${slot}`,
-      title: `Slot ${slot}`,
+      title: t("panels.z88.slot", { slot }),
       typeName: ozvmCardTypeName(card.ozvmType),
       sizeK: banks.length * (Z88_BANK_SIZE / 1024),
-      klive: mapped ? mapped.cardType : hybrid ? "hybrid cards are not supported" : "not supported",
+      klive: mapped
+        ? mapped.cardType
+        : hybrid
+          ? t("panels.z88.card.hybridNotSupported")
+          : t("panels.z88.card.notSupported"),
       loadable: !!mapped,
       ozvmType: card.ozvmType,
       banks
@@ -279,9 +285,14 @@ export function z88BankMirrors(bank: number, cardBanks: number): number[] {
 /** The mirrors as a short phrase: "none", "$81, $83" or "$83, $85, ... $BF (31 banks)" */
 export function formatZ88Mirrors(mirrors: number[]): string {
   const hex = (bank: number) => `$${bank.toString(16).toUpperCase().padStart(2, "0")}`;
-  if (mirrors.length === 0) return "none";
+  if (mirrors.length === 0) return t("panels.z88.none");
   if (mirrors.length <= 3) return mirrors.map(hex).join(", ");
-  return `${hex(mirrors[0])}, ${hex(mirrors[1])}, ... ${hex(mirrors[mirrors.length - 1])} (${mirrors.length} banks)`;
+  return t("panels.z88.mirrorsMany", {
+    first: hex(mirrors[0]),
+    second: hex(mirrors[1]),
+    last: hex(mirrors[mirrors.length - 1]),
+    count: mirrors.length
+  });
 }
 
 /**
@@ -377,11 +388,12 @@ export type Z88SlotFilter = "all" | "nonEmpty" | "pagedIn" | string;
  * @param cards The snapshot's cards
  */
 export function z88SlotFilters(cards: Z88ViewedCard[]): { value: string; text: string }[] {
+  // --- ROM and RAM are the chips' names: not translated
   const names: Record<string, string> = { rom: "ROM", ram: "RAM" };
   return [
-    { value: "all", text: "All" },
-    { value: "nonEmpty", text: "Non-empty" },
-    { value: "pagedIn", text: "Paged in" },
+    { value: "all", text: t("panels.helpers.filter.all") },
+    { value: "nonEmpty", text: t("panels.z88.filter.nonEmpty") },
+    { value: "pagedIn", text: t("panels.helpers.filter.pagedIn") },
     ...cards.map((card) => ({
       value: card.key,
       text: names[card.key] ?? card.title
@@ -420,5 +432,5 @@ export function formatZ88Rtc(tim: Z88Tim): string {
   const ms = totalMs % 1000;
   const pad = (value: number, width = 2) => value.toString().padStart(width, "0");
   const time = `${pad(hours)}:${pad(minutes)}:${pad(seconds)}.${pad(ms, 3)}`;
-  return days > 0 ? `${days}d ${time}` : time;
+  return days > 0 ? t("panels.z88.rtcDays", { days, time }) : time;
 }

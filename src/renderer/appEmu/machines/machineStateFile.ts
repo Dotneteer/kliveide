@@ -41,6 +41,7 @@ import { stateMismatch } from "@emu/machines/state/wasmStateImage";
 import { writeSpectrumSnapshot } from "@common/spectrum/snapshot/writeSpectrumSnapshot";
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_SD_CARD, MEDIA_TAPE } from "@common/structs/project-const";
 import { loadSpectrumSnapshot } from "./spectrumSnapshotLoad";
+import { t } from "@common/i18n/i18n";
 
 /** The services the save and the load use */
 export type MachineStatePorts = SpectrumSnapshotLoadPorts & {
@@ -123,11 +124,11 @@ export async function saveMachineStateFile(
   const controller = ports.getMachineController();
   const machine = stateMachineOf(controller);
   if (!controller || !machine) {
-    throw new Error("This machine cannot save its state");
+    throw new Error(t("emu.machineState.cannotSave"));
   }
   const state = controller.state;
   if (state !== MachineControllerState.Running && state !== MachineControllerState.Paused) {
-    throw new Error("The machine has no state to save; start it first");
+    throw new Error(t("emu.machine.noStateToSave"));
   }
 
   const running = state === MachineControllerState.Running;
@@ -173,7 +174,7 @@ export function captureKliveStateFile(
       }).bytes;
     } catch (err) {
       warnings.push(
-        `The state has no portable .szx part (${(err as Error).message}); it loads only into this version of Klive`
+        t("emu.machineState.noSzxPart", { reason: (err as Error).message })
       );
     }
   }
@@ -246,11 +247,11 @@ export async function loadMachineStateFile(
   if (savedCard?.fingerprint) {
     const live = options.currentSdCard;
     if (!live) {
-      throw new Error(`The SD card image the state was saved with (${savedCard.fileName}) is not available`);
+      throw new Error(t("emu.machineState.sdCardMissing", { file: savedCard.fileName }));
     }
     if (live.fingerprint !== savedCard.fingerprint && !options.acceptChangedSdCard) {
       return {
-        needsConfirmation: `The SD card image (${live.fileName}) has changed since the state was saved; its file system may not match what the machine remembers`,
+        needsConfirmation: t("emu.machineState.sdCardChangedConfirm", { file: live.fileName }),
         machineId: header.machineId,
         modelId: header.modelId,
         machineName,
@@ -261,7 +262,7 @@ export async function loadMachineStateFile(
       };
     }
     if (live.fingerprint !== savedCard.fingerprint) {
-      warnings.push("The SD card image has changed since the state was saved");
+      warnings.push(t("emu.machineState.sdCardChanged"));
     }
   }
 
@@ -279,13 +280,13 @@ export async function loadMachineStateFile(
       header.modelId,
       (header.config ?? {}) as MachineConfigSet
     );
-    if (!done) throw new Error("Another machine change superseded loading the state");
+    if (!done) throw new Error(t("emu.machineState.superseded"));
     rebuilt = true;
   }
   const controller = ports.getMachineController();
   const machine = stateMachineOf(controller);
   if (!controller || !machine || machine.machineId !== header.machineId) {
-    throw new Error(`The emulator is not running the ${machineName}`);
+    throw new Error(t("emu.machine.notRunningThe", { machine: machineName }));
   }
 
   // --- 2. The image, or the portable fallback
@@ -293,7 +294,7 @@ export async function loadMachineStateFile(
   if (mismatch) {
     if (!file.szx) {
       throw new Error(
-        `${mismatch}. The state was saved by Klive ${header.kliveVersion} and cannot be loaded into this version`
+        t("emu.machineState.mismatch", { reason: mismatch, version: header.kliveVersion })
       );
     }
     const result = await loadSpectrumSnapshot(ports, `${fileName}.szx`, file.szx, mode, {
@@ -307,7 +308,7 @@ export async function loadMachineStateFile(
       rebuilt: rebuilt || result.rebuilt,
       path: "szx",
       warnings: [
-        `The state was saved by Klive ${header.kliveVersion}, whose ${header.coreId} core differs from this one; it was loaded from its .szx part, which leaves out the exact tape position, the disk controller's state and the EI/MEMPTR details`,
+        t("emu.machineState.loadedFromSzx", { version: header.kliveVersion, core: header.coreId }),
         ...warnings,
         ...result.warnings
       ]
@@ -322,14 +323,14 @@ export async function loadMachineStateFile(
     image: file.image,
     host: file.host
   };
-  await controller.restoreState(() => machine.loadMachineState(parts), "Machine state loaded", {
+  await controller.restoreState(() => machine.loadMachineState(parts), t("emu.machineState.loaded"), {
     attachMedia: false
   });
   for (const m of file.media) {
-    if (m.id === MEDIA_TAPE) warnings.push(`The tape is the one in the state (${m.fileName}), at its saved position`);
+    if (m.id === MEDIA_TAPE) warnings.push(t("emu.machineState.tape", { file: m.fileName }));
     if (m.id === MEDIA_DISK_A || m.id === MEDIA_DISK_B) {
       warnings.push(
-        `Disk ${m.id === MEDIA_DISK_A ? "A" : "B"} is the one in the state (${m.fileName}); it is detached from that file, so the machine's writes are not saved to it. Insert a disk to attach one again`
+        t("emu.machineState.disk", { drive: m.id === MEDIA_DISK_A ? "A" : "B", file: m.fileName })
       );
     }
   }
@@ -373,10 +374,10 @@ export async function quickSaveMachineState(
 ): Promise<{ machineName: string; pc: number }> {
   const controller = ports.getMachineController();
   const machine = stateMachineOf(controller);
-  if (!controller || !machine) throw new Error("This machine cannot save its state");
+  if (!controller || !machine) throw new Error(t("emu.machineState.cannotSave"));
   const state = controller.state;
   if (state !== MachineControllerState.Running && state !== MachineControllerState.Paused) {
-    throw new Error("The machine has no state to save; start it first");
+    throw new Error(t("emu.machine.noStateToSave"));
   }
   const running = state === MachineControllerState.Running;
   const debugging = controller.isDebugging;
@@ -413,9 +414,9 @@ export async function quickRestoreMachineState(
   const machine = stateMachineOf(controller);
   const slot = machine ? quickSlots.get(machine) : undefined;
   if (!controller || !machine || !slot) {
-    throw new Error("No state has been quick-saved for this machine");
+    throw new Error(t("emu.machineState.noQuickSave"));
   }
-  await controller.restoreState(() => machine.loadMachineState(slot.parts), "Quick state restored", {
+  await controller.restoreState(() => machine.loadMachineState(slot.parts), t("emu.machineState.quickRestored"), {
     attachMedia: false
   });
   return { pc: slot.pc };

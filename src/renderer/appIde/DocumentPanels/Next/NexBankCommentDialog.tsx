@@ -10,6 +10,7 @@ import {
 import styles from "./NexBankCommentDialog.module.scss";
 import { BANK_COMMENT_SOFT_LIMIT, normalizeMultilineComment } from "@renderer/appIde/annotations/programAnnotations";
 import { flattenBankComment } from "@renderer/appIde/annotations/annotationEdits";
+import { useT } from "@common/i18n/useT";
 
 export type NexBankCommentDialogResult = {
   comment?: string;
@@ -20,7 +21,6 @@ export type NexBankCommentDialogProps = DialogComponentProps<NexBankCommentDialo
   initialComment?: string;
 };
 
-export const BANK_COMMENT_DIALOG_TITLE = "Bank comment";
 export const BANK_COMMENT_DIALOG_WIDTH = 560;
 
 /**
@@ -38,6 +38,7 @@ export function NexBankCommentDialog({
   initialComment = "",
   controls
 }: NexBankCommentDialogProps) {
+  const t = useT();
   const [comment, setComment] = useState(initialComment);
   const normalizedComment = useMemo(() => normalizeMultilineComment(comment), [comment]);
   const flattened = useMemo(() => flattenBankComment(normalizedComment), [normalizedComment]);
@@ -60,16 +61,16 @@ export function NexBankCommentDialog({
 
   return (
     <form onSubmit={submit}>
-      <DialogRow label="Location" rows={true}>
+      <DialogRow label={t("panels.next.field.location")} rows={true}>
         <div className={styles.location}>
-          <span className={styles.locationLabel}>Bank</span>
+          <span className={styles.locationLabel}>{t("panels.next.field.bank")}</span>
           <span>{`$${toHexa2(bank)} (${bank})`}</span>
         </div>
       </DialogRow>
-      <DialogRow label="Comment" rows={true}>
+      <DialogRow label={t("panels.next.field.comment")} rows={true}>
         <textarea
           autoFocus
-          aria-label="Bank comment"
+          aria-label={t("panels.next.bankComment.title")}
           className={styles.comment}
           spellCheck={false}
           value={comment}
@@ -77,30 +78,30 @@ export function NexBankCommentDialog({
           onKeyDown={keyDown}
         />
         <div className={styles.hint}>
-          <span>Enter starts a new line. Ctrl+Enter saves.</span>
+          <span>{t("panels.next.bankComment.hint")}</span>
           <span
             className={overLimit ? styles.countOver : styles.count}
-            title={`Comments longer than ${BANK_COMMENT_SOFT_LIMIT} characters are reported when the file is loaded.`}
+            title={t("panels.next.bankComment.limitTitle", { limit: BANK_COMMENT_SOFT_LIMIT })}
           >
             {`${comment.length} / ${BANK_COMMENT_SOFT_LIMIT}`}
           </span>
         </div>
       </DialogRow>
-      <DialogRow label="Heading preview" rows={true}>
-        <div className={styles.preview} aria-label="Heading preview">
-          <span className={styles.previewBank}>{`Bank $${toHexa2(bank)}`}</span>
+      <DialogRow label={t("panels.next.bankComment.headingPreview")} rows={true}>
+        <div className={styles.preview} aria-label={t("panels.next.bankComment.headingPreview")}>
+          <span className={styles.previewBank}>{t("panels.next.bankComment.previewBank", { bank: toHexa2(bank) })}</span>
           <span className={styles.previewComment}>{flattened}</span>
         </div>
       </DialogRow>
       <DialogFooter>
-        <Button text="Save" type="submit" />
-        <Button variant="secondary" text="Cancel" clicked={controls.cancel} />
+        <Button text={t("panels.next.button.save")} type="submit" />
+        <Button variant="secondary" text={t("common.button.cancel")} clicked={controls.cancel} />
         {hasExistingComment && (
           <>
             <DialogFooterSpacer />
             <Button
               variant="secondary"
-              text="Clear"
+              text={t("panels.next.button.clear")}
               clicked={() => controls.close({ comment: undefined })}
             />
           </>

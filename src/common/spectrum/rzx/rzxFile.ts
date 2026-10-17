@@ -26,6 +26,7 @@ import {
   type RzxFile,
   type RzxFrame
 } from "./rzxModel";
+import { t } from "@common/i18n/i18n";
 
 const HEADER_LENGTH = 10;
 const BLOCK_HEADER_LENGTH = 5;
@@ -52,20 +53,20 @@ export function hasRzxSignature(bytes: Uint8Array): boolean {
  */
 export function parseRzxFile(bytes: Uint8Array): RzxFile {
   if (!hasRzxSignature(bytes)) {
-    throw new RzxError('The file has no "RZX!" signature');
+    throw new RzxError(t("media.rzx.read.noSignature"));
   }
   if (bytes.length < HEADER_LENGTH) {
-    throw new RzxError("The RZX header is truncated");
+    throw new RzxError(t("media.rzx.read.headerTruncated"));
   }
   const major = bytes[4];
   const minor = bytes[5];
   const flags = dword(bytes, 6);
   const notes: string[] = [];
   if (major > 0 || minor > 13) {
-    notes.push(`RZX version ${major}.${minor} is newer than 0.13; blocks Klive does not know are skipped.`);
+    notes.push(t("media.rzx.read.newerVersion", { major: String(major), minor: String(minor) }));
   }
   if (flags & 0x01) {
-    notes.push("The file is signed; Klive does not verify RZX signatures.");
+    notes.push(t("media.rzx.read.signed"));
   }
 
   const blocks: RzxBlock[] = [];
@@ -74,17 +75,22 @@ export function parseRzxFile(bytes: Uint8Array): RzxFile {
   let index = 0;
   while (offset < bytes.length) {
     if (offset + BLOCK_HEADER_LENGTH > bytes.length) {
-      throw new RzxError(`Block ${index} at offset ${offset} is truncated (no room for its header)`);
+      throw new RzxError(t("media.rzx.read.blockTruncated", { block: String(index), offset: String(offset) }));
     }
     const id = bytes[offset];
     const length = dword(bytes, offset + 1);
     if (length < BLOCK_HEADER_LENGTH || offset + length > bytes.length) {
       throw new RzxError(
-        `Block ${index} (ID 0x${hex2(id)}) at offset ${offset} has an invalid length (${length})`
+        t("media.rzx.read.blockLength", {
+          block: String(index),
+          id: hex2(id),
+          offset: String(offset),
+          length: String(length)
+        })
       );
     }
     const body = bytes.subarray(offset + BLOCK_HEADER_LENGTH, offset + length);
-    const where = `block ${index} (offset ${offset})`;
+    const where: Where = { block: String(index), offset: String(offset) };
     switch (id) {
       case RZX_BLOCK_CREATOR: {
         const block = readCreator(body, where);
@@ -102,13 +108,14 @@ export function parseRzxFile(bytes: Uint8Array): RzxFile {
       case RZX_BLOCK_SECURITY_SIGNATURE:
         blocks.push({ kind: "skipped", id, length });
         notes.push(
-          `Skipped the security ${id === RZX_BLOCK_SECURITY_INFO ? "information" : "signature"} block (${where}); ` +
-            "Klive does not verify RZX signatures."
+          id === RZX_BLOCK_SECURITY_INFO
+            ? t("media.rzx.read.skippedSecurityInfo", where)
+            : t("media.rzx.read.skippedSecuritySignature", where)
         );
         break;
       default:
         blocks.push({ kind: "skipped", id, length });
-        notes.push(`Skipped an unknown block with ID 0x${hex2(id)} (${where}, ${length} bytes).`);
+        notes.push(t("media.rzx.read.skippedUnknown", { ...where, id: hex2(id), length: String(length) }));
         break;
     }
     offset += length;
@@ -116,14 +123,14 @@ export function parseRzxFile(bytes: Uint8Array): RzxFile {
   }
 
   if (!blocks.some((b) => b.kind === "snapshot")) {
-    throw new RzxError("The recording has no snapshot to start from");
+    throw new RzxError(t("media.rzx.read.noSnapshot"));
   }
   return { major, minor, flags, creator, blocks, notes };
 }
 
-function readCreator(body: Uint8Array, where: string): RzxCreator {
+function readCreator(body: Uint8Array, where: Where): RzxCreator {
   if (body.length < CREATOR_FIXED_LENGTH - BLOCK_HEADER_LENGTH) {
-    throw new RzxError(`The creator block (${where}) is too short`);
+    throw new RzxError(t("media.rzx.read.creatorShort", where));
   }
   return {
     name: asciiz(body, 0, 20),
@@ -133,49 +140,45 @@ function readCreator(body: Uint8Array, where: string): RzxCreator {
   };
 }
 
-function readSnapshot(body: Uint8Array, where: string): RzxBlock {
+function readSnapshot(body: Uint8Array, where: Where): RzxBlock {
   if (body.length < SNAPSHOT_FIXED_LENGTH - BLOCK_HEADER_LENGTH) {
-    throw new RzxError(`The snapshot block (${where}) is too short`);
+    throw new RzxError(t("media.rzx.read.snapshotShort", where));
   }
   const flags = dword(body, 0);
   const extension = asciiz(body, 4, 4).toLowerCase().replace(/^\./, "");
   const length = dword(body, 8);
   if (flags & SNAPSHOT_EXTERNAL) {
-    throw new RzxError(
-      `The snapshot block (${where}) refers to an external snapshot file; Klive plays only recordings that embed their snapshot`
-    );
+    throw new RzxError(t("media.rzx.read.snapshotExternal", where));
   }
   const data = body.subarray(12);
   let snapshot: Uint8Array;
   const compressed = (flags & SNAPSHOT_COMPRESSED) !== 0;
   if (compressed) {
-    snapshot = inflate(data, `the snapshot block (${where})`);
+    snapshot = inflate(data, (error) => t("media.rzx.read.snapshotInflate", { ...where, error }));
   } else {
     snapshot = data.slice();
   }
   if (snapshot.length !== length) {
     throw new RzxError(
-      `The snapshot block (${where}) declares ${length} bytes but holds ${snapshot.length}`
+      t("media.rzx.read.snapshotLength", { ...where, declared: String(length), actual: String(snapshot.length) })
     );
   }
   return { kind: "snapshot", extension, bytes: snapshot, compressed };
 }
 
-function readInput(body: Uint8Array, where: string, notes: string[]): RzxBlock {
+function readInput(body: Uint8Array, where: Where, notes: string[]): RzxBlock {
   if (body.length < INPUT_FIXED_LENGTH - BLOCK_HEADER_LENGTH) {
-    throw new RzxError(`The input recording block (${where}) is too short`);
+    throw new RzxError(t("media.rzx.read.inputShort", where));
   }
   const frameCount = dword(body, 0);
   const tstates = dword(body, 5);
   const flags = dword(body, 9);
   if (flags & INPUT_PROTECTED) {
-    throw new RzxError(
-      `The input recording block (${where}) is protected (encrypted); Klive cannot play it`
-    );
+    throw new RzxError(t("media.rzx.read.inputProtected", where));
   }
   const compressed = (flags & INPUT_COMPRESSED) !== 0;
   const raw = body.subarray(13);
-  const data = compressed ? inflate(raw, `the input recording block (${where})`) : raw;
+  const data = compressed ? inflate(raw, (error) => t("media.rzx.read.inputInflate", { ...where, error })) : raw;
 
   const frames: RzxFrame[] = [];
   let lastIns: Uint8Array | undefined;
@@ -183,7 +186,7 @@ function readInput(body: Uint8Array, where: string, notes: string[]): RzxBlock {
   for (let i = 0; i < frameCount; i++) {
     if (pos + 4 > data.length) {
       throw new RzxError(
-        `The input recording block (${where}) declares ${frameCount} frames but ends after ${i}`
+        t("media.rzx.read.inputEndsEarly", { ...where, frames: String(frameCount), read: String(i) })
       );
     }
     const fetchCount = word(data, pos);
@@ -191,17 +194,13 @@ function readInput(body: Uint8Array, where: string, notes: string[]): RzxBlock {
     pos += 4;
     if (inCount === RZX_REPEAT_FRAME) {
       if (!lastIns) {
-        throw new RzxError(
-          `Frame ${i} of the input recording block (${where}) repeats a previous frame, but none precedes it`
-        );
+        throw new RzxError(t("media.rzx.read.repeatFirst", { ...where, frame: String(i) }));
       }
       frames.push({ fetchCount, ins: lastIns });
       continue;
     }
     if (pos + inCount > data.length) {
-      throw new RzxError(
-        `Frame ${i} of the input recording block (${where}) declares ${inCount} IN values past the end of the block`
-      );
+      throw new RzxError(t("media.rzx.read.inPastEnd", { ...where, frame: String(i), count: String(inCount) }));
     }
     const ins = data.slice(pos, pos + inCount);
     pos += inCount;
@@ -209,18 +208,22 @@ function readInput(body: Uint8Array, where: string, notes: string[]): RzxBlock {
     lastIns = ins;
   }
   if (pos !== data.length) {
-    notes.push(`Ignored ${data.length - pos} bytes after the ${frameCount} frames of the input recording block (${where}).`);
+    notes.push(
+      t("media.rzx.read.trailingBytes", { ...where, bytes: String(data.length - pos), frames: String(frameCount) })
+    );
   }
   return { kind: "input", tstates, frames, compressed };
 }
 
-function inflate(data: Uint8Array, what: string): Uint8Array {
+/** Which block a message is about: its index and byte offset in the file (invariant numbers) */
+type Where = { block: string; offset: string };
+
+/** Inflates zlib data; `message` words the failure from the decompressor's error */
+function inflate(data: Uint8Array, message: (error: string) => string): Uint8Array {
   try {
     return unzlibSync(data);
   } catch (err) {
-    throw new RzxError(
-      `Cannot decompress ${what}: ${err instanceof Error ? err.message : String(err)}`
-    );
+    throw new RzxError(message(err instanceof Error ? err.message : String(err)));
   }
 }
 

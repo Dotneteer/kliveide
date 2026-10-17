@@ -13,8 +13,10 @@ import { Text } from "@renderer/controls/layout/Text";
 import { useMainApi } from "@renderer/core/MainApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { EmptyState } from "@renderer/controls/data";
+import { useT } from "@common/i18n/useT";
 
 export const ScriptingHistoryPanel = () => {
+  const t = useT();
   const { ideCommandsService, projectService } = useAppServices();
   const mainApi = useMainApi();
   const scriptsInState = useSelector((state) => state.scripts);
@@ -64,7 +66,7 @@ export const ScriptingHistoryPanel = () => {
       <div className={styles.header}>
         <TabButton
           iconName="clear-all"
-          title="Clear completed scripts"
+          title={t("panels.side.scripting.clearCompleted")}
           clicked={async () => {
             const removed = scripts.filter((scr) => isScriptCompleted(scr.status));
             const hub = projectService.getActiveDocumentHubService();
@@ -76,20 +78,20 @@ export const ScriptingHistoryPanel = () => {
         />
         <TabButton
           iconName="combine"
-          title={`${showBuildScripts ? "Hide" : "Show"} build scripts`}
+          title={t(showBuildScripts ? "panels.side.scripting.hideBuildScripts" : "panels.side.scripting.showBuildScripts")}
           fill={showBuildScripts ? "--color-button-focused" : undefined}
           clicked={() => {
             setShowBuildScripts(!showBuildScripts);
           }}
         />
-        <Text text={`Scripts displayed: ${scripts.length}`} />
+        <Text text={t("panels.side.scripting.displayed", { count: scripts.length })} />
       </div>
       {scripts.length === 0 && (
         <EmptyState
           message={
             showBuildScripts
-              ? "No scripts have run yet"
-              : "No scripts have run yet, apart from build scripts"
+              ? t("panels.side.scripting.empty")
+              : t("panels.side.scripting.emptyExceptBuild")
           }
         />
       )}
@@ -135,6 +137,7 @@ type ScriptItemProps = {
 };
 
 const ScriptItem = ({ script, now, isSelected, onSelect }: ScriptItemProps) => {
+  const t = useT();
   let icon = "";
   let color = "";
   const from = script.startTime;
@@ -201,7 +204,7 @@ const ScriptItem = ({ script, now, isSelected, onSelect }: ScriptItemProps) => {
       <Icon iconName={icon} fill={color} width={16} height={16} />
       <div className={styles.itemId}>{script.id}</div>
       <div className={styles.itemText}>{taskName}</div>
-      <div className={styles.itemTime}>{`${duration}ms`}</div>
+      <div className={styles.itemTime}>{t("panels.side.scripting.duration", { ms: duration })}</div>
     </div>
   );
 };

@@ -11,18 +11,21 @@ import { VListHandle } from "virtua";
 import { AddressInput } from "@renderer/controls/AddressInput";
 import Dropdown, { DropdownOption } from "@renderer/controls/Dropdown";
 import { Text } from "@renderer/controls/layout/Text";
+import { useT, type TFunction } from "@common/i18n/useT";
+import { uiLocale } from "@common/i18n/i18n";
 
 const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4 MB
 
 type DumpViewMode = "8x1" | "8x2" | "16x1";
 
-const viewModeOptions: DropdownOption[] = [
-  { value: "8x1", label: "8B / 1 col" },
-  { value: "8x2", label: "8B / 2 col" },
-  { value: "16x1", label: "16B / 1 col" },
+const viewModeOptions = (t: TFunction): DropdownOption[] => [
+  { value: "8x1", label: t("panels.doc.binViewer.layout8x1") },
+  { value: "8x2", label: t("panels.doc.binViewer.layout8x2") },
+  { value: "16x1", label: t("panels.doc.binViewer.layout16x1") },
 ];
 
 const BinFileViewerPanelComponent = ({ contents }: DocumentProps) => {
+  const t = useT();
   const data = contents as Uint8Array;
 
   const [decimalView, setDecimalView] = useState(false);
@@ -49,14 +52,17 @@ const BinFileViewerPanelComponent = ({ contents }: DocumentProps) => {
   }, [data, bytesPerRow]);
 
   if (!data || data.length === 0) {
-    return <EmptyState message="No content." />;
+    return <EmptyState message={t("panels.doc.binViewer.noContent")} />;
   }
 
   if (data.length > MAX_FILE_SIZE) {
-    const sizeMb = (data.length / (1024 * 1024)).toFixed(2);
+    const sizeMb = (data.length / (1024 * 1024)).toLocaleString(uiLocale(), {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
     return (
       <EmptyState
-        message={`File is too large to display (${sizeMb} MB). Maximum supported size is 4 MB.`}
+        message={t("panels.doc.binViewer.tooLarge", { sizeMb, maxMb: 4 })}
       />
     );
   }
@@ -65,27 +71,27 @@ const BinFileViewerPanelComponent = ({ contents }: DocumentProps) => {
     <DataPanel>
       <PanelHeader>
         <LabeledSwitch
-          label="Decimal"
-          title="Show byte values in decimal"
+          label={t("panels.doc.binViewer.decimal")}
+          title={t("panels.doc.binViewer.decimalTitle")}
           value={decimalView}
           clicked={(val) => setDecimalView(val)}
         />
-        <Text text="View" />
+        <Text text={t("panels.doc.binViewer.view")} />
         <LabelSeparator />
         <Dropdown
-          options={viewModeOptions}
+          options={viewModeOptions(t)}
           initialValue={viewMode}
           width={88}
           onChanged={(val) => setViewMode(val as DumpViewMode)}
         />
         <LabeledSwitch
-          label="Chars"
-          title="Show character dump"
+          label={t("panels.doc.binViewer.chars")}
+          title={t("panels.doc.binViewer.charsTitle")}
           value={charDump}
           clicked={(val) => setCharDump(val)}
         />
         <AddressInput
-          label="Go To"
+          label={t("panels.doc.common.goTo")}
           clearOnEnter={true}
           decimalView={decimalView}
           hexDigits={addressDigits}

@@ -1,3 +1,5 @@
+import { t as translate } from "@common/i18n/i18n";
+import { useT } from "@common/i18n/useT";
 import type { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import type { GenericFileContext } from "../helpers/GenericFilePanel";
 
@@ -59,7 +61,11 @@ export function loadRzxFileContents(contents: Uint8Array): { fileInfo?: RzxFileI
     file = parseRzxFile(contents);
     segments = rzxSegments(file);
   } catch (err) {
-    return { error: `Not a playable RZX file: ${err instanceof Error ? err.message : String(err)}` };
+    return {
+      error: translate("panels.spectrum.rzx.invalid", {
+        reason: err instanceof Error ? err.message : String(err)
+      })
+    };
   }
   const frames = segments.reduce((sum, s) => sum + s.frameCount, 0);
   const pictureFrames = segments.reduce((sum, s) => sum + s.pictureFrames, 0);
@@ -112,41 +118,50 @@ const RzxView = ({ ctx, documentSource, fullPath }: ViewProps) => {
 type SectionProps = { ctx: ViewContext; info: RzxFileInfo };
 
 const RecordingSection = ({ ctx, info }: SectionProps) => {
+  const t = useT();
   const { file } = info;
   return (
     <ExpandableRow
-      heading="RZX Recording"
+      heading={t("panels.spectrum.rzx.heading")}
       initialExpanded={ctx.viewState?.recordingExpanded ?? true}
       onExpanded={(exp) => ctx.changeViewState((vs) => (vs.recordingExpanded = exp))}
     >
       <Row>
-        <LabeledText label="Version:" labelWidth={LABEL_WIDTH} value={`${file.major}.${file.minor}`} />
+        <LabeledText label={t("panels.spectrum.rzx.version")} labelWidth={LABEL_WIDTH} value={`${file.major}.${file.minor}`} />
       </Row>
       <Row>
-        <LabeledText label="Creator:" labelWidth={LABEL_WIDTH} value={rzxCreatorText(file.creator)} />
+        <LabeledText label={t("panels.spectrum.rzx.creator")} labelWidth={LABEL_WIDTH} value={rzxCreatorText(file.creator)} />
       </Row>
       <Row>
         <LabeledText
-          label="Machine:"
+          label={t("panels.helpers.label.machine")}
           labelWidth={LABEL_WIDTH}
-          value={info.first ? describeSnapshotMapping(info.first.snapshot, info.first.mapping) : "unknown"}
+          value={
+            info.first
+              ? describeSnapshotMapping(info.first.snapshot, info.first.mapping)
+              : t("panels.spectrum.rzx.unknownMachine")
+          }
         />
       </Row>
       <Row>
         <LabeledText
-          label="Frames:"
+          label={t("panels.spectrum.rzx.frames")}
           labelWidth={LABEL_WIDTH}
-          value={`${info.frames} (${info.pictureFrames} pictures, ${formatRzxDuration(info.pictureFrames)})`}
+          value={t("panels.spectrum.rzx.framesValue", {
+            frames: info.frames,
+            pictures: info.pictureFrames,
+            duration: formatRzxDuration(info.pictureFrames)
+          })}
         />
       </Row>
       <Row>
-        <LabeledText label="Segments:" labelWidth={LABEL_WIDTH} value={`${info.segments.length}`} />
+        <LabeledText label={t("panels.spectrum.rzx.segmentsLabel")} labelWidth={LABEL_WIDTH} value={`${info.segments.length}`} />
       </Row>
       <Row>
-        <LabeledFlag label="Signed:" labelWidth={LABEL_WIDTH} value={(file.flags & 0x01) !== 0} />
+        <LabeledFlag label={t("panels.spectrum.rzx.signed")} labelWidth={LABEL_WIDTH} value={(file.flags & 0x01) !== 0} />
       </Row>
       <Row>
-        <LabeledFlag label="Playable:" labelWidth={LABEL_WIDTH} value={!info.error} />
+        <LabeledFlag label={t("panels.spectrum.rzx.playable")} labelWidth={LABEL_WIDTH} value={!info.error} />
       </Row>
       {info.error && (
         <Row>
@@ -168,10 +183,11 @@ const RecordingSection = ({ ctx, info }: SectionProps) => {
 };
 
 const SegmentsSection = ({ ctx, info, fullPath }: SectionProps & { fullPath: string }) => {
+  const t = useT();
   const { ideCommandsService } = useAppServices();
   return (
     <ExpandableRow
-      heading="Segments"
+      heading={t("panels.spectrum.rzx.segments")}
       initialExpanded={ctx.viewState?.segmentsExpanded ?? true}
       onExpanded={(exp) => ctx.changeViewState((vs) => (vs.segmentsExpanded = exp))}
     >
@@ -179,7 +195,7 @@ const SegmentsSection = ({ ctx, info, fullPath }: SectionProps & { fullPath: str
         <Row key={segment.index}>
           <SmallIconButton
             iconName="play"
-            title={`Play from segment ${segment.index + 1}`}
+            title={t("panels.spectrum.rzx.playFrom", { segment: segment.index + 1 })}
             enable={!info.error && segment.frameCount > 0}
             clicked={async () => {
               await ideCommandsService.executeCommand(rzxPlayCommandText(fullPath, false, segment.index));
@@ -188,11 +204,13 @@ const SegmentsSection = ({ ctx, info, fullPath }: SectionProps & { fullPath: str
           <LabeledText
             label={`#${segment.index + 1}:`}
             labelWidth="5ch"
-            value={
-              `frame ${segment.firstFrame + 1}, ${segment.frameCount} frames ` +
-              `(${formatRzxDuration(segment.pictureFrames)}), .${segment.snapshot.extension} snapshot, ` +
-              `${segment.inputs.length} input block${segment.inputs.length === 1 ? "" : "s"}`
-            }
+            value={t("panels.spectrum.rzx.segment", {
+              first: segment.firstFrame + 1,
+              frames: segment.frameCount,
+              duration: formatRzxDuration(segment.pictureFrames),
+              extension: segment.snapshot.extension,
+              inputs: segment.inputs.length
+            })}
           />
         </Row>
       ))}

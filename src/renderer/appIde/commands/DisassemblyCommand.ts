@@ -16,6 +16,7 @@ import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
 import { MemorySection } from "../disassemblers/common-types";
 import { Z80Disassembler } from "../disassemblers/z80-disassembler/z80-disassembler";
 import { MemorySectionType } from "@abstractions/MemorySection";
+import { t } from "@common/i18n/i18n";
 
 let disassemblyIndex = 1;
 
@@ -29,9 +30,9 @@ type DisassemblyCommandArgs = {
 
 export class DisassemblyCommand extends IdeCommandBase<DisassemblyCommandArgs> {
   readonly id = "dis";
-  readonly description =
-    "Disassembles the specified memory section. " +
-    "Options: '-d': use decimal numbers; '-c': concise output; '-lc': terminate labels with semicolon";
+  get description() {
+    return t("commands.dis.description");
+  }
   readonly usage = "dis <start> <end> [-d] [-c] [-lc]";
   readonly aliases = [];
 
@@ -50,12 +51,12 @@ export class DisassemblyCommand extends IdeCommandBase<DisassemblyCommandArgs> {
     const fromH = toHexa4(args.startAddress);
     const toH = toHexa4(args.endAddress);
     const buffer = await this.getDisassembly(context, args);
-    const title = `Result of running '${context.commandtext.trim()}'`;
+    const title = t("commands.common.resultTitle", { command: context.commandtext.trim() });
     const documentHubService = context.service.projectService.getActiveDocumentHubService();
     await documentHubService.openDocument(
       {
         id: `disOutput-${disassemblyIndex++}`,
-        name: `Disassembly ($${fromH}-$${toH})`,
+        name: t("commands.dis.documentName", { from: fromH, to: toH }),
         type: COMMAND_RESULT_EDITOR,
         iconName: "disassembly-icon",
         iconFill: "--console-ansi-bright-green",
@@ -67,10 +68,7 @@ export class DisassemblyCommand extends IdeCommandBase<DisassemblyCommandArgs> {
       false
     );
 
-    writeSuccessMessage(
-      context.output,
-      `Disassembly of address range $${fromH} - $${toH} successfully created`
-    );
+    writeSuccessMessage(context.output, t("commands.dis.created", { from: fromH, to: toH }));
     return commandSuccess;
   }
 

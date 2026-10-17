@@ -10,6 +10,7 @@ import { DataPanel, DataRow } from "@renderer/controls/data";
 import regStyles from "@renderer/controls/data/Registers.module.scss";
 import styles from "./UlaPanel.module.scss";
 import { HistoryPresentBanner } from "../debugger/history/HistoryPresentBanner";
+import { useT } from "@common/i18n/useT";
 
 /**
  * The token every value in this panel is drawn with. Labels stay on `--data-label`; see the comment
@@ -19,6 +20,7 @@ import { HistoryPresentBanner } from "../debugger/history/HistoryPresentBanner";
 const VALUE_FILL = "--color-state-value";
 
 export const UlaPanel = () => {
+  const t = useT();
   const emuApi = useEmuApi();
   const [ulaState, setUlaState] = useState<UlaState>(null);
   const machineId = useSelector((s) => s.emulatorState?.machineId);
@@ -45,18 +47,18 @@ export const UlaPanel = () => {
 
   return (
     <DataPanel autoHeight>
-      <HistoryPresentBanner what="The ULA" />
+      <HistoryPresentBanner subject="ula" />
       <DataRow dense>
         <SimpleValue
           label="FCL"
           value={ulaState?.fcl}
-          tooltip="FrameClock"
+          tooltip={t("panels.side.ula.frameClock")}
           valueXclass={regStyles.stateValue}
         />
         <SimpleValue
           label="FRM"
           value={ulaState?.frm}
-          tooltip="#of frames rendered"
+          tooltip={t("panels.side.ula.framesRendered")}
           valueXclass={regStyles.stateValue}
         />
       </DataRow>
@@ -64,13 +66,13 @@ export const UlaPanel = () => {
         <SimpleValue
           label="RAS"
           value={ulaState?.ras}
-          tooltip="Current raster line"
+          tooltip={t("panels.side.ula.rasterLine")}
           valueXclass={regStyles.stateValue}
         />
         <SimpleValue
           label="POS"
           value={ulaState?.pos}
-          tooltip="Pixel in the current line"
+          tooltip={t("panels.side.ula.pixelInLine")}
           valueXclass={regStyles.stateValue}
         />
       </DataRow>
@@ -78,13 +80,13 @@ export const UlaPanel = () => {
         <SimpleValue
           label="PIX"
           value={ulaState?.pix}
-          tooltip="Pixel operation"
+          tooltip={t("panels.side.ula.pixelOperation")}
           valueXclass={regStyles.stateValue}
         />
         <SimpleValue
           label="BOR"
           value={ulaState?.bor}
-          tooltip="Current border color"
+          tooltip={t("panels.side.ula.borderColor")}
           valueXclass={regStyles.stateValue}
         />
       </DataRow>
@@ -92,7 +94,7 @@ export const UlaPanel = () => {
         <SimpleValue
           label="FLO"
           value={ulaState?.flo}
-          tooltip="Floating bus value"
+          tooltip={t("panels.side.ula.floatingBus")}
           valueXclass={regStyles.stateValue}
         />
       </DataRow>
@@ -101,23 +103,23 @@ export const UlaPanel = () => {
         <SimpleValue
           label="CON"
           value={ulaState?.con}
-          tooltip="Contention tacts"
+          tooltip={t("panels.side.ula.contention")}
           valueXclass={regStyles.stateValue}
         />
         <SimpleValue
           label="LCO"
           value={ulaState?.lco}
-          tooltip="Contention tacts since last pause"
+          tooltip={t("panels.side.ula.contentionSincePause")}
           valueXclass={regStyles.stateValue}
         />
       </DataRow>
       <DataRow dense>
-        <FlagValue label="EAR" value={ulaState?.ear} tooltip="EAR bit value" iconFill={VALUE_FILL} />
-        <FlagValue label="MIC" value={ulaState?.mic} tooltip="MIC bit value" iconFill={VALUE_FILL} />
+        <FlagValue label="EAR" value={ulaState?.ear} tooltip={t("panels.side.ula.earBit")} iconFill={VALUE_FILL} />
+        <FlagValue label="MIC" value={ulaState?.mic} tooltip={t("panels.side.ula.micBit")} iconFill={VALUE_FILL} />
       </DataRow>
       <Separator />
       <DataRow dense>
-        <Label text="KL0" className={styles.klLabel} tooltip="Keyboard line #0" />
+        <Label text="KL0" className={styles.klLabel} tooltip={t("panels.side.ula.keyboardLine", { line: 0 })} />
         <KeyboardLine
           lineNo={0}
           value={ulaState?.keyLines?.[0]}
@@ -126,7 +128,7 @@ export const UlaPanel = () => {
         />
       </DataRow>
       <DataRow dense>
-        <Label text="KL1" className={styles.klLabel} tooltip="Keyboard line #1" />
+        <Label text="KL1" className={styles.klLabel} tooltip={t("panels.side.ula.keyboardLine", { line: 1 })} />
         <KeyboardLine
           lineNo={1}
           value={ulaState?.keyLines?.[1]}
@@ -135,7 +137,7 @@ export const UlaPanel = () => {
         />
       </DataRow>
       <DataRow dense>
-        <Label text="KL2" className={styles.klLabel} tooltip="Keyboard line #2" />
+        <Label text="KL2" className={styles.klLabel} tooltip={t("panels.side.ula.keyboardLine", { line: 2 })} />
         <KeyboardLine
           lineNo={2}
           value={ulaState?.keyLines?.[2]}
@@ -144,7 +146,7 @@ export const UlaPanel = () => {
         />
       </DataRow>
       <DataRow dense>
-        <Label text="KL3" className={styles.klLabel} tooltip="Keyboard line #3" />
+        <Label text="KL3" className={styles.klLabel} tooltip={t("panels.side.ula.keyboardLine", { line: 3 })} />
         <KeyboardLine
           lineNo={3}
           value={ulaState?.keyLines?.[3]}
@@ -153,7 +155,7 @@ export const UlaPanel = () => {
         />
       </DataRow>
       <DataRow dense>
-        <Label text="KL4" className={styles.klLabel} tooltip="Keyboard line #4" />
+        <Label text="KL4" className={styles.klLabel} tooltip={t("panels.side.ula.keyboardLine", { line: 4 })} />
         <KeyboardLine
           lineNo={4}
           value={ulaState?.keyLines?.[4]}
@@ -162,7 +164,7 @@ export const UlaPanel = () => {
         />
       </DataRow>
       <DataRow dense>
-        <Label text="KL5" className={styles.klLabel} tooltip="Keyboard line #5" />
+        <Label text="KL5" className={styles.klLabel} tooltip={t("panels.side.ula.keyboardLine", { line: 5 })} />
         <KeyboardLine
           lineNo={5}
           value={ulaState?.keyLines?.[5]}
@@ -171,7 +173,7 @@ export const UlaPanel = () => {
         />
       </DataRow>
       <DataRow dense>
-        <Label text="KL6" className={styles.klLabel} tooltip="Keyboard line #6" />
+        <Label text="KL6" className={styles.klLabel} tooltip={t("panels.side.ula.keyboardLine", { line: 6 })} />
         <KeyboardLine
           lineNo={6}
           value={ulaState?.keyLines?.[6]}
@@ -180,7 +182,7 @@ export const UlaPanel = () => {
         />
       </DataRow>
       <DataRow dense>
-        <Label text="KL7" className={styles.klLabel} tooltip="Keyboard line #7" />
+        <Label text="KL7" className={styles.klLabel} tooltip={t("panels.side.ula.keyboardLine", { line: 7 })} />
         <KeyboardLine
           lineNo={7}
           value={ulaState?.keyLines?.[7]}
@@ -194,13 +196,13 @@ export const UlaPanel = () => {
           <SimpleValue
             label="ROMP"
             value={ulaState?.romP}
-            tooltip="Current ROM page"
+            tooltip={t("panels.side.ula.romPage")}
             valueXclass={regStyles.stateValue}
           />
           <SimpleValue
             label="RAMB"
             value={ulaState?.ramB}
-            tooltip="Current RAM bank"
+            tooltip={t("panels.side.ula.ramBank")}
             valueXclass={regStyles.stateValue}
           />
         </>

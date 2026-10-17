@@ -114,13 +114,13 @@ export async function saveMachineStateAs(browserWindow: BrowserWindow): Promise<
  */
 export async function loadMachineStateFile(browserWindow: BrowserWindow, filename: string): Promise<void> {
   let done = await getIdeApi().executeCommand(machineStateLoadCommandText(filename, "debug"));
-  if (!done?.success && /Use -y to load it anyway/.test(done?.finalMessage ?? "")) {
+  // --- A state that needs `-y` says why in the command's `value` (`StateLoadConfirmation`)
+  const reason = (done?.value as { needsConfirmation?: unknown } | undefined)?.needsConfirmation;
+  if (!done?.success && typeof reason === "string") {
     const answer = await dialog.showMessageBox(browserWindow, {
       type: "warning",
       title: t("messages.state.title"),
-      // --- The command's own text stays English until step 12 of LOCALIZATION_PLAN; this match
-      // --- must follow it then
-      message: (done.finalMessage ?? "").replace(/ Use -y to load it anyway\.$/, ""),
+      message: reason,
       detail: t("messages.state.loadAnyway"),
       buttons: [t("common.button.load"), t("common.button.cancel")],
       defaultId: 1,

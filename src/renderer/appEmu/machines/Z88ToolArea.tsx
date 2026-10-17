@@ -28,8 +28,10 @@ import {
   EmuDialogResult
 } from "../dialogs/emuDialogRegistry";
 import { cardTypes } from "./z88Cards";
+import { useT } from "@common/i18n/useT";
 
 export const Z88ToolArea = () => {
+  const t = useT();
   const config = useSelector(s => s.emulatorState.config);
   const { machineService } = useAppServices();
   const dialogs = useDialogs();
@@ -45,7 +47,7 @@ export const Z88ToolArea = () => {
     const empty = {
       size: currentRomSize
         ? `${Math.floor(currentRomSize / 1024)}K`
-        : "(empty)",
+        : t("emu.z88.slot.empty"),
       type: defRom ?? "",
       isPristine: false
     };
@@ -54,17 +56,13 @@ export const Z88ToolArea = () => {
     if (!type) {
       return {
         size: slotState.size.toString() + "K",
-        type: "System default",
+        type: t("emu.z88.slot.systemDefault"),
         isPristine: false
       };
     }
-    const parts = type.label.split("*");
     return {
-      size: parts?.[1] ?? slotState.size + "K" ?? "(empty)",
-      type:
-        (parts?.[0] ?? "") === CardIds.ANYROM
-          ? `ROM ${slotState.file}`
-          : parts?.[0],
+      size: type.sizeLabel ?? `${slotState.size}K`,
+      type: type.value === CardIds.ANYROM ? t("emu.z88.slot.romFile", { file: slotState.file }) : type.typeName,
       isPristine: slotState.pristine
     };
   };
@@ -132,13 +130,14 @@ type SlotDisplayProps = {
 };
 
 const SlotDisplay = ({ slot, size, type, isPristine, openDialog }: SlotDisplayProps) => {
+  const t = useT();
   const { machineService } = useAppServices();
   const machine = machineService.getMachineController().machine as IZ88Machine;
   const isEmpty = !type;
   return (
     <div className={styles.slotHandler}>
       <div className={styles.row}>
-        <span>Slot {slot}: </span>
+        <span>{t("emu.z88.slot.title", { slot })} </span>
         <span className={styles.slotInfo}>&nbsp;{size}</span>
         <SpaceFiller />
         {isPristine && <Icon iconName='@asterisk' width={12} height={12} />}
@@ -194,12 +193,13 @@ const Slot0Display = ({
   useDefaultRom,
   openDialog
 }: Slot0DisplayProps) => {
+  const t = useT();
   const isEmpty = !typeRom || typeRom === "-";
   return (
     <div className={classnames(styles.slotHandler, styles.slot0)}>
       <div className={styles.row}>
-        <span>Slot 0: </span>
-        <span className={styles.slotInfo}>&nbsp;{sizeRam} RAM</span>
+        <span>{t("emu.z88.slot.title", { slot: 0 })} </span>
+        <span className={styles.slotInfo}>&nbsp;{t("emu.z88.slot.ram", { size: sizeRam })}</span>
         <SpaceFiller />
         <div
           className={styles.button}

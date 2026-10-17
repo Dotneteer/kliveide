@@ -1,6 +1,7 @@
 import styles from "./SpriteEditor.module.scss";
 import classnames from "classnames";
 import { DragEvent, memo, useCallback, useState } from "react";
+import { useT } from "@common/i18n/useT";
 import { SpriteImage } from "./SpriteImage";
 import ScrollViewer from "@renderer/controls/ScrollViewer";
 import { SpriteSheetResizer } from "./SpriteSheetResizer";
@@ -57,6 +58,7 @@ export const SpriteSheetBrowser = memo(
       setDropAt(undefined);
     }, []);
 
+    const t = useT();
     const handleDrop = useCallback(() => {
       if (dragFrom !== undefined && dropAt) {
         onReorder(dragFrom, dropAt.index + (dropAt.after ? 1 : 0));
@@ -73,15 +75,15 @@ export const SpriteSheetBrowser = memo(
         onReset={onResetHeight}
       />
       <div className={styles.sectionHeader}>
-        <span>Sheet</span>
+        <span>{t("panels.spriteEditor.sheet")}</span>
         <span className={styles.statusSpacer} />
         <span className={styles.sheetCount}>
-          {sprites.length} {sprites.length === 1 ? "sprite" : "sprites"}
+          {t("panels.spriteEditor.sheetCount", { count: sprites.length })}
         </span>
       </div>
       <div className={styles.sheetScroll}>
         <ScrollViewer allowHorizontal={false} thinScrollBar={true}>
-          <div className={styles.sheetCells} role="listbox" aria-label="Sprite sheet">
+          <div className={styles.sheetCells} role="listbox" aria-label={t("panels.spriteEditor.sheetList")}>
             {sprites.map((sprite, index) => (
           <SheetCell
             key={index}
@@ -156,12 +158,17 @@ const SheetCell = memo(
     onDropped,
     onDragFinished
   }: CellProps) => {
+    const t = useT();
     const isEmpty = sprite.every((value) => value === transparencyIndex);
     return (
       <div
         role="option"
         aria-selected={selected}
-        aria-label={`Sprite ${index + 1}${isEmpty ? " (empty)" : ""}`}
+        aria-label={
+          isEmpty
+            ? t("panels.spriteEditor.cellEmpty", { index: index + 1 })
+            : t("panels.spriteEditor.cell", { index: index + 1 })
+        }
         tabIndex={selected ? 0 : -1}
         className={classnames(styles.sheetCell, {
           [styles.sheetCellSelected]: selected,

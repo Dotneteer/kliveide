@@ -24,6 +24,7 @@ import {
   type DetectionScope
 } from "../reverse/detection";
 import { detectionContextFor, detectionUnavailableReason } from "../reverse/detectionEnvironment";
+import { t } from "@common/i18n/i18n";
 
 type AnnDetectArgs = {
   target?: string;
@@ -61,8 +62,9 @@ export function parseDetectionScope(target: string | number | undefined): Detect
  */
 export class AnnDetectCommand extends IdeCommandBase<AnnDetectArgs> {
   readonly id = "ann-detect";
-  readonly description =
-    "Detects code and data from code coverage and proposes regions for the active annotations";
+  get description() {
+    return t("commands.annDetect.description");
+  }
   readonly aliases = ["detect"];
   readonly usage = [
     "ann-detect [<bank>|rom|all] [-mode fill|replace|clear] [-reach] [-text] [-words]",
@@ -83,14 +85,14 @@ export class AnnDetectCommand extends IdeCommandBase<AnnDetectArgs> {
     if (args["-undo"]) return messages;
     const reason = detectionUnavailableReason(context.store.getState());
     if (reason) messages.push(validationError(reason));
-    if (!parseDetectionScope(args.target)) messages.push(validationError("Name a bank number, rom or all."));
+    if (!parseDetectionScope(args.target)) messages.push(validationError(t("commands.annDetect.targetValues")));
     const mode = args["-mode"]?.toLowerCase();
     if (mode !== undefined && mode !== "fill" && mode !== "replace" && mode !== "clear") {
-      messages.push(validationError("-mode: use fill, replace or clear"));
+      messages.push(validationError(t("commands.annDetect.modeValues")));
     }
     const unknown = args["-unknown"]?.toLowerCase();
     if (unknown !== undefined && unknown !== "keep" && unknown !== "bytes") {
-      messages.push(validationError("-unknown: use keep or bytes"));
+      messages.push(validationError(t("commands.annDetect.unknownValues")));
     }
     return messages;
   }
@@ -98,14 +100,14 @@ export class AnnDetectCommand extends IdeCommandBase<AnnDetectArgs> {
   async execute(context: IdeCommandContext, args: AnnDetectArgs): Promise<IdeCommandResult> {
     const projectService = context.service.projectService;
     if (args["-undo"]) {
-      if (!canUndoDetection()) return commandError("There is no detection to undo in this session.");
+      if (!canUndoDetection()) return commandError(t("commands.annDetect.nothingToUndo"));
       const paths = await undoLastDetection(projectService);
-      writeSuccessMessage(context.output, `Restored the annotations before the last detection: ${paths.join(", ")}`);
+      writeSuccessMessage(context.output, t("commands.annDetect.restored", { paths: paths.join(", ") }));
       return commandSuccess;
     }
 
     const detection = detectionContextFor(context.store.getState(), projectService);
-    if (!detection) return commandError("This machine's memory cannot be annotated.");
+    if (!detection) return commandError(t("commands.common.notAnnotatable"));
     const request: DetectionRequest = {
       ...DEFAULT_DETECTION_REQUEST,
       scope: parseDetectionScope(args.target)!,
@@ -121,7 +123,7 @@ export class AnnDetectCommand extends IdeCommandBase<AnnDetectArgs> {
     try {
       run = await runDetection(context.emuApi, detection, request);
     } catch (err) {
-      return commandError(`Detection failed: ${err instanceof Error ? err.message : String(err)}`);
+      return commandError(t("commands.annDetect.failed", { message: err instanceof Error ? err.message : String(err) }));
     }
     if (run.problem && run.targets.length === 0) return commandError(run.problem);
 
@@ -135,25 +137,25 @@ export class AnnDetectCommand extends IdeCommandBase<AnnDetectArgs> {
     await context.service.projectService.getActiveDocumentHubService().openDocument(
       {
         id: `annDetect-${resultIndex++}`,
-        name: "Detected code and data",
+        name: t("commands.annDetect.documentName"),
         type: COMMAND_RESULT_EDITOR,
         iconName: "disassembly-icon",
         iconFill: "--console-ansi-bright-green",
-        contents: { title: `Result of running '${context.commandtext.trim()}'`, buffer } as any
+        contents: { title: t("commands.common.resultTitle", { command: context.commandtext.trim() }), buffer } as any
       },
       false
     );
 
     if (!args["-apply"]) {
-      writeInfoMessage(context.output, "Nothing was written. Add -apply to write the proposal.");
+      writeInfoMessage(context.output, t("commands.annDetect.dryRun"));
       return commandSuccess;
     }
     const { written, problems } = await applyDetection(run.targets, detection);
     problems.forEach((problem) => writeInfoMessage(context.output, problem));
-    if (written.length === 0) return commandError("Nothing was written.");
+    if (written.length === 0) return commandError(t("commands.common.nothingWritten"));
     writeSuccessMessage(
       context.output,
-      `Applied to ${written.join(", ")}. Undo with 'ann-detect -undo'; remove detected regions with -mode clear.`
+      t("commands.annDetect.applied", { paths: written.join(", ") })
     );
     return commandSuccess;
   }

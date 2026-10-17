@@ -4,7 +4,7 @@ import { dirname, join, relative, resolve, sep } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { checkI18n, renderKeysFile } from "../../scripts/i18n-check.cjs";
 import { buildTodo } from "../../scripts/i18n-todo.cjs";
-import { renderTranslationsFile } from "../../scripts/i18n-lib.cjs";
+import { renderSourceFile, renderTranslationsFile } from "../../scripts/i18n-lib.cjs";
 import { extractJsonObject, mergeTranslations } from "../../scripts/i18n-merge.cjs";
 
 let root: string;
@@ -22,6 +22,7 @@ function run(update = false) {
     catalogsFile: join(root, "catalogs.ts"),
     keysFile: join(root, "keys.generated.ts"),
     translationsFile: join(root, "translations.generated.ts"),
+    sourceFile: join(root, "source.generated.ts"),
     update
   });
 }
@@ -40,6 +41,7 @@ beforeEach(() => {
   write("src/use.ts", `t("menu.file.openFile"); t('dialog.delete.confirm', { name });`);
   write("keys.generated.ts", renderKeysFile(["dialog.delete.confirm", "menu.file.openFile"]));
   write("translations.generated.ts", renderTranslationsFile(join(root, "locales")));
+  write("source.generated.ts", renderSourceFile(join(root, "locales")));
 });
 
 afterEach(() => {
@@ -135,10 +137,13 @@ describe("i18n-check", () => {
     expect(warnings).toEqual([`en: "dialog.delete.confirm" is not used by any source file`]);
   });
 
-  it("requires catalogs.ts to import every English namespace", async () => {
+  it("requires the generated English module to import every namespace", async () => {
+    await run(true);
     write("locales/en/toolbar.json", {});
     const { errors } = await run();
-    expect(errors.join("\n")).toContain("does not import en/toolbar.json");
+    expect(errors.join("\n")).toContain("source.generated.ts: out of date");
+    expect((await run(true)).errors).toEqual([]);
+    expect(readFileSync(join(root, "source.generated.ts"), "utf8")).toContain('import en_toolbar from "./locales/en/toolbar.json";');
   });
 
   it("rejects a checked-in qps folder", async () => {
@@ -199,6 +204,12 @@ describe("i18n-todo and i18n-merge", () => {
     expect(JSON.parse(readFileSync(join(root, "locales/hu/menu.json"), "utf8"))).toEqual({ "menu.file.openFile": "Megnyitás…" });
     expect(JSON.parse(readFileSync(join(root, "locales/hu/.source.json"), "utf8"))).toEqual({ "menu.file.openFile": "Open File…" });
     expect(readFileSync(join(root, "translations.generated.ts"), "utf8")).toContain('import hu_menu from "./locales/hu/menu.json";');
+    // --- A hyphenated namespace still yields a valid identifier
+    write("locales/en/panels-side.json", { "panels.side.x": "X", "@panels.side.x": { context: "c" } });
+    write("locales/hu/panels-side.json", { "panels.side.x": "Y" });
+    expect(renderTranslationsFile(join(root, "locales"))).toContain('import hu_panels_side from "./locales/hu/panels-side.json";');
+    rmSync(join(root, "locales/en/panels-side.json"));
+    rmSync(join(root, "locales/hu/panels-side.json"));
     const { errors, info } = await run();
     expect(errors).toEqual([]);
     expect(info).toEqual(["hu: 50 % translated (1/2), 0 outdated"]);

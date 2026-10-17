@@ -26,6 +26,7 @@ import { compileLogTemplate } from "@common/utils/breakpoint-condition/logpoint-
 import { conditionMachineFacts } from "@common/utils/breakpoint-condition/condition-machine";
 import { parseCommand } from "@renderer/appIde/services/command-parser";
 import { getNumericTokenValue, toHexa2, toHexa4 } from "@renderer/appIde/services/ide-commands";
+import { t } from "@common/i18n/i18n";
 // --- The Next's bank limits, from the module that owns the NEX bank facts. `BreakpointCommands`
 // --- imports them from the same place for the same grammar, which is the point: one definition of
 // --- what a legal bank and offset are, not one per parser.
@@ -231,11 +232,8 @@ const ADDRESS_MAX = 0xffff;
 const BYTE_MAX = 0xff;
 
 /** What the address field says when handed a `[file]:line` spec. */
-export const SOURCE_SPEC_MESSAGE =
-  "Set source-code breakpoints from the editor's left margin.";
-
-const NUMBER_HINT = "for example $8000, 32768, or %1000000000000000";
-const BYTE_HINT = "for example $07, 7, or %00000111";
+/** What the address field says when handed a `[file]:line` spec (translated on each call) */
+export const sourceSpecMessage = (): string => t("panels.breakpointForm.sourceSpec");
 
 /**
  * True for a breakpoint this dialog can author or edit.
@@ -673,16 +671,16 @@ export function validateBreakpointForm(
    */
   if (isNextRegKind(form.kind)) {
     if (!env.supportsNextRegBreakpoints) {
-      errors.nextReg = "NextReg breakpoints are supported on the ZX Spectrum Next only.";
+      errors.nextReg = t("panels.breakpointForm.nextRegUnsupported");
     } else {
       const reg = parseNumericInput(form.nextReg);
       if (!reg.ok) {
         errors.nextReg =
           reg.reason === "empty"
-            ? "Enter a Next Register number."
-            : `Enter a valid register, ${BYTE_HINT}.`;
+            ? t("panels.breakpointForm.nextRegEmpty")
+            : t("panels.breakpointForm.nextRegInvalid");
       } else if (reg.value < 0 || reg.value > BYTE_MAX) {
-        errors.nextReg = "A Next Register number is between $00 and $FF.";
+        errors.nextReg = t("panels.breakpointForm.nextRegRange");
       }
     }
 
@@ -691,25 +689,25 @@ export function validateBreakpointForm(
       if (!value.ok) {
         errors.nextRegValue =
           value.reason === "empty"
-            ? "Enter the value to break on."
-            : `Enter a valid value, ${BYTE_HINT}.`;
+            ? t("panels.breakpointForm.valueEmpty")
+            : t("panels.breakpointForm.valueInvalid");
       } else if (value.value < 0 || value.value > BYTE_MAX) {
-        errors.nextRegValue = "A value is between $00 and $FF.";
+        errors.nextRegValue = t("panels.breakpointForm.valueRange");
       }
 
       const maskText = (form.nextRegMask ?? "").trim();
       if (maskText) {
         const mask = parseNumericInput(maskText);
         if (!mask.ok) {
-          errors.nextRegMask = `Enter a valid mask, ${BYTE_HINT}.`;
+          errors.nextRegMask = t("panels.breakpointForm.maskInvalid");
         } else if (mask.value < 0 || mask.value > BYTE_MAX) {
-          errors.nextRegMask = "A mask is between $00 and $FF.";
+          errors.nextRegMask = t("panels.breakpointForm.maskRange");
         }
       }
     } else if ((form.nextRegMask ?? "").trim()) {
       // --- Unreachable through the UI, which hides the field; checked because this module must be
       // --- correct against a hand-built state, as the header says.
-      errors.nextRegMask = "A mask needs a value to mask.";
+      errors.nextRegMask = t("panels.breakpointForm.maskNeedsValue");
     }
 
     addDuplicateKeyError(errors, form, env);
@@ -719,16 +717,16 @@ export function validateBreakpointForm(
   // --- The Copper rules, on their own path like the NextReg ones
   if (isCopperKind(form.kind)) {
     if (!env.supportsNextRegBreakpoints) {
-      errors.copperIndex = "Copper breakpoints are supported on the ZX Spectrum Next only.";
+      errors.copperIndex = t("panels.breakpointForm.copperUnsupported");
     } else {
       const index = parseNumericInput(form.copperIndex);
       if (!index.ok) {
         errors.copperIndex =
           index.reason === "empty"
-            ? "Enter a Copper list index."
-            : "Enter a valid list index, for example $00B or 11.";
+            ? t("panels.breakpointForm.copperEmpty")
+            : t("panels.breakpointForm.copperInvalid");
       } else if (index.value < 0 || index.value > COPPER_INDEX_MAX) {
-        errors.copperIndex = "A Copper list index is between $000 and $3FF.";
+        errors.copperIndex = t("panels.breakpointForm.copperRange");
       }
     }
     addDuplicateKeyError(errors, form, env);
@@ -738,47 +736,47 @@ export function validateBreakpointForm(
   // --- The sprite rules, on their own path like the Copper ones
   if (isSpriteKind(form.kind)) {
     if (!env.supportsNextRegBreakpoints) {
-      errors.spriteIndex = "Sprite breakpoints are supported on the ZX Spectrum Next only.";
+      errors.spriteIndex = t("panels.breakpointForm.spriteUnsupported");
     } else {
       const index = parseNumericInput(form.spriteIndex);
       if (!index.ok) {
         errors.spriteIndex =
           index.reason === "empty"
-            ? "Enter a sprite index."
-            : "Enter a valid sprite index, for example $0C or 12.";
+            ? t("panels.breakpointForm.spriteEmpty")
+            : t("panels.breakpointForm.spriteInvalid");
       } else if (index.value < 0 || index.value > SPRITE_INDEX_MAX) {
-        errors.spriteIndex = "A sprite index is between $00 and $7F.";
+        errors.spriteIndex = t("panels.breakpointForm.spriteRange");
       }
     }
     if ((form.spriteAttrMask & SPRITE_ATTR_ALL) === 0) {
-      errors.spriteAttrMask = "Watch at least one attribute byte.";
+      errors.spriteAttrMask = t("panels.breakpointForm.spriteAttrNone");
     }
     addDuplicateKeyError(errors, form, env);
     return errors;
   }
 
-  const addressLabel = isIoKind(form.kind) ? "port" : "address";
+  const io = isIoKind(form.kind);
 
   // --- Address (a port, for I/O kinds; or a bank-relative site)
   const addressText = (form.address ?? "").trim();
   if (addressText.startsWith("[")) {
-    errors.address = SOURCE_SPEC_MESSAGE;
+    errors.address = sourceSpecMessage();
   } else if (isBankRelativeInput(addressText)) {
     // --- Judged as what it is *spelled* as. Falling through to the numeric parser instead would
     // --- report "enter a valid address" for a bank-relative site with one digit wrong, which says
     // --- nothing about the mistake.
     if (!env.supportsBankRelative) {
-      errors.address = "Bank-relative breakpoints are not supported on this machine.";
+      errors.address = t("panels.breakpointForm.bankRelativeUnsupported");
     } else if (isIoKind(form.kind)) {
-      errors.address = "An I/O breakpoint watches a port, which is not in a bank.";
+      errors.address = t("panels.breakpointForm.bankRelativeIo");
     } else {
       const maxBank = env.maxBank ?? NEX_MAX_BANK;
       const site = parseBankRelativeInput(addressText, maxBank);
       if (!site.ok) {
         errors.address =
           site.reason === "bank"
-            ? `Enter a 16K bank in hexadecimal, $00 to $${toHexa2(maxBank).toUpperCase()}.`
-            : `Enter an offset within the bank, $0000 to $${toHexa4(ANNOTATION_BANK_LAST_OFFSET)}.`;
+            ? t("panels.breakpointForm.bankRange", { max: `$${toHexa2(maxBank).toUpperCase()}` })
+            : t("panels.breakpointForm.offsetRange", { max: `$${toHexa4(ANNOTATION_BANK_LAST_OFFSET)}` });
       }
     }
   } else {
@@ -786,10 +784,10 @@ export function validateBreakpointForm(
     if (!parsed.ok) {
       errors.address =
         parsed.reason === "empty"
-          ? `Enter ${isIoKind(form.kind) ? "a port" : "an address"}.`
-          : `Enter a valid ${addressLabel}, ${NUMBER_HINT}.`;
+          ? t(io ? "panels.breakpointForm.portEmpty" : "panels.breakpointForm.addressEmpty")
+          : t(io ? "panels.breakpointForm.portInvalid" : "panels.breakpointForm.addressInvalid");
     } else if (parsed.value < 0 || parsed.value > ADDRESS_MAX) {
-      errors.address = `The ${addressLabel} must be between $0000 and $FFFF.`;
+      errors.address = t(io ? "panels.breakpointForm.portRange" : "panels.breakpointForm.addressRange");
     }
   }
 
@@ -797,13 +795,13 @@ export function validateBreakpointForm(
   const maskText = (form.ioMask ?? "").trim();
   if (maskText) {
     if (!isIoKind(form.kind)) {
-      errors.ioMask = "A port mask applies only to I/O breakpoints.";
+      errors.ioMask = t("panels.breakpointForm.ioMaskNotIo");
     } else {
       const parsed = parseNumericInput(maskText);
       if (!parsed.ok) {
-        errors.ioMask = `Enter a valid port mask, ${NUMBER_HINT}.`;
+        errors.ioMask = t("panels.breakpointForm.ioMaskInvalid");
       } else if (parsed.value < 0 || parsed.value > ADDRESS_MAX) {
-        errors.ioMask = "The port mask must be between $0000 and $FFFF.";
+        errors.ioMask = t("panels.breakpointForm.ioMaskRange");
       }
     }
   }
@@ -812,16 +810,16 @@ export function validateBreakpointForm(
   const lengthText = (form.length ?? "").trim();
   if (lengthText) {
     if (!isMemoryKind(form.kind)) {
-      errors.length = "A length applies only to memory breakpoints.";
+      errors.length = t("panels.breakpointForm.lengthNotMemory");
     } else {
       const parsed = parseNumericInput(lengthText);
       const start = parseNumericInput(addressText);
       if (!parsed.ok) {
-        errors.length = "Enter a valid length, for example 5 or $10.";
+        errors.length = t("panels.breakpointForm.lengthInvalid");
       } else if (parsed.value < 1 || parsed.value > 0x1_0000) {
-        errors.length = "The length must be between 1 and 65536.";
+        errors.length = t("panels.breakpointForm.lengthRange");
       } else if (start.ok && start.value + parsed.value > 0x1_0000) {
-        errors.length = "A memory range cannot wrap past $FFFF.";
+        errors.length = t("panels.breakpointForm.lengthWraps");
       }
     }
   }
@@ -829,16 +827,16 @@ export function validateBreakpointForm(
   // --- Partition
   if (form.partition !== undefined) {
     if (!env.supportsPartitions) {
-      errors.partition = "This machine does not support partitions.";
+      errors.partition = t("panels.breakpointForm.partitionUnsupported");
     } else if (isIoKind(form.kind)) {
-      errors.partition = "I/O breakpoints cannot use a partition.";
+      errors.partition = t("panels.breakpointForm.partitionIo");
     } else if (isBankRelativeInput(addressText)) {
       // --- A bank-relative breakpoint resolves its own partition from the bank and the offset. A
       // --- second one chosen here would contradict it, and silently dropping it would leave the
       // --- dialog showing a partition the breakpoint does not have.
-      errors.partition = "A bank-relative breakpoint already names its bank.";
+      errors.partition = t("panels.breakpointForm.partitionBankRelative");
     } else if (!isKnownPartition(form.partition, env)) {
-      errors.partition = "This machine has no such partition.";
+      errors.partition = t("panels.breakpointForm.partitionUnknown");
     }
   }
 
@@ -858,7 +856,7 @@ function addFilterErrors(
 
   if (form.action === "log") {
     if (!(form.logMessage ?? "").trim()) {
-      errors.logMessage = "Enter the message to log.";
+      errors.logMessage = t("panels.breakpointForm.logMessageEmpty");
     } else {
       const logError = checkLogMessage(form, env).errors[0];
       if (logError) errors.logMessage = formatConditionDiagnostic(logError);
@@ -869,9 +867,9 @@ function addFilterErrors(
     const count = parseNumericInput(form.hitCount);
     if (!count.ok) {
       errors.hitCount =
-        count.reason === "empty" ? "Enter the hit count." : "Enter a valid hit count, for example 10 or $0A.";
+        count.reason === "empty" ? t("panels.breakpointForm.hitCountEmpty") : t("panels.breakpointForm.hitCountInvalid");
     } else if (!isValidBreakpointHitCount(count.value)) {
-      errors.hitCount = `The hit count must be between 1 and ${MAX_BREAKPOINT_HIT_COUNT}.`;
+      errors.hitCount = t("panels.breakpointForm.hitCountRange", { max: MAX_BREAKPOINT_HIT_COUNT });
     }
   }
 }
@@ -926,7 +924,7 @@ export function conditionAccessKindOf(kind: BreakpointKind): ConditionAccessKind
 
 /** A condition message with its column, as the dialog shows it under the field. */
 export function formatConditionDiagnostic(diagnostic: ConditionDiagnostic): string {
-  return `Column ${diagnostic.start + 1}: ${diagnostic.message}`;
+  return t("panels.breakpointForm.diagnostic", { column: diagnostic.start + 1, message: diagnostic.message });
 }
 
 /**
@@ -963,7 +961,7 @@ function addDuplicateKeyError(
   if (key !== undefined && key !== env.editingKey && env.existingKeys.includes(key)) {
     // --- `bp-set` silently merges onto an existing key, which reads as an update on the command
     // --- line but would look like a rename here. Refuse instead.
-    errors.form = `A breakpoint already exists at ${key}.`;
+    errors.form = t("panels.breakpointForm.duplicate", { key });
   }
 }
 

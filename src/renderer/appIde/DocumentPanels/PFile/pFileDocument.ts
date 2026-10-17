@@ -1,3 +1,4 @@
+import { t } from "@common/i18n/i18n";
 import { documentSourceName } from "../helpers/documentSourceName";
 import { analyzeProgramFile } from "./oFileView";
 import { P_FILE_REGION_NAMES, type PFileRegionKind } from "./pFileView";
@@ -28,8 +29,12 @@ export function pFileRegionTitle(
   projectFolder?: string,
   view?: "basic" | "screen"
 ): string {
-  const what = view === "basic" ? "Listing" : view === "screen" ? "Screen" : P_FILE_REGION_NAMES[kind];
-  return `${documentSourceName(fullPath, projectFolder)} - ${what}`;
+  const source = documentSourceName(fullPath, projectFolder);
+  return view === "basic"
+    ? t("panels.pfile.titleListing", { source })
+    : view === "screen"
+      ? t("panels.pfile.titleScreen", { source })
+      : t("panels.pfile.titlePart", { source, part: P_FILE_REGION_NAMES[kind] });
 }
 
 /** The document id of a part's BASIC listing or screen */

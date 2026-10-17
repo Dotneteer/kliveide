@@ -26,6 +26,7 @@ import {
   validationError,
   writeMessage
 } from "../services/ide-commands";
+import { t } from "@common/i18n/i18n";
 
 /** The machines whose state Klive can save: every WASM machine (not the experimental C64) */
 export const STATE_MACHINES = [
@@ -54,7 +55,9 @@ export type StateSaveCommandArgs = { file: string; "-f"?: boolean };
  */
 export class StateSaveCommand extends IdeCommandBase<StateSaveCommandArgs> {
   readonly id = "state-save";
-  readonly description = "Saves the machine's complete state as a Klive state file (.kls; -f overwrites)";
+  get description() {
+    return t("commands.state.save.description");
+  }
   readonly aliases = ["ssave"];
   readonly usage = "state-save <state-file> [-f]";
 
@@ -69,13 +72,13 @@ export class StateSaveCommand extends IdeCommandBase<StateSaveCommandArgs> {
   ): Promise<ValidationMessage[]> {
     const messages: ValidationMessage[] = [];
     if (!args.file?.trim()) {
-      messages.push(validationError("The state file path cannot be empty."));
+      messages.push(validationError(t("commands.state.emptyPath")));
     } else if (!isMachineStatePath(args.file)) {
-      messages.push(validationError("The state file must have the .kls extension."));
+      messages.push(validationError(t("commands.state.save.wrongType")));
     }
     const machineId = context.store.getState()?.emulatorState?.machineId;
     if (!machineId || !STATE_MACHINES.includes(machineId)) {
-      messages.push(validationError("This machine cannot save its state."));
+      messages.push(validationError(t("commands.state.save.unsupported")));
     }
     return messages;
   }
@@ -83,7 +86,7 @@ export class StateSaveCommand extends IdeCommandBase<StateSaveCommandArgs> {
   async execute(context: IdeCommandContext, args: StateSaveCommandArgs): Promise<IdeCommandResult> {
     const file = args.file.trim();
     if (!args["-f"] && (await fileExists(context, file))) {
-      return commandError(`${file} already exists; use -f to replace it.`);
+      return commandError(t("commands.state.fileExists", { file }));
     }
     const machineId = context.store.getState()?.emulatorState?.machineId;
     let result: Awaited<ReturnType<typeof context.emuApi.saveMachineStateFile>>;
@@ -95,22 +98,25 @@ export class StateSaveCommand extends IdeCommandBase<StateSaveCommandArgs> {
         sdCard
       });
     } catch (err) {
-      return commandError(`Could not save the state: ${messageOf(err)}`);
+      return commandError(t("commands.state.save.failed", { error: messageOf(err) }));
     }
     try {
       await context.mainApi.saveBinaryFile(file, result.bytes);
     } catch (err) {
-      return commandError(`Could not write ${file}: ${messageOf(err)}`);
+      return commandError(t("commands.state.writeFailed", { file, error: messageOf(err) }));
     }
     for (const warning of result.warnings) {
-      writeMessage(context.output, `Warning: ${warning}`, "yellow");
+      writeMessage(context.output, t("commands.state.warning", { warning }), "yellow");
     }
     return commandSuccessWith(
-      `Machine state saved to ${file} (${result.machineName}, PC $${toHexa4(result.pc)}).`,
+      t("commands.state.save.saved", { file, machine: result.machineName, pc: `$${toHexa4(result.pc)}` }),
       { warnings: result.warnings }
     );
   }
 }
+
+/** The `value` of a `state-load` that needs `-y`: why (the File menu asks the user with it) */
+export type StateLoadConfirmation = { needsConfirmation: string };
 
 export type StateLoadCommandArgs = {
   file: string;
@@ -126,8 +132,9 @@ export type StateLoadCommandArgs = {
  */
 export class StateLoadCommand extends IdeCommandBase<StateLoadCommandArgs> {
   readonly id = "state-load";
-  readonly description =
-    "Loads a Klive state file (.kls) and debugs it, stopping at its PC (-r runs it; -y accepts a changed SD card)";
+  get description() {
+    return t("commands.state.load.description");
+  }
   readonly aliases = ["sload"];
   readonly usage = "state-load <state-file> [-r | -d] [-y]";
 
@@ -142,12 +149,12 @@ export class StateLoadCommand extends IdeCommandBase<StateLoadCommandArgs> {
   ): Promise<ValidationMessage[]> {
     const messages: ValidationMessage[] = [];
     if (!args.file?.trim()) {
-      messages.push(validationError("The state file path cannot be empty."));
+      messages.push(validationError(t("commands.state.emptyPath")));
     } else if (!isMachineStatePath(args.file)) {
-      messages.push(validationError("The file to load must be a Klive state file (.kls)."));
+      messages.push(validationError(t("commands.state.load.wrongType")));
     }
     if (args["-r"] && args["-d"]) {
-      messages.push(validationError("Use only one of -r and -d."));
+      messages.push(validationError(t("commands.state.load.oneMode")));
     }
     return messages;
   }
@@ -159,7 +166,7 @@ export class StateLoadCommand extends IdeCommandBase<StateLoadCommandArgs> {
     try {
       bytes = await context.mainApi.readBinaryFile(file);
     } catch (err) {
-      return commandError(`Could not read ${file}: ${messageOf(err)}`);
+      return commandError(t("commands.state.readFailed", { file, error: messageOf(err) }));
     }
     let header: KliveStateHeader;
     let hasSdCard: boolean;
@@ -168,7 +175,7 @@ export class StateLoadCommand extends IdeCommandBase<StateLoadCommandArgs> {
       header = read.header;
       hasSdCard = read.media.some((m) => m.id === MEDIA_SD_CARD);
     } catch (err) {
-      return commandError(`${file} is not a valid state file: ${messageOf(err)}`);
+      return commandError(t("commands.state.load.invalid", { file, error: messageOf(err) }));
     }
     const guard = machineStateProjectGuard(context.store.getState(), header.machineId);
     if (guard) return commandError(guard);
@@ -181,14 +188,17 @@ export class StateLoadCommand extends IdeCommandBase<StateLoadCommandArgs> {
         acceptChangedSdCard: !!args["-y"]
       });
     } catch (err) {
-      return commandError(`Could not load ${file}: ${messageOf(err)}`);
+      return commandError(t("commands.state.load.failed", { file, error: messageOf(err) }));
     }
     if (result.needsConfirmation) {
-      return commandError(`${result.needsConfirmation}. Use -y to load it anyway.`);
+      // --- The reason travels in `value` too: the File menu asks the user with it (no text matching)
+      return commandError(t("commands.state.load.needsConfirmation", { reason: result.needsConfirmation }), {
+        needsConfirmation: result.needsConfirmation
+      } satisfies StateLoadConfirmation);
     }
     const state = context.store.getState();
     if (result.rebuilt) {
-      writeMessage(context.output, `Machine switched to the ${result.machineName}.`, "cyan");
+      writeMessage(context.output, t("commands.state.machineSwitched", { machine: result.machineName }), "cyan");
     }
     if (
       state?.project?.isKliveProject &&
@@ -196,16 +206,16 @@ export class StateLoadCommand extends IdeCommandBase<StateLoadCommandArgs> {
     ) {
       writeMessage(
         context.output,
-        "Warning: the project's machine model differs from the state's; the emulator runs the state's until the project's machine is set again",
+        t("commands.state.load.modelDiffers"),
         "yellow"
       );
     }
     for (const warning of result.warnings) {
-      writeMessage(context.output, `Warning: ${warning}`, "yellow");
+      writeMessage(context.output, t("commands.state.warning", { warning }), "yellow");
     }
-    const done = mode === "run" ? "running" : "stopped at";
+    const loaded = { file, pc: `$${toHexa4(result.pc)}`, part: result.path === "szx" ? "szx" : "state" };
     return commandSuccessWith(
-      `Machine state ${file} loaded${result.path === "szx" ? " from its .szx part" : ""}, ${done} PC $${toHexa4(result.pc)}.`
+      mode === "run" ? t("commands.state.load.loadedRunning", loaded) : t("commands.state.load.loadedStopped", loaded)
     );
   }
 }
@@ -213,23 +223,23 @@ export class StateLoadCommand extends IdeCommandBase<StateLoadCommandArgs> {
 /**
  * Why a state cannot be loaded with the current project open, or undefined when it can (D10): a
  * project keeps its machine type, so a state of another machine type is refused
+ * @param kind What is being loaded: a state file, or a debug recording (which carries one)
  */
 export function machineStateProjectGuard(
   state: {
     project?: { isKliveProject?: boolean };
     emulatorState?: { machineId?: string };
   },
-  stateMachineId: string
+  stateMachineId: string,
+  kind: "state" | "recording" = "state"
 ): string | undefined {
   if (!state?.project?.isKliveProject) return undefined;
   const machineId = state.emulatorState?.machineId;
   if (machineId === stateMachineId) return undefined;
   const nameOf = (id: string | undefined) =>
-    machineRegistry.find((m) => m.machineId === id)?.displayName ?? id ?? "another machine";
-  return (
-    `The open project targets the ${nameOf(machineId)}, but this state was saved on the ` +
-    `${nameOf(stateMachineId)}. Close the project or open a project for that machine.`
-  );
+    machineRegistry.find((m) => m.machineId === id)?.displayName ?? id ?? t("commands.state.anotherMachine");
+  const args = { machine: nameOf(machineId), saved: nameOf(stateMachineId) };
+  return kind === "recording" ? t("commands.debugRecording.guard", args) : t("commands.state.guard", args);
 }
 
 async function versionOf(context: IdeCommandContext): Promise<string> {

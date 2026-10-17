@@ -69,6 +69,6 @@ describe("exporting a compiler-written tape", () => {
   it("says which of Klive's loader options it cannot apply to that tape", async () => {
     const { context, lines } = contextWith();
     await new ExportCodeCommand().exportCompiledCode(context, output, { filename: "banked.tap", "-f": "tap", "-as": true, "-b": 2 });
-    expect(lines.join("\n")).toMatch(/own loader; -as, -b has no effect/);
+    expect(lines.join("\n")).toMatch(/own loader; -as, -b have no effect/);
   });
 });

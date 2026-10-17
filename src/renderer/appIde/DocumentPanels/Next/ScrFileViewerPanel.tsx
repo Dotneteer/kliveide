@@ -9,6 +9,8 @@ import { Panel } from "@renderer/controls/layout/Panel";
 import { Column } from "@renderer/controls/layout/Column";
 import { createElement } from "react";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
+import { t } from "@common/i18n/i18n";
+import { useT } from "@common/i18n/useT";
 
 type ScrFileViewState = {
   scrollPosition?: number;
@@ -20,6 +22,7 @@ const ScrFileViewerPanel = ({
   viewState
 }: DocumentProps<ScrFileViewState>) => {
   const documentHubService = useDocumentHubService();
+  const t = useT();
 
   return createElement(
     GenericFilePanel<true, ScrFileViewState>,
@@ -40,12 +43,12 @@ const ScrFileViewerPanel = ({
                 <SmallIconButton
                   iconName='square-arrow-out-up-right'
                   fill='--data-value'
-                  title='Display screen data dump'
+                  title={t("panels.next.scr.showDump")}
                   clicked={async () => {
                     await openStaticMemoryDump(
                       documentHubService,
                       `scrData${documentSource}`,
-                      `${documentSource} - Dump`,
+                      t("panels.next.dumpTitle.dump", { source: documentSource }),
                       contents
                     );
                   }}
@@ -92,7 +95,7 @@ export const createScrFileViewerPanel = ({
 function loadScrFileContents (contents: Uint8Array): { fileInfo?: true; error?: string } {
   if (contents.length !== SCR_FILE_LENGTH) {
     return {
-      error: `Invalid file size (${contents.length} bytes): an .SCR file is ${SCR_FILE_LENGTH} bytes long.`
+      error: t("panels.next.scr.invalidSize", { size: contents.length, expected: SCR_FILE_LENGTH })
     };
   }
   return { fileInfo: true };

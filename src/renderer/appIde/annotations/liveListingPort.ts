@@ -1,3 +1,4 @@
+import { t } from "@common/i18n/i18n";
 import type { DisassemblyItem } from "@renderer/appIde/disassemblers/common-types";
 import type { AnnotationMachine, BankSpace, SlotPaging } from "@common/annotations/bankSpace";
 import type { ActiveAnnotationSet } from "./activeAnnotationSet";
@@ -48,16 +49,19 @@ export function liveRowTarget(
   context: LiveRowTargetContext
 ): LiveRowTarget | { disabledReason: string } {
   const { bankSpace, activeSet } = context;
-  if (!bankSpace) return { disabledReason: "This machine's memory cannot be annotated." };
+  if (!bankSpace) return { disabledReason: t("media.annotations.machineNotAnnotatable") };
   const site = bankSpace.siteAt(address & 0xffff, context.slots);
-  if (!site) return { disabledReason: "This memory (a DOCK or EXROM chunk) cannot be annotated." };
+  if (!site) return { disabledReason: t("media.annotations.chunkNotAnnotatable") };
 
   if (site.kind === "rom") {
     const rom = context.romPartition(site.partition);
-    if (!rom) return { disabledReason: "This ROM page has not been identified yet." };
+    if (!rom) return { disabledReason: t("media.annotations.romNotIdentified") };
     if (!rom.hasWorkingCopy) {
+      const name = fileNameOf(rom.workingPath);
       return {
-        disabledReason: `No working copy of ${fileNameOf(rom.workingPath) ?? "this ROM's annotations"}: use Start Editing ROM Annotations, or rom-ann-new.`
+        disabledReason: name
+          ? t("media.annotations.noWorkingCopy", { name })
+          : t("media.annotations.noWorkingCopyUnnamed")
       };
     }
     return {
@@ -72,12 +76,14 @@ export function liveRowTarget(
         crc32: rom.source.crc32,
         romName: fileNameOf(rom.source.path)
       },
-      destination: `${fileNameOf(rom.workingPath) ?? "the ROM's"} working copy`
+      destination: fileNameOf(rom.workingPath)
+        ? t("media.annotations.workingCopy", { name: fileNameOf(rom.workingPath)! })
+        : t("media.annotations.romWorkingCopy")
     };
   }
 
   if (!activeSet) {
-    return { disabledReason: "No annotation set is active: use ann-new, or open a project." };
+    return { disabledReason: t("media.annotations.noActiveSet") };
   }
   return {
     kind: "bank",

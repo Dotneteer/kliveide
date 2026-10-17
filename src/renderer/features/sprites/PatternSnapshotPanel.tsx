@@ -7,7 +7,8 @@ import {
 import type { SprFileContents, SprFileViewState } from "@renderer/features/sprite-editor/sprite-common";
 import { SpriteEditor } from "@renderer/features/sprite-editor/SpriteEditor";
 import { parseSprFile } from "@renderer/features/sprite-editor/sprite-file";
-import type { PatternSnapshotViewState } from "./patternSnapshot";
+import { useT } from "@common/i18n/useT";
+import { patternSnapshotTexts, type PatternSnapshotViewState } from "./patternSnapshot";
 
 /*
  * A sprite pattern snapshot (`patternSnapshot.ts`): the sprite editor, read-only, over bytes held by
@@ -21,8 +22,11 @@ function loadSnapshot(contents: Uint8Array): { fileInfo?: SprFileContents; error
   return { fileInfo: { sprites } };
 }
 
-const PatternSnapshotPanel = ({ document, contents, viewState }: DocumentProps<SnapshotViewState>) =>
-  createElement(GenericFilePanel<SprFileContents, SnapshotViewState>, {
+const PatternSnapshotPanel = ({ document, contents, viewState }: DocumentProps<SnapshotViewState>) => {
+  // --- The bar's text follows the language; a snapshot taken before `snapshotInfo` keeps its text
+  const t = useT();
+  const texts = (vs?: SnapshotViewState) => (vs?.snapshotInfo ? patternSnapshotTexts(vs.snapshotInfo, t) : undefined);
+  return createElement(GenericFilePanel<SprFileContents, SnapshotViewState>, {
     document,
     contents,
     viewState,
@@ -31,12 +35,13 @@ const PatternSnapshotPanel = ({ document, contents, viewState }: DocumentProps<S
       <SpriteEditor
         context={context}
         readOnly={{
-          title: context.viewState?.snapshotTitle ?? document.name,
-          detail: context.viewState?.snapshotDetail
+          title: texts(context.viewState)?.title ?? context.viewState?.snapshotTitle ?? document.name,
+          detail: texts(context.viewState)?.detail ?? context.viewState?.snapshotDetail
         }}
       />
     )
   });
+};
 
 export const createPatternSnapshotPanel = ({ document, contents, viewState }: DocumentProps) => (
   <PatternSnapshotPanel document={document} contents={contents} viewState={viewState} />

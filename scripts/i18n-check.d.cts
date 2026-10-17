@@ -4,6 +4,7 @@ export function checkI18n(options?: {
   catalogsFile?: string;
   keysFile?: string;
   translationsFile?: string;
+  sourceFile?: string;
   update?: boolean;
 }): Promise<{
   errors: string[];

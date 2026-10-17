@@ -50,6 +50,8 @@ import {
   type SpriteSheetZoom
 } from "@renderer/controls/Next/sprites/SpritePatternSheet";
 import { abgrToCss, toAbgrTable } from "@renderer/controls/Next/sprites/spriteAbgr";
+import { t } from "@common/i18n/i18n";
+import { useT } from "@common/i18n/useT";
 import styles from "./NexBankSpritesView.module.scss";
 
 /*
@@ -161,16 +163,17 @@ export const NexBankSpritesToolbar = ({
   onLookChange,
   onGoToAddress
 }: ToolbarProps) => {
+  const t = useT();
   const size = patternSize(format);
   return (
     <>
       <PanelHeaderGroup>
-        <Text text="Palette" />
+        <Text text={t("panels.next.sprites.palette")} />
         <LabelSeparator />
-        <span className={spriteSegmentedClass} role="group" aria-label="Sprite palette">
+        <span className={spriteSegmentedClass} role="group" aria-label={t("panels.next.sprites.paletteAria")}>
           {([0, 1] as const).map((bank) => {
             const live = paletteInfo.source === "machine" && paletteInfo.liveBank === bank;
-            const name = bank === 0 ? "Primary" : "Secondary";
+            const name = bank === 0 ? t("panels.next.sprites.primary") : t("panels.next.sprites.secondary");
             return (
               <button
                 key={bank}
@@ -178,8 +181,9 @@ export const NexBankSpritesToolbar = ({
                 className={classnames(spriteSegmentClass, { [spriteSegmentLiveClass]: live })}
                 aria-pressed={look.palette === bank}
                 title={
-                  `${name} sprite palette (Reg $43, bit 3)` +
-                  (live ? "\nThe sprite engine is drawing with this palette now." : "")
+                  bank === 0
+                    ? t(live ? "panels.next.sprites.primaryLiveTitle" : "panels.next.sprites.primaryTitle")
+                    : t(live ? "panels.next.sprites.secondaryLiveTitle" : "panels.next.sprites.secondaryTitle")
                 }
                 onClick={() => onLookChange({ palette: bank })}
               >
@@ -191,19 +195,16 @@ export const NexBankSpritesToolbar = ({
         {paletteInfo.source === "default" && (
           <span
             className={styles.paletteFallback}
-            title={
-              "No ZX Spectrum Next machine is running, so the sprite palettes cannot be read.\n" +
-              "Both are shown as the palette the Next starts with, and look the same."
-            }
+            title={t("panels.next.sprites.defaultPaletteTitle")}
           >
-            Default palette
+            {t("panels.next.sprites.defaultPalette")}
           </span>
         )}
       </PanelHeaderGroup>
       <PanelHeaderGroup>
-        <Text text="Format" />
+        <Text text={t("panels.next.sprites.format")} />
         <LabelSeparator />
-        <span className={spriteSegmentedClass} role="group" aria-label="Sprite pattern format">
+        <span className={spriteSegmentedClass} role="group" aria-label={t("panels.next.sprites.formatAria")}>
           {(["8bit", "4bit"] as const).map((f) => (
             <button
               key={f}
@@ -212,18 +213,18 @@ export const NexBankSpritesToolbar = ({
               aria-pressed={format === f}
               title={
                 f === "8bit"
-                  ? "8-bit patterns: 256 bytes, one byte per pixel"
-                  : "4-bit patterns: 128 bytes, two pixels per byte (high nibble first)"
+                  ? t("panels.next.sprites.format8bitTitle")
+                  : t("panels.next.sprites.format4bitTitle")
               }
               onClick={() => onFormatChange(f)}
             >
-              {f === "8bit" ? "8-bit" : "4-bit"}
+              {f === "8bit" ? t("panels.next.banks.detail.format8bit") : t("panels.next.banks.detail.format4bit")}
             </button>
           ))}
         </span>
         {format === "4bit" && (
           <Dropdown
-            ariaLabel="4-bit palette offset"
+            ariaLabel={t("panels.next.sprites.paletteOffsetAria")}
             options={paletteOffsetOptions}
             initialValue={String(look.paletteOffset)}
             width={64}
@@ -232,26 +233,26 @@ export const NexBankSpritesToolbar = ({
         )}
       </PanelHeaderGroup>
       <PanelHeaderGroup>
-        <Text text="Offset" />
+        <Text text={t("panels.next.sprites.offset")} />
         <LabelSeparator />
         <OffsetControl offset={offset} step={size} onChange={onOffsetChange} />
       </PanelHeaderGroup>
       <PanelHeaderGroup>
-        <Text text="Zoom" />
+        <Text text={t("panels.next.sprites.zoom")} />
         <LabelSeparator />
         <SpriteZoomButtons zoom={look.zoom} onChange={(zoom) => onLookChange({ zoom })} />
       </PanelHeaderGroup>
       <PanelHeaderGroup>
         <LabeledSwitch
           value={look.showTransparent}
-          label="Checker"
-          title="Draw transparent pixels as a checkerboard rather than in the transparency colour"
+          label={t("panels.next.sprites.checker")}
+          title={t("panels.next.sprites.checkerTitle")}
           clicked={(value) => onLookChange({ showTransparent: value })}
         />
       </PanelHeaderGroup>
       <PanelHeaderGroup>
         <AddressInput
-          label="Go To"
+          label={t("panels.next.action.goTo")}
           clearOnEnter={true}
           decimalView={decimalView}
           onAddressSent={async (address) => onGoToAddress(address)}
@@ -276,6 +277,7 @@ const OffsetControl = ({
   step: number;
   onChange: (offset: number) => void;
 }) => {
+  const t = useT();
   const [text, setText] = useState(`$${toHexa4(offset)}`);
   useEffect(() => setText(`$${toHexa4(offset)}`), [offset]);
 
@@ -296,16 +298,16 @@ const OffsetControl = ({
 
   return (
     <span className={styles.offsetControl}>
-      <button type="button" className={styles.nudge} title="Back one pattern" onClick={() => nudge(-step)}>
+      <button type="button" className={styles.nudge} title={t("panels.next.sprites.backPattern")} onClick={() => nudge(-step)}>
         «
       </button>
-      <button type="button" className={styles.nudge} title="Back one byte" onClick={() => nudge(-1)}>
+      <button type="button" className={styles.nudge} title={t("panels.next.sprites.backByte")} onClick={() => nudge(-1)}>
         ‹
       </button>
       <input
         className={styles.offsetInput}
-        aria-label="Sprite start offset"
-        title="Bank offset of pattern #0 ($hex or decimal)"
+        aria-label={t("panels.next.sprites.offsetAria")}
+        title={t("panels.next.sprites.offsetTitle")}
         spellCheck={false}
         value={text}
         onChange={(event) => setText(event.target.value)}
@@ -316,13 +318,13 @@ const OffsetControl = ({
           event.stopPropagation();
         }}
       />
-      <button type="button" className={styles.nudge} title="Forward one byte" onClick={() => nudge(1)}>
+      <button type="button" className={styles.nudge} title={t("panels.next.sprites.forwardByte")} onClick={() => nudge(1)}>
         ›
       </button>
       <button
         type="button"
         className={styles.nudge}
-        title="Forward one pattern"
+        title={t("panels.next.sprites.forwardPattern")}
         onClick={() => nudge(step)}
       >
         »
@@ -368,6 +370,7 @@ export const NexBankSpritesView = ({
   onShowIn,
   onBankComment
 }: ViewProps) => {
+  const t = useT();
   const count = patternCount(format, offset, bytes.length);
   const size = patternSize(format);
   const active = count > 0 ? Math.min(look.active, count - 1) : 0;
@@ -398,14 +401,17 @@ export const NexBankSpritesView = ({
           index,
           id: `nex-sprite-${bank}-${index}`,
           pixels,
-          title: `Pattern #${index} · bank offset $${toHexa4(at)}${markedBytes ? " · marked as bytes" : ""}`,
+          title: t(markedBytes ? "panels.next.sprites.cellTitleMarked" : "panels.next.sprites.cellTitle", {
+            index,
+            offset: toHexa4(at)
+          }),
           number: `#${index}`,
           secondary: `$${toHexa4(at)}`,
           dimmed: isBlankPattern(pixels),
           fold: markedBytes
         };
       }),
-    [allPixels, bank, format, offset, regions, size]
+    [allPixels, bank, format, offset, regions, size, t]
   );
 
   const sheetRef = useRef<HTMLDivElement | null>(null);
@@ -490,14 +496,14 @@ export const NexBankSpritesView = ({
             className={styles.sheet}
             tabIndex={0}
             role="listbox"
-            aria-label={`Bank $${toHexa2(bank)} sprite patterns`}
+            aria-label={t("panels.next.sprites.sheetAria", { bank: toHexa2(bank) })}
             aria-multiselectable={true}
             aria-activedescendant={count ? `nex-sprite-${bank}-${active}` : undefined}
             data-testid="nex-sprites-sheet"
             onKeyDown={keyDown}
           >
             {count === 0 ? (
-              <div className={styles.empty}>No whole pattern fits after this offset.</div>
+              <div className={styles.empty}>{t("panels.next.sprites.noPattern")}</div>
             ) : (
               <SpritePatternSheet
                 cells={cells}
@@ -537,7 +543,7 @@ export const NexBankSpritesView = ({
       )}
       <ContextMenu state={menuState} onClickOutside={menuApi.conceal}>
         <ContextMenuItem
-          text={markedBytes ? "Marked as Bytes" : "Mark as Bytes"}
+          text={markedBytes ? t("panels.next.sprites.markedAsBytes") : t("panels.next.sprites.markAsBytes")}
           disabled={!canAnnotate || markedBytes}
           clicked={() => {
             menuApi.conceal();
@@ -545,7 +551,7 @@ export const NexBankSpritesView = ({
           }}
         />
         <ContextMenuItem
-          text="Mark as Disassembly"
+          text={t("panels.next.sprites.markAsDisassembly")}
           disabled={!canAnnotate || spanHasRegionType(regions, span.start, span.end, "disassemble")}
           clicked={() => {
             menuApi.conceal();
@@ -554,14 +560,14 @@ export const NexBankSpritesView = ({
         />
         <ContextMenuSeparator />
         <ContextMenuItem
-          text="Show in Memory"
+          text={t("panels.next.sprites.showInMemory")}
           clicked={() => {
             menuApi.conceal();
             onShowIn("memory", patternOffset(active, format, offset));
           }}
         />
         <ContextMenuItem
-          text="Show in Disassembly"
+          text={t("panels.next.sprites.showInDisassembly")}
           clicked={() => {
             menuApi.conceal();
             onShowIn("disassembly", patternOffset(active, format, offset));
@@ -622,17 +628,22 @@ const SpriteInspector = ({
   onMarkSpan,
   onShowIn
 }: InspectorProps) => {
+  const t = useT();
   const range = first !== last;
   const colours = patternColours(pixels);
   const hint = patternHint(pixels);
   const shownColours = colours.slice(0, 16);
+  const paletteName =
+    look.palette === 0 ? t("panels.next.sprites.primary") : t("panels.next.sprites.secondary");
 
   return (
-    <aside className={styles.inspector} aria-label="Pattern inspector">
+    <aside className={styles.inspector} aria-label={t("panels.next.sprites.inspectorAria")}>
       <ScrollViewer allowHorizontal={false} thinScrollBar={true}>
         <div className={styles.inspectorContent}>
           <div className={styles.inspectorTitle}>
-            {range ? `Patterns #${first}–#${last} (${last - first + 1})` : `Pattern #${activeIndex}`}
+            {range
+              ? t("panels.next.sprites.patternRange", { first, last, count: last - first + 1 })
+              : t("panels.next.sprites.pattern", { index: activeIndex })}
           </div>
           <span className={styles.bigFrame}>
             <SpriteCanvas
@@ -644,37 +655,41 @@ const SpriteInspector = ({
             />
           </span>
           <dl className={styles.facts}>
-            <dt>{range ? "Bank offsets" : "Bank offset"}</dt>
+            <dt>{range ? t("panels.next.sprites.bankOffsets") : t("panels.next.sprites.bankOffset")}</dt>
             <dd>{`$${toHexa4(span.start)}–$${toHexa4(span.end)}`}</dd>
-            <dt>Address</dt>
+            <dt>{t("panels.next.field.address")}</dt>
             <dd>{`$${toHexa4((addressBase + activeOffset) & 0xffff)}`}</dd>
-            <dt>Format</dt>
+            <dt>{t("panels.next.sprites.format")}</dt>
             <dd>
-              {format === "8bit" ? "8-bit" : `4-bit, palette +$${toHexa2(look.paletteOffset * 16)}`}
+              {format === "8bit"
+                ? t("panels.next.banks.detail.format8bit")
+                : t("panels.next.sprites.format4bitValue", { offset: toHexa2(look.paletteOffset * 16) })}
             </dd>
-            <dt>Palette</dt>
+            <dt>{t("panels.next.sprites.palette")}</dt>
             <dd>
-              {`${look.palette === 0 ? "Primary" : "Secondary"}${
-                paletteInfo.source === "default" ? " (default)" : ""
-              }`}
+              {paletteInfo.source === "default"
+                ? t("panels.next.sprites.paletteDefaultValue", { palette: paletteName })
+                : paletteName}
             </dd>
           </dl>
           <div className={styles.inspectorSection}>
-            <div className={styles.inspectorHeading}>Colours used</div>
+            <div className={styles.inspectorHeading}>{t("panels.next.sprites.coloursUsed")}</div>
             <div className={styles.swatches}>
               {shownColours.map(({ index, count }) =>
                 index === NEX_SPRITE_TRANSPARENT ? (
-                  <span key="t" className={styles.swatch} title={`Transparent · ${count} px`}>
+                  <span key="t" className={styles.swatch} title={t("panels.next.sprites.transparentTitle", { count })}>
                     <span className={classnames(styles.swatchColour, spriteCheckerClass)} />
-                    transp.
+                    {t("panels.next.sprites.transparentShort")}
                   </span>
                 ) : (
                   <span
                     key={index}
                     className={styles.swatch}
-                    title={`Index $${toHexa2(index)} · RGB333 ${getRgbPartsForPaletteCode(
-                      paletteInfo.palette[index]
-                    ).join("")} · ${count} px`}
+                    title={t("panels.next.sprites.swatchTitle", {
+                      index: toHexa2(index),
+                      rgb: getRgbPartsForPaletteCode(paletteInfo.palette[index]).join(""),
+                      count
+                    })}
                   >
                     <span
                       className={styles.swatchColour}
@@ -694,19 +709,19 @@ const SpriteInspector = ({
           </div>
           <div className={styles.actions}>
             <button type="button" className={styles.action} onClick={() => onShowIn("memory", activeOffset)}>
-              Show in Memory
+              {t("panels.next.sprites.showInMemory")}
             </button>
             <button
               type="button"
               className={styles.action}
               onClick={() => onShowIn("disassembly", activeOffset)}
             >
-              Show in Disassembly
+              {t("panels.next.sprites.showInDisassembly")}
             </button>
             {markedBytes ? (
               <>
                 <button type="button" className={styles.action} disabled>
-                  Marked as Bytes
+                  {t("panels.next.sprites.markedAsBytes")}
                 </button>
                 <button
                   type="button"
@@ -714,7 +729,7 @@ const SpriteInspector = ({
                   disabled={!canAnnotate}
                   onClick={() => onMarkSpan(span.start, span.end, "disassemble")}
                 >
-                  Mark as Disassembly
+                  {t("panels.next.sprites.markAsDisassembly")}
                 </button>
               </>
             ) : (
@@ -724,12 +739,12 @@ const SpriteInspector = ({
                 disabled={!canAnnotate}
                 title={
                   canAnnotate
-                    ? `Mark $${toHexa4(span.start)}–$${toHexa4(span.end)} as a bytes region`
-                    : "This bank has no annotation file to record regions in"
+                    ? t("panels.next.sprites.markTitle", { start: toHexa4(span.start), end: toHexa4(span.end) })
+                    : t("panels.next.sprites.noAnnotationFile")
                 }
                 onClick={() => onMarkSpan(span.start, span.end, "bytes")}
               >
-                Mark as Bytes
+                {t("panels.next.sprites.markAsBytes")}
               </button>
             )}
           </div>
@@ -743,13 +758,14 @@ function describeHint(hint: ReturnType<typeof patternHint>, transparencyIndex: n
   switch (hint.kind) {
     case "blank":
       return hint.transparent
-        ? `Blank: every pixel is transparent ($${toHexa2(transparencyIndex)}).`
-        : `Blank: every pixel is $${toHexa2(hint.index)}.`;
+        ? t("panels.next.sprites.hint.blankTransparent", { index: toHexa2(transparencyIndex) })
+        : t("panels.next.sprites.hint.blank", { index: toHexa2(hint.index) });
     case "noisy":
-      return `${hint.colours} colours with little structure: more likely code or packed data than a sprite. Check the format and offset.`;
+      return t("panels.next.sprites.hint.noisy", { colours: hint.colours });
     default:
-      return `${hint.colours} colour${hint.colours === 1 ? "" : "s"}, ${hint.transparent} transparent pixel${
-        hint.transparent === 1 ? "" : "s"
-      }.`;
+      return t("panels.next.sprites.hint.normal", {
+        colours: hint.colours,
+        transparent: hint.transparent
+      });
   }
 }

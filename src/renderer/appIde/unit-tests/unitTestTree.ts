@@ -1,5 +1,6 @@
 import type { UnitTestCase } from "@common/unit-tests/discovery";
 import type { UnitTestResult, UnitTestSummary } from "@common/unit-tests/unitTestTypes";
+import { t } from "@common/i18n/i18n";
 
 /*
  * The rows of the Unit Tests panel (`.plans/Z80_UNIT_TESTS_PLAN.md` D13): suites, each followed by
@@ -69,7 +70,7 @@ export function unitTestRows(
   const query = filter.trim().toLowerCase();
   const visible = query
     ? tests.filter(
-        (t) => t.id.toLowerCase().includes(query) || (results[t.id]?.message ?? "").toLowerCase().includes(query)
+        (tc) => tc.id.toLowerCase().includes(query) || (results[tc.id]?.message ?? "").toLowerCase().includes(query)
       )
     : tests;
 
@@ -83,7 +84,7 @@ export function unitTestRows(
 
   const rows: UnitTestRow[] = [];
   for (const [name, members] of suites) {
-    const statuses = members.map((t) => testStatus(t, results[t.id], run));
+    const statuses = members.map((tc) => testStatus(tc, results[tc.id], run));
     if (name) {
       rows.push({
         kind: "suite",
@@ -112,23 +113,31 @@ export function formatTstates(tstates: number): string {
 
 /** A result as text, for Copy result */
 export function resultText(test: UnitTestCase, result: UnitTestResult | undefined): string {
-  if (!result) return `${test.id}: not run`;
-  const head = `${test.id}: ${result.status}${result.errorKind ? ` (${result.errorKind})` : ""}, ${formatTstates(result.tstates)}`;
+  if (!result) return t("debug.unitTest.result.notRun", { id: test.id });
+  const head = result.errorKind
+    ? t("debug.unitTest.result.headWithKind", {
+        id: test.id,
+        status: result.status,
+        errorKind: result.errorKind,
+        tstates: formatTstates(result.tstates)
+      })
+    : t("debug.unitTest.result.head", { id: test.id, status: result.status, tstates: formatTstates(result.tstates) });
   const lines = [head];
   if (result.message) lines.push(result.message);
-  if (result.location) lines.push(`at ${result.location.file}:${result.location.line}`);
-  for (const line of result.log ?? []) lines.push(`log: ${line}`);
+  if (result.location) {
+    lines.push(t("debug.unitTest.result.at", { location: `${result.location.file}:${result.location.line}` }));
+  }
+  for (const line of result.log ?? []) lines.push(t("debug.unitTest.result.log", { line }));
   return lines.join("\n");
 }
 
 /** `5 tests: 3 passed, 1 failed, 1 error` */
 export function summaryText(summary: UnitTestSummary): string {
-  const parts = [`${summary.passed} passed`];
-  if (summary.failed) parts.push(`${summary.failed} failed`);
-  if (summary.errors) parts.push(`${summary.errors} error${summary.errors === 1 ? "" : "s"}`);
-  return (
-    `${summary.total} test${summary.total === 1 ? "" : "s"}: ${parts.join(", ")}` +
-    (summary.cancelled ? " (cancelled)" : "")
-  );
+  return t("debug.unitTest.summary", {
+    total: summary.total,
+    passed: summary.passed,
+    failed: summary.failed ?? 0,
+    errors: summary.errors ?? 0,
+    cancelled: summary.cancelled ? "yes" : "no"
+  });
 }
-

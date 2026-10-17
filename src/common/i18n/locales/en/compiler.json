@@ -1,0 +1,1041 @@
+{
+  "compiler.asm.Z0001": "Invalid token at the end of the line: {0}",
+  "@compiler.asm.Z0001": {
+    "context": "Z80 assembler message Z0001, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0002": "A line cannot start with this token: {0}",
+  "@compiler.asm.Z0002": {
+    "context": "Z80 assembler message Z0002, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0003": "A comma expected",
+  "@compiler.asm.Z0003": {
+    "context": "Z80 assembler message Z0003, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0004": "'(' expected",
+  "@compiler.asm.Z0004": {
+    "context": "Z80 assembler message Z0004, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0005": "')' expected",
+  "@compiler.asm.Z0005": {
+    "context": "Z80 assembler message Z0005, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0006": "''}}'' expected",
+  "@compiler.asm.Z0006": {
+    "context": "Z80 assembler message Z0006, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0007": "'=' expected",
+  "@compiler.asm.Z0007": {
+    "context": "Z80 assembler message Z0007, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0008": "'to' expected",
+  "@compiler.asm.Z0008": {
+    "context": "Z80 assembler message Z0008, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0101": "Register A expected",
+  "@compiler.asm.Z0101": {
+    "context": "Z80 assembler message Z0101, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0102": "Register B expected",
+  "@compiler.asm.Z0102": {
+    "context": "Z80 assembler message Z0102, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0103": "Register DE expected",
+  "@compiler.asm.Z0103": {
+    "context": "Z80 assembler message Z0103, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0104": "Register D expected",
+  "@compiler.asm.Z0104": {
+    "context": "Z80 assembler message Z0104, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0105": "Register E expected",
+  "@compiler.asm.Z0105": {
+    "context": "Z80 assembler message Z0105, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0106": "BC, DE, HL, or SP expected",
+  "@compiler.asm.Z0106": {
+    "context": "Z80 assembler message Z0106, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0107": "An identifier expected",
+  "@compiler.asm.Z0107": {
+    "context": "Z80 assembler message Z0107, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0108": "A string literal expected",
+  "@compiler.asm.Z0108": {
+    "context": "Z80 assembler message Z0108, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0109": "The lreg and hreg functions accept only a bc, de, hl, ix, or iy as their argument.",
+  "@compiler.asm.Z0109": {
+    "context": "Z80 assembler message Z0109, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0110": "A byte-emitting pragma expected",
+  "@compiler.asm.Z0110": {
+    "context": "Z80 assembler message Z0110, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0111": "An expression expected",
+  "@compiler.asm.Z0111": {
+    "context": "Z80 assembler message Z0111, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0112": "A mnemonic, a register, or a register indirection expression expected.",
+  "@compiler.asm.Z0112": {
+    "context": "Z80 assembler message Z0112, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0113": "Operand expected",
+  "@compiler.asm.Z0113": {
+    "context": "Z80 assembler message Z0113, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0114": "Cannot parse an integer literal",
+  "@compiler.asm.Z0114": {
+    "context": "Z80 assembler message Z0114, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0201": "Cannot find include file: ''{0}'",
+  "@compiler.asm.Z0201": {
+    "context": "Z80 assembler message Z0201, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0202": "Include file ''{0}' is included more than once into the same parent source file",
+  "@compiler.asm.Z0202": {
+    "context": "Z80 assembler message Z0202, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0203": "Include file ''{0}' causes circular file reference",
+  "@compiler.asm.Z0203": {
+    "context": "Z80 assembler message Z0203, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0204": "Error reading include file: ''{0}' ({1})",
+  "@compiler.asm.Z0204": {
+    "context": "Z80 assembler message Z0204, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim",
+      "1": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0205": "Missing #endif directive",
+  "@compiler.asm.Z0205": {
+    "context": "Z80 assembler message Z0205, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0206": "An #ifmod or #ifnmod directive can be used only with these identifiers: 'SPECTRUM48', 'SPECTRUM128', 'SPECTRUMP3', 'NEXT', 'ZX80', 'ZX81'.",
+  "@compiler.asm.Z0206": {
+    "context": "Z80 assembler message Z0206, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0207": "Unexpected #else directive",
+  "@compiler.asm.Z0207": {
+    "context": "Z80 assembler message Z0207, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0208": "Unexpected #endif directive",
+  "@compiler.asm.Z0208": {
+    "context": "Z80 assembler message Z0208, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0209": "The #line directive needs a positive integer line number.",
+  "@compiler.asm.Z0209": {
+    "context": "Z80 assembler message Z0209, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0302": "A .model pragma can be used only once.",
+  "@compiler.asm.Z0302": {
+    "context": "Z80 assembler message Z0302, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0303": "A .model pragma can have only these values: 'SPECTRUM48', 'SPECTRUM128', 'SPECTRUMP3', 'NEXT', 'ZX80', 'ZX81'.",
+  "@compiler.asm.Z0303": {
+    "context": "Z80 assembler message Z0303, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0304": "An .equ pragma must have a label",
+  "@compiler.asm.Z0304": {
+    "context": "Z80 assembler message Z0304, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0305": "The .bank pragma cannot have a label.",
+  "@compiler.asm.Z0305": {
+    "context": "Z80 assembler message Z0305, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0306": "The .bank pragma's value must be between 0 and 7 (Spectrum 128) or 0 and 111 (Next).",
+  "@compiler.asm.Z0306": {
+    "context": "Z80 assembler message Z0306, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0307": "The .bank pragma's offset value must be between 0 and #03fff.",
+  "@compiler.asm.Z0307": {
+    "context": "Z80 assembler message Z0307, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0308": "The .bank pragma cannot be used with the current model type.",
+  "@compiler.asm.Z0308": {
+    "context": "Z80 assembler message Z0308, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0309": "You have already used the .bank pragma for bank {0}.",
+  "@compiler.asm.Z0309": {
+    "context": "Z80 assembler message Z0309, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0310": "The {0} pragma can be used only in the global scope.",
+  "@compiler.asm.Z0310": {
+    "context": "Z80 assembler message Z0310, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0311": "A .var pragma must have a label",
+  "@compiler.asm.Z0311": {
+    "context": "Z80 assembler message Z0311, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0312": "A .var pragma cannot redefine a non-.var-created symbol",
+  "@compiler.asm.Z0312": {
+    "context": "Z80 assembler message Z0312, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0313": ".skip to {0} is invalid, as this address is less than the current address, {1}",
+  "@compiler.asm.Z0313": {
+    "context": "Z80 assembler message Z0313, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim",
+      "1": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0314": "Only one .xorg pragma can be used within a code segment.",
+  "@compiler.asm.Z0314": {
+    "context": "Z80 assembler message Z0314, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0315": ".defm/.defn pragma requires a string argument.",
+  "@compiler.asm.Z0315": {
+    "context": "Z80 assembler message Z0315, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0316": ".defh pragma requires a string argument.",
+  "@compiler.asm.Z0316": {
+    "context": "Z80 assembler message Z0316, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0317": ".defh pragma requires a string with even hexadecimal digits.",
+  "@compiler.asm.Z0317": {
+    "context": "Z80 assembler message Z0317, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0318": ".align pragma must be used with a parameter value between 1 and #4000; {0} is an invalid value.",
+  "@compiler.asm.Z0318": {
+    "context": "Z80 assembler message Z0318, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0319": ".includebin pragma requires a string argument.",
+  "@compiler.asm.Z0319": {
+    "context": "Z80 assembler message Z0319, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0320": "Invalid .includebin offset value (negative, or greater than the file length).",
+  "@compiler.asm.Z0320": {
+    "context": "Z80 assembler message Z0320, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0321": "Invalid .includebin length value (negative, or segment exceeds the file length).",
+  "@compiler.asm.Z0321": {
+    "context": "Z80 assembler message Z0321, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0322": "Cannot open file ''{0}' used in .includebin pragma ({1}).",
+  "@compiler.asm.Z0322": {
+    "context": "Z80 assembler message Z0322, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "The file name given to .includebin, shown verbatim",
+      "1": "The operating system's error text, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0323": "Emitting the .includebin segment would overflow the current segment.",
+  "@compiler.asm.Z0323": {
+    "context": "Z80 assembler message Z0323, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0324": ".defgx pragma requires a string argument.",
+  "@compiler.asm.Z0324": {
+    "context": "Z80 assembler message Z0324, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0325": "Cannot use an empty pattern with .defg/.defgx pragma.",
+  "@compiler.asm.Z0325": {
+    "context": "Z80 assembler message Z0325, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0326": "The .comparebin pragma expects a string as its first argument.",
+  "@compiler.asm.Z0326": {
+    "context": "Z80 assembler message Z0326, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0327": "Invalid .comparebin offset value (negative, or greater than the file length).",
+  "@compiler.asm.Z0327": {
+    "context": "Z80 assembler message Z0327, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0328": "Invalid .comparebin length value (negative, or segment exceeds the file length).",
+  "@compiler.asm.Z0328": {
+    "context": "Z80 assembler message Z0328, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0329": "Cannot open file ''{0}' used in .comparebin pragma ({1}).",
+  "@compiler.asm.Z0329": {
+    "context": "Z80 assembler message Z0329, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim",
+      "1": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0330": ".comparebin fails: {0}.",
+  "@compiler.asm.Z0330": {
+    "context": "Z80 assembler message Z0330, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0331": "The 'noexport' flag in .bank pragma can only be used with .model Next.",
+  "@compiler.asm.Z0331": {
+    "context": "Z80 assembler message Z0331, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0332": "The .page pragma cannot have a label.",
+  "@compiler.asm.Z0332": {
+    "context": "Z80 assembler message Z0332, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0333": "The .page pragma can only be used with .model Next.",
+  "@compiler.asm.Z0333": {
+    "context": "Z80 assembler message Z0333, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0334": "The .page pragma's page must be between 0 and 223.",
+  "@compiler.asm.Z0334": {
+    "context": "Z80 assembler message Z0334, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0335": "The .page pragma's address must be between 0 and #ffff.",
+  "@compiler.asm.Z0335": {
+    "context": "Z80 assembler message Z0335, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0336": "The .page pragma's page count must be 1 or 2.",
+  "@compiler.asm.Z0336": {
+    "context": "Z80 assembler message Z0336, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0337": "A two-page .page must start on an even page, at an address on an 8K boundary no higher than #c000.",
+  "@compiler.asm.Z0337": {
+    "context": "Z80 assembler message Z0337, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0340": "The .savenex pragma can only be used with .model Next.",
+  "@compiler.asm.Z0340": {
+    "context": "Z80 assembler message Z0340, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0341": "The .savenex file pragma requires a string filename.",
+  "@compiler.asm.Z0341": {
+    "context": "Z80 assembler message Z0341, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0342": "The .savenex ram pragma requires 768 or 1792 as the RAM size.",
+  "@compiler.asm.Z0342": {
+    "context": "Z80 assembler message Z0342, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0343": "The .savenex border pragma requires a color value between 0 and 7.",
+  "@compiler.asm.Z0343": {
+    "context": "Z80 assembler message Z0343, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0344": "The .savenex core pragma requires major (0-15), minor (0-15), and subminor (0-255) version numbers.",
+  "@compiler.asm.Z0344": {
+    "context": "Z80 assembler message Z0344, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0345": "The .savenex entrybank pragma requires a bank number between 0 and 111.",
+  "@compiler.asm.Z0345": {
+    "context": "Z80 assembler message Z0345, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0346": "Unknown .savenex subcommand: ''{0}'.",
+  "@compiler.asm.Z0346": {
+    "context": "Z80 assembler message Z0346, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0347": "The .savenex screen pragma requires a valid screen type (l2/layer2/ula/lores/hires/hicolor/l2_320/l2_640).",
+  "@compiler.asm.Z0347": {
+    "context": "Z80 assembler message Z0347, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0348": "The .savenex bar pragma requires 'on' or 'off' as the first parameter.",
+  "@compiler.asm.Z0348": {
+    "context": "Z80 assembler message Z0348, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0349": "The .savenex filehandle pragma requires 'close', 'bc', or an address value.",
+  "@compiler.asm.Z0349": {
+    "context": "Z80 assembler message Z0349, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0350": "The .savenex preserve pragma requires 'on' or 'off'.",
+  "@compiler.asm.Z0350": {
+    "context": "Z80 assembler message Z0350, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0351": "Invalid color value {0} for loading bar (must be 0-255).",
+  "@compiler.asm.Z0351": {
+    "context": "Z80 assembler message Z0351, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0352": "Invalid delay value {0} (must be 0-255).",
+  "@compiler.asm.Z0352": {
+    "context": "Z80 assembler message Z0352, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0360": "Unknown .dma sub-command: ''{0}'.",
+  "@compiler.asm.Z0360": {
+    "context": "Z80 assembler message Z0360, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0361": "Expected direction: 'a_to_b' or 'b_to_a'.",
+  "@compiler.asm.Z0361": {
+    "context": "Z80 assembler message Z0361, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0362": "Expected transfer type: 'transfer', 'search', or 'search_transfer'.",
+  "@compiler.asm.Z0362": {
+    "context": "Z80 assembler message Z0362, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0363": "Expected port type: 'memory' or 'io'.",
+  "@compiler.asm.Z0363": {
+    "context": "Z80 assembler message Z0363, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0364": "Expected address mode: 'increment', 'decrement', or 'fixed'.",
+  "@compiler.asm.Z0364": {
+    "context": "Z80 assembler message Z0364, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0365": "Expected cycle length: '2t', '3t', or '4t'.",
+  "@compiler.asm.Z0365": {
+    "context": "Z80 assembler message Z0365, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0366": "Expected operating mode: 'byte', 'continuous', or 'burst'.",
+  "@compiler.asm.Z0366": {
+    "context": "Z80 assembler message Z0366, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0367": "Prescaler requires cycle length to be specified.",
+  "@compiler.asm.Z0367": {
+    "context": "Z80 assembler message Z0367, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0368": "The .dma pragma requires the Next model (.model next).",
+  "@compiler.asm.Z0368": {
+    "context": "Z80 assembler message Z0368, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0371": "Unknown .copper sub-command: ''{0}'.",
+  "@compiler.asm.Z0371": {
+    "context": "Z80 assembler message Z0371, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0372": "The .copper pragma requires the Next model (.model next).",
+  "@compiler.asm.Z0372": {
+    "context": "Z80 assembler message Z0372, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0373": "Copper WAIT line {0} is out of range (0..511).",
+  "@compiler.asm.Z0373": {
+    "context": "Z80 assembler message Z0373, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0374": "Copper WAIT horizontal position {0} is out of range (0..63).",
+  "@compiler.asm.Z0374": {
+    "context": "Z80 assembler message Z0374, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0375": "Copper MOVE can write only NextRegs $00..$7F, not {0}.",
+  "@compiler.asm.Z0375": {
+    "context": "Z80 assembler message Z0375, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0376": "Copper MOVE value {0} does not fit in 8 bits.",
+  "@compiler.asm.Z0376": {
+    "context": "Z80 assembler message Z0376, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0377": "Copper block at {0} is {1} instructions long; the Copper holds at most 1024.",
+  "@compiler.asm.Z0377": {
+    "context": "Z80 assembler message Z0377, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim",
+      "1": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0370": "Unbanked code address ${0} exceeds typical bank 2 range ($8000-$bfff). This will create a gap in bank 2 when exporting to NEX. Consider using explicit .bank for separate bank layout.",
+  "@compiler.asm.Z0370": {
+    "context": "Z80 assembler message Z0370, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0378": "Code at ${0} is above $7FFF: on a ZX80/ZX81, instructions fetched from there execute as NOPs. Keep the code below $8000.",
+  "@compiler.asm.Z0378": {
+    "context": "Z80 assembler message Z0378, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0379": "The .defzx pragma can be used only with .model ZX80 or ZX81.",
+  "@compiler.asm.Z0379": {
+    "context": "Z80 assembler message Z0379, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0380": ".defzx pragma requires a string argument.",
+  "@compiler.asm.Z0380": {
+    "context": "Z80 assembler message Z0380, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0381": "The {0} character set has no ''{1}'.",
+  "@compiler.asm.Z0381": {
+    "context": "Z80 assembler message Z0381, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim",
+      "1": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0401": "Unexpected error when emitting code for mnemonic ''{0}'.",
+  "@compiler.asm.Z0401": {
+    "context": "Z80 assembler message Z0401, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0402": "The jr instructions cannot be used with the pe, po, p, or m conditions.",
+  "@compiler.asm.Z0402": {
+    "context": "Z80 assembler message Z0402, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0403": "Relative jump distance should be between -128 and 127. {0} is invalid.",
+  "@compiler.asm.Z0403": {
+    "context": "Z80 assembler message Z0403, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0404": "The rst instruction can be used only with #00, #08, #10, #18, #20, #28, #30, or #38 arguments. #{0} is invalid.",
+  "@compiler.asm.Z0404": {
+    "context": "Z80 assembler message Z0404, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0405": "Interrupt mode can only be 0, 1, or 2. ''{0}' is invalid.",
+  "@compiler.asm.Z0405": {
+    "context": "Z80 assembler message Z0405, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0406": "Output value can only be 0",
+  "@compiler.asm.Z0406": {
+    "context": "Z80 assembler message Z0406, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0407": "Bit index should be between 0 and 7. ''{0}' is invalid",
+  "@compiler.asm.Z0407": {
+    "context": "Z80 assembler message Z0407, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0408": "The first operand must be 'a' when using the two-argument form of the ALU operation.",
+  "@compiler.asm.Z0408": {
+    "context": "Z80 assembler message Z0408, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0409": "The first argument of an 8-bit ALU operation can only be 'a'.",
+  "@compiler.asm.Z0409": {
+    "context": "Z80 assembler message Z0409, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0410": "The current assembly address overflowed $FFFF",
+  "@compiler.asm.Z0410": {
+    "context": "Z80 assembler message Z0410, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0411": "The emitted code overflows the segment/bank.",
+  "@compiler.asm.Z0411": {
+    "context": "Z80 assembler message Z0411, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0412": "The pop instruction cannot be used with an expression operand",
+  "@compiler.asm.Z0412": {
+    "context": "Z80 assembler message Z0412, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0413": "The push and pop instructions can use only these registers: af, bc, de, hl, ix, and iy.",
+  "@compiler.asm.Z0413": {
+    "context": "Z80 assembler message Z0413, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0414": "To use this Spectrum Next-specific instruction, you need to set .model type to NEXT explicitly.",
+  "@compiler.asm.Z0414": {
+    "context": "Z80 assembler message Z0414, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0501": "Label ''{0}' is already defined",
+  "@compiler.asm.Z0501": {
+    "context": "Z80 assembler message Z0501, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0502": "Variable {0} is already declared, it cannot be used as a .for-loop variable again.",
+  "@compiler.asm.Z0502": {
+    "context": "Z80 assembler message Z0502, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0503": "The {0} section in .if/.ifused/.ifnused cannot have a label.",
+  "@compiler.asm.Z0503": {
+    "context": "Z80 assembler message Z0503, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0504": "You cannot define a local symbol with a temporary name ({0}).",
+  "@compiler.asm.Z0504": {
+    "context": "Z80 assembler message Z0504, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0505": "This local symbol is already declared: ({0}).",
+  "@compiler.asm.Z0505": {
+    "context": "Z80 assembler message Z0505, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0601": "A string value is used where a numeric value is expected.",
+  "@compiler.asm.Z0601": {
+    "context": "Z80 assembler message Z0601, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0602": "An integral value is expected.",
+  "@compiler.asm.Z0602": {
+    "context": "Z80 assembler message Z0602, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0603": "A numeric expression expected.",
+  "@compiler.asm.Z0603": {
+    "context": "Z80 assembler message Z0603, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0604": "Invalid operand",
+  "@compiler.asm.Z0604": {
+    "context": "Z80 assembler message Z0604, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0605": "Identifier ''{0}' is not defined yet.",
+  "@compiler.asm.Z0605": {
+    "context": "Z80 assembler message Z0605, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0606": "Expression evaluation error: {0}",
+  "@compiler.asm.Z0606": {
+    "context": "Z80 assembler message Z0606, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0701": "Missing end statement for {0}.",
+  "@compiler.asm.Z0701": {
+    "context": "Z80 assembler message Z0701, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0702": "Loop counter cannot be greater than 65535 (#FFFF).",
+  "@compiler.asm.Z0702": {
+    "context": "Z80 assembler message Z0702, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0703": "Too many errors detected while compiling a loop, further processing aborted.",
+  "@compiler.asm.Z0703": {
+    "context": "Z80 assembler message Z0703, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0704": "Orphan ''{0}' statement found without a corresponding ''{1}' statement.",
+  "@compiler.asm.Z0704": {
+    "context": "Z80 assembler message Z0704, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim",
+      "1": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0705": "$CNT cannot be used outside of loop constructs.",
+  "@compiler.asm.Z0705": {
+    "context": "Z80 assembler message Z0705, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0706": "The .step value in a .for-loop cannot be zero.",
+  "@compiler.asm.Z0706": {
+    "context": "Z80 assembler message Z0706, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0707": ".break cannot be used outside of loop constructs.",
+  "@compiler.asm.Z0707": {
+    "context": "Z80 assembler message Z0707, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0708": ".continue cannot be used outside of loop constructs.",
+  "@compiler.asm.Z0708": {
+    "context": "Z80 assembler message Z0708, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0709": ".if/.ifused/.ifnused cannot have an {0} section after a detected .else section.",
+  "@compiler.asm.Z0709": {
+    "context": "Z80 assembler message Z0709, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0801": "The .struct size of {0} is {1} byte(s). The invocation wants to emit {2} bytes.",
+  "@compiler.asm.Z0801": {
+    "context": "Z80 assembler message Z0801, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim",
+      "1": "A name, token, number or file name from the source code or the build, shown verbatim",
+      "2": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0802": "The .struct definition of {0} does not have a field named {1}.",
+  "@compiler.asm.Z0802": {
+    "context": "Z80 assembler message Z0802, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim",
+      "1": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0803": "Field assignment instruction cannot be used outside of .struct invocation.",
+  "@compiler.asm.Z0803": {
+    "context": "Z80 assembler message Z0803, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0804": "You cannot define a struct without a name.",
+  "@compiler.asm.Z0804": {
+    "context": "Z80 assembler message Z0804, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0805": "You cannot define a struct with a temporary name ({0}).",
+  "@compiler.asm.Z0805": {
+    "context": "Z80 assembler message Z0805, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0806": "Structure name ''{0}' has already been declared.",
+  "@compiler.asm.Z0806": {
+    "context": "Z80 assembler message Z0806, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0807": "The .ends statement cannot have a label.",
+  "@compiler.asm.Z0807": {
+    "context": "Z80 assembler message Z0807, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0808": "Structures can use only pragmas that emit bytes, words, strings, or reserve space.",
+  "@compiler.asm.Z0808": {
+    "context": "Z80 assembler message Z0808, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0809": "A .struct invocation ({0}) cannot have arguments.",
+  "@compiler.asm.Z0809": {
+    "context": "Z80 assembler message Z0809, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0810": "Duplicated field label {0} in a .struct definition.",
+  "@compiler.asm.Z0810": {
+    "context": "Z80 assembler message Z0810, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0901": "You cannot define a module without a name.",
+  "@compiler.asm.Z0901": {
+    "context": "Z80 assembler message Z0901, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0902": "You cannot define a module with a temporary name ({0}).",
+  "@compiler.asm.Z0902": {
+    "context": "Z80 assembler message Z0902, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0903": "Module with name ''{0}' already exists.",
+  "@compiler.asm.Z0903": {
+    "context": "Z80 assembler message Z0903, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z1001": "Duplicated .macro argument: {0}.",
+  "@compiler.asm.Z1001": {
+    "context": "Z80 assembler message Z1001, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z1002": "You cannot define a macro without a name.",
+  "@compiler.asm.Z1002": {
+    "context": "Z80 assembler message Z1002, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z1003": "You cannot define a macro with a temporary name ({0}).",
+  "@compiler.asm.Z1003": {
+    "context": "Z80 assembler message Z1003, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z1004": "Macro name ''{0}' has already been declared.",
+  "@compiler.asm.Z1004": {
+    "context": "Z80 assembler message Z1004, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z1005": "Macro definition cannot be nested into another macro definition.",
+  "@compiler.asm.Z1005": {
+    "context": "Z80 assembler message Z1005, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z1006": "Unknown macro argument (''{0}') is used in a macro definition.",
+  "@compiler.asm.Z1006": {
+    "context": "Z80 assembler message Z1006, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z1007": "Unknown macro: {0}.",
+  "@compiler.asm.Z1007": {
+    "context": "Z80 assembler message Z1007, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z1008": "The declaration of macro {0} contains {1} argument(s), but it is invoked with more parameters ({2}).",
+  "@compiler.asm.Z1008": {
+    "context": "Z80 assembler message Z1008, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim",
+      "1": "A name, token, number or file name from the source code or the build, shown verbatim",
+      "2": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z1009": "A macro-time function accepts only macro parameters.",
+  "@compiler.asm.Z1009": {
+    "context": "Z80 assembler message Z1009, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z1010": "Cannot pass a macro parameter template in a macro argument.",
+  "@compiler.asm.Z1010": {
+    "context": "Z80 assembler message Z1010, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z1011": "Macro parameter can only be used within a macro declaration.",
+  "@compiler.asm.Z1011": {
+    "context": "Z80 assembler message Z1011, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z1012": "Error in macro invocation",
+  "@compiler.asm.Z1012": {
+    "context": "Z80 assembler message Z1012, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z1013": "The ''{0}' label matches a structure name. If you want to invoke it, use parentheses like ''{0}(...)'.",
+  "@compiler.asm.Z1013": {
+    "context": "Z80 assembler message Z1013, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z1014": "The ''{0}' label matches a macro name. If you want to invoke it, use parentheses like ''{0}(...)'.",
+  "@compiler.asm.Z1014": {
+    "context": "Z80 assembler message Z1014, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z2000": "ERROR: {0}",
+  "@compiler.asm.Z2000": {
+    "context": "Z80 assembler message Z2000, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.M1001": "Unexpected error when emitting code for mnemonic ''{0}'.",
+  "@compiler.asm.M1001": {
+    "context": "6510 assembler message M1001, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.M1002": "The {0} instruction does not support immediate addressing.",
+  "@compiler.asm.M1002": {
+    "context": "6510 assembler message M1002, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.M1003": "The {0} instruction does not support indexing with register X.",
+  "@compiler.asm.M1003": {
+    "context": "6510 assembler message M1003, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.M1004": "The {0} instruction does not support indirect addressing",
+  "@compiler.asm.M1004": {
+    "context": "6510 assembler message M1004, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.M1005": "The {0} instruction cannot use A as its operand.",
+  "@compiler.asm.M1005": {
+    "context": "6510 assembler message M1005, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.M1006": "The {0} instruction does not support indexing with register Y.",
+  "@compiler.asm.M1006": {
+    "context": "6510 assembler message M1006, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.M1007": "The {0} instruction does not support indirect indexing without register X or Y.",
+  "@compiler.asm.M1007": {
+    "context": "6510 assembler message M1007, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.M1008": "The {0} instruction does not support zero page or absolute addressing.",
+  "@compiler.asm.M1008": {
+    "context": "6510 assembler message M1008, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.M1009": "Invalid operand for the {0} instruction.",
+  "@compiler.asm.M1009": {
+    "context": "6510 assembler message M1009, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.ksx.K001": "An expression expected",
+  "@compiler.ksx.K001": {
+    "context": "Klive script (KSX) parser message K001, shown when a script fails to parse, after its code. Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.ksx.K002": "Unexpected token: ''{0}'",
+  "@compiler.ksx.K002": {
+    "context": "Klive script (KSX) parser message K002, shown when a script fails to parse, after its code. Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.ksx.K003": "An identifier expected",
+  "@compiler.ksx.K003": {
+    "context": "Klive script (KSX) parser message K003, shown when a script fails to parse, after its code. Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.ksx.K004": "'''}'' expected",
+  "@compiler.ksx.K004": {
+    "context": "Klive script (KSX) parser message K004, shown when a script fails to parse, after its code. Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.ksx.K005": "']' expected",
+  "@compiler.ksx.K005": {
+    "context": "Klive script (KSX) parser message K005, shown when a script fails to parse, after its code. Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.ksx.K006": "')' expected",
+  "@compiler.ksx.K006": {
+    "context": "Klive script (KSX) parser message K006, shown when a script fails to parse, after its code. Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.ksx.K007": "Invalid object property name type",
+  "@compiler.ksx.K007": {
+    "context": "Klive script (KSX) parser message K007, shown when a script fails to parse, after its code. Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.ksx.K008": "':' expected",
+  "@compiler.ksx.K008": {
+    "context": "Klive script (KSX) parser message K008, shown when a script fails to parse, after its code. Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.ksx.K009": "'=' expected",
+  "@compiler.ksx.K009": {
+    "context": "Klive script (KSX) parser message K009, shown when a script fails to parse, after its code. Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.ksx.K010": "Invalid arrow expression argument list",
+  "@compiler.ksx.K010": {
+    "context": "Klive script (KSX) parser message K010, shown when a script fails to parse, after its code. Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.ksx.K011": "For loop variable must be initialized",
+  "@compiler.ksx.K011": {
+    "context": "Klive script (KSX) parser message K011, shown when a script fails to parse, after its code. Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.ksx.K012": "'''{'' expected",
+  "@compiler.ksx.K012": {
+    "context": "Klive script (KSX) parser message K012, shown when a script fails to parse, after its code. Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.ksx.K013": "'catch' or 'finally' expected",
+  "@compiler.ksx.K013": {
+    "context": "Klive script (KSX) parser message K013, shown when a script fails to parse, after its code. Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.ksx.K014": "'(' expected",
+  "@compiler.ksx.K014": {
+    "context": "Klive script (KSX) parser message K014, shown when a script fails to parse, after its code. Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.ksx.K015": "'case' or 'default' expected",
+  "@compiler.ksx.K015": {
+    "context": "Klive script (KSX) parser message K015, shown when a script fails to parse, after its code. Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.ksx.K016": "'default' case can be used only once within a switch statement",
+  "@compiler.ksx.K016": {
+    "context": "Klive script (KSX) parser message K016, shown when a script fails to parse, after its code. Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.ksx.K017": "Invalid sequence expression",
+  "@compiler.ksx.K017": {
+    "context": "Klive script (KSX) parser message K017, shown when a script fails to parse, after its code. Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.ksx.K018": "Invalid object literal",
+  "@compiler.ksx.K018": {
+    "context": "Klive script (KSX) parser message K018, shown when a script fails to parse, after its code. Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.ksx.K019": "'function' or 'const' expected",
+  "@compiler.ksx.K019": {
+    "context": "Klive script (KSX) parser message K019, shown when a script fails to parse, after its code. Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.ksx.K020": "'from' expected",
+  "@compiler.ksx.K020": {
+    "context": "Klive script (KSX) parser message K020, shown when a script fails to parse, after its code. Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.ksx.K021": "A string literal expected",
+  "@compiler.ksx.K021": {
+    "context": "Klive script (KSX) parser message K021, shown when a script fails to parse, after its code. Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.ksx.K022": "Identifier ''{0}' is already imported",
+  "@compiler.ksx.K022": {
+    "context": "Klive script (KSX) parser message K022, shown when a script fails to parse, after its code. Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.ksx.K023": "Function ''{0}' is already defined in the module",
+  "@compiler.ksx.K023": {
+    "context": "Klive script (KSX) parser message K023, shown when a script fails to parse, after its code. Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.ksx.K024": "''{0}' is already exported from the module",
+  "@compiler.ksx.K024": {
+    "context": "Klive script (KSX) parser message K024, shown when a script fails to parse, after its code. Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.ksx.K025": "Cannot find module ''{0}'",
+  "@compiler.ksx.K025": {
+    "context": "Klive script (KSX) parser message K025, shown when a script fails to parse, after its code. Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.ksx.K026": "Module ''{0}' does not export ''{1}'",
+  "@compiler.ksx.K026": {
+    "context": "Klive script (KSX) parser message K026, shown when a script fails to parse, after its code. Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim",
+      "1": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.ksx.K027": "Cannot find package ''{0}'",
+  "@compiler.ksx.K027": {
+    "context": "Klive script (KSX) parser message K027, shown when a script fails to parse, after its code. Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.unknownError": "Unknown error",
+  "@compiler.asm.unknownError": {
+    "context": "Fallback assembler message for an error code that has no text (should not happen)."
+  },
+  "compiler.asm.unknownWarning": "Unknown warning",
+  "@compiler.asm.unknownWarning": {
+    "context": "Fallback assembler message for a warning code that has no text (should not happen)."
+  }
+}

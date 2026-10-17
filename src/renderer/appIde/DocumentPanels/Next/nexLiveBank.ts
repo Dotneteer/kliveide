@@ -1,3 +1,4 @@
+import { t } from "@common/i18n/i18n";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 
 import { ANNOTATION_BANK_SIZE } from "@renderer/appIde/annotations/programAnnotations";
@@ -142,12 +143,11 @@ export function formatBankDiff(
   const total = diff.mask.length;
   const percent = Math.round((diff.changed / total) * 100);
   return {
-    text: `${diff.changed} changed`,
+    text: t("panels.next.liveBank.changed", { count: diff.changed }),
     title:
-      `${diff.changed} of ${total} bytes in this bank differ from the file ` +
-      `(${percent === 0 ? "<1" : percent}%). ` +
-      "The program has written to the bank since it was loaded — or the loader decompressed into " +
-      "it. Changed bytes are marked in the memory dump."
+      percent === 0
+        ? t("panels.next.liveBank.changedTitleUnderOne", { count: diff.changed, total })
+        : t("panels.next.liveBank.changedTitle", { count: diff.changed, total, percent })
   };
 }
 

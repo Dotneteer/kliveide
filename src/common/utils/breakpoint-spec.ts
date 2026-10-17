@@ -1,5 +1,6 @@
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 
+import { t } from "@common/i18n/i18n";
 import { getBreakpointAddressSpec } from "@common/utils/breakpoints";
 import { formatHitSpec } from "@common/utils/breakpoint-filters";
 import { spriteAttrMaskOf } from "@common/utils/breakpoint-scope";
@@ -50,12 +51,12 @@ export function breakpointCommandSpec(
 /** What `bp-set` cannot say about a breakpoint: disabled, the live count, a condition's state. */
 export function breakpointStatusText(bp: BreakpointInfo): string {
   const parts: string[] = [];
-  if (bp.disabled) parts.push("<disabled>");
-  if (bp.runTo) parts.push("<run-to target>");
-  if (bp.currentHits !== undefined) parts.push(`(hits: ${bp.currentHits})`);
-  if (bp.conditionInactive) parts.push(`<inactive: ${bp.conditionInactive}>`);
-  if (bp.conditionError) parts.push(`<condition error: ${bp.conditionError}>`);
-  if (bp.logError) parts.push(`<log template error: ${bp.logError}>`);
+  if (bp.disabled) parts.push(t("debug.bpStatus.disabled"));
+  if (bp.runTo) parts.push(t("debug.bpStatus.runTo"));
+  if (bp.currentHits !== undefined) parts.push(t("debug.bpStatus.hits", { count: bp.currentHits }));
+  if (bp.conditionInactive) parts.push(t("debug.bpStatus.inactive", { label: bp.conditionInactive }));
+  if (bp.conditionError) parts.push(t("debug.bpStatus.conditionError", { error: bp.conditionError }));
+  if (bp.logError) parts.push(t("debug.bpStatus.logError", { error: bp.logError }));
   return parts.join(" ");
 }
 

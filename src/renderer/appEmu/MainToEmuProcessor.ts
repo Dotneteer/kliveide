@@ -117,6 +117,7 @@ import type {
   SpectrumSnapshotLoadResult
 } from "@common/spectrum/snapshot/spectrumSnapshotLoadTypes";
 import type { Z88SnapshotLoadMode, Z88SnapshotLoadResult } from "@common/z88/z88SnapshotLoadTypes";
+import { t } from "@common/i18n/i18n";
 
 const borderColors = ULA_BORDER_COLOR_NAMES;
 
@@ -193,11 +194,11 @@ class EmuMessageProcessor {
       case "pause":
         return controller.pause();
       case "stop":
-        return this.unlessKeepingRecording("Stop", () => controller.stop());
+        return this.unlessKeepingRecording("stop", () => controller.stop());
       case "reset":
-        return this.unlessKeepingRecording("Reset", () => controller.cpuReset());
+        return this.unlessKeepingRecording("reset", () => controller.cpuReset());
       case "restart":
-        return this.unlessKeepingRecording("Restart", () => controller.restart());
+        return this.unlessKeepingRecording("restart", () => controller.restart());
       case "debug":
         return controller.startDebug();
       case "stepInto":
@@ -240,7 +241,7 @@ class EmuMessageProcessor {
     } catch (err) {
       return `${(err as Error).message}`;
     }
-    if (!dockBankOf(image)) return "The file holds no DOCK bank";
+    if (!dockBankOf(image)) return t("emu.media.dock.noBank");
     mediaStore.addMedia({ id: MEDIA_DOCK, mediaFile: file, mediaContents: image });
     await this.restartWithDock(image);
     return undefined;
@@ -270,7 +271,7 @@ class EmuMessageProcessor {
   ) {
     // --- New media act on the present: a muted journal in the past would drop them (REVERSE_DEBUGGING_PLAN D12)
     this.machineService.getMachineController()?.clearHistoryCursor?.();
-    await this.machineService.getMachineController()?.interruptRzx?.("the tape was changed");
+    await this.machineService.getMachineController()?.interruptRzx?.("tapeChanged");
     // --- A ZX80/ZX81 program file (.p, .81, .o, .80) is its own tape: the machine plays its bytes
     if (file && isZx8081ProgramFileName(file)) {
       const program = parseZxProgramFile(contents, file);
@@ -278,8 +279,8 @@ class EmuMessageProcessor {
         if (!suppressError) {
           await createMainApi(this.mainMessenger).displayMessageBox(
             "error",
-            "Tape file error",
-            `${file} is not a ZX80/ZX81 program file`
+            t("emu.media.tape.errorTitle"),
+            t("emu.media.tape.notZx8081Program", { file })
           );
         }
         return;
@@ -287,7 +288,11 @@ class EmuMessageProcessor {
       mediaStore.addMedia({ id: MEDIA_TAPE, mediaFile: file, mediaContents: program });
       this.machineService.getMachineController()?.machine?.setMachineProperty(MEDIA_TAPE, program);
       if (confirm) {
-        await createMainApi(this.mainMessenger).displayMessageBox("info", "Tape file set", `Tape file ${file} successfully set.`);
+        await createMainApi(this.mainMessenger).displayMessageBox(
+          "info",
+          t("emu.media.tape.setTitle"),
+          t("emu.media.tape.setMessage", { file })
+        );
       }
       return;
     }
@@ -298,8 +303,8 @@ class EmuMessageProcessor {
       if (!suppressError) {
         await createMainApi(this.mainMessenger).displayMessageBox(
           "error",
-          "Tape file error",
-          `Error while processing tape file ${file} (${tape.error})`
+          t("emu.media.tape.errorTitle"),
+          t("emu.media.tape.errorMessage", { file, error: tape.error })
         );
       }
       return;
@@ -325,8 +330,8 @@ class EmuMessageProcessor {
     if (confirm) {
       await createMainApi(this.mainMessenger).displayMessageBox(
         "info",
-        "Tape file set",
-        `Tape file ${file} successfully set.`
+        t("emu.media.tape.setTitle"),
+        t("emu.media.tape.setMessage", { file })
       );
     }
   }
@@ -425,9 +430,9 @@ class EmuMessageProcessor {
       options,
       (stop, videoFile) => {
         const controller = this.machineService.getMachineController();
-        const how = stop?.kind === "desync" ? "stopped at the desync" : stop?.kind === "ended" ? "finished" : "stopped";
+        const how = stop?.kind === "desync" ? "desync" : stop?.kind === "ended" ? "ended" : "stopped";
         void controller?.sendOutput(
-          `RZX video ${how}${videoFile ? `: ${videoFile}` : ""}`,
+          videoFile ? t("emu.rzx.video.doneWithFile", { how, file: videoFile }) : t("emu.rzx.video.done", { how }),
           stop?.kind === "ended" ? "green" : "yellow"
         );
       }
@@ -538,14 +543,23 @@ class EmuMessageProcessor {
    * Runs a command that ends the timeline - unless the timeline came from a debug recording, was run
    * on past its end, and the user keeps it (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` Q7, T12)
    */
-  private async unlessKeepingRecording(what: string, command: () => Promise<unknown>): Promise<unknown> {
+  private async unlessKeepingRecording(
+    action: "stop" | "reset" | "restart",
+    command: () => Promise<unknown>
+  ): Promise<unknown> {
     const timeline = this.machineService.getMachineController()?.timeline;
     if (timeline?.hasUnsavedExtension) {
+      const confirmLabel =
+        action === "stop"
+          ? t("emu.debugRecording.discard.stop")
+          : action === "reset"
+            ? t("emu.debugRecording.discard.reset")
+            : t("emu.debugRecording.discard.restart");
       const discard = await createMainApi(this.mainMessenger).confirmAction(
-        "Debug Recording",
-        `${what} discards what ran after the end of ${timeline.recording!.name}.`,
-        "The recording was continued past its end, and that part is not in the file. Cancel, then use Debug › Save Debug Recording... to keep it.",
-        what
+        t("emu.debugRecording.discard.title"),
+        t("emu.debugRecording.discard.message", { action, recording: timeline.recording!.name }),
+        t("emu.debugRecording.discard.detail"),
+        confirmLabel
       );
       if (!discard) return undefined;
     }
@@ -626,7 +640,7 @@ class EmuMessageProcessor {
     const controller = this.machineService.getMachineController();
     // --- New media act on the present (REVERSE_DEBUGGING_PLAN D12)
     controller?.clearHistoryCursor?.();
-    await controller?.interruptRzx?.("a disk was changed");
+    await controller?.interruptRzx?.("diskChanged");
     const mediaId = diskIndex ? MEDIA_DISK_B : MEDIA_DISK_A;
     // --- `diskIndex` is a number, so indexing it always yielded `undefined` and every message
     // --- claimed drive A regardless of which drive was actually used.
@@ -650,18 +664,18 @@ class EmuMessageProcessor {
       if (confirm) {
         await createMainApi(this.mainMessenger).displayMessageBox(
           "info",
-          contents ? "Disk inserted" : "Disk ejected",
+          contents ? t("emu.media.disk.insertedTitle") : t("emu.media.disk.ejectedTitle"),
           contents
-            ? `Disk file ${file} successfully inserted into drive ${drive}.`
-            : `Disk successfully ejected from drive ${drive}`
+            ? t("emu.media.disk.insertedMessage", { file, drive })
+            : t("emu.media.disk.ejectedMessage", { drive })
         );
       }
     } catch (err) {
       if (!suppressError) {
         await createMainApi(this.mainMessenger).displayMessageBox(
           "error",
-          "Disk file error",
-          `Error while processing disk file ${file} (${err})`
+          t("emu.media.disk.errorTitle"),
+          t("emu.media.disk.errorMessage", { file, error: String(err) })
         );
       }
     }
@@ -988,7 +1002,7 @@ class EmuMessageProcessor {
     if (!controller) {
       noController();
     }
-    void controller.interruptRzx?.("code was injected");
+    void controller.interruptRzx?.("codeInjected");
     // --- Injection waits on wall time, so where it continues is not reproducible (T10)
     controller.endTimeline?.();
     controller.machine.injectCodeToRun(codeToInject);
@@ -1654,7 +1668,7 @@ class EmuMessageProcessor {
     }
     // --- An edit acts on the present: no register edits in the past (LITE_STEP_BACK_PLAN D5)
     controller.clearHistoryCursor?.();
-    await controller.interruptRzx?.(`register ${register.toUpperCase()} was edited`);
+    await controller.interruptRzx?.("registerEdited", register);
     const machine = controller.machine as any;
     switch (register.toUpperCase()) {
       case "A":
@@ -1759,7 +1773,7 @@ class EmuMessageProcessor {
       noController();
     }
     controller.clearHistoryCursor?.();
-    await controller.interruptRzx?.("memory was edited");
+    await controller.interruptRzx?.("memoryEdited");
     const machine = controller.machine;
     switch (size) {
       case 8:
@@ -1816,7 +1830,7 @@ class EmuMessageProcessor {
     if (!(bytes instanceof Uint8Array)) throw new Error("The bytes must be a Uint8Array.");
     // --- An edit acts on the present (LITE_STEP_BACK_PLAN D5)
     controller.clearHistoryCursor?.();
-    await controller.interruptRzx?.("memory was edited");
+    await controller.interruptRzx?.("memoryEdited");
     const machine = controller.machine;
     if (partition === undefined) {
       for (let i = 0; i < bytes.length; i++) {
@@ -1826,7 +1840,7 @@ class EmuMessageProcessor {
     }
     const memory = (machine as IZxSpectrumMachine).getMemoryPartition(partition);
     if (!memory || address < 0 || address + bytes.length > memory.length) {
-      throw new Error(`The write does not fit partition ${partition} (${memory?.length ?? 0} bytes).`);
+      throw new Error(t("emu.memory.writeDoesNotFit", { partition, size: memory?.length ?? 0 }));
     }
     // --- A partition that is paged in is written through the CPU's view: some cores (the 128K's)
     // --- keep a flat copy of the paged-in memory that the CPU reads, which a write into the
@@ -1839,7 +1853,7 @@ class EmuMessageProcessor {
         const base = (page * 0x2000) % memory.length;
         if (offset >= base && offset < base + 0x2000) {
           if (romFlags[page]) {
-            throw new Error("A ROM partition cannot be written while it is paged in.");
+            throw new Error(t("emu.memory.romPagedIn"));
           }
           return page * 0x2000 + (offset - base);
         }

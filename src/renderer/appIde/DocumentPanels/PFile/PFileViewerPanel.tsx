@@ -33,6 +33,8 @@ import { analyzeProgramFile } from "./oFileView";
 import { pFileRegionDumpId, pFileRegionTitle, pFileRegionViewDocumentId } from "./pFileDocument";
 import { Zx81ScreenView } from "./Zx81ScreenView";
 import styles from "../Tape/TapeViewerPanel.module.scss";
+import { uiLocale } from "@common/i18n/i18n";
+import { useT } from "@common/i18n/useT";
 
 /*
  * The ZX81 `.P` and ZX80 `.O` viewer, built as the `.tap`/`.tzx` viewer is (`../Tape/TapeViewerPanel.tsx`): a
@@ -54,8 +56,6 @@ type PFileViewState = {
 type ViewContext = GenericFileContext<PFileAnalysis, PFileViewState>;
 
 type RegionItem = BankBrowserItem<PFileView> & { region: PFileRegion };
-
-const FILTERS = [{ value: "all", text: "All" }];
 
 /** How many variables the details list before "and n more" */
 const VARIABLES_SHOWN = 40;
@@ -97,11 +97,13 @@ export const createPFileViewerPanel = ({ document, contents, viewState }: Docume
   />
 );
 
+/* --- Byte counts beside addresses stay invariant; counts in sentences go through the messages */
 const fmt = (value: number) => value.toLocaleString("en-US");
 const hex = (value: number) => `$${toHexa4(value)}`;
 
 /** A module-level component, so it may hold hooks (see `GenericFilePanel`'s renderer note) */
 const PFileView = ({ ctx, fullPath }: { ctx: ViewContext; fullPath: string }) => {
+  const t = useT();
   const documentHubService = useDocumentHubService();
   const { navigationHistoryService } = useAppServices();
   const projectFolder = useSelector((s) => s.project?.folderPath);
@@ -160,20 +162,19 @@ const PFileView = ({ ctx, fullPath }: { ctx: ViewContext; fullPath: string }) =>
       <Summary analysis={analysis} />
       {!summary.layoutValid && (
         <div className={styles.banner} role="note">
-          This file&apos;s system variables do not describe its parts (1K programs often keep code in
-          them), so everything after them is shown as one part.
+          {t("panels.pfile.layoutBanner")}
         </div>
       )}
       <BankBrowser<RegionItem, PFileView>
         visibleItems={items}
         selectedKey={selectedKey}
-        heading="Parts"
-        summary={`${fmt(summary.size)} bytes from ${hex(summary.start)}`}
-        filters={FILTERS}
+        heading={t("panels.pfile.heading")}
+        summary={t("panels.pfile.listSummary", { count: summary.size, address: hex(summary.start) })}
+        filters={[{ value: "all", text: t("panels.helpers.filter.all") }]}
         filter={vs.regionFilter ?? "all"}
         views={["memory", "disassembly", "basic", "screen"]}
         viewNames={P_FILE_VIEW_NAMES}
-        itemNoun="Part"
+        itemKind="part"
         layout="sideBySide"
         formatNumber={(item) => hex(item.region.start)}
         viewsFor={(item) => item.region.views}
@@ -189,7 +190,7 @@ const PFileView = ({ ctx, fullPath }: { ctx: ViewContext; fullPath: string }) =>
             onShowListing={() => void popOut(item.region, "basic")}
           />
         )}
-        hint="Pop out a part from its row's icon, by double-clicking the row, or with Enter."
+        hint={t("panels.helpers.popOutHint.part")}
       />
     </div>
   );
@@ -203,30 +204,48 @@ const Fact = ({ label, value, title }: { label: string; value: string; title?: s
 );
 
 const Summary = ({ analysis }: { analysis: PFileAnalysis }) => {
+  const t = useT();
   const { summary } = analysis;
   const zx80 = analysis.machine === "zx80";
+  const machine = zx80 ? "ZX80" : "ZX81";
+  const lines = summary.lineCount.toLocaleString(uiLocale());
   return (
-    <div className={styles.summary} aria-label="Program summary">
-      <Fact label="Format" value={zx80 ? "ZX80 program (.O)" : "ZX81 program (.P)"} />
-      <Fact label="Size" value={`${fmt(summary.size)} bytes`} />
+    <div className={styles.summary} aria-label={t("panels.pfile.summaryLabel")}>
       <Fact
-        label="Needs"
-        value={`${summary.ramKb}K RAM`}
-        title={`The file ends at ${hex(summary.start + summary.size)}; a 1K ${zx80 ? "ZX80" : "ZX81"}'s RAM ends at $4400`}
+        label={t("panels.tape.fact.format")}
+        value={t("panels.pfile.format", { machine, extension: zx80 ? ".O" : ".P" })}
+      />
+      <Fact label={t("panels.tape.fact.size")} value={t("panels.helpers.bytes", { count: summary.size })} />
+      <Fact
+        label={t("panels.pfile.fact.needs")}
+        value={t("panels.pfile.fact.ram", { kb: summary.ramKb })}
+        title={t("panels.pfile.fact.needsTitle", { end: hex(summary.start + summary.size), machine })}
       />
       {summary.layoutValid && (
-        <Fact label="Lines" value={`${fmt(summary.lineCount)}${summary.programCorrupted ? " (damaged)" : ""}`} />
+        <Fact
+          label={t("panels.pfile.fact.lines")}
+          value={summary.programCorrupted ? t("panels.pfile.fact.linesDamaged", { lines }) : lines}
+        />
       )}
       {zx80 ? (
-        <Fact label="Runs from" value="Needs RUN" title="The ZX80's LOAD stops with its report" />
+        <Fact
+          label={t("panels.pfile.fact.runsFrom")}
+          value={t("panels.pfile.fact.needsRun")}
+          title={t("panels.pfile.fact.zx80LoadTitle")}
+        />
       ) : (
         <>
           <Fact
-            label="Runs from"
-            value={summary.autorunLine !== undefined ? `LINE ${summary.autorunLine}` : "Needs RUN"}
-            title="A program saved by a program line carries on from the line after its SAVE"
+            label={t("panels.pfile.fact.runsFrom")}
+            value={summary.autorunLine !== undefined ? `LINE ${summary.autorunLine}` : t("panels.pfile.fact.needsRun")}
+            title={t("panels.pfile.fact.runsFromTitle")}
           />
-          <Fact label="Mode" value={summary.slowMode ? "SLOW" : "FAST"} title="The mode the program loads in (CDFLAG)" />
+          {/* --- SLOW and FAST are the BASIC keywords: not translated */}
+          <Fact
+            label={t("panels.pfile.fact.mode")}
+            value={summary.slowMode ? "SLOW" : "FAST"}
+            title={t("panels.pfile.fact.modeTitle")}
+          />
         </>
       )}
     </div>
@@ -235,8 +254,9 @@ const Summary = ({ analysis }: { analysis: PFileAnalysis }) => {
 
 /** The row: the part's chip, a short text, its size on the right */
 const Row = ({ region, analysis }: { region: PFileRegion; analysis: PFileAnalysis }) => {
+  const t = useT();
   const notVariables = region.kind === "variables" && analysis.summary.variablesCorrupted;
-  const text = notVariables ? "Data, not BASIC variables" : regionText(region, analysis);
+  const text = notVariables ? t("panels.pfile.row.notVariables") : regionText(region, analysis);
   return (
     <>
       <BankChip alt={region.kind === "sysvars"}>{P_FILE_REGION_CHIPS[region.kind]}</BankChip>
@@ -253,37 +273,39 @@ type DetailsProps = {
 };
 
 const Details = ({ region, analysis, onShowListing }: DetailsProps) => {
+  const t = useT();
   const { summary } = analysis;
   return (
     <>
       <BankFacts>
-        <dt>Part</dt>
+        <dt>{t("panels.pfile.fact.part")}</dt>
         <dd>{P_FILE_REGION_NAMES[region.kind]}</dd>
-        <dt>Address</dt>
+        <dt>{t("panels.pfile.fact.address")}</dt>
         <dd>{region.end > region.start ? `${hex(region.start)}–${hex(region.end - 1)}` : hex(region.start)}</dd>
-        <dt>Length</dt>
-        <dd>{`${fmt(region.bytes.length)} bytes`}</dd>
+        <dt>{t("panels.helpers.fact.length")}</dt>
+        <dd>{t("panels.helpers.bytes", { count: region.bytes.length })}</dd>
       </BankFacts>
       {region.kind === "sysvars" &&
         (analysis.machine === "zx80" ? <Zx80SysVarsDetails analysis={analysis} /> : <SysVarsDetails analysis={analysis} />)}
       {region.kind === "program" && (
-        <BankDetailsSection title="BASIC">
+        <BankDetailsSection title={t("panels.helpers.view.basic")}>
           <BankFacts>
-            <dt>Listing</dt>
+            <dt>{t("panels.helpers.fact.listing")}</dt>
             <dd data-testid="p-file-basic-summary">
-              {`${fmt(summary.lineCount)} line${summary.lineCount === 1 ? "" : "s"}`}
-              {summary.programCorrupted ? " (stops early: the program is damaged)" : ""}
+              {summary.programCorrupted
+                ? t("panels.helpers.lineCountDamaged", { count: summary.lineCount })
+                : t("panels.helpers.lineCount", { count: summary.lineCount })}
             </dd>
-            <dt>Runs from</dt>
+            <dt>{t("panels.pfile.fact.runsFrom")}</dt>
             <dd>
               {summary.autorunLine !== undefined
-                ? `LINE ${summary.autorunLine}, after LOAD`
-                : "Stops after LOAD; type RUN"}
+                ? t("panels.pfile.runsFromLine", { line: summary.autorunLine })
+                : t("panels.pfile.stopsAfterLoad")}
             </dd>
           </BankFacts>
           {summary.lineCount > 0 && (
             <button type="button" className={styles.more} onClick={onShowListing}>
-              Pop out the listing
+              {t("panels.helpers.popOutListing")}
             </button>
           )}
         </BankDetailsSection>
@@ -291,23 +313,21 @@ const Details = ({ region, analysis, onShowListing }: DetailsProps) => {
       {region.kind === "display" && <DisplayDetails analysis={analysis} region={region} />}
       {region.kind === "variables" && <VariablesDetails analysis={analysis} />}
       {region.kind === "data" && (
-        <BankDetailsSection title="Program and data">
+        <BankDetailsSection title={P_FILE_REGION_NAMES.data}>
           <p className={styles.wrap}>
             {analysis.machine === "zx80"
-              ? `VARS (${hex(summary.vars)}) and E_LINE (${hex(
-                  summary.eLine
-                )}) do not mark out a program and variables in this file. The bytes are its own: open them in Memory or Disassembly.`
-              : `D_FILE (${hex(summary.dFile)}), VARS (${hex(summary.vars)}) and E_LINE (${hex(
-                  summary.eLine
-                )}) do not mark out a program, a display file and variables in this file. The bytes are its own: open them in Memory or Disassembly.`}
+              ? t("panels.pfile.dataZx80", { vars: hex(summary.vars), eLine: hex(summary.eLine) })
+              : t("panels.pfile.dataZx81", {
+                  dFile: hex(summary.dFile),
+                  vars: hex(summary.vars),
+                  eLine: hex(summary.eLine)
+                })}
           </p>
         </BankDetailsSection>
       )}
       {region.kind === "extra" && (
-        <BankDetailsSection title="After E_LINE">
-          <p className={styles.wrap}>
-            The ROM&apos;s LOAD stops at E_LINE, so these bytes never reach the machine.
-          </p>
+        <BankDetailsSection title={P_FILE_REGION_NAMES.extra}>
+          <p className={styles.wrap}>{t("panels.pfile.extra")}</p>
         </BankDetailsSection>
       )}
     </>
@@ -316,15 +336,16 @@ const Details = ({ region, analysis, onShowListing }: DetailsProps) => {
 
 /** The system variables that say what the file is */
 const SysVarsDetails = ({ analysis }: { analysis: PFileAnalysis }) => {
+  const t = useT();
   const { memory, summary } = analysis;
   const word = (address: number) => memory[address] | (memory[address + 1] << 8);
   return (
-    <BankDetailsSection title="Key system variables">
+    <BankDetailsSection title={t("panels.pfile.keySysVars")}>
       <BankFacts>
         <dt>VERSN</dt>
         <dd>{`$${toHexa2(memory[0x4009])}`}</dd>
         <dt>E_PPC</dt>
-        <dd>{`${word(0x400a)} (the current line)`}</dd>
+        <dd>{t("panels.pfile.currentLine", { line: word(0x400a) })}</dd>
         <dt>D_FILE</dt>
         <dd>{hex(summary.dFile)}</dd>
         <dt>VARS</dt>
@@ -342,37 +363,39 @@ const SysVarsDetails = ({ analysis }: { analysis: PFileAnalysis }) => {
 
 /** A ZX80 file's: the display file is not in it, but D_FILE says where it went */
 const Zx80SysVarsDetails = ({ analysis }: { analysis: PFileAnalysis }) => {
+  const t = useT();
   const { memory, summary } = analysis;
   const word = (address: number) => memory[address] | (memory[address + 1] << 8);
   return (
-    <BankDetailsSection title="Key system variables">
+    <BankDetailsSection title={t("panels.pfile.keySysVars")}>
       <BankFacts>
         <dt>E_PPC</dt>
-        <dd>{`${word(0x4006)} (the current line)`}</dd>
+        <dd>{t("panels.pfile.currentLine", { line: word(0x4006) })}</dd>
         <dt>VARS</dt>
         <dd>{hex(summary.vars)}</dd>
         <dt>E_LINE</dt>
-        <dd>{`${hex(summary.eLine)} (the end of the file)`}</dd>
+        <dd>{t("panels.pfile.endOfFile", { address: hex(summary.eLine) })}</dd>
         <dt>D_FILE</dt>
-        <dd>{`${hex(summary.dFile)} (not saved)`}</dd>
+        <dd>{t("panels.pfile.notSaved", { address: hex(summary.dFile) })}</dd>
       </BankFacts>
     </BankDetailsSection>
   );
 };
 
 const DisplayDetails = ({ analysis, region }: { analysis: PFileAnalysis; region: PFileRegion }) => {
+  const t = useT();
   const rows = useMemo(
     () => zx81DisplayRows(analysis.memory, region.start, region.end),
     [analysis, region]
   );
   return (
-    <BankDetailsSection title="Screen">
+    <BankDetailsSection title={t("panels.helpers.view.screen")}>
       <BankFacts>
-        <dt>Lines</dt>
+        <dt>{t("panels.pfile.fact.lines")}</dt>
         <dd>
           {analysis.summary.displayCollapsed
-            ? "Collapsed: lines end at their last character (saved on a 1K machine)"
-            : "Full: 24 lines of 32 characters"}
+            ? t("panels.pfile.displayCollapsed")
+            : t("panels.pfile.displayFull")}
         </dd>
       </BankFacts>
       <div className={styles.screen}>
@@ -383,36 +406,34 @@ const DisplayDetails = ({ analysis, region }: { analysis: PFileAnalysis; region:
 };
 
 const VariablesDetails = ({ analysis }: { analysis: PFileAnalysis }) => {
+  const t = useT();
   const { variables, summary } = analysis;
   if (summary.variablesCorrupted && variables.length === 0) {
     return (
-      <BankDetailsSection title="Variables">
-        <p className={styles.wrap}>
-          This area does not hold BASIC variables: a program keeps its own data here (machine code or
-          tables), ended by the $80 the ROM expects.
-        </p>
+      <BankDetailsSection title={P_FILE_REGION_NAMES.variables}>
+        <p className={styles.wrap}>{t("panels.pfile.variablesNotBasic")}</p>
       </BankDetailsSection>
     );
   }
   if (variables.length === 0) {
     return (
-      <BankDetailsSection title="Variables">
-        <p className={styles.wrap}>No variables: the program was saved before it set any, or after CLEAR.</p>
+      <BankDetailsSection title={P_FILE_REGION_NAMES.variables}>
+        <p className={styles.wrap}>{t("panels.pfile.noVariables")}</p>
       </BankDetailsSection>
     );
   }
   return (
-    <BankDetailsSection title="Variables">
+    <BankDetailsSection title={P_FILE_REGION_NAMES.variables}>
       <BankFacts>
         {variables.slice(0, VARIABLES_SHOWN).map((variable) => (
           <VariableFact key={variable.address} name={variable.name} value={describeZx8081Variable(variable)} />
         ))}
       </BankFacts>
       {variables.length > VARIABLES_SHOWN && (
-        <p className={styles.wrap}>{`and ${fmt(variables.length - VARIABLES_SHOWN)} more`}</p>
+        <p className={styles.wrap}>{t("panels.pfile.andMore", { count: variables.length - VARIABLES_SHOWN })}</p>
       )}
       {summary.variablesCorrupted && (
-        <p className={styles.wrap}>The rest of the area does not read as variables.</p>
+        <p className={styles.wrap}>{t("panels.pfile.restNotVariables")}</p>
       )}
     </BankDetailsSection>
   );

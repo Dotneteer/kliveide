@@ -12,10 +12,13 @@ import {
 } from "@renderer/appIde/annotations/programAnnotations";
 import {
   formatNexLabelValue,
+  scopeText,
   suggestNexLabelName,
   type NexLabelDialogLabel
 } from "./NexLabelDialog";
 import styles from "./NexOperandLabelDialog.module.scss";
+import { t } from "@common/i18n/i18n";
+import { useT } from "@common/i18n/useT";
 import {
   DialogFooter,
   DialogFooterSpacer
@@ -67,6 +70,7 @@ export function NexOperandLabelDialog({
   labels,
   controls
 }: NexOperandLabelDialogProps) {
+  const t = useT();
   const [selectedOperandIndex, setSelectedOperandIndex] = useState(
     chooseInitialOperandIndex(operands, explicitReferences)
   );
@@ -131,17 +135,20 @@ export function NexOperandLabelDialog({
 
   return (
     <form onSubmit={submit}>
-      <DialogRow label="Instruction" rows={true}>
+      <DialogRow label={t("panels.next.field.instruction")} rows={true}>
         <div className={styles.readOnlyValue}>{instruction}</div>
       </DialogRow>
       {operands.length > 1 && (
-        <DialogRow label="Operand" rows={true}>
+        <DialogRow label={t("panels.next.operandLabel.operand")} rows={true}>
           {/* The app's own dropdown, as the other annotation dialogs use. */}
           <Dropdown
-            ariaLabel="Operand"
+            ariaLabel={t("panels.next.operandLabel.operand")}
             options={operands.map<DropdownOption>((operand) => ({
               value: String(operand.operandIndex),
-              label: `Operand ${operand.operandIndex + 1}: ${operand.defaultText}`
+              label: t("panels.next.operandLabel.operandOption", {
+                number: operand.operandIndex + 1,
+                text: operand.defaultText
+              })
             }))}
             initialValue={String(selectedOperandIndex)}
             onChanged={(value) => setSelectedOperandIndex(Number(value))}
@@ -149,16 +156,16 @@ export function NexOperandLabelDialog({
         </DialogRow>
       )}
       {selectedOperand && (
-        <DialogRow label="Operand value" rows={true}>
+        <DialogRow label={t("panels.next.operandLabel.operandValue")} rows={true}>
           <div className={styles.readOnlyValue}>
             {`${formatNexLabelValue(selectedOperand.operandValue)} (${selectedOperand.operandValue})`}
           </div>
         </DialogRow>
       )}
-      <DialogRow label="Candidate labels" rows={true}>
+      <DialogRow label={t("panels.next.operandLabel.candidates")} rows={true}>
         <TextInput
-          placeholder="Search labels"
-          ariaLabel="Search labels"
+          placeholder={t("panels.next.search.labels")}
+          ariaLabel={t("panels.next.search.labels")}
           value={searchText}
           onChange={setSearchText}
         />
@@ -175,7 +182,7 @@ export function NexOperandLabelDialog({
                   onClick={() => setSelectedLabelKey(getLabelKey(candidate))}
                 >
                   <span className={styles.labelName}>{candidate.name}</span>
-                  <span>{candidate.scope === "global" ? "Global" : `Bank ${candidate.bank ?? bank}`}</span>
+                  <span>{scopeText(candidate, bank)}</span>
                   <span>{formatNexLabelValue(candidate.value)}</span>
                   <span>{formatNexLabelValue(candidate.effectiveValue)}</span>
                 </button>
@@ -183,7 +190,7 @@ export function NexOperandLabelDialog({
             </div>
           ))}
           {filteredGroups.length === 0 && (
-            <div className={styles.emptyList}>No matching labels</div>
+            <div className={styles.emptyList}>{t("panels.next.empty.noMatchingLabels")}</div>
           )}
         </div>
       </DialogRow>
@@ -193,19 +200,19 @@ export function NexOperandLabelDialog({
         */}
       <div className={styles.createActions}>
         <Button
-          text="Create Bank Label"
+          text={t("panels.next.operandLabel.createBank")}
           variant="secondary"
           disabled={!canCreateLocal}
           clicked={() => createLabel("local")}
         />
-        <Button variant="secondary" text="Create Global Label" clicked={() => createLabel("global")} />
+        <Button variant="secondary" text={t("panels.next.operandLabel.createGlobal")} clicked={() => createLabel("global")} />
       </div>
       <DialogFooter>
-        <Button text="Apply Reference" type="submit" disabled={!selectedCandidate} />
-        <Button variant="secondary" text="Cancel" clicked={controls.cancel} />
+        <Button text={t("panels.next.operandLabel.apply")} type="submit" disabled={!selectedCandidate} />
+        <Button variant="secondary" text={t("common.button.cancel")} clicked={controls.cancel} />
         <DialogFooterSpacer />
         <Button
-          text="Clear Reference"
+          text={t("panels.next.operandLabel.clear")}
           variant="secondary"
           disabled={!explicitReference}
           clicked={() => {
@@ -280,7 +287,11 @@ function filterCandidates(candidates: Candidate[], searchText: string): Candidat
       formatNexLabelValue(candidate.effectiveValue),
       candidate.effectiveValue.toString(10),
       candidate.scope,
-      candidate.scope === "local" ? `bank ${candidate.bank ?? ""}` : "global"
+      candidate.scope === "local" ? `bank ${candidate.bank ?? ""}` : "global",
+      // --- The scope as shown, too, so a search in the display language finds it
+      candidate.scope === "local" && candidate.bank === undefined
+        ? ""
+        : scopeText(candidate, candidate.bank ?? 0)
     ];
     return searchValues.some((value) => value.toLowerCase().includes(normalizedSearch));
   });
@@ -346,11 +357,11 @@ function getLabelKey(label: Pick<NexLabelDialogLabel, "scope" | "bank" | "name">
 function getGroupTitle(group: CandidateGroup): string {
   switch (group) {
     case "exact":
-      return "Exact matches";
+      return t("panels.next.operandLabel.group.exact");
     case "nearby":
-      return "Nearby labels";
+      return t("panels.next.operandLabel.group.nearby");
     default:
-      return "All labels";
+      return t("panels.next.operandLabel.group.all");
   }
 }
 

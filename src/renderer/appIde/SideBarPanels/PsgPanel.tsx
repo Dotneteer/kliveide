@@ -6,6 +6,7 @@ import { useEmuApi } from "@renderer/core/EmuApi";
 import { DataPanel, DataRow, EmptyState } from "@renderer/controls/data";
 import { FlagValue, SimpleValue } from "@renderer/controls/data/registers";
 import regStyles from "@renderer/controls/data/Registers.module.scss";
+import { useT } from "@common/i18n/useT";
 
 /**
  * The token every value in this panel is drawn with.
@@ -45,62 +46,66 @@ const PsgChannel = ({
   envelope,
   counter,
   bit
-}: ChannelProps) => (
-  <>
-    <DataRow dense>
-      <SimpleValue
-        label={`Tone${name}`}
-        value={tone}
-        tooltip={`Channel ${name} tone value`}
-        valueXclass={regStyles.stateValue}
-      />
-    </DataRow>
-    <DataRow dense>
-      <FlagValue
-        label={`T${name}En`}
-        value={toneEnabled}
-        tooltip={`Channel ${name} tone enabled?`}
-        iconFill={VALUE_FILL}
-      />
-      <FlagValue
-        label={`T${name}NEn`}
-        value={noiseEnabled}
-        tooltip={`Channel ${name} noise enabled?`}
-        iconFill={VALUE_FILL}
-      />
-    </DataRow>
-    <DataRow dense>
-      <SimpleValue
-        label={`Vol${name}`}
-        value={volume}
-        tooltip={`Channel ${name} volume value`}
-        valueXclass={regStyles.stateValue}
-      />
-      <FlagValue
-        label={`Env${name}`}
-        value={envelope}
-        tooltip={`Channel ${name} envelope enabled?`}
-        iconFill={VALUE_FILL}
-      />
-    </DataRow>
-    <DataRow dense>
-      <SimpleValue
-        label={`Cnt${name}`}
-        value={counter}
-        tooltip={`Channel ${name} counter`}
-        valueXclass={regStyles.stateValue}
-      />
-      <FlagValue
-        label={`Bit${name}`}
-        value={bit}
-        tooltip={`Channel ${name} current bit value`}
-        iconFill={VALUE_FILL}
-      />
-    </DataRow>
-  </>
-);
+}: ChannelProps) => {
+  const t = useT();
+  return (
+    <>
+      <DataRow dense>
+        <SimpleValue
+          label={`Tone${name}`}
+          value={tone}
+          tooltip={t("panels.side.psg.channelTone", { channel: name })}
+          valueXclass={regStyles.stateValue}
+        />
+      </DataRow>
+      <DataRow dense>
+        <FlagValue
+          label={`T${name}En`}
+          value={toneEnabled}
+          tooltip={t("panels.side.psg.channelToneEnabled", { channel: name })}
+          iconFill={VALUE_FILL}
+        />
+        <FlagValue
+          label={`T${name}NEn`}
+          value={noiseEnabled}
+          tooltip={t("panels.side.psg.channelNoiseEnabled", { channel: name })}
+          iconFill={VALUE_FILL}
+        />
+      </DataRow>
+      <DataRow dense>
+        <SimpleValue
+          label={`Vol${name}`}
+          value={volume}
+          tooltip={t("panels.side.psg.channelVolume", { channel: name })}
+          valueXclass={regStyles.stateValue}
+        />
+        <FlagValue
+          label={`Env${name}`}
+          value={envelope}
+          tooltip={t("panels.side.psg.channelEnvelopeEnabled", { channel: name })}
+          iconFill={VALUE_FILL}
+        />
+      </DataRow>
+      <DataRow dense>
+        <SimpleValue
+          label={`Cnt${name}`}
+          value={counter}
+          tooltip={t("panels.side.psg.channelCounter", { channel: name })}
+          valueXclass={regStyles.stateValue}
+        />
+        <FlagValue
+          label={`Bit${name}`}
+          value={bit}
+          tooltip={t("panels.side.psg.channelBit", { channel: name })}
+          iconFill={VALUE_FILL}
+        />
+      </DataRow>
+    </>
+  );
+};
 
 export const PsgPanel = () => {
+  const t = useT();
   const emuApi = useEmuApi();
   const [psgState, setPsgState] = useState<PsgChipState>(null);
 
@@ -111,7 +116,7 @@ export const PsgPanel = () => {
   if (!psgState) {
     return (
       <DataPanel autoHeight>
-        <EmptyState message="PSG state not available" />
+        <EmptyState message={t("panels.side.psg.notAvailable")} />
       </DataPanel>
     );
   }
@@ -122,7 +127,7 @@ export const PsgPanel = () => {
         <SimpleValue
           label="IDX"
           value={psgState.psgRegisterIndex}
-          tooltip="PSG Register Index"
+          tooltip={t("panels.side.psg.registerIndex")}
           valueXclass={regStyles.stateValue}
         />
       </DataRow>
@@ -130,13 +135,13 @@ export const PsgPanel = () => {
         <SimpleValue
           label="EnvFq"
           value={psgState.envFreq}
-          tooltip="Envelope frequency"
+          tooltip={t("panels.side.psg.envelopeFrequency")}
           valueXclass={regStyles.stateValue}
         />
         <SimpleValue
           label="Env"
           value={psgState.envStyle}
-          tooltip="Envelope style"
+          tooltip={t("panels.side.psg.envelopeStyle")}
           valueXclass={regStyles.stateValue}
         />
       </DataRow>
@@ -144,13 +149,13 @@ export const PsgPanel = () => {
         <SimpleValue
           label="CntEn"
           value={psgState.cntEnv}
-          tooltip="Envelope counter"
+          tooltip={t("panels.side.psg.envelopeCounter")}
           valueXclass={regStyles.stateValue}
         />
         <SimpleValue
           label="PosFq"
           value={psgState.posEnv}
-          tooltip="Envelope position"
+          tooltip={t("panels.side.psg.envelopePosition")}
           valueXclass={regStyles.stateValue}
         />
       </DataRow>
@@ -193,13 +198,13 @@ export const PsgPanel = () => {
         <SimpleValue
           label="NsFq"
           value={psgState.noiseFreq}
-          tooltip="Noise frequency"
+          tooltip={t("panels.side.psg.noiseFrequency")}
           valueXclass={regStyles.stateValue}
         />
         <SimpleValue
           label="CntNs"
           value={psgState.cntNoise}
-          tooltip="Noise counter"
+          tooltip={t("panels.side.psg.noiseCounter")}
           valueXclass={regStyles.stateValue}
         />
       </DataRow>
@@ -207,7 +212,7 @@ export const PsgPanel = () => {
         <FlagValue
           label="BitNs"
           value={psgState.bitNoise}
-          tooltip="Noise current bit value"
+          tooltip={t("panels.side.psg.noiseBit")}
           iconFill={VALUE_FILL}
         />
       </DataRow>

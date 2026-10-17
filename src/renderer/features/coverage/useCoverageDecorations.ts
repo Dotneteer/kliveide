@@ -8,6 +8,7 @@ import { machineRegistry } from "@common/machines/machine-registry";
 import { SETTING_IDE_COVERAGE_LINE_TINT } from "@common/settings/setting-const";
 import { useGlobalSetting, useSelector } from "@renderer/core/RendererProvider";
 import { useEmuApi } from "@renderer/core/EmuApi";
+import { t } from "@common/i18n/i18n";
 import { buildCoverageModel, lineCoverage, type CoverageModel, type LineCoverage } from "@common/profile/coverageModel";
 
 /*
@@ -48,13 +49,14 @@ export function coverageDecorations(
     const cls = c.state === "covered" ? classes.covered : c.state === "partial" ? classes.partial : classes.uncovered;
     const tooltip =
       c.state === "uncovered"
-        ? "Not executed"
+        ? t("panels.feature.coverage.notExecuted")
         : c.hits !== undefined
-          ? `Executed ${c.hits.toLocaleString("en-US")} time${c.hits === 1 ? "" : "s"}` +
-            (c.state === "partial" ? ` (${c.executed} of ${c.total} instructions ran)` : "")
+          ? c.state === "partial"
+            ? t("panels.feature.coverage.executedTimesPartial", { hits: c.hits, executed: c.executed, total: c.total })
+            : t("panels.feature.coverage.executedTimes", { hits: c.hits })
           : c.state === "partial"
-            ? `${c.executed} of ${c.total} instructions ran`
-            : "Executed";
+            ? t("panels.feature.coverage.partial", { executed: c.executed, total: c.total })
+            : t("panels.feature.coverage.executed");
     decorations.push({
       range: { startLineNumber: line, startColumn: 1, endLineNumber: line, endColumn: 1 },
       options: {

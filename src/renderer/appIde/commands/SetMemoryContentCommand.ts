@@ -1,3 +1,4 @@
+import { t } from "@common/i18n/i18n";
 import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
 import { takeOverBeforeEdit } from "./reverseDebugFork";
 import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
@@ -17,9 +18,9 @@ type SetMemoryContentCommandArgs = {
 
 export class SetMemoryContentCommand extends IdeCommandBase<SetMemoryContentCommandArgs> {
   readonly id = "setmem";
-  readonly description =
-    "Sets the specified 1, 2, 3, or 4 bytes of memory content. Options: " +
-    "-b8, -b16, -b24, -b32: Number of bits; -be: Big-endian";
+  get description() {
+    return t("commands.memory.description");
+  }
   readonly usage = "setmem <address> <value> [-b8] [-b16] [-b24] [-b32] [-be]";
   readonly aliases = ["sm"];
   readonly argumentInfo: CommandArgumentInfo = {
@@ -54,7 +55,7 @@ export class SetMemoryContentCommand extends IdeCommandBase<SetMemoryContentComm
       optionCount++;
     }
     if (optionCount > 1) {
-      return commandError("Only one of the -b8, -b16, -b24, -b32 options can be used");
+      return commandError(t("commands.memory.oneSize"));
     }
 
     // --- Check for big-endian option
@@ -64,37 +65,29 @@ export class SetMemoryContentCommand extends IdeCommandBase<SetMemoryContentComm
     const outp = context.output;
     outp.color("yellow"); 
     if (size === 8 && (args.value < 0 || args.value > 0xff)) {
-      outp.writeLine(
-        `Warning: Value (${args.value}) is out of range; only the last 8 bit will be used.`
-      );
+      outp.writeLine(t("commands.memory.outOfRange", { value: String(args.value), bits: "8" }));
       args.value &= 0xff;
     } else if (size === 16 && (args.value < 0 || args.value > 0xffff)) {
-      outp.writeLine(
-        `Warning: Value (${args.value}) is out of range; only the last 16 bit will be used.`
-      );
+      outp.writeLine(t("commands.memory.outOfRange", { value: String(args.value), bits: "16" }));
       args.value &= 0xffff;
     } else if (size === 24 && (args.value < 0 || args.value > 0xffffff)) {
-      outp.writeLine(
-        `Warning: Value (${args.value}) is out of range; only the last 24 bit will be used.`
-      );
+      outp.writeLine(t("commands.memory.outOfRange", { value: String(args.value), bits: "24" }));
       args.value &= 0xffffff;
     } else if (size === 32 && (args.value < 0 || args.value > 0xffffffff)) {
-      outp.writeLine(
-        `Warning: Value (${args.value}) is out of range; only the last 32 bit will be used.`
-      );
+      outp.writeLine(t("commands.memory.outOfRange", { value: String(args.value), bits: "32" }));
       args.value &= 0xffffffff;
     }
     outp.resetStyle();
 
     // --- An edit in the past changes the past: take over there first, after asking (REVERSE_DEBUGGING_PLAN D12)
-    if (!(await takeOverBeforeEdit(context, "Edit memory"))) {
-      writeSuccessMessage(context.output, "Memory edit canceled");
+    if (!(await takeOverBeforeEdit(context, { kind: "editMemory" }))) {
+      writeSuccessMessage(context.output, t("commands.memory.canceled"));
       return commandSuccess;
     }
     await context.emuApi.setMemoryContent(args.address, args.value, size, bigEndian);
     context.store.dispatch(incEmuViewVersionAction(), "ide");
 
-    writeSuccessMessage(context.output, "Memory content set");
+    writeSuccessMessage(context.output, t("commands.memory.set"));
     return commandSuccess;
   }
 }

@@ -12,6 +12,7 @@ import { executeModule, isModuleErrors, parseKsxModule } from "@common/ksx/ksx-m
 import type { ScriptOutputOptions } from "@common/ksx/script-runner";
 import { sendScriptOutput } from "@common/ksx/script-runner";
 import { createMainApi } from "@common/messaging/MainApi";
+import { t } from "@common/i18n/i18n";
 
 type ScriptExecInfo = {
   evalContext: EvaluationContext;
@@ -45,7 +46,7 @@ export class EmuScriptRunner {
     let script = scripts.find((s) => s.id === scriptId);
     if (!script) {
       // --- The script is already running, nothing to do
-      this.outputFn?.(`Script ${scriptFile} process has not been created.`, {
+      this.outputFn?.(t("emu.script.notCreated", { file: scriptFile }), {
         foreground: "yellow"
       });
       return false;
@@ -94,7 +95,7 @@ export class EmuScriptRunner {
       execTask
     });
 
-    this.outputFn?.(`Script started`, {
+    this.outputFn?.(t("emu.script.started"), {
       foreground: "green"
     });
 
@@ -113,7 +114,9 @@ export class EmuScriptRunner {
           time = script.endTime.getTime() - script.startTime.getTime();
         }
         this.outputFn?.(
-          `Script ${script.scriptFileName} with ID ${script.id} ${script.status} in ${time}ms.`,
+          cancelled
+            ? t("emu.script.stopped", { file: script.scriptFileName, id: script.id, ms: time })
+            : t("emu.script.completed", { file: script.scriptFileName, id: script.id, ms: time }),
           {
             foreground: cancelled ? "yellow" : "green"
           }
@@ -124,12 +127,12 @@ export class EmuScriptRunner {
         script.endTime = new Date();
         const time = script.endTime.getTime() - script.startTime.getTime();
         this.outputFn?.(
-          `Script ${script.scriptFileName} with ID ${script.id} failed in ${time}ms.`,
+          t("emu.script.failed", { file: script.scriptFileName, id: script.id, ms: time }),
           {
             foreground: "red"
           }
         );
-        this.outputFn?.(error.toString?.() ?? "Unknown error", {
+        this.outputFn?.(error.toString?.() ?? t("emu.script.unknownError"), {
           foreground: "bright-red"
         });
       } finally {
@@ -156,8 +159,9 @@ export class EmuScriptRunner {
     const scripts = this.store.getState().scripts;
     const script = scripts.find((s) => s.id === scriptId);
     if (!script) {
-      // --- The script is not running or has been completed, nothing to do
-      this.outputFn?.(`Script ${script.scriptFileName} is not running.`, {
+      // --- The script is not running or has been completed, nothing to do (there is no script
+      // --- to name, so the message names its ID)
+      this.outputFn?.(t("emu.script.notRunning", { id: scriptId }), {
         foreground: "yellow"
       });
       return false;
@@ -165,7 +169,7 @@ export class EmuScriptRunner {
 
     // --- Stop the script
     const scriptInfo = this.runningScripts.get(scriptId);
-    this.outputFn?.(`Stopping script ${script.scriptFileName}...`);
+    this.outputFn?.(t("emu.script.stopping", { file: script.scriptFileName }));
     scriptInfo?.evalContext?.cancellationToken?.cancel();
     await scriptInfo?.execTask;
     return true;

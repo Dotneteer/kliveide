@@ -8,9 +8,9 @@
  *   - a translation with invalid ICU, different placeholders from English, `@` metadata (context
  *     lives only in English, D4), or a key English no longer has (stale);
  *   - a key used in code (`t("...")`) that English does not define;
- *   - an English namespace file that `catalogs.ts` does not import;
- *   - `keys.generated.ts` or `translations.generated.ts` out of date.
- * It warns on: English keys no source file mentions, `maxChars` exceeded (the overflow worklist),
+ *   - `keys.generated.ts`, `source.generated.ts` or `translations.generated.ts` out of date.
+ * It warns on: English keys no source file mentions (code that builds keys at run time declares
+ * their prefix with a `i18n-dynamic: <prefix>` comment), `maxChars` exceeded (the overflow worklist),
  * translations whose English changed since they were made (outdated: `<lang>/.source.json` holds
  * the English each translation was made from), and Portuguese text that uses the other variant's
  * words (`glossary.json` `variantOnly`).
@@ -20,7 +20,7 @@
  *
  * Usage:
  *   npm run i18n:check             check; exit 1 on errors
- *   npm run i18n:keys              regenerate keys.generated.ts and translations.generated.ts, then check
+ *   npm run i18n:keys              regenerate the three generated files, then check
  */
 const fs = require("fs");
 const path = require("path");
@@ -32,7 +32,8 @@ const DEFAULTS = {
   sourceDirs: [path.join(REPO, "src")],
   catalogsFile: path.join(REPO, "src/common/i18n/catalogs.ts"),
   keysFile: path.join(REPO, "src/common/i18n/keys.generated.ts"),
-  translationsFile: path.join(REPO, "src/common/i18n/translations.generated.ts")
+  translationsFile: path.join(REPO, "src/common/i18n/translations.generated.ts"),
+  sourceFile: path.join(REPO, "src/common/i18n/source.generated.ts")
 };
 const T_CALL = /\bt\(\s*(["'`])([^"'`\n]+)\1/g;
 
@@ -205,18 +206,8 @@ async function checkI18n(options = {}) {
     info.push(`${lang}: ${pct} % translated (${translated}/${total}), ${outdated} outdated`);
   }
 
-  // --- catalogs.ts must bundle every English namespace
-  if (fs.existsSync(opts.catalogsFile)) {
-    const catalogsText = fs.readFileSync(opts.catalogsFile, "utf8");
-    for (const ns of namespaces) {
-      if (!catalogsText.includes(`./locales/${SOURCE_LANGUAGE}/${ns}.json`)) {
-        errors.push(`${rel(opts.catalogsFile)}: does not import ${SOURCE_LANGUAGE}/${ns}.json`);
-      }
-    }
-  }
-
   // --- Keys used in code
-  const skip = new Set([path.resolve(opts.keysFile), path.resolve(opts.translationsFile)]);
+  const skip = new Set([path.resolve(opts.keysFile), path.resolve(opts.translationsFile), path.resolve(opts.sourceFile)]);
   const sources = listSourceFiles(opts.sourceDirs, skip);
   const allText = [];
   for (const file of sources) {
@@ -231,7 +222,10 @@ async function checkI18n(options = {}) {
     }
   }
   const joined = allText.join("\n");
+  // --- Code that builds keys at run time declares the prefix: `// i18n-dynamic: compiler.asm.`
+  const dynamicPrefixes = [...joined.matchAll(/i18n-dynamic:\s*([a-z][a-zA-Z0-9.]*\.)/g)].map((m) => m[1]);
   for (const key of english.keys()) {
+    if (dynamicPrefixes.some((prefix) => key.startsWith(prefix))) continue;
     if (!joined.includes(`"${key}"`) && !joined.includes(`'${key}'`) && !joined.includes(`\`${key}\``)) {
       warnings.push(`en: "${key}" is not used by any source file`);
     }
@@ -241,7 +235,8 @@ async function checkI18n(options = {}) {
   const keys = [...english.keys()].sort();
   const generated = [
     [opts.keysFile, renderKeysFile(keys)],
-    [opts.translationsFile, lib.renderTranslationsFile(opts.localesDir)]
+    [opts.translationsFile, lib.renderTranslationsFile(opts.localesDir)],
+    [opts.sourceFile, lib.renderSourceFile(opts.localesDir)]
   ];
   for (const [file, expected] of generated) {
     if (opts.update) {

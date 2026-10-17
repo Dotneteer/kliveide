@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useMemo, useRef, useState, type ReactNode } from "react";
 import { Button } from "@renderer/controls/Button";
 import { TextInput } from "@renderer/controls/TextInput";
 import { RadioGroup } from "@renderer/controls/RadioGroup";
@@ -8,10 +8,13 @@ import { DialogRow } from "@renderer/controls/DialogRow";
 import { DialogComponentProps } from "@renderer/controls/overlay/DialogProvider";
 import {
   formatNexLabelValue,
+  scopeText,
   type NexLabelDialogLabel
 } from "./NexLabelDialog";
 import type { AnnotationLabelScope } from "@renderer/appIde/annotations/programAnnotations";
 import styles from "./NexLabelsDialog.module.scss";
+import { t } from "@common/i18n/i18n";
+import { useT } from "@common/i18n/useT";
 import {
   DialogFooter,
   DialogFooterSpacer
@@ -20,11 +23,31 @@ import {
 type NexLabelsScopeFilter = "all" | AnnotationLabelScope;
 type NexLabelsSortMode = "address" | "name" | "references";
 
-const sortOptions: DropdownOption[] = [
-  { value: "address", label: "Address" },
-  { value: "name", label: "Name" },
-  { value: "references", label: "References" }
+/** Built when drawn, so it follows the display language. */
+const sortOptions = (): DropdownOption[] => [
+  { value: "address", label: t("panels.next.labels.sort.address") },
+  { value: "name", label: t("panels.next.labels.sort.name") },
+  { value: "references", label: t("panels.next.labels.sort.references") }
 ];
+
+/**
+ * A message with `**bold**` and `` `code` `` markers, as elements.
+ *
+ * The intro is one translated passage with its emphasis inside it, so a translation can put the
+ * emphasised words wherever its grammar wants them. Markdown-like markers rather than tags, because
+ * the pseudo-locale accents a tag's letters but leaves `*` and `` ` `` alone.
+ */
+function renderMarkup(text: string): ReactNode[] {
+  return text.split(/(\*\*[^*]+\*\*|`[^`]+`)/).map((part, index) => {
+    if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
+      return <strong key={index}>{part.slice(2, -2)}</strong>;
+    }
+    if (part.startsWith("`") && part.endsWith("`") && part.length > 2) {
+      return <code key={index}>{part.slice(1, -1)}</code>;
+    }
+    return <Fragment key={index}>{part}</Fragment>;
+  });
+}
 
 /**
  * Going to a label is the only thing that *ends* this dialog.
@@ -66,6 +89,7 @@ export function NexLabelsDialog({
   onDeleteLabel,
   controls
 }: NexLabelsDialogProps) {
+  const t = useT();
   const [scopeFilter, setScopeFilter] = useState<NexLabelsScopeFilter>(initialScope);
   const [searchText, setSearchText] = useState("");
   const [sortMode, setSortMode] = useState<NexLabelsSortMode>("address");
@@ -102,20 +126,16 @@ export function NexLabelsDialog({
 
   return (
     <div>
-      <p className={styles.intro}>
-        A <strong>bank label</strong> names an address inside bank {bank} alone, so two banks can
-        each have their own <code>Start</code>. A <strong>global label</strong> names a 16-bit
-        address anywhere in memory and is visible from every bank.
-      </p>
-      <DialogRow label="Scope" rows={true}>
+      <p className={styles.intro}>{renderMarkup(t("panels.next.labels.intro", { bank }))}</p>
+      <DialogRow label={t("panels.next.field.scope")} rows={true}>
         <RadioGroup
-          ariaLabel="Label scope filter"
+          ariaLabel={t("panels.next.labels.scopeFilterAria")}
           columns={3}
           value={scopeFilter}
           options={[
-            { value: "local", label: `Bank ${bank}` },
-            { value: "global", label: "Global" },
-            { value: "all", label: "All" }
+            { value: "local", label: t("panels.next.scope.bank", { bank }) },
+            { value: "global", label: t("panels.next.scope.global") },
+            { value: "all", label: t("panels.next.scope.all") }
           ]}
           onChange={(next) => setScopeFilter(next as NexLabelsScopeFilter)}
         />
@@ -123,30 +143,30 @@ export function NexLabelsDialog({
       <div className={styles.toolbar}>
         <TextInput
           autoFocus
-          placeholder="Search labels"
-          ariaLabel="Search labels"
+          placeholder={t("panels.next.search.labels")}
+          ariaLabel={t("panels.next.search.labels")}
           value={searchText}
           onChange={setSearchText}
         />
         <Dropdown
-          ariaLabel="Sort labels"
-          options={sortOptions}
+          ariaLabel={t("panels.next.labels.sortAria")}
+          options={sortOptions()}
           initialValue={sortMode}
           onChanged={(value) => setSortMode(value as NexLabelsSortMode)}
         />
       </div>
       <div className={styles.table}>
         <div className={styles.tableHeader}>
-          <span>Scope</span>
-          <span>Name</span>
-          <span>Value</span>
-          <span>Address</span>
-          <span>Refs</span>
+          <span>{t("panels.next.field.scope")}</span>
+          <span>{t("panels.next.field.name")}</span>
+          <span>{t("panels.next.field.value")}</span>
+          <span>{t("panels.next.labels.column.address")}</span>
+          <span>{t("panels.next.labels.column.refs")}</span>
           <span />
         </div>
         {filteredLabels.map((label) => (
           <div className={styles.labelRow} key={getLabelKey(label)}>
-            <span>{label.scope === "global" ? "Global" : `Bank ${label.bank ?? bank}`}</span>
+            <span>{scopeText(label, bank)}</span>
             <span className={styles.labelName} title={label.name}>{label.name}</span>
             <span>{formatNexLabelValue(label.value)}</span>
             <span className={label.scope === "global" ? styles.muted : undefined}>
@@ -167,11 +187,11 @@ export function NexLabelsDialog({
                 type="button"
                 onClick={() => controls.close({ action: "go-to", label })}
               >
-                Go To
+                {t("panels.next.action.goTo")}
               </button>
               <SmallIconButton
                 iconName="pencil"
-                title={`Edit ${label.name}`}
+                title={t("panels.next.labels.edit", { name: label.name })}
                 fill="--color-command-icon"
                 enable={!busy}
                 clicked={() => void runAction(() => onEditLabel(label))}
@@ -183,7 +203,7 @@ export function NexLabelsDialog({
                 */}
               <SmallIconButton
                 iconName="trash"
-                title={`Delete ${label.name}`}
+                title={t("panels.next.labels.delete", { name: label.name })}
                 fill="--status-error"
                 enable={!busy}
                 clicked={() => void runAction(() => onDeleteLabel(label))}
@@ -192,20 +212,20 @@ export function NexLabelsDialog({
           </div>
         ))}
         {filteredLabels.length === 0 && (
-          <div className={styles.emptyList}>No matching labels</div>
+          <div className={styles.emptyList}>{t("panels.next.empty.noMatchingLabels")}</div>
         )}
       </div>
       <DialogFooter>
-        <Button variant="secondary" text="Close" clicked={controls.cancel} />
+        <Button variant="secondary" text={t("common.button.close")} clicked={controls.cancel} />
         <DialogFooterSpacer />
         <Button
-          text="Add Global Label"
+          text={t("panels.next.labels.addGlobal")}
           variant="secondary"
           disabled={busy}
           clicked={() => void runAction(() => onAddLabel("global"))}
         />
         <Button
-          text="Add Bank Label"
+          text={t("panels.next.labels.addBank")}
           variant="secondary"
           disabled={busy}
           clicked={() => void runAction(() => onAddLabel("local"))}
@@ -245,6 +265,8 @@ function matchesSearch(
     label.name,
     label.scope,
     label.scope === "local" ? `bank ${label.bank ?? ""}` : "global",
+    // --- The scope as shown, too, so a search in the display language finds it
+    label.scope === "local" && label.bank === undefined ? "" : scopeText(label, label.bank ?? 0),
     formatNexLabelValue(label.value),
     String(label.value),
     effectiveAddress

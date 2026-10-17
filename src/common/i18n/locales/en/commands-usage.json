@@ -1,0 +1,76 @@
+{
+  "commands.usage.bpSet.len": "-len: a memory breakpoint (-r/-w) over this many bytes, e.g. bp-set $8000 -w -len 5",
+  "@commands.usage.bpSet.len": {
+    "context": "Line of the IDE command help (the 'help <command>' output) explaining one option or argument of bp-set. Keep option names (-r, -len, ...), placeholders in <angle brackets>, addresses and the example commands exactly as they are."
+  },
+  "commands.usage.bpSet.copper": "cu:<index>: (ZX Spectrum Next) stop when the Copper completes list index $000-$3FF; a WAIT when it is satisfied, e.g. bp-set cu:$00B -hit 50",
+  "@commands.usage.bpSet.copper": {
+    "context": "Line of the IDE command help (the 'help <command>' output) explaining one option or argument of bp-set. 'Copper' and 'WAIT' are hardware names. Keep option names (-r, -len, ...), placeholders in <angle brackets>, addresses and the example commands exactly as they are."
+  },
+  "commands.usage.bpSet.sprite": "sp:<sprite>: (ZX Spectrum Next) stop when an attribute byte of sprite $00-$7F is written; -attr picks the bytes, e.g. bp-set sp:$0C -attr 0,1",
+  "@commands.usage.bpSet.sprite": {
+    "context": "Line of the IDE command help (the 'help <command>' output) explaining one option or argument of bp-set. Keep option names (-r, -len, ...), placeholders in <angle brackets>, addresses and the example commands exactly as they are."
+  },
+  "commands.usage.bpSet.once": "-once: a one-shot breakpoint, removed the first time it stops the machine; never saved",
+  "@commands.usage.bpSet.once": {
+    "context": "Line of the IDE command help (the 'help <command>' output) explaining one option or argument of bp-set. Keep option names (-r, -len, ...), placeholders in <angle brackets>, addresses and the example commands exactly as they are."
+  },
+  "commands.usage.bpSet.log": "-log: log the message and continue instead of stopping (a logpoint), e.g. {example}",
+  "@commands.usage.bpSet.log": {
+    "context": "Line of the IDE command help (the 'help <command>' output) explaining one option or argument of bp-set. Keep option names (-r, -len, ...), placeholders in <angle brackets>, addresses and the example commands exactly as they are.",
+    "placeholders": {
+      "example": "An example log option, shown verbatim, e.g. -log \"[LOOP] B={B} HL={HL:hex16}\""
+    }
+  },
+  "commands.usage.bpSet.hit": "-hit: stop on hit N (N or =N), after it (>N), from it (>=N), before it (<N), up to it (<=N), every Nth (*N)",
+  "@commands.usage.bpSet.hit": {
+    "context": "Line of the IDE command help (the 'help <command>' output) explaining one option or argument of bp-set. Keep the forms in brackets (N, =N, >N, ...) exactly. Keep option names (-r, -len, ...), placeholders in <angle brackets>, addresses and the example commands exactly as they are."
+  },
+  "commands.usage.bpSet.if": "-if: must be last; the rest of the line is the condition, e.g. -if A == $FF && !ZF",
+  "@commands.usage.bpSet.if": {
+    "context": "Line of the IDE command help (the 'help <command>' output) explaining one option or argument of bp-set. Keep option names (-r, -len, ...), placeholders in <angle brackets>, addresses and the example commands exactly as they are."
+  },
+  "commands.usage.lpEnable.groups": "no groups: all logpoints log (-d: none does); groups: only those log (-d: those stop logging)",
+  "@commands.usage.lpEnable.groups": {
+    "context": "Line of the IDE command help (the 'help <command>' output) explaining one option or argument of lp-en (logpoint groups). Keep option names (-r, -len, ...), placeholders in <angle brackets>, addresses and the example commands exactly as they are."
+  },
+  "commands.usage.annotationEnable.disable": "-d: switch them off; saved with the project",
+  "@commands.usage.annotationEnable.disable": {
+    "context": "Line of the IDE command help (the 'help <command>' output) explaining one option or argument of as-en / wp-en (ASSERTION or WPMEM breakpoints from source comments). Keep option names (-r, -len, ...), placeholders in <angle brackets>, addresses and the example commands exactly as they are."
+  },
+  "commands.usage.nav.record": "-r: record the jump in the navigation history (Go Back / Go Forward); reason is one of {reasons}",
+  "@commands.usage.nav.record": {
+    "context": "Line of the IDE command help (the 'help <command>' output) explaining one option or argument of nav. 'Go Back' and 'Go Forward' are menu items; use their names in your language. Keep option names (-r, -len, ...), placeholders in <angle brackets>, addresses and the example commands exactly as they are.",
+    "placeholders": {
+      "reasons": "The reason ids, a comma-separated list, shown verbatim (never translated)"
+    }
+  },
+  "commands.usage.testRun.pattern": "pattern: Suite.UT_name, with * as a wildcard (all tests when omitted)",
+  "@commands.usage.testRun.pattern": {
+    "context": "Line of the IDE command help (the 'help <command>' output) explaining one option or argument of test-run. Keep 'Suite.UT_name' as it is. Keep option names (-r, -len, ...), placeholders in <angle brackets>, addresses and the example commands exactly as they are."
+  },
+  "commands.usage.testRun.failed": "-failed: only the tests that failed or ended in an error last time",
+  "@commands.usage.testRun.failed": {
+    "context": "Line of the IDE command help (the 'help <command>' output) explaining one option or argument of test-run. Keep option names (-r, -len, ...), placeholders in <angle brackets>, addresses and the example commands exactly as they are."
+  },
+  "commands.usage.testRun.coverage": "-coverage: merge the tests' code coverage into the editor's coverage view",
+  "@commands.usage.testRun.coverage": {
+    "context": "Line of the IDE command help (the 'help <command>' output) explaining one option or argument of test-run. Keep option names (-r, -len, ...), placeholders in <angle brackets>, addresses and the example commands exactly as they are."
+  },
+  "commands.usage.testDebug.test": "test: Suite.UT_name, or a * pattern that names one test",
+  "@commands.usage.testDebug.test": {
+    "context": "Line of the IDE command help (the 'help <command>' output) explaining one option or argument of test-debug. Keep 'Suite.UT_name' as it is. Keep option names (-r, -len, ...), placeholders in <angle brackets>, addresses and the example commands exactly as they are."
+  },
+  "commands.usage.testJunit.file": "file: the XML file to write",
+  "@commands.usage.testJunit.file": {
+    "context": "Line of the IDE command help (the 'help <command>' output) explaining one option or argument of test-junit. Keep option names (-r, -len, ...), placeholders in <angle brackets>, addresses and the example commands exactly as they are."
+  },
+  "commands.usage.testJunit.noTimestamp": "-notimestamp: leave the run's time out, so two runs write the same file",
+  "@commands.usage.testJunit.noTimestamp": {
+    "context": "Line of the IDE command help (the 'help <command>' output) explaining one option or argument of test-junit. Keep option names (-r, -len, ...), placeholders in <angle brackets>, addresses and the example commands exactly as they are."
+  },
+  "commands.usage.watchAdd.types": ">: use direct symbol value\n<type>:\n  b=byte,\n  w=16-bit little-endian, -w=16-bit big-endian,\n  l=32-bit little-endian, -l=32-bit big-endian,\n  f=flag,\n  a=array (use length, default: 8), s=string (use length, default: 8)",
+  "@commands.usage.watchAdd.types": {
+    "context": "Line of the IDE command help (the 'help <command>' output) explaining one option or argument of w-add: the meaning of the > prefix and of each type letter. Keep the letters (b, w, -w, l, -l, f, a, s), '>', '<type>' and the line breaks and indentation exactly. Keep option names (-r, -len, ...), placeholders in <angle brackets>, addresses and the example commands exactly as they are."
+  }
+}

@@ -28,6 +28,9 @@ import type { TzxCustomInfoBlock } from "@emu/machines/tape/TzxCustomInfoBlock";
 import type { TzxLoopStartBlock } from "@emu/machines/tape/TzxLoopStartBlock";
 import type { TzxJumpBlock } from "@emu/machines/tape/TzxJumpBlock";
 import { readTapeFile } from "@renderer/utils/tape-utils";
+import { t } from "@common/i18n/i18n";
+import { labelRecord } from "@common/i18n/labels";
+import type { MessageKey } from "@common/i18n/keys.generated";
 import { zxText } from "./zxText";
 
 /*
@@ -70,12 +73,12 @@ export type TapeBlockRole = "basic" | "code" | "screen" | "numArray" | "charArra
 /** The ways a block pops out as its own document. */
 export type TapeBlockView = "memory" | "disassembly" | "basic" | "screen";
 
-export const TAPE_VIEW_NAMES: Record<TapeBlockView, string> = {
-  memory: "Memory",
-  disassembly: "Disassembly",
-  basic: "BASIC",
-  screen: "Screen"
-};
+export const TAPE_VIEW_NAMES: Readonly<Record<TapeBlockView, string>> = labelRecord({
+  memory: "panels.helpers.view.memory",
+  disassembly: "panels.helpers.view.disassembly",
+  basic: "panels.helpers.view.basic",
+  screen: "panels.helpers.view.screen"
+});
 
 /** A standard ROM header, decoded. */
 export type TapeHeaderInfo = {
@@ -106,7 +109,8 @@ export type TapeBlockTiming = {
   bit1: number;
 };
 
-export type TapeArchiveField = { label: string; value: string };
+/** An archive info field: its TZX text type (0 title, 1 publisher, ...), label and value */
+export type TapeArchiveField = { type: number; label: string; value: string };
 
 export type TapeBlockInfo = {
   index: number;
@@ -180,7 +184,21 @@ export type TapeAnalysis = {
   summary: TapeSummary;
 };
 
-const HEADER_TYPE_NAMES = ["Program", "Number array", "Character array", "Bytes"];
+/*
+ * The model words its texts when a tape is analysed (`t()`); the viewer re-analyses the tape when
+ * the language changes (`GenericFilePanel`), so nothing here freezes in one language.
+ */
+const HEADER_TYPE_KEYS: MessageKey[] = [
+  "panels.tape.headerType.program",
+  "panels.tape.headerType.numberArray",
+  "panels.tape.headerType.characterArray",
+  "panels.tape.headerType.bytes"
+];
+
+function headerTypeName(type: number): string {
+  const key = HEADER_TYPE_KEYS[type];
+  return key ? t(key) : t("panels.tape.headerType.other", { type });
+}
 
 const ROLE_CHIPS: Record<TapeBlockRole, string> = {
   basic: "BASIC",
@@ -191,58 +209,78 @@ const ROLE_CHIPS: Record<TapeBlockRole, string> = {
   headerless: "DATA"
 };
 
-export const TAPE_ROLE_NAMES: Record<TapeBlockRole, string> = {
-  basic: "BASIC program",
-  code: "Code",
-  screen: "Screen",
-  numArray: "Number array",
-  charArray: "Character array",
-  headerless: "Headerless data"
+export const TAPE_ROLE_NAMES: Readonly<Record<TapeBlockRole, string>> = labelRecord({
+  basic: "panels.tape.role.basic",
+  code: "panels.tape.role.code",
+  screen: "panels.tape.role.screen",
+  numArray: "panels.tape.role.numArray",
+  charArray: "panels.tape.role.charArray",
+  headerless: "panels.tape.role.headerless"
+});
+
+const ROLE_COUNT_KEYS: Record<TapeBlockRole, MessageKey> = {
+  basic: "panels.tape.roleCount.basic",
+  code: "panels.tape.roleCount.code",
+  screen: "panels.tape.roleCount.screen",
+  numArray: "panels.tape.roleCount.numArray",
+  charArray: "panels.tape.roleCount.charArray",
+  headerless: "panels.tape.roleCount.headerless"
 };
 
-const TZX_KIND_NAMES: Record<number, string> = {
-  0x10: "Standard data",
-  0x11: "Turbo data",
-  0x12: "Pure tone",
-  0x13: "Pulse sequence",
-  0x14: "Pure data",
-  0x15: "Direct recording",
-  0x16: "C64 ROM data",
-  0x17: "C64 turbo data",
-  0x18: "CSW recording",
-  0x19: "Generalized data",
-  0x20: "Pause",
-  0x21: "Group start",
-  0x22: "Group end",
-  0x23: "Jump",
-  0x24: "Loop start",
-  0x25: "Loop end",
-  0x26: "Call sequence",
-  0x27: "Return from sequence",
-  0x28: "Select block",
-  0x2a: "Stop if 48K",
-  0x2b: "Set signal level",
-  0x30: "Text description",
-  0x31: "Message",
-  0x32: "Archive info",
-  0x33: "Hardware type",
-  0x34: "Emulation info",
-  0x35: "Custom info",
-  0x40: "Snapshot",
-  0x5a: "Glue"
+/** A role's count in the tape summary, as a phrase ("2 BASIC programs") */
+export function tapeRoleCount(role: TapeBlockRole, count: number): string {
+  return t(ROLE_COUNT_KEYS[role], { count });
+}
+
+const TZX_KIND_KEYS: Record<number, MessageKey> = {
+  0x10: "panels.tape.tzx.standardData",
+  0x11: "panels.tape.tzx.turboData",
+  0x12: "panels.tape.tzx.pureTone",
+  0x13: "panels.tape.tzx.pulseSequence",
+  0x14: "panels.tape.tzx.pureData",
+  0x15: "panels.tape.tzx.directRecording",
+  0x16: "panels.tape.tzx.c64RomData",
+  0x17: "panels.tape.tzx.c64TurboData",
+  0x18: "panels.tape.tzx.cswRecording",
+  0x19: "panels.tape.tzx.generalizedData",
+  0x20: "panels.tape.tzx.pause",
+  0x21: "panels.tape.tzx.groupStart",
+  0x22: "panels.tape.tzx.groupEnd",
+  0x23: "panels.tape.tzx.jump",
+  0x24: "panels.tape.tzx.loopStart",
+  0x25: "panels.tape.tzx.loopEnd",
+  0x26: "panels.tape.tzx.callSequence",
+  0x27: "panels.tape.tzx.returnFromSequence",
+  0x28: "panels.tape.tzx.selectBlock",
+  0x2a: "panels.tape.tzx.stopIf48k",
+  0x2b: "panels.tape.tzx.setSignalLevel",
+  0x30: "panels.tape.tzx.textDescription",
+  0x31: "panels.tape.tzx.message",
+  0x32: "panels.tape.tzx.archiveInfo",
+  0x33: "panels.tape.tzx.hardwareType",
+  0x34: "panels.tape.tzx.emulationInfo",
+  0x35: "panels.tape.tzx.customInfo",
+  0x40: "panels.tape.tzx.snapshot",
+  0x5a: "panels.tape.tzx.glue"
 };
 
-const ARCHIVE_LABELS: Record<number, string> = {
-  0x00: "Title",
-  0x01: "Publisher",
-  0x02: "Authors",
-  0x03: "Year",
-  0x04: "Language",
-  0x05: "Type",
-  0x06: "Price",
-  0x07: "Loader",
-  0x08: "Origin",
-  0xff: "Comment"
+/** TZX archive info text types: the ones the summary strip shows */
+const ARCHIVE_TITLE = 0x00;
+const ARCHIVE_PUBLISHER = 0x01;
+const ARCHIVE_AUTHORS = 0x02;
+const ARCHIVE_YEAR = 0x03;
+
+const ARCHIVE_LABEL_KEYS: Record<number, MessageKey> = {
+  0x00: "panels.tape.archive.title",
+  0x01: "panels.tape.archive.publisher",
+  0x02: "panels.tape.archive.authors",
+  0x03: "panels.tape.archive.year",
+  0x04: "panels.tape.archive.language",
+  0x05: "panels.tape.archive.type",
+  0x06: "panels.tape.archive.price",
+  0x07: "panels.tape.archive.loader",
+  0x08: "panels.tape.archive.origin",
+  0xff: "panels.tape.archive.comment"
 };
 
 /* --- The TZX blocks Klive's tape player turns into sound. `MainToEmuProcessor.setTapeFile` keeps
@@ -271,7 +309,7 @@ export function parseTapeHeader(data: Uint8Array): TapeHeaderInfo {
   const type = header.type;
   const info: TapeHeaderInfo = {
     type,
-    typeName: HEADER_TYPE_NAMES[type] ?? `Type ${type}`,
+    typeName: headerTypeName(type),
     name: zxText(header.nameBytes),
     dataLength: header.dataLength,
     param1: header.parameter1,
@@ -407,7 +445,7 @@ function describeTapBlock(index: number, block: TapeDataBlock): BlockBase {
   return {
     index,
     kind: header ? "header" : "data",
-    kindName: header ? "Header" : "Data",
+    kindName: header ? t("panels.tape.kind.header") : t("panels.tape.kind.data"),
     bytes: data,
     flag: data[0],
     checksumOk: data.length > 0 ? checksumOk(data) : undefined,
@@ -426,7 +464,9 @@ function describeTzxBlock(index: number, block: TzxBlockBase): BlockBase {
     index,
     blockId,
     kind: "other",
-    kindName: TZX_KIND_NAMES[blockId] ?? `Block $${hex2(blockId)}`,
+    kindName: TZX_KIND_KEYS[blockId]
+      ? t(TZX_KIND_KEYS[blockId])
+      : t("panels.tape.tzx.other", { id: `$${hex2(blockId)}` }),
     chip: `$${hex2(blockId)}`,
     pauseMs: 0,
     durationMs: 0,
@@ -494,7 +534,7 @@ function describeTzxBlock(index: number, block: TzxBlockBase): BlockBase {
         kind: "pulses",
         carriesSignal: true,
         durationMs: total / T_STATES_PER_MS,
-        text: `${b.pulseCount} pulses`
+        text: t("panels.tape.text.pulses", { count: b.pulseCount })
       };
     }
     case 0x14: {
@@ -520,7 +560,7 @@ function describeTzxBlock(index: number, block: TzxBlockBase): BlockBase {
         pauseMs: b.pauseAfter,
         durationMs: (bits * b.tactsPerSample) / T_STATES_PER_MS + b.pauseAfter,
         durationApprox: true,
-        text: `${b.tactsPerSample}T per sample`
+        text: t("panels.tape.text.perSample", { tStates: b.tactsPerSample })
       };
     }
     case 0x18: {
@@ -532,7 +572,7 @@ function describeTzxBlock(index: number, block: TzxBlockBase): BlockBase {
         pauseMs: b.pauseAfter,
         durationMs: cswMs(b) + b.pauseAfter,
         durationApprox: true,
-        text: `${b.pulseCount.toLocaleString("en-US")} pulses`
+        text: t("panels.tape.text.pulses", { count: b.pulseCount })
       };
     }
     case 0x19: {
@@ -544,7 +584,7 @@ function describeTzxBlock(index: number, block: TzxBlockBase): BlockBase {
         pauseMs: b.pauseAfter,
         durationMs: generalizedTStates(b) / T_STATES_PER_MS + b.pauseAfter,
         durationApprox: true,
-        text: `${b.totd.toLocaleString("en-US")} symbols`
+        text: t("panels.tape.text.symbols", { count: b.totd })
       };
     }
     case 0x20: {
@@ -552,7 +592,7 @@ function describeTzxBlock(index: number, block: TzxBlockBase): BlockBase {
       return {
         ...base,
         kind: b.duration === 0 ? "control" : "pause",
-        kindName: b.duration === 0 ? "Stop the tape" : "Pause",
+        kindName: b.duration === 0 ? t("panels.tape.kind.stopTape") : t("panels.tape.tzx.pause"),
         carriesSignal: b.duration > 0,
         pauseMs: b.duration,
         durationMs: b.duration
@@ -563,9 +603,17 @@ function describeTzxBlock(index: number, block: TzxBlockBase): BlockBase {
     case 0x22:
       return { ...base, kind: "group" };
     case 0x23:
-      return { ...base, kind: "control", text: `by ${(block as TzxJumpBlock).jump}` };
+      return {
+        ...base,
+        kind: "control",
+        text: t("panels.tape.text.jumpBy", { jump: (block as TzxJumpBlock).jump })
+      };
     case 0x24:
-      return { ...base, kind: "control", text: `${(block as TzxLoopStartBlock).loops} times` };
+      return {
+        ...base,
+        kind: "control",
+        text: t("panels.tape.text.loops", { count: (block as TzxLoopStartBlock).loops })
+      };
     case 0x25:
     case 0x26:
     case 0x27:
@@ -582,9 +630,12 @@ function describeTzxBlock(index: number, block: TzxBlockBase): BlockBase {
       return {
         ...base,
         kind: "archive",
-        archive: (b.textStrings ?? []).map((t) => ({
-          label: ARCHIVE_LABELS[t.type] ?? `Field $${hex2(t.type)}`,
-          value: t.text.replace(/\r\n?/g, "\n")
+        archive: (b.textStrings ?? []).map((field) => ({
+          type: field.type,
+          label: ARCHIVE_LABEL_KEYS[field.type]
+            ? t(ARCHIVE_LABEL_KEYS[field.type])
+            : t("panels.tape.archive.other", { id: `$${hex2(field.type)}` }),
+          value: field.text.replace(/\r\n?/g, "\n")
         }))
       };
     }
@@ -592,9 +643,7 @@ function describeTzxBlock(index: number, block: TzxBlockBase): BlockBase {
       return {
         ...base,
         kind: "hardware",
-        text: `${(block as TzxHardwareInfoBlock).hwCount} entr${
-          (block as TzxHardwareInfoBlock).hwCount === 1 ? "y" : "ies"
-        }`
+        text: t("panels.tape.text.entries", { count: (block as TzxHardwareInfoBlock).hwCount })
       };
     case 0x35:
       return { ...base, kind: "text", text: (block as TzxCustomInfoBlock).idText?.trim() };
@@ -603,8 +652,9 @@ function describeTzxBlock(index: number, block: TzxBlockBase): BlockBase {
   }
 }
 
-function formatMs(ms: number): string {
-  return `${Math.round(ms).toLocaleString("en-US")} ms`;
+/** A duration in milliseconds, for the row and the details: a human figure, in the display locale */
+export function formatMs(ms: number): string {
+  return t("panels.tape.ms", { ms: Math.round(ms) });
 }
 
 /**
@@ -614,7 +664,7 @@ function formatMs(ms: number): string {
 export function analyzeTape(contents: Uint8Array): { analysis?: TapeAnalysis; error?: string } {
   const read = readTapeFile(contents);
   if (!read.data) {
-    return { error: read.error ?? "This file could not be read as a .tap or .tzx tape." };
+    return { error: read.error ?? t("panels.tape.error.notTape") };
   }
   const isTap = read.type === "tap";
   const described: BlockBase[] = read.data.map((block, index) =>
@@ -640,7 +690,7 @@ export function analyzeTape(contents: Uint8Array): { analysis?: TapeAnalysis; er
       if (next.carriesSignal && next.kind !== "pause") break;
     }
     const role = roleOf(block.header);
-    const label = `${block.header.typeName} "${block.header.name}"`;
+    const label = t("panels.tape.fileLabel", { type: block.header.typeName, name: block.header.name });
     const file: TapeFile = { key: `file:${i}`, headerIndex: i, dataIndex, label, role };
     files.push(file);
     if (dataIndex !== undefined) {
@@ -678,17 +728,18 @@ export function analyzeTape(contents: Uint8Array): { analysis?: TapeAnalysis; er
       groupKey = file.key;
       groupLabel = file.label;
     } else if (block.kind === "text" || block.kind === "archive" || block.kind === "hardware") {
-      groupLabel = "Metadata";
-      groupKey = previous?.label === groupLabel ? previous.key : `meta:${block.index}`;
+      // --- Runs of metadata share one group: matched by its key, never by its (translated) label
+      groupLabel = t("panels.tape.group.metadata");
+      groupKey = previous?.key.startsWith("meta:") ? previous.key : `meta:${block.index}`;
     } else if ((block.kind === "pause" || block.kind === "control") && previous) {
       groupKey = previous.key;
       groupLabel = previous.label;
     } else if (tzxGroup) {
       groupKey = tzxGroup.key;
-      groupLabel = `Group "${tzxGroup.name}"`;
+      groupLabel = t("panels.tape.group.tzxGroup", { name: tzxGroup.name });
     } else {
-      groupKey = previous?.label === "Headerless" ? previous.key : `headerless:${block.index}`;
-      groupLabel = "Headerless";
+      groupKey = previous?.key.startsWith("headerless:") ? previous.key : `headerless:${block.index}`;
+      groupLabel = t("panels.tape.group.headerless");
     }
     if (block.blockId === 0x22) tzxGroup = undefined;
     previous = { key: groupKey, label: groupLabel };
@@ -712,21 +763,21 @@ function chipOf(block: BlockBase): string {
 }
 
 function summaryOf(block: BlockBase): string {
-  if (block.header) return `${block.header.typeName} header`;
+  if (block.header) return t("panels.tape.summary.header", { type: block.header.typeName });
   switch (block.role) {
     case "basic":
-      return block.headerIndex !== undefined ? "Program" : "";
+      return block.headerIndex !== undefined ? t("panels.tape.summary.program") : "";
     case "code":
     case "screen":
       return "";
     case "numArray":
     case "charArray":
-      return "Array";
+      return t("panels.tape.summary.array");
   }
   if (block.kind === "pause") return formatMs(block.pauseMs);
   if (block.text) return block.text;
-  if (block.archive) return `${block.archive.length} field${block.archive.length === 1 ? "" : "s"}`;
-  return block.role === "headerless" ? "Headerless" : "";
+  if (block.archive) return t("panels.tape.summary.fields", { count: block.archive.length });
+  return block.role === "headerless" ? t("panels.tape.group.headerless") : "";
 }
 
 function summarize(
@@ -738,7 +789,7 @@ function summarize(
   const roleCounts: Partial<Record<TapeBlockRole, number>> = {};
   for (const file of files) roleCounts[file.role] = (roleCounts[file.role] ?? 0) + 1;
   const archive = blocks.find((b) => b.archive)?.archive ?? [];
-  const field = (label: string) => archive.find((f) => f.label === label)?.value;
+  const field = (type: number) => archive.find((f) => f.type === type)?.value;
   return {
     format: read.type === "tap" ? "TAP" : "TZX",
     version: read.version,
@@ -749,10 +800,10 @@ function summarize(
     durationMs: blocks.reduce((sum, b) => sum + b.durationMs, 0),
     durationApprox: blocks.some((b) => b.durationApprox),
     unplayableCount: blocks.filter((b) => b.carriesSignal && !b.playable).length,
-    title: field("Title"),
-    publisher: field("Publisher"),
-    year: field("Year"),
-    authors: field("Authors")
+    title: field(ARCHIVE_TITLE),
+    publisher: field(ARCHIVE_PUBLISHER),
+    year: field(ARCHIVE_YEAR),
+    authors: field(ARCHIVE_AUTHORS)
   };
 }
 
@@ -830,13 +881,16 @@ export function defaultTapeBlockView(block: TapeBlockInfo): TapeBlockView {
 
 export type TapeBlockFilter = "all" | "data" | "basic" | "code" | "notPlayed";
 
-export const TAPE_BLOCK_FILTERS: { value: TapeBlockFilter; text: string }[] = [
-  { value: "all", text: "All" },
-  { value: "data", text: "Data" },
-  { value: "basic", text: "BASIC" },
-  { value: "code", text: "Code" },
-  { value: "notPlayed", text: "Not played" }
-];
+/** The filter buttons, worded in the current language */
+export function tapeBlockFilters(): { value: TapeBlockFilter; text: string }[] {
+  return [
+    { value: "all", text: t("panels.helpers.filter.all") },
+    { value: "data", text: t("panels.tape.filter.data") },
+    { value: "basic", text: t("panels.helpers.view.basic") },
+    { value: "code", text: t("panels.tape.filter.code") },
+    { value: "notPlayed", text: t("panels.tape.filter.notPlayed") }
+  ];
+}
 
 export function filterTapeBlocks<T extends { block: TapeBlockInfo }>(
   items: T[],

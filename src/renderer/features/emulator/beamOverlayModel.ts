@@ -5,6 +5,7 @@ import {
   type BeamPosition
 } from "@common/utils/beamGeometry";
 import type { ScreenLabel, ScreenShape } from "./EmulatorScreenOverlay";
+import { t } from "@common/i18n/i18n";
 
 /*
  * What the beam position overlay draws (`.plans/BEAM_POSITION_OVERLAY_PLAN.md` §4.4): a pure function
@@ -55,7 +56,7 @@ export function copperHitTact(beam: BeamPosition, hit: { line: number; hc: numbe
 
 /** The pill's text (D1, T8) */
 export function beamOverlayPill({ beam, instant }: Pick<BeamOverlayState, "beam" | "instant">): string {
-  return describeBeam(beam) + (instant ? " · instant screen" : "");
+  return instant ? t("panels.feature.beam.pillInstant", { beam: describeBeam(beam) }) : describeBeam(beam);
 }
 
 /** The overlay for a paused machine */
@@ -85,7 +86,7 @@ export function beamOverlayModel({ beam, instant, copper }: BeamOverlayState): B
         y: nearBottom ? y0 : y0 + 1,
         place: nearBottom ? "above" : "below",
         align: x0 > W / 2 ? "end" : "start",
-        text: "previous frame",
+        text: t("panels.feature.beam.previousFrame"),
         testId: "beam-stale-label"
       });
     }
@@ -94,19 +95,19 @@ export function beamOverlayModel({ beam, instant, copper }: BeamOverlayState): B
   // --- D1: the beam's row and pixel; D5: an edge marker in blanking
   if (beam.bufferX !== undefined && beam.bufferY !== undefined) {
     const y = beam.bufferY + 0.5;
-    shapes.push({ kind: "line", className: "beamLine", x1: 0, y1: y, x2: W, y2: y, title: "Beam" });
+    shapes.push({ kind: "line", className: "beamLine", x1: 0, y1: y, x2: W, y2: y, title: t("panels.feature.beam.beam") });
     const x = beam.bufferX + 0.5;
     shapes.push({ kind: "line", className: "beamMarker", x1: x, y1: beam.bufferY - TICK, x2: x, y2: beam.bufferY + TICK + 1 });
   } else if (beam.region === "hblank") {
     // --- Between rows: the row just finished, marked at the right edge it left
     const row = Math.max(0, Math.min(H - 1, Math.floor((beam.frameTact - beam.firstVisibleTact) / beam.tactsPerLine)));
-    shapes.push({ kind: "line", className: "beamLine", x1: 0, y1: row + 0.5, x2: W, y2: row + 0.5, title: "Beam (horizontal blanking)" });
+    shapes.push({ kind: "line", className: "beamLine", x1: 0, y1: row + 0.5, x2: W, y2: row + 0.5, title: t("panels.feature.beam.hblank") });
     shapes.push({ kind: "line", className: "beamEdge", x1: W - 0.5, y1: row - TICK, x2: W - 0.5, y2: row + TICK + 1 });
   } else {
     // --- Vertical blanking: pinned to the edge the beam left (below the picture) or will enter
     const below = beam.frameTact >= beam.firstVisibleTact + H * beam.tactsPerLine;
     const y = below ? H - 0.5 : 0.5;
-    shapes.push({ kind: "line", className: "beamEdge", x1: 0, y1: y, x2: W, y2: y, title: "Beam (vertical blanking)" });
+    shapes.push({ kind: "line", className: "beamEdge", x1: 0, y1: y, x2: W, y2: y, title: t("panels.feature.beam.vblank") });
   }
 
   // --- D7, T7: the Copper's own position, never merged with the CPU's

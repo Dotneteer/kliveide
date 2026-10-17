@@ -2,6 +2,8 @@ import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 
 import type { SidecarBreakpointKind } from "@renderer/appIde/annotations/programAnnotations";
 import { sidecarKindOf } from "./nexBreakpointSync";
+import { t } from "@common/i18n/i18n";
+import type { MessageKey } from "@common/i18n/keys.generated";
 
 /**
  * What a popped-out NEX bank's gutter shows, and what the viewer's bank heading counts.
@@ -81,12 +83,17 @@ export type BankBreakpointKind = SidecarBreakpointKind;
 /** In the order the bank list and its details show them. */
 export const BANK_BREAKPOINT_KINDS: readonly BankBreakpointKind[] = ["exec", "memRead", "memWrite"];
 
-/** The words for a kind, as the details pane and the tooltip say them. */
-export const BANK_BREAKPOINT_KIND_NAMES: Record<BankBreakpointKind, string> = {
-  exec: "execution",
-  memRead: "memory read",
-  memWrite: "memory write"
+/** The counted words for a kind (`2 execution`), as the details pane and the tooltip say them. */
+const BANK_BREAKPOINT_KIND_KEYS: Record<BankBreakpointKind, MessageKey> = {
+  exec: "panels.next.breakpoints.kind.exec",
+  memRead: "panels.next.breakpoints.kind.memRead",
+  memWrite: "panels.next.breakpoints.kind.memWrite"
 };
+
+/** `count` breakpoints of `kind`, in the display language: `2 execution`. */
+export function countedBreakpointKind(kind: BankBreakpointKind, count: number): string {
+  return t(BANK_BREAKPOINT_KIND_KEYS[kind], { count });
+}
 
 /** The gutter's glyph for a kind, so the bank list and the listing draw the same shape. */
 export const BANK_BREAKPOINT_KIND_ICONS: Record<BankBreakpointKind, string> = {
@@ -161,16 +168,18 @@ export function formatBankBreakpointBadge(
   if (!summary || summary.total === 0) return undefined;
 
   const parts: string[] = [];
-  if (summary.exec) parts.push(`${summary.exec} execution`);
-  if (summary.memRead) parts.push(`${summary.memRead} memory read`);
-  if (summary.memWrite) parts.push(`${summary.memWrite} memory write`);
-  if (summary.disabled) parts.push(`${summary.disabled} disabled`);
+  for (const kind of BANK_BREAKPOINT_KINDS) {
+    if (summary[kind]) parts.push(countedBreakpointKind(kind, summary[kind]));
+  }
+  if (summary.disabled) {
+    parts.push(t("panels.next.breakpoints.kind.disabled", { count: summary.disabled }));
+  }
 
   return {
     text: `${summary.total}`,
-    title:
-      `${summary.total} breakpoint${summary.total === 1 ? "" : "s"} in this bank` +
-      (parts.length ? ` — ${parts.join(", ")}` : "")
+    title: parts.length
+      ? t("panels.next.breakpoints.inBankWithParts", { total: summary.total, parts: parts.join(", ") })
+      : t("panels.next.breakpoints.inBank", { total: summary.total })
   };
 }
 
@@ -211,11 +220,14 @@ export function describeBankBreakpoints(
   if (!summary) return [];
   return BANK_BREAKPOINT_KINDS.filter((kind) => summary[kind] > 0).map((kind) => {
     const disabled = summary.disabledByKind[kind];
+    const counted = countedBreakpointKind(kind, summary[kind]);
     return {
       kind,
-      text:
-        `${summary[kind]} ${BANK_BREAKPOINT_KIND_NAMES[kind]}` +
-        (disabled ? ` (${disabled === summary[kind] ? "disabled" : `${disabled} disabled`})` : "")
+      text: !disabled
+        ? counted
+        : disabled === summary[kind]
+          ? t("panels.next.breakpoints.kindAllDisabled", { kind: counted })
+          : t("panels.next.breakpoints.kindSomeDisabled", { kind: counted, disabled })
     };
   });
 }

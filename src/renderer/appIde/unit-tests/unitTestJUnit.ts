@@ -1,6 +1,7 @@
 import type { AppState } from "@common/state/AppState";
 import type { UnitTestProgram } from "@common/unit-tests/discovery";
 import { toJUnitXml } from "@common/unit-tests/junit";
+import { t } from "@common/i18n/i18n";
 
 /**
  * The last run's results as JUnit (`.plans/UNIT_TESTS_CLI_PLAN.md` D14): the command line's writer
@@ -10,10 +11,10 @@ import { toJUnitXml } from "@common/unit-tests/junit";
 export function junitOfLastRun(state: AppState, program: UnitTestProgram | undefined, withTimestamp = true): string {
   const unitTests = state.unitTests;
   const results = unitTests?.results ?? {};
-  if (!program?.tests.length) return "Build the project first: the tests come from the last successful build.";
+  if (!program?.tests.length) return t("debug.unitTest.junit.noBuild");
   const ran = new Set(unitTests?.runIds ?? Object.keys(results));
-  const tests = program.tests.filter((t) => ran.has(t.id));
-  if (!tests.length || !tests.some((t) => results[t.id])) return "Run the tests first: there are no results to export.";
+  const tests = program.tests.filter((tc) => ran.has(tc.id));
+  if (!tests.length || !tests.some((tc) => results[tc.id])) return t("debug.unitTest.junit.noResults");
   const folder = state.project?.folderPath;
   return toJUnitXml({
     name: folder?.replace(/\\/g, "/").split("/").filter(Boolean).pop() ?? "klive",

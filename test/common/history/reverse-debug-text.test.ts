@@ -53,7 +53,7 @@ describe("reverse debugging: the status bar and the fork confirmation", () => {
     const plain = forkConfirmation({ sdWrites: 0, hostFiles: [] });
     expect(plain.message).toBe("Continue from this point in the past?");
     expect(plain.detail).not.toContain("SD card");
-    const full = forkConfirmation({ sdWrites: 3, hostFiles: ["game.tzx"] }, "Edit HL");
+    const full = forkConfirmation({ sdWrites: 3, hostFiles: ["game.tzx"] }, { kind: "editRegister", register: "HL" });
     expect(full.message).toBe("Edit HL in the past?");
     expect(full.detail).toContain("The SD card's 3 sector writes in that future will be undone.");
     expect(full.detail).toContain("Files saved to tape in that future stay on disk: game.tzx.");

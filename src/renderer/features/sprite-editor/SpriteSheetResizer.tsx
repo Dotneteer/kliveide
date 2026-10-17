@@ -1,6 +1,7 @@
 import styles from "./SpriteEditor.module.scss";
 import classnames from "classnames";
 import { useCallback, useRef, useState } from "react";
+import { useT } from "@common/i18n/useT";
 import { SHEET_ROW_HEIGHT } from "./sheet-metrics";
 
 type Props = {
@@ -24,6 +25,7 @@ type Props = {
  * is nothing to unbind and nothing to leak if the component goes away mid-drag.
  */
 export const SpriteSheetResizer = ({ height, onResize, onResizeEnd, onReset }: Props) => {
+  const t = useT();
   const [active, setActive] = useState(false);
   const [pointed, setPointed] = useState(false);
   const drag = useRef<{ startY: number; startHeight: number; latest: number } | undefined>();
@@ -69,7 +71,7 @@ export const SpriteSheetResizer = ({ height, onResize, onResizeEnd, onReset }: P
     <div
       role="separator"
       aria-orientation="horizontal"
-      aria-label="Resize the sheet"
+      aria-label={t("panels.spriteEditor.resize")}
       aria-valuenow={Math.round(height / SHEET_ROW_HEIGHT)}
       tabIndex={-1}
       className={classnames(styles.sheetResizer, { [styles.sheetResizerActive]: active || pointed })}
@@ -82,7 +84,7 @@ export const SpriteSheetResizer = ({ height, onResize, onResizeEnd, onReset }: P
       // Double-click restores the two-row default - the cheapest way back from a drag that went
       // somewhere silly, and the reason the default is a named constant rather than a literal.
       onDoubleClick={onReset}
-      title={"Drag to resize the sheet\nDouble-click to reset"}
+      title={t("panels.spriteEditor.resizeTitle")}
     />
   );
 };

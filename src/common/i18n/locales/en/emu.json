@@ -1,1 +1,939 @@
-{}
+{
+  "emu.media.tape.title": "Tape",
+  "@emu.media.tape.title": {
+    "context": "ZX Spectrum media strip under the emulator screen: the name of the tape card, shown as the tooltip and accessible name of its cassette icon. Also used inside the insert/eject buttons' accessible names.",
+    "maxChars": 12
+  },
+  "emu.media.tape.empty": "(no tape)",
+  "@emu.media.tape.empty": {
+    "context": "ZX Spectrum media strip under the emulator screen: shown in place of the file name while no tape file is inserted.",
+    "maxChars": 16
+  },
+  "emu.media.drive.title": "Drive {drive}",
+  "@emu.media.drive.title": {
+    "context": "ZX Spectrum media strip under the emulator screen: the name of a floppy drive card, shown as the tooltip and accessible name of its disk icon.",
+    "maxChars": 14,
+    "placeholders": {
+      "drive": "The drive letter, A or B (never translated)"
+    }
+  },
+  "emu.media.drive.empty": "(no disk)",
+  "@emu.media.drive.empty": {
+    "context": "ZX Spectrum media strip under the emulator screen: shown in place of the file name while a floppy drive is empty.",
+    "maxChars": 16
+  },
+  "emu.media.cartridge.title": "Cartridge",
+  "@emu.media.cartridge.title": {
+    "context": "ZX Spectrum media strip under the emulator screen (Timex 2068): the name of the DOCK cartridge card, shown as the tooltip and accessible name of its icon.",
+    "maxChars": 14
+  },
+  "emu.media.cartridge.empty": "(no cartridge)",
+  "@emu.media.cartridge.empty": {
+    "context": "ZX Spectrum media strip under the emulator screen (Timex 2068): shown in place of the file name while no cartridge is inserted.",
+    "maxChars": 20
+  },
+  "emu.media.writeProtected": "Write-protected",
+  "@emu.media.writeProtected": {
+    "context": "ZX Spectrum media strip: tooltip of the lock badge on a disk card whose disk is write-protected."
+  },
+  "emu.media.eject.title": "{kind, select, tape {Eject tape} cartridge {Eject cartridge} other {Eject disk}}",
+  "@emu.media.eject.title": {
+    "context": "ZX Spectrum media strip: tooltip of the eject button on a media card. Translate each branch; keep the select keywords (tape, cartridge, other) unchanged.",
+    "placeholders": {
+      "kind": "Which medium: tape, cartridge, or disk (the 'other' branch)"
+    }
+  },
+  "emu.media.eject.label": "{kind, select, tape {Eject tape ({card})} cartridge {Eject cartridge ({card})} other {Eject disk ({card})}}",
+  "@emu.media.eject.label": {
+    "context": "ZX Spectrum media strip: accessible name (screen readers) of the eject button on a media card. Translate each branch; keep the select keywords unchanged.",
+    "placeholders": {
+      "kind": "Which medium: tape, cartridge, or disk (the 'other' branch)",
+      "card": "The card's translated title, e.g. 'Tape' or 'Drive B'"
+    }
+  },
+  "emu.media.insert.title": "{kind, select, tape {Insert tape...} cartridge {Insert cartridge...} other {Insert disk...}}",
+  "@emu.media.insert.title": {
+    "context": "ZX Spectrum media strip: tooltip of the button that opens a file dialog to insert a medium into an empty card. Translate each branch; keep the select keywords unchanged.",
+    "placeholders": {
+      "kind": "Which medium: tape, cartridge, or disk (the 'other' branch)"
+    }
+  },
+  "emu.media.insert.label": "{kind, select, tape {Insert tape ({card})} cartridge {Insert cartridge ({card})} other {Insert disk ({card})}}",
+  "@emu.media.insert.label": {
+    "context": "ZX Spectrum media strip: accessible name (screen readers) of the insert button on an empty media card. Translate each branch; keep the select keywords unchanged.",
+    "placeholders": {
+      "kind": "Which medium: tape, cartridge, or disk (the 'other' branch)",
+      "card": "The card's translated title, e.g. 'Tape' or 'Drive B'"
+    }
+  },
+  "emu.media.change.title": "{kind, select, tape {Change tape...} cartridge {Change cartridge...} other {Change disk...}}",
+  "@emu.media.change.title": {
+    "context": "ZX Spectrum media strip: tooltip of the button that opens a file dialog to replace the inserted medium. Translate each branch; keep the select keywords unchanged.",
+    "placeholders": {
+      "kind": "Which medium: tape, cartridge, or disk (the 'other' branch)"
+    }
+  },
+  "emu.media.change.label": "{kind, select, tape {Change tape ({card})} cartridge {Change cartridge ({card})} other {Change disk ({card})}}",
+  "@emu.media.change.label": {
+    "context": "ZX Spectrum media strip: accessible name (screen readers) of the button that replaces the inserted medium. Translate each branch; keep the select keywords unchanged.",
+    "placeholders": {
+      "kind": "Which medium: tape, cartridge, or disk (the 'other' branch)",
+      "card": "The card's translated title, e.g. 'Tape' or 'Drive B'"
+    }
+  },
+  "emu.nextLayers.priority": "Layer priority ($15), top layer first",
+  "@emu.nextLayers.priority": {
+    "context": "ZX Spectrum Next Layers strip under the emulator screen: tooltip of the readout showing the layer order NextReg $15 selects (e.g. 'S L U'). Keep '$15' (a register number)."
+  },
+  "emu.nextLayers.showTransparency": "Show transparency: paint the pixels no layer covers in magenta",
+  "@emu.nextLayers.showTransparency": {
+    "context": "ZX Spectrum Next Layers strip: tooltip of a toggle button."
+  },
+  "emu.nextLayers.showClips": "Show the four clip windows on the screen",
+  "@emu.nextLayers.showClips": {
+    "context": "ZX Spectrum Next Layers strip: tooltip of a toggle button that outlines the layers' clip windows."
+  },
+  "emu.nextLayers.probe": "Pixel probe: pause, then point at a pixel to see which layer produced it and why",
+  "@emu.nextLayers.probe": {
+    "context": "ZX Spectrum Next Layers strip: tooltip of a toggle button that turns on the pixel probe."
+  },
+  "emu.nextLayers.reset.title": "Show every layer",
+  "@emu.nextLayers.reset.title": {
+    "context": "ZX Spectrum Next Layers strip: tooltip of the button that ends hiding/solo and shows all layers again."
+  },
+  "emu.nextLayers.reset.text": "All",
+  "@emu.nextLayers.reset.text": {
+    "context": "ZX Spectrum Next Layers strip: the short text on the button that shows every layer again (its tooltip is 'Show every layer'). Very narrow.",
+    "maxChars": 8
+  },
+  "emu.nextLayers.close.title": "Show the composite picture (every layer) and hide this strip",
+  "@emu.nextLayers.close.title": {
+    "context": "ZX Spectrum Next Layers strip: tooltip of the close (X) button at its end."
+  },
+  "emu.nextLayers.close.label": "Close the Layers strip",
+  "@emu.nextLayers.close.label": {
+    "context": "ZX Spectrum Next Layers strip: accessible name (screen readers) of the close (X) button."
+  },
+  "emu.nextLayers.chip.hide": "Hide {layer}",
+  "@emu.nextLayers.chip.hide": {
+    "context": "ZX Spectrum Next Layers strip: tooltip of a layer chip that is shown; clicking hides the layer.",
+    "placeholders": {
+      "layer": "The layer's hardware name, never translated: ULA, Tilemap, Layer 2 or Sprites"
+    }
+  },
+  "emu.nextLayers.chip.show": "Show {layer}",
+  "@emu.nextLayers.chip.show": {
+    "context": "ZX Spectrum Next Layers strip: tooltip of a layer chip that is hidden; clicking shows the layer again.",
+    "placeholders": {
+      "layer": "The layer's hardware name, never translated: ULA, Tilemap, Layer 2 or Sprites"
+    }
+  },
+  "emu.nextLayers.chip.hideProgramOff": "Hide {layer} (the program has it switched off)",
+  "@emu.nextLayers.chip.hideProgramOff": {
+    "context": "ZX Spectrum Next Layers strip: tooltip of a shown layer chip whose layer the running program has disabled itself.",
+    "placeholders": {
+      "layer": "The layer's hardware name, never translated: ULA, Tilemap, Layer 2 or Sprites"
+    }
+  },
+  "emu.nextLayers.chip.showProgramOff": "Show {layer} (the program has it switched off)",
+  "@emu.nextLayers.chip.showProgramOff": {
+    "context": "ZX Spectrum Next Layers strip: tooltip of a hidden layer chip whose layer the running program has disabled itself.",
+    "placeholders": {
+      "layer": "The layer's hardware name, never translated: ULA, Tilemap, Layer 2 or Sprites"
+    }
+  },
+  "emu.nextLayers.chip.solo": "Solo: show {layer} alone, over a checker",
+  "@emu.nextLayers.chip.solo": {
+    "context": "ZX Spectrum Next Layers strip: tooltip of a layer chip's solo ('S') button.",
+    "placeholders": {
+      "layer": "The layer's hardware name, never translated: ULA, Tilemap, Layer 2 or Sprites"
+    }
+  },
+  "emu.nextLayers.chip.endSolo": "End solo: show every layer",
+  "@emu.nextLayers.chip.endSolo": {
+    "context": "ZX Spectrum Next Layers strip: tooltip of the solo ('S') button of the layer that is currently soloed."
+  },
+  "emu.nextLayers.chip.soloShort": "S",
+  "@emu.nextLayers.chip.soloShort": {
+    "context": "ZX Spectrum Next Layers strip: the one-letter text of a layer chip's solo button (short for 'Solo'). One or two characters at most.",
+    "maxChars": 2
+  },
+  "emu.z88.card.rom": "ROM",
+  "@emu.z88.card.rom": {
+    "context": "Cambridge Z88 card type: a ROM card. Shown in the Z88 slot strip under the emulator screen and in the Insert Card dialog's card-type list. Usually kept as is.",
+    "maxChars": 12
+  },
+  "emu.z88.card.ram": "RAM",
+  "@emu.z88.card.ram": {
+    "context": "Cambridge Z88 card type: a RAM card. Shown in the Z88 slot strip under the emulator screen and, followed by its size (e.g. 'RAM 128K'), in the Insert Card dialog's card-type list. Usually kept as is.",
+    "maxChars": 12
+  },
+  "emu.z88.card.epromUv": "EPROM UV",
+  "@emu.z88.card.epromUv": {
+    "context": "Cambridge Z88 card type: a UV-erasable EPROM card. Shown in the Z88 slot strip and, followed by its size, in the Insert Card dialog's card-type list. Usually kept as is.",
+    "maxChars": 16
+  },
+  "emu.z88.card.intelFlash": "Intel Flash {chip}",
+  "@emu.z88.card.intelFlash": {
+    "context": "Cambridge Z88 card type: an Intel flash memory card. Shown in the Z88 slot strip and, followed by its size, in the Insert Card dialog's card-type list. Only 'Flash' may need translating.",
+    "maxChars": 28,
+    "placeholders": {
+      "chip": "The chip's part number, e.g. '28F004S5' (never translated)"
+    }
+  },
+  "emu.z88.card.amdFlash": "AMD Flash {chip}",
+  "@emu.z88.card.amdFlash": {
+    "context": "Cambridge Z88 card type: an AMD flash memory card. Shown in the Z88 slot strip and, followed by its size, in the Insert Card dialog's card-type list. Only 'Flash' may need translating.",
+    "maxChars": 28,
+    "placeholders": {
+      "chip": "The chip's part number, e.g. '29F040B' (never translated)"
+    }
+  },
+  "emu.z88.slot.title": "Slot {slot}:",
+  "@emu.z88.slot.title": {
+    "context": "Cambridge Z88 slot strip under the emulator screen: the label of a card slot, followed by the card's size (e.g. 'Slot 1: 128K').",
+    "maxChars": 10,
+    "placeholders": {
+      "slot": "The slot number, 0 to 3"
+    }
+  },
+  "emu.z88.slot.ram": "{size} RAM",
+  "@emu.z88.slot.ram": {
+    "context": "Cambridge Z88 slot strip: the internal RAM size of slot 0, e.g. '512K RAM'.",
+    "maxChars": 12,
+    "placeholders": {
+      "size": "The RAM size with its unit, e.g. '512K' (invariant)"
+    }
+  },
+  "emu.z88.slot.empty": "(empty)",
+  "@emu.z88.slot.empty": {
+    "context": "Cambridge Z88 slot strip: shown in place of the card size while a slot has no card.",
+    "maxChars": 10
+  },
+  "emu.z88.slot.systemDefault": "System default",
+  "@emu.z88.slot.systemDefault": {
+    "context": "Cambridge Z88 slot strip: the card type shown for a card Klive does not recognise (the system's default card).",
+    "maxChars": 20
+  },
+  "emu.z88.slot.romFile": "ROM {file}",
+  "@emu.z88.slot.romFile": {
+    "context": "Cambridge Z88 slot strip: the card type of a ROM card loaded from a file.",
+    "placeholders": {
+      "file": "The ROM file's name"
+    }
+  },
+  "emu.media.dock.noBank": "The file holds no DOCK bank",
+  "@emu.media.dock.noBank": {
+    "context": "Error shown when a Timex 2068 cartridge (.dck) file is inserted but contains no DOCK memory bank. Keep 'DOCK' (the Timex hardware name)."
+  },
+  "emu.media.tape.errorTitle": "Tape file error",
+  "@emu.media.tape.errorTitle": {
+    "context": "Title of the message box shown when a tape file cannot be used."
+  },
+  "emu.media.tape.notZx8081Program": "{file} is not a ZX80/ZX81 program file",
+  "@emu.media.tape.notZx8081Program": {
+    "context": "Message box text: the chosen .p/.81/.o/.80 tape file is not a valid ZX80/ZX81 program.",
+    "placeholders": {
+      "file": "The file's path"
+    }
+  },
+  "emu.media.tape.errorMessage": "Error while processing tape file {file} ({error})",
+  "@emu.media.tape.errorMessage": {
+    "context": "Message box text: the tape file could not be read.",
+    "placeholders": {
+      "file": "The tape file's path",
+      "error": "The reader's error text (English)"
+    }
+  },
+  "emu.media.tape.setTitle": "Tape file set",
+  "@emu.media.tape.setTitle": {
+    "context": "Title of the message box confirming that a tape file was inserted."
+  },
+  "emu.media.tape.setMessage": "Tape file {file} successfully set.",
+  "@emu.media.tape.setMessage": {
+    "context": "Message box text confirming that a tape file was inserted.",
+    "placeholders": {
+      "file": "The tape file's path"
+    }
+  },
+  "emu.media.disk.insertedTitle": "Disk inserted",
+  "@emu.media.disk.insertedTitle": {
+    "context": "Title of the message box confirming that a disk file was inserted into a floppy drive."
+  },
+  "emu.media.disk.ejectedTitle": "Disk ejected",
+  "@emu.media.disk.ejectedTitle": {
+    "context": "Title of the message box confirming that a disk was ejected from a floppy drive."
+  },
+  "emu.media.disk.insertedMessage": "Disk file {file} successfully inserted into drive {drive}.",
+  "@emu.media.disk.insertedMessage": {
+    "context": "Message box text confirming that a disk file was inserted.",
+    "placeholders": {
+      "file": "The disk file's path",
+      "drive": "The drive letter, A or B (never translated)"
+    }
+  },
+  "emu.media.disk.ejectedMessage": "Disk successfully ejected from drive {drive}",
+  "@emu.media.disk.ejectedMessage": {
+    "context": "Message box text confirming that a disk was ejected.",
+    "placeholders": {
+      "drive": "The drive letter, A or B (never translated)"
+    }
+  },
+  "emu.media.disk.errorTitle": "Disk file error",
+  "@emu.media.disk.errorTitle": {
+    "context": "Title of the message box shown when a disk file cannot be used."
+  },
+  "emu.media.disk.errorMessage": "Error while processing disk file {file} ({error})",
+  "@emu.media.disk.errorMessage": {
+    "context": "Message box text: the disk file could not be read.",
+    "placeholders": {
+      "file": "The disk file's path",
+      "error": "The reader's error text (English)"
+    }
+  },
+  "emu.debugRecording.discard.title": "Debug Recording",
+  "@emu.debugRecording.discard.title": {
+    "context": "Title of the confirmation shown before Stop, Reset or Restart would discard the part of an opened debug recording that ran past its end."
+  },
+  "emu.debugRecording.discard.message": "{action, select, stop {Stop discards what ran after the end of {recording}.} reset {Reset discards what ran after the end of {recording}.} other {Restart discards what ran after the end of {recording}.}}",
+  "@emu.debugRecording.discard.message": {
+    "context": "Confirmation question shown before Stop, Reset or Restart of a machine running on past the end of an opened debug recording. Translate each branch; keep the select keywords (stop, reset, other) unchanged. The command names should match the Stop/Reset/Restart toolbar buttons.",
+    "placeholders": {
+      "action": "The command: stop, reset, or restart (the 'other' branch)",
+      "recording": "The recording's file name"
+    }
+  },
+  "emu.debugRecording.discard.detail": "The recording was continued past its end, and that part is not in the file. Cancel, then use Debug › Save Debug Recording... to keep it.",
+  "@emu.debugRecording.discard.detail": {
+    "context": "Detail text of the discard confirmation. 'Debug › Save Debug Recording...' is the menu path: use the translated menu names."
+  },
+  "emu.debugRecording.discard.stop": "Stop",
+  "@emu.debugRecording.discard.stop": {
+    "context": "Confirm button of the discard confirmation: stops the machine and discards the unsaved part of the recording.",
+    "maxChars": 12
+  },
+  "emu.debugRecording.discard.reset": "Reset",
+  "@emu.debugRecording.discard.reset": {
+    "context": "Confirm button of the discard confirmation: resets the machine and discards the unsaved part of the recording.",
+    "maxChars": 12
+  },
+  "emu.debugRecording.discard.restart": "Restart",
+  "@emu.debugRecording.discard.restart": {
+    "context": "Confirm button of the discard confirmation: restarts the machine and discards the unsaved part of the recording.",
+    "maxChars": 12
+  },
+  "emu.rzx.video.done": "{how, select, desync {RZX video stopped at the desync} ended {RZX video finished} other {RZX video stopped}}",
+  "@emu.rzx.video.done": {
+    "context": "Emulator output line written when rendering an RZX recording to a video ends. Translate each branch; keep the select keywords (desync, ended, other) unchanged. Keep 'RZX'.",
+    "placeholders": {
+      "how": "How it ended: desync (the replay lost sync), ended (it reached the end), or stopped (the 'other' branch)"
+    }
+  },
+  "emu.rzx.video.doneWithFile": "{how, select, desync {RZX video stopped at the desync: {file}} ended {RZX video finished: {file}} other {RZX video stopped: {file}}}",
+  "@emu.rzx.video.doneWithFile": {
+    "context": "Emulator output line written when rendering an RZX recording to a video ends, naming the video file. Translate each branch; keep the select keywords unchanged. Keep 'RZX'.",
+    "placeholders": {
+      "how": "How it ended: desync, ended, or stopped (the 'other' branch)",
+      "file": "The video file's path"
+    }
+  },
+  "emu.memory.writeDoesNotFit": "The write does not fit partition {partition} ({size} bytes).",
+  "@emu.memory.writeDoesNotFit": {
+    "context": "Error of a memory write command: the bytes run past the end of the memory partition.",
+    "placeholders": {
+      "partition": "The partition (bank) number",
+      "size": "The partition's size in bytes"
+    }
+  },
+  "emu.memory.romPagedIn": "A ROM partition cannot be written while it is paged in.",
+  "@emu.memory.romPagedIn": {
+    "context": "Error of a memory write command: the target bank is ROM and is currently paged into the CPU's view."
+  },
+  "emu.machine.supersededSnapshot": "The machine change was superseded by another one; the snapshot was not loaded",
+  "@emu.machine.supersededSnapshot": {
+    "context": "Error of loading a snapshot (.sna/.z80/.szx/.z88), shown as a command result or message: another machine switch started while this one was setting up."
+  },
+  "emu.machine.supersededRecording": "The machine change was superseded by another one; the recording was not played",
+  "@emu.machine.supersededRecording": {
+    "context": "Error of playing an RZX recording: another machine switch started while this one was setting up."
+  },
+  "emu.machine.notRunningA": "The emulator is not running a {machine}",
+  "@emu.machine.notRunningA": {
+    "context": "Error of loading a snapshot or recording: after switching, the emulator does not run the machine the file needs.",
+    "placeholders": {
+      "machine": "The machine's name, e.g. 'ZX Spectrum 128K' or 'Cambridge Z88' (never translated)"
+    }
+  },
+  "emu.machine.notRunningThe": "The emulator is not running the {machine}",
+  "@emu.machine.notRunningThe": {
+    "context": "Error of loading a machine state or debug recording: after switching, the emulator does not run the machine the file was saved on.",
+    "placeholders": {
+      "machine": "The machine's name, e.g. 'ZX Spectrum Next' (never translated)"
+    }
+  },
+  "emu.machine.noMachineToSave": "There is no machine to save",
+  "@emu.machine.noMachineToSave": {
+    "context": "Error of saving a snapshot: no emulated machine exists."
+  },
+  "emu.machine.noStateToSave": "The machine has no state to save; start it first",
+  "@emu.machine.noStateToSave": {
+    "context": "Error of saving a snapshot or machine state while the machine is stopped."
+  },
+  "emu.snapshot.cannotLoad": "The snapshot cannot be loaded: {errors}",
+  "@emu.snapshot.cannotLoad": {
+    "context": "Error of loading a snapshot file, followed by the reasons.",
+    "placeholders": {
+      "errors": "The reasons (English), separated by semicolons"
+    }
+  },
+  "emu.snapshot.embeddedTapeUnsupported": "The embedded .{extension} tape is not a format Klive plays; it was not inserted",
+  "@emu.snapshot.embeddedTapeUnsupported": {
+    "context": "Warning after loading an .szx snapshot that embeds a tape of an unsupported format.",
+    "placeholders": {
+      "extension": "The tape's file extension, e.g. 'csw' (never translated)"
+    }
+  },
+  "emu.snapshot.linkedTape": "The snapshot links the tape {file}; insert it yourself if you need it",
+  "@emu.snapshot.linkedTape": {
+    "context": "Warning after loading an .szx snapshot that refers to an external tape file.",
+    "placeholders": {
+      "file": "The tape file's name"
+    }
+  },
+  "emu.snapshot.noDrive": "The machine has no drive {drive} for {file}",
+  "@emu.snapshot.noDrive": {
+    "context": "Warning after loading a snapshot: a disk the snapshot uses cannot be inserted because the machine lacks that drive.",
+    "placeholders": {
+      "drive": "The drive letter, A or B (never translated)",
+      "file": "The disk file's name"
+    }
+  },
+  "emu.snapshot.needs48k": "The snapshot needs 48K of RAM, but the project's machine is a ZX Spectrum 16K",
+  "@emu.snapshot.needs48k": {
+    "context": "Error of loading a 48K snapshot while a project keeps the machine a 16K model."
+  },
+  "emu.snapshot.keptModel": "The snapshot is loaded on the project's {machine} rather than a {wanted}",
+  "@emu.snapshot.keptModel": {
+    "context": "Warning after loading a snapshot while a project is open: the project's model is kept instead of switching to the model the snapshot was made on.",
+    "placeholders": {
+      "machine": "The project's machine name (never translated)",
+      "wanted": "The machine the snapshot was made on (never translated)"
+    }
+  },
+  "emu.snapshot.noDiskDrives": "The project's machine has no disk drives; the snapshot's disks are not inserted",
+  "@emu.snapshot.noDiskDrives": {
+    "context": "Warning after loading a +3 snapshot on a project machine without floppy drives."
+  },
+  "emu.snapshot.saveUnsupportedMachine": "Only a ZX Spectrum 48K, 128K or +2E/+3E can be saved as a snapshot",
+  "@emu.snapshot.saveUnsupportedMachine": {
+    "context": "Error of saving a snapshot on a machine that has no snapshot format. Machine names are never translated."
+  },
+  "emu.rzx.noScreenRecorder": "The emulator has no screen recorder",
+  "@emu.rzx.noScreenRecorder": {
+    "context": "Error of rendering an RZX recording to a video: the screen recorder is unavailable."
+  },
+  "emu.rzx.screenRecordingBusy": "A screen recording is already armed or running; stop it first",
+  "@emu.rzx.screenRecordingBusy": {
+    "context": "Error of rendering an RZX recording to a video while a screen recording is already in progress."
+  },
+  "emu.rzx.loaded": "RZX recording {file} loaded",
+  "@emu.rzx.loaded": {
+    "context": "Emulator output line after an RZX recording was loaded for playback; the program counter is appended in brackets.",
+    "placeholders": {
+      "file": "The recording's file name"
+    }
+  },
+  "emu.rzx.noMachine": "There is no machine to record",
+  "@emu.rzx.noMachine": {
+    "context": "Error of an RZX recording command: no emulated machine exists."
+  },
+  "emu.rzx.unsupportedMachine": "Only a ZX Spectrum 48K, 128K or +2E/+3E can record an RZX file",
+  "@emu.rzx.unsupportedMachine": {
+    "context": "Error of starting an RZX recording on a machine that cannot record. Machine names are never translated."
+  },
+  "emu.rzx.notRecording": "No RZX recording is running",
+  "@emu.rzx.notRecording": {
+    "context": "Error of an RZX recording command (stop, rollback, insert point) when no recording is in progress."
+  },
+  "emu.rzx.cannotRecord": "The machine cannot record",
+  "@emu.rzx.cannotRecord": {
+    "context": "Error of starting an RZX recording on a machine that cannot record."
+  },
+  "emu.rzx.alreadyRecording": "A recording is already running or waiting to be saved; stop and save it first",
+  "@emu.rzx.alreadyRecording": {
+    "context": "Error of starting an RZX recording while another one is in progress or unsaved."
+  },
+  "emu.rzx.noState": "The machine has no state to record from; start it first",
+  "@emu.rzx.noState": {
+    "context": "Error of starting an RZX recording while the machine is stopped."
+  },
+  "emu.rzx.stoppedSaveIt": "The recording has stopped; save it",
+  "@emu.rzx.stoppedSaveIt": {
+    "context": "Error of rolling back an RZX recording that has already stopped."
+  },
+  "emu.rzx.stopped": "The recording has stopped",
+  "@emu.rzx.stopped": {
+    "context": "Error of inserting a rollback point into an RZX recording that has already stopped."
+  },
+  "emu.rzx.rolledBackLatest": "RZX recording rolled back to the latest point",
+  "@emu.rzx.rolledBackLatest": {
+    "context": "Emulator output line after an RZX recording was rolled back to its latest rollback point; the program counter is appended in brackets."
+  },
+  "emu.rzx.rolledBackPoint": "RZX recording rolled back to point -{back}",
+  "@emu.rzx.rolledBackPoint": {
+    "context": "Emulator output line after an RZX recording was rolled back several rollback points; the program counter is appended in brackets.",
+    "placeholders": {
+      "back": "How many points back, 2 or more (shown as '-2', '-3', ...)"
+    }
+  },
+  "emu.machineState.cannotSave": "This machine cannot save its state",
+  "@emu.machineState.cannotSave": {
+    "context": "Error of saving a machine state (.kls) or quick-saving on a machine that does not support it."
+  },
+  "emu.machineState.noSzxPart": "The state has no portable .szx part ({reason}); it loads only into this version of Klive",
+  "@emu.machineState.noSzxPart": {
+    "context": "Warning after saving a machine state (.kls) whose portable snapshot part could not be written.",
+    "placeholders": {
+      "reason": "Why (English)"
+    }
+  },
+  "emu.machineState.sdCardMissing": "The SD card image the state was saved with ({file}) is not available",
+  "@emu.machineState.sdCardMissing": {
+    "context": "Error of loading a ZX Spectrum Next machine state whose SD card image file is missing.",
+    "placeholders": {
+      "file": "The SD card image's file name"
+    }
+  },
+  "emu.machineState.sdCardChangedConfirm": "The SD card image ({file}) has changed since the state was saved; its file system may not match what the machine remembers",
+  "@emu.machineState.sdCardChangedConfirm": {
+    "context": "Confirmation question before loading a ZX Spectrum Next machine state whose SD card image changed since saving.",
+    "placeholders": {
+      "file": "The SD card image's file name"
+    }
+  },
+  "emu.machineState.sdCardChanged": "The SD card image has changed since the state was saved",
+  "@emu.machineState.sdCardChanged": {
+    "context": "Warning after loading a ZX Spectrum Next machine state whose SD card image changed since saving (the user accepted it)."
+  },
+  "emu.machineState.superseded": "Another machine change superseded loading the state",
+  "@emu.machineState.superseded": {
+    "context": "Error of loading a machine state: another machine switch started meanwhile."
+  },
+  "emu.machineState.mismatch": "{reason}. The state was saved by Klive {version} and cannot be loaded into this version",
+  "@emu.machineState.mismatch": {
+    "context": "Error of loading a machine state saved by a different Klive build that has no portable fallback.",
+    "placeholders": {
+      "reason": "Why the state does not fit this build (English)",
+      "version": "The Klive version that saved it, e.g. '0.61.0'"
+    }
+  },
+  "emu.machineState.loadedFromSzx": "The state was saved by Klive {version}, whose {core} core differs from this one; it was loaded from its .szx part, which leaves out the exact tape position, the disk controller's state and the EI/MEMPTR details",
+  "@emu.machineState.loadedFromSzx": {
+    "context": "Warning after loading a machine state through its portable .szx fallback. Keep 'EI/MEMPTR' (CPU details).",
+    "placeholders": {
+      "version": "The Klive version that saved it",
+      "core": "The emulator core's id, e.g. 'sp128' (never translated)"
+    }
+  },
+  "emu.machineState.loaded": "Machine state loaded",
+  "@emu.machineState.loaded": {
+    "context": "Emulator output line after a machine state file was loaded; the program counter is appended in brackets."
+  },
+  "emu.machineState.tape": "The tape is the one in the state ({file}), at its saved position",
+  "@emu.machineState.tape": {
+    "context": "Note after loading a machine state: which tape the machine now has.",
+    "placeholders": {
+      "file": "The tape file's name"
+    }
+  },
+  "emu.machineState.disk": "Disk {drive} is the one in the state ({file}); it is detached from that file, so the machine's writes are not saved to it. Insert a disk to attach one again",
+  "@emu.machineState.disk": {
+    "context": "Note after loading a machine state: the floppy disk comes from the state and is not written back to its file.",
+    "placeholders": {
+      "drive": "The drive letter, A or B (never translated)",
+      "file": "The disk file's name"
+    }
+  },
+  "emu.machineState.noQuickSave": "No state has been quick-saved for this machine",
+  "@emu.machineState.noQuickSave": {
+    "context": "Error of the Quick Restore command when nothing was quick-saved."
+  },
+  "emu.machineState.quickRestored": "Quick state restored",
+  "@emu.machineState.quickRestored": {
+    "context": "Emulator output line after Quick Restore; the program counter is appended in brackets."
+  },
+  "emu.debugRecording.noLayoutStamp": "The {core} core has no layout stamp",
+  "@emu.debugRecording.noLayoutStamp": {
+    "context": "Error of saving or opening a debug recording: the emulator core lacks build information (a build problem).",
+    "placeholders": {
+      "core": "The emulator core's id (never translated)"
+    }
+  },
+  "emu.debugRecording.noCodeHash": "The {core} core was built without a code hash; rebuild it",
+  "@emu.debugRecording.noCodeHash": {
+    "context": "Error of saving or opening a debug recording: the emulator core lacks build information (a build problem).",
+    "placeholders": {
+      "core": "The emulator core's id (never translated)"
+    }
+  },
+  "emu.debugRecording.mismatch.core": "The recording belongs to the {recordedCore} core, not the {core} core",
+  "@emu.debugRecording.mismatch.core": {
+    "context": "Why a debug recording cannot be replayed: it was made on another emulator core.",
+    "placeholders": {
+      "recordedCore": "The recording's core id (never translated)",
+      "core": "This machine's core id (never translated)"
+    }
+  },
+  "emu.debugRecording.mismatch.layout": "The recording was recorded by Klive {version} (build {build}); this build's {core} core has another memory layout",
+  "@emu.debugRecording.mismatch.layout": {
+    "context": "Why a debug recording cannot be replayed by this Klive build.",
+    "placeholders": {
+      "version": "The Klive version that recorded it",
+      "build": "The recording build's short hash, e.g. '1a2b3c4d'",
+      "core": "The core id (never translated)"
+    }
+  },
+  "emu.debugRecording.mismatch.contract": "The recording was recorded by Klive {version} (build {build}); this build's {core} core takes its inputs through other exports",
+  "@emu.debugRecording.mismatch.contract": {
+    "context": "Why a debug recording cannot be replayed by this Klive build.",
+    "placeholders": {
+      "version": "The Klive version that recorded it",
+      "build": "The recording build's short hash",
+      "core": "The core id (never translated)"
+    }
+  },
+  "emu.debugRecording.mismatch.build": "The recording was recorded by Klive {version} (build {build}); this build (Klive {liveVersion}, build {liveBuild}) differs",
+  "@emu.debugRecording.mismatch.build": {
+    "context": "Why a debug recording cannot be replayed by this Klive build.",
+    "placeholders": {
+      "version": "The Klive version that recorded it",
+      "build": "The recording build's short hash",
+      "liveVersion": "This Klive's version",
+      "liveBuild": "This build's short hash"
+    }
+  },
+  "emu.debugRecording.refusalNoEndState": "{reason}, and it holds no end state",
+  "@emu.debugRecording.refusalNoEndState": {
+    "context": "Why a debug recording cannot be opened at all: it cannot be replayed (the reason) and has no saved end state to fall back to.",
+    "placeholders": {
+      "reason": "Why it cannot be replayed (one of the 'The recording ...' messages)"
+    }
+  },
+  "emu.debugRecording.cannotSave": "This machine cannot save a debug recording",
+  "@emu.debugRecording.cannotSave": {
+    "context": "Error of saving a debug recording on a machine without support for it."
+  },
+  "emu.debugRecording.startWithDebugging": "Start the machine with debugging; recordings come from reverse debugging",
+  "@emu.debugRecording.startWithDebugging": {
+    "context": "Error of saving a debug recording while the machine is not running under the debugger."
+  },
+  "emu.debugRecording.timelineEnded": "The reverse-debugging timeline ended",
+  "@emu.debugRecording.timelineEnded": {
+    "context": "Error of saving a debug recording: the reverse-debugging history stopped meanwhile."
+  },
+  "emu.debugRecording.tooLargeToWrite": "The recording would be {size} GB, more than Klive can write; save less of it with -from or -sparse",
+  "@emu.debugRecording.tooLargeToWrite": {
+    "context": "Error of saving a debug recording that is too large. Keep the option names '-from' and '-sparse' (command syntax).",
+    "placeholders": {
+      "size": "The size in gigabytes with one decimal, already formatted"
+    }
+  },
+  "emu.debugRecording.tooLargeToRead": "The recording is larger than Klive can read (2 GB)",
+  "@emu.debugRecording.tooLargeToRead": {
+    "context": "Error of opening a debug recording file that is too large."
+  },
+  "emu.debugRecording.superseded": "Another machine change superseded opening the recording",
+  "@emu.debugRecording.superseded": {
+    "context": "Error of opening a debug recording: another machine switch started meanwhile."
+  },
+  "emu.debugRecording.noReverseDebugging": "The {machine} has no reverse debugging",
+  "@emu.debugRecording.noReverseDebugging": {
+    "context": "Error of opening a debug recording on a machine without reverse debugging.",
+    "placeholders": {
+      "machine": "The machine's name (never translated)"
+    }
+  },
+  "emu.debugRecording.noKls": "The recording holds no state of its present (KLS section)",
+  "@emu.debugRecording.noKls": {
+    "context": "Error of opening a debug recording without its machine state section. Keep 'KLS' (a file section name)."
+  },
+  "emu.debugRecording.opened": "Debug recording {file} opened",
+  "@emu.debugRecording.opened": {
+    "context": "Emulator output line after a debug recording was opened; the program counter is appended in brackets.",
+    "placeholders": {
+      "file": "The recording's file name"
+    }
+  },
+  "emu.debugRecording.timelineNotStarted": "The recording's timeline did not start",
+  "@emu.debugRecording.timelineNotStarted": {
+    "context": "Error of opening a debug recording: its reverse-debugging history could not be set up."
+  },
+  "emu.debugRecording.overBudget": "The recording is larger than the reverse-debugging memory budget: its oldest keyframes go as the machine runs on",
+  "@emu.debugRecording.overBudget": {
+    "context": "Warning after opening a debug recording bigger than the reverse-debugging memory budget."
+  },
+  "emu.debugRecording.verifySkipped": "-verify checks a recording opened at its present; it was opened in the past and not checked",
+  "@emu.debugRecording.verifySkipped": {
+    "context": "Warning of the open-recording command: its -verify option was ignored. Keep '-verify' (an option name)."
+  },
+  "emu.debugRecording.tape": "The tape is the one in the recording ({file})",
+  "@emu.debugRecording.tape": {
+    "context": "Note after opening a debug recording: which tape the machine now has.",
+    "placeholders": {
+      "file": "The tape file's name"
+    }
+  },
+  "emu.debugRecording.disk": "Disk {drive} is the one in the recording ({file}); it is detached from that file, so replaying never writes to it",
+  "@emu.debugRecording.disk": {
+    "context": "Note after opening a debug recording: the floppy disk comes from the recording.",
+    "placeholders": {
+      "drive": "The drive letter, A or B (never translated)",
+      "file": "The disk file's name"
+    }
+  },
+  "emu.debugRecording.sdCard.same": "The SD card ({file}) is the one the recording was made with: running on past its end uses it",
+  "@emu.debugRecording.sdCard.same": {
+    "context": "Note after opening a ZX Spectrum Next debug recording made with the current SD card image.",
+    "placeholders": {
+      "file": "The SD card image's file name"
+    }
+  },
+  "emu.debugRecording.sdCard.other": "Every SD card sector the recording read is in it, so it replays without the card; running on past its end uses the current card ({file}), which is not the recorded one ({recorded})",
+  "@emu.debugRecording.sdCard.other": {
+    "context": "Note after opening a ZX Spectrum Next debug recording made with another SD card image.",
+    "placeholders": {
+      "file": "The current SD card image's file name",
+      "recorded": "The recorded SD card image's file name"
+    }
+  },
+  "emu.debugRecording.sdCard.none": "Every SD card sector the recording read is in it, so it replays without the card; running on past its end uses no card",
+  "@emu.debugRecording.sdCard.none": {
+    "context": "Note after opening a ZX Spectrum Next debug recording while no SD card image is set."
+  },
+  "emu.debugRecording.sparse": "The recording keeps only keyframes about a second apart: the first step back into a stretch replays longer",
+  "@emu.debugRecording.sparse": {
+    "context": "Note after opening a sparse debug recording (saved with -sparse)."
+  },
+  "emu.script.notCreated": "Script {file} process has not been created.",
+  "@emu.script.notCreated": {
+    "context": "Script output (the script's output document): the emulator was asked to run a script the IDE has not registered.",
+    "placeholders": {
+      "file": "The script file's path"
+    }
+  },
+  "emu.script.started": "Script started",
+  "@emu.script.started": {
+    "context": "Script output (the script's output document): the script began running in the emulator."
+  },
+  "emu.script.completed": "Script {file} with ID {id} completed in {ms, number} ms.",
+  "@emu.script.completed": {
+    "context": "Script output: the script finished normally.",
+    "placeholders": {
+      "file": "The script file's path",
+      "id": "The script run's numeric ID",
+      "ms": "The run time in milliseconds"
+    }
+  },
+  "emu.script.stopped": "Script {file} with ID {id} stopped in {ms, number} ms.",
+  "@emu.script.stopped": {
+    "context": "Script output: the script was stopped by the user.",
+    "placeholders": {
+      "file": "The script file's path",
+      "id": "The script run's numeric ID",
+      "ms": "The run time in milliseconds"
+    }
+  },
+  "emu.script.failed": "Script {file} with ID {id} failed in {ms, number} ms.",
+  "@emu.script.failed": {
+    "context": "Script output: the script ended with an error (the error follows on the next line).",
+    "placeholders": {
+      "file": "The script file's path",
+      "id": "The script run's numeric ID",
+      "ms": "The run time in milliseconds"
+    }
+  },
+  "emu.script.unknownError": "Unknown error",
+  "@emu.script.unknownError": {
+    "context": "Script output: shown when a failed script's error has no text."
+  },
+  "emu.script.notRunning": "Script with ID {id} is not running.",
+  "@emu.script.notRunning": {
+    "context": "Script output: a stop was requested for a script that is not running.",
+    "placeholders": {
+      "id": "The script run's numeric ID"
+    }
+  },
+  "emu.script.stopping": "Stopping script {file}...",
+  "@emu.script.stopping": {
+    "context": "Script output: the user asked to stop the script.",
+    "placeholders": {
+      "file": "The script file's path"
+    }
+  },
+  "panels.controls.registers.bitTooltip": "Bit {bit}: {description}",
+  "@panels.controls.registers.bitTooltip": {
+    "context": "Tooltip of one bit of an eight-bit flag strip in the register/state panels (e.g. the Z80 F register, a NextReg's flags): the bit number and what it means.",
+    "placeholders": {
+      "bit": "The bit number, 0 to 7",
+      "description": "What the bit means (may be empty)"
+    }
+  },
+  "panels.controls.bankBrowser.filters": "Show {heading}",
+  "@panels.controls.bankBrowser.filters": {
+    "context": "Accessible name (screen readers) of the filter buttons above a bank/block list in a file viewer (NEX, tape, snapshot, Z88).",
+    "placeholders": {
+      "heading": "The list's heading, e.g. 'Banks' or 'Blocks'"
+    }
+  },
+  "panels.controls.bankBrowser.noMatch": "{kind, select, block {No block matches this filter.} part {No part matches this filter.} other {No bank matches this filter.}}",
+  "@panels.controls.bankBrowser.noMatch": {
+    "context": "Empty state of a file viewer's bank/block list when the selected filter leaves nothing. Translate each branch; keep the select keywords (block, part, other) unchanged.",
+    "placeholders": {
+      "kind": "What the items are: block (tape blocks), part (program file parts), or bank (memory banks, the 'other' branch)"
+    }
+  },
+  "panels.controls.bankBrowser.listLabel": "{kind, select, block {Block list} part {Part list} other {Bank list}}",
+  "@panels.controls.bankBrowser.listLabel": {
+    "context": "Accessible name (screen readers) of a file viewer's bank/block list. Translate each branch; keep the select keywords unchanged.",
+    "placeholders": {
+      "kind": "What the items are: block, part, or bank (the 'other' branch)"
+    }
+  },
+  "panels.controls.bankBrowser.itemTitle": "{kind, select, block {Block {number}} part {Part {number}} other {Bank {number}}}",
+  "@panels.controls.bankBrowser.itemTitle": {
+    "context": "Title of the details pane of the selected bank/block in a file viewer, e.g. 'Bank $05'. Translate each branch; keep the select keywords unchanged.",
+    "maxChars": 16,
+    "placeholders": {
+      "kind": "What the items are: block, part, or bank (the 'other' branch)",
+      "number": "The item's number, e.g. '$05' (invariant)"
+    }
+  },
+  "panels.controls.bankBrowser.detailsLabel": "{title} details",
+  "@panels.controls.bankBrowser.detailsLabel": {
+    "context": "Accessible name (screen readers) of the details pane of the selected bank/block.",
+    "placeholders": {
+      "title": "The details title, e.g. 'Bank $05'"
+    }
+  },
+  "panels.controls.bankBrowser.rowHint": "Double-click or Enter to pop out in {view}",
+  "@panels.controls.bankBrowser.rowHint": {
+    "context": "Tooltip of a row in a file viewer's bank/block list.",
+    "placeholders": {
+      "view": "The translated name of the view it opens in, e.g. 'Memory' or 'Disassembly'"
+    }
+  },
+  "panels.controls.bankBrowser.rowPopOut.title": "{kind, select, block {Pop out Block {number} ({view})} part {Pop out Part {number} ({view})} other {Pop out Bank {number} ({view})}}",
+  "@panels.controls.bankBrowser.rowPopOut.title": {
+    "context": "Tooltip of the pop-out icon on a row of a file viewer's bank/block list; it opens the item as its own document. Translate each branch; keep the select keywords unchanged.",
+    "placeholders": {
+      "kind": "What the items are: block, part, or bank (the 'other' branch)",
+      "number": "The item's number, e.g. '$05'",
+      "view": "The translated name of the view it opens in"
+    }
+  },
+  "panels.controls.bankBrowser.rowPopOut.label": "{kind, select, block {Pop out Block {number}} part {Pop out Part {number}} other {Pop out Bank {number}}}",
+  "@panels.controls.bankBrowser.rowPopOut.label": {
+    "context": "Accessible name (screen readers) of the pop-out icon on a row of a file viewer's bank/block list. Translate each branch; keep the select keywords unchanged.",
+    "placeholders": {
+      "kind": "What the items are: block, part, or bank (the 'other' branch)",
+      "number": "The item's number, e.g. '$05'"
+    }
+  },
+  "panels.controls.bankBrowser.openAsDocument": "{kind, select, block {Open this block as its own document} part {Open this part as its own document} other {Open this bank as its own document}}",
+  "@panels.controls.bankBrowser.openAsDocument": {
+    "context": "Tooltip of the 'Pop out' button in the details pane of a file viewer's selected bank/block. Translate each branch; keep the select keywords unchanged.",
+    "placeholders": {
+      "kind": "What the items are: block, part, or bank (the 'other' branch)"
+    }
+  },
+  "panels.controls.bankBrowser.popOut": "Pop out",
+  "@panels.controls.bankBrowser.popOut": {
+    "context": "Text of the button in the details pane that opens the selected bank/block as its own document; the view's name follows it after a dot.",
+    "maxChars": 12
+  },
+  "panels.controls.bankBrowser.popOutIn": "Pop out in {view}",
+  "@panels.controls.bankBrowser.popOutIn": {
+    "context": "Accessible name (screen readers) of the 'Pop out' button in the details pane of a file viewer.",
+    "placeholders": {
+      "view": "The translated name of the view it opens in, e.g. 'Memory'"
+    }
+  },
+  "panels.controls.bankBrowser.menuPopOutIn": "Pop Out in {view}",
+  "@panels.controls.bankBrowser.menuPopOutIn": {
+    "context": "Context-menu item of a bank/block in a file viewer (title case, like other menu items): opens it as its own document in that view.",
+    "placeholders": {
+      "view": "The translated name of the view it opens in, e.g. 'Memory'"
+    }
+  },
+  "panels.controls.bankBrowser.popOutOther": "Pop out in another view",
+  "@panels.controls.bankBrowser.popOutOther": {
+    "context": "Tooltip and accessible name of the arrow button beside 'Pop out' that opens a menu of the other views."
+  },
+  "panels.controls.bankBrowser.lastUsed": "last used",
+  "@panels.controls.bankBrowser.lastUsed": {
+    "context": "Grey note at the right of the menu item for the view a bank/block was last popped out in.",
+    "maxChars": 14
+  },
+  "panels.controls.nextPalette.label": "Next palette",
+  "@panels.controls.nextPalette.label": {
+    "context": "Accessible name (screen readers) of the ZX Spectrum Next palette grid (256 colour swatches) in the palette panels and editors."
+  },
+  "panels.controls.nextPalette.tooltip": "{index} — R: {r}, G: {g}, B: {b}",
+  "@panels.controls.nextPalette.tooltip": {
+    "context": "Tooltip of a swatch in the ZX Spectrum Next palette grid: the palette index and its red/green/blue components. R, G and B may be replaced by your language's usual abbreviations.",
+    "placeholders": {
+      "index": "The palette index in hex, e.g. '$1F'",
+      "r": "Red component, 0-7",
+      "g": "Green component, 0-7",
+      "b": "Blue component, 0-3 or 0-7"
+    }
+  },
+  "panels.controls.nextPalette.tooltipWithFlags": "{index} — R: {r}, G: {g}, B: {b} ({flags})",
+  "@panels.controls.nextPalette.tooltipWithFlags": {
+    "context": "Tooltip of a swatch in the ZX Spectrum Next palette grid that has special roles, listed in brackets.",
+    "placeholders": {
+      "index": "The palette index in hex, e.g. '$1F'",
+      "r": "Red component",
+      "g": "Green component",
+      "b": "Blue component",
+      "flags": "The roles, e.g. 'priority, transparency' (translated, joined by the separator message)"
+    }
+  },
+  "panels.controls.nextPalette.flag.priority": "priority",
+  "@panels.controls.nextPalette.flag.priority": {
+    "context": "Role of a ZX Spectrum Next palette entry, listed in its tooltip: the Layer 2 priority bit is set (the colour is drawn above the other layers). Lower case, as it appears inside brackets."
+  },
+  "panels.controls.nextPalette.flag.transparency": "transparency",
+  "@panels.controls.nextPalette.flag.transparency": {
+    "context": "Role of a ZX Spectrum Next palette entry, listed in its tooltip: this index is the transparent colour. Lower case, as it appears inside brackets."
+  },
+  "panels.controls.nextPalette.flagSeparator": ", ",
+  "@panels.controls.nextPalette.flagSeparator": {
+    "context": "Separator between the roles listed in a palette swatch's tooltip (e.g. 'priority, transparency'). Keep the trailing space if your language uses one."
+  },
+  "panels.controls.spriteSheet.bytesMark": "Marked as bytes",
+  "@panels.controls.spriteSheet.bytesMark": {
+    "context": "Accessible name (screen readers) of the mark on a sprite pattern that the user marked as data bytes, not a picture (NEX viewer and sprite inspector)."
+  },
+  "panels.controls.spriteSheet.mixedFormats": "Mixed formats",
+  "@panels.controls.spriteSheet.mixedFormats": {
+    "context": "Accessible name of the warning mark on a sprite pattern whose data is used as both 8-bit and 4-bit patterns."
+  },
+  "panels.controls.spriteSheet.uploadCursor": "Upload cursor",
+  "@panels.controls.spriteSheet.uploadCursor": {
+    "context": "Accessible name of the mark on the sprite pattern the next pattern upload (port $5B) writes into."
+  },
+  "panels.controls.spriteSheet.selectedSprite": "The selected sprite's pattern",
+  "@panels.controls.spriteSheet.selectedSprite": {
+    "context": "Accessible name of the mark on the pattern the selected sprite shows."
+  },
+  "panels.controls.spriteSheet.zoom": "Zoom",
+  "@panels.controls.spriteSheet.zoom": {
+    "context": "Accessible name of the group of zoom buttons (1×-4×) above a sprite pattern sheet."
+  },
+  "panels.controls.dropdown.placeholder": "Select...",
+  "@panels.controls.dropdown.placeholder": {
+    "context": "Placeholder of a drop-down list while nothing is chosen (used when the caller sets no placeholder of its own).",
+    "maxChars": 16
+  }
+}

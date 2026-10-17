@@ -28,19 +28,23 @@ translators is `src/common/i18n/locales/README.md`.
    ViewModel selector. Store keys/arguments in state, format at display.
 7. **Add `maxChars`** to anything in a status bar, toolbar, tab, button, menu-bar title or narrow
    column. Status bars are one `nowrap` line; give long items a tooltip with the full text.
-8. **Not translated (D9):** mnemonics, register/flag names, NextReg names, directives, BASIC
+8. **Commands**: `description` is a getter returning `t(...)`; in `usage`, a pure syntax line
+   (`bp-set <address-spec> [-r] …`) stays English, an explanatory line (`-once: a one-shot …`) is a
+   translated message — make `usage` a getter then. Never match a command's message text in code:
+   return a code/flag in the result's `value`.
+9. **Not translated (D9):** mnemonics, register/flag names, NextReg names, directives, BASIC
    keywords, IDE command names and syntax, machine/model names, file extensions, accelerators,
    log/trace/console output (use `tEnglish()` when a log line reuses a translated label), external
    compiler output, the docs site. Settings' `setting-definitions.ts` titles are developer docs, not
    UI text.
-9. **Never write translations for other languages** as part of a feature change. New English is
+10. **Never write translations for other languages** as part of a feature change. New English is
    picked up by `npm run i18n:todo -- <lang>` in the next translation round (`README.md` §3–4).
-10. **Tests pin English** (`test/vitest.setup.ts`), so English assertions keep working. To check a
+11. **Tests pin English** (`test/vitest.setup.ts`), so English assertions keep working. To check a
     new screen for missed text, switch to the pseudo-locale: `setLanguage("qps")` in a test, or
     Settings › Language › *Pseudo-locale (qps)* in a dev build — anything not `[Åççéñţéð~~]` was
     missed. `test/main/app-menu-structure.test.ts` and `test/settings/settings-i18n.test.ts` do this
     for the menus and the Settings dialog.
-11. **Tests never hard-code the list of offered languages.** A disabled language appears in dev
+12. **Tests never hard-code the list of offered languages.** A disabled language appears in dev
     builds as soon as it has a catalog (Hungarian's menu catalog did exactly that in the step 9 dry
     run and broke two tests); read `offeredLanguages()` / `LANGUAGES` instead.
 

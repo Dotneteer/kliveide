@@ -1,3 +1,4 @@
+import { useT } from "@common/i18n/useT";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import classnames from "classnames";
 
@@ -89,6 +90,7 @@ function fileNameOf(path: string): string {
 }
 
 const RomAnnotationEditorPanel = ({ document, viewState }: DocumentProps<RomAnnotationEditorViewState>) => {
+  const t = useT();
   const path = viewState?.sidecarPath ?? document?.node?.fullPath ?? document?.path ?? "";
   const { projectService } = useAppServices();
   const documentHubService = useDocumentHubService();
@@ -111,7 +113,7 @@ const RomAnnotationEditorPanel = ({ document, viewState }: DocumentProps<RomAnno
   // --- The file, read again whenever its session publishes (an edit from any page document)
   useEffect(() => {
     if (!path) {
-      setLoaded({ status: "error", message: "This document has no file." });
+      setLoaded({ status: "error", message: t("panels.rom.noFile") });
       return undefined;
     }
     let cancelled = false;
@@ -122,7 +124,7 @@ const RomAnnotationEditorPanel = ({ document, viewState }: DocumentProps<RomAnno
           ? await mainApi.readTextFile(path)
           : await projectService.readFileContent(path, false);
         if (cancelled) return;
-        if (typeof contents !== "string") throw new Error("The file is not text.");
+        if (typeof contents !== "string") throw new Error(t("panels.rom.notText"));
         // --- A shipped sidecar is shown, never written: its page documents read a read-only session
         if (location === "shipped" && !peekAnnotationSession(path)) {
           const parsed = parseAnnotations(contents);
@@ -150,6 +152,7 @@ const RomAnnotationEditorPanel = ({ document, viewState }: DocumentProps<RomAnno
       cancelled = true;
       unsubscribe();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `t` only words an error; no re-read
   }, [location, mainApi, path, projectService]);
 
   const raw = loaded.status === "loaded" ? loaded.raw : undefined;
@@ -204,7 +207,7 @@ const RomAnnotationEditorPanel = ({ document, viewState }: DocumentProps<RomAnno
       await openStaticMemoryDump(
         documentHubService,
         `rom:${path}:${match.page}`,
-        `${fileNameOf(path).replace(/\.dis$/i, "")} · page ${match.page}`,
+        t("panels.rom.pageTitle", { file: fileNameOf(path).replace(/\.dis$/i, ""), page: match.page }),
         match.bytes,
         {
           disassemblyEnabled: true,
@@ -220,7 +223,7 @@ const RomAnnotationEditorPanel = ({ document, viewState }: DocumentProps<RomAnno
         }
       );
     },
-    [documentHubService, path, readOnly]
+    [documentHubService, path, readOnly, t]
   );
 
   /** The next unlabelled control-transfer target of a page, cycling: the level 1 to-do list. */
@@ -244,20 +247,24 @@ const RomAnnotationEditorPanel = ({ document, viewState }: DocumentProps<RomAnno
     return counts;
   }, [raw]);
 
-  if (loaded.status === "loading") return <EmptyState message="Loading ROM annotations..." motif={false} />;
+  if (loaded.status === "loading") return <EmptyState message={t("panels.rom.loading")} motif={false} />;
   if (loaded.status === "error") return <EmptyState message={loaded.message} tone="error" motif={false} />;
   if (!isRomSidecar) {
-    return <EmptyState message={`${fileNameOf(path)} is not a ROM annotation file (its machine is not "rom").`} tone="error" />;
+    return <EmptyState message={t("panels.rom.notRomSidecar", { file: fileNameOf(path) })} tone="error" />;
   }
-  if (!matches) return <EmptyState message="Looking for the ROM..." motif={false} />;
+  if (!matches) return <EmptyState message={t("panels.rom.lookingForRom")} motif={false} />;
 
   const matched = matches.filter((m) => m.bytes);
   if (matched.length === 0) {
-    const crcs = matches.map((m) => m.crc32).join(", ") || "none";
+    const crcs = matches.map((m) => m.crc32).join(", ");
     const searched = [...new Set(matches.flatMap((m) => m.searched))].join("; ");
     return (
       <EmptyState
-        message={`No ROM matches ${fileNameOf(path)}: no ROM page has CRC ${crcs}. Searched: ${searched || "nothing to search"}.`}
+        message={
+          searched
+            ? t("panels.rom.noMatch", { file: fileNameOf(path), crcs: crcs || t("panels.rom.noCrcs"), searched })
+            : t("panels.rom.noMatchNothingSearched", { file: fileNameOf(path), crcs: crcs || t("panels.rom.noCrcs") })
+        }
         tone="error"
       />
     );
@@ -266,30 +273,30 @@ const RomAnnotationEditorPanel = ({ document, viewState }: DocumentProps<RomAnno
   const ready = check && check.problems.length === 0;
   const measured = check ? Math.min(...Object.values(check.levels), 2) : undefined;
   const readinessText = !check
-    ? "checking..."
+    ? t("panels.rom.checking")
     : ready
-      ? `Ready to ship · level ${measured}`
-      : `${check.problems.length} problem${check.problems.length === 1 ? "" : "s"} · level ${measured ?? 0}`;
+      ? t("panels.rom.ready", { level: measured ?? 0 })
+      : t("panels.rom.problems", { count: check.problems.length, level: measured ?? 0 });
   return (
     <DataPanel xclass={styles.panel}>
-      <PanelHeader title="ROM annotations">
+      <PanelHeader title={t("panels.rom.title")}>
         <PanelHeaderActions>
           {!readOnly && (
-            <span className={styles.mode} title="The provenance a new label, comment or region is recorded with">
-              New entries:
+            <span className={styles.mode} title={t("panels.rom.modeTitle")}>
+              {t("panels.rom.newEntries")}
               <button
                 type="button"
                 className={classnames(styles.modeButton, { [styles.modeActive]: provenanceMode === "observed" })}
                 onClick={() => setRomProvenanceMode("observed")}
               >
-                observed
+                {t("panels.rom.observed")}
               </button>
               <button
                 type="button"
                 className={classnames(styles.modeButton, { [styles.modeActive]: provenanceMode === "manual" })}
                 onClick={() => setRomProvenanceMode("manual")}
               >
-                manual
+                {t("panels.rom.manual")}
               </button>
             </span>
           )}
@@ -298,45 +305,45 @@ const RomAnnotationEditorPanel = ({ document, viewState }: DocumentProps<RomAnno
 
       <div className={styles.summary}>
         <DataRow>
-          <DataLabel text="File" />
+          <DataLabel text={t("panels.helpers.heading.file")} />
           <DataValue text={path} />
           {/* --- Only a file on disk can be revealed: `roms/…` is relative to Klive's own folder */}
           {isAbsolutePath(path) && (
             <SmallIconButton
               iconName="folder-opened"
-              title={`Reveal in ${isWindows ? "File Explorer" : "Finder"}`}
+              title={isWindows ? t("panels.rom.revealExplorer") : t("panels.rom.revealFinder")}
               clicked={() => void mainApi.showItemInFolder(path)}
             />
           )}
         </DataRow>
         <DataRow>
-          <DataLabel text="Kind" />
+          <DataLabel text={t("panels.tape.fact.kind")} />
           <DataValue
             text={
               location === "working"
-                ? "Working copy — edits are written here"
+                ? t("panels.rom.kindWorking")
                 : location === "shipped"
-                  ? "Shipped sidecar — read-only; rom-ann-new makes a working copy to edit"
-                  : "Custom ROM's sidecar — edits are written here"
+                  ? t("panels.rom.kindShipped")
+                  : t("panels.rom.kindCustom")
             }
           />
         </DataRow>
         <DataRow>
-          <DataLabel text="Ready" />
+          <DataLabel text={t("panels.rom.readyLabel")} />
           <DataValue text={readinessText}>
             {!check ? (
-              "checking..."
+              t("panels.rom.checking")
             ) : (
               <button
                 type="button"
                 className={classnames(styles.chip, ready ? styles.chipReady : styles.chipProblems)}
                 onClick={() => setShowProblems((shown) => !shown)}
-                title={ready ? "Passes every check a shipped sidecar must pass" : "Show the problems"}
+                title={ready ? t("panels.rom.readyTitle") : t("panels.rom.showProblems")}
               >
                 {readinessText}
               </button>
             )}
-            {check && <DataSecondary text={` records level ${check.recordedLevel}`} />}
+            {check && <DataSecondary text={` ${t("panels.rom.recordsLevel", { level: check.recordedLevel })}`} />}
           </DataValue>
         </DataRow>
         {showProblems && check && check.problems.length > 0 && (
@@ -348,14 +355,12 @@ const RomAnnotationEditorPanel = ({ document, viewState }: DocumentProps<RomAnno
         )}
         {shippedChanged && (
           <div className={styles.notice}>
-            The shipped {fileNameOf(path)} has changed since this working copy was made from it. Copying
-            this file back would undo that change.
+            {t("panels.rom.shippedChanged", { file: fileNameOf(path) })}
           </div>
         )}
         {!readOnly && (
           <div className={styles.rule}>
-            Write only what the code in front of you does: no comment, name or region from a published
-            disassembly (.ai/rom-annotations/README.md).
+            {t("panels.rom.rule")}
           </div>
         )}
       </div>
@@ -365,20 +370,29 @@ const RomAnnotationEditorPanel = ({ document, viewState }: DocumentProps<RomAnno
           const targets = check?.unlabelledTargets[String(match.page)] ?? [];
           return (
             <DataRow key={match.page} index={index} xclass={styles.pageRow}>
-              <DataLabel text={`Page ${match.page}`} />
+              <DataLabel text={t("panels.rom.page", { page: match.page })} />
               <DataValue text={match.name ?? ""} />
               <DataSecondary text={`CRC ${match.crc32}`} />
               {match.bytes ? (
                 <>
                   <DataSecondary
-                    text={`${match.bytes.length / 1024}K · ${labelCounts.get(match.page) ?? 0} labels · level ${check?.levels[String(match.page)] ?? "?"} · from ${match.foundAt}`}
+                    text={t("panels.rom.pageFacts", {
+                      kb: match.bytes.length / 1024,
+                      labels: labelCounts.get(match.page) ?? 0,
+                      level: String(check?.levels[String(match.page)] ?? "?"),
+                      from: match.foundAt
+                    })}
                   />
                   <span className={styles.actions}>
-                    <Button text="Disassembly" variant="secondary" clicked={() => void openPage(match, "disassembly")} />
-                    <Button text="Memory" variant="secondary" clicked={() => void openPage(match, "memory")} />
+                    <Button text={t("panels.helpers.view.disassembly")} variant="secondary" clicked={() => void openPage(match, "disassembly")} />
+                    <Button text={t("panels.helpers.view.memory")} variant="secondary" clicked={() => void openPage(match, "memory")} />
                     {!readOnly && targets.length > 0 && (
                       <Button
-                        text={`Next unlabelled ($${toHexa4(targets.find((t) => t > (nextTarget.current.get(match.page) ?? -1)) ?? targets[0])})`}
+                        text={t("panels.rom.nextUnlabelled", {
+                          address: `$${toHexa4(
+                            targets.find((target) => target > (nextTarget.current.get(match.page) ?? -1)) ?? targets[0]
+                          )}`
+                        })}
                         variant="secondary"
                         clicked={() => openNextUnlabelled(match)}
                       />
@@ -388,7 +402,7 @@ const RomAnnotationEditorPanel = ({ document, viewState }: DocumentProps<RomAnno
               ) : (
                 <DataSecondary
                   xclass={styles.missing}
-                  text={`No ROM page with CRC ${match.crc32} was found. Searched: ${match.searched.join("; ")}.`}
+                  text={t("panels.rom.pageMissing", { crc: match.crc32, searched: match.searched.join("; ") })}
                 />
               )}
             </DataRow>

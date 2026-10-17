@@ -31,7 +31,7 @@ import {
   formatCopperInstruction
 } from "@common/zxnext/copper/copperDecoder";
 import type { IFloppyControllerDevice } from "@emu/abstractions/IFloppyControllerDevice";
-import type { IRzxSession, RzxStop } from "@emu/machines/zxSpectrum/rzx/rzxSession";
+import type { IRzxSession, RzxInterruptReason, RzxStop } from "@emu/machines/zxSpectrum/rzx/rzxSession";
 import type { ReverseDebugState, RzxState } from "@state/AppState";
 
 import { toHexa4 } from "@appIde/services/ide-commands";
@@ -99,7 +99,7 @@ import {
 import { getGlobalSetting } from "@renderer/core/RendererProvider";
 import { MF_PROFILE, MF_REVERSE_DEBUG } from "@common/machines/constants";
 import {
-  ADVANCED_DEBUGGING_OFF_MESSAGE,
+  advancedDebuggingOffMessage,
   isAdvancedDebuggingEnabled
 } from "@common/features/advancedDebugging";
 import {
@@ -485,11 +485,12 @@ export class MachineController implements IMachineController {
    * Ends an active RZX session because the IDE changes the machine from outside the CPU (trap 4).
    * A stopped playback is detached; a stopped recording stays attached, unsaved, until it is saved.
    * @param reason What the IDE did, for the message
+   * @param register The register edited, for `registerEdited`
    */
-  async interruptRzx(reason: string): Promise<void> {
+  async interruptRzx(reason: RzxInterruptReason, register?: string): Promise<void> {
     const session = this.rzxSession;
     if (!session?.active) return;
-    session.interrupt(reason);
+    session.interrupt(reason, register);
     await this.reportRzxStop();
   }
 
@@ -587,7 +588,7 @@ export class MachineController implements IMachineController {
   async stop(operationRevision?: number): Promise<void> {
     this.prepareMachineOperation(operationRevision);
     // --- Every reset, restore, code injection and machine switch stops the machine first (trap 4)
-    if (!this.keepRzxOnStop) await this.interruptRzx("the machine was stopped, reset or reloaded");
+    if (!this.keepRzxOnStop) await this.interruptRzx("machineStopped");
     // --- Stop the machine
     const beforeState = this.state;
     this.isDebugging = false;
@@ -1606,7 +1607,7 @@ export class MachineController implements IMachineController {
     snapshot: TimelineSnapshot,
     options: { land?: TimelinePosition; description?: string; expectedImage?: Uint8Array; recordingName?: string } = {}
   ): Promise<void> {
-    if (!this.advancedDebuggingEnabled) throw new Error(ADVANCED_DEBUGGING_OFF_MESSAGE);
+    if (!this.advancedDebuggingEnabled) throw new Error(advancedDebuggingOffMessage());
     if (!isTimelineMachine(this.machine)) throw new Error("This machine has no reverse debugging");
     await this.restoreState(applyState, options.description ?? "Debug recording opened", { attachMedia: false });
     this.historySource()?.setHistoryEnabled(true);

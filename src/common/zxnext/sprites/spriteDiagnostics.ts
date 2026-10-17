@@ -7,6 +7,9 @@ import type { DecodedSpriteSlot, ResolvedSprite } from "./spriteAttributes";
 import { findAnchor, patternSlotOf } from "./spriteAttributes";
 import { clippedFraction, isOnScreen, spriteRect, type SpriteSpaceRect } from "./spriteGeometry";
 import { NEX_SPRITE_TRANSPARENT, isBlankPattern, patternPixels } from "./spritePatterns";
+import type { MessageArgs } from "@common/i18n/i18n";
+import type { MessageKey } from "@common/i18n/keys.generated";
+import { withTranslatedTexts } from "../translatedTexts";
 
 export type SpriteDiagnosticCode =
   | "visibleBitClear"
@@ -30,11 +33,40 @@ export type SpriteDiagnosticLevel = "hidden" | "warning" | "info";
 export type SpriteDiagnostic = {
   code: SpriteDiagnosticCode;
   level: SpriteDiagnosticLevel;
-  /** The chip text */
-  chip: string;
-  /** The inspector's sentence */
-  sentence: string;
+  /** The chip text, in the current language on each read */
+  readonly chip: string;
+  /** The inspector's sentence, in the current language on each read */
+  readonly sentence: string;
 };
+
+/** The chip and sentence keys of each code */
+const TEXT_KEYS: Record<SpriteDiagnosticCode, { chip: MessageKey; sentence: MessageKey }> = {
+  visibleBitClear: { chip: "gfxCommon.sprite.diag.visibleBitClear.chip", sentence: "gfxCommon.sprite.diag.visibleBitClear.sentence" },
+  anchorHidden: { chip: "gfxCommon.sprite.diag.anchorHidden.chip", sentence: "gfxCommon.sprite.diag.anchorHidden.sentence" },
+  noAnchor: { chip: "gfxCommon.sprite.diag.noAnchor.chip", sentence: "gfxCommon.sprite.diag.noAnchor.sentence" },
+  spritesDisabled: { chip: "gfxCommon.sprite.diag.spritesDisabled.chip", sentence: "gfxCommon.sprite.diag.spritesDisabled.sentence" },
+  offScreen: { chip: "gfxCommon.sprite.diag.offScreen.chip", sentence: "gfxCommon.sprite.diag.offScreen.sentence" },
+  outsideClip: { chip: "gfxCommon.sprite.diag.outsideClip.chip", sentence: "gfxCommon.sprite.diag.outsideClip.sentence" },
+  partlyClipped: { chip: "gfxCommon.sprite.diag.partlyClipped.chip", sentence: "gfxCommon.sprite.diag.partlyClipped.sentence" },
+  patternTransparent: { chip: "gfxCommon.sprite.diag.patternTransparent.chip", sentence: "gfxCommon.sprite.diag.patternTransparent.sentence" },
+  patternBlank: { chip: "gfxCommon.sprite.diag.patternBlank.chip", sentence: "gfxCommon.sprite.diag.patternBlank.sentence" },
+  staleAttr4: { chip: "gfxCommon.sprite.diag.staleAttr4.chip", sentence: "gfxCommon.sprite.diag.staleAttr4.sentence" }
+};
+
+/** A diagnostic whose texts translate on each read */
+function diagnostic(
+  code: SpriteDiagnosticCode,
+  level: SpriteDiagnosticLevel,
+  args?: MessageArgs
+): SpriteDiagnostic {
+  return withTranslatedTexts(
+    { code, level },
+    {
+      chip: { key: TEXT_KEYS[code].chip, args },
+      sentence: { key: TEXT_KEYS[code].sentence, args }
+    }
+  );
+}
 
 export type SpriteDiagnosticContext = {
   slots: DecodedSpriteSlot[];
@@ -62,67 +94,32 @@ export function spriteDiagnostics(index: number, ctx: SpriteDiagnosticContext): 
   const out: SpriteDiagnostic[] = [];
 
   if (!slot.visibleBit) {
-    out.push({
-      code: "visibleBitClear",
-      level: "hidden",
-      chip: "hidden: visible bit clear",
-      sentence: "Hidden: its visible bit (attr3 bit 7) is clear."
-    });
+    out.push(diagnostic("visibleBitClear", "hidden"));
   } else if (slot.kind === "relative" && resolved && !resolved.visible) {
     const anchor = findAnchor(ctx.slots, index);
     out.push(
       anchor === undefined
-        ? {
-            code: "noAnchor",
-            level: "hidden",
-            chip: "hidden: no anchor",
-            sentence:
-              "Hidden: this relative sprite has no anchor before it, so it composes onto an invisible, all-zero anchor."
-          }
-        : {
-            code: "anchorHidden",
-            level: "hidden",
-            chip: `hidden: anchor #${anchor} not visible`,
-            sentence: `Hidden: its anchor, sprite #${anchor}, is not visible.`
-          }
+        ? diagnostic("noAnchor", "hidden")
+        : diagnostic("anchorHidden", "hidden", { anchor: String(anchor) })
     );
   }
 
   const visible = resolved?.visible ?? false;
   if (visible && !ctx.spritesEnabled) {
-    out.push({
-      code: "spritesDisabled",
-      level: "hidden",
-      chip: "sprites disabled ($15 bit 0)",
-      sentence: "Hidden: the sprite layer is off (NextReg $15 bit 0 is clear)."
-    });
+    out.push(diagnostic("spritesDisabled", "hidden"));
   }
 
   if (visible && resolved) {
     const rect = spriteRect(resolved);
     if (!isOnScreen(rect)) {
-      out.push({
-        code: "offScreen",
-        level: "hidden",
-        chip: "off screen",
-        sentence: `Hidden: it is at (${rect.x1}, ${rect.y1}), outside the 320×256 sprite space.`
-      });
+      // --- Coordinates are copy-pasteable values: invariant, not locale-formatted
+      out.push(diagnostic("offScreen", "hidden", { x: String(rect.x1), y: String(rect.y1) }));
     } else {
       const fraction = clippedFraction(rect, ctx.clip);
       if (fraction >= 1) {
-        out.push({
-          code: "outsideClip",
-          level: "hidden",
-          chip: "outside clip window",
-          sentence: "Hidden: it lies entirely outside the sprite clip window."
-        });
+        out.push(diagnostic("outsideClip", "hidden"));
       } else if (fraction > 0) {
-        out.push({
-          code: "partlyClipped",
-          level: "warning",
-          chip: "partly clipped",
-          sentence: `Partly clipped: ${Math.round(fraction * 100)}% of it is outside the clip window or the screen.`
-        });
+        out.push(diagnostic("partlyClipped", "warning", { fraction: Math.round(fraction * 100) / 100 }));
       }
     }
 
@@ -136,33 +133,19 @@ export function spriteDiagnostics(index: number, ctx: SpriteDiagnosticContext): 
       if (isBlankPattern(pixels)) {
         out.push(
           pixels[0] === NEX_SPRITE_TRANSPARENT
-            ? {
-                code: "patternTransparent",
-                level: "warning",
-                chip: "pattern is all transparent",
-                sentence: "Its pattern is entirely the transparency colour ($4B), so nothing is drawn."
-              }
-            : {
-                code: "patternBlank",
-                level: "warning",
-                chip: "pattern is blank",
-                sentence: "Its pattern is a single solid colour."
-              }
+            ? diagnostic("patternTransparent", "warning")
+            : diagnostic("patternBlank", "warning")
         );
       }
     }
   }
 
   if (slot.staleAttr4Matters) {
-    out.push({
-      code: "staleAttr4",
-      level: "info",
-      chip: "4-byte: attr4 ignored",
-      sentence: `A 4-byte sprite: its stored attr4 ($${slot.raw[4]
-        .toString(16)
-        .toUpperCase()
-        .padStart(2, "0")}) is left over from an earlier upload and ignored. It would change this sprite if attr3 bit 6 were set.`
-    });
+    out.push(
+      diagnostic("staleAttr4", "info", {
+        value: `$${slot.raw[4].toString(16).toUpperCase().padStart(2, "0")}`
+      })
+    );
   }
   return out;
 }

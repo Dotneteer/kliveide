@@ -36,6 +36,8 @@ import {
   type ProfilerModel
 } from "@renderer/features/profiler/profilerModel";
 import styles from "./ProfilerPanel.module.scss";
+import { useT } from "@common/i18n/useT";
+import type { MessageKey } from "@common/i18n/keys.generated";
 
 /**
  * The Profiler document (`$profiler`, `.plans/PROFILER_PLAN.md` D14): where the time went, as a
@@ -47,16 +49,17 @@ import styles from "./ProfilerPanel.module.scss";
 type ProfilerTab = "routines" | "addresses" | "tree" | "callers";
 type RoutineSort = "self" | "calls" | "instructions";
 
-const TABS: { id: ProfilerTab; label: string }[] = [
-  { id: "routines", label: "Routines" },
-  { id: "addresses", label: "Addresses" },
-  { id: "tree", label: "Call tree" },
-  { id: "callers", label: "Callers" }
+const TABS: { id: ProfilerTab; labelKey: MessageKey }[] = [
+  { id: "routines", labelKey: "panels.doc.profiler.tab.routines" },
+  { id: "addresses", labelKey: "panels.doc.profiler.tab.addresses" },
+  { id: "tree", labelKey: "panels.doc.profiler.tab.tree" },
+  { id: "callers", labelKey: "panels.doc.profiler.tab.callers" }
 ];
 
 const n = (v: number) => Math.round(v).toLocaleString("en-US");
 
 const ProfilerPanel = (_props: DocumentProps) => {
+  const t = useT();
   const emuApi = useEmuApi();
   const mainApi = useMainApi();
   const { ideCommandsService, outputPaneService, projectService } = useAppServices();
@@ -120,7 +123,7 @@ const ProfilerPanel = (_props: DocumentProps) => {
     try {
       const result = await ideCommandsService.executeCommand(command, outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD));
       if (result && !result.success && result.finalMessage) {
-        await mainApi.displayMessageBox("error", "Profiler", result.finalMessage);
+        await mainApi.displayMessageBox("error", t("panels.doc.profiler.errorTitle"), result.finalMessage);
       }
     } finally {
       setBusy(false);
@@ -129,7 +132,7 @@ const ProfilerPanel = (_props: DocumentProps) => {
 
   const exportProfile = async () => {
     const file = await mainApi.showSaveFileDialog({
-      title: "Export Profile",
+      title: t("panels.doc.profiler.exportTitle"),
       defaultPath: `${machineId ?? "machine"}-profile.json`,
       filters: PROFILE_FILE_FILTERS,
       settingsId: PROFILE_EXPORT_FOLDER
@@ -162,57 +165,57 @@ const ProfilerPanel = (_props: DocumentProps) => {
 
   const header = (
     <PanelHeader>
-      <span className={styles.tabs} role="tablist" aria-label="Profiler view">
-        {TABS.map((t) => (
+      <span className={styles.tabs} role="tablist" aria-label={t("panels.doc.profiler.tabsLabel")}>
+        {TABS.map((tabDef) => (
           <button
-            key={t.id}
+            key={tabDef.id}
             type="button"
             role="tab"
             className={styles.tab}
-            aria-selected={tab === t.id}
-            onClick={() => setTab(t.id)}
+            aria-selected={tab === tabDef.id}
+            onClick={() => setTab(tabDef.id)}
           >
-            {t.label}
+            {t(tabDef.labelKey)}
           </button>
         ))}
       </span>
       <ToolbarSeparator small={true} />
       <SmallIconButton
         iconName="play"
-        title={withCalls ? "Start profiling, with the call graph (resets the profile)" : "Start profiling (resets the profile)"}
+        title={t(withCalls ? "panels.doc.profiler.startWithCalls" : "panels.doc.profiler.start")}
         enable={supported && !busy && !running}
         clicked={() => run(`profile start${withCalls ? " -calls" : ""}`)}
       />
       <SmallIconButton
         iconName="pause"
-        title="Stop profiling: the profile stays"
+        title={t("panels.doc.profiler.stop")}
         enable={supported && !busy && running}
         clicked={() => run("profile stop")}
       />
       <SmallIconButton
         iconName="clear-all"
-        title="Clear the profile"
+        title={t("panels.doc.profiler.clear")}
         enable={supported && !busy && !!status?.timeTotal}
         clicked={() => run("profile reset")}
       />
       <SmallIconButton
         iconName="save"
-        title="Export the profile: speedscope, callgrind, CSV or Fuse"
+        title={t("panels.doc.profiler.export")}
         enable={supported && !busy && !!status?.timeTotal}
         clicked={() => void exportProfile()}
       />
       <ToolbarSeparator small={true} />
       <LabeledSwitch
         value={withCalls}
-        label="Call graph:"
-        title="Start profiling with the call tracker: inclusive time, the call tree and callers"
+        label={t("panels.doc.profiler.callGraph")}
+        title={t("panels.doc.profiler.callGraphTitle")}
         clicked={setWithCalls}
       />
       <ToolbarSeparator small={true} />
       <LabeledSwitch
         value={hideWaiting}
-        label="Hide waiting:"
-        title="Leave the time spent in HALT out of the table and the percentages"
+        label={t("panels.doc.profiler.hideWaiting")}
+        title={t("panels.doc.profiler.hideWaitingTitle")}
         clicked={setHideWaiting}
       />
     </PanelHeader>
@@ -222,7 +225,7 @@ const ProfilerPanel = (_props: DocumentProps) => {
     return (
       <FullPanel fontSize="--panel-font-size" fontFamily="--monospace-font">
         {header}
-        <EmptyState message={empty ?? "Reading the profile..."} />
+        <EmptyState message={empty ?? t("panels.doc.profiler.reading")} />
       </FullPanel>
     );
   }
@@ -247,10 +250,10 @@ const ProfilerPanel = (_props: DocumentProps) => {
       <span className={styles.shareText}>{formatPct(pct)}</span>
     </span>
   );
-  const sortHeader = (key: RoutineSort, text: string, className: string) => (
+  const sortHeader = (key: RoutineSort, text: string, sortTitle: string, className: string) => (
     <span
       className={classnames(styles.number, className, styles.sortable)}
-      title={`Sort by ${text.toLowerCase()}`}
+      title={sortTitle}
       onClick={() => setSort(key)}
     >
       {sort === key ? `${text} ▾` : text}
@@ -260,20 +263,27 @@ const ProfilerPanel = (_props: DocumentProps) => {
   const routinesTab = () => (
     <>
       <div className={classnames(styles.row, styles.headerRow)}>
-        <span className={styles.name}>Routine</span>
-        {banked && <span className={styles.partition}>Part.</span>}
-        <span className={styles.address}>Entry</span>
-        {sortHeader("self", `Self (${unit})`, "")}
-        <span className={styles.share}>Self %</span>
-        {sortHeader("calls", model.flat.rows[0]?.callsFromGraph ? "Calls" : "Entries", styles.narrow)}
-        {sortHeader("instructions", "Instr.", styles.narrow)}
-        <span className={classnames(styles.number, styles.narrow)} title="Self time per call">
-          Per call
+        <span className={styles.name}>{t("panels.doc.profiler.col.routine")}</span>
+        {banked && <span className={styles.partition}>{t("panels.doc.profiler.col.partition")}</span>}
+        <span className={styles.address}>{t("panels.doc.profiler.col.entry")}</span>
+        {sortHeader("self", t("panels.doc.profiler.col.self", { unit }), t("panels.doc.profiler.sortBySelf"), "")}
+        <span className={styles.share}>{t("panels.doc.profiler.col.selfPct")}</span>
+        {model.flat.rows[0]?.callsFromGraph
+          ? sortHeader("calls", t("panels.doc.profiler.col.calls"), t("panels.doc.profiler.sortByCalls"), styles.narrow)
+          : sortHeader("calls", t("panels.doc.profiler.col.entries"), t("panels.doc.profiler.sortByEntries"), styles.narrow)}
+        {sortHeader(
+          "instructions",
+          t("panels.doc.profiler.col.instructions"),
+          t("panels.doc.profiler.sortByInstructions"),
+          styles.narrow
+        )}
+        <span className={classnames(styles.number, styles.narrow)} title={t("panels.doc.profiler.col.perCallTitle")}>
+          {t("panels.doc.profiler.col.perCall")}
         </span>
-        <span className={styles.number} title="Self time per emulated frame (D5)">
-          Per frame
+        <span className={styles.number} title={t("panels.doc.profiler.col.perFrameTitle")}>
+          {t("panels.doc.profiler.col.perFrame")}
         </span>
-        <span className={styles.source}>Source</span>
+        <span className={styles.source}>{t("panels.doc.profiler.col.source")}</span>
       </div>
       <div className={styles.list}>
         <VirtualizedList
@@ -292,9 +302,9 @@ const ProfilerPanel = (_props: DocumentProps) => {
                 onDoubleClick={() => void goTo(r.routine)}
                 title={
                   r.pseudo
-                    ? "Time that is no routine's: the machine waiting or the hardware holding the CPU (D4)"
+                    ? t("panels.doc.profiler.pseudoRowTitle")
                     : r.source === "labels"
-                      ? `${r.name}: up to the next label (${n(r.size ?? 0)} bytes)`
+                      ? t("panels.doc.profiler.labelRoutineTitle", { name: r.name, count: r.size ?? 0 })
                       : r.name
                 }
               >
@@ -323,12 +333,12 @@ const ProfilerPanel = (_props: DocumentProps) => {
   const addressesTab = () => (
     <>
       <div className={classnames(styles.row, styles.headerRow)}>
-        {banked && <span className={styles.partition}>Part.</span>}
-        <span className={styles.address}>Addr</span>
-        <span className={styles.name}>Routine</span>
-        <span className={styles.number}>Executions</span>
-        <span className={styles.number}>{`Time (${unit})`}</span>
-        <span className={styles.share}>Time %</span>
+        {banked && <span className={styles.partition}>{t("panels.doc.profiler.col.partition")}</span>}
+        <span className={styles.address}>{t("panels.doc.profiler.col.address")}</span>
+        <span className={styles.name}>{t("panels.doc.profiler.col.routine")}</span>
+        <span className={styles.number}>{t("panels.doc.profiler.col.executions")}</span>
+        <span className={styles.number}>{t("panels.doc.profiler.col.time", { unit })}</span>
+        <span className={styles.share}>{t("panels.doc.profiler.col.timePct")}</span>
       </div>
       <div className={styles.list}>
         <VirtualizedList
@@ -341,7 +351,7 @@ const ProfilerPanel = (_props: DocumentProps) => {
                 key={r.offset}
                 className={classnames(styles.row, { [styles.pseudoRow]: r.halt })}
                 onDoubleClick={() => void goTo({ entry: r.address })}
-                title={r.halt ? "A HALT: its time is the machine waiting" : undefined}
+                title={r.halt ? t("panels.doc.profiler.haltTitle") : undefined}
               >
                 {banked && <span className={styles.partition}>{partitionText(r.partition)}</span>}
                 <span className={styles.address}>{`$${hex4(r.address)}`}</span>
@@ -362,17 +372,21 @@ const ProfilerPanel = (_props: DocumentProps) => {
   );
 
   const noGraph = (
-    <EmptyState message="No call graph: start profiling with the Call graph switch on, or with 'profile start -calls'." />
+    <EmptyState message={t("panels.doc.profiler.noGraph")} />
   );
 
   const treeColumns = (
     <div className={classnames(styles.row, styles.headerRow)}>
-      <span className={styles.name}>Routine</span>
-      <span className={classnames(styles.number, styles.narrow)}>Calls</span>
-      <span className={styles.number} title="The time of these calls, the calls they made included">{`Incl. (${unit})`}</span>
-      <span className={styles.share}>Incl. %</span>
-      <span className={styles.number} title="The time of these calls in their own code">{`Excl. (${unit})`}</span>
-      <span className={styles.source}>Source</span>
+      <span className={styles.name}>{t("panels.doc.profiler.col.routine")}</span>
+      <span className={classnames(styles.number, styles.narrow)}>{t("panels.doc.profiler.col.calls")}</span>
+      <span className={styles.number} title={t("panels.doc.profiler.col.inclusiveTitle")}>
+        {t("panels.doc.profiler.col.inclusive", { unit })}
+      </span>
+      <span className={styles.share}>{t("panels.doc.profiler.col.inclusivePct")}</span>
+      <span className={styles.number} title={t("panels.doc.profiler.col.exclusiveTitle")}>
+        {t("panels.doc.profiler.col.exclusive", { unit })}
+      </span>
+      <span className={styles.source}>{t("panels.doc.profiler.col.source")}</span>
     </div>
   );
   const treeCells = (node: CallNode) => (
@@ -390,13 +404,13 @@ const ProfilerPanel = (_props: DocumentProps) => {
   );
   const nodeTitle = (node: CallNode) =>
     node.recursive
-      ? `${node.name} calls itself here (recursion): its inclusive time is counted at the outermost call`
+      ? t("panels.doc.profiler.node.recursive", { name: node.name })
       : node.kind === "root"
-        ? "What ran outside every tracked call: the code that was running when profiling started, and its own time"
+        ? t("panels.doc.profiler.node.root")
         : node.kind === "interrupt"
-          ? "An interrupt is a root of its own: its time is not charged to the routine it interrupted"
+          ? t("panels.doc.profiler.node.interrupt")
           : node.open
-            ? `${node.name}: still running when the profile was read; its time so far is included`
+            ? t("panels.doc.profiler.node.open", { name: node.name })
             : undefined;
 
   const treeTab = () =>
@@ -459,7 +473,7 @@ const ProfilerPanel = (_props: DocumentProps) => {
     if (!model.graph) return noGraph;
     const subject = selected ? (model.graph.totals.get(selected) ?? undefined) : undefined;
     if (!subject) {
-      return <EmptyState message="Select a routine in the Routines or Call tree tab to see who called it." />;
+      return <EmptyState message={t("panels.doc.profiler.selectRoutine")} />;
     }
     const callers = model.graph.callersOf(subject.key);
     const callees = model.graph.childrenOf({ ...subject, recursive: false });
@@ -483,13 +497,17 @@ const ProfilerPanel = (_props: DocumentProps) => {
     return (
       <>
         <div className={styles.caption}>
-          {`${subject.name}: ${n(subject.calls)} calls, ${formatTime(subject.inclusive, status)} inclusive, ` +
-            `${formatTime(subject.exclusive, status)} exclusive`}
+          {t("panels.doc.profiler.callersCaption", {
+            name: subject.name,
+            count: subject.calls,
+            inclusive: formatTime(subject.inclusive, status),
+            exclusive: formatTime(subject.exclusive, status)
+          })}
         </div>
         {treeColumns}
         <div className={styles.list} style={{ overflow: "auto" }}>
-          {list(`Called by (${callers.length})`, callers)}
-          {list(`Calls (${callees.length})`, callees)}
+          {list(t("panels.doc.profiler.calledBy", { count: callers.length }), callers)}
+          {list(t("panels.doc.profiler.callsList", { count: callees.length }), callees)}
         </div>
       </>
     );

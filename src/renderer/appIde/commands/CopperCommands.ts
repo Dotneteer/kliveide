@@ -13,6 +13,7 @@ import {
   commandSuccess,
   writeSuccessMessage
 } from "@renderer/appIde/services/ide-commands";
+import { t } from "@common/i18n/i18n";
 
 /*
  * The ZX Spectrum Next Copper's commands (`.plans/COPPER_DEBUGGING_PLAN.md` §4.5, §4.6). The
@@ -24,7 +25,7 @@ function requireNext(context: IdeCommandContext): IdeCommandResult | undefined {
   const machineId = context.service.machineService.getMachineInfo()?.machine?.machineId;
   return machineId === MI_ZXNEXT
     ? undefined
-    : commandError("The Copper exists on the ZX Spectrum Next only");
+    : commandError(t("commands.copper.nextOnly"));
 }
 
 /**
@@ -32,7 +33,9 @@ function requireNext(context: IdeCommandContext): IdeCommandResult | undefined {
  */
 export class ShowCopperCommand extends IdeCommandBase<{ index?: number }> {
   readonly id = "show-copper";
-  readonly description = "Displays the Copper List, optionally revealing a list index";
+  get description() {
+    return t("commands.copper.showDescription");
+  }
   readonly usage = "show-copper [<index>]";
   readonly aliases = ["shcop"];
   readonly argumentInfo: CommandArgumentInfo = {
@@ -56,7 +59,9 @@ export class ShowCopperCommand extends IdeCommandBase<{ index?: number }> {
 /** `hide-copper`: closes the Copper List document. */
 export class HideCopperCommand extends IdeCommandBase {
   readonly id = "hide-copper";
-  readonly description = "Hides the Copper List";
+  get description() {
+    return t("commands.copper.hideDescription");
+  }
   readonly usage = "hide-copper";
   readonly aliases = ["hcop"];
 
@@ -73,7 +78,9 @@ export class HideCopperCommand extends IdeCommandBase {
  */
 export class StepCopperCommand extends IdeCommandBase {
   readonly id = "step-copper";
-  readonly description = "Runs until the Copper completes its next instruction";
+  get description() {
+    return t("commands.copper.stepDescription");
+  }
   readonly usage = "step-copper";
   readonly aliases = ["stcop"];
 
@@ -82,12 +89,10 @@ export class StepCopperCommand extends IdeCommandBase {
     if (refused) return refused;
     const emuState = context.store.getState().emulatorState;
     if (emuState?.machineState === MachineControllerState.Running && !emuState?.isDebugging) {
-      return commandError(
-        "The machine is running in normal mode. Pause it (or start it with debugging) before stepping the Copper."
-      );
+      return commandError(t("commands.copper.runningNormal"));
     }
     await context.emuApi.stepCopper();
-    writeSuccessMessage(context.output, "Running to the Copper's next instruction");
+    writeSuccessMessage(context.output, t("commands.copper.stepping"));
     return commandSuccess;
   }
 }

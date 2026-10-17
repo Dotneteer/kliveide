@@ -1,3 +1,6 @@
+import { t as translate } from "@common/i18n/i18n";
+import { useT } from "@common/i18n/useT";
+import { labelRecord } from "@common/i18n/labels";
 import { AnnotationFileBanner, type AnnotationFileStatus } from "@renderer/appIde/annotations/AnnotationFileBanner";
 import { createAnnotationSidecar, loadAnnotationSidecar } from "@renderer/appIde/annotations/annotationSidecar";
 import { seedAnnotationSession } from "@renderer/appIde/annotations/annotationSession";
@@ -96,7 +99,11 @@ export function loadSpectrumSnapshotFileContents(
     const snapshot = parseSpectrumSnapshot(name, contents);
     return { fileInfo: { snapshot, mapping: mapSpectrumSnapshotToKlive(snapshot) } };
   } catch (err) {
-    return { error: `Not a valid snapshot: ${err instanceof Error ? err.message : String(err)}` };
+    return {
+      error: translate("panels.spectrum.error.invalid", {
+        reason: err instanceof Error ? err.message : String(err)
+      })
+    };
   }
 }
 
@@ -158,27 +165,32 @@ export const SnapshotView = ({ ctx, documentSource, fullPath }: ViewProps) => {
 type SectionProps = { ctx: ViewContext; info: SpectrumSnapshotFileInfo };
 
 const SummarySection = ({ ctx, info }: SectionProps) => {
+  const t = useT();
   const { snapshot, mapping } = info;
   const loadable = mapping.errors.length === 0;
   const screen = snapshot.ram.get(spectrumScreenBank(snapshot));
   return (
     <ExpandableRow
-      heading="Snapshot"
+      heading={t("panels.helpers.heading.snapshot")}
       initialExpanded={ctx.viewState?.summaryExpanded ?? true}
       onExpanded={(exp) => ctx.changeViewState((vs) => (vs.summaryExpanded = exp))}
     >
       <Row>
         <LabeledText
-          label="Format:"
+          label={t("panels.spectrum.label.format")}
           labelWidth={LABEL_WIDTH}
           value={`.${snapshot.format} ${snapshot.formatVersion}`}
         />
       </Row>
       <Row>
-        <LabeledText label="Machine:" labelWidth={LABEL_WIDTH} value={describeSnapshotMapping(snapshot, mapping)} />
+        <LabeledText
+          label={t("panels.helpers.label.machine")}
+          labelWidth={LABEL_WIDTH}
+          value={describeSnapshotMapping(snapshot, mapping)}
+        />
       </Row>
       <Row>
-        <LabeledFlag label="Loadable:" labelWidth={LABEL_WIDTH} value={loadable} />
+        <LabeledFlag label={t("panels.helpers.label.loadable")} labelWidth={LABEL_WIDTH} value={loadable} />
       </Row>
       {mapping.errors.map((error, index) => (
         <Row key={`error${index}`}>
@@ -220,10 +232,11 @@ const Byte = ({ label, value }: { label: string; value: string }) => (
 );
 
 const CpuSection = ({ ctx, info }: SectionProps) => {
+  const t = useT();
   const cpu = info.snapshot.cpu;
   return (
     <ExpandableRow
-      heading="Z80 Registers"
+      heading={t("panels.helpers.heading.z80Registers")}
       initialExpanded={ctx.viewState?.cpuExpanded ?? true}
       onExpanded={(exp) => ctx.changeViewState((vs) => (vs.cpuExpanded = exp))}
     >
@@ -258,7 +271,7 @@ const CpuSection = ({ ctx, info }: SectionProps) => {
       </Row>
       {cpu.suppressInterrupt && (
         <Row>
-          <Text text="Interrupts are not accepted before the next instruction (after EI)." />
+          <Text text={t("panels.spectrum.suppressInterrupt")} />
         </Row>
       )}
     </ExpandableRow>
@@ -266,6 +279,7 @@ const CpuSection = ({ ctx, info }: SectionProps) => {
 };
 
 const UlaSection = ({ ctx, info }: SectionProps) => {
+  const t = useT();
   const { snapshot } = info;
   const ula = snapshot.ula;
   return (
@@ -281,7 +295,7 @@ const UlaSection = ({ ctx, info }: SectionProps) => {
         <LabeledText
           label="Frame T-state:"
           labelWidth={LABEL_WIDTH}
-          value={ula.frameTact !== undefined ? `${ula.frameTact}` : "not recorded (loads at 0)"}
+          value={ula.frameTact !== undefined ? `${ula.frameTact}` : t("panels.spectrum.frameTactNone")}
         />
       </Row>
       {ula.lastFe !== undefined && (
@@ -290,13 +304,18 @@ const UlaSection = ({ ctx, info }: SectionProps) => {
         </Row>
       )}
       <Row>
-        <LabeledText label="Screen:" labelWidth={LABEL_WIDTH} value={`bank ${spectrumScreenBank(snapshot)}`} />
+        <LabeledText
+          label={t("panels.spectrum.label.screen")}
+          labelWidth={LABEL_WIDTH}
+          value={t("panels.spectrum.bank", { bank: spectrumScreenBank(snapshot) })}
+        />
       </Row>
     </ExpandableRow>
   );
 };
 
 const PagingSection = ({ ctx, info, documentSource }: SectionProps & { documentSource: string }) => {
+  const t = useT();
   const documentHubService = useDocumentHubService();
   const { snapshot } = info;
   const pc = snapshot.cpu.pc;
@@ -313,20 +332,24 @@ const PagingSection = ({ ctx, info, documentSource }: SectionProps & { documentS
     openStaticMemoryDump(
       documentHubService,
       `spectrumSnapshot${documentSource}`,
-      `${documentSource} - 64K at PC`,
+      t("panels.helpers.addressSpaceTitle", { source: documentSource }),
       space,
       { disassemblyEnabled: true, disassOffset: 0, viewMode, topAddress: pc }
     );
 
   return (
     <ExpandableRow
-      heading="Paging and Address Space at PC"
+      heading={t("panels.spectrum.pagingHeading")}
       headingAction={
         <>
-          <SmallIconButton iconName="memory-icon" title="Memory dump at PC" clicked={() => openAtPc("memory")} />
+          <SmallIconButton
+            iconName="memory-icon"
+            title={t("panels.helpers.memoryAtPc")}
+            clicked={() => openAtPc("memory")}
+          />
           <SmallIconButton
             iconName="disassembly-icon"
-            title="Disassembly at PC"
+            title={t("panels.helpers.disassemblyAtPc")}
             clicked={() => openAtPc("disassembly")}
           />
         </>
@@ -339,9 +362,16 @@ const PagingSection = ({ ctx, info, documentSource }: SectionProps & { documentS
           <LabeledText
             label="Port $7FFD:"
             labelWidth={LABEL_WIDTH}
-            value={`$${toHexa2(snapshot.paging?.port7ffd ?? 0)}: bank ${p7.bank}, ROM ${p7.rom}, ${
-              p7.shadowScreen ? "shadow screen" : "normal screen"
-            }${p7.locked ? ", locked" : ""}`}
+            value={t(
+              p7.shadowScreen
+                ? p7.locked
+                  ? "panels.spectrum.port7ffdShadowLocked"
+                  : "panels.spectrum.port7ffdShadow"
+                : p7.locked
+                  ? "panels.spectrum.port7ffdNormalLocked"
+                  : "panels.spectrum.port7ffdNormal",
+              { value: `$${toHexa2(snapshot.paging?.port7ffd ?? 0)}`, bank: p7.bank, rom: p7.rom }
+            )}
           />
         </Row>
       )}
@@ -350,9 +380,16 @@ const PagingSection = ({ ctx, info, documentSource }: SectionProps & { documentS
           <LabeledText
             label="Port $1FFD:"
             labelWidth={LABEL_WIDTH}
-            value={`$${toHexa2(snapshot.paging!.port1ffd!)}: ${
-              p1.specialPaging ? `special paging, configuration ${p1.config}` : "normal paging"
-            }, motor ${p1.motorOn ? "on" : "off"}`}
+            value={
+              p1.specialPaging
+                ? t(p1.motorOn ? "panels.spectrum.port1ffdSpecialOn" : "panels.spectrum.port1ffdSpecialOff", {
+                    value: `$${toHexa2(snapshot.paging!.port1ffd!)}`,
+                    config: p1.config
+                  })
+                : t(p1.motorOn ? "panels.spectrum.port1ffdNormalOn" : "panels.spectrum.port1ffdNormalOff", {
+                    value: `$${toHexa2(snapshot.paging!.port1ffd!)}`
+                  })
+            }
           />
         </Row>
       )}
@@ -362,8 +399,16 @@ const PagingSection = ({ ctx, info, documentSource }: SectionProps & { documentS
           labelWidth={LABEL_WIDTH}
           value={
             location.bank !== undefined
-              ? `$${toHexa4(pc)} = bank ${location.bank}, offset $${toHexa4(location.offset)}`
-              : `$${toHexa4(pc)} = ROM ${location.rom}, offset $${toHexa4(location.offset)}`
+              ? t("panels.spectrum.pcInBank", {
+                  pc: `$${toHexa4(pc)}`,
+                  bank: location.bank,
+                  offset: `$${toHexa4(location.offset)}`
+                })
+              : t("panels.spectrum.pcInRom", {
+                  pc: `$${toHexa4(pc)}`,
+                  rom: location.rom ?? 0,
+                  offset: `$${toHexa4(location.offset)}`
+                })
           }
         />
       </Row>
@@ -372,7 +417,11 @@ const PagingSection = ({ ctx, info, documentSource }: SectionProps & { documentS
           <LabeledText
             label={`$${toHexa4(range.start)}-$${toHexa4(range.end)}:`}
             labelWidth={LABEL_WIDTH}
-            value={range.bank !== undefined ? `bank ${range.bank}` : `ROM ${range.rom} (not in the snapshot)`}
+            value={
+              range.bank !== undefined
+                ? t("panels.spectrum.bank", { bank: range.bank })
+                : t("panels.spectrum.romNotInSnapshot", { rom: range.rom ?? 0 })
+            }
           />
         </Row>
       ))}
@@ -381,6 +430,7 @@ const PagingSection = ({ ctx, info, documentSource }: SectionProps & { documentS
 };
 
 const AySection = ({ ctx, info }: SectionProps) => {
+  const t = useT();
   const ay = info.snapshot.ay!;
   const state = decodeAy(ay.regs);
   return (
@@ -400,40 +450,59 @@ const AySection = ({ ctx, info }: SectionProps) => {
         ))}
       </Row>
       <Row>
-        <LabeledText label="Selected:" labelWidth={LABEL_WIDTH} value={`R${ay.selected}`} />
+        <LabeledText label={t("panels.spectrum.ay.selected")} labelWidth={LABEL_WIDTH} value={`R${ay.selected}`} />
       </Row>
       {["A", "B", "C"].map((ch, i) => (
         <Row key={ch}>
           <LabeledText
-            label={`Channel ${ch}:`}
+            label={t("panels.spectrum.ay.channel", { channel: ch })}
             labelWidth={LABEL_WIDTH}
-            value={`tone period ${state.tone[i]}${state.mixer[i].tone ? "" : " (off)"}, noise ${
-              state.mixer[i].noise ? "on" : "off"
-            }, volume ${state.volume[i]}`}
+            value={t(
+              state.mixer[i].tone
+                ? state.mixer[i].noise
+                  ? "panels.spectrum.ay.toneNoiseOn"
+                  : "panels.spectrum.ay.toneNoiseOff"
+                : state.mixer[i].noise
+                  ? "panels.spectrum.ay.toneOffNoiseOn"
+                  : "panels.spectrum.ay.toneOffNoiseOff",
+              {
+                period: state.tone[i],
+                volume:
+                  state.volume[i] === "envelope" ? t("panels.spectrum.ay.envelope") : String(state.volume[i])
+              }
+            )}
           />
         </Row>
       ))}
       <Row>
         <LabeledText
-          label="Noise / env.:"
+          label={t("panels.spectrum.ay.noiseEnv")}
           labelWidth={LABEL_WIDTH}
-          value={`noise period ${state.noise}, envelope period ${state.envelopePeriod}, shape $${toHexa2(state.envelopeShape)}`}
+          value={t("panels.spectrum.ay.noiseEnvValue", {
+            noise: state.noise,
+            period: state.envelopePeriod,
+            shape: `$${toHexa2(state.envelopeShape)}`
+          })}
         />
       </Row>
       {ay.on48k && (
         <Row>
-          <Text text="An add-on AY of a 48K (Melodik or Fuller Box)." />
+          <Text text={t("panels.spectrum.ay.on48k")} />
         </Row>
       )}
     </ExpandableRow>
   );
 };
 
-const VIEW_NAMES: Record<SpectrumBankView, string> = { memory: "Memory", disassembly: "Disassembly" };
+const VIEW_NAMES: Readonly<Record<SpectrumBankView, string>> = labelRecord({
+  memory: "panels.helpers.view.memory",
+  disassembly: "panels.helpers.view.disassembly"
+});
 const VIEWS: SpectrumBankView[] = ["memory", "disassembly"];
 
 /** Every RAM bank in the shared bank browser; a bank pops out as its own document */
 const BanksSection = ({ ctx, info, fullPath }: SectionProps & { fullPath: string }) => {
+  const t = useT();
   const documentHubService = useDocumentHubService();
   const { navigationHistoryService, projectService } = useAppServices();
   /*
@@ -527,13 +596,15 @@ const BanksSection = ({ ctx, info, fullPath }: SectionProps & { fullPath: string
     <BankBrowser<SpectrumBankItem, SpectrumBankView>
       visibleItems={visible}
       selectedKey={ctx.viewState?.selectedBank === undefined ? undefined : `${ctx.viewState.selectedBank}`}
-      heading="RAM Banks"
-      summary={`${items.length} bank${items.length === 1 ? "" : "s"} · ${items.length * 16} KB · ${
-        items.filter((i) => i.pagedAt !== undefined).length
-      } paged in`}
+      heading={t("panels.spectrum.banksHeading")}
+      summary={t("panels.helpers.banksSummary", {
+        banks: items.length,
+        kb: items.length * 16,
+        paged: items.filter((i) => i.pagedAt !== undefined).length
+      })}
       filters={[
-        { value: "all", text: "All banks" },
-        { value: "paged", text: "Paged in" }
+        { value: "all", text: t("panels.spectrum.filter.allBanks") },
+        { value: "paged", text: t("panels.helpers.filter.pagedIn") }
       ]}
       filter={filter}
       views={VIEWS}
@@ -546,58 +617,74 @@ const BanksSection = ({ ctx, info, fullPath }: SectionProps & { fullPath: string
         <>
           <Marks item={item} />
           {item.pagedAt !== undefined && (
-            <BankChip alt title={`Paged in at $${toHexa4(item.pagedAt)}`}>{`$${toHexa4(item.pagedAt)}`}</BankChip>
+            <BankChip alt title={t("panels.helpers.pagedInAt", { address: `$${toHexa4(item.pagedAt)}` })}>
+              {`$${toHexa4(item.pagedAt)}`}
+            </BankChip>
           )}
-          {item.screen && <BankChip title="The ULA shows this bank">screen</BankChip>}
-          <BankRowText>{item.empty ? "empty" : ""}</BankRowText>
+          {item.screen && (
+            <BankChip title={t("panels.helpers.screenChipTitle")}>{t("panels.helpers.screenChip")}</BankChip>
+          )}
+          <BankRowText>{item.empty ? t("panels.helpers.empty") : ""}</BankRowText>
         </>
       )}
       renderDetailsMarks={(item) => <Marks item={item} />}
       renderDetails={(item) => (
         <BankFacts>
-          <dt>Paged in</dt>
-          <dd>{item.pagedAt !== undefined ? `at $${toHexa4(item.pagedAt)}` : "no"}</dd>
-          <dt>Listed at</dt>
+          <dt>{t("panels.helpers.fact.pagedIn")}</dt>
+          <dd>
+            {item.pagedAt !== undefined
+              ? t("panels.helpers.fact.pagedInAt", { address: `$${toHexa4(item.pagedAt)}` })
+              : t("panels.helpers.fact.no")}
+          </dd>
+          <dt>{t("panels.helpers.fact.listedAt")}</dt>
           <dd>{`$${toHexa4(item.listedAt)}`}</dd>
-          <dt>Last view</dt>
+          <dt>{t("panels.helpers.fact.lastView")}</dt>
           <dd>{VIEW_NAMES[item.lastView]}</dd>
           {item.empty && (
             <>
-              <dt>Contents</dt>
-              <dd>{`All $${toHexa2(item.bytes[0])}`}</dd>
+              <dt>{t("panels.helpers.fact.contents")}</dt>
+              <dd>{t("panels.spectrum.allValue", { value: `$${toHexa2(item.bytes[0])}` })}</dd>
             </>
           )}
         </BankFacts>
       )}
-      hint="Pop out a bank from its row's icon, by double-clicking the row, or with Enter."
+      hint={t("panels.helpers.popOutHint.bank")}
     />
     </>
   );
 };
 
 /** The PC and SP chips */
-const Marks = ({ item }: { item: SpectrumBankItem }) => (
-  <>
-    {item.pc !== undefined && (
-      <BankChip title="The program counter points into this bank">{`PC $${toHexa4(item.pc)}`}</BankChip>
-    )}
-    {item.sp !== undefined && (
-      <BankChip alt title="The stack pointer points into this bank">{`SP $${toHexa4(item.sp)}`}</BankChip>
-    )}
-  </>
-);
+const Marks = ({ item }: { item: SpectrumBankItem }) => {
+  const t = useT();
+  return (
+    <>
+      {item.pc !== undefined && (
+        <BankChip title={t("panels.helpers.pcChip")}>{`PC $${toHexa4(item.pc)}`}</BankChip>
+      )}
+      {item.sp !== undefined && (
+        <BankChip alt title={t("panels.helpers.spChip")}>{`SP $${toHexa4(item.sp)}`}</BankChip>
+      )}
+    </>
+  );
+};
 
 const FileSection = ({ ctx, info }: SectionProps) => {
+  const t = useT();
   const { snapshot } = info;
   const p = snapshot.peripherals;
   return (
     <ExpandableRow
-      heading={`File (.${snapshot.format})`}
+      heading={t("panels.spectrum.fileHeading", { format: snapshot.format })}
       initialExpanded={ctx.viewState?.fileExpanded ?? false}
       onExpanded={(exp) => ctx.changeViewState((vs) => (vs.fileExpanded = exp))}
     >
       <Row>
-        <LabeledText label="Machine:" labelWidth={LABEL_WIDTH} value={snapshotMachineName(snapshot.machine)} />
+        <LabeledText
+          label={t("panels.helpers.label.machine")}
+          labelWidth={LABEL_WIDTH}
+          value={snapshotMachineName(snapshot.machine)}
+        />
       </Row>
       {snapshot.header.map((item, index) => (
         <Row key={`h${index}`}>
@@ -607,12 +694,16 @@ const FileSection = ({ ctx, info }: SectionProps) => {
       {p.tape && (
         <Row>
           <LabeledText
-            label="Tape:"
+            label={t("panels.helpers.media.tape")}
             labelWidth={LABEL_WIDTH}
             value={
               p.tape.embedded
-                ? `embedded .${p.tape.extension} (${p.tape.embedded.length} bytes), block ${p.tape.currentBlock}`
-                : `${p.tape.fileName}, block ${p.tape.currentBlock}`
+                ? t("panels.spectrum.tapeEmbedded", {
+                    extension: p.tape.extension ?? "",
+                    count: p.tape.embedded.length,
+                    block: p.tape.currentBlock
+                  })
+                : t("panels.spectrum.tapeFile", { file: p.tape.fileName ?? "", block: p.tape.currentBlock })
             }
           />
         </Row>
@@ -620,27 +711,32 @@ const FileSection = ({ ctx, info }: SectionProps) => {
       {p.plus3 && (
         <Row>
           <LabeledText
-            label="+3 drives:"
+            label={t("panels.spectrum.plus3Drives")}
             labelWidth={LABEL_WIDTH}
-            value={`${p.plus3.drives}, motor ${p.plus3.motorOn ? "on" : "off"}`}
+            value={t(p.plus3.motorOn ? "panels.spectrum.drivesMotorOn" : "panels.spectrum.drivesMotorOff", {
+              drives: p.plus3.drives
+            })}
           />
         </Row>
       )}
       {p.plus3?.disks.map((disk, index) => (
         <Row key={`d${index}`}>
           <LabeledText
-            label={`Drive ${disk.drive ? "B" : "A"}:`}
+            label={t("panels.spectrum.drive", { drive: disk.drive ? "B" : "A" })}
             labelWidth={LABEL_WIDTH}
-            value={disk.fileName ?? "embedded image"}
+            value={disk.fileName ?? t("panels.spectrum.embeddedImage")}
           />
         </Row>
       ))}
       {snapshot.chunks?.map((chunk, index) => (
         <Row key={`c${index}`}>
           <LabeledText
-            label={index === 0 ? "Blocks:" : ""}
+            label={index === 0 ? t("panels.spectrum.chunks") : ""}
             labelWidth={LABEL_WIDTH}
-            value={`${chunk.id} (${chunk.size} bytes)${chunk.known ? "" : " - not read"}`}
+            value={t(chunk.known ? "panels.spectrum.chunk" : "panels.spectrum.chunkNotRead", {
+              id: chunk.id,
+              count: chunk.size
+            })}
           />
         </Row>
       ))}

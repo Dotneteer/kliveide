@@ -12,6 +12,7 @@ import { commandSuccess, commandError, IdeCommandBase } from "../services/ide-co
 import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
 import { openRendererDialog } from "@renderer/controls/overlay/dialogRequestBridge";
 import { MessageSource } from "@common/messaging/messages-core";
+import { t } from "@common/i18n/i18n";
 
 type DialogCommandArgs = {
   dialogId: string;
@@ -21,7 +22,9 @@ export class DisplayDialogCommand extends IdeCommandBase<DialogCommandArgs> {
   readonly id = "display-dialog";
   // --- Opens a modal dialog: never through automation (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` T5)
   readonly automation = "deny" as const;
-  readonly description = "Displays the specified dialog";
+  get description() {
+    return t("commands.displayDialog.description");
+  }
   readonly usage = "display-dialog <dialogId>";
   readonly aliases = [];
   readonly noInteractiveUsage = true;
@@ -40,7 +43,7 @@ export class DisplayDialogCommand extends IdeCommandBase<DialogCommandArgs> {
       }
       return commandSuccess;
     }
-    return commandError(`Unknown dialog ID: ${args.dialogId}`);
+    return commandError(t("commands.displayDialog.unknown", { id: args.dialogId }));
   }
 }
 

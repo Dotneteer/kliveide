@@ -1,5 +1,5 @@
 {
-  "_about": "Klive's translation glossary (LOCALIZATION_PLAN §8). Seeded by AI from the English catalogs; each language column still needs review by a native speaker. Translators and the AI follow it; extend it in the same change that adds or fixes a language. See README.md. The first translation round (LOCALIZATION_PLAN step 10) added the terms its translators had to settle on themselves.",
+  "_about": "Klive's translation glossary (LOCALIZATION_PLAN §8). Seeded by AI from the English catalogs; each language column still needs review by a native speaker. Translators and the AI follow it; extend it in the same change that adds or fixes a language. See README.md. The translation rounds (LOCALIZATION_PLAN step 10, and its rerun after steps 11–13) added the terms their translators had to settle on themselves.",
   "reviewed": {
     "es": false,
     "pt-BR": false,
@@ -112,8 +112,7 @@
       "registo",
       "registos",
       "rato",
-      "contacto",
-      "definições"
+      "contacto"
     ]
   },
   "terms": [
@@ -1177,6 +1176,192 @@
       "pt-PT": "imagem",
       "de": "Abbild",
       "hu": "képfájl"
+    },
+    {
+      "en": "bank",
+      "note": "Memory bank (128K/Next/Z88)",
+      "es": "banco",
+      "pt-BR": "banco",
+      "pt-PT": "banco",
+      "de": "Bank",
+      "hu": "bank"
+    },
+    {
+      "en": "page",
+      "note": "Memory page",
+      "es": "página",
+      "pt-BR": "página",
+      "pt-PT": "página",
+      "de": "Seite",
+      "hu": "lap"
+    },
+    {
+      "en": "offset",
+      "es": "desplazamiento",
+      "pt-BR": "deslocamento",
+      "pt-PT": "deslocamento",
+      "de": "Offset",
+      "hu": "eltolás"
+    },
+    {
+      "en": "region (annotation)",
+      "note": "A code/data region of an annotation file",
+      "es": "región",
+      "pt-BR": "região",
+      "pt-PT": "região",
+      "de": "Region",
+      "hu": "terület"
+    },
+    {
+      "en": "slot (Z88 card)",
+      "note": "A Cambridge Z88 card slot; an 8K MMU slot stays 'slot'",
+      "es": "ranura",
+      "pt-BR": "slot",
+      "pt-PT": "ranhura",
+      "de": "Steckplatz",
+      "hu": "kártyahely"
+    },
+    {
+      "en": "sidecar",
+      "note": "An annotation file next to a binary",
+      "es": "archivo complementario",
+      "pt-BR": "arquivo auxiliar",
+      "pt-PT": "ficheiro auxiliar",
+      "de": "Begleitdatei",
+      "hu": "kísérőfájl"
+    },
+    {
+      "en": "working copy",
+      "note": "An editable copy of a shipped file",
+      "es": "copia de trabajo",
+      "pt-BR": "cópia de trabalho",
+      "pt-PT": "cópia de trabalho",
+      "de": "Arbeitskopie",
+      "hu": "munkapéldány"
+    },
+    {
+      "en": "annotation set",
+      "es": "conjunto de anotaciones",
+      "pt-BR": "conjunto de anotações",
+      "pt-PT": "conjunto de anotações",
+      "de": "Annotationssatz",
+      "hu": "annotációkészlet"
+    },
+    {
+      "en": "provenance",
+      "note": "Where an annotation came from",
+      "es": "procedencia",
+      "pt-BR": "procedência",
+      "pt-PT": "proveniência",
+      "de": "Herkunftsangabe",
+      "hu": "eredetjelölés"
+    },
+    {
+      "en": "keyframe",
+      "note": "A saved machine state on the reverse-debugging timeline",
+      "es": "fotograma clave",
+      "pt-BR": "keyframe",
+      "pt-PT": "fotograma-chave",
+      "de": "Keyframe",
+      "hu": "kulcskocka"
+    },
+    {
+      "en": "T-state",
+      "note": "A Z80 clock cycle",
+      "es": "estado T",
+      "pt-BR": "T-state",
+      "pt-PT": "estado T",
+      "de": "T-State",
+      "hu": "T-ciklus"
+    },
+    {
+      "en": "pop out",
+      "note": "Open a bank or block as its own document",
+      "es": "separar",
+      "pt-BR": "destacar",
+      "pt-PT": "destacar",
+      "de": "abkoppeln",
+      "hu": "leválasztás"
+    },
+    {
+      "en": "watchpoint",
+      "note": "A breakpoint on a memory read or write",
+      "es": "punto de vigilancia",
+      "pt-BR": "watchpoint",
+      "pt-PT": "ponto de vigilância",
+      "de": "Watchpoint",
+      "hu": "figyelési pont"
+    },
+    {
+      "en": "one-shot (breakpoint)",
+      "note": "Removed after its first hit",
+      "es": "de un solo uso",
+      "pt-BR": "de uso único",
+      "pt-PT": "de uso único",
+      "de": "einmalig",
+      "hu": "egyszeri"
+    },
+    {
+      "en": "clip window",
+      "note": "Next layer clipping rectangle",
+      "es": "ventana de recorte",
+      "pt-BR": "janela de recorte",
+      "pt-PT": "janela de recorte",
+      "de": "Clip-Fenster",
+      "hu": "vágóablak"
+    },
+    {
+      "en": "ink / paper",
+      "note": "Spectrum attribute colours",
+      "es": "tinta / papel",
+      "pt-BR": "tinta / papel",
+      "pt-PT": "tinta / papel",
+      "de": "Tinte / Papier",
+      "hu": "tinta / papír"
+    },
+    {
+      "en": "tile",
+      "note": "A tilemap tile",
+      "es": "tile",
+      "pt-BR": "tile",
+      "pt-PT": "tile",
+      "de": "Kachel",
+      "hu": "csempe"
+    },
+    {
+      "en": "solo (a layer)",
+      "note": "Show only this layer",
+      "es": "aislar",
+      "pt-BR": "isolar",
+      "pt-PT": "isolar",
+      "de": "solo schalten",
+      "hu": "szóló"
+    },
+    {
+      "en": "heat map",
+      "note": "Coverage colouring",
+      "es": "mapa de calor",
+      "pt-BR": "mapa de calor",
+      "pt-PT": "mapa de calor",
+      "de": "Heatmap",
+      "hu": "hőtérkép"
+    },
+    {
+      "en": "emulator core",
+      "es": "núcleo",
+      "pt-BR": "núcleo",
+      "pt-PT": "núcleo",
+      "de": "Kern",
+      "hu": "mag"
+    },
+    {
+      "en": "reset (machine) vs restart",
+      "note": "Reset keeps running state; restart stops and starts again",
+      "es": "reiniciar / volver a iniciar",
+      "pt-BR": "resetar / reiniciar",
+      "pt-PT": "repor / reiniciar",
+      "de": "zurücksetzen / neu starten",
+      "hu": "alaphelyzet / újraindítás"
     }
   ]
 }

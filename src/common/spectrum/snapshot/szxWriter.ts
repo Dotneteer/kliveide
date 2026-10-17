@@ -36,6 +36,7 @@ import {
   latin1Bytes,
   type SnapshotWriteResult
 } from "./snapshotBytes";
+import { t } from "@common/i18n/i18n";
 
 /** The `chMachineId` of each machine (the inverse of the parser's table) */
 const SZX_MACHINE_IDS: Record<SnapshotMachineKind, number> = {
@@ -80,7 +81,7 @@ export function writeSzxFile(
 ): SnapshotWriteResult {
   const machine = s.machine;
   if (typeof machine === "object") {
-    throw new SnapshotRefusedError(`A ${machine.unsupported} snapshot cannot be saved`);
+    throw new SnapshotRefusedError(t("media.snapshot.refused.unsupported", { machine: machine.unsupported }));
   }
   const losses: string[] = [];
   const paged = isPagedSnapshotMachine(machine);
@@ -125,7 +126,7 @@ export function writeSzxFile(
     for (let r = 0; r < 16; r++) ay.byte(s.ay.regs[r] ?? 0);
     block(out, "AY", ay.toArray());
   } else if (s.ay) {
-    losses.push("The AY registers of a 48K without an add-on AY are not saved");
+    losses.push(t("media.snapshot.loss.szx48Ay"));
   }
 
   // --- KEYB: issue 2 (16K/48K only), no keyboard joystick
@@ -155,7 +156,7 @@ export function writeSzxFile(
     const data = s.ram.get(b);
     if (!data || data.length !== SPECTRUM_BANK_SIZE) {
       throw new SnapshotRefusedError(
-        `The ${snapshotMachineName(machine)} snapshot has no RAM bank ${b}`
+        t("media.snapshot.refused.noRamBank", { machine: snapshotMachineName(machine), bank: b })
       );
     }
     const ramp = new SnapshotBytes().word(0x01 /* compressed */).byte(b).bytes(zlibSync(data));
@@ -168,9 +169,7 @@ export function writeSzxFile(
     block(out, "+3", new SnapshotBytes().byte(p3.drives, p3.motorOn ? 1 : 0).toArray());
     for (const disk of p3.disks) {
       if (!disk.fileName) {
-        losses.push(
-          `The disk in drive ${disk.drive === 1 ? "B" : "A"} has no file, and a .szx can only link disks to files`
-        );
+        losses.push(t("media.snapshot.loss.szxDiskNoFile", { drive: disk.drive === 1 ? "B" : "A" }));
         continue;
       }
       const name = latin1Bytes(disk.fileName + "\0");
@@ -197,9 +196,7 @@ export function writeSzxFile(
     );
     for (const disk of beta.disks) {
       if (!disk.fileName) {
-        losses.push(
-          `The Beta disk in drive ${disk.drive === 1 ? "B" : "A"} has no file, and a .szx can only link disks to files`
-        );
+        losses.push(t("media.snapshot.loss.szxBetaDiskNoFile", { drive: disk.drive === 1 ? "B" : "A" }));
         continue;
       }
       const name = latin1Bytes(disk.fileName + "\0");

@@ -1,0 +1,19 @@
+{
+  "commands.usage.bpSet.len": "-len: um ponto de interrupção de memória (-r/-w) que abrange esta quantidade de bytes, ex.: bp-set $8000 -w -len 5",
+  "commands.usage.bpSet.copper": "cu:<index>: (ZX Spectrum Next) para quando o Copper conclui o índice de lista $000-$3FF; um WAIT, quando é satisfeito, ex.: bp-set cu:$00B -hit 50",
+  "commands.usage.bpSet.sprite": "sp:<sprite>: (ZX Spectrum Next) para quando um byte de atributo do sprite $00-$7F é gravado; -attr escolhe os bytes, ex.: bp-set sp:$0C -attr 0,1",
+  "commands.usage.bpSet.once": "-once: um ponto de interrupção de uso único, removido na primeira vez que para a máquina; nunca é salvo",
+  "commands.usage.bpSet.log": "-log: registra a mensagem e continua em vez de parar (um logpoint), ex.: {example}",
+  "commands.usage.bpSet.hit": "-hit: para na ocorrência N (N ou =N), depois dela (>N), a partir dela (>=N), antes dela (<N), até ela (<=N), a cada N-ésima (*N)",
+  "commands.usage.bpSet.if": "-if: deve vir por último; o resto da linha é a condição, ex.: -if A == $FF && !ZF",
+  "commands.usage.lpEnable.groups": "sem grupos: todos os logpoints registram (-d: nenhum registra); com grupos: só esses registram (-d: esses param de registrar)",
+  "commands.usage.annotationEnable.disable": "-d: desativa-os; salvo com o projeto",
+  "commands.usage.nav.record": "-r: registra o salto no histórico de navegação (Voltar / Avançar); o motivo é um de {reasons}",
+  "commands.usage.testRun.pattern": "pattern: Suite.UT_name, com * como curinga (todos os testes quando omitido)",
+  "commands.usage.testRun.failed": "-failed: só os testes que falharam ou terminaram com erro da última vez",
+  "commands.usage.testRun.coverage": "-coverage: mescla a cobertura de código dos testes na visualização de cobertura do editor",
+  "commands.usage.testDebug.test": "test: Suite.UT_name, ou um padrão com * que indique um único teste",
+  "commands.usage.testJunit.file": "file: o arquivo XML a gravar",
+  "commands.usage.testJunit.noTimestamp": "-notimestamp: omite o horário da execução, para que duas execuções gravem o mesmo arquivo",
+  "commands.usage.watchAdd.types": ">: usa o valor direto do símbolo\n<type>:\n  b=byte,\n  w=16 bits little-endian, -w=16 bits big-endian,\n  l=32 bits little-endian, -l=32 bits big-endian,\n  f=flag,\n  a=array (usa o comprimento, padrão: 8), s=string (usa o comprimento, padrão: 8)"
+}

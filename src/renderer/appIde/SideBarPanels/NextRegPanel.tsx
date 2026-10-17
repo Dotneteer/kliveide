@@ -17,6 +17,7 @@ import { TooltipFactory, useTooltipRef } from "@renderer/controls/Tooltip";
 import regStyles from "@renderer/controls/data/Registers.module.scss";
 import classnames from "classnames";
 import { HistoryPresentBanner } from "../debugger/history/HistoryPresentBanner";
+import { useT, type TFunction } from "@common/i18n/useT";
 
 // M2: `ch`, not px. Capacity preserved from the px width at its old 12.8px size (px / 6.4).
 const VALUE_WIDTH = "5ch"; // 32px / 6.4
@@ -53,6 +54,7 @@ const valueTooltip = (heading: string, value: number) =>
  * the same folder; this is the same idea with the row's several numbers folded into the content.
  */
 const registerTooltip = (
+  t: TFunction,
   id: number,
   description: string | undefined,
   value: number | undefined,
@@ -60,8 +62,8 @@ const registerTooltip = (
 ) =>
   [
     `Reg $${toHexa2(id)}${description ? ` — ${description}` : ""}`,
-    value !== undefined ? valueTooltip("Current value", value) : undefined,
-    lastWrite !== undefined ? valueTooltip("Last written", lastWrite) : undefined
+    value !== undefined ? valueTooltip(t("panels.side.nextReg.currentValue"), value) : undefined,
+    lastWrite !== undefined ? valueTooltip(t("panels.side.nextReg.lastWritten"), lastWrite) : undefined
   ]
     .filter(Boolean)
     .join("\n\n");
@@ -86,6 +88,7 @@ const registerTooltip = (
  * word. Multi-bit fields keep their hex, because a number is what they are.
  */
 const SliceRow = ({ slice, regValue }: { slice: NextRegValueSlice; regValue: number }) => {
+  const t = useT();
   const ref = useTooltipRef<HTMLDivElement>();
   const value = sliceValue(regValue, slice);
   const flag = isFlagSlice(slice);
@@ -114,8 +117,12 @@ const SliceRow = ({ slice, regValue }: { slice: NextRegValueSlice; regValue: num
           offsetX={0}
           offsetY={0}
           showDelay={100}
-          content={`Bit${sliceBits(slice).includes(":") ? "s" : ""} ${sliceBits(slice)}\n${text}\n${
-            flag ? (value ? "Set" : "Clear") : `$${toHexa2(value)} (${value})`
+          content={`${t(sliceBits(slice).includes(":") ? "panels.side.nextReg.bits" : "panels.side.nextReg.bit", {
+            bits: sliceBits(slice)
+          })}\n${text}\n${
+            flag
+              ? t(value ? "panels.side.nextReg.bitSet" : "panels.side.nextReg.bitClear")
+              : `$${toHexa2(value)} (${value})`
           }`}
         />
       )}
@@ -150,6 +157,7 @@ type NextRegRowProps = {
 };
 
 const NextRegRow = ({ item, description, hasDetail, isExpanded, onToggle }: NextRegRowProps) => {
+  const t = useT();
   const ref = useTooltipRef<HTMLDivElement>();
 
   return (
@@ -195,13 +203,14 @@ const NextRegRow = ({ item, description, hasDetail, isExpanded, onToggle }: Next
         offsetX={0}
         offsetY={0}
         showDelay={100}
-        content={registerTooltip(item.id, description, item.value, item.lastWrite)}
+        content={registerTooltip(t, item.id, description, item.value, item.lastWrite)}
       />
     </DataRow>
   );
 };
 
 export const NextRegPanel = () => {
+  const t = useT();
   const emuApi = useEmuApi();
   const machineId = useSelector((s) => s.emulatorState?.machineId);
   const [lastRegIndex, setLastRegIndex] = useState<number>();
@@ -263,13 +272,13 @@ export const NextRegPanel = () => {
 
   return (
     <div className={styles.nextRegPanel}>
-      <HistoryPresentBanner what="The Next registers" plural />
+      <HistoryPresentBanner subject="nextRegisters" />
       <DataRow hoverable dense xclass={styles.nextRegRow}>
-        <Label text={`Last Reg Index:`} className={styles.nextRegHeaderLabel} />
+        <Label text={t("panels.side.nextReg.lastRegIndexLabel")} className={styles.nextRegHeaderLabel} />
         <Value
           text={toHexa2(lastRegIndex ?? 0)}
           className={regStyles.stateValue}
-          tooltip={valueTooltip("Last register index", lastRegIndex ?? 0)}
+          tooltip={valueTooltip(t("panels.side.nextReg.lastRegIndex"), lastRegIndex ?? 0)}
         />
       </DataRow>
       <VirtualizedList

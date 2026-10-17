@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSelector } from "@renderer/core/RendererProvider";
 import styles from "./RecordingStateOverlay.module.scss";
+import { useT } from "@common/i18n/useT";
 
 /**
  * Displays a floating pill below the ExecutionStateOverlay that shows the
@@ -8,6 +9,7 @@ import styles from "./RecordingStateOverlay.module.scss";
  * Invisible when the state is idle.
  */
 export const RecordingStateOverlay = () => {
+  const t = useT();
   const recState = useSelector((s) => s.emulatorState?.screenRecordingState);
   const [elapsed, setElapsed] = useState(0);
 
@@ -29,14 +31,14 @@ export const RecordingStateOverlay = () => {
 
   const mins = Math.floor(elapsed / 60).toString().padStart(2, "0");
   const secs = (elapsed % 60).toString().padStart(2, "0");
-  const timerSuffix = recState === "recording" && elapsed > 0 ? ` ${mins}:${secs}` : "";
-
   const text =
     recState === "armed"
-      ? "Ready – recording starts when machine runs"
+      ? t("panels.feature.emulator.recordingArmed")
       : recState === "recording"
-        ? `Recording...${timerSuffix}`
-        : "Recording paused";
+        ? elapsed > 0
+          ? t("panels.feature.emulator.recordingTime", { time: `${mins}:${secs}` })
+          : t("panels.feature.emulator.recording")
+        : t("panels.feature.emulator.recordingPaused");
 
   return (
     <div className={styles.recordingOverlay}>

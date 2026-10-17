@@ -1,3 +1,4 @@
+import { t } from "@common/i18n/i18n";
 import { documentSourceName } from "../helpers/documentSourceName";
 import { parseSpectrumSnapshot } from "@common/spectrum/snapshot/parseSpectrumSnapshot";
 
@@ -17,7 +18,7 @@ export function spectrumBankDumpId(fullPath: string, bank: number): string {
 
 /** The tab title of a snapshot bank's document: `<path> - Bank N`. */
 export function spectrumBankDumpTitle(fullPath: string, bank: number, projectFolder?: string): string {
-  return `${documentSourceName(fullPath, projectFolder)} - Bank ${bank}`;
+  return t("panels.helpers.bankTitle", { source: documentSourceName(fullPath, projectFolder), bank: String(bank) });
 }
 
 /** The document id `openStaticMemoryDump` gives a snapshot bank: `memoryDump-` + `spectrumBankDumpId`. */

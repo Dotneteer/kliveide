@@ -1,4 +1,6 @@
 import type { DiagnosticBag, Span } from "../diagnostics";
+import { t as tr, type MessageArgs } from "@common/i18n/i18n";
+import type { MessageKey } from "@common/i18n/keys.generated";
 import type {
   Argument,
   AttrModifier,
@@ -134,7 +136,7 @@ class Parser {
     let expression: Expression;
     try {
       expression = this.expression();
-      if (!this.at("newline") && !this.at("eof")) this.fail("E302", "Unexpected text after the expression");
+      if (!this.at("newline") && !this.at("eof")) this.fail("E302", "compiler.basic.E302.unexpectedText");
     } catch (e) {
       if (!(e instanceof ParseError)) throw e;
       return undefined;
@@ -176,15 +178,16 @@ class Parser {
   }
   private expectKeyword(keyword: string, what = keyword): Token {
     if (this.atKeyword(keyword)) return this.next();
-    return this.fail("E302", `Expected ${what}`);
+    return this.fail("E302", "compiler.basic.E302.expectedKeyword", { keyword: what });
   }
   private expectOp(text: string): Token {
     if (this.atOp(text)) return this.next();
-    return this.fail("E302", `Expected '${text}'`);
+    return this.fail("E302", "compiler.basic.E302.expectedOperator", { operator: text });
   }
-  private fail(code: string, message: string, token = this.peek()): never {
-    this.diagnostics.error(code, `${message}${describe(token)}`, siteSpan(token));
-    throw new ParseError(message);
+  /** Reports `key` (a message that ends with the found token, `{found, select, ...}`) and gives up the statement. */
+  private fail(code: string, key: MessageKey, args: MessageArgs = {}, token = this.peek()): never {
+    this.diagnostics.error(code, tr(key, { ...args, ...found(token) }), siteSpan(token));
+    throw new ParseError(key);
   }
 
   /** A span from the token at `start` to the last token consumed. */
@@ -218,7 +221,7 @@ class Parser {
       if (t.atLineStart && t.kind === "number") {
         const start = this.pos;
         this.next();
-        if (t.numberForm !== "integer") this.diagnostics.error("E304", "A line number must be a whole number", siteSpan(t));
+        if (t.numberForm !== "integer") this.diagnostics.error("E304", tr("compiler.basic.E304"), siteSpan(t));
         out.push(this.node(start, { kind: "label", name: t.text, lineNumber: t.value }));
         continue;
       }
@@ -233,7 +236,7 @@ class Parser {
       this.afterMissingCloser = false;
       this.statementInto(out);
       if (!this.atStatementEnd() && !this.afterMissingCloser) {
-        this.diagnostics.error("E301", `Expected the end of the statement${describe(this.peek())}`, siteSpan(this.peek()));
+        this.diagnostics.error("E301", tr("compiler.basic.E301.endOfStatement", found(this.peek())), siteSpan(this.peek()));
         this.synchronize();
       }
     }
@@ -261,7 +264,7 @@ class Parser {
       if (this.isEndIf()) return out;
       this.statementInto(out);
       if (!this.atStatementEnd()) {
-        this.diagnostics.error("E301", `Expected the end of the statement${describe(this.peek())}`, siteSpan(this.peek()));
+        this.diagnostics.error("E301", tr("compiler.basic.E301.endOfStatement", found(this.peek())), siteSpan(this.peek()));
         this.synchronize();
       }
     }
@@ -287,7 +290,7 @@ class Parser {
       this.next();
       return this.node(start, {});
     }
-    return this.missingCloser(`${opener.text.toUpperCase()} has no END ${keyword}`, opener);
+    return this.missingCloser(tr("compiler.basic.E303.noEnd", { opener: opener.text.toUpperCase(), keyword }), opener);
   }
 
   private missingCloser(message: string, opener: Token): Node {
@@ -308,7 +311,7 @@ class Parser {
       return this.node(start, { kind: "pragma", text: t.text, ...this.pragma(t) });
     }
     if (t.kind === "identifier") return this.assignmentOrCall(false);
-    if (t.kind !== "keyword") this.fail("E301", "Expected a statement");
+    if (t.kind !== "keyword") this.fail("E301", "compiler.basic.E301.statement");
 
     const kw = t.keyword!;
     if ((ATTRS as string[]).includes(kw)) {
@@ -388,7 +391,7 @@ class Parser {
         return this.node(start, { kind: kw === "GOTO" ? "goto" : "gosub", target: this.jumpTarget() });
       case "GO": {
         this.next();
-        const which = this.eatKeyword("TO") ? "goto" : this.eatKeyword("SUB") ? "gosub" : this.fail("E302", "Expected TO or SUB after GO");
+        const which = this.eatKeyword("TO") ? "goto" : this.eatKeyword("SUB") ? "gosub" : this.fail("E302", "compiler.basic.E302.toOrSubAfterGo");
         return this.node(start, { kind: which, target: this.jumpTarget() });
       }
       case "ON":
@@ -397,7 +400,7 @@ class Parser {
       case "END":
       case "STOP": {
         if (kw === "END" && this.endsBlock()) {
-          this.fail("E305", `END ${this.peek(1).text.toUpperCase()} without its opening statement`);
+          this.fail("E305", "compiler.basic.E305", { keyword: this.peek(1).text.toUpperCase() });
         }
         this.next();
         const value = this.atStatementEnd() ? undefined : this.expression();
@@ -457,19 +460,19 @@ class Parser {
       case "CODEBANK":
         return this.codebank();
       case "NEXT":
-        this.fail("E306", "NEXT without FOR");
+        this.fail("E306", "compiler.basic.E306.next");
         break;
       case "LOOP":
-        this.fail("E306", "LOOP without DO");
+        this.fail("E306", "compiler.basic.E306.loop");
         break;
       case "WEND":
-        this.fail("E306", "WEND without WHILE");
+        this.fail("E306", "compiler.basic.E306.wend");
         break;
       case "ELSEIF":
       case "ENDIF":
-        this.fail("E306", `${kw} without IF`);
+        this.fail("E306", "compiler.basic.E306.withoutIf", { keyword: kw });
     }
-    return this.fail("E301", "Expected a statement");
+    return this.fail("E301", "compiler.basic.E301.statement");
   }
 
   /** `option = value`, `option value`, `push(option)`, `pop(option)` (spec `preprocessor` #pragma). */
@@ -478,12 +481,12 @@ class Parser {
     const stack = /^(push|pop)\s*\(\s*([A-Za-z_]\w*)\s*\)$/i.exec(t.text);
     if (stack) {
       const name = stack[2].toLowerCase();
-      if (!(name in PRAGMAS)) this.diagnostics.warning("W300", `Unknown #pragma option '${stack[2]}' ignored`, span);
+      if (!(name in PRAGMAS)) this.diagnostics.warning("W300", tr("compiler.basic.W300", { option: stack[2] }), span);
       return { name, action: stack[1].toLowerCase() as "push" | "pop" };
     }
     const m = /^([A-Za-z_]\w*)\s*(?:=\s*)?(.*)$/.exec(t.text);
     if (!m) {
-      this.diagnostics.error("E314", "Expected a #pragma option", span);
+      this.diagnostics.error("E314", tr("compiler.basic.E314.expected"), span);
       return { action: "set" };
     }
     const name = m[1].toLowerCase();
@@ -491,7 +494,7 @@ class Parser {
     const value = /^".*"$/.test(raw) ? raw.slice(1, -1) : raw;
     const type = PRAGMAS[name];
     if (!type) {
-      this.diagnostics.warning("W300", `Unknown #pragma option '${m[1]}' ignored`, span);
+      this.diagnostics.warning("W300", tr("compiler.basic.W300", { option: m[1] }), span);
       return { name, action: "set", value };
     }
     const valid =
@@ -503,7 +506,7 @@ class Parser {
             ? /^(size|speed|auto)$/i.test(value)
             : true;
     if (!valid || (type !== "bool" && value === "")) {
-      this.diagnostics.error("E314", `Invalid value '${value}' for #pragma ${name}`, span);
+      this.diagnostics.error("E314", tr("compiler.basic.E314.invalidValue", { value, option: name }), span);
     }
     return { name, action: "set", value };
   }
@@ -511,7 +514,7 @@ class Parser {
   /** A block header ends at ':' or the end of the line (spec SEP); `lineOnly` wants the end of the line. */
   private expectSeparator(lineOnly = false): void {
     if (this.at("newline") || this.at("eof") || (!lineOnly && this.atOp(":"))) return;
-    this.fail("E302", lineOnly ? "Expected the end of the line" : "Expected ':' or the end of the line");
+    this.fail("E302", lineOnly ? "compiler.basic.E302.lineEnd" : "compiler.basic.E302.statementEnd");
   }
 
   private endsBlock(): boolean {
@@ -521,11 +524,11 @@ class Parser {
   /** `[LET] target = value`, or a SUB/FUNCTION call statement. */
   private assignmentOrCall(hasLet: boolean, start = this.pos): Statement {
     const nameToken = this.peek();
-    if (nameToken.kind !== "identifier") this.fail("E302", "Expected a variable name");
+    if (nameToken.kind !== "identifier") this.fail("E302", "compiler.basic.E302.variableName");
     const afterName = this.pos + 1;
     const target = this.postfix(this.primaryName());
     if (this.eatOp("=")) return this.node(start, { kind: "let", target, value: this.expression(), hasLet });
-    if (hasLet) this.fail("E302", "Expected '='");
+    if (hasLet) this.fail("E302", "compiler.basic.E302.expectedOperator", { operator: "=" });
     const callee = nameRef(nameToken);
     if (this.atStatementEnd()) {
       if (target.kind === "name") return this.node(start, { kind: "callStatement", callee, args: [], parens: false });
@@ -540,7 +543,7 @@ class Parser {
   }
 
   private designator(): Expression {
-    if (!this.at("identifier")) this.fail("E302", "Expected a variable");
+    if (!this.at("identifier")) this.fail("E302", "compiler.basic.E302.variable");
     return this.postfix(this.primaryName());
   }
 
@@ -564,7 +567,7 @@ class Parser {
       } else {
         items.push(this.node(start, { kind: "expr", value: this.expression() }));
       }
-      if (!this.atStatementEnd() && !this.atOp(";") && !this.atOp(",")) this.fail("E302", "Expected ';' or ','");
+      if (!this.atStatementEnd() && !this.atOp(";") && !this.atOp(",")) this.fail("E302", "compiler.basic.E302.semicolonOrComma");
     }
     return items;
   }
@@ -677,7 +680,7 @@ class Parser {
       }
       otherwise = this.block(() => this.isEndIf() || this.atKeyword("ELSEIF") || this.atKeyword("ELSE"));
     }
-    if (this.atKeyword("ELSEIF") || this.atKeyword("ELSE")) this.fail("E306", "ELSE or ELSEIF after ELSE");
+    if (this.atKeyword("ELSEIF") || this.atKeyword("ELSE")) this.fail("E306", "compiler.basic.E306.elseAfterElse");
     this.closeBlock("IF", opener, "ENDIF");
     return this.node(start, { kind: "if", condition, then, elseIfs, ...(otherwise ? { else: otherwise } : {}), singleLine: false });
   }
@@ -698,7 +701,7 @@ class Parser {
     if (this.eatKeyword("NEXT")) {
       const nextVariable = this.at("identifier") ? this.name() : undefined;
       next = this.node(nextStart, nextVariable ? { variable: nextVariable } : {});
-    } else next = this.missingCloser("FOR has no NEXT", opener);
+    } else next = this.missingCloser(tr("compiler.basic.E303.forNoNext"), opener);
     return this.node(start, { kind: "for", variable, from, to, ...(step ? { step } : {}), body, next });
   }
 
@@ -731,12 +734,12 @@ class Parser {
     const loopStart = this.pos;
     if (test === "none" && this.atKeyword("LOOP")) this.checkBareDoLine(bodyStart, loopStart);
     if (!this.eatKeyword("LOOP")) {
-      const loop = this.missingCloser("DO has no LOOP", opener);
+      const loop = this.missingCloser(tr("compiler.basic.E303.doNoLoop"), opener);
       return this.node(start, { kind: "do", test, ...(condition ? { condition } : {}), body, loop });
     }
     const post = this.atKeyword("UNTIL") ? "postUntil" : this.atKeyword("WHILE") ? "postWhile" : undefined;
     if (post) {
-      if (condition) this.fail("E307", "A DO loop cannot test both at the top and at the bottom");
+      if (condition) this.fail("E307", "compiler.basic.E307");
       this.next();
       test = post;
       condition = this.expression();
@@ -759,14 +762,14 @@ class Parser {
     for (let i = bodyStart; i < loopStart; i++) if (this.tokens[i].kind === "newline") return;
     this.diagnostics.error(
       "E315",
-      "LOOP must start a new line here: after a DO without WHILE or UNTIL, ZX BASIC does not accept a LOOP on the line that holds the whole body",
+      tr("compiler.basic.E315"),
       siteSpan(this.tokens[loopStart])
     );
   }
 
   private loopKind(): LoopKind {
     for (const k of ["DO", "FOR", "WHILE"] as LoopKind[]) if (this.eatKeyword(k)) return k;
-    return this.fail("E302", "Expected DO, FOR or WHILE");
+    return this.fail("E302", "compiler.basic.E302.loopKind");
   }
 
   private jumpTarget(): JumpTarget {
@@ -774,14 +777,14 @@ class Parser {
     const start = this.pos;
     if (t.kind === "number") {
       this.next();
-      if (t.numberForm !== "integer") this.diagnostics.error("E304", "A line number must be a whole number", siteSpan(t));
+      if (t.numberForm !== "integer") this.diagnostics.error("E304", tr("compiler.basic.E304"), siteSpan(t));
       return this.node(start, { kind: "lineTarget", line: t.value! });
     }
     if (t.kind === "identifier" && !t.sigil) {
       this.next();
       return this.node(start, { kind: "labelTarget", name: t.name! });
     }
-    return this.fail("E302", "Expected a label or line number");
+    return this.fail("E302", "compiler.basic.E302.jumpTarget");
   }
 
   private onJump(): Statement {
@@ -793,8 +796,8 @@ class Parser {
     else if (this.eatKeyword("GOSUB")) jump = "GOSUB";
     else if (this.atKeyword("GO")) {
       this.next();
-      jump = this.eatKeyword("TO") ? "GOTO" : this.eatKeyword("SUB") ? "GOSUB" : this.fail("E302", "Expected TO or SUB after GO");
-    } else return this.fail("E302", "Expected GOTO or GOSUB");
+      jump = this.eatKeyword("TO") ? "GOTO" : this.eatKeyword("SUB") ? "GOSUB" : this.fail("E302", "compiler.basic.E302.toOrSubAfterGo");
+    } else return this.fail("E302", "compiler.basic.E302.gotoOrGosub");
     const targets = [this.jumpTarget()];
     while (this.eatOp(",")) targets.push(this.jumpTarget());
     return this.node(start, { kind: "on", selector, jump, targets });
@@ -853,7 +856,7 @@ class Parser {
       const isArray = !!variable && !!this.eatOp("(") && !!this.expectOp(")");
       target = this.node(targetStart, { kind: "data", ...(variable ? { variable } : {}), isArray });
     } else {
-      return this.fail("E302", `Expected CODE, SCREEN$ or DATA after ${operation}'s name`);
+      return this.fail("E302", "compiler.basic.E302.tapeTarget", { operation });
     }
     return this.node(start, { kind: "tape", operation, name, target });
   }
@@ -877,7 +880,7 @@ class Parser {
 
   private routineHeader(): RoutineHeader {
     const start = this.pos;
-    const routine = this.eatKeyword("SUB") ? "SUB" : this.eatKeyword("FUNCTION") ? "FUNCTION" : this.fail("E302", "Expected SUB or FUNCTION");
+    const routine = this.eatKeyword("SUB") ? "SUB" : this.eatKeyword("FUNCTION") ? "FUNCTION" : this.fail("E302", "compiler.basic.E302.subOrFunction");
     const convention = this.eatKeyword("FASTCALL") ? "FASTCALL" : this.eatKeyword("STDCALL") ? "STDCALL" : undefined;
     const name = this.name();
     const params: Param[] = [];
@@ -890,7 +893,7 @@ class Parser {
     }
     const returnType = this.asType();
     if (returnType && routine === "SUB") {
-      this.diagnostics.error("E308", "A SUB cannot have a return type", returnType.span);
+      this.diagnostics.error("E308", tr("compiler.basic.E308"), returnType.span);
     }
     return this.node(start, {
       kind: "routineHeader",
@@ -933,7 +936,7 @@ class Parser {
       if (t.kind !== "asm") continue;
       lines.push({ text: t.text, span: t.span });
       if (/^\s*codebank\s*(;.*)?$/i.test(t.text)) {
-        this.diagnostics.error("E313", "CODEBANK in an ASM block needs a bank number", t.span);
+        this.diagnostics.error("E313", tr("compiler.basic.E313"), t.span);
       }
     }
     const end = this.closeBlock("ASM", opener);
@@ -943,13 +946,13 @@ class Parser {
   private codebank(): Statement {
     const start = this.pos;
     const opener = this.next();
-    if (this.routineDepth > 0) this.diagnostics.error("E312", "A CODEBANK block cannot be inside a SUB or FUNCTION", siteSpan(opener));
+    if (this.routineDepth > 0) this.diagnostics.error("E312", tr("compiler.basic.E312"), siteSpan(opener));
     const bank = this.expression();
     this.expectSeparator(true);
     const body = this.block(() => this.isEnd("CODEBANK") || this.atKeyword("CODEBANK"));
     for (const s of body) {
       if (!["routine", "declare", "dim", "const", "asm", "label", "pragma"].includes(s.kind)) {
-        this.diagnostics.error("E311", "A CODEBANK block holds only SUBs, FUNCTIONs, DIMs, ASM blocks and labels", s.span);
+        this.diagnostics.error("E311", tr("compiler.basic.E311"), s.span);
       }
     }
     const end = this.closeBlock("CODEBANK", opener);
@@ -961,7 +964,7 @@ class Parser {
 
   private name(): NameRef {
     const t = this.peek();
-    if (t.kind !== "identifier") return this.fail("E302", "Expected a name");
+    if (t.kind !== "identifier") return this.fail("E302", "compiler.basic.E302.name");
     this.next();
     return nameRef(t);
   }
@@ -973,7 +976,7 @@ class Parser {
 
   private typeRef(): TypeRef {
     const t = this.peek();
-    if (!this.atType()) return this.fail("E302", "Expected a type");
+    if (!this.atType()) return this.fail("E302", "compiler.basic.E302.type");
     this.next();
     return { kind: "type", name: t.keyword as TypeName, span: siteSpan(t) };
   }
@@ -1008,7 +1011,7 @@ class Parser {
     const start = this.pos;
     const t = this.peek();
     if (t.kind === "operator") {
-      if ((t.text === "-" || t.text === "+") && unsigned) this.fail("E309", `A sign cannot start this operand: put it in parentheses (ZX BASIC)`);
+      if ((t.text === "-" || t.text === "+") && unsigned) this.fail("E309", "compiler.basic.E309.sign");
       if (t.text === "-" || t.text === "+") {
         this.next();
         return this.node(start, { kind: "unary", op: t.text as "-" | "+", operand: this.expression(NEGATION_OPERAND) });
@@ -1027,9 +1030,9 @@ class Parser {
       }
       if (t.text === "@") {
         this.next();
-        if (!this.at("identifier")) this.fail("E302", "Expected a name after '@'");
+        if (!this.at("identifier")) this.fail("E302", "compiler.basic.E302.nameAfterAt");
         const target = this.postfix(this.primaryName());
-        if (target.kind !== "name" && target.kind !== "call") this.fail("E302", "Expected a name after '@'");
+        if (target.kind !== "name" && target.kind !== "call") this.fail("E302", "compiler.basic.E302.nameAfterAt");
         return this.node(start, { kind: "addressOf", target: target as never });
       }
     }
@@ -1053,7 +1056,7 @@ class Parser {
       return callee;
     }
     if (t.kind === "keyword") return this.keywordPrimary();
-    return this.fail("E309", "Expected an expression");
+    return this.fail("E309", "compiler.basic.E309.expression");
   }
 
   private startsBareArgument(): boolean {
@@ -1206,7 +1209,7 @@ class Parser {
       return builtin([arg], true);
     }
     this.pos = start;
-    return this.fail("E309", "Expected an expression");
+    return this.fail("E309", "compiler.basic.E309.expression");
   }
 }
 
@@ -1214,8 +1217,8 @@ function nameRef(t: Token): NameRef {
   return { kind: "name", name: t.name!, ...(t.sigil ? { sigil: t.sigil } : {}), span: siteSpan(t) };
 }
 
-function describe(t: Token): string {
-  if (t.kind === "eof") return ", found the end of the file";
-  if (t.kind === "newline") return ", found the end of the line";
-  return `, found '${t.text.length > 20 ? t.text.slice(0, 20) + "..." : t.text}'`;
+/** The `found` and `text` arguments of a message that ends with what the parser found instead. */
+function found(t: Token): { found: string; text: string } {
+  if (t.kind === "eof" || t.kind === "newline") return { found: t.kind, text: "" };
+  return { found: "token", text: t.text.length > 20 ? t.text.slice(0, 20) + "..." : t.text };
 }

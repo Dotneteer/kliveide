@@ -20,6 +20,7 @@ import { Icon } from "@renderer/controls/Icon";
 import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
 import { useMainApi } from "@renderer/core/MainApi";
 import { reportMessagingError } from "@renderer/reportError";
+import { useT } from "@common/i18n/useT";
 import { useNextLayerRegs } from "@renderer/features/emulator/useNextLayerView";
 import styles from "./NextLayersToolArea.module.scss";
 
@@ -31,6 +32,7 @@ import styles from "./NextLayersToolArea.module.scss";
  * emulator applies to the machine's mixer and announces with a pill (D3).
  */
 export const NextLayersToolArea = ({ machine }: { machine: IAnyMachine }) => {
+  const t = useT();
   const dispatch = useDispatch();
   const mainApi = useMainApi();
   const view = useSelector((s) => s.emulatorState?.nextLayers) ?? EMPTY_LAYER_VIEW;
@@ -54,7 +56,7 @@ export const NextLayersToolArea = ({ machine }: { machine: IAnyMachine }) => {
 
   return (
     <div className={styles.layersStrip} data-testid="next-layers-strip">
-      <span className={styles.order} title="Layer priority ($15), top layer first">
+      <span className={styles.order} title={t("emu.nextLayers.priority")}>
         {readout ?? "-"}
       </span>
       {chips.map((chip) => (
@@ -68,19 +70,19 @@ export const NextLayersToolArea = ({ machine }: { machine: IAnyMachine }) => {
       <span className={styles.separator} />
       <ToggleButton
         icon="spr-checker"
-        title="Show transparency: paint the pixels no layer covers in magenta"
+        title={t("emu.nextLayers.showTransparency")}
         on={view.showTransparent}
         onClick={() => set({ ...view, showTransparent: !view.showTransparent })}
       />
       <ToggleButton
         icon="square-dashed"
-        title="Show the four clip windows on the screen"
+        title={t("emu.nextLayers.showClips")}
         on={!!view.showClips}
         onClick={() => set({ ...view, showClips: !view.showClips })}
       />
       <ToggleButton
         icon="crosshair"
-        title="Pixel probe: pause, then point at a pixel to see which layer produced it and why"
+        title={t("emu.nextLayers.probe")}
         on={!!view.probe}
         onClick={() => set({ ...view, probe: !view.probe })}
       />
@@ -88,16 +90,16 @@ export const NextLayersToolArea = ({ machine }: { machine: IAnyMachine }) => {
         type="button"
         className={styles.reset}
         disabled={!changed}
-        title="Show every layer"
+        title={t("emu.nextLayers.reset.title")}
         onClick={() => set(resetLayers(view))}
       >
-        All
+        {t("emu.nextLayers.reset.text")}
       </button>
       <button
         type="button"
         className={styles.close}
-        title="Show the composite picture (every layer) and hide this strip"
-        aria-label="Close the Layers strip"
+        title={t("emu.nextLayers.close.title")}
+        aria-label={t("emu.nextLayers.close.label")}
         onClick={close}
       >
         <Icon iconName="close" width={14} height={14} fill="--color-display" />
@@ -114,6 +116,14 @@ const CHIP_CLASS: Record<NextLayerId, string> = {
 };
 
 const LayerChipView = ({ chip, onHide, onSolo }: { chip: LayerChip; onHide: () => void; onSolo: () => void }) => {
+  const t = useT();
+  const hideKey = chip.hidden
+    ? chip.disabledByProgram
+      ? "emu.nextLayers.chip.showProgramOff"
+      : "emu.nextLayers.chip.show"
+    : chip.disabledByProgram
+      ? "emu.nextLayers.chip.hideProgramOff"
+      : "emu.nextLayers.chip.hide";
   const off = chip.hidden || chip.eclipsed;
   return (
     <span
@@ -127,10 +137,7 @@ const LayerChipView = ({ chip, onHide, onSolo }: { chip: LayerChip; onHide: () =
         type="button"
         className={styles.chipMain}
         aria-pressed={!chip.hidden}
-        title={
-          `${chip.hidden ? "Show" : "Hide"} ${chip.name}` +
-          (chip.disabledByProgram ? " (the program has it switched off)" : "")
-        }
+        title={t(hideKey, { layer: chip.name })}
         onClick={onHide}
       >
         <Icon iconName={chip.hidden ? "eye-off" : "eye"} width={12} height={12} fill="--color-display" />
@@ -141,10 +148,10 @@ const LayerChipView = ({ chip, onHide, onSolo }: { chip: LayerChip; onHide: () =
         type="button"
         className={styles.solo}
         aria-pressed={chip.solo}
-        title={chip.solo ? `End solo: show every layer` : `Solo: show ${chip.name} alone, over a checker`}
+        title={chip.solo ? t("emu.nextLayers.chip.endSolo") : t("emu.nextLayers.chip.solo", { layer: chip.name })}
         onClick={onSolo}
       >
-        S
+        {t("emu.nextLayers.chip.soloShort")}
       </button>
     </span>
   );

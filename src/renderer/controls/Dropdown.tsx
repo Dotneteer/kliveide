@@ -3,6 +3,7 @@ import * as Select from "@radix-ui/react-select";
 import { Icon } from "./Icon";
 import { useOverlayRoot } from "@renderer/controls/overlay/useOverlayRoot";
 import { useEffect, useState } from "react";
+import { useT } from "@common/i18n/useT";
 
 export type DropdownOption = {
   value: string;
@@ -77,6 +78,7 @@ export default function Dropdown({
   onChanged,
   onOpenChange,
 }: Props) {
+  const t = useT();
   const rootElement = useOverlayRoot();
   const [selectedValue, setSelectedValue] = useState(initialValue);
 
@@ -100,7 +102,7 @@ export default function Dropdown({
         aria-label={ariaLabel}
         data-testid={testId}
       >
-        <Select.Value placeholder={placeholder ?? "Select..."} />
+        <Select.Value placeholder={placeholder ?? t("panels.controls.dropdown.placeholder")} />
         <div style={{ width: "100%" }} />
         <Icon iconName="chevron-down" fill="--color-command-icon" width={16} height={16} />
       </Select.Trigger>

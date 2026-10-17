@@ -23,6 +23,8 @@
  *   - a relative (bits 7..6 = `01`): `0 1 N6 XX YY PR` - N6, scale, "the pattern is relative"
  */
 
+import { t } from "@common/i18n/i18n";
+
 /**
  * - `anchor4`: a 4-byte sprite (attr3 bit 6 clear); its attr4 is stale and ignored.
  * - `anchor5`: a 5-byte anchor.
@@ -186,9 +188,11 @@ export function formatSpritePattern(fourBit: boolean, pattern7: number): string 
 /** The sprite type as the table shows it: `anchor`, `anchor·4B`, `rel·composite`, `rel·unified`. */
 export function formatSpriteType(slots: DecodedSpriteSlot[], index: number): string {
   const slot = slots[index];
-  if (slot.kind === "anchor4") return "anchor·4B";
-  if (slot.kind === "anchor5") return "anchor";
-  return `rel·${relativeTypeOf(slots, index)}`;
+  if (slot.kind === "anchor4") return t("gfxCommon.sprite.type.anchor4");
+  if (slot.kind === "anchor5") return t("gfxCommon.sprite.type.anchor");
+  return relativeTypeOf(slots, index) === "unified"
+    ? t("gfxCommon.sprite.type.relUnified")
+    : t("gfxCommon.sprite.type.relComposite");
 }
 
 // --- The core's resolved table (D4)

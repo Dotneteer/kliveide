@@ -7,6 +7,7 @@ import type {
   ConditionSymbols
 } from "./condition-types";
 import { bankLocalSymbolKey, romSymbolKey } from "./condition-types";
+import { t } from "@common/i18n/i18n";
 import { ConditionSyntaxError } from "./condition-lexer";
 import { parseCondition, type SyntaxNode } from "./condition-parser";
 import { MAX_PROGRAM_WORDS, MAX_STACK_DEPTH, emitCondition, stackDepthOf } from "./condition-bytecode";
@@ -42,7 +43,7 @@ const FLAGS: Record<string, number> = {
 const MAX_NEXT_BANK = 111;
 
 /** A value's static range, and the name an out-of-range message uses for it. */
-type StaticRange = { min: number; max: number; name: string };
+type StaticRange = { min: number; max: number; name?: string };
 
 export type CompileConditionResult = {
   /** Absent when `errors` is not empty. */
@@ -73,7 +74,7 @@ export function compileConditionWith(
   try {
     if (env.isZ80 === false) {
       throw new ConditionSyntaxError(
-        "Breakpoint conditions are supported on Z80 machines only",
+        t("debug.condition.z80Only"),
         0,
         text.length
       );
@@ -84,10 +85,10 @@ export function compileConditionWith(
     // --- The evaluator's limits (`z80-condition.c`): checked here, so a condition the cores could
     // --- not run is refused with a message rather than failing safe at every hit
     if (stackDepthOf(tree) > MAX_STACK_DEPTH) {
-      throw new ConditionSyntaxError("The condition is nested too deeply", 0, text.length);
+      throw new ConditionSyntaxError(t("debug.condition.tooDeep"), 0, text.length);
     }
     if (emitCondition({ tree, values: checker.labels.map(() => 0) }).length > MAX_PROGRAM_WORDS) {
-      throw new ConditionSyntaxError("The condition is too long", 0, text.length);
+      throw new ConditionSyntaxError(t("debug.condition.tooLong"), 0, text.length);
     }
     const compiled: CompiledCondition = {
       source: text,
@@ -154,17 +155,14 @@ class Checker {
         return { k: "num", v: node.v };
 
       case "str":
-        return this.fail(
-          "A string can only be compared (==, !=) with an unsigned memory access",
-          node
-        );
+        return this.fail(t("debug.condition.stringCompare"), node);
 
       case "part": {
         if (!this.env.hasPartitions) {
-          this.fail(`@${node.label} names a partition, but this machine has none`, node);
+          this.fail(t("debug.condition.noPartitions", { partition: `@${node.label}` }), node);
         }
         const index = this.env.parsePartitionLabel?.(node.label);
-        if (index === undefined) this.fail(`Unknown partition @${node.label}`, node);
+        if (index === undefined) this.fail(t("debug.condition.unknownPartition", { partition: `@${node.label}` }), node);
         return { k: "num", v: index };
       }
 
@@ -179,7 +177,7 @@ class Checker {
         if (!(this.env.bankLabels ?? this.env.isNext)) {
           if (ignoredBankPrefix) return this.labelSlot(node.name.toLowerCase(), node.name, node);
           this.fail(
-            `Bank-local labels (${this.source(node)}) exist only on the ZX Spectrum Next`,
+            t("debug.condition.bankLabelNextOnly", { label: this.source(node) }),
             node
           );
         }
@@ -196,7 +194,10 @@ class Checker {
               part = { kind: "bank", bank: this.parseBank(node.part.text, node.part.span) };
             } else if (this.env.hasPartitions) {
               this.fail(
-                `Bank specs (${node.part.text}:+offset, ${node.part.text}:label) exist only on the ZX Spectrum Next`,
+                t("debug.condition.bankSpecNextOnly", {
+                  offsetSpec: `${node.part.text}:+offset`,
+                  labelSpec: `${node.part.text}:label`
+                }),
                 node.part.span
               );
             } else {
@@ -205,7 +206,7 @@ class Checker {
           } else if (this.env.hasPartitions) {
             const index = this.env.parsePartitionLabel?.(node.part.text);
             if (index === undefined) {
-              this.fail(`Unknown partition '${node.part.text}'`, node.part.span);
+              this.fail(t("debug.condition.unknownPartition", { partition: `'${node.part.text}'` }), node.part.span);
             }
             part = { kind: "partition", index };
           }
@@ -223,10 +224,10 @@ class Checker {
 
       case "call": {
         if (node.fn === "page" && !this.env.hasPartitions) {
-          this.fail("page() needs a machine with memory partitions", node);
+          this.fail(t("debug.condition.pageNeedsPartitions"), node);
         }
         if (node.fn === "nr" && !this.env.isNext) {
-          this.fail("nr() reads a Next register; it exists only on the ZX Spectrum Next", node);
+          this.fail(t("debug.condition.nrNextOnly"), node);
         }
         return { k: "call", fn: node.fn, arg: this.convert(node.arg, ignoredBankPrefix) };
       }
@@ -234,7 +235,7 @@ class Checker {
       case "machine":
         if (node.fn === "slots") {
           this.fail(
-            "slots() is text; it can only be a whole logpoint placeholder ({slots()})",
+            t("debug.condition.slotsIsText", { placeholder: "{slots()}" }),
             node
           );
         }
@@ -249,10 +250,7 @@ class Checker {
         const isEquality = node.op === "==" || node.op === "!=";
         if (node.l.k === "str" || node.r.k === "str") {
           if (!isEquality) {
-            this.fail(
-              "A string can only be compared (==, !=) with an unsigned memory access",
-              node.l.k === "str" ? node.l : node.r
-            );
+            this.fail(t("debug.condition.stringCompare"), node.l.k === "str" ? node.l : node.r);
           }
           return this.stringComparison(node, ignoredBankPrefix);
         }
@@ -279,7 +277,9 @@ class Checker {
     } else if (lower === "val" || lower === "addr") {
       if (this.env.accessKind === "exec") {
         this.fail(
-          `${node.name.toUpperCase()} is the accessed ${lower === "val" ? "value" : "address"}; an execution breakpoint has none`,
+          lower === "val"
+            ? t("debug.condition.valOnExec", { name: node.name.toUpperCase() })
+            : t("debug.condition.addrOnExec", { name: node.name.toUpperCase() }),
           node
         );
       }
@@ -291,7 +291,7 @@ class Checker {
       if (this.env.symbols?.[lower] !== undefined) {
         this.warnings.push({
           severity: "warning",
-          message: `${node.name} is read as the reserved name, not the label; write \`${node.name}\` for the label`,
+          message: t("debug.condition.reservedNameShadows", { name: node.name, quoted: `\`${node.name}\`` }),
           start: node.start,
           end: node.end
         });
@@ -311,7 +311,7 @@ class Checker {
     if (this.env.symbols && this.env.symbols[key] === undefined) {
       this.warnings.push({
         severity: "warning",
-        message: `Unknown label ${display}: the breakpoint is inactive until a build defines it`,
+        message: t("debug.condition.unknownLabel", { label: display }),
         start: span.start,
         end: span.end
       });
@@ -321,7 +321,7 @@ class Checker {
 
   private parseBank(text: string, span: { start: number; end: number }): number {
     if (!/^[0-9a-f]{1,2}$/i.test(text) || parseInt(text, 16) > MAX_NEXT_BANK) {
-      this.fail(`'${text}' is not a 16K bank (00-6F)`, span);
+      this.fail(t("debug.condition.notABank", { bank: text }), span);
     }
     return parseInt(text, 16);
   }
@@ -331,16 +331,16 @@ class Checker {
     const [strSide, other] = node.l.k === "str" ? [node.l, node.r] : [node.r, node.l];
     if (strSide.k !== "str") throw new Error("unreachable");
     if (other.k === "str") {
-      this.fail("Two strings cannot be compared with each other", node);
+      this.fail(t("debug.condition.twoStrings"), node);
     }
     if (other.k !== "mem" || other.access.signed) {
-      this.fail("A string can only be compared (==, !=) with an unsigned memory access", strSide);
+      this.fail(t("debug.condition.stringCompare"), strSide);
     }
     const width = other.access.width;
     if (strSide.codes.length !== width) {
       const n = strSide.codes.length;
       this.fail(
-        `String ${strSide.text} has ${n} character${n === 1 ? "" : "s"} but ${other.access.name}[…] compares ${width}`,
+        t("debug.condition.stringLength", { string: strSide.text, count: n, access: `${other.access.name}[…]`, width }),
         strSide
       );
     }
@@ -363,7 +363,13 @@ class Checker {
     const range = this.rangeOf(operand, operandSyntax);
     if (!range || (constant >= range.min && constant <= range.max)) return;
     this.fail(
-      `${this.source(otherSyntax)} is out of range for ${range.name} (${formatRange(range.min, range.max)})`,
+      range.name === undefined
+        ? t("debug.condition.outOfRangeAccess", { value: this.source(otherSyntax), range: formatRange(range.min, range.max) })
+        : t("debug.condition.outOfRange", {
+            value: this.source(otherSyntax),
+            operand: range.name,
+            range: formatRange(range.min, range.max)
+          }),
       otherSyntax
     );
   }
@@ -390,7 +396,7 @@ class Checker {
             };
       case "mem": {
         const bits = node.width * 8;
-        const name = syntax.k === "mem" ? `${syntax.access.name}[…]` : "the access";
+        const name = syntax.k === "mem" ? `${syntax.access.name}[…]` : undefined;
         return node.signed
           ? { min: -(2 ** (bits - 1)), max: 2 ** (bits - 1) - 1, name }
           : { min: 0, max: 2 ** bits - 1, name };

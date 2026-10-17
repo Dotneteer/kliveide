@@ -16,6 +16,7 @@ import { KeyHandler } from "@renderer/controls/generic/KeyHandler";
 import { ToolbarSeparator } from "@renderer/controls/ToolbarSeparator";
 import { Column } from "@renderer/controls/layout/Column";
 import { Panel } from "@renderer/controls/layout/Panel";
+import { useT } from "@common/i18n/useT";
 
 type Props = {
   palette: number[];
@@ -51,6 +52,7 @@ export const PaletteEditor = ({
   onUpdated,
   allowTransparencySelection = true
 }: Props) => {
+  const t = useT();
   const [selectedIndex, setSelectedIndex] = useState<number>(initialIndex);
   const [transparencyIndex, setTransparencyIndex] = useState<number>(null);
   const [selectedColor, setSelectedColor] = useState<string>(null);
@@ -216,7 +218,7 @@ export const PaletteEditor = ({
         <KeyHandler xclass={styles.headerRow} onKey={handleCommonKeys} autofocus={true}>
           <SmallIconButton
             iconName="undo"
-            title={"Undo"}
+            title={t("panels.next.palette.undo")}
             enable={editStackIndex >= 0}
             clicked={async () => {
               undo();
@@ -224,7 +226,7 @@ export const PaletteEditor = ({
           />
           <SmallIconButton
             iconName="redo"
-            title={"Redo"}
+            title={t("panels.next.palette.redo")}
             enable={editStackIndex < editStack.length - 1}
             clicked={async () => {
               redo();
@@ -235,11 +237,11 @@ export const PaletteEditor = ({
             <>
               <ToolbarSeparator small={true} />
               <LabeledText
-                label="Transparency Color:"
+                label={t("panels.next.palette.transparencyColor")}
                 value={
                   typeof transparencyIndex === "number"
                     ? `$${toHexa2(transparencyIndex)} (${transparencyIndex})`
-                    : "(none)"
+                    : t("panels.next.palette.none")
                 }
               />
             </>
@@ -252,11 +254,12 @@ export const PaletteEditor = ({
             <Row>
               <div className={styles.colorBar} style={{ backgroundColor: selectedColor }}>
                 {selectedIndex != undefined && (
-                  <span style={{ color: midColor }}>{`Color $${toHexa2(
-                    selectedIndex
-                  )} (${selectedIndex.toString(10)})`}</span>
+                  <span style={{ color: midColor }}>{t("panels.next.palette.color", {
+                    hex: toHexa2(selectedIndex),
+                    index: selectedIndex.toString(10)
+                  })}</span>
                 )}
-                {selectedIndex == undefined && <Label text="No color selected" />}
+                {selectedIndex == undefined && <Label text={t("panels.next.palette.noColor")} />}
               </div>
             </Row>
             <Row xclass={styles.colorRow}>
@@ -271,7 +274,7 @@ export const PaletteEditor = ({
                 <div
                   className={classnames(styles.colorScaleLabel, styles.colorScaleLabelRed)}
                 >
-                  Red
+                  {t("panels.next.palette.red")}
                 </div>
                 {levels9.map((level) => (
                   <ColorItem
@@ -295,7 +298,7 @@ export const PaletteEditor = ({
                 <div
                   className={classnames(styles.colorScaleLabel, styles.colorScaleLabelGreen)}
                 >
-                  Green
+                  {t("panels.next.palette.green")}
                 </div>
                 {levels9.map((level) => (
                   <ColorItem
@@ -319,7 +322,7 @@ export const PaletteEditor = ({
                 <div
                   className={classnames(styles.colorScaleLabel, styles.colorScaleLabelBlue)}
                 >
-                  Blue
+                  {t("panels.next.palette.blue")}
                 </div>
                 {levels9.map((level) => (
                   <ColorItem
@@ -335,30 +338,30 @@ export const PaletteEditor = ({
             </Row>
             <Column xclass={styles.trIndex}>
               <Row>
-                <LabeledText label="Click palette:" value="Select color" />
+                <LabeledText label={t("panels.next.palette.help.clickPalette")} value={t("panels.next.palette.help.selectColor")} />
               </Row>
               <Row>
-                <LabeledText label="Click R, G, B:" value="Select channel" />
+                <LabeledText label={t("panels.next.palette.help.clickChannel")} value={t("panels.next.palette.help.selectChannel")} />
               </Row>
               <Row>
-                <LabeledText label="Arrows:" value="Change selection" />
+                <LabeledText label={t("panels.next.palette.help.arrows")} value={t("panels.next.palette.help.changeSelection")} />
               </Row>
               <Row>
-                <LabeledText label="Key 8:" value="Use 8-bit palette" />
+                <LabeledText label={t("panels.next.palette.help.key8")} value={t("panels.next.palette.help.use8bit")} />
               </Row>
               <Row>
-                <LabeledText label="Key 9:" value="Use 8-bit palette" />
+                <LabeledText label={t("panels.next.palette.help.key9")} value={t("panels.next.palette.help.use9bit")} />
               </Row>
               <Row>
-                <LabeledText label="Space/Enter:" value="Toggle priority" />
+                <LabeledText label={t("panels.next.palette.help.spaceEnter")} value={t("panels.next.palette.help.togglePriority")} />
               </Row>
               {allowTransparencySelection && (
                 <Row>
-                  <LabeledText label="Key T, C:" value="Set/reset transp." />
+                  <LabeledText label={t("panels.next.palette.help.keyTC")} value={t("panels.next.palette.help.setResetTransparency")} />
                 </Row>
               )}
               <Row>
-                <LabeledText label="(Shift +) TAB:" value="Move focus" />
+                <LabeledText label={t("panels.next.palette.help.shiftTab")} value={t("panels.next.palette.help.moveFocus")} />
               </Row>
             </Column>
           </div>

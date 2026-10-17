@@ -5,6 +5,7 @@ import type { BankAnnotation, ProgramAnnotations } from "@renderer/appIde/annota
 import { createAnnotatedDisassemblyItems } from "@renderer/appIde/annotations/annotatedDisassembly";
 import { getBankAnnotation } from "@renderer/appIde/annotations/programAnnotations";
 import { isZ80Keyword } from "@main/z80-compiler/z80-token-stream";
+import { t } from "@common/i18n/i18n";
 import { describeNonCanonical, nonCanonicalReason } from "./canonicalEncoding";
 
 /*
@@ -228,7 +229,7 @@ export async function exportSource(options: SourceExportOptions): Promise<Source
       if (options.skip === "gap") {
         body.push({ kind: "comment", text: `${hex4(addressOf(offset))}-${hex4(addressOf(offset + length - 1))}: ${length} byte(s) not exported` });
         body.push({ kind: "directive", text: `.org ${hex4(addressOf(offset + length) & 0xffff)}` });
-        notes.push(`A skip region at ${hex4(addressOf(offset))} was left out (${length} bytes): the export reassembles to fewer bytes.`);
+        notes.push(t("media.export.skipLeftOut", { address: hex4(addressOf(offset)), count: length }));
         segment = undefined;
       } else {
         defbRows(offset, bytes, comment ?? "skip region", label);
@@ -237,7 +238,15 @@ export async function exportSource(options: SourceExportOptions): Promise<Source
       const reason = nonCanonicalReason(bytes, options.z80n);
       if (reason || !instruction || instruction.startsWith(".") && !/^\.def[bwm]\b/i.test(instruction)) {
         defbRows(offset, bytes, `${instruction || "?"}${reason ? ` (${describeNonCanonical(reason)})` : ""}`, label);
-        if (reason) notes.push(`${hex4(addressOf(offset))}: ${instruction} is written as .defb (${describeNonCanonical(reason)}).`);
+        if (reason) {
+          notes.push(
+            t("media.export.writtenAsDefb", {
+              address: hex4(addressOf(offset)),
+              instruction,
+              reason: reason === "undefined-ed" ? "undefinedEd" : reason === "ignored-prefix" ? "ignoredPrefix" : "nonCanonical"
+            })
+          );
+        }
       } else {
         body.push({ kind: "row", ...(label ? { label } : {}), text: instruction, ...(comment ? { comment } : {}) });
         emitBytes(offset, bytes);
@@ -321,7 +330,7 @@ function buildRenames(
     for (let n = 2; taken.has(candidate.toLowerCase()); n++) candidate = `${base}_${n}`;
     taken.add(candidate.toLowerCase());
     renames.set(name, candidate);
-    if (candidate !== name) notes.push(`The label ${name} is exported as ${candidate}.`);
+    if (candidate !== name) notes.push(t("media.export.labelRenamed", { name, as: candidate }));
   }
   return renames;
 }

@@ -16,10 +16,24 @@ import { iconSizes } from "@renderer/theming/tokens/dimensions";
 import { NEXT_PALETTE_DEVICES as DEVICES, type NextPaletteDeviceDef as DeviceDef } from "@renderer/features/next-palette/nextPaletteDevices";
 import { useEmuStateListener } from "../useStateRefresh";
 import styles from "./PalettePanel.module.scss";
+import { useT } from "@common/i18n/useT";
 
-const BANK_NAMES = ["First", "Second"] as const;
+/** Each bank's texts: the button's accessible name (plain and live) and the tooltip heading */
+const BANK_TEXTS = [
+  {
+    aria: "panels.side.palette.firstBank",
+    ariaLive: "panels.side.palette.firstBankLive",
+    heading: "panels.side.palette.firstDevicePalette"
+  },
+  {
+    aria: "panels.side.palette.secondBank",
+    ariaLive: "panels.side.palette.secondBankLive",
+    heading: "panels.side.palette.secondDevicePalette"
+  }
+] as const;
 
 export const PalettePanel = () => {
+  const t = useT();
   const emuApi = useEmuApi();
   const [paletteState, setPaletteState] = useState<PaletteDeviceInfo>(null);
 
@@ -32,7 +46,7 @@ export const PalettePanel = () => {
   if (!paletteState) {
     return (
       <DataPanel autoHeight xclass={styles.palettePanel}>
-        <EmptyState message="No palette information" />
+        <EmptyState message={t("panels.side.palette.empty")} />
       </DataPanel>
     );
   }
@@ -52,6 +66,7 @@ type DeviceSectionProps = {
 };
 
 const DeviceSection = ({ device, info }: DeviceSectionProps) => {
+  const t = useT();
   const [expanded, setExpanded] = useState(false);
   /**
    * Which bank is on screen.
@@ -100,7 +115,7 @@ const DeviceSection = ({ device, info }: DeviceSectionProps) => {
           * the machine's colour state.
           */}
         <PaletteThumb palette={palette} />
-        <span className={styles.bankSwitch} role="group" aria-label={`${device.label} palette bank`}>
+        <span className={styles.bankSwitch} role="group" aria-label={t("panels.side.palette.bankGroup", { device: device.label })}>
           {([0, 1] as const).map((bank) => (
             <BankButton
               key={bank}
@@ -148,6 +163,8 @@ type BankButtonProps = {
  * time*, since the default state is the coinciding one. A mark that never varies is not a signal.
  */
 const BankButton = ({ bank, device, isShown, isLive, clicked }: BankButtonProps) => {
+  const t = useT();
+  const texts = BANK_TEXTS[bank];
   const ref = useTooltipRef<HTMLButtonElement>();
   return (
     <>
@@ -159,7 +176,7 @@ const BankButton = ({ bank, device, isShown, isLive, clicked }: BankButtonProps)
           [styles.bankLive]: isLive
         })}
         aria-pressed={isShown}
-        aria-label={`${BANK_NAMES[bank]} palette${isLive ? " (live)" : ""}`}
+        aria-label={t(isLive ? texts.ariaLive : texts.aria)}
         onClick={(e) => {
           // --- The header toggles the section; the bank control must not.
           e.stopPropagation();
@@ -172,8 +189,8 @@ const BankButton = ({ bank, device, isShown, isLive, clicked }: BankButtonProps)
         refElement={ref.current}
         placement="bottom"
         content={
-          `${BANK_NAMES[bank]} ${device.label} palette\n` +
-          (isLive ? "Live — the machine is drawing with this bank\n" : "") +
+          `${t(texts.heading, { device: device.label })}\n` +
+          (isLive ? `${t("panels.side.palette.liveBank")}\n` : "") +
           device.liveSource
         }
       />

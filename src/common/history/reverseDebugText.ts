@@ -68,28 +68,48 @@ export function reverseStatusTooltip(state: ReverseDebugState | undefined): stri
 }
 
 /**
+ * What starts a fork (D12): Take over here, or an edit made while the machine stands in the past.
+ * An id, not text: each one has its own whole question in the catalog.
+ */
+export type ForkAction =
+  | { kind: "takeOver" }
+  | { kind: "editMemory" }
+  | { kind: "editRegister"; register: string }
+  | { kind: "editVariable"; name: string };
+
+/** The question the fork confirmation asks for an action */
+function forkQuestion(action: ForkAction): string {
+  switch (action.kind) {
+    case "editMemory":
+      return t("commands.fork.confirm.editMemory");
+    case "editRegister":
+      return t("commands.fork.confirm.editRegister", { register: action.register });
+    case "editVariable":
+      return t("commands.fork.confirm.editVariable", { name: action.name });
+    default:
+      return t("commands.fork.confirm.takeOver");
+  }
+}
+
+/**
  * The fork confirmation (D12, T4): what the recorded future takes with it and what it leaves
- * @param action What starts the fork: "Take over here", or an edit
+ * @param action What starts the fork: Take over here, or an edit
  */
 export function forkConfirmation(
   preview: ForkPreview | undefined,
-  action = "Take over here"
+  action: ForkAction = { kind: "takeOver" }
 ): { title: string; message: string; detail: string; confirmLabel: string } {
-  const lines = [
-    "The recorded future after this point is discarded: its input, keyframes and history. The machine continues live from here."
-  ];
+  const lines = [t("commands.fork.detail.discard")];
   if (preview?.sdWrites) {
-    lines.push(
-      `The SD card's ${preview.sdWrites} sector write${preview.sdWrites === 1 ? "" : "s"} in that future will be undone.`
-    );
+    lines.push(t("commands.fork.detail.sdWrites", { count: preview.sdWrites }));
   }
   if (preview?.hostFiles.length) {
-    lines.push(`Files saved to tape in that future stay on disk: ${preview.hostFiles.join(", ")}.`);
+    lines.push(t("commands.fork.detail.hostFiles", { files: preview.hostFiles.join(", ") }));
   }
   return {
-    title: "Take Over Here",
-    message: action === "Take over here" ? "Continue from this point in the past?" : `${action} in the past?`,
+    title: t("commands.fork.title"),
+    message: forkQuestion(action),
     detail: lines.join("\n\n"),
-    confirmLabel: "Take Over"
+    confirmLabel: t("commands.fork.confirmLabel")
   };
 }

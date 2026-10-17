@@ -80,7 +80,7 @@ describe("DetectController", () => {
   });
 
   it("offers to turn coverage on when there is none", async () => {
-    const h = open({ targets: [], problem: "There is no coverage to detect from." });
+    const h = open({ targets: [], problem: "There is no coverage to detect from.", problemCode: "no-coverage" });
     await h.dispatch({ type: "opened" });
     expect(h.vm.showCoverageHelp).toBe(true);
     await h.dispatch({ type: "coverageOnRequested" });

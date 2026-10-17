@@ -2,6 +2,7 @@ import type { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext
 import type { RecordingSources } from "@common/debugRecording/debugRecordingFile";
 
 import { sha256Hex } from "@common/debugRecording/debugRecordingFile";
+import { t } from "@common/i18n/i18n";
 
 /*
  * A debug recording's sources (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` D13): identified by their
@@ -83,9 +84,11 @@ export async function compareRecordingSources(
   }
   const lines: string[] = [];
   if (differs.length) {
-    lines.push(`Labels and source lines may not match the recording: ${differs.map((p) => `${p} differs`).join(", ")}`);
+    lines.push(t("commands.debugRecording.sources.differ", { count: differs.length, files: differs.join(", ") }));
   }
-  if (missing.length) lines.push(`The project lacks ${missing.length === 1 ? "a file" : "files"} the recording was made with: ${missing.join(", ")}`);
-  if (lines.length) lines.push("Stepping still works on the disassembly; address breakpoints are exact");
+  if (missing.length) {
+    lines.push(t("commands.debugRecording.sources.missing", { count: missing.length, files: missing.join(", ") }));
+  }
+  if (lines.length) lines.push(t("commands.debugRecording.sources.stillWorks"));
   return lines;
 }

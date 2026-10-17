@@ -61,6 +61,15 @@ export class Translator {
     return this.languageId;
   }
 
+  /**
+   * The BCP 47 locale for human figures (file sizes, durations, percentages) in the current
+   * language; the pseudo-locale formats as the source language. Never use it for addresses, hex,
+   * T-states or anything copy-pasteable, which stay invariant (plan §4, "Formatting").
+   */
+  get locale(): string {
+    return this.pseudoLanguage && this.languageId === this.pseudoLanguage ? this.sourceLanguage : this.languageId;
+  }
+
   /** The language ids this translator has text for (source, translations, pseudo-locale). */
   get availableLanguages(): string[] {
     const ids = [this.sourceLanguage, ...Object.keys(this.catalogs)];
@@ -213,6 +222,11 @@ export function t(key: MessageKey, args?: MessageArgs): string {
 /** The English text of a message, for log output (D9) */
 export function tEnglish(key: MessageKey, args?: MessageArgs): string {
   return translator.sourceText(key, args);
+}
+
+/** The locale for human figures in the current display language (see `Translator.locale`) */
+export function uiLocale(): string {
+  return translator.locale;
 }
 
 export function setLanguage(language: string): void {

@@ -1,6 +1,7 @@
 import { useLayoutEffect, useMemo, useRef } from "react";
 
 import { isBlankPattern, patternPixels } from "@common/zxnext/sprites/spritePatterns";
+import { useT } from "@common/i18n/useT";
 import ScrollViewer from "@renderer/controls/ScrollViewer";
 import {
   SpritePatternSheet,
@@ -52,6 +53,7 @@ export const PatternsView = ({
   onSelect,
   onOpenUser
 }: Props) => {
+  const t = useT();
   const transparency = model.state.transparencyIndex;
   const upload = uploadCell(model, cells);
 
@@ -91,17 +93,25 @@ export const PatternsView = ({
             ? {
                 text: String(users.length),
                 strong: cell.visibleUsers.length > 0,
-                title: `Used by ${users.map((u) => `#${u}`).join(", ")}`
+                title: t("panels.sprites.patterns.usedBy", { users: users.map((u) => `#${u}`).join(", ") })
               }
             : undefined,
-          title:
-            `Pattern ${cell.number} (${cell.format === "8bit" ? "8-bit" : "4-bit"}) · RAM ${hex4(range.start)}–${hex4(range.end)}` +
-            (users.length ? `\nUsed by ${users.map((u) => `#${u}`).join(", ")}` : "\nNot used by any sprite") +
-            (cell.mixed ? "\nThis slot is read both as 8-bit and as 4-bit: almost always a bug" : "") +
-            (upload === cell ? "\nThe next port $5B byte goes here" : "")
+          title: [
+            t("panels.sprites.patterns.cellTitle", {
+              number: cell.number,
+              format: cell.format === "8bit" ? t("panels.sprites.format.8bit") : t("panels.sprites.format.4bit"),
+              start: hex4(range.start),
+              end: hex4(range.end)
+            }),
+            users.length
+              ? t("panels.sprites.patterns.usedBy", { users: users.map((u) => `#${u}`).join(", ") })
+              : t("panels.sprites.patterns.notUsed"),
+            ...(cell.mixed ? [t("panels.sprites.patterns.mixed")] : []),
+            ...(upload === cell ? [t("panels.sprites.patterns.upload")] : [])
+          ].join("\n")
         };
       }),
-    [cells, pixels, upload, selectedSprite]
+    [cells, pixels, upload, selectedSprite, t]
   );
 
   // --- Keep the selected cell in view
@@ -115,14 +125,17 @@ export const PatternsView = ({
   }, [selectedIndex]);
 
   const mixedCount = model.usage.filter((u) => u.mixed).length;
+  const usedSlots = model.usage.filter((u) => u.users8.length + u.users4.length > 0).length;
 
   return (
-    <div className={styles.pane} aria-label="Patterns">
+    <div className={styles.pane} aria-label={t("panels.sprites.tab.patterns")}>
       <div className={styles.paneHeader}>
-        <span>Patterns</span>
+        <span>{t("panels.sprites.tab.patterns")}</span>
         <span className={styles.paneMeta}>
-          {model.usage.filter((u) => u.users8.length + u.users4.length > 0).length} of 64 slots used
-          {mixedCount > 0 && <span className={styles.warningText}> · {mixedCount} mixed</span>}
+          {t("panels.sprites.patterns.meta", { used: usedSlots })}
+          {mixedCount > 0 && (
+            <span className={styles.warningText}> · {t("panels.sprites.patterns.mixedCount", { mixed: mixedCount })}</span>
+          )}
         </span>
       </div>
       <div className={styles.sheetScroll}>
@@ -132,7 +145,7 @@ export const PatternsView = ({
             className={styles.sheet}
             role="listbox"
             tabIndex={0}
-            aria-label="Sprite pattern RAM"
+            aria-label={t("panels.sprites.patterns.label")}
             aria-activedescendant={selectedIndex !== undefined ? `sprite-pattern-${selectedIndex}` : undefined}
           >
             <SpritePatternSheet

@@ -3,6 +3,7 @@ import type { MemoryInfo } from "@common/messaging/EmuApi";
 import type { ProposalMode } from "@common/reverse/proposal";
 import type { DetectionContext, DetectionRun, DetectionTarget } from "./detection";
 
+import { t } from "@common/i18n/i18n";
 import { parseSkool } from "@common/reverse/skool/skoolParse";
 import { parseCtl } from "@common/reverse/skool/ctlParse";
 import {
@@ -63,7 +64,7 @@ export async function buildSkoolImport(
   assembleLines: SkoolAssembler
 ): Promise<DetectionRun> {
   if (!context.activeSet) {
-    return { targets: [], problem: "No annotation set is active: use ann-new, or open a project." };
+    return { targets: [], problem: t("media.annotations.noActiveSet") };
   }
   const memory = await ports.getMemoryContents();
   const slots = memory.slotPartitions;
@@ -78,8 +79,8 @@ export async function buildSkoolImport(
   });
 
   const notes = [
-    ...result.problems.map((p) => `line ${p.line}: ${p.message}`),
-    ...result.renamed.map((r) => `The label ${r.from} is imported as ${r.to}.`)
+    ...result.problems.map((p) => t("media.skool.lineProblem", { line: p.line, message: p.message })),
+    ...result.renamed.map((r) => t("media.skool.labelRenamed", { from: r.from, to: r.to }))
   ];
   const targets: DetectionTarget[] = [];
   const ram = await annotationsAt(context.activeSet.path, context.projectService);
@@ -88,13 +89,13 @@ export async function buildSkoolImport(
       // --- Into the user's own ROM layer only, never a shipped sidecar (R8, Q7)
       const write = liveRowTarget(0, { bankSpace, slots, activeSet: context.activeSet, romPartition: context.romPartition });
       if (!("annotationPath" in write) || write.kind !== "rom") {
-        notes.push("The file's ROM entries are skipped: the ROM page has not been identified.");
+        notes.push(t("media.skool.romSkipped"));
         continue;
       }
       const romBank = { ...bank, bank: write.bank };
       const rom = await annotationsAt(write.annotationPath, context.projectService);
       targets.push({
-        name: "ROM (your ROM annotations)",
+        name: t("media.skool.romTarget"),
         write,
         proposal: proposeSkoolBank(romBank, rom?.banks[String(write.bank)], mode),
         skool: romBank
@@ -103,7 +104,7 @@ export async function buildSkoolImport(
     }
     const offsetIndex = bankSpace.defaultOffsetIndex(bank.bank);
     targets.push({
-      name: `bank ${bank.bank}`,
+      name: t("media.annotations.bankTarget", { bank: bank.bank }),
       write: {
         kind: "bank",
         annotationPath: context.activeSet.path,
@@ -119,7 +120,7 @@ export async function buildSkoolImport(
   }
   return targets.length
     ? { targets, notes }
-    : { targets, notes, problem: "The file has no entries Klive can place in this machine's memory." };
+    : { targets, notes, problem: t("media.skool.noEntries") };
 }
 
 async function annotationsAt(
@@ -168,14 +169,14 @@ export async function buildSkoolExport(
   const slots = memory.slotPartitions;
   const { bankSpace } = context;
   const annotations = context.annotationPath ? await annotationsAt(context.annotationPath, context.projectService) : undefined;
-  if (!annotations) throw new Error("There are no annotations to export: no annotation set is active, or it is empty.");
+  if (!annotations) throw new Error(t("media.skool.nothingToExport"));
   const z80n = bankSpace.extendedSet;
   const isNext = bankSpace.id === "next";
   const isBanked = ["sp128", "plus3", "scorpion"].includes(bankSpace.id);
 
   const section = async (bank: number, options: { org?: boolean; bankDirective?: number; range?: { start: number; end: number } }) => {
     const bytes = await readBankBytes(ports, bankSpace, memory, slots, bank);
-    if (!bytes) throw new Error(`Bank ${bank} cannot be read.`);
+    if (!bytes) throw new Error(t("media.export.bankUnreadable", { bank }));
     const pagedAt = bankSpace.addressesOf({ bank, offset: 0 }, slots)[0];
     const listingBase = isNext ? 0xc000 : options.bankDirective !== undefined ? 0xc000 : (pagedAt ?? bankSpace.defaultOffsetIndex(bank) * 0x4000);
     const withBank = annotations.banks[String(bank)]

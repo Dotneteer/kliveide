@@ -1,3 +1,4 @@
+import { t } from "@common/i18n/i18n";
 import { ParserError } from "./parse-errors";
 import { ParserErrorMessage, TypedObject } from "../compiler-common/abstractions";
 import { CommonTokens, CommonTokenType, TokenTraits } from "@main/compiler-common/common-tokens";
@@ -127,7 +128,7 @@ import {
   IntegerLiteral,
   RealLiteral
 } from "@main/compiler-common/tree-nodes";
-import { ErrorCodes, errorMessages } from "./assembler-errors";
+import { ErrorCodes, assemblerMessage } from "./assembler-errors";
 import { CommonTokenStream } from "./common-token-stream";
 
 /**
@@ -2156,12 +2157,7 @@ export abstract class CommonAsmParser<
     token?: Token<CommonTokenType>,
     options?: any[]
   ): void {
-    let errorText: string = errorMessages[errorCode] ?? "Unknown error";
-    if (options) {
-      options.forEach(
-        (_, idx) => (errorText = replace(errorText, `{${idx}}`, options[idx].toString()))
-      );
-    }
+    const errorText: string = assemblerMessage(errorCode, options) ?? t("compiler.asm.unknownError");
     if (!token) {
       token = this.getParsePoint().start;
     }
@@ -2173,13 +2169,6 @@ export abstract class CommonAsmParser<
       position: token.location.startPosition
     });
     throw new ParserError(errorText, errorCode);
-
-    function replace(input: string, placeholder: string, replacement: string): string {
-      do {
-        input = input.replace(placeholder, replacement);
-      } while (input.includes(placeholder));
-      return input;
-    }
   }
 
   /**

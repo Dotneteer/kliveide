@@ -240,7 +240,7 @@ function selectSheet(
   const rom = spec.rom.map((r) => `${r.id} (${formatKb(r.kb)}${r.role ? `, ${r.role}` : ""})`);
   return {
     ...base,
-    chips: [spec.cpu, `${formatKb(spec.ramKb)} RAM`, spec.standard, ...spec.media.filter((m) => !m.startsWith("No ")).map((m) => m.split(" (")[0])],
+    chips: [spec.cpu, `${formatKb(spec.ramKb)} RAM`, spec.standard, ...spec.mediaChips],
     screen: {
       kind: d.kind,
       width: d.width,

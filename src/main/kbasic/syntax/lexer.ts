@@ -1,3 +1,4 @@
+import { t as tr } from "@common/i18n/i18n";
 import type { DiagnosticBag, Span } from "../diagnostics";
 import { keywordOf, KEYWORDS } from "./keywords";
 import type { SourceFile } from "./source";
@@ -96,12 +97,12 @@ class Lexer {
       } else if (ONE_CHAR_OPERATORS.has(c)) {
         this.emit("operator", this.pos, this.pos + 1);
       } else {
-        this.error("E101", `Unexpected character '${c}'`, this.pos, this.pos + 1);
+        this.error("E101", tr("compiler.basic.E101", { char: c }), this.pos, this.pos + 1);
         this.pos++;
       }
     }
     if (!this.fragment) {
-      if (this.asmMode) this.error("E102", "The ASM block has no END ASM", this.end, this.end);
+      if (this.asmMode) this.error("E102", tr("compiler.basic.E102"), this.end, this.end);
       if (this.tokens.length && this.tokens[this.tokens.length - 1].kind !== "newline") {
         this.tokens.push({ kind: "newline", text: "", span: this.span(this.end, this.end) });
       }
@@ -173,7 +174,7 @@ class Lexer {
         if (depth === 0) break;
       } else this.pos++;
     }
-    if (depth > 0) this.error("E103", "The block comment has no closing '/", start, start + 2);
+    if (depth > 0) this.error("E103", tr("compiler.basic.E103"), start, start + 2);
     this.comments.push(this.span(start, this.pos));
     this.spaceBefore = true;
   }
@@ -243,7 +244,7 @@ class Lexer {
     let value = "";
     for (;;) {
       if (p >= this.end || this.text[p] === "\n") {
-        this.error("E104", "The string has no closing quote", start, p);
+        this.error("E104", tr("compiler.basic.E104"), start, p);
         break;
       }
       const c = this.text[p];
@@ -264,7 +265,7 @@ class Lexer {
       }
       const code = spectrumCode(c);
       if (code === undefined) {
-        this.error("E105", `'${c}' is not in the ZX Spectrum character set`, p, p + 1);
+        this.error("E105", tr("compiler.basic.E105", { char: c }), p, p + 1);
       } else value += String.fromCharCode(code);
       p++;
     }
@@ -322,7 +323,7 @@ class Lexer {
     }
     const keyword = keywordOf(upper);
     if (keyword) {
-      if (sigil) this.error("E106", `'${name}' is a reserved word and cannot take a '${sigil}'`, start, end);
+      if (sigil) this.error("E106", tr("compiler.basic.E106", { name, sigil }), start, end);
       const previous = this.lastOnLine;
       this.emit("keyword", start, end, { keyword });
       if (keyword === "ASM" && previous?.keyword !== "END") {
@@ -346,7 +347,7 @@ class Lexer {
       (last.kind === "operator" && last.text === ":") ||
       (last.kind === "number" && last.atLineStart) ||
       (last.kind === "keyword" && (last.keyword === "THEN" || last.keyword === "ELSE"));
-    if (!allowed) this.error("E107", "REM needs a ':' before it when it follows a statement", start, start + 3);
+    if (!allowed) this.error("E107", tr("compiler.basic.E107"), start, start + 3);
     this.lineComment(start);
   }
 

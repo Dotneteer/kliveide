@@ -13,6 +13,7 @@ import { getAnnotationPath } from "@renderer/appIde/annotations/programAnnotatio
 import { getRomPartition } from "@renderer/appIde/annotations/romAnnotations";
 import { machineConfigOf } from "@renderer/appIde/annotations/useMachineBankSpace";
 import { getNexLoad } from "@renderer/appIde/DocumentPanels/Next/nexLoadSession";
+import { t } from "@common/i18n/i18n";
 
 /*
  * Where detection runs: the machine's bank space and profile layout, the active annotation set, the
@@ -22,16 +23,13 @@ import { getNexLoad } from "@renderer/appIde/DocumentPanels/Next/nexLoadSession"
 /** Why detection cannot run on this machine now, or `undefined` when it can. */
 export function detectionUnavailableReason(state: AppState | undefined): string | undefined {
   if (!isAdvancedDebuggingEnabled(state)) {
-    return (
-      "Detection reads code coverage, which is part of advanced debugging. Turn it on with " +
-      `'set -u ${ADVANCED_DEBUGGING_SETTING} 1', then restart Klive.`
-    );
+    return t("commands.detection.needsAdvancedDebugging", { setting: ADVANCED_DEBUGGING_SETTING });
   }
   const machineId = state?.emulatorState?.machineId;
   if (!machineId || !machineRegistry.find((m) => m.machineId === machineId)?.features?.[MF_PROFILE]) {
-    return "This machine does not keep code coverage.";
+    return t("commands.detection.noCoverageSupport");
   }
-  if (!bankSpaceFor(machineId)) return "This machine's memory cannot be annotated.";
+  if (!bankSpaceFor(machineId)) return t("commands.common.notAnnotatable");
   return undefined;
 }
 

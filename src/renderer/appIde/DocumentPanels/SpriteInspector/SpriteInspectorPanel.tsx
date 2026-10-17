@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import classnames from "classnames";
 
 import { MI_ZXNEXT } from "@common/machines/constants";
+import { useT } from "@common/i18n/useT";
+import type { MessageKey } from "@common/i18n/keys.generated";
 import { EmptyState } from "@renderer/controls/data";
 import Dropdown, { type DropdownOption } from "@renderer/controls/Dropdown";
 import { FullPanel } from "@renderer/controls/layout/Panels";
@@ -144,20 +146,14 @@ export function chooseView(
   return { view: wanted, tab: wanted };
 }
 
-const filterOptions: DropdownOption[] = SPRITE_FILTERS.map((f) => ({ value: f.value, label: f.label }));
-
-const FORMATS: { value: PatternFormatMode; label: string; title: string }[] = [
-  { value: "asUsed", label: "As used", title: "Each slot as the sprites that use it read it" },
-  { value: "8bit", label: "8-bit", title: "64 patterns of 256 bytes, one byte per pixel" },
-  { value: "4bit", label: "4-bit", title: "128 patterns of 128 bytes, two pixels per byte (high nibble first)" }
-];
-
-const offsetOptions: DropdownOption[] = [
-  { value: "fromSprite", label: "From sprite" },
-  ...Array.from({ length: 16 }, (_, i) => ({ value: String(i), label: `Fixed ${i}` }))
+const FORMATS: { value: PatternFormatMode; labelKey: MessageKey; titleKey: MessageKey }[] = [
+  { value: "asUsed", labelKey: "panels.sprites.format.asUsed", titleKey: "panels.sprites.format.asUsedTitle" },
+  { value: "8bit", labelKey: "panels.sprites.format.8bit", titleKey: "panels.sprites.format.8bitTitle" },
+  { value: "4bit", labelKey: "panels.sprites.format.4bit", titleKey: "panels.sprites.format.4bitTitle" }
 ];
 
 const SpriteInspectorPanel = ({ document, viewState }: DocumentProps<Partial<SpriteInspectorViewState>>) => {
+  const t = useT();
   const machineId = useSelector((s) => s.emulatorState?.machineId);
   const isNext = machineId === MI_ZXNEXT;
   const documentHubService = useDocumentHubService();
@@ -244,6 +240,20 @@ const SpriteInspectorPanel = ({ document, viewState }: DocumentProps<Partial<Spr
     [model, cells, selection]
   );
   const abgr = useMemo(() => toAbgrTable(palette.palette), [palette.palette]);
+  const filterOptions = useMemo<DropdownOption[]>(
+    () => SPRITE_FILTERS.map((f) => ({ value: f.value, label: t(f.labelKey) })),
+    [t]
+  );
+  const offsetOptions = useMemo<DropdownOption[]>(
+    () => [
+      { value: "fromSprite", label: t("panels.sprites.offsetFromSprite") },
+      ...Array.from({ length: 16 }, (_, i) => ({
+        value: String(i),
+        label: t("panels.graphics.inspector.fixedOffset", { offset: i })
+      }))
+    ],
+    [t]
+  );
 
   const probe = (
     <span ref={chRef} className={styles.chProbe} aria-hidden="true">
@@ -256,9 +266,7 @@ const SpriteInspectorPanel = ({ document, viewState }: DocumentProps<Partial<Spr
       <FullPanel fontSize="--panel-font-size" fontFamily="--monospace-font">
         <EmptyState
           message={
-            isNext
-              ? "Waiting for the ZX Spectrum Next's sprite state"
-              : "The Sprite Inspector shows a running ZX Spectrum Next"
+            isNext ? t("panels.sprites.waiting") : t("panels.sprites.notNext")
           }
         />
       </FullPanel>
@@ -288,7 +296,7 @@ const SpriteInspectorPanel = ({ document, viewState }: DocumentProps<Partial<Spr
 
   // --- Toolbar pieces
   const tabs = (
-    <span className={spriteSegmentedClass} role="tablist" aria-label="Sprite Inspector view">
+    <span className={spriteSegmentedClass} role="tablist" aria-label={t("panels.sprites.viewTabs")}>
       {(["sprites", "patterns", "both"] as const)
         .filter((v) => v !== "both" || layout === "wide")
         .map((v) => (
@@ -301,16 +309,25 @@ const SpriteInspectorPanel = ({ document, viewState }: DocumentProps<Partial<Spr
             aria-pressed={view === v}
             onClick={() => updateLook(chooseView(look, v, layout))}
           >
-            {v === "sprites" ? "Sprites" : v === "patterns" ? "Patterns" : "Both"}
+            {v === "sprites"
+              ? t("panels.sprites.tab.sprites")
+              : v === "patterns"
+                ? t("panels.sprites.tab.patterns")
+                : t("panels.graphics.inspector.both")}
           </button>
         ))}
     </span>
   );
   const paletteButtons = (
-    <span className={spriteSegmentedClass} role="group" aria-label="Sprite palette">
+    <span className={spriteSegmentedClass} role="group" aria-label={t("panels.sprites.paletteGroup")}>
       {([undefined, 0, 1] as const).map((bank) => {
         const live = bank !== undefined && palette.liveBank === bank;
-        const label = bank === undefined ? `Live (${(palette.liveBank ?? 0) + 1})` : bank === 0 ? "1" : "2";
+        const label =
+          bank === undefined
+            ? t("panels.graphics.inspector.paletteLive", { bank: (palette.liveBank ?? 0) + 1 })
+            : bank === 0
+              ? "1"
+              : "2";
         return (
           <button
             key={String(bank)}
@@ -319,8 +336,10 @@ const SpriteInspectorPanel = ({ document, viewState }: DocumentProps<Partial<Spr
             aria-pressed={look.palettePin === bank}
             title={
               bank === undefined
-                ? "Follow the palette the sprite engine draws with (NextReg $43 bit 3)"
-                : `Pin the ${bank === 0 ? "first" : "second"} sprite palette`
+                ? t("panels.sprites.paletteFollow")
+                : bank === 0
+                  ? t("panels.sprites.palettePinFirst")
+                  : t("panels.sprites.palettePinSecond")
             }
             onClick={() => updateLook({ palettePin: bank })}
           >
@@ -355,9 +374,9 @@ const SpriteInspectorPanel = ({ document, viewState }: DocumentProps<Partial<Spr
         const r = row.resolved;
         openSnapshot(r.fourBit ? "4bit" : "8bit", r.fourBit ? r.pattern7 : patternSlotOf(r), r.paletteOffset, row.index);
       }}
-      onCopy={(text, what) => {
+      onCopy={(text, sprite) => {
         void navigator.clipboard?.writeText(text);
-        dispatch(setIdeStatusMessageAction(`${what} copied to the clipboard`, true));
+        dispatch(setIdeStatusMessageAction(t("panels.sprites.copiedAttributes", { index: sprite }), true));
       }}
       breakpoints={spriteBreakpoints.breakpoints}
       onToggleBreakpoint={(sprite) => void spriteBreakpoints.toggle(sprite)}
@@ -415,12 +434,12 @@ const SpriteInspectorPanel = ({ document, viewState }: DocumentProps<Partial<Spr
     <FullPanel fontSize="--panel-font-size" fontFamily="--main-font-family">
       <div ref={rootRef} className={styles.root} data-layout={layout}>
         {probe}
-        <div className={styles.toolbar} role="toolbar" aria-label="Sprite Inspector">
+        <div className={styles.toolbar} role="toolbar" aria-label={t("panels.sprites.toolbar")}>
           {tabs}
           {showsSprites && (
             <span className={styles.toolbarContext}>
               <Dropdown
-                ariaLabel="Sprite filter"
+                ariaLabel={t("panels.sprites.filterLabel")}
                 options={filterOptions}
                 initialValue={filter}
                 width={150}
@@ -430,22 +449,22 @@ const SpriteInspectorPanel = ({ document, viewState }: DocumentProps<Partial<Spr
           )}
           {showsPatterns && (
             <span className={styles.toolbarContext}>
-              <span className={spriteSegmentedClass} role="group" aria-label="Pattern format">
+              <span className={spriteSegmentedClass} role="group" aria-label={t("panels.sprites.formatGroup")}>
                 {FORMATS.map((f) => (
                   <button
                     key={f.value}
                     type="button"
                     className={spriteSegmentClass}
                     aria-pressed={look.formatMode === f.value}
-                    title={f.title}
+                    title={t(f.titleKey)}
                     onClick={() => updateLook({ formatMode: f.value })}
                   >
-                    {f.label}
+                    {t(f.labelKey)}
                   </button>
                 ))}
               </span>
               <Dropdown
-                ariaLabel="Palette offset"
+                ariaLabel={t("panels.sprites.offsetLabel")}
                 options={offsetOptions}
                 initialValue={String(look.paletteOffset)}
                 width={110}
@@ -462,8 +481,8 @@ const SpriteInspectorPanel = ({ document, viewState }: DocumentProps<Partial<Spr
               <SpriteZoomButtons zoom={look.zoom} onChange={(zoom) => updateLook({ zoom })} />
               <LabeledSwitch
                 value={look.checker}
-                label="Checker"
-                title="Draw transparent pixels as a checkerboard rather than in the transparency colour"
+                label={t("panels.sprites.checker")}
+                title={t("panels.sprites.checkerTitle")}
                 clicked={(value) => updateLook({ checker: value })}
               />
             </>
@@ -471,8 +490,8 @@ const SpriteInspectorPanel = ({ document, viewState }: DocumentProps<Partial<Spr
           <button
             type="button"
             className={styles.moreButton}
-            aria-label="More options"
-            title="More options"
+            aria-label={t("panels.graphics.inspector.moreOptions")}
+            title={t("panels.graphics.inspector.moreOptions")}
             onClick={(e) => menuApi.show(e)}
           >
             ⋯
@@ -482,18 +501,18 @@ const SpriteInspectorPanel = ({ document, viewState }: DocumentProps<Partial<Spr
         <div
           className={classnames(styles.globals, { [styles.globalsOpen]: globalsOpen })}
           role="list"
-          aria-label="Sprite globals"
+          aria-label={t("panels.sprites.globalsLabel")}
         >
           {globals.map((item) => (
             <span
-              key={item.key}
+              key={item.id}
               className={classnames(styles.globalItem, {
                 [styles.globalSecondary]: !item.flag && !item.primary && hidden > 0
               })}
               role="listitem"
               title={item.title}
             >
-              {item.flag && item.key === "Status" ? (
+              {item.flag && item.id === "status" ? (
                 <span className={styles.globalFlagChip}>{item.value}</span>
               ) : (
                 <>
@@ -507,7 +526,11 @@ const SpriteInspectorPanel = ({ document, viewState }: DocumentProps<Partial<Spr
           ))}
           {layout !== "wide" && (
             <button type="button" className={styles.globalsMore} onClick={() => setGlobalsOpen((o) => !o)}>
-              {globalsOpen ? "less" : `+${globals.filter((g) => !g.flag && !g.primary).length} more`}
+              {globalsOpen
+                ? t("panels.graphics.inspector.globalsLess")
+                : t("panels.graphics.inspector.globalsMore", {
+                    count: globals.filter((g) => !g.flag && !g.primary).length
+                  })}
             </button>
           )}
         </div>
@@ -542,17 +565,17 @@ const SpriteInspectorPanel = ({ document, viewState }: DocumentProps<Partial<Spr
           {layout === "narrow" && (
             <>
               <ContextMenuItem
-                text={`Palette: live (${(palette.liveBank ?? 0) + 1})`}
+                text={t("panels.graphics.inspector.menuPaletteLive", { bank: (palette.liveBank ?? 0) + 1 })}
                 selected={look.palettePin === undefined}
                 clicked={fromMenu(() => updateLook({ palettePin: undefined }))}
               />
               <ContextMenuItem
-                text="Palette: 1"
+                text={t("panels.graphics.inspector.menuPalette", { bank: 1 })}
                 selected={look.palettePin === 0}
                 clicked={fromMenu(() => updateLook({ palettePin: 0 }))}
               />
               <ContextMenuItem
-                text="Palette: 2"
+                text={t("panels.graphics.inspector.menuPalette", { bank: 2 })}
                 selected={look.palettePin === 1}
                 clicked={fromMenu(() => updateLook({ palettePin: 1 }))}
               />
@@ -564,13 +587,13 @@ const SpriteInspectorPanel = ({ document, viewState }: DocumentProps<Partial<Spr
               {SPRITE_SHEET_ZOOMS.map((z) => (
                 <ContextMenuItem
                   key={z}
-                  text={`Zoom ${z}×`}
+                  text={t("panels.graphics.inspector.menuZoom", { zoom: z })}
                   selected={look.zoom === z}
                   clicked={fromMenu(() => updateLook({ zoom: z }))}
                 />
               ))}
               <ContextMenuItem
-                text="Checkerboard behind transparent pixels"
+                text={t("panels.graphics.inspector.checkerboard")}
                 selected={look.checker}
                 clicked={fromMenu(() => updateLook({ checker: !look.checker }))}
               />
@@ -578,23 +601,23 @@ const SpriteInspectorPanel = ({ document, viewState }: DocumentProps<Partial<Spr
             </>
           )}
           <ContextMenuItem
-            text="Show raw attribute bytes"
+            text={t("panels.sprites.menu.showRaw")}
             selected={look.showRaw}
             clicked={fromMenu(() => updateLook({ showRaw: !look.showRaw }))}
           />
           <ContextMenuItem
-            text="Unused slots as 8-bit"
+            text={t("panels.sprites.menu.unused8")}
             selected={look.fallback === "8bit"}
             clicked={fromMenu(() => updateLook({ fallback: "8bit" }))}
           />
           <ContextMenuItem
-            text="Unused slots as 4-bit"
+            text={t("panels.sprites.menu.unused4")}
             selected={look.fallback === "4bit"}
             clicked={fromMenu(() => updateLook({ fallback: "4bit" }))}
           />
           <ContextMenuSeparator />
           <ContextMenuItem
-            text="Export pattern RAM as .spr"
+            text={t("panels.sprites.menu.export")}
             clicked={fromMenu(() => void ideCommandsService.executeCommand("export-patterns -o"))}
           />
         </ContextMenu>

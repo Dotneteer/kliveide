@@ -1,3 +1,4 @@
+import { t } from "@common/i18n/i18n";
 import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
 import { takeOverBeforeEdit } from "./reverseDebugFork";
 import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
@@ -52,7 +53,9 @@ const registerInfo = [
 
 export class SetZ80RegisterCommand extends IdeCommandBase<SetZ80RegisterCommandArgs> {
   readonly id = "setz80reg";
-  readonly description = "Sets the value of the specified Z80 register";
+  get description() {
+    return t("commands.register.description");
+  }
   readonly usage = "setz80reg <register> <value>";
   readonly aliases = ["sr"];
   readonly argumentInfo: CommandArgumentInfo = {
@@ -69,13 +72,13 @@ export class SetZ80RegisterCommand extends IdeCommandBase<SetZ80RegisterCommandA
     // --- Check if the machine is paused
     const machineState = context.store.getState().emulatorState.machineState;
     if (machineState !== MachineControllerState.Paused) {
-      return commandError("The machine must be paused to set Z80 registers.");
+      return commandError(t("commands.register.mustBePaused"));
     }
 
     // --- Use a valid register name
     const regInfo = registerInfo.find((ri) => ri.name === args.register.toUpperCase());
     if (!regInfo) {
-      return commandError(`Invalid register name: ${args.register}`);
+      return commandError(t("commands.register.invalidName", { name: args.register }));
     }
 
     // --- Check the value
@@ -83,20 +86,20 @@ export class SetZ80RegisterCommand extends IdeCommandBase<SetZ80RegisterCommandA
     outp.color("yellow"); 
     if (regInfo.size === 8 && (args.value < 0 || args.value > 0xff)) {
       outp.writeLine(
-        `Warning: Value (${args.value}) for ${regInfo.name} is out of range; only the last 8 bit will be used.`
+        t("commands.register.outOfRange", { value: String(args.value), register: regInfo.name, bits: "8" })
       );
       args.value &= 0xff;
     } else if (regInfo.size === 16 && (args.value < 0 || args.value > 0xffff)) {
       outp.writeLine(
-        `Warning: Value (${args.value}) for ${regInfo.name} is out of range; only the last 16 bit will be used.`
+        t("commands.register.outOfRange", { value: String(args.value), register: regInfo.name, bits: "16" })
       );
       args.value &= 0xffff;
     }
     outp.resetStyle();
 
     // --- An edit in the past changes the past: take over there first, after asking (REVERSE_DEBUGGING_PLAN D12)
-    if (!(await takeOverBeforeEdit(context, `Edit ${regInfo.name}`))) {
-      writeSuccessMessage(context.output, "Register edit canceled");
+    if (!(await takeOverBeforeEdit(context, { kind: "editRegister", register: regInfo.name }))) {
+      writeSuccessMessage(context.output, t("commands.register.canceled"));
       return commandSuccess;
     }
     await context.emuApi.setRegisterValue(args.register, args.value);
@@ -104,9 +107,12 @@ export class SetZ80RegisterCommand extends IdeCommandBase<SetZ80RegisterCommandA
 
     writeSuccessMessage(
       context.output,
-      `Z80 ${regInfo.name} register value is set to ${args.value} ` +
-        `($${regInfo.size === 8 ? toHexa2(args.value) : toHexa4(args.value)}, ` +
-        `${regInfo.size === 8 ? toBin8(args.value) : toBin16(args.value)})`
+      t("commands.register.set", {
+        register: regInfo.name,
+        value: String(args.value),
+        hex: regInfo.size === 8 ? toHexa2(args.value) : toHexa4(args.value),
+        binary: regInfo.size === 8 ? toBin8(args.value) : toBin16(args.value)
+      })
     );
     return commandSuccess;
   }

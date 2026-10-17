@@ -1,3 +1,4 @@
+import { t as tr } from "@common/i18n/i18n";
 import type { ListFileItem, SourceLevelDebugInfo } from "@abstractions/CompilerInfo";
 import type { CodebankDebugInfo } from "@abstractions/SourceDebugInfo";
 import { MI_ZXNEXT } from "@common/machines/constants";
@@ -60,13 +61,13 @@ export async function generateProgram(
   if (level >= 1) {
     const problems = verifyModule(mir, level);
     if (problems.length) {
-      diagnostics.error("E599", `Internal code generator error: the MIR is invalid (${problems.slice(0, 3).join("; ")})`, { file: 0, start: 0, end: 0 });
+      diagnostics.error("E599", tr("compiler.basic.E599.invalidMir", { problems: problems.slice(0, 3).join("; ") }), { file: 0, start: 0, end: 0 });
       return undefined;
     }
     try {
       optimizeMir(mir, level);
     } catch (e) {
-      diagnostics.error("E599", `Internal code generator error: ${(e as Error).message}`, { file: 0, start: 0, end: 0 });
+      diagnostics.error("E599", tr("compiler.basic.E599.internal", { reason: (e as Error).message }), { file: 0, start: 0, end: 0 });
       return undefined;
     }
   }
@@ -76,7 +77,7 @@ export async function generateProgram(
     functions = optimizeLir(mir, functions, { level, target: options.target === "next" ? "z80n" : "z80" });
   } catch (e) {
     if (!(e instanceof CodegenError)) throw e;
-    diagnostics.error("E599", `Internal code generator error: ${e.message}`, { file: 0, start: 0, end: 0 });
+    diagnostics.error("E599", tr("compiler.basic.E599.internal", { reason: e.message }), { file: 0, start: 0, end: 0 });
     return undefined;
   }
 
@@ -86,7 +87,7 @@ export async function generateProgram(
   if (banks.length) {
     const span = mir.codebankSpan ?? { file: 0, start: 0, end: 0 };
     if (options.target !== "next") {
-      diagnostics.error("E458", "CODEBANK needs the ZX Spectrum Next target (it pages banks in through the Next's MMU)", span);
+      diagnostics.error("E458", tr("compiler.basic.E458.codebank"), span);
       return undefined;
     }
     const plan = planBanks(banks, options);
@@ -103,7 +104,7 @@ export async function generateProgram(
   // --- still needs the window and the page table, and the Next
   if (!banking && modules.some((m) => m.name === "banking")) {
     if (options.target !== "next") {
-      diagnostics.error("E458", "Far memory (farmem.bas) needs the ZX Spectrum Next target (it pages banks in through the Next's MMU)", { file: 0, start: 0, end: 0 });
+      diagnostics.error("E458", tr("compiler.basic.E458.farMemory"), { file: 0, start: 0, end: 0 });
       return undefined;
     }
     const plan = planBanks([], options);
@@ -150,7 +151,9 @@ export async function generateProgram(
       const size = banking!.layout.slots * 8;
       diagnostics.error(
         "E455",
-        `CODEBANK ${bank} does not fit its ${size}K window${names.length ? ` (it holds ${names.slice(0, 12).join(", ")})` : ""}: move routines or data to another bank${size === 8 ? " or use a 16K window" : ""}`,
+        names.length
+          ? tr(size === 8 ? "compiler.basic.E455.holds8k" : "compiler.basic.E455.holds", { bank: String(bank), size: String(size), names: names.slice(0, 12).join(", ") })
+          : tr(size === 8 ? "compiler.basic.E455.empty8k" : "compiler.basic.E455.empty", { bank: String(bank), size: String(size) }),
         mir.codebankSpan ?? { file: 0, start: 0, end: 0 }
       );
       return undefined;
@@ -158,12 +161,12 @@ export async function generateProgram(
     // --- An error in the user's inline asm is theirs, at its BASIC line; any other is the compiler's
     const internal = errors.filter((e) => {
       const span = e.filename === programFile ? asmLineSpan(mir, emitted, e.line) : undefined;
-      if (span) diagnostics.error("E503", `Inline assembly: ${e.message}`, span);
+      if (span) diagnostics.error("E503", tr("compiler.basic.E503", { message: e.message }), span);
       return !span;
     });
     if (internal.length) {
       const e = internal[0];
-      diagnostics.error("E599", `Internal code generator error: the generated program does not assemble (${e.filename}:${e.line}: ${e.message})`, { file: 0, start: 0, end: 0 });
+      diagnostics.error("E599", tr("compiler.basic.E599.doesNotAssemble", { file: e.filename, line: String(e.line), message: e.message }), { file: 0, start: 0, end: 0 });
     }
     return undefined;
   }
@@ -180,7 +183,7 @@ export async function generateProgram(
       const shapedErrors = output.errors.filter((e) => !e.isWarning);
       if (shapedErrors.length) {
         const e = shapedErrors[0];
-        diagnostics.error("E599", `Internal code generator error: branch shaping broke the program (${e.filename}:${e.line}: ${e.message})`, { file: 0, start: 0, end: 0 });
+        diagnostics.error("E599", tr("compiler.basic.E599.branchShaping", { file: e.filename, line: String(e.line), message: e.message }), { file: 0, start: 0, end: 0 });
         return undefined;
       }
     }
@@ -197,7 +200,12 @@ export async function generateProgram(
       const hex = (n: number) => `$${n.toString(16).toUpperCase().padStart(4, "0")}`;
       diagnostics.error(
         "E456",
-        `The CODEBANK window ${hex(low)}-${hex(high - 1)} overlaps the resident program (${hex(clash.startAddress)}-${hex(clash.startAddress + clash.emittedCode.length - 1)}): move the window (codebank-window) or the program (origin)`,
+        tr("compiler.basic.E456", {
+          low: hex(low),
+          high: hex(high - 1),
+          start: hex(clash.startAddress),
+          end: hex(clash.startAddress + clash.emittedCode.length - 1)
+        }),
         mir.codebankSpan ?? { file: 0, start: 0, end: 0 }
       );
       return undefined;
@@ -316,8 +324,8 @@ function planBanks(banks: number[], options: KBasicOptions): BankPlan | string {
   const slots = options.codebankWindowSize === "16k" ? 2 : 1;
   const window = options.codebankWindow;
   const hex = (n: number) => `$${n.toString(16).toUpperCase().padStart(4, "0")}`;
-  if (window % 0x2000 !== 0) return `The CODEBANK window (${hex(window)}) must start on an 8K boundary`;
-  if (window + slots * 0x2000 > 0x10000) return `The ${slots * 8}K CODEBANK window at ${hex(window)} runs past $FFFF`;
+  if (window % 0x2000 !== 0) return tr("compiler.basic.E457.boundary", { window: hex(window) });
+  if (window + slots * 0x2000 > 0x10000) return tr("compiler.basic.E457.pastEnd", { size: String(slots * 8), window: hex(window) });
   const listed = options.codebankPages ?? [];
   const pageOf = (bank: number) =>
     bank <= listed.length
@@ -330,8 +338,8 @@ function planBanks(banks: number[], options: KBasicOptions): BankPlan | string {
   for (let bank = 1; bank <= maxBank; bank++) pages.push(pageOf(bank));
   for (const bank of banks) {
     const page = pageOf(bank);
-    if (page < 0 || page + slots - 1 > 223) return `CODEBANK ${bank}'s page (${page}) is not an 8K page of the Next (0-223)`;
-    if (slots === 2 && page % 2 !== 0) return `A 16K CODEBANK window needs even pages; bank ${bank} would start on page ${page}`;
+    if (page < 0 || page + slots - 1 > 223) return tr("compiler.basic.E457.page", { bank: String(bank), page: String(page) });
+    if (slots === 2 && page % 2 !== 0) return tr("compiler.basic.E457.oddPage", { bank: String(bank), page: String(page) });
   }
   return {
     placement: new Map(banks.map((bank) => [bank, { page: pageOf(bank), address: window, pages: slots }])),

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { setLanguage } from "@common/i18n/i18n";
 
 import type { NextSpriteState } from "@common/messaging/EmuApi";
 import {
@@ -228,10 +229,10 @@ describe("the inspector's fields and summary", () => {
 
   it("gives a relative's own reading only where it differs from the effective value", () => {
     const f = byName(1);
-    expect(f.Type).toEqual({ name: "Type", value: "relative", own: "anchor #0, unified" });
-    expect(f.X).toEqual({ name: "X", value: "108", own: "own Δ+8" });
+    expect(f.Type).toEqual({ id: "type", name: "Type", value: "relative", own: "anchor #0, unified" });
+    expect(f.X).toEqual({ id: "x", name: "X", value: "108", own: "own Δ+8" });
     expect(f.Y.own).toBe("own Δ−4");
-    expect(f.Palette).toEqual({ name: "Palette", value: "5", own: "own +2" });
+    expect(f.Palette).toEqual({ id: "palette", name: "Palette", value: "5", own: "own +2" });
     expect(f.Visible.own).toBeUndefined();
     expect(f.Scale.own).toBeUndefined();
   });
@@ -276,5 +277,25 @@ describe("4-bit sprites in the table", () => {
     const model = buildSpriteModel(stateOf([[0, 0, 0, 0x80, 0]], [{ visible: true, fourBit: true, pattern7: 81 }]));
     const [row] = spriteRows(model, "all");
     expect(row).toMatchObject({ patternNumber: "81", format: "4·hi", pattern: "81 (40·hi)" });
+  });
+});
+
+describe("the Sprite Inspector's text in the pseudo-locale", () => {
+  it("translates the strip's labels and tooltips and the inspector's fields", () => {
+    setLanguage("qps");
+    const isPseudo = (text: string) => /^\[.*~+\]$/s.test(text);
+    const model = buildSpriteModel(
+      stateOf([[100, 100, 0, 0xc0, 0x20], [8, 0xfc, 0, 0x40]], [{ visible: true }, { visible: true }])
+    );
+    // --- Hardware names stay as they are: the register, and the X / Y coordinates
+    const strip = globalsStrip(model).filter((g) => g.key !== "$4B");
+    for (const g of strip) {
+      expect(isPseudo(g.key), g.id).toBe(true);
+      expect(g.title === undefined || g.title.split("\n").every(isPseudo), g.id).toBe(true);
+    }
+    for (const f of [...spriteFields(model, 0), ...spriteFields(model, 1)].filter((f) => f.name !== "X" && f.name !== "Y")) {
+      expect(isPseudo(f.name), f.id).toBe(true);
+    }
+    expect(spriteSummary(model, 0).split(" · ").filter((p) => /[a-z]/.test(p)).every(isPseudo)).toBe(true);
   });
 });

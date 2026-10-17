@@ -7,6 +7,7 @@ import type {
   ConditionRegister,
   ConditionSymbols
 } from "./condition-types";
+import { t } from "@common/i18n/i18n";
 import { ConditionSyntaxError } from "./condition-lexer";
 import { parseCondition, type SyntaxNode } from "./condition-parser";
 import { bindCondition, compileConditionWith } from "./condition-checker";
@@ -114,7 +115,7 @@ export function compileLogTemplate(
   const warnings: ConditionDiagnostic[] = [];
   try {
     if (env.isZ80 === false) {
-      throw new ConditionSyntaxError("Logpoints are supported on Z80 machines only", 0, text.length);
+      throw new ConditionSyntaxError(t("debug.logTemplate.z80Only"), 0, text.length);
     }
     const groupMatch = GROUP_PATTERN.exec(text);
     const group = groupMatch ? groupMatch[1].toUpperCase() : DEFAULT_LOG_GROUP;
@@ -138,7 +139,11 @@ export function compileLogTemplate(
         if (c === "$" && text[pos + 1] === "{") {
           const close = text.indexOf("}", pos + 2);
           if (close < 0) {
-            throw new ConditionSyntaxError("Unterminated placeholder: '${' has no '}'", pos, text.length);
+            throw new ConditionSyntaxError(
+              t("debug.logTemplate.unterminatedPlaceholder", { open: "${", close: "}" }),
+              pos,
+              text.length
+            );
           }
           placeholder(pos + 2, close, pos);
           pos = close + 1;
@@ -167,7 +172,7 @@ export function compileLogTemplate(
           pos += 2;
           continue;
         }
-        throw new ConditionSyntaxError("A literal '}' is written '}}'", pos, pos + 1);
+        throw new ConditionSyntaxError(t("debug.logTemplate.literalBrace", { brace: "}", escaped: "}}" }), pos, pos + 1);
       }
       literal += c;
       pos++;
@@ -226,7 +231,11 @@ function findPlaceholderEnd(text: string, from: number): number {
     }
     pos++;
   }
-  throw new ConditionSyntaxError("Unterminated placeholder: '{' has no '}'", from - 1, text.length);
+  throw new ConditionSyntaxError(
+    t("debug.logTemplate.unterminatedPlaceholder", { open: "{", close: "}" }),
+    from - 1,
+    text.length
+  );
 }
 
 /**
@@ -256,7 +265,7 @@ function formatColon(text: string, start: number, end: number, dialect: LogDiale
       if ((LOG_FORMATS as readonly string[]).includes(name)) found = pos;
       else if (dialect === "dezog" || /^(hex|int|uint|bit|str)[a-z0-9]*$/.test(name)) {
         throw new ConditionSyntaxError(
-          `Unknown format '${text.substring(pos + 1, end).trim()}'; use ${LOG_FORMATS.join(", ")}`,
+          t("debug.logTemplate.unknownFormat", { format: text.substring(pos + 1, end).trim(), formats: LOG_FORMATS.join(", ") }),
           pos + 1,
           end
         );
@@ -281,7 +290,7 @@ function compilePlaceholder(
     colon >= 0 ? (text.substring(colon + 1, innerEnd).trim().toLowerCase() as LogFormat) : undefined;
   const source = text.substring(innerStart, exprEnd);
   if (!source.trim()) {
-    throw new ConditionSyntaxError("Empty placeholder", openStart, innerEnd + 1);
+    throw new ConditionSyntaxError(t("debug.logTemplate.emptyPlaceholder"), openStart, innerEnd + 1);
   }
   const parse: (t: string) => SyntaxNode =
     dialect === "dezog" ? parseDezogExpression : parseCondition;
@@ -301,7 +310,7 @@ function compilePlaceholder(
   if (root?.k === "machine" && root.fn === "slots") {
     if (format) {
       throw new ConditionSyntaxError(
-        "The slot map is text; it takes no format",
+        t("debug.logTemplate.slotsNoFormat"),
         colon + 1,
         innerEnd
       );

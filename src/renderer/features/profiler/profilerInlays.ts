@@ -9,6 +9,7 @@ import { SETTING_IDE_PROFILER_INLAYS } from "@common/settings/setting-const";
 import { useGlobalSetting, useSelector } from "@renderer/core/RendererProvider";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { buildProfilerModel, readProfileSnapshot, type ProfilerModel } from "./profilerModel";
+import { t } from "@common/i18n/i18n";
 
 /*
  * The profiler's editor hints (`.plans/PROFILER_PLAN.md` D15): with a profile present and the
@@ -33,11 +34,12 @@ export function routineInlays(model: ProfilerModel, fileName: string): Map<numbe
     // --- A routine that took no measurable share says nothing; one never called (jumped to) no count
     const pct = row.selfPct.toFixed(1);
     if (pct === "0.0") continue;
-    const unit = row.callsFromGraph ? "call" : "entry";
-    const count = row.calls
-      ? ` · ${row.calls.toLocaleString("en-US")} ${row.calls === 1 ? unit : unit === "call" ? "calls" : "entries"}`
-      : "";
-    const text = `${pct}%${count}`;
+    const text = row.calls
+      ? t(row.callsFromGraph ? "panels.feature.profiler.inlayCalls" : "panels.feature.profiler.inlayEntries", {
+          pct,
+          count: row.calls
+        })
+      : t("panels.feature.profiler.inlayPct", { pct });
     // --- Two routines on one line (a label and a proc): the bigger one speaks
     if (!hints.has(row.line)) hints.set(row.line, text);
   }
@@ -82,7 +84,7 @@ export function registerProfilerInlayProvider(monaco: typeof monacoEditor, langu
           position: { lineNumber: line, column: model.getLineMaxColumn(line) },
           kind: monaco.languages.InlayHintKind.Type,
           paddingLeft: true,
-          tooltip: "The routine's share of the profile's time, and its calls (the Profiler)"
+          tooltip: t("panels.feature.profiler.inlayTooltip")
         });
       }
       return { hints: result, dispose: () => {} };

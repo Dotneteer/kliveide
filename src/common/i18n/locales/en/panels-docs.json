@@ -1,0 +1,1374 @@
+{
+  "panels.doc.common.copyToClipboard": "Copy to clipboard",
+  "@panels.doc.common.copyToClipboard": {
+    "context": "Tooltip of the copy icon button in the header of a document panel (command result, BASIC listing, script output); copies the panel's whole text."
+  },
+  "panels.doc.common.goTo": "Go To",
+  "@panels.doc.common.goTo": {
+    "context": "Label in front of the address box in a document panel's header (binary file viewer, disassembly); type an address and press Enter to jump there.",
+    "maxChars": 10
+  },
+  "panels.doc.common.refreshNow": "Refresh now",
+  "@panels.doc.common.refreshNow": {
+    "context": "Tooltip of the refresh icon button in the header of the BASIC listing and disassembly panels; re-reads the machine's memory at once."
+  },
+  "panels.doc.unknownFile.noViewer": "This file type has no associated viewer",
+  "@panels.doc.unknownFile.noViewer": {
+    "context": "Message filling the document panel opened for a file whose type Klive cannot display. Not an error: the file is fine."
+  },
+  "panels.doc.commandResult.noBuffer": "This command produced no output buffer.",
+  "@panels.doc.commandResult.noBuffer": {
+    "context": "Error message filling a command-result document panel when the IDE command that opened it supplied no output to show."
+  },
+  "panels.doc.commandResult.copied": "Command output text copied to the clipboard",
+  "@panels.doc.commandResult.copied": {
+    "context": "Status-bar message after the copy button of a command-result document panel copied the command's output."
+  },
+  "panels.doc.binViewer.layout8x1": "8B / 1 col",
+  "@panels.doc.binViewer.layout8x1": {
+    "context": "Option of the dump-layout dropdown in the binary file viewer: 8 bytes per row in one column. 'B' is bytes, 'col' is column; keep it short.",
+    "maxChars": 12
+  },
+  "panels.doc.binViewer.layout8x2": "8B / 2 col",
+  "@panels.doc.binViewer.layout8x2": {
+    "context": "Option of the dump-layout dropdown in the binary file viewer: two columns of 8 bytes per row. 'B' is bytes, 'col' is column; keep it short.",
+    "maxChars": 12
+  },
+  "panels.doc.binViewer.layout16x1": "16B / 1 col",
+  "@panels.doc.binViewer.layout16x1": {
+    "context": "Option of the dump-layout dropdown in the binary file viewer: 16 bytes per row in one column. 'B' is bytes, 'col' is column; keep it short.",
+    "maxChars": 12
+  },
+  "panels.doc.binViewer.noContent": "No content.",
+  "@panels.doc.binViewer.noContent": {
+    "context": "Message filling the binary file viewer when the opened file is empty."
+  },
+  "panels.doc.binViewer.tooLarge": "File is too large to display ({sizeMb} MB). Maximum supported size is {maxMb} MB.",
+  "@panels.doc.binViewer.tooLarge": {
+    "context": "Message filling the binary file viewer when the opened file is bigger than it can show.",
+    "placeholders": {
+      "sizeMb": "The file's size in megabytes, already formatted with two decimals, e.g. '5.25'",
+      "maxMb": "The largest size the viewer shows, in megabytes (4)"
+    }
+  },
+  "panels.doc.binViewer.decimal": "Decimal",
+  "@panels.doc.binViewer.decimal": {
+    "context": "Label of a switch in the binary file viewer's header: show byte values and addresses in decimal instead of hexadecimal.",
+    "maxChars": 10
+  },
+  "panels.doc.binViewer.decimalTitle": "Show byte values in decimal",
+  "@panels.doc.binViewer.decimalTitle": {
+    "context": "Tooltip of the 'Decimal' switch in the binary file viewer's header."
+  },
+  "panels.doc.binViewer.view": "View",
+  "@panels.doc.binViewer.view": {
+    "context": "Label in front of the dump-layout dropdown (bytes per row) in the binary file viewer's header.",
+    "maxChars": 8
+  },
+  "panels.doc.binViewer.chars": "Chars",
+  "@panels.doc.binViewer.chars": {
+    "context": "Label of a switch in the binary file viewer's header: show each row's bytes as characters too. Short for 'characters'.",
+    "maxChars": 8
+  },
+  "panels.doc.binViewer.charsTitle": "Show character dump",
+  "@panels.doc.binViewer.charsTitle": {
+    "context": "Tooltip of the 'Chars' switch in the binary file viewer's header."
+  },
+  "panels.doc.staticMemory.showAll": "Show all",
+  "@panels.doc.staticMemory.showAll": {
+    "context": "Label of a switch above a memory dump embedded in a file viewer (e.g. a tape block's data): show every byte instead of only the leading ones.",
+    "maxChars": 12
+  },
+  "panels.doc.staticMemory.showingLeading": "(Showing only the leading {count, plural, one {# byte} other {# bytes}})",
+  "@panels.doc.staticMemory.showingLeading": {
+    "context": "Note next to the 'Show all' switch above a memory dump embedded in a file viewer, while only the first bytes are shown.",
+    "placeholders": {
+      "count": "How many bytes are shown (e.g. 64)"
+    }
+  },
+  "panels.doc.imageViewer.fitOriginal": "Original size",
+  "@panels.doc.imageViewer.fitOriginal": {
+    "context": "Option of the sizing dropdown in the image viewer's header: show the image at its own size (the zoom buttons then apply).",
+    "maxChars": 16
+  },
+  "panels.doc.imageViewer.fitWidth": "Fit Width",
+  "@panels.doc.imageViewer.fitWidth": {
+    "context": "Option of the sizing dropdown in the image viewer's header: scale the image to the panel's width.",
+    "maxChars": 16
+  },
+  "panels.doc.imageViewer.fitPage": "Fit Page",
+  "@panels.doc.imageViewer.fitPage": {
+    "context": "Option of the sizing dropdown in the image viewer's header: scale the whole image to fit inside the panel.",
+    "maxChars": 16
+  },
+  "panels.doc.imageViewer.noContent": "No image content.",
+  "@panels.doc.imageViewer.noContent": {
+    "context": "Message filling the image viewer when the opened image file is empty."
+  },
+  "panels.doc.imageViewer.decodeFailed": "This file could not be decoded as an image ({name}).",
+  "@panels.doc.imageViewer.decodeFailed": {
+    "context": "Error message filling the image viewer when the file is corrupt or in a format the viewer cannot show.",
+    "placeholders": {
+      "name": "The file's name, e.g. 'title.png'"
+    }
+  },
+  "panels.doc.imageViewer.decodeFailedUnnamed": "This file could not be decoded as an image.",
+  "@panels.doc.imageViewer.decodeFailedUnnamed": {
+    "context": "Error message filling the image viewer when the file is corrupt or in a format the viewer cannot show, and its name is not known."
+  },
+  "panels.doc.imageViewer.zoomOut": "Zoom out",
+  "@panels.doc.imageViewer.zoomOut": {
+    "context": "Tooltip of the zoom-out icon button in the image viewer's header."
+  },
+  "panels.doc.imageViewer.zoomIn": "Zoom in",
+  "@panels.doc.imageViewer.zoomIn": {
+    "context": "Tooltip of the zoom-in icon button in the image viewer's header."
+  },
+  "panels.doc.imageViewer.resetZoom": "Click to reset to 100%",
+  "@panels.doc.imageViewer.resetZoom": {
+    "context": "Tooltip of the zoom readout (e.g. '2×') between the zoom buttons of the image viewer; clicking it returns to the image's own size."
+  },
+  "panels.doc.imageViewer.previewAlt": "Preview",
+  "@panels.doc.imageViewer.previewAlt": {
+    "context": "Alternative text (screen readers) of the image shown in the image viewer."
+  },
+  "panels.doc.scriptOutput.stop": "Stop this script file",
+  "@panels.doc.scriptOutput.stop": {
+    "context": "Tooltip of the stop icon button in the header of a script's output panel; cancels the running script."
+  },
+  "panels.doc.scriptOutput.openFile": "Open script file",
+  "@panels.doc.scriptOutput.openFile": {
+    "context": "Tooltip of an icon button in the header of a script's output panel; opens the script's source file in an editor."
+  },
+  "panels.doc.scriptOutput.clear": "Clear script output",
+  "@panels.doc.scriptOutput.clear": {
+    "context": "Tooltip of an icon button in the header of a script's output panel; empties the output."
+  },
+  "panels.doc.scriptOutput.copied": "Script output copied to the clipboard",
+  "@panels.doc.scriptOutput.copied": {
+    "context": "Status-bar message after the copy button of a script's output panel copied the output."
+  },
+  "panels.doc.scriptOutput.autoScrollOn": "Turn auto scrolling on",
+  "@panels.doc.scriptOutput.autoScrollOn": {
+    "context": "Tooltip of the lock icon button in a script's output panel while auto scrolling is off; clicking makes the panel follow new output."
+  },
+  "panels.doc.scriptOutput.autoScrollOff": "Turn auto scrolling off",
+  "@panels.doc.scriptOutput.autoScrollOff": {
+    "context": "Tooltip of the lock icon button in a script's output panel while auto scrolling is on; clicking keeps the view where it is when new output arrives."
+  },
+  "panels.doc.scriptOutput.lines": "Lines: {count, number}",
+  "@panels.doc.scriptOutput.lines": {
+    "context": "Readout in the header of a script's output panel: how many output lines the script wrote so far.",
+    "maxChars": 16,
+    "placeholders": {
+      "count": "The number of output lines"
+    }
+  },
+  "panels.doc.scriptOutput.statusRunning": "(Running)",
+  "@panels.doc.scriptOutput.statusRunning": {
+    "context": "Status readout in the header of a script's output panel while the script runs. Keep the brackets.",
+    "maxChars": 14
+  },
+  "panels.doc.scriptOutput.statusStopped": "(Stopped)",
+  "@panels.doc.scriptOutput.statusStopped": {
+    "context": "Status readout in the header of a script's output panel after the user stopped the script. Keep the brackets.",
+    "maxChars": 14
+  },
+  "panels.doc.scriptOutput.statusError": "(Error)",
+  "@panels.doc.scriptOutput.statusError": {
+    "context": "Status readout in the header of a script's output panel after the script failed. Keep the brackets.",
+    "maxChars": 14
+  },
+  "panels.doc.scriptOutput.statusCompleted": "(Completed)",
+  "@panels.doc.scriptOutput.statusCompleted": {
+    "context": "Status readout in the header of a script's output panel after the script finished normally. Keep the brackets.",
+    "maxChars": 14
+  },
+  "panels.doc.basic.emptyProgram": "BASIC program area is empty",
+  "@panels.doc.basic.emptyProgram": {
+    "context": "Message filling the BASIC Listing panel when the emulated machine's memory holds no BASIC program."
+  },
+  "panels.doc.basic.osNotInitialized": "Machine OS has not been initialized yet",
+  "@panels.doc.basic.osNotInitialized": {
+    "context": "Message filling the BASIC Listing panel before the emulated machine's ROM has finished starting up (no BASIC program area exists yet)."
+  },
+  "panels.doc.basic.refreshed": "BASIC listing refreshed",
+  "@panels.doc.basic.refreshed": {
+    "context": "Status-bar message after the refresh button of the BASIC Listing panel re-read the program."
+  },
+  "panels.doc.basic.copied": "BASIC listing copied to the clipboard",
+  "@panels.doc.basic.copied": {
+    "context": "Status-bar message after the copy button of the BASIC Listing panel copied the program text."
+  },
+  "panels.doc.basic.autoRefresh": "Auto Refresh:",
+  "@panels.doc.basic.autoRefresh": {
+    "context": "Label of a switch in the BASIC Listing panel's header: re-read the program periodically while the machine runs. Keep the colon if your language uses one.",
+    "maxChars": 20
+  },
+  "panels.doc.basic.autoRefreshTitle": "Refresh the BASIC listing periodically",
+  "@panels.doc.basic.autoRefreshTitle": {
+    "context": "Tooltip of the 'Auto Refresh' switch in the BASIC Listing panel's header."
+  },
+  "panels.doc.basic.showCodes": "Show Non-Printable:",
+  "@panels.doc.basic.showCodes": {
+    "context": "Label of a switch in the BASIC Listing panel's header: also show the control codes (colour, position) embedded in the program lines.",
+    "maxChars": 28
+  },
+  "panels.doc.basic.showCodesTitle": "Display the non-printable codes",
+  "@panels.doc.basic.showCodesTitle": {
+    "context": "Tooltip of the 'Show Non-Printable' switch in the BASIC Listing panel's header."
+  },
+  "panels.doc.basic.spectrumFont": "Use ZX Spectrum font:",
+  "@panels.doc.basic.spectrumFont": {
+    "context": "Label of a switch in the BASIC Listing panel's header (ZX Spectrum machines): draw the listing with the machine's own character set. 'ZX Spectrum' is a computer's name.",
+    "maxChars": 32
+  },
+  "panels.doc.basic.sinclairFont": "Use Sinclair font:",
+  "@panels.doc.basic.sinclairFont": {
+    "context": "Label of a switch in the BASIC Listing panel's header (ZX80/ZX81 machines): draw the listing with the machine's own character set. 'Sinclair' is the maker's name.",
+    "maxChars": 28
+  },
+  "panels.doc.basic.fontTitle": "Use the ZX Spectrum's font (the Sinclair font) to display the list",
+  "@panels.doc.basic.fontTitle": {
+    "context": "Tooltip of the font switch in the BASIC Listing panel's header."
+  },
+  "panels.doc.breakpoint.type.execute": "execute",
+  "@panels.doc.breakpoint.type.execute": {
+    "context": "Breakpoint kind, shown in brackets after the address in the tooltip of a breakpoint glyph (disassembly gutter, Breakpoints panel): stops when the CPU executes the instruction there."
+  },
+  "panels.doc.breakpoint.type.memoryRead": "memory read",
+  "@panels.doc.breakpoint.type.memoryRead": {
+    "context": "Breakpoint kind, shown in brackets after the address in the tooltip of a breakpoint glyph: stops when the CPU reads that memory address."
+  },
+  "panels.doc.breakpoint.type.memoryWrite": "memory write",
+  "@panels.doc.breakpoint.type.memoryWrite": {
+    "context": "Breakpoint kind, shown in brackets after the address in the tooltip of a breakpoint glyph: stops when the CPU writes that memory address."
+  },
+  "panels.doc.breakpoint.type.ioRead": "I/O read",
+  "@panels.doc.breakpoint.type.ioRead": {
+    "context": "Breakpoint kind, shown in brackets after the port in the tooltip of a breakpoint glyph: stops when the CPU reads that I/O port."
+  },
+  "panels.doc.breakpoint.type.ioWrite": "I/O write",
+  "@panels.doc.breakpoint.type.ioWrite": {
+    "context": "Breakpoint kind, shown in brackets after the port in the tooltip of a breakpoint glyph: stops when the CPU writes that I/O port."
+  },
+  "panels.doc.breakpoint.type.nextRegWrite": "NextReg write",
+  "@panels.doc.breakpoint.type.nextRegWrite": {
+    "context": "Breakpoint kind (ZX Spectrum Next), shown in brackets in the tooltip of a breakpoint glyph: stops when a Next register is written. 'NextReg' is a hardware name; keep it."
+  },
+  "panels.doc.breakpoint.type.copper": "Copper instruction",
+  "@panels.doc.breakpoint.type.copper": {
+    "context": "Breakpoint kind (ZX Spectrum Next), shown in brackets in the tooltip of a breakpoint glyph: stops when the Copper co-processor completes an instruction. 'Copper' is a hardware name; keep it."
+  },
+  "panels.doc.breakpoint.type.spriteWrite": "Sprite attribute write",
+  "@panels.doc.breakpoint.type.spriteWrite": {
+    "context": "Breakpoint kind (ZX Spectrum Next), shown in brackets in the tooltip of a breakpoint glyph: stops when a hardware sprite's attributes are written."
+  },
+  "panels.doc.breakpoint.heading": "{address} ({type})",
+  "@panels.doc.breakpoint.heading": {
+    "context": "First line of the tooltip of a breakpoint glyph: where the breakpoint is and its kind, e.g. '$8000 (execute)'. Change only the bracket style if your language needs to.",
+    "placeholders": {
+      "address": "The breakpoint's address, port or source line, e.g. '$8000' or 'ROM0:$0038'; never translated",
+      "type": "The breakpoint's kind, one of the panels.doc.breakpoint.type.* messages"
+    }
+  },
+  "panels.doc.breakpoint.headingMasked": "{address} /{mask} ({type})",
+  "@panels.doc.breakpoint.headingMasked": {
+    "context": "First line of the tooltip of an I/O breakpoint glyph whose port is matched through a mask, e.g. '$00FE /$00FF (I/O read)'. Change only the bracket style if your language needs to.",
+    "placeholders": {
+      "address": "The I/O port, e.g. '$00FE'; never translated",
+      "mask": "The port mask, e.g. '$00FF'; never translated",
+      "type": "The breakpoint's kind, one of the panels.doc.breakpoint.type.* messages"
+    }
+  },
+  "panels.doc.breakpoint.hint.readOnly": "Edit the comment and rebuild to change it",
+  "@panels.doc.breakpoint.hint.readOnly": {
+    "context": "Line of the tooltip of a breakpoint glyph whose breakpoint comes from a special comment in the source code (LOGPOINT, ASSERTION, WPMEM): it cannot be changed here."
+  },
+  "panels.doc.breakpoint.hint.remove": "Right-click to remove this breakpoint",
+  "@panels.doc.breakpoint.hint.remove": {
+    "context": "Line of the tooltip of a breakpoint glyph in the gutter of the disassembly or a breakpoint list."
+  },
+  "panels.doc.breakpoint.hint.set": "Right-click to set a breakpoint",
+  "@panels.doc.breakpoint.hint.set": {
+    "context": "Line of the tooltip of the empty breakpoint gutter of a disassembly row."
+  },
+  "panels.doc.breakpoint.hint.edit": "Double-click to edit this breakpoint",
+  "@panels.doc.breakpoint.hint.edit": {
+    "context": "Line of the tooltip of a breakpoint glyph; double-clicking opens the breakpoint editor dialog."
+  },
+  "panels.doc.breakpoint.hint.runHere": "{modifier}-click to run here",
+  "@panels.doc.breakpoint.hint.runHere": {
+    "context": "Line of the tooltip of the breakpoint gutter: clicking it with the modifier key held runs the machine until it reaches this row.",
+    "placeholders": {
+      "modifier": "The keyboard modifier's name: 'Cmd' on macOS, 'Ctrl' elsewhere; never translated"
+    }
+  },
+  "panels.doc.breakpoint.hint.removeOneShot": "Shift-click to remove the one-shot",
+  "@panels.doc.breakpoint.hint.removeOneShot": {
+    "context": "Line of the tooltip of a one-shot breakpoint glyph (a breakpoint removed after it stops once). 'Shift' is the key's name."
+  },
+  "panels.doc.breakpoint.hint.makeOneShot": "Shift-click to make it stop here once",
+  "@panels.doc.breakpoint.hint.makeOneShot": {
+    "context": "Line of the tooltip of a breakpoint glyph: Shift-click turns the breakpoint into a one-shot that is removed after it stops once."
+  },
+  "panels.doc.breakpoint.hint.setOneShot": "Shift-click to stop here once",
+  "@panels.doc.breakpoint.hint.setOneShot": {
+    "context": "Line of the tooltip of the empty breakpoint gutter: Shift-click sets a one-shot breakpoint, removed after it stops once."
+  },
+  "panels.doc.breakpoint.hint.enable": "Check to enable this breakpoint",
+  "@panels.doc.breakpoint.hint.enable": {
+    "context": "Line of the tooltip of the checkbox next to a disabled breakpoint in a breakpoint list."
+  },
+  "panels.doc.breakpoint.hint.disable": "Uncheck to disable this breakpoint",
+  "@panels.doc.breakpoint.hint.disable": {
+    "context": "Line of the tooltip of the checkbox next to an enabled breakpoint in a breakpoint list."
+  },
+  "panels.doc.rowMenu.label": "Label...",
+  "@panels.doc.rowMenu.label": {
+    "context": "Context-menu item of a disassembly row (right-click): opens a box to name the row's address with a label in the active annotation set."
+  },
+  "panels.doc.rowMenu.labelRom": "Label (ROM working copy)...",
+  "@panels.doc.rowMenu.labelRom": {
+    "context": "Context-menu item of a ROM row in the disassembly: opens a box to name the address with a label, stored in the user's editable copy of the ROM's annotations."
+  },
+  "panels.doc.rowMenu.synopsis": "Synopsis Comment...",
+  "@panels.doc.rowMenu.synopsis": {
+    "context": "Context-menu item of a disassembly row: opens a box to write a comment block shown above the row."
+  },
+  "panels.doc.rowMenu.synopsisRom": "Synopsis Comment (ROM working copy)...",
+  "@panels.doc.rowMenu.synopsisRom": {
+    "context": "Context-menu item of a ROM row in the disassembly: opens a box to write a comment block shown above the row, stored in the user's editable copy of the ROM's annotations."
+  },
+  "panels.doc.rowMenu.comment": "End-of-Line Comment...",
+  "@panels.doc.rowMenu.comment": {
+    "context": "Context-menu item of a disassembly row: opens a box to write a comment shown at the end of the row."
+  },
+  "panels.doc.rowMenu.commentRom": "End-of-Line Comment (ROM working copy)...",
+  "@panels.doc.rowMenu.commentRom": {
+    "context": "Context-menu item of a ROM row in the disassembly: opens a box to write a comment shown at the end of the row, stored in the user's editable copy of the ROM's annotations."
+  },
+  "panels.doc.rowMenu.operandLabel": "Operand Label...",
+  "@panels.doc.rowMenu.operandLabel": {
+    "context": "Context-menu item of a disassembly row: opens a box to name the value or address the instruction's operand uses."
+  },
+  "panels.doc.rowMenu.operandLabelRom": "Operand Label (ROM working copy)...",
+  "@panels.doc.rowMenu.operandLabelRom": {
+    "context": "Context-menu item of a ROM row in the disassembly: opens a box to name the instruction's operand, stored in the user's editable copy of the ROM's annotations."
+  },
+  "panels.doc.rowMenu.gotoDefinition": "Go to Definition",
+  "@panels.doc.rowMenu.gotoDefinition": {
+    "context": "Context-menu item of a disassembly row: scrolls to the address the instruction's operand label names."
+  },
+  "panels.doc.rowMenu.openRomAnnotations": "Open ROM Annotations",
+  "@panels.doc.rowMenu.openRomAnnotations": {
+    "context": "Context-menu item of a ROM row in the disassembly: opens the editor of the user's editable copy of the ROM's labels and comments."
+  },
+  "panels.doc.rowMenu.startRomAnnotations": "Start Editing ROM Annotations...",
+  "@panels.doc.rowMenu.startRomAnnotations": {
+    "context": "Context-menu item of a ROM row in the disassembly when the user has no editable copy of the ROM's labels and comments yet: creates one."
+  },
+  "panels.doc.rowMenu.removeBreakpoint": "Remove Breakpoint",
+  "@panels.doc.rowMenu.removeBreakpoint": {
+    "context": "Context-menu item of a disassembly row that has a breakpoint."
+  },
+  "panels.doc.rowMenu.keepAfterStop": "Keep After It Stops",
+  "@panels.doc.rowMenu.keepAfterStop": {
+    "context": "Context-menu item of a disassembly row with a one-shot breakpoint: makes it an ordinary breakpoint that stays after the machine stops on it."
+  },
+  "panels.doc.rowMenu.removeAfterStop": "Remove After It Stops",
+  "@panels.doc.rowMenu.removeAfterStop": {
+    "context": "Context-menu item of a disassembly row with a breakpoint: makes it a one-shot, removed the first time the machine stops on it."
+  },
+  "panels.doc.rowMenu.addBreakpoint": "Add Breakpoint",
+  "@panels.doc.rowMenu.addBreakpoint": {
+    "context": "Context-menu item of a disassembly row without a breakpoint."
+  },
+  "panels.doc.rowMenu.addOneShot": "Add One-Shot Breakpoint",
+  "@panels.doc.rowMenu.addOneShot": {
+    "context": "Context-menu item of a disassembly row: sets a breakpoint that is removed the first time the machine stops on it."
+  },
+  "panels.doc.rowMenu.runToHere": "Run to Here",
+  "@panels.doc.rowMenu.runToHere": {
+    "context": "Context-menu item of a disassembly row: runs the machine until it reaches this instruction, without leaving a breakpoint."
+  },
+  "panels.doc.rowMenu.editBreakpoint": "Edit Breakpoint...",
+  "@panels.doc.rowMenu.editBreakpoint": {
+    "context": "Context-menu item of a disassembly row: opens the breakpoint editor dialog for the row's breakpoint."
+  },
+  "panels.doc.rowMenu.showAsGraphics": "Show as Graphics",
+  "@panels.doc.rowMenu.showAsGraphics": {
+    "context": "Context-menu item of a disassembly row: opens the graphics finder showing the memory from this address as pixels."
+  },
+  "panels.doc.disassembly.decimal": "Decimal",
+  "@panels.doc.disassembly.decimal": {
+    "context": "Label of a switch in the disassembly panel's header: show numbers in decimal instead of hexadecimal.",
+    "maxChars": 10
+  },
+  "panels.doc.disassembly.decimalTitle": "Use decimal numbers?",
+  "@panels.doc.disassembly.decimalTitle": {
+    "context": "Tooltip of the 'Decimal' switch in the disassembly panel's header."
+  },
+  "panels.doc.disassembly.sysVars": "Sys vars",
+  "@panels.doc.disassembly.sysVars": {
+    "context": "Label of a switch in the disassembly panel's header: show the names of the ROM's system variables (e.g. ERR_SP) in place of their addresses. Short for 'system variables'.",
+    "maxChars": 12
+  },
+  "panels.doc.disassembly.sysVarsTitle": "Show system variable names in operands?",
+  "@panels.doc.disassembly.sysVarsTitle": {
+    "context": "Tooltip of the 'Sys vars' switch in the disassembly and memory panels: show the names of the ROM's system variables in place of their addresses."
+  },
+  "panels.doc.disassembly.romLabels": "ROM labels",
+  "@panels.doc.disassembly.romLabels": {
+    "context": "Label of a switch in the disassembly panel's header (machines with annotated ROMs): show the ROM's labels, comments and data regions.",
+    "maxChars": 14
+  },
+  "panels.doc.disassembly.romLabelsTitle": "Show the ROM's labels, comments and data regions?",
+  "@panels.doc.disassembly.romLabelsTitle": {
+    "context": "Tooltip of the 'ROM labels' switch in the disassembly panel's header."
+  },
+  "panels.doc.disassembly.followPc": "Follow PC",
+  "@panels.doc.disassembly.followPc": {
+    "context": "Label of a switch in the disassembly panel's header: keep the listing around the instruction the CPU executes next. 'PC' is the Z80's program counter register; keep it.",
+    "maxChars": 14
+  },
+  "panels.doc.disassembly.followPcTitle": "Follow the changes of PC",
+  "@panels.doc.disassembly.followPcTitle": {
+    "context": "Tooltip of the 'Follow PC' switch in the disassembly panel's header. 'PC' is the Z80's program counter register; keep it."
+  },
+  "panels.doc.disassembly.ram": "RAM:",
+  "@panels.doc.disassembly.ram": {
+    "context": "Label of a switch in the disassembly panel's header: include RAM in the listing. 'RAM' is a hardware term; change it only if your language has its own.",
+    "maxChars": 8
+  },
+  "panels.doc.disassembly.ramTitle": "Disassemble RAM?",
+  "@panels.doc.disassembly.ramTitle": {
+    "context": "Tooltip of the 'RAM' switch in the disassembly panel's header."
+  },
+  "panels.doc.disassembly.screen": "Screen:",
+  "@panels.doc.disassembly.screen": {
+    "context": "Label of a switch in the disassembly panel's header: include the screen memory in the listing.",
+    "maxChars": 12
+  },
+  "panels.doc.disassembly.screenTitle": "Disassemble screen?",
+  "@panels.doc.disassembly.screenTitle": {
+    "context": "Tooltip of the 'Screen' switch in the disassembly panel's header: include the screen memory area in the listing."
+  },
+  "panels.doc.disassembly.bank": "Bank",
+  "@panels.doc.disassembly.bank": {
+    "context": "Label of a switch in the disassembly panel's header: show which memory bank each row's address is in.",
+    "maxChars": 8
+  },
+  "panels.doc.disassembly.bankTitle": "Display bank label information?",
+  "@panels.doc.disassembly.bankTitle": {
+    "context": "Tooltip of the 'Bank' switch in the disassembly panel's header."
+  },
+  "panels.doc.disassembly.goToPc": "Go to the PC address",
+  "@panels.doc.disassembly.goToPc": {
+    "context": "Tooltip of the arrow icon button in the disassembly panel's header: scrolls to the instruction the CPU executes next. 'PC' is the Z80's program counter register; keep it."
+  },
+  "panels.doc.disassembly.fullView": "64K View",
+  "@panels.doc.disassembly.fullView": {
+    "context": "Label of a switch in the disassembly panel's second header row: list the whole 64K address space instead of one memory bank.",
+    "maxChars": 12
+  },
+  "panels.doc.disassembly.fullViewTitle": "Show the full 64K memory",
+  "@panels.doc.disassembly.fullViewTitle": {
+    "context": "Tooltip of the '64K View' switch in the disassembly panel's header."
+  },
+  "panels.doc.disassembly.selectBank": "Select bank",
+  "@panels.doc.disassembly.selectBank": {
+    "context": "Label in front of the memory-bank chooser in the disassembly panel's header.",
+    "maxChars": 14
+  },
+  "panels.doc.disassembly.offset": "Offset",
+  "@panels.doc.disassembly.offset": {
+    "context": "Label in front of the dropdown choosing the start offset inside the selected bank in the disassembly panel's header.",
+    "maxChars": 10
+  },
+  "panels.doc.copper.notAvailable": "The Copper is available on the ZX Spectrum Next",
+  "@panels.doc.copper.notAvailable": {
+    "context": "Message filling the Copper List panel on a machine other than the ZX Spectrum Next. 'Copper' is the name of the Next's display co-processor; keep it."
+  },
+  "panels.doc.copper.clickToExpand": "click to expand",
+  "@panels.doc.copper.clickToExpand": {
+    "context": "Hint at the end of a folded row of the Copper List panel that stands for a run of NOP instructions; clicking shows them one by one."
+  },
+  "panels.doc.copper.removeBreakpointOn": "Remove the breakpoint on {index}",
+  "@panels.doc.copper.removeBreakpointOn": {
+    "context": "Tooltip of the breakpoint gutter of a Copper List row that has a breakpoint.",
+    "placeholders": {
+      "index": "The Copper instruction's index in the list, e.g. '#012'; never translated"
+    }
+  },
+  "panels.doc.copper.stopWhenCompletes": "Stop when the Copper completes {index}",
+  "@panels.doc.copper.stopWhenCompletes": {
+    "context": "Tooltip of the empty breakpoint gutter of a Copper List row: clicking sets a breakpoint that stops the machine once the Copper has done this instruction.",
+    "placeholders": {
+      "index": "The Copper instruction's index in the list, e.g. '#012'; never translated"
+    }
+  },
+  "panels.doc.copper.waitNeverMatches": "This WAIT never matches under the current timing",
+  "@panels.doc.copper.waitNeverMatches": {
+    "context": "Tooltip of a Copper List row's explanation, shown in warning colour: the WAIT instruction waits for a raster position this machine's video timing never reaches. 'WAIT' is the instruction's name; keep it."
+  },
+  "panels.doc.copper.waitOutOfOrder": "This WAIT is for an earlier line than the WAIT before it: in a looping mode it waits for the next frame",
+  "@panels.doc.copper.waitOutOfOrder": {
+    "context": "Tooltip of a Copper List row's explanation, shown in warning colour. 'WAIT' is the instruction's name; keep it."
+  },
+  "panels.doc.copper.hitAt": "· hit at line {line}, hc {hc}",
+  "@panels.doc.copper.hitAt": {
+    "context": "Note after the explanation of the Copper List row where the breakpoint stopped: the raster line and horizontal position at that moment. 'hc' is the hardware's horizontal counter; keep it.",
+    "placeholders": {
+      "line": "The raster line number",
+      "hc": "The horizontal counter value"
+    }
+  },
+  "panels.doc.copper.sourcePatched": "{source} · patched: assembled as {word}",
+  "@panels.doc.copper.sourcePatched": {
+    "context": "First line of the tooltip of a Copper List row's source column when the instruction in memory differs from the one assembled from that source line.",
+    "placeholders": {
+      "source": "The source file name and line, e.g. 'effects.copper:12'",
+      "word": "The instruction word the assembler produced, in hex, e.g. '$8012'"
+    }
+  },
+  "panels.doc.copper.sourceMatched": "matched {matched} of {total} in this block",
+  "@panels.doc.copper.sourceMatched": {
+    "context": "Second line of the tooltip of a Copper List row's source column: how many of the block's assembled instructions were found in memory.",
+    "placeholders": {
+      "matched": "The number of instructions found",
+      "total": "The number of instructions the block holds"
+    }
+  },
+  "panels.doc.copper.followPc": "Follow PC:",
+  "@panels.doc.copper.followPc": {
+    "context": "Label of a switch in the Copper List panel's header: keep the Copper's next instruction in view. 'PC' is the Copper's program counter; keep it.",
+    "maxChars": 14
+  },
+  "panels.doc.copper.followPcTitle": "Keep the Copper's PC in view",
+  "@panels.doc.copper.followPcTitle": {
+    "context": "Tooltip of the 'Follow PC' switch in the Copper List panel's header. 'PC' is the Copper's program counter; keep it."
+  },
+  "panels.doc.copper.source": "Source:",
+  "@panels.doc.copper.source": {
+    "context": "Label of a switch in the Copper List panel's header: show the source line each instruction was assembled from.",
+    "maxChars": 12
+  },
+  "panels.doc.copper.sourceTitle": "Show the .copper source line each instruction was assembled from",
+  "@panels.doc.copper.sourceTitle": {
+    "context": "Tooltip of the 'Source' switch in the Copper List panel's header. '.copper' is a file extension; keep it."
+  },
+  "panels.doc.copper.hexWait": "Hex WAIT:",
+  "@panels.doc.copper.hexWait": {
+    "context": "Label of a switch in the Copper List panel's header: show the operands of WAIT instructions in hexadecimal. 'WAIT' is the instruction's name; keep it.",
+    "maxChars": 14
+  },
+  "panels.doc.copper.hexWaitTitle": "Show WAIT operands in hexadecimal",
+  "@panels.doc.copper.hexWaitTitle": {
+    "context": "Tooltip of the 'Hex WAIT' switch in the Copper List panel's header. 'WAIT' is the instruction's name; keep it."
+  },
+  "panels.doc.copper.step": "Step Copper: run until the Copper completes its next instruction",
+  "@panels.doc.copper.step": {
+    "context": "Tooltip of the step icon button in the Copper List panel's header. 'Copper' is the co-processor's name; keep it."
+  },
+  "panels.doc.copper.rulerTick": "{index} WAIT line {line}",
+  "@panels.doc.copper.rulerTick": {
+    "context": "Tooltip of the raster ruler beside the Copper List while the pointer is on a WAIT's tick: which instruction waits for which raster line.",
+    "placeholders": {
+      "index": "The Copper instruction's index, e.g. '#012'",
+      "line": "The raster line the WAIT waits for"
+    }
+  },
+  "panels.doc.copper.rulerTickNeverMatches": "{index} WAIT line {line} (never matches)",
+  "@panels.doc.copper.rulerTickNeverMatches": {
+    "context": "Tooltip of the raster ruler beside the Copper List while the pointer is on the tick of a WAIT that never matches under the current video timing.",
+    "placeholders": {
+      "index": "The Copper instruction's index, e.g. '#012'",
+      "line": "The raster line the WAIT waits for"
+    }
+  },
+  "panels.doc.copper.menu.removeBreakpoint": "Remove breakpoint",
+  "@panels.doc.copper.menu.removeBreakpoint": {
+    "context": "Context-menu item of a Copper List row that has a breakpoint."
+  },
+  "panels.doc.copper.menu.addBreakpoint": "Add breakpoint",
+  "@panels.doc.copper.menu.addBreakpoint": {
+    "context": "Context-menu item of a Copper List row: stop the machine once the Copper has done this instruction."
+  },
+  "panels.doc.copper.menu.editBreakpoint": "Edit breakpoint...",
+  "@panels.doc.copper.menu.editBreakpoint": {
+    "context": "Context-menu item of a Copper List row with a breakpoint: opens the breakpoint editor dialog."
+  },
+  "panels.doc.copper.menu.runToHere": "Run to here",
+  "@panels.doc.copper.menu.runToHere": {
+    "context": "Context-menu item of a Copper List row: runs the machine until the Copper has done this instruction."
+  },
+  "panels.doc.copper.menu.goToSource": "Go to source ({source})",
+  "@panels.doc.copper.menu.goToSource": {
+    "context": "Context-menu item of a Copper List row: opens the source file at the line the instruction was assembled from.",
+    "placeholders": {
+      "source": "The source file name and line, e.g. 'effects.copper:12'"
+    }
+  },
+  "panels.doc.dsk.unreadable": "This file could not be read as a .dsk disk image.",
+  "@panels.doc.dsk.unreadable": {
+    "context": "Error message filling the disk image viewer when the opened file is not a valid disk image. '.dsk' is a file extension; keep it."
+  },
+  "panels.doc.dsk.sides": "Sides:",
+  "@panels.doc.dsk.sides": {
+    "context": "Label of a value in the disk image viewer's header: how many sides the floppy disk has.",
+    "maxChars": 10
+  },
+  "panels.doc.dsk.tracks": "Tracks:",
+  "@panels.doc.dsk.tracks": {
+    "context": "Label of a value in the disk image viewer's header: how many tracks the floppy disk has.",
+    "maxChars": 10
+  },
+  "panels.doc.dsk.diskFormat": "Disk format:",
+  "@panels.doc.dsk.diskFormat": {
+    "context": "Label of a value in the disk image viewer's header: the image's format (CPC or Extended CPC, which are format names).",
+    "maxChars": 16
+  },
+  "panels.doc.dsk.showSurface": "Show surface view",
+  "@panels.doc.dsk.showSurface": {
+    "context": "Label of a switch in the disk image viewer's header: show the disk's physical layout (gaps, sync marks, raw bytes) instead of its tracks and sectors.",
+    "maxChars": 24
+  },
+  "panels.doc.dsk.showSurfaceTitle": "Floppy physical surface view",
+  "@panels.doc.dsk.showSurfaceTitle": {
+    "context": "Tooltip of the 'Show surface view' switch in the disk image viewer's header."
+  },
+  "panels.doc.dsk.genericInfo": "Generic Disk Info",
+  "@panels.doc.dsk.genericInfo": {
+    "context": "Title of a collapsible section of the disk image viewer's surface view: facts about the whole disk."
+  },
+  "panels.doc.dsk.density": "Density:",
+  "@panels.doc.dsk.density": {
+    "context": "Label of a value in the disk image viewer: the floppy's recording density (a hardware term such as 'DoubleDensity', shown untranslated).",
+    "maxChars": 12
+  },
+  "panels.doc.dsk.weakSectors": "Has weak sectors",
+  "@panels.doc.dsk.weakSectors": {
+    "context": "Label of a yes/no flag in the disk image viewer: whether any sector holds weak (copy-protection) data that reads differently each time."
+  },
+  "panels.doc.dsk.total": "Total:",
+  "@panels.doc.dsk.total": {
+    "context": "Label of a value in the disk image viewer's surface view: the disk's whole physical size in bytes.",
+    "maxChars": 10
+  },
+  "panels.doc.dsk.totalTitle": "Total physical size in bytes",
+  "@panels.doc.dsk.totalTitle": {
+    "context": "Tooltip of the 'Total' value in the disk image viewer's surface view."
+  },
+  "panels.doc.dsk.bytesPerTrackTitle": "Bytes per track",
+  "@panels.doc.dsk.bytesPerTrackTitle": {
+    "context": "Tooltip of the 'B/T' value in the disk image viewer's surface view ('B/T' itself stays untranslated)."
+  },
+  "panels.doc.dsk.trackLengthTitle": "Track length in bytes",
+  "@panels.doc.dsk.trackLengthTitle": {
+    "context": "Tooltip of the 'TLen' value in the disk image viewer's surface view ('TLen' itself stays untranslated)."
+  },
+  "panels.doc.dsk.trackTitle": "Track #{track}",
+  "@panels.doc.dsk.trackTitle": {
+    "context": "Title of a collapsible section of the disk image viewer's surface view, one per physical track.",
+    "placeholders": {
+      "track": "The track's index, from 0"
+    }
+  },
+  "panels.doc.dsk.trackHeader": "Track header (GAP0 + Sync + Index + GAP1, {count, plural, one {# byte} other {# bytes}})",
+  "@panels.doc.dsk.trackHeader": {
+    "context": "Caption above the raw bytes of a track's header in the disk image viewer's surface view. GAP0, Sync, Index and GAP1 are floppy-format field names; keep them.",
+    "placeholders": {
+      "count": "How many bytes the header holds"
+    }
+  },
+  "panels.doc.dsk.sectorLayout": "Sector #{sector} (Header + GAP2 + Sync + DM + Data + CRC + GAP3, {count, plural, one {# byte} other {# bytes}})",
+  "@panels.doc.dsk.sectorLayout": {
+    "context": "Caption above the raw bytes of a sector in the disk image viewer's surface view. Header, GAP2, Sync, DM, Data, CRC and GAP3 are floppy-format field names; keep them.",
+    "placeholders": {
+      "sector": "The sector's number in the track, from 1",
+      "count": "How many bytes the sector's raw data holds"
+    }
+  },
+  "panels.doc.dsk.noSectors": "This track holds no sectors.",
+  "@panels.doc.dsk.noSectors": {
+    "context": "Note in the disk image viewer's surface view under a track that has no sectors."
+  },
+  "panels.doc.dsk.logicalTrackTitle": "Track #{track} | Side #{side} | {count, plural, one {# sector} other {# sectors}} | GAP3: {gap3} | Filler: {filler}",
+  "@panels.doc.dsk.logicalTrackTitle": {
+    "context": "Title of a collapsible section of the disk image viewer, one per track. 'GAP3' is a floppy-format field name; keep it. 'Filler' is the byte that fills the formatted sectors.",
+    "placeholders": {
+      "track": "The track number",
+      "side": "The disk side, 0 or 1",
+      "count": "How many sectors the track holds",
+      "gap3": "The GAP3 length, in hex, e.g. '4E'",
+      "filler": "The filler byte, in hex, e.g. 'E5'"
+    }
+  },
+  "panels.doc.dsk.sectors": "Sectors:",
+  "@panels.doc.dsk.sectors": {
+    "context": "Label in front of the row of sector-number buttons of a track in the disk image viewer; clicking a number shows that sector.",
+    "maxChars": 12
+  },
+  "panels.doc.dsk.cylinderTitle": "Cylinder (Track)",
+  "@panels.doc.dsk.cylinderTitle": {
+    "context": "Tooltip of the 'C' value of a sector in the disk image viewer: the cylinder number in the sector's ID field ('C' itself stays untranslated)."
+  },
+  "panels.doc.dsk.headTitle": "Head (Side)",
+  "@panels.doc.dsk.headTitle": {
+    "context": "Tooltip of the 'H' value of a sector in the disk image viewer: the head number in the sector's ID field ('H' itself stays untranslated)."
+  },
+  "panels.doc.dsk.sectorIdTitle": "Sector ID",
+  "@panels.doc.dsk.sectorIdTitle": {
+    "context": "Tooltip of the 'R' value of a sector in the disk image viewer: the sector number in the sector's ID field ('R' itself stays untranslated)."
+  },
+  "panels.doc.dsk.sectorSizeTitle": "Sector size",
+  "@panels.doc.dsk.sectorSizeTitle": {
+    "context": "Tooltip of the 'N' value of a sector in the disk image viewer ('N' itself stays untranslated)."
+  },
+  "panels.doc.dsk.sr1Title": "FDD SR1 value",
+  "@panels.doc.dsk.sr1Title": {
+    "context": "Tooltip of the 'SR1' value of a sector in the disk image viewer: the floppy controller's status register 1. 'FDD' and 'SR1' are hardware names; keep them."
+  },
+  "panels.doc.dsk.sr2Title": "FDD SR2 value",
+  "@panels.doc.dsk.sr2Title": {
+    "context": "Tooltip of the 'SR2' value of a sector in the disk image viewer: the floppy controller's status register 2. 'FDD' and 'SR2' are hardware names; keep them."
+  },
+  "panels.doc.profiler.tab.routines": "Routines",
+  "@panels.doc.profiler.tab.routines": {
+    "context": "Tab of the Profiler document: a table of the routines (labelled code) and the CPU time each took.",
+    "maxChars": 14
+  },
+  "panels.doc.profiler.tab.addresses": "Addresses",
+  "@panels.doc.profiler.tab.addresses": {
+    "context": "Tab of the Profiler document: a table of every executed instruction address and its time.",
+    "maxChars": 14
+  },
+  "panels.doc.profiler.tab.tree": "Call tree",
+  "@panels.doc.profiler.tab.tree": {
+    "context": "Tab of the Profiler document: the routines as a tree of who called whom.",
+    "maxChars": 14
+  },
+  "panels.doc.profiler.tab.callers": "Callers",
+  "@panels.doc.profiler.tab.callers": {
+    "context": "Tab of the Profiler document: which routines called the selected routine, and which it called.",
+    "maxChars": 14
+  },
+  "panels.doc.profiler.tabsLabel": "Profiler view",
+  "@panels.doc.profiler.tabsLabel": {
+    "context": "Accessible name (screen readers only) of the row of tabs at the top of the Profiler document."
+  },
+  "panels.doc.profiler.errorTitle": "Profiler",
+  "@panels.doc.profiler.errorTitle": {
+    "context": "Title of the error message box shown when a profiling command started from the Profiler document fails."
+  },
+  "panels.doc.profiler.exportTitle": "Export Profile",
+  "@panels.doc.profiler.exportTitle": {
+    "context": "Title of the save-file dialog opened by the export button of the Profiler document."
+  },
+  "panels.doc.profiler.start": "Start profiling (resets the profile)",
+  "@panels.doc.profiler.start": {
+    "context": "Tooltip of the play icon button in the Profiler document's header while the 'Call graph' switch is off."
+  },
+  "panels.doc.profiler.startWithCalls": "Start profiling, with the call graph (resets the profile)",
+  "@panels.doc.profiler.startWithCalls": {
+    "context": "Tooltip of the play icon button in the Profiler document's header while the 'Call graph' switch is on: the call tracker records who called whom."
+  },
+  "panels.doc.profiler.stop": "Stop profiling: the profile stays",
+  "@panels.doc.profiler.stop": {
+    "context": "Tooltip of the pause icon button in the Profiler document's header."
+  },
+  "panels.doc.profiler.clear": "Clear the profile",
+  "@panels.doc.profiler.clear": {
+    "context": "Tooltip of the clear icon button in the Profiler document's header."
+  },
+  "panels.doc.profiler.export": "Export the profile: speedscope, callgrind, CSV or Fuse",
+  "@panels.doc.profiler.export": {
+    "context": "Tooltip of the save icon button in the Profiler document's header. speedscope, callgrind, CSV and Fuse are file-format names; keep them."
+  },
+  "panels.doc.profiler.callGraph": "Call graph:",
+  "@panels.doc.profiler.callGraph": {
+    "context": "Label of a switch in the Profiler document's header: record calls while profiling (inclusive time, the call tree and callers).",
+    "maxChars": 16
+  },
+  "panels.doc.profiler.callGraphTitle": "Start profiling with the call tracker: inclusive time, the call tree and callers",
+  "@panels.doc.profiler.callGraphTitle": {
+    "context": "Tooltip of the 'Call graph' switch in the Profiler document's header."
+  },
+  "panels.doc.profiler.hideWaiting": "Hide waiting:",
+  "@panels.doc.profiler.hideWaiting": {
+    "context": "Label of a switch in the Profiler document's header: leave out the time the CPU spent waiting in HALT.",
+    "maxChars": 18
+  },
+  "panels.doc.profiler.hideWaitingTitle": "Leave the time spent in HALT out of the table and the percentages",
+  "@panels.doc.profiler.hideWaitingTitle": {
+    "context": "Tooltip of the 'Hide waiting' switch in the Profiler document's header. 'HALT' is a Z80 instruction; keep it."
+  },
+  "panels.doc.profiler.reading": "Reading the profile...",
+  "@panels.doc.profiler.reading": {
+    "context": "Message filling the Profiler document while it loads the profile from the emulator."
+  },
+  "panels.doc.profiler.sortBySelf": "Sort by self time",
+  "@panels.doc.profiler.sortBySelf": {
+    "context": "Tooltip of the 'Self' column header in the Profiler's Routines table; clicking sorts by it."
+  },
+  "panels.doc.profiler.sortByCalls": "Sort by calls",
+  "@panels.doc.profiler.sortByCalls": {
+    "context": "Tooltip of the 'Calls' column header in the Profiler's Routines table; clicking sorts by it."
+  },
+  "panels.doc.profiler.sortByEntries": "Sort by entries",
+  "@panels.doc.profiler.sortByEntries": {
+    "context": "Tooltip of the 'Entries' column header in the Profiler's Routines table (shown instead of 'Calls' when no call graph was recorded); clicking sorts by it."
+  },
+  "panels.doc.profiler.sortByInstructions": "Sort by instructions",
+  "@panels.doc.profiler.sortByInstructions": {
+    "context": "Tooltip of the 'Instr.' column header in the Profiler's Routines table; clicking sorts by it."
+  },
+  "panels.doc.profiler.col.routine": "Routine",
+  "@panels.doc.profiler.col.routine": {
+    "context": "Column header in the Profiler's tables: the routine's name (a label in the code).",
+    "maxChars": 14
+  },
+  "panels.doc.profiler.col.partition": "Part.",
+  "@panels.doc.profiler.col.partition": {
+    "context": "Narrow column header in the Profiler's tables: the memory partition (bank or ROM page) the code is in. Short for 'partition'.",
+    "maxChars": 6
+  },
+  "panels.doc.profiler.col.entry": "Entry",
+  "@panels.doc.profiler.col.entry": {
+    "context": "Column header in the Profiler's Routines table: the routine's start address.",
+    "maxChars": 8
+  },
+  "panels.doc.profiler.col.address": "Addr",
+  "@panels.doc.profiler.col.address": {
+    "context": "Narrow column header in the Profiler's Addresses table: the instruction's address. Short for 'address'.",
+    "maxChars": 6
+  },
+  "panels.doc.profiler.col.self": "Self ({unit})",
+  "@panels.doc.profiler.col.self": {
+    "context": "Column header in the Profiler's Routines table: the time spent in the routine's own code.",
+    "maxChars": 12,
+    "placeholders": {
+      "unit": "The time unit's symbol, e.g. 'T' for T-states; never translated"
+    }
+  },
+  "panels.doc.profiler.col.selfPct": "Self %",
+  "@panels.doc.profiler.col.selfPct": {
+    "context": "Column header in the Profiler's Routines table: the routine's own time as a share of the whole profile.",
+    "maxChars": 10
+  },
+  "panels.doc.profiler.col.calls": "Calls",
+  "@panels.doc.profiler.col.calls": {
+    "context": "Column header in the Profiler's tables: how many times the routine was called.",
+    "maxChars": 8
+  },
+  "panels.doc.profiler.col.entries": "Entries",
+  "@panels.doc.profiler.col.entries": {
+    "context": "Column header in the Profiler's Routines table when no call graph was recorded: how many times execution entered the routine.",
+    "maxChars": 8
+  },
+  "panels.doc.profiler.col.instructions": "Instr.",
+  "@panels.doc.profiler.col.instructions": {
+    "context": "Narrow column header in the Profiler's Routines table: how many instructions the routine executed. Short for 'instructions'.",
+    "maxChars": 8
+  },
+  "panels.doc.profiler.col.perCall": "Per call",
+  "@panels.doc.profiler.col.perCall": {
+    "context": "Column header in the Profiler's Routines table: the routine's own time divided by its calls.",
+    "maxChars": 10
+  },
+  "panels.doc.profiler.col.perCallTitle": "Self time per call",
+  "@panels.doc.profiler.col.perCallTitle": {
+    "context": "Tooltip of the 'Per call' column header in the Profiler's Routines table."
+  },
+  "panels.doc.profiler.col.perFrame": "Per frame",
+  "@panels.doc.profiler.col.perFrame": {
+    "context": "Column header in the Profiler's Routines table: the routine's own time per emulated screen frame.",
+    "maxChars": 10
+  },
+  "panels.doc.profiler.col.perFrameTitle": "Self time per emulated frame (D5)",
+  "@panels.doc.profiler.col.perFrameTitle": {
+    "context": "Tooltip of the 'Per frame' column header in the Profiler's Routines table. '(D5)' refers to a design note; keep it."
+  },
+  "panels.doc.profiler.col.source": "Source",
+  "@panels.doc.profiler.col.source": {
+    "context": "Column header in the Profiler's tables: the source file and line of the routine.",
+    "maxChars": 10
+  },
+  "panels.doc.profiler.col.executions": "Executions",
+  "@panels.doc.profiler.col.executions": {
+    "context": "Column header in the Profiler's Addresses table: how many times the instruction ran.",
+    "maxChars": 12
+  },
+  "panels.doc.profiler.col.time": "Time ({unit})",
+  "@panels.doc.profiler.col.time": {
+    "context": "Column header in the Profiler's Addresses table: the time the instruction took in total.",
+    "maxChars": 12,
+    "placeholders": {
+      "unit": "The time unit's symbol, e.g. 'T' for T-states; never translated"
+    }
+  },
+  "panels.doc.profiler.col.timePct": "Time %",
+  "@panels.doc.profiler.col.timePct": {
+    "context": "Column header in the Profiler's Addresses table: the instruction's time as a share of the whole profile.",
+    "maxChars": 10
+  },
+  "panels.doc.profiler.col.inclusive": "Incl. ({unit})",
+  "@panels.doc.profiler.col.inclusive": {
+    "context": "Column header in the Profiler's call tree: the time of the calls including the calls they made. Short for 'inclusive'.",
+    "maxChars": 12,
+    "placeholders": {
+      "unit": "The time unit's symbol, e.g. 'T' for T-states; never translated"
+    }
+  },
+  "panels.doc.profiler.col.inclusiveTitle": "The time of these calls, the calls they made included",
+  "@panels.doc.profiler.col.inclusiveTitle": {
+    "context": "Tooltip of the 'Incl.' column header in the Profiler's call tree."
+  },
+  "panels.doc.profiler.col.inclusivePct": "Incl. %",
+  "@panels.doc.profiler.col.inclusivePct": {
+    "context": "Column header in the Profiler's call tree: the inclusive time as a share of the whole profile.",
+    "maxChars": 10
+  },
+  "panels.doc.profiler.col.exclusive": "Excl. ({unit})",
+  "@panels.doc.profiler.col.exclusive": {
+    "context": "Column header in the Profiler's call tree: the time spent in the calls' own code. Short for 'exclusive'.",
+    "maxChars": 12,
+    "placeholders": {
+      "unit": "The time unit's symbol, e.g. 'T' for T-states; never translated"
+    }
+  },
+  "panels.doc.profiler.col.exclusiveTitle": "The time of these calls in their own code",
+  "@panels.doc.profiler.col.exclusiveTitle": {
+    "context": "Tooltip of the 'Excl.' column header in the Profiler's call tree."
+  },
+  "panels.doc.profiler.pseudoRowTitle": "Time that is no routine's: the machine waiting or the hardware holding the CPU (D4)",
+  "@panels.doc.profiler.pseudoRowTitle": {
+    "context": "Tooltip of the special rows at the foot of the Profiler's Routines table. '(D4)' refers to a design note; keep it."
+  },
+  "panels.doc.profiler.labelRoutineTitle": "{name}: up to the next label ({count, plural, one {# byte} other {# bytes}})",
+  "@panels.doc.profiler.labelRoutineTitle": {
+    "context": "Tooltip of a row of the Profiler's Routines table whose routine was guessed from the labels: it is taken to run until the next label.",
+    "placeholders": {
+      "name": "The routine's label",
+      "count": "The routine's size in bytes"
+    }
+  },
+  "panels.doc.profiler.haltTitle": "A HALT: its time is the machine waiting",
+  "@panels.doc.profiler.haltTitle": {
+    "context": "Tooltip of a row of the Profiler's Addresses table for a HALT instruction. 'HALT' is a Z80 instruction; keep it."
+  },
+  "panels.doc.profiler.noGraph": "No call graph: start profiling with the Call graph switch on, or with 'profile start -calls'.",
+  "@panels.doc.profiler.noGraph": {
+    "context": "Message in the Profiler's Call tree and Callers tabs when the profile was recorded without the call tracker. 'profile start -calls' is an IDE command; keep it."
+  },
+  "panels.doc.profiler.node.recursive": "{name} calls itself here (recursion): its inclusive time is counted at the outermost call",
+  "@panels.doc.profiler.node.recursive": {
+    "context": "Tooltip of a call-tree row where a routine calls itself.",
+    "placeholders": {
+      "name": "The routine's label"
+    }
+  },
+  "panels.doc.profiler.node.root": "What ran outside every tracked call: the code that was running when profiling started, and its own time",
+  "@panels.doc.profiler.node.root": {
+    "context": "Tooltip of the root row of the Profiler's call tree."
+  },
+  "panels.doc.profiler.node.interrupt": "An interrupt is a root of its own: its time is not charged to the routine it interrupted",
+  "@panels.doc.profiler.node.interrupt": {
+    "context": "Tooltip of an interrupt row of the Profiler's call tree."
+  },
+  "panels.doc.profiler.node.open": "{name}: still running when the profile was read; its time so far is included",
+  "@panels.doc.profiler.node.open": {
+    "context": "Tooltip of a call-tree row of a call that had not returned yet when the profile was read.",
+    "placeholders": {
+      "name": "The routine's label"
+    }
+  },
+  "panels.doc.profiler.selectRoutine": "Select a routine in the Routines or Call tree tab to see who called it.",
+  "@panels.doc.profiler.selectRoutine": {
+    "context": "Message in the Profiler's Callers tab while no routine is selected. 'Routines' and 'Call tree' are the names of the other tabs."
+  },
+  "panels.doc.profiler.callersCaption": "{name}: {count, plural, one {# call} other {# calls}}, {inclusive} inclusive, {exclusive} exclusive",
+  "@panels.doc.profiler.callersCaption": {
+    "context": "Caption at the top of the Profiler's Callers tab, summing up the selected routine.",
+    "placeholders": {
+      "name": "The routine's label",
+      "count": "How many times it was called",
+      "inclusive": "Its time including its calls, already formatted with a unit, e.g. '12,345 T'",
+      "exclusive": "Its time in its own code, already formatted with a unit"
+    }
+  },
+  "panels.doc.profiler.calledBy": "Called by ({count, number})",
+  "@panels.doc.profiler.calledBy": {
+    "context": "Caption of the list of callers in the Profiler's Callers tab.",
+    "placeholders": {
+      "count": "How many routines called the selected one"
+    }
+  },
+  "panels.doc.profiler.callsList": "Calls ({count, number})",
+  "@panels.doc.profiler.callsList": {
+    "context": "Caption of the list of routines the selected routine called, in the Profiler's Callers tab.",
+    "placeholders": {
+      "count": "How many routines it called"
+    }
+  },
+  "panels.doc.branch.met": "{condition} met",
+  "@panels.doc.branch.met": {
+    "context": "Part of the readout on the disassembly row where the CPU stands, for a conditional jump, call or return: the condition holds, so it branches.",
+    "placeholders": {
+      "condition": "The Z80 condition, e.g. 'NC' or 'B≠0'; never translated"
+    }
+  },
+  "panels.doc.branch.notMet": "{condition} not met",
+  "@panels.doc.branch.notMet": {
+    "context": "Part of the readout on the disassembly row where the CPU stands: the branch's condition does not hold.",
+    "placeholders": {
+      "condition": "The Z80 condition, e.g. 'NC' or 'B≠0'; never translated"
+    }
+  },
+  "panels.doc.branch.metBecause": "{condition} met ({reason})",
+  "@panels.doc.branch.metBecause": {
+    "context": "Part of the readout on the disassembly row where the CPU stands: the branch's condition holds, and the flag value that decided it.",
+    "placeholders": {
+      "condition": "The Z80 condition, e.g. 'NC'; never translated",
+      "reason": "The flag or register value that decided it, e.g. 'C=0'; never translated"
+    }
+  },
+  "panels.doc.branch.notMetBecause": "{condition} not met ({reason})",
+  "@panels.doc.branch.notMetBecause": {
+    "context": "Part of the readout on the disassembly row where the CPU stands: the branch's condition does not hold, and the flag value that decided it.",
+    "placeholders": {
+      "condition": "The Z80 condition, e.g. 'NC'; never translated",
+      "reason": "The flag or register value that decided it, e.g. 'C=1'; never translated"
+    }
+  },
+  "panels.doc.branch.fallsThrough": "falls through to {address}",
+  "@panels.doc.branch.fallsThrough": {
+    "context": "Readout on the disassembly row where the CPU stands: the branch will not be taken, execution continues at the next instruction.",
+    "placeholders": {
+      "address": "The next address, e.g. '$0EFD'; never translated"
+    }
+  },
+  "panels.doc.branch.returnsTo": "returns to {address}",
+  "@panels.doc.branch.returnsTo": {
+    "context": "Readout on the disassembly row where the CPU stands: the return instruction will go back to this address.",
+    "placeholders": {
+      "address": "The return address, e.g. '$0EFD'; never translated"
+    }
+  },
+  "panels.doc.branch.calls": "calls {address}",
+  "@panels.doc.branch.calls": {
+    "context": "Readout on the disassembly row where the CPU stands: the CALL or RST instruction will call this address.",
+    "placeholders": {
+      "address": "The called address, e.g. '$0038'; never translated"
+    }
+  },
+  "panels.doc.branch.jumpsBack": "jumps back to {address}",
+  "@panels.doc.branch.jumpsBack": {
+    "context": "Readout on the disassembly row where the CPU stands: the jump goes to an earlier address (typically closing a loop).",
+    "placeholders": {
+      "address": "The destination, e.g. '$0EFD'; never translated"
+    }
+  },
+  "panels.doc.branch.jumpsForward": "jumps forward to {address}",
+  "@panels.doc.branch.jumpsForward": {
+    "context": "Readout on the disassembly row where the CPU stands: the jump goes to a later address.",
+    "placeholders": {
+      "address": "The destination, e.g. '$0F20'; never translated"
+    }
+  },
+  "panels.doc.branch.jumpsFromPort": "jumps — destination is read from port BC as it executes",
+  "@panels.doc.branch.jumpsFromPort": {
+    "context": "Readout on the disassembly row where the CPU stands, for the Z80N 'JP (C)' instruction: its destination depends on an I/O read that has not happened yet. 'BC' is a register; keep it."
+  },
+  "panels.doc.branch.callsFromPort": "calls — destination is read from port BC as it executes",
+  "@panels.doc.branch.callsFromPort": {
+    "context": "Readout on the disassembly row where the CPU stands, for a call whose destination depends on an I/O read that has not happened yet. 'BC' is a register; keep it."
+  },
+  "panels.doc.branch.returnsFromPort": "returns — destination is read from port BC as it executes",
+  "@panels.doc.branch.returnsFromPort": {
+    "context": "Readout on the disassembly row where the CPU stands, for a return whose destination depends on an I/O read that has not happened yet. 'BC' is a register; keep it."
+  },
+  "panels.doc.branch.jumpsStackUnreadable": "jumps — the stack is outside the memory on display",
+  "@panels.doc.branch.jumpsStackUnreadable": {
+    "context": "Readout on the disassembly row where the CPU stands: the destination is on the stack, which the panel's memory view does not cover."
+  },
+  "panels.doc.branch.callsStackUnreadable": "calls — the stack is outside the memory on display",
+  "@panels.doc.branch.callsStackUnreadable": {
+    "context": "Readout on the disassembly row where the CPU stands: the destination is on the stack, which the panel's memory view does not cover."
+  },
+  "panels.doc.branch.returnsStackUnreadable": "returns — the stack is outside the memory on display",
+  "@panels.doc.branch.returnsStackUnreadable": {
+    "context": "Readout on the disassembly row where the CPU stands, for a return: the return address is on the stack, which the panel's memory view does not cover."
+  },
+  "panels.doc.disassemblyRow.alsoNamed": "Also: {name}",
+  "@panels.doc.disassemblyRow.alsoNamed": {
+    "context": "Line of the tooltip of a named label in the disassembly: another name the same address has.",
+    "placeholders": {
+      "name": "The other label name; never translated"
+    }
+  },
+  "panels.doc.disassemblyRow.mirrorOf": "Mirror of {address}",
+  "@panels.doc.disassemblyRow.mirrorOf": {
+    "context": "Line of the tooltip of a label on a ZX80/ZX81 mirror row of the disassembly: the memory there repeats this canonical address.",
+    "placeholders": {
+      "address": "The canonical address, e.g. '$0038'; never translated"
+    }
+  },
+  "panels.doc.disassemblyRow.historyCodeChanged": "History: the code here has changed since this instruction ran. The listing shows the present bytes.",
+  "@panels.doc.disassemblyRow.historyCodeChanged": {
+    "context": "Tooltip of the disassembly row marked by the execution-history cursor, when the memory there was overwritten since that step."
+  },
+  "panels.doc.disassemblyRow.historyCursor": "History: the instruction the history cursor is on. The bytes are the present's.",
+  "@panels.doc.disassemblyRow.historyCursor": {
+    "context": "Tooltip of the disassembly row marked by the execution-history cursor (the step selected in the Execution History)."
+  },
+  "panels.doc.disassemblyRow.regionFromCoverage": "Detected from coverage",
+  "@panels.doc.disassemblyRow.regionFromCoverage": {
+    "context": "Tooltip of the coloured rail at the left of a disassembly row whose code/data region was detected by a tool from which addresses were executed."
+  },
+  "panels.doc.disassemblyRow.regionFromSkool": "Imported from a SkoolKit file",
+  "@panels.doc.disassemblyRow.regionFromSkool": {
+    "context": "Tooltip of the coloured rail at the left of a disassembly row whose code/data region came from an imported SkoolKit file. 'SkoolKit' is a tool's name; keep it."
+  },
+  "panels.doc.disassemblyRow.executedTimes": "{count, plural, one {Executed # time} other {Executed # times}}",
+  "@panels.doc.disassemblyRow.executedTimes": {
+    "context": "Tooltip of the coverage mark of a disassembly row: how often the instruction ran.",
+    "placeholders": {
+      "count": "How many times it ran"
+    }
+  },
+  "panels.doc.disassemblyRow.executedTimesShare": "{count, plural, one {Executed # time} other {Executed # times}} · {share}% of the profiled time",
+  "@panels.doc.disassemblyRow.executedTimesShare": {
+    "context": "Tooltip of the coverage mark of a disassembly row while profiling: how often the instruction ran and its share of the CPU time.",
+    "placeholders": {
+      "count": "How many times it ran",
+      "share": "Its share of the profiled time, already formatted with one decimal, e.g. '12.5'"
+    }
+  },
+  "panels.doc.disassemblyRow.executed": "Executed",
+  "@panels.doc.disassemblyRow.executed": {
+    "context": "Tooltip of the coverage mark of a disassembly row whose instruction ran (the count is not known)."
+  },
+  "panels.doc.disassemblyRow.executedShare": "Executed · {share}% of the profiled time",
+  "@panels.doc.disassemblyRow.executedShare": {
+    "context": "Tooltip of the coverage mark of a disassembly row while profiling, when the run count is not known.",
+    "placeholders": {
+      "share": "Its share of the profiled time, already formatted with one decimal, e.g. '12.5'"
+    }
+  },
+  "panels.doc.disassembly.outsideRange": "{address} is outside the disassembled range ({from}-{to}). Turn on the 64K view, or turn off Follow PC, to reach it.",
+  "@panels.doc.disassembly.outsideRange": {
+    "context": "Status-bar message after Go To in the disassembly panel asked for an address the current listing does not cover. '64K view' and 'Follow PC' are the names of switches in the panel's header.",
+    "placeholders": {
+      "address": "The requested address, e.g. '$C000'; never translated",
+      "from": "The listing's first address, e.g. '$0000'",
+      "to": "The listing's last address, e.g. '$3FFF'"
+    }
+  },
+  "panels.doc.disassembly.refreshed": "Disassembly refreshed",
+  "@panels.doc.disassembly.refreshed": {
+    "context": "Status-bar message after the refresh button of the disassembly panel re-read the memory."
+  },
+  "panels.doc.history.exportTitle": "Export Execution History",
+  "@panels.doc.history.exportTitle": {
+    "context": "Title of the save-file dialog opened by the export button of the Execution History document, and of the error box when the export fails."
+  },
+  "panels.doc.history.exportFailed": "Export failed",
+  "@panels.doc.history.exportFailed": {
+    "context": "Fallback text of the error box when exporting the Execution History fails without a more specific reason."
+  },
+  "panels.doc.history.recordingTitle": "History is recorded in debug sessions only: Start with Debugging and the steps",
+  "@panels.doc.history.recordingTitle": {
+    "context": "Tooltip of the recording indicator in the Execution History document's header. 'Start with Debugging' is a menu command's name."
+  },
+  "panels.doc.history.recording": "● Recording",
+  "@panels.doc.history.recording": {
+    "context": "Indicator in the Execution History document's header while the CPU's instructions are being recorded. Keep the dot.",
+    "maxChars": 16
+  },
+  "panels.doc.history.notRecording": "○ Not recording",
+  "@panels.doc.history.notRecording": {
+    "context": "Indicator in the Execution History document's header while nothing is being recorded. Keep the circle.",
+    "maxChars": 20
+  },
+  "panels.doc.history.reverseRangeTitle": "How far back the machine itself can go (full reverse debugging): the rows reach as far as the history holds",
+  "@panels.doc.history.reverseRangeTitle": {
+    "context": "Tooltip of the reverse-range readout in the Execution History document's header."
+  },
+  "panels.doc.history.reverseRange": "Reverse range {range}",
+  "@panels.doc.history.reverseRange": {
+    "context": "Readout in the Execution History document's header while full reverse debugging is on: how far back in time the machine can step.",
+    "maxChars": 24,
+    "placeholders": {
+      "range": "A duration already formatted, e.g. '12.5 s'"
+    }
+  },
+  "panels.doc.history.followNewest": "Follow newest:",
+  "@panels.doc.history.followNewest": {
+    "context": "Label of a switch in the Execution History document's header: scroll to the newest record whenever the machine stops.",
+    "maxChars": 18
+  },
+  "panels.doc.history.followNewestTitle": "Keep the newest record in view after every stop",
+  "@panels.doc.history.followNewestTitle": {
+    "context": "Tooltip of the 'Follow newest' switch in the Execution History document's header."
+  },
+  "panels.doc.history.foldInterrupts": "Fold interrupts:",
+  "@panels.doc.history.foldInterrupts": {
+    "context": "Label of a switch in the Execution History document's header: show each interrupt with its service routine as one collapsible row.",
+    "maxChars": 20
+  },
+  "panels.doc.history.foldInterruptsTitle": "Show each interrupt and its service routine as one row you can open",
+  "@panels.doc.history.foldInterruptsTitle": {
+    "context": "Tooltip of the 'Fold interrupts' switch in the Execution History document's header."
+  },
+  "panels.doc.history.clear": "Clear the execution history",
+  "@panels.doc.history.clear": {
+    "context": "Tooltip of the clear icon button in the Execution History document's header."
+  },
+  "panels.doc.history.export": "Export the history as a text or CSV trace",
+  "@panels.doc.history.export": {
+    "context": "Tooltip of the save icon button in the Execution History document's header."
+  },
+  "panels.doc.history.exportPause": "Pause the machine to export the history",
+  "@panels.doc.history.exportPause": {
+    "context": "Tooltip of the (disabled) save icon button in the Execution History document's header while the machine runs."
+  },
+  "panels.doc.history.filterPlaceholder": "$8000-$80FF, label, or text",
+  "@panels.doc.history.filterPlaceholder": {
+    "context": "Placeholder of the filter box in the Execution History document's header: an address range, a label name or any text. Keep '$8000-$80FF' as it is."
+  },
+  "panels.doc.history.filterLabel": "Filter the execution history",
+  "@panels.doc.history.filterLabel": {
+    "context": "Accessible name and tooltip of the filter box in the Execution History document's header."
+  },
+  "panels.doc.history.filterRows": "{count, plural, one {# row} other {# rows}}",
+  "@panels.doc.history.filterRows": {
+    "context": "Readout inside the filter box of the Execution History document: how many records match the filter.",
+    "maxChars": 12,
+    "placeholders": {
+      "count": "How many rows match"
+    }
+  },
+  "panels.doc.history.frameTitle": "Frame {frame}",
+  "@panels.doc.history.frameTitle": {
+    "context": "Tooltip of the first Execution History row of a new screen frame.",
+    "placeholders": {
+      "frame": "The frame's number since the machine started"
+    }
+  },
+  "panels.doc.history.unfoldService": "Show the service's instructions",
+  "@panels.doc.history.unfoldService": {
+    "context": "Tooltip of the triangle on a folded interrupt row of the Execution History: shows the instructions of the interrupt's service routine."
+  },
+  "panels.doc.history.foldService": "Fold the service into this row",
+  "@panels.doc.history.foldService": {
+    "context": "Tooltip of the triangle on an opened interrupt row of the Execution History: hides the service routine's instructions again."
+  },
+  "panels.doc.history.notTaken": "not taken",
+  "@panels.doc.history.notTaken": {
+    "context": "Tooltip of the flow column of an Execution History row whose conditional jump, call or return did not branch."
+  },
+  "panels.doc.history.menu.goToSource": "Go to source",
+  "@panels.doc.history.menu.goToSource": {
+    "context": "Context-menu item of an Execution History row: opens the source line the instruction came from."
+  },
+  "panels.doc.history.menu.showInDisassembly": "Show in disassembly",
+  "@panels.doc.history.menu.showInDisassembly": {
+    "context": "Context-menu item of an Execution History row: shows the instruction's address in the disassembly."
+  },
+  "panels.doc.history.menu.showInMemory": "Show in memory",
+  "@panels.doc.history.menu.showInMemory": {
+    "context": "Context-menu item of an Execution History row: shows the instruction's address in the memory view."
+  },
+  "panels.doc.history.menu.copyRow": "Copy row",
+  "@panels.doc.history.menu.copyRow": {
+    "context": "Context-menu item of an Execution History row: copies the row as text."
+  },
+  "panels.doc.history.menu.copyRows": "Copy rows as text (to the newest)",
+  "@panels.doc.history.menu.copyRows": {
+    "context": "Context-menu item of an Execution History row: copies this row and every newer one as text."
+  },
+  "panels.doc.history.menu.exportRows": "Export rows from here to the newest...",
+  "@panels.doc.history.menu.exportRows": {
+    "context": "Context-menu item of an Execution History row: saves this row and every newer one into a trace file."
+  },
+  "panels.doc.history.menu.setBreakpoint": "Set breakpoint here",
+  "@panels.doc.history.menu.setBreakpoint": {
+    "context": "Context-menu item of an Execution History row: sets a breakpoint at the instruction's address."
+  },
+  "panels.doc.history.detail.step": "Step {step}",
+  "@panels.doc.history.detail.step": {
+    "context": "Title of the detail pane of the Execution History for a selected separator row (interrupt, DMA): which step back it is.",
+    "placeholders": {
+      "step": "The step's offset from the newest, e.g. '−12'; never translated"
+    }
+  },
+  "panels.doc.history.detail.stepAt": "Step {step} at {address}",
+  "@panels.doc.history.detail.stepAt": {
+    "context": "Title of the detail pane of the Execution History for a selected instruction.",
+    "placeholders": {
+      "step": "The step's offset from the newest, e.g. '−12'; never translated",
+      "address": "The instruction's address, e.g. '$8000'; never translated"
+    }
+  },
+  "panels.doc.history.detail.register": "Reg",
+  "@panels.doc.history.detail.register": {
+    "context": "Narrow column header in the Execution History's detail pane: the register's name (AF, BC, ...). Short for 'register'.",
+    "maxChars": 5
+  },
+  "panels.doc.history.detail.before": "Before",
+  "@panels.doc.history.detail.before": {
+    "context": "Column header in the Execution History's detail pane: the register values before the instruction ran.",
+    "maxChars": 6
+  },
+  "panels.doc.history.detail.after": "After",
+  "@panels.doc.history.detail.after": {
+    "context": "Column header in the Execution History's detail pane: the register values after the instruction ran.",
+    "maxChars": 11
+  },
+  "panels.doc.history.detail.afterNow": "After (now)",
+  "@panels.doc.history.detail.afterNow": {
+    "context": "Column header in the Execution History's detail pane for the newest record: the register values after it are the current ones.",
+    "maxChars": 11
+  },
+  "panels.doc.history.detail.when": "When",
+  "@panels.doc.history.detail.when": {
+    "context": "Section header in the Execution History's detail pane: the frame and time of the record."
+  },
+  "panels.doc.history.detail.frame": "Frame",
+  "@panels.doc.history.detail.frame": {
+    "context": "Label in the Execution History's detail pane: the screen frame number of the record.",
+    "maxChars": 7
+  },
+  "panels.doc.history.detail.held": "Held",
+  "@panels.doc.history.detail.held": {
+    "context": "Label in the Execution History's detail pane for a DMA hold record: how long the DMA held the CPU.",
+    "maxChars": 7
+  },
+  "panels.doc.history.detail.repeats": "Repeats",
+  "@panels.doc.history.detail.repeats": {
+    "context": "Label in the Execution History's detail pane: how many times the instruction repeated in a row (e.g. LDIR).",
+    "maxChars": 7
+  },
+  "panels.doc.history.detail.memoryMap": "Memory map",
+  "@panels.doc.history.detail.memoryMap": {
+    "context": "Section header in the Execution History's detail pane: the memory paging at the time of the instruction."
+  },
+  "panels.doc.traceExport.noColumns": "No columns given",
+  "@panels.doc.traceExport.noColumns": {
+    "context": "Error of the history-export and history commands when their -columns option lists no column."
+  },
+  "panels.doc.traceExport.unknownColumn": "Unknown column ''{id}''; use default, viewer, all, or some of {columns}",
+  "@panels.doc.traceExport.unknownColumn": {
+    "context": "Error of the history-export and history commands when their -columns option names a column that does not exist. 'default', 'viewer' and 'all' are option values; keep them.",
+    "placeholders": {
+      "id": "The column name the user typed; never translated",
+      "columns": "The comma-separated list of valid column ids; never translated"
+    }
+  },
+  "panels.doc.basic.corrupted": "*** BASIC code corrupted or partially loaded ***",
+  "@panels.doc.basic.corrupted": {
+    "context": "Line written at the end of a BASIC listing (BASIC Listing panel, tape viewer) when the program's bytes stop making sense. Keep the asterisks."
+  }
+}

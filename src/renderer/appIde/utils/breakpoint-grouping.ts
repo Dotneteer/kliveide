@@ -12,6 +12,7 @@ import {
 } from "@common/utils/breakpoint-scope";
 import { isLogpoint } from "@common/utils/breakpoint-filters";
 import { logGroupOf } from "@common/utils/breakpoint-condition/logpoint-template";
+import { labelRecord } from "@common/i18n/labels";
 
 /**
  * How the Breakpoints panel orders and groups its rows, with no React in it.
@@ -49,17 +50,20 @@ export const BREAKPOINT_GROUP_ORDER: readonly BreakpointGroup[] = [
   "sprite"
 ];
 
-/** What a group header calls itself. Sentence case, as the dialog's options are. */
-export const BREAKPOINT_GROUP_TITLES: Record<BreakpointGroup, string> = {
-  exec: "Execution",
-  memRead: "Memory read",
-  memWrite: "Memory write",
-  ioRead: "I/O read",
-  ioWrite: "I/O write",
-  nextRegWrite: "NextReg write",
-  copper: "Copper",
-  sprite: "Sprite attribute"
-};
+/**
+ * What a group header calls itself, in the display language (each read translates). Sentence
+ * case, as the dialog's options are.
+ */
+export const BREAKPOINT_GROUP_TITLES: Readonly<Record<BreakpointGroup, string>> = labelRecord({
+  exec: "debug.bpGroup.exec",
+  memRead: "debug.bpGroup.memRead",
+  memWrite: "debug.bpGroup.memWrite",
+  ioRead: "debug.bpGroup.ioRead",
+  ioWrite: "debug.bpGroup.ioWrite",
+  nextRegWrite: "debug.bpGroup.nextRegWrite",
+  copper: "debug.bpGroup.copper",
+  sprite: "debug.bpGroup.sprite"
+});
 
 /**
  * The type glyph for each group, the same one the row's own indicator shows.

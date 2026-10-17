@@ -8,7 +8,6 @@ import { dialog, type BrowserWindow } from "electron";
 
 import type { AppState } from "@state/AppState";
 import {
-  DEBUG_RECORDING_FALLBACK_HINT,
   debugRecordingLoadCommandText,
   debugRecordingSaveCommandText
 } from "@common/debugRecording/debugRecordingTypes";
@@ -77,12 +76,13 @@ export async function pickAndOpenDebugRecording(window: BrowserWindow): Promise<
  */
 export async function openDebugRecordingFile(window: BrowserWindow, filename: string, start = false): Promise<void> {
   let done = await getIdeApi().executeCommand(debugRecordingLoadCommandText(filename, { start }));
-  const message = done?.finalMessage ?? "";
-  if (!done?.success && message.endsWith(DEBUG_RECORDING_FALLBACK_HINT)) {
+  // --- A recording that can open only its end state says why in the command's `value`
+  const refusal = (done?.value as { fallbackRefusal?: unknown } | undefined)?.fallbackRefusal;
+  if (!done?.success && typeof refusal === "string") {
     const answer = await dialog.showMessageBox(window, {
       type: "warning",
       title: t("messages.debugRecording.title"),
-      message: message.slice(0, -DEBUG_RECORDING_FALLBACK_HINT.length).trim(),
+      message: refusal,
       detail: t("messages.debugRecording.offerEndState"),
       buttons: [t("common.button.openEndState"), t("common.button.cancel")],
       defaultId: 1,

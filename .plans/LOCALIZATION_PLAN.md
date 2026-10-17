@@ -4,7 +4,7 @@ Goal: every user-facing literal in Klive IDE lives in one folder of per-language
 English carries translator context, AI translates English into the other languages, and the app
 shows text in the language chosen in Settings. **English must keep working after every step.**
 
-Status: **steps 1–10 done** (see the "as built" notes under §3): Spanish, Brazilian and European Portuguese, German and Hungarian are translated and enabled. Steps 11–13 open; rerun step 10 after each.
+Status: **all steps done (1–13)**; see the "as built" notes under §3. 5817 English keys, translated into Spanish, Brazilian and European Portuguese, German and Hungarian (100 %, AI-translated, awaiting native-speaker review). New UI text follows `.ai/i18n-guide.md`; each later change reruns step 10 for its new keys.
 
 ---
 
@@ -389,6 +389,71 @@ app is byte-for-byte English.
 - **Verified in the running app**, each language launched in turn: the native menu is translated,
   the Language page shows 100 % and the button, and a DOM scan found no clipped text in the IDE
   window or the Settings dialog.
+
+### Steps 11–13 — as built
+
+- **4505 more English keys (5800 in all)**, extracted by fifteen agents on disjoint files in three
+  waves — panels (step 11), commands (step 12), compiler messages (step 13), then two cleanup waves
+  for the shared `src/common` modules the first wave reported but could not reach. New namespace
+  files: `panels-next`, `panels-docs`, `panels-media`, `panels-graphics`, `panels-side`, `emu`,
+  `hardware`, `commands`, `commands-debug`, `commands-media`, `compiler`, `compiler-basic`,
+  `debug-common`, `graphics-common`, `media-common`.
+- **English catalogs are generated too**: `source.generated.ts` imports every `en/<ns>.json`
+  (`npm run i18n:keys`), so a new namespace needs no code edit, and each agent could own its
+  namespace file and run its tests at once. `i18n:check` accepts an `i18n-dynamic: <prefix>`
+  comment for code that builds keys at run time (compiler codes).
+- **Step 11 (panels)**: headers, empty states, tooltips, menus, help, column headers that are
+  plain words; register/flag/field names, hardware and layer names (ULA, Layer 2, Tilemap,
+  Copper), key-cap legends, hex and T-states stay English. **Formatting audit (§4)**: every bare
+  `toLocaleString()` (OS locale) is gone — human figures use `uiLocale()` (the display language's
+  locale) or ICU `{n, number}`/plurals, invariant data `"en-US"`. File models that word their text
+  at load (`tapeView`, `z88SnapshotView`, …) re-parse on a switch because `GenericFilePanel` lists `t`
+  in its loader's dependencies; registries and computed diagnostics use getters
+  (`withTexts`, `withTranslatedTexts`, `labelRecord`) so values computed before a switch still read in
+  the new language.
+- **Step 12 (commands)**: every `description` is a getter (`get description() { return t(...) }`);
+  ids, aliases, options and echoed syntax stay English. `usage` lines that are pure syntax stay
+  English; the explanatory lines inside `usage` (17, e.g. bp-set's "-once: a one-shot breakpoint…")
+  are translated — `usage` became a getter there too (`commands-usage.json`). Result, error and
+  validation messages, the help command and the argument parser are translated. Machine-parsed output (CSV,
+  JSON, `$W:` markers, the CLI) stays as it was.
+- **Logic that matched English text was replaced by codes/flags** (the reason this step had to come
+  before more languages): `state-load` → `value.needsConfirmation`; debug-recording fallback →
+  `value.fallbackRefusal`; Detect `problemCode`; the RZX guard and recording guard `kind`; fork
+  confirmation `ForkAction` ids; RZX interrupt `RzxInterruptReason` codes; snapshot
+  `isInsidePrefixRefusal()`; tape/Next-layer/sprite/tilemap fields by id instead of English labels;
+  Select Machine's media chips from `mediaChips`; `BankBrowser` `itemKind` with whole messages.
+- **Step 13 (compiler messages)**: the Z80/6510 assembler catalog (172 codes) and the KSX catalog
+  (27) moved to `compiler.json` as ICU, converted mechanically and verified to format identically
+  (`assemblerMessage`, `ksxErrorMessage`); Klive BASIC's 192 diagnostics (120 codes) to
+  `compiler-basic.json`. **Codes stay visible** ("Z0201: …") in the Output pane and editor markers.
+  The compiler worker sets its own translator from `state.uiLanguage`, so background compiles word
+  their errors in the display language. All 5239 assembler/KSX and 3713 BASIC tests (corpus
+  included) pass unchanged — English is byte-for-byte.
+- **Still English on purpose**: NextReg descriptions (hardware reference), sysvar descriptions,
+  key-cap names, machine/chip/peripheral names, the joystick-interface names in snapshot headers,
+  text written into files (exported source headers, `.defb` comments), `usage` lines, trace and log
+  output, `#error`/`#warning` program text, and compiler-bug internals (E599 detail).
+- A few English wordings were corrected on the way ("1 call too deep", "0 breakpoints removed",
+  "1 cell uses it", "Frame clock", "Klive project", "rolled back to the latest point"); "(s)"
+  plurals became ICU plurals except in BASIC diagnostics, where English stays byte-identical and the
+  context tells translators to inflect properly.
+
+### Step 10 rerun — after steps 11–13
+
+- **4522 new keys translated into all five languages** (each 5817/5817, 0 outdated, no `maxChars`
+  or variant warnings) by one translator agent per language — one per language, never two, because
+  two merges into the same language race on its `.source.json`.
+- Their reports found English defects and a tooling bug, all fixed: assembler typos (Z0206 "cen",
+  Z0313 "less then", Z0321/Z0328 "exceends", Z0410 "overflew"), KSX K014's missing token, a missing
+  parenthesis, a doubled "not supported", and **Z0322**, which printed the OS error in place of the
+  file name (the call now passes both). `translations.generated.ts` imported hyphenated namespaces
+  as invalid identifiers (`de_panels-side`); the generator now sanitises them, with a test.
+- Prose lines inside command `usage` (17) were added to the scope and translated (see step 12).
+- The glossary has 145 terms; "definições" left the pt-PT-only list (it is also pt-BR).
+- Verified: unit tier 877 files / 19,511 tests and e2e tiers 375 files / 7,461 tests green; in the
+  running app, in each language, the command help, the Debug side bar and the IDE chrome are
+  translated with no clipped text.
 
 ---
 

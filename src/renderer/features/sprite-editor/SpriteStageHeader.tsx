@@ -1,3 +1,4 @@
+import { useT } from "@common/i18n/useT";
 import styles from "./SpriteEditor.module.scss";
 import { memo } from "react";
 import { SmallIconButton } from "@renderer/controls/IconButton";
@@ -38,11 +39,13 @@ export const SpriteStageHeader = memo(
     onToggleGrid,
     onToggleOnionSkin,
     onToggleTransparency
-  }: Props) => (
+  }: Props) => {
+    const t = useT();
+    return (
     <div className={styles.stageHeader}>
       <SmallIconButton
         iconName="spr-zoom-out"
-        title={"Zoom out (-)"}
+        title={t("panels.spriteEditor.zoomOut")}
         enable={canZoomOut}
         clicked={onZoomOut}
       />
@@ -53,20 +56,20 @@ export const SpriteStageHeader = memo(
       <span className={styles.zoomLabel}>{cellSize}&times;</span>
       <SmallIconButton
         iconName="spr-zoom-in"
-        title={"Zoom in (+)"}
+        title={t("panels.spriteEditor.zoomIn")}
         enable={canZoomIn}
         clicked={onZoomIn}
       />
       <SmallIconButton
         iconName="spr-fit"
-        title={"Fit to pane (0)"}
+        title={t("panels.spriteEditor.fit")}
         selected={fitToPane}
         clicked={onFit}
       />
       <ToolbarSeparator small={true} />
       <SmallIconButton
         iconName="spr-grid"
-        title={`${showGrid ? "Hide" : "Show"} pixel grid`}
+        title={showGrid ? t("panels.spriteEditor.hideGrid") : t("panels.spriteEditor.showGrid")}
         selected={showGrid}
         clicked={onToggleGrid}
       />
@@ -74,8 +77,10 @@ export const SpriteStageHeader = memo(
         iconName="spr-onion"
         title={
           hasOnionSource
-            ? `${showOnionSkin ? "Hide" : "Show"} onion skin\nGhosts the previous sprite through the transparent pixels`
-            : "Onion skin\nNo previous sprite to ghost"
+            ? showOnionSkin
+              ? t("panels.spriteEditor.hideOnion")
+              : t("panels.spriteEditor.showOnion")
+            : t("panels.spriteEditor.noOnion")
         }
         selected={showOnionSkin}
         enable={hasOnionSource}
@@ -83,10 +88,11 @@ export const SpriteStageHeader = memo(
       />
       <SmallIconButton
         iconName="spr-checker"
-        title={`${showTransparency ? "Hide" : "Show"} transparency color`}
+        title={showTransparency ? t("panels.spriteEditor.hideTransparency") : t("panels.spriteEditor.showTransparency")}
         selected={showTransparency}
         clicked={onToggleTransparency}
       />
     </div>
-  )
+    );
+  }
 );

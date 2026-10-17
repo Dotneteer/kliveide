@@ -17,6 +17,7 @@ import {
   writeMessage
 } from "../services/ide-commands";
 import { spectrumSnapshotProjectGuard } from "./SpectrumSnapshotCommand";
+import { t } from "@common/i18n/i18n";
 
 /*
  * The RZX commands (`.plans/RZX_PLAN.md` §1.6, §4.6):
@@ -48,7 +49,7 @@ async function loadRecording(
   try {
     bytes = await context.mainApi.readBinaryFile(file);
   } catch (err) {
-    return commandError(`Could not read ${file}: ${messageOf(err)}`);
+    return commandError(t("commands.rzx.readFailed", { file, error: messageOf(err) }));
   }
   let rzx: RzxFile;
   let machineId: string | undefined;
@@ -56,32 +57,32 @@ async function loadRecording(
     rzx = parseRzxFile(bytes);
     machineId = mapRzxToKlive(rzx, segment ?? 0).mapping.machineId;
   } catch (err) {
-    return commandError(`${file} cannot be played: ${messageOf(err)}`);
+    return commandError(t("commands.rzx.cannotPlay", { file, error: messageOf(err) }));
   }
   const state = context.store.getState();
-  const guard = spectrumSnapshotProjectGuard(state, machineId);
-  if (guard) return commandError(guard.replace(/snapshot/g, "recording"));
+  const guard = spectrumSnapshotProjectGuard(state, machineId, "recording");
+  if (guard) return commandError(guard);
   return { bytes, rzx, keepModel: !!state.project?.isKliveProject };
 }
 
 function validateFile(context: IdeCommandContext, file: string | undefined): ValidationMessage[] {
   const messages: ValidationMessage[] = [];
   if (!file?.trim()) {
-    messages.push(validationError("The recording file path cannot be empty."));
+    messages.push(validationError(t("commands.rzx.emptyPath")));
   } else if (!isRzxPath(file)) {
-    messages.push(validationError("The file must be an .rzx recording."));
+    messages.push(validationError(t("commands.rzx.wrongType")));
   }
-  const guard = spectrumSnapshotProjectGuard(context.store.getState());
-  if (guard) messages.push(validationError(guard.replace(/snapshot/g, "recording")));
+  const guard = spectrumSnapshotProjectGuard(context.store.getState(), undefined, "recording");
+  if (guard) messages.push(validationError(guard));
   return messages;
 }
 
 function reportPlay(context: IdeCommandContext, result: RzxPlayResult): void {
   if (result.rebuilt) {
-    writeMessage(context.output, `Machine switched to the ${result.machineName}.`, "cyan");
+    writeMessage(context.output, t("commands.rzx.machineSwitched", { machine: result.machineName }), "cyan");
   }
   for (const warning of result.warnings) {
-    writeMessage(context.output, `Warning: ${warning}`, "yellow");
+    writeMessage(context.output, t("commands.rzx.warning", { warning }), "yellow");
   }
 }
 
@@ -91,8 +92,9 @@ export type RzxPlayCommandArgs = RzxFileArgs & { "-d"?: boolean; "-s"?: number }
 
 export class RzxPlayCommand extends IdeCommandBase<RzxPlayCommandArgs> {
   readonly id = "zx-rzx";
-  readonly description =
-    "Plays an RZX input recording on the ZX Spectrum (-d: under the debugger, stopping at its first instruction; -s n: from segment n)";
+  get description() {
+    return t("commands.rzx.play.description");
+  }
   readonly aliases = ["rzx"];
   readonly usage = "zx-rzx <rzx-file> [-d] [-s <segment>]";
 
@@ -105,7 +107,7 @@ export class RzxPlayCommand extends IdeCommandBase<RzxPlayCommandArgs> {
   async validateCommandArgs(context: IdeCommandContext, args: RzxPlayCommandArgs): Promise<ValidationMessage[]> {
     const messages = validateFile(context, args.file);
     if (args["-s"] !== undefined && (!Number.isInteger(args["-s"]) || args["-s"] < 1)) {
-      messages.push(validationError("The segment number starts at 1."));
+      messages.push(validationError(t("commands.rzx.segmentFromOne")));
     }
     return messages;
   }
@@ -122,12 +124,18 @@ export class RzxPlayCommand extends IdeCommandBase<RzxPlayCommandArgs> {
         segment
       });
     } catch (err) {
-      return commandError(`Could not play ${file}: ${messageOf(err)}`);
+      return commandError(t("commands.rzx.playFailed", { file, error: messageOf(err) }));
     }
     reportPlay(context, result);
-    const how = args["-d"] ? `under the debugger, stopped at PC $${toHexa4(result.pc)}` : "playing";
+    const played = {
+      file,
+      frames: result.frames,
+      creator: result.creator,
+      machine: result.machineName,
+      pc: `$${toHexa4(result.pc)}`
+    };
     return commandSuccessWith(
-      `RZX recording ${file} (${result.frames} frames, ${result.creator}) loaded on the ${result.machineName}, ${how}.`
+      args["-d"] ? t("commands.rzx.loadedDebug", played) : t("commands.rzx.loadedPlaying", played)
     );
   }
 }
@@ -136,26 +144,27 @@ export class RzxPlayCommand extends IdeCommandBase<RzxPlayCommandArgs> {
 
 export class RzxRecordCommand extends IdeCommandBase {
   readonly id = "zx-rzx-record";
-  readonly description =
-    "Starts recording an RZX file from the ZX Spectrum's current state (a running or paused machine)";
+  get description() {
+    return t("commands.rzx.record.description");
+  }
   readonly usage = "zx-rzx-record";
 
   async validateCommandArgs(context: IdeCommandContext): Promise<ValidationMessage[]> {
     const machineId = context.store.getState()?.emulatorState?.machineId;
     return !machineId || !SPECTRUM_MACHINES.includes(machineId)
-      ? [validationError("Only a ZX Spectrum 48K, 128K or +2E/+3E can record an RZX file.")]
+      ? [validationError(t("commands.rzx.recordMachines"))]
       : [];
   }
 
   async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
     try {
       const result = await context.emuApi.startRzxRecording(await creatorOf(context));
+      const started = { machine: result.machineName, pc: `$${toHexa4(result.pc)}` };
       return commandSuccessWith(
-        `RZX recording started on the ${result.machineName} at PC $${toHexa4(result.pc)}` +
-          (result.tookOverPlayback ? ", taking over the playback." : ".")
+        result.tookOverPlayback ? t("commands.rzx.recordingTookOver", started) : t("commands.rzx.recordingStarted", started)
       );
     } catch (err) {
-      return commandError(`Could not start recording: ${messageOf(err)}`);
+      return commandError(t("commands.rzx.recordFailed", { error: messageOf(err) }));
     }
   }
 }
@@ -166,7 +175,9 @@ export type RzxStopCommandArgs = RzxFileArgs & { "-f"?: boolean };
 
 export class RzxStopCommand extends IdeCommandBase<RzxStopCommandArgs> {
   readonly id = "zx-rzx-stop";
-  readonly description = "Stops the RZX recording, finalises it and saves it (-f overwrites)";
+  get description() {
+    return t("commands.rzx.stop.description");
+  }
   readonly usage = "zx-rzx-stop <rzx-file> [-f]";
 
   readonly argumentInfo: CommandArgumentInfo = {
@@ -175,26 +186,26 @@ export class RzxStopCommand extends IdeCommandBase<RzxStopCommandArgs> {
   };
 
   async validateCommandArgs(_context: IdeCommandContext, args: RzxStopCommandArgs): Promise<ValidationMessage[]> {
-    return isRzxPath(args.file) ? [] : [validationError("The file to save must be an .rzx file.")];
+    return isRzxPath(args.file) ? [] : [validationError(t("commands.rzx.saveWrongType"))];
   }
 
   async execute(context: IdeCommandContext, args: RzxStopCommandArgs): Promise<IdeCommandResult> {
     const file = args.file.trim();
     if (!args["-f"] && (await fileExists(context, file))) {
-      return commandError(`${file} already exists; use -f to replace it.`);
+      return commandError(t("commands.rzx.fileExists", { file }));
     }
     let result: Awaited<ReturnType<typeof context.emuApi.stopRzxRecording>>;
     try {
       result = await context.emuApi.stopRzxRecording();
     } catch (err) {
-      return commandError(`Could not stop the recording: ${messageOf(err)}`);
+      return commandError(t("commands.rzx.stopFailed", { error: messageOf(err) }));
     }
     try {
       await context.mainApi.saveBinaryFile(file, result.bytes);
     } catch (err) {
-      return commandError(`Could not write ${file}: ${messageOf(err)}`);
+      return commandError(t("commands.rzx.writeFailed", { file, error: messageOf(err) }));
     }
-    return commandSuccessWith(`RZX recording saved to ${file} (${result.frames} frames).`, {
+    return commandSuccessWith(t("commands.rzx.saved", { file, frames: result.frames }), {
       frames: result.frames
     });
   }
@@ -206,8 +217,9 @@ export type RzxRollbackCommandArgs = { back?: number };
 
 export class RzxRollbackCommand extends IdeCommandBase<RzxRollbackCommandArgs> {
   readonly id = "zx-rzx-rollback";
-  readonly description =
-    "Rolls the RZX recording back to its latest rollback point (n: the n-th latest); the machine is paused there";
+  get description() {
+    return t("commands.rzx.rollback.description");
+  }
   readonly usage = "zx-rzx-rollback [n]";
 
   readonly argumentInfo: CommandArgumentInfo = {
@@ -217,26 +229,26 @@ export class RzxRollbackCommand extends IdeCommandBase<RzxRollbackCommandArgs> {
   async execute(context: IdeCommandContext, args: RzxRollbackCommandArgs): Promise<IdeCommandResult> {
     try {
       const result = await context.emuApi.rollbackRzxRecording(args.back ?? 1);
-      return commandSuccessWith(
-        `Rolled back to frame ${result.frame}; ${result.points} rollback point(s) left. Resume to record on.`
-      );
+      return commandSuccessWith(t("commands.rzx.rolledBack", { frame: result.frame, points: result.points }));
     } catch (err) {
-      return commandError(`Could not roll back: ${messageOf(err)}`);
+      return commandError(t("commands.rzx.rollbackFailed", { error: messageOf(err) }));
     }
   }
 }
 
 export class RzxRollbackPointCommand extends IdeCommandBase {
   readonly id = "zx-rzx-point";
-  readonly description = "Inserts a rollback point into the RZX recording at the next frame end";
+  get description() {
+    return t("commands.rzx.point.description");
+  }
   readonly usage = "zx-rzx-point";
 
   async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
     try {
       const result = await context.emuApi.insertRzxRollbackPoint();
-      return commandSuccessWith(`A rollback point is set at the next frame end (frame ${result.frame + 1}).`);
+      return commandSuccessWith(t("commands.rzx.pointSet", { frame: result.frame + 1 }));
     } catch (err) {
-      return commandError(`Could not insert a rollback point: ${messageOf(err)}`);
+      return commandError(t("commands.rzx.pointFailed", { error: messageOf(err) }));
     }
   }
 }
@@ -247,8 +259,9 @@ export type RzxVideoCommandArgs = RzxFileArgs & { "-t"?: boolean };
 
 export class RzxVideoCommand extends IdeCommandBase<RzxVideoCommandArgs> {
   readonly id = "zx-rzx-video";
-  readonly description =
-    "Renders an RZX recording to video with the screen recorder's settings, as fast as possible (-t: in real time)";
+  get description() {
+    return t("commands.rzx.video.description");
+  }
   readonly usage = "zx-rzx-video <rzx-file> [-t]";
 
   readonly argumentInfo: CommandArgumentInfo = {
@@ -259,7 +272,7 @@ export class RzxVideoCommand extends IdeCommandBase<RzxVideoCommandArgs> {
   async validateCommandArgs(context: IdeCommandContext, args: RzxVideoCommandArgs): Promise<ValidationMessage[]> {
     const messages = validateFile(context, args.file);
     if (!context.store.getState()?.emulatorState?.screenRecordingAvailable) {
-      messages.push(validationError("Screen recording is not available (FFmpeg was not found)."));
+      messages.push(validationError(t("commands.rzx.noScreenRecording")));
     }
     return messages;
   }
@@ -275,12 +288,12 @@ export class RzxVideoCommand extends IdeCommandBase<RzxVideoCommandArgs> {
         unthrottled: !args["-t"]
       });
     } catch (err) {
-      return commandError(`Could not render ${file}: ${messageOf(err)}`);
+      return commandError(t("commands.rzx.renderFailed", { file, error: messageOf(err) }));
     }
     reportPlay(context, result);
+    const rendering = { file, frames: result.frames };
     return commandSuccessWith(
-      `Rendering ${file} (${result.frames} frames) to video${args["-t"] ? " in real time" : ", as fast as the emulator can"}; ` +
-        "the video stops at the recording's end."
+      args["-t"] ? t("commands.rzx.renderingRealTime", rendering) : t("commands.rzx.renderingFast", rendering)
     );
   }
 }

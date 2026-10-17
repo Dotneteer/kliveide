@@ -6,6 +6,7 @@ import { Panel } from "@renderer/controls/layout/Panel";
 import { EmptyState } from "@renderer/controls/data";
 import { AppServices } from "@renderer/abstractions/AppServices";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
+import { useT } from "@common/i18n/useT";
 
 /**
  * The one panel behind every file viewer and file editor.
@@ -74,6 +75,11 @@ export function GenericFilePanel<TFile, TState extends GenericFileViewState>({
   const currentViewStateRef = useRef<TState>(viewState);
   const documentHubService = useDocumentHubService();
   const appServices = useAppServices();
+  /*
+   * The loaders build their text when they parse (the tape viewer's block names, a snapshot's
+   * error), so a language switch re-runs the loader below: `t` changes identity with the language.
+   */
+  const t = useT();
 
   const [fileInfo, setFileInfo] = useState<TFile>();
   const [fileError, setFileError] = useState<string>();
@@ -109,7 +115,7 @@ export function GenericFilePanel<TFile, TState extends GenericFileViewState>({
     let cancelled = false;
     const node = document?.node;
     if (!node) {
-      setFileError("This document has no contents to show.");
+      setFileError(t("panels.helpers.fileError.noContents"));
       setValid(false);
       setInitialized(true);
       return undefined;
@@ -119,7 +125,11 @@ export function GenericFilePanel<TFile, TState extends GenericFileViewState>({
       .then((loaded) => {
         if (cancelled) return;
         if (loaded?.contents === undefined) {
-          setFileError(`${node.name ?? "The file"} could not be read.`);
+          setFileError(
+            t("panels.helpers.fileError.cannotRead", {
+              name: node.name ?? t("panels.helpers.fileError.unknownFile")
+            })
+          );
           setValid(false);
           setInitialized(true);
           return;
@@ -129,7 +139,10 @@ export function GenericFilePanel<TFile, TState extends GenericFileViewState>({
       .catch((err) => {
         if (cancelled) return;
         setFileError(
-          `${node.name ?? "The file"} could not be read: ${err instanceof Error ? err.message : String(err)}`
+          t("panels.helpers.fileError.cannotReadReason", {
+            name: node.name ?? t("panels.helpers.fileError.unknownFile"),
+            reason: err instanceof Error ? err.message : String(err)
+          })
         );
         setValid(false);
         setInitialized(true);
@@ -137,6 +150,7 @@ export function GenericFilePanel<TFile, TState extends GenericFileViewState>({
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `t` only words the error; no re-read
   }, [contents, document]);
 
   // Reload when the document *or its bytes* change. `contents` was missing from the dependencies,
@@ -156,7 +170,7 @@ export function GenericFilePanel<TFile, TState extends GenericFileViewState>({
     } finally {
       setInitialized(true);
     }
-  }, [document, effectiveContents, fileLoader]);
+  }, [document, effectiveContents, fileLoader, t]);
 
   useEffect(() => {
     if (document.id) {
@@ -249,7 +263,7 @@ export function GenericFilePanel<TFile, TState extends GenericFileViewState>({
           <EmptyState
             tone="error"
             motif={false}
-            message={fileError || "This file could not be read."}
+            message={fileError || t("panels.helpers.fileError.generic")}
           />
         )
       )}

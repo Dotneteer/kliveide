@@ -1,3 +1,4 @@
+import { useT } from "@common/i18n/useT";
 import classnames from "classnames";
 import { useCallback, useMemo, useState } from "react";
 
@@ -34,6 +35,7 @@ const DEFAULT_CELL_SIZE = 40;
 const hex2 = (v: number) => `$${(v & 0xff).toString(16).toUpperCase().padStart(2, "0")}`;
 
 const TileSnapshotPanel = ({ document, contents, viewState }: DocumentProps<TileSnapshotViewState>) => {
+  const t = useT();
   const documentHubService = useDocumentHubService();
   const dispatch = useDispatch();
   const info = viewState?.snapshot;
@@ -65,7 +67,7 @@ const TileSnapshotPanel = ({ document, contents, viewState }: DocumentProps<Tile
   const preview = useMemo(() => Int16Array.from(pixels, (p) => p.index), [pixels]);
 
   if (!info || !bytes || pixels.length !== 64) {
-    return <EmptyState message="This tile snapshot has no contents." />;
+    return <EmptyState message={t("panels.tileSnapshot.empty")} />;
   }
 
   const { title, detail } = tileSnapshotTitle(info);
@@ -74,42 +76,42 @@ const TileSnapshotPanel = ({ document, contents, viewState }: DocumentProps<Tile
   const hovered = hover !== undefined ? pixels[hover] : undefined;
 
   return (
-    <div className={styles.snapshot} aria-label="Tile snapshot">
-      <div className={styles.bar} role="toolbar" aria-label="Read-only snapshot">
-        <span className={styles.readOnlyBadge}>Read-only</span>
+    <div className={styles.snapshot} aria-label={t("panels.tileSnapshot.label")}>
+      <div className={styles.bar} role="toolbar" aria-label={t("panels.tileSnapshot.toolbar")}>
+        <span className={styles.readOnlyBadge}>{t("panels.tileSnapshot.readOnly")}</span>
         <span className={styles.title}>{title}</span>
         <span className={styles.detail} title={detail}>
           {detail}
         </span>
         <span className={styles.spacer} />
         {info.cell && (
-          <span className={styles.segmented} role="group" aria-label="Orientation">
+          <span className={styles.segmented} role="group" aria-label={t("panels.tileSnapshot.orientation")}>
             <button
               type="button"
               className={styles.segment}
               aria-pressed={!look.asShown}
               onClick={() => update({ asShown: false })}
             >
-              As stored
+              {t("panels.tileSnapshot.asStored")}
             </button>
             <button
               type="button"
               className={styles.segment}
               aria-pressed={look.asShown}
-              title="Rotated, then mirrored, as the cell shows it"
+              title={t("panels.tileSnapshot.asShownTitle")}
               onClick={() => update({ asShown: true })}
             >
-              As shown
+              {t("panels.tileSnapshot.asShown")}
             </button>
           </span>
         )}
         <SmallIconButton
           iconName="spr-copy"
-          title="Copy the tile's bytes as .db"
+          title={t("panels.tileSnapshot.copy")}
           enable={true}
           clicked={() => {
             void navigator.clipboard?.writeText(tileSnapshotAsDb(bytes, info));
-            dispatch(setIdeStatusMessageAction(`Tile ${info.tile} copied as .db`, true));
+            dispatch(setIdeStatusMessageAction(t("panels.tileSnapshot.copied", { tile: info.tile }), true));
           }}
         />
       </div>
@@ -117,28 +119,28 @@ const TileSnapshotPanel = ({ document, contents, viewState }: DocumentProps<Tile
       <div className={styles.stageHeader}>
         <SmallIconButton
           iconName="spr-zoom-out"
-          title="Zoom out"
+          title={t("panels.tileSnapshot.zoomOut")}
           enable={zoomIndex > 0}
           clicked={() => update({ cellSize: TILE_CELL_SIZES[Math.max(0, zoomIndex - 1)] })}
         />
         <span className={styles.zoomLabel}>{size}×</span>
         <SmallIconButton
           iconName="spr-zoom-in"
-          title="Zoom in"
+          title={t("panels.tileSnapshot.zoomIn")}
           enable={zoomIndex < TILE_CELL_SIZES.length - 1}
           clicked={() => update({ cellSize: TILE_CELL_SIZES[Math.min(TILE_CELL_SIZES.length - 1, zoomIndex + 1)] })}
         />
         <span className={styles.separator} />
         <SmallIconButton
           iconName="spr-grid"
-          title="Show grid"
+          title={t("panels.tileSnapshot.showGrid")}
           enable={true}
           selected={look.showGrid}
           clicked={() => update({ showGrid: !look.showGrid })}
         />
         <SmallIconButton
           iconName="spr-checker"
-          title="Checkerboard behind transparent pixels"
+          title={t("panels.tileSnapshot.checker")}
           enable={true}
           selected={look.checker}
           clicked={() => update({ checker: !look.checker })}
@@ -154,7 +156,9 @@ const TileSnapshotPanel = ({ document, contents, viewState }: DocumentProps<Tile
             width={size * 8}
             height={size * 8}
             role="img"
-            aria-label={`Tile ${info.tile}, ${look.asShown ? "as shown" : "as stored"}`}
+            aria-label={t(look.asShown ? "panels.tileSnapshot.gridShown" : "panels.tileSnapshot.gridStored", {
+              tile: info.tile
+            })}
             onMouseLeave={() => setHover(undefined)}
           >
             <g data-role="pixels">
@@ -191,25 +195,31 @@ const TileSnapshotPanel = ({ document, contents, viewState }: DocumentProps<Tile
               x {hover % 8}, y {Math.floor(hover / 8)}
             </span>
             <span>
-              {info.textMode ? "bit" : "nibble"} {info.textMode ? hovered.value : hovered.value.toString(16).toUpperCase()}
+              {info.textMode
+                ? t("panels.tileSnapshot.bit", { value: hovered.value })
+                : t("panels.tileSnapshot.nibble", { value: hovered.value.toString(16).toUpperCase() })}
             </span>
             <span>
               {isTransparent(hovered)
                 ? info.textMode
-                  ? "transparent (colour = $14)"
-                  : `transparent (= $4C ${info.transparencyIndex.toString(16).toUpperCase()})`
-                : `index ${hex2(hovered.index)}`}
+                  ? t("panels.tileSnapshot.transparentText")
+                  : t("panels.tileSnapshot.transparent", {
+                      index: info.transparencyIndex.toString(16).toUpperCase()
+                    })
+                : t("panels.tileSnapshot.index", { index: hex2(hovered.index) })}
             </span>
           </>
         ) : (
           <span className={styles.muted}>x –, y –</span>
         )}
         <span className={styles.spacer} />
-        <span>Tile {info.tile} · 8×8 · {info.textMode ? "1bpp" : "4bpp"}</span>
+        <span>{t("panels.tileSnapshot.footer", { tile: info.tile, depth: info.textMode ? "1bpp" : "4bpp" })}</span>
       </div>
 
       <div className={styles.inspector}>
-        <div className={styles.sectionHeader}>Tilemap palette {info.paletteBank + 1} (as taken)</div>
+        <div className={styles.sectionHeader}>
+          {t("panels.tileSnapshot.palette", { palette: info.paletteBank + 1 })}
+        </div>
         <div className={styles.paletteBody}>
           <NextPaletteViewer
             palette={codes}
@@ -218,7 +228,7 @@ const TileSnapshotPanel = ({ document, contents, viewState }: DocumentProps<Tile
             selectedIndex={hovered && !isTransparent(hovered) ? hovered.index : undefined}
           />
         </div>
-        <div className={styles.sectionHeader}>Preview</div>
+        <div className={styles.sectionHeader}>{t("panels.tileSnapshot.preview")}</div>
         <div className={styles.previews}>
           {[1, 2, 4].map((z) => (
             <figure key={z} className={styles.preview}>

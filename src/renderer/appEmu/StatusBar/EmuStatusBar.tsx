@@ -29,6 +29,7 @@ import classnames from "classnames";
 import styles from "./EmuStatusBar.module.scss";
 import { FrameCompletedArgs } from "@renderer/abstractions/IMachineController";
 import { useT } from "@common/i18n/useT";
+import { uiLocale } from "@common/i18n/i18n";
 
 type EmuStatusBarProps = {
   show: boolean;
@@ -273,8 +274,9 @@ const DataLabel = ({
   minimumIntegerDigits = 2
 }: DataLabelProps) => {
   return (
+    // --- Frame times and the frame count are human figures: the display language's number format
     <Label
-      text={value.toLocaleString(undefined, {
+      text={value.toLocaleString(uiLocale(), {
         minimumFractionDigits,
         maximumFractionDigits,
         minimumIntegerDigits

@@ -3,6 +3,7 @@ import type { MouseEvent as ReactMouseEvent } from "react";
 import classnames from "classnames";
 
 import { patternPixels } from "@common/zxnext/sprites/spritePatterns";
+import { useT } from "@common/i18n/useT";
 import {
   ContextMenu,
   ContextMenuItem,
@@ -45,7 +46,8 @@ type Props = {
   onShowPattern: (row: SpriteRow) => void;
   /** Pops the row's pattern out into a read-only sprite editor, as the sprite shows it */
   onOpenSnapshot: (row: SpriteRow) => void;
-  onCopy: (text: string, what: string) => void;
+  /** Copies a sprite's attributes as text; `sprite` names it in the status message */
+  onCopy: (text: string, sprite: number) => void;
   /** The `sp:` breakpoints, by sprite (G3.8, sprite half) */
   breakpoints: Map<number, SpriteBreakpointState>;
   /** Adds or removes the sprite's attribute-write breakpoint */
@@ -95,6 +97,7 @@ export const SpritesTable = ({
   onEditBreakpoint,
   onRunUntilWrite
 }: Props) => {
+  const t = useT();
   const { list: rowHeight } = useRowSizes();
   const thumbnail = useThumbnails(model, patternsVersion);
   const [menuState, menuApi] = useContextMenuState();
@@ -123,34 +126,35 @@ export const SpritesTable = ({
   };
 
   return (
-    <div className={styles.pane} aria-label="Sprites">
+    <div className={styles.pane} aria-label={t("panels.sprites.tab.sprites")}>
       <div className={styles.paneHeader}>
-        <span>Sprites</span>
+        <span>{t("panels.sprites.tab.sprites")}</span>
         <span className={styles.paneMeta}>
-          {rows.length} of 128 · last visible{" "}
-          {model.state.lastVisible < 0 ? "none" : `#${model.state.lastVisible}`}
+          {model.state.lastVisible < 0
+            ? t("panels.sprites.table.metaNone", { count: rows.length })
+            : t("panels.sprites.table.meta", { count: rows.length, last: model.state.lastVisible })}
         </span>
       </div>
       <div className={styles.tableBody}>
         {rows.length === 0 ? (
-          <div className={styles.emptyRows}>No sprite matches the filter.</div>
+          <div className={styles.emptyRows}>{t("panels.sprites.table.empty")}</div>
         ) : (
           <ScrollViewer>
-            <table ref={tableRef} className={styles.spriteTable} aria-label="Sprite attribute slots">
+            <table ref={tableRef} className={styles.spriteTable} aria-label={t("panels.sprites.table.label")}>
               <thead>
                 <tr style={{ height: rowHeight }}>
                   <th className={styles.pinIndex}>#</th>
                   <th className={styles.pinVis}>vis</th>
-                  <th className={styles.pinPattern}>pattern</th>
+                  <th className={styles.pinPattern}>{t("panels.sprites.table.colPattern")}</th>
                   <th>x</th>
                   <th>y</th>
                   <th>fmt</th>
                   <th>pal</th>
                   <th>xform</th>
-                  <th>scale</th>
-                  <th>type</th>
-                  {showRaw && <th>raw</th>}
-                  <th>note</th>
+                  <th>{t("panels.sprites.table.colScale")}</th>
+                  <th>{t("panels.sprites.table.colType")}</th>
+                  {showRaw && <th>{t("panels.sprites.table.colRaw")}</th>}
+                  <th>{t("panels.sprites.table.colNote")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -176,9 +180,11 @@ export const SpritesTable = ({
                         {breakpoints.has(row.index) && (
                           <span
                             className={styles.bpMark}
-                            title={`Breaks when an attribute of sprite #${row.index} is written${
-                              breakpoints.get(row.index)!.disabled ? " (disabled)" : ""
-                            }`}
+                            title={
+                              breakpoints.get(row.index)!.disabled
+                                ? t("panels.sprites.table.breakpointDisabled", { index: row.index })
+                                : t("panels.sprites.table.breakpoint", { index: row.index })
+                            }
                           >
                             <Icon
                               iconName="circle-filled"
@@ -194,7 +200,7 @@ export const SpritesTable = ({
                         )}
                         {row.index}
                         {row.anchor !== undefined && (
-                          <span className={styles.anchorBadge} title={`Relative to sprite #${row.anchor}`}>
+                          <span className={styles.anchorBadge} title={t("panels.sprites.table.relativeTo", { anchor: row.anchor })}>
                             ↳{row.anchor}
                           </span>
                         )}
@@ -207,16 +213,16 @@ export const SpritesTable = ({
                           })}
                           title={
                             row.visibility === "effective"
-                              ? "Visible"
+                              ? t("panels.sprites.table.visible")
                               : row.visibility === "hiddenByAnchor"
-                                ? "Its visible bit is set, but its anchor is not visible"
-                                : "Visible bit clear"
+                                ? t("panels.sprites.table.hiddenByAnchor")
+                                : t("panels.sprites.table.visibleClear")
                           }
                         />
                       </td>
                       <td
                         className={styles.pinPattern}
-                        title={`Pattern ${row.pattern}. Double-click to show it in the Patterns view`}
+                        title={t("panels.sprites.table.patternTitle", { pattern: row.pattern })}
                         onDoubleClick={(e) => {
                           e.stopPropagation();
                           onShowPattern(row);
@@ -237,17 +243,17 @@ export const SpritesTable = ({
                       </td>
                       <td>{row.y}</td>
                       <td>{row.format}</td>
-                      <td title={relative && slot.paletteRelative ? "Added to the anchor's palette offset" : undefined}>
+                      <td title={relative && slot.paletteRelative ? t("panels.sprites.table.paletteRelative") : undefined}>
                         {row.palette}
                       </td>
                       <td>
-                        <span className={row.resolved.rotate ? styles.glyphOn : styles.glyphOff} title="Rotate">
+                        <span className={row.resolved.rotate ? styles.glyphOn : styles.glyphOff} title={t("panels.sprites.table.rotate")}>
                           R
                         </span>
-                        <span className={row.resolved.xmirror ? styles.glyphOn : styles.glyphOff} title="X mirror">
+                        <span className={row.resolved.xmirror ? styles.glyphOn : styles.glyphOff} title={t("panels.sprites.table.xMirror")}>
                           X
                         </span>
-                        <span className={row.resolved.ymirror ? styles.glyphOn : styles.glyphOff} title="Y mirror">
+                        <span className={row.resolved.ymirror ? styles.glyphOn : styles.glyphOff} title={t("panels.sprites.table.yMirror")}>
                           Y
                         </span>
                       </td>
@@ -257,7 +263,7 @@ export const SpritesTable = ({
                         <td className={styles.colRaw}>
                           {row.raw.map((b, k) =>
                             k === 4 && slot.attr4Ignored ? (
-                              <s key={k} title="Ignored: a 4-byte sprite">
+                              <s key={k} title={t("panels.sprites.attr4Ignored")}>
                                 {b}
                               </s>
                             ) : (
@@ -288,20 +294,16 @@ export const SpritesTable = ({
       </div>
       <ContextMenu state={menuState} onClickOutside={() => menuApi.conceal()}>
         <ContextMenuItem
-          text="Copy attributes as nextreg"
-          clicked={fromMenu(
-            () => menuRow && onCopy(attributesAsNextreg(menuRow.slot), `Sprite #${menuRow.index}'s attributes`)
-          )}
+          text={t("panels.sprites.menu.copyNextreg")}
+          clicked={fromMenu(() => menuRow && onCopy(attributesAsNextreg(menuRow.slot), menuRow.index))}
         />
         <ContextMenuItem
-          text="Copy attributes as .db"
-          clicked={fromMenu(
-            () => menuRow && onCopy(attributesAsDb(menuRow.slot), `Sprite #${menuRow.index}'s attributes`)
-          )}
+          text={t("panels.sprites.menu.copyDb")}
+          clicked={fromMenu(() => menuRow && onCopy(attributesAsDb(menuRow.slot), menuRow.index))}
         />
-        <ContextMenuItem text="Show pattern" clicked={fromMenu(() => menuRow && onShowPattern(menuRow))} />
+        <ContextMenuItem text={t("panels.sprites.menu.showPattern")} clicked={fromMenu(() => menuRow && onShowPattern(menuRow))} />
         <ContextMenuItem
-          text="Open pattern in sprite editor"
+          text={t("panels.sprites.menu.openPattern")}
           clicked={fromMenu(() => menuRow && onOpenSnapshot(menuRow))}
         />
         <ContextMenuSeparator />
@@ -309,20 +311,20 @@ export const SpritesTable = ({
         <ContextMenuItem
           text={
             menuRow && breakpoints.has(menuRow.index)
-              ? "Remove attribute-write breakpoint"
-              : "Break on attribute write"
+              ? t("panels.sprites.menu.removeBreakpoint")
+              : t("panels.sprites.menu.addBreakpoint")
           }
           clicked={fromMenu(() => menuRow && onToggleBreakpoint(menuRow.index))}
         />
         {menuRow && breakpoints.has(menuRow.index) && (
           <ContextMenuItem
-            text="Edit breakpoint..."
+            text={t("panels.sprites.menu.editBreakpoint")}
             iconName="pencil"
             clicked={fromMenu(() => onEditBreakpoint(menuRow.index))}
           />
         )}
         <ContextMenuItem
-          text="Run until attribute write"
+          text={t("panels.sprites.menu.runUntilWrite")}
           clicked={fromMenu(() => menuRow && onRunUntilWrite(menuRow.index))}
         />
       </ContextMenu>

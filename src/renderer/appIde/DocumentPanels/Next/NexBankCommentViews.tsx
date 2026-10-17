@@ -7,6 +7,7 @@ import { Button } from "@renderer/controls/Button";
 import { getOverlayRoot } from "@renderer/controls/overlay/useOverlayRoot";
 import { toHexa2 } from "@renderer/appIde/services/ide-commands";
 import { flattenBankComment } from "@renderer/appIde/annotations/annotationEdits";
+import { useT } from "@common/i18n/useT";
 import styles from "./NexBankCommentViews.module.scss";
 
 /*
@@ -24,8 +25,6 @@ import styles from "./NexBankCommentViews.module.scss";
  * sidecar — pinning is not a write.
  */
 
-export const BANK_COMMENT_CHIP_TITLE = "Show this bank's comment";
-
 type ChipProps = {
   bank: number;
   comment: string;
@@ -35,6 +34,7 @@ type ChipProps = {
 
 /** The toolbar chip, and the popover it opens. */
 export function NexBankCommentChip ({ bank, comment, onEdit, onPin }: ChipProps) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [anchor, setAnchor] = useState<HTMLButtonElement | null>(null);
   const [popover, setPopover] = useState<HTMLDivElement | null>(null);
@@ -83,7 +83,7 @@ export function NexBankCommentChip ({ bank, comment, onEdit, onPin }: ChipProps)
         type="button"
         ref={setAnchor}
         className={styles.chip}
-        title={BANK_COMMENT_CHIP_TITLE}
+        title={t("panels.next.bankComment.chipTitle")}
         aria-haspopup="dialog"
         aria-expanded={open}
         onClick={() => setOpen((current) => !current)}
@@ -96,20 +96,22 @@ export function NexBankCommentChip ({ bank, comment, onEdit, onPin }: ChipProps)
           <div
             ref={setPopover}
             role="dialog"
-            aria-label={`Bank $${toHexa2(bank)} comment`}
+            aria-label={t("panels.next.bankComment.popoverTitle", { bank: toHexa2(bank) })}
             className={styles.popover}
             style={{ ...popperStyles.popper, zIndex: 9999 }}
             {...attributes.popper}
           >
-            <div className={styles.popoverTitle}>{`Bank $${toHexa2(bank)} comment`}</div>
+            <div className={styles.popoverTitle}>
+              {t("panels.next.bankComment.popoverTitle", { bank: toHexa2(bank) })}
+            </div>
             <div ref={bodyRef} className={styles.popoverBody} tabIndex={-1}>
               {comment}
             </div>
             <div className={styles.popoverFooter}>
-              <Button text="Edit..." clicked={() => close(onEdit)} />
-              <Button variant="secondary" text="Pin" clicked={() => close(onPin)} />
+              <Button text={t("panels.next.bankComment.edit")} clicked={() => close(onEdit)} />
+              <Button variant="secondary" text={t("panels.next.bankComment.pin")} clicked={() => close(onPin)} />
               <span className={styles.spacer} />
-              <Button variant="secondary" text="Close" clicked={() => close()} />
+              <Button variant="secondary" text={t("common.button.close")} clicked={() => close()} />
             </div>
           </div>,
           getOverlayRoot()
@@ -146,6 +148,7 @@ export function NexBankCommentStrip ({
   onEdit,
   onUnpin
 }: StripProps) {
+  const t = useT();
   const flattened = flattenBankComment(comment);
   const textRef = useRef<HTMLButtonElement | null>(null);
   const measureRef = useRef<HTMLSpanElement | null>(null);
@@ -170,7 +173,7 @@ export function NexBankCommentStrip ({
     <div
       className={showExpanded ? styles.stripExpanded : styles.strip}
       role="note"
-      aria-label="Bank comment"
+      aria-label={t("panels.next.bankComment.title")}
     >
       <span className={styles.stripIcon}>
         <Icon iconName="note" width={14} height={14} fill="--accent-text" />
@@ -179,7 +182,7 @@ export function NexBankCommentStrip ({
         type="button"
         ref={textRef}
         className={styles.stripText}
-        title="Edit the bank comment"
+        title={t("panels.next.bankComment.editTitle")}
         onClick={onEdit}
       >
         {showExpanded ? comment : flattened}
@@ -190,11 +193,15 @@ export function NexBankCommentStrip ({
       {canExpand && (
         <SmallIconButton
           iconName={showExpanded ? "chevron-down" : "chevron-right"}
-          title={showExpanded ? "Show the comment on one line" : "Show the whole comment"}
+          title={
+            showExpanded
+              ? t("panels.next.bankComment.collapse")
+              : t("panels.next.bankComment.expand")
+          }
           clicked={onToggleExpanded}
         />
       )}
-      <SmallIconButton iconName="close" title="Unpin the bank comment" clicked={onUnpin} />
+      <SmallIconButton iconName="close" title={t("panels.next.bankComment.unpin")} clicked={onUnpin} />
     </div>
   );
 }

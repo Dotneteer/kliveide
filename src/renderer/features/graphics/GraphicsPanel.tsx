@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
+import { useT } from "@common/i18n/useT";
 import type { NavigationLocator } from "@renderer/abstractions/NavigationLocation";
 import { FullPanel } from "@renderer/controls/layout/Panels";
 import { PanelHeader, PanelHeaderGroup } from "@renderer/controls/data";
@@ -35,7 +36,7 @@ import { addressSymbolsForState } from "@renderer/appIde/annotations/useAddressS
 import { activeSetForEditing } from "@renderer/appIde/reverse/detectionEnvironment";
 import { GraphicsView, type ByteSpan, type GraphicMark } from "./GraphicsView";
 import { GraphicsToolbar } from "./GraphicsToolbar";
-import { NameGraphicDialog, NAME_GRAPHIC_DIALOG_TITLE } from "./NameGraphicDialog";
+import { NameGraphicDialog, nameGraphicDialogTitle } from "./NameGraphicDialog";
 import { graphicOfSpan } from "./graphicMarks";
 import { findGraphicCandidates } from "@common/reverse/graphicsCandidates";
 import { onGraphicsReveal } from "./graphicsReveal";
@@ -60,6 +61,7 @@ type Snapshot = { bytes: Uint8Array; base: number; slots: SlotPaging };
 const SOURCE_64K = "64k";
 
 const GraphicsPanel = ({ document, viewState }: DocumentProps<GraphicsPanelViewState>) => {
+  const t = useT();
   const emuApi = useEmuApi();
   const mainApi = useMainApi();
   const { store } = useRendererContext();
@@ -192,7 +194,7 @@ const GraphicsPanel = ({ document, viewState }: DocumentProps<GraphicsPanelViewS
       const result = await dialogs.open(
         NameGraphicDialog,
         { initial: { ...graphicOfSpan(span, look), offset: live.offset }, baseAddress: live.disassOffset },
-        { title: NAME_GRAPHIC_DIALOG_TITLE, width: 520 }
+        { title: nameGraphicDialogTitle(), width: 520 }
       );
       if (!result) return;
       const annotations = await ensureAnnotatedBank(live, projectService);
@@ -211,9 +213,9 @@ const GraphicsPanel = ({ document, viewState }: DocumentProps<GraphicsPanelViewS
     async (span: ByteSpan, atZoom: boolean) => {
       if (!snapshot) return;
       const path = await mainApi.showSaveFileDialog({
-        title: "Save as PNG",
+        title: t("panels.graphics.savePngTitle"),
         defaultPath: `graphic-${toHexa4((snapshot.base + span.start) & 0xffff)}.png`,
-        filters: [{ name: "PNG image", extensions: ["png"] }],
+        filters: [{ name: t("panels.graphics.pngFilter"), extensions: ["png"] }],
         settingsId: "graphicsPng"
       });
       if (!path) return;
@@ -221,7 +223,7 @@ const GraphicsPanel = ({ document, viewState }: DocumentProps<GraphicsPanelViewS
       const { width, height, rgba } = graphicsRgba(snapshot.bytes, look, span, look.columns || 8, scale);
       await mainApi.saveBinaryFile(path, await encodePng(width, height, rgba));
     },
-    [look, mainApi, snapshot]
+    [look, mainApi, snapshot, t]
   );
 
   const candidates = useMemo(
@@ -233,18 +235,18 @@ const GraphicsPanel = ({ document, viewState }: DocumentProps<GraphicsPanelViewS
   );
 
   const sourceOptions = useMemo<DropdownOption[]>(
-    () => [{ value: SOURCE_64K, label: "64K view" }, ...machineSetup.segmentOptions],
-    [machineSetup.segmentOptions]
+    () => [{ value: SOURCE_64K, label: t("panels.graphics.source64k") }, ...machineSetup.segmentOptions],
+    [machineSetup.segmentOptions, t]
   );
 
   return (
     <FullPanel fontFamily="--monospace-font" fontSize="--panel-font-size">
       <PanelHeader>
         <PanelHeaderGroup>
-          <Text text="Show" />
+          <Text text={t("panels.graphics.show")} />
           <LabelSeparator />
           <Dropdown
-            ariaLabel="Memory to show"
+            ariaLabel={t("panels.graphics.memoryToShow")}
             options={sourceOptions}
             initialValue={source}
             width={140}
@@ -295,9 +297,9 @@ const GraphicsPanel = ({ document, viewState }: DocumentProps<GraphicsPanelViewS
               const from = (snapshot.base + span.start) & 0xffff;
               const to = (snapshot.base + span.end) & 0xffff;
               const path = await mainApi.showSaveFileDialog({
-                title: "Export as source",
+                title: t("panels.graphics.exportSourceTitle"),
                 defaultPath: `graphic-${toHexa4(from)}.kz80.asm`,
-                filters: [{ name: "Klive Z80 assembly", extensions: ["kz80.asm", "asm"] }],
+                filters: [{ name: t("panels.graphics.asmFilter"), extensions: ["kz80.asm", "asm"] }],
                 settingsId: "asmExport"
               });
               if (path) void ideCommandsService.executeCommand(`export-asm "${path}" $${toHexa4(from)} $${toHexa4(to)}`);

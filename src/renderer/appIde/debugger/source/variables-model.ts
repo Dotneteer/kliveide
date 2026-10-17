@@ -50,8 +50,8 @@ export type VariableSections = {
   returned: VariableNode[];
   /** The selected frame's parameters and locals; undefined for the main program. */
   locals?: VariableNode[];
-  /** Why the locals cannot be read (a routine's frame is not set up yet, or already gone). */
-  localsNote?: string;
+  /** Why the locals are empty: the routine's frame is not set up yet (the view words it) */
+  localsFrameNotSetUp?: boolean;
   globals: VariableNode[];
 };
 
@@ -252,7 +252,7 @@ export function buildVariableSections(
   if (!isRoutine) return { returned, globals };
   const ix = frameIx(chain, frame);
   if (ix === undefined) {
-    return { returned, globals, locals: [], localsNote: "The routine's frame is not set up here" };
+    return { returned, globals, locals: [], localsFrameNotSetUp: true };
   }
   const locals = scoped.map((v) => variableNode(v, mem, ix)).filter((n): n is VariableNode => !!n);
   return { returned, globals, locals };

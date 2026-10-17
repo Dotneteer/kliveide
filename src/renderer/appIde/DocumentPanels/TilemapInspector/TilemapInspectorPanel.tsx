@@ -2,6 +2,7 @@ import { type MouseEvent, useCallback, useEffect, useMemo, useRef, useState } fr
 import classnames from "classnames";
 
 import { MI_ZXNEXT } from "@common/machines/constants";
+import { useT } from "@common/i18n/useT";
 import { MEMORY_PANEL_ID } from "@common/state/common-ids";
 import { changedCells, cellKeys } from "@common/zxnext/tilemap/tilemapUsage";
 import { EmptyState } from "@renderer/controls/data";
@@ -133,15 +134,11 @@ export function chooseView(
   return { view: wanted, tab: wanted };
 }
 
-const offsetOptions: DropdownOption[] = [
-  { value: "fromMap", label: "From map" },
-  ...Array.from({ length: 16 }, (_, i) => ({ value: String(i), label: `Fixed ${i}` }))
-];
-
 const TilemapInspectorPanel = ({
   document,
   viewState
 }: DocumentProps<Partial<TilemapInspectorViewState>>) => {
+  const t = useT();
   const machineId = useSelector((s) => s.emulatorState?.machineId);
   const isNext = machineId === MI_ZXNEXT;
   const documentHubService = useDocumentHubService();
@@ -232,6 +229,16 @@ const TilemapInspectorPanel = ({
     () => (model ? textTransparency(model, palette.deviceValues) : undefined),
     [model, palette.deviceValues]
   );
+  const offsetOptions = useMemo<DropdownOption[]>(
+    () => [
+      { value: "fromMap", label: t("panels.tilemap.offsetFromMap") },
+      ...Array.from({ length: 16 }, (_, i) => ({
+        value: String(i),
+        label: t("panels.graphics.inspector.fixedOffset", { offset: i })
+      }))
+    ],
+    [t]
+  );
 
   const probe = (
     <span ref={chRef} className={styles.chProbe} aria-hidden="true">
@@ -244,9 +251,7 @@ const TilemapInspectorPanel = ({
       <FullPanel fontSize="--panel-font-size" fontFamily="--monospace-font">
         <EmptyState
           message={
-            isNext
-              ? "Waiting for the ZX Spectrum Next's tilemap state"
-              : "The Tilemap Inspector shows a running ZX Spectrum Next"
+            isNext ? t("panels.tilemap.waiting") : t("panels.tilemap.notNext")
           }
         />
       </FullPanel>
@@ -310,12 +315,12 @@ const TilemapInspectorPanel = ({
       `bp-set ${hex} -w -len ${menuCell.raw.length}`
     );
     if (result?.success)
-      dispatch(setIdeStatusMessageAction(`Breakpoint set on writes to ${hex}`, true));
+      dispatch(setIdeStatusMessageAction(t("panels.graphics.inspector.breakpointSet", { address: hex }), true));
   };
 
   // --- Toolbar pieces
   const tabs = (
-    <span className={spriteSegmentedClass} role="tablist" aria-label="Tilemap Inspector view">
+    <span className={spriteSegmentedClass} role="tablist" aria-label={t("panels.tilemap.viewTabs")}>
       {(["map", "tiles", "both"] as const)
         .filter((v) => v !== "both" || layout === "wide")
         .map((v) => (
@@ -328,17 +333,25 @@ const TilemapInspectorPanel = ({
             aria-pressed={view === v}
             onClick={() => updateLook(chooseView(look, v, layout))}
           >
-            {v === "map" ? "Map" : v === "tiles" ? "Tiles" : "Both"}
+            {v === "map"
+              ? t("panels.tilemap.tab.map")
+              : v === "tiles"
+                ? t("panels.tilemap.tab.tiles")
+                : t("panels.graphics.inspector.both")}
           </button>
         ))}
     </span>
   );
   const paletteButtons = (
-    <span className={spriteSegmentedClass} role="group" aria-label="Tilemap palette">
+    <span className={spriteSegmentedClass} role="group" aria-label={t("panels.tilemap.paletteGroup")}>
       {([undefined, 0, 1] as const).map((bank) => {
         const live = bank !== undefined && palette.liveBank === bank;
         const label =
-          bank === undefined ? `Live (${(palette.liveBank ?? 0) + 1})` : bank === 0 ? "1" : "2";
+          bank === undefined
+            ? t("panels.graphics.inspector.paletteLive", { bank: (palette.liveBank ?? 0) + 1 })
+            : bank === 0
+              ? "1"
+              : "2";
         return (
           <button
             key={String(bank)}
@@ -347,8 +360,10 @@ const TilemapInspectorPanel = ({
             aria-pressed={look.palettePin === bank}
             title={
               bank === undefined
-                ? "Follow the palette the tilemap draws with (NextReg $6B bit 4)"
-                : `Pin the ${bank === 0 ? "first" : "second"} tilemap palette`
+                ? t("panels.tilemap.paletteFollow")
+                : bank === 0
+                  ? t("panels.tilemap.palettePinFirst")
+                  : t("panels.tilemap.palettePinSecond")
             }
             onClick={() => updateLook({ palettePin: bank })}
           >
@@ -431,28 +446,28 @@ const TilemapInspectorPanel = ({
     <FullPanel fontSize="--panel-font-size" fontFamily="--main-font-family">
       <div ref={rootRef} className={styles.root} data-layout={layout}>
         {probe}
-        <div className={styles.toolbar} role="toolbar" aria-label="Tilemap Inspector">
+        <div className={styles.toolbar} role="toolbar" aria-label={t("panels.tilemap.toolbar")}>
           {tabs}
           {showsMap && (
             <span className={styles.toolbarContext}>
-              <span className={spriteSegmentedClass} role="group" aria-label="Map mode">
+              <span className={spriteSegmentedClass} role="group" aria-label={t("panels.tilemap.mapMode")}>
                 <button
                   type="button"
                   className={spriteSegmentClass}
                   aria-pressed={!look.asDisplayed}
-                  title="The whole map, unscrolled, with the screen's view outlined"
+                  title={t("panels.tilemap.wholeMapTitle")}
                   onClick={() => updateLook({ asDisplayed: false })}
                 >
-                  Whole map
+                  {t("panels.tilemap.wholeMap")}
                 </button>
                 <button
                   type="button"
                   className={spriteSegmentClass}
                   aria-pressed={look.asDisplayed}
-                  title="Scrolled and clipped, as the layer reaches the mixer"
+                  title={t("panels.graphics.inspector.asDisplayedTitle")}
                   onClick={() => updateLook({ asDisplayed: true })}
                 >
-                  As displayed
+                  {t("panels.graphics.inspector.asDisplayed")}
                 </button>
               </span>
             </span>
@@ -460,7 +475,7 @@ const TilemapInspectorPanel = ({
           {showsTiles && (
             <span className={styles.toolbarContext}>
               <Dropdown
-                ariaLabel="Tile palette offset"
+                ariaLabel={t("panels.tilemap.offsetLabel")}
                 options={offsetOptions}
                 initialValue={String(look.paletteOffset)}
                 width={110}
@@ -479,14 +494,14 @@ const TilemapInspectorPanel = ({
               <SpriteZoomButtons zoom={look.zoom} onChange={(zoom) => updateLook({ zoom })} />
               <LabeledSwitch
                 value={look.grid}
-                label="Grid"
-                title="Draw the cell grid (zoom 2 and up)"
+                label={t("panels.tilemap.grid")}
+                title={t("panels.tilemap.gridTitle")}
                 clicked={(value) => updateLook({ grid: value })}
               />
               <LabeledSwitch
                 value={look.indices}
-                label="Indices"
-                title="Write each cell's tile number (zoom 3 and up)"
+                label={t("panels.tilemap.indices")}
+                title={t("panels.tilemap.indicesTitle")}
                 clicked={(value) => updateLook({ indices: value })}
               />
             </>
@@ -494,8 +509,8 @@ const TilemapInspectorPanel = ({
           <button
             type="button"
             className={styles.moreButton}
-            aria-label="More options"
-            title="More options"
+            aria-label={t("panels.graphics.inspector.moreOptions")}
+            title={t("panels.graphics.inspector.moreOptions")}
             onClick={(e) => menuApi.show(e)}
           >
             ⋯
@@ -505,7 +520,7 @@ const TilemapInspectorPanel = ({
         <div
           className={classnames(styles.globals, { [styles.globalsOpen]: globalsOpen })}
           role="list"
-          aria-label="Tilemap globals"
+          aria-label={t("panels.tilemap.globalsLabel")}
         >
           {globals.map((item) => (
             <span
@@ -540,7 +555,9 @@ const TilemapInspectorPanel = ({
               className={styles.globalsMore}
               onClick={() => setGlobalsOpen((o) => !o)}
             >
-              {globalsOpen ? "less" : `+${secondary} more`}
+              {globalsOpen
+                ? t("panels.graphics.inspector.globalsLess")
+                : t("panels.graphics.inspector.globalsMore", { count: secondary })}
             </button>
           )}
         </div>
@@ -575,17 +592,17 @@ const TilemapInspectorPanel = ({
           {layout === "narrow" && (
             <>
               <ContextMenuItem
-                text={`Palette: live (${(palette.liveBank ?? 0) + 1})`}
+                text={t("panels.graphics.inspector.menuPaletteLive", { bank: (palette.liveBank ?? 0) + 1 })}
                 selected={look.palettePin === undefined}
                 clicked={fromMenu(menuApi, () => updateLook({ palettePin: undefined }))}
               />
               <ContextMenuItem
-                text="Palette: 1"
+                text={t("panels.graphics.inspector.menuPalette", { bank: 1 })}
                 selected={look.palettePin === 0}
                 clicked={fromMenu(menuApi, () => updateLook({ palettePin: 0 }))}
               />
               <ContextMenuItem
-                text="Palette: 2"
+                text={t("panels.graphics.inspector.menuPalette", { bank: 2 })}
                 selected={look.palettePin === 1}
                 clicked={fromMenu(menuApi, () => updateLook({ palettePin: 1 }))}
               />
@@ -597,18 +614,18 @@ const TilemapInspectorPanel = ({
               {([1, 2, 3, 4] as const).map((z) => (
                 <ContextMenuItem
                   key={z}
-                  text={`Map zoom ${z}×`}
+                  text={t("panels.tilemap.menu.mapZoom", { zoom: z })}
                   selected={look.zoom === z}
                   clicked={fromMenu(menuApi, () => updateLook({ zoom: z }))}
                 />
               ))}
               <ContextMenuItem
-                text="Cell grid"
+                text={t("panels.tilemap.menu.cellGrid")}
                 selected={look.grid}
                 clicked={fromMenu(menuApi, () => updateLook({ grid: !look.grid }))}
               />
               <ContextMenuItem
-                text="Tile indices on the map"
+                text={t("panels.tilemap.menu.indices")}
                 selected={look.indices}
                 clicked={fromMenu(menuApi, () => updateLook({ indices: !look.indices }))}
               />
@@ -618,13 +635,13 @@ const TilemapInspectorPanel = ({
           {([1, 2, 3, 4] as const).map((z) => (
             <ContextMenuItem
               key={`t${z}`}
-              text={`Tiles zoom ${z}×`}
+              text={t("panels.tilemap.menu.tilesZoom", { zoom: z })}
               selected={look.tileZoom === z}
               clicked={fromMenu(menuApi, () => updateLook({ tileZoom: z }))}
             />
           ))}
           <ContextMenuItem
-            text="Checkerboard behind transparent pixels"
+            text={t("panels.graphics.inspector.checkerboard")}
             selected={look.checker}
             clicked={fromMenu(menuApi, () => updateLook({ checker: !look.checker }))}
           />
@@ -632,28 +649,32 @@ const TilemapInspectorPanel = ({
 
         <ContextMenu state={cellMenuState} onClickOutside={() => cellMenuApi.conceal()}>
           <ContextMenuItem
-            text={`Show entry in memory${menuAddress?.z80Text ? ` (${menuAddress.z80Text})` : " (not mapped)"}`}
+            text={
+              menuAddress?.z80Text
+                ? t("panels.tilemap.menu.showEntry", { address: menuAddress.z80Text })
+                : t("panels.tilemap.menu.showEntryNotMapped")
+            }
             disabled={menuAddress?.z80 === undefined}
             clicked={fromMenu(cellMenuApi, () => void showInMemory())}
           />
           <ContextMenuItem
-            text="Break on write to this entry"
+            text={t("panels.tilemap.menu.breakOnWrite")}
             disabled={menuAddress?.z80 === undefined}
             clicked={fromMenu(cellMenuApi, () => void breakOnWrite())}
           />
           <ContextMenuItem
-            text="Open tile snapshot"
+            text={t("panels.tilemap.menu.openSnapshot")}
             disabled={!menuCell}
             clicked={fromMenu(cellMenuApi, () => menuCell && openSnapshot(menuCell.tile, menuCell))}
           />
           <ContextMenuSeparator />
           <ContextMenuItem
-            text="Copy as .db"
+            text={t("panels.tilemap.menu.copyDb")}
             disabled={!menuCell}
             clicked={fromMenu(cellMenuApi, () => {
               if (!menuCell) return;
               void navigator.clipboard?.writeText(cellAsDb(menuCell));
-              dispatch(setIdeStatusMessageAction("Cell copied to the clipboard", true));
+              dispatch(setIdeStatusMessageAction(t("panels.graphics.inspector.copied.cell"), true));
             })}
           />
         </ContextMenu>

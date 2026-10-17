@@ -1,0 +1,19 @@
+{
+  "commands.usage.bpSet.len": "-len: um ponto de interrupção de memória (-r/-w) que abrange este número de bytes, p. ex. bp-set $8000 -w -len 5",
+  "commands.usage.bpSet.copper": "cu:<index>: (ZX Spectrum Next) para quando o Copper conclui o índice de lista $000-$3FF; um WAIT, quando é satisfeito, p. ex. bp-set cu:$00B -hit 50",
+  "commands.usage.bpSet.sprite": "sp:<sprite>: (ZX Spectrum Next) para quando é escrito um byte de atributo do sprite $00-$7F; -attr escolhe os bytes, p. ex. bp-set sp:$0C -attr 0,1",
+  "commands.usage.bpSet.once": "-once: um ponto de interrupção de uso único, removido na primeira vez que para a máquina; nunca é guardado",
+  "commands.usage.bpSet.log": "-log: regista a mensagem e continua em vez de parar (um logpoint), p. ex. {example}",
+  "commands.usage.bpSet.hit": "-hit: para na ocorrência N (N ou =N), depois dela (>N), a partir dela (>=N), antes dela (<N), até ela (<=N), a cada N-ésima (*N)",
+  "commands.usage.bpSet.if": "-if: tem de ser o último; o resto da linha é a condição, p. ex. -if A == $FF && !ZF",
+  "commands.usage.lpEnable.groups": "sem grupos: todos os logpoints registam (-d: nenhum regista); com grupos: só esses registam (-d: esses deixam de registar)",
+  "commands.usage.annotationEnable.disable": "-d: desativa-os; guardado com o projeto",
+  "commands.usage.nav.record": "-r: regista o salto no histórico de navegação (Recuar / Avançar); o motivo é um de {reasons}",
+  "commands.usage.testRun.pattern": "pattern: Suite.UT_name, com * como caráter universal (todos os testes quando omitido)",
+  "commands.usage.testRun.failed": "-failed: apenas os testes que falharam ou terminaram com erro da última vez",
+  "commands.usage.testRun.coverage": "-coverage: junta a cobertura de código dos testes à vista de cobertura do editor",
+  "commands.usage.testDebug.test": "test: Suite.UT_name, ou um padrão com * que indique um único teste",
+  "commands.usage.testJunit.file": "file: o ficheiro XML a escrever",
+  "commands.usage.testJunit.noTimestamp": "-notimestamp: omite a hora da execução, para que duas execuções escrevam o mesmo ficheiro",
+  "commands.usage.watchAdd.types": ">: usar o valor direto do símbolo\n<type>:\n  b=byte,\n  w=16 bits little-endian, -w=16 bits big-endian,\n  l=32 bits little-endian, -l=32 bits big-endian,\n  f=flag,\n  a=array (usa o comprimento, predefinição: 8), s=cadeia (usa o comprimento, predefinição: 8)"
+}

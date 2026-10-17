@@ -1,3 +1,4 @@
+import { t } from "@common/i18n/i18n";
 import {
   MC_MEM_SIZE,
   MC_ZX80_ROM8K,
@@ -423,5 +424,5 @@ export function annotationMachineWarning(
   const spectrum48Like = new Set<AnnotationMachine>(["sp48", "timex"]);
   const spectrumBanked = new Set<AnnotationMachine>(["sp48", "timex", "sp128", "plus3", "scorpion"]);
   if (spectrum48Like.has(fileMachine) && spectrumBanked.has(current)) return undefined;
-  return `These annotations were written for the ${fileMachine} bank space; this machine numbers its memory as ${current}. Labels may name the wrong bytes.`;
+  return t("media.annotations.machineMismatch", { file: fileMachine, current });
 }

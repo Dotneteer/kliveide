@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { AppState } from "@common/state/AppState";
 import {
-  ADVANCED_DEBUGGING_OFF_MESSAGE,
+  advancedDebuggingOffMessage,
   ADVANCED_DEBUGGING_SETTING,
   hasMachineFeature,
   isAdvancedDebuggingEnabled,
@@ -45,8 +45,8 @@ describe("advanced-debugging switch - the setting", () => {
   });
 
   it("tells the user how to turn it on", () => {
-    expect(ADVANCED_DEBUGGING_OFF_MESSAGE).toContain("set -u features.advancedDebugging 1");
-    expect(ADVANCED_DEBUGGING_OFF_MESSAGE).toMatch(/restart/i);
+    expect(advancedDebuggingOffMessage()).toContain("set -u features.advancedDebugging 1");
+    expect(advancedDebuggingOffMessage()).toMatch(/restart/i);
   });
 });
 
@@ -78,7 +78,7 @@ describe("advanced-debugging switch - the views", () => {
 
   it("the Execution History document says how to turn it on", () => {
     expect(historyEmptyMessage({ supported: false, running: false, debugging: false, switchedOff: true }, undefined)).toBe(
-      ADVANCED_DEBUGGING_OFF_MESSAGE
+      advancedDebuggingOffMessage()
     );
   });
 });

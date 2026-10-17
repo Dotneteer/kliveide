@@ -49,7 +49,7 @@ import type {
 } from "./source-tree";
 
 import { Lexer } from "./Lexer";
-import { errorMessages, ParserError } from "./ParserError";
+import { ksxErrorMessage, ParserError } from "./ParserError";
 import { InputStream } from "./InputStream";
 import { tokenTraits } from "./TokenTrait";
 import { TokenType } from "./TokenType";
@@ -2372,12 +2372,7 @@ export class Parser {
    * @param options Error message options
    */
   private reportError(errorCode: ErrorCodes, token?: Token, ...options: any[]): void {
-    let errorText: string = errorMessages[errorCode] ?? "Unkonwn error";
-    if (options) {
-      options.forEach(
-        (_, idx) => (errorText = replace(errorText, `{${idx}}`, options[idx].toString()))
-      );
-    }
+    const errorText: string = ksxErrorMessage(errorCode, options);
     if (!token) {
       token = this._lexer.peek();
     }
@@ -2389,13 +2384,6 @@ export class Parser {
       position: token.location.startPosition
     });
     throw new ParserError(errorText, errorCode);
-
-    function replace(input: string, placeholder: string, replacement: string): string {
-      do {
-        input = input.replace(placeholder, replacement);
-      } while (input.includes(placeholder));
-      return input;
-    }
   }
 
   /**

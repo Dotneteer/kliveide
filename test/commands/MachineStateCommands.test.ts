@@ -181,6 +181,10 @@ describe("state-load", () => {
     const result = await new StateLoadCommand().execute(context, { file: "/p/a.kls" });
     expect(result.success).toBe(false);
     expect(result.finalMessage).toMatch(/has changed .* Use -y to load it anyway\.$/);
+    // --- The File menu reads the reason from the value, not from the message's wording
+    expect(result.value).toEqual({
+      needsConfirmation: "The SD card image (/c/ks2.cim) has changed since the state was saved"
+    });
     expect(loadMachineStateFile.mock.calls[0][3]).toEqual({
       currentSdCard: { fileName: "/c/ks2.cim", size: 1, fingerprint: "f".repeat(32) },
       acceptChangedSdCard: false
@@ -196,6 +200,10 @@ describe("state-load", () => {
     expect(result.finalMessage).toMatch(/project targets the .*saved on the Cambridge Z88/);
     expect(loadMachineStateFile).not.toHaveBeenCalled();
     expect(machineStateProjectGuard({ project: { isKliveProject: false } }, MI_Z88)).toBeUndefined();
+    // --- A debug recording carries a state: its refusal has its own message, not a rewritten one
+    expect(machineStateProjectGuard({ project: { isKliveProject: true } }, MI_Z88, "recording")).toMatch(
+      /this recording was made on the Cambridge Z88/
+    );
   });
 
   it("reports a file that is not a state", async () => {

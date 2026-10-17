@@ -1,6 +1,7 @@
 import type { NexHeader } from "./nexFileLoader";
 
 import { toHexa2, toHexa4 } from "@renderer/appIde/services/ide-commands";
+import { t } from "@common/i18n/i18n";
 import {
   NEX_SLOT_1_BANK,
   NEX_SLOT_1_START,
@@ -98,9 +99,7 @@ export function validateNexHeader(
     issues.push({
       id: "entry-bank-missing",
       severity: "error",
-      message:
-        `The entry bank $${toHexa2(header.entryBank)} is not one of the banks this file ` +
-        "contains, so the program would be handed control of memory it never loaded."
+      message: t("panels.next.validation.entryBankMissing", { bank: toHexa2(header.entryBank) })
     });
   }
 
@@ -116,21 +115,18 @@ export function validateNexHeader(
     issues.push({
       id: "entry-point-in-rom",
       severity: "error",
-      message:
-        `The entry point $${toHexa4(header.programCounter)} is below $4000, which is ROM when the ` +
-        "program starts — the program's own code is never reached."
+      message: t("panels.next.validation.entryPointInRom", { address: toHexa4(header.programCounter) })
     });
   } else if (pcBank !== undefined && pcBank !== header.entryBank && !hasBank(header, pcBank)) {
-    const slot =
-      header.programCounter < NEX_SLOT_2_START
-        ? `$${toHexa4(NEX_SLOT_1_START)} (bank $${toHexa2(NEX_SLOT_1_BANK)})`
-        : `$${toHexa4(NEX_SLOT_2_START)} (bank $${toHexa2(NEX_SLOT_2_BANK)})`;
+    const inSlot1 = header.programCounter < NEX_SLOT_2_START;
     issues.push({
       id: "entry-point-bank-missing",
       severity: "error",
-      message:
-        `The entry point $${toHexa4(header.programCounter)} runs from the bank paged at ${slot}, ` +
-        "which this file does not contain."
+      message: t("panels.next.validation.entryPointBankMissing", {
+        address: toHexa4(header.programCounter),
+        slot: toHexa4(inSlot1 ? NEX_SLOT_1_START : NEX_SLOT_2_START),
+        bank: toHexa2(inSlot1 ? NEX_SLOT_1_BANK : NEX_SLOT_2_BANK)
+      })
     });
   }
 
@@ -145,9 +141,7 @@ export function validateNexHeader(
     issues.push({
       id: "stack-in-rom",
       severity: "error",
-      message:
-        `The stack pointer $${toHexa4(header.stackPointer)} is below $4000, which is ROM when the ` +
-        "program starts — pushes would be discarded."
+      message: t("panels.next.validation.stackInRom", { address: toHexa4(header.stackPointer) })
     });
   }
 
@@ -167,10 +161,12 @@ export function validateNexHeader(
       issues.push({
         id: "core-too-old",
         severity: "warning",
-        message:
-          `This file asks for core ${header.requiredCoreVersionMajor}.` +
-          `${header.requiredCoreVersionMinor}.${header.requiredCoreVersionSubMinor}; ` +
-          `the emulated core is ${major}.${minor}.${subMinor}. It may not run correctly.`
+        message: t("panels.next.validation.coreTooOld", {
+          required:
+            `${header.requiredCoreVersionMajor}.` +
+            `${header.requiredCoreVersionMinor}.${header.requiredCoreVersionSubMinor}`,
+          emulated: `${major}.${minor}.${subMinor}`
+        })
       });
     }
   }
@@ -181,8 +177,7 @@ export function validateNexHeader(
       issues.push({
         id: "not-enough-ram",
         severity: "error",
-        message:
-          `This file needs the full 1792K of RAM; the machine has ${context.bankCount * 16}K.`
+        message: t("panels.next.validation.notEnoughRam", { size: context.bankCount * 16 })
       });
     }
   }
@@ -199,9 +194,10 @@ export function validateNexHeader(
     issues.push({
       id: "bank-count-mismatch",
       severity: "warning",
-      message:
-        `The header says ${header.numOf16KBanks} banks but marks ${declared}. The file may have ` +
-        "been written incorrectly."
+      message: t("panels.next.validation.bankCountMismatch", {
+        declared: header.numOf16KBanks,
+        marked: declared
+      })
     });
   }
 
@@ -219,8 +215,8 @@ export function summarizeNexIssues(issues: NexIssue[]): string | undefined {
 
   const errors = issues.filter((issue) => issue.severity === "error").length;
   const warnings = issues.length - errors;
-  const parts: string[] = [];
-  if (errors) parts.push(`${errors} problem${errors === 1 ? "" : "s"}`);
-  if (warnings) parts.push(`${warnings} warning${warnings === 1 ? "" : "s"}`);
-  return `This NEX file has ${parts.join(" and ")}.`;
+  if (errors && warnings) return t("panels.next.validation.summaryBoth", { errors, warnings });
+  return errors
+    ? t("panels.next.validation.summaryProblems", { errors })
+    : t("panels.next.validation.summaryWarnings", { warnings });
 }

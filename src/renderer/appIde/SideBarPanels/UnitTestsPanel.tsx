@@ -24,6 +24,9 @@ import {
 } from "@renderer/appIde/unit-tests/unitTestTree";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 import styles from "./UnitTestsPanel.module.scss";
+import { useT } from "@common/i18n/useT";
+import { uiLocale } from "@common/i18n/i18n";
+import type { MessageKey } from "@common/i18n/keys.generated";
 
 /*
  * The Unit Tests panel of the Testing activity (`.plans/Z80_UNIT_TESTS_PLAN.md` D13, D14): the
@@ -34,18 +37,19 @@ import styles from "./UnitTestsPanel.module.scss";
  */
 
 /** The glyph and its colour token for a status */
-const STATUS_ICON: Record<UnitTestRowStatus, { icon: string; fill: string; title: string }> = {
-  passed: { icon: "check", fill: "--color-unit-test-passed", title: "Passed" },
-  failed: { icon: "close", fill: "--color-unit-test-failed", title: "Failed" },
-  error: { icon: "warning", fill: "--color-unit-test-error", title: "Error" },
-  running: { icon: "circle-filled", fill: "--color-unit-test-running", title: "Running" },
-  queued: { icon: "circle-outline", fill: "--color-unit-test-running", title: "Queued" },
-  notRun: { icon: "circle-outline", fill: "--color-unit-test-idle", title: "Not run" }
+const STATUS_ICON: Record<UnitTestRowStatus, { icon: string; fill: string; titleKey: MessageKey }> = {
+  passed: { icon: "check", fill: "--color-unit-test-passed", titleKey: "panels.side.unitTests.status.passed" },
+  failed: { icon: "close", fill: "--color-unit-test-failed", titleKey: "panels.side.unitTests.status.failed" },
+  error: { icon: "warning", fill: "--color-unit-test-error", titleKey: "panels.side.unitTests.status.error" },
+  running: { icon: "circle-filled", fill: "--color-unit-test-running", titleKey: "panels.side.unitTests.status.running" },
+  queued: { icon: "circle-outline", fill: "--color-unit-test-running", titleKey: "panels.side.unitTests.status.queued" },
+  notRun: { icon: "circle-outline", fill: "--color-unit-test-idle", titleKey: "panels.side.unitTests.status.notRun" }
 };
 
 const TEST_LANGUAGES = ["kz80-asm", "sjasmp"];
 
 export const UnitTestsPanel = () => {
+  const t = useT();
   const { ideCommandsService, outputPaneService } = useAppServices();
   const mainApi = useMainApi();
   const compilation = useSelector((s) => s.compilation);
@@ -97,9 +101,9 @@ export const UnitTestsPanel = () => {
   /** Export results as JUnit… (`.plans/UNIT_TESTS_CLI_PLAN.md` D14): the command line's format */
   const exportJUnit = async () => {
     const file = await mainApi.showSaveFileDialog({
-      title: "Export Results as JUnit",
+      title: t("panels.side.unitTests.exportDialogTitle"),
       defaultPath: "unit-tests.xml",
-      filters: [{ name: "JUnit XML", extensions: ["xml"] }],
+      filters: [{ name: t("panels.side.unitTests.junitFilter"), extensions: ["xml"] }],
       settingsId: "unitTestJUnitExport"
     });
     if (file) await execute(`test-junit "${file}"`);
@@ -115,9 +119,11 @@ export const UnitTestsPanel = () => {
   };
 
   // --- What the status line says
-  const builtAt = compilation?.endedAt ? new Date(compilation.endedAt).toLocaleTimeString() : undefined;
+  const builtAt = compilation?.endedAt ? new Date(compilation.endedAt).toLocaleTimeString(uiLocale()) : undefined;
   const status = running
-    ? `Running${unitTests?.runningTest ? ` ${unitTests.runningTest}` : ""}...`
+    ? unitTests?.runningTest
+      ? t("panels.side.unitTests.runningTest", { test: unitTests.runningTest })
+      : t("panels.side.unitTests.runningAll")
     : unitTests?.summary
       ? summaryText(unitTests.summary)
       : undefined;
@@ -127,18 +133,18 @@ export const UnitTestsPanel = () => {
   ];
 
   let empty: string | undefined;
-  if (!project?.isKliveProject) empty = "Open a Klive project to run its unit tests";
+  if (!project?.isKliveProject) empty = t("panels.side.unitTests.empty.noProject");
   else if (language && !TEST_LANGUAGES.includes(language))
-    empty = "The build root's language has no unit tests: they need the Klive Z80 assembler or sjasmplus";
-  else if (!program) empty = "Build the project to find its unit tests";
-  else if (!tests.length) empty = "No unit tests: a test is a routine whose label starts with UT_";
+    empty = t("panels.side.unitTests.empty.language");
+  else if (!program) empty = t("panels.side.unitTests.empty.notBuilt");
+  else if (!tests.length) empty = t("panels.side.unitTests.empty.noTests");
 
   return (
     <div className={styles.panel}>
       <div className={styles.toolbar}>
         <IconButton
           iconName="play"
-          title="Run all tests (builds first)"
+          title={t("panels.side.unitTests.toolbar.runAll")}
           iconSize={iconSizes.sm}
           buttonWidth={22}
           buttonHeight={22}
@@ -148,7 +154,7 @@ export const UnitTestsPanel = () => {
         />
         <IconButton
           iconName="refresh"
-          title="Run the tests that failed"
+          title={t("panels.side.unitTests.toolbar.runFailed")}
           iconSize={iconSizes.sm}
           buttonWidth={22}
           buttonHeight={22}
@@ -158,17 +164,17 @@ export const UnitTestsPanel = () => {
         />
         <IconButton
           iconName="debug"
-          title={selected ? `Debug ${selected} in the emulator` : "Select a test to debug"}
+          title={selected ? t("panels.side.unitTests.toolbar.debug", { test: selected }) : t("panels.side.unitTests.toolbar.selectToDebug")}
           iconSize={iconSizes.sm}
           buttonWidth={22}
           buttonHeight={22}
-          enable={canRun && !!selected && tests.some((t) => t.id === selected)}
+          enable={canRun && !!selected && tests.some((test) => test.id === selected)}
           fill="--color-command-icon"
           clicked={() => selected && void execute(`test-debug ${selected}`)}
         />
         <IconButton
           iconName="stop"
-          title="Stop the run"
+          title={t("panels.side.unitTests.toolbar.stop")}
           iconSize={iconSizes.sm}
           buttonWidth={22}
           buttonHeight={22}
@@ -179,7 +185,7 @@ export const UnitTestsPanel = () => {
         {program && !program.labels && TEST_LANGUAGES.includes(language ?? "") && (
           <IconButton
             iconName="plus"
-            title="Add unit-test support (the include file and its include line)"
+            title={t("panels.side.unitTests.toolbar.addSupport")}
             iconSize={iconSizes.sm}
             buttonWidth={22}
             buttonHeight={22}
@@ -190,8 +196,8 @@ export const UnitTestsPanel = () => {
         )}
       </div>
       {(builtAt || status) && (
-        <div className={styles.status} title={[builtAt && `Built at ${builtAt}`, status].filter(Boolean).join(" · ")}>
-          {[builtAt && `Built ${builtAt}`, status].filter(Boolean).join(" · ")}
+        <div className={styles.status} title={[builtAt && t("panels.side.unitTests.builtAtLong", { time: builtAt }), status].filter(Boolean).join(" · ")}>
+          {[builtAt && t("panels.side.unitTests.builtAt", { time: builtAt }), status].filter(Boolean).join(" · ")}
         </div>
       )}
       {problems.map((p, i) => (
@@ -204,13 +210,13 @@ export const UnitTestsPanel = () => {
           <PanelFilter
             value={filter}
             onChange={setFilter}
-            placeholder="Test name or message"
-            label="Filter unit tests"
+            placeholder={t("panels.side.unitTests.filterPlaceholder")}
+            label={t("panels.side.unitTests.filterLabel")}
             status={filter.trim() ? `${rows.filter((r) => r.kind === "test").length} / ${tests.length}` : undefined}
           />
         )}
         {empty && <EmptyState message={empty} />}
-        {!empty && rows.length === 0 && <EmptyState message={`No test matches "${filter.trim()}"`} motif={false} />}
+        {!empty && rows.length === 0 && <EmptyState message={t("panels.side.unitTests.noMatch", { filter: filter.trim() })} motif={false} />}
         {rows.length > 0 && (
           <div className={styles.list}>
             <VirtualizedList
@@ -237,7 +243,7 @@ export const UnitTestsPanel = () => {
       </DataPanel>
       <ContextMenu state={menuState} onClickOutside={() => menuApi.conceal()}>
         <ContextMenuItem
-          text="Run"
+          text={t("panels.side.unitTests.menu.run")}
           iconName="play"
           disabled={!canRun}
           clicked={() => {
@@ -246,7 +252,7 @@ export const UnitTestsPanel = () => {
           }}
         />
         <ContextMenuItem
-          text="Debug"
+          text={t("panels.side.unitTests.menu.debug")}
           iconName="debug"
           disabled={!canRun}
           clicked={() => {
@@ -256,7 +262,7 @@ export const UnitTestsPanel = () => {
         />
         <ContextMenuSeparator />
         <ContextMenuItem
-          text="Copy result"
+          text={t("panels.side.unitTests.menu.copyResult")}
           iconName="copy"
           clicked={() => {
             menuApi.conceal();
@@ -264,7 +270,7 @@ export const UnitTestsPanel = () => {
           }}
         />
         <ContextMenuItem
-          text="Reveal in Disassembly"
+          text={t("panels.side.unitTests.menu.revealInDisassembly")}
           iconName="disassembly-icon"
           clicked={() => {
             menuApi.conceal();
@@ -273,7 +279,7 @@ export const UnitTestsPanel = () => {
         />
         <ContextMenuSeparator />
         <ContextMenuItem
-          text="Export results as JUnit..."
+          text={t("panels.side.unitTests.menu.exportJUnit")}
           iconName="save"
           disabled={!Object.keys(results).length || running}
           clicked={() => {
@@ -297,15 +303,18 @@ type RowProps = {
 };
 
 const StatusGlyph = ({ status }: { status: UnitTestRowStatus }) => {
+  const t = useT();
   const s = STATUS_ICON[status];
+  const title = t(s.titleKey);
   return (
-    <span title={s.title} aria-label={s.title}>
+    <span title={title} aria-label={title}>
       <Icon iconName={s.icon} width={iconSizes.sm} height={iconSizes.sm} fill={s.fill} />
     </span>
   );
 };
 
 const UnitTestRowView = ({ row, index, selected, onSelect, onMessage, onRun, onContextMenu }: RowProps) => {
+  const t = useT();
   switch (row.kind) {
     case "suite":
       return (
@@ -315,7 +324,9 @@ const UnitTestRowView = ({ row, index, selected, onSelect, onMessage, onRun, onC
             {row.name}
           </span>
           <span className={styles.tstates}>
-            {row.failures ? `${row.failures} of ${row.count} failing` : `${row.count}`}
+            {row.failures
+              ? t("panels.side.unitTests.suiteFailing", { failures: row.failures, count: row.count })
+              : `${row.count}`}
           </span>
         </DataRow>
       );

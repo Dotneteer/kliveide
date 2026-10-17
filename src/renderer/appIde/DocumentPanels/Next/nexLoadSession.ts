@@ -1,3 +1,4 @@
+import { t } from "@common/i18n/i18n";
 import { hostFileName } from "@common/utils/nex-launch-paths";
 
 /*
@@ -84,8 +85,5 @@ export function describeNexBankProvenance(
   if (bank16k < 0 || bank16k === 0xff) return undefined;
   if (!loaded.banks.includes(bank16k)) return undefined;
 
-  return (
-    `This is one of ${loaded.fileName}'s banks, as launched — ` +
-    "the program may have changed it since."
-  );
+  return t("panels.next.provenance", { fileName: loaded.fileName });
 }

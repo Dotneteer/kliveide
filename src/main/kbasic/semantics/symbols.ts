@@ -147,21 +147,3 @@ export class Scope {
     if (anyCase) this.anyCase.add(symbol);
   }
 }
-
-/** How a symbol's class is named in messages. */
-export function kindText(s: Symbol | LabelSymbol): string {
-  switch (s.kind) {
-    case "variable":
-      return "a variable";
-    case "array":
-      return "an array";
-    case "const":
-      return "a constant";
-    case "sub":
-      return "a SUB";
-    case "function":
-      return "a FUNCTION";
-    case "label":
-      return "a label";
-  }
-}

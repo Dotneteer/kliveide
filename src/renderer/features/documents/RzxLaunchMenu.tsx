@@ -18,7 +18,7 @@ import { spectrumSnapshotProjectGuard } from "@renderer/appIde/commands/Spectrum
  */
 
 const recordingGuard = (state: Parameters<typeof spectrumSnapshotProjectGuard>[0]) =>
-  spectrumSnapshotProjectGuard(state)?.replace(/snapshot/g, "recording");
+  spectrumSnapshotProjectGuard(state, undefined, "recording");
 
 /** The Explorer's entries for an `.rzx` file */
 export function getRzxContextMenuInfo(services: AppServices): ContextMenuInfo[] {

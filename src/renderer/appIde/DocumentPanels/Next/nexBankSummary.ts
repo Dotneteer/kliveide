@@ -1,3 +1,4 @@
+import { t } from "@common/i18n/i18n";
 import type {
   AnnotationRegion,
   AnnotationRegionType,
@@ -64,7 +65,9 @@ export function contentMixPercent(mix: NexBankContentMix, type: AnnotationRegion
  */
 export function formatMixPercent(mix: NexBankContentMix, type: AnnotationRegionType): string {
   const percent = contentMixPercent(mix, type);
-  return percent === 0 && mix[type] > 0 ? "<1%" : `${percent}%`;
+  return percent === 0 && mix[type] > 0
+    ? t("panels.next.mix.underOnePercent")
+    : t("panels.next.mix.percent", { percent });
 }
 
 /** A label that lands in a bank, with the address it is listed at. */

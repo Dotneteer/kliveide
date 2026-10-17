@@ -10,6 +10,8 @@
  * hardware: 48K becomes 16K, 128K becomes +2, +3 becomes +2A.
  */
 
+import { t } from "@common/i18n/i18n";
+import type { MessageKey } from "@common/i18n/keys.generated";
 import { decompressZ80DataBlock } from "./z80Compression";
 import {
   SPECTRUM_BANK_SIZE,
@@ -63,7 +65,12 @@ const HW_MODE_EXTENDED: Record<number, string> = {
 const Z80_JOYSTICKS = ["Cursor/Protek/AGF", "Kempston", "Sinclair 2 Left", "Sinclair 2 Right"];
 
 /** The video synchronisation in byte 29 bits 4-5 */
-const Z80_VIDEO_SYNC = ["Normal", "High", "Normal", "Low"];
+const Z80_VIDEO_SYNC: MessageKey[] = [
+  "media.snapshot.value.syncNormal",
+  "media.snapshot.value.syncHigh",
+  "media.snapshot.value.syncNormal",
+  "media.snapshot.value.syncLow"
+];
 
 /** The name of a hardware mode, as the viewer shows it */
 export function z80HardwareModeName(version: number, mode: number, modified: boolean): string {
@@ -182,7 +189,7 @@ function requiredBanks(machine: SnapshotMachine): number[] {
  */
 export function parseZ80File(bytes: Uint8Array): SpectrumSnapshot {
   if (bytes.length < 30) {
-    throw new Error(`A .z80 file has a 30-byte header; this file is ${bytes.length} bytes long`);
+    throw new Error(t("media.snapshot.error.z80TooShort", { length: bytes.length }));
   }
   const warnings: string[] = [];
   const flags1 = bytes[12] === 0xff ? 1 : bytes[12];
@@ -207,7 +214,7 @@ export function parseZ80File(bytes: Uint8Array): SpectrumSnapshot {
     im: flags2 & 0x03
   };
   if (cpu.im === 3) {
-    warnings.push("Interrupt mode 3 does not exist; IM 1 is used");
+    warnings.push(t("media.snapshot.warning.badInterruptMode", { mode: 3 }));
     cpu.im = 1;
   }
   const border = (flags1 >> 1) & 0x07;
@@ -216,14 +223,14 @@ export function parseZ80File(bytes: Uint8Array): SpectrumSnapshot {
   };
   if (flags2 & 0x04) peripherals.issue2 = true;
   if (flags1 & 0x10) {
-    warnings.push("The file asks for the SamRom BASIC switch, which Klive ignores");
+    warnings.push(t("media.snapshot.warning.samRom"));
   }
   const header = [
-    { label: "Compressed (v1)", value: flags1 & 0x20 ? "yes" : "no" },
-    { label: "Issue 2 keyboard", value: flags2 & 0x04 ? "yes" : "no" },
-    { label: "Double interrupt frequency", value: flags2 & 0x08 ? "yes" : "no" },
-    { label: "Video sync", value: Z80_VIDEO_SYNC[(flags2 >> 4) & 0x03] },
-    { label: "Joystick", value: peripherals.joystick! }
+    { label: t("media.snapshot.header.compressedV1"), value: flags1 & 0x20 ? t("media.snapshot.value.yes") : t("media.snapshot.value.no") },
+    { label: t("media.snapshot.header.issue2"), value: flags2 & 0x04 ? t("media.snapshot.value.yes") : t("media.snapshot.value.no") },
+    { label: t("media.snapshot.header.doubleInterrupt"), value: flags2 & 0x08 ? t("media.snapshot.value.yes") : t("media.snapshot.value.no") },
+    { label: t("media.snapshot.header.videoSync"), value: t(Z80_VIDEO_SYNC[(flags2 >> 4) & 0x03]) },
+    { label: t("media.snapshot.header.joystick"), value: peripherals.joystick! }
   ];
 
   // --- Version 1: the 48K RAM follows the header
@@ -232,7 +239,7 @@ export function parseZ80File(bytes: Uint8Array): SpectrumSnapshot {
     const ramBytes = flags1 & 0x20 ? decompressZ80DataBlock(data, true) : data;
     if (ramBytes.length !== 3 * SPECTRUM_BANK_SIZE) {
       throw new Error(
-        `A version 1 .z80 file holds 48K of RAM; this one holds ${ramBytes.length} bytes`
+        t("media.snapshot.error.z80V1RamSize", { size: ramBytes.length })
       );
     }
     const ram = new Map<number, Uint8Array>();
@@ -247,23 +254,23 @@ export function parseZ80File(bytes: Uint8Array): SpectrumSnapshot {
       ula: { border },
       ram,
       peripherals,
-      header: [{ label: "Version", value: "1" }, ...header],
+      header: [{ label: t("media.snapshot.header.version"), value: "1" }, ...header],
       warnings
     };
   }
 
   // --- Versions 2 and 3
   if (bytes.length < 34) {
-    throw new Error("The .z80 extra header is missing");
+    throw new Error(t("media.snapshot.error.z80NoExtraHeader"));
   }
   const extraLength = readWord(bytes, 30);
   const version = extraLength === 23 ? 2 : extraLength === 54 || extraLength === 55 ? 3 : 0;
   if (!version) {
-    throw new Error(`The .z80 extra header length is ${extraLength}; it should be 23, 54 or 55`);
+    throw new Error(t("media.snapshot.error.z80ExtraHeaderLength", { length: extraLength }));
   }
   const dataStart = 32 + extraLength;
   if (bytes.length < dataStart) {
-    throw new Error(`The .z80 extra header is truncated (${bytes.length} bytes)`);
+    throw new Error(t("media.snapshot.error.z80ExtraHeaderTruncated", { length: bytes.length }));
   }
   cpu.pc = readWord(bytes, 32);
   const hwMode = bytes[34];
@@ -277,8 +284,8 @@ export function parseZ80File(bytes: Uint8Array): SpectrumSnapshot {
   if (mgt) peripherals.mgt = true;
 
   header.unshift(
-    { label: "Version", value: `${version}` },
-    { label: "Hardware mode", value: `${hwMode}: ${z80HardwareModeName(version, hwMode, modified)}` }
+    { label: t("media.snapshot.header.version"), value: `${version}` },
+    { label: t("media.snapshot.header.hardwareMode"), value: `${hwMode}: ${z80HardwareModeName(version, hwMode, modified)}` }
   );
   header.push(
     ...(timexMode
@@ -288,12 +295,12 @@ export function parseZ80File(bytes: Uint8Array): SpectrumSnapshot {
         ]
       : [
           { label: "Port $7FFD", value: hex(bytes[35]) },
-          { label: "Interface 1 ROM paged", value: bytes[36] === 0xff ? "yes" : "no" }
+          { label: t("media.snapshot.header.if1RomPaged"), value: bytes[36] === 0xff ? t("media.snapshot.value.yes") : t("media.snapshot.value.no") }
         ]),
-    { label: "R emulation", value: flags3 & 0x01 ? "on" : "off" },
-    { label: "LDIR emulation", value: flags3 & 0x02 ? "on" : "off" },
-    { label: "AY sound in use", value: flags3 & 0x04 ? "yes" : "no" },
-    { label: "Fuller Audio Box", value: flags3 & 0x40 ? "yes" : "no" }
+    { label: t("media.snapshot.header.rEmulation"), value: flags3 & 0x01 ? t("media.snapshot.value.on") : t("media.snapshot.value.off") },
+    { label: t("media.snapshot.header.ldirEmulation"), value: flags3 & 0x02 ? t("media.snapshot.value.on") : t("media.snapshot.value.off") },
+    { label: t("media.snapshot.header.aySound"), value: flags3 & 0x04 ? t("media.snapshot.value.yes") : t("media.snapshot.value.no") },
+    { label: t("media.snapshot.header.fullerAudioBox"), value: flags3 & 0x40 ? t("media.snapshot.value.yes") : t("media.snapshot.value.no") }
   );
 
   const result: SpectrumSnapshot = {
@@ -338,18 +345,18 @@ export function parseZ80File(bytes: Uint8Array): SpectrumSnapshot {
     const low = readWord(bytes, 55);
     const high = bytes[57];
     const quarter = paged ? 17727 : machine === "ts2068" ? 58688 / 4 : 17472;
-    header.push({ label: "T-state counter", value: `${hex(high)} / ${hex(low, 4)}` });
+    header.push({ label: t("media.snapshot.header.tstateCounter"), value: `${hex(high)} / ${hex(low, 4)}` });
     if (low < quarter) {
       // --- The high counter is 3 just after the interrupt and counts up every quarter frame;
       // --- the low counter counts down through each quarter
       result.ula.frameTact = ((high + 1) & 0x03) * quarter + (quarter - 1 - low);
     } else {
-      warnings.push(`The T-state counter (${low}) is out of range; the frame position is not used`);
+      warnings.push(t("media.snapshot.warning.z80TstateCounter", { value: low }));
     }
     if (bytes[59] === 0xff) peripherals.mgt = true;
     if (bytes[60] === 0xff) {
       peripherals.multiface = true;
-      warnings.push("The Multiface ROM was paged in; the program will probably crash");
+      warnings.push(t("media.snapshot.warning.multiface"));
     }
   }
 
@@ -357,30 +364,30 @@ export function parseZ80File(bytes: Uint8Array): SpectrumSnapshot {
   let offset = dataStart;
   while (offset < bytes.length) {
     if (offset + 3 > bytes.length) {
-      throw new Error(`A .z80 memory block header at ${offset} is truncated`);
+      throw new Error(t("media.snapshot.error.z80BlockHeaderTruncated", { offset }));
     }
     const length = readWord(bytes, offset);
     const page = bytes[offset + 2];
     offset += 3;
     const stored = length === 0xffff ? SPECTRUM_BANK_SIZE : length;
     if (offset + stored > bytes.length) {
-      throw new Error(`The .z80 memory block of page ${page} is truncated`);
+      throw new Error(t("media.snapshot.error.z80BlockTruncated", { page }));
     }
     const raw = bytes.subarray(offset, offset + stored);
     offset += stored;
     const data = length === 0xffff ? raw.slice() : decompressZ80DataBlock(raw);
     if (data.length !== SPECTRUM_BANK_SIZE) {
       throw new Error(
-        `The .z80 memory block of page ${page} holds ${data.length} bytes instead of 16384`
+        t("media.snapshot.error.z80BlockSize", { page, size: data.length })
       );
     }
     const bank = bankOfPage(page, paged, snapshotBankCount(machine));
     if (bank === undefined) {
-      warnings.push(`Memory page ${page} is not RAM of this machine; it is ignored`);
+      warnings.push(t("media.snapshot.warning.z80PageNotRam", { page }));
       continue;
     }
     if (result.ram.has(bank)) {
-      warnings.push(`Memory page ${page} is stored twice; the first copy is used`);
+      warnings.push(t("media.snapshot.warning.z80PageTwice", { page }));
       continue;
     }
     result.ram.set(bank, data);
@@ -389,7 +396,7 @@ export function parseZ80File(bytes: Uint8Array): SpectrumSnapshot {
   if (typeof machine === "string") {
     const missing = requiredBanks(machine).filter((b) => !result.ram.has(b));
     if (missing.length) {
-      throw new Error(`The .z80 file lacks RAM bank(s) ${missing.join(", ")}`);
+      throw new Error(t("media.snapshot.error.z80MissingBanks", { count: missing.length, banks: missing.join(", ") }));
     }
   }
   return result;

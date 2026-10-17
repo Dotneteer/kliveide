@@ -6,6 +6,7 @@ import { BUILD_FILE } from "@common/structs/project-const";
 import { scriptDocumentId } from "@common/utils/script-utils";
 import { isAbsolutePath } from "@renderer/appIde/project/project-node";
 import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
+import { t } from "@common/i18n/i18n";
 
 type RunScriptCommandArgs = {
   filePath: string;
@@ -13,7 +14,9 @@ type RunScriptCommandArgs = {
 
 export class RunScriptCommand extends IdeCommandBase<RunScriptCommandArgs> {
   readonly id = "script-run";
-  readonly description = "Runs the specified script";
+  get description() {
+    return t("commands.script.runDescription");
+  }
   readonly usage = "script-run <script file path>";
   readonly aliases = ["scr"];
 
@@ -32,9 +35,10 @@ export class RunScriptCommand extends IdeCommandBase<RunScriptCommandArgs> {
     try {
       const id = await context.service.scriptService.runScript(checkResult.file!);
       return commandSuccessWith(
-        `Script ${args.filePath} (with ID ${Math.abs(id)}) ${
-          id < 0 ? "is already running" : "has been started"
-        }.`
+        t(id < 0 ? "commands.script.alreadyRunning" : "commands.script.started", {
+          script: args.filePath,
+          id: String(Math.abs(id))
+        })
       );
     } catch (err) {
       return commandError(err.message);
@@ -48,7 +52,9 @@ type CancelScriptCommandArgs = {
 
 export class CancelScriptCommand extends IdeCommandBase<CancelScriptCommandArgs> {
   readonly id = "script-cancel";
-  readonly description = "Cancels the specified running script";
+  get description() {
+    return t("commands.script.cancelDescription");
+  }
   readonly usage = "script-cancel <script file path | script ID>";
   readonly aliases = ["sc"];
 
@@ -76,7 +82,7 @@ export class CancelScriptCommand extends IdeCommandBase<CancelScriptCommandArgs>
     try {
       const stopped = await context.service.scriptService.cancelScript(arg);
       return commandSuccessWith(
-        stopped ? `Script ${arg} has been stopped.` : `Script ${arg} did not run.`
+        t(stopped ? "commands.script.stopped" : "commands.script.notRunning", { script: String(arg) })
       );
     } catch (err) {
       return commandError(err.message);
@@ -90,7 +96,9 @@ type DisplayScriptOutputCommandArgs = {
 
 export class DisplayScriptOutputCommand extends IdeCommandBase<DisplayScriptOutputCommandArgs> {
   readonly id = "script-output";
-  readonly description = "Displays the output of the specified script";
+  get description() {
+    return t("commands.script.outputDescription");
+  }
   readonly usage = "script-output <script ID>";
   readonly aliases = ["so"];
 
@@ -110,7 +118,7 @@ export class DisplayScriptOutputCommand extends IdeCommandBase<DisplayScriptOutp
     const scripts = context.store.getState().scripts;
     const thisScript = scripts.find((s) => s.id === scriptId);
     if (!thisScript) {
-      return commandError(`Script with ID ${scriptId} not found`);
+      return commandError(t("commands.script.notFound", { id: String(scriptId) }));
     }
 
     // --- Open the script output
@@ -121,7 +129,7 @@ export class DisplayScriptOutputCommand extends IdeCommandBase<DisplayScriptOutp
       await documentHubService.openDocument(
         {
           id: scriptDocumentId(args.scriptId),
-          name: `${thisScript.scriptFileName} (ID: ${scriptId}) output`,
+          name: t("commands.script.outputDocumentName", { script: thisScript.scriptFileName, id: String(scriptId) }),
           type: SCRIPT_OUTPUT_VIEWER,
           contents: scriptId.toString(),
           iconName: "note",
@@ -131,7 +139,7 @@ export class DisplayScriptOutputCommand extends IdeCommandBase<DisplayScriptOutp
       );
     }
     return commandSuccessWith(
-      `Output of script ${thisScript.scriptFileName} (ID: ${scriptId}) displayed.`
+      t("commands.script.outputDisplayed", { script: thisScript.scriptFileName, id: String(scriptId) })
     );
   }
 }
@@ -142,7 +150,9 @@ type RunBuildScriptCommandArgs = {
 
 export class RunBuildScriptCommand extends IdeCommandBase<RunBuildScriptCommandArgs> {
   readonly id = "run-build-function";
-  readonly description = "Runs the specified build script function";
+  get description() {
+    return t("commands.script.buildFunctionDescription");
+  }
   readonly usage = "run-build-function <function name>";
   readonly aliases = ["rbf"];
 
@@ -159,24 +169,24 @@ export class RunBuildScriptCommand extends IdeCommandBase<RunBuildScriptCommandA
     // --- Check for function name syntax
     const functionName = args.functionName;
     if (!functionName.match(/^[$A-Z_][0-9A-Z_$]*$/i)) {
-      return commandError(`Invalid function name syntax: '${functionName}'`);
+      return commandError(t("commands.script.invalidFunctionName", { name: functionName }));
     }
 
     // --- Check if the project is open
     if (!context.store.getState().project?.folderPath) {
-      return commandError("Open a project first. Only then you can run scripts.");
+      return commandError(t("commands.script.openProject"));
     }
 
     // --- Check if this project has a build file
     if (!context.store.getState().project?.hasBuildFile) {
-      return commandError("This project has no build file.");
+      return commandError(t("commands.script.noBuildFile"));
     }
 
     // --- Check if build function exists
     try {
       const functions = await context.mainApi.getBuildFunctions();
       if (!functions.includes(functionName)) {
-        return commandError(`Function '${functionName}' not found in the build file.`);
+        return commandError(t("commands.script.functionNotFound", { name: functionName }));
       }
       // --- Get the current project's build file name
       const projectFolder = context.store.getState().project?.folderPath;
@@ -195,9 +205,10 @@ export class RunBuildScriptCommand extends IdeCommandBase<RunBuildScriptCommandA
           "build"
         );
         return commandSuccessWith(
-          `Script ${functionName} (with ID ${Math.abs(id)}) ${
-            id < 0 ? "is already running" : "has been started"
-          }.`,
+          t(id < 0 ? "commands.script.alreadyRunning" : "commands.script.started", {
+            script: functionName,
+            id: String(Math.abs(id))
+          }),
           id
         );
       } catch (err) {
@@ -215,7 +226,7 @@ async function checkScriptFile(
 ): Promise<{ file?: string; error?: string }> {
   const projectFolder = context.store.getState().project?.folderPath;
   if (!projectFolder) {
-    return { error: "Open a project first. Only then you can run scripts." };
+    return { error: t("commands.script.openProject") };
   }
 
   // --- Check if the script file exists

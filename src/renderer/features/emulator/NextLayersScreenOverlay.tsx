@@ -27,6 +27,8 @@ import { useMainApi } from "@renderer/core/MainApi";
 import { reportMessagingError } from "@renderer/reportError";
 import { EmulatorScreenOverlay, type ScreenPointer, type ScreenShape } from "./EmulatorScreenOverlay";
 import styles from "./NextLayersScreenOverlay.module.scss";
+import { useT, type TFunction } from "@common/i18n/useT";
+import type { MessageKey } from "@common/i18n/keys.generated";
 
 type Props = {
   machine: IZxNextIdeMachine;
@@ -75,6 +77,7 @@ const INSPECTOR: Partial<Record<NextLayerId, "sprites" | "tilemap" | "layer2">> 
  * a pixel of it.
  */
 export const NextLayersScreenOverlay = ({ machine, view, layerState, paused, screenWidth, screenHeight }: Props) => {
+  const t = useT();
   const mainApi = useMainApi();
   const [probe, setProbe] = useState<{ result: NextPixelProbe; left: number; top: number; flip: boolean }>();
   const probing = !!view.probe && paused;
@@ -110,7 +113,7 @@ export const NextLayersScreenOverlay = ({ machine, view, layerState, paused, scr
           y: r.y + 0.5,
           width: Math.max(0, r.width - 1),
           height: Math.max(0, r.height - 1),
-          title: `${NEXT_LAYER_NAMES[id]} clip window`
+          title: t("panels.feature.nextLayers.clipWindow", { layer: NEXT_LAYER_NAMES[id] })
         };
       })
     : [];
@@ -139,15 +142,49 @@ export const NextLayersScreenOverlay = ({ machine, view, layerState, paused, scr
   );
 };
 
-const layerText = (p: LayerPixel): string => {
-  if (p.disabled) return "disabled";
-  if (!p.opaque) return "transparent";
-  const flags = [p.priority ? "priority" : "", p.border ? "border" : "", p.below ? "below ULA" : ""].filter(Boolean);
-  return `${rgb333Hex(p.rgb)}${flags.length ? ` (${flags.join(", ")})` : ""}`;
+const layerText = (t: TFunction, p: LayerPixel): string => {
+  if (p.disabled) return t("panels.feature.nextLayers.pixel.disabled");
+  if (!p.opaque) return t("panels.feature.nextLayers.pixel.transparent");
+  const flags = [
+    p.priority ? t("panels.feature.nextLayers.pixel.priority") : "",
+    p.border ? t("panels.feature.nextLayers.pixel.border") : "",
+    p.below ? t("panels.feature.nextLayers.pixel.belowUla") : ""
+  ].filter(Boolean);
+  return flags.length
+    ? t("panels.feature.nextLayers.pixel.withFlags", { color: rgb333Hex(p.rgb), flags: flags.join(", ") })
+    : rgb333Hex(p.rgb);
+};
+
+/** The probe's last line: when the pixel was drawn, and how exact the registers behind it are */
+const PROBE_NOTES: Record<"thisFrame" | "lastFrame", Record<"exact" | "noCapture" | "overflow" | "approximate", MessageKey>> = {
+  thisFrame: {
+    exact: "panels.feature.nextLayers.note.thisFrameExact",
+    noCapture: "panels.feature.nextLayers.note.thisFrameNoCapture",
+    overflow: "panels.feature.nextLayers.note.thisFrameOverflow",
+    approximate: "panels.feature.nextLayers.note.thisFrameApproximate"
+  },
+  lastFrame: {
+    exact: "panels.feature.nextLayers.note.lastFrameExact",
+    noCapture: "panels.feature.nextLayers.note.lastFrameNoCapture",
+    overflow: "panels.feature.nextLayers.note.lastFrameOverflow",
+    approximate: "panels.feature.nextLayers.note.lastFrameApproximate"
+  }
+};
+
+const probeNote = (t: TFunction, probe: NextPixelProbe): string => {
+  const quality = !probe.status.captured
+    ? "noCapture"
+    : !probe.status.exact
+      ? probe.status.overflow
+        ? "overflow"
+        : "approximate"
+      : "exact";
+  return t(PROBE_NOTES[probe.thisFrame ? "thisFrame" : "lastFrame"][quality]);
 };
 
 /** The probe's explanation of one pixel (D7) */
 export const ProbeTooltip = ({ probe, style }: { probe: NextPixelProbe; style?: React.CSSProperties }) => {
+  const t = useT();
   const mode = describeBlend(probe.params.priorities, probe.params.blendMode) ?? PRIORITY_NAMES[probe.params.priorities];
   const hiddenWinner = probe.why !== probe.machineWhy || probe.rgb !== probe.machineRgb;
   return (
@@ -158,10 +195,13 @@ export const ProbeTooltip = ({ probe, style }: { probe: NextPixelProbe; style?: 
           ({probe.x}, {probe.y}) {rgb333Hex(probe.rgb)}
         </span>
       </div>
-      <div className={styles.why}>{WHY_TEXT[probe.why] ?? `rule ${probe.why}`}</div>
+      <div className={styles.why}>{WHY_TEXT[probe.why] ?? t("panels.feature.nextLayers.rule", { rule: probe.why })}</div>
       {hiddenWinner && (
         <div className={styles.note}>
-          The machine shows {rgb333Hex(probe.machineRgb)}: {WHY_TEXT[probe.machineWhy]}
+          {t("panels.feature.nextLayers.machineShows", {
+            color: rgb333Hex(probe.machineRgb),
+            why: WHY_TEXT[probe.machineWhy]
+          })}
         </div>
       )}
       <div className={styles.rows}>
@@ -172,31 +212,23 @@ export const ProbeTooltip = ({ probe, style }: { probe: NextPixelProbe; style?: 
               {probe.layers[id].opaque && (
                 <span className={styles.swatch} style={{ backgroundColor: rgb333Css(probe.layers[id].rgb) }} />
               )}
-              {layerText(probe.layers[id])}
+              {layerText(t, probe.layers[id])}
             </span>
           </div>
         ))}
         <div className={styles.row}>
-          <span className={styles.label}>Mode</span>
+          <span className={styles.label}>{t("panels.feature.nextLayers.mode")}</span>
           <span className={styles.value}>
-            {mode}
-            {probe.params.stencil ? ", stencil" : ""}
+            {probe.params.stencil ? t("panels.feature.nextLayers.modeStencil", { mode }) : mode}
           </span>
         </div>
         <div className={styles.row}>
-          <span className={styles.label}>Fallback</span>
+          <span className={styles.label}>{t("panels.feature.nextLayers.fallback")}</span>
           <span className={styles.value}>{rgb333Hex(probe.params.fallbackRgb)}</span>
         </div>
       </div>
       <div className={styles.note}>
-        {probe.thisFrame ? "Drawn this frame" : "Drawn last frame (past the beam)"}
-        {!probe.status.captured
-          ? "; registers as they are now (no capture)"
-          : !probe.status.exact
-            ? probe.status.overflow
-              ? "; too many mid-frame changes, approximate"
-              : "; captured from mid-frame, approximate"
-            : ""}
+        {probeNote(t, probe)}
       </div>
     </div>
   );

@@ -2,6 +2,7 @@ import classnames from "classnames";
 import { useMemo } from "react";
 import { abgrToCss } from "@renderer/controls/Next/sprites/spriteAbgr";
 import ScrollViewer from "@renderer/controls/ScrollViewer";
+import { useT } from "@common/i18n/useT";
 import { IndexedImageCanvas } from "@renderer/controls/Next/IndexedImageCanvas";
 import {
   cellFields,
@@ -85,6 +86,7 @@ export const TilemapInspectorPane = ({
   onSelectTile,
   onOpenSnapshot
 }: Props) => {
+  const t = useT();
   const cell =
     selection?.kind === "cell"
       ? model.cells[cellIndex(model, selection.col, selection.row)]
@@ -95,14 +97,13 @@ export const TilemapInspectorPane = ({
     if (!cell) return undefined;
     const shown = cellShownIndices(model, cell, textTransparent);
     const stored = tileStoredIndices(model, cell.tile, cell.paletteOffset, textTransparent);
-    return {
-      shown,
-      stored,
-      fields: cellFields(model, cell),
-      colours: coloursUsed(shown),
-      reasons: invisibilityReasons(model, cell, shown)
-    };
+    return { shown, stored, colours: coloursUsed(shown) };
   }, [model, cell, textTransparent]);
+  // --- Not memoized: the text is cheap and must follow a language switch
+  const cellText =
+    cell && cellView
+      ? { fields: cellFields(model, cell), reasons: invisibilityReasons(model, cell, cellView.shown) }
+      : undefined;
 
   const tileView = useMemo(() => {
     if (tile === undefined) return undefined;
@@ -121,19 +122,20 @@ export const TilemapInspectorPane = ({
       key={index}
       className={styles.swatch}
       style={{ background: abgrToCss(abgr[index & 0xff]) }}
-      title={`Palette index ${index} ($${index.toString(16).toUpperCase().padStart(2, "0")})`}
+      title={t("panels.tilemap.pane.swatch", {
+        index,
+        hex: `$${index.toString(16).toUpperCase().padStart(2, "0")}`
+      })}
     />
   );
 
   return (
     <div
       className={classnames(styles.inspector, { [styles.inspectorBand]: layout === "band" })}
-      aria-label="Inspector"
+      aria-label={t("panels.graphics.inspector.label")}
     >
       {!cell && tile === undefined && (
-        <div className={styles.inspectorEmpty}>
-          Select a cell on the map or a tile in the sheet.
-        </div>
+        <div className={styles.inspectorEmpty}>{t("panels.tilemap.pane.empty")}</div>
       )}
 
       {cell && cellView && (
@@ -145,62 +147,59 @@ export const TilemapInspectorPane = ({
                 <div className={styles.previews}>
                   <Preview
                     pixels={cellView.stored}
-                    label="as stored"
+                    label={t("panels.tilemap.pane.asStored")}
                     abgr={abgr}
                     transparentAbgr={transparentAbgr}
                     checker={checker}
                   />
                   <Preview
                     pixels={cellView.shown}
-                    label="as shown"
+                    label={t("panels.tilemap.pane.asShown")}
                     abgr={abgr}
                     transparentAbgr={transparentAbgr}
                     checker={checker}
                   />
                 </div>
                 <dl className={styles.fields}>
-                  {cellView.fields.map((f) => (
-                    <div key={f.name} className={styles.field} title={f.title}>
+                  {cellText!.fields.map((f) => (
+                    <div key={f.id} className={styles.field} title={f.title}>
                       <dt>{f.name}</dt>
                       <dd className={classnames({ [styles.muted]: f.muted })}>{f.value}</dd>
                     </div>
                   ))}
                 </dl>
                 <div className={styles.inspectorSection}>
-                  <span className={styles.sectionLabel}>Colours</span>
+                  <span className={styles.sectionLabel}>{t("panels.tilemap.pane.colours")}</span>
                   <span className={styles.swatches}>
                     {cellView.colours.length ? (
                       cellView.colours.map(swatch)
                     ) : (
-                      <span className={styles.muted}>none</span>
+                      <span className={styles.muted}>{t("panels.graphics.inspector.none")}</span>
                     )}
                   </span>
                 </div>
-                {cellView.reasons.map((r) => (
+                {cellText!.reasons.map((r) => (
                   <p key={r} className={styles.reason}>
                     {r}
                   </p>
                 ))}
                 {model.state.copperRunning && (
-                  <p className={styles.note}>
-                    The Copper is running: it may change the registers per line, so the screen can
-                    differ from this decode.
-                  </p>
+                  <p className={styles.note}>{t("panels.graphics.inspector.copperNote")}</p>
                 )}
                 <button
                   type="button"
                   className={styles.linkButton}
                   onClick={() => onSelectTile(cell.tile)}
                 >
-                  Show tile {cell.tile} and its users
+                  {t("panels.tilemap.pane.showTile", { tile: cell.tile })}
                 </button>
                 <button
                   type="button"
                   className={styles.linkButton}
-                  title="Open this tile, as this cell shows it, in a read-only tile viewer"
+                  title={t("panels.tilemap.pane.snapshotCellTitle")}
                   onClick={() => onOpenSnapshot(cell.tile, cell)}
                 >
-                  Open tile snapshot
+                  {t("panels.tilemap.menu.openSnapshot")}
                 </button>
               </div>
             </ScrollViewer>
@@ -211,8 +210,7 @@ export const TilemapInspectorPane = ({
       {tileView && tile !== undefined && (
         <>
           <div className={styles.inspectorHeader}>
-            Tile {tile} · {tileView.users.length} cell{tileView.users.length === 1 ? "" : "s"} use
-            it
+            {t("panels.tilemap.pane.tileHeader", { tile, count: tileView.users.length })}
           </div>
           <div className={styles.inspectorScroll}>
             <ScrollViewer allowHorizontal={false} thinScrollBar={true}>
@@ -220,7 +218,7 @@ export const TilemapInspectorPane = ({
                 <div className={styles.previews}>
                   <Preview
                     pixels={tileView.pixels}
-                    label={`offset ${tileView.offset}`}
+                    label={t("panels.tilemap.pane.offset", { offset: tileView.offset })}
                     abgr={abgr}
                     transparentAbgr={transparentAbgr}
                     checker={checker}
@@ -228,13 +226,13 @@ export const TilemapInspectorPane = ({
                 </div>
                 <dl className={styles.fields}>
                   <div className={styles.field}>
-                    <dt>Bytes</dt>
+                    <dt>{t("panels.graphics.inspector.bytes")}</dt>
                     <dd>
                       {tileView.address.bankText} +{model.mode.tileBytes}
                     </dd>
                   </div>
                   <div className={styles.field}>
-                    <dt>Physical</dt>
+                    <dt>{t("panels.graphics.inspector.physical")}</dt>
                     <dd>{tileView.address.physicalText}</dd>
                   </div>
                   <div className={styles.field}>
@@ -242,22 +240,22 @@ export const TilemapInspectorPane = ({
                     <dd
                       className={classnames({ [styles.muted]: tileView.address.z80 === undefined })}
                     >
-                      {tileView.address.z80Text ?? "not mapped"}
+                      {tileView.address.z80Text ?? t("panels.graphics.inspector.notMapped")}
                     </dd>
                   </div>
                 </dl>
                 <button
                   type="button"
                   className={styles.linkButton}
-                  title="Open this tile, with the sheet's palette offset, in a read-only tile viewer"
+                  title={t("panels.tilemap.pane.snapshotTileTitle")}
                   onClick={() => onOpenSnapshot(tile)}
                 >
-                  Open tile snapshot
+                  {t("panels.tilemap.menu.openSnapshot")}
                 </button>
                 <div className={styles.inspectorSection}>
-                  <span className={styles.sectionLabel}>Used by</span>
+                  <span className={styles.sectionLabel}>{t("panels.graphics.inspector.usedBy")}</span>
                   {tileView.users.length === 0 ? (
-                    <span className={styles.muted}>no cell</span>
+                    <span className={styles.muted}>{t("panels.tilemap.pane.noCell")}</span>
                   ) : (
                     <span className={styles.users}>
                       {tileView.users.slice(0, MAX_USERS).map((u) => (
@@ -272,7 +270,7 @@ export const TilemapInspectorPane = ({
                       ))}
                       {tileView.users.length > MAX_USERS && (
                         <span className={styles.muted}>
-                          and {tileView.users.length - MAX_USERS} more
+                          {t("panels.tilemap.pane.andMore", { count: tileView.users.length - MAX_USERS })}
                         </span>
                       )}
                     </span>

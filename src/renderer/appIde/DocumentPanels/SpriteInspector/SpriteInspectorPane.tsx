@@ -3,6 +3,8 @@ import type { MouseEvent as ReactMouseEvent, ReactNode } from "react";
 import classnames from "classnames";
 
 import { getRgbPartsForPaletteCode } from "@emu/machines/zxNext/palette";
+import { t as translate } from "@common/i18n/i18n";
+import { useT } from "@common/i18n/useT";
 import { formatSpritePattern, patternSlotOf } from "@common/zxnext/sprites/spriteAttributes";
 import { transformPattern } from "@common/zxnext/sprites/spriteGeometry";
 import {
@@ -61,32 +63,40 @@ const hex2 = (v: number) => `$${(v & 0xff).toString(16).toUpperCase().padStart(2
 const hex4 = (v: number) => `$${(v & 0xffff).toString(16).toUpperCase().padStart(4, "0")}`;
 
 export const SpriteInspectorPane = (props: Props) => {
+  const t = useT();
   const { selection, layout, model, selectedCell } = props;
   let title: string;
   let summary = "";
   let details: ReactNode;
   let mapSelection: number | number[] | undefined;
   if (selection?.kind === "sprite") {
-    title = `Sprite #${selection.index}`;
+    title = t("panels.sprites.pane.sprite", { index: selection.index });
     summary = spriteSummary(model, selection.index);
     details = <SpriteDetails {...props} index={selection.index} />;
     mapSelection = selection.index;
   } else if (selection?.kind === "pattern" && selectedCell) {
-    title = `Pattern ${selectedCell.number}`;
+    title = t("panels.sprites.pane.pattern", { number: selectedCell.number });
     const range = cellRange(selectedCell);
-    summary = `${selectedCell.format === "8bit" ? "8-bit" : `4-bit, ${selectedCell.secondary}`} · ${hex4(range.start)}–${hex4(range.end)}`;
+    summary =
+      selectedCell.format === "8bit"
+        ? t("panels.sprites.pane.summary8", { start: hex4(range.start), end: hex4(range.end) })
+        : t("panels.sprites.pane.summary4", {
+            half: selectedCell.secondary,
+            start: hex4(range.start),
+            end: hex4(range.end)
+          });
     details = <PatternDetails {...props} cell={selectedCell} />;
     mapSelection = usersOfSlot(model, selectedCell.slot);
   } else {
-    title = "No selection";
-    details = <p className={styles.why}>Select a sprite or a pattern, or click an outline on the map.</p>;
+    title = t("panels.sprites.pane.noSelection");
+    details = <p className={styles.why}>{t("panels.sprites.pane.hint")}</p>;
   }
 
   const map = <SpriteSpaceMap model={model} selected={mapSelection} onSelectSprite={props.onSelectSprite} />;
   return (
     <div
       className={classnames(styles.inspector, layout === "band" ? styles.band : styles.rail)}
-      aria-label="Sprite Inspector selection"
+      aria-label={t("panels.sprites.pane.label")}
       data-layout={layout}
     >
       <div className={styles.inspectorHeader}>
@@ -115,20 +125,25 @@ export const SpriteInspectorPane = (props: Props) => {
 // --- The colours a pattern uses
 
 const ColourStrip = ({ pixels, palette, abgr }: { pixels: Int16Array; palette: number[]; abgr: Uint32Array }) => {
+  const t = useT();
   const colours = patternColours(pixels);
   const shown = colours.slice(0, 12);
   return (
     <div className={styles.swatches}>
       {shown.map(({ index, count }) =>
         index === NEX_SPRITE_TRANSPARENT ? (
-          <span key="t" className={styles.swatch} title={`Transparent · ${count} px`}>
+          <span key="t" className={styles.swatch} title={t("panels.sprites.pane.swatchTransparent", { count })}>
             <span className={classnames(styles.swatchColour, spriteCheckerClass)} />
           </span>
         ) : (
           <span
             key={index}
             className={styles.swatch}
-            title={`Index ${hex2(index)} · RGB333 ${getRgbPartsForPaletteCode(palette[index]).join("")} · ${count} px`}
+            title={t("panels.sprites.pane.swatch", {
+              index: hex2(index),
+              rgb: getRgbPartsForPaletteCode(palette[index]).join(""),
+              count
+            })}
           >
             <span className={styles.swatchColour} style={{ backgroundColor: abgrToCss(abgr[index]) }} />
           </span>
@@ -151,6 +166,7 @@ const SpriteDetails = ({
   onSelectPattern,
   onOpenSnapshot
 }: Props & { index: number }) => {
+  const t = useT();
   const slot = model.slots[index];
   const r = model.resolved[index];
   const transparentAbgr = abgr[model.state.transparencyIndex & 0xff];
@@ -189,7 +205,7 @@ const SpriteDetails = ({
               className={styles.previewCanvas}
               style={{ width: box, height: box }}
             />
-            <figcaption>stored</figcaption>
+            <figcaption>{t("panels.sprites.pane.stored")}</figcaption>
           </figure>
           <figure className={styles.preview}>
             <SpriteCanvas
@@ -200,7 +216,7 @@ const SpriteDetails = ({
               className={styles.previewCanvas}
               style={{ width: shownWidth, height: shownHeight }}
             />
-            <figcaption>shown</figcaption>
+            <figcaption>{t("panels.sprites.pane.shown")}</figcaption>
           </figure>
         </div>
         <ColourStrip pixels={stored} palette={palette} abgr={abgr} />
@@ -208,18 +224,18 @@ const SpriteDetails = ({
       <dl className={styles.fields}>
         {fields.map((f) => {
           // --- A long value, or one carrying the slot's own reading, takes a whole line in the band
-          const wide = f.name === "Type" || f.own !== undefined;
+          const wide = f.id === "type" || f.own !== undefined;
           return (
-            <FieldRow key={f.name} name={f.name} wide={wide} title={f.own ? `${f.value} · ${f.own}` : f.value}>
+            <FieldRow key={f.id} name={f.name} wide={wide} title={f.own ? `${f.value} · ${f.own}` : f.value}>
               {f.value}
               {f.own && <span className={styles.own}> · {f.own}</span>}
             </FieldRow>
           );
         })}
-        <FieldRow name="Bytes" wide={true}>
+        <FieldRow name={t("panels.graphics.inspector.bytes")} wide={true}>
           {slot.raw.map((b, k) =>
             k === 4 && slot.attr4Ignored ? (
-              <s key={k} title="Ignored: a 4-byte sprite">
+              <s key={k} title={t("panels.sprites.attr4Ignored")}>
                 {hex2(b)}
               </s>
             ) : (
@@ -233,12 +249,12 @@ const SpriteDetails = ({
         className={styles.link}
         onClick={() => onSelectPattern(patternSlotOf(r), r.fourBit ? ((r.pattern7 & 1) as 0 | 1) : undefined)}
       >
-        Show pattern {formatSpritePattern(r.fourBit, r.pattern7)}
+        {t("panels.sprites.pane.showPattern", { pattern: formatSpritePattern(r.fourBit, r.pattern7) })}
       </button>
       <button
         type="button"
         className={styles.link}
-        title="Open this pattern, as this sprite shows it, in a read-only sprite editor"
+        title={t("panels.sprites.pane.openEditorSpriteTitle")}
         onClick={() =>
           onOpenSnapshot(
             r.fourBit ? "4bit" : "8bit",
@@ -248,7 +264,7 @@ const SpriteDetails = ({
           )
         }
       >
-        Open in sprite editor
+        {t("panels.sprites.pane.openEditor")}
       </button>
     </>
   );
@@ -281,12 +297,12 @@ function describeHint(pixels: Int16Array, transparencyIndex: number): string {
   switch (hint.kind) {
     case "blank":
       return hint.transparent
-        ? `Blank: every pixel is transparent (${hex2(transparencyIndex)}).`
-        : `Blank: every pixel is ${hex2(hint.index)}.`;
+        ? translate("panels.sprites.pane.blankTransparent", { index: hex2(transparencyIndex) })
+        : translate("panels.sprites.pane.blank", { index: hex2(hint.index) });
     case "noisy":
-      return `${hint.colours} colours with little structure: more likely code or packed data than a sprite.`;
+      return translate("panels.sprites.pane.noisy", { colours: hint.colours });
     default:
-      return `${hint.colours} colour${hint.colours === 1 ? "" : "s"}, ${hint.transparent} transparent pixel${hint.transparent === 1 ? "" : "s"}.`;
+      return translate("panels.sprites.pane.colours", { colours: hint.colours, transparent: hint.transparent });
   }
 }
 
@@ -299,6 +315,7 @@ const PatternDetails = ({
   onSelectSprite,
   onOpenSnapshot
 }: Props & { cell: PatternCell }) => {
+  const t = useT();
   const pixels = useMemo(
     () =>
       patternPixels(model.state.patterns, cell.pattern, {
@@ -333,28 +350,26 @@ const PatternDetails = ({
       </div>
       <div className={styles.patternFacts}>
         {cell.mixed && (
-          <p className={styles.problem}>
-            This 256-byte slot is read both as one 8-bit pattern and as 4-bit halves: almost always a bug.
-          </p>
+          <p className={styles.problem}>{t("panels.sprites.pane.mixedSlot")}</p>
         )}
         <p className={styles.why}>{describeHint(pixels, model.state.transparencyIndex)}</p>
         <button
           type="button"
           className={styles.link}
-          title="Open this pattern, with the palette offset shown here, in a read-only sprite editor"
+          title={t("panels.sprites.pane.openEditorPatternTitle")}
           onClick={() =>
             onOpenSnapshot(cell.format, cell.pattern, cellPaletteOffset(model, cell, look.paletteOffset))
           }
         >
-          Open in sprite editor
+          {t("panels.sprites.pane.openEditor")}
         </button>
         <dl className={styles.fields}>
-          <FieldRow name="Used by" wide={true}>
-            {cell.users.length === 0 && others.length === 0 && "no sprite"}
+          <FieldRow name={t("panels.graphics.inspector.usedBy")} wide={true}>
+            {cell.users.length === 0 && others.length === 0 && t("panels.sprites.pane.noSprite")}
             {userLinks(cell.users)}
             {others.length > 0 && (
               <span className={styles.own}>
-                {cell.format === "8bit" ? "as 4-bit: " : "other reading: "}
+                {cell.format === "8bit" ? t("panels.sprites.pane.as4bit") : t("panels.sprites.pane.otherReading")}{" "}
                 {userLinks(others)}
               </span>
             )}
@@ -380,6 +395,7 @@ const SpriteSpaceMap = ({
   selected?: number | number[];
   onSelectSprite: (index: number) => void;
 }) => {
+  const t = useT();
   const ref = useRef<SVGSVGElement>(null);
   const map = useMemo(() => spriteMap(model, selected), [model, selected]);
   const click = (e: ReactMouseEvent<SVGSVGElement>) => {
@@ -398,13 +414,13 @@ const SpriteSpaceMap = ({
   });
   return (
     <figure className={styles.mapFigure}>
-      <figcaption className={styles.sectionTitle}>Sprite space</figcaption>
+      <figcaption className={styles.sectionTitle}>{t("panels.sprites.pane.space")}</figcaption>
       <svg
         ref={ref}
         className={styles.map}
         viewBox={`0 0 ${map.width} ${map.height}`}
         role="img"
-        aria-label="Sprite space"
+        aria-label={t("panels.sprites.pane.space")}
         onClick={click}
       >
         <rect className={styles.mapSpace} x={0} y={0} width={map.width} height={map.height} />
@@ -416,7 +432,7 @@ const SpriteSpaceMap = ({
             {...rect(s.rect)}
             vectorEffect="non-scaling-stroke"
           >
-            <title>{`#${s.index} at (${s.rect.x1}, ${s.rect.y1})`}</title>
+            <title>{t("panels.sprites.pane.mapSprite", { index: s.index, x: s.rect.x1, y: s.rect.y1 })}</title>
           </rect>
         ))}
         <rect className={styles.mapClip} {...rect(map.clip)} vectorEffect="non-scaling-stroke" />

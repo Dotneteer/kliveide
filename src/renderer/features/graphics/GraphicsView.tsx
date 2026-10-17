@@ -11,6 +11,7 @@ import {
 } from "react";
 
 import { IndexedImageCanvas, pixelAt } from "@renderer/controls/Next/IndexedImageCanvas";
+import { useT } from "@common/i18n/useT";
 import {
   ContextMenu,
   ContextMenuItem,
@@ -113,6 +114,7 @@ export const GraphicsView = ({
   onInteractingChange,
   candidates
 }: GraphicsViewProps) => {
+  const t = useT();
   const [showCandidates, setShowCandidates] = useState(false);
   const l = useMemo(() => normalizeLook(look), [look]);
   const geometry = frameGeometry(l);
@@ -283,10 +285,10 @@ export const GraphicsView = ({
     return [
       addressText,
       `$${toHexa2(value)} %${value.toString(2).padStart(8, "0")}`,
-      `frame ${frame}`,
+      t("panels.graphics.view.frame", { frame }),
       ...(label ? [label] : [])
     ].join(" · ");
-  }, [alignedPhase, baseAddress, bytes, decimalView, frameBytes, hover, labelAt]);
+  }, [alignedPhase, baseAddress, bytes, decimalView, frameBytes, hover, labelAt, t]);
 
   const menuSpan: ByteSpan | undefined = selected ?? (hover !== undefined ? { start: hover, end: hover } : undefined);
 
@@ -298,7 +300,7 @@ export const GraphicsView = ({
         className={styles.scroller}
         tabIndex={0}
         role="region"
-        aria-label="Memory as graphics"
+        aria-label={t("panels.graphics.view.label")}
         onScroll={onScroll}
         onKeyDown={onKeyDown}
       >
@@ -313,7 +315,7 @@ export const GraphicsView = ({
               checker={false}
               zoomX={l.zoom}
               dim={dim}
-              ariaLabel="Graphics"
+              ariaLabel={t("panels.graphics.view.image")}
               onPixelMove={(x, y, event) => {
                 const offset = decoded.byteMap[y * decoded.width + x];
                 setHover(offset >= 0 ? offset : undefined);
@@ -357,9 +359,9 @@ export const GraphicsView = ({
         </div>
       </div>
       {showCandidates && candidates && (
-        <ul className={styles.candidates} aria-label="Graphics candidates">
-          <li className={styles.candidatesNote}>Heuristic guesses — check each one.</li>
-          {candidates.length === 0 && <li className={styles.candidatesNote}>Nothing found.</li>}
+        <ul className={styles.candidates} aria-label={t("panels.graphics.view.candidates")}>
+          <li className={styles.candidatesNote}>{t("panels.graphics.view.heuristic")}</li>
+          {candidates.length === 0 && <li className={styles.candidatesNote}>{t("panels.graphics.view.nothing")}</li>}
           {candidates.map((candidate) => (
             <li key={`${candidate.kind}:${candidate.start}`}>
               <button
@@ -381,27 +383,32 @@ export const GraphicsView = ({
       <div className={styles.statusLine} aria-live="polite">
         {candidates && (
           <button type="button" className={styles.candidateToggle} onClick={() => setShowCandidates((v) => !v)}>
-            {`${showCandidates ? "Hide" : "Show"} candidates (${candidates.length})`}
+            {showCandidates
+              ? t("panels.graphics.view.hideCandidates", { count: candidates.length })
+              : t("panels.graphics.view.showCandidates", { count: candidates.length })}
           </button>
         )}
         {hoverText ??
           (selected
-            ? `Selected ${selected.end - selected.start + 1} byte(s) from $${toHexa4((baseAddress + selected.start) & 0xffff)}`
-            : "Hover a pixel to see its byte; drag to select. ← → change the width.")}
+            ? t("panels.graphics.view.selected", {
+                count: selected.end - selected.start + 1,
+                address: `$${toHexa4((baseAddress + selected.start) & 0xffff)}`
+              })
+            : t("panels.graphics.view.hint"))}
       </div>
       {menu && (
         <ContextMenu state={menuState} onClickOutside={menuApi.conceal}>
           {menu.onShowIn && menuSpan && (
             <>
               <ContextMenuItem
-                text="Show in Memory"
+                text={t("panels.graphics.menu.showInMemory")}
                 clicked={() => {
                   menuApi.conceal();
                   menu.onShowIn!("memory", menuSpan.start);
                 }}
               />
               <ContextMenuItem
-                text="Show in Disassembly"
+                text={t("panels.graphics.menu.showInDisassembly")}
                 clicked={() => {
                   menuApi.conceal();
                   menu.onShowIn!("disassembly", menuSpan.start);
@@ -413,7 +420,7 @@ export const GraphicsView = ({
             <>
               <ContextMenuSeparator />
               <ContextMenuItem
-                text="Name Graphic…"
+                text={t("panels.graphics.menu.nameGraphic")}
                 clicked={() => {
                   menuApi.conceal();
                   menu.onNameGraphic!(menuSpan);
@@ -424,14 +431,14 @@ export const GraphicsView = ({
           {menu.onSavePng && menuSpan && (
             <>
               <ContextMenuItem
-                text="Save as PNG (1:1)…"
+                text={t("panels.graphics.menu.savePng1")}
                 clicked={() => {
                   menuApi.conceal();
                   menu.onSavePng!(menuSpan, false);
                 }}
               />
               <ContextMenuItem
-                text={`Save as PNG (${l.zoom}×)…`}
+                text={t("panels.graphics.menu.savePngZoom", { zoom: l.zoom })}
                 clicked={() => {
                   menuApi.conceal();
                   menu.onSavePng!(menuSpan, true);
@@ -441,7 +448,7 @@ export const GraphicsView = ({
           )}
           {menu.onExportSource && menuSpan && (
             <ContextMenuItem
-              text="Export as Source…"
+              text={t("panels.graphics.menu.exportSource")}
               clicked={() => {
                 menuApi.conceal();
                 menu.onExportSource!(menuSpan);

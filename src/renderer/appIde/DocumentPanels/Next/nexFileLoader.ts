@@ -1,3 +1,4 @@
+import { t } from "@common/i18n/i18n";
 import { BinaryReader } from "@common/utils/BinaryReader";
 
 export const NEX_BANK_FILE_ORDER = [
@@ -22,18 +23,18 @@ export function loadNexFileContents (contents: Uint8Array): {
   const startToken = reader.readUint32();
   if (startToken !== 0x7478654e) {
     // 'Next'
-    return { error: "Missing 'Next' token in file header" };
+    return { error: t("panels.next.nex.error.missingNextToken") };
   }
 
   // --- Read the version number
   if (reader.readByte() !== 0x56) {
     // 'V'
-    return { error: "Missing 'V' in version number" };
+    return { error: t("panels.next.nex.error.missingV") };
   }
   header.versionMajor = reader.readByte() - 0x30;
   if (reader.readByte() !== 0x2e) {
     // '.'
-    return { error: "Missing '.' in version number" };
+    return { error: t("panels.next.nex.error.missingDot") };
   }
   header.versionMinor = reader.readByte() - 0x30;
 

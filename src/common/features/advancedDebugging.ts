@@ -28,6 +28,7 @@ import type { AppState } from "@common/state/AppState";
 import type { MachineInfo } from "@common/machines/info-types";
 import type { createSettingsReader } from "@common/utils/SettingsReader";
 
+import { t } from "@common/i18n/i18n";
 import { MF_EXEC_HISTORY, MF_PROFILE, MF_REVERSE_DEBUG } from "@common/machines/constants";
 
 /** The user setting (`set -u features.advancedDebugging 1`). */
@@ -39,10 +40,10 @@ export const ADVANCED_DEBUGGING_SETTING = "features.advancedDebugging";
  */
 export const ADVANCED_DEBUGGING_FEATURES: readonly string[] = [MF_EXEC_HISTORY, MF_REVERSE_DEBUG, MF_PROFILE];
 
-/** What a command or a refused action says when the group is off. */
-export const ADVANCED_DEBUGGING_OFF_MESSAGE =
-  "Execution history and reverse debugging are turned off. Turn them on with " +
-  `'set -u ${ADVANCED_DEBUGGING_SETTING} 1', then restart Klive.`;
+/** What a command or a refused action says when the group is off (translated when called). */
+export function advancedDebuggingOffMessage(): string {
+  return t("debug.advancedDebugging.off", { command: `set -u ${ADVANCED_DEBUGGING_SETTING} 1` });
+}
 
 /** The switch as the user set it; on while unset, off only when the user turned it off. */
 export function readAdvancedDebuggingSetting(reader: ReturnType<typeof createSettingsReader>): boolean {

@@ -16,6 +16,7 @@ import { MessageSource } from "@common/messaging/messages-core";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { createMainApi } from "@common/messaging/MainApi";
 import { createEmuApi } from "@common/messaging/EmuApi";
+import { t } from "@common/i18n/i18n";
 
 const MAX_HISTORY = 1024;
 
@@ -141,7 +142,7 @@ class IdeCommandService implements IIdeCommandService {
       // --- No token, no command to execute
       return {
         success: false,
-        finalMessage: `The command '${command}' cannot be parsed.`
+        finalMessage: t("commands.common.cannotParse", { command })
       };
     }
 
@@ -149,7 +150,7 @@ class IdeCommandService implements IIdeCommandService {
     const commandId = tokens[0].text;
     const commandInfo = this.getCommandByIdOrAlias(tokens[0].text);
     if (!commandInfo) {
-      const finalMessage = `Unknown command '${commandId}'.`;
+      const finalMessage = t("commands.common.unknownCommand", { command: commandId });
       buffer.color("bright-red");
       buffer.writeLine(finalMessage);
       buffer.resetStyle();
@@ -161,7 +162,7 @@ class IdeCommandService implements IIdeCommandService {
 
     // --- Allow if the command can be executed interactively
     if (!!commandInfo.noInteractiveUsage && interactiveContex) {
-      const finalMessage = `Command '${commandId}' cannot be executed interactively`;
+      const finalMessage = t("commands.common.notInteractive", { command: commandId });
       buffer.color("bright-red");
       buffer.writeLine(finalMessage);
       buffer.resetStyle();
@@ -221,7 +222,7 @@ class IdeCommandService implements IIdeCommandService {
         // --- Check if this command requires an open Klive project
         if (commandInfo.requiresProject && !context.store.getState().project?.isKliveProject) {
           buffer.color("bright-red");
-          buffer.writeLine("This command requires an open Klive project.");
+          buffer.writeLine(t("commands.common.requiresProject"));
           buffer.resetStyle();
           return { success: false };
         }
@@ -247,7 +248,7 @@ class IdeCommandService implements IIdeCommandService {
       }
     } else {
       buffer.color("bright-red");
-      buffer.writeLines(commandResult.finalMessage ?? "Command execution failed.");
+      buffer.writeLines(commandResult.finalMessage ?? t("commands.common.failed"));
       buffer.resetStyle();
     }
     return commandResult;
@@ -297,7 +298,9 @@ type HelpArgs = {
  */
 class HelpCommand extends IdeCommandBase<HelpArgs> {
   readonly id = "help";
-  readonly description = "Displays help information about commands";
+  get description() {
+    return t("commands.help.description");
+  }
   readonly usage = "help [<command>]";
   readonly aliases = ["?", "-?", "-h"];
   readonly argumentInfo: CommandArgumentInfo = {
@@ -325,7 +328,7 @@ class HelpCommand extends IdeCommandBase<HelpArgs> {
       : cmdSrv.getRegisteredCommands();
     const out = context.output;
     out.color("bright-blue");
-    out.writeLine("Available interactive commands:");
+    out.writeLine(t("commands.help.title"));
     out.writeLine();
     selectedCommands
       .sort((a, b) => (a.id > b.id ? 1 : a.id < b.id ? -1 : 0))
@@ -339,7 +342,7 @@ class HelpCommand extends IdeCommandBase<HelpArgs> {
         }
         if (ci.noInteractiveUsage) {
           out.color("cyan");
-          out.write(" [non-interactive]");
+          out.write(t("commands.help.nonInteractive"));
         }
         context.output.color("bright-blue");
         context.output.write(`: `);
@@ -358,7 +361,7 @@ class HelpCommand extends IdeCommandBase<HelpArgs> {
 
           const lines = toLines(ci.usage);
           if (lines.length > 0) {
-            context.output.writeLine(`  usage: ${lines[0]}`);
+            context.output.writeLine(t("commands.help.usageLine", { usage: lines[0] }));
             const indent = "  ".replace(/./g, " "); // keep alignment for subsequent lines
             for (let i = 1; i < lines.length; i++) {
               context.output.writeLine(`${indent}${lines[i]}`);
@@ -369,7 +372,7 @@ class HelpCommand extends IdeCommandBase<HelpArgs> {
       });
     return {
       success: true,
-      finalMessage: `${count} command${count > 1 ? "s" : ""} displayed.`
+      finalMessage: t("commands.help.displayed", { count })
     };
   }
 }
@@ -381,12 +384,14 @@ class ExitCommand extends IdeCommandBase<NoCommandArgs> {
   readonly id = "exit";
   // --- Quits Klive: never through automation (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` T5)
   readonly automation = "deny" as const;
-  readonly description = "Exits Klive IDE.";
+  get description() {
+    return t("commands.exit.description");
+  }
   readonly usage = "exit";
 
   async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
     context.mainApi.exitApp();
-    return { success: true, finalMessage: "Farewell!" };
+    return { success: true, finalMessage: t("commands.exit.farewell") };
   }
 }
 

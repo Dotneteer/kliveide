@@ -5,7 +5,14 @@ import { MI_ZXNEXT } from "@common/machines/constants";
 import type { NextLayerState } from "@common/messaging/EmuApi";
 import { SETTING_EMU_SHOW_NEXT_LAYERS } from "@common/settings/setting-const";
 import { setNextLayersAction } from "@common/state/actions";
-import { describeBlend, PRIORITY_NAMES, rgb333Hex, type NextLayerId } from "@common/zxnext/layers/layerMix";
+import {
+  describeBlend,
+  NEXT_LAYER_BITS,
+  PRIORITY_NAMES,
+  rgb333Hex,
+  type NextLayerId
+} from "@common/zxnext/layers/layerMix";
+import { useT } from "@common/i18n/useT";
 import { EMPTY_LAYER_VIEW, toggleHidden, toggleSolo } from "@common/zxnext/layers/layerView";
 import { EmptyState, SectionHeader } from "@renderer/controls/data";
 import { FullPanel } from "@renderer/controls/layout/Panels";
@@ -32,6 +39,7 @@ const LAYER_CLASS: Record<NextLayerId, string> = {
 };
 
 const LayersDocumentPanel = (_props: DocumentProps) => {
+  const t = useT();
   const isNext = useSelector((s) => s.emulatorState?.machineId) === MI_ZXNEXT;
   const view = useSelector((s) => s.emulatorState?.nextLayers) ?? EMPTY_LAYER_VIEW;
   const emuApi = useEmuApi();
@@ -81,7 +89,7 @@ const LayersDocumentPanel = (_props: DocumentProps) => {
     return (
       <FullPanel>
         <EmptyState
-          message={isNext ? "Waiting for the ZX Spectrum Next's layer state" : "The Layers document shows a running ZX Spectrum Next"}
+          message={isNext ? t("panels.layersDoc.waiting") : t("panels.layersDoc.notNext")}
         />
       </FullPanel>
     );
@@ -99,15 +107,18 @@ const LayersDocumentPanel = (_props: DocumentProps) => {
           <div className={styles.header}>
             <span className={styles.mode}>{mode}</span>
             <span className={styles.meta}>
-              $15 priority {(regs.priorities & 7).toString(2).padStart(3, "0")} · fallback $4A {rgb333Hex(((regs.fallback << 1) | (regs.fallback & 3 ? 1 : 0)) & 0x1ff)} ·
-              transparency $14 ${regs.globalTransparency.toString(16).toUpperCase().padStart(2, "0")}
-              {regs.copperRunning && " · the Copper is running: registers may change per line"}
-              {!state.capture && " · no capture: the pictures are the last span of each row"}
+              {t("panels.layersDoc.meta", {
+                priority: (regs.priorities & 7).toString(2).padStart(3, "0"),
+                fallback: rgb333Hex(((regs.fallback << 1) | (regs.fallback & 3 ? 1 : 0)) & 0x1ff),
+                transparency: `$${regs.globalTransparency.toString(16).toUpperCase().padStart(2, "0")}`
+              })}
+              {regs.copperRunning && ` · ${t("panels.layersDoc.copperRunning")}`}
+              {!state.capture && ` · ${t("panels.layersDoc.noCapture")}`}
             </span>
           </div>
 
           <section className={styles.section}>
-            <SectionHeader title="Priority, top first" />
+            <SectionHeader title={t("panels.layersDoc.priority")} />
             <ol className={styles.stack}>
               {stack.map((level, i) => (
                 <li key={i} className={styles.level}>
@@ -123,19 +134,21 @@ const LayersDocumentPanel = (_props: DocumentProps) => {
               ))}
               <li className={styles.level}>
                 <span className={styles.levelLayers} />
-                <span className={styles.levelLabel}>Fallback colour ($4A)</span>
-                <span className={styles.levelNote}>where every layer is transparent</span>
+                <span className={styles.levelLabel}>{t("panels.layersDoc.fallback")}</span>
+                <span className={styles.levelNote}>{t("panels.layersDoc.fallbackNote")}</span>
               </li>
             </ol>
           </section>
 
           <section className={styles.section}>
-            <SectionHeader title="Layers" />
+            <SectionHeader title={t("panels.layersDoc.layers")} />
             <div className={styles.cards}>
               {cards.map((card) => (
                 <LayerCardView
                   key={card.id}
                   card={card}
+                  hidden={(view.hidden & NEXT_LAYER_BITS[card.id]) !== 0}
+                  solo={view.solo === NEXT_LAYER_BITS[card.id]}
                   thumbnail={state.thumbnails?.[card.id]}
                   width={state.thumbnails?.width ?? 0}
                   height={state.thumbnails?.height ?? 0}
@@ -145,12 +158,12 @@ const LayersDocumentPanel = (_props: DocumentProps) => {
               ))}
               {state.thumbnails && (
                 <div className={styles.card}>
-                  <div className={styles.cardTitle}>Composite (the machine's picture)</div>
+                  <div className={styles.cardTitle}>{t("panels.layersDoc.composite")}</div>
                   <Thumbnail
                     rgba={state.thumbnails.composite}
                     width={state.thumbnails.width}
                     height={state.thumbnails.height}
-                    title="The machine's own picture, with no layer hidden"
+                    title={t("panels.layersDoc.compositeTitle")}
                   />
                 </div>
               )}
@@ -164,6 +177,8 @@ const LayersDocumentPanel = (_props: DocumentProps) => {
 
 const LayerCardView = ({
   card,
+  hidden,
+  solo,
   thumbnail,
   width,
   height,
@@ -171,22 +186,27 @@ const LayerCardView = ({
   onHide
 }: {
   card: LayerCard;
+  /** The debug view state, read from the view itself: `card.debugText` is display text */
+  hidden: boolean;
+  solo: boolean;
   thumbnail?: Uint8ClampedArray;
   width: number;
   height: number;
   onSolo: () => void;
   onHide: () => void;
-}) => (
+}) => {
+  const t = useT();
+  return (
   <div className={classnames(styles.card, LAYER_CLASS[card.id])} data-testid={`layers-card-${card.id}`}>
     <div className={styles.cardTitle}>
       <span className={classnames(styles.dot, LAYER_CLASS[card.id])} />
       {card.name}
       <span className={styles.cardActions}>
-        <button type="button" onClick={onHide} aria-pressed={card.debugText === "hidden"}>
-          {card.debugText === "hidden" ? "Show" : "Hide"}
+        <button type="button" onClick={onHide} aria-pressed={hidden}>
+          {hidden ? t("panels.layersDoc.show") : t("panels.layersDoc.hide")}
         </button>
-        <button type="button" onClick={onSolo} aria-pressed={card.debugText === "solo"}>
-          {card.debugText === "solo" ? "End solo" : "Solo"}
+        <button type="button" onClick={onSolo} aria-pressed={solo}>
+          {solo ? t("panels.layersDoc.endSolo") : t("panels.layersDoc.solo")}
         </button>
       </span>
     </div>
@@ -196,16 +216,16 @@ const LayerCardView = ({
         width={width}
         height={height}
         frameClass={LAYER_CLASS[card.id]}
-        title={`Click to show ${card.name} alone on the emulator screen`}
+        title={t("panels.layersDoc.soloTitle", { layer: card.name })}
         onClick={onSolo}
       />
     )}
     <dl className={styles.facts}>
-      <dt>Program</dt>
+      <dt>{t("panels.layersDoc.program")}</dt>
       <dd>{card.enableText}</dd>
-      <dt>Clip</dt>
+      <dt>{t("panels.layersDoc.clip")}</dt>
       <dd>{card.clipText}</dd>
-      <dt>Debug view</dt>
+      <dt>{t("panels.layersDoc.debugView")}</dt>
       <dd>{card.debugText}</dd>
     </dl>
     {card.reasons.length > 0 && (
@@ -216,7 +236,8 @@ const LayerCardView = ({
       </ul>
     )}
   </div>
-);
+  );
+};
 
 /** One layer's picture, drawn once per snapshot; transparent pixels show the checker behind */
 const Thumbnail = ({

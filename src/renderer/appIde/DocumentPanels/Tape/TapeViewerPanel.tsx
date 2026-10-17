@@ -6,12 +6,14 @@ import { openStaticMemoryDump } from "@renderer/features/memory/StaticMemoryDump
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { useSelector } from "@renderer/core/RendererProvider";
+import { uiLocale } from "@common/i18n/i18n";
+import { useT } from "@common/i18n/useT";
 import {
-  TAPE_ROLE_NAMES,
   analyzeTape,
   blockLoadAddress,
   blockPayload,
   formatPlayTime,
+  tapeRoleCount,
   type TapeAnalysis,
   type TapeBlockRole,
   type TapeBlockView
@@ -77,6 +79,7 @@ export const createTapeViewerPanel = ({ document, contents, viewState }: Documen
 
 /** A module-level component, so it may hold hooks (see `GenericFilePanel`'s renderer note) */
 const TapeView = ({ ctx, fullPath }: { ctx: ViewContext; fullPath: string }) => {
+  const t = useT();
   const documentHubService = useDocumentHubService();
   const { navigationHistoryService } = useAppServices();
   const projectFolder = useSelector((s) => s.project?.folderPath);
@@ -130,9 +133,7 @@ const TapeView = ({ ctx, fullPath }: { ctx: ViewContext; fullPath: string }) => 
       <Summary analysis={analysis} />
       {analysis.summary.unplayableCount > 0 && (
         <div className={styles.banner} role="note">
-          {`${analysis.summary.unplayableCount} block${
-            analysis.summary.unplayableCount === 1 ? "" : "s"
-          } on this tape will not play in Klive, so loading it may fail. They are marked "not played".`}
+          {t("panels.tape.unplayableBanner", { count: analysis.summary.unplayableCount })}
         </div>
       )}
       <TapeBlockBrowser
@@ -170,28 +171,34 @@ const Fact = ({ label, value, title }: { label: string; value: string; title?: s
 );
 
 const Summary = ({ analysis }: { analysis: TapeAnalysis }) => {
+  const t = useT();
   const { summary } = analysis;
   const roles = ROLE_ORDER.filter((role) => summary.roleCounts[role])
-    .map((role) => `${summary.roleCounts[role]} ${TAPE_ROLE_NAMES[role].toLowerCase()}`)
-    .join(", ");
+    .map((role) => tapeRoleCount(role, summary.roleCounts[role] ?? 0))
+    .join(t("panels.tape.fact.listSeparator"));
+  const count = (n: number) => n.toLocaleString(uiLocale());
   return (
-    <div className={styles.summary} aria-label="Tape summary">
-      <Fact label="Format" value={summary.version ? `TZX ${summary.version}` : summary.format} />
-      <Fact label="Size" value={`${summary.size.toLocaleString("en-US")} bytes`} />
-      <Fact label="Blocks" value={`${summary.blockCount}`} />
+    <div className={styles.summary} aria-label={t("panels.tape.summaryLabel")}>
+      <Fact label={t("panels.tape.fact.format")} value={summary.version ? `TZX ${summary.version}` : summary.format} />
+      <Fact label={t("panels.tape.fact.size")} value={t("panels.helpers.bytes", { count: summary.size })} />
+      <Fact label={t("panels.tape.fact.blocks")} value={count(summary.blockCount)} />
       <Fact
-        label="Files"
-        value={roles ? `${summary.fileCount} (${roles})` : `${summary.fileCount}`}
+        label={t("panels.tape.fact.files")}
+        value={
+          roles
+            ? t("panels.tape.fact.filesValue", { count: summary.fileCount, roles })
+            : count(summary.fileCount)
+        }
       />
       <Fact
-        label="Play time"
+        label={t("panels.tape.fact.playTime")}
         value={`${summary.durationApprox ? "~" : ""}${formatPlayTime(summary.durationMs)}`}
-        title={summary.durationApprox ? "Some blocks' play time is estimated" : undefined}
+        title={summary.durationApprox ? t("panels.tape.fact.playTimeApprox") : undefined}
       />
-      {summary.title && <Fact label="Title" value={summary.title} />}
-      {summary.publisher && <Fact label="Publisher" value={summary.publisher} />}
-      {summary.year && <Fact label="Year" value={summary.year} />}
-      {summary.authors && <Fact label="Authors" value={summary.authors} />}
+      {summary.title && <Fact label={t("panels.tape.archive.title")} value={summary.title} />}
+      {summary.publisher && <Fact label={t("panels.tape.archive.publisher")} value={summary.publisher} />}
+      {summary.year && <Fact label={t("panels.tape.archive.year")} value={summary.year} />}
+      {summary.authors && <Fact label={t("panels.tape.archive.authors")} value={summary.authors} />}
     </div>
   );
 };

@@ -94,8 +94,23 @@ export type SnapshotWriteResult = {
  * different machine state (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` D3)
  */
 export class SnapshotRefusedError extends Error {
-  constructor(message: string) {
+  /**
+   * @param message The translated reason, for display
+   * @param code What kind of refusal it is, for code that acts on it (never match the message)
+   */
+  constructor(
+    message: string,
+    readonly code?: SnapshotRefusalCode
+  ) {
     super(message);
     this.name = "SnapshotRefusedError";
   }
+}
+
+/** Refusals code acts on: `inside-prefix` is retried after running the machine on a little */
+export type SnapshotRefusalCode = "inside-prefix";
+
+/** Is this the capture's "the CPU stands inside a prefixed instruction" refusal? */
+export function isInsidePrefixRefusal(err: unknown): boolean {
+  return err instanceof SnapshotRefusedError && err.code === "inside-prefix";
 }

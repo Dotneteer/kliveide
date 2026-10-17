@@ -71,7 +71,8 @@ function readWanted(): { on: boolean; level: AutomationLevel } {
 }
 
 function writeLog(line: string): void {
-  const stamp = new Date().toLocaleTimeString();
+  // --- A log line (D9): an invariant time stamp, whatever the OS or display language
+  const stamp = new Date().toLocaleTimeString("en-US");
   const text = `${stamp}  ${line}`;
   if (!host.isReady()) {
     pendingLog.push(text);

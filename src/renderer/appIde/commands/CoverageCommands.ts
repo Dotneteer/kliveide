@@ -16,6 +16,7 @@ import { findSmcRuns } from "@common/profile/smcReport";
 import { setMemoryHeatModeAction } from "@common/state/actions";
 import { buildCoverageModel, coverageTotals, lcovFilesOf, lineCoverage } from "@common/profile/coverageModel";
 import { HEAT_MODES, type HeatMode } from "@renderer/features/coverage/heatModel";
+import { t, uiLocale } from "@common/i18n/i18n";
 import {
   IdeCommandBase,
   commandError,
@@ -34,16 +35,24 @@ import {
  */
 
 /** What a coverage command says with the advanced-debugging switch off */
-export const COVERAGE_OFF_MESSAGE =
-  "Code coverage is part of advanced debugging, which is turned off. Turn it on with " +
-  `'set -u ${ADVANCED_DEBUGGING_SETTING} 1', then restart Klive.`;
+export function coverageOffMessage(): string {
+  return t("commands.coverage.off", { setting: ADVANCED_DEBUGGING_SETTING });
+}
+
+/** A percentage with one decimal, in the display language's number format (a human figure) */
+function percent1(value: number): string {
+  return value.toLocaleString(uiLocale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+}
+
+const notKept = () => t("commands.coverage.notKept");
+const layoutUnknown = () => t("commands.coverage.layoutUnknown");
 
 /** Refuses a command on a machine whose core does not profile */
 function requireProfile(context: IdeCommandContext): IdeCommandResult | undefined {
-  if (!isAdvancedDebuggingEnabled(context.store.getState())) return commandError(COVERAGE_OFF_MESSAGE);
+  if (!isAdvancedDebuggingEnabled(context.store.getState())) return commandError(coverageOffMessage());
   const machineId = context.service.machineService.getMachineInfo()?.machine?.machineId;
   const supported = !!machineRegistry.find((m) => m.machineId === machineId)?.features?.[MF_PROFILE];
-  return supported ? undefined : commandError("This machine does not keep code coverage");
+  return supported ? undefined : commandError(notKept());
 }
 
 /** The compilation the IDE holds now: the source lines come from it */
@@ -80,7 +89,9 @@ export function coverageFormatOfName(file: string): ExportFormat | undefined {
  */
 export class CoverageCommand extends IdeCommandBase<CoverageArgs> {
   readonly id = "coverage";
-  readonly description = "Code coverage and the memory heat map: on, off, reset, status, export, load, smc";
+  get description() {
+    return t("commands.coverage.description");
+  }
   readonly usage = [
     "coverage on [-nocounts] | off | reset | status",
     "coverage export <file> [-format lcov|csv|kcov] [-norom] [-f]",
@@ -99,18 +110,18 @@ export class CoverageCommand extends IdeCommandBase<CoverageArgs> {
     const messages: ValidationMessage[] = [];
     const action = args.action?.toLowerCase() as CoverageSubcommand;
     if (!SUBCOMMANDS.includes(action)) {
-      messages.push(validationError(`Use one of: ${SUBCOMMANDS.join(", ")}`));
+      messages.push(validationError(t("commands.coverage.useOneOf", { choices: SUBCOMMANDS.join(", ") })));
       return messages;
     }
     if ((action === "export" || action === "load") && !args.file?.trim()) {
-      messages.push(validationError(`coverage ${action} needs a file`));
+      messages.push(validationError(t("commands.coverage.needsFile", { action })));
     }
     if (action === "export" && args.file) {
       const format = args["-format"]?.toLowerCase();
       if (format !== undefined && format !== "lcov" && format !== "csv" && format !== "kcov") {
-        messages.push(validationError("-format: use lcov, csv or kcov"));
+        messages.push(validationError(t("commands.coverage.formatInvalid")));
       } else if (format === undefined && !coverageFormatOfName(args.file)) {
-        messages.push(validationError("Use a .info/.lcov, .csv or .kcov file, or name the format with -format."));
+        messages.push(validationError(t("commands.coverage.formatUnknown")));
       }
     }
     return messages;
@@ -122,20 +133,20 @@ export class CoverageCommand extends IdeCommandBase<CoverageArgs> {
     switch (args.action.toLowerCase() as CoverageSubcommand) {
       case "on": {
         const status = await context.emuApi.setProfiling(true, args["-nocounts"] ? false : undefined);
-        if (!status) return commandError("This machine does not keep code coverage");
+        if (!status) return commandError(notKept());
         writeSuccessMessage(
           context.output,
-          `Code coverage is on${status.counters ? "" : " (flags only, no counts)"}`
+          status.counters ? t("commands.coverage.on") : t("commands.coverage.onFlagsOnly")
         );
         return commandSuccess;
       }
       case "off":
         await context.emuApi.setProfiling(false);
-        writeSuccessMessage(context.output, "Code coverage is off; what it recorded stays until a reset");
+        writeSuccessMessage(context.output, t("commands.coverage.offDone"));
         return commandSuccess;
       case "reset":
         await context.emuApi.resetProfile();
-        writeSuccessMessage(context.output, "Code coverage cleared");
+        writeSuccessMessage(context.output, t("commands.coverage.cleared"));
         return commandSuccess;
       case "status":
         return this.status(context);
@@ -150,7 +161,7 @@ export class CoverageCommand extends IdeCommandBase<CoverageArgs> {
 
   private async status(context: IdeCommandContext): Promise<IdeCommandResult> {
     const status = await context.emuApi.getProfileStatus();
-    if (!status) return commandError("This machine does not keep code coverage");
+    if (!status) return commandError(notKept());
     for (const line of coverageStatusLines(status)) writeMessage(context.output, line, "cyan");
     const compilation = currentCompilation(context);
     const model = buildCoverageModel(compilation, status.machineId);
@@ -161,12 +172,16 @@ export class CoverageCommand extends IdeCommandBase<CoverageArgs> {
       );
       if (sample) {
         const all = [...lineCoverage(model, sample.flags).values()].flatMap((m) => [...m.values()]);
-        const t = coverageTotals(all);
-        const pct = t.lines ? ((100 * t.covered) / t.lines).toFixed(1) : "0.0";
+        const totals = coverageTotals(all);
+        const args = {
+          covered: totals.covered,
+          lines: totals.lines,
+          partial: totals.partial,
+          percent: percent1(totals.lines ? (100 * totals.covered) / totals.lines : 0)
+        };
         writeMessage(
           context.output,
-          `Source: ${t.covered.toLocaleString("en-US")} of ${t.lines.toLocaleString("en-US")} lines covered (${pct}%)` +
-            (t.partial ? `, ${t.partial.toLocaleString("en-US")} partly` : ""),
+          totals.partial ? t("commands.coverage.sourcePartial", args) : t("commands.coverage.source", args),
           "cyan"
         );
       }
@@ -178,77 +193,78 @@ export class CoverageCommand extends IdeCommandBase<CoverageArgs> {
     const file = args.file!.trim();
     const format = ((args["-format"]?.toLowerCase() as ExportFormat | undefined) ?? coverageFormatOfName(file))!;
     if (!args["-f"] && (await fileExists(context, file))) {
-      return commandError(`${file} already exists; use -f to replace it.`);
+      return commandError(t("commands.coverage.fileExists", { file }));
     }
     const status = await context.emuApi.getProfileStatus();
-    if (!status) return commandError("This machine does not keep code coverage");
+    if (!status) return commandError(notKept());
     const layout = profileLayoutOf(status.machineId);
-    if (!layout) return commandError("This machine's coverage layout is unknown");
+    if (!layout) return commandError(layoutUnknown());
 
     let text: string;
     let summary: string;
     if (format === "lcov") {
       const compilation = currentCompilation(context);
       const model = buildCoverageModel(compilation, status.machineId);
-      if (!model.points.length) return commandError("LCOV needs source lines: build the program first");
+      if (!model.points.length) return commandError(t("commands.coverage.lcovNeedsSource"));
       const sample = await context.emuApi.getProfileSample(
         model.points.map((p) => p.address),
         model.points.map((p) => p.partition),
         true
       );
-      if (!sample) return commandError("Could not read the coverage");
+      if (!sample) return commandError(t("commands.coverage.readFailed"));
       const files = lcovFilesOf(lineCoverage(model, sample.flags, sample.exec), context.store.getState().project?.folderPath);
       text = toLcov(files);
       const lines = files.reduce((n, f) => n + f.lines.length, 0);
       const hit = files.reduce((n, f) => n + f.lines.filter((l) => l.hits > 0).length, 0);
-      summary = `${hit.toLocaleString("en-US")} of ${lines.toLocaleString("en-US")} lines hit in ${files.length} file${files.length === 1 ? "" : "s"}`;
+      summary = t("commands.coverage.exportedLcov", { hit, lines, files: files.length, file });
     } else {
       const touched = await context.emuApi.getProfileTouched();
-      if (!touched) return commandError("Could not read the coverage");
+      if (!touched) return commandError(t("commands.coverage.readFailed"));
       if (format === "csv") {
         const labels = await context.emuApi.getPartitionLabels().catch(() => ({}));
         text = toCoverageCsv(touched.bytes, layout, labels, !!args["-norom"]);
       } else {
         text = toKcov(status.machineId, layout, status, touched.bytes);
       }
-      summary = `${touched.bytes.length.toLocaleString("en-US")} touched byte${touched.bytes.length === 1 ? "" : "s"}`;
+      summary = t("commands.coverage.exportedBytes", {
+        format: format.toUpperCase(),
+        bytes: touched.bytes.length,
+        file
+      });
     }
     try {
       await context.mainApi.saveTextFile(file, text);
     } catch (err) {
-      return commandError(`Could not write ${file}: ${messageOf(err)}`);
+      return commandError(t("commands.coverage.writeFailed", { file, error: messageOf(err) }));
     }
-    writeSuccessMessage(context.output, `Exported coverage (${format.toUpperCase()}, ${summary}) to ${file}`);
+    writeSuccessMessage(context.output, summary);
     return commandSuccess;
   }
 
   private async load(context: IdeCommandContext, file: string): Promise<IdeCommandResult> {
     const status = await context.emuApi.getProfileStatus();
-    if (!status) return commandError("This machine does not keep code coverage");
+    if (!status) return commandError(notKept());
     const layout = profileLayoutOf(status.machineId);
-    if (!layout) return commandError("This machine's coverage layout is unknown");
+    if (!layout) return commandError(layoutUnknown());
     let text: string;
     try {
       text = await context.mainApi.readTextFile(file);
     } catch (err) {
-      return commandError(`Could not read ${file}: ${messageOf(err)}`);
+      return commandError(t("commands.coverage.readFileFailed", { file, error: messageOf(err) }));
     }
     const run = parseKcov(text, layout);
     if (typeof run === "string") return commandError(run);
     const merged = await context.emuApi.mergeProfile(run.bytes, { instructions: run.instructions, timeTotal: run.timeTotal });
-    if (!merged) return commandError("Could not merge the coverage");
-    writeSuccessMessage(
-      context.output,
-      `Merged ${run.bytes.length.toLocaleString("en-US")} touched byte${run.bytes.length === 1 ? "" : "s"} from ${file}`
-    );
+    if (!merged) return commandError(t("commands.coverage.mergeFailed"));
+    writeSuccessMessage(context.output, t("commands.coverage.merged", { bytes: run.bytes.length, file }));
     return commandSuccess;
   }
 
   private async smc(context: IdeCommandContext): Promise<IdeCommandResult> {
     const touched = await context.emuApi.getProfileTouched(PF_SELF_MODIFIED);
-    if (!touched) return commandError("This machine does not keep code coverage");
+    if (!touched) return commandError(notKept());
     const layout = profileLayoutOf(touched.info.machineId);
-    if (!layout) return commandError("This machine's coverage layout is unknown");
+    if (!layout) return commandError(layoutUnknown());
     const labels = await context.emuApi.getPartitionLabels().catch(() => ({}) as Record<number, string>);
     const labelAt = nearestLabelLookup(currentCompilation(context), layout.partitionSize);
     const runs = findSmcRuns(touched.bytes, layout, labelAt);
@@ -256,19 +272,28 @@ export class CoverageCommand extends IdeCommandBase<CoverageArgs> {
       writeInfoMessage(
         context.output,
         touched.info.enabled || touched.info.instructions
-          ? "No self-modifying code found"
-          : "No self-modifying code found: coverage has not recorded anything (coverage on)"
+          ? t("commands.coverage.smcNone")
+          : t("commands.coverage.smcNoneNotRecorded")
       );
       return commandSuccess;
     }
-    writeMessage(context.output, `${runs.length} self-modified run${runs.length === 1 ? "" : "s"}:`, "cyan");
+    writeMessage(context.output, t("commands.coverage.smcRuns", { count: runs.length }), "cyan");
     for (const run of runs) {
       const where = run.partition !== undefined ? `${labels[run.partition] ?? run.partition}:` : "";
       const length = run.to - run.from + 1;
       const label = run.label ? ` ${run.label}${run.labelOffset ? `+${run.labelOffset}` : ""}` : "";
-      const counts =
-        run.writes !== undefined ? ` (written ${run.writes.toLocaleString("en-US")}, executed ${(run.executions ?? 0).toLocaleString("en-US")})` : "";
-      writeMessage(context.output, `  ${where}$${toHexa4(run.address)}, ${length} byte${length === 1 ? "" : "s"}${label}${counts}`);
+      const location = `${where}$${toHexa4(run.address)}`;
+      const line =
+        run.writes !== undefined
+          ? t("commands.coverage.smcRunCounted", {
+              location,
+              length,
+              label,
+              writes: run.writes,
+              executions: run.executions ?? 0
+            })
+          : t("commands.coverage.smcRun", { location, length, label });
+      writeMessage(context.output, `  ${line}`);
     }
     return commandSuccess;
   }
@@ -277,7 +302,9 @@ export class CoverageCommand extends IdeCommandBase<CoverageArgs> {
 /** `coverage-reset` (`covr`): clears the coverage - the one coverage command worth a short alias */
 export class CoverageResetCommand extends IdeCommandBase {
   readonly id = "coverage-reset";
-  readonly description = "Clears code coverage and the heat map";
+  get description() {
+    return t("commands.coverage.reset.description");
+  }
   readonly usage = "coverage-reset";
   readonly aliases = ["covr"];
 
@@ -285,7 +312,7 @@ export class CoverageResetCommand extends IdeCommandBase {
     const refused = requireProfile(context);
     if (refused) return refused;
     await context.emuApi.resetProfile();
-    writeSuccessMessage(context.output, "Code coverage cleared");
+    writeSuccessMessage(context.output, t("commands.coverage.cleared"));
     return commandSuccess;
   }
 }
@@ -293,14 +320,16 @@ export class CoverageResetCommand extends IdeCommandBase {
 /** `memory-heat <off|exec|read|write|all>`: the memory view's Heat selector, for scripts (D15) */
 export class MemoryHeatCommand extends IdeCommandBase<{ mode: string }> {
   readonly id = "memory-heat";
-  readonly description = "Sets the memory view's heat map: off, exec, read, write or all";
+  get description() {
+    return t("commands.coverage.heat.description");
+  }
   readonly usage = "memory-heat <off|exec|read|write|all>";
   readonly argumentInfo: CommandArgumentInfo = { mandatory: [{ name: "mode", type: "string" }] };
 
   async validateCommandArgs(_context: IdeCommandContext, args: { mode: string }): Promise<ValidationMessage[]> {
     return HEAT_MODES.includes(args.mode?.toLowerCase() as HeatMode)
       ? []
-      : [validationError(`Use one of: ${HEAT_MODES.join(", ")}`)];
+      : [validationError(t("commands.coverage.useOneOf", { choices: HEAT_MODES.join(", ") }))];
   }
 
   async execute(context: IdeCommandContext, args: { mode: string }): Promise<IdeCommandResult> {
@@ -310,41 +339,42 @@ export class MemoryHeatCommand extends IdeCommandBase<{ mode: string }> {
       if (refused) return refused;
     }
     context.store.dispatch(setMemoryHeatModeAction(mode));
-    writeSuccessMessage(context.output, `Memory heat map: ${mode}`);
+    writeSuccessMessage(context.output, t("commands.coverage.heat.set", { mode }));
     return commandSuccess;
   }
 }
 
 /** `coverage status`'s lines about the profile itself (pure, so it is tested without an IDE) */
 export function coverageStatusLines(status: ProfileStatus): string[] {
-  const n = (v: number) => v.toLocaleString("en-US");
   const lines: string[] = [];
   lines.push(
-    `Coverage is ${status.enabled ? "on" : "off"}${status.enabled && !status.counters ? " (flags only, no counts)" : ""}` +
-      (status.muted ? "; a replay is running, nothing counts" : "")
+    t("commands.coverage.status.state", {
+      state: !status.enabled ? "off" : status.counters ? "on" : "flags",
+      muted: status.muted ? "yes" : "no"
+    })
   );
-  lines.push(`${n(status.instructions)} instruction${status.instructions === 1 ? "" : "s"} counted`);
+  lines.push(t("commands.coverage.status.instructions", { count: status.instructions }));
   if (status.counters || status.pagesUsed) {
-    lines.push(`Counter pool: ${n(status.pagesUsed)} of ${n(status.poolPages)} 8K pages used`);
+    lines.push(t("commands.coverage.status.pool", { used: status.pagesUsed, total: status.poolPages }));
   }
   if (status.pagesDropped) {
     lines.push(
-      `${n(status.pagesDropped)} page${status.pagesDropped === 1 ? "" : "s"} found the pool full and keep flags only` +
-        ` (the first: physical page ${status.firstDroppedPage})`
+      t("commands.coverage.status.dropped", { count: status.pagesDropped, first: status.firstDroppedPage })
     );
   }
   if (status.timeTotal) {
-    const pct = (v: number) => `${((100 * v) / status.timeTotal).toFixed(1)}%`;
-    const parts = [`total ${n(status.timeTotal)} ${status.timeUnit}`];
+    const pct = (v: number) => `${percent1((100 * v) / status.timeTotal)}%`;
+    // --- HALT, INT ack, NMI ack and DMA are hardware names: they stay as they are (D9)
+    const parts = [t("commands.coverage.status.timeTotal", { total: status.timeTotal, unit: status.timeUnit })];
     if (status.timeHalt) parts.push(`HALT ${pct(status.timeHalt)}`);
     if (status.timeIntAck) parts.push(`INT ack ${pct(status.timeIntAck)}`);
     if (status.timeNmiAck) parts.push(`NMI ack ${pct(status.timeNmiAck)}`);
     if (status.timeDma) parts.push(`DMA ${pct(status.timeDma)}`);
-    if (status.timeSnooze) parts.push(`snooze ${pct(status.timeSnooze)}`);
-    lines.push(`Time: ${parts.join(", ")}`);
+    if (status.timeSnooze) parts.push(t("commands.coverage.status.timeSnooze", { percent: pct(status.timeSnooze) }));
+    lines.push(t("commands.coverage.status.time", { parts: parts.join(", ") }));
   }
   if (status.abandonedInstructions) {
-    lines.push(`Includes ${n(status.abandonedInstructions)} instructions from an abandoned future (Take over here)`);
+    lines.push(t("commands.coverage.status.abandoned", { count: status.abandonedInstructions }));
   }
   return lines;
 }

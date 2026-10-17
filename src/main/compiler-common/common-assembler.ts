@@ -1,9 +1,10 @@
+import { t } from "@common/i18n/i18n";
 import fs from "fs";
 import { annotationsInComment } from "@common/utils/source-annotations";
 import path from "path";
 
 import type { ErrorCodes } from "../compiler-common/assembler-errors";
-import { errorMessages } from "../compiler-common/assembler-errors";
+import { assemblerMessage } from "../compiler-common/assembler-errors";
 import { InputStream } from "../compiler-common/input-stream";
 import {
   AssemblerErrorInfo,
@@ -2925,7 +2926,7 @@ export abstract class CommonAssembler<
     try {
       contents = fs.readFileSync(filename);
     } catch (err) {
-      this.reportAssemblyError("Z0322", pragma, null, err.message);
+      this.reportAssemblyError("Z0322", pragma, null, filename, err.message);
       return;
     }
 
@@ -6244,12 +6245,7 @@ export abstract class CommonAssembler<
       line.endColumn = line.startColumn + segments[0].trim().length - 1;
     }
     const sourceItem = this._output.sourceFileList[line.fileIndex];
-    let errorText: string = errorMessages[code] ?? "Unkonwn error";
-    if (parameters) {
-      parameters.forEach(
-        (_, idx) => (errorText = replace(errorText, `{${idx}}`, parameters[idx].toString()))
-      );
-    }
+    let errorText: string = assemblerMessage(code, parameters) ?? t("compiler.asm.unknownError");
 
     errorText = this.buildMacroInvocationPrefix() + errorText;
 
@@ -6265,13 +6261,6 @@ export abstract class CommonAssembler<
     );
     this._output.errors.push(errorInfo);
     this.reportScopeError(code);
-
-    function replace(input: string, placeholder: string, replacement: string): string {
-      do {
-        input = input.replace(placeholder, replacement);
-      } while (input.includes(placeholder));
-      return input;
-    }
   }
 
   /**
@@ -6302,12 +6291,7 @@ export abstract class CommonAssembler<
       line.endColumn = line.startColumn + segments[0].trim().length - 1;
     }
     const sourceItem = this._output.sourceFileList[line.fileIndex];
-    let errorText: string = errorMessages[code] ?? "Unknown warning";
-    if (parameters) {
-      parameters.forEach(
-        (_, idx) => (errorText = replace(errorText, `{${idx}}`, parameters[idx].toString()))
-      );
-    }
+    let errorText: string = assemblerMessage(code, parameters) ?? t("compiler.asm.unknownWarning");
 
     errorText = this.buildMacroInvocationPrefix() + errorText;
 
@@ -6323,13 +6307,6 @@ export abstract class CommonAssembler<
       true  // Mark as warning
     );
     this._output.errors.push(errorInfo);
-
-    function replace(input: string, placeholder: string, replacement: string): string {
-      do {
-        input = input.replace(placeholder, replacement);
-      } while (input.includes(placeholder));
-      return input;
-    }
   }
 
   /**

@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import classnames from "classnames";
 
 import { MI_ZXNEXT } from "@common/machines/constants";
+import { useT } from "@common/i18n/useT";
+import type { MessageKey } from "@common/i18n/keys.generated";
 import { MEMORY_PANEL_ID } from "@common/state/common-ids";
 import { EmptyState } from "@renderer/controls/data";
 import { FullPanel } from "@renderer/controls/layout/Panels";
@@ -93,15 +95,22 @@ export const RAIL_FROM_CH = 120;
 const RAIL_CH = 40;
 const BAND_CH = 26;
 
-const SOURCES: { id: Layer2Source; label: string; title: string }[] = [
-  { id: "displayed", label: "Displayed", title: "The banks the display reads: $12" },
-  { id: "shadow", label: "Shadow", title: "The shadow banks: $13" },
-  { id: "window", label: "Write window", title: "The banks the $123B window maps ($12, or $13 with bit 3)" }
+const SOURCES: { id: Layer2Source; labelKey: MessageKey; titleKey: MessageKey }[] = [
+  { id: "displayed", labelKey: "panels.layer2.source.displayed", titleKey: "panels.layer2.source.displayedTitle" },
+  { id: "shadow", labelKey: "panels.layer2.source.shadow", titleKey: "panels.layer2.source.shadowTitle" },
+  { id: "window", labelKey: "panels.layer2.source.window", titleKey: "panels.layer2.source.windowTitle" }
 ];
+
+const ROLE_KEYS: Record<string, MessageKey> = {
+  displayed: "panels.layer2.role.displayed",
+  shadow: "panels.layer2.role.shadow",
+  window: "panels.layer2.role.window"
+};
 
 type Selection = { kind: "pixel"; x: number; y: number; asDisplayed: boolean } | { kind: "bank"; index: number };
 
 const Layer2InspectorPanel = ({ document, viewState }: DocumentProps<Partial<Layer2InspectorViewState>>) => {
+  const t = useT();
   const machineId = useSelector((s) => s.emulatorState?.machineId);
   const isNext = machineId === MI_ZXNEXT;
   const documentHubService = useDocumentHubService();
@@ -229,7 +238,7 @@ const Layer2InspectorPanel = ({ document, viewState }: DocumentProps<Partial<Lay
     return (
       <FullPanel fontSize="--panel-font-size" fontFamily="--monospace-font">
         <EmptyState
-          message={isNext ? "Waiting for the ZX Spectrum Next's Layer 2 state" : "The Layer 2 Inspector shows a running ZX Spectrum Next"}
+          message={isNext ? t("panels.layer2.waiting") : t("panels.layer2.notNext")}
         />
       </FullPanel>
     );
@@ -266,7 +275,10 @@ const Layer2InspectorPanel = ({ document, viewState }: DocumentProps<Partial<Lay
       if (result?.success) set.push(command.split(" ")[1]);
       else if (result?.finalMessage) dispatch(setIdeStatusMessageAction(result.finalMessage, false));
     }
-    if (set.length) dispatch(setIdeStatusMessageAction(`Breakpoint set on writes to ${set.join(" and ")}`, true));
+    if (set.length) {
+      const address = set.length === 1 ? set[0] : t("panels.layer2.and", { first: set[0], second: set[1] });
+      dispatch(setIdeStatusMessageAction(t("panels.graphics.inspector.breakpointSet", { address }), true));
+    }
   };
 
   const globals = orderGlobals(globalsStrip(model, diagnostics));
@@ -274,10 +286,15 @@ const Layer2InspectorPanel = ({ document, viewState }: DocumentProps<Partial<Lay
   const hidden = rail || globalsOpen ? 0 : secondary;
 
   const paletteButtons = (
-    <span className={spriteSegmentedClass} role="group" aria-label="Layer 2 palette">
+    <span className={spriteSegmentedClass} role="group" aria-label={t("panels.layer2.paletteGroup")}>
       {([undefined, 0, 1] as const).map((bank) => {
         const live = bank !== undefined && palette.liveBank === bank;
-        const label = bank === undefined ? `Live (${(palette.liveBank ?? 0) + 1})` : bank === 0 ? "1" : "2";
+        const label =
+          bank === undefined
+            ? t("panels.graphics.inspector.paletteLive", { bank: (palette.liveBank ?? 0) + 1 })
+            : bank === 0
+              ? "1"
+              : "2";
         return (
           <button
             key={String(bank)}
@@ -286,8 +303,10 @@ const Layer2InspectorPanel = ({ document, viewState }: DocumentProps<Partial<Lay
             aria-pressed={look.palettePin === bank}
             title={
               bank === undefined
-                ? "Follow the palette Layer 2 draws with (NextReg $43 bit 2)"
-                : `Pin the ${bank === 0 ? "first" : "second"} Layer 2 palette`
+                ? t("panels.layer2.paletteFollow")
+                : bank === 0
+                  ? t("panels.layer2.palettePinFirst")
+                  : t("panels.layer2.palettePinSecond")
             }
             onClick={() => updateLook({ palettePin: bank })}
           >
@@ -302,11 +321,14 @@ const Layer2InspectorPanel = ({ document, viewState }: DocumentProps<Partial<Lay
     <div className={styles.pane}>
       <div className={styles.paneHeader}>
         <span>
-          {SOURCES.find((s) => s.id === look.source)!.label} · {resolutionText(size)}
+          {t(SOURCES.find((s) => s.id === look.source)!.labelKey)} · {resolutionText(size)}
         </span>
         <span className={styles.paneMeta}>
-          {look.asDisplayed ? "as displayed: scrolled and clipped" : "whole layer: the screen's view outlined"}
-          {state!.copperRunning && look.asDisplayed && " · the Copper is running: per-line changes are not shown"}
+          {!look.asDisplayed
+            ? t("panels.graphics.inspector.metaWholeLayer")
+            : state!.copperRunning
+              ? t("panels.graphics.inspector.metaDisplayedCopper")
+              : t("panels.graphics.inspector.metaDisplayed")}
         </span>
       </div>
       <div className={styles.scroller}>
@@ -323,7 +345,7 @@ const Layer2InspectorPanel = ({ document, viewState }: DocumentProps<Partial<Lay
                 zoomX={zoomX}
                 zoomY={zoomY}
                 dim={dim}
-                ariaLabel="Layer 2 image"
+                ariaLabel={t("panels.layer2.image")}
                 className={styles.image}
                 onPixelMove={(x, y) => setHover({ x, y })}
                 onLeave={() => setHover(undefined)}
@@ -349,7 +371,7 @@ const Layer2InspectorPanel = ({ document, viewState }: DocumentProps<Partial<Lay
                 )}
               </IndexedImageCanvas>
             ) : (
-              <span className={styles.muted}>Reading the shadow banks…</span>
+              <span className={styles.muted}>{t("panels.layer2.readingShadow")}</span>
             )}
           </div>
         </ScrollViewer>
@@ -361,17 +383,22 @@ const Layer2InspectorPanel = ({ document, viewState }: DocumentProps<Partial<Lay
               ({hovered.layer.x}, {hovered.layer.y})
             </span>
             <span>
-              {size.nibbles ? "nibble" : "byte"} ${hovered.stored.toString(16).toUpperCase().padStart(size.nibbles ? 1 : 2, "0")}
+              {t(size.nibbles ? "panels.layer2.hoverNibble" : "panels.layer2.hoverByte", {
+                value: `$${hovered.stored.toString(16).toUpperCase().padStart(size.nibbles ? 1 : 2, "0")}`
+              })}
             </span>
-            <span>index {hovered.index}</span>
+            <span>{t("panels.layer2.hoverIndex", { index: hovered.index })}</span>
             <span>
-              bank {hovered.address.bank16}:${hovered.address.offset.toString(16).toUpperCase().padStart(4, "0")}
+              {t("panels.layer2.hoverBank", {
+                bank: hovered.address.bank16,
+                offset: `$${hovered.address.offset.toString(16).toUpperCase().padStart(4, "0")}`
+              })}
             </span>
-            {hovered.transparent && <span>transparent</span>}
-            {hovered.priority && <span>priority</span>}
+            {hovered.transparent && <span>{t("panels.layer2.hoverTransparent")}</span>}
+            {hovered.priority && <span>{t("panels.layer2.hoverPriority")}</span>}
           </>
         ) : (
-          <span className={styles.muted}>Point at a pixel; click to inspect it</span>
+          <span className={styles.muted}>{t("panels.layer2.hint")}</span>
         )}
       </div>
     </div>
@@ -398,43 +425,43 @@ const Layer2InspectorPanel = ({ document, viewState }: DocumentProps<Partial<Lay
     <FullPanel fontSize="--panel-font-size" fontFamily="--main-font-family">
       <div ref={rootRef} className={styles.root} data-layout={rail ? "rail" : "band"}>
         {probe}
-        <div className={styles.toolbar} role="toolbar" aria-label="Layer 2 Inspector">
-          <span className={spriteSegmentedClass} role="group" aria-label="Source">
+        <div className={styles.toolbar} role="toolbar" aria-label={t("panels.layer2.toolbar")}>
+          <span className={spriteSegmentedClass} role="group" aria-label={t("panels.layer2.sourceGroup")}>
             {SOURCES.map((s) => (
               <button
                 key={s.id}
                 type="button"
                 className={spriteSegmentClass}
                 aria-pressed={look.source === s.id}
-                title={s.title}
+                title={t(s.titleKey)}
                 onClick={() => {
                   updateLook({ source: s.id });
                   setSelection(undefined);
                 }}
               >
-                {s.label}
+                {t(s.labelKey)}
               </button>
             ))}
           </span>
           <span className={styles.toolbarContext}>
-            <span className={spriteSegmentedClass} role="group" aria-label="Geometry">
+            <span className={spriteSegmentedClass} role="group" aria-label={t("panels.layer2.geometryGroup")}>
               <button
                 type="button"
                 className={spriteSegmentClass}
                 aria-pressed={!look.asDisplayed}
-                title="The whole layer, unscrolled, with the screen's view and the banks outlined"
+                title={t("panels.layer2.wholeLayerTitle")}
                 onClick={() => updateLook({ asDisplayed: false })}
               >
-                Whole layer
+                {t("panels.layer2.wholeLayer")}
               </button>
               <button
                 type="button"
                 className={spriteSegmentClass}
                 aria-pressed={look.asDisplayed}
-                title="Scrolled and clipped, as the layer reaches the mixer"
+                title={t("panels.graphics.inspector.asDisplayedTitle")}
                 onClick={() => updateLook({ asDisplayed: true })}
               >
-                As displayed
+                {t("panels.graphics.inspector.asDisplayed")}
               </button>
             </span>
           </span>
@@ -444,15 +471,15 @@ const Layer2InspectorPanel = ({ document, viewState }: DocumentProps<Partial<Lay
           <button
             type="button"
             className={styles.moreButton}
-            aria-label="More options"
-            title="More options"
+            aria-label={t("panels.graphics.inspector.moreOptions")}
+            title={t("panels.graphics.inspector.moreOptions")}
             onClick={(e) => menuApi.show(e)}
           >
             ⋯
           </button>
         </div>
 
-        <div className={classnames(styles.globals, { [styles.globalsOpen]: globalsOpen })} role="list" aria-label="Layer 2 globals">
+        <div className={classnames(styles.globals, { [styles.globalsOpen]: globalsOpen })} role="list" aria-label={t("panels.layer2.globalsLabel")}>
           {globals.map((item) => (
             <span
               key={item.key}
@@ -477,12 +504,14 @@ const Layer2InspectorPanel = ({ document, viewState }: DocumentProps<Partial<Lay
           ))}
           {!rail && secondary > 0 && (
             <button type="button" className={styles.globalsMore} onClick={() => setGlobalsOpen((o) => !o)}>
-              {globalsOpen ? "less" : `+${secondary} more`}
+              {globalsOpen
+                ? t("panels.graphics.inspector.globalsLess")
+                : t("panels.graphics.inspector.globalsMore", { count: secondary })}
             </button>
           )}
         </div>
 
-        <div className={styles.banks} role="list" aria-label="Layer 2 banks">
+        <div className={styles.banks} role="list" aria-label={t("panels.layer2.banksLabel")}>
           {chips.map((c) => (
             <button
               key={c.index}
@@ -492,7 +521,13 @@ const Layer2InspectorPanel = ({ document, viewState }: DocumentProps<Partial<Lay
                 [styles.bankChipSelected]: bankSel?.index === c.index,
                 [styles.bankChipOutside]: c.outsideRam
               })}
-              title={c.outsideRam ? "Past the 2 MB SRAM: no pixels" : `Physical $${(0x040000 + c.bank16 * 0x4000).toString(16).toUpperCase()}`}
+              title={
+                c.outsideRam
+                  ? t("panels.layer2.chipOutside")
+                  : t("panels.layer2.chipPhysical", {
+                      address: `$${(0x040000 + c.bank16 * 0x4000).toString(16).toUpperCase()}`
+                    })
+              }
               onClick={() => {
                 setSelection({ kind: "bank", index: c.index });
                 if (look.asDisplayed) updateLook({ asDisplayed: false });
@@ -501,10 +536,10 @@ const Layer2InspectorPanel = ({ document, viewState }: DocumentProps<Partial<Lay
               <span>{bankChipLabel(c)}</span>
               {c.roles.map((r) => (
                 <span key={r} className={classnames(styles.role, styles[`role_${r}`])}>
-                  {r === "window" ? "write window" : r}
+                  {t(ROLE_KEYS[r])}
                 </span>
               ))}
-              {c.outsideRam && <span className={classnames(styles.role, styles.role_outside)}>past 2 MB</span>}
+              {c.outsideRam && <span className={classnames(styles.role, styles.role_outside)}>{t("panels.layer2.role.outside")}</span>}
             </button>
           ))}
         </div>
@@ -539,17 +574,17 @@ const Layer2InspectorPanel = ({ document, viewState }: DocumentProps<Partial<Lay
           {!rail && (
             <>
               <ContextMenuItem
-                text={`Palette: live (${(palette.liveBank ?? 0) + 1})`}
+                text={t("panels.graphics.inspector.menuPaletteLive", { bank: (palette.liveBank ?? 0) + 1 })}
                 selected={look.palettePin === undefined}
                 clicked={fromMenu(menuApi, () => updateLook({ palettePin: undefined }))}
               />
               <ContextMenuItem
-                text="Palette: 1"
+                text={t("panels.graphics.inspector.menuPalette", { bank: 1 })}
                 selected={look.palettePin === 0}
                 clicked={fromMenu(menuApi, () => updateLook({ palettePin: 0 }))}
               />
               <ContextMenuItem
-                text="Palette: 2"
+                text={t("panels.graphics.inspector.menuPalette", { bank: 2 })}
                 selected={look.palettePin === 1}
                 clicked={fromMenu(menuApi, () => updateLook({ palettePin: 1 }))}
               />
@@ -557,7 +592,7 @@ const Layer2InspectorPanel = ({ document, viewState }: DocumentProps<Partial<Lay
               {([1, 2, 3, 4] as const).map((z) => (
                 <ContextMenuItem
                   key={z}
-                  text={`Zoom ${z}×`}
+                  text={t("panels.graphics.inspector.menuZoom", { zoom: z })}
                   selected={look.zoom === z}
                   clicked={fromMenu(menuApi, () => updateLook({ zoom: z }))}
                 />
@@ -566,22 +601,22 @@ const Layer2InspectorPanel = ({ document, viewState }: DocumentProps<Partial<Lay
             </>
           )}
           <ContextMenuItem
-            text="Bank boundaries"
+            text={t("panels.layer2.menu.bankBoundaries")}
             selected={look.banks}
             clicked={fromMenu(menuApi, () => updateLook({ banks: !look.banks }))}
           />
           <ContextMenuItem
-            text="Highlight priority pixels"
+            text={t("panels.layer2.menu.priority")}
             selected={look.priority}
             clicked={fromMenu(menuApi, () => updateLook({ priority: !look.priority }))}
           />
           <ContextMenuItem
-            text="Show transparent pixels as transparent"
+            text={t("panels.layer2.menu.transparent")}
             selected={look.transparent}
             clicked={fromMenu(menuApi, () => updateLook({ transparent: !look.transparent }))}
           />
           <ContextMenuItem
-            text="Checkerboard behind transparent pixels"
+            text={t("panels.graphics.inspector.checkerboard")}
             selected={look.checker}
             clicked={fromMenu(menuApi, () => updateLook({ checker: !look.checker }))}
           />
@@ -589,23 +624,33 @@ const Layer2InspectorPanel = ({ document, viewState }: DocumentProps<Partial<Lay
 
         <ContextMenu state={pixelMenuState} onClickOutside={() => pixelMenuApi.conceal()}>
           <ContextMenuItem
-            text={memAt ? `Show in memory (${memAt.text})` : "Show in memory (past 2 MB)"}
+            text={
+              memAt
+                ? t("panels.layer2.menu.showInMemory", { address: memAt.text })
+                : t("panels.layer2.menu.showInMemoryOutside")
+            }
             disabled={!memAt}
             clicked={fromMenu(pixelMenuApi, () => void showInMemory())}
           />
           <ContextMenuItem
-            text={breakCommands.length ? `Break on write (${breakCommands.map((c) => c.split(" ")[1]).join(" + ")})` : "Break on write (past 2 MB)"}
+            text={
+              breakCommands.length
+                ? t("panels.layer2.menu.breakOnWrite", {
+                    targets: breakCommands.map((c) => c.split(" ")[1]).join(" + ")
+                  })
+                : t("panels.layer2.menu.breakOnWriteOutside")
+            }
             disabled={!breakCommands.length}
             clicked={fromMenu(pixelMenuApi, () => void breakOnWrite())}
           />
           <ContextMenuSeparator />
           <ContextMenuItem
-            text="Copy coordinates"
+            text={t("panels.layer2.menu.copyCoordinates")}
             disabled={!pixel}
             clicked={fromMenu(pixelMenuApi, () => {
               if (!pixel) return;
               void navigator.clipboard?.writeText(coordinatesText(pixel));
-              dispatch(setIdeStatusMessageAction("Coordinates copied to the clipboard", true));
+              dispatch(setIdeStatusMessageAction(t("panels.graphics.inspector.copied.coordinates"), true));
             })}
           />
         </ContextMenu>

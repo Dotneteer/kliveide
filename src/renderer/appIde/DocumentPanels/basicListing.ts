@@ -1,6 +1,7 @@
 import type { CharDescriptor } from "@common/machines/info-types";
 import { toHexa2 } from "../services/ide-commands";
 import { BasicLine, BasicProgramBuffer, getMemoryWord, SpectrumColor } from "./BasicLine";
+import { t } from "@common/i18n/i18n";
 
 /*
  * The ZX Spectrum BASIC detokenizer: a program's bytes into the coloured lines the BASIC views show.
@@ -216,7 +217,7 @@ export function decodeBasicProgram(
     buffer.paper("white");
     buffer.ink("red");
     buffer.inverse(true);
-    buffer.writeLine("*** BASIC code corrupted or partially loaded ***");
+    buffer.writeLine(t("panels.doc.basic.corrupted"));
   }
 
   return { lines: buffer.getContents(), buffer, corrupted, lineCount };

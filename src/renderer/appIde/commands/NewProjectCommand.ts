@@ -12,6 +12,7 @@ import {
   IdeCommandBase
 } from "../services/ide-commands";
 import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
+import { t } from "@common/i18n/i18n";
 
 // --- Field names are the `argumentInfo` names: `extractArguments` stores each argument under its name
 type NewProjectCommandArgs = {
@@ -24,7 +25,9 @@ type NewProjectCommandArgs = {
 
 export class NewProjectCommand extends IdeCommandBase<NewProjectCommandArgs> {
   readonly id = "newp";
-  readonly description = "Creates a new Klive project.";
+  get description() {
+    return t("commands.newp.description");
+  }
   readonly usage = "newp <machine ID> <project name> [<template>] [-p <project folder>] [-o]";
   readonly aliases = ["np"];
 
@@ -55,7 +58,7 @@ export class NewProjectCommand extends IdeCommandBase<NewProjectCommandArgs> {
         if (errorMessage) {
           return {
             success: false,
-            finalMessage: `Error opening folder: ${errorMessage}`
+            finalMessage: t("commands.common.openFolderError", { message: errorMessage })
           };
         }
         await ensureProjectLoaded(context.service.projectService);
@@ -72,7 +75,7 @@ export class NewProjectCommand extends IdeCommandBase<NewProjectCommandArgs> {
           context.service.ideCommandsService.executeCommand(`nav "${buildRoots[0]}"`);
         }
       }
-      writeSuccessMessage(context.output, `Klive project successfully created in ${responsePath}`);
+      writeSuccessMessage(context.output, t("commands.newp.created", { path: responsePath }));
     } catch (error) {
       return commandError(error.toString());
     }

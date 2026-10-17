@@ -159,7 +159,7 @@ describe("the profiler's text", () => {
       "Total 1,000 T (286 µs)",
       "Routines from labels (Klive asm)",
       "3 stack switches",
-      "1 calls too deep",
+      "1 call too deep",
       "9 calls in (other)"
     ]);
     expect(facts.filter((f) => f.warning)).toHaveLength(3);

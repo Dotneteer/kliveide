@@ -1,0 +1,19 @@
+{
+  "commands.usage.bpSet.len": "-len: ein Speicher-Haltepunkt (-r/-w) über so viele Bytes, z. B. bp-set $8000 -w -len 5",
+  "commands.usage.bpSet.copper": "cu:<index>: (ZX Spectrum Next) hält an, wenn der Copper den Listenindex $000-$3FF abschließt; ein WAIT, sobald er erfüllt ist, z. B. bp-set cu:$00B -hit 50",
+  "commands.usage.bpSet.sprite": "sp:<sprite>: (ZX Spectrum Next) hält an, wenn ein Attributbyte des Sprites $00-$7F geschrieben wird; -attr wählt die Bytes, z. B. bp-set sp:$0C -attr 0,1",
+  "commands.usage.bpSet.once": "-once: ein einmaliger Haltepunkt, der beim ersten Anhalten der Maschine entfernt wird; wird nie gespeichert",
+  "commands.usage.bpSet.log": "-log: protokolliert die Meldung und läuft weiter, statt anzuhalten (ein Logpoint), z. B. {example}",
+  "commands.usage.bpSet.hit": "-hit: hält beim Treffer N an (N oder =N), danach (>N), ab dort (>=N), davor (<N), bis dahin (<=N), bei jedem N-ten (*N)",
+  "commands.usage.bpSet.if": "-if: muss zuletzt stehen; der Rest der Zeile ist die Bedingung, z. B. -if A == $FF && !ZF",
+  "commands.usage.lpEnable.groups": "ohne Gruppen: alle Logpoints protokollieren (-d: keiner); mit Gruppen: nur diese protokollieren (-d: diese hören damit auf)",
+  "commands.usage.annotationEnable.disable": "-d: schaltet sie aus; wird mit dem Projekt gespeichert",
+  "commands.usage.nav.record": "-r: speichert den Sprung im Navigationsverlauf (Zurück / Vorwärts); der Grund ist einer von {reasons}",
+  "commands.usage.testRun.pattern": "pattern: Suite.UT_name, mit * als Platzhalter (alle Tests, wenn weggelassen)",
+  "commands.usage.testRun.failed": "-failed: nur die Tests, die beim letzten Mal fehlgeschlagen oder mit einem Fehler beendet sind",
+  "commands.usage.testRun.coverage": "-coverage: übernimmt die Codeabdeckung der Tests in die Abdeckungsansicht des Editors",
+  "commands.usage.testDebug.test": "test: Suite.UT_name oder ein Muster mit *, das genau einen Test benennt",
+  "commands.usage.testJunit.file": "file: die zu schreibende XML-Datei",
+  "commands.usage.testJunit.noTimestamp": "-notimestamp: lässt die Uhrzeit des Laufs weg, sodass zwei Läufe dieselbe Datei schreiben",
+  "commands.usage.watchAdd.types": ">: direkten Symbolwert verwenden\n<type>:\n  b=Byte,\n  w=16 Bit Little-Endian, -w=16 Bit Big-Endian,\n  l=32 Bit Little-Endian, -l=32 Bit Big-Endian,\n  f=Flag,\n  a=Array (verwendet die Länge, Standard: 8), s=String (verwendet die Länge, Standard: 8)"
+}

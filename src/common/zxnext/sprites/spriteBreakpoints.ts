@@ -7,6 +7,8 @@
  */
 
 import type { SpriteWriteEvent, SpriteWriteOrigin } from "@common/messaging/EmuApi";
+import { t, tEnglish } from "@common/i18n/i18n";
+import type { MessageKey } from "@common/i18n/keys.generated";
 
 /** All five attribute bytes. */
 export const SPRITE_ATTR_ALL = 0x1f;
@@ -14,17 +16,35 @@ export const SPRITE_ATTR_ALL = 0x1f;
 /** The highest sprite index. */
 export const SPRITE_INDEX_MAX = 0x7f;
 
-/**
+/*
  * What each attribute byte holds, briefly, for an anchor sprite (`spriteAttributes.ts` has the full
- * layout). Used in the stop message and as the dialog's checkbox hints.
+ * layout): a field name kept as the hardware names it, or a key for a list of plain words.
  */
-export const SPRITE_ATTRIBUTE_LABELS: readonly string[] = [
-  "X",
-  "Y",
-  "palette, mirror, rotate, X8",
-  "visible, pattern",
-  "attr4"
+const ATTRIBUTE_LABELS: readonly ({ text: string } | { key: MessageKey })[] = [
+  { text: "X" },
+  { text: "Y" },
+  { key: "panels.sprites.attrLabel.byte2" },
+  { key: "panels.sprites.attrLabel.byte3" },
+  { text: "attr4" }
 ];
+
+/**
+ * The attribute labels in the display language, for the dialog's checkbox hints and the Breakpoints
+ * panel. Each index is a getter, so the array reads the current language every time.
+ */
+export const SPRITE_ATTRIBUTE_LABELS: readonly string[] = ATTRIBUTE_LABELS.reduce<string[]>((labels, label, i) => {
+  Object.defineProperty(labels, i, {
+    enumerable: true,
+    get: () => ("key" in label ? t(label.key) : label.text)
+  });
+  return labels;
+}, []);
+
+/** An attribute label in English, for the stop message (which is not translated yet) */
+function englishAttributeLabel(attribute: number): string | undefined {
+  const label = ATTRIBUTE_LABELS[attribute];
+  return label === undefined ? undefined : "key" in label ? tEnglish(label.key) : label.text;
+}
 
 /**
  * Parses an attribute-byte list as `-attr` takes it: digits `0`-`4` separated by commas, with
@@ -99,7 +119,7 @@ export function describeSpriteStop(
   write: SpriteWriteEvent,
   partitionLabels?: Record<number, string>
 ): string {
-  const label = SPRITE_ATTRIBUTE_LABELS[write.attribute];
+  const label = englishAttributeLabel(write.attribute);
   const what =
     `sprite ${formatSpriteIndex(write.sprite)} attr ${write.attribute}${label ? ` (${label})` : ""} ` +
     `${hex2(write.oldValue)} -> ${hex2(write.newValue)}`;
