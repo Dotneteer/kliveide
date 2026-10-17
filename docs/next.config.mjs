@@ -315,8 +315,8 @@ const customTheme = {
   ]
 };
 
-// Where the site will be served from, e.g. "/kliveide" in production or
-// "/kliveide/preview/<branch>" for a branch preview. Deployment path is a
+// Where the site will be served from, e.g. "" (the root of https://kliveide.net/)
+// in production or "/preview/<branch>" for a branch preview. Deployment path is a
 // deployment concern, not a NODE_ENV concern: coupling the two is what made it
 // impossible to publish a preview at a different path.
 // Production default lives in .env.production; dev leaves it empty.

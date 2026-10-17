@@ -25,7 +25,7 @@ import type { MessageKey } from "@common/i18n/keys.generated";
 import {
   LANGUAGE_SYSTEM,
   languageInfo,
-  offeredLanguages,
+  selectableLanguages,
   type UiLanguageState
 } from "@common/i18n/languages";
 import { MOUSE_POINTER_DISPLAYS, MOUSE_SENSITIVITIES } from "./mouse-capture";
@@ -230,7 +230,7 @@ export function languageOptions(env: SettingsPlatform): SettingsOption[] {
   const system = languageInfo(env.uiLanguage?.system ?? "en")?.nativeName ?? "English";
   return [
     { value: LANGUAGE_SYSTEM, label: t("settings.language.systemDefault", { language: system }) },
-    ...offeredLanguages(devTools).map((l) => ({ value: l.id, label: l.nativeName }))
+    ...selectableLanguages(devTools).map((l) => ({ value: l.id, label: l.nativeName }))
   ];
 }
 

@@ -82,6 +82,7 @@ import {
   appSettings,
   getSettingValue,
   loadAppSettings,
+  markAppStateRestored,
   saveAppSettings,
   settingsFileLoaded
 } from "./settings-utils";
@@ -412,6 +413,8 @@ async function createAppWindows() {
       // --- Ready, sign the machine type state change
       mainStore.dispatch(setMachineTypeAction(machineId));
       mainStore.dispatch(setModelTypeAction(modelId));
+      // --- From now on the store holds the loaded settings, and saves may write them back
+      markAppStateRestored();
 
       if (appSettings.media?.[MEDIA_TAPE]) {
         await setSelectedTapeFile(appSettings.media[MEDIA_TAPE]);

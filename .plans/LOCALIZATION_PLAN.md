@@ -455,6 +455,21 @@ app is byte-for-byte English.
   running app, in each language, the command help, the Debug side bar and the IDE chrome are
   translated with no clipped text.
 
+### After step 13 — the pseudo-locale left the dropdown
+
+- Once the five real languages shipped, `qps` was removed from Settings › Language
+  (`selectableLanguages()` = the offered languages without dev-only ones). It still works where it
+  is useful: `setLanguage("qps")` in tests (the menu, Settings and every `*-i18n` test use it), and
+  in a dev build the setting value `ideViewOptions.language: "qps"` in the settings file is still
+  honoured (`resolveUiLanguage` accepts it), e.g. through the doc-shots harness's `ideViewOptions`.
+- Checking that exposed an older start-up bug: `saveAppSettings()` copied the main store's state
+  over the loaded settings, and the store holds them only after the emulator window first loads, so
+  a window-state save while the windows opened (or the emulator window fitting itself to the
+  machine) wrote `globalSettings: {}` — losing the display language and every other global setting.
+  The heavier bundle made that race likely. Saves now copy state only after
+  `markAppStateRestored()` (called once main has restored the settings);
+  `test/main/save-app-settings-startup.test.ts` pins it.
+
 ---
 
 ## 4. UX risks to watch

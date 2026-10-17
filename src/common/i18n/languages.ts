@@ -90,6 +90,19 @@ export function offeredLanguages(
 }
 
 /**
+ * The languages the Language page's dropdown lists: the offered ones without the dev-only
+ * pseudo-locale. `qps` stays reachable in dev builds through the setting itself
+ * (`ideViewOptions.language: "qps"` in the settings file) and through `setLanguage("qps")` in tests.
+ */
+export function selectableLanguages(
+  devTools: boolean,
+  catalogIds?: readonly string[],
+  table?: readonly LanguageInfo[]
+): LanguageInfo[] {
+  return offeredLanguages(devTools, catalogIds, table).filter((l) => !l.devOnly);
+}
+
+/**
  * The offered language the OS asks for: the first of the OS's preferred locales that matches one
  * (`pt-PT` -> `pt-PT`, `es-MX` -> `es`, a bare `pt` -> `pt-BR`), else English. Never the
  * pseudo-locale.

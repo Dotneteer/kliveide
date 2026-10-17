@@ -1,15 +1,15 @@
 /**
  * Serves the static docs export under a path prefix, so a build made for GitHub
- * Pages (basePath '/kliveide', or a preview path) can be smoke-tested locally
+ * Pages (basePath '' at the root of kliveide.net, or a preview path) can be smoke-tested locally
  * exactly as it will be served.
  *
  * `npx serve docs/out` cannot do this: it always mounts at '/', so every asset
  * URL 404s and basePath regressions stay invisible until they reach production.
  *
  * Usage:
- *   node scripts/serve-docs.cjs                              # mounts at /kliveide
- *   node scripts/serve-docs.cjs --prefix /kliveide/preview/x
- *   node scripts/serve-docs.cjs --prefix '' --port 4000
+ *   node scripts/serve-docs.cjs                              # mounts at /
+ *   node scripts/serve-docs.cjs --prefix /preview/x
+ *   node scripts/serve-docs.cjs --prefix /some/path --port 4000
  */
 const { createServer } = require("node:http");
 const { existsSync, createReadStream, statSync } = require("node:fs");
@@ -40,7 +40,7 @@ function argValue(flag, fallback) {
 }
 
 const root = join(__dirname, "..", "docs", "out");
-const prefix = argValue("--prefix", "/kliveide").replace(/\/$/, "");
+const prefix = argValue("--prefix", "").replace(/\/$/, "");
 const port = Number(argValue("--port", "3000"));
 
 /** Maps a request path to a file on disk, honouring trailingSlash-style exports. */

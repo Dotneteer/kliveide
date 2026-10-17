@@ -123,12 +123,34 @@ export function applyUserSetting(key: string, value?: any): void {
 export let appSettings: AppSettings = {};
 export let settingsFileLoaded = false;
 
+/**
+ * The main store holds the saved settings only after main has restored them, which it does when
+ * the emulator window first reports it is loaded. Until then the store has defaults: a save in that
+ * window - a window-state save when a window opens, maximises or is fitted to the machine's screen -
+ * must not copy them over the settings it loaded, or every global setting (the display language,
+ * panel sizes, fonts...) is lost at start-up.
+ */
+let appStateRestored = false;
+
+/** Called once main has put the loaded settings into the store */
+export function markAppStateRestored(): void {
+  appStateRestored = true;
+}
+
 export function saveAppSettings(): void {
   const filename = getSettingsFilePath();
   ensureSettingsFileDirectory(filename);
+  if (appStateRestored) copyStateToAppSettings();
 
-  // --- Do not refresh state after the final save
-  // --- Get settings from the current state
+  // --- Save to the settings file
+  fs.writeFileSync(getSettingsFilePath(), JSON.stringify(appSettings, null, 2), {
+    encoding: "utf8",
+    flag: "w"
+  });
+}
+
+/** Takes the settings the store owns into `appSettings`, ready to be written */
+function copyStateToAppSettings(): void {
   const state = mainStore.getState();
   appSettings.startScreenDisplayed = state.startScreenDisplayed;
   appSettings.theme = state.theme;
@@ -151,12 +173,6 @@ export function saveAppSettings(): void {
   appSettings.keyMappingFile = state.keyMappingFile;
   appSettings.project = { folderPath: state.project?.folderPath };
   appSettings.recentProjects = getRecentProjects();
-
-  // --- Save to the settings file
-  fs.writeFileSync(getSettingsFilePath(), JSON.stringify(appSettings, null, 2), {
-    encoding: "utf8",
-    flag: "w"
-  });
 }
 
 export function loadAppSettings(): void {

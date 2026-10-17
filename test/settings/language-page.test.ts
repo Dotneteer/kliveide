@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { AppState } from "@common/state/AppState";
-import { offeredLanguages, type UiLanguageState } from "@common/i18n/languages";
+import { selectableLanguages, type UiLanguageState } from "@common/i18n/languages";
 import { setLanguage } from "@common/i18n/i18n";
 import { TRANSLATION_STATUS } from "@common/i18n/translations.generated";
 import {
@@ -54,11 +54,10 @@ describe("the Language page", () => {
     );
   });
 
-  it("adds the pseudo-locale in a dev build", () => {
+  it("never lists the pseudo-locale, not even in a dev build", () => {
     const values = languageOptions({ isWindows: false, uiLanguage: ui({ devTools: true }) }).map((o) => o.value);
-    // --- Plus every disabled language that already has a catalog (Hungarian since the step 9 dry run)
-    expect(values).toEqual(["system", ...offeredLanguages(true).map((l) => l.id)]);
-    expect(values).toContain("qps");
+    expect(values).toEqual(["system", ...selectableLanguages(true).map((l) => l.id)]);
+    expect(values).not.toContain("qps");
   });
 
   it("reads 'system' by default and the stored value otherwise", () => {
@@ -98,7 +97,7 @@ describe("the Language page", () => {
     expect(settingsRowTitle(row("i18nShowKeys"))).toMatch(/^\[Šĥôŵ/);
     // --- Language names are never translated
     expect(pseudo.sections[0].groups[0].rows[0].options.map((o) => o.label).slice(1)).toEqual(
-      offeredLanguages(true).map((l) => l.nativeName)
+      selectableLanguages(true).map((l) => l.nativeName)
     );
   });
 
