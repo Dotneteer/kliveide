@@ -1,7 +1,7 @@
 # Boriel BASIC (zxbc 2.0) Integration — Implementation Plan
 
 Status: **approved for implementation; Phase B0 done** (2026-10-17, HEAD `2cebbd732`). Decisions B1, B-L1, B-T1 and B-T2 are settled (§0).
-Inputs: the setup kits in `_input/zxbasic-setup/` (`boriel-basic-v2.0.0-beta25_*`) and the debug
+Inputs: the setup kits, now in `vendor/boriel-basic/` (`kit.json` + git-ignored `kits/`; see §3.1) and the debug
 format published at <https://zxbasic.readthedocs.io/en/v2.0/debug_format/> (pages *Statements &
 Addresses*, *Callables*, *Call Sites*, *Variables*, *Banking*).
 
@@ -106,8 +106,9 @@ otherwise.
   installer to ship in for now. They become relevant only if those targets are added. Windows x64
   Klive runs on Windows on ARM under emulation and gets the x64 kit, which also works there.
 - `extraResources` uses no `${arch}` macros yet. Runtime resources are found through
-  `process.resourcesPath` (see `cliLauncherPath()` in `src/main/cli-install.ts`). `"!_input"` keeps the
-  `_input` kits out of `files`.
+  `process.resourcesPath` (see `cliLauncherPath()` in `src/main/cli-install.ts`). `"!vendor"` (added
+  next to `"!_input"`) keeps `vendor/` out of `files`; the kit reaches the package only through
+  `extraResources`.
 - Settings live in `<home>/Klive/klive.settings`. User settings are free-form dotted keys, written in
   main via `applyUserSetting`.
 - There is a first-run flow: `shouldShowFirstStartupDialog` → `&firststart=1` on the EMU window →
@@ -190,32 +191,57 @@ These checks are part of B1's install tests on CI (§8) rather than a separate g
 
 ### 3.1 Packaging
 
-- Each kit is stored once under `build/boriel/` with a normalised name, `boriel-<electronArch>-<os>.<ext>`.
-  The mapping is `x86_64→x64`, `arm64→arm64`, `armv6→armv7l`; `os` is `mac` / `win` / `linux`. A
-  script `scripts/boriel-kit.cjs` copies and renames them from `_input/zxbasic-setup/` and writes a
-  `build/boriel/kit.json`:
+**Location (decided 2026-10-17): `vendor/boriel-basic/`**, the one place the kits live in the source
+tree. It replaces the earlier `_input/zxbasic-setup/` and `build/boriel/`; its `README.md` says
+what each part is.
 
-  ```json
-  { "version": "2.0.0-beta25", "kits": { "mac-arm64": { "file": "...", "sha256": "..." } } }
-  ```
+| Path | Tracked | Contents |
+| --- | --- | --- |
+| `vendor/boriel-basic/kit.json` | yes | `version`, `urlBase` (`https://files.boriel-basic.net/v2/`), and per `process.platform`-`process.arch` key (`darwin-arm64`, `win32-x64`, …) the `file`, `size` and `sha256`. The single source for the packaging step, the installer's hash check and the version probe. |
+| `vendor/boriel-basic/kits/` | no | All seven archives under **Boriel's own file names**, no renaming. Downloaded from `urlBase` + `file`, or copied in by hand. |
+| `vendor/boriel-basic/stage/` | no | The one kit the current package includes, plus `kit.json`. |
 
-- `package.json` `build.extraResources`:
+- **`scripts/boriel-kit.cjs`:**
+  - `fetch` downloads every missing kit into `kits/` and verifies each SHA-256. It fails on a
+    mismatch and never overwrites a file that verifies.
+  - `stage --platform <p> --arch <a>` copies the matching kit and `kit.json` into a clean `stage/`.
+
+  The `package:*` scripts run `stage` first, with the target's platform and arch (electron-builder
+  names: `x64`, `arm64`, `armv7l` → `kit.json` keys `x64`, `arm64`, `arm`).
+- **`package.json` `build.extraResources`:** one platform-neutral entry,
 
   ```jsonc
-  { "from": "build/boriel/boriel-${arch}-${os}.${ext}", "to": "boriel/" }
+  { "from": "vendor/boriel-basic/stage", "to": "boriel" }
   ```
 
-  The extension differs per OS, so this goes as one entry under each of `mac`, `win` and `linux`.
-  `build/boriel/kit.json` is added for every target.
-  - **Storage.** The kits are public at `https://files.boriel-basic.net/v2/<file>` (B0 found the URL;
-    sizes match the copies Boriel sent). `kit.json` pins each file's URL and SHA-256 (the values
-    are in `.ai/boriel/kit.md`). A packaging step, `scripts/boriel-kit.cjs`, downloads the one kit
-    the current target needs into `build/boriel/` (git-ignored), verifies the hash, and fails the
-    build on a mismatch. Nothing is committed. `_input/zxbasic-setup/` serves as a local cache when
-    present, so offline dev builds work.
+  Because `stage` holds exactly the target's kit, no `${arch}` macros or per-OS entries are needed.
+  A package build with an empty `stage/` fails, rather than silently shipping no kit.
+- **A fresh clone restores the kits by itself.** `kit.json` is tracked, and the archives are
+  re-created from it on demand:
+  - **Packaging.** `stage` first fetches the target's kit if `kits/` lacks it, then verifies it. It
+    runs from `prepackage:win`, `prepackage:mac`, `prepackage:mac:arm64`, `prepackage:linux` and
+    `prepackage:linux:arm64` (npm runs a `pre<name>` script before `<name>`). So
+    `git clone` → `npm ci` → `npm run package:mac:arm64` downloads exactly one kit, and fails
+    loudly if it cannot get a kit whose hash matches. An installer without the kit can never be
+    produced silently.
+  - **Dev.** `predev` (today `install-electron`) also runs `fetch --current --optional`. That
+    downloads the running platform's kit and only warns when offline, so `npm run dev` works without
+    network; the first-run offer is then simply not shown (§3.2).
+  - **CI** needs no extra step: the release jobs call the package scripts, which fetch.
+  - **Tests** need no kit: CI tests use the committed fixtures (B-T1). The kit is needed only by the
+    install tests in §8, which fetch it the same way.
+- **Not depending on one server.** `kit.json` lists `mirrors` after `urlBase`, tried in order with
+  the same SHA-256 check. The first mirror is a Klive GitHub release that holds the seven archives
+  as assets (tag `boriel-kit-2.0.0-beta25`), uploaded once by the project author. That is
+  redistribution under the same permission as the installer itself (B-L1). If Boriel's server
+  moves or the files change, the build still gets byte-identical kits, or stops. It never ships
+  different ones.
+- **Alternative, not chosen:** committing the five shipped kits (about 27 MB, or Git LFS). That
+  makes clones self-contained, at the cost of repository size on every clone, forever.
+
 - A resolver `borielKitPath()` (new, in `src/main/boriel-integration/boriel-kit.ts`) follows the
   `cliLauncherPath()` pattern. It returns `process.resourcesPath/boriel/<file>` packaged, and
-  `build/boriel/<file>` in dev, or `undefined` when the installer carries no kit (unsupported
+  `vendor/boriel-basic/kits/<file>` in dev (the file for the running platform, from `kit.json`), or `undefined` when the installer carries no kit (unsupported
   platform). Then the setup offer is simply not made.
 - Platform selection is by `process.platform` + `process.arch`. Because each installer carries one
   kit, this only checks that the bundled kit matches. It is not used to choose among several kits.

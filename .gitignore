@@ -52,3 +52,7 @@ _pagefind/
 .rom-annotations/
 # Output of test/harness/zxnext (PNG frames, review prompts, verdicts); see .plans/COPPER_VISUAL_TEST_HARNESS_PLAN.md
 .visual-tests/
+
+# Boriel BASIC setup kits: archives are downloaded (see vendor/boriel-basic/README.md), never committed
+vendor/boriel-basic/kits/
+vendor/boriel-basic/stage/

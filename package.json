@@ -214,6 +214,7 @@
       "!.prettierrc.yaml",
       "!.vscode",
       "!_input",
+      "!vendor",
       "!CHANGELOG.md",
       "!pages",
       "!public",

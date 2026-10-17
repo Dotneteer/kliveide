@@ -3,8 +3,12 @@
 ## Downloads and hashes
 
 The kits are public: `https://files.boriel-basic.net/v2/<file>`. The URL is recorded in each file's
-`kMDItemWhereFroms`. The sizes served on 2026-10-17 equal the copies in `_input/zxbasic-setup/`,
-so CI can fetch by pinned URL and verify the SHA-256; the archives need not be committed.
+`kMDItemWhereFroms`. The sizes served on 2026-10-17 equal the copies Boriel sent, so CI can fetch
+by pinned URL and verify the SHA-256; the archives need not be committed.
+
+In the source tree the kits live in **`vendor/boriel-basic/`**. `kit.json` there is the
+authoritative copy of the table below (keys are `process.platform`-`process.arch`), and the
+archives sit in the git-ignored `kits/` (see that folder's `README.md`).
 
 | File | Bytes | SHA-256 | Klive installer |
 | --- | --- | --- | --- |

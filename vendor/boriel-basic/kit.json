@@ -1,0 +1,43 @@
+{
+  "product": "Boriel BASIC",
+  "version": "2.0.0-beta25",
+  "urlBase": "https://files.boriel-basic.net/v2/",
+  "mirrors": [],
+  "kits": {
+    "darwin-arm64": {
+      "file": "boriel-basic-v2.0.0-beta25_arm64-macos.tar.gz",
+      "size": 3069013,
+      "sha256": "41c225e078b0811a36b043ab4afa8f66be0156d865fef243c40c1397407e523f"
+    },
+    "darwin-x64": {
+      "file": "boriel-basic-v2.0.0-beta25_x86_64-macos.tar.gz",
+      "size": 3374038,
+      "sha256": "528b6c18ec25478203bbdc4df9905979c3d608d081f0252c2ab3d2aa5a450465"
+    },
+    "linux-x64": {
+      "file": "boriel-basic-v2.0.0-beta25_x86_64-linux.tar.gz",
+      "size": 3391237,
+      "sha256": "07914d463118917e3e45fe188f70646073f236711b9e06cc157a278252331546"
+    },
+    "linux-arm64": {
+      "file": "boriel-basic-v2.0.0-beta25_arm64-linux.tar.gz",
+      "size": 3241916,
+      "sha256": "e7f8b2f965017de6b25c481b3fa28bb4f775134590ba240c44317194be19f4eb"
+    },
+    "linux-arm": {
+      "file": "boriel-basic-v2.0.0-beta25_armv6-linux.tar.gz",
+      "size": 3696098,
+      "sha256": "897273b25199a0b7907cdc59e6b14503333a0cb316585433b767b3705112fc9b"
+    },
+    "win32-x64": {
+      "file": "boriel-basic-v2.0.0-beta25_x86_64-win.zip",
+      "size": 13697031,
+      "sha256": "ee797b323f778c29a238b3225fc74be8146c44cb1cdf4702410547da6c5a321d"
+    },
+    "win32-arm64": {
+      "file": "boriel-basic-v2.0.0-beta25_arm64-win.zip",
+      "size": 13046014,
+      "sha256": "5c99a4de4abc84b8a56d076e7554d1da376717a5ce6d0213f100a0735c0092ae"
+    }
+  }
+}
