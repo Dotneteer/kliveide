@@ -56,3 +56,5 @@ _pagefind/
 # Boriel BASIC setup kits: archives are downloaded (see vendor/boriel-basic/README.md), never committed
 vendor/boriel-basic/kits/
 vendor/boriel-basic/stage/
+# Output of scripts/boriel-ide-check.cjs (throwaway homes and screenshots)
+.boriel-ide-check/

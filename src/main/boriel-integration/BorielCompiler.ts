@@ -201,6 +201,18 @@ export class BorielCompiler implements IKliveCompiler {
           (debug.dropped.length ? ` (${debug.dropped.length} records left out)` : "")
       );
       for (const problem of debug.problems) trace.push(`Boriel BASIC: debug information check: ${problem}`);
+      // --- Boriel promises none of Klive BASIC's stepping guarantees (plan §6.2): say when the data breaks one
+      if (debug.problems.length) {
+        diagnostics.push({
+          ...buildError(
+            filename,
+            "ZXBC-D",
+            `The debug information failed ${debug.problems.length} check(s) (see the build output): ` +
+              "source stepping may stop in the wrong place."
+          ),
+          isWarning: true
+        });
+      }
     } catch (error) {
       diagnostics.push({ ...buildError(filename, "ZXBC-D", `No source-level debugging: ${(error as Error).message}`), isWarning: true });
     }

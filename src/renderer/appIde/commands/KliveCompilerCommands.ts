@@ -1023,7 +1023,18 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
           `kliveHome:${EXPORT_FILE_FOLDER}`
         );
         await context.mainApi.copyToSdCard(prebuiltPath, "_klive/" + compiledOutput.nexConfig.filename);
-        return commandSuccessWith(`NEX file exported to ${prebuiltPath} (${prebuiltNex.length} bytes, written by the compiler).`);
+        // --- The same debug sidecar Klive BASIC's NEX gets, so `nex-run -d` debugs it at source level
+        let prebuiltSidecar = "";
+        if (hasSourceLevelDebug(output)) {
+          const sidecarFile = await context.mainApi.saveTextFile(
+            sourceDebugSidecarPath(prebuiltPath),
+            createSourceDebugSidecar(new Uint8Array(prebuiltNex), output.sourceLevelDebug, sidecarProgramOf(output))
+          );
+          prebuiltSidecar = `, debug sidecar ${sidecarFile}`;
+        }
+        return commandSuccessWith(
+          `NEX file exported to ${prebuiltPath} (${prebuiltNex.length} bytes, written by the compiler${prebuiltSidecar}).`
+        );
       }
 
       // --- Generate NEX file data. Problems the writer works around (code it drops or may

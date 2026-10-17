@@ -1,7 +1,7 @@
 /*
  * Regenerates the Boriel BASIC test fixtures (`test/boriel/fixtures/`, plan decision B-T1): each
  * folder's `program.bas`, compiled by an installed zxbc with the arguments in its `fixture.json`,
- * into `program.bin`, `program.dbg` and `program.map`. Run locally only - CI uses the committed files.
+ * into `program.bin`, `program.dbg` and `program.map` (and `program.nex` when `fixture.json` says `"nex": true`). Run locally only - CI uses the committed files.
  *
  *   npm run boriel:fixtures [-- <path to zxbc>]
  *
@@ -31,8 +31,8 @@ function main() {
     const folder = path.join(FIXTURES, name);
     const spec = path.join(folder, "fixture.json");
     if (!fs.existsSync(spec)) continue;
-    const { args } = JSON.parse(fs.readFileSync(spec, "utf8"));
-    for (const f of ["program.bin", "program.dbg", "program.map", "program.err"]) fs.rmSync(path.join(folder, f), { force: true });
+    const { args, nex } = JSON.parse(fs.readFileSync(spec, "utf8"));
+    for (const f of ["program.bin", "program.dbg", "program.map", "program.err", "program.nex"]) fs.rmSync(path.join(folder, f), { force: true });
     try {
       execFileSync(
         zxbc,
@@ -43,6 +43,8 @@ function main() {
       const err = path.join(folder, "program.err");
       throw new Error(`${name}: zxbc failed\n${fs.existsSync(err) ? fs.readFileSync(err, "utf8") : error.message}`);
     }
+    // --- "nex": true also writes the .nex a Next program starts from
+    if (nex) execFileSync(zxbc, ["program.bas", ...args, "-f", "nex", "-o", "program.nex"], { cwd: folder, timeout: 60_000, stdio: ["ignore", "pipe", "pipe"] });
     const err = path.join(folder, "program.err");
     const warnings = fs.existsSync(err) ? fs.readFileSync(err, "utf8").trim() : "";
     if (!warnings) fs.rmSync(err, { force: true });

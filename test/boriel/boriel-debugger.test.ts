@@ -155,12 +155,52 @@ describe("the debugger on Boriel BASIC programs", () => {
     expect(value(end.globals, "g")).toBe("7");
   });
 
-  it("does not yet place a FASTCALL routine on the call stack (Phase B4)", async () => {
+  it("places a FASTCALL routine on the call stack, without a frame (Phase B4)", async () => {
     const { info, stops } = await debugRun("calls");
     const twice = stops.find((s) => s.line === 25)!;
-    // --- The frame locator knows IX frames only; B4 teaches it FASTCALL, and this test changes then
-    expect(names(info, twice)).toEqual(["main"]);
+    expect(names(info, twice)).toEqual(["Twice", "main"]);
+    expect(twice.chain[0]).toMatchObject({ kind: "routine" });
+    expect(twice.chain[0].ix).toBeUndefined();
+    // --- Its parameter arrives in A: the .dbg's frame location for it is wrong, so it is not shown
     expect(twice.locals).toEqual([]);
+  });
+
+  it("steps into, over and out of FUNCTION and FASTCALL calls", async () => {
+    const info = load("calls");
+    const session = await createSp48Session();
+    session.bootToBasic();
+    session.poke(ORG, [...fs.readFileSync(path.join(FIXTURES, "calls", "program.bin"))]);
+    session.poke(STUB, [0x21, 0x03, 0x13, 0xe5, 0xed, 0x73, 0x3d, 0x5c, 0xcd, ORG & 0xff, ORG >> 8, 0x18, 0xfe]);
+    session.machine.pc = STUB;
+    const index = new SourceDebugIndex(info, false);
+    const debug = session.attachDebugSupport();
+    debug.statementTracker = new CurrentStatementTracker(index);
+    const lineAt = (pc: number) => info.statements.find((st) => pc >= st.startAddress && pc < st.endAddress)?.startLine;
+    const stopAtLine = (line: number) => {
+      const st = info.statements.find((x) => x.startLine === line)!;
+      debug.addBreakpoint({ address: st.startAddress, exec: true });
+      session.continueToBreakpoint({ maxFrames: 300 });
+      debug.removeBreakpoint({ address: st.startAddress, exec: true });
+      expect(lineAt(session.machine.pc)).toBe(line);
+    };
+
+    // --- PRINT Square(4) + Square(5): into lands in Square, out comes back to the statement
+    stopAtLine(34);
+    session.sourceStep(index, "into");
+    expect(lineAt(session.machine.pc)).toBe(11);
+    session.sourceStep(index, "out");
+    expect(lineAt(session.machine.pc)).toBe(34);
+    // --- over runs the second call too and stops at the next statement
+    session.sourceStep(index, "over");
+    expect(lineAt(session.machine.pc)).toBe(35);
+
+    // --- PRINT Twice(g): into a FASTCALL routine, out of it, then over
+    session.sourceStep(index, "into");
+    expect(lineAt(session.machine.pc)).toBe(25);
+    session.sourceStep(index, "out");
+    expect(lineAt(session.machine.pc)).toBe(35);
+    session.sourceStep(index, "over");
+    expect(lineAt(session.machine.pc)).toBe(36);
   });
 
   it("decodes global and fixed-size local arrays, strings, Float, Fixed and Long", async () => {

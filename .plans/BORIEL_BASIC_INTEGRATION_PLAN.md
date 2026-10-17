@@ -1,6 +1,6 @@
 # Boriel BASIC (zxbc 2.0) Integration — Implementation Plan
 
-Status: **approved for implementation; Phases B0-B3 done** (2026-10-17, HEAD `2cebbd732`). Decisions B1, B-L1, B-T1 and B-T2 are settled (§0).
+Status: **approved for implementation; Phases B0-B3 done, B4 done except one open issue (§6, "Open")** (2026-10-17, HEAD `2cebbd732`). Decisions B1, B-L1, B-T1 and B-T2 are settled (§0).
 Inputs: the setup kits, now in `vendor/boriel-basic/` (`kit.json` + git-ignored `kits/`; see §3.1) and the debug
 format published at <https://zxbasic.readthedocs.io/en/v2.0/debug_format/> (pages *Statements &
 Addresses*, *Callables*, *Call Sites*, *Variables*, *Banking*).
@@ -574,7 +574,60 @@ validator Klive BASIC's builder runs.
 
 ---
 
-## 6. Phase B4 — debugger parity
+## 6. Phase B4 — debugger parity (**done 2026-10-17, one open issue**)
+
+**As built:**
+
+- **6.1 FASTCALL.** `locateActivations` (`src/emu/machines/SourceStepDecision.ts`) walks a
+  `fastcall` activation: its return slot is the first stack word that is a call site of the
+  routine, its baseline that slot, it has no IX, and the IX live in it passes through to its
+  caller. Klive BASIC never emits `fastcall`, so its behaviour is unchanged.
+  `test/boriel/boriel-debugger.test.ts` checks that `Twice` sits on the call stack, and that
+  Step Into, Over and Out work across both a FUNCTION (`Square`) and a FASTCALL routine (`Twice`)
+  on the real 48K. FASTCALL parameters stay hidden (V6).
+- **6.2 Validator.** Decided differently from the text below: no special stepping mode. A build
+  whose debug data fails `validateSourceLevel` gets one warning, "source stepping may stop in the
+  wrong place", and the details go to the build output. Every fixture validates clean, so a
+  fallback mode would be untested code. Revisit if real programs fail the checks.
+- **6.3 Error stops.** Verified on the real Next core. `test/boriel/boriel-next.test.ts` loads
+  zxbc's `.nex` (fixture `runtime-error-next`) after `prepareBasic()`; the stop at `__ERROR` comes
+  with A = 2 and before the panic screen. On the 48K the same was verified in B3.
+- **6.4 NEX sidecar.** Exporting a zxbc-built `.nex` (the `prebuiltNex` path in
+  `KliveCompilerCommands.exportNexFile`) now writes Klive's own sidecar next to it, as Klive BASIC
+  does, so `nex-run -d` can debug that file later. **Not done:** reading a raw zxbc `.dbg` next to a
+  `.nex` built outside Klive. zxbc's checksum covers the code image, not the `.nex`, and the `-M`
+  map would be missing. Left for later.
+- **Fixtures:** `calls-next` is now also a `.nex` (`"nex": true` in `fixture.json`); a new
+  `runtime-error-next` fixture exists.
+
+**Open: in an IDE debug run on the Next, breakpoints in a Boriel program do not stop it.**
+Observed in the running app: a Next project, Boriel selected, a breakpoint on `RETURN n * n` inside
+a FUNCTION, then `debug`. NextZXOS loads zxbc's `.nex` and the program runs and prints correctly,
+but the machine never pauses. With Klive BASIC, the same program and breakpoint pause at `$8060`
+(a control run with no breakpoint does not pause, so that was the user breakpoint).
+
+Ruled out so far:
+
+- **The core.** The same breakpoint in the same `.nex` fires on the Next harness (direct loader after
+  `prepareBasic`, `boriel-next.test.ts`).
+- **Breakpoint resolution.** It resolves the same way for both compilers: no partition, from
+  `listFileItems` and `segments[0]`.
+- **Timing and `suppressUserBreakpointsUntilKeystrokesLand`.** A `PAUSE 750` (15 s) before the
+  call changes nothing, which is past the 10 s suppression deadline.
+- **The renderers.** They log nothing.
+
+Suspects to check next:
+
+- The debug run's Next path (`injectCode` → `exportNexFile`'s `prebuiltNex` early return →
+  `runCodeCommand`). Compare what Klive BASIC's output carries that Boriel's minimal
+  `nexConfig: { filename }` does not.
+- Whether Boriel's zxnext runtime remaps the MMU (slot 4/5), so the program runs from another page
+  while the breakpoint compares against something else.
+- Whether `codeToInject.entryAddress` = `$8000` (the NEX start itself, where Klive BASIC's is past
+  its NEX stub) matters to the Next flow.
+
+The check script used is described in the handoff.
+
 
 ### 6.1 Frame locator: `fastcall`
 

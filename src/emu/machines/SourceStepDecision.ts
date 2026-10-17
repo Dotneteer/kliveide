@@ -315,11 +315,15 @@ export function locateActivations(index: SourceDebugIndex, m: MachineView): Acti
   };
 
   let low = m.sp;
+  // --- The IX value live in the activation being walked: a FASTCALL routine (Boriel BASIC) builds no
+  // --- frame, so its caller's IX is still in the register, or under the next frame callee's return slot
+  let liveIx = m.ix;
   for (let guard = 0; guard < 1024; guard++) {
     if (callable === main || callable === undefined) break;
     const f = index.frames[callable];
+    const frameless = f?.convention === "fastcall";
     let slot: number | undefined;
-    if (ix !== undefined && isRoutineSite(siteAt(ix + 2), callable)) slot = ix + 2;
+    if (!frameless && ix !== undefined && isRoutineSite(siteAt(ix + 2), callable)) slot = ix + 2;
     else {
       for (let p = low; p < mainBaseline; p += 2) {
         if (isRoutineSite(siteAt(p), callable)) {
@@ -328,15 +332,24 @@ export function locateActivations(index: SourceDebugIndex, m: MachineView): Acti
         }
       }
     }
-    if (slot === undefined || !f || f.convention !== "frame") break;
-    const baseline = slot - (f.returnSlotOffset ?? 2);
+    if (slot === undefined || !f || (f.convention !== "frame" && !frameless)) break;
+    const baseline = slot - (f.returnSlotOffset ?? (frameless ? 0 : 2));
     gosubs(low, baseline, callable);
     const site = siteAt(slot)!;
-    out.push({ callableIndex: callable, kind: "routine", baseline, returnSlot: slot, callSite: site, ix: slot - 2 });
+    out.push({
+      callableIndex: callable,
+      kind: "routine",
+      baseline,
+      returnSlot: slot,
+      callSite: site,
+      ...(frameless ? {} : { ix: slot - 2 })
+    });
     const caller = site.callerIndex;
     const callerFrame = index.frames[caller];
-    ix = callerFrame?.convention === "frame" ? m.readWord(slot - 2) : undefined;
-    low = slot + 2 + (f.argBytes ?? 0);
+    if (!frameless) liveIx = m.readWord(slot - 2);
+    ix = callerFrame?.convention === "frame" ? liveIx : undefined;
+    // --- A FASTCALL routine's first argument comes in registers; the stack holds none of it
+    low = slot + 2 + (frameless ? 0 : (f.argBytes ?? 0));
     callable = caller;
   }
   gosubs(low, mainBaseline, main);

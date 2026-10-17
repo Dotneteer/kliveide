@@ -108,6 +108,8 @@ type FakeBehaviour = {
   stderr?: string;
   wrongChecksum?: boolean;
   timedOut?: boolean;
+  /** A .dbg whose data fails the adapter's checks (no main baseline). */
+  brokenDebugData?: boolean;
 };
 
 function fakeZxbc(behaviour: FakeBehaviour, calls: { args: string[]; cwd: string }[]): ZxbcRunner {
@@ -134,7 +136,17 @@ function fakeZxbc(behaviour: FakeBehaviour, calls: { args: string[]; cwd: string
             version: 1,
             binaryLength: image.length,
             binaryChecksum: behaviour.wrongChecksum ? 1 : fnv1a32(image),
-            sourceLevelDebug: { callables: [{ kind: "entrypoint", entryAddress: 32768 }] }
+            sourceLevelDebug: {
+              files: [],
+              statements: [],
+              callables: [{ index: 0, name: "main", kind: "entrypoint", entryAddress: 32768, exitAddresses: [] }],
+              extensions: {
+                frames: [{ callableIndex: 0, convention: "entrypoint", startAddress: 32768, bodyStart: 32768, epilogueStart: 32769 }],
+                mainBaselineSymbol: behaviour.brokenDebugData ? 0 : 32790,
+                callSites: [],
+                variables: []
+              }
+            }
           })
         );
       }
@@ -217,6 +229,15 @@ describe("BorielCompiler", () => {
     const { compiler } = compilerWith({ wrongChecksum: true });
     const output = await compiler.compileFile(source);
     expect(output.errors?.[0].message).toMatch(/checksum mismatch/);
+  });
+
+  it("warns when the debug information fails its checks, and still builds", async () => {
+    const { compiler } = compilerWith({ brokenDebugData: true });
+    const output: any = await compiler.compileFile(source);
+    expect(output.errors).toEqual([expect.objectContaining({ errorCode: "ZXBC-D", isWarning: true, message: expect.stringMatching(/failed 1 check/) })]);
+    expect(output.traceOutput.join("\n")).toMatch(/debug information check: no main baseline symbol/);
+    expect(output.segments).toHaveLength(1);
+    expect(output.sourceLevelDebug).toBeDefined();
   });
 
   it("explains argument errors and timeouts", async () => {

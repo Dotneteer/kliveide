@@ -1,1 +1,1 @@
-{ "description": "The calls program built for the ZX Spectrum Next", "args": ["--arch", "zxnext", "-O", "2", "-S", "32768"] }
+{"description": "The calls program built for the ZX Spectrum Next, also as a .nex", "args": ["--arch", "zxnext", "-O", "2", "-S", "32768"], "nex": true}

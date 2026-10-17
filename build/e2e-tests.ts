@@ -94,6 +94,7 @@ export const E2E_KBASIC_TESTS: string[] = [
   "test/kbasic/corpus/**/*.test.ts",
   // --- The debugger on zxbc-built Boriel BASIC programs (`.plans/BORIEL_BASIC_INTEGRATION_PLAN.md` §5)
   "test/boriel/boriel-debugger.test.ts",
+  "test/boriel/boriel-next.test.ts",
   "test/kbasic/compat/compat.test.ts",
   "test/kbasic/opt/opt-report.test.ts",
   "test/kbasic/oracle/oracle-script.test.ts",
