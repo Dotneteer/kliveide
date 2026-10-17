@@ -79,9 +79,11 @@ export type CallableFrameInfo = {
   /**
    * `frame`: a routine that builds an IX frame (`push ix; ld ix,0; add ix,sp`; locals below IX, the
    * return address at IX+2); `entrypoint`: the main program, whose baseline SP is in
-   * `mainBaselineSymbol`.
+   * `mainBaselineSymbol`; `fastcall`: a routine with no frame (Boriel BASIC's FASTCALL, whose first
+   * argument arrives in registers and whose return address is the stack word at its baseline). Klive
+   * BASIC never emits `fastcall`.
    */
-  convention: "frame" | "entrypoint";
+  convention: "frame" | "entrypoint" | "fastcall";
   /** `frame`: bytes from the baseline SP (every statement entry's SP) to the return-address slot. */
   returnSlotOffset?: number;
   /** `frame`: bytes of stack arguments above the return address, which the routine removes. */

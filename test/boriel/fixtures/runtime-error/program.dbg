@@ -1,0 +1,161 @@
+{
+  "format": "zx-source-debug",
+  "version": 1,
+  "architecture": "zx48k",
+  "binaryLength": 6292,
+  "binaryChecksum": 2379143152,
+  "sourceLevelDebug": {
+    "language": "basic",
+    "files": [
+      {
+        "index": 0,
+        "filename": "program.bas"
+      }
+    ],
+    "statements": [
+      {
+        "index": 0,
+        "fileIndex": 0,
+        "startLine": 3,
+        "startColumn": 0,
+        "endLine": 3,
+        "endColumn": 14,
+        "startAddress": 37578,
+        "endAddress": 37591,
+        "kind": "normal",
+        "callableIndex": 0,
+        "callTargets": []
+      },
+      {
+        "index": 1,
+        "fileIndex": 0,
+        "startLine": 4,
+        "startColumn": 0,
+        "endLine": 4,
+        "endColumn": 8,
+        "startAddress": 37591,
+        "endAddress": 37606,
+        "kind": "normal",
+        "callableIndex": 0,
+        "callTargets": []
+      },
+      {
+        "index": 2,
+        "fileIndex": 0,
+        "startLine": 5,
+        "startColumn": 0,
+        "endLine": 5,
+        "endColumn": 13,
+        "startAddress": 37606,
+        "endAddress": 37625,
+        "kind": "normal",
+        "callableIndex": 0,
+        "callTargets": []
+      },
+      {
+        "index": 3,
+        "fileIndex": 0,
+        "startLine": 5,
+        "startColumn": 0,
+        "endLine": 6,
+        "endColumn": 0,
+        "startAddress": 37625,
+        "endAddress": 37625,
+        "kind": "normal",
+        "callableIndex": 0,
+        "callTargets": []
+      }
+    ],
+    "callables": [
+      {
+        "index": 0,
+        "name": "main",
+        "kind": "entrypoint",
+        "fileIndex": 0,
+        "line": 1,
+        "entryAddress": 32768,
+        "exitAddresses": [
+          37630
+        ]
+      }
+    ],
+    "addressToStatement": [
+      [
+        37578,
+        0
+      ],
+      [
+        37591,
+        1
+      ],
+      [
+        37606,
+        2
+      ],
+      [
+        37625,
+        3
+      ]
+    ],
+    "usesBanking": false,
+    "partitionedAddressMap": [],
+    "extensions": {
+      "frames": [
+        {
+          "callableIndex": 0,
+          "convention": "entrypoint",
+          "returnSlotOffset": 0,
+          "argBytes": 0,
+          "startAddress": 32768,
+          "bodyStart": 37578,
+          "epilogueStart": 37630
+        }
+      ],
+      "mainBaselineSymbol": 32790,
+      "callSites": [],
+      "variables": [
+        {
+          "name": "a",
+          "displayName": "a",
+          "type": "ubyte",
+          "kind": "global",
+          "location": {
+            "at": "absolute",
+            "address": 37561
+          },
+          "byRef": false,
+          "array": {
+            "elementType": "ubyte",
+            "dimensions": [
+              [
+                0,
+                3
+              ]
+            ]
+          },
+          "scope": "global",
+          "declaredAt": {
+            "fileIndex": 0,
+            "line": 1
+          }
+        },
+        {
+          "name": "k",
+          "displayName": "k",
+          "type": "ubyte",
+          "kind": "global",
+          "location": {
+            "at": "absolute",
+            "address": 37560
+          },
+          "byRef": false,
+          "scope": "global",
+          "declaredAt": {
+            "fileIndex": 0,
+            "line": 2
+          }
+        }
+      ]
+    }
+  }
+}

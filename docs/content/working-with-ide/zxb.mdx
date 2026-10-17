@@ -175,7 +175,7 @@ to `zxbc`'s options; the few that only Klive BASIC understands (CODEBANK, `asm-d
 With Boriel BASIC, Klive builds for the ZX Spectrum 48K, 128K and +3, the Timex and Scorpion machines,
 and the ZX Spectrum Next (whose programs run from the `.nex` file `zxbc` writes). Its errors and warnings
 appear in the Output panel and in the editor, marking the whole line, because `zxbc` reports no column.
-Source-level debugging with Boriel BASIC is not available yet: a debug run steps Z80 instructions.
+Source-level debugging works with Boriel BASIC too: breakpoints, statement stepping, the call stack and the Variables panel read the debug information `zxbc` writes. A few things are not shown yet: a `FASTCALL` routine on the call stack, and the contents of an array whose bounds are not constant.
 
 ## Using ZX BASIC
 
@@ -197,4 +197,4 @@ When you run the code, the compiler checks the syntax. If there are any errors, 
 
 ## Debugging
 
-You can run your code in debug mode by clicking the last icon in the document tab bar or with the [`debug`](/commands-reference#debug) command. With Klive BASIC, debugging works at source level as described in [Debugging BASIC at source level](#debugging-basic-at-source-level); with Boriel BASIC, the IDE steps Z80 instructions for now.
+You can run your code in debug mode by clicking the last icon in the document tab bar or with the [`debug`](/commands-reference#debug) command. With Klive BASIC, debugging works at source level as described in [Debugging BASIC at source level](#debugging-basic-at-source-level); with Boriel BASIC too, with the limits listed in [Using Boriel BASIC](#using-boriel-basic).

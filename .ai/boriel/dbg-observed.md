@@ -67,6 +67,12 @@ what the compiler **actually writes**, checked by running the programs on Klive'
 11. **`declaredAt`** has `fileIndex` and `line` only.
 12. **`files[].filename`** is in the form the compiler was given (absolute if called with an absolute
     path).
+13. **A FUNCTION call site's `returnAddress` is one too high** (verified, B3): it points past the
+    `PUSH` after the CALL. SUB/GOSUB/ON GOSUB sites are right. The adapter checks each against the
+    code image and moves it back when a CALL ends one byte earlier.
+
+All of these corrections live in `src/main/boriel-integration/dbg-adapter.ts`; the fixtures in
+`test/boriel/fixtures/` and `test/boriel/dbg-adapter.test.ts` pin each one.
 
 ## Banking (observed, `--split-modules`)
 

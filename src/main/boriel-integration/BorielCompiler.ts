@@ -18,6 +18,9 @@ import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
 import { argumentErrorText, buildError, parseZxbcDiagnostics } from "./boriel-diagnostics";
 import { zxbcArgumentsFor } from "./boriel-options";
 import { BORIEL_NOT_CONFIGURED_MESSAGE, resolveBorielExecutable } from "./boriel-resolver";
+import { parseMemoryMap } from "./boriel-map";
+import { adaptBorielDebugInfo, type DbgAdapterOutput } from "./dbg-adapter";
+import { lineCanHaveBreakpoint } from "@main/kbasic/breakpoints";
 
 /*
  * Boriel BASIC 2.x as Klive's `zxbas` compiler (`.plans/BORIEL_BASIC_INTEGRATION_PLAN.md` §4). It runs
@@ -102,9 +105,9 @@ export class BorielCompiler implements IKliveCompiler {
     this.state = state;
   }
 
-  /** Breakpoints need the `.dbg` mapped into Klive's model (Phase B3). */
-  async lineCanHaveBreakpoint(_line: string): Promise<boolean> {
-    return false;
+  /** The same rule as Klive BASIC's: a line that holds a statement (not a comment, label or DATA). */
+  async lineCanHaveBreakpoint(line: string): Promise<boolean> {
+    return lineCanHaveBreakpoint(line);
   }
 
   /** The editor's background check: `zxbc --parse-only`, which writes no files. */
@@ -173,6 +176,35 @@ export class BorielCompiler implements IKliveCompiler {
     const entryAddress =
       debugFile.sourceLevelDebug?.callables?.find((c: any) => c.kind === "entrypoint")?.entryAddress ?? options.origin;
 
+    // --- The .dbg in Klive's model (plan §5); a build whose debug data cannot be read still runs
+    let debug: DbgAdapterOutput | undefined;
+    try {
+      debug = adaptBorielDebugInfo({
+        dbg: debugFile,
+        map: parseMemoryMap(fs.existsSync(out("map")) ? fs.readFileSync(out("map"), "utf8") : ""),
+        arch,
+        baseFolder: buildFolder,
+        libraryFolder: path.join(path.dirname(executable), "lib"),
+        optimizationLevel: options.optimize,
+        image: { bytes: image, origin: options.origin },
+        readFile: (file) => {
+          try {
+            return fs.readFileSync(file, "utf8");
+          } catch {
+            return undefined;
+          }
+        }
+      });
+      const sld = debug.sourceLevelDebug;
+      trace.push(
+        `Boriel BASIC: source-level debug information for ${sld.statements.length} statements in ${sld.callables.length} routines` +
+          (debug.dropped.length ? ` (${debug.dropped.length} records left out)` : "")
+      );
+      for (const problem of debug.problems) trace.push(`Boriel BASIC: debug information check: ${problem}`);
+    } catch (error) {
+      diagnostics.push({ ...buildError(filename, "ZXBC-D", `No source-level debugging: ${(error as Error).message}`), isWarning: true });
+    }
+
     // --- The Next starts programs from a .nex: zxbc writes its own
     let prebuiltNex: number[] | undefined;
     if (arch === "zxnext") {
@@ -191,8 +223,10 @@ export class BorielCompiler implements IKliveCompiler {
       injectOptions: { subroutine: true },
       modelType: model,
       entryAddress,
-      // --- Source-level debugging arrives with the .dbg adapter (Phase B3)
-      sourceFileList: [],
+      sourceFileList: debug?.sourceFileList ?? [],
+      ...(debug
+        ? { sourceMap: debug.sourceMap, listFileItems: debug.listFileItems, sourceLevelDebug: debug.sourceLevelDebug }
+        : {}),
       ...(prebuiltNex ? { nexConfig: { filename: `${name}.nex` }, prebuiltNex } : {})
     } as BorielBuildOutput;
   }

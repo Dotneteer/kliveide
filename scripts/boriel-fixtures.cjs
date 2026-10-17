@@ -1,0 +1,53 @@
+/*
+ * Regenerates the Boriel BASIC test fixtures (`test/boriel/fixtures/`, plan decision B-T1): each
+ * folder's `program.bas`, compiled by an installed zxbc with the arguments in its `fixture.json`,
+ * into `program.bin`, `program.dbg` and `program.map`. Run locally only - CI uses the committed files.
+ *
+ *   npm run boriel:fixtures [-- <path to zxbc>]
+ *
+ * The zxbc comes from the argument, else `BORIEL_ZXBC`, else `~/zxbasic2/zxbc`. It must be the
+ * version `vendor/boriel-basic/kit.json` pins. zxbc runs inside each fixture folder with a relative
+ * program name, so no absolute path of this machine ends up in the committed `.dbg`.
+ */
+const { execFileSync } = require("node:child_process");
+const fs = require("node:fs");
+const os = require("node:os");
+const path = require("node:path");
+
+const FIXTURES = path.join(__dirname, "..", "test", "boriel", "fixtures");
+const KIT = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "vendor", "boriel-basic", "kit.json"), "utf8"));
+
+function zxbcPath() {
+  const exe = process.platform === "win32" ? "zxbc.exe" : "zxbc";
+  return process.argv[2] || process.env.BORIEL_ZXBC || path.join(os.homedir(), "zxbasic2", exe);
+}
+
+function main() {
+  const zxbc = zxbcPath();
+  if (!fs.existsSync(zxbc)) throw new Error(`No zxbc at ${zxbc}. Install Boriel BASIC from Klive, or pass its path.`);
+  const version = execFileSync(zxbc, ["--version"], { encoding: "utf8", timeout: 10_000, stdio: ["ignore", "pipe", "pipe"] }).trim();
+  if (!version.includes(KIT.version)) throw new Error(`${zxbc} is "${version}"; the fixtures need ${KIT.version}.`);
+  for (const name of fs.readdirSync(FIXTURES).sort()) {
+    const folder = path.join(FIXTURES, name);
+    const spec = path.join(folder, "fixture.json");
+    if (!fs.existsSync(spec)) continue;
+    const { args } = JSON.parse(fs.readFileSync(spec, "utf8"));
+    for (const f of ["program.bin", "program.dbg", "program.map", "program.err"]) fs.rmSync(path.join(folder, f), { force: true });
+    try {
+      execFileSync(
+        zxbc,
+        ["program.bas", ...args, "-f", "bin", "-o", "program.bin", "--debug=program.dbg", "-M", "program.map", "-e", "program.err"],
+        { cwd: folder, timeout: 60_000, stdio: ["ignore", "pipe", "pipe"] }
+      );
+    } catch (error) {
+      const err = path.join(folder, "program.err");
+      throw new Error(`${name}: zxbc failed\n${fs.existsSync(err) ? fs.readFileSync(err, "utf8") : error.message}`);
+    }
+    const err = path.join(folder, "program.err");
+    const warnings = fs.existsSync(err) ? fs.readFileSync(err, "utf8").trim() : "";
+    if (!warnings) fs.rmSync(err, { force: true });
+    console.log(`[boriel-fixtures] ${name}: ${fs.statSync(path.join(folder, "program.bin")).size} bytes${warnings ? " (with warnings)" : ""}`);
+  }
+}
+
+main();

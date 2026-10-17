@@ -36,8 +36,13 @@ reproduces it. The project author decides what to send.
 8. **`W150 "never used"` is reported for an array that is read**
    (`DIM a(3) As UByte … a(k) = 1 … PRINT "after"; a(0)`). The program itself behaves correctly:
    the out-of-range write raises `3 Subscript wrong` under `--debug-array`.
-9. **Diagnostics have no column**, and argument errors go to stderr even with `-e`.
-10. **Packaging:**
+9. **A FUNCTION call site's `returnAddress` is one byte too high.** In the `calls` fixture, `PRINT Square(4)`'s
+   CALL ends at $930C, but the site says $930D: zxbc records the address after the `PUSH HL`/`PUSH AF`
+   that follows the CALL. SUB, GOSUB and ON GOSUB sites are right. A debugger matching stack words
+   against return addresses never finds the FUNCTION's activation. Klive's adapter moves it back
+   when the code image shows a CALL ending one byte earlier (found in Phase B3).
+10. **Diagnostics have no column**, and argument errors go to stderr even with `-e`.
+11. **Packaging:**
     - the kits have no LICENSE file;
     - extracting with `tar`/Finder leaves `com.apple.quarantine`, and a quarantined first launch
       blocks a non-interactive caller forever (`kit.md`);

@@ -329,8 +329,9 @@ describe("the zxbas compiler", () => {
   it("hands requests to Boriel BASIC when it is selected", async () => {
     const dispatcher = new ZxBasicDispatcher();
     dispatcher.setAppState(state({ zxbasic: { compiler: "boriel" } }));
-    // --- No breakpoints before the .dbg adapter (Boriel plan B3); no zxbc set up, so a check says so
-    expect(await dispatcher.lineCanHaveBreakpoint("PRINT 1")).toBe(false);
+    // --- Breakpoints follow Klive BASIC's rule (Boriel plan B3); no zxbc set up, so a check says so
+    expect(await dispatcher.lineCanHaveBreakpoint("PRINT 1")).toBe(true);
+    expect(await dispatcher.lineCanHaveBreakpoint("' a comment")).toBe(false);
     const output = await dispatcher.checkFile(path.join(folder, "bad.bas"));
     expect(output.errors?.[0].message).toMatch(/Boriel BASIC is not set up/);
   });

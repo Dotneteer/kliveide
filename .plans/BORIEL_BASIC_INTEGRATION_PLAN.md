@@ -1,6 +1,6 @@
 # Boriel BASIC (zxbc 2.0) Integration — Implementation Plan
 
-Status: **approved for implementation; Phases B0, B1 and B2 done** (2026-10-17, HEAD `2cebbd732`). Decisions B1, B-L1, B-T1 and B-T2 are settled (§0).
+Status: **approved for implementation; Phases B0-B3 done** (2026-10-17, HEAD `2cebbd732`). Decisions B1, B-L1, B-T1 and B-T2 are settled (§0).
 Inputs: the setup kits, now in `vendor/boriel-basic/` (`kit.json` + git-ignored `kits/`; see §3.1) and the debug
 format published at <https://zxbasic.readthedocs.io/en/v2.0/debug_format/> (pages *Statements &
 Addresses*, *Callables*, *Call Sites*, *Variables*, *Banking*).
@@ -521,7 +521,35 @@ there is never a build in which `zxbasic.compiler` points at nothing.
 
 ---
 
-## 5. Phase B3 — the `.dbg` adapter
+## 5. Phase B3 — the `.dbg` adapter (**done 2026-10-17**)
+
+**As built.** `src/main/boriel-integration/dbg-adapter.ts` and `boriel-map.ts`. Every Boriel build now
+returns the classic tables and `sourceLevelDebug` with extensions. Source breakpoints, the execution
+point, source stepping, the call stack, the Variables panel, watches and error stops work on zxbc
+programs. Beyond the table below:
+
+- **One more zxbc defect, found and corrected here:** a FUNCTION call site's `returnAddress` is one
+  too high. It points past the `PUSH` after the CALL, so no FUNCTION activation could be found on
+  the stack. The adapter checks each site against the code image and moves it back
+  (`.ai/boriel/boriel-issues.md` #9).
+- **`fastcall` is now a Klive frame convention**, in `SourceDebugInfo.ts`. The frame locator still
+  stops at it, so a FASTCALL routine is missing from the call stack. B4 fixes that, and
+  `test/boriel/boriel-debugger.test.ts` pins the current behaviour.
+- **Dropped records:** dynamic local arrays and FASTCALL parameters are left out and listed in the
+  build output's count. Statement kinds are all `"other"`.
+- **Validator:** the structural checks in `validateSourceLevel` run on every build, and problems go
+  to the build output. B4 decides the fallback when they fail.
+- **Fixtures (B-T1):** `test/boriel/fixtures/` (`calls`, `calls-next`, `arrays`, `runtime-error`),
+  regenerated with `npm run boriel:fixtures` (`scripts/boriel-fixtures.cjs`).
+- **Tests:**
+  - `test/boriel/dbg-adapter.test.ts`: each B0 correction on real zxbc output.
+  - `test/boriel/boriel-debugger.test.ts` (e2e-kbasic tier): the fixtures run on the real 48K, with
+    a breakpoint on every statement. Call stack, Variables panel, watches and values agree;
+    covers `Square` called twice in one statement, GOSUB activations, the BYREF parameter,
+    fixed-size local and global arrays, strings, Float, Fixed and Long, and the error stop with A = 2.
+- **Verified in the running app:** a breakpoint inside a SUB pauses the machine, and the editor
+  highlights exactly that statement.
+
 
 `src/main/boriel-integration/dbg-adapter.ts`: `.dbg` JSON → `SourceLevelDebugInfo` + `extensions`.
 It is a pure function, unit-tested on fixtures. The output must satisfy the same debug-info
