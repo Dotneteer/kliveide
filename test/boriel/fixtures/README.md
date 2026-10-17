@@ -14,6 +14,10 @@ Each folder holds:
 | `program.dbg` | the debug file (format `zx-source-debug` 1) |
 | `program.map` | the `-M` memory map |
 | `program.err` | zxbc's warnings, when it gave any |
+| `program.nex` | the Next's `.nex` (`"nex": true`, built with `--debug` too: the flag changes the code) |
+| `program.z80` / `program.nex` | instead of `program.bin` for a banked build (`"banked": true`, `--split-modules`): zxbc writes no `bin` then |
+
+`"from": "../other"` builds another fixture's sources (`banked-next` shares `banked-128`'s modules).
 
 ## Rules
 

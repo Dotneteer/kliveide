@@ -80,6 +80,11 @@ what the compiler **actually writes**, checked by running the programs on Klive'
     the statement the range up to the epilogue (correction 2) and clamps the other at the routine's
     start.
 
+15. **A modular build gives every statement `callableIndex: 0`** (the main program), module
+    routines' statements included (verified, B5). The owner is the routine whose frame range
+    (`startAddress` up to the epilogue and exits) holds the statement's address, in the same raw
+    partition. Without this, a routine's last statement ran to the next routine.
+
 All of these corrections live in `src/main/boriel-integration/dbg-adapter.ts`; the fixtures in
 `test/boriel/fixtures/` and `test/boriel/dbg-adapter.test.ts` pin each one.
 
@@ -101,6 +106,36 @@ All of these corrections live in `src/main/boriel-integration/dbg-adapter.ts`; t
   documented. There is no shadow stack.
 - The `-M` map prefixes every label with its physical bank (`00::C000:`, `04::8000:` on the
   Next), as the docs say. Unbanked builds have no prefix.
+
+## Where a banked program is (verified, B5)
+
+- zxbc refuses `-f bin` with `--split-modules`; the program comes from a `-f z80 -B -a` snapshot
+  (128K) or the `.nex` (Next), both as 16K banks.
+- The resident part runs from the origin to `$C000` (bank 2 for `$8000`); each module bank starts
+  at the window's first byte. `binaryLength`/`binaryChecksum` cover the resident part, then the
+  banks in ascending order, each without its unused tail. No file states the parts' lengths.
+- The 128K snapshot leaves `$7FFD` = `$10`: ROM 1, bank 0 at `$C000`, paging **unlocked**. A
+  banked program must start from 128 BASIC; 48 BASIC latches the lock.
+
+## Far calls (verified on the 128K and Next cores, B5)
+
+The plan assumed no shadow stack; there is one.
+
+- A far call site runs the `callFar` template inline: `EXX; LD C,page; LD DE,target; CALL helper`.
+  The helper's address is the template's last two bytes.
+- The helper (`LD HL,ret` at helper + 4) **replaces the return slot** with its own return path
+  `ret`, then switches SP to the page stack and pushes `AF` (A = the caller's paging: `BANKM` on
+  the 128K, the page in MMU slot 6 on the Next) and then the caller's real return address. It
+  pages the target in and `RET`s into it.
+- `core.PAGE_STACK` is the word holding the page stack's pointer, and also the area's end: the
+  pointer starts there and records are pushed downwards (area from `core.PAGE_STACK_BOTTOM`, 256
+  bytes). Records = (`PAGE_STACK` − pointer) / 4; the oldest is at `PAGE_STACK − 4`: return word,
+  then F, then A.
+- The return path pops the record before it restores the paging. Paused inside the helper, a slot
+  can lack its record (call path) or a record its slot (return path); pairing from the oldest end
+  stays right in both.
+- zxbc's frames hold byte-sized locals, so IX and return slots can be at **odd** addresses.
+- Within one bank a call is a plain `CALL` (in the fixture, `Weigh` → `Mix`).
 
 ## Run-time data layouts (verified on the 48K)
 

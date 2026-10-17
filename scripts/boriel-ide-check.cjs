@@ -9,10 +9,12 @@
  *            zxbc's .nex (needs ~/Klive/ks2.cim, copied);
  *   export - a TAP export of an sp48 build holds the injected code; a Next build's NEX export
  *            writes the debug sidecar beside it, and `nex-run -d` of that file stops at a source
- *            breakpoint (needs the card image too).
+ *            breakpoint (needs the card image too);
+ *   banked - a '@split-modules program (test/boriel/fixtures/banked-128) on the 128K and the Next: a
+ *            breakpoint in a module that zxbc put in a RAM bank pauses the machine there.
  *
  *   npx electron-vite build --config build/electron.vite.config.ts
- *   node scripts/boriel-ide-check.cjs [run|debug|next|export ...]
+ *   node scripts/boriel-ide-check.cjs [run|debug|next|export|banked ...]
  *
  * Boriel BASIC comes from BORIEL_ROOT, else ~/zxbasic2 (install it from Klive's setup dialog).
  * Screenshots and the throwaway homes go to `.boriel-ide-check/` (git-ignored). Local only: it needs
@@ -27,7 +29,7 @@ const ROOT = process.env.BORIEL_ROOT || path.join(os.homedir(), "zxbasic2");
 const OUT = path.join(__dirname, "..", ".boriel-ide-check");
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function session(name, { card = false } = {}) {
+async function session(name, { card = false, ideViewOptions = {} } = {}) {
   const out = path.join(OUT, name);
   fs.rmSync(out, { recursive: true, force: true });
   const projects = path.join(out, "projects");
@@ -35,7 +37,7 @@ async function session(name, { card = false } = {}) {
   fs.mkdirSync(projects, { recursive: true });
   fs.mkdirSync(path.join(userHome, "Klive"), { recursive: true });
   if (card) fs.copyFileSync(path.join(os.homedir(), "Klive", "ks2.cim"), path.join(userHome, "Klive", "ks2.cim"));
-  const k = await launchKlive({ home: path.join(out, "klive"), userHome, userSettings: { zxbasic: { root: ROOT } } });
+  const k = await launchKlive({ home: path.join(out, "klive"), userHome, userSettings: { zxbasic: { root: ROOT } }, ideViewOptions });
   const ideText = async () => (await k.ide.evaluate(() => document.body.innerText)).replace(/\s+/g, " ");
   const emuText = async () =>
     (await k.app.windows().find((w) => w.url().includes("?emu")).evaluate(() => document.body.innerText)).replace(/\s+/g, " ");
@@ -134,8 +136,54 @@ const PARTS = {
     check(!!(await n.waitPaused(120000)), "export: nex-run -d of the exported NEX stops at a source breakpoint");
     await n.k.ide.screenshot({ path: path.join(n.out, "nex-run.png") });
     await n.k.close();
+  },
+
+  async banked() {
+    // --- "Sync the Source with the Current Breakpoint" (a global IDE option, off by default) makes a
+    // --- stop open its file
+    const sync = { syncBreakpoints: true };
+    const s = await session("banked", { ideViewOptions: sync });
+    const r128 = await bankedPart(s, "sp128", "sp128");
+    check(!!r128.pc && r128.pc === r128.expected, `banked: a breakpoint in a module in RAM bank 1 pauses the 128K (PC $${r128.pc}, Peek3 at $${r128.expected})`);
+    check(r128.opened, "banked: the 128K stop opens big3.bas at the execution point");
+    await s.k.close();
+    const n = await session("banked-next", { card: true, ideViewOptions: sync });
+    const rNext = await bankedPart(n, "zxnext", "zxnext");
+    check(!!rNext.pc && rNext.pc === rNext.expected, `banked: a breakpoint in a module in page 34 pauses the Next (PC $${rNext.pc}, Peek3 at $${rNext.expected})`);
+    check(rNext.opened, "banked: the Next stop opens big3.bas at the execution point");
+    await n.k.close();
   }
 };
+
+/**
+ * The banked fixture's sources in a new project for `machine`, '@split-modules in the header, a
+ * breakpoint on Peek3's RETURN in big3.bas (the second bank), then `debug`; true when it pauses there.
+ */
+async function bankedPart(s, machine, label) {
+  const fixture = path.join(__dirname, "..", "test", "boriel", "fixtures", "banked-128");
+  const main = fs.readFileSync(path.join(fixture, "program.bas"), "utf8").split("\n");
+  const folder = await s.project(machine, ["'@split-modules", ...main]);
+  for (const file of fs.readdirSync(fixture).filter((f) => f.endsWith(".bas") && f !== "program.bas")) {
+    fs.copyFileSync(path.join(fixture, file), path.join(folder, "code", file));
+  }
+  if (machine === "zxnext") {
+    for (let t = Date.now(); !/ZX Spectrum Next/.test(await s.emuText()) && Date.now() - t < 30000; ) await sleep(500);
+    await sleep(3000);
+  }
+  const line = fs.readFileSync(path.join(fixture, "big3.bas"), "utf8").split("\n").findIndex((l) => /RETURN table\(i\)/.test(l)) + 1;
+  await s.k.cmd(`bp-set [code/big3.bas]:${line}`, 1200);
+  await s.k.cmd("debug", 9000);
+  const pc = await s.waitPaused(machine === "zxnext" ? 120000 : 30000);
+  // --- The IDE opens the module at the execution point once it has asked the emulator where it is
+  let opened = false;
+  for (let t = Date.now(); !opened && Date.now() - t < 10000; await sleep(500)) {
+    opened = await s.k.ide.evaluate(() => [...document.querySelectorAll("[role=tab], .tab, [class*=tab]")].some((e) => /big3\.bas/.test(e.textContent)));
+  }
+  await s.k.ide.screenshot({ path: path.join(s.out, `${label}.png`) });
+  const dbg = JSON.parse(fs.readFileSync(path.join(folder, "_klive", "boriel", "program.dbg"), "utf8")).sourceLevelDebug;
+  const peek3 = dbg.extensions.frames.find((f) => dbg.callables[f.callableIndex].name === "Peek3");
+  return { pc, opened, expected: peek3 && peek3.bodyStart.toString(16).toUpperCase().padStart(4, "0") };
+}
 
 /** A TAP file's blocks, each with its flag byte first and its checksum last. */
 function tapBlocks(bytes) {

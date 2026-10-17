@@ -4,7 +4,8 @@ import path from "path";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import type { AppState } from "@common/state/AppState";
-import { BorielCompiler, fnv1a32, type ZxbcRunner } from "@main/boriel-integration/BorielCompiler";
+import { fnv1a32 } from "@main/boriel-integration/boriel-banked";
+import { BorielCompiler, type ZxbcRunner } from "@main/boriel-integration/BorielCompiler";
 import { argumentErrorText, parseZxbcDiagnostics } from "@main/boriel-integration/boriel-diagnostics";
 import { EXPORT_OPTIONS, KLIVE_ONLY_OPTIONS, MAPPED_OPTIONS, zxbcArgumentsFor } from "@main/boriel-integration/boriel-options";
 import { installBoriel } from "@main/boriel-integration/boriel-install-service";
@@ -255,6 +256,25 @@ describe("BorielCompiler", () => {
     expect((await slow.compiler.compileFile(source)).errors?.[0].message).toMatch(/did not finish/);
   });
 
+  it("searches the source's folder, then the include folders, for USEd modules", async () => {
+    const { compiler, calls } = compilerWith({});
+    await compiler.compileFile(source);
+    const m = calls[0].args[calls[0].args.indexOf("-m") + 1];
+    expect(m).toBe(path.dirname(source));
+    const { args } = zxbcArgumentsFor({ ...defaultOptions(), includePaths: ["/lib"] }, [], ":", "/src");
+    expect(args[args.indexOf("-m") + 1]).toBe("/src:/lib");
+  });
+
+  it("splits modules into banks only on a machine that has banks", () => {
+    const flag = header("split-modules");
+    const banked = zxbcArgumentsFor({ ...defaultOptions("zx128k"), splitModules: true }, flag);
+    expect(banked.args).toContain("--split-modules");
+    expect(banked.warnings).toEqual([]);
+    const flat = zxbcArgumentsFor({ ...defaultOptions("zx48k"), splitModules: true }, flag);
+    expect(flat.args).not.toContain("--split-modules");
+    expect(flat.warnings[0].message).toMatch(/no RAM banks/);
+  });
+
   it("builds the Next's .nex with zxbc and hands it over", async () => {
     const { compiler, calls } = compilerWith({ image: [9, 9] }, "zxnext");
     const output: any = await compiler.compileFile(source);
@@ -389,4 +409,46 @@ describe("BorielCompiler with the real zxbc", () => {
     const checked = await compiler.checkFile(source);
     expect(checked.errors?.[0]).toMatchObject({ errorCode: "E342", line: 2 });
   }, 60_000);
+
+  it.skipIf(!available)("builds a banked program (--split-modules) for the 128K and the Next", async () => {
+    // --- The banked fixture's sources, in a project of their own, with the option in the header
+    const project = path.join(home, "banked");
+    const code = path.join(project, "code");
+    fs.mkdirSync(code, { recursive: true });
+    const fixture = path.resolve(__dirname, "../boriel/fixtures/banked-128");
+    for (const file of fs.readdirSync(fixture).filter((f) => f.endsWith(".bas"))) {
+      fs.copyFileSync(path.join(fixture, file), path.join(code, file === "program.bas" ? "program.zxbas" : file));
+    }
+    const source = path.join(code, "program.zxbas");
+    fs.writeFileSync(source, "'@split-modules\n" + fs.readFileSync(source, "utf8"));
+
+    for (const [machineId, banks] of [
+      ["sp128", [0, 1]],
+      ["zxnext", [16, 17]]
+    ] as const) {
+      const compiler = new BorielCompiler();
+      compiler.setAppState({
+        userSettings: { zxbasic: { executablePath: zxbcPath } },
+        projectSettings: {},
+        project: { folderPath: project, isKliveProject: true },
+        emulatorState: { machineId }
+      } as unknown as AppState);
+      const output: any = await compiler.compileFile(source, undefined, "debug");
+      expect(output.errors.filter((e: any) => !e.isWarning), machineId).toEqual([]);
+      expect(output.segments.map((s: any) => s.bank), machineId).toEqual([undefined, ...banks]);
+      expect(output.segments[0].startAddress).toBe(0x8000);
+      // --- A module's lines name their bank's segment, so their breakpoints get the partition
+      const big3 = output.sourceFileList.findIndex((f: any) => f.filename.endsWith("big3.bas"));
+      const lines = output.listFileItems.filter((li: any) => li.fileIndex === big3);
+      expect(lines.length, machineId).toBeGreaterThan(0);
+      expect(lines.every((li: any) => output.segments[li.segmentIndex].bank === banks[1]), machineId).toBe(true);
+      expect(output.sourceLevelDebug.extensions.codebank.shadowStackKind).toBe("zxbc");
+      if (machineId === "zxnext") {
+        expect(Buffer.from(output.prebuiltNex).subarray(0, 4).toString()).toBe("Next");
+        expect(output.nexConfig).toEqual({ filename: "program.nex" });
+      } else {
+        expect(output.prebuiltNex).toBeUndefined();
+      }
+    }
+  }, 120_000);
 });

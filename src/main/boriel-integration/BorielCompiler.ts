@@ -4,12 +4,15 @@ import { execa } from "execa";
 
 import type {
   AssemblerErrorInfo,
+  BinarySegment,
   CompileProfile,
   IKliveCompiler,
   KliveCompilerOutput
 } from "@abstractions/CompilerInfo";
 import type { AppState } from "@common/state/AppState";
+import { parseZ80File } from "@common/spectrum/snapshot/z80File";
 import { createSettingsReader } from "@common/utils/SettingsReader";
+import { loadNexFileContents } from "@renderer/appIde/DocumentPanels/Next/nexFileLoader";
 import { DiagnosticBag } from "@main/kbasic/diagnostics";
 import { applyHeader, optionsFromSettings, readHeader, type HeaderOption } from "@main/kbasic/options/header";
 import type { KBasicOptions, Target } from "@main/kbasic/options/options";
@@ -19,6 +22,7 @@ import { argumentErrorText, buildError, parseZxbcDiagnostics } from "./boriel-di
 import { zxbcArgumentsFor } from "./boriel-options";
 import { BORIEL_NOT_CONFIGURED_MESSAGE, resolveBorielExecutable } from "./boriel-resolver";
 import { parseMemoryMap } from "./boriel-map";
+import { bankedSegments, extractBankedProgram, fnv1a32, programBankIds, segmentOfPartition } from "./boriel-banked";
 import { adaptBorielDebugInfo, type DbgAdapterOutput } from "./dbg-adapter";
 import { lineCanHaveBreakpoint } from "@main/kbasic/breakpoints";
 
@@ -127,7 +131,7 @@ export class BorielCompiler implements IKliveCompiler {
     if ("errors" in prepared) return prepared;
     const { executable, options, header, headerErrors, headerWarnings, buildFolder, projectIni } = prepared;
     if (headerErrors.length) return { errors: [...headerErrors, ...headerWarnings] };
-    const args = [filename, ...zxbcArgumentsFor(options, header).args, "--parse-only", ...(projectIni ? ["-F", projectIni] : [])];
+    const args = [filename, ...zxbcArgumentsFor(options, header, undefined, path.dirname(filename)).args, "--parse-only", ...(projectIni ? ["-F", projectIni] : [])];
     const run = await this.invoke(executable, args, buildFolder, CHECK_TIMEOUT_MS, filename);
     if ("errors" in run) return run;
     return { errors: [...headerWarnings, ...run.diagnostics] };
@@ -157,17 +161,33 @@ export class BorielCompiler implements IKliveCompiler {
 
     const name = programName(filename);
     const out = (ext: string) => path.join(buildFolder, `${name}.${ext}`);
-    for (const ext of ["bin", "dbg", "map", "err", "nex", SECOND_DBG]) fs.rmSync(out(ext), { force: true });
-    const { args, arch } = zxbcArgumentsFor(options, header);
+    for (const ext of ["bin", "dbg", "map", "err", "nex", "z80", SECOND_DBG]) fs.rmSync(out(ext), { force: true });
+    const { args, arch } = zxbcArgumentsFor(options, header, undefined, path.dirname(filename));
     const common = [...args, ...(projectIni ? ["-F", projectIni] : [])];
     // --- `--debug` changes the code zxbc generates (`.ai/boriel/dbg-observed.md`): every other
     // --- output of this build passes it too, or it holds other code than the one debugged
     const sameCode = [...common, `--debug=${out(SECOND_DBG)}`];
 
-    // --- The code image, its debug file and map: what Klive injects and debugs
+    // --- The code image, its debug file and map: what Klive injects and debugs. zxbc refuses `bin`
+    // --- for a banked build (plan §7): the program then comes out of a 128K snapshot or the .nex
+    const banked = args.includes("--split-modules");
+    const format = !banked ? "bin" : arch === "zxnext" ? "nex" : "z80";
     const run = await this.invoke(
       executable,
-      [filename, ...common, "-f", "bin", "-o", out("bin"), `--debug=${out("dbg")}`, "-M", out("map"), "-e", out("err")],
+      [
+        filename,
+        ...common,
+        "-f",
+        format,
+        ...(format === "z80" ? ["-B", "-a"] : []),
+        "-o",
+        out(format),
+        `--debug=${out("dbg")}`,
+        "-M",
+        out("map"),
+        "-e",
+        out("err")
+      ],
       buildFolder,
       BUILD_TIMEOUT_MS,
       filename,
@@ -177,16 +197,14 @@ export class BorielCompiler implements IKliveCompiler {
     const diagnostics = [...headerWarnings, ...run.diagnostics];
     if (diagnostics.some((d) => !d.isWarning)) return { errors: diagnostics, traceOutput: trace };
 
-    const image = fs.readFileSync(out("bin"));
     const debugFile = readDebugFile(out("dbg"));
     if (typeof debugFile === "string") return { errors: [...diagnostics, buildError(filename, "ZXBC-D", debugFile)], traceOutput: trace };
     // --- A stale or foreign .dbg must never drive the debugger (plan §4.1)
-    if (debugFile.binaryLength !== image.length || debugFile.binaryChecksum !== fnv1a32(image)) {
-      return {
-        errors: [...diagnostics, buildError(filename, "ZXBC-D", "The debug file does not belong to the compiled program (checksum mismatch).")],
-        traceOutput: trace
-      };
+    const program = programOf(fs.readFileSync(out(format)), format, options.origin, debugFile, arch);
+    if (typeof program === "string") {
+      return { errors: [...diagnostics, buildError(filename, "ZXBC-D", `The debug file does not belong to the compiled program: ${program}.`)], traceOutput: trace };
     }
+    const { image, segments } = program;
     const entryAddress =
       debugFile.sourceLevelDebug?.callables?.find((c: any) => c.kind === "entrypoint")?.entryAddress ?? options.origin;
 
@@ -201,6 +219,9 @@ export class BorielCompiler implements IKliveCompiler {
         libraryFolder: path.join(path.dirname(executable), "lib"),
         optimizationLevel: options.optimize,
         image: { bytes: image, origin: options.origin },
+        bankImages: segments
+          .filter((s) => s.bank !== undefined)
+          .map((s) => ({ partition: arch === "zxnext" ? s.bank! * 2 : s.bank!, bytes: s.emittedCode, origin: s.startAddress })),
         readFile: (file) => {
           try {
             return fs.readFileSync(file, "utf8");
@@ -231,9 +252,16 @@ export class BorielCompiler implements IKliveCompiler {
       diagnostics.push({ ...buildError(filename, "ZXBC-D", `No source-level debugging: ${(error as Error).message}`), isWarning: true });
     }
 
-    // --- The Next starts programs from a .nex: zxbc writes its own
+    // --- A banked program's breakpoints need their bank: each list item names its bank's segment
+    if (banked && debug) {
+      for (const item of debug.listFileItems) item.segmentIndex = segmentOfPartition(segments, item.partition, arch);
+    }
+
+    // --- The Next starts programs from a .nex: zxbc writes its own (a banked build's is the first run's)
     let prebuiltNex: number[] | undefined;
-    if (arch === "zxnext") {
+    if (arch === "zxnext" && banked) {
+      prebuiltNex = Array.from(fs.readFileSync(out("nex")));
+    } else if (arch === "zxnext") {
       const nexRun = await this.invoke(executable, [filename, ...sameCode, "-f", "nex", "-o", out("nex")], buildFolder, BUILD_TIMEOUT_MS, filename);
       if ("errors" in nexRun) return { ...nexRun, traceOutput: trace };
       const nex = fs.readFileSync(out("nex"));
@@ -254,11 +282,14 @@ export class BorielCompiler implements IKliveCompiler {
     await this.writeRequestedFiles(executable, filename, sameCode, options, buildFolder, name, out("map"), trace);
     fs.rmSync(out(SECOND_DBG), { force: true });
     trace.push(`Boriel BASIC: ${image.length} bytes at $${options.origin.toString(16).toUpperCase().padStart(4, "0")} (${arch})`);
+    for (const segment of segments.filter((s) => s.bank !== undefined)) {
+      trace.push(`Boriel BASIC: ${segment.emittedCode.length} bytes in bank ${segment.bank}`);
+    }
 
     return {
       errors: diagnostics,
       traceOutput: trace,
-      segments: [{ startAddress: options.origin, emittedCode: Array.from(image) }],
+      segments,
       injectOptions: { subroutine: true },
       modelType: model,
       entryAddress,
@@ -377,6 +408,35 @@ export class BorielCompiler implements IKliveCompiler {
   }
 }
 
+/**
+ * The program a build wrote, checked against its `.dbg`: the resident code image, and the segments
+ * Klive injects (one, or one per bank for a banked build); or why it does not match.
+ */
+function programOf(
+  file: Uint8Array,
+  format: string,
+  origin: number,
+  debugFile: any,
+  arch: string
+): { image: Uint8Array; segments: BinarySegment[] } | string {
+  if (format === "bin") {
+    if (debugFile.binaryLength !== file.length || debugFile.binaryChecksum !== fnv1a32(file)) return "checksum mismatch";
+    return { image: file, segments: [{ startAddress: origin, emittedCode: Array.from(file) }] as BinarySegment[] };
+  }
+  let ram: Map<number, Uint8Array>;
+  if (format === "z80") {
+    ram = parseZ80File(file).ram;
+  } else {
+    const nex = loadNexFileContents(file);
+    if (!nex.fileInfo) return `zxbc's .nex cannot be read (${nex.error})`;
+    ram = new Map(nex.fileInfo.bankData);
+  }
+  const ids = programBankIds(debugFile.sourceLevelDebug?.extensions?.codebank, arch);
+  const parts = extractBankedProgram(ram, origin, ids, debugFile.binaryLength, debugFile.binaryChecksum);
+  if (typeof parts === "string") return parts;
+  return { image: parts.find((p) => p.bank === undefined)?.bytes ?? new Uint8Array(), segments: bankedSegments(parts) };
+}
+
 /** The parsed `.dbg`, or why it cannot be used. */
 function readDebugFile(file: string): any | string {
   let parsed: any;
@@ -391,15 +451,6 @@ function readDebugFile(file: string): any | string {
   return parsed;
 }
 
-/** The 32-bit FNV-1a hash zxbc records as `binaryChecksum` (`.ai/boriel/dbg-observed.md`). */
-export function fnv1a32(bytes: Uint8Array): number {
-  let hash = 0x811c9dc5;
-  for (const byte of bytes) {
-    hash ^= byte;
-    hash = Math.imul(hash, 0x01000193) >>> 0;
-  }
-  return hash >>> 0;
-}
 
 function diagnosticInfo(file: SourceFile, code: string, message: string, offset: number, warning: boolean): AssemblerErrorInfo {
   const location = file.location(offset);

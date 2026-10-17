@@ -1,6 +1,6 @@
 # Boriel BASIC (zxbc 2.0) Integration — Implementation Plan
 
-Status: **approved for implementation; Phases B0-B4 done, B5-B6 not started** (2026-10-17, HEAD `2cebbd732`). Decisions B1, B-L1, B-T1 and B-T2 are settled (§0).
+Status: **approved for implementation; Phases B0-B5 done, B6 not started** (2026-10-17, HEAD `2cebbd732`). Decisions B1, B-L1, B-T1 and B-T2 are settled (§0).
 Inputs: the setup kits, now in `vendor/boriel-basic/` (`kit.json` + git-ignored `kits/`; see §3.1) and the debug
 format published at <https://zxbasic.readthedocs.io/en/v2.0/debug_format/> (pages *Statements &
 Addresses*, *Callables*, *Call Sites*, *Variables*, *Banking*).
@@ -681,7 +681,48 @@ The following need no Boriel-specific code beyond the adapter, once the frame-lo
 
 ---
 
-## 7. Phase B5 — banked programs (`--split-modules`)
+## 7. Phase B5 — banked programs (`--split-modules`) (**done 2026-10-17**)
+
+**As built:**
+
+- **Turning it on.** A new header option, `'@split-modules` (`KBasicOptions.splitModules`), maps
+  to `--split-modules`. On the 48K zxbc rejects the flag ("declares no banks"), so Boriel leaves it
+  out with a `ZXBC-H` warning. Klive BASIC accepts the option and warns K013 (it banks with
+  CODEBANK). Every build now passes **`-m <source folder>[:<include folders>]`**: `USE` finds
+  modules only on the module path, which defaults to zxbc's cwd (`_klive/boriel`). Modules never
+  worked in Klive builds before.
+- **Where the program comes from** (`src/main/boriel-integration/boriel-banked.ts`). The debug
+  build's first run writes `-f z80 -B -a` on the 128K and `-f nex` on the Next, with `--debug`.
+  The 16K banks come from Klive's `.z80` reader or the `.nex` loader. The program is the resident
+  part (origin up to `$C000`) plus each bank `codebank.banks` lists that holds anything. The parts'
+  lengths are not stated anywhere, so trailing zeros are trimmed and the `.dbg`'s
+  `binaryLength`/`binaryChecksum` (resident, then banks ascending) decide; zeros that were data
+  are put back on one part until the checksum matches. A mismatch is a build error.
+- **Segments.** One per part: `{bank, bankOffset 0, startAddress $C000}` (on the Next the 16K
+  bank, 16 for pages 32-33). The 128K injects them through the normal flow into 128 BASIC, which
+  leaves the paging lock off. The Next runs the first run's `.nex`. Each list item names its
+  bank's segment, so a line breakpoint gets its partition from `resolvedPartitionFor`.
+- **Far calls: there is a shadow stack** (item 4 below assumed none). zxbc's helper replaces the
+  callee's return slot with its own return path, then pushes the caller's real return and its
+  paging (`BANKM` on the 128K, the MMU6 page on the Next) onto a stack whose pointer is
+  `core.PAGE_STACK`. The adapter describes this as a CODEBANK runtime with
+  `shadowStackKind: "zxbc"` (`CodebankDebugInfo`), and `stackReader` reads both layouts. zxbc
+  frames hold byte-sized locals, so slots may be at odd addresses: the zxbc scan steps by one byte.
+- **Adapter fixes found on the way:** zxbc records every statement of a modular build as the
+  main program's (`callableIndex 0`), so the owner comes from the frames' address ranges; the
+  FUNCTION return-address correction now also covers banked call sites (`bankImages`), and checks
+  for the PUSH after the CALL, because the helper's address byte `$FC` reads as `CALL M`.
+- **Tests:** fixtures `banked-128` (z80) and `banked-next` (nex, sources shared with `"from"`);
+  `test/main/boriel-banked.test.ts`, the banked cases in `test/boriel/dbg-adapter.test.ts`, real-zxbc
+  builds in `test/main/boriel-compiler.test.ts`, and `test/boriel/boriel-banked.test.ts` on both
+  cores: `Sum` and `Peek3` share a window address and stop in their own bank, and the call stack
+  reads `Mix ← Weigh ← main` through far calls. The sp128 harness gained `attachDebugSupport`,
+  `continueToBreakpoint` and `machineView`. `scripts/boriel-ide-check.cjs banked` checks both machines
+  in the app, including that the stop opens the module's file (with "Sync the Source with the
+  Current Breakpoint" on).
+- **Not covered:** a routine whose code crosses `$E000` on the Next keeps its start's page for
+  the whole routine; Step Over/Out across a far call are not exercised by a test yet; exporting a
+  banked 128K build (TAP/TZX through Klive's writer, which receives the bank segments) is untested.
 
 1. **128K.** zxbc refuses `bin` and `sna` for a banked build. It writes only `tap`, `tzx` or `z80`
    (B0). Build `-f z80 -B -a`, read the snapshot with Klive's own `.z80` reader, and turn its RAM banks
@@ -695,7 +736,8 @@ The following need no Boriel-specific code beyond the adapter, once the frame-lo
    target page/address patched at fixed offsets. There is **no shadow stack**. Klive's frame locator
    recognises far calls only through Klive's CODEBANK runtime. Supporting zxbc's mechanism needs a new
    locator branch that decodes the trampoline bytes (`callFar.bytes`/`slots`). It is scoped as a
-   separate task once 1–3 work. Until then, see §10, item 4.
+   separate task once 1–3 work. Until then, see §10, item 4. *(As built: there is a shadow stack after
+   all; see the note above.)*
 
 ---
 
@@ -780,11 +822,11 @@ the format or the compiler.
 
 **Calls, frames and banking**
 
-4. **Cross-bank calls (CALL FAR / `--split-modules`).** There is no `"far"` call-site kind and no
-   shadow call stack. The call stack cannot be walked through a far call, and Step Over/Out across a
-   bank switch are unreliable until a trampoline decoder exists (§7, item 4). Klive's CODEBANK-based
-   banked debugging has no Boriel equivalent. Also, **CODEBANK itself is Klive BASIC syntax**: those
-   programs do not compile under Boriel, which uses `MODULE`/`USE` with `--split-modules` instead.
+4. **Cross-bank calls (`--split-modules`).** There is no `"far"` call-site kind. **(adapter)** Klive
+   decodes zxbc's far-call helper and reads its shadow stack (§7 "As built"), so the call stack walks
+   through bank switches on the 128K and the Next. Step Over/Out across a far call are untested. Also,
+   **CODEBANK itself is Klive BASIC syntax**: those programs do not compile under Boriel, which uses
+   `MODULE`/`USE` with `--split-modules` instead.
 5. **`callTargets` is always `[]`.** No loss, because Klive uses `callSites` for the same information.
 6. **Top-level call sites have no `callerIndex`.** **(adapter)** It is the entrypoint routine.
 7. **FASTCALL routines** have no IX frame. Klive's locator gains a `fastcall` path (§6.1). Their

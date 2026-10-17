@@ -27,6 +27,7 @@ The mapping `src/main/boriel-integration/boriel-options.ts` implements
 | `disable-warning` / `enable-warning` | `-W n` / `+W n` (the code without its `W`) |
 | `expect-warnings` | `--expect-warnings` |
 | `nex-stack` | `--set:nex:sp` (Next only) |
+| `split-modules` | `--split-modules` on the 128K and the Next (the build then writes `-f z80 -B -a` or `-f nex`); on the 48K a warning, no flag |
 | `emit-map` / `emit-asm` / `emit-ir` | the build's `-M` map copied beside the source / an extra `-f asm` / `-f ir` run |
 
 ## Export options (no zxbc argument for a build)
@@ -45,5 +46,5 @@ BASIC syntax; Boriel banks MODULEs with `--split-modules`), `nex-entry`, `nex-lo
 `<absolute source path>`, `-f bin -o …`, `--debug=…`, `-M …`, `-e …`, and on the Next a second run with
 `-f nex -o …`. Every run after the first (the `.nex`, `@emit-asm`, `@emit-ir`) passes
 `--debug=<build folder>/<name>.same-code.dbg` too, deleted afterwards, because the flag changes the
-code (`cli-and-diagnostics.md`). `-F <project>/project.ini` only when the project has one. Never `--hide-warning-codes`.
+code (`cli-and-diagnostics.md`). `-m <source folder>[:<include folders>]` on every run. `-F <project>/project.ini` only when the project has one. Never `--hide-warning-codes`.
 zxbc runs with `cwd` = `<project>/_klive/boriel`.

@@ -1,0 +1,1 @@
+{ "description": "The banked-128 program built for the ZX Spectrum Next (--split-modules, -f nex)", "from": "../banked-128", "args": ["--arch", "zxnext", "-O", "1", "-S", "32768", "--split-modules"], "banked": true }

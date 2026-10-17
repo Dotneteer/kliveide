@@ -11,6 +11,7 @@ import type {
 import type {
   CallableFrameInfo,
   CallSiteDebugInfo,
+  CodebankDebugInfo,
   SourceValueType,
   VariableDebugInfo
 } from "@abstractions/SourceDebugInfo";
@@ -51,6 +52,8 @@ export type DbgAdapterInput = {
   readFile: (path: string) => string | undefined;
   /** The unbanked code image and its address, to check call sites' return addresses against. */
   image?: { bytes: Uint8Array | number[]; origin: number };
+  /** A banked build's banks, by the `.dbg`'s partition (16K bank; Next: first 8K page), for the same check. */
+  bankImages?: { partition: number; bytes: Uint8Array | number[]; origin: number }[];
 };
 
 export type ClassicDebugTables = {
@@ -90,6 +93,55 @@ const CALLABLE_KINDS: Record<string, CallableKind> = {
 
 /** The 16K window banked code runs in (128K and Next alike, `codebank.window`). */
 const WINDOW = 0xc000;
+
+/** The 128K's `BANKM` system variable: zxbc's far call saves it, and keeps the bank in its low bits. */
+const BANKM = 0x5b5c;
+
+/**
+ * zxbc's far calls (`--split-modules`) in Klive's CODEBANK model, so the call stack walks through
+ * bank switches (`.ai/boriel/dbg-observed.md`, "Far calls"). A call site runs the `callFar` template,
+ * which ends `CALL helper`; the helper replaces the return slot with its own return path (its
+ * `LD HL,nn` at helper + 4) and pushes the real return and the caller's paging onto a shadow stack
+ * whose pointer is `core.PAGE_STACK`. Undefined, with a note, when the build is not banked or the
+ * helper does not have that shape.
+ */
+function adaptCodebank(
+  raw: any,
+  arch: string,
+  map: MapEntry[],
+  image: DbgAdapterInput["image"],
+  dropped: string[]
+): CodebankDebugInfo | undefined {
+  const template: number[] | undefined = raw?.callFar?.bytes;
+  if (!Array.isArray(template)) return undefined;
+  const n = template.length;
+  const helper = n >= 3 && template[n - 3] === 0xcd ? template[n - 2] | (template[n - 1] << 8) : undefined;
+  const byteAt = (a: number) => (image && a >= image.origin && a < image.origin + image.bytes.length ? image.bytes[a - image.origin] : undefined);
+  const farReturn =
+    helper !== undefined && byteAt(helper + 4) === 0x21 ? (byteAt(helper + 5) ?? 0) | ((byteAt(helper + 6) ?? 0) << 8) : undefined;
+  const pageStack = map.find((e) => e.name === "core.PAGE_STACK")?.address;
+  if (helper === undefined || farReturn === undefined || pageStack === undefined) {
+    dropped.push("far calls: the far-call helper was not recognised, so the call stack stops at a bank switch");
+    return undefined;
+  }
+  const next = arch === "zxnext";
+  return {
+    window: raw.window?.start ?? WINDOW,
+    windowSize: raw.window?.length ?? 0x4000,
+    farCall: helper,
+    farReturn,
+    // --- Klive BASIC's current-bank byte; the Next pages through NextRegs and has none
+    currentBank: next ? 0 : BANKM,
+    shadowStackPointer: pageStack,
+    shadowStack: pageStack,
+    // --- A logical bank is the `.dbg`'s partition: the 16K bank on the 128K (whose partitions are
+    // --- 16K, so both halves of the window name it), the first 8K page on the Next
+    banks: (raw.banks ?? []).map((b: any) => ({ bank: b.id, pages: next ? [b.id, b.id + 1] : [b.id, b.id] })),
+    shadowStackKind: "zxbc",
+    // --- The 128K saves BANKM (bank in bits 0-2); the Next saves the page MMU slot 6 held
+    bankMask: next ? 0xff : 0x07
+  };
+}
 
 export function adaptBorielDebugInfo(input: DbgAdapterInput): DbgAdapterOutput {
   const { dbg } = input;
@@ -132,9 +184,29 @@ export function adaptBorielDebugInfo(input: DbgAdapterInput): DbgAdapterOutput {
   );
   const indexOf = new Map<number, number>();
   raw.forEach((s, i) => indexOf.set(s.index, i));
+  // --- A modular build (`USE`) records every statement as the main program's: the routine whose
+  // --- frame holds the statement's address, in the same bank, is its owner (`dbg-observed.md` 15)
+  const mainRaw = entrypointIndex(rawCallables);
+  const routineRanges = rawCallables
+    .filter((c) => c.index !== mainRaw)
+    .map((c) => {
+      const f = rawFrames.get(c.index);
+      const start = f?.startAddress ?? c.entryAddress;
+      const end = Math.max(f?.endAddress ?? 0, (f?.epilogueStart ?? start) + 1, ...(c.exitAddresses ?? []).map((a: number) => a + 1));
+      return { index: c.index, start, end, partition: c.partition ?? undefined };
+    });
+  const ownerOf = (s: any): number => {
+    const recorded = s.callableIndex >= 0 ? s.callableIndex : mainRaw;
+    if (recorded !== mainRaw) return recorded;
+    const range = routineRanges.find(
+      (r) => r.partition === (s.partition ?? undefined) && s.startAddress >= r.start && s.startAddress < r.end
+    );
+    return range?.index ?? recorded;
+  };
   const statements: StatementDebugInfo[] = raw.map((s, i) => {
     const partition = partitionOf(s.partition, s.startAddress);
-    const frame = rawFrames.get(s.callableIndex);
+    const owner = ownerOf(s);
+    const frame = rawFrames.get(owner);
     // --- The next statement in the same partition, and the first routine starting after this one
     const next = raw.slice(i + 1).find((o) => partitionOf(o.partition, o.startAddress) === partition && o.startAddress > s.startAddress);
     const nextRoutine = routineStarts.find((r) => r.partition === partition && r.start > s.startAddress)?.start;
@@ -155,7 +227,7 @@ export function adaptBorielDebugInfo(input: DbgAdapterInput): DbgAdapterOutput {
       endAddress: end,
       ...(partition !== undefined ? { partition } : {}),
       kind: "other",
-      callableIndex: s.callableIndex >= 0 ? s.callableIndex : entrypointIndex(rawCallables)
+      callableIndex: owner
     };
   });
 
@@ -217,7 +289,12 @@ export function adaptBorielDebugInfo(input: DbgAdapterInput): DbgAdapterOutput {
     }
     const partition = partitionOf(site.partition, site.returnAddress);
     callSites.push({
-      returnAddress: partition === undefined ? correctReturnAddress(site.returnAddress, input.image) : site.returnAddress,
+      returnAddress: correctReturnAddress(
+        site.returnAddress,
+        site.partition === undefined || site.partition === null
+          ? input.image
+          : input.bankImages?.find((b) => b.partition === site.partition)
+      ),
       ...(partition !== undefined ? { partition } : {}),
       statementIndex,
       callerIndex: site.callerIndex ?? statements[statementIndex]?.callableIndex ?? mainIndex,
@@ -231,6 +308,7 @@ export function adaptBorielDebugInfo(input: DbgAdapterInput): DbgAdapterOutput {
 
   const variables = adaptVariables(ext.variables ?? [], frames, partitionOf, dropped);
   const symbols = mapSymbols(input.map);
+  const codebank = adaptCodebank(ext.codebank, input.arch, input.map, input.image, dropped);
 
   // --- Address maps: every byte a statement's or glue (-1), resident and per partition
   const addressMap = (list: StatementDebugInfo[]) => {
@@ -274,6 +352,7 @@ export function adaptBorielDebugInfo(input: DbgAdapterInput): DbgAdapterOutput {
       libraryFiles,
       runtimeSymbols: symbols.runtimeSymbols,
       ...(symbols.errorEntry !== undefined ? { errorEntry: symbols.errorEntry } : {}),
+      ...(codebank ? { codebank } : {}),
       optimizationLevel: input.optimizationLevel
     }
   };
@@ -469,12 +548,16 @@ const CALL_OPCODES = new Set([0xcd, 0xc4, 0xcc, 0xd4, 0xdc, 0xe4, 0xec, 0xf4, 0x
  */
 function correctReturnAddress(address: number, image: DbgAdapterInput["image"]): number {
   if (!image) return address;
-  const callAt = (returnAddress: number) => {
-    const offset = returnAddress - 3 - image.origin;
-    return offset >= 0 && offset < image.bytes.length && CALL_OPCODES.has(image.bytes[offset]);
-  };
-  return !callAt(address) && callAt(address - 1) ? address - 1 : address;
+  const byteAt = (a: number) => (a >= image.origin && a < image.origin + image.bytes.length ? image.bytes[a - image.origin] : undefined);
+  const callAt = (returnAddress: number) => CALL_OPCODES.has(byteAt(returnAddress - 3) ?? -1);
+  if (!callAt(address - 1)) return address;
+  // --- The defect's own shape: a CALL ending one byte earlier, then the PUSH zxbc counted. An address
+  // --- byte of that CALL can look like a CALL opcode itself (`$FC` is CALL M), so the PUSH decides.
+  return PUSH_OPCODES.has(byteAt(address - 1) ?? -1) || !callAt(address) ? address - 1 : address;
 }
+
+/** `PUSH BC/DE/HL/AF` */
+const PUSH_OPCODES = new Set([0xc5, 0xd5, 0xe5, 0xf5]);
 
 function entrypointIndex(callables: any[]): number {
   return callables.find((c) => c.kind === "entrypoint")?.index ?? Math.max(0, callables.length - 1);

@@ -5,6 +5,9 @@ import { describe, expect, it } from "vitest";
 import type { SourceLevelDebugInfo } from "@abstractions/CompilerInfo";
 import { mapSymbols, parseMemoryMap } from "@main/boriel-integration/boriel-map";
 import { adaptBorielDebugInfo, validateSourceLevel, type DbgAdapterOutput } from "@main/boriel-integration/dbg-adapter";
+import { extractBankedProgram, programBankIds } from "@main/boriel-integration/boriel-banked";
+import { parseZ80File } from "@common/spectrum/snapshot/z80File";
+import { loadNexFileContents } from "@renderer/appIde/DocumentPanels/Next/nexFileLoader";
 
 /*
  * The .dbg adapter on zxbc's real output (`test/boriel/fixtures/`, README there). Each expectation
@@ -182,6 +185,66 @@ describe("the .dbg adapter", () => {
     expect(() =>
       adaptBorielDebugInfo({ dbg: { format: "x", version: 9 }, map: [], arch: "zx48k", baseFolder: "/", optimizationLevel: 0, readFile: () => undefined })
     ).toThrow(/Unsupported debug file format/);
+  });
+});
+
+describe("the .dbg adapter on banked builds (--split-modules)", () => {
+  /** A banked fixture, with the program found in zxbc's snapshot or .nex as the compiler finds it. */
+  function adaptBanked(name: string, arch: "zx128k" | "zxnext"): DbgAdapterOutput {
+    const folder = path.join(FIXTURES, name);
+    const dbg = JSON.parse(fs.readFileSync(path.join(folder, "program.dbg"), "utf8"));
+    const ram =
+      arch === "zxnext"
+        ? new Map(loadNexFileContents(new Uint8Array(fs.readFileSync(path.join(folder, "program.nex")))).fileInfo!.bankData)
+        : parseZ80File(new Uint8Array(fs.readFileSync(path.join(folder, "program.z80")))).ram;
+    const parts = extractBankedProgram(ram, 0x8000, programBankIds(dbg.sourceLevelDebug.extensions.codebank, arch), dbg.binaryLength, dbg.binaryChecksum);
+    if (typeof parts === "string") throw new Error(parts);
+    return adaptBorielDebugInfo({
+      dbg,
+      map: parseMemoryMap(fs.readFileSync(path.join(folder, "program.map"), "utf8")),
+      arch,
+      baseFolder: folder,
+      optimizationLevel: 1,
+      image: { bytes: parts[0].bytes, origin: 0x8000 },
+      bankImages: parts.slice(1).map((p) => ({ partition: arch === "zxnext" ? p.bank! * 2 : p.bank!, bytes: p.bytes, origin: 0xc000 })),
+      readFile: (file) => (fs.existsSync(file) ? fs.readFileSync(file, "utf8") : undefined)
+    });
+  }
+
+  it("gives a module's statements their routine (zxbc records every one as the main program's)", () => {
+    for (const [name, arch] of [["banked-128", "zx128k"], ["banked-next", "zxnext"]] as const) {
+      const { sourceLevelDebug: sld, problems } = adaptBanked(name, arch);
+      expect(problems, name).toEqual([]);
+      const owners = new Set(sld.statements.filter((s) => s.partition !== undefined).map((s) => sld.callables[s.callableIndex].name));
+      expect([...owners].sort(), name).toEqual(["Mix", "Peek3", "Sum", "Weigh"]);
+      // --- With its owner known, a routine's last statement ends at its epilogue again
+      for (const c of sld.callables.filter((c) => c.kind !== "entrypoint")) {
+        const frame = sld.extensions!.frames!.find((f) => f.callableIndex === c.index)!;
+        const last = sld.statements[c.lastStatementIndex];
+        expect(last.endAddress, `${name} ${c.name}`).toBeLessThanOrEqual(frame.epilogueStart);
+      }
+    }
+  });
+
+  it("describes zxbc's far-call helper and shadow stack as a CODEBANK runtime", () => {
+    const cb128 = adaptBanked("banked-128", "zx128k").sourceLevelDebug.extensions!.codebank!;
+    const map = parseMemoryMap(fs.readFileSync(path.join(FIXTURES, "banked-128", "program.map"), "utf8"));
+    const pageStack = map.find((e) => e.name === "core.PAGE_STACK")!.address;
+    expect(cb128).toMatchObject({ window: 0xc000, windowSize: 0x4000, shadowStackKind: "zxbc", bankMask: 0x07, shadowStackPointer: pageStack, shadowStack: pageStack });
+    expect(cb128.banks.find((b) => b.bank === 1)).toEqual({ bank: 1, pages: [1, 1] });
+    const cbNext = adaptBanked("banked-next", "zxnext").sourceLevelDebug.extensions!.codebank!;
+    expect(cbNext).toMatchObject({ shadowStackKind: "zxbc", bankMask: 0xff });
+    expect(cbNext.banks.find((b) => b.bank === 34)).toEqual({ bank: 34, pages: [34, 35] });
+    // --- The far return is the helper's own return path, loaded by its LD HL,nn
+    expect(cbNext.farReturn).toBeGreaterThan(cbNext.farCall);
+  });
+
+  it("moves an in-bank FUNCTION call site's return address back, as for unbanked ones", () => {
+    const sld = adaptBanked("banked-next", "zxnext").sourceLevelDebug;
+    const raw = JSON.parse(fs.readFileSync(path.join(FIXTURES, "banked-next", "program.dbg"), "utf8")).sourceLevelDebug.extensions.callSites;
+    const mix = sld.callables.find((c) => c.name === "Mix")!.index;
+    const site = sld.extensions!.callSites!.find((s) => s.calleeIndex === mix)!;
+    expect(site.returnAddress).toBe(raw.find((s: any) => s.calleeIndex === mix).returnAddress - 1);
   });
 });
 

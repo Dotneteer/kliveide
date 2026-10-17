@@ -47,8 +47,11 @@ reproduces it. The project author decides what to send.
     until Klive passed the flag to the `.nex` run too. Debug information should not change the code.
 11. **A FUNCTION whose body is only `RETURN expr`** gets a zero-length statement
     (`startAddress == endAddress`), and the previous statement's range covers the routine's prologue.
-12. **Diagnostics have no column**, and argument errors go to stderr even with `-e`.
-13. **Packaging:**
+12. **A modular build records every statement as the main program's** (`callableIndex: 0`), module
+    routines' statements included. A debugger cannot tell which routine a statement belongs to.
+13. **`USE` searches the cwd, not the source's folder**, unless `-m` is given.
+14. **Diagnostics have no column**, and argument errors go to stderr even with `-e`.
+15. **Packaging:**
     - the kits have no LICENSE file;
     - extracting with `tar`/Finder leaves `com.apple.quarantine`, and a quarantined first launch
       blocks a non-interactive caller forever (`kit.md`);

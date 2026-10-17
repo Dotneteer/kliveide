@@ -72,7 +72,8 @@ export const MAPPED_OPTIONS = new Set([
   "emit-asm",
   "emit-ir",
   "emit-map",
-  "nex-stack"
+  "nex-stack",
+  "split-modules"
 ]);
 
 export type ZxbcArguments = {
@@ -83,11 +84,15 @@ export type ZxbcArguments = {
   warnings: { option: HeaderOption; message: string }[];
 };
 
-/** The zxbc arguments for `options`; `header` names the options the source itself set. */
+/**
+ * The zxbc arguments for `options`; `header` names the options the source itself set, and
+ * `sourceFolder` (the build root's folder) heads the module path.
+ */
 export function zxbcArgumentsFor(
   options: KBasicOptions,
   header: HeaderOption[],
-  delimiter: string = pathDelimiter
+  delimiter: string = pathDelimiter,
+  sourceFolder?: string
 ): ZxbcArguments {
   const args: string[] = [];
   const arch = ZXBC_ARCH[options.target] ?? "zx48k";
@@ -119,8 +124,20 @@ export function zxbcArgumentsFor(
   for (const code of options.enabledWarnings) args.push(`+W`, warningNumber(code));
   if (options.expectWarnings !== undefined) args.push("--expect-warnings", String(options.expectWarnings));
   if (options.nexStack !== undefined && arch === "zxnext") args.push("--set:nex:sp", String(options.nexStack));
+  // --- USE finds modules only on the module path, which is zxbc's cwd unless -m says otherwise (B5):
+  // --- the source's own folder first, then the include folders
+  if (sourceFolder) args.push("-m", [sourceFolder, ...options.includePaths].join(delimiter));
 
   const warnings: ZxbcArguments["warnings"] = [];
+  // --- The 48K has no banks: zxbc rejects the flag there, so a build without it is the useful answer
+  if (options.splitModules) {
+    if (arch === "zx48k") {
+      const option = header.find((h) => h.name === "split-modules");
+      if (option) warnings.push({ option, message: "'@split-modules has no effect on this machine: it has no RAM banks." });
+    } else {
+      args.push("--split-modules");
+    }
+  }
   for (const option of header) {
     const reason = KLIVE_ONLY_OPTIONS[option.name];
     // --- The zxbasm dialect is Boriel's own, so asking for it explicitly needs no warning

@@ -1,6 +1,6 @@
 # Boriel BASIC integration — handoff
 
-For the next AI session. Written 2026-10-17 after Phase B4's last fix on branch `dotneteer/zxbasic-2`.
+For the next AI session. Written 2026-10-17 at the end of Phase B5 on branch `dotneteer/zxbasic-2`.
 The plan is `.plans/BORIEL_BASIC_INTEGRATION_PLAN.md`; each phase's section opens with an
 **"As built"** note that records what differs from its design. This file says where things stand and
 what to do next.
@@ -13,7 +13,7 @@ what to do next.
 | the plan's "As built" notes in §2-§6 | What was built, and how it differs from the design text below each note |
 | the plan's §10 | What does not work with Boriel compared with Klive BASIC |
 | `.ai/boriel/README.md`, then `kit.md`, `cli-and-diagnostics.md`, `dbg-observed.md`, `options.md` | Facts about zxbc 2.0.0-beta25, observed, not assumed |
-| `.ai/boriel/boriel-issues.md` | zxbc defects found (13 items; Klive works around several) |
+| `.ai/boriel/boriel-issues.md` | zxbc defects found (15 items; Klive works around several) |
 | `vendor/boriel-basic/README.md` | Where the setup kits live, and how a clone gets them |
 
 ## Where things stand
@@ -25,8 +25,8 @@ what to do next.
 | B2: `BorielCompiler`, options, diagnostics, switch, 1.x removal | done | `e0e730165` |
 | B3: `.dbg` adapter, fixtures, source-level debugging | done | `1bc26fcc7` |
 | B4: FASTCALL frames, validator warning, Next error stop, NEX sidecar | done | `8a4d59c93` |
-| B4 fix: Next breakpoints (`.nex` built without `--debug`), in-app export checks | done | the commit after this file |
-| B5: banked programs (`--split-modules`), 128K bank injection, trampoline decoding | not started | — |
+| B4 fix: Next breakpoints (`.nex` built without `--debug`), in-app export checks | done | `3381503f1` |
+| B5: banked programs (`--split-modules`), 128K bank injection, far-call decoding | done | the commit after this file |
 | B6: settings/status-bar polish, competitive analysis update | not started | — |
 
 **What works (each verified in the running app or on the real cores):**
@@ -39,11 +39,19 @@ what to do next.
   the Variables panel, watches, and runtime-error stops (48K; Next core).
 - Source breakpoints in an IDE debug run on the Next, through NextZXOS.
 - TAP export; the Next's NEX export with its debug sidecar; `nex-run -d` of that NEX.
+- `USE`d modules (zxbc gets `-m <source folder>`).
+- Banked programs (`'@split-modules`) on the 128K and the Next: build, run, partition-qualified
+  breakpoints, the execution point in a module file, and the call stack through far calls.
 
 `scripts/boriel-ide-check.cjs` checks all of this in the running app (parts `run`, `debug`, `next`,
-`export`; all pass).
+`export`, `banked`; all pass).
 
-## The trap the last fix found
+## Two traps found late
+
+**zxbc's far calls have a shadow stack** (plan §7 "As built", `.ai/boriel/dbg-observed.md` "Far
+calls"); the plan had assumed none. The adapter describes it as a CODEBANK runtime with
+`shadowStackKind: "zxbc"`, and `stackReader` (`SourceStepDecision.ts`) reads both layouts. zxbc
+frames can sit at odd addresses, which a word-stepped stack scan misses.
 
 **`--debug=FILE` changes the code zxbc generates.** Every zxbc run whose output must match the
 debugged program passes it (`BorielCompiler`'s `sameCode`). Without it the Next ran a `.nex` shifted
@@ -54,29 +62,23 @@ the `.bin` image now gets a `ZXBC-D` warning. Details: plan §6 and `.ai/boriel/
 
 ```
 npx electron-vite build --config build/electron.vite.config.ts
-node scripts/boriel-ide-check.cjs [run|debug|next|export]
+node scripts/boriel-ide-check.cjs [run|debug|next|export|banked]
 ```
 
-It needs `~/zxbasic2` or `BORIEL_ROOT`; `next` and `export` also need `~/Klive/ks2.cim`. A kit
+It needs `~/zxbasic2` or `BORIEL_ROOT`; `next`, `export` and `banked` also need `~/Klive/ks2.cim`. A kit
 unpacked from `vendor/boriel-basic/kits/` works as `BORIEL_ROOT` once `xattr -dr
-com.apple.quarantine` has been run on it. All parts take about five minutes.
+com.apple.quarantine` has been run on it. All parts take about seven minutes.
 
 ## Next steps, in order
 
-1. **Phase B5** (plan §7):
-   - banked 128K: build with `-f z80 -B -a` and read the snapshot's banks into segments. That run
-     produces the code Klive debugs, so it must pass `--debug` (see the trap above);
-   - banked Next: the `.nex` carries the banks;
-   - a decoder for zxbc's far-call trampoline (`extensions.codebank.callFar`), so the call stack
-     walks through bank switches.
-
-   Partition numbering is settled in `.ai/boriel/dbg-observed.md` (128K: 16K bank; Next: first
-   8K page + offset).
-2. **Phase B6:**
+1. **Phase B6:**
    - the settings row and status bar (plan §8);
    - the `.plans/LANDING_PAGE_COMPETITIVE_ANALYSIS.md` tables (standing instruction in `AGENTS.md`);
    - the Next BASIC template uses CODEBANK, which Boriel cannot compile, so it is not yet a shared
      template.
+2. **Banked gaps** (plan §7 "Not covered"): Step Over/Out across a far call need a core test;
+   on the Next a routine crossing `$E000` keeps its start's page; exporting a banked 128K build
+   (TAP/TZX) is untested.
 3. **Unverified platforms.** The x86_64 Linux and Windows kits have never been run. Unchecked on
    Windows: Windows `;` as the `-I` separator (`boriel-options.ts`), and skipping the 34.5 MB of
    `.pdb` files.
@@ -86,10 +88,13 @@ com.apple.quarantine` has been run on it. All parts take about five minutes.
 - **Tests:**
   - Unit: `test/main/boriel-*.test.ts`, `test/main/tool-install-archive.test.ts`,
     `test/boriel/dbg-adapter.test.ts`, `test/dialogs/boriel/`.
-  - Core (e2e-kbasic tier): `test/boriel/boriel-debugger.test.ts` (48K), `test/boriel/boriel-next.test.ts` (Next).
+  - Unit: also `test/main/boriel-banked.test.ts` (finding a banked program in zxbc's output).
+  - Core (e2e-kbasic tier): `test/boriel/boriel-debugger.test.ts` (48K), `test/boriel/boriel-next.test.ts` (Next),
+    `test/boriel/boriel-banked.test.ts` (banked, 128K and Next; the sp128 harness has debugger methods now).
 - **Fixtures** are zxbc output for Klive's own programs, committed under decision B-T1. Never edit
   them by hand: `npm run boriel:fixtures -- <path to zxbc>`. A new one is a folder with `program.bas`
-  and `fixture.json` (`"nex": true` adds a `.nex`).
+  and `fixture.json` (`"nex": true` adds a `.nex`; `"banked": true` builds `--split-modules` into
+  `program.z80` or `program.nex`; `"from"` builds another fixture's sources).
 - **The real zxbc in tests:** `boriel-install-service.test.ts` and `boriel-compiler.test.ts` install
   the kit into a temp folder and run it when `vendor/boriel-basic/kits/` holds this platform's kit.
   `npm run dev` fetches it.

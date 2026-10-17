@@ -7,7 +7,11 @@ import { join } from "node:path";
 import type { MachineConfigSet, MachineModel } from "@common/machines/info-types";
 import { MI_SPECTRUM_3E, MI_SPECTRUM_48 } from "@common/machines/constants";
 import { machineRegistry } from "@common/machines/machine-registry";
+import { bankSpaceFor } from "@common/annotations/bankSpace";
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
+import { connectConditionSupport } from "@emu/machines/conditionStore";
+import { DebugSupport } from "@emu/machines/DebugSupport";
+import type { MachineView } from "@emu/machines/SourceStepDecision";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { ZxSpectrum48WasmV2Machine } from "@emu/machines/zxSpectrum48/ZxSpectrum48WasmV2Machine";
 import { ZxSpectrum128WasmV2Machine } from "@emu/machines/zxSpectrum128/ZxSpectrum128WasmV2Machine";
@@ -602,6 +606,58 @@ export class Sp128TestSession {
   /** A byte of the 64K the CPU sees */
   peek(address: number): number {
     return this.machine.doReadMemory(address & 0xffff);
+  }
+
+  peekWord(address: number): number {
+    return this.peek(address) | (this.peek(address + 1) << 8);
+  }
+
+  // ==========================================================================================
+  // Breakpoints
+
+  /**
+   * Attaches a fresh `DebugSupport` (the emulator's breakpoint store) in this machine's bank space,
+   * as `MachineService` creates it, and returns it: a partition is a 16K bank here.
+   */
+  attachDebugSupport(): DebugSupport {
+    const debugSupport = new DebugSupport(undefined, [], bankSpaceFor(this.machine.machineId));
+    connectConditionSupport(debugSupport, this.machine);
+    this.machine.executionContext.debugSupport = debugSupport;
+    return debugSupport;
+  }
+
+  /** Continues in debug mode until a breakpoint stops the machine; returns the PC. */
+  continueToBreakpoint(options: { returnTo?: number } & RunLimit = {}): number {
+    const { maxFrames = 100, returnTo } = options;
+    const ctx = this.machine.executionContext;
+    if (!ctx.debugSupport) throw new Error("Call attachDebugSupport() first.");
+    ctx.debugStepMode = DebugStepMode.StopAtBreakpoint;
+    const limit = this.frames + maxFrames;
+    try {
+      while (true) {
+        if (this.frames >= limit) throw new Error(`No breakpoint hit in ${maxFrames} frames (PC=${hex4(this.machine.pc)})`);
+        if (this.execute() === FrameTerminationMode.DebugEvent) return this.machine.pc;
+        if (returnTo !== undefined && this.machine.pc === returnTo) {
+          throw new Error(`The program returned to ${hex4(returnTo)} without hitting a breakpoint.`);
+        }
+      }
+    } finally {
+      ctx.debugStepMode = DebugStepMode.NoDebug;
+    }
+  }
+
+  /** The machine as the source-level debugger reads it: registers, memory and PC's partition. */
+  machineView(): MachineView {
+    const m = this.machine;
+    return {
+      pc: m.pc,
+      sp: m.sp,
+      ix: m.ix,
+      readWord: (a: number) => this.peekWord(a),
+      readByte: (a: number) => this.peek(a),
+      partitionOf: (a: number) => m.getPartition(a & 0xffff),
+      interruptDepth: m.getInterruptDepth()
+    };
   }
 
   /** A RAM bank (0-7), as stored */

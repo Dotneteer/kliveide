@@ -48,6 +48,8 @@ export type KBasicOptions = {
   nexStack?: number;
   nexLoadingScreen?: string;
   nexCore: string;
+  /** Boriel BASIC only: each MODULE in its own RAM bank (zxbc's `--split-modules`). */
+  splitModules: boolean;
 };
 
 export function defaultOptions(target: Target = "zx48k"): KBasicOptions {
@@ -80,6 +82,7 @@ export function defaultOptions(target: Target = "zx48k"): KBasicOptions {
     emitAsm: false,
     emitIr: false,
     emitMap: false,
+    splitModules: false,
     debugInfo: "full",
     asmDialect: "zxbasm",
     codebankWindow: 0x6000,
@@ -198,7 +201,13 @@ export const OPTION_SPECS: readonly OptionSpec[] = [
   { name: "nex-entry", value: ADDRESS, describe: "the NEX entry address", apply: set("nexEntry") },
   { name: "nex-stack", value: ADDRESS, describe: "the NEX stack address", apply: set("nexStack") },
   { name: "nex-loading-screen", value: { kind: "text" }, describe: "the NEX loading screen file", apply: set("nexLoadingScreen") },
-  { name: "nex-core", value: { kind: "version" }, describe: "the minimum core version of the NEX", apply: set("nexCore") }
+  { name: "nex-core", value: { kind: "version" }, describe: "the minimum core version of the NEX", apply: set("nexCore") },
+  {
+    name: "split-modules",
+    value: flag,
+    describe: "Boriel BASIC: put each USEd MODULE in a RAM bank of its own (--split-modules)",
+    apply: set("splitModules")
+  }
 ];
 
 export const OPTIONS_BY_NAME = new Map(OPTION_SPECS.map((o) => [o.name, o]));

@@ -17,6 +17,11 @@ and a timeout that kills the process.
   zx48k and zxnext alike. So **every output that must match the debugged code is built with
   `--debug`**: the `.nex`, and the `asm`/`ir` listings. The `.dbg` written beside a `-f nex` run is
   byte-identical to the `-f bin` run's.
+- **`USE` searches only the module path (`-m`), which defaults to the cwd**, not the source's
+  folder, with or without `--split-modules`. `-m` takes a `:`-separated list. Klive passes the
+  source's folder, then the include folders.
+- **`--split-modules` on zx48k is an argument error** (exit 2: "architecture 'zx48k' declares no
+  banks to split into").
 - `--version` prints `zxbc 2.0.0-beta25` and exits 0. It takes about 1 s on a cold launch.
 - **`-d` takes no value. Only `--debug=FILE` sets the path.** `-d=FILE` is an argument error, and so is
   `-d FILE`, because the path is read as the program.

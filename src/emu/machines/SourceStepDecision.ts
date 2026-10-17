@@ -242,13 +242,22 @@ export function stackReader(index: SourceDebugIndex, m: MachineView, limit: numb
   const cb = index.codebank;
   const far: { slot: number; ret: number; bank: number }[] = [];
   if (cb && m.readByte) {
-    const records = Math.max(0, Math.floor((m.readWord(cb.shadowStackPointer) - cb.shadowStack) / 3));
+    // --- zxbc pushes 4-byte records downwards from the area's end; Klive's grow up in 3-byte steps
+    const zxbc = cb.shadowStackKind === "zxbc";
+    const pointer = m.readWord(cb.shadowStackPointer);
+    const records = Math.max(0, Math.floor(zxbc ? (cb.shadowStack - pointer) / 4 : (pointer - cb.shadowStack) / 3));
     const slots: number[] = [];
-    for (let p = m.sp; p < limit; p += 2) if (m.readWord(p) === cb.farReturn) slots.push(p);
-    // --- The outermost slot is the oldest record; slots beyond the records (none, normally) stay unpaired
+    // --- zxbc's frames hold byte-sized locals, so a return slot may sit at an odd address: every
+    // --- byte is a candidate there. Klive BASIC keeps the stack word-aligned.
+    const stride = zxbc ? 1 : 2;
+    for (let p = m.sp; p < limit; p += stride) if (m.readWord(p) === cb.farReturn) slots.push(p);
+    // --- The outermost slot is the oldest record. Unpaired: a record without its slot (paused in the
+    // --- far return) and, with zxbc, a slot without its record (paused in the far call, which
+    // --- replaces the slot first); both are the newest, so pairing from the oldest end stays right
     for (let k = 0; k < Math.min(records, slots.length); k++) {
-      const record = cb.shadowStack + 3 * k;
-      far.push({ slot: slots[slots.length - 1 - k], bank: m.readByte(record), ret: m.readWord(record + 1) });
+      const record = zxbc ? cb.shadowStack - 4 * (k + 1) : cb.shadowStack + 3 * k;
+      const bank = zxbc ? m.readByte(record + 3) & (cb.bankMask ?? 0xff) : m.readByte(record);
+      far.push({ slot: slots[slots.length - 1 - k], bank, ret: m.readWord(zxbc ? record : record + 1) });
     }
     far.sort((a, b) => a.slot - b.slot);
   }

@@ -1,0 +1,684 @@
+{
+  "format": "zx-source-debug",
+  "version": 1,
+  "architecture": "zx128k",
+  "binaryLength": 20028,
+  "binaryChecksum": 206347084,
+  "sourceLevelDebug": {
+    "language": "basic",
+    "files": [
+      {
+        "index": 0,
+        "filename": "big1.bas"
+      },
+      {
+        "index": 1,
+        "filename": "shade.bas"
+      },
+      {
+        "index": 2,
+        "filename": "big2.bas"
+      },
+      {
+        "index": 3,
+        "filename": "big3.bas"
+      },
+      {
+        "index": 4,
+        "filename": "program.bas"
+      }
+    ],
+    "statements": [
+      {
+        "index": 8,
+        "fileIndex": 4,
+        "startLine": 9,
+        "startColumn": 0,
+        "endLine": 9,
+        "endColumn": 19,
+        "startAddress": 32852,
+        "endAddress": 32869,
+        "kind": "normal",
+        "callableIndex": 0,
+        "callTargets": []
+      },
+      {
+        "index": 9,
+        "fileIndex": 4,
+        "startLine": 10,
+        "startColumn": 0,
+        "endLine": 10,
+        "endColumn": 29,
+        "startAddress": 32869,
+        "endAddress": 32890,
+        "kind": "normal",
+        "callableIndex": 0,
+        "callTargets": []
+      },
+      {
+        "index": 10,
+        "fileIndex": 4,
+        "startLine": 11,
+        "startColumn": 0,
+        "endLine": 11,
+        "endColumn": 29,
+        "startAddress": 32890,
+        "endAddress": 32916,
+        "kind": "normal",
+        "callableIndex": 0,
+        "callTargets": []
+      },
+      {
+        "index": 11,
+        "fileIndex": 4,
+        "startLine": 12,
+        "startColumn": 0,
+        "endLine": 12,
+        "endColumn": 11,
+        "startAddress": 32916,
+        "endAddress": 32928,
+        "kind": "normal",
+        "callableIndex": 0,
+        "callTargets": []
+      },
+      {
+        "index": 12,
+        "fileIndex": 4,
+        "startLine": 12,
+        "startColumn": 0,
+        "endLine": 13,
+        "endColumn": 0,
+        "startAddress": 32928,
+        "endAddress": 32928,
+        "kind": "normal",
+        "callableIndex": 0,
+        "callTargets": []
+      },
+      {
+        "index": 14,
+        "fileIndex": 0,
+        "startLine": 314,
+        "startColumn": 4,
+        "endLine": 316,
+        "endColumn": 10,
+        "startAddress": 55178,
+        "endAddress": 55185,
+        "kind": "normal",
+        "partition": 0,
+        "callableIndex": 0,
+        "callTargets": []
+      },
+      {
+        "index": 13,
+        "fileIndex": 0,
+        "startLine": 315,
+        "startColumn": 0,
+        "endLine": 315,
+        "endColumn": 24,
+        "startAddress": 55185,
+        "endAddress": 55234,
+        "kind": "normal",
+        "partition": 0,
+        "callableIndex": 0,
+        "callTargets": []
+      },
+      {
+        "index": 15,
+        "fileIndex": 0,
+        "startLine": 317,
+        "startColumn": 4,
+        "endLine": 317,
+        "endColumn": 12,
+        "startAddress": 55234,
+        "endAddress": 61273,
+        "kind": "normal",
+        "partition": 0,
+        "callableIndex": 0,
+        "callTargets": []
+      },
+      {
+        "index": 18,
+        "fileIndex": 2,
+        "startLine": 314,
+        "startColumn": 0,
+        "endLine": 314,
+        "endColumn": 30,
+        "startAddress": 61273,
+        "endAddress": 61303,
+        "kind": "normal",
+        "partition": 0,
+        "callableIndex": 0,
+        "callTargets": []
+      },
+      {
+        "index": 19,
+        "fileIndex": 2,
+        "startLine": 315,
+        "startColumn": 4,
+        "endLine": 315,
+        "endColumn": 12,
+        "startAddress": 61303,
+        "endAddress": 61331,
+        "kind": "normal",
+        "partition": 0,
+        "callableIndex": 0,
+        "callTargets": []
+      },
+      {
+        "index": 20,
+        "fileIndex": 1,
+        "startLine": 7,
+        "startColumn": 0,
+        "endLine": 7,
+        "endColumn": 17,
+        "startAddress": 61331,
+        "endAddress": 61348,
+        "kind": "normal",
+        "partition": 0,
+        "callableIndex": 0,
+        "callTargets": []
+      },
+      {
+        "index": 21,
+        "fileIndex": 1,
+        "startLine": 8,
+        "startColumn": 4,
+        "endLine": 8,
+        "endColumn": 12,
+        "startAddress": 61348,
+        "endAddress": 61348,
+        "kind": "normal",
+        "partition": 0,
+        "callableIndex": 0,
+        "callTargets": []
+      },
+      {
+        "index": 22,
+        "fileIndex": 3,
+        "startLine": 312,
+        "startColumn": 4,
+        "endLine": 312,
+        "endColumn": 19,
+        "startAddress": 55172,
+        "endAddress": 55172,
+        "kind": "normal",
+        "partition": 1,
+        "callableIndex": 0,
+        "callTargets": []
+      }
+    ],
+    "callables": [
+      {
+        "index": 0,
+        "name": "main",
+        "kind": "entrypoint",
+        "fileIndex": 4,
+        "line": 1,
+        "entryAddress": 32768,
+        "exitAddresses": [
+          32933
+        ]
+      },
+      {
+        "index": 1,
+        "name": "Sum",
+        "kind": "function",
+        "fileIndex": 0,
+        "line": 311,
+        "partition": 0,
+        "entryAddress": 55164,
+        "exitAddresses": [
+          55240
+        ]
+      },
+      {
+        "index": 2,
+        "name": "Weigh",
+        "kind": "function",
+        "fileIndex": 2,
+        "line": 312,
+        "partition": 0,
+        "entryAddress": 61261,
+        "exitAddresses": [
+          61309
+        ]
+      },
+      {
+        "index": 3,
+        "name": "Mix",
+        "kind": "function",
+        "fileIndex": 1,
+        "line": 5,
+        "partition": 0,
+        "entryAddress": 61319,
+        "exitAddresses": [
+          61354
+        ]
+      },
+      {
+        "index": 4,
+        "name": "Peek3",
+        "kind": "function",
+        "fileIndex": 3,
+        "line": 311,
+        "partition": 1,
+        "entryAddress": 55164,
+        "exitAddresses": [
+          55186
+        ]
+      }
+    ],
+    "addressToStatement": [
+      [
+        32852,
+        8
+      ],
+      [
+        32869,
+        9
+      ],
+      [
+        32890,
+        10
+      ],
+      [
+        32916,
+        11
+      ],
+      [
+        32928,
+        12
+      ]
+    ],
+    "usesBanking": true,
+    "partitionedAddressMap": [
+      {
+        "partition": 0,
+        "map": [
+          [
+            55178,
+            14
+          ],
+          [
+            55185,
+            13
+          ],
+          [
+            55234,
+            15
+          ],
+          [
+            61273,
+            18
+          ],
+          [
+            61303,
+            19
+          ],
+          [
+            61331,
+            20
+          ],
+          [
+            61348,
+            21
+          ]
+        ]
+      },
+      {
+        "partition": 1,
+        "map": [
+          [
+            55172,
+            22
+          ]
+        ]
+      }
+    ],
+    "extensions": {
+      "frames": [
+        {
+          "callableIndex": 0,
+          "convention": "entrypoint",
+          "returnSlotOffset": 0,
+          "argBytes": 0,
+          "startAddress": 32768,
+          "bodyStart": 32816,
+          "epilogueStart": 32933
+        },
+        {
+          "callableIndex": 1,
+          "convention": "frame",
+          "returnSlotOffset": 5,
+          "argBytes": 2,
+          "startAddress": 55164,
+          "bodyStart": 55178,
+          "epilogueStart": 55240,
+          "endAddress": 55249,
+          "returnType": "uinteger"
+        },
+        {
+          "callableIndex": 2,
+          "convention": "frame",
+          "returnSlotOffset": 4,
+          "argBytes": 2,
+          "startAddress": 61261,
+          "bodyStart": 61273,
+          "epilogueStart": 61309,
+          "endAddress": 61318,
+          "returnType": "uinteger"
+        },
+        {
+          "callableIndex": 3,
+          "convention": "frame",
+          "returnSlotOffset": 4,
+          "argBytes": 4,
+          "startAddress": 61319,
+          "bodyStart": 61331,
+          "epilogueStart": 61354,
+          "endAddress": 61364,
+          "returnType": "uinteger"
+        },
+        {
+          "callableIndex": 4,
+          "convention": "frame",
+          "returnSlotOffset": 2,
+          "argBytes": 2,
+          "startAddress": 55164,
+          "bodyStart": 55172,
+          "epilogueStart": 55186,
+          "endAddress": 55195,
+          "returnType": "ubyte"
+        }
+      ],
+      "mainBaselineSymbol": 32809,
+      "callSites": [
+        {
+          "returnAddress": 32865,
+          "statementIndex": 8,
+          "calleeIndex": 1,
+          "kind": "function",
+          "order": 0,
+          "moreCallsFollow": false
+        },
+        {
+          "returnAddress": 32882,
+          "statementIndex": 9,
+          "calleeIndex": 2,
+          "kind": "function",
+          "order": 0,
+          "moreCallsFollow": false
+        },
+        {
+          "returnAddress": 32904,
+          "statementIndex": 10,
+          "calleeIndex": 4,
+          "kind": "function",
+          "order": 0,
+          "moreCallsFollow": false
+        },
+        {
+          "returnAddress": 61296,
+          "statementIndex": 18,
+          "callerIndex": 2,
+          "calleeIndex": 3,
+          "kind": "function",
+          "partition": 0,
+          "order": 0,
+          "moreCallsFollow": false
+        }
+      ],
+      "variables": [
+        {
+          "name": "total",
+          "displayName": "total",
+          "type": "uinteger",
+          "kind": "global",
+          "location": {
+            "at": "absolute",
+            "address": 32814
+          },
+          "byRef": false,
+          "scope": "global",
+          "declaredAt": {
+            "fileIndex": 4,
+            "line": 8
+          }
+        },
+        {
+          "name": "count",
+          "displayName": "count",
+          "type": "ubyte",
+          "kind": "parameter",
+          "location": {
+            "at": "frame",
+            "ixOffset": 5
+          },
+          "byRef": false,
+          "scope": {
+            "callableIndex": 1
+          },
+          "declaredAt": {
+            "fileIndex": 0,
+            "line": 311
+          },
+          "bank": 0
+        },
+        {
+          "name": "s",
+          "displayName": "s",
+          "type": "uinteger",
+          "kind": "local",
+          "location": {
+            "at": "frame",
+            "ixOffset": -3
+          },
+          "byRef": false,
+          "scope": {
+            "callableIndex": 1
+          },
+          "declaredAt": {
+            "fileIndex": 0,
+            "line": 312
+          },
+          "bank": 0
+        },
+        {
+          "name": "i",
+          "displayName": "i",
+          "type": "ubyte",
+          "kind": "local",
+          "location": {
+            "at": "frame",
+            "ixOffset": -1
+          },
+          "byRef": false,
+          "scope": {
+            "callableIndex": 1
+          },
+          "declaredAt": {
+            "fileIndex": 0,
+            "line": 313
+          },
+          "bank": 0
+        },
+        {
+          "name": "k",
+          "displayName": "k",
+          "type": "ubyte",
+          "kind": "parameter",
+          "location": {
+            "at": "frame",
+            "ixOffset": 5
+          },
+          "byRef": false,
+          "scope": {
+            "callableIndex": 2
+          },
+          "declaredAt": {
+            "fileIndex": 2,
+            "line": 312
+          },
+          "bank": 0
+        },
+        {
+          "name": "w",
+          "displayName": "w",
+          "type": "uinteger",
+          "kind": "local",
+          "location": {
+            "at": "frame",
+            "ixOffset": -2
+          },
+          "byRef": false,
+          "scope": {
+            "callableIndex": 2
+          },
+          "declaredAt": {
+            "fileIndex": 2,
+            "line": 313
+          },
+          "bank": 0
+        },
+        {
+          "name": "a",
+          "displayName": "a",
+          "type": "ubyte",
+          "kind": "parameter",
+          "location": {
+            "at": "frame",
+            "ixOffset": 5
+          },
+          "byRef": false,
+          "scope": {
+            "callableIndex": 3
+          },
+          "declaredAt": {
+            "fileIndex": 1,
+            "line": 5
+          },
+          "bank": 0
+        },
+        {
+          "name": "b",
+          "displayName": "b",
+          "type": "ubyte",
+          "kind": "parameter",
+          "location": {
+            "at": "frame",
+            "ixOffset": 7
+          },
+          "byRef": false,
+          "scope": {
+            "callableIndex": 3
+          },
+          "declaredAt": {
+            "fileIndex": 1,
+            "line": 5
+          },
+          "bank": 0
+        },
+        {
+          "name": "m",
+          "displayName": "m",
+          "type": "uinteger",
+          "kind": "local",
+          "location": {
+            "at": "frame",
+            "ixOffset": -2
+          },
+          "byRef": false,
+          "scope": {
+            "callableIndex": 3
+          },
+          "declaredAt": {
+            "fileIndex": 1,
+            "line": 6
+          },
+          "bank": 0
+        },
+        {
+          "name": "i",
+          "displayName": "i",
+          "type": "uinteger",
+          "kind": "parameter",
+          "location": {
+            "at": "frame",
+            "ixOffset": 4
+          },
+          "byRef": false,
+          "scope": {
+            "callableIndex": 4
+          },
+          "declaredAt": {
+            "fileIndex": 3,
+            "line": 311
+          },
+          "bank": 1
+        }
+      ],
+      "codebank": {
+        "window": {
+          "start": 49152,
+          "length": 16384
+        },
+        "defaultPage": 0,
+        "banks": [
+          {
+            "id": 0,
+            "address": 49152,
+            "size": 16384
+          },
+          {
+            "id": 1,
+            "address": 49152,
+            "size": 16384
+          },
+          {
+            "id": 3,
+            "address": 49152,
+            "size": 16384
+          },
+          {
+            "id": 4,
+            "address": 49152,
+            "size": 16384
+          },
+          {
+            "id": 6,
+            "address": 49152,
+            "size": 16384
+          },
+          {
+            "id": 7,
+            "address": 49152,
+            "size": 16384
+          }
+        ],
+        "callFar": {
+          "bytes": [
+            217,
+            14,
+            17,
+            17,
+            51,
+            34,
+            205,
+            145,
+            134
+          ],
+          "slots": [
+            {
+              "offset": 2,
+              "slot": "target_page"
+            },
+            {
+              "offset": 4,
+              "slot": "target_addr"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

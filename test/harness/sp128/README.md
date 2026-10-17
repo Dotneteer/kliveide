@@ -38,7 +38,8 @@ it("pages bank 3 in from a snapshot", async () => {
 | Media | `insertTape(blocks)`, `insertDisk(drive, bytes)` | As the IDE inserts them: a `.dsk` into the +3's drive A or B, a `.trd` / `.scl` into the Pentagon's. |
 | Beta 128 | `createSp128Session("pentagon", { trdosRom })`, `beta128()`, `takeDiskChanges(drive)`, `diskUnsaved(drive)` | The Pentagon's disk interface needs a TR-DOS ROM: the tests in `test/sp128-hw/beta128/` hand it their own stand-in (`test-rom.ts`); `trdosRomFromEnvironment()` reads a real one from `KLIVE_TRDOS_ROM` (Klive cannot ship it). `beta128()` reads the interface and the WD1793 without side effects; `takeDiskChanges` returns the `.trd` sectors the guest wrote, as the controller writes them back. |
 | Screen | `screenChar(row, col)`, `screenLine(row)`, `screenText()` | Text recognised against the 48 BASIC ROM's character set. |
-| Memory | `peek(address)`, `bank(n)` | A byte of the 64K the CPU sees; a RAM bank as stored. |
+| Memory | `peek(address)`, `peekWord(address)`, `bank(n)` | A byte (word) of the 64K the CPU sees; a RAM bank as stored. |
+| Debugger | `attachDebugSupport()`, `continueToBreakpoint({ returnTo?, maxFrames? })`, `machineView()` | The emulator's breakpoint store in the machine's bank space (a partition is a 16K bank), run in debug mode to a stop, and the registers and memory as the source-level debugger reads them. |
 | Paging | `paging()` | `{ bank, rom, shadowScreen, locked }`, plus `specialPaging` and `diskMotor` on the +2E/+3E. |
 | AY | `psgRegister(n)`, `psgSelected()` | A register's value (the selection is restored after reading); the selected register. |
 | ULA | `frameTact()`, `border()` | T-states since the frame started; the border colour. |

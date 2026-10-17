@@ -45,6 +45,12 @@ describe("runFrontEnd", () => {
     expect(result.diagnostics.items.map((d) => [d.code, d.severity])).toEqual([["K012", "info"]]);
   });
 
+  it("accepts Boriel BASIC's '@split-modules and warns K013 that it has no effect here", () => {
+    const result = runFrontEnd("/p/main.bas", "'@split-modules\nPRINT 1\n", files({}), defaultOptions("zx128k"));
+    expect(result.options.splitModules).toBe(true);
+    expect(result.diagnostics.items.map((d) => [d.code, d.severity])).toEqual([["K013", "warning"]]);
+  });
+
   it("does not take the header of a define's text for a file's", () => {
     const result = runFrontEnd("/p/main.bas", "'@define X=1\nPRINT X\n", files({}), defaultOptions());
     expect(result.diagnostics.items).toEqual([]);
