@@ -51,7 +51,11 @@ export function findResourcesFolder(baseDir: string): string | undefined {
 
 /**
  * The app's public folder (ROMs and firmware): `PUBLIC`, a packaged app's resources folder, the
- * renderer's output next to the bundle, or the repository's `src/public` above it
+ * renderer's output next to the bundle, or the repository's `src/public` above it.
+ *
+ * `PUBLIC` counts only when it holds a `roms` folder, like every other candidate: Windows sets
+ * `PUBLIC` for every process (`C:\Users\Public`), and taking that folder made the packaged command
+ * line look for its ROMs there.
  */
 export function findPublicFolder(baseDir: string, env: NodeJS.ProcessEnv): string | undefined {
   if (env.PUBLIC && fs.existsSync(path.join(env.PUBLIC, "roms"))) return env.PUBLIC;
