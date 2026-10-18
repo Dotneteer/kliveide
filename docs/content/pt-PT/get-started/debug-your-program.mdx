@@ -1,0 +1,87 @@
+---
+description: "Definir um ponto de interrupção no programa Z80, iniciá-lo com o depurador, avançar instrução a instrução e ver os registos da CPU a mudar."
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# Depurar o programa
+
+Um depurador permite parar um programa e ver o interior da máquina: que instrução é executada a seguir, o que contêm os registos e o que está na memória. Nesta página, para-se o programa das cores da margem da página anterior e avança-se por ele passo a passo.
+
+## Parar num ponto de interrupção
+
+<Steps>
+
+### Definir um ponto de interrupção
+
+No editor, clique imediatamente à esquerda do número de linha **13**, a linha `out (#fe),a`. Aparece um ponto vermelho: é um **ponto de interrupção**. Clique novamente no ponto para o remover.
+
+### Iniciar a depuração
+
+Clique em **Depurar** na barra de compilação, ou prima <kbd>Ctrl</kbd>+<kbd>F5</kbd>. O Klive compila e inicia o programa como antes, mas agora para quando chega ao ponto de interrupção.
+
+### Abrir a barra lateral Depurar
+
+Clique no ícone **Depurar** na barra de atividades, o segundo a contar de cima.
+
+</Steps>
+
+<Shot
+  src="get-started/debug-paused.webp"
+  alt="O IDE em pausa no ponto de interrupção da linha 13"
+  figure="6.1"
+  caption="Em pausa no ponto de interrupção"
+  markers={["breakpoint", "stepover", "registers"]}
+  width={900}
+/>
+
+1. O ponto de interrupção. A linha realçada é a instrução que é executada **a seguir**: a máquina parou antes de a executar.
+2. Os botões de execução passo a passo na barra de ferramentas: **Entrar**, **Passar por cima** e **Sair**.
+3. O painel **Z80 CPU** mostra os registos. `A` contém `07`, a cor prestes a ser escrita: branco.
+
+## Avançar pelo código
+
+Prima <kbd>F10</kbd> (**Passar por cima**) duas vezes. Cada vez que se prime, é executada uma instrução e a máquina para de novo.
+
+<Shot
+  src="get-started/debug-stepped.webp"
+  alt="O IDE depois de dois passos, parado na instrução HALT"
+  figure="6.2"
+  caption="Duas instruções depois"
+  markers={["current"]}
+  width={900}
+/>
+
+1. A máquina parou em `halt`. Pelo caminho, `out (#fe),a` pôs a margem a branco, e `ld e,25` colocou 25 em `E`; confirme no painel **Z80 CPU**.
+
+Observe também o emulador. A máquina parou a meio do desenho de um fotograma, por isso o ecrã só está desenhado até onde o feixe tinha chegado. A parte tracejada por baixo é ainda o fotograma anterior, e a etiqueta no topo indica exatamente onde está o feixe.
+
+Para o ver, a posição do feixe tem de estar ativa. Se o ecrã do emulador não mostrar a parte tracejada, clique em **Mostrar/ocultar a posição do feixe em pausa** na barra de ferramentas do emulador: o ícone com uma linha entre quatro cantos, que fica realçado enquanto está ativo.
+
+<Shot
+  src="get-started/debug-emulator.webp"
+  alt="O emulador em pausa, desenhado até ao feixe, com o fotograma anterior tracejado por baixo"
+  figure="6.3"
+  caption="O emulador enquanto o programa está em pausa"
+  width={620}
+/>
+
+## Os comandos de execução passo a passo
+
+| Comando | Atalho | O que faz |
+| --- | --- | --- |
+| Continuar | <kbd>F5</kbd> | Executa até ao ponto de interrupção seguinte. |
+| Entrar | <kbd>F11</kbd> (<kbd>F12</kbd> em macOS) | Executa uma instrução. Num `CALL`, para na primeira instrução da sub-rotina. |
+| Passar por cima | <kbd>F10</kbd> | Executa uma instrução. Um `CALL`, um `RST` ou uma instrução de bloco como `LDIR` é executado por completo. |
+| Sair | <kbd>Shift</kbd>+<kbd>F11</kbd> (<kbd>Shift</kbd>+<kbd>F12</kbd> em macOS) | Executa até a sub-rotina atual regressar. |
+| Parar | <kbd>F4</kbd> | Desliga a máquina. |
+
+<Callout type="info" emoji="💡">
+Prima <kbd>F5</kbd> algumas vezes: de cada vez, o programa dá uma volta ao seu ciclo e para novamente no ponto de interrupção, com `A` uma unidade abaixo do valor anterior.
+</Callout>
+
+## Mais para explorar
+
+A barra lateral Depurar tem mais painéis; clique num título para abrir ou fechar um painel. Os últimos botões da barra de ferramentas abrem as vistas **Memória** e **Desmontagem**. [Pontos de interrupção](/en/guides/debugging/breakpoints/) explica as condições, as contagens de ocorrências e os pontos de interrupção de memória, e os outros [guias de depuração](/en/guides/debugging/run-debug/) abordam todas as vistas.
+
+A seguir, escrever [o primeiro programa em BASIC](/pt-PT/get-started/first-basic-program/).

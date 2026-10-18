@@ -126,10 +126,19 @@ tools:
 | W10 | **Proof points**: Next accuracy is unbenchmarked against CSpect/ZEsarUX publicly; sjasmplus debugging tested on 48K only | — | A credibility gap more than a feature gap. |
 
 ### Housekeeping found during the sweep (fix before marketing anything)
-- **Klive BASIC is unreleased.** The BASIC compiler and its debugger are on main after v0.61.0
-  with no CHANGELOG entry. The landing page must not lead with them until a release ships them.
-- **`docs/content/machine-types.mdx` still says the Next is "still in development"**, which
-  contradicts the README.
+- ~~**Klive BASIC is unreleased.**~~ Shipped in v0.63.0 (2026-10-04) as the default compiler, with
+  source-level debugging and editor intelligence.
+- ~~**`docs/content/machine-types.mdx` still says the Next is "still in development"**~~ — fixed
+  (docs site modernization, Phase 0).
+- **Release status as of v0.63.0** (checked against `CHANGELOG.md` on 2026-10-18): shipped — Klive
+  BASIC and its debugger, BASIC editor intelligence, conditional/hit-count breakpoints, logpoints,
+  one-shot breakpoints, memory watchpoints and DeZog comments, `.sna`/`.z80`/`.szx` snapshots and
+  `.kls` states, the tape viewer, IDE + emulator recording, ZX80/ZX81. Not yet released — reverse
+  debugging and the execution history, code coverage, the profiler, unit tests and `klive test`,
+  the Copper/sprite/tilemap/Layer 2 inspectors and layer composition, Pentagon/Timex/Scorpion and
+  TR-DOS, the automation API, Boriel BASIC 2.x integration. The landing page gates each feature
+  on the latest release tag (`docs/` reads it at build time), so these appear when a release ships
+  them.
 - **The README roadmap lists memory and I/O breakpoints and custom ROMs as planned**, but both
   are shipped. The README "Technology" section still describes pure-TypeScript emulators; they
   are now C/WASM.

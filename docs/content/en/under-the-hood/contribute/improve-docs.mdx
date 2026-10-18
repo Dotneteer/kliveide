@@ -1,0 +1,83 @@
+---
+description: "How the Klive documentation site is organised and built, and how to fix a page, add one, or regenerate its screenshots."
+---
+
+import { Callout } from 'nextra/components'
+
+# Improve the documentation
+
+Found a typo, an unclear explanation or something out of date? You can fix it. The documentation is part of Klive's repository, and changes go through pull requests like code changes do. Start by [getting the source code](/en/under-the-hood/contribute/get-source/).
+
+The quickest fix needs no setup: every page has an **Edit this page on GitHub** link at the right, which opens the page's source in GitHub's editor.
+
+## Run the site locally
+
+The site is a [Nextra](https://nextra.site/) site in the `docs/` folder, a separate npm package. Install its dependencies once, then start it:
+
+```bash
+npm run doc:install
+npm run doc:dev
+```
+
+Open http://localhost:3000. Pages reload as you edit them. Before you open a pull request, build the site and run its checks:
+
+```bash
+npm run doc:build && npm run doc:check
+```
+
+The checks catch removed pages, broken links and images, lost syntax highlighting, pages with too many megabytes of images, and broken translations.
+
+## How the site is organised
+
+| Folder | What it holds |
+| --- | --- |
+| `docs/content/en/` | The English pages, in four areas: `get-started/`, `guides/`, `reference/` and `under-the-hood/`. Each folder's `_meta.ts` sets the order and titles of its pages. |
+| `docs/content/<lang>/` | Translations. Only Get Started is translated; do not edit these by hand (see [Translate Klive](/en/under-the-hood/contribute/translate/)). |
+| `docs/public/images/` | Images. Screenshots taken in every language live under `images/<lang>/`. |
+| `docs/landing/`, `docs/i18n/landing/` | The landing page and its text. |
+| `docs/redirects.json` | Old URLs and the pages they moved to. |
+
+## Common tasks
+
+### Fix or extend a page
+
+Edit its `.mdx` file. Pages are Markdown with JSX components: `<Callout>`, `<Steps>` and `<Cards>` from Nextra, and Klive's `<Shot>` and `<ClickableImage>` for images. Look at a page of the same kind for examples.
+
+<Callout type="info" emoji="💡">
+Changing an English Get Started page marks its translations as out of date. That is expected: the translated pages show a notice until they are translated again.
+</Callout>
+
+### Add a page
+
+1. Create the `.mdx` file in the folder where it belongs, with a short, descriptive file name.
+2. Give it front matter with a one-sentence `description`, and one `# Title`.
+3. Add it to the folder's `_meta.ts`, where it fits among the existing pages.
+
+### Move or rename a page
+
+Add the old URL and the new one to `docs/redirects.json`. The build writes a page at the old URL that forwards to the new one, so links from elsewhere keep working. `doc:check` fails if an old URL disappears.
+
+### Add a screenshot
+
+Screenshots are generated, not captured by hand: a recipe in `scripts/doc-shots/recipes/` starts Klive, drives it to the right state and photographs the part of the window you need. That keeps every screenshot consistent and lets anyone regenerate it after the UI changes. Read `.ai/doc-screenshots-guide.md` to write a recipe.
+
+Show a generated screenshot with `<Shot>`:
+
+```jsx
+<Shot
+  src="get-started/debug-paused.webp"
+  alt="The IDE paused at a breakpoint"
+  figure="6.1"
+  caption="Paused at the breakpoint"
+  markers={["breakpoint", "registers"]}
+  width={900}
+/>
+```
+
+`<Shot>` picks the screenshot in the page's language, and draws numbered markers at the points the recipe measured. Explain the markers in a numbered list right under the figure.
+
+For an image that is not a generated screenshot, put the file under `docs/public/images/` and use `<ClickableImage src="/images/..." alt="..." width={512} />`.
+
+### Add a code example
+
+Use a fenced block with a language: `z80klive` for Klive Z80 assembly, `zxbasic` for ZX BASIC (its grammar, `docs/zxbasic.tmLanguage.json`, is generated from the IDE's own keyword lists with `npm run doc:grammar`). A language that is not listed in `docs/next.config.mjs` fails the build. If a Get Started page shows a program, keep the program in `scripts/doc-shots/fixtures/get-started/`: a test builds it and checks that the page shows the same code.

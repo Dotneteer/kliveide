@@ -1,0 +1,110 @@
+---
+description: "Escribe un programa en ensamblador Z80 para el ZX Spectrum Next que coloca un sprite por hardware en la pantalla y lo mueve, y ejecútalo en el emulador del Next de Klive."
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# Tu primer programa para ZX Spectrum Next
+
+El ZX Spectrum Next es un ZX Spectrum moderno con un Z80 más rápido (el Z80N), más memoria y nuevo hardware de vídeo: capas, un tilemap, un Copper y 128 sprites por hardware. En esta página colocarás un sprite en la pantalla y lo moverás de un lado a otro, sin dibujar ni un solo píxel con la CPU.
+
+## Crea el proyecto
+
+Elige **Archivo › Nuevo proyecto...** con estos valores:
+
+- **Tipo de máquina**: ZX Spectrum Next.
+- **Plantilla de proyecto**: `default`.
+- **Nombre del proyecto**: `NextSprites`.
+
+## Escribe el programa
+
+Sustituye el contenido de `code/code.kz80.asm` por este programa y guárdalo:
+
+```z80klive fixture="next-sprite/code/code.kz80.asm"
+; A sprite on the ZX Spectrum Next - the program of Get Started, step 8.
+; It uploads one 16x16 sprite pattern and moves the sprite across the screen.
+
+        .model Next
+        .org #8000
+        .savenex file "NextSprites.nex"   ; the name of the .nex file Klive builds
+
+SPRITE_SLOT  .equ #303b     ; selects the sprite (and pattern) to write
+SPRITE_ATTR  .equ #57       ; writes the selected sprite's attributes
+SPRITE_PATT  .equ #5b       ; writes the selected pattern's bytes
+
+Start:
+        ei
+        nextreg #15,%00000001       ; show sprites (on top of the other layers)
+
+        ; Upload pattern 0: 256 bytes, one per pixel
+        ld bc,SPRITE_SLOT
+        xor a
+        out (c),a                   ; pattern 0
+        ld hl,Ball
+        ld bc,SPRITE_PATT           ; B = 0, so OTIR sends 256 bytes
+        otir
+
+        ld d,32                     ; D is the sprite's X coordinate
+Move:
+        ld bc,SPRITE_SLOT
+        xor a
+        out (c),a                   ; select sprite 0
+        ld a,d
+        out (SPRITE_ATTR),a         ; attribute 0: X (low 8 bits)
+        ld a,120
+        out (SPRITE_ATTR),a         ; attribute 1: Y
+        xor a
+        out (SPRITE_ATTR),a         ; attribute 2: no palette offset, mirror or rotation
+        ld a,%10000000
+        out (SPRITE_ATTR),a         ; attribute 3: visible, pattern 0
+        halt                        ; one step per frame
+        inc d
+        jr Move
+
+; The ball: $E3 is the transparent colour, $E0 red, $FF white
+Ball:
+        .defb $E3,$E3,$E3,$E3,$E3,$E3,$E3,$E0,$E0,$E3,$E3,$E3,$E3,$E3,$E3,$E3
+        .defb $E3,$E3,$E3,$E3,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E3,$E3,$E3,$E3
+        .defb $E3,$E3,$E3,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E3,$E3,$E3
+        .defb $E3,$E3,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E3,$E3
+        .defb $E3,$E0,$E0,$E0,$FF,$FF,$FF,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E3
+        .defb $E3,$E0,$E0,$E0,$FF,$FF,$FF,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E3
+        .defb $E3,$E0,$E0,$E0,$FF,$FF,$FF,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E3
+        .defb $E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0
+        .defb $E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0
+        .defb $E3,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E3
+        .defb $E3,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E3
+        .defb $E3,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E3
+        .defb $E3,$E3,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E3,$E3
+        .defb $E3,$E3,$E3,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E3,$E3,$E3
+        .defb $E3,$E3,$E3,$E3,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E3,$E3,$E3,$E3
+        .defb $E3,$E3,$E3,$E3,$E3,$E3,$E3,$E0,$E0,$E3,$E3,$E3,$E3,$E3,$E3,$E3
+```
+
+Cómo funciona:
+
+- `.savenex file "NextSprites.nex"` da nombre al archivo `.nex` que Klive genera y copia en la tarjeta SD emulada cuando ejecutas el programa.
+- `nextreg #15,%00000001` escribe en el registro del Next `$15`, cuyo bit 0 hace visibles los sprites. `NEXTREG` es una de las nuevas instrucciones del Z80N.
+- El aspecto de un sprite es su **patrón**: 256 bytes para 16 × 16 píxeles, un índice de color por píxel. El puerto `$303B` selecciona el patrón 0, y `OTIR` envía los 256 bytes al puerto `$5B`. El color `$E3` es transparente, así que las esquinas del cuadrado no se ven.
+- La posición de un sprite está en sus **atributos**. El puerto `$303B` selecciona el sprite 0, y cuatro escrituras en el puerto `$57` establecen sus coordenadas X e Y y sus opciones, y lo hacen visible con el patrón 0.
+- El bucle mueve el sprite un píxel a la derecha en cada fotograma. `D` es un byte, así que después de X = 255 vuelve a 0.
+
+## Ejecútalo
+
+Haz clic en **Ejecutar** o pulsa <kbd>F5</kbd>. En el Next, Klive genera un archivo `.nex`, el formato de programa del Next, y lo inicia a través de NextZXOS, el sistema operativo del Next, que arranca desde una tarjeta SD emulada. El primer inicio tarda unos segundos; a partir de entonces, Klive arranca desde un estado guardado del sistema ya iniciado.
+
+<Shot
+  src="get-started/next-running.webp"
+  alt="El emulador del ZX Spectrum Next con un sprite de una pelota roja"
+  figure="8.1"
+  caption="Un sprite por hardware en el Next"
+  width={620}
+/>
+
+<Callout type="info" emoji="💡">
+Cambia `ld a,120` por otro valor y vuelve a ejecutar el programa para mover la pelota hacia arriba o hacia abajo. Para ver los atributos y los patrones de todos los sprites mientras se ejecuta el programa, abre el [Inspector de sprites](/en/guides/next/sprite-inspector/).
+</Callout>
+
+La [referencia del ensamblador para ZX Spectrum Next](/en/reference/z80-assembler/zx-next/) describe las instrucciones del Next, `.savenex` y las demás funciones para el Next del ensamblador de Klive.
+
+A continuación, [guarda y comparte tu trabajo](/es/get-started/save-and-share/).

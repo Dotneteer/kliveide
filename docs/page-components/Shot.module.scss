@@ -1,0 +1,56 @@
+// <Shot>: figure label above, image with numbered markers. Colours come from the site tokens
+// (app/tokens.css), with fallbacks so the component also renders before they load.
+
+.figure {
+  margin: 1.5rem auto;
+  width: 100%;
+}
+
+.label {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.375rem;
+  border-bottom: 1px solid var(--site-line, rgb(127 127 127 / 0.3));
+  font-family: var(--site-font-mono, ui-monospace, Menlo, Consolas, monospace);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--site-muted, #7f8690);
+}
+
+.number {
+  color: var(--site-accent, #45a5e6);
+  white-space: nowrap;
+}
+
+.frame {
+  position: relative;
+  display: block;
+  line-height: 0;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--site-line, rgb(127 127 127 / 0.3));
+
+  img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+}
+
+.marker {
+  position: absolute;
+  width: 1.5rem;
+  height: 1.5rem;
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-items: center;
+  border-radius: 4px;
+  background: var(--site-accent, #45a5e6);
+  color: var(--site-on-accent, #0e0f11);
+  box-shadow: 0 0 0 2px var(--site-bg, #141517);
+  font: 700 0.75rem/1 var(--site-font-mono, ui-monospace, Menlo, Consolas, monospace);
+  pointer-events: none;
+}

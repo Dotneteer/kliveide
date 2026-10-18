@@ -1,0 +1,97 @@
+---
+description: "Laden Sie ZX-Spectrum-Programme aus .tap- und .tzx-Kassettendateien, sofort oder in Echtzeit, und sehen Sie sich mit dem Kassettenbetrachter an, was auf einer Kassette ist."
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# Ein Programm von Kassette laden
+
+ZX-Spectrum-Software wurde auf Musikkassetten verkauft, und heute gibt es sie als `.tap`- und `.tzx`-Dateien: Aufzeichnungen dieser Kassetten. Klive spielt sie der emulierten Maschine vor, wie es ein Kassettenrekorder täte.
+
+## Eine Kassette laden
+
+<Steps>
+
+### Die Kassette einlegen
+
+Wählen Sie **Maschine › Kassette › Kassette einlegen...** (oder **Datei › Datei öffnen...**) und wählen Sie eine `.tap`- oder `.tzx`-Datei. Klive versucht, auch Dateien mit anderen Endungen als Kassette zu lesen.
+
+### LOAD "" eingeben
+
+Starten Sie die Maschine, falls sie nicht läuft, und klicken Sie auf ihren Bildschirm. Drücken Sie auf dem ZX Spectrum 48K <kbd>J</kbd> für `LOAD`, tippen Sie dann zwei Anführungszeichen (zweimal **Symbol Shift**+<kbd>P</kbd>; Symbol Shift ist die rechte <kbd>Alt</kbd>-Taste) und drücken Sie <kbd>Enter</kbd>. Auf einem 128K oder +2 wählen Sie stattdessen **Tape Loader** im Startmenü.
+
+### Auf das Programm warten
+
+Die Maschine lädt, was auf der Kassette ist, und die meisten Programme starten sich nach dem Laden selbst.
+
+</Steps>
+
+<Callout type="info" emoji="💡">
+Sie können die Kassette jederzeit wechseln, auch während die Maschine läuft: Das ist so, als würden Sie eine Kassette auswerfen und eine andere einlegen.
+</Callout>
+
+## Normales und schnelles Laden
+
+Das Laden von ZX-Spectrum-Programmen und -Kassetten kann lange dauern, besonders bei großen Dateien. Neben dem *normalen Laden* unterstützt Klive das *Schnellladen*, das das Programm sofort, in Sekundenbruchteilen, einliest.
+
+Sie schalten das Schnellladen mit dem Befehl **Maschine › Kassette › Schnellladen** (oder unter **Einstellungen › Emulator**) ein oder aus, oder mit einem Klick auf das Symbol **Schneller LOAD-Modus** (die Rakete) in der Symbolleiste.
+
+Sie können den Modus sogar ändern, während ein Spiel lädt. Die Änderung wirkt sich aber erst aus, wenn Sie das nächste Mal ein Programm laden.
+
+<Callout type="info" emoji="💡">
+Standardmäßig ist das Schnellladen eingeschaltet.
+</Callout>
+
+## Die Kassette zurückspulen
+
+Wenn das Laden abgeschlossen ist oder unterbrochen wird, bleibt die Bandposition stehen, als hätten Sie einen echten Kassettenrekorder angehalten. Wenn Sie den Befehl `LOAD` erneut eingeben, sucht der Ladevorgang den nächsten Dateikopf ab der Stelle, an der er angehalten wurde.
+
+Sie können die Kassette an den Anfang zurückspulen, genau wie eine echte Musikkassette. Klicken Sie auf das Symbol **Zurückspulen** in der Symbolleiste (rechts neben der Rakete) oder führen Sie den Befehl **Maschine › Kassette › Zurückspulen** aus.
+
+## Ein Blick in eine Kassette
+
+Öffnen Sie eine `.tap`- oder `.tzx`-Datei im Explorer, um zu sehen, was darauf ist (die Groß- und Kleinschreibung der Endung spielt keine Rolle: `GAME.TAP` lässt sich ebenfalls öffnen). Der Betrachter zeigt:
+
+- **Eine Zusammenfassung**: das Format (und die TZX-Version), die Dateigröße, wie viele Blöcke und Dateien sie enthält, wie lange sie spielt, sowie Titel, Herausgeber und Jahr einer TZX-Datei, die diese Angaben enthält.
+- **Eine Zeitleiste**: die ganze Kassette in Abspielreihenfolge, jeder Block so breit wie die Zeit, die sein Abspielen dauert. Der ausgewählte Block ist umrandet; klicken Sie auf ein Segment, um seinen Block auszuwählen. Ein BASIC-Programm erscheint in der Akzentfarbe, ein Block, den Klive nicht abspielen kann, in Rot.
+- **Die Blöcke**: alle Blöcke in einer Liste, nach Dateien gruppiert. Ein Standard-Header und der darauffolgende Datenblock bilden eine Datei, etwa `Program "Float Spy"` oder `Bytes "float.cde"`. Jede Zeile zeigt, was der Block enthält: `LINE 9996` bei einem Programm, das sich selbst startet, oder die Ladeadresse bei Code. Mit den Schaltflächen **Alle**, **Daten**, **BASIC**, **Code** und **Nicht gespielt** filtern Sie die Liste, mit den Pfeiltasten bewegen Sie sich darin.
+
+Die Details neben der Liste beschreiben den ausgewählten Block: seine Länge und Prüfsumme, wann er abgespielt wird, die Felder seines Headers und das Timing eines Turbo-Blocks. Liste und Details stehen immer nebeneinander. Bei einem **BASIC-Programm** sehen Sie, wie viele Zeilen es hat, und ein **Bildschirm** (`SCREEN$`) wird gezeichnet; um das Listing eines Programms oder die Bytes eines Blocks zu lesen, koppeln Sie den Block ab.
+
+<ClickableImage src="/images/getting-started/tape-viewer.png" width={900} />
+
+Wählen Sie einen **Header** aus, um seine 19 Bytes erklärt zu bekommen. Die Bytes sind nach Feldern gruppiert – Flag, Typ, der zehnstellige Name, drei Zwei-Byte-Werte und die Prüfsumme –, darunter steht eine Liste der Felder mit ihren decodierten Werten. Zeigen Sie auf ein Byte oder ein Feld (oder gehen Sie mit der Tabulatortaste durch die Liste), um beide hervorzuheben und zu lesen, was das Feld bedeutet; die Autostart-Zeile eines Programms oder die Ladeadresse von Code ist von Anfang an erklärt. Die drei Zwei-Byte-Werte bedeuten je nach Dateityp etwas anderes, und die Erklärung sagt, was.
+
+<ClickableImage src="/images/getting-started/tape-header-bytes.png" width={560} />
+
+Mit **Abkoppeln** öffnen Sie einen Block vollständig in einem eigenen Dokument: als Speicherauszug (die Vorgabe für Code), als Disassemblierung an der Adresse, an die der Block geladen wird, als vollständiges BASIC-Listing oder als Bildschirm. Verwenden Sie dazu die Schaltfläche neben den Details des Blocks (ihr Pfeil wählt die Ansicht), das Symbol in seiner Zeile, einen Doppelklick oder <kbd>Enter</kbd>. **Zurück** kehrt zur Kassette zurück. Ein Block ohne Header hat keine eigene Ladeadresse: Geben Sie eine in das Feld **Listen ab** ein, um ihn dort zu disassemblieren, und wählen Sie per Rechtsklick **Als BASIC lesen**, wenn Sie wissen, dass er ein Programm enthält.
+
+<Callout type="warning" emoji="⚠️">
+Einige TZX-Blöcke – reine Töne, Impulsfolgen, reine Daten, Direkt- und CSW-Aufzeichnungen, generalisierte Daten – werden zwar angezeigt, von Klive aber **nicht gespielt**. Eine Kassette, die sie benötigt, ist mit einem Banner gekennzeichnet, und das Laden kann fehlschlagen.
+</Callout>
+
+## Eine Kassette aus der IDE laden
+
+Auf einem ZX Spectrum 48K, 128K oder +2/+3 hat die Registerkarte des Kassettenbetrachters drei Schaltflächen, und das Kontextmenü des Explorers für eine `.tap`- oder `.tzx`-Datei enthält dieselben drei Einträge:
+
+<ClickableImage src="/images/getting-started/tape-viewer-commands.png" width={900} />
+
+- **Kassette laden und ausführen** (Play-Symbol) setzt die Maschine zurück und startet das Laden der Kassette: Auf einem 48K tippt es `LOAD ""`, auf einem 128K oder +2 wählt es **Tape Loader** im Startmenü (**Loader** auf einem +2A/+3, der stattdessen von Diskette bootet, wenn eine in Laufwerk A liegt). Danach läuft der Loader der Kassette, wie er es auf der echten Maschine täte.
+- **Kassette einlegen** (Kassettensymbol) legt die Kassette ohne Zurücksetzen in das Laufwerk ein, wie **Maschine › Kassette › Kassette einlegen...**. Wenn Sie die Kassette einlegen, die bereits im Laufwerk ist, wird sie zurückgespult.
+- **Kassette laden und debuggen** (Debug-Symbol) entspricht **Kassette laden und ausführen**, mit scharf geschalteten Haltepunkten.
+
+<ClickableImage src="/images/getting-started/tape-viewer-loaded.png" width={720} />
+
+Auf jeder anderen Maschine, etwa dem ZX Spectrum Next, sind die Schaltflächen und Menüeinträge deaktiviert; der Tooltip einer Schaltfläche nennt den Grund. Dieselben Aktionen stehen auch als Befehl [`tape-load`](/en/reference/commands#tape-load) zur Verfügung.
+
+## Wie das Schnellladen funktioniert
+
+Das Schnellladen nutzt eine wirkungsvolle Technik: ROM-Hooking. Während der Emulator läuft, überwacht er das Register `PC` auf den Einsprungpunkt der Laderoutine im ROM, und zwar bei jedem ZX-Spectrum-Modell.
+
+Erreicht die Ausführung die Laderoutine, unterbricht das Schnellladen die Maschine und schreibt die Daten aus der Kassettendatei direkt in den Speicher. Dabei setzt der Algorithmus die Z80-Register (einschließlich der Flags) genauso, wie es der Algorithmus im ROM tun würde.
+
+Sobald die Daten geladen sind, setzt der Mechanismus den Wert des Registers `PC` auf den Ausstiegspunkt der Laderoutine, als hätte die CPU sie ausgeführt, und verlässt den Schnellmodus.
+
+Tritt beim Laden ein Fehler auf, setzt das Schnellladen `PC` auf den Anfang der Routine, die einen Kassettenfehler meldet.
+
+Als Nächstes lernen Sie [die IDE](/de/get-started/meet-the-ide/) kennen.

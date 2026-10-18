@@ -1,0 +1,96 @@
+---
+description: "Egy emulált ZX Spectrum elindítása, egy BASIC program begépelése és futtatása, valamint egy másik gép kiválasztása."
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# Ismerkedés az emulátorral
+
+Indításkor a Klive az emulátorablakot mutatja egy kikapcsolt géppel. Ez az oldal bemutatja, hogyan kapcsolhatjuk be, hogyan gépelhetünk be egy programot, és hogyan választhatunk másik gépet.
+
+<Shot
+  src="get-started/emulator-off.webp"
+  alt="Az emulátorablak egy kikapcsolt géppel"
+  figure="2.1"
+  caption="Az emulátor a gép elindítása előtt"
+  markers={["toolbar", "screen"]}
+  width={620}
+/>
+
+1. Az eszköztárral indíthatjuk, szüneteltethetjük, állíthatjuk le és indíthatjuk újra a gépet. Az első gomb, a zöld háromszög, a **Gép futtatása**.
+2. A képernyő. Amíg a gép nem indul el, egy rövid tippet mutat arról, hogyan indítható.
+
+## A gép indítása
+
+Nyomjuk meg az <kbd>F5</kbd> billentyűt, kattintsunk az eszköztár **Gép futtatása** gombjára, vagy válasszuk a **Gép › Indítás** menüpontot. Egy pillanat múlva a ZX Spectrum megjeleníti a szerzői jogi üzenetét, pontosan úgy, ahogy az igazi gép tette 1982-ben.
+
+<Shot
+  src="get-started/emulator-running.webp"
+  alt="A ZX Spectrum 48K a szerzői jogi üzenetével"
+  figure="2.2"
+  caption="A ZX Spectrum 48K elindult"
+  width={620}
+/>
+
+## Egy BASIC program begépelése
+
+Kattintsunk az emulátor képernyőjére, hogy az kapja meg a billentyűleütéseket. A ZX Spectrum 48K a BASIC **kulcsszavakat** egyetlen billentyűvel viszi be: a sor elején a kurzor **K** betűt mutat, és a <kbd>P</kbd> megnyomása a teljes `PRINT` szót beírja.
+
+<Steps>
+
+### A sor begépelése
+
+Gépeljük be: <kbd>1</kbd> <kbd>0</kbd>, majd a `PRINT` kulcsszóhoz nyomjuk meg a <kbd>P</kbd> billentyűt. Az idézőjelhez tartsuk lenyomva a **Symbol Shift** billentyűt, és nyomjuk meg a <kbd>P</kbd> billentyűt. A Klive-ban a Symbol Shift a **jobb oldali Alt** billentyű (Macen a jobb oldali **Option** billentyű). Gépeljük be a `hello` szót, majd ugyanígy a záró idézőjelet, és nyomjuk meg az <kbd>Enter</kbd> billentyűt.
+
+<Shot
+  src="get-started/emulator-basic-line.webp"
+  alt="A 10 PRINT &quot;hello&quot; BASIC sor a programlistában"
+  figure="2.3"
+  caption="A sor bekerült a programba"
+  width={620}
+/>
+
+### Futtatás
+
+Nyomjuk meg az <kbd>R</kbd> billentyűt, amely a `RUN` parancsot írja be, majd az <kbd>Enter</kbd> billentyűt. A program kiírja, hogy `hello`, és a `0 OK, 10:1` üzenetet adja: hiba nélkül ért véget, a 10-es sor 1. utasításánál.
+
+<Shot
+  src="get-started/emulator-hello.webp"
+  alt="A program kiírta, hogy hello"
+  figure="2.4"
+  caption="Lefutott az első program"
+  width={620}
+/>
+
+</Steps>
+
+<Callout type="info" emoji="💡">
+Ha nehéz megjegyezni a kulcsszavak billentyűit, jelenítsük meg a **virtuális billentyűzetet** az emulátor eszköztárának billentyűzet gombjával vagy a **Nézet › Virtuális billentyűzet** menüponttal. Minden kulcsszót mutat, és a billentyűire kattintani is lehet. Lásd: [A billentyűzet (angolul)](/en/guides/emulator/keyboard/).
+</Callout>
+
+## A gép vezérlése
+
+| Művelet | Billentyű | Eszköztár |
+| --- | --- | --- |
+| Indítás vagy folytatás | <kbd>F5</kbd> | **Gép futtatása** (zöld háromszög) |
+| Szüneteltetés | <kbd>Shift</kbd>+<kbd>F5</kbd> | **Szüneteltetés** |
+| Leállítás (kikapcsolás) | <kbd>F4</kbd> | **Leállítás** |
+| Újraindítás | <kbd>Shift</kbd>+<kbd>F4</kbd> | **Újraindítás** |
+
+A leállított gép nem folytatható, de a memóriája és a regiszterei az IDE-ben továbbra is megtekinthetők.
+
+## Másik gép kiválasztása
+
+A **Gép › Géptípus** menü a kedvenc gépeinket sorolja fel. A **Gép kiválasztása…** menüpont (macOS-en <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>M</kbd>, Windowson és Linuxon <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>M</kbd>) egy párbeszédablakot nyit meg, amely a Klive által emulált összes modellt tartalmazza. Ugyanez az emulátor állapotsorának jobb szélén látható gépnévre kattintva is elérhető.
+
+<Shot
+  src="get-started/select-machine.webp"
+  alt="A Gép kiválasztása párbeszédablak, kijelölt ZX Spectrum 48K-val"
+  figure="2.5"
+  caption="Minden modell, a hardveres részleteivel együtt"
+  width={760}
+/>
+
+Egy modell megkereséséhez gépeljünk a szűrőmezőbe (például `128K` vagy `NTSC`), a modellt kijelölve megtekinthetjük a részleteit, dupla kattintással pedig átválthatunk rá. A csillag felveszi a modellt a **Géptípus** menübe. A [Géptípusok (angolul)](/en/reference/machine-types/) oldal az összes gépet és modellt felsorolja.
+
+Következő lépésként [töltsünk be egy programot kazettáról](/hu/get-started/load-from-tape/).

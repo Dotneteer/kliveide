@@ -31,6 +31,7 @@ import {
 } from "@common/state/actions";
 import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
 import { hasSourceLevelDebug, isInjectableCompilerOutput } from "@renderer/appIde/utils/compiler-utils";
+import { nexFileNameOf, sdCardNexName } from "@renderer/appIde/utils/nex-file-name";
 import { createSourceDebugSidecar, sidecarProgramOf, sourceDebugSidecarPath } from "@common/utils/source-debug-sidecar";
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
 import { machineRegistry } from "@common/machines/machine-registry";
@@ -1046,7 +1047,10 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
           new Uint8Array(prebuiltNex),
           `kliveHome:${EXPORT_FILE_FOLDER}`
         );
-        await context.mainApi.copyToSdCard(prebuiltPath, "_klive/" + compiledOutput.nexConfig.filename);
+        await context.mainApi.copyToSdCard(
+          prebuiltPath,
+          "_klive/" + sdCardNexName(compiledOutput.nexConfig.filename, prebuiltPath)
+        );
         // --- The same debug sidecar Klive BASIC's NEX gets, so `nex-run -d` debugs it at source level
         if (hasSourceLevelDebug(output)) {
           const sidecarFile = await context.mainApi.saveTextFile(
@@ -1084,7 +1088,10 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
         `kliveHome:${EXPORT_FILE_FOLDER}`
       );
 
-      await context.mainApi.copyToSdCard(filePath, "_klive/" + compiledOutput.nexConfig.filename);
+      await context.mainApi.copyToSdCard(
+        filePath,
+        "_klive/" + sdCardNexName(compiledOutput.nexConfig.filename, filePath)
+      );
 
       // --- Source-level debug info (Klive BASIC, plan §8.5) goes beside the NEX, so `nex-run` can
       // --- debug the file at source level without a rebuild
@@ -1238,16 +1245,18 @@ export async function injectCode(
     unitTest = resolved;
   }
   if (isZxNext && compiledOutput.nexConfig) {
-    // --- Export NEX file for Next model
+    // --- Export NEX file for Next model. Without `.savenex file` the name comes from the project
+    // --- folder; the exported file, its SD card copy and the file the run loads share it
+    const nexName = nexFileNameOf(compiledOutput.nexConfig.filename, context.store.getState().project?.folderPath);
     const exportCmd = new ExportCodeCommand();
     const args: ExportCommandArgs = {
-      filename: compiledOutput.nexConfig.filename || "output.nex"
+      filename: nexName
     };
 
     // --- Stop the machine before exporting
     await context.emuApi.issueMachineCommand("stop");
     await exportCmd.exportCompiledCode(context, result, args);
-    additionalInfo = "_klive/" + compiledOutput.nexConfig.filename;
+    additionalInfo = "_klive/" + nexName;
   }
 
   let sumCodeLength = 0;

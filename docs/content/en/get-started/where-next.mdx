@@ -1,0 +1,61 @@
+---
+description: "You have installed Klive, written, run and debugged programs, and exported one. Pick what to learn next."
+---
+
+import { Cards } from 'nextra/components'
+
+# Where to go next
+
+You have met the emulator and the IDE, written a program in Z80 assembly, in ZX BASIC and for the ZX Spectrum Next, debugged two of them, and exported one. Here is where to go from here, by what you want to do.
+
+## Write a game or a demo
+
+<Cards num={2}>
+  <Cards.Card title="ZX BASIC" href="/en/guides/languages/zx-basic/" arrow>
+    The language options, the standard library, inline assembly, and banked code on the 128K and the Next.
+  </Cards.Card>
+  <Cards.Card title="The Klive Z80 Assembler" href="/en/reference/z80-assembler/" arrow>
+    Macros, structs, modules, conditional assembly, and every directive and pragma.
+  </Cards.Card>
+  <Cards.Card title="The build system" href="/en/guides/projects/build-system/" arrow>
+    Customise what Build, Run and Export do with a script.
+  </Cards.Card>
+  <Cards.Card title="Projects and templates" href="/en/guides/projects/creating-projects/" arrow>
+    The project file, the build root, and the templates for each machine.
+  </Cards.Card>
+</Cards>
+
+## Find a bug
+
+<Cards num={2}>
+  <Cards.Card title="Breakpoints" href="/en/guides/debugging/breakpoints/" arrow>
+    Conditions, hit counts, logpoints, and breakpoints on memory and I/O.
+  </Cards.Card>
+  <Cards.Card title="Memory and disassembly" href="/en/guides/debugging/memory/" arrow>
+    Look at any byte of memory, and at the code as the CPU sees it.
+  </Cards.Card>
+</Cards>
+
+## Program the ZX Spectrum Next
+
+<Cards num={2}>
+  <Cards.Card title="ZX Spectrum Next tools" href="/en/guides/next/copper/" arrow>
+    Live views of the Copper, the sprites, the tilemap, Layer 2 and the video layers.
+  </Cards.Card>
+  <Cards.Card title="Next assembler features" href="/en/reference/z80-assembler/zx-next/" arrow>
+    The Z80N instructions, `.savenex`, and the `.dma` and `.copper` pragmas.
+  </Cards.Card>
+</Cards>
+
+## Take a program apart
+
+<Cards num={2}>
+  <Cards.Card title="Analysis and reverse engineering" href="/en/guides/analysis/code-coverage/" arrow>
+    Code coverage, the profiler, code and data detection, and the Graphics Finder.
+  </Cards.Card>
+  <Cards.Card title="Snapshots" href="/en/guides/emulator/snapshots/" arrow>
+    Open, run and debug `.sna`, `.z80` and `.szx` files.
+  </Cards.Card>
+</Cards>
+
+Everything else is in the [Guides](/en/guides/) and the [Reference](/en/reference/). If something does not work as described, please [open an issue](https://github.com/Dotneteer/kliveide/issues) on GitHub.

@@ -1,0 +1,202 @@
+---
+description: "The Klive BASIC preprocessor: #include, #define and macros, conditional compilation with #if and #ifdef, #pragma options and where they apply, and the '@ header options at the top of the build root file."
+---
+
+# Preprocessor and options
+
+The preprocessor runs before the compiler reads the program. It includes files, expands macros and selects the parts of the source to compile. `#pragma` lines and header options set compiler options.
+
+## Directive lines
+
+A directive line starts with `#` as its first non-blank character. Blanks may follow the `#`, and directive names are case-insensitive.
+
+| Directive | Purpose |
+| --- | --- |
+| `#include` | Inserts another source file |
+| `#define`, `#undef` | Defines and removes macros |
+| `#if`, `#ifdef`, `#ifndef`, `#else`, `#endif` | Conditional compilation |
+| `#pragma` | Sets, saves or restores a compiler option |
+| `#error`, `#warning` | Reports a compile error or warning with the given text |
+| `#line` | Resets the line number (and optionally the file name) used in messages |
+| `#init` | Registers an assembly routine to run when the program starts |
+| `#require` | Requests a runtime assembly module |
+
+## #include
+
+```zxbasic
+#include <file>
+#include "file"
+#include MACRO
+#include once <file>
+#include once "file"
+```
+
+- `<file>` searches the standard library first, then the folders of the include path.
+- `"file"` tries the folder of the current file first, then searches as `<file>` does. A quoted name therefore finds a library file too: `#include "string.bas"` works.
+- Absolute paths are allowed.
+- A macro must expand to one of the two forms above.
+- `once` includes the file only if it has not been included yet. A file that starts with `#pragma once` is always included once.
+- Recursive inclusion raises a warning.
+
+```zxbasic
+#include <string.bas>
+DIM s AS String = "ZX Spectrum"
+PRINT left(s, 2); "|"; mid(s, 3, 4)
+```
+
+This prints `ZX|Spec`.
+
+## #define and macros
+
+```zxbasic
+#define NAME
+#define NAME body
+#define NAME(param, ...) body
+```
+
+- An object-like macro replaces its name with its body. A function-like macro takes arguments; its parameter list must follow the name without a space.
+- The body can continue on the next line when the line ends with `\` or `_`.
+- Expansion is lazy and recursive. Arguments may contain nested parentheses, and commas inside those parentheses. The number of arguments must match the parameters.
+- `##` pastes two tokens together. `#` turns an argument into a BASIC string literal.
+- A macro name can be a keyword, and then it replaces that keyword.
+- Redefining a macro raises warning W510 (W500 for a built-in macro). A `#define` without whitespace after the name raises W520. Two parameters with the same name are an error.
+- `#undef NAME` removes a definition.
+
+Macros are expanded inside `ASM` blocks too. See [Inline assembly](/en/reference/klive-basic/inline-assembly/#macros-in-asm-blocks).
+
+```zxbasic
+#define SCREEN_ATTRS 22528
+#define SQUARE(x) ((x) * (x))
+POKE SCREEN_ATTRS, 56
+PRINT SQUARE(7)
+```
+
+### Built-in macros
+
+| Macro | Value |
+| --- | --- |
+| `__FILE__` | The name of the current file |
+| `__LINE__` | The current line number |
+| `__BASE_FILE__` | The name of the file the compilation started with |
+| `__ABS_FILE__` | The absolute path of the current file |
+
+The `define` header option defines further macros, as `NAME` or `NAME=value`.
+
+## Conditional compilation
+
+```zxbasic
+#ifdef NAME
+#ifndef NAME
+#if expression
+#else
+#endif
+```
+
+`#ifdef` is true when the macro is defined and `#ifndef` when it is not. A block runs to `#else` or `#endif`, and blocks can be nested.
+
+An `#if` expression can use macro names, integers, strings, parentheses, the comparisons `==`, `!=` (or `<>`), `<`, `<=`, `>`, `>=`, and `&&` and `||`.
+
+- `==` and `!=` compare the expanded text. A single `=` is an error.
+- The ordering comparisons compare integer values; text that is not a number counts as 0.
+- A bare name is true when it expands to a non-zero integer, or, failing that, when it is defined.
+
+There is no `#elif`. Nest an `#if` inside the `#else` branch instead:
+
+```zxbasic
+#define LEVEL 2
+#if LEVEL == 1
+PRINT "one"
+#else
+#if LEVEL == 2
+PRINT "two"
+#else
+PRINT "other"
+#endif
+#endif
+```
+
+A program whose code is all inside a false conditional block compiles to an empty program.
+
+## #pragma
+
+```zxbasic
+#pragma option = value
+#pragma option value
+#pragma push(option)
+#pragma pop(option)
+#pragma once
+```
+
+A value is an integer, an identifier or a string. A boolean option accepts `true`/`false`, `on`/`off`, `yes`/`no` and `+`/`-`. An unknown option raises warning W300.
+
+`push` saves the current value of one option and `pop` restores it. A library uses them to change an option for its own lines only:
+
+```zxbasic
+#pragma push(case_insensitive)
+#pragma case_insensitive = true
+' ... declarations ...
+#pragma pop(case_insensitive)
+```
+
+### Options that change what follows
+
+These options take effect from their line onward, and `push` and `pop` work on them:
+
+| Pragma | Type | Default | Effect |
+| --- | --- | --- | --- |
+| `array_base` | 0 or 1 | 0 | The lower bound of arrays declared with a single bound |
+| `string_base` | 0 or 1 | 0 | The index of the first character of a string |
+| `case_insensitive` | Boolean | false | Identifiers match in any case |
+| `explicit` | Boolean | false | Variables must be declared before use |
+| `strict` | Boolean | false | Declarations must have a type |
+| `default_byref` | Boolean | false | Scalar parameters are `BYREF` by default |
+| `asm_dialect` | `zxbasm` or `klive` | `zxbasm` | The assembler dialect of the `ASM` blocks that follow |
+| `codebank` | Bank number | 0 | The `CODEBANK` bank of the declarations that follow (ZX Spectrum Next) |
+
+### Options for the whole program
+
+These options set their value for the whole program, wherever they stand, and override the header options:
+
+| Pragma | Type | Default | Effect |
+| --- | --- | --- | --- |
+| `org` | Address | 32768 | The address the program starts at |
+| `heap_size` | Bytes | 4768 | The size of the heap |
+| `heap_address` | Address | After the program | A fixed address for the heap |
+| `memory_check` | Boolean | false | Stop with `4 Out of memory` when the heap is full |
+| `array_check` | Boolean | false | Stop with `3 Subscript wrong` for an array index outside its bounds |
+| `enable_break` | Boolean | false | Stop with `L BREAK into program` when BREAK is held as a statement starts |
+| `optimization_level` | 0 to 3 | 2 | The optimisation level |
+| `opt_strategy` | `size`, `speed` or `auto` | `auto` | What the optimiser favours |
+| `headerless` | Boolean | false | Leave out the start-up and end code |
+| `zxnext` | Boolean | false | Accept the ZX Spectrum Next's instructions in `ASM` blocks |
+| `autorun` | Boolean | false | Add an auto-start entry to the output |
+| `expected_warnings` | Count | 0 | The number of warnings the program is expected to raise |
+
+`#pragma sinclair` changes nothing. Use the `sinclair-compatible` header option instead.
+
+## Header options
+
+Header options are written in the comment lines at the top of the build root file, before its first line of code. Each option takes one line:
+
+```zxbasic
+'@optimize 0
+'@heap-size 4768
+'@array-base 1
+
+PRINT "Hello"
+```
+
+- An option line is a comment that starts with `@`: `'@name value` or `REM @name value`. An `=` may stand between the name and the value.
+- Blank lines and ordinary comments may be mixed in. The first line of code ends the header.
+- Only the build root file's header is read. Library files and other included files use `#pragma` instead.
+- NextBuild's `'!name=value` lines are read too; the compiler translates the options it knows and warns about the others.
+- A `#pragma` for the same setting overrides the header option.
+
+The user guide lists every header option with its values and the `zxbc` option it corresponds to: [Build options in the source](/en/guides/languages/zx-basic/#build-options-in-the-source).
+
+## #init and #require
+
+These two directives are used mainly in library code.
+
+- `#init name` registers an assembly routine (a dotted name is allowed) that the program calls when it starts. It is used inside `ASM` blocks of libraries.
+- `#require "file.asm"` asks for a runtime assembly module to be added to the output, once.

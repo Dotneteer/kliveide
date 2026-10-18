@@ -1,0 +1,67 @@
+---
+description: "Öffnen Sie die IDE von Klive und finden Sie sich darin zurecht: Symbolleiste, Explorer, Editor, Befehlszeile und Statusleiste. Stellen Sie die Sprache und das Design der IDE ein."
+---
+
+import { Callout } from 'nextra/components'
+
+# Die IDE
+
+Die IDE ist das zweite Fenster von Klive. Wählen Sie im Emulatorfenster **Ansicht › IDE anzeigen**. Klive merkt sich, welche Fenster wo geöffnet waren, und öffnet sie beim nächsten Mal wieder genauso.
+
+Solange kein Projekt geöffnet ist, bietet der Explorer zwei Schaltflächen an: **Ordner öffnen** und **Klive-Projekt erstellen**. Ein Projekt legen Sie auf der nächsten Seite an.
+
+<Shot
+  src="get-started/ide-no-project.webp"
+  alt="Die IDE ohne geöffneten Ordner"
+  figure="4.1"
+  caption="Die IDE, bevor Sie ein Projekt öffnen"
+  markers={["newproject"]}
+  width={900}
+/>
+
+1. **Klive-Projekt erstellen** öffnet das Dialogfeld **Neues Klive-Projekt erstellen**.
+
+## Die Bestandteile der IDE
+
+So sieht die IDE mit einem geöffneten Projekt aus:
+
+<Shot
+  src="get-started/ide-tour.webp"
+  alt="Die IDE mit einem geöffneten Projekt und nummerierten Bestandteilen"
+  figure="4.2"
+  caption="Die Bestandteile der IDE"
+  markers={["toolbar", "activities", "explorer", "editor", "buildbar", "tools", "prompt", "status"]}
+  width={900}
+/>
+
+1. **Die Symbolleiste** steuert die Maschine: Projekt ausführen oder debuggen, pausieren, anhalten, neu starten und den Code schrittweise durchlaufen.
+2. **Die Aktivitätsleiste** schaltet die Seitenleiste zwischen **Explorer**, **Debuggen** (Register, Aufrufliste, Variablen, Überwachungen und Haltepunkte), **Maschineninfo**, **Skripte** und **Tests** um. Das Zahnrad unten öffnet die Einstellungen.
+3. **Die Seitenleiste**, hier mit dem Explorer und den Dateien Ihres Projekts.
+4. **Der Code-Editor**. Er versteht Z80-Assembler und ZX BASIC: Er färbt den Code ein, vervollständigt Namen und zeigt Fehler schon beim Tippen an.
+5. **Die Build-Leiste** der Hauptdatei: zum Kompilieren, Injizieren, Ausführen und Debuggen.
+6. **Befehle und Ausgabe**. Die Registerkarte **Befehle** zeigt, was Sie in der Befehlszeile eingegeben haben, und die Antworten darauf; **Ausgabe** zeigt die Meldungen von Builds und Emulator.
+7. **Die Befehlszeile**. Tippen Sie `?` und drücken Sie <kbd>Enter</kbd>, um alle Befehle aufzulisten. Mit Befehlen erledigen Sie in Klive fast alles besonders schnell.
+8. **Die Statusleiste**: der Zustand der Maschine, das Ergebnis des letzten Builds und die Position des Cursors.
+
+<Callout type="info" emoji="💡">
+Probieren Sie die Befehlszeile gleich aus: Tippen Sie `em-start` und drücken Sie <kbd>Enter</kbd> – der Emulator startet. `em-stop` hält ihn an. [IDE-Befehle](/en/reference/commands/) listet sie alle auf.
+</Callout>
+
+## Sprache und Design einstellen
+
+Die Menüs, Dialogfelder und Bereiche von Klive gibt es auf Englisch, Spanisch, Portugiesisch (Brasilien und Portugal), Deutsch und Ungarisch. Öffnen Sie die Einstellungen unter macOS mit **Klive › Einstellungen...** (<kbd>Cmd</kbd>+<kbd>,</kbd>) oder unter Windows und Linux mit **Datei › Einstellungen...**, und wählen Sie die Seite **Sprache**.
+
+<Shot
+  src="get-started/settings-language.webp"
+  alt="Die Seite „Sprache“ im Dialogfeld „Einstellungen“"
+  figure="4.3"
+  caption="Die Seite „Sprache“ der Einstellungen"
+  markers={["language"]}
+  width={760}
+/>
+
+1. **Anzeigesprache** wählt die Sprache. **Systemstandard** folgt Ihrem Betriebssystem. Technische Bezeichnungen wie Z80-Instruktionen, Register, Befehle und Maschinennamen bleiben in jeder Sprache englisch.
+
+Die Seite **Darstellung** legt das Design fest: einen hellen oder dunklen **Farbton** und eine von sechs **Akzentfarben**. Änderungen wirken sofort; es gibt keine OK-Schaltfläche.
+
+Als Nächstes schreiben Sie [Ihr erstes Assemblerprogramm](/de/get-started/first-assembly-program/).

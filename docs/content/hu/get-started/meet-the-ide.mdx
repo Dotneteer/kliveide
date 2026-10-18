@@ -1,0 +1,67 @@
+---
+description: "A Klive IDE megnyitása és eligazodás benne: eszköztár, intéző, szerkesztő, parancssor és állapotsor. Az IDE nyelvének és témájának beállítása."
+---
+
+import { Callout } from 'nextra/components'
+
+# Ismerkedés az IDE-vel
+
+Az IDE a Klive második ablaka. Az emulátorablakban válasszuk a **Nézet › IDE megjelenítése** menüpontot. A Klive megjegyzi, mely ablakok voltak nyitva és hol, így legközelebb ugyanúgy nyitja meg őket.
+
+Ha nincs megnyitott projekt, az intéző két gombot kínál: **Mappa megnyitása** és **Klive projekt létrehozása**. Projektet a következő oldalon hozunk létre.
+
+<Shot
+  src="get-started/ide-no-project.webp"
+  alt="Az IDE megnyitott mappa nélkül"
+  figure="4.1"
+  caption="Az IDE egy projekt megnyitása előtt"
+  markers={["newproject"]}
+  width={900}
+/>
+
+1. A **Klive projekt létrehozása** gomb az **Új Klive projekt létrehozása** párbeszédablakot nyitja meg.
+
+## Az IDE részei
+
+Így néz ki az IDE egy megnyitott projekttel:
+
+<Shot
+  src="get-started/ide-tour.webp"
+  alt="Az IDE egy megnyitott projekttel, a részei megszámozva"
+  figure="4.2"
+  caption="Az IDE részei"
+  markers={["toolbar", "activities", "explorer", "editor", "buildbar", "tools", "prompt", "status"]}
+  width={900}
+/>
+
+1. **Az eszköztár** a gépet vezérli: a projekt futtatása vagy hibakeresése, szüneteltetés, leállítás, újraindítás és a kód léptetése.
+2. **A tevékenységsáv** váltja az oldalsáv tartalmát: **Intéző**, **Hibakeresés** (regiszterek, hívási verem, változók, figyelők és töréspontok), **Gépinformációk**, **Szkriptelés** és **Tesztelés**. Az alján lévő fogaskerék a Beállításokat nyitja meg.
+3. **Az oldalsáv**, itt az Intézővel, amely a projekt fájljait mutatja.
+4. **A kódszerkesztő**. Ismeri a Z80 assemblyt és a ZX BASIC-et: kiszínezi a kódot, kiegészíti a neveket, és már gépelés közben jelzi a hibákat.
+5. **A fordítási sáv** a fő fájlhoz: fordítás, betöltés a memóriába, futtatás és hibakeresés.
+6. **Parancsok és kimenet**. A **Parancsok** lap mutatja, mit gépeltünk be a parancssorba, és milyen válaszokat kaptunk; a **Kimenet** lap a fordítások és az emulátor üzeneteit mutatja.
+7. **A parancssor**. Gépeljük be a `?` karaktert, és nyomjuk meg az <kbd>Enter</kbd> billentyűt az összes parancs listázásához. A parancsokkal gyorsan elvégezhető szinte bármi a Klive-ban.
+8. **Az állapotsor**: a gép állapota, az utolsó fordítás eredménye és a kurzor pozíciója.
+
+<Callout type="info" emoji="💡">
+Próbáljuk ki most a parancssort: gépeljük be az `em-start` parancsot, nyomjuk meg az <kbd>Enter</kbd> billentyűt, és az emulátor elindul. Az `em-stop` leállítja. Az [IDE-parancsok (angolul)](/en/reference/commands/) oldal mindegyiket felsorolja.
+</Callout>
+
+## A nyelv és a téma beállítása
+
+A Klive menüi, párbeszédablakai és panelei angolul, spanyolul, portugálul (brazil és portugáliai változatban), németül és magyarul érhetők el. A Beállításokat macOS-en a **Klive › Beállítások...** (<kbd>Cmd</kbd>+<kbd>,</kbd>), Windowson és Linuxon a **Fájl › Beállítások...** menüponttal nyithatjuk meg; itt válasszuk a **Nyelv** oldalt.
+
+<Shot
+  src="get-started/settings-language.webp"
+  alt="A Beállítások párbeszédablak Nyelv oldala"
+  figure="4.3"
+  caption="A Beállítások Nyelv oldala"
+  markers={["language"]}
+  width={760}
+/>
+
+1. A **Felület nyelve** beállítás választja ki a nyelvet. A **Rendszer alapértelmezése** az operációs rendszer nyelvét követi. A műszaki nevek – például a Z80 utasítások, a regiszterek, a parancsok és a gépnevek – minden nyelven angolul maradnak.
+
+A **Megjelenés** oldalon állítható be a téma: világos vagy sötét **Tónus**, és hat **Kiemelőszín** egyike. A változások azonnal érvénybe lépnek; nincs OK gomb.
+
+Következő lépésként írjuk meg [az első assembly programot](/hu/get-started/first-assembly-program/).

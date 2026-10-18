@@ -1,0 +1,134 @@
+---
+description: "The lexical rules of Klive BASIC: case sensitivity, comments, lines and statements, line continuation, line numbers and labels, identifiers, reserved words, and number and string literals."
+---
+
+# Syntax
+
+This page describes how Klive BASIC source text is read: case, comments, lines, names and literals.
+
+## Case sensitivity
+
+- **Keywords** are always case-insensitive: `PRINT`, `print` and `PrInT` are the same.
+- **Identifiers** are case-sensitive by default: `score` and `Score` are two variables. The `case-insensitive` and `sinclair-compatible` header options, and `#pragma case_insensitive = true`, make them case-insensitive.
+
+The standard library declares its routines case-insensitive, so `LEFT`, `left` and `Left` all find the same routine, even in a case-sensitive program.
+
+## Comments
+
+| Form | Kind | Notes |
+| --- | --- | --- |
+| `REM text` | Line | `REM` must be followed by a space, a tab or the end of the line. After another statement on the same line, it needs a `:` before it. |
+| `' text` | Line | Needs no `:` before it. |
+| `/' text '/` | Block | Can span lines and can sit inside a statement, which continues after it. Block comments nest. |
+
+```zxbasic
+DIM total AS UInteger   ' the running sum
+total = total + /' an inline note '/ 1 : REM a REM after a statement needs a colon
+/' A block comment
+   over several lines '/
+```
+
+## Lines and statements
+
+A program is a sequence of lines. A line has an optional label or line number, then zero or more statements separated by `:`. Empty statements (`::`) are allowed.
+
+```zxbasic
+a = 1 : b = 2 : PRINT a + b
+```
+
+The debugger steps through a program one statement at a time, so each statement of this line is a separate step.
+
+### Line continuation
+
+A `_` or `\` as the last token of a line joins the next line to it. A `'` or `REM` comment may follow the continuation mark. A continued line cannot start with a label.
+
+```zxbasic
+PRINT "Klive "; _
+      "BASIC"
+```
+
+## Line numbers and labels
+
+Both are optional, and both declare a label that `GOTO`, `GOSUB`, `RESTORE` and `ON ... GOTO` can use.
+
+- **Line number**: a decimal integer at the start of a line, with only blanks before it. The order of line numbers does not matter. Two lines with the same number are an error, and so is a number that is not an integer.
+- **Label**: an identifier at the start of a line, with only blanks before it, followed by `:`. A label is recognised only at the start of a line.
+
+Labels are global, even when declared inside a `SUB` or `FUNCTION`.
+
+```zxbasic
+GOSUB greet
+GOTO 100
+PRINT "never printed"
+
+greet:
+PRINT "Hello ";
+RETURN
+
+100 PRINT "World"
+```
+
+`@label` gives the address of a label as a constant. See [The @ operator](/en/reference/klive-basic/expressions/#the--operator).
+
+## Preprocessor lines
+
+A line whose first non-blank character is `#` is a preprocessor directive, such as `#include` or `#define`. A `#` anywhere else is an illegal character. See [Preprocessor and options](/en/reference/klive-basic/preprocessor/).
+
+## Identifiers
+
+An identifier starts with a letter or `_`, followed by letters, digits and `_`. Letters are the ASCII letters `A` to `Z` and `a` to `z`.
+
+An identifier may end with a type sigil:
+
+| Sigil | Type |
+| --- | --- |
+| `$` | `String` |
+| `%` | `Integer` |
+
+The sigil is not part of the name: `a$` and `a` name the same variable. A sigil that contradicts the variable's declared or inferred type is an error.
+
+`CHR$`, `STR$` and `INKEY$` are accepted spellings of `CHR`, `STR` and `INKEY`. A `SUB` or `FUNCTION` name may carry `$`; a `FUNCTION` whose name ends in `$` must return a `String`.
+
+### Reserved words
+
+Reserved words cannot be identifiers:
+
+`ABS` `ACS` `AND` `AS` `ASM` `ASN` `AT` `ATN` `BAND` `BEEP` `BIN` `BNOT` `BOLD` `BOR` `BORDER` `BRIGHT` `BXOR` `BYREF` `BYTE` `BYVAL` `CAST` `CHR` `CHR$` `CIRCLE` `CLS` `CODE` `CONST` `CONTINUE` `COS` `DATA` `DECLARE` `DIM` `DO` `DRAW` `ELSE` `ELSEIF` `END` `ENDIF` `ERROR` `EXIT` `EXP` `FASTCALL` `FIXED` `FLASH` `FLOAT` `FOR` `FUNCTION` `GO` `GOSUB` `GOTO` `IF` `IN` `INK` `INKEY` `INKEY$` `INT` `INTEGER` `INVERSE` `ITALIC` `LBOUND` `LEN` `LET` `LN` `LOAD` `LONG` `LOOP` `MOD` `NEXT` `NOT` `ON` `OR` `OUT` `OVER` `PAPER` `PAUSE` `PEEK` `PI` `PLOT` `POKE` `PRINT` `RANDOMIZE` `READ` `REM` `RESTORE` `RETURN` `RND` `SAVE` `SGN` `SHL` `SHR` `SIN` `SIZEOF` `SQR` `STDCALL` `STEP` `STOP` `STR` `STR$` `STRING` `SUB` `TAB` `TAN` `THEN` `TO` `UBOUND` `UBYTE` `UINTEGER` `ULONG` `UNTIL` `USR` `VAL` `VERIFY` `WEND` `WHILE` `XOR`
+
+The standard library provides further names. They are not reserved, but avoid them as names of your own: `ASC`, `ATTR`, `CSRLIN`, `HEX`, `HEX16`, `INPUT`, `INPUT42`, `GETKEY`, `MULTIKEYS`, `GETKEYSCANCODE`, `POINT`, `POS`, `PRINT42`, `PRINTAT42`, `PRINT64`, `PRINTAT64`, `SCREEN$`.
+
+## Number literals
+
+| Form | Examples | Notes |
+| --- | --- | --- |
+| Decimal integer | `123` | |
+| Decimal real | `1.5`, `.5`, `1e3`, `2.5E-3` | Optional fraction, optional exponent `e` or `E` with an optional sign |
+| Hexadecimal | `$9C`, `0x9C`, `9Ch`, `0C9h` | The `h` form must start with a digit: `C9h` is an identifier |
+| Octal | `17o` | Digits 0-7 with an `o` or `O` suffix |
+| Binary | `%101`, `101b`, `BIN 101` | `BIN` reads the next token as binary digits. `00B` is binary, `00Bh` is hexadecimal |
+
+A literal has a type, chosen by its value:
+
+- A whole number takes the smallest type that holds it: `0` to `255` is a `UByte`, `256` to `65535` a `UInteger`, a larger one a `ULong`. A negative literal is unary minus applied to a positive literal, folded when compiling: `-128` to `-1` is a `Byte`, down to `-32768` an `Integer`, below that a `Long`.
+- A number with a fraction is a `Fixed` when it lies between -32768 and 32767, otherwise a `Float`.
+- Binary, hexadecimal and octal literals are unsigned, sized by their value.
+
+## String literals
+
+A string literal is enclosed in double quotes. Two double quotes inside it stand for one: `"Say ""hi"""`.
+
+A backslash starts an escape sequence for the Spectrum's special characters:
+
+| Escape | Character |
+| --- | --- |
+| `\\` | A backslash |
+| `\*` | Character 127 (the copyright sign) |
+| `\A` to `\U` | The user-defined graphics, characters 144 to 164 (either letter case) |
+| `\#nnn` | The character with the decimal code `nnn` (exactly three digits) |
+| `\{iN}`, `\{pN}`, `\{fN}`, `\{bN}` | An embedded INK, PAPER, FLASH or BRIGHT control code with the value N |
+| `\{vN}` | An embedded INVERSE control code; N is `0`, `1`, `n` or `i` |
+| `\{IN}`, `\{BN}` | An embedded ITALIC or BOLD control code |
+
+A backslash followed by two of the characters space, `'`, `.` and `:` gives one of the block-graphics characters 128 to 143. The first character describes the left half of the cell and the second the right half. A space leaves the half empty, `'` sets its upper square, `.` its lower square, and `:` both. For example, `\::` is character 143, the full block, and `\' ` (with a space) is character 130, the upper-left square.
+
+A backslash followed by any other character is kept as written, the backslash included.

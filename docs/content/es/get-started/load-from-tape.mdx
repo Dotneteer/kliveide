@@ -1,0 +1,97 @@
+---
+description: "Carga programas de ZX Spectrum desde archivos de cinta .tap y .tzx, al instante o en tiempo real, y examina el contenido de una cinta con el visor de cintas."
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# Carga un programa desde cinta
+
+El software de ZX Spectrum se vendía en cintas de casete, y hoy se distribuye en archivos `.tap` y `.tzx`: grabaciones de esas cintas. Klive las reproduce para la máquina emulada como lo haría un magnetófono.
+
+## Carga una cinta
+
+<Steps>
+
+### Inserta la cinta
+
+Elige **Máquina › Cinta › Insertar cinta...** (o **Archivo › Abrir archivo...**) y selecciona un archivo `.tap` o `.tzx`. Klive también intenta leer como cintas los archivos con otras extensiones.
+
+### Escribe LOAD ""
+
+Inicia la máquina si no está en marcha y haz clic en su pantalla. En el ZX Spectrum 48K, pulsa <kbd>J</kbd> para `LOAD`, escribe dos comillas (**Symbol Shift**+<kbd>P</kbd> dos veces; Symbol Shift es la tecla <kbd>Alt</kbd> derecha) y pulsa <kbd>Enter</kbd>. En un 128K o un +2, elige en su lugar **Tape Loader** en el menú de inicio.
+
+### Espera al programa
+
+La máquina carga lo que contenga la cinta, y la mayoría de los programas se inician solos al terminar de cargarse.
+
+</Steps>
+
+<Callout type="info" emoji="💡">
+Puedes cambiar de cinta en cualquier momento, incluso con la máquina en marcha: es como expulsar un casete y poner otro.
+</Callout>
+
+## Carga normal y carga rápida
+
+Cargar programas y cintas de ZX Spectrum puede llevar mucho tiempo, sobre todo con archivos grandes. Además del modo de *carga normal*, Klive admite la *carga rápida*, que lee el programa al instante, en una fracción de segundo.
+
+Puedes activar o desactivar la carga rápida con el comando **Máquina › Cinta › Carga rápida** (o en **Configuración › Emulador**), o haciendo clic en el icono **Carga rápida** (un cohete) de la barra de herramientas.
+
+Puedes cambiar el modo de carga rápida incluso mientras se carga un juego. Sin embargo, el cambio solo tendrá efecto la próxima vez que empieces a cargar un programa.
+
+<Callout type="info" emoji="💡">
+La carga rápida está activada de forma predeterminada.
+</Callout>
+
+## Rebobinar la cinta
+
+Cuando la carga termina o se interrumpe, la posición de la cinta se queda donde estaba, como si hubieras detenido un magnetófono real. Al volver a ejecutar el comando `LOAD`, la carga empieza a buscar la siguiente cabecera de archivo desde la posición en la que se detuvo.
+
+Puedes rebobinar la cinta hasta el principio, igual que con un casete real. Haz clic en el icono **Rebobinar** de la barra de herramientas (el que está a la derecha del icono del cohete) o ejecuta el comando **Máquina › Cinta › Rebobinar**.
+
+## Examina el contenido de una cinta
+
+Abre un archivo `.tap` o `.tzx` desde el Explorador para ver qué contiene (no importa si la extensión está en mayúsculas o minúsculas: `GAME.TAP` también se abre). El visor muestra:
+
+- **Un resumen**: el formato (y la versión de TZX), el tamaño del archivo, cuántos bloques y archivos contiene, cuánto dura su reproducción y, si un archivo TZX los incluye, el título, el editor y el año.
+- **Una línea de tiempo**: toda la cinta en orden de reproducción, con cada bloque tan ancho como el tiempo que tarda en reproducirse. El bloque seleccionado aparece recuadrado; haz clic en un segmento para seleccionar su bloque. Un programa BASIC se dibuja en el color de acento, y un bloque que Klive no puede reproducir, en rojo.
+- **Los bloques**: todos los bloques en una lista, agrupados por archivo. Una cabecera estándar y el bloque de datos que la sigue forman un archivo, como `Program "Float Spy"` o `Bytes "float.cde"`. Cada fila muestra lo que contiene el bloque: `LINE 9996` para un programa que se inicia solo, o la dirección de carga del código. Usa los botones **Todos**, **Datos**, **BASIC**, **Código** y **Sin reproducir** para filtrar la lista, y las teclas de flecha para recorrerla.
+
+Los detalles junto a la lista describen el bloque seleccionado: su longitud y su suma de comprobación, cuándo se reproduce, los campos de su cabecera y la temporización de un bloque turbo. La lista y los detalles siempre se muestran uno al lado del otro. Un **Programa BASIC** muestra cuántas líneas tiene, y una **pantalla** (`SCREEN$`) se dibuja; para leer el listado de un programa o los bytes de un bloque, abre el bloque aparte.
+
+<ClickableImage src="/images/getting-started/tape-viewer.png" width={900} />
+
+Selecciona una **cabecera** para ver explicados sus 19 bytes. Los bytes se agrupan por campo (indicador, tipo, el nombre de diez caracteres, tres valores de dos bytes y la suma de comprobación) encima de una lista de los campos con sus valores decodificados. Señala un byte o un campo (o recorre la lista con el tabulador) para resaltar ambos y leer qué significa el campo; la línea de inicio automático de un programa, o la dirección de carga del código, aparece explicada desde el principio. Los tres valores de dos bytes significan cosas distintas según el tipo de archivo, y la explicación indica cuáles.
+
+<ClickableImage src="/images/getting-started/tape-header-bytes.png" width={560} />
+
+Usa **Abrir aparte** en un bloque para verlo entero en su propio documento: como volcado de memoria (lo predeterminado para el código), como desensamblado en la dirección donde se carga el bloque, como listado BASIC completo o como pantalla. Usa el botón junto a los detalles del bloque (su flecha elige la vista), el icono de su fila, un doble clic o <kbd>Enter</kbd>. **Atrás** vuelve a la cinta. Un bloque sin cabecera no tiene dirección de carga propia: escribe una en el cuadro **Listar en** para desensamblarlo ahí, y haz clic con el botón derecho en él para elegir **Leer como BASIC** cuando sepas que es un programa.
+
+<Callout type="warning" emoji="⚠️">
+Algunos bloques TZX (tonos puros, secuencias de pulsos, datos puros, grabaciones directas y CSW, datos generalizados) se muestran, pero Klive los deja **sin reproducir**. Una cinta que los necesita se marca con un aviso, y su carga puede fallar.
+</Callout>
+
+## Carga una cinta desde el IDE
+
+En un ZX Spectrum 48K, 128K o +2/+3, la pestaña del visor de cintas tiene tres botones, y el menú contextual del Explorador sobre un archivo `.tap` o `.tzx` tiene las mismas tres entradas:
+
+<ClickableImage src="/images/getting-started/tape-viewer-commands.png" width={900} />
+
+- **Cargar y ejecutar cinta** (icono de reproducción) reinicia la máquina y empieza a cargar la cinta: escribe `LOAD ""` en un 48K, y elige **Tape Loader** en el menú de inicio de un 128K o un +2 (**Loader** en un +2A/+3, que arranca en su lugar desde un disco si hay uno en la unidad A). Después, el cargador que traiga la cinta se ejecuta como lo haría en la máquina real.
+- **Insertar cinta** (icono de casete) pone la cinta en el magnetófono sin reiniciar, como hace **Máquina › Cinta › Insertar cinta...**. Insertar la cinta que ya está en el magnetófono la rebobina.
+- **Cargar y depurar cinta** (icono de depuración) es **Cargar y ejecutar cinta** con tus puntos de interrupción activos.
+
+<ClickableImage src="/images/getting-started/tape-viewer-loaded.png" width={720} />
+
+En cualquier otra máquina, como el ZX Spectrum Next, los botones y las entradas del menú están desactivados; la información sobre herramientas de cada botón explica por qué. Las mismas acciones están disponibles con el comando [`tape-load`](/en/reference/commands#tape-load).
+
+## Cómo funciona la carga rápida
+
+El modo de carga rápida aplica una técnica potente: la interceptación de la ROM. Mientras el emulador funciona, vigila en el registro `PC` el punto de entrada de la rutina de carga de la ROM, en todos los modelos de ZX Spectrum.
+
+Cuando la ejecución llega a la rutina de carga, el mecanismo de carga rápida suspende la máquina e inyecta los datos del archivo de cinta directamente en la memoria. Mientras lo hace, el algoritmo establece los registros del Z80 (incluidos los indicadores) del mismo modo que lo haría el algoritmo de la ROM.
+
+Una vez cargados los datos, el mecanismo pone en el registro `PC` el punto de salida de la rutina de carga, como si la CPU la hubiera ejecutado, y sale del modo rápido.
+
+Si se produce algún error durante la carga, el mecanismo de carga rápida pone `PC` al inicio de la rutina que informa de un error de cinta.
+
+A continuación, [conoce el IDE](/es/get-started/meet-the-ide/).

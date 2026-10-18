@@ -1,0 +1,193 @@
+---
+description: "How Klive's debugger decides where to stop: the core decides whether to stop, TypeScript decides what a stop means, an in-core loop runs between the candidates, and tests prove it stops exactly where instruction-by-instruction stepping would."
+---
+
+import { Callout } from 'nextra/components'
+
+# How the Debugger Decides Where to Stop
+
+A plain Run is easy for an emulator core: the host calls it once per frame, and the core runs the
+whole frame in WebAssembly. A debug session is harder. The debugger may have to stop at **any**
+instruction: at a breakpoint, at the end of a step, when a condition becomes true, when a byte is
+written. This article explains how Klive keeps a debug session almost as fast as a plain Run, and how
+it proves that the speed does not change where the debugger stops.
+
+[How the emulator cores are built](/en/under-the-hood/emulator-internals/wasm-cores/) describes the
+cores and their TypeScript hosts. Read it first if you have not.
+
+## The slow way: one instruction at a time
+
+The obvious way to debug is to run one instruction, ask whether to stop, and repeat. That is how
+the Spectrum cores and the Next used to work under the debugger. For every Z80 instruction the host
+called the core's `ExecuteInstruction` export, read the PC and the frame-completed flag back with two
+more calls, and ran the TypeScript stop policy, `shouldStopAtDebugPoint`.
+
+It was slow. Measured against a plain Run of the same host:
+
+| Machine | Debug session, one breakpoint never hit | Project start (running to the execution point) |
+|---|---|---|
+| 48K | 2.3x | 2.1x |
+| 128K | 2.2x | 1.9x |
+| +3E | 2.1x | 1.9x |
+| Next | 1.4x | 1.3x |
+
+A project start runs the machine to the program's execution point, and it used the same loop.
+
+The interesting part is **where** the time went. The boundary crossings on their own (the three calls
+per instruction, without the host's JavaScript) cost only 1.1 to 1.4 times a fast frame. The rest was
+the JavaScript stop tests that ran for every instruction. Crossing into the core was cheap; deciding
+in TypeScript at every instruction was not.
+
+## The rule
+
+The fix rests on one rule:
+
+<Callout type="info">
+**The core decides whether to stop; TypeScript decides what a stop means.**
+</Callout>
+
+The core never makes a final decision it cannot reproduce exactly. It only stops **early**, at a
+**candidate**: an address where the TypeScript policy *might* stop. There the unchanged TypeScript
+policy decides, as it always did. A candidate that is not a real stop, such as a breakpoint in
+another memory partition, costs one round trip and nothing else.
+
+Because the same TypeScript code still decides, running in the core decides exactly as running
+instruction by instruction does. The core only skips the instructions where nothing could happen.
+
+## The in-core loop
+
+Every core includes the shared `z80-debug-loop.c`, which provides one export:
+
+```text
+<prefix>ExecuteUntilStop(extraStop, mask, accessMask)
+```
+
+It runs instructions until one of these happens:
+
+- the PC reaches an address whose entry in the stop table meets `mask`;
+- the PC reaches `extraStop`;
+- an instruction reads or writes an address, or accesses a port, whose flags meet `accessMask`;
+- the frame ends, or a reverse-debugging stop target is reached;
+- something that would end the core's own frame loop happens (on the Next, an SD card command for
+  the host or a reset request).
+
+It returns the number of instructions it ran, and the host takes over.
+
+### The stop table
+
+The stop table has one 16-bit entry for every address. On every entry into a debug run, the host
+builds it (`buildCoreStopTable`) and copies it into the core. Most of it is a copy of the breakpoint
+flags that the TypeScript `DebugSupport` already keeps. Two bits are the table's own:
+
+| Bit | Meaning in the core |
+|---|---|
+| `0x01`, `0x02` | Stop: an execution breakpoint (whether its partition matches is decided in TypeScript) |
+| `0x08` to `0x40` | With `accessMask`: stop after an instruction that read, wrote, or did I/O on the address or port |
+| `0x4000` | Run this address's conditions in the core; stop unless all of them are false |
+| `0x8000` | Stop: an error stop, or an address that the BASIC statement tracker or a source step acts at |
+
+`extraStop` carries the one address that is not a breakpoint: the run's execution point, the return
+address of a Step Over, or the target of a Step Out.
+
+### Conditions in the core
+
+A conditional breakpoint on a hot instruction used to cost a TypeScript round trip on every pass,
+even when the condition was false. Conditions are already compiled to bytecode for the evaluator in
+`z80-condition.c`, so the core can run them itself.
+
+The host writes a condition plan into the core: up to 128 addresses and 256 program slots. At such an
+address the loop runs the slots and **keeps going while every condition is false**. Anything else
+stops, and TypeScript decides and counts the hit as before.
+
+Hit counters stay in TypeScript, on purpose. A false condition counts nothing, logs nothing and never
+stops, so leaving false passes to the core is exact without moving any counter. A true pass stops,
+and TypeScript counts it. The reverse-debugging timeline logs each counted hit with its position, and
+an in-core counter would need a second hit log in the core. As a result, a bare hit-count rule with no
+condition still stops on every pass.
+
+### Memory and port breakpoints
+
+For an access breakpoint the core cannot know in advance where the program will write. So it checks
+after each instruction: if that instruction touched a flagged address or port, the loop returns. The
+host then reads the bus record and decides as before: disabled breakpoints, partitions, conditions,
+hit counts.
+
+### Source-level stepping
+
+Klive BASIC's source debugger steps by statement. A statement step only ever stops at a statement
+entry or at the return address of a call site. The stop table marks those addresses as candidates, so
+the core stops only there, and the step's own logic (the stack pointer and interrupt-depth checks)
+runs only there.
+
+### What stays instruction by instruction
+
+Some runs still go one instruction at a time in TypeScript: **Step Into** (one instruction by
+definition), an RZX session, and the Next's NextReg, Copper and sprite watches.
+
+## The result
+
+After the change, measured the same way:
+
+| Machine | Debug session | Project start | With history recording |
+|---|---|---|---|
+| 48K | 1.0x | 1.0x | 1.11x |
+| 128K | 1.0x | 1.0x | 1.13x |
+| +3E | 1.0x | 1.0x | 1.13x |
+| Next | 1.0x | 1.0x | 1.06x |
+| ZX81 | 1.1x | 1.0x | 1.30x |
+| Z88 | 1.3x | 1.2x | 1.54x |
+
+Other cases improved as much. A conditional breakpoint whose condition is never true, on the
+hottest instruction of a test loop, cost 1.64x on the 48K and costs 1.07x now. A Step Over of a call to
+a Klive BASIC SUB that loops 2,000 times takes about 4.0 ms in the core, against 15.6 ms instruction by
+instruction.
+
+The Z88 is the exception, and the reason is simple arithmetic. The host rebuilds and copies the stop
+table on every entry, which takes about 10 µs. A Z88 frame is only 0.04 ms of emulation, so the copy
+shows. In real time it is 0.2% of the Z88's 5 ms frame.
+
+## Proving the stops are the same
+
+A faster debugger that stops one instruction late is worse than a slow one. So every move of a
+decision into the core is guarded by an **equivalence test**: `test/wasm/debug-loop-equivalence.test.ts`.
+
+The test runs the same program with the same breakpoints twice on each core, once in the core and
+once instruction by instruction. A test seam, `wasmDebugLoopOptions.inCore = false`, forces the
+second path. Every stop must match: the PC, the registers, the T-state counter, and the last decision
+point (`lastDecisionPc`). The scenarios cover continues, step-overs and step-outs, conditional
+breakpoints, hit-count rules, and memory-read, memory-write and port-read breakpoints.
+
+The test also has to fail when it should. Disabling the core's path (making the core ignore the stop
+table or the conditions) makes it fail on every core. A second test, for source-level stepping, runs a
+22-step script of step into, step over and step out through SUBs, FUNCTIONs, recursion and a loop,
+and requires identical stops both ways.
+
+These tests caught real bugs while the loop was built:
+
+- The access-breakpoint report named the wrong instruction. The instruction-by-instruction loop set
+  the last decision point before every instruction, and the in-core run did not, so a memory stop
+  named the instruction where the run started. Now the host reads where the last instruction started
+  (`<prefix>GetDebugOpStart`) after every in-core run.
+- That same value was written only by debug runs, yet it was part of the machine's saved state. Every
+  reverse-debugging test that compares a replay with a debug run failed: 51 tests. It is volatile now.
+
+The second bug is a rule of its own: **anything a debug run writes in a core and a fast frame does not
+must be volatile**, or replays stop matching the runs they replay.
+
+A third guard is about speed. `test/wasm/debug-loop-budgets.perf.test.ts` (`npm run test:perf`)
+measures a debug session, a project start, access breakpoints and a never-true condition against a
+plain Run on each core, and fails if one exceeds its budget.
+
+## Adding a new kind of stop
+
+The rule tells a contributor what to do:
+
+1. Decide whether the core can reproduce the TypeScript decision **exactly**. If it can only find the
+   places where the answer might be "stop", mark those places as candidates and let TypeScript decide.
+2. If the core does decide itself, as it does for false conditions, keep everything with an effect in
+   TypeScript: hit counters, logpoints and the reverse-debugging hit log.
+3. Extend the equivalence test, and check that it fails with your core path disabled.
+4. Measure with `npm run benchmark:debug-host-loop` and keep `npm run test:perf` green.
+
+The full contract is in `src/emu/z80/wasm/README.md`. The shared host loop is `runWasmDebugLoop` in
+`src/emu/machines/wasmDebugLoop.ts`.

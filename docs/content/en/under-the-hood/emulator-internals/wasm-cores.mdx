@@ -1,0 +1,197 @@
+---
+description: "How Klive's emulator cores are built: every Z80 machine is a C core compiled to WebAssembly, all of them share one Z80 with hooks for each machine's hardware, and a TypeScript host drives each core one frame at a time."
+---
+
+import { Callout } from 'nextra/components'
+
+# How the Emulator Cores Are Built
+
+Every Z80 machine in Klive runs on a **core written in C and compiled to WebAssembly** (WASM). The
+Electron app loads the compiled `.wasm` file, and a TypeScript class around it, the **host**, connects
+the core to the IDE: the keyboard, the screen, the sound, the debugger. The emulation itself, from
+the CPU to the last device, happens inside the core.
+
+All the cores share **one Z80 implementation**. A machine does not get its own CPU; it plugs its
+hardware into the shared one through hooks. This article explains how that fits together and how the
+host drives a core frame by frame.
+
+## The cores
+
+There are seven cores. Each lives in a `wasm/` folder under `src/emu/machines/` and builds to one
+artifact:
+
+| Core | Machines | Artifact | Build command |
+|---|---|---|---|
+| `zxSpectrum48` | ZX Spectrum 48K and 16K | `zx-spectrum48.wasm` | `npm run build:sp48-wasm` |
+| `timex` | Timex Computer 2048, Timex Computer 2068, Timex Sinclair 2068 | `zx-timex.wasm` | `npm run build:timex-wasm` |
+| `zxSpectrum128` | ZX Spectrum 128K, Pentagon, Scorpion | `zx-spectrum128.wasm` | `npm run build:sp128-wasm` |
+| `zxSpectrumP3e` | ZX Spectrum +2A/+3/+2E/+3E | `zx-spectrum-p3e.wasm` | `npm run build:spp3e-wasm` |
+| `zxNext` | ZX Spectrum Next | `zx-spectrum-next.wasm` | `npm run build:zxnext-wasm` |
+| `z88` | Cambridge Z88 | `cambridge-z88.wasm` | `npm run build:z88-wasm` |
+| `zx8081` | Sinclair ZX80 and ZX81 | `zx8081.wasm` | `npm run build:zx8081-wasm` |
+
+The C64 is not on the list. It runs on a 6510 emulated in TypeScript, so nothing in this article
+applies to it.
+
+Each core is the only emulation of its machines. The Next and the Z88 once had TypeScript machines
+too. Each was removed once its C core matched it. The Z88 core, for example, was held to the
+TypeScript machine in lockstep, frame for frame and instruction for instruction, and ran at 9 to 22
+times its speed.
+
+### The toolchain
+
+The build scripts compile with `clang` for the portable `wasm32` target and link with `wasm-ld`.
+None of them needs Emscripten. Each build script
+accepts an environment variable to pick another compiler (`SP48_WASM_CC`, `ZXNEXT_WASM_CC`, and so
+on), and some take an optimization profile: `speed` (the default), `size` or `lto`.
+
+The `.wasm` files are build outputs and are not committed.
+[Install the WASM Toolchain](/en/under-the-hood/contribute/wasm-toolchain/) explains how to set up
+the compiler after a fresh clone.
+
+## One translation unit per core
+
+A core is **one C translation unit**. Its main file includes everything else, the machine's own
+devices and the shared files from `src/emu/z80/wasm/`:
+
+| Shared file | What it is |
+|---|---|
+| `z80.c` | The CPU: registers, every opcode, the memory and port funnels |
+| `z80-history.h` / `.c` | The execution-history recorder |
+| `z80-profile.h` / `.c` | Code coverage, the heat map and the profiler |
+| `z80-condition.c` | The breakpoint-condition evaluator |
+| `z80-cpu-exports.c` | Register access, step-out, interrupt depth, the access log, the last port |
+| `z80-debug-loop.c` | The debugger's in-core loop |
+
+Because everything is in one unit, the compiler sees the CPU and the machine together and can inline
+a hook into the opcode that calls it. The export names carry a per-core prefix (`sp48`, `sp128`,
+`spp3e`, `zxnext`, `z88`, `zx8081`), which the shared files paste on. A script,
+`scripts/check-wasm-cpu-contract.cjs`, checks that every core includes the shared files the way it
+should.
+
+## Hooks: how a machine plugs into the Z80
+
+`z80.c` calls a set of macros at the points where real hardware could interfere with the CPU: before
+and after an opcode fetch, at the refresh cycle, at an interrupt acknowledge, when a memory or port
+access needs extra T-states. Each macro has an empty default. A core defines the ones it needs and
+then includes `z80.c`.
+
+The ZX81 is a good example, because its ULA reaches deep into the CPU's bus cycles. Its core maps
+the hardware like this:
+
+| ULA behaviour | Hook |
+|---|---|
+| An opcode fetch above 32K of a byte with bit 6 clear is kept for the video, and the CPU sees a `NOP` | `Z80_BEFORE_OPCODE_FETCH` marks the next read as the opcode read; the memory read does the rest |
+| The refresh cycle fetches a character row from the font | `Z80_REFRESH`, with I:R before the increment |
+| `INT` is wired to address line A6 during refresh | `Z80_REFRESH` records when the refresh ends, and the frame loop raises `INT` there |
+| `WAIT` is held while the NMI is asserted and the CPU is not halted | The memory and port delay hooks add the T-states; `Z80_NMI_ACK_WAIT` handles the NMI acknowledge |
+| The `INT` acknowledge resets the line timer | `Z80_INT_ACK` |
+
+The ULA logic itself is ported from Clock Signal by Thomas Harte (MIT licence), and the files derived
+from it keep its copyright line. [ZX81: how the screen is drawn](/en/under-the-hood/emulator-internals/zx81-display/)
+tells the whole story of that picture.
+
+### Sharing machine code, too
+
+Cores share more than the CPU. The Spectrum devices (the ULA, the ports, the tape, the keyboard) live
+in `src/emu/machines/zxSpectrum/wasm/common/`, and the 48K, 128K and +3E cores include them. The
+Spectrum frame loop and the RZX playback steps are shared the same way.
+
+The Timex core shows how far this goes. A TC2048 is a 48K Spectrum whose ULA is Timex's SCLD, so
+`timex/timex.c` is short: it defines `SP48_SCLD` and includes the whole 48K machine. A handful of
+compile-time switches make the difference:
+
+| Switch | 48K | Timex |
+|---|---|---|
+| `SP48_PIXEL_SCALE` | 1 | 2 (two buffer pixels per Spectrum pixel) |
+| `SP48_SCREEN_BUFFER_WIDTH_MAX` | 352 | 704 |
+| `SP48_BASE_CLOCK_FREQUENCY_PAL` | 3,500,000 | 3,528,000 (the SCLD's 14.112 MHz / 4) |
+| `SP48_DISPLAY_MEMORY_END` | `$5B00` | `$7B00` (the second display file) |
+
+The 48K build is unchanged bit for bit by these switches.
+
+The Z88 goes the other way. It includes none of the Spectrum device sources: its Blink, LCD, keyboard
+and beeper are its own, and the contract checker enforces that too.
+
+## How the host drives a core
+
+The host is a TypeScript class such as `ZxSpectrum48WasmV2Machine`. A loader (`Sp48WasmV2Loader.ts`
+and its siblings) instantiates the module and gives the host its exports and typed views into the
+core's memory, such as the pixel buffer and the audio samples.
+
+During a plain Run, without the debugger, the host calls the core **once per frame**. This is the
+48K host's frame, shortened:
+
+```typescript
+override executeMachineFrame(): FrameTerminationMode {
+  const runtime = this.wasmV2Runtime;
+  // ...a debug session or a run to an execution point takes the debug loop instead
+  this.emulateKeystroke();
+  this.syncKeyboardToWasmV2(runtime);
+  this.syncAudioSampleRateToWasmV2(runtime);
+  this.syncTargetClockMultiplierToWasmV2(runtime);
+  runtime.exports.sp48ExecuteFrame();
+  this.wasmV2NormalFrames++;
+  this.syncFrameCountersFromWasmV2(runtime);
+  this.publishSavedTapeFromWasmV2(runtime);
+  this.frameCompleted = true;
+  return FrameTerminationMode.Normal;
+}
+```
+
+Before the call, the host pushes the inputs into the core: the keyboard state, the audio sample rate,
+the clock multiplier. Then `sp48ExecuteFrame` runs a whole frame inside WebAssembly: the CPU, the ULA,
+the beeper and the tape. After it, the host reads
+what it needs. The picture needs no copy: `getPixelBuffer()` returns the loader's view of the core's
+own pixel buffer. The audio samples are read from another view, one frame's worth at a time.
+
+So a frame costs one crossing from JavaScript into WebAssembly, plus a few small calls around it. The
+measured speeds show what that buys. On an Apple M4 Pro, the ZX81 core runs a 20 ms frame in 0.27 ms
+at the BASIC prompt, 74 times real time. The Z88 core runs OZ 5.0 at the keyboard in 0.038 ms per
+5 ms frame, where the TypeScript machine needed 0.327 ms.
+
+The debugger cannot always run whole frames. It may have to stop at any instruction. How the cores
+handle that without giving up their speed is the subject of
+[How the debugger decides where to stop](/en/under-the-hood/emulator-internals/debugger-loop/).
+
+## The whole machine is one block of memory
+
+Every core keeps its entire world in its WebAssembly linear memory: the CPU registers, RAM, ROM,
+every device, and the inserted media. Between exported calls the C stack is unwound. A copy of that
+memory is therefore a **complete record of the machine**.
+
+Klive builds on this fact in several places:
+
+- **State files** save the image and load it back.
+- **The Next's checkpoints**, used by code injection, are images held in memory.
+- **Reverse debugging** stores images as keyframes. See
+  [How reverse debugging works](/en/under-the-hood/emulator-internals/reverse-debugging/).
+
+An image leaves out the core's **volatile** statics: debugging state and scratch buffers that the
+build script names. A restore keeps the live core's bytes there. An image also fits only a core with
+the same memory layout: the build stamps a fingerprint into the module, and a restore refuses an
+image with another one.
+
+<Callout type="warning">
+The volatile list is a rule, not a convenience. Anything a debug run writes in a core and a fast frame
+does not must be volatile. If it is part of the image, a replay (which runs fast frames) no longer
+matches the debug run it replays, and reverse debugging breaks.
+</Callout>
+
+## Debugging support costs almost nothing when it is off
+
+The history recorder, the profiler and the access log all sit inside the CPU's hot paths. Each is
+either behind one predictable runtime check, or gated by a capture flag that only a debug run sets.
+Klive measured what remains: removing every piece of debugging work from a fast frame made it 0 to
+4% faster, and after a round of cleanup at most 2 to 3%, which is close to the measurement noise. A
+plan to compile the instruction set twice, once without any hooks, was dropped for that reason.
+
+The hooks cost size more than speed: they make each core 16 to 34% larger. The hooks that run at
+every memory access are kept **out of line** on purpose. Inlined into every opcode, the profile hooks
+once grew a core from 235 KB to 390 KB.
+
+## Where to read more
+
+- `src/emu/z80/wasm/README.md`: the shared Z80 and its debugging support.
+- The `README.md` in each core's `wasm/` folder: the 48K, 128K, +3E, Timex, Next, Z88 and ZX80/81.
+- `src/emu/machines/state/wasmStateImage.ts`: how a state image is captured and restored.

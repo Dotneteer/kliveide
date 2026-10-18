@@ -1,0 +1,108 @@
+---
+description: "Write a ZX BASIC program, compile it with Klive's built-in Klive BASIC compiler, and debug it statement by statement, with its call stack and variables."
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# Your first BASIC program
+
+ZX BASIC is a compiled dialect of the ZX Spectrum's own BASIC, with subroutines, local variables and typed variables. Klive compiles it with its built-in compiler, **Klive BASIC**, which is compatible with Boriel ZX BASIC and needs no installation. The compiled program runs far faster than interpreted BASIC, and you can debug it line by line in its BASIC source.
+
+## Create the project
+
+Choose **File › New Project...** as on the [first assembly page](/en/get-started/first-assembly-program/), with these settings:
+
+- **Machine type**: ZX Spectrum 48K.
+- **Project Template**: `zx-basic`.
+- **Project name**: `BouncingBall`.
+
+The project's source file is `code/program.zxbas`.
+
+## Write the program
+
+Replace the contents of `code/program.zxbas` with this program and save it:
+
+```zxbasic fixture="bouncing-ball/code/program.zxbas"
+' Bouncing ball - the program of Get Started, step 7.
+' A ball bounces between the screen's edges and counts its bounces.
+
+DIM x AS INTEGER = 15
+DIM dx AS INTEGER = 1
+DIM bounces AS UINTEGER = 0
+
+SUB DrawBall(column AS INTEGER, ball AS STRING)
+    PRINT AT 10, column; ball
+END SUB
+
+CLS
+PRINT AT 0, 0; "Bounces: 0"
+DO
+    DrawBall(x, " ")
+    x = x + dx
+    IF x = 0 OR x = 31 THEN
+        dx = -dx
+        bounces = bounces + 1
+        PRINT AT 0, 9; bounces
+    END IF
+    DrawBall(x, "O")
+    PAUSE 2
+LOOP
+```
+
+A few things that Sinclair BASIC does not have:
+
+- **No line numbers.** Lines run in order, and `DO` … `LOOP` repeats the lines between them.
+- **Typed variables.** `DIM x AS INTEGER` declares a whole-number variable, which is much faster than the Spectrum's floating-point numbers.
+- **Subroutines with parameters.** `SUB DrawBall` takes a column and a string, and `DrawBall(x, "O")` calls it.
+- **Block `IF`.** The lines up to `END IF` run when the condition is true.
+
+## Run it
+
+Click **Run** on the build bar, or press <kbd>F5</kbd>. The ball moves along line 10 and turns back at the edges of the screen, and the counter at the top counts the bounces.
+
+<Shot
+  src="get-started/basic-running.webp"
+  alt="The emulator running the bouncing ball program"
+  figure="7.1"
+  caption="The ball bounces"
+  width={620}
+/>
+
+## Debug it
+
+<Steps>
+
+### Set a breakpoint in the subroutine
+
+Click left of line number **9**, the `PRINT AT 10, column; ball` line inside `DrawBall`.
+
+### Start debugging
+
+Click **Debug** on the build bar, or press <kbd>Ctrl</kbd>+<kbd>F5</kbd>. The program stops the first time it calls `DrawBall`.
+
+### Look at the call stack and the variables
+
+Open the **Debug** side bar, then open its **Call Stack** and **Variables** panels by clicking their titles.
+
+</Steps>
+
+<Shot
+  src="get-started/basic-debug.webp"
+  alt="The IDE paused inside DrawBall, with the call stack and the variables"
+  figure="7.2"
+  caption="Paused inside the DrawBall subroutine"
+  markers={["breakpoint", "callstack", "variables"]}
+  width={900}
+/>
+
+1. The breakpoint, and the statement that runs next.
+2. The **Call Stack**: `DrawBall` was called from line 15 of the main program.
+3. The **Variables**: the subroutine's parameters (`column` is 15, `ball` is a space), and the program's global variables.
+
+Stepping works on BASIC **statements**, not on Z80 instructions: <kbd>F10</kbd> runs the next statement, <kbd>F11</kbd> (<kbd>F12</kbd> on macOS) steps into a subroutine, and <kbd>Shift</kbd>+<kbd>F11</kbd> steps out of it. Press <kbd>F5</kbd> a few times, and watch `column` and `x` change.
+
+<Callout type="info" emoji="💡">
+Klive can also build your BASIC programs with Boriel's own compiler, Boriel BASIC 2, and debug them the same way. See [ZX BASIC](/en/guides/languages/zx-basic/) for the language options, the standard library, and how to switch compilers.
+</Callout>
+
+Next, write [your first ZX Spectrum Next program](/en/get-started/first-next-program/).

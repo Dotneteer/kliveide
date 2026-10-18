@@ -14,6 +14,9 @@
 ### Fixes
 
 - Assembler: a bare `.dma wr3` followed by another line failed with "An expression expected".
+- ZX Spectrum Next: running or debugging a program without `.savenex file` copied it to the SD card as
+  `_klive/undefined`. The NEX is now named after the project folder (`NextSprites/` gives
+  `NextSprites.nex`), and an exported NEX keeps the name it was exported under.
 
 ## 0.63.0
 

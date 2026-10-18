@@ -1,0 +1,442 @@
+{
+  "meta.title": "Klive IDE - the ZX Spectrum and Next development studio",
+  "@meta.title": {
+    "context": "The browser tab title and search-result title of the landing page. 'Klive IDE' and 'ZX Spectrum Next' are never translated."
+  },
+  "meta.description": "Write, assemble, compile, run and debug Z80 code and ZX BASIC in one free app, on macOS, Windows and Linux.",
+  "@meta.description": {
+    "context": "The page description search engines and link previews show. One sentence, at most about 160 characters."
+  },
+  "nav.skip": "Skip to content",
+  "@nav.skip": {
+    "context": "Link for keyboard and screen-reader users that jumps over the header to the page's content. Visible only when focused."
+  },
+  "nav.getStarted": "Get Started",
+  "@nav.getStarted": {
+    "context": "Header link to the tutorial for newcomers. Same as the documentation's 'Get Started' tab."
+  },
+  "nav.guides": "Guides",
+  "@nav.guides": {
+    "context": "Header link to the task-oriented documentation."
+  },
+  "nav.reference": "Reference",
+  "@nav.reference": {
+    "context": "Header link to the reference documentation (assembler, commands, machines)."
+  },
+  "nav.github": "GitHub",
+  "@nav.github": {
+    "context": "Header link to the project's source code on GitHub. Product name: never translated."
+  },
+  "nav.language": "Language",
+  "@nav.language": {
+    "context": "Accessible label of the header's language selector (read by screen readers)."
+  },
+  "nav.theme": "Switch between light and dark",
+  "@nav.theme": {
+    "context": "Accessible label and tooltip of the header button that toggles the light and dark theme."
+  },
+  "nav.menu": "Menu",
+  "@nav.menu": {
+    "context": "Accessible label of the header's menu button on phones."
+  },
+  "hero.badge": "Version {version} · macOS · Windows · Linux",
+  "@hero.badge": {
+    "context": "Small badge above the headline. {version} is a version number like 0.63.0. The three platform names are never translated."
+  },
+  "hero.title": "The complete ZX Spectrum and {next} development studio",
+  "@hero.title": {
+    "context": "The landing page headline. {next} is the word 'Next' (as in ZX Spectrum Next), rendered in the accent colour; keep it where it fits the sentence. 'ZX Spectrum' is never translated."
+  },
+  "hero.next": "Next",
+  "@hero.next": {
+    "context": "The word 'Next' of 'ZX Spectrum Next', inserted into hero.title. A product name: never translated."
+  },
+  "hero.lead": "Write, assemble, compile, run and debug Z80 code and ZX BASIC in one app. No toolchain to wire up.",
+  "@hero.lead": {
+    "context": "The sentence under the headline. 'Z80' and 'ZX BASIC' are never translated."
+  },
+  "hero.download": "Download for {os}",
+  "@hero.download": {
+    "context": "The primary button. {os} is 'macOS', 'Windows' or 'Linux'."
+  },
+  "hero.downloadGeneric": "Download",
+  "@hero.downloadGeneric": {
+    "context": "The primary button when the visitor's operating system is not known (or on a phone)."
+  },
+  "hero.otherPlatforms": "Other platforms",
+  "@hero.otherPlatforms": {
+    "context": "Link under the Download button to the page with every install kit."
+  },
+  "hero.getStarted": "Get started",
+  "@hero.getStarted": {
+    "context": "The secondary button, to the tutorial."
+  },
+  "hero.free": "Free and open source",
+  "@hero.free": {
+    "context": "Short note next to the buttons."
+  },
+  "hero.carousel.label": "Klive in action",
+  "@hero.carousel.label": {
+    "context": "Accessible name of the hero's picture carousel (read by screen readers)."
+  },
+  "hero.carousel.previous": "Previous picture",
+  "@hero.carousel.previous": {
+    "context": "Accessible label of the carousel's back arrow."
+  },
+  "hero.carousel.next": "Next picture",
+  "@hero.carousel.next": {
+    "context": "Accessible label of the carousel's forward arrow."
+  },
+  "hero.carousel.slide": "Picture {n} of {count}",
+  "@hero.carousel.slide": {
+    "context": "Accessible label of a carousel picture and of its dot. {n} is the picture's number, {count} how many there are."
+  },
+  "hero.carousel.pause": "Pause the pictures",
+  "@hero.carousel.pause": {
+    "context": "Accessible label and tooltip of the carousel's pause button, which stops the pictures from changing by themselves."
+  },
+  "hero.carousel.play": "Play the pictures",
+  "@hero.carousel.play": {
+    "context": "Accessible label and tooltip of the same button while the carousel is paused: it starts changing pictures again."
+  },
+  "slide.debug": "Debug Z80 programs at the source level, register by register",
+  "@slide.debug": {
+    "context": "Caption under a carousel picture of the IDE paused at a breakpoint. One line; keep it short. 'Z80' is never translated."
+  },
+  "slide.emulator": "Run ZX Spectrum and Next software: the ScrollNutter demo on the Next",
+  "@slide.emulator": {
+    "context": "Caption of a picture of the emulator running a demo. 'ZX Spectrum', 'Next' and 'ScrollNutter' (the demo's name) are never translated."
+  },
+  "slide.disassembly": "Take a .nex apart: ScrollNutter's annotated disassembly, its zxnDMA program decoded",
+  "@slide.disassembly": {
+    "context": "Caption of a picture of the disassembly view with labels and comments. '.nex', 'ScrollNutter' and 'zxnDMA' are never translated."
+  },
+  "slide.sprites": "Every hardware sprite, live, in the Sprite Inspector",
+  "@slide.sprites": {
+    "context": "Caption of a picture of the Sprite Inspector panel. Use the app's translation of 'Sprite Inspector'."
+  },
+  "slide.copper": "The Copper list, with every MOVE and WAIT explained",
+  "@slide.copper": {
+    "context": "Caption of a picture of the Copper list panel. 'Copper', 'MOVE' and 'WAIT' are never translated."
+  },
+  "slide.spriteEditor": "Draw sprites and patterns in the sprite editor",
+  "@slide.spriteEditor": {
+    "context": "Caption of a picture of the sprite editor with the demo's sprites."
+  },
+  "slide.basic": "Step through ZX BASIC, with its call stack and variables",
+  "@slide.basic": {
+    "context": "Caption of a picture of a BASIC program paused in the debugger. 'ZX BASIC' is never translated."
+  },
+  "machines.title": "Machines",
+  "@machines.title": {
+    "context": "Accessible label of the strip listing the emulated machines."
+  },
+  "machines.spectrum": "48K · 128K · +2A/+3 · +2E/+3E",
+  "@machines.spectrum": {
+    "context": "ZX Spectrum models. Model names: never translated."
+  },
+  "machines.clones": "Pentagon · Scorpion · Timex",
+  "@machines.clones": {
+    "context": "Names of ZX Spectrum clones. Never translated."
+  },
+  "loop.write.label": "Write",
+  "@loop.write.label": {
+    "context": "Step label in the four-step strip 'Write, Build, Run, Debug'. One word, shown in capitals."
+  },
+  "loop.write.title": "An editor that knows Z80",
+  "@loop.write.title": {
+    "context": "Heading of the 'Write' step."
+  },
+  "loop.write.text": "Completion, hover and rename from the real compiler.",
+  "@loop.write.text": {
+    "context": "One-line description of the 'Write' step."
+  },
+  "loop.build.label": "Build",
+  "@loop.build.label": {
+    "context": "Step label, one word, shown in capitals."
+  },
+  "loop.build.title": "Assembler and BASIC built in",
+  "@loop.build.title": {
+    "context": "Heading of the 'Build' step."
+  },
+  "loop.build.text": "Or sjasmplus, Boriel BASIC, z88dk and PASTA/80.",
+  "@loop.build.text": {
+    "context": "One-line description. The four tool names are never translated."
+  },
+  "loop.run.label": "Run",
+  "@loop.run.label": {
+    "context": "Step label, one word, shown in capitals."
+  },
+  "loop.run.title": "One click to the emulator",
+  "@loop.run.title": {
+    "context": "Heading of the 'Run' step."
+  },
+  "loop.run.text": "Klive builds, loads and starts your code.",
+  "@loop.run.text": {
+    "context": "One-line description of the 'Run' step."
+  },
+  "loop.debug.label": "Debug",
+  "@loop.debug.label": {
+    "context": "Step label, one word, shown in capitals."
+  },
+  "loop.debug.title": "See inside the machine",
+  "@loop.debug.title": {
+    "context": "Heading of the 'Debug' step."
+  },
+  "loop.debug.text": "Breakpoints, stepping, registers and memory.",
+  "@loop.debug.text": {
+    "context": "One-line description of the 'Debug' step."
+  },
+  "features.title": "What makes Klive different",
+  "@features.title": {
+    "context": "Heading above the feature sections."
+  },
+  "feature.allInOne.tag": "All in one",
+  "@feature.allInOne.tag": {
+    "context": "Short label above the feature heading, shown in capitals."
+  },
+  "feature.allInOne.title": "One app. Zero glue.",
+  "@feature.allInOne.title": {
+    "context": "Feature heading: Klive needs no other tools to be installed and configured. Keep it short and punchy."
+  },
+  "feature.allInOne.short": "Emulator, editor, assembler, BASIC compiler and debugger, built to work together.",
+  "@feature.allInOne.short": {
+    "context": "One-sentence version of the feature, in a coloured block."
+  },
+  "feature.allInOne.text": "Start from a template for the 48K, 128K, +3E, Next or Z88 and press Run. Elsewhere this takes an assembler, an editor, an emulator and a debugger bridge, configured by hand.",
+  "@feature.allInOne.text": {
+    "context": "The feature's paragraph. Machine names are never translated."
+  },
+  "feature.allInOne.point1": "Compile, inject, run and debug with one click",
+  "@feature.allInOne.point1": {
+    "context": "Bullet point."
+  },
+  "feature.allInOne.point2": "Project templates for every machine",
+  "@feature.allInOne.point2": {
+    "context": "Bullet point."
+  },
+  "feature.allInOne.point3": "Works with sjasmplus, Boriel BASIC, z88dk and PASTA/80 when you want them",
+  "@feature.allInOne.point3": {
+    "context": "Bullet point. Tool names are never translated."
+  },
+  "feature.basicDebug.tag": "ZX BASIC",
+  "@feature.basicDebug.tag": {
+    "context": "Short label above the feature heading. 'ZX BASIC' is never translated."
+  },
+  "feature.basicDebug.title": "Step through your BASIC, line by line",
+  "@feature.basicDebug.title": {
+    "context": "Feature heading: source-level debugging of compiled BASIC programs."
+  },
+  "feature.basicDebug.short": "Breakpoints on statements, a call stack, and variables you can edit.",
+  "@feature.basicDebug.short": {
+    "context": "One-sentence version of the feature, in a coloured block."
+  },
+  "feature.basicDebug.text": "Klive's built-in ZX BASIC compiler, compatible with Boriel ZX BASIC, debugs at the source level: breakpoints on statements, Step Over and Step Into, a real call stack, live variables, and stops on runtime errors.",
+  "@feature.basicDebug.text": {
+    "context": "The feature's paragraph. 'Step Over' and 'Step Into' are command names: use the translation the Klive app uses for them."
+  },
+  "feature.basicDebug.point1": "No installation: the compiler is built in",
+  "@feature.basicDebug.point1": {
+    "context": "Bullet point."
+  },
+  "feature.basicDebug.point2": "Compatible with Boriel ZX BASIC and NextBuild's CODEBANK",
+  "@feature.basicDebug.point2": {
+    "context": "Bullet point. Product names and CODEBANK are never translated."
+  },
+  "feature.basicDebug.point3": "Editor help: completion, go to definition, rename",
+  "@feature.basicDebug.point3": {
+    "context": "Bullet point."
+  },
+  "feature.timeTravel.tag": "Reverse debugging",
+  "@feature.timeTravel.tag": {
+    "context": "Short label above the feature heading."
+  },
+  "feature.timeTravel.title": "Go back in time",
+  "@feature.timeTravel.title": {
+    "context": "Feature heading: the debugger can run the machine backwards."
+  },
+  "feature.timeTravel.short": "Step backwards through the whole machine: memory, devices, the screen.",
+  "@feature.timeTravel.short": {
+    "context": "One-sentence version of the feature, in a coloured block."
+  },
+  "feature.timeTravel.text": "Step back through every instruction with memory, devices and the screen restored. Find the last write to a byte, continue from the past, and save a whole session to open elsewhere.",
+  "@feature.timeTravel.text": {
+    "context": "The feature's paragraph."
+  },
+  "feature.timeTravel.point1": "On every Z80 machine Klive emulates",
+  "@feature.timeTravel.point1": {
+    "context": "Bullet point."
+  },
+  "feature.timeTravel.point2": "Every breakpoint works backwards too",
+  "@feature.timeTravel.point2": {
+    "context": "Bullet point."
+  },
+  "feature.timeTravel.point3": "Debug recordings: send the bug, not a description",
+  "@feature.timeTravel.point3": {
+    "context": "Bullet point."
+  },
+  "feature.speaksNext.tag": "ZX Spectrum Next",
+  "@feature.speaksNext.tag": {
+    "context": "Short label above the feature heading. Product name: never translated."
+  },
+  "feature.speaksNext.title": "Speaks Next natively",
+  "@feature.speaksNext.title": {
+    "context": "Feature heading: Klive understands the ZX Spectrum Next's hardware."
+  },
+  "feature.speaksNext.short": "NextReg breakpoints, bank-aware debugging, .nex files with palettes and Copper.",
+  "@feature.speaksNext.short": {
+    "context": "One-sentence version of the feature, in a coloured block. 'NextReg', '.nex' and 'Copper' are never translated."
+  },
+  "feature.speaksNext.text": "Break when a program writes a Next register, with value and mask filters and old-to-new values. Set breakpoints on banks rather than addresses, program the DMA with a readable syntax, and build .nex files with palettes, Copper lists and loading bars.",
+  "@feature.speaksNext.text": {
+    "context": "The feature's paragraph. 'DMA', '.nex' and 'Copper' are never translated."
+  },
+  "feature.speaksNext.point1": "Live views of the sprites, the Copper and the video layers",
+  "@feature.speaksNext.point1": {
+    "context": "Bullet point. 'Copper' is never translated."
+  },
+  "feature.speaksNext.point2": "Sprite and palette editors",
+  "@feature.speaksNext.point2": {
+    "context": "Bullet point."
+  },
+  "feature.speaksNext.point3": "NextZXOS boots from an emulated SD card",
+  "@feature.speaksNext.point3": {
+    "context": "Bullet point. 'NextZXOS' is never translated."
+  },
+  "feature.testing.tag": "Testing",
+  "@feature.testing.tag": {
+    "context": "Short label above the feature heading."
+  },
+  "feature.testing.title": "Test it like modern code",
+  "@feature.testing.title": {
+    "context": "Feature heading: unit tests, coverage and profiling for Z80 programs."
+  },
+  "feature.testing.short": "Unit tests, code coverage and a profiler, in the IDE and in CI.",
+  "@feature.testing.short": {
+    "context": "One-sentence version of the feature, in a coloured block. 'CI' (continuous integration) is usually left as is."
+  },
+  "feature.testing.text": "Write unit tests for your Z80 routines and run them headless, with exact T-state timings. See which lines ran with code coverage, and where the time goes with a profiler.",
+  "@feature.testing.text": {
+    "context": "The feature's paragraph. 'T-state' is never translated."
+  },
+  "feature.testing.point1": "DeZog-compatible test projects",
+  "@feature.testing.point1": {
+    "context": "Bullet point. 'DeZog' is a product name."
+  },
+  "feature.testing.point2": "JUnit XML and LCOV output for CI",
+  "@feature.testing.point2": {
+    "context": "Bullet point. 'JUnit XML', 'LCOV' and 'CI' are never translated."
+  },
+  "feature.testing.point3": "Coverage per memory bank",
+  "@feature.testing.point3": {
+    "context": "Bullet point."
+  },
+  "feature.disassembly.tag": "Disassembly",
+  "@feature.disassembly.tag": {
+    "context": "Short label above the feature heading."
+  },
+  "feature.disassembly.title": "Disassembly that explains itself",
+  "@feature.disassembly.title": {
+    "context": "Feature heading: the disassembly view shows what each branch will do."
+  },
+  "feature.disassembly.short": "Branch verdicts with their T-state cost, system variables by name.",
+  "@feature.disassembly.short": {
+    "context": "One-sentence version of the feature, in a coloured block. 'T-state' is never translated."
+  },
+  "feature.disassembly.text": "Every conditional branch shows whether it will be taken and what it costs in T-states, worked out from the live flags. System variables appear by name, and you can measure the T-states between any two points.",
+  "@feature.disassembly.text": {
+    "context": "The feature's paragraph."
+  },
+  "feature.disassembly.point1": "Banked memory shown per bank",
+  "@feature.disassembly.point1": {
+    "context": "Bullet point."
+  },
+  "feature.disassembly.point2": "Labels and comments you add, everywhere",
+  "@feature.disassembly.point2": {
+    "context": "Bullet point."
+  },
+  "feature.disassembly.point3": "A ULA view of the beam, contention and the floating bus",
+  "@feature.disassembly.point3": {
+    "context": "Bullet point. 'ULA' is never translated."
+  },
+  "feature.nex.tag": "Reverse engineering",
+  "@feature.nex.tag": {
+    "context": "Short label above the feature heading."
+  },
+  "feature.nex.title": "Open a .nex. Understand it.",
+  "@feature.nex.title": {
+    "context": "Feature heading. '.nex' is a file extension: never translated."
+  },
+  "feature.nex.short": "Debug any NEX file without a project, and keep your notes beside it.",
+  "@feature.nex.short": {
+    "context": "One-sentence version of the feature, in a coloured block."
+  },
+  "feature.nex.text": "Debug any NEX file with no project and stop at its entry point. Compare a bank with the file on disk, name routines as you find them, and keep your labels, comments and data regions in a file that is there next time.",
+  "@feature.nex.text": {
+    "context": "The feature's paragraph."
+  },
+  "feature.nex.point1": "Break at the entry point",
+  "@feature.nex.point1": {
+    "context": "Bullet point."
+  },
+  "feature.nex.point2": "Annotations in a sidecar file",
+  "@feature.nex.point2": {
+    "context": "Bullet point."
+  },
+  "feature.nex.point3": "Copper lists and DMA programs decoded",
+  "@feature.nex.point3": {
+    "context": "Bullet point. 'Copper' and 'DMA' are never translated."
+  },
+  "feature.more": "Read more",
+  "@feature.more": {
+    "context": "Link at the end of a feature section, to its documentation."
+  },
+  "strip.machines": "From the ZX80 to the ZX Spectrum Next",
+  "@strip.machines": {
+    "context": "Small card: the range of machines Klive emulates. 'ZX80' and 'ZX Spectrum Next' are never translated."
+  },
+  "strip.recording": "Record the emulator and the IDE as video",
+  "@strip.recording": {
+    "context": "Small card."
+  },
+  "strip.scripting": "Script the IDE and your builds",
+  "@strip.scripting": {
+    "context": "Small card."
+  },
+  "strip.languages": "In six languages",
+  "@strip.languages": {
+    "context": "Small card: Klive's interface is available in six languages."
+  },
+  "strip.open": "Free and open source",
+  "@strip.open": {
+    "context": "Small card."
+  },
+  "cta.title": "Ready to write your first program?",
+  "@cta.title": {
+    "context": "Heading of the closing call to action."
+  },
+  "cta.text": "The Get Started tutorial takes you from installing Klive to debugging Z80 assembly and BASIC.",
+  "@cta.text": {
+    "context": "Paragraph of the closing call to action."
+  },
+  "footer.license": "Klive IDE is free and open source, under the MIT license.",
+  "@footer.license": {
+    "context": "Footer line. 'Klive IDE' and 'MIT' are never translated."
+  },
+  "footer.changelog": "Changelog",
+  "@footer.changelog": {
+    "context": "Footer link to the list of changes in each release."
+  },
+  "footer.issues": "Report an issue",
+  "@footer.issues": {
+    "context": "Footer link to GitHub issues."
+  },
+  "footer.translate": "Help translate Klive",
+  "@footer.translate": {
+    "context": "Footer link to the translation guide."
+  },
+  "footer.docs": "Documentation",
+  "@footer.docs": {
+    "context": "Footer link to the documentation."
+  }
+}

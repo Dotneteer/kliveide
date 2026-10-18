@@ -2816,3 +2816,47 @@ its text as a shape has the same problem.
   session. § "Verify Geometry In The Running App, Never In A Replica".
 - Run the visual check. The token contract, row-size and syntax-palette tests catch structure, never
   appearance.
+
+## The Website Wears The App's Palette
+
+The documentation site (`docs/`) and its landing page use the app's own L1 values, not a palette
+of their own: `docs/app/tokens.css` holds the neutral ramp (both tones) and the Sinclair Blue
+accent from `theming/tokens/palette.ts`, and `test/docs/site-tokens.test.ts` fails when the two
+drift. Change a neutral or the default accent in the app, and the site changes with it - update
+`tokens.css` in the same change. Nextra's own chrome takes the same accent and canvas through
+`<Head color backgroundColor>` in `docs/app/[lang]/layout.tsx`.
+
+- **One loud moment, on the landing page only.** The four Spectrum colours (the logo's stripes and
+  the solid blocks) appear in the hero's stripe band and the feature blocks, nowhere else. The
+  docs stay calm: never a Spectrum colour behind running text.
+- **Type:** Schibsted Grotesk for headings, IBM Plex Sans for text, JetBrains Mono for code and
+  labels (`docs/app/fonts.ts`, served from the site by `next/font`).
+- **Theme selection follows next-themes:** a `dark`/`light` class on `<html>` wins, the OS
+  preference decides otherwise. The landing page's toggle writes the same `theme` key, so a choice
+  holds across the landing page and the docs.
+- **The hero is a carousel of real screenshots** (`docs/landing/HeroCarousel.tsx`): a 16:10 frame on
+  the app's canvas colour, so pictures of another shape (the emulator) sit centred on the IDE's own
+  dark ground rather than on the page. Pictures fly sideways in the direction of travel (forward:
+  in from the right, out to the left), every five seconds; a manual change restarts the count.
+  Its caption box is always two lines tall, so captions of different lengths never move the page.
+  Only the first slide is in the HTML; a slide's neighbours load ahead of it. **The only way to stop
+  it is its pause button** (WCAG 2.2.2): implicit stops - on hover, on focus, after the first click,
+  under reduced motion - made it look broken, because the pointer rests on it and a clicked arrow
+  keeps the focus. Reduced motion turns off the flying, not the advancing. Its pictures come from `scripts/doc-shots/recipes/landing.cjs`.
+- **Screenshots in the docs are dark** (decision D4), whatever the page's theme; their frame and
+  markers use the tokens.
+- **A docs link card is title first, then its description**, padded as a whole
+  (`docs/app/[lang]/(docs)/custom.css`, `.nextra-card`). Nextra's own layout assumes an image as
+  the card's body: unpadded children above a separately padded title, which looks broken with text.
+- **Every docs code block has a copy button**, Nextra's (`defaultShowCopyCode` in
+  `docs/next.config.mjs`). It stays invisible until the block is hovered or focused, and is
+  styled quietly (panel colour, thin border, accent on hover). Touch screens cannot hover, so
+  there it rests half visible. Its container sits *inside* the `<pre>` (`.nextra-code pre > div`).
+- **ZX BASIC code in the docs is ```zxbasic**, highlighted by `docs/zxbasic.tmLanguage.json`, which
+  is generated from the IDE editor's word lists (`npm run doc:grammar`; a test fails when it falls
+  behind). Its colours sit beside the Z80 ones in `docs/next.config.mjs`: statements share the
+  assembler's keyword blue, types are teal, built-in and library functions a pale yellow that only
+  this grammar produces (the highlighting check counts it), and `ASM` blocks embed the Z80 grammar.
+- **A screenshot's callouts are HTML, never pixels:** `<Shot markers>` draws numbered badges from
+  the harness's sidecar, and the numbered list under the figure is styled like the badges, so the
+  text translates with the page.

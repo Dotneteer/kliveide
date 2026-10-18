@@ -139,6 +139,30 @@ of a machine through the same session and compares them:
   Compare pictures and panel text for equality, and read a difference as a bug only
   when it is not time-dependent; exact machine state is the golden tests' job (`test/wasm/z88/`).
 
+## Localized shots, markers and WebP
+
+Added for the Get Started pages (`.plans/DOCS_SITE_MODERNIZATION_PLAN.md` §5, Phase 2):
+
+- **`localized: true`** on a recipe makes `run.cjs` run it once per language of `--lang <id>`,
+  `--lang de,hu` or `--lang all` (the `enabled` rows of `src/common/i18n/languages.ts`). The harness
+  seeds `globalSettings.ideViewOptions.language`, so the IDE *and* the emulator show that language,
+  and `shot()` prefixes every path with it: `images/<lang>/get-started/x.webp`. A recipe gets the
+  language as `klive.lang` (and `{ lang }` in its second argument) for anything else it must vary.
+  Verified in Hungarian: menus, panels, prompt output and the emulator's overlay all switch.
+- **`.webp` paths** are written as near-lossless WebP, about a third of the PNG size for UI shots.
+  New pages use WebP; the weight budget (`npm run doc:check:weight`, 1.5 MB of images per page)
+  is why.
+- **`markers`** on `shot()` (`{ name: selector }`, or `{ selector, x, y }` for a point inside the
+  box) writes `<image>.json` beside the image with each point as a percentage of the captured
+  element. The docs' `<Shot markers={["name", ...]}>` draws numbered badges there. The badges are
+  HTML, so the text they refer to is translated with the page, and they follow the layout when a
+  re-capture moves things.
+- **`klive.emu({ width, height })`** shows, focuses and sizes the EMU window and returns its page;
+  pass it as `shot(selector, path, { page })` to photograph the emulator. Without the sizing the
+  window keeps a display-dependent size and the screen gets cut off.
+- `body` is the wrong crop for a whole-window shot: it is larger than the app and leaves a black
+  margin on the right and bottom. Use the app's root container instead.
+
 ## Fixture projects live under `~/KliveProjects`, guarded
 
 Screenshots show absolute paths, so a temp-folder fixture puts

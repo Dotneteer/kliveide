@@ -1,0 +1,97 @@
+---
+description: "Carregar programas de ZX Spectrum a partir de ficheiros de cassete .tap e .tzx, instantaneamente ou em tempo real, e ver o conteúdo de uma cassete com o visualizador de cassetes."
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# Carregar um programa a partir de cassete
+
+O software para ZX Spectrum era vendido em cassetes, e hoje chega sob a forma de ficheiros `.tap` e `.tzx`: gravações dessas cassetes. O Klive reprodu-los para a máquina emulada tal como faria um gravador de cassetes.
+
+## Carregar uma cassete
+
+<Steps>
+
+### Inserir a cassete
+
+Escolha **Máquina › Cassete › Inserir cassete...** (ou **Ficheiro › Abrir ficheiro...**) e selecione um ficheiro `.tap` ou `.tzx`. O Klive tenta também ler como cassetes os ficheiros com outras extensões.
+
+### Escrever LOAD ""
+
+Inicie a máquina, se não estiver em execução, e clique no seu ecrã. No ZX Spectrum 48K, prima <kbd>J</kbd> para `LOAD`, escreva duas aspas (**Symbol Shift**+<kbd>P</kbd> duas vezes; o Symbol Shift é a tecla <kbd>Alt</kbd> da direita) e prima <kbd>Enter</kbd>. Num 128K ou +2, escolha antes **Tape Loader** no menu de arranque.
+
+### Aguardar pelo programa
+
+A máquina carrega o que estiver na cassete, e a maioria dos programas arranca sozinha depois de carregada.
+
+</Steps>
+
+<Callout type="info" emoji="💡">
+É possível mudar de cassete a qualquer momento, mesmo com a máquina em execução: é como ejetar uma cassete e colocar outra.
+</Callout>
+
+## Carregamento normal e rápido
+
+Carregar programas e cassetes de ZX Spectrum pode demorar muito tempo, sobretudo com ficheiros grandes. Além do modo de *carregamento normal*, o Klive suporta o *carregamento rápido*, que lê o programa instantaneamente, numa fração de segundo.
+
+O carregamento rápido pode ser ativado ou desativado com o comando **Máquina › Cassete › Carregamento rápido** (ou em **Definições › Emulador**), ou clicando no ícone de **carregamento rápido** (um foguetão) na barra de ferramentas.
+
+É possível alterar o modo de carregamento rápido mesmo durante o carregamento de um jogo. No entanto, a alteração só tem efeito da próxima vez que começar a carregar um programa.
+
+<Callout type="info" emoji="💡">
+Por predefinição, o carregamento rápido está ativado.
+</Callout>
+
+## Rebobinar a cassete
+
+Quando o carregamento termina ou é interrompido, a posição da cassete mantém-se, tal como se o leitor de cassetes físico tivesse sido parado. Ao dar novamente o comando `LOAD`, o carregamento começa a procurar o cabeçalho de ficheiro seguinte a partir da posição onde tinha parado.
+
+É possível rebobinar a cassete até ao início, tal como numa cassete física. Clique no ícone **Rebobinar** na barra de ferramentas (o que está à direita do ícone do foguetão) ou execute o comando **Máquina › Cassete › Rebobinar**.
+
+## Ver o conteúdo de uma cassete
+
+Abra um ficheiro `.tap` ou `.tzx` a partir do Explorador para ver o que contém (as maiúsculas ou minúsculas da extensão não importam: `GAME.TAP` também abre). O visualizador mostra:
+
+- **Um resumo**: o formato (e a versão TZX), o tamanho do ficheiro, quantos blocos e ficheiros contém, quanto tempo demora a reproduzir e, num ficheiro TZX que os registe, o título, a editora e o ano.
+- **Uma faixa cronológica**: a cassete inteira pela ordem de reprodução, com cada bloco tão largo quanto o tempo que demora a reproduzir. O bloco selecionado aparece contornado; clique num segmento para selecionar o respetivo bloco. Um programa em BASIC aparece na cor de destaque, e um bloco que o Klive não consegue reproduzir aparece a vermelho.
+- **Os blocos**: todos os blocos numa lista, agrupados por ficheiro. Um cabeçalho padrão e o bloco de dados que se lhe segue formam um ficheiro, como `Program "Float Spy"` ou `Bytes "float.cde"`. Cada linha mostra o que o bloco contém: `LINE 9996` para um programa que arranca sozinho, ou o endereço de carregamento do código. Utilize os botões **Todos**, **Dados**, **BASIC**, **Código** e **Ignorados** para filtrar a lista, e as teclas de seta para a percorrer.
+
+Os detalhes ao lado da lista descrevem o bloco selecionado: o seu comprimento e checksum, quando é reproduzido, os campos do seu cabeçalho e o timing de um bloco turbo. A lista e os detalhes ficam sempre lado a lado. Um **Programa BASIC** mostra quantas linhas tem, e um **ecrã** (`SCREEN$`) é desenhado; para ler a listagem de um programa ou os bytes de um bloco, destaque o bloco.
+
+<ClickableImage src="/images/getting-started/tape-viewer.png" width={900} />
+
+Selecione um **cabeçalho** para ver os seus 19 bytes explicados. Os bytes estão agrupados por campo — flag, tipo, o nome de dez caracteres, três valores de dois bytes e o checksum — por cima de uma lista dos campos com os respetivos valores descodificados. Aponte para um byte ou para um campo (ou percorra a lista com a tecla Tab) para realçar ambos e ler o significado do campo; a linha de arranque automático de um programa, ou o endereço de carregamento do código, é explicada logo de início. Os três valores de dois bytes significam coisas diferentes consoante o tipo de ficheiro, e a explicação indica qual.
+
+<ClickableImage src="/images/getting-started/tape-header-bytes.png" width={560} />
+
+**Destacar** um bloco mostra-o por inteiro num documento próprio: como dump de memória (a vista predefinida para código), como desmontagem no endereço para onde o bloco é carregado, como listagem BASIC completa, ou como ecrã. Utilize o botão ao lado dos detalhes do bloco (a sua seta escolhe a vista), o ícone na respetiva linha, um duplo clique, ou <kbd>Enter</kbd>. **Retroceder** volta à cassete. Um bloco sem cabeçalho não tem endereço de carregamento próprio: escreva um na caixa **Listar em** para o desmontar nesse endereço, e clique nele com o botão direito para **Ler como BASIC** quando se souber que é um programa.
+
+<Callout type="warning" emoji="⚠️">
+Alguns blocos TZX — tons puros, sequências de impulsos, dados puros, gravações diretas e CSW, dados generalizados — são mostrados, mas **ignorados** pelo Klive na reprodução. Uma cassete que precise deles é assinalada com uma faixa de aviso, e o seu carregamento pode falhar.
+</Callout>
+
+## Carregar uma cassete a partir do IDE
+
+Num ZX Spectrum 48K, 128K ou +2/+3, o separador do visualizador de cassetes tem três botões, e o menu de contexto do Explorador sobre um ficheiro `.tap` ou `.tzx` tem as mesmas três entradas:
+
+<ClickableImage src="/images/getting-started/tape-viewer-commands.png" width={900} />
+
+- **Carregar e executar cassete** (ícone de reprodução) reinicia a máquina e começa a carregar a cassete: escreve `LOAD ""` num 48K, e escolhe **Tape Loader** no menu de arranque de um 128K ou +2 (**Loader** num +2A/+3, que, se houver um disco na unidade A, arranca a partir dele). O carregador que a cassete trouxer é então executado tal como seria na máquina real.
+- **Inserir cassete** (ícone de cassete) coloca a cassete no leitor sem reiniciar, tal como **Máquina › Cassete › Inserir cassete...**. Inserir a cassete que já está no leitor rebobina-a.
+- **Carregar e depurar cassete** (ícone de depuração) é o mesmo que **Carregar e executar cassete**, com os pontos de interrupção ativos.
+
+<ClickableImage src="/images/getting-started/tape-viewer-loaded.png" width={720} />
+
+Em qualquer outra máquina, como o ZX Spectrum Next, os botões e as entradas do menu estão desativados; a descrição de um botão explica porquê. As mesmas ações estão disponíveis através do comando [`tape-load`](/en/reference/commands#tape-load).
+
+## Como funciona o carregamento rápido
+
+O modo de carregamento rápido aplica uma técnica poderosa: a interceção da ROM (ROM hooking). Enquanto o emulador corre, vigia o registo `PC` à espera do ponto de entrada da rotina de carregamento da ROM, em todos os modelos de ZX Spectrum.
+
+Quando a execução chega à rotina de carregamento, o mecanismo de carregamento rápido suspende a máquina e injeta os dados do ficheiro da cassete diretamente na memória. Ao fazê-lo, o algoritmo define os registos do Z80 (incluindo as flags) da mesma forma que o algoritmo da ROM.
+
+Depois de carregados os dados, o mecanismo define o valor atual do registo `PC` para o ponto de saída da rotina de carregamento, como se a CPU a tivesse executado, e sai do modo rápido.
+
+Se ocorrer algum erro durante o carregamento, o mecanismo de carregamento rápido define `PC` para o início da rotina que comunica um erro de cassete.
+
+A seguir, [conhecer o IDE](/pt-PT/get-started/meet-the-ide/).

@@ -1,0 +1,67 @@
+---
+description: "Abra o IDE do Klive e aprenda a se orientar nele: a barra de ferramentas, o explorador, o editor, o prompt de comando e a barra de status. Defina o idioma e o tema do IDE."
+---
+
+import { Callout } from 'nextra/components'
+
+# Conheça o IDE
+
+O IDE é a segunda janela do Klive. Na janela do emulador, escolha **Exibir › Mostrar IDE**. O Klive lembra quais janelas estavam abertas e onde, então da próxima vez ele as abre do mesmo jeito.
+
+Quando não há nenhum projeto aberto, o explorador oferece dois botões: **Abrir pasta** e **Criar um projeto Klive**. Você vai criar um projeto na próxima página.
+
+<Shot
+  src="get-started/ide-no-project.webp"
+  alt="O IDE sem nenhuma pasta aberta"
+  figure="4.1"
+  caption="O IDE antes de você abrir um projeto"
+  markers={["newproject"]}
+  width={900}
+/>
+
+1. **Criar um projeto Klive** abre a caixa de diálogo **Criar um novo projeto Klive**.
+
+## As partes do IDE
+
+Este é o IDE com um projeto aberto:
+
+<Shot
+  src="get-started/ide-tour.webp"
+  alt="O IDE com um projeto aberto e as suas partes numeradas"
+  figure="4.2"
+  caption="As partes do IDE"
+  markers={["toolbar", "activities", "explorer", "editor", "buildbar", "tools", "prompt", "status"]}
+  width={900}
+/>
+
+1. **A barra de ferramentas** controla a máquina: executar ou depurar o seu projeto, pausar, parar, reiniciar e percorrer o código passo a passo.
+2. **A barra de atividades** alterna a barra lateral entre **Explorador**, **Depurar** (registradores, pilha de chamadas, variáveis, inspeções e pontos de interrupção), **Info da máquina**, **Scripts** e **Testes**. A engrenagem na parte de baixo abre as Configurações.
+3. **A barra lateral**, aqui com o Explorador, mostrando os arquivos do seu projeto.
+4. **O editor de código**. Ele conhece assembly Z80 e ZX BASIC: colore o código, completa nomes e mostra erros enquanto você digita.
+5. **A barra de compilação** do arquivo principal: compile, injete, execute e depure esse arquivo.
+6. **Comandos e Saída**. A guia **Comandos** mostra o que você digitou no prompt e as respostas; **Saída** mostra o que as compilações e o emulador informam.
+7. **O prompt de comando**. Digite `?` e <kbd>Enter</kbd> para listar todos os comandos. Os comandos são um jeito rápido de fazer quase tudo no Klive.
+8. **A barra de status**: o estado da máquina, o resultado da última compilação e a posição do cursor.
+
+<Callout type="info" emoji="💡">
+Experimente o prompt agora: digite `em-start` e pressione <kbd>Enter</kbd>, e o emulador inicia. `em-stop` o para. [Comandos do IDE](/en/reference/commands/) lista todos eles.
+</Callout>
+
+## Defina o idioma e o tema
+
+Os menus, as caixas de diálogo e os painéis do Klive estão disponíveis em inglês, espanhol, português (do Brasil e de Portugal), alemão e húngaro. Abra as Configurações com **Klive › Configurações...** no macOS (<kbd>Cmd</kbd>+<kbd>,</kbd>) ou **Arquivo › Configurações...** no Windows e no Linux, e escolha a página **Idioma**.
+
+<Shot
+  src="get-started/settings-language.webp"
+  alt="A página Idioma da caixa de diálogo Configurações"
+  figure="4.3"
+  caption="A página Idioma das Configurações"
+  markers={["language"]}
+  width={760}
+/>
+
+1. **Idioma de exibição** escolhe o idioma. **Padrão do sistema** segue o seu sistema operacional. Nomes técnicos, como instruções Z80, registradores, comandos e nomes de máquinas, ficam em inglês em todos os idiomas.
+
+A página **Aparência** define o tema: um **Tom** claro ou escuro, e uma de seis cores em **Cor de destaque**. As mudanças valem na hora; não há botão OK.
+
+Agora, escreva [o seu primeiro programa em assembly](/pt-BR/get-started/first-assembly-program/).

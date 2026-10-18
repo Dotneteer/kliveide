@@ -1,0 +1,56 @@
+---
+description: "The project templates Klive offers for each machine: Klive Z80 assembly, ZX BASIC, sjasmplus, PASTA/80 and z88dk."
+---
+
+import { Callout } from 'nextra/components'
+
+# Project templates
+
+When you create a project with **File › New Project...** or the [`newp`](/en/reference/commands#newp) command, you choose a machine and a **template**. A template is a small, working starting point: a build root file with a "Welcome to Klive IDE" program, and a `build.ksx` file that tells Klive how to build, run and export it. Press Run on a new project and it works.
+
+## Templates by machine
+
+| Machine | Machine ID | `default` | `zx-basic` | `sjasmplus` | `pasta-80` | `z88-dk` |
+| --- | --- | :-: | :-: | :-: | :-: | :-: |
+| ZX Spectrum 48K | `sp48` | ✓ | ✓ | ✓ | ✓ | ✓ |
+| ZX Spectrum 128K | `sp128` | ✓ | ✓ | ✓ | ✓ | |
+| ZX Spectrum +2E/+3E | `spp3e` | ✓ | | ✓ | ✓ | |
+| Timex | `timex` | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Scorpion ZS-256 | `scorpion` | ✓ | ✓ | ✓ | ✓ | |
+| ZX Spectrum Next | `zxnext` | ✓ | ✓ | | | |
+| ZX81 | `zx81` | ✓ | | | | |
+| ZX80 | `zx80` | ✓ | | | | |
+| Cambridge Z88 | `z88` | ✓ | | | | |
+
+[Machine types](/en/reference/machine-types/) lists the models of each machine.
+
+## The templates
+
+| Template | Language | Build root | Needs |
+| --- | --- | --- | --- |
+| `default` | Klive Z80 assembly | `code/code.kz80.asm` (`code/code.z88.asm` on the Z88) | Nothing: the assembler is built in. |
+| `zx-basic` | ZX BASIC | `code/program.zxbas` | Nothing: Klive BASIC is built in. [ZX BASIC](/en/guides/languages/zx-basic/) explains the options and how to use Boriel BASIC instead. |
+| `sjasmplus` | sjasmplus assembly | `code/code.asm` | sjasmplus, set up as [sjasmplus](/en/guides/languages/sjasmplus/) describes. |
+| `pasta-80` | Pascal | `main.pas` | The PASTA/80 compiler, set up as [PASTA/80](/en/guides/languages/pasta80/) describes. |
+| `z88-dk` | C | `code/main.c` | z88dk, installed separately. |
+
+A few details:
+
+- The `default` template's code starts with a `.model` pragma for its machine (`Spectrum48`, `Spectrum128`, `SpectrumP3`, `ZX80`, `ZX81`), so the assembler knows what it targets.
+- On the ZX81 and ZX80, the program runs as a BASIC program: Klive puts the code into a `1 REM` line and calls it. See [ZX80 and ZX81](/en/reference/z80-assembler/zx80-zx81/).
+- The ZX Spectrum Next's `zx-basic` template shows how `CODEBANK` blocks put routines into 8K pages.
+- The Cambridge Z88's template has no program yet; it gives you the project structure to start from.
+
+<Callout type="info" emoji="💡">
+You can change a project's machine at any time while it is open, but the template's code stays what it was: a program written for the 48K's ROM does not run on a ZX81.
+</Callout>
+
+## What a template creates
+
+Every project has the same structure:
+
+- `klive.project`: the project's settings (the machine, breakpoints, the build root). Klive maintains it; do not edit it by hand.
+- `build.ksx`: the build functions behind **Compile**, **Inject**, **Run**, **Debug** and **Export**. See [The build system](/en/guides/projects/build-system/).
+- the source files of the template.
+
+[Creating a project](/en/guides/projects/creating-projects/) explains the project file, the build root, and the build bar.

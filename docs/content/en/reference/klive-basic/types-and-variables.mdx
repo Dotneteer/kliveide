@@ -1,0 +1,199 @@
+---
+description: "Klive BASIC's data types with their sizes and ranges, how variables get their types, DIM and CONST, arrays and their initialisers, and strings with slicing and substring assignment."
+---
+
+# Types and variables
+
+Every variable, constant, parameter and function result in Klive BASIC has a type. This page lists the types and shows how to declare variables, constants, arrays and strings.
+
+## Data types
+
+| Type | Bytes | Signed | Range | Sigil |
+| --- | --- | --- | --- | --- |
+| `Byte` | 1 | Yes | -128 to 127 | |
+| `UByte` | 1 | No | 0 to 255 | |
+| `Integer` | 2 | Yes | -32768 to 32767 | `%` |
+| `UInteger` | 2 | No | 0 to 65535 | |
+| `Long` | 4 | Yes | -2^31 to 2^31-1 | |
+| `ULong` | 4 | No | 0 to 2^32-1 | |
+| `Fixed` | 4 | Yes | 16.16 fixed point: about -32767.99998 to 32767.99998, in steps of 1/65536 | |
+| `Float` | 5 | Yes | The Sinclair ROM's 40-bit floating-point format: one exponent byte and four mantissa bytes | |
+| `String` | 2 | | A pointer to a block on the heap that holds a 2-byte length and the characters; at most 65535 characters | `$` |
+
+Type names are keywords, so their case does not matter: `UByte`, `UBYTE` and `ubyte` are the same.
+
+The types fall into groups:
+
+- **Integral**: `Byte`, `UByte`, `Integer`, `UInteger`, `Long`, `ULong`.
+- **Decimal**: `Fixed`, `Float`.
+- **Numeric**: integral or decimal.
+
+`Float` arithmetic uses the ROM's floating-point calculator.
+
+### Booleans
+
+Comparisons and the logical operators produce a boolean: 1 byte, 0 or 1. There is no boolean type name you can declare. In arithmetic a boolean counts as a `UByte`, and `PRINT` writes it as `0` or `1`.
+
+## How a variable gets its type
+
+A variable declared with `DIM ... AS type` has that type. A variable used without a declaration takes its type from where it first appears:
+
+- the value assigned to it (`n = 10` makes `n` a `UByte`),
+- the common type of a `FOR` loop's start, limit and step,
+- a sigil (`name$` is a `String`, `count%` an `Integer`),
+- a `READ` target, a parameter or a function result position.
+
+When nothing decides the type, the variable is a `Float` and the compiler warns (W100).
+
+Two header options make declarations stricter:
+
+| Option | Effect |
+| --- | --- |
+| `require-declarations` | Every variable must be declared with `DIM` before it is used. |
+| `require-types` | A variable without a type is an error, not a `Float`. `DIM x = 3` without `AS` is an error too. |
+
+The same settings are available as `#pragma explicit = true` and `#pragma strict = true`.
+
+An undeclared variable used inside a `SUB` or `FUNCTION` is the global of that name if one exists at that point; otherwise it is local to the routine.
+
+### Initial values
+
+Numeric variables start at zero and strings start empty. This holds for local variables too: they are cleared each time the routine is entered.
+
+## DIM
+
+`DIM` declares variables and arrays.
+
+| Form | Meaning |
+| --- | --- |
+| `DIM a, b, c AS type` | Several variables of one type |
+| `DIM x AS type = expr` | One variable with an initial value |
+| `DIM x = expr` | One variable whose type comes from the value |
+| `DIM x AS type AT address` | One variable placed at a fixed address |
+| `DIM a(bounds) AS type` | An array |
+| `DIM a(bounds) AS type AT address` | An array placed at a fixed address |
+| `DIM a(bounds) AS type => { ... }` | An array with initial values (`=` works the same as `=>`) |
+
+```zxbasic
+DIM score AS UInteger
+DIM i, j AS UByte
+DIM name$ AS String = "Klive"
+DIM speed = 1.5
+DIM lastKey AS UByte AT 23560
+```
+
+- With `= expr`, a constant numeric value becomes the variable's initial value. Any other value is assigned when the `DIM` statement runs.
+- With `AT address`, the variable shares memory with that address. The address must be a constant: a number, `@` of a global variable, `@` of a label, or `@` of an array element with constant subscripts. Inside a routine a variable placed with `AT` is static.
+- Inside a `SUB` or `FUNCTION`, `DIM` declares local variables, which are released when the routine returns. A parameter cannot be declared again with `DIM`.
+- A variable must be declared before its first use. Declaring a variable that was already used is an error.
+
+## CONST
+
+`CONST` declares a named constant whose value is fixed when compiling:
+
+```zxbasic
+CONST LIVES AS UByte = 3
+CONST TITLE = "KLIVE"
+CONST SCREEN_START = 16384
+```
+
+The value must be a constant expression (numbers, operators, `@` of a global variable or of a label) or a string literal. A constant is not a variable: you cannot assign to it. A string constant can be sliced.
+
+A numeric constant folds by its value, whatever type it declares: with `CONST k AS UByte = 200`, `k + k` is 400.
+
+## Arrays
+
+```zxbasic
+DIM m(2, 3) AS UByte           ' 3 x 4 elements, from m(0, 0) to m(2, 3)
+DIM p(1 TO 3) AS UInteger      ' 3 elements, p(1) to p(3)
+DIM names$(9)                  ' 10 strings
+```
+
+- **Bounds** are non-negative constants. A single bound `n` means `array-base TO n`; with the default base 0, `DIM a(10)` has 11 elements. `lower TO upper` gives both bounds; the lower bound may not be above the upper one.
+- **Dimensions**: an array can have any number of them.
+- **Layout**: elements are contiguous and row-major: the last subscript varies fastest. `@a(0)` (or `@a(0, 0)`) is the address of the first element.
+- **Subscripts** are converted to `UInteger`. With the `check-bounds` header option, a subscript outside its bounds stops the program with `3 Subscript wrong`. Without it, nothing is checked.
+- **Declaration first**: an array must be declared before it is used.
+
+The `array-base` header option and `#pragma array_base` set the default lower bound to 0 or 1.
+
+### Array initialisers
+
+`=>` (or `=`) followed by values in braces gives a numeric array its initial contents. Nested braces follow the dimensions, and the number of values must match the bounds:
+
+```zxbasic
+DIM p(1 TO 3) AS UInteger => {10, 20, 30}
+DIM q(1, 1) AS UByte => {{1, 2}, {3, 4}}
+```
+
+String arrays cannot be initialised this way, and an initialiser cannot be combined with `AT`.
+
+### Whole arrays
+
+A bare array name stands for the whole array in two places:
+
+- **Assignment**: `a = b` copies array `b` into array `a`. Both must have the same element type and the same total size in bytes. Different dimension shapes only raise a warning.
+- **Arguments**: `sum(values)` passes the whole array to a routine. Arrays are always passed by reference. See [Parameters](/en/reference/klive-basic/statements/#parameters).
+
+`LBOUND` and `UBOUND` give an array's bounds; see [Built-in functions](/en/reference/klive-basic/functions/#arrays-and-sizes).
+
+### Local arrays
+
+An array declared inside a `SUB` or `FUNCTION` gets fresh, zeroed data on the heap each time the routine runs, and the data is freed when it returns.
+
+## Strings
+
+A `String` variable holds a pointer to a block on the heap that stores the length and the characters. Strings behave as values:
+
+- Assignment copies the string.
+- `+` joins two strings into a new one.
+- Comparisons (`=`, `<>`, `<`, `>`, `<=`, `>=`) are lexicographic.
+- A string is never converted to a number, or a number to a string, implicitly. Use `VAL` and `STR`.
+
+### Slicing
+
+A slice takes part of a string:
+
+| Form | Result |
+| --- | --- |
+| `s$(i)` | The character at index `i` |
+| `s$(i TO j)` | The characters from index `i` to index `j`, both included |
+| `s$(i TO)` | From index `i` to the end |
+| `s$(TO j)` | From the start to index `j` |
+
+```zxbasic
+DIM s$ AS String = "Hello World"
+PRINT s$(0 TO 2); "|"; s$(4); "|"; s$(6 TO)
+```
+
+This prints `Hel|o|World`.
+
+- Indices count from the string base: 0 by default, 1 with the `string-base` or `sinclair-compatible` header option or `#pragma string_base = 1`.
+- A bound past the end is clipped. A lower bound above the upper one gives the empty string.
+- You can slice a string variable, a string array element, a string constant or a string literal. A parenthesised expression or a function result cannot be sliced.
+- For an element of a string array, the character index goes in the same parentheses after the array subscripts: `names$(2, 0)` is the first character of `names$(2)`.
+
+### Substring assignment
+
+A slice on the left of `=` overwrites characters in place. The string's length never changes:
+
+```zxbasic
+DIM s AS String = "Hello World"
+s(0 TO 4) = "Howdy"
+s(6 TO) = "Earth"
+s(0) = "J"
+PRINT s
+```
+
+This prints `Jowdy Earth`.
+
+- A value shorter than the range is padded with spaces; a longer one is cut.
+- The range is clipped to the string's current length. A range entirely outside the string writes nothing.
+
+### The heap
+
+Strings and local arrays live on the heap, which is 4768 bytes by default. The `heap-size` and `heap-address` header options change its size and place. When a new string does not fit, it becomes the empty string and the program goes on. With the `check-memory` option the program stops with `4 Out of memory` instead.
+
+## SIZEOF
+
+`SIZEOF(type)` and `SIZEOF(variable)` give a size in bytes as a constant: `SIZEOF(Float)` is 5.

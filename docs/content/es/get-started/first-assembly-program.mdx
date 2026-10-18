@@ -1,0 +1,122 @@
+---
+description: "Crea un proyecto Klive para el ZX Spectrum 48K, escribe un breve programa en ensamblador Z80 que cambia el color del borde y ejecútalo con un solo clic."
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# Tu primer programa en ensamblador
+
+En esta página crearás un proyecto, escribirás un programa en ensamblador Z80 que hace pasar el borde del ZX Spectrum por sus ocho colores, y lo ejecutarás.
+
+## Crea un proyecto
+
+<Steps>
+
+### Abre el cuadro de diálogo
+
+Elige **Archivo › Nuevo proyecto...** o haz clic en **Crear un proyecto Klive** en el explorador. Se abre el cuadro de diálogo **Crear un nuevo proyecto Klive**.
+
+<Shot
+  src="get-started/new-project.webp"
+  alt="El cuadro de diálogo Crear un nuevo proyecto Klive para un proyecto de ZX Spectrum 48K"
+  figure="5.1"
+  caption="Un nuevo proyecto de ZX Spectrum 48K"
+  width={620}
+/>
+
+### Rellénalo
+
+- **Tipo de máquina**: ZX Spectrum 48K.
+- **Plantilla de proyecto**: `default`, un proyecto con un archivo de ensamblador Z80 de Klive.
+- **Carpeta del proyecto**: déjala vacía, y el proyecto irá a la carpeta `KliveProjects` de tu carpeta personal.
+- **Nombre del proyecto**: `BorderColours`.
+
+Haz clic en **Crear**. Klive crea el proyecto y lo abre.
+
+</Steps>
+
+## Escribe el programa
+
+El proyecto tiene un único archivo fuente, `code/code.kz80.asm`. Ábrelo desde el explorador, sustituye su contenido por este programa y guárdalo con <kbd>Cmd</kbd>+<kbd>S</kbd> (<kbd>Ctrl</kbd>+<kbd>S</kbd> en Windows y Linux):
+
+```z80klive fixture="border-colours/code/code.kz80.asm"
+; Border colours - the program of Get Started, steps 5 and 6.
+; It shows the eight border colours, half a second each, forever.
+
+        .model Spectrum48
+        .org #8000
+
+Start:
+        ei              ; HALT needs interrupts to wake up
+        ld b,8          ; eight colours: 7 (white) down to 0 (black)
+NextColour:
+        ld a,b
+        dec a           ; B is 8..1, the colour is 7..0
+        out (#fe),a     ; the border colour is bits 0-2 of port #FE
+        ld e,25         ; wait 25 frames (half a second)
+Wait:
+        halt            ; wait for the next frame
+        dec e
+        jr nz,Wait
+        djnz NextColour
+        jr Start
+```
+
+Qué hace:
+
+- `.model Spectrum48` y `.org #8000` indican al ensamblador para qué máquina es el código y en qué lugar de la memoria se coloca.
+- El ZX Spectrum toma el color del borde de los tres bits más bajos del byte escrito en el puerto `#FE`. `OUT (#FE),A` lo escribe.
+- `HALT` espera al siguiente fotograma de la pantalla. El ZX Spectrum dibuja 50 fotogramas por segundo, así que 25 de ellos duran medio segundo.
+- `DJNZ` hace una cuenta atrás de `B` desde 8, así que los colores van del 7 (blanco) al 0 (negro), y después el programa vuelve a empezar.
+
+<Shot
+  src="get-started/first-program.webp"
+  alt="El programa en el editor del IDE"
+  figure="5.2"
+  caption="El programa, listo para ejecutarse"
+  markers={["buildroot", "run", "debug"]}
+  width={900}
+/>
+
+1. El icono junto a `code.kz80.asm` lo marca como **raíz de compilación**: el archivo que compila Klive.
+2. **Ejecutar** compila el programa, lo carga en la máquina y lo inicia.
+3. **Depurar** hace lo mismo con el depurador activado. Lo usarás en la página siguiente.
+
+## Ejecútalo
+
+Haz clic en **Ejecutar** en la barra de compilación, o pulsa <kbd>F5</kbd> en el IDE. El borde empieza a cambiar de color.
+
+<Shot
+  src="get-started/first-program-running.webp"
+  alt="El emulador con el borde cambiando de color"
+  figure="5.3"
+  caption="El programa se está ejecutando"
+  width={620}
+/>
+
+Klive ha hecho cinco cosas por ti:
+
+1. Ha ensamblado el programa. Si hubiera encontrado un error, se habría detenido aquí y lo habría mostrado en el editor.
+2. Ha reiniciado la máquina y ha dejado que la ROM llegue a su bucle principal.
+3. Ha pausado la máquina y ha copiado los bytes del programa en su memoria, en `#8000`.
+4. Ha puesto el contador de programa de la CPU en la primera instrucción del programa.
+5. Ha dejado que la máquina se ejecute.
+
+La pestaña **Comandos** muestra lo que ha ocurrido:
+
+<Shot
+  src="get-started/first-program-output.webp"
+  alt="La pestaña Comandos después de compilar e iniciar el programa"
+  figure="5.4"
+  caption="El informe de la compilación"
+  markers={["output"]}
+  width={900}
+/>
+
+1. El comando `run` ha compilado `code/code.kz80.asm` y después ha inyectado e iniciado el código. (Los botones de la barra de compilación ejecutan los mismos comandos que puedes escribir en la línea de comandos).
+
+<Callout type="info" emoji="💡">
+Prueba a hacer un cambio: sustituye `ld e,25` por `ld e,5` y vuelve a ejecutar el programa. Ahora los colores cambian diez veces por segundo.
+</Callout>
+
+A continuación, [depura tu programa](/es/get-started/debug-your-program/).

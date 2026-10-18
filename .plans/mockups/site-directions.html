@@ -1,0 +1,642 @@
+<title>Klive Site Directions</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Silkscreen&family=Archivo:wdth,wght@62..125,400;62..125,600;62..125,800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a review sheet. Short critique of today, then one tab per direction; each tab holds a
+   landing-page mockup and a docs-page mockup drawn in that direction's own tokens. */
+:root {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --fg: #1b1d21;
+  --muted: #565c65;
+  --line: #d5d8dd;
+  --accent: #0a6fb8;
+  --f-ui: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-head: "Schibsted Grotesk", "IBM Plex Sans", system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141517; --surface: #1b1d21; --fg: #e4e6ea; --muted: #949aa4; --line: #2e3238; --accent: #45a5e6;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141517; --surface: #1b1d21; --fg: #e4e6ea; --muted: #949aa4; --line: #2e3238; --accent: #45a5e6;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--f-ui); font-size: 15px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 32px 64px;
+}
+.sheet { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; }
+.sheet > *, .panel > * { min-width: 0; }
+h1, h2, h3 { font-family: var(--f-head); text-wrap: balance; margin: 0; }
+.intro h1 { font-size: clamp(1.6rem, 3.5vw, 2.3rem); }
+.intro p { max-width: 68ch; color: var(--muted); margin: 8px 0 0; }
+.critique { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.critique div { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; min-width: 0; }
+.critique b { display: block; font-family: var(--f-head); margin-bottom: 4px; }
+.critique span { color: var(--muted); font-size: 0.92rem; }
+.eyebrow { font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+
+.tabs { display: flex; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid var(--line); }
+.tabs button {
+  font: 600 0.95rem var(--f-ui); color: var(--muted); background: none; border: 0; border-bottom: 3px solid transparent;
+  padding: 10px 14px; cursor: pointer; display: flex; gap: 8px; align-items: baseline;
+}
+.tabs button small { font-weight: 400; }
+.tabs button[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--accent); }
+.tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.panel { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
+.why { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+.why p { margin: 6px 0 0; max-width: 68ch; }
+.why ul { margin: 6px 0 0; padding-left: 18px; color: var(--muted); font-size: 0.92rem; }
+.swatches { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+.swatches i { width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--line); display: block; }
+.caption { font-size: 0.8rem; color: var(--muted); margin: 0 0 6px; }
+.frame { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; box-shadow: 0 10px 30px rgb(0 0 0 / 0.12); }
+.browserbar { display: flex; gap: 6px; align-items: center; padding: 8px 12px; background: var(--surface); border-bottom: 1px solid var(--line); font: 0.75rem var(--f-mono); color: var(--muted); }
+.browserbar i { width: 10px; height: 10px; border-radius: 50%; background: var(--line); display: block; }
+.browserbar span { margin-left: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 760px) { .why { grid-template-columns: 1fr; } }
+
+/* ---------- shared mock pieces (coloured by each direction's --m-* tokens) ---------- */
+.m { background: var(--m-bg); color: var(--m-fg); font-family: var(--m-body); }
+.m a { color: inherit; text-decoration: none; }
+.m-header { display: flex; min-width: 0; align-items: center; gap: 18px; padding: 14px 28px; border-bottom: 1px solid var(--m-line); flex-wrap: wrap; }
+.m-brand { display: flex; align-items: center; gap: 10px; font-family: var(--m-display); font-weight: 800; font-size: 1.1rem; }
+.m-brand svg { width: 28px; height: 28px; display: block; }
+.m-nav { display: flex; gap: 18px; font-size: 0.9rem; color: var(--m-muted); flex-wrap: wrap; }
+.m-nav .on { color: var(--m-fg); }
+.m-tools { margin-left: auto; display: flex; gap: 10px; align-items: center; font-size: 0.85rem; }
+.m-lang { position: relative; }
+.m-lang > button { font: inherit; color: var(--m-fg); background: var(--m-raised); border: 1px solid var(--m-line); border-radius: var(--m-radius); padding: 5px 10px; cursor: pointer; }
+.m-lang ul { position: absolute; right: 0; top: calc(100% + 6px); z-index: 3; list-style: none; margin: 0; padding: 6px; min-width: 190px; background: var(--m-raised); border: 1px solid var(--m-line); border-radius: var(--m-radius); box-shadow: 0 12px 30px rgb(0 0 0 / 0.35); }
+.m-lang li { padding: 6px 10px; border-radius: 4px; display: flex; justify-content: space-between; gap: 12px; color: var(--m-fg); }
+.m-lang li small { color: var(--m-muted); }
+.m-lang li.cur { background: var(--m-accent-soft); }
+.m-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: var(--m-radius); font-weight: 600; border: 1px solid var(--m-line); font-family: var(--m-body); }
+.m-btn.primary { background: var(--m-accent); color: var(--m-on-accent); border-color: var(--m-accent); }
+.m-btn small { font-weight: 400; opacity: 0.8; }
+
+/* IDE + emulator drawing */
+.ide { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 0; background: #17191c; border: 1px solid #2e3238; border-radius: 8px; overflow: hidden; font: 11px/1.65 var(--f-mono); color: #a4a4a4; box-shadow: 0 24px 60px rgb(0 0 0 / 0.45); }
+.ide-ed { padding: 10px 0; border-right: 1px solid #2e3238; min-width: 0; overflow: hidden; }
+.ide-ed div { white-space: pre; padding: 0 12px; }
+.ide-ed .ln { color: #5a606a; display: inline-block; width: 2.2ch; text-align: right; margin-right: 1.4ch; }
+.ide-ed .bp { background: rgb(69 165 230 / 0.16); }
+.ide-ed .bp .ln { color: #e55; }
+.k { color: #569cd6; font-weight: 600; } .r { color: #2b7cb3; } .n { color: #4d8061; } .c { color: #6a9955; } .l { color: #4ec9b0; } .p { color: #c586c0; } .id { color: #b5890f; }
+.emu { display: grid; place-items: center; padding: 14px; background: #101113; min-width: 0; }
+.zx { width: 100%; max-width: 100%; aspect-ratio: 4 / 3; background: repeating-linear-gradient(0deg, #0000d8 0 6px, #d8d800 6px 12px); padding: 9%; }
+.zx div { background: #d8d8d8; width: 100%; height: 100%; display: grid; place-items: center; color: #000; font: 600 10px var(--f-mono); }
+.regs { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px 16px; padding: 6px 12px; border-top: 1px solid #2e3238; background: #1b1d21; font-size: 10.5px; }
+.regs b { color: #949aa4; font-weight: 400; margin-right: 4px; }
+.regs span { color: var(--ide-val, #45a5e6); }
+
+/* docs page drawing */
+.d { display: grid; grid-template-columns: 210px minmax(0, 1fr) 160px; min-height: 420px; }
+.d-side, .d-toc { padding: 18px 16px; font-size: 0.83rem; color: var(--m-muted); display: grid; align-content: start; gap: 4px; }
+.d-side { border-right: 1px solid var(--m-line); }
+.d-toc { border-left: 1px solid var(--m-line); }
+.d-side .grp { margin-top: 10px; color: var(--m-fg); font-weight: 600; font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; }
+.d-side .on { color: var(--m-fg); background: var(--m-accent-soft); border-radius: 4px; padding: 2px 8px; margin-left: -8px; }
+.d-side .step { display: flex; gap: 8px; align-items: center; }
+.d-side .step i { font-style: normal; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; font-size: 0.68rem; border: 1px solid var(--m-line); }
+.d-side .done i { background: var(--m-accent); color: var(--m-on-accent); border-color: var(--m-accent); }
+.d-main { padding: 22px 30px; min-width: 0; }
+.d-main h3 { font-family: var(--m-display); font-size: 1.6rem; margin: 4px 0 8px; }
+.d-meta { display: flex; gap: 12px; flex-wrap: wrap; font-size: 0.78rem; color: var(--m-muted); margin-bottom: 14px; }
+.d-meta span { border: 1px solid var(--m-line); border-radius: 99px; padding: 2px 10px; }
+.d-main p { margin: 0 0 12px; max-width: 62ch; font-size: 0.92rem; }
+.shot { position: relative; margin: 6px 0 12px; }
+.shot .ide { box-shadow: none; }
+.mk { position: absolute; width: 22px; height: 22px; border-radius: 50%; background: var(--m-accent); color: var(--m-on-accent); font: 700 12px var(--m-body); display: grid; place-items: center; box-shadow: 0 0 0 3px var(--m-bg); }
+.d-main ol { margin: 0 0 6px; padding-left: 0; list-style: none; display: grid; gap: 6px; font-size: 0.88rem; }
+.d-main ol li { display: flex; gap: 10px; }
+.d-main ol li b { flex: none; width: 20px; height: 20px; border-radius: 50%; background: var(--m-accent); color: var(--m-on-accent); font-size: 0.72rem; display: grid; place-items: center; }
+.d-toc .on { color: var(--m-fg); }
+@media (max-width: 900px) { .d { grid-template-columns: 180px minmax(0, 1fr); } .d-toc { display: none; } }
+@media (max-width: 620px) { .d { grid-template-columns: 1fr; } .d-side { display: none; } .ide { grid-template-columns: 1fr; } .ide-ed { border-right: 0; } .m-header { padding: 12px 16px; } }
+
+/* ---------- Direction A: Studio — the site looks like the app ---------- */
+.dir-a {
+  --m-bg: #141517; --m-raised: #202329; --m-fg: #e4e6ea; --m-muted: #949aa4; --m-line: #2e3238;
+  --m-accent: #45a5e6; --m-on-accent: #0e0f11; --m-accent-soft: rgb(69 165 230 / 0.14);
+  --m-display: "Schibsted Grotesk", system-ui, sans-serif; --m-body: "IBM Plex Sans", system-ui, sans-serif; --m-radius: 6px;
+}
+.a-hero { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 36px; align-items: center; padding: 48px 28px 36px; position: relative; overflow: hidden; }
+.a-hero::after { content: ""; position: absolute; right: -40px; top: -40px; width: 260px; height: 260px; background: linear-gradient(135deg, transparent 0 46%, #f00 46% 52%, #ff0 52% 58%, #0f0 58% 64%, #0ff 64% 70%, transparent 70%); opacity: 0.85; pointer-events: none; }
+.a-hero > * { position: relative; z-index: 1; min-width: 0; }
+.a-ver { font: 0.78rem var(--f-mono); color: var(--m-muted); border: 1px solid var(--m-line); border-radius: 99px; padding: 3px 10px; display: inline-block; }
+.a-hero h2 { font-family: var(--m-display); font-size: clamp(1.9rem, 4vw, 3rem); line-height: 1.05; font-weight: 800; margin: 14px 0 12px; letter-spacing: -0.02em; }
+.a-hero h2 em { font-style: normal; color: var(--m-accent); }
+.a-hero p { color: var(--m-muted); margin: 0 0 22px; max-width: 46ch; }
+.a-cta { display: flex; gap: 10px; flex-wrap: wrap; }
+.a-loop { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid var(--m-line); }
+.a-loop div { padding: 16px 20px; border-right: 1px solid var(--m-line); min-width: 0; }
+.a-loop div:last-child { border-right: 0; }
+.a-loop b { font: 600 0.72rem var(--f-mono); color: var(--m-accent); letter-spacing: 0.06em; }
+.a-loop h4 { margin: 4px 0 2px; font-family: var(--m-display); font-size: 1rem; }
+.a-loop p { margin: 0; color: var(--m-muted); font-size: 0.82rem; }
+.a-feat { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; padding: 32px 28px; border-top: 1px solid var(--m-line); align-items: center; }
+.a-feat h3 { font-family: var(--m-display); font-size: 1.5rem; margin: 6px 0 8px; }
+.a-feat p { color: var(--m-muted); margin: 0 0 10px; font-size: 0.92rem; }
+.a-feat ul { margin: 0; padding-left: 18px; font-size: 0.86rem; color: var(--m-muted); }
+.a-tag { font: 600 0.72rem var(--f-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--m-accent); }
+.history { background: #17191c; border: 1px solid #2e3238; border-radius: 8px; font: 11px/1.8 var(--f-mono); overflow: hidden; }
+.history div { display: grid; grid-template-columns: 7ch 6ch minmax(0, 1fr) 5ch; gap: 10px; padding: 0 12px; color: #949aa4; }
+.history div span:nth-child(3) { color: #e4e6ea; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.history .now { background: rgb(69 165 230 / 0.18); }
+.history .hd { color: #7f8690; border-bottom: 1px solid #2e3238; background: #1b1d21; }
+.history .back { color: #45a5e6; padding: 6px 12px; border-top: 1px solid #2e3238; background: #1b1d21; display: block; }
+@media (max-width: 760px) { .a-hero, .a-feat { grid-template-columns: 1fr; } .a-loop { grid-template-columns: repeat(2, minmax(0, 1fr)); } .a-loop div:nth-child(2) { border-right: 0; } }
+
+/* ---------- Direction B: Spectrum Heritage — loud, nostalgic, the 15 colours ---------- */
+.dir-b {
+  --m-bg: #000000; --m-raised: #101010; --m-fg: #f2f2f2; --m-muted: #a8a8a8; --m-line: #2a2a2a;
+  --m-accent: #00d7d7; --m-on-accent: #000; --m-accent-soft: rgb(0 215 215 / 0.15);
+  --m-display: "Bricolage Grotesque", system-ui, sans-serif; --m-body: "IBM Plex Sans", system-ui, sans-serif; --m-radius: 0px;
+  --ide-val: #00d7d7;
+}
+.dir-b .m-nav, .dir-b .m-tools { font-family: "Silkscreen", var(--f-mono); font-size: 0.78rem; text-transform: uppercase; }
+.b-hero { position: relative; padding: 52px 28px 0; overflow: hidden; }
+.b-hero::before { content: ""; position: absolute; inset: auto -10% 0 auto; width: 70%; height: 100%; background: linear-gradient(120deg, transparent 0 40%, #d80000 40% 47%, #d8d800 47% 54%, #00d800 54% 61%, #00d8d8 61% 68%, transparent 68%); opacity: 0.9; }
+.b-hero > * { position: relative; z-index: 1; }
+.b-kicker { font-family: "Silkscreen", var(--f-mono); color: #d8d800; font-size: 0.85rem; }
+.b-hero h2 { font-family: var(--m-display); font-weight: 800; font-size: clamp(2.2rem, 6vw, 4.4rem); line-height: 0.95; letter-spacing: -0.03em; margin: 10px 0 16px; max-width: 13ch; }
+.b-hero p { max-width: 46ch; color: #d0d0d0; margin: 0 0 22px; }
+.b-hero .m-btn { border-width: 2px; }
+.b-hero .m-btn.primary { background: #d8d800; border-color: #d8d800; color: #000; }
+.b-cta { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 34px; }
+.b-listing { background: #d8d8d8; color: #000; font: 600 12px/1.6 var(--f-mono); padding: 14px 18px; border: 14px solid #0000d8; max-width: 420px; margin-bottom: -1px; }
+.b-listing .cur { background: #000; color: #d8d8d8; padding: 0 3px; }
+.b-machines { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); border-top: 4px solid; border-image: linear-gradient(90deg, #d80000 0 25%, #d8d800 25% 50%, #00d800 50% 75%, #00d8d8 75%) 1; }
+.b-machines div { padding: 14px 16px; border-right: 1px solid var(--m-line); min-width: 0; }
+.b-machines b { display: block; font-family: var(--m-display); font-size: 1rem; }
+.b-machines span { font: 0.7rem "Silkscreen", var(--f-mono); color: var(--m-muted); text-transform: uppercase; }
+.b-feats { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.b-feats div { padding: 22px 24px; min-width: 0; }
+.b-feats div:nth-child(1) { background: #0000d8; }
+.b-feats div:nth-child(2) { background: #d800d8; }
+.b-feats div:nth-child(3) { background: #00d800; color: #000; }
+.b-feats div:nth-child(4) { background: #d8d800; color: #000; }
+.b-feats h3 { font-family: var(--m-display); font-size: 1.35rem; margin: 0 0 6px; line-height: 1.1; }
+.b-feats p { margin: 0; font-size: 0.86rem; opacity: 0.9; }
+.dir-b .d-main h3 { font-weight: 800; letter-spacing: -0.02em; }
+.dir-b .d-side .grp { font-family: "Silkscreen", var(--f-mono); letter-spacing: 0; }
+
+/* ---------- Direction C: Field Manual — light, annotated, precise ---------- */
+.dir-c {
+  --m-bg: #ffffff; --m-raised: #ffffff; --m-fg: #16181c; --m-muted: #5a5f68; --m-line: #d9dce1;
+  --m-accent: #9b2fb4; --m-on-accent: #ffffff; --m-accent-soft: rgb(155 47 180 / 0.1);
+  --m-display: "Archivo", system-ui, sans-serif; --m-body: "IBM Plex Sans", system-ui, sans-serif; --m-radius: 3px;
+}
+.dir-c .m-nav, .dir-c .m-tools { font-family: "IBM Plex Mono", var(--f-mono); font-size: 0.8rem; }
+.c-hero { padding: 40px 28px 30px; background-image: linear-gradient(var(--m-line) 1px, transparent 1px), linear-gradient(90deg, var(--m-line) 1px, transparent 1px); background-size: 24px 24px; background-position: -1px -1px; }
+.c-hero-in { background: var(--m-bg); border: 1px solid var(--m-fg); padding: 26px 28px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; }
+.c-hero-in > * { min-width: 0; }
+.c-label { font: 500 0.72rem "IBM Plex Mono", var(--f-mono); letter-spacing: 0.04em; color: var(--m-muted); text-transform: uppercase; display: flex; justify-content: space-between; border-bottom: 1px solid var(--m-line); padding-bottom: 6px; margin-bottom: 14px; }
+.c-hero h2 { font-family: var(--m-display); font-stretch: 72%; font-weight: 800; font-size: clamp(2.2rem, 5.4vw, 3.9rem); line-height: 0.95; text-transform: uppercase; margin: 0 0 14px; }
+.c-hero h2 span { color: var(--m-accent); }
+.c-hero p { margin: 0 0 20px; color: var(--m-muted); max-width: 44ch; }
+.c-cta { display: flex; gap: 10px; flex-wrap: wrap; }
+.c-annot { position: relative; padding: 0 0 0 0; }
+.c-callout { position: absolute; font: 500 0.7rem/1.3 "IBM Plex Mono", var(--f-mono); color: var(--m-fg); background: var(--m-bg); border: 1px solid var(--m-fg); padding: 4px 7px; max-width: 18ch; }
+.c-callout::before { content: attr(data-n); background: var(--m-accent); color: #fff; padding: 0 5px; margin-right: 6px; }
+.c-specs { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); border-top: 1px solid var(--m-fg); }
+.c-specs div { padding: 14px 18px; border-right: 1px solid var(--m-line); min-width: 0; }
+.c-specs b { display: block; font-family: var(--m-display); font-stretch: 85%; font-size: 1.05rem; }
+.c-specs span { font: 0.74rem "IBM Plex Mono", var(--f-mono); color: var(--m-muted); }
+.c-feat { padding: 26px 28px; display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 20px; border-top: 1px solid var(--m-line); }
+.c-feat .c-fig { font: 500 0.75rem "IBM Plex Mono", var(--f-mono); color: var(--m-accent); }
+.c-feat h3 { font-family: var(--m-display); font-stretch: 85%; font-size: 1.45rem; margin: 0 0 6px; }
+.c-feat p { margin: 0; color: var(--m-muted); max-width: 64ch; font-size: 0.92rem; }
+.c-feat code { font-family: "IBM Plex Mono", var(--f-mono); font-size: 0.85em; background: var(--m-accent-soft); padding: 1px 5px; }
+.dir-c .d-main h3 { font-stretch: 85%; }
+.dir-c .mk { border-radius: 2px; }
+.dir-c .d-main ol li b { border-radius: 2px; }
+@media (max-width: 760px) { .c-hero-in { grid-template-columns: 1fr; } .c-feat { grid-template-columns: 1fr; gap: 4px; } .c-callout { display: none; } }
+
+/* ---------- Mix: A's system + B's landing moment + C's callouts ---------- */
+.dir-x {
+  --m-bg: #141517; --m-raised: #202329; --m-fg: #e4e6ea; --m-muted: #949aa4; --m-line: #2e3238;
+  --m-accent: #45a5e6; --m-on-accent: #0e0f11; --m-accent-soft: rgb(69 165 230 / 0.14);
+  --m-display: "Schibsted Grotesk", system-ui, sans-serif; --m-body: "IBM Plex Sans", system-ui, sans-serif; --m-radius: 6px;
+}
+.x-hero { position: relative; overflow: hidden; display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 36px; align-items: center; padding: 52px 28px 44px; }
+.x-hero::before { content: ""; position: absolute; inset: 0 -12% 0 auto; width: 78%; background: linear-gradient(118deg, transparent 0 44%, #d80000 44% 50%, #d8d800 50% 56%, #00d800 56% 62%, #00d8d8 62% 68%, transparent 68%); opacity: 0.9; pointer-events: none; }
+.x-hero > * { position: relative; z-index: 1; min-width: 0; }
+.x-hero h2 { font-family: var(--m-display); font-size: clamp(1.9rem, 4vw, 3.1rem); line-height: 1.04; font-weight: 800; margin: 14px 0 12px; letter-spacing: -0.02em; }
+.x-hero h2 em { font-style: normal; color: var(--m-accent); }
+.x-hero p { color: var(--m-muted); margin: 0 0 22px; max-width: 46ch; }
+.x-blocks { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.x-blocks div { padding: 22px 24px 24px; min-width: 0; display: grid; gap: 6px; align-content: start; }
+.x-blocks div:nth-child(1) { background: #0000c8; color: #fff; }
+.x-blocks div:nth-child(2) { background: #c800c8; color: #fff; }
+.x-blocks div:nth-child(3) { background: #00c800; color: #000; }
+.x-blocks div:nth-child(4) { background: #d8d800; color: #000; }
+.x-blocks b { font: 600 0.7rem var(--f-mono); letter-spacing: 0.08em; opacity: 0.8; }
+.x-blocks h3 { font-family: var(--m-display); font-size: 1.3rem; line-height: 1.1; margin: 0; }
+.x-blocks p { margin: 0; font-size: 0.86rem; opacity: 0.92; }
+.x-machines { display: flex; flex-wrap: wrap; gap: 8px 22px; padding: 16px 28px; border-bottom: 1px solid var(--m-line); font-size: 0.85rem; color: var(--m-muted); }
+.x-machines b { color: var(--m-fg); font-weight: 600; }
+.figlabel { display: flex; justify-content: space-between; gap: 12px; font: 500 0.72rem var(--f-mono); color: var(--m-muted); text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 1px solid var(--m-line); padding-bottom: 6px; margin: 10px 0 8px; }
+.figlabel span:first-child { color: var(--m-accent); }
+.dir-x .mk { border-radius: 4px; font-family: var(--f-mono); }
+.dir-x .d-main ol li b { border-radius: 4px; font-family: var(--f-mono); }
+@media (max-width: 760px) { .x-hero { grid-template-columns: 1fr; } .x-blocks { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+.verdict { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.verdict div { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; min-width: 0; }
+.verdict h3 { font-size: 1rem; margin-bottom: 4px; }
+.verdict p { margin: 0; color: var(--muted); font-size: 0.9rem; }
+@media (prefers-reduced-motion: no-preference) { .tabs button { transition: color .15s, border-color .15s; } }
+</style>
+
+<main class="sheet">
+  <header class="intro">
+    <div class="eyebrow">kliveide.net redesign · design review</div>
+    <h1>Three directions for the Klive website</h1>
+    <p>Each direction shows the landing page (with the language selector open) and a Get Started page with an annotated screenshot. The screenshots are dark, as decided. The IDE drawings are HTML stand-ins for the shots the Playwright recipes will capture.</p>
+  </header>
+
+  <section aria-labelledby="today">
+    <div class="eyebrow" id="today">What the current design gets wrong</div>
+    <div class="critique" style="margin-top:10px">
+      <div><b>It doesn't look like Klive</b><span>The landing page uses a generic Tailwind blue (#2563eb) and system font. The app's own palette (a cool neutral ramp and six accents) and the rainbow-stripe logo are missing.</span></div>
+      <div><b>Centered and generic</b><span>A centered headline, two buttons and four equal text cards. That pattern fits any product, so nothing says "ZX Spectrum" until the screenshot.</span></div>
+      <div><b>Two sites, two looks</b><span>The landing page and the stock Nextra docs share no tokens, header or type. Clicking "Documentation" feels like leaving the site.</span></div>
+      <div><b>The screenshot does the work alone</b><span>One small, old screenshot with no annotations. The unique features (BASIC debugging, reverse debugging, Next inspectors) never appear.</span></div>
+    </div>
+  </section>
+
+  <div class="tabs" role="tablist" aria-label="Design directions">
+    <button role="tab" id="t-x" aria-controls="p-x" aria-selected="true">Recommended mix <small>A + B + C</small></button>
+    <button role="tab" id="t-a" aria-controls="p-a" aria-selected="false">A · Studio <small>looks like the app</small></button>
+    <button role="tab" id="t-b" aria-controls="p-b" aria-selected="false">B · Spectrum Heritage <small>loud and nostalgic</small></button>
+    <button role="tab" id="t-c" aria-controls="p-c" aria-selected="false">C · Field Manual <small>annotated and precise</small></button>
+  </div>
+
+  <!-- ===================== MIX ===================== -->
+  <section class="panel" role="tabpanel" id="p-x" aria-labelledby="t-x">
+    <div class="why">
+      <div>
+        <h2>Recommended mix</h2>
+        <p>A's tokens and type everywhere, so the site looks like the app. The landing page gets one loud moment from B: the stripe band across the hero and the four features in solid Spectrum colours. The docs screenshots use C's figure labels and numbered markers, and the numbered list under each one is page text, so it translates.</p>
+        <ul>
+          <li><b>From A:</b> neutrals, Sinclair Blue accent, header, type, docs layout.</li>
+          <li><b>From B:</b> the hero stripe band and the colour feature blocks. Landing page only.</li>
+          <li><b>From C:</b> "Fig." labels and numbered markers on screenshots.</li>
+        </ul>
+      </div>
+      <div>
+        <div class="caption">Palette and type</div>
+        <div class="swatches"><i style="background:#141517"></i><i style="background:#202329"></i><i style="background:#e4e6ea"></i><i style="background:#45a5e6"></i><i style="background:#0000c8"></i><i style="background:#c800c8"></i><i style="background:#00c800"></i><i style="background:#d8d800"></i></div>
+        <p class="caption" style="margin-top:8px">Schibsted Grotesk · IBM Plex Sans · JetBrains Mono</p>
+      </div>
+    </div>
+    <div>
+      <p class="caption">Landing page</p>
+      <div class="frame">
+        <div class="browserbar"><i></i><i></i><i></i><span>kliveide.net</span></div>
+        <div class="m dir-x" data-mock="landing-x"></div>
+      </div>
+    </div>
+    <div>
+      <p class="caption">Get Started page with an annotated screenshot</p>
+      <div class="frame">
+        <div class="browserbar"><i></i><i></i><i></i><span>kliveide.net/en/get-started/debug-your-program/</span></div>
+        <div class="m dir-x" data-mock="docs-x"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== A ===================== -->
+  <section class="panel" role="tabpanel" id="p-a" aria-labelledby="t-a" hidden>
+    <div class="why">
+      <div>
+        <h2>A · Studio</h2>
+        <p>The website uses the app's own design tokens: the same cool dark neutrals, the Sinclair Blue accent and a grotesk typeface. The logo's four stripes appear once, in the hero corner. It looks like a professional developer tool, the way VS Code or JetBrains sites do, and the screenshots blend in because they share the colours.</p>
+        <ul>
+          <li>Lowest risk; the tokens already exist in <code>theming/tokens/palette.ts</code>.</li>
+          <li>The accent could follow a visitor-picked accent, like the app's View › Accent.</li>
+          <li>Docs keep Nextra's layout, re-skinned with the same tokens.</li>
+        </ul>
+      </div>
+      <div>
+        <div class="caption">Palette and type</div>
+        <div class="swatches"><i style="background:#141517"></i><i style="background:#202329"></i><i style="background:#e4e6ea"></i><i style="background:#45a5e6"></i><i style="background:#f00"></i><i style="background:#ff0"></i><i style="background:#0f0"></i><i style="background:#0ff"></i></div>
+        <p class="caption" style="margin-top:8px">Schibsted Grotesk · IBM Plex Sans · JetBrains Mono</p>
+      </div>
+    </div>
+
+    <div>
+      <p class="caption">Landing page</p>
+      <div class="frame">
+        <div class="browserbar"><i></i><i></i><i></i><span>kliveide.net</span></div>
+        <div class="m dir-a" data-mock="landing-a"></div>
+      </div>
+    </div>
+    <div>
+      <p class="caption">Get Started page with an annotated screenshot</p>
+      <div class="frame">
+        <div class="browserbar"><i></i><i></i><i></i><span>kliveide.net/en/get-started/debug-your-program/</span></div>
+        <div class="m dir-a" data-mock="docs"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== B ===================== -->
+  <section class="panel" role="tabpanel" id="p-b" aria-labelledby="t-b" hidden>
+    <div class="why">
+      <div>
+        <h2>B · Spectrum Heritage</h2>
+        <p>Black ground, the Spectrum's bright colours in solid blocks, the rainbow stripes running large across the hero, and a BASIC listing in a blue border as the first thing you read. Pixel-style labels mark the navigation. This one is the most memorable and appeals to nostalgia, but it puts the machine before the tool.</p>
+        <ul>
+          <li>Strong identity and very shareable.</li>
+          <li>Hardest to keep readable in long docs, so the docs side stays calmer than the landing page.</li>
+          <li>Risk: reads as a games or retro site more than a serious IDE.</li>
+        </ul>
+      </div>
+      <div>
+        <div class="caption">Palette and type</div>
+        <div class="swatches"><i style="background:#000"></i><i style="background:#0000d8"></i><i style="background:#d80000"></i><i style="background:#d800d8"></i><i style="background:#00d800"></i><i style="background:#00d8d8"></i><i style="background:#d8d800"></i><i style="background:#d8d8d8"></i></div>
+        <p class="caption" style="margin-top:8px">Bricolage Grotesque · IBM Plex Sans · Silkscreen</p>
+      </div>
+    </div>
+    <div>
+      <p class="caption">Landing page</p>
+      <div class="frame">
+        <div class="browserbar"><i></i><i></i><i></i><span>kliveide.net</span></div>
+        <div class="m dir-b" data-mock="landing-b"></div>
+      </div>
+    </div>
+    <div>
+      <p class="caption">Get Started page with an annotated screenshot</p>
+      <div class="frame">
+        <div class="browserbar"><i></i><i></i><i></i><span>kliveide.net/en/get-started/debug-your-program/</span></div>
+        <div class="m dir-b" data-mock="docs"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== C ===================== -->
+  <section class="panel" role="tabpanel" id="p-c" aria-labelledby="t-c" hidden>
+    <div class="why">
+      <div>
+        <h2>C · Field Manual</h2>
+        <p>A light, technical-datasheet look: a fine grid, condensed uppercase headlines, monospaced labels, and numbered callouts drawn into the screenshots. It turns the "text never lives inside pixels" rule into the visual style itself, and it pairs naturally with the book. The dark screenshots stand out as framed figures on white.</p>
+        <ul>
+          <li>Best fit for documentation-heavy pages and the annotated <code>&lt;Shot&gt;</code> component.</li>
+          <li>Needs a dark variant built from the same tokens.</li>
+          <li>Risk: quieter on first impression than B.</li>
+        </ul>
+      </div>
+      <div>
+        <div class="caption">Palette and type</div>
+        <div class="swatches"><i style="background:#fff"></i><i style="background:#d9dce1"></i><i style="background:#16181c"></i><i style="background:#9b2fb4"></i><i style="background:#17191c"></i></div>
+        <p class="caption" style="margin-top:8px">Archivo (condensed) · IBM Plex Sans · IBM Plex Mono</p>
+      </div>
+    </div>
+    <div>
+      <p class="caption">Landing page</p>
+      <div class="frame">
+        <div class="browserbar"><i></i><i></i><i></i><span>kliveide.net</span></div>
+        <div class="m dir-c" data-mock="landing-c"></div>
+      </div>
+    </div>
+    <div>
+      <p class="caption">Get Started page with an annotated screenshot</p>
+      <div class="frame">
+        <div class="browserbar"><i></i><i></i><i></i><span>kliveide.net/en/get-started/debug-your-program/</span></div>
+        <div class="m dir-c" data-mock="docs"></div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="rec">
+    <div class="eyebrow" id="rec">Why the mix</div>
+    <div class="verdict" style="margin-top:10px">
+      <div><h3>Build A as the system</h3><p>Its tokens come straight from the app, so the site, the docs and the dark screenshots look like one product, and the light theme can be derived the way the app does it.</p></div>
+      <div><h3>Borrow from B for the landing page only</h3><p>Use the stripe band and the four solid feature blocks in the Spectrum colours as the landing page's one loud moment. The docs stay calm.</p></div>
+      <div><h3>Borrow C's callouts for the docs</h3><p>Numbered markers and monospaced figure labels make the annotated screenshots readable in every language.</p></div>
+    </div>
+  </section>
+</main>
+
+<script>
+const LOGO = '<svg viewBox="0 0 200 200" aria-hidden="true"><rect width="200" height="200" fill="#000"/><path d="M200 149v-20l-70 70h20" fill="#0ff"/><path d="M200 129v-20l-90 90h20" fill="#0f0"/><path d="M200 109V89L90 199h20" fill="#ff0"/><path d="M200 89V69L70 199h20" fill="#f00"/><path d="M0 0h200v8H0zM0 192h200v8H0zM0 0h8v200H0zM192 0h8v200h-8z" fill="#00B4CC"/><path d="M40 40h20v120H40zM60 80h40v20H60zM100 100h20v20h-20zM120 120h20v20h-20zM140 140h20v20h-20zM100 60h20v20h-20zM120 40h20v20h-20z" fill="#00B4CC"/></svg>';
+
+const LANGS = [["English","en"],["Español","es"],["Português (Brasil)","pt-BR"],["Português (Portugal)","pt-PT"],["Deutsch","de"],["Magyar","hu"]];
+
+function header(navOn) {
+  const items = ["Get Started", "Guides", "Reference", "Under the Hood"]
+    .map(x => `<a class="${x === navOn ? "on" : ""}">${x}</a>`).join("");
+  const langs = LANGS.map(([n, id], i) => `<li class="${i === 0 ? "cur" : ""}">${n}<small>${id}</small></li>`).join("");
+  return `<div class="m-header">
+    <a class="m-brand">${LOGO}<span>Klive IDE</span></a>
+    <nav class="m-nav">${items}</nav>
+    <div class="m-tools">
+      <div class="m-lang"><button type="button" aria-expanded="${navOn ? "false" : "true"}">🌐 English ▾</button>${navOn ? "" : `<ul>${langs}</ul>`}</div>
+      <a>GitHub</a>
+    </div>
+  </div>`;
+}
+
+function ide(withBp) {
+  const lines = [
+    ['<span class="c">; Border stripes - Get Started, step 6</span>'],
+    ['<span class="l">Start:</span>'],
+    ['    <span class="k">ld</span> <span class="r">b</span>,<span class="n">8</span>'],
+    ['<span class="l">Loop:</span>'],
+    ['    <span class="k">ld</span> <span class="r">a</span>,<span class="r">b</span>', true],
+    ['    <span class="k">out</span> (<span class="n">$fe</span>),<span class="r">a</span>'],
+    ['    <span class="k">halt</span>'],
+    ['    <span class="k">djnz</span> <span class="id">Loop</span>'],
+    ['    <span class="k">jr</span> <span class="id">Start</span>'],
+  ];
+  const ed = lines.map(([t, bp], i) => `<div class="${bp && withBp ? "bp" : ""}"><span class="ln">${bp && withBp ? "●" : i + 1}</span>${t}</div>`).join("");
+  return `<div class="ide"><div class="ide-ed">${ed}</div>
+    <div class="emu"><div class="zx"><div>PAUSED · PC $8004</div></div></div>
+    <div class="regs"><span><b>A</b>06</span><span><b>B</b>06</span><span><b>PC</b>8004</span><span><b>SP</b>FF4A</span><span><b>F</b>S·Z·H·PNC</span><span><b>T</b>71,904</span></div></div>`;
+}
+
+const MOCKS = {
+  "landing-a": () => `${header()}
+    <div class="a-hero">
+      <div>
+        <span class="a-ver">v0.63.0 · macOS · Windows · Linux</span>
+        <h2>The complete ZX Spectrum and <em>Next</em> development studio</h2>
+        <p>Write, assemble, compile, run and debug Z80 code and ZX BASIC in one app. No toolchain to wire up.</p>
+        <div class="a-cta"><a class="m-btn primary">Download for macOS <small>Apple silicon</small></a><a class="m-btn">Get started</a></div>
+      </div>
+      ${ide(true)}
+    </div>
+    <div class="a-loop">
+      <div><b>WRITE</b><h4>An editor that knows Z80</h4><p>Completion, hover and rename from the real compiler.</p></div>
+      <div><b>BUILD</b><h4>Assembler and BASIC built in</h4><p>Or sjasmplus, Boriel BASIC 2.x, z88dk.</p></div>
+      <div><b>RUN</b><h4>Ten machines</h4><p>48K to the Next, ZX81, Z88, Timex, Pentagon.</p></div>
+      <div><b>DEBUG</b><h4>Step back in time</h4><p>Reverse debugging of the whole machine.</p></div>
+    </div>
+    <div class="a-feat">
+      <div><span class="a-tag">Reverse debugging</span><h3>Go back in time</h3>
+        <p>Step back through every instruction, with memory, devices and the screen restored. Find the last write to a byte and continue from the past.</p>
+        <ul><li>Every Z80 machine Klive emulates</li><li>Save a session as a debug recording</li></ul></div>
+      <div class="history">
+        <div class="hd"><span>T-state</span><span>PC</span><span>Instruction</span><span>T</span></div>
+        <div><span>71,872</span><span>8000</span><span>ld b,8</span><span>7</span></div>
+        <div><span>71,879</span><span>8002</span><span>ld a,b</span><span>4</span></div>
+        <div class="now"><span>71,883</span><span>8003</span><span>out ($fe),a</span><span>11</span></div>
+        <div><span>71,894</span><span>8005</span><span>halt</span><span>4</span></div>
+        <span class="back">◀ Step Back · ◀◀ Reverse Continue</span>
+      </div>
+    </div>`,
+
+  "landing-b": () => `${header()}
+    <div class="b-hero">
+      <div class="b-kicker">ZX SPECTRUM · NEXT · ZX81 · Z88</div>
+      <h2>Make Spectrum software again.</h2>
+      <p>Klive is an emulator and a full IDE in one app: write Z80 assembly or ZX BASIC, run it on ten machines, and debug it line by line.</p>
+      <div class="b-cta"><a class="m-btn primary">Download for macOS</a><a class="m-btn">Get started</a></div>
+      <div class="b-listing">10 BORDER 1: PAPER 7: CLS<br>20 PRINT AT 10,8;"HELLO, KLIVE"<br>30 GO TO 20<br><span class="cur">K</span></div>
+    </div>
+    <div class="b-machines">
+      <div><b>ZX Spectrum 48K</b><span>1982 · 3.5 MHz</span></div>
+      <div><b>128K / +2 / +3</b><span>AY · disks</span></div>
+      <div><b>ZX Spectrum Next</b><span>Z80N · 28 MHz</span></div>
+      <div><b>ZX80 / ZX81</b><span>SLOW · FAST</span></div>
+      <div><b>Cambridge Z88</b><span>OZ</span></div>
+    </div>
+    <div class="b-feats">
+      <div><h3>One app. Zero glue.</h3><p>Emulator, editor, assembler, compiler and debugger, built together.</p></div>
+      <div><h3>Debug your BASIC</h3><p>Breakpoints on statements, a call stack and live variables.</p></div>
+      <div><h3>Go back in time</h3><p>Step backwards through the whole machine.</p></div>
+      <div><h3>Speaks Next</h3><p>NextReg, Copper and sprite breakpoints, live inspectors.</p></div>
+    </div>`,
+
+  "landing-c": () => `${header()}
+    <div class="c-hero"><div class="c-hero-in">
+      <div>
+        <div class="c-label"><span>Klive IDE</span><span>Rel. 0.63.0</span></div>
+        <h2>Emulator <span>+</span> IDE<br>for Z80 machines</h2>
+        <p>Write, assemble, compile, run and debug Z80 code and ZX BASIC in one app, on macOS, Windows and Linux.</p>
+        <div class="c-cta"><a class="m-btn primary">Download for macOS</a><a class="m-btn">Get started →</a></div>
+      </div>
+      <div class="c-annot">
+        <div class="c-label"><span>Fig. 1</span><span>Debugging border stripes</span></div>
+        ${ide(true)}
+        <span class="c-callout" data-n="1" style="left:-12px; top:96px">Breakpoint on a source line</span>
+        <span class="c-callout" data-n="2" style="right:-8px; top:44px">The machine pauses mid-frame</span>
+        <span class="c-callout" data-n="3" style="right:30px; bottom:-14px">Registers after each step</span>
+      </div>
+    </div></div>
+    <div class="c-specs">
+      <div><b>10 machines</b><span>48K → Next, ZX81, Z88</span></div>
+      <div><b>2 languages built in</b><span>Klive Z80 asm · Klive BASIC</span></div>
+      <div><b>131,072</b><span>instructions of history (Next)</span></div>
+      <div><b>6 UI languages</b><span>en es pt de hu</span></div>
+    </div>
+    <div class="c-feat"><div class="c-fig">§1 · BASIC</div><div><h3>Step through your BASIC, line by line</h3><p>Put a breakpoint on a statement, step into a <code>SUB</code>, and edit a variable while the program is paused. Works for Klive BASIC and Boriel BASIC 2.x.</p></div></div>`,
+
+  "docs": () => docs(false),
+  "docs-x": () => docs(true),
+  "landing-x": () => `${header()}
+    <div class="x-hero">
+      <div>
+        <span class="a-ver">v0.63.0 · macOS · Windows · Linux</span>
+        <h2>The complete ZX Spectrum and <em>Next</em> development studio</h2>
+        <p>Write, assemble, compile, run and debug Z80 code and ZX BASIC in one app. No toolchain to wire up.</p>
+        <div class="a-cta"><a class="m-btn primary">Download for macOS <small>Apple silicon</small></a><a class="m-btn">Get started</a></div>
+      </div>
+      ${ide(true)}
+    </div>
+    <div class="x-machines"><span><b>ZX Spectrum</b> 48K · 128K · +2A/+3 · +2E/+3E</span><span><b>ZX Spectrum Next</b></span><span><b>ZX80 / ZX81</b></span><span><b>Pentagon · Scorpion · Timex</b></span><span><b>Cambridge Z88</b></span></div>
+    <div class="x-blocks">
+      <div><b>ALL IN ONE</b><h3>One app. Zero glue.</h3><p>Emulator, editor, assembler, BASIC compiler and debugger, built to work together.</p></div>
+      <div><b>BASIC</b><h3>Step through your BASIC</h3><p>Breakpoints on statements, a call stack and variables you can edit.</p></div>
+      <div><b>REVERSE DEBUGGING</b><h3>Go back in time</h3><p>Step backwards through the whole machine: memory, devices, screen.</p></div>
+      <div><b>ZX SPECTRUM NEXT</b><h3>Speaks Next natively</h3><p>NextReg, Copper and sprite breakpoints, live inspectors.</p></div>
+    </div>
+    <div class="a-feat">
+      <div><span class="a-tag">Reverse debugging</span><h3>Go back in time</h3>
+        <p>Step back through every instruction, with memory, devices and the screen restored. Find the last write to a byte and continue from the past.</p>
+        <ul><li>Every Z80 machine Klive emulates</li><li>Save a session as a debug recording</li></ul></div>
+      <div class="history">
+        <div class="hd"><span>T-state</span><span>PC</span><span>Instruction</span><span>T</span></div>
+        <div><span>71,872</span><span>8000</span><span>ld b,8</span><span>7</span></div>
+        <div><span>71,879</span><span>8002</span><span>ld a,b</span><span>4</span></div>
+        <div class="now"><span>71,883</span><span>8003</span><span>out ($fe),a</span><span>11</span></div>
+        <div><span>71,894</span><span>8005</span><span>halt</span><span>4</span></div>
+        <span class="back">◀ Step Back · ◀◀ Reverse Continue</span>
+      </div>
+    </div>`
+};
+
+function docs(fig) {
+  return `${header("Get Started")}
+    <div class="d">
+      <aside class="d-side">
+        <span class="grp">Get Started</span>
+        <span class="step done"><i>✓</i>Welcome to Klive</span>
+        <span class="step done"><i>✓</i>Install Klive</span>
+        <span class="step done"><i>✓</i>Meet the emulator</span>
+        <span class="step done"><i>✓</i>Meet the IDE</span>
+        <span class="step done"><i>✓</i>Your first program</span>
+        <span class="step on"><i>6</i>Debug your program</span>
+        <span class="step"><i>7</i>Your first BASIC program</span>
+        <span class="step"><i>8</i>Your first Next program</span>
+        <span class="step"><i>9</i>Save and share</span>
+      </aside>
+      <article class="d-main">
+        <div class="eyebrow" style="color:var(--m-muted)">Get Started · Step 6 of 10</div>
+        <h3>Debug your program</h3>
+        <div class="d-meta"><span>⏱ 10 minutes</span><span>Needs: step 5's project</span><span>48K</span></div>
+        <p>Click in the margin next to <code>ld a,b</code> to set a breakpoint, then start the program with <b>Debug</b>. The emulator stops before it runs that line.</p>
+        ${fig ? '<div class="figlabel"><span>Fig. 6.1</span><span>Paused at a breakpoint</span></div>' : ""}
+        <div class="shot">${ide(true)}
+          <span class="mk" style="left:2%; top:36%">1</span>
+          <span class="mk" style="left:56%; top:8%">2</span>
+          <span class="mk" style="left:30%; bottom:4%">3</span>
+        </div>
+        <ol>
+          <li><b>1</b>The red dot is your breakpoint; the highlighted line runs next.</li>
+          <li><b>2</b>The emulator is paused, with the border drawn up to this moment.</li>
+          <li><b>3</b>The registers show <code>B</code> counting down as you step.</li>
+        </ol>
+      </article>
+      <aside class="d-toc"><span class="on">Set a breakpoint</span><span>Step over</span><span>Watch a register</span><span>Step back</span><span>What you learned</span></aside>
+    </div>`;
+}
+
+document.querySelectorAll("[data-mock]").forEach(el => { el.innerHTML = MOCKS[el.dataset.mock](); });
+
+const tabs = [...document.querySelectorAll('[role="tab"]')];
+function select(tab) {
+  tabs.forEach(t => {
+    const on = t === tab;
+    t.setAttribute("aria-selected", on);
+    t.tabIndex = on ? 0 : -1;
+    document.getElementById(t.getAttribute("aria-controls")).hidden = !on;
+  });
+  try { localStorage.setItem("klive-dir", tab.id); } catch (e) {}
+}
+tabs.forEach((t, i) => {
+  t.addEventListener("click", () => select(t));
+  t.addEventListener("keydown", e => {
+    if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+      const n = tabs[(i + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length];
+      select(n); n.focus();
+    }
+  });
+});
+const hash = location.hash.slice(1);
+let start = tabs.find(t => t.id === "t-" + hash);
+if (!start) { try { start = tabs.find(t => t.id === localStorage.getItem("klive-dir")); } catch (e) {} }
+select(start || tabs[0]);
+</script>

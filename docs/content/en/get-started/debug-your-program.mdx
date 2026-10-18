@@ -1,0 +1,87 @@
+---
+description: "Set a breakpoint in your Z80 program, start it with the debugger, step through it instruction by instruction, and watch the CPU's registers change."
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# Debug your program
+
+A debugger lets you stop a program and look inside the machine: which instruction runs next, what the registers hold, and what is in memory. On this page you stop the border-colours program from the previous page and step through it.
+
+## Stop at a breakpoint
+
+<Steps>
+
+### Set a breakpoint
+
+In the editor, click just left of the line number **13**, the line `out (#fe),a`. A red dot appears: that is a **breakpoint**. Click the dot again to remove it.
+
+### Start debugging
+
+Click **Debug** on the build bar, or press <kbd>Ctrl</kbd>+<kbd>F5</kbd>. Klive builds and starts the program as before, but now it stops when it reaches the breakpoint.
+
+### Open the Debug side bar
+
+Click the **Debug** icon in the activity bar, the second one from the top.
+
+</Steps>
+
+<Shot
+  src="get-started/debug-paused.webp"
+  alt="The IDE paused at the breakpoint on line 13"
+  figure="6.1"
+  caption="Paused at the breakpoint"
+  markers={["breakpoint", "stepover", "registers"]}
+  width={900}
+/>
+
+1. The breakpoint. The highlighted line is the instruction that runs **next**: the machine stopped before running it.
+2. The stepping buttons on the toolbar: **Step Into**, **Step Over** and **Step Out**.
+3. The **Z80 CPU** panel shows the registers. `A` holds `07`, the colour about to be written: white.
+
+## Step through the code
+
+Press <kbd>F10</kbd> (**Step Over**) twice. Each press runs one instruction and stops again.
+
+<Shot
+  src="get-started/debug-stepped.webp"
+  alt="The IDE after two steps, stopped at the HALT instruction"
+  figure="6.2"
+  caption="Two instructions later"
+  markers={["current"]}
+  width={900}
+/>
+
+1. The machine stopped at `halt`. On the way, `out (#fe),a` set the border to white, and `ld e,25` put 25 into `E`; check it in the **Z80 CPU** panel.
+
+Look at the emulator, too. The machine stopped in the middle of drawing a frame, so the screen is drawn only down to where the beam had got to. The hatched part below it is still the previous frame, and the label at the top says exactly where the beam is.
+
+To see this, the beam position must be turned on. If the emulator's screen shows no hatched part, click **Show/Hide the beam position while paused** on the emulator's toolbar: the icon with a line between four corner marks, highlighted while it is on.
+
+<Shot
+  src="get-started/debug-emulator.webp"
+  alt="The paused emulator, drawn down to the beam, with the previous frame hatched below"
+  figure="6.3"
+  caption="The emulator while the program is paused"
+  width={620}
+/>
+
+## The stepping commands
+
+| Command | Shortcut | What it does |
+| --- | --- | --- |
+| Continue | <kbd>F5</kbd> | Runs until the next breakpoint. |
+| Step Into | <kbd>F11</kbd> (<kbd>F12</kbd> on macOS) | Runs one instruction. On a `CALL`, stops at the first instruction of the subroutine. |
+| Step Over | <kbd>F10</kbd> | Runs one instruction. A `CALL`, an `RST` or a block instruction such as `LDIR` runs completely. |
+| Step Out | <kbd>Shift</kbd>+<kbd>F11</kbd> (<kbd>Shift</kbd>+<kbd>F12</kbd> on macOS) | Runs until the current subroutine returns. |
+| Stop | <kbd>F4</kbd> | Switches the machine off. |
+
+<Callout type="info" emoji="💡">
+Press <kbd>F5</kbd> a few times: each time, the program runs once around its loop and stops at the breakpoint again, with `A` one less than before.
+</Callout>
+
+## More to look at
+
+The Debug side bar has more panels; click a title to open or close one. The toolbar's last buttons open the **Memory** and **Disassembly** views. [Breakpoints](/en/guides/debugging/breakpoints/) explains conditions, hit counts and memory breakpoints, and the other [debugging guides](/en/guides/debugging/run-debug/) cover every view.
+
+Next, write [your first BASIC program](/en/get-started/first-basic-program/).

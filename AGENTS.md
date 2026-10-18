@@ -31,6 +31,25 @@ React 19 + Next 16.
 - Install its dependencies with `npm run doc:install`, not a root `npm ci`.
 - Only `docs/content/` produces routes. `docs/authoring/` holds working notes
   that must stay off the public site.
+- Pages live under `docs/content/<lang>/` (English in `en/`), in four navbar areas -
+  `get-started/`, `guides/`, `reference/`, `under-the-hood/` - plus the book, which is reachable
+  by URL but deliberately not linked anywhere (decision D6). The plan is
+  `.plans/DOCS_SITE_MODERNIZATION_PLAN.md`.
+- **The website is translated through its own workflow**, never by hand-editing
+  `docs/content/<lang>/`: `npm run doc:i18n:todo -- <lang>` / `doc:i18n:merge` (read
+  `docs/i18n/TRANSLATING.md`). The landing page's and the chrome's texts are in
+  `docs/i18n/{landing,ui}/en.json` with translator context, like the app's catalogs. The site's
+  languages are the app's enabled languages (`docs/i18n/languages.json`, checked by
+  `doc:i18n:check`, part of `doc:check`); a language is published once it has a `content/<lang>/`.
+  Only `get-started/` is translated; other areas link to English.
+- **After adding or removing a site language, delete `docs/.next`** before building: Nextra writes
+  the locale list into a webpack module, and a cached build keeps the old list and fails with
+  "{(intermediate value)}[a] is not a function" while collecting page data. CI builds are clean.
+- Landing-page features carry a `since` version (`docs/landing/features.ts`) and appear only when
+  the latest release tag has them.
+- **Moving or renaming a page needs an entry in `docs/redirects.json`** (old path -> new path);
+  `scripts/build-doc-redirects.cjs` writes a redirect stub for it, and the route golden fails the
+  build when an old URL disappears.
 - **`docs/package.json` must keep `--webpack` on `dev` and `build`.** Next 16
   defaults to Turbopack, which rejects Nextra's non-serializable `mdxOptions` -
   and those options are what register the custom `z80klive` Shiki grammar used

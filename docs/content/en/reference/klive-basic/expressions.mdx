@@ -1,0 +1,168 @@
+---
+description: "Klive BASIC expressions: operator precedence, arithmetic, bitwise, comparison and logical operators, the @ address-of operator, the result type of mixed operands, conversions and CAST."
+---
+
+# Expressions
+
+An expression combines values with operators and function calls. This page lists the operators, their precedence, and the rules that decide an expression's type.
+
+## Operands
+
+An operand is one of these:
+
+- a number or string literal, or `PI`;
+- a variable, a constant, an array element or a string slice;
+- a call to a `FUNCTION` or a built-in function;
+- `@` followed by a variable, an array element or a label;
+- an expression in parentheses.
+
+`name(args)` is a function call, an array element or a string slice, depending on what `name` is. A bare name is a variable or a call to a `FUNCTION` without parameters. A `SUB` cannot appear in an expression.
+
+## Precedence
+
+Operators are listed from the highest precedence to the lowest. Operators on the same level are evaluated in the order given by their associativity.
+
+| Level | Operators | Associativity |
+| --- | --- | --- |
+| 1 | `( )`, function call, slice, `@` | |
+| 2 | `^` | Right |
+| 3 | unary `-` | Right |
+| 4 | `*`, `/` | Left |
+| 5 | `MOD` | Left |
+| 6 | `+`, binary `-`, `bNOT` (`!`) | Left |
+| 7 | `bAND` (`&`), `bXOR` (`~`), `SHL` (`<<`), `SHR` (`>>`) | Left |
+| 8 | `bOR` (`\|`) | Left |
+| 9 | `=`, `<>`, `<`, `>`, `<=`, `>=` | Left |
+| 10 | `NOT` | Right |
+| 11 | `XOR` | Left |
+| 12 | `AND` | Left |
+| 13 | `OR` | Left |
+
+Some consequences:
+
+| Expression | Is read as |
+| --- | --- |
+| `NOT a = b` | `NOT (a = b)` |
+| `a bAND 3 = 1` | `(a bAND 3) = 1` |
+| `a bAND b + 1` | `a bAND (b + 1)` |
+| `2 ^ 3 ^ 2` | `2 ^ (3 ^ 2)`, which is 512 |
+| `-2 ^ 2` | `-(2 ^ 2)` |
+
+## Arithmetic operators
+
+| Operator | Operands | Result |
+| --- | --- | --- |
+| `+` | Two numbers, or two strings | The common type; for strings, the two joined |
+| `-` | Numbers | The common type. Unary minus turns an unsigned operand into its signed counterpart |
+| `*` | Numbers | The common type |
+| `/` | Numbers | The common type. Integer division when both operands are integral |
+| `MOD` | Numbers | The common type: the remainder |
+| `^` | Numbers | `Float`: both operands are converted to `Float` |
+
+- **Integer division** truncates toward zero: `-7 / 2` is `-3`.
+- **`MOD` of integral values** at run time is the remainder of the magnitudes, and it is never negative: `-100 MOD 3` is `1`, and so is `100 MOD -3`. An expression made only of literals folds to the floored remainder instead: `-1 MOD 3` is `2`.
+- **`MOD` of `Fixed` and `Float` values** is the floored remainder, `left - INT(left / right) * right`: `-7.5 MOD 2` is `0.5`.
+- **Integer division by zero** does not stop the program. The quotient has every bit set and takes the sign of the quotient (`100 / 0` is 65535 for a `UInteger`); `MOD` by zero gives the dividend.
+- **`Fixed` and `Float` division by zero** stops the program with `6 Number too big`.
+
+## Bitwise operators
+
+The bitwise operators work on the bits of integral values. Each has a symbol form.
+
+| Operator | Symbol | Operands | Result |
+| --- | --- | --- | --- |
+| `bAND` | `&` | Integral | The common type |
+| `bOR` | `\|` | Integral | The common type |
+| `bXOR` | `~` | Integral | The common type |
+| `bNOT` | `!` | One integral operand | The same type, with every bit inverted |
+| `SHL` | `<<` | An integral left operand; the shift count is converted to `UByte` | The type of the left operand |
+| `SHR` | `>>` | As `SHL` | The type of the left operand |
+
+- A `Fixed` or `Float` operand of `bAND`, `bOR`, `bXOR` or `bNOT` is converted to `Long` first, rounding down: `bNOT 2.5` is `-3`.
+- A `Fixed` or `Float` left operand of `SHL` or `SHR` is converted to `ULong`.
+- `SHR` keeps the sign of a signed value (an arithmetic shift) and shifts zeros into an unsigned one (a logical shift).
+
+```zxbasic
+DIM a, b AS UByte
+a = $AC : b = $4A
+PRINT a BAND b; " "; a BOR b; " "; a BXOR b; " "; BNOT b
+```
+
+This prints `8 238 230 181`.
+
+## Comparison operators
+
+`=`, `<>`, `<`, `>`, `<=` and `>=` compare two numbers or two strings and give a boolean, 0 or 1. Strings compare lexicographically.
+
+## Logical operators
+
+`AND`, `OR`, `XOR` and `NOT` take numbers, where 0 is false and any other value is true. The result is a boolean, 0 or 1.
+
+Both operands of `AND` and `OR` are always evaluated, the left one first: there is no short-circuit evaluation.
+
+## The @ operator
+
+`@` gives an address as a `UInteger`:
+
+| Operand | Result |
+| --- | --- |
+| `@variable` | The address of a variable. A constant for a global variable; a value computed at run time for a local one |
+| `@array(i, j)` | The address of an element; the subscripts must be constants |
+| `@label` | The address of a label or line number, as a constant |
+
+`@` is how a program gives the address of code or data to `USR`, `POKE`, `PEEK` or `DIM ... AT`:
+
+```zxbasic
+DIM n AS UByte = 42
+POKE @n, 43
+PRINT n
+```
+
+## Strings in expressions
+
+Strings take part only in `+`, the comparisons, slices and functions that accept them. Using a string as an operand of `-`, `*`, `/`, `MOD`, `AND`, `OR`, `XOR`, `bAND`, `bOR`, `bXOR`, `SHL` or `SHR` is an error.
+
+## The type of an expression
+
+When an operator combines two operands of different types, both are converted to a common type first:
+
+1. Two operands of the same type keep that type.
+2. If either operand is a `Float`, the result is a `Float`.
+3. Otherwise, if either is a `Fixed`, the result is a `Fixed`.
+4. A `String` with a number is an error.
+5. Otherwise the result has the larger size of the two, and it is signed if either operand is signed. `UByte` with `Byte` gives `Byte`; `UInteger` with `Byte` gives `Integer`.
+
+An operand whose type is not yet known takes the other operand's type.
+
+## Conversions
+
+- **Between numeric types**, values convert implicitly: in assignments, arguments, return values and built-in functions.
+- A non-constant `Fixed` or `Float` value converted to an integral type raises warning W200 (a value will be truncated).
+- A constant converted to an integral type is rounded toward minus infinity and cut to the target's width. A value that does not fit raises warning W120.
+- **Between strings and numbers** there is no implicit conversion. Use `VAL` to turn a string into a number and `STR` to turn a number into a string.
+
+### CAST
+
+`CAST(type, expr)` converts a numeric value to the named type explicitly:
+
+```zxbasic
+DIM f AS Float = 3.99
+DIM i AS Integer = -1
+PRINT CAST(UByte, f); " "; CAST(UInteger, i); " "; CAST(Byte, 200)
+```
+
+This prints `3 65535 -56`.
+
+## Constant folding
+
+Expressions made of constants are computed when compiling, including joining and comparing string literals. Arithmetic on literals alone is exact: `1 / 8` is `0.125`, and the result takes the type a literal of that value would have.
+
+A condition that is a numeric constant (always true or always false) raises warning W110.
+
+## Evaluation order
+
+The order matters only when a `FUNCTION` called in an expression has side effects:
+
+- The arguments of a call are evaluated last first.
+- A binary operator evaluates its left operand first. The exception is a plain variable on the left that needs no conversion: it is read after the right operand.
+- In an assignment to an array element, the value is evaluated before the subscripts.
