@@ -2,14 +2,16 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { AnnotationFileWatcher } from "@main/annotation-file-watcher";
+import { ANNOTATION_CHANGE_SETTLE_MS, AnnotationFileWatcher } from "@main/annotation-file-watcher";
 
 /*
  * The watcher follows real folders here: what it must survive is how editors actually save
  * (in place, or a new file renamed over the old one), which a mocked `fs.watch` cannot show.
  */
 
-const SETTLE_MS = 30;
+// --- The app's own settle time: under load FSEvents delivers one save's events up to ~50 ms apart,
+// --- so a shorter one splits a burst into two reports
+const SETTLE_MS = ANNOTATION_CHANGE_SETTLE_MS;
 
 let folder: string;
 let changes: string[];
@@ -28,29 +30,55 @@ afterEach(() => {
 
 const sidecar = (name = "zx81.rom.dis") => path.join(folder, name);
 
+/*
+ * macOS watches a folder through FSEvents, whose stream starts asynchronously: a change made in the
+ * first moments after `fs.watch()` can be lost. Under load (the full test run, with many tests
+ * writing files) that window grows, and a test that writes straight after `watch()` waits for an
+ * event that never comes. So a test that expects a report first waits until the watch is live:
+ * it rewrites the file until the watcher reports it, then lets the report settle and clears it.
+ */
+async function watchLive(filePath: string, watchAs = filePath): Promise<void> {
+  watcher.watch(watchAs);
+  await vi.waitFor(
+    () => {
+      if (!changes.length) fs.writeFileSync(filePath, fs.readFileSync(filePath));
+      expect(changes.length).toBeGreaterThan(0);
+    },
+    // --- Rewrites spaced wider than the settle time, or each one would restart it and none report
+    { timeout: 10_000, interval: SETTLE_MS * 3 }
+  );
+  await new Promise((resolve) => setTimeout(resolve, SETTLE_MS * 3));
+  changes.length = 0;
+}
+
+/** Events arrive within ~50 ms even under heavy file churn once the watch is live; this is slack */
+const EVENT_WAIT = { timeout: 5_000 };
+
 describe("AnnotationFileWatcher", () => {
   it("reports a file written in place, once per burst of writes", async () => {
     fs.writeFileSync(sidecar(), "{}");
     expect(watcher.watch(sidecar())).toBe(true);
+    watcher.unwatch(sidecar());
+    await watchLive(sidecar());
 
     fs.writeFileSync(sidecar(), '{"a":1}');
     fs.appendFileSync(sidecar(), " ");
 
-    await vi.waitFor(() => expect(changes).toEqual([sidecar()]));
+    await vi.waitFor(() => expect(changes).toEqual([sidecar()]), EVENT_WAIT);
     await new Promise((resolve) => setTimeout(resolve, SETTLE_MS * 3));
     expect(changes).toEqual([sidecar()]);
   });
 
   it("keeps reporting after a save that renames a new file over the old one", async () => {
     fs.writeFileSync(sidecar(), "{}");
-    watcher.watch(sidecar());
+    await watchLive(sidecar());
 
     for (const text of ['{"a":1}', '{"a":2}']) {
       changes.length = 0;
       const temp = path.join(folder, "zx81.rom.dis.tmp");
       fs.writeFileSync(temp, text);
       fs.renameSync(temp, sidecar());
-      await vi.waitFor(() => expect(changes).toContain(sidecar()));
+      await vi.waitFor(() => expect(changes).toContain(sidecar()), EVENT_WAIT);
     }
   });
 
@@ -93,9 +121,9 @@ describe("AnnotationFileWatcher", () => {
   it("reports the path exactly as it was given", async () => {
     const spelled = `${folder}${path.sep}.${path.sep}zx81.rom.dis`;
     fs.writeFileSync(sidecar(), "{}");
-    watcher.watch(spelled);
+    await watchLive(sidecar(), spelled);
 
     fs.writeFileSync(sidecar(), '{"a":1}');
-    await vi.waitFor(() => expect(changes).toEqual([spelled]));
+    await vi.waitFor(() => expect(changes).toEqual([spelled]), EVENT_WAIT);
   });
 });
