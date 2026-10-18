@@ -126,6 +126,8 @@ export default function LandingPage({ lang }: Readonly<{ lang: string }>) {
                 previousLabel={t("hero.carousel.previous")}
                 nextLabel={t("hero.carousel.next")}
                 slideLabel={t("hero.carousel.slide")}
+                pauseLabel={t("hero.carousel.pause")}
+                playLabel={t("hero.carousel.play")}
               />
             </div>
           </div>

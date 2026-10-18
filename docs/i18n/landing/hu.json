@@ -22,6 +22,8 @@
   "hero.carousel.previous": "Előző kép",
   "hero.carousel.next": "Következő kép",
   "hero.carousel.slide": "{n}. kép, összesen {count}",
+  "hero.carousel.pause": "Képváltás szüneteltetése",
+  "hero.carousel.play": "Képváltás folytatása",
   "slide.debug": "Z80-programok hibakeresése forráskód szinten, regiszterről regiszterre",
   "slide.emulator": "ZX Spectrum- és Next-programok futtatása: a ScrollNutter demó a Nexten",
   "slide.disassembly": "Egy .nex szétszedése: a ScrollNutter megjegyzésekkel ellátott visszafejtett kódja, a zxnDMA-program értelmezve",

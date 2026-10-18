@@ -107,7 +107,9 @@
     "slide.copper": "a7516a55c845d147",
     "slide.spriteEditor": "32b57eff324236fd",
     "slide.basic": "370c806dc8a28840",
-    "strip.machines": "7966862ed0ce3042"
+    "strip.machines": "7966862ed0ce3042",
+    "hero.carousel.pause": "5067a632a789c96f",
+    "hero.carousel.play": "19b267d0adf79367"
   },
   "ui": {
     "area.get-started": "bd2cb051773a703f",

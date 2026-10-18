@@ -22,6 +22,8 @@
   "hero.carousel.previous": "Imagem anterior",
   "hero.carousel.next": "Próxima imagem",
   "hero.carousel.slide": "Imagem {n} de {count}",
+  "hero.carousel.pause": "Pausar as imagens",
+  "hero.carousel.play": "Retomar as imagens",
   "slide.debug": "Depure programas Z80 no nível do código-fonte, registrador por registrador",
   "slide.emulator": "Execute software de ZX Spectrum e Next: a demo ScrollNutter no Next",
   "slide.disassembly": "Desmonte um .nex: o desassembly anotado do ScrollNutter, com o programa zxnDMA decodificado",

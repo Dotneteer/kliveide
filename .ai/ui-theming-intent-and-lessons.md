@@ -2837,10 +2837,12 @@ drift. Change a neutral or the default accent in the app, and the site changes w
 - **The hero is a carousel of real screenshots** (`docs/landing/HeroCarousel.tsx`): a 16:10 frame on
   the app's canvas colour, so pictures of another shape (the emulator) sit centred on the IDE's own
   dark ground rather than on the page. Pictures fly sideways in the direction of travel (forward:
-  in from the right, out to the left), every ten seconds. Its caption box is always two lines tall,
-  so captions of different lengths never move the page. Only the first slide is in the HTML; a
-  slide's neighbours load ahead of it. It moves by itself only until the visitor touches it, never
-  under the pointer or focus, and with reduced motion the pictures swap without flying. Its pictures come from `scripts/doc-shots/recipes/landing.cjs`.
+  in from the right, out to the left), every five seconds; a manual change restarts the count.
+  Its caption box is always two lines tall, so captions of different lengths never move the page.
+  Only the first slide is in the HTML; a slide's neighbours load ahead of it. **The only way to stop
+  it is its pause button** (WCAG 2.2.2): implicit stops - on hover, on focus, after the first click,
+  under reduced motion - made it look broken, because the pointer rests on it and a clicked arrow
+  keeps the focus. Reduced motion turns off the flying, not the advancing. Its pictures come from `scripts/doc-shots/recipes/landing.cjs`.
 - **Screenshots in the docs are dark** (decision D4), whatever the page's theme; their frame and
   markers use the tokens.
 - **A screenshot's callouts are HTML, never pixels:** `<Shot markers>` draws numbered badges from
