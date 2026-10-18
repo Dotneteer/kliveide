@@ -1,0 +1,32 @@
+[
+  {
+    "id": "en",
+    "nativeName": "English",
+    "englishName": "English"
+  },
+  {
+    "id": "es",
+    "nativeName": "Español",
+    "englishName": "Spanish"
+  },
+  {
+    "id": "pt-BR",
+    "nativeName": "Português (Brasil)",
+    "englishName": "Portuguese (Brazil)"
+  },
+  {
+    "id": "pt-PT",
+    "nativeName": "Português (Portugal)",
+    "englishName": "Portuguese (Portugal)"
+  },
+  {
+    "id": "de",
+    "nativeName": "Deutsch",
+    "englishName": "German"
+  },
+  {
+    "id": "hu",
+    "nativeName": "Magyar",
+    "englishName": "Hungarian"
+  }
+]

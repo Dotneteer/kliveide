@@ -9,7 +9,8 @@
   box-sizing: border-box;
 }
 
-body.lp-body {
+body.lp-body,
+div.lp-body {
   margin: 0;
   background: var(--site-bg);
   color: var(--site-fg);
@@ -659,4 +660,34 @@ body.lp-body {
   .lp * {
     transition: none !important;
   }
+}
+
+/* ------------------------------------------------------------------ language suggestion */
+
+.lp-suggest {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem 1rem;
+  padding: 0.75rem max(1.25rem, env(safe-area-inset-left, 0px));
+  background: var(--site-accent-soft);
+  border-bottom: 1px solid var(--site-line);
+  font-family: var(--site-font-body);
+  font-size: 0.9375rem;
+  color: var(--site-fg);
+}
+
+.lp-suggest .lp-button {
+  padding: 0.4rem 0.9rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+  cursor: pointer;
+  background: var(--site-bg);
+  color: var(--site-fg);
+}
+
+.lp-suggest .lp-button-primary {
+  background: var(--site-accent);
+  color: var(--site-on-accent) !important;
 }

@@ -1,0 +1,53 @@
+{
+  "area.get-started": "Get Started",
+  "@area.get-started": { "context": "Navbar tab and sidebar title of the tutorial area. Same as the landing page's 'Get Started'." },
+  "area.guides": "Guides",
+  "@area.guides": { "context": "Navbar tab of the task-oriented documentation." },
+  "area.reference": "Reference",
+  "@area.reference": { "context": "Navbar tab of the reference documentation." },
+  "area.under-the-hood": "Under the Hood",
+  "@area.under-the-hood": { "context": "Navbar tab of the articles on how the emulators work inside, and on contributing." },
+  "area.englishOnly": "{title} (English)",
+  "@area.englishOnly": { "context": "A navbar tab whose pages exist only in English. {title} is the tab's translated name. Keep it short: it sits in the navbar." },
+
+  "search.placeholder": "Search documentation…",
+  "@search.placeholder": { "context": "Placeholder of the search box in the docs navbar." },
+  "search.empty": "No results found.",
+  "@search.empty": { "context": "Shown when a search finds nothing." },
+  "search.error": "The search index could not be loaded.",
+  "@search.error": { "context": "Shown when the search cannot start." },
+  "search.loading": "Loading…",
+  "@search.loading": { "context": "Shown while the search index loads." },
+
+  "toc.title": "On This Page",
+  "@toc.title": { "context": "Heading of the list of the page's sections, at the right of a docs page." },
+  "toc.backToTop": "Scroll to top",
+  "@toc.backToTop": { "context": "Link under the page's section list that scrolls back to the top." },
+  "editLink": "Edit this page on GitHub",
+  "@editLink": { "context": "Link to the page's source on GitHub. 'GitHub' is never translated." },
+
+  "theme.dark": "Dark",
+  "@theme.dark": { "context": "Theme menu option at the bottom of the sidebar." },
+  "theme.light": "Light",
+  "@theme.light": { "context": "Theme menu option." },
+  "theme.system": "System",
+  "@theme.system": { "context": "Theme menu option: follow the operating system's setting." },
+
+  "language.label": "Language",
+  "@language.label": { "context": "Accessible label of the docs navbar's language selector." },
+
+  "outdated.title": "This translation may be out of date.",
+  "@outdated.title": { "context": "Bold start of a notice at the top of a translated page whose English original changed after it was translated." },
+  "outdated.link": "Read the English page",
+  "@outdated.link": { "context": "Link in the out-of-date notice, to the English original of the page." },
+
+  "suggest.text": "This site is also available in your language.",
+  "@suggest.text": { "context": "Banner on the English landing page, shown in the visitor's language when the browser asks for it. Written in the target language, so it says 'your language' rather than naming it." },
+  "suggest.switch": "Switch to {language}",
+  "@suggest.switch": { "context": "Button of the language banner. {language} is the language's own name, such as Deutsch or Magyar." },
+  "suggest.dismiss": "No, thanks",
+  "@suggest.dismiss": { "context": "Button that closes the language banner for good." },
+
+  "footer.text": "Klive IDE is free and open source, under the MIT license.",
+  "@footer.text": { "context": "The docs footer. Same text as the landing page's footer." }
+}

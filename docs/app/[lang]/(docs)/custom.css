@@ -67,3 +67,76 @@ article figure + ol > li::before {
   color: var(--site-on-accent);
   font: 700 0.75rem/1 var(--site-font-mono);
 }
+
+/* --- The navbar's language selector (page-components/DocsLanguageSwitch.tsx) */
+.site-lang {
+  position: relative;
+}
+
+.site-lang > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  height: 2rem;
+  padding: 0 0.5rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: inherit;
+  opacity: 0.8;
+}
+
+.site-lang > button:hover,
+.site-lang > button[aria-expanded="true"] {
+  opacity: 1;
+  background: rgb(127 127 127 / 0.12);
+}
+
+.site-lang ul {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.375rem);
+  z-index: 30;
+  min-width: 13rem;
+  margin: 0;
+  padding: 0.375rem;
+  list-style: none;
+  background: var(--site-raised);
+  border: 1px solid var(--site-line);
+  border-radius: 8px;
+  box-shadow: 0 16px 40px rgb(0 0 0 / 0.28);
+}
+
+.site-lang a {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.4rem 0.625rem;
+  border-radius: 5px;
+  font-size: 0.9375rem;
+}
+
+.site-lang a:hover,
+.site-lang a[aria-current="true"] {
+  background: var(--site-accent-soft);
+}
+
+.site-lang small {
+  color: var(--site-subtle);
+  font-family: var(--site-font-mono);
+}
+
+/* --- The notice on a translated page whose English original changed */
+.site-outdated {
+  margin: 1rem 0 1.5rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--site-line);
+  border-left: 3px solid var(--site-accent);
+  border-radius: 6px;
+  background: var(--site-accent-soft);
+  font-size: 0.9375rem;
+}
+
+.site-outdated a {
+  color: var(--site-accent);
+  text-decoration: underline;
+}
