@@ -9,9 +9,12 @@ The design is `.plans/RELEASE_AUTOMATION_PLAN.md`; changesets are `.changes/READ
    `npm run release:prepare -- --dry-run` (the CHANGELOG section and the PR body, nothing written).
 2. `npm run release:prepare`. It creates `release/v<x.y.z>`, writes the dated CHANGELOG section,
    deletes the consumed changesets, bumps `package.json` and the lockfile, runs every gate
-   (`build:check`, `lint:renderer`, `test:all`, `doc:build`, `doc:check`, `release:verify`),
+   (`build:check`, `lint:renderer`, `test:fast`, `doc:build`, `doc:check`, `release:verify`),
    commits `Release v<x.y.z>`, pushes and opens the PR. `--version x.y.z` overrides the computed
-   version; `--skip-tests` skips `test:all` (re-runs only); `--no-push` stops after the commit.
+   version; `--skip-tests` skips `test:fast` (re-runs only); `--no-push` stops after the commit.
+   The slow test tier is **not** a gate: run `npm run test:slow` (or the manual "Slow tests"
+   workflow) beforehand; `release:prepare` only warns when it has not passed on these sources
+   (`.plans/FAST_SLOW_TEST_TIERS_PLAN.md`).
    It runs locally on purpose: a PR opened by a workflow token would not trigger `test.yml`.
 3. In the PR: edit **Highlights** in `CHANGELOG.md`, tick the checklist (competitive-analysis
    release note, README, screenshots). Optionally run **Release** (`release.yml`) with

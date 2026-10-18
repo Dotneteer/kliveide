@@ -1,0 +1,42 @@
+# The slow end-to-end tier (`e2e-slow`, `build/e2e-tests.ts`): the files carved out of the fast
+# tiers because they cost far more than they add to an everyday run.
+#
+# Run it by hand ("Run workflow", any branch) when a plan is about to complete and before
+# `npm run release:prepare` - the GitHub counterpart of `npm run test:slow`. Push, pull requests and
+# the Release workflow never run it (`.plans/FAST_SLOW_TEST_TIERS_PLAN.md` D1).
+
+name: Slow tests
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  slow:
+    name: slow (${{ matrix.shard }}/3)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.x
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build all WASM machine cores
+        run: npm run build:all-wasm
+
+      - name: Run the slow tier
+        run: npx vitest run --config build/vitest.config.ts --project=e2e-slow --shard=${{ matrix.shard }}/3
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
