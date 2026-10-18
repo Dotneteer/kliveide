@@ -1,5 +1,465 @@
 # Klive IDE Changelog
 
+## 0.64.0 (2026-10-18)
+
+### Highlights
+
+- **Reverse debugging on every Z80 machine:** step back, reverse-continue to the last breakpoint
+  hit, take over in the past, and save the session as a `.klr` debug recording (#1445).
+- **Code coverage, a memory heat map and an exact profiler** on every Z80 machine (#1446).
+- **Z80 unit tests** in DeZog's conventions, with a Unit Tests panel and the new `klive` command
+  line for CI (`klive test` with JUnit and LCOV, `klive build`, `klive run`) (#1446).
+- **ZX Spectrum Next inspectors:** Copper debugging, and live Sprite, Tilemap and Layer 2
+  inspectors, with layer hiding and a pixel probe on the emulator screen (#1434).
+- **New machines:** the Pentagon 128 with TR-DOS disks, the ZX Spectrum +2A/+3 with Amstrad's
+  original ROMs, and experimental Timex TC2048/TC2068/TS2068 and Scorpion ZS-256 machines (#1431).
+- **RZX input recordings:** play, debug, record, roll back and render `.rzx` files to video (#1431).
+- **Reverse-engineering tools:** annotations on every machine, annotated ROMs, code and data
+  detection from coverage, a graphics finder, SkoolKit import/export and export as re-assemblable
+  source (#1448).
+- **Boriel BASIC 2 comes with Klive,** with source-level debugging on the ZX Spectrum and the Next
+  (#1463).
+- **Klive speaks your language:** the IDE in Spanish, Portuguese (Brazil and Portugal), German and
+  Hungarian (#1464, #1465).
+- **A reorganised menu bar and a new Settings dialog,** with a Debug menu and one **File › Open
+  File...** for every kind of file (#1443).
+
+### Key fixes
+
+- Cambridge Z88: no more noise below a small Screen Base File on the larger LCDs, the known issue of
+  0.63.0 (#1433).
+- Assembler: `DEFB` accepts strings (#1437).
+
+### Breaking changes
+
+- ZX Spectrum 48K, 128K and +2E/+3E machine states saved by 0.63.0 no longer load exactly, because
+  the emulator cores' memory layout changed. Such a `.kls` file loads from the `.szx` snapshot it
+  carries: nearly the same state, without the tape's exact position, the disk controller's state and
+  a few CPU details. Klive says when this happens (#1431, #1432).
+- Boriel ZX BASIC 1.x (`zxbc` 1.19) is no longer supported as the external compiler, and the
+  `zxb-reset` command is gone. An existing `zxbasic.compiler zxbc` setting now means Boriel BASIC 2
+  (#1463).
+- Many menu items moved in the menu redesign, and the per-type load items, the IDE menu and the View
+  and Machine check items are gone (the options are in Settings). Keyboard shortcuts are unchanged.
+  The Settings page of the documentation has a **Where Did It Go?** table with the new place of
+  every moved item (#1443).
+
+### Features
+
+- **Execution History on every Z80 machine:** **Debug › Execution History** (or `show-history`)
+  lists the last instructions the CPU ran in a debug session: 131,072 on the Next and 65,536 on the
+  other machines. Each row shows the bank and address, the bytes that actually ran, the disassembly,
+  the source line, and the registers and flags the instruction changed. A HALT wait, a ZX80/ZX81
+  display line and a Next DMA bus hold are each one row with a count, and **Fold interrupts** turns
+  each interrupt service into one expandable row. Click a row for the full registers before and
+  after it and the memory map at that time; double-click it to go to its source. A plain **Start**
+  records nothing (#1445).
+- **Reverse debugging on every Z80 machine:** while a debug session is paused, **Step Back**, **Step
+  Forward**, **Reverse Step Over**, **Reverse Step Out** and **Reverse Continue** (Alt+F5) put the
+  whole machine back at any recorded instruction, memory, devices and screen included, and every
+  panel shows that moment. Stepping or continuing from the past replays the recorded run with your
+  breakpoints active, and **Take over here** makes the current point the present and goes on live
+  (on the Next this undoes the SD card writes of the discarded future). Reverse Continue checks
+  every breakpoint kind, so a memory-write breakpoint finds where a byte last changed; a long search
+  shows its progress and can be cancelled (`reverse-continue-cancel`). The status bar shows how far
+  back you are, and a click returns to the present. **Settings › Debugging** sets how much memory
+  the timeline may use (#1445).
+- **Trace export:** **Debug › Export Execution History...**, the Execution History's **Export**
+  button or `history-export` (`hexp`) saves a range of the history as a text or CSV trace. The
+  defaults suit diffing two runs: times are relative to the first row, the header has no export
+  time, and `-nointerrupts` leaves interrupt services out. The columns can be chosen, and CSV has
+  one column per register (#1445).
+- **Debug recordings:** **Debug › Save Debug Recording...** (`drsave`) saves a reverse-debugging
+  session to a `.klr` file. **Debug › Open Debug Recording...** (`drload`), **File › Open File...**
+  or dropping the file on the Emulator window opens it on the same machine and configuration, paused
+  where it was saved, with its whole past to step back through; its breakpoints and watches come
+  with it as session breakpoints. A minute of a ZX Spectrum game takes about 1-2 MB, and `.klr`
+  files have a viewer in the Explorer. A recording replays only in the Klive build that made it; for
+  a file from another build, Klive offers to open its end state instead (#1445).
+- **The advanced debugging features can be turned off:** the execution history, reverse debugging,
+  debug recordings, code coverage and the profiler are on by default.
+  `set -u features.advancedDebugging 0` and a restart turn them all off; a debug session then
+  records nothing extra, and the related commands say how to turn the features back on (#1445,
+  #1446).
+- **Code coverage and the memory heat map on every Z80 machine:** **Debug › Code Coverage** (or
+  `coverage on`) records which bytes of every bank ran, were read or were written, and how often, at
+  full speed as well as while stepping. The editor marks source lines as covered, partly covered or
+  not covered, and the Disassembly view marks the instructions that ran. The Memory view's **Heat**
+  selector draws execution, read or write counts as a heat map and outlines self-modified bytes;
+  `coverage smc` lists self-modifying code. `coverage export` writes LCOV, CSV or `.kcov` files,
+  `coverage load` merges a `.kcov` file, and **Debug › Reset Coverage** starts over (#1446).
+- **Profiler on every Z80 machine:** **Debug › Start Profiling** and **Stop Profiling** measure
+  every instruction in a window of the run, with no sampling, and open the **Profiler** document.
+  **Routines** shows the time per routine (from Klive BASIC SUBs and FUNCTIONs, `.proc` blocks or
+  labels), **Addresses** the time per address, **Call tree** inclusive and exclusive time, and
+  **Callers** what called a routine. Interrupts count as roots of their own, and time waiting in
+  HALT is kept apart. `profile start -at <label> -until <label>` measures exactly one pass of a
+  loop. Profiles export to speedscope, callgrind (KCachegrind), CSV and Fuse's format, and
+  **Settings › Debugging › Profile hints in the editor** shows each routine's share in the source.
+  The assembler's `.proc` blocks also appear in the editor's Outline (#1446).
+- **Z80 unit tests,** with the Klive assembler and with sjasmplus, in DeZog's conventions, so DeZog
+  unit-test projects run unchanged: a routine labelled `UT_...` is a test, and `TEST_...` macros
+  check values. **Add unit-test support** in the **Testing** activity's menu (or `test-init`) adds
+  the include file to a project. The **Unit Tests** panel runs each test on a fresh machine in the
+  background, without touching the emulator, and shows passed, failed or error, the values that made
+  a test fail and the T-states each test took; a click goes to the source. A failing test can be
+  debugged in the emulator, and **Run all tests with coverage** feeds code coverage. Commands:
+  `test-list`, `test-run`, `test-debug` and `test-junit`. Tests run on the ZX Spectrum 48K/16K,
+  128K, +2A/+3/+3E and Next (#1446).
+- **The `klive` command line,** for scripts and CI, needs nothing else installed and never opens a
+  window. `klive test` builds a project and runs its unit tests, with exit codes, pretty, plain or
+  TAP output, JUnit XML, and LCOV or `.kcov` coverage, giving the same results on every run.
+  `klive build` compiles a project to a flat binary or Intel HEX. `klive run` runs a project, a
+  tape, a snapshot, a state file, a NEX file or a ZX80/ZX81 program until a frame count, an exact
+  T-state count, an address, a HALT, a breakpoint or a timeout, then writes memory dumps, registers,
+  a PNG screenshot or a state file. On macOS, **Klive IDE › Install Command Line Tool...** puts
+  `klive` on the PATH; the Windows installer adds it there (#1446).
+- **Automation:** with **Settings › General › Automation** on (it is off by default), scripts drive
+  the running Klive with `klive ide`: build, run and debug the project, wait for a stop, read and
+  write registers and memory, set breakpoints, take screenshots and, at the **Full** level, run any
+  IDE command. Any language can do the same through a local, token-authenticated JSON-RPC 2.0
+  protocol. Three permission levels (Read, Control, Full) limit what scripts may do, and an
+  **Automation** status bar item and output pane show the connected scripts and their calls (#1446).
+- **Faster debugging:** debug sessions and project starts now run close to the speed of a plain Run
+  on most machines, also with memory, I/O or conditional breakpoints set; before, they could take
+  two to three times longer. A source-level Step Over of a long call is almost four times faster
+  (#1446).
+- **ZX Spectrum Next Copper debugging:** a **Copper** panel in the Debug activity shows the Copper's
+  mode, state, PC, write pointer, line offset and beam, with the instructions around its PC. The
+  **Copper List** document (**View › Machine Views › Copper List**, or `show-copper [index]`)
+  decodes all 1024 instructions with their meaning and a colour swatch for palette writes, marks the
+  Copper's PC and last hit, flags a list without `HALT` and `WAIT`s that never match at the current
+  timing, and draws a raster ruler of where in the frame each `WAIT` acts. `bp-set cu:<index>` stops
+  the machine when the Copper completes an instruction, with hit counts, conditions, logpoints and
+  one-shots; set one from the list's gutter, its row menu (**Run to here**, `run-to cu:`) or the
+  margin of a `.copper` source line. **Step Copper** (**Debug › Step Copper**, `step-copper`) runs
+  to the Copper's next instruction (#1434).
+- **The `.copper` pragma** writes Copper instructions in the Klive Z80 Assembler: `.copper wait`,
+  `move`, `nop`, `halt` and `word`, with highlighting, completion and hover. The Copper List matches
+  the live Copper memory back to these source lines, even when the list is uploaded at an offset or
+  patched at run time, and **Go to source** opens the line (#1434).
+- **Sprite Inspector for the ZX Spectrum Next:** **View › Machine Views › Sprite Inspector**,
+  `show-sprites [n]` or `show-patterns [n]` opens one document with two linked views. **Sprites**
+  decodes all 128 attribute slots (pattern, position, palette offset, transforms, anchors,
+  visibility) with diagnostics chips, change markers since the last stop and **copy as
+  nextreg/.db**; **Patterns** shows the 16K of pattern RAM in the live or a pinned sprite palette,
+  with usage badges. An inspector shows the selection and a map of sprite space. `export-patterns`
+  (or **Export pattern RAM as .spr**) saves the pattern RAM. The inspector only reads: it does not
+  clear the sprite status port `$303B` (#1434).
+- **Tilemap Inspector for the ZX Spectrum Next:** **View › Machine Views › Tilemap Inspector**,
+  `show-tilemap [x y]` or `show-tiles [n]` opens one document with two linked views: **Map**, the
+  40x32 or 80x32 map (whole, or as displayed) with each cell's tile, attributes and address, and
+  **Tiles**, the 256 or 512 definitions with usage counts and unused tiles dimmed. Select a tile and
+  every cell that uses it is outlined. Diagnostics check the map, the tile definitions and the ULA
+  screen for setup mistakes such as overlaps. The inspector only reads, so opening it never changes
+  the machine (#1435).
+- **Pattern and tile snapshots:** **Open in sprite editor** in the Sprite Inspector pops a sprite
+  pattern, as its sprite shows it, into a read-only sprite editor, and **Open tile snapshot** in the
+  Tilemap Inspector pops a tile into a read-only 8x8 viewer, with the cell's transform and the
+  palette frozen at the stop (#1435).
+- **Layer 2 Inspector for the ZX Spectrum Next:** **View › Machine Views › Layer 2 Inspector** or
+  `show-layer2 [shadow|window]` shows the displayed (`$12`), shadow (`$13`) or `$123B` write-window
+  banks as an image at their resolution, either whole with the 16K bank boundaries outlined, or as
+  displayed with the scroll and clip window applied. A Banks strip names each bank's role, and the
+  pixel inspector gives a pixel's byte, palette index and addresses: **Show in memory** opens the
+  byte (in its 8K page when it is not mapped), and **Break on write** sets a bank-relative write
+  breakpoint (#1436).
+- **A viewer for `.sl2` and `.nxi` Layer 2 pictures,** at 256x192, 320x256 or 640x256 (the toolbar
+  switches between the last two, which have the same size), with the palette the file carries or the
+  Next's default Layer 2 palette (#1436).
+- **Hide, solo and probe the ZX Spectrum Next's video layers:** the Layers strip under the emulator
+  screen (**Settings › Emulator › Show the Layers strip**, the status bar's context menu, or the
+  `layers` command, such as `layers spr off` or `layers l2 solo`) lists the layers in their `$15`
+  priority order, hides or solos each one, marks where no layer is opaque, and draws the four clip
+  windows. A paused picture is redrawn exactly at once, even after mid-frame Copper changes. The
+  pixel probe names the layer that produced a pixel and the rule that made it win, and a click opens
+  the inspector that owns it. **View › Machine Views › Layers** (`show-layers`) shows the priority
+  stack and a card per layer. This changes only what the emulator shows, never what the machine
+  does, and a pill on the screen says when a layer is hidden (#1442).
+- **The beam position on the paused screen,** on the ZX Spectrum Next and on the 48K, 128K, +2A/+3,
+  +2E/+3E, Pentagon, Scorpion and Timex models: when the machine pauses, a line marks the beam's
+  row, a pill gives its raster line, paper row, position in the line and frame tact, and the part of
+  the picture left from the previous frame is hatched. The paused picture is first brought up to the
+  beam, without changing the machine. Blanking is named, pointing at a pixel tells how many tacts
+  until the beam draws it, and on the Next a Copper breakpoint's hit is shown as a second marker.
+  Switch it with the emulator toolbar's beam button, **Settings › Emulator › Beam position** or
+  `beam [on|off]` (#1442).
+- **Sprite attribute breakpoints on the ZX Spectrum Next:** `bp-set sp:<sprite>` stops after an
+  instruction writes an attribute byte of that sprite, whether the CPU, the DMA or the Copper wrote
+  it, through port `$57` or the NextReg mirrors. The stop reports the byte, its old and new value,
+  and the writer, and `-attr` limits the breakpoint to some of the five bytes. You can also set one
+  from the breakpoint dialog or the Sprite Inspector's row menu (#1445).
+- **Copper and DMA regions in `.NEX` annotations:** mark a range of a popped-out bank as a Copper
+  list or a zxnDMA program, and the listing shows it as `.copper` / `.dma` pragmas, with each
+  instruction's meaning in the comment column. Every row reassembles to the bytes it shows, and the
+  annotation file stays readable by older Klive versions (#1444).
+- **New model: the Pentagon 128,** the Russian 128K clone much of the demoscene writes for. It is a
+  model of the ZX Spectrum 128K with the same ROMs, paging and AY and the Pentagon's own timing: 3.5
+  MHz, a 71,680 T-state frame (224 T-states by 320 lines), no memory or I/O contention and no
+  floating bus. Running, debugging, injecting code, the tape loader, snapshots and state files work
+  as on the 128K. `.szx` and `.z80` snapshots of a Pentagon open on it and are saved as a Pentagon,
+  and a 128K snapshot keeps a Pentagon project on the Pentagon (#1431).
+- **TR-DOS disks on the Pentagon 128:** the Pentagon has the Beta 128 disk interface, with two
+  drives that take `.trd` and `.scl` images, and TR-DOS. Klive cannot ship the TR-DOS ROM, so name
+  your own 16K copy under **Settings › Machine › TR-DOS ROM**; without it the Pentagon runs without
+  its drives. **Machine › Disks** inserts, ejects and write-protects disks; TR-DOS writes go back
+  into `.trd` files, while an `.scl` is never changed (**Save Disk in Drive A as .trd...** keeps the
+  changes). **Create Disk File...** and `crd` (for example `crd trd80ds games`) make blank TR-DOS
+  disks, and **Boot Disk in Drive A** selects 48 BASIC, enters TR-DOS and runs the disk's `boot`
+  program. The debugger shows the TR-DOS ROM as partition `R2`, so `R2:$3D2F` stops only in TR-DOS.
+  `.szx` snapshots and state files keep the disk interface's state (#1432).
+- **ZX Spectrum +2A/+3 with the original Amstrad ROMs:** the +2A/+3/+2E/+3E machine gains eight
+  models that boot Amstrad's unmodified ROMs: the +2A (v4.1 and Spanish v4.1) and the +3 (v4.1, the
+  1987 v4.0 and Spanish v4.1, each with one or two drives). Pick one when a program must behave
+  exactly as on the original machine; running, debugging, injecting code, tapes, `.dsk` disks,
+  snapshots and state files work as on the +2E/+3E. A `.z80` or `.szx` snapshot of a +2A or +3 stays
+  on a +2A/+3 model when the project already uses one, and is saved back as a +2A or +3 (#1431).
+- **New experimental machines: the Timex TC2048, TC2068 and TS2068.** They run 48K software and add
+  the Timex SCLD's screen modes (a second screen, 8x1 extended colour and 512x192 two-colour), port
+  `$FF` and the 3.528 MHz clock; the TS2068 has a 60 Hz frame and the TC2048 a built-in Kempston
+  port. The 2068s add 8K bank switching from the HOME bank, the cartridge DOCK and the Extension ROM
+  (partitions `H0`-`H7`, `D0`-`D7` and `X0`-`X7` in the views and breakpoints), an AY chip with the
+  PSG panel, two joysticks, and cartridges: **Machine › Cartridge › Insert Cartridge...** takes a
+  `.dck` file. Klive cannot ship Timex's ROMs, so name yours under **Settings › Machine** (TC2048
+  ROM, TC2068 ROM or TS2068 ROM); until then the machine boots the Sinclair 48K ROM. With a 2068 ROM
+  other than the known TS2068 one, the IDE cannot start a program or a tape. `.szx` and `.z80`
+  snapshots load and save; a `.sna` saves as a 48K, and Klive names what it loses (#1432).
+- **New experimental machine: the Scorpion ZS-256,** a Russian 128K-compatible machine with 256K of
+  RAM in sixteen banks (`B0`-`B15`), port `$1FFD`, four ROMs (`R0`-`R3`: the 128K editor, 48K BASIC,
+  the service monitor and TR-DOS) and a built-in Beta 128 disk interface with two drives, as on the
+  Pentagon. Klive cannot ship its 64K ROM, so name yours under **Settings › Machine › Scorpion
+  ROM**. Until then it boots the 128K ROMs and takes TR-DOS from the TR-DOS ROM setting, and
+  running, debugging, the tape loader and booting a disk work as on the 128K. With the Scorpion's
+  own ROM the IDE cannot start a program, tape or disk in its editor, so load them by hand. `.szx`
+  and `.z80` snapshots keep all sixteen banks; a `.sna` is refused while `$1FFD` is in use (#1432).
+- **RZX input recordings:** Klive plays and records RZX files (version 0.13) on the ZX Spectrum 48K
+  (16K and NTSC too), the 128K and the +2E/+3E, and a recording made on a +2A or +3 plays on the new
+  Amstrad models. Open an `.rzx` file with **File › Open File...**, drop it on the Emulator window,
+  use **Play recording** in the Explorer or the recording's tab, or `zx-rzx <file>`. **Debug
+  recording** (`zx-rzx <file> -d`) stops at the first instruction, breakpoints and stepping work
+  while it plays, and a desync pauses the machine and names the frame. The `.rzx` viewer shows the
+  file's details, its segments (each can be played from, `zx-rzx <file> -s <n>`) and its first
+  snapshot. **Machine › Record › RZX: Record** (`zx-rzx-record`) records from the current state with
+  a rollback point every five seconds, with **RZX: Roll Back** (`zx-rzx-rollback`), **RZX: Insert
+  Rollback Point** (`zx-rzx-point`) and **RZX: Stop and Save...** (`zx-rzx-stop <file>`). **RZX:
+  Render a Recording to Video...** (`zx-rzx-video <file>`) plays a recording into a video file. A
+  PLAY/REC badge in the status bar shows the frame counter (#1431).
+- **Machine code for the ZX81 and ZX80:** the assembler takes `.model ZX81` and `.model ZX80` (and
+  `#ifmod`), the `.defzx` pragma writes text in the machines' character sets, and code above `$7FFF`
+  gets a warning; a source with no `.model` is assembled for the running machine. **Run** and
+  **Debug** put the code into a `1 REM` line followed by `2 RAND USR <entry>` and type `RUN`, so the
+  code is debugged at source level as on the other machines, and **Inject** only writes the program.
+  Code that starts at the program's base is taken as a complete program. **Export** (or
+  `expc <file> -f p|o`) writes a `.p` or `.o` file, and on a `.p` file `-as` makes it run itself
+  once loaded. New **ZX81** and **ZX80** project templates print a welcome message, and `klive run`
+  works on these projects (#1461).
+- **BASIC Listing for the ZX81 and ZX80:** **View › Machine Views › BASIC Listing** lists the
+  program in a ZX81 or ZX80 the way the machine's own `LIST` prints it, with the ROM's keyword
+  spacing, and line numbers above 9999 shown as the ROM shows them (14393 as E393). A ZX80 with the
+  8K ROM is listed as a ZX81 (#1460).
+- **ZX81 SAVE writes a `.p` file:** `SAVE "NAME"` on the ZX81 writes the program to `NAME.p` in the
+  saved-files folder, as a Spectrum SAVE writes a `.tzx`. With *Fast Load* on, the save is instant;
+  press BREAK while it saves, and no file is written (#1460).
+- **A viewer for ZX81 `.p` and ZX80 `.o` files:** a summary strip (size, RAM needed, lines, auto-run
+  line, FAST/SLOW) and the file's parts at their own addresses: system variables, BASIC program,
+  display file and variables. Each part pops out as Memory, Disassembly, a BASIC listing, or the
+  screen drawn with the machine's own characters. ZX80 files (`.o`/`.80`) open in the same viewer
+  with the ZX80's keywords and variables (#1460, #1462).
+- **A ZX80 virtual keyboard** in the original 4K machine's colours, with blue keys and white and
+  amber legends taken from the ZX80 ROM; each legend is the key or SHIFT plus the key. A ZX80 with
+  the 8K ROM shows the ZX81 keyboard (#1460).
+- **TV noise without sync on the ZX80 and ZX81:** a ZX81 in FAST mode, or a ZX80 while it computes,
+  sends no usable picture, which a real television showed as noise and Klive as black. Turn on
+  **Settings › Emulator › Show TV noise without sync** (off by default) to see animated grey noise
+  instead. SAVE and LOAD stripes still show, and screenshots and recordings keep the real picture
+  (#1460).
+- **ZX80 and ZX81 system variables:** the System Variables panel lists them, and the disassembly
+  names operands such as `D_FILE` and `E_LINE`. Labels follow memory mirrors: a label shows at every
+  address where its byte appears, and a mirror row says which address it mirrors (#1448).
+- **Annotations on every machine:** the Disassembly view is now an editable, annotated listing on
+  the ZX Spectrum 48K, 128K, +2A/+3 and Next, the Pentagon, the Scorpion, the Timex machines, the
+  ZX80 and the ZX81. Right-click a row to add a label, a synopsis or an end-of-line comment, or to
+  mark data; the `label` command adds a label from the command prompt. Annotations are kept in a
+  `.dis` file beside the program: `nex-run`, `zx-snapshot`, `tape-load` of a ZX80/ZX81 program and
+  the open project (`annotations.dis`) choose it for you, or pick one with `ann-new` or `ann-open`.
+  Snapshot banks can be annotated too. The same names appear in the Execution History, the Call
+  Stack, the Profiler and `dis`, and on every machine with banks, `bp-set` accepts
+  `<bank>:+<offset>` and `<bank>:<label>` (#1448).
+- **ROM annotations:** Klive recognises a ROM by its bytes, also when it is loaded from your own
+  file, and shows the labels and comments it ships for it, so calls into the ROM read by name. This
+  release ships the main entry points of the ZX Spectrum 48K ROM and the whole ZX81 ROM: a label on
+  every call and jump target, a synopsis for each of its 604 labels, its data regions, and its
+  tables (keys and keywords, edit keys, the calculator, syntax, operator priorities and the
+  character set). ROM labels are set in italics, and the Disassembly view's **ROM labels** switch
+  hides them. `bp-set ROM:<name>` breaks at a ROM label, and `ROM:<name>` also works in breakpoint
+  conditions (#1448, #1460, #1466).
+- **Editing ROM annotations:** a ROM's labels, comments and regions are edited in a working copy
+  that replaces the shipped annotations for that ROM: in Klive's home folder (`RomAnnotations/`) for
+  a ROM Klive ships, where it survives updates, or beside your own ROM file as `<file>.dis`. Make
+  one with `rom-ann-new` or **Start Editing ROM Annotations...** on a ROM row's context menu, and
+  open it with **Open ROM Annotations**, `rom-ann-open` or by opening the `.rom.dis` file: the ROM
+  annotation editor finds the ROM by its bytes and opens its pages with the same annotation menu and
+  shortcuts as a NEX bank, with no machine running. Once a working copy exists, ROM rows in the live
+  Disassembly view can be edited too. A **Ready** chip (or `rom-ann-check`) says whether the file
+  passes the checks of a shipped annotation file, **Next unlabelled** steps through the calls and
+  jumps that still have no label, and `rom-ann-provenance` marks an entry as `observed` or `manual`
+  (#1460).
+- **Code and data detection:** after a run with code coverage on, **Debug › Detect Code and
+  Data...** (also `ann-detect` or the Disassembly view's tools button) proposes annotation regions
+  from what the program actually did: code, and `.defb`, `.defw` or `.defm` data, bank by bank. It
+  warns about self-modifying code, overlapping instructions and code bytes that are also read, and
+  its changes can be undone (#1448).
+- **Graphics finder:** the `gfx` command, the Memory view's **Show as graphics** button, a
+  Disassembly row's **Show as Graphics** or the **Graphics** mode of any memory dump draws memory as
+  bitmaps. Change the width with the arrow keys until a sprite or a font snaps into focus; frames
+  can be read in four byte orders, with masks, and graphics can be named and saved as PNG.
+  `show-memory <address>` moves the Memory view to an address (#1448).
+- **SkoolKit import and export:** `skool-import` and `skool-export`, or the Disassembly view's tools
+  button, exchange annotations with SkoolKit skool and control (`.ctl`) files. Klive checks each
+  imported instruction against the bytes already in the machine and lists the entries that do not
+  match. SkoolKit itself is not needed (#1448).
+- **Export as source:** **Export as Source...** on the Disassembly view's or a bank document's tools
+  button, or `export-asm`, writes an annotated range or a whole bank as Klive Z80 assembly, then
+  reassembles the file and reports whether the result is byte-identical. Encodings that would not
+  assemble back to the same bytes are written so that they do (#1448).
+- **Go to References in the Disassembly view:** a row's menu has one entry for each label the row
+  offers, its own and its operands', and Shift+F12 opens the first. The list shows the rows of that
+  bank or ROM page that name the label, with the routine each one is in, and **Go To** scrolls
+  there. This works in the live Disassembly view and in the bank and ROM annotation editor, and the
+  **Refs** column of the Labels list counts the same rows (#1466).
+- **Label names in `.defw` rows:** a `.defw` word that is a labelled address shows the label in the
+  operand colour, so jump tables and word tables read by name, and Go to Definition works on it.
+  `.defb` rows inside code (after `RST $08` and `RST $28`) take the data colour (#1466).
+- **Boriel BASIC 2 comes with Klive:** Klive includes Boriel's `zxbc` 2.0.0-beta25 and offers to
+  install it the first time it starts (in `~/zxbasic2` by default); skip it and install it later
+  from **Settings › Integrations › Boriel BASIC**, which also accepts, repairs or updates an
+  existing installation. Klive BASIC stays the default. To switch, choose **Boriel BASIC** in
+  **Settings › Integrations › Compiler for BASIC programs**, tick **Use Boriel BASIC to build BASIC
+  programs** in the Boriel BASIC dialog, or type `set zxbasic.compiler boriel`. The status bar names
+  the compiler of the focused BASIC file, and a click opens the dialog. The build options in the
+  source header become `zxbc` options, and the few that only Klive BASIC knows give a warning.
+  Boriel BASIC builds for the 48K, 128K, +3, Timex, Scorpion and Next; the result can be run,
+  injected and exported, and `zxbc`'s errors keep their codes (#1463).
+- **Source-level debugging of Boriel BASIC programs:** programs built with Boriel BASIC 2 get the
+  same debugger as Klive BASIC programs, on the ZX Spectrum and on the Next: source breakpoints, the
+  execution point, Step Into/Over/Out, the Call Stack (`FASTCALL` routines included), the Variables
+  panel, watches and runtime-error stops. The Next's NEX export writes its debug file, so
+  `nex-run -d` debugs it (#1463).
+- **Boriel BASIC modules and banked programs:** a program can `USE` modules from its own folder or
+  the `include-path` option, and on the 128K and the Next the `'@split-modules` header option puts
+  each module in a RAM bank of its own. Klive runs and debugs such a program at source level, with
+  the call stack and stepping working across bank switches, and a banked 128K program exports as
+  `zxbc`'s own tape. A Boriel BASIC build that fails on `CODEBANK`, which is Klive BASIC syntax,
+  says so at that line (#1463).
+- **Display languages:** Klive's menus, dialogs, panels, command messages and compiler messages
+  (assembler, Klive BASIC and KSX) are now available in Spanish, Portuguese (Brazil), Portuguese
+  (Portugal), German and Hungarian, besides English. Pick one in **Settings › Language › Display
+  language**, or open the page with `settings language`; **System default** follows the operating
+  system and falls back to English, and a change applies at once in both windows. Machine, register
+  and hardware names, Z80 instructions, BASIC keywords, command names and options, and message codes
+  stay in English. The translations were made by AI and have not yet been reviewed by native
+  speakers; the Language page shows how much of the current language is translated, and its **Help
+  translate** button opens the contributor guide (#1464, #1465).
+- **A reorganised menu bar:** the menus now hold commands, and preferences have moved to the new
+  Settings dialog. **File › Open File...** opens snapshots, `.kls` states, `.rzx` recordings and
+  tapes, as dropping the file on the Emulator window does, and replaces the separate load items of
+  the File and Machine menus. **Quick Save State** and **Quick Restore State** moved to **File**. A
+  new **Debug** menu holds Start with Debugging, the stepping commands, Step Copper and Sync Source
+  with Breakpoint. The **Machine** menu has one submenu for each device the machine has (Tape,
+  Program, Disks, Cartridge, SD Card, Input), a submenu named after the machine for its hardware
+  actions, and Speed, Sound and Record. **View › Machine Views** opens the Memory, Disassembly,
+  BASIC Listing and Next inspector views. The IDE menu is gone, and every keyboard shortcut still
+  works (#1443).
+- **Settings dialog:** **Klive › Settings...** (Cmd+,) on macOS, **File › Settings...** on Windows
+  and Linux, the gear at the foot of the activity bar, or the `settings` command. Its nine pages
+  (General, Appearance, Editor, Emulator, Debugging, Machine, Input, Recording and Integrations)
+  hold what used to be menu check items and scattered options: the ROM files, the Z88's keyboard
+  layout and LCD resolution, key mapping, recording formats, editor and panel options, the theme and
+  the layout. Changes apply at once, the search box looks through every page, and **Reset Page to
+  Defaults** restores the current page. Settings returns to the page you last used in the session,
+  and **Machine › Input › Input Settings...**, **Machine › Record › Recording Settings...** and
+  **Debug › Debugger Settings...** open it on their page (#1443, #1460).
+- **Controls in the Emulator window:** the emulator toolbar's sound and recording buttons are split
+  buttons with their options a click away. In the emulator status bar, the machine name opens
+  **Select machine...** and the MHz label the list of speeds; right-clicking the status bar toggles
+  the performance info, the media information and the Layers strip, and right-clicking the activity
+  bar controls the sidebar (#1443, #1460).
+- **New activity bar and toolbar icons:** the activity bar and the toolbar use new line-style icons,
+  and the buttons are about 20% smaller, so more of them fit (#1460).
+- **New Project dialog: machine type and model:** the long machine list is replaced by a **Machine
+  type** drop-down, grouped by family, and a **Model** drop-down. The dialog opens on the running
+  machine, and machine types that have no project templates are not offered (#1461).
+- **A new documentation website** at kliveide.net, with a new landing page and four areas: Get
+  Started, Guides, Reference and Under the Hood. Get Started is a ten-page tutorial from installing
+  Klive to exporting a program, with tested example programs and annotated screenshots, and it and
+  the landing page are available in all six display languages. New pages include a Klive BASIC
+  language reference, project templates, the display language, the `klive` command line, articles on
+  emulator internals (the ZX81 display and tape), and a What's new page generated from this
+  changelog. Code blocks have a copy button and BASIC syntax highlighting, and old page addresses
+  redirect to the new ones (#1465, #1467).
+
+### Fixes
+
+- Cambridge Z88: on the 640x256, 640x320 and 640x480 LCDs, a small Screen Base File (such as OZ
+  V5.0B's 2K one) painted unrelated memory as noise below its last row. The Screen Base File now
+  runs from its page offset to the end of its bank, as in OZvm, the rows below it stay unlit, and
+  the Blink panel's tooltip sizes it the same way (#1433).
+- Assembler: `DEFB` rejected string arguments unless the flexible-pragmas option was on, so
+  `defb 22,9,5,"TEXT"` failed with Z0601. A string argument now emits one byte per character, with
+  the same escapes as `DEFM` (#1437).
+- ZX Spectrum Next: Layer 2 resolution `%11` in NextReg `$70` did not render as 640x256, and the
+  Next Memory Mapping panel showed port `$123B` as 0 instead of its real value (#1436).
+- ULA & I/O panel: the RAS and POS values were wrong on every machine other than the ZX Spectrum
+  Next (#1442).
+- Opening a project whose machine failed to start left an empty Explorer and a blank document area
+  with no explanation. The folder still opens, and the error is now shown in a dialog (#1442).
+- Breakpoints: stepping counted a single visit to a hit-count breakpoint twice, once when the step
+  arrived at it and again when the next step left it. Each visit now counts once, in Reverse
+  Continue as well (#1445).
+- ZX Spectrum Next: while DivMMC or Multiface memory was paged in, Klive named the ROM underneath
+  it, so source lines, bank breakpoints and `page()` in conditions pointed at the wrong memory. They
+  now follow the memory the CPU actually reads (#1445).
+- ZX Spectrum 128K, Pentagon, Scorpion and +2A/+3/+3E: after a project with `.bank` segments was
+  started, the Memory, Disassembly, Watch and System Variables views showed the old bytes of a
+  paged-in bank until the next paging change or reset. The program itself ran correctly (#1446).
+- Annotations: changes another program made to an open annotation file (a text editor or a script)
+  did not show until Klive restarted, and the next edit in the IDE overwrote them. The IDE now
+  reloads the file when it changes on disk (#1460).
+- ZX80/ZX81: the emulator window drew a white surround around the picture, which has its own border
+  (#1460).
+- ZX81: the description of the `FRAMES` system variable had bit 15 backwards; it is set in normal
+  running and clear while `PAUSE` counts (#1460).
+- ZX80 with the 8K ROM: *Load and Run* of a tape did not work reliably. Klive now waits until the
+  editor is ready before it types (#1461).
+- ZX80: *Load and Run* of a program file, and running code from the IDE, often stopped at the K
+  cursor, because the 4K ROM ignored a key that came too soon after the reset. Klive now waits
+  before it types `LOAD` or `RUN` (#1462).
+- Settings: a nested setting in the project's settings hid the user's settings of the same group (a
+  project's `zxbasic.compiler` hid the user's `zxbasic.root`, for example). Project settings now
+  override user settings one key at a time (#1463).
+- Settings: after a nested setting (such as `zxbasic.compiler`) changed, the IDE kept showing the
+  old value until something else redrew it (#1463).
+- Debugger: a debug run of a build without source-level debug information crashed (#1463).
+- UI text: the ZX Spectrum Next's SD card picker was titled "Select Tape File", two browse tooltips
+  named the wrong folder, the default dialog button read "Ok", and several plurals and wordings were
+  wrong, including the Z88 RAM warning. Assembler error Z0322 now reports the file name and the
+  error (#1464).
+- Settings: a save during start-up (a window-state save, or the emulator window fitting itself to
+  the machine) could erase every global setting. Klive no longer saves the settings before it has
+  loaded them (#1465).
+- Assembler: a bare `.dma wr3` followed by another line failed with "An expression expected".
+- ZX Spectrum Next: running or debugging a program without `.savenex file` copied it to the SD card
+  as
+  `_klive/undefined`. The NEX is now named after the project folder (`NextSprites/` gives
+  `NextSprites.nex`), and an exported NEX keeps the name it was exported under.
+
+### Known issues
+
+- Boriel BASIC programs have less debug information than Klive BASIC programs: stepping through
+  loops and conditions stops wherever `zxbc` put a statement boundary; constants, `FASTCALL`
+  parameters and the elements of dynamic arrays are not shown in the Variables panel; and inline
+  `ASM` blocks are stepped in the disassembly only (#1463).
+
 ## 0.63.0
 
 ### Highlights
