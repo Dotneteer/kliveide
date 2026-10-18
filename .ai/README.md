@@ -3,6 +3,8 @@
 This folder stores durable notes for future AI-assisted work in this repository.
 
 - Read `../AGENTS.md` first.
+- **Before committing, read `changesets-guide.md`**: when a commit carries a changeset in
+  `.changes/`, when to ask the user, and how to show it. Before releasing, read `release-guide.md`.
 - Keep notes concise and oriented toward repeatable future work.
 - For creating or updating IDE interactive commands, read
   `interactive-command-notes.md`.

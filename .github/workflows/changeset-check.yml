@@ -1,0 +1,38 @@
+# Fails a PR that changes the app without a changeset in .changes/ (.plans/RELEASE_AUTOMATION_PLAN.md
+# Phase 2). Docs, plans, tests and CI changes pass; so do Dependabot PRs, release PRs (release/v*)
+# and PRs with the `no-changeset` label. The rules are in gateDecision() in scripts/changes-lib.cjs.
+# It only reports: no comments, no commits to the PR.
+
+name: Changeset check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+
+jobs:
+  changeset:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.x
+
+      # No npm install: the gate and the format check are dependency-free Node scripts.
+      - name: Validate the pending changesets
+        run: node scripts/changes.cjs check
+
+      - name: Require a changeset for user-visible changes
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: node scripts/changes.cjs gate --base "$BASE_SHA" --labels "$LABELS" --author "$AUTHOR" --head-ref "$HEAD_REF"

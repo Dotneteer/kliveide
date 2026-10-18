@@ -2,6 +2,7 @@ import nextra from "nextra";
 import { createHighlighter } from "shiki";
 import { readFileSync } from "node:fs";
 import { DEFAULT_LOCALE, LOCALES } from "./i18n/locales.mjs";
+import remarkReleaseVersion from "./remark-release-version.mjs";
 
 // ZX BASIC (```zxbasic), generated from the IDE's own word lists by
 // scripts/build-doc-zxbasic-grammar.cjs; test/docs/zxbasic-grammar.test.ts keeps it current.
@@ -384,7 +385,8 @@ const withNextra = nextra({
   // `theme` / `themeConfig` are gone in Nextra 4 - the theme is now applied by
   // <Layout> in app/(docs)/layout.tsx, and NextraConfigSchema rejects unknown keys.
   mdxOptions: {
-    remarkPlugins: [],
+    // --- @KLIVE_RELEASE@ -> the latest release's version (remark-release-version.mjs)
+    remarkPlugins: [remarkReleaseVersion],
     rehypePlugins: [],
     rehypePrettyCodeOptions: {
       // A single theme object (rather than a keyed map) makes rehype-pretty-code

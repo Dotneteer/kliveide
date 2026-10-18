@@ -8,12 +8,12 @@ import { createFakeHost, startFakeServer } from "./fake-host";
 
 /*
  * The protocol test (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` D17, §6): every request/response
- * example in `docs/content/working-with-ide/automation.mdx` is replayed against a real server, and
+ * example in `docs/content/en/guides/testing/automation.mdx` is replayed against a real server, and
  * the page's Node and Python clients run against it, so the documentation cannot drift from the
  * protocol. The examples run in order on one connection, as a reader would type them.
  */
 
-const DOC = path.join(__dirname, "../../docs/content/working-with-ide/automation.mdx");
+const DOC = path.join(__dirname, "../../docs/content/en/guides/testing/automation.mdx");
 const text = fs.readFileSync(DOC, "utf8");
 
 /** The request/response pairs of the page's `text` blocks made of `-->` and `<--` lines */

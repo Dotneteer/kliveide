@@ -5,20 +5,39 @@
 
 name: GitHub Pages deploy
 
+# release.yml also calls it (workflow_call) once a release is published, so the landing page picks up
+# the new version and download links at once (.plans/RELEASE_AUTOMATION_PLAN.md §5). Its dry run
+# passes deploy: false and the would-be tag, and nothing is deployed.
+
 on:
   push:
     branches: [master]
+  workflow_call:
+    inputs:
+      deploy:
+        description: Deploy the built site (false for the release dry run)
+        type: boolean
+        required: false
+        default: true
+      release-tag:
+        description: Build as if this release tag existed (KLIVE_SITE_RELEASE_TAG; the dry run)
+        type: string
+        required: false
+        default: ""
 
 permissions:
   contents: write
 
-concurrency:
-  group: docs-production
-  cancel-in-progress: false
-
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    # One production deploy at a time, whether from a master push or a release; they queue, never
+    # race. A dry run builds in its own group and deploys nothing. (`inputs.deploy` is null on a
+    # push, and null == false is true in Actions expressions, hence the comparison as text.)
+    concurrency:
+      group: ${{ format('{0}', inputs.deploy) == 'false' && format('docs-dry-run-{0}', github.run_id) || 'docs-production' }}
+      cancel-in-progress: false
 
     steps:
       - name: Checkout 🛎️
@@ -42,6 +61,8 @@ jobs:
         run: npm run doc:install
 
       - name: Build the docs site
+        env:
+          KLIVE_SITE_RELEASE_TAG: ${{ inputs.release-tag }}
         run: npm run doc:build
 
       - name: Verify the build against the golden snapshots
@@ -51,6 +72,8 @@ jobs:
         run: touch docs/out/.nojekyll
 
       - name: Deploy 🚀
+        # A push has no inputs, and null == false is true in Actions expressions, so compare as text
+        if: ${{ format('{0}', inputs.deploy) != 'false' }}
         uses: JamesIves/github-pages-deploy-action@v4.9.0
         with:
           git-config-name: https://kliveide.net

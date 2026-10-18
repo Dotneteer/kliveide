@@ -1,23 +1,5 @@
 # Klive IDE Changelog
 
-## Unreleased
-
-### New features
-
-- **Copper and DMA regions in `.NEX` annotations:** mark a range of a popped-out bank as a Copper
-  list or a zxnDMA program, and the listing shows it as `.copper` / `.dma` pragmas, with each
-  instruction's meaning in the comment column. Every row reassembles to the bytes it shows, and the
-  annotation file stays readable by older Klive versions.
-- A pure zxnDMA program decoder (`src/common/zxnext/dma/dmaDecoder.ts`) that reads the byte stream
-  the way the DMA does.
-
-### Fixes
-
-- Assembler: a bare `.dma wr3` followed by another line failed with "An expression expected".
-- ZX Spectrum Next: running or debugging a program without `.savenex file` copied it to the SD card as
-  `_klive/undefined`. The NEX is now named after the project folder (`NextSprites/` gives
-  `NextSprites.nex`), and an exported NEX keeps the name it was exported under.
-
 ## 0.63.0
 
 ### Highlights
