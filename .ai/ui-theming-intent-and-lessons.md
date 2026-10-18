@@ -2848,6 +2848,10 @@ drift. Change a neutral or the default accent in the app, and the site changes w
 - **A docs link card is title first, then its description**, padded as a whole
   (`docs/app/[lang]/(docs)/custom.css`, `.nextra-card`). Nextra's own layout assumes an image as
   the card's body: unpadded children above a separately padded title, which looks broken with text.
+- **Every docs code block has a copy button**, Nextra's (`defaultShowCopyCode` in
+  `docs/next.config.mjs`). It stays invisible until the block is hovered or focused, and is
+  styled quietly (panel colour, thin border, accent on hover). Touch screens cannot hover, so
+  there it rests half visible. Its container sits *inside* the `<pre>` (`.nextra-code pre > div`).
 - **A screenshot's callouts are HTML, never pixels:** `<Shot markers>` draws numbered badges from
   the harness's sidecar, and the numbered list under the figure is styled like the badges, so the
   text translates with the page.

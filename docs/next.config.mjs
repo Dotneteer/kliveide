@@ -327,6 +327,8 @@ const withNextra = nextra({
   // Static export has no middleware, so Nextra writes the locale into every page-map link
   // itself. See the Phase 0 "As built" note in .plans/DOCS_SITE_MODERNIZATION_PLAN.md.
   unstable_shouldAddLocaleToLinks: true,
+  // Every code block gets Nextra's copy button (shown when the block is hovered or focused)
+  defaultShowCopyCode: true,
   // `theme` / `themeConfig` are gone in Nextra 4 - the theme is now applied by
   // <Layout> in app/(docs)/layout.tsx, and NextraConfigSchema rejects unknown keys.
   mdxOptions: {

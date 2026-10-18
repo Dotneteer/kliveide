@@ -169,3 +169,26 @@ article figure + ol > li::before {
   line-height: 1.5;
   color: var(--site-muted);
 }
+
+/*
+ * The copy button of code blocks (Nextra's, turned on for every block by `defaultShowCopyCode`).
+ * It stays out of sight until the block is hovered or focused; here it only gets the site's quiet
+ * look. Touch screens cannot hover, so there it stays faintly visible instead.
+ */
+.nextra-code pre > div > button {
+  background: var(--site-raised);
+  border-color: var(--site-line) !important;
+  color: var(--site-muted);
+}
+
+.nextra-code pre > div > button:hover,
+.nextra-code pre > div > button:focus-visible {
+  color: var(--site-accent);
+  border-color: var(--site-accent) !important;
+}
+
+@media (hover: none) {
+  .nextra-code pre > div {
+    opacity: 0.7;
+  }
+}
