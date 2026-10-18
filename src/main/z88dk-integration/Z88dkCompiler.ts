@@ -319,7 +319,17 @@ export class Z88dkCompiler implements IKliveCompiler {
         if (adapted) {
           sourceLevelDebug = adapted.sourceLevelDebug;
           trace.push(`z88dk: source-level debug information for ${adapted.sourceLevelDebug.statements.length} statements in ${adapted.sourceLevelDebug.callables.length} functions`);
-          for (const problem of adapted.problems) trace.push(`z88dk: debug information check: ${problem}`);
+          for (const problem of adapted.problems) trace.push(`z88dk: not described at source level: ${problem}`);
+          for (const problem of adapted.invalid) trace.push(`z88dk: debug information check: ${problem}`);
+          if (adapted.invalid.length) {
+            diagnostics.push({
+              ...z88dkBuildError(
+                filename,
+                `The debug information failed ${adapted.invalid.length} check(s) (see the build output): source stepping may stop in the wrong place.`
+              ),
+              isWarning: true
+            });
+          }
         }
       } catch (error) {
         diagnostics.push({ ...z88dkBuildError(filename, `No source-level debugging: ${(error as Error).message}`), isWarning: true });

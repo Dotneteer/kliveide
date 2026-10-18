@@ -18,7 +18,11 @@ export type SourceValueType =
   | "fixed"
   | "float"
   | "string"
-  | "boolean";
+  | "boolean"
+  /** C's `char`: a signed byte, shown with its character (z88dk, `.plans/Z88DK_INTEGRATION_PLAN.md` §8) */
+  | "char"
+  /** A 16-bit address (a C pointer), shown in hex */
+  | "pointer";
 
 /** Where a variable's value (or, for `byRef`, its address) lives. */
 export type VariableDebugLocation =
@@ -34,6 +38,8 @@ export type VariableDebugInfo = {
   /** As the source writes it, with its sigil. */
   displayName: string;
   type: SourceValueType;
+  /** The type as the source declares it (`unsigned int`, `char *`), shown in place of the value type's name. */
+  typeLabel?: string;
   kind: "global" | "local" | "parameter" | "constant";
   /** The location holds the value's address (a BYREF parameter, an array parameter's descriptor). */
   byRef?: boolean;
@@ -111,6 +117,13 @@ export type SourceDebugExtensions = {
   frames: CallableFrameInfo[];
   /** The address of the word where the prologue stores the main program's baseline SP. */
   mainBaselineSymbol: number;
+  /**
+   * A frame pointer kept in memory instead of IX: the address of the word that holds it. sccz80's
+   * debug builds (z88dk, `.ai/z88dk/cdb-records.md`, "Frames") keep the same layout as an IX frame -
+   * the caller's frame pointer at FP, the return address at FP+2 - in the word `__debug_framepointer`.
+   * The frame locator reads it wherever it would read IX.
+   */
+  framePointerAddress?: number;
   /** The program's labels (a line number's digits or a label's name), sorted by address: GOSUB rows name their subroutine by them. */
   labels?: { name: string; address: number }[];
   /** Files of the standard library (`<kbasic-stdlib>/...`): Just My Code steps through their statements (§10.12). */

@@ -60,6 +60,8 @@ export class SourceDebugIndex {
   readonly frames: CallableFrameInfo[];
   readonly mainIndex: number;
   readonly mainBaselineSymbol: number;
+  /** A frame pointer kept in memory (sccz80's debug frames): the word read in place of IX. */
+  readonly framePointerAddress?: number;
   /** CODEBANK: the window and the far-call runtime (undefined without banked code). */
   readonly codebank?: CodebankDebugInfo;
   private readonly entries = new Map<number, number>();
@@ -93,6 +95,7 @@ export class SourceDebugIndex {
       info.callables.findIndex((c) => c.kind === "entrypoint")
     );
     this.mainBaselineSymbol = ext?.mainBaselineSymbol ?? 0;
+    this.framePointerAddress = ext?.framePointerAddress;
     // --- The banked slots: the CODEBANK window, and any 8K slot a partitioned statement starts in
     this.codebank = ext?.codebank;
     const cb = this.codebank;
@@ -220,6 +223,11 @@ export class SourceDebugIndex {
     return cb.banks.find((b) => b.bank === bank)?.pages[(address - cb.window) >> 13];
   }
 
+  /** The live frame pointer: IX, or the word a memory frame pointer is kept in. */
+  framePointer(m: MachineView): number {
+    return this.framePointerAddress === undefined ? m.ix : m.readWord(this.framePointerAddress);
+  }
+
   /** The main program's baseline SP, as the running program's prologue stored it. */
   mainBaseline(m: MachineView): number {
     return m.readWord(this.mainBaselineSymbol);
@@ -313,17 +321,18 @@ export function locateActivations(index: SourceDebugIndex, m: MachineView): Acti
   const inStack = (address: number) => address >= m.sp && address < mainBaseline;
 
   // --- The innermost callable, and its frame pointer when its frame is certainly up
+  const fp = index.framePointer(m);
   let callable = index.callableAt(m.pc, index.partitionNow(m, m.pc));
   let ix: number | undefined;
   if (callable !== undefined && callable !== main) {
     const f = index.frames[callable];
-    if (f && m.pc >= f.bodyStart && m.pc <= f.epilogueStart && isRoutineSite(siteAt(m.ix + 2), callable)) ix = m.ix;
+    if (f && m.pc >= f.bodyStart && m.pc <= f.epilogueStart && isRoutineSite(siteAt(fp + 2), callable)) ix = fp;
   } else if (callable === undefined) {
     // --- Runtime or ROM code: the routine it was called from still has IX; else the main program
-    const site = inStack(m.ix + 2) ? siteAt(m.ix + 2) : undefined;
+    const site = inStack(fp + 2) ? siteAt(fp + 2) : undefined;
     if (isRoutineSite(site)) {
       callable = site!.calleeIndex!;
-      ix = m.ix;
+      ix = fp;
     } else callable = main;
   }
 
@@ -340,7 +349,7 @@ export function locateActivations(index: SourceDebugIndex, m: MachineView): Acti
   let low = m.sp;
   // --- The IX value live in the activation being walked: a FASTCALL routine (Boriel BASIC) builds no
   // --- frame, so its caller's IX is still in the register, or under the next frame callee's return slot
-  let liveIx = m.ix;
+  let liveIx = fp;
   for (let guard = 0; guard < 1024; guard++) {
     if (callable === main || callable === undefined) break;
     const f = index.frames[callable];

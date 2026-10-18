@@ -1,3 +1,4 @@
+import fs from "fs";
 import path from "path";
 
 import { ExpressionValueType, type FileLine, type ListFileItem } from "@abstractions/CompilerInfo";
@@ -246,17 +247,29 @@ function normalizeFile(file: string): string {
 }
 
 /**
- * A project-file test: the file is under the project folder (or the build root's folder), and not in
- * the z88dk install or a temp folder.
+ * A project-file test: the file exists, is under the project folder (or the build root's folder), and
+ * is not in the z88dk install or a temp folder. Library modules name their sources relative to the
+ * library's own tree (`stdio/fputc_callee.c`), which resolves into the project folder but is not there.
  */
-export function projectFileTest(projectFolders: string[], z88dkRoot?: string): (file: string) => boolean {
+export function projectFileTest(
+  projectFolders: string[],
+  z88dkRoot?: string,
+  exists: (file: string) => boolean = fs.existsSync
+): (file: string) => boolean {
   const folders = projectFolders.filter(Boolean).map((f) => normalizeFile(path.resolve(f)).replace(/\/?$/, "/"));
   const root = z88dkRoot ? normalizeFile(path.resolve(z88dkRoot)).replace(/\/?$/, "/") : undefined;
   const caseless = process.platform === "win32" || process.platform === "darwin";
   const fold = (s: string) => (caseless ? s.toLowerCase() : s);
+  const known = new Map<string, boolean>();
   return (file: string) => {
     const normalized = fold(normalizeFile(file));
     if (root && normalized.startsWith(fold(root))) return false;
-    return folders.some((folder) => normalized.startsWith(fold(folder)));
+    if (!folders.some((folder) => normalized.startsWith(fold(folder)))) return false;
+    let found = known.get(normalized);
+    if (found === undefined) {
+      found = exists(file);
+      known.set(normalized, found);
+    }
+    return found;
   };
 }

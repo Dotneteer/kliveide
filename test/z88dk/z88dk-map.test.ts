@@ -119,8 +119,9 @@ describe("symbols", () => {
 
 describe("projectFileTest", () => {
   it("accepts files under the project, not the install or temp folders", () => {
-    const test = projectFileTest(["/home/u/proj"], "/opt/z88dk");
+    const test = projectFileTest(["/home/u/proj"], "/opt/z88dk", (f) => f !== "/home/u/proj/stdio/fputc_callee.c");
     expect(test("/home/u/proj/code/main.c")).toBe(true);
+    expect(test("/home/u/proj/stdio/fputc_callee.c")).toBe(false);
     expect(test("/opt/z88dk/include/stdio.h")).toBe(false);
     expect(test("/tmp/tmpklive.i")).toBe(false);
   });

@@ -75,7 +75,9 @@ const SIZES: Record<SourceValueType, number> = {
   long: 4,
   ulong: 4,
   fixed: 4,
-  float: 5
+  float: 5,
+  char: 1,
+  pointer: 2
 };
 
 export function valueSize(type: SourceValueType): number {
@@ -92,7 +94,9 @@ const TYPE_NAMES: Record<SourceValueType, string> = {
   long: "Long",
   ulong: "ULong",
   fixed: "Fixed",
-  float: "Float"
+  float: "Float",
+  char: "char",
+  pointer: "Pointer"
 };
 
 /** The type as the source writes it. */
@@ -167,6 +171,12 @@ function fromBytes(type: SourceValueType, b: number[], mem: MemoryView): Decoded
     }
     case "string":
       return decodeStringAt(mem, u16);
+    case "char": {
+      const value = b[0] >= 0x80 ? b[0] - 0x100 : b[0];
+      return num(value, b[0] >= 32 && b[0] < 127 ? `${value} '${String.fromCharCode(b[0])}'` : String(value));
+    }
+    case "pointer":
+      return num(u16, `$${u16.toString(16).toUpperCase().padStart(4, "0")}`);
   }
 }
 
@@ -189,6 +199,7 @@ export function decodeRegisters(type: SourceValueType, r: SourceReturnRegisters,
     case "byte":
     case "ubyte":
     case "boolean":
+    case "char":
       return fromBytes(type, [a], mem);
     case "float":
       return fromBytes(type, [a, lo(r.de), hi(r.de), lo(r.bc), hi(r.bc)], mem);
@@ -203,7 +214,9 @@ const RANGES: Partial<Record<SourceValueType, [number, number]>> = {
   integer: [-32768, 32767],
   uinteger: [0, 65535],
   long: [-2147483648, 2147483647],
-  ulong: [0, 4294967295]
+  ulong: [0, 4294967295],
+  char: [-128, 127],
+  pointer: [0, 65535]
 };
 
 /**
