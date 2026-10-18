@@ -14,7 +14,7 @@ Escolha **Ficheiro › Novo projeto...** com estas definições:
 
 - **Tipo de máquina**: ZX Spectrum Next.
 - **Modelo de projeto**: `default`.
-- **Nome do projeto**: `NextSprite`.
+- **Nome do projeto**: `NextSprites`.
 
 ## Escrever o programa
 
@@ -26,6 +26,7 @@ Substitua o conteúdo de `code/code.kz80.asm` por este programa e guarde-o:
 
         .model Next
         .org #8000
+        .savenex file "NextSprites.nex"   ; the name of the .nex file Klive builds
 
 SPRITE_SLOT  .equ #303b     ; selects the sprite (and pattern) to write
 SPRITE_ATTR  .equ #57       ; writes the selected sprite's attributes
@@ -82,6 +83,7 @@ Ball:
 
 Como funciona:
 
+- `.savenex file "NextSprites.nex"` dá nome ao ficheiro `.nex` que o Klive cria e copia para o cartão SD emulado quando o programa é executado.
 - `nextreg #15,%00000001` escreve no registo do Next `$15`, cujo bit 0 torna os sprites visíveis. `NEXTREG` é uma das novas instruções do Z80N.
 - O aspeto de um sprite é o seu **padrão**: 256 bytes para 16 × 16 pixels, um índice de cor por pixel. A porta `$303B` seleciona o padrão 0, e `OTIR` envia os 256 bytes para a porta `$5B`. A cor `$E3` é transparente, por isso os cantos do quadrado não aparecem.
 - A posição de um sprite está nos seus **atributos**. A porta `$303B` seleciona o sprite 0, e quatro escritas na porta `$57` definem as coordenadas X e Y, as opções, e tornam-no visível com o padrão 0.

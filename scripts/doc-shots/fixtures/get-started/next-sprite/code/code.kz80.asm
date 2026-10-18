@@ -3,6 +3,7 @@
 
         .model Next
         .org #8000
+        .savenex file "NextSprites.nex"   ; the name of the .nex file Klive builds
 
 SPRITE_SLOT  .equ #303b     ; selects the sprite (and pattern) to write
 SPRITE_ATTR  .equ #57       ; writes the selected sprite's attributes

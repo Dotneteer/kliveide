@@ -14,7 +14,7 @@ Válasszuk a **Fájl › Új projekt...** menüpontot ezekkel a beállításokka
 
 - **Géptípus**: ZX Spectrum Next.
 - **Projektsablon**: `default`.
-- **Projektnév**: `NextSprite`.
+- **Projektnév**: `NextSprites`.
 
 ## A program megírása
 
@@ -26,6 +26,7 @@ Cseréljük le a `code/code.kz80.asm` tartalmát erre a programra, és mentsük 
 
         .model Next
         .org #8000
+        .savenex file "NextSprites.nex"   ; the name of the .nex file Klive builds
 
 SPRITE_SLOT  .equ #303b     ; selects the sprite (and pattern) to write
 SPRITE_ATTR  .equ #57       ; writes the selected sprite's attributes
@@ -82,6 +83,7 @@ Ball:
 
 Hogyan működik?
 
+- A `.savenex file "NextSprites.nex"` adja meg annak a `.nex` fájlnak a nevét, amelyet a Klive a program futtatásakor elkészít, és az emulált SD-kártyára másol.
 - A `nextreg #15,%00000001` a `$15`-ös Next regisztert írja, amelynek 0. bitje láthatóvá teszi a sprite-okat. A `NEXTREG` a Z80N egyik új utasítása.
 - Egy sprite kinézetét a **mintája** határozza meg: 256 bájt a 16 × 16 képponthoz, képpontonként egy színindex. A `$303B` port kiválasztja a 0. mintát, az `OTIR` pedig a 256 bájtot a `$5B` portra küldi. A `$E3` szín átlátszó, így a négyzet sarkai nem látszanak.
 - Egy sprite helyzetét az **attribútumai** adják meg. A `$303B` port kiválasztja a 0. sprite-ot, a `$57` portra küldött négy írás pedig beállítja az X és Y koordinátáját, a beállításait, és a 0. mintával láthatóvá teszi.
