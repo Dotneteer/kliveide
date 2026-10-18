@@ -495,6 +495,19 @@ class EmuApiImpl {
   }
 
   /**
+   * Puts a card application into the Z88's application slot and starts it: the machine soft-resets,
+   * then □ + the application's key is pressed once OZ is ready (`z88AppFlow.ts`; a z88dk C program,
+   * `.plans/Z88DK_INTEGRATION_PLAN.md` §7).
+   * @param _file The card image (`.epr`)
+   * @param _sizeKb Its size in KB (32, 128 or 256)
+   * @param _appKey The application's key, a letter
+   * @param _debug Arm the breakpoints once the keys are pressed
+   */
+  async startZ88Application(_file: string, _sizeKb: number, _appKey: string, _debug: boolean): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * Resolves breakpoints in the emulator.
    * @param _breakpoints The breakpoints to resolve.
    */
@@ -1667,6 +1680,7 @@ const UNBOUNDED_EMU_METHODS = [
   // --- Reaches the editor or the start-up menu by running the ROM, like `runCodeCommand`
   "startTapeLoad",
   "startDiskBoot",
+  "startZ88Application",
   // --- Script lifetime is controlled by the script/user, not by this call
   "startScript",
   "stopScript",

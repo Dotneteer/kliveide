@@ -565,6 +565,38 @@
       "sidecar": "The sidecar file's path"
     }
   },
+  "commands.compile.z88CardStarted": "Inserted {file} into slot 3; the Z88 restarts and starts the application with □{key}.",
+  "@commands.compile.z88CardStarted": {
+    "context": "Build output after Run or Debug of a C program on the Cambridge Z88: the application card the compiler wrote goes into slot 3, the machine soft-resets, then the Square key plus the application's key starts it. □ is the Z88's Square key.",
+    "placeholders": {
+      "file": "The card image's path, shown verbatim",
+      "key": "The application's key, a letter, shown verbatim"
+    }
+  },
+  "commands.compile.z88dkExported": "Exported {file} ({bytes, number} bytes, written by z88dk).",
+  "@commands.compile.z88dkExported": {
+    "context": "Result of the 'expc' export command for a C program: the native file the z88dk C compiler wrote was copied to the export file.",
+    "placeholders": {
+      "file": "The exported file's path, shown verbatim",
+      "bytes": "The file's size in bytes"
+    }
+  },
+  "commands.compile.z88dkNoArtefact": "z88dk wrote no .{format} file for this machine (it wrote: {available}).",
+  "@commands.compile.z88dkNoArtefact": {
+    "context": "Error of the 'expc' export command for a C program: the requested format is a file only z88dk can write, and the build did not write one.",
+    "placeholders": {
+      "format": "The requested file extension, shown verbatim, e.g. 'dsk'",
+      "available": "The extensions the build did write, comma-separated, shown verbatim"
+    }
+  },
+  "commands.compile.z88dkOptionsIgnored": "{count, plural, one {The option {options} does not apply} other {The options {options} do not apply}}: z88dk wrote the file, and it is exported as it is.",
+  "@commands.compile.z88dkOptionsIgnored": {
+    "context": "Warning of the 'expc' export command for a C program: tape options such as the auto-start loader are ignored because the file the z88dk compiler wrote is copied unchanged.",
+    "placeholders": {
+      "count": "Number of ignored options",
+      "options": "The ignored option names, comma-separated, shown verbatim, e.g. '-as, -b'"
+    }
+  },
   "commands.compile.z88dkSetupLink": "Set up z88dk...",
   "@commands.compile.z88dkSetupLink": {
     "context": "Clickable link in the IDE's Build output, after the error saying the z88dk C compiler is not set up; it opens the z88dk Integration dialog. z88dk is a product name, always lower case.",

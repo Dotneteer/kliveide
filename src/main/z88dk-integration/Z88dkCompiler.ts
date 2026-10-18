@@ -173,6 +173,8 @@ export type Z88dkBuildOutput = KliveCompilerOutput & {
   z88dkArtefacts?: Record<string, string>;
   /** How Run delivers the program (`z88dk-targets.ts`). */
   z88dkRun?: string;
+  /** A Z88 application: the card image, its size, and the key OZ starts it with (□ + key). */
+  z88Card?: { file: string; sizeKb: number; appKey: string };
 };
 
 export class Z88dkCompiler implements IKliveCompiler {
@@ -345,6 +347,16 @@ export class Z88dkCompiler implements IKliveCompiler {
       (result as any).nexConfig = { filename: `${name}.nex` };
       result.prebuiltNex = Array.from(fs.readFileSync(artefacts.nex));
     }
+    if (target.run === "card") {
+      if (!artefacts.epr) {
+        return { errors: [...diagnostics, z88dkBuildError(filename, "zcc wrote no .epr card image for the Z88 application.")], traceOutput: trace };
+      }
+      result.z88Card = {
+        file: artefacts.epr,
+        sizeKb: Math.max(32, Math.ceil(fs.statSync(artefacts.epr).size / 1024)),
+        appKey: appKeyOf(filename)
+      };
+    }
     if (target.run === "program") {
       const file = artefacts.P ?? artefacts.O;
       if (!file) {
@@ -402,6 +414,16 @@ export class Z88dkCompiler implements IKliveCompiler {
     if (run.error) return { errors: [z88dkBuildError(filename, `zcc could not be started: ${run.error}`)] };
     const output = `${run.stderr}\n${run.stdout}`;
     const diagnostics = parseZccDiagnostics(output, cwd, filename);
+    // --- A Z88 application without its DOR fails to link on `applname` (`.ai/z88dk/targets.md`)
+    if (/undefined symbol: applname/.test(output)) {
+      diagnostics.push({
+        ...z88dkBuildError(
+          filename,
+          "A Z88 application needs its DOR: #include <dor.h>, #define APP_NAME, APP_INFO and APP_KEY, then #include <application.h> (see the z88-dk project template)."
+        ),
+        isWarning: true
+      });
+    }
     if (run.exitCode !== 0 && !diagnostics.some((d) => !d.isWarning)) {
       const first = output.split(/\r?\n/).map((l) => l.trim()).find(Boolean);
       diagnostics.push(z88dkBuildError(filename, `zcc failed (exit code ${run.exitCode})${first ? `: ${first}` : "."}`));
@@ -418,6 +440,16 @@ export function cLineCanHaveBreakpoint(line: string): boolean {
   if (/^[{}();]*$/.test(text)) return false;
   if (text.startsWith("/*") || text.startsWith("*")) return false;
   return true;
+}
+
+/** The application key a Z88 program defines (`#define APP_KEY 'K'`), else z88dk's default, `A`. */
+export function appKeyOf(filename: string): string {
+  try {
+    const match = /^\s*#\s*define\s+APP_KEY\s+'([A-Za-z])'/m.exec(fs.readFileSync(filename, "utf8"));
+    return match ? match[1].toUpperCase() : "A";
+  } catch {
+    return "A";
+  }
 }
 
 function programName(file: string): string {

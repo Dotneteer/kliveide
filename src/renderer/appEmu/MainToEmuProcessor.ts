@@ -43,6 +43,9 @@ import type { HistoricalState } from "@emu/machines/history/HistoryCursor";
 import { createMainApi } from "@common/messaging/MainApi";
 import { IMachineService } from "@renderer/abstractions/IMachineService";
 import { CodeToInject } from "@abstractions/CodeToInject";
+import { CardIds } from "@emu/machines/z88/CardIds";
+import { Z88_APP_SLOT, z88AppStartFlow } from "@emu/machines/z88/z88AppFlow";
+import { applyCardStateChange, type Z88SlotKey } from "./machines/z88Cards";
 import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
 import { BreakpointInfo, type BreakpointScope } from "@abstractions/BreakpointInfo";
 import { MachineCommand } from "@abstractions/MachineCommand";
@@ -1038,6 +1041,27 @@ class EmuMessageProcessor {
       noController();
     }
     return controller.runTapeLoad(debug);
+  }
+
+  /**
+   * Inserts a card application into the Z88's application slot and starts it (`z88AppFlow.ts`).
+   * @param file The card image
+   * @param sizeKb Its size in KB
+   * @param appKey The application's key
+   * @param debug Arm the breakpoints once the keys are pressed
+   */
+  async startZ88Application(file: string, sizeKb: number, appKey: string, debug: boolean) {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    const cardType = sizeKb <= 32 ? CardIds.EPROMUV32 : sizeKb <= 128 ? CardIds.EPROMUV128 : CardIds.EPROMUV256;
+    await applyCardStateChange(getCachedStore(), controller, `slot${Z88_APP_SLOT}` as Z88SlotKey, {
+      cardType,
+      size: sizeKb <= 32 ? 32 : sizeKb <= 128 ? 128 : 256,
+      file
+    });
+    return controller.runFlow(z88AppStartFlow(appKey), debug);
   }
 
   /**

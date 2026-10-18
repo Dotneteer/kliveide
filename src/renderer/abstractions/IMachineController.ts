@@ -3,6 +3,7 @@ import type { TimelinePosition } from "@emu/machines/reverse/timelinePosition";
 import type { ILiteEvent } from "@abstractions/ILiteEvent";
 import type { IOutputBuffer, OutputColor } from "@appIde/ToolArea/abstractions";
 import type { CodeToInject } from "@abstractions/CodeToInject";
+import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import type { FrameStats } from "@renderer/abstractions/FrameStats";
 import type { IDebugSupport } from "@renderer/abstractions/IDebugSupport";
 import type { MachineControllerState } from "@abstractions/MachineControllerState";
@@ -270,6 +271,13 @@ export interface IMachineController {
    */
   runTapeLoad(debug: boolean): Promise<void>;
   runDiskBoot(debug: boolean): Promise<void>;
+
+  /**
+   * Stops the machine and runs a ready-made flow (start, queued keys) on it: a Z88 card application
+   * is started this way (`z88AppFlow.ts`)
+   * @param debug Arm the breakpoints once the flow has run
+   */
+  runFlow(flow: CodeInjectionFlow, debug: boolean): Promise<void>;
 
   /**
    * Replaces the machine's state and leaves it Paused, so the next Start, Debug or step continues

@@ -35,7 +35,7 @@ import { nexFileNameOf, sdCardNexName } from "@renderer/appIde/utils/nex-file-na
 import { createSourceDebugSidecar, sidecarProgramOf, sourceDebugSidecarPath } from "@common/utils/source-debug-sidecar";
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
 import { machineRegistry } from "@common/machines/machine-registry";
-import { MF_INJECT_SUPPORT, MI_ZX80, MI_ZX81, MI_ZXNEXT } from "@common/machines/constants";
+import { MF_INJECT_SUPPORT, MI_Z88, MI_ZX80, MI_ZX81, MI_ZXNEXT } from "@common/machines/constants";
 import {
   zx8081ExportFile,
   zx8081ExportFormatOf,
@@ -154,7 +154,7 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
     return t("commands.compile.export.description");
   }
   readonly usage =
-    "expc filename [-n name] [-f tap|tzx|hex|nex|p|o] [-as] [-p] [-c] [-b border] [-sb] [-addr address] [-scr screenfile]";
+    "expc filename [-n name] [-f tap|tzx|hex|nex|p|o|dsk|epr] [-as] [-p] [-c] [-b border] [-sb] [-addr address] [-scr screenfile]";
 
   readonly argumentInfo: CommandArgumentInfo = {
     mandatory: [{ name: "filename" }],
@@ -197,6 +197,11 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
     output: KliveCompilerOutput,
     args: ExportCommandArgs
   ): Promise<IdeCommandResult> {
+    // --- A C build (z88dk) exports the native file appmake wrote instead of rebuilding it
+    // --- (`.plans/Z88DK_INTEGRATION_PLAN.md` §7); `.nex` takes the NEX path below, which uses it too
+    const z88dkExport = await exportZ88dkArtefact(context, output, args);
+    if (z88dkExport) return z88dkExport;
+
     // --- A ZX80/ZX81 program exports as the machine's own program file (`ZX8081_CODE_INJECTION_PLAN.md` D8)
     const emulatorState = context.store.getState().emulatorState;
     const zxFormat = zx8081ExportFormatOf(
@@ -1144,6 +1149,61 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
  * They go to the output rather than into the command's result text because `run` and `debug`
  * export the NEX too and discard that result: written here, the user sees them on every path.
  */
+/** The project's build root is a C file (z88dk builds it). */
+function isCBuildRoot(context: IdeCommandContext): boolean {
+  const roots = context.store.getState().project?.buildRoots ?? [];
+  return roots.some((root: string) => /\.c$/i.test(root));
+}
+
+/**
+ * The native file a z88dk build wrote for the requested format (`tap`, `p`, `o`, `dsk`, `epr`),
+ * copied to the export file; undefined when the build is not a z88dk one, or has no such file and
+ * Klive's own exporter should make it (`tap`, `tzx`, `hex`, `nex`, `p`, `o`).
+ */
+async function exportZ88dkArtefact(
+  context: IdeCommandContext,
+  output: KliveCompilerOutput,
+  args: ExportCommandArgs
+): Promise<IdeCommandResult | undefined> {
+  const artefacts = (output as { z88dkArtefacts?: Record<string, string> }).z88dkArtefacts;
+  if (!artefacts) return undefined;
+  const requested = (args["-f"] ?? defaultZ88dkExportFormat(artefacts, args.filename) ?? "").toLowerCase();
+  const key = ({ tap: "tap", p: "P", o: "O", dsk: "dsk", epr: "epr" } as Record<string, string>)[requested];
+  const source = key ? artefacts[key] : undefined;
+  if (!source) {
+    if (requested === "dsk" || requested === "epr") {
+      return commandError(
+        t("commands.compile.z88dkNoArtefact", { format: requested, available: Object.keys(artefacts).join(", ") || "-" })
+      );
+    }
+    return undefined;
+  }
+  const ignored = ["-as", "-n", "-b", "-scr", "-c", "-p", "-sb", "-addr"].filter((o) => {
+    const value = (args as Record<string, unknown>)[o];
+    return value !== undefined && value !== false;
+  });
+  if (ignored.length) {
+    context.output.color("yellow");
+    context.output.writeLine(t("commands.compile.z88dkOptionsIgnored", { options: ignored.join(", "), count: ignored.length }));
+    context.output.resetStyle();
+  }
+  try {
+    const bytes = await context.mainApi.readBinaryFile(source);
+    const filePath = await context.mainApi.saveBinaryFile(args.filename, bytes, `kliveHome:${EXPORT_FILE_FOLDER}`);
+    return commandSuccessWith(t("commands.compile.z88dkExported", { file: filePath, bytes: bytes.length }), { file: filePath });
+  } catch (err) {
+    return commandError(String(err));
+  }
+}
+
+/** With no `-f`: the export file's extension, else the one native file the build has (a +3's `.dsk`). */
+function defaultZ88dkExportFormat(artefacts: Record<string, string>, filename: string): string | undefined {
+  const ext = /\.([A-Za-z0-9]+)$/.exec(filename ?? "")?.[1]?.toLowerCase();
+  if (ext && ["tap", "tzx", "hex", "nex", "p", "o", "dsk", "epr"].includes(ext)) return ext;
+  const own = Object.keys(artefacts);
+  return own.length === 1 ? own[0].toLowerCase() : undefined;
+}
+
 export function writeNexWarnings(out: IOutputBuffer, warnings: readonly string[]): void {
   for (const warning of warnings) {
     out.severity("warning");
@@ -1198,7 +1258,9 @@ export async function injectCode(
   {
     const machineId = context.store.getState().emulatorState?.machineId;
     const machine = machineRegistry.find((mi) => mi.machineId === machineId);
-    if (machine && machine.features?.[MF_INJECT_SUPPORT] === false) {
+    // --- The Z88 runs a C program (z88dk) as a card application: Run and Debug go on to build it
+    const z88CardRoute = machineId === MI_Z88 && operationType !== "inject" && isCBuildRoot(context);
+    if (machine && machine.features?.[MF_INJECT_SUPPORT] === false && !z88CardRoute) {
       if (operationType === "inject") {
         return commandError(
           machine.machineId === MI_ZXNEXT
@@ -1257,6 +1319,26 @@ export async function injectCode(
     await context.emuApi.issueMachineCommand("stop");
     await exportCmd.exportCompiledCode(context, result, args);
     additionalInfo = "_klive/" + nexName;
+  }
+
+  // --- A C build for the Z88 is a card application: into the slot, soft reset, □ + its key (§7)
+  const z88Card = (result as { z88Card?: { file: string; sizeKb: number; appKey: string } }).z88Card;
+  if (context.store.getState().emulatorState?.machineId === MI_Z88) {
+    if (!z88Card) return commandError(t("commands.compile.noRoute", { machine: "Cambridge Z88" }));
+    if (operationType === "debug") {
+      context.service.projectService.setLockedFiles((result.sourceFileList ?? []).map((f) => f.filename));
+    }
+    try {
+      await context.emuApi.setSourceDebugInfo(hasSourceLevelDebug(result) ? result.sourceLevelDebug : undefined);
+    } catch {
+      // --- An emulator without source stepping keeps instruction stepping
+    }
+    await context.emuApi.startZ88Application(z88Card.file, z88Card.sizeKb, z88Card.appKey, operationType === "debug");
+    context.output.writeLine(t("commands.compile.z88CardStarted", { file: z88Card.file, key: z88Card.appKey }));
+    context.store.dispatch(incInjectionVersionAction());
+    return commandSuccessWith(
+      operationType === "debug" ? t("commands.compile.startedDebug") : t("commands.compile.started")
+    );
   }
 
   // --- A C build for the ZX80/ZX81 (z88dk, `.plans/Z88DK_INTEGRATION_PLAN.md` §5.2) brings its own
