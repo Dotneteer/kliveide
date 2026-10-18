@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "next dev --webpack",
     "build": "next build --webpack",
-    "postbuild": "pagefind --site out --output-path out/_pagefind --include-characters '#$.%'",
+    "postbuild": "node ../scripts/build-doc-redirects.cjs && pagefind --site out --output-path out/_pagefind --include-characters '#$.%'",
     "start": "next start",
     "postinstall": "patch-package"
   },

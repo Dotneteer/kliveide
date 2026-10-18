@@ -23,8 +23,8 @@ export const metadata: Metadata = {
   },
   description: "The comprehensive guide to Klive IDE",
   openGraph: {
-    title: "KliveIDE Documentation",
-    description: "The comprehensive guide to KliveIDE"
+    title: "Klive IDE Documentation",
+    description: "The comprehensive guide to Klive IDE"
   }
 };
 
@@ -34,7 +34,7 @@ const navbar = (
       <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
         <img
           src={`${basePath}/images/klive-logo.svg`}
-          alt="KliveIDE"
+          alt="Klive IDE"
           width="50px"
           height="50px"
         />
@@ -54,12 +54,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <Layout
           navbar={navbar}
           pageMap={pageMap}
-          docsRepositoryBase="https://github.com/dotneteer/klive"
+          docsRepositoryBase="https://github.com/Dotneteer/kliveide/tree/master/docs"
           search={<Search placeholder="Search documentation..." />}
           sidebar={{ defaultMenuCollapseLevel: 1, toggleButton: true }}
           // `toc.backToTop` was a boolean in Nextra 3; in 4 it is the label node.
           toc={{ backToTop: "Scroll to top" }}
-          editLink={null}
+          editLink="Edit this page on GitHub"
           feedback={{ content: null }}
           footer={<Footer />}
         >

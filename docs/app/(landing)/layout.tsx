@@ -13,7 +13,7 @@ import "./landing.css";
 export const metadata: Metadata = {
   title: "Klive IDE",
   description:
-    "Klive IDE is a retro computer emulator and Integrated Development Environment running on Mac and Windows."
+    "Klive IDE is a retro computer emulator and Integrated Development Environment running on macOS, Windows and Linux."
 };
 
 export default function LandingLayout({ children }: { children: React.ReactNode }) {

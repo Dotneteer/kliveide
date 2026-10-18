@@ -56,7 +56,7 @@ export default function LandingPage() {
           <h1>The retro computer IDE for Z80 machines</h1>
           <p className="landing-lead">
             Klive IDE is a retro computer emulator and Integrated Development Environment running
-            on Mac and Windows.
+            on macOS, Windows and Linux.
           </p>
           <div className="landing-actions">
             <a className="landing-button landing-button-primary" href={DOWNLOAD_URL}>

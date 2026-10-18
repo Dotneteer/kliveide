@@ -283,6 +283,22 @@ Each phase ends with `npm run doc:build && npm run doc:check` green and goldens 
 change.
 
 ### Phase 0 — Spikes and housekeeping (small, de-risks everything)
+
+> **As built (2026-10-18).** The D1 spike passed in a scratch copy of the docs app: `content/en` +
+> `content/de`, `i18n` in `next.config.mjs` with `unstable_shouldAddLocaleToLinks`, a root layout
+> at `app/[lang]/layout.tsx` (with `generateStaticParams` and `dynamicParams = false`), Nextra's
+> `<Layout>` in a nested `app/[lang]/(docs)/layout.tsx` calling `getPageMap(\`/${lang}\`)`, the
+> catch-all using `generateStaticParamsFor("mdxPath", "lang")` and `importPage(path, lang)`, and a
+> separate `app/(root)` group for `/`. The export under `/preview/x` produced per-locale links,
+> `_meta` `href`s into English pages, `<html lang="de">`, and Pagefind indexed two languages.
+> Nextra's own `LocaleSwitch` only swaps the locale segment, so it would 404 on a page that has no
+> translation; the site gets its own switcher that knows which pages exist per locale (Phase 5).
+> Redirect stubs: `scripts/build-doc-redirects.cjs` reads `docs/redirects.json` and runs in docs'
+> `postbuild` before Pagefind; it refuses targets that are not pages and stubs that would replace a
+> real page. Release check: v0.63.0 lacks reverse debugging, unit tests/coverage/profiler and the
+> Next inspectors, so landing-page features carry a `since` version and are shown only when the
+> latest release tag (read at build time) has them — this is how D2 and R6 coexist.
+
 - Spike D1: a throwaway branch with `content/en` + `content/de`, two pages,
   `unstable_shouldAddLocaleToLinks`, `LocaleSwitch`, static export under a base path, Pagefind
   per language. Also prove `(landing)/[lang]/page.tsx` and the docs catch-all coexist.
