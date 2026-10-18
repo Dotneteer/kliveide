@@ -203,7 +203,8 @@ describe("app shell dialog registries and bridges", () => {
       dialogIds.MACHINE_SELECT_DIALOG,
       dialogIds.SETTINGS_DIALOG,
       dialogIds.DETECT_CODE_DATA_DIALOG,
-      dialogIds.BORIEL_SETUP_DIALOG
+      dialogIds.BORIEL_SETUP_DIALOG,
+      dialogIds.Z88DK_INTEGRATION_DIALOG
     ];
     const expectedEmuIds = [
       dialogIds.FIRST_STARTUP_DIALOG_EMU,

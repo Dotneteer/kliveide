@@ -20,6 +20,8 @@ Options:
                             from the lowest to the highest address (unbanked code only)
   --machine <id>[:<model>]  The machine the build is for (the sjasmplus device follows it)
   --sjasmplus <path>        The sjasmplus executable (else SJASMPLUS, the project, the PATH)
+  --z88dk <folder>          The z88dk installation, for a C build root (else Z88DK, the
+                            project, ~/z88dk)
   --use-ide-settings        Read the IDE's user settings too
 
 Exit codes: 0 built, 2 build errors, 3 usage or configuration, 4 internal error.`;
@@ -30,7 +32,7 @@ type Segment = { startAddress: number; emittedCode: number[]; bank?: number };
 export async function runBuildVerb(argv: string[], io: CliIo): Promise<number> {
   const { positional, options } = parseArgs(argv, {
     flags: ["use-ide-settings", "help"],
-    values: ["out", "machine", "sjasmplus"]
+    values: ["out", "machine", "sjasmplus", "z88dk"]
   });
   if (options.help) {
     io.out(BUILD_HELP);
@@ -43,6 +45,7 @@ export async function runBuildVerb(argv: string[], io: CliIo): Promise<number> {
     project,
     {
       sjasmplus: options.sjasmplus as string | undefined,
+      z88dk: options.z88dk as string | undefined,
       useIdeSettings: !!options["use-ide-settings"],
       ...machine
     },

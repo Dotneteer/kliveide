@@ -106,7 +106,8 @@ export function languageOf(file: string, settings: Record<string, any>): string 
     [".asm", "kz80-asm"],
     [".zxbas", "zxbas"],
     [".bas", "zxbas"],
-    [".pas", "pasta80"]
+    [".pas", "pasta80"],
+    [".c", "c"]
   ];
   return builtIn.find(([ext]) => lower.endsWith(ext))?.[1];
 }

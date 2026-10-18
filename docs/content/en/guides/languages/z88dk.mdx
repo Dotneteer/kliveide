@@ -1,0 +1,137 @@
+---
+description: "Write C for the ZX Spectrum, ZX Spectrum Next, ZX80, ZX81 and Cambridge Z88 with z88dk: set it up from Klive, then run, debug and export C programs with breakpoints, stepping, the call stack and variables."
+---
+
+import { Callout } from 'nextra/components'
+
+# z88dk (C)
+
+Klive builds C programs with [z88dk](https://github.com/z88dk/z88dk), the Z80 C development kit. Open a project whose build root is a `.c` file and Run, Debug and Export work as they do for the other languages: compiler errors go to the Problems view, breakpoints stop on C lines, the execution point follows your source, and the Call Stack and Variables panels show your functions, parameters, locals and globals.
+
+z88dk is not part of Klive: it is a large toolkit (about 400 MB installed). Klive finds an installation you already have, or downloads one from GitHub for you.
+
+## Setting up z88dk
+
+Open **Settings › Integrations** (see [Settings](/en/guides/ide/settings)) and click **Configure...** next to **z88dk**, or type `z88dk-setup` in the Command window. A C build that finds no z88dk says so in the Build output, with a **Set up z88dk...** link that opens the same dialog.
+
+The **z88dk Integration** dialog works like the [SJASMPLUS one](/en/guides/languages/sjasmplus): the **In use** block re-tests the configured installation every time the dialog opens, the **To apply** block shows what you are setting up, and **Apply** saves it only after its test passed. The test compiles a one-line C program for the ZX Spectrum, which proves that the compiler, its libraries and its configuration all work, not only that the program starts.
+
+The **Source** row offers two ways in:
+
+- **Local installation** — z88dk is already on your computer. The **Found** row lists the installations Klive detected (z88dk's folder on your `PATH`, the `Z88DK` and `ZCCCFG` environment variables, `~/z88dk`, and the folders Klive downloaded into), each with its version. Click one, or press **Choose folder...** and pick the folder that holds `bin` and `lib`.
+- **Download from GitHub** — Klive lists z88dk's releases, preselects the newest one it supports and the file for your system, and installs it into `~/KliveTools/z88dk/<release>` (or a folder you choose). A progress bar shows the download, which you can cancel; the file is checked against its size and the checksum GitHub publishes, unpacked, and tested before it is moved into place, so a failed or cancelled download leaves nothing behind.
+
+<Callout type="info" emoji="💡">
+z88dk publishes ready-made builds for **Windows and macOS** only. On Linux, install z88dk from your distribution's packages or the snap store, or build it from source, then pick its folder under **Local installation**.
+</Callout>
+
+**Supported versions.** Klive reads z88dk's debug information, whose format changes between releases, so it supports **v2.4 and newer**. The release list shows older releases only when you tick **Show older releases**; an older installation still builds, but **Apply** asks before saving it, and breakpoints and stepping may not work with it.
+
+Like the other integrations, the setup can go into your user settings or, with a project open, into the project's settings.
+
+## Projects
+
+Create a project with the `z88-dk` template (see [Project templates](/en/guides/projects/project-templates)). It exists for the ZX Spectrum 48K, 128K and +2E/+3E, the Timex, the ZX Spectrum Next, the ZX81, the ZX80 and the Cambridge Z88. Its build root is `code/main.c`:
+
+```c
+#include <stdio.h>
+#include <arch/zx/spectrum.h>
+
+int counter;
+
+int square(int value)
+{
+    int result = value * value;
+    return result;
+}
+
+int main(void)
+{
+    zx_cls();
+    zx_border(1);
+    printf("Welcome to Klive IDE - z88dk\n\n");
+    for (counter = 1; counter <= 5; counter++) {
+        printf("%d squared is %d\n", counter, square(counter));
+    }
+    return 0;
+}
+```
+
+Any `.c` file can be a build root. To build several files together, list the others (C or z88dk assembly) in the project's `z88dk.extraArgs` setting (see [Build options](#build-options)): zcc compiles and links them with the build root.
+
+## The machine decides the target
+
+Klive builds for the machine the emulator runs; you do not choose a z88dk target yourself.
+
+| Machine | z88dk target | Run | Export |
+| --- | --- | --- | --- |
+| ZX Spectrum 48K, Timex TC2048 | `+zx` | injects the code and starts it | `.tap` with a BASIC loader |
+| ZX Spectrum 128K, Scorpion | `+zx` | injects the code in 48 BASIC; a banked program loads from its tape | `.tap` |
+| ZX Spectrum +2E/+3E | `+zx -subtype=plus3` | injects the code in 48 BASIC | `.dsk` |
+| Timex TC2068 / TS2068 | `+ts2068` | injects the code and starts it | `.tap` |
+| ZX Spectrum Next | `+zxn -subtype=nex` | loads the `.nex` | `.nex` |
+| ZX81 (and a ZX80 with the 8K ROM) | `+zx81` | loads the `.P` program | `.P` |
+| ZX80 | `+zx80` | loads the `.O` program | `.O` |
+| Cambridge Z88 | `+z88 -subtype=app` | inserts the application card and starts it | `.epr` card |
+
+The 16K Spectrum and the Commodore 64 are refused with a reason: z88dk programs load at `$8000`, and the C64 has no Z80.
+
+**Export** copies the file z88dk itself wrote (`.tap`, `.dsk`, `.P`, `.O`, `.epr`), so what you export is exactly what z88dk built; the tape loader options of the Export dialog do not apply to it. Intel HEX (`-f hex`) still comes from Klive.
+
+### The Cambridge Z88
+
+A Z88 program is an application on a card. It needs its application header, which z88dk builds from a few definitions placed before `<application.h>`:
+
+```c
+#include <dor.h>
+#define APP_NAME "Klive C"
+#define APP_INFO "Made with Klive IDE"
+#define APP_KEY 'K'
+#include <application.h>
+```
+
+Run puts the card z88dk wrote into **slot 3**, restarts the Z88 (OZ lists a new application only after a restart) and, once OZ is ready, presses **□** and the application's key to start it. Debug does the same with the breakpoints armed.
+
+## Debugging
+
+Debug builds the program with z88dk's debug information and without optimisation, then:
+
+- **Breakpoints** stop on C lines. Click in the gutter of a line with a statement; blank lines, comments, braces and preprocessor lines take none.
+- The **execution point** follows the C source.
+- **Step Into**, **Step Over** and **Step Out** step C statements. Step Into on a call stops at the called function's first statement.
+- The **Call Stack** lists the active functions, innermost first, down to the startup code.
+- The **Variables** panel shows the selected function's parameters and locals and the globals, with their C types (`int`, `unsigned char`, `char *`, ...). **Watch** accepts their names too.
+
+<Callout type="warning" emoji="💡">
+**What debugging cannot show.** Floats, structures and arrays are not decoded in the Variables panel (their addresses are in Watch as symbols). Functions in banked code take breakpoints, but they are not stepped at source level. On the Z88, a breakpoint matches its address in whatever bank OZ has paged in.
+</Callout>
+
+**How lines map to code.** z88dk's compiler reads one line ahead, so the line after a statement sometimes shares its address. Klive shows the earlier line there, and a breakpoint on the later line stops where that shared code starts.
+
+**SDCC.** z88dk's second compiler, SDCC, cannot produce the line information Klive reads. A project that chooses SDCC still runs and exports, but debugging works in the disassembly only; the build says so.
+
+## Build options
+
+The options live in the project (`klive.project`), so each project builds the same way on every computer. The first three are also in **Settings › Integrations** while the project is open.
+
+| Setting | Values | Meaning |
+| --- | --- | --- |
+| `z88dk.compiler` | `sccz80` (default), `sdcc` | The C compiler. Only sccz80 builds are debuggable at source level. |
+| `z88dk.clib` | `classic` (default), `new` | The C library. |
+| `z88dk.optimise` | `none`, `O1`, `O2` (default), `O3`, `SO3` | The optimisation of Run and Export builds. Debug builds are never optimised. |
+| `z88dk.subtype` | a z88dk subtype | Overrides the subtype the machine table picks. |
+| `z88dk.startup` | a number | zcc's `-startup=` value. |
+| `z88dk.libs` | a list of names | Libraries to link (`-l<name>`). By default, Spectrum and Next projects with the classic library link `ndos`, which `printf` needs there. |
+| `z88dk.pragmas` | a list of `NAME=value` | `#pragma output`-style definitions for every build (`-pragma-define:`). |
+| `z88dk.extraArgs` | a list of arguments | Passed to zcc as they are, after Klive's own: more source files, or any zcc option. |
+| `z88dk.backgroundCheck` | `true`, `false` (default) | Checks the build root in the background as you edit. Off by default: a zcc run is much slower than Klive's built-in compilers. |
+
+z88dk's own `#pragma output` lines in your source keep working.
+
+## Commands and the command line
+
+- `z88dk-setup` opens the z88dk Integration dialog.
+- `z88dk-reset <folder>` stores an installation folder without testing it (for scripts); with no argument it removes the z88dk settings.
+- [`klive build`](/en/reference/command-line) builds a C project without the IDE. It finds z88dk through `--z88dk <folder>`, then the `Z88DK` environment variable, then the project's setting, then the usual folders.
+
+The `Z88dk.compile` function of [build scripts](/en/reference/klive-script) is still available for custom builds.

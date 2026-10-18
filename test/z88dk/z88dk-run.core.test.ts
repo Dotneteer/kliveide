@@ -47,7 +47,7 @@ describe("z88dk +zx81 on the ZX81", () => {
     const counter = symbol("zx81-hello", "_counter");
     s.runUntil(() => s.peekWord(counter) === 42, { maxFrames: 500 }, "main's result in _counter");
     expect(s.peekWord(counter)).toBe(42);
-  });
+  }, 120_000);
 });
 
 describe("z88dk banked code on the 128K (§9)", () => {

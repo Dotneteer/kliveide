@@ -140,6 +140,7 @@
 /en/guides/index.html
 /en/guides/languages/pasta80/index.html
 /en/guides/languages/sjasmplus/index.html
+/en/guides/languages/z88dk/index.html
 /en/guides/languages/zx-basic/index.html
 /en/guides/next/copper/index.html
 /en/guides/next/layer2-inspector/index.html
