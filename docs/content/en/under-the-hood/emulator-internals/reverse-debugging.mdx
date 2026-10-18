@@ -1,0 +1,174 @@
+---
+description: "How Klive's reverse debugging works: keyframes of the whole machine, a journal of every input that replays and checks itself, how Step Back and Reverse Continue put the machine itself in the past, and what Take over here does to the future."
+---
+
+import { Callout } from 'nextra/components'
+
+# How Reverse Debugging Works
+
+With reverse debugging, **Step Back** does not just show you the registers of an earlier moment. It
+puts the **whole machine** back there: memory, every device, the screen. Every panel shows that
+moment because the machine *is* at that moment. You can step forward again, continue from the past,
+or make the past your new present.
+
+[Reverse Debugging](/en/guides/debugging/reverse-debugging/) explains how to use it. This article
+explains how it is built. It works on every Klive machine that runs on a WebAssembly core: the 48K,
+128K, Pentagon, Scorpion, +2A/+3/+2E/+3E, Timex, Next, Z88, ZX81 and ZX80.
+
+## Replay, not undo
+
+Klive does not keep an **undo log** of state changes. It would have to record the changes of every
+device (about 20 on the Next), and every change to a device would risk breaking it.
+
+Klive uses the technique of record-and-replay debuggers such as rr, adapted to an emulator:
+
+1. **Keyframes.** While you debug, Klive saves the complete machine state every so often.
+2. **An input journal.** It records everything the host feeds into the machine, stamped with the
+   exact point in the instruction stream where it arrived.
+3. **Replay.** To reach an earlier point, it restores the nearest keyframe before it, runs forward
+   with the journal supplying the inputs, and stops exactly at the point.
+
+This works because the whole emulated machine is deterministic data. No C core reads the host's time or a random number while it runs. Given the same
+state and the same inputs, a core does exactly the same thing again.
+
+## Keyframes
+
+A keyframe is a copy of the core's linear memory, which holds the entire machine (see
+[How the emulator cores are built](/en/under-the-hood/emulator-internals/wasm-cores/)). An image is
+about 2,000 pages of 4 KiB: 2,014 on the 48K, 1,852 on the Next.
+
+Most of an image does not change between keyframes, so each keyframe is a table of page references
+into a shared pool. A page equal to the same page of the
+previous keyframe is stored as a reference to it. Pages are immutable and reference-counted, so
+dropping an old keyframe only drops references. Capturing a keyframe compares every page with its
+predecessor and takes 1.2 to 1.6 ms.
+
+Keyframes are taken at frame boundaries. The interval is set by **replay cost**. Klive takes a
+keyframe once the frames since the last one would take about **100 ms** to replay, within 5 to 50
+frames. That is 50 frames on the 48K and 13 on the Next at 28 MHz, whose frames run eight times as
+many cycles. The cost is measured: at the second keyframe, and then at every 64th, Klive replays the
+interval that just ended and times it.
+
+The keyframes live within a memory budget: by default the smaller of 512 MB and 1/16 of physical
+memory, adjustable from 64 MB to 2 GB. When the pool is full, the oldest keyframes go, and the start
+of the timeline moves forward. In 10-minute test sessions, the 48K kept the whole 10 minutes in 30 to
+81 MB. The worst case measured, a Next program that rewrites Layer 2 every frame at 28 MHz, filled
+512 MB and still kept 149 seconds.
+
+## The input journal
+
+The journal sits at the **core's export boundary**. Every call from TypeScript into a core export that
+*changes* machine state goes through a journaling wrapper, stamped with the current position. That
+covers key presses, joysticks, the mouse, tape controls and uploads, memory and register edits,
+NextReg writes, SD card responses, the Z88's cards and flap, and the clock multiplier. Direct writes
+into core memory, such as a tape upload or SD sector data, go through a journaled helper too.
+
+The hard part is making sure nothing slips past. Klive keeps a **contract** that classifies every
+export of every core: *pure* (it only reads), *debug* (it changes only volatile statics),
+*execution*, or *journaled*. That is 1,707 function exports across seven cores. A test fails on an
+export with no class. It also calls every pure and debug export on a running machine and requires the
+memory image to be unchanged, so a misclassified export cannot hide either. Its first run found eight
+exports that looked like getters but changed state.
+
+The journal records **effects, not host events**. The emulated-keystroke queue, for example, lives in
+TypeScript, outside the image. During replay it is muted, and the journal supplies its effects.
+
+## Positions
+
+To stop "exactly at the point", Klive needs a way to name a point. It uses the execution-history
+recorder's sequence number, which counts every instruction-boundary event on every core, plus two
+small numbers:
+
+| Part | What it counts |
+|---|---|
+| sequence | The recorder's record number |
+| sub | Units already merged into a coalesced record: HALT cycles, Next DMA hold T-states, ZX81 forced NOP fetches |
+| phase | How far into a prefixed instruction the CPU is: 0 at a boundary, 1 after `CB`/`ED`/`DD`/`FD`, 2 after `DD CB`/`FD CB` |
+
+The phase is needed because a frame can end, and a debugger step can stop, between the cycles of one
+instruction, for example inside `ED 78`.
+
+Stopping at a position happens in C. The recorder holds a **target**. Every core's frame loop calls
+`z80HistoryStopNow()` after each CPU cycle, which marks the target reached and makes the loop return.
+Replay can therefore run at full speed in fast frames and still stop on the exact cycle. A fast frame
+also continues a frame in progress instead of starting a new one, so a stop in the middle of a frame
+leaves nothing to undo.
+
+## Replay checks itself
+
+Every replay is verified in two ways:
+
+- **Against the history ring.** While the ring still holds the record for the position being replayed,
+  the recorder compares the record it is about to write with the one in its slot (PC, SP and AF).
+- **Against keyframes.** When a replay passes a later keyframe's position, the live image's page
+  hashes must equal that keyframe's.
+
+A mismatch stops the replay with "Replay diverged", and the timeline ends there. A desync is
+treated as a bug that needs a test, never as a user error.
+
+The journal-replay determinism test, which feeds each machine its own inputs and replays them,
+passed 660 runs over 30 random seeds across eleven machines.
+
+## Going back
+
+**Step Back** restores the nearest keyframe and replays to one instruction before the current
+position. The other backward commands (Reverse Step Over, Reverse Step Out, selecting a row of the
+Execution History) work the same way and differ only in how they pick the target.
+
+Repeated step backs reuse work. Each navigation replay drops **transient keyframes** every 2,000
+records over the last 20,000 before the target. So the next Step Back replays at most 2,000
+records. In the 10-minute sessions, a Step Back to a random point took at most 103 ms at the 90th
+percentile, and a repeated one under 1 ms.
+
+### Reverse Continue
+
+**Reverse Continue** finds the last point before the current one where a breakpoint would have
+stopped. It replays the keyframe interval that contains the current position, with breakpoints in
+**collect** mode: every hit is noted, nothing stops. It takes the last hit before the current
+position. If there is none, it moves one interval back. Then it replays to that hit.
+
+Because the search runs the real machine, every breakpoint kind works, including conditions that read
+memory, I/O breakpoints, and the Next's NextReg and Copper breakpoints. A memory-write breakpoint
+becomes a **reverse watchpoint**: "go back to the last write to `$9500`".
+
+Hit counts are part of the timeline: each keyframe stores the counters, and the live run logs every
+counted hit with its position.
+
+## Continuing from the past
+
+Continue, Step Into, Step Over and Run-to all work in the past. They start a **replay run**: the
+machine runs with breakpoints active, the journal supplies the inputs, and live input is ignored. The
+status bar shows "Replaying" and the distance to the present. When the run reaches the end of the
+journal, it switches to live without a seam.
+
+Host side effects are suppressed while the machine replays: tape saves, disk write-back, logpoint
+output, the Z88's serial output, audio and screen updates. Key presses during a replay never change
+the future, because keys reach the emulator panel by accident too easily. They are ignored, and the
+status bar says so.
+
+## Take over here
+
+**Take over here** makes the point you stand at your new present. It discards the future: the journal
+entries, keyframes and history records after this point. Live input then resumes from there. Editing
+a register, memory or a variable in the past asks first, then forks the same way.
+
+Some of the discarded future has already reached the host, so a fork cleans up after it:
+
+- **The Next's SD card.** Before each sector write in a timeline, the old sector is read and logged.
+  On a fork, the discarded future's writes are reverted, newest first. A test checks that the host's
+  card image then equals, byte for byte, the image at the fork point.
+- **Disk images.** The +3's `.dsk` and the Beta 128's `.trd` are re-published from the restored
+  in-core image.
+- **Tape files** written by `SAVE` cannot be unwritten. The confirmation lists them.
+
+<Callout type="info">
+The end-to-end test runs on a real 48K through the real machine controller. After 1,300 forward steps,
+each logged with a hash of the whole machine, it takes 1,000 Step Backs. Every one lands on a logged
+position with an equal hash.
+</Callout>
+
+## Where to read more
+
+The code lives in `src/emu/machines/reverse/`: `Timeline.ts`, `KeyframeStore.ts`,
+`InputJournal.ts`, `JournalingExports.ts`, `exportContract.ts`, `ReplayEngine.ts` and `SdUndoLog.ts`.
+The C side is the shared history recorder, `src/emu/z80/wasm/z80-history.c`.

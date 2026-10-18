@@ -1,0 +1,26 @@
+---
+description: "Klive's interface and its website are translated into several languages. How to fix a translation, translate the website, or add a language."
+---
+
+# Translate Klive
+
+Klive's menus, dialogs and panels are available in English, Spanish, Portuguese (Brazil and Portugal), German and Hungarian, and so are this website's landing page and its Get Started pages. Translations are made by people and by AI models, and every language can use a native speaker's eye.
+
+## Fix a translation in the app
+
+If a menu item, dialog or message in Klive reads wrong in your language, the fix is a one-line change. The texts live in `src/common/i18n/locales/<lang>/`, one file per area, and `src/common/i18n/locales/README.md` explains how to find the right one, fix it, and check it with `npm run i18n:check`.
+
+## Fix a translation on this website
+
+The website has its own texts and workflow, described in `docs/i18n/TRANSLATING.md`:
+
+- The landing page's texts are in `docs/i18n/landing/<lang>.json`, and the site's buttons and notices in `docs/i18n/ui/<lang>.json`.
+- The translated Get Started pages are in `docs/content/<lang>/get-started/`.
+
+`npm run doc:i18n:todo -- <lang>` lists what is missing or out of date in a language, and `npm run doc:i18n:merge` takes a translation in. The merge checks that a translated page keeps everything that must not change: the code, the screenshots and their markers, the headings and the links.
+
+## Add a language
+
+A new language starts in the app: `src/common/i18n/locales/README.md` explains how to register it and translate the interface. Once the app has the language, the website picks it up: translate the website's texts and pages with `doc:i18n:todo` and `doc:i18n:merge`, and generate the Get Started screenshots in the new language with the screenshot recipe (`docs/i18n/TRANSLATING.md`, "Screenshots").
+
+Whatever you change, open a pull request on [GitHub](https://github.com/Dotneteer/kliveide), and say in it which language you speak natively.

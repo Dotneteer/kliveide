@@ -1,88 +1,83 @@
 ---
-description: "Though we strive to maintain high-quality documentation, you may find typos, grammar issues, clumsy explanations, out-of-date information, and other problems."
+description: "How the Klive documentation site is organised and built, and how to fix a page, add one, or regenerate its screenshots."
 ---
 
-# Improve the Documentation
+import { Callout } from 'nextra/components'
 
-Though we strive to maintain high-quality documentation, you may find typos, grammar issues, clumsy explanations, out-of-date information, and other problems.
+# Improve the documentation
 
-You can help by fixing these issues or submitting new content.
+Found a typo, an unclear explanation or something out of date? You can fix it. The documentation is part of Klive's repository, and changes go through pull requests like code changes do. Start by [getting the source code](/en/under-the-hood/contribute/get-source/).
 
-Klive generates its documentation using [Nextra](https://nextra.site/). This article explains how to contribute to improving the documentation. 
+The quickest fix needs no setup: every page has an **Edit this page on GitHub** link at the right, which opens the page's source in GitHub's editor.
 
-Follow the steps to [get the source code](./get-source).
+## Run the site locally
 
-## Running the Documentation Site Locally
+The site is a [Nextra](https://nextra.site/) site in the `docs/` folder, a separate npm package. Install its dependencies once, then start it:
 
-Start the documentation site locally on your development machine with the `npm run doc:dev` command, then visit http://localhost:3000 in your browser.
-
-This site uses hot module reloading (HMR), so as you modify the documentation, updates are displayed live in your browser. When you have completed all modifications, create a GitHub Pull Request from your working branch to Klive's `master` branch for review and merging.
-
-## Documentation Structure
-
-You can find these documentation-related folders within the project's root:
-- **`pages`**: The source documentation files using Nextra and the `.mdx` (extended markdown) format. Documentation lives in `.mdx` files. The content of this folder represents the hierarchy of the documentation. Each folder describes its content in a `_meta.ts` file (you'll understand them; they map the individual files with the table of contents).
-- **`public/images`**: The image resources of the documentation pages (organized hierarchically). 
-The project contains some other Nextra-related files; please do not touch them. If you have to do so, please add some comments to your submitted PR to explain your intention.
-
-## Common Documentation Tasks
-
-### Adding a New Page
-
-1. Create a new `.mdx` page in the appropriate folder. Use a short name representing the contents you intend to describe.
-2. Optionally, you can create a new folder and add documentation files there.
-3. Ensure you update the `_meta.ts` file in the new article folder with a suitable title. Place the new article in the location where it fits the best among the already existing articles.
-
-You can consider existing articles as examples.
-
-### Creating Hidden Pages
-
-Sometimes you may want to create documentation pages that are accessible via URL but don't appear in the navigation sidebar. This is useful for:
-- Supplementary reference materials
-- Draft content that's ready but not yet promoted
-- Special-purpose landing pages
-- Beta feature documentation
-
-To create a hidden page:
-
-1. Create your `.mdx` file in the appropriate folder (e.g., `pages/book.mdx`)
-2. Add an entry for this page in the corresponding `_meta.ts` file with `display: "hidden"`
-3. The page will be accessible via its URL path (e.g., `/book`) but won't appear in navigation
-
-Example:
-```typescript
-// pages/_meta.ts
-export default {
-  index: "Introduction",
-  "getting-started": "Getting Started",
-  book: {
-    display: "hidden"  // Page exists at /book but hidden from sidebar
-  }
-};
+```bash
+npm run doc:install
+npm run doc:dev
 ```
 
-The page at `pages/book.mdx` will be accessible at `/book` but hidden from the sidebar. You can link to hidden pages from other documentation pages using standard markdown links: `[Link text](/en/book)`.
+Open http://localhost:3000. Pages reload as you edit them. Before you open a pull request, build the site and run its checks:
 
-See the [example hidden page](/en/book) to understand how this works in practice.
-
-### Adding images
-
-You can add images following these steps:
-
-1. Add the following line to the top of the `.mdx` file:
-```js
+```bash
+npm run doc:build && npm run doc:check
 ```
 
-2. Copy the image to add into the right folder within `public/images` (under the project's root folder).
+The checks catch removed pages, broken links and images, lost syntax highlighting, pages with too many megabytes of images, and broken translations.
 
-3. Use the `<ClickableImage>` component to place your image in an article:
+## How the site is organised
+
+| Folder | What it holds |
+| --- | --- |
+| `docs/content/en/` | The English pages, in four areas: `get-started/`, `guides/`, `reference/` and `under-the-hood/`. Each folder's `_meta.ts` sets the order and titles of its pages. |
+| `docs/content/<lang>/` | Translations. Only Get Started is translated; do not edit these by hand (see [Translate Klive](/en/under-the-hood/contribute/translate/)). |
+| `docs/public/images/` | Images. Screenshots taken in every language live under `images/<lang>/`. |
+| `docs/landing/`, `docs/i18n/landing/` | The landing page and its text. |
+| `docs/redirects.json` | Old URLs and the pages they moved to. |
+
+## Common tasks
+
+### Fix or extend a page
+
+Edit its `.mdx` file. Pages are Markdown with JSX components: `<Callout>`, `<Steps>` and `<Cards>` from Nextra, and Klive's `<Shot>` and `<ClickableImage>` for images. Look at a page of the same kind for examples.
+
+<Callout type="info" emoji="💡">
+Changing an English Get Started page marks its translations as out of date. That is expected: the translated pages show a notice until they are translated again.
+</Callout>
+
+### Add a page
+
+1. Create the `.mdx` file in the folder where it belongs, with a short, descriptive file name.
+2. Give it front matter with a one-sentence `description`, and one `# Title`.
+3. Add it to the folder's `_meta.ts`, where it fits among the existing pages.
+
+### Move or rename a page
+
+Add the old URL and the new one to `docs/redirects.json`. The build writes a page at the old URL that forwards to the new one, so links from elsewhere keep working. `doc:check` fails if an old URL disappears.
+
+### Add a screenshot
+
+Screenshots are generated, not captured by hand: a recipe in `scripts/doc-shots/recipes/` starts Klive, drives it to the right state and photographs the part of the window you need. That keeps every screenshot consistent and lets anyone regenerate it after the UI changes. Read `.ai/doc-screenshots-guide.md` to write a recipe.
+
+Show a generated screenshot with `<Shot>`:
 
 ```jsx
-<ClickableImage 
-  src="/images/working-with-ide/mem-view.png" 
-  alt="Memory view" 
-  width={512} 
+<Shot
+  src="get-started/debug-paused.webp"
+  alt="The IDE paused at a breakpoint"
+  figure="6.1"
+  caption="Paused at the breakpoint"
+  markers={["breakpoint", "registers"]}
+  width={900}
 />
 ```
 
-To set the image's display dimensions, use the `width` attribute. The `ClickableImage` component will handle proper path resolution for both development and production environments.
+`<Shot>` picks the screenshot in the page's language, and draws numbered markers at the points the recipe measured. Explain the markers in a numbered list right under the figure.
+
+For an image that is not a generated screenshot, put the file under `docs/public/images/` and use `<ClickableImage src="/images/..." alt="..." width={512} />`.
+
+### Add a code example
+
+Use a fenced block with a language: `z80klive` for Klive Z80 assembly, `text` for ZX BASIC. A language that is not listed in `docs/next.config.mjs` fails the build. If a Get Started page shows a program, keep the program in `scripts/doc-shots/fixtures/get-started/`: a test builds it and checks that the page shows the same code.
