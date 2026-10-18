@@ -30,7 +30,8 @@ import {
   JOYSTICK_BINDINGS_DIALOG,
   SETTINGS_DIALOG,
   SJASMPLUS_INTEGRATION_DIALOG,
-  BORIEL_SETUP_DIALOG
+  BORIEL_SETUP_DIALOG,
+  Z88DK_INTEGRATION_DIALOG
 } from "@messaging/dialog-ids";
 import { mainStore } from "./main-store";
 import { rememberSettingsPage, settingsPageToOpen } from "./settings-page-memory";
@@ -50,6 +51,8 @@ import {
 import { parseKeyMappings } from "./key-mappings/keymapping-parser";
 import { setClockMultiplier, setSoundLevel } from "./emulator-preferences";
 import { setEffectiveBasicCompiler } from "./boriel-integration/boriel-main";
+import { setZ88dkProjectOption } from "./z88dk-integration/z88dk-main";
+import { Z88DK_CLIB, Z88DK_COMPILER, Z88DK_OPTIMISE } from "./z88dk-integration/z88dk-config";
 import {
   type WindowRecordingPreference,
   windowRecordingPreferenceAction
@@ -282,6 +285,12 @@ export async function runUiAction(actionId: UiActionId, value?: unknown): Promis
       if (value !== "klive" && value !== "boriel") return `Unknown BASIC compiler: ${value}`;
       await setEffectiveBasicCompiler(value);
       return undefined;
+    case "set:z88dkCompiler":
+      return await setZ88dkProjectOption(Z88DK_COMPILER, value);
+    case "set:z88dkClib":
+      return await setZ88dkProjectOption(Z88DK_CLIB, value);
+    case "set:z88dkOptimise":
+      return await setZ88dkProjectOption(Z88DK_OPTIMISE, value);
     case "rom:sp48:select":
       await selectSp48RomFile(owner);
       return undefined;
@@ -325,6 +334,10 @@ export async function runUiAction(actionId: UiActionId, value?: unknown): Promis
     case "dialog:boriel":
       showIdeWindow();
       await getIdeApi().displayDialog(BORIEL_SETUP_DIALOG, { mode: "settings" });
+      return undefined;
+    case "dialog:z88dk":
+      showIdeWindow();
+      await getIdeApi().displayDialog(Z88DK_INTEGRATION_DIALOG);
       return undefined;
     case "dialog:excluded-items":
       showIdeWindow();

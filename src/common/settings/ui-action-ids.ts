@@ -24,6 +24,9 @@ export type UiActionId =
   | "set:automationEnabled"
   | "set:automationLevel"
   | "set:basicCompiler"
+  | "set:z88dkCompiler"
+  | "set:z88dkClib"
+  | "set:z88dkOptimise"
   | "rom:sp48:select"
   | "rom:sp48:reset"
   | "rom:trdos:select"
@@ -37,6 +40,7 @@ export type UiActionId =
   | "dialog:joystick-bindings"
   | "dialog:sjasmplus"
   | "dialog:boriel"
+  | "dialog:z88dk"
   | "dialog:excluded-items"
   /** Opens the translators' guide in the browser (`.plans/LOCALIZATION_PLAN.md` §7) */
   | "open:translation-guide";

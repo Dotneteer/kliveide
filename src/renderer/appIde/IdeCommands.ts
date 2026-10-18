@@ -134,7 +134,7 @@ import {
   RunBuildScriptCommand,
   RunScriptCommand
 } from "./commands/ScriptCommands";
-import { ResetZ88DkCommand } from "./commands/Z88DkCommands";
+import { ResetZ88DkCommand, SetupZ88DkCommand } from "./commands/Z88DkCommands";
 import {
   ExportCodeCommand,
   KliveBuildCommand,
@@ -311,6 +311,7 @@ export function registerIdeCommands(cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new DisplayScriptOutputCommand());
 
   cmdSrv.registerCommand(new ResetZ88DkCommand());
+  cmdSrv.registerCommand(new SetupZ88DkCommand());
   cmdSrv.registerCommand(new DisplayDialogCommand());
 
   cmdSrv.registerCommand(new SetZ80RegisterCommand());

@@ -10,7 +10,8 @@ import {
   MACHINE_SELECT_DIALOG,
   SETTINGS_DIALOG,
   DETECT_CODE_DATA_DIALOG,
-  BORIEL_SETUP_DIALOG
+  BORIEL_SETUP_DIALOG,
+  Z88DK_INTEGRATION_DIALOG
 } from "@messaging/dialog-ids";
 import type { AboutDialogData } from "@common/messaging/about-dialog";
 import { AboutDialog, AboutDialogResult } from "./AboutDialog";
@@ -40,6 +41,7 @@ import {
 } from "./sjasmplus/SjasmplusIntegrationDialog";
 
 import { BorielSetupDialog, type BorielSetupDialogResult } from "./boriel/BorielSetupDialog";
+import { Z88dkIntegrationDialog, type Z88dkIntegrationDialogResult } from "./z88dk/Z88dkIntegrationDialog";
 import { SettingsDialog, type SettingsDialogResult } from "./settings/SettingsDialog";
 import { DetectDialog, type DetectDialogResult } from "./detect/DetectDialog";
 
@@ -53,7 +55,8 @@ export type IdeDialogResult =
   | MachineSelectDialogResult
   | SettingsDialogResult
   | DetectDialogResult
-  | BorielSetupDialogResult;
+  | BorielSetupDialogResult
+  | Z88dkIntegrationDialogResult;
 
 export type IdeDialogRenderer = (
   data: any,
@@ -81,6 +84,9 @@ export const ideDialogRegistry: Record<number, IdeDialogRenderer> = {
   ),
   [SJASMPLUS_INTEGRATION_DIALOG]: (_, controls) => (
     <SjasmplusIntegrationDialog onClose={(result) => controls.close(result)} />
+  ),
+  [Z88DK_INTEGRATION_DIALOG]: (_, controls) => (
+    <Z88dkIntegrationDialog onClose={(result) => controls.close(result)} />
   ),
   [MACHINE_SELECT_DIALOG]: (data, controls) => (
     <MachineSelectDialog data={data} onResult={(result) => controls.close(result)} onClose={controls.cancel} />

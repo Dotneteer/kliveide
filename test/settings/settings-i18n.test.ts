@@ -28,7 +28,9 @@ const isLiteral = (label: string) =>
   /^\d+ [MG]B$/.test(label) ||
   /^640 x \d+$/.test(label) ||
   FONT_NAMES.has(label) ||
-  ["Klive BASIC", "Boriel BASIC"].includes(label) ||
+  ["Klive BASIC", "Boriel BASIC", "sccz80", "SDCC"].includes(label) ||
+  // --- zcc's own optimisation flags (the z88dk options row)
+  /^-S?O\d$/.test(label) ||
   // --- Language names are never translated (§7)
   LANGUAGES.some((l) => l.nativeName === label);
 

@@ -1,4 +1,5 @@
 import path from "path";
+import os from "os";
 import { checkSourceAnnotations } from "@common/utils/source-annotations";
 import fs from "fs";
 import _ from "lodash";
@@ -130,6 +131,20 @@ import {
   SJASMP_INSTALL_FOLDER,
   SJASMP_VERSION
 } from "./sjasmp-integration/sjasmp-config";
+import type {
+  Z88dkIntegrationApplyRequest,
+  Z88dkReleaseDownloadRequest
+} from "@common/messaging/Z88dkIntegration";
+import {
+  cancelZ88dkDownload,
+  downloadZ88dkRelease,
+  getZ88dkDownloadProgress,
+  getZ88dkPathSuggestions,
+  listZ88dkReleases,
+  probeZ88dkPath,
+  validateZ88dkInstall
+} from "./z88dk-integration/z88dk-integration-service";
+import { Z88DK_INSTALL_FOLDER, Z88DK_VERSION } from "./z88dk-integration/z88dk-config";
 import { t } from "@common/i18n/i18n";
 
 const compilerRegistry = createCompilerRegistry();
@@ -815,6 +830,64 @@ class MainMessageProcessor {
     this.dispatch(applyProjectSettingAction(SJASMP_INSTALL_FOLDER, installFolder));
     this.dispatch(applyProjectSettingAction(SJASMP_EXECUTABLE_PATH, executablePath));
     this.dispatch(applyProjectSettingAction(SJASMP_VERSION, version));
+    await saveKliveProject();
+  }
+
+  probeZ88dkPath(itemPath: string) {
+    return probeZ88dkPath(itemPath, mainStore.getState().isWindows ?? process.platform === "win32");
+  }
+
+  async getZ88dkPathSuggestions() {
+    return await getZ88dkPathSuggestions(process.env, {
+      isWindows: mainStore.getState().isWindows ?? process.platform === "win32"
+    });
+  }
+
+  async listZ88dkReleases(request?: { refresh?: boolean }) {
+    return await listZ88dkReleases({ refresh: !!request?.refresh });
+  }
+
+  async downloadZ88dkRelease(request: Z88dkReleaseDownloadRequest) {
+    return await downloadZ88dkRelease(request, {
+      isWindows: mainStore.getState().isWindows ?? process.platform === "win32"
+    });
+  }
+
+  getZ88dkDownloadProgress() {
+    return getZ88dkDownloadProgress();
+  }
+
+  cancelZ88dkDownload() {
+    cancelZ88dkDownload();
+  }
+
+  getZ88dkDefaultDownloadFolder() {
+    return path.join(os.homedir(), "KliveTools", "z88dk").replaceAll("\\", "/");
+  }
+
+  async validateZ88dkInstall(root: string) {
+    return await validateZ88dkInstall(root, mainStore.getState().isWindows ?? process.platform === "win32");
+  }
+
+  async applyZ88dkIntegration(request: Z88dkIntegrationApplyRequest) {
+    if (!request || typeof request !== "object") throw new Error("Invalid z88dk integration request.");
+    const { scope, root, version } = request;
+    if (scope !== "user" && scope !== "project") throw new Error("Invalid z88dk integration scope.");
+    if (!root) throw new Error("The z88dk install folder is required.");
+    if (scope === "project" && !mainStore.getState().project?.isKliveProject) {
+      throw new Error("You need a Klive project loaded to save z88dk project settings.");
+    }
+    if (scope === "user") {
+      appSettings.userSettings ??= {};
+      _.set(appSettings.userSettings, Z88DK_INSTALL_FOLDER, root);
+      if (version) _.set(appSettings.userSettings, Z88DK_VERSION, version);
+      else _.unset(appSettings.userSettings, Z88DK_VERSION);
+      this.dispatch(saveUserSettingAction({ ...appSettings.userSettings }));
+      saveAppSettings();
+      return;
+    }
+    this.dispatch(applyProjectSettingAction(Z88DK_INSTALL_FOLDER, root));
+    this.dispatch(applyProjectSettingAction(Z88DK_VERSION, version));
     await saveKliveProject();
   }
 

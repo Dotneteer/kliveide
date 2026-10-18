@@ -19,6 +19,14 @@ import type {
   SjasmplusReleaseListResult
 } from "./SjasmplusIntegration";
 import type {
+  Z88dkDownloadProgress,
+  Z88dkIntegrationApplyRequest,
+  Z88dkProbeResult,
+  Z88dkReleaseDownloadRequest,
+  Z88dkReleaseDownloadResult,
+  Z88dkReleaseListResult
+} from "./Z88dkIntegration";
+import type {
   BorielInstallResult,
   BorielSetupDecision,
   BorielSetupStatus
@@ -457,6 +465,74 @@ class MainApiImpl {
    * @param _request Validated integration settings.
    */
   async applySjasmplusIntegration(_request: SjasmplusIntegrationApplyRequest): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Probes a folder (or zcc itself) as a possible z88dk installation, without running it.
+   * @param _path Folder or executable path to probe.
+   */
+  async probeZ88dkPath(_path: string): Promise<Z88dkProbeResult> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Returns the z88dk installations found on this machine, each with its version.
+   */
+  async getZ88dkPathSuggestions(): Promise<Z88dkProbeResult[]> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Lists the z88dk GitHub releases, supported ones first (cached; `refresh` asks GitHub again).
+   * @param _request Release list options.
+   */
+  async listZ88dkReleases(_request?: { refresh?: boolean }): Promise<Z88dkReleaseListResult> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Downloads, installs and tests a z88dk release asset as `<destination>/<tag>`.
+   * @param _request Selected release asset and destination folder.
+   */
+  async downloadZ88dkRelease(_request: Z88dkReleaseDownloadRequest): Promise<Z88dkReleaseDownloadResult> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Reports what the running z88dk download is doing.
+   */
+  async getZ88dkDownloadProgress(): Promise<Z88dkDownloadProgress> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Cancels the running z88dk download.
+   */
+  async cancelZ88dkDownload(): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * The folder z88dk releases are downloaded into by default (`~/KliveTools/z88dk`).
+   */
+  async getZ88dkDefaultDownloadFolder(): Promise<string> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Validates a z88dk installation: reads zcc's version and compiles a one-line program.
+   * @param _root The install folder.
+   */
+  async validateZ88dkInstall(_root: string): Promise<Z88dkProbeResult> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Applies a validated z88dk installation to user or project settings.
+   * @param _request Validated integration settings.
+   */
+  async applyZ88dkIntegration(_request: Z88dkIntegrationApplyRequest): Promise<void> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 

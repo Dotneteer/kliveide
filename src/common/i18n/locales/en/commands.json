@@ -748,6 +748,10 @@
   "@commands.z88dk.removed": {
     "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). "
   },
+  "commands.z88dk.setupDescription": "Opens the z88dk integration dialog: set up the C compiler from an installation you have, or download one",
+  "@commands.z88dk.setupDescription": {
+    "context": "Description of the 'z88dk-setup' interactive command, shown by 'help'. z88dk is an external C compiler's name, always lower case."
+  },
   "commands.tilemap.nextOnly": "The tilemap exists on the ZX Spectrum Next only",
   "@commands.tilemap.nextOnly": {
     "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). A tilemap command on another machine."

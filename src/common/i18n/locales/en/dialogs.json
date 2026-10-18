@@ -1289,6 +1289,486 @@
       "arch": "Processor architecture, shown verbatim, e.g. 'x64', 'x86', 'arm64'"
     }
   },
+  "dialog.z88dk.title": "z88dk Integration",
+  "@dialog.z88dk.title": {
+    "context": "Title of the z88dk Integration dialog (sets up the external z88dk C compiler). z88dk is a product name, always lower case.",
+    "maxChars": 30
+  },
+  "dialog.z88dk.button.apply": "Apply",
+  "@dialog.z88dk.button.apply": {
+    "context": "Primary button of the z88dk Integration dialog (sets up the external z88dk C compiler): saves the tested installation folder to the settings.",
+    "maxChars": 8
+  },
+  "dialog.z88dk.button.testAgain": "Test again",
+  "@dialog.z88dk.button.testAgain": {
+    "context": "Secondary button of the z88dk Integration dialog (sets up the external z88dk C compiler): re-runs the test compile on the selected installation.",
+    "maxChars": 14
+  },
+  "dialog.z88dk.button.chooseFolder": "Choose folder...",
+  "@dialog.z88dk.button.chooseFolder": {
+    "context": "Button in the z88dk Integration dialog (sets up the external z88dk C compiler) (Local installation source) that opens a folder picker for an existing z88dk installation.",
+    "maxChars": 24
+  },
+  "dialog.z88dk.button.selectFolder": "Select folder...",
+  "@dialog.z88dk.button.selectFolder": {
+    "context": "Button in the z88dk Integration dialog (sets up the external z88dk C compiler) (Online source) that picks the folder z88dk is downloaded into.",
+    "maxChars": 23
+  },
+  "dialog.z88dk.button.download": "Download and install",
+  "@dialog.z88dk.button.download": {
+    "context": "Button in the z88dk Integration dialog (sets up the external z88dk C compiler) that downloads the selected z88dk release from GitHub, installs and tests it.",
+    "maxChars": 24
+  },
+  "dialog.z88dk.button.refresh": "Refresh",
+  "@dialog.z88dk.button.refresh": {
+    "context": "Button in the z88dk Integration dialog (sets up the external z88dk C compiler) that asks GitHub for the list of z88dk releases again.",
+    "maxChars": 12
+  },
+  "dialog.z88dk.row.inUse": "In use",
+  "@dialog.z88dk.row.inUse": {
+    "context": "Row label in the z88dk Integration dialog (sets up the external z88dk C compiler): the installation Klive uses now.",
+    "maxChars": 11
+  },
+  "dialog.z88dk.row.source": "Source",
+  "@dialog.z88dk.row.source": {
+    "context": "Row label in the z88dk Integration dialog (sets up the external z88dk C compiler): where the installation comes from (an existing folder or a download).",
+    "maxChars": 11
+  },
+  "dialog.z88dk.row.saveTo": "Save to",
+  "@dialog.z88dk.row.saveTo": {
+    "context": "Row label in the z88dk Integration dialog (sets up the external z88dk C compiler): which settings (user or project) Apply writes.",
+    "maxChars": 11
+  },
+  "dialog.z88dk.row.folder": "Folder",
+  "@dialog.z88dk.row.folder": {
+    "context": "Row label in the z88dk Integration dialog (sets up the external z88dk C compiler) (Local installation): the button that picks an installation folder.",
+    "maxChars": 11
+  },
+  "dialog.z88dk.row.detected": "Found",
+  "@dialog.z88dk.row.detected": {
+    "context": "Row label in the z88dk Integration dialog (sets up the external z88dk C compiler) (Local installation): z88dk installations found on this computer.",
+    "maxChars": 11
+  },
+  "dialog.z88dk.row.release": "Release",
+  "@dialog.z88dk.row.release": {
+    "context": "Row label in the z88dk Integration dialog (sets up the external z88dk C compiler) (Online): the z88dk version to download.",
+    "maxChars": 11
+  },
+  "dialog.z88dk.row.asset": "File",
+  "@dialog.z88dk.row.asset": {
+    "context": "Row label in the z88dk Integration dialog (sets up the external z88dk C compiler) (Online): the downloadable file of the selected release.",
+    "maxChars": 11
+  },
+  "dialog.z88dk.row.downloadTo": "Install to",
+  "@dialog.z88dk.row.downloadTo": {
+    "context": "Row label in the z88dk Integration dialog (sets up the external z88dk C compiler) (Online): the folder the release is installed into.",
+    "maxChars": 11
+  },
+  "dialog.z88dk.row.progress": "Progress",
+  "@dialog.z88dk.row.progress": {
+    "context": "Row label in the z88dk Integration dialog (sets up the external z88dk C compiler) (Online): the download's progress bar.",
+    "maxChars": 11
+  },
+  "dialog.z88dk.row.downloads": "Downloads",
+  "@dialog.z88dk.row.downloads": {
+    "context": "Row label in the z88dk Integration dialog (sets up the external z88dk C compiler) (Online, on Linux): explains that no download exists for this system.",
+    "maxChars": 11
+  },
+  "dialog.z88dk.row.project": "Releases",
+  "@dialog.z88dk.row.project": {
+    "context": "Row label in the z88dk Integration dialog (sets up the external z88dk C compiler) (Online, on Linux): a link to z88dk's release page.",
+    "maxChars": 11
+  },
+  "dialog.z88dk.row.toApply": "To apply",
+  "@dialog.z88dk.row.toApply": {
+    "context": "Row label in the z88dk Integration dialog (sets up the external z88dk C compiler): the installation Apply would save, and its test result.",
+    "maxChars": 11
+  },
+  "dialog.z88dk.source.ariaLabel": "Installation source",
+  "@dialog.z88dk.source.ariaLabel": {
+    "context": "Accessible name of the source radio group in the z88dk Integration dialog (sets up the external z88dk C compiler)."
+  },
+  "dialog.z88dk.source.local": "Local installation",
+  "@dialog.z88dk.source.local": {
+    "context": "Radio option in the z88dk Integration dialog (sets up the external z88dk C compiler): use a z88dk already on this computer.",
+    "maxChars": 22
+  },
+  "dialog.z88dk.source.online": "Download from GitHub",
+  "@dialog.z88dk.source.online": {
+    "context": "Radio option in the z88dk Integration dialog (sets up the external z88dk C compiler): download a z88dk release from GitHub.",
+    "maxChars": 22
+  },
+  "dialog.z88dk.scope.ariaLabel": "Settings to save to",
+  "@dialog.z88dk.scope.ariaLabel": {
+    "context": "Accessible name of the scope radio group in the z88dk Integration dialog (sets up the external z88dk C compiler)."
+  },
+  "dialog.z88dk.scope.user": "User settings",
+  "@dialog.z88dk.scope.user": {
+    "context": "Radio option in the z88dk Integration dialog (sets up the external z88dk C compiler) and the scope named in its status line: settings of this user, for every project.",
+    "maxChars": 20
+  },
+  "dialog.z88dk.scope.project": "Project settings",
+  "@dialog.z88dk.scope.project": {
+    "context": "Radio option in the z88dk Integration dialog (sets up the external z88dk C compiler) and the scope named in its status line: settings stored in the open project.",
+    "maxChars": 20
+  },
+  "dialog.z88dk.scope.none": "No settings",
+  "@dialog.z88dk.scope.none": {
+    "context": "Scope named in the z88dk Integration dialog (sets up the external z88dk C compiler) when nothing is configured.",
+    "maxChars": 20
+  },
+  "dialog.z88dk.scope.noProject": "Open a Klive project to save project settings.",
+  "@dialog.z88dk.scope.noProject": {
+    "context": "Note beside the scope choice in the z88dk Integration dialog (sets up the external z88dk C compiler) when no project is open."
+  },
+  "dialog.z88dk.status.noneText": "No z88dk installation is set up.",
+  "@dialog.z88dk.status.noneText": {
+    "context": "Status in the z88dk Integration dialog (sets up the external z88dk C compiler)'s 'In use' row when nothing is configured."
+  },
+  "dialog.z88dk.status.noneHint": "Choose an installation on this computer, or download one, then Apply.",
+  "@dialog.z88dk.status.noneHint": {
+    "context": "Hint under the empty status of the z88dk Integration dialog (sets up the external z88dk C compiler)."
+  },
+  "dialog.z88dk.status.configured": "Configured",
+  "@dialog.z88dk.status.configured": {
+    "context": "Status word in the z88dk Integration dialog (sets up the external z88dk C compiler)'s 'In use' row: an installation is set up.",
+    "maxChars": 14
+  },
+  "dialog.z88dk.status.notWorking": "Not working",
+  "@dialog.z88dk.status.notWorking": {
+    "context": "Status word in the z88dk Integration dialog (sets up the external z88dk C compiler)'s 'In use' row: the configured installation failed its test.",
+    "maxChars": 14
+  },
+  "dialog.z88dk.status.headlineInScope": "{headline} in {scope}",
+  "@dialog.z88dk.status.headlineInScope": {
+    "context": "Status line in the z88dk Integration dialog (sets up the external z88dk C compiler)'s 'In use' row, e.g. 'Configured in User settings'.",
+    "placeholders": {
+      "headline": "The translated status word: 'Configured' or 'Not working'",
+      "scope": "The translated settings scope: 'User settings' or 'Project settings'"
+    }
+  },
+  "dialog.z88dk.status.badgeSetUp": "Set up and working",
+  "@dialog.z88dk.status.badgeSetUp": {
+    "context": "Accessible name of the check icon in the z88dk Integration dialog (sets up the external z88dk C compiler)'s status line."
+  },
+  "dialog.z88dk.status.badgeSetUpTitle": "The configured z88dk passed its test compile.",
+  "@dialog.z88dk.status.badgeSetUpTitle": {
+    "context": "Tooltip of the check icon in the z88dk Integration dialog (sets up the external z88dk C compiler)'s status line."
+  },
+  "dialog.z88dk.status.badgeNotUsable": "Not usable",
+  "@dialog.z88dk.status.badgeNotUsable": {
+    "context": "Accessible name of the warning icon in the z88dk Integration dialog (sets up the external z88dk C compiler)'s status line."
+  },
+  "dialog.z88dk.status.notResolved": "(folder not set)",
+  "@dialog.z88dk.status.notResolved": {
+    "context": "Shown in the z88dk Integration dialog (sets up the external z88dk C compiler)'s status line in place of a folder path that is missing."
+  },
+  "dialog.z88dk.status.versionUnknown": "version unknown",
+  "@dialog.z88dk.status.versionUnknown": {
+    "context": "Shown in the z88dk Integration dialog (sets up the external z88dk C compiler)'s status line when the installation's version is not known."
+  },
+  "dialog.z88dk.version.unsupported": "{version} (not a supported version)",
+  "@dialog.z88dk.version.unsupported": {
+    "context": "A version in the z88dk Integration dialog (sets up the external z88dk C compiler) that is older than the oldest z88dk Klive supports (v2.4); it may still work.",
+    "placeholders": {
+      "version": "z88dk's version as zcc reports it, shown verbatim, e.g. 'v23854-4d530b6eb7-20251002'"
+    }
+  },
+  "dialog.z88dk.local.suggestion": "{path} · {version}",
+  "@dialog.z88dk.local.suggestion": {
+    "context": "A z88dk installation found on this computer, listed in the z88dk Integration dialog (sets up the external z88dk C compiler).",
+    "placeholders": {
+      "path": "A folder path, shown verbatim",
+      "version": "z88dk's version as zcc reports it, shown verbatim, e.g. 'v23854-4d530b6eb7-20251002'"
+    }
+  },
+  "dialog.z88dk.local.suggestionUnsupported": "{path} · {version} (not supported)",
+  "@dialog.z88dk.local.suggestionUnsupported": {
+    "context": "A z88dk installation found on this computer, listed in the z88dk Integration dialog (sets up the external z88dk C compiler), whose version is older than the oldest Klive supports.",
+    "placeholders": {
+      "path": "A folder path, shown verbatim",
+      "version": "z88dk's version as zcc reports it, shown verbatim, e.g. 'v23854-4d530b6eb7-20251002'"
+    }
+  },
+  "dialog.z88dk.local.useSuggestion": "Use {path}",
+  "@dialog.z88dk.local.useSuggestion": {
+    "context": "Tooltip of a found installation in the z88dk Integration dialog (sets up the external z88dk C compiler): clicking it selects and tests it.",
+    "placeholders": {
+      "path": "A folder path, shown verbatim"
+    }
+  },
+  "dialog.z88dk.online.releaseAriaLabel": "z88dk release",
+  "@dialog.z88dk.online.releaseAriaLabel": {
+    "context": "Accessible name of the release dropdown in the z88dk Integration dialog (sets up the external z88dk C compiler)."
+  },
+  "dialog.z88dk.online.assetAriaLabel": "Release file",
+  "@dialog.z88dk.online.assetAriaLabel": {
+    "context": "Accessible name of the file dropdown in the z88dk Integration dialog (sets up the external z88dk C compiler)."
+  },
+  "dialog.z88dk.online.noReleases": "No releases listed",
+  "@dialog.z88dk.online.noReleases": {
+    "context": "Placeholder in the z88dk Integration dialog (sets up the external z88dk C compiler)'s release dropdown when GitHub listed nothing."
+  },
+  "dialog.z88dk.online.noAssets": "No download for this system",
+  "@dialog.z88dk.online.noAssets": {
+    "context": "Placeholder in the z88dk Integration dialog (sets up the external z88dk C compiler)'s file dropdown when the release has nothing for this operating system."
+  },
+  "dialog.z88dk.online.showOlder": "Show older releases",
+  "@dialog.z88dk.online.showOlder": {
+    "context": "Checkbox in the z88dk Integration dialog (sets up the external z88dk C compiler): also list releases older than the oldest one Klive supports.",
+    "maxChars": 22
+  },
+  "dialog.z88dk.online.folderNotSelected": "No folder selected",
+  "@dialog.z88dk.online.folderNotSelected": {
+    "context": "Shown in the z88dk Integration dialog (sets up the external z88dk C compiler) in place of the download folder before one is chosen."
+  },
+  "dialog.z88dk.online.noDownload": "Not downloading",
+  "@dialog.z88dk.online.noDownload": {
+    "context": "Shown in the z88dk Integration dialog (sets up the external z88dk C compiler)'s progress row while no download runs."
+  },
+  "dialog.z88dk.online.noBinary": "z88dk publishes no ready-made build for Linux.",
+  "@dialog.z88dk.online.noBinary": {
+    "context": "Explanation in the z88dk Integration dialog (sets up the external z88dk C compiler) on Linux, where the Online source has nothing to download."
+  },
+  "dialog.z88dk.online.stepPackage": "1. Install z88dk from your distribution's packages or the snap store, or",
+  "@dialog.z88dk.online.stepPackage": {
+    "context": "First step of the instructions in the z88dk Integration dialog (sets up the external z88dk C compiler) on Linux. The numbering is part of the text."
+  },
+  "dialog.z88dk.online.stepBuild": "2. build it from source (see the {guide}),",
+  "@dialog.z88dk.online.stepBuild": {
+    "context": "Second step of the instructions in the z88dk Integration dialog (sets up the external z88dk C compiler) on Linux.",
+    "placeholders": {
+      "guide": "A link whose text is the translated 'installation guide'"
+    }
+  },
+  "dialog.z88dk.online.buildGuide": "installation guide",
+  "@dialog.z88dk.online.buildGuide": {
+    "context": "Link text in the z88dk Integration dialog (sets up the external z88dk C compiler)'s Linux instructions, pointing at z88dk's installation guide."
+  },
+  "dialog.z88dk.online.stepSelect": "3. then pick its folder under {local}.",
+  "@dialog.z88dk.online.stepSelect": {
+    "context": "Third step of the instructions in the z88dk Integration dialog (sets up the external z88dk C compiler) on Linux.",
+    "placeholders": {
+      "local": "The translated name of the 'Local installation' source, in italics"
+    }
+  },
+  "dialog.z88dk.releases.checking": "Asking GitHub for releases...",
+  "@dialog.z88dk.releases.checking": {
+    "context": "Status in the z88dk Integration dialog (sets up the external z88dk C compiler)'s GitHub row while the release list is being fetched."
+  },
+  "dialog.z88dk.releases.notChecked": "Releases not checked yet",
+  "@dialog.z88dk.releases.notChecked": {
+    "context": "Status in the z88dk Integration dialog (sets up the external z88dk C compiler)'s GitHub row before the release list is fetched."
+  },
+  "dialog.z88dk.releases.noneFound": "GitHub lists no releases",
+  "@dialog.z88dk.releases.noneFound": {
+    "context": "Status in the z88dk Integration dialog (sets up the external z88dk C compiler)'s GitHub row when the list is empty."
+  },
+  "dialog.z88dk.releases.suggested": "Suggested {tag}",
+  "@dialog.z88dk.releases.suggested": {
+    "context": "Status in the z88dk Integration dialog (sets up the external z88dk C compiler)'s GitHub row naming the release Klive recommends.",
+    "placeholders": {
+      "tag": "Release tag (version name), shown verbatim, e.g. 'v2.4'"
+    }
+  },
+  "dialog.z88dk.releases.noBinaryFor": "No supported release has a download for {platform}",
+  "@dialog.z88dk.releases.noBinaryFor": {
+    "context": "Status in the z88dk Integration dialog (sets up the external z88dk C compiler)'s GitHub row when nothing can be installed on this system.",
+    "placeholders": {
+      "platform": "Operating system name, shown verbatim: 'Windows', 'macOS' or 'Linux'"
+    }
+  },
+  "dialog.z88dk.release.label": "{tag} — {date}{supported, select, yes {} other { (not supported)}}",
+  "@dialog.z88dk.release.label": {
+    "context": "Entry of the release dropdown in the z88dk Integration dialog (sets up the external z88dk C compiler): the version, its release date and whether Klive supports it.",
+    "placeholders": {
+      "tag": "Release tag (version name), shown verbatim, e.g. 'v2.4'",
+      "date": "Release date as yyyy-mm-dd, shown verbatim",
+      "supported": "'yes' for a release Klive supports, otherwise 'no'; selects the ' (not supported)' mark"
+    }
+  },
+  "dialog.z88dk.asset.labelWithSize": "{name} · {size}",
+  "@dialog.z88dk.asset.labelWithSize": {
+    "context": "Entry of the file dropdown in the z88dk Integration dialog (sets up the external z88dk C compiler), with the file's size.",
+    "placeholders": {
+      "name": "File name, shown verbatim",
+      "size": "File size with unit, e.g. '71.9 MB'"
+    }
+  },
+  "dialog.z88dk.progress.downloading": "Downloaded {received}",
+  "@dialog.z88dk.progress.downloading": {
+    "context": "Progress label in the z88dk Integration dialog (sets up the external z88dk C compiler) when the download's total size is unknown.",
+    "placeholders": {
+      "received": "File size with unit, e.g. '71.9 MB'"
+    },
+    "maxChars": 28
+  },
+  "dialog.z88dk.progress.downloadingOf": "{received} of {total}",
+  "@dialog.z88dk.progress.downloadingOf": {
+    "context": "Progress label in the z88dk Integration dialog (sets up the external z88dk C compiler) during the download.",
+    "placeholders": {
+      "received": "File size with unit, e.g. '71.9 MB'",
+      "total": "File size with unit, e.g. '71.9 MB'"
+    },
+    "maxChars": 28
+  },
+  "dialog.z88dk.progress.verifying": "Checking the download...",
+  "@dialog.z88dk.progress.verifying": {
+    "context": "Progress label in the z88dk Integration dialog (sets up the external z88dk C compiler) while the downloaded file's checksum is checked.",
+    "maxChars": 28
+  },
+  "dialog.z88dk.progress.extracting": "Unpacking...",
+  "@dialog.z88dk.progress.extracting": {
+    "context": "Progress label in the z88dk Integration dialog (sets up the external z88dk C compiler) while the downloaded archive is unpacked.",
+    "maxChars": 28
+  },
+  "dialog.z88dk.progress.testing": "Testing the compiler...",
+  "@dialog.z88dk.progress.testing": {
+    "context": "Progress label in the z88dk Integration dialog (sets up the external z88dk C compiler) while the new installation's test compile runs.",
+    "maxChars": 28
+  },
+  "dialog.z88dk.apply.nothingSelected": "Nothing selected",
+  "@dialog.z88dk.apply.nothingSelected": {
+    "context": "Shown in the z88dk Integration dialog (sets up the external z88dk C compiler)'s 'To apply' row before an installation is chosen."
+  },
+  "dialog.z88dk.validation.probing": "Checking...",
+  "@dialog.z88dk.validation.probing": {
+    "context": "Test status in the z88dk Integration dialog (sets up the external z88dk C compiler) while a folder is checked.",
+    "maxChars": 16
+  },
+  "dialog.z88dk.validation.downloading": "Downloading...",
+  "@dialog.z88dk.validation.downloading": {
+    "context": "Test status in the z88dk Integration dialog (sets up the external z88dk C compiler) during a download.",
+    "maxChars": 16
+  },
+  "dialog.z88dk.validation.testing": "Testing...",
+  "@dialog.z88dk.validation.testing": {
+    "context": "Test status in the z88dk Integration dialog (sets up the external z88dk C compiler) while the test compile runs.",
+    "maxChars": 16
+  },
+  "dialog.z88dk.validation.saving": "Saving...",
+  "@dialog.z88dk.validation.saving": {
+    "context": "Test status in the z88dk Integration dialog (sets up the external z88dk C compiler) while Apply saves the settings.",
+    "maxChars": 16
+  },
+  "dialog.z88dk.validation.notTested": "Not tested",
+  "@dialog.z88dk.validation.notTested": {
+    "context": "Test status in the z88dk Integration dialog (sets up the external z88dk C compiler) before a test ran.",
+    "maxChars": 16
+  },
+  "dialog.z88dk.validation.passed": "Passed",
+  "@dialog.z88dk.validation.passed": {
+    "context": "Test status in the z88dk Integration dialog (sets up the external z88dk C compiler): the test compile worked.",
+    "maxChars": 16
+  },
+  "dialog.z88dk.validation.passedUnsupported": "Passed (old version)",
+  "@dialog.z88dk.validation.passedUnsupported": {
+    "context": "Test status in the z88dk Integration dialog (sets up the external z88dk C compiler): the test compile worked, but the version is older than the oldest Klive supports.",
+    "maxChars": 22
+  },
+  "dialog.z88dk.validation.failed": "Failed",
+  "@dialog.z88dk.validation.failed": {
+    "context": "Test status in the z88dk Integration dialog (sets up the external z88dk C compiler): the test compile did not work.",
+    "maxChars": 16
+  },
+  "dialog.z88dk.hint.pickFolder": "Choose a z88dk folder, or download a release.",
+  "@dialog.z88dk.hint.pickFolder": {
+    "context": "Hint in the z88dk Integration dialog (sets up the external z88dk C compiler)'s 'To apply' row when nothing is selected."
+  },
+  "dialog.z88dk.hint.testAgain": "Press Test again to check this installation.",
+  "@dialog.z88dk.hint.testAgain": {
+    "context": "Hint in the z88dk Integration dialog (sets up the external z88dk C compiler)'s 'To apply' row when the selection was not tested yet."
+  },
+  "dialog.z88dk.message.configuredFailed": "The configured z88dk installation is missing or failed its test.",
+  "@dialog.z88dk.message.configuredFailed": {
+    "context": "Message in the z88dk Integration dialog (sets up the external z88dk C compiler) (and in a failed C build) when the configured installation does not work."
+  },
+  "dialog.z88dk.message.configuredPassed": "The configured installation works. Choose another one only to replace it.",
+  "@dialog.z88dk.message.configuredPassed": {
+    "context": "Hint in the z88dk Integration dialog (sets up the external z88dk C compiler) after the configured installation passed its test on opening."
+  },
+  "dialog.z88dk.message.configuredFailedHint": "Choose a working installation, or download one, then Apply.",
+  "@dialog.z88dk.message.configuredFailedHint": {
+    "context": "Hint in the z88dk Integration dialog (sets up the external z88dk C compiler) after the configured installation failed its test on opening."
+  },
+  "dialog.z88dk.message.replacementReady": "The selected installation works; Apply replaces the broken one.",
+  "@dialog.z88dk.message.replacementReady": {
+    "context": "Note in the z88dk Integration dialog (sets up the external z88dk C compiler)'s status line when a working replacement was tested."
+  },
+  "dialog.z88dk.message.candidateRejected": "The selected installation failed; the configured one stays in use.",
+  "@dialog.z88dk.message.candidateRejected": {
+    "context": "Note in the z88dk Integration dialog (sets up the external z88dk C compiler)'s status line when the newly tested installation failed."
+  },
+  "dialog.z88dk.message.validationPassed": "The test compile worked. Apply to use this installation.",
+  "@dialog.z88dk.message.validationPassed": {
+    "context": "Message in the z88dk Integration dialog (sets up the external z88dk C compiler) after a successful test."
+  },
+  "dialog.z88dk.message.validationPassedUnsupported": "The test compile worked, but this z88dk is older than v2.4, the oldest version Klive supports: debugging may not work. Apply to use it anyway.",
+  "@dialog.z88dk.message.validationPassedUnsupported": {
+    "context": "Message in the z88dk Integration dialog (sets up the external z88dk C compiler) after a successful test of an old version. 'v2.4' is a version name."
+  },
+  "dialog.z88dk.message.validationFailed": "The test compile failed.",
+  "@dialog.z88dk.message.validationFailed": {
+    "context": "Message in the z88dk Integration dialog (sets up the external z88dk C compiler) after a failed test that gave no reason."
+  },
+  "dialog.z88dk.message.probeFailed": "The selected folder is not a z88dk installation.",
+  "@dialog.z88dk.message.probeFailed": {
+    "context": "Message in the z88dk Integration dialog (sets up the external z88dk C compiler) when the picked folder is not an installation."
+  },
+  "dialog.z88dk.message.downloadFailed": "The download failed.",
+  "@dialog.z88dk.message.downloadFailed": {
+    "context": "Message in the z88dk Integration dialog (sets up the external z88dk C compiler) when the download failed without a reason."
+  },
+  "dialog.z88dk.message.downloadCancelled": "The download was cancelled; nothing was installed.",
+  "@dialog.z88dk.message.downloadCancelled": {
+    "context": "Message in the z88dk Integration dialog (sets up the external z88dk C compiler) after the user pressed Cancel during a download."
+  },
+  "dialog.z88dk.message.applySaved": "Saved.",
+  "@dialog.z88dk.message.applySaved": {
+    "context": "Message in the z88dk Integration dialog (sets up the external z88dk C compiler) after Apply saved the settings."
+  },
+  "dialog.z88dk.discard.title": "Discard the selection?",
+  "@dialog.z88dk.discard.title": {
+    "context": "Title of the question the z88dk Integration dialog (sets up the external z88dk C compiler) asks when it is closed with a tested installation that was not applied."
+  },
+  "dialog.z88dk.discard.notApplied": "This tested installation has not been applied:",
+  "@dialog.z88dk.discard.notApplied": {
+    "context": "Line of the discard question, above the folder path."
+  },
+  "dialog.z88dk.discard.unchanged": "Closing keeps the current settings.",
+  "@dialog.z88dk.discard.unchanged": {
+    "context": "Line of the discard question, below the folder path."
+  },
+  "dialog.z88dk.discard.confirm": "Discard",
+  "@dialog.z88dk.discard.confirm": {
+    "context": "Confirm button of the discard question.",
+    "maxChars": 12
+  },
+  "dialog.z88dk.discard.keepEditing": "Keep editing",
+  "@dialog.z88dk.discard.keepEditing": {
+    "context": "Cancel button of the discard question.",
+    "maxChars": 14
+  },
+  "dialog.z88dk.unsupported.title": "Use an unsupported z88dk?",
+  "@dialog.z88dk.unsupported.title": {
+    "context": "Title of the question the z88dk Integration dialog (sets up the external z88dk C compiler) asks before applying a version older than the oldest one Klive supports."
+  },
+  "dialog.z88dk.unsupported.lines": "This z88dk ({version}) is older than v2.4, the oldest version Klive supports:",
+  "@dialog.z88dk.unsupported.lines": {
+    "context": "Line of the unsupported-version question, above the folder path. 'v2.4' is a version name.",
+    "placeholders": {
+      "version": "z88dk's version as zcc reports it, shown verbatim, e.g. 'v23854-4d530b6eb7-20251002'"
+    }
+  },
+  "dialog.z88dk.unsupported.after": "It builds, but breakpoints and stepping depend on debug data that changes between versions and may not work.",
+  "@dialog.z88dk.unsupported.after": {
+    "context": "Line of the unsupported-version question, below the folder path."
+  },
+  "dialog.z88dk.unsupported.confirm": "Use it",
+  "@dialog.z88dk.unsupported.confirm": {
+    "context": "Confirm button of the unsupported-version question.",
+    "maxChars": 12
+  },
   "dialog.boriel.intro": "Klive comes with Boriel BASIC {version}, a ZX BASIC compiler you can use instead of Klive BASIC. Install it now? You can also do it later from Settings › Integrations.",
   "@dialog.boriel.intro": {
     "context": "Opening paragraph of the Boriel BASIC setup dialog (installs or picks the external Boriel BASIC compiler) when it is offered at startup. Boriel BASIC and Klive BASIC are product names. 'Settings › Integrations' names a page of the Settings dialog; use its translated name.",
