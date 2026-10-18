@@ -20,6 +20,35 @@ Guidance for AI assistants working in this workspace.
 - Run focused tests first, then `npm run build:check`; run `npm run lint:renderer` when touching renderer React code.
 - After moving or deleting component files, scan both alias and relative imports, then run `npx electron-vite build --config build/electron.vite.config.ts` to catch Vite import-analysis errors.
 
+## Changesets And Releases
+
+- User-visible changes are recorded as changesets in `.changes/`, **never by editing
+  `CHANGELOG.md`** (it has no `## Unreleased` section any more). Read `.ai/changesets-guide.md`
+  before writing one; the format is `.changes/README.md`.
+- **Whenever the user asks for a commit, the commit includes a changeset** — create it with
+  `npm run change -- --type <feature|fix|breaking|known-issue|internal> [--issue <n>] --text "..."`
+  before committing, written in the CHANGELOG's voice (bold lead-in for a feature, a full sentence
+  saying what was wrong for a fix).
+- **Exception: a commit that completes only some steps or phases of a longer plan gets no
+  changeset.** The changeset comes with the commit that completes the plan and describes the
+  plan's result as a whole, not its last step. Say in one line that it is deferred and why.
+- **The same applies without being asked** when a plan is finished or a bug is fixed: the commit
+  that delivers it carries the changeset.
+- **If it is not clear whether a changeset is needed, ask the user before committing** — e.g. the
+  change may not be user-visible (refactor, tests, build, CI, docs only), it is unclear whether the
+  work completes a plan or only a step of it, or it could be a `fix` or a `feature`. Offer the
+  choices, including an `internal` changeset (no CHANGELOG entry, no version bump) and none.
+- **One changeset per change, not per commit.** When a later commit on the same branch extends or
+  corrects the same change, edit the existing changeset instead of adding a second one.
+- **Every time a changeset is created or edited, show it to the user:** its path, its kind —
+  **minor** or **patch** (or *none* for `internal` / `known-issue`) — and its full content in a
+  fenced block. `npm run change` prints exactly this; after a hand edit, run
+  `npm run change -- --show <file>`.
+- Releases: `npm run release:prepare` opens the release PR; merging it runs
+  `.github/workflows/release.yml`. Read `.ai/release-guide.md` first. `release-artifacts.yml` is the
+  author's **private** build (workflow artifacts only) and must never tag, release or deploy. The
+  plan is `.plans/RELEASE_AUTOMATION_PLAN.md`.
+
 ## Documentation Site (`docs/`)
 
 The docs site is a **separate npm package** with its own `package.json` and

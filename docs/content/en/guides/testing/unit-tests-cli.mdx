@@ -244,7 +244,8 @@ ten times faster than real time.
 ## GitHub Actions
 
 The job below downloads the Linux build, extracts it and runs the tests. The command line ships with
-Klive 0.64.0 and later; replace the version with the release you want.
+Klive 0.64.0 and later. The URL below names the latest release; pin the version you want, so a new
+release does not change your build unannounced.
 
 ```yaml
 name: Z80 tests
@@ -260,7 +261,7 @@ jobs:
       - name: Get Klive
         run: |
           curl -sSL -o klive.AppImage \
-            https://github.com/Dotneteer/kliveide/releases/download/v0.64.0/KliveIdeSetup-0.64.0-x86_64.AppImage
+            https://github.com/Dotneteer/kliveide/releases/download/v@KLIVE_RELEASE@/KliveIdeSetup-@KLIVE_RELEASE@-x86_64.AppImage
           chmod +x klive.AppImage
           ./klive.AppImage --appimage-extract > /dev/null
           echo "$PWD/squashfs-root/resources/cli" >> "$GITHUB_PATH"
@@ -288,7 +289,7 @@ z80-tests:
   image: ubuntu:24.04
   before_script:
     - apt-get update && apt-get install -y curl libnss3 libgbm1 libasound2t64 libgtk-3-0
-    - curl -sSL -o klive.AppImage https://github.com/Dotneteer/kliveide/releases/download/v0.64.0/KliveIdeSetup-0.64.0-x86_64.AppImage
+    - curl -sSL -o klive.AppImage https://github.com/Dotneteer/kliveide/releases/download/v@KLIVE_RELEASE@/KliveIdeSetup-@KLIVE_RELEASE@-x86_64.AppImage
     - chmod +x klive.AppImage && ./klive.AppImage --appimage-extract > /dev/null
   script:
     - squashfs-root/resources/cli/klive test --junit results.xml --coverage coverage.lcov

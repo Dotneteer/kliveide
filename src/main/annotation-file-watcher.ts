@@ -13,6 +13,12 @@ import path from "path";
  * over the old one replaces the inode a file watch is attached to, and the watch goes quiet. A folder
  * watch sees both kinds of save. The IDE's own writes are reported too; the renderer tells them apart
  * by comparing what is on disk with the model it holds (`reloadAnnotationSessionFromDisk`).
+ *
+ * On macOS the folder watch is an FSEvents stream, which starts asynchronously: a change made in
+ * the first moments after `watch()` (longer when the machine is busy writing files) may never be
+ * reported. Changes after that arrive within ~50 ms even under heavy file churn. For the IDE that
+ * window is harmless - nothing edits a sidecar the instant the IDE opens it - but a test must wait
+ * for the watch to be live before it writes (test/main/annotation-file-watcher.test.ts).
  */
 
 /** How long a burst of change events for one file is gathered into one notification */

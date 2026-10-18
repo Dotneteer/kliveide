@@ -1,6 +1,21 @@
+# Builds the five install kits and uploads them as workflow artifacts - nothing else.
+#
+# Run by hand (workflow_dispatch), it is the author's PRIVATE build: the kits stay workflow
+# artifacts, named after package.json's version, and are never tagged, released or deployed (D14 and
+# D16 of .plans/RELEASE_AUTOMATION_PLAN.md). Keep it that way: all publishing lives in release.yml,
+# which reuses these jobs through workflow_call and publishes their artifacts itself.
+
 name: Build artifacts
 
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      ref:
+        description: The commit to build (release.yml passes the release commit)
+        type: string
+        required: false
+        default: ""
 
 jobs:
   build-on-windows:
@@ -9,6 +24,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -94,6 +111,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -174,6 +193,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -239,6 +260,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -376,6 +399,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v7

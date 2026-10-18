@@ -2857,6 +2857,9 @@ drift. Change a neutral or the default accent in the app, and the site changes w
   behind). Its colours sit beside the Z80 ones in `docs/next.config.mjs`: statements share the
   assembler's keyword blue, types are teal, built-in and library functions a pale yellow that only
   this grammar produces (the highlighting check counts it), and `ASM` blocks embed the Z80 grammar.
+- **The language menus size to their longest name** (`width: max-content`, a 16rem minimum, rows
+  that never wrap), in the landing header and the docs navbar alike: a fixed narrow width wrapped
+  "Português (Portugal)" and its code onto two lines.
 - **A screenshot's callouts are HTML, never pixels:** `<Shot markers>` draws numbered badges from
   the harness's sidecar, and the numbered list under the figure is styled like the badges, so the
   text translates with the page.

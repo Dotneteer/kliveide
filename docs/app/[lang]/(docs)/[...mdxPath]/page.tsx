@@ -15,6 +15,7 @@ import { DEFAULT_LOCALE, LOCALES } from "../../../../i18n/locales.mjs";
 import { uiTranslator } from "../../../../i18n/ui";
 import { useMDXComponents as getMDXComponents } from "../../../../mdx-components";
 import Shot from "../../../../page-components/Shot";
+import { replaceReleaseToken } from "../../../../remark-release-version.mjs";
 
 export const generateStaticParams = generateStaticParamsFor("mdxPath", "lang");
 
@@ -63,7 +64,7 @@ export default async function Page(props: PageProps) {
   const outdated = isOutdated(params.lang, params.mdxPath);
   const t = uiTranslator(params.lang);
   return (
-    <Wrapper toc={toc} metadata={metadata} sourceCode={sourceCode}>
+    <Wrapper toc={toc} metadata={metadata} sourceCode={replaceReleaseToken(sourceCode)}>
       {outdated && (
         <p className="site-outdated">
           <strong>{t("outdated.title")}</strong>{" "}

@@ -1,0 +1,138 @@
+# Publishes a Klive release (.plans/RELEASE_AUTOMATION_PLAN.md §5, .ai/release-guide.md).
+#
+# `npm run release:prepare` opens a "Release v<x.y.z>" PR. Merging it lands here:
+#
+#   verify -> build (the five install kits, release-artifacts.yml) -> publish (tag, GitHub release
+#   with the CHANGELOG section as notes, kits + SHA256SUMS.txt) -> docs (redeploy kliveide.net, so
+#   the landing page shows the new version and download links) -> smoke (the live site and the kits)
+#
+# Nothing is tagged or published before all five builds succeed. A failed run is resumed with
+# "Run workflow" on master and dry_run off; every step is idempotent.
+#
+# Dry run: "Run workflow" on a release/v* branch with dry_run on builds everything, checks the kit
+# set and the notes, builds the would-be site, and publishes nothing.
+
+name: Release
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Build and check everything, publish nothing
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    # A squash merge's message is the PR title ("Release v0.64.0 (#1470)"); a merge commit's names
+    # the branch. Every other push to master skips the whole workflow.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      startsWith(github.event.head_commit.message, 'Release v') ||
+      contains(github.event.head_commit.message, '/release/v')
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.verify.outputs.version }}
+      tag: ${{ steps.verify.outputs.tag }}
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.x
+
+      - name: Publish only from master
+        if: ${{ github.event_name == 'workflow_dispatch' && !inputs.dry_run && github.ref != 'refs/heads/master' }}
+        run: |
+          echo "::error::A real release runs on master; run a dry run on ${GITHUB_REF_NAME}, or merge the release PR."
+          exit 1
+
+      # Dependency-free: version untagged, CHANGELOG section present, no pending changesets,
+      # package.json and the lockfile at the version.
+      - name: Check the release commit
+        id: verify
+        run: node scripts/release.cjs verify
+
+  build:
+    needs: verify
+    uses: ./.github/workflows/release-artifacts.yml
+    with:
+      ref: ${{ github.sha }}
+
+  publish:
+    needs: [verify, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.x
+
+      - name: Download the kits
+        uses: actions/download-artifact@v8
+        with:
+          path: kits
+          merge-multiple: true
+
+      - name: Publish the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          node scripts/release.cjs publish
+          --version "${{ needs.verify.outputs.version }}"
+          --dir kits
+          --target "${{ github.sha }}"
+          --notes-out "$RUNNER_TEMP/release-notes.md"
+          ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '--dry-run' || '' }}
+
+      - name: Keep the notes and checksums of a dry run
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-dry-run
+          path: |
+            ${{ runner.temp }}/release-notes.md
+            kits/SHA256SUMS.txt
+
+  docs:
+    needs: [verify, publish]
+    uses: ./.github/workflows/deploy-doc.yml
+    permissions:
+      contents: write
+    with:
+      deploy: ${{ !(github.event_name == 'workflow_dispatch' && inputs.dry_run) }}
+      release-tag: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && needs.verify.outputs.tag || '' }}
+
+  smoke:
+    needs: [verify, docs]
+    if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.dry_run) }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.x
+
+      # GitHub Pages takes a minute or two to serve a deploy; the script retries.
+      - name: Check kliveide.net and the downloads
+        run: node scripts/release.cjs smoke --version "${{ needs.verify.outputs.version }}"

@@ -10,15 +10,19 @@
  *
  * The CI checkout fetches tags (`fetch-depth: 0` in deploy-doc.yml), so `git describe` sees them.
  *
+ * `KLIVE_SITE_RELEASE_TAG=v<x.y.z>` builds the site as if that release existed (the release
+ * workflow's dry run): the tag is not looked up and the downloads come from the naming pattern.
+ *
  * Usage: node scripts/build-doc-site-info.cjs
  */
 const { execFileSync } = require("node:child_process");
 const { mkdirSync, writeFileSync } = require("node:fs");
 const { join } = require("node:path");
 
+const { REPO, downloadsFrom, expectedAssets } = require("./release-assets.cjs");
+
 const repoRoot = join(__dirname, "..");
 const outFile = join(repoRoot, "docs", "generated", "site-info.json");
-const REPO = "Dotneteer/kliveide";
 
 function latestTag() {
   try {
@@ -30,35 +34,6 @@ function latestTag() {
   } catch {
     return undefined;
   }
-}
-
-/** The kit for each platform, from the release's asset names. */
-function downloadsFrom(names, tag) {
-  const url = (name) => `https://github.com/${REPO}/releases/download/${tag}/${name}`;
-  const find = (re) => {
-    const name = names.find((n) => re.test(n));
-    return name ? url(name) : undefined;
-  };
-  return {
-    macArm64: find(/arm64\.pkg$/),
-    macX64: find(/x64\.pkg$/),
-    windowsX64: find(/x64\.exe$/),
-    windowsPortable: find(/Portable.*\.zip$/),
-    linuxX64: find(/(x86_64|x64)\.AppImage$/),
-    linuxArm64: find(/arm64\.AppImage$/)
-  };
-}
-
-/** The asset names the release workflow produces, for when the API cannot be asked. */
-function expectedAssets(version) {
-  return [
-    `KliveIdeSetup-${version}-arm64.pkg`,
-    `KliveIdeSetup-${version}-x64.pkg`,
-    `KliveIdeSetup-${version}-x64.exe`,
-    `KliveIde-Portable-${version}-x64.zip`,
-    `KliveIdeSetup-${version}-x86_64.AppImage`,
-    `KliveIdeSetup-${version}-arm64.AppImage`
-  ];
 }
 
 async function fetchRelease(tag) {
@@ -76,7 +51,8 @@ async function fetchRelease(tag) {
 }
 
 async function buildDocSiteInfo() {
-  const tag = latestTag();
+  const override = process.env.KLIVE_SITE_RELEASE_TAG?.trim();
+  const tag = override || latestTag();
   const version = tag ? tag.replace(/^v/, "") : undefined;
   let info = {
     latestRelease: version ?? "0.0.0",
@@ -87,12 +63,12 @@ async function buildDocSiteInfo() {
     source: "none"
   };
   if (tag) {
-    const release = await fetchRelease(tag);
+    const release = override ? undefined : await fetchRelease(tag);
     info = {
       ...info,
       releaseDate: release?.date ?? null,
       downloads: downloadsFrom(release?.names ?? expectedAssets(version), tag),
-      source: release ? "github-api" : "naming-pattern"
+      source: release ? "github-api" : override ? "KLIVE_SITE_RELEASE_TAG" : "naming-pattern"
     };
   }
   mkdirSync(join(repoRoot, "docs", "generated"), { recursive: true });
