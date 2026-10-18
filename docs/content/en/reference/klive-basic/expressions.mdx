@@ -82,7 +82,7 @@ The bitwise operators work on the bits of integral values. Each has a symbol for
 - A `Fixed` or `Float` left operand of `SHL` or `SHR` is converted to `ULong`.
 - `SHR` keeps the sign of a signed value (an arithmetic shift) and shifts zeros into an unsigned one (a logical shift).
 
-```text
+```zxbasic
 DIM a, b AS UByte
 a = $AC : b = $4A
 PRINT a BAND b; " "; a BOR b; " "; a BXOR b; " "; BNOT b
@@ -112,7 +112,7 @@ Both operands of `AND` and `OR` are always evaluated, the left one first: there 
 
 `@` is how a program gives the address of code or data to `USR`, `POKE`, `PEEK` or `DIM ... AT`:
 
-```text
+```zxbasic
 DIM n AS UByte = 42
 POKE @n, 43
 PRINT n
@@ -145,7 +145,7 @@ An operand whose type is not yet known takes the other operand's type.
 
 `CAST(type, expr)` converts a numeric value to the named type explicitly:
 
-```text
+```zxbasic
 DIM f AS Float = 3.99
 DIM i AS Integer = -1
 PRINT CAST(UByte, f); " "; CAST(UInteger, i); " "; CAST(Byte, 200)

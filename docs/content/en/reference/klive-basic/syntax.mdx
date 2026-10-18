@@ -21,7 +21,7 @@ The standard library declares its routines case-insensitive, so `LEFT`, `left` a
 | `' text` | Line | Needs no `:` before it. |
 | `/' text '/` | Block | Can span lines and can sit inside a statement, which continues after it. Block comments nest. |
 
-```text
+```zxbasic
 DIM total AS UInteger   ' the running sum
 total = total + /' an inline note '/ 1 : REM a REM after a statement needs a colon
 /' A block comment
@@ -32,7 +32,7 @@ total = total + /' an inline note '/ 1 : REM a REM after a statement needs a col
 
 A program is a sequence of lines. A line has an optional label or line number, then zero or more statements separated by `:`. Empty statements (`::`) are allowed.
 
-```text
+```zxbasic
 a = 1 : b = 2 : PRINT a + b
 ```
 
@@ -42,7 +42,7 @@ The debugger steps through a program one statement at a time, so each statement 
 
 A `_` or `\` as the last token of a line joins the next line to it. A `'` or `REM` comment may follow the continuation mark. A continued line cannot start with a label.
 
-```text
+```zxbasic
 PRINT "Klive "; _
       "BASIC"
 ```
@@ -56,7 +56,7 @@ Both are optional, and both declare a label that `GOTO`, `GOSUB`, `RESTORE` and 
 
 Labels are global, even when declared inside a `SUB` or `FUNCTION`.
 
-```text
+```zxbasic
 GOSUB greet
 GOTO 100
 PRINT "never printed"

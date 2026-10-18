@@ -8,7 +8,7 @@ An `ASM` block puts Z80 assembly into a BASIC program. The block can work on the
 
 ## ASM blocks
 
-```text
+```zxbasic
 ASM
   assembly lines
 END ASM
@@ -16,7 +16,7 @@ END ASM
 
 `ASM` and `END ASM` each stand on a line of their own. Inside the block, `;` starts a comment.
 
-```text
+```zxbasic
 DIM n AS UByte = 42
 ASM
     ld hl,_n
@@ -42,7 +42,7 @@ Klive BASIC accepts two assembler dialects in `ASM` blocks:
 
 To use Klive's dialect for the whole program, add `'@asm-dialect klive` to the header. To use it for some blocks only, put them between these lines:
 
-```text
+```zxbasic
 #pragma push(asm_dialect)
 #pragma asm_dialect = klive
 ' ... ASM blocks in Klive's dialect ...
@@ -86,7 +86,7 @@ Local variables and parameters have no names. They live in the routine's stack f
 
 From BASIC, `@variable` and `@label` give addresses, and `USR @label` calls code. To address data or code inside an `ASM` block from BASIC, put a label on the line just before the block:
 
-```text
+```zxbasic
 DIM r AS UInteger
 r = USR @setbc
 PRINT r
@@ -120,7 +120,7 @@ A `SUB` or `FUNCTION` follows one of two calling conventions.
 - Further parameters are pushed as for `STDCALL`: the return address is at `(sp+0)`, the second parameter at `(sp+2)`, and so on. The routine must remove them itself. A `FASTCALL` routine with more than one parameter raises warning W160.
 - When the body is only an `ASM` block, the routine has no frame and no local variables, and the block needs no `ret`.
 
-```text
+```zxbasic
 FUNCTION FASTCALL hMirror(BYVAL number AS UByte) AS UByte
     ASM
         ld b,8          ; A holds the byte; C collects the mirror
@@ -157,7 +157,7 @@ A call to a BASIC routine preserves no register except IX. IY must hold `$5C3A` 
 
 `#define` macros are expanded inside `ASM` blocks, as text. A macro name, written in its exact case, is replaced by its body outside strings and `;` comments; a function-like macro's arguments are substituted. Libraries use this to name instruction sequences:
 
-```text
+```zxbasic
 #define BORDER_RED ld a,2 : out ($fe),a
 
 ASM

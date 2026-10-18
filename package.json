@@ -98,6 +98,7 @@
     "doc:check:highlighting": "node scripts/check-docs-highlighting.cjs",
     "doc:serve": "node scripts/serve-docs.cjs",
     "doc:shots": "node scripts/doc-shots/run.cjs",
+    "doc:grammar": "node scripts/build-doc-zxbasic-grammar.cjs",
     "bootstrap:ci": "npm ci",
     "check:lockfile": "rm -rf node_modules && npm ci",
     "fix:lockfile": "rm -rf node_modules && npm install && git diff --stat package-lock.json"

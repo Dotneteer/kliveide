@@ -1,6 +1,11 @@
 import nextra from "nextra";
 import { createHighlighter } from "shiki";
+import { readFileSync } from "node:fs";
 import { DEFAULT_LOCALE, LOCALES } from "./i18n/locales.mjs";
+
+// ZX BASIC (```zxbasic), generated from the IDE's own word lists by
+// scripts/build-doc-zxbasic-grammar.cjs; test/docs/zxbasic-grammar.test.ts keeps it current.
+const zxbasicLanguage = JSON.parse(readFileSync(new URL("./zxbasic.tmLanguage.json", import.meta.url), "utf8"));
 
 // Z80 assembly language grammar embedded directly to avoid file system operations
 const z80Language = {
@@ -269,6 +274,53 @@ const customTheme = {
         foreground: "#B5890F"
       }
     },
+    // ZX BASIC (```zxbasic). Statements share the Z80 keyword colour; built-in and library
+    // functions get their own, so check-docs-highlighting.cjs can tell the grammar applied.
+    {
+      scope: ["keyword.control.zxbasic"],
+      settings: {
+        foreground: "#569cd6",
+        fontStyle: "bold"
+      }
+    },
+    {
+      scope: ["keyword.operator.word.zxbasic", "keyword.control.directive.zxbasic"],
+      settings: {
+        foreground: "#c586c0",
+        fontStyle: "normal"
+      }
+    },
+    {
+      scope: ["support.function.zxbasic"],
+      settings: {
+        foreground: "#DCDCAA"
+      }
+    },
+    {
+      scope: ["storage.type.zxbasic"],
+      settings: {
+        foreground: "#4EC9B0"
+      }
+    },
+    {
+      scope: ["entity.name.label.zxbasic", "constant.numeric.line.zxbasic"],
+      settings: {
+        foreground: "#B5890F"
+      }
+    },
+    {
+      scope: ["constant.character.escape.zxbasic"],
+      settings: {
+        foreground: "#ff6000"
+      }
+    },
+    {
+      scope: ["keyword.operator.zxbasic"],
+      settings: {
+        foreground: "#a4a4a4",
+        fontStyle: "normal"
+      }
+    },
     // JavaScript and general syntax highlighting
     {
       scope: [
@@ -374,6 +426,14 @@ const withNextra = nextra({
               name: "z80klive",
               scopeName: "source.z80klive",
               aliases: ["z80-assembly"]
+            },
+            {
+              ...zxbasicLanguage,
+              name: "zxbasic",
+              scopeName: "source.zxbasic",
+              aliases: ["zxbas"],
+              // --- ASM blocks are highlighted as Klive Z80 assembly
+              embeddedLangs: ["z80klive"]
             }
           ]
         });

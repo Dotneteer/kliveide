@@ -6,7 +6,7 @@ description: "The Klive BASIC standard library: the #include libraries for text 
 
 The standard library is a set of BASIC files that you include with `#include <name.bas>`. Klive BASIC provides the libraries documented for Boriel ZX BASIC, written as Klive's own code, and Klive's own `farmem.bas`.
 
-```text
+```zxbasic
 #include <string.bas>
 #include <hex.bas>
 
@@ -139,7 +139,7 @@ Reads the keyboard through port `$FE`, without the ROM.
 
 The library defines a `UInteger` constant for the scan code of every key: `KEYA` to `KEYZ`, `KEY0` to `KEY9`, `KEYSPACE`, `KEYENTER`, `KEYSYMBOL` and `KEYCAPS`. The high byte selects the key's half-row and the low byte is its bit there. Only codes of the same half-row can be combined.
 
-```text
+```zxbasic
 #include <keys.bas>
 PRINT "Press P or O"
 DO

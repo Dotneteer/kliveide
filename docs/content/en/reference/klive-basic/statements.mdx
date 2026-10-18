@@ -8,7 +8,7 @@ This page describes the statements of Klive BASIC, grouped by purpose. In the sy
 
 ## Assignment
 
-```text
+```zxbasic
 [LET] variable = expr
 [LET] array(subscripts) = expr
 [LET] array1 = array2
@@ -25,7 +25,7 @@ This page describes the statements of Klive BASIC, grouped by purpose. In the sy
 
 ### IF
 
-```text
+```zxbasic
 IF condition [THEN] statements [ELSE statements]
 
 IF condition [THEN]
@@ -44,7 +44,7 @@ END IF
 - `ELSE IF` written as two words is a nested `IF`, which needs its own `END IF`.
 - In a block `IF`, an `ELSE` followed by statements on the same line ends the `IF` on that line. Only an `END IF` on that same line may follow.
 
-```text
+```zxbasic
 SUB classify(n AS UByte)
   IF n < 10 THEN
     PRINT "small"
@@ -61,7 +61,7 @@ IF a THEN PRINT "yes" : a = 2
 
 ### FOR
 
-```text
+```zxbasic
 FOR variable = start TO limit [STEP step]
   block
 NEXT [variable]
@@ -75,7 +75,7 @@ NEXT [variable]
 - A constant `STEP` keeps its sign, so `FOR u = 9 TO 2 STEP -2` counts a `UByte` down. A step held in a variable takes the loop variable's type: with an unsigned loop variable it never counts down.
 - The compiler warns for `STEP 0` and for constant ranges that never run.
 
-```text
+```zxbasic
 DIM u AS UInteger = 1
 DIM i AS UByte
 FOR i = 1 TO 9 : u = u * i : NEXT i
@@ -83,7 +83,7 @@ FOR i = 1 TO 9 : u = u * i : NEXT i
 
 ### WHILE
 
-```text
+```zxbasic
 WHILE condition
   block
 END WHILE
@@ -93,7 +93,7 @@ The condition is tested before each pass. `WEND` is a one-word spelling of `END 
 
 ### DO and LOOP
 
-```text
+```zxbasic
 DO
   block
 LOOP
@@ -120,7 +120,7 @@ LOOP UNTIL condition
 - After a `DO` without a condition, `LOOP` must start a new line unless the body is empty. `DO : i = i + 1 : LOOP` on one line is an error, while `DO LOOP UNTIL k` is allowed.
 - An empty body raises warning W130.
 
-```text
+```zxbasic
 DIM i AS UByte
 DO WHILE i < 3 : i = i + 1 : LOOP
 DO : i = i + 1
@@ -129,14 +129,14 @@ LOOP UNTIL i > 5
 
 ### EXIT and CONTINUE
 
-```text
+```zxbasic
 EXIT DO | EXIT FOR | EXIT WHILE
 CONTINUE DO | CONTINUE FOR | CONTINUE WHILE
 ```
 
 `EXIT` leaves the innermost enclosing loop of the named kind. `CONTINUE` starts its next pass. Either one is an error when no loop of that kind encloses it.
 
-```text
+```zxbasic
 DIM i AS UByte
 FOR i = 1 TO 20
   IF i MOD 2 = 0 THEN CONTINUE FOR
@@ -149,7 +149,7 @@ This prints `13579`.
 
 ### GOTO and GOSUB
 
-```text
+```zxbasic
 GOTO target
 GO TO target
 GOSUB target
@@ -163,7 +163,7 @@ A *target* is a label or a line number. It may be used before it is declared; a 
 - `GOSUB` calls the code at the target, and `RETURN` comes back to the statement after the `GOSUB`.
 - `GOSUB` is not allowed inside a `SUB` or `FUNCTION`.
 
-```text
+```zxbasic
 10 LET t = 0
 20 FOR i = 1 TO 10
 30 GO SUB 100
@@ -176,7 +176,7 @@ A *target* is a label or a line number. It may be used before it is declared; a 
 
 ### ON GOTO and ON GOSUB
 
-```text
+```zxbasic
 ON expr GOTO target1, target2, ...
 ON expr GOSUB target1, target2, ...
 ```
@@ -197,7 +197,7 @@ The value of *expr*, converted to `UByte`, selects a target: 0 selects the first
 
 ### SUB
 
-```text
+```zxbasic
 SUB [FASTCALL | STDCALL] name[(parameters)]
   body
 END SUB
@@ -207,7 +207,7 @@ A `SUB` is a routine without a result. It cannot declare a return type and canno
 
 ### FUNCTION
 
-```text
+```zxbasic
 FUNCTION [FASTCALL | STDCALL] name[(parameters)] [AS type]
   body
 END FUNCTION
@@ -218,7 +218,7 @@ A `FUNCTION` returns a value with `RETURN expr`. The value is converted to the r
 - Without `AS type` the function returns a `Float`, with warning W100 (an error with `require-types`).
 - A function that may end without `RETURN` raises warning W190. If it does end that way, it returns 0, or the empty string for a `String` function.
 
-```text
+```zxbasic
 FUNCTION factorial(n AS UByte) AS Float
   IF n < 2 THEN RETURN 1
   RETURN n * factorial(n - 1)
@@ -229,7 +229,7 @@ PRINT factorial(12)
 
 ### Calling a routine
 
-```text
+```zxbasic
 name
 name(arguments)
 name arguments
@@ -245,7 +245,7 @@ A `SUB` or `FUNCTION` can be called as a statement, with or without parentheses 
 
 ### Parameters
 
-```text
+```zxbasic
 [BYVAL | BYREF] name [AS type] [= constant]
 [BYREF] name() AS type
 ```
@@ -258,7 +258,7 @@ A `SUB` or `FUNCTION` can be called as a statement, with or without parentheses 
 | Optional parameters | A parameter with `= constant` is optional. A mandatory parameter cannot follow an optional one, and an array parameter cannot have a default. |
 | Types | A parameter without a type is a `Float`, with warning W100. |
 
-```text
+```zxbasic
 SUB bump(BYREF v AS UInteger)
   v = v + 1
 END SUB
@@ -286,7 +286,7 @@ An argument can name its parameter with `:=`. Positional arguments cannot follow
 
 The values given, positional and named, are taken in the order written, and the defaults of the parameters that were neither given by position nor named follow them. A name says which default is left out, not where its value goes.
 
-```text
+```zxbasic
 SUB show(a AS UByte, b AS UByte = 2, c AS UByte = 3)
   PRINT a; "-"; b; "-"; c; " ";
 END SUB
@@ -300,7 +300,7 @@ This prints `1-2-3 1-9-3 7-5-2`.
 
 ### DECLARE
 
-```text
+```zxbasic
 DECLARE SUB name[(parameters)]
 DECLARE FUNCTION name[(parameters)] [AS type]
 ```
@@ -320,7 +320,7 @@ DECLARE FUNCTION name[(parameters)] [AS type]
 
 ### DATA, READ and RESTORE
 
-```text
+```zxbasic
 DATA expr, expr, ...
 READ variable, variable, ...
 RESTORE [target]
@@ -332,7 +332,7 @@ RESTORE [target]
 - `RESTORE` makes the next `READ` start at the first `DATA` item, or at the first `DATA` after the given label or line number.
 - A program that uses `READ` but has no `DATA` is an error.
 
-```text
+```zxbasic
 DIM x AS UByte
 READ x : PRINT x; " ";
 RESTORE second
@@ -348,7 +348,7 @@ This prints `1 3`.
 
 ### PRINT
 
-```text
+```zxbasic
 PRINT [item {separator item}] [separator]
 ```
 
@@ -367,7 +367,7 @@ An *item* is one of these:
 
 A `PRINT` without items prints a new line. The apostrophe is not a separator: it starts a comment. Attribute modifiers inside `PRINT` apply to that statement only. Booleans print as `0` or `1`.
 
-```text
+```zxbasic
 PRINT AT 5, 10; "X"
 PRINT AT 6, 0; TAB 3; "Y"; TAB 10; "Z"
 PRINT INK 1; PAPER 6; "Colours"; " for this line only"
@@ -379,7 +379,7 @@ Character codes 165 to 255 print one glyph each from the user-defined graphics a
 
 ### CLS
 
-```text
+```zxbasic
 CLS
 ```
 
@@ -387,7 +387,7 @@ Clears the screen with the current permanent attributes.
 
 ### Attribute statements
 
-```text
+```zxbasic
 INK expr
 PAPER expr
 FLASH expr
@@ -411,7 +411,7 @@ No value stops the program:
 
 ### BORDER
 
-```text
+```zxbasic
 BORDER expr
 ```
 
@@ -421,7 +421,7 @@ Sets the border colour. The value is converted to `UByte`, and bits 0 to 2 give 
 
 `PLOT`, `DRAW` and `CIRCLE` accept attribute modifiers before their coordinates, separated by `;`. The modifiers apply to that statement only:
 
-```text
+```zxbasic
 PLOT INK 2; 128, 96
 ```
 
@@ -434,7 +434,7 @@ PLOT INK 2; 128, 96
 
 A point off the screen is not drawn and does not stop the program: `PLOT` plots nothing, `DRAW` draws nothing when its end is off the screen, and `CIRCLE` skips the points off it. `ERR_NR` is set to 4 (`5 Out of screen`).
 
-```text
+```zxbasic
 PLOT 60, 60
 DRAW 80, 0, PI
 ```
@@ -443,7 +443,7 @@ DRAW 80, 0, PI
 
 ### BEEP
 
-```text
+```zxbasic
 BEEP duration, pitch
 ```
 
@@ -460,14 +460,14 @@ Sounds the beeper for *duration* seconds at *pitch* semitones from middle C. Bot
 
 ### POKE
 
-```text
+```zxbasic
 POKE address, value
 POKE type address, value
 ```
 
 Without a type, `POKE` writes a byte: the address is converted to `UInteger` and the value to `UByte`. With a type, the value is converted to that type and stored with its full size. Parentheses around the operands, `POKE (address, value)`, and a comma after the type, `POKE UInteger, address, value`, are accepted too.
 
-```text
+```zxbasic
 POKE 40000, 255
 POKE UInteger 40001, 4660
 POKE ULong 40003, 305419896
@@ -478,7 +478,7 @@ To read memory, use the [`PEEK`](/en/reference/klive-basic/functions/#memory-and
 
 ### OUT
 
-```text
+```zxbasic
 OUT port, value
 ```
 
@@ -486,7 +486,7 @@ Writes a byte to an I/O port. The port is converted to `UInteger` and the value 
 
 ## Tape
 
-```text
+```zxbasic
 SAVE name CODE address, length
 SAVE name SCREEN$
 SAVE name DATA [variable | array()]
@@ -508,7 +508,7 @@ VERIFY name ...
 
 ## ASM
 
-```text
+```zxbasic
 ASM
   assembly lines
 END ASM
@@ -518,7 +518,7 @@ An `ASM` block passes its lines to the assembler. See [Inline assembly](/en/refe
 
 ## CODEBANK (ZX Spectrum Next)
 
-```text
+```zxbasic
 CODEBANK bank
   routines, DIM statements, ASM blocks and labels
 END CODEBANK

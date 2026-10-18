@@ -74,7 +74,7 @@ Numeric variables start at zero and strings start empty. This holds for local va
 | `DIM a(bounds) AS type AT address` | An array placed at a fixed address |
 | `DIM a(bounds) AS type => { ... }` | An array with initial values (`=` works the same as `=>`) |
 
-```text
+```zxbasic
 DIM score AS UInteger
 DIM i, j AS UByte
 DIM name$ AS String = "Klive"
@@ -91,7 +91,7 @@ DIM lastKey AS UByte AT 23560
 
 `CONST` declares a named constant whose value is fixed when compiling:
 
-```text
+```zxbasic
 CONST LIVES AS UByte = 3
 CONST TITLE = "KLIVE"
 CONST SCREEN_START = 16384
@@ -103,7 +103,7 @@ A numeric constant folds by its value, whatever type it declares: with `CONST k 
 
 ## Arrays
 
-```text
+```zxbasic
 DIM m(2, 3) AS UByte           ' 3 x 4 elements, from m(0, 0) to m(2, 3)
 DIM p(1 TO 3) AS UInteger      ' 3 elements, p(1) to p(3)
 DIM names$(9)                  ' 10 strings
@@ -121,7 +121,7 @@ The `array-base` header option and `#pragma array_base` set the default lower bo
 
 `=>` (or `=`) followed by values in braces gives a numeric array its initial contents. Nested braces follow the dimensions, and the number of values must match the bounds:
 
-```text
+```zxbasic
 DIM p(1 TO 3) AS UInteger => {10, 20, 30}
 DIM q(1, 1) AS UByte => {{1, 2}, {3, 4}}
 ```
@@ -161,7 +161,7 @@ A slice takes part of a string:
 | `s$(i TO)` | From index `i` to the end |
 | `s$(TO j)` | From the start to index `j` |
 
-```text
+```zxbasic
 DIM s$ AS String = "Hello World"
 PRINT s$(0 TO 2); "|"; s$(4); "|"; s$(6 TO)
 ```
@@ -177,7 +177,7 @@ This prints `Hel|o|World`.
 
 A slice on the left of `=` overwrites characters in place. The string's length never changes:
 
-```text
+```zxbasic
 DIM s AS String = "Hello World"
 s(0 TO 4) = "Howdy"
 s(6 TO) = "Earth"

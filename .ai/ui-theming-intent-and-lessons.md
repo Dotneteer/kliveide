@@ -2852,6 +2852,11 @@ drift. Change a neutral or the default accent in the app, and the site changes w
   `docs/next.config.mjs`). It stays invisible until the block is hovered or focused, and is
   styled quietly (panel colour, thin border, accent on hover). Touch screens cannot hover, so
   there it rests half visible. Its container sits *inside* the `<pre>` (`.nextra-code pre > div`).
+- **ZX BASIC code in the docs is ```zxbasic**, highlighted by `docs/zxbasic.tmLanguage.json`, which
+  is generated from the IDE editor's word lists (`npm run doc:grammar`; a test fails when it falls
+  behind). Its colours sit beside the Z80 ones in `docs/next.config.mjs`: statements share the
+  assembler's keyword blue, types are teal, built-in and library functions a pale yellow that only
+  this grammar produces (the highlighting check counts it), and `ASM` blocks embed the Z80 grammar.
 - **A screenshot's callouts are HTML, never pixels:** `<Shot markers>` draws numbered badges from
   the harness's sidecar, and the numbered list under the figure is styled like the badges, so the
   text translates with the page.

@@ -23,7 +23,7 @@ A directive line starts with `#` as its first non-blank character. Blanks may fo
 
 ## #include
 
-```text
+```zxbasic
 #include <file>
 #include "file"
 #include MACRO
@@ -38,7 +38,7 @@ A directive line starts with `#` as its first non-blank character. Blanks may fo
 - `once` includes the file only if it has not been included yet. A file that starts with `#pragma once` is always included once.
 - Recursive inclusion raises a warning.
 
-```text
+```zxbasic
 #include <string.bas>
 DIM s AS String = "ZX Spectrum"
 PRINT left(s, 2); "|"; mid(s, 3, 4)
@@ -48,7 +48,7 @@ This prints `ZX|Spec`.
 
 ## #define and macros
 
-```text
+```zxbasic
 #define NAME
 #define NAME body
 #define NAME(param, ...) body
@@ -64,7 +64,7 @@ This prints `ZX|Spec`.
 
 Macros are expanded inside `ASM` blocks too. See [Inline assembly](/en/reference/klive-basic/inline-assembly/#macros-in-asm-blocks).
 
-```text
+```zxbasic
 #define SCREEN_ATTRS 22528
 #define SQUARE(x) ((x) * (x))
 POKE SCREEN_ATTRS, 56
@@ -84,7 +84,7 @@ The `define` header option defines further macros, as `NAME` or `NAME=value`.
 
 ## Conditional compilation
 
-```text
+```zxbasic
 #ifdef NAME
 #ifndef NAME
 #if expression
@@ -102,7 +102,7 @@ An `#if` expression can use macro names, integers, strings, parentheses, the com
 
 There is no `#elif`. Nest an `#if` inside the `#else` branch instead:
 
-```text
+```zxbasic
 #define LEVEL 2
 #if LEVEL == 1
 PRINT "one"
@@ -119,7 +119,7 @@ A program whose code is all inside a false conditional block compiles to an empt
 
 ## #pragma
 
-```text
+```zxbasic
 #pragma option = value
 #pragma option value
 #pragma push(option)
@@ -131,7 +131,7 @@ A value is an integer, an identifier or a string. A boolean option accepts `true
 
 `push` saves the current value of one option and `pop` restores it. A library uses them to change an option for its own lines only:
 
-```text
+```zxbasic
 #pragma push(case_insensitive)
 #pragma case_insensitive = true
 ' ... declarations ...
@@ -178,7 +178,7 @@ These options set their value for the whole program, wherever they stand, and ov
 
 Header options are written in the comment lines at the top of the build root file, before its first line of code. Each option takes one line:
 
-```text
+```zxbasic
 '@optimize 0
 '@heap-size 4768
 '@array-base 1

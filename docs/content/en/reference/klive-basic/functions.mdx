@@ -47,7 +47,7 @@ A ROM calculator error, such as `SQR(-1)` or `LN(0)`, stops the program with the
 - `VAL` evaluates the text with BASIC's own `VAL`, so `VAL("2*3")` is 6. Text that BASIC rejects gives 0 and sets `ERR_NR` to 9 (`A Invalid argument`); the program carries on.
 - `CHR$(72, 105)` is `"Hi"`.
 
-```text
+```zxbasic
 PRINT CODE("A"); " "; CHR$(66); " "; CHR$(72, 105); " "; VAL("2*3")
 ```
 
@@ -72,7 +72,7 @@ Slices take parts of a string: see [Slicing](/en/reference/klive-basic/types-and
 
 Without a dimension number, or with 0, `LBOUND` and `UBOUND` give the number of dimensions. For a declared array they are constants.
 
-```text
+```zxbasic
 DIM a(2 TO 5, 3) AS UByte
 PRINT LBOUND(a, 1); " "; UBOUND(a, 1); " "; LBOUND(a, 2); " "; UBOUND(a, 2)
 ```
@@ -87,7 +87,7 @@ This prints `2 5 0 3`.
 | `PEEK(type, address)` | A type and an address | The value of that type stored at the address |
 | `IN(port)` | Converted to `UInteger` | `UByte`: the byte read from the port |
 
-```text
+```zxbasic
 POKE UInteger 40001, 4660
 PRINT PEEK(UInteger, 40001); " "; PEEK 40001
 ```
@@ -101,7 +101,7 @@ This prints `4660 52`.
 | `USR(address)` | Converted to `UInteger` | `UInteger`: calls the machine code at the address and returns the value of BC |
 | `USR(s)` | `String` | `UInteger`: the address of the user-defined graphic named by the string's first character, in either case |
 
-```text
+```zxbasic
 POKE 40000, 1 : POKE 40001, 57 : POKE 40002, 48 : POKE 40003, 201
 PRINT USR 40000
 ```

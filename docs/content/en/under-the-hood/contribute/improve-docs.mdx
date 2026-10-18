@@ -80,4 +80,4 @@ For an image that is not a generated screenshot, put the file under `docs/public
 
 ### Add a code example
 
-Use a fenced block with a language: `z80klive` for Klive Z80 assembly, `text` for ZX BASIC. A language that is not listed in `docs/next.config.mjs` fails the build. If a Get Started page shows a program, keep the program in `scripts/doc-shots/fixtures/get-started/`: a test builds it and checks that the page shows the same code.
+Use a fenced block with a language: `z80klive` for Klive Z80 assembly, `zxbasic` for ZX BASIC (its grammar, `docs/zxbasic.tmLanguage.json`, is generated from the IDE's own keyword lists with `npm run doc:grammar`). A language that is not listed in `docs/next.config.mjs` fails the build. If a Get Started page shows a program, keep the program in `scripts/doc-shots/fixtures/get-started/`: a test builds it and checks that the page shows the same code.

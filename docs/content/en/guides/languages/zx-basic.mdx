@@ -34,7 +34,7 @@ Compatibility is checked, not assumed: several thousand test cases are compiled 
 
 Options go in the comment lines at the top of the build root file, before the first line of code, one per line as `'@name value`:
 
-```
+```zxbasic
 '@optimize 0
 '@heap-size 4768
 '@array-base 1
@@ -94,7 +94,7 @@ Klive BASIC gives a different result from `zxbc` 1.19 only in these cases:
 
 On the ZX Spectrum Next, routines and data inside a `CODEBANK` block live in their own 8K memory pages instead of the program's main memory:
 
-```
+```zxbasic
 CODEBANK 1
 DIM table(1000) AS UByte
 FUNCTION Lookup(i AS UInteger) AS UByte
@@ -192,7 +192,7 @@ Boriel BASIC 2 programs can `USE` modules: a `MODULE name` … `END MODULE` file
 On the ZX Spectrum 128K and the Next, add `'@split-modules` to the header to put each module into a
 RAM bank of its own, so a program can be larger than the memory below `$C000`:
 
-```
+```zxbasic
 '@split-modules
 USE tiles
 USE music

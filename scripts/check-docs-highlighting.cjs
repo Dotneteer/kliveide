@@ -35,7 +35,9 @@ const TOKENS = [
   { color: "4d8061", scope: "constant.numeric", example: "#6000, 42" },
   { color: "b5890f", scope: "variable.other.identifier.z80klive", example: "labels" },
   { color: "6a9955", scope: "comment", example: "; comment" },
-  { color: "ff6b35", scope: "string", example: '"text"' }
+  { color: "ff6b35", scope: "string", example: '"text"' },
+  // --- ZX BASIC (```zxbasic, docs/zxbasic.tmLanguage.json): a colour only that grammar produces
+  { color: "dcdcaa", scope: "support.function.zxbasic", example: "CHR$, INKEY$, library routines" }
 ];
 
 /** Tolerance for content edits that legitimately add or remove a few code blocks. */
