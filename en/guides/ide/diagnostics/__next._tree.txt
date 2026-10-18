@@ -12,4 +12,4 @@
 3:[["children",{"s":{"n":"mdxPath","t":"c","k":"guides/ide/diagnostics","s":[]},"h":65600,"c":"$Q4"}]]
 2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
 1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
-0:{"b":"j5KvqO1wLq2XyTDDqaYgI","t":{"t":{"s":"","h":131152,"c":"$Q1"}}}
+0:{"b":"u4gg6LNiCYmu_atURxdCO","t":{"t":{"s":"","h":131152,"c":"$Q1"}}}
