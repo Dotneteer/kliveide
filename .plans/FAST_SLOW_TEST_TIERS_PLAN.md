@@ -55,10 +55,11 @@ at ~1200 file-seconds.
    (manual, 3 shards).
 4. [x] `release.cjs` uses `test:fast` + the slow-status warning.
 5. [x] AGENTS.md, `.ai/release-guide.md`, `.plans/RELEASE_AUTOMATION_PLAN.md` note.
-6. [ ] Verify. Local, 2026-10-18: `npm run test:fast` **2:24** wall (was 4:42 for everything),
+6. [x] Verify. Local, 2026-10-18: `npm run test:fast` **2:24** wall (was 4:42 for everything),
    1264 files pass; `npm run test:slow` 2:15, 20 files pass; `test:slow-status` turns fresh after
    it. GitHub, first run (39128490501, one unit job): **8:22** wall; unit 8:18, kbasic 3:18, cores
-   shards 2:18-4:14, type-check 1:28. The unit job was the longest, so it was split in two.
+   shards 2:18-4:14, type-check 1:28. The unit job was the longest, so it was split in two; second
+   run (39129104761): **4:54** wall, every job 1:10-4:51.
 
 ## Results
 
@@ -66,4 +67,4 @@ at ~1200 file-seconds.
 | --- | --- | --- |
 | Local, fast set (`test:fast`) | 4:42 (everything) | 2:24 |
 | Local, slow tier (`test:slow`) | - | 2:15 |
-| GitHub `test.yml` | ~32 min, one job | 8:22 (one unit job; then split in two) |
+| GitHub `test.yml` | ~32 min, one job | 4:54 (7 parallel jobs) |
