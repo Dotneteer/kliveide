@@ -34,7 +34,7 @@ You can change the tape at any time, even while the machine is running: it is li
 
 Loading ZX Spectrum programs and tapes may take a long time, especially for large files. Besides the *normal loading* mode, Klive supports *fast load*, which reads the program instantly, in a fraction of a second.
 
-You can turn on or off fast load with the **Machine | Tape | Fast Load** command (or **Settings | Emulator**) or by clicking the **Fast Load** icon (rocket) in the toolbar.
+You can turn on or off fast load with the **Machine › Tape › Fast Load** command (or **Settings › Emulator**) or by clicking the **Fast Load** icon (rocket) in the toolbar.
 
 You can change the Fast Load mode even while loading a game. However, the change will take effect only when you start loading a program next time.
 
@@ -46,7 +46,7 @@ By default, fast load is turned on.
 
 When the loading completes or gets interrupted, the tape position stays as if you stopped the physical tape player. When you issue the `LOAD` command again, the load operation starts searching the following file header from the position where it has been stopped.
 
-You can rewind the tape to its beginning just as you can do it with a physical tape cassette. Click the **Rewind** icon in the toolbar (the one to the right of the rocket icon) or execute the **Machine | Tape | Rewind** command.
+You can rewind the tape to its beginning just as you can do it with a physical tape cassette. Click the **Rewind** icon in the toolbar (the one to the right of the rocket icon) or execute the **Machine › Tape › Rewind** command.
 
 ## Look inside a tape
 
@@ -77,8 +77,8 @@ On a ZX Spectrum 48K, 128K or +2/+3, the tape viewer's tab has three buttons, an
 <ClickableImage src="/images/getting-started/tape-viewer-commands.png" width={900} />
 
 - **Load and run tape** (play icon) resets the machine and starts the tape loading: it types `LOAD ""` on a 48K, and chooses **Tape Loader** from the start-up menu of a 128K or +2 (**Loader** on a +2A/+3, which boots a disk instead if one is in drive A). Whatever loader the tape carries then runs as it would on the real machine.
-- **Insert tape** (cassette icon) puts the tape in the deck without a reset, as **Machine | Tape | Insert Tape...** does. Inserting the tape that is already in the deck rewinds it.
-- **Load and debug tape** (debug icon) is **Load and run** with your breakpoints armed.
+- **Insert tape** (cassette icon) puts the tape in the deck without a reset, as **Machine › Tape › Insert Tape...** does. Inserting the tape that is already in the deck rewinds it.
+- **Load and debug tape** (debug icon) is **Load and run tape** with your breakpoints armed.
 
 <ClickableImage src="/images/getting-started/tape-viewer-loaded.png" width={720} />
 
@@ -86,12 +86,12 @@ On any other machine, such as the ZX Spectrum Next, the buttons and the menu ent
 
 ## How fast load works
 
-The Fast Load mode applies a powerful technique: ROM hooking. While the emulator runs, it observes when the OS reaches a particular entry point of the load subroutine (by examining the value of the `PC` register) in the ZX Spectrum ROM, including all ZX Spectrum models.
+The Fast Load mode applies a powerful technique: ROM hooking. While the emulator runs, it watches the `PC` register for the entry point of the ROM's load routine, on every ZX Spectrum model.
 
 When the execution reaches the load routine, the Fast Load mechanism suspends the machine and injects the data from the tape file directly into the memory. While doing this, the algorithm sets the Z80 registers (including the flags) in the same way as the algorithm in the ROM.
 
 When the data is loaded, the mechanism sets the current value of the `PC` register to the exit point of the load routine as if the CPU has executed that and exits the fast mode.
 
-If there is some error during the load, the fast load mechanism sets `PC` to the beginning of the method that reports tape error.
+If there is some error during the load, the fast load mechanism sets `PC` to the start of the routine that reports a tape error.
 
 Next, [meet the IDE](/en/get-started/meet-the-ide/).

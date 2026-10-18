@@ -12,13 +12,13 @@ On this page you create a project, write a Z80 assembly program that cycles the 
 
 <Steps>
 
-### Open the New Project dialog
+### Open the dialog
 
-Choose **File › New Project...**, or click **Create a Klive Project** in the explorer.
+Choose **File › New Project...**, or click **Create a Klive Project** in the explorer. The **Create a new Klive project** dialog opens.
 
 <Shot
   src="get-started/new-project.webp"
-  alt="The New Project dialog for a ZX Spectrum 48K project"
+  alt="The Create a new Klive project dialog for a ZX Spectrum 48K project"
   figure="5.1"
   caption="A new ZX Spectrum 48K project"
   width={620}
@@ -40,7 +40,7 @@ Click **Create**. Klive creates the project and opens it.
 The project has one source file, `code/code.kz80.asm`. Open it from the explorer, replace its contents with this program, and save it with <kbd>Cmd</kbd>+<kbd>S</kbd> (<kbd>Ctrl</kbd>+<kbd>S</kbd> on Windows and Linux):
 
 ```z80klive fixture="border-colours/code/code.kz80.asm"
-; Border colours - the program of Get Started, steps 6 and 7.
+; Border colours - the program of Get Started, steps 5 and 6.
 ; It shows the eight border colours, half a second each, forever.
 
         .model Spectrum48
@@ -106,7 +106,7 @@ The **Commands** tab shows what happened:
 
 <Shot
   src="get-started/first-program-output.webp"
-  alt="The Output tab after a successful build"
+  alt="The Commands tab after the program was built and started"
   figure="5.4"
   caption="The build's report"
   markers={["output"]}

@@ -1,0 +1,63 @@
+---
+description: "A Klive egyetlen alkalmazásban egyesít egy ZX Spectrum és ZX Spectrum Next emulátort és egy teljes értékű IDE-t. Ez az oktatóanyag a telepítéstől az első programok megírásáig, futtatásáig és hibakereséséig vezet végig."
+---
+
+import { Cards } from 'nextra/components'
+
+# Üdvözöl a Klive
+
+A Klive egyetlen alkalmazásban egyesít egy emulátort és egy integrált fejlesztői környezetet (IDE). Emulálja a ZX Spectrumot, a ZX Spectrum Nextet és több más Z80-as gépet, és ezekre Z80 assemblyben vagy ZX BASIC nyelven programokat írhatunk, fordíthatunk, futtathatunk és hibakereshetünk vele. macOS-en, Windowson és Linuxon is fut.
+
+<Shot
+  src="get-started/debug-paused.webp"
+  alt="A Klive IDE egy Z80 assembly program töréspontján megállva"
+  figure="1.1"
+  caption="A Klive IDE-je, töréspontnál megállva"
+  width={900}
+/>
+
+## Két ablak
+
+A Klive két, egymással együttműködő ablakból áll:
+
+- **Az emulátor** a gépet mutatja: a képernyőjét, egy eszköztárat az indításához, szüneteltetéséhez és leállításához, valamint – ha kérjük – egy virtuális billentyűzetet.
+- **Az IDE**-ben írjuk a kódot: itt található a projektintéző, a kódszerkesztő, a parancssor, és azok a hibakereső panelek, amelyek a gép regisztereit, memóriáját és sok minden mást mutatnak.
+
+A két ablak elhelyezhető egymás mellett, de akár két monitoron is.
+
+## Mit fogunk csinálni?
+
+Az oktatóanyag nagyjából 90 percet vesz igénybe. Minden oldal az előzőre épül, de bármelyik után nyugodtan abbahagyhatjuk.
+
+<Cards num={2}>
+  <Cards.Card title="1. A Klive telepítése" href="/hu/get-started/install/" arrow>
+    A Klive letöltése és telepítése macOS-en, Windowson vagy Linuxon.
+  </Cards.Card>
+  <Cards.Card title="2. Ismerkedés az emulátorral" href="/hu/get-started/meet-the-emulator/" arrow>
+    Egy ZX Spectrum elindítása, egy BASIC program begépelése és egy másik gép kiválasztása.
+  </Cards.Card>
+  <Cards.Card title="3. Program betöltése kazettáról" href="/hu/get-started/load-from-tape/" arrow>
+    Egy `.tap` fájl betöltése és futtatása – gyorsan vagy valós időben.
+  </Cards.Card>
+  <Cards.Card title="4. Ismerkedés az IDE-vel" href="/hu/get-started/meet-the-ide/" arrow>
+    Eligazodás az IDE-ben és a felület nyelvének beállítása.
+  </Cards.Card>
+  <Cards.Card title="5. Az első assembly program" href="/hu/get-started/first-assembly-program/" arrow>
+    Projekt létrehozása, Z80 assembly kód írása és futtatása.
+  </Cards.Card>
+  <Cards.Card title="6. A program hibakeresése" href="/hu/get-started/debug-your-program/" arrow>
+    Megállás egy törésponton, a kód léptetése és a regiszterek változásának követése.
+  </Cards.Card>
+  <Cards.Card title="7. Az első BASIC program" href="/hu/get-started/first-basic-program/" arrow>
+    ZX BASIC program írása, fordítása a Klive BASIC-kel és hibakeresése utasításról utasításra.
+  </Cards.Card>
+  <Cards.Card title="8. Az első ZX Spectrum Next program" href="/hu/get-started/first-next-program/" arrow>
+    Egy hardveres sprite megjelenítése a Next képernyőjén.
+  </Cards.Card>
+  <Cards.Card title="9. A munka mentése és megosztása" href="/hu/get-started/save-and-share/" arrow>
+    A program exportálása olyan kazettafájlba, amelyet más emulátorok és valódi gépek is be tudnak tölteni.
+  </Cards.Card>
+  <Cards.Card title="10. Merre tovább?" href="/hu/get-started/where-next/" arrow>
+    A következő téma kiválasztása.
+  </Cards.Card>
+</Cards>

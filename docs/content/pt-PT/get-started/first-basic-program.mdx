@@ -1,0 +1,108 @@
+---
+description: "Escrever um programa em ZX BASIC, compilá-lo com o compilador Klive BASIC integrado no Klive e depurá-lo instrução a instrução, com a pilha de chamadas e as variáveis."
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# O primeiro programa em BASIC
+
+O ZX BASIC é um dialeto compilado do próprio BASIC do ZX Spectrum, com sub-rotinas, variáveis locais e variáveis com tipo. O Klive compila-o com o seu compilador integrado, o **Klive BASIC**, que é compatível com o Boriel ZX BASIC e não precisa de instalação. O programa compilado corre muito mais depressa do que o BASIC interpretado, e é possível depurá-lo linha a linha no seu código-fonte BASIC.
+
+## Criar o projeto
+
+Escolha **Ficheiro › Novo projeto...**, como na [página do primeiro programa em assembly](/pt-PT/get-started/first-assembly-program/), com estas definições:
+
+- **Tipo de máquina**: ZX Spectrum 48K.
+- **Modelo de projeto**: `zx-basic`.
+- **Nome do projeto**: `BouncingBall`.
+
+O ficheiro de código-fonte do projeto é `code/program.zxbas`.
+
+## Escrever o programa
+
+Substitua o conteúdo de `code/program.zxbas` por este programa e guarde-o:
+
+```text fixture="bouncing-ball/code/program.zxbas"
+' Bouncing ball - the program of Get Started, step 7.
+' A ball bounces between the screen's edges and counts its bounces.
+
+DIM x AS INTEGER = 15
+DIM dx AS INTEGER = 1
+DIM bounces AS UINTEGER = 0
+
+SUB DrawBall(column AS INTEGER, ball AS STRING)
+    PRINT AT 10, column; ball
+END SUB
+
+CLS
+PRINT AT 0, 0; "Bounces: 0"
+DO
+    DrawBall(x, " ")
+    x = x + dx
+    IF x = 0 OR x = 31 THEN
+        dx = -dx
+        bounces = bounces + 1
+        PRINT AT 0, 9; bounces
+    END IF
+    DrawBall(x, "O")
+    PAUSE 2
+LOOP
+```
+
+Algumas coisas que o Sinclair BASIC não tem:
+
+- **Sem números de linha.** As linhas são executadas por ordem, e `DO` … `LOOP` repete as linhas entre eles.
+- **Variáveis com tipo.** `DIM x AS INTEGER` declara uma variável de número inteiro, muito mais rápida do que os números de vírgula flutuante do Spectrum.
+- **Sub-rotinas com parâmetros.** `SUB DrawBall` recebe uma coluna e uma cadeia de caracteres, e `DrawBall(x, "O")` chama-a.
+- **`IF` em bloco.** As linhas até `END IF` são executadas quando a condição é verdadeira.
+
+## Executar
+
+Clique em **Executar** na barra de compilação, ou prima <kbd>F5</kbd>. A bola desloca-se ao longo da linha 10 e inverte o sentido nas extremidades do ecrã, e o contador no topo conta os ressaltos.
+
+<Shot
+  src="get-started/basic-running.webp"
+  alt="O emulador a executar o programa da bola saltitante"
+  figure="7.1"
+  caption="A bola ressalta"
+  width={620}
+/>
+
+## Depurar
+
+<Steps>
+
+### Definir um ponto de interrupção na sub-rotina
+
+Clique à esquerda do número de linha **9**, a linha `PRINT AT 10, column; ball` dentro de `DrawBall`.
+
+### Iniciar a depuração
+
+Clique em **Depurar** na barra de compilação, ou prima <kbd>Ctrl</kbd>+<kbd>F5</kbd>. O programa para da primeira vez que chama `DrawBall`.
+
+### Ver a pilha de chamadas e as variáveis
+
+Abra a barra lateral **Depurar** e, em seguida, os seus painéis **Pilha de chamadas** e **Variáveis**, clicando nos respetivos títulos.
+
+</Steps>
+
+<Shot
+  src="get-started/basic-debug.webp"
+  alt="O IDE em pausa dentro de DrawBall, com a pilha de chamadas e as variáveis"
+  figure="7.2"
+  caption="Em pausa dentro da sub-rotina DrawBall"
+  markers={["breakpoint", "callstack", "variables"]}
+  width={900}
+/>
+
+1. O ponto de interrupção, e a instrução que é executada a seguir.
+2. A **Pilha de chamadas**: `DrawBall` foi chamada a partir da linha 15 do programa principal.
+3. As **Variáveis**: os parâmetros da sub-rotina (`column` vale 15, `ball` é um espaço) e as variáveis globais do programa.
+
+A execução passo a passo funciona sobre **instruções** BASIC, não sobre instruções Z80: <kbd>F10</kbd> executa a instrução seguinte, <kbd>F11</kbd> (<kbd>F12</kbd> em macOS) entra numa sub-rotina, e <kbd>Shift</kbd>+<kbd>F11</kbd> sai dela. Prima <kbd>F5</kbd> algumas vezes e observe `column` e `x` a mudar.
+
+<Callout type="info" emoji="💡">
+O Klive também consegue compilar os programas BASIC com o compilador do próprio Boriel, o Boriel BASIC 2, e depurá-los da mesma forma. Consulte [ZX BASIC](/en/guides/languages/zx-basic/) para conhecer as opções da linguagem, a biblioteca padrão e a forma de mudar de compilador.
+</Callout>
+
+A seguir, escrever [o primeiro programa para o ZX Spectrum Next](/pt-PT/get-started/first-next-program/).

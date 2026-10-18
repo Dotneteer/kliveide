@@ -1,0 +1,132 @@
+---
+description: "Descarga Klive desde su página de versiones e instálalo en macOS, Windows o Linux."
+---
+
+import { Callout } from 'nextra/components'
+
+# Instala Klive
+
+Klive es gratuito y de código abierto. Visita la [página de versiones](https://github.com/Dotneteer/kliveide/releases) del proyecto para obtener los paquetes de instalación de Klive. La versión más reciente aparece al principio de la página. Al desplegar la sección Assets, verás la lista de paquetes de instalación:
+
+- `KliveIdeSetup-{version}-{arch}.AppImage`: el formato AppImage de Linux, para instalar Klive IDE en Linux sin necesitar privilegios de administrador para ejecutarlo
+- `KliveIdeSetup-{version}-{arch}.exe`: ejecutable autoextraíble para instalar Klive IDE en Windows x64 (instalador NSIS)
+- `KliveIde-Portable-{version}-{arch}.zip`: un archivo comprimido para Windows x64 que descomprimes y ejecutas sin instalador (consulta [Windows sin instalador](#windows-without-an-installer))
+- `KliveIdeSetup-{version}-{arch}.pkg`: el formato PKG estándar, para instalar Klive IDE en macOS
+
+`{version}` representa el número de versión de una versión concreta dentro del nombre del archivo.
+`{arch}` representa la arquitectura de la plataforma de destino. Puede ser `x64` o `arm64`.
+
+<Callout type="info" emoji="💡">
+Por ahora, Windows solo admite la arquitectura x64.
+</Callout>
+
+Descarga el archivo que corresponda a tu sistema operativo y arquitectura, y sigue las secciones de este artículo.
+
+## macOS
+
+Abre el archivo `.pkg` descargado. Como el archivo procede de una fuente no fiable, el sistema operativo no puede instalarlo directamente. Haz clic en el botón OK para cerrar el mensaje.
+
+<ClickableImage src="/images/getting-started/warning1.png" alt="Advertencia 1" width={173} height={195} />
+
+Ahora abre Ajustes del Sistema y ve a la sección Privacidad y seguridad. Al desplazarte hacia abajo, verás el mensaje con el nombre del archivo bloqueado y el botón Abrir igualmente. Haz clic en ese botón para confirmar que quieres ejecutar el paquete de instalación.
+
+<ClickableImage src="/images/getting-started/privacy-and-security.png" alt="Privacidad y seguridad" width={477} height={398} />
+
+Abre de nuevo el archivo `.pkg` y selecciona el botón Abrir en el cuadro de diálogo de seguridad que aparece en pantalla.
+
+<Callout type="info" emoji="💡">
+Es posible que el sistema operativo te pida la contraseña para confirmar la instalación.
+</Callout>
+
+<ClickableImage src="/images/getting-started/warning2.png" alt="Advertencia 2" width={173} height={233} />
+
+Haz clic en Abrir para permitir que se ejecute el instalador. Sigue las capturas de pantalla (usa Continuar) para completar la instalación.
+
+<ClickableImage src="/images/getting-started/install-step-1.png" width={413} />
+
+<ClickableImage src="/images/getting-started/install-step-2.png" width={413} />
+
+<ClickableImage src="/images/getting-started/install-step-3.png" width={413} />
+
+<ClickableImage src="/images/getting-started/install-step-4.png" width={413} />
+
+<Callout type="info" emoji="💡">
+El instalador crea una carpeta Klive IDE en la carpeta Aplicaciones y copia en ella los archivos necesarios. También crea un acceso directo en el Launchpad. Al terminar la instalación, es posible que macOS te pida acceso a la carpeta Descargas para mover el instalador a la papelera.
+</Callout>
+
+Tras una instalación correcta, encontrarás Klive IDE en la carpeta Aplicaciones.
+
+<ClickableImage src="/images/getting-started/apps-in-finder.png" width={441} />
+
+## Windows
+
+El archivo de instalación `.exe` es un ejecutable autoextraíble. Ábrelo: se extraerá automáticamente y copiará los archivos ejecutables en el directorio Programs (dentro de `AppData/Local/Programs/klive-ide` en tu carpeta de usuario).
+
+<Callout type="warning" emoji="⚠️">
+**Problema conocido en Windows 11**: algunos usuarios han informado de que el instalador puede parecer bloqueado o tardar muchísimo en terminar (de 10 a 22 minutos) en sistemas Windows 11. Normalmente se debe a que Windows Defender u otro software antimalware analiza el instalador. Si esperas, el instalador acabará terminando.
+</Callout>
+
+El instalador inicia Klive IDE al terminar. Más adelante, puedes volver a iniciar Klive IDE así:
+
+Usa la búsqueda de la barra de tareas de Windows y escribe "Klive". La app recién instalada aparece en los resultados de la búsqueda:
+
+<ClickableImage src="/images/getting-started/klive-in-search.png" width={213} />
+
+Haz clic en Klive IDE para iniciarlo.
+
+<Callout type="info" emoji="💡">
+Cuando Klive IDE está seleccionado en la lista de resultados, el panel derecho muestra el comando Anclar a la barra de tareas. Úsalo para añadir el IDE a la barra de tareas; después podrás ejecutarlo con un solo clic en el icono de Klive IDE.
+</Callout>
+
+### Windows sin instalador [#windows-without-an-installer]
+
+Si no puedes o prefieres no ejecutar un instalador (un equipo con restricciones, sin derechos de administrador, o una memoria USB), descarga en su lugar `KliveIde-Portable-{version}-x64.zip`. No necesita instalación y no escribe nada en el registro de Windows.
+
+1. Antes de extraerlo, haz clic con el botón derecho en el archivo `.zip` descargado, selecciona **Propiedades**, marca **Desbloquear** y haz clic en **Aceptar**. Sin este paso, Windows marca cada archivo extraído como descargado de Internet y puede advertirte por separado de cada ejecutable. (En PowerShell: `Unblock-File .\KliveIde-Portable-{version}-x64.zip`.)
+2. Extrae el archivo comprimido en una **carpeta nueva y vacía**: los archivos están en la raíz del archivo comprimido, no dentro de una carpeta propia.
+3. Ejecuta `Klive IDE.exe` desde esa carpeta.
+
+Esta copia es totalmente portátil: guarda todo lo que escribe en una carpeta `KliveData` junto a `Klive IDE.exe`, y nada en tu perfil de usuario.
+
+| Carpeta | Contenido | Equivalente en Klive instalado |
+| --- | --- | --- |
+| `KliveData\Klive` | Configuración, la imagen de la tarjeta SD del ZX Spectrum Next, archivos guardados | `%USERPROFILE%\Klive` |
+| `KliveData\KliveProjects` | Ubicación predeterminada de los proyectos nuevos | `%USERPROFILE%\KliveProjects` |
+| `KliveData\KliveExports` | Código exportado y grabaciones de pantalla | `%USERPROFILE%\KliveExports` |
+| `KliveData\AppData` | Caché del navegador y datos de las ventanas | `%APPDATA%\Klive IDE` |
+
+Para quitar Klive, elimina la carpeta. Para actualizarlo, extrae el archivo comprimido más reciente en una carpeta nueva y copia en ella la carpeta `KliveData` de la antigua para conservar tu configuración.
+
+<Callout type="info" emoji="💡">
+La copia zip y un Klive instalado no comparten la configuración. Para iniciar la copia zip con tu configuración actual, copia `%USERPROFILE%\Klive` en `KliveData\Klive` antes de ejecutarla por primera vez.
+</Callout>
+
+<Callout type="warning" emoji="⚠️">
+Extrae el archivo comprimido en una carpeta en la que puedas escribir. En una ubicación de solo lectura (por ejemplo, dentro de `C:\Program Files`), Klive no puede crear `KliveData` y recurre a las carpetas del perfil de usuario de un Klive instalado.
+</Callout>
+
+## Linux
+
+El paquete de instalación de Linux es un archivo `.AppImage`. Puede que necesites descargar e instalar FUSE en tu equipo para usarlo. Por ejemplo, en Ubuntu (donde FUSE no viene instalado de forma predeterminada), puedes instalarlo así:
+
+```text
+sudo apt-get install fuse libfuse2
+```
+
+Copia el archivo `.AppImage` en la carpeta desde la que quieras usarlo. Hazlo ejecutable con esta línea de comandos:
+
+```text
+chmod +x KliveIdeSetup-{version}-{arch}.AppImage
+```
+
+También puedes hacer clic con el botón derecho en el archivo en el gestor de archivos y seleccionar el comando Propiedades. En la pestaña Permisos, marca la casilla Permitir ejecutar el archivo como un programa:
+
+<ClickableImage src="/images/getting-started/ubuntu-permission.png" width={296} />
+
+Después, ejecuta el archivo con un doble clic, o desde un terminal con `./KliveIdeSetup-{version}-{arch}.AppImage`.
+
+## El primer inicio
+
+La primera vez que se inicia, Klive muestra la ventana del emulador con un ZX Spectrum 48K apagado. Klive también puede ofrecerte instalar **Boriel BASIC**, un compilador externo de ZX BASIC. No lo necesitas para este tutorial: Klive lleva integrado su propio compilador de BASIC. Si más adelante quieres Boriel BASIC, la [guía de ZX BASIC](/en/guides/languages/zx-basic/#using-boriel-basic) explica cómo instalarlo.
+
+A continuación, [conoce el emulador](/es/get-started/meet-the-emulator/).

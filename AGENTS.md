@@ -42,6 +42,9 @@ React 19 + Next 16.
   languages are the app's enabled languages (`docs/i18n/languages.json`, checked by
   `doc:i18n:check`, part of `doc:check`); a language is published once it has a `content/<lang>/`.
   Only `get-started/` is translated; other areas link to English.
+- **After adding or removing a site language, delete `docs/.next`** before building: Nextra writes
+  the locale list into a webpack module, and a cached build keeps the old list and fails with
+  "{(intermediate value)}[a] is not a function" while collecting page data. CI builds are clean.
 - Landing-page features carry a `since` version (`docs/landing/features.ts`) and appear only when
   the latest release tag has them.
 - **Moving or renaming a page needs an entry in `docs/redirects.json`** (old path -> new path);

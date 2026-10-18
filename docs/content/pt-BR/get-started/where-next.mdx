@@ -1,0 +1,61 @@
+---
+description: "Você instalou o Klive, escreveu, executou e depurou programas, e exportou um deles. Escolha o que aprender em seguida."
+---
+
+import { Cards } from 'nextra/components'
+
+# Para onde ir agora
+
+Você conheceu o emulador e o IDE, escreveu um programa em assembly Z80, um em ZX BASIC e um para o ZX Spectrum Next, depurou dois deles e exportou um. Veja aqui para onde seguir, de acordo com o que você quer fazer.
+
+## Escrever um jogo ou uma demo
+
+<Cards num={2}>
+  <Cards.Card title="ZX BASIC" href="/en/guides/languages/zx-basic/" arrow>
+    As opções da linguagem, a biblioteca padrão, assembly embutido e código em bancos no 128K e no Next.
+  </Cards.Card>
+  <Cards.Card title="O montador Z80 do Klive" href="/en/reference/z80-assembler/" arrow>
+    Macros, structs, módulos, montagem condicional e todas as diretivas e pragmas.
+  </Cards.Card>
+  <Cards.Card title="O sistema de compilação" href="/en/guides/projects/build-system/" arrow>
+    Personalize com um script o que Compilar, Executar e Exportar fazem.
+  </Cards.Card>
+  <Cards.Card title="Projetos e templates" href="/en/guides/projects/creating-projects/" arrow>
+    O arquivo de projeto, a raiz de compilação e os templates de cada máquina.
+  </Cards.Card>
+</Cards>
+
+## Encontrar um bug
+
+<Cards num={2}>
+  <Cards.Card title="Pontos de interrupção" href="/en/guides/debugging/breakpoints/" arrow>
+    Condições, contagens de ocorrências, logpoints e pontos de interrupção de memória e de E/S.
+  </Cards.Card>
+  <Cards.Card title="Memória e desmontagem" href="/en/guides/debugging/memory/" arrow>
+    Examine qualquer byte da memória, e o código do jeito que a CPU o vê.
+  </Cards.Card>
+</Cards>
+
+## Programar o ZX Spectrum Next
+
+<Cards num={2}>
+  <Cards.Card title="Ferramentas do ZX Spectrum Next" href="/en/guides/next/copper/" arrow>
+    Visualizações ao vivo do Copper, dos sprites, do tilemap, do Layer 2 e das camadas de vídeo.
+  </Cards.Card>
+  <Cards.Card title="Recursos do montador para o Next" href="/en/reference/z80-assembler/zx-next/" arrow>
+    As instruções do Z80N, `.savenex` e os pragmas `.dma` e `.copper`.
+  </Cards.Card>
+</Cards>
+
+## Desmontar um programa
+
+<Cards num={2}>
+  <Cards.Card title="Análise e engenharia reversa" href="/en/guides/analysis/code-coverage/" arrow>
+    Cobertura de código, o profiler, a detecção de código e dados, e o Graphics Finder.
+  </Cards.Card>
+  <Cards.Card title="Snapshots" href="/en/guides/emulator/snapshots/" arrow>
+    Abra, execute e depure arquivos `.sna`, `.z80` e `.szx`.
+  </Cards.Card>
+</Cards>
+
+Todo o resto está nos [Guias](/en/guides/) e na [Referência](/en/reference/). Se algo não funcionar como descrito, [abra uma issue](https://github.com/Dotneteer/kliveide/issues) no GitHub.

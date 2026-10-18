@@ -1,0 +1,85 @@
+---
+description: "Setzen Sie einen Haltepunkt in Ihrem Z80-Programm, starten Sie es mit dem Debugger, durchlaufen Sie es Instruktion für Instruktion und sehen Sie zu, wie sich die Register der CPU ändern."
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# Ihr Programm debuggen
+
+Mit einem Debugger halten Sie ein Programm an und sehen in die Maschine hinein: welche Instruktion als Nächstes läuft, was in den Registern steht und was sich im Speicher befindet. Auf dieser Seite halten Sie das Rahmenfarben-Programm der vorigen Seite an und gehen es Schritt für Schritt durch.
+
+## An einem Haltepunkt anhalten
+
+<Steps>
+
+### Einen Haltepunkt setzen
+
+Klicken Sie im Editor direkt links neben die Zeilennummer **13**, die Zeile `out (#fe),a`. Ein roter Punkt erscheint: Das ist ein **Haltepunkt**. Klicken Sie erneut auf den Punkt, um ihn zu entfernen.
+
+### Das Debugging starten
+
+Klicken Sie in der Build-Leiste auf **Debuggen** oder drücken Sie <kbd>Ctrl</kbd>+<kbd>F5</kbd>. Klive erstellt und startet das Programm wie zuvor, hält aber jetzt an, sobald es den Haltepunkt erreicht.
+
+### Die Seitenleiste „Debuggen“ öffnen
+
+Klicken Sie in der Aktivitätsleiste auf das Symbol **Debuggen**, das zweite von oben.
+
+</Steps>
+
+<Shot
+  src="get-started/debug-paused.webp"
+  alt="Die IDE, angehalten am Haltepunkt in Zeile 13"
+  figure="6.1"
+  caption="Am Haltepunkt angehalten"
+  markers={["breakpoint", "stepover", "registers"]}
+  width={900}
+/>
+
+1. Der Haltepunkt. Die hervorgehobene Zeile ist die Instruktion, die als **Nächstes** läuft: Die Maschine hat vor ihrer Ausführung angehalten.
+2. Die Schritt-Schaltflächen in der Symbolleiste: **Hineinspringen**, **Überspringen** und **Herausspringen**.
+3. Der Bereich **Z80 CPU** zeigt die Register. `A` enthält `07`, die Farbe, die gleich geschrieben wird: Weiß.
+
+## Den Code schrittweise durchlaufen
+
+Drücken Sie zweimal <kbd>F10</kbd> (**Überspringen**). Jeder Druck führt eine Instruktion aus und hält wieder an.
+
+<Shot
+  src="get-started/debug-stepped.webp"
+  alt="Die IDE nach zwei Schritten, angehalten an der HALT-Instruktion"
+  figure="6.2"
+  caption="Zwei Instruktionen später"
+  markers={["current"]}
+  width={900}
+/>
+
+1. Die Maschine hat bei `halt` angehalten. Unterwegs hat `out (#fe),a` den Rahmen auf Weiß gesetzt, und `ld e,25` hat 25 in `E` geladen; prüfen Sie das im Bereich **Z80 CPU**.
+
+Sehen Sie sich auch den Emulator an. Die Maschine hat mitten im Zeichnen eines Bildes angehalten, deshalb ist der Bildschirm nur bis zu der Stelle gezeichnet, die der Strahl erreicht hatte. Der schraffierte Teil darunter ist noch das vorherige Bild, und die Beschriftung oben gibt genau an, wo der Strahl steht.
+
+<Shot
+  src="get-started/debug-emulator.webp"
+  alt="Der pausierte Emulator, bis zum Strahl gezeichnet, darunter schraffiert das vorherige Bild"
+  figure="6.3"
+  caption="Der Emulator, während das Programm angehalten ist"
+  width={620}
+/>
+
+## Die Schrittbefehle
+
+| Befehl | Tastenkürzel | Was er tut |
+| --- | --- | --- |
+| Fortsetzen | <kbd>F5</kbd> | Läuft bis zum nächsten Haltepunkt. |
+| Hineinspringen | <kbd>F11</kbd> (<kbd>F12</kbd> unter macOS) | Führt eine Instruktion aus. Bei einem `CALL` wird an der ersten Instruktion des Unterprogramms angehalten. |
+| Überspringen | <kbd>F10</kbd> | Führt eine Instruktion aus. Ein `CALL`, ein `RST` oder eine Blockinstruktion wie `LDIR` läuft vollständig durch. |
+| Herausspringen | <kbd>Shift</kbd>+<kbd>F11</kbd> (<kbd>Shift</kbd>+<kbd>F12</kbd> unter macOS) | Läuft, bis das aktuelle Unterprogramm zurückkehrt. |
+| Anhalten | <kbd>F4</kbd> | Schaltet die Maschine aus. |
+
+<Callout type="info" emoji="💡">
+Drücken Sie ein paarmal <kbd>F5</kbd>: Jedes Mal durchläuft das Programm seine Schleife einmal und hält wieder am Haltepunkt an, wobei `A` jeweils um eins kleiner ist als zuvor.
+</Callout>
+
+## Was es noch zu sehen gibt
+
+Die Seitenleiste „Debuggen“ hat weitere Bereiche; klicken Sie auf einen Titel, um einen Bereich auf- oder zuzuklappen. Die letzten Schaltflächen der Symbolleiste öffnen die Ansichten **Speicher** und **Disassemblierung**. [Haltepunkte](/en/guides/debugging/breakpoints/) erklärt Bedingungen, Trefferanzahlen und Speicherhaltepunkte, und die übrigen [Anleitungen zum Debugging](/en/guides/debugging/run-debug/) behandeln jede Ansicht.
+
+Als Nächstes schreiben Sie [Ihr erstes BASIC-Programm](/de/get-started/first-basic-program/).

@@ -1,0 +1,61 @@
+---
+description: "Telepítettük a Klive-ot, programokat írtunk, futtattunk és vizsgáltunk a hibakeresővel, egyet pedig exportáltunk is. Válasszuk ki, mit tanuljunk meg ezután."
+---
+
+import { Cards } from 'nextra/components'
+
+# Merre tovább?
+
+Megismerkedtünk az emulátorral és az IDE-vel, írtunk programot Z80 assemblyben, ZX BASIC-ben és ZX Spectrum Nextre, kettőt közülük a hibakeresővel is megvizsgáltunk, egyet pedig exportáltunk. Íme néhány irány a folytatáshoz, aszerint, hogy mit szeretnénk csinálni. A hivatkozott oldalak angol nyelvűek.
+
+## Játék vagy demó írása
+
+<Cards num={2}>
+  <Cards.Card title="ZX BASIC" href="/en/guides/languages/zx-basic/" arrow>
+    A nyelvi beállítások, a standard könyvtár, a beágyazott assembly és a bankokba szervezett kód a 128K-n és a Nexten.
+  </Cards.Card>
+  <Cards.Card title="A Klive Z80 assembler" href="/en/reference/z80-assembler/" arrow>
+    Makrók, struktúrák, modulok, feltételes fordítás, valamint az összes direktíva és pragma.
+  </Cards.Card>
+  <Cards.Card title="A fordítási rendszer" href="/en/guides/projects/build-system/" arrow>
+    A fordítás, a futtatás és az exportálás testreszabása szkripttel.
+  </Cards.Card>
+  <Cards.Card title="Projektek és sablonok" href="/en/guides/projects/creating-projects/" arrow>
+    A projektfájl, a fordítási gyökér és az egyes gépek sablonjai.
+  </Cards.Card>
+</Cards>
+
+## Hibakeresés
+
+<Cards num={2}>
+  <Cards.Card title="Töréspontok" href="/en/guides/debugging/breakpoints/" arrow>
+    Feltételek, találatszámok, naplópontok, valamint töréspontok a memórián és az I/O-n.
+  </Cards.Card>
+  <Cards.Card title="Memória és visszafejtés" href="/en/guides/debugging/memory/" arrow>
+    A memória bármely bájtjának, illetve a kódnak a megtekintése úgy, ahogy a CPU látja.
+  </Cards.Card>
+</Cards>
+
+## A ZX Spectrum Next programozása
+
+<Cards num={2}>
+  <Cards.Card title="ZX Spectrum Next eszközök" href="/en/guides/next/copper/" arrow>
+    Élő nézetek a Copperről, a sprite-okról, a tilemapről, a Layer 2-ről és a videorétegekről.
+  </Cards.Card>
+  <Cards.Card title="Az assembler Next-funkciói" href="/en/reference/z80-assembler/zx-next/" arrow>
+    A Z80N utasításai, a `.savenex`, valamint a `.dma` és a `.copper` pragma.
+  </Cards.Card>
+</Cards>
+
+## Egy program szétszedése
+
+<Cards num={2}>
+  <Cards.Card title="Elemzés és visszafejtés" href="/en/guides/analysis/code-coverage/" arrow>
+    Kódlefedettség, profilozó, kód- és adatfelismerés, valamint a grafikakereső (Graphics Finder).
+  </Cards.Card>
+  <Cards.Card title="Pillanatképek" href="/en/guides/emulator/snapshots/" arrow>
+    `.sna`, `.z80` és `.szx` fájlok megnyitása, futtatása és hibakeresése.
+  </Cards.Card>
+</Cards>
+
+Minden más az [Útmutatók](/en/guides/) és a [Referencia](/en/reference/) oldalain található. Ha valami nem a leírtak szerint működik, a hibát egy [GitHub-hibajegyben](https://github.com/Dotneteer/kliveide/issues) lehet jelezni.

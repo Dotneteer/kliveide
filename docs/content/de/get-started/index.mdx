@@ -1,0 +1,63 @@
+---
+description: "Klive ist ein Emulator für ZX Spectrum und ZX Spectrum Next und eine vollständige IDE in einer App. Dieses Tutorial führt Sie von der Installation bis zum Schreiben, Ausführen und Debuggen Ihrer ersten Programme."
+---
+
+import { Cards } from 'nextra/components'
+
+# Willkommen bei Klive
+
+Klive ist ein Emulator und eine integrierte Entwicklungsumgebung (IDE) in einer App. Klive emuliert den ZX Spectrum, den ZX Spectrum Next und mehrere weitere Z80-Maschinen, und Sie können darin Programme für diese Maschinen in Z80-Assembler oder ZX BASIC schreiben, erstellen, ausführen und debuggen. Klive läuft unter macOS, Windows und Linux.
+
+<Shot
+  src="get-started/debug-paused.webp"
+  alt="Die Klive IDE, angehalten an einem Haltepunkt in einem Z80-Assemblerprogramm"
+  figure="1.1"
+  caption="Die IDE von Klive, angehalten an einem Haltepunkt"
+  width={900}
+/>
+
+## Zwei Fenster
+
+Klive hat zwei Fenster, die zusammenarbeiten:
+
+- **Der Emulator** zeigt die Maschine: ihren Bildschirm, eine Symbolleiste zum Starten, Pausieren und Anhalten und, wenn Sie möchten, eine virtuelle Tastatur.
+- **Die IDE** ist der Ort, an dem Sie Code schreiben: mit einem Projekt-Explorer, einem Code-Editor, einer Befehlszeile und den Debugging-Bereichen, die Register, Speicher und mehr anzeigen.
+
+Sie können die beiden Fenster nebeneinander anordnen oder auf zwei Monitore verteilen.
+
+## Was Sie erwartet
+
+Dieses Tutorial dauert etwa 90 Minuten. Jede Seite baut auf der vorherigen auf, Sie können aber nach jeder Seite aufhören.
+
+<Cards num={2}>
+  <Cards.Card title="1. Klive installieren" href="/de/get-started/install/" arrow>
+    Klive unter macOS, Windows oder Linux herunterladen und installieren.
+  </Cards.Card>
+  <Cards.Card title="2. Der Emulator" href="/de/get-started/meet-the-emulator/" arrow>
+    Einen ZX Spectrum starten, ein BASIC-Programm eintippen und eine andere Maschine wählen.
+  </Cards.Card>
+  <Cards.Card title="3. Ein Programm von Kassette laden" href="/de/get-started/load-from-tape/" arrow>
+    Eine `.tap`-Datei laden und ausführen, schnell oder in Echtzeit.
+  </Cards.Card>
+  <Cards.Card title="4. Die IDE" href="/de/get-started/meet-the-ide/" arrow>
+    Sich in der IDE zurechtfinden und ihre Sprache einstellen.
+  </Cards.Card>
+  <Cards.Card title="5. Ihr erstes Assemblerprogramm" href="/de/get-started/first-assembly-program/" arrow>
+    Ein Projekt anlegen, Z80-Assembler schreiben und ausführen.
+  </Cards.Card>
+  <Cards.Card title="6. Ihr Programm debuggen" href="/de/get-started/debug-your-program/" arrow>
+    An einem Haltepunkt anhalten, den Code schrittweise durchlaufen und zusehen, wie sich die Register ändern.
+  </Cards.Card>
+  <Cards.Card title="7. Ihr erstes BASIC-Programm" href="/de/get-started/first-basic-program/" arrow>
+    ZX BASIC schreiben, mit Klive BASIC kompilieren und Anweisung für Anweisung debuggen.
+  </Cards.Card>
+  <Cards.Card title="8. Ihr erstes Programm für den ZX Spectrum Next" href="/de/get-started/first-next-program/" arrow>
+    Ein Hardware-Sprite auf den Bildschirm des Next bringen.
+  </Cards.Card>
+  <Cards.Card title="9. Ihre Arbeit speichern und weitergeben" href="/de/get-started/save-and-share/" arrow>
+    Ihr Programm als Kassettendatei exportieren, die andere Emulatoren und echte Maschinen laden können.
+  </Cards.Card>
+  <Cards.Card title="10. Wie es weitergeht" href="/de/get-started/where-next/" arrow>
+    Wählen Sie Ihr nächstes Thema.
+  </Cards.Card>
+</Cards>

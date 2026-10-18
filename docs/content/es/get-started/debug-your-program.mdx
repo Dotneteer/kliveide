@@ -1,0 +1,85 @@
+---
+description: "Pon un punto de interrupción en tu programa Z80, inícialo con el depurador, avanza por él instrucción a instrucción y observa cómo cambian los registros de la CPU."
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# Depura tu programa
+
+Un depurador te permite detener un programa y mirar dentro de la máquina: qué instrucción se ejecuta a continuación, qué contienen los registros y qué hay en la memoria. En esta página detendrás el programa de colores del borde de la página anterior y lo recorrerás paso a paso.
+
+## Detente en un punto de interrupción
+
+<Steps>
+
+### Pon un punto de interrupción
+
+En el editor, haz clic justo a la izquierda del número de línea **13**, la línea `out (#fe),a`. Aparece un punto rojo: es un **punto de interrupción**. Vuelve a hacer clic en el punto para quitarlo.
+
+### Empieza a depurar
+
+Haz clic en **Depurar** en la barra de compilación, o pulsa <kbd>Ctrl</kbd>+<kbd>F5</kbd>. Klive compila e inicia el programa como antes, pero ahora se detiene al llegar al punto de interrupción.
+
+### Abre la barra lateral Depurar
+
+Haz clic en el icono **Depurar** de la barra de actividades, el segundo empezando por arriba.
+
+</Steps>
+
+<Shot
+  src="get-started/debug-paused.webp"
+  alt="El IDE detenido en el punto de interrupción de la línea 13"
+  figure="6.1"
+  caption="Detenido en el punto de interrupción"
+  markers={["breakpoint", "stepover", "registers"]}
+  width={900}
+/>
+
+1. El punto de interrupción. La línea resaltada es la instrucción que se ejecuta **a continuación**: la máquina se ha detenido antes de ejecutarla.
+2. Los botones de ejecución paso a paso de la barra de herramientas: **Entrar**, **Saltar** y **Salir**.
+3. El panel **Z80 CPU** muestra los registros. `A` contiene `07`, el color que se va a escribir: blanco.
+
+## Avanza paso a paso por el código
+
+Pulsa <kbd>F10</kbd> (**Saltar**) dos veces. Cada pulsación ejecuta una instrucción y vuelve a detenerse.
+
+<Shot
+  src="get-started/debug-stepped.webp"
+  alt="El IDE tras dos pasos, detenido en la instrucción HALT"
+  figure="6.2"
+  caption="Dos instrucciones después"
+  markers={["current"]}
+  width={900}
+/>
+
+1. La máquina se ha detenido en `halt`. Por el camino, `out (#fe),a` ha puesto el borde en blanco y `ld e,25` ha puesto 25 en `E`; compruébalo en el panel **Z80 CPU**.
+
+Mira también el emulador. La máquina se ha detenido a mitad del dibujo de un fotograma, así que la pantalla solo está dibujada hasta donde había llegado el haz. La parte rayada que queda debajo es todavía el fotograma anterior, y la etiqueta de la parte superior indica exactamente dónde está el haz.
+
+<Shot
+  src="get-started/debug-emulator.webp"
+  alt="El emulador en pausa, dibujado hasta el haz, con el fotograma anterior rayado debajo"
+  figure="6.3"
+  caption="El emulador mientras el programa está en pausa"
+  width={620}
+/>
+
+## Los comandos de ejecución paso a paso
+
+| Comando | Atajo | Qué hace |
+| --- | --- | --- |
+| Continuar | <kbd>F5</kbd> | Ejecuta hasta el siguiente punto de interrupción. |
+| Entrar | <kbd>F11</kbd> (<kbd>F12</kbd> en macOS) | Ejecuta una instrucción. En un `CALL`, se detiene en la primera instrucción de la subrutina. |
+| Saltar | <kbd>F10</kbd> | Ejecuta una instrucción. Un `CALL`, un `RST` o una instrucción de bloque como `LDIR` se ejecutan por completo. |
+| Salir | <kbd>Shift</kbd>+<kbd>F11</kbd> (<kbd>Shift</kbd>+<kbd>F12</kbd> en macOS) | Ejecuta hasta que la subrutina actual retorna. |
+| Detener | <kbd>F4</kbd> | Apaga la máquina. |
+
+<Callout type="info" emoji="💡">
+Pulsa <kbd>F5</kbd> unas cuantas veces: cada vez, el programa da una vuelta a su bucle y se vuelve a detener en el punto de interrupción, con `A` una unidad menor que antes.
+</Callout>
+
+## Más cosas que mirar
+
+La barra lateral Depurar tiene más paneles; haz clic en un título para abrir o cerrar un panel. Los últimos botones de la barra de herramientas abren las vistas **Memoria** y **Desensamblado**. [Puntos de interrupción](/en/guides/debugging/breakpoints/) explica las condiciones, los contadores de activaciones y los puntos de interrupción de memoria, y las demás [guías de depuración](/en/guides/debugging/run-debug/) tratan todas las vistas.
+
+A continuación, escribe [tu primer programa en BASIC](/es/get-started/first-basic-program/).

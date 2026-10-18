@@ -1,0 +1,60 @@
+---
+description: "A program exportálása BASIC betöltővel ellátott .tap vagy .tzx kazettafájlba, illetve .nex fájlba, hogy más emulátorok és valódi gépek is betölthessék."
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# A munka mentése és megosztása
+
+A projekt a saját mappájában él, így amint a fájljait elmentjük, a projekt is mentve van. Ha a programot másnak is oda szeretnénk adni, **exportáljuk**: a Klive lefordítja, és olyan fájlt ír, amelyet bármely ZX Spectrum emulátor – vagy akár egy valódi gép – be tud tölteni.
+
+## Exportálás kazettafájlba
+
+<Steps>
+
+### Az exportálási párbeszédablak megnyitása
+
+Nyissuk meg a keretszínező projektet, és válasszuk a **Fordítás › Export code...** menüpontot.
+
+### A mezők kitöltése
+
+<Shot
+  src="get-started/export-dialog.webp"
+  alt="A Kód exportálása párbeszédablak egy TZX fájlhoz kitöltve"
+  figure="9.1"
+  caption="A keretszínező program exportálása"
+  width={620}
+/>
+
+- **Formátum**: TZX (vagy TAP; mindkettő kazettafájl).
+- **Exportálási mappa**: hagyjuk üresen, és a fájl a saját mappánkban lévő `KliveExports` mappába kerül.
+- **Exportált fájl neve**: `border-colours`. A kiterjesztést a Klive teszi hozzá.
+- **Programnév**: ezt a nevet mutatja a `LOAD ""` a betöltés közben.
+- **BASIC betöltő létrehozása**: maradjon bejelölve. Ekkor a kazetta egy rövid BASIC programmal kezdődik, amely betölti és elindítja a kódot, így bárkinek elég csak annyit begépelnie, hogy `LOAD ""`.
+
+### Exportálás
+
+Kattintsunk az **Exportálás** gombra. A Klive lefordítja a programot, és megírja a fájlt.
+
+</Steps>
+
+## Kipróbálás
+
+Töltsük be az exportált fájlt úgy, ahogy a felhasználóink is fogják: válasszuk a **Gép › Kazetta › Kazetta behelyezése...** menüpontot, jelöljük ki a fájlt, és gépeljük be a `LOAD ""` parancsot, ahogy a [kazettás oldalon](/hu/get-started/load-from-tape/) láttuk. A BASIC betöltő lefut, betölti a kódot, és a keret elkezdi váltogatni a színét.
+
+<Callout type="info" emoji="💡">
+Ha meg szeretnénk nézni a betöltő BASIC programját, kapcsoljuk ki a gyors betöltést (a rakéta az emulátor eszköztárán), szüneteltessük a gépet, miután az első blokk betöltődött, és nyissuk meg a **Nézet › Gépnézetek › BASIC-lista** nézetet.
+</Callout>
+
+## További formátumok
+
+| Gép | Formátum | Mi ez? |
+| --- | --- | --- |
+| ZX Spectrum 48K, 128K, +2, +3 | `.tap`, `.tzx` | Kazettafájlok, opcionális BASIC betöltővel és betöltőképernyővel. |
+| ZX Spectrum Next | `.nex` | A Next programfájlja, amelyet a NextZXOS az SD-kártyáról futtat. |
+| ZX81, ZX80 | `.p`, `.o` | Programfájlok a gépek `LOAD` parancsához. |
+| Bármelyik | Intel HEX | Szöveges formátum EPROM-égetőkhöz és más eszközökhöz. |
+
+A [Kód exportálása (angolul)](/en/guides/projects/exporting-code/) oldal minden beállítást ismertet, a 128K-s gépek több bankra kiterjedő programjait is beleértve.
+
+Végül nézzük meg, [merre érdemes továbbhaladni](/hu/get-started/where-next/).

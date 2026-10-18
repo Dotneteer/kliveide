@@ -1,4 +1,4 @@
-; Border colours - the program of Get Started, steps 6 and 7.
+; Border colours - the program of Get Started, steps 5 and 6.
 ; It shows the eight border colours, half a second each, forever.
 
         .model Spectrum48

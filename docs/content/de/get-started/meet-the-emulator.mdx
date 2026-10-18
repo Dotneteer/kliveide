@@ -1,0 +1,96 @@
+---
+description: "Starten Sie einen emulierten ZX Spectrum, tippen Sie ein BASIC-Programm ein, führen Sie es aus und wählen Sie eine andere Maschine."
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# Der Emulator
+
+Beim Start zeigt Klive das Emulatorfenster mit einer ausgeschalteten Maschine. Auf dieser Seite erfahren Sie, wie Sie sie einschalten, ein Programm eintippen und eine andere Maschine wählen.
+
+<Shot
+  src="get-started/emulator-off.webp"
+  alt="Das Emulatorfenster mit einer ausgeschalteten Maschine"
+  figure="2.1"
+  caption="Der Emulator, bevor die Maschine startet"
+  markers={["toolbar", "screen"]}
+  width={620}
+/>
+
+1. Die Symbolleiste startet die Maschine, pausiert sie, hält sie an und startet sie neu. Die erste Schaltfläche, das grüne Dreieck, ist **Maschine starten**.
+2. Der Bildschirm. Solange die Maschine nicht läuft, zeigt er einen Hinweis, wie Sie sie starten.
+
+## Die Maschine starten
+
+Drücken Sie <kbd>F5</kbd>, klicken Sie in der Symbolleiste auf **Maschine starten** oder wählen Sie **Maschine › Starten**. Nach einem Moment zeigt der ZX Spectrum seine Copyright-Meldung, genau wie der echte Computer im Jahr 1982.
+
+<Shot
+  src="get-started/emulator-running.webp"
+  alt="Der ZX Spectrum 48K mit seiner Copyright-Meldung"
+  figure="2.2"
+  caption="Der ZX Spectrum 48K ist gestartet"
+  width={620}
+/>
+
+## Ein BASIC-Programm eintippen
+
+Klicken Sie auf den Bildschirm des Emulators, damit er Ihre Tastatureingaben erhält. Der ZX Spectrum 48K gibt BASIC-**Schlüsselwörter** mit einer einzigen Taste ein: Am Anfang einer Zeile zeigt der Cursor **K**, und ein Druck auf <kbd>P</kbd> tippt das ganze Wort `PRINT`.
+
+<Steps>
+
+### Die Zeile eintippen
+
+Tippen Sie <kbd>1</kbd> <kbd>0</kbd> und dann <kbd>P</kbd> für `PRINT`. Für das Anführungszeichen halten Sie **Symbol Shift** gedrückt und drücken <kbd>P</kbd>. In Klive ist Symbol Shift die **rechte Alt**-Taste (auf dem Mac die rechte **Option**-Taste). Tippen Sie `hello`, dann auf dieselbe Weise das schließende Anführungszeichen, und drücken Sie <kbd>Enter</kbd>.
+
+<Shot
+  src="get-started/emulator-basic-line.webp"
+  alt="Die BASIC-Zeile 10 PRINT &quot;hello&quot; im Programmlisting"
+  figure="2.3"
+  caption="Die Zeile steht im Programm"
+  width={620}
+/>
+
+### Ausführen
+
+Drücken Sie <kbd>R</kbd>, was `RUN` tippt, und dann <kbd>Enter</kbd>. Das Programm gibt `hello` aus und meldet `0 OK, 10:1`: Es wurde ohne Fehler beendet, in Zeile 10, Anweisung 1.
+
+<Shot
+  src="get-started/emulator-hello.webp"
+  alt="Das Programm hat hello ausgegeben"
+  figure="2.4"
+  caption="Ihr erstes Programm ist gelaufen"
+  width={620}
+/>
+
+</Steps>
+
+<Callout type="info" emoji="💡">
+Wenn Sie sich die Schlüsselworttasten schwer merken können, blenden Sie die **virtuelle Tastatur** ein – mit der Tastatur-Schaltfläche in der Symbolleiste des Emulators oder mit **Ansicht › Virtuelle Tastatur**. Sie zeigt alle Schlüsselwörter, und Sie können auf ihre Tasten klicken. Siehe [Die Tastatur](/en/guides/emulator/keyboard/).
+</Callout>
+
+## Die Maschine steuern
+
+| Aktion | Taste | Symbolleiste |
+| --- | --- | --- |
+| Starten oder fortsetzen | <kbd>F5</kbd> | **Maschine starten** (grünes Dreieck) |
+| Pausieren | <kbd>Shift</kbd>+<kbd>F5</kbd> | **Pausieren** |
+| Anhalten (ausschalten) | <kbd>F4</kbd> | **Anhalten** |
+| Neu starten | <kbd>Shift</kbd>+<kbd>F4</kbd> | **Neu starten** |
+
+Eine angehaltene Maschine kann nicht fortgesetzt werden, aber Sie können ihren Speicher und ihre Register weiterhin in der IDE ansehen.
+
+## Eine andere Maschine wählen
+
+**Maschine › Maschinentyp** listet Ihre bevorzugten Maschinen auf. **Maschine auswählen…** (<kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>M</kbd> unter macOS, <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>M</kbd> unter Windows und Linux) öffnet ein Dialogfeld mit allen Modellen, die Klive emuliert. Sie können auch auf den Namen der Maschine am rechten Ende der Statusleiste des Emulators klicken.
+
+<Shot
+  src="get-started/select-machine.webp"
+  alt="Das Dialogfeld „Maschine auswählen“ mit ausgewähltem ZX Spectrum 48K"
+  figure="2.5"
+  caption="Alle Modelle mit ihren Hardwaredetails"
+  width={760}
+/>
+
+Tippen Sie in das Filterfeld, um ein Modell zu finden (zum Beispiel `128K` oder `NTSC`), wählen Sie es aus, um seine Details zu sehen, und doppelklicken Sie darauf, um zu wechseln. Der Stern fügt ein Modell dem Menü **Maschinentyp** hinzu. [Maschinentypen](/en/reference/machine-types/) listet alle Maschinen und Modelle auf.
+
+Als Nächstes [laden Sie ein Programm von Kassette](/de/get-started/load-from-tape/).

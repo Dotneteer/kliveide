@@ -1,0 +1,60 @@
+---
+description: "Exportar o programa como ficheiro de cassete .tap ou .tzx com um carregador BASIC, ou como ficheiro .nex, para que outros emuladores e máquinas reais o possam carregar."
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# Guardar e partilhar o trabalho
+
+O projeto vive na sua pasta, por isso fica guardado assim que os seus ficheiros são guardados. Para dar o programa a outra pessoa, **exporte-o**: o Klive compila-o e escreve um ficheiro que qualquer emulador de ZX Spectrum, ou uma máquina real, consegue carregar.
+
+## Exportar um ficheiro de cassete
+
+<Steps>
+
+### Abrir a caixa de diálogo de exportação
+
+Abra o projeto das cores da margem e escolha **Compilar › Export code...**.
+
+### Preencher os campos
+
+<Shot
+  src="get-started/export-dialog.webp"
+  alt="A caixa de diálogo Exportar código preenchida para um ficheiro TZX"
+  figure="9.1"
+  caption="Exportar o programa das cores da margem"
+  width={620}
+/>
+
+- **Formato**: TZX (ou TAP; ambos são ficheiros de cassete).
+- **Pasta de destino**: deixe-a vazia, e o ficheiro fica na pasta `KliveExports` da pasta pessoal.
+- **Nome do ficheiro**: `border-colours`. O Klive acrescenta a extensão.
+- **Nome do programa**: o nome que `LOAD ""` mostra durante o carregamento.
+- **Criar carregador BASIC**: mantenha esta opção marcada. A cassete começa então com um pequeno programa em BASIC que carrega o código e o executa, por isso basta escrever `LOAD ""`.
+
+### Exportar
+
+Clique em **Exportar**. O Klive compila o programa e escreve o ficheiro.
+
+</Steps>
+
+## Testar
+
+Carregue o ficheiro exportado tal como os utilizadores o farão: escolha **Máquina › Cassete › Inserir cassete...**, selecione o ficheiro e escreva `LOAD ""`, como na [página das cassetes](/pt-PT/get-started/load-from-tape/). O carregador BASIC é executado, carrega o código, e a margem começa a mudar de cor.
+
+<Callout type="info" emoji="💡">
+Para ver o programa BASIC do carregador, desative o carregamento rápido (o foguetão na barra de ferramentas do emulador), pause a máquina depois de carregado o primeiro bloco e abra **Ver › Vistas da máquina › Listagem BASIC**.
+</Callout>
+
+## Outros formatos
+
+| Máquina | Formato | O que é |
+| --- | --- | --- |
+| ZX Spectrum 48K, 128K, +2, +3 | `.tap`, `.tzx` | Ficheiros de cassete, com carregador BASIC e ecrã de carregamento opcionais. |
+| ZX Spectrum Next | `.nex` | O ficheiro de programa do Next, que o NextZXOS executa a partir do cartão SD. |
+| ZX81, ZX80 | `.p`, `.o` | Ficheiros de programa para o respetivo comando `LOAD`. |
+| Qualquer | Intel HEX | Um formato de texto para programadores de EPROM e outras ferramentas. |
+
+[Exportar código](/en/guides/projects/exporting-code/) explica todas as opções, incluindo os programas com vários bancos no 128K.
+
+A seguir, ver [para onde ir a seguir](/pt-PT/get-started/where-next/).

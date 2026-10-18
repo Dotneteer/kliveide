@@ -1,0 +1,97 @@
+---
+description: "ZX Spectrum programok betöltése .tap és .tzx kazettafájlokból, azonnal vagy valós időben, és egy kazetta tartalmának megtekintése a kazettanézővel."
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# Program betöltése kazettáról
+
+A ZX Spectrum szoftvereit egykor kazettán árulták, ma pedig `.tap` és `.tzx` fájlokként terjednek: ezek az egykori kazetták felvételei. A Klive úgy játssza le őket az emulált gépnek, ahogy egy magnetofon tenné.
+
+## Kazetta betöltése
+
+<Steps>
+
+### A kazetta behelyezése
+
+Válasszuk a **Gép › Kazetta › Kazetta behelyezése...** (vagy a **Fájl › Fájl megnyitása...**) menüpontot, és válasszunk ki egy `.tap` vagy `.tzx` fájlt. A Klive más kiterjesztésű fájlokat is megpróbál kazettaként beolvasni.
+
+### A LOAD "" begépelése
+
+Ha a gép nem fut, indítsuk el, és kattintsunk a képernyőjére. ZX Spectrum 48K-n nyomjuk meg a <kbd>J</kbd> billentyűt a `LOAD` kulcsszóhoz, majd gépeljünk be két idézőjelet (kétszer **Symbol Shift**+<kbd>P</kbd>; a Symbol Shift a jobb oldali <kbd>Alt</kbd> billentyű), és nyomjuk meg az <kbd>Enter</kbd> billentyűt. 128K-s gépen vagy +2-n ehelyett a nyitómenü **Tape Loader** pontját válasszuk.
+
+### Várakozás a programra
+
+A gép betölti mindazt, ami a kazettán van, és a legtöbb program betöltés után magától elindul.
+
+</Steps>
+
+<Callout type="info" emoji="💡">
+A kazetta bármikor kicserélhető, akár futó gép mellett is: olyan ez, mintha kivennénk a magnóból az egyik kazettát, és betennénk egy másikat.
+</Callout>
+
+## Normál és gyors betöltés
+
+A ZX Spectrum programok és kazetták betöltése hosszú ideig tarthat, főleg nagy fájloknál. A *normál betöltés* mellett a Klive támogatja a *gyors betöltést* is, amely a programot azonnal, a másodperc törtrésze alatt beolvassa.
+
+A gyors betöltés a **Gép › Kazetta › Gyors betöltés** paranccsal (vagy a **Beállítások › Emulátor** oldalon), illetve az eszköztár **Gyors betöltés** ikonjára (rakéta) kattintva kapcsolható be és ki.
+
+A gyors betöltés módja akár egy játék betöltése közben is átállítható, a változás azonban csak a következő program betöltésekor lép érvénybe.
+
+<Callout type="info" emoji="💡">
+A gyors betöltés alapértelmezés szerint be van kapcsolva.
+</Callout>
+
+## A kazetta visszatekerése
+
+Amikor a betöltés befejeződik vagy megszakad, a kazetta ott marad, ahol volt, mintha egy valódi magnót állítottunk volna meg. A `LOAD` parancs újbóli kiadásakor a betöltés onnan kezdi keresni a következő fájlfejlécet, ahol korábban megállt.
+
+A kazetta – akárcsak egy valódi kazetta – visszatekerhető az elejére. Kattintsunk az eszköztár **Visszatekerés** ikonjára (a rakéta ikontól jobbra lévőre), vagy adjuk ki a **Gép › Kazetta › Visszatekerés** parancsot.
+
+## Betekintés egy kazettába
+
+Ha az Intézőből megnyitunk egy `.tap` vagy `.tzx` fájlt, láthatjuk, mi van rajta (a kiterjesztés kis- és nagybetűs írása nem számít: a `GAME.TAP` is megnyílik). A nézőben a következők láthatók:
+
+- **Összefoglaló**: a formátum (és a TZX verziója), a fájl mérete, a benne lévő blokkok és fájlok száma, a lejátszás hossza, valamint TZX fájlnál – ha rögzítették – a cím, a kiadó és az évszám.
+- **Idővonalsáv**: a teljes kazetta lejátszási sorrendben; minden blokk olyan széles, amilyen hosszú a lejátszása. A kijelölt blokk körvonalat kap; egy szakaszra kattintva kijelölhető a hozzá tartozó blokk. A BASIC programok kiemelőszínnel, a Klive által le nem játszható blokkok pirossal jelennek meg.
+- **A blokkok**: az összes blokk listája, fájlonként csoportosítva. Egy szabványos fejléc és az utána következő adatblokk együtt egy fájlt alkot, például `Program "Float Spy"` vagy `Bytes "float.cde"`. Minden sor megmutatja, mit tartalmaz a blokk: magától induló programnál például `LINE 9996`, kódnál a betöltési címet. A lista a **Mind**, **Adat**, **BASIC**, **Kód** és **Nem játszott** gombokkal szűrhető, a nyílbillentyűkkel pedig bejárható.
+
+A lista melletti részletek a kijelölt blokkot írják le: a hosszát és az ellenőrzőösszegét, a lejátszás időpontját, a fejléc mezőit, turbóblokknál pedig az időzítést. A lista és a részletek mindig egymás mellett maradnak. Egy **BASIC program** esetén látszik, hány sorból áll, egy **képernyő** (`SCREEN$`) pedig kirajzolódik; egy program listájának vagy egy blokk bájtjainak elolvasásához le kell választani a blokkot.
+
+<ClickableImage src="/images/getting-started/tape-viewer.png" width={900} />
+
+Egy **fejlécet** kijelölve megtekinthető a 19 bájtjának magyarázata. A bájtok mezők szerint csoportosítva jelennek meg – jelzőbájt, típus, a tízkarakteres név, három kétbájtos érték és az ellenőrzőösszeg –, alattuk pedig a mezők listája a dekódolt értékekkel. Ha egy bájtra vagy mezőre mutatunk (vagy a <kbd>Tab</kbd> billentyűvel lépkedünk a listán), mindkettő kiemelődik, és elolvasható, mit jelent az adott mező; egy program automatikus indítási sora vagy egy kód betöltési címe már kezdettől magyarázattal jelenik meg. A három kétbájtos érték jelentése fájltípusonként más, és a magyarázat ezt is megadja.
+
+<ClickableImage src="/images/getting-started/tape-header-bytes.png" width={560} />
+
+A **Leválasztás** paranccsal egy blokk teljes egészében, saját dokumentumban tekinthető meg: memóriatartalomként (ez a kód alapértelmezése), visszafejtésként azon a címen, ahová a blokk betöltődik, teljes BASIC-listaként vagy képernyőként. Ehhez használhatjuk a blokk részletei melletti gombot (a nyila a nézetet választja ki), a sorában lévő ikont, a dupla kattintást vagy az <kbd>Enter</kbd> billentyűt. A **Vissza** gomb visszavisz a kazettához. A fejléc nélküli blokknak nincs saját betöltési címe: a **Listázás** mezőbe írt címen visszafejthető, ha pedig tudjuk, hogy programról van szó, a jobb gombos menü **Olvasás BASIC-ként** parancsával BASIC-ként is beolvasható.
+
+<Callout type="warning" emoji="⚠️">
+Egyes TZX blokkokat – tiszta hangokat, impulzussorozatokat, tiszta adatot, közvetlen és CSW felvételeket, általánosított adatot – a Klive megjelenít, de **nem játssza le**. Az ilyen blokkokat igénylő kazettát egy figyelmeztető sáv jelzi, és a betöltése sikertelen lehet.
+</Callout>
+
+## Kazetta betöltése az IDE-ből
+
+ZX Spectrum 48K, 128K vagy +2/+3 gépen a kazettanéző lapján három gomb található, és az Intéző helyi menüjében a `.tap` és `.tzx` fájloknál ugyanez a három parancs szerepel:
+
+<ClickableImage src="/images/getting-started/tape-viewer-commands.png" width={900} />
+
+- A **Kazetta betöltése és futtatása** (lejátszás ikon) alaphelyzetbe állítja a gépet, és elindítja a kazetta betöltését: 48K-n begépeli a `LOAD ""` parancsot, 128K-n vagy +2-n pedig a nyitómenü **Tape Loader** pontját választja (+2A/+3 gépen a **Loader** pontot, amely viszont lemezről indít, ha az A meghajtóban van lemez). Ezután a kazettán lévő betöltőprogram – bármilyen legyen is – úgy fut, ahogy a valódi gépen.
+- A **Kazetta behelyezése** (kazetta ikon) alaphelyzetbe állítás nélkül teszi be a kazettát a magnóba, ugyanúgy, mint a **Gép › Kazetta › Kazetta behelyezése...** parancs. A már bent lévő kazetta újbóli behelyezése visszatekeri azt.
+- A **Kazetta betöltése és hibakeresése** (hibakeresés ikon) ugyanaz, mint a **Kazetta betöltése és futtatása**, csak élesített töréspontokkal.
+
+<ClickableImage src="/images/getting-started/tape-viewer-loaded.png" width={720} />
+
+Minden más gépen, például a ZX Spectrum Nexten, a gombok és a menüpontok le vannak tiltva; a gombok elemleírása megmondja, miért. Ugyanezek a műveletek a [`tape-load`](/en/reference/commands#tape-load) paranccsal is elérhetők.
+
+## Hogyan működik a gyors betöltés?
+
+A gyors betöltés egy hatékony technikát alkalmaz: a ROM-rutinok elfogását (ROM hooking). Futás közben az emulátor – minden ZX Spectrum modellen – a `PC` regisztert figyelve észleli, amikor a végrehajtás eléri a ROM betöltő rutinjának belépési pontját.
+
+Amikor a végrehajtás eléri a betöltő rutint, a gyors betöltés felfüggeszti a gépet, és a kazettafájl adatait közvetlenül a memóriába írja. Közben a Z80 regisztereit (a jelzőbiteket is beleértve) pontosan úgy állítja be, ahogy a ROM-ban lévő algoritmus tenné.
+
+Amikor az adatok betöltődtek, a mechanizmus a `PC` regisztert a betöltő rutin kilépési pontjára állítja, mintha a CPU végrehajtotta volna a rutint, majd kilép a gyors módból.
+
+Ha betöltés közben hiba történik, a gyors betöltés a `PC` regisztert annak a rutinnak az elejére állítja, amely a kazettahibát jelzi.
+
+Következő lépésként [ismerkedjünk meg az IDE-vel](/hu/get-started/meet-the-ide/).

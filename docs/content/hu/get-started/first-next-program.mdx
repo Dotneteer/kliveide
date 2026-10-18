@@ -1,0 +1,108 @@
+---
+description: "Z80 assembly program írása ZX Spectrum Nextre, amely egy hardveres sprite-ot jelenít meg és mozgat a képernyőn, és futtatása a Klive Next emulátorán."
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# Az első ZX Spectrum Next program
+
+A ZX Spectrum Next egy modern ZX Spectrum gyorsabb Z80-nal (a Z80N-nel), több memóriával és új videohardverrel: rétegekkel, tilemappel, Copperrel és 128 hardveres sprite-tal. Ezen az oldalon egy sprite-ot jelenítünk meg a képernyőn, és végigmozgatjuk rajta – anélkül, hogy a CPU-val egyetlen képpontot is kirajzolnánk.
+
+## Projekt létrehozása
+
+Válasszuk a **Fájl › Új projekt...** menüpontot ezekkel a beállításokkal:
+
+- **Géptípus**: ZX Spectrum Next.
+- **Projektsablon**: `default`.
+- **Projektnév**: `NextSprite`.
+
+## A program megírása
+
+Cseréljük le a `code/code.kz80.asm` tartalmát erre a programra, és mentsük el:
+
+```z80klive fixture="next-sprite/code/code.kz80.asm"
+; A sprite on the ZX Spectrum Next - the program of Get Started, step 8.
+; It uploads one 16x16 sprite pattern and moves the sprite across the screen.
+
+        .model Next
+        .org #8000
+
+SPRITE_SLOT  .equ #303b     ; selects the sprite (and pattern) to write
+SPRITE_ATTR  .equ #57       ; writes the selected sprite's attributes
+SPRITE_PATT  .equ #5b       ; writes the selected pattern's bytes
+
+Start:
+        ei
+        nextreg #15,%00000001       ; show sprites (on top of the other layers)
+
+        ; Upload pattern 0: 256 bytes, one per pixel
+        ld bc,SPRITE_SLOT
+        xor a
+        out (c),a                   ; pattern 0
+        ld hl,Ball
+        ld bc,SPRITE_PATT           ; B = 0, so OTIR sends 256 bytes
+        otir
+
+        ld d,32                     ; D is the sprite's X coordinate
+Move:
+        ld bc,SPRITE_SLOT
+        xor a
+        out (c),a                   ; select sprite 0
+        ld a,d
+        out (SPRITE_ATTR),a         ; attribute 0: X (low 8 bits)
+        ld a,120
+        out (SPRITE_ATTR),a         ; attribute 1: Y
+        xor a
+        out (SPRITE_ATTR),a         ; attribute 2: no palette offset, mirror or rotation
+        ld a,%10000000
+        out (SPRITE_ATTR),a         ; attribute 3: visible, pattern 0
+        halt                        ; one step per frame
+        inc d
+        jr Move
+
+; The ball: $E3 is the transparent colour, $E0 red, $FF white
+Ball:
+        .defb $E3,$E3,$E3,$E3,$E3,$E3,$E3,$E0,$E0,$E3,$E3,$E3,$E3,$E3,$E3,$E3
+        .defb $E3,$E3,$E3,$E3,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E3,$E3,$E3,$E3
+        .defb $E3,$E3,$E3,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E3,$E3,$E3
+        .defb $E3,$E3,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E3,$E3
+        .defb $E3,$E0,$E0,$E0,$FF,$FF,$FF,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E3
+        .defb $E3,$E0,$E0,$E0,$FF,$FF,$FF,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E3
+        .defb $E3,$E0,$E0,$E0,$FF,$FF,$FF,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E3
+        .defb $E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0
+        .defb $E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0
+        .defb $E3,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E3
+        .defb $E3,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E3
+        .defb $E3,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E3
+        .defb $E3,$E3,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E3,$E3
+        .defb $E3,$E3,$E3,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E3,$E3,$E3
+        .defb $E3,$E3,$E3,$E3,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E0,$E3,$E3,$E3,$E3
+        .defb $E3,$E3,$E3,$E3,$E3,$E3,$E3,$E0,$E0,$E3,$E3,$E3,$E3,$E3,$E3,$E3
+```
+
+Hogyan működik?
+
+- A `nextreg #15,%00000001` a `$15`-ös Next regisztert írja, amelynek 0. bitje láthatóvá teszi a sprite-okat. A `NEXTREG` a Z80N egyik új utasítása.
+- Egy sprite kinézetét a **mintája** határozza meg: 256 bájt a 16 × 16 képponthoz, képpontonként egy színindex. A `$303B` port kiválasztja a 0. mintát, az `OTIR` pedig a 256 bájtot a `$5B` portra küldi. A `$E3` szín átlátszó, így a négyzet sarkai nem látszanak.
+- Egy sprite helyzetét az **attribútumai** adják meg. A `$303B` port kiválasztja a 0. sprite-ot, a `$57` portra küldött négy írás pedig beállítja az X és Y koordinátáját, a beállításait, és a 0. mintával láthatóvá teszi.
+- A ciklus képkockánként egy képponttal jobbra mozgatja a sprite-ot. A `D` egy bájt, így X = 255 után visszafordul 0-ra.
+
+## Futtatás
+
+Kattintsunk a **Futtatás** gombra, vagy nyomjuk meg az <kbd>F5</kbd> billentyűt. Nexten a Klive egy `.nex` fájlt – a Next programformátumát – készít, és a Next operációs rendszerén, a NextZXOS-en keresztül indítja el, amely egy emulált SD-kártyáról töltődik be. Az első indítás néhány másodpercig tart; ezután a Klive a már elindult rendszer elmentett állapotából indul.
+
+<Shot
+  src="get-started/next-running.webp"
+  alt="A ZX Spectrum Next emulátor egy piros labda sprite-tal"
+  figure="8.1"
+  caption="Egy hardveres sprite a Nexten"
+  width={620}
+/>
+
+<Callout type="info" emoji="💡">
+Írjuk át az `ld a,120` sort egy másik értékre, és futtassuk újra a programot: a labda feljebb vagy lejjebb kerül. Ha a program futása közben minden sprite attribútumait és mintáit látni szeretnénk, nyissuk meg a [Sprite-vizsgálót (angolul)](/en/guides/next/sprite-inspector/).
+</Callout>
+
+A [ZX Spectrum Next assembler-referencia (angolul)](/en/reference/z80-assembler/zx-next/) ismerteti a Next utasításait, a `.savenex` direktívát és a Klive assembler többi, Nextre vonatkozó lehetőségét.
+
+Következő lépésként [mentsük és osszuk meg a munkánkat](/hu/get-started/save-and-share/).

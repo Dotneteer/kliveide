@@ -1,4 +1,4 @@
-' Bouncing ball - the program of Get Started, step 8.
+' Bouncing ball - the program of Get Started, step 7.
 ' A ball bounces between the screen's edges and counts its bounces.
 
 DIM x AS INTEGER = 15

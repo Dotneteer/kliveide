@@ -1,0 +1,85 @@
+---
+description: "Defina um ponto de interrupção no seu programa Z80, inicie-o com o depurador, percorra-o instrução por instrução e veja os registradores da CPU mudarem."
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# Depure o seu programa
+
+Um depurador permite parar um programa e olhar dentro da máquina: qual instrução será executada em seguida, o que os registradores contêm e o que há na memória. Nesta página, você para o programa das cores da borda da página anterior e o percorre passo a passo.
+
+## Pare em um ponto de interrupção
+
+<Steps>
+
+### Defina um ponto de interrupção
+
+No editor, clique logo à esquerda do número de linha **13**, a linha `out (#fe),a`. Aparece um ponto vermelho: esse é um **ponto de interrupção**. Clique no ponto de novo para removê-lo.
+
+### Comece a depurar
+
+Clique em **Depurar** na barra de compilação, ou pressione <kbd>Ctrl</kbd>+<kbd>F5</kbd>. O Klive compila e inicia o programa como antes, mas agora ele para quando chega ao ponto de interrupção.
+
+### Abra a barra lateral Depurar
+
+Clique no ícone **Depurar** na barra de atividades, o segundo de cima para baixo.
+
+</Steps>
+
+<Shot
+  src="get-started/debug-paused.webp"
+  alt="O IDE pausado no ponto de interrupção da linha 13"
+  figure="6.1"
+  caption="Pausado no ponto de interrupção"
+  markers={["breakpoint", "stepover", "registers"]}
+  width={900}
+/>
+
+1. O ponto de interrupção. A linha destacada é a instrução que será executada **em seguida**: a máquina parou antes de executá-la.
+2. Os botões de passo a passo na barra de ferramentas: **Intervir**, **Contornar** e **Sair**.
+3. O painel **Z80 CPU** mostra os registradores. `A` contém `07`, a cor que está prestes a ser escrita: branco.
+
+## Percorra o código passo a passo
+
+Pressione <kbd>F10</kbd> (**Contornar**) duas vezes. Cada vez que você pressiona, uma instrução é executada e a máquina para de novo.
+
+<Shot
+  src="get-started/debug-stepped.webp"
+  alt="O IDE após dois passos, parado na instrução HALT"
+  figure="6.2"
+  caption="Duas instruções depois"
+  markers={["current"]}
+  width={900}
+/>
+
+1. A máquina parou em `halt`. No caminho, `out (#fe),a` deixou a borda branca, e `ld e,25` colocou 25 em `E`; confira no painel **Z80 CPU**.
+
+Olhe também para o emulador. A máquina parou no meio do desenho de um quadro, então a tela só está desenhada até onde o feixe tinha chegado. A parte hachurada abaixo dela ainda é o quadro anterior, e o rótulo no topo diz exatamente onde está o feixe.
+
+<Shot
+  src="get-started/debug-emulator.webp"
+  alt="O emulador pausado, desenhado até o feixe, com o quadro anterior hachurado abaixo"
+  figure="6.3"
+  caption="O emulador enquanto o programa está pausado"
+  width={620}
+/>
+
+## Os comandos de passo a passo
+
+| Comando | Atalho | O que faz |
+| --- | --- | --- |
+| Continuar | <kbd>F5</kbd> | Executa até o próximo ponto de interrupção. |
+| Intervir | <kbd>F11</kbd> (<kbd>F12</kbd> no macOS) | Executa uma instrução. Em um `CALL`, para na primeira instrução da sub-rotina. |
+| Contornar | <kbd>F10</kbd> | Executa uma instrução. Um `CALL`, um `RST` ou uma instrução de bloco como `LDIR` é executado por completo. |
+| Sair | <kbd>Shift</kbd>+<kbd>F11</kbd> (<kbd>Shift</kbd>+<kbd>F12</kbd> no macOS) | Executa até a sub-rotina atual retornar. |
+| Parar | <kbd>F4</kbd> | Desliga a máquina. |
+
+<Callout type="info" emoji="💡">
+Pressione <kbd>F5</kbd> algumas vezes: a cada vez, o programa dá uma volta no seu laço e para de novo no ponto de interrupção, com `A` uma unidade menor que antes.
+</Callout>
+
+## Mais coisas para ver
+
+A barra lateral Depurar tem mais painéis; clique em um título para abrir ou fechar um deles. Os últimos botões da barra de ferramentas abrem as visualizações **Memória** e **Desmontagem**. [Pontos de interrupção](/en/guides/debugging/breakpoints/) explica condições, contagens de ocorrências e pontos de interrupção de memória, e os outros [guias de depuração](/en/guides/debugging/run-debug/) cobrem todas as visualizações.
+
+Agora, escreva [o seu primeiro programa em BASIC](/pt-BR/get-started/first-basic-program/).

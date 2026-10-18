@@ -1,0 +1,96 @@
+---
+description: "Iniciar um ZX Spectrum emulado, escrever e executar nele um programa em BASIC e escolher outra máquina."
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# Conhecer o emulador
+
+Quando o Klive arranca, mostra a janela do emulador com uma máquina desligada. Esta página mostra como a ligar, escrever um programa e escolher outra máquina.
+
+<Shot
+  src="get-started/emulator-off.webp"
+  alt="A janela do emulador com uma máquina desligada"
+  figure="2.1"
+  caption="O emulador, antes de a máquina arrancar"
+  markers={["toolbar", "screen"]}
+  width={620}
+/>
+
+1. A barra de ferramentas inicia, pausa, para e reinicia a máquina. O primeiro botão, o triângulo verde, é **Executar máquina**.
+2. O ecrã. Enquanto a máquina não for iniciada, mostra uma indicação de como a iniciar.
+
+## Iniciar a máquina
+
+Prima <kbd>F5</kbd>, clique em **Executar máquina** na barra de ferramentas ou escolha **Máquina › Iniciar**. Passado um momento, o ZX Spectrum mostra a sua mensagem de copyright, tal como o computador real fazia em 1982.
+
+<Shot
+  src="get-started/emulator-running.webp"
+  alt="O ZX Spectrum 48K a mostrar a sua mensagem de copyright"
+  figure="2.2"
+  caption="O ZX Spectrum 48K arrancou"
+  width={620}
+/>
+
+## Escrever um programa em BASIC
+
+Clique no ecrã do emulador para que este receba as teclas premidas. O ZX Spectrum 48K introduz as **palavras-chave** do BASIC com uma única tecla: no início de uma linha, o cursor mostra **K**, e premir <kbd>P</kbd> escreve a palavra inteira `PRINT`.
+
+<Steps>
+
+### Escrever a linha
+
+Escreva <kbd>1</kbd> <kbd>0</kbd> e depois <kbd>P</kbd> para `PRINT`. Para as aspas, mantenha premida a tecla **Symbol Shift** e prima <kbd>P</kbd>. No Klive, o Symbol Shift é a tecla **Alt da direita** (a tecla **Option** da direita num Mac). Escreva `hello`, depois as aspas de fecho da mesma maneira, e prima <kbd>Enter</kbd>.
+
+<Shot
+  src="get-started/emulator-basic-line.webp"
+  alt="A linha de BASIC 10 PRINT &quot;hello&quot; na listagem do programa"
+  figure="2.3"
+  caption="A linha já faz parte do programa"
+  width={620}
+/>
+
+### Executar
+
+Prima <kbd>R</kbd>, que escreve `RUN`, e depois <kbd>Enter</kbd>. O programa escreve `hello` e indica `0 OK, 10:1`: terminou sem erros, na linha 10, instrução 1.
+
+<Shot
+  src="get-started/emulator-hello.webp"
+  alt="O programa escreveu hello"
+  figure="2.4"
+  caption="O primeiro programa foi executado"
+  width={620}
+/>
+
+</Steps>
+
+<Callout type="info" emoji="💡">
+Se for difícil memorizar as teclas das palavras-chave, mostre o **teclado virtual** com o botão do teclado na barra de ferramentas do emulador ou com **Ver › Teclado virtual**. Mostra todas as palavras-chave, e é possível clicar nas suas teclas. Consulte [O teclado](/en/guides/emulator/keyboard/).
+</Callout>
+
+## Controlar a máquina
+
+| Para | Premir | Barra de ferramentas |
+| --- | --- | --- |
+| Iniciar ou continuar | <kbd>F5</kbd> | **Executar máquina** (triângulo verde) |
+| Pausar | <kbd>Shift</kbd>+<kbd>F5</kbd> | **Pausar** |
+| Parar (desligar) | <kbd>F4</kbd> | **Parar** |
+| Reiniciar | <kbd>Shift</kbd>+<kbd>F4</kbd> | **Reiniciar** |
+
+Uma máquina parada não pode continuar, mas é possível continuar a examinar a sua memória e os seus registos no IDE.
+
+## Escolher outra máquina
+
+**Máquina › Tipo de máquina** lista as máquinas favoritas. **Selecionar máquina…** (<kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>M</kbd> em macOS, <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>M</kbd> em Windows e Linux) abre uma caixa de diálogo com todos os modelos que o Klive emula. Também é possível clicar no nome da máquina, na extremidade direita da barra de estado do emulador.
+
+<Shot
+  src="get-started/select-machine.webp"
+  alt="A caixa de diálogo Selecionar máquina com o ZX Spectrum 48K selecionado"
+  figure="2.5"
+  caption="Todos os modelos, com os respetivos detalhes de hardware"
+  width={760}
+/>
+
+Escreva na caixa de filtro para encontrar um modelo (por exemplo `128K` ou `NTSC`), selecione-o para ver os seus detalhes e faça duplo clique para mudar para ele. A estrela adiciona um modelo ao menu **Tipo de máquina**. [Tipos de máquina](/en/reference/machine-types/) lista todas as máquinas e modelos.
+
+A seguir, [carregar um programa a partir de cassete](/pt-PT/get-started/load-from-tape/).

@@ -1,4 +1,4 @@
-; A sprite on the ZX Spectrum Next - the program of Get Started, step 9.
+; A sprite on the ZX Spectrum Next - the program of Get Started, step 8.
 ; It uploads one 16x16 sprite pattern and moves the sprite across the screen.
 
         .model Next

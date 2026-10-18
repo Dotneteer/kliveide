@@ -32,6 +32,10 @@ The answer is one JSON object with only what you translated:
 }
 ```
 
+Rather than escaping whole pages inside JSON, you can write plain files into a folder -
+`i18n-work/docs-de/landing.json`, `ui.json` (key -> text) and `pages/get-started/<page>.mdx` - and
+run `node scripts/docs-i18n.cjs pack i18n-work/docs-de`, which writes `i18n-work/docs-de.answer.json`.
+
 `merge` checks everything before it writes anything for an item. A rejected item is listed with
 the reason and stays in the next todo. `merge` also writes the language's navigation
 (`docs/content/<lang>/_meta.ts`), so there is nothing else to edit.
@@ -50,7 +54,9 @@ and rejects it unless these are identical:
   the screenshots show.
 - **`<Shot>` and `<ClickableImage>` images**: keep `src`, `markers`, `width` and `figure` as they
   are. Translate `alt` and `caption`.
-- **Headings**: the same number at the same levels. Translate their text.
+- **Headings**: the same number at the same levels. Translate their text, but keep a custom id at
+  the end of a heading (`### Windows without an installer [#windows-without-an-installer]`)
+  exactly as it is: links to that section use it, and translated text would change the anchor.
 - **Links**: keep every URL as it is, including `/en/...` ones. `merge` points links into translated
   areas (`/en/get-started/...`) at your language by itself; links elsewhere stay English on
   purpose.

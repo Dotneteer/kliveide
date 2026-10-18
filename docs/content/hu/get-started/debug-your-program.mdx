@@ -1,0 +1,85 @@
+---
+description: "Töréspont elhelyezése egy Z80 programban, indítás a hibakeresővel, a program léptetése utasításról utasításra, és a CPU regisztereinek követése."
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# A program hibakeresése
+
+A hibakeresővel megállíthatjuk a programot, és betekinthetünk a gép belsejébe: melyik utasítás következik, mit tartalmaznak a regiszterek, és mi van a memóriában. Ezen az oldalon megállítjuk az előző oldalon megírt keretszínező programot, és lépésenként végighaladunk rajta.
+
+## Megállás egy törésponton
+
+<Steps>
+
+### Töréspont elhelyezése
+
+A szerkesztőben kattintsunk közvetlenül a **13**-as sorszám bal oldalára, az `out (#fe),a` sornál. Megjelenik egy piros pont: ez a **töréspont**. A pontra újra kattintva eltávolíthatjuk.
+
+### A hibakeresés indítása
+
+Kattintsunk a fordítási sáv **Hibakeresés** gombjára, vagy nyomjuk meg a <kbd>Ctrl</kbd>+<kbd>F5</kbd> billentyűkombinációt. A Klive a korábbiakhoz hasonlóan lefordítja és elindítja a programot, most azonban megáll, amikor a végrehajtás eléri a töréspontot.
+
+### A Hibakeresés oldalsáv megnyitása
+
+Kattintsunk a tevékenységsáv **Hibakeresés** ikonjára, felülről a másodikra.
+
+</Steps>
+
+<Shot
+  src="get-started/debug-paused.webp"
+  alt="Az IDE a 13. sor töréspontján megállva"
+  figure="6.1"
+  caption="Megállás a törésponton"
+  markers={["breakpoint", "stepover", "registers"]}
+  width={900}
+/>
+
+1. A töréspont. A kiemelt sor az az utasítás, amely **következik**: a gép a végrehajtása előtt állt meg.
+2. Az eszköztár léptetőgombjai: **Belépés**, **Átlépés** és **Kilépés**.
+3. A **Z80 CPU** panel a regisztereket mutatja. Az `A` értéke `07`, vagyis az éppen kiírandó szín: fehér.
+
+## A kód léptetése
+
+Nyomjuk meg kétszer az <kbd>F10</kbd> billentyűt (**Átlépés**). Minden lenyomás végrehajt egy utasítást, majd ismét megáll.
+
+<Shot
+  src="get-started/debug-stepped.webp"
+  alt="Az IDE két lépés után, a HALT utasításnál megállva"
+  figure="6.2"
+  caption="Két utasítással később"
+  markers={["current"]}
+  width={900}
+/>
+
+1. A gép a `halt` utasításnál állt meg. Közben az `out (#fe),a` fehérre állította a keretet, az `ld e,25` pedig 25-öt töltött az `E` regiszterbe; ezt a **Z80 CPU** panelen ellenőrizhetjük.
+
+Nézzünk rá az emulátorra is. A gép egy képkocka kirajzolásának közepén állt meg, ezért a képernyő csak addig van kirajzolva, ameddig a sugár eljutott. Az alatta lévő sraffozott rész még az előző képkocka, a felül látható címke pedig pontosan megmutatja, hol tart a sugár.
+
+<Shot
+  src="get-started/debug-emulator.webp"
+  alt="A szüneteltetett emulátor a sugár helyzetéig kirajzolva, alatta sraffozva az előző képkocka"
+  figure="6.3"
+  caption="Az emulátor, miközben a program szünetel"
+  width={620}
+/>
+
+## A léptetőparancsok
+
+| Parancs | Billentyű | Mit csinál? |
+| --- | --- | --- |
+| Folytatás | <kbd>F5</kbd> | A következő töréspontig fut. |
+| Belépés | <kbd>F11</kbd> (macOS-en <kbd>F12</kbd>) | Egy utasítást hajt végre. `CALL` utasításnál a szubrutin első utasításánál áll meg. |
+| Átlépés | <kbd>F10</kbd> | Egy utasítást hajt végre. A `CALL`, az `RST` és a blokkutasítások – például az `LDIR` – teljes egészükben lefutnak. |
+| Kilépés | <kbd>Shift</kbd>+<kbd>F11</kbd> (macOS-en <kbd>Shift</kbd>+<kbd>F12</kbd>) | Addig fut, amíg az aktuális szubrutin vissza nem tér. |
+| Leállítás | <kbd>F4</kbd> | Kikapcsolja a gépet. |
+
+<Callout type="info" emoji="💡">
+Nyomjuk meg néhányszor az <kbd>F5</kbd> billentyűt: a program minden alkalommal egyszer végigfut a ciklusán, majd ismét megáll a törésponton – az `A` értéke pedig mindig eggyel kisebb, mint előtte.
+</Callout>
+
+## További nézetek
+
+A Hibakeresés oldalsávon további panelek is vannak; a címükre kattintva nyithatók meg és zárhatók be. Az eszköztár utolsó gombjai a **Memória** és a **Visszafejtés** nézetet nyitják meg. A [Töréspontok (angolul)](/en/guides/debugging/breakpoints/) oldal a feltételeket, a találatszámokat és a memóriatöréspontokat ismerteti, a többi [hibakeresési útmutató (angolul)](/en/guides/debugging/run-debug/) pedig minden nézetet bemutat.
+
+Következő lépésként írjuk meg [az első BASIC programot](/hu/get-started/first-basic-program/).

@@ -11,6 +11,7 @@
  *   node scripts/docs-i18n.cjs merge <lang> <file>  Validate a translation and write it: landing
  *                                                 and UI texts into docs/i18n/{landing,ui}/<lang>.json,
  *                                                 pages into docs/content/<lang>/.
+ *   node scripts/docs-i18n.cjs pack <dir>         Build an answer file from plain files (see pack()).
  *   node scripts/docs-i18n.cjs check              The gate (part of `doc:check`).
  *
  * What gets translated: the landing page and the site chrome (all of them), and the areas listed
@@ -88,7 +89,7 @@ function structure(mdx) {
       return `${src} ${markers}`;
     }),
     images: [...body.matchAll(/<ClickableImage\b[^>]*src="([^"]+)"/g)].map((m) => m[1]),
-    headings: [...prose.matchAll(/^(#{1,6}) /gm)].map((m) => m[1]),
+    headings: [...prose.matchAll(/^(#{1,6}) .*?(\[#[\w-]+\])?$/gm)].map((m) => `${m[1]}${m[2] ?? ""}`),
     links: [...prose.matchAll(/(?:\]\(|href=")([^)"\s]+)/g)].map((m) => m[1]).sort(),
     components: [...prose.matchAll(/<(Callout|Steps|Cards|Cards\.Card|Shot|ClickableImage)\b/g)].map((m) => m[1]),
     hasDescription: /^---[\s\S]*?description:\s*"[^"]+"[\s\S]*?---/.test(mdx)
@@ -145,16 +146,35 @@ function appCatalog(lang) {
 function uiLabels(mdx, lang) {
   const en = appCatalog("en");
   const tr = appCatalog(lang);
+  // --- One English text often has several keys (a menu item and a table column both say
+  // --- "Start"); a page names menus, toolbars and dialogs, so those win
+  const rank = (key) => {
+    const order = ["menu.", "toolbar.", "settings.", "dialog.", "dialogs.", "emu.", "panels."];
+    const i = order.findIndex((p) => key.startsWith(p));
+    return i < 0 ? order.length : i;
+  };
   const byText = new Map();
+  const add = (text, key) => {
+    const list = byText.get(text) ?? [];
+    list.push(key);
+    byText.set(text, list);
+  };
   for (const [key, text] of Object.entries(en)) {
-    if (typeof text === "string" && !key.startsWith("@")) byText.set(text.replace(/\.\.\.$|…$/, "").trim(), key);
+    if (typeof text !== "string" || key.startsWith("@") || typeof tr[key] !== "string") continue;
+    add(text.trim(), key);
   }
+  const best = (text) => (byText.get(text) ?? []).sort((a, b) => rank(a) - rank(b))[0];
   const labels = {};
   for (const m of mdx.matchAll(/\*\*([^*]+)\*\*/g)) {
     for (const part of m[1].split(" › ")) {
-      const clean = part.replace(/\.\.\.$|…$/, "").trim();
-      const key = byText.get(clean);
-      if (key && typeof tr[key] === "string") labels[part] = tr[key];
+      const clean = part.trim();
+      // --- The exact text first ("Settings..." keeps its dots), then without the ellipsis
+      let key = best(clean);
+      if (!key) {
+        const bare = clean.replace(/(\.\.\.|…)$/, "");
+        key = best(bare) ?? best(`${bare}...`) ?? best(`${bare}…`);
+      }
+      if (key) labels[part] = tr[key];
     }
   }
   return labels;
@@ -361,6 +381,27 @@ function check() {
   return true;
 }
 
+/**
+ * Builds an answer file from a folder, so a translator can write plain files instead of whole
+ * pages escaped inside JSON: <dir>/landing.json, <dir>/ui.json (key -> text) and
+ * <dir>/pages/<area>/<page>.mdx. Writes <dir>.answer.json.
+ */
+function pack(dir) {
+  if (!dir) throw new Error("Usage: docs-i18n.cjs pack <dir>");
+  const answer = { landing: readJson(path.join(dir, "landing.json"), {}), ui: readJson(path.join(dir, "ui.json"), {}), pages: {} };
+  const pagesDir = path.join(dir, "pages");
+  if (fs.existsSync(pagesDir)) {
+    for (const area of fs.readdirSync(pagesDir)) {
+      for (const file of fs.readdirSync(path.join(pagesDir, area)).filter((f) => f.endsWith(".mdx"))) {
+        answer.pages[`${area}/${file.replace(/\.mdx$/, "")}`] = fs.readFileSync(path.join(pagesDir, area, file), "utf8");
+      }
+    }
+  }
+  const out = `${dir.replace(/\/$/, "")}.answer.json`;
+  writeJson(out, answer);
+  console.log(`${out}: ${Object.keys(answer.landing).length} landing, ${Object.keys(answer.ui).length} UI, ${Object.keys(answer.pages).length} page(s)`);
+}
+
 // ------------------------------------------------------------------ main
 
 if (require.main === module) {
@@ -370,6 +411,7 @@ if (require.main === module) {
     else if (command === "todo") todo(args[0]);
     else if (command === "merge") merge(args[0], args[1]);
     else if (command === "meta") writeMeta(args[0]);
+    else if (command === "pack") pack(args[0]);
     else if (command === "check") process.exitCode = check() ? 0 : 1;
     else {
       console.error("Usage: docs-i18n.cjs languages | todo <lang> | merge <lang> <file> | check");

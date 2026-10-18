@@ -1,0 +1,132 @@
+---
+description: "A Klive letöltése a kiadási oldaláról és telepítése macOS-en, Windowson vagy Linuxon."
+---
+
+import { Callout } from 'nextra/components'
+
+# A Klive telepítése
+
+A Klive ingyenes és nyílt forráskódú. A telepítőkészletek a projekt [kiadási oldaláról](https://github.com/Dotneteer/kliveide/releases) tölthetők le. A legfrissebb kiadás az oldal tetején található. Az Assets rész lenyitásakor megjelenik a telepítőkészletek listája:
+
+- `KliveIdeSetup-{version}-{arch}.AppImage`: Linuxos AppImage formátum, amellyel a Klive IDE rendszergazdai jogosultság nélkül telepíthető és futtatható Linuxon
+- `KliveIdeSetup-{version}-{arch}.exe`: Önkicsomagoló programfájl a Klive IDE telepítéséhez Windows x64 rendszeren (NSIS telepítő)
+- `KliveIde-Portable-{version}-{arch}.zip`: Windows x64 archívum, amely telepítő nélkül, kicsomagolás után azonnal futtatható (lásd: [Windows telepítő nélkül](#windows-without-an-installer))
+- `KliveIdeSetup-{version}-{arch}.pkg`: Szabványos PKG formátum a Klive IDE telepítéséhez macOS-en
+
+A fájlnévben a `{version}` az adott kiadás verziószámát jelöli,
+az `{arch}` pedig a célplatform architektúráját, amely `x64` vagy `arm64` lehet.
+
+<Callout type="info" emoji="💡">
+Windowson jelenleg csak az x64 architektúra támogatott.
+</Callout>
+
+Töltsük le az operációs rendszernek és az architektúrának megfelelő fájlt, majd kövessük a cikk megfelelő szakaszát.
+
+## macOS
+
+Nyissuk meg a letöltött `.pkg` fájlt. Mivel a fájl nem megbízható forrásból származik, a rendszer nem telepíti közvetlenül. Az üzenetet az OK gombbal zárhatjuk be.
+
+<ClickableImage src="/images/getting-started/warning1.png" alt="Első figyelmeztetés" width={173} height={195} />
+
+Ezután nyissuk meg a Rendszerbeállításokat, és lépjünk az Adatvédelem és biztonság (Privacy & Security) lapra. Lejjebb görgetve megjelenik az üzenet a letiltott fájl nevével, mellette pedig a Megnyitás mindenképp (Open Anyway) gomb. Erre kattintva jelezhetjük, hogy valóban futtatni szeretnénk a telepítőkészletet.
+
+<ClickableImage src="/images/getting-started/privacy-and-security.png" alt="Adatvédelem és biztonság" width={477} height={398} />
+
+Nyissuk meg újra a `.pkg` fájlt, és a képernyőn megjelenő biztonsági párbeszédablakban válasszuk a Megnyitás (Open) gombot.
+
+<Callout type="info" emoji="💡">
+A rendszer a telepítés megerősítéséhez a jelszavunkat is kérheti.
+</Callout>
+
+<ClickableImage src="/images/getting-started/warning2.png" alt="Második figyelmeztetés" width={173} height={233} />
+
+A Megnyitás gombra kattintva engedélyezhetjük a telepítő futását. A telepítést a képernyőképek szerint, a Folytatás (Continue) gombbal haladva fejezhetjük be.
+
+<ClickableImage src="/images/getting-started/install-step-1.png" width={413} />
+
+<ClickableImage src="/images/getting-started/install-step-2.png" width={413} />
+
+<ClickableImage src="/images/getting-started/install-step-3.png" width={413} />
+
+<ClickableImage src="/images/getting-started/install-step-4.png" width={413} />
+
+<Callout type="info" emoji="💡">
+A telepítő létrehoz egy Klive IDE mappát az Alkalmazások mappában, és oda másolja a szükséges fájlokat. A Launchpadben is létrehoz egy parancsikont. A telepítés végén a macOS hozzáférést kérhet a Letöltések mappához, hogy a telepítőt a Kukába helyezhesse.
+</Callout>
+
+A sikeres telepítés után a Klive IDE az Alkalmazások mappában található.
+
+<ClickableImage src="/images/getting-started/apps-in-finder.png" width={441} />
+
+## Windows
+
+Az `.exe` telepítőfájl önkicsomagoló program. Megnyitás után automatikusan kicsomagolja magát, és a programfájlokat a felhasználói mappán belüli Programs könyvtárba (`AppData/Local/Programs/klive-ide`) másolja.
+
+<Callout type="warning" emoji="⚠️">
+**Ismert probléma Windows 11 rendszeren**: Egyes felhasználók azt tapasztalták, hogy Windows 11 alatt a telepítő látszólag lefagy, vagy szokatlanul sokáig (10–22 percig) tart. Ezt jellemzően a Windows Defender vagy más kártevőirtó szoftver okozza, amely átvizsgálja a telepítőt. Ha kivárjuk, a telepítés végül befejeződik.
+</Callout>
+
+A telepítőkészlet a végén elindítja a Klive IDE-t. Később így indíthatjuk el újra:
+
+Írjuk be a Windows tálcájának keresőmezőjébe, hogy „Klive”. Az újonnan telepített alkalmazás megjelenik a találatok között:
+
+<ClickableImage src="/images/getting-started/klive-in-search.png" width={213} />
+
+A Klive IDE-re kattintva indíthatjuk el.
+
+<Callout type="info" emoji="💡">
+Ha a találati listában a Klive IDE van kijelölve, a jobb oldali panelen megjelenik a Rögzítés a tálcán (Pin to taskbar) parancs. Ezzel az IDE felvehető a tálcára, és ezután egyetlen kattintással, a Klive IDE ikonjával indítható.
+</Callout>
+
+### Windows telepítő nélkül [#windows-without-an-installer]
+
+Ha nem tudunk vagy nem szeretnénk telepítőt futtatni (például zárolt gépen, rendszergazdai jogok nélkül vagy USB-kulcsról), töltsük le helyette a `KliveIde-Portable-{version}-x64.zip` fájlt. Nem igényel telepítést, és semmit sem ír a beállításjegyzékbe (registry).
+
+1. Kicsomagolás előtt kattintsunk a jobb gombbal a letöltött `.zip` fájlra, válasszuk a **Tulajdonságok** (Properties) parancsot, jelöljük be a **Tiltás feloldása** (Unblock) jelölőnégyzetet, és kattintsunk az **OK** gombra. E lépés nélkül a Windows minden kicsomagolt fájlt internetről letöltöttként jelöl meg, és minden egyes programfájlnál külön figyelmeztetést jeleníthet meg. (PowerShellben: `Unblock-File .\KliveIde-Portable-{version}-x64.zip`.)
+2. Csomagoljuk ki az archívumot egy **új, üres mappába** – a fájlok az archívum gyökerében vannak, nem egy saját mappában.
+3. Futtassuk a mappában található `Klive IDE.exe` fájlt.
+
+Ez a példány teljesen hordozható: mindent, amit ír, a `Klive IDE.exe` melletti `KliveData` mappában tárol, a felhasználói profilban pedig semmit.
+
+| Mappa | Tartalom | A telepített Klive által használt hely |
+| --- | --- | --- |
+| `KliveData\Klive` | Beállítások, a ZX Spectrum Next SD-kártya-képfájlja, mentett fájlok | `%USERPROFILE%\Klive` |
+| `KliveData\KliveProjects` | Az új projektek alapértelmezett helye | `%USERPROFILE%\KliveProjects` |
+| `KliveData\KliveExports` | Exportált kód és képernyőfelvételek | `%USERPROFILE%\KliveExports` |
+| `KliveData\AppData` | Böngésző-gyorsítótár és ablakadatok | `%APPDATA%\Klive IDE` |
+
+A Klive eltávolításához elég törölni a mappát. Frissítéskor csomagoljuk ki az újabb archívumot egy új mappába, és a beállítások megtartásához másoljuk át a régiből a `KliveData` mappát.
+
+<Callout type="info" emoji="💡">
+A zip-es példány és a telepített Klive nem osztoznak a beállításokon. Ha a zip-es példányt a meglévő beállításokkal szeretnénk indítani, az első indítás előtt másoljuk át a `%USERPROFILE%\Klive` mappát a `KliveData\Klive` helyre.
+</Callout>
+
+<Callout type="warning" emoji="⚠️">
+Az archívumot olyan mappába csomagoljuk ki, amely írható. Csak olvasható helyen (például a `C:\Program Files` alatt) a Klive nem tudja létrehozni a `KliveData` mappát, ezért a telepített Klive felhasználói profilban lévő mappáit használja.
+</Callout>
+
+## Linux
+
+A linuxos telepítőkészlet egy `.AppImage` fájl. A használatához szükség lehet a FUSE letöltésére és telepítésére. Ubuntun például (ahol a FUSE alapértelmezés szerint nincs telepítve) így telepíthető:
+
+```text
+sudo apt-get install fuse libfuse2
+```
+
+Másoljuk az `.AppImage` fájlt abba a mappába, ahonnan használni szeretnénk, majd tegyük futtathatóvá ezzel a paranccsal:
+
+```text
+chmod +x KliveIdeSetup-{version}-{arch}.AppImage
+```
+
+Másik lehetőségként a fájlkezelőben a jobb gombbal a fájlra kattintva válasszuk a Tulajdonságok parancsot, majd a Jogosultságok lapon jelöljük be a „Fájl futtatásának engedélyezése programként” (Allow executing file as program) jelölőnégyzetet:
+
+<ClickableImage src="/images/getting-started/ubuntu-permission.png" width={296} />
+
+Ezután a fájl dupla kattintással, vagy terminálból a `./KliveIdeSetup-{version}-{arch}.AppImage` paranccsal indítható.
+
+## Az első indítás
+
+Első indításkor a Klive az emulátorablakot mutatja egy kikapcsolt ZX Spectrum 48K-val. A Klive felajánlhatja a **Boriel BASIC**, egy külső ZX BASIC fordító beállítását is. Ehhez az oktatóanyaghoz nincs rá szükség: a Klive saját, beépített BASIC-fordítóval rendelkezik. Ha később mégis szeretnénk használni a Boriel BASIC-et, a [ZX BASIC útmutató (angolul)](/en/guides/languages/zx-basic/#using-boriel-basic) leírja a beállítását.
+
+Következő lépésként [ismerkedjünk meg az emulátorral](/hu/get-started/meet-the-emulator/).

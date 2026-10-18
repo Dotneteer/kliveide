@@ -145,6 +145,24 @@ async function focusIde(klive) {
   await klive.sleep(600);
 }
 
+/**
+ * Makes sure the editor shows `file` (project-relative). After a run the document area is
+ * sometimes empty, and one `nav` does not always bring the document back: retry, and fall back to
+ * opening it from the Explorer.
+ */
+async function showFile(klive, file) {
+  const ide = klive.ide;
+  for (let attempt = 0; attempt < 4; attempt++) {
+    if (await ide.locator(".monaco-editor .line-numbers").count()) return;
+    if (attempt === 2) {
+      await ide.locator('[class*="_activityButton_"]').first().click();
+      await klive.sleep(800);
+    }
+    await klive.cmd(`nav ${file}`, 2500);
+  }
+  if (!(await ide.locator(".monaco-editor .line-numbers").count())) throw new Error(`The editor does not show ${file}`);
+}
+
 /** Clicks the editor's glyph margin on a line, which toggles a breakpoint there. */
 async function toggleBreakpoint(ide, line) {
   const number = ide.locator(".monaco-editor .line-numbers", { hasText: new RegExp(`^${line}$`) }).first();
@@ -310,7 +328,7 @@ async function steps(klive) {
 
     // ------------------------------------------------------------------ Debug your program
     if (wants("debug")) {
-      await klive.cmd("nav code/code.kz80.asm", 2500);
+      await showFile(klive, "code/code.kz80.asm");
       await klive.cmd("cls", 500);
       await toggleBreakpoint(klive.ide, 13);
       await klive.ide.locator('[class*="_activityButton_"] >> nth=1').click();
@@ -358,9 +376,9 @@ async function steps(klive) {
 
         await focusIde(klive);
         // --- Reopen the source: the editor may have no document after the run
-        await klive.cmd("nav code/program.zxbas", 2500);
-        await klive.cmd("cls", 500);
+        await showFile(klive, "code/program.zxbas");
         await toggleBreakpoint(klive.ide, 9);
+        await klive.cmd("cls", 500);
         await klive.ide.locator('[class*="_activityButton_"] >> nth=1').click();
         await klive.sleep(800);
         await klive.cmd("debug", 9000);

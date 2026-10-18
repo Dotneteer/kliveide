@@ -1,0 +1,108 @@
+---
+description: "ZX BASIC program írása, fordítása a Klive beépített Klive BASIC fordítójával, és hibakeresése utasításról utasításra, a hívási verem és a változók segítségével."
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# Az első BASIC program
+
+A ZX BASIC a ZX Spectrum saját BASIC nyelvének gépi kódra fordítható dialektusa, szubrutinokkal, lokális és típusos változókkal. A Klive a beépített fordítójával, a **Klive BASIC**-kel fordítja le, amely kompatibilis a Boriel ZX BASIC-kel, és nem igényel telepítést. A lefordított program sokkal gyorsabban fut, mint az értelmezett BASIC, és soronként, a BASIC forráskódban követhetjük a hibakeresővel.
+
+## Projekt létrehozása
+
+Válasszuk a **Fájl › Új projekt...** menüpontot, ahogy az [első assembly programnál](/hu/get-started/first-assembly-program/), ezekkel a beállításokkal:
+
+- **Géptípus**: ZX Spectrum 48K.
+- **Projektsablon**: `zx-basic`.
+- **Projektnév**: `BouncingBall`.
+
+A projekt forrásfájlja a `code/program.zxbas`.
+
+## A program megírása
+
+Cseréljük le a `code/program.zxbas` tartalmát erre a programra, és mentsük el:
+
+```text fixture="bouncing-ball/code/program.zxbas"
+' Bouncing ball - the program of Get Started, step 7.
+' A ball bounces between the screen's edges and counts its bounces.
+
+DIM x AS INTEGER = 15
+DIM dx AS INTEGER = 1
+DIM bounces AS UINTEGER = 0
+
+SUB DrawBall(column AS INTEGER, ball AS STRING)
+    PRINT AT 10, column; ball
+END SUB
+
+CLS
+PRINT AT 0, 0; "Bounces: 0"
+DO
+    DrawBall(x, " ")
+    x = x + dx
+    IF x = 0 OR x = 31 THEN
+        dx = -dx
+        bounces = bounces + 1
+        PRINT AT 0, 9; bounces
+    END IF
+    DrawBall(x, "O")
+    PAUSE 2
+LOOP
+```
+
+Néhány dolog, ami a Sinclair BASIC-ből hiányzik:
+
+- **Nincsenek sorszámok.** A sorok sorrendben futnak, a `DO` … `LOOP` pedig ismétli a közéjük eső sorokat.
+- **Típusos változók.** A `DIM x AS INTEGER` egy egész típusú változót deklarál, amely sokkal gyorsabb, mint a Spectrum lebegőpontos számai.
+- **Paraméteres szubrutinok.** A `SUB DrawBall` egy oszlopot és egy karakterláncot vár, a `DrawBall(x, "O")` pedig meghívja.
+- **Blokkos `IF`.** Az `END IF`-ig tartó sorok akkor futnak le, ha a feltétel igaz.
+
+## Futtatás
+
+Kattintsunk a fordítási sáv **Futtatás** gombjára, vagy nyomjuk meg az <kbd>F5</kbd> billentyűt. A labda a 10. sorban mozog, a képernyő szélén visszafordul, a felső számláló pedig számolja a visszapattanásokat.
+
+<Shot
+  src="get-started/basic-running.webp"
+  alt="Az emulátor futtatja a pattogó labdás programot"
+  figure="7.1"
+  caption="A labda pattog"
+  width={620}
+/>
+
+## Hibakeresés
+
+<Steps>
+
+### Töréspont elhelyezése a szubrutinban
+
+Kattintsunk a **9**-es sorszám bal oldalára, a `DrawBall` belsejében lévő `PRINT AT 10, column; ball` sornál.
+
+### A hibakeresés indítása
+
+Kattintsunk a fordítási sáv **Hibakeresés** gombjára, vagy nyomjuk meg a <kbd>Ctrl</kbd>+<kbd>F5</kbd> billentyűkombinációt. A program akkor áll meg, amikor először hívja meg a `DrawBall` szubrutint.
+
+### A hívási verem és a változók megtekintése
+
+Nyissuk meg a **Hibakeresés** oldalsávot, majd a címükre kattintva nyissuk meg rajta a **Hívási verem** és a **Változók** panelt.
+
+</Steps>
+
+<Shot
+  src="get-started/basic-debug.webp"
+  alt="Az IDE a DrawBall belsejében megállva, a hívási veremmel és a változókkal"
+  figure="7.2"
+  caption="Megállás a DrawBall szubrutin belsejében"
+  markers={["breakpoint", "callstack", "variables"]}
+  width={900}
+/>
+
+1. A töréspont és a következőként végrehajtandó utasítás.
+2. A **Hívási verem**: a `DrawBall` szubrutint a főprogram 15. sora hívta meg.
+3. A **Változók**: a szubrutin paraméterei (a `column` értéke 15, a `ball` egy szóköz), valamint a program globális változói.
+
+A léptetés BASIC **utasításokon** működik, nem Z80 utasításokon: az <kbd>F10</kbd> végrehajtja a következő utasítást, az <kbd>F11</kbd> (macOS-en <kbd>F12</kbd>) belép egy szubrutinba, a <kbd>Shift</kbd>+<kbd>F11</kbd> pedig kilép belőle. Nyomjuk meg néhányszor az <kbd>F5</kbd> billentyűt, és figyeljük, hogyan változik a `column` és az `x` értéke.
+
+<Callout type="info" emoji="💡">
+A Klive a BASIC programokat a Boriel saját fordítójával, a Boriel BASIC 2-vel is le tudja fordítani, és ugyanígy lehet bennük hibát keresni. A nyelvi beállításokról, a standard könyvtárról és a fordítók közötti váltásról a [ZX BASIC (angolul)](/en/guides/languages/zx-basic/) oldal szól.
+</Callout>
+
+Következő lépésként írjuk meg [az első ZX Spectrum Next programot](/hu/get-started/first-next-program/).

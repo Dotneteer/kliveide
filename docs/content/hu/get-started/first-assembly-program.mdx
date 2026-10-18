@@ -1,0 +1,122 @@
+---
+description: "Klive projekt létrehozása ZX Spectrum 48K-ra, egy rövid, a keret színét változtató Z80 assembly program megírása és futtatása egyetlen kattintással."
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# Az első assembly program
+
+Ezen az oldalon létrehozunk egy projektet, megírunk egy Z80 assembly programot, amely a ZX Spectrum keretét sorban végigváltja mind a nyolc színén, majd lefuttatjuk.
+
+## Projekt létrehozása
+
+<Steps>
+
+### A párbeszédablak megnyitása
+
+Válasszuk a **Fájl › Új projekt...** menüpontot, vagy kattintsunk az intézőben a **Klive projekt létrehozása** gombra. Megnyílik az **Új Klive projekt létrehozása** párbeszédablak.
+
+<Shot
+  src="get-started/new-project.webp"
+  alt="Az Új Klive projekt létrehozása párbeszédablak egy ZX Spectrum 48K projekthez"
+  figure="5.1"
+  caption="Egy új ZX Spectrum 48K projekt"
+  width={620}
+/>
+
+### A mezők kitöltése
+
+- **Géptípus**: ZX Spectrum 48K.
+- **Projektsablon**: `default`, egyetlen Klive Z80 assembly fájlt tartalmazó projekt.
+- **Projektmappa**: hagyjuk üresen, és a projekt a saját mappánkban lévő `KliveProjects` mappába kerül.
+- **Projektnév**: `BorderColours`.
+
+Kattintsunk a **Létrehozás** gombra. A Klive létrehozza és megnyitja a projektet.
+
+</Steps>
+
+## A program megírása
+
+A projektnek egyetlen forrásfájlja van, a `code/code.kz80.asm`. Nyissuk meg az intézőből, cseréljük le a tartalmát erre a programra, és mentsük a <kbd>Cmd</kbd>+<kbd>S</kbd> billentyűkombinációval (Windowson és Linuxon <kbd>Ctrl</kbd>+<kbd>S</kbd>):
+
+```z80klive fixture="border-colours/code/code.kz80.asm"
+; Border colours - the program of Get Started, steps 5 and 6.
+; It shows the eight border colours, half a second each, forever.
+
+        .model Spectrum48
+        .org #8000
+
+Start:
+        ei              ; HALT needs interrupts to wake up
+        ld b,8          ; eight colours: 7 (white) down to 0 (black)
+NextColour:
+        ld a,b
+        dec a           ; B is 8..1, the colour is 7..0
+        out (#fe),a     ; the border colour is bits 0-2 of port #FE
+        ld e,25         ; wait 25 frames (half a second)
+Wait:
+        halt            ; wait for the next frame
+        dec e
+        jr nz,Wait
+        djnz NextColour
+        jr Start
+```
+
+Mit csinál a program?
+
+- A `.model Spectrum48` és az `.org #8000` megadja az assemblernek, melyik gépre készül a kód, és hová kerül a memóriában.
+- A ZX Spectrum a keret színét a `#FE` portra írt bájt legalsó három bitjéből veszi. Az `OUT (#FE),A` utasítás írja ki ezt a bájtot.
+- A `HALT` megvárja a következő képkockát. A ZX Spectrum másodpercenként 50 képkockát rajzol ki, így 25 képkocka fél másodpercig tart.
+- A `DJNZ` a `B` regisztert 8-tól lefelé számlálja, így a színek 7-től (fehér) 0-ig (fekete) követik egymást, utána pedig a program elölről kezdi.
+
+<Shot
+  src="get-started/first-program.webp"
+  alt="A program az IDE szerkesztőjében"
+  figure="5.2"
+  caption="A program futtatásra készen"
+  markers={["buildroot", "run", "debug"]}
+  width={900}
+/>
+
+1. A `code.kz80.asm` melletti ikon jelzi, hogy ez a **fordítási gyökér**: az a fájl, amelyet a Klive lefordít.
+2. A **Futtatás** lefordítja a programot, betölti a gépbe, és elindítja.
+3. A **Hibakeresés** ugyanezt teszi, bekapcsolt hibakeresővel. Ezt a következő oldalon használjuk.
+
+## Futtatás
+
+Kattintsunk a fordítási sáv **Futtatás** gombjára, vagy nyomjuk meg az IDE-ben az <kbd>F5</kbd> billentyűt. A keret elkezdi váltogatni a színét.
+
+<Shot
+  src="get-started/first-program-running.webp"
+  alt="Az emulátor, a keret színe változik"
+  figure="5.3"
+  caption="A program fut"
+  width={620}
+/>
+
+A Klive öt dolgot végzett el helyettünk:
+
+1. Lefordította a programot. Ha hibát talált volna, itt megállt volna, és a hibát a szerkesztőben jelezte volna.
+2. Újraindította a gépet, és megvárta, amíg a ROM eléri a főciklusát.
+3. Szüneteltette a gépet, és a program bájtjait a memóriájába másolta, a `#8000` címtől kezdve.
+4. A CPU utasításszámlálóját a program első utasítására állította.
+5. Hagyta futni a gépet.
+
+A **Parancsok** lapon látható, mi történt:
+
+<Shot
+  src="get-started/first-program-output.webp"
+  alt="A Parancsok lap a program lefordítása és elindítása után"
+  figure="5.4"
+  caption="A fordítás jelentése"
+  markers={["output"]}
+  width={900}
+/>
+
+1. A `run` parancs lefordította a `code/code.kz80.asm` fájlt, majd betöltötte és elindította a kódot. (A fordítási sáv gombjai ugyanazokat a parancsokat futtatják, amelyeket a parancssorba is begépelhetünk.)
+
+<Callout type="info" emoji="💡">
+Próbáljunk ki egy módosítást: cseréljük az `ld e,25` sort `ld e,5`-re, és futtassuk újra a programot. A színek most másodpercenként tízszer váltanak.
+</Callout>
+
+Következő lépésként [vizsgáljuk meg a programot a hibakeresővel](/hu/get-started/debug-your-program/).
