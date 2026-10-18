@@ -160,7 +160,7 @@ Each was read from code or run, not remembered:
 
 ## State of the work
 
-604 labels, 36 regions; the readiness check is clean; **level 2**, measured and recorded in the
+616 labels (twelve of them on table starts inside data regions), 34 regions; the readiness check is clean; **level 2**, measured and recorded in the
 working copy: every label has a synopsis, every target a label (`$1D89` is `ATN_SMALL`, see
 "Entries inside calculator code"). `npm run rom:annotations -- level` measures the *shipped*
 file, not the working copy: use `check-annotations.cjs` (its `levels`).

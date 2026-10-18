@@ -670,3 +670,74 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
 - **Method:** a scan of every synopsis and comment for `$XXXX` against the page's labels, each
   mention replaced by hand; the author's own edits in the working copy were kept.
 - **Level:** 2, unchanged (`checkRomSidecar`: no problems).
+
+### 2026-10-17 — `zx81.rom.dis`, the key and keyword tables labelled (working copy)
+
+- **Added:** labels on the five table starts, inside their data regions: `KEYS_UNSHIFTED`
+  (`$007E`), `KEYS_SHIFTED` (`$00A5`), `KEYS_FUNCTION` (`$00CC`), `KEYS_GRAPHICS` (`$00F3`) and
+  `KEYWORD_TABLE` (`$0111`), Klive names. Their synopses were rewritten in more detail: entry
+  counts, the indexing each reader uses, every key's code, token or graphic, and the entries
+  never read (graphics table: shifted P O I U and L K J). KEY_DECODE, FUNCTION_KEY,
+  GRAPHICS_KEY, FIND_TOKEN and the comment at `$0502` now name the tables by label.
+- **Method:** the bytes through `zx81-dis.cjs`, decoded through the ZX81 character set and the
+  keyword table's own spellings; the readers read: KEY_DECODE (`HL = $007D + E`), the mode
+  dispatch from `$04DF` (FUNCTION_KEY's `$00CC + E - 1` with shifted keys folded, GRAPHICS_KEY's
+  `$00C7 + E` only for codes `$40` and over, KL_MODE_KEY's `+ $C0` for letters in K mode),
+  OP_INKEY (the string is the table entry) and FIND_TOKEN (entry n found by counting end
+  marks; 68 entries ending at `$01FB`). No run was needed and none is claimed.
+- **Applied** with a variant of `apply-annotations.cjs` that accepts labels inside data regions
+  and keeps a changed line's provenance (the lines at `$007E` and `$00A5` stay `manual`).
+- **Names:** none from a name list. **Provenance:** labels `observed`. **Level:** 2, unchanged
+  (`checkRomSidecar`: no problems).
+
+### 2026-10-17 — `zx81.rom.dis`, the two word tables labelled (working copy)
+
+- **Added:** `EDIT_KEY_TABLE` (`$0562`; the name its synopsis already used) and `CALC_OP_TABLE`
+  (`$1923`), Klive names, on the starts of the page's two `words` regions. EDIT_KEY_TABLE's
+  synopsis no longer opens with its own name; EDIT_KEY_JUMP's comment names it by label.
+- **With it, in Klive:** a `.defw` value that is a labelled address now shows the label
+  (`annotatedDisassembly.ts`), so the tables read `.defw KEY_UP, KEY_DOWN` and
+  `.defw CALC_JUMP_TRUE, CALC_EXCHANGE`. All ten editing-key words have labels; of the
+  calculator's 61, only `$1D49` (sin, inside cos's codes) does not.
+- **Method:** each word read from the ROM and matched against the page's labels; the listing
+  checked through `createAnnotatedDisassemblyItems` on the working copy. No run.
+- **Provenance:** labels `observed`; the `$0562` line stays `manual`. **Level:** 2, unchanged.
+
+### 2026-10-17 — `zx81.rom.dis`, the syntax tables labelled (working copy)
+
+- **Added:** `SYNTAX_OFFSETS` (`$0C29`), `SYNTAX_ENTRIES` (`$0C48`, where the entries start inside
+  the same merged region) and `CLASS_TABLE` (`$0D16`, the name its synopsis already used), Klive
+  names. Synopses rewritten: the offsets as one-byte relative pointers in token order with each
+  keyword's entry address (computed from the bytes); the entry format (class codes `$00-$06`,
+  required characters `$0B` and up, the routine word after classes 0, 3 and 5, LET ending with
+  class 2); and what an operand class is, with each class's job and the commands that use it.
+  SCAN_STATEMENT names the offsets by label.
+- **Method:** the bytes through `zx81-dis.cjs`; SCAN_STATEMENT and SYNTAX_ITEM read
+  (`$0C29 + keyword - $E1`, then `+ (HL)`; `$0D16 + class`, then `+ (HL)`, entered by PUSH/RET
+  with SYNTAX_NEXT as the return), and the class routines `$0D1D-$0DA5` (which pop that return:
+  CLASS_0 via STATEMENT_END, CLASS_3 into CLASS_0, CLASS_5; RUN_ROUTINE reading the word at
+  T_ADDR). No run was needed and none is claimed.
+- **Provenance:** labels `observed`; changed lines keep theirs. **Level:** 2, unchanged.
+
+### 2026-10-18 — `zx81.rom.dis`, the operator priorities labelled (working copy)
+
+- **Added:** `OP_PRIORITIES` (`$110F`), a Klive name. Its synopsis now gives the size, the index
+  order (from OPERATOR_CODE), that `$104C + C` is the table plus the index, and how the numbers are
+  used: higher binds tighter, a waiting operation of the same or higher priority is done first
+  (so equal priorities work left to right), and 0 ends the expression. OP_PRIORITY's synopsis and
+  the comment at `$10BB` name the table by label.
+- **Method:** `$1088-$110E` read through `zx81-dis.cjs` (the index arithmetic at `$1098-$10B3`,
+  the `CP B` / `JR C` at `$10BE`); the 13 bytes read from the ROM. No run.
+- **Provenance:** label `observed`; changed lines keep theirs. **Level:** 2, unchanged.
+
+### 2026-10-18 — `zx81.rom.dis`, the character set labelled (working copy)
+
+- **Added:** `CHARACTER_SET` (`$1E00`), a Klive name. A paragraph about the whole table now
+  precedes the author's own `$00 - Character: ' '` line, which is kept as it was: 64 codes ×
+  8 bytes, one byte per pixel row, and its two readers. PRN_CHAR's synopsis and the comment at
+  `$03F4` name the table by label.
+- **Method:** the display's address from `zx8081-ula.c` (`(address & $FE00) | (code & $3F) << 3
+  | line`, inverse from bit 7) and the `LD I,A` at `$03F4`; the printer's from PRN_CHAR
+  (`$089C-$08B1`: three shifts of the code, H = `$0F` rotated with bit 5, the inverse bit from
+  bit 7 of C). Bit 7 as the leftmost pixel is from PRN_CHAR's `RLC C`. No run.
+- **Provenance:** label `observed`; changed lines keep theirs. **Level:** 2, unchanged.
