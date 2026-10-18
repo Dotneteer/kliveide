@@ -1,5 +1,6 @@
 import nextra from "nextra";
 import { createHighlighter } from "shiki";
+import { DEFAULT_LOCALE, LOCALES } from "./i18n/locales.mjs";
 
 // Z80 assembly language grammar embedded directly to avoid file system operations
 const z80Language = {
@@ -323,6 +324,9 @@ const customTheme = {
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 const withNextra = nextra({
+  // Static export has no middleware, so Nextra writes the locale into every page-map link
+  // itself. See the Phase 0 "As built" note in .plans/DOCS_SITE_MODERNIZATION_PLAN.md.
+  unstable_shouldAddLocaleToLinks: true,
   // `theme` / `themeConfig` are gone in Nextra 4 - the theme is now applied by
   // <Layout> in app/(docs)/layout.tsx, and NextraConfigSchema rejects unknown keys.
   mdxOptions: {
@@ -381,6 +385,8 @@ export default withNextra({
   // Next sees two lockfiles and infers the wrong workspace root. Pin it.
   outputFileTracingRoot: import.meta.dirname,
   output: "export",
+  // Read by Nextra (it removes the key before Next sees it): one content/<locale>/ tree each.
+  i18n: { locales: LOCALES, defaultLocale: DEFAULT_LOCALE },
   trailingSlash: true,
   images: {
     unoptimized: true

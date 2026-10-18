@@ -31,6 +31,13 @@ React 19 + Next 16.
 - Install its dependencies with `npm run doc:install`, not a root `npm ci`.
 - Only `docs/content/` produces routes. `docs/authoring/` holds working notes
   that must stay off the public site.
+- Pages live under `docs/content/<lang>/` (English in `en/`), in four navbar areas -
+  `get-started/`, `guides/`, `reference/`, `under-the-hood/` - plus the book, which is reachable
+  by URL but deliberately not linked anywhere (decision D6). The plan is
+  `.plans/DOCS_SITE_MODERNIZATION_PLAN.md`.
+- **Moving or renaming a page needs an entry in `docs/redirects.json`** (old path -> new path);
+  `scripts/build-doc-redirects.cjs` writes a redirect stub for it, and the route golden fails the
+  build when an old URL disappears.
 - **`docs/package.json` must keep `--webpack` on `dev` and `build`.** Next 16
   defaults to Turbopack, which rejects Nextra's non-serializable `mdxOptions` -
   and those options are what register the custom `z80klive` Shiki grammar used
