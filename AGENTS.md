@@ -149,7 +149,7 @@ merely uncoloured, which no route diff can see.
 - Execution tests run on the real WASM cores: `test/harness/sp48/` (48K with the real ROM, booted
   to BASIC; read its README) and `test/harness/zxnext/`.
 - New language behaviour gets a program in the test corpus, `test/kbasic/corpus/<area>/<name>.zxbas`,
-  with `'@expect` header lines (the runner's header comment lists them); the runner also fails on
+  with `'@expect` header lines (`test/kbasic/corpus/corpus-run.ts`'s header comment lists them); the runner also fails on
   the debug-info validator's problems and checks SP at every statement entry (G4).
   `scripts/kbasic-ide-check.cjs` checks breakpoints, the execution point and the source-level debugger
   (stepping, return points, the Call Stack and Variables panels, error stops) in the running IDE.
@@ -220,14 +220,24 @@ merely uncoloured, which no route diff can see.
   record it. Raising a count needs a reason in the PR.
 - Renderer hook lint baseline: `npm run lint:renderer`
 - Tests: `npm test` runs the **unit tier** (projects `node` and `jsdom`, ~40 s) always, and each
-  **end-to-end tier** - `e2e-cores` (tests that run the WASM machine cores) and `e2e-kbasic`
+  **fast end-to-end tier** - `e2e-cores` (tests that run the WASM machine cores) and `e2e-kbasic`
   (Klive BASIC programs compiled and run on them) - only when its inputs changed since it last
   passed on this machine (`scripts/run-tests.cjs`; `npm test -- --dry-run` says which and why).
-  `npm run test:e2e` forces the e2e tiers, `npm run test:all` runs everything (CI does).
+  `npm run test:e2e` forces the fast e2e tiers; `npm run test:fast` runs unit + fast e2e (what CI
+  and `release:prepare` run; ≤ 3 min locally, ≤ 10 min on GitHub).
+  - **The slow tier, `e2e-slow`, runs only on request**: `npm run test:slow` (or `npm run test:all`,
+    everything) **when a plan is about to complete and before `npm run release:prepare`** - not after
+    every step. GitHub runs it only from the manual "Slow tests" workflow; push, PRs and the release
+    never do. `release:prepare` warns when it has not passed on the current sources
+    (`npm run test:slow-status`). The plan is `.plans/FAST_SLOW_TEST_TIERS_PLAN.md`.
   - The tiers are listed in `build/e2e-tests.ts`. **A new test that runs a core goes there**: in the
     unit tier, instantiating a core fails with a message saying so (`test/vitest.setup.ts`).
-  - Focused runs: `npm test -- <paths>` runs those files whatever their tier;
-    `npm test -- --project jsdom <test files>` still selects one project.
+  - **Keep the fast set fast**: a fast-tier file over 20 s in a full run (`npm run test:timings`)
+    moves to `E2E_SLOW_TESTS` in `build/e2e-tests.ts`, or gets cheaper. Exhaustive sweeps (every
+    machine, every ROM, whole corpora) belong in the slow tier; one representative case stays fast.
+  - Focused runs: `npm test -- <paths>` runs those files whatever their fast tier;
+    a slow file needs `--project e2e-slow`. `npm test -- --project jsdom <test files>` still
+    selects one project.
 - Docs build: `npm run doc:build`
 - Docs verification: `npm run doc:check`
 - Docs preview at the production path: `npm run doc:serve`

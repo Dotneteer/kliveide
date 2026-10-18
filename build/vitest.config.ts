@@ -1,11 +1,13 @@
 import { resolve } from "path";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vitest/config";
-import { E2E_CORE_TESTS, E2E_KBASIC_TESTS } from "./e2e-tests";
+import { E2E_CORE_TESTS, E2E_KBASIC_TESTS, E2E_SLOW_TESTS } from "./e2e-tests";
 
 /** Run by their own config (`test/wasm/vitest.z80.config.ts`), and wall-clock budgets (`perf`). */
 const ALWAYS_EXCLUDED = ["./test/wasm/z80/**/*.test.ts", "./test/**/*.perf.test.ts"];
 const E2E = [...E2E_CORE_TESTS, ...E2E_KBASIC_TESTS].map((glob) => `./${glob}`);
+/** Carved out of the two fast e2e tiers into `e2e-slow` (see `build/e2e-tests.ts`). */
+const SLOW = E2E_SLOW_TESTS.map((file) => `./${file}`);
 
 export default defineConfig({
   plugins: [react()],
@@ -46,15 +48,16 @@ export default defineConfig({
       },
       /**
        * The end-to-end tiers: tests that run the real WASM machine cores (see `build/e2e-tests.ts`).
-       * `npm test` runs each only when its inputs changed since it last passed
-       * (`scripts/run-tests.cjs`); `npm run test:e2e` / `npm run test:all` run them regardless.
+       * `npm test` runs each fast one only when its inputs changed since it last passed
+       * (`scripts/run-tests.cjs`); `npm run test:e2e` / `npm run test:fast` run them regardless.
+       * `e2e-slow` runs only on request: `npm run test:slow` / `npm run test:all`.
        */
       {
         extends: true,
         test: {
           name: "e2e-cores",
           include: E2E_CORE_TESTS.map((glob) => `./${glob}`),
-          exclude: ALWAYS_EXCLUDED,
+          exclude: [...ALWAYS_EXCLUDED, ...SLOW],
           environment: "node"
         }
       },
@@ -63,6 +66,15 @@ export default defineConfig({
         test: {
           name: "e2e-kbasic",
           include: E2E_KBASIC_TESTS.map((glob) => `./${glob}`),
+          exclude: [...ALWAYS_EXCLUDED, ...SLOW],
+          environment: "node"
+        }
+      },
+      {
+        extends: true,
+        test: {
+          name: "e2e-slow",
+          include: SLOW,
           exclude: ALWAYS_EXCLUDED,
           environment: "node"
         }

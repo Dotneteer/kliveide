@@ -3,7 +3,8 @@
  *
  *   npm run release:prepare [-- --version x.y.z] [--dry-run] [--skip-tests] [--no-push]
  *       Step A, on an up-to-date master: computes the version from .changes/, writes the
- *       CHANGELOG section, consumes the changesets, bumps package.json, runs every gate, commits
+ *       CHANGELOG section, consumes the changesets, bumps package.json, runs every gate (the fast
+ *       test tiers; it only warns when the slow tier has not passed on these sources), commits
  *       "Release v<version>" on release/v<version>, pushes it and opens the release PR.
  *   npm run release:verify [-- --version x.y.z]
  *       The checks that must hold on a release commit; the release workflow's first job.
@@ -186,6 +187,15 @@ function prepare(opts) {
   });
   const body = lib.releasePrBody({ version, lastRelease: last, section, reason, unlocks, consumed: pending.length });
 
+  // --- The slow test tier is never a release gate; a stale one is worth a warning, not a stop
+  // --- (.plans/FAST_SLOW_TEST_TIERS_PLAN.md D3).
+  if (!run("node", ["scripts/run-tests.cjs", "--slow-status"], { allowFail: true }).ok) {
+    console.warn(
+      "Warning: the slow test tier has not passed on these sources. The release runs only the fast tiers;\n" +
+        "run `npm run test:slow` (or the \"Slow tests\" workflow) first unless you have a reason not to."
+    );
+  }
+
   if (dry) {
     console.log(`\n--- CHANGELOG section ---\n\n${section}\n--- PR body ---\n\n${body}`);
     console.log(`(dry run) would consume ${pending.length} changeset(s), set package.json to ${version}, run the gates and open the PR.`);
@@ -205,7 +215,8 @@ function prepare(opts) {
   const gates = [
     ["npm", ["run", "build:check"]],
     ["npm", ["run", "lint:renderer"]],
-    ...(opts["skip-tests"] ? [] : [["npm", ["run", "test:all"]]]),
+    // --- The fast tiers only: the slow one is run before release:prepare, not by it
+    ...(opts["skip-tests"] ? [] : [["npm", ["run", "test:fast"]]]),
     ["npm", ["run", "doc:build"]],
     ["npm", ["run", "doc:check"]],
     ["node", ["scripts/release.cjs", "verify", "--local"]]

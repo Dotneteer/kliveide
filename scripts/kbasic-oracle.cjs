@@ -16,7 +16,7 @@
  *   the repository are `test/kbasic/oracle/<area>/<name>.json`, which hold observed results (screen
  *   rows, whether the program returned, peeked values) and never generated code.
  * The corpus runner then compares each program's expectations with its results file
- * (`test/kbasic/corpus/corpus.test.ts`).
+ * (`test/kbasic/corpus/corpus-run.ts`).
  */
 const { spawnSync } = require("child_process");
 const fs = require("fs");

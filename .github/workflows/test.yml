@@ -7,8 +7,12 @@ on:
 permissions:
   contents: read
 
+# The fast tiers only (`npm run test:fast`), split into parallel jobs so the wall time is the
+# longest job, not the sum (`.plans/FAST_SLOW_TEST_TIERS_PLAN.md`). The slow tier (`e2e-slow`) never
+# runs here: it is `npm run test:slow` / `test:all` locally and the manual "Slow tests" workflow.
+
 jobs:
-  unit:
+  type-check:
     runs-on: ubuntu-latest
 
     steps:
@@ -25,21 +29,52 @@ jobs:
       - name: Check ZX Spectrum 48K WASM artifact size
         run: npm run check:sp48-wasm-size
 
+      # Fails only on type errors that are not in build/type-errors-baseline.json, so the existing
+      # backlog does not block CI while it is being paid down. See scripts/check-types.cjs.
+      - name: Type-check
+        run: npm run build:check
+
+  test:
+    name: test (${{ matrix.name }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Together these are exactly `npm run test:fast`. A shard is a slice of the tier's files
+          # (vitest --shard); add a shard when a job nears the 10-minute budget.
+          - name: unit
+            projects: --project=node --project=jsdom
+          - name: kbasic
+            projects: --project=e2e-kbasic
+          - name: cores 1/3
+            projects: --project=e2e-cores --shard=1/3
+          - name: cores 2/3
+            projects: --project=e2e-cores --shard=2/3
+          - name: cores 3/3
+            projects: --project=e2e-cores --shard=3/3
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.x
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
       # The .wasm cores are build outputs (git-ignored), so a fresh checkout has none. The WASM-core
       # tests (e.g. test/zxnext-hw/) load them from src/emu/machines/*/wasm/dist/ and fail with
       # ENOENT without this step. Same freestanding clang --target=wasm32 toolchain as the sp48 step.
       - name: Build all WASM machine cores
         run: npm run build:all-wasm
 
-      # Fails only on type errors that are not in build/type-errors-baseline.json, so the existing
-      # backlog does not block CI while it is being paid down. See scripts/check-types.cjs.
-      - name: Type-check
-        run: npm run build:check
-
       # Headroom for the test workers' heap: the Klive BASIC suites compile and run many programs.
-      # Every tier, the end-to-end ones included: `npm test` skips an e2e tier whose inputs are
-      # unchanged since it last passed *on that machine*, and CI has no such record to trust.
-      - name: Run unit, component and end-to-end tests
-        run: npm run test:all
+      # Every listed tier runs: `npm test` skips an e2e tier whose inputs are unchanged since it last
+      # passed *on that machine*, and CI has no such record to trust.
+      - name: Run tests
+        run: npx vitest run --config build/vitest.config.ts ${{ matrix.projects }}
         env:
           NODE_OPTIONS: --max-old-space-size=4096

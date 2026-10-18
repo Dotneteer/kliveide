@@ -4,8 +4,9 @@
  * They are most of the suite's time (≈1350 of ≈1590 test-seconds when this was written), and a
  * change that touches none of their inputs cannot change their outcome. `npm test`
  * (`scripts/run-tests.cjs`) therefore always runs the unit tier and runs each tier below only when
- * its inputs changed since it last passed; `npm run test:e2e` and `npm run test:all` run them
- * regardless, and CI runs everything.
+ * its inputs changed since it last passed; `npm run test:e2e` and `npm run test:fast` run them
+ * regardless (CI and `release:prepare` run `test:fast`). The slowest of them are carved out into a
+ * slow tier, `E2E_SLOW_TESTS` at the end of this file, which only `test:slow` and `test:all` run.
  *
  * **Keep this list complete.** A unit-tier test that instantiates a machine core fails with a
  * message pointing here (`test/vitest.setup.ts`), so a new core test cannot quietly slow the unit
@@ -133,4 +134,45 @@ export const E2E_KBASIC_TESTS: string[] = [
   "test/kbasic/codegen/strings.test.ts",
   "test/kbasic/codegen/tape.test.ts",
   "test/kbasic/codegen/targets.test.ts"
+];
+
+/**
+ * The slow end-to-end tier: files taken out of the two lists above because they cost far more than
+ * they add to an everyday run - exhaustive sweeps (every ROM, every machine, the whole corpus under
+ * the debugger), determinism and contract checks that build the cores twice, and the zxbc
+ * compatibility and optimiser reports. They are measured, not guessed: each took 17-143 s of a full
+ * local run, ~1090 of its ~2400 test-seconds (`.plans/FAST_SLOW_TEST_TIERS_PLAN.md`).
+ *
+ * Every entry must also match one of the lists above (that decides the unit-tier guard and the
+ * inputs); being here moves it from its fast tier into `e2e-slow`. `npm test`, CI and
+ * `release:prepare` never run this tier: `npm run test:slow` and `npm run test:all` do, when a plan
+ * is about to complete and before a release is prepared, and so does the manual "Slow tests"
+ * workflow. A fast-tier file that grows past the budget (`npm run test:timings`) moves here, or gets
+ * cheaper. Exact paths, no globs, so a new test never lands here by accident.
+ */
+export const E2E_SLOW_TESTS: string[] = [
+  // --- Klive BASIC: the zxbc compatibility suites, the optimiser report, the corpus beyond levels 0 and 3 on the 48K
+  "test/kbasic/compat/compat.test.ts",
+  "test/kbasic/opt/opt-report.test.ts",
+  "test/kbasic/corpus/corpus-levels.test.ts",
+  "test/kbasic/corpus/corpus-debugger.test.ts",
+  "test/kbasic/corpus/corpus-next.test.ts",
+  // --- Loaders and machines over every ROM and bank layout
+  "test/zxSpectrum/sp128-wasm-v2-loader.test.ts",
+  "test/zxSpectrum/spp3e-wasm-v2-loader.test.ts",
+  "test/zxSpectrum/ZxSpectrum48WasmV2Machine.test.ts",
+  "test/zxSpectrum/ZxSpectrum128WasmV2Machine.test.ts",
+  "test/zxSpectrum/ZxSpectrumP3eWasmV2Machine.test.ts",
+  "test/machines/hardware-specs-cores.test.ts",
+  // --- Reverse debugging and debug recordings across every machine
+  "test/emu/debug-recording-sp48.test.ts",
+  "test/emu/debug-recording-cores.test.ts",
+  "test/emu/reverse-cores-controller.test.ts",
+  "test/emu/reverse-step-back-controller.test.ts",
+  "test/emu/reverse-continue-controller.test.ts",
+  "test/wasm/reverse/journal-replay-determinism.test.ts",
+  // --- Core contracts that build the cores (twice) or replay every export
+  "test/wasm/reverse/export-contract.test.ts",
+  "test/wasm/state/wasm-layout.test.ts",
+  "test/wasm/state/machine-state-determinism.test.ts"
 ];

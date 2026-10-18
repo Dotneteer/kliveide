@@ -164,7 +164,7 @@ branch to a program label, from the emitted text), G3 (by construction), G5 (eve
 non-runtime label carries a call-site record) and the spans (non-empty, no leading or trailing
 blank or `:`, and statements on one line either apart or nested — a one-line `IF a THEN PRINT 1`'s
 header shares its line with the statements it holds). The corpus runner
-(`test/kbasic/corpus/corpus.test.ts`) fails on any problem and checks G4 on every run: it stops at
+(`test/kbasic/corpus/corpus-run.ts`, run by `corpus.test.ts`, `corpus-o3.test.ts` and `corpus-levels.test.ts`) fails on any problem and checks G4 on every run: it stops at
 every statement entry (a breakpoint each) and requires SP = IX − frame inside routines, and the main
 baseline minus two bytes per pending GOSUB in the main program. G6 waits for the tracing hook of §13.5
 (Phase 5's step tests check FUNCTION results at return points, `test/kbasic/codegen/source-step.test.ts`).
