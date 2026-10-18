@@ -43,8 +43,10 @@ jobs:
         include:
           # Together these are exactly `npm run test:fast`. A shard is a slice of the tier's files
           # (vitest --shard); add a shard when a job nears the 10-minute budget.
-          - name: unit
-            projects: --project=node --project=jsdom
+          - name: unit 1/2
+            projects: --project=node --project=jsdom --shard=1/2
+          - name: unit 2/2
+            projects: --project=node --project=jsdom --shard=2/2
           - name: kbasic
             projects: --project=e2e-kbasic
           - name: cores 1/3

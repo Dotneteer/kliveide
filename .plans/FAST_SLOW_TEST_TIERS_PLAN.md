@@ -51,14 +51,14 @@ at ~1200 file-seconds.
    every slow entry exists and belongs to a fast e2e list (`test/e2e-tiers.test.ts`). The corpus
    runner moved to `test/kbasic/corpus/corpus-run.ts`, run by `corpus.test.ts` (level 0),
    `corpus-o3.test.ts` (level 3) and `corpus-levels.test.ts` (1 and 2, slow).
-3. [x] `test.yml` parallel jobs (type-check; unit; kbasic; cores in 3 shards); `slow-tests.yml`
+3. [x] `test.yml` parallel jobs (type-check; unit in 2 shards; kbasic; cores in 3 shards); `slow-tests.yml`
    (manual, 3 shards).
 4. [x] `release.cjs` uses `test:fast` + the slow-status warning.
 5. [x] AGENTS.md, `.ai/release-guide.md`, `.plans/RELEASE_AUTOMATION_PLAN.md` note.
 6. [ ] Verify. Local, 2026-10-18: `npm run test:fast` **2:24** wall (was 4:42 for everything),
    1264 files pass; `npm run test:slow` 2:15, 20 files pass; `test:slow-status` turns fresh after
-   it. **Still to measure: the first `test.yml` run on GitHub** (estimate ~6-8 min per job; add a
-   cores shard if one nears 10).
+   it. GitHub, first run (39128490501, one unit job): **8:22** wall; unit 8:18, kbasic 3:18, cores
+   shards 2:18-4:14, type-check 1:28. The unit job was the longest, so it was split in two.
 
 ## Results
 
@@ -66,4 +66,4 @@ at ~1200 file-seconds.
 | --- | --- | --- |
 | Local, fast set (`test:fast`) | 4:42 (everything) | 2:24 |
 | Local, slow tier (`test:slow`) | - | 2:15 |
-| GitHub `test.yml` | ~32 min, one job | to be measured |
+| GitHub `test.yml` | ~32 min, one job | 8:22 (one unit job; then split in two) |
