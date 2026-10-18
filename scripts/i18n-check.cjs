@@ -243,7 +243,9 @@ async function checkI18n(options = {}) {
       fs.writeFileSync(file, expected);
     } else {
       const actual = fs.existsSync(file) ? fs.readFileSync(file, "utf8") : "";
-      if (actual !== expected) errors.push(`${rel(file)}: out of date - run \`npm run i18n:keys\``);
+      if (actual.replace(/\r\n/g, "\n") !== expected) {
+        errors.push(`${rel(file)}: out of date - run \`npm run i18n:keys\``);
+      }
     }
   }
 

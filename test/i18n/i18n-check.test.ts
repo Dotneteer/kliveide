@@ -56,6 +56,15 @@ describe("i18n-check", () => {
     expect(result.keys).toEqual(["dialog.delete.confirm", "menu.file.openFile"]);
   });
 
+  it("accepts Windows line endings in generated files", async () => {
+    for (const file of ["keys.generated.ts", "translations.generated.ts", "source.generated.ts"]) {
+      const content = readFileSync(join(root, file), "utf8");
+      write(file, content.replace(/\n/g, "\r\n"));
+    }
+
+    expect((await run()).errors).toEqual([]);
+  });
+
   it("passes the real catalogs of the repo", async () => {
     const result = await checkI18n();
     expect(result.errors).toEqual([]);
