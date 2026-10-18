@@ -16,6 +16,10 @@ import {
   type GoToDefinitionTarget
 } from "@renderer/appIde/annotations/goToDefinition";
 import {
+  referenceSubjectsOf,
+  type ReferenceSubject
+} from "@renderer/appIde/annotations/labelReferences";
+import {
   actionRange,
   isAnnotationEnabled,
   offsetSpanOf,
@@ -70,10 +74,13 @@ export type NexAnnotationMenuEntry =
       disabled: boolean;
       /** The key that reaches this action from the listing, spelled for display. */
       shortcut?: string;
+      /** For "find-references": the label this entry searches for (one entry per label). */
+      subject?: ReferenceSubject;
     };
 
 export type NexAnnotationMenuAction =
   | "goto-definition"
+  | "find-references"
   | "manage-labels"
   | "manage-regions"
   | "bank-comment"
@@ -281,6 +288,8 @@ export const NEX_ANNOTATION_SHORTCUTS: {
   hint: string;
 }[] = [
   { action: "goto-definition", key: "f12", shift: false, ctrl: true, hint: "Ctrl+F12" },
+  // --- VS Code's key for the same: it reaches the row's first label (its own, else an operand's)
+  { action: "find-references", key: "f12", shift: true, hint: "Shift+F12" },
   { action: "comment", key: "c", shift: false, hint: "C" },
   { action: "synopsis", key: "c", shift: true, hint: "Shift+C" },
   { action: "global-label", key: "l", shift: false, hint: "L" },
@@ -363,6 +372,7 @@ function selectMenu(
      * label commands beneath would file it as an annotation action, which it is not.
      */
     item("goto-definition", "panels.next.annotations.menu.goToDefinition", !canGoToDefinition(state)),
+    ...selectReferenceEntries(state),
     { kind: "separator" },
     item("manage-labels", "panels.next.annotations.menu.manageLabels", !enabled),
     item("manage-regions", "panels.next.annotations.menu.manageRegions"),
@@ -386,6 +396,51 @@ function selectMenu(
     { kind: "separator" },
     item("clear", "panels.next.annotations.menu.clear")
   ];
+}
+
+/**
+ * The "Go to References" entries: one per label the row offers, each naming its label, the first
+ * carrying the shortcut. A row with none still shows the entry, disabled, so it can be found.
+ */
+function selectReferenceEntries(state: NexAnnotationEditorState): NexAnnotationMenuEntry[] {
+  const subjects = referenceSubjectsFor(state);
+  if (subjects.length === 0) {
+    return [
+      withTexts(
+        { kind: "item" as const, id: "find-references" as const, disabled: true, shortcut: SHORTCUT_HINTS.get("find-references") },
+        { text: "panels.next.annotations.menu.findReferences" }
+      )
+    ];
+  }
+  return subjects.map((subject, index): NexAnnotationMenuEntry => {
+    const entry = {
+      kind: "item" as const,
+      id: "find-references" as const,
+      disabled: false,
+      shortcut: index === 0 ? SHORTCUT_HINTS.get("find-references") : undefined,
+      subject
+    };
+    // --- A getter, like `withTexts`, so the text follows the display language (D7)
+    Object.defineProperty(entry, "text", {
+      enumerable: true,
+      get: () => t("panels.next.annotations.menu.findReferencesOf", { name: subject.label.name })
+    });
+    return entry as NexAnnotationMenuEntry;
+  });
+}
+
+/**
+ * The labels "Go to References" can search for from the row a gesture named: the row's own label
+ * first, then the ones its operands name.
+ */
+export function referenceSubjectsFor(
+  state: NexAnnotationEditorState,
+  rowIndex?: number
+): ReferenceSubject[] {
+  if (!isAnnotationEnabled(state)) return [];
+  const index = rowIndex ?? state.contextTarget?.rowIndex ?? state.selection?.activeIndex;
+  if (index === undefined) return [];
+  return referenceSubjectsOf(state.annotations, state.env.bank, state.items[index], state.env.disassOffset);
 }
 
 /**
@@ -496,18 +551,26 @@ export function wholeBankConfirmMessage(): string {
 export function deleteLabelConfirmRequest(args: {
   scope: "global" | "local";
   name: string;
+  /** The operands pointed at the label by hand: deleting it clears them. */
   referenceCount: number;
+  /** The listed rows that show its name (Go to References): they will no longer. */
+  listedCount?: number;
 }): ConfirmRequest {
+  const after = [
+    ...(args.referenceCount > 0
+      ? [t("panels.next.labels.deleteReferences", { count: args.referenceCount })]
+      : []),
+    ...(args.listedCount
+      ? [t("panels.next.labels.deleteListedRows", { count: args.listedCount })]
+      : [])
+  ];
   return {
     title: t("panels.next.labels.deleteTitle"),
     lines: [
       t(args.scope === "global" ? "panels.next.labels.deleteGlobal" : "panels.next.labels.deleteBank")
     ],
     code: args.name,
-    linesAfterCode:
-      args.referenceCount > 0
-        ? [t("panels.next.labels.deleteReferences", { count: args.referenceCount })]
-        : undefined,
+    linesAfterCode: after.length > 0 ? after : undefined,
     confirmLabel: t("panels.next.button.delete"),
     cancelLabel: t("common.button.cancel"),
     danger: true

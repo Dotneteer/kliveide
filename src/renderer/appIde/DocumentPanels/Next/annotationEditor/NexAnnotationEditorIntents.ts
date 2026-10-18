@@ -6,6 +6,7 @@ import type {
   AnnotationRegionType
 } from "@renderer/appIde/annotations/programAnnotations";
 import type { NexAnnotationEditorEnvironment } from "./NexAnnotationEditorModel";
+import type { DefinitionLabel } from "@renderer/appIde/annotations/goToDefinition";
 
 /**
  * Everything a user can do to a NEX bank's annotations, in the user's own vocabulary.
@@ -58,6 +59,11 @@ export type NexAnnotationEditorIntent =
    * you are looking at, never the sidecar.
    */
   | { type: "goToDefinitionRequested"; rowIndex?: number }
+  /*
+   * The rows that name a label, listed to choose one to go to. `label` is the one the menu entry
+   * named; absent (the shortcut), the row's first: its own label, else an operand's.
+   */
+  | { type: "referencesRequested"; rowIndex?: number; label?: DefinitionLabel }
 
   // ─── Editing ───────────────────────────────────────────────────────────────
   // --- The comment on the whole bank: no row, because it is not about one.

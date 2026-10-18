@@ -3,6 +3,7 @@ import { toDecimal3, toHexa2, toHexa4 } from "@renderer/appIde/services/ide-comm
 import {
   DisassemblyItem,
   DisassemblyAnnotationMetadata,
+  DisassemblyOperandInfo,
   DisassemblyOperandLabelResolver,
   MemorySection
 } from "@renderer/appIde/disassemblers/common-types";
@@ -271,7 +272,15 @@ export async function createAnnotatedDisassemblyItems({
 
       case "words":
         items.push(
-          ...createWordItems(contents, start, end, decimalView, addressOffset, labelOffsets)
+          ...createWordItems(
+            contents,
+            start,
+            end,
+            decimalView,
+            addressOffset,
+            labelOffsets,
+            createWordLabelResolver(annotations, bankAnnotation, addressOffset)
+          )
         );
         break;
 
@@ -400,6 +409,32 @@ function createAnnotationOperandLabelResolver(
 
 
 
+/**
+ * The label a `.defw` value shows: a table of addresses (a jump table, a list of routines) reads
+ * as the routines' names, as an instruction's operand does.
+ *
+ * The same rule as an operand (`resolveOperandLabel`: an explicit reference first, then a label
+ * with that value), keyed as an instruction's operand is: the row's bank offset and the word's
+ * index in the row, which is what "Go to definition" and the operand label dialog use. Only the
+ * annotations' labels name a word — not the machine's system variables, which an instruction
+ * operand falls back to — because a word in a table is as often a plain number as an address,
+ * and an authored label is a statement about this program where a system variable's address
+ * matching a number is a coincidence.
+ */
+function createWordLabelResolver(
+  annotations: ProgramAnnotations,
+  bankAnnotation: BankAnnotation,
+  addressOffset: number
+): (rowOffset: number, wordIndex: number, value: number) => string | undefined {
+  return (rowOffset, wordIndex, value) =>
+    resolveOperandLabel(
+      annotations,
+      bankAnnotation,
+      { bankOffset: rowOffset & ANNOTATION_BANK_LAST_OFFSET, operandIndex: wordIndex, operandValue: value },
+      addressOffset
+    )?.name;
+}
+
 /** Most values a `.defb` / `.defw` row shows before starting a new row. */
 const DATA_ROW_BYTES = MAX_ROW_BYTES;
 
@@ -510,19 +545,35 @@ function createWordItems(
   end: number,
   decimalView: boolean,
   addressOffset: number,
-  labelOffsets: number[] = []
+  labelOffsets: number[] = [],
+  wordLabel?: (rowOffset: number, wordIndex: number, value: number) => string | undefined
 ): DisassemblyItem[] {
   const items: DisassemblyItem[] = [];
   for (let offset = start, rowLength = 0; offset <= end; offset += rowLength) {
     rowLength = dataRowLength(offset, start, end, 2, labelOffsets);
     const values: string[] = [];
+    // --- Each word is an operand candidate, as an instruction's 16-bit operand is: that is what
+    // --- lets the row tint a resolved name (`splitInstructionOperands`) and go to its definition.
+    const operandCandidates: DisassemblyOperandInfo[] = [];
     for (let idx = 0; idx + 1 < rowLength; idx += 2) {
       const value = contents[offset + idx] | (contents[offset + idx + 1] << 8);
-      values.push(decimalView ? value.toString(10) : `$${toHexa4(value)}`);
+      const defaultText = decimalView ? value.toString(10) : `$${toHexa4(value)}`;
+      const resolvedText = wordLabel?.(offset, idx / 2, value);
+      operandCandidates.push({
+        instructionAddress: effectiveAddress(offset, addressOffset),
+        instructionOffset: offset,
+        operandIndex: idx / 2,
+        operandValue: value,
+        pragma: "W",
+        defaultText,
+        ...(resolvedText ? { resolvedText } : {})
+      });
+      values.push(resolvedText ?? defaultText);
     }
     items.push({
       address: effectiveAddress(offset, addressOffset),
       instruction: `.defw ${values.join(", ")}`,
+      operandCandidates,
       annotation: createAnnotationMetadata(
         undefined,
         offset,

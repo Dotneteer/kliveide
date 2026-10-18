@@ -1053,7 +1053,10 @@ describe("StaticMemoryDump", () => {
           name: "LocalTarget",
           value: 2,
           referenced: true,
-          referenceCount: 1
+          // --- The hand-made reference is on a `nop` (the bank is zeros): no listed row shows the
+          // --- name, so the Refs count (the rows Go to References lists) is 0; it is kept apart
+          referenceCount: 0,
+          operandReferenceCount: 1
         }),
         expect.objectContaining({
           scope: "global",
@@ -2045,7 +2048,9 @@ describe("StaticMemoryDump", () => {
     expect(confirmComponent.name).toBe("ConfirmDialog");
     expect(confirmRequest.code).toBe("GlobalSetup");
     expect(confirmRequest.linesAfterCode).toEqual([
-      "2 operand references to it will be cleared."
+      "2 operand references to it will be cleared.",
+      // --- `call GlobalSetup` at $8000 is the one listed row that shows it
+      "1 row of this listing shows its name and will no longer."
     ]);
     expect(confirmRequest.danger).toBe(true);
     expect(confirmOptions.dialogRole).toBe("alertdialog");

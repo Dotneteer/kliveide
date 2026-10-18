@@ -23,6 +23,8 @@ import {
   normalizeMultilineComment,
   sameRegionLayout
 } from "./programAnnotations";
+import type { DisassemblyItem } from "@renderer/appIde/disassemblers/common-types";
+import { countLabelReferencesInListing, labelKey } from "./labelReferences";
 
 /*
  * The pure edits behind the NEX annotation UI: label bookkeeping, region algebra, and the operand
@@ -685,32 +687,49 @@ export type LabelListEntry = AnnotationLabel & {
   scope: AnnotationLabelScope;
   bank?: number;
   referenced: boolean;
+  /**
+   * How many rows name the label: of the listing, when one is given (what Go to References lists),
+   * else the operands pointed at it by hand.
+   */
   referenceCount: number;
+  /** The operands pointed at it by hand (`operandReferences`), which deleting it clears. */
+  operandReferenceCount: number;
 };
 
 /**
  * Every label a bank can use — the file's global labels followed by the bank's own — each with its
  * reference count.
  *
- * The count is what the delete confirmation reports, and what marks a label as referenced in the
- * list, so it is derived here rather than at each call site.
+ * With `listing`, the count is the rows of that listing that name the label — the rows Go to
+ * References lists, found by the rule the listing prints names by — so the Labels list and Go to
+ * References agree. That covers the bank or ROM page listed; a global label named from another bank
+ * is not counted there. Without one, it is the operands pointed at the label by hand, the only count
+ * the annotations alone can give.
  */
 export function listLabelsForBank(
   annotations: ProgramAnnotations,
-  bank: number
+  bank: number,
+  listing?: { items: readonly DisassemblyItem[]; addressOffset: number }
 ): LabelListEntry[] {
   const bankAnnotation = getBankAnnotation(annotations, bank);
+  const listed = listing
+    ? countLabelReferencesInListing(annotations, bank, listing.items, listing.addressOffset)
+    : undefined;
   const entry = (
     label: AnnotationLabel,
     scope: AnnotationLabelScope
   ): LabelListEntry => {
-    const referenceCount = countLabelReferences(annotations, bank, scope, label.name);
+    const operandReferenceCount = countLabelReferences(annotations, bank, scope, label.name);
+    const referenceCount = listed
+      ? listed.get(labelKey({ name: label.name, scope })) ?? 0
+      : operandReferenceCount;
     return {
       ...label,
       scope,
       ...(scope === "local" ? { bank } : {}),
-      referenced: referenceCount > 0,
-      referenceCount
+      referenced: referenceCount > 0 || operandReferenceCount > 0,
+      referenceCount,
+      operandReferenceCount
     };
   };
   return [

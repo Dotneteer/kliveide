@@ -20,6 +20,9 @@ import {
 
 import { useActiveAnnotationSet } from "./activeAnnotationSet";
 import { runLiveAnnotationAction } from "./liveAnnotationEditing";
+import type { DefinitionLabel } from "./goToDefinition";
+import { referenceSubjectsOf } from "./labelReferences";
+import { peekAnnotationSession } from "./annotationSession";
 import { liveRowTarget, rowsOfTarget, type LiveRowTarget, type LiveRowTargetContext } from "./liveListingPort";
 import { ANNOTATION_BANK_SIZE, decodedRegionTypesFor } from "./programAnnotations";
 import { getRomPartition } from "./romAnnotations";
@@ -28,6 +31,19 @@ import {
   openRomAnnotationEditor,
   startEditingRomPartition
 } from "@renderer/appIde/commands/RomAnnotationCommands";
+
+/**
+ * The labels "Go to References" can search for from a live row: from the annotations the row's
+ * edits go to, which the listing has already loaded into their session.
+ */
+function referenceLabelsOf(item: DisassemblyItem, target: LiveRowTarget): DefinitionLabel[] {
+  const row = item.annotation
+    ? item
+    : { ...item, annotation: { bankOffset: target.offset, byteLength: item.opCodes?.length || 1, regionType: "disassemble" as const } };
+  return referenceSubjectsOf(peekAnnotationSession(target.annotationPath), target.bank, row, target.disassOffset).map(
+    (subject) => subject.label
+  );
+}
 
 /** The region entries a row menu offers on a machine. */
 function regionActionsFor(space: BankSpace | undefined): { id: NexAnnotationMenuAction; text: string }[] {
@@ -126,6 +142,7 @@ export function useLiveAnnotationEditing(args: {
         rom: "kind" in target && target.kind === "rom",
         hasOperands: !!item.operandCandidates?.length,
         hasDefinition: !!item.operandCandidates?.some((operand) => operand.resolvedText),
+        referenceLabels: "annotationPath" in target ? referenceLabelsOf(item, target) : [],
         hints,
         regionActions: regionActionsFor(argsRef.current.bankSpace)
       });
@@ -134,7 +151,7 @@ export function useLiveAnnotationEditing(args: {
   );
 
   const run = useCallback(
-    async (item: DisassemblyItem, action: NexAnnotationMenuAction): Promise<void> => {
+    async (item: DisassemblyItem, action: NexAnnotationMenuAction, label?: DefinitionLabel): Promise<void> => {
       if (action === "open-rom-annotations" || action === "start-rom-annotations") {
         const rom = romPartitionAt(item.address);
         if (!rom) return;
@@ -161,6 +178,7 @@ export function useLiveAnnotationEditing(args: {
           rows: rowsOfTarget(argsRef.current.items, target, context),
           row: item,
           action,
+          label,
           decimalView: argsRef.current.decimalView,
           machineRunning,
           projectService

@@ -35,7 +35,7 @@ import {
   type LiveListingContext,
   useDisassemblyRefresh
 } from "./useDisassemblyRefresh";
-import { DisassemblyRow } from "./DisassemblyRow";
+import { DisassemblyRow, deriveInstructionWidthCh } from "./DisassemblyRow";
 import { hasMachineFeature } from "@common/features/advancedDebugging";
 import { MF_PROFILE } from "@common/machines/constants";
 import { PF_EXECUTED } from "@common/profile/profileTypes";
@@ -705,6 +705,9 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
     };
   }, [coverageAvailable, items, profileVersion, isFullView, currentSegment, mem64kPartitions, emuApi]);
 
+  // --- Sized to the longest row, as the static listing is: a `.defw` row whose words are label
+  // --- names outgrows the default and would otherwise wrap over the row below.
+  const instructionWidthCh = useMemo(() => deriveInstructionWidthCh(items), [items]);
   const commentWidthCh = useMemo(
     () =>
       items.reduce(
@@ -821,6 +824,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
                     )
                   )}
                   commentWidthCh={commentWidthCh}
+                  instructionWidthCh={instructionWidthCh}
                   currentSegment={currentSegment}
                   decimalView={decimalView}
                   index={idx}
@@ -850,8 +854,8 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
       )}
       <ContextMenu state={rowMenuState} onClickOutside={() => rowMenuApi.conceal()}>
         {rowMenuTarget &&
-          annotationEditing.menuItemsFor(rowMenuTarget.item).map((entry) => (
-            <span key={entry.id} style={{ display: "contents" }}>
+          annotationEditing.menuItemsFor(rowMenuTarget.item).map((entry, index) => (
+            <span key={`${entry.id}:${index}`} style={{ display: "contents" }}>
               {entry.separatorBefore && <ContextMenuSeparator />}
               <ContextMenuItem
                 text={entry.text}
@@ -860,7 +864,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
                 clicked={() => {
                   rowMenuApi.conceal();
                   if (rowMenuTarget.item) {
-                    void annotationEditing.run(rowMenuTarget.item, entry.id);
+                    void annotationEditing.run(rowMenuTarget.item, entry.id, entry.label);
                   }
                 }}
               />

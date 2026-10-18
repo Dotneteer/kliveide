@@ -40,11 +40,14 @@ import {
   type NexAnnotationEditorState
 } from "./NexAnnotationEditorModel";
 import type { NexAnnotationEditorPorts } from "./NexAnnotationEditorPorts";
+import type { DefinitionLabel } from "@renderer/appIde/annotations/goToDefinition";
+import { findLabelReferences } from "@renderer/appIde/annotations/labelReferences";
 import {
   actionOffsetSpan,
   deleteLabelConfirmRequest,
   discardConfirmMessage,
   goToDefinitionTargetFor,
+  referenceSubjectsFor,
   selectViewModel,
   wholeBankConfirmMessage,
   type NexAnnotationEditorViewModel
@@ -195,6 +198,10 @@ export class NexAnnotationEditorController extends UiController<
 
       case "goToDefinitionRequested":
         await this.goToDefinition(intent.rowIndex);
+        return;
+
+      case "referencesRequested":
+        await this.goToReferences(intent.rowIndex, intent.label);
         return;
 
       case "manageLabelsRequested":
@@ -438,11 +445,19 @@ export class NexAnnotationEditorController extends UiController<
         result.scope,
         result.name
       );
+      const listedCount = findLabelReferences(
+        annotations,
+        env.bank,
+        this.state.items,
+        { name: result.name, scope: result.scope, value: result.value },
+        env.disassOffset
+      ).length;
       const confirmed = await this.ports.confirm.confirm(
         deleteLabelConfirmRequest({
           scope: result.scope,
           name: result.name,
-          referenceCount
+          referenceCount,
+          listedCount
         })
       );
       if (!confirmed) return;
@@ -466,7 +481,11 @@ export class NexAnnotationEditorController extends UiController<
   private labelList(): NexLabelDialogLabel[] {
     const { annotations, env } = this.state;
     if (!annotations || env.bank === undefined) return [];
-    return listLabelsForBank(annotations, env.bank) as NexLabelDialogLabel[];
+    // --- Counted in the listing the editor holds, so the list agrees with Go to References
+    return listLabelsForBank(annotations, env.bank, {
+      items: this.state.items,
+      addressOffset: env.disassOffset
+    }) as NexLabelDialogLabel[];
   }
 
   private async manageLabels(): Promise<void> {
@@ -551,6 +570,28 @@ export class NexAnnotationEditorController extends UiController<
     if (target.kind === "other-bank" && this.state.env.machineRunning) {
       await this.ports.revealAddressInBank(target.address & 0xffff);
     }
+  }
+
+  /**
+   * List the rows that name a label, and go to the one chosen.
+   *
+   * The label is the one the menu entry named, or — from the shortcut — the row's first. Searched in
+   * the listing the editor holds (the whole bank or ROM page), with the rule the listing printed the
+   * names by (`findLabelReferences`). Going to a row is a scroll in this listing, so it needs no
+   * machine.
+   */
+  private async goToReferences(rowIndex: number | undefined, requested?: DefinitionLabel): Promise<void> {
+    const label = requested ?? referenceSubjectsFor(this.state, rowIndex)[0]?.label;
+    if (!label) return;
+    const references = findLabelReferences(
+      this.state.annotations,
+      this.state.env.bank,
+      this.state.items,
+      label,
+      this.state.env.disassOffset
+    );
+    const result = await this.ports.dialogs.references({ label, references });
+    if (result) this.ports.navigateToAddress(result.address & 0xffff);
   }
 
   // ─── Operand labels ────────────────────────────────────────────────────────

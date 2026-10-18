@@ -214,6 +214,18 @@ export function splitInstructionOperands(
 }
 
 /**
+ * Whether an instruction is a data pragma (`.defb`, `.defw`, ...) rather than something the CPU runs.
+ *
+ * A machine's custom disassembler lists the bytes after a ROM restart that takes inline data - the
+ * report code after the ZX81's and Spectrum's `RST $08`, the calculator codes after `RST $28` - as
+ * `.defb` rows *inside a code region*, so the region type alone would paint them as instructions.
+ * No Z80 mnemonic starts with a dot, so the text says which it is.
+ */
+export function isDataPragma(instruction: string | undefined): boolean {
+  return !!instruction && instruction.trimStart().startsWith(".");
+}
+
+/**
  * Whether a row carries anything the *user* put there, as opposed to anything the disassembler
  * worked out. Drives the leading rail: scrolling a bank, the rail is how far the documenting got.
  */
@@ -551,12 +563,19 @@ export const DisassemblyRow = memo(function DisassemblyRow({
       })
     : undefined;
 
-  // --- A region the user marked as data is a directive, not something the CPU runs, so it takes the
-  // --- directive hue rather than the instruction one. "disassemble" is code and keeps its own.
+  // --- Data is a directive, not something the CPU runs, so it takes the directive hue rather than
+  // --- the instruction one: a region the user marked as data, and a data pragma the disassembler
+  // --- wrote inside code (the bytes after RST $08 / RST $28).
   const isDirective =
-    annotated && !!item.annotation?.regionType && item.annotation.regionType !== "disassemble";
+    annotated &&
+    ((!!item.annotation?.regionType && item.annotation.regionType !== "disassemble") ||
+      isDataPragma(item.instruction));
+  // --- A directive's resolved operands (a `.defw` word that names a label) take the operand hue
+  // --- as an instruction's do; the rest of the directive keeps the directive hue it inherits. A
+  // --- directive naming nothing stays one plain run.
   const instructionParts =
-    annotated && !isDirective
+    annotated &&
+    (!isDirective || !!item.operandCandidates?.some((operand) => operand.resolvedText))
       ? splitInstructionOperands(viewModel?.instruction ?? "", item.operandCandidates)
       : undefined;
   const showRail = annotated && isAuthoredRow(item);
