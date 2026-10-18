@@ -37,6 +37,13 @@ export const Z88DK_MIN_SUPPORTED_BUILD = 23854;
 /** The release tag of that build: the dialog marks this and newer releases as supported. */
 export const Z88DK_MIN_SUPPORTED_TAG = "v2.4";
 
+/**
+ * The error code of "z88dk is not set up / not working": the IDE's build output follows the message
+ * with a link that opens the z88dk integration dialog (`compile-code.ts`), keyed on this code, never
+ * on the message's text.
+ */
+export const Z88DK_SETUP_ERROR_CODE = "ZCC-SETUP";
+
 // --- The verdict the integration dialog shows next to a broken setup. Shared so a failed build says
 // --- the same thing the dialog does, in the same words.
 export const Z88DK_CONFIGURED_FAILED_MESSAGE = "The configured z88dk installation is missing or failed its test.";

@@ -565,6 +565,27 @@
       "sidecar": "The sidecar file's path"
     }
   },
+  "commands.compile.z88dkSetupLink": "Set up z88dk...",
+  "@commands.compile.z88dkSetupLink": {
+    "context": "Clickable link in the IDE's Build output, after the error saying the z88dk C compiler is not set up; it opens the z88dk Integration dialog. z88dk is a product name, always lower case.",
+    "maxChars": 24
+  },
+  "commands.compile.programFileLoaded": "Loading {file} ({bytes} bytes) into the {machine}",
+  "@commands.compile.programFileLoaded": {
+    "context": "Build output after Run or Debug of a C program on a ZX80/ZX81: the program file the compiler wrote is being loaded into the machine.",
+    "placeholders": {
+      "file": "A file path, shown verbatim",
+      "bytes": "The file's size in bytes",
+      "machine": "Machine name, shown verbatim, e.g. 'ZX81'"
+    }
+  },
+  "commands.compile.programFileNoInject": "The {machine} loads C programs as a program file: use Run or Debug.",
+  "@commands.compile.programFileNoInject": {
+    "context": "Error of the Inject command for a C program on a ZX80/ZX81, whose code the compiler places for its own program file, not for Klive's REM-line injection.",
+    "placeholders": {
+      "machine": "Machine name, shown verbatim, e.g. 'ZX81'"
+    }
+  },
   "commands.compile.nex.exported": "NEX file successfully exported to ''{file}''",
   "@commands.compile.nex.exported": {
     "context": "Result message of the IDE's build/run commands (klive.build, klive.inject, klive.run, klive.debug, expc), shown in the command output and in notifications. First line of the NEX export summary; the next lines are indented facts.",

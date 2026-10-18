@@ -1259,6 +1259,37 @@ export async function injectCode(
     additionalInfo = "_klive/" + nexName;
   }
 
+  // --- A C build for the ZX80/ZX81 (z88dk, `.plans/Z88DK_INTEGRATION_PLAN.md` §5.2) brings its own
+  // --- program file: Run and Debug load it as `tape-load -r`/`-d` does, Inject has nothing to place
+  const programFile = (result as { programFile?: string }).programFile;
+  if (programFile) {
+    const machineId = context.store.getState().emulatorState?.machineId;
+    const machine = machineRegistry.find((mi) => mi.machineId === machineId)?.displayName ?? machineId ?? "";
+    if (operationType === "inject") return commandError(t("commands.compile.programFileNoInject", { machine }));
+    let bytes: Uint8Array;
+    try {
+      bytes = await context.mainApi.readBinaryFile(programFile);
+    } catch (err) {
+      return commandError(t("commands.tapeLoad.readFailed", { file: programFile, error: String(err) }));
+    }
+    const insertError = await context.mainApi.setTapeFile(programFile);
+    if (insertError) return commandError(insertError);
+    if (operationType === "debug") {
+      context.service.projectService.setLockedFiles((result.sourceFileList ?? []).map((f) => f.filename));
+    }
+    try {
+      await context.emuApi.setSourceDebugInfo(hasSourceLevelDebug(result) ? result.sourceLevelDebug : undefined);
+    } catch {
+      // --- An emulator without source stepping keeps instruction stepping
+    }
+    await context.emuApi.startTapeLoad(operationType === "debug");
+    context.output.writeLine(t("commands.compile.programFileLoaded", { file: programFile, bytes: bytes.length, machine }));
+    context.store.dispatch(incInjectionVersionAction());
+    return commandSuccessWith(
+      operationType === "debug" ? t("commands.compile.startedDebug") : t("commands.compile.started")
+    );
+  }
+
   let sumCodeLength = 0;
   result.segments.forEach((s) => (sumCodeLength += s.emittedCode.length));
   if (sumCodeLength === 0) {

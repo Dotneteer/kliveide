@@ -197,6 +197,7 @@ import { asm6510LanguageProvider } from "./appIde/project/asm6510LanguageProvide
 import { VicPanel } from "./appIde/SideBarPanels/VicPanel";
 import { WatchPanel } from "./appIde/SideBarPanels/WatchPanel";
 import { turboPascalLanguageProvider } from "./appIde/project/turboPascalLanguageProvider";
+import { cLanguageProvider } from "./appIde/project/cLanguageProvider";
 
 const ACTIVITY_FILE_ID = "file-view";
 const ACTIVITY_DEBUG_ID = "debug-view";
@@ -1246,4 +1247,5 @@ export const customLanguagesRegistry: MonacoAwareCustomLanguageInfo[] = [
   sjasmZ80LanguageProvider,
   asm6510LanguageProvider,
   turboPascalLanguageProvider,
+  cLanguageProvider,
 ];

@@ -27,7 +27,13 @@ library). Each target option is a **separate argument** (`+zx`, `-subtype=plus3`
   **`+zxn -subtype=nex -clib=classic`** links `target/zxn/classic/ram_crt0.asm`, which has the same
   shape (`ld (__restore_sp_onexit+1),sp`, `call _main`, restore SP, `ret`).
 - **`+zx81` / `+zx80`**: the `.P`/`.O` holds a BASIC program whose `REM` line carries the code; the
-  program is started by `RUN`. Klive loads it as a program file.
+  program is started by `RUN`. Klive loads it as a program file (Run and Debug do what
+  `tape-load -r`/`-d` does). The ZX80's `CRT_ORG_CODE` (`$408D`) is not Klive's REM body (`$402B`), so
+  Klive's own REM-line injection cannot place z88dk code: Inject is refused on both machines.
+- **Checked on the real cores** (`test/z88dk/z88dk-run.core.test.ts`): the `+zx` image poked at `$8000`
+  and called returns to the 48K's BASIC loop with `main`'s results in memory; the ZX81 `.P` loads and
+  runs. The classic `+zx` console draws its **own font**, not the ROM's characters, so a screen test
+  looks for ink rather than ROM text.
 - **`+z88 -subtype=app`**: a card application; OZ starts it from the Index. It cannot be injected.
 
 ## Z88 applications
