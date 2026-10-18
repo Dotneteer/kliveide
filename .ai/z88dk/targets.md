@@ -52,6 +52,18 @@ Without it the link fails with `undefined symbol: applname`. `-create-app` write
 EPROM image `p.epr` (no conversion from `.63`/`.62` is needed on v2.4); the Insert Card dialog
 loads `.epr` files.
 
+## The 128K family
+
+- Klive's **128 BASIC** injection flow starts injected code from the editor loop with **ROM 0** (the
+  128 editor ROM) paged in. A real `USR` from 128 BASIC runs machine code with the 48K ROM paged, and
+  the classic crt0 calls 48K ROM routines, so a z88dk program injected that way crashes into the ROM
+  (seen at `$05EF`). Klive therefore injects non-banked z88dk builds on the 128K, +3 and Scorpion
+  through the **48 BASIC** flow (model `sp48`), checked on the 128K and +3 cores.
+- 48 BASIC locks the paging, so a **banked** build cannot run that way. appmake's `.tap` for a banked
+  build carries a BASIC loader that loads and pages the banks; loaded through the Tape Loader it runs
+  and the banked call returns (checked on the 128K core). Run uses that tape for banked builds on the
+  128K and the Scorpion. The +3 target writes only a `.dsk`, so banked +3 builds are export-only.
+
 ## Banked code
 
 See `map-format.md`, "Banked code": `p_BANK_n.bin` per used bank, map addresses `n << 16 | addr`.

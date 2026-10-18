@@ -47,6 +47,12 @@ export type Z88dkTarget = {
    * `+zx` has no such option (`Cannot find definition for -clib=classic`), classic is its default.
    */
   classicClib?: string;
+  /**
+   * How a banked build runs (`BANK_n` sections): `tape` - from appmake's tape, through the Tape
+   * Loader, whose BASIC loader pages the banks in; undefined - the machine runs no banked builds.
+   * The Next loads its `.nex`, which holds the banks.
+   */
+  banking?: "tape";
 };
 
 const ZX: Omit<Z88dkTarget, "model"> = { args: ["+zx"], run: "inject", appExtension: ".tap", name: "+zx", needsNdos: true };
@@ -69,13 +75,16 @@ export function z88dkTargetFor(
         return { refused: "z88dk builds programs at $8000, which a 16K Spectrum does not have. Switch to the 48K model." };
       }
       return withSubtype({ ...ZX, model: SpectrumModelType.Spectrum48 });
+    // --- The 128K family injects in 48 BASIC: Klive's 128 BASIC injection starts the code with the
+    // --- editor ROM paged in, where the classic crt0's ROM calls go wrong (a real USR runs with the
+    // --- 48K ROM paged). A banked build runs from appmake's tape instead (`Z88dkCompiler`, §9).
     case MI_SPECTRUM_128:
     case MI_SCORPION:
-      return withSubtype({ ...ZX, model: SpectrumModelType.Spectrum128 });
+      return withSubtype({ ...ZX, model: SpectrumModelType.Spectrum48, banking: "tape" });
     case MI_SPECTRUM_3E:
       return withSubtype({
         args: ["+zx", "-subtype=plus3"],
-        model: SpectrumModelType.SpectrumP3,
+        model: SpectrumModelType.Spectrum48,
         run: "inject",
         appExtension: ".dsk",
         name: "+zx -subtype=plus3",

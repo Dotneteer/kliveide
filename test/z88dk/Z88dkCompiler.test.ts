@@ -30,8 +30,8 @@ const defaults = () => z88dkOptionsFrom(() => undefined);
 describe("z88dkTargetFor (§5.2)", () => {
   it("maps each machine to its zcc target and Run route", () => {
     expect(target("sp48")).toMatchObject({ args: ["+zx"], run: "inject", appExtension: ".tap" });
-    expect(target("sp128").args).toEqual(["+zx"]);
-    expect(target("spp3e")).toMatchObject({ args: ["+zx", "-subtype=plus3"], appExtension: ".dsk" });
+    expect(target("sp128")).toMatchObject({ args: ["+zx"], model: 1, banking: "tape" });
+    expect(target("spp3e")).toMatchObject({ args: ["+zx", "-subtype=plus3"], appExtension: ".dsk", model: 1 });
     expect(target("timex", undefined, {})).toMatchObject({ args: ["+zx"] });
     expect(target("timex", "ts2068", { timexModel: "ts2068" })).toMatchObject({ args: ["+ts2068"] });
     expect(target("zxnext")).toMatchObject({ args: ["+zxn", "-subtype=nex"], run: "nex", classicClib: "-clib=classic" });
@@ -207,6 +207,8 @@ describe("Z88dkCompiler (fixtures)", () => {
     expect(out.segments).toHaveLength(2);
     expect(out.segments[1]).toMatchObject({ bank: 1, bankOffset: 0, startAddress: 0xc000 });
     expect(out.segments[1].emittedCode.length).toBe(fs.statSync(path.join(FIXTURES, "zx-banked", "program_BANK_1.bin")).size);
+    // --- Run loads appmake's tape: its loader pages bank 1 in (48 BASIC injection locks the paging)
+    expect(out.programFile).toBe(out.z88dkArtefacts.tap);
     const banked = out.listFileItems.filter((i: any) => i.partition === 1);
     expect(banked.length).toBeGreaterThan(0);
     expect(banked.every((i: any) => i.address >= 0xc000)).toBe(true);

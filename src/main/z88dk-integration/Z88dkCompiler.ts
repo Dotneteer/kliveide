@@ -167,7 +167,10 @@ export function zccArgumentsFor(
 export type Z88dkBuildOutput = KliveCompilerOutput & {
   /** The `.nex` appmake wrote: the Next runs it, Export copies it. */
   prebuiltNex?: number[];
-  /** The ZX80/ZX81 program file appmake wrote, which Run loads as `tape-load -r` does. */
+  /**
+   * A file Run loads through the tape deck, as `tape-load -r` does: the ZX80/ZX81 program file, or a
+   * banked 128K build's tape.
+   */
   programFile?: string;
   /** Every native file `-create-app` wrote, by extension (`tap`, `nex`, `P`, `O`, `dsk`, `epr`). */
   z88dkArtefacts?: Record<string, string>;
@@ -356,6 +359,20 @@ export class Z88dkCompiler implements IKliveCompiler {
         sizeKb: Math.max(32, Math.ceil(fs.statSync(artefacts.epr).size / 1024)),
         appKey: appKeyOf(filename)
       };
+    }
+    // --- A banked Spectrum build (§9): the 48 BASIC injection locks the paging, so the program runs
+    // --- from appmake's tape, whose loader pages the banks in as the program expects
+    if (segments.some((s) => s.bank !== undefined) && target.run === "inject") {
+      if (target.banking !== "tape" || !artefacts.tap) {
+        return {
+          errors: [
+            ...diagnostics,
+            z88dkBuildError(filename, `Banked builds (BANK_n sections) run on the ZX Spectrum 128K and the Scorpion; for this machine, export the program instead.`)
+          ],
+          traceOutput: trace
+        };
+      }
+      result.programFile = artefacts.tap;
     }
     if (target.run === "program") {
       const file = artefacts.P ?? artefacts.O;
