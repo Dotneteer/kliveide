@@ -34,6 +34,7 @@
     "i18n:merge": "node scripts/i18n-merge.cjs",
     "rom:annotations": "node scripts/rom-annotations.cjs",
     "boriel:fixtures": "node scripts/boriel-fixtures.cjs",
+    "z88dk:fixtures": "node scripts/z88dk-fixtures.cjs",
     "kbasic:runtime": "node scripts/kbasic-runtime-index.cjs",
     "kbasic:help": "node scripts/kbasic-help-data.cjs",
     "build:sp48-wasm": "node scripts/build-sp48-wasm.cjs",
