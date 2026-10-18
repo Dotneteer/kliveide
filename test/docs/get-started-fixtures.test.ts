@@ -67,7 +67,12 @@ describe("Get Started fixture programs", () => {
   });
 
   it("keeps every page's code block identical to its fixture", () => {
-    for (const { page, fixture, code } of pageBlocks()) {
+    const blocks = pageBlocks();
+    // --- Every fixture is shown on a page; a renamed fence attribute would otherwise pass silently
+    expect(new Set(blocks.map((b) => b.fixture.split("/")[0]))).toEqual(
+      new Set(["border-colours", "bouncing-ball", "next-sprite"])
+    );
+    for (const { page, fixture, code } of blocks) {
       const expected = readFileSync(join(FIXTURES, fixture), "utf8");
       expect(code, `${page} shows a different ${fixture}`).toBe(expected);
     }

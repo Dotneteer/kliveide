@@ -51,6 +51,8 @@ export const IconButton = memo(
         disabled={!enable}
         aria-label={title}
         aria-pressed={selected}
+        // --- A language-neutral handle for automation: the aria-label is translated
+        data-icon={iconName}
         className={classnames(styles.iconButton, { [styles.noPadding]: noPadding })}
         style={{
           // Totals including the 1px padding, which border-box counts inside the box.

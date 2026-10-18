@@ -36,6 +36,8 @@ export function TabButton ({
         type="button"
         disabled={disabled}
         aria-label={title}
+        // --- A language-neutral handle for automation: the aria-label is translated
+        data-icon={iconName}
         className={classnames(styles.tabButton, xclass)}
         onClick={(e) => {
           if (!disabled) {

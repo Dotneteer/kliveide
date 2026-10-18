@@ -175,6 +175,11 @@ async function launchKlive({
       // --- The emulator window is never photographed by these recipes and would
       // --- otherwise sit on top of the IDE while the shots are taken.
       emuWin?.hide();
+      // --- View > Zoom persists per origin across runs (Chromium keeps it in the shared user
+      // --- data), and a zoom other than 1 makes Playwright's element crops miss the element:
+      // --- shots then gain a black margin on the right and bottom. Pin it.
+      ideWin.webContents.setZoomFactor(1);
+      emuWin?.webContents.setZoomFactor(1);
       ideWin.setPosition(60, 60);
       ideWin.setContentSize(size.width, size.height);
       ideWin.show();

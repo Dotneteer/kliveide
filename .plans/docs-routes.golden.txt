@@ -69,10 +69,17 @@
 /en/book/index.html
 /en/book/introduction/index.html
 /en/book/preface/index.html
+/en/get-started/debug-your-program/index.html
+/en/get-started/first-assembly-program/index.html
+/en/get-started/first-basic-program/index.html
+/en/get-started/first-next-program/index.html
 /en/get-started/index.html
 /en/get-started/install/index.html
 /en/get-started/load-from-tape/index.html
 /en/get-started/meet-the-emulator/index.html
+/en/get-started/meet-the-ide/index.html
+/en/get-started/save-and-share/index.html
+/en/get-started/where-next/index.html
 /en/guides/analysis/code-coverage/index.html
 /en/guides/analysis/detecting-code-data/index.html
 /en/guides/analysis/exporting-source/index.html

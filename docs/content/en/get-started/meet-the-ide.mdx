@@ -1,0 +1,67 @@
+---
+description: "Open Klive's IDE and find your way around it: the toolbar, the explorer, the editor, the command prompt and the status bar. Set the IDE's language and theme."
+---
+
+import { Callout } from 'nextra/components'
+
+# Meet the IDE
+
+The IDE is Klive's second window. In the emulator window, choose **View › Show IDE**. Klive remembers which windows were open and where, so next time it opens them the same way.
+
+When no project is open, the explorer offers two buttons: **Open Folder** and **Create a Klive Project**. You will create a project on the next page.
+
+<Shot
+  src="get-started/ide-no-project.webp"
+  alt="The IDE with no folder open"
+  figure="4.1"
+  caption="The IDE before you open a project"
+  markers={["newproject"]}
+  width={900}
+/>
+
+1. **Create a Klive Project** opens the New Project dialog.
+
+## The parts of the IDE
+
+This is the IDE with a project open:
+
+<Shot
+  src="get-started/ide-tour.webp"
+  alt="The IDE with a project open and its parts numbered"
+  figure="4.2"
+  caption="The parts of the IDE"
+  markers={["toolbar", "activities", "explorer", "editor", "buildbar", "tools", "prompt", "status"]}
+  width={900}
+/>
+
+1. **The toolbar** controls the machine: run or debug your project, pause, stop, restart, and step through code.
+2. **The activity bar** switches the side bar between the **Explorer**, **Debug** (registers, call stack, variables, watches and breakpoints), **Machine info**, **Scripting** and **Testing**. The gear at the bottom opens the Settings.
+3. **The side bar**, here the Explorer, with the files of your project.
+4. **The code editor**. It knows Z80 assembly and ZX BASIC: it colours the code, completes names, and shows errors as you type.
+5. **The build bar** of the main file: compile, inject, run and debug it.
+6. **Commands and Output**. The **Commands** tab shows what you typed at the prompt and the answers; **Output** shows what builds and the emulator report.
+7. **The command prompt**. Type `?` and <kbd>Enter</kbd> to list every command. Commands are a fast way to do almost anything in Klive.
+8. **The status bar**: the machine's state, the last build's result, and the cursor's position.
+
+<Callout type="info" emoji="💡">
+Try the prompt now: type `em-start` and press <kbd>Enter</kbd>, and the emulator starts. `em-stop` stops it. [IDE commands](/en/reference/commands/) lists them all.
+</Callout>
+
+## Set the language and the theme
+
+Klive's menus, dialogs and panels are available in English, Spanish, Portuguese (Brazil and Portugal), German and Hungarian. Open the Settings with **Klive › Settings...** on macOS (<kbd>Cmd</kbd>+<kbd>,</kbd>) or **File › Settings...** on Windows and Linux, and choose the **Language** page.
+
+<Shot
+  src="get-started/settings-language.webp"
+  alt="The Language page of the Settings dialog"
+  figure="4.3"
+  caption="The Language page of the Settings"
+  markers={["language"]}
+  width={760}
+/>
+
+1. **Display language** picks the language. **System default** follows your operating system. Technical names, such as Z80 instructions, registers, commands and machine names, stay in English in every language.
+
+The **Appearance** page sets the theme: a light or a dark **Tone**, and one of six **Accent** colours. Changes apply at once; there is no OK button.
+
+Next, write [your first assembly program](/en/get-started/first-assembly-program/).

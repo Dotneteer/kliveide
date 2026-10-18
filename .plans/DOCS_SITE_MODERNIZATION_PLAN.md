@@ -318,6 +318,18 @@ change.
   image optimisation step, weight budget check.
 
 ### Phase 3 — Get Started rewrite (English)
+
+> **As built (2026-10-18).** Ten pages plus the welcome page (the plan's "Meet the IDE" and "Install"
+> survived as planned; *Load a program from tape* keeps the existing English tape-viewer images).
+> One localized recipe, `scripts/doc-shots/recipes/get-started.cjs`, drives the whole path and
+> writes 24 WebP shots per language with marker sidecars. Lessons that shaped it: aria-labels are
+> translated, so the toolbar and build-bar buttons got a `data-icon` attribute (`IconButton`,
+> `TabButton`); on macOS the application menu has submenus only while Klive has the OS focus, which
+> a scripted run cannot count on, so the recipe uses commands (`settings language`, `close`/`open`,
+> `run-build-function exportCode`) and in-window buttons instead of the menu; a persisted View zoom
+> broke Playwright's element crops, so the harness pins zoom to 1; the Next needs its SD card image
+> seeded into the throwaway home. The pages target master, not v0.63.0: the localized UI, the beam
+> overlay and the unified Settings are unreleased, as much of the existing documentation already is.
 - Write the 11 pages of §2.1 with recipes and annotated shots. Reviewed by the author for tone
   (and against `docs/authoring/book-writing-guidelines.md` where it applies).
 

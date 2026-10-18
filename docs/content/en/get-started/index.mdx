@@ -1,83 +1,63 @@
 ---
-description: "Klive IDE is a retro computer emulator and Integrated Development Environment running on macOS, Windows and Linux."
+description: "Klive is a ZX Spectrum and ZX Spectrum Next emulator and a full IDE in one app. This tutorial takes you from installing it to writing, running and debugging your first programs."
 ---
 
-# Introduction to Klive IDE
+import { Cards } from 'nextra/components'
 
-**Klive IDE is a retro computer emulator and Integrated Development Environment running on macOS, Windows and Linux.**
+# Welcome to Klive
 
-Klive offers not only the emulators but also debugging views, a multi-pane code editor, interactive commands, and other tools to create your Z80 Assembly and ZX BASIC (Boriel's Basic) programs.
+Klive is an emulator and an Integrated Development Environment (IDE) in one app. It runs the ZX Spectrum, the ZX Spectrum Next and several other Z80 machines, and it lets you write, build, run and debug programs for them in Z80 assembly or ZX BASIC. It runs on macOS, Windows and Linux.
 
-Klive IDE supports dual monitor mode to place the Emulator and IDE on different monitors while working with code.
-
-<ClickableImage
-  src="/images/intro/klive-ide-intro.png"
-  alt="Klive IDE Introduction"
+<Shot
+  src="get-started/debug-paused.webp"
+  alt="The Klive IDE paused at a breakpoint in a Z80 assembly program"
+  figure="1.1"
+  caption="Klive's IDE, paused at a breakpoint"
+  width={900}
 />
 
-## Supported Emulators
+## Two windows
 
-Klive IDE intends to support retro computers with the Z80 family of CPUs. Klive supports these emulators:
+Klive has two windows that work together:
 
-- **ZX Spectrum 48K**
-- **ZX Spectrum 128K**
-- **ZX Spectrum +2A/+3** (with the original Amstrad ROMs) **and +2E/+3E**
-- **Cambridge Z88**
-- ZX Spectrum Next (*in progress*)
-- ZX 80/81 (*in the future*)
+- **The emulator** shows the machine: its screen, a toolbar to start, pause and stop it, and, if you want one, a virtual keyboard.
+- **The IDE** is where you write code: a project explorer, a code editor, a command prompt, and the debugging panels that show the machine's registers, memory and more.
 
-## Emulator Features
+You can put the two windows side by side, or on two monitors.
 
-The emulator can run the selected machine with or without debugging. These modes can be changed without restarting the running machine:
+## What you will do
 
-- Starting, pausing, continuing to run
-- Start or continue in debug mode
-- Setting up breakpoints, step-in, step-over, step-out modes
+This tutorial takes about 90 minutes. Each page builds on the one before it, but you can stop after any of them.
 
-To examine the state of the emulator, Klive offers several views:
-
-- Full CPU view
-- Full ULA view
-- Memory view with live refresh
-- Disassembly view with execution point tracking
-- Monitoring system variable values
-- Displaying (and exporting) the current BASIC listing
-
-You can quickly load and play programs (games) from files:
-
-- Loading tape files (`.tap` and `.tzx`)
-- Fast load
-- Loading from disk files (`.dsk`) with ZX Spectrum +3 and +3E
-- Writing and formatting disk (`.dsk`) files (*in progress*)
-
-Other emulator features:
-
-- Visual keyboard (ZX Spectrum 48K and ZX Spectrum 128K styles)
-- Multiplying CPU clock speed (1-24 multiplier)
-- Setting up the sound level, muting and unmuting sound
-
-Planned features (*in the future*):
-
-- Using custom machine ROMs
-- Memory read/write breakpoints
-- I/O read/write breakpoints
-- Breakpoints with hit count conditions
-
-## IDE Features
-
-The IDE allows you to open project folders that keep the files belonging to a particular (development) project together. You can use Z80 Assembly language (with the built-in Klive Z80 Assembler) and ZX BASIC (with the built-in Klive BASIC compiler, or Boriel's ZX Basic) as your programming language.
-
-- Syntax highlighting
-- Source code debugging (works with the Klive Z80 Assembler)
-- Exporting the compiled code to tape files (`.tap` and `.tzx`) with BASIC loaders
-
-Klive's unique feature is the one-click start and debugging: With a click of one button, your code is compiled and injected into the selected emulator and immediately starts up. You can start your code with debugging (or pause it and continue with debugging).
-
-Commands: The IDE has an interactive command panel to issue CLI commands executed within the IDE.
-
-Planned features (*in the future*):
-
-- Watch Panel: display runtime information about memory variables (expressions)
-- Conditional breakpoints
-- Integration with other assemblers, including compilation and optional source code debugging (if the particular compiler supports debug symbol information).
-
+<Cards num={2}>
+  <Cards.Card title="1. Install Klive" href="/en/get-started/install/" arrow>
+    Download and install Klive on macOS, Windows or Linux.
+  </Cards.Card>
+  <Cards.Card title="2. Meet the emulator" href="/en/get-started/meet-the-emulator/" arrow>
+    Start a ZX Spectrum, type a BASIC program, and choose another machine.
+  </Cards.Card>
+  <Cards.Card title="3. Load a program from tape" href="/en/get-started/load-from-tape/" arrow>
+    Load and run a `.tap` file, quickly or in real time.
+  </Cards.Card>
+  <Cards.Card title="4. Meet the IDE" href="/en/get-started/meet-the-ide/" arrow>
+    Find your way around the IDE and set its language.
+  </Cards.Card>
+  <Cards.Card title="5. Your first assembly program" href="/en/get-started/first-assembly-program/" arrow>
+    Create a project, write Z80 assembly, and run it.
+  </Cards.Card>
+  <Cards.Card title="6. Debug your program" href="/en/get-started/debug-your-program/" arrow>
+    Stop at a breakpoint, step through the code, and watch the registers change.
+  </Cards.Card>
+  <Cards.Card title="7. Your first BASIC program" href="/en/get-started/first-basic-program/" arrow>
+    Write ZX BASIC, compile it with Klive BASIC, and debug it statement by statement.
+  </Cards.Card>
+  <Cards.Card title="8. Your first ZX Spectrum Next program" href="/en/get-started/first-next-program/" arrow>
+    Put a hardware sprite on the Next's screen.
+  </Cards.Card>
+  <Cards.Card title="9. Save and share your work" href="/en/get-started/save-and-share/" arrow>
+    Export your program as a tape file that other emulators and real machines can load.
+  </Cards.Card>
+  <Cards.Card title="10. Where to go next" href="/en/get-started/where-next/" arrow>
+    Pick your next topic.
+  </Cards.Card>
+</Cards>

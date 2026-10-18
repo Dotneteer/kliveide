@@ -1,0 +1,122 @@
+---
+description: "Create a Klive project for the ZX Spectrum 48K, write a short Z80 assembly program that changes the border colour, and run it with one click."
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# Your first assembly program
+
+On this page you create a project, write a Z80 assembly program that cycles the ZX Spectrum's border through its eight colours, and run it.
+
+## Create a project
+
+<Steps>
+
+### Open the New Project dialog
+
+Choose **File › New Project...**, or click **Create a Klive Project** in the explorer.
+
+<Shot
+  src="get-started/new-project.webp"
+  alt="The New Project dialog for a ZX Spectrum 48K project"
+  figure="5.1"
+  caption="A new ZX Spectrum 48K project"
+  width={620}
+/>
+
+### Fill it in
+
+- **Machine type**: ZX Spectrum 48K.
+- **Project Template**: `default`, a project with one Klive Z80 assembly file.
+- **Project folder**: leave it empty, and the project goes into the `KliveProjects` folder in your home folder.
+- **Project name**: `BorderColours`.
+
+Click **Create**. Klive creates the project and opens it.
+
+</Steps>
+
+## Write the program
+
+The project has one source file, `code/code.kz80.asm`. Open it from the explorer, replace its contents with this program, and save it with <kbd>Cmd</kbd>+<kbd>S</kbd> (<kbd>Ctrl</kbd>+<kbd>S</kbd> on Windows and Linux):
+
+```z80klive fixture="border-colours/code/code.kz80.asm"
+; Border colours - the program of Get Started, steps 6 and 7.
+; It shows the eight border colours, half a second each, forever.
+
+        .model Spectrum48
+        .org #8000
+
+Start:
+        ei              ; HALT needs interrupts to wake up
+        ld b,8          ; eight colours: 7 (white) down to 0 (black)
+NextColour:
+        ld a,b
+        dec a           ; B is 8..1, the colour is 7..0
+        out (#fe),a     ; the border colour is bits 0-2 of port #FE
+        ld e,25         ; wait 25 frames (half a second)
+Wait:
+        halt            ; wait for the next frame
+        dec e
+        jr nz,Wait
+        djnz NextColour
+        jr Start
+```
+
+What it does:
+
+- `.model Spectrum48` and `.org #8000` tell the assembler which machine the code is for and where in memory it goes.
+- The ZX Spectrum sets its border colour from the lowest three bits of the byte written to port `#FE`. `OUT (#FE),A` writes it.
+- `HALT` waits for the next screen frame. The ZX Spectrum draws 50 frames a second, so 25 of them take half a second.
+- `DJNZ` counts `B` down from 8, so the colours go from 7 (white) to 0 (black), and then the program starts again.
+
+<Shot
+  src="get-started/first-program.webp"
+  alt="The program in the IDE's editor"
+  figure="5.2"
+  caption="The program, ready to run"
+  markers={["buildroot", "run", "debug"]}
+  width={900}
+/>
+
+1. The icon next to `code.kz80.asm` marks it as the **build root**: the file Klive builds.
+2. **Run** builds the program, loads it into the machine and starts it.
+3. **Debug** does the same with the debugger on. You will use it on the next page.
+
+## Run it
+
+Click **Run** on the build bar, or press <kbd>F5</kbd> in the IDE. The border starts changing colour.
+
+<Shot
+  src="get-started/first-program-running.webp"
+  alt="The emulator with the border changing colour"
+  figure="5.3"
+  caption="The program is running"
+  width={620}
+/>
+
+Klive did five things for you:
+
+1. It assembled the program. If it had found an error, it would have stopped here and shown the error in the editor.
+2. It restarted the machine and let the ROM reach its main loop.
+3. It paused the machine and copied the program's bytes into its memory at `#8000`.
+4. It set the CPU's program counter to the program's first instruction.
+5. It let the machine run.
+
+The **Commands** tab shows what happened:
+
+<Shot
+  src="get-started/first-program-output.webp"
+  alt="The Output tab after a successful build"
+  figure="5.4"
+  caption="The build's report"
+  markers={["output"]}
+  width={900}
+/>
+
+1. The `run` command compiled `code/code.kz80.asm`, then injected and started the code. (The build bar's buttons run the same commands you can type at the prompt.)
+
+<Callout type="info" emoji="💡">
+Try a change: replace `ld e,25` with `ld e,5` and run the program again. The colours now change ten times a second.
+</Callout>
+
+Next, [debug your program](/en/get-started/debug-your-program/).
