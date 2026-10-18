@@ -2845,6 +2845,9 @@ drift. Change a neutral or the default accent in the app, and the site changes w
   keeps the focus. Reduced motion turns off the flying, not the advancing. Its pictures come from `scripts/doc-shots/recipes/landing.cjs`.
 - **Screenshots in the docs are dark** (decision D4), whatever the page's theme; their frame and
   markers use the tokens.
+- **A docs link card is title first, then its description**, padded as a whole
+  (`docs/app/[lang]/(docs)/custom.css`, `.nextra-card`). Nextra's own layout assumes an image as
+  the card's body: unpadded children above a separately padded title, which looks broken with text.
 - **A screenshot's callouts are HTML, never pixels:** `<Shot markers>` draws numbered badges from
   the harness's sidecar, and the numbered list under the figure is styled like the badges, so the
   text translates with the page.
