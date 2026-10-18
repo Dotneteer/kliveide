@@ -9,6 +9,7 @@
 import type { MDXComponents } from "mdx/types";
 import { useMDXComponents as getDocsMDXComponents } from "nextra-theme-docs";
 import ClickableImage from "./page-components/ClickableImage";
+import Shot from "./page-components/Shot";
 
 const docsComponents = getDocsMDXComponents();
 
@@ -16,6 +17,7 @@ export function useMDXComponents(components?: MDXComponents) {
   return {
     ...docsComponents,
     ClickableImage,
+    Shot,
     ...components
   };
 }

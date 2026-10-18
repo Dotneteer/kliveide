@@ -94,7 +94,14 @@ async function launchKlive({
    * every version, so no offer covers the windows a recipe drives; `null` seeds nothing, so a run
    * that checks the offer itself sees it (`.plans/BORIEL_BASIC_INTEGRATION_PLAN.md` §3.2).
    */
-  borielSetup = { declined: true, offeredVersion: "*" }
+  borielSetup = { declined: true, offeredVersion: "*" },
+  /*
+   * The UI language (an `id` from `src/common/i18n/languages.ts`). A localized recipe runs once per
+   * language and its `shot()` paths get the language as their first folder
+   * (`images/<lang>/...`), so a translated page shows the IDE in its own language (R4 of
+   * `.plans/DOCS_SITE_MODERNIZATION_PLAN.md`). Unset, English, and paths are left as they are.
+   */
+  lang
 }) {
   if (!fs.existsSync(MAIN)) {
     throw new Error(`No build at ${MAIN} — run \`npx electron-vite build --config build/electron.vite.config.ts\` first.`);
@@ -124,9 +131,9 @@ async function launchKlive({
             maximizeTools: false,
             sideBarWidth,
             toolPanelHeight,
-            // --- English, whatever the OS language: the docs show the English UI
-            // --- (`.plans/LOCALIZATION_PLAN.md` step 2)
-            language: "en",
+            // --- English, whatever the OS language, unless the recipe is localized: the docs
+            // --- show the UI in the page's language (`.plans/LOCALIZATION_PLAN.md` step 2)
+            language: lang ?? "en",
             i18nShowKeys: false,
             ...ideViewOptions
           },
@@ -190,27 +197,78 @@ async function launchKlive({
 
   /**
    * Captures one element and writes it under docs/public/images.
-   * `displayWidth` is the width the MDX renders the image at; the PNG is written at
+   * `displayWidth` is the width the MDX renders the image at; the image is written at
    * 2x that so it stays crisp on retina displays, matching the existing assets.
+   *
+   * A `.webp` path is written as near-lossless WebP (about a third smaller than PNG for UI
+   * shots); anything else as PNG.
+   *
+   * `markers` names points of interest for the `<Shot>` component's numbered badges:
+   * `{ breakpoint: '[data-line="5"] [class*="_glyph_"]', ... }`. Each selector's box centre,
+   * relative to the captured element, is written as a percentage to `<image>.json`, so the
+   * badges follow the layout when it changes. A value may also be `{ selector, x, y }`, where
+   * `x`/`y` (0..1) pick a point inside the selector's box instead of its centre, or
+   * `{ page, selector, x, y }` to measure in another window (the EMU window).
+   *
+   * `page` captures another window instead of the IDE (pass `klive.emu()`).
    */
-  async function shot(selector, relPath, { displayWidth } = {}) {
+  async function shot(selector, relPath, { displayWidth, markers, page = ide } = {}) {
+    if (lang) relPath = path.join(lang, relPath);
     const target = path.join(IMAGES, relPath);
     fs.mkdirSync(path.dirname(target), { recursive: true });
-    const buffer = await ide.locator(selector).first().screenshot();
+    const element = page.locator(selector).first();
+    const buffer = await element.screenshot();
     const sharp = loadSharp();
     let pipeline = sharp(buffer);
     if (displayWidth) pipeline = pipeline.resize({ width: displayWidth * 2 });
     // --- 144 dpi marks the file as 2x, the same as the hand-captured screenshots.
-    await pipeline.withMetadata({ density: 144 }).png().toFile(target);
+    pipeline = pipeline.withMetadata({ density: 144 });
+    pipeline = target.endsWith(".webp") ? pipeline.webp({ nearLossless: true, quality: 90 }) : pipeline.png();
+    await pipeline.toFile(target);
     const meta = await sharp(target).metadata();
-    console.log(`  ✓ ${relPath}  ${meta.width}x${meta.height}`);
+
+    const sidecar = `${target}.json`;
+    if (markers) {
+      const box = await element.boundingBox();
+      const points = {};
+      for (const [name, spec] of Object.entries(markers)) {
+        const m = typeof spec === "string" ? { selector: spec } : spec;
+        const mbox = await (m.page ?? page).locator(m.selector).first().boundingBox();
+        if (!mbox) throw new Error(`Marker "${name}": nothing matches ${m.selector}`);
+        const px = mbox.x + mbox.width * (m.x ?? 0.5);
+        const py = mbox.y + mbox.height * (m.y ?? 0.5);
+        points[name] = {
+          x: +(((px - box.x) / box.width) * 100).toFixed(1),
+          y: +(((py - box.y) / box.height) * 100).toFixed(1)
+        };
+      }
+      fs.writeFileSync(sidecar, JSON.stringify({ width: meta.width, height: meta.height, markers: points }, null, 2) + "\n");
+    } else if (fs.existsSync(sidecar)) {
+      fs.rmSync(sidecar);
+    }
+    console.log(`  ✓ ${relPath}  ${meta.width}x${meta.height}${markers ? `  (${Object.keys(markers).length} markers)` : ""}`);
     return target;
+  }
+
+  /**
+   * The EMU window's page (shown, focused and sized), for recipes that photograph the emulator.
+   * The window keeps whatever size it had otherwise, which depends on the display.
+   */
+  async function emu({ width: emuWidth = 900, height: emuHeight = 760 } = {}) {
+    await app.evaluate(({ BrowserWindow }, size) => {
+      const win = BrowserWindow.getAllWindows().find((w) => w.webContents.getURL().includes("?emu"));
+      win?.setContentSize(size.width, size.height);
+      win?.show();
+      win?.focus();
+    }, { width: emuWidth, height: emuHeight });
+    await sleep(800);
+    return app.windows().find((w) => w.url().includes("?emu"));
   }
 
   // --- Clear the prompt history so the Commands pane starts empty in every shot.
   await cmd("cls", 700);
 
-  return { app, ide, cmd, shot, sleep, close: () => app.close() };
+  return { app, ide, cmd, shot, emu, sleep, lang: lang ?? "en", close: () => app.close() };
 }
 
 /**
@@ -251,4 +309,15 @@ function fixtureProjectFolder(name) {
   };
 }
 
-module.exports = { launchKlive, fixtureProjectFolder, IMAGES, REPO };
+/**
+ * The UI languages a localized recipe runs in: the enabled rows of
+ * `src/common/i18n/languages.ts` (R1). Read as text, because that file is TypeScript.
+ */
+function enabledLanguages() {
+  const source = fs.readFileSync(path.join(REPO, "src", "common", "i18n", "languages.ts"), "utf8");
+  const ids = [];
+  for (const m of source.matchAll(/\{\s*id:\s*"([^"]+)"[^}]*?enabled:\s*true/gs)) ids.push(m[1]);
+  return ids;
+}
+
+module.exports = { launchKlive, fixtureProjectFolder, enabledLanguages, IMAGES, REPO };

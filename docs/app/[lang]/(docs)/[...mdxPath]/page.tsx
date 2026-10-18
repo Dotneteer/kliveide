@@ -10,6 +10,7 @@
  */
 import { generateStaticParamsFor, importPage } from "nextra/pages";
 import { useMDXComponents as getMDXComponents } from "../../../../mdx-components";
+import Shot from "../../../../page-components/Shot";
 
 export const generateStaticParams = generateStaticParamsFor("mdxPath", "lang");
 
@@ -28,7 +29,12 @@ export default async function Page(props: PageProps) {
   const { default: MDXContent, toc, metadata, sourceCode } = await importPage(params.mdxPath, params.lang);
   return (
     <Wrapper toc={toc} metadata={metadata} sourceCode={sourceCode}>
-      <MDXContent {...props} params={params} />
+      {/* <Shot> needs the page's language to pick its localized image; MDX never passes it */}
+      <MDXContent
+        {...props}
+        params={params}
+        components={{ Shot: (p: React.ComponentProps<typeof Shot>) => <Shot {...p} lang={params.lang} /> }}
+      />
     </Wrapper>
   );
 }
