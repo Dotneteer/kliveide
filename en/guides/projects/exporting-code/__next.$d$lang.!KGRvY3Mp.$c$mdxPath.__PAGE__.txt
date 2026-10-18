@@ -1,0 +1,105 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-ec4827f49d7f8d42.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T1231,---
+description: "When your code is ready to be tested on actual hardware or with another emulator, you can export it with the Build | Export code menu command."
+---
+
+import exportDialog1 from '../../../../public/images/working-with-ide/export-dialog-1.png'
+import exportDialog2 from '../../../../public/images/working-with-ide/export-dialog-2.png'
+
+# Exporting Code
+
+When your code is ready to be tested on actual hardware or with another emulator, you can export it with the **Build | Export code** menu command. This command pops up a dialog:
+
+<ClickableImage src="/images/working-with-ide/export-dialog-1.png" width={384} />
+
+## The Export Dialog
+
+Before exporting the code, you can specify several parameters:
+- **Export format**. You can select one of these file formats from the dropdown to export your code:
+  - **`TAP format`: Standard `.tap` file format
+  - **`TZX format`: Standard `.tzx` file format
+  - **`Intel HEX format`: Standard text file format you can use with classic tools (e.g., EPROM burners).
+- **Export folder**. An optional folder to save the exported file. If you do not specify this folder, the IDE will save the exported file into the `KliveExports` folder under your home directory.
+- **Export file name**. The filename for the export is mandatory. If you do not specify a file name extension, Klive will add it according to the selected export format.
+- **Program name**. The name to add to the tape file header. If you leave it empty, the export infers the program name from the export file name.
+- **Create BASIC loader**. (This option is not available with Intel HEX format.) If you check this option, the export creates a BASIC loader for your code; otherwise, it creates a simple file you can load as a port of your custom loader.
+
+If you are about to export the code with a BASIC loader, you can set other options:
+
+<ClickableImage src="/images/working-with-ide/export-dialog-2.png" width={384} />
+
+
+- **Add CLEAR**. Adds a `CLEAR` statement to the loader.
+- **Add PAUSE 0**. Adds a PAUSE 0 statement to the loader. When your code has been completely loaded, it waits for a keypress before running.
+- **Use a single code block**. If this option is checked, your separate code segments (according to their `ORG` directives) are merged in a single block, gaps filled with zeros. Otherwise, the export creates a separate code file for each code block.
+- **Set border color**. You can specify a color for the border during the load operation (while loading the app's code files).
+- **Screen file**. You can optionally add a screen file for your code. The IDE accepts these formats:
+  - A `.tap` or `.tzx` file that is created when saving a screen (with the `SAVE "<name>" SCREEN$` command)
+  - A standard 6912 bytes long `.scr` file with the raw screen contents.
+  - A standard 7040 bytes long `.scr` file with 128 bytes +3DOS header and the raw screen contents. Klive does not test the +3DOS header; it just uses the raw screen bytes.
+- **Code start address**. The IDE infers the code start address from your code (according to the ORG, XORG, ENT, or XENT pragmas), so you can leave this field empty. However, you can specify another start address by typing a decimal value here. This address cannot point to the ROM; it must be between 16384 and 65535.
+
+## The BASIC Loader
+
+According to your options, Klive generates a BASIC loader for the ZX Spectrum 48K/128K/+2/+3 models. This loader ensures that other files (screen, code) are loaded in the correct order (and the right memory location).
+
+The ZX Spectrum 128K models and above support memory paging, and you can compile multi-bank code with the `BANK` pragma. When your code uses multiple banks, the loader ensures they are loaded into the appropriate bank.
+
+With the following steps, you can examine the structure of the loader:
+
+1. Turn off the **fast LOAD mode** in the emulator toolbar (with the rocket icon).
+2. Load the exported file. When the first block is loaded, pause the machine.
+3. You can view the code with the **View | Machine Views | BASIC Listing** menu command.
+
+## Overriding the Current Tape File
+
+You can set the current tape file with the **Machine | Tape | Insert Tape...** menu command. This command loads the selected file and sends it to the emulator.
+
+When you export a file in the IDE and overwrite the currently selected tape file, the emulator will still use the contents of the previously selected tape file, as the file update does not send the new file contents to the emulator. However, the emulator picks up the updated file when you click the **rewind** button in the toolbar (or use the **Machine | Rewind tape** menu function).a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"The Export Dialog","id":"the-export-dialog","depth":2},{"value":"The BASIC Loader","id":"the-basic-loader","depth":2},{"value":"Overriding the Current Tape File","id":"overriding-the-current-tape-file","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"When your code is ready to be tested on actual hardware or with another emulator, you can export it with the Build | Export code menu command.","title":"Exporting Code","filePath":"content/en/guides/projects/exporting-code.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"guides/projects/exporting-code","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Exporting Code - Klive IDE"}],["$","meta","1",{"name":"description","content":"When your code is ready to be tested on actual hardware or with another emulator, you can export it with the Build | Export code menu command."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/guides/projects/exporting-code/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"bnP8CSh_BnoTR_ngaC9us"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+2b:I[484,[],"OutletBoundary"]
+:HL["/images/working-with-ide/export-dialog-1.png","image"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Exporting Code","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["When your code is ready to be tested on actual hardware or with another emulator, you can export it with the ",["$","strong",null,{"children":"Build | Export code"}]," menu command. This command pops up a dialog:"]}],"\n",["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/images/working-with-ide/export-dialog-1.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/images/working-with-ide/export-dialog-1.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":384,"height":"auto"}}]}]}],"\n",["$","h2",null,{"id":"the-export-dialog","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The Export Dialog",["$","$L20",null,{"id":"the-export-dialog"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Before exporting the code, you can specify several parameters:"}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Export format"}],". You can select one of these file formats from the dropdown to export your code:","\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["**",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"TAP format"}],": Standard ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".tap"}]," file format"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["**",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"TZX format"}],": Standard ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".tzx"}]," file format"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["**",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Intel HEX format"}],": Standard text file format you can use with classic tools (e.g., EPROM burners)."]}],"\n"]}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Export folder"}],". An optional folder to save the exported file. If you do not specify this folder, the IDE will save the exported file into the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"KliveExports"}]," folder under your home directory."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Export file name"}],". The filename for the export is mandatory. If you do not specify a file name extension, Klive will add it according to the selected export format."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Program name"}],". The name to add to the tape file header. If you leave it empty, the export infers the program name from the export file name."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Create BASIC loader"}],". (This option is not available with Intel HEX format.) If you check this option, the export creates a BASIC loader for your code; otherwise, it creates a simple file you can load as a port of your custom loader."]}],"\n"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If you are about to export the code with a BASIC loader, you can set other options:"}],"\n",["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/images/working-with-ide/export-dialog-2.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":"$L21"}]}],"\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a"]]}]
+15:["$","$L2b",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@2c"}]}]
+1f:true
+:HL["/images/working-with-ide/export-dialog-2.png","image"]
+9:300
+21:["$","img",null,{"src":"/images/working-with-ide/export-dialog-2.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":384,"height":"auto"}}]
+22:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Add CLEAR"}],". Adds a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"CLEAR"}]," statement to the loader."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Add PAUSE 0"}],". Adds a PAUSE 0 statement to the loader. When your code has been completely loaded, it waits for a keypress before running."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Use a single code block"}],". If this option is checked, your separate code segments (according to their ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ORG"}]," directives) are merged in a single block, gaps filled with zeros. Otherwise, the export creates a separate code file for each code block."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Set border color"}],". You can specify a color for the border during the load operation (while loading the app’s code files)."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Screen file"}],". You can optionally add a screen file for your code. The IDE accepts these formats:","\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["A ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".tap"}]," or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".tzx"}]," file that is created when saving a screen (with the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"SAVE \"<name>\" SCREEN$"}]," command)"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["A standard 6912 bytes long ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".scr"}]," file with the raw screen contents."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["A standard 7040 bytes long ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".scr"}]," file with 128 bytes +3DOS header and the raw screen contents. Klive does not test the +3DOS header; it just uses the raw screen bytes."]}],"\n"]}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Code start address"}],". The IDE infers the code start address from your code (according to the ORG, XORG, ENT, or XENT pragmas), so you can leave this field empty. However, you can specify another start address by typing a decimal value here. This address cannot point to the ROM; it must be between 16384 and 65535."]}],"\n"]}]
+23:["$","h2",null,{"id":"the-basic-loader","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The BASIC Loader",["$","$L20",null,{"id":"the-basic-loader"}]]}]
+24:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"According to your options, Klive generates a BASIC loader for the ZX Spectrum 48K/128K/+2/+3 models. This loader ensures that other files (screen, code) are loaded in the correct order (and the right memory location)."}]
+25:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ZX Spectrum 128K models and above support memory paging, and you can compile multi-bank code with the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"BANK"}]," pragma. When your code uses multiple banks, the loader ensures they are loaded into the appropriate bank."]}]
+26:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"With the following steps, you can examine the structure of the loader:"}]
+27:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["Turn off the ",["$","strong",null,{"children":"fast LOAD mode"}]," in the emulator toolbar (with the rocket icon)."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Load the exported file. When the first block is loaded, pause the machine."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["You can view the code with the ",["$","strong",null,{"children":"View | Machine Views | BASIC Listing"}]," menu command."]}],"\n"]}]
+28:["$","h2",null,{"id":"overriding-the-current-tape-file","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Overriding the Current Tape File",["$","$L20",null,{"id":"overriding-the-current-tape-file"}]]}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["You can set the current tape file with the ",["$","strong",null,{"children":"Machine | Tape | Insert Tape…"}]," menu command. This command loads the selected file and sends it to the emulator."]}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["When you export a file in the IDE and overwrite the currently selected tape file, the emulator will still use the contents of the previously selected tape file, as the file update does not send the new file contents to the emulator. However, the emulator picks up the updated file when you click the ",["$","strong",null,{"children":"rewind"}]," button in the toolbar (or use the ",["$","strong",null,{"children":"Machine | Rewind tape"}]," menu function)."]}]
+2c:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

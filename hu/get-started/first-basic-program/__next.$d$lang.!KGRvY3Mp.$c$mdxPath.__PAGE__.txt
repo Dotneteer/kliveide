@@ -1,0 +1,183 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-ec4827f49d7f8d42.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T127c,---
+description: "ZX BASIC program írása, fordítása a Klive beépített Klive BASIC fordítójával, és hibakeresése utasításról utasításra, a hívási verem és a változók segítségével."
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# Az első BASIC program
+
+A ZX BASIC a ZX Spectrum saját BASIC nyelvének gépi kódra fordítható dialektusa, szubrutinokkal, lokális és típusos változókkal. A Klive a beépített fordítójával, a **Klive BASIC**-kel fordítja le, amely kompatibilis a Boriel ZX BASIC-kel, és nem igényel telepítést. A lefordított program sokkal gyorsabban fut, mint az értelmezett BASIC, és soronként, a BASIC forráskódban követhetjük a hibakeresővel.
+
+## Projekt létrehozása
+
+Válasszuk a **Fájl › Új projekt...** menüpontot, ahogy az [első assembly programnál](/hu/get-started/first-assembly-program/), ezekkel a beállításokkal:
+
+- **Géptípus**: ZX Spectrum 48K.
+- **Projektsablon**: `zx-basic`.
+- **Projektnév**: `BouncingBall`.
+
+A projekt forrásfájlja a `code/program.zxbas`.
+
+## A program megírása
+
+Cseréljük le a `code/program.zxbas` tartalmát erre a programra, és mentsük el:
+
+```zxbasic fixture="bouncing-ball/code/program.zxbas"
+' Bouncing ball - the program of Get Started, step 7.
+' A ball bounces between the screen's edges and counts its bounces.
+
+DIM x AS INTEGER = 15
+DIM dx AS INTEGER = 1
+DIM bounces AS UINTEGER = 0
+
+SUB DrawBall(column AS INTEGER, ball AS STRING)
+    PRINT AT 10, column; ball
+END SUB
+
+CLS
+PRINT AT 0, 0; "Bounces: 0"
+DO
+    DrawBall(x, " ")
+    x = x + dx
+    IF x = 0 OR x = 31 THEN
+        dx = -dx
+        bounces = bounces + 1
+        PRINT AT 0, 9; bounces
+    END IF
+    DrawBall(x, "O")
+    PAUSE 2
+LOOP
+```
+
+Néhány dolog, ami a Sinclair BASIC-ből hiányzik:
+
+- **Nincsenek sorszámok.** A sorok sorrendben futnak, a `DO` … `LOOP` pedig ismétli a közéjük eső sorokat.
+- **Típusos változók.** A `DIM x AS INTEGER` egy egész típusú változót deklarál, amely sokkal gyorsabb, mint a Spectrum lebegőpontos számai.
+- **Paraméteres szubrutinok.** A `SUB DrawBall` egy oszlopot és egy karakterláncot vár, a `DrawBall(x, "O")` pedig meghívja.
+- **Blokkos `IF`.** Az `END IF`-ig tartó sorok akkor futnak le, ha a feltétel igaz.
+
+## Futtatás
+
+Kattintsunk a fordítási sáv **Futtatás** gombjára, vagy nyomjuk meg az <kbd>F5</kbd> billentyűt. A labda a 10. sorban mozog, a képernyő szélén visszafordul, a felső számláló pedig számolja a visszapattanásokat.
+
+<Shot
+  src="get-started/basic-running.webp"
+  alt="Az emulátor futtatja a pattogó labdás programot"
+  figure="7.1"
+  caption="A labda pattog"
+  width={620}
+/>
+
+## Hibakeresés
+
+<Steps>
+
+### Töréspont elhelyezése a szubrutinban
+
+Kattintsunk a **9**-es sorszám bal oldalára, a `DrawBall` belsejében lévő `PRINT AT 10, column; ball` sornál.
+
+### A hibakeresés indítása
+
+Kattintsunk a fordítási sáv **Hibakeresés** gombjára, vagy nyomjuk meg a <kbd>Ctrl</kbd>+<kbd>F5</kbd> billentyűkombinációt. A program akkor áll meg, amikor először hívja meg a `DrawBall` szubrutint.
+
+### A hívási verem és a változók megtekintése
+
+Nyissuk meg a **Hibakeresés** oldalsávot, majd a címükre kattintva nyissuk meg rajta a **Hívási verem** és a **Változók** panelt.
+
+</Steps>
+
+<Shot
+  src="get-started/basic-debug.webp"
+  alt="Az IDE a DrawBall belsejében megállva, a hívási veremmel és a változókkal"
+  figure="7.2"
+  caption="Megállás a DrawBall szubrutin belsejében"
+  markers={["breakpoint", "callstack", "variables"]}
+  width={900}
+/>
+
+1. A töréspont és a következőként végrehajtandó utasítás.
+2. A **Hívási verem**: a `DrawBall` szubrutint a főprogram 15. sora hívta meg.
+3. A **Változók**: a szubrutin paraméterei (a `column` értéke 15, a `ball` egy szóköz), valamint a program globális változói.
+
+A léptetés BASIC **utasításokon** működik, nem Z80 utasításokon: az <kbd>F10</kbd> végrehajtja a következő utasítást, az <kbd>F11</kbd> (macOS-en <kbd>F12</kbd>) belép egy szubrutinba, a <kbd>Shift</kbd>+<kbd>F11</kbd> pedig kilép belőle. Nyomjuk meg néhányszor az <kbd>F5</kbd> billentyűt, és figyeljük, hogyan változik a `column` és az `x` értéke.
+
+<Callout type="info" emoji="💡">
+A Klive a BASIC programokat a Boriel saját fordítójával, a Boriel BASIC 2-vel is le tudja fordítani, és ugyanígy lehet bennük hibát keresni. A nyelvi beállításokról, a standard könyvtárról és a fordítók közötti váltásról a [ZX BASIC (angolul)](/en/guides/languages/zx-basic/) oldal szól.
+</Callout>
+
+Következő lépésként írjuk meg [az első ZX Spectrum Next programot](/hu/get-started/first-next-program/).a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Projekt létrehozása","id":"projekt-létrehozása","depth":2},{"value":"A program megírása","id":"a-program-megírása","depth":2},{"value":"Futtatás","id":"futtatás","depth":2},{"value":"Hibakeresés","id":"hibakeresés","depth":2},{"value":"Töréspont elhelyezése a szubrutinban","id":"töréspont-elhelyezése-a-szubrutinban","depth":3},{"value":"A hibakeresés indítása","id":"a-hibakeresés-indítása","depth":3},{"value":"A hívási verem és a változók megtekintése","id":"a-hívási-verem-és-a-változók-megtekintése","depth":3}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"ZX BASIC program írása, fordítása a Klive beépített Klive BASIC fordítójával, és hibakeresése utasításról utasításra, a hívási verem és a változók segítségével.","title":"Az első BASIC program","filePath":"content/hu/get-started/first-basic-program.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"get-started/first-basic-program","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"hu","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Az első BASIC program - Klive IDE"}],["$","meta","1",{"name":"description","content":"ZX BASIC program írása, fordítása a Klive beépített Klive BASIC fordítójával, és hibakeresése utasításról utasításra, a hívási verem és a változók segítségével."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/get-started/first-basic-program/"}],["$","link","3",{"rel":"alternate","hrefLang":"es","href":"/es/get-started/first-basic-program/"}],["$","link","4",{"rel":"alternate","hrefLang":"pt-BR","href":"/pt-BR/get-started/first-basic-program/"}],["$","link","5",{"rel":"alternate","hrefLang":"pt-PT","href":"/pt-PT/get-started/first-basic-program/"}],["$","link","6",{"rel":"alternate","hrefLang":"de","href":"/de/get-started/first-basic-program/"}],["$","link","7",{"rel":"alternate","hrefLang":"hu","href":"/hu/get-started/first-basic-program/"}],["$","meta","8",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","9",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","10",{"name":"twitter:card","content":"summary"}],["$","meta","11",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","12",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","13",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","14",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"bnP8CSh_BnoTR_ngaC9us"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+21:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+22:"ToggleWordWrapButton"
+23:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$22"]
+24:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+48:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Az első BASIC program","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A ZX BASIC a ZX Spectrum saját BASIC nyelvének gépi kódra fordítható dialektusa, szubrutinokkal, lokális és típusos változókkal. A Klive a beépített fordítójával, a ",["$","strong",null,{"children":"Klive BASIC"}],"-kel fordítja le, amely kompatibilis a Boriel ZX BASIC-kel, és nem igényel telepítést. A lefordított program sokkal gyorsabban fut, mint az értelmezett BASIC, és soronként, a BASIC forráskódban követhetjük a hibakeresővel."]}],"\n",["$","h2",null,{"id":"projekt-létrehozása","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Projekt létrehozása",["$","$L20",null,{"id":"projekt-létrehozása"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Válasszuk a ",["$","strong",null,{"children":"Fájl › Új projekt…"}]," menüpontot, ahogy az ",["$","$L21",null,{"href":"/hu/get-started/first-assembly-program/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"első assembly programnál"}],", ezekkel a beállításokkal:"]}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Géptípus"}],": ZX Spectrum 48K."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Projektsablon"}],": ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"zx-basic"}],"."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Projektnév"}],": ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"BouncingBall"}],"."]}],"\n"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A projekt forrásfájlja a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"code/program.zxbas"}],"."]}],"\n",["$","h2",null,{"id":"a-program-megírása","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["A program megírása",["$","$L20",null,{"id":"a-program-megírása"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Cseréljük le a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"code/program.zxbas"}]," tartalmát erre a programra, és mentsük el:"]}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L23",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L24",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"' Bouncing ball - the program of Get Started, step 7."}]}],"\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b"]}]]}]]}],"\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47"]]}]
+15:["$","$L48",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@49"}]}]
+1f:true
+9:300
+25:["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"' A ball bounces between the screen's edges and counts its bounces."}]}]
+26:["$","span",null,{"children":" "}]
+27:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"DIM"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" x "}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"AS"}],["$","span",null,{"style":{"color":"#4EC9B0","fontWeight":"bold"},"children":" INTEGER"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" = "}],["$","span",null,{"style":{"color":"#4D8061"},"children":"15"}]]}]
+28:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"DIM"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" dx "}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"AS"}],["$","span",null,{"style":{"color":"#4EC9B0","fontWeight":"bold"},"children":" INTEGER"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" = "}],["$","span",null,{"style":{"color":"#4D8061"},"children":"1"}]]}]
+29:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"DIM"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" bounces "}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"AS"}],["$","span",null,{"style":{"color":"#4EC9B0","fontWeight":"bold"},"children":" UINTEGER"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" = "}],["$","span",null,{"style":{"color":"#4D8061"},"children":"0"}]]}]
+2a:["$","span",null,{"children":" "}]
+2b:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"SUB"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" DrawBall(column "}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"AS"}],["$","span",null,{"style":{"color":"#4EC9B0","fontWeight":"bold"},"children":" INTEGER"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":", ball "}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"AS"}],["$","span",null,{"style":{"color":"#4EC9B0","fontWeight":"bold"},"children":" STRING"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":")"}]]}]
+2c:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    PRINT"}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":" AT"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" 10"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":", column; ball"}]]}]
+2d:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"END"}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":" SUB"}]]}]
+2e:["$","span",null,{"children":" "}]
+2f:["$","span",null,{"children":["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"CLS"}]}]
+30:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"PRINT"}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":" AT"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" 0"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":", "}],["$","span",null,{"style":{"color":"#4D8061"},"children":"0"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"; "}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"Bounces: 0\""}]]}]
+31:["$","span",null,{"children":["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"DO"}]}]
+32:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#A4A4A4"},"children":"    DrawBall(x, "}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\" \""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":")"}]]}]
+33:["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"    x = x + dx"}]}]
+34:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    IF"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" x = "}],["$","span",null,{"style":{"color":"#4D8061"},"children":"0"}],["$","span",null,{"style":{"color":"#C586C0"},"children":" OR"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" x = "}],["$","span",null,{"style":{"color":"#4D8061"},"children":"31"}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":" THEN"}]]}]
+35:["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"        dx = -dx"}]}]
+36:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#A4A4A4"},"children":"        bounces = bounces + "}],["$","span",null,{"style":{"color":"#4D8061"},"children":"1"}]]}]
+37:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"        PRINT"}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":" AT"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" 0"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":", "}],["$","span",null,{"style":{"color":"#4D8061"},"children":"9"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"; bounces"}]]}]
+38:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    END"}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":" IF"}]]}]
+39:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#A4A4A4"},"children":"    DrawBall(x, "}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"O\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":")"}]]}]
+3a:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    PAUSE"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" 2"}]]}]
+3b:["$","span",null,{"children":["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"LOOP"}]}]
+3c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Néhány dolog, ami a Sinclair BASIC-ből hiányzik:"}]
+3d:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Nincsenek sorszámok."}]," A sorok sorrendben futnak, a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"DO"}]," … ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"LOOP"}]," pedig ismétli a közéjük eső sorokat."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Típusos változók."}]," A ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"DIM x AS INTEGER"}]," egy egész típusú változót deklarál, amely sokkal gyorsabb, mint a Spectrum lebegőpontos számai."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Paraméteres szubrutinok."}]," A ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"SUB DrawBall"}]," egy oszlopot és egy karakterláncot vár, a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"DrawBall(x, \"O\")"}]," pedig meghívja."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":["Blokkos ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"IF"}],"."]}]," Az ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"END IF"}],"-ig tartó sorok akkor futnak le, ha a feltétel igaz."]}],"\n"]}]
+3e:["$","h2",null,{"id":"futtatás","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Futtatás",["$","$L20",null,{"id":"futtatás"}]]}]
+3f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Kattintsunk a fordítási sáv ",["$","strong",null,{"children":"Futtatás"}]," gombjára, vagy nyomjuk meg az ",["$","kbd",null,{"children":"F5"}]," billentyűt. A labda a 10. sorban mozog, a képernyő szélén visszafordul, a felső számláló pedig számolja a visszapattanásokat."]}]
+40:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"620px"},"children":[["$","figcaption",null,{"className":"Shot_label__LxtzD","children":[["$","span",null,{"className":"Shot_number__1dPY0","children":["Fig. ","7.1"]}],["$","span",null,{"children":"A labda pattog"}]]}],["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/hu/get-started/basic-running.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/hu/get-started/basic-running.webp","alt":"Az emulátor futtatja a pattogó labdás programot","loading":"lazy","decoding":"async"}],[]]}]]}]
+41:["$","h2",null,{"id":"hibakeresés","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Hibakeresés",["$","$L20",null,{"id":"hibakeresés"}]]}]
+42:["$","div",null,{"className":"nextra-steps x:ms-4 x:mb-12 x:border-s x:border-gray-200 x:ps-6 x:dark:border-neutral-800","style":{"--counter-id":"_S_1_"},"children":[["$","h3",null,{"id":"töréspont-elhelyezése-a-szubrutinban","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Töréspont elhelyezése a szubrutinban",["$","$L20",null,{"id":"töréspont-elhelyezése-a-szubrutinban"}]]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Kattintsunk a ",["$","strong",null,{"children":"9"}],"-es sorszám bal oldalára, a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"DrawBall"}]," belsejében lévő ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"PRINT AT 10, column; ball"}]," sornál."]}],["$","h3",null,{"id":"a-hibakeresés-indítása","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["A hibakeresés indítása",["$","$L20",null,{"id":"a-hibakeresés-indítása"}]]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Kattintsunk a fordítási sáv ",["$","strong",null,{"children":"Hibakeresés"}]," gombjára, vagy nyomjuk meg a ",["$","kbd",null,{"children":"Ctrl"}],"+",["$","kbd",null,{"children":"F5"}]," billentyűkombinációt. A program akkor áll meg, amikor először hívja meg a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"DrawBall"}]," szubrutint."]}],["$","h3",null,{"id":"a-hívási-verem-és-a-változók-megtekintése","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["A hívási verem és a változók megtekintése",["$","$L20",null,{"id":"a-hívási-verem-és-a-változók-megtekintése"}]]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Nyissuk meg a ",["$","strong",null,{"children":"Hibakeresés"}]," oldalsávot, majd a címükre kattintva nyissuk meg rajta a ",["$","strong",null,{"children":"Hívási verem"}]," és a ",["$","strong",null,{"children":"Változók"}]," panelt."]}]]}]
+43:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"900px"},"children":[["$","figcaption",null,{"className":"Shot_label__LxtzD","children":[["$","span",null,{"className":"Shot_number__1dPY0","children":["Fig. ","7.2"]}],["$","span",null,{"children":"Megállás a DrawBall szubrutin belsejében"}]]}],["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/hu/get-started/basic-debug.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/hu/get-started/basic-debug.webp","alt":"Az IDE a DrawBall belsejében megállva, a hívási veremmel és a változókkal","loading":"lazy","decoding":"async","width":1800,"height":1153}],[["$","span","0",{"className":"Shot_marker___4iE_","style":{"left":"25.6%","top":"33.7%"},"aria-label":"1","children":1}],["$","span","1",{"className":"Shot_marker___4iE_","style":{"left":"20.2%","top":"13.3%"},"aria-label":"2","children":2}],["$","span","2",{"className":"Shot_marker___4iE_","style":{"left":"20.2%","top":"54.3%"},"aria-label":"3","children":3}]]]}]]}]
+44:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"A töréspont és a következőként végrehajtandó utasítás."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["A ",["$","strong",null,{"children":"Hívási verem"}],": a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"DrawBall"}]," szubrutint a főprogram 15. sora hívta meg."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["A ",["$","strong",null,{"children":"Változók"}],": a szubrutin paraméterei (a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"column"}]," értéke 15, a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ball"}]," egy szóköz), valamint a program globális változói."]}],"\n"]}]
+45:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A léptetés BASIC ",["$","strong",null,{"children":"utasításokon"}]," működik, nem Z80 utasításokon: az ",["$","kbd",null,{"children":"F10"}]," végrehajtja a következő utasítást, az ",["$","kbd",null,{"children":"F11"}]," (macOS-en ",["$","kbd",null,{"children":"F12"}],") belép egy szubrutinba, a ",["$","kbd",null,{"children":"Shift"}],"+",["$","kbd",null,{"children":"F11"}]," pedig kilép belőle. Nyomjuk meg néhányszor az ",["$","kbd",null,{"children":"F5"}]," billentyűt, és figyeljük, hogyan változik a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"column"}]," és az ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"x"}]," értéke."]}]
+46:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":"💡"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A Klive a BASIC programokat a Boriel saját fordítójával, a Boriel BASIC 2-vel is le tudja fordítani, és ugyanígy lehet bennük hibát keresni. A nyelvi beállításokról, a standard könyvtárról és a fordítók közötti váltásról a ",["$","$L21",null,{"href":"/en/guides/languages/zx-basic/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"ZX BASIC (angolul)"}]," oldal szól."]}]}]]}]
+47:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Következő lépésként írjuk meg ",["$","$L21",null,{"href":"/hu/get-started/first-next-program/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"az első ZX Spectrum Next programot"}],"."]}]
+49:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

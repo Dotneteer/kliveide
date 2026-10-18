@@ -1,0 +1,79 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-ec4827f49d7f8d42.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+1e:"ViewportBoundary"
+1f:I[484,[],"$1e"]
+20:"MetadataBoundary"
+21:I[484,[],"$20"]
+22:"$Sreact.suspense"
+23:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T827,---
+description: "Everything in the book up to now lived entirely in memory."
+---
+
+import { Callout } from 'nextra/components'
+
+# NextZXOS, esxDOS, and the SD Card
+
+<Callout type="warning" emoji="🚧">
+This chapter is a placeholder. The full text is being written.
+</Callout>
+
+## Synopsis
+
+Everything in the book up to now lived entirely in memory. To make a real program — one that loads its own assets, saves its own settings, and plays nicely with NextZXOS — you need to talk to the SD card. The good news is you don't have to write a FAT32 driver: NextZXOS exposes a clean, MS-DOS-flavoured file API that is callable from a few-line Z80 wrapper.
+
+Topics:
+
+- **NextZXOS, esxDOS, and the +3DOS lineage.** What they are, how they're related, and which lives where on a stock Next SD card.
+- **The DivMMC mechanism.** How NextZXOS swaps in its handler ROM transparently when the Z80 hits certain entry points — the alt-ROM concept introduced in [Memory Architecture](./03-memory.mdx) is the same machinery.
+- **The file API.** `M_GETSETDRV`, `F_OPEN`, `F_READ`, `F_WRITE`, `F_CLOSE`, `F_SEEK`, plus the ESX error codes. Calling convention via `RST $08` + handle byte.
+- **The current drive and current path.** How NextZXOS tracks them, and what `M_GETSETDRV` lets you change.
+- **Reading a file into a paged-in bank.** The natural fit: open file, set MMU slot to the destination page, read directly into it.
+- **Dot commands.** What they are (executable files in `/dot/`), their entry-point convention, the command-line argument they receive in `HL`, and how to write one.
+
+## What you should know first
+
+- [Memory Architecture](./03-memory.mdx) — files load into pages.
+- [I/O and NextRegs](./02-io-and-nextregs.mdx).
+
+## Planned exercises
+
+- **First read.** Open a text file from the example pack's `/data` folder and print its first line on the ULA screen.
+- **Asset loader.** Read a binary blob (a Layer 2 image) directly into the Layer 2 page and display it.
+- **Mini dot command.** Write a `.hello` dot command that prints its first command-line argument back to the user.a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Synopsis","id":"synopsis","depth":2},{"value":"What you should know first","id":"what-you-should-know-first","depth":2},{"value":"Planned exercises","id":"planned-exercises","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"Everything in the book up to now lived entirely in memory.","title":"NextZXOS, esxDOS, and the SD Card","filePath":"content/en/book/19-storage.mdx","timestamp":1792315833000},"sourceCode":"$12","children":[["$","div",null,{"id":"nextra-skip-nav"}],["$","main",null,{"data-pagefind-body":true,"children":[false,[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["NextZXOS, esxDOS, and the SD Card","$undefined"]}],"\n",["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-yellow-50 x:dark:bg-yellow-700/30 x:text-yellow-700 x:dark:text-yellow-500 x:border-yellow-700","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":"🚧"}],"$L13"]}],"\n","$L14","\n","$L15","\n","$L16","\n","$L17","\n","$L18","\n","$L19","\n","$L1a","\n","$L1b"]]}]]}]]}]}],null,"$L1c"]}],"p":"$@1d","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"book/19-storage","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L1f",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L21",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$22",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"NextZXOS, esxDOS, and the SD Card - Klive IDE"}],["$","meta","1",{"name":"description","content":"Everything in the book up to now lived entirely in memory."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/book/19-storage/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L23","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@24","v":null,"s":"$9"}},"a":"$@25","u":"$@26","b":"bnP8CSh_BnoTR_ngaC9us"}
+27:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+28:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+29:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This chapter is a placeholder. The full text is being written."}]}]
+14:["$","h2",null,{"id":"synopsis","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Synopsis",["$","$L27",null,{"id":"synopsis"}]]}]
+15:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Everything in the book up to now lived entirely in memory. To make a real program — one that loads its own assets, saves its own settings, and plays nicely with NextZXOS — you need to talk to the SD card. The good news is you don’t have to write a FAT32 driver: NextZXOS exposes a clean, MS-DOS-flavoured file API that is callable from a few-line Z80 wrapper."}]
+16:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Topics:"}]
+17:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"NextZXOS, esxDOS, and the +3DOS lineage."}]," What they are, how they’re related, and which lives where on a stock Next SD card."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"The DivMMC mechanism."}]," How NextZXOS swaps in its handler ROM transparently when the Z80 hits certain entry points — the alt-ROM concept introduced in ",["$","$L28",null,{"href":"./03-memory","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Memory Architecture"}]," is the same machinery."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"The file API."}]," ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"M_GETSETDRV"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"F_OPEN"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"F_READ"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"F_WRITE"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"F_CLOSE"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"F_SEEK"}],", plus the ESX error codes. Calling convention via ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RST $08"}]," + handle byte."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"The current drive and current path."}]," How NextZXOS tracks them, and what ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"M_GETSETDRV"}]," lets you change."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Reading a file into a paged-in bank."}]," The natural fit: open file, set MMU slot to the destination page, read directly into it."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Dot commands."}]," What they are (executable files in ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"/dot/"}],"), their entry-point convention, the command-line argument they receive in ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"HL"}],", and how to write one."]}],"\n"]}]
+18:["$","h2",null,{"id":"what-you-should-know-first","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["What you should know first",["$","$L27",null,{"id":"what-you-should-know-first"}]]}]
+19:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","$L28",null,{"href":"./03-memory","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Memory Architecture"}]," — files load into pages."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","$L28",null,{"href":"./02-io-and-nextregs","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"I/O and NextRegs"}],"."]}],"\n"]}]
+1a:["$","h2",null,{"id":"planned-exercises","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Planned exercises",["$","$L27",null,{"id":"planned-exercises"}]]}]
+1b:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"First read."}]," Open a text file from the example pack’s ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"/data"}]," folder and print its first line on the ULA screen."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Asset loader."}]," Read a binary blob (a Layer 2 image) directly into the Layer 2 page and display it."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Mini dot command."}]," Write a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".hello"}]," dot command that prints its first command-line argument back to the user."]}],"\n"]}]
+1c:["$","$L29",null,{"children":["$","$22",null,{"name":"Next.MetadataOutlet","children":"$@2a"}]}]
+26:true
+9:300
+2a:null
+9:C
+25:0
+7:"$undefined"
+24:"$undefined"
+1d:"$undefined"

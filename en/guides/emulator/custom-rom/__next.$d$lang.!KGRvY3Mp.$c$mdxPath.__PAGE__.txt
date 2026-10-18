@@ -1,0 +1,94 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-ec4827f49d7f8d42.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+24:"ViewportBoundary"
+25:I[484,[],"$24"]
+26:"MetadataBoundary"
+27:I[484,[],"$26"]
+28:"$Sreact.suspense"
+29:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T92e,---
+description: "Klive lets you replace the built-in ZX Spectrum 48K ROM with any compatible 16K ROM image of your choice."
+---
+
+import { Callout } from 'nextra/components'
+
+# Using a Custom ROM with ZX Spectrum 48K
+
+Klive lets you replace the built-in ZX Spectrum 48K ROM with any compatible 16K ROM image of your choice. This is useful when you want to test or develop against alternative ROM implementations, patched ROMs, or diagnostic ROMs.
+
+<Callout type="warning" emoji="⚠️">
+This feature is only available for the **ZX Spectrum 48K** machine model. Other Spectrum models (128K, +2E/+3E) are not affected.
+</Callout>
+
+## Selecting a Custom ROM
+
+While the ZX Spectrum 48K runs, open the **Machine** page of the [Settings](/en/guides/ide/settings) dialog. Its **ZX Spectrum 48K ROM** option has two buttons:
+
+- **Browse...** — opens a file picker to choose a ROM image
+- **Reset** — removes the custom ROM and restores the original Spectrum 48K ROM
+
+Click **Browse...** and browse to your ROM file. Klive accepts files with the `.rom` and `.bin` extensions (as well as any other extension via the *All Files* filter).
+
+<Callout type="info" emoji="💡">
+The selected ROM file must be **exactly 16,384 bytes** (16K) in size. If the file is smaller or larger, Klive will reject it and display an error message.
+</Callout>
+
+Once a valid file is selected, the machine is restarted automatically with the new ROM. The path to the ROM file is stored in the project configuration, so it will be reloaded automatically the next time you open the project.
+
+## Resetting to the Default ROM
+
+To go back to the original ZX Spectrum 48K ROM, click **Reset** next to the **ZX Spectrum 48K ROM** option on the **Settings > Machine** page. Klive will ask for confirmation before switching back:
+
+> *Are you sure you want to reset to the default ZX Spectrum 48 ROM?*
+
+Confirm with **Yes** and the machine will restart with the built-in ROM.
+
+<Callout type="info" emoji="💡">
+The **Reset** button is only enabled when a custom ROM is currently active.
+</Callout>
+
+## How the ROM Path Is Stored
+
+The ROM file path is saved in the `config` section of the Klive project file (`.klive`) under the `sp48RomFile` key. As long as the file exists at that path when the project is reopened, the custom ROM will be used automatically — no extra steps required.a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Selecting a Custom ROM","id":"selecting-a-custom-rom","depth":2},{"value":"Resetting to the Default ROM","id":"resetting-to-the-default-rom","depth":2},{"value":"How the ROM Path Is Stored","id":"how-the-rom-path-is-stored","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"Klive lets you replace the built-in ZX Spectrum 48K ROM with any compatible 16K ROM image of your choice.","title":"Using a Custom ROM with ZX Spectrum 48K","filePath":"content/en/guides/emulator/custom-rom.mdx","timestamp":1792315833000},"sourceCode":"$12","children":[["$","div",null,{"id":"nextra-skip-nav"}],["$","main",null,{"data-pagefind-body":true,"children":[false,[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Using a Custom ROM with ZX Spectrum 48K","$undefined"]}],"\n","$L13","\n","$L14","\n","$L15","\n","$L16","\n","$L17","\n","$L18","\n","$L19","\n","$L1a","\n","$L1b","\n","$L1c","\n","$L1d","\n","$L1e","\n","$L1f","\n","$L20","\n","$L21"]]}]]}]]}]}],null,"$L22"]}],"p":"$@23","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"guides/emulator/custom-rom","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L25",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L27",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$28",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Using a Custom ROM with ZX Spectrum 48K - Klive IDE"}],["$","meta","1",{"name":"description","content":"Klive lets you replace the built-in ZX Spectrum 48K ROM with any compatible 16K ROM image of your choice."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/guides/emulator/custom-rom/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L29","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@2a","v":null,"s":"$9"}},"a":"$@2b","u":"$@2c","b":"bnP8CSh_BnoTR_ngaC9us"}
+2d:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+2e:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+2f:I[484,[],"OutletBoundary"]
+13:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Klive lets you replace the built-in ZX Spectrum 48K ROM with any compatible 16K ROM image of your choice. This is useful when you want to test or develop against alternative ROM implementations, patched ROMs, or diagnostic ROMs."}]
+14:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-yellow-50 x:dark:bg-yellow-700/30 x:text-yellow-700 x:dark:text-yellow-500 x:border-yellow-700","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":"⚠️"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["This feature is only available for the ",["$","strong",null,{"children":"ZX Spectrum 48K"}]," machine model. Other Spectrum models (128K, +2E/+3E) are not affected."]}]}]]}]
+15:["$","h2",null,{"id":"selecting-a-custom-rom","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Selecting a Custom ROM",["$","$L2d",null,{"id":"selecting-a-custom-rom"}]]}]
+16:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["While the ZX Spectrum 48K runs, open the ",["$","strong",null,{"children":"Machine"}]," page of the ",["$","$L2e",null,{"href":"/en/guides/ide/settings","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Settings"}]," dialog. Its ",["$","strong",null,{"children":"ZX Spectrum 48K ROM"}]," option has two buttons:"]}]
+17:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Browse…"}]," — opens a file picker to choose a ROM image"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Reset"}]," — removes the custom ROM and restores the original Spectrum 48K ROM"]}],"\n"]}]
+18:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Click ",["$","strong",null,{"children":"Browse…"}]," and browse to your ROM file. Klive accepts files with the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".rom"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".bin"}]," extensions (as well as any other extension via the ",["$","em",null,{"children":"All Files"}]," filter)."]}]
+19:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$14:props:children:0:props:style","data-pagefind-ignore":"all","children":"💡"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The selected ROM file must be ",["$","strong",null,{"children":"exactly 16,384 bytes"}]," (16K) in size. If the file is smaller or larger, Klive will reject it and display an error message."]}]}]]}]
+1a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Once a valid file is selected, the machine is restarted automatically with the new ROM. The path to the ROM file is stored in the project configuration, so it will be reloaded automatically the next time you open the project."}]
+1b:["$","h2",null,{"id":"resetting-to-the-default-rom","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Resetting to the Default ROM",["$","$L2d",null,{"id":"resetting-to-the-default-rom"}]]}]
+1c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["To go back to the original ZX Spectrum 48K ROM, click ",["$","strong",null,{"children":"Reset"}]," next to the ",["$","strong",null,{"children":"ZX Spectrum 48K ROM"}]," option on the ",["$","strong",null,{"children":"Settings > Machine"}]," page. Klive will ask for confirmation before switching back:"]}]
+1d:["$","blockquote",null,{"className":"x:not-first:mt-[1.25em] x:border-gray-300 x:italic x:text-gray-700 x:dark:border-gray-700 x:dark:text-gray-400 x:border-s-2 x:ps-[1.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","em",null,{"children":"Are you sure you want to reset to the default ZX Spectrum 48 ROM?"}]}],"\n"]}]
+1e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Confirm with ",["$","strong",null,{"children":"Yes"}]," and the machine will restart with the built-in ROM."]}]
+1f:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$14:props:children:0:props:style","data-pagefind-ignore":"all","children":"💡"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","strong",null,{"children":"Reset"}]," button is only enabled when a custom ROM is currently active."]}]}]]}]
+20:["$","h2",null,{"id":"how-the-rom-path-is-stored","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["How the ROM Path Is Stored",["$","$L2d",null,{"id":"how-the-rom-path-is-stored"}]]}]
+21:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ROM file path is saved in the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"config"}]," section of the Klive project file (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".klive"}],") under the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"sp48RomFile"}]," key. As long as the file exists at that path when the project is reopened, the custom ROM will be used automatically — no extra steps required."]}]
+22:["$","$L2f",null,{"children":["$","$28",null,{"name":"Next.MetadataOutlet","children":"$@30"}]}]
+2c:true
+9:300
+30:null
+9:C
+2b:0
+7:"$undefined"
+2a:"$undefined"
+23:"$undefined"

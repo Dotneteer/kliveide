@@ -1,0 +1,282 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-ec4827f49d7f8d42.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T276b,---
+description: "How Klive's debugger decides where to stop: the core decides whether to stop, TypeScript decides what a stop means, an in-core loop runs between the candidates, and tests prove it stops exactly where instruction-by-instruction stepping would."
+---
+
+import { Callout } from 'nextra/components'
+
+# How the Debugger Decides Where to Stop
+
+A plain Run is easy for an emulator core: the host calls it once per frame, and the core runs the
+whole frame in WebAssembly. A debug session is harder. The debugger may have to stop at **any**
+instruction: at a breakpoint, at the end of a step, when a condition becomes true, when a byte is
+written. This article explains how Klive keeps a debug session almost as fast as a plain Run, and how
+it proves that the speed does not change where the debugger stops.
+
+[How the emulator cores are built](/en/under-the-hood/emulator-internals/wasm-cores/) describes the
+cores and their TypeScript hosts. Read it first if you have not.
+
+## The slow way: one instruction at a time
+
+The obvious way to debug is to run one instruction, ask whether to stop, and repeat. That is how
+the Spectrum cores and the Next used to work under the debugger. For every Z80 instruction the host
+called the core's `ExecuteInstruction` export, read the PC and the frame-completed flag back with two
+more calls, and ran the TypeScript stop policy, `shouldStopAtDebugPoint`.
+
+It was slow. Measured against a plain Run of the same host:
+
+| Machine | Debug session, one breakpoint never hit | Project start (running to the execution point) |
+|---|---|---|
+| 48K | 2.3x | 2.1x |
+| 128K | 2.2x | 1.9x |
+| +3E | 2.1x | 1.9x |
+| Next | 1.4x | 1.3x |
+
+A project start runs the machine to the program's execution point, and it used the same loop.
+
+The interesting part is **where** the time went. The boundary crossings on their own (the three calls
+per instruction, without the host's JavaScript) cost only 1.1 to 1.4 times a fast frame. The rest was
+the JavaScript stop tests that ran for every instruction. Crossing into the core was cheap; deciding
+in TypeScript at every instruction was not.
+
+## The rule
+
+The fix rests on one rule:
+
+<Callout type="info">
+**The core decides whether to stop; TypeScript decides what a stop means.**
+</Callout>
+
+The core never makes a final decision it cannot reproduce exactly. It only stops **early**, at a
+**candidate**: an address where the TypeScript policy *might* stop. There the unchanged TypeScript
+policy decides, as it always did. A candidate that is not a real stop, such as a breakpoint in
+another memory partition, costs one round trip and nothing else.
+
+Because the same TypeScript code still decides, running in the core decides exactly as running
+instruction by instruction does. The core only skips the instructions where nothing could happen.
+
+## The in-core loop
+
+Every core includes the shared `z80-debug-loop.c`, which provides one export:
+
+```text
+<prefix>ExecuteUntilStop(extraStop, mask, accessMask)
+```
+
+It runs instructions until one of these happens:
+
+- the PC reaches an address whose entry in the stop table meets `mask`;
+- the PC reaches `extraStop`;
+- an instruction reads or writes an address, or accesses a port, whose flags meet `accessMask`;
+- the frame ends, or a reverse-debugging stop target is reached;
+- something that would end the core's own frame loop happens (on the Next, an SD card command for
+  the host or a reset request).
+
+It returns the number of instructions it ran, and the host takes over.
+
+### The stop table
+
+The stop table has one 16-bit entry for every address. On every entry into a debug run, the host
+builds it (`buildCoreStopTable`) and copies it into the core. Most of it is a copy of the breakpoint
+flags that the TypeScript `DebugSupport` already keeps. Two bits are the table's own:
+
+| Bit | Meaning in the core |
+|---|---|
+| `0x01`, `0x02` | Stop: an execution breakpoint (whether its partition matches is decided in TypeScript) |
+| `0x08` to `0x40` | With `accessMask`: stop after an instruction that read, wrote, or did I/O on the address or port |
+| `0x4000` | Run this address's conditions in the core; stop unless all of them are false |
+| `0x8000` | Stop: an error stop, or an address that the BASIC statement tracker or a source step acts at |
+
+`extraStop` carries the one address that is not a breakpoint: the run's execution point, the return
+address of a Step Over, or the target of a Step Out.
+
+### Conditions in the core
+
+A conditional breakpoint on a hot instruction used to cost a TypeScript round trip on every pass,
+even when the condition was false. Conditions are already compiled to bytecode for the evaluator in
+`z80-condition.c`, so the core can run them itself.
+
+The host writes a condition plan into the core: up to 128 addresses and 256 program slots. At such an
+address the loop runs the slots and **keeps going while every condition is false**. Anything else
+stops, and TypeScript decides and counts the hit as before.
+
+Hit counters stay in TypeScript, on purpose. A false condition counts nothing, logs nothing and never
+stops, so leaving false passes to the core is exact without moving any counter. A true pass stops,
+and TypeScript counts it. The reverse-debugging timeline logs each counted hit with its position, and
+an in-core counter would need a second hit log in the core. As a result, a bare hit-count rule with no
+condition still stops on every pass.
+
+### Memory and port breakpoints
+
+For an access breakpoint the core cannot know in advance where the program will write. So it checks
+after each instruction: if that instruction touched a flagged address or port, the loop returns. The
+host then reads the bus record and decides as before: disabled breakpoints, partitions, conditions,
+hit counts.
+
+### Source-level stepping
+
+Klive BASIC's source debugger steps by statement. A statement step only ever stops at a statement
+entry or at the return address of a call site. The stop table marks those addresses as candidates, so
+the core stops only there, and the step's own logic (the stack pointer and interrupt-depth checks)
+runs only there.
+
+### What stays instruction by instruction
+
+Some runs still go one instruction at a time in TypeScript: **Step Into** (one instruction by
+definition), an RZX session, and the Next's NextReg, Copper and sprite watches.
+
+## The result
+
+After the change, measured the same way:
+
+| Machine | Debug session | Project start | With history recording |
+|---|---|---|---|
+| 48K | 1.0x | 1.0x | 1.11x |
+| 128K | 1.0x | 1.0x | 1.13x |
+| +3E | 1.0x | 1.0x | 1.13x |
+| Next | 1.0x | 1.0x | 1.06x |
+| ZX81 | 1.1x | 1.0x | 1.30x |
+| Z88 | 1.3x | 1.2x | 1.54x |
+
+Other cases improved as much. A conditional breakpoint whose condition is never true, on the
+hottest instruction of a test loop, cost 1.64x on the 48K and costs 1.07x now. A Step Over of a call to
+a Klive BASIC SUB that loops 2,000 times takes about 4.0 ms in the core, against 15.6 ms instruction by
+instruction.
+
+The Z88 is the exception, and the reason is simple arithmetic. The host rebuilds and copies the stop
+table on every entry, which takes about 10 µs. A Z88 frame is only 0.04 ms of emulation, so the copy
+shows. In real time it is 0.2% of the Z88's 5 ms frame.
+
+## Proving the stops are the same
+
+A faster debugger that stops one instruction late is worse than a slow one. So every move of a
+decision into the core is guarded by an **equivalence test**: `test/wasm/debug-loop-equivalence.test.ts`.
+
+The test runs the same program with the same breakpoints twice on each core, once in the core and
+once instruction by instruction. A test seam, `wasmDebugLoopOptions.inCore = false`, forces the
+second path. Every stop must match: the PC, the registers, the T-state counter, and the last decision
+point (`lastDecisionPc`). The scenarios cover continues, step-overs and step-outs, conditional
+breakpoints, hit-count rules, and memory-read, memory-write and port-read breakpoints.
+
+The test also has to fail when it should. Disabling the core's path (making the core ignore the stop
+table or the conditions) makes it fail on every core. A second test, for source-level stepping, runs a
+22-step script of step into, step over and step out through SUBs, FUNCTIONs, recursion and a loop,
+and requires identical stops both ways.
+
+These tests caught real bugs while the loop was built:
+
+- The access-breakpoint report named the wrong instruction. The instruction-by-instruction loop set
+  the last decision point before every instruction, and the in-core run did not, so a memory stop
+  named the instruction where the run started. Now the host reads where the last instruction started
+  (`<prefix>GetDebugOpStart`) after every in-core run.
+- That same value was written only by debug runs, yet it was part of the machine's saved state. Every
+  reverse-debugging test that compares a replay with a debug run failed: 51 tests. It is volatile now.
+
+The second bug is a rule of its own: **anything a debug run writes in a core and a fast frame does not
+must be volatile**, or replays stop matching the runs they replay.
+
+A third guard is about speed. `test/wasm/debug-loop-budgets.perf.test.ts` (`npm run test:perf`)
+measures a debug session, a project start, access breakpoints and a never-true condition against a
+plain Run on each core, and fails if one exceeds its budget.
+
+## Adding a new kind of stop
+
+The rule tells a contributor what to do:
+
+1. Decide whether the core can reproduce the TypeScript decision **exactly**. If it can only find the
+   places where the answer might be "stop", mark those places as candidates and let TypeScript decide.
+2. If the core does decide itself, as it does for false conditions, keep everything with an effect in
+   TypeScript: hit counters, logpoints and the reverse-debugging hit log.
+3. Extend the equivalence test, and check that it fails with your core path disabled.
+4. Measure with `npm run benchmark:debug-host-loop` and keep `npm run test:perf` green.
+
+The full contract is in `src/emu/z80/wasm/README.md`. The shared host loop is `runWasmDebugLoop` in
+`src/emu/machines/wasmDebugLoop.ts`.a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"The slow way: one instruction at a time","id":"the-slow-way-one-instruction-at-a-time","depth":2},{"value":"The rule","id":"the-rule","depth":2},{"value":"The in-core loop","id":"the-in-core-loop","depth":2},{"value":"The stop table","id":"the-stop-table","depth":3},{"value":"Conditions in the core","id":"conditions-in-the-core","depth":3},{"value":"Memory and port breakpoints","id":"memory-and-port-breakpoints","depth":3},{"value":"Source-level stepping","id":"source-level-stepping","depth":3},{"value":"What stays instruction by instruction","id":"what-stays-instruction-by-instruction","depth":3},{"value":"The result","id":"the-result","depth":2},{"value":"Proving the stops are the same","id":"proving-the-stops-are-the-same","depth":2},{"value":"Adding a new kind of stop","id":"adding-a-new-kind-of-stop","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"How Klive's debugger decides where to stop: the core decides whether to stop, TypeScript decides what a stop means, an in-core loop runs between the candidates, and tests prove it stops exactly where instruction-by-instruction stepping would.","title":"How the Debugger Decides Where to Stop","filePath":"content/en/under-the-hood/emulator-internals/debugger-loop.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"under-the-hood/emulator-internals/debugger-loop","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"How the Debugger Decides Where to Stop - Klive IDE"}],["$","meta","1",{"name":"description","content":"How Klive's debugger decides where to stop: the core decides whether to stop, TypeScript decides what a stop means, an in-core loop runs between the candidates, and tests prove it stops exactly where instruction-by-instruction stepping would."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/under-the-hood/emulator-internals/debugger-loop/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"bnP8CSh_BnoTR_ngaC9us"}
+20:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+21:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+52:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["How the Debugger Decides Where to Stop","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A plain Run is easy for an emulator core: the host calls it once per frame, and the core runs the\nwhole frame in WebAssembly. A debug session is harder. The debugger may have to stop at ",["$","strong",null,{"children":"any"}],"\ninstruction: at a breakpoint, at the end of a step, when a condition becomes true, when a byte is\nwritten. This article explains how Klive keeps a debug session almost as fast as a plain Run, and how\nit proves that the speed does not change where the debugger stops."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","$L20",null,{"href":"/en/under-the-hood/emulator-internals/wasm-cores/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"How the emulator cores are built"}]," describes the\ncores and their TypeScript hosts. Read it first if you have not."]}],"\n",["$","h2",null,{"id":"the-slow-way-one-instruction-at-a-time","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The slow way: one instruction at a time",["$","$L21",null,{"id":"the-slow-way-one-instruction-at-a-time"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The obvious way to debug is to run one instruction, ask whether to stop, and repeat. That is how\nthe Spectrum cores and the Next used to work under the debugger. For every Z80 instruction the host\ncalled the core’s ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ExecuteInstruction"}]," export, read the PC and the frame-completed flag back with two\nmore calls, and ran the TypeScript stop policy, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"shouldStopAtDebugPoint"}],"."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"It was slow. Measured against a plain Run of the same host:"}],"\n",["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Machine","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Debug session, one breakpoint never hit","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Project start (running to the execution point)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"48K","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"2.3x","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"2.1x","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"128K","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],"$L22","$L23"],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$L24","$L25"]}]]}],"\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49","\n","$L4a","\n","$L4b","\n","$L4c","\n","$L4d","\n","$L4e","\n","$L4f","\n","$L50","\n","$L51"]]}]
+15:["$","$L52",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@53"}]}]
+1f:true
+54:"ToggleWordWrapButton"
+55:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$54"]
+56:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+9:300
+22:["$","td",null,{"children":"2.2x","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+23:["$","td",null,{"children":"1.9x","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+24:["$","tr",null,{"children":[["$","td",null,{"children":"+3E","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"2.1x","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"1.9x","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+25:["$","tr",null,{"children":[["$","td",null,{"children":"Next","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"1.4x","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"1.3x","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+26:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A project start runs the machine to the program’s execution point, and it used the same loop."}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The interesting part is ",["$","strong",null,{"children":"where"}]," the time went. The boundary crossings on their own (the three calls\nper instruction, without the host’s JavaScript) cost only 1.1 to 1.4 times a fast frame. The rest was\nthe JavaScript stop tests that ran for every instruction. Crossing into the core was cheap; deciding\nin TypeScript at every instruction was not."]}]
+28:["$","h2",null,{"id":"the-rule","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The rule",["$","$L21",null,{"id":"the-rule"}]]}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The fix rests on one rule:"}]
+2a:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"The core decides whether to stop; TypeScript decides what a stop means."}]}]}]]}]
+2b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The core never makes a final decision it cannot reproduce exactly. It only stops ",["$","strong",null,{"children":"early"}],", at a\n",["$","strong",null,{"children":"candidate"}],": an address where the TypeScript policy ",["$","em",null,{"children":"might"}]," stop. There the unchanged TypeScript\npolicy decides, as it always did. A candidate that is not a real stop, such as a breakpoint in\nanother memory partition, costs one round trip and nothing else."]}]
+2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Because the same TypeScript code still decides, running in the core decides exactly as running\ninstruction by instruction does. The core only skips the instructions where nothing could happen."}]
+2d:["$","h2",null,{"id":"the-in-core-loop","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The in-core loop",["$","$L21",null,{"id":"the-in-core-loop"}]]}]
+2e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Every core includes the shared ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"z80-debug-loop.c"}],", which provides one export:"]}]
+2f:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L55",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L56",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"<prefix>ExecuteUntilStop(extraStop, mask, accessMask)"}]}]}]]}]]}]
+30:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"It runs instructions until one of these happens:"}]
+31:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["the PC reaches an address whose entry in the stop table meets ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"mask"}],";"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["the PC reaches ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"extraStop"}],";"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["an instruction reads or writes an address, or accesses a port, whose flags meet ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"accessMask"}],";"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"the frame ends, or a reverse-debugging stop target is reached;"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"something that would end the core’s own frame loop happens (on the Next, an SD card command for\nthe host or a reset request)."}],"\n"]}]
+32:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"It returns the number of instructions it ran, and the host takes over."}]
+33:["$","h3",null,{"id":"the-stop-table","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["The stop table",["$","$L21",null,{"id":"the-stop-table"}]]}]
+34:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The stop table has one 16-bit entry for every address. On every entry into a debug run, the host\nbuilds it (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"buildCoreStopTable"}],") and copies it into the core. Most of it is a copy of the breakpoint\nflags that the TypeScript ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"DebugSupport"}]," already keeps. Two bits are the table’s own:"]}]
+35:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Bit","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Meaning in the core","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0x01"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0x02"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Stop: an execution breakpoint (whether its partition matches is decided in TypeScript)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0x08"}]," to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0x40"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["With ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"accessMask"}],": stop after an instruction that read, wrote, or did I/O on the address or port"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0x4000"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Run this address’s conditions in the core; stop unless all of them are false","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0x8000"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Stop: an error stop, or an address that the BASIC statement tracker or a source step acts at","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}]
+36:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"extraStop"}]," carries the one address that is not a breakpoint: the run’s execution point, the return\naddress of a Step Over, or the target of a Step Out."]}]
+37:["$","h3",null,{"id":"conditions-in-the-core","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Conditions in the core",["$","$L21",null,{"id":"conditions-in-the-core"}]]}]
+38:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A conditional breakpoint on a hot instruction used to cost a TypeScript round trip on every pass,\neven when the condition was false. Conditions are already compiled to bytecode for the evaluator in\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"z80-condition.c"}],", so the core can run them itself."]}]
+39:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The host writes a condition plan into the core: up to 128 addresses and 256 program slots. At such an\naddress the loop runs the slots and ",["$","strong",null,{"children":"keeps going while every condition is false"}],". Anything else\nstops, and TypeScript decides and counts the hit as before."]}]
+3a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Hit counters stay in TypeScript, on purpose. A false condition counts nothing, logs nothing and never\nstops, so leaving false passes to the core is exact without moving any counter. A true pass stops,\nand TypeScript counts it. The reverse-debugging timeline logs each counted hit with its position, and\nan in-core counter would need a second hit log in the core. As a result, a bare hit-count rule with no\ncondition still stops on every pass."}]
+3b:["$","h3",null,{"id":"memory-and-port-breakpoints","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Memory and port breakpoints",["$","$L21",null,{"id":"memory-and-port-breakpoints"}]]}]
+3c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"For an access breakpoint the core cannot know in advance where the program will write. So it checks\nafter each instruction: if that instruction touched a flagged address or port, the loop returns. The\nhost then reads the bus record and decides as before: disabled breakpoints, partitions, conditions,\nhit counts."}]
+3d:["$","h3",null,{"id":"source-level-stepping","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Source-level stepping",["$","$L21",null,{"id":"source-level-stepping"}]]}]
+3e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Klive BASIC’s source debugger steps by statement. A statement step only ever stops at a statement\nentry or at the return address of a call site. The stop table marks those addresses as candidates, so\nthe core stops only there, and the step’s own logic (the stack pointer and interrupt-depth checks)\nruns only there."}]
+3f:["$","h3",null,{"id":"what-stays-instruction-by-instruction","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["What stays instruction by instruction",["$","$L21",null,{"id":"what-stays-instruction-by-instruction"}]]}]
+40:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Some runs still go one instruction at a time in TypeScript: ",["$","strong",null,{"children":"Step Into"}]," (one instruction by\ndefinition), an RZX session, and the Next’s NextReg, Copper and sprite watches."]}]
+41:["$","h2",null,{"id":"the-result","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The result",["$","$L21",null,{"id":"the-result"}]]}]
+42:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"After the change, measured the same way:"}]
+43:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Machine","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Debug session","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Project start","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"With history recording","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"48K","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"1.0x","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"1.0x","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"1.11x","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"128K","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"1.0x","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"1.0x","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"1.13x","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"+3E","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"1.0x","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"1.0x","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"1.13x","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Next","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"1.0x","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"1.0x","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"1.06x","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"ZX81","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"1.1x","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"1.0x","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"1.30x","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$L57"]}]]}]
+44:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Other cases improved as much. A conditional breakpoint whose condition is never true, on the\nhottest instruction of a test loop, cost 1.64x on the 48K and costs 1.07x now. A Step Over of a call to\na Klive BASIC SUB that loops 2,000 times takes about 4.0 ms in the core, against 15.6 ms instruction by\ninstruction."}]
+45:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The Z88 is the exception, and the reason is simple arithmetic. The host rebuilds and copies the stop\ntable on every entry, which takes about 10 µs. A Z88 frame is only 0.04 ms of emulation, so the copy\nshows. In real time it is 0.2% of the Z88’s 5 ms frame."}]
+46:["$","h2",null,{"id":"proving-the-stops-are-the-same","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Proving the stops are the same",["$","$L21",null,{"id":"proving-the-stops-are-the-same"}]]}]
+47:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A faster debugger that stops one instruction late is worse than a slow one. So every move of a\ndecision into the core is guarded by an ",["$","strong",null,{"children":"equivalence test"}],": ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"test/wasm/debug-loop-equivalence.test.ts"}],"."]}]
+48:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The test runs the same program with the same breakpoints twice on each core, once in the core and\nonce instruction by instruction. A test seam, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"wasmDebugLoopOptions.inCore = false"}],", forces the\nsecond path. Every stop must match: the PC, the registers, the T-state counter, and the last decision\npoint (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"lastDecisionPc"}],"). The scenarios cover continues, step-overs and step-outs, conditional\nbreakpoints, hit-count rules, and memory-read, memory-write and port-read breakpoints."]}]
+49:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The test also has to fail when it should. Disabling the core’s path (making the core ignore the stop\ntable or the conditions) makes it fail on every core. A second test, for source-level stepping, runs a\n22-step script of step into, step over and step out through SUBs, FUNCTIONs, recursion and a loop,\nand requires identical stops both ways."}]
+4a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"These tests caught real bugs while the loop was built:"}]
+4b:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["The access-breakpoint report named the wrong instruction. The instruction-by-instruction loop set\nthe last decision point before every instruction, and the in-core run did not, so a memory stop\nnamed the instruction where the run started. Now the host reads where the last instruction started\n(",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"<prefix>GetDebugOpStart"}],") after every in-core run."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"That same value was written only by debug runs, yet it was part of the machine’s saved state. Every\nreverse-debugging test that compares a replay with a debug run failed: 51 tests. It is volatile now."}],"\n"]}]
+4c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The second bug is a rule of its own: ",["$","strong",null,{"children":"anything a debug run writes in a core and a fast frame does not\nmust be volatile"}],", or replays stop matching the runs they replay."]}]
+4d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A third guard is about speed. ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"test/wasm/debug-loop-budgets.perf.test.ts"}]," (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"npm run test:perf"}],")\nmeasures a debug session, a project start, access breakpoints and a never-true condition against a\nplain Run on each core, and fails if one exceeds its budget."]}]
+4e:["$","h2",null,{"id":"adding-a-new-kind-of-stop","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Adding a new kind of stop",["$","$L21",null,{"id":"adding-a-new-kind-of-stop"}]]}]
+4f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The rule tells a contributor what to do:"}]
+50:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["Decide whether the core can reproduce the TypeScript decision ",["$","strong",null,{"children":"exactly"}],". If it can only find the\nplaces where the answer might be “stop”, mark those places as candidates and let TypeScript decide."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"If the core does decide itself, as it does for false conditions, keep everything with an effect in\nTypeScript: hit counters, logpoints and the reverse-debugging hit log."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Extend the equivalence test, and check that it fails with your core path disabled."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Measure with ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"npm run benchmark:debug-host-loop"}]," and keep ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"npm run test:perf"}]," green."]}],"\n"]}]
+51:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The full contract is in ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"src/emu/z80/wasm/README.md"}],". The shared host loop is ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"runWasmDebugLoop"}]," in\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"src/emu/machines/wasmDebugLoop.ts"}],"."]}]
+53:null
+9:C
+57:["$","tr",null,{"children":[["$","td",null,{"children":"Z88","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"1.3x","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"1.2x","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"1.54x","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

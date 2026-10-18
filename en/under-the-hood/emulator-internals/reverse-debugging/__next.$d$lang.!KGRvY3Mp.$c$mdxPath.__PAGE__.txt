@@ -1,0 +1,245 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-ec4827f49d7f8d42.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T2731,---
+description: "How Klive's reverse debugging works: keyframes of the whole machine, a journal of every input that replays and checks itself, how Step Back and Reverse Continue put the machine itself in the past, and what Take over here does to the future."
+---
+
+import { Callout } from 'nextra/components'
+
+# How Reverse Debugging Works
+
+With reverse debugging, **Step Back** does not just show you the registers of an earlier moment. It
+puts the **whole machine** back there: memory, every device, the screen. Every panel shows that
+moment because the machine *is* at that moment. You can step forward again, continue from the past,
+or make the past your new present.
+
+[Reverse Debugging](/en/guides/debugging/reverse-debugging/) explains how to use it. This article
+explains how it is built. It works on every Klive machine that runs on a WebAssembly core: the 48K,
+128K, Pentagon, Scorpion, +2A/+3/+2E/+3E, Timex, Next, Z88, ZX81 and ZX80.
+
+## Replay, not undo
+
+Klive does not keep an **undo log** of state changes. It would have to record the changes of every
+device (about 20 on the Next), and every change to a device would risk breaking it.
+
+Klive uses the technique of record-and-replay debuggers such as rr, adapted to an emulator:
+
+1. **Keyframes.** While you debug, Klive saves the complete machine state every so often.
+2. **An input journal.** It records everything the host feeds into the machine, stamped with the
+   exact point in the instruction stream where it arrived.
+3. **Replay.** To reach an earlier point, it restores the nearest keyframe before it, runs forward
+   with the journal supplying the inputs, and stops exactly at the point.
+
+This works because the whole emulated machine is deterministic data. No C core reads the host's time or a random number while it runs. Given the same
+state and the same inputs, a core does exactly the same thing again.
+
+## Keyframes
+
+A keyframe is a copy of the core's linear memory, which holds the entire machine (see
+[How the emulator cores are built](/en/under-the-hood/emulator-internals/wasm-cores/)). An image is
+about 2,000 pages of 4 KiB: 2,014 on the 48K, 1,852 on the Next.
+
+Most of an image does not change between keyframes, so each keyframe is a table of page references
+into a shared pool. A page equal to the same page of the
+previous keyframe is stored as a reference to it. Pages are immutable and reference-counted, so
+dropping an old keyframe only drops references. Capturing a keyframe compares every page with its
+predecessor and takes 1.2 to 1.6 ms.
+
+Keyframes are taken at frame boundaries. The interval is set by **replay cost**. Klive takes a
+keyframe once the frames since the last one would take about **100 ms** to replay, within 5 to 50
+frames. That is 50 frames on the 48K and 13 on the Next at 28 MHz, whose frames run eight times as
+many cycles. The cost is measured: at the second keyframe, and then at every 64th, Klive replays the
+interval that just ended and times it.
+
+The keyframes live within a memory budget: by default the smaller of 512 MB and 1/16 of physical
+memory, adjustable from 64 MB to 2 GB. When the pool is full, the oldest keyframes go, and the start
+of the timeline moves forward. In 10-minute test sessions, the 48K kept the whole 10 minutes in 30 to
+81 MB. The worst case measured, a Next program that rewrites Layer 2 every frame at 28 MHz, filled
+512 MB and still kept 149 seconds.
+
+## The input journal
+
+The journal sits at the **core's export boundary**. Every call from TypeScript into a core export that
+*changes* machine state goes through a journaling wrapper, stamped with the current position. That
+covers key presses, joysticks, the mouse, tape controls and uploads, memory and register edits,
+NextReg writes, SD card responses, the Z88's cards and flap, and the clock multiplier. Direct writes
+into core memory, such as a tape upload or SD sector data, go through a journaled helper too.
+
+The hard part is making sure nothing slips past. Klive keeps a **contract** that classifies every
+export of every core: *pure* (it only reads), *debug* (it changes only volatile statics),
+*execution*, or *journaled*. That is 1,707 function exports across seven cores. A test fails on an
+export with no class. It also calls every pure and debug export on a running machine and requires the
+memory image to be unchanged, so a misclassified export cannot hide either. Its first run found eight
+exports that looked like getters but changed state.
+
+The journal records **effects, not host events**. The emulated-keystroke queue, for example, lives in
+TypeScript, outside the image. During replay it is muted, and the journal supplies its effects.
+
+## Positions
+
+To stop "exactly at the point", Klive needs a way to name a point. It uses the execution-history
+recorder's sequence number, which counts every instruction-boundary event on every core, plus two
+small numbers:
+
+| Part | What it counts |
+|---|---|
+| sequence | The recorder's record number |
+| sub | Units already merged into a coalesced record: HALT cycles, Next DMA hold T-states, ZX81 forced NOP fetches |
+| phase | How far into a prefixed instruction the CPU is: 0 at a boundary, 1 after `CB`/`ED`/`DD`/`FD`, 2 after `DD CB`/`FD CB` |
+
+The phase is needed because a frame can end, and a debugger step can stop, between the cycles of one
+instruction, for example inside `ED 78`.
+
+Stopping at a position happens in C. The recorder holds a **target**. Every core's frame loop calls
+`z80HistoryStopNow()` after each CPU cycle, which marks the target reached and makes the loop return.
+Replay can therefore run at full speed in fast frames and still stop on the exact cycle. A fast frame
+also continues a frame in progress instead of starting a new one, so a stop in the middle of a frame
+leaves nothing to undo.
+
+## Replay checks itself
+
+Every replay is verified in two ways:
+
+- **Against the history ring.** While the ring still holds the record for the position being replayed,
+  the recorder compares the record it is about to write with the one in its slot (PC, SP and AF).
+- **Against keyframes.** When a replay passes a later keyframe's position, the live image's page
+  hashes must equal that keyframe's.
+
+A mismatch stops the replay with "Replay diverged", and the timeline ends there. A desync is
+treated as a bug that needs a test, never as a user error.
+
+The journal-replay determinism test, which feeds each machine its own inputs and replays them,
+passed 660 runs over 30 random seeds across eleven machines.
+
+## Going back
+
+**Step Back** restores the nearest keyframe and replays to one instruction before the current
+position. The other backward commands (Reverse Step Over, Reverse Step Out, selecting a row of the
+Execution History) work the same way and differ only in how they pick the target.
+
+Repeated step backs reuse work. Each navigation replay drops **transient keyframes** every 2,000
+records over the last 20,000 before the target. So the next Step Back replays at most 2,000
+records. In the 10-minute sessions, a Step Back to a random point took at most 103 ms at the 90th
+percentile, and a repeated one under 1 ms.
+
+### Reverse Continue
+
+**Reverse Continue** finds the last point before the current one where a breakpoint would have
+stopped. It replays the keyframe interval that contains the current position, with breakpoints in
+**collect** mode: every hit is noted, nothing stops. It takes the last hit before the current
+position. If there is none, it moves one interval back. Then it replays to that hit.
+
+Because the search runs the real machine, every breakpoint kind works, including conditions that read
+memory, I/O breakpoints, and the Next's NextReg and Copper breakpoints. A memory-write breakpoint
+becomes a **reverse watchpoint**: "go back to the last write to `$9500`".
+
+Hit counts are part of the timeline: each keyframe stores the counters, and the live run logs every
+counted hit with its position.
+
+## Continuing from the past
+
+Continue, Step Into, Step Over and Run-to all work in the past. They start a **replay run**: the
+machine runs with breakpoints active, the journal supplies the inputs, and live input is ignored. The
+status bar shows "Replaying" and the distance to the present. When the run reaches the end of the
+journal, it switches to live without a seam.
+
+Host side effects are suppressed while the machine replays: tape saves, disk write-back, logpoint
+output, the Z88's serial output, audio and screen updates. Key presses during a replay never change
+the future, because keys reach the emulator panel by accident too easily. They are ignored, and the
+status bar says so.
+
+## Take over here
+
+**Take over here** makes the point you stand at your new present. It discards the future: the journal
+entries, keyframes and history records after this point. Live input then resumes from there. Editing
+a register, memory or a variable in the past asks first, then forks the same way.
+
+Some of the discarded future has already reached the host, so a fork cleans up after it:
+
+- **The Next's SD card.** Before each sector write in a timeline, the old sector is read and logged.
+  On a fork, the discarded future's writes are reverted, newest first. A test checks that the host's
+  card image then equals, byte for byte, the image at the fork point.
+- **Disk images.** The +3's `.dsk` and the Beta 128's `.trd` are re-published from the restored
+  in-core image.
+- **Tape files** written by `SAVE` cannot be unwritten. The confirmation lists them.
+
+<Callout type="info">
+The end-to-end test runs on a real 48K through the real machine controller. After 1,300 forward steps,
+each logged with a hash of the whole machine, it takes 1,000 Step Backs. Every one lands on a logged
+position with an equal hash.
+</Callout>
+
+## Where to read more
+
+The code lives in `src/emu/machines/reverse/`: `Timeline.ts`, `KeyframeStore.ts`,
+`InputJournal.ts`, `JournalingExports.ts`, `exportContract.ts`, `ReplayEngine.ts` and `SdUndoLog.ts`.
+The C side is the shared history recorder, `src/emu/z80/wasm/z80-history.c`.a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Replay, not undo","id":"replay-not-undo","depth":2},{"value":"Keyframes","id":"keyframes","depth":2},{"value":"The input journal","id":"the-input-journal","depth":2},{"value":"Positions","id":"positions","depth":2},{"value":"Replay checks itself","id":"replay-checks-itself","depth":2},{"value":"Going back","id":"going-back","depth":2},{"value":"Reverse Continue","id":"reverse-continue","depth":3},{"value":"Continuing from the past","id":"continuing-from-the-past","depth":2},{"value":"Take over here","id":"take-over-here","depth":2},{"value":"Where to read more","id":"where-to-read-more","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"How Klive's reverse debugging works: keyframes of the whole machine, a journal of every input that replays and checks itself, how Step Back and Reverse Continue put the machine itself in the past, and what Take over here does to the future.","title":"How Reverse Debugging Works","filePath":"content/en/under-the-hood/emulator-internals/reverse-debugging.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"under-the-hood/emulator-internals/reverse-debugging","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"How Reverse Debugging Works - Klive IDE"}],["$","meta","1",{"name":"description","content":"How Klive's reverse debugging works: keyframes of the whole machine, a journal of every input that replays and checks itself, how Step Back and Reverse Continue put the machine itself in the past, and what Take over here does to the future."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/under-the-hood/emulator-internals/reverse-debugging/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"bnP8CSh_BnoTR_ngaC9us"}
+20:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+21:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+44:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["How Reverse Debugging Works","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["With reverse debugging, ",["$","strong",null,{"children":"Step Back"}]," does not just show you the registers of an earlier moment. It\nputs the ",["$","strong",null,{"children":"whole machine"}]," back there: memory, every device, the screen. Every panel shows that\nmoment because the machine ",["$","em",null,{"children":"is"}]," at that moment. You can step forward again, continue from the past,\nor make the past your new present."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","$L20",null,{"href":"/en/guides/debugging/reverse-debugging/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Reverse Debugging"}]," explains how to use it. This article\nexplains how it is built. It works on every Klive machine that runs on a WebAssembly core: the 48K,\n128K, Pentagon, Scorpion, +2A/+3/+2E/+3E, Timex, Next, Z88, ZX81 and ZX80."]}],"\n",["$","h2",null,{"id":"replay-not-undo","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Replay, not undo",["$","$L21",null,{"id":"replay-not-undo"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Klive does not keep an ",["$","strong",null,{"children":"undo log"}]," of state changes. It would have to record the changes of every\ndevice (about 20 on the Next), and every change to a device would risk breaking it."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Klive uses the technique of record-and-replay debuggers such as rr, adapted to an emulator:"}],"\n",["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Keyframes."}]," While you debug, Klive saves the complete machine state every so often."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"An input journal."}]," It records everything the host feeds into the machine, stamped with the\nexact point in the instruction stream where it arrived."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Replay."}]," To reach an earlier point, it restores the nearest keyframe before it, runs forward\nwith the journal supplying the inputs, and stops exactly at the point."]}],"\n"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This works because the whole emulated machine is deterministic data. No C core reads the host’s time or a random number while it runs. Given the same\nstate and the same inputs, a core does exactly the same thing again."}],"\n",["$","h2",null,{"id":"keyframes","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Keyframes",["$","$L21",null,{"id":"keyframes"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A keyframe is a copy of the core’s linear memory, which holds the entire machine (see\n",["$","$L20",null,{"href":"/en/under-the-hood/emulator-internals/wasm-cores/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"How the emulator cores are built"}],"). An image is\nabout 2,000 pages of 4 KiB: 2,014 on the 48K, 1,852 on the Next."]}],"\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43"]]}]
+15:["$","$L44",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@45"}]}]
+1f:true
+9:300
+22:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Most of an image does not change between keyframes, so each keyframe is a table of page references\ninto a shared pool. A page equal to the same page of the\nprevious keyframe is stored as a reference to it. Pages are immutable and reference-counted, so\ndropping an old keyframe only drops references. Capturing a keyframe compares every page with its\npredecessor and takes 1.2 to 1.6 ms."}]
+23:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Keyframes are taken at frame boundaries. The interval is set by ",["$","strong",null,{"children":"replay cost"}],". Klive takes a\nkeyframe once the frames since the last one would take about ",["$","strong",null,{"children":"100 ms"}]," to replay, within 5 to 50\nframes. That is 50 frames on the 48K and 13 on the Next at 28 MHz, whose frames run eight times as\nmany cycles. The cost is measured: at the second keyframe, and then at every 64th, Klive replays the\ninterval that just ended and times it."]}]
+24:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The keyframes live within a memory budget: by default the smaller of 512 MB and 1/16 of physical\nmemory, adjustable from 64 MB to 2 GB. When the pool is full, the oldest keyframes go, and the start\nof the timeline moves forward. In 10-minute test sessions, the 48K kept the whole 10 minutes in 30 to\n81 MB. The worst case measured, a Next program that rewrites Layer 2 every frame at 28 MHz, filled\n512 MB and still kept 149 seconds."}]
+25:["$","h2",null,{"id":"the-input-journal","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The input journal",["$","$L21",null,{"id":"the-input-journal"}]]}]
+26:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The journal sits at the ",["$","strong",null,{"children":"core’s export boundary"}],". Every call from TypeScript into a core export that\n",["$","em",null,{"children":"changes"}]," machine state goes through a journaling wrapper, stamped with the current position. That\ncovers key presses, joysticks, the mouse, tape controls and uploads, memory and register edits,\nNextReg writes, SD card responses, the Z88’s cards and flap, and the clock multiplier. Direct writes\ninto core memory, such as a tape upload or SD sector data, go through a journaled helper too."]}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The hard part is making sure nothing slips past. Klive keeps a ",["$","strong",null,{"children":"contract"}]," that classifies every\nexport of every core: ",["$","em",null,{"children":"pure"}]," (it only reads), ",["$","em",null,{"children":"debug"}]," (it changes only volatile statics),\n",["$","em",null,{"children":"execution"}],", or ",["$","em",null,{"children":"journaled"}],". That is 1,707 function exports across seven cores. A test fails on an\nexport with no class. It also calls every pure and debug export on a running machine and requires the\nmemory image to be unchanged, so a misclassified export cannot hide either. Its first run found eight\nexports that looked like getters but changed state."]}]
+28:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The journal records ",["$","strong",null,{"children":"effects, not host events"}],". The emulated-keystroke queue, for example, lives in\nTypeScript, outside the image. During replay it is muted, and the journal supplies its effects."]}]
+29:["$","h2",null,{"id":"positions","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Positions",["$","$L21",null,{"id":"positions"}]]}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"To stop “exactly at the point”, Klive needs a way to name a point. It uses the execution-history\nrecorder’s sequence number, which counts every instruction-boundary event on every core, plus two\nsmall numbers:"}]
+2b:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Part","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"What it counts","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"sequence","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The recorder’s record number","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"sub","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Units already merged into a coalesced record: HALT cycles, Next DMA hold T-states, ZX81 forced NOP fetches","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"phase","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["How far into a prefixed instruction the CPU is: 0 at a boundary, 1 after ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"CB"}],"/",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ED"}],"/",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"DD"}],"/",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"FD"}],", 2 after ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"DD CB"}],"/",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"FD CB"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}]
+2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The phase is needed because a frame can end, and a debugger step can stop, between the cycles of one\ninstruction, for example inside ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ED 78"}],"."]}]
+2d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Stopping at a position happens in C. The recorder holds a ",["$","strong",null,{"children":"target"}],". Every core’s frame loop calls\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"z80HistoryStopNow()"}]," after each CPU cycle, which marks the target reached and makes the loop return.\nReplay can therefore run at full speed in fast frames and still stop on the exact cycle. A fast frame\nalso continues a frame in progress instead of starting a new one, so a stop in the middle of a frame\nleaves nothing to undo."]}]
+2e:["$","h2",null,{"id":"replay-checks-itself","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Replay checks itself",["$","$L21",null,{"id":"replay-checks-itself"}]]}]
+2f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Every replay is verified in two ways:"}]
+30:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Against the history ring."}]," While the ring still holds the record for the position being replayed,\nthe recorder compares the record it is about to write with the one in its slot (PC, SP and AF)."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Against keyframes."}]," When a replay passes a later keyframe’s position, the live image’s page\nhashes must equal that keyframe’s."]}],"\n"]}]
+31:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A mismatch stops the replay with “Replay diverged”, and the timeline ends there. A desync is\ntreated as a bug that needs a test, never as a user error."}]
+32:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The journal-replay determinism test, which feeds each machine its own inputs and replays them,\npassed 660 runs over 30 random seeds across eleven machines."}]
+33:["$","h2",null,{"id":"going-back","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Going back",["$","$L21",null,{"id":"going-back"}]]}]
+34:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Step Back"}]," restores the nearest keyframe and replays to one instruction before the current\nposition. The other backward commands (Reverse Step Over, Reverse Step Out, selecting a row of the\nExecution History) work the same way and differ only in how they pick the target."]}]
+35:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Repeated step backs reuse work. Each navigation replay drops ",["$","strong",null,{"children":"transient keyframes"}]," every 2,000\nrecords over the last 20,000 before the target. So the next Step Back replays at most 2,000\nrecords. In the 10-minute sessions, a Step Back to a random point took at most 103 ms at the 90th\npercentile, and a repeated one under 1 ms."]}]
+36:["$","h3",null,{"id":"reverse-continue","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Reverse Continue",["$","$L21",null,{"id":"reverse-continue"}]]}]
+37:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Reverse Continue"}]," finds the last point before the current one where a breakpoint would have\nstopped. It replays the keyframe interval that contains the current position, with breakpoints in\n",["$","strong",null,{"children":"collect"}]," mode: every hit is noted, nothing stops. It takes the last hit before the current\nposition. If there is none, it moves one interval back. Then it replays to that hit."]}]
+38:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Because the search runs the real machine, every breakpoint kind works, including conditions that read\nmemory, I/O breakpoints, and the Next’s NextReg and Copper breakpoints. A memory-write breakpoint\nbecomes a ",["$","strong",null,{"children":"reverse watchpoint"}],": “go back to the last write to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$9500"}],"”."]}]
+39:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Hit counts are part of the timeline: each keyframe stores the counters, and the live run logs every\ncounted hit with its position."}]
+3a:["$","h2",null,{"id":"continuing-from-the-past","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Continuing from the past",["$","$L21",null,{"id":"continuing-from-the-past"}]]}]
+3b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Continue, Step Into, Step Over and Run-to all work in the past. They start a ",["$","strong",null,{"children":"replay run"}],": the\nmachine runs with breakpoints active, the journal supplies the inputs, and live input is ignored. The\nstatus bar shows “Replaying” and the distance to the present. When the run reaches the end of the\njournal, it switches to live without a seam."]}]
+3c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Host side effects are suppressed while the machine replays: tape saves, disk write-back, logpoint\noutput, the Z88’s serial output, audio and screen updates. Key presses during a replay never change\nthe future, because keys reach the emulator panel by accident too easily. They are ignored, and the\nstatus bar says so."}]
+3d:["$","h2",null,{"id":"take-over-here","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Take over here",["$","$L21",null,{"id":"take-over-here"}]]}]
+3e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Take over here"}]," makes the point you stand at your new present. It discards the future: the journal\nentries, keyframes and history records after this point. Live input then resumes from there. Editing\na register, memory or a variable in the past asks first, then forks the same way."]}]
+3f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Some of the discarded future has already reached the host, so a fork cleans up after it:"}]
+40:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"The Next’s SD card."}]," Before each sector write in a timeline, the old sector is read and logged.\nOn a fork, the discarded future’s writes are reverted, newest first. A test checks that the host’s\ncard image then equals, byte for byte, the image at the fork point."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Disk images."}]," The +3’s ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".dsk"}]," and the Beta 128’s ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".trd"}]," are re-published from the restored\nin-core image."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Tape files"}]," written by ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"SAVE"}]," cannot be unwritten. The confirmation lists them."]}],"\n"]}]
+41:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The end-to-end test runs on a real 48K through the real machine controller. After 1,300 forward steps,\neach logged with a hash of the whole machine, it takes 1,000 Step Backs. Every one lands on a logged\nposition with an equal hash."}]}]]}]
+42:["$","h2",null,{"id":"where-to-read-more","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Where to read more",["$","$L21",null,{"id":"where-to-read-more"}]]}]
+43:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The code lives in ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"src/emu/machines/reverse/"}],": ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Timeline.ts"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"KeyframeStore.ts"}],",\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"InputJournal.ts"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"JournalingExports.ts"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"exportContract.ts"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ReplayEngine.ts"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"SdUndoLog.ts"}],".\nThe C side is the shared history recorder, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"src/emu/z80/wasm/z80-history.c"}],"."]}]
+45:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

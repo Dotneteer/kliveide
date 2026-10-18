@@ -1,0 +1,82 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-ec4827f49d7f8d42.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:Ta71,---
+description: "The Copper is a tiny, two-instruction co-processor that does one thing: it writes NextRegs at exact raster positions, perfectly synchronised to the video beam, with..."
+---
+
+import { Callout } from 'nextra/components'
+
+# The Copper: Graphics Co-Processor
+
+<Callout type="warning" emoji="🚧">
+This chapter is a placeholder. The full text is being written.
+</Callout>
+
+## Synopsis
+
+The Copper is a tiny, two-instruction co-processor that does one thing: it writes NextRegs at exact raster positions, perfectly synchronised to the video beam, with no CPU involvement. That sounds modest until you realise what it unlocks — per-scanline palette swaps, mid-frame layer reconfiguration, gradient skies, parallax via per-line scroll, and effects that are simply impossible to do reliably from the Z80 because the line interrupt's jitter is too coarse.
+
+Why this chapter sits where it does in the book: the Copper has nothing interesting to do until you already know which NextRegs are worth retiming. We placed it after every "single-layer" video chapter so each example can demonstrate something visually striking instead of an abstract toggle.
+
+Topics:
+
+- **The Copper instruction set.** Two instructions, both 16 bits.
+  - `MOVE`: write `value` to NextReg `nr` immediately.
+  - `WAIT`: pause the Copper until raster reaches `(line, h-position)`.
+- **Copper memory.** 2 KB (1024 instructions max), accessed via NextReg `$60` (data) with auto-incrementing index in `$61`/`$62`.
+- **Run modes.** `$62` bits 7-6: stopped, run-once-then-stop, run-once-and-restart-at-V-blank, run-and-restart-at-(0,0).
+- **Synchronisation.** How the Copper relates to the line interrupt (and why the Copper is more precise: the Copper waits for an *exact* H-position, the line interrupt fires at the start of the line ± Z80 latency).
+- **Limits.** No conditionals, no jumps, no arithmetic. It's a list of timed register writes. Anything more complex needs cooperation with a Z80 ISR.
+
+## What you should know first
+
+- [Interrupts](./04-interrupts.mdx) — for the comparison.
+- [Palettes](./09-palettes.mdx), [Layer 2](./11-layer2.mdx), [Tilemap](./12-tilemap.mdx), [Sprites](./13-sprites.mdx) — to know what's worth retiming.
+
+## Planned exercises
+
+- **Sky gradient.** A 192-instruction Copper program that writes a different palette colour to entry 0 on every Layer 2 scanline — instant gradient sky.
+- **Mid-screen mode swap.** Top half of the screen uses ULA, bottom half uses LoRes, switched by a Copper `MOVE` at line 96.
+- **Parallax floor.** Per-scanline X-scroll values for the tilemap, producing a perspective floor effect that no Z80 routine could keep up with.a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Synopsis","id":"synopsis","depth":2},{"value":"What you should know first","id":"what-you-should-know-first","depth":2},{"value":"Planned exercises","id":"planned-exercises","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"The Copper is a tiny, two-instruction co-processor that does one thing: it writes NextRegs at exact raster positions, perfectly synchronised to the video beam, with...","title":"The Copper: Graphics Co-Processor","filePath":"content/en/book/14-copper.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"book/14-copper","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"The Copper: Graphics Co-Processor - Klive IDE"}],["$","meta","1",{"name":"description","content":"The Copper is a tiny, two-instruction co-processor that does one thing: it writes NextRegs at exact raster positions, perfectly synchronised to the video beam, with..."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/book/14-copper/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"bnP8CSh_BnoTR_ngaC9us"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+28:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["The Copper: Graphics Co-Processor","$undefined"]}],"\n",["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-yellow-50 x:dark:bg-yellow-700/30 x:text-yellow-700 x:dark:text-yellow-500 x:border-yellow-700","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":"🚧"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This chapter is a placeholder. The full text is being written."}]}]]}],"\n",["$","h2",null,{"id":"synopsis","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Synopsis",["$","$L20",null,{"id":"synopsis"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The Copper is a tiny, two-instruction co-processor that does one thing: it writes NextRegs at exact raster positions, perfectly synchronised to the video beam, with no CPU involvement. That sounds modest until you realise what it unlocks — per-scanline palette swaps, mid-frame layer reconfiguration, gradient skies, parallax via per-line scroll, and effects that are simply impossible to do reliably from the Z80 because the line interrupt’s jitter is too coarse."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Why this chapter sits where it does in the book: the Copper has nothing interesting to do until you already know which NextRegs are worth retiming. We placed it after every “single-layer” video chapter so each example can demonstrate something visually striking instead of an abstract toggle."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Topics:"}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"The Copper instruction set."}]," Two instructions, both 16 bits.","\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"MOVE"}],": write ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"value"}]," to NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"nr"}]," immediately."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"WAIT"}],": pause the Copper until raster reaches ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"(line, h-position)"}],"."]}],"\n"]}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Copper memory."}]," 2 KB (1024 instructions max), accessed via NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$60"}]," (data) with auto-incrementing index in ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$61"}],"/",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$62"}],"."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Run modes."}]," ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$62"}]," bits 7-6: stopped, run-once-then-stop, run-once-and-restart-at-V-blank, run-and-restart-at-(0,0)."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$L21"," How the Copper relates to the line interrupt (and why the Copper is more precise: the Copper waits for an ","$L22"," H-position, the line interrupt fires at the start of the line ± Z80 latency)."]}],"\n","$L23","\n"]}],"\n","$L24","\n","$L25","\n","$L26","\n","$L27"]]}]
+15:["$","$L28",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@29"}]}]
+1f:true
+2a:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+9:300
+21:["$","strong",null,{"children":"Synchronisation."}]
+22:["$","em",null,{"children":"exact"}]
+23:["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Limits."}]," No conditionals, no jumps, no arithmetic. It’s a list of timed register writes. Anything more complex needs cooperation with a Z80 ISR."]}]
+24:["$","h2",null,{"id":"what-you-should-know-first","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["What you should know first",["$","$L20",null,{"id":"what-you-should-know-first"}]]}]
+25:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","$L2a",null,{"href":"./04-interrupts","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Interrupts"}]," — for the comparison."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","$L2a",null,{"href":"./09-palettes","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Palettes"}],", ",["$","$L2a",null,{"href":"./11-layer2","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Layer 2"}],", ",["$","$L2a",null,{"href":"./12-tilemap","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Tilemap"}],", ",["$","$L2a",null,{"href":"./13-sprites","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Sprites"}]," — to know what’s worth retiming."]}],"\n"]}]
+26:["$","h2",null,{"id":"planned-exercises","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Planned exercises",["$","$L20",null,{"id":"planned-exercises"}]]}]
+27:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Sky gradient."}]," A 192-instruction Copper program that writes a different palette colour to entry 0 on every Layer 2 scanline — instant gradient sky."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Mid-screen mode swap."}]," Top half of the screen uses ULA, bottom half uses LoRes, switched by a Copper ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"MOVE"}]," at line 96."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Parallax floor."}]," Per-scanline X-scroll values for the tilemap, producing a perspective floor effect that no Z80 routine could keep up with."]}],"\n"]}]
+29:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

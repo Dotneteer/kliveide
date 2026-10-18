@@ -1,7 +1,0 @@
-:HL["/_next/static/css/11c59cc40cabfed8.css","style"]
-:HL["/_next/static/css/75ed199ed4213428.css","style"]
-:HL["/images/klive-logo.svg","image"]
-3:[["children",{"s":"__PAGE__","h":160}]]
-2:[["children",{"s":{"n":"mdxPath","t":"c","k":"book/app-B-nextreg-reference","s":["_not-found","_global-error"]},"h":64,"c":"$Q3"}]]
-1:[["children",{"s":"(docs)","h":48,"c":"$Q2"}]]
-0:{"b":"3Dyzz-7u5fdSVpwa6CycA","t":{"t":{"s":"","h":80,"c":"$Q1"}}}

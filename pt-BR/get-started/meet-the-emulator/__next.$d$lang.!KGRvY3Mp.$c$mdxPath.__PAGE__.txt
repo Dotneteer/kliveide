@@ -1,0 +1,148 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-ec4827f49d7f8d42.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T10b5,---
+description: "Inicie um ZX Spectrum emulado, digite e execute um programa em BASIC nele e escolha outra máquina."
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# Conheça o emulador
+
+Quando o Klive é iniciado, ele mostra a janela do emulador com uma máquina desligada. Esta página mostra como ligá-la, digitar um programa e escolher outra máquina.
+
+<Shot
+  src="get-started/emulator-off.webp"
+  alt="A janela do emulador com uma máquina desligada"
+  figure="2.1"
+  caption="O emulador, antes de a máquina iniciar"
+  markers={["toolbar", "screen"]}
+  width={620}
+/>
+
+1. A barra de ferramentas inicia, pausa, para e reinicia a máquina. O primeiro botão, o triângulo verde, é **Executar máquina**.
+2. A tela. Até você iniciar a máquina, ela mostra uma dica de como fazer isso.
+
+## Inicie a máquina
+
+Pressione <kbd>F5</kbd>, clique em **Executar máquina** na barra de ferramentas ou escolha **Máquina › Iniciar**. Depois de um instante, o ZX Spectrum mostra a sua mensagem de copyright, exatamente como o computador de verdade fazia em 1982.
+
+<Shot
+  src="get-started/emulator-running.webp"
+  alt="O ZX Spectrum 48K mostrando a sua mensagem de copyright"
+  figure="2.2"
+  caption="O ZX Spectrum 48K foi iniciado"
+  width={620}
+/>
+
+## Digite um programa em BASIC
+
+Clique na tela do emulador para que ela receba o que você digita. O ZX Spectrum 48K insere as **palavras-chave** do BASIC com uma única tecla: no início de uma linha, o cursor mostra **K**, e pressionar <kbd>P</kbd> digita a palavra inteira `PRINT`.
+
+<Steps>
+
+### Digite a linha
+
+Digite <kbd>1</kbd> <kbd>0</kbd> e depois <kbd>P</kbd> para `PRINT`. Para as aspas, segure **Symbol Shift** e pressione <kbd>P</kbd>. O Symbol Shift do Klive é a tecla **Alt da direita** (a tecla **Option** da direita no Mac). Digite `hello`, depois as aspas de fechamento do mesmo jeito, e pressione <kbd>Enter</kbd>.
+
+<Shot
+  src="get-started/emulator-basic-line.webp"
+  alt="A linha BASIC 10 PRINT &quot;hello&quot; na listagem do programa"
+  figure="2.3"
+  caption="A linha está no programa"
+  width={620}
+/>
+
+### Execute
+
+Pressione <kbd>R</kbd>, que digita `RUN`, e depois <kbd>Enter</kbd>. O programa imprime `hello` e informa `0 OK, 10:1`: ele terminou sem erro, na linha 10, comando 1.
+
+<Shot
+  src="get-started/emulator-hello.webp"
+  alt="O programa imprimiu hello"
+  figure="2.4"
+  caption="Seu primeiro programa foi executado"
+  width={620}
+/>
+
+</Steps>
+
+<Callout type="info" emoji="💡">
+Se for difícil lembrar as teclas das palavras-chave, mostre o **teclado virtual** com o botão de teclado na barra de ferramentas do emulador ou com **Exibir › Teclado virtual**. Ele mostra todas as palavras-chave, e você pode clicar nas teclas dele. Veja [O teclado](/en/guides/emulator/keyboard/).
+</Callout>
+
+## Controle a máquina
+
+| Para | Pressione | Barra de ferramentas |
+| --- | --- | --- |
+| Iniciar ou continuar | <kbd>F5</kbd> | **Executar máquina** (triângulo verde) |
+| Pausar | <kbd>Shift</kbd>+<kbd>F5</kbd> | **Pausar** |
+| Parar (desligar) | <kbd>F4</kbd> | **Parar** |
+| Reiniciar | <kbd>Shift</kbd>+<kbd>F4</kbd> | **Reiniciar** |
+
+Uma máquina parada não pode continuar, mas você ainda pode examinar a memória e os registradores dela no IDE.
+
+## Escolha outra máquina
+
+**Máquina › Tipo de máquina** lista as suas máquinas favoritas. **Selecionar máquina…** (<kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>M</kbd> no macOS, <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>M</kbd> no Windows e no Linux) abre uma caixa de diálogo com todos os modelos que o Klive emula. Você também pode clicar no nome da máquina na extremidade direita da barra de status do emulador.
+
+<Shot
+  src="get-started/select-machine.webp"
+  alt="A caixa de diálogo Selecionar máquina com o ZX Spectrum 48K selecionado"
+  figure="2.5"
+  caption="Todos os modelos, com os detalhes do hardware"
+  width={760}
+/>
+
+Digite na caixa de filtro para encontrar um modelo (por exemplo, `128K` ou `NTSC`), selecione-o para ver os detalhes e clique duas vezes nele para trocar de máquina. A estrela adiciona um modelo ao menu **Tipo de máquina**. [Tipos de máquina](/en/reference/machine-types/) lista todas as máquinas e modelos.
+
+Agora, [carregue um programa da fita](/pt-BR/get-started/load-from-tape/).a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Inicie a máquina","id":"inicie-a-máquina","depth":2},{"value":"Digite um programa em BASIC","id":"digite-um-programa-em-basic","depth":2},{"value":"Digite a linha","id":"digite-a-linha","depth":3},{"value":"Execute","id":"execute","depth":3},{"value":"Controle a máquina","id":"controle-a-máquina","depth":2},{"value":"Escolha outra máquina","id":"escolha-outra-máquina","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"Inicie um ZX Spectrum emulado, digite e execute um programa em BASIC nele e escolha outra máquina.","title":"Conheça o emulador","filePath":"content/pt-BR/get-started/meet-the-emulator.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"get-started/meet-the-emulator","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"pt-BR","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Conheça o emulador - Klive IDE"}],["$","meta","1",{"name":"description","content":"Inicie um ZX Spectrum emulado, digite e execute um programa em BASIC nele e escolha outra máquina."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/get-started/meet-the-emulator/"}],["$","link","3",{"rel":"alternate","hrefLang":"es","href":"/es/get-started/meet-the-emulator/"}],["$","link","4",{"rel":"alternate","hrefLang":"pt-BR","href":"/pt-BR/get-started/meet-the-emulator/"}],["$","link","5",{"rel":"alternate","hrefLang":"pt-PT","href":"/pt-PT/get-started/meet-the-emulator/"}],["$","link","6",{"rel":"alternate","hrefLang":"de","href":"/de/get-started/meet-the-emulator/"}],["$","link","7",{"rel":"alternate","hrefLang":"hu","href":"/hu/get-started/meet-the-emulator/"}],["$","meta","8",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","9",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","10",{"name":"twitter:card","content":"summary"}],["$","meta","11",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","12",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","13",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","14",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"bnP8CSh_BnoTR_ngaC9us"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+30:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Conheça o emulador","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Quando o Klive é iniciado, ele mostra a janela do emulador com uma máquina desligada. Esta página mostra como ligá-la, digitar um programa e escolher outra máquina."}],"\n",["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"620px"},"children":[["$","figcaption",null,{"className":"Shot_label__LxtzD","children":[["$","span",null,{"className":"Shot_number__1dPY0","children":["Fig. ","2.1"]}],["$","span",null,{"children":"O emulador, antes de a máquina iniciar"}]]}],["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/pt-BR/get-started/emulator-off.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/pt-BR/get-started/emulator-off.webp","alt":"A janela do emulador com uma máquina desligada","loading":"lazy","decoding":"async","width":1240,"height":952}],[["$","span","0",{"className":"Shot_marker___4iE_","style":{"left":"2.6%","top":"2.7%"},"aria-label":"1","children":1}],["$","span","1",{"className":"Shot_marker___4iE_","style":{"left":"50%","top":"48.5%"},"aria-label":"2","children":2}]]]}]]}],"\n",["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["A barra de ferramentas inicia, pausa, para e reinicia a máquina. O primeiro botão, o triângulo verde, é ",["$","strong",null,{"children":"Executar máquina"}],"."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"A tela. Até você iniciar a máquina, ela mostra uma dica de como fazer isso."}],"\n"]}],"\n",["$","h2",null,{"id":"inicie-a-máquina","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Inicie a máquina",["$","$L20",null,{"id":"inicie-a-máquina"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Pressione ",["$","kbd",null,{"children":"F5"}],", clique em ",["$","strong",null,{"children":"Executar máquina"}]," na barra de ferramentas ou escolha ",["$","strong",null,{"children":"Máquina › Iniciar"}],". Depois de um instante, o ZX Spectrum mostra a sua mensagem de copyright, exatamente como o computador de verdade fazia em 1982."]}],"\n",["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"620px"},"children":[["$","figcaption",null,{"className":"Shot_label__LxtzD","children":[["$","span",null,{"className":"Shot_number__1dPY0","children":["Fig. ","2.2"]}],["$","span",null,{"children":"O ZX Spectrum 48K foi iniciado"}]]}],["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/pt-BR/get-started/emulator-running.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/pt-BR/get-started/emulator-running.webp","alt":"O ZX Spectrum 48K mostrando a sua mensagem de copyright","loading":"lazy","decoding":"async"}],[]]}]]}],"\n",["$","h2",null,{"id":"digite-um-programa-em-basic","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Digite um programa em BASIC",["$","$L20",null,{"id":"digite-um-programa-em-basic"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Clique na tela do emulador para que ela receba o que você digita. O ZX Spectrum 48K insere as ",["$","strong",null,{"children":"palavras-chave"}]," do BASIC com uma única tecla: no início de uma linha, o cursor mostra ",["$","strong",null,{"children":"K"}],", e pressionar ",["$","kbd",null,{"children":"P"}]," digita a palavra inteira ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"PRINT"}],"."]}],"\n",["$","div",null,{"className":"nextra-steps x:ms-4 x:mb-12 x:border-s x:border-gray-200 x:ps-6 x:dark:border-neutral-800","style":{"--counter-id":"_S_1_"},"children":["$L21","$L22","$L23","$L24","$L25","$L26"]}],"\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f"]]}]
+15:["$","$L30",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@31"}]}]
+1f:true
+32:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+9:300
+21:["$","h3",null,{"id":"digite-a-linha","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Digite a linha",["$","$L20",null,{"id":"digite-a-linha"}]]}]
+22:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Digite ",["$","kbd",null,{"children":"1"}]," ",["$","kbd",null,{"children":"0"}]," e depois ",["$","kbd",null,{"children":"P"}]," para ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"PRINT"}],". Para as aspas, segure ",["$","strong",null,{"children":"Symbol Shift"}]," e pressione ",["$","kbd",null,{"children":"P"}],". O Symbol Shift do Klive é a tecla ",["$","strong",null,{"children":"Alt da direita"}]," (a tecla ",["$","strong",null,{"children":"Option"}]," da direita no Mac). Digite ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"hello"}],", depois as aspas de fechamento do mesmo jeito, e pressione ",["$","kbd",null,{"children":"Enter"}],"."]}]
+23:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"620px"},"children":[["$","figcaption",null,{"className":"Shot_label__LxtzD","children":[["$","span",null,{"className":"Shot_number__1dPY0","children":["Fig. ","2.3"]}],["$","span",null,{"children":"A linha está no programa"}]]}],["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/pt-BR/get-started/emulator-basic-line.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/pt-BR/get-started/emulator-basic-line.webp","alt":"A linha BASIC 10 PRINT \"hello\" na listagem do programa","loading":"lazy","decoding":"async"}],[]]}]]}]
+24:["$","h3",null,{"id":"execute","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Execute",["$","$L20",null,{"id":"execute"}]]}]
+25:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Pressione ",["$","kbd",null,{"children":"R"}],", que digita ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RUN"}],", e depois ",["$","kbd",null,{"children":"Enter"}],". O programa imprime ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"hello"}]," e informa ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0 OK, 10:1"}],": ele terminou sem erro, na linha 10, comando 1."]}]
+26:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"620px"},"children":[["$","figcaption",null,{"className":"Shot_label__LxtzD","children":[["$","span",null,{"className":"Shot_number__1dPY0","children":["Fig. ","2.4"]}],["$","span",null,{"children":"Seu primeiro programa foi executado"}]]}],["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/pt-BR/get-started/emulator-hello.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/pt-BR/get-started/emulator-hello.webp","alt":"O programa imprimiu hello","loading":"lazy","decoding":"async"}],[]]}]]}]
+27:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":"💡"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Se for difícil lembrar as teclas das palavras-chave, mostre o ",["$","strong",null,{"children":"teclado virtual"}]," com o botão de teclado na barra de ferramentas do emulador ou com ",["$","strong",null,{"children":"Exibir › Teclado virtual"}],". Ele mostra todas as palavras-chave, e você pode clicar nas teclas dele. Veja ",["$","$L32",null,{"href":"/en/guides/emulator/keyboard/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"O teclado"}],"."]}]}]]}]
+28:["$","h2",null,{"id":"controle-a-máquina","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Controle a máquina",["$","$L20",null,{"id":"controle-a-máquina"}]]}]
+29:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Para","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Pressione","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Barra de ferramentas","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"Iniciar ou continuar","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","kbd",null,{"children":"F5"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","strong",null,{"children":"Executar máquina"}]," (triângulo verde)"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Pausar","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","kbd",null,{"children":"Shift"}],"+",["$","kbd",null,{"children":"F5"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","strong",null,{"children":"Pausar"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Parar (desligar)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","kbd",null,{"children":"F4"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","strong",null,{"children":"Parar"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Reiniciar","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","kbd",null,{"children":"Shift"}],"+",["$","kbd",null,{"children":"F4"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","strong",null,{"children":"Reiniciar"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Uma máquina parada não pode continuar, mas você ainda pode examinar a memória e os registradores dela no IDE."}]
+2b:["$","h2",null,{"id":"escolha-outra-máquina","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Escolha outra máquina",["$","$L20",null,{"id":"escolha-outra-máquina"}]]}]
+2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Máquina › Tipo de máquina"}]," lista as suas máquinas favoritas. ",["$","strong",null,{"children":"Selecionar máquina…"}]," (",["$","kbd",null,{"children":"Cmd"}],"+",["$","kbd",null,{"children":"Shift"}],"+",["$","kbd",null,{"children":"M"}]," no macOS, ",["$","kbd",null,{"children":"Ctrl"}],"+",["$","kbd",null,{"children":"Shift"}],"+",["$","kbd",null,{"children":"M"}]," no Windows e no Linux) abre uma caixa de diálogo com todos os modelos que o Klive emula. Você também pode clicar no nome da máquina na extremidade direita da barra de status do emulador."]}]
+2d:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"760px"},"children":[["$","figcaption",null,{"className":"Shot_label__LxtzD","children":[["$","span",null,{"className":"Shot_number__1dPY0","children":["Fig. ","2.5"]}],["$","span",null,{"children":"Todos os modelos, com os detalhes do hardware"}]]}],["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/pt-BR/get-started/select-machine.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/pt-BR/get-started/select-machine.webp","alt":"A caixa de diálogo Selecionar máquina com o ZX Spectrum 48K selecionado","loading":"lazy","decoding":"async"}],[]]}]]}]
+2e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Digite na caixa de filtro para encontrar um modelo (por exemplo, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"128K"}]," ou ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"NTSC"}],"), selecione-o para ver os detalhes e clique duas vezes nele para trocar de máquina. A estrela adiciona um modelo ao menu ",["$","strong",null,{"children":"Tipo de máquina"}],". ",["$","$L32",null,{"href":"/en/reference/machine-types/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Tipos de máquina"}]," lista todas as máquinas e modelos."]}]
+2f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Agora, ",["$","$L32",null,{"href":"/pt-BR/get-started/load-from-tape/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"carregue um programa da fita"}],"."]}]
+31:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"

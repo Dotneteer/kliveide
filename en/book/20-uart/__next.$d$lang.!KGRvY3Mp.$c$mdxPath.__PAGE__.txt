@@ -1,0 +1,80 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-ec4827f49d7f8d42.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+1f:"ViewportBoundary"
+20:I[484,[],"$1f"]
+21:"MetadataBoundary"
+22:I[484,[],"$21"]
+23:"$Sreact.suspense"
+24:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T85d,---
+description: "The Next has a UART wired to an on-board socket where, on real hardware, an ESP-01 WiFi module lives."
+---
+
+import { Callout } from 'nextra/components'
+
+# The UART and the ESP WiFi Module
+
+<Callout type="warning" emoji="🚧">
+This chapter is a placeholder. The full text is being written.
+</Callout>
+
+## Synopsis
+
+The Next has a UART wired to an on-board socket where, on real hardware, an ESP-01 WiFi module lives. The same UART is also exposed as a generic serial port — perfect for talking to a host PC, a sensor, or any 3.3 V serial device. Klive emulates the UART surface (with a configurable virtual peer) so you can develop and test serial code without a real Next on your desk.
+
+Topics:
+
+- **The UART ports.** `$133B` (data), `$143B` (control / status). 8N1 framing only — no parity options.
+- **Baud rate.** Set via NextReg `$0A`/`$0B` and `$0E`/`$0F` — full divider chain explained, with a table of common baud rates.
+- **Polled I/O.** The simplest possible TX and RX loops. Status bits: TX-empty, RX-ready.
+- **Interrupt-driven I/O.** UART RX and TX interrupts via NextRegs `$C2` (enables) and `$C6` (status). Building a small ring-buffer driver around them.
+- **Talking to the ESP.** AT command basics — set network, connect to access point, open TCP, send/receive. Just enough to get "fetch a JSON file from the internet" working.
+- **Klive specifics.** What kind of virtual peer Klive offers and how to wire it up for the exercises.
+
+## What you should know first
+
+- [I/O and NextRegs](./02-io-and-nextregs.mdx).
+- [Interrupts](./04-interrupts.mdx) — for the ring-buffer driver.
+
+## Planned exercises
+
+- **Polled echo.** Read a byte from the UART, write it back. Test with the Klive virtual peer.
+- **Interrupt-driven terminal.** A scrolling text window that displays everything that arrives over the UART, while the main loop animates a sprite to prove it's not blocking.
+- **AT hello (real hardware).** Aimed at users who do have a Next with ESP — open a TCP connection and send a one-line HTTP request. Klive users can run the same code against the virtual peer to see the AT command sequence.a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Synopsis","id":"synopsis","depth":2},{"value":"What you should know first","id":"what-you-should-know-first","depth":2},{"value":"Planned exercises","id":"planned-exercises","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"The Next has a UART wired to an on-board socket where, on real hardware, an ESP-01 WiFi module lives.","title":"The UART and the ESP WiFi Module","filePath":"content/en/book/20-uart.mdx","timestamp":1792315833000},"sourceCode":"$12","children":[["$","div",null,{"id":"nextra-skip-nav"}],["$","main",null,{"data-pagefind-body":true,"children":[false,[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["The UART and the ESP WiFi Module","$undefined"]}],"\n",["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-yellow-50 x:dark:bg-yellow-700/30 x:text-yellow-700 x:dark:text-yellow-500 x:border-yellow-700","children":["$L13","$L14"]}],"\n","$L15","\n","$L16","\n","$L17","\n","$L18","\n","$L19","\n","$L1a","\n","$L1b","\n","$L1c"]]}]]}]]}]}],null,"$L1d"]}],"p":"$@1e","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"book/20-uart","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L20",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L22",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$23",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"The UART and the ESP WiFi Module - Klive IDE"}],["$","meta","1",{"name":"description","content":"The Next has a UART wired to an on-board socket where, on real hardware, an ESP-01 WiFi module lives."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/book/20-uart/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L24","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@25","v":null,"s":"$9"}},"a":"$@26","u":"$@27","b":"bnP8CSh_BnoTR_ngaC9us"}
+28:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+29:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+2a:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":"🚧"}]
+14:["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This chapter is a placeholder. The full text is being written."}]}]
+15:["$","h2",null,{"id":"synopsis","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Synopsis",["$","$L28",null,{"id":"synopsis"}]]}]
+16:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The Next has a UART wired to an on-board socket where, on real hardware, an ESP-01 WiFi module lives. The same UART is also exposed as a generic serial port — perfect for talking to a host PC, a sensor, or any 3.3 V serial device. Klive emulates the UART surface (with a configurable virtual peer) so you can develop and test serial code without a real Next on your desk."}]
+17:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Topics:"}]
+18:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"The UART ports."}]," ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$133B"}]," (data), ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$143B"}]," (control / status). 8N1 framing only — no parity options."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Baud rate."}]," Set via NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$0A"}],"/",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$0B"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$0E"}],"/",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$0F"}]," — full divider chain explained, with a table of common baud rates."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Polled I/O."}]," The simplest possible TX and RX loops. Status bits: TX-empty, RX-ready."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Interrupt-driven I/O."}]," UART RX and TX interrupts via NextRegs ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$C2"}]," (enables) and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$C6"}]," (status). Building a small ring-buffer driver around them."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Talking to the ESP."}]," AT command basics — set network, connect to access point, open TCP, send/receive. Just enough to get “fetch a JSON file from the internet” working."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Klive specifics."}]," What kind of virtual peer Klive offers and how to wire it up for the exercises."]}],"\n"]}]
+19:["$","h2",null,{"id":"what-you-should-know-first","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["What you should know first",["$","$L28",null,{"id":"what-you-should-know-first"}]]}]
+1a:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","$L29",null,{"href":"./02-io-and-nextregs","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"I/O and NextRegs"}],"."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","$L29",null,{"href":"./04-interrupts","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Interrupts"}]," — for the ring-buffer driver."]}],"\n"]}]
+1b:["$","h2",null,{"id":"planned-exercises","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Planned exercises",["$","$L28",null,{"id":"planned-exercises"}]]}]
+1c:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Polled echo."}]," Read a byte from the UART, write it back. Test with the Klive virtual peer."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Interrupt-driven terminal."}]," A scrolling text window that displays everything that arrives over the UART, while the main loop animates a sprite to prove it’s not blocking."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"AT hello (real hardware)."}]," Aimed at users who do have a Next with ESP — open a TCP connection and send a one-line HTTP request. Klive users can run the same code against the virtual peer to see the AT command sequence."]}],"\n"]}]
+1d:["$","$L2a",null,{"children":["$","$23",null,{"name":"Next.MetadataOutlet","children":"$@2b"}]}]
+27:true
+9:300
+2b:null
+9:C
+26:0
+7:"$undefined"
+25:"$undefined"
+1e:"$undefined"

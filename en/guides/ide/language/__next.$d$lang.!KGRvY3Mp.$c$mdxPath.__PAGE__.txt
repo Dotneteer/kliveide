@@ -1,0 +1,87 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-ec4827f49d7f8d42.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+22:"ViewportBoundary"
+23:I[484,[],"$22"]
+24:"MetadataBoundary"
+25:I[484,[],"$24"]
+26:"$Sreact.suspense"
+27:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T67d,---
+description: "Show Klive's menus, dialogs and panels in English, Spanish, Portuguese, German or Hungarian."
+---
+
+import { Callout } from 'nextra/components'
+
+# The display language
+
+Klive's menus, dialogs, panels and messages are available in these languages:
+
+| Language | In itself |
+| --- | --- |
+| English | English |
+| Spanish | Español |
+| Portuguese (Brazil) | Português (Brasil) |
+| Portuguese (Portugal) | Português (Portugal) |
+| German | Deutsch |
+| Hungarian | Magyar |
+
+## Change the language
+
+1. Open the Settings: **Klive › Settings...** on macOS (<kbd>Cmd</kbd>+<kbd>,</kbd>), **File › Settings...** on Windows and Linux. The [`settings language`](/en/reference/commands/) command opens the right page directly.
+2. Choose the **Language** page.
+3. Pick a language in **Display language**. **System default** follows your operating system's language, and uses English if Klive does not have it.
+
+The change applies at once, in both the IDE and the emulator.
+
+## What stays in English
+
+Some things are the same in every language, because people type them, search for them, or see them printed on the machine:
+
+- product and machine names (ZX Spectrum Next, Cambridge Z88), and hardware names such as Copper, NextReg and ULA;
+- Z80 instructions and registers, and BASIC keywords;
+- the IDE's commands (`run`, `bp-set`), file extensions and keyboard shortcuts;
+- the names of the build functions in a project's `build.ksx` (the **Build** menu shows them as they are).
+
+<Callout type="info" emoji="💡">
+Something reads wrong in your language? [Translate Klive](/en/under-the-hood/contribute/translate/) explains how to fix it.
+</Callout>a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Change the language","id":"change-the-language","depth":2},{"value":"What stays in English","id":"what-stays-in-english","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"Show Klive's menus, dialogs and panels in English, Spanish, Portuguese, German or Hungarian.","title":"The display language","filePath":"content/en/guides/ide/language.mdx","timestamp":1792315833000},"sourceCode":"$12","children":[["$","div",null,{"id":"nextra-skip-nav"}],["$","main",null,{"data-pagefind-body":true,"children":[false,[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["The display language","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Klive’s menus, dialogs, panels and messages are available in these languages:"}],"\n",["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Language","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"In itself","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"English","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],"$L13"],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$L14","$L15","$L16","$L17","$L18"]}]]}],"\n","$L19","\n","$L1a","\n","$L1b","\n","$L1c","\n","$L1d","\n","$L1e","\n","$L1f"]]}]]}]]}]}],null,"$L20"]}],"p":"$@21","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"guides/ide/language","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L23",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L25",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$26",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"The display language - Klive IDE"}],["$","meta","1",{"name":"description","content":"Show Klive's menus, dialogs and panels in English, Spanish, Portuguese, German or Hungarian."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/guides/ide/language/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L27","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@28","v":null,"s":"$9"}},"a":"$@29","u":"$@2a","b":"bnP8CSh_BnoTR_ngaC9us"}
+2b:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+2c:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+2d:I[484,[],"OutletBoundary"]
+13:["$","td",null,{"children":"English","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+14:["$","tr",null,{"children":[["$","td",null,{"children":"Spanish","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Español","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+15:["$","tr",null,{"children":[["$","td",null,{"children":"Portuguese (Brazil)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Português (Brasil)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+16:["$","tr",null,{"children":[["$","td",null,{"children":"Portuguese (Portugal)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Português (Portugal)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+17:["$","tr",null,{"children":[["$","td",null,{"children":"German","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Deutsch","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+18:["$","tr",null,{"children":[["$","td",null,{"children":"Hungarian","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Magyar","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+19:["$","h2",null,{"id":"change-the-language","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Change the language",["$","$L2b",null,{"id":"change-the-language"}]]}]
+1a:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["Open the Settings: ",["$","strong",null,{"children":"Klive › Settings…"}]," on macOS (",["$","kbd",null,{"children":"Cmd"}],"+",["$","kbd",null,{"children":","}],"), ",["$","strong",null,{"children":"File › Settings…"}]," on Windows and Linux. The ",["$","$L2c",null,{"href":"/en/reference/commands/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"settings language"}]}]," command opens the right page directly."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Choose the ",["$","strong",null,{"children":"Language"}]," page."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Pick a language in ",["$","strong",null,{"children":"Display language"}],". ",["$","strong",null,{"children":"System default"}]," follows your operating system’s language, and uses English if Klive does not have it."]}],"\n"]}]
+1b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The change applies at once, in both the IDE and the emulator."}]
+1c:["$","h2",null,{"id":"what-stays-in-english","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["What stays in English",["$","$L2b",null,{"id":"what-stays-in-english"}]]}]
+1d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Some things are the same in every language, because people type them, search for them, or see them printed on the machine:"}]
+1e:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"product and machine names (ZX Spectrum Next, Cambridge Z88), and hardware names such as Copper, NextReg and ULA;"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Z80 instructions and registers, and BASIC keywords;"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["the IDE’s commands (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"run"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"bp-set"}],"), file extensions and keyboard shortcuts;"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["the names of the build functions in a project’s ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"build.ksx"}]," (the ",["$","strong",null,{"children":"Build"}]," menu shows them as they are)."]}],"\n"]}]
+1f:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":"💡"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Something reads wrong in your language? ",["$","$L2c",null,{"href":"/en/under-the-hood/contribute/translate/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Translate Klive"}]," explains how to fix it."]}]}]]}]
+20:["$","$L2d",null,{"children":["$","$26",null,{"name":"Next.MetadataOutlet","children":"$@2e"}]}]
+2a:true
+9:300
+2e:null
+9:C
+29:0
+7:"$undefined"
+28:"$undefined"
+21:"$undefined"

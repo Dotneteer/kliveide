@@ -1,0 +1,220 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-ec4827f49d7f8d42.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T2003,---
+description: "Descarga Klive desde su página de versiones e instálalo en macOS, Windows o Linux."
+---
+
+import { Callout } from 'nextra/components'
+
+# Instala Klive
+
+Klive es gratuito y de código abierto. Visita la [página de versiones](https://github.com/Dotneteer/kliveide/releases) del proyecto para obtener los paquetes de instalación de Klive. La versión más reciente aparece al principio de la página. Al desplegar la sección Assets, verás la lista de paquetes de instalación:
+
+- `KliveIdeSetup-{version}-{arch}.AppImage`: el formato AppImage de Linux, para instalar Klive IDE en Linux sin necesitar privilegios de administrador para ejecutarlo
+- `KliveIdeSetup-{version}-{arch}.exe`: ejecutable autoextraíble para instalar Klive IDE en Windows x64 (instalador NSIS)
+- `KliveIde-Portable-{version}-{arch}.zip`: un archivo comprimido para Windows x64 que descomprimes y ejecutas sin instalador (consulta [Windows sin instalador](#windows-without-an-installer))
+- `KliveIdeSetup-{version}-{arch}.pkg`: el formato PKG estándar, para instalar Klive IDE en macOS
+
+`{version}` representa el número de versión de una versión concreta dentro del nombre del archivo.
+`{arch}` representa la arquitectura de la plataforma de destino. Puede ser `x64` o `arm64`.
+
+<Callout type="info" emoji="💡">
+Por ahora, Windows solo admite la arquitectura x64.
+</Callout>
+
+Descarga el archivo que corresponda a tu sistema operativo y arquitectura, y sigue las secciones de este artículo.
+
+## macOS
+
+Abre el archivo `.pkg` descargado. Como el archivo procede de una fuente no fiable, el sistema operativo no puede instalarlo directamente. Haz clic en el botón OK para cerrar el mensaje.
+
+<ClickableImage src="/images/getting-started/warning1.png" alt="Advertencia 1" width={173} height={195} />
+
+Ahora abre Ajustes del Sistema y ve a la sección Privacidad y seguridad. Al desplazarte hacia abajo, verás el mensaje con el nombre del archivo bloqueado y el botón Abrir igualmente. Haz clic en ese botón para confirmar que quieres ejecutar el paquete de instalación.
+
+<ClickableImage src="/images/getting-started/privacy-and-security.png" alt="Privacidad y seguridad" width={477} height={398} />
+
+Abre de nuevo el archivo `.pkg` y selecciona el botón Abrir en el cuadro de diálogo de seguridad que aparece en pantalla.
+
+<Callout type="info" emoji="💡">
+Es posible que el sistema operativo te pida la contraseña para confirmar la instalación.
+</Callout>
+
+<ClickableImage src="/images/getting-started/warning2.png" alt="Advertencia 2" width={173} height={233} />
+
+Haz clic en Abrir para permitir que se ejecute el instalador. Sigue las capturas de pantalla (usa Continuar) para completar la instalación.
+
+<ClickableImage src="/images/getting-started/install-step-1.png" width={413} />
+
+<ClickableImage src="/images/getting-started/install-step-2.png" width={413} />
+
+<ClickableImage src="/images/getting-started/install-step-3.png" width={413} />
+
+<ClickableImage src="/images/getting-started/install-step-4.png" width={413} />
+
+<Callout type="info" emoji="💡">
+El instalador crea una carpeta Klive IDE en la carpeta Aplicaciones y copia en ella los archivos necesarios. También crea un acceso directo en el Launchpad. Al terminar la instalación, es posible que macOS te pida acceso a la carpeta Descargas para mover el instalador a la papelera.
+</Callout>
+
+Tras una instalación correcta, encontrarás Klive IDE en la carpeta Aplicaciones.
+
+<ClickableImage src="/images/getting-started/apps-in-finder.png" width={441} />
+
+## Windows
+
+El archivo de instalación `.exe` es un ejecutable autoextraíble. Ábrelo: se extraerá automáticamente y copiará los archivos ejecutables en el directorio Programs (dentro de `AppData/Local/Programs/klive-ide` en tu carpeta de usuario).
+
+El instalador inicia Klive IDE al terminar. Más adelante, puedes volver a iniciar Klive IDE así:
+
+Usa la búsqueda de la barra de tareas de Windows y escribe "Klive". La app recién instalada aparece en los resultados de la búsqueda:
+
+<ClickableImage src="/images/getting-started/klive-in-search.png" width={213} />
+
+Haz clic en Klive IDE para iniciarlo.
+
+<Callout type="info" emoji="💡">
+Cuando Klive IDE está seleccionado en la lista de resultados, el panel derecho muestra el comando Anclar a la barra de tareas. Úsalo para añadir el IDE a la barra de tareas; después podrás ejecutarlo con un solo clic en el icono de Klive IDE.
+</Callout>
+
+### Windows sin instalador [#windows-without-an-installer]
+
+Si no puedes o prefieres no ejecutar un instalador (un equipo con restricciones, sin derechos de administrador, o una memoria USB), descarga en su lugar `KliveIde-Portable-{version}-x64.zip`. No necesita instalación y no escribe nada en el registro de Windows.
+
+1. Antes de extraerlo, haz clic con el botón derecho en el archivo `.zip` descargado, selecciona **Propiedades**, marca **Desbloquear** y haz clic en **Aceptar**. Sin este paso, Windows marca cada archivo extraído como descargado de Internet y puede advertirte por separado de cada ejecutable. (En PowerShell: `Unblock-File .\KliveIde-Portable-{version}-x64.zip`.)
+2. Extrae el archivo comprimido en una **carpeta nueva y vacía**: los archivos están en la raíz del archivo comprimido, no dentro de una carpeta propia.
+3. Ejecuta `Klive IDE.exe` desde esa carpeta.
+
+Esta copia es totalmente portátil: guarda todo lo que escribe en una carpeta `KliveData` junto a `Klive IDE.exe`, y nada en tu perfil de usuario.
+
+| Carpeta | Contenido | Equivalente en Klive instalado |
+| --- | --- | --- |
+| `KliveData\Klive` | Configuración, la imagen de la tarjeta SD del ZX Spectrum Next, archivos guardados | `%USERPROFILE%\Klive` |
+| `KliveData\KliveProjects` | Ubicación predeterminada de los proyectos nuevos | `%USERPROFILE%\KliveProjects` |
+| `KliveData\KliveExports` | Código exportado y grabaciones de pantalla | `%USERPROFILE%\KliveExports` |
+| `KliveData\AppData` | Caché del navegador y datos de las ventanas | `%APPDATA%\Klive IDE` |
+
+Para quitar Klive, elimina la carpeta. Para actualizarlo, extrae el archivo comprimido más reciente en una carpeta nueva y copia en ella la carpeta `KliveData` de la antigua para conservar tu configuración.
+
+<Callout type="info" emoji="💡">
+La copia zip y un Klive instalado no comparten la configuración. Para iniciar la copia zip con tu configuración actual, copia `%USERPROFILE%\Klive` en `KliveData\Klive` antes de ejecutarla por primera vez.
+</Callout>
+
+<Callout type="warning" emoji="⚠️">
+Extrae el archivo comprimido en una carpeta en la que puedas escribir. En una ubicación de solo lectura (por ejemplo, dentro de `C:\Program Files`), Klive no puede crear `KliveData` y recurre a las carpetas del perfil de usuario de un Klive instalado.
+</Callout>
+
+## Linux
+
+El paquete de instalación de Linux es un archivo `.AppImage`. Puede que necesites descargar e instalar FUSE en tu equipo para usarlo. Por ejemplo, en Ubuntu (donde FUSE no viene instalado de forma predeterminada), puedes instalarlo así:
+
+```text
+sudo apt-get install fuse libfuse2
+```
+
+Copia el archivo `.AppImage` en la carpeta desde la que quieras usarlo. Hazlo ejecutable con esta línea de comandos:
+
+```text
+chmod +x KliveIdeSetup-{version}-{arch}.AppImage
+```
+
+También puedes hacer clic con el botón derecho en el archivo en el gestor de archivos y seleccionar el comando Propiedades. En la pestaña Permisos, marca la casilla Permitir ejecutar el archivo como un programa:
+
+<ClickableImage src="/images/getting-started/ubuntu-permission.png" width={296} />
+
+Después, ejecuta el archivo con un doble clic, o desde un terminal con `./KliveIdeSetup-{version}-{arch}.AppImage`.
+
+## El primer inicio
+
+La primera vez que se inicia, Klive muestra la ventana del emulador con un ZX Spectrum 48K apagado. Klive también puede ofrecerte instalar **Boriel BASIC**, un compilador externo de ZX BASIC. No lo necesitas para este tutorial: Klive lleva integrado su propio compilador de BASIC. Si más adelante quieres Boriel BASIC, la [guía de ZX BASIC](/en/guides/languages/zx-basic/#using-boriel-basic) explica cómo instalarlo.
+
+A continuación, [conoce el emulador](/es/get-started/meet-the-emulator/).a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"macOS","id":"macos","depth":2},{"value":"Windows","id":"windows","depth":2},{"value":"Windows sin instalador","id":"windows-without-an-installer","depth":3},{"value":"Linux","id":"linux","depth":2},{"value":"El primer inicio","id":"el-primer-inicio","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"Descarga Klive desde su página de versiones e instálalo en macOS, Windows o Linux.","title":"Instala Klive","filePath":"content/es/get-started/install.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"get-started/install","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"es","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Instala Klive - Klive IDE"}],["$","meta","1",{"name":"description","content":"Descarga Klive desde su página de versiones e instálalo en macOS, Windows o Linux."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/get-started/install/"}],["$","link","3",{"rel":"alternate","hrefLang":"es","href":"/es/get-started/install/"}],["$","link","4",{"rel":"alternate","hrefLang":"pt-BR","href":"/pt-BR/get-started/install/"}],["$","link","5",{"rel":"alternate","hrefLang":"pt-PT","href":"/pt-PT/get-started/install/"}],["$","link","6",{"rel":"alternate","hrefLang":"de","href":"/de/get-started/install/"}],["$","link","7",{"rel":"alternate","hrefLang":"hu","href":"/hu/get-started/install/"}],["$","meta","8",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","9",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","10",{"name":"twitter:card","content":"summary"}],["$","meta","11",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","12",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","13",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","14",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"bnP8CSh_BnoTR_ngaC9us"}
+4a:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Instala Klive","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Klive es gratuito y de código abierto. Visita la ",["$","a",null,{"href":"https://github.com/Dotneteer/kliveide/releases","target":"_blank","rel":"noreferrer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["página de versiones",[" ",["$","svg",null,{"fill":"none","stroke":"currentColor","strokeLinecap":"round","strokeLinejoin":"round","strokeWidth":1.7,"viewBox":"0 0 24 24","height":"1em","className":"x:inline x:align-baseline x:shrink-0","children":[["$","path",null,{"d":"M7 17L17 7"}],["$","path",null,{"d":"M7 7h10v10"}]]}]]]}]," del proyecto para obtener los paquetes de instalación de Klive. La versión más reciente aparece al principio de la página. Al desplegar la sección Assets, verás la lista de paquetes de instalación:"]}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"KliveIdeSetup-{version}-{arch}.AppImage"}],": el formato AppImage de Linux, para instalar Klive IDE en Linux sin necesitar privilegios de administrador para ejecutarlo"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"KliveIdeSetup-{version}-{arch}.exe"}],": ejecutable autoextraíble para instalar Klive IDE en Windows x64 (instalador NSIS)"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"KliveIde-Portable-{version}-{arch}.zip"}],": un archivo comprimido para Windows x64 que descomprimes y ejecutas sin instalador (consulta ",["$","a",null,{"href":"#windows-without-an-installer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Windows sin instalador"}],")"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"KliveIdeSetup-{version}-{arch}.pkg"}],": el formato PKG estándar, para instalar Klive IDE en macOS"]}],"\n"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"{version}"}]," representa el número de versión de una versión concreta dentro del nombre del archivo.\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"{arch}"}]," representa la arquitectura de la plataforma de destino. Puede ser ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"x64"}]," o ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"arm64"}],"."]}],"\n",["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":"💡"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Por ahora, Windows solo admite la arquitectura x64."}]}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Descarga el archivo que corresponda a tu sistema operativo y arquitectura, y sigue las secciones de este artículo."}],"\n","$L20","\n","$L21","\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49"]]}]
+15:["$","$L4a",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@4b"}]}]
+1f:true
+4c:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+4d:"ToggleWordWrapButton"
+4e:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$4d"]
+4f:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+50:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+:HL["/images/getting-started/warning1.png","image"]
+:HL["/images/getting-started/privacy-and-security.png","image"]
+:HL["/images/getting-started/warning2.png","image"]
+:HL["/images/getting-started/install-step-1.png","image"]
+:HL["/images/getting-started/install-step-2.png","image"]
+:HL["/images/getting-started/install-step-3.png","image"]
+:HL["/images/getting-started/install-step-4.png","image"]
+:HL["/images/getting-started/apps-in-finder.png","image"]
+:HL["/images/getting-started/klive-in-search.png","image"]
+:HL["/images/getting-started/ubuntu-permission.png","image"]
+9:300
+20:["$","h2",null,{"id":"macos","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["macOS",["$","$L4c",null,{"id":"macos"}]]}]
+21:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Abre el archivo ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".pkg"}]," descargado. Como el archivo procede de una fuente no fiable, el sistema operativo no puede instalarlo directamente. Haz clic en el botón OK para cerrar el mensaje."]}]
+22:["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/images/getting-started/warning1.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/images/getting-started/warning1.png","alt":"Advertencia 1","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":173,"height":195}}]}]}]
+23:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Ahora abre Ajustes del Sistema y ve a la sección Privacidad y seguridad. Al desplazarte hacia abajo, verás el mensaje con el nombre del archivo bloqueado y el botón Abrir igualmente. Haz clic en ese botón para confirmar que quieres ejecutar el paquete de instalación."}]
+24:["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/images/getting-started/privacy-and-security.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/images/getting-started/privacy-and-security.png","alt":"Privacidad y seguridad","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":477,"height":398}}]}]}]
+25:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Abre de nuevo el archivo ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".pkg"}]," y selecciona el botón Abrir en el cuadro de diálogo de seguridad que aparece en pantalla."]}]
+26:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$14:props:children:1:8:props:children:0:props:style","data-pagefind-ignore":"all","children":"💡"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Es posible que el sistema operativo te pida la contraseña para confirmar la instalación."}]}]]}]
+27:["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/images/getting-started/warning2.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/images/getting-started/warning2.png","alt":"Advertencia 2","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":173,"height":233}}]}]}]
+28:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Haz clic en Abrir para permitir que se ejecute el instalador. Sigue las capturas de pantalla (usa Continuar) para completar la instalación."}]
+29:["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/images/getting-started/install-step-1.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/images/getting-started/install-step-1.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":413,"height":"auto"}}]}]}]
+2a:["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/images/getting-started/install-step-2.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/images/getting-started/install-step-2.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":413,"height":"auto"}}]}]}]
+2b:["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/images/getting-started/install-step-3.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/images/getting-started/install-step-3.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":413,"height":"auto"}}]}]}]
+2c:["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/images/getting-started/install-step-4.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/images/getting-started/install-step-4.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":413,"height":"auto"}}]}]}]
+2d:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$14:props:children:1:8:props:children:0:props:style","data-pagefind-ignore":"all","children":"💡"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"El instalador crea una carpeta Klive IDE en la carpeta Aplicaciones y copia en ella los archivos necesarios. También crea un acceso directo en el Launchpad. Al terminar la instalación, es posible que macOS te pida acceso a la carpeta Descargas para mover el instalador a la papelera."}]}]]}]
+2e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Tras una instalación correcta, encontrarás Klive IDE en la carpeta Aplicaciones."}]
+2f:["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/images/getting-started/apps-in-finder.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/images/getting-started/apps-in-finder.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":441,"height":"auto"}}]}]}]
+30:["$","h2",null,{"id":"windows","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Windows",["$","$L4c",null,{"id":"windows"}]]}]
+31:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["El archivo de instalación ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".exe"}]," es un ejecutable autoextraíble. Ábrelo: se extraerá automáticamente y copiará los archivos ejecutables en el directorio Programs (dentro de ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"AppData/Local/Programs/klive-ide"}]," en tu carpeta de usuario)."]}]
+32:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"El instalador inicia Klive IDE al terminar. Más adelante, puedes volver a iniciar Klive IDE así:"}]
+33:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Usa la búsqueda de la barra de tareas de Windows y escribe “Klive”. La app recién instalada aparece en los resultados de la búsqueda:"}]
+34:["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/images/getting-started/klive-in-search.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/images/getting-started/klive-in-search.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":213,"height":"auto"}}]}]}]
+35:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Haz clic en Klive IDE para iniciarlo."}]
+36:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$14:props:children:1:8:props:children:0:props:style","data-pagefind-ignore":"all","children":"💡"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Cuando Klive IDE está seleccionado en la lista de resultados, el panel derecho muestra el comando Anclar a la barra de tareas. Úsalo para añadir el IDE a la barra de tareas; después podrás ejecutarlo con un solo clic en el icono de Klive IDE."}]}]]}]
+37:["$","h3",null,{"id":"windows-without-an-installer","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Windows sin instalador",["$","$L4c",null,{"id":"windows-without-an-installer"}]]}]
+38:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Si no puedes o prefieres no ejecutar un instalador (un equipo con restricciones, sin derechos de administrador, o una memoria USB), descarga en su lugar ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"KliveIde-Portable-{version}-x64.zip"}],". No necesita instalación y no escribe nada en el registro de Windows."]}]
+39:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["Antes de extraerlo, haz clic con el botón derecho en el archivo ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".zip"}]," descargado, selecciona ",["$","strong",null,{"children":"Propiedades"}],", marca ",["$","strong",null,{"children":"Desbloquear"}]," y haz clic en ",["$","strong",null,{"children":"Aceptar"}],". Sin este paso, Windows marca cada archivo extraído como descargado de Internet y puede advertirte por separado de cada ejecutable. (En PowerShell: ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Unblock-File .\\KliveIde-Portable-{version}-x64.zip"}],".)"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Extrae el archivo comprimido en una ",["$","strong",null,{"children":"carpeta nueva y vacía"}],": los archivos están en la raíz del archivo comprimido, no dentro de una carpeta propia."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Ejecuta ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Klive IDE.exe"}]," desde esa carpeta."]}],"\n"]}]
+3a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Esta copia es totalmente portátil: guarda todo lo que escribe en una carpeta ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"KliveData"}]," junto a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Klive IDE.exe"}],", y nada en tu perfil de usuario."]}]
+3b:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Carpeta","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Contenido","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Equivalente en Klive instalado","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"KliveData\\Klive"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Configuración, la imagen de la tarjeta SD del ZX Spectrum Next, archivos guardados","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"%USERPROFILE%\\Klive"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"KliveData\\KliveProjects"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Ubicación predeterminada de los proyectos nuevos","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"%USERPROFILE%\\KliveProjects"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"KliveData\\KliveExports"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Código exportado y grabaciones de pantalla","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"%USERPROFILE%\\KliveExports"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"KliveData\\AppData"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Caché del navegador y datos de las ventanas","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"%APPDATA%\\Klive IDE"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}]
+3c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Para quitar Klive, elimina la carpeta. Para actualizarlo, extrae el archivo comprimido más reciente en una carpeta nueva y copia en ella la carpeta ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"KliveData"}]," de la antigua para conservar tu configuración."]}]
+3d:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$14:props:children:1:8:props:children:0:props:style","data-pagefind-ignore":"all","children":"💡"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["La copia zip y un Klive instalado no comparten la configuración. Para iniciar la copia zip con tu configuración actual, copia ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"%USERPROFILE%\\Klive"}]," en ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"KliveData\\Klive"}]," antes de ejecutarla por primera vez."]}]}]]}]
+3e:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-yellow-50 x:dark:bg-yellow-700/30 x:text-yellow-700 x:dark:text-yellow-500 x:border-yellow-700","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$14:props:children:1:8:props:children:0:props:style","data-pagefind-ignore":"all","children":"⚠️"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Extrae el archivo comprimido en una carpeta en la que puedas escribir. En una ubicación de solo lectura (por ejemplo, dentro de ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"C:\\Program Files"}],"), Klive no puede crear ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"KliveData"}]," y recurre a las carpetas del perfil de usuario de un Klive instalado."]}]}]]}]
+3f:["$","h2",null,{"id":"linux","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Linux",["$","$L4c",null,{"id":"linux"}]]}]
+40:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["El paquete de instalación de Linux es un archivo ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".AppImage"}],". Puede que necesites descargar e instalar FUSE en tu equipo para usarlo. Por ejemplo, en Ubuntu (donde FUSE no viene instalado de forma predeterminada), puedes instalarlo así:"]}]
+41:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L4e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L4f",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"sudo apt-get install fuse libfuse2"}]}]}]]}]]}]
+42:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Copia el archivo ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".AppImage"}]," en la carpeta desde la que quieras usarlo. Hazlo ejecutable con esta línea de comandos:"]}]
+43:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L4e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L4f",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"chmod +x KliveIdeSetup-{version}-{arch}.AppImage"}]}]}]]}]]}]
+44:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"También puedes hacer clic con el botón derecho en el archivo en el gestor de archivos y seleccionar el comando Propiedades. En la pestaña Permisos, marca la casilla Permitir ejecutar el archivo como un programa:"}]
+45:["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/images/getting-started/ubuntu-permission.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/images/getting-started/ubuntu-permission.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":296,"height":"auto"}}]}]}]
+46:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Después, ejecuta el archivo con un doble clic, o desde un terminal con ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"./KliveIdeSetup-{version}-{arch}.AppImage"}],"."]}]
+47:["$","h2",null,{"id":"el-primer-inicio","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["El primer inicio",["$","$L4c",null,{"id":"el-primer-inicio"}]]}]
+48:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["La primera vez que se inicia, Klive muestra la ventana del emulador con un ZX Spectrum 48K apagado. Klive también puede ofrecerte instalar ",["$","strong",null,{"children":"Boriel BASIC"}],", un compilador externo de ZX BASIC. No lo necesitas para este tutorial: Klive lleva integrado su propio compilador de BASIC. Si más adelante quieres Boriel BASIC, la ",["$","$L50",null,{"href":"/en/guides/languages/zx-basic/#using-boriel-basic","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"guía de ZX BASIC"}]," explica cómo instalarlo."]}]
+49:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A continuación, ",["$","$L50",null,{"href":"/es/get-started/meet-the-emulator/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"conoce el emulador"}],"."]}]
+4b:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"
