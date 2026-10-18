@@ -54,7 +54,7 @@ export function findResourcesFolder(baseDir: string): string | undefined {
  * renderer's output next to the bundle, or the repository's `src/public` above it
  */
 export function findPublicFolder(baseDir: string, env: NodeJS.ProcessEnv): string | undefined {
-  if (env.PUBLIC && fs.existsSync(env.PUBLIC)) return env.PUBLIC;
+  if (env.PUBLIC && fs.existsSync(path.join(env.PUBLIC, "roms"))) return env.PUBLIC;
   const resources = findResourcesFolder(baseDir);
   if (resources) return resources;
   const beside = path.join(baseDir, "../renderer");

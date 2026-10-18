@@ -7,7 +7,7 @@ import type { UnitTestCase } from "@common/unit-tests/discovery";
 import { junitErrorType, projectRelative, toJUnitXml, xmlAttr, xmlText, type JUnitResult } from "@common/unit-tests/junit";
 import { findOnPath, resolveSjasmplus, toDiagnostic } from "../../src/cli/compile";
 import { CliError } from "../../src/cli/exit-codes";
-import { CliRomProvider, romOverrides } from "../../src/cli/headless";
+import { CliRomProvider, findPublicFolder, romOverrides } from "../../src/cli/headless";
 import type { CliIo } from "../../src/cli/io";
 import { languageOf, loadProject } from "../../src/cli/project";
 import { defaultReporter, totalsText, type RunTotals } from "../../src/cli/reporters/reporter";
@@ -259,6 +259,15 @@ describe("the project and the options (D2, D6)", () => {
     const provider = new CliRomProvider("/public", { sp48: "/my/sp48.rom" });
     expect(provider.resolve("roms/sp48.rom")).toBe("/my/sp48.rom");
     expect(provider.resolve("roms/sp128-0.rom")).toBe(path.join("/public", "roms/sp128-0.rom"));
+  });
+
+  it("ignores an unrelated PUBLIC directory and uses one containing ROMs", () => {
+    const publicFolder = tempDir();
+    const baseDir = path.resolve(__dirname, "../../src/cli");
+    expect(findPublicFolder(baseDir, { PUBLIC: publicFolder })).toBe(path.resolve(__dirname, "../../src/public"));
+
+    fs.mkdirSync(path.join(publicFolder, "roms"));
+    expect(findPublicFolder(baseDir, { PUBLIC: publicFolder })).toBe(publicFolder);
   });
 });
 
