@@ -1,6 +1,8 @@
 # Landing Page Prototype Plan
 
-Status: **prototype built** — runs locally with `npm run doc:dev`. Rich content (feature videos, screenshot gallery,
+Status: **superseded** by `.plans/DOCS_SITE_MODERNIZATION_PLAN.md` (the landing page now lives in `docs/landing/`).
+
+Previous status: **prototype built** — runs locally with `npm run doc:dev`. Rich content (feature videos, screenshot gallery,
 release-aware download links, theming polish) comes in later phases, after this works locally.
 
 ## Goal

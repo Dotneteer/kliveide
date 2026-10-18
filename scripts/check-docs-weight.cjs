@@ -39,8 +39,11 @@ function checkDocsWeight({ budgetMb = DEFAULT_BUDGET_MB } = {}) {
     const html = readFileSync(file, "utf8");
     // --- Images are referenced as /images/... (public) or /_next/static/media/... (imported);
     // --- the base path, if any, comes first
+    // --- (Fonts are served from /_next/static/media too; only images count)
     const urls = new Set(
-      [...html.matchAll(/\s(?:src|href)="[^"]*?(\/images\/[^"]+|\/_next\/static\/media\/[^"]+)"/g)].map((m) => m[1])
+      [...html.matchAll(/\s(?:src|href)="[^"]*?(\/images\/[^"]+|\/_next\/static\/media\/[^"]+)"/g)]
+        .map((m) => m[1])
+        .filter((url) => /\.(png|jpe?g|webp|avif|gif|svg)(\?|$)/i.test(url))
     );
     let bytes = 0;
     for (const url of urls) {

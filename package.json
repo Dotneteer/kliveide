@@ -84,7 +84,7 @@
     "style:baseline": "UPDATE_STYLE_BASELINE=1 vitest run --config build/vitest.config.ts --project=node test/theming/type-scale-contract.test.ts",
     "test": "node scripts/run-tests.cjs",
     "doc:install": "cd docs && npm ci",
-    "doc:assets": "node scripts/build-doc-assets.cjs",
+    "doc:assets": "node scripts/build-doc-assets.cjs && node scripts/build-doc-site-info.cjs",
     "doc:dev": "npm run doc:assets && cd docs && npm run dev",
     "doc:build": "npm run doc:assets && cd docs && npm run build",
     "doc:check": "npm run doc:check:routes && npm run doc:check:links && npm run doc:check:highlighting && npm run doc:check:weight",

@@ -7,6 +7,8 @@
  */
 import { Head } from "nextra/components";
 import { LOCALES } from "../../i18n/locales.mjs";
+import { fontVariables } from "../fonts";
+import "../tokens.css";
 
 export function generateStaticParams() {
   return LOCALES.map((lang) => ({ lang }));
@@ -20,8 +22,16 @@ type LayoutProps = Readonly<{ children: React.ReactNode; params: Promise<{ lang:
 export default async function LangRootLayout({ children, params }: LayoutProps) {
   const { lang } = await params;
   return (
-    <html lang={lang} dir="ltr" suppressHydrationWarning>
-      <Head />
+    <html lang={lang} dir="ltr" className={fontVariables} suppressHydrationWarning>
+      {/* Nextra's accent and page background: the app's Sinclair Blue and canvas (app/tokens.css) */}
+      <Head
+        color={{
+          hue: { dark: 204, light: 205 },
+          saturation: { dark: 76, light: 90 },
+          lightness: { dark: 59, light: 38 }
+        }}
+        backgroundColor={{ dark: "#141517", light: "#ffffff" }}
+      />
       <body>{children}</body>
     </html>
   );

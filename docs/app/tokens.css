@@ -1,0 +1,81 @@
+/*
+ * The website's design tokens (decision D8 of .plans/DOCS_SITE_MODERNIZATION_PLAN.md): the
+ * app's own palette, so the site, the docs and the dark screenshots read as one product.
+ *
+ * Values come from the app's L1 tokens (src/renderer/theming/tokens/palette.ts): the cool neutral
+ * ramp (NEUTRAL.dark / NEUTRAL.light) and the Sinclair Blue accent (ACCENTS.sinclairBlue). The
+ * light theme is derived the same way the app derives it, never hand-tuned separately.
+ * test/docs/site-tokens.test.ts keeps these values equal to the app's.
+ *
+ * The four Spectrum colours are for the landing page's single loud moment (the stripe band and
+ * the feature blocks), never for running text.
+ *
+ * Theme selection matches Nextra's (next-themes): a `dark` or `light` class on <html> wins;
+ * without one, the operating system's preference decides.
+ */
+:root {
+  --site-bg: #ffffff;
+  --site-chrome: #f1f2f4;
+  --site-panel: #f7f8f9;
+  --site-raised: #ffffff;
+  --site-hover: #e8eaee;
+  --site-line: #d5d8dd;
+  --site-line-strong: #b9bec6;
+  --site-fg: #1b1d21;
+  --site-muted: #565c65;
+  --site-subtle: #6b717a;
+  --site-accent: #0a6fb8;
+  --site-on-accent: #ffffff;
+  --site-accent-soft: rgb(10 111 184 / 0.1);
+
+  --site-spectrum-blue: #0000c8;
+  --site-spectrum-magenta: #c800c8;
+  --site-spectrum-green: #00c800;
+  --site-spectrum-yellow: #d8d800;
+  --site-stripe-red: #d80000;
+  --site-stripe-yellow: #d8d800;
+  --site-stripe-green: #00c800;
+  --site-stripe-cyan: #00c8c8;
+
+  --site-font-display: var(--font-display), "Schibsted Grotesk", system-ui, sans-serif;
+  --site-font-body: var(--font-body), "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --site-font-mono: var(--font-mono), "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    --site-bg: #141517;
+    --site-chrome: #1b1d21;
+    --site-panel: #17191c;
+    --site-raised: #202329;
+    --site-hover: #24272e;
+    --site-line: #2e3238;
+    --site-line-strong: #3d424a;
+    --site-fg: #e4e6ea;
+    --site-muted: #949aa4;
+    --site-subtle: #7f8690;
+    --site-accent: #45a5e6;
+    --site-on-accent: #0e0f11;
+    --site-accent-soft: rgb(69 165 230 / 0.14);
+    color-scheme: dark;
+  }
+}
+
+:root.dark {
+  --site-bg: #141517;
+  --site-chrome: #1b1d21;
+  --site-panel: #17191c;
+  --site-raised: #202329;
+  --site-hover: #24272e;
+  --site-line: #2e3238;
+  --site-line-strong: #3d424a;
+  --site-fg: #e4e6ea;
+  --site-muted: #949aa4;
+  --site-subtle: #7f8690;
+  --site-accent: #45a5e6;
+  --site-on-accent: #0e0f11;
+  --site-accent-soft: rgb(69 165 230 / 0.14);
+  color-scheme: dark;
+}

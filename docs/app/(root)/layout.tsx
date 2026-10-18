@@ -1,26 +1,22 @@
 /**
- * Root layout for the landing page ("/").
+ * Root layout for "/", the English landing page. The other languages' landing pages render the
+ * same component under `app/[lang]` (Phase 5 of .plans/DOCS_SITE_MODERNIZATION_PLAN.md).
  *
- * The site has two root layouts (Next.js route groups): this one, which is plain React,
- * and `app/(docs)/layout.tsx`, which wraps every documentation page in Nextra's <Layout>.
- * Navigating between the two is a full page load - that is how separate root layouts work.
- *
- * See .plans/LANDING_PAGE_PROTOTYPE_PLAN.md.
+ * No Nextra here: navigating to the docs is a full page load, as between any two root layouts.
  */
-import type { Metadata } from "next";
-import "./landing.css";
+import { fontVariables } from "../fonts";
+import { themeBootScript } from "../../landing/ThemeToggle";
+import "../tokens.css";
+import "../../landing/landing.css";
 
-export const metadata: Metadata = {
-  title: "Klive IDE",
-  description:
-    "Klive IDE is a retro computer emulator and Integrated Development Environment running on macOS, Windows and Linux."
-};
-
-export default function LandingLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" dir="ltr">
+    <html lang="en" dir="ltr" className={fontVariables} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
+      </head>
       {/* Pagefind indexes documentation only; keep the landing page out of search. */}
-      <body className="landing" data-pagefind-ignore="all">
+      <body className="lp-body" data-pagefind-ignore="all">
         {children}
       </body>
     </html>

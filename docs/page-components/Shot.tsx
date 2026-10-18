@@ -17,8 +17,7 @@
  *
  * A server component: it reads the image folder at build time, which a static export allows.
  */
-import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { findLocalizedImage, readImageSidecar } from "./images";
 import styles from "./Shot.module.scss";
 
 type Marker = string | { x: number; y: number };
@@ -34,26 +33,16 @@ type ShotProps = Readonly<{
 }>;
 
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-const IMAGES = join(process.cwd(), "public", "images");
-
 /** The language folder that has this image: the page's own, or English. */
 function resolveImage(src: string, lang: string): string {
-  for (const candidate of [lang, "en"]) {
-    if (existsSync(join(IMAGES, candidate, src))) return `${candidate}/${src}`;
-  }
-  throw new Error(`<Shot>: no image "${src}" for "${lang}" or "en" under public/images/`);
-}
-
-type Sidecar = { width: number; height: number; markers: Record<string, { x: number; y: number }> };
-
-function readSidecar(file: string): Sidecar | undefined {
-  const path = join(IMAGES, `${file}.json`);
-  return existsSync(path) ? (JSON.parse(readFileSync(path, "utf8")) as Sidecar) : undefined;
+  const file = findLocalizedImage(src, lang);
+  if (!file) throw new Error(`<Shot>: no image "${src}" for "${lang}" or "en" under public/images/`);
+  return file;
 }
 
 export default function Shot({ src, alt, width, figure, caption, markers = [], lang = "en" }: ShotProps) {
   const file = resolveImage(src, lang);
-  const sidecar = readSidecar(file);
+  const sidecar = readImageSidecar(file);
   const url = `${basePath}/images/${file}`;
   const points = markers.map((m, i) => {
     if (typeof m !== "string") return m;

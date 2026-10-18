@@ -31,15 +31,10 @@ export const metadata: Metadata = {
 const navbar = (
   <Navbar
     logo={
-      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-        <img
-          src={`${basePath}/images/klive-logo.svg`}
-          alt="Klive IDE"
-          width="50px"
-          height="50px"
-        />
-        <span style={{ fontWeight: "bold", fontSize: "2em" }}>Klive IDE</span>
-      </div>
+      <span className="site-brand">
+        <img src={`${basePath}/images/klive-logo.svg`} alt="" width={28} height={28} />
+        <span>Klive IDE</span>
+      </span>
     }
     projectLink="https://github.com/Dotneteer/kliveide"
   />

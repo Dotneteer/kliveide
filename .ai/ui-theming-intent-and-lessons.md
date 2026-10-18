@@ -2816,3 +2816,26 @@ its text as a shape has the same problem.
   session. § "Verify Geometry In The Running App, Never In A Replica".
 - Run the visual check. The token contract, row-size and syntax-palette tests catch structure, never
   appearance.
+
+## The Website Wears The App's Palette
+
+The documentation site (`docs/`) and its landing page use the app's own L1 values, not a palette
+of their own: `docs/app/tokens.css` holds the neutral ramp (both tones) and the Sinclair Blue
+accent from `theming/tokens/palette.ts`, and `test/docs/site-tokens.test.ts` fails when the two
+drift. Change a neutral or the default accent in the app, and the site changes with it - update
+`tokens.css` in the same change. Nextra's own chrome takes the same accent and canvas through
+`<Head color backgroundColor>` in `docs/app/[lang]/layout.tsx`.
+
+- **One loud moment, on the landing page only.** The four Spectrum colours (the logo's stripes and
+  the solid blocks) appear in the hero's stripe band and the feature blocks, nowhere else. The
+  docs stay calm: never a Spectrum colour behind running text.
+- **Type:** Schibsted Grotesk for headings, IBM Plex Sans for text, JetBrains Mono for code and
+  labels (`docs/app/fonts.ts`, served from the site by `next/font`).
+- **Theme selection follows next-themes:** a `dark`/`light` class on `<html>` wins, the OS
+  preference decides otherwise. The landing page's toggle writes the same `theme` key, so a choice
+  holds across the landing page and the docs.
+- **Screenshots in the docs are dark** (decision D4), whatever the page's theme; their frame and
+  markers use the tokens.
+- **A screenshot's callouts are HTML, never pixels:** `<Shot markers>` draws numbered badges from
+  the harness's sidecar, and the numbered list under the figure is styled like the badges, so the
+  text translates with the page.

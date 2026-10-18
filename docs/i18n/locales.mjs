@@ -6,3 +6,12 @@
  */
 export const DEFAULT_LOCALE = "en";
 export const LOCALES = ["en"];
+
+/** The language names shown in the language selector, in each language itself. */
+export const LOCALE_NAMES = { en: "English" };
+
+/**
+ * The documentation areas translated into every non-English locale. Links into any other area
+ * go to the English pages (§4.2 of the plan).
+ */
+export const TRANSLATED_AREAS = ["get-started"];
