@@ -1,0 +1,44 @@
+---
+description: "The klive command line: run unit tests, build and run programs without the IDE, and drive a running Klive from scripts."
+---
+
+# The `klive` command line
+
+Klive comes with a command-line tool, `klive`, for scripts and continuous integration (CI). It runs Klive's own engine without a window, so it needs nothing else installed, and its results are the same on a laptop and on a CI runner.
+
+[Getting the `klive` command](/en/guides/testing/unit-tests-cli#getting-the-klive-command) explains how to put it on your PATH on macOS, Windows and Linux.
+
+## The commands
+
+| Command | What it does | Details |
+| --- | --- | --- |
+| `klive test` | Runs a project's unit tests headless and reports the results, optionally as JUnit XML and with LCOV coverage. | [Unit tests on the command line](/en/guides/testing/unit-tests-cli/) |
+| `klive build` | Compiles a project's build root, and can write the code as Intel HEX or a binary. | [`klive build`](/en/guides/testing/unit-tests-cli#klive-build) |
+| `klive run` | Runs a project, a tape, a snapshot or a NEX file on a machine of its own until a condition you name, then writes screenshots, memory dumps, registers or a state file. | [`klive run`](/en/guides/testing/unit-tests-cli#klive-run) |
+| `klive ide <verb>` | Talks to a running Klive: builds, runs, debugs, steps, reads registers and memory, sets breakpoints, takes screenshots. | [Automation](/en/guides/testing/automation/) |
+
+`klive test`, `klive build` and `klive run` never open a window, so they can run while the IDE is open. `klive ide` needs a running Klive with automation turned on; [Automation](/en/guides/testing/automation/#turning-it-on) explains how, and what a script may do at each permission level.
+
+## Exit codes
+
+Every command exits with a code a script can test. `0` always means success, and `2` means the build had errors; each command's page lists the rest.
+
+## Examples
+
+Run the tests of the project in the current folder and write a JUnit report for the CI server:
+
+```bash
+klive test --junit test-results.xml
+```
+
+Check that a program still draws its title screen:
+
+```bash
+klive run --until-pc GameLoop --screenshot title.png
+```
+
+Build, start debugging, and wait for a breakpoint in a running Klive:
+
+```bash
+klive ide build && klive ide debug && klive ide wait --timeout 30
+```

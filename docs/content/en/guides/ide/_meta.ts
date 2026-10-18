@@ -7,6 +7,7 @@ export default {
   "syntax-colors": "Syntax highlighting colors",
   "file-extensions": "Default file extensions",
   "settings": "Settings",
+  "language": "The display language",
   "ide-settings": { display: "hidden" },
   "ide-startup": "IDE startup options",
   "diagnostics": "Diagnostics"

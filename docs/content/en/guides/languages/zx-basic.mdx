@@ -26,6 +26,8 @@ Files with the `.zxbas` or `.bas` extension are recognized as ZX BASIC files. A 
 
 Klive BASIC is compatible with Boriel ZX BASIC 1.19: the same language, the same options and `#pragma`s, the same standard libraries and the same inline assembly dialect. It also supports NextBuild's `CODEBANK` extension for the ZX Spectrum Next. It generates code for the ZX Spectrum 48K, 128K and +3 and the ZX Spectrum Next; the target follows the machine you have selected in the emulator.
 
+The language itself, with its types, statements, built-in functions, preprocessor, inline assembly and standard library, is described in the [Klive BASIC language reference](/en/reference/klive-basic/).
+
 Compatibility is checked, not assumed: several thousand test cases are compiled by both Klive BASIC and `zxbc`, run on the same emulated machine, and must show the same results. The few places where Klive BASIC gives a different result on purpose are listed in [Where Klive BASIC differs from zxbc](#where-klive-basic-differs-from-zxbc). The machine code itself is Klive's own, so addresses and sizes differ from `zxbc`'s.
 
 ### Build options in the source

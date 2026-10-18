@@ -1,0 +1,170 @@
+---
+description: "Inline Z80 assembly in Klive BASIC: ASM blocks, the zxbasm and Klive assembler dialects, how BASIC variables, labels and parameters are reached from assembly, and the STDCALL and FASTCALL calling conventions."
+---
+
+# Inline assembly
+
+An `ASM` block puts Z80 assembly into a BASIC program. The block can work on the program's variables, and a whole `SUB` or `FUNCTION` can be written in assembly.
+
+## ASM blocks
+
+```text
+ASM
+  assembly lines
+END ASM
+```
+
+`ASM` and `END ASM` each stand on a line of their own. Inside the block, `;` starts a comment.
+
+```text
+DIM n AS UByte = 42
+ASM
+    ld hl,_n
+    inc (hl)
+END ASM
+PRINT n
+```
+
+This prints `43`.
+
+- The registers keep their values from one `ASM` block to the next.
+- A variable that only assembly code uses is kept, even though no BASIC code mentions it.
+- `#line`, `#init` and `#require` may appear inside a block.
+
+## Two dialects
+
+Klive BASIC accepts two assembler dialects in `ASM` blocks:
+
+| Dialect | When | Purpose |
+| --- | --- | --- |
+| `zxbasm` | The default | The dialect of Boriel's assembler. Existing ZX BASIC libraries, such as NextBuild's NextLib, compile unchanged. |
+| `klive` | Selected with an option | The dialect of the [Klive Z80 Assembler](/en/reference/z80-assembler/), the one of `.kz80.asm` files. |
+
+To use Klive's dialect for the whole program, add `'@asm-dialect klive` to the header. To use it for some blocks only, put them between these lines:
+
+```text
+#pragma push(asm_dialect)
+#pragma asm_dialect = klive
+' ... ASM blocks in Klive's dialect ...
+#pragma pop(asm_dialect)
+```
+
+Library files use these lines to choose the dialect of their own blocks, whichever dialect the program uses.
+
+### The zxbasm dialect
+
+- `:` separates several instructions on one line, and `;` starts a comment.
+- Mnemonics, registers and directives ignore case; labels do not.
+- Numbers: `$1F`, `0x1F`, `1Fh`, `%101`, and `'A'` for a character code.
+- Temporary labels: a number followed by `:` declares one, and `1b` and `1f` refer to the nearest one backward and forward.
+- Parentheses around a whole operand are a memory reference; elsewhere they group an expression.
+- `name EQU value` defines a symbol. A colon before `EQU` is an error.
+- Data directives: `DEFB` (`DB`), `DEFW` (`DW`), `DEFS` (`DS`) with an optional fill value, `DEFM` (`DM`), and `ALIGN`.
+- `PROC` ... `ENDP` makes the names listed on its `LOCAL` lines local, over the whole `PROC`, even when it spans several `ASM` blocks. Every other label stays global.
+
+### The Klive dialect
+
+In Klive's dialect the block uses the syntax of the Klive Z80 Assembler: its literals, directives and expressions. See the [Klive Z80 Assembler reference](/en/reference/z80-assembler/).
+
+## Reaching BASIC from assembly
+
+| BASIC item | Name in the zxbasm dialect | Name in the Klive dialect |
+| --- | --- | --- |
+| Global variable, `SUB` or `FUNCTION` | `_name` | `_name` |
+| Label | `.LABEL._name` | `_label.name` |
+| Line number | `.LABEL._10` | `_label.10` |
+
+The name is the BASIC name with its sigil (`$` or `%`) removed. In the zxbasm dialect, `._name` refers to a global as well.
+
+Local variables and parameters have no names. They live in the routine's stack frame, which IX points to:
+
+| Item | Where |
+| --- | --- |
+| The first parameter of a `STDCALL` routine | `(ix+4)`; an 8-bit value is the high byte of its slot, `(ix+5)` |
+| Further parameters | The following slots. Each parameter takes whole 16-bit words |
+| Local variables | Negative offsets; the first 8-bit local is at `(ix-1)` |
+
+From BASIC, `@variable` and `@label` give addresses, and `USR @label` calls code. To address data or code inside an `ASM` block from BASIC, put a label on the line just before the block:
+
+```text
+DIM r AS UInteger
+r = USR @setbc
+PRINT r
+END
+
+setbc:
+ASM
+    ld bc,12345
+    ret
+END ASM
+```
+
+`USR` returns the value of BC, so this prints `12345`.
+
+## Calling conventions
+
+A `SUB` or `FUNCTION` follows one of two calling conventions.
+
+### STDCALL
+
+`STDCALL` is the default.
+
+- The caller pushes the arguments on the stack, the last argument first, so the first argument ends up nearest the return address. The routine removes them.
+- An 8-bit value takes a whole word, with the value in the high byte. A 32-bit value is pushed high word first. A `Float` takes 6 bytes: a padding byte, then the exponent, then the four mantissa bytes.
+- A `BYREF` argument is the address of the variable.
+- The routine sets up a frame with IX: the saved IX is at `(ix+0)`, the return address at `(ix+2)`, and the first parameter at `(ix+4)`. Local variables are at negative offsets and are zeroed on entry.
+
+### FASTCALL
+
+- The first parameter arrives in registers, by size: A for 8 bits, HL for 16 bits and `String` pointers, DE:HL for 32 bits and `Fixed` (DE holds the high word), and A, E, D, C, B for a `Float`.
+- Further parameters are pushed as for `STDCALL`: the return address is at `(sp+0)`, the second parameter at `(sp+2)`, and so on. The routine must remove them itself. A `FASTCALL` routine with more than one parameter raises warning W160.
+- When the body is only an `ASM` block, the routine has no frame and no local variables, and the block needs no `ret`.
+
+```text
+FUNCTION FASTCALL hMirror(BYVAL number AS UByte) AS UByte
+    ASM
+        ld b,8          ; A holds the byte; C collects the mirror
+    1:  rra
+        rl c
+        djnz 1b
+        ld a,c
+    END ASM
+END FUNCTION
+
+PRINT hMirror(1)
+```
+
+This prints `128`. The routine comes from the standard library's `hmirror.bas`.
+
+### Results
+
+Both conventions return a result in the same registers:
+
+| Result type | Registers |
+| --- | --- |
+| 8-bit (`Byte`, `UByte`) | A |
+| 16-bit (`Integer`, `UInteger`) and `String` | HL |
+| 32-bit (`Long`, `ULong`) and `Fixed` | DE:HL |
+| `Float` | A (exponent), E, D, C, B (mantissa; the sign is bit 7 of E) |
+
+A `FUNCTION` whose body ends with an `ASM` block, and that ends without `RETURN`, returns what these registers hold.
+
+### Registers
+
+A call to a BASIC routine preserves no register except IX. IY must hold `$5C3A` whenever a ROM routine runs.
+
+## Macros in ASM blocks
+
+`#define` macros are expanded inside `ASM` blocks, as text. A macro name, written in its exact case, is replaced by its body outside strings and `;` comments; a function-like macro's arguments are substituted. Libraries use this to name instruction sequences:
+
+```text
+#define BORDER_RED ld a,2 : out ($fe),a
+
+ASM
+    BORDER_RED
+END ASM
+```
+
+## ZX Spectrum Next instructions
+
+The ZX Spectrum Next's extra instructions (such as `nextreg`) are accepted in `ASM` blocks on the ZX Spectrum Next target. The `zxnext` header option, or `#pragma zxnext = true`, accepts them on any target.

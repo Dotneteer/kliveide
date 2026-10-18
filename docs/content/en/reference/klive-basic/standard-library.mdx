@@ -1,0 +1,256 @@
+---
+description: "The Klive BASIC standard library: the #include libraries for text output, input, the screen, the keyboard, strings and numbers, memory banks, CODEBANK far memory and decompression, with each routine's signature."
+---
+
+# Standard library
+
+The standard library is a set of BASIC files that you include with `#include <name.bas>`. Klive BASIC provides the libraries documented for Boriel ZX BASIC, written as Klive's own code, and Klive's own `farmem.bas`.
+
+```text
+#include <string.bas>
+#include <hex.bas>
+
+PRINT left("ZX Spectrum", 2); " "; hex16(49152)
+```
+
+This prints `ZX C000`.
+
+How the compiler treats library files:
+
+- **Only what you call is compiled.** A library routine the program never calls adds nothing to it.
+- **Names match in any case.** `LEFT`, `left` and `Left` find the same routine, even in a case-sensitive program.
+- **Library code is not yours.** Warnings from it are not shown, and with Just My Code on (`em-jmc`), stepping goes over it.
+- **Library options are their own.** The libraries declare every variable and parameter with a type, so a program's `require-declarations`, `require-types` or `default_byref` setting does not affect them.
+
+The library files that Boriel ZX BASIC ships without documentation are not available. Calling a routine that Boriel's documentation shows only as a listing to copy, and that no library here provides, gives an error saying so.
+
+## Text output
+
+### print42.bas
+
+Text in 42 columns, with characters 6 pixels wide. print42 has its own cursor, separate from the cursors of `PRINT` and `print64`.
+
+| Routine | Description |
+| --- | --- |
+| `SUB print42(BYVAL s AS String)` | Prints a string at the print42 cursor in the permanent colours and moves the cursor on |
+| `SUB printat42(BYVAL y AS UByte, BYVAL x AS UByte)` | Moves the print42 cursor to row y (0-23) and column x (0-41) |
+
+### print64.bas
+
+Text in 64 columns, with characters 4 pixels wide. print64 has its own cursor, separate from the cursors of `PRINT` and `print42`.
+
+| Routine | Description |
+| --- | --- |
+| `SUB print64(BYVAL s AS String)` | Prints a string at the print64 cursor in the permanent colours and moves the cursor on |
+| `SUB printat64(BYVAL y AS UByte, BYVAL x AS UByte)` | Moves the print64 cursor to row y (0-23) and column x (0-63) |
+
+How print42 and print64 handle the cursor and control codes:
+
+- Text past the last column goes on at the next row, and text past the last row goes on at the top. The screen does not scroll.
+- In `printat42` and `printat64`, a column past the last is the start of the next row, and a row past 23 is row 0.
+- `CHR$ 13` starts a new line, and `CHR$ 22` followed by a row and a column moves the cursor.
+- print42 prints characters 31-127 from the font and 144-164 from the user-defined graphics. `CHR$ 8` steps back one place.
+- print64 prints characters 32-127.
+- Every other code, colour codes included, is skipped without moving the cursor.
+- The glyphs are Klive's own. print42 narrows the machine's font; print64 has its own 3 x 7 pixel font.
+
+## Input
+
+### input.bas
+
+| Routine | Description |
+| --- | --- |
+| `FUNCTION INPUT(BYVAL maxLength AS UByte) AS String` | Reads a line of at most maxLength characters at the `PRINT` position, with a flashing cursor, and returns it when ENTER is pressed |
+
+`INPUT` is a function, not Sinclair BASIC's `INPUT` statement. Use `PRINT AT` to place the cursor first. DELETE (CAPS SHIFT + 0) removes the last character.
+
+### input42.bas
+
+| Routine | Description |
+| --- | --- |
+| `FUNCTION INPUT42(BYVAL maxChars AS UInteger) AS String` | Reads a line of at most maxChars characters at the print42 cursor, echoed through print42, and returns it when ENTER is pressed |
+
+## Screen
+
+### attr.bas
+
+| Routine | Description |
+| --- | --- |
+| `FUNCTION ATTR(BYVAL row AS UByte, BYVAL col AS UByte) AS UByte` | The attribute byte of the character cell at row, col; all 24 rows can be read |
+
+### point.bas
+
+| Routine | Description |
+| --- | --- |
+| `FUNCTION POINT(BYVAL x AS UByte, BYVAL y AS UByte) AS Byte` | 1 when the pixel at x, y is set, 0 when it is not, and -1 for a y past the top |
+
+`POINT` counts as `PLOT` does: (0, 0) is the bottom-left pixel and all 192 rows can be tested. With the `sinclair-compatible` option it takes the ROM's coordinates instead: y counts the 176 rows above the editor area, so `POINT(x, y)` tests the pixel that `PLOT x, y + 16` sets.
+
+### screen.bas
+
+| Routine | Description |
+| --- | --- |
+| `FUNCTION SCREEN$(BYVAL row AS UByte, BYVAL col AS UByte) AS String` | The character shown at row, col, when it is one of the font's characters 32-127, normal or inverse; otherwise the empty string. All 24 rows can be read |
+
+### sinclair.bas
+
+Includes `ATTR`, `POINT` and `SCREEN$` together. The `sinclair-compatible` header option includes it automatically, before the program's first line.
+
+### pos.bas and csrlin.bas
+
+| Routine | Library | Description |
+| --- | --- | --- |
+| `FUNCTION POS() AS UByte` | `pos.bas` | The column of the `PRINT` cursor: 0 at the left, 32 when the line is full |
+| `FUNCTION CSRLIN() AS UByte` | `csrlin.bas` | The row of the `PRINT` cursor: 0 at the top, 23 at the bottom (24 after a new line on row 23, until the screen scrolls) |
+
+### clearbox.bas
+
+| Routine | Description |
+| --- | --- |
+| `SUB clearBox(BYVAL x AS UByte, BYVAL y AS UByte, BYVAL width AS UByte, BYVAL height AS UByte)` | Blanks the pixels of the character cells from column x, row y, width cells wide and height cells high. The attributes stay |
+
+### putchars.bas
+
+x is a column and y a row, both in character cells. Nothing is checked against the edges of the screen.
+
+| Routine | Description |
+| --- | --- |
+| `SUB putChars(BYVAL x AS UByte, BYVAL y AS UByte, BYVAL width AS UByte, BYVAL height AS UByte, BYVAL dataAddress AS UInteger)` | Copies width x height character bitmaps, 8 bytes each, from dataAddress to the screen. The data goes column by column: the cells of the first column from top to bottom, then the next column |
+| `SUB paint(BYVAL x AS UByte, BYVAL y AS UByte, BYVAL width AS UByte, BYVAL height AS UByte, BYVAL attribute AS UByte)` | Gives every cell of the rectangle the same attribute byte |
+| `SUB paintData(BYVAL x AS UByte, BYVAL y AS UByte, BYVAL width AS UByte, BYVAL height AS UByte, BYVAL address AS UInteger)` | Copies width x height attribute bytes from address to the rectangle, row by row |
+
+### puttile.bas
+
+| Routine | Description |
+| --- | --- |
+| `SUB putTile(BYVAL x AS UByte, BYVAL y AS UByte, BYVAL graphicsAddr AS UInteger)` | Copies a 2 x 2 character tile to column x, row y. The 36 bytes at graphicsAddr are two bytes for each of the 16 pixel rows from the top, then the top two attributes and the bottom two |
+
+## Keyboard
+
+### keys.bas
+
+Reads the keyboard through port `$FE`, without the ROM.
+
+| Routine | Description |
+| --- | --- |
+| `FUNCTION GetKey() AS UByte` | Waits for a key and returns its character code |
+| `FUNCTION GetKeyScanCode() AS UInteger` | The scan code of the keys held down in the first half-row that has any, their bits combined; 0 when no key is down. Does not wait |
+| `FUNCTION MultiKeys(BYVAL scanCode AS UInteger) AS UByte` | Tests the keys of the given scan codes, combined with `bOR`; returns the bits of the keys that are down, or 0 |
+
+The library defines a `UInteger` constant for the scan code of every key: `KEYA` to `KEYZ`, `KEY0` to `KEY9`, `KEYSPACE`, `KEYENTER`, `KEYSYMBOL` and `KEYCAPS`. The high byte selects the key's half-row and the low byte is its bit there. Only codes of the same half-row can be combined.
+
+```text
+#include <keys.bas>
+PRINT "Press P or O"
+DO
+  PAUSE 1
+LOOP UNTIL MultiKeys(KEYP BOR KEYO) <> 0
+```
+
+## Strings and numbers
+
+### string.bas
+
+| Routine | Description |
+| --- | --- |
+| `FUNCTION left(BYVAL s AS String, BYVAL n AS UInteger) AS String` | The first n characters of s; all of s when it is shorter |
+| `FUNCTION right(BYVAL s AS String, BYVAL n AS UInteger) AS String` | The last n characters of s; the empty string when s is shorter |
+| `FUNCTION mid(BYVAL s AS String, BYVAL start AS UInteger, BYVAL n AS UInteger) AS String` | Up to n characters of s from position start; the empty string when start is past the end |
+
+`mid` counts `start` from 0, whatever the string base.
+
+### asc.bas
+
+| Routine | Description |
+| --- | --- |
+| `FUNCTION asc(BYVAL s AS String, BYVAL n AS UInteger) AS UByte` | The code of the n-th character of s, counted from the string base; 0 past the end |
+
+### hex.bas
+
+| Routine | Description |
+| --- | --- |
+| `FUNCTION hex(BYVAL n AS ULong) AS String` | 8 hexadecimal digits of a 32-bit value |
+| `FUNCTION hex16(BYVAL n AS UInteger) AS String` | 4 hexadecimal digits of a 16-bit value |
+| `FUNCTION hex8(BYVAL n AS UByte) AS String` | 2 hexadecimal digits of an 8-bit value |
+
+The digits are upper case, with leading zeros.
+
+### fmath.bas
+
+Fast trigonometry in `Fixed` arithmetic, with angles in degrees and results accurate to about 0.25%.
+
+| Routine | Description |
+| --- | --- |
+| `FUNCTION fSin(BYVAL num AS Fixed) AS Fixed` | The sine of an angle in degrees |
+| `FUNCTION fCos(BYVAL num AS Fixed) AS Fixed` | The cosine, computed as `fSin(90 - num)` |
+| `FUNCTION fTan(BYVAL num AS Fixed) AS Fixed` | The tangent, computed as `fSin(num) / fSin(90 - num)` |
+
+An angle outside 0-360 is reduced with `MOD 360` first.
+
+### hmirror.bas
+
+| Routine | Description |
+| --- | --- |
+| `FUNCTION FASTCALL hMirror(BYVAL number AS UByte) AS UByte` | The byte with its bit order reversed: bit 7 becomes bit 0. Useful for mirroring sprite graphics |
+
+## Memory
+
+### memorybank.bas
+
+For the ZX Spectrum 128K and compatible models. The bank at `$C000` is selected through port `$7FFD`, and the system variable `BANKM` keeps the last value written there.
+
+| Routine | Description |
+| --- | --- |
+| `SUB SetBank(BYVAL bankNumber AS UByte)` | Pages RAM bank 0-7 into `$C000`-`$FFFF` and records it in `BANKM` |
+| `FUNCTION GetBank() AS UByte` | The RAM bank at `$C000`, read from `BANKM` |
+| `SUB SetCodeBank(BYVAL bankNumber AS UByte)` | Copies a RAM bank to `$8000`-`$BFFF`: the bank is paged in at `$C000`, copied, and the bank that was there before is paged back |
+
+A program that extends past `$C000` can break when another bank is paged in there.
+
+### farmem.bas
+
+For `CODEBANK` programs on the ZX Spectrum Next. These routines read and write bank-local data through `FARPTR` values, from resident or banked code, without changing the current bank. A `FARPTR` value is a `ULong` with the bank in bits 16-23 and the address in bits 0-15; bank 0 is resident memory.
+
+| Routine | Description |
+| --- | --- |
+| `FUNCTION FarPeek(BYVAL fp AS ULong) AS UByte` | The byte at a `FARPTR` |
+| `FUNCTION FASTCALL FarPeekW(BYVAL fp AS ULong) AS UInteger` | The word at a `FARPTR` |
+| `SUB FarPoke(BYVAL fp AS ULong, BYVAL v AS UByte)` | Writes a byte at a `FARPTR` |
+| `SUB FarPokeW(BYVAL fp AS ULong, BYVAL v AS UInteger)` | Writes a word at a `FARPTR` |
+| `SUB FarCopy(BYVAL fp AS ULong, BYVAL dest AS UInteger, BYVAL count AS UInteger)` | Copies count bytes from a bank to resident memory at dest |
+| `SUB FarCopyTo(BYVAL fp AS ULong, BYVAL src AS UInteger, BYVAL count AS UInteger)` | Copies count bytes from resident memory at src into a bank |
+| `FUNCTION FASTCALL FarStr(BYVAL fp AS ULong) AS String` | A string read from a bank, where the data at fp is a 2-byte length followed by the characters. The empty string when the heap is full |
+
+- Include `farmem.bas` outside `CODEBANK` blocks: it must stay resident.
+- The resident address of `FarCopy` and `FarCopyTo` must not be in the `CODEBANK` window, and an access must not run past the window's end.
+- The routines must not be called from an interrupt handler.
+
+## Decompression
+
+### zx0.bas
+
+Decompresses data packed with Einar Saukas' [ZX0](https://github.com/einar-saukas/ZX0) compressor, in its current format (version 2). Every routine has the same parameters: `src` is the address of the packed data and `dst` the destination.
+
+| Routine | Description |
+| --- | --- |
+| `SUB FASTCALL dzx0Standard(BYVAL src AS UInteger, BYVAL dst AS UInteger)` | The smallest decoder |
+| `SUB FASTCALL dzx0Turbo(BYVAL src AS UInteger, BYVAL dst AS UInteger)` | A faster decoder |
+| `SUB FASTCALL dzx0Mega(BYVAL src AS UInteger, BYVAL dst AS UInteger)` | The fastest decoder |
+| `SUB FASTCALL dzx0StandardBack(BYVAL src AS UInteger, BYVAL dst AS UInteger)` | `dzx0Standard` for data packed backwards |
+| `SUB FASTCALL dzx0TurboBack(BYVAL src AS UInteger, BYVAL dst AS UInteger)` | `dzx0Turbo` for data packed backwards |
+| `SUB FASTCALL dzx0MegaBack(BYVAL src AS UInteger, BYVAL dst AS UInteger)` | `dzx0Mega` for data packed backwards |
+| `SUB FASTCALL dzx0SmartRCS(BYVAL src AS UInteger, BYVAL dst AS UInteger)` | A small decoder for RCS-encoded screens |
+| `SUB FASTCALL dzx0SmartRCSBack(BYVAL src AS UInteger, BYVAL dst AS UInteger)` | `dzx0SmartRCS` for data packed backwards |
+| `SUB FASTCALL dzx0AgileRCS(BYVAL src AS UInteger, BYVAL dst AS UInteger)` | A faster decoder for RCS-encoded screens |
+
+- All the routines decode the same format; the variants differ in size and speed.
+- The `Back` routines read data made by the compressor's backwards mode. Their `src` and `dst` are the addresses of the last byte of the packed data and of the destination.
+- The `RCS` routines write the bytes that land in the screen bitmap (16384-22527) to their RCS places, and every other byte as it is.
+
+ZX0's author asks that programs that use it mention ZX0 in their documentation.
+
+### megalz.bas
+
+| Routine | Description |
+| --- | --- |
+| `SUB FASTCALL megaLZDepack(BYVAL source AS UInteger, BYVAL dest AS UInteger)` | Unpacks MegaLZ data from source to dest |

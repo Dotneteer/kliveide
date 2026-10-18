@@ -334,23 +334,63 @@ change.
   (and against `docs/authoring/book-writing-guidelines.md` where it applies).
 
 ### Phase 4 — Landing page (English)
+
+> **As built (2026-10-18).** `docs/landing/` (server component plus three small client parts:
+> Download, theme switch, language menu), text in `docs/i18n/landing/en.json`, tokens in
+> `docs/app/tokens.css` guarded by `test/docs/site-tokens.test.ts`, fonts through `next/font`.
+> `scripts/build-doc-site-info.cjs` reads the latest tag and the release's asset names (GitHub
+> API, falling back to the naming pattern) for the per-OS Download button and the `since` gating;
+> with v0.63.0 the page shows five features and holds back reverse debugging and testing. The
+> landing footer's changelog link goes to the generated *What's new* page.
 - Implement §3 with tokens, download detection, media from recipes and the recorder.
 - Visual check in the browser at desktop and phone widths, light and dark.
 
 ### Phase 5 — i18n infrastructure
+
+> **As built (2026-10-18).** `scripts/docs-i18n.cjs` (`languages`, `todo`, `merge`, `pack`,
+> `check`); `check` runs in `doc:check`. A language is published once it has `content/<lang>/`,
+> so enabling a language in the app adds nothing to the site until it is translated. The docs
+> navbar switcher knows each language's routes; the out-of-date notice compares merge-time hashes.
+> `uiLabels` gives translators the app's own wording for every bold UI label; it prefers
+> menu/toolbar keys and keeps ellipses, after the first round showed text-only matching picked
+> table columns ("Start" as a tape-header field). Custom heading ids (`[#id]`) are part of the
+> structure check, because a translated heading otherwise breaks in-page anchors.
 - `languages.json` export + check, `[lang]` routing for landing and docs, language selector,
   locale-aware chrome strings, hreflang, banner, untranslated-section badges, the
   `doc:i18n:todo/merge/check` scripts and `TRANSLATING.md`.
 
 ### Phase 6 — Translations
+
+> **As built (2026-10-18).** All five languages (es, pt-BR, pt-PT, de, hu) translated through the
+> workflow by one model agent per language, then re-translated where the English changed after
+> their review notes (wrong separators, a heading anchor, step numbers in code comments, a wrong
+> alt text). Native-speaker review is still open for every language; the Hungarian voice is first
+> person plural, per the glossary's style entry. Screenshots: `get-started.cjs --lang all`.
 - Landing dictionaries and Get Started pages into es, pt-BR, pt-PT, de, hu through the workflow,
   localized screenshots via `--lang all`. Native-speaker review is the author's call per language.
 
 ### Phase 7 — Book and Under the Hood polish
+
+> **As built (2026-10-18).** The book home lists every chapter with a Written / In progress /
+> Outline status (chapters 1-8, the front matter and appendices A-C are written), and
+> `scripts/build-doc-search-scope.cjs` keeps the book out of Pagefind. The one link into the book
+> (an example on the contribution page) is gone. Under the Hood gained four articles written from
+> the engineering READMEs and plans (the WASM cores, the debugger loop, the Next core and the
+> VHDL, reverse debugging); Contribute gained *Translate Klive* and a rewritten *Improve the
+> documentation*.
 - Book home with chapter status (still unlinked, §2.4), Under the Hood articles adapted from the READMEs, Contribute
   pages including "Translate Klive" (linking `src/common/i18n/locales/README.md`).
 
 ### Phase 8 — Writing the gaps (English)
+
+> **As built (2026-10-18).** A nine-page Klive BASIC reference under `reference/klive-basic/`,
+> written only from `.ai/zxbasic-syntax/`, `.ai/kbasic/` and Klive's own stdlib (every example
+> program was compiled with Klive BASIC; the failing blocks are grammar notation). Where the
+> sources disagree (`#elif`, bare `@array`, `CHR` without parentheses, `right()` on a short
+> string, `printat64` out of range) the page follows the compiler or leaves the point out; the
+> spec should be reconciled. Also: the project templates page, *The display language*, *The klive
+> command line*, and *What's new*, generated from CHANGELOG.md on every build
+> (`scripts/build-doc-changelog.cjs`, not committed).
 - Klive BASIC user guide and language reference (from `.ai/zxbasic-syntax/` and `.ai/kbasic/`
   only), project templates page, UI language page, CLI landing, "What's new" from `CHANGELOG.md`.
 

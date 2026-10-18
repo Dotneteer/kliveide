@@ -1,0 +1,109 @@
+---
+description: "The built-in functions of Klive BASIC with their argument and result types: maths, conversion, strings, arrays and sizes, memory and I/O, keyboard and machine code."
+---
+
+# Built-in functions
+
+The compiler knows these functions without an `#include`. Further functions, such as `INPUT`, `ATTR`, `POINT`, `SCREEN$` and the string routines `left`, `mid` and `right`, come from the [standard library](/en/reference/klive-basic/standard-library/).
+
+## Parentheses
+
+A built-in function can take its argument without parentheses: `SIN 0`, `LEN a$`, `CODE "a"`. It then takes only the operand right after it, so `SIN 0 + 1` is `SIN(0) + 1` and `INT 7 / 2` is `INT(7) / 2`. That operand cannot start with a sign: `ABS -5` is a syntax error. With parentheses the argument can be any expression.
+
+## Constant arguments
+
+A built-in function of a literal is computed when compiling. `ABS`, `SGN`, `INT`, `CODE` and `LEN` give exact values; the maths functions give a `Float` constant.
+
+## Maths
+
+| Function | Argument | Result |
+| --- | --- | --- |
+| `ABS(x)` | Numeric | The absolute value, of the same type as the argument. Warns when the argument is unsigned |
+| `SGN(x)` | Numeric | `Byte`: -1, 0 or 1. Warns when the argument is unsigned |
+| `INT(x)` | Numeric | `Long`, rounded toward minus infinity |
+| `SQR(x)` | Converted to `Float` | `Float`: the square root |
+| `EXP(x)` | Converted to `Float` | `Float`: e to the power of x |
+| `LN(x)` | Converted to `Float` | `Float`: the natural logarithm |
+| `SIN(x)`, `COS(x)`, `TAN(x)` | Converted to `Float`, in radians | `Float` |
+| `ASN(x)`, `ACS(x)`, `ATN(x)` | Converted to `Float` | `Float`: the angle in radians |
+| `PI` | None | The `Float` constant π |
+| `RND` or `RND()` | None | A `Float` from 0 up to (not including) 1. The generator's period is 2^32 |
+
+`RANDOMIZE` seeds the random number generator; see [Timing and random numbers](/en/reference/klive-basic/statements/#timing-and-random-numbers).
+
+A ROM calculator error, such as `SQR(-1)` or `LN(0)`, stops the program with the ROM report.
+
+## Conversion
+
+| Function | Argument | Result |
+| --- | --- | --- |
+| `CAST(type, x)` | Numeric | The value converted to the named type |
+| `STR(x)`, `STR$(x)` | Converted to `Float` | `String`: the number as text |
+| `VAL(s)` | `String` | `Float`: the value of the text |
+| `CHR(n, ...)`, `CHR$(n, ...)` | Each converted to `UByte` | `String` with one character for each argument |
+| `CODE(s)` | `String` | `UByte`: the code of the first character; 0 for the empty string |
+
+- `STR` writes a number in the ROM's number format. For a literal, the text is made when compiling.
+- `VAL` evaluates the text with BASIC's own `VAL`, so `VAL("2*3")` is 6. Text that BASIC rejects gives 0 and sets `ERR_NR` to 9 (`A Invalid argument`); the program carries on.
+- `CHR$(72, 105)` is `"Hi"`.
+
+```text
+PRINT CODE("A"); " "; CHR$(66); " "; CHR$(72, 105); " "; VAL("2*3")
+```
+
+This prints `65 B Hi 6`.
+
+## Strings
+
+| Function | Argument | Result |
+| --- | --- | --- |
+| `LEN(s)` | `String` | `UInteger`: the number of characters |
+| `INKEY`, `INKEY$` | None | `String`: the key pressed at the moment, or the empty string |
+
+Slices take parts of a string: see [Slicing](/en/reference/klive-basic/types-and-variables/#slicing).
+
+## Arrays and sizes
+
+| Function | Argument | Result |
+| --- | --- | --- |
+| `LBOUND(a, n)` | An array and a dimension number, counted from 1 | `UInteger`: the lower bound of dimension n |
+| `UBOUND(a, n)` | An array and a dimension number, counted from 1 | `UInteger`: the upper bound of dimension n |
+| `SIZEOF(type)`, `SIZEOF(variable)` | A type name or a variable | The size in bytes, as a constant |
+
+Without a dimension number, or with 0, `LBOUND` and `UBOUND` give the number of dimensions. For a declared array they are constants.
+
+```text
+DIM a(2 TO 5, 3) AS UByte
+PRINT LBOUND(a, 1); " "; UBOUND(a, 1); " "; LBOUND(a, 2); " "; UBOUND(a, 2)
+```
+
+This prints `2 5 0 3`.
+
+## Memory and I/O
+
+| Function | Argument | Result |
+| --- | --- | --- |
+| `PEEK(address)` | Converted to `UInteger` | `UByte`: the byte at the address |
+| `PEEK(type, address)` | A type and an address | The value of that type stored at the address |
+| `IN(port)` | Converted to `UInteger` | `UByte`: the byte read from the port |
+
+```text
+POKE UInteger 40001, 4660
+PRINT PEEK(UInteger, 40001); " "; PEEK 40001
+```
+
+This prints `4660 52`.
+
+## Machine code
+
+| Function | Argument | Result |
+| --- | --- | --- |
+| `USR(address)` | Converted to `UInteger` | `UInteger`: calls the machine code at the address and returns the value of BC |
+| `USR(s)` | `String` | `UInteger`: the address of the user-defined graphic named by the string's first character, in either case |
+
+```text
+POKE 40000, 1 : POKE 40001, 57 : POKE 40002, 48 : POKE 40003, 201
+PRINT USR 40000
+```
+
+The four bytes are `ld bc,12345` and `ret`, so this prints `12345`. `USR @label` calls code placed after a label, for example in an `ASM` block.

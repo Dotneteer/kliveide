@@ -210,7 +210,7 @@ export default function LandingPage({ lang }: Readonly<{ lang: string }>) {
           <span>{t("footer.license")}</span>
           <nav aria-label={t("footer.docs")}>
             <Link href={docsHref(lang, "get-started")}>{t("footer.docs")}</Link>
-            <a href={`${GITHUB}/blob/master/CHANGELOG.md`}>{t("footer.changelog")}</a>
+            <Link href={docsHref(lang, "reference", "whats-new/")}>{t("footer.changelog")}</Link>
             <a href={`${GITHUB}/issues`}>{t("footer.issues")}</a>
             <a href={`${GITHUB}/blob/master/src/common/i18n/locales/README.md`}>{t("footer.translate")}</a>
           </nav>

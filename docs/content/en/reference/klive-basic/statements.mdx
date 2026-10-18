@@ -1,0 +1,531 @@
+---
+description: "Klive BASIC statements: assignment, IF, FOR, WHILE, DO and LOOP, EXIT and CONTINUE, GOTO and GOSUB, SUB and FUNCTION with their parameters and calling conventions, DATA and READ, PRINT, and the screen, sound, memory, I/O and tape statements."
+---
+
+# Statements
+
+This page describes the statements of Klive BASIC, grouped by purpose. In the syntax lines, keywords are in upper case (their case does not matter), lower-case words are the parts you fill in, and square brackets mark optional parts.
+
+## Assignment
+
+```text
+[LET] variable = expr
+[LET] array(subscripts) = expr
+[LET] array1 = array2
+[LET] string(from TO to) = string-expr
+```
+
+`LET` is optional. The value is converted to the variable's type. There are no compound assignment operators such as `+=`.
+
+- Assigning to a constant, a function or a label is an error.
+- `array1 = array2` copies a whole array. See [Whole arrays](/en/reference/klive-basic/types-and-variables/#whole-arrays).
+- Assigning to a slice overwrites characters in place. See [Substring assignment](/en/reference/klive-basic/types-and-variables/#substring-assignment).
+
+## Control flow
+
+### IF
+
+```text
+IF condition [THEN] statements [ELSE statements]
+
+IF condition [THEN]
+  block
+[ELSEIF condition [THEN]
+  block]
+[ELSE
+  block]
+END IF
+```
+
+`THEN` is optional. `ENDIF` is a one-word spelling of `END IF`.
+
+- In the **single-line form**, everything after `THEN` up to the end of the line belongs to the `IF`, including statements separated by `:`.
+- In the **block form**, the condition ends the line. Any number of `ELSEIF` branches may follow; the first true branch runs.
+- `ELSE IF` written as two words is a nested `IF`, which needs its own `END IF`.
+- In a block `IF`, an `ELSE` followed by statements on the same line ends the `IF` on that line. Only an `END IF` on that same line may follow.
+
+```text
+SUB classify(n AS UByte)
+  IF n < 10 THEN
+    PRINT "small"
+  ELSEIF n < 100 THEN
+    PRINT "medium"
+  ELSE
+    PRINT "large"
+  END IF
+END SUB
+
+DIM a AS UByte = 1
+IF a THEN PRINT "yes" : a = 2
+```
+
+### FOR
+
+```text
+FOR variable = start TO limit [STEP step]
+  block
+NEXT [variable]
+```
+
+`STEP` defaults to 1. If `NEXT` names the loop variable, the name must match.
+
+- An undeclared loop variable takes the common type of the start, limit and step. `FOR i = 1 TO 10` makes `i` a `UByte`; `FOR i = -1 TO 10` makes it a `Byte`. Choose the type with care: a `UByte` loop that counts to 255 wraps around and never ends.
+- The start is evaluated once. The limit is evaluated again for every test, before the first pass and after each `NEXT`. A step that is not constant is evaluated again too.
+- After the loop, the variable holds the first value past the limit. A loop that never runs (`FOR i = 10 TO 1`) still sets the variable to the start value.
+- A constant `STEP` keeps its sign, so `FOR u = 9 TO 2 STEP -2` counts a `UByte` down. A step held in a variable takes the loop variable's type: with an unsigned loop variable it never counts down.
+- The compiler warns for `STEP 0` and for constant ranges that never run.
+
+```text
+DIM u AS UInteger = 1
+DIM i AS UByte
+FOR i = 1 TO 9 : u = u * i : NEXT i
+```
+
+### WHILE
+
+```text
+WHILE condition
+  block
+END WHILE
+```
+
+The condition is tested before each pass. `WEND` is a one-word spelling of `END WHILE`. An empty body raises warning W130.
+
+### DO and LOOP
+
+```text
+DO
+  block
+LOOP
+
+DO WHILE condition
+  block
+LOOP
+
+DO UNTIL condition
+  block
+LOOP
+
+DO
+  block
+LOOP WHILE condition
+
+DO
+  block
+LOOP UNTIL condition
+```
+
+- `DO` ... `LOOP` without a condition loops forever. It is the recommended form of an endless loop.
+- A condition after `DO` is tested before each pass. A condition after `LOOP` is tested after each pass, so the body runs at least once.
+- After a `DO` without a condition, `LOOP` must start a new line unless the body is empty. `DO : i = i + 1 : LOOP` on one line is an error, while `DO LOOP UNTIL k` is allowed.
+- An empty body raises warning W130.
+
+```text
+DIM i AS UByte
+DO WHILE i < 3 : i = i + 1 : LOOP
+DO : i = i + 1
+LOOP UNTIL i > 5
+```
+
+### EXIT and CONTINUE
+
+```text
+EXIT DO | EXIT FOR | EXIT WHILE
+CONTINUE DO | CONTINUE FOR | CONTINUE WHILE
+```
+
+`EXIT` leaves the innermost enclosing loop of the named kind. `CONTINUE` starts its next pass. Either one is an error when no loop of that kind encloses it.
+
+```text
+DIM i AS UByte
+FOR i = 1 TO 20
+  IF i MOD 2 = 0 THEN CONTINUE FOR
+  IF i > 9 THEN EXIT FOR
+  PRINT i;
+NEXT i
+```
+
+This prints `13579`.
+
+### GOTO and GOSUB
+
+```text
+GOTO target
+GO TO target
+GOSUB target
+GO SUB target
+RETURN
+```
+
+A *target* is a label or a line number. It may be used before it is declared; a target that is never declared is an error.
+
+- `GOTO` jumps to the target. Labels are global, but you cannot jump into a `SUB` or `FUNCTION`.
+- `GOSUB` calls the code at the target, and `RETURN` comes back to the statement after the `GOSUB`.
+- `GOSUB` is not allowed inside a `SUB` or `FUNCTION`.
+
+```text
+10 LET t = 0
+20 FOR i = 1 TO 10
+30 GO SUB 100
+40 NEXT i
+50 PRINT t
+60 STOP
+100 LET t = t + i * i
+110 RETURN
+```
+
+### ON GOTO and ON GOSUB
+
+```text
+ON expr GOTO target1, target2, ...
+ON expr GOSUB target1, target2, ...
+```
+
+The value of *expr*, converted to `UByte`, selects a target: 0 selects the first one. A value outside the list does nothing, and execution continues after the statement. `GO TO` and `GO SUB` work here too.
+
+### END, STOP and ERROR
+
+| Statement | Effect |
+| --- | --- |
+| `END [expr]` | Ends the program and returns to its caller (BASIC or the operating system) with the value, 0 by default. |
+| `STOP [expr]` | Stops the program with a ROM report: `STOP statement` without an operand. |
+| `ERROR expr` | Raises the ROM error report with the given number (converted to `UByte`). |
+
+`END` also closes blocks: `END IF`, `END WHILE`, `END SUB`, `END FUNCTION` and `END ASM`.
+
+## Routines
+
+### SUB
+
+```text
+SUB [FASTCALL | STDCALL] name[(parameters)]
+  body
+END SUB
+```
+
+A `SUB` is a routine without a result. It cannot declare a return type and cannot appear in an expression. `RETURN` without a value leaves it early.
+
+### FUNCTION
+
+```text
+FUNCTION [FASTCALL | STDCALL] name[(parameters)] [AS type]
+  body
+END FUNCTION
+```
+
+A `FUNCTION` returns a value with `RETURN expr`. The value is converted to the return type, and it must be of the right kind: a number for a numeric function, a string for a `String` function.
+
+- Without `AS type` the function returns a `Float`, with warning W100 (an error with `require-types`).
+- A function that may end without `RETURN` raises warning W190. If it does end that way, it returns 0, or the empty string for a `String` function.
+
+```text
+FUNCTION factorial(n AS UByte) AS Float
+  IF n < 2 THEN RETURN 1
+  RETURN n * factorial(n - 1)
+END FUNCTION
+
+PRINT factorial(12)
+```
+
+### Calling a routine
+
+```text
+name
+name(arguments)
+name arguments
+```
+
+A `SUB` or `FUNCTION` can be called as a statement, with or without parentheses around the arguments. In an expression, write `name(arguments)`; a function without parameters can be written as its bare name.
+
+- **Recursion** is allowed.
+- **Forward calls**: a routine can be called before its definition. Its signature comes from the definition.
+- **Locals** are declared with `DIM` inside the body. They are zeroed on each call and released on return.
+- `DATA` and `GOSUB` are not allowed inside routines.
+- At optimisation level 1 and above, a routine that is never called is removed, with warning W170.
+
+### Parameters
+
+```text
+[BYVAL | BYREF] name [AS type] [= constant]
+[BYREF] name() AS type
+```
+
+| Rule | Detail |
+| --- | --- |
+| Default passing | Scalars are passed `BYVAL` (a copy). `#pragma default_byref = true` makes `BYREF` the default. |
+| `BYREF` | The routine works on the caller's variable. The argument must be a variable, an array or an array element, not an expression. |
+| Arrays | `name()` declares an array parameter. Arrays are always passed by reference; `BYVAL` on an array is an error. Pass the whole array by its name: `sum(values)`. |
+| Optional parameters | A parameter with `= constant` is optional. A mandatory parameter cannot follow an optional one, and an array parameter cannot have a default. |
+| Types | A parameter without a type is a `Float`, with warning W100. |
+
+```text
+SUB bump(BYREF v AS UInteger)
+  v = v + 1
+END SUB
+
+FUNCTION sum(a() AS UInteger) AS UInteger
+  DIM i AS UByte
+  DIM s AS UInteger
+  FOR i = LBOUND(a, 1) TO UBOUND(a, 1)
+    s = s + a(i)
+  NEXT i
+  RETURN s
+END FUNCTION
+
+DIM g AS UInteger = 1
+bump g
+DIM x(2) AS UInteger => {1, 2, 3}
+PRINT g; " "; sum(x)
+```
+
+This prints `2 6`.
+
+### Named arguments
+
+An argument can name its parameter with `:=`. Positional arguments cannot follow a named one, and an unknown name, too many or too few arguments are errors.
+
+The values given, positional and named, are taken in the order written, and the defaults of the parameters that were neither given by position nor named follow them. A name says which default is left out, not where its value goes.
+
+```text
+SUB show(a AS UByte, b AS UByte = 2, c AS UByte = 3)
+  PRINT a; "-"; b; "-"; c; " ";
+END SUB
+
+show 1
+show 1, 9
+show(c := 7, a := 5)
+```
+
+This prints `1-2-3 1-9-3 7-5-2`.
+
+### DECLARE
+
+```text
+DECLARE SUB name[(parameters)]
+DECLARE FUNCTION name[(parameters)] [AS type]
+```
+
+`DECLARE` states a routine's header before its definition. The definition must match it in name, number of parameters, their types and `BYREF` passing; renaming a parameter only raises a warning. A `DECLARE` after the definition, or a second definition, is an error. A declared routine that is used but never defined is an error.
+
+### Calling conventions
+
+| Convention | How the routine receives its arguments |
+| --- | --- |
+| `STDCALL` | The default. Arguments are pushed on the stack. |
+| `FASTCALL` | The first argument arrives in registers: A for 8 bits, HL for 16 bits and strings, DE:HL for 32 bits and `Fixed`, A, E, D, C, B for a `Float`. |
+
+`FASTCALL` is meant for routines written in assembly. A `FASTCALL` routine with more than one parameter raises warning W160; the further arguments are on the stack. A `FASTCALL` routine with a BASIC body can still use its first parameter like any other. The register details are on the [Inline assembly](/en/reference/klive-basic/inline-assembly/#calling-conventions) page.
+
+## Data
+
+### DATA, READ and RESTORE
+
+```text
+DATA expr, expr, ...
+READ variable, variable, ...
+RESTORE [target]
+```
+
+- `DATA` provides items for `READ`. Items can be numbers or strings, and they can be expressions that are not constant: those are evaluated when `READ` takes them. `DATA` is allowed only at the global level, not inside a routine.
+- `READ` takes the next items into variables or array elements (not whole arrays). Each item is converted to the variable's type. An undeclared target becomes a `Float`. After the last item, `READ` starts again at the first.
+- A string item read into a number gives 0, and a number read into a string gives the empty string. `ERR_NR` is set to 9 (`A Invalid argument`) and the program carries on.
+- `RESTORE` makes the next `READ` start at the first `DATA` item, or at the first `DATA` after the given label or line number.
+- A program that uses `READ` but has no `DATA` is an error.
+
+```text
+DIM x AS UByte
+READ x : PRINT x; " ";
+RESTORE second
+READ x : PRINT x
+DATA 1, 2
+second:
+DATA 3, 4
+```
+
+This prints `1 3`.
+
+## Screen output
+
+### PRINT
+
+```text
+PRINT [item {separator item}] [separator]
+```
+
+An *item* is one of these:
+
+- an expression;
+- `AT row, column` (both `UByte`; all 24 rows are usable);
+- `TAB column` (`UByte`, taken modulo 32; when the cursor is already past the column, it moves to the next line);
+- an attribute modifier: `INK`, `PAPER`, `FLASH`, `BRIGHT`, `INVERSE`, `OVER`, `BOLD` or `ITALIC` followed by a value.
+
+| Separator | Effect |
+| --- | --- |
+| `;` | The next item follows directly. |
+| `,` | The next item starts in the next 16-column field. |
+| A separator at the end | No new line after the statement. |
+
+A `PRINT` without items prints a new line. The apostrophe is not a separator: it starts a comment. Attribute modifiers inside `PRINT` apply to that statement only. Booleans print as `0` or `1`.
+
+```text
+PRINT AT 5, 10; "X"
+PRINT AT 6, 0; TAB 3; "Y"; TAB 10; "Z"
+PRINT INK 1; PAPER 6; "Colours"; " for this line only"
+```
+
+`PRINT` starts at BASIC's print position and never asks `scroll?`. A new line on row 23 leaves the cursor below the screen, and the screen scrolls when something is printed there.
+
+Character codes 165 to 255 print one glyph each from the user-defined graphics area, not the ROM's keyword text.
+
+### CLS
+
+```text
+CLS
+```
+
+Clears the screen with the current permanent attributes.
+
+### Attribute statements
+
+```text
+INK expr
+PAPER expr
+FLASH expr
+BRIGHT expr
+INVERSE expr
+OVER expr
+BOLD expr
+ITALIC expr
+```
+
+As statements, these set the permanent attributes for everything printed or drawn afterwards. The value is converted to `UByte`. `BOLD` and `ITALIC` are ZX BASIC extensions that print emphasised and slanted characters.
+
+No value stops the program:
+
+| Statement | Values |
+| --- | --- |
+| `INK`, `PAPER` | 0 to 7 set the colour; 8 keeps the colour already on the screen; any other value is masked to 0 to 7 |
+| `FLASH`, `BRIGHT` | 0 is off; 8 keeps what is on the screen; any other value is on |
+| `INVERSE` | Bit 0 is used |
+| `OVER` | Bits 0 and 1 are used: a printed character replaces (0), is XORed with (1), ANDed with (2) or ORed with (3) the screen |
+
+### BORDER
+
+```text
+BORDER expr
+```
+
+Sets the border colour. The value is converted to `UByte`, and bits 0 to 2 give the colour.
+
+## Graphics
+
+`PLOT`, `DRAW` and `CIRCLE` accept attribute modifiers before their coordinates, separated by `;`. The modifiers apply to that statement only:
+
+```text
+PLOT INK 2; 128, 96
+```
+
+| Statement | Effect |
+| --- | --- |
+| `PLOT [modifiers;] x, y` | Sets the pixel at x, y (both `UByte`). (0, 0) is the bottom-left pixel, and all 192 rows are usable. |
+| `DRAW [modifiers;] dx, dy` | Draws a line from the last plotted point, dx and dy (`Integer`) away. |
+| `DRAW [modifiers;] dx, dy, angle` | Draws an arc to the same end point, turning through *angle* radians (`Float`). A positive angle turns anticlockwise. |
+| `CIRCLE [modifiers;] x, y, r` | Draws a circle centred at x, y with radius r. Each value is converted to `Byte`. |
+
+A point off the screen is not drawn and does not stop the program: `PLOT` plots nothing, `DRAW` draws nothing when its end is off the screen, and `CIRCLE` skips the points off it. `ERR_NR` is set to 4 (`5 Out of screen`).
+
+```text
+PLOT 60, 60
+DRAW 80, 0, PI
+```
+
+## Sound
+
+### BEEP
+
+```text
+BEEP duration, pitch
+```
+
+Sounds the beeper for *duration* seconds at *pitch* semitones from middle C. Both values are converted to `Float`. The duration can be 0 to 10 and the pitch -60 to 69; any other value stops the program with `B Integer out of range`. Constant arguments are also checked when compiling.
+
+## Timing and random numbers
+
+| Statement | Effect |
+| --- | --- |
+| `PAUSE frames` | Waits the given number of frames (`UInteger`). `PAUSE 0` waits for a key press. |
+| `RANDOMIZE [seed]` | Seeds the random number generator with the value (`ULong`). Without a value, it uses the `FRAMES` counter. |
+
+## Memory and I/O
+
+### POKE
+
+```text
+POKE address, value
+POKE type address, value
+```
+
+Without a type, `POKE` writes a byte: the address is converted to `UInteger` and the value to `UByte`. With a type, the value is converted to that type and stored with its full size. Parentheses around the operands, `POKE (address, value)`, and a comma after the type, `POKE UInteger, address, value`, are accepted too.
+
+```text
+POKE 40000, 255
+POKE UInteger 40001, 4660
+POKE ULong 40003, 305419896
+POKE Float 40010, PI
+```
+
+To read memory, use the [`PEEK`](/en/reference/klive-basic/functions/#memory-and-io) function.
+
+### OUT
+
+```text
+OUT port, value
+```
+
+Writes a byte to an I/O port. The port is converted to `UInteger` and the value to `UByte`. To read a port, use the [`IN`](/en/reference/klive-basic/functions/#memory-and-io) function.
+
+## Tape
+
+```text
+SAVE name CODE address, length
+SAVE name SCREEN$
+SAVE name DATA [variable | array()]
+
+LOAD name CODE [address [, length]]
+LOAD name SCREEN$
+LOAD name DATA [variable | array()]
+
+VERIFY name ...
+```
+
+*name* is a string expression.
+
+- `CODE` saves or loads a block of memory. `LOAD ... CODE` can leave out the address and length.
+- `SCREEN$` is the same as `CODE 16384, 6912`. `SCREEN` is accepted as a spelling of `SCREEN$`.
+- `DATA` saves or loads the bytes of one variable or a whole array. For a `String` variable these are its two-byte pointer, not its characters. String arrays and local arrays are not accepted. Without a name, `DATA` saves or loads the whole area of the program's variables together with the heap.
+- `VERIFY` takes the same forms as `LOAD` and compares the tape block with memory instead of loading it.
+- A load error does not stop the program: check `PEEK 23610` afterwards. BREAK cancels the operation.
+
+## ASM
+
+```text
+ASM
+  assembly lines
+END ASM
+```
+
+An `ASM` block passes its lines to the assembler. See [Inline assembly](/en/reference/klive-basic/inline-assembly/).
+
+## CODEBANK (ZX Spectrum Next)
+
+```text
+CODEBANK bank
+  routines, DIM statements, ASM blocks and labels
+END CODEBANK
+```
+
+On the ZX Spectrum Next, the routines and data inside a `CODEBANK` block live in their own 8K memory pages. Calls to them are written as any other call. A `CODEBANK` block cannot stand inside a `SUB` or `FUNCTION`.
+
+`#pragma codebank = n` puts the code that follows into bank *n*; bank 0 is resident memory. `FARPTR name` gives a `ULong` that holds a bank-local variable's bank in bits 16 to 23 and its address in bits 0 to 15. The `farmem.bas` library reads and writes data through such values; see [Standard library](/en/reference/klive-basic/standard-library/#farmembas).
+
+The compiler reports, among others, a bank larger than its window, a direct `GOTO`, `jp` or `call` between banks, and a reference into a bank from outside it. The user guide describes the build side: [Banked code on the ZX Spectrum Next](/en/guides/languages/zx-basic/#banked-code-on-the-zx-spectrum-next-codebank).
