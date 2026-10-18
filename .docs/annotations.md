@@ -81,7 +81,16 @@ label and says `(mirror of $4082)`.
 
 The row menu adds the bank document's annotation entries — Label, Synopsis and
 End-of-Line Comment, Operand Label, Mark As Code/Bytes/Words/Skip (Text on the
-ZX80/ZX81), Go to Definition — with the same shortcuts on the row last clicked. A row's
+ZX80/ZX81), Go to Definition, Go to References — with the same shortcuts on the row last
+clicked. Go to References (`labelReferences.ts`) offers one entry per label the row has (its own,
+then each its operands name) and lists the rows of the bank or ROM page whose operands resolve to
+it by `resolveOperandLabel`, the rule the listing prints names by, so `.defw` words count and a
+number that only equals the label's value under another name does not. The Labels list's Refs
+column (and its References sort) counts the same rows for every label at once
+(`countLabelReferencesInListing`, one pass), so the two always agree; the operands pointed at a
+label by hand are counted apart (`operandReferenceCount`), because deleting the label clears them,
+and the delete question reports both. Neither sees a target only an `RST` reaches: the listing
+prints `rst $10`, not the label. A row's
 edit goes through the bank document's own controller, given the bank the row is in
 (`liveListingPort.ts`, `liveAnnotationEditing.ts`): RAM rows to the active set, ROM rows
 to the user's ROM layer, never to a shipped sidecar. A row nowhere annotatable (a Timex
@@ -378,7 +387,9 @@ Regions can be:
 
 - `disassemble`: generate Z80 instructions;
 - `bytes`: generate `.defb` lines with up to four values per line;
-- `words`: generate `.defw` lines with up to two words per line;
+- `words`: generate `.defw` lines with up to two words per line; a word whose value is a labelled
+  address shows the label, by the same rule as an instruction operand (an operand reference first,
+  then a label with that value), but never a system variable's name;
 - `skip`: generate a `.skip` line;
 - `copper`: generate one `.copper` row per big-endian word (a Copper list);
 - `dma`: generate one `.dma` row per register write (a zxnDMA program);

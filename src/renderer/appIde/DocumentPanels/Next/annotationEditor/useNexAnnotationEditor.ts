@@ -10,6 +10,7 @@ import { NexRegionDialog } from "../NexRegionDialog";
 import { NexRegionsDialog } from "../NexRegionsDialog";
 import { NexLabelDialog } from "../NexLabelDialog";
 import { NexLabelsDialog } from "../NexLabelsDialog";
+import { NexReferencesDialog } from "../NexReferencesDialog";
 import { NexOperandLabelDialog } from "../NexOperandLabelDialog";
 import { NexSynopsisCommentDialog } from "../NexSynopsisCommentDialog";
 import { NexEndOfLineCommentDialog } from "../NexEndOfLineCommentDialog";
@@ -135,6 +136,11 @@ export function useAnnotationEditorPorts(args: AnnotationEditorPortArgs): NexAnn
         label: (args) => opened(dialogs.open(NexLabelDialog, args, { title: t("panels.next.label.title"), width: 560 })),
         manageLabels: (args) =>
           opened(dialogs.open(NexLabelsDialog, args, { title: t("panels.next.labels.title"), width: 780 })),
+        references: (args) =>
+          opened(dialogs.open(NexReferencesDialog, args, {
+            title: t("panels.next.references.title", { name: args.label.name }),
+            width: 720
+          })),
         operandLabel: (args) =>
           opened(dialogs.open(NexOperandLabelDialog, args, { title: t("panels.next.operandLabel.title"), width: 640 })),
         region: (args) =>

@@ -971,7 +971,7 @@
   },
   "panels.next.label.refs": "{count, plural, one {# ref} other {# refs}}",
   "@panels.next.label.refs": {
-    "context": "How many operands refer to a label, in a row of the label dialog's list. 'ref' is short for reference.",
+    "context": "Beside a label in the Label dialog's list: how many rows of this bank's listing name it (as the Labels dialog's Refs column counts them).",
     "maxChars": 10,
     "placeholders": {
       "count": "How many references (at least 1)"
@@ -1004,6 +1004,36 @@
   "@panels.next.labels.title": {
     "context": "Title of the dialog of the NEX annotation editor (a popped-out bank's disassembly) that lists and manages all labels."
   },
+  "panels.next.references.title": "References: {name}",
+  "@panels.next.references.title": {
+    "context": "Title of the dialog that lists the disassembly rows naming a label (Go to References).",
+    "placeholders": {
+      "name": "The label name (not translated)"
+    }
+  },
+  "panels.next.references.intro": "{count, plural, =0 {No row in this listing names **{name}**.} one {# row in this listing names **{name}**.} other {# rows in this listing name **{name}**.}} References from other banks are not searched.",
+  "@panels.next.references.intro": {
+    "context": "Introduction of the Go to References dialog. 'Listing' is the bank's or ROM page's disassembly. Keep the **...** (bold) markers around the label name.",
+    "placeholders": {
+      "count": "How many rows name the label",
+      "name": "The label name (not translated)"
+    }
+  },
+  "panels.next.references.column.instruction": "Instruction",
+  "@panels.next.references.column.instruction": {
+    "context": "Column header in the Go to References dialog: the row's instruction or data directive, as listed.",
+    "maxChars": 16
+  },
+  "panels.next.references.column.within": "In",
+  "@panels.next.references.column.within": {
+    "context": "Column header in the Go to References dialog: the nearest label above the row, i.e. the routine or table the reference sits in.",
+    "maxChars": 12
+  },
+  "panels.next.references.empty": "No references",
+  "@panels.next.references.empty": {
+    "context": "Shown in the empty list of the Go to References dialog.",
+    "maxChars": 40
+  },
   "panels.next.labels.intro": "A **bank label** names an address inside bank {bank} alone, so two banks can each have their own `Start`. A **global label** names a 16-bit address anywhere in memory and is visible from every bank.",
   "@panels.next.labels.intro": {
     "context": "Introduction at the top of the Labels dialog. Keep the **...** (bold) and `...` (code font) markers around the matching terms; 'Start' is an example label name, keep it.",
@@ -1031,7 +1061,7 @@
   },
   "panels.next.labels.sort.references": "References",
   "@panels.next.labels.sort.references": {
-    "context": "Sort option of the Labels dialog: most referenced first.",
+    "context": "Sort option of the Labels dialog: the label named by the most rows of this listing first.",
     "maxChars": 14
   },
   "panels.next.labels.column.address": "Address",
@@ -1041,8 +1071,12 @@
   },
   "panels.next.labels.column.refs": "Refs",
   "@panels.next.labels.column.refs": {
-    "context": "Column header of the Labels dialog: how many operands refer to the label. Short for references.",
+    "context": "Column header of the Labels dialog: how many rows of this bank's (or ROM page's) listing name the label, the rows Go to References lists. Short for references.",
     "maxChars": 6
+  },
+  "panels.next.labels.column.refsTitle": "Rows of this listing that name the label, as Go to References lists them. A global label named from other banks counts only the rows here.",
+  "@panels.next.labels.column.refsTitle": {
+    "context": "Tooltip of the Refs column header in the Labels dialog. 'Listing' is the bank's or ROM page's disassembly; Go to References is the row-menu command of that name."
   },
   "panels.next.labels.edit": "Edit {name}",
   "@panels.next.labels.edit": {
@@ -1085,6 +1119,13 @@
     "context": "Shown under the label name in the delete-label question when operands refer to the label.",
     "placeholders": {
       "count": "How many references"
+    }
+  },
+  "panels.next.labels.deleteListedRows": "{count, plural, one {# row of this listing shows its name and will no longer.} other {# rows of this listing show its name and will no longer.}}",
+  "@panels.next.labels.deleteListedRows": {
+    "context": "Shown under the label name in the delete-label question when rows of the disassembly listing show the label's name (by value or by an operand reference). After the delete they show a number or another name instead.",
+    "placeholders": {
+      "count": "How many rows"
     }
   },
   "panels.next.operandLabel.title": "Operand label",
@@ -1328,6 +1369,19 @@
   "panels.next.annotations.menu.goToDefinition": "Go to Definition",
   "@panels.next.annotations.menu.goToDefinition": {
     "context": "Item of the Annotations menu of the NEX annotation editor (a popped-out bank's disassembly) (toolbar button and row context menu): jump to the label the row's operand names."
+  },
+  "panels.next.annotations.menu.findReferences": "Go to References",
+  "@panels.next.annotations.menu.findReferences": {
+    "context": "Item of the Annotations menu of the NEX annotation editor and of the Disassembly view's row menu, shown disabled when the row has no label of its own and no operand that names one: lists the rows that name a label.",
+    "maxChars": 40
+  },
+  "panels.next.annotations.menu.findReferencesOf": "Go to References: {name}",
+  "@panels.next.annotations.menu.findReferencesOf": {
+    "context": "Item of the Annotations menu of the NEX annotation editor and of the Disassembly view's row menu: lists the rows that name this label. One item per label the row offers (its own label, the labels its operands name).",
+    "placeholders": {
+      "name": "A label name, such as KEY_LEFT (not translated)"
+    },
+    "maxChars": 48
   },
   "panels.next.annotations.menu.manageLabels": "Manage Labels...",
   "@panels.next.annotations.menu.manageLabels": {

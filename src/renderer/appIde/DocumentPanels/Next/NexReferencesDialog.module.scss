@@ -1,0 +1,108 @@
+@use "@styles/core.scss" as *;
+
+/*
+ * The "Go to References" list: the Labels list's table, with its row metrics and tokens, at fewer
+ * columns. The intro says how many rows name the label, so an empty list is not a mystery.
+ */
+.intro {
+  margin: 0 0 var(--space-3);
+  color: var(--color-doc-inactiveText);
+  font-size: var(--font-size-200);
+  line-height: 1.5;
+
+  & strong {
+    color: var(--color-modal-body);
+    font-weight: 600;
+  }
+
+  & code {
+    font-family: var(--monospace-font);
+    font-size: var(--font-size-300);
+  }
+}
+
+/* A fixed viewport, as in the Labels list: the dialog does not resize with the number of rows. */
+.table {
+  box-sizing: border-box;
+  --list-row-height: var(--size-controlMd);
+  --list-visible-rows: 10;
+
+  height: calc(var(--list-row-height) * (var(--list-visible-rows) + 1));
+  overflow: auto;
+  border: 1px solid var(--border-modal-section);
+  border-radius: 4px;
+  background: var(--bgcolor-modal-header);
+}
+
+.tableHeader,
+.referenceRow {
+  display: grid;
+  grid-template-columns: 8ch minmax(20ch, 1fr) minmax(12ch, 18ch) 8ch;
+  column-gap: 10px;
+  align-items: center;
+  box-sizing: border-box;
+  height: var(--list-row-height);
+  padding: 0 8px;
+  font-family: var(--monospace-font);
+}
+
+.tableHeader {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  border-bottom: 1px solid var(--border-modal-section);
+  background: var(--bgcolor-modal-footer);
+  color: var(--color-doc-inactiveText);
+  font-size: var(--font-size-100);
+}
+
+.referenceRow {
+  color: var(--color-modal-body);
+  cursor: default;
+
+  &:nth-child(odd) {
+    background: var(--bgcolor-disass-even-row);
+  }
+
+  &:hover {
+    background: var(--bgcolor-disass-hover);
+  }
+}
+
+.instruction,
+.within {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Where the row sits is context, not the thing found: it reads like a label, in the label hue. */
+.within {
+  color: var(--color-value);
+}
+
+.emptyList {
+  padding: 10px;
+  color: var(--color-doc-inactiveText);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.actionButton {
+  border: 1px solid var(--border-modal-section);
+  border-radius: 4px;
+  padding: 3px 7px;
+  background: transparent;
+  color: var(--color-modal-body);
+  font-size: var(--font-size-100);
+  cursor: pointer;
+  @include focus-ring;
+
+  &:hover {
+    background: var(--bgcolor-disass-hover);
+  }
+}

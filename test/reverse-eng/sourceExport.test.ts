@@ -110,6 +110,8 @@ describe("exportSource", () => {
     expect(source).toContain("; The entry point.");
     expect(source).toContain("; Never returns.");
     expect(source).toMatch(/Start:\s+ld hl,Table\s+; point at the table/);
+    // --- A word that is a labelled address is written as the label, and still assembles to it
+    expect(source).toMatch(/Table:\s+\.defw Start,\s*\$8010/);
     expect(source).toMatch(/L_hl:/);
     expect(source).toMatch(/table_2:/);
     expect(source).toMatch(/Ship:\s+\.defb %00111100\s+; \.\.####\.\./);

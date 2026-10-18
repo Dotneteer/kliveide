@@ -6,6 +6,7 @@ import { breakpointCommandSpec } from "@common/utils/breakpoint-spec";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 import { ONE_SHOT_GESTURE } from "@renderer/features/editor/monaco/marginBreakpointMenu";
 import { t } from "@common/i18n/i18n";
+import type { DefinitionLabel } from "@renderer/appIde/annotations/goToDefinition";
 
 /*
  * The live disassembly view's row menu (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §4.2): the
@@ -37,6 +38,8 @@ export type AnnotationRowMenuItem = {
   /** Why the entry is disabled: the row's memory cannot be annotated, or no set is active. */
   tooltip?: string;
   separatorBefore?: boolean;
+  /** For "find-references": the label the entry searches for. */
+  label?: DefinitionLabel;
 };
 
 /**
@@ -53,6 +56,11 @@ export function annotationRowMenuItems(args: {
   rom: boolean;
   hasOperands: boolean;
   hasDefinition: boolean;
+  /**
+   * The labels "Go to References" can search for from the row, in order (its own, then its
+   * operands'): one entry each. Empty, the entry is shown disabled.
+   */
+  referenceLabels?: DefinitionLabel[];
   hints: Partial<Record<NexAnnotationMenuAction, string>>;
   regionActions: { id: NexAnnotationMenuAction; text: string }[];
   /**
@@ -92,6 +100,24 @@ export function annotationRowMenuItems(args: {
       separatorBefore: true,
       ...(args.hasDefinition ? {} : { disabled: true })
     }),
+    // --- Reading, not editing: offered wherever the row names a label, as Go to Definition is
+    ...(args.referenceLabels?.length
+      ? args.referenceLabels.map(
+          (label, index): AnnotationRowMenuItem => ({
+            id: "find-references",
+            text: t("panels.next.annotations.menu.findReferencesOf", { name: label.name }),
+            hint: index === 0 ? args.hints["find-references"] : undefined,
+            label
+          })
+        )
+      : [
+          {
+            id: "find-references" as const,
+            text: t("panels.next.annotations.menu.findReferences"),
+            hint: args.hints["find-references"],
+            disabled: true
+          }
+        ]),
     ...(args.romEditor === "open"
       ? [{ id: "open-rom-annotations" as const, text: t("panels.doc.rowMenu.openRomAnnotations"), separatorBefore: true }]
       : args.romEditor === "start"

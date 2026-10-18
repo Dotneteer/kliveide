@@ -19,6 +19,8 @@ import type { NexLabelsDialogResult } from "../NexLabelsDialog";
 import type { NexOperandLabelDialogResult } from "../NexOperandLabelDialog";
 import type { NexRegionDialogResult } from "../NexRegionDialog";
 import type { NexRegionsDialogResult } from "../NexRegionsDialog";
+import type { DefinitionLabel } from "@renderer/appIde/annotations/goToDefinition";
+import type { LabelReference } from "@renderer/appIde/annotations/labelReferences";
 
 /**
  * Everything outside the annotation editor that its controller may touch.
@@ -118,6 +120,15 @@ export type NexAnnotationDialogsPort = {
     onEditLabel: (label: NexLabelDialogLabel) => Promise<NexLabelDialogLabel[]>;
     onDeleteLabel: (label: NexLabelDialogLabel) => Promise<NexLabelDialogLabel[]>;
   }): Promise<NexLabelsDialogResult | undefined>;
+
+  /**
+   * The rows that name a label. Resolves with the one chosen, which the listing scrolls to, or
+   * nothing when closed.
+   */
+  references(args: {
+    label: DefinitionLabel;
+    references: LabelReference[];
+  }): Promise<LabelReference | undefined>;
 
   operandLabel(args: {
     bank: number;

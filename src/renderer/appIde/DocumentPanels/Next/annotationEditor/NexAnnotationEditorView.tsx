@@ -9,6 +9,7 @@ import type { IContextMenuApi, ContextMenuState } from "@renderer/controls/Conte
 
 import { useT } from "@common/i18n/useT";
 import type { NexAnnotationEditorIntent } from "./NexAnnotationEditorIntents";
+import type { DefinitionLabel } from "@renderer/appIde/annotations/goToDefinition";
 import {
   annotationsMenuTitle,
   regionTypeOfAction,
@@ -82,7 +83,7 @@ export const NexAnnotationMenu = ({
         <ContextMenuSeparator key={index} />
       ) : (
         <ContextMenuItem
-          key={entry.id}
+          key={`${entry.id}:${index}`}
           text={entry.text}
           disabled={entry.disabled}
           /*
@@ -95,7 +96,7 @@ export const NexAnnotationMenu = ({
           trailing={entry.shortcut}
           clicked={() => {
             api.conceal();
-            dispatch(intentForAction(entry.id, rowIndex));
+            dispatch(intentForAction(entry.id, rowIndex, entry.subject?.label));
           }}
         />
       )
@@ -106,7 +107,8 @@ export const NexAnnotationMenu = ({
 /** Which intent a menu entry stands for. */
 export function intentForAction(
   action: NexAnnotationMenuAction,
-  rowIndex?: number
+  rowIndex?: number,
+  label?: DefinitionLabel
 ): NexAnnotationEditorIntent {
   const regionType = regionTypeOfAction(action);
   if (regionType) return { type: "regionTypeMarked", regionType, rowIndex };
@@ -114,6 +116,8 @@ export function intentForAction(
   switch (action) {
     case "goto-definition":
       return { type: "goToDefinitionRequested", rowIndex };
+    case "find-references":
+      return { type: "referencesRequested", rowIndex, label };
     case "manage-labels":
       return { type: "manageLabelsRequested" };
     case "manage-regions":

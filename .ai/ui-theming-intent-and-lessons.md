@@ -323,6 +323,17 @@ colouring one never touches the others or the still-neutral panels. Full role ta
   because it names the machine's code rather than the program's and a reader scanning for their
   own routines should not have to read past every ROM call. Which source named the row, and the
   other names the address has, go in the label's tooltip, not in the colour.
+- **Data is painted as a directive by what the row *is*, not by the region it sits in.** A custom
+  disassembler writes the bytes after a ROM restart that takes inline data (`RST $08`'s report
+  code, `RST $28`'s calculator codes) as `.defb` rows inside a code region, so the region type
+  alone gave them the instruction hue. A row is a directive when its region is data **or** its
+  text is a data pragma (`isDataPragma`: no Z80 mnemonic starts with a dot).
+- **A label name in an operand takes `--color-annotation-operand` whatever the row is.** A `.defw`
+  word that resolves to a label is an operand like `jp Start`'s, so it is tinted the same, inside
+  a directive whose other text keeps `--color-annotation-directive`. The tint needs the row's
+  `operandCandidates` with `resolvedText`: a row kind that substitutes names must record them, or
+  the name is painted in its row's hue and looks unresolved. A directive that names nothing stays
+  one plain run.
 - **A *predicted* state takes a status hue for the positive case and a neutral for the negative —
   never an error hue for the negative.** The disassembly view's branch gutter
   (`--color-disassembly-branch-taken` / `-fallthrough`) says whether each conditional branch will
@@ -761,6 +772,16 @@ longest label, and when the options come from data, a literal width goes stale w
 Disk dialog's fixed 200px fitted the +3's CPC labels and clipped the Pentagon's TR-DOS ones. Size it
 as `` `${longest label length + 4}ch` `` (the 4ch hold the chevron); the open list takes the trigger's
 width (`--radix-select-trigger-width`), so one value sizes both.
+
+**A table column's `ch` width covers its header as well as its values.** The Go to References
+list sized its address column for `$0576` (6ch) and its header, `Address`, ran into the next
+column's. Size a column from the longer of its widest value and its header, and give a translated
+header room (or a `maxChars` that fits the column).
+
+**A read-only list in a dialog reuses the Labels list's table** (`NexLabelsDialog.module.scss`: the
+fixed `--list-row-height` x `--list-visible-rows` viewport, the sticky header, the zebra rows, the
+bordered Go To button) rather than inventing a second one; Go to References (`NexReferencesDialog`)
+is that table at four columns. Its only action is Go To, so a row also goes there on a double-click.
 
 ## A Long Choice Is Two Short Ones; A Field With One Answer Stays, Disabled
 
@@ -2384,8 +2405,10 @@ four-value `.defb`. An annotated `.NEX` listing also lists `.dma`/`.copper` prag
 characters, and a cell narrower than its text **wraps into the row below and overprints it** (rows
 have a fixed height). A shared listing column is sized from the listing's own rows with a floor
 (`deriveInstructionWidthCh`, like `deriveLabelWidthCh` and the comment column), so ordinary listings
-are unchanged and every row's later columns still start at one x. Unit tests of row text cannot see
-this; only the running app showed it.
+are unchanged and every row's later columns still start at one x. **Every view that renders
+`DisassemblyRow` sizes it this way** - the static listing and the live Disassembly panel alike; the
+live panel's fixed default overprinted as soon as `.defw` rows showed label names. Unit tests of row
+text cannot see this; only the running app showed it.
 
 ## An Explainer Links Bytes To Meanings With One Highlight
 

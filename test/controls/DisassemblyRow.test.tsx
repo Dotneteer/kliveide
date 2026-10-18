@@ -621,6 +621,65 @@ describe("annotated disassembly rows", () => {
     expect(getByText(".defb $01, $02").className).toContain("annotationDirective");
   });
 
+  it("paints a .defw word that names a label in the operand hue, the rest as a directive", () => {
+    const { container, getByText } = render(
+      <DisassemblyRow
+        {...base}
+        annotated
+        item={{
+          address: 0x8000,
+          instruction: ".defw KeyUp, $9000",
+          operandCandidates: [
+            { instructionAddress: 0x8000, instructionOffset: 0, operandIndex: 0,
+              operandValue: 0x8010, pragma: "W" as any, defaultText: "$8010", resolvedText: "KeyUp" },
+            { instructionAddress: 0x8000, instructionOffset: 0, operandIndex: 1,
+              operandValue: 0x9000, pragma: "W" as any, defaultText: "$9000" }
+          ],
+          annotation: { bankOffset: 0, byteLength: 4, regionType: "words" }
+        }}
+      />
+    );
+
+    expect(getByText("KeyUp").className).toContain("annotationOperand");
+    expect(getByText("KeyUp").closest("[class*='annotationDirective']")).not.toBeNull();
+    expect(container.textContent).toContain(".defw KeyUp, $9000");
+  });
+
+  it("paints a data pragma inside code (the byte after RST $08) as a directive", () => {
+    const { getByText } = render(
+      <DisassemblyRow
+        {...base}
+        annotated
+        item={{
+          address: 0x0d4c,
+          instruction: ".defb $01",
+          hardComment: "(report 2)",
+          annotation: { bankOffset: 0x0d4c, byteLength: 1, regionType: "disassemble" }
+        }}
+      />
+    );
+
+    expect(getByText(".defb $01").className).toContain("annotationDirective");
+  });
+
+  it("keeps an instruction in a code region in the instruction hue", () => {
+    const { getByText } = render(
+      <DisassemblyRow
+        {...base}
+        annotated
+        item={{
+          address: 0x8000,
+          instruction: "rst $08",
+          opCodes: [0xcf],
+          annotation: { bankOffset: 0, byteLength: 1, regionType: "disassemble" }
+        }}
+      />
+    );
+
+    expect(getByText("rst $08").closest("[class*='disassemblyInstruction']")).not.toBeNull();
+    expect(getByText("rst $08").closest("[class*='annotationDirective']")).toBeNull();
+  });
+
   it("lights the rail only on rows carrying something authored", () => {
     const { getByTestId } = render(
       <>

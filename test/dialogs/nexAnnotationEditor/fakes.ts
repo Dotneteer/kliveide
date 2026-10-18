@@ -121,6 +121,7 @@ export function createFakeDialogs() {
     endOfLineComment: record("endOfLineComment"),
     label: record("label"),
     manageLabels: record("manageLabels"),
+    references: record("references"),
     operandLabel: record("operandLabel"),
     region: record("region"),
     manageRegions: record("manageRegions")

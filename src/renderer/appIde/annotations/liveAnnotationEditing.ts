@@ -18,6 +18,7 @@ import {
   type ProgramAnnotations
 } from "./programAnnotations";
 import type { LiveRowTarget } from "./liveListingPort";
+import type { DefinitionLabel } from "./goToDefinition";
 
 /*
  * Editing annotations from the live Disassembly view (§4.5 of
@@ -34,7 +35,8 @@ import type { LiveRowTarget } from "./liveListingPort";
 /** The intent a live row's menu entry or shortcut stands for. */
 export function liveIntentForAction(
   action: NexAnnotationMenuAction,
-  rowIndex: number
+  rowIndex: number,
+  label?: DefinitionLabel
 ): NexAnnotationEditorIntent | undefined {
   const regionType = regionTypeOfAction(action);
   if (regionType) return { type: "regionTypeMarked", regionType, rowIndex };
@@ -51,6 +53,8 @@ export function liveIntentForAction(
       return { type: "operandLabelRequested", rowIndex };
     case "goto-definition":
       return { type: "goToDefinitionRequested", rowIndex };
+    case "find-references":
+      return { type: "referencesRequested", rowIndex, label };
     case "bank-comment":
       return { type: "bankCommentRequested" };
     case "manage-labels":
@@ -119,6 +123,8 @@ export async function runLiveAnnotationAction(args: {
   rows: DisassemblyItem[];
   row: DisassemblyItem;
   action: NexAnnotationMenuAction;
+  /** For "find-references": the label the menu entry named. */
+  label?: DefinitionLabel;
   decimalView: boolean;
   machineRunning: boolean;
   projectService: Pick<IProjectService, "readFileContent" | "saveFileContent">;
@@ -129,7 +135,7 @@ export async function runLiveAnnotationAction(args: {
 
   // --- By address: `rowsOfTarget` hands the editor copies of the listing's rows
   const rowIndex = args.rows.findIndex((row) => row.address === args.row.address && !row.isPrefixItem);
-  const intent = liveIntentForAction(args.action, rowIndex < 0 ? 0 : rowIndex);
+  const intent = liveIntentForAction(args.action, rowIndex < 0 ? 0 : rowIndex, args.label);
   if (!intent) return false;
 
   const controller = new NexAnnotationEditorController(args.ports, {

@@ -8,6 +8,7 @@ import {
   discardConfirmMessage,
   annotationActionForKey,
   menuEntryFor,
+  referenceSubjectsFor,
   NEX_ANNOTATION_SHORTCUTS,
   regionTypeOfAction,
   selectViewModel,
@@ -124,6 +125,8 @@ describe("menu", () => {
     expect(ids).toEqual([
       // --- Go to Definition leads: it reads rather than edits, and is the entry most reached for.
       "goto-definition",
+      // --- Beside it: the other entry that reads rather than edits (disabled here: no label)
+      "find-references",
       "manage-labels",
       "manage-regions",
       "bank-comment",
@@ -389,6 +392,7 @@ describe("shortcuts", () => {
     expect([...bound].sort()).toEqual([
       "bank-comment",
       "comment",
+      "find-references",
       "global-label",
       "goto-definition",
       "local-label",
@@ -490,7 +494,9 @@ describe("go to definition", () => {
   it("is the first entry, and stands alone above the editing commands", () => {
     const menu = menuFor({ row: aLabelledOperandRow(0x0010, 0x4100) });
     expect(menu[0]).toMatchObject({ kind: "item", id: "goto-definition", text: "Go to Definition" });
-    expect(menu[1]).toEqual({ kind: "separator" });
+    // --- Go to References shares its group: the two entries that read rather than edit
+    expect(menu[1]).toMatchObject({ kind: "item", id: "find-references" });
+    expect(menu[2]).toEqual({ kind: "separator" });
   });
 
   it("is available for a definition inside this bank, with no machine at all", () => {
@@ -539,5 +545,69 @@ describe("bank comment", () => {
     const bankKey = Object.keys(model.banks)[0];
     model.banks[bankKey] = { ...model.banks[bankKey], comment: "Music\nIM2" };
     expect(selectViewModel(loaded({ annotations: model })).bankComment).toEqual("Music\nIM2");
+  });
+});
+
+describe("go to references", () => {
+  // --- A row labelled `Here` (bank offset $10) whose operand names the global `Nearby`
+  const labelledRow = () => {
+    const row = aLabelledOperandRow(0x0010, 0x4100);
+    return { ...row, formattedLabel: "Here" };
+  };
+  const stateFor = (items: ReturnType<typeof aListing>, annotations = anAnnotationModelWithLabels()) =>
+    aState({
+      annotations: {
+        ...annotations,
+        banks: {
+          ...annotations.banks,
+          [Object.keys(annotations.banks)[0]]: {
+            ...Object.values(annotations.banks)[0],
+            localLabels: [{ name: "Here", value: 0x0010 }]
+          }
+        }
+      },
+      items,
+      selection: { anchorIndex: 0, activeIndex: 0 }
+    });
+  const entries = (menu: NexAnnotationMenuEntry[]) =>
+    menu.filter((entry) => entry.kind === "item" && entry.id === "find-references") as any[];
+
+  it("offers one entry per label, the row's own first, each naming its label", () => {
+    const found = entries(selectViewModel(stateFor([labelledRow()])).menu);
+    expect(found.map((entry) => [entry.text, entry.disabled, entry.shortcut])).toEqual([
+      ["Go to References: Here", false, "Shift+F12"],
+      ["Go to References: Nearby", false, undefined]
+    ]);
+    expect(found.map((entry) => entry.subject.source)).toEqual(["row", { operandIndex: 0 }]);
+  });
+
+  it("is shown disabled on a row with no label to search for", () => {
+    const found = entries(selectViewModel(aState({ annotations: anAnnotationModelWithLabels(), items: aListing(3), selection: { anchorIndex: 0, activeIndex: 0 } })).menu);
+    expect(found).toHaveLength(1);
+    expect(found[0]).toMatchObject({ text: "Go to References", disabled: true });
+  });
+
+  it("is reached with Shift+F12, and F12 alone stays unbound", () => {
+    expect(annotationActionForKey("F12", true, false)).toEqual("find-references");
+    expect(annotationActionForKey("F12", false, false)).toBeUndefined();
+  });
+
+  it("names, for the shortcut, the row's first label", () => {
+    expect(referenceSubjectsFor(stateFor([labelledRow()]), 0).map((subject) => subject.label.name)).toEqual([
+      "Here",
+      "Nearby"
+    ]);
+  });
+});
+
+describe("the delete-label question", () => {
+  it("says what happens to the hand-made references and to the rows that show the name", () => {
+    expect(
+      deleteLabelConfirmRequest({ scope: "local", name: "Loop", referenceCount: 2, listedCount: 5 }).linesAfterCode
+    ).toEqual(["2 operand references to it will be cleared.", "5 rows of this listing show its name and will no longer."]);
+    expect(
+      deleteLabelConfirmRequest({ scope: "local", name: "Loop", referenceCount: 0, listedCount: 1 }).linesAfterCode
+    ).toEqual(["1 row of this listing shows its name and will no longer."]);
+    expect(deleteLabelConfirmRequest({ scope: "local", name: "Loop", referenceCount: 0, listedCount: 0 }).linesAfterCode).toBeUndefined();
   });
 });

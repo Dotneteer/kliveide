@@ -37,7 +37,7 @@ const sortOptions = (): DropdownOption[] => [
  * emphasised words wherever its grammar wants them. Markdown-like markers rather than tags, because
  * the pseudo-locale accents a tag's letters but leaves `*` and `` ` `` alone.
  */
-function renderMarkup(text: string): ReactNode[] {
+export function renderMarkup(text: string): ReactNode[] {
   return text.split(/(\*\*[^*]+\*\*|`[^`]+`)/).map((part, index) => {
     if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
       return <strong key={index}>{part.slice(2, -2)}</strong>;
@@ -161,7 +161,7 @@ export function NexLabelsDialog({
           <span>{t("panels.next.field.name")}</span>
           <span>{t("panels.next.field.value")}</span>
           <span>{t("panels.next.labels.column.address")}</span>
-          <span>{t("panels.next.labels.column.refs")}</span>
+          <span title={t("panels.next.labels.column.refsTitle")}>{t("panels.next.labels.column.refs")}</span>
           <span />
         </div>
         {filteredLabels.map((label) => (

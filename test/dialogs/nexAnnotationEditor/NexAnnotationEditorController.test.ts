@@ -651,8 +651,10 @@ describe("the Labels list", () => {
 
     const args = fakes.dialogs.callsTo("manageLabels")[0];
     expect(args.labels).toEqual([
-      { name: "Start", value: 0x8000, scope: "global", referenced: false, referenceCount: 0 },
-      { name: "Loop", value: 2, scope: "local", bank: BANK, referenced: true, referenceCount: 1 }
+      { name: "Start", value: 0x8000, scope: "global", referenced: false, referenceCount: 0, operandReferenceCount: 0 },
+      // --- Pointed at by hand, but no listed row names it here (the fixture lists none): the
+      // --- count is the listing's, the hand-made reference is kept apart for the delete warning
+      { name: "Loop", value: 2, scope: "local", bank: BANK, referenced: true, referenceCount: 0, operandReferenceCount: 1 }
     ]);
   });
 
@@ -675,7 +677,7 @@ describe("the Labels list", () => {
     await controller.settle();
 
     expect(refreshed).toEqual([
-      { name: "Added", value: 0x1234, scope: "global", referenced: false, referenceCount: 0 }
+      { name: "Added", value: 0x1234, scope: "global", referenced: false, referenceCount: 0, operandReferenceCount: 0 }
     ]);
   });
 
@@ -1192,5 +1194,84 @@ describe("go to definition", () => {
 
     expect(fakes.navigateToAddress).not.toHaveBeenCalled();
     expect(fakes.revealAddressInBank).not.toHaveBeenCalled();
+  });
+});
+
+describe("go to references", () => {
+  // --- Three rows: two name `Nearby` ($4100) through their operand, one names nothing
+  async function withReferences() {
+    const session = new FakeSession({ annotations: anAnnotationModelWithLabels() });
+    return opened({}, {
+      session,
+      items: [
+        { ...aLabelledOperandRow(0x0010, 0x4100), formattedLabel: "Main" },
+        aLabelledOperandRow(0x0013, 0x4999),
+        aLabelledOperandRow(0x0016, 0x4100)
+      ]
+    });
+  }
+
+  it("lists the rows that name the label, then goes to the one chosen", async () => {
+    const controller = await withReferences();
+    fakes.dialogs.answerWith("references", (args: any) => args.references[1]);
+    await controller.dispatch({
+      type: "referencesRequested",
+      rowIndex: 0,
+      label: { name: "Nearby", scope: "global", value: 0x4100 }
+    });
+    await controller.settle();
+
+    const args = fakes.dialogs.calls.references[0];
+    expect(args.label.name).toEqual("Nearby");
+    expect(args.references.map((reference: any) => [reference.address, reference.within])).toEqual([
+      [0x4010, "Main"],
+      [0x4016, "Main"]
+    ]);
+    expect(fakes.navigateToAddress).toHaveBeenCalledWith(0x4016);
+  });
+
+  it("searches for the row's first label when the shortcut names none", async () => {
+    const controller = await withReferences();
+    await controller.dispatch({ type: "referencesRequested", rowIndex: 0 });
+    await controller.settle();
+
+    expect(fakes.dialogs.calls.references[0].label.name).toEqual("Nearby");
+  });
+
+  it("goes nowhere when the list is closed", async () => {
+    const controller = await withReferences();
+    fakes.dialogs.answerWith("references", undefined);
+    await controller.dispatch({ type: "referencesRequested", rowIndex: 0 });
+    await controller.settle();
+
+    expect(fakes.navigateToAddress).not.toHaveBeenCalled();
+  });
+
+  it("opens nothing on a row with no label to search for", async () => {
+    const controller = await withReferences();
+    await controller.dispatch({ type: "referencesRequested", rowIndex: 1 });
+    await controller.settle();
+
+    expect(fakes.dialogs.calls.references).toBeUndefined();
+  });
+});
+
+describe("the Labels list counts what Go to References lists", () => {
+  it("gives each label the number of listed rows that name it", async () => {
+    const session = new FakeSession({ annotations: anAnnotationModelWithLabels() });
+    const controller = await opened({}, {
+      session,
+      items: [aLabelledOperandRow(0x0010, 0x4100), aLabelledOperandRow(0x0013, 0x4999), aLabelledOperandRow(0x0016, 0x4100)]
+    });
+    fakes.dialogs.answerWith("manageLabels", undefined);
+    await controller.dispatch({ type: "manageLabelsRequested" });
+    await controller.settle();
+
+    const nearby = fakes.dialogs.callsTo("manageLabels")[0].labels.find((label: any) => label.name === "Nearby");
+    expect(nearby).toMatchObject({ referenceCount: 2, operandReferenceCount: 0, referenced: true });
+    // --- The same two rows Go to References lists
+    await controller.dispatch({ type: "referencesRequested", rowIndex: 0, label: { name: "Nearby", scope: "global", value: 0x4100 } });
+    await controller.settle();
+    expect(fakes.dialogs.calls.references[0].references).toHaveLength(2);
   });
 });

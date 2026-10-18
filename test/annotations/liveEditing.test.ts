@@ -146,6 +146,39 @@ describe("liveRowTarget", () => {
     expect(start[start.length - 1].disabled).toBeUndefined();
   });
 
+  it("offers Go to References once per label, each naming it, the first with the shortcut", () => {
+    const labels = [
+      { name: "KEY_LEFT", scope: "local" as const, value: 0x0576 },
+      { name: "AT_LINE_START", scope: "local" as const, value: 0x0593 }
+    ];
+    const items = annotationRowMenuItems({
+      rom: true,
+      hasOperands: true,
+      hasDefinition: true,
+      referenceLabels: labels,
+      hints: { "find-references": "Shift+F12" },
+      regionActions: []
+    });
+    const references = items.filter((item) => item.id === "find-references");
+    expect(references.map((item) => [item.text, item.hint, item.label?.name, item.disabled])).toEqual([
+      ["Go to References: KEY_LEFT", "Shift+F12", "KEY_LEFT", undefined],
+      ["Go to References: AT_LINE_START", undefined, "AT_LINE_START", undefined]
+    ]);
+    // --- Right after Go to Definition, the other entry that reads rather than edits
+    const at = items.findIndex((item) => item.id === "goto-definition");
+    expect(items[at + 1].id).toBe("find-references");
+    // --- No label on the row: one entry, disabled
+    const none = annotationRowMenuItems({ rom: false, hasOperands: false, hasDefinition: false, hints: {}, regionActions: [] });
+    expect(none.filter((item) => item.id === "find-references")).toEqual([
+      expect.objectContaining({ text: "Go to References", disabled: true })
+    ]);
+  });
+
+  it("turns Go to References into its intent, with the label the entry named", () => {
+    const label = { name: "KEY_LEFT", scope: "local" as const, value: 0x0576 };
+    expect(liveIntentForAction("find-references", 2, label)).toEqual({ type: "referencesRequested", rowIndex: 2, label });
+  });
+
   it("collects the rows of the same bank piece", () => {
     const items = [0x8000, 0xc000, 0xc003, 0x0010].map((address) => ({ address }) as DisassemblyItem);
     const target = liveRowTarget(0xc000, context()) as any;

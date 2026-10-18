@@ -810,3 +810,97 @@ describe("regions past the end of a short page", () => {
     expect(rows[0].annotation?.regionType).toBe("bytes");
   });
 });
+
+describe("labels in a words region", () => {
+  // --- A jump table at $8000 ($8010 and $9000, then the plain number $0003), code at $8010
+  const contents = new Uint8Array(0x4000);
+  contents.set([0x10, 0x80, 0x00, 0x90, 0x03, 0x00], 0);
+  const listing = (labels: { global?: any[]; local?: any[]; references?: any }, decimalView = false) =>
+    createAnnotatedDisassemblyItems({
+      annotations: {
+        schemaVersion: 1,
+        globalLabels: labels.global,
+        banks: {
+          "2": {
+            offsetIndex: 2,
+            regions: [
+              { start: 0, end: 5, type: "words" },
+              { start: 6, end: 0x3fff, type: "skip" }
+            ],
+            localLabels: labels.local,
+            operandReferences: labels.references
+          }
+        }
+      },
+      bank: 2,
+      contents,
+      decimalView,
+      disassOffset: 0x8000,
+      fallbackOperandLabelResolver: ({ operandValue }) => (operandValue === 3 ? "SYSVAR" : undefined)
+    }).then((items) =>
+      (items ?? [])
+        .filter((item) => item.annotation?.regionType === "words")
+        .map((item) => item.instruction)
+        .join(" | ")
+    );
+
+  it("shows a word that is a labelled address as the label", async () => {
+    expect(await listing({ local: [{ name: "Routine", value: 0x10 }], global: [{ name: "Far", value: 0x9000 }] }))
+      .toBe(".defw Routine, Far | .defw $0003");
+  });
+
+  it("keeps numbers where no label matches, in decimal too", async () => {
+    expect(await listing({ local: [{ name: "Routine", value: 0x10 }] }, true)).toBe(".defw Routine, 36864 | .defw 3");
+  });
+
+  it("does not name a word after the machine's system variables", async () => {
+    expect(await listing({})).toBe(".defw $8010, $9000 | .defw $0003");
+  });
+
+  it("follows an explicit reference keyed by the row's offset and the word's index", async () => {
+    // --- Two labels on $8010; the reference on the first word picks the second
+    const labels = { local: [{ name: "First", value: 0x10 }, { name: "Second", value: 0x10 }] };
+    expect(await listing(labels)).toBe(".defw First, $9000 | .defw $0003");
+    expect(
+      await listing({ ...labels, references: { "0": [{ operandIndex: 0, name: "Second", scope: "local" }] } })
+    ).toBe(".defw Second, $9000 | .defw $0003");
+    // --- The same key the operand label dialog and "Go to definition" use: a reference on word 1
+    expect(
+      await listing({
+        local: [{ name: "Routine", value: 0x10 }],
+        global: [{ name: "Far", value: 0x9000 }, { name: "AlsoFar", value: 0x9000 }],
+        references: { "0": [{ operandIndex: 1, name: "AlsoFar", scope: "global" }] }
+      })
+    ).toBe(".defw Routine, AlsoFar | .defw $0003");
+  });
+
+  it("records each word as an operand candidate, with the name it resolved to", async () => {
+    const items = await createAnnotatedDisassemblyItems({
+      annotations: {
+        schemaVersion: 1,
+        banks: {
+          "2": {
+            offsetIndex: 2,
+            regions: [
+              { start: 0, end: 5, type: "words" },
+              { start: 6, end: 0x3fff, type: "skip" }
+            ],
+            localLabels: [{ name: "Routine", value: 0x10 }]
+          }
+        }
+      },
+      bank: 2,
+      contents,
+      disassOffset: 0x8000
+    });
+    const [first, second] = (items ?? []).filter((item) => item.annotation?.regionType === "words");
+    expect(first.operandCandidates).toEqual([
+      expect.objectContaining({ instructionOffset: 0, operandIndex: 0, operandValue: 0x8010, defaultText: "$8010", resolvedText: "Routine" }),
+      expect.objectContaining({ instructionOffset: 0, operandIndex: 1, operandValue: 0x9000, defaultText: "$9000" })
+    ]);
+    expect(first.operandCandidates?.[1].resolvedText).toBeUndefined();
+    expect(second.operandCandidates).toEqual([
+      expect.objectContaining({ instructionOffset: 4, operandIndex: 0, operandValue: 3 })
+    ]);
+  });
+});
