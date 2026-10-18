@@ -13,7 +13,8 @@ import { DEFAULT_LOCALE, LOCALE_NAMES, LOCALES } from "../i18n/locales.mjs";
 import DownloadButton from "./DownloadButton";
 import LanguageSelect from "./LanguageSelect";
 import ThemeToggle from "./ThemeToggle";
-import { FEATURES, SHOWN_FEATURES, type Feature } from "./features";
+import { FEATURES, HERO_SLIDES, SHOWN_FEATURES, type Feature } from "./features";
+import HeroCarousel from "./HeroCarousel";
 import { docsHref, landingHref, landingTranslator } from "./i18n";
 import { readSiteInfo, versionAtMost } from "./site-info";
 
@@ -43,7 +44,13 @@ export default function LandingPage({ lang }: Readonly<{ lang: string }>) {
   const t = landingTranslator(lang);
   const site = readSiteInfo();
   const features = FEATURES.filter((f) => versionAtMost(f.since, site.latestRelease)).slice(0, SHOWN_FEATURES);
-  const heroShot = imageUrl({ localized: "get-started/debug-paused.webp" }, lang);
+  const slides = HERO_SLIDES.map((s) => ({
+    src: imageUrl(s.image, lang),
+    alt: t(s.caption),
+    caption: t(s.caption),
+    width: s.width,
+    height: s.height
+  }));
   const languages: [string, string, string][] = LOCALES.map((id: string) => [
     id,
     (LOCALE_NAMES as Record<string, string>)[id] ?? id,
@@ -113,7 +120,13 @@ export default function LandingPage({ lang }: Readonly<{ lang: string }>) {
               </p>
             </div>
             <div className="lp-hero-shot">
-              <img src={heroShot} alt={t("hero.shotAlt")} width={1800} height={1153} />
+              <HeroCarousel
+                slides={slides}
+                label={t("hero.carousel.label")}
+                previousLabel={t("hero.carousel.previous")}
+                nextLabel={t("hero.carousel.next")}
+                slideLabel={t("hero.carousel.slide")}
+              />
             </div>
           </div>
         </section>
@@ -188,7 +201,7 @@ export default function LandingPage({ lang }: Readonly<{ lang: string }>) {
 
         <section className="lp-strip">
           <div className="lp-strip-in">
-            {(["vhdl", "recording", "scripting", "languages", "open"] as const).map((k) => (
+            {(["machines", "recording", "scripting", "languages", "open"] as const).map((k) => (
               <span key={k}>{t(`strip.${k}`)}</span>
             ))}
           </div>

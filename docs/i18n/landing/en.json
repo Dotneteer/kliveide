@@ -75,9 +75,49 @@
   "@hero.free": {
     "context": "Short note next to the buttons."
   },
-  "hero.shotAlt": "The Klive IDE paused at a breakpoint in a Z80 assembly program",
-  "@hero.shotAlt": {
-    "context": "Alternative text of the hero screenshot."
+  "hero.carousel.label": "Klive in action",
+  "@hero.carousel.label": {
+    "context": "Accessible name of the hero's picture carousel (read by screen readers)."
+  },
+  "hero.carousel.previous": "Previous picture",
+  "@hero.carousel.previous": {
+    "context": "Accessible label of the carousel's back arrow."
+  },
+  "hero.carousel.next": "Next picture",
+  "@hero.carousel.next": {
+    "context": "Accessible label of the carousel's forward arrow."
+  },
+  "hero.carousel.slide": "Picture {n} of {count}",
+  "@hero.carousel.slide": {
+    "context": "Accessible label of a carousel picture and of its dot. {n} is the picture's number, {count} how many there are."
+  },
+  "slide.debug": "Debug Z80 programs at the source level, register by register",
+  "@slide.debug": {
+    "context": "Caption under a carousel picture of the IDE paused at a breakpoint. One line; keep it short. 'Z80' is never translated."
+  },
+  "slide.emulator": "Run ZX Spectrum and Next software: the ScrollNutter demo on the Next",
+  "@slide.emulator": {
+    "context": "Caption of a picture of the emulator running a demo. 'ZX Spectrum', 'Next' and 'ScrollNutter' (the demo's name) are never translated."
+  },
+  "slide.disassembly": "Take a .nex apart: ScrollNutter's annotated disassembly, its zxnDMA program decoded",
+  "@slide.disassembly": {
+    "context": "Caption of a picture of the disassembly view with labels and comments. '.nex', 'ScrollNutter' and 'zxnDMA' are never translated."
+  },
+  "slide.sprites": "Every hardware sprite, live, in the Sprite Inspector",
+  "@slide.sprites": {
+    "context": "Caption of a picture of the Sprite Inspector panel. Use the app's translation of 'Sprite Inspector'."
+  },
+  "slide.copper": "The Copper list, with every MOVE and WAIT explained",
+  "@slide.copper": {
+    "context": "Caption of a picture of the Copper list panel. 'Copper', 'MOVE' and 'WAIT' are never translated."
+  },
+  "slide.spriteEditor": "Draw sprites and patterns in the sprite editor",
+  "@slide.spriteEditor": {
+    "context": "Caption of a picture of the sprite editor with the demo's sprites."
+  },
+  "slide.basic": "Step through ZX BASIC, with its call stack and variables",
+  "@slide.basic": {
+    "context": "Caption of a picture of a BASIC program paused in the debugger. 'ZX BASIC' is never translated."
   },
   "machines.title": "Machines",
   "@machines.title": {
@@ -243,9 +283,9 @@
   "@feature.speaksNext.text": {
     "context": "The feature's paragraph. 'DMA', '.nex' and 'Copper' are never translated."
   },
-  "feature.speaksNext.point1": "A Next core written from the FPGA's VHDL",
+  "feature.speaksNext.point1": "Live views of the sprites, the Copper and the video layers",
   "@feature.speaksNext.point1": {
-    "context": "Bullet point. 'FPGA' and 'VHDL' are never translated."
+    "context": "Bullet point. 'Copper' is never translated."
   },
   "feature.speaksNext.point2": "Sprite and palette editors",
   "@feature.speaksNext.point2": {
@@ -343,9 +383,9 @@
   "@feature.more": {
     "context": "Link at the end of a feature section, to its documentation."
   },
-  "strip.vhdl": "Next core built from the FPGA's VHDL",
-  "@strip.vhdl": {
-    "context": "Small card. 'Next', 'FPGA' and 'VHDL' are never translated."
+  "strip.machines": "From the ZX80 to the ZX Spectrum Next",
+  "@strip.machines": {
+    "context": "Small card: the range of machines Klive emulates. 'ZX80' and 'ZX Spectrum Next' are never translated."
   },
   "strip.recording": "Record the emulator and the IDE as video",
   "@strip.recording": {

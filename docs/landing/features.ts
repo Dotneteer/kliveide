@@ -40,7 +40,7 @@ export const FEATURES: Feature[] = [
   {
     id: "speaksNext",
     since: "0.61.0",
-    image: { path: "working-with-ide/bp-view.png" },
+    image: { path: "landing/sprite-editor.webp" },
     more: { area: "guides", rest: "debugging/breakpoints/" }
   },
   {
@@ -58,9 +58,26 @@ export const FEATURES: Feature[] = [
   {
     id: "nex",
     since: "0.61.0",
-    image: { path: "working-with-ide/banked-disass-view.png" },
+    image: { path: "landing/disassembly-scrollnutter.webp" },
     more: { area: "guides", rest: "debugging/run-debug/#running-a-nex-file-directly" }
   }
 ];
 
 export const SHOWN_FEATURES = 5;
+
+/**
+ * The hero carousel's pictures, in order. Localized ones come from the Get Started screenshots;
+ * the others from `scripts/doc-shots/recipes/landing.cjs` (ScrollNutter.nex on the Next). `caption`
+ * is a key of docs/i18n/landing/<lang>.json.
+ */
+export type HeroSlide = { image: Feature["image"]; caption: string; width: number; height: number };
+
+export const HERO_SLIDES: HeroSlide[] = [
+  { image: { localized: "get-started/debug-paused.webp" }, caption: "slide.debug", width: 1800, height: 1153 },
+  { image: { path: "landing/emulator-scrollnutter.webp" }, caption: "slide.emulator", width: 1440, height: 1184 },
+  { image: { path: "landing/disassembly-scrollnutter.webp" }, caption: "slide.disassembly", width: 2200, height: 1375 },
+  { image: { path: "landing/sprite-inspector.webp" }, caption: "slide.sprites", width: 2200, height: 1375 },
+  { image: { path: "landing/copper-list.webp" }, caption: "slide.copper", width: 2200, height: 1375 },
+  { image: { path: "landing/sprite-editor.webp" }, caption: "slide.spriteEditor", width: 2200, height: 1375 },
+  { image: { localized: "get-started/basic-debug.webp" }, caption: "slide.basic", width: 1800, height: 1153 }
+];

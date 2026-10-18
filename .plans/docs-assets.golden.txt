@@ -173,6 +173,11 @@
 /images/klive-logo.ico
 /images/klive-logo.png
 /images/klive-logo.svg
+/images/landing/copper-list.webp
+/images/landing/disassembly-scrollnutter.webp
+/images/landing/emulator-scrollnutter.webp
+/images/landing/sprite-editor.webp
+/images/landing/sprite-inspector.webp
 /images/pt-BR/get-started/basic-debug.webp
 /images/pt-BR/get-started/basic-debug.webp.json
 /images/pt-BR/get-started/basic-running.webp
