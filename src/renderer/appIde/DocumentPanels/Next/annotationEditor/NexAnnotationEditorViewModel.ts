@@ -22,6 +22,7 @@ import {
 import {
   actionRange,
   isAnnotationEnabled,
+  isAnnotationShown,
   offsetSpanOf,
   selectedRange,
   type NexAnnotationEditorState
@@ -112,6 +113,12 @@ export type NexAnnotationEditorViewModel = {
    * allowed to *create* the selection, so it asks this instead.
    */
   annotationsAvailable: boolean;
+  /**
+   * Is the listing an annotated one? True whenever this bank's annotations are loaded, read-only
+   * (a shipped ROM sidecar) or not: it picks the rows' colour table, which must not change with
+   * whether the annotations can be edited.
+   */
+  annotationsShown: boolean;
   /** The generated listing, and the rows currently highlighted within it. */
   listing: {
     items: DisassemblyItem[];
@@ -157,6 +164,7 @@ export function selectViewModel(state: NexAnnotationEditorState): NexAnnotationE
     toolbar: selectToolbar(state, enabled),
     menu: selectMenu(state, enabled),
     annotationsAvailable: enabled,
+    annotationsShown: isAnnotationShown(state),
     listing: {
       items: state.items,
       selectedRange: selectedRange(state)

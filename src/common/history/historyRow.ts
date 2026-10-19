@@ -17,6 +17,8 @@ export type HistoryRowInput = {
   machineId?: string;
   /** The disassembled instruction, when known */
   instruction?: string;
+  /** The label names substituted into `instruction`, for a writer that tints them */
+  names?: readonly string[];
   /** The instruction's length in bytes, when known (else every captured byte is shown) */
   length?: number;
   /** `file.asm:123`, when the address maps to source */

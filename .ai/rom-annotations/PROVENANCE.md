@@ -741,3 +741,248 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
   (`$089C-$08B1`: three shifts of the code, H = `$0F` rotated with bit 5, the inverse bit from
   bit 7 of C). Bit 7 as the leftmost pixel is from PRN_CHAR's `RLC C`. No run.
 - **Provenance:** label `observed`; changed lines keep theirs. **Level:** 2, unchanged.
+
+### 2026-10-19 — `zx80.rom.dis`, the start-up sequence (working copy)
+
+- **Added:** 7 labels with synopses and end-of-line comments for the cold start up to the main
+  loop: `START` (`$0000`), `RAM_FILL`/`RAM_CHECK` (`$0261-$0282`: the RAM fill and count-down test,
+  SP, I, IM 1, IY, VARS, E_LINE), `EDIT_RESET` (`$0283`: the empty edit line, D_FILE, DF_SZ),
+  `MAIN_LOOP` (`$0293`, its head only), and the routine it calls first, `CLS_DISPLAY` (`$0747`) with
+  its tail `DISPLAY_ENDS` (`$073C`). Klive names, chosen from what the code does. Authored outside
+  the IDE, in `<Klive home>/RomAnnotations/zx80.rom.dis`; not yet copied to `src/public/roms/`.
+- **Method:** the ROM bytes through the new `tools/zx80-dis.cjs` (Klive's `Z80Disassembler`; the byte
+  after `RST $08` shown as data, because the handler at `$0008` reads it: `POP HL` / `LD L,(HL)`),
+  read instruction by instruction; the jumps into `EDIT_RESET` and `MAIN_LOOP` found in the same
+  listing. The character pattern address from Klive's core (`zx8081-ula.c`: `(address & $FE00)`
+  with I as the high byte), RAM repeating above its top from `zx8081-memory.c`. System variable
+  names and meanings from Klive's table (`Zx80SysVars.ts`).
+- **Runs** (a throwaway probe in `test/zx8081-hw/`, deleted; breakpoints at `$0263`, `$026B`,
+  `$026D`, `$0283`, `$0293`, `$02F7` on `zx80-1k` and `zx80-16k`): the fill loop runs 16384 times;
+  the walk stops at HL = `$4400` (1K) and `$8000` (16K), so SP = `$43FE`/`$7FFE` after the PUSH AF,
+  whose word is `$3FBA`; at `$02F7` VARS = `$4028` (holding `$80`), E_LINE = `$4029` (`$B0 $76`),
+  D_FILE = `$402B`, DF_SZ = 2, I = `$0E`, IY = `$4000`, and `$4000` (ERR_NR) = `$FF` on both.
+- **Manual:** ERR_NR's 'no report' value and S_POSN's column/line bytes (the ZX80 operating manual's
+  system variables, through `Zx80SysVars.ts`); the two lines resting on them are `manual`.
+- **Tools:** `apply-annotations.cjs` now ends the page where the file's last region ends (the ZX80's
+  page is 4K) and creates the label, line and provenance maps a fresh sidecar lacks;
+  `check-annotations.cjs` reads the ROM the sidecar names.
+- **Names:** none from a name list. **Provenance:** `observed`, except the two `manual` lines.
+- **Level:** 0 (`checkRomSidecar`: no problems). The IDE and the level tool still decode the ZX80 as
+  plain Z80, so their unlabelled-target list includes the bytes after `RST $08`.
+
+### 2026-10-19 — `zx80.rom.dis`, the main loop: listing, edit line, key wait (working copy)
+
+- **Added:** 90 labels (four on table starts inside data regions), synopses for all of them and
+  end-of-line comments, Klive names throughout. `MAIN_LOOP`'s synopsis now covers the whole loop.
+  - The listing: `LIST_FROM_TOP`/`LIST_LOOP`, the S_TOP adjustment (`REDRAW`, `NEXT_LINE_NO`,
+    `SET_LINE_NO`, `LIST_DONE`), `LIST_LINE`, `LIST_TEXT`, `PRINT_LINE_NO`/`PRINT_DIGITS`/
+    `PRINT_PLACE`, `PRINT_TOKEN`/`FIND_TOKEN`, `PRINT_A` (`$0010`) and `PRINT_CHAR` (`$0560`),
+    `DISPLAY_ROOM`, `FILL_NEWLINES`, `FIND_LINE`, `CMP_LINE_NO`, `NEXT_ITEM`, `LINE_NO`.
+  - The edit line: `EDIT_LINE_SHOW`, `EDIT_SHOWN`, `LINE_SCAN` (`$07BE`, its first steps only),
+    `MAKE_ROOM`, `POINTERS`, `RECLAIM`/`RECLAIM_1`.
+  - The key wait and the picture: `WAIT_KEY` (`$013F`), `WK_BOTTOM`, `RUN_DISPLAY`, the INT handler
+    `INT_DISPLAY`/`INT_RUN_ROW`/`INT_SAME_ROW` (`$0038-$0048`).
+  - Key handling: `KEY_DECODE`, `KEY_CODE`, `EDIT_KEY_JUMP`, `EDIT_AGAIN`, and the six editing keys
+    whose routines are short: `KEY_UP`, `KEY_DOWN`, `KEY_LEFT`, `KEY_RIGHT`, `KEY_HOME`, `KEY_RUBOUT`
+    (with `CURSOR_AT_START`, `KEY_IGNORE`, `SET_E_PPC`). SHIFT NEWLINE (`$03CB`) and NEWLINE (`$0408`)
+    are left for a later session.
+  - Regions: `KEY_TABLE` (`$006C`, with `KEY_TABLE_SHIFT` at `$0093`) and `KEYWORD_TABLE` (`$00BA-$013B`),
+    `bytes`/`text` (they touch, so the IDE merges them; each start has its synopsis), and
+    `EDIT_KEY_TABLE` (`$0372-$0381`, `words`).
+- **Method:** the bytes through `tools/zx80-dis.cjs`, read instruction by instruction. The tables'
+  extents from their readers: KEY_DECODE's index (5 × row + column, + 39 with SHIFT, base `$006B`),
+  FIND_TOKEN's `$00BA` start byte and end-mark count (45 spellings, the last at `$013B`; code
+  resumes at `$013C`), EDIT_KEY_JUMP's `$0292 + 2A` for the codes `$70-$77` (the only `$40-$7F` codes
+  in the key table). The key and keyword contents decoded with Klive's `ZX80_CHARSET`. The
+  two-pass apply left every instruction start outside the new regions unchanged. Hardware facts
+  from Klive's core (`src/emu/machines/zx8081/wasm/README.md`, `zx8081.c`): the M1 NOP rule above
+  32K, INT on A6 during refresh, VSYNC on at an IN from port $FE and off at an OUT, bit 6 of port $FE
+  reading 1 on the 50 Hz machine. The ROM addresses in that README's tape section were not used.
+- **Runs** (a throwaway probe in `test/zx8081-hw/`, deleted; `zx80-16k`): after boot FLAGS = `$04`,
+  P_PTR = E_LINE = `$4029`, X_PTR = 0, D_FILE = `$402B`, DF_EA = `$4042`, DF_END = `$4045` (the display
+  file is 24 `$76`, `$B0`, `$76`), `($4023)` = `$38`, CH_ADD = `$FFFF`; FRAMES + 10 in 10 frames. A held
+  40 frames in K mode inserted one byte, `$E6` (LIST), FLAGS bit 2 then clear, `($4022)` = `$0F` and
+  CH_ADD = `$FDFD` while held. U stopped at `$0323` with BC = `$EFDF`, DE = 0, HL = `$4022` and inserted
+  `$3A`; SHIFT 5 moved the cursor one place left; SHIFT 6 left the edit line as it was. The listing
+  form (`  10` + inverse `>` + text) is the existing `test/zx8081-hw/zx80.test.ts` case.
+- **Tools:** `apply-annotations.cjs` takes `dataLabels` (labels on table starts inside data regions).
+- **Names:** none from a name list. **Provenance:** `observed` throughout.
+- **Level:** 0 (`checkRomSidecar`: no problems). Unlabelled targets left are outside this session's
+  code (the restarts' entries, the tape routines `$01B6-$0260`, the interpreter).
+
+### 2026-10-19 — `zx80.rom.dis`, NEWLINE and SHIFT NEWLINE: storing and running lines (working copy)
+
+- **Added:** 32 labels with synopses and end-of-line comments, Klive names throughout.
+  - `KEY_EDIT` (`$03CB`, SHIFT NEWLINE) and `KEY_NEWLINE` (`$0408`): the last two editing keys.
+  - Running a line: `RUN_START`, `RUN_STATEMENT`, `RUN_CHECK`, `RUN_NEXT_LINE`, `RUN_STOP` with the
+    report (`REPORT_OLDPPC`, `REPORT_SHOW`); storing one: `STORE_LINE`, `SL_SIZE`, `SL_DONE`.
+  - What they use: `ERROR_RST`/`ERROR_SET` (`$0008`), `NEXT_CHAR_RST` (`$0018`), `GET_CHAR` (`$001A`),
+    `GC_TEST`, `NEXT_NONSPACE` (`$0020`), `NEXT_CHAR`/`NC_STEP` (`$0052`), `READ_NUMBER` (`$0679`),
+    `PRINT_NUMBER` (`$06A1`), `PN_DIGITS`, `PN_DONE`, `PRINT_IF_RUN` (`$06E0`), `TEST_ROOM` (`$094F`),
+    `CLEAR_E_LINE` (`$0D0A`), `RECLAIM_RANGE` (`$0663`), `CLEAR_VARS` (`$065B`).
+  - Rewritten: the synopses of `EDIT_RESET` (its callers by label), `EDIT_KEY_TABLE`, `LINE_SCAN`
+    (checking with FLAGS bit 7 clear, running with it set), `DISPLAY_ROOM` (report 4),
+    `PRINT_DIGITS`.
+- **Method:** the bytes through `tools/zx80-dis.cjs`, read instruction by instruction, with the
+  register-set swaps (EXX) traced through READ_NUMBER, KEY_NEWLINE and KEY_EDIT. The report number
+  is ERR_NR + 1 from RUN_STOP (`$0492-$04A8`); `zx80-dis.cjs` now shows it after each RST $08.
+- **Runs** (throwaway probes in `test/zx8081-hw/`, deleted; `zx80-16k`):
+  - `10 PRINT "HI"` stored as `00 0A F4 01 2D 2E 01 76`, E_PPC = 10; `20 PRINT 1` as `00 14 F4 1D 76`.
+  - SHIFT NEWLINE on line 20 replaced the edit line (it held `$DE`) with `00 00 1E 1C B0 F4 1D 76`, in
+    K mode; NEWLINE on it stored the same line again.
+  - The command `PRINT 2` showed `2` on line 0 and `0/-2` on line 23, PPC = `$FFFE`, the edit line
+    removed (E_LINE = D_FILE); the next key gave a new edit line.
+  - `PRINT )`: X_PTR = `$4037`, the inverse S before `)`; NEWLINE left the line as it was.
+  - `20` alone deleted line 20.
+  - `PRINT X` with no X: ERR_NR = 1, report `2/-2`, OLDPPC = PPC.
+  - RUN of `10 PRINT "HI"`: `HI`, then `0/10`.
+  - `10 INPUT A` / `20 PRINT A`, RUN: FLAGX = `$60` while INPUT waits (bit 5 set), `$40` after the
+    answer 7; the run went on to line 20 (`7`, `0/20`).
+- **Names:** none from a name list. **Provenance:** `observed` throughout.
+- **Level:** 0 (`checkRomSidecar`: no problems).
+
+### 2026-10-19 — `zx80.rom.dis`, LINE_SCAN and the syntax tables (working copy)
+
+- **Added:** 31 labels and 3 data labels with synopses and end-of-line comments, Klive names.
+  - The scanner: `LINE_SCAN` rewritten in full, `LS_LINE`, `LS_ERROR`, `LS_STATEMENT`, `SYNTAX_NEXT`,
+    `SYNTAX_ITEM`, `SYNTAX_TOKEN`, `ST_COMPARE`, `CHECK_END`, `END_AT_HL`, `NO_STATEMENT`,
+    `SKIP_TO_END`, `JUMP_ROUTINE`, `MARK_ERROR`, `ASSIGN_CHECK`, `EXPR_RST` (`$0028`, its entry only),
+    `IS_LETTER`, `IS_ALNUM`, `IS_BELOW_40`.
+  - The operand classes `CLASS_0`-`CLASS_6`.
+  - The short command routines, read in full: `LIST_CMD` (`$0256`), `RANDOMISE_CMD`, `STOP_CMD`,
+    `CONTINUE_CMD`, `GOTO_CMD`, `RUN_CMD` (`$0923-$0942`); REM is `SKIP_TO_END`, CLEAR `CLEAR_VARS`,
+    CLS `CLS_DISPLAY`, NEW `START`. The rest are named by address in the table's synopsis.
+  - Regions (`bytes`): `SYNTAX_TABLE` `$0752-$07BD` (offsets, then `SYNTAX_ENTRIES` from `$076C`)
+    and `CLASS_TABLE` `$0836-$083C`.
+- **Method:** the bytes through `tools/zx80-dis.cjs`; the tables' extents and contents from their
+  readers (`$07FC-$0807`: `$0752 + T - $E6 + offset`; `$0819-$0821`: `$0836 + n + offset`), every
+  entry decoded by a script reading the ROM bytes the way SYNTAX_ITEM does. The entries end at
+  `$07BD`; NEW's offset points at `$07C3`, LINE_SCAN's own `LD HL,$0000` / `NOP` bytes, read as class
+  0 and address `$0000`. The two-pass apply left every instruction start outside the new regions
+  unchanged.
+- **Runs** (a throwaway probe in `test/zx8081-hw/`, deleted; `zx80-16k`): `10000 PRINT 1` marked
+  X_PTR = `$402E`, just after the number; `LET A="X"` marked at its end; FLAGS = `$80` after
+  `PRINT "HI"` and `$C0` after `PRINT 2` (bit 6: the type); `10 GO TO 30` / `20 PRINT "A"` /
+  `30 STOP` / `40 PRINT "C"`, RUN: report `9/30`, OLDPPC = 31, ERR_NR = 8, line 20 not printed;
+  CONTINUE: `C`, `0/40`; `LIST 20`: E_PPC = 20, no report; a REM line as a command: `0/-2`. A probe
+  stopping at `$0000` after NEW did not stop (the key was likely lost); NEW's routine is described
+  from the bytes only.
+- **Names:** none from a name list. **Provenance:** `observed` throughout.
+- **Level:** 0 (`checkRomSidecar`: no problems).
+
+### 2026-10-19 — `zx80.rom.dis`, the expression evaluator, variables and the assignment (working copy)
+
+- **Added:** 65 labels and 3 data labels with synopses and end-of-line comments, Klive names.
+  - The evaluator: `EVAL` (`$09E1`) and its `EV_*` steps, `PRIORITIES` (`$0AA3-$0AAC`), `OP_TABLE`
+    (`$0D1F-$0D38`, the 13 operation routines named by address), `EXPR_RST` rewritten, `EXPR_NEXT`
+    (`$0025`), `BRACKET_EXPR` (`$0049`).
+  - Names: `VAR_SCAN` (`$0AAD`) with `VS_*`, `FUNCTION_TABLE` (`$0BC0-$0BEC`), `VAR_FIND` (`$0B3B`)
+    with `VF_*`, `FN_RESULT`, `VAR_NOT_FOUND`.
+  - The functions read in full: `PEEK_FN` (also CODE), `CHR_FN`, `TL_FN`, `STR_FN`, `USR_FN` (`$06F0`,
+    PRINT_IF_RUN's `JP (HL)`), `EMPTY_STRING`; `RND_FN` by its entry only; ABS by address.
+  - The assignment: `ASSIGN` (`$0C3D`) with `AS_*`, `NEW_STRING`, `NEW_VAR_END`, `WORKSPACE_RST`
+    (`$0030`) and `WS_ROOM` (`$0CF3`), `CLEAR_TO_HL` (`$0D0D`), `DROP_RETURN`.
+  - Regions: `PRIORITIES` and `FUNCTION_TABLE` (`bytes`), `OP_TABLE` (`words`).
+- **Method:** the bytes through `tools/zx80-dis.cjs`, the operator stack and the register-set swaps
+  traced by hand; the tables' extents from their readers (`$0A47`: `$0AA3 + code` for codes 0-9;
+  `$0A5D`: `$0D1F + 2 × code` for 0-12, codes 10-12 from EV_PUSH's `+ 3`; VS_FUNCTION's walk from
+  `$0BBF + 1` to the 0 at `$0BEC`), decoded by a script reading the ROM bytes. The way a new
+  variable takes the `$80`'s place was traced through WS_ROOM, MAKE_ROOM and NEW_VAR_END for both an
+  empty workspace and one holding the edit line. The two-pass apply left every instruction start
+  outside the new regions unchanged.
+- **Runs** (a throwaway probe in `test/zx8081-hw/`, deleted; `zx80-16k`, each a command):
+  `2+3*4` 14, `10-2-3` 5, `-5+2` -3, `NOT 0` -1, `7/2` 3, `"A"="A"` -1, `1=2` 0, `CODE("A")` 38,
+  `CHR$(38)` A, `TL$("ABC")` BC, `STR$(-12)` -12, `PEEK(0)` 33, `ABS(-3)` 3; the variables area after
+  `LET A=5` `66 05 00 80`, then `LET AB=7` adds `46 A7 07 00`, `LET A$="HI"` adds `86 2D 2E 01`,
+  `LET A$="HELLO"` removes it and adds `86 2D 2A 31 31 34 01` at the end, `LET A=A+1` makes A 6;
+  `AB*A` 42; `DIM B(3)` adds `A7 03` and 8 zero bytes, `LET B(2)=9` sets the third word;
+  `B(4)`: ERR_NR 2, report 3; `Z`: ERR_NR 1, report 2; `32767+1`: ERR_NR 5, report 6. (`**` could not
+  be typed through the harness's typer.)
+- **Names:** none from a name list. **Provenance:** `observed` throughout.
+- **Level:** 0 (`checkRomSidecar`: no problems).
+
+### 2026-10-19 — `zx80.rom.dis`, the arithmetic and the character set (working copy)
+
+- **Added:** 34 labels and 1 data label with synopses and end-of-line comments, Klive names.
+  - The operation routines: `OP_SUBTRACT`, `OP_ADD` (`ADD_CHECK`, `OVERFLOW`), `OP_MULTIPLY`
+    (`MUL_SIGN`), `MULT16` (`M16_*`), `OP_POWER` (`POW_*`), `OP_DIVIDE` (`DIV_*`), `OP_AND`, `OP_OR`,
+    `OP_EQUAL` (`EQ_RESULT`), `OP_GREATER`, `OP_LESS` (`LESS_RESULT`), the string comparisons
+    `OP_STR_EQUAL`/`OP_STR_GREATER`/`OP_STR_LESS` and `STR_COMPARE`; `ABS_BOTH`, `SWAP_ABS`,
+    `ABS_HL` (ABS), `NEGATE`.
+  - `RND_FN` described in full (`RND_SEED_0`, `RND_STORE`); `RAND_STORE` and `VS_FN_RUN`, two
+    targets inside routines described earlier.
+  - `OP_TABLE` and `FUNCTION_TABLE` now name the routines by label.
+  - `CHARACTER_SET` (`$0E00-$0FFF`), a `bytes` region of one binary row per byte: the ROM's code
+    ends at `$0DFF`.
+- **Method:** the bytes through `tools/zx80-dis.cjs`; MULT16's shift-and-add, OP_DIVIDE's inverted
+  quotient and sign bit, RND's mod-65537 step and STR_COMPARE's end test traced by hand. The
+  character set's address and bit order from Klive's core (`zx8081-ula.c`: `(address & $FE00) |
+  (code & $3F) << 3 | line`, inverted for codes with bit 7 clear; `zx8081-video.c`: MSB first) and
+  I = `$0E` at `$026F`. `apply-annotations.cjs` now keeps a new region's `rowBytes` and `radix`.
+- **Runs** (a throwaway probe in `test/zx8081-hw/`, deleted; `zx80-16k`, each a command): `-7/2` -3,
+  `7/-2` -3, `-7/-2` 3, `1/0` report 6; `181*181` 32761, `182*181` report 6, `-181*181` -32761;
+  `-32767-1` -32768, `-32767-2` report 6; `2**10` 1024, `-2**3` -8, `2**0` 1, `2**15` and `2**-1`
+  report 6; `5>3` -1, `3>5` 0, `3<5` -1, `-30000<30000` -1; `"AB"<"AC"`, `"B">"A"`, `"A"<"AB"` and
+  `"A "<"A"` all -1; after `RANDOMISE 1`, `RND(10)` gave 1, 1, 10 with SEED `$004D`, `$1729`,
+  `$F74F` (the values the mod-65537 step predicts); `ABS(-32767)` 32767. AND and OR were not run
+  (the harness typed AND as letters).
+- **Names:** none from a name list. **Provenance:** `observed` throughout.
+- **Level:** 0 (`checkRomSidecar`: no problems); 36 unlabelled targets remain, in the tape routines
+  (`$01BA-$024D`), PRINT (`$06F1-$073A`, `$0978-$09CF`), FOR, IF and `$0921`.
+
+### 2026-10-19 — `zx80.rom.dis`, the command routines: PRINT, INPUT, IF, FOR, NEXT, GO SUB, RETURN, POKE, DIM (working copy)
+
+- **Added:** 27 labels with synopses and end-of-line comments, Klive names: `PRINT_CMD` (`PR_ITEM`,
+  `PR_SEPARATOR`) and its helpers `PRINT_RESULT`, `PR_CHAR`, `PR_CHECK`, `PR_STRING`,
+  `PRINT_NEWLINE`, `PR_DONE_TEST`, `SCREEN_FULL`, `PRINT_COMMA` (`PC_TAB_LOOP`), `PRINT_SAVE_POS`
+  (`$06F1-$073B`); `INPUT_CMD` (`IN_TYPE`, `IN_CURSOR`, `INPUT_ERROR`); `IF_CMD` (`IF_THEN`);
+  `FOR_CMD` (`FOR_STORE`); `NEXT_CMD` (`NEXT_ERROR`); `GOSUB_CMD`; `RETURN_CMD`; `POKE_CMD`;
+  `DIM_CMD`. `SYNTAX_TABLE`'s synopsis names them all by label. The comment at `$026C` now says what
+  the start-up PUSH AF is for: RETURN_CMD recognises the stack's bottom word by its `$3F`.
+- **Method:** the bytes through `tools/zx80-dis.cjs`; the GO SUB stack (a word under the routine's
+  return address, left on the machine stack when LINE_SCAN returns) and the bottom-word test traced
+  by hand; the FOR variable's layout from FOR_CMD and NEXT_CMD and NEXT_ITEM's 6 bytes.
+- **Runs** (a throwaway probe in `test/zx8081-hw/`, deleted; `zx80-16k`): `PRINT "A";"B"` AB;
+  `PRINT 1,2,3` 8 columns apart; `PRINT "X";` and a bare PRINT; `10 IF 1=1 THEN PRINT "T"` /
+  `20 IF 1=2 THEN PRINT "F"`: only T, `0/20`; `10 FOR I=1 TO 3` / `20 PRINT I;` / `30 NEXT I`: 123,
+  `0/30`, I = `EE 04 00 03 00 0B 00`; `10 NEXT I` alone: `2/10`; the GO SUB program: SE, `9/30`;
+  RETURN as a command `7/-2`; `POKE 16413,9` then `PEEK(16413)` 9; INPUT as a command `8/-2`;
+  `10 INPUT A$` / `20 PRINT A$`: the answer line `01 B0 01 76`, FLAGX `$20`, DF_SZ 24, then HI and
+  `0/20`; `DIM C(2)`: `A8 02` and 6 zero bytes; `DIM D(256)`: report 3; `10 PRINT 1` /
+  `20 GO TO 10`: 23 lines, then `5/10`. NEXT on a variable that is not a FOR one (report 1) was not
+  run: it is from the code.
+- **Names:** none from a name list. **Provenance:** `observed` throughout.
+- **Level:** 0 (`checkRomSidecar`: no problems); the 18 unlabelled targets left are all in the
+  tape routines (`$01BA-$024D`).
+
+### 2026-10-19 — `zx80.rom.dis`, SAVE and LOAD; level 1 and level 2 (working copy)
+
+- **Added:** 21 labels with synopses and end-of-line comments, Klive names: `SAVE_CMD` (`$01B6`) with
+  `SV_LEADER`, `SV_LEADER_PAUSE`, `SV_START`, `SV_BYTE`, `SV_BIT`, `SV_PULSE`, `SV_PAUSE_OFF`,
+  `SV_PAUSE_ON`, `SV_GAP`; `NEXT_TAPE_BYTE` (`$01F8`); `TAPE_DONE` (`$0203`); `LOAD_CMD` (`$0206`) with
+  `LD_QUIET`, `LD_QUIET_LOOP`, `LD_BYTE`, `LD_WAIT`, `LD_SIGNAL`, `LD_COUNT`, `LD_BIT`, `LD_BREAK`.
+  Synopses for the two labels that had none (`WK_PAUSE`, `SYNTAX_ENTRIES`).
+- **Method:** the bytes through `tools/zx80-dis.cjs`. The tape output and input from Klive's core
+  (`src/emu/machines/zx8081/wasm/README.md`: the tape output is the vertical sync; `zx8081-ula.c`:
+  bit 7 of port $FE is the tape signal); the ROM addresses that README's tape section gives were not
+  used. LD_COUNT's decision traced with C wrapping past 0, which a first reading missed and the run
+  below showed.
+- **Runs** (a throwaway probe in `test/zx8081-hw/`, deleted; `zx80-16k`): `_input/zx80-tapes/klive/hello.o`
+  inserted for a real-time load (no fast-load trap), LOAD typed, breakpoints at `$021A`, `$023E`,
+  `$0242` and `$0203`: the quiet wait ended at `$021A`; the first byte's eight 1 bits reached
+  `$0242` with C = `$D6`/`$D7` and carry clear, the 0 bits with C = `$37`/`$38`, carry set at `$0242`
+  after `CP $56`; `$4000-$4003` held the file's first bytes (`FF 04 00` ...). SAVE was not run: it
+  is from the code.
+- **Names:** none from a name list. **Provenance:** `observed` throughout.
+- **Level:** 2, measured by `checkRomSidecar` and recorded in the working copy: 314 labels, every
+  control-transfer target labelled and every label with a synopsis; no problems.
+
+### 2026-10-19 — `zx80.rom.dis`, the character set's characters (working copy)
+
+- **Added:** a synopsis for each of the 64 characters in `CHARACTER_SET` (`$0E00-$0FFF`, every 8 bytes),
+  in the ZX81 sidecar's style: `$NN - Character: 'c'`, `mosaic` for the ten block graphics
+  `$02-$0B`, `ukp` for £ (`$0C`). The table's own synopsis stays at `$0E00`, with `$00`'s line after it.
+- **Method:** the names from Klive's `ZX80_CHARSET` (`src/common/zx8081/charset.ts`, read off these
+  glyphs); a sample of the patterns (`$01`, `$02`, `$0C`, `$12`, `$17`, `$3F`) printed from the ROM
+  and checked by eye against them. No run.
+- **Provenance:** `observed`. **Level:** 2, unchanged (`checkRomSidecar`: no problems).

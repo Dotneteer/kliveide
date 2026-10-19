@@ -11,7 +11,12 @@ import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler
  * thousands of rows, so the cache turns a full-ring filter into a few hundred disassemblies.
  */
 
-export type HistoryInstruction = { text: string; length: number };
+export type HistoryInstruction = {
+  text: string;
+  length: number;
+  /** The label names the resolver substituted into `text`, so a view can tint them */
+  names?: string[];
+};
 
 export type HistoryLabelLookup = (address: number) => string | undefined;
 
@@ -53,9 +58,13 @@ export class HistoryDisassemblyCache {
     disassembler.setAddressOffset(record.regs.pc);
     const output = await disassembler.disassemble(0, 0);
     const item = output?.outputItems?.[0];
+    const names = (item?.operandCandidates ?? [])
+      .map((operand) => operand.resolvedText)
+      .filter((name): name is string => !!name);
     const result: HistoryInstruction = {
       text: item?.instruction ?? "???",
-      length: Math.max(1, Math.min(4, item?.opCodes?.length ?? 4))
+      length: Math.max(1, Math.min(4, item?.opCodes?.length ?? 4)),
+      ...(names.length ? { names } : {})
     };
     this.cache.set(key, result);
     return result;

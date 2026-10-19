@@ -433,7 +433,7 @@ describe("DisassemblyPanel refactor characterization", () => {
 
     const labelCells = Array.from(
       screen.getByTestId("disassembly-list").querySelectorAll<HTMLElement>("span")
-    ).filter((el) => el.className.includes("disassemblyLabel"));
+    ).filter((el) => el.className.includes("annotationLabel"));
     expect(labelCells.length).toBeGreaterThan(0);
     for (const cell of labelCells) {
       expect(cell.style.width).toBe("10ch");

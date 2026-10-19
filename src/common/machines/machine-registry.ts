@@ -45,9 +45,12 @@ import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler
 import { ZxSpectrum48CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/zx-spectrum-48-disassembler";
 import { ZxSpectrumNextCustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/zx-spectrum-next-disassembler";
 import { Z88CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z88-custom.disassembler";
+import { Zx80CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/zx80-disassembler";
 import { Zx81CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/zx81-disassembler";
 import {
+  ChainedCustomDisassembler,
   gateOnRom,
+  RomGatedCustomDisassembler,
   type CustomDisassemblerFactory
 } from "@renderer/appIde/disassemblers/z80-disassembler/rom-gated-disassembler";
 import { ZX80_MODELS, ZX81_MODELS } from "@emu/machines/zx8081/zx8081MachineInfo";
@@ -221,6 +224,21 @@ const spectrum48CustomDisassembler: CustomDisassemblerFactory = (context) =>
 /** The ZX81 ROM's calculator, decoded only in the ZX81 ROM (also the ZX80's 8K upgrade, §4.7) */
 const zx81CustomDisassembler: CustomDisassemblerFactory = (context) =>
   gateOnRom(new Zx81CustomDisassembler(), context, 0x2000);
+
+/**
+ * A ZX80 lists its own 4K ROM with the ZX80's decoding (the error code after `RST $08`; no
+ * calculator) and the 8K upgrade, the ZX81's ROM, with the ZX81's. Without a context — a caller that
+ * knows nothing of the paging — the machine's usual 4K ROM is assumed.
+ */
+const zx80CustomDisassembler: CustomDisassemblerFactory = (context) =>
+  new ChainedCustomDisassembler([
+    new RomGatedCustomDisassembler(new Zx81CustomDisassembler(), (address) =>
+      context ? context.inDescribedRom(address) : false
+    ),
+    new RomGatedCustomDisassembler(new Zx80CustomDisassembler(), (address) =>
+      context ? !!context.inZx80Rom?.(address) : (address & 0xffff) < 0x1000
+    )
+  ]);
 
 /**
  * The registry of available machine types with their available models
@@ -550,7 +568,7 @@ export const machineRegistry: MachineInfo[] = [
         partitionLabels?: string[],
         options?: DisassemblyOptions
       ) => new Z80Disassembler(memorySections, memoryContents, partitionLabels, options),
-      [CT_CUSTOM_DISASSEMBLER]: zx81CustomDisassembler,
+      [CT_CUSTOM_DISASSEMBLER]: zx80CustomDisassembler,
       [CT_DISASSEMBLER_VIEW]: {
         showRamOption: false,
         showScreenOption: false

@@ -117,6 +117,13 @@ export function isZx81Rom(machineId: string | undefined, identity: RomPageIdenti
   return kind ? kind === "zx81" : identity?.size === 0x2000;
 }
 
+/** Whether a ZX80's ROM is its own 4K ROM (not the 8K upgrade, which is the ZX81's). */
+export function isZx80Rom(machineId: string | undefined, identity: RomPageIdentity | undefined): boolean {
+  if (machineId !== MI_ZX80) return false;
+  const kind = knownRomPageKind(identity);
+  return kind ? kind === "zx80" : identity?.size === 0x1000;
+}
+
 /** Where a ROM partition's bytes came from, and what they are (`IAnyMachine.getRomSources`). */
 export type RomSource = RomPageIdentity & {
   /** The file it was loaded from: `roms/sp48.rom` (shipped) or an absolute path; absent if unknown. */

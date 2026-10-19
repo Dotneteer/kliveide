@@ -6,9 +6,9 @@ import {
   deriveInstructionWidthCh,
   deriveDisassemblyRowViewModel,
   DisassemblyRow,
-  isAuthoredRow,
-  splitInstructionOperands
+  isAuthoredRow
 } from "@renderer/appIde/DocumentPanels/DisassemblyRow";
+import { splitInstructionOperands } from "@renderer/controls/data/DisassemblyText";
 import type { BranchVerdict } from "@renderer/appIde/DocumentPanels/branchVerdict";
 
 /*
@@ -721,7 +721,7 @@ describe("annotated disassembly rows", () => {
     expect(rail(1)).toHaveAttribute("data-authored", "true");
   });
 
-  it("leaves a machine disassembly row alone", () => {
+  it("colours a machine disassembly row with the same table, without the rail", () => {
     const { getByTestId, getByText } = render(
       <DisassemblyRow
         {...base}
@@ -739,10 +739,12 @@ describe("annotated disassembly rows", () => {
       />
     );
 
-    // --- No rail, no operand cell, no directive hue: `annotated` is opt-in and this row did not.
+    // --- One colour table for every disassembly: the name is in the operand hue, the data region
+    // --- in the directive hue, the generated label in the label hue. Only the rail is opt-in.
     expect(getByTestId("disassembly-row-0").querySelector('[class*="annotationRail"]')).toBeNull();
-    expect(getByText("call DrawSprite").className).toContain("disassemblyInstruction");
-    expect(getByText("L8000:").className).toContain("disassemblyLabel");
+    expect(getByText("DrawSprite").className).toContain("annotationOperand");
+    expect(getByText("DrawSprite").closest("[class*='annotationDirective']")).not.toBeNull();
+    expect(getByText("L8000:").className).toContain("annotationLabel");
   });
 });
 

@@ -72,29 +72,35 @@
   color: var(--color-state-value);
 }
 
+/*
+ * A Copper listing is a disassembly too, so it takes the one disassembly colour set
+ * (`--color-disassembly-*`): the index where a listing has its address, the word where it has its
+ * opcodes, the instruction bold in primary text, and the decoded meaning as its comment.
+ */
 .index {
   width: 5ch;
   flex-shrink: 0;
-  color: var(--color-state-value);
+  color: var(--color-disassembly-address);
 }
 
 .word {
   width: 6ch;
   flex-shrink: 0;
-  color: var(--color-state-value-alt);
+  color: var(--color-disassembly-opcodes);
 }
 
 .mnemonic {
   width: 5ch;
   flex-shrink: 0;
   font-weight: 600;
-  color: var(--data-value);
+  color: var(--color-disassembly-instruction);
 }
 
 .operands {
   width: 11ch;
   flex-shrink: 0;
-  color: var(--data-value);
+  font-weight: 600;
+  color: var(--color-disassembly-instruction);
 }
 
 .meaning {
@@ -102,7 +108,8 @@
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: var(--data-secondary);
+  font-style: italic;
+  color: var(--color-disassembly-comment);
 }
 
 .hitNote {

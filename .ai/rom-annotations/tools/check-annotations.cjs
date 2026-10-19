@@ -53,7 +53,8 @@ registerTsRuntime();
 const { checkRomSidecar } = require(join(root, "src/renderer/appIde/annotations/romSidecarCheck.ts"));
 (async () => {
   const text = readFileSync(process.argv[2], "utf8");
-  const rom = new Uint8Array(readFileSync(join(root, "src/public/roms/zx81.rom")));
+  const romFile = JSON.parse(text).source?.fileName ?? "zx81.rom"; // the ROM the sidecar names
+  const rom = new Uint8Array(readFileSync(join(root, "src/public/roms", romFile)));
   const result = await checkRomSidecar(text, (page) => (page === 0 ? rom.subarray(0, 0x4000) : undefined));
   console.log(JSON.stringify(result, null, 1).slice(0, 3000));
 })();

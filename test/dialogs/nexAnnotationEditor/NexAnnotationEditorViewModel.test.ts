@@ -611,3 +611,19 @@ describe("the delete-label question", () => {
     expect(deleteLabelConfirmRequest({ scope: "local", name: "Loop", referenceCount: 0, listedCount: 0 }).linesAfterCode).toBeUndefined();
   });
 });
+
+describe("annotationsShown", () => {
+  it("keeps a read-only listing annotated, though nothing can be edited", () => {
+    // --- A shipped ROM sidecar opens read-only: its rows keep the annotated colours of the
+    // --- editable working copy, and only the editing tools go.
+    const vm = selectViewModel(loaded({ env: anEnvironment({ readOnly: true }) }));
+    expect(vm.annotationsShown).toEqual(true);
+    expect(vm.annotationsAvailable).toEqual(false);
+  });
+
+  it("is on for an editable listing, and off before the annotations load or without a sidecar", () => {
+    expect(selectViewModel(loaded()).annotationsShown).toEqual(true);
+    expect(selectViewModel(aState({ annotations: undefined })).annotationsShown).toEqual(false);
+    expect(selectViewModel(aState({ env: anEnvironment({ annotationPath: undefined }) })).annotationsShown).toEqual(false);
+  });
+});
