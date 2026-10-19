@@ -180,7 +180,7 @@
     "@electron-toolkit/utils": "^4.0.0",
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@formatjs/icu-messageformat-parser": "^3.5.18",
-    "@radix-ui/react-select": "^2.3.8",
+    "@radix-ui/react-select": "^2.4.1",
     "classnames": "^2.5.1",
     "electron-updater": "^6.8.9",
     "fflate": "^0.8.3",
