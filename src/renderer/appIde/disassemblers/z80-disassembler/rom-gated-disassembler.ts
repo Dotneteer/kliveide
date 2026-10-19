@@ -22,6 +22,11 @@ import {
 export type CustomDisassemblyContext = {
   /** Whether the instruction at an address is in a ROM page the custom disassembler describes. */
   inDescribedRom(address: number): boolean;
+  /**
+   * Whether the instruction at an address is in the ZX80's own 4K ROM. Only a ZX80 asks: a ZX80
+   * fitted with the 8K ROM runs the ZX81's ROM, which `inDescribedRom` covers.
+   */
+  inZx80Rom?(address: number): boolean;
 };
 
 /** A factory a machine registers as `CT_CUSTOM_DISASSEMBLER`. */
@@ -66,4 +71,32 @@ export function gateOnRom(
     inner,
     context ? (address) => context.inDescribedRom(address) : (address) => (address & 0xffff) < romEnd
   );
+}
+
+/**
+ * Several custom disassemblers over one listing, each behind its own gate: a machine whose ROM may be
+ * one of two programs (the ZX80's 4K ROM or the 8K upgrade) lists each with its own decoding. Every
+ * instruction goes to all of them, and their gates decide; the data after an instruction belongs to
+ * whichever one asked for it.
+ */
+export class ChainedCustomDisassembler implements ICustomDisassembler {
+  readonly toolId = CUSTOM_Z80_DISASSEMBLY_TOOL;
+
+  constructor(private readonly inners: ICustomDisassembler[]) {}
+
+  setDisassemblyApi(api: IDisassemblyApi): void {
+    for (const inner of this.inners) inner.setDisassemblyApi(api);
+  }
+
+  startSectionDisassembly(section: MemorySection): void {
+    for (const inner of this.inners) inner.startSectionDisassembly(section);
+  }
+
+  beforeInstruction(fetchResult: FetchResult): boolean {
+    return this.inners.some((inner) => inner.beforeInstruction(fetchResult));
+  }
+
+  afterInstruction(item: DisassemblyItem): void {
+    for (const inner of this.inners) inner.afterInstruction(item);
+  }
 }
