@@ -11,13 +11,20 @@
  * - D7: call `t()` when text is displayed, never at import time, or the text freezes in the
  *   language that was current when the module loaded.
  */
-import { IntlMessageFormat } from "intl-messageformat";
+import { IntlMessageFormat, type MessageValues } from "intl-messageformat";
 import type { MessageFormatElement } from "@formatjs/icu-messageformat-parser";
 import { SOURCE_CATALOG } from "./catalogs";
 import { PSEUDO_LANGUAGE, SOURCE_LANGUAGE, type Catalog } from "./catalogs-core";
 import { TRANSLATED_CATALOGS } from "./translations.generated";
 import { PARSE_OPTIONS, pseudoLocalize } from "./pseudo";
 import type { MessageKey } from "./keys.generated";
+
+/**
+ * A compiled message. Typed with intl-messageformat's own `MessageValues` rather than left untyped:
+ * from version 12 the untyped form's `format` is chosen by a conditional type that, without
+ * `strictNullChecks` (Klive builds without it), resolves to one that takes no values at all.
+ */
+type Formatter = IntlMessageFormat<MessageValues>;
 
 /** Values substituted into a message's `{placeholders}`. */
 export type MessageArgs = Readonly<Record<string, string | number | boolean | Date | null | undefined>>;
@@ -45,7 +52,7 @@ export class Translator {
   private readonly pseudoLanguage: string | null;
   private languageId: string;
   private showKeys = false;
-  private readonly cache = new Map<string, IntlMessageFormat>();
+  private readonly cache = new Map<string, Formatter>();
   private readonly listeners = new Set<Listener>();
 
   constructor(options: TranslatorOptions) {
@@ -139,11 +146,11 @@ export class Translator {
     return text ?? english;
   }
 
-  private formatterFor(key: string, english: string): IntlMessageFormat | null {
+  private formatterFor(key: string, english: string): Formatter | null {
     const cached = this.cache.get(key);
     if (cached) return cached;
 
-    let formatter: IntlMessageFormat | null;
+    let formatter: Formatter | null;
     if (this.pseudoLanguage && this.languageId === this.pseudoLanguage) {
       formatter = compilePseudo(english, this.sourceLanguage);
     } else {
@@ -161,15 +168,15 @@ export class Translator {
   }
 }
 
-function compile(message: string | MessageFormatElement[], locale: string): IntlMessageFormat | null {
+function compile(message: string | MessageFormatElement[], locale: string): Formatter | null {
   try {
-    return new IntlMessageFormat(message, locale, undefined, PARSE_OPTIONS);
+    return new IntlMessageFormat<MessageValues>(message, locale, undefined, PARSE_OPTIONS);
   } catch {
     return null;
   }
 }
 
-function compilePseudo(english: string, locale: string): IntlMessageFormat | null {
+function compilePseudo(english: string, locale: string): Formatter | null {
   try {
     return compile(pseudoLocalize(english), locale);
   } catch {
@@ -177,9 +184,9 @@ function compilePseudo(english: string, locale: string): IntlMessageFormat | nul
   }
 }
 
-function tryFormat(formatter: IntlMessageFormat, args?: MessageArgs): string | null {
+function tryFormat(formatter: Formatter, args?: MessageArgs): string | null {
   try {
-    const result = formatter.format(args as Record<string, unknown>);
+    const result = formatter.format(args);
     return Array.isArray(result) ? result.join("") : String(result);
   } catch {
     return null;
