@@ -123,7 +123,8 @@ import { useDialogs } from "@renderer/controls/overlay/DialogProvider";
 import { updateAnnotationSession } from "@renderer/appIde/annotations/annotationSession";
 import { withNamedGraphic } from "@renderer/appIde/annotations/annotationEdits";
 import { useActiveAnnotationSet } from "@renderer/appIde/annotations/activeAnnotationSet";
-import { ReverseToolsMenu } from "@renderer/appIde/reverse/ReverseToolsMenu";
+import { ExportSourceButton, ReverseToolsMenu } from "@renderer/appIde/reverse/ReverseToolsMenu";
+import type { SourceExportScope } from "@common/reverse/sourceExportUi";
 import { GraphicsToolbar } from "@renderer/features/graphics/GraphicsToolbar";
 import { findGraphicCandidates } from "@common/reverse/graphicsCandidates";
 import {
@@ -1662,13 +1663,8 @@ const StaticMemoryDump = ({
             --- are offered on the bank document of the active set only */}
         {viewAnnotationBank !== undefined && viewAnnotationPath && viewAnnotationPath === activeAnnotationSet?.path && (
           <PanelHeaderGroup>
-            <ReverseToolsMenu
-              scope={{
-                kind: "bank",
-                bank: viewAnnotationBank,
-                hostName: activeAnnotationSet.hostPath?.split(/[\\/]/).pop()?.replace(/\.[^.]+$/, "")
-              }}
-            />
+            <ExportSourceButton scope={bankExportScope(viewAnnotationBank, activeAnnotationSet.hostPath)} />
+            <ReverseToolsMenu scope={bankExportScope(viewAnnotationBank, activeAnnotationSet.hostPath)} />
           </PanelHeaderGroup>
         )}
         {/* --- Guarded rather than always rendered: `NexAnnotationToolbar` returns null when it has
@@ -2083,3 +2079,8 @@ export const MiniMemoryDump = ({ contents, length = 64 }: MiniDumpProps) => {
     </>
   ) : null;
 };
+
+/** A bank document's export: the whole bank, named after the file the annotations describe. */
+function bankExportScope(bank: number, hostPath: string | undefined): SourceExportScope {
+  return { kind: "bank", bank, hostName: hostPath?.split(/[\\/]/).pop()?.replace(/\.[^.]+$/, "") };
+}

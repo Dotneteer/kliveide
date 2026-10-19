@@ -137,6 +137,18 @@ class MainApiImpl {
    * @param _options `defaultPath` is a file name or a full path; with `settingsId` the dialog opens
    * in the folder used last under that key and remembers the new one
    */
+  /**
+   * The save dialog of "Export as source": opened in the export folder (`export.sourceFolder`, or
+   * the suggested default), whose choice is remembered in the project's or the user's settings.
+   */
+  async showSourceExportDialog(_options: {
+    title: string;
+    defaultName: string;
+    filters: { name: string; extensions: string[] }[];
+  }): Promise<string | undefined> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
   async showSaveFileDialog(_options: {
     title?: string;
     defaultPath?: string;
@@ -881,6 +893,7 @@ const UNBOUNDED_MAIN_METHODS = [
   "showOpenFolderDialog",
   "showOpenFileDialog",
   "showSaveFileDialog",
+  "showSourceExportDialog",
   "selectMediaFile",
   "ejectMediaFile",
   // --- File pickers, confirmations and dialogs of their own

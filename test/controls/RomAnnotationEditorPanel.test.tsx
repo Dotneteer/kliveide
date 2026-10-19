@@ -22,6 +22,7 @@ afterEach(() => {
 async function renderEditor(path: string, files: Record<string, string>) {
   vi.resetModules();
   const opened: any[] = [];
+  const executeCommand = vi.fn(async () => ({ success: true }));
   const projectService = {
     readFileContent: vi.fn(async (file: string) => {
       if (files[file] === undefined) throw new Error("File does not exist");
@@ -30,7 +31,7 @@ async function renderEditor(path: string, files: Record<string, string>) {
     saveFileContent: vi.fn(async () => {})
   };
   vi.doMock("@renderer/appIde/services/AppServicesProvider", () => ({
-    useAppServices: () => ({ projectService })
+    useAppServices: () => ({ projectService, ideCommandsService: { executeCommand } })
   }));
   vi.doMock("@renderer/appIde/services/DocumentServiceProvider", () => ({
     useDocumentHubService: () => ({})
@@ -52,6 +53,10 @@ async function renderEditor(path: string, files: Record<string, string>) {
       <button onClick={clicked}>{title}</button>
     )
   }));
+  // --- The overlay scrollbars need the theme provider; the panes' content is what is tested
+  vi.doMock("@renderer/controls/ScrollViewer", () => ({
+    default: ({ children }: { children?: React.ReactNode }) => <div>{children}</div>
+  }));
   vi.doMock("@renderer/core/EmuApi", () => ({
     useEmuApi: () => ({ getRomSources: async () => ({}) })
   }));
@@ -71,7 +76,7 @@ async function renderEditor(path: string, files: Record<string, string>) {
       viewState: { sidecarPath: path }
     })
   );
-  return { opened, mainApi };
+  return { opened, mainApi, executeCommand };
 }
 
 describe("the ROM annotation editor", () => {
@@ -79,7 +84,8 @@ describe("the ROM annotation editor", () => {
     const { opened } = await renderEditor(WORKING, { [WORKING]: SHIPPED_TEXT });
     await waitFor(() => expect(screen.getByText(/Ready to ship · level/)).toBeInTheDocument());
     expect(screen.getByText("Working copy — edits are written here")).toBeInTheDocument();
-    expect(screen.getByText("Page 0")).toBeInTheDocument();
+    expect(screen.getByText("Working copy")).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "To label" })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Disassembly" }));
     await waitFor(() => expect(opened).toHaveLength(1));
@@ -97,6 +103,18 @@ describe("the ROM annotation editor", () => {
       romPageKind: "sp48-basic"
     });
     expect(options.annotationReadOnly).toBeUndefined();
+  });
+
+  it("counts a page's unlabelled targets and steps to the next one", async () => {
+    const { opened } = await renderEditor(WORKING, { [WORKING]: SHIPPED_TEXT });
+    // --- The shipped 48K sidecar is at level 0: 940 call and jump targets have no label yet
+    expect(await screen.findByText("940")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Level 0 of 2" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "next $0000" }));
+    await waitFor(() => expect(opened).toHaveLength(1));
+    expect(opened[0][4]).toMatchObject({ viewMode: "disassembly", topAddress: 0 });
+    // --- The link moves on to the following target
+    expect(await screen.findByRole("button", { name: "next $0010" })).toBeInTheDocument();
   });
 
   it("reveals the working copy in the file manager, from beside its name", async () => {
@@ -118,12 +136,21 @@ describe("the ROM annotation editor", () => {
   it("shows a shipped sidecar read-only", async () => {
     const { opened } = await renderEditor("roms/sp48.rom.dis", {});
     await screen.findByText(/Shipped sidecar — read-only/);
-    expect(screen.queryByText("New entries:")).not.toBeInTheDocument();
+    expect(screen.getByText("Read-only")).toBeInTheDocument();
+    expect(screen.queryByText("New entries are recorded as")).not.toBeInTheDocument();
+    // --- Nothing to step through in a file that cannot be edited
+    expect(screen.queryByRole("button", { name: /^next \$/ })).not.toBeInTheDocument();
     // --- `roms/…` is relative to Klive's own folder: nothing on disk to reveal
     expect(screen.queryByRole("button", { name: /^Reveal in/ })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Disassembly" }));
     await waitFor(() => expect(opened).toHaveLength(1));
     expect(opened[0][4]).toMatchObject({ annotationPath: "roms/sp48.rom.dis", annotationReadOnly: true });
+  });
+
+  it("offers a working copy of a shipped sidecar", async () => {
+    const { executeCommand } = await renderEditor("roms/sp48.rom.dis", {});
+    fireEvent.click(await screen.findByRole("button", { name: "Make working copy" }));
+    expect(executeCommand).toHaveBeenCalledWith("rom-ann-new sp48.rom");
   });
 
   it("is only a message when no ROM matches the file", async () => {

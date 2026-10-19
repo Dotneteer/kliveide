@@ -13,7 +13,7 @@ import { compareAssembly, dialectOf } from "@common/reverse/sourceExport";
 import {
   IdeCommandBase,
   commandError,
-  commandSuccess,
+  commandSuccessWith,
   toHexa4,
   validationError,
   writeInfoMessage,
@@ -35,7 +35,6 @@ type ExportAsmArgs = {
   "-skip"?: string;
   "-dialect"?: string;
   "-open"?: boolean;
-  "-noverify"?: boolean;
 };
 
 /** The export context for the machine running now: its bank space, names and custom decoding. */
@@ -72,7 +71,8 @@ export function exportContextFor(state: AppState, context: IdeCommandContext): E
 /**
  * `export-asm`: export an annotated range or bank as Klive Z80 source that reassembles to the same
  * bytes (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §7.5, G7.6). After writing, the file is
- * assembled and compared with the bytes it came from (R10).
+ * always assembled and compared with the bytes it came from (R10): the verdict is the command's
+ * result, a success only when the bytes are identical, so a button or menu that runs it can show it.
  */
 export class ExportAsmCommand extends IdeCommandBase<ExportAsmArgs> {
   readonly id = "export-asm";
@@ -80,7 +80,7 @@ export class ExportAsmCommand extends IdeCommandBase<ExportAsmArgs> {
     return t("commands.exportAsm.description");
   }
   readonly aliases = [];
-  readonly usage = "export-asm <file> [<from> <to>] [-bank <n>] [-skip data|gap] [-dialect klive] [-open] [-noverify]";
+  readonly usage = "export-asm <file> [<from> <to>] [-bank <n>] [-skip data|gap] [-dialect klive] [-open]";
   readonly argumentInfo: CommandArgumentInfo = {
     mandatory: [{ name: "file", type: "string" }],
     optional: [
@@ -92,7 +92,7 @@ export class ExportAsmCommand extends IdeCommandBase<ExportAsmArgs> {
       { name: "-skip", type: "string" },
       { name: "-dialect", type: "string" }
     ],
-    commandOptions: ["-open", "-noverify"]
+    commandOptions: ["-open"]
   };
 
   async validateCommandArgs(context: IdeCommandContext, args: ExportAsmArgs): Promise<ValidationMessage[]> {
@@ -160,15 +160,14 @@ export class ExportAsmCommand extends IdeCommandBase<ExportAsmArgs> {
     );
     result.notes.forEach((note) => writeInfoMessage(context.output, note));
 
-    if (!args["-noverify"]) {
-      const verdict = await verifyExport(context, text, result.expected);
-      writeInfoMessage(context.output, verdict);
-    }
+    const verdict = await verifyExport(context, text, result.expected);
     if (args["-open"]) {
       const opened = await context.service.ideCommandsService.executeCommand(`nav "${args.file}"`);
       if (!opened.success) writeInfoMessage(context.output, t("commands.exportAsm.notOpened"));
     }
-    return commandSuccess;
+    return verdict.identical
+      ? commandSuccessWith(verdict.text, { identical: true, file: args.file })
+      : commandError(verdict.text);
   }
 }
 
@@ -177,22 +176,31 @@ export async function verifyExport(
   context: Pick<IdeCommandContext, "mainApi">,
   text: string,
   expected: { address: number; bytes: number[] }[]
-): Promise<string> {
+): Promise<{ identical: boolean; text: string }> {
   try {
     const assembled = await context.mainApi.assembleText(text);
     const errors = assembled.errors.filter((e) => !e.isWarning);
     if (errors.length > 0) {
-      return t("commands.exportAsm.verifyNotAssembled", { line: String(errors[0].line), message: errors[0].message });
+      return {
+        identical: false,
+        text: t("commands.exportAsm.verifyNotAssembled", { line: String(errors[0].line), message: errors[0].message })
+      };
     }
     const verdict = compareAssembly(expected, assembled.segments);
-    if (verdict.identical) return t("commands.exportAsm.verifyIdentical");
+    if (verdict.identical) return { identical: true, text: t("commands.exportAsm.verifyIdentical") };
     const hex2 = (n?: number) => (n === undefined ? "--" : n.toString(16).toUpperCase().padStart(2, "0"));
-    return t("commands.exportAsm.verifyDifferent", {
-      differences: verdict.differences
-        .map((d) => `$${toHexa4(d.address)} (${hex2(d.expected)} -> ${hex2(d.actual)})`)
-        .join(", ")
-    });
+    return {
+      identical: false,
+      text: t("commands.exportAsm.verifyDifferent", {
+        differences: verdict.differences
+          .map((d) => `$${toHexa4(d.address)} (${hex2(d.expected)} -> ${hex2(d.actual)})`)
+          .join(", ")
+      })
+    };
   } catch (err) {
-    return t("commands.exportAsm.verifyFailed", { message: err instanceof Error ? err.message : String(err) });
+    return {
+      identical: false,
+      text: t("commands.exportAsm.verifyFailed", { message: err instanceof Error ? err.message : String(err) })
+    };
   }
 }

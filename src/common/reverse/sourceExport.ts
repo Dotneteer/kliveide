@@ -44,6 +44,11 @@ export interface SourceDialect {
 const hex2 = (n: number) => `$${n.toString(16).toUpperCase().padStart(2, "0")}`;
 const hex4 = (n: number) => `$${n.toString(16).toUpperCase().padStart(4, "0")}`;
 
+/** A comment's lines: one per line break, so none of them reaches the assembler as source. */
+function commentLines(comment: string | undefined): string[] {
+  return comment ? comment.split(/\r?\n/) : [];
+}
+
 export const kliveDialect: SourceDialect = {
   id: "klive",
   extension: ".kz80.asm",
@@ -55,18 +60,24 @@ export const kliveDialect: SourceDialect = {
           out.push("");
           break;
         case "comment":
-          out.push(line.text ? `; ${line.text}` : ";");
+          for (const text of line.text.split(/\r?\n/)) out.push(text ? `; ${text}` : ";");
           break;
-        case "directive":
-          out.push(`  ${line.text}${line.comment ? ` ; ${line.comment}` : ""}`);
+        case "directive": {
+          const [first, ...rest] = commentLines(line.comment);
+          out.push(`  ${line.text}${first ? ` ; ${first}` : ""}`);
+          for (const text of rest) out.push(`${" ".repeat(40)} ; ${text}`);
           break;
+        }
         case "equ":
           out.push(`${line.name} .equ ${hex4(line.value)}`);
           break;
         case "row": {
           const label = line.label ? `${line.label}:` : "";
           const body = label.length >= 15 ? `${label}\n${" ".repeat(16)}${line.text}` : `${label.padEnd(16)}${line.text}`;
-          out.push(line.comment ? `${body.padEnd(40)} ; ${line.comment}` : body.trimEnd());
+          // --- A multi-line end-of-line comment goes on in the comment column of the lines below
+          const [first, ...rest] = commentLines(line.comment);
+          out.push(first ? `${body.padEnd(40)} ; ${first}` : body.trimEnd());
+          for (const text of rest) out.push(`${" ".repeat(40)} ; ${text}`);
           break;
         }
       }
@@ -194,6 +205,12 @@ export async function exportSource(options: SourceExportOptions): Promise<Source
     }
     const offset = item.annotation?.bankOffset ?? ((item.address - options.listingBase) & 0x3fff);
     let length = item.annotation?.byteLength ?? item.opCodes?.length ?? 1;
+    // --- A custom disassembler's row (a calculator literal after `RST $28`) carries no opcodes:
+    // --- it covers the bytes up to the next row the decoder produced
+    if (!item.opCodes?.length && (item.annotation?.regionType ?? regionTypeAt(offset)) === "disassemble") {
+      const next = nextRowOffset(items, index, options.listingBase);
+      if (next !== undefined && next > offset) length = next - offset;
+    }
     // --- Bytes the listing skipped over (should not happen) are kept as data
     if (offset > emittedUntil) defbRows(emittedUntil, Array.from(options.bytes.subarray(emittedUntil, offset)), "not listed");
     for (const line of pendingSynopsis) body.push({ kind: "comment", text: line });
@@ -236,7 +253,11 @@ export async function exportSource(options: SourceExportOptions): Promise<Source
       }
     } else if (type === "disassemble" && item.opCodes?.length) {
       const reason = nonCanonicalReason(bytes, options.z80n);
-      if (reason || !instruction || instruction.startsWith(".") && !/^\.def[bwm]\b/i.test(instruction)) {
+      if (!reason && wrapsRound(bytes, addressOf(offset))) {
+        // --- The CPU wraps PC round $FFFF; the assembler measures the distance without wrapping
+        defbRows(offset, bytes, `${instruction} (the jump wraps round $FFFF)`, label);
+        notes.push(t("media.export.wrapsAsDefb", { address: hex4(addressOf(offset)), instruction }));
+      } else if (reason || !instruction || instruction.startsWith(".") && !/^\.def[bwm]\b/i.test(instruction)) {
         defbRows(offset, bytes, `${instruction || "?"}${reason ? ` (${describeNonCanonical(reason)})` : ""}`, label);
         if (reason) {
           notes.push(
@@ -291,6 +312,23 @@ export async function exportSource(options: SourceExportOptions): Promise<Source
   lines.push({ kind: "directive", text: `.org ${hex4(addressOf(start))}` });
   lines.push(...body);
   return { lines, expected, notes };
+}
+
+/** Whether a relative jump (`JR`, `JR cc`, `DJNZ`) at `address` reaches its target only by wrapping. */
+function wrapsRound(bytes: readonly number[], address: number): boolean {
+  if (bytes.length !== 2 || ![0x10, 0x18, 0x20, 0x28, 0x30, 0x38].includes(bytes[0])) return false;
+  const target = address + 2 + (bytes[1] < 0x80 ? bytes[1] : bytes[1] - 0x100);
+  return target < 0 || target > 0xffff;
+}
+
+/** The bank offset of the first listing row after `index` that is not a synopsis line. */
+function nextRowOffset(items: readonly DisassemblyItem[], index: number, listingBase: number): number | undefined {
+  for (let i = index + 1; i < items.length; i++) {
+    const item = items[i];
+    if (item.isPrefixItem) continue;
+    return item.annotation?.bankOffset ?? ((item.address - listingBase) & 0x3fff);
+  }
+  return undefined;
 }
 
 function pushEndComment(body: SourceLine[], bank: BankAnnotation | undefined, offset: number): void {

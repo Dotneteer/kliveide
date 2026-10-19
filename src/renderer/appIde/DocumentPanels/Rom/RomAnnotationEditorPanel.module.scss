@@ -1,35 +1,104 @@
-// --- The ROM annotation editor (`.plans/ROM_ANNOTATION_EDITING_PLAN.md` §4.1).
-// --- Every colour is a token; the readiness chip uses the status family, which is what it reports.
+// --- The ROM annotation editor (`.plans/ROM_ANNOTATION_EDITING_PLAN.md` §4.1): an inspector column
+// --- beside the pages list. Every colour is a token; the readiness chip uses the status family,
+// --- which is what it reports. Column widths are `ch` of the panel font, and the column heads keep
+// --- that font size (only their text is smaller), or their `ch` tracks would not line up with the
+// --- rows'.
 
 .panel {
-  overflow: auto;
+  overflow: hidden;
+  // --- The document's own width decides the layout, not the window's
+  container-type: inline-size;
 }
 
-.summary {
+// --- Side by side, each column scrolls on its own: a tall inspector must not scroll the pages away.
+// --- Both scroll in a `ScrollViewer` (the app's overlay scrollbars, never the platform's)
+.layout {
+  display: grid;
+  grid-template-columns: 34ch minmax(0, 1fr);
+  height: 100%;
+  min-height: 0;
+}
+
+/* --- The inspector column */
+
+.inspector {
   display: flex;
   flex-direction: column;
-  padding: var(--space-2) 0;
-  border-bottom: 1px solid var(--border-subtle);
+  min-width: 0;
+  min-height: 0;
+  border-right: 1px solid var(--border-default);
+  background: var(--surface-panel);
 }
 
-.pages {
+// --- A pane's scrolling body under its fixed header; scrolled to its end, it keeps the wheel
+.paneScroll {
+  min-width: 0;
+  min-height: 0;
+
+  :global([data-overlayscrollbars-viewport]) {
+    overscroll-behavior: contain;
+  }
+}
+
+.inspectorBody {
   display: flex;
   flex-direction: column;
 }
 
-.pageRow {
-  gap: var(--space-3);
-  flex-wrap: wrap;
+.section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+  padding: var(--space-3);
+
+  & + & {
+    border-top: 1px solid var(--border-subtle);
+  }
 }
 
-.actions {
+.sectionLabel {
+  font-size: var(--font-size-200);
+  color: var(--data-label);
+}
+
+.sectionAction {
+  margin-top: var(--space-1);
+}
+
+.fileLine {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  max-width: 100%;
+}
+
+.path {
+  overflow-wrap: anywhere;
+}
+
+.secondary {
+  color: var(--data-secondary);
+}
+
+.badge {
   display: inline-flex;
-  gap: var(--space-2);
-  margin-left: auto;
+  align-items: center;
+  padding: 0 var(--space-1_5);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-200);
+  white-space: nowrap;
 }
 
-.missing {
-  color: var(--status-error);
+.badgeAccent {
+  color: var(--accent-text);
+  background: var(--accent-subtle);
+}
+
+// --- Read-only is a decision, not a failure: the warning hue's subtle fill, never the error's
+.badgeReadOnly {
+  color: var(--status-warning);
+  background: var(--status-warning-subtle);
 }
 
 .chip {
@@ -51,43 +120,221 @@
 }
 
 .problems {
-  margin: var(--space-1) var(--space-4);
-  padding-left: var(--space-4);
-  color: var(--text-secondary);
+  align-self: stretch;
+  margin: var(--space-1) 0 0;
+  padding: var(--space-1_5) var(--space-2) var(--space-1_5) var(--space-5);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--surface-canvas);
+  color: var(--text-primary);
+
+  li::marker {
+    color: var(--status-warning);
+  }
 }
 
 .notice {
-  margin: var(--space-1) var(--space-2);
+  align-self: stretch;
+  margin-top: var(--space-1);
   padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-sm);
   color: var(--status-warning);
   background: var(--status-warning-subtle);
 }
 
-.rule {
-  margin: var(--space-1) var(--space-2);
-  color: var(--text-tertiary);
-}
-
-.mode {
+.segmented {
   display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  color: var(--text-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
 }
 
-.modeButton {
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
+.segment {
   padding: 0 var(--space-2);
+  border: 0;
   font: inherit;
   color: var(--text-secondary);
   background: transparent;
   cursor: pointer;
+
+  & + & {
+    border-left: 1px solid var(--border-default);
+  }
+
+  &:hover {
+    background: var(--surface-hover);
+  }
 }
 
-.modeActive {
+.segmentActive {
   color: var(--accent-text);
-  border-color: var(--accent-border);
   background: var(--accent-subtle);
+
+  &:hover {
+    background: var(--accent-subtle);
+  }
+}
+
+.exportGood {
+  color: var(--status-success);
+}
+
+.exportBad {
+  color: var(--status-error);
+}
+
+// --- The provenance rule closes the column, below the sections
+.rule {
+  padding: var(--space-2_5) var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+  font-size: var(--font-size-200);
+  color: var(--text-tertiary);
+}
+
+/* --- The pages list */
+
+.pagesPane {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+// --- As wide as the pane, and never narrower than its columns at their minimum (the ROM column's
+// --- 6ch): narrower than that, it scrolls sideways in its `ScrollViewer`. Not `max-content`, which
+// --- grows the ROM column to the longest name.
+.pagesTable {
+  display: flex;
+  flex-direction: column;
+  min-width: calc(59ch + 6 * var(--space-2) + var(--space-2) + var(--space-3));
+}
+
+.count {
+  font-size: var(--font-size-100);
+  color: var(--data-secondary);
+}
+
+.pageGrid {
+  display: grid;
+  // --- Page, ROM · CRC, Size, Labels, To label (with its "next" link), Completeness, the two views
+  grid-template-columns: 5ch minmax(6ch, 1fr) 5ch 7ch 16ch 13ch 7ch;
+  column-gap: var(--space-2);
+  align-items: center;
+  padding: 0 var(--space-2) 0 var(--space-3);
+}
+
+.columnHeads {
+  min-height: var(--row-panelHeader);
+  color: var(--data-secondary);
+
+  > span {
+    font-size: var(--font-size-200);
+    white-space: nowrap;
+  }
+}
+
+.pageRow {
+  min-height: var(--strip-panelHeader);
+  border-bottom: 1px solid var(--border-subtle);
+
+  &:hover {
+    background: var(--surface-hover);
+  }
+}
+
+.pageNumber {
+  color: var(--data-label);
+}
+
+.romCell {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.completeness {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  white-space: nowrap;
+}
+
+.meter {
+  display: inline-flex;
+  gap: var(--space-0_5);
+}
+
+.meterStep {
+  width: 2ch;
+  height: var(--space-1_5);
+  border-radius: var(--radius-xs);
+  background: var(--border-strong);
+}
+
+.meterFilled {
+  background: var(--accent-solid);
+}
+
+.rowActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-1);
+}
+
+.toLabel {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  white-space: nowrap;
+}
+
+// --- The level 1 to-do: a link-styled action beside its count, so a row reads as data with one
+// --- way onward
+.nextLink {
+  padding: 0;
+  border: 0;
+  font: inherit;
+  color: var(--accent-text);
+  background: transparent;
+  white-space: nowrap;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.missing {
+  grid-column: 3 / -1;
+  color: var(--status-error);
+}
+
+/* --- Narrow: the inspector stacks above the list, its sections side by side where they fit. Each
+ * pane keeps its own scrolling: the inspector takes what it needs up to the space left after a few
+ * page rows, the list the rest. */
+@container (max-width: 108ch) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, max-content) minmax(calc(var(--strip-panelHeader) * 5), 1fr);
+  }
+
+  .inspector {
+    border-right: 0;
+    border-bottom: 1px solid var(--border-default);
+  }
+
+  .inspectorBody {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(30ch, 1fr));
+
+    > .rule {
+      grid-column: 1 / -1;
+    }
+  }
+
+  .section + .section {
+    border-top: 0;
+  }
 }

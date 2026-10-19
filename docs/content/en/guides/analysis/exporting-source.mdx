@@ -9,8 +9,30 @@ import { Callout } from 'nextra/components'
 Once a program is annotated, you can turn it into **source code**: Klive Z80 assembly with your
 labels, comments and data regions, that reassembles to exactly the bytes it came from.
 
-Use **Export as Source...** from the tools button of the Disassembly view or a bank document, or
-**Export as Source** on a named graphic. The command takes a range of the 64K view or a whole bank:
+Click the **Export as source** button (the file icon) in the header of the Disassembly view or of a
+bank document, or choose **Debug › Export Disassembly as Source...**. The Disassembly view and the
+menu export the RAM of the 64K view (`$4000`–`$FFFF`) under the current paging; a bank document
+exports its bank. The tools button's **Export as Source...** does the same, and **Export as Source**
+on a named graphic exports the graphic. To export a whole ROM, use **Export as source...** in the
+[ROM annotation editor](/en/guides/debugging/disassembly).
+
+## Where the files go
+
+The save dialog opens in the **export folder**:
+
+- in a Klive project, `SourceExports` in the project folder, so the exported file opens in the IDE;
+- without a project, `KliveExports/source` in your home folder, beside the screen recordings.
+
+When you save somewhere else, Klive remembers that folder for the next export: in the project's
+settings while a Klive project is open (relative to the project when the folder is inside it),
+otherwise in your user settings. It is the `export.sourceFolder` setting, so you can also set it with
+[`set`](/en/reference/commands#set) — `set -p export.sourceFolder asm` for one project,
+`set -u export.sourceFolder ~/asm` for every export outside a project. A project uses only its own
+value, so a folder chosen outside a project never takes over a project's exports.
+
+## From the command line
+
+The command takes any range of the 64K view or a whole bank:
 
 ```
 export-asm game.kz80.asm $8000 $9fff -open
@@ -19,13 +41,16 @@ export-asm bank3.kz80.asm -bank 3
 
 ## Proven, not hoped for
 
-After writing the file, Klive assembles it and compares the result with the bytes:
+After writing the file, Klive always assembles it and compares the result with the bytes:
 
 ```
-Byte-identical: yes
+Verified: the export assembles to the same bytes.
 ```
 
-If anything differs, the first differing addresses are listed instead.
+If the file does not assemble, the first error is shown with its line; if it assembles to different
+bytes, the first differing addresses are listed. An export started from a button or the menu shows
+the verdict in a message box, as an error when the check fails; the command fails then too, so a
+script can tell.
 
 The export takes care of the cases where a disassembly's text would *not* assemble back to the same
 bytes:
@@ -47,5 +72,5 @@ A 128K bank is assembled into its bank with `.model Spectrum128` and `.bank`; a 
 `.model next` for the Next's own instructions.
 
 <Callout type="info">
-`-noverify` skips the check. The export is always written in Klive's own assembly dialect.
+The export is always written in Klive's own assembly dialect.
 </Callout>
