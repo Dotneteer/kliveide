@@ -1,3 +1,4 @@
+import { resolveCommandFilePath } from "./commandFilePath";
 import type { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
 import type { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext";
 import type { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
@@ -47,14 +48,6 @@ import { t } from "@common/i18n/i18n";
  * (absolute, or relative to the open project). A multi-page file takes `-page <n>`.
  */
 
-/** A path relative to the open project's folder, as the other file commands take them. */
-function resolvePath(context: IdeCommandContext, file: string): string {
-  const trimmed = file.trim();
-  const folder = context.store.getState().project?.folderPath;
-  const isAbsolute = /^([A-Za-z]:)?[\\/]/.test(trimmed);
-  return isAbsolute || !folder ? trimmed : `${folder.replace(/[\\/]+$/, "")}/${trimmed}`;
-}
-
 function fileNameOf(path: string): string {
   return path.split(/[\\/]/).pop() ?? path;
 }
@@ -82,11 +75,13 @@ export async function romTargetOf(
   if (!isPath) {
     path = `${SHIPPED_ROM_FOLDER}/${rom}`;
     bytes = await mainApi.readBinaryFile(path).catch(() => undefined);
-  } else {
-    path = resolvePath(context, rom);
   }
   if (!bytes) {
-    path = resolvePath(context, rom);
+    const resolved = resolveCommandFilePath(context, rom);
+    // --- A bare name that is not a shipped ROM is most likely one mistyped, so say that rather
+    // --- than that no project is open; a path needs the project to mean anything
+    if ("error" in resolved) return { error: isPath ? resolved.error : t("commands.romAnn.unknownRom", { rom }) };
+    path = resolved.path;
     bytes = await mainApi.readBinaryFile(path).catch(() => undefined);
   }
   if (!bytes) return { error: t("commands.romAnn.unknownRom", { rom }) };
@@ -201,7 +196,9 @@ export class RomAnnotationOpenCommand extends IdeCommandBase<RomArgs> {
   async execute(context: IdeCommandContext, args: RomArgs): Promise<IdeCommandResult> {
     const hub = context.service.projectService.getActiveDocumentHubService();
     if (/\.dis$/i.test(args.rom!)) {
-      await openRomAnnotationEditor(hub, resolvePath(context, args.rom!));
+      const resolved = resolveCommandFilePath(context, args.rom!);
+      if ("error" in resolved) return commandError(resolved.error);
+      await openRomAnnotationEditor(hub, resolved.path);
       return commandSuccess;
     }
     const target = await romTargetOf(context, args.rom!, args["-page"] ?? 0);
@@ -226,7 +223,10 @@ export class RomAnnotationOpenCommand extends IdeCommandBase<RomArgs> {
 
 /** The sidecar a `rom-ann-check` / `rom-ann-provenance` argument names. */
 async function sidecarPathOf(context: IdeCommandContext, args: RomArgs): Promise<string | { error: string }> {
-  if (args.rom && /\.dis$/i.test(args.rom)) return resolvePath(context, args.rom);
+  if (args.rom && /\.dis$/i.test(args.rom)) {
+    const resolved = resolveCommandFilePath(context, args.rom);
+    return "error" in resolved ? resolved : resolved.path;
+  }
   if (!args.rom) return { error: t("commands.romAnn.nameRomOrSidecar") };
   const target = await romTargetOf(context, args.rom, args["-page"] ?? 0);
   return "error" in target ? target : target.workingPath;
@@ -363,7 +363,9 @@ export class RomAnnotationImportNamesCommand extends IdeCommandBase<ImportNamesA
     if (path.startsWith(`${SHIPPED_ROM_FOLDER}/`)) return commandError(t("commands.romAnn.shippedReadOnly"));
     const page = args["-page"] ?? 0;
 
-    const listPath = resolvePath(context, args.list!);
+    const resolvedList = resolveCommandFilePath(context, args.list!);
+    if ("error" in resolvedList) return commandError(resolvedList.error);
+    const listPath = resolvedList.path;
     const listText = await Promise.resolve(context.service.projectService.readFileContent(listPath, false))
       .then((text) => (typeof text === "string" ? text : undefined))
       .catch(() => undefined);
