@@ -80,6 +80,7 @@ import {
   setSelectedTapeFile
 } from "./machine-menus/zx-specrum-menus";
 import { appSettings, applyUserSetting, saveAppSettings, setSettingValue } from "./settings-utils";
+import { showSourceExportSaveDialog } from "./source-export-folder";
 import { tapAutomationOutput } from "./automation/automation-controller";
 import { relayedRequest } from "@messaging/MessengerBase";
 import { runBackgroundCompileWorker } from "./compiler-integration/runWorker";
@@ -272,6 +273,19 @@ class MainMessageProcessor {
   /**
    * Opens a save dialog and returns the chosen path (see `MainApi.showSaveFileDialog`).
    */
+  /** "Export as source"'s save dialog (`MainApi.showSourceExportDialog`) */
+  async showSourceExportDialog(options: {
+    title: string;
+    defaultName: string;
+    filters: { name: string; extensions: string[] }[];
+  }): Promise<string | undefined> {
+    try {
+      return await showSourceExportSaveDialog(this.window, options);
+    } finally {
+      this.dispatch(dimMenuAction(false));
+    }
+  }
+
   async showSaveFileDialog(options: {
     title?: string;
     defaultPath?: string;

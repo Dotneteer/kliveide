@@ -265,6 +265,18 @@ describe("the application menu", () => {
     ]);
   });
 
+  it("offers Export Disassembly as Source... on every machine whose memory can be annotated", () => {
+    const exportSource = (machineId: string, advanced = true) =>
+      menu(buildMenu(machineId, undefined, "emu", advanced), "Debug").find((i) => i.id === "export_disassembly_source");
+    for (const machineId of ["sp48", "zxnext", "zx81", "zx80"]) {
+      expect(exportSource(machineId), machineId).toMatchObject({ label: "Export Disassembly as Source..." });
+    }
+    // --- Not an advanced-debugging feature: it stays with the switch off
+    expect(exportSource("sp48", false)).toBeDefined();
+    expect(exportSource("z88")).toBeUndefined();
+    expect(exportSource("c64")).toBeUndefined();
+  });
+
   it("gives the Z88 its hardware actions and help links, and no setup items", () => {
     const template = buildMenu("z88");
     const machine = menu(template, "Machine");

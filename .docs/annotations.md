@@ -117,8 +117,23 @@ the ZX81's on the ZX81 ROM, the ZX80 upgrade included.
   (`src/common/reverse/classify.ts`, `reach.ts`, `proposal.ts`; the orchestration is
   `src/renderer/appIde/reverse/detection.ts`). The *Detect code and data* dialog is the same run.
 - `gfx [<address>] [-w] [-h] [-layout] [-bank]`: the graphics finder over the paused machine.
-- `export-asm <file> [<from> <to>] [-bank <n>] [-skip data|gap] [-open] [-noverify]`: source export,
-  verified by assembling it in the main process (`MainApi.assembleText`).
+- `export-asm <file> [<from> <to>] [-bank <n>] [-skip data|gap] [-open]`: source export, always
+  verified by assembling it in the main process (`MainApi.assembleText`); the verdict is the command's
+  result (an error unless byte-identical). The listing headers' export button, the tools menu and
+  Debug › Export Disassembly as Source… all run it through `src/common/reverse/sourceExportUi.ts` and
+  show the verdict in a message box, because the Commands pane is usually hidden. Their save dialog
+  (`MainApi.showSourceExportDialog`, `src/main/source-export-folder.ts`) opens in the
+  `export.sourceFolder` setting — the project's in a Klive project, the user's otherwise (not merged:
+  a folder picked outside a project must not take over a project's exports) — or the suggested `<project>/SourceExports` /
+  `<home>/KliveExports/source`, and writes a different folder back: to the project's settings in a
+  Klive project (relative when inside it), to the user's otherwise — the `set` command's default scope.
+- `rom-ann-export <rom>|<sidecar.dis> <file> [-page <n>] [-open]`: every page of a ROM
+  sidecar as one source file (`annotations/romSourceExport.ts`), each page listed at `$0000` with its
+  own decoding and, for a multi-page ROM, in its own `.module`; then assembled (`MainApi.assembleText`)
+  and compared, segment by segment, with the pages. The ROM annotation editor's **Export as source…**
+  runs the same `runRomSourceExport`. A custom disassembler's row without opcodes (a calculator literal)
+  covers the bytes up to the next row, and a multi-line end-of-line comment continues in the comment
+  column — without either, the shipped 48K and ZX81 sidecars did not reassemble.
 - `skool-import <file> [-ctl] [-mode fill|replace] [-apply]` and `skool-export <file> [-ctl] [<from>
   <to>] [-bank <n>|all] [-split]`: SkoolKit files (`src/common/reverse/skool/`).
 

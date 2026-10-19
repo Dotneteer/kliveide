@@ -1165,7 +1165,8 @@ colours.
 
 ## A File Path In A Panel Carries Its Reveal Button
 
-Where a document shows the file it edits (the ROM annotation editor's **File** row), a
+Where a document shows the file it edits (the **File** section of the ROM annotation editor's
+inspector), a
 `SmallIconButton` with the `folder-opened` icon sits right after the path, titled "Reveal in Finder"
 or "Reveal in File Explorer" from the store's `isWindows` - the same wording as the Explorer's and the
 document tab's context menus, so the action reads the same wherever it is found. It is shown only for a
@@ -1175,6 +1176,50 @@ a button that does nothing is worse than none.
 A choice that only applies to one option of another choice (a bytes region's **Format** in the region
 dialog) appears only while that option is selected, as its own `RadioGroup` row directly below, rather
 than being shown disabled for every other type.
+
+## An Action's Verdict Is Shown Where The Action Was Started
+
+A command run from a button or a menu writes to the Commands pane, which is usually hidden, so a
+result the user must see — the export's "does it reassemble" check — is the command's `finalMessage`
+(an error result when it fails), and the button or menu shows it in a message box (`error` when it
+failed). Never leave such a verdict only in the command output. A listing header's one-click action
+is a `SmallIconButton` placed in the same `PanelHeaderGroup` just before the tools menu
+(`ReverseToolsMenu`), so the frequent action is one click and the rest stay one menu away.
+
+## A File And Its Parts: An Inspector Column Beside The List
+
+A document about one file made of parts (the ROM annotation editor: a sidecar and its ROM pages) is
+two panes in one grid: an **inspector column** (`34ch`, `--surface-panel`, a `--border-default`
+seam) with everything about the file in labelled sections - where it is, what kind (the kind is a
+badge in the column's `PanelHeader`: accent subtle for an editable file, the warning hue's subtle
+fill for **Read-only**), readiness, settings, actions and their outcomes - and beside it the **parts
+list**, one row per part under its own `PanelHeader` with a count. Rules it settled:
+
+- **Each pane scrolls in its own `ScrollViewer`** under its fixed header (`thinScrollBar`,
+  `overscroll-behavior: contain` on the overlay viewport, `min-height: 0` on the grid item), never by
+  native `overflow`: a native bar is an unthemed strip, and one scroll for the whole document lets a
+  tall inspector scroll the list out of view.
+- **The document's own width decides the layout** (`container-type: inline-size`, a query in `ch`):
+  narrow, the inspector stacks above the list with its sections side by side
+  (`repeat(auto-fill, minmax(30ch, 1fr))`), and the rows are `minmax(0, max-content)` and a list
+  minimum of five strips, so both panes still scroll on their own. **A container query cannot
+  restyle the container itself**: put the rule that must change on a child of it.
+- **`ch` tracks resolve against each grid's own font size.** Column heads drawn at 12px over 14px
+  rows put every `ch` column of the head out of line with the rows below it. The head keeps the
+  rows' font size and shrinks only its text (`> span { font-size }`).
+- **A table in a `ScrollViewer` gets a `min-width` equal to its minimum tracks, never
+  `max-content`**, which grows a `1fr` column to its longest cell and scrolls a table that fits.
+  Every column is a fixed `ch` track except one `minmax(<n>ch, 1fr)` that takes the slack and
+  ellipsises; an `auto` track sizes per row and breaks the columns' line-up.
+- **A to-do count carries its way onward**: the count, then a link-styled action in `--accent-text`
+  ("next $0000") that opens the next item and moves on with each click; a part with nothing left
+  shows *none* in `--data-secondary` and no action. A read-only file shows the count but not the
+  action. The position the action got to lives **outside the component** (per file), because
+  following it opens another document and coming back remounts the editor.
+- **A completeness level is a short segmented meter** beside its number: one `2ch` step per level
+  (`--accent-solid` filled, `--border-strong` empty), `role="img"` with "Level n of 2".
+- **The parts' views are icon buttons at the row's end** (`logs` for disassembly, `binary` for
+  memory, the toolbar's pair), titled with the view's name; text buttons there cost the columns.
 
 ## A Heading Inside Panel Content Is `SectionHeader`, Not `PanelHeader`
 
@@ -1319,6 +1364,12 @@ family's subtle fill: `--status-success` on `--status-success-subtle` when it pa
 `--status-warning` on `--status-warning-subtle` - not error - when it does not, because a file still
 being worked on is unfinished, not broken. The chip is the button that lists the reasons, so the
 verdict and its evidence are one click apart and the reasons cost no space until asked for.
+
+The outcome of an action started from an inspector section (the ROM annotation editor's **Source**:
+**Export as source…**, then the verdict, the file it wrote with **Open**, and how many rows had to be
+adjusted) is plain text under the button, not a chip: only the verdict sentence takes
+`--status-success` / `--status-error` - error here, because a source that does not give back the ROM
+is a wrong result, not unfinished work - and the rest stays `--data-secondary`.
 
 A tool setup dialog (the Boriel BASIC setup) colours the same way: the installed tool's status line
 and the outcome message are `--status-success` when it works, `--status-warning` when it works but

@@ -221,18 +221,30 @@ Without a working copy, the shipped annotations are shown and a ROM row cannot b
 
 Opening a working copy &mdash; from **Open ROM Annotations** on a ROM row, with
 [`rom-ann-open`](/en/reference/commands#rom-ann-open), or by opening the `.rom.dis` file &mdash; shows
-the **ROM annotation editor**. It finds the ROM by its bytes and lists its pages; **Disassembly** opens
-a page with everything a NEX bank has: select rows, right-click for the annotation menu, or use the
+the **ROM annotation editor**. It finds the ROM by its bytes and shows two panes: on the left,
+everything about the file; on the right, its pages, one row each with the ROM's name and CRC, its
+size, its labels, how many targets still need one (**To label**) and its completeness level. The
+row's disassembly icon opens a page with everything a NEX bank has: select rows, right-click for the annotation menu, or use the
 shortcuts (`L` label, `C` end-of-line comment, `Shift+C` synopsis, `O` operand label, `M`/`R` manage
 labels/regions, `B` bank comment). No machine needs to be running. If no ROM matches the file, the
 editor says so and shows nothing else. With a working copy in place, ROM rows of the live view are
 editable too, and every edit shows wherever ROM names appear.
 
-The editor's **Ready** chip says whether the file passes every check a shipped annotation file must
-pass (the same as [`rom-ann-check`](/en/reference/commands#rom-ann-check)). **New entries** chooses
-whether what you add is recorded as `observed` (worked out from the bytes) or `manual` (an interface
-fact from a manual); [`rom-ann-provenance`](/en/reference/commands#rom-ann-provenance) changes an existing
-entry. **Next unlabelled** steps through the calls and jumps that still have no label.
+A shipped annotation file opens **Read-only**; **Make working copy** copies it to your own folder
+and opens the copy to edit. The editor's **Ready** chip says whether the file passes every check a
+shipped annotation file must pass (the same as
+[`rom-ann-check`](/en/reference/commands#rom-ann-check)). **New entries are recorded as** chooses
+whether what you add is `observed` (worked out from the bytes) or `manual` (an interface fact from a
+manual); [`rom-ann-provenance`](/en/reference/commands#rom-ann-provenance) changes an existing entry.
+
+**To label** is the to-do list of completeness level 1, which needs a label on every `CALL`, `JP`,
+`RST`, `JR` and `DJNZ` target reached from code. It counts the targets that still have none, and its
+**next $xxxx** link opens the disassembly at the next one; each click moves on to the following
+target. A page with none left shows *none*.
+
+**Export as source…** writes the whole ROM as one Klive Z80 assembly file, with your labels and
+comments, then assembles it and says whether it gives back the ROM byte for byte (the same as
+[`rom-ann-export`](/en/reference/commands#rom-ann-export)). **Open** opens the file it wrote.
 
 <Callout type="info">
 A working copy is written in exactly the format of Klive's own ROM annotation files. When it is

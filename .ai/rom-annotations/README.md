@@ -112,8 +112,9 @@ instead of by editing JSON:
 2. Open a page's **Disassembly** and annotate it with the NEX viewer's dialogs and shortcuts.
    Set **New entries** to `manual` before adding an interface fact or a conventional name, and
    back to `observed` after; `rom-ann-provenance` corrects an entry afterwards. A changed entry
-   keeps its provenance. **Next unlabelled** walks the level 1 to-do list.
-3. The **Ready** chip (and `rom-ann-check`) runs every check `shippedRomSidecars.test.ts` makes.
+   keeps its provenance. The pages list's **To label** column counts the level 1 to-do list, and its **next $xxxx** link
+   walks it.
+3. The **Ready** chip (and `rom-ann-check`) runs every check `shippedRomSidecars.test.ts` makes. **Export as source…** (and `rom-ann-export`) proves the annotations still describe every byte: the file reassembles to the ROM.
    When it says *Ready to ship*, copy the working copy over the file in `src/public/roms/`
    **unchanged** and run `npm run rom:annotations -- --check`; it must report nothing to format.
 4. Log the session in `PROVENANCE.md` as for any other authoring session.

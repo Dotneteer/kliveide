@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { exportSourceFromUi } from "@renderer/appIde/reverse/ReverseToolsMenu";
 
 import type { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import { useT } from "@common/i18n/useT";
@@ -294,15 +295,15 @@ const GraphicsPanel = ({ document, viewState }: DocumentProps<GraphicsPanelViewS
             onNameGraphic: (span) => void nameGraphic(span),
             onSavePng: (span, atZoom) => void savePng(span, atZoom),
             onExportSource: async (span) => {
+              // --- The listings' export: the save dialog, the always-verified command, the verdict
               const from = (snapshot.base + span.start) & 0xffff;
               const to = (snapshot.base + span.end) & 0xffff;
-              const path = await mainApi.showSaveFileDialog({
-                title: t("panels.graphics.exportSourceTitle"),
-                defaultPath: `graphic-${toHexa4(from)}.kz80.asm`,
-                filters: [{ name: t("panels.graphics.asmFilter"), extensions: ["kz80.asm", "asm"] }],
-                settingsId: "asmExport"
+              await exportSourceFromUi(mainApi, ideCommandsService, {
+                kind: "range",
+                from,
+                to,
+                name: `graphic-${toHexa4(from)}`
               });
-              if (path) void ideCommandsService.executeCommand(`export-asm "${path}" $${toHexa4(from)} $${toHexa4(to)}`);
             }
           }}
         />

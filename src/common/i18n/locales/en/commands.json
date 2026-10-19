@@ -519,11 +519,11 @@
   "@commands.exportAsm.notOpened": {
     "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). 'export-asm -open' wrote a file outside the project."
   },
-  "commands.exportAsm.verifyIdentical": "Byte-identical: yes",
+  "commands.exportAsm.verifyIdentical": "Verified: the export assembles to the same bytes.",
   "@commands.exportAsm.verifyIdentical": {
     "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). After 'export-asm' the file is assembled again: it gives exactly the original bytes."
   },
-  "commands.exportAsm.verifyNotAssembled": "Byte-identical: no — the export does not assemble (line {line}: {message}).",
+  "commands.exportAsm.verifyNotAssembled": "Not verified: the export does not assemble (line {line}: {message}).",
   "@commands.exportAsm.verifyNotAssembled": {
     "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). After 'export-asm' the file is assembled again: it has an assembler error.",
     "placeholders": {
@@ -531,14 +531,14 @@
       "message": "The assembler's error message (English)"
     }
   },
-  "commands.exportAsm.verifyDifferent": "Byte-identical: no — first differences: {differences}",
+  "commands.exportAsm.verifyDifferent": "Not verified: the export assembles to different bytes. First differences: {differences}",
   "@commands.exportAsm.verifyDifferent": {
     "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). After 'export-asm' the reassembled bytes differ from the originals.",
     "placeholders": {
       "differences": "Comma-separated list like '$8000 (3E -> 00)': address, expected byte -> actual byte; never translated"
     }
   },
-  "commands.exportAsm.verifyFailed": "Could not verify the export: {message}",
+  "commands.exportAsm.verifyFailed": "Not verified: the export could not be assembled ({message}).",
   "@commands.exportAsm.verifyFailed": {
     "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). ",
     "placeholders": {
@@ -1662,5 +1662,36 @@
   "commands.detection.noCoverageSupport": "This machine does not keep code coverage.",
   "@commands.detection.noCoverageSupport": {
     "context": "Shown by the 'ann-detect' command (command prompt output) and in the Detect code and data dialog. "
+  },
+  "commands.romAnn.exportDescription": "Exports a ROM's annotations as one Klive Z80 source file and checks that it assembles to the ROM byte for byte",
+  "@commands.romAnn.exportDescription": {
+    "context": "Description of the rom-ann-export command in the command help."
+  },
+  "commands.romAnn.nameExportFile": "Name the source file to write.",
+  "@commands.romAnn.nameExportFile": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Validation error of rom-ann-export: the output file is missing."
+  },
+  "commands.romAnn.exported": "Exported {path} to {file}.",
+  "@commands.romAnn.exported": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). rom-ann-export wrote the source file.",
+    "placeholders": {
+      "path": "The sidecar's path",
+      "file": "The source file written"
+    }
+  },
+  "commands.romAnn.exportLeftOut": "Left out {count, plural, one {page} other {pages}} {pages}: no ROM bytes were found for them.",
+  "@commands.romAnn.exportLeftOut": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). rom-ann-export: some pages the sidecar names have no ROM bytes, so they are not in the file.",
+    "placeholders": {
+      "count": "Number of pages",
+      "pages": "Comma-separated page numbers"
+    }
+  },
+  "commands.romAnn.exportFailed": "The export failed: {message}",
+  "@commands.romAnn.exportFailed": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). rom-ann-export could not export or write the file.",
+    "placeholders": {
+      "message": "Error message"
+    }
   }
 }

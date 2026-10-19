@@ -421,8 +421,6 @@
   "panels.graphics.source64k": "64K nézet",
   "panels.graphics.savePngTitle": "Mentés PNG-ként",
   "panels.graphics.pngFilter": "PNG kép",
-  "panels.graphics.exportSourceTitle": "Exportálás forráskódként",
-  "panels.graphics.asmFilter": "Klive Z80 assembly",
   "panels.graphics.width": "Szél.",
   "panels.graphics.widthLabel": "Bájt képpontsoronként",
   "panels.graphics.widthTitle": "Bájt képpontsoronként (← / →)",

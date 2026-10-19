@@ -2174,14 +2174,6 @@
   "@panels.graphics.pngFilter": {
     "context": "Graphics document (the graphics finder: memory drawn as 1-bit pixels to spot sprites and fonts). File-type filter name in the save-file dialog."
   },
-  "panels.graphics.exportSourceTitle": "Export as source",
-  "@panels.graphics.exportSourceTitle": {
-    "context": "Graphics document (the graphics finder: memory drawn as 1-bit pixels to spot sprites and fonts). Title of the save-file dialog that exports the selected bytes as assembly source."
-  },
-  "panels.graphics.asmFilter": "Klive Z80 assembly",
-  "@panels.graphics.asmFilter": {
-    "context": "Graphics document (the graphics finder: memory drawn as 1-bit pixels to spot sprites and fonts). File-type filter name in the save-file dialog. 'Klive' is the product name."
-  },
   "panels.graphics.width": "Width",
   "@panels.graphics.width": {
     "context": "Graphics document (the graphics finder: memory drawn as 1-bit pixels to spot sprites and fonts). Toolbar: label before the stepper setting the bytes per pixel row.",

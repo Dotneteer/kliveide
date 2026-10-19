@@ -206,4 +206,39 @@ describe("exportSource", () => {
     expect(isAssemblableName("org")).toBe(false);
     expect(isAssemblableName("9lives")).toBe(false);
   });
+  it("keeps a multi-line end-of-line comment out of the source", async () => {
+    const text = kliveDialect.render([
+      { kind: "directive", text: ".org $8000" },
+      { kind: "row", text: "nop", comment: "first line\nsecond line" },
+      { kind: "comment", text: "synopsis one\nsynopsis two" }
+    ]);
+    expect(text).toMatch(/^ +; second line$/m);
+    expect(text).toMatch(/^; synopsis two$/m);
+    const output = await assemble(text);
+    expect(output.errors).toEqual([]);
+    expect(output.segments[0].emittedCode).toEqual([0]);
+  });
+  it("writes a relative jump that wraps round $FFFF as its bytes", async () => {
+    const bytes = new Uint8Array(0x4000);
+    bytes.set([0x10, 0x10], 0x3ff3); // $FFF3: djnz $0005
+    bytes.set([0x18, 0xfe], 0x3ff5); // $FFF5: jr $FFF5 (no wrap)
+    const result = await exportSource({
+      annotations: annotationsOf({
+        schemaVersion: 3,
+        machine: "sp48",
+        banks: { "0": { offsetIndex: 3, regions: [{ start: 0x3ff3, end: 0x3ff6, type: "disassemble" }] } }
+      }),
+      bank: 0,
+      bytes,
+      listingBase: 0xc000,
+      range: { start: 0x3ff3, end: 0x3ff6 },
+      z80n: false
+    });
+    const source = kliveDialect.render(result.lines);
+    expect(source).toMatch(/\.defb \$10,\$10 +; djnz \$0005 \(the jump wraps round \$FFFF\)/);
+    expect(source).toMatch(/^ +jr \$FFF5$/m);
+    const output = await assemble(source);
+    expect(output.errors).toEqual([]);
+    expect(compareAssembly(result.expected, output.segments).identical).toBe(true);
+  });
 });

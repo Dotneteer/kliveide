@@ -7,6 +7,15 @@ import { DETECT_CODE_DATA_DIALOG } from "@common/messaging/dialog-ids";
 import { useMainApi } from "@renderer/core/MainApi";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
+import { useT } from "@common/i18n/useT";
+import type { MainApi } from "@common/messaging/MainApi";
+import type { IIdeCommandService } from "@renderer/abstractions/IIdeCommandService";
+import {
+  sourceExportCommandText,
+  sourceExportDialogOptions,
+  sourceExportResultMessage,
+  type SourceExportScope
+} from "@common/reverse/sourceExportUi";
 
 /*
  * The reverse-engineering tools a listing offers (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §4.6,
@@ -15,11 +24,39 @@ import { toHexa4 } from "@renderer/appIde/services/ide-commands";
  * also scriptable.
  */
 
-export type ReverseToolsScope =
-  /** The live 64K view: a range of addresses. */
-  | { kind: "range"; from: number; to: number }
-  /** A bank document: the whole bank. */
-  | { kind: "bank"; bank: number; hostName?: string };
+/** The live 64K view (a range of addresses) or a bank document (the whole bank). */
+export type ReverseToolsScope = SourceExportScope;
+
+/**
+ * Export as source from the UI: the save dialog, `export-asm` (which always assembles the file and
+ * compares it with the bytes), then a message box with the verdict — the Commands pane, where the
+ * command writes, is usually hidden. Debug › Export Disassembly as Source… does the same in main.
+ */
+export async function exportSourceFromUi(
+  mainApi: Pick<MainApi, "showSourceExportDialog" | "displayMessageBox">,
+  ideCommandsService: Pick<IIdeCommandService, "executeCommand">,
+  scope: SourceExportScope
+): Promise<void> {
+  const file = await mainApi.showSourceExportDialog(sourceExportDialogOptions(scope));
+  if (!file) return;
+  const result = await ideCommandsService.executeCommand(sourceExportCommandText(file, scope));
+  const box = sourceExportResultMessage(file, result);
+  await mainApi.displayMessageBox(box.type, box.title, box.message);
+}
+
+/** The listing header's "Export as source" button: the export, verified, in one click. */
+export const ExportSourceButton = ({ scope }: { scope: SourceExportScope }) => {
+  const t = useT();
+  const mainApi = useMainApi();
+  const { ideCommandsService } = useAppServices();
+  return (
+    <SmallIconButton
+      iconName="file-code"
+      title={t("media.sourceExport.buttonTitle")}
+      clicked={() => void exportSourceFromUi(mainApi, ideCommandsService, scope)}
+    />
+  );
+};
 
 const quote = (path: string) => `"${path.replace(/"/g, '\\"')}"`;
 
@@ -41,22 +78,18 @@ export const ReverseToolsMenu = ({ scope }: { scope: ReverseToolsScope }) => {
   const run = (command: string) => void ideCommandsService.executeCommand(command);
   const exportAs = async (kind: "asm" | "skool" | "ctl") => {
     menuApi.conceal();
-    const extension = kind === "asm" ? "kz80.asm" : kind;
+    if (kind === "asm") {
+      await exportSourceFromUi(mainApi, ideCommandsService, scope);
+      return;
+    }
     const path = await mainApi.showSaveFileDialog({
-      title: kind === "asm" ? "Export as source" : "Export as SkoolKit",
-      defaultPath: `${baseName}.${extension}`,
-      filters:
-        kind === "asm"
-          ? [{ name: "Klive Z80 assembly", extensions: ["kz80.asm", "asm"] }]
-          : [{ name: kind === "skool" ? "SkoolKit skool file" : "SkoolKit control file", extensions: [kind] }],
-      settingsId: kind === "asm" ? "asmExport" : "skoolExport"
+      title: "Export as SkoolKit",
+      defaultPath: `${baseName}.${kind}`,
+      filters: [{ name: kind === "skool" ? "SkoolKit skool file" : "SkoolKit control file", extensions: [kind] }],
+      settingsId: "skoolExport"
     });
     if (!path) return;
-    run(
-      kind === "asm"
-        ? `export-asm ${quote(path)} ${where} -open`
-        : `skool-export ${quote(path)} ${where}${kind === "ctl" ? " -ctl" : ""}`
-    );
+    run(`skool-export ${quote(path)} ${where}${kind === "ctl" ? " -ctl" : ""}`);
   };
   const importSkool = async () => {
     menuApi.conceal();

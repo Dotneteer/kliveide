@@ -165,6 +165,7 @@ import { GraphicsCommand } from "./commands/GraphicsCommand";
 import { SkoolExportCommand, SkoolImportCommand } from "./commands/SkoolCommands";
 import {
   RomAnnotationCheckCommand,
+  RomAnnotationExportCommand,
   RomAnnotationImportNamesCommand,
   RomAnnotationNewCommand,
   RomAnnotationOpenCommand,
@@ -350,6 +351,7 @@ export function registerIdeCommands(cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new RomAnnotationCheckCommand());
   cmdSrv.registerCommand(new RomAnnotationProvenanceCommand());
   cmdSrv.registerCommand(new RomAnnotationImportNamesCommand());
+  cmdSrv.registerCommand(new RomAnnotationExportCommand());
 }
 
 export function resetIdeCommandRegistrationForTests(): void {

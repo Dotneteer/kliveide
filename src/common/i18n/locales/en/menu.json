@@ -784,5 +784,9 @@
   "menu.next.joystickMode.userDefined": "User-defined (joymap)",
   "@menu.next.joystickMode.userDefined": {
     "context": "Machine › Input › Joystick › Set machine mode: a joystick type of the ZX Spectrum Next. Keep product names (Sinclair, Kempston, Protek, MD) and port numbers like '$1F'. 'joymap' is the name of the key map; keep it."
+  },
+  "menu.debug.exportDisassemblySource": "Export Disassembly as Source...",
+  "@menu.debug.exportDisassemblySource": {
+    "context": "Debug menu: writes the annotated disassembly of the 64K view's RAM ($4000-$FFFF) as a Klive Z80 assembly file, then assembles it to check it gives the same bytes. The trailing '...' means the item opens a dialog; keep it."
   }
 }
