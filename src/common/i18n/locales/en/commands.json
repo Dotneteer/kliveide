@@ -870,6 +870,13 @@
   "@commands.disass.hideDescription": {
     "context": "Description of the 'hide-disass' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
   },
+  "commands.common.relativePathNoProject": "{file} is a relative path, and no project is open to resolve it in. Open a project, or give the full path.",
+  "@commands.common.relativePathNoProject": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). Shown when a command that reads or writes the user's files is given a path relative to the project folder while no project is open.",
+    "placeholders": {
+      "file": "The path as the user typed it"
+    }
+  },
   "commands.common.cannotWriteFile": "Could not write {file}: {message}",
   "@commands.common.cannotWriteFile": {
     "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). ",
@@ -1224,6 +1231,14 @@
     "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts). 'ann-open' is a command name.",
     "placeholders": {
       "path": "The annotation file path"
+    }
+  },
+  "commands.annSet.romSidecarHint": "{path} is named like a ROM's annotations, but ann-new made an annotation set for the {machine} machine. For a ROM's own annotations, use rom-ann-new <rom>.",
+  "@commands.annSet.romSidecarHint": {
+    "context": "Interactive command output (the IDE's command prompt pane, also returned to 'klive ide' scripts), shown as a warning after 'ann-new' created a file whose name ends in '.rom.dis'. 'ann-new' and 'rom-ann-new' are command names; '<rom>' stands for a ROM file name the user types.",
+    "placeholders": {
+      "path": "The annotation file path",
+      "machine": "The machine id the annotation set is for (sp48, zx80, ...)"
     }
   },
   "commands.annSet.created": "{path} created; it is the active annotation set ({machine}).",

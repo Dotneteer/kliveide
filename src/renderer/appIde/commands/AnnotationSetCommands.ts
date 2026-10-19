@@ -1,3 +1,4 @@
+import { resolveCommandFilePath } from "./commandFilePath";
 import type { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
 import type { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext";
 import type { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
@@ -89,14 +90,6 @@ function currentAnnotationMachine(context: IdeCommandContext): AnnotationMachine
     ?.id;
 }
 
-/** A path relative to the open project's folder, as `tape-load` and the Explorer name files. */
-function resolvePath(context: IdeCommandContext, file: string): string {
-  const trimmed = file.trim();
-  const folder = context.store.getState().project?.folderPath;
-  const isAbsolute = /^([A-Za-z]:)?[\\/]/.test(trimmed);
-  return isAbsolute || !folder ? trimmed : `${folder.replace(/[\\/]+$/, "")}/${trimmed}`;
-}
-
 function messageOf(err: unknown): string {
   const text = err instanceof Error ? err.message : String(err);
   return text.replace(/^(Error: )+/, "");
@@ -124,7 +117,9 @@ export class AnnotationOpenCommand extends IdeCommandBase<AnnOpenArgs> {
   }
 
   async execute(context: IdeCommandContext, args: AnnOpenArgs): Promise<IdeCommandResult> {
-    const path = resolvePath(context, args.file);
+    const resolved = resolveCommandFilePath(context, args.file);
+    if ("error" in resolved) return commandError(resolved.error);
+    const path = resolved.path;
     const state = await loadAnnotationSidecar(context.service.projectService, { fullPath: path });
     if (state.status === "missing") {
       return commandError(t("commands.annSet.missing", { path }));
@@ -189,7 +184,9 @@ export class AnnotationNewCommand extends IdeCommandBase<AnnNewArgs> {
   }
 
   async execute(context: IdeCommandContext, args: AnnNewArgs): Promise<IdeCommandResult> {
-    const path = resolvePath(context, args.file);
+    const resolved = resolveCommandFilePath(context, args.file);
+    if ("error" in resolved) return commandError(resolved.error);
+    const path = resolved.path;
     const machine = (args["-m"] as AnnotationMachine | undefined) ?? currentAnnotationMachine(context)!;
     const existing = await loadAnnotationSidecar(context.service.projectService, { fullPath: path });
     if (existing.status !== "missing") {
@@ -203,6 +200,10 @@ export class AnnotationNewCommand extends IdeCommandBase<AnnNewArgs> {
     }
     seedAnnotationSession(path, annotations);
     setActiveAnnotationSet({ path, machine, reason: "command" });
+    // --- `zx80.rom.dis` reads as a ROM's annotations, which are rom-ann-new's: say so, not refuse
+    if (/\.rom\.dis$/i.test(path)) {
+      writeMessage(context.output, t("commands.annSet.romSidecarHint", { path, machine }), "yellow");
+    }
     return commandSuccessWith(t("commands.annSet.created", { path, machine }));
   }
 }
