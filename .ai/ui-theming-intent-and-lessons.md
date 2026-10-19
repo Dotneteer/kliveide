@@ -264,8 +264,8 @@ colouring one never touches the others or the still-neutral panels. Full role ta
   because legibility of the actual data was the point of §5.2 and still is here.
 - **A highlight that could be confused with the anchor takes the secondary accent instead of
   echoing the primary.** The memory dump's hovered byte and disassembly's opcode bytes both ended up
-  here; disassembly's jump-target label did not, because a label is a *name for* the address rather
-  than a different kind of information, so it deliberately shares the address's hue.
+  here. Disassembly's labels take neither accent: they are in the syntax label hue, with every other
+  disassembly (see "one colour set" below).
 - **Give a shared component (`AddressLabel`, `controls/layout`'s `Secondary`/`Value`/`Label`,
   `Tooltip`/`TooltipFactory`) an optional `className`** merged onto its existing class, rather than
   forking it or restyling it for everyone. Every other one of its 20+ other call sites simply does
@@ -314,14 +314,23 @@ colouring one never touches the others or the still-neutral panels. Full role ta
   every register/state panel has the same single role — "this is a live value". Adding
   `--color-ula-value`, `--color-vic-value` and so on would be a near-identical family per panel.
   Split it the day a panel needs a role the others do not have.
-- **A name in the live disassembly takes the label hue of its *source*, never a hue per source.**
-  The live view labels rows through the shared resolver (build symbols, the active annotation set,
-  the ROM's annotations): a generated `L1234` keeps `--color-disassembly-label` (the address's
-  accent, a name *for* the address), a named row takes the annotated listing's
-  `--color-annotation-label`, and a ROM label takes `--color-disassembly-rom-label` — the same
-  syntax-label hue, set back by **weight and slant** (400, italic) rather than by a fourth hue,
-  because it names the machine's code rather than the program's and a reader scanning for their
-  own routines should not have to read past every ROM call. Which source named the row, and the
+- **Every disassembly Klive shows uses one colour set, `--color-disassembly-*`, wherever it is
+  shown** — the live Disassembly view, every file viewer and ROM page, the execution history, the
+  breakpoints panel, the annotation dialogs, the Copper list and the `dis`/`history` console output.
+  The address and opcodes take the accent pair (address primary, opcodes secondary), the instruction
+  is bold `--text-primary` (the most legible thing in the row), and the rest speaks the editor's
+  syntax palette: **every** label — generated `L1234` or named — in the label hue, a substituted name
+  in an operand in the operand hue, data in the directive hue, a comment green and italic. There
+  were two tables once (machine rows: accent labels, grey comments; annotated rows: syntax hues), and
+  the same line looked finished in one view and unfinished in another; the author asked for one set.
+  Outside `DisassemblyRow`, draw an instruction with `InstructionText` and take the role classes from
+  `disassemblyText` (`controls/data/DisassemblyText.tsx`); a console writer uses the `disasm-*`
+  `OutputColor`s, which paint in the same tokens. **A flag that gates tools never picks colours:**
+  `annotated` on `DisassemblyRow` now adds only the provenance rail. The source editor (`.kz80.asm`)
+  keeps Monaco's palette, where the mnemonic is the accent keyword — it is source, not a listing.
+- **A ROM label is the label hue set back by weight and slant** (400, italic) rather than by a
+  fourth hue, because it names the machine's code rather than the program's and a reader scanning for
+  their own routines should not have to read past every ROM call. Which source named the row, and the
   other names the address has, go in the label's tooltip, not in the colour.
 - **Data is painted as a directive by what the row *is*, not by the region it sits in.** A custom
   disassembler writes the bytes after a ROM restart that takes inline data (`RST $08`'s report
@@ -1145,6 +1154,14 @@ editor): its one-line statement of what the file is replaces the editing chrome 
 toggle, no to-do stepping), and the annotation editor raises **no warning glyph** for it. That glyph
 means a load or save failed; read-only is a decision, and dressing it as a failure makes users hunt for
 an error that is not there.
+
+**Its rows keep the annotated colour table.** Which table a listing row uses (`annotated` on
+`DisassemblyRow`: syntax-comment italics, label and operand hues, directive hue, the rail) follows
+whether the bank's annotations are *loaded* (`annotationsShown`), never whether they can be *edited*
+(`annotationsAvailable`). Tying the two made a shipped ROM sidecar, which opens read-only, show grey
+upright comments and accent labels while its own working copy showed the annotated colours: the same
+lines looked finished in one and unfinished in the other. A flag that gates tools must not pick
+colours.
 
 ## A File Path In A Panel Carries Its Reveal Button
 

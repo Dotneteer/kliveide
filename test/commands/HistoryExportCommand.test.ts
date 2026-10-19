@@ -117,7 +117,13 @@ function fake(options: {
     getAppVersion: vi.fn(async () => "0.52.0")
   });
   const output: string[] = [];
-  (context.output.writeLine as any).mockImplementation((text: string) => output.push(text));
+  // --- A line is its spans (`write`, the history rows' coloured columns) and what `writeLine` adds
+  let pending = "";
+  (context.output.write as any).mockImplementation((text: string) => (pending += text));
+  (context.output.writeLine as any).mockImplementation((text?: string) => {
+    output.push(pending + (text ?? ""));
+    pending = "";
+  });
   return { context, files, output, emu: { getHistoryRecords } };
 }
 

@@ -1,0 +1,42 @@
+/*
+ * The disassembly colour set (`--color-disassembly-*`), for places that draw an instruction outside
+ * `DisassemblyRow`. Each class is doubled so it wins over the cell primitive it sits in
+ * (`DataValue`, `Value`, a dialog's read-only field) whatever order the stylesheets load in.
+ */
+.address.address {
+  color: var(--color-disassembly-address);
+}
+
+.opcodes.opcodes {
+  color: var(--color-disassembly-opcodes);
+}
+
+.label.label {
+  color: var(--color-disassembly-label);
+  font-weight: 600;
+}
+
+.romLabel.romLabel {
+  color: var(--color-disassembly-rom-label);
+  font-style: italic;
+  font-weight: 400;
+}
+
+.instruction.instruction {
+  color: var(--color-disassembly-instruction);
+  font-weight: 600;
+}
+
+.directive.directive {
+  color: var(--color-disassembly-directive);
+  font-weight: 600;
+}
+
+.operand.operand {
+  color: var(--color-disassembly-operand);
+}
+
+.comment.comment {
+  color: var(--color-disassembly-comment);
+  font-style: italic;
+}

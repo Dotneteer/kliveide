@@ -1,3 +1,4 @@
+import { InstructionText, disassemblyText } from "@renderer/controls/data/DisassemblyText";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Button } from "@renderer/controls/Button";
 import { TextInput } from "@renderer/controls/TextInput";
@@ -200,7 +201,7 @@ export function NexRegionDialog({
       </DialogRow>
       <DialogRow label={t("panels.next.field.preview")} rows={true}>
         <div className={styles.preview} aria-label={t("panels.next.region.previewLabel")}>
-          {preview}
+          <RegionPreviewLines text={preview} />
         </div>
       </DialogRow>
       <DialogFooter>
@@ -208,6 +209,33 @@ export function NexRegionDialog({
         <Button variant="secondary" text={t("common.button.cancel")} clicked={controls.cancel} />
       </DialogFooter>
     </form>
+  );
+}
+
+/**
+ * The preview's lines in the disassembly colours: each `$OFFS  instruction` line as an address and an
+ * instruction (data in the directive hue), anything else (`...`) as it is.
+ */
+function RegionPreviewLines({ text }: { text: string }) {
+  return (
+    <>
+      {text.split("\n").map((line, index) => {
+        const match = /^(\$[0-9A-Fa-f]{4})(\s+)(.*)$/.exec(line);
+        return (
+          <div key={index}>
+            {match ? (
+              <>
+                <span className={disassemblyText.address}>{match[1]}</span>
+                {match[2]}
+                <InstructionText text={match[3]} />
+              </>
+            ) : (
+              line
+            )}
+          </div>
+        );
+      })}
+    </>
   );
 }
 

@@ -1,3 +1,4 @@
+import { InstructionText, disassemblyText } from "@renderer/controls/data/DisassemblyText";
 import { useAddressSymbols } from "@renderer/appIde/annotations/useAddressSymbols";
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { formatReverseSeconds } from "@common/history/reverseDebugText";
@@ -667,17 +668,19 @@ const ExecutionHistoryPanel = (_props: DocumentProps) => {
           </span>
         ) : (
           <>
-            <span className={styles.address}>
+            <span className={classnames(styles.address, disassemblyText.address)}>
               {partitionLabels && Object.keys(partitionLabels).length > 0 && (
                 <PartitionPrefix label={partitionLabelOf(record)} width={partitionWidth} />
               )}
               {hex4(record.regs.pc)}
             </span>
-            <span className={styles.bytes}>{cells.bytes}</span>
+            <span className={classnames(styles.bytes, disassemblyText.opcodes)}>{cells.bytes}</span>
             <span className={styles.flow} title={flow.taken === false ? t("panels.doc.history.notTaken") : flow.kind}>
               {flow.taken === false ? "" : (FLOW_ICONS[flow.kind] ?? "")}
             </span>
-            <span className={styles.instruction}>{cells.instruction}</span>
+            <span className={styles.instruction}>
+              <InstructionText text={cells.instruction ?? ""} names={disassembly.peek(record)?.names} />
+            </span>
             <span className={styles.source}>{cells.source}</span>
             <span className={styles.changes}>{cells.changes}</span>
           </>

@@ -1880,7 +1880,7 @@ const StaticMemoryDump = ({
 
                 return (
                   <DisassemblyRow
-                    annotated={annotationVm.annotationsAvailable}
+                    annotated={annotationVm.annotationsShown}
                     bankLabel={false}
                     /*
                      * The gutter, for the bank this document shows.

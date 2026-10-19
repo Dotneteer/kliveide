@@ -533,7 +533,20 @@ export const componentAliases: Record<string, string> = {
   "--color-disassembly-address": "var(--accent-text)",
   "--color-disassembly-instruction": "var(--text-primary)",
   "--color-disassembly-opcodes": "var(--accent-secondary-text)",
-  "--color-disassembly-label": "var(--accent-text)",
+  /*
+   * The rest of the row speaks the editor's syntax palette — one colour set for every disassembly
+   * Klive shows (the live view, every file viewer and ROM page, the execution history, the
+   * breakpoints panel, the annotation dialogs, the `dis` and `history` console output): a label,
+   * generated (`L8000`) or named, in the label hue; a name in an operand in the operand hue; data
+   * (`.defb`) in the directive hue; a comment green and italic. The address and opcodes keep the
+   * accent pair, and the instruction stays the most legible thing in the row. A listing and a source
+   * file are the same language, so a label is one colour whether it came from a `.kz80.asm` file, a
+   * sidecar or the disassembler. `syntaxTokens` fixes each against the canvas these rows sit on.
+   */
+  "--color-disassembly-label": "var(--syntax-label)",
+  "--color-disassembly-operand": "var(--syntax-operand)",
+  "--color-disassembly-directive": "var(--syntax-directive)",
+  "--color-disassembly-comment": "var(--syntax-comment)",
   /*
    * The row the CPU is currently paused at - the same background wash the memory dump's hovered
    * byte sits on (`--bgcolor-memory-hover`, itself `--surface-hover`), scoped independently rather
@@ -568,32 +581,15 @@ export const componentAliases: Record<string, string> = {
   "--color-disassembly-branch-fallthrough": "var(--text-secondary)",
 
   /*
-   * An *annotated* disassembly listing — the `.NEX` viewer's bank view, read against its sidecar.
-   *
-   * A separate family from `--color-disassembly-*` above, because the two views answer different
-   * questions. A machine disassembly is entirely generated, so its colour table describes structure:
-   * address, opcodes, instruction. An annotated listing is generated text with a thin layer of
-   * *authored* text laid over it — a name the user chose, a note they wrote, a decision they made
-   * about what a run of bytes is — and its colour table has to describe that layer.
-   *
-   * The values come straight from the editor's own syntax palette rather than from the accent,
-   * for two reasons:
-   *
-   * - **The listing and the source file are the same language.** A label is a label whether it came
-   *   from a `.z80.asm` file or from a `.nex.dis` sidecar, and naming it in two different colours in
-   *   two Klive windows is the drift this avoids.
-   * - **The accent is already spoken for here.** `--color-disassembly-address` and
-   *   `-label` are both `--accent-text`, so an annotation that also took the accent would read as
-   *   another address column. Hue has to carry the distinction, which is exactly the principle
-   *   `SYNTAX_HUES` was chosen under.
-   *
-   * `syntaxTokens` fixes every one of these against `NEUTRAL[tone].canvas`, which is the ground this
-   * listing sits on, so no further contrast work is needed here.
+   * The annotated listing's names for the same roles. They were a separate table once — machine
+   * listings coloured labels in the accent and comments in grey, annotated ones from the syntax
+   * palette — so one line looked different by where it was shown. They are aliases of the one
+   * disassembly table above now, kept because the stylesheets and the rail read them.
    */
-  "--color-annotation-comment": "var(--syntax-comment)",
-  "--color-annotation-label": "var(--syntax-label)",
-  "--color-annotation-directive": "var(--syntax-directive)",
-  "--color-annotation-operand": "var(--syntax-operand)",
+  "--color-annotation-comment": "var(--color-disassembly-comment)",
+  "--color-annotation-label": "var(--color-disassembly-label)",
+  "--color-annotation-directive": "var(--color-disassembly-directive)",
+  "--color-annotation-operand": "var(--color-disassembly-operand)",
   /*
    * The leading rail on a row carrying anything authored.
    *

@@ -1,3 +1,4 @@
+import { InstructionText, disassemblyText } from "@renderer/controls/data/DisassemblyText";
 import { FormEvent, useMemo, useState } from "react";
 import { Button } from "@renderer/controls/Button";
 import { TextInput } from "@renderer/controls/TextInput";
@@ -65,13 +66,17 @@ export function NexEndOfLineCommentDialog({
         </div>
       </DialogRow>
       <DialogRow label={t("panels.next.field.instruction")} rows={true}>
-        <div className={styles.readOnlyValue}>{instruction}</div>
+        <div className={styles.readOnlyValue}>
+          <InstructionText text={instruction} />
+        </div>
       </DialogRow>
       {/* --- Kept on show while you type: a user comment replaces this one in the listing, so this
           --- row is what says which note is being given up. */}
       {generatedHardComment && (
         <DialogRow label={t("panels.next.eolComment.generated")} rows={true}>
-          <div className={styles.readOnlyValue}>{generatedHardComment}</div>
+          <div className={styles.readOnlyValue}>
+            <span className={disassemblyText.comment}>{generatedHardComment}</span>
+          </div>
         </DialogRow>
       )}
       <DialogRow label={t("panels.next.eolComment.user")} rows={true}>
@@ -79,7 +84,7 @@ export function NexEndOfLineCommentDialog({
       </DialogRow>
       <DialogRow label={t("panels.next.field.preview")} rows={true}>
         <div className={styles.preview} aria-label={t("panels.next.eolComment.previewLabel")}>
-          {preview}
+          <span className={disassemblyText.comment}>{preview}</span>
         </div>
       </DialogRow>
       <DialogFooter>

@@ -1,3 +1,4 @@
+import { InstructionText } from "@renderer/controls/data/DisassemblyText";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 
 import { Label } from "@renderer/controls/layout/Label";
@@ -960,8 +961,8 @@ export const BreakpointsPanel = () => {
                   {/*
                     * The breakpoint's own address is the headline and takes the primary accent (see
                     * `.bpLabel`); the *resolved* address is the supporting one and takes the
-                    * secondary (`--color-state-value-alt`). The disassembled instruction keeps
-                    * `Value`'s neutral `--data-value` — it is context for the address.
+                    * secondary (`--color-state-value-alt`). The disassembled instruction takes the
+                    * disassembly colour set (`InstructionText`), as every listing shows it.
                     */}
                   {bp.resolvedAddress !== undefined && (
                     <Value
@@ -1002,11 +1003,9 @@ export const BreakpointsPanel = () => {
                     />
                   )}
                   {bp.exec && !comment && (
-                    <Value
-                      text={instruction}
-                      width="auto"
-                      className={styles.bpCell}
-                    />
+                    <Value text={instruction} width="auto" className={styles.bpCell}>
+                      <InstructionText text={instruction} />
+                    </Value>
                   )}
                   {isNextRegBreakpoint(bp) &&
                     (() => {
@@ -1068,7 +1067,9 @@ export const BreakpointsPanel = () => {
                           />
                         )}
                       {instruction && (
-                        <Value text={instruction} width="auto" className={styles.bpCell} />
+                        <Value text={instruction} width="auto" className={styles.bpCell}>
+                          <InstructionText text={instruction} />
+                        </Value>
                       )}
                     </>
                   )}
@@ -1113,11 +1114,9 @@ export const BreakpointsPanel = () => {
                         width={OP_ADDR_WIDTH}
                         className={regStyles.stateValueAlt}
                       />
-                      <Value
-                        text={instruction}
-                        width="auto"
-                        className={styles.bpCell}
-                      />
+                      <Value text={instruction} width="auto" className={styles.bpCell}>
+                        <InstructionText text={instruction} />
+                      </Value>
                     </>
                   )}
                   <BreakpointFilterCells bp={bp} />

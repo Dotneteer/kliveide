@@ -186,14 +186,14 @@ export const reduce: UiReducer<NexAnnotationEditorState, NexAnnotationEditorEven
 
 // ─── Derivations shared by the controller and the view model ─────────────────
 
+/** Are this bank's annotations loaded, so its listing is an annotated one, editable or not? */
+export function isAnnotationShown(state: NexAnnotationEditorState): boolean {
+  return !!state.env.annotationPath && state.env.bank !== undefined && !!state.annotations;
+}
+
 /** Are annotations available to edit at all? */
 export function isAnnotationEnabled(state: NexAnnotationEditorState): boolean {
-  return (
-    !!state.env.annotationPath &&
-    state.env.bank !== undefined &&
-    !!state.annotations &&
-    !state.env.readOnly
-  );
+  return isAnnotationShown(state) && !state.env.readOnly;
 }
 
 /**

@@ -71,7 +71,9 @@ export function defaultTraceOptions(format: TraceFormat = "text"): TraceExportOp
 /** What the renderer knows about a record */
 export type TraceResolvers = {
   /** The disassembled instruction (`HistoryDisassemblyCache`) */
-  instruction(record: HistoryRecord): Promise<{ text: string; length: number } | undefined>;
+  instruction(
+    record: HistoryRecord
+  ): Promise<{ text: string; length: number; names?: readonly string[] } | undefined>;
   /** `file.asm:123`, when the address maps to source */
   source?(record: HistoryRecord): string | undefined;
   /** The partition label of PC (`R0`, `0A`), when the machine has partitions */
@@ -222,6 +224,8 @@ export function traceHeaderLines(meta: TraceMeta, options: TraceExportOptions): 
 /** A row's cells: the viewer's, and the columns only a trace has */
 type TraceCells = HistoryRowCells & {
   record: HistoryRecord;
+  /** The label names substituted into the instruction */
+  names?: readonly string[];
   seq: number;
   stepNumber: number;
   frame: number;
@@ -242,6 +246,7 @@ function traceCells(input: HistoryRowInput, base: TraceBase | undefined, ctx = "
     stepNumber: input.step,
     frame: base ? r.frame - base.frame : r.frame,
     partition: input.partitionLabel ?? "",
+    names: input.names,
     ctx,
     repeat:
       r.kind === HistoryKind.Halt || r.kind === HistoryKind.ForcedNop || r.kind === HistoryKind.DmaHold
@@ -304,16 +309,53 @@ function pad(text: string, column: TraceColumn): string {
   return align === "start" ? text.padStart(width) : text.padEnd(width);
 }
 
+/**
+ * A piece of a text line: a column's padded cell (`column` says which), the two spaces between
+ * columns, or an event line's text. Joined, the pieces are exactly the line `exportTrace` writes;
+ * apart, they let the `history` command colour each column.
+ */
+export type TraceTextPart = {
+  column?: TraceColumn;
+  event?: true;
+  text: string;
+  /** On the `instr` piece: the label names substituted into the instruction */
+  names?: readonly string[];
+};
+
+/** A text line's pieces: fixed-width columns two spaces apart; a separator keeps its time columns */
+function textParts(c: TraceCells, columns: readonly TraceColumn[], separatorText?: string): TraceTextPart[] {
+  const shown = separatorText !== undefined ? columns.filter((col) => PREFIX_COLUMNS.includes(col)) : columns;
+  const parts: TraceTextPart[] = [];
+  for (const col of shown) {
+    if (parts.length) parts.push({ text: "  " });
+    parts.push({
+      column: col,
+      text: pad(textCell(c, col), col),
+      ...(col === "instr" && c.names?.length ? { names: c.names } : {})
+    });
+  }
+  if (separatorText !== undefined) {
+    if (parts.length) parts.push({ text: "  " });
+    parts.push({ event: true, text: separatorText });
+  }
+  // --- The line is trimmed at its end, as one string would be
+  while (parts.length) {
+    const last = parts[parts.length - 1];
+    const trimmed = last.text.trimEnd();
+    if (trimmed) {
+      last.text = trimmed;
+      break;
+    }
+    parts.pop();
+  }
+  return parts;
+}
+
 /** A text line: fixed-width columns two spaces apart; a separator keeps its time columns */
 function textLine(c: TraceCells, columns: readonly TraceColumn[], separatorText?: string): string {
-  if (separatorText !== undefined) {
-    const prefix = columns.filter((col) => PREFIX_COLUMNS.includes(col)).map((col) => pad(textCell(c, col), col));
-    return [...prefix, separatorText].join("  ").trimEnd();
-  }
-  return columns
-    .map((col) => pad(textCell(c, col), col))
-    .join("  ")
-    .trimEnd();
+  return textParts(c, columns, separatorText)
+    .map((part) => part.text)
+    .join("");
 }
 
 /** The CSV column names (T5: `part` beside `addr`; D6: `repeat` beside `instr`; D4: a column per register) */
@@ -423,18 +465,46 @@ type DroppedSpan = {
  * @param options The export's options
  * @param resolvers The disassembly, source, partition and context of a record
  */
-export async function* exportTrace(
+export function exportTrace(
   pages: AsyncIterable<readonly HistoryRecord[]> | Iterable<readonly HistoryRecord[]>,
   meta: TraceMeta,
   spans: readonly HistoryServiceSpan[],
   options: TraceExportOptions,
   resolvers: TraceResolvers
 ): AsyncGenerator<string> {
+  return traceLines(pages, meta, spans, options, resolvers, textLine, (line) => line);
+}
+
+/**
+ * The same text lines as `exportTrace` (CSV is not offered), each as its pieces (`TraceTextPart`),
+ * for a writer that colours the columns: the `history` command.
+ */
+export function exportTraceTextParts(
+  pages: AsyncIterable<readonly HistoryRecord[]> | Iterable<readonly HistoryRecord[]>,
+  meta: TraceMeta,
+  spans: readonly HistoryServiceSpan[],
+  options: TraceExportOptions,
+  resolvers: TraceResolvers
+): AsyncGenerator<TraceTextPart[]> {
+  return traceLines(pages, meta, spans, { ...options, format: "text" }, resolvers, textParts, (line) => [
+    { text: line }
+  ]);
+}
+
+async function* traceLines<T>(
+  pages: AsyncIterable<readonly HistoryRecord[]> | Iterable<readonly HistoryRecord[]>,
+  meta: TraceMeta,
+  spans: readonly HistoryServiceSpan[],
+  options: TraceExportOptions,
+  resolvers: TraceResolvers,
+  text: (c: TraceCells, columns: readonly TraceColumn[], separatorText?: string) => T,
+  plain: (line: string) => T
+): AsyncGenerator<T> {
   const csv = options.format === "csv";
   if (csv) {
-    yield csvRow(traceCsvColumnNames(options.columns).map((name) => csvCell(name)));
+    yield plain(csvRow(traceCsvColumnNames(options.columns).map((name) => csvCell(name))));
   } else if (options.header) {
-    for (const line of traceHeaderLines(meta, options)) yield `; ${line}`;
+    for (const line of traceHeaderLines(meta, options)) yield plain(`; ${line}`);
   }
 
   const sortedSpans = [...spans].sort((a, b) => a.first - b.first);
@@ -457,6 +527,7 @@ export async function* exportTrace(
       step: record.sequence - meta.newestSequence - 1,
       machineId: meta.machineId,
       instruction: instruction?.text,
+      names: instruction?.names,
       length: instruction?.length,
       source: isInstruction ? resolvers.source?.(record) : undefined,
       changes: after && isInstruction ? formatRegisterDiff(registerDiff(record.regs, after)) : undefined,
@@ -465,18 +536,18 @@ export async function* exportTrace(
     };
   };
 
-  const markerLine = (span: DroppedSpan, last: boolean): string | undefined => {
+  const markerLine = (span: DroppedSpan, last: boolean): T | undefined => {
     if (!markers) return undefined;
     const what = span.kind === HistoryKind.Nmi ? "NMI service" : "interrupt service";
     const count = `${span.instructions.toLocaleString("en-US")} instruction${span.instructions === 1 ? "" : "s"}`;
-    const text = `${what}, ${count}${last && span.until === Infinity ? ", unfinished" : ""}`;
+    const eventText = `… ${what}, ${count}${last && span.until === Infinity ? ", unfinished" : ""} …`;
     const c = traceCells({ record: span.first, step: span.first.sequence - meta.newestSequence - 1 }, base);
-    return csv ? csvLine(c, options.columns, options, `… ${text} …`) : textLine(c, options.columns, `… ${text} …`);
+    return csv ? plain(csvLine(c, options.columns, options, eventText)) : text(c, options.columns, eventText);
   };
 
   /** The lines of one record (none, when it is dropped or filtered out) */
-  const rowLines = async (record: HistoryRecord, after: HistoryRegisters | undefined): Promise<string[]> => {
-    const out: string[] = [];
+  const rowLines = async (record: HistoryRecord, after: HistoryRegisters | undefined): Promise<T[]> => {
+    const out: T[] = [];
     // --- D3: relative to the range's first record, unless -absolute
     if (!options.absolute) base ??= { frame: record.frame, sequence: record.sequence };
     if (options.interrupts !== "keep") {
@@ -503,7 +574,9 @@ export async function* exportTrace(
     const input = await inputOf(record, after);
     const c = traceCells(input, base, record.kind === HistoryKind.Instruction ? (resolvers.describeContext?.(record) ?? "") : "");
     if (resolvers.include && !resolvers.include(record, c.instruction)) return out;
-    out.push(csv ? csvLine(c, options.columns, options) : textLine(c, options.columns, c.separator ? c.instruction : undefined));
+    out.push(
+      csv ? plain(csvLine(c, options.columns, options)) : text(c, options.columns, c.separator ? c.instruction : undefined)
+    );
     return out;
   };
 

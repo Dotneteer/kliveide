@@ -19,7 +19,22 @@ export type OutputColor =
   | "bright-blue"
   | "bright-magenta"
   | "bright-cyan"
-  | "bright-white";
+  | "bright-white"
+  | DisassemblyOutputColor;
+
+/**
+ * The disassembly colour set's roles, for a console line that shows disassembly (`dis`, `history`).
+ * Not terminal colours: each paints in its `--color-disassembly-*` token, so the console shows an
+ * instruction exactly as every listing does.
+ */
+export type DisassemblyOutputColor =
+  | "disasm-address"
+  | "disasm-opcodes"
+  | "disasm-label"
+  | "disasm-instruction"
+  | "disasm-operand"
+  | "disasm-directive"
+  | "disasm-comment";
 
 export type OutputSpan = {
   text: string;

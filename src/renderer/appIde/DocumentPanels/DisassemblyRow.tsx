@@ -22,7 +22,8 @@ import {
   isInactiveBreakpoint
 } from "@renderer/appIde/utils/breakpoint-filter-text";
 import { formatBranchReadout, isCall, type BranchVerdict } from "./branchVerdict";
-import type { DisassemblyItem, DisassemblyOperandInfo } from "../disassemblers/common-types";
+import type { DisassemblyItem } from "../disassemblers/common-types";
+import { isDataPragma, splitInstructionOperands } from "@renderer/controls/data/DisassemblyText";
 import { toDecimal3, toDecimal5, toHexa2, toHexa4 } from "../services/ide-commands";
 import styles from "./DisassemblyPanel.module.scss";
 
@@ -173,56 +174,6 @@ export function deriveInstructionWidthCh(items: readonly DisassemblyItem[]): num
     (widest, item) => Math.max(widest, (item.instruction?.length ?? 0) + 1),
     DEFAULT_INSTRUCTION_WIDTH_CH
   );
-}
-
-/**
- * Splits an instruction so the operand labels a resolver substituted can be tinted separately.
- *
- * The disassembler puts a resolved label into the instruction as plain text, so by the time a row
- * sees `"ld hl,SpriteTable"` nothing marks where the name starts. `resolvedText` on each operand
- * candidate is what went in, so the name can be found again — matched left to right and each
- * candidate consumed once, which is what keeps two operands resolving to the same name from both
- * landing on the first occurrence.
- *
- * Returns plain strings and `{ label }` markers rather than elements, so the rule stays testable
- * without rendering.
- */
-export type InstructionPart = string | { label: string };
-
-export function splitInstructionOperands(
-  instruction: string,
-  operands: readonly DisassemblyOperandInfo[] | undefined
-): InstructionPart[] {
-  const names = (operands ?? [])
-    .map((operand) => operand.resolvedText)
-    .filter((name): name is string => !!name);
-  if (names.length === 0 || !instruction) return [instruction];
-
-  const parts: InstructionPart[] = [];
-  let rest = instruction;
-  for (const name of names) {
-    const at = rest.indexOf(name);
-    // --- The resolver ran but the name is not in the finished text: a custom disassembler rewrote
-    // --- the instruction afterwards. Leave what is left alone rather than guessing.
-    if (at < 0) continue;
-    if (at > 0) parts.push(rest.slice(0, at));
-    parts.push({ label: name });
-    rest = rest.slice(at + name.length);
-  }
-  if (rest) parts.push(rest);
-  return parts;
-}
-
-/**
- * Whether an instruction is a data pragma (`.defb`, `.defw`, ...) rather than something the CPU runs.
- *
- * A machine's custom disassembler lists the bytes after a ROM restart that takes inline data - the
- * report code after the ZX81's and Spectrum's `RST $08`, the calculator codes after `RST $28` - as
- * `.defb` rows *inside a code region*, so the region type alone would paint them as instructions.
- * No Z80 mnemonic starts with a dot, so the text says which it is.
- */
-export function isDataPragma(instruction: string | undefined): boolean {
-  return !!instruction && instruction.trimStart().startsWith(".");
 }
 
 /**
@@ -444,12 +395,9 @@ type DisassemblyRowProps = DisassemblyRowViewModelParams & {
    */
   instructionWidthCh?: number;
   /**
-   * Draw this row as an *annotated* listing row rather than a machine disassembly row.
-   *
-   * Opt-in, and off by default, because the two views have different colour tables and only the
-   * `.NEX` viewer has a sidecar to annotate from — see `--color-annotation-*`. It changes nothing
-   * about the row's structure: the same cells, at the same widths, in different hues, plus the
-   * leading rail.
+   * The row belongs to an *annotated* listing (a bank or ROM page read against its sidecar): it
+   * gets the leading provenance rail. Colours do not depend on it — every disassembly row uses the
+   * one table of `--color-disassembly-*`, whatever view shows it.
    */
   annotated?: boolean;
   /**
@@ -567,15 +515,13 @@ export const DisassemblyRow = memo(function DisassemblyRow({
   // --- the instruction one: a region the user marked as data, and a data pragma the disassembler
   // --- wrote inside code (the bytes after RST $08 / RST $28).
   const isDirective =
-    annotated &&
-    ((!!item.annotation?.regionType && item.annotation.regionType !== "disassemble") ||
-      isDataPragma(item.instruction));
+    (!!item.annotation?.regionType && item.annotation.regionType !== "disassemble") ||
+    isDataPragma(item.instruction);
   // --- A directive's resolved operands (a `.defw` word that names a label) take the operand hue
   // --- as an instruction's do; the rest of the directive keeps the directive hue it inherits. A
   // --- directive naming nothing stays one plain run.
   const instructionParts =
-    annotated &&
-    (!isDirective || !!item.operandCandidates?.some((operand) => operand.resolvedText))
+    !isDirective || !!item.operandCandidates?.some((operand) => operand.resolvedText)
       ? splitInstructionOperands(viewModel?.instruction ?? "", item.operandCandidates)
       : undefined;
   const showRail = annotated && isAuthoredRow(item);
@@ -676,9 +622,7 @@ export const DisassemblyRow = memo(function DisassemblyRow({
       )}
       {isPrefixComment ? (
         <div
-          className={classnames(styles.synopsisCommentLine, {
-            [styles.annotationComment]: annotated
-          })}
+          className={classnames(styles.synopsisCommentLine, styles.annotationComment)}
         >
           ; {item.prefixComment}
         </div>
@@ -751,11 +695,7 @@ export const DisassemblyRow = memo(function DisassemblyRow({
             width={`${labelWidthCh}ch`}
             tooltip={describeLabelOrigin(item)}
             className={
-              item.labelSource === "rom"
-                ? styles.romLabel
-                : annotated || item.labelSource
-                  ? styles.annotationLabel
-                  : styles.disassemblyLabel
+              item.labelSource === "rom" ? styles.romLabel : styles.annotationLabel
             }
           />
           <div className={styles.tstates}>{viewModel.tstates}</div>
@@ -847,7 +787,7 @@ export const DisassemblyRow = memo(function DisassemblyRow({
             <Secondary
               text={item.hardComment ? "; " + item.hardComment : ""}
               width={`${commentWidthCh}ch`}
-              className={annotated ? styles.annotationComment : undefined}
+              className={styles.annotationComment}
             />
           )}
         </>
