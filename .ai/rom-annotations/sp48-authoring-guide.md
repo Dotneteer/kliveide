@@ -14,9 +14,14 @@ supersedes, keep no history (that is `PROVENANCE.md`'s job).
 - **`sp128-1.rom.dis` ships at level 2** (2026-10-20): it `inherits` `sp48.rom.dis` and authors
   only ROM 1's six patches and its new code at `$386E-$3CFF` (the keypad, the hooks into the other
   ROM, SPECTRUM and PLAY, a test picture).
-- **Next: the 128K editor ROM (`sp128-0`)**, from scratch, starting from its start-up and menu. Its
-  page kind (`sp128-editor`) has no custom decoding yet: watch for inline data after RSTs or calls
-  (phantom targets show it) and add a decoder, as the 48K has, if the ROM uses one.
+- **The 128K editor ROM (`sp128-0.rom.dis`) is under way** (level 0): its restarts, the RAM
+  routines copied to $5B00, start-up, bank and stack switching and the main menu are done. Its RST
+  $28 calls the ROM 1 address in the word after it; `ZxSpectrum128EditorCustomDisassembler` lists
+  that word as `.defw` on `sp128-editor` pages. Next there: the editor itself (the key tables'
+  routines at $2537), then the menu actions ($2831, $286C, $2885, $1B47, $2816).
+- The live 128K view decodes it too: the 128K's custom disassembler chains the 48K decoder (gated on
+  the 48K BASIC page) with the editor's (gated on `sp128-editor` pages through
+  `CustomDisassemblyContext.inRomOfKind`).
 
 ## A ROM that is mostly another one: `inherits`
 

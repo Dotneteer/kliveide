@@ -1600,3 +1600,23 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
   in the IDE; it does now, and the readiness check, the level measure, Export as source and the
   `tools/` scripts read an inheriting sidecar merged with its inherited, byte-bound entries.
 - **Level:** 2.
+
+### 2026-10-20 — `sp128-0.rom.dis`, the 128K editor ROM: start-up and the main menu (shipped)
+
+- **Added:** a new sidecar, written from scratch: 66 labels, 172 line entries, 18 data regions.
+  Covered: the restarts and the way into ROM 1 (`CALL_ROM1`, RST $28), the routines copied to $5B00
+  (`SWAP_ROM` to `CALL_ROM0_BACK`), the vector table at $0100, the RAM test and start-up
+  (`START`-`START_SETUP`), the bank and stack switches (`SELECT_BANK`, `BANK7_STACK`,
+  `BANK0_STACK`), the main menu (`MAIN_MENU`, `MAIN_KEY_LOOP`, `KEY_DISPATCH`, `DRAW_MENU`,
+  `TABLE_DISPATCH`), and the data they read: the copyright message, CHANS and STRMS as copied at
+  start-up, the bank table, the key tables, both menus' actions and texts, the menu's header,
+  stripes and colours, and the bytes at the ROM's end.
+- **Decoding:** ROM 0's RST $28 reads the word after it as a ROM 1 address (its routine at $0028),
+  so a new custom disassembler for `sp128-editor` pages lists that word as `.defw` (178 calls).
+- **Method:** the bytes through `tools/sp48-dis.cjs` (`ROM=sp128-0.rom`); the ROM 1 addresses
+  named from `sp48.rom.dis`; the probe of the ROM 1 session (the menu text on screen, FLAGS bit 4
+  set, the $5B00 code) confirmed the start-up's result.
+- **Names:** Klive's own; the restarts that forward to ROM 1's take the 48K file's names
+  (`PRINT_A`, `GET_CHAR`, `NEXT_SKIP`, `INT_FRAME`), `START` likewise, and `WAIT_KEY` the ZX81
+  file's. The 128K's new system variables are named by address, not given names.
+- **Level:** 0 (921 targets left to label). It reassembles byte for byte.
