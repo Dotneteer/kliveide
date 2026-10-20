@@ -1851,3 +1851,34 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
   20 frames and bit 3 of $5B67 was cleared (ROM 0 may count too); Spanish PRINT 1/0 gave
   "6 NUMERO MUY GRANDE, 0:1".
 - **Level:** 2 for all three, recorded; each reassembles byte for byte.
+
+### 2026-10-20 — +3DOS: `spp3-41-2`, `spp3-40-2`, `spp3-41es-2` (shipped, level 2)
+
+- **Sources:** the bytes only. No +3 manual was available, so the jump table's routines are named
+  from their code; the uPD765's datasheet (`_input/765.pdf`) was allowed for command codes and status
+  bits (interface facts). The commented +3 and 128K disassemblies in `_input/` were not opened.
+- **v4.1 (`spp3-41-2`), 747 labels, 3,658 comments, 74 regions:** a skeleton by hand (the frame
+  interrupt with the same motor time-out as ROM 3, the "PLUS3DOS" text, the 53-entry jump table
+  `DOS_JUMPS` with `DOS_xxxx` entry labels, `CALL_ROM0` at $3E00 with a words region for its inline
+  address, `CALL_ROM2` at $3F00, which ROM 1 enters in its own copy, filler); then five ranges
+  drafted by helpers from the listing, reviewed (samples against the code; one name clash,
+  WRITE_BYTES, split) and merged. Found: file records of $38 bytes from $DBA0, a sector cache of 16
+  entries at $DFE0, drive tables, the 765 driver on ports $2FFD/$3FFD with its error numbers, a copy
+  of the 48K ROM's keyboard decoder at $229E (+$2099, the 48K names kept), and a disk test program at
+  $2492 that ROM 0 copies to $6000 (labels `DT_`, RAM = ROM + $3B6E). Read from the code, not
+  probed: LENGTH_FROM_DIR never clears $DF90; ENTRY_STAMP_ADDR may run past one entry's copy.
+- **v4.0 (`spp3-40-2`), inherits v4.1:** differs only at $244E-$2CDF and $3FFF: hooks without the
+  CURCHL/FLAGS saving, and the test program at $245C (RAM = ROM + $3BA4) with a block that still runs
+  the spin test and other timing constants; the rest is v4.1's code moved, its entries converted.
+- **Spanish v4.1 (`spp3-41es-2`), inherits v4.1:** the same English messages, $21 lower; a shorter
+  disk-error question (message at $DB22, no key list, the routine's code taken as the answer); the
+  code after the messages $2E lower and the calls to it changed; $0103 returns DE = $0101, HL =
+  $0070; the first hook passes HL = BC, moving the test program up 2. Entries copied with the shifts
+  and their text's addresses remapped.
+- **Probe** (`test/harness/sp128`, `plus3-fdd1` / `plus3-es-fdd1`, `test/testfiles/ltk.dsk` and
+  `blank180K.dsk`, deleted): CAT listed "DISK . 1K", "124K free"; a blank disk "No files found",
+  "173K free"; SAVE "prog": CAT gave "PROG . 1K", "172K free"; no disk asked "Drive A: track 0,
+  sector 0, no data - Retry, Ignore or Cancel?" (C: "No data, 0:1"); LOAD "nope" gave "File not
+  found"; SAVE "a?b" "Bad filename"; on the Spanish +3 the question came in Spanish from the routine
+  at $DB20 ("SIN DATOS, 0:1").
+- **Level:** 2 for all three, recorded; each reassembles byte for byte.

@@ -211,8 +211,10 @@ the code it added. The 128K's editor ROM (ROM 0) is complete as well: its menus,
 editor, the RAM disk, PLAY, the RS232 and tape commands are all labelled, described and commented.
 So are the 48K BASIC ROMs (ROM 3) of the +2A and +3, in the v4.0, v4.1 and Spanish versions (the +3E
 shares v4.0's): they take the 128K's annotations where their bytes match and describe what Amstrad
-changed, such as the disk motor's time-out and the Spanish messages. The other ROMs' annotations
-are still sparse.
+changed, such as the disk motor's time-out and the Spanish messages. The +3's disk operating
+system ROM (ROM 2, +3DOS) is complete too, in the same three versions: its jump table, the files and
+directory, the sector cache, the floppy controller driver and the built-in disk test. The other ROMs'
+annotations are still sparse.
 
 Use `bp-set ROM:<name>` to break at a ROM label, and `ROM:<name>` in a breakpoint condition.
 

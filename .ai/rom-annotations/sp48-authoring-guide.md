@@ -17,6 +17,15 @@ supersedes, keep no history (that is `PROVENANCE.md`'s job).
 - **The +2A/+3 ROM 3s ship at level 2** (2026-10-20): `spp3-41-3.rom.dis` inherits `sp128-1` and
   `sp48`; `spp3-40-3.rom.dis` (also the +3E's ROM 3, the same bytes) and `spp3-41es-3.rom.dis` inherit
   `spp3-41-3` first. On the +3, FLAGS bit 4 is "+3 BASIC", not 128 BASIC.
+- **+3DOS (ROM 2) ships at level 2** (2026-10-20) for v4.1, v4.0 and Spanish (the last two inherit
+  v4.1). Next in R4: ROMs 0 and 1 of each version (they differ between versions by moved code, so
+  author v4.1 and inherit by copying entries with the measured shifts, as for the Spanish ROM 2), and
+  the +3E's ROMs. `_input/` holds commented disassemblies of these ROMs: never open them; only
+  `_input/765.pdf`, the floppy controller's datasheet, is allowed (interface facts).
+- **A variant whose code moved** binds nothing at the moved offsets. Measure the shifts (align the
+  bytes block by block), copy the base's entries to the new offsets with the addresses in their text
+  remapped, and re-read only what really differs. Compare the instruction counts of the base and the
+  variant afterwards: a big gap means a filler region did not bind.
 - **`sp128-0.rom.dis`, the 128K editor ROM, ships at level 2** (2026-10-20): 1,085 labels, each with
   a synopsis, 4,253 comments, no unlabelled targets; it reassembles byte for byte. Its RST $28 calls
   the ROM 1 address in the word after it and `CALL $05AC` + a code byte raises its errors;
