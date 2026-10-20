@@ -1,5 +1,5 @@
 import type { DisassemblyItem, FetchResult, MemorySection } from "../common-types";
-import { intToX4 } from "../utils";
+import { intToX2, intToX4 } from "../utils";
 import {
   CUSTOM_Z80_DISASSEMBLY_TOOL,
   type ICustomDisassembler,
@@ -12,11 +12,14 @@ import {
  * In that ROM `RST $28` is not the calculator: its routine takes the word after the instruction as
  * an address in the other ROM (ROM 1, the 48K BASIC), calls it there through the paging routine in
  * RAM, and returns past the word. So the two bytes after each `RST $28` are listed as one `.defw`,
- * not as instructions. Found from the ROM's own `RST $28` routine (`sp128-0.rom.dis`).
+ * not as instructions. Its errors are raised by `CALL $05AC`, whose routine takes the byte after the
+ * call as the report code and never returns; that byte is listed as `.defb`. Both found from the
+ * ROM's own routines (`sp128-0.rom.dis`: CALL_ROM1, ERROR_128).
  */
 export class ZxSpectrum128EditorCustomDisassembler implements ICustomDisassembler {
   private _api: IDisassemblyApi;
   private _inRst28Mode = false;
+  private _inErrorMode = false;
 
   readonly toolId = CUSTOM_Z80_DISASSEMBLY_TOOL;
 
@@ -26,9 +29,22 @@ export class ZxSpectrum128EditorCustomDisassembler implements ICustomDisassemble
 
   startSectionDisassembly(_section: MemorySection): void {
     this._inRst28Mode = false;
+    this._inErrorMode = false;
   }
 
   beforeInstruction(fetchResult: FetchResult): boolean {
+    if (this._inErrorMode) {
+      this._inErrorMode = false;
+      const code = this._api.fetch().opcode;
+      const value = this._api.decimalMode ? code.toString(10) : `$${intToX2(code)}`;
+      this._api.addDisassemblyItem({
+        address: fetchResult.offset,
+        opCodes: [code],
+        instruction: `.defb ${value}`,
+        hardComment: `(error code: ${value})`
+      });
+      return true;
+    }
     if (!this._inRst28Mode) return false;
     this._inRst28Mode = false;
     const address = fetchResult.offset;
@@ -49,6 +65,9 @@ export class ZxSpectrum128EditorCustomDisassembler implements ICustomDisassemble
     if (item.opCodes && item.opCodes[0] === 0xef) {
       this._inRst28Mode = true;
       item.hardComment = "(Call ROM 1)";
+    } else if (item.opCodes?.[0] === 0xcd && item.opCodes[1] === 0xac && item.opCodes[2] === 0x05) {
+      this._inErrorMode = true;
+      item.hardComment = "(Report error)";
     }
   }
 }
