@@ -19,7 +19,10 @@ const annotations = parseAnnotations(readFileSync(join(ROMS, "sp48.rom.dis"), "u
 async function rowsAfterRst8(prepare?: Parameters<typeof prepareRomDisassembler>[1]) {
   // --- An `RST $08` the ROM's own decoder finds in code, so the test does not hunt for one by hand
   const decoded = await romDecoderFor("sp48-basic")(SP48, 0x0100, 0x3cff);
-  const rst = decoded.find((instr) => SP48[instr.offset] === 0xcf)!;
+  // --- Inside a code region: a $CF byte in a data table (a bit-7 keyword's last letter) is not one
+  const code = (offset: number) =>
+    annotations.banks["0"].regions!.some((r) => r.type === "disassemble" && offset >= r.start && offset <= r.end);
+  const rst = decoded.find((instr) => SP48[instr.offset] === 0xcf && code(instr.offset))!;
   const items = await createAnnotatedDisassemblyItems({
     annotations,
     bank: 0,

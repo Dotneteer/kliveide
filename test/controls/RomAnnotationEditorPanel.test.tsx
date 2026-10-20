@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { formatRomSidecar } from "@common/roms/romAnnotationTools";
 
 /*
  * The ROM annotation editor (`.plans/ROM_ANNOTATION_EDITING_PLAN.md` R4, R7, §4.1): a selected ROM
@@ -12,6 +13,35 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 const ROMS = join(__dirname, "../../src/public/roms");
 const SHIPPED_TEXT = readFileSync(join(ROMS, "sp48.rom.dis"), "utf8");
 const WORKING = "/home/me/Klive/RomAnnotations/sp48.rom.dis";
+
+/**
+ * A working copy still being authored, made from the shipped sidecar (which is at level 2): the
+ * labels below $0100 are gone, so their targets need labels again (level 0), and the labels from
+ * $3800 on have lost their synopses.
+ */
+const SPARSE_TEXT = (() => {
+  const raw = JSON.parse(SHIPPED_TEXT);
+  const bank = raw.banks["0"];
+  const dropped = new Set<number>();
+  bank.localLabels = bank.localLabels.filter((label: { value: number }) => {
+    if (label.value >= 0x0100) return true;
+    dropped.add(label.value);
+    return false;
+  });
+  for (const key of Object.keys(bank.lineAnnotations)) {
+    const offset = Number(key);
+    if (dropped.has(offset) || offset >= 0x3800) delete bank.lineAnnotations[key].synopsis;
+    if (Object.keys(bank.lineAnnotations[key]).length === 0) delete bank.lineAnnotations[key];
+  }
+  for (const key of Object.keys(raw.provenance)) {
+    const [, offset, kind] = key.split(":");
+    if ((kind === "label" && dropped.has(Number(offset))) || (kind === "line" && !bank.lineAnnotations[offset])) {
+      delete raw.provenance[key];
+    }
+  }
+  raw.level = 0;
+  return formatRomSidecar(raw);
+})();
 
 afterEach(() => {
   cleanup();
@@ -109,28 +139,27 @@ describe("the ROM annotation editor", () => {
   });
 
   it("counts a page's unlabelled targets and steps to the next one", async () => {
-    const { opened } = await renderEditor(WORKING, { [WORKING]: SHIPPED_TEXT });
-    // --- The shipped 48K sidecar is at level 0: 940 call and jump targets have no label yet
-    expect(await screen.findByText("940")).toBeInTheDocument();
+    const { opened } = await renderEditor(WORKING, { [WORKING]: SPARSE_TEXT });
+    // --- The sparse working copy is at level 0: 17 call and jump targets have no label yet
+    expect(await screen.findByText("17")).toBeInTheDocument();
     expect(screen.getByRole("img", { name: "Level 0 of 2" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "next $0000" }));
+    fireEvent.click(screen.getByRole("button", { name: "next $0008" }));
     await waitFor(() => expect(opened).toHaveLength(1));
-    expect(opened[0][4]).toMatchObject({ viewMode: "disassembly", topAddress: 0 });
+    expect(opened[0][4]).toMatchObject({ viewMode: "disassembly", topAddress: 8 });
     // --- The link moves on to the following target
     expect(await screen.findByRole("button", { name: "next $0010" })).toBeInTheDocument();
   });
 
   it("explains the level in a hover card wherever a level is shown", async () => {
-    await renderEditor(WORKING, { [WORKING]: SHIPPED_TEXT });
+    await renderEditor(WORKING, { [WORKING]: SPARSE_TEXT });
     const meter = await screen.findByRole("img", { name: "Level 0 of 2" });
 
     // --- A page's meter: its level, and what levels 1 and 2 still need
     fireEvent.mouseEnter(meter.parentElement!);
     const pageCard = await screen.findByRole("tooltip");
     expect(pageCard).toHaveTextContent("Page 0 · level 0");
-    expect(pageCard).toHaveTextContent("940 call and jump targets have no label");
-    // --- The shipped sidecar gives every label a synopsis
-    expect(pageCard).toHaveTextContent("Every label has a synopsis");
+    expect(pageCard).toHaveTextContent("17 call and jump targets have no label");
+    expect(pageCard).toHaveTextContent("6 labels have no synopsis");
     expect(pageCard.querySelector('[data-state="next"]')).toHaveTextContent("Level 1");
     fireEvent.keyDown(document, { key: "Escape" });
     await waitFor(() => expect(screen.queryByRole("tooltip")).toBeNull());

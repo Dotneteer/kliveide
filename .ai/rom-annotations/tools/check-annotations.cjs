@@ -1,5 +1,6 @@
 // Runs the IDE's own readiness check (checkRomSidecar, the "Ready" chip / rom-ann-check) on a sidecar.
-// Usage: node .ai/rom-annotations/tools/check-annotations.cjs <sidecar.dis>   ("problems": [] is clean)
+// Usage: node .ai/rom-annotations/tools/check-annotations.cjs <sidecar.dis> [full.json]   ("problems": [] is clean)
+// The console gets the first 3000 characters; with full.json the whole result (every unlabelled target) is written there.
 const { existsSync, readFileSync } = require("node:fs");
 const { dirname, join, resolve } = require("node:path");
 const root = resolve(__dirname, "../../..");
@@ -56,5 +57,6 @@ const { checkRomSidecar } = require(join(root, "src/renderer/appIde/annotations/
   const romFile = JSON.parse(text).source?.fileName ?? "zx81.rom"; // the ROM the sidecar names
   const rom = new Uint8Array(readFileSync(join(root, "src/public/roms", romFile)));
   const result = await checkRomSidecar(text, (page) => (page === 0 ? rom.subarray(0, 0x4000) : undefined));
+  if (process.argv[3]) require("node:fs").writeFileSync(process.argv[3], JSON.stringify(result, null, 1));
   console.log(JSON.stringify(result, null, 1).slice(0, 3000));
 })();

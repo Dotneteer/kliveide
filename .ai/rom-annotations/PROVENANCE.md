@@ -986,3 +986,580 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
   glyphs); a sample of the patterns (`$01`, `$02`, `$0C`, `$12`, `$17`, `$3F`) printed from the ROM
   and checked by eye against them. No run.
 - **Provenance:** `observed`. **Level:** 2, unchanged (`checkRomSidecar`: no problems).
+
+### 2026-10-19 — `sp48.rom.dis`, the restarts and the start-up up to the main loop (working copy)
+
+- **Added:** 94 labels and their synopses and comments, in `<Klive home>/RomAnnotations/sp48.rom.dis`
+  (not yet copied to `src/public/roms/`): the restarts and interrupts `$0000-$0094` (`RESET`,
+  `PRINT_A`, `CUR_CHAR`/`NEXT_CHAR`/`SKIP_TEST`, `WS_ROOM`, `MASK_INT`, `ERROR_TAIL`, `NMI`); the
+  cold start and NEW, `NEW_CMD` to `MAIN_RESET_EDIT` (`$11B7-$12A9`); and the routines start-up
+  calls: `CLS`/`CLS_ALL`/`CLS_LOWER`, `CLEAR_LINES`, `SET_POS`/`STORE_POS`, `LINE_ADDR`,
+  `TEMP_COLOURS`, `CLEAR_PRINTER`, `PRINT_MESSAGE`/`PRINT_TOKEN`/`FIND_ENTRY`, `CHAN_OPEN` and the
+  channel flag routines, `MAKE_ROOM`/`POINTERS_UP`/`TEST_ROOM`, `CLEAR_EDIT_WS`, `CALC_STK_RESET`,
+  `INDEXER`. `KEY_SCAN` (`$028E`) is described; `KEYBOARD` (`$02BF`) and `MAIN_LOOP` (`$12A2`) are
+  labelled with only their first lines described.
+- **Regions:** five data regions, each bounded from the bytes and the code that reads them: the
+  keyword table `$0095-$0204` (92 bit-7-terminated strings walked from `$0095`; code resumes at
+  `$0205`), the start-up message table `$1538-$1554`, the channel data `$15AF-$15C3` (21 bytes, the
+  `LDIR` count at `$123E`), the stream table `$15C6-$15D3` (14 bytes, `$1282`), and `CHAN_OPEN`'s
+  letter table `$162D-$1633` (read by `INDEXER` from `$1621`). The listing resynchronised on the same
+  instruction starts as before, plus `$1555` after the message table.
+- **Method:** the ROM bytes through Klive's own disassembler with the 48K decoding
+  (`tools/sp48-dis.cjs`, new this session), read instruction by instruction. One throwaway probe on
+  `test/harness/sp48` (deleted): the cold start reaches `$11EF` after 82 frames with HL = `$FFFF`;
+  RAMTOP `$FF57`, UDG `$FF58` (its first 8 bytes equal `$3E08`'s), CHANS `$5CB6`, PROG = VARS
+  `$5CCB`, E-LINE `$5CCC`, WORKSP = STKBOT = STKEND `$5CCE`, ERR-SP `$FF54`, BORDCR = ATTR-P `$38`,
+  REPDEL 35, REPPER 5, NMIADD 0; the channel and stream bytes as in the regions; line 23 shows the
+  copyright line. NEW typed in K mode (A, ENTER) stops at `$11B7`, enters `$11CB` with A = `$FF`,
+  skips `$1200`, and keeps a RAMTOP poked to `$7FFF`. The CAPS SHIFT / SYMBOL SHIFT key numbers
+  (`$27`, `$18`) were worked out from Klive's own matrix (`SpectrumKeyCode.ts`: row 0 bit 0, row 7 bit 1).
+- **Manual:** the token codes `$A5-$FF` of the keywords (the keyword table's synopsis), the colour
+  meaning of `$38` (`$1265`), and the name COORDS for `$5C7D` (`$0DAF`); those lines are `manual`.
+  Other system variable names from Klive's table (`ZxSpectrum48SysVars.ts`), which names `$5C7D`
+  `UDG` by mistake (its description is the plotted coordinates).
+- **Names:** Klive names throughout, chosen from what the code does; no name list was used.
+- **Provenance:** `observed`, except the three `manual` lines and the keyword table region.
+- **Level:** 0 (`checkRomSidecar`: no problems; 842 unlabelled targets, from 940). The working copy
+  exports and reassembles to the ROM byte for byte (`buildRomSourceExport`, `compareRomAssembly`).
+
+### 2026-10-19 — `sp48.rom.dis`, the main execution cycle and the report handler (working copy)
+
+- **Added:** 27 labels and their synopses and comments: the main cycle `MAIN_LOOP`/`MAIN_ENTRY`
+  to `MAIN_LINE_OK` (`$12A2-$1300`), the report handler `MAIN_REPORT` to `REPORT_DONE`
+  (`$1303-$138E`) and `REPORT_NO_ROOM` (`$1555`); the routines the cycle calls, described as far as
+  read: `REMOVE_NUMS`, `E_LINE_NO`, `PRINT_BC_NUM`, `PRINT_A_DIGIT`, `CLEAR_INPUT`/`INPUT_RANGE`,
+  `RECLAIM_BC`/`RECLAIM_DE`/`DIFFERENCE`, `PRB_SEND`, `REPORT_C`; and the entries of larger routines
+  with only their first lines described: `EDITOR` (`$0F2C`), `LINE_SCAN` (`$1B17`), `LINE_RUN`
+  (`$1B8A`), `ADD_LINE` (`$155D`), `AUTO_LIST` (`$1795`).
+- **Regions:** the report messages `$1391-$1537`, walked from `$1391` (29 bit-7-terminated strings)
+  up to the start-up message table, which the region now joins (`$1391-$1554`, one region: they touch
+  and share a type). `COMMA_MESSAGES` (`$1536`) marks the second table the handler reads at `$134A`.
+  Outside the region the listing kept its instruction starts.
+- **Method:** the ROM bytes through `tools/sp48-dis.cjs`, read instruction by instruction. One
+  throwaway probe on `test/harness/sp48` (deleted), stepping with the keys held and stopping at the
+  cycle's addresses. At main level SP = `$FF56` and ERR-SP = `$FF54`, so each top-level CALL leaves its
+  return in the ERR-SP slot: `$12B7` during the syntax check, `$1303` while a line runs, `$1555`
+  inside `ADD_LINE` (no constant `$1303` exists in the ROM). PRINT 1 ends at `$1303` with ERR-NR `$FF`
+  and shows "0 OK, 0:1"; PRINT 1/0 gives ERR-NR 5 and "6 Number too big, 0:1"; PRINT ) takes
+  `$12C3`, reclaims 6 bytes and returns to `$12AC` with "PRINT ?)" in the edit line; 10 STOP goes
+  `$155D` → `$12A2` and lists "10>STOP" (FLAGS2 bit 0 set afterwards); RUN on it gives ERR-NR 8,
+  "9 STOP statement, 10:1", OLDPPC 10, OSPPC 2; an empty ENTER goes `$12DD` → `$12A2`.
+- **Manual:** none beyond the earlier sessions' system variable names; the report texts are read
+  from the ROM's own table.
+- **Names:** Klive names, from what the code does; no name list.
+- **Provenance:** all `observed`.
+- **Level:** 0 (`checkRomSidecar`: no problems; 774 unlabelled targets, none in `$12A2-$1390`). The
+  working copy exports and reassembles to the ROM byte for byte.
+
+### 2026-10-19 — `sp48.rom.dis`, the house style, and the keyboard (working copy)
+
+- **Restyled** every entry of the earlier sp48 sessions to `zx81.rom.dis`'s conventions: system
+  variables with underscores (CH_ADD, ERR_SP), synopses wrapped at 92 columns with numbered steps
+  and `Entry:`/`Exit:`/`Changes:`/`Observed:` lines, "Stops with error code n (report X)", comments
+  starting with a capital and without a full stop, tests as questions. Labels of routines with the
+  same job as a ZX81 one take its name: `START`, `GET_CHAR`/`GET_CHAR_TEST`/`NEXT_SKIP`/`NEXT_CHAR`/
+  `CH_ADD_PLUS1`, `WORK_ROOM`/`WORK_ROOM_END`, `ERROR_CODE`/`ERROR_L`, `INT_FRAME`, `KEYWORD_TABLE`,
+  `RAM_FILL`/`RAM_FILL_LOOP`/`RAM_CHECK`/`RAM_TOP_FOUND`, `MAKE_ROOM_ONE`, `MOVE_POINTERS`,
+  `RECLAIM`/`RECLAIM_DE_HL`, `NO_ROOM`, `CALC_RESET`, `PRBUFF_OUT`/`CLEAR_PRBUFF`, `STRIP_NUMBERS`,
+  `EDIT_LINE_NO`, `CLEAR_SCREEN`, `CLS_LINES`, `SET_PRINT_POS`, `REPORT`/`PRINT_REPORT`,
+  `SET_OLDPPC`, `CHECK_EDIT_LINE`, `RUN_EDIT_LINE`, `STORE_LINE`, `REPORT_G`, `REPORT_O`. Every label
+  now has a synopsis (31 inner labels got theirs).
+- **Added:** 23 labels for the keyboard: `KEYBOARD` (`$02BF`) and its key-set handling (`KBD_*`,
+  `$02C6-$031D`), `KEY_TEST` (`$031E`), `KEY_DECODE` and its branches (`KD_*`, `$0333-$03B4`); the six
+  key tables `KEYS_MAIN`, `KEYS_E_LETTERS`, `KEYS_E_SHIFTED`, `KEYS_CAPS_DIGITS`, `KEYS_SYM_LETTERS`,
+  `KEYS_E_SYM_DIGIT`.
+- **Regions:** the key tables `$0205-$028D` (39 + 26 + 26 + 10 + 26 + 10 bytes, bounded by the bases
+  the decoder adds codes to: `$0205` + key number, `$01EB`/`$0205` + letter, `$0230`/`$0229`/`$0254` +
+  code; KEY_SCAN starts at `$028E`). They touch KEYWORD_TABLE, so the region is now `$0095-$028D`;
+  each table's start has its synopsis and a data label. The listing kept its instruction starts.
+- **Method:** the bytes through `tools/sp48-dis.cjs`. Two throwaway probes on `test/harness/sp48`
+  (deleted). KEYBOARD called directly with keys held and MODE/FLAGS/FLAGS2 set gave LAST_K: A in K
+  mode `$E6`, L mode `$61`, with CAPS LOCK or CAPS SHIFT `$41`, SYMBOL SHIFT `$E2`; E mode `$E3`, with a
+  shift `$7E`; G mode A `$90`, V `$A5`; 5 `$35`, CAPS SHIFT+5 `$08`, SYMBOL SHIFT+2 `$40`, +0 `$5F`, +3
+  `$23`; E mode 3 `$13`, CAPS `$1B`, SYMBOL `$CA`, 8 `$02`, CAPS+9 `$01`; G mode 1 `$81`, CAPS+1 `$8E`,
+  8 `$80`, 0 `$0C`, 9 `$0F`; SPACE `$20`, ENTER `$0D`, CAPS SHIFT+SYMBOL SHIFT `$0E`; a shift key alone,
+  or A+S, no key. Holding 1 in the running machine: a new key on the first interrupt, then after 35
+  and every 5 more; on release the set's counter ran 4, 3, 2, 1 and the set was freed on the fifth.
+  The table examples in the synopses are spelt from the ROM's own KEYWORD_TABLE.
+- **Manual:** the names of the CAPS SHIFT digit codes (DELETE, EDIT, CAPS LOCK, TRUE VIDEO,
+  INV. VIDEO, the cursor keys, GRAPHICS): that line is `manual`.
+- **Names:** Klive names; the ZX81 sidecar's own names reused for routines with the same job.
+- **Provenance:** `observed`, except the line above and the earlier `manual` lines.
+- **Level:** 0 (`checkRomSidecar`: no problems; 754 unlabelled targets). The working copy exports
+  and reassembles to the ROM byte for byte.
+
+### 2026-10-19 — `sp48.rom.dis`, the line editor (working copy)
+
+- **Added:** 55 labels and their synopses: `EDITOR` (`$0F2C`) and `ED_LOOP`, `INSERT_CHAR`,
+  `ED_CONTROL`, `EDIT_KEY_JUMP`; the editing keys `KEY_EDIT`, `KEY_LEFT`, `KEY_RIGHT`, `KEY_DOWN`,
+  `KEY_UP`, `KEY_DELETE`, `KEY_ENTER`, `KEY_EXTEND`, `KEY_GRAPHICS`, `ED_PREV_ITEM`, `ED_ERROR`
+  (`$0FA9-$1096`); channel K's input `KEY_INPUT` and its branches (`KI_*`, `$10A8-$111C`); `WAIT_KEY`,
+  `CHAN_INPUT` (`$15D4-$15EE`); the line helpers `LINE_NO`/`LINE_NO_PREV`, `FIND_LINE`, `CMP_LINE_NO`,
+  `NEXT_ITEM`, `E_PPC_NEXT`, `SET_LINE_WORD`; and, first lines only, `EDIT_LINE_SHOW` (`$111D`),
+  `PRINT_LINE` (`$1855`), `BEEPER` (`$03B5`).
+- **Regions:** `EDIT_KEY_TABLE` `$0FA0-$0FA8` (9 offsets for codes `$07-$0F`, from `$0F99` + code;
+  each offset lands on a code start, and code resumes at `$0FA9`, KEY_EDIT); `ZERO_WORD`
+  `$168F-$1690`, the two zero bytes LINE_NO_PREV points DE at (after MOVE_POINTERS' RET, never run).
+  Only the instruction starts inside them changed.
+- **Correction:** MAKE_ROOM opens its room *before* the byte at HL (that byte moves up), not after
+  it, as INSERT_CHAR shows (the key lands at the old K_CUR). MAKE_ROOM, MAKE_ROOM_ONE and
+  WORK_ROOM_END now say so.
+- **Method:** the bytes through `tools/sp48-dis.cjs`. One throwaway probe on `test/harness/sp48`
+  (deleted), typing with the harness's keys and reading the edit line from E_LINE to WORKSP with
+  K_CUR: PRINT 123 → `F5 31 32 33|0D`; LEFT moved K_CUR before `33`; DELETE removed `32`; RIGHT moved
+  it back to the end, and again did nothing; LEFT x3 reached the start, where DELETE did nothing. With
+  10 PRINT 1 and 20 PRINT 2 stored, UP set E_PPC 10, DOWN 20; UP then EDIT gave
+  `20 20 31 30|F5 31 0D` ("  10" and PRINT 1, the cursor after the number, no '>'), and ENTER
+  stored it again. CAPS LOCK set and cleared FLAGS2 bit 3; E mode and GRAPHICS gave MODE 1 and 2 and
+  0 when pressed again; E then 2 inserted `11 02`, E then CAPS SHIFT+3 `10 03`, E then 8 `13 00`.
+  BEEPER was called once per key with DE = 0 (PIP) and HL = `$00C8`.
+- **Manual:** the names of control codes `$10-$14` (INK, PAPER, FLASH, BRIGHT, INVERSE): the
+  `ED_CONTROL` and `KEY_INPUT` lines are `manual`. The report texts are the ROM's own.
+- **Names:** the ZX81 sidecar's names for the same jobs (`WAIT_KEY`, `INSERT_CHAR`, `EDIT_KEY_JUMP`,
+  `EDIT_KEY_TABLE`, `KEY_LEFT`..., `LINE_NO`, `LINE_NO_PREV`, `FIND_LINE`, `CMP_LINE_NO`, `NEXT_ITEM`,
+  `SET_LINE_WORD`, `EDIT_LINE_SHOW`); Klive names otherwise.
+- **Level:** 0 (`checkRomSidecar`: no problems; 713 unlabelled targets). The working copy exports
+  and reassembles to the ROM byte for byte.
+
+### 2026-10-19 — `sp48.rom.dis`, storing lines, the listing and the edit line's display (working copy)
+
+- **Added:** 37 labels and their synopses: `STORE_LINE` (`$155D-$15AE`) with `STORE_NEW`/`STORE_DONE`;
+  `AUTO_LIST` (`$1795-$17F4`) and `LIST_ALL` (`$1833-$1854`); `PRINT_LINE` (`$1855`), `PRINT_TEXT`,
+  `PRINT_CURSOR`, `PRINT_FLASH`, `SKIP_NUMBER`, `PRINT_LIST_CHR` (`$1855-$196D`); `DIGIT_OUT`,
+  `PRINT_LINE_NO`, `DIGIT_TEST`; `EDIT_LINE_SHOW` in full (`$111D-$118F`); `PRINT_OUT` (`$09F4`, first
+  lines only). `PRINT_BC_NUM`'s synopsis now covers its `B` bit 7 case (prints 0).
+- **Regions:** `TAPE_MESSAGES` `$09A1-$09F3` (6 bit-7-terminated strings, read by PRINT_MESSAGE from
+  `$0977`; the code before it ends with `JP SA_BYTES` at `$099E`). Marking it lets `$09F4`, channel
+  K/S/P's output routine named in CHANNEL_DATA, list as code: before, a misdecode ran across it.
+- **Method:** the bytes through `tools/sp48-dis.cjs`. One throwaway probe on `test/harness/sp48`
+  (deleted), typing lines and reading PROG to VARS: 10 PRINT 1 → `00 0A 09 00 F5 31 0E 00 00 01 00 00
+  0D`; 5 PRINT 5 stored in front; 10 STOP replaced line 10 (`00 0A 02 00 E2 0D`); 5 alone deleted
+  line 5, E_PPC 5. With 30 lines `n REM` + 20 letters (n = 20..600), E_PPC 600: rows 0-21 listed
+  180-600 with '>' on 600 (S_TOP 200 afterwards); after 25 cursor ups E_PPC = S_TOP = 100, listed at
+  row 0 with '>'. A 41-character edit line made DF_SZ 3; after 30 DELETEs the old second row was
+  blank and ECHO_E had moved back.
+- **Manual:** attribute bit 7 as FLASH (the `PRINT_FLASH` line is `manual`).
+- **Names:** the ZX81 sidecar's where the job is the same (`STORE_LINE`, `SKIP_NUMBER`,
+  `PRINT_LINE_NO`, `EDIT_LINE_SHOW`); Klive names otherwise.
+- **Level:** 0 (`checkRomSidecar`: no problems; 671 unlabelled targets). The working copy exports
+  and reassembles to the ROM byte for byte.
+
+### 2026-10-19 — `sp48.rom.dis`, PRINT_OUT: printing, control codes, scrolling (working copy)
+
+- **Added:** 58 labels and their synopses: `PRINT_OUT` (`$09F4`) and the control codes `PO_BACK`,
+  `PO_RIGHT`, `PO_ENTER`, `PO_COMMA`, `PO_QUEST`, `PO_COLOUR`, `PO_AT_TAB`, `PO_OPERANDS`, `PO_TAB`,
+  `PO_FILL` (`$0A23-$0AD8`); `PO_ABLE`, `FETCH_POS`, `PO_ANY`, `PO_GRAPHIC`, `PO_UDG_TOKEN`,
+  `PO_CHAR`, `PO_PATTERN`, `PO_ATTR` (`$0AD9-$0C09`); `PO_SCROLL` with the scroll prompt and the
+  lower screen's growth (`$0C55-$0D4C`); `CL_SCROLL`/`CL_SCROLL_B` (`$0DFE-$0E43`); `REPORT_5`,
+  `REPORT_D`, `REPORT_B`; and `CO_TEMP` (`$2211`, first lines only).
+- **Regions:** `CTRL_TABLE` `$0A11-$0A22` (18 offsets for codes `$06-$17` from `$0A0B` + code; all
+  land on code starts, and code resumes at `$0A23`, PO_BACK); `SCROLL_MESSAGE` `$0CF8-$0CFF` (`$80`,
+  then "scroll?", read by PRINT_MESSAGE from `$0CA1`; code resumes at `$0D00`). The listing changed
+  only inside them.
+- **Method:** the bytes through `tools/sp48-dis.cjs`. One throwaway probe on `test/harness/sp48`
+  (deleted): machine code opening a stream and printing bytes with RST $10. AT 5,3 "A", TAB 10 "B",
+  comma "C" → A, B, C at columns 3, 10, 16; "XY", `$08`, "Z" → XZ; INVERSE 1 printed A's `$3C` row
+  as `$C3`; B over B with OVER 1 left `$00`; `$83` gave four rows `$FF`, four `$00`; `$90` printed
+  the UDG at UDG; `$F5` printed " PRINT"; AT 22,0 in the upper screen reached RST $08 from `$0C86`
+  with code 4; 30 lines from a cleared screen stopped at the prompt's WAIT_KEY (`$0CB3`) with SCR_CT
+  22; four lines through stream 1 made DF_SZ 5.
+- **Manual:** the names of control codes `$10-$15`, attribute bit 7 as FLASH, the PAPER 9/INK 9
+  meaning of P_FLAG bits 6 and 4, and OVER/INVERSE as P_FLAG bits 0 and 2: the lines naming them
+  (`PO_COLOUR`, `PO_PATTERN`, `PO_ATTR`, `CO_TEMP`) are `manual`.
+- **Names:** Klive names (`PO_` for the print-out routines); the ZX81 sidecar has no screen printer
+  of this kind.
+- **Level:** 0 (`checkRomSidecar`: no problems; 622 unlabelled targets). The working copy exports
+  and reassembles to the ROM byte for byte.
+
+### 2026-10-19 — `sp48.rom.dis`, the statement scanner and the syntax tables (working copy)
+
+- **Added:** 90 labels and their synopses: the statement loop `CHECK_LINE` (renamed from
+  `CHECK_EDIT_LINE`, the ZX81 sidecar's name), `STMT_LOOP`/`STMT_START`, `SYNTAX_ITEM`/`SYNTAX_NEXT`/
+  `SYNTAX_CHAR`, `STMT_RET`, `RUN_EDIT_LINE`, `LINE_NEW`, `LINE_END`, `LINE_USE`, `NEXT_LINE`,
+  `STATEMENT_END`, `STMT_NEXT` (`$1B17-$1C00`); the operand classes `CLASS_0`-`CLASS_B` with
+  `CLASS_VAR`, `SET_DEST`, `VAL_FETCH`, `FETCH_NUM`, `USE_ZERO` (`$1C0D-$1CED`); `STOP_CMD`, `IF_CMD`;
+  `EACH_STMT` (`$198B-$19B7`); `SYNTAX_Z`, `BREAK_KEY`; reports `N`, `2`, `O` (`$1725`). Every command
+  routine named in the syntax entries got a `<KEYWORD>_CMD` label (`CLS` renamed `CLS_CMD`), and the
+  routines the classes call (`SCAN_EXPR`, `LOOK_VARS`, `STK_VAR`, `LET_ASSIGN`, `SAVE_ETC`, `CO_*`,
+  `TEST_ZERO`) a label; those not read yet say "Not yet described".
+- **Regions:** `SYNTAX_OFFSETS` + `SYNTAX_ENTRIES` `$1A48-$1B16` (50 offsets for `$CE-$FF`, each
+  landing on its entry; the entries decoded item by item, classes 0/3/5 followed by an address, 2/7/`$0B`
+  ending one; the last, CAT's, ends at `$1B16` and CHECK_LINE starts at `$1B17`); `CLASS_TABLE`
+  `$1C01-$1C0C` (12 offsets, each landing on a class routine). Outside them the listing gained one
+  instruction start, `$1C0D` (CLASS_3), which the misdecode had covered.
+- **Method:** the bytes through `tools/sp48-dis.cjs`; the syntax entries decoded from the bytes, their
+  keywords spelt from KEYWORD_TABLE and every routine address checked to be an instruction start. One
+  throwaway probe on `test/harness/sp48` (deleted): GO TO "a" was refused with the ? marker;
+  PRINT 1: PRINT 2 → "0 OK, 0:2"; IF 0 THEN PRINT 1: PRINT 2 → "0:1", IF 1 → "0:3"; FORMAT "a" →
+  "O Invalid stream, 0:1"; RUN on 10 PRINT 5: GO TO 30 / 20 PRINT 6 → "0 OK, 10:2"; CAPS SHIFT +
+  SPACE during 30 GO TO 30 → "L BREAK into program, 30:1".
+- **Manual:** the colour meaning of class 7 and class 9's MASK_T/P_FLAG changes (those lines are
+  `manual`).
+- **Names:** the ZX81 sidecar's for the same jobs (`CHECK_LINE`, `SYNTAX_OFFSETS`, `SYNTAX_ENTRIES`,
+  `SYNTAX_ITEM`, `SYNTAX_NEXT`, `SYNTAX_CHAR`, `CLASS_TABLE`, `CLASS_n`, `CLASS_VAR`, `SET_DEST`,
+  `STATEMENT_END`, `LET_ASSIGN`, `LOOK_VARS`, `SCAN_EXPR`, `*_CMD`).
+- **Level:** 0 (`checkRomSidecar`: no problems; 571 unlabelled targets). The working copy exports
+  and reassembles to the ROM byte for byte.
+
+### 2026-10-20 — `sp48.rom.dis`, the expression evaluator and LOOK_VARS (working copy)
+
+- **Added:** 91 labels and their synopses: `SCAN_EXPR` (`$24FB`) and its operand side
+  `SCAN_OPERAND`, `OP_QUOTE`, `OP_BRACKET`, `OP_RND`, `OP_PI`, `OP_INKEY`, `OP_SCREEN`/`SCREENS_VALUE`,
+  `OP_ATTR`/`ATTR_VALUE`, `OP_POINT`, `OP_ALNUM`, `OP_NUMBER`/`NUMBER_RUN`, `OP_VARIABLE`, `OP_PREFIX`,
+  `PUSH_PREFIX` (`$24FF-$2711`); the operator loop `SCAN_OPERATOR`, `SCAN_OP_LOOP`, `SCAN_OP_APPLY`,
+  `SCAN_OP_PUSH`, `OP_REPORT_C` (`$2712-$2794`); `LOOK_VARS` with its walk and the DEF FN parameters
+  (`LV_*`, `$28B2-$2995`); the helpers `ALPHANUM`, `ALPHA`, `STK_TO_BC`, `STK_TO_A`, `FN_SKIP_SP`,
+  `STACK_NUM`, `MOVE_FP`, `STACK_A`, `REPORT_B_2`; and, first lines only, `FN_CALL`, `DEC_TO_FP`,
+  `STACK_BC`, `FP_TO_BC`, `POINT_SUB`, `STR_SLICE`.
+- **Regions:** `SCAN_FUNCS` `$2596-$25AE` (12 INDEXER pairs and a 0, every offset landing on a code
+  start, code resuming at `$25AF`); `OPERATORS` + `PRIORITIES` `$2795-$27BC` (13 pairs and a 0 at
+  `$27AF`, then 13 priorities read as `$26ED` + operation `$C3-$CF`). Outside them the listing gained
+  `$27BD`, FN's entry, which the misdecode had covered.
+- **Method:** the bytes through `tools/sp48-dis.cjs`; the calculator operation names in the synopses
+  are those Klive's own 48K decoder prints for those codes. One throwaway probe on
+  `test/harness/sp48` (deleted), inserting token bytes into the edit line with MAKE_ROOM at K_CUR
+  (from the editor's WAIT_KEY loop head, `$15DE`) and pressing ENTER: 2+3*4 14; 2^3^2 64; -2^2 -4;
+  NOT 1=0 1; "ab"+"cd" abcd; "a"<"b" 1; "x" AND 1 x, "x" AND 0 empty; 1 AND 0 0, 3 OR 0 3; "ab"*2
+  refused with ? before '*'; VAL "2+3" 5; CODE "A" 65; LEN "abc" 3; "say ""hi""" say "hi";
+  "abcde"(2 TO 3) bc; LET total value=5: PRINT TotalValue 5; PRINT zz "2 Variable not found";
+  PI 3.1415927; INKEY$ with no key empty; SCREEN$ (0,0) after printing Q "Q"; ATTR (0,0) 56; BIN 101 5;
+  RND from SEED 0 0.0011291504, SEED 74; 10 PRINT 2.5 stored with `0E 82 20 00 00 00`.
+- **Names:** the ZX81 sidecar's for the same jobs (`SCAN_OPERAND`, `SCAN_OPERATOR`, `OP_INKEY`,
+  `OP_NUMBER`, `NUMBER_RUN`, `SET_NUMERIC`, `OP_REPORT_C`, `STR_SLICE`); Klive names otherwise.
+- **Level:** 0 (`checkRomSidecar`: no problems; 494 unlabelled targets). The working copy exports
+  and reassembles to the ROM byte for byte.
+
+### 2026-10-20 — `sp48.rom.dis`, the simple commands, FOR and NEXT (working copy)
+
+- **Added:** 30 labels and synopses for every routine in `$1D03-$1DEB` and `$1E42-$1F53`: RESTORE,
+  RANDOMIZE, CONTINUE, GO TO (`GO_TO_2`), OUT, POKE (`TWO_PARAM`), `FIND_INT1`/`FIND_INT2`, RUN, CLEAR
+  (`CLEAR_RUN`, `CLEAR_STACK`, report M), GO SUB (`GO_SUB_ROOM`), `FREE_MEM`, RETURN (report 7), PAUSE;
+  FOR (`FOR_VALUES`, `FOR_STORE`, `FOR_SEARCH`, report I), `LOOK_PROG`, NEXT (report 1), `NEXT_LOOP`. The
+  `*_CMD` labels from the syntax table got full synopses.
+- **Regions:** `$1DE9`, one byte: the end-calc the calculator's jump-true at `$1DE4` lands on (the
+  listing had shown it as `JR C`); `$1DEA` (SCF) now lists as code. Nothing else changed.
+- **Method:** the bytes through `tools/sp48-dis.cjs`. One throwaway probe on `test/harness/sp48`
+  (deleted), inserting token bytes into the edit line from WAIT_KEY's loop head and pressing ENTER:
+  10 GO SUB 100: PRINT "b" / 20 STOP / 100 PRINT "a";: RETURN → ab, 9 at 20:1; RETURN alone → report
+  7; FOR i=1 TO 3: PRINT i;: NEXT i → 123; FOR i=5 TO 1: PRINT "x";: NEXT i: PRINT "y" → y; FOR i=3 TO
+  1 STEP -1 → 321, the variable `E9`, value 0, limit 1, step -1, `FE FF`, 3; LET j=1: NEXT j → report 1;
+  NEXT q → report 2; FOR k=5 TO 1: PRINT k → report I; CLEAR 30000 → RAMTOP 30000 holding `$3E`; CLEAR
+  100 → report M; POKE 30001,300 → report B, POKE 30001,-1 → 255; RANDOMIZE 5 → SEED 5, RANDOMIZE →
+  FRAMES' low word; GO TO 61440 → report B; STOP then CONTINUE → p, then q, 0 OK at 10:3.
+- **Names:** Klive names; the ZX81 sidecar's where the job is the same (`*_CMD`, `TEST_ROOM`).
+- **Level:** 0 (`checkRomSidecar`: no problems; 466 unlabelled targets). The working copy exports
+  and reassembles to the ROM byte for byte.
+
+### 2026-10-20 — `sp48.rom.dis`, PRINT, LPRINT, INPUT, READ, DATA and DIM (working copy)
+
+- **Added:** 55 labels and their synopses: `RUN_ONLY` (`$1FC3`), PRINT/LPRINT and the print list
+  (`PRINT_START`, `PRINT_LIST`, `PRINT_SEP`, `PRINT_ITEM`, `PRINT_STRING`, `PRINT_END_Z`,
+  `STREAM_ALTER`, `PRINT_COLOUR`; `$1FC9-$2088`, `$21F2`); INPUT (`INPUT_*`, `IN_ASSIGN`, `IN_STOP`,
+  `IN_CHAN_K`; `$2089-$21E0`); READ (`READ_NEXT`, `READ_ITEM`, `READ_SEP`), DATA (`DATA_LOOP`,
+  `DATA_SKIP`; `$1DEC-$1E41`); DIM (`DIM_*`, `$2C02-$2C87`); `REPORT_3`; and, first lines only,
+  `SUBSCRIPT` (`$2ACC`), `HL_MULT` (`$2AF4`). The `*_CMD` synopses of these commands were rewritten.
+- **Regions:** none.
+- **Method:** the bytes through `tools/sp48-dis.cjs`. One throwaway probe on `test/harness/sp48`
+  (deleted), inserting token bytes into the edit line and pressing ENTER, then typing answers:
+  PRINT "a";"b";"c","d"'"e" → abc, d at column 16, e on the next line; AT 3,4;"x";TAB 9;"y" → x at 4,
+  y at 9 of line 3; INK 2;"z" → attribute `$3A`; a trailing ';' left the position on the line; INPUT
+  "n?";n answered 21 → 42 (workspace `0D`, FLAGX `$62` while waiting); INPUT a$ → workspace `22 22 0D`,
+  cursor on the second quote, FLAGX `$22`, answer hi → hi!; INPUT LINE b$ → FLAGX `$A2`, 1+2 → 1+2!; a
+  bad answer ! was shown again with ?; STOP → "H STOP in INPUT, 10:1"; READ a,b$ / DATA 5,"q" → 5q,
+  then READ c → "E Out of DATA, 10:3"; DIM a(2,3): DIM b$(4) → `81 23 00 02 02 00 03 00` + 30 zeros,
+  `C2 07 00 01 04 00` + 4 spaces. LPRINT and PRINT #1 were run but their output was gone (the report
+  emptied the buffer and the lower screen) before it was read: no claim rests on them.
+- **Names:** the ZX81 sidecar's `RUN_ONLY`; Klive names otherwise.
+- **Level:** 0 (`checkRomSidecar`: no problems; 412 unlabelled targets). The working copy exports
+  and reassembles to the ROM byte for byte.
+
+### 2026-10-20 — `sp48.rom.dis`, the variable handlers and DEF FN (working copy)
+
+- **Added:** 67 labels and their synopses: `STK_VAR` (`$2996`, `SV_*`), `STR_SLICE` (`$2A52`, `SL_*`),
+  `STK_ST_0`, `SUBSCRIPT`/`SUBSCRIPT_A`, `GET_DIM`, `HL_MULT`, `HL_HL_X_DE` (`$30A9`, first lines
+  only); `LET_ASSIGN` (`$2AFF-$2BF0`, `L_*`); `DEF_FN_CMD` (`$1F60-$1FC2`, `DF_*`); `FN_CALL`
+  (`$27BD-$28AA`, `FN_*`, report Q).
+- **Regions:** none.
+- **Method:** the bytes through `tools/sp48-dis.cjs`. Two throwaway probes on `test/harness/sp48`
+  (deleted), inserting token bytes into the edit line: LET Total Sum=3: LET q=7 → VARS `B4 6F 74 61
+  6C 73 75 ED` + 5 bytes, `71` + 5 bytes; LET q=9 changed only q's bytes; LET a$="hello" → `41 05 00`
+  hello, then LET a$="hi" → `41 02 00 68 69`; a$(2 TO 3)="EL" → hELlo, ="XYZ" → hXYlo; slices (TO 2)
+  hX, (4 TO) lo, () whole, (3 TO 2) and (9 TO 2) empty, (7) report 3; DIM c$(3): c$="ABCDE" → ABC,
+  c$="X" → X and two spaces; DIM n$(2,3): n$(2)="xy" → "xy ", n$(2,2) y; DIM m(2,3), m(2,3)=6,
+  m(1,2)=4 → 6, 4, 0; m(3,1) → report 3. 10 DEF FN f(x,y)=x*y+1 stored `0E` + 5 bytes after x and y
+  (leftover bytes until called, then 3 and 4); FN f(3,4) 13; with 20 DEF FN s$(a$)=a$+"!", FN s$("hi")
+  hi!; FN g(1) → "P FN without DEF"; FN f(1) and FN f("a",2) → "Q Parameter error".
+- **Names:** Klive names (`SV_`, `SL_`, `L_`, `DF_`, `FN_` for the routines' parts).
+- **Level:** 0 (`checkRomSidecar`: no problems; 346 unlabelled targets). The working copy exports
+  and reassembles to the ROM byte for byte.
+
+### 2026-10-20 — `sp48.rom.dis`, string tables as `defc` regions (working copy)
+
+- **Changed:** the new `defc` region decoding (`"type": "bytes", "decode": "defc"`) on the tables
+  whose entries end with bit 7 set: KEYWORD_TABLE `$0095-$0204` (split from the key tables, which stay
+  a plain `bytes` region `$0205-$028D`), TAPE_MESSAGES `$09A1-$09F3`, SCROLL_MESSAGE `$0CF8-$0CFF` and
+  the report and start-up messages `$1391-$1554`. KEYWORD_TABLE's synopsis says so. No label, line
+  or provenance changed but the new region key `0:517:region`.
+- **Method:** the export as source lists 132 `.defc` rows (`KEYWORD_TABLE: .defc "?"`, `.defc "RND"`,
+  ...; `.defc "\x0DProgram: "`; `.defc "\x7F 1982 Sinclair Research Ltd"`); the label COMMA_MESSAGES
+  inside "Tape loading error" cuts it into `.defm` and `.defc "r"`. It reassembles to the ROM byte for
+  byte; `checkRomSidecar`: no problems.
+
+### 2026-10-20 — `sp48.rom.dis`, the unused space as a `fill` region (working copy)
+
+- **Added:** the new `fill` region decoding on `$386E-$3CFF` (`"type": "bytes", "decode": "fill"`), the
+  label `UNUSED_SPACE` and its synopsis. The `defc` regions' type is now called "Bit-7 Text" in the IDE.
+- **Method:** the bytes: the only run of 16 or more equal bytes below the character set is 1170 x `$FF`
+  from `$386E`; the code before it ends with the RET at `$386D` (the `JR C` the listing shows at `$386C`
+  is the end-calc of the calculator's jump-true from `$384D`, left for the calculator session), and no
+  code target lies in it (`checkRomSidecar`). The export lists `UNUSED_SPACE: .fillb 1170,$FF` and
+  reassembles to the ROM byte for byte.
+
+### 2026-10-20 — `sp48.rom.dis`, the colour items and the graphics commands (working copy)
+
+- **Added:** 43 labels and their synopses: the colour items `CO_ITEMS`, `PRINT_COLOUR`, `CO_TEMP_ITEM`
+  and `CO_TEMP` with its parts (`CO_*`, report K; `$21E1-$2293`); BORDER (`$2294-$22A9`); `PIXEL_ADDR`,
+  POINT, PLOT, `PLOT_SUB` (`$22AA-$2306`); CIRCLE (`$2320-$2381`); DRAW with its arc (`DRAW_ARC`,
+  `ARC_*`, `$2382-$247C`); `CD_PARAMS` (`$247D-$24B6`); `DRAW_LINE` (`DL_*`, `$24B7-$24F8`). The
+  `*_CMD` synopses of these commands were rewritten.
+- **Regions:** `DRAW_ARC_CALC` `$23A3-$23B4`: calculator codes the jump-true at `$239C` lands on, which
+  the listing showed as Z80 code; decoded in the synopsis (the names Klive's 48K decoder gives these
+  codes), the Z80 resuming at `$23B5`, `DRAW_ARC_SIZE`. Only the starts inside it changed.
+- **Method:** the bytes through `tools/sp48-dis.cjs`; the trigonometry of CD_PARAMS and the arc loop
+  described only as far as the calculator codes show it. One throwaway probe on `test/harness/sp48`
+  (deleted), inserting token bytes into the edit line: PLOT 0,0 lit the bottom left pixel; PLOT 3,0
+  then PLOT OVER 1;3,0 cleared it; PLOT INVERSE 1;3,0 cleared it; POINT (5,7) 1 and (6,7) 0 after
+  PLOT 5,7; PLOT 0,176 report B; PLOT 10,10: DRAW 20,5 → COORDS 30,15; DRAW 250,0 → to x 255, report
+  B; PLOT 100,50: DRAW 50,0,PI → COORDS 150,50; CIRCLE 128,88,40 lit (168,88), (128,128), (128,48),
+  COORDS 168,83; CIRCLE 20,20,0.5 plotted (20,20) only; PLOT INK 2;PAPER 6;30,30 → attribute `$32`,
+  ATTR_P `$38`; BORDER 2 → BORDCR `$17`, BORDER 5 → `$28`; BORDER 8, INK 10, FLASH 2 → report K;
+  PAPER 1;INK 9 → `$0F`, PAPER 6;INK 9 → `$30`; INK 8;PAPER 8;BRIGHT 1 over a PAPER 2 cell → `$50`;
+  INK 3: PAPER 5: FLASH 1: BRIGHT 1 → ATTR_P `$EB`; OVER 1: INVERSE 1 → P_FLAG `$0A`.
+- **Manual:** the names INK, PAPER, FLASH, BRIGHT, INVERSE, OVER and their 8/9 meanings, the border's
+  port `$FE` bits (the lines naming them are `manual`).
+- **Names:** Klive names (`CO_`, `ARC_`, `DL_`).
+- **Level:** 0 (`checkRomSidecar`: no problems; 305 unlabelled targets). The working copy exports
+  and reassembles to the ROM byte for byte.
+
+### 2026-10-20 — `sp48.rom.dis`, the tape commands, BEEPER and BEEP (working copy)
+
+- **Added:** 97 labels and their synopses for `$03B5-$09A0`: BEEPER (`BEEPER_*`), BEEP (`BEEP_*`, report B),
+  `SEMITONES`, the unreferenced `UNUSED_STR_BIT7` (`$04AA`; no CALL, JP or stored address in the ROM);
+  SA_BYTES (`SAVE_*`), `TAPE_RETURN`; LD_BYTES (`LOAD_*`, `TAPE_EDGE`, `TAPE_TWO_EDGES`); SAVE_ETC with
+  its header building (`SE_*`), the header search (`LOAD_HEADER_*`), VERIFY/CODE (`LOAD_CODE_*`,
+  `LOAD_BLOCK`, report R), program and array loading (`LOAD_PROG_ARRAY`, `LOAD_PROGRAM`), MERGE
+  (`MERGE_*`) and `SAVE_CONTROL`; the data label `TAPE_KIND_MSGS` (`$09C0`) inside TAPE_MESSAGES.
+- **Regions:** `SEMITONES` `$046E-$04A9`, 12 five-byte numbers (bytes; `rowBytes` stops at 4), read by
+  BEEP at `$046E` + 5 x semitone; decoded from the bytes as 261.626 to 493.883.
+- **Names:** Klive names chosen from what the code does (`SAVE_`, `LOAD_`, `TAPE_`, `SE_`, `MERGE_`):
+  the conventional names of these routines were deliberately not used (D4). The earlier session's
+  `SA_BYTES`, `LD_BYTES`, `LD_START`, `LD_BAD_HEADER`, `LD_RESUME` (the repository's own) were kept.
+- **Method:** the bytes through `tools/sp48-dis.cjs`. One throwaway probe on `test/harness/sp48`
+  (deleted), with TAP blocks built in the test (flag, bytes, XOR) and fast load: SAVE "" and SAVE
+  "abcdefghijk" → report F; SAVE "a" CODE refused when checking; LOAD "" CODE → "Bytes: abc", 1,2,3,4
+  at 32768; LOAD "abc" CODE 40000 → at 40000; VERIFY with a byte different → report R; LOAD "" CODE
+  50000,4 for an 8-byte block → report R; LOAD "abc" CODE past "xyz" → printed "Bytes: xyz", loaded abc;
+  a program header with line 10 → loaded and ran line 10; MERGE of 20 PRINT 8 → listed 10 and 20;
+  BEEP 11,0 → report B; BEEP .5,0 → BEEPER with DE 130, HL 1642; BEEP .5,12 → DE 261, HL 806.
+- **Manual:** port `$FE`'s bits (border 0-2, 3, speaker 4, tape input 6): the BEEPER and TAPE_EDGE lines
+  are `manual`.
+- **Level:** 0 (`checkRomSidecar`: no problems; 210 unlabelled targets). The working copy exports and
+  reassembles to the ROM byte for byte.
+
+### 2026-10-20 — `sp48.rom.dis`, streams, the printer and LIST (working copy)
+
+- **Added:** 30 labels and their synopses: CLOSE # (`CLOSE_*`, `STREAM_WORD`; `$16E5-$1735`), OPEN #
+  (`OPEN_*`, report F; `$1736-$1792`), COPY and the printer (`COPY_*`, `PRBUFF_ROW`, `PRINTER_*`;
+  `$0EAC-$0F2B`), LIST/LLIST (`LIST_*`; `$17F5-$1832`). The `*_CMD` synopses were rewritten.
+- **Regions:** `CLOSE_LETTERS` `$1716-$171B` (K, S, P pairs for INDEXER, every offset to `$171C`, whose
+  POP HL / RET now list as code) and `OPEN_LETTERS` `$177A-$1780` (K, S, P and the 0).
+- **Method:** the bytes through `tools/sp48-dis.cjs`. Two throwaway probes on `test/harness/sp48`
+  (deleted): OPEN #4,"s" → word 6, PRINT #4 printed on the screen; OPEN #4,"P" → 16; CLOSE #4 → 0, then
+  PRINT #4 → report O; OPEN #5,"q" / "ss" / "" → report F; OPEN #16,"s" → report O; OPEN #2,"k" → 1,
+  CLOSE #2 → 6; with lines 10-30 LIST 20 listed 20 (with '>') and 30, E_PPC 20; COPY with no printer
+  (port `$FB` reads `$FF`) → 0 OK at once. The printer's actual output was not seen: Klive's 48K core
+  has no ZX Printer.
+- **Manual:** the ZX Printer's port `$FB` bits (motor, speed, stylus, the encoder and "no printer"
+  bits): the PRINTER_ROW and PRINTER_OFF lines are `manual`.
+- **Level:** 0 (`checkRomSidecar`: no problems; 186 unlabelled targets). The working copy exports and
+  reassembles to the ROM byte for byte.
+
+### 2026-10-20 — `sp48.rom.dis`, the calculator: dispatch, stack, memories, arithmetic (working copy)
+
+- **Added:** 161 labels and their synopses: the dispatcher `CALC_ENTRY` and its loop (`$335B-$33A2`); every
+  operation's routine named from `CALC_OP_TABLE` with the operation names Klive's own 48K decoder
+  prints (`CALC_ADDITION`, `CALC_COMPARE` for the twelve comparisons, ...; those not read yet say "Not
+  yet described"); the literals (`UNPACK_LITERAL`, `SKIP_LITERALS`), memories (`MEM_ADDRESS`, get-mem,
+  st-mem, stk-const), exchange, abs/negate/sgn, peek/in/usr, not/less-0/greater-0/or/and, the
+  comparisons, strs-add, chr$, len, the jumps, end-calc, n-mod-m, int; the small integers
+  (`SMALL_INT_GET`, `SMALL_INT_PUT`, re-stack); addition/subtract, multiply, division and their shared
+  helpers (`ADD_*`, `MUL_*`, `DIV_*`, `RESULT_EXPONENT`, `SHIFT_UP`, `ROUND_RESULT`, `STORE_RESULT`, report
+  6); truncate (`TRUNC_*`).
+- **Regions:** `CALC_CONSTANTS` `$32C5-$32D6` (five compact literals, 18 bytes); `CALC_OP_TABLE`
+  `$32D7-$335A` (66 words, listed with the routines' labels); `CALC_INT_NEG` `$36B7-$36C2`, calculator
+  codes the jump-true at `$36B2` lands on, decoded in the synopsis; `$36C3` (RET) now lists as code.
+- **Names:** Klive names for the helpers, chosen to avoid the conventional ones (D4).
+- **Method:** the bytes through `tools/sp48-dis.cjs`. One throwaway probe on `test/harness/sp48`
+  (deleted): INT 2.5 / -2.5 / -3 → 2 -3 -3; 300*300 90000; 65535+1 65536; -65535-1 printed -1E-38 (not
+  -65536); 7/2 3.5; 1/3 0.33333333; 1/0 and 1E38*10 report 6; 1E-38/1E10 0; ABS -3 3; SGN -5 -1, SGN 0 0;
+  NOT 0 1, NOT 7 0; 2<=2 1, 3>=4 0, 2<>2 0, "ab"<"abc" 1; 0.1+0.2 0.3; LET v=-5 / w=1.5 / z=65535 stored
+  `00 FF FB FF 00`, `81 40 00 00 00`, `00 00 FF FF 00`.
+- **Level:** 0 (`checkRomSidecar`: no problems; 66 unlabelled targets). The working copy exports and
+  reassembles to the ROM byte for byte.
+- **A provenance problem found in this session's own earlier work.** Some labels given in the earlier
+  sp48 sessions are conventional names of these routines remembered by the AI author, not chosen from
+  the code, and recorded `observed`: sp48-only `BEEPER`, `CHAN_OPEN`, `CL_SCROLL`, `CL_SCROLL_B`,
+  `CO_TEMP`, `DEC_TO_FP`, `EACH_STMT`, `FIND_INT1`, `FIND_INT2`, `INDEXER`, `KEY_SCAN`, `KEY_TEST`,
+  `LINE_ADDR`, `PIXEL_ADDR`, `PRINT_OUT`, `SAVE_ETC`, `STACK_NUM`, `STK_TO_A`, `STK_TO_BC`, `STK_VAR`,
+  `TEMP_COLOURS`, `TEST_ZERO`, and the 45 `PO_*` labels; shared with the ZX81 sidecar `ALPHA`,
+  `ALPHANUM`, `CALC_RESET`, `CLEAR_PRBUFF`, `FP_TO_BC`, `MOVE_FP`, `PRBUFF_OUT`, `SCAN_EXPR`, `STACK_A`,
+  `STACK_BC`, `STR_SLICE`, `WAIT_KEY`. They must be renamed to Klive names (or recorded `manual` from a
+  named name list, Q1) before this file ships. No comment or region boundary was taken from memory.
+
+### 2026-10-20 — `sp48.rom.dis`, the memory-derived labels renamed (working copy)
+
+- **Renamed** the labels the previous entry lists as remembered conventional names, 99 in all, to
+  Klive names chosen from what each routine does, with every reference in the synopses and comments
+  (123): the `PO_*` family → `OUT_*`; `CO_*` → `COL_*` (`CO_TEMP` → `SET_TEMP_ATTR`); `CL_SCROLL` →
+  `SCROLL_SCREEN`, `CL_SCROLL_B` → `SCROLL_LINES_B`, `CL_SCR_*` → `SCROLL_*`; `CD_PARAMS*` → `CHORD_COUNT*`;
+  `KEY_SCAN*` → `READ_KEYS*`; `KEY_TEST` → `KEY_MAIN_CODE`, `KEY_TEST_MAIN` → `KEY_MAIN_LOOKUP`; `FIND_INT1`
+  → `TAKE_BYTE`, `FIND_INT2` → `TAKE_WORD`, `FIND_INT_TEST` → `TAKE_INT_TEST`; `STK_TO_BC` →
+  `TAKE_TWO_BYTES`, `STK_TO_A` → `TAKE_BYTE_SIGN`; `DEC_TO_FP` → `READ_NUMBER` (the ZX81 sidecar's name for
+  the same job); `STACK_NUM` → `PUSH_NUMBER`; `PIXEL_ADDR` → `PIXEL_BYTE`; `LINE_ADDR` → `LINE_SCREEN_ADDR`;
+  `EACH_STMT` → `FIND_STATEMENT`; `INDEXER` → `TABLE_LOOKUP`, `INDEXER_NEXT` → `LOOKUP_NEXT_PAIR`;
+  `CHAN_OPEN` → `STREAM_SELECT`, `CHAN_OPEN_FOUND` → `STREAM_FOUND`; `BEEPER*` → `TONE_*` (`TONE_OUT`);
+  `SAVE_ETC` → `TAPE_COMMAND`; `PRINT_OUT` → `SCREEN_OUTPUT`; `STK_VAR` → `VAR_SUBSCRIPTS`; `TEMP_COLOURS`
+  → `COLOURS_TO_TEMP`, `TEMP_COLOURS_SET` → `COLOURS_TEMP_SET`; `TEST_ZERO` → `IS_ZERO`.
+- **Kept**, under the README's rule that a routine doing the same job as one named in another sidecar
+  takes that name: `ALPHA`, `ALPHANUM`, `CALC_RESET`, `CLEAR_PRBUFF`, `FP_TO_BC`, `MOVE_FP`, `PRBUFF_OUT`,
+  `SCAN_EXPR`, `STACK_A`, `STACK_BC`, `STR_SLICE`, `WAIT_KEY` (the ZX81 sidecar's). Whether those names in
+  `zx81.rom.dis` are clean is that file's own provenance question, not settled here.
+- **Not changed:** comments, regions and every other entry. `checkRomSidecar`: no problems; the
+  working copy exports and reassembles to the ROM byte for byte.
+
+### 2026-10-20 — `sp48.rom.dis`, number conversion and printing (working copy)
+
+- **Added:** 60 labels and their synopses: READ_NUMBER with binary, decimal and exponent parts
+  (`BINARY_*`, `NUM_*`; `$2C9B-$2D1A`), `DIGIT_TO_STACK`, `DIGITS_TO_FP`, e-to-fp (`TENS_*`), STACK_A and
+  STACK_BC's synopses, `FP_TO_BC` (rounding, carry, sign), `FP_TO_BYTE` (`$2DD5`), `LOG10_ESTIMATE`,
+  PRINT_FP (`NP_*`, `MUL10_ADD`; `$2DE3-$2F9A`), val/val$, str$, read-in and code (`$35DE-$3673`).
+- **Regions:** `TENS_CALC_TAIL` `$2D6D-$2D6F` (calculator codes the jump-true at `$2D68` and the jump at
+  `$2D6B` land on; the Z80 resumes at `$2D70`) and `NP_NEG_CALC` `$2DF2-$2DF3` (abs, end-calc, the
+  jump-true at `$2DE6`'s target; the Z80 resumes at `$2DF4`). Only the starts inside them changed.
+- **Names:** Klive names; prefixes that could echo conventional ones were avoided on purpose
+  (`NP_` for the number printer, `NUM_`, `BINARY_`, `TENS_`), and `FP_TO_BYTE` rather than a
+  remembered name. `FP_TO_BC`, `STACK_A`, `STACK_BC` are the ZX81 sidecar's (kept, see the rename entry).
+- **Method:** the bytes through `tools/sp48-dis.cjs`. One throwaway probe on `test/harness/sp48`
+  (deleted): 1E9 → 1E+9; 123456789 → 1.2345679E+8; 12345678 → 12345678; .0001 → .0001; .001 → .001; .5
+  → 0.5; -.5 → -0.5; 1.5E-5 → .000015; 2E10 → 2E+10; 1/7 → 0.14285714; 0 and -0 → 0; 1E38 → 1E+38;
+  1E39 and BIN with 17 digits refused when checking; BIN 11111111 255, BIN 1111111111111111 65535; VAL
+  "2*3" 6; VAL "1E3" 1000; VAL$ joining two strings → ab; VAL of a string expression → report C; STR$
+  (1/3) 0.33333333; LEN STR$ 100 3; CODE "" 0.
+- **Level:** 0 (`checkRomSidecar`: no problems; 9 unlabelled targets left in the whole ROM). The
+  working copy exports and reassembles to the ROM byte for byte.
+
+### 2026-10-20 — `sp48.rom.dis`, the maths functions (working copy)
+
+- **Added:** 10 labels and synopses for the series generator (`CALC_SERIES`, `$3449`), exp
+  (`EXP_*`), ln (`LN_*`), get-argt (`ARGT_REFLECT`), sin, cos, tan, atn (`ATN_SMALL`), asn, acs, sqr and
+  to-power (`POWER_ZERO_BASE`), replacing every "Not yet described" synopsis; `LINE_NO_TOO_BIG`
+  (`$1A15`, EDIT_LINE_NO's report C for a line number of 10000 or more).
+- **Regions:** three more calculator-code runs that a jump-true reaches outside an RST $28 decode, as
+  `bytes` with a decoding synopsis: `LN_POSITIVE` `$371C-$371E` (the Z80 resumes at `$371F`),
+  `ARGT_REFLECT` `$37A1-$37A8` (resumes at `$37A9`), `POWER_ZERO_BASE` `$385D-$386C` (resumes at
+  `$386D`; sqr's jump-true at `$384D` also lands at `$386C`). The phantom targets `$3773`, `$379E` and
+  `$3837` the misdecoded bytes produced are gone.
+- **Names:** Klive names from what the code does. The series is described as the Clenshaw recurrence for
+  a Chebyshev series: a mathematical description of the recurrence the codes compute, not a ROM name.
+- **Method:** the bytes through `tools/sp48-dis.cjs`. One throwaway probe on `test/harness/sp48`
+  (deleted): SIN 0, SIN (PI/2), SIN PI, SIN 1 → 0 1 0 0.84147098; SIN 1000 0.82687939; COS 0, COS PI,
+  COS 1 → 1 -1 0.54030231; TAN 1 1.5574077; ATN 1 0.78539816; ATN -2 -1.1071487; ASN .5 0.52359878; ACS
+  .5 1.0471976; LN 1 0; LN 10 2.3025851; EXP 1 2.7182818; EXP -1 0.36787944; SQR 2 1.4142136; SQR 0 0;
+  2^10 1024; 2^.5 1.4142136; 0^0 1; 0^3 0; EXP -100 0; report 6 for 0^-1 and EXP 100; report A for LN 0,
+  SQR -1, ASN 2 and (-2)^2.
+- **Level:** 1 recorded (`checkRomSidecar`: no problems; 0 unlabelled targets). The tool measures 2,
+  since every label now has a synopsis, but level 2's end-of-line comments where a purpose is not obvious
+  are the author's judgement and have not been reviewed ROM-wide. The working copy exports and
+  reassembles to the ROM byte for byte.
+
+### 2026-10-20 — `sp48.rom.dis`, level-2 comments: numbers and the calculator (working copy)
+
+- **Added:** 862 end-of-line comments, house style (a capital first, no full stop), on the Z80
+  instructions from `$2C9B` to `$36A0` and the Z80 lines in exp, ln and atn: number reading, STACK_BC,
+  e-to-fp, the small-integer form, FP_TO_BC/FP_TO_BYTE, PRINT_FP, addition, multiply, division,
+  normalising, truncate, re-stack, the calculator's dispatch, literals, memories and simple operations,
+  comparisons, string operations, val/str$/read-in and the calculator's jumps. Calculator-code bytes
+  take no comments: the decoder names each code. The comment total is now 1058 (196 before).
+- **Corrected while reviewing:** SMALL_INT_GET returns the magnitude in DE (the stored two's
+  complement value negated back for a negative sign), not a signed value, and leaves HL at the high
+  byte; NP_SPLIT leaves the whole part on the stack and the fraction in memory 2, not the reverse.
+- **Method:** the bytes through `tools/sp48-dis.cjs`, no new probes. `checkRomSidecar`: no problems,
+  0 unlabelled targets; the working copy exports and reassembles to the ROM byte for byte.
+- **Level:** stays 1. The rest of the ROM (`$0000-$2C9A`) is still to be reviewed for comments before
+  level 2 is recorded.
+
+### 2026-10-20 — `sp48.rom.dis`, level-2 comments: start-up, keyboard, beeper and tape (working copy)
+
+- **Added:** 784 end-of-line comments, house style, on the Z80 instructions from `$0000` to `$0C09`:
+  the restarts and the interrupt and NMI handlers, CH_ADD and SKIP_TEST, READ_KEYS, KEYBOARD and
+  KEY_DECODE, TONE_OUT and BEEP, SA_BYTES, LD_BYTES and TAPE_EDGE, TAPE_COMMAND (SAVE, LOAD, VERIFY,
+  MERGE: headers, names, DATA, SCREEN$, CODE, LINE), the header search, LOAD of programs, arrays and
+  code, MERGE's line and variable merging, SAVE_CONTROL, and SCREEN_OUTPUT up to OUT_ATTR. Existing
+  comments were kept. The comment total is now 1842.
+- **Corrected while reviewing:** the comment at `$0B9E` said B = $FF meant OVER 0; it is OVER 1 (the
+  old byte kept, to XOR with); OVER 0 makes B 0. MERGE_ENTER's synopsis had HL and DE swapped: the
+  item is at HL in the workspace and goes in before DE in the program.
+- **Method:** the bytes through `tools/sp48-dis.cjs`, no new probes. `checkRomSidecar`: no problems,
+  0 unlabelled targets; the working copy exports and reassembles to the ROM byte for byte.
+- **Level:** stays 1; `$0C0A-$2C9A` is still to be reviewed for comments.
+
+### 2026-10-20 — `sp48.rom.dis`, level-2 comments: screen output, printer, editor and main loop (working copy)
+
+- **Added:** 610 end-of-line comments, house style, on the Z80 instructions from `$0C0A` to `$138E`:
+  PRINT_MESSAGE and PRINT_TOKEN, FIND_ENTRY, OUT_SCROLL and the "scroll?" prompt, the lower screen
+  growing, the temporary colours, CLS, RESET_CHAN_K, CLEAR_SCREEN, SET_PRINT_POS, the scrolling and
+  line-clearing routines, COPY, the printer buffer and PRINTER_ROW, the editor and its keys, KEY_INPUT,
+  EDIT_LINE_SHOW, INPUT_RANGE, STRIP_NUMBERS, NEW and start-up, and the main loop with PRINT_REPORT.
+  Existing comments were kept (one draft that repeated `$1148`'s was dropped). `$138F-$1554` is the
+  report and start-up message text, already marked. The comment total is now 2452.
+- **Corrected while reviewing:** nothing; the synopses and comments checked in this range held.
+- **Method:** the bytes through `tools/sp48-dis.cjs`, no new probes. `checkRomSidecar`: no problems,
+  0 unlabelled targets; the working copy exports and reassembles to the ROM byte for byte.
+- **Level:** stays 1; `$1555-$2C9A` is still to be reviewed for comments.
+
+### 2026-10-20 — `sp48.rom.dis`, level-2 comments: line storage, channels, listing and the statement loop (working copy)
+
+- **Added:** 541 end-of-line comments, house style, on the Z80 instructions from `$1555` to `$1BFE`:
+  REPORT_G and STORE_LINE, WAIT_KEY, CHAN_INPUT, PRINT_A_CHAN, STREAM_SELECT and the channel flags,
+  MAKE_ROOM and MOVE_POINTERS, LINE_NO, WORK_ROOM_END, the workspace and calculator-stack resets,
+  TABLE_LOOKUP, CLOSE #, OPEN #, AUTO_LIST, LIST/LLIST and LIST_ALL, PRINT_LINE, PRINT_TEXT,
+  PRINT_FLASH and PRINT_CURSOR, the digit printers, PRINT_LIST_CHR, FIND_LINE, FIND_STATEMENT,
+  NEXT_ITEM, RECLAIM, EDIT_LINE_NO, and the statement loop (CHECK_LINE, STMT_START, SYNTAX_ITEM,
+  STMT_RET, RUN_EDIT_LINE, LINE_NEW, LINE_END, NEXT_LINE, STATEMENT_END). Existing comments were kept.
+  Two short runs nothing in this ROM reaches are marked as such: `$16D4` (RECLAIM_DE_HL from E_LINE)
+  and `$1988` (past a line's number and length into FIND_STATEMENT). The comment total is now 2993.
+- **Corrected while reviewing:** nothing; the synopses and comments checked in this range held.
+- **Method:** the bytes through `tools/sp48-dis.cjs`, no new probes. `checkRomSidecar`: no problems,
+  0 unlabelled targets; the working copy exports and reassembles to the ROM byte for byte.
+- **Level:** stays 1; `$1C00-$2C9A` is still to be reviewed for comments.
+
+### 2026-10-20 — `sp48.rom.dis`, level-2 comments: commands, evaluator and variables; level 2 (working copy)
+
+- **Added:** 1884 end-of-line comments, house style, on the Z80 instructions from `$1C00` to `$2C9A`:
+  the statement classes, GO TO, GO SUB, RETURN, RUN, CLEAR, CONTINUE, POKE, PAUSE, RANDOMIZE, FOR,
+  NEXT, READ, DATA, DEF FN, PRINT and INPUT with their items, the colour items, BORDER, PLOT, DRAW and
+  CIRCLE, SCAN_EXPR with its operands and operators, FN_CALL, LOOK_VARS, VAR_SUBSCRIPTS, STR_SLICE,
+  SUBSCRIPT, LET_ASSIGN, STK_FETCH and DIM. They were drafted in five parts by helper agents working
+  from the same bytes (`tools/sp48-dis.cjs` listing and this sidecar only), each line checked to be an
+  instruction start, then reviewed and merged here. A sweep of the rest of the ROM added 9 more (the
+  maths routines' Z80 lines and addition's negation). Existing comments were kept. The comment total
+  is now 4886; every code area has been reviewed.
+- **Corrected while reviewing:** FOR variables are 19 bytes, not 18 (FOR_CMD); DIM_FILL sets the
+  room's last byte and copies it down, not from the first; INKEY$ decodes the key in L mode (MODE 0,
+  D = $FF), so a letter gives a letter, not a keyword (OP_INKEY); LV_PARAM_FOUND copies a string
+  parameter's 5 bytes onto the calculator stack, while a number's stay at HL + 1 after its $0E (it said
+  the reverse); LOOK_VARS's and LV_EXIT's Z flag means a string or an array when a variable is found,
+  and a following '(' only when checking or not found.
+- **Method:** the bytes through `tools/sp48-dis.cjs`, no new probes. `checkRomSidecar`: no problems,
+  0 unlabelled targets, every label with a synopsis; it measures level 2.
+- **Level:** 2 recorded. The working copy exports and reassembles to the ROM byte for byte.

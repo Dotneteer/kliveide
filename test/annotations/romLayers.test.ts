@@ -192,10 +192,10 @@ describe("byte binding (§5.3)", () => {
 
   it("keeps most of the 48K ROM's labels on the 128K's ROM 1", () => {
     const binding = bindRomPage(bank, SP48, romFile("sp128-1.rom"));
-    // --- Measured once (2026-10-09) on the R0 sidecar, recorded so a change shows. A span runs to
-    // --- the next label, so with this few labels a span is thousands of bytes and one changed byte
-    // --- in it costs the label: the share rises as the sidecar is authored to level 1.
-    expect(binding.labelsTotal).toBe(12);
-    expect(binding.labelsBound).toBe(8);
+    // --- Measured on the level 2 sidecar (2026-10-20; the R0 sidecar bound 8 of 12), recorded so a
+    // --- change shows. A span runs to the next label, so with labels this dense only the routines
+    // --- the 128K actually changed lose theirs.
+    expect(binding.labelsTotal).toBe(1042);
+    expect(binding.labelsBound).toBe(1035);
   });
 });

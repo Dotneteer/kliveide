@@ -203,6 +203,11 @@ paged: a copy of the 48K ROM loaded from your own file gets them too, and on a R
 (a modified 48K ROM, say) they apply wherever its bytes still match. ROM labels are set in italics so
 your own stand out.
 
+The 48K ROM's annotations are complete (completeness level 2): every call and jump target has a
+label, every labelled routine has a synopsis saying what it does, takes and returns, and the lines
+whose purpose is not obvious carry a comment. They apply to the 128K's copy of the 48K BASIC ROM
+too, wherever its bytes match. The other ROMs' annotations are still sparse.
+
 Use `bp-set ROM:<name>` to break at a ROM label, and `ROM:<name>` in a breakpoint condition.
 
 #### Editing a ROM's annotations
@@ -243,6 +248,11 @@ manual); [`rom-ann-provenance`](/en/reference/commands#rom-ann-provenance) chang
 `RST`, `JR` and `DJNZ` target reached from code. It counts the targets that still have none, and its
 **next $xxxx** link opens the disassembly at the next one; each click moves on to the following
 target. A page with none left shows *none*.
+
+Rest the pointer on a completeness level &mdash; the **Ready** chip, *records level*, the
+**Completeness** column head or a page's level meter &mdash; and a card explains the three levels,
+marks the ones reached and the next one, and counts what is still missing: the targets without a
+label and the labels without a synopsis.
 
 **Export as source…** writes the whole ROM as one Klive Z80 assembly file, with your labels and
 comments, then assembles it and says whether it gives back the ROM byte for byte (the same as

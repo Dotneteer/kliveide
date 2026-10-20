@@ -79,8 +79,11 @@ describe("checkRomSidecar", () => {
   });
 
   it("finds a recorded level higher than the measured one", async () => {
+    // --- The shipped sidecar measures 2; one label without a synopsis drops it to 1
     const raw = sp48();
     raw.level = 2;
+    const first = raw.banks["0"].localLabels[0].value;
+    delete raw.banks["0"].lineAnnotations[String(first)].synopsis;
     const check = await checkRomSidecar(formatRomSidecar(raw), romPages("sp48.rom.dis"));
     expect(check.problems).toEqual(expect.arrayContaining([expect.stringContaining("records level 2")]));
   });
