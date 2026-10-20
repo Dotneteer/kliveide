@@ -1882,3 +1882,25 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
   found"; SAVE "a?b" "Bad filename"; on the Spanish +3 the question came in Spanish from the routine
   at $DB20 ("SIN DATOS, 0:1").
 - **Level:** 2 for all three, recorded; each reassembles byte for byte.
+
+### 2026-10-20 — the +2E/+3E: ROM 3 covered, `spp3e-2` (shipped, level 2)
+
+- **ROM 3:** `spp3e-3.rom` is byte-identical to `spp3-40-3.rom` (CRC 04448eaa), so the shipped
+  `spp3-40-3.rom.dis` already applies through the index.
+- **ROM 2 (`spp3e-2`), 1,102 labels, 6,091 comments:** v4.0's merged entries (its own and v4.1's)
+  were mapped by aligning the two listings instruction by instruction with address operands
+  ignored (51 blocks, 4,735 instructions; RAM operands matched in 202 of 204 cases, so the RAM
+  layout is the same), data regions by their exact bytes, ROM addresses in the text remapped
+  (provenance `derived`). The first mapping put the +3's table at $0100 onto this ROM's second
+  table at $00A0 and remapped port $1FFD as an address; the helper of $0000-$23FF corrected those
+  (165 fixes, labels moved as one batch). Three helpers authored the rest from the bytes (D4; no
+  file of `_input/` but the 765 datasheet; interface commands described by value): the 56-entry
+  `DOS_JUMPS` and a second 32-entry table at $00A0, a hard disk driver on ports $xxEF (256-byte
+  sectors), partitions and their table, drive letters mapped to partitions or floppy/RAM devices,
+  a snapshot loader, BASIC streams, coloured messages (`SHOW_MESSAGE` through ROM 0's $3FF7). Read
+  from the code, not probed: RP_READ passes an undoubled sector (probably a bug).
+- **Probe** (`test/harness/sp128`, model `fdd1`, entered through the code-injection flow): the
+  start-up shows "2000-2015 Garry Lancaster v1.43"; CAT listed ltk.dsk ("DISK . 1K", "124K free");
+  with no disk "Drive A: track 0 sector 0", "No data", "Retry, Ignore or Cancel?", C: "No data, 0:1".
+  The hard disk code was not probed (the harness has no hard disk).
+- **Level:** 2, recorded; it reassembles byte for byte.

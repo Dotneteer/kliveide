@@ -213,7 +213,9 @@ So are the 48K BASIC ROMs (ROM 3) of the +2A and +3, in the v4.0, v4.1 and Spani
 shares v4.0's): they take the 128K's annotations where their bytes match and describe what Amstrad
 changed, such as the disk motor's time-out and the Spanish messages. The +3's disk operating
 system ROM (ROM 2, +3DOS) is complete too, in the same three versions: its jump table, the files and
-directory, the sector cache, the floppy controller driver and the built-in disk test. The other ROMs'
+directory, the sector cache, the floppy controller driver and the built-in disk test. The +2E and
++3E share v4.0's ROM 3, and their ROM 2 is annotated as well, including its hard disk driver,
+partitions and drive letters. The other ROMs'
 annotations are still sparse.
 
 Use `bp-set ROM:<name>` to break at a ROM label, and `ROM:<name>` in a breakpoint condition.

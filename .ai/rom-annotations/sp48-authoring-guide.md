@@ -22,6 +22,13 @@ supersedes, keep no history (that is `PROVENANCE.md`'s job).
   author v4.1 and inherit by copying entries with the measured shifts, as for the Spanish ROM 2), and
   the +3E's ROMs. `_input/` holds commented disassemblies of these ROMs: never open them; only
   `_input/765.pdf`, the floppy controller's datasheet, is allowed (interface facts).
+- **A ROM whose code was reworked and moved throughout** (the +3E's ROM 2) is mapped, not
+  inherited: align the two listings instruction by instruction with address operands masked
+  (difflib on normalised mnemonics), map data regions by their exact bytes, and remap ROM
+  addresses in the copied text. Leave numbers that are not addresses alone: port numbers below
+  $4000 ($1FFD, $2FFD, $3FFD) and the entry numbers after "DOS_JUMPS"; and check that a table was
+  not aligned onto a neighbouring table of the same instructions (the +3E's $00A0 table caught
+  the +3's $0100). Then let helpers author what did not map and list fixes for what mapped wrongly.
 - **A variant whose code moved** binds nothing at the moved offsets. Measure the shifts (align the
   bytes block by block), copy the base's entries to the new offsets with the addresses in their text
   remapped, and re-read only what really differs. Compare the instruction counts of the base and the
