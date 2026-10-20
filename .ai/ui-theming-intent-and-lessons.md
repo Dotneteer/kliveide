@@ -806,6 +806,11 @@ field below it each time the choice above changes, which reads as the dialog jum
 pointer. The same holds for anything else whose size follows the choice (a hint, a button label):
 keep it to one fixed size, or keep it constant.
 
+**A row of radio options wraps into two rows before it crowds.** A `RadioGroup` laid out as one row
+(`columns` = the option count) stays readable up to about six short labels; beyond that the labels
+run into each other (the region dialog's nine types did). Give it `columns={Math.ceil(n / 2)}`:
+two even rows, aligned in a grid, never a free wrap that leaves one orphan.
+
 ## A Dialog Row Is Spaced Once
 
 Inside a `DialogForm`, the form body's gap (`--space-4`) is what separates one `DialogRow` from the

@@ -84,23 +84,34 @@ export type AnnotationRegionType =
   | "copper"
   | "dma"
   | "text"
+  | "defc"
+  | "fill"
   | "graphic";
 
 /**
  * The region kinds stored as `bytes` + `decode` on disk. `copper`/`dma` are the Next's; `text` is
  * printable runs, decoded with the machine's own character set on the ZX80/ZX81 (§4.7 of the
- * reverse-engineering annotations plan) and as ASCII elsewhere; `graphic` is bytes laid out by the
- * bank's matching `graphics` entry (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §3).
+ * reverse-engineering annotations plan) and as ASCII elsewhere; `defc` is ASCII strings each ended by
+ * bit 7 set on its last character, listed as `.defc` rows (the Spectrum ROMs' keyword and message
+ * tables); `fill` is runs of one repeated byte, listed as `.fillb count,value` rows (padding and
+ * unused space); `graphic` is bytes laid out by the bank's matching `graphics` entry
+ * (`.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §3).
  */
-export type DecodedRegionType = Extract<AnnotationRegionType, "copper" | "dma" | "text" | "graphic">;
+export type DecodedRegionType = Extract<AnnotationRegionType, "copper" | "dma" | "text" | "defc" | "fill" | "graphic">;
 
-/** The decoded region types a bank space offers. Every other type is offered everywhere. */
+/**
+ * The decoded region types a bank space offers. Every other type is offered everywhere. `defc` is
+ * ASCII, so the ZX80 and ZX81, whose character sets are not, do not offer it.
+ */
 export function decodedRegionTypesFor(machine: AnnotationMachine): DecodedRegionType[] {
   switch (machine) {
     case "next":
-      return ["copper", "dma", "text", "graphic"];
+      return ["copper", "dma", "text", "defc", "fill", "graphic"];
+    case "zx80":
+    case "zx81":
+      return ["text", "fill", "graphic"];
     default:
-      return ["text", "graphic"];
+      return ["text", "defc", "fill", "graphic"];
   }
 }
 
@@ -243,6 +254,10 @@ export function toSidecarRegion(region: AnnotationRegion): SidecarRegion {
       return { start: region.start, end: region.end, type: "bytes", decode: "dma", ...origin };
     case "text":
       return { start: region.start, end: region.end, type: "bytes", decode: "text", ...origin };
+    case "defc":
+      return { start: region.start, end: region.end, type: "bytes", decode: "defc", ...origin };
+    case "fill":
+      return { start: region.start, end: region.end, type: "bytes", decode: "fill", ...origin };
     case "graphic":
       return {
         start: region.start,
@@ -507,7 +522,7 @@ const REGION_TYPES = new Set<AnnotationRegionType>([
   "words",
   "skip"
 ]);
-const DECODED_REGION_TYPES = new Set<DecodedRegionType>(["copper", "dma", "text", "graphic"]);
+const DECODED_REGION_TYPES = new Set<DecodedRegionType>(["copper", "dma", "text", "defc", "fill", "graphic"]);
 const REGION_ORIGINS = new Set<AnnotationRegionOrigin>(["auto", "skool"]);
 const GRAPHIC_LAYOUTS = new Set<BankGraphicLayout>(["linear", "cells", "columns", "screen"]);
 const GRAPHIC_MASKS = new Set<BankGraphicMask>(["none", "interleaved", "before", "after"]);

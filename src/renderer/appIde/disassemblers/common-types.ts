@@ -139,6 +139,8 @@ export type DisassemblyAnnotationRegionType =
   | "copper"
   | "dma"
   | "text"
+  | "defc"
+  | "fill"
   | "graphic";
 
 export type DisassemblyAnnotationMetadata = {

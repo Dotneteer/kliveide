@@ -170,8 +170,10 @@ game loaded from a Spectrum tape, say &mdash; use [`ann-new`](/en/reference/comm
 is active.
 
 Right-click a row to annotate it: **Label...**, **Synopsis Comment...**, **End-of-Line Comment...**,
-**Operand Label...**, **Mark As Code / Bytes / Words / Skip** (and **Text** on the ZX80 and ZX81),
-**Go to Definition**, and **Go to References**. The same keys as in a popped-out `.NEX` bank work on
+**Operand Label...**, **Mark As Code / Bytes / Words / Text / Skip**, **Mark As Fill (.fillb)** (runs of
+one repeated byte, such as padding, listed as `.fillb 1170,$FF`), **Mark As Bit-7 Text (.defc)** (every
+machine but the ZX80 and ZX81: strings whose last character has bit 7 set, listed as `.defc "TEXT"`),
+**Mark As Copper** and **Mark As DMA** (on the ZX Spectrum Next), **Go to Definition**, and **Go to References**. The same keys as in a popped-out `.NEX` bank work on
 the row you last clicked (`L` for a label, `C` for an end-of-line comment, `Shift+C` for a synopsis,
 `Shift+F12` for references). The label goes in
 the bank the row is in &mdash; it follows that bank wherever it is paged &mdash; and the
