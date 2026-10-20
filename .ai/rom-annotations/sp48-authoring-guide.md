@@ -17,9 +17,11 @@ supersedes, keep no history (that is `PROVENANCE.md`'s job).
 - **The +2A/+3 ROM 3s ship at level 2** (2026-10-20): `spp3-41-3.rom.dis` inherits `sp128-1` and
   `sp48`; `spp3-40-3.rom.dis` (also the +3E's ROM 3, the same bytes) and `spp3-41es-3.rom.dis` inherit
   `spp3-41-3` first. On the +3, FLAGS bit 4 is "+3 BASIC", not 128 BASIC.
-- **The +3 editor ROM (ROM 0) ships at level 2** for v4.1, v4.0, Spanish and +3E (2026-10-20). Next
-  in R4: ROM 1, the syntax ROM, which calls ROM 2 through `CALL $3F00` + word (75 times) and ROM 3
-  through `RST $28` + word: extend the decoder to `plus3-syntax` pages first.
+- **Every +2A/+3 (v4.0, v4.1, Spanish) and +2E/+3E ROM ships at level 2** (2026-10-20, R4 done):
+  ROMs 0 (editor), 1 (syntax), 2 (+3DOS) and 3 (48K BASIC). v4.1 was authored from the bytes, the
+  others mapped from it and completed. On `plus3-syntax` pages calls into other ROMs carry inline
+  words (`RST $28`, `CALL $3F00`, `CALL $3E80`, decoded); calls to the error routines carry a code
+  byte, marked with one-byte regions because the routines move between versions.
 - **+3DOS (ROM 2) ships at level 2** (2026-10-20) for v4.1, v4.0 and Spanish (the last two inherit
   v4.1). Next in R4: ROMs 0 and 1 of each version (they differ between versions by moved code, so
   author v4.1 and inherit by copying entries with the measured shifts, as for the Spanish ROM 2), and

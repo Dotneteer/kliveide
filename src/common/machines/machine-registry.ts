@@ -47,7 +47,10 @@ import { ZxSpectrumNextCustomDisassembler } from "@renderer/appIde/disassemblers
 import { Z88CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z88-custom.disassembler";
 import { Zx80CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/zx80-disassembler";
 import { Zx81CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/zx81-disassembler";
-import { ZxSpectrum128EditorCustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/zx-spectrum-128-editor-disassembler";
+import {
+  plus3SyntaxDecoder,
+  ZxSpectrum128EditorCustomDisassembler
+} from "@renderer/appIde/disassemblers/z80-disassembler/zx-spectrum-128-editor-disassembler";
 import {
   ChainedCustomDisassembler,
   gateOnRom,
@@ -237,7 +240,8 @@ const spectrum128CustomDisassembler: CustomDisassemblerFactory = (context) =>
 
 /**
  * The +2A/+3/+3E list their 48K BASIC ROM (ROM 3) with the 48K decoding and their editor ROM (ROM 0)
- * with the ROM 3 address after `RST $28`, each only in its own page. Without a context only the 48K
+ * with the ROM 3 address after `RST $28`, and their syntax ROM (ROM 1) with that and the inline
+ * addresses after `CALL $3F00` (ROM 2) and `CALL $3E80` (ROM 0), each only in its own page. Without a context only the 48K
  * decoding applies, to the ROM area, as before.
  */
 const spectrumP3CustomDisassembler: CustomDisassemblerFactory = (context) =>
@@ -246,6 +250,9 @@ const spectrumP3CustomDisassembler: CustomDisassemblerFactory = (context) =>
     new RomGatedCustomDisassembler(
       new ZxSpectrum128EditorCustomDisassembler({ decodeErrorCalls: false, otherRom: "ROM 3" }),
       (address) => (context ? !!context.inRomOfKind?.(address, "plus3-editor") : false)
+    ),
+    new RomGatedCustomDisassembler(plus3SyntaxDecoder(), (address) =>
+      context ? !!context.inRomOfKind?.(address, "plus3-syntax") : false
     )
   ]);
 

@@ -49,3 +49,21 @@ describe("the +3 editor ROM's decoding", () => {
     expect(decoded.map((i) => [i.offset, i.length])).toEqual([[0x287, 3], [0x28a, 3]]);
   });
 });
+
+/*
+ * The +3's syntax ROM (ROM 1) also calls +3DOS with CALL $3F00 + word and ROM 0 with CALL $3E80 +
+ * word: each word is the address in that ROM.
+ */
+const P3_ROM1 = new Uint8Array(readFileSync(join(__dirname, "../../src/public/roms/spp3-41-1.rom")));
+
+describe("the +3 syntax ROM's decoding", () => {
+  it("reads the word after CALL $3F00 as data", async () => {
+    const decoded = await romDecoderFor("plus3-syntax")(P3_ROM1, 0x02db, 0x02e0);
+    expect(decoded.map((x) => [x.offset, x.length]).slice(0, 2)).toEqual([[0x02db, 3], [0x02de, 2]]);
+  });
+
+  it("reads the word after CALL $3E80 as data", async () => {
+    const decoded = await romDecoderFor("plus3-syntax")(P3_ROM1, 0x136d, 0x1372);
+    expect(decoded.map((x) => [x.offset, x.length]).slice(0, 2)).toEqual([[0x136d, 3], [0x1370, 2]]);
+  });
+});

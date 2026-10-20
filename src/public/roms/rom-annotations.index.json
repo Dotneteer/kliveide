@@ -7,12 +7,16 @@
   "4b1dd6eb": {"sidecar":"zx81.rom.dis","page":0},
   "4c7fc597": {"sidecar":"zx80.rom.dis","page":0},
   "504755cb": {"sidecar":"spp3e-2.rom.dis","page":0},
+  "5aeb4675": {"sidecar":"spp3e-1.rom.dis","page":0},
   "7f4a5482": {"sidecar":"spp3e-0.rom.dis","page":0},
+  "a7916b3f": {"sidecar":"spp3-41-1.rom.dis","page":0},
+  "a8ac4966": {"sidecar":"spp3-41es-1.rom.dis","page":0},
   "b88fd6e3": {"sidecar":"spp3-41-3.rom.dis","page":0},
   "b96a36be": {"sidecar":"sp128-1.rom.dis","page":0},
   "c9a0b748": {"sidecar":"spp3-41-2.rom.dis","page":0},
   "ddee531f": {"sidecar":"sp48.rom.dis","page":0},
   "e76799d2": {"sidecar":"sp128-0.rom.dis","page":0},
+  "f1d1d99e": {"sidecar":"spp3-40-1.rom.dis","page":0},
   "f6bb0296": {"sidecar":"spp3-41es-2.rom.dis","page":0},
   "f6d25389": {"sidecar":"spp3-41es-3.rom.dis","page":0}
 }

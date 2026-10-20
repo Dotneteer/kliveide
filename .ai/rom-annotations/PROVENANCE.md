@@ -1935,3 +1935,28 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
   "Drives A: and M: available."); EDIT opens Options (+3 BASIC, Renumber, Screen, Print, Exit);
   Renumber made lines 1, 2 into 10, 20 ($5B75/$5B77 = 10).
 - **Level:** 2 for all four, recorded; each reassembles byte for byte.
+
+### 2026-10-20 — the +3 syntax ROM: `spp3-41-1`, `spp3-40-1`, `spp3-41es-1`, `spp3e-1` (shipped, level 2); R4 done
+
+- **Decoding:** `plus3-syntax` pages decode `RST $28` (ROM 3), `CALL $3F00` (ROM 2, a DOS_JUMPS entry)
+  and `CALL $3E80` (ROM 0) with their inline words (`plus3SyntaxDecoder`, in the tools and the
+  +3/+3E live view). The error routine (v4.1 $2C4C; $0008 jumps to it) and FILE_ERROR ($0EB6) are
+  followed by an error code byte; they sit at a different address in each version, so every such
+  byte is a one-byte region in the sidecars (an `errfix` pass added any a draft missed).
+- **v4.1 (`spp3-41-1`), 812 labels, 3,681 comments:** five ranges drafted by helpers from the bytes
+  (D4; `_input/` not opened): the 128K editor ROM's syntax machinery, commands and PLAY moved here
+  under its names; tape and disk SAVE/LOAD/VERIFY/MERGE; FORMAT (the disk, LPRINT and LINE forms:
+  FORMAT LINE joins the 128K's FORMAT "p" code at FORMAT_LINE_BAUD, while FORMAT "p" itself has no
+  caller); ERASE, MOVE, CAT, COPY (screen, EXP, files, SPECTRUM FORMAT); the report table and
+  messages; COPY RANDOMIZE's greeting; the ROM switching. Two text slips found later and fixed:
+  INSERT_TAPE_MSG is INK 0, PAPER 7; ROM 3's tape message is "Press REC & PLAY, then any key.".
+- **v4.0, Spanish, +3E:** mapped from v4.1 (the mapper's inline-word context set to ROM 0) and
+  completed by helpers: v4.0 has one RS232 wiring, a 52-entry report table and fewer FORMAT
+  options; the Spanish texts and report table are Spanish; the +3E adds streams (OPEN #, GO TO #
+  ...), partitions (NEW DATA, MOVE ... FOR/IN/OUT, FORMAT TO), CAT TAB/ASN, SPECTRUM snapshots and
+  drive letters, and drops FORMAT "p", COPY RANDOMIZE and the second RS232 wiring. The PLAY period
+  for notes below 21 is the constant $0FBF ($0FBE on the +3E), which the mapper had remapped.
+- **Probe** (`plus3-fdd1`): FORMAT LINE 2400 gave 0 OK and $5B5F 11 -> 54; ERASE "nope" on a blank
+  disk gave "File not found, 0:1".
+- **Level:** 2 for all four, recorded; each reassembles byte for byte. Every +2A/+3/+3E ROM now ships
+  at level 2 (R4 done).
