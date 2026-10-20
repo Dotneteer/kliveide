@@ -14,11 +14,27 @@ supersedes, keep no history (that is `PROVENANCE.md`'s job).
 - **`sp128-1.rom.dis` ships at level 2** (2026-10-20): it `inherits` `sp48.rom.dis` and authors
   only ROM 1's six patches and its new code at `$386E-$3CFF` (the keypad, the hooks into the other
   ROM, SPECTRUM and PLAY, a test picture).
-- **The 128K editor ROM (`sp128-0.rom.dis`) is under way** (level 0): its restarts, the RAM
-  routines copied to $5B00, start-up, bank and stack switching and the main menu are done. Its RST
-  $28 calls the ROM 1 address in the word after it; `ZxSpectrum128EditorCustomDisassembler` lists
-  that word as `.defw` on `sp128-editor` pages. Next there: the editor itself (the key tables'
-  routines at $2537), then the menu actions ($2831, $286C, $2885, $1B47, $2816).
+- **`sp128-0.rom.dis`, the 128K editor ROM, ships at level 2** (2026-10-20): 1,085 labels, each with
+  a synopsis, 4,253 comments, no unlabelled targets; it reassembles byte for byte. Its RST $28 calls
+  the ROM 1 address in the word after it and `CALL $05AC` + a code byte raises its errors;
+  `ZxSpectrum128EditorCustomDisassembler` lists both on `sp128-editor` pages. Facts the synopses
+  rest on: $5B5C is the paging byte; the editor's variables are in bank 7 from $EC00 ($EC0D flags,
+  $EC0E the mode: 0 128 BASIC, 4 Calculator); the editing rows are 35 bytes from $EC16 (32 cells,
+  flags, line number high byte first; flags bit 0 a line's first row, bit 3 its last, bit 4 a row
+  from the program), with row stores above the screen at $F9DB and below at $F6F5. A canned command
+  line or token string in the ROM is data: mark it as a region, or the `RST $28` decoder reads $EF
+  as a call.
+- **Drafting a ROM in parallel**: helpers draft JSON per range ({labels, synopses, comments,
+  regions, facts}) from the listing and the sidecar; check the drafts against each other for
+  shared names (helpers reach for the same `CURSOR_ON`) before merging, and read their `facts`:
+  they carry the corrections to synopses written earlier. A comment pass over finished ranges
+  is worth it for that alone: on ROM 0 it found 25 wrong synopses or comments. Check every such
+  report against the instructions before applying it, and scan the drafts for names that are not
+  labels (a helper will cite a name a synopsis used for an unlabelled address).
+- **Probing the 128K editor** (`test/harness/sp128`): choose 128 BASIC with `typeText("{CS+6}")`
+  then ENTER (`typeText` types small letters only: send capitals as `{CS+X}` chords; EDIT is
+  `{CS+1}`, down `{CS+6}`; `bank(7)` reads the editor's rows); type slowly (`{ hold: 4, gap: 12 }`),
+  and after a report send one key first, which only clears it.
 - The live 128K view decodes it too: the 128K's custom disassembler chains the 48K decoder (gated on
   the 48K BASIC page) with the editor's (gated on `sp128-editor` pages through
   `CustomDisassemblyContext.inRomOfKind`).

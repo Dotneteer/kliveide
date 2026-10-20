@@ -1620,3 +1620,200 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
   (`PRINT_A`, `GET_CHAR`, `NEXT_SKIP`, `INT_FRAME`), `START` likewise, and `WAIT_KEY` the ZX81
   file's. The 128K's new system variables are named by address, not given names.
 - **Level:** 0 (921 targets left to label). It reassembles byte for byte.
+
+### 2026-10-20 — `sp128-0.rom.dis`, from start-up to the statement loop (shipped)
+
+- **Added:** 26 labels, 103 line entries, 2 regions, continuing in address order from `$026B`: a
+  line entered in the 128 BASIC editor (`LINE_ENTER`), the handler that stores or runs it
+  (`ENTER_HANDLER`, `STORE_LINE` with `REPORT_G_ROOM`), the run set-up and the hand-over to the
+  statement loop (`RUN_SETUP`, `EXEC_LINE` at `$1838`), the report after a run (`AFTER_RUN`,
+  `REPORT_PRINT`, `REPORT_LINE`, CONTINUE's place), the 128K's report table and messages
+  (`REPORT_128_TABLE`, `REPORT_128_MSGS`), and the editor's entry (`EDITOR_MAIN`).
+- **Method:** the bytes through `tools/sp48-dis.cjs`; the ROM 1 routines named from `sp48.rom.dis`.
+  Read from the table itself: reports g and h share "File does not exist", and p's entry points at
+  the copyright message.
+- **Probe** (`test/harness/sp128`, deleted; the menu's second item chosen with CS+6 and ENTER):
+  `print x` gave `2 Variable not found, 0:1`; `play "x"` gave `k Invalid note name, 0:1`; `10 print
+  1` was stored and listed as `10 PRINT 1`. After a report the first key only clears it, and the
+  editor needs keys held 4 frames 12 apart to take them all.
+- **Level:** 0 (879 targets left). It reassembles byte for byte.
+
+### 2026-10-20 — `sp128-0.rom.dis`, the statement loop (working copy and shipped file, uncommitted)
+
+- **Added:** 43 labels, 117 line entries, 3 regions: the 128K's own copy of the statement
+  interpreter, with the 48K file's names where a routine does the same job (`CHECK_LINE`,
+  `STMT_LOOP`, `STMT_START`, `SYNTAX_ITEM`, `STMT_RET`, `LINE_NEW`, `LINE_END`, `NEXT_LINE`,
+  `STATEMENT_END`, `STMT_NEXT`, `CLASS_0`-`CLASS_B`, `REM_CMD`, `IF_CMD`; `EXEC_LINE` renamed
+  `RUN_EDIT_LINE`), the classes the 48K ROM has not (`CLASS_C`-`CLASS_E`, which run a routine in this
+  ROM), the syntax tables (`SYNTAX_OFFSETS`, `SYNTAX_ENTRIES`, `CLASS_TABLE`), and the error routine
+  `ERROR_128` with `BREAK_KEY`.
+- **Decoding:** `ERROR_128` takes the byte after `CALL $05AC` as the report code (32 calls); the
+  editor ROM's custom disassembler now lists it as `.defb`.
+- **Method:** the bytes through `tools/sp48-dis.cjs`; the syntax entries parsed by the item rules
+  the class routines show (classes 0, 3, 5, $0C, $0D, $0E are followed by a routine's address;
+  2, 7 and $0B end an entry); the command routines read from them.
+- **Probe** (`test/harness/sp128`, deleted): `if 0 then print 1` printed nothing; `if 1 then print
+  2` printed 2 and reported 0:2; `ink 2` made ATTR_P 58 (from 56); `print 1: rem x: print 3`
+  printed 1 and reported 0:2; `print 1:: print 4` printed 1 and 4 and reported 0:3; `go to 5` with
+  no program reported 0 OK, 0:1.
+- **Level:** 0 (853 targets left). It reassembles byte for byte.
+
+### 2026-10-20 — `sp128-0.rom.dis`, command routines $1981-$1C2D (working copy and shipped file, uncommitted)
+
+- **Added:** 44 labels, 116 line entries, 1 region: FOR, READ, DATA, RUN, CLEAR, GO SUB, RETURN,
+  DEF FN, MOVE, SPECTRUM, LLIST/LIST, CAT and ERASE, with the 48K file's names where a routine does
+  the same job (`FOR_CMD`, `READ_CMD`, `CLEAR_RUN`, `GO_SUB_CMD`, `RETURN_CMD`, `DEF_FN_CMD`,
+  `LIST_CMD` ...); the two canned commands the menus run (`RUN_LOAD_LINE` with `LOAD_LINE`, the
+  tokens of LOAD "" that the `RST $28` decoder would otherwise read as a call; `RUN_LIST_LINE`); the
+  menu's 48 BASIC (`GO_48_BASIC`).
+- **Read from the code:** MOVE's routine is a lone RET; CAT and ERASE accept only `!` (the RAM
+  disk); SPECTRUM leaves through ROM 1's RST $08 with the $FF at ROM 1's $0013 as the code, into the
+  48K REPORT with the paging locked.
+- **Probe** (`test/harness/sp128`, deleted): `for i=1 to 3: print i;: next i` printed 123; `read a:
+  print a: data 7` as a direct command gave E Out of DATA; `clear 30000` made RAMTOP 30000;
+  `return` gave 7 RETURN without GOSUB; `move "a","b"` and `cat !` gave 0 OK; `cat` was refused by
+  the syntax check; `def fn f(x)=x*2: print fn f(4)` as a direct command gave P FN without DEF;
+  `spectrum` gave 0 OK with FLAGS bit 4 clear and the paging byte $30.
+- **Not yet:** the RAM-disk helpers at $1BAD and $1C2E between these routines.
+- **Level:** 0 (825 targets left). It reassembles byte for byte.
+
+### 2026-10-20 — `sp128-0.rom.dis`, the RAM disk (working copy and shipped file, uncommitted)
+
+- **Added:** 58 labels, 88 line entries, 1 region: the RAM disk's catalogue and files
+  (`RAMDISK_NEW`, `RAMDISK_FIND`, `RAMDISK_OPEN`, `RAMDISK_CLOSE`, `RAMDISK_WRITE`, `RAMDISK_READ`,
+  `RAMDISK_ERASE`, `RAMDISK_CAT` with `CAT_PRINT_NAME` and its name bounds, `RAMDISK_FREE_ADD`),
+  the entries SAVE !/LOAD ! use (`RAMDISK_SAVE`, `RAMDISK_LOAD_HDR`, `RAMDISK_LOAD`), and the two
+  bank 7 copiers behind vectors $0106 and $0109 (`BANK7_PUT`, `BANK7_GET`).
+- **Read from the code:** the catalogue grows down from $EBEC in bank 7 in 20-byte entries (name,
+  start, length, current place, flags); places are an address in $C000-$FFFF with a bank number
+  (SELECT_BANK 0-4); $5B85-$5B87 count the free bytes (76780 at start-up: four banks and bank 7
+  below the catalogue); a source or destination in the $C000 window goes through 32 bytes at $5B98;
+  ERASE moves every later file down byte by byte across banks and closes the catalogue's gap; CAT
+  lists in name order by repeated passes.
+- **Probe** (`test/harness/sp128`, deleted): free bytes 76780 at start; `save !"bb"code 0,100` took
+  129, `save !"aa"code 0,50` took 79; `cat !` listed aa then bb; saving aa again gave e File
+  already exists; `erase !"aa"` gave the 79 back and $5B83 rose 20; `load !"zz"code` gave h File
+  does not exist; `load !"bb"code 32768` gave 0 OK.
+- **Level:** 0 (768 targets left). It reassembles byte for byte.
+
+### 2026-10-20 — `sp128-0.rom.dis`, SAVE/LOAD/VERIFY/MERGE (working copy and shipped file, uncommitted)
+
+- **Added:** 54 labels, 75 line entries: the four commands' entries and the `!` test (`SAVE_128`
+  ... `TAPE_BANG`), ROM 0's own copy of the tape command parser with the 48K file's names where it
+  does the same job (`TAPE_COMMAND`, `SE_HEADER_ROOM` ... `SE_SAVE_OR_LOAD`), and the RAM disk side
+  (`RD_COMMAND`, `RD_CODE`, `RD_MERGE`, `RD_LOAD_PROG`, `RD_LOAD_PROGRAM`, `RD_READ`,
+  `RAMDISK_NAME`, `STRING_NAME`).
+- **Read from the code:** tape transfers go on in ROM 1 (SAVE_CONTROL, and the load branch of its
+  SE_SAVE_OR_LOAD at $0761); MERGE ! reuses ROM 1's MERGE_LOAD from $08CE; VERIFY ! takes LOAD's
+  CODE path, so it reads the data in place without comparing.
+- **Probe** (`test/harness/sp128`, deleted): `save !"c"code 0,10` then `load !"c"code 32768` put
+  $F3 $01 $2B at 32768 (ROM 0's first bytes: saving from 0 in 128 BASIC saves the paged ROM 0);
+  `merge !"c"` and `load !"c"` of that CODE file gave b Wrong file type; `load !"c"code 32768,5`
+  gave c CODE error; `verify !"c"code 32768` put the file's bytes at 32768; `save "t"` printed
+  Start tape, then press any key. (With a program line stored, the 128K editor's cursor stays on
+  the listing and further typing goes into that line: probe commands before storing a line.)
+- **Not yet:** the serial byte sender at $11A3 (vector $011E), which sits just before these.
+- **Level:** 0 (715 targets left). It reassembles byte for byte.
+
+### 2026-10-20 — `sp128-0.rom.dis`, PRINT to DIM and the line tests (working copy and shipped file, uncommitted)
+
+- **Added:** 35 labels, 50 line entries, 1 region ($2174-$2316): LPRINT, PRINT, INPUT, COPY, NEW,
+  CIRCLE, DRAW and DIM (front ends to ROM 1's routines; NEW restarts from START_SETUP's $019D,
+  COPY goes to $08F0); the Calculator's line handler `CALC_LINE`, which evaluates a line that starts
+  like an expression and feeds the result back into the editor as keys (`KEY_INTO_EDITOR`); the
+  tests `LINE_ENTER` uses (`KEYWORD_TEST`, `LETTER_TEST`, `NUMBER_TEST`, `DIGIT_TEST`,
+  `OPERATOR_TEST` with its `OPERATORS` list, `LET_TEST`). `LINE_ENTER`'s synopsis now names them.
+- **Probe** (`test/harness/sp128`, deleted; the menu's third item is the Calculator): `1+2` in 128
+  BASIC and in the Calculator became `3` in the edit line with 0 OK, 0:0; `sin 0` in the Calculator
+  became 0; `x` in 128 BASIC gave 2 Variable not found, 0:1. $EC0E was 0 in 128 BASIC and 4 in
+  the Calculator.
+- **Level:** 0 (689 targets left). It reassembles byte for byte.
+
+### 2026-10-20 — `sp128-0.rom.dis`, PLAY and MIDI (working copy and shipped file, uncommitted)
+
+- **Added:** 134 labels, 183 line entries, 8 regions: PLAY's front end ($2317) and its engine
+  ($0985-$11EA): the blocks it builds (one per string, one shared), the command interpreter and
+  every command (`PLAY_COMMANDS`, `PLAY_LETTERS`, `PLAY_OCTAVE` ... `PLAY_STOP`), notes and lengths
+  (`PLAY_NOTE`, `PLAY_NOTE_NAME`, `PLAY_LENGTHS`, `PLAY_NOTE_TABLE`, `PLAY_PERIODS`), the timing loop
+  (`PLAY_SHORTEST`, `PLAY_START_NOTES`, `PLAY_WAIT`, `PLAY_ADVANCE`), the tempo (`TEMPO_CODE`, run in
+  RAM under ROM 1's calculator), the AY (`AY_WRITE`, `AY_READ`, `PLAY_SILENCE`), MIDI
+  (`MIDI_NOTE_ON`, `MIDI_NOTE_OFF`, `MIDI_OUT`, the byte sender at $11A3, vector $011E), the errors
+  d, k, l, m, n, o; and COPY's printer codes (`COPY_CODES`), which sat in front of PLAY.
+- **Read from the code:** the command letters are capitals only (a small o is a note name); only
+  triplet lengths count towards "Too many tied notes"; the dispatch table's order matches the
+  letters searched from the end (H is index 14, a note 0).
+- **Probe** (`test/harness/sp128`, deleted; capitals typed as `{CS+X}` chords): during play "1c"
+  AY registers 0-1 held $01A8 (note 60's period from the table); play "O4cC" gave 0 OK;
+  `O9c`, `V16c`, `T300c` gave n Out of range; `o9c`, `x` and `o8b#` gave k Invalid note name;
+  `(((((c)))))` gave d Too many brackets; `99999c` gave l Number too big; nine strings were refused
+  when entered; eleven plain ties played.
+- **Level:** 0 (569 targets left). It reassembles byte for byte.
+
+### 2026-10-20 — `sp128-0.rom.dis`, RS232, FORMAT and COPY (working copy and shipped file, uncommitted)
+
+- **Added:** 72 labels, 100 line entries, 1 region ($05E6-$0978): CALL_ROM0's work in ROM 0
+  (`ROM0_CALLED`, which feeds an INPUT line to ROM 1's editor character by character), FORMAT with
+  its `BAUD_TABLE`, channel P's input (`RS232_IN`, a bit-banged receiver that keeps a second byte
+  arriving at once) and output (`RS232_PRINT`, a small printer driver: width, CR LF, the comma's
+  columns, AT and TAB; `RS232_OUT`, the byte sender), and COPY to an RS232 printer (`COPY_128`, 44
+  strips of 4 pixel lines as 768-dot graphics).
+- **Read from the code:** the RS232 port is the AY's I/O port A (bit 7 data in, bit 6 handshake in,
+  bit 3 data out, bit 2 handshake out).
+- **Probe** (`test/harness/sp128`, deleted): `format "p";300` made $5B5F 451, `;1000` 110 (1200's),
+  `;20000` left 11 (9600's, the start-up value), `;0` gave j Invalid baud rate, `format "x";300`
+  gave C Nonsense in BASIC. LPRINT and COPY were not run (they wait for a printer's handshake).
+- **Level:** 0 (498 targets left). It reassembles byte for byte.
+
+### 2026-10-20 — `sp128-0.rom.dis`, the editor to the end of the ROM (working copy and shipped file, uncommitted)
+
+- **Added:** 553 labels, each with a synopsis, about 450 comments and 18 regions, drafted in four
+  ranges by helper agents from the listing and the sidecar only (D4), and reviewed against the code
+  before merging: the editing rows (`ROWS_REBUILD`, `ROWS_DRAW`, `ROW_PUSH_CHAR` ... $152F-$16DB);
+  unused code at $2336-$2536 (a character-buffer renderer and room helpers that nothing calls, with
+  two 8x8 pictures); the keys and menus ($2584-$2A19: `KEY_ENTER`, `KEY_WORD_LEFT`, `SCREEN_TOGGLE`,
+  `MENU_OPEN`, `MENU_SELECT`, the menu items `MENU_TAPE_LOAD` to `MENU_RENUMBER`, the Calculator's
+  menu and the Tape Loader's text as regions); line entry from the rows, insert and delete across a
+  line's rows ($2A1A-$311D, `LINE_INSERT_CHAR`, `LINE_DELETE_CHAR`); the row stores above and below
+  the screen, line expansion with the keyword finder run in RAM at $FCAE (`EXPAND_CODES`,
+  `OWN_WORDS`) ($311E-$3847); renumber, the window and cursor routines and the tables to the end
+  ($3848-$3FCD, `RENUM_TOKENS`); and five strays (`START_CHARS`, `ERROR_128_OWN`, `DEF_FN_CHECK`,
+  `TABLE_LOOP`, `TABLE_CARRY`).
+- **Corrected:** `MENU_BAR` flips the item's 14 attribute cells between $78 and $68 rather than
+  moving the bar; $1B14 puts LLIST's token ($E1, from ROM 1's keyword table) into the line, so it is
+  `RUN_LLIST_LINE` (the Print item); the menu text after `MENU_ACTIONS` is named by address ($2754).
+  Names three drafts shared were split: `CURSOR_ON/OFF` (the editor's), `CELL_CURSOR_ON/OFF` ($3640),
+  `WIN_CURSOR_ON/OFF` ($3A9D); `NEXT_EDIT_CHAR` ($32EA).
+- **Read from the code, not probed:** `ROWS_DRAW`'s $161B-$162F is never reached (both callers
+  enter with Z); `ABOVE_POP` with an empty stack expands from $F9E1, 3 bytes above the stack's base;
+  `BELOW_CARRY` at row 21 addresses a 22nd slot past the buffer.
+- **Probe** (`test/harness/sp128`, deleted): EDIT in 128 BASIC opens Options (128 BASIC, Renumber,
+  Screen, Print, Exit); Renumber made lines 1 and 2 into 10 and 20; after `1 PRINT 1` and ENTER the
+  line's row at $EC16 (bank 7) has flags $19 and the empty rows $09, so bit 4 marks a row from the
+  program; the fifth start-up item shows "Tape Tester".
+- **Level:** measures 2 (1,085 labels, every one with a synopsis, no unlabelled targets, no
+  problems); recorded level still 0, with 959 comments for some 7,700 lines. It reassembles byte for
+  byte.
+
+### 2026-10-20 — `sp128-0.rom.dis`, the comment pass; level 2 recorded
+
+- **Added:** 3,294 end-of-line comments (4,253 in all, about one per 1.9 instructions), drafted in
+  six ranges by helper agents from the listing and the sidecar only (D4), sampled against the code
+  and checked for names that do not exist; every name a comment uses is a label in ROM 0 or ROM 1.
+- **Corrected** (each reported by a helper and checked against the instructions): `ROWS_DRAW` draws
+  rows B to C; `BELOW_ROW_ADDR`/`ABOVE_ROW_ADDR` leave HL = $0023; `DRAW_MENU`'s items are 14
+  cells; `PLAY_PERIODS`' first word ($0FBF) is note 21's; $17C1 calls ROM 1's CLEAR_WS, not
+  CALC_RESET; `PLAY_VOLUME` does not check the string's number; `RAM_FAULT`'s border is the bank
+  counter (bank + 1); `COPY_STRIP` sends x = 0 up; `RS232_OTHER` passes every control $10-$1F but
+  AT/TAB to `RS232_COLOUR`; `CLICK` uses RASP; `SWAP_INK_PAPER`'s C lacks the new ink;
+  `DELETE_SHIFT`'s bit is set on the cursor's row; `SCREEN_REFILL` does not store the line it
+  looks up; `ROW_UP`/`ROW_DOWN_TEXT` compare row numbers; the main window is lines 0-20 and the
+  lower one 22-23 (IX + 2 is the last line from the top); `RAMDISK_ERASE`'s source and destination
+  comments were swapped; `RAMDISK_READ` reads to HL; $1826's report L is never reached (BREAK_KEY
+  raises it); the tape tester takes 2047 samples a reading; `RENUM_REF_LINE`'s other case.
+- **Read from the code, not probed:** $2DA5 compares C with the byte at ($F9DB)'s word, not the
+  count (commented as a probable slip).
+- **Probe** (`test/harness/sp128`, deleted): RENUMBER with one line and step 10 renumbered it from
+  start 9989 and refused start 9990, so its test is start + step x count, one step past the last
+  new number.
+- **Level:** 2, recorded (1,085 labels, every one with a synopsis, no unlabelled targets, no
+  problems). It reassembles byte for byte.

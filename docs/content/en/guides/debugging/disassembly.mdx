@@ -207,7 +207,9 @@ The 48K ROM's annotations are complete (completeness level 2): every call and ju
 label, every labelled routine has a synopsis saying what it does, takes and returns, and the lines
 whose purpose is not obvious carry a comment. The 128K's ROM 1 is complete too: it takes the 48K
 ROM's annotations wherever its bytes match and adds its own for the routines the 128K changed and
-the code it added. The other ROMs' annotations are still sparse.
+the code it added. The 128K's editor ROM (ROM 0) is complete as well: its menus, the full-screen
+editor, the RAM disk, PLAY, the RS232 and tape commands are all labelled, described and commented.
+The other ROMs' annotations are still sparse.
 
 Use `bp-set ROM:<name>` to break at a ROM label, and `ROM:<name>` in a breakpoint condition.
 
