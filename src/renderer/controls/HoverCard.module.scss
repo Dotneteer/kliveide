@@ -1,0 +1,25 @@
+// --- An explanation card that opens on hover and can be read at leisure: the portalled-menu frame
+// --- (`--bg-color-dropdown-menu`, its border and shadow), at the body font size, not the tooltip's.
+// --- Unlike `.tooltip` it is a hit target - the pointer may move onto it - which is safe only
+// --- because `HoverCard` never places it over its own anchor.
+
+.anchor {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+}
+
+.card {
+  position: fixed;
+  z-index: var(--z-menu);
+  width: 44ch;
+  max-width: calc(100vw - var(--space-4));
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-color-dropdown-menu);
+  color: var(--color-dropdown-menu);
+  border: 1px solid var(--border-color-dropdown-menu);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-context-menu);
+  font-size: var(--font-size-300);
+  line-height: 1.4;
+}

@@ -29,6 +29,8 @@ export type RomSidecarCheck = {
   recordedLevel: number;
   /** Per page, the control-transfer targets in code that have no label yet: the level 1 to-do list. */
   unlabelledTargets: Record<string, number[]>;
+  /** Per page, how many labels have no synopsis yet: what level 2 still needs. */
+  labelsWithoutSynopsis: Record<string, number>;
 };
 
 /**
@@ -44,6 +46,7 @@ export async function checkRomSidecar(
   const problems: string[] = [];
   const levels: Record<string, number> = {};
   const unlabelledTargets: Record<string, number[]> = {};
+  const labelsWithoutSynopsis: Record<string, number> = {};
   let raw: RawRomSidecar;
   try {
     raw = JSON.parse(text);
@@ -52,7 +55,8 @@ export async function checkRomSidecar(
       problems: [t("media.romCheck.notJson", { message: (err as Error).message })],
       levels,
       recordedLevel: 0,
-      unlabelledTargets
+      unlabelledTargets,
+      labelsWithoutSynopsis
     };
   }
   const recordedLevel = typeof raw.level === "number" ? raw.level : 0;
@@ -109,6 +113,7 @@ export async function checkRomSidecar(
     const report = await measureRomLevel(bank, bytes, romDecoderFor(knownRomPageKind(romPageIdentity(bytes))));
     levels[page] = report.level;
     unlabelledTargets[page] = report.unlabelledTargets;
+    labelsWithoutSynopsis[page] = report.labelsWithoutSynopsis.length;
     for (const name of report.misplacedLabels) {
       problems.push(t("media.romCheck.misplacedLabel", { page, name }));
     }
@@ -120,5 +125,5 @@ export async function checkRomSidecar(
   // --- The canonical format
   if (text !== formatRomSidecar(raw)) problems.push(t("media.romCheck.notCanonical"));
 
-  return { problems, levels, recordedLevel, unlabelledTargets };
+  return { problems, levels, recordedLevel, unlabelledTargets, labelsWithoutSynopsis };
 }

@@ -48,6 +48,9 @@ async function renderEditor(path: string, files: Record<string, string>) {
   vi.doMock("@renderer/core/RendererProvider", () => ({
     useSelector: (selector: (state: any) => unknown) => selector({ isWindows: false })
   }));
+  vi.doMock("@renderer/controls/Icon", () => ({
+    Icon: ({ iconName }: { iconName: string }) => <span data-icon={iconName} />
+  }));
   vi.doMock("@renderer/controls/IconButton", () => ({
     SmallIconButton: ({ title, clicked }: { title?: string; clicked?: () => void }) => (
       <button onClick={clicked}>{title}</button>
@@ -115,6 +118,40 @@ describe("the ROM annotation editor", () => {
     expect(opened[0][4]).toMatchObject({ viewMode: "disassembly", topAddress: 0 });
     // --- The link moves on to the following target
     expect(await screen.findByRole("button", { name: "next $0010" })).toBeInTheDocument();
+  });
+
+  it("explains the level in a hover card wherever a level is shown", async () => {
+    await renderEditor(WORKING, { [WORKING]: SHIPPED_TEXT });
+    const meter = await screen.findByRole("img", { name: "Level 0 of 2" });
+
+    // --- A page's meter: its level, and what levels 1 and 2 still need
+    fireEvent.mouseEnter(meter.parentElement!);
+    const pageCard = await screen.findByRole("tooltip");
+    expect(pageCard).toHaveTextContent("Page 0 · level 0");
+    expect(pageCard).toHaveTextContent("940 call and jump targets have no label");
+    // --- The shipped sidecar gives every label a synopsis
+    expect(pageCard).toHaveTextContent("Every label has a synopsis");
+    expect(pageCard.querySelector('[data-state="next"]')).toHaveTextContent("Level 1");
+    fireEvent.keyDown(document, { key: "Escape" });
+    await waitFor(() => expect(screen.queryByRole("tooltip")).toBeNull());
+
+    // --- The column head explains the levels without measuring anything
+    fireEvent.mouseEnter(screen.getByRole("columnheader", { name: "Completeness" }));
+    const legend = await screen.findByRole("tooltip");
+    expect(legend).toHaveTextContent("Completeness levels");
+    expect(legend.querySelectorAll('[data-state="legend"]')).toHaveLength(3);
+    fireEvent.keyDown(document, { key: "Escape" });
+    await waitFor(() => expect(screen.queryByRole("tooltip")).toBeNull());
+
+    // --- The readiness chip and "records level": the whole file
+    for (const anchor of [screen.getByText(/Ready to ship · level/), screen.getByText(/^records level/)]) {
+      fireEvent.mouseEnter(anchor.closest("span")!);
+      const fileCard = await screen.findByRole("tooltip");
+      expect(fileCard).toHaveTextContent("measured 0 · records 0");
+      fireEvent.keyDown(document, { key: "Escape" });
+      await waitFor(() => expect(screen.queryByRole("tooltip")).toBeNull());
+    }
+    expect(screen.getByRole("columnheader", { name: "Completeness" })).not.toHaveAttribute("title");
   });
 
   it("reveals the working copy in the file manager, from beside its name", async () => {

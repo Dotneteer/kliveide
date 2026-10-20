@@ -42,6 +42,8 @@ import {
   runRomSourceExport
 } from "@renderer/appIde/annotations/romSourceExport";
 
+import { HoverCard } from "@renderer/controls/HoverCard";
+import { RomLevelCard } from "./RomLevelCard";
 import styles from "./RomAnnotationEditorPanel.module.scss";
 
 /*
@@ -355,6 +357,18 @@ const RomAnnotationEditorPanel = ({
 
   const ready = check && check.problems.length === 0;
   const measured = check ? Math.min(...Object.values(check.levels), 2) : undefined;
+  // --- The whole file's level card: its lowest page level, and what every page still lacks
+  const fileLevelCard = () =>
+    check && (
+      <RomLevelCard
+        kind="file"
+        measured={measured}
+        recorded={check.recordedLevel}
+        note={ready ? t("panels.rom.readyTitle") : t("panels.rom.showProblems")}
+        unlabelled={Object.values(check.unlabelledTargets).reduce((sum, list) => sum + list.length, 0)}
+        withoutSynopsis={Object.values(check.labelsWithoutSynopsis).reduce((sum, n) => sum + n, 0)}
+      />
+    );
   const readinessText = !check
     ? t("panels.rom.checking")
     : ready
@@ -428,7 +442,7 @@ const RomAnnotationEditorPanel = ({
                 {!check ? (
                   <span className={styles.secondary}>{t("panels.rom.checking")}</span>
                 ) : (
-                  <span>
+                  <HoverCard content={fileLevelCard}>
                     <button
                       type="button"
                       className={classnames(
@@ -436,17 +450,16 @@ const RomAnnotationEditorPanel = ({
                         ready ? styles.chipReady : styles.chipProblems
                       )}
                       onClick={() => setShowProblems((shown) => !shown)}
-                      title={ready ? t("panels.rom.readyTitle") : t("panels.rom.showProblems")}
                       aria-expanded={ready ? undefined : showProblems}
                     >
                       {readinessText}
                     </button>
-                  </span>
+                  </HoverCard>
                 )}
                 {check && (
-                  <span className={styles.secondary}>
+                  <HoverCard className={styles.secondary} tabIndex={0} content={fileLevelCard}>
                     {t("panels.rom.recordsLevel", { level: check.recordedLevel })}
-                  </span>
+                  </HoverCard>
                 )}
                 {showProblems && check && check.problems.length > 0 && (
                   <ul className={styles.problems}>
@@ -556,7 +569,9 @@ const RomAnnotationEditorPanel = ({
                 <span role="columnheader" title={t("panels.rom.colToLabelTitle")}>
                   {t("panels.rom.colToLabel")}
                 </span>
-                <span role="columnheader">{t("panels.rom.colCompleteness")}</span>
+                <HoverCard role="columnheader" tabIndex={0} content={<RomLevelCard kind="legend" />}>
+                  {t("panels.rom.colCompleteness")}
+                </HoverCard>
                 <span role="columnheader" />
               </div>
               {matches.map((match) => {
@@ -607,7 +622,23 @@ const RomAnnotationEditorPanel = ({
                             </button>
                           )}
                         </span>
-                        <span className={styles.completeness}>
+                        <HoverCard
+                          className={styles.completeness}
+                          tabIndex={0}
+                          content={() =>
+                            level === undefined ? (
+                              <RomLevelCard kind="legend" />
+                            ) : (
+                              <RomLevelCard
+                                kind="page"
+                                page={match.page}
+                                measured={level}
+                                unlabelled={targets?.length}
+                                withoutSynopsis={check?.labelsWithoutSynopsis[String(match.page)]}
+                              />
+                            )
+                          }
+                        >
                           <span
                             className={styles.meter}
                             role="img"
@@ -627,7 +658,7 @@ const RomAnnotationEditorPanel = ({
                           <span>
                             {level === undefined ? "…" : t("panels.rom.levelValue", { level })}
                           </span>
-                        </span>
+                        </HoverCard>
                         <span className={styles.rowActions}>
                           <SmallIconButton
                             iconName="logs"
