@@ -121,6 +121,7 @@ import { GraphicsView, type ByteSpan } from "@renderer/features/graphics/Graphic
 import { NameGraphicDialog, nameGraphicDialogTitle } from "@renderer/features/graphics/NameGraphicDialog";
 import { useDialogs } from "@renderer/controls/overlay/DialogProvider";
 import { updateAnnotationSession } from "@renderer/appIde/annotations/annotationSession";
+import { useInheritedRomAnnotations } from "@renderer/appIde/annotations/useInheritedRomAnnotations";
 import { withNamedGraphic } from "@renderer/appIde/annotations/annotationEdits";
 import { useActiveAnnotationSet } from "@renderer/appIde/annotations/activeAnnotationSet";
 import { ExportSourceButton, ReverseToolsMenu } from "@renderer/appIde/reverse/ReverseToolsMenu";
@@ -1372,12 +1373,22 @@ const StaticMemoryDump = ({
     contextMenuApi.show(event);
   }, [annotationVm.toolbar.menuEnabled, contextMenuApi, dispatchAnnotation]);
 
+  // --- A ROM sidecar that `inherits` lists with the inherited entries under its own (display only)
+  const listingAnnotations = useInheritedRomAnnotations(
+    annotationVm.annotations,
+    annotationMachine,
+    viewAnnotationBank,
+    contents,
+    mainApi,
+    projectService
+  );
+
   useEffect(() => {
     if (!disassemblyEnabled || viewMode !== "disassembly") return undefined;
     let cancelled = false;
 
     (async () => {
-      const annotations = annotationVm.annotations;
+      const annotations = listingAnnotations;
       const annotationItems = annotations && viewAnnotationBank !== undefined
         ? await createAnnotatedDisassemblyItems({
             annotations,
@@ -1461,7 +1472,7 @@ const StaticMemoryDump = ({
     decimalView,
     disassOffset,
     disassemblyEnabled,
-    annotationVm.annotations,
+    listingAnnotations,
     hideScreenArea,
     isZ88Listing,
     isRomListing,

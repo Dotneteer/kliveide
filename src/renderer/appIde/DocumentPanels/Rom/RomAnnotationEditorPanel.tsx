@@ -614,7 +614,7 @@ const RomAnnotationEditorPanel = ({
                     {match.bytes ? (
                       <>
                         <span>{t("panels.rom.sizeKb", { kb: match.bytes.length / 1024 })}</span>
-                        <span>{labelCounts.get(match.page) ?? 0}</span>
+                        <span>{check?.labels[String(match.page)] ?? labelCounts.get(match.page) ?? 0}</span>
                         <span
                           className={classnames(styles.toLabel, {
                             [styles.secondary]: !targets?.length

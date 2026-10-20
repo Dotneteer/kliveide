@@ -32,6 +32,8 @@ export type RomSidecarCheck = {
   unlabelledTargets: Record<string, number[]>;
   /** Per page, how many labels have no synopsis yet: what level 2 still needs. */
   labelsWithoutSynopsis: Record<string, number>;
+  /** Per page, how many labels it shows: its own and, when it `inherits`, the byte-bound inherited ones. */
+  labels: Record<string, number>;
 };
 
 /**
@@ -51,6 +53,7 @@ export async function checkRomSidecar(
   const levels: Record<string, number> = {};
   const unlabelledTargets: Record<string, number[]> = {};
   const labelsWithoutSynopsis: Record<string, number> = {};
+  const labels: Record<string, number> = {};
   let raw: RawRomSidecar;
   try {
     raw = JSON.parse(text);
@@ -60,7 +63,8 @@ export async function checkRomSidecar(
       levels,
       recordedLevel: 0,
       unlabelledTargets,
-      labelsWithoutSynopsis
+      labelsWithoutSynopsis,
+      labels
     };
   }
   const recordedLevel = typeof raw.level === "number" ? raw.level : 0;
@@ -132,6 +136,7 @@ export async function checkRomSidecar(
     levels[page] = report.level;
     unlabelledTargets[page] = report.unlabelledTargets;
     labelsWithoutSynopsis[page] = report.labelsWithoutSynopsis.length;
+    labels[page] = (bank.localLabels ?? []).length;
     for (const name of report.misplacedLabels) {
       problems.push(t("media.romCheck.misplacedLabel", { page, name }));
     }
@@ -143,5 +148,5 @@ export async function checkRomSidecar(
   // --- The canonical format
   if (text !== formatRomSidecar(raw)) problems.push(t("media.romCheck.notCanonical"));
 
-  return { problems, levels, recordedLevel, unlabelledTargets, labelsWithoutSynopsis };
+  return { problems, levels, recordedLevel, unlabelledTargets, labelsWithoutSynopsis, labels };
 }
