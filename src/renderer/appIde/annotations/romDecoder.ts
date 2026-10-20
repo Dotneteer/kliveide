@@ -11,7 +11,8 @@ import { Zx81CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disas
 
 /**
  * Install the ROM's own decoding on a disassembler: the report code after `RST $08` and the
- * calculator literals after `RST $28` on a 48K BASIC page, the ZX81's equivalents on its ROM, the
+ * calculator literals after `RST $28` on a 48K BASIC page, the ROM address after `RST $28` on the
+ * 128K's and the +3's editor ROMs, the ZX81's equivalents on its ROM, the
  * error code after `RST $08` on the ZX80's 4K ROM. Any
  * other page decodes as plain Z80. Shared by the authoring tools and the ROM page documents, so a
  * listing and the level report never disagree about where the code is.
@@ -22,6 +23,9 @@ export function prepareRomDisassembler(
 ): void {
   if (kind === "sp48-basic") disassembler.setCustomDisassembler(new ZxSpectrum48CustomDisassembler());
   if (kind === "sp128-editor") disassembler.setCustomDisassembler(new ZxSpectrum128EditorCustomDisassembler());
+  if (kind === "plus3-editor") {
+    disassembler.setCustomDisassembler(new ZxSpectrum128EditorCustomDisassembler({ decodeErrorCalls: false, otherRom: "ROM 3" }));
+  }
   if (kind === "zx81") disassembler.setCustomDisassembler(new Zx81CustomDisassembler());
   if (kind === "zx80") disassembler.setCustomDisassembler(new Zx80CustomDisassembler());
 }

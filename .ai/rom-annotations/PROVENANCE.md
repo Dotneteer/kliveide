@@ -1904,3 +1904,34 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
   with no disk "Drive A: track 0 sector 0", "No data", "Retry, Ignore or Cancel?", C: "No data, 0:1".
   The hard disk code was not probed (the harness has no hard disk).
 - **Level:** 2, recorded; it reassembles byte for byte.
+
+### 2026-10-20 — the +3 editor ROM: `spp3-41-0`, `spp3-40-0`, `spp3-41es-0`, `spp3e-0` (shipped, level 2)
+
+- **Decoding:** these pages (`plus3-editor`) now decode `RST $28` + word as a call into ROM 3
+  (`ZxSpectrum128EditorCustomDisassembler` with `decodeErrorCalls: false, otherRom: "ROM 3"`: their
+  $05AC is a stack switch, so nothing after its calls is data), in the tools and in the +3/+3E live
+  view (`spectrumP3CustomDisassembler`). `CALL $3E80` + word (into ROM 1) is marked with words regions.
+- **v4.1 (`spp3-41-0`), 833 labels, 3,628 comments:** a skeleton (filler), then five ranges drafted by
+  helpers from the bytes (D4; `_input/` holds commented disassemblies of these ROMs and was not
+  opened). Much of the ROM is the 128K editor ROM's code moved, so those routines carry the 128K
+  names (renamed where the 128K name says something wrong here: TITLE_P3_BASIC, MENU_LOADER ...);
+  the rest is new: restarts and RAM paging copies, start-up, the factory test program with its
+  texts, ROM switching at $3E00/$3E80/$3F00. Corrections found on review: $0FC2 is a row template,
+  not filler; WAIT_40_FRAMES is not where the start-up ends (that JP is into ROM 1); CHANS_128_INIT's
+  third channel is X and P is $3A05/$3A00.
+- **v4.0, Spanish, +3E:** mapped from v4.1 by instruction alignment (address operands masked, two
+  passes, the second listing the target with the first pass's regions; small gaps filled by
+  carrying the nearest shift; data regions placed by bytes or by position; moved RAM variables
+  remapped where consistent; the ROM 1 words after `CALL $3E80` translated). v4.0 needed only
+  ROM 1 addresses fixed by hand (its ROM 1 sites found by their bytes). The Spanish ROM 0 (857
+  labels) has Spanish menus and loader text and its own Spanish disk-error prompt at $21A3; the
+  +3E's (846 labels) replaces the test program with the window channel W (a drawing engine with a
+  dual 3/5-pixel font), channels M, V, X and F and a disk-message routine; both completed by
+  helpers. The mapper's slips, all fixed: constants and other ROMs' addresses in the text taken for
+  ROM 0 addresses (now left alone when a unit word or "in ROM n" follows, or in a "ROM n's" list).
+- **Level rule:** a jump target inside an instruction (v4.0's start-up JP into ROM 1 at $253A) is
+  reported apart (`midInstructionTargets`) and no longer holds a page below level 1.
+- **Probe** (`plus3-fdd1`): the start-up menu "128 +3" (Loader, +3 BASIC, Calculator, 48 BASIC;
+  "Drives A: and M: available."); EDIT opens Options (+3 BASIC, Renumber, Screen, Print, Exit);
+  Renumber made lines 1, 2 into 10, 20 ($5B75/$5B77 = 10).
+- **Level:** 2 for all four, recorded; each reassembles byte for byte.

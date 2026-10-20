@@ -87,6 +87,12 @@ const ROMS = join(root, "src/public/roms");
       return;
     }
   }
+  // --- LABELS=<file> with a sidecar that inherits nothing: its own labels
+  if (process.env.LABELS && sidecar && !sidecar.inherits?.length) {
+    const labels = sidecar.banks["0"].localLabels ?? [];
+    require("node:fs").writeFileSync(process.env.LABELS, labels.map((l) => `$${l.value.toString(16).toUpperCase().padStart(4, "0")} ${l.name}`).join("\n") + "\n");
+    return;
+  }
   const sections = regions
     ? regions.filter((r) => r.end < 0x4000).map((r) => new MemorySection(r.start, r.end, types[r.type]))
     : [new MemorySection(0, 0x3fff, MemorySectionType.Disassemble)];

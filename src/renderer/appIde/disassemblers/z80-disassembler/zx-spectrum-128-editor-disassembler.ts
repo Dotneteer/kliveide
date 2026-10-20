@@ -15,13 +15,29 @@ import {
  * not as instructions. Its errors are raised by `CALL $05AC`, whose routine takes the byte after the
  * call as the report code and never returns; that byte is listed as `.defb`. Both found from the
  * ROM's own routines (`sp128-0.rom.dis`: CALL_ROM1, ERROR_128).
+ *
+ * The +2A/+3's editor ROM (ROM 0) has the same `RST $28` (a call into ROM 3, the word after it the
+ * address), but its \$05AC is a stack switch whose calls are followed by code: it is decoded with
+ * `decodeErrorCalls: false`.
  */
 export class ZxSpectrum128EditorCustomDisassembler implements ICustomDisassembler {
   private _api: IDisassemblyApi;
   private _inRst28Mode = false;
   private _inErrorMode = false;
+  private readonly _decodeErrorCalls: boolean;
+  private readonly _otherRom: string;
 
   readonly toolId = CUSTOM_Z80_DISASSEMBLY_TOOL;
+
+  /**
+   * @param options `decodeErrorCalls` (default true): list the byte after `CALL $05AC` as the
+   * report code, as the 128K's editor ROM needs; `otherRom` (default "ROM 1"): the ROM `RST $28`
+   * calls, named in the listing's comments
+   */
+  constructor(options?: { decodeErrorCalls?: boolean; otherRom?: string }) {
+    this._decodeErrorCalls = options?.decodeErrorCalls ?? true;
+    this._otherRom = options?.otherRom ?? "ROM 1";
+  }
 
   setDisassemblyApi(api: IDisassemblyApi): void {
     this._api = api;
@@ -56,7 +72,7 @@ export class ZxSpectrum128EditorCustomDisassembler implements ICustomDisassemble
       address,
       opCodes: [low, high],
       instruction: `.defw ${value}`,
-      hardComment: "(ROM 1 address)"
+      hardComment: `(${this._otherRom} address)`
     });
     return true;
   }
@@ -64,8 +80,13 @@ export class ZxSpectrum128EditorCustomDisassembler implements ICustomDisassemble
   afterInstruction(item: DisassemblyItem): void {
     if (item.opCodes && item.opCodes[0] === 0xef) {
       this._inRst28Mode = true;
-      item.hardComment = "(Call ROM 1)";
-    } else if (item.opCodes?.[0] === 0xcd && item.opCodes[1] === 0xac && item.opCodes[2] === 0x05) {
+      item.hardComment = `(Call ${this._otherRom})`;
+    } else if (
+      this._decodeErrorCalls &&
+      item.opCodes?.[0] === 0xcd &&
+      item.opCodes[1] === 0xac &&
+      item.opCodes[2] === 0x05
+    ) {
       this._inErrorMode = true;
       item.hardComment = "(Report error)";
     }

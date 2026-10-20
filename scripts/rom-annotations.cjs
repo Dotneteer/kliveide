@@ -143,6 +143,9 @@ async function level(only) {
       console.log(
         `${name} page ${page}: level ${report.level} (recorded ${json.level ?? 0}); ` +
           `${report.instructions} instructions, ${report.unlabelledTargets.length} unlabelled target(s), ` +
+          (report.midInstructionTargets.length
+            ? `${report.midInstructionTargets.length} target(s) inside an instruction, `
+            : "") +
           `${report.labelsWithoutSynopsis.length} label(s) without a synopsis, ` +
           `${report.misplacedLabels.length} misplaced label(s), ${missing.length} entr(ies) without provenance`
       );
