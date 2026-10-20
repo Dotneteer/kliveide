@@ -166,6 +166,7 @@ makes the work faster, not the sources wider.
 
 ## Order of work
 
-`sp48.rom.dis` first (everything else inherits from it; done, at level 2), then `sp128-1` and the +3 ROM 3s
-by inheritance plus their differing routines, `sp128-0`, the +3 ROMs 0–2 (the +3DOS call
+`sp48.rom.dis` first (everything else inherits from it; done, at level 2), `sp128-1` by inheritance
+(done, at level 2; `sp48-authoring-guide.md` explains `inherits`), then the +3 ROM 3s by inheritance
+plus their differing routines, `sp128-0`, the +3 ROMs 0–2 (the +3DOS call
 table from the +3 manual first), and the ZX81 and ZX80 ROMs.

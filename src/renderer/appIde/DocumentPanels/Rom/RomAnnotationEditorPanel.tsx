@@ -33,7 +33,8 @@ import {
 } from "@renderer/appIde/annotations/romSidecarWriter";
 import {
   SHIPPED_ROM_FOLDER,
-  WORKING_ROM_FOLDER
+  WORKING_ROM_FOLDER,
+  inheritedSidecarSource
 } from "@renderer/appIde/annotations/romAnnotationLoader";
 import { parseAnnotations } from "@renderer/appIde/annotations/programAnnotations";
 import { requestRomAnnotationsReload } from "@renderer/appIde/annotations/romAnnotations";
@@ -204,7 +205,11 @@ const RomAnnotationEditorPanel = ({
   useEffect(() => {
     if (loaded.status !== "loaded" || !isRomSidecar || !matches) return undefined;
     let cancelled = false;
-    void checkRomSidecar(loaded.text, (page) => matches.find((m) => m.page === page)?.bytes).then(
+    void checkRomSidecar(
+      loaded.text,
+      (page) => matches.find((m) => m.page === page)?.bytes,
+      inheritedSidecarSource({ files: mainApi, projectService })
+    ).then(
       (result) => {
         if (!cancelled) setCheck(result);
       }
@@ -212,7 +217,7 @@ const RomAnnotationEditorPanel = ({
     return () => {
       cancelled = true;
     };
-  }, [loaded, isRomSidecar, matches]);
+  }, [loaded, isRomSidecar, matches, mainApi, projectService]);
 
   // --- Has an update moved the shipped sidecar on since this working copy was made?
   useEffect(() => {
@@ -294,7 +299,16 @@ const RomAnnotationEditorPanel = ({
       if (!readOnly) await flushAnnotationSession(path);
       const annotations = peekAnnotationSession(path) ?? parseAnnotations(loaded.text).annotations;
       if (!annotations) throw new Error(t("panels.rom.notRomSidecar", { file: fileNameOf(path) }));
-      const run = await runRomSourceExport(mainApi, { path, annotations, matches }, file);
+      const run = await runRomSourceExport(
+        mainApi,
+        {
+          path,
+          annotations,
+          matches,
+          inherited: inheritedSidecarSource({ files: mainApi, projectService })
+        },
+        file
+      );
       setExportState({
         status: "done",
         file,
@@ -308,7 +322,7 @@ const RomAnnotationEditorPanel = ({
         message: err instanceof Error ? err.message : String(err)
       });
     }
-  }, [loaded, mainApi, matches, path, readOnly, t]);
+  }, [loaded, mainApi, matches, path, projectService, readOnly, t]);
 
   const labelCounts = useMemo(() => {
     const counts = new Map<number, number>();

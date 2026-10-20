@@ -160,6 +160,17 @@ describe("loadRomPartitions", () => {
     expect(info.bindings[0].binding.labelsBound).toBe(SHIPPED.banks["0"].localLabels.length - 1);
   });
 
+  it("gives the 128K's ROM 1 its own sidecar with sp48.rom.dis inherited under it, byte-bound", async () => {
+    const rom1 = romFile("sp128-1.rom");
+    const [info] = await loadRomPartitions({ ...deps({ [-1]: source(rom1, "roms/sp128-1.rom") }), machineId: "sp128" } as any);
+    expect(info.shippedSidecar).toBe("sp128-1.rom.dis");
+    expect(info.layers.map((layer) => layer.path)).toEqual(["roms/sp128-1.rom.dis", "roms/sp48.rom.dis"]);
+    // --- ROM 1's own label where it differs; the 48K's where the bytes match
+    expect(info.layers[0].annotations.banks["0"].localLabels).toContainEqual({ name: "ROM0_JUMP", value: 0x3b49 });
+    expect(info.layers[1].bound?.has(0x3d00)).toBe(true);
+    expect(info.layers[1].bound?.has(0x1b7d)).toBe(false);
+  });
+
   it("gives an unknown page that is not a 48K BASIC page nothing shipped", async () => {
     const other = new Uint8Array(0x4000).fill(0x76);
     const [info] = await loadRomPartitions({ ...deps({ [-1]: source(other) }), machineId: "sp128" } as any);

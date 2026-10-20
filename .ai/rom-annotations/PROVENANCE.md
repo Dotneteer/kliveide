@@ -1574,3 +1574,29 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
   throughout except `$5E` (an up arrow), `$60` (a pound sign, `ukp` as in the ZX81 sidecar) and `$7F`
   (a copyright sign); `$27` is named `apostrophe` to keep the quoting readable.
 - **Level:** 2. `checkRomSidecar`: no problems; the file exports and reassembles byte for byte.
+
+### 2026-10-20 — `sp128-1.rom.dis`, the 128K's ROM 1 (shipped)
+
+- **Added:** `sp128-1.rom.dis`, which `inherits` `sp48.rom.dis` and authors only where ROM 1's bytes
+  differ: 99 labels, 253 line entries, 10 regions. Byte binding carries 1,036 of the 48K file's
+  1,043 labels; the merged page measures level 2 and reassembles byte for byte (1,135 labels).
+- **Method:** the two ROMs compared byte by byte: 1,177 bytes differ, in six patches of 2-4 bytes
+  (`$004A`, `$0B52`, `$1349`, `$1B7D`, `$1BF4`, `$2646`) and the 48K's filler `$386E-$3CFF`, which
+  holds new code. Each patch was read against the 48K code it replaced; the new code through
+  `tools/sp48-dis.cjs` with the merged regions.
+- **What the new code is (from the code):** a device on the AY chip's register 14 I/O port, read
+  one bit at a time (bit 0 out, bit 5 in), whose codes map through a table of digits, `.`, ENTER,
+  arithmetic signs, keyword codes and edit codes: the `KP_` routines (named for the keypad that
+  table describes), hooked into the frame interrupt and INKEY$ when FLAGS bit 4 is set; hooks that
+  send report printing and the statement loop to addresses `$010F`, `$0112`, `$0115` through the
+  RAM routine at `$5B00`; keyword codes `$A3`/`$A4` printed as SPECTRUM and PLAY (a `defc` table);
+  a test picture reached through a vector table at `$3C01`; filler.
+- **Names:** Klive's own; the patched routines keep their 48K names, and the 48K entries of their
+  unchanged lines are copied as `derived`.
+- **Probe** (`test/harness/sp128`, deleted): at the start-up menu FLAGS was `%00011101` (bit 4 set)
+  and `$5B00` held code that flips bit 4 of the byte at `$5B5C`, writes it to port `$7FFD` with
+  interrupts off and returns.
+- **Tooling, in the same change:** the parser kept no `inherits`, so inheritance had never applied
+  in the IDE; it does now, and the readiness check, the level measure, Export as source and the
+  `tools/` scripts read an inheriting sidecar merged with its inherited, byte-bound entries.
+- **Level:** 2.

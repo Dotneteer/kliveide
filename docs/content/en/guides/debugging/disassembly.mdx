@@ -205,8 +205,9 @@ your own stand out.
 
 The 48K ROM's annotations are complete (completeness level 2): every call and jump target has a
 label, every labelled routine has a synopsis saying what it does, takes and returns, and the lines
-whose purpose is not obvious carry a comment. They apply to the 128K's copy of the 48K BASIC ROM
-too, wherever its bytes match. The other ROMs' annotations are still sparse.
+whose purpose is not obvious carry a comment. The 128K's ROM 1 is complete too: it takes the 48K
+ROM's annotations wherever its bytes match and adds its own for the routines the 128K changed and
+the code it added. The other ROMs' annotations are still sparse.
 
 Use `bp-set ROM:<name>` to break at a ROM label, and `ROM:<name>` in a breakpoint condition.
 

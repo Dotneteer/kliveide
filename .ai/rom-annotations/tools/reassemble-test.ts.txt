@@ -12,10 +12,17 @@ import { AssemblerOptions } from "@main/compiler-common/assembler-in-out";
 import { knownRomPageKind, romPageIdentity } from "@common/roms/romIdentity";
 import { parseAnnotations } from "@renderer/appIde/annotations/programAnnotations";
 import { buildRomSourceExport, compareRomAssembly } from "@renderer/appIde/annotations/romSourceExport";
+import { withInheritedEntries } from "@renderer/appIde/annotations/romInheritance";
 
 it("reassembles to the ROM byte for byte", async () => {
-  const annotations = parseAnnotations(readFileSync(process.env.SIDECAR!, "utf8")).annotations!;
-  const bytes = new Uint8Array(readFileSync(join(__dirname, "../../src/public/roms", process.env.ROM!)));
+  const ROMS = join(__dirname, "../../src/public/roms");
+  const own = parseAnnotations(readFileSync(process.env.SIDECAR!, "utf8")).annotations!;
+  const bytes = new Uint8Array(readFileSync(join(ROMS, process.env.ROM!))).subarray(0, 0x4000);
+  // --- A sidecar that `inherits` is exported with its inherited, byte-bound entries, as the IDE does
+  const { annotations } = await withInheritedEntries(own, () => bytes, async (sidecar, page) => ({
+    annotations: parseAnnotations(readFileSync(join(ROMS, sidecar), "utf8")).annotations!,
+    bytes: new Uint8Array(readFileSync(join(ROMS, sidecar.replace(/\.dis$/, "")))).subarray(page * 0x4000, (page + 1) * 0x4000)
+  }));
   const pages = [{ page: 0, bytes, kind: knownRomPageKind(romPageIdentity(bytes)), crc32: romPageIdentity(bytes).crc32 }];
   const exported = await buildRomSourceExport(annotations, pages, { header: ["check"] });
   if (process.env.OUT) writeFileSync(process.env.OUT, exported.text);

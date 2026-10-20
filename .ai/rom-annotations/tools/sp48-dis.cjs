@@ -1,6 +1,10 @@
-// Lists the ZX Spectrum 48K ROM through Klive's own disassembler and 48K decoding (RST $08 report codes, RST $28 calculator codes) (the D4-sanctioned source).
+// Lists a Spectrum ROM page through Klive's own disassembler with the decoding the IDE gives that page
+// (prepareRomDisassembler: for a 48K BASIC page, RST $08 report codes and RST $28 calculator codes)
+// (the D4-sanctioned source). The 48K ROM by default; another ROM by its sidecar's source.fileName,
+// or ROM=<file in src/public/roms> without a sidecar.
 // Usage: node .ai/rom-annotations/tools/sp48-dis.cjs <from hex> <to hex> [sidecar.dis]
-// With a sidecar, its regions are used (data shown as .defb/.defw); without, the ROM is all code.
+// With a sidecar, its regions are used (data shown as .defb/.defw) - for a sidecar that `inherits`,
+// merged with the inherited sidecars' byte-bound regions, as the IDE shows them; without, all code.
 // Prints "ADDR BYTES INSTRUCTION [; decoder comment]" lines; grep -v '.def' leaves instruction starts.
 const { existsSync, readFileSync } = require("node:fs");
 const { dirname, join, resolve } = require("node:path");
@@ -55,17 +59,31 @@ registerTsRuntime();
 const { MemorySectionType } = require(join(root, "src/common/abstractions/MemorySection.ts"));
 const { MemorySection } = require(join(root, "src/renderer/appIde/disassemblers/common-types.ts"));
 const { Z80Disassembler } = require(join(root, "src/renderer/appIde/disassemblers/z80-disassembler/z80-disassembler.ts"));
-const { ZxSpectrum48CustomDisassembler } = require(join(root, "src/renderer/appIde/disassemblers/z80-disassembler/zx-spectrum-48-disassembler.ts"));
+const { prepareRomDisassembler } = require(join(root, "src/renderer/appIde/annotations/romDecoder.ts"));
+const { knownRomPageKind, romPageIdentity } = require(join(root, "src/common/roms/romIdentity.ts"));
+const { parseAnnotations } = require(join(root, "src/renderer/appIde/annotations/programAnnotations.ts"));
+const { withInheritedEntries } = require(join(root, "src/renderer/appIde/annotations/romInheritance.ts"));
+const ROMS = join(root, "src/public/roms");
 (async () => {
   const [from, to] = process.argv.slice(2, 4).map((x) => parseInt(x, 16));
   const sidecarFile = process.argv[4];
-  const bytes = readFileSync(join(root, "src/public/roms/sp48.rom"));
+  const sidecar = sidecarFile ? JSON.parse(readFileSync(sidecarFile, "utf8")) : undefined;
+  const romFile = sidecar?.source?.fileName ?? process.env.ROM ?? "sp48.rom";
+  const bytes = new Uint8Array(readFileSync(join(ROMS, romFile))).subarray(0, 0x4000);
   const types = { disassemble: MemorySectionType.Disassemble, bytes: MemorySectionType.ByteArray, words: MemorySectionType.WordArray, skip: MemorySectionType.Skip };
-  const sections = sidecarFile
-    ? JSON.parse(readFileSync(sidecarFile, "utf8")).banks["0"].regions.filter((r) => r.end < 0x4000).map((r) => new MemorySection(r.start, r.end, types[r.type]))
-    : [new MemorySection(0, 0x3cff, MemorySectionType.Disassemble)];
-  const d = new Z80Disassembler(sections, new Uint8Array(bytes), undefined, { allowExtendedSet: false });
-  d.setCustomDisassembler(new ZxSpectrum48CustomDisassembler());
+  let regions = sidecar?.banks["0"].regions;
+  if (sidecar?.inherits?.length) {
+    const merged = await withInheritedEntries(parseAnnotations(JSON.stringify(sidecar)).annotations, (p) => (p === 0 ? bytes : undefined), async (name, p) => ({
+      annotations: parseAnnotations(readFileSync(join(ROMS, name), "utf8")).annotations,
+      bytes: new Uint8Array(readFileSync(join(ROMS, name.replace(/\.dis$/i, "")))).subarray(p * 0x4000, (p + 1) * 0x4000)
+    }));
+    regions = merged.annotations.banks["0"].regions;
+  }
+  const sections = regions
+    ? regions.filter((r) => r.end < 0x4000).map((r) => new MemorySection(r.start, r.end, types[r.type]))
+    : [new MemorySection(0, 0x3fff, MemorySectionType.Disassemble)];
+  const d = new Z80Disassembler(sections, bytes, undefined, { allowExtendedSet: false });
+  prepareRomDisassembler(d, knownRomPageKind(romPageIdentity(bytes)));
   const out = await d.disassemble(0, 0x3fff);
   for (const it of out.outputItems) {
     if (it.address < from || it.address > to) continue;

@@ -476,6 +476,12 @@ export type ProgramAnnotations = {
   globalLabels?: AnnotationLabel[];
   banks: Record<string, BankAnnotation>;
   debug?: AnnotationDebugState;
+  /**
+   * A ROM sidecar's `inherits`: the sidecars whose byte-bound entries apply under its own
+   * (`romInheritance.ts`, the loader). Read only; the ROM sidecar writer takes nothing but `banks`
+   * from the model, so the file's own key is what is kept.
+   */
+  inherits?: { sidecar: string; page: number }[];
 };
 
 export type CreateDefaultAnnotationsOptions = {
@@ -670,6 +676,12 @@ export function validateAnnotations(
   annotations.banks = banks;
   if (debug) {
     annotations.debug = debug;
+  }
+  if (machine === "rom" && Array.isArray(value.inherits)) {
+    const inherits = value.inherits.filter(
+      (entry: any) => typeof entry?.sidecar === "string" && Number.isInteger(entry?.page)
+    );
+    if (inherits.length) annotations.inherits = inherits.map((e: any) => ({ sidecar: e.sidecar, page: e.page }));
   }
   return { annotations, diagnostics };
 }

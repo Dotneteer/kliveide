@@ -11,9 +11,28 @@ supersedes, keep no history (that is `PROVENANCE.md`'s job).
 - **`sp48.rom.dis` ships at level 2** (`src/public/roms/`, 2026-10-20, plan step R2): 1,043 labels,
   each with a synopsis; 4,886 end-of-line comments; every byte in a code or data region; it exports
   and reassembles byte for byte. The working copy `~/Klive/RomAnnotations/sp48.rom.dis` equals it.
-- **Next: R3**, the 128K. Byte binding already carries 1,036 of the 1,043 labels onto the 128K's
-  ROM 1 (`romLayers.test.ts`); label the 7 routines that differ there, then take the 128K editor
-  ROM (`sp128-0`) to level 1 and 2 the same way, starting from its start-up and menu.
+- **`sp128-1.rom.dis` ships at level 2** (2026-10-20): it `inherits` `sp48.rom.dis` and authors
+  only ROM 1's six patches and its new code at `$386E-$3CFF` (the keypad, the hooks into the other
+  ROM, SPECTRUM and PLAY, a test picture).
+- **Next: the 128K editor ROM (`sp128-0`)**, from scratch, starting from its start-up and menu. Its
+  page kind (`sp128-editor`) has no custom decoding yet: watch for inline data after RSTs or calls
+  (phantom targets show it) and add a decoder, as the 48K has, if the ROM uses one.
+
+## A ROM that is mostly another one: `inherits`
+
+The 128K's ROM 1 is the 48K ROM with patches. Its sidecar names `"inherits": [{"sidecar":
+"sp48.rom.dis", "page": 0}]` and holds only its own entries; every tool reads it merged with the
+inherited sidecar's byte-bound entries (`romInheritance.ts`): the IDE's layers, the readiness check
+and level, Export as source, `sp48-dis.cjs` (it picks the ROM from the sidecar's `source.fileName`),
+`check-annotations.cjs`, `rom:annotations level` and the reassembly template. What to author:
+
+- **Find the differences first**: compare the two ROM files byte by byte and group the runs. Each
+  run is a routine whose inherited label, synopsis and comments are dropped (binding is per label
+  span), so the sidecar must give that routine back: copy the inherited entries of its unchanged
+  lines (provenance `derived`) and describe the changed ones.
+- Mid-routine targets that the new code jumps to need labels of their own (`OUT_UDG`,
+  `PRINT_ENTRY_AT`, `OP_INKEY_CHAR` in ROM 1).
+- New code where the base ROM had filler gets regions, labels and comments as usual.
 
 ## The method, per topic
 

@@ -2499,6 +2499,8 @@ export type MessageKey =
   | "media.romCheck.debugSubtree"
   | "media.romCheck.duplicateLabel"
   | "media.romCheck.globalLabels"
+  | "media.romCheck.inheritedMissing"
+  | "media.romCheck.inheritedUnread"
   | "media.romCheck.invalidLabel"
   | "media.romCheck.levelTooHigh"
   | "media.romCheck.machineNotRom"

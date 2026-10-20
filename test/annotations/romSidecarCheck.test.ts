@@ -4,6 +4,7 @@ import { join } from "node:path";
 
 import { checkRomSidecar } from "@renderer/appIde/annotations/romSidecarCheck";
 import { formatRomSidecar } from "@common/roms/romAnnotationTools";
+import { parseAnnotations } from "@renderer/appIde/annotations/programAnnotations";
 
 /*
  * `rom-ann-check` and the editor's readiness chip (`.plans/ROM_ANNOTATION_EDITING_PLAN.md` R7): the
@@ -21,11 +22,16 @@ const romPages = (sidecar: string) => {
   };
 };
 const SP48_TEXT = readFileSync(join(ROMS, "sp48.rom.dis"), "utf8");
+/** The shipped sidecars a sidecar inherits (`sp128-1.rom.dis` inherits `sp48.rom.dis`). */
+const shippedSource = async (sidecar: string, page: number) => ({
+  annotations: parseAnnotations(readFileSync(join(ROMS, sidecar), "utf8")).annotations!,
+  bytes: romPages(sidecar)(page)!
+});
 const sp48 = () => JSON.parse(SP48_TEXT);
 
 describe("checkRomSidecar", () => {
   it.each(sidecars)("passes the shipped %s, as CI does", async (name) => {
-    const check = await checkRomSidecar(readFileSync(join(ROMS, name), "utf8"), romPages(name));
+    const check = await checkRomSidecar(readFileSync(join(ROMS, name), "utf8"), romPages(name), shippedSource);
     expect(check.problems).toEqual([]);
   });
 

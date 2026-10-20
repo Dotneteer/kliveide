@@ -10,6 +10,7 @@ import { knownRomPageKind, romPageIdentity } from "@common/roms/romIdentity";
 
 import { isValidLabelName, parseAnnotations } from "./programAnnotations";
 import { romDecoderFor } from "./romDecoder";
+import { inheritsOf, withInheritedEntries, type InheritedSidecarSource } from "./romInheritance";
 
 /*
  * Is a working copy ready to be copied into `src/public/roms/`? (`.plans/ROM_ANNOTATION_EDITING_PLAN.md`
@@ -38,10 +39,13 @@ export type RomSidecarCheck = {
  *
  * @param pageBytes The bytes of a page of the ROM the sidecar is named after, or `undefined` when
  *   that ROM (or page) cannot be found — which is itself a reason it cannot be shipped
+ * @param inherited Reads the sidecars this one `inherits`: a page is then measured together with
+ *   their byte-bound entries, as the Disassembly view shows it (`romInheritance.ts`)
  */
 export async function checkRomSidecar(
   text: string,
-  pageBytes: (page: number) => Uint8Array | undefined
+  pageBytes: (page: number) => Uint8Array | undefined,
+  inherited?: InheritedSidecarSource
 ): Promise<RomSidecarCheck> {
   const problems: string[] = [];
   const levels: Record<string, number> = {};
@@ -106,8 +110,22 @@ export async function checkRomSidecar(
     }
   }
 
+  // --- An inheriting sidecar is measured as the page it describes: with its inherited entries
+  let measuredBanks: Record<string, any> = raw.banks ?? {};
+  if (inheritsOf(raw).length > 0 && parsed.annotations) {
+    if (!inherited) {
+      problems.push(t("media.romCheck.inheritedUnread"));
+    } else {
+      const effective = await withInheritedEntries(parsed.annotations, pageBytes, inherited);
+      for (const sidecar of effective.missing) {
+        problems.push(t("media.romCheck.inheritedMissing", { sidecar }));
+      }
+      measuredBanks = effective.annotations.banks;
+    }
+  }
+
   // --- Labels sit on instruction starts inside code; the recorded level is no more than measured
-  for (const [page, bank] of Object.entries<any>(raw.banks ?? {})) {
+  for (const [page, bank] of Object.entries<any>(measuredBanks)) {
     const bytes = pageBytes(Number(page));
     if (!bytes) continue;
     const report = await measureRomLevel(bank, bytes, romDecoderFor(knownRomPageKind(romPageIdentity(bytes))));
