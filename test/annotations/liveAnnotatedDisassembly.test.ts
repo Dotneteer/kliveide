@@ -1,4 +1,8 @@
 import { describe, it, expect } from "vitest";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { machineRegistry } from "@common/machines/machine-registry";
+import { CT_CUSTOM_DISASSEMBLER, MI_SPECTRUM_128 } from "@common/machines/constants";
 
 import { MemorySectionType } from "@abstractions/MemorySection";
 import { sp128BankSpace, sp48BankSpace, nextBankSpace } from "@common/annotations/bankSpace";
@@ -295,5 +299,45 @@ describe("the ROM-gated custom disassembler", () => {
       identity("12345678")
     );
     expect(custom.inDescribedRom(0x0100)).toBe(true);
+  });
+
+  it("lists the 128K editor ROM's RST $28 with its ROM 1 address, and only in that ROM", async () => {
+    const roms = join(__dirname, "../../src/public/roms");
+    const rom0 = new Uint8Array(readFileSync(join(roms, "sp128-0.rom")));
+    const rom1 = new Uint8Array(readFileSync(join(roms, "sp128-1.rom")));
+    const factory = machineRegistry.find((m) => m.machineId === MI_SPECTRUM_128)!.toolInfo![CT_CUSTOM_DISASSEMBLER];
+    const identity = (crc32: string) => ({ crc32, size: 0x4000 });
+    async function list(rom: Uint8Array, partition: number, start: number, end: number) {
+      const memory = new Uint8Array(0x10000);
+      memory.set(rom, 0);
+      const context = customDisassemblyContextFor("sp128", sp128BankSpace, [partition, partition, 5, 5, 2, 2, 0, 0], (p) =>
+        p === -2 ? identity("b96a36be") : identity("e76799d2")
+      );
+      const disassembler = new Z80Disassembler([new MemorySection(start, end, MemorySectionType.Disassemble)], memory, undefined, {
+        allowExtendedSet: false
+      });
+      disassembler.setCustomDisassembler(factory(context));
+      return (await disassembler.disassemble(start, end))?.outputItems ?? [];
+    }
+    // --- ROM 0 paged in: $018A RST $28, .defw $1661, EX DE,HL
+    const editor = await list(rom0, -1, 0x018a, 0x018d);
+    expect(editor.map((i) => [i.address, i.instruction])).toEqual([
+      [0x018a, "rst $28"],
+      [0x018b, ".defw $1661"],
+      [0x018d, "ex de,hl"]
+    ]);
+    // --- ROM 1 paged in: its RST $28 is the calculator, and its RST $08 still takes a report code
+    const basic = await list(rom1, -2, 0x1b7b, 0x1b7c);
+    expect(basic[1]).toMatchObject({ address: 0x1b7c, instruction: ".defb $14" });
+    // --- The same bytes as ROM 0 but in RAM: plain code
+    const memory = new Uint8Array(0x10000);
+    memory.set(rom0.subarray(0x018a, 0x018e), 0x818a);
+    const context = customDisassemblyContextFor("sp128", sp128BankSpace, [-1, -1, 5, 5, 2, 2, 0, 0], () => identity("e76799d2"));
+    const disassembler = new Z80Disassembler([new MemorySection(0x818a, 0x818d, MemorySectionType.Disassemble)], memory, undefined, {
+      allowExtendedSet: false
+    });
+    disassembler.setCustomDisassembler(factory(context));
+    const ram = (await disassembler.disassemble(0x818a, 0x818d))?.outputItems ?? [];
+    expect(ram.map((i) => i.instruction)).not.toContain(".defw $1661");
   });
 });
