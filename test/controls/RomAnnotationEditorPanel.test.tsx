@@ -159,7 +159,7 @@ describe("the ROM annotation editor", () => {
     const pageCard = await screen.findByRole("tooltip");
     expect(pageCard).toHaveTextContent("Page 0 · level 0");
     expect(pageCard).toHaveTextContent("17 call and jump targets have no label");
-    expect(pageCard).toHaveTextContent("6 labels have no synopsis");
+    expect(pageCard).toHaveTextContent("7 labels have no synopsis");
     expect(pageCard.querySelector('[data-state="next"]')).toHaveTextContent("Level 1");
     fireEvent.keyDown(document, { key: "Escape" });
     await waitFor(() => expect(screen.queryByRole("tooltip")).toBeNull());

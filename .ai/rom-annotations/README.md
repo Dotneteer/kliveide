@@ -87,7 +87,10 @@ variables with underscores (CH_ADD, not CH-ADD), synopses wrapped at 92 columns 
 (`RST $xx:` or the command name leading where it applies), numbered steps for long routines and
 `Entry:`/`Exit:`/`Changes:`/`Observed:` lines last; errors as "Stops with error code n (report X)";
 comments starting with a capital, no full stop, tests as questions; a synopsis on every label; and a
-routine doing the same job as one already named in another sidecar takes that name. For the ZX81 ROM, `zx81-authoring-guide.md` beside this file carries the session method, the
+routine doing the same job as one already named in another sidecar takes that name. For the 48K ROM,
+`sp48-authoring-guide.md` beside this file carries the method, the naming lessons, the calculator
+traps, the level-2 comment pass and the tools added for it (`annotated-view.py`,
+`apply-comments.py`, `reassemble-test.ts.txt`, `sp48-probe-template.ts.txt`). For the ZX81 ROM, `zx81-authoring-guide.md` beside this file carries the session method, the
 helper scripts in `tools/` (a listing through Klive's disassembler, applying a batch through the
 formatter, the IDE's readiness check, a harness probe template) and the state of the work.
 
@@ -163,6 +166,6 @@ makes the work faster, not the sources wider.
 
 ## Order of work
 
-`sp48.rom.dis` first (everything else inherits from it), then `sp128-1` and the +3 ROM 3s
+`sp48.rom.dis` first (everything else inherits from it; done, at level 2), then `sp128-1` and the +3 ROM 3s
 by inheritance plus their differing routines, `sp128-0`, the +3 ROMs 0–2 (the +3DOS call
 table from the +3 manual first), and the ZX81 and ZX80 ROMs.

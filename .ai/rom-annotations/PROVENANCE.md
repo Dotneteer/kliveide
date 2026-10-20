@@ -1563,3 +1563,14 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
 - **Method:** the bytes through `tools/sp48-dis.cjs`, no new probes. `checkRomSidecar`: no problems,
   0 unlabelled targets, every label with a synopsis; it measures level 2.
 - **Level:** 2 recorded. The working copy exports and reassembles to the ROM byte for byte.
+
+### 2026-10-20 — `sp48.rom.dis`, the character set in the ZX81 sidecar's style
+
+- **Changed:** the character set `$3D00-$3FFF` takes `zx81.rom.dis`'s form: the label `CHARACTER_SET`,
+  the region shown one byte per row in binary, a synopsis naming its three readers (OUT_CHAR and
+  SCREENS_VALUE through CHARS, and the start-up copy of A-U into the UDGs at `$1203`), and a
+  `$NN - Character: ...` synopsis at each of the 96 pictures.
+- **Method:** every picture drawn from the ROM's bytes and named from its pixels: ASCII order
+  throughout except `$5E` (an up arrow), `$60` (a pound sign, `ukp` as in the ZX81 sidecar) and `$7F`
+  (a copyright sign); `$27` is named `apostrophe` to keep the quoting readable.
+- **Level:** 2. `checkRomSidecar`: no problems; the file exports and reassembles byte for byte.

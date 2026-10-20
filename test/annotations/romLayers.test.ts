@@ -195,7 +195,7 @@ describe("byte binding (§5.3)", () => {
     // --- Measured on the level 2 sidecar (2026-10-20; the R0 sidecar bound 8 of 12), recorded so a
     // --- change shows. A span runs to the next label, so with labels this dense only the routines
     // --- the 128K actually changed lose theirs.
-    expect(binding.labelsTotal).toBe(1042);
-    expect(binding.labelsBound).toBe(1035);
+    expect(binding.labelsTotal).toBe(1043);
+    expect(binding.labelsBound).toBe(1036);
   });
 });
