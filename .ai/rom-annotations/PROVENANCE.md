@@ -1817,3 +1817,37 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
   new number.
 - **Level:** 2, recorded (1,085 labels, every one with a synopsis, no unlabelled targets, no
   problems). It reassembles byte for byte.
+
+### 2026-10-20 — the +2A/+3 ROM 3s: `spp3-41-3`, `spp3-40-3`, `spp3-41es-3` (shipped, level 2)
+
+- **Method:** each ROM compared byte by byte with `sp48.rom` and `sp128-1.rom`; inheritance is one
+  level deep, so each sidecar lists its whole chain, nearest first (`spp3-41-3`: `sp128-1`, `sp48`;
+  the other two: `spp3-41-3`, `sp128-1`, `sp48`). What did not bind (a label whose span holds a
+  changed byte, a region holding one) was given back: the unchanged lines' entries copied
+  (provenance `derived`), the changed ones described from the bytes.
+- **v4.1 (`spp3-41-3`), 44 own labels:** the NMI's test is the 48K ROM's reversed (it jumps to
+  NMIADD when that is not zero); the frame interrupt calls `INT_KBD_MOTOR`, which after the keyboard
+  counts the disk motor's time-out down at $E600 in bank 7 every even frame and clears bit 3 of
+  port $1FFD (and its copy $5B67) at 0 (`MOTOR_TIMEOUT`); `ROM_SWAP_HL` at $3A00/$3A05 clears bit 2
+  of port $1FFD and continues at $3D00 in ROM 1, `ROM_SWAP_BACK` returns (nothing in ROM 3 calls
+  them); the hooks into the editor ROM are ROM 1's moved down $112 with their jumps NOPped out, so
+  REPORT_CHAR, STMT_JUMP and STMT_NEXT always take the 48K path; INKEY$ has DI, EI and a jump where
+  ROM 1 reads its keypad; SPECTRUM/PLAY printing kept; the messages ("Press REC & PLAY, then any
+  key.", " 1982 Amstrad"); the rest of $386E-$3CFF is filler, with an unprinted text at $3C01 that
+  `JUMP_3C01` would jump into.
+- **v4.0 (`spp3-40-3`, also the +3E's ROM 3: same CRC), 10 own labels:** $0013 is $A7, and the three
+  hooks keep their `JR NZ` to `HOOK_TO_010F`/`0112`/`0115`, so in +3 BASIC reports and statement
+  ends go to the editor ROM as on the 128K.
+- **Spanish v4.1 (`spp3-41es-3`), 53 own labels:** the tape, scroll ("]MAS?", shown as an inverted
+  question mark) and report messages in Spanish; the longer reports move COMMA_MESSAGES to $1544
+  and START_MESSAGES to $1546 (start-up's pointer at $1296 follows), while HOOK_REPORT still loads
+  $1536, which PRINT_MESSAGE's skip makes harmless; five character pictures differ (named from their
+  pixels: inverted exclamation mark, N with tilde, inverted question mark, Pt, n with tilde); the 48K
+  synopses that quote a report's text quote the Spanish one, their probe results marked as the
+  48K ROM's.
+- **Probe** (`test/harness/sp128`, models `plus3-fdd1` and `plus3-es-fdd1`, deleted): the menus say
+  "+3 BASIC" (the synopses say so for FLAGS bit 4); 48 BASIC started with " 1982 Amstrad" on both;
+  SAVE "x" printed "Press REC & PLAY, then any key."; in +3 BASIC $E600 set to 6 reached 0 within
+  20 frames and bit 3 of $5B67 was cleared (ROM 0 may count too); Spanish PRINT 1/0 gave
+  "6 NUMERO MUY GRANDE, 0:1".
+- **Level:** 2 for all three, recorded; each reassembles byte for byte.

@@ -6,6 +6,8 @@
 // With a sidecar, its regions are used (data shown as .defb/.defw) - for a sidecar that `inherits`,
 // merged with the inherited sidecars' byte-bound regions, as the IDE shows them; without, all code.
 // Prints "ADDR BYTES INSTRUCTION [; decoder comment]" lines; grep -v '.def' leaves instruction starts.
+// LABELS=<file> with an inheriting sidecar writes the merged page's labels to <file> instead: compare
+// it before and after to see which inherited labels a ROM's changed bytes drop.
 const { existsSync, readFileSync } = require("node:fs");
 const { dirname, join, resolve } = require("node:path");
 const root = resolve(__dirname, "../../..");
@@ -78,6 +80,12 @@ const ROMS = join(root, "src/public/roms");
       bytes: new Uint8Array(readFileSync(join(ROMS, name.replace(/\.dis$/i, "")))).subarray(p * 0x4000, (p + 1) * 0x4000)
     }));
     regions = merged.annotations.banks["0"].regions;
+    // --- LABELS=<file>: write the merged page's labels ("$XXXX NAME" lines) instead of a listing
+    if (process.env.LABELS) {
+      const labels = merged.annotations.banks["0"].localLabels;
+      require("node:fs").writeFileSync(process.env.LABELS, labels.map((l) => `$${l.value.toString(16).toUpperCase().padStart(4, "0")} ${l.name}`).join("\n") + "\n");
+      return;
+    }
   }
   const sections = regions
     ? regions.filter((r) => r.end < 0x4000).map((r) => new MemorySection(r.start, r.end, types[r.type]))

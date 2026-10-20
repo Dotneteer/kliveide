@@ -14,6 +14,9 @@ supersedes, keep no history (that is `PROVENANCE.md`'s job).
 - **`sp128-1.rom.dis` ships at level 2** (2026-10-20): it `inherits` `sp48.rom.dis` and authors
   only ROM 1's six patches and its new code at `$386E-$3CFF` (the keypad, the hooks into the other
   ROM, SPECTRUM and PLAY, a test picture).
+- **The +2A/+3 ROM 3s ship at level 2** (2026-10-20): `spp3-41-3.rom.dis` inherits `sp128-1` and
+  `sp48`; `spp3-40-3.rom.dis` (also the +3E's ROM 3, the same bytes) and `spp3-41es-3.rom.dis` inherit
+  `spp3-41-3` first. On the +3, FLAGS bit 4 is "+3 BASIC", not 128 BASIC.
 - **`sp128-0.rom.dis`, the 128K editor ROM, ships at level 2** (2026-10-20): 1,085 labels, each with
   a synopsis, 4,253 comments, no unlabelled targets; it reassembles byte for byte. Its RST $28 calls
   the ROM 1 address in the word after it and `CALL $05AC` + a code byte raises its errors;
@@ -54,6 +57,17 @@ and level, Export as source, `sp48-dis.cjs` (it picks the ROM from the sidecar's
 - Mid-routine targets that the new code jumps to need labels of their own (`OUT_UDG`,
   `PRINT_ENTRY_AT`, `OP_INKEY_CHAR` in ROM 1).
 - New code where the base ROM had filler gets regions, labels and comments as usual.
+- **Inheritance is one level deep**: each tool reads only the sidecars a file lists, with their
+  own entries. A ROM that is a variant of a variant lists the whole chain, nearest first (the first
+  layer wins per label and per line field).
+- **Binding is per label span of each layer**, and a sparse layer's spans are long: one of its
+  labels covers everything up to its next own label. A changed byte far from a routine can drop
+  it, and a label can bind inside a region you made (ROM 1's `UNUSED_TAIL` did on the +3); give
+  such offsets entries of your own. `LABELS=<file> node $T/sp48-dis.cjs 0000 3FFF <sidecar>` writes the
+  merged page's labels: compare an empty sidecar's list with the base's to see what dropped.
+- **Text the base sidecars quote** (message texts, report names, probe results) follows the base
+  ROM; on a ROM whose messages differ, override those synopses, and mark copied probe results as
+  the base ROM's.
 
 ## The method, per topic
 

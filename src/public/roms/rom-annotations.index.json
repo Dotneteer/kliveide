@@ -1,7 +1,10 @@
 {
+  "04448eaa": {"sidecar":"spp3-40-3.rom.dis","page":0},
   "4b1dd6eb": {"sidecar":"zx81.rom.dis","page":0},
   "4c7fc597": {"sidecar":"zx80.rom.dis","page":0},
+  "b88fd6e3": {"sidecar":"spp3-41-3.rom.dis","page":0},
   "b96a36be": {"sidecar":"sp128-1.rom.dis","page":0},
   "ddee531f": {"sidecar":"sp48.rom.dis","page":0},
-  "e76799d2": {"sidecar":"sp128-0.rom.dis","page":0}
+  "e76799d2": {"sidecar":"sp128-0.rom.dis","page":0},
+  "f6d25389": {"sidecar":"spp3-41es-3.rom.dis","page":0}
 }
