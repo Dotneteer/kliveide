@@ -127,17 +127,24 @@ export function formatRomSidecar(sidecar: RawRomSidecar): string {
  * sidecar and page that describe it. A ROM loaded from *any* file whose bytes equal a shipped page
  * gets that page's annotations, and nothing has to read every sidecar to find out.
  *
+ * Only the pages a sidecar describes (its banks) are indexed: `enNextLG.rom.dis` describes page 2 alone,
+ * and its file's other pages, the same bytes as `enNextZX.rom`'s, belong to that file's sidecar.
+ *
  * @param sidecars The shipped sidecar file names (`sp48.rom.dis`)
  * @param romBytes The bytes of the ROM file a sidecar sits beside (its name without `.dis`)
+ * @param describedPages The pages a sidecar has banks for; every page of the file when absent
  */
 export function buildRomIndex(
   sidecars: readonly string[],
-  romBytes: (romFile: string) => Uint8Array
+  romBytes: (romFile: string) => Uint8Array,
+  describedPages?: (sidecar: string) => readonly number[] | undefined
 ): Record<string, { sidecar: string; page: number }> {
   const index: Record<string, { sidecar: string; page: number }> = {};
   for (const sidecar of [...sidecars].sort()) {
     const bytes = romBytes(sidecar.replace(/\.dis$/i, ""));
+    const described = describedPages?.(sidecar);
     for (let page = 0; page * 0x4000 < bytes.length; page++) {
+      if (described && !described.includes(page)) continue;
       const crc = romCrc32(bytes.subarray(page * 0x4000, Math.min(bytes.length, (page + 1) * 0x4000)));
       index[crc] ??= { sidecar, page };
     }

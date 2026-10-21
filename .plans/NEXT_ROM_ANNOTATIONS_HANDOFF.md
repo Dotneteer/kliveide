@@ -1,4 +1,4 @@
-# Handoff: ZX Spectrum Next ROM annotations
+# Handoff: ZX Spectrum Next ROM annotations (complete)
 
 For the next session. The plan is `NEXT_ROM_ANNOTATIONS_PLAN.md` (phases N0-N6); this file says where the
 work stands, what is uncommitted, and how to go on. Read first: `AGENTS.md`, `.ai/rom-annotations/README.md`
@@ -73,16 +73,16 @@ tests. Details in PROVENANCE.
 level 2 in their working copies and reassemble byte for byte. The alternate ROM's pages have kinds of their
 own (`next-alt0`, `next-alt1`) and decoder tables. Every Next ROM is now at level 2; none is shipped.
 
-## The next step: N6, ship
+## Done: N6 (2026-10-21) — the plan is complete
 
-Copy the five working copies (`enNextZX`, `enNextLG`, `enAltZX`, `enNxtmmc`, `enNextMf` `.rom.dis`) to
-`src/public/roms/`, add them to `rom-annotations.index.json`, and run the shipped-sidecar checks (`npm test`
-covers `romSidecarCheck`; `node scripts/rom-annotations.cjs level` on each). `enNextLG.rom.dis` inherits
-`enNextZX.rom.dis`, so the tools that read inherited sidecars from `src/public/roms/` work only once both are
-shipped. Then the Disassembly guide (`docs/content/en/.../disassembly.mdx`), the roadmap
-(`CLOSING_THE_GAPS_PLAN.md` G7.2) and the competitive analysis (§2 and §4), and the plan's changeset (a
-feature: the Next's ROMs annotated). Check the Next's live Disassembly view in the running IDE (the N0
-item still not checked) before committing.
+The five sidecars ship in `src/public/roms/` (`enNextZX`, `enNextLG`, `enAltZX`, `enNxtmmc`, `enNextMf`),
+indexed; `buildRomIndex` now lists only the pages a sidecar describes. Checked in the running IDE with a
+throwaway doc-shots recipe (isolated home, so the real `~/Klive/ks2.cim` was not touched): every sidecar's
+document shows its pages at level 2, and the Next's live Disassembly view shows the labels, synopses and
+comments (it halts at ROM 2's HALT_LOOP without an SD card). Seen there, not changed: the view writes a 16-bit
+immediate that equals a label's address as that label (`ld bc,DOS_CATALOG` for `ld bc,$0200` in PRINT_MSG).
+Docs, roadmap, competitive analysis and the changeset are done. The working copies in `~/Klive/RomAnnotations/`
+still exist and now replace the shipped files in the author's IDE until removed.
 
 ## Lessons from R3-R4 to keep
 

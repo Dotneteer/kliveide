@@ -4,7 +4,7 @@ Annotate the ROMs the Next runs (NextZXOS, the alternate ROM, the DivMMC and Mul
 48K, 128K and +3 ROMs are: labels, synopses, comments and regions, written from the bytes, to level 2.
 This continues G7.2 of `CLOSING_THE_GAPS_PLAN.md` (R0-R4 covered the 48K, 128K, +2A/+3 and +2E/+3E).
 
-Status: **N0-N5 done (2026-10-21): every Next ROM at level 2 in its working copy; N6 (shipping) next.** Where the work stands and how to go on: `NEXT_ROM_ANNOTATIONS_HANDOFF.md`.
+Status: **Done (2026-10-21): every Next ROM ships at level 2 (N0-N6).** Where the work stands and how to go on: `NEXT_ROM_ANNOTATIONS_HANDOFF.md`.
 
 ## 1. The ROM files
 
@@ -59,7 +59,7 @@ The tools take `PAGE=<n>` for a page of a several-page file (`sp48-dis.cjs`, `ap
 | **N3** ✅ (2026-10-21) | Page 2 at level 2 (761 labels): the DOS ROM, its IDE_* and DOS_*/DD_* jump tables named from the API document; `RST $08` + byte + word calls the DivMMC memory's code (through ROM 3's $3Dxx automap), `CALL $3E18` + word the alternate ROM. The file records level 2; all four pages reassemble byte for byte. | M |
 | **N4** ✅ (2026-10-21) | `enNxtmmc.rom` (617 labels) and `enNextMf.rom` (424) at level 2, reassembling byte for byte. The DivMMC ROM is the vector table, bank dispatch, FAT file system and SD sector layer (its `RST $08` hands esxDOS calls to DivMMC RAM); the Multiface ROM is the NMI menu, snapshot saving and breakpoints. Their inline conventions are in `nextzxos-disassembler.ts` (kinds `next-divmmc`, `next-multiface`). | M |
 | **N5** ✅ (2026-10-21) | `enAltZX.rom` at level 2 (511 and 612 labels; kinds `next-alt0`/`next-alt1` with decoder tables), and `enNextLG.rom.dis` inheriting enNextZX's page 2 with its two changed texts. | M |
-| **N6** | Ship at level 2, docs (Disassembly guide), roadmap, competitive analysis; the changeset. | S |
+| **N6** ✅ (2026-10-21) | Shipped: `enNextZX`, `enNextLG`, `enAltZX`, `enNxtmmc`, `enNextMf` `.rom.dis` in `src/public/roms/`, indexed (the index now lists only the pages a sidecar describes, so `enNextLG.rom.dis`'s page 2 does not claim enNextZX's pages); checked in the running IDE (the ROM documents and the Next's live Disassembly view); the Disassembly guide, the roadmap and the competitive analysis; the changeset. | S |
 
 ## 5. Decisions
 

@@ -217,9 +217,14 @@ directory, the sector cache, the floppy controller driver and the built-in disk 
 +3E share v4.0's ROM 3, and their ROM 2 is annotated as well, including its hard disk driver,
 partitions and drive letters. The +3's editor ROM (ROM 0) and syntax ROM (ROM 1) are complete in all four
 versions (v4.0, v4.1, Spanish and +3E), the +3E's with its window, memory and file channels and
-its commands for partitions and streams. In these ROMs the disassembly lists the address after each
-call into another ROM as a `.defw`, and the error code after each error call as a `.defb`. The other ROMs'
-annotations are still sparse.
+its commands for partitions and streams. The ZX Spectrum Next's ROMs are complete as well: the four
+pages of NextZXOS (the system ROM with its start-up menu, Browser and window channels; NextBASIC's
+command ROM; the DOS ROM with its IDEDOS and +3DOS-style jump tables and the SD card driver; and the
+48K BASIC page NextZXOS extends), the alternate ROM with NextBASIC's editor and its graphics, sound
+and file commands, the DivMMC ROM's file system and the Multiface ROM's NMI menu; the `enNextLG.rom`
+variant shares them. In these ROMs the disassembly lists the address after each call into another
+ROM as a `.defw`, and the error code after each error call as a `.defb`. The other ROMs' annotations
+are still sparse.
 
 Use `bp-set ROM:<name>` to break at a ROM label, and `ROM:<name>` in a breakpoint condition.
 

@@ -96,7 +96,21 @@ describe("the shipped ROM sidecars", () => {
 
   it("has an index that is up to date", () => {
     const index = readFileSync(join(ROMS, "rom-annotations.index.json"), "utf8");
-    expect(index).toBe(formatRomIndex(buildRomIndex(sidecars, (rom) => new Uint8Array(readFileSync(join(ROMS, rom))))));
+    const described = (sidecar: string) =>
+      Object.keys(JSON.parse(readFileSync(join(ROMS, sidecar), "utf8")).banks ?? {}).map(Number);
+    expect(index).toBe(
+      formatRomIndex(buildRomIndex(sidecars, (rom) => new Uint8Array(readFileSync(join(ROMS, rom))), described))
+    );
+  });
+});
+
+describe("buildRomIndex", () => {
+  it("indexes only the pages a sidecar describes", () => {
+    // --- enNextLG.rom.dis describes page 2 only; its file's other pages are enNextZX.rom's bytes
+    const index = JSON.parse(readFileSync(join(ROMS, "rom-annotations.index.json"), "utf8"));
+    expect(index["43fc1f2f"]).toEqual({ sidecar: "enNextLG.rom.dis", page: 2 });
+    expect(index["95ba84d4"]).toEqual({ sidecar: "enNextZX.rom.dis", page: 0 });
+    expect(index["92d23960"]).toEqual({ sidecar: "enNextZX.rom.dis", page: 3 });
   });
 });
 
