@@ -1,6 +1,6 @@
 import { MemorySectionType } from "@abstractions/MemorySection";
 import type { RomDecoder, RomInstruction } from "@common/roms/romAnnotationTools";
-import type { RomPageKind } from "@common/roms/romIdentity";
+import { romKindUsesZ80N, type RomPageKind } from "@common/roms/romIdentity";
 
 import { MemorySection } from "@renderer/appIde/disassemblers/common-types";
 import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z80-disassembler";
@@ -24,7 +24,9 @@ export function prepareRomDisassembler(
   disassembler: Z80Disassembler,
   kind: RomPageKind | undefined
 ): void {
-  if (kind === "sp48-basic") disassembler.setCustomDisassembler(new ZxSpectrum48CustomDisassembler());
+  if (kind === "sp48-basic" || kind === "next-basic") {
+    disassembler.setCustomDisassembler(new ZxSpectrum48CustomDisassembler());
+  }
   if (kind === "sp128-editor") disassembler.setCustomDisassembler(new ZxSpectrum128EditorCustomDisassembler());
   if (kind === "plus3-syntax") disassembler.setCustomDisassembler(plus3SyntaxDecoder());
   if (kind === "plus3-editor") {
@@ -46,7 +48,8 @@ export function romDecoderFor(kind: RomPageKind | undefined): RomDecoder {
       [new MemorySection(start, end, MemorySectionType.Disassemble)],
       bytes,
       undefined,
-      { allowExtendedSet: false }
+      // --- The Next's pages use the Z80N's extra opcodes; on any other ROM they are not instructions
+      { allowExtendedSet: romKindUsesZ80N(kind) }
     );
     prepareRomDisassembler(disassembler, kind);
     const output = await disassembler.disassemble(start, end);

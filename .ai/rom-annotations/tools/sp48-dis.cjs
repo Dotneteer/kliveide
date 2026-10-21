@@ -99,7 +99,11 @@ const ROMS = join(root, "src/public/roms");
   const sections = regions
     ? regions.filter((r) => r.end < 0x4000).map((r) => new MemorySection(r.start, r.end, types[r.type]))
     : [new MemorySection(0, 0x3fff, MemorySectionType.Disassemble)];
-  const d = new Z80Disassembler(sections, bytes, undefined, { allowExtendedSet: false });
+  // --- The Next's pages use the Z80N's extra opcodes (romKindUsesZ80N); other ROMs do not
+  const { romKindUsesZ80N } = require(join(root, "src/common/roms/romIdentity.ts"));
+  const d = new Z80Disassembler(sections, bytes, undefined, {
+    allowExtendedSet: romKindUsesZ80N(knownRomPageKind(romPageIdentity(bytes)))
+  });
   prepareRomDisassembler(d, knownRomPageKind(romPageIdentity(bytes)));
   const out = await d.disassemble(0, 0x3fff);
   for (const it of out.outputItems) {

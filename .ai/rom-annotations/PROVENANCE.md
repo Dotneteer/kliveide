@@ -1976,3 +1976,23 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
   610, 528, 451.
 - **Measured, not yet authored:** page 3 shares ~9.7K with the 48K ROM; page 2 ~3K with the +3E's
   ROM 0; pages 0 and 1 little; `enNextLG.rom` differs from `enNextZX.rom` in page 2 only.
+
+### 2026-10-21 — NextZXOS ROM 3 (`enNextZX.rom` page 3, working copy, level 2 measured)
+
+- **Method:** `sp48.rom.dis` mapped onto page 3 with `map-rom.py` (`PAGE=3 SRC_PAGE=0`, two passes: 749 of
+  1,043 labels, 3,445 of 5,263 lines), then three ranges completed by helpers from the bytes (D4; the
+  Next developer guide, `nextreg.txt` and the VHDL allowed as interface documents), each draft merged with
+  `apply-draft.py` and `:replace=` ranges. Audit of the remapped addresses: no slips.
+- **Found:** the listing tools hid the Z80N's opcodes (`MUL D,E`, `NEXTREG`, `PUSH nn` ... listed as NOPs);
+  Next pages now decode them (`next-basic` kind for this page). NextZXOS removed the tape code ($0605 and
+  $060D page DivMMC RAM in, `$87` to port `$E3`), the 48K start-up and the syntax tables; added an operand
+  jump table at $0600, a 256-byte operator table at $1A99, selectors and string modifiers at $11B7, number
+  bases (`$`, `@`, BIN; memory 5's byte $5CAD), long names, local variables (list at ($5C0B)), `%` integer
+  variables in DivMMC memory, BANK PEEK/DPEEK/USR/PEEK$, SPRITE functions, shifts and bitwise operators
+  ($386E-$3CFC); moved the calculator's operation table to $3B02 and its constants to $3C02; `CALL $2705` is
+  followed by an inline DivMMC address (words regions); `RST $00` soft-resets through NextReg 2. Token
+  names of NextBASIC's new keywords were read from the alternate ROM's keyword table (bytes).
+- **Probe** (`test/harness/zxnext`, `prepareBasic()` and `call()`): MUL_HL_DE 300 x 200 = 60000, $1234 x
+  $0300 carry, 0 x 5 Z; NEXTREG_READ of register $00 gave 8 (the core's value).
+- **Level:** page 3 measures 2 (1,148 labels, 5,416 comments, no unlabelled or mid-instruction targets);
+  it reassembles byte for byte. The file records 0 until its other pages are done.

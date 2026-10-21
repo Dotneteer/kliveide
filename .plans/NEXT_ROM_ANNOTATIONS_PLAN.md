@@ -4,7 +4,7 @@ Annotate the ROMs the Next runs (NextZXOS, the alternate ROM, the DivMMC and Mul
 48K, 128K and +3 ROMs are: labels, synopses, comments and regions, written from the bytes, to level 2.
 This continues G7.2 of `CLOSING_THE_GAPS_PLAN.md` (R0-R4 covered the 48K, 128K, +2A/+3 and +2E/+3E).
 
-Status: **N0 done (2026-10-21), N1 next.** Where the work stands and how to go on: `NEXT_ROM_ANNOTATIONS_HANDOFF.md`.
+Status: **N0 and N1 done (2026-10-21), N2 next.** Where the work stands and how to go on: `NEXT_ROM_ANNOTATIONS_HANDOFF.md`.
 
 ## 1. The ROM files
 
@@ -13,7 +13,7 @@ Status: **N0 done (2026-10-21), N1 next.** Where the work stands and how to go o
 | `enNextZX.rom` | 0 | R0 (`-1`) | `95ba84d4` | `next-os` | NextZXOS; little in common with the +3E's ROMs (~0.4K matches) |
 | | 1 | R1 (`-2`) | `74dbb504` | `next-os` | NextZXOS; ~0.7K matches with the +3E's ROM 1 |
 | | 2 | R2 (`-3`) | `cafb1e32` | `next-os` | ~3K matches with the +3E's ROM 0 (editor-like) |
-| | 3 | R3 (`-4`) | `92d23960` | `sp48-basic` | 48K BASIC, changed: ~9.7K matches with the 48K ROM; `$0028` is the calculator |
+| | 3 | R3 (`-4`) | `92d23960` | `next-basic` | 48K BASIC, changed: ~9.7K matches with the 48K ROM; `$0028` is the calculator |
 | `enNextLG.rom` | 0-3 | | page 2 `43fc1f2f` | `next-os` | `enNextZX.rom` with another page 2; pages 0, 1, 3 identical |
 | `enAltZX.rom` | 0, 1 | X0, X1 (`-5`, `-6`) | `574ec214`, `74bc5674` | `next-os` | the alternate ROM |
 | `enNxtmmc.rom` | 0 (8K) | DM (`-7`) | `5a443736` | `next-divmmc` | the DivMMC ROM (esxDOS) |
@@ -54,7 +54,7 @@ The tools take `PAGE=<n>` for a page of a several-page file (`sp48-dis.cjs`, `ap
 | Phase | Work | Size |
 |---|---|---|
 | **N0** ✅ (2026-10-21) | The Next reports its ROM pages (R0-R3, X0, X1, DM) to the annotations (`getRomSources`); a 16K ROM page's sites count within the page; the pages' CRCs and kinds are known (`KNOWN_ROM_PAGES`, with `page`); ROM 3 decodes as the 48K ROM in the live view; the tools take `PAGE=`; the working copies exist. | S |
-| **N1** | `enNextZX` page 3 (48K BASIC, changed): bind the 48K ROM's entries (`inherits` or mapping, as for the +3's ROM 3), author what NextZXOS changed. | S–M |
+| **N1** ✅ (2026-10-21) | `enNextZX` page 3 at level 2 in the working copy (1,148 labels, 5,416 comments, reassembling byte for byte): the 48K ROM's entries mapped (749 labels), the rest drafted by three helpers. It is a new kind, `next-basic` (48K decoding with the Z80N's opcodes). What NextZXOS changed: no tape code (the DivMMC does it), the operand jump table at $0600 and new functions in its place, no 48K start-up (selectors and string modifiers instead), a 256-byte operator table at $1A99, the calculator's tables moved to $3B02/$3C02, number bases, long names, local and integer variables, BANK/SPRITE/bitwise functions at $386E-$3CFC, `CALL $2705` + an inline word into DivMMC memory. | S–M |
 | **N2** | Pages 0 and 1 (NextZXOS): the restarts and the `RST $28` convention first (a decoder for `next-os` pages if it carries inline words), then helpers by range, as for the +3 ROMs; the API call numbers from the API document (`manual`). | L |
 | **N3** | Page 2. | M |
 | **N4** | `enNxtmmc.rom` (esxDOS, 8K) with its `RST $08` API (document), and `enNextMf.rom`. | M |

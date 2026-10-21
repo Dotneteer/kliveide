@@ -18,7 +18,7 @@ describe("the Next's ROM sources", () => {
       expect(sources[partition].path).toMatch(/enNextZX\.rom$/);
       expect(KNOWN_ROM_PAGES[sources[partition].crc32]).toBeDefined();
     }
-    expect(KNOWN_ROM_PAGES[sources[-4].crc32].kind).toBe("sp48-basic");
+    expect(KNOWN_ROM_PAGES[sources[-4].crc32].kind).toBe("next-basic");
     expect(sources[-5].path).toMatch(/enAltZX\.rom$/);
     expect(sources[-7]).toMatchObject({ size: 0x2000 });
     expect(sources[-7].path).toMatch(/enNxtmmc\.rom$/);

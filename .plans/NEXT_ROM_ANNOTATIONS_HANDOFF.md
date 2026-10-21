@@ -33,31 +33,24 @@ work stands, what is uncommitted, and how to go on. Read first: `AGENTS.md`, `.a
   `enNextMf.rom.dis` — skeletons, level 0, each page one disassemble region. Write them back with the cmp
   guard (`zx81-authoring-guide.md`): the author may edit them in the IDE meanwhile.
 
-## The next step: N1, NextZXOS's ROM 3 (`enNextZX.rom` page 3)
+## Done since: N1 (2026-10-21)
 
-Measured: page 3 shares ~9.7K with the 48K ROM. A first mapping pass (run in the last session, not kept)
-carried 742 of `sp48.rom.dis`'s 1,043 labels and 3,435 of its 5,263 lines, leaving 346 unlabelled targets
-and one data region unplaced (the 48K's `SYNTAX_ENTRIES` area, `$1A48-$1B16`). To redo it:
+`enNextZX.rom` page 3 is at level 2 in the working copy `~/Klive/RomAnnotations/enNextZX.rom.dis` (1,148
+labels, 5,416 comments, no unlabelled targets, reassembling byte for byte; probes: MUL_HL_DE, NEXTREG_READ).
+Code changes with it (committed with N1): the kind `next-basic`
+(`romIdentity.ts`, `romKindUsesZ80N`), the Z80N's opcodes decoded on every Next page (`romDecoder.ts`,
+`sp48-dis.cjs`, the ROM page document in `StaticMemoryDump.tsx`), the Next's live chain gated on
+`next-basic`, test `test/annotations/nextRomDecoder.test.ts`. The file's recorded level stays 0 until every
+page is done (the level is per file).
 
-```
-W=<a work folder in the scratchpad>
-PAGE=3 SRC_PAGE=0 python3 .ai/rom-annotations/tools/map-rom.py $W src/public/roms/sp48.rom.dis sp48.rom enNextZX.rom $W/p3
-PAGE=3 python3 .ai/rom-annotations/tools/build-mapped.py $W $W/p3 enNextZX.rom "ZX Spectrum Next NextZXOS ROM 3 (48K BASIC)" $W/p3.dis
-# second pass, listing the target with the first pass's regions
-PAGE=3 SRC_PAGE=0 python3 .ai/rom-annotations/tools/map-rom.py $W src/public/roms/sp48.rom.dis sp48.rom enNextZX.rom $W/p3 $W/p3.dis
-PAGE=3 python3 .ai/rom-annotations/tools/build-mapped.py $W $W/p3 enNextZX.rom "ZX Spectrum Next NextZXOS ROM 3 (48K BASIC)" $W/p3.dis
-```
+## The next step: N2, pages 0 and 1
 
-`build-mapped.py` writes a sidecar holding only bank 3. Put that bank (its `banks["3"]`, `pages["3"]` and
-the `3:`-prefixed provenance) into `~/Klive/RomAnnotations/enNextZX.rom.dis`, then let helpers complete it
-(`helper-briefs/complete-a-mapped-sidecar.md`, merged with `PAGE=3 apply-draft.py`), audit the mapped texts
-(below), probe on the Next core (`test/harness/zxnext`, which needs an SD image for NextZXOS to boot:
-`attachSdCard` and `runFramesAsync`, see its README), and reassemble
-(`PAGE=3 SIDECAR=... ROM=enNextZX.rom`, the template in `tools/reassemble-test.ts.txt`).
-
-Then N2 (pages 0 and 1): read their new `RST $28` first (`LD ($5B54),BC / EX (SP),HL / JP ...`) and decide
-whether `next-os` pages need a decoder (as `plus3SyntaxDecoder` in
-`zx-spectrum-128-editor-disassembler.ts` does for the +3's ROM 1).
+Read their new `RST $28` first (`LD ($5B54),BC / EX (SP),HL / JP ...`) and decide whether `next-os` pages need
+a decoder with inline words (as `plus3SyntaxDecoder` in `zx-spectrum-128-editor-disassembler.ts`). Pages 0
+and 1 share little with the +3E's ROMs, so they are authored from the bytes by helpers per range
+(`helper-briefs/draft-a-range.md`, with `PAGE=0`/`PAGE=1` throughout), the API call numbers from the
+NextZXOS API document (`manual` provenance). Page 3's findings help: `CALL $2705` + word (DivMMC memory),
+`$5B3E`/`$5B48` (calls into other ROMs through RAM), the ROM switching at `$5B00`.
 
 ## Lessons from R3-R4 to keep
 

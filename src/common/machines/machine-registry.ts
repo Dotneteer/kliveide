@@ -264,7 +264,7 @@ const nextCustomDisassembler: CustomDisassemblerFactory = (context) =>
   new ChainedCustomDisassembler([
     new ZxSpectrumNextCustomDisassembler(),
     new RomGatedCustomDisassembler(new ZxSpectrum48CustomDisassembler(), (address) =>
-      context ? !!context.inRomOfKind?.(address, "sp48-basic") : false
+      context ? !!context.inRomOfKind?.(address, "next-basic") : false
     )
   ]);
 
