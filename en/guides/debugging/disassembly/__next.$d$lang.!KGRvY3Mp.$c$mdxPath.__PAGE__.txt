@@ -17,7 +17,7 @@ f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
 8:X
 8:C
 9:X
-12:T57c5,---
+12:T5b99,---
 description: "You can view the disassembly of the memory with the View | Machine Views | Disassembly menu command:"
 ---
 
@@ -232,8 +232,18 @@ So are the 48K BASIC ROMs (ROM 3) of the +2A and +3, in the v4.0, v4.1 and Spani
 shares v4.0's): they take the 128K's annotations where their bytes match and describe what Amstrad
 changed, such as the disk motor's time-out and the Spanish messages. The +3's disk operating
 system ROM (ROM 2, +3DOS) is complete too, in the same three versions: its jump table, the files and
-directory, the sector cache, the floppy controller driver and the built-in disk test. The other ROMs'
-annotations are still sparse.
+directory, the sector cache, the floppy controller driver and the built-in disk test. The +2E and
++3E share v4.0's ROM 3, and their ROM 2 is annotated as well, including its hard disk driver,
+partitions and drive letters. The +3's editor ROM (ROM 0) and syntax ROM (ROM 1) are complete in all four
+versions (v4.0, v4.1, Spanish and +3E), the +3E's with its window, memory and file channels and
+its commands for partitions and streams. The ZX Spectrum Next's ROMs are complete as well: the four
+pages of NextZXOS (the system ROM with its start-up menu, Browser and window channels; NextBASIC's
+command ROM; the DOS ROM with its IDEDOS and +3DOS-style jump tables and the SD card driver; and the
+48K BASIC page NextZXOS extends), the alternate ROM with NextBASIC's editor and its graphics, sound
+and file commands, the DivMMC ROM's file system and the Multiface ROM's NMI menu; the `enNextLG.rom`
+variant shares them. In these ROMs the disassembly lists the address after each call into another
+ROM as a `.defw`, and the error code after each error call as a `.defb`. The other ROMs' annotations
+are still sparse.
 
 Use `bp-set ROM:<name>` to break at a ROM label, and `ROM:<name>` in a breakpoint condition.
 
@@ -378,7 +388,7 @@ for the names each machine uses.a:[["children",{"s":"__PAGE__","h":160,"d":{"r":
 3:[["children",{"s":{"n":"mdxPath","t":"c","k":"guides/debugging/disassembly","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
 2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
 1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
-0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"The Disassembly View - Klive IDE"}],["$","meta","1",{"name":"description","content":"You can view the disassembly of the memory with the View | Machine Views | Disassembly menu command:"}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/guides/debugging/disassembly/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"KUuvYuitlziKxu7By9V0e"}
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"The Disassembly View - Klive IDE"}],["$","meta","1",{"name":"description","content":"You can view the disassembly of the memory with the View | Machine Views | Disassembly menu command:"}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/guides/debugging/disassembly/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"R8oxTXaF3S_abEfXFap7p"}
 20:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
 6c:I[484,[],"OutletBoundary"]
 :HL["/images/working-with-ide/disass-view.png","image"]
@@ -435,7 +445,7 @@ for the names each machine uses.a:[["children",{"s":"__PAGE__","h":160,"d":{"r":
 47:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["On the ZX80 and ZX81, memory appears at more than one address (the 16K RAM again at ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$8000"}]," and\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$C000"}],", the ROM again at ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$2000"}],"). A label is kept for the byte, not the address, so it shows at every\nmirror, and a mirror row says ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"(mirror of $4082)"}],"."]}]
 48:["$","h3",null,{"id":"rom-annotations","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["ROM annotations",["$","$L6e",null,{"id":"rom-annotations"}]]}]
 49:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Calls into the ROM read by name: ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"call SA_BYTES"}]," rather than ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"call $04C2"}],". Klive ships annotations\nfor its ROMs, written for Klive, and finds them by the ROM’s ",["$","em",null,{"children":"bytes"}]," rather than by which ROM slot is\npaged: a copy of the 48K ROM loaded from your own file gets them too, and on a ROM Klive does not know\n(a modified 48K ROM, say) they apply wherever its bytes still match. ROM labels are set in italics so\nyour own stand out."]}]
-72:T469,The 48K ROM’s annotations are complete (completeness level 2): every call and jump target has a
+72:T764,The 48K ROM’s annotations are complete (completeness level 2): every call and jump target has a
 label, every labelled routine has a synopsis saying what it does, takes and returns, and the lines
 whose purpose is not obvious carry a comment. The 128K’s ROM 1 is complete too: it takes the 48K
 ROM’s annotations wherever its bytes match and adds its own for the routines the 128K changed and
@@ -445,8 +455,15 @@ So are the 48K BASIC ROMs (ROM 3) of the +2A and +3, in the v4.0, v4.1 and Spani
 shares v4.0’s): they take the 128K’s annotations where their bytes match and describe what Amstrad
 changed, such as the disk motor’s time-out and the Spanish messages. The +3’s disk operating
 system ROM (ROM 2, +3DOS) is complete too, in the same three versions: its jump table, the files and
-directory, the sector cache, the floppy controller driver and the built-in disk test. The other ROMs’
-annotations are still sparse.4a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"$72"}]
+directory, the sector cache, the floppy controller driver and the built-in disk test. The +2E and
++3E share v4.0’s ROM 3, and their ROM 2 is annotated as well, including its hard disk driver,
+partitions and drive letters. The +3’s editor ROM (ROM 0) and syntax ROM (ROM 1) are complete in all four
+versions (v4.0, v4.1, Spanish and +3E), the +3E’s with its window, memory and file channels and
+its commands for partitions and streams. The ZX Spectrum Next’s ROMs are complete as well: the four
+pages of NextZXOS (the system ROM with its start-up menu, Browser and window channels; NextBASIC’s
+command ROM; the DOS ROM with its IDEDOS and +3DOS-style jump tables and the SD card driver; and the
+48K BASIC page NextZXOS extends), the alternate ROM with NextBASIC’s editor and its graphics, sound
+and file commands, the DivMMC ROM’s file system and the Multiface ROM’s NMI menu; the 4a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$72",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"enNextLG.rom"}],"\nvariant shares them. In these ROMs the disassembly lists the address after each call into another\nROM as a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".defw"}],", and the error code after each error call as a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".defb"}],". The other ROMs’ annotations\nare still sparse."]}]
 4b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Use ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"bp-set ROM:<name>"}]," to break at a ROM label, and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ROM:<name>"}]," in a breakpoint condition."]}]
 4c:["$","h4",null,{"id":"editing-a-roms-annotations","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-xl","children":["Editing a ROM’s annotations",["$","$L6e",null,{"id":"editing-a-roms-annotations"}]]}]
 4d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A ROM’s annotations are edited in a ",["$","strong",null,{"children":"working copy"}],", never in the shipped file. Make one with\n",["$","$L20",null,{"href":"/en/reference/commands#rom-ann-new","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"rom-ann-new"}]}],", or with ",["$","strong",null,{"children":"Start Editing ROM Annotations…"}]," on a\nROM row’s context menu:"]}]
