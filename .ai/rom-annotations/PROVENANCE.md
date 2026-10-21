@@ -1882,3 +1882,215 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
   found"; SAVE "a?b" "Bad filename"; on the Spanish +3 the question came in Spanish from the routine
   at $DB20 ("SIN DATOS, 0:1").
 - **Level:** 2 for all three, recorded; each reassembles byte for byte.
+
+### 2026-10-20 — the +2E/+3E: ROM 3 covered, `spp3e-2` (shipped, level 2)
+
+- **ROM 3:** `spp3e-3.rom` is byte-identical to `spp3-40-3.rom` (CRC 04448eaa), so the shipped
+  `spp3-40-3.rom.dis` already applies through the index.
+- **ROM 2 (`spp3e-2`), 1,102 labels, 6,091 comments:** v4.0's merged entries (its own and v4.1's)
+  were mapped by aligning the two listings instruction by instruction with address operands
+  ignored (51 blocks, 4,735 instructions; RAM operands matched in 202 of 204 cases, so the RAM
+  layout is the same), data regions by their exact bytes, ROM addresses in the text remapped
+  (provenance `derived`). The first mapping put the +3's table at $0100 onto this ROM's second
+  table at $00A0 and remapped port $1FFD as an address; the helper of $0000-$23FF corrected those
+  (165 fixes, labels moved as one batch). Three helpers authored the rest from the bytes (D4; no
+  file of `_input/` but the 765 datasheet; interface commands described by value): the 56-entry
+  `DOS_JUMPS` and a second 32-entry table at $00A0, a hard disk driver on ports $xxEF (256-byte
+  sectors), partitions and their table, drive letters mapped to partitions or floppy/RAM devices,
+  a snapshot loader, BASIC streams, coloured messages (`SHOW_MESSAGE` through ROM 0's $3FF7). Read
+  from the code, not probed: RP_READ passes an undoubled sector (probably a bug).
+- **Probe** (`test/harness/sp128`, model `fdd1`, entered through the code-injection flow): the
+  start-up shows "2000-2015 Garry Lancaster v1.43"; CAT listed ltk.dsk ("DISK . 1K", "124K free");
+  with no disk "Drive A: track 0 sector 0", "No data", "Retry, Ignore or Cancel?", C: "No data, 0:1".
+  The hard disk code was not probed (the harness has no hard disk).
+- **Level:** 2, recorded; it reassembles byte for byte.
+
+### 2026-10-20 — the +3 editor ROM: `spp3-41-0`, `spp3-40-0`, `spp3-41es-0`, `spp3e-0` (shipped, level 2)
+
+- **Decoding:** these pages (`plus3-editor`) now decode `RST $28` + word as a call into ROM 3
+  (`ZxSpectrum128EditorCustomDisassembler` with `decodeErrorCalls: false, otherRom: "ROM 3"`: their
+  $05AC is a stack switch, so nothing after its calls is data), in the tools and in the +3/+3E live
+  view (`spectrumP3CustomDisassembler`). `CALL $3E80` + word (into ROM 1) is marked with words regions.
+- **v4.1 (`spp3-41-0`), 833 labels, 3,628 comments:** a skeleton (filler), then five ranges drafted by
+  helpers from the bytes (D4; `_input/` holds commented disassemblies of these ROMs and was not
+  opened). Much of the ROM is the 128K editor ROM's code moved, so those routines carry the 128K
+  names (renamed where the 128K name says something wrong here: TITLE_P3_BASIC, MENU_LOADER ...);
+  the rest is new: restarts and RAM paging copies, start-up, the factory test program with its
+  texts, ROM switching at $3E00/$3E80/$3F00. Corrections found on review: $0FC2 is a row template,
+  not filler; WAIT_40_FRAMES is not where the start-up ends (that JP is into ROM 1); CHANS_128_INIT's
+  third channel is X and P is $3A05/$3A00.
+- **v4.0, Spanish, +3E:** mapped from v4.1 by instruction alignment (address operands masked, two
+  passes, the second listing the target with the first pass's regions; small gaps filled by
+  carrying the nearest shift; data regions placed by bytes or by position; moved RAM variables
+  remapped where consistent; the ROM 1 words after `CALL $3E80` translated). v4.0 needed only
+  ROM 1 addresses fixed by hand (its ROM 1 sites found by their bytes). The Spanish ROM 0 (857
+  labels) has Spanish menus and loader text and its own Spanish disk-error prompt at $21A3; the
+  +3E's (846 labels) replaces the test program with the window channel W (a drawing engine with a
+  dual 3/5-pixel font), channels M, V, X and F and a disk-message routine; both completed by
+  helpers. The mapper's slips, all fixed: constants and other ROMs' addresses in the text taken for
+  ROM 0 addresses (now left alone when a unit word or "in ROM n" follows, or in a "ROM n's" list).
+- **Level rule:** a jump target inside an instruction (v4.0's start-up JP into ROM 1 at $253A) is
+  reported apart (`midInstructionTargets`) and no longer holds a page below level 1.
+- **Probe** (`plus3-fdd1`): the start-up menu "128 +3" (Loader, +3 BASIC, Calculator, 48 BASIC;
+  "Drives A: and M: available."); EDIT opens Options (+3 BASIC, Renumber, Screen, Print, Exit);
+  Renumber made lines 1, 2 into 10, 20 ($5B75/$5B77 = 10).
+- **Level:** 2 for all four, recorded; each reassembles byte for byte.
+
+### 2026-10-20 — the +3 syntax ROM: `spp3-41-1`, `spp3-40-1`, `spp3-41es-1`, `spp3e-1` (shipped, level 2); R4 done
+
+- **Decoding:** `plus3-syntax` pages decode `RST $28` (ROM 3), `CALL $3F00` (ROM 2, a DOS_JUMPS entry)
+  and `CALL $3E80` (ROM 0) with their inline words (`plus3SyntaxDecoder`, in the tools and the
+  +3/+3E live view). The error routine (v4.1 $2C4C; $0008 jumps to it) and FILE_ERROR ($0EB6) are
+  followed by an error code byte; they sit at a different address in each version, so every such
+  byte is a one-byte region in the sidecars (an `errfix` pass added any a draft missed).
+- **v4.1 (`spp3-41-1`), 812 labels, 3,681 comments:** five ranges drafted by helpers from the bytes
+  (D4; `_input/` not opened): the 128K editor ROM's syntax machinery, commands and PLAY moved here
+  under its names; tape and disk SAVE/LOAD/VERIFY/MERGE; FORMAT (the disk, LPRINT and LINE forms:
+  FORMAT LINE joins the 128K's FORMAT "p" code at FORMAT_LINE_BAUD, while FORMAT "p" itself has no
+  caller); ERASE, MOVE, CAT, COPY (screen, EXP, files, SPECTRUM FORMAT); the report table and
+  messages; COPY RANDOMIZE's greeting; the ROM switching. Two text slips found later and fixed:
+  INSERT_TAPE_MSG is INK 0, PAPER 7; ROM 3's tape message is "Press REC & PLAY, then any key.".
+- **v4.0, Spanish, +3E:** mapped from v4.1 (the mapper's inline-word context set to ROM 0) and
+  completed by helpers: v4.0 has one RS232 wiring, a 52-entry report table and fewer FORMAT
+  options; the Spanish texts and report table are Spanish; the +3E adds streams (OPEN #, GO TO #
+  ...), partitions (NEW DATA, MOVE ... FOR/IN/OUT, FORMAT TO), CAT TAB/ASN, SPECTRUM snapshots and
+  drive letters, and drops FORMAT "p", COPY RANDOMIZE and the second RS232 wiring. The PLAY period
+  for notes below 21 is the constant $0FBF ($0FBE on the +3E), which the mapper had remapped.
+- **Probe** (`plus3-fdd1`): FORMAT LINE 2400 gave 0 OK and $5B5F 11 -> 54; ERASE "nope" on a blank
+  disk gave "File not found, 0:1".
+- **Level:** 2 for all four, recorded; each reassembles byte for byte. Every +2A/+3/+3E ROM now ships
+  at level 2 (R4 done).
+
+### 2026-10-21 — ZX Spectrum Next: preparation (N0 of `.plans/NEXT_ROM_ANNOTATIONS_PLAN.md`)
+
+- **Machine:** the Next now reports its ROM pages to the annotations (`getRomSources`: R0-R3, X0, X1
+  and the DivMMC ROM; the DivMMC RAM is left out), each with its file and page, so a working copy
+  `~/Klive/RomAnnotations/<file>.dis` applies to it in the Disassembly view. A site in a 16K ROM page
+  is offset within the page (the core pages R0 in both slots 0 and 1). `KNOWN_ROM_PAGES` knows the
+  Next's pages (with a `page` for files of several pages); page 3 is `sp48-basic` and decodes as the
+  48K ROM in the live view.
+- **Tools:** `PAGE=<n>` in `sp48-dis.cjs`, `apply-annotations.cjs`, `annotated-view.py` and the
+  reassembly template; `check-annotations.cjs` measures every page of the file.
+- **Working copies** (skeletons, level 0): `enNextZX.rom.dis` (4 pages), `enAltZX.rom.dis` (2),
+  `enNxtmmc.rom.dis`, `enNextMf.rom.dis`; unlabelled targets per page 967 / 984 / 578 / 1045, 459 /
+  610, 528, 451.
+- **Measured, not yet authored:** page 3 shares ~9.7K with the 48K ROM; page 2 ~3K with the +3E's
+  ROM 0; pages 0 and 1 little; `enNextLG.rom` differs from `enNextZX.rom` in page 2 only.
+
+### 2026-10-21 — NextZXOS ROM 3 (`enNextZX.rom` page 3, working copy, level 2 measured)
+
+- **Method:** `sp48.rom.dis` mapped onto page 3 with `map-rom.py` (`PAGE=3 SRC_PAGE=0`, two passes: 749 of
+  1,043 labels, 3,445 of 5,263 lines), then three ranges completed by helpers from the bytes (D4; the
+  Next developer guide, `nextreg.txt` and the VHDL allowed as interface documents), each draft merged with
+  `apply-draft.py` and `:replace=` ranges. Audit of the remapped addresses: no slips.
+- **Found:** the listing tools hid the Z80N's opcodes (`MUL D,E`, `NEXTREG`, `PUSH nn` ... listed as NOPs);
+  Next pages now decode them (`next-basic` kind for this page). NextZXOS removed the tape code ($0605 and
+  $060D page DivMMC RAM in, `$87` to port `$E3`), the 48K start-up and the syntax tables; added an operand
+  jump table at $0600, a 256-byte operator table at $1A99, selectors and string modifiers at $11B7, number
+  bases (`$`, `@`, BIN; memory 5's byte $5CAD), long names, local variables (list at ($5C0B)), `%` integer
+  variables in DivMMC memory, BANK PEEK/DPEEK/USR/PEEK$, SPRITE functions, shifts and bitwise operators
+  ($386E-$3CFC); moved the calculator's operation table to $3B02 and its constants to $3C02; `CALL $2705` is
+  followed by an inline DivMMC address (words regions); `RST $00` soft-resets through NextReg 2. Token
+  names of NextBASIC's new keywords were read from the alternate ROM's keyword table (bytes).
+- **Probe** (`test/harness/zxnext`, `prepareBasic()` and `call()`): MUL_HL_DE 300 x 200 = 60000, $1234 x
+  $0300 carry, 0 x 5 Z; NEXTREG_READ of register $00 gave 8 (the core's value).
+- **Level:** page 3 measures 2 (1,148 labels, 5,416 comments, no unlabelled or mid-instruction targets);
+  it reassembles byte for byte. The file records 0 until its other pages are done.
+
+### 2026-10-21 — NextZXOS ROMs 0 and 1 (`enNextZX.rom` pages 0 and 1, working copy, level 2 measured)
+
+- **Decoding first:** each page uses its restarts differently, read from their own routines: the ROM-to-ROM
+  stubs at $3E00/$3E80/$3F00 take the word after the CALL and switch ROM with NextReg $8E; `CALL $0068`
+  (and page 1's `$0080`) calls the alternate ROM (NextReg $8C = $80); `RST $28` calls ROM 3 through the RAM
+  routine at $5B48. Page 0: `RST $18`/`$20` + word into ROM 1/2. Page 1: `RST $00` + word into ROM 2,
+  `RST $08` and `CALL $08EF` + error byte, `RST $10` + function byte (+ word when bit 7 is set),
+  `CALL $26CB`/`$26E5` + word into DivMMC memory. Page 2: `RST $08` + byte + word. New kinds `next-os0`-`2`
+  and `NextZxOsCustomDisassembler` (`nextzxos-disassembler.ts`, test `nextRomDecoder.test.ts`). Two of the
+  conventions were found by helpers while drafting and fed back to the others.
+- **Method:** five helpers per page drafted from the bytes (D4), with the +3E's, 128K's and 48K's sidecars
+  for names where the bytes and the job match; merged with `apply-draft.py`. The NextZXOS and esxDOS API
+  document (read as text extracted from the PDF) gave the API names after `RST $00`/`$20` and of the
+  IDE_* entry points, and `nextreg.txt` the NextReg meanings: provenance `manual` (81 entries on page 0,
+  48 on page 1). No published NextZXOS or esxDOS source was opened.
+- **Found:** page 0 is the system ROM: start-up and RAM test, the RAM routines at $5B00, the start-up menu
+  (text at $09EA-$0DAC), the channel dispatchers (M, F, D, V), the window channel driver in five screen modes
+  with its fonts and line buffer, the line editor (IDE_WINDOW_LINEIN) and the Browser (IDE_BROWSER). Page 1
+  is NextBASIC's command ROM: the syntax tables at $021D-$0566 (class words whose top two bits pick this ROM,
+  ROM 3, the alternate ROM or the DivMMC memory), reports and the error messages at $2705, the program
+  index of labels and PROCs, LAYER, SAVE/LOAD, IF/ELSE, loops, PROC/LOCAL, PRINT/INPUT, the BANK commands,
+  OPEN #/CLOSE #, DRIVER. A helper's "never reached" note at $0DCE was wrong ($0135 and $2B9C jump there).
+- **Probe:** none this time (the findings are structural; booting NextZXOS to its menu needs a cloned card).
+- **Level:** pages 0 and 1 measure 2 (1,068 and 1,038 labels; 3,895 and 4,663 comments; no unlabelled
+  targets) and reassemble byte for byte. The file records 0 until page 2 is done.
+
+### 2026-10-21 — NextZXOS ROM 2 (`enNextZX.rom` page 2, working copy; the file at level 2)
+
+- **Decoding first:** page 2's `RST $08` ($3F18) takes a byte and a word, pages the DivMMC out, selects ROM 3
+  at $3CFC and runs on into $3D00, where the fetch maps the DivMMC in again (its $3Dxx automap with ROM 3:
+  `zxnext.vhd`, NextReg $BB bit 7, interface documents): a call of the DivMMC memory's code, the word its
+  address, the byte probably the DivMMC bank at $2000-$3FFF during the call. A helper found `CALL $3E18`
+  (and the unused `$3E32`): + word into the alternate ROM. Both in `nextzxos-disassembler.ts`, with tests.
+- **Not mapped:** `map-rom.py` carried only 40 of the +3E ROM 0's 846 labels (the shared ~1.5K is
+  scattered), so five helpers drafted from the bytes with the byte-identical runs and the other sidecars'
+  names, as in N2; the shared routines keep the +3E's names (house rule).
+- **Found:** page 2 is the DOS ROM, not an editor ROM as first measured: the IDE_* jump table below $0100
+  and the +3DOS-compatible DOS_*/DD_* table from $0100, matched to the API document's call addresses
+  (`manual`, 357 entries); most entries call the DivMMC memory's code through `RST $08`. Also the snapshot
+  and machine-ROM loaders (SNA/SNX/Z80, ZX80/ZX81 .O/.P with code run at $F000), streams and channels (the
+  +3E's code with the Next's D, V and W channels), the swap file, the SD card's SPI driver (the MMC
+  specification for the commands), mounting and images (.P3D/.DSK), the start-up loading of enAltZX.rom
+  and enSystem.sys, and metadata files. The code ends at $291B; the rest is filler and the stubs.
+- **Corrected in page 1:** $001B is reached (page 2's LDIR_ROM_1 pushes it).
+- **Probe:** none (structural findings; the SD and boot paths need a booted card).
+- **Level:** page 2 measures 2 (761 labels, 3,111 comments); all four pages reassemble byte for byte and the
+  file records level 2. Not shipped yet (N6).
+
+### 2026-10-21 — The Next's DivMMC ROM and Multiface ROM (`enNxtmmc.rom`, `enNextMf.rom`, working copies, level 2)
+
+- **Decoding first** (`nextzxos-disassembler.ts`, kinds `next-divmmc` and `next-multiface`, with tests), each
+  convention read from its routine; four of them were found by helpers while drafting and fed back:
+  - DivMMC: `RST $08` + the API function byte ($0512; it hands the call to $33B4 in DivMMC RAM, so the ROM
+    holds no esxDOS function table); `RST $18` + a word read high byte first ($03C6); `RST $28` / `CALL $04E1`
+    + a field offset read at (IY)/(IX), `CALL $04F8`/`$0500` + one written there; `RST $30` + a word, the
+    vector entries at $0100-$018A whose address picks the bank ($018D; the tables at $2300/$2310/$2320);
+    `CALL $040D`/`$0407` + an address in DivMMC bank A / the last bank, `CALL $041F` + bank + address.
+  - Multiface: `RST $10`-`$28` + an address in ROM 0-3 (through its RAM image: $1856-$1AAF runs at $5B00);
+    `CALL $1569` + an API function byte (run as `RST $08` at $5B5D in ROM 3).
+- **Method:** three helpers per ROM from the bytes (D4), merged with `apply-draft.py`; the API document
+  (`manual`: the +3DOS/IDEDOS entry names on the DivMMC side, as NextZXOS ROM 2 calls them; M_DRVAPI and the
+  disk-stream calls on the Multiface), `nextreg.txt`, the VHDL (automap entry points and the $1FF8-$1FFF
+  off-area, the Multiface's ports $3F/$BF) and the MMC specification. The Multiface's register block is named
+  after the public .z80 snapshot file format (an interface fact, like the API document). No published
+  esxDOS, NextZXOS or Multiface source was opened.
+- **Found:** the DivMMC ROM holds the vector table and bank dispatch, the FAT16/FAT32 file system (mounting,
+  partitions, long and short names, directories, file handles, block and byte I/O) and the SD card's sector
+  layer; error codes are the +3DOS rc_ numbers. The Multiface ROM is the NMI menu: it saves the program's
+  state in a .z80-shaped block, the Status, memory browser and breakpoint screens (breakpoints are planted
+  `NEXTREG $02,$08`, which raises the Multiface NMI), .z80 and bank saving, and the start of a snapshot that
+  NextZXOS's loader raised.
+- **Probe:** none (structural; the paths need a booted card).
+- **Level:** both measure 2 (617 labels and 2,559 comments; 424 and 1,864) and reassemble byte for byte;
+  both record level 2. Not shipped yet (N6).
+
+### 2026-10-21 — The alternate ROM and enNextLG's page 2 (`enAltZX.rom`, `enNextLG.rom`, working copies, level 2)
+
+- **Decoding first:** the alternate ROM's two pages stand in for ROM 0 and ROM 1 (NextReg $8C), so they get
+  kinds of their own, `next-alt0`/`next-alt1` (replacing `next-os`), and decoder tables
+  (`NEXT_ALT_ROM_PAGES`): page 0's `RST $10`/`$18`/`$20` + word into ROM 0/1/3, page 1's into ROM 1/2/3, page
+  1's `CALL $00BA` (ROM 0) and `$00D7` (DivMMC); each stub leaves through its `$007B` (NextReg $8C = 0).
+- **Method:** five helpers from the bytes (D4), with the 128K's and +3E's editor and syntax ROMs' names where
+  the bytes and the job match; merged with `apply-draft.py`. The API document (`manual`) for the DOS and IDE
+  calls COPY, CAT, MOVE, CD/MKDIR/RMDIR/PWD make; the developer guide for the sprite, tilemap, palette and AY
+  ports.
+- **Found:** page 0 is NextBASIC's screen editor (the 128K's editor widened to 32, 64 or 85 columns, with
+  syntax colouring and the tokeniser) and holds the keyword table at $18FB-$19D5 that N1 read token names
+  from; page 1 holds the SPRITE, TILE, LAYER, PALETTE, PLAY (three AY chips), CAT, COPY, ERASE, MOVE, CD,
+  MKDIR, RMDIR, PWD and FORMAT commands, reached from NextZXOS ROM 1's syntax words with bits 15-14 = 10.
+  NextZXOS page 1's OPT_RANGE_STEP synopsis was corrected (this ROM calls it).
+- **enNextLG.rom** differs from enNextZX.rom only in page 2's two file-name texts ("lg.rom", "enNextLG.rom");
+  its pages 0, 1, 3 have enNextZX's CRCs. `enNextLG.rom.dis` inherits enNextZX's page 2 and authors the two
+  texts. Its text regions had to be declared again: parsing merges adjacent decoded regions, so the merged
+  region holding a changed byte no longer binds. `sp48-dis.cjs` now maps parsed region types on its
+  inheritance path.
+- **Level:** both alternate pages measure 2 (511 labels and 2,309 comments; 612 and 3,059) and reassemble
+  byte for byte; enNextLG's page 2 measures 2 (761 labels, 2 its own). All record level 2. Not shipped (N6).

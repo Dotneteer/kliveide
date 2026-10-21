@@ -138,8 +138,11 @@ describe("KNOWN_ROM_PAGES", () => {
 
   it("is in step with the ROM files Klive ships", () => {
     for (const [crc, entry] of Object.entries(KNOWN_ROM_PAGES)) {
-      const bytes = new Uint8Array(readFileSync(join(ROMS, entry.file)));
-      expect(romCrc32(bytes), entry.file).toBe(crc);
+      // --- A page of a file of several 16K pages (the Next's enNextZX.rom has four)
+      const file = new Uint8Array(readFileSync(join(ROMS, entry.file)));
+      const page = entry.page ?? 0;
+      const bytes = entry.page === undefined ? file : file.subarray(page * 0x4000, (page + 1) * 0x4000);
+      expect(romCrc32(bytes), `${entry.file} page ${page}`).toBe(crc);
     }
   });
 

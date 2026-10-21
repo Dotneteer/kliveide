@@ -30,6 +30,8 @@ export type RomSidecarCheck = {
   recordedLevel: number;
   /** Per page, the control-transfer targets in code that have no label yet: the level 1 to-do list. */
   unlabelledTargets: Record<string, number[]>;
+  /** Per page, targets inside an instruction, where no label can go (reported, not a level gap). */
+  midInstructionTargets: Record<string, number[]>;
   /** Per page, how many labels have no synopsis yet: what level 2 still needs. */
   labelsWithoutSynopsis: Record<string, number>;
   /** Per page, how many labels it shows: its own and, when it `inherits`, the byte-bound inherited ones. */
@@ -52,6 +54,7 @@ export async function checkRomSidecar(
   const problems: string[] = [];
   const levels: Record<string, number> = {};
   const unlabelledTargets: Record<string, number[]> = {};
+  const midInstructionTargets: Record<string, number[]> = {};
   const labelsWithoutSynopsis: Record<string, number> = {};
   const labels: Record<string, number> = {};
   let raw: RawRomSidecar;
@@ -63,6 +66,7 @@ export async function checkRomSidecar(
       levels,
       recordedLevel: 0,
       unlabelledTargets,
+      midInstructionTargets,
       labelsWithoutSynopsis,
       labels
     };
@@ -135,6 +139,7 @@ export async function checkRomSidecar(
     const report = await measureRomLevel(bank, bytes, romDecoderFor(knownRomPageKind(romPageIdentity(bytes))));
     levels[page] = report.level;
     unlabelledTargets[page] = report.unlabelledTargets;
+    midInstructionTargets[page] = report.midInstructionTargets;
     labelsWithoutSynopsis[page] = report.labelsWithoutSynopsis.length;
     labels[page] = (bank.localLabels ?? []).length;
     for (const name of report.misplacedLabels) {
@@ -148,5 +153,13 @@ export async function checkRomSidecar(
   // --- The canonical format
   if (text !== formatRomSidecar(raw)) problems.push(t("media.romCheck.notCanonical"));
 
-  return { problems, levels, recordedLevel, unlabelledTargets, labelsWithoutSynopsis, labels };
+  return {
+    problems,
+    levels,
+    recordedLevel,
+    unlabelledTargets,
+    midInstructionTargets,
+    labelsWithoutSynopsis,
+    labels
+  };
 }

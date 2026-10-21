@@ -107,6 +107,14 @@ describe("the Next bank space", () => {
     expectRoundTrip(nextBankSpace, slots);
   });
 
+  it("counts a site in a 16K ROM page (both slots 0 and 1 hold R0) within the 16K page", () => {
+    const slots = [-1, -1, 10, 11, 4, 5, 0, 1];
+    expect(nextBankSpace.siteAt(0x2100, slots)).toEqual({ kind: "rom", partition: -1, offset: 0x2100 });
+    expect(nextBankSpace.siteAt(0x0100, slots)).toEqual({ kind: "rom", partition: -1, offset: 0x0100 });
+    // --- The DivMMC ROM (DM, -7) is 8K, a slot of its own
+    expect(nextBankSpace.siteAt(0x1100, [-7, -8, 10, 11, 4, 5, 0, 1])).toEqual({ kind: "rom", partition: -7, offset: 0x1100 });
+  });
+
   it("names ROM partitions as ROM sites", () => {
     expect(nextBankSpace.siteAt(0x0100, [-1, -2, 10, 11, 4, 5, 0, 1])).toEqual({
       kind: "rom",

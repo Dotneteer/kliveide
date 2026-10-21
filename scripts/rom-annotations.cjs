@@ -68,6 +68,11 @@ function readSidecar(name) {
   return { path, json: JSON.parse(readFileSync(path, "utf8")) };
 }
 
+/** The pages a sidecar has banks for (the index lists only those). */
+function describedPages(name) {
+  return Object.keys(readSidecar(name).json.banks ?? {}).map(Number);
+}
+
 function romBytes(romFile) {
   return new Uint8Array(readFileSync(existsSync(romFile) ? romFile : join(ROMS, romFile)));
 }
@@ -85,7 +90,7 @@ function format(check) {
       if (!check) writeFileSync(path, text);
     }
   }
-  const index = tools.formatRomIndex(tools.buildRomIndex(sidecarFiles(), romBytes));
+  const index = tools.formatRomIndex(tools.buildRomIndex(sidecarFiles(), romBytes, describedPages));
   if (!existsSync(INDEX) || readFileSync(INDEX, "utf8") !== index) {
     changed.push("rom-annotations.index.json");
     if (!check) writeFileSync(INDEX, index);
@@ -143,6 +148,9 @@ async function level(only) {
       console.log(
         `${name} page ${page}: level ${report.level} (recorded ${json.level ?? 0}); ` +
           `${report.instructions} instructions, ${report.unlabelledTargets.length} unlabelled target(s), ` +
+          (report.midInstructionTargets.length
+            ? `${report.midInstructionTargets.length} target(s) inside an instruction, `
+            : "") +
           `${report.labelsWithoutSynopsis.length} label(s) without a synopsis, ` +
           `${report.misplacedLabels.length} misplaced label(s), ${missing.length} entr(ies) without provenance`
       );

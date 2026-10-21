@@ -109,6 +109,15 @@ function spectrumOffsetIndex(bank: number): 0 | 1 | 2 | 3 {
 // ------------------------------------------------------------------------------------------------
 // The ZX Spectrum Next: 8K pages
 
+/**
+ * The Next's 16K ROM partitions: R0-R3 (`-1`..`-4`) and the alternate ROM's X0/X1 (`-5`, `-6`). The core
+ * pages one in both of slots 0 and 1, so a site in it is offset within the 16K page, as its ROM
+ * sidecar counts. The others (the DivMMC ROM and RAM) are 8K, a slot each.
+ */
+function isNext16kRom(partition: number): boolean {
+  return partition <= -1 && partition >= -6;
+}
+
 export const nextBankSpace: BankSpace = {
   id: "next",
   bankSize: BANK_SIZE,
@@ -119,7 +128,9 @@ export const nextBankSpace: BankSpace = {
   siteAt(address, slots) {
     const page = slotPartition(slots, address);
     if (page === undefined) return undefined;
-    if (page < 0) return { kind: "rom", partition: page, offset: address & 0x1fff };
+    if (page < 0) {
+      return { kind: "rom", partition: page, offset: address & (isNext16kRom(page) ? 0x3fff : 0x1fff) };
+    }
     return { kind: "bank", bank: page >> 1, offset: (page & 0x01) * 0x2000 + (address & 0x1fff) };
   },
   addressesOf(site, slots) {

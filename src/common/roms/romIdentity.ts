@@ -42,13 +42,26 @@ export type RomPageKind =
   | "plus3-syntax"
   | "plus3-dos"
   | "zx81"
-  | "zx80";
+  | "zx80"
+  // --- The ZX Spectrum Next: NextZXOS's pages (and the alternate ROM's), the DivMMC and Multiface ROMs
+  | "next-basic"
+  // --- NextZXOS's pages 0-2, each with its own restarts and inline data (`nextzxos-disassembler.ts`)
+  | "next-os0"
+  | "next-os1"
+  | "next-os2"
+  // --- The alternate ROM's two pages, which stand in for ROM 0 and ROM 1
+  | "next-alt0"
+  | "next-alt1"
+  | "next-divmmc"
+  | "next-multiface";
 
 /**
  * The ROM pages Klive ships, by CRC-32 (`src/public/roms`). Recorded by checksumming the files;
  * `test/annotations/romIdentity.test.ts` keeps it in step with them.
  */
-export const KNOWN_ROM_PAGES: Readonly<Record<string, { file: string; kind: RomPageKind }>> = {
+export const KNOWN_ROM_PAGES: Readonly<
+  Record<string, { file: string; kind: RomPageKind; /** The 16K page within the file (0 when absent). */ page?: number }>
+> = {
   ddee531f: { file: "sp48.rom", kind: "sp48-basic" },
   e76799d2: { file: "sp128-0.rom", kind: "sp128-editor" },
   b96a36be: { file: "sp128-1.rom", kind: "sp48-basic" },
@@ -67,9 +80,26 @@ export const KNOWN_ROM_PAGES: Readonly<Record<string, { file: string; kind: RomP
   "7f4a5482": { file: "spp3e-0.rom", kind: "plus3-editor" },
   "5aeb4675": { file: "spp3e-1.rom", kind: "plus3-syntax" },
   "504755cb": { file: "spp3e-2.rom", kind: "plus3-dos" },
+  // --- The ZX Spectrum Next: NextZXOS in four 16K pages (enNextLG differs in page 2 only), its 48K BASIC
+  // --- page (3) decoded as the 48K ROM's, with Z80N opcodes (`next-basic`); the alternate ROM's two pages;
+  // --- the 8K DivMMC and Multiface ROMs
+  "95ba84d4": { file: "enNextZX.rom", kind: "next-os0", page: 0 },
+  "74dbb504": { file: "enNextZX.rom", kind: "next-os1", page: 1 },
+  cafb1e32: { file: "enNextZX.rom", kind: "next-os2", page: 2 },
+  "92d23960": { file: "enNextZX.rom", kind: "next-basic", page: 3 },
+  "43fc1f2f": { file: "enNextLG.rom", kind: "next-os2", page: 2 },
+  "574ec214": { file: "enAltZX.rom", kind: "next-alt0", page: 0 },
+  "74bc5674": { file: "enAltZX.rom", kind: "next-alt1", page: 1 },
+  "5a443736": { file: "enNxtmmc.rom", kind: "next-divmmc" },
+  "36db4453": { file: "enNextMf.rom", kind: "next-multiface" },
   "4b1dd6eb": { file: "zx81.rom", kind: "zx81" },
   "4c7fc597": { file: "zx80.rom", kind: "zx80" }
 };
+
+/** Whether a page of this kind is the Next's, whose code uses the Z80N's extra opcodes. */
+export function romKindUsesZ80N(kind: RomPageKind | undefined): boolean {
+  return kind !== undefined && kind.startsWith("next-");
+}
 
 /** The kind of a page Klive knows, by its identity. */
 export function knownRomPageKind(identity: RomPageIdentity | undefined): RomPageKind | undefined {

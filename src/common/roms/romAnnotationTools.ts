@@ -127,17 +127,24 @@ export function formatRomSidecar(sidecar: RawRomSidecar): string {
  * sidecar and page that describe it. A ROM loaded from *any* file whose bytes equal a shipped page
  * gets that page's annotations, and nothing has to read every sidecar to find out.
  *
+ * Only the pages a sidecar describes (its banks) are indexed: `enNextLG.rom.dis` describes page 2 alone,
+ * and its file's other pages, the same bytes as `enNextZX.rom`'s, belong to that file's sidecar.
+ *
  * @param sidecars The shipped sidecar file names (`sp48.rom.dis`)
  * @param romBytes The bytes of the ROM file a sidecar sits beside (its name without `.dis`)
+ * @param describedPages The pages a sidecar has banks for; every page of the file when absent
  */
 export function buildRomIndex(
   sidecars: readonly string[],
-  romBytes: (romFile: string) => Uint8Array
+  romBytes: (romFile: string) => Uint8Array,
+  describedPages?: (sidecar: string) => readonly number[] | undefined
 ): Record<string, { sidecar: string; page: number }> {
   const index: Record<string, { sidecar: string; page: number }> = {};
   for (const sidecar of [...sidecars].sort()) {
     const bytes = romBytes(sidecar.replace(/\.dis$/i, ""));
+    const described = describedPages?.(sidecar);
     for (let page = 0; page * 0x4000 < bytes.length; page++) {
+      if (described && !described.includes(page)) continue;
       const crc = romCrc32(bytes.subarray(page * 0x4000, Math.min(bytes.length, (page + 1) * 0x4000)));
       index[crc] ??= { sidecar, page };
     }
@@ -205,6 +212,12 @@ export type RomLevelReport = {
   level: 0 | 1 | 2;
   /** Control-transfer targets inside the page's code with no label. */
   unlabelledTargets: number[];
+  /**
+   * Targets that fall inside an instruction of the page's code, where no label can go: a jump made
+   * after another ROM is paged in (the +3's ROM 0 ends its start-up with a JP into ROM 1), or data
+   * decoded as code. Reported, but they do not hold the page below level 1.
+   */
+  midInstructionTargets: number[];
   /** Labels without a synopsis comment. */
   labelsWithoutSynopsis: string[];
   /** Labels that are not on an instruction start inside a code region. */
@@ -216,7 +229,8 @@ export type RomLevelReport = {
  * Measure a page against the completeness levels (§5.6).
  *
  * Level 1: every `CALL`/`JP`/`RST`/`JR`/`DJNZ` target inside the page that code regions reach has a
- * label. (Every data region being marked is the author's judgement; the coverage tool is what
+ * label — every one that is an instruction start; one inside an instruction cannot have a label and
+ * is reported apart (`midInstructionTargets`). (Every data region being marked is the author's judgement; the coverage tool is what
  * suggests them.) Level 2: level 1, and every label has a synopsis comment.
  */
 export async function measureRomLevel(
@@ -250,7 +264,12 @@ export async function measureRomLevel(
     }
   }
 
-  const unlabelledTargets = [...targets].filter((target) => !labelled.has(target)).sort((a, b) => a - b);
+  const unlabelledTargets = [...targets]
+    .filter((target) => !labelled.has(target) && starts.has(target))
+    .sort((a, b) => a - b);
+  const midInstructionTargets = [...targets]
+    .filter((target) => !labelled.has(target) && !starts.has(target))
+    .sort((a, b) => a - b);
   const synopsisAt = (offset: number) => !!bank.lineAnnotations?.[String(offset)]?.synopsis;
   const labelsWithoutSynopsis = labels.filter((l) => !synopsisAt(l.value)).map((l) => l.name);
   const misplacedLabels = labels
@@ -261,6 +280,7 @@ export async function measureRomLevel(
   return {
     level: level2 ? 2 : level1 ? 1 : 0,
     unlabelledTargets,
+    midInstructionTargets,
     labelsWithoutSynopsis,
     misplacedLabels,
     instructions

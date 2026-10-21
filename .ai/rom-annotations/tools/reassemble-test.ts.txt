@@ -1,7 +1,7 @@
 // A throwaway check that a ROM sidecar still describes every byte: it is exported as Klive source and
 // reassembled, and must give the ROM back byte for byte (what the IDE's Export as source and
 // rom-ann-export do). Copy to test/reverse-eng/zz-reassemble.test.ts, run, delete:
-//   SIDECAR=~/Klive/RomAnnotations/sp48.rom.dis ROM=sp48.rom OUT=<scratchpad>/export.kz80.asm \
+//   [PAGE=<n>] SIDECAR=~/Klive/RomAnnotations/sp48.rom.dis ROM=sp48.rom OUT=<scratchpad>/export.kz80.asm \
 //     npx vitest run --config build/vitest.config.ts --project node test/reverse-eng/zz-reassemble.test.ts
 // OUT keeps the exported source for reading.
 import { readFileSync, writeFileSync } from "node:fs";
@@ -17,13 +17,15 @@ import { withInheritedEntries } from "@renderer/appIde/annotations/romInheritanc
 it("reassembles to the ROM byte for byte", async () => {
   const ROMS = join(__dirname, "../../src/public/roms");
   const own = parseAnnotations(readFileSync(process.env.SIDECAR!, "utf8")).annotations!;
-  const bytes = new Uint8Array(readFileSync(join(ROMS, process.env.ROM!))).subarray(0, 0x4000);
+  // --- PAGE=<n>: one page of a ROM file of several 16K pages (enNextZX.rom has four)
+  const page = Number(process.env.PAGE ?? 0);
+  const bytes = new Uint8Array(readFileSync(join(ROMS, process.env.ROM!))).subarray(page * 0x4000, (page + 1) * 0x4000);
   // --- A sidecar that `inherits` is exported with its inherited, byte-bound entries, as the IDE does
-  const { annotations } = await withInheritedEntries(own, () => bytes, async (sidecar, page) => ({
+  const { annotations } = await withInheritedEntries(own, (p) => (p === page ? bytes : undefined), async (sidecar, inheritedPage) => ({
     annotations: parseAnnotations(readFileSync(join(ROMS, sidecar), "utf8")).annotations!,
-    bytes: new Uint8Array(readFileSync(join(ROMS, sidecar.replace(/\.dis$/, "")))).subarray(page * 0x4000, (page + 1) * 0x4000)
+    bytes: new Uint8Array(readFileSync(join(ROMS, sidecar.replace(/\.dis$/, "")))).subarray(inheritedPage * 0x4000, (inheritedPage + 1) * 0x4000)
   }));
-  const pages = [{ page: 0, bytes, kind: knownRomPageKind(romPageIdentity(bytes)), crc32: romPageIdentity(bytes).crc32 }];
+  const pages = [{ page, bytes, kind: knownRomPageKind(romPageIdentity(bytes)), crc32: romPageIdentity(bytes).crc32 }];
   const exported = await buildRomSourceExport(annotations, pages, { header: ["check"] });
   if (process.env.OUT) writeFileSync(process.env.OUT, exported.text);
   const output = await new Z80Assembler().compile(exported.text, new AssemblerOptions());

@@ -69,7 +69,10 @@ const { checkRomSidecar } = require(join(root, "src/renderer/appIde/annotations/
       bytes: described.subarray(page * 0x4000, (page + 1) * 0x4000)
     };
   };
-  const result = await checkRomSidecar(text, (page) => (page === 0 ? rom.subarray(0, 0x4000) : undefined), inherited);
+  // --- Every page of the ROM file (enNextZX.rom has four 16K pages)
+  const pageBytes = (page) =>
+    page * 0x4000 < rom.length ? rom.subarray(page * 0x4000, Math.min(rom.length, (page + 1) * 0x4000)) : undefined;
+  const result = await checkRomSidecar(text, pageBytes, inherited);
   if (process.argv[3]) require("node:fs").writeFileSync(process.argv[3], JSON.stringify(result, null, 1));
   console.log(JSON.stringify(result, null, 1).slice(0, 3000));
 })();

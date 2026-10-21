@@ -708,5 +708,5 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
 /** The shipped file holding a ROM page with this CRC, if Klive ships one. */
 function shippedRomPageOf(crc32: string): { path: string; page: number } | undefined {
   const known = KNOWN_ROM_PAGES[crc32];
-  return known ? { path: `roms/${known.file}`, page: 0 } : undefined;
+  return known ? { path: `roms/${known.file}`, page: known.page ?? 0 } : undefined;
 }

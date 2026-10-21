@@ -17,11 +17,36 @@ supersedes, keep no history (that is `PROVENANCE.md`'s job).
 - **The +2A/+3 ROM 3s ship at level 2** (2026-10-20): `spp3-41-3.rom.dis` inherits `sp128-1` and
   `sp48`; `spp3-40-3.rom.dis` (also the +3E's ROM 3, the same bytes) and `spp3-41es-3.rom.dis` inherit
   `spp3-41-3` first. On the +3, FLAGS bit 4 is "+3 BASIC", not 128 BASIC.
+- **The ZX Spectrum Next's ROMs are next** (`.plans/NEXT_ROM_ANNOTATIONS_PLAN.md`, state in
+  `.plans/NEXT_ROM_ANNOTATIONS_HANDOFF.md`; the mapping and merge scripts are in `tools/`): one working copy per
+  ROM file with a bank per page (`enNextZX.rom.dis` holds pages 0-3); give the tools `PAGE=<n>`. The
+  author follows the work by opening the working copy (`rom-ann-open enNextZX.rom -page 3`): write
+  it back after every step, since the IDE re-reads it on each change.
+- **Every +2A/+3 (v4.0, v4.1, Spanish) and +2E/+3E ROM ships at level 2** (2026-10-20, R4 done):
+  ROMs 0 (editor), 1 (syntax), 2 (+3DOS) and 3 (48K BASIC). v4.1 was authored from the bytes, the
+  others mapped from it and completed. On `plus3-syntax` pages calls into other ROMs carry inline
+  words (`RST $28`, `CALL $3F00`, `CALL $3E80`, decoded); calls to the error routines carry a code
+  byte, marked with one-byte regions because the routines move between versions.
 - **+3DOS (ROM 2) ships at level 2** (2026-10-20) for v4.1, v4.0 and Spanish (the last two inherit
   v4.1). Next in R4: ROMs 0 and 1 of each version (they differ between versions by moved code, so
   author v4.1 and inherit by copying entries with the measured shifts, as for the Spanish ROM 2), and
   the +3E's ROMs. `_input/` holds commented disassemblies of these ROMs: never open them; only
   `_input/765.pdf`, the floppy controller's datasheet, is allowed (interface facts).
+- **A ROM whose code was reworked and moved throughout** (the +3E's ROM 2) is mapped, not
+  inherited: align the two listings instruction by instruction with address operands masked
+  (difflib on normalised mnemonics), map data regions by their exact bytes, and remap ROM
+  addresses in the copied text. Leave numbers that are not addresses alone: port numbers below
+  $4000 ($1FFD, $2FFD, $3FFD) and the entry numbers after "DOS_JUMPS"; and check that a table was
+  not aligned onto a neighbouring table of the same instructions (the +3E's $00A0 table caught
+  the +3's $0100). Then let helpers author what did not map and list fixes for what mapped wrongly.
+- **The mapper** (`mapgen.py`/`build.py` in the session scratchpad of 2026-10-20, recorded in
+  PROVENANCE) must not remap numbers that are not this ROM's addresses: constants followed by a
+  unit ("$2000 misses", "$0370 half-cycles"), addresses before "in ROM n" or in a "ROM n's" list,
+  port numbers. Audit a mapped sidecar by listing every token the mapping changed with its
+  context, and fix other ROMs' addresses from that version's own bytes (search the byte sequence).
+- **A jump into another ROM** that lands mid-instruction in this page is reported as a
+  mid-instruction target and needs no label; where it lands on an instruction start, give it a
+  label whose synopsis says nothing in this ROM jumps there.
 - **A variant whose code moved** binds nothing at the moved offsets. Measure the shifts (align the
   bytes block by block), copy the base's entries to the new offsets with the addresses in their text
   remapped, and re-read only what really differs. Compare the instruction counts of the base and the

@@ -2,7 +2,7 @@
 // (prepareRomDisassembler: for a 48K BASIC page, RST $08 report codes and RST $28 calculator codes)
 // (the D4-sanctioned source). The 48K ROM by default; another ROM by its sidecar's source.fileName,
 // or ROM=<file in src/public/roms> without a sidecar.
-// Usage: node .ai/rom-annotations/tools/sp48-dis.cjs <from hex> <to hex> [sidecar.dis]
+// Usage: [PAGE=<n>] node .ai/rom-annotations/tools/sp48-dis.cjs <from hex> <to hex> [sidecar.dis]
 // With a sidecar, its regions are used (data shown as .defb/.defw) - for a sidecar that `inherits`,
 // merged with the inherited sidecars' byte-bound regions, as the IDE shows them; without, all code.
 // Prints "ADDR BYTES INSTRUCTION [; decoder comment]" lines; grep -v '.def' leaves instruction starts.
@@ -71,26 +71,41 @@ const ROMS = join(root, "src/public/roms");
   const sidecarFile = process.argv[4];
   const sidecar = sidecarFile ? JSON.parse(readFileSync(sidecarFile, "utf8")) : undefined;
   const romFile = sidecar?.source?.fileName ?? process.env.ROM ?? "sp48.rom";
-  const bytes = new Uint8Array(readFileSync(join(ROMS, romFile))).subarray(0, 0x4000);
-  const types = { disassemble: MemorySectionType.Disassemble, bytes: MemorySectionType.ByteArray, words: MemorySectionType.WordArray, skip: MemorySectionType.Skip };
-  let regions = sidecar?.banks["0"].regions;
+  // --- PAGE=<n>: a page of a ROM file of several 16K pages (enNextZX.rom has four); the sidecar's bank n
+  const page = Number(process.env.PAGE ?? 0);
+  const bank = String(page);
+  const bytes = new Uint8Array(readFileSync(join(ROMS, romFile))).subarray(page * 0x4000, (page + 1) * 0x4000);
+  // --- A merged (inherited) page's regions come parsed: decoded data regions carry their decoding as the type
+  const types = { disassemble: MemorySectionType.Disassemble, bytes: MemorySectionType.ByteArray, words: MemorySectionType.WordArray, skip: MemorySectionType.Skip,
+    text: MemorySectionType.ByteArray, defc: MemorySectionType.ByteArray, fill: MemorySectionType.ByteArray, graphic: MemorySectionType.ByteArray };
+  let regions = sidecar?.banks[bank]?.regions;
   if (sidecar?.inherits?.length) {
-    const merged = await withInheritedEntries(parseAnnotations(JSON.stringify(sidecar)).annotations, (p) => (p === 0 ? bytes : undefined), async (name, p) => ({
+    const merged = await withInheritedEntries(parseAnnotations(JSON.stringify(sidecar)).annotations, (p) => (p === page ? bytes : undefined), async (name, p) => ({
       annotations: parseAnnotations(readFileSync(join(ROMS, name), "utf8")).annotations,
       bytes: new Uint8Array(readFileSync(join(ROMS, name.replace(/\.dis$/i, "")))).subarray(p * 0x4000, (p + 1) * 0x4000)
     }));
-    regions = merged.annotations.banks["0"].regions;
+    regions = merged.annotations.banks[bank].regions;
     // --- LABELS=<file>: write the merged page's labels ("$XXXX NAME" lines) instead of a listing
     if (process.env.LABELS) {
-      const labels = merged.annotations.banks["0"].localLabels;
+      const labels = merged.annotations.banks[bank].localLabels;
       require("node:fs").writeFileSync(process.env.LABELS, labels.map((l) => `$${l.value.toString(16).toUpperCase().padStart(4, "0")} ${l.name}`).join("\n") + "\n");
       return;
     }
   }
+  // --- LABELS=<file> with a sidecar that inherits nothing: its own labels
+  if (process.env.LABELS && sidecar && !sidecar.inherits?.length) {
+    const labels = sidecar.banks[bank]?.localLabels ?? [];
+    require("node:fs").writeFileSync(process.env.LABELS, labels.map((l) => `$${l.value.toString(16).toUpperCase().padStart(4, "0")} ${l.name}`).join("\n") + "\n");
+    return;
+  }
   const sections = regions
     ? regions.filter((r) => r.end < 0x4000).map((r) => new MemorySection(r.start, r.end, types[r.type]))
     : [new MemorySection(0, 0x3fff, MemorySectionType.Disassemble)];
-  const d = new Z80Disassembler(sections, bytes, undefined, { allowExtendedSet: false });
+  // --- The Next's pages use the Z80N's extra opcodes (romKindUsesZ80N); other ROMs do not
+  const { romKindUsesZ80N } = require(join(root, "src/common/roms/romIdentity.ts"));
+  const d = new Z80Disassembler(sections, bytes, undefined, {
+    allowExtendedSet: romKindUsesZ80N(knownRomPageKind(romPageIdentity(bytes)))
+  });
   prepareRomDisassembler(d, knownRomPageKind(romPageIdentity(bytes)));
   const out = await d.disassemble(0, 0x3fff);
   for (const it of out.outputItems) {

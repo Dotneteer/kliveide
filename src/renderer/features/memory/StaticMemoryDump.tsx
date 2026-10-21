@@ -41,7 +41,7 @@ import { Z88CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disass
 import { prepareRomDisassembler } from "@renderer/appIde/annotations/romDecoder";
 import { romSysVarsFor } from "@renderer/appIde/annotations/romSysVars";
 import { createSysVarOperandLabelResolver } from "@renderer/appIde/disassemblers/sys-var-operand-labels";
-import type { RomPageKind } from "@common/roms/romIdentity";
+import { romKindUsesZ80N, type RomPageKind } from "@common/roms/romIdentity";
 import { MemorySection, type DisassemblyItem } from "@renderer/appIde/disassemblers/common-types";
 import {
   deriveInstructionWidthCh,
@@ -1425,9 +1425,9 @@ const StaticMemoryDump = ({
             bankBytes,
             undefined,
             {
-              // --- The Next's extra opcodes are not instructions on a Z88.
-              // --- Nor on a Spectrum or ZX81 ROM.
-              allowExtendedSet: !isZ88Listing && !isRomListing,
+              // --- The Next's extra opcodes are not instructions on a Z88, nor on a Spectrum or
+              // --- ZX81 ROM; they are on the Next's own ROM pages
+              allowExtendedSet: !isZ88Listing && (!isRomListing || romKindUsesZ80N(romPageKind)),
               decimalMode: decimalView,
               // --- An un-annotated bank has no labels of its own, so the machine's system variables
               // --- are the only names available here — and the only ones this path ever needs.
@@ -1476,6 +1476,7 @@ const StaticMemoryDump = ({
     hideScreenArea,
     isZ88Listing,
     isRomListing,
+    romPageKind,
     prepareRomListing,
     sysVarLabelResolver,
     viewMode
