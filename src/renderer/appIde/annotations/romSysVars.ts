@@ -36,7 +36,8 @@ export function romSysVarsFor(kind: RomPageKind | undefined): SysVar[] | undefin
     case "plus3-editor":
     case "plus3-syntax":
     case "plus3-dos":
-    case "next-os":
+    case "next-alt0":
+    case "next-alt1":
     case "next-os0":
     case "next-os1":
     case "next-os2":

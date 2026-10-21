@@ -138,6 +138,35 @@ export const NEXT_MULTIFACE_ROM: NextOsPageSpec = {
   }
 };
 
+/**
+ * The alternate ROM (`enAltZX.rom`): page 0 stands in for ROM 0 and page 1 for ROM 1 (NextReg $8C), so
+ * their stubs switch it off (NextReg $8C = 0, \$007B) and come back through the ROM they stand in for:
+ * - page 0: `RST $10` + word → ROM 0, `RST $18` → ROM 1 (through ROM 0's \$3E8A), `RST $20` → ROM 3;
+ * - page 1: `RST $10` + word → ROM 1, `RST $18` → ROM 2, `RST $20` → ROM 3, `CALL $00BA` → ROM 0,
+ *   `$00D7` → the DivMMC memory (through ROM 1's \$3EA0).
+ */
+export const NEXT_ALT_ROM_PAGES: Readonly<Record<0 | 1, NextOsPageSpec>> = {
+  0: {
+    restarts: {
+      0x10: { kind: "call", rom: "ROM 0" },
+      0x18: { kind: "call", rom: "ROM 1" },
+      0x20: { kind: "call", rom: "ROM 3" }
+    },
+    calls: {}
+  },
+  1: {
+    restarts: {
+      0x10: { kind: "call", rom: "ROM 1" },
+      0x18: { kind: "call", rom: "ROM 2" },
+      0x20: { kind: "call", rom: "ROM 3" }
+    },
+    calls: {
+      0x00ba: { kind: "call", rom: "ROM 0" },
+      0x00d7: { kind: "call", rom: "DivMMC" }
+    }
+  }
+};
+
 type Pending = { size: 1 | 2; comment: string; thenWordIfBit7?: string };
 
 /**
@@ -230,12 +259,15 @@ export class NextZxOsCustomDisassembler implements ICustomDisassembler {
 }
 
 /**
- * The decoder for a NextZXOS page kind (`next-os0`..`next-os2`), the DivMMC ROM (`next-divmmc`) or the
- * Multiface ROM (`next-multiface`); undefined for any other kind.
+ * The decoder for a NextZXOS page kind (`next-os0`..`next-os2`), the alternate ROM's pages (`next-alt0`,
+ * `next-alt1`), the DivMMC ROM (`next-divmmc`) or the Multiface ROM (`next-multiface`); undefined for any
+ * other kind.
  */
 export function nextZxOsDecoderFor(kind: string | undefined): NextZxOsCustomDisassembler | undefined {
   if (kind === "next-divmmc") return new NextZxOsCustomDisassembler(NEXT_DIVMMC_ROM);
   if (kind === "next-multiface") return new NextZxOsCustomDisassembler(NEXT_MULTIFACE_ROM);
+  if (kind === "next-alt0") return new NextZxOsCustomDisassembler(NEXT_ALT_ROM_PAGES[0]);
+  if (kind === "next-alt1") return new NextZxOsCustomDisassembler(NEXT_ALT_ROM_PAGES[1]);
   const page = kind === "next-os0" ? 0 : kind === "next-os1" ? 1 : kind === "next-os2" ? 2 : undefined;
   return page === undefined ? undefined : new NextZxOsCustomDisassembler(NEXTZXOS_PAGES[page]);
 }

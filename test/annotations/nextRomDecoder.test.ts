@@ -94,3 +94,14 @@ describe("the DivMMC and Multiface ROMs' inline data", () => {
     expect(await at("next-multiface", "enNextMf.rom", 0x0041, 0x0044)).toEqual([[0x0041, 1], [0x0042, 2], [0x0044, 1]]);
   });
 });
+
+describe("the alternate ROM's inline data", () => {
+  const alt = new Uint8Array(readFileSync(join(__dirname, "../../src/public/roms/enAltZX.rom")));
+  const at = async (kind: "next-alt0" | "next-alt1", page: number, from: number, to: number) =>
+    (await romDecoderFor(kind)(alt.subarray(page * 0x4000, (page + 1) * 0x4000), from, to)).map((i) => [i.offset, i.length]);
+
+  it("page 1: CALL $00BA is followed by a ROM 0 address", async () => {
+    // --- $2068: CALL $00BA / DEFW $3C10
+    expect(await at("next-alt1", 1, 0x2068, 0x206b)).toEqual([[0x2068, 3], [0x206b, 2]]);
+  });
+});

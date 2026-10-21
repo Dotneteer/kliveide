@@ -67,15 +67,22 @@ measure said). The decoder learned page 2's `RST $08` (a DivMMC call: byte + wor
 and reassemble byte for byte. The decoder has tables for both (`NEXT_DIVMMC_ROM`, `NEXT_MULTIFACE_ROM`), with
 tests. Details in PROVENANCE.
 
-## The next step: N5, the alternate ROM and enNextLG's page 2
+## Done since: N5 (2026-10-21)
 
-`enAltZX.rom` (two pages, kind `next-os` for now): NextZXOS calls it through `CALL $0068` (pages 0 and 1) and
-`CALL $3E18` (page 2), and its `$007B` switches it off again (NextReg $8C). Its keyword table gave N1 the
-token names. Read its restarts first and give its pages kinds and decoder tables of their own if they need
-them. Then `enNextLG.rom`'s page 2 (`43fc1f2f`, kind `next-os2`): it differs from `enNextZX.rom`'s page 2 only
-there; map page 2's sidecar onto it with `map-rom.py` (`SRC_PAGE=2 PAGE=2`), which should carry almost
-everything. The merge scripts of N2-N4 are in the session scratchpad (`n4/merge.sh` refuses to write when the
-check reports problems): copy that one.
+`enAltZX.rom` (511 and 612 labels) and `enNextLG.rom` (page 2 only, inheriting enNextZX's page 2) are at
+level 2 in their working copies and reassemble byte for byte. The alternate ROM's pages have kinds of their
+own (`next-alt0`, `next-alt1`) and decoder tables. Every Next ROM is now at level 2; none is shipped.
+
+## The next step: N6, ship
+
+Copy the five working copies (`enNextZX`, `enNextLG`, `enAltZX`, `enNxtmmc`, `enNextMf` `.rom.dis`) to
+`src/public/roms/`, add them to `rom-annotations.index.json`, and run the shipped-sidecar checks (`npm test`
+covers `romSidecarCheck`; `node scripts/rom-annotations.cjs level` on each). `enNextLG.rom.dis` inherits
+`enNextZX.rom.dis`, so the tools that read inherited sidecars from `src/public/roms/` work only once both are
+shipped. Then the Disassembly guide (`docs/content/en/.../disassembly.mdx`), the roadmap
+(`CLOSING_THE_GAPS_PLAN.md` G7.2) and the competitive analysis (§2 and §4), and the plan's changeset (a
+feature: the Next's ROMs annotated). Check the Next's live Disassembly view in the running IDE (the N0
+item still not checked) before committing.
 
 ## Lessons from R3-R4 to keep
 
@@ -91,6 +98,8 @@ check reports problems): copy that one.
 - **Helpers:** five per ROM page of ~3K each worked; review a sample of each draft against the code, check
   drafts against each other for shared names, and pass findings that concern another range on to its
   helper while they run (`SendMessage`).
+- **Inheriting sidecars and decoded regions:** parsing merges adjacent decoded regions (e.g. text), so a
+  changed byte inside one unbinds the whole run: declare those regions in the inheriting sidecar.
 - **Never write a working copy from a string edit:** an unescaped newline once made the live file
   invalid JSON for a moment. Load, change and dump it as JSON, then canonicalise and check before the cmp guard.
 - **Feed findings back while helpers run:** in N2 two inline conventions (`RST $00` on page 1, `CALL $08EF`)

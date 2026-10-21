@@ -2071,3 +2071,26 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
 - **Probe:** none (structural; the paths need a booted card).
 - **Level:** both measure 2 (617 labels and 2,559 comments; 424 and 1,864) and reassemble byte for byte;
   both record level 2. Not shipped yet (N6).
+
+### 2026-10-21 — The alternate ROM and enNextLG's page 2 (`enAltZX.rom`, `enNextLG.rom`, working copies, level 2)
+
+- **Decoding first:** the alternate ROM's two pages stand in for ROM 0 and ROM 1 (NextReg $8C), so they get
+  kinds of their own, `next-alt0`/`next-alt1` (replacing `next-os`), and decoder tables
+  (`NEXT_ALT_ROM_PAGES`): page 0's `RST $10`/`$18`/`$20` + word into ROM 0/1/3, page 1's into ROM 1/2/3, page
+  1's `CALL $00BA` (ROM 0) and `$00D7` (DivMMC); each stub leaves through its `$007B` (NextReg $8C = 0).
+- **Method:** five helpers from the bytes (D4), with the 128K's and +3E's editor and syntax ROMs' names where
+  the bytes and the job match; merged with `apply-draft.py`. The API document (`manual`) for the DOS and IDE
+  calls COPY, CAT, MOVE, CD/MKDIR/RMDIR/PWD make; the developer guide for the sprite, tilemap, palette and AY
+  ports.
+- **Found:** page 0 is NextBASIC's screen editor (the 128K's editor widened to 32, 64 or 85 columns, with
+  syntax colouring and the tokeniser) and holds the keyword table at $18FB-$19D5 that N1 read token names
+  from; page 1 holds the SPRITE, TILE, LAYER, PALETTE, PLAY (three AY chips), CAT, COPY, ERASE, MOVE, CD,
+  MKDIR, RMDIR, PWD and FORMAT commands, reached from NextZXOS ROM 1's syntax words with bits 15-14 = 10.
+  NextZXOS page 1's OPT_RANGE_STEP synopsis was corrected (this ROM calls it).
+- **enNextLG.rom** differs from enNextZX.rom only in page 2's two file-name texts ("lg.rom", "enNextLG.rom");
+  its pages 0, 1, 3 have enNextZX's CRCs. `enNextLG.rom.dis` inherits enNextZX's page 2 and authors the two
+  texts. Its text regions had to be declared again: parsing merges adjacent decoded regions, so the merged
+  region holding a changed byte no longer binds. `sp48-dis.cjs` now maps parsed region types on its
+  inheritance path.
+- **Level:** both alternate pages measure 2 (511 labels and 2,309 comments; 612 and 3,059) and reassemble
+  byte for byte; enNextLG's page 2 measures 2 (761 labels, 2 its own). All record level 2. Not shipped (N6).

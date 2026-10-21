@@ -49,8 +49,9 @@ export type RomPageKind =
   | "next-os0"
   | "next-os1"
   | "next-os2"
-  // --- The alternate ROM's pages (not yet read)
-  | "next-os"
+  // --- The alternate ROM's two pages, which stand in for ROM 0 and ROM 1
+  | "next-alt0"
+  | "next-alt1"
   | "next-divmmc"
   | "next-multiface";
 
@@ -87,8 +88,8 @@ export const KNOWN_ROM_PAGES: Readonly<
   cafb1e32: { file: "enNextZX.rom", kind: "next-os2", page: 2 },
   "92d23960": { file: "enNextZX.rom", kind: "next-basic", page: 3 },
   "43fc1f2f": { file: "enNextLG.rom", kind: "next-os2", page: 2 },
-  "574ec214": { file: "enAltZX.rom", kind: "next-os", page: 0 },
-  "74bc5674": { file: "enAltZX.rom", kind: "next-os", page: 1 },
+  "574ec214": { file: "enAltZX.rom", kind: "next-alt0", page: 0 },
+  "74bc5674": { file: "enAltZX.rom", kind: "next-alt1", page: 1 },
   "5a443736": { file: "enNxtmmc.rom", kind: "next-divmmc" },
   "36db4453": { file: "enNextMf.rom", kind: "next-multiface" },
   "4b1dd6eb": { file: "zx81.rom", kind: "zx81" },
@@ -97,7 +98,7 @@ export const KNOWN_ROM_PAGES: Readonly<
 
 /** Whether a page of this kind is the Next's, whose code uses the Z80N's extra opcodes. */
 export function romKindUsesZ80N(kind: RomPageKind | undefined): boolean {
-  return kind === "next-basic" || kind === "next-os" || kind === "next-os0" || kind === "next-os1" || kind === "next-os2" || kind === "next-divmmc" || kind === "next-multiface";
+  return kind !== undefined && kind.startsWith("next-");
 }
 
 /** The kind of a page Klive knows, by its identity. */

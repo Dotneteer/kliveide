@@ -75,7 +75,9 @@ const ROMS = join(root, "src/public/roms");
   const page = Number(process.env.PAGE ?? 0);
   const bank = String(page);
   const bytes = new Uint8Array(readFileSync(join(ROMS, romFile))).subarray(page * 0x4000, (page + 1) * 0x4000);
-  const types = { disassemble: MemorySectionType.Disassemble, bytes: MemorySectionType.ByteArray, words: MemorySectionType.WordArray, skip: MemorySectionType.Skip };
+  // --- A merged (inherited) page's regions come parsed: decoded data regions carry their decoding as the type
+  const types = { disassemble: MemorySectionType.Disassemble, bytes: MemorySectionType.ByteArray, words: MemorySectionType.WordArray, skip: MemorySectionType.Skip,
+    text: MemorySectionType.ByteArray, defc: MemorySectionType.ByteArray, fill: MemorySectionType.ByteArray, graphic: MemorySectionType.ByteArray };
   let regions = sidecar?.banks[bank]?.regions;
   if (sidecar?.inherits?.length) {
     const merged = await withInheritedEntries(parseAnnotations(JSON.stringify(sidecar)).annotations, (p) => (p === page ? bytes : undefined), async (name, p) => ({
