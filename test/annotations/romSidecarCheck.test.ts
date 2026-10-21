@@ -4,6 +4,7 @@ import { join } from "node:path";
 
 import { checkRomSidecar } from "@renderer/appIde/annotations/romSidecarCheck";
 import { formatRomSidecar } from "@common/roms/romAnnotationTools";
+import { parseAnnotations } from "@renderer/appIde/annotations/programAnnotations";
 
 /*
  * `rom-ann-check` and the editor's readiness chip (`.plans/ROM_ANNOTATION_EDITING_PLAN.md` R7): the
@@ -21,11 +22,16 @@ const romPages = (sidecar: string) => {
   };
 };
 const SP48_TEXT = readFileSync(join(ROMS, "sp48.rom.dis"), "utf8");
+/** The shipped sidecars a sidecar inherits (`sp128-1.rom.dis` inherits `sp48.rom.dis`). */
+const shippedSource = async (sidecar: string, page: number) => ({
+  annotations: parseAnnotations(readFileSync(join(ROMS, sidecar), "utf8")).annotations!,
+  bytes: romPages(sidecar)(page)!
+});
 const sp48 = () => JSON.parse(SP48_TEXT);
 
 describe("checkRomSidecar", () => {
   it.each(sidecars)("passes the shipped %s, as CI does", async (name) => {
-    const check = await checkRomSidecar(readFileSync(join(ROMS, name), "utf8"), romPages(name));
+    const check = await checkRomSidecar(readFileSync(join(ROMS, name), "utf8"), romPages(name), shippedSource);
     expect(check.problems).toEqual([]);
   });
 
@@ -79,8 +85,11 @@ describe("checkRomSidecar", () => {
   });
 
   it("finds a recorded level higher than the measured one", async () => {
+    // --- The shipped sidecar measures 2; one label without a synopsis drops it to 1
     const raw = sp48();
     raw.level = 2;
+    const first = raw.banks["0"].localLabels[0].value;
+    delete raw.banks["0"].lineAnnotations[String(first)].synopsis;
     const check = await checkRomSidecar(formatRomSidecar(raw), romPages("sp48.rom.dis"));
     expect(check.problems).toEqual(expect.arrayContaining([expect.stringContaining("records level 2")]));
   });

@@ -47,6 +47,7 @@ import { ZxSpectrumNextCustomDisassembler } from "@renderer/appIde/disassemblers
 import { Z88CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z88-custom.disassembler";
 import { Zx80CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/zx80-disassembler";
 import { Zx81CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/zx81-disassembler";
+import { ZxSpectrum128EditorCustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/zx-spectrum-128-editor-disassembler";
 import {
   ChainedCustomDisassembler,
   gateOnRom,
@@ -221,6 +222,19 @@ const Z88_MODELS: MachineModel[] = [
 const spectrum48CustomDisassembler: CustomDisassemblerFactory = (context) =>
   gateOnRom(new ZxSpectrum48CustomDisassembler(), context, 0x4000);
 
+/**
+ * The 128K lists its 48K BASIC ROM with the 48K decoding and its editor ROM with the editor's (the
+ * ROM 1 address after `RST $28`), each only in its own page. Without a context — a caller that knows
+ * nothing of the paging — only the 48K decoding applies, to the ROM area, as before.
+ */
+const spectrum128CustomDisassembler: CustomDisassemblerFactory = (context) =>
+  new ChainedCustomDisassembler([
+    gateOnRom(new ZxSpectrum48CustomDisassembler(), context, 0x4000),
+    new RomGatedCustomDisassembler(new ZxSpectrum128EditorCustomDisassembler(), (address) =>
+      context ? !!context.inRomOfKind?.(address, "sp128-editor") : false
+    )
+  ]);
+
 /** The ZX81 ROM's calculator, decoded only in the ZX81 ROM (also the ZX80's 8K upgrade, §4.7) */
 const zx81CustomDisassembler: CustomDisassemblerFactory = (context) =>
   gateOnRom(new Zx81CustomDisassembler(), context, 0x2000);
@@ -325,7 +339,7 @@ export const machineRegistry: MachineInfo[] = [
         partitionLabels?: string[],
         options?: DisassemblyOptions
       ) => new Z80Disassembler(memorySections, memoryContents, partitionLabels, options),
-      [CT_CUSTOM_DISASSEMBLER]: spectrum48CustomDisassembler,
+      [CT_CUSTOM_DISASSEMBLER]: spectrum128CustomDisassembler,
     }
   },
   {

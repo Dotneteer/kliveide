@@ -292,6 +292,20 @@ colouring one never touches the others or the still-neutral panels. Full role ta
   shared `FlagFieldRow` takes `tooltipBelow` for the same. The box covers the rows below while the
   pointer is there, which is harmless: tooltips are `pointer-events: none`.
 
+- **Something worth reading is a hover card, not a tooltip.** A native `title` and `Tooltip` are
+  for a phrase: `title` is tiny, on the platform's clock (about a second), and only covers its own
+  element; `Tooltip` is `pointer-events: none`, so it cannot be held open. An explanation of several
+  lines (the ROM annotation editor's completeness levels) uses `controls/HoverCard`: it opens after
+  250ms over the **whole** anchor (wrap the cell, chip or column head, not the text inside it),
+  stays open while the pointer moves onto it, closes 150ms after the pointer leaves both, and on
+  Escape; keyboard focus opens it too (give a non-interactive anchor `tabIndex={0}`). It takes the
+  portalled-menu frame (`--bg-color-dropdown-menu`, its border, `--shadow-context-menu`,
+  `--radius-md`, `--z-menu`) at `--font-size-300` and `44ch` wide. It is hit-testable, which is safe
+  only because it opens beside its anchor (below, or above when there is no room) and never over it -
+  the anchor/overlay overlap trap below. One card per thing explained, shown from every place that
+  thing appears, and the anchor drops its `title` so two boxes never compete. Inside the card, hue
+  only where the state is: a reached step in `--status-success`, the next one in `--accent-text`, the
+  current one on `--accent-subtle`.
 - **A row tooltip and a cell tooltip inside it are two boxes for one pointer.** Where a row's cells
   each have something to say — 192 array bytes, eight flag bits — do not give the cells tooltips
   *and* the row one: both appear, at different placements and on different timings, and a native

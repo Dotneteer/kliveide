@@ -1,0 +1,92 @@
+// --- The level hover card's content (`RomLevelCard`): a header line, one row per level, a footnote.
+// --- Hue only where the level is: the reached mark takes the status-success hue (the readiness
+// --- chip's family), the next level the accent, the current level's row the accent's subtle fill.
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0_5);
+}
+
+.header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-1);
+}
+
+.title {
+  font-weight: 600;
+}
+
+.aside {
+  color: var(--data-secondary);
+  font-size: var(--font-size-200);
+  white-space: nowrap;
+}
+
+.level {
+  display: grid;
+  grid-template-columns: 2ch minmax(0, 1fr);
+  column-gap: var(--space-2);
+  align-items: start;
+  padding: var(--space-1) var(--space-1_5);
+  border-radius: var(--radius-sm);
+}
+
+.current {
+  background: var(--accent-subtle);
+}
+
+.mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: calc(var(--font-size-300) * 1.4);
+}
+
+.reached {
+  color: var(--status-success);
+}
+
+.next {
+  color: var(--accent-text);
+}
+
+.notReached,
+.legend {
+  color: var(--data-secondary);
+}
+
+.number {
+  font-weight: 600;
+}
+
+.name {
+  font-weight: 600;
+}
+
+.count {
+  display: block;
+  color: var(--data-secondary);
+  font-size: var(--font-size-200);
+}
+
+.countNext {
+  color: var(--accent-text);
+}
+
+.footer {
+  margin-top: var(--space-1);
+  padding-top: var(--space-1_5);
+  border-top: 1px solid var(--border-subtle);
+  color: var(--data-secondary);
+  font-size: var(--font-size-200);
+}
+
+.note {
+  margin: calc(var(--space-1) * -1) 0 var(--space-1);
+  color: var(--data-secondary);
+  font-size: var(--font-size-200);
+}

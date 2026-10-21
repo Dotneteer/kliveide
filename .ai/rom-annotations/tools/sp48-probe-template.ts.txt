@@ -1,0 +1,69 @@
+// A throwaway 48K probe: copy to test/spectrum-hw/zz-<name>-probe.test.ts (a folder in the e2e-cores
+// tier; a core test anywhere else fails in the unit tier), run it, read OUT, delete it:
+//   PROBE_OUT=<scratchpad>/probe.txt npx vitest run --config build/vitest.config.ts --project e2e-cores \
+//     test/spectrum-hw/zz-<name>-probe.test.ts
+// vitest swallows console.log here: write results to a file. Record only the observed values in
+// PROVENANCE.md; never keep the probe.
+//
+// Method: rather than typing keywords through the keyboard (the 48K's modes make that slow and
+// fragile), a line is inserted as tokens into the edit line by a little machine code, then ENTER
+// runs it. Pitfalls already met:
+// - Run to $15DE (the editor waiting for a key) before calling code, or the flags the ROM expects
+//   are clobbered.
+// - After an error the edit line keeps its text: clear() empties it before the next line.
+// - DEF FN is one token ($CE); OPEN #/CLOSE # tokens already include the '#'.
+// - TONE_OUT (the beeper) is also called for the key click (HL = 200): skip those calls.
+// - Hold ENTER for a few frames and run to the address you are measuring; a command may finish
+//   while typeKeys is still running.
+import { it } from "vitest";
+import { writeFileSync } from "node:fs";
+import { createSp48Session } from "../harness/sp48";
+
+const K: Record<string, number> = { PRINT: 0xf5, CLS: 0xfb, SIN: 0xb2, LN: 0xb8, SQR: 0xbb, PI: 0xa7 };
+const enc = (parts: (string | number)[]) =>
+  parts.flatMap((p) => (typeof p === "number" ? [p] : [...p].map((c) => c.charCodeAt(0))));
+
+it("probes something", async () => {
+  const s: any = await createSp48Session();
+  s.bootToBasic();
+  s.runFrames(10);
+  const out: string[] = [];
+  // --- Empties the edit line (E_LINE to WORKSP - 2) after a line that stopped with an error
+  const clear = async () => {
+    if (s.peekWord(0x5c61) - s.peekWord(0x5c59) <= 2) return;
+    await s.loadCode(`  .org $F800\nClr: ld hl,($5C59)\n ld de,($5C61)\n dec de\n dec de\n ex de,hl\n call $19E5\n ld ($5C5B),hl\n ret`);
+    s.runTo(0x15de, { maxFrames: 2000 });
+    s.call(0xf800);
+    s.runFrames(10);
+  };
+  // --- Puts the tokens into the edit line at K_CUR (MAKE_ROOM at $1655), then ENTER runs it
+  const line = async (label: string, parts: (string | number)[]) => {
+    const bytes = enc([K.CLS, ":", ...parts]);
+    await s.loadCode(`
+        .org $F000
+    Main:
+        ld hl,($5C5B)
+        ld bc,${bytes.length}
+        call $1655
+        inc hl
+        ex de,hl
+        ld hl,Data
+        ld bc,${bytes.length}
+        ldir
+        ld ($5C5B),de
+        ret
+    Data:
+        .defb ${bytes.join(",")}
+    `);
+    s.runTo(0x15de, { maxFrames: 2000 });
+    s.call("Main");
+    s.runFrames(2);
+    s.typeKeys([["Enter"]], { hold: 3, gap: 7 });
+    s.runFrames(150);
+    out.push(`${label}: [${s.screenLine(0)}] [${s.screenLine(1)}] report=[${s.screenLine(23)}]`);
+    await clear();
+  };
+  await line("SIN 1", [K.PRINT, K.SIN, "1"]);
+  await line("LN 0", [K.PRINT, K.LN, "0"]);
+  writeFileSync(process.env.PROBE_OUT!, out.join("\n") + "\n");
+}, 900000);

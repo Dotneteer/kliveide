@@ -120,7 +120,7 @@ describe("migrating the additive overlays of earlier builds (§4.2)", () => {
         offsetIndex: 0,
         regions: [{ start: 0, end: 0x3fff, type: "disassemble" }],
         localLabels: [{ name: "MY_RESTART", value: 0x0008 }, { name: "MINE", value: 0x0001 }],
-        lineAnnotations: { "1": { comment: "mine" } }
+        lineAnnotations: { "1": { comment: "mine", synopsis: "Mine" } }
       }
     }
   };
@@ -130,7 +130,7 @@ describe("migrating the additive overlays of earlier builds (§4.2)", () => {
     const labels = merged.banks["0"].localLabels;
     expect(labels.filter((label: { value: number }) => label.value === 0x0008)).toEqual([{ name: "MY_RESTART", value: 0x0008 }]);
     expect(labels).toContainEqual({ name: "MINE", value: 1 });
-    expect(merged.banks["0"].lineAnnotations["1"]).toEqual({ comment: "mine" });
+    expect(merged.banks["0"].lineAnnotations["1"]).toEqual({ comment: "mine", synopsis: "Mine" });
     expect(merged.provenance["0:1:label"]).toBe("observed");
     expect((await checkRomSidecar(mergeLegacyOverlay(SHIPPED_TEXT, overlay, 0), () => SP48)).problems).toEqual([]);
   });

@@ -33,7 +33,8 @@ import {
 } from "@renderer/appIde/annotations/romSidecarWriter";
 import {
   SHIPPED_ROM_FOLDER,
-  WORKING_ROM_FOLDER
+  WORKING_ROM_FOLDER,
+  inheritedSidecarSource
 } from "@renderer/appIde/annotations/romAnnotationLoader";
 import { parseAnnotations } from "@renderer/appIde/annotations/programAnnotations";
 import { requestRomAnnotationsReload } from "@renderer/appIde/annotations/romAnnotations";
@@ -42,6 +43,8 @@ import {
   runRomSourceExport
 } from "@renderer/appIde/annotations/romSourceExport";
 
+import { HoverCard } from "@renderer/controls/HoverCard";
+import { RomLevelCard } from "./RomLevelCard";
 import styles from "./RomAnnotationEditorPanel.module.scss";
 
 /*
@@ -202,7 +205,11 @@ const RomAnnotationEditorPanel = ({
   useEffect(() => {
     if (loaded.status !== "loaded" || !isRomSidecar || !matches) return undefined;
     let cancelled = false;
-    void checkRomSidecar(loaded.text, (page) => matches.find((m) => m.page === page)?.bytes).then(
+    void checkRomSidecar(
+      loaded.text,
+      (page) => matches.find((m) => m.page === page)?.bytes,
+      inheritedSidecarSource({ files: mainApi, projectService })
+    ).then(
       (result) => {
         if (!cancelled) setCheck(result);
       }
@@ -210,7 +217,7 @@ const RomAnnotationEditorPanel = ({
     return () => {
       cancelled = true;
     };
-  }, [loaded, isRomSidecar, matches]);
+  }, [loaded, isRomSidecar, matches, mainApi, projectService]);
 
   // --- Has an update moved the shipped sidecar on since this working copy was made?
   useEffect(() => {
@@ -292,7 +299,16 @@ const RomAnnotationEditorPanel = ({
       if (!readOnly) await flushAnnotationSession(path);
       const annotations = peekAnnotationSession(path) ?? parseAnnotations(loaded.text).annotations;
       if (!annotations) throw new Error(t("panels.rom.notRomSidecar", { file: fileNameOf(path) }));
-      const run = await runRomSourceExport(mainApi, { path, annotations, matches }, file);
+      const run = await runRomSourceExport(
+        mainApi,
+        {
+          path,
+          annotations,
+          matches,
+          inherited: inheritedSidecarSource({ files: mainApi, projectService })
+        },
+        file
+      );
       setExportState({
         status: "done",
         file,
@@ -306,7 +322,7 @@ const RomAnnotationEditorPanel = ({
         message: err instanceof Error ? err.message : String(err)
       });
     }
-  }, [loaded, mainApi, matches, path, readOnly, t]);
+  }, [loaded, mainApi, matches, path, projectService, readOnly, t]);
 
   const labelCounts = useMemo(() => {
     const counts = new Map<number, number>();
@@ -355,6 +371,18 @@ const RomAnnotationEditorPanel = ({
 
   const ready = check && check.problems.length === 0;
   const measured = check ? Math.min(...Object.values(check.levels), 2) : undefined;
+  // --- The whole file's level card: its lowest page level, and what every page still lacks
+  const fileLevelCard = () =>
+    check && (
+      <RomLevelCard
+        kind="file"
+        measured={measured}
+        recorded={check.recordedLevel}
+        note={ready ? t("panels.rom.readyTitle") : t("panels.rom.showProblems")}
+        unlabelled={Object.values(check.unlabelledTargets).reduce((sum, list) => sum + list.length, 0)}
+        withoutSynopsis={Object.values(check.labelsWithoutSynopsis).reduce((sum, n) => sum + n, 0)}
+      />
+    );
   const readinessText = !check
     ? t("panels.rom.checking")
     : ready
@@ -428,7 +456,7 @@ const RomAnnotationEditorPanel = ({
                 {!check ? (
                   <span className={styles.secondary}>{t("panels.rom.checking")}</span>
                 ) : (
-                  <span>
+                  <HoverCard content={fileLevelCard}>
                     <button
                       type="button"
                       className={classnames(
@@ -436,17 +464,16 @@ const RomAnnotationEditorPanel = ({
                         ready ? styles.chipReady : styles.chipProblems
                       )}
                       onClick={() => setShowProblems((shown) => !shown)}
-                      title={ready ? t("panels.rom.readyTitle") : t("panels.rom.showProblems")}
                       aria-expanded={ready ? undefined : showProblems}
                     >
                       {readinessText}
                     </button>
-                  </span>
+                  </HoverCard>
                 )}
                 {check && (
-                  <span className={styles.secondary}>
+                  <HoverCard className={styles.secondary} tabIndex={0} content={fileLevelCard}>
                     {t("panels.rom.recordsLevel", { level: check.recordedLevel })}
-                  </span>
+                  </HoverCard>
                 )}
                 {showProblems && check && check.problems.length > 0 && (
                   <ul className={styles.problems}>
@@ -556,7 +583,9 @@ const RomAnnotationEditorPanel = ({
                 <span role="columnheader" title={t("panels.rom.colToLabelTitle")}>
                   {t("panels.rom.colToLabel")}
                 </span>
-                <span role="columnheader">{t("panels.rom.colCompleteness")}</span>
+                <HoverCard role="columnheader" tabIndex={0} content={<RomLevelCard kind="legend" />}>
+                  {t("panels.rom.colCompleteness")}
+                </HoverCard>
                 <span role="columnheader" />
               </div>
               {matches.map((match) => {
@@ -585,7 +614,7 @@ const RomAnnotationEditorPanel = ({
                     {match.bytes ? (
                       <>
                         <span>{t("panels.rom.sizeKb", { kb: match.bytes.length / 1024 })}</span>
-                        <span>{labelCounts.get(match.page) ?? 0}</span>
+                        <span>{check?.labels[String(match.page)] ?? labelCounts.get(match.page) ?? 0}</span>
                         <span
                           className={classnames(styles.toLabel, {
                             [styles.secondary]: !targets?.length
@@ -607,7 +636,23 @@ const RomAnnotationEditorPanel = ({
                             </button>
                           )}
                         </span>
-                        <span className={styles.completeness}>
+                        <HoverCard
+                          className={styles.completeness}
+                          tabIndex={0}
+                          content={() =>
+                            level === undefined ? (
+                              <RomLevelCard kind="legend" />
+                            ) : (
+                              <RomLevelCard
+                                kind="page"
+                                page={match.page}
+                                measured={level}
+                                unlabelled={targets?.length}
+                                withoutSynopsis={check?.labelsWithoutSynopsis[String(match.page)]}
+                              />
+                            )
+                          }
+                        >
                           <span
                             className={styles.meter}
                             role="img"
@@ -627,7 +672,7 @@ const RomAnnotationEditorPanel = ({
                           <span>
                             {level === undefined ? "…" : t("panels.rom.levelValue", { level })}
                           </span>
-                        </span>
+                        </HoverCard>
                         <span className={styles.rowActions}>
                           <SmallIconButton
                             iconName="logs"

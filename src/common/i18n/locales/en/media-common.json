@@ -202,6 +202,17 @@
       "name": "Label name"
     }
   },
+  "media.romCheck.inheritedMissing": "It inherits {sidecar}, which cannot be found.",
+  "@media.romCheck.inheritedMissing": {
+    "context": "Reason a ROM annotation working copy cannot be shipped (the ROM annotation editor's check panel and the rom-ann-check command output): the file takes most of its labels from another annotation file (a .rom.dis file name), which is neither shipped nor a working copy.",
+    "placeholders": {
+      "sidecar": "Annotation file name, e.g. sp48.rom.dis"
+    }
+  },
+  "media.romCheck.inheritedUnread": "It inherits other ROM annotations, which this check cannot read.",
+  "@media.romCheck.inheritedUnread": {
+    "context": "Reason a ROM annotation file cannot be judged (the ROM annotation editor's check panel and the rom-ann-check command output): the file takes most of its labels from another annotation file, and the check was run without access to it."
+  },
   "media.romCheck.levelTooHigh": "Page {page}: it records level {recorded}, but measures {measured}.",
   "@media.romCheck.levelTooHigh": {
     "context": "Reason a ROM annotation working copy cannot be shipped (the ROM annotation editor's check panel and the rom-ann-check command output). The level is the annotation's completeness level.",

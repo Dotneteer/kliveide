@@ -2,7 +2,13 @@ import type { BankSpace, SlotPaging } from "@common/annotations/bankSpace";
 import type { CustomDisassemblyContext } from "@renderer/appIde/disassemblers/z80-disassembler/rom-gated-disassembler";
 
 import { MI_ZX80, MI_ZX81 } from "@common/machines/constants";
-import { isBasic48RomPage, isZx80Rom, isZx81Rom, type RomPageIdentity } from "@common/roms/romIdentity";
+import {
+  isBasic48RomPage,
+  isZx80Rom,
+  isZx81Rom,
+  knownRomPageKind,
+  type RomPageIdentity
+} from "@common/roms/romIdentity";
 
 /**
  * The context a machine's custom disassembler is gated with (`rom-gated-disassembler.ts`): whether
@@ -34,6 +40,10 @@ export function customDisassemblyContextFor(
     inZx80Rom(address) {
       const rom = romPartitionAt(address);
       return rom !== undefined && isZx80Rom(machineId, identityOf(rom));
+    },
+    inRomOfKind(address, kind) {
+      const rom = romPartitionAt(address);
+      return rom !== undefined && knownRomPageKind(identityOf(rom)) === kind;
     }
   };
 }

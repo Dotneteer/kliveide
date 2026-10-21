@@ -1,5 +1,6 @@
 // Runs the IDE's own readiness check (checkRomSidecar, the "Ready" chip / rom-ann-check) on a sidecar.
-// Usage: node .ai/rom-annotations/tools/check-annotations.cjs <sidecar.dis>   ("problems": [] is clean)
+// Usage: node .ai/rom-annotations/tools/check-annotations.cjs <sidecar.dis> [full.json]   ("problems": [] is clean)
+// The console gets the first 3000 characters; with full.json the whole result (every unlabelled target) is written there.
 const { existsSync, readFileSync } = require("node:fs");
 const { dirname, join, resolve } = require("node:path");
 const root = resolve(__dirname, "../../..");
@@ -55,6 +56,20 @@ const { checkRomSidecar } = require(join(root, "src/renderer/appIde/annotations/
   const text = readFileSync(process.argv[2], "utf8");
   const romFile = JSON.parse(text).source?.fileName ?? "zx81.rom"; // the ROM the sidecar names
   const rom = new Uint8Array(readFileSync(join(root, "src/public/roms", romFile)));
-  const result = await checkRomSidecar(text, (page) => (page === 0 ? rom.subarray(0, 0x4000) : undefined));
+  // --- Inherited sidecars as the IDE reads them: the working copy when there is one, else the shipped
+  // --- file; the bytes of the shipped ROM each was written for
+  const { parseAnnotations } = require(join(root, "src/renderer/appIde/annotations/programAnnotations.ts"));
+  const home = join(require("node:os").homedir(), "Klive/RomAnnotations");
+  const inherited = async (sidecar, page) => {
+    const working = join(home, sidecar);
+    const file = existsSync(working) ? working : join(root, "src/public/roms", sidecar);
+    const described = new Uint8Array(readFileSync(join(root, "src/public/roms", sidecar.replace(/\.dis$/i, ""))));
+    return {
+      annotations: parseAnnotations(readFileSync(file, "utf8")).annotations,
+      bytes: described.subarray(page * 0x4000, (page + 1) * 0x4000)
+    };
+  };
+  const result = await checkRomSidecar(text, (page) => (page === 0 ? rom.subarray(0, 0x4000) : undefined), inherited);
+  if (process.argv[3]) require("node:fs").writeFileSync(process.argv[3], JSON.stringify(result, null, 1));
   console.log(JSON.stringify(result, null, 1).slice(0, 3000));
 })();

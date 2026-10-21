@@ -30,6 +30,11 @@ you to use (trap T10). So:
 Review checks for this. A comment that cannot be traced to the code it sits on is
 removed.
 
+**Labels too.** A routine's name that comes to mind before you have read the routine is a
+remembered one, however descriptive it sounds; so is a whole prefix family (`PO_`, `CO_`, ...).
+Name a routine from what its code does, after reading it. The sp48 sessions had to rename 99
+labels that slipped through this way (`PROVENANCE.md`, 2026-10-20).
+
 ## What may be used
 
 - **The ROM bytes**, through Klive's own disassembler (`romDecoder.ts`, which also runs
@@ -75,7 +80,17 @@ provenance that names nothing.
 
 ## The tools
 
-For the ZX81 ROM, `zx81-authoring-guide.md` beside this file carries the session method, the
+For the 48K ROM, `tools/sp48-dis.cjs <from> <to> [sidecar]` lists the ROM through Klive's disassembler
+with the 48K decoding (RST $08 report codes, RST $28 calculator codes); the other tools below work on
+its sidecar as they do on the ZX81's. **Write every sidecar in `zx81.rom.dis`'s style**: system
+variables with underscores (CH_ADD, not CH-ADD), synopses wrapped at 92 columns with a summary first
+(`RST $xx:` or the command name leading where it applies), numbered steps for long routines and
+`Entry:`/`Exit:`/`Changes:`/`Observed:` lines last; errors as "Stops with error code n (report X)";
+comments starting with a capital, no full stop, tests as questions; a synopsis on every label; and a
+routine doing the same job as one already named in another sidecar takes that name. For the 48K ROM,
+`sp48-authoring-guide.md` beside this file carries the method, the naming lessons, the calculator
+traps, the level-2 comment pass and the tools added for it (`annotated-view.py`,
+`apply-comments.py`, `reassemble-test.ts.txt`, `sp48-probe-template.ts.txt`). For the ZX81 ROM, `zx81-authoring-guide.md` beside this file carries the session method, the
 helper scripts in `tools/` (a listing through Klive's disassembler, applying a batch through the
 formatter, the IDE's readiness check, a harness probe template) and the state of the work.
 
@@ -131,6 +146,12 @@ the Disassembly view and the editor at once (`reloadAnnotationSessionFromDisk`).
 needed. A file that does not parse is not taken: the IDE keeps its last good model until the file
 is valid again — so a broken hand edit is overwritten by the next edit made inside the IDE.
 
+**Bit-7 string tables are `defc` regions** (`"type": "bytes", "decode": "defc"`): keyword and
+message tables whose entries end with bit 7 set list as one `.defc "TEXT"` row per entry and still
+reassemble byte for byte. A table of other bytes that touches one stays a separate region, since the
+types differ. **Runs of one filler byte are `fill` regions** (`"decode": "fill"`): the 48K ROM's
+unused `$FF` bytes list as one `.fillb 1170,$FF` row.
+
 **Regions that touch merge.** When the IDE reads a sidecar it merges neighbouring regions of the
 same type and layout (`mergeAdjacentRegions` in `programAnnotations.ts`), and its next save writes
 the merged one. Two tables that touch and share a type (the ZX81's unshifted and shifted key
@@ -145,6 +166,7 @@ makes the work faster, not the sources wider.
 
 ## Order of work
 
-`sp48.rom.dis` first (everything else inherits from it), then `sp128-1` and the +3 ROM 3s
-by inheritance plus their differing routines, `sp128-0`, the +3 ROMs 0–2 (the +3DOS call
+`sp48.rom.dis` first (everything else inherits from it; done, at level 2), `sp128-1` by inheritance
+(done, at level 2; `sp48-authoring-guide.md` explains `inherits`), then the +3 ROM 3s by inheritance
+plus their differing routines, `sp128-0`, the +3 ROMs 0–2 (the +3DOS call
 table from the +3 manual first), and the ZX81 and ZX80 ROMs.
