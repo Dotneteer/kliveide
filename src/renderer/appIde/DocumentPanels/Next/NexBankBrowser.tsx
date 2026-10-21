@@ -95,6 +95,8 @@ const REGION_NAME_KEYS = labelRecord({
   bytes: "panels.next.regionType.bytes",
   words: "panels.next.regionType.words",
   text: "panels.next.regionType.text",
+  defc: "panels.next.regionType.defc",
+  fill: "panels.next.regionType.fill",
   graphic: "panels.next.regionType.graphics",
   skip: "panels.next.regionType.skip"
 });

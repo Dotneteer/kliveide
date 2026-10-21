@@ -113,13 +113,32 @@ function decoderFor(romFile, page) {
   return { decode: romDecoderFor(kind), pageBytes };
 }
 
+/**
+ * The bank to measure: an inheriting sidecar's page together with its inherited, byte-bound entries
+ * (`romInheritance.ts`), as the IDE shows and checks it; any other sidecar's own bank.
+ */
+async function measuredBank(json, page, pageBytes) {
+  if (!json.inherits?.length) return json.banks[page];
+  const { withInheritedEntries } = require(join(root, "src/renderer/appIde/annotations/romInheritance.ts"));
+  const { parseAnnotations } = require(join(root, "src/renderer/appIde/annotations/programAnnotations.ts"));
+  const { annotations } = await withInheritedEntries(
+    parseAnnotations(JSON.stringify(json)).annotations,
+    (p) => (p === Number(page) ? pageBytes : undefined),
+    async (sidecar, p) => ({
+      annotations: parseAnnotations(readFileSync(join(ROMS, sidecar), "utf8")).annotations,
+      bytes: romBytes(sidecar.replace(/\.dis$/i, "")).subarray(p * 0x4000, (p + 1) * 0x4000)
+    })
+  );
+  return annotations.banks[page];
+}
+
 async function level(only) {
   for (const name of only ? [only] : sidecarFiles()) {
     const { json } = readSidecar(name);
     const romFile = name.replace(/\.dis$/i, "").split(/[\\/]/).pop();
     for (const page of Object.keys(json.banks ?? {})) {
       const { decode, pageBytes } = decoderFor(romFile, Number(page));
-      const report = await tools.measureRomLevel(json.banks[page], pageBytes, decode);
+      const report = await tools.measureRomLevel(await measuredBank(json, page, pageBytes), pageBytes, decode);
       const missing = tools.missingProvenance(json);
       console.log(
         `${name} page ${page}: level ${report.level} (recorded ${json.level ?? 0}); ` +
@@ -138,7 +157,7 @@ async function skeleton(name, page) {
     : { banks: { [page]: { regions: [{ start: 0, end: 0x3fff, type: "disassemble" }] } } };
   const romFile = name.replace(/\.dis$/i, "").split(/[\\/]/).pop();
   const { decode, pageBytes } = decoderFor(romFile, page);
-  const bank = sidecar.banks[String(page)];
+  const bank = await measuredBank(sidecar, String(page), pageBytes);
   const report = await tools.measureRomLevel(bank, pageBytes, decode);
   console.log(`// ${report.unlabelledTargets.length} unlabelled target(s) in ${romFile} page ${page}:`);
   for (const line of tools.skeletonOf(report)) console.log(line);

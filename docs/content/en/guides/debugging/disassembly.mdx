@@ -170,8 +170,10 @@ game loaded from a Spectrum tape, say &mdash; use [`ann-new`](/en/reference/comm
 is active.
 
 Right-click a row to annotate it: **Label...**, **Synopsis Comment...**, **End-of-Line Comment...**,
-**Operand Label...**, **Mark As Code / Bytes / Words / Skip** (and **Text** on the ZX80 and ZX81),
-**Go to Definition**, and **Go to References**. The same keys as in a popped-out `.NEX` bank work on
+**Operand Label...**, **Mark As Code / Bytes / Words / Text / Skip**, **Mark As Fill (.fillb)** (runs of
+one repeated byte, such as padding, listed as `.fillb 1170,$FF`), **Mark As Bit-7 Text (.defc)** (every
+machine but the ZX80 and ZX81: strings whose last character has bit 7 set, listed as `.defc "TEXT"`),
+**Mark As Copper** and **Mark As DMA** (on the ZX Spectrum Next), **Go to Definition**, and **Go to References**. The same keys as in a popped-out `.NEX` bank work on
 the row you last clicked (`L` for a label, `C` for an end-of-line comment, `Shift+C` for a synopsis,
 `Shift+F12` for references). The label goes in
 the bank the row is in &mdash; it follows that bank wherever it is paged &mdash; and the
@@ -200,6 +202,19 @@ for its ROMs, written for Klive, and finds them by the ROM's *bytes* rather than
 paged: a copy of the 48K ROM loaded from your own file gets them too, and on a ROM Klive does not know
 (a modified 48K ROM, say) they apply wherever its bytes still match. ROM labels are set in italics so
 your own stand out.
+
+The 48K ROM's annotations are complete (completeness level 2): every call and jump target has a
+label, every labelled routine has a synopsis saying what it does, takes and returns, and the lines
+whose purpose is not obvious carry a comment. The 128K's ROM 1 is complete too: it takes the 48K
+ROM's annotations wherever its bytes match and adds its own for the routines the 128K changed and
+the code it added. The 128K's editor ROM (ROM 0) is complete as well: its menus, the full-screen
+editor, the RAM disk, PLAY, the RS232 and tape commands are all labelled, described and commented.
+So are the 48K BASIC ROMs (ROM 3) of the +2A and +3, in the v4.0, v4.1 and Spanish versions (the +3E
+shares v4.0's): they take the 128K's annotations where their bytes match and describe what Amstrad
+changed, such as the disk motor's time-out and the Spanish messages. The +3's disk operating
+system ROM (ROM 2, +3DOS) is complete too, in the same three versions: its jump table, the files and
+directory, the sector cache, the floppy controller driver and the built-in disk test. The other ROMs'
+annotations are still sparse.
 
 Use `bp-set ROM:<name>` to break at a ROM label, and `ROM:<name>` in a breakpoint condition.
 
@@ -241,6 +256,11 @@ manual); [`rom-ann-provenance`](/en/reference/commands#rom-ann-provenance) chang
 `RST`, `JR` and `DJNZ` target reached from code. It counts the targets that still have none, and its
 **next $xxxx** link opens the disassembly at the next one; each click moves on to the following
 target. A page with none left shows *none*.
+
+Rest the pointer on a completeness level &mdash; the **Ready** chip, *records level*, the
+**Completeness** column head or a page's level meter &mdash; and a card explains the three levels,
+marks the ones reached and the next one, and counts what is still missing: the targets without a
+label and the labels without a synopsis.
 
 **Export as source…** writes the whole ROM as one Klive Z80 assembly file, with your labels and
 comments, then assembles it and says whether it gives back the ROM byte for byte (the same as

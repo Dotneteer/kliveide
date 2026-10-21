@@ -5,6 +5,7 @@ import { withTexts } from "@common/i18n/labels";
 import type { MessageKey } from "@common/i18n/keys.generated";
 
 import {
+  decodedRegionTypesFor,
   getBankAnnotation,
   type AnnotationRegion,
   type AnnotationRegionType,
@@ -96,6 +97,8 @@ export type NexAnnotationMenuAction =
   | "mark-copper"
   | "mark-dma"
   | "mark-text"
+  | "mark-defc"
+  | "mark-fill"
   | "mark-skip"
   | "clear"
   // --- The live Disassembly view's ROM rows only (`.plans/ROM_ANNOTATION_EDITING_PLAN.md` §4.1):
@@ -354,6 +357,8 @@ function selectMenu(
   enabled: boolean
 ): NexAnnotationMenuEntry[] {
   const rowActionsDisabled = !enabled || actionRange(state, undefined) === undefined;
+  // --- The decoded kinds this machine's annotations can hold, in the region dialog's order
+  const offered = decodedRegionTypesFor(state.annotations?.machine ?? "next");
   // --- `text` is a getter over its key, so the menu reads the current language whenever it is
   // --- drawn, even from a view model selected before the language changed (D7).
   const item = (
@@ -397,10 +402,14 @@ function selectMenu(
     item("mark-disassembly", "panels.next.annotations.menu.markDisassembly"),
     item("mark-bytes", "panels.next.annotations.menu.markBytes"),
     item("mark-words", "panels.next.annotations.menu.markWords"),
-    // --- No shortcut keys for these two (plan D7): rare, and marked once per program.
-    item("mark-copper", "panels.next.annotations.menu.markCopper"),
-    item("mark-dma", "panels.next.annotations.menu.markDma"),
+    // --- The decoded kinds only where the machine offers them; no shortcut keys for these (plan
+    // --- D7): rare, and marked once per program.
+    ...(offered.includes("text") ? [item("mark-text", "panels.next.annotations.menu.markText")] : []),
+    ...(offered.includes("defc") ? [item("mark-defc", "panels.next.annotations.menu.markDefc")] : []),
+    ...(offered.includes("fill") ? [item("mark-fill", "panels.next.annotations.menu.markFill")] : []),
     item("mark-skip", "panels.next.annotations.menu.markSkip"),
+    ...(offered.includes("copper") ? [item("mark-copper", "panels.next.annotations.menu.markCopper")] : []),
+    ...(offered.includes("dma") ? [item("mark-dma", "panels.next.annotations.menu.markDma")] : []),
     { kind: "separator" },
     item("clear", "panels.next.annotations.menu.clear")
   ];
@@ -600,6 +609,10 @@ export function regionTypeOfAction(
       return "copper";
     case "mark-text":
       return "text";
+    case "mark-defc":
+      return "defc";
+    case "mark-fill":
+      return "fill";
     case "mark-dma":
       return "dma";
     case "mark-skip":

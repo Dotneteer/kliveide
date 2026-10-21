@@ -1,6 +1,7 @@
 import type { RomPageKind } from "@common/roms/romIdentity";
 import type { AssembledText, MainApi } from "@common/messaging/MainApi";
 import type { SourceLine } from "@common/reverse/sourceExport";
+import { withInheritedEntries, type InheritedSidecarSource } from "./romInheritance";
 import type { ProgramAnnotations } from "./programAnnotations";
 
 import { t } from "@common/i18n/i18n";
@@ -175,7 +176,13 @@ export type RomExportRun = {
  */
 export async function runRomSourceExport(
   mainApi: Pick<MainApi, "saveTextFile" | "assembleText">,
-  sidecar: { path: string; annotations: ProgramAnnotations; matches: readonly RomPageMatch[] },
+  sidecar: {
+    path: string;
+    annotations: ProgramAnnotations;
+    matches: readonly RomPageMatch[];
+    /** Reads the sidecars it `inherits`: their byte-bound entries are exported with its own. */
+    inherited?: InheritedSidecarSource;
+  },
   file: string
 ): Promise<RomExportRun> {
   const pages: RomExportPage[] = sidecar.matches
@@ -195,7 +202,12 @@ export async function runRomSourceExport(
     "Assemble with the Klive Z80 assembler; the output is the ROM, byte for byte.",
     ...(missingPages.length ? [`Left out (no ROM bytes found): page ${missingPages.join(", ")}`] : [])
   ];
-  const exported = await buildRomSourceExport(sidecar.annotations, pages, { header });
+  const { annotations } = await withInheritedEntries(
+    sidecar.annotations,
+    (page) => pages.find((p) => p.page === page)?.bytes,
+    sidecar.inherited
+  );
+  const exported = await buildRomSourceExport(annotations, pages, { header });
   await mainApi.saveTextFile(file, exported.text);
   let verdict: RomExportVerdict;
   try {

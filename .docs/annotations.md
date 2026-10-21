@@ -80,8 +80,10 @@ hides the ROM's annotations. On the ZX80/ZX81 a mirror row repeats the canonical
 label and says `(mirror of $4082)`.
 
 The row menu adds the bank document's annotation entries — Label, Synopsis and
-End-of-Line Comment, Operand Label, Mark As Code/Bytes/Words/Skip (Text on the
-ZX80/ZX81), Go to Definition, Go to References — with the same shortcuts on the row last
+End-of-Line Comment, Operand Label, Mark As Code/Bytes/Words/Text/Bit-7 Text/Fill/Skip/Copper/DMA
+(each decoded kind only where `decodedRegionTypesFor` offers it: Bit-7 Text everywhere but the
+ZX80/ZX81, Copper and DMA on the Next; the NEX/ROM annotation editor's menu filters the same way),
+Go to Definition, Go to References — with the same shortcuts on the row last
 clicked. Go to References (`labelReferences.ts`) offers one entry per label the row has (its own,
 then each its operands name) and lists the rows of the bank or ROM page whose operands resolve to
 it by `resolveOperandLabel`, the rule the listing prints names by, so `.defw` words count and a
@@ -410,6 +412,15 @@ Regions can be:
 - `dma`: generate one `.dma` row per register write (a zxnDMA program);
 - `text`: printable runs as `.defm` rows (the ZX80/ZX81's own character set as `.defb` with the
   text in the comment); a row breaks at `$0D`, `$00` and a byte with bit 7 set;
+- `defc`: ASCII strings each ended by bit 7 set on the last character (the Spectrum ROMs' keyword
+  and message tables), one `.defc "TEXT"` row per string. A label inside a string cuts it into a
+  `.defm` row and the rest; a tail with no bit-7 byte is `.defm`; a non-printable character or a
+  quote is written `\xHH`, and a backslash (`$5C`), which the assembler's double unescaping would
+  misread, is a `.defb` row of its own (`createDefcItems`, `defcLiteralChar`). On a machine with its
+  own character set the region lists as `text`. Not offered on the ZX80/ZX81;
+- `fill`: runs of one repeated byte (padding, unused space), one `.fillb count,value` row per run
+  and a `.defb` row for a byte unlike its neighbours; runs are cut at labels (`createFillItems`).
+  Offered everywhere; SkoolKit's form is `DEFS count,value`;
 - `graphic`: one `.defb` row per pixel row (binary up to two bytes, hex beyond), the pixels drawn
   in the comment, laid out by the bank's matching `graphics` entry.
 
@@ -473,9 +484,15 @@ See `.plans/NEX_DMA_COPPER_REGIONS_PLAN.md`. The decoders are pure shared module
 `.plans/REVERSE_ENGINEERING_TOOLS_PLAN.md` §3. Every one is a key a shipped build ignores (R2); no
 schema bump, and Next files stay at version 2.
 
-- **`text` and `graphic` regions** are stored as `bytes` + `decode`, like Copper and DMA. A
-  graphic keeps its stored `rowBytes` (`min(width, 4)`), so an older build lists it a pixel row per
-  line where it can. Both are offered on every machine.
+- **`text`, `defc`, `fill` and `graphic` regions** are stored as `bytes` + `decode`, like Copper and DMA.
+  A graphic keeps its stored `rowBytes` (`min(width, 4)`), so an older build lists it a pixel row
+  per line where it can. `text` and `graphic` are offered on every machine, `defc` on every machine
+  but the ZX80/ZX81 (`decodedRegionTypesFor`). Source export writes `.defc` rows as they are; the
+  SkoolKit export writes them as `DEFM "AB","C"+128` (`skoolDefm`), and the import turns such a
+  string-and-number list into a `.defb` before assembling it (`skoolDataToKlive`), since the Klive
+  assembler takes no list after `DEFM`. A `fill` region is offered everywhere and goes to SkoolKit
+  as `DEFS count,value`, which the import turns into `.fillb` (the Klive `.defs` takes no value). A
+  bank's content mix counts `defc` bytes as text and `fill` bytes as bytes.
 - **`origin`** on a region: absent for the user's, `"auto"` for code/data detection, `"skool"` for
   a SkoolKit import. It takes part in `sameRegionLayout`, so a tool's region never merges into the
   user's; `withRegion` takes it as an optional argument and the editor never passes it, so a region

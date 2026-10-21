@@ -272,7 +272,7 @@ export async function exportSource(options: SourceExportOptions): Promise<Source
         body.push({ kind: "row", ...(label ? { label } : {}), text: instruction, ...(comment ? { comment } : {}) });
         emitBytes(offset, bytes);
       }
-    } else if (/^\.def[bwm]\b/i.test(instruction) && (type !== "copper" && type !== "dma")) {
+    } else if (/^\.(def[bwmc]|fillb)\b/i.test(instruction) && (type !== "copper" && type !== "dma")) {
       body.push({ kind: "row", ...(label ? { label } : {}), text: instruction, ...(comment ? { comment } : {}) });
       emitBytes(offset, bytes);
     } else {
@@ -289,7 +289,8 @@ export async function exportSource(options: SourceExportOptions): Promise<Source
   const equDone = new Set<string>();
   for (const line of body) {
     if (line.kind !== "row") continue;
-    for (const word of line.text.match(/[A-Za-z_][A-Za-z0-9_]*/g) ?? []) {
+    // --- A string literal's words are text, not names (`.defc "CLS"` uses no label CLS)
+    for (const word of line.text.replace(/"(?:[^"\\]|\\.)*"/g, '""').match(/[A-Za-z_][A-Za-z0-9_]*/g) ?? []) {
       const key = word.toLowerCase();
       if (definedNames.has(key) || equDone.has(key)) continue;
       const value = labelValues.get(word) ?? usedExternal.get(word);

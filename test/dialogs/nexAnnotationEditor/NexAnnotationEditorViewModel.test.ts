@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import type { ProgramAnnotations } from "@renderer/appIde/annotations/programAnnotations";
 
 import {
   actionOffsetSpan,
@@ -138,11 +139,22 @@ describe("menu", () => {
       "mark-disassembly",
       "mark-bytes",
       "mark-words",
+      "mark-text",
+      "mark-defc",
+      "mark-fill",
+      "mark-skip",
       "mark-copper",
       "mark-dma",
-      "mark-skip",
       "clear"
     ]);
+  });
+
+  it("offers only the region kinds the machine's annotations can hold", () => {
+    const marks = (machine: ProgramAnnotations["machine"]) =>
+      selectViewModel(loaded({ annotations: anAnnotationModel({ machine }) }))
+        .menu.flatMap((entry) => (entry.kind === "item" && entry.id.startsWith("mark-") ? [entry.id] : []));
+    expect(marks("rom")).toEqual(["mark-disassembly", "mark-bytes", "mark-words", "mark-text", "mark-defc", "mark-fill", "mark-skip"]);
+    expect(marks("zx81")).toEqual(["mark-disassembly", "mark-bytes", "mark-words", "mark-text", "mark-fill", "mark-skip"]);
   });
 
   it("separates the groups", () => {

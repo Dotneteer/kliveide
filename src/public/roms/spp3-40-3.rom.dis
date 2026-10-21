@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 3,
+  "machine": "rom",
+  "source": {"fileName":"spp3-40-3.rom"},
+  "authoring": ".ai/rom-annotations/README.md",
+  "level": 2,
+  "pages": {
+    "0": {"crc32":"04448eaa","name":"ZX Spectrum +2A/+3 v4.0 and +3E ROM 3 (48K BASIC)"}
+  },
+  "inherits": [{"sidecar":"spp3-41-3.rom.dis","page":0},{"sidecar":"sp128-1.rom.dis","page":0},{"sidecar":"sp48.rom.dis","page":0}],
+  "banks": {
+    "0": {
+      "offsetIndex": 0,
+      "regions": [
+        {"start":0,"end":16383,"type":"disassemble"}
+      ],
+      "localLabels": [
+        {"name":"PRINT_A","value":16},
+        {"name":"REPORT_CHAR","value":4924},
+        {"name":"STMT_JUMP","value":7037},
+        {"name":"STMT_NEXT","value":7156},
+        {"name":"HOOK_REPORT","value":14889},
+        {"name":"HOOK_TO_010F","value":14900},
+        {"name":"HOOK_STMT_JUMP","value":14907},
+        {"name":"HOOK_TO_0112","value":14918},
+        {"name":"HOOK_STMT_NEXT","value":14923},
+        {"name":"HOOK_TO_0115","value":14933}
+      ],
+      "lineAnnotations": {
+        "16": {"synopsis":"RST $10: prints the character in A through the current channel (CURCHL), by PRINT_A_CHAN.","comment":"PRINT_A_CHAN"},
+        "19": {"comment":"$A7 here ($FF in the 48K ROM), never run"},
+        "20": {"comment":"Unused ($FF)"},
+        "4924": {"synopsis":"Prints the report's code character (PRINT_A_DIGIT), a space, then its message; in +3 BASIC\nthe rest of the report is the other ROM's (HOOK_REPORT)."},
+        "7037": {"synopsis":"A jump pending (NSPPC bit 7 clear)? In +3 BASIC the other ROM answers (HOOK_STMT_JUMP)."},
+        "7156": {"synopsis":"After a statement: ENTER ends the line (LINE_END), ':' starts the next (STMT_LOOP), anything\nelse is report C. In +3 BASIC the other ROM takes over (HOOK_STMT_NEXT)."},
+        "14889": {"synopsis":"REPORT_CHAR's hook: in 48 BASIC (FLAGS bit 4 clear) what it replaced, A = 0 and DE =\nCOMMA_MESSAGES; in +3 BASIC the other ROM's address $010F (ROM0_JUMP).","comment":"+3 BASIC?"},
+        "14895": {"comment":"No: A = 0, DE = COMMA_MESSAGES"},
+        "14900": {"synopsis":"HL = $010F, then ROM0_JUMP."},
+        "14907": {"synopsis":"STMT_JUMP's hook: in 48 BASIC what it replaced, NSPPC bit 7 tested (Z: a jump pending); in\n+3 BASIC the other ROM's $0112 (ROM0_JUMP).","comment":"+3 BASIC?"},
+        "14913": {"comment":"No: a jump pending?"},
+        "14918": {"synopsis":"HL = $0112, then ROM0_JUMP."},
+        "14923": {"synopsis":"STMT_NEXT's hook: in 48 BASIC what it replaced, the current character compared with ENTER;\nin +3 BASIC the other ROM's $0115 (ROM0_JUMP).","comment":"+3 BASIC?"},
+        "14929": {"comment":"No: the current character, ENTER?"},
+        "14933": {"synopsis":"HL = $0115, then ROM0_JUMP."}
+      }
+    }
+  },
+  "provenance": {
+    "0:16:label": "derived",
+    "0:16:line": "derived",
+    "0:19:line": "observed",
+    "0:20:line": "observed",
+    "0:4924:label": "observed",
+    "0:4924:line": "observed",
+    "0:7037:label": "observed",
+    "0:7037:line": "observed",
+    "0:7156:label": "observed",
+    "0:7156:line": "observed",
+    "0:14889:label": "observed",
+    "0:14889:line": "observed",
+    "0:14895:line": "observed",
+    "0:14900:label": "observed",
+    "0:14900:line": "observed",
+    "0:14907:label": "observed",
+    "0:14907:line": "observed",
+    "0:14913:line": "observed",
+    "0:14918:label": "observed",
+    "0:14918:line": "observed",
+    "0:14923:label": "observed",
+    "0:14923:line": "observed",
+    "0:14929:line": "observed",
+    "0:14933:label": "observed",
+    "0:14933:line": "observed"
+  }
+}

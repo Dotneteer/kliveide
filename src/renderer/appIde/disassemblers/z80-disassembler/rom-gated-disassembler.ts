@@ -1,3 +1,4 @@
+import type { RomPageKind } from "@common/roms/romIdentity";
 import type { DisassemblyItem, FetchResult, MemorySection } from "../common-types";
 import {
   CUSTOM_Z80_DISASSEMBLY_TOOL,
@@ -27,6 +28,11 @@ export type CustomDisassemblyContext = {
    * fitted with the 8K ROM runs the ZX81's ROM, which `inDescribedRom` covers.
    */
   inZx80Rom?(address: number): boolean;
+  /**
+   * Whether the instruction at an address is in a ROM page Klive knows as being of this kind (by its
+   * bytes): the 128K asks it for its editor ROM, whose `RST $28` is followed by a ROM 1 address.
+   */
+  inRomOfKind?(address: number, kind: RomPageKind): boolean;
 };
 
 /** A factory a machine registers as `CT_CUSTOM_DISASSEMBLER`. */

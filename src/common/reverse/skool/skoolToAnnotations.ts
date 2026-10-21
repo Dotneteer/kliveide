@@ -84,6 +84,8 @@ export const REGION_BLOCK: Partial<Record<AnnotationRegionType, SkoolBlockType>>
   bytes: "b",
   words: "w",
   text: "t",
+  defc: "t",
+  fill: "s",
   skip: "i",
   graphic: "b",
   copper: "b",
@@ -91,6 +93,55 @@ export const REGION_BLOCK: Partial<Record<AnnotationRegionType, SkoolBlockType>>
 };
 
 const REGISTER_PREFIX = /^(Input:|Output:|I:|O:)/;
+
+/**
+ * A SkoolKit `DEFS size,value` as `.fillb size,value`, and a `DEFM`/`DEFB` list that mixes strings
+ * and numbers — `DEFM "LIN","E"+128`, the form
+ * SkoolKit writes for a string whose last character has bit 7 set — as a `.defb` of its bytes,
+ * which the Klive assembler reads; it does not take a comma list after `DEFM`. Any other text, or
+ * a list with an item it cannot read (an expression, a value over 255), is returned unchanged.
+ */
+export function skoolDataToKlive(text: string): string {
+  // --- `DEFS size,value`: the Klive `.defs` takes no fill value, `.fillb` does
+  const defs = /^\s*DEFS\s+(\$[0-9A-Fa-f]+|\d+)\s*,\s*(\$[0-9A-Fa-f]+|\d+)\s*$/i.exec(text);
+  if (defs) return `.fillb ${defs[1]},${defs[2]}`;
+  const match = /^\s*DEF([MB])\s+(.*?)\s*$/i.exec(text);
+  if (!match || !match[2].includes('"')) return text;
+  const items: string[] = [];
+  let current = "";
+  let quoted = false;
+  for (let i = 0; i < match[2].length; i++) {
+    const ch = match[2][i];
+    if (quoted && ch === "\\") {
+      current += ch + (match[2][++i] ?? "");
+      continue;
+    }
+    if (ch === '"') quoted = !quoted;
+    if (ch === "," && !quoted) {
+      items.push(current.trim());
+      current = "";
+    } else {
+      current += ch;
+    }
+  }
+  items.push(current.trim());
+  const bytes: number[] = [];
+  for (const item of items) {
+    const str = /^"((?:[^"\\]|\\.)*)"(?:\s*\+\s*(\d+|\$[0-9A-Fa-f]+))?$/.exec(item);
+    if (str) {
+      const codes = [...str[1].replace(/\\(.)/g, "$1")].map((c) => c.charCodeAt(0));
+      if (!codes.length || codes.some((c) => c > 0xff)) return text;
+      if (str[2] !== undefined) codes[codes.length - 1] += str[2].startsWith("$") ? parseInt(str[2].slice(1), 16) : Number(str[2]);
+      bytes.push(...codes);
+      continue;
+    }
+    const num = /^(?:\$([0-9A-Fa-f]+)|(\d+))$/.exec(item);
+    if (!num) return text;
+    bytes.push(num[1] !== undefined ? parseInt(num[1], 16) : Number(num[2]));
+  }
+  if (bytes.some((b) => b < 0 || b > 0xff)) return text;
+  return `.defb ${bytes.map((b) => `$${b.toString(16).toUpperCase().padStart(2, "0")}`).join(",")}`;
+}
 
 /** The region an instruction's own text implies: a `DEFx` directive's, or code. */
 function instructionRegion(text: string, entryType: SkoolBlockType): AnnotationRegionType {
@@ -171,7 +222,7 @@ export async function skoolToAnnotations(input: SkoolImportInput): Promise<Skool
       for (const instruction of entry.instructions) {
         if (!instruction.text) continue;
         assembleIndex.set(instruction, toAssemble.length);
-        toAssemble.push({ text: instruction.text, address: instruction.address });
+        toAssemble.push({ text: skoolDataToKlive(instruction.text), address: instruction.address });
       }
     }
   }

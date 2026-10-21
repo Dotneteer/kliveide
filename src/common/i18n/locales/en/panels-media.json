@@ -2928,6 +2928,74 @@
   "@panels.rom.colToLabelTitle": {
     "context": "The ROM annotation editor (a document listing a ROM annotation file's pages). Tooltip of the 'To label' column head."
   },
+  "panels.rom.levelCard.legendTitle": "Completeness levels",
+  "@panels.rom.levelCard.legendTitle": {
+    "context": "The ROM annotation editor's level hover card (opens when the pointer rests on a completeness level: the readiness chip, the 'records level' text, the Completeness column head, or a page's level meter). Title when the card only explains the levels (on the column head)."
+  },
+  "panels.rom.levelCard.pageTitle": "Page {page} \u00b7 level {level}",
+  "@panels.rom.levelCard.pageTitle": {
+    "context": "The ROM annotation editor's level hover card (opens when the pointer rests on a completeness level: the readiness chip, the 'records level' text, the Completeness column head, or a page's level meter). Title for one page of the ROM.",
+    "placeholders": {
+      "page": "Page number of the ROM",
+      "level": "The page's measured level, 0-2"
+    }
+  },
+  "panels.rom.levelCard.fileTitle": "Level {level}",
+  "@panels.rom.levelCard.fileTitle": {
+    "context": "The ROM annotation editor's level hover card (opens when the pointer rests on a completeness level: the readiness chip, the 'records level' text, the Completeness column head, or a page's level meter). Title for the whole file: its lowest measured page level.",
+    "placeholders": {
+      "level": "Measured level, 0-2"
+    }
+  },
+  "panels.rom.levelCard.measured": "measured",
+  "@panels.rom.levelCard.measured": {
+    "context": "The ROM annotation editor's level hover card (opens when the pointer rests on a completeness level: the readiness chip, the 'records level' text, the Completeness column head, or a page's level meter). Small text beside a page's title: the level shown is what the tool measured. Lower case."
+  },
+  "panels.rom.levelCard.measuredRecords": "measured {measured} \u00b7 records {recorded}",
+  "@panels.rom.levelCard.measuredRecords": {
+    "context": "The ROM annotation editor's level hover card (opens when the pointer rests on a completeness level: the readiness chip, the 'records level' text, the Completeness column head, or a page's level meter). Small text beside the file's title: the measured level and the level the file itself claims. Lower case.",
+    "placeholders": {
+      "measured": "Measured level, 0-2",
+      "recorded": "Level the file records, 0-2"
+    }
+  },
+  "panels.rom.levelCard.levelName": "Level {level}",
+  "@panels.rom.levelCard.levelName": {
+    "context": "The ROM annotation editor's level hover card (opens when the pointer rests on a completeness level: the readiness chip, the 'records level' text, the Completeness column head, or a page's level meter). The name at the start of each level's row, followed by its rule.",
+    "placeholders": {
+      "level": "1, 2 or 3"
+    }
+  },
+  "panels.rom.levelCard.rule1": "Every call and jump target has a label, and data regions are marked.",
+  "@panels.rom.levelCard.rule1": {
+    "context": "The ROM annotation editor's level hover card (opens when the pointer rests on a completeness level: the readiness chip, the 'records level' text, the Completeness column head, or a page's level meter). What level 1 means."
+  },
+  "panels.rom.levelCard.rule2": "Level 1, and every label has a synopsis.",
+  "@panels.rom.levelCard.rule2": {
+    "context": "The ROM annotation editor's level hover card (opens when the pointer rests on a completeness level: the readiness chip, the 'records level' text, the Completeness column head, or a page's level meter). What level 2 means. A synopsis is the summary comment above a labelled routine."
+  },
+  "panels.rom.levelCard.rule3": "A comment on every non-trivial line. Not a goal.",
+  "@panels.rom.levelCard.rule3": {
+    "context": "The ROM annotation editor's level hover card (opens when the pointer rests on a completeness level: the readiness chip, the 'records level' text, the Completeness column head, or a page's level meter). What level 3 means; nobody aims for it."
+  },
+  "panels.rom.levelCard.unlabelled": "{count, plural, =0 {No call or jump target lacks a label} one {# call or jump target has no label} other {# call and jump targets have no label}}",
+  "@panels.rom.levelCard.unlabelled": {
+    "context": "The ROM annotation editor's level hover card (opens when the pointer rests on a completeness level: the readiness chip, the 'records level' text, the Completeness column head, or a page's level meter). Under level 1: what is still missing for it.",
+    "placeholders": {
+      "count": "Number of unlabelled targets"
+    }
+  },
+  "panels.rom.levelCard.withoutSynopsis": "{count, plural, =0 {Every label has a synopsis} one {# label has no synopsis} other {# labels have no synopsis}}",
+  "@panels.rom.levelCard.withoutSynopsis": {
+    "context": "The ROM annotation editor's level hover card (opens when the pointer rests on a completeness level: the readiness chip, the 'records level' text, the Completeness column head, or a page's level meter). Under level 2: what is still missing for it. A synopsis is the summary comment above a labelled routine.",
+    "placeholders": {
+      "count": "Number of labels"
+    }
+  },
+  "panels.rom.levelCard.footer": "The tool measures labels and synopses; marked data regions and comments are your judgement. A file never records more than it measures.",
+  "@panels.rom.levelCard.footer": {
+    "context": "The ROM annotation editor's level hover card (opens when the pointer rests on a completeness level: the readiness chip, the 'records level' text, the Completeness column head, or a page's level meter). Footnote at the bottom of the card."
+  },
   "panels.rom.colCompleteness": "Completeness",
   "@panels.rom.colCompleteness": {
     "context": "The ROM annotation editor (a document listing a ROM annotation file's pages). Column head in the pages list: the completeness level the page measures (0 to 2).",

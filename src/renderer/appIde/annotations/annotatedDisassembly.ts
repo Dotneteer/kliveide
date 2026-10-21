@@ -294,6 +294,18 @@ export async function createAnnotatedDisassemblyItems({
         );
         break;
 
+      case "fill":
+        items.push(...createFillItems(contents, start, end, decimalView, addressOffset, labelOffsets));
+        break;
+
+      case "defc":
+        items.push(
+          ...(charSet
+            ? createTextItems(contents, start, end, decimalView, addressOffset, labelOffsets, charSet)
+            : createDefcItems(contents, start, end, decimalView, addressOffset, labelOffsets))
+        );
+        break;
+
       case "dma":
         items.push(
           ...createDmaItems(contents, start, end, decimalView, addressOffset, labelOffsets)
@@ -648,6 +660,108 @@ function createTextItems(
       address: effectiveAddress(offset, addressOffset),
       instruction: `.defm "${text}"`,
       annotation: createAnnotationMetadata(undefined, offset, length, "text")
+    });
+    offset += length;
+  }
+  return items;
+}
+
+/**
+ * A character of a `.defc`/`.defm` literal that the Klive assembler reads back as `code`: printable
+ * ASCII as it is, anything else as `\xHH`. A backslash ($5C) has no safe form — the assembler
+ * unescapes a string literal twice (the parser, then `.defc`/`.defm`), so a `\` it produces would
+ * start an escape — and returns `undefined`.
+ */
+export function defcLiteralChar(code: number): string | undefined {
+  if (code === 0x5c || code > 0xff) return undefined;
+  if (code >= 0x20 && code < 0x7f && code !== 0x22) return String.fromCharCode(code);
+  return `\\x${toHexa2(code)}`;
+}
+
+/**
+ * A `defc` region: strings each ended by bit 7 set on the last character, the form `.defc "TEXT"`
+ * assembles (the Spectrum ROMs' keyword and message tables). Each string is one `.defc` row, its
+ * last character written without bit 7. A label inside a string cuts it: the part before the label
+ * is a `.defm` row, and the string goes on from the label. A run with no bit-7 byte before the
+ * region's end is a `.defm` row too. A byte with no literal form (a backslash, see
+ * `defcLiteralChar`) is a `.defb` row of its own, so every row reassembles to its bytes.
+ */
+export function createDefcItems(
+  contents: Uint8Array,
+  start: number,
+  end: number,
+  decimalView: boolean,
+  addressOffset: number,
+  labelOffsets: number[]
+): DisassemblyItem[] {
+  const items: DisassemblyItem[] = [];
+  const byteText = (value: number) => (decimalView ? toDecimal3(value) : `$${toHexa2(value)}`);
+  const nextLabel = (offset: number) => labelOffsets.find((labelOffset) => labelOffset > offset && labelOffset <= end);
+  let offset = start;
+  while (offset <= end) {
+    // --- The row runs to the string's terminator, or to the next label, or to the region's end
+    const label = nextLabel(offset);
+    const limit = label === undefined ? end : label - 1;
+    let text = "";
+    let length = 0;
+    let terminated = false;
+    while (offset + length <= limit) {
+      const value = contents[offset + length];
+      const ch = defcLiteralChar(value & 0x7f);
+      if (ch === undefined) break;
+      text += ch;
+      length++;
+      if (value & 0x80) {
+        terminated = true;
+        break;
+      }
+    }
+    if (length === 0) {
+      const value = contents[offset];
+      items.push({
+        address: effectiveAddress(offset, addressOffset),
+        instruction: `.defb ${byteText(value)}`,
+        annotation: createAnnotationMetadata(undefined, offset, 1, "defc")
+      });
+      offset++;
+      continue;
+    }
+    items.push({
+      address: effectiveAddress(offset, addressOffset),
+      instruction: `${terminated ? ".defc" : ".defm"} "${text}"`,
+      annotation: createAnnotationMetadata(undefined, offset, length, "defc")
+    });
+    offset += length;
+  }
+  return items;
+}
+
+/**
+ * A `fill` region: each run of one repeated byte is a `.fillb count,value` row, a byte unlike its
+ * neighbours a `.defb` row. Runs are cut at labels like any data row, so every row reassembles to
+ * its bytes.
+ */
+export function createFillItems(
+  contents: Uint8Array,
+  start: number,
+  end: number,
+  decimalView: boolean,
+  addressOffset: number,
+  labelOffsets: number[]
+): DisassemblyItem[] {
+  const items: DisassemblyItem[] = [];
+  const byteText = (value: number) => (decimalView ? toDecimal3(value) : `$${toHexa2(value)}`);
+  let offset = start;
+  while (offset <= end) {
+    const label = labelOffsets.find((labelOffset) => labelOffset > offset && labelOffset <= end);
+    const limit = label === undefined ? end : label - 1;
+    const value = contents[offset];
+    let length = 1;
+    while (offset + length <= limit && contents[offset + length] === value) length++;
+    items.push({
+      address: effectiveAddress(offset, addressOffset),
+      instruction: length > 1 ? `.fillb ${length},${byteText(value)}` : `.defb ${byteText(value)}`,
+      annotation: createAnnotationMetadata(undefined, offset, length, "fill")
     });
     offset += length;
   }

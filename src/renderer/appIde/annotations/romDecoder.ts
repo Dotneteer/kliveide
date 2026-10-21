@@ -5,6 +5,7 @@ import type { RomPageKind } from "@common/roms/romIdentity";
 import { MemorySection } from "@renderer/appIde/disassemblers/common-types";
 import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z80-disassembler";
 import { ZxSpectrum48CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/zx-spectrum-48-disassembler";
+import { ZxSpectrum128EditorCustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/zx-spectrum-128-editor-disassembler";
 import { Zx80CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/zx80-disassembler";
 import { Zx81CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/zx81-disassembler";
 
@@ -20,6 +21,7 @@ export function prepareRomDisassembler(
   kind: RomPageKind | undefined
 ): void {
   if (kind === "sp48-basic") disassembler.setCustomDisassembler(new ZxSpectrum48CustomDisassembler());
+  if (kind === "sp128-editor") disassembler.setCustomDisassembler(new ZxSpectrum128EditorCustomDisassembler());
   if (kind === "zx81") disassembler.setCustomDisassembler(new Zx81CustomDisassembler());
   if (kind === "zx80") disassembler.setCustomDisassembler(new Zx80CustomDisassembler());
 }

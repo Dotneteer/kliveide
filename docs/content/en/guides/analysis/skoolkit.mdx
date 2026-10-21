@@ -42,6 +42,10 @@ What comes in:
 | Mid-block comments | the synopsis of the instruction they precede |
 | End comments | lines after the entry's last instruction |
 
+A `DEFM` or `DEFB` that lists strings and numbers, such as `DEFM "LIN","E"+128` (SkoolKit's form
+for a string whose last character has bit 7 set), is read as the bytes it spells, and
+`DEFS 10,$FF` as ten `$FF` bytes.
+
 Skool macros such as `#R32768` are kept as text. What Klive does not model — other `@` directives,
 text between entries, `*` entry points — is kept with the bank, so exporting an unedited import
 gives the file back. Two labels that differ only in case are imported as `NAME` and `NAME_2`.
@@ -62,4 +66,6 @@ The export uses SkoolKit's conventional style: upper case, `$` hex, numeric oper
 lines for names. A new entry starts at every region boundary and at every address with a synopsis.
 A 48K export is one file; a 128K export adds every other annotated bank as an `@bank` section at
 `$C000` (or one file per bank with `-split`). A Next bank exports as its own file at `$C000`. A named
-graphic becomes a `b` entry whose description draws it with a `#UDGARRAY` macro.
+graphic becomes a `b` entry whose description draws it with a `#UDGARRAY` macro. A string region
+listed as `.defc` (Mark As Bit-7 Text) is written as `t` with `DEFM "AB","C"+128` rows, and a fill
+region as `s` with `DEFS 1170,$FF` rows.

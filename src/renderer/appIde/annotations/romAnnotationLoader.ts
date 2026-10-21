@@ -12,6 +12,7 @@ import { peekAnnotationSession } from "./annotationSession";
 import { annotationMachineOf, parseAnnotations, type ProgramAnnotations } from "./programAnnotations";
 import { bindRomPage, type RomBinding } from "./romBinding";
 import type { RomLayer } from "./romLayer";
+import { inheritsOf, type InheritedSidecarSource } from "./romInheritance";
 
 /*
  * Finding a ROM page's sidecar (`.plans/ROM_ANNOTATION_EDITING_PLAN.md` §4.2, which amends §5.2-§5.3
@@ -220,14 +221,9 @@ export async function pageCrcOf(
   }
 }
 
-/** The `inherits` a ROM sidecar declares. */
-function inheritsOf(annotations: ProgramAnnotations): { sidecar: string; page: number }[] {
-  return (annotations as ProgramAnnotations & { inherits?: { sidecar: string; page: number }[] }).inherits ?? [];
-}
-
 /** A shipped sidecar's effective model: its working copy when there is one, else the shipped file. */
 async function effectiveSidecar(
-  deps: RomLoaderDeps,
+  deps: Pick<RomLoaderDeps, "files" | "projectService">,
   sidecar: string
 ): Promise<{ annotations: ProgramAnnotations; path: string; working: boolean } | undefined> {
   const workingPath = await deps.files.resolveKliveHomePath(workingCopyRelativePath(sidecar));
@@ -235,6 +231,21 @@ async function effectiveSidecar(
   if (working) return { annotations: working, path: workingPath, working: true };
   const shipped = await readShippedSidecar(deps.files, sidecar);
   return shipped ? { annotations: shipped, path: `${SHIPPED_ROM_FOLDER}/${sidecar}`, working: false } : undefined;
+}
+
+/**
+ * Reads the sidecars a ROM sidecar `inherits`, as the Disassembly view does: each one's working copy
+ * when there is one, else the shipped file, with the bytes of the shipped ROM it was written for.
+ * What the readiness check and Export as source take, to judge an inheriting sidecar as its page.
+ */
+export function inheritedSidecarSource(
+  deps: Pick<RomLoaderDeps, "files" | "projectService">
+): InheritedSidecarSource {
+  return async (sidecar, page) => {
+    const effective = await effectiveSidecar(deps, sidecar);
+    const bytes = await readShippedRomPage(deps.files, sidecar, page);
+    return effective && bytes ? { annotations: effective.annotations, bytes } : undefined;
+  };
 }
 
 /** A sidecar applied by byte binding: inherited (`inherits`) or for an unknown 48K BASIC page (Q7). */

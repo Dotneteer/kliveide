@@ -48,11 +48,13 @@ const regionTypeOptions = (): DropdownOption[] => [
   { value: "disassemble", label: t("panels.next.regionType.disassembly") },
   { value: "bytes", label: t("panels.next.regionType.bytes") },
   { value: "words", label: t("panels.next.regionType.words") },
-  { value: "copper", label: "Copper" },
-  { value: "dma", label: "DMA" },
   { value: "text", label: t("panels.next.regionType.text") },
+  { value: "defc", label: t("panels.next.regionType.defc") },
+  { value: "fill", label: t("panels.next.regionType.fill") },
   { value: "graphic", label: t("panels.next.regionType.graphics") },
-  { value: "skip", label: t("panels.next.regionType.skip") }
+  { value: "skip", label: t("panels.next.regionType.skip") },
+  { value: "copper", label: "Copper" },
+  { value: "dma", label: "DMA" }
 ];
 
 export function NexRegionsDialog({

@@ -202,6 +202,17 @@ merely uncoloured, which no route diff can see.
   export) is `.plans/ZX8081_CODE_INJECTION_PLAN.md`; its §8 records how it works. The program image is
   built in one place, `src/common/zx8081/programImage.ts`, for injection and export alike.
 
+## ROM Annotations (reverse engineering the ROMs)
+
+- The shipped ROM sidecars (`src/public/roms/*.rom.dis`) are written from scratch: **read
+  `.ai/rom-annotations/README.md` first** — the D4 provenance rule (nothing from a remembered or
+  published commented disassembly, names included), the levels and the tools. Then the per-ROM
+  guide: `sp48-authoring-guide.md` (the 48K ROM, done to level 2, and the method to reuse) or
+  `zx81-authoring-guide.md`. Every session appends to `.ai/rom-annotations/PROVENANCE.md`.
+- Work happens in the working copy (`~/Klive/RomAnnotations/<rom>.dis`), written back only if the
+  file is unchanged since read (the IDE may be editing it); shipping copies it over the shipped
+  file, and some tests pin the shipped file's content.
+
 ## WASM Cores And The Debugger
 
 - **Read `src/emu/z80/wasm/README.md` before adding a hook, a debugger feature or a core.** Every core

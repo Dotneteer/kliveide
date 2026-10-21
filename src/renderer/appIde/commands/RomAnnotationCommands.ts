@@ -11,6 +11,7 @@ import { formatRomSidecar, type Provenance } from "@common/roms/romAnnotationToo
 import { romPageIdentity } from "@common/roms/romIdentity";
 import {
   SHIPPED_ROM_FOLDER,
+  inheritedSidecarSource,
   readShippedIndex,
   workingCopyOf
 } from "@renderer/appIde/annotations/romAnnotationLoader";
@@ -268,7 +269,11 @@ export class RomAnnotationCheckCommand extends IdeCommandBase<RomArgs> {
       return commandError(t("commands.romAnn.invalidJson", { path, message: (err as Error).message }));
     }
     const matches = await matchRomPages({ files: context.mainApi, emuApi: context.emuApi }, path, raw.pages ?? {});
-    const check = await checkRomSidecar(text, (page) => matches.find((m) => m.page === page)?.bytes);
+    const check = await checkRomSidecar(
+      text,
+      (page) => matches.find((m) => m.page === page)?.bytes,
+      inheritedSidecarSource({ files: context.mainApi, projectService: context.service.projectService })
+    );
     const levels = Object.entries(check.levels)
       .map(([page, level]) => t("commands.romAnn.pageLevel", { page, level: String(level) }))
       .join(", ");
@@ -415,7 +420,11 @@ export class RomAnnotationImportNamesCommand extends IdeCommandBase<ImportNamesA
       writeMessage(context.output, t("commands.romAnn.renamed", { from: entry.from, name: entry.name }));
     }
     if (result.text) {
-      const check = await checkRomSidecar(result.text, (p) => matches.find((m) => m.page === p)?.bytes);
+      const check = await checkRomSidecar(
+        result.text,
+        (p) => matches.find((m) => m.page === p)?.bytes,
+        inheritedSidecarSource({ files: context.mainApi, projectService: context.service.projectService })
+      );
       for (const problem of check.problems) writeMessage(context.output, `  ${problem}`, "yellow");
     }
     writeSuccessMessage(
@@ -485,7 +494,7 @@ export class RomAnnotationExportCommand extends IdeCommandBase<ExportArgs> {
     try {
       run = await runRomSourceExport(
         context.mainApi,
-        { path, annotations: parsed.annotations, matches },
+        { path, annotations: parsed.annotations, matches, inherited: inheritedSidecarSource({ files: context.mainApi, projectService: context.service.projectService }) },
         file
       );
     } catch (err) {
