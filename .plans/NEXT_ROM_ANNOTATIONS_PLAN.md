@@ -4,7 +4,7 @@ Annotate the ROMs the Next runs (NextZXOS, the alternate ROM, the DivMMC and Mul
 48K, 128K and +3 ROMs are: labels, synopses, comments and regions, written from the bytes, to level 2.
 This continues G7.2 of `CLOSING_THE_GAPS_PLAN.md` (R0-R4 covered the 48K, 128K, +2A/+3 and +2E/+3E).
 
-Status: **N0-N3 done (2026-10-21): `enNextZX.rom` at level 2 in its working copy; N4 next.** Where the work stands and how to go on: `NEXT_ROM_ANNOTATIONS_HANDOFF.md`.
+Status: **N0-N4 done (2026-10-21): `enNextZX.rom`, `enNxtmmc.rom` and `enNextMf.rom` at level 2 in their working copies; N5 next.** Where the work stands and how to go on: `NEXT_ROM_ANNOTATIONS_HANDOFF.md`.
 
 ## 1. The ROM files
 
@@ -57,7 +57,7 @@ The tools take `PAGE=<n>` for a page of a several-page file (`sp48-dis.cjs`, `ap
 | **N1** ✅ (2026-10-21) | `enNextZX` page 3 at level 2 in the working copy (1,148 labels, 5,416 comments, reassembling byte for byte): the 48K ROM's entries mapped (749 labels), the rest drafted by three helpers. It is a new kind, `next-basic` (48K decoding with the Z80N's opcodes). What NextZXOS changed: no tape code (the DivMMC does it), the operand jump table at $0600 and new functions in its place, no 48K start-up (selectors and string modifiers instead), a 256-byte operator table at $1A99, the calculator's tables moved to $3B02/$3C02, number bases, long names, local and integer variables, BANK/SPRITE/bitwise functions at $386E-$3CFC, `CALL $2705` + an inline word into DivMMC memory. | S–M |
 | **N2** ✅ (2026-10-21) | Pages 0 and 1 at level 2 in the working copy (1,068 and 1,038 labels, reassembling byte for byte). Each page has its own restarts and inline data: kinds `next-os0`-`2` and `NextZxOsCustomDisassembler` (ROM-to-ROM stubs + word, `RST $28` into ROM 3 through $5B48, the alternate ROM through `CALL $0068`, error bytes, `RST $10` functions, DivMMC calls). Page 0 is the system ROM (start-up, menu, channels, window driver, line editor, Browser); page 1 NextBASIC's command ROM (syntax tables, reports, LOAD/SAVE, PROC/loops, BANK). API names from the API document (`manual`). | L |
 | **N3** ✅ (2026-10-21) | Page 2 at level 2 (761 labels): the DOS ROM, its IDE_* and DOS_*/DD_* jump tables named from the API document; `RST $08` + byte + word calls the DivMMC memory's code (through ROM 3's $3Dxx automap), `CALL $3E18` + word the alternate ROM. The file records level 2; all four pages reassemble byte for byte. | M |
-| **N4** | `enNxtmmc.rom` (esxDOS, 8K) with its `RST $08` API (document), and `enNextMf.rom`. | M |
+| **N4** ✅ (2026-10-21) | `enNxtmmc.rom` (617 labels) and `enNextMf.rom` (424) at level 2, reassembling byte for byte. The DivMMC ROM is the vector table, bank dispatch, FAT file system and SD sector layer (its `RST $08` hands esxDOS calls to DivMMC RAM); the Multiface ROM is the NMI menu, snapshot saving and breakpoints. Their inline conventions are in `nextzxos-disassembler.ts` (kinds `next-divmmc`, `next-multiface`). | M |
 | **N5** | `enAltZX.rom` (two pages) and `enNextLG.rom`'s page 2: map from the above where they share code. | M |
 | **N6** | Ship at level 2, docs (Disassembly guide), roadmap, competitive analysis; the changeset. | S |
 

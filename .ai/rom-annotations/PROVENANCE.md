@@ -2044,3 +2044,30 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
 - **Probe:** none (structural findings; the SD and boot paths need a booted card).
 - **Level:** page 2 measures 2 (761 labels, 3,111 comments); all four pages reassemble byte for byte and the
   file records level 2. Not shipped yet (N6).
+
+### 2026-10-21 — The Next's DivMMC ROM and Multiface ROM (`enNxtmmc.rom`, `enNextMf.rom`, working copies, level 2)
+
+- **Decoding first** (`nextzxos-disassembler.ts`, kinds `next-divmmc` and `next-multiface`, with tests), each
+  convention read from its routine; four of them were found by helpers while drafting and fed back:
+  - DivMMC: `RST $08` + the API function byte ($0512; it hands the call to $33B4 in DivMMC RAM, so the ROM
+    holds no esxDOS function table); `RST $18` + a word read high byte first ($03C6); `RST $28` / `CALL $04E1`
+    + a field offset read at (IY)/(IX), `CALL $04F8`/`$0500` + one written there; `RST $30` + a word, the
+    vector entries at $0100-$018A whose address picks the bank ($018D; the tables at $2300/$2310/$2320);
+    `CALL $040D`/`$0407` + an address in DivMMC bank A / the last bank, `CALL $041F` + bank + address.
+  - Multiface: `RST $10`-`$28` + an address in ROM 0-3 (through its RAM image: $1856-$1AAF runs at $5B00);
+    `CALL $1569` + an API function byte (run as `RST $08` at $5B5D in ROM 3).
+- **Method:** three helpers per ROM from the bytes (D4), merged with `apply-draft.py`; the API document
+  (`manual`: the +3DOS/IDEDOS entry names on the DivMMC side, as NextZXOS ROM 2 calls them; M_DRVAPI and the
+  disk-stream calls on the Multiface), `nextreg.txt`, the VHDL (automap entry points and the $1FF8-$1FFF
+  off-area, the Multiface's ports $3F/$BF) and the MMC specification. The Multiface's register block is named
+  after the public .z80 snapshot file format (an interface fact, like the API document). No published
+  esxDOS, NextZXOS or Multiface source was opened.
+- **Found:** the DivMMC ROM holds the vector table and bank dispatch, the FAT16/FAT32 file system (mounting,
+  partitions, long and short names, directories, file handles, block and byte I/O) and the SD card's sector
+  layer; error codes are the +3DOS rc_ numbers. The Multiface ROM is the NMI menu: it saves the program's
+  state in a .z80-shaped block, the Status, memory browser and breakpoint screens (breakpoints are planted
+  `NEXTREG $02,$08`, which raises the Multiface NMI), .z80 and bank saving, and the start of a snapshot that
+  NextZXOS's loader raised.
+- **Probe:** none (structural; the paths need a booted card).
+- **Level:** both measure 2 (617 labels and 2,559 comments; 424 and 1,864) and reassemble byte for byte;
+  both record level 2. Not shipped yet (N6).

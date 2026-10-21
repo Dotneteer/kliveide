@@ -260,7 +260,8 @@ const spectrumP3CustomDisassembler: CustomDisassemblerFactory = (context) =>
 /**
  * The Next: its own opcodes everywhere, and its 48K BASIC ROM page (NextZXOS's ROM 3) with the 48K
  * decoding (report codes after `RST $08`, calculator literals after `RST $28`), only in that page; its
- * pages 0-2 with the inline data after their restarts and ROM-to-ROM calls, each only in its own page.
+ * pages 0-2, the DivMMC ROM and the Multiface ROM with the inline data after their restarts and calls,
+ * each only in its own page.
  */
 const nextCustomDisassembler: CustomDisassemblerFactory = (context) =>
   new ChainedCustomDisassembler([
@@ -268,7 +269,7 @@ const nextCustomDisassembler: CustomDisassemblerFactory = (context) =>
     new RomGatedCustomDisassembler(new ZxSpectrum48CustomDisassembler(), (address) =>
       context ? !!context.inRomOfKind?.(address, "next-basic") : false
     ),
-    ...(["next-os0", "next-os1", "next-os2"] as const).map(
+    ...(["next-os0", "next-os1", "next-os2", "next-divmmc", "next-multiface"] as const).map(
       (kind) =>
         new RomGatedCustomDisassembler(nextZxOsDecoderFor(kind)!, (address) =>
           context ? !!context.inRomOfKind?.(address, kind) : false

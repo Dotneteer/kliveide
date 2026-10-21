@@ -15,7 +15,11 @@ export type NextOsInline =
   /** A byte: a function code, followed by a word when its bit 7 is set */
   | { kind: "function" }
   /** A byte and a word: a call into the DivMMC's memory */
-  | { kind: "divmmcCall" };
+  | { kind: "divmmcCall" }
+  /** One byte, with what it is */
+  | { kind: "byte"; what: string; call?: string }
+  /** A word, with what it is */
+  | { kind: "word"; what: string; call?: string };
 
 /** The inline data of one NextZXOS ROM page, by restart and by CALL target. */
 export type NextOsPageSpec = {
@@ -89,6 +93,48 @@ export const NEXTZXOS_PAGES: Readonly<Record<0 | 1 | 2, NextOsPageSpec>> = {
       0x3e32: { kind: "call", rom: "alternate ROM" },
       0x3f00: { kind: "call", rom: "ROM 1" }
     }
+  }
+};
+
+/**
+ * The DivMMC ROM (`enNxtmmc.rom`, esxDOS) and the Next's Multiface ROM (`enNextMf.rom`), from their own
+ * routines:
+ * - DivMMC: `RST $08` + the API function byte (\$0512); `RST $30` + a word, the routine a vector entry at
+ *   \$00FC-\$0165 runs (\$018D picks the bank from the entry's address); `CALL $040D` + a word, an address
+ *   called with the DivMMC RAM bank A paged in (`CALL $0407`: the bank last used, at \$2006); `CALL $041F` + a bank byte and an address word, the same; `RST $18` + a word, read high byte first (\$03C6);
+ *   `RST $28` + a byte, the offset of a 4-byte field read from (IY) into BC and DE (\$04E9); `CALL $04E1` the
+ *   same from (IX); `CALL $04F8` / `CALL $0500` + a byte, the offset of a field BC and DE are written to at
+ *   (IX) / (IY).
+ * - Multiface: `RST $10`/`$18`/`$20`/`$28` + a word, an address called in ROM 0/1/2/3 (through the RAM
+ *   routines at \$5C1C and \$5B3E-\$5B4D); `CALL $1569` + an API function byte (it runs `RST $08` + that
+ *   byte at \$5B5D in ROM 3).
+ */
+export const NEXT_DIVMMC_ROM: NextOsPageSpec = {
+  restarts: {
+    0x08: { kind: "byte", what: "esxDOS function", call: "esxDOS call" },
+    0x18: { kind: "word", what: "word, high byte first", call: "Call through $03C6" },
+    0x28: { kind: "byte", what: "field offset", call: "Field of IY" },
+    0x30: { kind: "word", what: "routine address", call: "Vector" }
+  },
+  calls: {
+    0x0407: { kind: "word", what: "address in the bank at $2006", call: "Call in the last bank" },
+    0x040d: { kind: "word", what: "address in bank A", call: "Call in DivMMC bank A" },
+    0x041f: { kind: "divmmcCall" },
+    0x04e1: { kind: "byte", what: "field offset", call: "Field of IX" },
+    0x04f8: { kind: "byte", what: "field offset", call: "Store into IX's field" },
+    0x0500: { kind: "byte", what: "field offset", call: "Store into IY's field" }
+  }
+};
+
+export const NEXT_MULTIFACE_ROM: NextOsPageSpec = {
+  restarts: {
+    0x10: { kind: "call", rom: "ROM 0" },
+    0x18: { kind: "call", rom: "ROM 1" },
+    0x20: { kind: "call", rom: "ROM 2" },
+    0x28: { kind: "call", rom: "ROM 3" }
+  },
+  calls: {
+    0x1569: { kind: "byte", what: "API function", call: "API call through $5B5D" }
   }
 };
 
@@ -167,6 +213,14 @@ export class NextZxOsCustomDisassembler implements ICustomDisassembler {
       case "function":
         this._pending.push({ size: 1, comment: "function code", thenWordIfBit7: "word" });
         break;
+      case "byte":
+        if (inline.call) item.hardComment = `(${inline.call})`;
+        this._pending.push({ size: 1, comment: inline.what });
+        break;
+      case "word":
+        if (inline.call) item.hardComment = `(${inline.call})`;
+        this._pending.push({ size: 2, comment: inline.what });
+        break;
       case "divmmcCall":
         item.hardComment = "(Call DivMMC)";
         this._pending.push({ size: 1, comment: "DivMMC call byte" }, { size: 2, comment: "DivMMC address" });
@@ -175,8 +229,13 @@ export class NextZxOsCustomDisassembler implements ICustomDisassembler {
   }
 }
 
-/** The decoder for a NextZXOS page kind (`next-os0`..`next-os2`); undefined for any other kind. */
+/**
+ * The decoder for a NextZXOS page kind (`next-os0`..`next-os2`), the DivMMC ROM (`next-divmmc`) or the
+ * Multiface ROM (`next-multiface`); undefined for any other kind.
+ */
 export function nextZxOsDecoderFor(kind: string | undefined): NextZxOsCustomDisassembler | undefined {
+  if (kind === "next-divmmc") return new NextZxOsCustomDisassembler(NEXT_DIVMMC_ROM);
+  if (kind === "next-multiface") return new NextZxOsCustomDisassembler(NEXT_MULTIFACE_ROM);
   const page = kind === "next-os0" ? 0 : kind === "next-os1" ? 1 : kind === "next-os2" ? 2 : undefined;
   return page === undefined ? undefined : new NextZxOsCustomDisassembler(NEXTZXOS_PAGES[page]);
 }

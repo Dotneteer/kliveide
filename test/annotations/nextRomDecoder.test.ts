@@ -62,3 +62,35 @@ describe("NextZXOS's inline data", () => {
     expect(await starts("next-os2", 1, 0x0dad, 0x0db0)).toEqual([[0x0dad, 1], [0x0dae, 1], [0x0daf, 1], [0x0db0, 1]]);
   });
 });
+
+describe("the DivMMC and Multiface ROMs' inline data", () => {
+  const rom = (file: string) => new Uint8Array(readFileSync(join(__dirname, `../../src/public/roms/${file}`)));
+  const at = async (kind: "next-divmmc" | "next-multiface", file: string, from: number, to: number) =>
+    (await romDecoderFor(kind)(rom(file), from, to)).map((i) => [i.offset, i.length]);
+
+  it("DivMMC: RST $18 is followed by a word, CALL $04F8 by a field offset", async () => {
+    // --- $0010: RST $18 / two bytes / RET
+    expect(await at("next-divmmc", "enNxtmmc.rom", 0x0010, 0x0013)).toEqual([[0x0010, 1], [0x0011, 2], [0x0013, 1]]);
+    // --- $0A57: CALL $04F8 / DEFB $07 / SCF
+    expect(await at("next-divmmc", "enNxtmmc.rom", 0x0a57, 0x0a5b)).toEqual([[0x0a57, 3], [0x0a5a, 1], [0x0a5b, 1]]);
+  });
+
+  it("DivMMC: RST $30 is a vector entry, followed by the routine's address", async () => {
+    // --- $0103: RST $30 / DEFW $0EDA, then the next entry
+    expect(await at("next-divmmc", "enNxtmmc.rom", 0x0103, 0x0106)).toEqual([[0x0103, 1], [0x0104, 2], [0x0106, 1]]);
+  });
+
+  it("DivMMC: CALL $041F is followed by a bank and an address, CALL $040D by an address", async () => {
+    // --- $0310: CALL $041F / DEFB $0C / DEFW $26E7 / RET
+    expect(await at("next-divmmc", "enNxtmmc.rom", 0x0310, 0x0316)).toEqual([[0x0310, 3], [0x0313, 1], [0x0314, 2], [0x0316, 1]]);
+    // --- $0262: CALL $0407 / DEFW $1C7B, then $0267
+    expect(await at("next-divmmc", "enNxtmmc.rom", 0x0262, 0x0267)).toEqual([[0x0262, 3], [0x0265, 2], [0x0267, 2]]);
+    // --- $021D: CALL $040D / DEFW $1BA8 / RET
+    expect(await at("next-divmmc", "enNxtmmc.rom", 0x021d, 0x0222)).toEqual([[0x021d, 3], [0x0220, 2], [0x0222, 1]]);
+  });
+
+  it("Multiface: RST $10 is followed by an address", async () => {
+    // --- $0041: RST $10 / DEFW $2767 / POP HL
+    expect(await at("next-multiface", "enNextMf.rom", 0x0041, 0x0044)).toEqual([[0x0041, 1], [0x0042, 2], [0x0044, 1]]);
+  });
+});

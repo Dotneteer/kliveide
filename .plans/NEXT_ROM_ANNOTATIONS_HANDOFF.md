@@ -61,15 +61,21 @@ the file; all four pages reassemble byte for byte. Page 2 is the DOS ROM (not ed
 measure said). The decoder learned page 2's `RST $08` (a DivMMC call: byte + word) and `CALL $3E18`/`$3E32`
 (+ word, the alternate ROM). The working copy is not shipped (N6).
 
-## The next step: N4, the DivMMC and Multiface ROMs
+## Done since: N4 (2026-10-21)
 
-`enNxtmmc.rom` (8K, kind `next-divmmc`) is esxDOS's ROM: its `RST $08` API is in the API document. Read its
-restarts first and add its inline conventions to a decoder (as `nextzxos-disassembler.ts`). It is what
-page 2's `RST $08` reaches through the $3Dxx automap (the entry at $3D00 is in the DivMMC ROM or RAM: find
-out), so pages 0-2's synopses of DivMMC calls ($001D, $04DD, $034F, $017B ...) are the clues; most of that
-code may be in DivMMC RAM loaded from enSystem.sys (not in scope). `enNextMf.rom` (8K) is the Multiface:
-the snapshot loader starts a snapshot through a Multiface NMI (page 2 $0AB6). Brief helpers the same way
-(`$S/n3/BRIEF.md` is the last brief used: copy and adapt it).
+`enNxtmmc.rom` (617 labels) and `enNextMf.rom` (424) are at level 2 in their working copies, record level 2
+and reassemble byte for byte. The decoder has tables for both (`NEXT_DIVMMC_ROM`, `NEXT_MULTIFACE_ROM`), with
+tests. Details in PROVENANCE.
+
+## The next step: N5, the alternate ROM and enNextLG's page 2
+
+`enAltZX.rom` (two pages, kind `next-os` for now): NextZXOS calls it through `CALL $0068` (pages 0 and 1) and
+`CALL $3E18` (page 2), and its `$007B` switches it off again (NextReg $8C). Its keyword table gave N1 the
+token names. Read its restarts first and give its pages kinds and decoder tables of their own if they need
+them. Then `enNextLG.rom`'s page 2 (`43fc1f2f`, kind `next-os2`): it differs from `enNextZX.rom`'s page 2 only
+there; map page 2's sidecar onto it with `map-rom.py` (`SRC_PAGE=2 PAGE=2`), which should carry almost
+everything. The merge scripts of N2-N4 are in the session scratchpad (`n4/merge.sh` refuses to write when the
+check reports problems): copy that one.
 
 ## Lessons from R3-R4 to keep
 
