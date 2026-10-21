@@ -1996,3 +1996,29 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
   $0300 carry, 0 x 5 Z; NEXTREG_READ of register $00 gave 8 (the core's value).
 - **Level:** page 3 measures 2 (1,148 labels, 5,416 comments, no unlabelled or mid-instruction targets);
   it reassembles byte for byte. The file records 0 until its other pages are done.
+
+### 2026-10-21 — NextZXOS ROMs 0 and 1 (`enNextZX.rom` pages 0 and 1, working copy, level 2 measured)
+
+- **Decoding first:** each page uses its restarts differently, read from their own routines: the ROM-to-ROM
+  stubs at $3E00/$3E80/$3F00 take the word after the CALL and switch ROM with NextReg $8E; `CALL $0068`
+  (and page 1's `$0080`) calls the alternate ROM (NextReg $8C = $80); `RST $28` calls ROM 3 through the RAM
+  routine at $5B48. Page 0: `RST $18`/`$20` + word into ROM 1/2. Page 1: `RST $00` + word into ROM 2,
+  `RST $08` and `CALL $08EF` + error byte, `RST $10` + function byte (+ word when bit 7 is set),
+  `CALL $26CB`/`$26E5` + word into DivMMC memory. Page 2: `RST $08` + byte + word. New kinds `next-os0`-`2`
+  and `NextZxOsCustomDisassembler` (`nextzxos-disassembler.ts`, test `nextRomDecoder.test.ts`). Two of the
+  conventions were found by helpers while drafting and fed back to the others.
+- **Method:** five helpers per page drafted from the bytes (D4), with the +3E's, 128K's and 48K's sidecars
+  for names where the bytes and the job match; merged with `apply-draft.py`. The NextZXOS and esxDOS API
+  document (read as text extracted from the PDF) gave the API names after `RST $00`/`$20` and of the
+  IDE_* entry points, and `nextreg.txt` the NextReg meanings: provenance `manual` (81 entries on page 0,
+  48 on page 1). No published NextZXOS or esxDOS source was opened.
+- **Found:** page 0 is the system ROM: start-up and RAM test, the RAM routines at $5B00, the start-up menu
+  (text at $09EA-$0DAC), the channel dispatchers (M, F, D, V), the window channel driver in five screen modes
+  with its fonts and line buffer, the line editor (IDE_WINDOW_LINEIN) and the Browser (IDE_BROWSER). Page 1
+  is NextBASIC's command ROM: the syntax tables at $021D-$0566 (class words whose top two bits pick this ROM,
+  ROM 3, the alternate ROM or the DivMMC memory), reports and the error messages at $2705, the program
+  index of labels and PROCs, LAYER, SAVE/LOAD, IF/ELSE, loops, PROC/LOCAL, PRINT/INPUT, the BANK commands,
+  OPEN #/CLOSE #, DRIVER. A helper's "never reached" note at $0DCE was wrong ($0135 and $2B9C jump there).
+- **Probe:** none this time (the findings are structural; booting NextZXOS to its menu needs a cloned card).
+- **Level:** pages 0 and 1 measure 2 (1,068 and 1,038 labels; 3,895 and 4,663 comments; no unlabelled
+  targets) and reassemble byte for byte. The file records 0 until page 2 is done.

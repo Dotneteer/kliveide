@@ -45,6 +45,11 @@ export type RomPageKind =
   | "zx80"
   // --- The ZX Spectrum Next: NextZXOS's pages (and the alternate ROM's), the DivMMC and Multiface ROMs
   | "next-basic"
+  // --- NextZXOS's pages 0-2, each with its own restarts and inline data (`nextzxos-disassembler.ts`)
+  | "next-os0"
+  | "next-os1"
+  | "next-os2"
+  // --- The alternate ROM's pages (not yet read)
   | "next-os"
   | "next-divmmc"
   | "next-multiface";
@@ -77,11 +82,11 @@ export const KNOWN_ROM_PAGES: Readonly<
   // --- The ZX Spectrum Next: NextZXOS in four 16K pages (enNextLG differs in page 2 only), its 48K BASIC
   // --- page (3) decoded as the 48K ROM's, with Z80N opcodes (`next-basic`); the alternate ROM's two pages;
   // --- the 8K DivMMC and Multiface ROMs
-  "95ba84d4": { file: "enNextZX.rom", kind: "next-os", page: 0 },
-  "74dbb504": { file: "enNextZX.rom", kind: "next-os", page: 1 },
-  cafb1e32: { file: "enNextZX.rom", kind: "next-os", page: 2 },
+  "95ba84d4": { file: "enNextZX.rom", kind: "next-os0", page: 0 },
+  "74dbb504": { file: "enNextZX.rom", kind: "next-os1", page: 1 },
+  cafb1e32: { file: "enNextZX.rom", kind: "next-os2", page: 2 },
   "92d23960": { file: "enNextZX.rom", kind: "next-basic", page: 3 },
-  "43fc1f2f": { file: "enNextLG.rom", kind: "next-os", page: 2 },
+  "43fc1f2f": { file: "enNextLG.rom", kind: "next-os2", page: 2 },
   "574ec214": { file: "enAltZX.rom", kind: "next-os", page: 0 },
   "74bc5674": { file: "enAltZX.rom", kind: "next-os", page: 1 },
   "5a443736": { file: "enNxtmmc.rom", kind: "next-divmmc" },
@@ -92,7 +97,7 @@ export const KNOWN_ROM_PAGES: Readonly<
 
 /** Whether a page of this kind is the Next's, whose code uses the Z80N's extra opcodes. */
 export function romKindUsesZ80N(kind: RomPageKind | undefined): boolean {
-  return kind === "next-basic" || kind === "next-os" || kind === "next-divmmc" || kind === "next-multiface";
+  return kind === "next-basic" || kind === "next-os" || kind === "next-os0" || kind === "next-os1" || kind === "next-os2" || kind === "next-divmmc" || kind === "next-multiface";
 }
 
 /** The kind of a page Klive knows, by its identity. */
