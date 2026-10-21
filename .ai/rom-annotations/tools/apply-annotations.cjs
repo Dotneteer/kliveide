@@ -64,7 +64,9 @@ const [file, dataFile, listFile] = process.argv.slice(2);
 const n = (k) => (String(k).startsWith("$") ? parseInt(String(k).slice(1), 16) : Number(k));
 const sidecar = JSON.parse(readFileSync(file, "utf8"));
 const data = JSON.parse(readFileSync(dataFile, "utf8"));
-const bank = sidecar.banks["0"];
+// --- PAGE=<n>: the page (bank) of a sidecar of several pages; provenance keys start with it
+const PAGE = Number(process.env.PAGE ?? 0);
+const bank = sidecar.banks[String(PAGE)];
 bank.localLabels ??= []; bank.lineAnnotations ??= {}; sidecar.provenance ??= {};
 // The page ends where the file's last region ends (16383 for the ZX81's 16K page, 4095 for the ZX80's 4K one)
 const pageEnd = Math.max(...bank.regions.map((r) => r.end));
@@ -85,10 +87,10 @@ bank.regions = regions;
 const inData = (o) => dataRegions.some((r) => o >= r.start && o <= r.end);
 for (const r of data.regions ?? []) {
   const s = n(r.start);
-  sidecar.provenance[`0:${s}:region`] = r.provenance ?? "observed";
+  sidecar.provenance[`${PAGE}:${s}:region`] = r.provenance ?? "observed";
   if (r.synopsis) {
     bank.lineAnnotations[String(s)] = { ...(bank.lineAnnotations[String(s)] ?? {}), synopsis: r.synopsis };
-    sidecar.provenance[`0:${s}:line`] = r.provenance ?? "observed";
+    sidecar.provenance[`${PAGE}:${s}:line`] = r.provenance ?? "observed";
   }
 }
 // --- the listing a region change invalidates: an existing label inside data is an error
@@ -101,7 +103,7 @@ for (const [k, name] of Object.entries(data.labels)) {
   const clash = bank.localLabels.find((l) => l.value === value || l.name === name);
   if (clash) { console.log("label kept:", clash.name, "for", name); continue; }
   bank.localLabels.push({ name, value });
-  sidecar.provenance[`0:${value}:label`] = "observed";
+  sidecar.provenance[`${PAGE}:${value}:label`] = "observed";
 }
 // dataLabels: labels on table starts, which must lie inside a data region (the IDE shows them there)
 for (const [k, name] of Object.entries(data.dataLabels ?? {})) {
@@ -111,14 +113,14 @@ for (const [k, name] of Object.entries(data.dataLabels ?? {})) {
   const clash = bank.localLabels.find((l) => l.value === value || l.name === name);
   if (clash) { console.log("label kept:", clash.name, "for", name); continue; }
   bank.localLabels.push({ name, value });
-  sidecar.provenance[`0:${value}:label`] = "observed";
+  sidecar.provenance[`${PAGE}:${value}:label`] = "observed";
 }
 bank.localLabels.sort((a, b) => a.value - b.value);
 for (const [k, entry] of Object.entries(data.lines)) {
   const o = n(k);
   if (!starts.has(o) && !inData(o)) problems.push(`line ${k} not an instruction start`);
   bank.lineAnnotations[String(o)] = { ...(bank.lineAnnotations[String(o)] ?? {}), ...entry };
-  sidecar.provenance[`0:${o}:line`] = manual.has(o) ? "manual" : "observed";
+  sidecar.provenance[`${PAGE}:${o}:line`] = manual.has(o) ? "manual" : "observed";
 }
 if (problems.length) { console.log("PROBLEMS:\n" + problems.join("\n")); process.exit(1); }
 console.log("missing provenance:", tools.missingProvenance(sidecar));

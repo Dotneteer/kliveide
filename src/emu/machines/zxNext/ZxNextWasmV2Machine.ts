@@ -1322,9 +1322,16 @@ export class ZxNextWasmV2Machine
     return flat;
   }
 
-  /** The Next's ROMs carry no annotations (G7.2 covers the 48K, 128K, +3, ZX80 and ZX81 ROMs) */
+  /**
+   * The Next's ROM pages, as the ROM annotations see them: NextZXOS's R0-R3 and the alternate ROM's
+   * X0/X1 (16K each) and the DivMMC ROM (DM, 8K). The DivMMC RAM pages (M0-MF) are RAM, not ROM.
+   */
   protected override getRomPartitionImages(): Map<number, Uint8Array> {
-    return new Map();
+    const images = new Map<number, Uint8Array>();
+    for (let partition = -1; partition >= -7; partition--) {
+      images.set(partition, this.getMemoryPartition(partition).slice());
+    }
+    return images;
   }
 
   override getMemoryPartition(index: number): Uint8Array {

@@ -35,6 +35,7 @@ export function romSysVarsFor(kind: RomPageKind | undefined): SysVar[] | undefin
     case "plus3-editor":
     case "plus3-syntax":
     case "plus3-dos":
+    case "next-os":
       return SPECTRUM_128_SYS_VARS;
     default:
       return undefined;

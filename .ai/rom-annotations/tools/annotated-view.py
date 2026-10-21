@@ -6,7 +6,8 @@
 import json, sys
 
 d = json.load(open(sys.argv[1]))
-b = d["banks"]["0"]
+import os
+b = d["banks"][os.environ.get("PAGE", "0")]  # PAGE=<n>: a page of a sidecar of several pages
 A = b["lineAnnotations"]
 labels = {l["value"]: l["name"] for l in b["localLabels"]}
 a0, a1 = int(sys.argv[3], 16), int(sys.argv[4], 16)

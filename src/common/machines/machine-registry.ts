@@ -256,6 +256,18 @@ const spectrumP3CustomDisassembler: CustomDisassemblerFactory = (context) =>
     )
   ]);
 
+/**
+ * The Next: its own opcodes everywhere, and its 48K BASIC ROM page (NextZXOS's ROM 3) with the 48K
+ * decoding (report codes after `RST $08`, calculator literals after `RST $28`), only in that page.
+ */
+const nextCustomDisassembler: CustomDisassemblerFactory = (context) =>
+  new ChainedCustomDisassembler([
+    new ZxSpectrumNextCustomDisassembler(),
+    new RomGatedCustomDisassembler(new ZxSpectrum48CustomDisassembler(), (address) =>
+      context ? !!context.inRomOfKind?.(address, "sp48-basic") : false
+    )
+  ]);
+
 /** The ZX81 ROM's calculator, decoded only in the ZX81 ROM (also the ZX80's 8K upgrade, §4.7) */
 const zx81CustomDisassembler: CustomDisassemblerFactory = (context) =>
   gateOnRom(new Zx81CustomDisassembler(), context, 0x2000);
@@ -436,7 +448,7 @@ export const machineRegistry: MachineInfo[] = [
         partitionLabels?: string[],
         options?: DisassemblyOptions
       ) => new Z80Disassembler(memorySections, memoryContents, partitionLabels, options),
-      [CT_CUSTOM_DISASSEMBLER]: () => new ZxSpectrumNextCustomDisassembler()
+      [CT_CUSTOM_DISASSEMBLER]: nextCustomDisassembler
     }
   },
   {

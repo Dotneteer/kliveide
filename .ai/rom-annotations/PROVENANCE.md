@@ -1960,3 +1960,19 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
   disk gave "File not found, 0:1".
 - **Level:** 2 for all four, recorded; each reassembles byte for byte. Every +2A/+3/+3E ROM now ships
   at level 2 (R4 done).
+
+### 2026-10-21 — ZX Spectrum Next: preparation (N0 of `.plans/NEXT_ROM_ANNOTATIONS_PLAN.md`)
+
+- **Machine:** the Next now reports its ROM pages to the annotations (`getRomSources`: R0-R3, X0, X1
+  and the DivMMC ROM; the DivMMC RAM is left out), each with its file and page, so a working copy
+  `~/Klive/RomAnnotations/<file>.dis` applies to it in the Disassembly view. A site in a 16K ROM page
+  is offset within the page (the core pages R0 in both slots 0 and 1). `KNOWN_ROM_PAGES` knows the
+  Next's pages (with a `page` for files of several pages); page 3 is `sp48-basic` and decodes as the
+  48K ROM in the live view.
+- **Tools:** `PAGE=<n>` in `sp48-dis.cjs`, `apply-annotations.cjs`, `annotated-view.py` and the
+  reassembly template; `check-annotations.cjs` measures every page of the file.
+- **Working copies** (skeletons, level 0): `enNextZX.rom.dis` (4 pages), `enAltZX.rom.dis` (2),
+  `enNxtmmc.rom.dis`, `enNextMf.rom.dis`; unlabelled targets per page 967 / 984 / 578 / 1045, 459 /
+  610, 528, 451.
+- **Measured, not yet authored:** page 3 shares ~9.7K with the 48K ROM; page 2 ~3K with the +3E's
+  ROM 0; pages 0 and 1 little; `enNextLG.rom` differs from `enNextZX.rom` in page 2 only.
