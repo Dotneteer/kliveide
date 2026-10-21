@@ -14,8 +14,8 @@ export type NextOsInline =
   | { kind: "error" }
   /** A byte: a function code, followed by a word when its bit 7 is set */
   | { kind: "function" }
-  /** A byte (a function code) and a word (an address) */
-  | { kind: "byteWord" };
+  /** A byte and a word: a call into the DivMMC's memory */
+  | { kind: "divmmcCall" };
 
 /** The inline data of one NextZXOS ROM page, by restart and by CALL target. */
 export type NextOsPageSpec = {
@@ -43,7 +43,11 @@ export type NextOsPageSpec = {
  * - Page 1's `RST $08` takes an error code byte, and so does its `CALL $08EF` (which never returns; $FF
  *   there means the +3DOS error in A); its `RST $10` a function byte, and a word after it when
  *   the byte's bit 7 is set.
- * - Page 2's `RST $08` takes a byte and a word.
+ * - Page 2's `CALL $3E18` and `CALL $3E32` call the word's address in the alternate ROM, through ROM 0's
+ *   (or ROM 1's) \$007B, coming back through \$3E13 (\$3F13).
+ * - Page 2's `RST $08` (\$3F18) takes a byte (into A) and a word (into HL), pages the DivMMC's memory out
+ *   (port $E3 = 0), selects ROM 3 at \$3CFC and runs on into \$3D00, where the fetch maps the DivMMC in
+ *   again (its automap on \$3Dxx, NextReg $BB bit 7): a call of the DivMMC's code, the word its address.
  */
 export const NEXTZXOS_PAGES: Readonly<Record<0 | 1 | 2, NextOsPageSpec>> = {
   0: {
@@ -77,10 +81,12 @@ export const NEXTZXOS_PAGES: Readonly<Record<0 | 1 | 2, NextOsPageSpec>> = {
   },
   2: {
     restarts: {
-      0x08: { kind: "byteWord" }
+      0x08: { kind: "divmmcCall" }
     },
     calls: {
       0x3e00: { kind: "call", rom: "ROM 0" },
+      0x3e18: { kind: "call", rom: "alternate ROM" },
+      0x3e32: { kind: "call", rom: "alternate ROM" },
       0x3f00: { kind: "call", rom: "ROM 1" }
     }
   }
@@ -161,8 +167,9 @@ export class NextZxOsCustomDisassembler implements ICustomDisassembler {
       case "function":
         this._pending.push({ size: 1, comment: "function code", thenWordIfBit7: "word" });
         break;
-      case "byteWord":
-        this._pending.push({ size: 1, comment: "function code" }, { size: 2, comment: "address" });
+      case "divmmcCall":
+        item.hardComment = "(Call DivMMC)";
+        this._pending.push({ size: 1, comment: "DivMMC call byte" }, { size: 2, comment: "DivMMC address" });
         break;
     }
   }

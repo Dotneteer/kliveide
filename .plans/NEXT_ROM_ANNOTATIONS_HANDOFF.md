@@ -46,7 +46,7 @@ page is done (the level is per file).
 ## Done since: N2 (2026-10-21)
 
 `enNextZX.rom` pages 0 and 1 are at level 2 in the working copy (1,068 and 1,038 labels; 3,895 and 4,663
-comments; reassembling byte for byte). Code changes with it (uncommitted until the author asks): kinds
+comments; reassembling byte for byte). Code changes with it (committed with N2): kinds
 `next-os0`/`next-os1`/`next-os2` replace `next-os` for NextZXOS's pages 0-2 (`next-os` stays for the
 alternate ROM until N5), `NextZxOsCustomDisassembler` (`src/renderer/appIde/disassemblers/z80-disassembler/
 nextzxos-disassembler.ts`: a per-page table of restarts and CALL targets followed by inline data), wired into
@@ -54,15 +54,22 @@ nextzxos-disassembler.ts`: a per-page table of restarts and CALL targets followe
 `test/annotations/nextRomDecoder.test.ts`. New tool `pdf-text.py` (the API document as text). Details in
 PROVENANCE.
 
-## The next step: N3, page 2
+## Done since: N3 (2026-10-21)
 
-Its decoding is already in the table: `RST $08` + byte + word (page 2's $3F18: probably a call through the
-DivMMC with a function byte), `CALL $3E00` + word (ROM 0), `CALL $3F00` + word (ROM 1); confirm `RST $08`'s
-meaning from $3F18 first. Page 2 shares ~3K with the +3E's ROM 0 (editor-like): map those runs
-(`map-rom.py`) before briefing helpers, and give helpers page 0's and 1's names (they call into page 2: the
-channel templates at $124C-$1481, IDE_* entry points, `$0FAA` calling page 1's RUN_LINE_SAVED). The N2
-brief (`helper-briefs/draft-a-range.md` adapted) worked with five helpers per page; when a helper finds a new
-inline convention, add it to the decoder table, regenerate the listing and tell the other helpers of the page.
+`enNextZX.rom` page 2 is at level 2 (761 labels, 3,111 comments) and the working copy records level 2 for
+the file; all four pages reassemble byte for byte. Page 2 is the DOS ROM (not editor-like, as the first
+measure said). The decoder learned page 2's `RST $08` (a DivMMC call: byte + word) and `CALL $3E18`/`$3E32`
+(+ word, the alternate ROM). The working copy is not shipped (N6).
+
+## The next step: N4, the DivMMC and Multiface ROMs
+
+`enNxtmmc.rom` (8K, kind `next-divmmc`) is esxDOS's ROM: its `RST $08` API is in the API document. Read its
+restarts first and add its inline conventions to a decoder (as `nextzxos-disassembler.ts`). It is what
+page 2's `RST $08` reaches through the $3Dxx automap (the entry at $3D00 is in the DivMMC ROM or RAM: find
+out), so pages 0-2's synopses of DivMMC calls ($001D, $04DD, $034F, $017B ...) are the clues; most of that
+code may be in DivMMC RAM loaded from enSystem.sys (not in scope). `enNextMf.rom` (8K) is the Multiface:
+the snapshot loader starts a snapshot through a Multiface NMI (page 2 $0AB6). Brief helpers the same way
+(`$S/n3/BRIEF.md` is the last brief used: copy and adapt it).
 
 ## Lessons from R3-R4 to keep
 
@@ -78,6 +85,8 @@ inline convention, add it to the decoder table, regenerate the listing and tell 
 - **Helpers:** five per ROM page of ~3K each worked; review a sample of each draft against the code, check
   drafts against each other for shared names, and pass findings that concern another range on to its
   helper while they run (`SendMessage`).
+- **Never write a working copy from a string edit:** an unescaped newline once made the live file
+  invalid JSON for a moment. Load, change and dump it as JSON, then canonicalise and check before the cmp guard.
 - **Feed findings back while helpers run:** in N2 two inline conventions (`RST $00` on page 1, `CALL $08EF`)
   were found by one helper; the decoder took them and the others re-checked against the new listing.
   Helpers misread inline words whose target is in another page as "inside an instruction": check them.

@@ -2022,3 +2022,25 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
 - **Probe:** none this time (the findings are structural; booting NextZXOS to its menu needs a cloned card).
 - **Level:** pages 0 and 1 measure 2 (1,068 and 1,038 labels; 3,895 and 4,663 comments; no unlabelled
   targets) and reassemble byte for byte. The file records 0 until page 2 is done.
+
+### 2026-10-21 — NextZXOS ROM 2 (`enNextZX.rom` page 2, working copy; the file at level 2)
+
+- **Decoding first:** page 2's `RST $08` ($3F18) takes a byte and a word, pages the DivMMC out, selects ROM 3
+  at $3CFC and runs on into $3D00, where the fetch maps the DivMMC in again (its $3Dxx automap with ROM 3:
+  `zxnext.vhd`, NextReg $BB bit 7, interface documents): a call of the DivMMC memory's code, the word its
+  address, the byte probably the DivMMC bank at $2000-$3FFF during the call. A helper found `CALL $3E18`
+  (and the unused `$3E32`): + word into the alternate ROM. Both in `nextzxos-disassembler.ts`, with tests.
+- **Not mapped:** `map-rom.py` carried only 40 of the +3E ROM 0's 846 labels (the shared ~1.5K is
+  scattered), so five helpers drafted from the bytes with the byte-identical runs and the other sidecars'
+  names, as in N2; the shared routines keep the +3E's names (house rule).
+- **Found:** page 2 is the DOS ROM, not an editor ROM as first measured: the IDE_* jump table below $0100
+  and the +3DOS-compatible DOS_*/DD_* table from $0100, matched to the API document's call addresses
+  (`manual`, 357 entries); most entries call the DivMMC memory's code through `RST $08`. Also the snapshot
+  and machine-ROM loaders (SNA/SNX/Z80, ZX80/ZX81 .O/.P with code run at $F000), streams and channels (the
+  +3E's code with the Next's D, V and W channels), the swap file, the SD card's SPI driver (the MMC
+  specification for the commands), mounting and images (.P3D/.DSK), the start-up loading of enAltZX.rom
+  and enSystem.sys, and metadata files. The code ends at $291B; the rest is filler and the stubs.
+- **Corrected in page 1:** $001B is reached (page 2's LDIR_ROM_1 pushes it).
+- **Probe:** none (structural findings; the SD and boot paths need a booted card).
+- **Level:** page 2 measures 2 (761 labels, 3,111 comments); all four pages reassemble byte for byte and the
+  file records level 2. Not shipped yet (N6).

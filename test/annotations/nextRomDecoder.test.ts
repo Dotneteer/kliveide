@@ -53,6 +53,11 @@ describe("NextZXOS's inline data", () => {
     expect(await starts("next-os2", 2, 0x0068, 0x006c)).toEqual([[0x0068, 1], [0x0069, 1], [0x006a, 2], [0x006c, 1]]);
   });
 
+  it("page 2: CALL $3E18 is followed by an alternate ROM address", async () => {
+    // --- $1093: CALL $3E18 / DEFW $14A7
+    expect(await starts("next-os2", 2, 0x1093, 0x1096)).toEqual([[0x1093, 3], [0x1096, 2]]);
+  });
+
   it("decodes no inline data on another kind", async () => {
     expect(await starts("next-os2", 1, 0x0dad, 0x0db0)).toEqual([[0x0dad, 1], [0x0dae, 1], [0x0daf, 1], [0x0db0, 1]]);
   });
