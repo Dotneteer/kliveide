@@ -368,6 +368,9 @@ run in parallel once Z2 is in.
 - **Z6.** Banked builds: segments per `BANK_n`, list items with partition and segment; on the 128K and
   Scorpion they run from appmake's tape through the Tape Loader (48 BASIC locks the paging); banked
   +3 builds are export-only.
+- **Templates.** The ZX Spectrum family's `z88-dk` templates were verified - and the Next's fixed -
+  by `.plans/ZX_SPECTRUM_C_TEMPLATES_PLAN.md` (template fixtures for Debug and Run, real-core run and
+  debug tests per model, the IDE sweep `z88dk-ide-check.cjs templates`, the `ZCC-PRINTF` warning).
 - **Z7.** `klive build`/`run` take `--z88dk`; docs `guides/languages/z88dk.mdx`;
   `scripts/z88dk-ide-check.cjs` (run, debug, export, zx81, setup, nosetup) passed on the built app.
 

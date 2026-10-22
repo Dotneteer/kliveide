@@ -1456,6 +1456,7 @@ export type MessageKey =
   | "compiler.ksx.K025"
   | "compiler.ksx.K026"
   | "compiler.ksx.K027"
+  | "compiler.z88dk.printfTableInStartup"
   | "debug.advancedDebugging.off"
   | "debug.annotation.assertionIgnored"
   | "debug.annotation.assertionWarning"

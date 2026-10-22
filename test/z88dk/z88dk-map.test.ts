@@ -7,6 +7,7 @@ import {
   mapValue,
   parseZ88dkLocation,
   parseZ88dkMap,
+  printfTableInStartupCode,
   projectFileTest,
   unescapeMapName,
   z88dkBanks,
@@ -124,5 +125,17 @@ describe("projectFileTest", () => {
     expect(test("/home/u/proj/stdio/fputc_callee.c")).toBe(false);
     expect(test("/opt/z88dk/include/stdio.h")).toBe(false);
     expect(test("/tmp/tmpklive.i")).toBe(false);
+  });
+});
+
+describe("printfTableInStartupCode", () => {
+  const line = (section: string) =>
+    `__printf_format_table           = $8068 ; addr, public, , zxn_crt0, ${section}, crt_runtime_selection.inc:211`;
+  it("finds printf's format table in the startup's init code", () => {
+    expect(printfTableInStartupCode(parseZ88dkMap(line("code_crt_init")))).toBe(true);
+  });
+  it("ignores the table in any other section, and a map without one", () => {
+    expect(printfTableInStartupCode(parseZ88dkMap(line("code_crt0")))).toBe(false);
+    expect(printfTableInStartupCode(parseZ88dkMap("_main = $8100 ; addr, public, , main_c, code_compiler, main.c:9"))).toBe(false);
   });
 });

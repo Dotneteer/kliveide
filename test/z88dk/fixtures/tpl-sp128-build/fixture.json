@@ -1,0 +1,1 @@
+{"template": "sp128", "machine": "sp128", "model": "sp128", "profile": "build", "zccArgs": ["+zx", "-O2", "-lndos", "-m", "-create-app", "-o", "program", "main.c"], "map": "gzip"}

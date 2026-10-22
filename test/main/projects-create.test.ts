@@ -161,6 +161,26 @@ describe("createKliveProject", () => {
     expect(projectContents.settings.languages.sjasmp).toBe(".asm|.sjasm");
   });
 
+  // --- The C templates of the Spectrum family (`.plans/ZX_SPECTRUM_C_TEMPLATES_PLAN.md`; their builds
+  // --- are checked against zcc output in `test/z88dk/templates.test.ts`)
+  it.each(["sp48", "sp128", "spp3e", "timex", "scorpion", "zxnext"])(
+    "creates a %s project from the z88-dk template",
+    async (machineId) => {
+      const { createKliveProject } = await import("@main/projects");
+      const parentFolder = fs.mkdtempSync(path.join(os.tmpdir(), "klive-create-project-"));
+
+      const result = await createKliveProject(machineId, undefined, "z88-dk", "CProject", parentFolder);
+
+      const projectFolder = path.join(parentFolder, "CProject");
+      const projectContents = JSON.parse(fs.readFileSync(path.join(projectFolder, "klive.project"), "utf8"));
+      expect(result.errorMessage).toBeUndefined();
+      expect(fs.readFileSync(path.join(projectFolder, "code", "main.c"), "utf8")).toContain("int square(int value)");
+      expect(fs.readFileSync(path.join(projectFolder, "build.ksx"), "utf8")).toContain('$command("klive.debug")');
+      expect(projectContents.machineType).toBe(machineId);
+      expect(projectContents.builder.roots).toEqual(["code/main.c"]);
+    }
+  );
+
   // --- The registry is mocked here; `getModelConfig` of these models is covered by the factory test
   it.each(["plus3-fdd1", "plus2a-es", "plus3-v40-fdd2"])("creates a %s project from the spp3e template", async (modelId) => {
     const { createKliveProject } = await import("@main/projects");

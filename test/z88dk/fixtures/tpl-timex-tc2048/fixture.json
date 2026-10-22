@@ -1,0 +1,1 @@
+{"template": "timex", "machine": "timex", "model": "tc2048", "profile": "debug", "zccArgs": ["+zx", "-debug", "-O0", "-lndos", "-m", "-create-app", "-o", "program", "main.c"], "map": "gzip"}

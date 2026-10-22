@@ -424,6 +424,25 @@ Derived figures (arithmetic from the chain, F = 10.644 MHz):
   it only inserts a space after each character, keeping the narrow font [S80 hardware_s80.htm],
   [MAME trs80_v.cpp comment], [HT-USER §4.1].
 
+### 5.9 Sources for reverse engineering the video circuit (checked 2026-10-22)
+
+There is **no video chip**. The picture comes from discrete TTL: counters, multiplexers, two 2114
+RAMs, a character ROM and a shift register, with analog RC sync timing. What we have:
+
+| Source | What it gives | Gaps |
+|---|---|---|
+| **/64 E panel, sheet 1** (`docs/ht1080z64_schematic_ht_panel_e_64k_kapcsolas1.pdf`, Y04-6000-00-1E) | The full gate-level video logic: the 10.6645 MHz oscillator; the dot/character counter IC31 (74LS92); the H/V counters IC27–IC30 (74LS93) with the 625/525 jumper; the CPU/video address multiplexers IC24, IC32–IC34 (74LS157) with A0–A9, WR, RD and VID from the F panel; VRAM IC13/IC14 (MM2114); the data latches IC3 (74LS175) and IC21 (74LS174); the semigraphics select IC22 (74LS153); the chargen IC20 (TMS2716); the shift registers IC4 and IC19 (74LS166); the VIDEO CUT switch S3 and the PAGE input | Not traced yet. A 300-dpi scan is legible enough to trace (rendered crops were read for §2) |
+| **/64 E panel, sheet 2** (`…kapcsolas2.pdf`) | H and V sync from **CD4069 RC delay/monostable stages with trimmers P1/P2** (picture position, as on the Genie), IC17 MC14011 gating, and the video mixer T1–T3 into the composite output and the RF modulator. It also has the port FF latch (IC6 74LS175), the relays and the speaker amplifier. | The sync position and width are analog (RC values on the sheet), so the border has no exact digital value. Approximate it from the component values. |
+| **Genie manual §1.4, printed pp. 8–15** (`docs/EACA_Genie_manual_1982.pdf`) | A prose description of the divider chain, VRAM addressing, video signal generation, the display modes, VIDEO CUT/PAGE and the CPU-access blanking, with timing figures 1.5, 1.6 and 1.8 (summarised in §5.1–5.8) | **This scan lacks the schematic and layout pages** (printed pp. 35–41 and 43–45): the PDF jumps from the "4. Schematic diagrams" index (p.34) to "5. Component layout" (p.42). So no Series I/II (EACA board) schematic is in hand. |
+| **Dick Smith System 80 Technical Manual** (EACA, the same board as the Genie / Series I) | Issue 3 (1982-10) reportedly has full fold-out A3 schematics. The scans are referenced from the [Microbee Technology forum thread](https://microbeetechnology.com.au/forum/thread-222.html); Issue 2's text is on [device.report](https://device.report/m/a0a5d0a47e5ccf21823333770da9c06390731e6491ce27aa0d501096d0fcff5d). | **Not downloaded yet.** This is the best candidate for the Series I/II video schematic. |
+| MiST `videoctrl.vhd` (BSD-3) | A working HDL re-implementation: 672 × 312 counters, the cell and semigraphics decode, VIDEO CUT/PAGE | Not derived from the schematic. Its timing constants are the author's (10.5 MHz; borders 81/81). |
+| MAME `trs80_v.cpp` (BSD-3) | The character-ROM byte layout and the semigraphics decode for the HT | Frame-based, with no beam timing |
+
+What tracing E panel sheet 1 would settle: the exact horizontal count (672?) and where blanking
+and sync start within it; the pipeline delay from the VRAM read through the chargen to the shift
+register (it decides where a CPU-access "dash" lands and how many dots wide it is); how VIDEO
+CUT halves the clock; and the code 00–1F handling on the /64 chargen address lines.
+
 ---
 
 ## 6. Sound
@@ -450,13 +469,18 @@ Derived figures (arithmetic from the chain, F = 10.644 MHz):
   (pin 27) and BC1 (pin 29), with A0 inverted (IC4). BC2 (pin 28) and A8 (pin 25) are tied to +5 V,
   /A9 (pin 24) to GND [HT-SCH64 ht_hang.pdf]. So the chip answers at **1E/1F only** (A7–A1 =
   0001111), and the IN strobe is in the decode, i.e. register reads are possible.
-  *Inference* from the NOR wiring + MAME: write 1F → latch address, write 1E → write data,
-  read 1E → read data; reading 1F is probably also a data read (BC1 high) or nothing — not verified.
+  **Traced (SOUND_AY.md §2):** OUT 1F latches the address, OUT 1E writes data, and **IN 1F
+  reads data**. IN 1E is inactive (open bus). The 1984 Rádiótechnika program `D=INP(31)`
+  confirms the 1F read. MAME's read at 1E is wrong.
 - **Clock:** AY pin 22 is driven from the CPU board via the internal connector pin 1 [HT-SCH64
   ht_hang.pdf]. *Inference:* the AY runs at the CPU clock, ≈1.77 MHz. MiSTer clocks it with the
   1.774 MHz CPU enable [MISTER trs80.vhd, `CE => cpuClk`]. MAME uses **1.5 MHz** and flags it
   "guess of clock" / "verify clock for AY-3-8910" [MAME trs80.cpp `ht1080z()`, To-Do list].
-- **Reset:** AY pin 23 from bus `/RESET` (BCS/48) [HT-SCH64 ht_hang.pdf].
+- **Reset:** AY pin 23 comes from BCS/48 on the *internal* bus connector [HT-SCH64 ht_hang.pdf].
+  The BCS numbering differs from the edge numbering, where pin 48 is /NMI, so whether this is the
+  power-on /RESET is unverified (SOUND_AY.md §6).
+- **Full detail** (decode, clock argument, mixing with the beeper, user port, emulation recipe):
+  [SOUND_AY.md](SOUND_AY.md).
 - **Output:** channels A, B, C (pins 4, 3, 38) are tied together with a 1 kΩ load and summed into
   one mono signal → rear 20-pin connector pins 9–10 and the internal amplifier [HT-SCH64],
   [HT-USER p.22]. Max output 1.5 Vpp [HT-USER App. D p.26].

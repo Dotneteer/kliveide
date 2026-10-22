@@ -1037,5 +1037,9 @@
   "compiler.asm.unknownWarning": "Unknown warning",
   "@compiler.asm.unknownWarning": {
     "context": "Fallback assembler message for a warning code that has no text (should not happen)."
+  },
+  "compiler.z88dk.printfTableInStartup": "This program uses printf, and z88dk linked printf's format table into the startup code, which runs it as instructions. Depending on where the code ends up, the program may fail to start (the screen goes black and the machine resets). Print with putchar or puts instead, as the ZX Spectrum Next template does.",
+  "@compiler.z88dk.printfTableInStartup": {
+    "context": "Warning after a z88dk (C compiler) build, shown in the Output pane and the Problems view. It happens with z88dk v2.4's classic library on the ZX Spectrum Next. Keep printf, putchar, puts and z88dk exactly as they are: they are names from the C library and of the compiler."
   }
 }

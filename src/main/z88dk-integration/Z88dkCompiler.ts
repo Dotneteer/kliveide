@@ -9,6 +9,7 @@ import type {
   IKliveCompiler,
   KliveCompilerOutput
 } from "@abstractions/CompilerInfo";
+import { t } from "@common/i18n/i18n";
 import type { AppState } from "@common/state/AppState";
 import { createSettingsReader } from "@common/utils/SettingsReader";
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
@@ -28,6 +29,7 @@ import {
 import { parseZccDiagnostics, z88dkBuildError } from "./z88dk-diagnostics";
 import {
   loadAddressOf,
+  printfTableInStartupCode,
   parseZ88dkMap,
   projectFileTest,
   z88dkBanks,
@@ -263,6 +265,10 @@ export class Z88dkCompiler implements IKliveCompiler {
     const image = fs.readFileSync(imageFile);
     const mapText = fs.existsSync(`${output}.map`) ? fs.readFileSync(`${output}.map`, "utf8") : "";
     const symbols = parseZ88dkMap(mapText);
+    // --- z88dk v2.4's classic Next startup runs into printf's format table (`.ai/z88dk/targets.md`)
+    if (printfTableInStartupCode(symbols)) {
+      diagnostics.push({ ...z88dkBuildError(filename, t("compiler.z88dk.printfTableInStartup"), "ZCC-PRINTF"), isWarning: true });
+    }
     const origin = loadAddressOf(symbols, useCodeBin);
     if (origin === undefined) {
       return { errors: [...diagnostics, z88dkBuildError(filename, "The z88dk map does not say where the program loads (no CRT_ORG_CODE).")], traceOutput: trace };

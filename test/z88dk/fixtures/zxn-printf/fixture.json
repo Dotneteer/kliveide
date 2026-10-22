@@ -1,0 +1,1 @@
+{ "args": ["+zxn", "-subtype=nex", "-clib=classic", "-lndos"], "sources": ["main.c"], "map": "gzip" }

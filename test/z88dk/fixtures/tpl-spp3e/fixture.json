@@ -1,0 +1,1 @@
+{"template": "spp3e", "machine": "spp3e", "profile": "debug", "zccArgs": ["+zx", "-subtype=plus3", "-debug", "-O0", "-lndos", "-m", "-create-app", "-o", "program", "main.c"], "map": "gzip"}

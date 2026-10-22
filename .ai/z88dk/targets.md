@@ -26,6 +26,32 @@ library). Each target option is a **separate argument** (`+zx`, `-subtype=plus3`
 - **`+ts2068`** uses the same crt0 (`lib/config/ts2068.cfg` names `target/zx/classic/spec_crt0`).
   **`+zxn -subtype=nex -clib=classic`** links `target/zxn/classic/ram_crt0.asm`, which has the same
   shape (`ld (__restore_sp_onexit+1),sp`, `call _main`, restore SP, `ret`).
+- **A `.nex` must not return from `main`.** `.nexload` (`_input/nexload.asm`, `.go`) loads SP from the
+  NEX header, discards its own stack and enters the program with `rst $20`; it pushes no return
+  address. Its only way back to BASIC is a header PC of 0 (load without running). The classic Next
+  crt0 above restores the entry SP and `ret`s, which under `.nexload` jumps to a garbage address
+  (observed: SP `$0001`, then a reset). End a Next program with an endless loop, or soft-reset
+  (NextReg `$02` bit 0) to go back to NextZXOS: `ZXN_WRITE_REG(0x02, 1)` (`<arch/zxn.h>`) builds with the
+  classic library and resets the Next core (checked); `ZXN_NEXTREG(0x02, 1)` does not link there
+  (`undefined symbol: _ZXN_NEXTREG_0x02_1`). The Next template does the former, with
+  `while (1) {}`: **`for (;;) {}` after a loop fails to link at `-O2`** (`undefined symbol: i_5`,
+  sccz80's optimiser drops labels the code still uses); `while (1)` and a `goto` loop link at every level.
+- **z88dk v2.4 bug - `+zxn -clib=classic` programs that use `printf` may not start.** The Next's
+  classic crt (`target/zxn/classic/ram_crt0.asm`) leaves `SECTION code_crt_init` current before
+  `zxn_crt0.asm` includes `crt/classic/crt_runtime_selection.inc`, which has no `SECTION` of its own,
+  so `__printf_format_table` (a `'d'` byte and the `%d` handler's address, ...) is linked into
+  `crt0_init`'s fall-through path and **executed as code**. `crt0_init` begins with `xor a`, so
+  carry is clear: when the `%d` handler's low byte is `$D0` (`ret nc`), `crt0_init` returns before
+  it sets the console's print vector `__zx_print_routine`, and the first `printf` jumps to 0
+  (observed: the template built `-O2` without `-debug`, handler `$85D0`). With another low byte
+  (`-debug`, handler `$8604`: `inc b`) it runs on and works - by luck. A program without `printf`
+  gets no table. On `+zx` and `+ts2068` the table follows `ret`/`jp (hl)` (`C9 E9`) and is never
+  executed (`spec_crt0.asm` includes the runtime selection before it opens `code_crt_init`).
+  Klive's build warns (`ZCC-PRINTF`) when the map shows the table in `code_crt_init`; the Next
+  template prints with `putchar` instead.
+- **sccz80's line look-ahead and Step Out**: in `f(g(x));` the code after `g` returns is recorded on
+  the next line, so Step Out from `g` shows the following line. Keep a call whose return the user
+  will step out to in a statement of its own (`y = g(x);`), as the Next template does.
 - **`+zx81` / `+zx80`**: the `.P`/`.O` holds a BASIC program whose `REM` line carries the code; the
   program is started by `RUN`. Klive loads it as a program file (Run and Debug do what
   `tape-load -r`/`-d` does). The ZX80's `CRT_ORG_CODE` (`$408D`) is not Klive's REM body (`$402B`), so
@@ -35,6 +61,19 @@ library). Each target option is a **separate argument** (`+zx`, `-subtype=plus3`
   runs. The classic `+zx` console draws its **own font**, not the ROM's characters, so a screen test
   looks for ink rather than ROM text.
 - **`+z88 -subtype=app`**: a card application; OZ starts it from the Index. It cannot be injected.
+
+## Run on every Spectrum family model (checked 2026-10-22)
+
+The shipped `z88-dk` templates run, return to BASIC and keep the ROM's interrupt going on: the 48K
+(PAL, NTSC); the 128K and the Pentagon 128; every +2A/+3/+2E/+3E model; the Scorpion on the 128K ROMs;
+the TC2048 (`+zx`, on the shipped 48K ROM and on its own); the TS2068 (`+ts2068`, its own ROM). The Next's
+`.nex` runs its program when loaded directly. With its own ROM the Scorpion refuses Run: Klive does not
+know that ROM's editor. Tests: `test/z88dk/z88dk-templates-run*.core.test.ts`. Not checked: the TC2068
+(no ROM to hand).
+
+Source-level debugging of the templates (a breakpoint in `square`, Step Over/Out, Continue, the Call
+Stack and Variables) works the same on the 48K, the 128K through the 48 BASIC injection, the TS2068
+(`+ts2068`, `$9C40`) and the Next's `.nex`: `test/z88dk/z88dk-templates-debug.core.test.ts`.
 
 ## Z88 applications
 

@@ -229,6 +229,16 @@ export function z88dkSymbols(
   return table;
 }
 
+/**
+ * True when printf's format table is linked into the startup's init code (`code_crt_init`), where
+ * the CPU runs into it as instructions: z88dk v2.4's classic Next crt does this
+ * (`.ai/z88dk/targets.md`, "z88dk v2.4 bug"). Whether such a program starts then depends on where the
+ * linker put the `%d` handler, so the build warns.
+ */
+export function printfTableInStartupCode(symbols: Z88dkMapSymbol[]): boolean {
+  return symbols.some((s) => s.name === "__printf_format_table" && s.section === "code_crt_init");
+}
+
 /** The banks a banked build fills: `__BANK_n_head` with a non-zero `__BANK_n_size`. */
 export function z88dkBanks(symbols: Z88dkMapSymbol[]): { bank: number; address: number; size: number }[] {
   const banks: { bank: number; address: number; size: number }[] = [];
