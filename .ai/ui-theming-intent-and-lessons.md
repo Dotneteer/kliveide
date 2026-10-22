@@ -690,7 +690,20 @@ Pick the end by the ground the legend sits on, not by the machine: the ZX80's ke
 (`--device-key-zx80`) with white and amber print, so every hovered legend there - on the key or on
 the case - takes `--accent-on-device-dark`, and a pressed key gets its own tint over its own face
 (`--accent-device-pressed-zx80`), because a tint mixed over the ZX81's white key would read as a
-different key colour, not a pressed one.
+different key colour, not a pressed one. The HT-1080Z's cream keys follow the ZX81: every legend sits
+on the key, so every hover takes `--accent-on-device-light`, and a pressed key gets its own tint
+(`--accent-device-pressed-ht1080z`).
+
+**A device keyboard's colours come from a photo of the machine, not from a drawing or from taste.**
+The HT-1080Z mockup was first drawn dark-on-light-legends because the manual's keyboard drawing is
+black and white; the machine's keys are cream with black legends. Its tokens (`keyHt1080z` and the
+rest of that block in `palette.ts`) are averages sampled from a photo, and the palette comment names
+the photo. A drawing gives geometry and legends; only a photo gives colour.
+
+**Legends a device never had are marked as the emulator's.** The HT-1080Z keyboard's Hungarian
+hints (`--color-keyht1080z-hint`) type characters the extension ROM builds from key combinations;
+the machine printed none of them. They take a colour no printed legend on that keyboard uses (burnt
+orange, dark enough for cream), so nobody mistakes them for the machine's own print.
 
 ## Alignment In The Register Panels
 

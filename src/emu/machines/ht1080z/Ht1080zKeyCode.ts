@@ -6,8 +6,13 @@ import type { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
  * by address bit A`row` of a read from $3800-$3BFF and it reads on data bit D`column`.
  *
  * The shifted symbols are the TRS-80's: SHIFT+1 is `!`, SHIFT+: is `*`, SHIFT+; is `+` and so on.
- * PAGE and F1 are not here: they are outside the matrix and software cannot read them.
+ *
+ * Codes from `HT1080Z_FIRST_SWITCH_KEY` up are keys outside the matrix, which software cannot read:
+ * PAGE is a latching key that selects the right half of each row in 32-column mode (§6). F1, the
+ * recorder-motor override, joins with the tape (Phase 6).
  */
+export const HT1080Z_FIRST_SWITCH_KEY = 64;
+
 export const Ht1080zKeyCode: KeyCodeSet = {
   // --- Row 0 ($3801)
   At: 0,
@@ -68,5 +73,7 @@ export const Ht1080zKeyCode: KeyCodeSet = {
   Right: 54,
   Space: 55,
   // --- Row 7 ($3880): both SHIFT keys share one contact
-  Shift: 56
+  Shift: 56,
+  // --- Outside the matrix
+  Page: 64
 };

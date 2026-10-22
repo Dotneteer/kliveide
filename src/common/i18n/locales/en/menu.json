@@ -606,6 +606,10 @@
   "@menu.timex.ejectCartridge": {
     "context": "Machine › Cartridge (Timex 2068): removes the cartridge."
   },
+  "menu.ht1080z.resetKey": "Press the RESET Key",
+  "@menu.ht1080z.resetKey": {
+    "context": "Machine › HT-1080Z (a Hungarian school computer): presses the RESET key on the machine's back panel, which takes BASIC back to its READY prompt and keeps the program in memory. RESET is the key's label: keep it in capitals."
+  },
   "menu.z88.softReset": "Soft Reset",
   "@menu.z88.softReset": {
     "context": "Machine › Cambridge Z88: resets the machine keeping its memory (like the reset button)."

@@ -9,11 +9,13 @@ import {
   MI_ZX81,
   MI_ZXNEXT,
   MI_TIMEX,
-  MI_SCORPION
+  MI_SCORPION,
+  MI_HT1080Z
 } from "@common/machines/constants";
 import { zx8081TapeMenuRenderer } from "./zx8081-menus";
 import { tapeMenuRenderer, spectrumIdeRenderer, diskMenuRenderer } from "./zx-specrum-menus";
 import { z88ResetRenderer } from "./z88-menus";
+import { ht1080zHardwareRenderer } from "./ht1080z-menus";
 import {
   hotkeyMenuRenderer,
   initializeZxSpectrumNext,
@@ -46,6 +48,9 @@ export const machineMenuRegistry: Record<string, MachineMenuInfo> = {
   [MI_ZX80]: {
     devices: { program: zx8081TapeMenuRenderer },
     viewItems: spectrumIdeRenderer
+  },
+  [MI_HT1080Z]: {
+    hardwareItems: ht1080zHardwareRenderer
   },
   [MI_SPECTRUM_48]: {
     devices: { tape: tapeMenuRenderer },

@@ -2883,6 +2883,7 @@ export type MessageKey =
   | "menu.help.z88.toolsAndGames"
   | "menu.help.z88.userGuide"
   | "menu.help.z88.wikipedia"
+  | "menu.ht1080z.resetKey"
   | "menu.joystick.configureBindings"
   | "menu.machine.continueVideo"
   | "menu.machine.device.cartridge"

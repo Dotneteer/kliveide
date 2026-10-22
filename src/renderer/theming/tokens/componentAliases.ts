@@ -295,6 +295,18 @@ export const componentAliases: Record<string, string> = {
   "--color-keyzx80-dim": "var(--device-legend-zx80-dim)",
   "--color-keyzx80-highlight": "var(--accent-on-device-dark)",
   "--bgcolor-hilitedzx80": "var(--accent-device-pressed-zx80)",
+  // --- The HT-1080Z keyboard: cream keys in a charcoal recess on an off-white case. Every legend is
+  // --- on a light key face, so a hovered one takes the accent's dark end, as on the ZX81.
+  "--bgcolor-keyboardht1080z": "var(--device-body-ht1080z)",
+  "--bgcolor-keyboardht1080z-panel": "var(--device-panel-ht1080z)",
+  "--bgcolor-keyht1080z": "var(--device-key-ht1080z)",
+  "--color-keyht1080z-edge": "var(--device-key-edge-ht1080z)",
+  "--bgcolor-keyht1080z-switch": "var(--device-key-switch-ht1080z)",
+  "--color-keyht1080z-switch-edge": "var(--device-key-switch-edge-ht1080z)",
+  "--color-keyht1080z-main": "var(--device-legend-ht1080z-ink)",
+  "--color-keyht1080z-hint": "var(--device-legend-ht1080z-hint)",
+  "--color-keyht1080z-highlight": "var(--accent-on-device-light)",
+  "--bgcolor-hilitedht1080z": "var(--accent-device-pressed-ht1080z)",
 
   // --- Document area ----------------------------------------------------------------------------
   "--bgcolor-docspanel": "var(--surface-canvas)",

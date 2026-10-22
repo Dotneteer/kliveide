@@ -8,6 +8,7 @@ import { connectConditionSupport } from "@emu/machines/conditionStore";
 import { DebugSupport } from "@emu/machines/DebugSupport";
 import { Ht1080zWasmV2Machine } from "@emu/machines/ht1080z/Ht1080zWasmV2Machine";
 import { Ht1080zKeyCode } from "@emu/machines/ht1080z/Ht1080zKeyCode";
+import { HT1080Z_EXTENSION_ON } from "@emu/machines/ht1080z/Ht1080zTyper";
 import { HT1080Z_ALL_MODELS, HT1080Z_VIDEO_RAM_START } from "@emu/machines/ht1080z/ht1080zMachineInfo";
 
 import { buildHt1080zWasm, productionOutput } from "../../../scripts/build-ht1080z-wasm.cjs";
@@ -190,6 +191,35 @@ export class Ht1080zTestSession {
    */
   pressKey(...codes: number[]): this {
     return this.keyDown(...codes).runFrames(3).keyUp(...codes).runFrames(3);
+  }
+
+  /**
+   * Types text through the machine's typer (`Ht1080zTyper.ts`: each key held 3 frames, released 3)
+   * and runs until the queue is empty, then `settle` frames more
+   */
+  typeKeys(text: string, { settle = 10 }: { settle?: number } = {}): this {
+    this.machine.typeText(text);
+    this.runUntil(() => this.machine.getKeyQueueLength() === 0, { maxFrames: 20 * text.length + 50 }, "typing");
+    return this.runFrames(settle);
+  }
+
+  /** Switches the extension ROM on (`SYSTEM`, `/12288`), which the accents and lowercase need */
+  extensionOn(): this {
+    return this.typeKeys(HT1080Z_EXTENSION_ON, { settle: 30 });
+  }
+
+  /** The non-empty screen lines, the last `count` of them */
+  lastLines(count = 1): string[] {
+    return this.screenText().filter((line) => line !== "").slice(-count);
+  }
+
+  /** The video-RAM codes of the `back`-th non-empty line from the bottom, up to `length` of them */
+  lineCodes(back = 0, length = 16): number[] {
+    const lines = this.screenText()
+      .map((text, line) => ({ text, line }))
+      .filter(({ text }) => text !== "");
+    const { line } = lines[lines.length - 1 - back];
+    return Array.from({ length }, (_, column) => this.screenCode(line, column));
   }
 
   /** The RESET key on the back panel (NMI) */

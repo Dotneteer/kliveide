@@ -134,17 +134,23 @@ describe("HT-1080Z skeleton: ports", () => {
 });
 
 describe("HT-1080Z skeleton: interrupts", () => {
-  it("the RESET key is an NMI to 0066h, and BASIC returns to READY with the memory kept", async () => {
+  it("the RESET key is an NMI to 0066h, taken once, and BASIC returns to its prompt with the memory kept", async () => {
     const s = await booted();
     s.poke(0x7000, [0xa5, 0x5a]);
     s.poke(CODE, z.loop());
     s.machine.pc = CODE;
     s.runFrames(2);
     expect(s.machine.pc).toBe(CODE);
+    // --- A blank screen, so the READY looked for below is one BASIC printed after the RESET
+    for (let i = 0; i < 0x400; i++) s.poke(0x3c00 + i, 0x20);
     s.breakpoint(0x0066).pressResetKey();
     expect(s.debug("continue", { maxFrames: 2 })).toBe(0x0066);
+    // --- The NMI is taken once: the next instruction is the handler's, not another NMI
+    s.step();
+    expect(s.machine.pc).toBe(0x0069);
     s.machine.executionContext.debugSupport = undefined;
-    s.runUntil(() => s.screenText().some((line) => line === "READY"), { maxFrames: 200 }, "READY after RESET");
+    // --- BASIC's warm start (06CCh) is back at its command level: a fresh > prompt
+    s.runUntil(() => s.screenText().some((line) => line.startsWith(">")), { maxFrames: 200 }, "the > prompt after RESET");
     expect([s.peek(0x7000), s.peek(0x7001)]).toEqual([0xa5, 0x5a]);
   });
 

@@ -19,6 +19,7 @@ import { loadHt1080zWasmV2 } from "./wasm/Ht1080zWasmV2Loader";
 import { Ht1080zWasmHost } from "./Ht1080zWasmHost";
 import { HT1080Z_ROM_SETS } from "./Ht1080zRoms";
 import { HT1080Z_PIXEL_ASPECT } from "./ht1080zMachineInfo";
+import { HT1080Z_FIRST_SWITCH_KEY, Ht1080zKeyCode } from "./Ht1080zKeyCode";
 import { HT_VIDEO_CUT, HT_VIDEO_DASH, HT_VIDEO_PAGE } from "../machine-props";
 
 /** The model numbers `ht1080zConfigure` takes */
@@ -42,6 +43,8 @@ export class Ht1080zWasmV2Machine extends Ht1080zWasmHost {
   private screenPixels?: Uint32Array;
   private screenPixelBytes?: Uint8ClampedArray;
   private syncedTargetClockMultiplier = -1;
+  /** Whether the PAGE key is down: it latches on the press, and host key repeats must not flip it */
+  private pageKeyDown = false;
 
   constructor(
     machineId: string,
@@ -331,6 +334,11 @@ export class Ht1080zWasmV2Machine extends Ht1080zWasmHost {
     this.requireWasmV2Runtime().exports.ht1080zPressResetKey();
   }
 
+  /** The machine-menu commands (`ht1080z-menus.ts`): `reset_key` presses the RESET key */
+  override async executeCustomCommand(command: string): Promise<any> {
+    if (command === "reset_key") this.pressResetKey();
+  }
+
   override setMachineProperty(key: string, value?: any): void {
     super.setMachineProperty(key, value);
     const runtime = this.wasmV2Runtime;
@@ -533,7 +541,18 @@ export class Ht1080zWasmV2Machine extends Ht1080zWasmHost {
   // ==========================================================================================
   // Keyboard and screen
 
+  /**
+   * A key of the matrix goes to the core. PAGE, outside the matrix, is a latching key: each press
+   * flips the 32-column page (`HT_VIDEO_PAGE`); holding it down does nothing more.
+   */
   setKeyStatus(key: number, isDown: boolean): void {
+    if (key >= HT1080Z_FIRST_SWITCH_KEY) {
+      if (key === Ht1080zKeyCode.Page) {
+        if (isDown && !this.pageKeyDown) this.setMachineProperty(HT_VIDEO_PAGE, !this.getMachineProperty(HT_VIDEO_PAGE));
+        this.pageKeyDown = isDown;
+      }
+      return;
+    }
     this.requireWasmV2Runtime().exports.ht1080zSetKeyStatus(key, isDown ? 1 : 0);
   }
 

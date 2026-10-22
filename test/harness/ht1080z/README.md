@@ -21,10 +21,10 @@ it("boots", async () => {
 | Create | `createHtSession({ model? })` | Builds the core once per test process and powers the machine on: `ht1080z-s1`, `ht1080z-s2` (default) or `ht1080z-64` (`HT1080Z_ALL_MODELS`). |
 | Boot | `bootToPrompt()`, `hasFirstPrompt()` | Runs to the power-on question (`READY ?` on Series I/II, `MEMORY SIZE?` on the /64), answers it with NEW LINE, and runs to the `>` prompt. |
 | Run | `runFrames(n)`, `runUntil(pred)`, `runTo(address)`, `step(n)` | Whole 34,944-T frames; until a predicate holds; until PC reaches an address; single instructions. |
-| Keys | `keyDown`/`keyUp`, `pressKey(...codes)`, `pressResetKey()` | Raw `Ht1080zKeyCode` keys (`row * 8 + column`); a chord held 3 frames and released 3; the RESET key's NMI. Typing text comes with Phase 4. |
+| Keys | `typeKeys(text)`, `extensionOn()`, `keyDown`/`keyUp`, `pressKey(...codes)`, `pressResetKey()` | Text through the machine's typer (`Ht1080zTyper.ts`), accents included; `SYSTEM` `/12288`, which the accents and lowercase need; raw `Ht1080zKeyCode` keys (`row * 8 + column`); a chord held 3 frames and released 3; the RESET key's NMI. |
 | Debug | `attachDebugSupport()`, `debug(action)`, `breakpoint(address)` | The emulator's own breakpoint store; continue/step into/over/out as `MachineController` runs them. |
 | Memory | `peek`, `peekWord`, `poke` | Through the memory map. |
-| Screen | `screenText()`, `screenCode(line, column)`, `screenPixels()` | The 16 lines of video RAM as text (codes 20h-7Fh as ASCII, others as `{xx}`); one video-RAM byte; the picture. |
+| Screen | `screenText()`, `lastLines(n)`, `lineCodes(back)`, `screenCode(line, column)`, `screenPixels()` | The 16 lines of video RAM as text (codes 20h-7Fh as ASCII, others as `{xx}`); the last non-empty lines; one line's codes; one video-RAM byte; the picture. |
 
 ## Notes
 

@@ -10,12 +10,39 @@ import { EmulatedKeyStroke, tactsPast, toTactCounter } from "@emu/structs/Emulat
 import { Z80MachineBase } from "../Z80MachineBase";
 import { Ht1080zKeyCode } from "./Ht1080zKeyCode";
 import { ht1080zKeyMappings } from "./Ht1080zKeyMappings";
+import { ht1080zStrokesForText } from "./Ht1080zTyper";
 import {
   HT1080Z_KEYBOARD_START,
   HT1080Z_TACTS_IN_FRAME,
   resolveHt1080zHardware,
   type Ht1080zHardware
 } from "./ht1080zMachineInfo";
+
+/**
+ * How the typer presses keys, in frames, measured on the ROMs (`test/ht1080z-hw/keyboard.test.ts`):
+ * the Level II keyboard routine loses a repeated key when hold plus release is 2 frames and takes
+ * every key from 3, so each is held 3 and released 3. A stroke whose modifier must lead (Series II's
+ * CLEAR) has the modifier down `TYPE_LEAD_FRAMES` before the key and up `TYPE_TAIL_FRAMES` after it.
+ */
+const TYPE_HOLD_FRAMES = 3;
+const TYPE_GAP_FRAMES = 3;
+const TYPE_LEAD_FRAMES = 3;
+const TYPE_TAIL_FRAMES = 2;
+
+/** A queued keystroke whose first key goes down later and up earlier than the others */
+class LeadKeyStroke extends EmulatedKeyStroke {
+  constructor(
+    startTact: number,
+    endTact: number,
+    readonly keyStartTact: number,
+    readonly keyEndTact: number,
+    primary: number,
+    secondary?: number,
+    ternary?: number
+  ) {
+    super(startTact, endTact, primary, secondary, ternary);
+  }
+}
 
 /**
  * The host side of an HT-1080Z whose hardware is emulated in the WASM core: the clock and frame
@@ -143,6 +170,14 @@ export abstract class Ht1080zWasmHost extends Z80MachineBase {
       this.emulatedKeyStrokes.shift();
       return;
     }
+    if (keyStroke instanceof LeadKeyStroke) {
+      // --- The modifiers for the whole stroke; the key only inside its own window
+      keys.slice(1).forEach((k) => this.setKeyStatus(k, true));
+      const keyDown =
+        tactsPast(this.tacts, keyStroke.keyStartTact) >= 0 && tactsPast(this.tacts, keyStroke.keyEndTact) <= 0;
+      this.setKeyStatus(keyStroke.primaryCode, keyDown);
+      return;
+    }
     keys.forEach((k) => this.setKeyStatus(k, true));
   }
 
@@ -157,6 +192,42 @@ export abstract class Ht1080zWasmHost extends Z80MachineBase {
 
   getKeyQueueLength(): number {
     return this.emulatedKeyStrokes.length;
+  }
+
+  /**
+   * Types a string as keystrokes (`Ht1080zTyper.ts`), starting `delayFrames` from now: each held
+   * `TYPE_HOLD_FRAMES` frames and released for `TYPE_GAP_FRAMES`. Accented letters need the
+   * extension ROM switched on (`HT1080Z_EXTENSION_ON`), as on the real machine.
+   * @throws when the model's keyboard cannot type a character
+   */
+  typeText(text: string, delayFrames = 0): void {
+    const frameTacts = this.tactsInFrame * this.clockMultiplier;
+    /*
+     * A stroke's edges sit half a frame before the frame they start or end at. Keys are set at the
+     * start of each frame, and a frame starts a few T-states after its nominal boundary (the last
+     * instruction runs over it) - by a different amount every frame. An edge on the boundary itself
+     * then fell a frame early or late, and a key held 3 frames was sometimes held 2, which the Series
+     * II extension missed in a run of accents.
+     */
+    const at = (frames: number) => toTactCounter(this.tacts + Math.round((frames - 0.5) * frameTacts));
+    let offset = delayFrames;
+    for (const stroke of ht1080zStrokesForText(text, this.hardware.romSet)) {
+      const [primary, secondary, ternary] = stroke.keys.map((name) => Ht1080zKeyCode[name]);
+      if (stroke.lead) {
+        const keyStart = offset + TYPE_LEAD_FRAMES;
+        const keyEnd = keyStart + TYPE_HOLD_FRAMES;
+        const end = keyEnd + TYPE_TAIL_FRAMES;
+        this.emulatedKeyStrokes.push(
+          new LeadKeyStroke(at(offset), at(end), at(keyStart), at(keyEnd), primary, secondary, ternary)
+        );
+        offset = end + TYPE_GAP_FRAMES;
+      } else {
+        this.emulatedKeyStrokes.push(
+          new EmulatedKeyStroke(at(offset), at(offset + TYPE_HOLD_FRAMES), primary, secondary, ternary)
+        );
+        offset += TYPE_HOLD_FRAMES + TYPE_GAP_FRAMES;
+      }
+    }
   }
 
   // ==========================================================================================

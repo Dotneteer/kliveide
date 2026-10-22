@@ -6,8 +6,9 @@ import type { KeyMapping } from "@abstractions/KeyMapping";
  * keys, Backspace the left arrow (which deletes the last character), both shifts SHIFT.
  *
  * The punctuation keys sit where the HT has them: `- =` on Minus, `; +` on Semicolon, `: *` on
- * Quote, `@` on Backslash. A shifted host symbol therefore types the HT's shifted symbol of that key,
- * not the host's; Phase 4 of the plan adds the character-level mapping and the typer.
+ * Quote, `@` on Backslash. Host keys go by position, as on the ZX80/81: SHIFT with a key gives the
+ * HT's shifted symbol of that key (SHIFT+2 is `"`), not the host's. Text typed by the IDE goes by
+ * character instead (`Ht1080zTyper.ts`). Page Up or Page Down is the latching PAGE key.
  */
 export const ht1080zKeyMappings: KeyMapping = {
   Digit1: "N1",
@@ -80,5 +81,7 @@ export const ht1080zKeyMappings: KeyMapping = {
   Backspace: "Left",
   Space: "Space",
   ShiftLeft: "Shift",
-  ShiftRight: "Shift"
+  ShiftRight: "Shift",
+  PageUp: "Page",
+  PageDown: "Page"
 };

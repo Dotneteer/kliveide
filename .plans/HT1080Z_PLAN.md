@@ -1,7 +1,7 @@
 # HT-1080Z on the WASM Core — Implementation Plan
 
 **Status:** decisions accepted 2026-10-22 (§15; D10 revised the same day after Phase 2); Phases 0-3
-done 2026-10-22 (§17). Next: Phase 4.
+done 2026-10-22 (§17); Phase 4 done 2026-10-22. Next: Phase 5.
 **Input:** the research pack `_input/ht1080z/`. Read its `README.md` first, then `HARDWARE.md`,
 `VIDEO_TIMING.md`, `SOUND_AY.md`, `STORAGE_FIRMWARE_SOFTWARE.md` and `EXISTING_EMULATORS.md`.
 Every hardware fact in this plan comes from there, with its source.
@@ -757,3 +757,45 @@ aspect nearest-neighbour, so some dot columns came out a pixel wider than others
 uneven. A picture whose aspect is not a whole fraction is now drawn sharp-bilinear on a
 device-resolution canvas (`features/emulator/sharpScale.ts`, the rule in
 `.ai/ui-theming-intent-and-lessons.md`); every other machine's path is unchanged.
+
+**Phase 4 done 2026-10-22.** The typer (`Ht1080zTyper.ts`, `Ht1080zWasmHost.typeText`), the RESET
+key (Machine menu, `ht1080z-menus.ts`, custom command `reset_key`), PAGE as a latching key on Page
+Up/Page Down, `test/ht1080z-hw/keyboard.test.ts`, and the virtual keyboard
+(`src/renderer/appEmu/Keyboard/Ht1080zKeyboard.tsx`, `test/controls/Ht1080zKeyboard.test.tsx`), built
+to the mockup `.plans/ht1080z/ht1080z-keyboard-mockup.html`, which the project author approved on
+2026-10-22. Its geometry and printed legends are measured from the user manual's keyboard drawing
+(§4.1, p. 8); its colours are sampled from a photo of a Series I/II machine
+(https://frescho.hu/ht-1080z-adatlap/): cream keys with black legends in a charcoal recess, light
+grey PAGE and F1. The Hungarian legends are Klive's hints, per model, in burnt orange; a click types
+its character through the typer. F1 is drawn and inert until Phase 6. Checked in the running app:
+the keyboard matches the mockup, and clicks on it type at the prompt.
+
+| Value | Klive | Source |
+|---|---|---|
+| Typing timing | held 3 frames, released 3; the Level II keyboard routine loses a repeated key at 2 frames in all and takes every key from 3 | Measured on both BASICs |
+| Typer frame edges | half a frame before each boundary: a frame starts a few T-states late by a different amount each time, and an edge on the boundary moved a key's hold between 2 and 3 frames | Measured (a run of Series II accents lost é and ü) |
+| Shifted keys | the TRS-80's: SHIFT+1-9 `! " # $ % & ' ( )`, SHIFT+: `*`, SHIFT+; `+`, SHIFT+, `<`, SHIFT+- `=`, SHIFT+. `>`, SHIFT+/ `?`; SHIFT+@ stores 00h (Series I/II) or 60h (/64) | Observed in video RAM |
+| Extension ROM | off at power-on; `SYSTEM` then `/12288` switches it on (Series I prints `NEW KEYBOARD ROUTINE ENABLE`, the /64 `BASIC ROM EXTENSION  2.51`, Series II nothing); it adds lowercase and a block cursor (8Fh) | Observed |
+| Series II accents | with the extension on: CLEAR held, then A E U O give 5Dh 40h 5Eh 5Ch (Á É Ü Ö); with SHIFT too 7Dh 60h 7Eh 7Ch (á é ü ö). CLEAR must go down before the letter | Observed; matches the HS ROM page |
+| /64 specials | with the extension on and `PRINT CHR$(21)`: `` ` `` (SHIFT+@) then A E I O U 3 4 5 6 give codes 0 1 2 3 6 4 5 7 8 (Á É Í Ó Ú Ö Ő Ü Ű), SHIFT+ them 16-24; 7 8 9 B G M S give Ω 15, ∞ 11, ■ 9, Ψ 14, π 12, λ 10, Σ 13; SHIFT+ them ω 31, α 27, √ 25, β 30, γ 28, μ 26, ∫ 29 | Observed; glyphs read off the /64 character ROM |
+| RESET key | NMI to 0066h, taken once; the handler (`LD SP,0600h`, 37ECh tested for a disk, `JP 06CCh`) returns BASIC to its `>` prompt, the program kept | Observed |
+
+Corrections and deviations:
+- **The HS ROM page's code numbers for the /64's mathematical and Greek characters are wrong** (and
+  so are HARDWARE.md §5.5 and STORAGE §1.3, which copy them); its *keys* are right. The /64
+  character ROM has λ at 10, π at 12, √ at 25, μ at 26, α at 27, γ at 28, ∫ at 29 and β at 30 (the
+  page says ∫ 10, √ 12, α 25, β 26, γ 27, λ 28, μ 29, π 30). The Phase 8 character map must use the
+  ROM's.
+- **A Phase 2 bug, fixed here:** the core raised NMI and never lowered it. The shared Z80 does not
+  clear the line when it takes an NMI (the machine owns it, as on the ZX81), so after one RESET the
+  CPU re-entered 0066h for ever. The Phase 2 probe passed because `READY` was still on the screen; it
+  now blanks the screen first and checks that the NMI is taken once.
+- §7's "Shift keeps the TRS-80 shifted symbols, which needs a character-level mapping" is read as:
+  host keys go by position (SHIFT+2 is `"`, as on the ZX80/81), and the character-level mapping is
+  the typer's. A host-character mapping would need a new mechanism in `useEmulatorKeyboard`.
+- The video switches (VIDEO CUT, the dash) stay machine properties without menu items until the
+  Phase 8 menus, which need settings for their check marks.
+- Found in passing, not changed: the shared `Z80MachineBase.queueKeystroke` puts its edges on frame
+  boundaries, the jitter fixed above for the HT. The ZX80/81 typer holds keys 4 frames and has not
+  shown it.
+

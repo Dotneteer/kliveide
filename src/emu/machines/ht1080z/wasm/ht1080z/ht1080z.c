@@ -184,13 +184,16 @@ uint32_t ht1080zExecuteInstruction(void) {
     z80ClearBusEvents();
     htOpStartAddress = cpu.pc;
   }
-  /* The CPU takes the NMI at its next instruction boundary and clears the line itself */
-  if (htNmiPending) {
-    z80SetSigNmi(1u);
-    htNmiPending = 0u;
-  }
+  /*
+   * The RESET key's NMI is taken at this instruction boundary: the line is up for the first cycle
+   * only. The shared core does not lower it when it takes the NMI - the machine owns the line, as on
+   * the ZX81 - so left up, every instruction would start with another NMI to 0066h.
+   */
+  z80SetSigNmi(htNmiPending);
+  htNmiPending = 0u;
   do {
     z80ExecuteCpuCycle();
+    z80SetSigNmi(0u);
   } while (cpu.prefix != PREFIX_NONE);
   return htFrameCompleted;
 }
