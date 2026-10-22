@@ -7,6 +7,8 @@ Every file cites its sources inline: URLs, and for emulator code the file and fu
 | File | Covers |
 |---|---|
 | [HARDWARE.md](HARDWARE.md) | Lineage and variants; CPU, clocks, NMI and interrupts; memory map; I/O ports; video (format, chargen, semigraphics, timing, VIDEO CUT/PAGE, "snow"); sound (beeper and AY-3-8910); keyboard matrix; cassette hardware; the 50-pin bus and the EU7 expansion unit (FD1771, printer, HRG card); reset and boot |
+| [VIDEO_TIMING.md](VIDEO_TIMING.md) | How one frame is drawn against the CPU clock: 1 T-state = 1 character cell, the counter chain (Genie and /64 chips), the 112-T line and 312-line frame (34,944 T), the visible window and the 2-character pipeline, the CPU-access black dash, VIDEO CUT/PAGE, and an emulation recipe |
+| [SOUND_AY.md](SOUND_AY.md) | The AY-3-8910 panel traced gate by gate: OUT 1Fh latches the address, OUT 1Eh writes, **IN 1Fh reads** (MAME reads 1Eh, wrongly); the clock argument (= Φ, the CPU clock; one AY clock per T-state); mono mixing with the port-FF beeper into one speaker; the user port; reset; an emulation recipe |
 | [STORAGE_FIRMWARE_SOFTWARE.md](STORAGE_FIRMWARE_SOFTWARE.md) | ROM sets (MAME names and hashes), what Hungary changed, redistribution status; Level II ROM entry points, the communications region, the token table; cassette signal and file structures, `.cas`/`.cmd`/`.cpt`/`.wav`; disk (WD1771, DOSes, JV1/JV3/DMK); software archives and test programs |
 | [EXISTING_EMULATORS.md](EXISTING_EMULATORS.md) | About 17 HT-1080Z and TRS-80 Model I emulators, with licences verified against the repositories; the code structure of the main candidates; port source and accuracy oracle |
 | [lkesteloot-trs80/](lkesteloot-trs80/README.md) | lkesteloot/trs80 (MIT, TypeScript) at commit `11ed9327`: the Model I machine, the WD1771, the JV1/JV3/DMK and CAS/CMD readers, and the cassette encoder. ROM files and the GPL Fuse test vectors are left out, so `Trs80.ts` does not compile on its own. Input only. |
@@ -78,6 +80,6 @@ Each file's own "Open questions" section has the full list.
 ## Suggested next steps before the plan
 
 - Read the FIXTÁR ROM book and the /64 operating manual in `docs/`. The hardware research did not reach them; they should settle the Series I/II/64 ROM differences and the /64 memory question.
-- Compare the hashes of the ht.homeserver.hu ROM dumps with MAME's table (the user supplies the files; we do not download them).
+- ~~Compare the ht.homeserver.hu ROM dumps with MAME's hashes~~ **Done 2026-10-22:** all nine match (s1/s2/s3 = `ht1080z`/`ht1080z2`/`ht108064`); see STORAGE §1.4b. The images are in the git-ignored `roms.local/` folder, for local testing only.
 - Decide the ROM policy and the provenance rule: port from lkesteloot, MiST BSD files and MAME; read GPL sources only; use trs80gp and the Hungarian emulators as behavioural oracles.
 - Decide the clock: measure a known AY tone or a tape timing on a real machine, or take the Genie crystal as the reference and keep MAME's value as an option.

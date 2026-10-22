@@ -113,8 +113,8 @@ Observations (facts from the same file):
   expect the board locations to be the same" - the `zNN` locations are a guess.
 - Also on HS (`html/hardverrom.html`) there are dumps named `ht_s1_basic.rom`,
   `ht_s1_basicexpansion.rom`, `ht_s1_chargen.rom`, and `_s2_`/`_s3_` equivalents (s3 = /64), credited
-  to Majzik István (HT1080Z emulator readme: "Thanks István Majzik, HT1080Z ROM dumps"). Not
-  downloaded; sizes/hashes not checked against MAME - open question.
+  to Majzik István (HT1080Z emulator readme: "Thanks István Majzik, HT1080Z ROM dumps").
+  **Verified identical to MAME's sets (§1.4b).**
 
 ### 1.3 What the Hungarians changed
 
@@ -173,6 +173,56 @@ Observations (facts from the same file):
   0033H, 003BH, 0049H, 01C9H, 0212H, 0235H, 0264H, 0284H, 0296H, 0361H, 1BB3H, 28A7H, 2B75H, ... for
   the HT), and KOLLÁR's listing of 01D9H-0282H matches T80-DIS instruction for instruction except
   the delay constants and the 01FEH-0214H drive select.
+
+### 1.4a Where the ROM images can be downloaded (checked 2026-10-22; nothing downloaded)
+
+Links were checked with HTTP HEAD requests only (status and size); no image was fetched.
+
+| Source | Files | Size | Notes |
+|---|---|---|---|
+| **ht.homeserver.hu ROM page** — https://ht.homeserver.hu/html/hardverrom.html (Hungarian; its TLS certificate chain is incomplete, so some clients refuse it) | Series I: `bin/rom/ht_s1_basic.rom`, `ht_s1_basicexpansion.rom`, `ht_s1_chargen.rom`. Series II: `ht_s2_*` (same three). HT-1080Z/64: `ht_s3_*` (same three). Full URLs are `https://ht.homeserver.hu/bin/rom/ht_sN_….rom` | basic **12,288** B (0000–2FFF in one file); basicexpansion **2,048** B (3000–37FF); chargen **2,048** B | **The only complete set for all three variants, including the character ROMs.** It is the HT preservation group's own site; the dumps are credited to Majzik István. The page describes each variant: the Series I extension prints "NEW KEYBOARD ROUTINE ENABLE", Series II has the CLEAR-key accents, and the /64 prints "BASIC ROM EXTENSION 2.51". No licence statement. |
+| **MiST core author (Jozsef Laszlo)** — http://joco.homeserver.hu/fpga/download/HT1080Z.ROM, also in https://github.com/mist-devel/mist-binaries/tree/master/cores/ht1080z | `HT1080Z.ROM` | 14,336 B (BASIC + extension, 0000–37FF) | **Patched**: the author changed the cassette routines to load CAS files from the FPGA's SDRAM (his page, "I needed to do some basic patch on the ROM"). **Not usable as a pristine reference.** No character ROM; the MiST chargen is embedded in `videoctrl.vhd`. |
+| **SDLTRS source** — https://codeberg.org/JenGun/SDLTRS (`src/trs_chars.c`) | The Series II character set as a C table (CG 11) | — | Its comment cites `ht.homeserver.hu/bin/rom/ht_s2_chargen.rom`. Useful to cross-check the glyph decoding; BSD/xtrs licence on the code, but the glyph data is a ROM dump. |
+| **MAME** (`src/mame/trs/trs80.cpp`) | — | — | MAME distributes **no ROMs**. It only names the files and their CRC32/SHA1 (§1.2), which is how to verify a dump. Note the naming differs: MAME splits BASIC into 3 × 4 KB (`3001.z10`, `3002.z11`, `3003.z12`) where HS has one 12 KB file. |
+| classic-computers.org.nz System-80 software archive — https://www.classic-computers.org.nz/system-80/software_archive.htm (pointed to by the MiSTer README) | EACA System-80 / "blue label" ROMs | — | Relevant only for Series I, if MAME is right that it uses EACA's unchanged `sys80.z13` extension (§7 #4). |
+
+### 1.4b Verification of the ht.homeserver.hu dumps against MAME (done 2026-10-22)
+
+All nine files were downloaded on 2026-10-22 into `_input/ht1080z/roms.local/`. The folder is
+git-ignored by the repository's `*.local` rule, so the images are **not committed**. Each 12 KB
+BASIC file was split into 4 KB pieces (0000–0FFF, 1000–1FFF, 2000–2FFF), and every piece was
+hashed with CRC32 and SHA1.
+
+**Result: every piece matches MAME's ROM table exactly** (both CRC32 and SHA1):
+
+| HS file | Piece | MAME file (§1.2) |
+|---|---|---|
+| `ht_s1_basic.rom`, `ht_s2_basic.rom` (identical, whole file CRC 2bfef8f7) | 0000–0FFF / 1000–1FFF / 2000–2FFF | `3001.z10` / `3002.z11` / `3003.z12` |
+| `ht_s3_basic.rom` (CRC 48985a30) | 0000–0FFF / 1000–1FFF / 2000–2FFF | `3001_64.z10` / `3002_64.z11` / `3003.z12` |
+| `ht_s1_basicexpansion.rom` | whole | **`sys80.z13`** (EACA System-80 blue label) |
+| `ht_s2_basicexpansion.rom` | whole | `ht1080z2.z13` |
+| `ht_s3_basicexpansion.rom` | whole | `ht108064.z13` |
+| `ht_s1_chargen.rom` | whole | `ht1080z.z25` |
+| `ht_s2_chargen.rom` | whole | `ht1080z2.z25` |
+| `ht_s3_chargen.rom` | whole | `ht108064.z25` |
+
+So HS's s1/s2/s3 are MAME's `ht1080z`/`ht1080z2`/`ht108064`. Klive can identify a user-supplied
+ROM by either set of names, using the hashes in §1.2 (for the 12 KB file: s1/s2 CRC 2bfef8f7,
+SHA1 7a350925fd05c20a3c95118c1ae56040c621be8f; s3 CRC 48985a30, SHA1
+e84cf3121f9e0bb9e1b01b095f7a9581dcfaaae4).
+
+What the comparison showed (byte counts and offsets only; no ROM content is recorded here):
+
+- **BASIC:**
+  - Series I and II are byte-identical.
+  - The /64 differs from them in 101 bytes in 0000–0FFF and 2 bytes in 1000–1FFF.
+  - 2000–2FFF (`3003.z12`, which is Tandy's `rom-c`) is the same in all three.
+  - The /64's "2.20" banner text is in the main BASIC ROM, at offset 011Ah.
+- **Extension:**
+  - Series I = EACA `sys80.z13`, and it contains the "NEW KEYBOARD ROUTINE ENABLE" text at 3040h. **MAME and HS were both right**: the System-80 blue-label extension is what prints that message.
+  - Series I and II differ in exactly two ranges: **302F–305B** (the message area) and **35EC–35FE** (code added in Series II). This matches FIXTÁR's description of the pre-832 EPROM.
+  - The last used byte is at 35EB (Series I), 35FE (Series II) and **374F (/64)**. So the /64 extension is longer than 1.5 KB and needs the full 2 KB window 3000–37FF.
+- **Character ROM:** Series I and II differ in 59 bytes, consistent with the eight accented glyphs. The /64 differs from both in about 1,085 bytes (codes 0–31 and other changes).
 
 ### 1.5 Copyright / redistribution status
 
@@ -602,10 +652,10 @@ but large), the Technika newspaper listings, and the System 80 Technical Manual 
 | 1 | Leader length | 255 zero bytes (ROM code `LD B,0FFH` at 0287H; HS formats page; trs80-cassette README) | 256 zero bytes (T80-DIS prose for 0284H/0287H; trs-80.com format page) | Code wins for what the ROM writes; a loader must accept any number. |
 | 2 | CPU clock (affects tape speed) | 1.77 MHz (HS english page), 1.774 MHz (Real-80 docs) | 10.48 MHz / 6 = 1.7467 MHz (MAME `sys80p`, used by `ht1080z`) | Hardware note should settle it; tape timing scales with it (≈491 vs 500 baud). |
 | 3 | Pulse width | ~128 µs each half (own T-count of 01D9H); 125 µs (trs80-cassette) | 80 µs (1980s article); MAME synthesises ≈136 µs | Real tapes are filtered anyway; a reader should be tolerant. |
-| 4 | Series I extension | MAME uses EACA `sys80.z13` unchanged | HS says Series I extension prints "NEW KEYBOARD ROUTINE ENABLE"; FIXTÁR says pre-832 EPROM differs at 302FH-305BH and ends at 35EBH | Verify the HS `ht_s1_basicexpansion.rom` against MAME's sys80.z13 hash. |
-| 5 | Extension size | 1.5 KB (HS, holdcomputers, System 80 manual) | 2 KB loaded at 3000H (MAME `0x0800`) | Probably a 2 KB part with 1.5 KB used (*inference*). |
-| 6 | "BASIC 2.20" on the /64 | Microsoft version? | HT build number? | Not stated anywhere found. |
-| 7 | HS ROM dumps vs MAME | HS `ht_s1/s2/s3_*.rom` (Majzik) | MAME sets above | Hashes not compared (no download). Also: is HS's s3 = MAME `ht108064`? |
+| 4 | Series I extension | MAME uses EACA `sys80.z13` unchanged | HS says Series I extension prints "NEW KEYBOARD ROUTINE ENABLE"; FIXTÁR says pre-832 EPROM differs at 302FH-305BH and ends at 35EBH | **Resolved (§1.4b):** HS s1 = `sys80.z13`, and it contains the message. The s1/s2 differences are exactly at 302F–305B and 35EC–35FE, and s1's last used byte is 35EB. All three sources agree. |
+| 5 | Extension size | 1.5 KB (HS, holdcomputers, System 80 manual) | 2 KB loaded at 3000H (MAME `0x0800`) | **Resolved (§1.4b):** Series I/II use up to 35EB/35FE (about 1.5 KB). The /64 uses up to 374F, so it needs the 2 KB window. |
+| 6 | "BASIC 2.20" on the /64 | Microsoft version? | HT build number? | **Partly resolved:** the "2.20" text is in the /64's own main BASIC ROM (offset 011Ah), so it is HT's label for its modified BASIC. Its meaning is still not stated. |
+| 7 | HS ROM dumps vs MAME | HS `ht_s1/s2/s3_*.rom` (Majzik) | MAME sets above | **Resolved (§1.4b):** all pieces match by CRC32 and SHA1. s1 = `ht1080z`, s2 = `ht1080z2`, s3 = `ht108064`. |
 | 8 | ROM redistribution | HS hosts dumps without a licence | No permission statement from Microsoft/Tandy/EACA/HT found | Treat as not redistributable. |
 | 9 | Different HT cassette speed | All HT sources: 500 baud, same ROM routines | (task brief mentioned "some sources say faster"); none found | Only emulator fast-load ROM patches exist (MiSTer). |
 | 10 | RST 20H meaning | "BASIC next-character fetch" (trs-80.com RAM page summary) | number-type test via 40AFH (T80-DIS row 0020H) | Resolved for B: RST 10H is the character fetch. |
