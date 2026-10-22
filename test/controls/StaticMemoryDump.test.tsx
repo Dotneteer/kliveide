@@ -4,6 +4,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { MI_ZXNEXT } from "@common/machines/constants";
 
+/**
+ * An instruction cell by its whole text. A substituted name sits in its own operand span (the one
+ * disassembly colour set tints it in every listing), so `ld hl,LAST_K` is not one text node.
+ */
+const instruction = (text: string) => (_content: string, element: Element | null) =>
+  !!element && element.className.includes("instructionRun") && element.textContent === text;
+
+
 beforeEach(() => {
   Object.defineProperty(document, "queryCommandSupported", {
     configurable: true,
@@ -781,20 +789,20 @@ describe("StaticMemoryDump", () => {
     it("names a data operand by default", async () => {
       await renderBank();
 
-      expect(await screen.findByText("ld hl,LAST_K")).toBeInTheDocument();
+      expect(await screen.findByText(instruction("ld hl,LAST_K"))).toBeInTheDocument();
       expect((screen.getByTestId("switch-Sys vars") as HTMLElement).dataset.value).toBe("true");
     });
 
     it("shows the address again when the switch is turned off", async () => {
       await renderBank();
-      await screen.findByText("ld hl,LAST_K");
+      await screen.findByText(instruction("ld hl,LAST_K"));
 
       await act(async () => {
         fireEvent.click(screen.getByTestId("switch-Sys vars"));
       });
 
       expect(await screen.findByText("ld hl,$5C08")).toBeInTheDocument();
-      expect(screen.queryByText("ld hl,LAST_K")).not.toBeInTheDocument();
+      expect(screen.queryByText(instruction("ld hl,LAST_K"))).not.toBeInTheDocument();
     });
 
     it("honours a remembered off state", async () => {
@@ -830,7 +838,7 @@ describe("StaticMemoryDump", () => {
 
       expect(await screen.findByText("oz OS_BOUT")).toBeInTheDocument();
       expect(screen.getByText("ld hl,$5C08")).toBeInTheDocument();
-      expect(screen.queryByText("ld hl,LAST_K")).not.toBeInTheDocument();
+      expect(screen.queryByText(instruction("ld hl,LAST_K"))).not.toBeInTheDocument();
       expect(screen.queryByText(/^test /)).not.toBeInTheDocument();
       expect(screen.queryByTestId("switch-Sys vars")).not.toBeInTheDocument();
     });
@@ -867,22 +875,22 @@ describe("StaticMemoryDump", () => {
     it("names a ZX81 ROM's operands after the ZX81's variables, whatever machine is selected", async () => {
       await renderRom({ romPageKind: "zx81" });
 
-      expect(await screen.findByText("ld hl,NXTLIN")).toBeInTheDocument();
+      expect(await screen.findByText(instruction("ld hl,NXTLIN"))).toBeInTheDocument();
       expect(screen.getByText("ld hl,$5C08")).toBeInTheDocument();
-      expect(screen.queryByText("ld hl,LAST_K")).not.toBeInTheDocument();
+      expect(screen.queryByText(instruction("ld hl,LAST_K"))).not.toBeInTheDocument();
     });
 
     it("names a 48K ROM's after the 48K's", async () => {
       await renderRom({ romPageKind: "sp48-basic" });
 
-      expect(await screen.findByText("ld hl,LAST_K")).toBeInTheDocument();
+      expect(await screen.findByText(instruction("ld hl,LAST_K"))).toBeInTheDocument();
       expect(screen.getByText("ld hl,$4029")).toBeInTheDocument();
     });
 
     it("falls back to the selected machine's for a ROM Klive does not know", async () => {
       await renderRom({});
 
-      expect(await screen.findByText("ld hl,LAST_K")).toBeInTheDocument();
+      expect(await screen.findByText(instruction("ld hl,LAST_K"))).toBeInTheDocument();
     });
 
     it("names nothing when the switch is off", async () => {

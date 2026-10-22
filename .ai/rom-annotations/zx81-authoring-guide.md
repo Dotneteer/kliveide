@@ -45,8 +45,10 @@ Run from the repository root; they load Klive's TypeScript through esbuild, as
 | Tool | What it does |
 |---|---|
 | `zx81-dis.cjs <from> <to> [sidecar]` | The ROM through Klive's `Z80Disassembler` with `Zx81CustomDisassembler` (report codes after RST $08, calculator codes after RST $28). With a sidecar, its regions shape the listing. **This is the only sanctioned way to read the code (D4).** |
+| `zx80-dis.cjs <from> <to> [sidecar]` | The same for `zx80.rom` (4K): plain Z80, with the byte after each RST $08 shown as data. `apply-annotations.cjs` and `check-annotations.cjs` work on either ROM's sidecar. |
 | `listing-range.py <listing> A-B ...` | Prints address ranges of a saved listing. |
 | `apply-annotations.cjs <sidecar> <batch.json> <code listing>` | Applies labels, line entries and regions through `formatRomSidecar`; refuses labels or lines that are not instruction starts in the given listing, labels over 16 characters; existing labels win; sets provenance (`observed`, `manual` for `manualLines`). A no-op batch leaves the file byte-identical. |
+| (batch key) `dataLabels` | Labels on table starts inside data regions (`{"$0372": "EDIT_KEY_TABLE"}`), which `labels` refuses. |
 | `check-annotations.cjs <sidecar>` | The IDE's own readiness check (`checkRomSidecar`); `"problems": []` is clean, and it lists the unlabelled targets (the level 1 to-do). |
 | `probe-template.ts.txt` | A throwaway harness probe (see "Running the ROM"). |
 

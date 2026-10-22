@@ -9,7 +9,15 @@ import { createAnnotatedDisassemblyItems } from "@renderer/appIde/annotations/an
 import { machineCharSetOf } from "@renderer/appIde/annotations/machineCharSet";
 import { customDisassemblyContextFor } from "@renderer/appIde/annotations/romDisassemblyGate";
 import { zx8081BankSpace } from "@common/annotations/bankSpace";
-import { KNOWN_ROM_PAGES, isZx81Rom, romCrc32 } from "@common/roms/romIdentity";
+import { KNOWN_ROM_PAGES, isZx80Rom, isZx81Rom, romCrc32 } from "@common/roms/romIdentity";
+import { machineRegistry } from "@common/machines/machine-registry";
+import { CT_CUSTOM_DISASSEMBLER } from "@common/machines/constants";
+import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z80-disassembler";
+import { MemorySection } from "@renderer/appIde/disassemblers/common-types";
+import type {
+  CustomDisassemblerFactory,
+  CustomDisassemblyContext
+} from "@renderer/appIde/disassemblers/z80-disassembler/rom-gated-disassembler";
 import { MI_ZX80, MI_ZX81 } from "@common/machines/constants";
 
 /*
@@ -130,8 +138,11 @@ describe("KNOWN_ROM_PAGES", () => {
 
   it("is in step with the ROM files Klive ships", () => {
     for (const [crc, entry] of Object.entries(KNOWN_ROM_PAGES)) {
-      const bytes = new Uint8Array(readFileSync(join(ROMS, entry.file)));
-      expect(romCrc32(bytes), entry.file).toBe(crc);
+      // --- A page of a file of several 16K pages (the Next's enNextZX.rom has four)
+      const file = new Uint8Array(readFileSync(join(ROMS, entry.file)));
+      const page = entry.page ?? 0;
+      const bytes = entry.page === undefined ? file : file.subarray(page * 0x4000, (page + 1) * 0x4000);
+      expect(romCrc32(bytes), `${entry.file} page ${page}`).toBe(crc);
     }
   });
 
@@ -144,5 +155,41 @@ describe("KNOWN_ROM_PAGES", () => {
       // --- spp3e-3 is byte-identical to spp3-40-3, so it is known by that file's entry
       expect(known.has(name) || !!KNOWN_ROM_PAGES[romCrc32(bytes)], name).toBe(true);
     }
+  });
+});
+
+describe("the ZX80's own ROM decoding", () => {
+  const zx80Rom = { crc32: "4c7fc597", size: 0x1000 };
+  const zx81Rom = { crc32: "4b1dd6eb", size: 0x2000 };
+
+  it("knows the ZX80's 4K ROM from the 8K upgrade", () => {
+    expect(isZx80Rom(MI_ZX80, zx80Rom)).toBe(true);
+    expect(isZx80Rom(MI_ZX80, zx81Rom)).toBe(false);
+    expect(isZx80Rom(MI_ZX80, { crc32: "00000000", size: 0x1000 })).toBe(true);
+    expect(isZx80Rom(MI_ZX81, zx80Rom)).toBe(false);
+  });
+
+  it("gates on the ROM a ZX80 has paged in", () => {
+    const own = customDisassemblyContextFor(MI_ZX80, zx8081BankSpace("zx80", { ramKb: 16 }), undefined, () => zx80Rom);
+    expect(own.inZx80Rom!(0x0970)).toBe(true);
+    expect(own.inDescribedRom(0x0970)).toBe(false);
+    expect(own.inZx80Rom!(0x4100)).toBe(false);
+    const upgraded = customDisassemblyContextFor(MI_ZX80, zx8081BankSpace("zx80", { ramKb: 16, rom8k: true }), undefined, () => zx81Rom);
+    expect(upgraded.inZx80Rom!(0x0970)).toBe(false);
+    expect(upgraded.inDescribedRom(0x0970)).toBe(true);
+  });
+
+  it("lists the 4K ROM with the ZX80's decoding and the 8K ROM with the ZX81's", async () => {
+    const factory = machineRegistry.find((m) => m.machineId === MI_ZX80)!.toolInfo![CT_CUSTOM_DISASSEMBLER] as CustomDisassemblerFactory;
+    const list = async (context: CustomDisassemblyContext, bytes: number[]) => {
+      const disassembler = new Z80Disassembler([new MemorySection(0, bytes.length - 1)], new Uint8Array(bytes));
+      disassembler.setCustomDisassembler(factory(context));
+      return (await disassembler.disassemble())!.outputItems.map((item) => item.instruction!.toLowerCase());
+    };
+    const bytes = [0xef, 0xa0, 0x34, 0xcf, 0x03, 0x00];
+    const own: CustomDisassemblyContext = { inDescribedRom: () => false, inZx80Rom: () => true };
+    expect(await list(own, bytes)).toEqual(["rst $28", "and b", "inc (hl)", "rst $08", ".defb $03", "nop"]);
+    const upgraded: CustomDisassemblyContext = { inDescribedRom: () => true, inZx80Rom: () => false };
+    expect(await list(upgraded, bytes)).toEqual(["rst $28", ".defb $a0", ".defb $34", "rst $08", ".defb $03", "nop"]);
   });
 });

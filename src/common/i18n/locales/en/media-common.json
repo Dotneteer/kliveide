@@ -202,6 +202,17 @@
       "name": "Label name"
     }
   },
+  "media.romCheck.inheritedMissing": "It inherits {sidecar}, which cannot be found.",
+  "@media.romCheck.inheritedMissing": {
+    "context": "Reason a ROM annotation working copy cannot be shipped (the ROM annotation editor's check panel and the rom-ann-check command output): the file takes most of its labels from another annotation file (a .rom.dis file name), which is neither shipped nor a working copy.",
+    "placeholders": {
+      "sidecar": "Annotation file name, e.g. sp48.rom.dis"
+    }
+  },
+  "media.romCheck.inheritedUnread": "It inherits other ROM annotations, which this check cannot read.",
+  "@media.romCheck.inheritedUnread": {
+    "context": "Reason a ROM annotation file cannot be judged (the ROM annotation editor's check panel and the rom-ann-check command output): the file takes most of its labels from another annotation file, and the check was run without access to it."
+  },
   "media.romCheck.levelTooHigh": "Page {page}: it records level {recorded}, but measures {measured}.",
   "@media.romCheck.levelTooHigh": {
     "context": "Reason a ROM annotation working copy cannot be shipped (the ROM annotation editor's check panel and the rom-ann-check command output). The level is the annotation's completeness level.",
@@ -1314,6 +1325,97 @@
     "context": "Line in the emulator output pane when an RZX input recording starts. PC is the Z80 register name.",
     "placeholders": {
       "pc": "Hex program counter, e.g. '$8000'"
+    }
+  },
+  "media.romExport.identical": "Verified: the source assembles to the ROM, byte for byte ({bytes, plural, one {# byte} other {# bytes}}).",
+  "@media.romExport.identical": {
+    "context": "Result of exporting a ROM's annotations as Klive Z80 source (the ROM annotation editor's 'Export as source' row and the rom-ann-export command output): the exported file was assembled with Klive's assembler and compared with the ROM. Success.",
+    "placeholders": {
+      "bytes": "Number of ROM bytes compared"
+    }
+  },
+  "media.romExport.notAssembled": "Not verified: the source does not assemble (line {line}: {message}).",
+  "@media.romExport.notAssembled": {
+    "context": "Result of exporting a ROM's annotations as Klive Z80 source (the ROM annotation editor's 'Export as source' row and the rom-ann-export command output): the exported file was assembled with Klive's assembler and compared with the ROM. The assembler reported an error.",
+    "placeholders": {
+      "line": "Line number in the exported file",
+      "message": "The assembler's error message (English)"
+    }
+  },
+  "media.romExport.notChecked": "Not verified: the source could not be assembled ({message}).",
+  "@media.romExport.notChecked": {
+    "context": "Result of exporting a ROM's annotations as Klive Z80 source (the ROM annotation editor's 'Export as source' row and the rom-ann-export command output): the exported file was assembled with Klive's assembler and compared with the ROM. The assembler could not be run at all.",
+    "placeholders": {
+      "message": "Error message"
+    }
+  },
+  "media.romExport.different": "Not verified: the source assembles to different bytes: {differences}.",
+  "@media.romExport.different": {
+    "context": "Result of exporting a ROM's annotations as Klive Z80 source (the ROM annotation editor's 'Export as source' row and the rom-ann-export command output): the exported file was assembled with Klive's assembler and compared with the ROM. The output differs from the ROM; the list names the first differing bytes.",
+    "placeholders": {
+      "differences": "Comma-separated list of media.romExport.byteDiffers / pageMoved items"
+    }
+  },
+  "media.romExport.byteDiffers": "page {page} {offset} ({expected} -> {actual})",
+  "@media.romExport.byteDiffers": {
+    "context": "One item of the media.romExport.different list: a byte of the assembled output that differs from the ROM. '--' stands for a missing byte.",
+    "placeholders": {
+      "page": "ROM page number",
+      "offset": "Hex offset in the page, e.g. '$0D04'",
+      "expected": "The ROM's byte in hex",
+      "actual": "The assembled byte in hex"
+    }
+  },
+  "media.romExport.pageMoved": "page {page} assembles at {address}, not $0000",
+  "@media.romExport.pageMoved": {
+    "context": "One item of the media.romExport.different list: a ROM page's code is assembled at the wrong address.",
+    "placeholders": {
+      "page": "ROM page number",
+      "address": "Hex address, e.g. '$4000'"
+    }
+  },
+  "media.romExport.noPages": "None of the ROM pages the annotations name were found, so there is nothing to export.",
+  "@media.romExport.noPages": {
+    "context": "Error of exporting a ROM's annotations as source (the ROM annotation editor and rom-ann-export): no ROM bytes match the sidecar's pages."
+  },
+  "media.sourceExport.dialogTitle": "Export as source",
+  "@media.sourceExport.dialogTitle": {
+    "context": "Export as source started from the UI (the Disassembly view's and a bank document's export button, their tools menu, Debug › Export Disassembly as Source…). Title of the save-file dialog and of the message box with the result."
+  },
+  "media.sourceExport.filter": "Klive Z80 assembly",
+  "@media.sourceExport.filter": {
+    "context": "Export as source started from the UI (the Disassembly view's and a bank document's export button, their tools menu, Debug › Export Disassembly as Source…). File-type filter name in the save dialog (files ending .kz80.asm or .asm)."
+  },
+  "media.sourceExport.buttonTitle": "Export as source: write the listing as a Klive Z80 assembly file and check that it assembles to the same bytes",
+  "@media.sourceExport.buttonTitle": {
+    "context": "Export as source started from the UI (the Disassembly view's and a bank document's export button, their tools menu, Debug › Export Disassembly as Source…). Tooltip of the export icon button in the listing's header."
+  },
+  "media.sourceExport.verified": "Exported to {file}.\n\n{verdict}",
+  "@media.sourceExport.verified": {
+    "context": "Export as source started from the UI (the Disassembly view's and a bank document's export button, their tools menu, Debug › Export Disassembly as Source…). Message box after an export whose file assembles to the same bytes. A blank line separates the file from the verdict.",
+    "placeholders": {
+      "file": "Full path of the exported file",
+      "verdict": "The export command's verdict, e.g. 'Verified: the export assembles to the same bytes.'"
+    }
+  },
+  "media.sourceExport.notVerified": "Exporting to {file} did not succeed.\n\n{verdict}",
+  "@media.sourceExport.notVerified": {
+    "context": "Export as source started from the UI (the Disassembly view's and a bank document's export button, their tools menu, Debug › Export Disassembly as Source…). Message box (an error) after an export that could not be written, or whose file does not assemble or assembles to different bytes.",
+    "placeholders": {
+      "file": "Full path of the chosen file",
+      "verdict": "The export command's message: why it failed, or the first differing bytes"
+    }
+  },
+  "media.sourceExport.noResult": "The export command did not answer.",
+  "@media.sourceExport.noResult": {
+    "context": "Export as source started from the UI (the Disassembly view's and a bank document's export button, their tools menu, Debug › Export Disassembly as Source…). Shown in the result message box when the IDE returned nothing."
+  },
+  "media.export.wrapsAsDefb": "{address}: {instruction} is written as .defb (the jump wraps round $FFFF, which the assembler does not accept).",
+  "@media.export.wrapsAsDefb": {
+    "context": "Note after export-asm: a relative jump near the top of memory reaches its target only because the Z80 wraps the address round $FFFF; the assembler rejects such a distance, so its bytes are written instead.",
+    "placeholders": {
+      "address": "Hex address",
+      "instruction": "The instruction, e.g. 'djnz $0005'"
     }
   }
 }

@@ -27,6 +27,7 @@ import { liveRowTarget, rowsOfTarget, type LiveRowTarget, type LiveRowTargetCont
 import { ANNOTATION_BANK_SIZE, decodedRegionTypesFor } from "./programAnnotations";
 import { getRomPartition } from "./romAnnotations";
 import { useMainApi } from "@renderer/core/MainApi";
+import { t } from "@common/i18n/i18n";
 import {
   openRomAnnotationEditor,
   startEditingRomPartition
@@ -46,16 +47,20 @@ function referenceLabelsOf(item: DisassemblyItem, target: LiveRowTarget): Defini
 }
 
 /** The region entries a row menu offers on a machine. */
-function regionActionsFor(space: BankSpace | undefined): { id: NexAnnotationMenuAction; text: string }[] {
+export function regionActionsFor(space: BankSpace | undefined): { id: NexAnnotationMenuAction; text: string }[] {
   const actions: { id: NexAnnotationMenuAction; text: string }[] = [
     { id: "mark-disassembly", text: "Mark As Code" },
     { id: "mark-bytes", text: "Mark As Bytes" },
     { id: "mark-words", text: "Mark As Words" }
   ];
-  if (space && decodedRegionTypesFor(space.id).includes("text")) {
-    actions.push({ id: "mark-text", text: "Mark As Text" });
-  }
+  // --- The decoded kinds the machine offers, in the region dialog's order
+  const offered = space ? decodedRegionTypesFor(space.id) : [];
+  if (offered.includes("text")) actions.push({ id: "mark-text", text: t("panels.next.annotations.menu.markText") });
+  if (offered.includes("defc")) actions.push({ id: "mark-defc", text: t("panels.next.annotations.menu.markDefc") });
+  if (offered.includes("fill")) actions.push({ id: "mark-fill", text: t("panels.next.annotations.menu.markFill") });
   actions.push({ id: "mark-skip", text: "Mark As Skip" });
+  if (offered.includes("copper")) actions.push({ id: "mark-copper", text: t("panels.next.annotations.menu.markCopper") });
+  if (offered.includes("dma")) actions.push({ id: "mark-dma", text: t("panels.next.annotations.menu.markDma") });
   return actions;
 }
 

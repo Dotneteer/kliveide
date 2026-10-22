@@ -1,9 +1,10 @@
 // Applies a JSON batch of labels, line annotations and regions to a ROM sidecar, through Klive's
 // own formatRomSidecar, so the file stays canonical. Offsets may be "$XXXX" (hex) or decimal.
 // Usage: node .ai/rom-annotations/tools/apply-annotations.cjs <sidecar.dis> <batch.json> <code-listing>
-//   <code-listing>: zx81-dis.cjs output of the SAME regions with .def lines removed; every label and
+//   <code-listing>: zx81-dis.cjs / zx80-dis.cjs output of the SAME regions with .def lines removed; every label and
 //   line key must be an instruction start in it (or inside a data region), labels at most 16 chars.
-// Batch: {"regions":[{start,end,type,decode?,synopsis?,provenance?}], "labels":{"$0419":"MAIN_LOOP"},
+// Batch: {"regions":[{start,end,type,decode?,rowBytes?,radix?,synopsis?,provenance?}], "labels":{"$0419":"MAIN_LOOP"},
+//         "dataLabels":{"$0562":"EDIT_KEY_TABLE"} (table starts inside data regions),
 //         "manualLines":["$0476"], "lines":{"$0419":{"synopsis":"...","comment":"..."}}}
 // Existing labels win (a clash is reported, not overwritten); lines are merged into existing entries.
 // New regions are carved out of disassemble regions. Provenance: observed, or manual for manualLines.
@@ -63,11 +64,16 @@ const [file, dataFile, listFile] = process.argv.slice(2);
 const n = (k) => (String(k).startsWith("$") ? parseInt(String(k).slice(1), 16) : Number(k));
 const sidecar = JSON.parse(readFileSync(file, "utf8"));
 const data = JSON.parse(readFileSync(dataFile, "utf8"));
-const bank = sidecar.banks["0"];
+// --- PAGE=<n>: the page (bank) of a sidecar of several pages; provenance keys start with it
+const PAGE = Number(process.env.PAGE ?? 0);
+const bank = sidecar.banks[String(PAGE)];
+bank.localLabels ??= []; bank.lineAnnotations ??= {}; sidecar.provenance ??= {};
+// The page ends where the file's last region ends (16383 for the ZX81's 16K page, 4095 for the ZX80's 4K one)
+const pageEnd = Math.max(...bank.regions.map((r) => r.end));
 const starts = new Set(readFileSync(listFile, "utf8").split("\n").filter(Boolean).map((l) => parseInt(l.slice(0, 4), 16)));
 const manual = new Set((data.manualLines ?? []).map(n));
 // --- regions: carve the new data regions out of the disassemble regions
-const added = (data.regions ?? []).map((r) => ({ start: n(r.start), end: n(r.end), type: r.type, ...(r.decode ? { decode: r.decode } : {}) }));
+const added = (data.regions ?? []).map((r) => ({ start: n(r.start), end: n(r.end), type: r.type, ...(r.decode ? { decode: r.decode } : {}), ...(r.rowBytes ? { rowBytes: r.rowBytes } : {}), ...(r.radix ? { radix: r.radix } : {}) }));
 const dataRegions = [...bank.regions.filter((r) => r.type !== "disassemble"), ...added].sort((a, b) => a.start - b.start);
 const regions = [];
 let at = 0;
@@ -76,15 +82,15 @@ for (const r of dataRegions) {
   regions.push(r);
   at = r.end + 1;
 }
-if (at <= 16383) regions.push({ start: at, end: 16383, type: "disassemble" });
+if (at <= pageEnd) regions.push({ start: at, end: pageEnd, type: "disassemble" });
 bank.regions = regions;
 const inData = (o) => dataRegions.some((r) => o >= r.start && o <= r.end);
 for (const r of data.regions ?? []) {
   const s = n(r.start);
-  sidecar.provenance[`0:${s}:region`] = r.provenance ?? "observed";
+  sidecar.provenance[`${PAGE}:${s}:region`] = r.provenance ?? "observed";
   if (r.synopsis) {
     bank.lineAnnotations[String(s)] = { ...(bank.lineAnnotations[String(s)] ?? {}), synopsis: r.synopsis };
-    sidecar.provenance[`0:${s}:line`] = r.provenance ?? "observed";
+    sidecar.provenance[`${PAGE}:${s}:line`] = r.provenance ?? "observed";
   }
 }
 // --- the listing a region change invalidates: an existing label inside data is an error
@@ -97,14 +103,24 @@ for (const [k, name] of Object.entries(data.labels)) {
   const clash = bank.localLabels.find((l) => l.value === value || l.name === name);
   if (clash) { console.log("label kept:", clash.name, "for", name); continue; }
   bank.localLabels.push({ name, value });
-  sidecar.provenance[`0:${value}:label`] = "observed";
+  sidecar.provenance[`${PAGE}:${value}:label`] = "observed";
+}
+// dataLabels: labels on table starts, which must lie inside a data region (the IDE shows them there)
+for (const [k, name] of Object.entries(data.dataLabels ?? {})) {
+  const value = n(k);
+  if (!inData(value)) problems.push(`data label ${name} not inside a data region`);
+  if (name.length > 16) problems.push(`label ${name} too long`);
+  const clash = bank.localLabels.find((l) => l.value === value || l.name === name);
+  if (clash) { console.log("label kept:", clash.name, "for", name); continue; }
+  bank.localLabels.push({ name, value });
+  sidecar.provenance[`${PAGE}:${value}:label`] = "observed";
 }
 bank.localLabels.sort((a, b) => a.value - b.value);
 for (const [k, entry] of Object.entries(data.lines)) {
   const o = n(k);
   if (!starts.has(o) && !inData(o)) problems.push(`line ${k} not an instruction start`);
   bank.lineAnnotations[String(o)] = { ...(bank.lineAnnotations[String(o)] ?? {}), ...entry };
-  sidecar.provenance[`0:${o}:line`] = manual.has(o) ? "manual" : "observed";
+  sidecar.provenance[`${PAGE}:${o}:line`] = manual.has(o) ? "manual" : "observed";
 }
 if (problems.length) { console.log("PROBLEMS:\n" + problems.join("\n")); process.exit(1); }
 console.log("missing provenance:", tools.missingProvenance(sidecar));

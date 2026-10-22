@@ -2270,11 +2270,6 @@
   "@panels.rom.modeTitle": {
     "context": "Tooltip of the 'New entries' mode switch in the ROM annotation editor (a document listing a ROM annotation sidecar file's pages)."
   },
-  "panels.rom.newEntries": "New entries:",
-  "@panels.rom.newEntries": {
-    "context": "Label of the mode switch in the ROM annotation editor (a document listing a ROM annotation sidecar file's pages)'s header: how new entries record where they came from.",
-    "maxChars": 16
-  },
   "panels.rom.observed": "observed",
   "@panels.rom.observed": {
     "context": "Mode button in the ROM annotation editor (a document listing a ROM annotation sidecar file's pages)'s header: new entries are recorded as observed in the running code. Lower case.",
@@ -2335,31 +2330,6 @@
   "panels.rom.rule": "Write only what the code in front of you does: no comment, name or region from a published disassembly (.ai/rom-annotations/README.md).",
   "@panels.rom.rule": {
     "context": "Standing rule shown in the ROM annotation editor (a document listing a ROM annotation sidecar file's pages) for editable files. The path in brackets stays as it is."
-  },
-  "panels.rom.page": "Page {page}",
-  "@panels.rom.page": {
-    "context": "Label of a ROM page row in the ROM annotation editor (a document listing a ROM annotation sidecar file's pages).",
-    "maxChars": 12,
-    "placeholders": {
-      "page": "The ROM page number"
-    }
-  },
-  "panels.rom.pageFacts": "{kb}K · {labels, plural, one {# label} other {# labels}} · level {level} · from {from}",
-  "@panels.rom.pageFacts": {
-    "context": "Secondary text of a ROM page row in the ROM annotation editor (a document listing a ROM annotation sidecar file's pages): the page's size, how many labels it has, its annotation level and where its bytes were found.",
-    "placeholders": {
-      "kb": "Size in KB",
-      "labels": "Number of labels",
-      "level": "Annotation level, or ?",
-      "from": "Where the ROM bytes were found (a path)"
-    }
-  },
-  "panels.rom.nextUnlabelled": "Next unlabelled ({address})",
-  "@panels.rom.nextUnlabelled": {
-    "context": "Button on a ROM page row in the ROM annotation editor (a document listing a ROM annotation sidecar file's pages): open the disassembly at the next jump or call target that has no label.",
-    "placeholders": {
-      "address": "The target's address in hex"
-    }
   },
   "panels.rom.pageMissing": "No ROM page with CRC {crc} was found. Searched: {searched}.",
   "@panels.rom.pageMissing": {
@@ -2843,5 +2813,239 @@
   "@panels.tileSnapshot.preview": {
     "context": "Section header in the tile snapshot document (a ZX Spectrum Next tilemap tile popped out of the Tilemap Inspector, read-only): the tile at real size and zoomed.",
     "maxChars": 16
+  },
+  "panels.rom.sourceLabel": "Source",
+  "@panels.rom.sourceLabel": {
+    "context": "The ROM annotation editor (a document listing a ROM annotation file's pages). Label of the summary row that exports the whole ROM's annotations as an assembly source file.",
+    "maxChars": 12
+  },
+  "panels.rom.exportSource": "Export as source…",
+  "@panels.rom.exportSource": {
+    "context": "The ROM annotation editor (a document listing a ROM annotation file's pages). Button: asks for a file name, writes every annotated ROM page as one Klive Z80 assembly file, then assembles it to check it reproduces the ROM.",
+    "maxChars": 24
+  },
+  "panels.rom.exportSourceTitle": "Write the whole ROM as a Klive Z80 assembly file, then assemble it to check it gives back the ROM byte for byte",
+  "@panels.rom.exportSourceTitle": {
+    "context": "The ROM annotation editor (a document listing a ROM annotation file's pages). Tooltip of the 'Export as source…' button."
+  },
+  "panels.rom.exportDialogTitle": "Export ROM annotations as source",
+  "@panels.rom.exportDialogTitle": {
+    "context": "The ROM annotation editor (a document listing a ROM annotation file's pages). Title of the save-file dialog the 'Export as source…' button opens."
+  },
+  "panels.rom.exportFilter": "Klive Z80 assembly",
+  "@panels.rom.exportFilter": {
+    "context": "The ROM annotation editor (a document listing a ROM annotation file's pages). File-type filter name in the save dialog of 'Export as source…' (files ending .kz80.asm or .asm)."
+  },
+  "panels.rom.exporting": "Exporting and assembling…",
+  "@panels.rom.exporting": {
+    "context": "The ROM annotation editor (a document listing a ROM annotation file's pages). Shown in the Source row while the export and its check are running."
+  },
+  "panels.rom.exportedTo": "Written to {file}.",
+  "@panels.rom.exportedTo": {
+    "context": "The ROM annotation editor (a document listing a ROM annotation file's pages). Shown in the Source row after the export: where the file went. Followed by the check's verdict.",
+    "placeholders": {
+      "file": "File name of the exported source"
+    }
+  },
+  "panels.rom.exportNotes": "{count, plural, one {# adjustment} other {# adjustments}} made it assemble (labels renamed or rows written as .defb)",
+  "@panels.rom.exportNotes": {
+    "context": "The ROM annotation editor (a document listing a ROM annotation file's pages). Shown in the Source row after the export when the exporter had to change something so the source assembles; the details are in the tooltip.",
+    "placeholders": {
+      "count": "Number of notes"
+    }
+  },
+  "panels.rom.exportFailed": "The export failed: {message}",
+  "@panels.rom.exportFailed": {
+    "context": "The ROM annotation editor (a document listing a ROM annotation file's pages). Shown in the Source row when the export could not be written.",
+    "placeholders": {
+      "message": "Error message"
+    }
+  },
+  "panels.rom.openExport": "Open",
+  "@panels.rom.openExport": {
+    "context": "The ROM annotation editor (a document listing a ROM annotation file's pages). Button in the Source row after an export: opens the exported source file in the editor.",
+    "maxChars": 10
+  },
+  "panels.rom.badgeWorking": "Working copy",
+  "@panels.rom.badgeWorking": {
+    "context": "The ROM annotation editor (a document listing a ROM annotation file's pages). Badge in the inspector's header: this file is the user's editable copy.",
+    "maxChars": 16
+  },
+  "panels.rom.badgeShipped": "Read-only",
+  "@panels.rom.badgeShipped": {
+    "context": "The ROM annotation editor (a document listing a ROM annotation file's pages). Badge in the inspector's header: this is the annotation file Klive ships, which is never edited.",
+    "maxChars": 16
+  },
+  "panels.rom.badgeCustom": "Custom ROM",
+  "@panels.rom.badgeCustom": {
+    "context": "The ROM annotation editor (a document listing a ROM annotation file's pages). Badge in the inspector's header: the annotations of a ROM file the user supplied, edited in place.",
+    "maxChars": 16
+  },
+  "panels.rom.makeWorkingCopy": "Make working copy",
+  "@panels.rom.makeWorkingCopy": {
+    "context": "The ROM annotation editor (a document listing a ROM annotation file's pages). Button under a shipped (read-only) file: copies it into the user's folder so it can be edited, and opens the copy.",
+    "maxChars": 24
+  },
+  "panels.rom.newEntriesLabel": "New entries are recorded as",
+  "@panels.rom.newEntriesLabel": {
+    "context": "The ROM annotation editor (a document listing a ROM annotation file's pages). Label above the observed/manual switch: the provenance given to a label, comment or region the user adds."
+  },
+  "panels.rom.notExported": "Not exported yet",
+  "@panels.rom.notExported": {
+    "context": "The ROM annotation editor (a document listing a ROM annotation file's pages). Shown under 'Export as source…' before the first export in this session."
+  },
+  "panels.rom.pagesTitle": "Pages",
+  "@panels.rom.pagesTitle": {
+    "context": "The ROM annotation editor (a document listing a ROM annotation file's pages). Header of the list of the file's ROM pages (16K each).",
+    "maxChars": 16
+  },
+  "panels.rom.colPage": "Page",
+  "@panels.rom.colPage": {
+    "context": "The ROM annotation editor (a document listing a ROM annotation file's pages). Column head in the pages list: the page number.",
+    "maxChars": 6
+  },
+  "panels.rom.colRom": "ROM · CRC",
+  "@panels.rom.colRom": {
+    "context": "The ROM annotation editor (a document listing a ROM annotation file's pages). Column head in the pages list: the ROM page's name and its CRC-32 checksum. 'CRC' is not translated.",
+    "maxChars": 14
+  },
+  "panels.rom.colSize": "Size",
+  "@panels.rom.colSize": {
+    "context": "The ROM annotation editor (a document listing a ROM annotation file's pages). Column head in the pages list: the page's size in kilobytes.",
+    "maxChars": 6
+  },
+  "panels.rom.colLabels": "Labels",
+  "@panels.rom.colLabels": {
+    "context": "The ROM annotation editor (a document listing a ROM annotation file's pages). Column head in the pages list: how many labels the page has.",
+    "maxChars": 8
+  },
+  "panels.rom.colToLabel": "To label",
+  "@panels.rom.colToLabel": {
+    "context": "The ROM annotation editor (a document listing a ROM annotation file's pages). Column head in the pages list: how many CALL/JP/RST/JR/DJNZ targets in the page still have no label (what level 1 needs).",
+    "maxChars": 10
+  },
+  "panels.rom.colToLabelTitle": "Call and jump targets that still have no label. Level 1 needs a label on every one.",
+  "@panels.rom.colToLabelTitle": {
+    "context": "The ROM annotation editor (a document listing a ROM annotation file's pages). Tooltip of the 'To label' column head."
+  },
+  "panels.rom.levelCard.legendTitle": "Completeness levels",
+  "@panels.rom.levelCard.legendTitle": {
+    "context": "The ROM annotation editor's level hover card (opens when the pointer rests on a completeness level: the readiness chip, the 'records level' text, the Completeness column head, or a page's level meter). Title when the card only explains the levels (on the column head)."
+  },
+  "panels.rom.levelCard.pageTitle": "Page {page} \u00b7 level {level}",
+  "@panels.rom.levelCard.pageTitle": {
+    "context": "The ROM annotation editor's level hover card (opens when the pointer rests on a completeness level: the readiness chip, the 'records level' text, the Completeness column head, or a page's level meter). Title for one page of the ROM.",
+    "placeholders": {
+      "page": "Page number of the ROM",
+      "level": "The page's measured level, 0-2"
+    }
+  },
+  "panels.rom.levelCard.fileTitle": "Level {level}",
+  "@panels.rom.levelCard.fileTitle": {
+    "context": "The ROM annotation editor's level hover card (opens when the pointer rests on a completeness level: the readiness chip, the 'records level' text, the Completeness column head, or a page's level meter). Title for the whole file: its lowest measured page level.",
+    "placeholders": {
+      "level": "Measured level, 0-2"
+    }
+  },
+  "panels.rom.levelCard.measured": "measured",
+  "@panels.rom.levelCard.measured": {
+    "context": "The ROM annotation editor's level hover card (opens when the pointer rests on a completeness level: the readiness chip, the 'records level' text, the Completeness column head, or a page's level meter). Small text beside a page's title: the level shown is what the tool measured. Lower case."
+  },
+  "panels.rom.levelCard.measuredRecords": "measured {measured} \u00b7 records {recorded}",
+  "@panels.rom.levelCard.measuredRecords": {
+    "context": "The ROM annotation editor's level hover card (opens when the pointer rests on a completeness level: the readiness chip, the 'records level' text, the Completeness column head, or a page's level meter). Small text beside the file's title: the measured level and the level the file itself claims. Lower case.",
+    "placeholders": {
+      "measured": "Measured level, 0-2",
+      "recorded": "Level the file records, 0-2"
+    }
+  },
+  "panels.rom.levelCard.levelName": "Level {level}",
+  "@panels.rom.levelCard.levelName": {
+    "context": "The ROM annotation editor's level hover card (opens when the pointer rests on a completeness level: the readiness chip, the 'records level' text, the Completeness column head, or a page's level meter). The name at the start of each level's row, followed by its rule.",
+    "placeholders": {
+      "level": "1, 2 or 3"
+    }
+  },
+  "panels.rom.levelCard.rule1": "Every call and jump target has a label, and data regions are marked.",
+  "@panels.rom.levelCard.rule1": {
+    "context": "The ROM annotation editor's level hover card (opens when the pointer rests on a completeness level: the readiness chip, the 'records level' text, the Completeness column head, or a page's level meter). What level 1 means."
+  },
+  "panels.rom.levelCard.rule2": "Level 1, and every label has a synopsis.",
+  "@panels.rom.levelCard.rule2": {
+    "context": "The ROM annotation editor's level hover card (opens when the pointer rests on a completeness level: the readiness chip, the 'records level' text, the Completeness column head, or a page's level meter). What level 2 means. A synopsis is the summary comment above a labelled routine."
+  },
+  "panels.rom.levelCard.rule3": "A comment on every non-trivial line. Not a goal.",
+  "@panels.rom.levelCard.rule3": {
+    "context": "The ROM annotation editor's level hover card (opens when the pointer rests on a completeness level: the readiness chip, the 'records level' text, the Completeness column head, or a page's level meter). What level 3 means; nobody aims for it."
+  },
+  "panels.rom.levelCard.unlabelled": "{count, plural, =0 {No call or jump target lacks a label} one {# call or jump target has no label} other {# call and jump targets have no label}}",
+  "@panels.rom.levelCard.unlabelled": {
+    "context": "The ROM annotation editor's level hover card (opens when the pointer rests on a completeness level: the readiness chip, the 'records level' text, the Completeness column head, or a page's level meter). Under level 1: what is still missing for it.",
+    "placeholders": {
+      "count": "Number of unlabelled targets"
+    }
+  },
+  "panels.rom.levelCard.withoutSynopsis": "{count, plural, =0 {Every label has a synopsis} one {# label has no synopsis} other {# labels have no synopsis}}",
+  "@panels.rom.levelCard.withoutSynopsis": {
+    "context": "The ROM annotation editor's level hover card (opens when the pointer rests on a completeness level: the readiness chip, the 'records level' text, the Completeness column head, or a page's level meter). Under level 2: what is still missing for it. A synopsis is the summary comment above a labelled routine.",
+    "placeholders": {
+      "count": "Number of labels"
+    }
+  },
+  "panels.rom.levelCard.footer": "The tool measures labels and synopses; marked data regions and comments are your judgement. A file never records more than it measures.",
+  "@panels.rom.levelCard.footer": {
+    "context": "The ROM annotation editor's level hover card (opens when the pointer rests on a completeness level: the readiness chip, the 'records level' text, the Completeness column head, or a page's level meter). Footnote at the bottom of the card."
+  },
+  "panels.rom.colCompleteness": "Completeness",
+  "@panels.rom.colCompleteness": {
+    "context": "The ROM annotation editor (a document listing a ROM annotation file's pages). Column head in the pages list: the completeness level the page measures (0 to 2).",
+    "maxChars": 14
+  },
+  "panels.rom.foundIn": "Found in {from}",
+  "@panels.rom.foundIn": {
+    "context": "The ROM annotation editor (a document listing a ROM annotation file's pages). Tooltip of a page's ROM name: where the ROM bytes were found.",
+    "placeholders": {
+      "from": "Where, e.g. 'the shipped zx81.rom'"
+    }
+  },
+  "panels.rom.sizeKb": "{kb}K",
+  "@panels.rom.sizeKb": {
+    "context": "The ROM annotation editor (a document listing a ROM annotation file's pages). A page's size in the pages list, e.g. '16K'.",
+    "placeholders": {
+      "kb": "Size in kilobytes"
+    },
+    "maxChars": 6
+  },
+  "panels.rom.toLabelNone": "none",
+  "@panels.rom.toLabelNone": {
+    "context": "The ROM annotation editor (a document listing a ROM annotation file's pages). In the 'To label' column: every call and jump target already has a label.",
+    "maxChars": 9
+  },
+  "panels.rom.levelValue": "level {level}",
+  "@panels.rom.levelValue": {
+    "context": "The ROM annotation editor (a document listing a ROM annotation file's pages). A page's completeness level in the pages list, beside its two-step meter.",
+    "placeholders": {
+      "level": "0, 1 or 2"
+    },
+    "maxChars": 13
+  },
+  "panels.rom.levelMeter": "Level {level} of 2",
+  "@panels.rom.levelMeter": {
+    "context": "The ROM annotation editor (a document listing a ROM annotation file's pages). Accessible name of the two-step completeness meter in a page row.",
+    "placeholders": {
+      "level": "0, 1 or 2"
+    }
+  },
+  "panels.rom.nextTarget": "next {address}",
+  "@panels.rom.nextTarget": {
+    "context": "The ROM annotation editor (a document listing a ROM annotation file's pages). Link in a page row: opens the disassembly at the next call or jump target that has no label; each click moves on to the following one.",
+    "placeholders": {
+      "address": "Hex address, e.g. '$0000'"
+    },
+    "maxChars": 14
+  },
+  "panels.rom.nextTargetTitle": "Open the disassembly at the next call or jump target that has no label yet. Level 1 needs a label on every one.",
+  "@panels.rom.nextTargetTitle": {
+    "context": "The ROM annotation editor (a document listing a ROM annotation file's pages). Tooltip of the 'next $xxxx' link in a page row."
   }
 }

@@ -1,0 +1,353 @@
+<!DOCTYPE html PUBLIC "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+  <meta http-equiv="Content-Type"
+ content="text/html; charset=iso-8859-2">
+  <meta name="GENERATOR"
+ content="Mozilla/4.7 [en] (WinNT; I) [Netscape]">
+  <title>HT változatok</title>
+  <link href="../ht.css" rel="stylesheet" type="text/css">
+</head>
+<body bgcolor="#cccccc">
+<center>
+  <p class="cim">ROM TARTALOM, ROM VÁLTOZATOK</p>
+</center>
+<div class="cim"> 
+  <p><br>
+    HT-1080Z ELSÕ VÁLTOZAT</p>
+  </div>
+<p class="szoveg">A HT 1080/Z elsõ változatát a Híradástechnika Szövetkezet 1983-tól 
+  gyártotta. Jórészt még eredeti, hongkongi gyártású (EACA) kártyákat szereltek 
+  össze. A BASIC és a bõvítés is maszk programozott ROM-okban található. Az elsõ 
+  változat jellemzõi:</p>
+<ul>
+  <li class="szoveg">A BASIC bõvítésben (a kisbetûk, betûismétlés, villogó kurzor, 
+    RENUMBER és monitor mellett) még nincsenek magyar ékezetes betûk. A SYSTEM 
+    parancs utáni /12288 indítás hatására a bõvítés "NEW KEYBOARD ROUTINE ENABLE" 
+    felirattal jelentkezett be.</li>
+</ul>
+<table border="1" cellspacing="0" cellpadding="5" align="center">
+  <tr> 
+    <td class="szoveg"><a href="../bin/rom/ht_s1_basic.rom"><img src="pic/chip.gif" width="30" height="25" border="0"></a></td>
+    <td class="szoveg"><a href="../bin/rom/ht_s1_basic.rom">BASIC ROM</a></td>
+  </tr>
+  <tr> 
+    <td class="szoveg"><a href="../bin/rom/ht_s1_basicexpansion.rom"><img src="pic/chip.gif" width="30" height="25" border="0"></a></td>
+    <td class="szoveg"><a href="../bin/rom/ht_s1_basicexpansion.rom">BASIC bõvítés 
+      ROM</a></td>
+  </tr>
+  <tr> 
+    <td class="szoveg"><a href="../bin/rom/ht_s1_chargen.rom"><img src="pic/chip.gif" width="30" height="25" border="0"></a></td>
+    <td class="szoveg"><a href="../bin/rom/ht_s1_chargen.rom">Karakter generátor 
+      ROM</a></td>
+  </tr>
+</table>
+<div class="cim"> 
+  <p><br>
+    <br>
+    HT-1080Z MÁSODIK VÁLTOZAT</p>
+</div>
+<p class="szoveg">A második változat 1984-ben került az iskolákhoz. A BASIC maradt 
+  maszk programozott ROM-okban, de a módosított bõvítés már EPROM-ban található. 
+  A második változat jellemzõi:</p>
+<ul><li class="szoveg">A BASIC bõvítés indítása nem írt ki semmilyen
+feliratot.</li>
+  <li class="szoveg">
+A ROM bõvítésben az A, E, U, O billentyûket a CLEAR billentyûvel együtt
+lenyomva
+kaphattuk meg a következõ ékezetes betûket (a kód itt a
+karaktergenerátorban szereplõ kódot jelenti, ezt POKE-kal a
+képernyõterületre írva a megadott karakter jelent meg):</li>
+</ul>
+  
+<table border="1" cellspacing="0" cellpadding="2"
+ style="text-align: left; margin-left: auto; margin-right: auto;" align="center">
+  <tbody> 
+  <tr>
+      <td class="szoveg" rowspan="2" align="center">
+Eredeti billentyû<br>
+      </td>
+      <td class="szoveg" align="center" colspan="2">&nbsp;
+CLEAR lenyomásával,<br>
+SHIFT nélkül
+      </td>
+      <td class="szoveg" style="text-align: center;" colspan="2">
+CLEAR lenyomásával,<br>
+&nbsp; SHIFT-tel</td>
+    </tr>
+    <tr>
+      <td class="szoveg" align="center">
+Karakter
+      </td>
+      <td class="szoveg" align="center">
+Kód
+      </td>
+      <td class="szoveg" align="center">
+Karakter
+      </td>
+      <td class="szoveg" align="center">
+Kód
+      </td>
+    </tr>
+    <tr>
+      <td class="szoveg" align="center">A</td>
+      <td class="szoveg" align="center">Á<br>
+      </td>
+      <td class="szoveg" align="center">93<br>
+      </td>
+      <td class="szoveg" align="center">á</td>
+      <td class="szoveg" align="center">125<br>
+      </td>
+    </tr>
+    <tr>
+      <td class="szoveg" align="center">E</td>
+      <td class="szoveg" align="center">É</td>
+      <td class="szoveg" align="center">64<br>
+      </td>
+      <td class="szoveg" align="center">é</td>
+      <td class="szoveg" align="center">96<br>
+      </td>
+    </tr>
+    <tr>
+      <td class="szoveg" align="center">U<br>
+      </td>
+      <td class="szoveg" align="center">Ü<br>
+      </td>
+      <td class="szoveg" align="center">94<br>
+      </td>
+      <td class="szoveg" align="center">ü<br>
+      </td>
+      <td class="szoveg" align="center">126<br>
+      </td>
+    </tr>
+    <tr>
+      <td class="szoveg" align="center">O<br>
+      </td>
+      <td class="szoveg" align="center">Ö<br>
+      </td>
+      <td class="szoveg" align="center">92<br>
+      </td>
+      <td class="szoveg" align="center">ö<br>
+      </td>
+      <td class="szoveg" align="center">124<br>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<div align="center"></div>
+<ul>
+  <li class="szoveg">A sima CLEAR helyét a BREAK+CLEAR vette át.</li>
+  <li class="szoveg">A BASIC ROM tartalma megegyezik az elsõ változat ROM tartalmával.</li>
+</ul>
+<table border="1" cellspacing="0" cellpadding="5" align="center">
+  <tr> 
+    <td class="szoveg"><a href="../bin/rom/ht_s2_basic.rom"><img src="pic/chip.gif" width="30" height="25" border="0"></a></td>
+    <td class="szoveg"><a href="../bin/rom/ht_s2_basic.rom">BASIC ROM</a></td>
+  </tr>
+  <tr> 
+    <td class="szoveg"><a href="../bin/rom/ht_s2_basicexpansion.rom"><img src="pic/chip.gif" width="30" height="25" border="0"></a></td>
+    <td class="szoveg"><a href="../bin/rom/ht_s2_basicexpansion.rom">BASIC bõvítés 
+      ROM</a></td>
+  </tr>
+  <tr> 
+    <td class="szoveg"><a href="../bin/rom/ht_s2_chargen.rom"><img src="pic/chip.gif" width="30" height="25" border="0"></a></td>
+    <td class="szoveg"><a href="../bin/rom/ht_s2_chargen.rom">Karakter generátor 
+      ROM</a></td>
+  </tr>
+</table>
+<div class="cim"><br>
+  HT-1080Z/64</div>
+<p class="szoveg">A 48 kB RAM-mal ellátott változat esetén a BASIC és a bõvítés 
+  is EPROM-okban található. A HT1080Z/64 változat jellemzõi:<br>
+</p>
+<ul>
+  <li class="szoveg"> A BASIC bõvítés (SYSTEM után /12288) indítása után a "BASIC 
+    ROM EXTENSION 2.51" feliratot írta ki.</li>
+  <li class="szoveg"> Az aposztróf (azaz SHIFT-@) után beírt egyes karakterek 
+    a <span
+ style="font-style: italic;">kiíráskor </span>speciális karakterekként (ékezetes 
+    karakterekként és matematikai szimbólumokként) jelentek meg, a következõ táblázat 
+    szerint (a kód itt is a karaktergenerátorban szereplõ kódot jelenti, ezt POKE-kal 
+    a képernyõterületre írva a megadott karakter jelent meg):</li>
+</ul>
+<center>
+  <table border="1" cellspacing="0" cellpadding="2">
+    <tbody> 
+    <tr> 
+      <td class="szoveg" rowspan="2" align="center"> Eredeti billentyû<br>
+      </td>
+      <td class="szoveg" align="center" colspan="2"> ' után SHIFT nélkül </td>
+      <td class="szoveg" align="center" colspan="2"> ' után SHIFT-tel</td>
+    </tr>
+    <tr> 
+      <td class="szoveg" align="center"> Karakter </td>
+      <td class="szoveg" align="center"> Kód </td>
+      <td class="szoveg" align="center"> Karakter </td>
+      <td class="szoveg" align="center"> Kód </td>
+    </tr>
+    <tr> 
+      <td class="szoveg" align="center">A</td>
+      <td class="szoveg" align="center">Á</td>
+      <td class="szoveg" align="center">0</td>
+      <td class="szoveg" align="center">á</td>
+      <td class="szoveg" align="center">16</td>
+    </tr>
+    <tr> 
+      <td class="szoveg" align="center">E</td>
+      <td class="szoveg" align="center">É</td>
+      <td class="szoveg" align="center">1</td>
+      <td class="szoveg" align="center">é</td>
+      <td class="szoveg" align="center">17</td>
+    </tr>
+    <tr> 
+      <td class="szoveg" align="center">I</td>
+      <td class="szoveg" align="center">Í</td>
+      <td class="szoveg" align="center">2</td>
+      <td class="szoveg" align="center">í</td>
+      <td class="szoveg" align="center">18</td>
+    </tr>
+    <tr> 
+      <td class="szoveg" align="center">O</td>
+      <td class="szoveg" align="center">Ó</td>
+      <td class="szoveg" align="center">3</td>
+      <td class="szoveg" align="center">ó</td>
+      <td class="szoveg" align="center">19</td>
+    </tr>
+    <tr> 
+      <td class="szoveg" align="center">U</td>
+      <td class="szoveg" align="center">Ú</td>
+      <td class="szoveg" align="center">6</td>
+      <td class="szoveg" align="center">ú</td>
+      <td class="szoveg" align="center">22</td>
+    </tr>
+    <tr> 
+      <td class="szoveg" align="center">3</td>
+      <td class="szoveg" align="center">Ö</td>
+      <td class="szoveg" align="center">4</td>
+      <td class="szoveg" align="center">ö</td>
+      <td class="szoveg" align="center">20</td>
+    </tr>
+    <tr> 
+      <td class="szoveg" align="center">4</td>
+      <td class="szoveg" align="center">Õ</td>
+      <td class="szoveg" align="center">5</td>
+      <td class="szoveg" align="center">õ</td>
+      <td class="szoveg" align="center">21</td>
+    </tr>
+    <tr> 
+      <td class="szoveg" align="center">5</td>
+      <td class="szoveg" align="center">Ü</td>
+      <td class="szoveg" align="center">7</td>
+      <td class="szoveg" align="center">ü</td>
+      <td class="szoveg" align="center">23</td>
+    </tr>
+    <tr> 
+      <td class="szoveg" align="center">6</td>
+      <td class="szoveg" align="center">Û</td>
+      <td class="szoveg" align="center">8</td>
+      <td class="szoveg" align="center">û</td>
+      <td class="szoveg" align="center">24</td>
+    </tr>
+    <tr> 
+      <td class="szoveg" align="center">7</td>
+      <td class="szoveg" align="center">nagy Omega</td>
+      <td class="szoveg" align="center">15</td>
+      <td class="szoveg" align="center">omega</td>
+      <td class="szoveg" align="center">31</td>
+    </tr>
+    <tr> 
+      <td class="szoveg" align="center">8</td>
+      <td class="szoveg" align="center">végtelen</td>
+      <td class="szoveg" align="center">11</td>
+      <td class="szoveg" align="center">alfa</td>
+      <td class="szoveg" align="center">25</td>
+    </tr>
+    <tr> 
+      <td class="szoveg" align="center">9</td>
+      <td class="szoveg" align="center">tele négyzet</td>
+      <td class="szoveg" align="center">9</td>
+      <td class="szoveg" align="center">négyzetgyök</td>
+      <td class="szoveg" align="center">12</td>
+    </tr>
+    <tr> 
+      <td class="szoveg" align="center">B</td>
+      <td class="szoveg" align="center">pszi</td>
+      <td class="szoveg" align="center">14</td>
+      <td class="szoveg" align="center">béta</td>
+      <td class="szoveg" align="center">26</td>
+    </tr>
+    <tr> 
+      <td class="szoveg" align="center">G</td>
+      <td class="szoveg" align="center">pi</td>
+      <td class="szoveg" align="center">30</td>
+      <td class="szoveg" align="center">gamma</td>
+      <td class="szoveg" align="center">27</td>
+    </tr>
+    <tr> 
+      <td class="szoveg" align="center">M</td>
+      <td class="szoveg" align="center">lambda</td>
+      <td class="szoveg" align="center">28</td>
+      <td class="szoveg" align="center">mû</td>
+      <td class="szoveg" align="center">29</td>
+    </tr>
+    <tr> 
+      <td class="szoveg" align="center">S</td>
+      <td class="szoveg" align="center">szumma</td>
+      <td class="szoveg" align="center">13</td>
+      <td class="szoveg" align="center">integrál</td>
+      <td class="szoveg" align="center">10</td>
+    </tr>
+    </tbody> 
+  </table>
+  <ul>
+    <li class="szoveg" style="text-align: left;">Az aposztróf jelet kétszer beírva 
+      jelent meg kiíráskor az (egyszeres) aposztróf jel.<br>
+    </li>
+    <li class="szoveg" style="text-align: left;">A speciális karakterek tehát 
+      a memóriában két bájton ábrázolódtak, ahol az elsõ byte az aposztróf jel, 
+      a második pedig a fenti táblázat szerinti billentyû. A kiírató rutin végezte 
+      el a megfelelõ konverziót a képernyõmemóriába való másoláskor. Lehetõség 
+      volt arra is, hogy <span
+ style="font-style: italic;">beíráskor</span> a beütött aposztróf ne zavarja a 
+      beírt szöveget, azaz csak a speciális jel jelenjen meg a képernyõn. Ez a 
+      PRINT CHR$(21) paranccsal vagy utasítással volt elérhetõ. Ezt hatástalanítani, 
+      az eredeti állapotot visszaállítani a PRINT CHR$(20) paranccsal lehetett. 
+      Biztosított volt az ASCII karakterkészlet CONTROL kódjainak (pl. CONTROL-A) 
+      a bevitele is, ezt a SHIFT és a CLEAR egyidejû lenyomásával és az illetõ 
+      karakter leütésével lehetett megtenni.</li>
+  </ul>
+</center>
+<p>
+  <center>
+    
+  <table border="1" cellspacing="0" cellpadding="5" align="center">
+    <tr> 
+      <td class="szoveg"><a href="../bin/rom/ht_s3_basic.rom"><img src="pic/chip.gif" width="30" height="25" border="0"></a></td>
+      <td class="szoveg"><a href="../bin/rom/ht_s3_basic.rom">BASIC ROM</a></td>
+    </tr>
+    <tr> 
+      <td class="szoveg"><a href="../bin/rom/ht_s3_basicexpansion.rom"><img src="pic/chip.gif" width="30" height="25" border="0"></a></td>
+      <td class="szoveg"><a href="../bin/rom/ht_s3_basicexpansion.rom">BASIC bõvítés 
+        ROM</a></td>
+    </tr>
+    <tr> 
+      <td class="szoveg"><a href="../bin/rom/ht_s3_chargen.rom"><img src="pic/chip.gif" width="30" height="25" border="0"></a></td>
+      <td class="szoveg"><a href="../bin/rom/ht_s3_chargen.rom">Karakter generátor 
+        ROM</a></td>
+    </tr>
+  </table>
+    
+  <br>
+</center>
+<p align="left" class="cim">HT-2080Z</p>
+  
+<p align="left" class="szoveg">A HT-2080Z ROM tartalma teljesen megegyezik a HT-1080Z 
+  ROM tartalmával. Érdekesség, hogy elsõ változatú HT-1080Z ROM-jával és bõvítésével, 
+  de már az új magnóval készültek HT-2080Z gépek.</p>
+  
+<p align="left" class="cim"><br>
+  HT-3080C</p>
+  <p align="left" class="szoveg">A ROM tartalomról nincs információnk.</p>
+  <p align="right" class="szovegdolt">(Majzik István, Grósz Attila)</p>
+</body>
+</html>

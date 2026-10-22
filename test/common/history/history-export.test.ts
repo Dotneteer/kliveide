@@ -4,6 +4,7 @@ import {
   collectTrace,
   defaultTraceOptions,
   exportTrace,
+  exportTraceTextParts,
   formatHistoryRow,
   historyExportCommandText,
   parseTraceColumns,
@@ -528,5 +529,42 @@ describe("trace export: parsing", () => {
     expect(historyExportCommandText("t.csv", { from: 42, filter: ' $8000-$80FF ', noInterrupts: true })).toBe(
       'history-export "t.csv" -from #42 -filter "$8000-$80FF" -nointerrupts'
     );
+  });
+});
+
+
+describe("exportTraceTextParts (the history command's coloured columns)", () => {
+  it("joins to exactly the lines exportTrace writes, and tags each column", async () => {
+    const records = run(10, 1, [{ bytes: [0x21, 0x01, 0x80, 0] }, { bytes: [0x23, 0, 0, 0] }, { bytes: [0xcd, 0, 0x90, 0] }]);
+    const options = { ...defaultTraceOptions("text"), header: false, columns: VIEWER_TRACE_COLUMNS, repeats: true };
+    const meta = { newestSequence: 12 };
+    const lines: string[] = [];
+    for await (const line of exportTrace([records], meta, [], options, resolvers())) lines.push(line);
+    const joined: string[] = [];
+    const columns: (string | undefined)[][] = [];
+    for await (const parts of exportTraceTextParts([records], meta, [], options, resolvers())) {
+      joined.push(parts.map((part) => part.text).join(""));
+      columns.push(parts.filter((part) => part.column).map((part) => part.column));
+    }
+    expect(joined).toEqual(lines);
+    expect(columns[0]).toEqual(expect.arrayContaining(["addr", "bytes", "instr"]));
+  });
+
+  it("carries the names substituted into an instruction on its instr piece", async () => {
+    const records = run(10, 1, [{ bytes: [0xcd, 0, 0x90, 0] }, { bytes: [0x00, 0, 0, 0] }]);
+    const named = resolvers({
+      instruction: async (r) => (r.bytes[0] === 0xcd ? { text: "call PrintIt", length: 3, names: ["PrintIt"] } : { text: "nop", length: 1 })
+    });
+    const lines: { column?: string; names?: readonly string[] }[][] = [];
+    for await (const parts of exportTraceTextParts(
+      [records],
+      { newestSequence: 11 },
+      [],
+      { ...defaultTraceOptions("text"), header: false, columns: VIEWER_TRACE_COLUMNS },
+      named
+    )) {
+      lines.push(parts);
+    }
+    expect(lines[0].find((part) => part.column === "instr")?.names).toEqual(["PrintIt"]);
   });
 });

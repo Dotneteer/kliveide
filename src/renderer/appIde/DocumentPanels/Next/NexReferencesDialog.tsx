@@ -1,3 +1,5 @@
+import classnames from "classnames";
+import { InstructionText, disassemblyText } from "@renderer/controls/data/DisassemblyText";
 import { Button } from "@renderer/controls/Button";
 import { DialogComponentProps } from "@renderer/controls/overlay/DialogProvider";
 import { DialogFooter } from "@renderer/controls/overlay/DialogFooter";
@@ -40,11 +42,11 @@ export function NexReferencesDialog({ label, references, controls }: NexReferenc
             key={reference.rowIndex}
             onDoubleClick={() => controls.close(reference)}
           >
-            <span>{formatNexLabelValue(reference.address)}</span>
+            <span className={disassemblyText.address}>{formatNexLabelValue(reference.address)}</span>
             <span className={styles.instruction} title={reference.instruction}>
-              {reference.instruction}
+              <InstructionText text={reference.instruction} />
             </span>
-            <span className={styles.within} title={reference.within}>
+            <span className={classnames(styles.within, disassemblyText.label)} title={reference.within}>
               {reference.within ?? ""}
             </span>
             <span className={styles.actions}>

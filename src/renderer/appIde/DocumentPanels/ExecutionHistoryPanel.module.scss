@@ -110,13 +110,12 @@
   align-items: center;
   width: 11ch;
   flex-shrink: 0;
-  color: var(--color-state-value);
 }
 
+/* Address and bytes take the disassembly colours (`disassemblyText`), as every listing does */
 .bytes {
   width: 12ch;
   flex-shrink: 0;
-  color: var(--data-secondary);
 }
 
 .flow {
@@ -129,7 +128,6 @@
 .instruction {
   width: 22ch;
   flex-shrink: 0;
-  color: var(--data-value);
 }
 
 .source {

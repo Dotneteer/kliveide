@@ -383,6 +383,15 @@ async function listingRows(
       } else {
         text = upperOutsideStrings(instruction);
       }
+    } else if (/^\.fillb\b/i.test(instruction)) {
+      // --- A run of one byte: SkoolKit's `DEFS size,value`
+      text = `DEFS ${length},$${bytes[0].toString(16).toUpperCase().padStart(2, "0")}`;
+    } else if (/^\.defc\b/i.test(instruction) || (/^\.defm\b/i.test(instruction) && instruction.includes("\\"))) {
+      // --- SkoolKit has no `.defc` and no `\xHH`: a bit-7 string is `DEFM "AB","C"+128`, built from
+      // --- the bytes; one with a character DEFM cannot hold is DEFB, the row as its comment
+      const skool = skoolDefm(bytes);
+      text = skool ?? defb(bytes);
+      generated = skool ? undefined : instruction;
     } else if (/^\.def[bwm]\b/i.test(instruction) && type !== "copper" && type !== "dma" && length === (item.annotation?.byteLength ?? length)) {
       text = upperOutsideStrings(instruction.replace(/^\.(def[bwm])/i, (_, d: string) => d.toUpperCase())).replace(/,\s+/g, ",");
     } else {
@@ -393,6 +402,23 @@ async function listingRows(
     emittedUntil = offset + length;
   }
   return rows;
+}
+
+/**
+ * A string's bytes as a SkoolKit `DEFM`: the last byte with bit 7 set is written as its character
+ * `+128` (`DEFM "AB","C"+128`). `undefined` when a byte has no place in a DEFM string: one outside
+ * printable ASCII, a quote or a backslash, or bit 7 set on any byte but the last.
+ */
+export function skoolDefm(bytes: number[]): string | undefined {
+  const plain = (code: number) => code >= 0x20 && code < 0x7f && code !== 0x22 && code !== 0x5c;
+  if (!bytes.length) return undefined;
+  const last = bytes[bytes.length - 1];
+  const head = last & 0x80 ? bytes.slice(0, -1) : bytes;
+  if (!head.every(plain) || (last & 0x80 && !plain(last & 0x7f))) return undefined;
+  const parts: string[] = [];
+  if (head.length) parts.push(`"${String.fromCharCode(...head)}"`);
+  if (last & 0x80) parts.push(`"${String.fromCharCode(last & 0x7f)}"+128`);
+  return `DEFM ${parts.join(",")}`;
 }
 
 function defb(bytes: number[]): string {

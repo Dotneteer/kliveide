@@ -421,8 +421,6 @@
   "panels.graphics.source64k": "Visão 64K",
   "panels.graphics.savePngTitle": "Salvar como PNG",
   "panels.graphics.pngFilter": "Imagem PNG",
-  "panels.graphics.exportSourceTitle": "Exportar como código-fonte",
-  "panels.graphics.asmFilter": "Assembly Z80 do Klive",
   "panels.graphics.width": "Largura",
   "panels.graphics.widthLabel": "Bytes por linha de pixels",
   "panels.graphics.widthTitle": "Bytes por linha de pixels (← / →)",

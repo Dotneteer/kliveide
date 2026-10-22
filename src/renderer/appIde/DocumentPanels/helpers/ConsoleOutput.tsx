@@ -209,7 +209,11 @@ const buildSpanStyle = (s: OutputSpan): CSSProperties => ({
    */
   backgroundColor: s.background !== undefined ? `var(--console-ansi-${s.background})` : undefined,
   color:
-    s.foreground !== undefined ? `var(--console-ansi-${s.foreground})` : "var(--console-default)",
+    s.foreground === undefined
+      ? "var(--console-default)"
+      : s.foreground.startsWith("disasm-")
+        ? `var(--color-disassembly-${s.foreground.slice("disasm-".length)})`
+        : `var(--console-ansi-${s.foreground})`,
   /*
    * `textDecorationLine`, not the `textDecoration` shorthand.
    *

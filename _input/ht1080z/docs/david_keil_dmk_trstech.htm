@@ -1,0 +1,1357 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type"
+content="text/html; charset=iso-8859-1">
+<meta name="Author" content="David Keil">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+<title>TRS-80 Emulator v6.10 Documentation (Technical)</title>
+</head>
+
+<body>
+
+
+<p><a name="Technical"></a><font size="5"><b>Technical Info:</b></font>
+</p>
+
+<p>What follows is technical information for users who want to
+know more about the emulator or want to develop support programs
+for the emulator or new software for the TRS-80 running on the
+emulator. Nothing contained here is required to use the emulator.
+</p>
+
+<p><a href="trsdoc.htm#Contents">Return to contents:</a>&nbsp; </p>
+
+<hr align="left">
+
+<p><a name="Technical-DMK-disks"></a><font size="5"><b>Technical
+info - DMK type virtual disks:</b></font> </p>
+
+<p>This information on what has become known as the DMK virtual
+disk format is provided for users wanting to better understand
+the operation of the emulator and for programmers writing their
+own emulators wanting to add support for this format and/or the
+creation of PC utilities to work with the DMK virtual disk
+format. </p>
+
+<p>This virtual disk format is as close to the way data on a real
+disk is stored as possible. There is very little added overhead
+and the data is easily examined and edited using PC based hex
+editors. The actual design is really quite simple and enables
+support of ALL the WD-1771 and WD-19xx controller functions and
+formats. While the design is simple however the programming
+requirements for this format are much more extensive then for the
+JV1/JV3 formats. </p>
+
+<p><font size="4">Disk header:</font> </p>
+
+<p>Virtual disks have a 16 byte disk header which is initialized
+when the user creates a new virtual disk. This header may be
+modified before or after a virtual disk has been formatted to
+change some of its characteristics.&nbsp; </p>
+
+<table border="1" width="100%" cols="2">
+    <tr>
+        <td width="15%">Byte 0</td>
+        <td width="85%">If this byte is set to FFH the disk is
+        `write protected', 00H allows writing.</td>
+    </tr>
+    <tr>
+        <td width="15%">Byte 1</td>
+        <td width="85%">Number of tracks on virtual disk. Since
+        tracks start at 0 this value will be one greater than the
+        highest track written to the disk. So a disk with 40
+        tracks will have a value of 40 (28H) in this field after
+        formatting while the highest track written would be 39.
+        This field is updated after a track is formatted if the
+        track formatted is greater than or equal to the current
+        number of tracks. Re-formatting a disk with fewer tracks
+        will NOT reduce the number of tracks on the virtual disk.
+        Once a virtual disk has allocated space for a track it
+        will NEVER release it. Formatting a virtual disk with 80
+        tracks then re-formatting it with 40 tracks would waste
+        space just like formatting only 40 tracks on an 80 track
+        drive. The emulator and TRS-80 operating system don't
+        care. To re-format a virtual disk with fewer tracks use
+        the /I option at start-up to delete and re-create the
+        virtual disk first, then re-format to save space.&nbsp; <p>Note:
+        This field should NEVER be modified. Changing this number
+        will cause TRS-80 operating system disk errors. (Like
+        reading an 80 track disk in a 40 track drive)</p>
+        </td>
+    </tr>
+    <tr>
+        <td width="15%">Byte 2 &amp; 3</td>
+        <td width="85%">This is the track length for the virtual
+        disk. By default the value is 1900H, 80H bytes more than
+        the actual track length, this gives a track length of
+        6272 bytes. A real double density track length is aprox.
+        6250 bytes. This is the default value when a virtual disk
+        is created. Values for other disk and format types are
+        0CC0H for single density 5.25&quot; floppies, 14E0H for
+        single density 8&quot; floppies and 2940H for double
+        density 8&quot; floppies. The max value is 2940H. For
+        normal formatting of disks the values of 1900H and 2940H
+        for 5.25&quot; and 8&quot; are used. The emulator will
+        write two bytes and read every second byte when&nbsp; in
+        single density to maintain proper sector spacing,
+        allowing mixed density disks. Setting the track length
+        must be done before a virtual disk is formatted or the
+        disk will have to be re-formatted and since the space for
+        the disk has already been allocated no space will be
+        saved.&nbsp; <p>WARNING: Bytes are entered in reverse
+        order (ex. 2940H would be entered, byte 2=40, byte
+        3=29).&nbsp; <br>
+        Note: No modification of the track length is necessary,
+        doing so only saves space and is not necessary to normal
+        operation. The values for all normal 5.25&quot; and
+        8&quot; disks are set when the virtual disk is created.
+        DON'T modify the track length unless you understand these
+        instructions completely. Nothing in the PC world can be
+        messed up by improper modification but any other virtual
+        disk mounted in the emulator with an improperly modified
+        disk could have their data scrambled.</p>
+        </td>
+    </tr>
+    <tr>
+        <td width="15%">Byte 4</td>
+        <td width="85%">Virtual disk option flags.&nbsp; <p>Bit 4
+        of this byte, if set, means this is a single sided ONLY
+        disk. This bit is set if the user selects single sided
+        during disk creation and should not require modification.
+        This flag is used only to save PC hard disk space and is
+        never required.&nbsp; </p>
+        <p>Bit 6 of this byte, if set, means this disk is to be
+        single density size and the emulator will access one byte
+        instead of two when doing I/O in single density. Double
+        density can still be written to a single density disk but
+        with half the track length only 10 256 byte sectors can
+        be written in either density. Mixed density is also
+        possible but sector timing may be off so protected disks
+        may not work, a maximum of 10 256 byte sectors of mixed
+        density can be written to a single density disk. A
+        program like &quot;Spook House&quot; which has a mixed
+        density track 0 with 1 SD sector and 1 DD sector and the
+        rest of the disk consisting of 10 SD sectors/track will
+        work with this flag set and save half the PC hard disk
+        space. The protected disk &quot;Super Utility + 3.0&quot;
+        however has 6 SD and 6 DD sectors/track for a total of 12
+        256 byte sectors/track. This disk cannot be single
+        density.&nbsp; </p>
+        <p>This bit is set if the user selects single density
+        during disk creation and should not require modification.
+        This flag is used only to save PC hard disk space and is
+        never required.&nbsp; </p>
+        <p>Bit 7 of this byte, if set, means density is to be
+        ignored when accessing this disk. The disk MUST be
+        formatted in double density but the emulator will then
+        read and write the sectors in either density. The
+        emulator will access one byte instead of two when doing
+        I/O in single density.&nbsp; </p>
+        <p>This flag was an early way to support mixed density
+        disks it is no longer needed for this purpose. It is now
+        used for compatibility with old virtual disks created
+        without the double byte now used when in single density.
+        This bit can be set manually in a hex editor to access
+        old virtual disks written in single density.</p>
+        </td>
+    </tr>
+    <tr>
+        <td width="15%">Byte 5-B</td>
+        <td width="85%">reserved for future options</td>
+    </tr>
+    <tr>
+        <td width="15%">Byte C-F</td>
+        <td width="85%">Must be zero if virtual disk is in
+        emulator's native format.&nbsp; <p>Must be 12345678h if
+        virtual disk is a REAL disk specification file used to
+        access REAL TRS-80 floppies in compatible PC drives.</p>
+        </td>
+    </tr>
+    <tr>
+        <td width="15%">Track Header</td>
+        <td width="85%">Each track has a 128 (80H) byte header
+        which contains an offset to each IDAM in the track. This
+        is created during format and should NEVER require
+        modification. The actual track data follows this header
+        and can be viewed with a hex editor showing the raw data
+        on the track. Modification should not be done as each
+        IDAM and sector has a CRC, this is just like a real disk,
+        and modifying the sector data without updating the CRC
+        value will cause CRC errors when accessing the virtual
+        disk within the emulator.&nbsp; <p>Note: Modification
+        within MSDOS could however be done to emulate a protected
+        disk in the TRS-80 emulator.</p>
+        </td>
+    </tr>
+</table>
+
+<p><font color="#000000" size="4">Track header:</font> </p>
+
+<p>Each side of each track has a 128 (80H) byte header which
+contains an offset pointer to each IDAM in the track. This allows
+a maximum of 64 sector IDAMs/track. This is more than twice what
+an 8 inch disk would require and 3.5 times that of a normal
+TRS-80 5 inch DD disk. This should more than enough for any
+protected disk also. </p>
+
+<p>These IDAM pointers MUST adhere to the following rules. </p>
+
+<ul>
+    <li>Each pointer is a 2 byte offset to the FEh byte of the
+        IDAM. In double byte single density the pointer is to the
+        first FEh.</li>
+    <li>The offset includes the 128 byte header. For example, an
+        IDAM 10h bytes into the track would have a pointer of
+        90h, 10h+80h=90h.</li>
+    <li>The IDAM offsets MUST be in ascending order with no
+        unused or bad pointers.</li>
+    <li>If all the entries are not used the header is terminated
+        with a 0000h entry. Unused entries must also be zero
+        filled..</li>
+    <li>Any IDAMs overwritten during a sector write command
+        should have their entry removed from the header and all
+        other pointer entries shifted to fill in.</li>
+    <li>The IDAM pointers are created during the track write
+        command (format). A completed track write MUST remove all
+        previous IDAM pointers. A partial track write (aborted
+        with the forced interrupt command) MUST have it's
+        previous pointers that were not overwritten added to the
+        new IDAM pointers.</li>
+    <li>The pointer bytes are stored in reverse order (LSB/MSB).</li>
+</ul>
+
+<p>Each IDAM pointer has two flags. Bit 15 is set if the sector
+is double density. Bit 14 is currently undefined. These bits must
+be masked to get the actual sector offset. For example, an offset
+to an IDAM at byte 90h would be 0090h if single density and 8090h
+if double density. </p>
+
+<p><font size="4">Track data:</font> </p>
+
+<p>The actual track data follows the header and can be viewed
+with a hex editor showing the raw data on the track. If the
+virtual disk doesn't have bits 6 or 7 set of byte 4 of the disk
+header then each single density data byte is written twice, this
+includes IDAMs and CRCs (the CRCs are calculated as if only 1
+byte was written however). The IDAM and sector data each have
+CRCs, this is just like on a real disk. </p>
+
+<p>Modification should not be done since doing so without
+updating&nbsp; the CRCs would cause data errors. Modification
+could be done however to create protected tracks for importing
+protected disks to virtual disk format. Examples of disks created
+using this technique are &quot;Super Utility+ 3.0&quot; and
+&quot;Forbidden City&quot;. </p>
+
+<p><a href="trsdoc.htm#Contents">Return to contents:</a>&nbsp; </p>
+
+<hr align="left">
+
+<p><a name="Technical-JV1-disks"></a><font size="5"><b>Technical
+info - JV1/JV3 type virtual disks:</b></font> </p>
+
+<p>This emulator is capable of reading and writing to JV1 and JV3
+type virtual disks. Support for this type of virtual disk is
+limited by both the limits of the format type and this emulators
+support of it. </p>
+
+<p>The emulator supports read sector, read address and write
+sector commands to the JV1 type virtual disk. JV1 disks are
+single density only and can be up to 254 tracks long and always
+have a protected directory track at track 17. Read track and
+write track commands are not supported for this disk type. This
+disk&nbsp; type can be write protected from the &quot;virtual
+floppy disk selection screen&quot; but the write protect status
+will always default to off when ever a JV1 disk is opened. </p>
+
+<p>The emulator supports read sector, read address and write
+sector commands to the JV3 type virtual disk. JV3 disks are
+single/double density and can be up to 96 tracks long. Read track
+and write track commands are not supported for this disk type.
+This disk&nbsp; type can be write protected from the
+&quot;virtual floppy disk selection screen&quot; but the write
+protect status will always default to what ever status is in the
+the JV3 virtual disk file (byte 21FFh) when the disk is opened,
+the write protect status is not updated. The density and CRC
+error flags are also supported but not updated. DAM types FB/F9
+report FB and F8/FA report F8. Sector writes that change the DAM
+type from what is in the virtual disk file are not supported.
+This will not cause problems unless you try to change the
+protection status of a directory track. Standard IBM sector sizes
+are supported of 128, 256, 512 &amp; 1024 bytes. A second sector
+header block is not supported. </p>
+
+<p><a href="trsdoc.htm#Contents">Return to contents:</a>&nbsp; </p>
+
+<hr align="left">
+
+<p><a name="Technical-REAL-disks"></a><font size="5"><b>Technical
+info - REAL TRS-80 floppy disks:</b></font> </p>
+
+<p>This emulator is capable of reading, writing and formatting
+REAL TRS-80 floppy disks in compatible PC floppy drives. Support
+for this is limited by both the limits of the NEC type floppy
+disk controller and this emulators support of it. </p>
+
+<p>Depending on compatibility of your PC you should be able to
+read/write single density &amp; double density 5.25&quot; and
+3.5&quot; disks in 360k and 720k PC floppy drives (commonly known
+as low/double density drives, DD). You should be able to
+read/write double density 5.25&quot; and 3.5&quot; disks in
+1.2meg and 1.44meg PC floppy drives (commonly known as high
+density drives, HD). </p>
+
+<p>Eight fixed sector length REAL floppy specification virtual
+disks are supplied to read/write 256 byte/sector floppies in a
+PC's A: and B: drives. </p>
+
+<table border="1" width="100%" cols="2">
+    <tr>
+        <td width="20%">FDD0_360.DSK</td>
+        <td width="80%">Reads 40 track disks on a PC A: 360k (DD)
+        drive.</td>
+    </tr>
+    <tr>
+        <td width="20%">FDD1_360.DSK</td>
+        <td width="80%">Reads 40 track disks on a PC B: 360k (DD)
+        drive</td>
+    </tr>
+    <tr>
+        <td width="20%">FHD0_360.DSK</td>
+        <td width="80%">Reads 40 track disks on a PC A: 1.2meg
+        (HD) drive. (double steps head)</td>
+    </tr>
+    <tr>
+        <td width="20%">FHD1_360.DSK</td>
+        <td width="80%">Reads 40 track disks on a PC B: 1.2meg
+        (HD) drive. (double steps head)</td>
+    </tr>
+    <tr>
+        <td width="20%">FHD0_720.DSK</td>
+        <td width="80%">Reads 80 track disks on a PC A: 1.2meg
+        (HD) drive.</td>
+    </tr>
+    <tr>
+        <td width="20%">FHD1_720.DSK</td>
+        <td width="80%">Reads 80 track disks on a PC B: 1.2meg
+        (HD) drive.</td>
+    </tr>
+    <tr>
+        <td width="20%">F350_720.DSK</td>
+        <td width="80%">Reads 80 track 3.5&quot; disks on a PC A:
+        1.44meg (HD) drive.</td>
+    </tr>
+    <tr>
+        <td width="20%">F351_720.DSK</td>
+        <td width="80%">Reads 80 track 3.5&quot; disks on a PC B:
+        1.44meg (HD) drive.</td>
+    </tr>
+</table>
+
+<p>Eight variable sector length REAL floppy specification virtual
+disks are supplied to read/write 128-1024 byte/sector floppies in
+a PC's A: and B: drives. These specification disks are slower
+than the fixed length ones and should only be used on disks
+un-readable with the fixed length specification disks. </p>
+
+<table border="1" width="100%" cols="2">
+    <tr>
+        <td width="20%">VDD0_360.DSK</td>
+        <td width="80%">Reads 40 track disks on a PC A: 360k (DD)
+        drive.</td>
+    </tr>
+    <tr>
+        <td width="20%">VDD1_360.DSK</td>
+        <td width="80%">Reads 40 track disks on a PC B: 360k (DD)
+        drive</td>
+    </tr>
+    <tr>
+        <td width="20%">VHD0_360.DSK</td>
+        <td width="80%">Reads 40 track disks on a PC A: 1.2meg
+        (HD) drive. (double steps head)</td>
+    </tr>
+    <tr>
+        <td width="20%">VHD1_360.DSK</td>
+        <td width="80%">Reads 40 track disks on a PC B: 1.2meg
+        (HD) drive. (double steps head)</td>
+    </tr>
+    <tr>
+        <td width="20%">VHD0_720.DSK</td>
+        <td width="80%">Reads 80 track disks on a PC A: 1.2meg
+        (HD) drive.</td>
+    </tr>
+    <tr>
+        <td width="20%">VHD1_720.DSK</td>
+        <td width="80%">Reads 80 track disks on a PC B: 1.2meg
+        (HD) drive.</td>
+    </tr>
+    <tr>
+        <td width="20%">V350_720.DSK</td>
+        <td width="80%">Reads 80 track 3.5&quot; disks on a PC A:
+        1.44meg (HD) drive.</td>
+    </tr>
+    <tr>
+        <td width="20%">V351_720.DSK</td>
+        <td width="80%">Reads 80 track 3.5&quot; disks on a PC B:
+        1.44meg (HD) drive.</td>
+    </tr>
+</table>
+
+<p>Because of the limitations of the PC's NEC type floppy disk
+controller the PC cannot read most protected disks. The emulator
+does not support the track read commands with REAL floppies.
+Because of limitations of the PC's controller most disk zap
+utilities (like Hyperzap and Super Utility) cannot work with REAL
+floppies. Also the write track command has to translate format
+data to the PC's controller form and is therefore unable to
+format anything but standard sectors. Because of the translation
+for PC disk I/O, access to real TRS-80 disks is apt to be slow,
+formatting in some cases can take as long as 8 seconds/track.
+This is unavoidable and should not present problems since REAL
+disk support is mainly for importing your existing TRS-80 disks
+and transferring data and programs to the TRS-80. If your PC has
+a hard time reading your TRS-80 disks then use the emulator to
+format a disk on the PC and then copy the disk on the TRS-80 to
+the PC formatted disk, this should correct most problems. </p>
+
+<p>Some PC's cannot read SD TRS-80 disks and still others cannot
+read any TRS-80 disks without errors. This is a compatibility
+problem with different PC controllers and not a problem with the
+emulator. Try using a different brand of PC or an older model PC.
+If you are still unable to read your disks and really need the
+data converted, e-mail me and maybe I can convert the disk for
+you (my PC has been able to read every disk I've tried so far). </p>
+
+<p><a href="trsdoc.htm#Contents">Return to contents:</a>&nbsp; </p>
+
+<hr>
+
+<p><a name="Technical-HDV-disk"></a><font size="5"><b>Technical
+info - Virtual hard disks:</b></font> </p>
+
+<p>This information on what are known as the HDV virtual hard
+disks is provided for users wanting to better understand the
+operation of the emulator and for programmers writing their own
+emulators wanting to add support for this format and/or the
+creation of PC utilities to work with the HDV virtual disk
+format.</p>
+
+<p>These emulators support the existing HDV format and have
+extended the format to support 1024 cylinder hard drives using
+the WD1010 hard drive controller emulation.</p>
+
+<p><font size="4">Disk header:</font> </p>
+
+<p>Virtual hard disks have a 256 byte disk header which is
+initialized when the user creates a new virtual disk. This header
+may be modified before or after a virtual disk has been formatted
+to change some of its characteristics.&nbsp;</p>
+<div align="center"><center>
+
+<table border="1" width="100%">
+    <tr>
+        <td width="15%">Byte 0 &amp; 1</td>
+        <td width="85%">Identifier 56h &amp; CBh</td>
+    </tr>
+    <tr>
+        <td>Byte 2</td>
+        <td>Version: set to 11h when file created (version 1.1)</td>
+    </tr>
+    <tr>
+        <td>Byte 3</td>
+        <td>Checksum of bytes 0-31 (excepting byte 3) XORed with
+        4Ch</td>
+    </tr>
+    <tr>
+        <td>Byte 4</td>
+        <td>Number of 256 byte blocks in header: should be 1<br>
+        (anything other than 1 is not supported by this emulator)</td>
+    </tr>
+    <tr>
+        <td>Byte 5</td>
+        <td>-unused- Currently set to 4 for compatibility</td>
+    </tr>
+    <tr>
+        <td>Byte 6</td>
+        <td>Media type: 0 for hard disk</td>
+    </tr>
+    <tr>
+        <td>Byte 7</td>
+        <td>Bit 7 set if hard disk is write protected, all other
+        bits -unused-</td>
+    </tr>
+    <tr>
+        <td>Byte 8 &amp; 9</td>
+        <td>-unused-</td>
+    </tr>
+    <tr>
+        <td>Byte 10</td>
+        <td>FFh = created with this emulator</td>
+    </tr>
+    <tr>
+        <td>Byte 11</td>
+        <td>-unused- (DOS type)</td>
+    </tr>
+    <tr>
+        <td>Byte 12</td>
+        <td>Creation month</td>
+    </tr>
+    <tr>
+        <td>Byte 13</td>
+        <td>Creation day</td>
+    </tr>
+    <tr>
+        <td>Byte 14</td>
+        <td>Creation year (offset from 1900)</td>
+    </tr>
+    <tr>
+        <td>Byte 15-26</td>
+        <td>-unused-</td>
+    </tr>
+    <tr>
+        <td>Byte 27</td>
+        <td>If 'byte 10' = FFh then bits 0-1 contains high bits
+        of cylinder count (max value 1024)<br>
+        else -unused-</td>
+    </tr>
+    <tr>
+        <td>Byte 28</td>
+        <td>If 'byte 10' = FFh then contains low byte of cylinder
+        count<br>
+        else contains total number of cylinders on disk </td>
+    </tr>
+    <tr>
+        <td>Byte 29</td>
+        <td>Number of sectors per cylinder<br>
+        This value must be divisible by 32. A value of 00h = 256
+        sectors</td>
+    </tr>
+    <tr>
+        <td>Byte 30</td>
+        <td>-unused- but is set to 'byte 29' divided by 16 when
+        file created (granules per cylinder)</td>
+    </tr>
+    <tr>
+        <td>Byte 31</td>
+        <td>-unused- but is set to 1 when file created (directory
+        cylinder)</td>
+    </tr>
+    <tr>
+        <td>Byte 32-63</td>
+        <td>Volume label, set to TRS80 when file is created (31
+        bytes terminated by 00h)</td>
+    </tr>
+    <tr>
+        <td>Byte 64-71</td>
+        <td>-unused- (Creation filename)</td>
+    </tr>
+    <tr>
+        <td>Byte 72-255</td>
+        <td>-unused-</td>
+    </tr>
+</table>
+</center></div>
+
+<p><a href="trsdoc.htm#Contents">Return to contents:</a>&nbsp;</p>
+
+<hr align="left">
+
+<p><a name="Technical-Z80"></a><font size="5"><b>Technical Info -
+Enhanced Z80 instructions</b></font></p>
+
+<p><font size="3">The emulator has a set of enhanced Z80
+instructions. These instructions allow TRS-80 programs to
+interface with the PC's disk drives, ports, memory and other
+hardware. These instructions also add high level math functions
+to the Z80 instruction set.</font></p>
+
+<p><font size="3"><strong>NOTE: </strong>These instructions are
+only available in the emulators.</font></p>
+
+<p>The following links contain a list of the enhanced
+instructions and documentation for each instruction.</p>
+
+<p><a href="trsz80.htm">Enhanced Instruction Documentation</a>
+(on-line)</p>
+
+<p><a href="trsz80.doc">Enhanced Instruction Documentation</a>
+(Microsoft Word 123k)</p>
+
+<p><a href="trsdoc.htm#Contents">Return to contents:</a>&nbsp;</p>
+
+<hr>
+
+<p><a name="Technical-I/O"></a><font size="5"><b>Technical Info -
+Port mapped PC I/O commands</b></font></p>
+
+<p><font size="3">In addition to the enhanced Z80 instructions
+described above the emulator can also interface with the PC using
+port mapped commands. These commands provide an easier to use
+interface when writing programs in BASIC or other high level
+language eliminating the need for machine language calls.</font></p>
+
+<p><font size="3">The port mapped I/O commands allow access to
+the 13 I/O functions between 30h and 3Fh as defined in the </font><a
+href="trsz80.htm">Enhanced Instruction Documentation</a>. These
+port mapped I/O commands also allow access to the PC's I/O ports.
+The Z80 ports 50h to 57h can be mapped to any of the PC's I/O
+ports.</p>
+
+<p>Port 70h is used execute commands, define which data register
+or PC port, port 71h points to and read the status of the
+previous command.</p>
+
+<p>Outputting a value of 30h to 3Fh to port 70h executes the
+corresponding enhanced Z80 instruction. The status of the command
+can be checked by a read to port 70h. In most cases a non-zero
+value indicates an error condition.</p>
+
+<p>Outputting a value of 40h to 43h to port 70h defines which
+register port 71h points to. The registers are:</p>
+
+<p>40h = DE register<br>
+41h = HL register<br>
+42h = BC register<br>
+43h = AF register</p>
+
+<p>After outputting a value to port 70h the LSB of the register
+is available at port 71h, the value can be read or written. After
+accessing port 71h the MSB of the value will be available and can
+be read or written. After a second I/O to port 71h the LSB value
+will be available again. The data available at port 71h toggles
+between the LSB &amp; MSB values of the defined register each
+time you access it. For example, to load a register HL with 3C00h
+you could use the following BASIC program:</p>
+
+<p><font face="Courier New">10 OUT 112,65&nbsp;: REM DEFINE HL
+REGISTER, BASIC WANTS DECIMAL NUMBERS<br>
+20 OUT 113,0 &nbsp;: REM LOAD L WITH 00H<br>
+30 OUT 113,60&nbsp;: REM LOAD H WITH 3CH</font></p>
+
+<p>Reading the register is done the same way except using
+INP(113) instead. Once the registers required by the desired 30h
+to 3Fh command are loaded, an output of that command to port 70h
+is done. The returned data, if any, is then available in the same
+registers.</p>
+
+<p>Outputting a value of 80h to 87h to port 70h defines which PC
+port, Z80 ports 50h to 57h point to. After outputting a value to
+port 70h the LSB of the PC port number is available at port 71h,
+the value can be read or written. The data available at port 71h
+toggles between the LSB &amp; MSB values of the defined port each
+time you access it. For example, to point Z80 port 53h to the PC
+game port at 201h and then read port 201h you could use the
+following BASIC program:</p>
+
+<p><font face="Courier New">10 OUT 112,131&nbsp;: REM DEFINE PORT
+53H, BASIC WANTS DECIMAL NUMBERS<br>
+20 OUT 113,1 &nbsp; : REM LOAD LSB WITH 01H<br>
+30 OUT 113,2 &nbsp; : REM LOAD MSB WITH 02H<br>
+40 A=INP(83)&nbsp;&nbsp;&nbsp;: REM READ Z80 PORT 53H WHICH
+POINTS TO PC PORT 201H<br>
+50 PRINT A&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: REM A CONTAINS THE
+JOYSTICK STATUS FROM PC PORT 201H</font></p>
+
+<p>Some program listings of BASIC programs are available as
+examples of using the port mapped I/O commands:</p>
+
+<p><a href="trsbasic.htm">BASIC Examples</a></p>
+
+<p><a href="trsdoc.htm#Contents">Return to contents:</a>&nbsp;</p>
+
+<hr>
+
+<p><a name="Technical-keymaps"></a><font size="5"><b>Technical
+info - Keyboard maps:</b></font> </p>
+
+<p>The TRS-80 emulators support two keyboard maps. These files
+determine the relationship between the PC keyboard and the TRS-80
+keyboard. Each key on the PC keyboard can be mapped to a key on
+the TRS-80 keyboard. More than one PC key can be mapped to the
+same TRS-80 key (ex. Backspace &amp; left arrow are both mapped
+to left arrow on the TRS-80 keyboard).</p>
+
+<p>Each keyboard map file contains 512 bytes which are organized
+in pairs. The first 128 byte pairs are unshifted keys the last
+128 are the same keys shifted. The PC communicates with its
+keyboard using scancodes. Each PC key has a scancode and each
+scancode has a matching 2 byte value in the keyboard map. For
+example the 'ENTER' key has a scancode of 28, therefore the 2
+keyboard map values at 2 times 28 plus 1 (57), contains the
+TRS-80 keyboard value for an unshifted 'ENTER' key. The map
+values 2 times 28 plus 257 (313), contains the TRS-80 keyboard
+value for a shifted 'ENTER' key.</p>
+
+<p>Below is a graphic of a standard PC keyboard layout showing
+the scancodes for each key. All the scancodes shown correspond to
+a keyboard map entry. The PC key's table entry can be found by
+multiplying the scancode by 2 and adding 1 for unshifted values
+or adding 257 for shifted values.</p>
+
+<p>Note: The scancodes for the cursor keys are not the actual
+scancodes but the scancode plus 32 because the actual scancodes
+are the same as for the number pad. The PC prefixes these keys
+with a special code. The emulator adds 32 to these prefixed
+scancodes so they can have their own keyboard map entries.</p>
+
+<table border="2" cellpadding="4" cellspacing="0"
+bordercolor="#000000">
+    <tr>
+        <td><img src="images/pckey.gif" width="868"
+        height="238"></td>
+    </tr>
+</table>
+
+<p>As said before each scancode points to a two byte pair. The
+second byte is the entry type, it has the following values:</p>
+<div align="left">
+
+<table border="2">
+    <tr>
+        <td align="center" width="5%">0</td>
+        <td>Unshifted TRS-80 key<br>
+        When this key is pushed a value corresponding to the
+        first byte of this map entry will be stored in the TRS-80
+        keyboard memory matrix.</td>
+    </tr>
+    <tr>
+        <td align="center">1</td>
+        <td>Shifted TRS-80 key<br>
+        When this key is pushed a value corresponding to the
+        first byte of this map entry will be stored in the TRS-80
+        keyboard memory matrix.<br>
+        A shift will also be stored in the matrix.</td>
+    </tr>
+    <tr>
+        <td align="center" width="5%">128</td>
+        <td>No function<br>
+        Pushing this key does nothing in the emulator</td>
+    </tr>
+    <tr>
+        <td align="center" width="5%">129</td>
+        <td>Command function<br>
+        These keys execute emulator command functions like
+        rebooting the emulator (F10). These map entries should
+        not be modified. Incorect entries to this type of entry
+        can result in emulator functions not working, emulator
+        lockups and system crashes.</td>
+    </tr>
+    <tr>
+        <td align="center" width="5%">130</td>
+        <td>Shift Key<br>
+        Whenever this key is pushed and held the emulator will
+        use the second half of the keyboard map. The first byte
+        of this type of entry contains the type of shift key. For
+        the Model 1 this value should always be 1. For the Model
+        III, 4 &amp; 4P a value of 1 means a left shift and a
+        value of 2 means a right shift.</td>
+    </tr>
+</table>
+</div>
+
+<p>The following table is to be used to find the first byte of
+the keyboard map value for entry type 0. The values in this table
+are in hex.</p>
+
+<p><img src="images/trskey1.gif" width="511" height="145"></p>
+
+<p>For example. If you look at the PC scancode graphic you will
+see that the 'ESC' key has a scan code of 1. If you look at the
+3rd byte of the PC80, PC81 or PC83 keyboard map file you will see
+a value of 38 (26 hex). Looking at the able above shows a value
+of 26H represents the TRS-80 'BREAK' key. The 'BREAK' key is in
+row 6 column 2 for the TRS-80 keyboard matrix.</p>
+
+<p>The 4th byte of the keyboard map file is a zero. This means
+the key is unshifted. If this value was 1 then anytime 'BREAK'
+was pushed the emulator would also push the TRS-80's shift key.
+This features allows keys that are not shifted on a PC keyboard
+to be shifted on the TRS-80 keyboard (like '=') or shifted keys
+to be unshifted (like &quot;@&quot;).</p>
+
+<p>The following table is to be used to find the first byte of
+the keyboard map value for entry type 1. The values in this table
+are in hex.</p>
+
+<p><img src="images/trskey2.gif" width="511" height="145"></p>
+
+<p>For example. If you look at the PC scancode graphic you will
+see that the '= +' key has a scan code of 13. If you look at the
+27th byte of the PC80, PC81 or PC83 keyboard map file you will
+see a value of 85 (55 hex). Looking at the able above shows a
+value of 55H represents the TRS-80 '- =' key. The '- =' key is in
+row 5 column 5 for the TRS-80 keyboard matrix.</p>
+
+<p>The 4th byte of the keyboard map file is a one. This means the
+key is shifted. When this key is pushed the TRS-80 will be sent
+the '- =' key along with a shift key.</p>
+
+<p>Most of the PC keys mapped to the TRS-80 layout in the first
+half of the keyboard map will have an entry type of 0 since this
+section is used when neither of the PC shift keys are pushed.
+Most of the PC keys mapped to the TRS-80 layout in the second
+half of the keyboard map will have an entry type of 1 since this
+section is used when either of the PC shift keys are pushed.
+Also, in most cases the first byte of a key entry in the first
+half of the map will be the same as the one in the second part of
+the map since it is just the shifted value of the other. Some of
+the PC keys however will have very different values in each half
+of the map (like' = +') for example because of the differences
+between the PC and TRS-80 keyboard layouts.</p>
+
+<p>I hope this documentation will give users the information
+needed to create custom keyboard layouts.</p>
+
+<p>I want to thank Knut Roll-Lund (from Norway) for his help in
+documenting the keyboard map files. You can see how he made his
+own keyboard layout and download it at: <a
+href="http://knut.one/emul-kbd.htm">http://knut.one/~kr-lund/emul-kbd.htm</a></p>
+
+<p><a href="trsdoc.htm#Contents">Return
+to contents:</a>&nbsp; </p>
+
+<hr align="left">
+
+<p><a name="Technical-ports"></a><font size="5"><b>Technical Info
+- Emulator port/memory maps:</b></font> </p>
+
+<p>The Model 1 emulator memory map is as follows: </p>
+
+<table border="1" width="100%" cols="3">
+    <tr>
+        <td width="20%"><b>Memory range</b></td>
+        <td width="40%"><b>Read</b></td>
+        <td width="40%"><b>Write</b></td>
+    </tr>
+    <tr>
+        <td width="20%">37E0</td>
+        <td width="40%">Interrupt type (RTC or disk)</td>
+        <td width="40%">-unused-</td>
+    </tr>
+    <tr>
+        <td width="20%">37E1</td>
+        <td width="40%">-unused-</td>
+        <td width="40%">FDC select register</td>
+    </tr>
+    <tr>
+        <td width="20%">37E8 &amp; 37E9</td>
+        <td width="40%">Read printer status</td>
+        <td width="40%">Output to printer</td>
+    </tr>
+    <tr>
+        <td width="20%">37EC</td>
+        <td width="40%">FDC status register</td>
+        <td width="40%">FDC command register</td>
+    </tr>
+    <tr>
+        <td width="20%">37ED</td>
+        <td width="40%">FDC track register</td>
+        <td width="40%">FDC track register</td>
+    </tr>
+    <tr>
+        <td width="20%">37EE</td>
+        <td width="40%">FDC sector register</td>
+        <td width="40%">FDC sector register</td>
+    </tr>
+    <tr>
+        <td width="20%">37EF</td>
+        <td width="40%">FDC data register</td>
+        <td width="40%">FDC data register</td>
+    </tr>
+</table>
+
+<p>The Model 1 emulator port map is as follows: </p>
+
+<table border="1" width="100%" cols="3">
+    <tr>
+        <td width="20%"><b>Port range</b></td>
+        <td width="40%"><b>Read</b></td>
+        <td width="40%"><b>Write</b></td>
+    </tr>
+    <tr>
+        <td width="20%">FC, FD &amp; FF</td>
+        <td width="40%">Cassette data</td>
+        <td width="40%">cassette data&nbsp; <br>
+        cassette motor control&nbsp; <br>
+        Video mode (64/16 or 32/16)</td>
+    </tr>
+    <tr>
+        <td>FE</td>
+        <td>Cassette data</td>
+        <td>CPU speed control<br>
+        Bit0=0 &amp; bit1=0 = 1.774mhz<br>
+        Bit0=1 &amp; bit1=0 = 4mhz<br>
+        Bit0=1 &amp; bit1=1 = 8mhz<br>
+        Bit0=0 &amp; bit1=1 = 1mhz</td>
+    </tr>
+    <tr>
+        <td>EB</td>
+        <td>RS-232 Receiver holding register</td>
+        <td>RS-232 Transmitter holding register</td>
+    </tr>
+    <tr>
+        <td>EA</td>
+        <td>RS-232 UART status</td>
+        <td>RS-232 UART &amp; modem control</td>
+    </tr>
+    <tr>
+        <td>E9</td>
+        <td>RS-232 Configuration sense switches</td>
+        <td>RS-232 Baud rate load</td>
+    </tr>
+    <tr>
+        <td>E8</td>
+        <td>RS-232 Modem status register</td>
+        <td>RS-232 Master reset</td>
+    </tr>
+    <tr>
+        <td>CF</td>
+        <td>HDC Status Register</td>
+        <td>HDC Command Register</td>
+    </tr>
+    <tr>
+        <td>CE</td>
+        <td>HDC Sector Size/Drive#/Head#<br>
+        Bits 0-2: Head Number (0-7)<br>
+        Bits 3-4: Drive Number (0-3)<br>
+        Bits 5-6: Sector Size<br>
+        (only 256 byte sectors supported)</td>
+        <td>HDC Sector Size/Drive#/Head#</td>
+    </tr>
+    <tr>
+        <td>CD</td>
+        <td>HDC Cylinder Number MSB (bits 0-1 only)</td>
+        <td>HDC Cylinder Number MSB (bits 0-1 only)</td>
+    </tr>
+    <tr>
+        <td>CC</td>
+        <td>HDC Cylinder Number LSB</td>
+        <td>HDC Cylinder Number LSB</td>
+    </tr>
+    <tr>
+        <td>CB</td>
+        <td>HDC Sector Number</td>
+        <td>HDC Sector Number</td>
+    </tr>
+    <tr>
+        <td>CA</td>
+        <td>HDC Sector Count register (unsupported)</td>
+        <td>HDC Sector Count register (unsupported)</td>
+    </tr>
+    <tr>
+        <td>C9</td>
+        <td>HDC Error Status Register</td>
+        <td>HDC Write Precomp Cylinder</td>
+    </tr>
+    <tr>
+        <td>C8</td>
+        <td>HDC Data Port</td>
+        <td>HDC Data Port</td>
+    </tr>
+    <tr>
+        <td>C1</td>
+        <td>HDC Control Register<br>
+        Bit 3&nbsp;&nbsp;&nbsp;: If set, enables controller<br>
+        Bit 4&nbsp;&nbsp;&nbsp;: If set, resets controller</td>
+        <td>HDC Control Register</td>
+    </tr>
+    <tr>
+        <td>C0</td>
+        <td>HDC Write Protect Port<br>
+        Bit 0&nbsp;&nbsp;&nbsp;: INTRQ<br>
+        Bit 1&nbsp;&nbsp;&nbsp;: HWPL (set if any drive WPed)<br>
+        Bit 4-7: Drive 3-0 WPed</td>
+        <td>-unused-</td>
+    </tr>
+    <tr>
+        <td width="20%">B9</td>
+        <td width="40%">-unused-</td>
+        <td width="40%">Orchestra-85 left channel</td>
+    </tr>
+    <tr>
+        <td width="20%">B5</td>
+        <td width="40%">-unused-</td>
+        <td width="40%">Orchestra-85 right channel</td>
+    </tr>
+    <tr>
+        <td width="20%">0B</td>
+        <td width="40%">VS-100 status bit 7 (set if not-busy)</td>
+        <td width="40%">VS-100 phoneme data</td>
+    </tr>
+</table>
+
+<p>The Model III/4 emulator supports the TRS-80 Model 4 port map
+as follows: </p>
+
+<table border="1" width="100%" cols="3">
+    <tr>
+        <td width="20%"><b>Port range</b></td>
+        <td width="40%"><b>Read</b></td>
+        <td width="40%"><b>Write</b></td>
+    </tr>
+    <tr>
+        <td width="20%">FC-FF</td>
+        <td width="40%">mode output latch &amp; 500/1500 baud
+        cassette data</td>
+        <td width="40%">cassette data<br>
+        MicroLabs Model 3 Hi-Res graphics</td>
+    </tr>
+    <tr>
+        <td width="20%">F8-FB</td>
+        <td width="40%">read printer status (also mapped at
+        37E8-37E9)</td>
+        <td width="40%">output to printer (also mapped at
+        37E8-37E9)</td>
+    </tr>
+    <tr>
+        <td width="20%">F4-F7</td>
+        <td width="40%">-unused-</td>
+        <td width="40%">drive select</td>
+    </tr>
+    <tr>
+        <td width="20%">F3</td>
+        <td width="40%">FDC data register</td>
+        <td width="40%">FDC data register</td>
+    </tr>
+    <tr>
+        <td width="20%">F2</td>
+        <td width="40%">FDC sector register</td>
+        <td width="40%">FDC sector register</td>
+    </tr>
+    <tr>
+        <td width="20%">F1</td>
+        <td width="40%">FDC track register</td>
+        <td width="40%">FDC track register</td>
+    </tr>
+    <tr>
+        <td width="20%">F0</td>
+        <td width="40%">FDC status register</td>
+        <td width="40%">FDC command register</td>
+    </tr>
+    <tr>
+        <td width="20%">EC-EF</td>
+        <td width="40%">resets RTC interrupt</td>
+        <td width="40%">mode output latch</td>
+    </tr>
+    <tr>
+        <td>EB</td>
+        <td>RS-232 Receiver holding register</td>
+        <td>RS-232 Transmitter holding register</td>
+    </tr>
+    <tr>
+        <td>EA</td>
+        <td>RS-232 UART status</td>
+        <td>RS-232 UART &amp; modem control</td>
+    </tr>
+    <tr>
+        <td>E9</td>
+        <td>RS-232 Current baud rate &amp; UART configuration</td>
+        <td>RS-232 Baud rate load</td>
+    </tr>
+    <tr>
+        <td>E8</td>
+        <td>RS-232 Modem status register</td>
+        <td>RS-232 Master reset</td>
+    </tr>
+    <tr>
+        <td width="20%">E4-E7</td>
+        <td width="40%">read NMI status</td>
+        <td width="40%">write NMI mask register</td>
+    </tr>
+    <tr>
+        <td width="20%">E0-E3</td>
+        <td width="40%">read MI status</td>
+        <td width="40%">write MI mask register</td>
+    </tr>
+    <tr>
+        <td>CF</td>
+        <td>HDC Status Register</td>
+        <td>HDC Command Register</td>
+    </tr>
+    <tr>
+        <td>CE</td>
+        <td>HDC Sector Size/Drive#/Head#<br>
+        Bits 0-2: Head Number (0-7)<br>
+        Bits 3-4: Drive Number (0-3)<br>
+        Bits 5-6: Sector Size<br>
+        (only 256 byte sectors supported)</td>
+        <td>HDC Sector Size/Drive#/Head#</td>
+    </tr>
+    <tr>
+        <td>CD</td>
+        <td>HDC Cylinder Number MSB (bits 0-1 only)</td>
+        <td>HDC Cylinder Number MSB (bits 0-1 only)</td>
+    </tr>
+    <tr>
+        <td>CC</td>
+        <td>HDC Cylinder Number LSB</td>
+        <td>HDC Cylinder Number LSB</td>
+    </tr>
+    <tr>
+        <td>CB</td>
+        <td>HDC Sector Number</td>
+        <td>HDC Sector Number</td>
+    </tr>
+    <tr>
+        <td>CA</td>
+        <td>HDC Sector Count register (unsupported)</td>
+        <td>HDC Sector Count register (unsupported)</td>
+    </tr>
+    <tr>
+        <td>C9</td>
+        <td>HDC Error Status Register</td>
+        <td>HDC Write Precomp Cylinder</td>
+    </tr>
+    <tr>
+        <td>C8</td>
+        <td>HDC Data Port</td>
+        <td>HDC Data Port</td>
+    </tr>
+    <tr>
+        <td>C1</td>
+        <td>HDC Control Register<br>
+        Bit 3&nbsp;&nbsp;&nbsp;: If set, enables controller<br>
+        Bit 4&nbsp;&nbsp;&nbsp;: If set, resets controller</td>
+        <td>HDC Control Register</td>
+    </tr>
+    <tr>
+        <td>C0</td>
+        <td>HDC Write Protect Port<br>
+        Bit 0&nbsp;&nbsp;&nbsp;: INTRQ<br>
+        Bit 1&nbsp;&nbsp;&nbsp;: HWPL (set if any drive WPed)<br>
+        Bit 4-7: Drive 3-0 WPed</td>
+        <td>-unused-</td>
+    </tr>
+    <tr>
+        <td>9C-9F</td>
+        <td>-unused-</td>
+        <td>Model 4P boot ROM enable</td>
+    </tr>
+    <tr>
+        <td width="20%">90-93</td>
+        <td width="40%">-unused-</td>
+        <td width="40%">sound option</td>
+    </tr>
+    <tr>
+        <td width="20%">8E</td>
+        <td width="40%">hi-res graphics - display mode register</td>
+        <td width="40%">display mode register</td>
+    </tr>
+    <tr>
+        <td width="20%">8D</td>
+        <td width="40%">hi-res graphics - Y display offset</td>
+        <td width="40%">Y display offset</td>
+    </tr>
+    <tr>
+        <td width="20%">8C</td>
+        <td width="40%">hi-res graphics - X display offset</td>
+        <td width="40%">X display offset</td>
+    </tr>
+    <tr>
+        <td width="20%">84-87</td>
+        <td width="40%">-unused-</td>
+        <td width="40%">options register</td>
+    </tr>
+    <tr>
+        <td width="20%">83</td>
+        <td width="40%">hi-res graphics - control register</td>
+        <td width="40%">control register</td>
+    </tr>
+    <tr>
+        <td width="20%">82</td>
+        <td width="40%">hi-res graphics - data port</td>
+        <td width="40%">data port</td>
+    </tr>
+    <tr>
+        <td width="20%">81</td>
+        <td width="40%">hi-res graphics - Y address</td>
+        <td width="40%">Y address</td>
+    </tr>
+    <tr>
+        <td width="20%">80</td>
+        <td width="40%">hi-res graphics - X address</td>
+        <td width="40%">X address</td>
+    </tr>
+    <tr>
+        <td width="20%">79</td>
+        <td width="40%">-unused-</td>
+        <td width="40%">Orchestra-90 left channel</td>
+    </tr>
+    <tr>
+        <td width="20%">75</td>
+        <td width="40%">-unused-</td>
+        <td width="40%">Orchestra-90 right channel</td>
+    </tr>
+    <tr>
+        <td width="20%">0B</td>
+        <td width="40%">VS-100 status bit 7 (set if not-busy)</td>
+        <td width="40%">VS-100 phoneme data</td>
+    </tr>
+    <tr>
+        <td colspan="3" width="20%">Special EC-EF:&nbsp; <br>
+        Bit 7 of port enhances the CPU fast bit 6.&nbsp; <br>
+        If bit 7 is set and bit 6 clear then speed is 1mhz.&nbsp;
+        <br>
+        If bit 7 is set and bit 6 set then speed is 8mhz.&nbsp; <br>
+        If the user has selected turbo speed this port has no
+        effect on speed.</td>
+    </tr>
+</table>
+
+<p>Both the Model 1 and Model III/4 emulators support a TRS-80
+enhanced port map as follows: </p>
+
+<table border="1" width="100%" cols="3">
+    <tr>
+        <td width="20%"><b>Port range</b></td>
+        <td width="40%"><b>Read</b></td>
+        <td width="40%"><b>Write</b></td>
+    </tr>
+    <tr>
+        <td width="20%">71</td>
+        <td width="40%">I/O data register</td>
+        <td width="40%">I/O data register</td>
+    </tr>
+    <tr>
+        <td width="20%">70</td>
+        <td width="40%">I/O status register</td>
+        <td width="40%">I/O command register</td>
+    </tr>
+    <tr>
+        <td width="20%">6F</td>
+        <td width="40%">-unused-</td>
+        <td width="40%">re-calibrate joystick</td>
+    </tr>
+    <tr>
+        <td width="20%">6D</td>
+        <td width="40%">month in BCD format</td>
+        <td width="40%">joystick-keyboard map</td>
+    </tr>
+    <tr>
+        <td width="20%">6C</td>
+        <td width="40%">day in BCD format</td>
+        <td width="40%">joystick-keyboard map</td>
+    </tr>
+    <tr>
+        <td width="20%">6B</td>
+        <td width="40%">year in BCD format</td>
+        <td width="40%">joystick-keyboard map</td>
+    </tr>
+    <tr>
+        <td width="20%">6A</td>
+        <td width="40%">hours in BCD format</td>
+        <td width="40%">joystick-keyboard map</td>
+    </tr>
+    <tr>
+        <td width="20%">69</td>
+        <td width="40%">minutes in BCD format</td>
+        <td width="40%">joystick-keyboard map</td>
+    </tr>
+    <tr>
+        <td width="20%">68</td>
+        <td width="40%">seconds in BCD format&nbsp; <br>
+        Reading this port loads the ports 67-6C with the PC's
+        system date and time.</td>
+        <td width="40%">joystick-keyboard map</td>
+    </tr>
+    <tr>
+        <td width="20%">66</td>
+        <td width="40%">-unused-</td>
+        <td width="40%">joystick-keyboard map</td>
+    </tr>
+    <tr>
+        <td width="20%">65</td>
+        <td width="40%">-unused-</td>
+        <td width="40%">joystick-keyboard map</td>
+    </tr>
+    <tr>
+        <td width="20%">64</td>
+        <td width="40%">Axis 2 Y coordinate of joystick</td>
+        <td width="40%">joystick-keyboard map</td>
+    </tr>
+    <tr>
+        <td width="20%">63</td>
+        <td width="40%">Axis 2 X coordinate of joystick</td>
+        <td width="40%">joystick-keyboard map</td>
+    </tr>
+    <tr>
+        <td width="20%">62</td>
+        <td width="40%">Axis 1 Y coordinate of joystick</td>
+        <td width="40%">joystick-keyboard map</td>
+    </tr>
+    <tr>
+        <td width="20%">61</td>
+        <td width="40%">Axis 1 X coordinate of joystick</td>
+        <td width="40%">joystick-keyboard map</td>
+    </tr>
+    <tr>
+        <td width="20%">60</td>
+        <td width="40%">buttons pushed and locked axis</td>
+        <td width="40%">map options and locked axis</td>
+    </tr>
+    <tr>
+        <td width="20%">5F</td>
+        <td width="40%">get mouse sensitivity (0-15)</td>
+        <td width="40%">set mouse sensitivity (0-15)</td>
+    </tr>
+    <tr>
+        <td width="20%">5E</td>
+        <td width="40%">-unused-</td>
+        <td width="40%">set mouse max Y coordinate</td>
+    </tr>
+    <tr>
+        <td width="20%">5D</td>
+        <td width="40%">-unused-</td>
+        <td width="40%">set mouse max X coordinate</td>
+    </tr>
+    <tr>
+        <td width="20%">5C</td>
+        <td width="40%">-unused-</td>
+        <td width="40%">set mouse min Y coordinate</td>
+    </tr>
+    <tr>
+        <td width="20%">5B</td>
+        <td width="40%">-unused-</td>
+        <td width="40%">set mouse min X coordinate</td>
+    </tr>
+    <tr>
+        <td width="20%">5A</td>
+        <td width="40%">get mouse current Y coordinate</td>
+        <td width="40%">set mouse current Y coordinate</td>
+    </tr>
+    <tr>
+        <td width="20%">59</td>
+        <td width="40%">get mouse current X coordinate</td>
+        <td width="40%">set mouse current X coordinate</td>
+    </tr>
+    <tr>
+        <td width="20%">58</td>
+        <td width="40%">get mouse buttons</td>
+        <td width="40%">set mouse buttons</td>
+    </tr>
+    <tr>
+        <td>50-57</td>
+        <td>input from PC I/O port<br>
+        (as defined by port 70 commands)</td>
+        <td>output to PC I/O port<br>
+        (as defined by port 70 commands)</td>
+    </tr>
+</table>
+
+<p><a href="trsdoc.htm#Contents">Return to contents:</a>&nbsp; </p>
+</body>
+</html>
+
+
+
+
+
+<!--
+     FILE ARCHIVED ON 16:14:35 Apr 10, 2010 AND RETRIEVED FROM THE
+     INTERNET ARCHIVE ON 23:02:12 Jan 7, 2012.
+     JAVASCRIPT APPENDED BY WAYBACK MACHINE, COPYRIGHT INTERNET ARCHIVE.
+
+     ALL OTHER CONTENT MAY ALSO BE PROTECTED BY COPYRIGHT (17 U.S.C.
+     SECTION 108(a)(3)).
+-->

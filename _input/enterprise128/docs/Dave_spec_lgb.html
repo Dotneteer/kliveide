@@ -1,0 +1,541 @@
+<html>
+  <head>
+    <!-- base href=http://pmwww.cs.vu.nl/home/dsbouma/enterprise/hardware/Dave.html -->
+    <title>
+      Enterprise Technical Documentation: DPC Sound Chip
+    </title>
+  </head>
+  <body>
+    <h1>
+      <hr>
+      DPC Sound Chip.<code> </code>DPC/Dave/1<code> </code>Issue 5
+    </h1>
+    <h3>
+      Confidential.<code> </code>Copyright &#169; 1984 Intelligent Software LTD.
+      <hr>
+    </h3>
+    <h3>
+      The DPC Sound Chip performs the following functions:
+    </h3>
+    <ul>
+      <li>Multi&#173;function "3 tones + noise" stereo sound generator.
+      <li>Memory paging.
+      <li>Address decoding for on&#173;board RAM, ROM and cartridge.
+      <li>Interrupt system including 1<i>Hz</i> and programmable frequency
+          timer interrupts and two external inputs.
+      <li>Reset circuit compatible with Z80 and dynamic RAM.
+      <li>I/O strobe signals for use with external octal latches and
+          tri&#173;state buffers.
+      <li>1<i>MHz</i> system clock.
+      <li>Z80 wait state generator.
+    </ul>
+    <p>
+      The DPC Sound Chip has 22 internal registers, 17 of which are
+      write&#173;only. 16 of these registers are associated with the sound
+      generation, four R/W registers are for memory management, and one R/W
+      register is used for interrupt control. The last write&#173;only register
+      is used for setting the overall system configuration. Internal decoding
+      is provided for a further 3 I/O registers, read and write strobes being
+      brought out for use with external latches and tri&#173;state buffers on
+      the data bus. Reset clears all 22 internal registers.
+    </p>
+    <p>
+      The 3 tone generators produce a square wave with frequency programmable
+      from 30<i>Hz</i> to 125<i>KHz</i> which can be modified in various ways:
+    </p>
+    <ul>
+      <li>Distortion can be introduced by using the output frequency to sample
+          H.F. clocked polynomial counters. PN counters which can be selected
+          are 4,5 or 7&#173;bit. The 7&#173;bit PN can also be exchanged for a
+          variable length 17/15/11/9&#173;bit PN counter.
+      <li>A simple high pass filter is provided on each channel clocked by the
+          output of a different channel.
+      <li>A ring modulator effect is provided on each channel, with the output
+          of a different channel for it's other input.
+    </ul>
+    <p>
+      The noise channel is normally a 17 bit PN counter clocked from
+      31<i>KHz</i>, generating a pseudo white noise. The input to this counter
+      can be changed to clock of any of the 3 tone channels, and the PN counter
+      can be reduced in length to 15,11 or 9 bits. This counter can also be
+      exchanged for the 7&#173;bit PN counter. The resulting noise is then 
+      passed through high&#173;pass and low&#173;pass filters and a ring
+      modulator, each controlled by the output of a different tone channel.
+    </p>
+    <p>
+      The 3 tone generator outputs and the noise generator output are routed to
+      2 amplitude control circuits (left and right). Each amplitude control
+      consists of four 6&#173;bit write&#173;only registers (one for each sound)
+      which are multiplexed onto an external 6&#173;bit D/A resistor network.
+      In it's own time slot each channel outputs the value in it's amplitude
+      register if the tone is high, else zero.
+    </p>
+    <p>
+      Either or both of the sound output channels may be turned nto 6&#173;bit
+      D/A outputs, when they will constantly output the valuesin tone channel 0 
+      amplitude registers.  This is controlled by 2 bits in the write&#173;only
+      sound configuration register.  Three further bits may be used to
+      synchronise the tone generators by holding them at a preset count until
+      sync bit goes low.
+    </p>
+    <p>
+      Memory management consists of four read/write registers which may be
+      output onto <code>A14-A21</code> pins by selecting the required register
+      with <code>A14', A15'</code>. This provides 256 * 16K pages. These
+      outputs may be tri&#173;stated with <code>BREQ</code>.
+    </p>
+    <p>
+      Four latched interrupts are provided, a 1<i>Hz</i> interrupt for time
+      clock applications, an interrupt switchable between 50<i>Hz</i>,
+      1<i>KHz</i> or the outputs of tone generators 0 or 1, and two external
+      negative edge triggered interrupts. Each interrupt latch has it's own
+      enable and reset controlled by an 8&#173;bit write-only register. An 
+      attempt to read this register will return the state of the four interrupt
+      latches and two interrupt input pins, and also two flip&#173;flops 
+      toggling off the timer interrupts. The setting of any interrupt latch
+      will bring <code>IRQ</code> low (open drain).
+      50<i>Hz</i>/1<i>KHz</i>/tone generator interrupt selection is made by 2
+      bits in the sound configuration register.
+    </p>
+    <p>
+      Select signals are generated for ROM, cartridge, video RAM and video I/O.
+      A 1<i>MHz</i> clock output is also provided.
+    </p>
+    <p>
+      A Z80 is reset provided on <code>RSTO</code>, either on switch&#173;on by
+      an external RC network on <code>CAP</code>, or a low going signal on 
+      <code>RSTI</code>. The latter generates a 1<i>mS</i> reset pulse
+      synchronised to the falling edge of <code>M1</code> to prevent loss of
+      data stored in dynamic RAM. THE <code>RSTO</code> output requires an
+      external <code>74ALS04</code> inverter to drive the system reset line at
+      the correct speed an inversion.
+    </p>
+    <p>
+      A write&#173;only system configuration register is used to set the system
+      for 16/64K on&#173;board RAM, 8/12<i>MHz</i> input clock, and wait states.
+      The wait state generator can be programmed to give no wait states, waits
+      on opcode fetch only, or waits on all memory accesses. Note that no wait
+      is ever generated for access to video RAM, as this would conflict with
+      Z80 clock stretch.
+    </p>
+    <h2>
+      <br>Register Descriptions
+    </h2>
+    <dl>
+      <dt><a name=R0><code><b>R0 W #A0</b></code></a>
+      <dd><br>
+          <dl>
+            <dt><code><b>b7-b0</b></code>
+            <dd>Low byte of number to be loaded into 12&#173;bit down counter
+                to set period of tone channel 0.
+            <br><br>
+          </dl>
+
+      <dt><a name=R1><code><b>R1 W #A1</b></code></a>
+      <dd><br>
+          <dl>
+            <dt><code><b>b3-b0</b></code>
+            <dd>High nybble of above.
+                <var>Fout</var> = 125,000 / (<var>n</var>+1) <i>Hz</i>.
+
+            <dt><code><b>b5,b4</b></code>
+            <dd><br>
+                <dl>
+                  <dt><b>00</b> = Pure tone.
+                  <dt><b>01</b> = Enable 4&#173;bit polynomial counter distortion.
+                  <dt><b>10</b> = Enable 5&#173;bit polynomial counter distortion.
+                  <dt><b>11</b> = Enable 7&#173;bit polynomial counter distortion.
+                  <br><br>
+                </dl>
+
+            <dt><code><b>b6</b></code>
+            <dd><b>1</b> = Enable high pass filter using tone channel 1 as clock.
+
+            <dt><code><b>b7</b></code>
+            <dd><b>1</b> = Enable ring modulator with tone channel 2.
+            <br><br>
+          </dl>
+
+      <dt><code><b>R2 W #A2</b></code>
+      <dd><br>
+          <dl>
+            <dt><dd>As <a href=#R0><code><b>R0</b></code></a> but for tone channel 1.
+            <br><br>
+          </dl>
+
+      <dt><code><b>R3 W #A3</b></code>
+      <dd><br>
+          <dl>
+            <dt><dd>As <a href=#R1><code><b>R1</b></code></a> but for tone channel 1, except:
+            <dd><br>
+                <dl>
+                  <dt><dd>H.P.F. uses tone channel 2.
+                  <dt><dd>R.M. uses noise channel.
+                  <br><br>
+                </dl>
+          </dl>
+
+      <dt><code><b>R4 W #A4</b></code>
+      <dd><br>
+          <dl>
+            <dt><dd>As <a href=#R0><code><b>R0</b></code></a> but for tone channel 2.
+            <br><br>
+          </dl>
+
+      <dt><code><b>R5 W #A5</b></code>
+      <dd><br>
+          <dl>
+            <dt><dd>As <a href=#R1><code><b>R1</b></code></a> but for tone channel 2, except:
+            <dd><br>
+                <dl>
+                  <dt><dd>H.P.F. uses noise channel.
+                  <dt><dd>R.M. uses tone channel 0.
+                  <br><br>
+                </dl>
+          </dl>
+
+      <dt><code><b>R6 W #A6</b></code>
+      <dd><br>
+          <dl>
+            <dt><code><b>b1,b0</b></code>
+            <dd>Select noise clock frequency:
+                <br><br>
+                <dl>
+                  <dt><b>00</b> = 31.25 <i>KHz</i>
+                  <dt><b>01</b> = tone channel 0.
+                  <dt><b>10</b> = tone channel 1.
+                  <dt><b>11</b> = tone channel 2.
+                  <br><br>
+                </dl>
+
+            <dt><code><b>b3,b2</b></code>
+            <dd>Select polynomial counter length:
+                <br><br>
+                <dl>
+                  <dt><b>00</b> = 17&#173;bit.
+                  <dt><b>01</b> = 15&#173;bit.
+                  <dt><b>10</b> = 11&#173;bit.
+                  <dt><b>11</b> = 9&#173;bit.
+                  <br><br>
+                </dl>
+
+            <dt><code><b>b4</b></code>
+            <dd><b>1</b> = Swop 17&#173;bit and 7&#173;bit polynomial counters.
+
+            <dt><code><b>b5</b></code>
+            <dd><b>1</b> = Enable low pass filter on noise using tone channel 2 as
+                    clock
+
+            <dt><code><b>b6</b></code>
+            <dd><b>1</b> = Enable high pass filter on noise using tone channel 0 as
+                    clock
+
+            <dt><code><b>b7</b></code>
+            <dd><b>1</b> = Enable ring modulator with tone channel 1.
+            <br><br>
+          </dl>
+
+      <dt><a name=R7><code><b>R7 W #A7</b></code></a>
+      <dd><br>
+          <dl>
+            <dt><code><b>b0</b></code>
+            <dd>Sync for tone channel 0. (<b>1</b> = hold at preset, <b>0</b> = run).
+
+            <dt><code><b>b1</b></code>
+            <dd>Sync for tone channel 1.
+
+            <dt><code><b>b2</b></code>
+            <dd>Sync for tone channel 2.
+
+            <dt><code><b>b3</b></code></a>
+            <dd><b>1</b> = Turn L.H. audio output into D/A, outputting value in
+                <a href=#R8><code><b>R8</b></code></a>.
+
+            <dt><code><b>b4</b></code>
+            <dd><b>1</b> = Turn R.H. audio output into D/A, outputting value in
+                <a href=#R12><code><b>R12</b></code></a>.
+
+            <dt><code><b>b6,b5</b></code>
+            <dd>Select interrupt rate:
+                <br><br>
+                <dl>
+                  <dt><b>00</b> = 1<i>KHz</i>.
+                  <dt><b>01</b> = 50<i>Hz</i>.
+                  <dt><b>10</b> = Tone generator 0. <var>f</var> = 250,000/(<var>n</var>+1)
+                  <dt><b>11</b> = Tone generator 1.
+                  <br><br>
+                </dl>
+
+            <dt><code><b>b7</b></code>
+            <dd>Undefined.
+            <br><br>
+          </dl>
+
+      <dt><a name=R8><code><b>R8 W #A8</b></code></a>
+      <dd><br>
+          <dl>
+            <dt><code><b>b5-b0</b></code>
+            <dd>Tone channel 0 L.H. amplitude.
+                <br>
+                Also value output to L.H. D/A if
+                <a href=#R7><code><b>R7.b3</b></code></a> = <b>1</b>.
+            <dt><code><b>b7,b6</b></code><dd>Undefined.
+            <br><br>
+          </dl>
+
+      <dt><code><b>R9 W #A9</b></code>
+      <dd><br>
+          <dl>
+            <dt><code><b>b5-b0</b></code><dd>Tone channel 1 L.H. amplitude.
+            <dt><code><b>b7,b6</b></code><dd>Undefined.
+            <br><br>
+          </dl>
+
+      <dt><code><b>R10 W #AA</b></code>
+      <dd><br>
+          <dl>
+            <dt><code><b>b5-b0</b></code><dd>Tone channel 2 L.H. amplitude.
+            <dt><code><b>b7,b6</b></code><dd>Undefined.
+            <br><br>
+          </dl>
+
+      <dt><code><b>R11 W #AB</b></code>
+      <dd><br>
+          <dl>
+            <dt><code><b>b5-b0</b></code><dd>Noise channel L.H. amplitude.
+            <dt><code><b>b7,b6</b></code><dd>Undefined.
+            <br><br>
+          </dl>
+
+      <dt><a name=R12><code><b>R12 W #AC</b></code></a>
+      <dd><br>
+          <dl>
+            <dt><code><b>b5-b0</b></code>
+            <dd>Tone channel 0 R.H. amplitude.
+                <br>
+                Also value output to R.H. D/A if 
+                <a href=#R7><code><b>R7.b4</b></code></a> = <b>1</b>.
+            <dt><code><b>b7,b6</b></code><dd>Undefined.
+            <br><br>
+          </dl>
+
+      <dt><code><b>R13 W #AD</b></code>
+      <dd><br>
+          <dl>
+            <dt><code><b>b5-b0</b></code><dd>Tone channel 1 R.H. amplitude.
+            <dt><code><b>b7,b6</b></code><dd>Undefined.
+            <br><br>
+          </dl>
+
+      <dt><code><b>R14 W #AE</b></code>
+      <dd><br>
+          <dl>
+            <dt><code><b>b5-b0</b></code><dd>Tone channel 2 R.H. amplitude.
+            <dt><code><b>b7,b6</b></code><dd>Undefined.
+            <br><br>
+          </dl>
+
+      <dt><code><b>R15 W #AF</b></code>
+      <dd><br>
+          <dl>
+            <dt><code><b>b5-b0</b></code><dd>Noise channel R.H. amplitude.
+            <dt><code><b>b7,b6</b></code><dd>Undefined.
+            <br><br>
+          </dl>
+
+      <dt><code><b>R16 R/W #B0</b></code>
+      <dd><br>
+          <dl>
+            <dt><code><b>b7-b0</b></code>
+            <dd>Page register output to <code>A21-A14</code> if
+                <code>A15',A14'</code> = <b>00</b>
+            <br><br>
+          </dl>
+
+      <dt><code><b>R17 R/W #B1</b></code>
+      <dd><br>
+          <dl>
+            <dt><code><b>b7-b0</b></code>
+            <dd>Page register output to <code>A21-A14</code> if
+                <code>A15',A14'</code> = <b>01</b>
+            <br><br>
+          </dl>
+
+      <dt><code><b>R18 R/W #B2</b></code>
+      <dd><br>
+          <dl>
+            <dt><code><b>b7-b0</b></code>
+            <dd>Page register output to <code>A21-A14</code> if
+                <code>A15',A14'</code> = <b>10</b>
+            <br><br>
+          </dl>
+
+      <dt><code><b>R19 R/W #B3</b></code>
+      <dd><br>
+          <dl>
+            <dt><code><b>b7-b0</b></code>
+            <dd> Page register output to <code>A21-A14</code> if
+                 <code>A15',A14'</code> = <b>11</b>
+            <br><br>
+          </dl>
+
+      <dt><code><b>R20 W #B4</b></code>
+      <dd><br>
+          <dl>
+            <dt><code><b>b0</b></code>
+            <dd><b>1</b> = enable 1<i>KHz</i> / 50<i>Hz</i> / TG interrupt.
+
+            <dt><code><b>b1</b></code>
+            <dd><b>1</b> = reset 1<i>KHz</i> / 50<i>Hz</i> / TG interrupt latch.
+
+            <dt><code><b>b2</b></code>
+            <dd><b>1</b> = enable 1<i>Hz</i> interrupt.
+
+            <dt><code><b>b3</b></code>
+            <dd><b>1</b> = reset 1<i>Hz</i> interrupt latch.
+
+            <dt><code><b>b4</b></code>
+            <dd>enable <code>INT1</code>.
+
+            <dt><code><b>b5</b></code>
+            <dd>reset <code>INT1</code> latch.
+
+            <dt><code><b>b6</b></code>
+            <dd>enable <code>INT2</code>.
+
+            <dt><code><b>b7</b></code>
+            <dd>reset <code>INT2</code> latch.
+
+            <br><br>
+          </dl>
+
+      <dt><code><b>R20 R #B4</b></code>
+      <dd><br>
+          <dl>
+            <dt><code><b>b0</b></code>
+            <dd>1<i>KHz</i> / 50<i>Hz</i> / TG divider. (<var>f</var> int/2 square
+                wave).
+
+            <dt><code><b>b1</b></code>
+            <dd><b>1</b> = 1<i>KHz</i> / 50<i>Hz</i> / TG latch set.
+
+            <dt><code><b>b2</b></code>
+            <dd>1<i>Hz</i> divider. (0.5 <i>Hz</i> square wave).
+
+            <dt><code><b>b3</b></code>
+            <dd><b>1</b> = 1<i>Hz</i> latch set.
+
+            <dt><code><b>b4</b></code>
+            <dd><code>INT1</code> input pin.
+
+            <dt><code><b>b5</b></code>
+            <dd><b>1</b> = <code>INT1</code> latch set.
+
+            <dt><code><b>b6</b></code>
+            <dd><code>INT2</code> input pin.
+
+            <dt><code><b>b7</b></code>
+            <dd><b>1</b> = <code>INT2</code> latch set.
+
+            <br><br>
+          </dl>
+
+      <dt><code><b>R21 W #B5</b></code>
+      <dd><br>
+          <dl>
+            <dt><dd>Active low strobe on <code>WR0</code>.
+            <br><br>
+          </dl>
+
+      <dt><code><b>R21 R #B5</b></code>
+      <dd><br>
+          <dl>
+            <dt><dd>Active low strobe on <code>RD0</code>.
+            <br><br>
+          </dl>
+
+      <dt><code><b>R22 W #B6</b></code>
+      <dd><br>
+          <dl>
+            <dt><dd>Active low strobe on <code>WR1</code>.
+            <br><br>
+          </dl>
+
+      <dt><code><b>R22 R #B6</b></code>
+      <dd><br>
+          <dl>
+            <dt><dd>Active low strobe on <code>RD1</code>.
+            <br><br>
+          </dl>
+
+      <dt><code><b>R23 W #B7</b></code>
+      <dd><br>
+          <dl>
+            <dt><dd>Active low strobe on <code>WR2</code>.
+            <br><br>
+          </dl>
+
+      <dt><code><b>R23 R #B7</b></code>
+      <dd><br>
+          <dl>
+            <dt><dd>Active low strobe on <code>RD2</code>.
+            <br><br>
+          </dl>
+
+      <dt><a name=R31><code><b>R31 R #BF</b></code></a>
+      <dd><br>
+          <dl>
+            <dt><code><b>b0</b></code>
+            <dd>On&#173;board RAM. <b>0</b> = 64K, <b>1</b> = 16K.
+
+            <dt><code><b>b1</b></code>
+            <dd>Input clock frequency. <b>0</b> = 8<i>MHz</i>, <b>1</b> = 12<i>MHz</i>.
+
+            <dt><code><b>b3,b2</b></code>
+            <dd><br>
+                <dl>
+                  <dt><b>00</b> = Wait on all memory access except video RAM.
+                  <dt><b>01</b> = Wait on <code>M1</code> only, except video RAM.
+                  <dt><b>10</b> = No waits.
+                  <dt><b>11</b> = No waits.
+                  <br><br>
+                </dl>
+          </dl>
+    </dl>
+    <h2>
+      <br>Select Outputs
+    </h2>
+    <dl>
+      <dt><code><b>VIO</b></code>
+      <dd>    Low for I/O access <code>#80</code> to <code>#8F</code>/
+          <br>Gated with <code>IORQ,RD,RW</code> in video chip.
+
+      <br><br>
+      <dt><code><b>ROM</b></code>
+      <dd>    Low for memory access on pages 0-3. (<code>#0-#FFFF</code>)
+          <br>Gated externally with <code>RD</code>.
+
+      <br><br>
+      <dt><code><b>CART</b></code>
+      <dd>    Low for memory access on pages 4-7. (<code>#10000-#1FFFF</code>)
+          <br>Gated externally with <code>RD,WR</code>.
+
+      <br><br>
+      <dt><code><b>VRAM</b></code>
+      <dd>   Low for any memory access on pages <code>#FC-#FF</code>
+             <code>(#3F0000-#3FFFFF)</code> <strong>if</strong>
+             <a href=#R31><code><b>R31.b0</b></code></a> = <b>0</b>.
+          <p>
+             Low for any memory access other than ROM or cartridge
+             <code>(#20000-#3FFFFF)</code> <strong>if</strong>
+             <a href=#R31><code><b>R31.b0</b></code></a> = <b>1</b>.
+          <p>
+             Gated with <code>MREQ,RD,WR</code> in video chip.
+    </dl>
+    <hr>
+    <address>
+      David Bouman.
+      (<a href=mailto:dsbouma@cs.vu.nl>dsbouma@cs.vu.nl</a>).
+    </address>
+  </body>
+</html>

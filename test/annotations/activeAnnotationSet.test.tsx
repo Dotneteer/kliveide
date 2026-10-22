@@ -265,3 +265,48 @@ describe("ann-* commands", () => {
     ]);
   });
 });
+
+describe("ann-* commands with no project open", () => {
+  /*
+   * A relative path with no project to resolve it in is refused. Passed on, the main process would
+   * resolve it against the app's own folder: `ann-new zx80.rom.dis` once wrote a stray annotation
+   * set into the repository's `src/public`.
+   */
+  it("ann-new refuses a relative path and writes nothing", async () => {
+    const { context, fs } = contextFor(MI_SPECTRUM_48, fileSystem(), null);
+    const result = await new AnnotationNewCommand().execute(context, { file: "zx80.rom.dis" });
+    expect(result.success).toBe(false);
+    expect(result.finalMessage).toContain("relative path");
+    expect(fs.projectService.saveFileContent).not.toHaveBeenCalled();
+  });
+
+  it("ann-new takes an absolute path", async () => {
+    const { context, fs } = contextFor(MI_SPECTRUM_48, fileSystem(), null);
+    const result = await new AnnotationNewCommand().execute(context, { file: "/work/game.dis" });
+    expect(result.success).toBe(true);
+    expect(fs.saved["/work/game.dis"]).toBeDefined();
+  });
+
+  it("ann-open refuses a relative path", async () => {
+    const { context, fs } = contextFor(MI_SPECTRUM_48, fileSystem(), null);
+    const result = await new AnnotationOpenCommand().execute(context, { file: "g.dis" });
+    expect(result.success).toBe(false);
+    expect(fs.projectService.readFileContent).not.toHaveBeenCalled();
+  });
+});
+
+describe("ann-new with a ROM-like name", () => {
+  it("creates the set, and points to rom-ann-new for a ROM's own annotations", async () => {
+    const { context, fs, lines } = contextFor(MI_SPECTRUM_48);
+    const result = await new AnnotationNewCommand().execute(context, { file: "zx80.rom.dis" });
+    expect(result.success).toBe(true);
+    expect(fs.saved["/proj/zx80.rom.dis"]).toBeDefined();
+    expect(lines.join("\n")).toContain("rom-ann-new");
+  });
+
+  it("says nothing for an ordinary name", async () => {
+    const { context, lines } = contextFor(MI_SPECTRUM_48);
+    await new AnnotationNewCommand().execute(context, { file: "game.dis" });
+    expect(lines.join("\n")).not.toContain("rom-ann-new");
+  });
+});

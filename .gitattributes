@@ -1,1 +1,4 @@
 *.pdf binary
+src/common/i18n/*.generated.ts text eol=lf
+src/public/roms/*.rom.dis text eol=lf
+src/public/roms/rom-annotations.index.json text eol=lf

@@ -43,11 +43,19 @@ import { Zx80Chars, Zx81Chars, ZxNextChars, ZxSpectrumChars } from "./char-codes
 import { DisassemblyOptions, MemorySection } from "@renderer/appIde/disassemblers/common-types";
 import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z80-disassembler";
 import { ZxSpectrum48CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/zx-spectrum-48-disassembler";
+import { nextZxOsDecoderFor } from "@renderer/appIde/disassemblers/z80-disassembler/nextzxos-disassembler";
 import { ZxSpectrumNextCustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/zx-spectrum-next-disassembler";
 import { Z88CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z88-custom.disassembler";
+import { Zx80CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/zx80-disassembler";
 import { Zx81CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/zx81-disassembler";
 import {
+  plus3SyntaxDecoder,
+  ZxSpectrum128EditorCustomDisassembler
+} from "@renderer/appIde/disassemblers/z80-disassembler/zx-spectrum-128-editor-disassembler";
+import {
+  ChainedCustomDisassembler,
   gateOnRom,
+  RomGatedCustomDisassembler,
   type CustomDisassemblerFactory
 } from "@renderer/appIde/disassemblers/z80-disassembler/rom-gated-disassembler";
 import { ZX80_MODELS, ZX81_MODELS } from "@emu/machines/zx8081/zx8081MachineInfo";
@@ -218,9 +226,75 @@ const Z88_MODELS: MachineModel[] = [
 const spectrum48CustomDisassembler: CustomDisassemblerFactory = (context) =>
   gateOnRom(new ZxSpectrum48CustomDisassembler(), context, 0x4000);
 
+/**
+ * The 128K lists its 48K BASIC ROM with the 48K decoding and its editor ROM with the editor's (the
+ * ROM 1 address after `RST $28`), each only in its own page. Without a context — a caller that knows
+ * nothing of the paging — only the 48K decoding applies, to the ROM area, as before.
+ */
+const spectrum128CustomDisassembler: CustomDisassemblerFactory = (context) =>
+  new ChainedCustomDisassembler([
+    gateOnRom(new ZxSpectrum48CustomDisassembler(), context, 0x4000),
+    new RomGatedCustomDisassembler(new ZxSpectrum128EditorCustomDisassembler(), (address) =>
+      context ? !!context.inRomOfKind?.(address, "sp128-editor") : false
+    )
+  ]);
+
+/**
+ * The +2A/+3/+3E list their 48K BASIC ROM (ROM 3) with the 48K decoding and their editor ROM (ROM 0)
+ * with the ROM 3 address after `RST $28`, and their syntax ROM (ROM 1) with that and the inline
+ * addresses after `CALL $3F00` (ROM 2) and `CALL $3E80` (ROM 0), each only in its own page. Without a context only the 48K
+ * decoding applies, to the ROM area, as before.
+ */
+const spectrumP3CustomDisassembler: CustomDisassemblerFactory = (context) =>
+  new ChainedCustomDisassembler([
+    gateOnRom(new ZxSpectrum48CustomDisassembler(), context, 0x4000),
+    new RomGatedCustomDisassembler(
+      new ZxSpectrum128EditorCustomDisassembler({ decodeErrorCalls: false, otherRom: "ROM 3" }),
+      (address) => (context ? !!context.inRomOfKind?.(address, "plus3-editor") : false)
+    ),
+    new RomGatedCustomDisassembler(plus3SyntaxDecoder(), (address) =>
+      context ? !!context.inRomOfKind?.(address, "plus3-syntax") : false
+    )
+  ]);
+
+/**
+ * The Next: its own opcodes everywhere, and its 48K BASIC ROM page (NextZXOS's ROM 3) with the 48K
+ * decoding (report codes after `RST $08`, calculator literals after `RST $28`), only in that page; its
+ * pages 0-2, the alternate ROM's pages, the DivMMC ROM and the Multiface ROM with the inline data after their restarts and calls,
+ * each only in its own page.
+ */
+const nextCustomDisassembler: CustomDisassemblerFactory = (context) =>
+  new ChainedCustomDisassembler([
+    new ZxSpectrumNextCustomDisassembler(),
+    new RomGatedCustomDisassembler(new ZxSpectrum48CustomDisassembler(), (address) =>
+      context ? !!context.inRomOfKind?.(address, "next-basic") : false
+    ),
+    ...(["next-os0", "next-os1", "next-os2", "next-alt0", "next-alt1", "next-divmmc", "next-multiface"] as const).map(
+      (kind) =>
+        new RomGatedCustomDisassembler(nextZxOsDecoderFor(kind)!, (address) =>
+          context ? !!context.inRomOfKind?.(address, kind) : false
+        )
+    )
+  ]);
+
 /** The ZX81 ROM's calculator, decoded only in the ZX81 ROM (also the ZX80's 8K upgrade, §4.7) */
 const zx81CustomDisassembler: CustomDisassemblerFactory = (context) =>
   gateOnRom(new Zx81CustomDisassembler(), context, 0x2000);
+
+/**
+ * A ZX80 lists its own 4K ROM with the ZX80's decoding (the error code after `RST $08`; no
+ * calculator) and the 8K upgrade, the ZX81's ROM, with the ZX81's. Without a context — a caller that
+ * knows nothing of the paging — the machine's usual 4K ROM is assumed.
+ */
+const zx80CustomDisassembler: CustomDisassemblerFactory = (context) =>
+  new ChainedCustomDisassembler([
+    new RomGatedCustomDisassembler(new Zx81CustomDisassembler(), (address) =>
+      context ? context.inDescribedRom(address) : false
+    ),
+    new RomGatedCustomDisassembler(new Zx80CustomDisassembler(), (address) =>
+      context ? !!context.inZx80Rom?.(address) : (address & 0xffff) < 0x1000
+    )
+  ]);
 
 /**
  * The registry of available machine types with their available models
@@ -307,7 +381,7 @@ export const machineRegistry: MachineInfo[] = [
         partitionLabels?: string[],
         options?: DisassemblyOptions
       ) => new Z80Disassembler(memorySections, memoryContents, partitionLabels, options),
-      [CT_CUSTOM_DISASSEMBLER]: spectrum48CustomDisassembler,
+      [CT_CUSTOM_DISASSEMBLER]: spectrum128CustomDisassembler,
     }
   },
   {
@@ -339,7 +413,7 @@ export const machineRegistry: MachineInfo[] = [
         partitionLabels?: string[],
         options?: DisassemblyOptions
       ) => new Z80Disassembler(memorySections, memoryContents, partitionLabels, options),
-      [CT_CUSTOM_DISASSEMBLER]: spectrum48CustomDisassembler,
+      [CT_CUSTOM_DISASSEMBLER]: spectrumP3CustomDisassembler,
     }
   },
   {
@@ -383,7 +457,7 @@ export const machineRegistry: MachineInfo[] = [
         partitionLabels?: string[],
         options?: DisassemblyOptions
       ) => new Z80Disassembler(memorySections, memoryContents, partitionLabels, options),
-      [CT_CUSTOM_DISASSEMBLER]: () => new ZxSpectrumNextCustomDisassembler()
+      [CT_CUSTOM_DISASSEMBLER]: nextCustomDisassembler
     }
   },
   {
@@ -550,7 +624,7 @@ export const machineRegistry: MachineInfo[] = [
         partitionLabels?: string[],
         options?: DisassemblyOptions
       ) => new Z80Disassembler(memorySections, memoryContents, partitionLabels, options),
-      [CT_CUSTOM_DISASSEMBLER]: zx81CustomDisassembler,
+      [CT_CUSTOM_DISASSEMBLER]: zx80CustomDisassembler,
       [CT_DISASSEMBLER_VIEW]: {
         showRamOption: false,
         showScreenOption: false

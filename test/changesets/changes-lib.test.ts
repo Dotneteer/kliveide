@@ -227,6 +227,7 @@ describe("display, slugs and the PR gate", () => {
     [{ files: [{ path: "src/main/a.ts", status: "M" }, { path: ".changes/README.md", status: "M" }] }, false],
     [{ files: [{ path: "src/main/a.ts", status: "M" }, { path: ".changes/a-1234.md", status: "D" }] }, false],
     [{ files: [{ path: "docs/content/en/x.mdx", status: "M" }, { path: "README.md", status: "M" }, { path: "test/x.test.ts", status: "A" }] }, true],
+    [{ files: [{ path: "_input/enterprise128/README.md", status: "A" }, { path: "_input/ht1080z/manual.pdf", status: "A" }] }, true],
     [{ files: [{ path: "src/a.ts", status: "M" }], labels: ["no-changeset"] }, true],
     [{ files: [{ path: "package.json", status: "M" }], author: "dependabot[bot]" }, true],
     [{ files: [{ path: "package.json", status: "M" }], headRef: "release/v0.64.0" }, true]

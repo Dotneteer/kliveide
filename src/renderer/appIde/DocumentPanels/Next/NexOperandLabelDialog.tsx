@@ -1,3 +1,4 @@
+import { InstructionText } from "@renderer/controls/data/DisassemblyText";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Button } from "@renderer/controls/Button";
 import { TextInput } from "@renderer/controls/TextInput";
@@ -136,7 +137,9 @@ export function NexOperandLabelDialog({
   return (
     <form onSubmit={submit}>
       <DialogRow label={t("panels.next.field.instruction")} rows={true}>
-        <div className={styles.readOnlyValue}>{instruction}</div>
+        <div className={styles.readOnlyValue}>
+          <InstructionText text={instruction} />
+        </div>
       </DialogRow>
       {operands.length > 1 && (
         <DialogRow label={t("panels.next.operandLabel.operand")} rows={true}>

@@ -264,8 +264,8 @@ colouring one never touches the others or the still-neutral panels. Full role ta
   because legibility of the actual data was the point of §5.2 and still is here.
 - **A highlight that could be confused with the anchor takes the secondary accent instead of
   echoing the primary.** The memory dump's hovered byte and disassembly's opcode bytes both ended up
-  here; disassembly's jump-target label did not, because a label is a *name for* the address rather
-  than a different kind of information, so it deliberately shares the address's hue.
+  here. Disassembly's labels take neither accent: they are in the syntax label hue, with every other
+  disassembly (see "one colour set" below).
 - **Give a shared component (`AddressLabel`, `controls/layout`'s `Secondary`/`Value`/`Label`,
   `Tooltip`/`TooltipFactory`) an optional `className`** merged onto its existing class, rather than
   forking it or restyling it for everyone. Every other one of its 20+ other call sites simply does
@@ -292,6 +292,20 @@ colouring one never touches the others or the still-neutral panels. Full role ta
   shared `FlagFieldRow` takes `tooltipBelow` for the same. The box covers the rows below while the
   pointer is there, which is harmless: tooltips are `pointer-events: none`.
 
+- **Something worth reading is a hover card, not a tooltip.** A native `title` and `Tooltip` are
+  for a phrase: `title` is tiny, on the platform's clock (about a second), and only covers its own
+  element; `Tooltip` is `pointer-events: none`, so it cannot be held open. An explanation of several
+  lines (the ROM annotation editor's completeness levels) uses `controls/HoverCard`: it opens after
+  250ms over the **whole** anchor (wrap the cell, chip or column head, not the text inside it),
+  stays open while the pointer moves onto it, closes 150ms after the pointer leaves both, and on
+  Escape; keyboard focus opens it too (give a non-interactive anchor `tabIndex={0}`). It takes the
+  portalled-menu frame (`--bg-color-dropdown-menu`, its border, `--shadow-context-menu`,
+  `--radius-md`, `--z-menu`) at `--font-size-300` and `44ch` wide. It is hit-testable, which is safe
+  only because it opens beside its anchor (below, or above when there is no room) and never over it -
+  the anchor/overlay overlap trap below. One card per thing explained, shown from every place that
+  thing appears, and the anchor drops its `title` so two boxes never compete. Inside the card, hue
+  only where the state is: a reached step in `--status-success`, the next one in `--accent-text`, the
+  current one on `--accent-subtle`.
 - **A row tooltip and a cell tooltip inside it are two boxes for one pointer.** Where a row's cells
   each have something to say — 192 array bytes, eight flag bits — do not give the cells tooltips
   *and* the row one: both appear, at different placements and on different timings, and a native
@@ -314,14 +328,23 @@ colouring one never touches the others or the still-neutral panels. Full role ta
   every register/state panel has the same single role — "this is a live value". Adding
   `--color-ula-value`, `--color-vic-value` and so on would be a near-identical family per panel.
   Split it the day a panel needs a role the others do not have.
-- **A name in the live disassembly takes the label hue of its *source*, never a hue per source.**
-  The live view labels rows through the shared resolver (build symbols, the active annotation set,
-  the ROM's annotations): a generated `L1234` keeps `--color-disassembly-label` (the address's
-  accent, a name *for* the address), a named row takes the annotated listing's
-  `--color-annotation-label`, and a ROM label takes `--color-disassembly-rom-label` — the same
-  syntax-label hue, set back by **weight and slant** (400, italic) rather than by a fourth hue,
-  because it names the machine's code rather than the program's and a reader scanning for their
-  own routines should not have to read past every ROM call. Which source named the row, and the
+- **Every disassembly Klive shows uses one colour set, `--color-disassembly-*`, wherever it is
+  shown** — the live Disassembly view, every file viewer and ROM page, the execution history, the
+  breakpoints panel, the annotation dialogs, the Copper list and the `dis`/`history` console output.
+  The address and opcodes take the accent pair (address primary, opcodes secondary), the instruction
+  is bold `--text-primary` (the most legible thing in the row), and the rest speaks the editor's
+  syntax palette: **every** label — generated `L1234` or named — in the label hue, a substituted name
+  in an operand in the operand hue, data in the directive hue, a comment green and italic. There
+  were two tables once (machine rows: accent labels, grey comments; annotated rows: syntax hues), and
+  the same line looked finished in one view and unfinished in another; the author asked for one set.
+  Outside `DisassemblyRow`, draw an instruction with `InstructionText` and take the role classes from
+  `disassemblyText` (`controls/data/DisassemblyText.tsx`); a console writer uses the `disasm-*`
+  `OutputColor`s, which paint in the same tokens. **A flag that gates tools never picks colours:**
+  `annotated` on `DisassemblyRow` now adds only the provenance rail. The source editor (`.kz80.asm`)
+  keeps Monaco's palette, where the mnemonic is the accent keyword — it is source, not a listing.
+- **A ROM label is the label hue set back by weight and slant** (400, italic) rather than by a
+  fourth hue, because it names the machine's code rather than the program's and a reader scanning for
+  their own routines should not have to read past every ROM call. Which source named the row, and the
   other names the address has, go in the label's tooltip, not in the colour.
 - **Data is painted as a directive by what the row *is*, not by the region it sits in.** A custom
   disassembler writes the bytes after a ROM restart that takes inline data (`RST $08`'s report
@@ -797,6 +820,11 @@ field below it each time the choice above changes, which reads as the dialog jum
 pointer. The same holds for anything else whose size follows the choice (a hint, a button label):
 keep it to one fixed size, or keep it constant.
 
+**A row of radio options wraps into two rows before it crowds.** A `RadioGroup` laid out as one row
+(`columns` = the option count) stays readable up to about six short labels; beyond that the labels
+run into each other (the region dialog's nine types did). Give it `columns={Math.ceil(n / 2)}`:
+two even rows, aligned in a grid, never a free wrap that leaves one orphan.
+
 ## A Dialog Row Is Spaced Once
 
 Inside a `DialogForm`, the form body's gap (`--space-4`) is what separates one `DialogRow` from the
@@ -1146,9 +1174,18 @@ toggle, no to-do stepping), and the annotation editor raises **no warning glyph*
 means a load or save failed; read-only is a decision, and dressing it as a failure makes users hunt for
 an error that is not there.
 
+**Its rows keep the annotated colour table.** Which table a listing row uses (`annotated` on
+`DisassemblyRow`: syntax-comment italics, label and operand hues, directive hue, the rail) follows
+whether the bank's annotations are *loaded* (`annotationsShown`), never whether they can be *edited*
+(`annotationsAvailable`). Tying the two made a shipped ROM sidecar, which opens read-only, show grey
+upright comments and accent labels while its own working copy showed the annotated colours: the same
+lines looked finished in one and unfinished in the other. A flag that gates tools must not pick
+colours.
+
 ## A File Path In A Panel Carries Its Reveal Button
 
-Where a document shows the file it edits (the ROM annotation editor's **File** row), a
+Where a document shows the file it edits (the **File** section of the ROM annotation editor's
+inspector), a
 `SmallIconButton` with the `folder-opened` icon sits right after the path, titled "Reveal in Finder"
 or "Reveal in File Explorer" from the store's `isWindows` - the same wording as the Explorer's and the
 document tab's context menus, so the action reads the same wherever it is found. It is shown only for a
@@ -1158,6 +1195,50 @@ a button that does nothing is worse than none.
 A choice that only applies to one option of another choice (a bytes region's **Format** in the region
 dialog) appears only while that option is selected, as its own `RadioGroup` row directly below, rather
 than being shown disabled for every other type.
+
+## An Action's Verdict Is Shown Where The Action Was Started
+
+A command run from a button or a menu writes to the Commands pane, which is usually hidden, so a
+result the user must see — the export's "does it reassemble" check — is the command's `finalMessage`
+(an error result when it fails), and the button or menu shows it in a message box (`error` when it
+failed). Never leave such a verdict only in the command output. A listing header's one-click action
+is a `SmallIconButton` placed in the same `PanelHeaderGroup` just before the tools menu
+(`ReverseToolsMenu`), so the frequent action is one click and the rest stay one menu away.
+
+## A File And Its Parts: An Inspector Column Beside The List
+
+A document about one file made of parts (the ROM annotation editor: a sidecar and its ROM pages) is
+two panes in one grid: an **inspector column** (`34ch`, `--surface-panel`, a `--border-default`
+seam) with everything about the file in labelled sections - where it is, what kind (the kind is a
+badge in the column's `PanelHeader`: accent subtle for an editable file, the warning hue's subtle
+fill for **Read-only**), readiness, settings, actions and their outcomes - and beside it the **parts
+list**, one row per part under its own `PanelHeader` with a count. Rules it settled:
+
+- **Each pane scrolls in its own `ScrollViewer`** under its fixed header (`thinScrollBar`,
+  `overscroll-behavior: contain` on the overlay viewport, `min-height: 0` on the grid item), never by
+  native `overflow`: a native bar is an unthemed strip, and one scroll for the whole document lets a
+  tall inspector scroll the list out of view.
+- **The document's own width decides the layout** (`container-type: inline-size`, a query in `ch`):
+  narrow, the inspector stacks above the list with its sections side by side
+  (`repeat(auto-fill, minmax(30ch, 1fr))`), and the rows are `minmax(0, max-content)` and a list
+  minimum of five strips, so both panes still scroll on their own. **A container query cannot
+  restyle the container itself**: put the rule that must change on a child of it.
+- **`ch` tracks resolve against each grid's own font size.** Column heads drawn at 12px over 14px
+  rows put every `ch` column of the head out of line with the rows below it. The head keeps the
+  rows' font size and shrinks only its text (`> span { font-size }`).
+- **A table in a `ScrollViewer` gets a `min-width` equal to its minimum tracks, never
+  `max-content`**, which grows a `1fr` column to its longest cell and scrolls a table that fits.
+  Every column is a fixed `ch` track except one `minmax(<n>ch, 1fr)` that takes the slack and
+  ellipsises; an `auto` track sizes per row and breaks the columns' line-up.
+- **A to-do count carries its way onward**: the count, then a link-styled action in `--accent-text`
+  ("next $0000") that opens the next item and moves on with each click; a part with nothing left
+  shows *none* in `--data-secondary` and no action. A read-only file shows the count but not the
+  action. The position the action got to lives **outside the component** (per file), because
+  following it opens another document and coming back remounts the editor.
+- **A completeness level is a short segmented meter** beside its number: one `2ch` step per level
+  (`--accent-solid` filled, `--border-strong` empty), `role="img"` with "Level n of 2".
+- **The parts' views are icon buttons at the row's end** (`logs` for disassembly, `binary` for
+  memory, the toolbar's pair), titled with the view's name; text buttons there cost the columns.
 
 ## A Heading Inside Panel Content Is `SectionHeader`, Not `PanelHeader`
 
@@ -1302,6 +1383,12 @@ family's subtle fill: `--status-success` on `--status-success-subtle` when it pa
 `--status-warning` on `--status-warning-subtle` - not error - when it does not, because a file still
 being worked on is unfinished, not broken. The chip is the button that lists the reasons, so the
 verdict and its evidence are one click apart and the reasons cost no space until asked for.
+
+The outcome of an action started from an inspector section (the ROM annotation editor's **Source**:
+**Export as source…**, then the verdict, the file it wrote with **Open**, and how many rows had to be
+adjusted) is plain text under the button, not a chip: only the verdict sentence takes
+`--status-success` / `--status-error` - error here, because a source that does not give back the ROM
+is a wrong result, not unfinished work - and the rest stays `--data-secondary`.
 
 A tool setup dialog (the Boriel BASIC setup) colours the same way: the installed tool's status line
 and the outcome message are `--status-success` when it works, `--status-warning` when it works but

@@ -1,3 +1,5 @@
+import type { IOutputBuffer } from "@renderer/appIde/ToolArea/abstractions";
+import { isDataPragma, splitInstructionNames } from "@renderer/controls/data/DisassemblyText";
 import { addressSymbolsForState } from "@renderer/appIde/annotations/useAddressSymbols";
 import { COMMAND_RESULT_EDITOR } from "@state/common-ids";
 import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
@@ -106,10 +108,13 @@ export class DisassemblyCommand extends IdeCommandBase<DisassemblyCommandArgs> {
       .outputItems;
 
     const buffer = new OutputPaneBuffer(0x1_0000);
+    // --- The disassembly colour set, as every listing shows it (`--color-disassembly-*`)
     disassItems.forEach((item) => {
       buffer.resetStyle();
       if (!args["-c"]) {
+        buffer.color("disasm-address");
         buffer.write((decimalMode ? toDecimal5(item.address) : toHexa4(item.address)) + " ");
+        buffer.color("disasm-opcodes");
         buffer.write(
           item.opCodes
             .map((oc) => (decimalMode ? toDecimal3(oc) : toHexa2(oc)))
@@ -117,7 +122,8 @@ export class DisassemblyCommand extends IdeCommandBase<DisassemblyCommandArgs> {
             .padEnd(decimalMode ? 17 : 13, " ")
         );
       }
-      buffer.color("green");
+      buffer.color("disasm-label");
+      buffer.bold(true);
       const name = symbols.labelAt(item.address, slots)?.name;
       const label = name
         ? name
@@ -125,9 +131,34 @@ export class DisassemblyCommand extends IdeCommandBase<DisassemblyCommandArgs> {
           ? `L${decimalMode ? toDecimal5(item.address) : toHexa4(item.address)}`
           : "";
       buffer.write((label && args["-lc"] ? `${label}:` : label).padEnd(12, " "));
-      buffer.color("bright-cyan");
-      buffer.writeLine(item.instruction);
+      writeInstructionSpans(
+        buffer,
+        item.instruction,
+        (item.operandCandidates ?? []).map((operand) => operand.resolvedText).filter((name): name is string => !!name)
+      );
+      buffer.resetStyle();
+      buffer.writeLine();
     });
     return buffer;
+  }
+}
+
+/**
+ * Writes an instruction in the disassembly colours: bold, in the directive hue for data and the
+ * instruction hue otherwise, each substituted name in the operand hue (`splitInstructionNames`).
+ */
+export function writeInstructionSpans(buffer: IOutputBuffer, instruction: string, names: readonly string[]): void {
+  const role = isDataPragma(instruction) ? "disasm-directive" : "disasm-instruction";
+  buffer.bold(true);
+  for (const part of splitInstructionNames(instruction, names)) {
+    if (typeof part === "string") {
+      buffer.color(role);
+      buffer.write(part);
+    } else {
+      buffer.color("disasm-operand");
+      buffer.bold(false);
+      buffer.write(part.label);
+      buffer.bold(true);
+    }
   }
 }

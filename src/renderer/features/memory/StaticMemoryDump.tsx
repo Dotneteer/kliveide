@@ -41,7 +41,7 @@ import { Z88CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disass
 import { prepareRomDisassembler } from "@renderer/appIde/annotations/romDecoder";
 import { romSysVarsFor } from "@renderer/appIde/annotations/romSysVars";
 import { createSysVarOperandLabelResolver } from "@renderer/appIde/disassemblers/sys-var-operand-labels";
-import type { RomPageKind } from "@common/roms/romIdentity";
+import { romKindUsesZ80N, type RomPageKind } from "@common/roms/romIdentity";
 import { MemorySection, type DisassemblyItem } from "@renderer/appIde/disassemblers/common-types";
 import {
   deriveInstructionWidthCh,
@@ -121,9 +121,11 @@ import { GraphicsView, type ByteSpan } from "@renderer/features/graphics/Graphic
 import { NameGraphicDialog, nameGraphicDialogTitle } from "@renderer/features/graphics/NameGraphicDialog";
 import { useDialogs } from "@renderer/controls/overlay/DialogProvider";
 import { updateAnnotationSession } from "@renderer/appIde/annotations/annotationSession";
+import { useInheritedRomAnnotations } from "@renderer/appIde/annotations/useInheritedRomAnnotations";
 import { withNamedGraphic } from "@renderer/appIde/annotations/annotationEdits";
 import { useActiveAnnotationSet } from "@renderer/appIde/annotations/activeAnnotationSet";
-import { ReverseToolsMenu } from "@renderer/appIde/reverse/ReverseToolsMenu";
+import { ExportSourceButton, ReverseToolsMenu } from "@renderer/appIde/reverse/ReverseToolsMenu";
+import type { SourceExportScope } from "@common/reverse/sourceExportUi";
 import { GraphicsToolbar } from "@renderer/features/graphics/GraphicsToolbar";
 import { findGraphicCandidates } from "@common/reverse/graphicsCandidates";
 import {
@@ -1371,12 +1373,22 @@ const StaticMemoryDump = ({
     contextMenuApi.show(event);
   }, [annotationVm.toolbar.menuEnabled, contextMenuApi, dispatchAnnotation]);
 
+  // --- A ROM sidecar that `inherits` lists with the inherited entries under its own (display only)
+  const listingAnnotations = useInheritedRomAnnotations(
+    annotationVm.annotations,
+    annotationMachine,
+    viewAnnotationBank,
+    contents,
+    mainApi,
+    projectService
+  );
+
   useEffect(() => {
     if (!disassemblyEnabled || viewMode !== "disassembly") return undefined;
     let cancelled = false;
 
     (async () => {
-      const annotations = annotationVm.annotations;
+      const annotations = listingAnnotations;
       const annotationItems = annotations && viewAnnotationBank !== undefined
         ? await createAnnotatedDisassemblyItems({
             annotations,
@@ -1413,9 +1425,9 @@ const StaticMemoryDump = ({
             bankBytes,
             undefined,
             {
-              // --- The Next's extra opcodes are not instructions on a Z88.
-              // --- Nor on a Spectrum or ZX81 ROM.
-              allowExtendedSet: !isZ88Listing && !isRomListing,
+              // --- The Next's extra opcodes are not instructions on a Z88, nor on a Spectrum or
+              // --- ZX81 ROM; they are on the Next's own ROM pages
+              allowExtendedSet: !isZ88Listing && (!isRomListing || romKindUsesZ80N(romPageKind)),
               decimalMode: decimalView,
               // --- An un-annotated bank has no labels of its own, so the machine's system variables
               // --- are the only names available here — and the only ones this path ever needs.
@@ -1460,10 +1472,11 @@ const StaticMemoryDump = ({
     decimalView,
     disassOffset,
     disassemblyEnabled,
-    annotationVm.annotations,
+    listingAnnotations,
     hideScreenArea,
     isZ88Listing,
     isRomListing,
+    romPageKind,
     prepareRomListing,
     sysVarLabelResolver,
     viewMode
@@ -1662,13 +1675,8 @@ const StaticMemoryDump = ({
             --- are offered on the bank document of the active set only */}
         {viewAnnotationBank !== undefined && viewAnnotationPath && viewAnnotationPath === activeAnnotationSet?.path && (
           <PanelHeaderGroup>
-            <ReverseToolsMenu
-              scope={{
-                kind: "bank",
-                bank: viewAnnotationBank,
-                hostName: activeAnnotationSet.hostPath?.split(/[\\/]/).pop()?.replace(/\.[^.]+$/, "")
-              }}
-            />
+            <ExportSourceButton scope={bankExportScope(viewAnnotationBank, activeAnnotationSet.hostPath)} />
+            <ReverseToolsMenu scope={bankExportScope(viewAnnotationBank, activeAnnotationSet.hostPath)} />
           </PanelHeaderGroup>
         )}
         {/* --- Guarded rather than always rendered: `NexAnnotationToolbar` returns null when it has
@@ -1880,7 +1888,7 @@ const StaticMemoryDump = ({
 
                 return (
                   <DisassemblyRow
-                    annotated={annotationVm.annotationsAvailable}
+                    annotated={annotationVm.annotationsShown}
                     bankLabel={false}
                     /*
                      * The gutter, for the bank this document shows.
@@ -2083,3 +2091,8 @@ export const MiniMemoryDump = ({ contents, length = 64 }: MiniDumpProps) => {
     </>
   ) : null;
 };
+
+/** A bank document's export: the whole bank, named after the file the annotations describe. */
+function bankExportScope(bank: number, hostPath: string | undefined): SourceExportScope {
+  return { kind: "bank", bank, hostName: hostPath?.split(/[\\/]/).pop()?.replace(/\.[^.]+$/, "") };
+}

@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { formatRomSidecar } from "@common/roms/romAnnotationTools";
 
 /*
  * The ROM annotation editor (`.plans/ROM_ANNOTATION_EDITING_PLAN.md` R4, R7, §4.1): a selected ROM
@@ -13,6 +14,35 @@ const ROMS = join(__dirname, "../../src/public/roms");
 const SHIPPED_TEXT = readFileSync(join(ROMS, "sp48.rom.dis"), "utf8");
 const WORKING = "/home/me/Klive/RomAnnotations/sp48.rom.dis";
 
+/**
+ * A working copy still being authored, made from the shipped sidecar (which is at level 2): the
+ * labels below $0100 are gone, so their targets need labels again (level 0), and the labels from
+ * $3800 on have lost their synopses.
+ */
+const SPARSE_TEXT = (() => {
+  const raw = JSON.parse(SHIPPED_TEXT);
+  const bank = raw.banks["0"];
+  const dropped = new Set<number>();
+  bank.localLabels = bank.localLabels.filter((label: { value: number }) => {
+    if (label.value >= 0x0100) return true;
+    dropped.add(label.value);
+    return false;
+  });
+  for (const key of Object.keys(bank.lineAnnotations)) {
+    const offset = Number(key);
+    if (dropped.has(offset) || offset >= 0x3800) delete bank.lineAnnotations[key].synopsis;
+    if (Object.keys(bank.lineAnnotations[key]).length === 0) delete bank.lineAnnotations[key];
+  }
+  for (const key of Object.keys(raw.provenance)) {
+    const [, offset, kind] = key.split(":");
+    if ((kind === "label" && dropped.has(Number(offset))) || (kind === "line" && !bank.lineAnnotations[offset])) {
+      delete raw.provenance[key];
+    }
+  }
+  raw.level = 0;
+  return formatRomSidecar(raw);
+})();
+
 afterEach(() => {
   cleanup();
   vi.resetModules();
@@ -22,6 +52,7 @@ afterEach(() => {
 async function renderEditor(path: string, files: Record<string, string>) {
   vi.resetModules();
   const opened: any[] = [];
+  const executeCommand = vi.fn(async () => ({ success: true }));
   const projectService = {
     readFileContent: vi.fn(async (file: string) => {
       if (files[file] === undefined) throw new Error("File does not exist");
@@ -30,7 +61,7 @@ async function renderEditor(path: string, files: Record<string, string>) {
     saveFileContent: vi.fn(async () => {})
   };
   vi.doMock("@renderer/appIde/services/AppServicesProvider", () => ({
-    useAppServices: () => ({ projectService })
+    useAppServices: () => ({ projectService, ideCommandsService: { executeCommand } })
   }));
   vi.doMock("@renderer/appIde/services/DocumentServiceProvider", () => ({
     useDocumentHubService: () => ({})
@@ -47,10 +78,17 @@ async function renderEditor(path: string, files: Record<string, string>) {
   vi.doMock("@renderer/core/RendererProvider", () => ({
     useSelector: (selector: (state: any) => unknown) => selector({ isWindows: false })
   }));
+  vi.doMock("@renderer/controls/Icon", () => ({
+    Icon: ({ iconName }: { iconName: string }) => <span data-icon={iconName} />
+  }));
   vi.doMock("@renderer/controls/IconButton", () => ({
     SmallIconButton: ({ title, clicked }: { title?: string; clicked?: () => void }) => (
       <button onClick={clicked}>{title}</button>
     )
+  }));
+  // --- The overlay scrollbars need the theme provider; the panes' content is what is tested
+  vi.doMock("@renderer/controls/ScrollViewer", () => ({
+    default: ({ children }: { children?: React.ReactNode }) => <div>{children}</div>
   }));
   vi.doMock("@renderer/core/EmuApi", () => ({
     useEmuApi: () => ({ getRomSources: async () => ({}) })
@@ -71,7 +109,7 @@ async function renderEditor(path: string, files: Record<string, string>) {
       viewState: { sidecarPath: path }
     })
   );
-  return { opened, mainApi };
+  return { opened, mainApi, executeCommand };
 }
 
 describe("the ROM annotation editor", () => {
@@ -79,7 +117,8 @@ describe("the ROM annotation editor", () => {
     const { opened } = await renderEditor(WORKING, { [WORKING]: SHIPPED_TEXT });
     await waitFor(() => expect(screen.getByText(/Ready to ship · level/)).toBeInTheDocument());
     expect(screen.getByText("Working copy — edits are written here")).toBeInTheDocument();
-    expect(screen.getByText("Page 0")).toBeInTheDocument();
+    expect(screen.getByText("Working copy")).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "To label" })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Disassembly" }));
     await waitFor(() => expect(opened).toHaveLength(1));
@@ -97,6 +136,51 @@ describe("the ROM annotation editor", () => {
       romPageKind: "sp48-basic"
     });
     expect(options.annotationReadOnly).toBeUndefined();
+  });
+
+  it("counts a page's unlabelled targets and steps to the next one", async () => {
+    const { opened } = await renderEditor(WORKING, { [WORKING]: SPARSE_TEXT });
+    // --- The sparse working copy is at level 0: 17 call and jump targets have no label yet
+    expect(await screen.findByText("17")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Level 0 of 2" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "next $0008" }));
+    await waitFor(() => expect(opened).toHaveLength(1));
+    expect(opened[0][4]).toMatchObject({ viewMode: "disassembly", topAddress: 8 });
+    // --- The link moves on to the following target
+    expect(await screen.findByRole("button", { name: "next $0010" })).toBeInTheDocument();
+  });
+
+  it("explains the level in a hover card wherever a level is shown", async () => {
+    await renderEditor(WORKING, { [WORKING]: SPARSE_TEXT });
+    const meter = await screen.findByRole("img", { name: "Level 0 of 2" });
+
+    // --- A page's meter: its level, and what levels 1 and 2 still need
+    fireEvent.mouseEnter(meter.parentElement!);
+    const pageCard = await screen.findByRole("tooltip");
+    expect(pageCard).toHaveTextContent("Page 0 · level 0");
+    expect(pageCard).toHaveTextContent("17 call and jump targets have no label");
+    expect(pageCard).toHaveTextContent("7 labels have no synopsis");
+    expect(pageCard.querySelector('[data-state="next"]')).toHaveTextContent("Level 1");
+    fireEvent.keyDown(document, { key: "Escape" });
+    await waitFor(() => expect(screen.queryByRole("tooltip")).toBeNull());
+
+    // --- The column head explains the levels without measuring anything
+    fireEvent.mouseEnter(screen.getByRole("columnheader", { name: "Completeness" }));
+    const legend = await screen.findByRole("tooltip");
+    expect(legend).toHaveTextContent("Completeness levels");
+    expect(legend.querySelectorAll('[data-state="legend"]')).toHaveLength(3);
+    fireEvent.keyDown(document, { key: "Escape" });
+    await waitFor(() => expect(screen.queryByRole("tooltip")).toBeNull());
+
+    // --- The readiness chip and "records level": the whole file
+    for (const anchor of [screen.getByText(/Ready to ship · level/), screen.getByText(/^records level/)]) {
+      fireEvent.mouseEnter(anchor.closest("span")!);
+      const fileCard = await screen.findByRole("tooltip");
+      expect(fileCard).toHaveTextContent("measured 0 · records 0");
+      fireEvent.keyDown(document, { key: "Escape" });
+      await waitFor(() => expect(screen.queryByRole("tooltip")).toBeNull());
+    }
+    expect(screen.getByRole("columnheader", { name: "Completeness" })).not.toHaveAttribute("title");
   });
 
   it("reveals the working copy in the file manager, from beside its name", async () => {
@@ -118,12 +202,21 @@ describe("the ROM annotation editor", () => {
   it("shows a shipped sidecar read-only", async () => {
     const { opened } = await renderEditor("roms/sp48.rom.dis", {});
     await screen.findByText(/Shipped sidecar — read-only/);
-    expect(screen.queryByText("New entries:")).not.toBeInTheDocument();
+    expect(screen.getByText("Read-only")).toBeInTheDocument();
+    expect(screen.queryByText("New entries are recorded as")).not.toBeInTheDocument();
+    // --- Nothing to step through in a file that cannot be edited
+    expect(screen.queryByRole("button", { name: /^next \$/ })).not.toBeInTheDocument();
     // --- `roms/…` is relative to Klive's own folder: nothing on disk to reveal
     expect(screen.queryByRole("button", { name: /^Reveal in/ })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Disassembly" }));
     await waitFor(() => expect(opened).toHaveLength(1));
     expect(opened[0][4]).toMatchObject({ annotationPath: "roms/sp48.rom.dis", annotationReadOnly: true });
+  });
+
+  it("offers a working copy of a shipped sidecar", async () => {
+    const { executeCommand } = await renderEditor("roms/sp48.rom.dis", {});
+    fireEvent.click(await screen.findByRole("button", { name: "Make working copy" }));
+    expect(executeCommand).toHaveBeenCalledWith("rom-ann-new sp48.rom");
   });
 
   it("is only a message when no ROM matches the file", async () => {

@@ -14,6 +14,7 @@ import { hasMachineFeature } from "@common/features/advancedDebugging";
 import { getEmuApi } from "@messaging/MainToEmuMessenger";
 import { getIdeApi } from "@messaging/MainToIdeMessenger";
 import { canExportHistory, exportExecutionHistoryAs } from "@main/history-export";
+import { canExportDisassembly, exportDisassemblyAsSource } from "@main/source-export-menu";
 import { canSaveDebugRecording, pickAndOpenDebugRecording, saveDebugRecordingAs } from "@main/debug-recording-menus";
 import { type MenuContext, windowInfoOf } from "./menu-context";
 import { createBooleanSettingsMenu, submenuContent, tidySeparators } from "./menu-utils";
@@ -181,6 +182,21 @@ export function createDebugMenu(context: MenuContext): MenuItemConstructorOption
             label: t("menu.debug.profiler"),
             click: async () => {
               await getIdeApi().executeCommand("show-profiler");
+            }
+          }
+        ]
+      : []),
+    // --- Export as source, always verified by reassembly: every machine whose memory can be annotated
+    ...(canExportDisassembly(context.appState)
+      ? [
+          { type: "separator" as const },
+          {
+            id: "export_disassembly_source",
+            label: t("menu.debug.exportDisassemblySource"),
+            click: async () => {
+              // --- The command opens the file in the IDE, so the IDE is where it is read
+              context.ensureIdeWindow();
+              await exportDisassemblyAsSource(context.focusedWindow());
             }
           }
         ]

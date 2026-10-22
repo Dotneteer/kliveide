@@ -193,20 +193,11 @@
   font-weight: 600;
 }
 
-.item .disassemblyLabel {
-  color: var(--color-disassembly-label);
-  font-weight: 600;
-}
-
 /*
- * The annotated listing — the `.NEX` viewer's bank view, read against its sidecar.
- *
- * Opt-in from the row (`annotated`), so the machine disassembly above keeps its own table. These sit
- * after the `.disassembly*` rules deliberately: the two families are the same specificity and a row
- * uses one or the other, never both, so source order is the tiebreak if that ever stops being true.
- *
- * See `--color-annotation-*` in componentAliases.ts for why these come from the editor's syntax
- * palette rather than from the accent.
+ * Labels, operand names, data and comments: the editor's syntax palette, on every disassembly row
+ * whatever view shows it (`--color-disassembly-*`; the `--color-annotation-*` names are aliases).
+ * These sit after the `.disassembly*` rules deliberately: the families are the same specificity,
+ * so source order is the tiebreak if a cell ever carries both.
  */
 .item .annotationLabel {
   color: var(--color-annotation-label);

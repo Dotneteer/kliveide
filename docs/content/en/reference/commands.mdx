@@ -1112,6 +1112,22 @@ is in the canonical format.
 rom-ann-check <rom>|<file.rom.dis> [-page <n>]
 ```
 
+## `rom-ann-export`
+
+Exports a ROM's annotations — every page they name — as one Klive Z80 source file, then assembles it
+and checks that the output is the ROM, byte for byte. The editor's **Export as source…** button does
+the same.
+
+```
+rom-ann-export <rom>|<file.rom.dis> <file> [-page <n>] [-open]
+```
+
+A ROM with no working copy is exported from its shipped annotations. Each page is listed at `$0000`;
+a ROM of several pages puts each one in its own `.module`. An instruction the assembler would encode
+differently is written as `.defb`, with the instruction as its comment. `-open` opens the file. The
+check always runs: the command fails when the source does not reassemble to the ROM, and names the
+first bytes that differ.
+
 ## `rom-ann-import-names`
 
 Adds a list of conventional routine names to a ROM's working copy, as labels recorded `manual`.
@@ -1170,8 +1186,11 @@ Exports an annotated range of the 64K view, or a bank, as Klive Z80 source that 
 same bytes, and verifies it. See [Exporting Source](./working-with-ide/exporting-source).
 
 ```
-export-asm <file> [<from> <to>] [-bank <n>] [-skip data|gap] [-dialect klive] [-open] [-noverify]
+export-asm <file> [<from> <to>] [-bank <n>] [-skip data|gap] [-dialect klive] [-open]
 ```
+
+The file is always assembled afterwards: the command fails when it does not assemble to the same
+bytes.
 
 ## `skool-import`
 

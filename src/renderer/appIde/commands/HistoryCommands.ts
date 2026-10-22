@@ -20,14 +20,18 @@ import {
   collectTrace,
   defaultTraceOptions,
   exportTrace,
+  exportTraceTextParts,
   parseTraceColumns,
   traceFormatOfName,
   traceHeaderLines,
   VIEWER_TRACE_COLUMNS,
   type TraceExportOptions,
   type TraceFormat,
-  type TraceMeta
+  type TraceMeta,
+  type TraceTextPart
 } from "@common/history/historyExport";
+import type { IOutputBuffer } from "@renderer/appIde/ToolArea/abstractions";
+import { writeInstructionSpans } from "./DisassemblyCommand";
 import type { HistoryServiceSpan } from "@common/history/serviceSpans";
 import { integerSymbolsOf } from "@common/utils/breakpoint-condition/integer-symbols";
 import { createTraceResolvers, historyRegistersOf } from "@renderer/features/history/historyTrace";
@@ -197,14 +201,15 @@ export class HistoryCommand extends IdeCommandBase<{ count?: number }> {
 
     writeMessage(context.output, t("commands.history.recorded", { count: info.count, capacity: info.capacity }), "cyan");
     // --- The viewer's columns through the exporter: one formatter for every text row (TRACE_EXPORT_PLAN D14)
-    const lines = exportTrace(
+    // --- Each column in the disassembly colour set, as every listing shows it
+    const lines = exportTraceTextParts(
       [records],
       { machineId: info.machineId, newestSequence: info.newestSequence, afterLast: historyRegistersOf(cpu) },
       [],
       { ...defaultTraceOptions("text"), columns: VIEWER_TRACE_COLUMNS, header: false, repeats: true },
       resolvers
     );
-    for await (const line of lines) writeMessage(context.output, line);
+    for await (const parts of lines) writeTraceLine(context.output, parts);
     if (page.gone) writeInfoMessage(context.output, t("commands.history.overwrittenWhileReading"));
     return commandSuccess;
   }
@@ -717,4 +722,33 @@ export function parseHistoryTarget(text: string): HistoryNavigationOp | undefine
     return n === 0 ? "present" : { toPosition: n };
   }
   return undefined;
+}
+
+/** Writes a trace line with its columns in the disassembly colours; the rest in the default style */
+function writeTraceLine(output: IOutputBuffer, parts: readonly TraceTextPart[]): void {
+  for (const part of parts) {
+    output.resetStyle();
+    switch (part.column) {
+      case "addr":
+        output.color("disasm-address");
+        output.write(part.text);
+        break;
+      case "bytes":
+        output.color("disasm-opcodes");
+        output.write(part.text);
+        break;
+      case "instr": {
+        // --- Padded to its column: the name split runs on the text, the padding follows it
+        const instruction = part.text.trimEnd();
+        writeInstructionSpans(output, instruction, part.names ?? []);
+        output.resetStyle();
+        output.write(part.text.slice(instruction.length));
+        break;
+      }
+      default:
+        output.write(part.text);
+    }
+  }
+  output.resetStyle();
+  output.writeLine();
 }

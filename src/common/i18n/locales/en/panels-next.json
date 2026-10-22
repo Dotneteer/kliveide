@@ -120,6 +120,16 @@
     "context": "Region type in the NEX annotation editor: bytes listed as .defm text strings.",
     "maxChars": 10
   },
+  "panels.next.regionType.defc": "Bit-7 Text",
+  "@panels.next.regionType.defc": {
+    "context": "Region type in the annotation editor's region dialogs: ASCII strings, each ended by bit 7 set on its last character, listed as .defc rows (the ZX Spectrum ROM's keyword and message tables). \"Bit-7\" names that marker bit; keep the number.",
+    "maxChars": 10
+  },
+  "panels.next.regionType.fill": "Fill",
+  "@panels.next.regionType.fill": {
+    "context": "Region type in the annotation editor's region dialogs: runs of one repeated byte (padding, unused space), listed as .fillb rows.",
+    "maxChars": 10
+  },
   "panels.next.regionType.graphics": "Graphics",
   "@panels.next.regionType.graphics": {
     "context": "Region type in the NEX annotation editor: bytes holding graphics (e.g. sprite patterns).",
@@ -1434,6 +1444,18 @@
   "panels.next.annotations.menu.markDma": "Mark As DMA",
   "@panels.next.annotations.menu.markDma": {
     "context": "Item of the Annotations menu of the NEX annotation editor (a popped-out bank's disassembly) (toolbar button and row context menu): list the selected rows as DMA commands."
+  },
+  "panels.next.annotations.menu.markText": "Mark As Text",
+  "@panels.next.annotations.menu.markText": {
+    "context": "Item of the annotation menus (the NEX/ROM annotation editor's Annotations menu and a disassembly row's context menu): list the selected rows as text strings (.defm rows)."
+  },
+  "panels.next.annotations.menu.markDefc": "Mark As Bit-7 Text (.defc)",
+  "@panels.next.annotations.menu.markDefc": {
+    "context": "Item of the annotation menus (the NEX/ROM annotation editor's Annotations menu and a disassembly row's context menu): list the selected rows as ASCII strings, each ended by bit 7 set on its last character, as .defc rows. Keep \".defc\" (an assembler directive) as it is."
+  },
+  "panels.next.annotations.menu.markFill": "Mark As Fill (.fillb)",
+  "@panels.next.annotations.menu.markFill": {
+    "context": "Item of the annotation menus (the NEX/ROM annotation editor's Annotations menu and a disassembly row's context menu): list the selected rows as runs of one repeated byte, as .fillb rows (padding, unused space). Keep \".fillb\" (an assembler directive) as it is."
   },
   "panels.next.annotations.menu.markSkip": "Mark As Skip",
   "@panels.next.annotations.menu.markSkip": {

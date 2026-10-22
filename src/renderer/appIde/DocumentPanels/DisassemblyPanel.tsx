@@ -1,5 +1,6 @@
 import styles from "./DisassemblyPanel.module.scss";
-import { ReverseToolsMenu } from "@renderer/appIde/reverse/ReverseToolsMenu";
+import { ExportSourceButton, ReverseToolsMenu } from "@renderer/appIde/reverse/ReverseToolsMenu";
+import { LIVE_VIEW_EXPORT_SCOPE } from "@common/reverse/sourceExportUi";
 import { useRowSizes } from "@renderer/theming/useRowSizes";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
@@ -721,7 +722,12 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
     /* --- M1: `0.8em` gave 12.8px here; see `MemoryPanel`. Follows the panel font size now. */
     <FullPanel fontFamily="--monospace-font" fontSize="--panel-font-size">
       <DisassemblyToolbar
-        reverseTools={<ReverseToolsMenu scope={{ kind: "range", from: 0x4000, to: 0xffff }} />}
+        reverseTools={
+          <>
+            <ExportSourceButton scope={LIVE_VIEW_EXPORT_SCOPE} />
+            <ReverseToolsMenu scope={LIVE_VIEW_EXPORT_SCOPE} />
+          </>
+        }
         autoRefresh={autoRefresh}
         bankLabel={bankLabel}
         decimalView={decimalView}

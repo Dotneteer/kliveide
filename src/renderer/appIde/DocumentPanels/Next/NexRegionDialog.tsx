@@ -1,3 +1,4 @@
+import { InstructionText, disassemblyText } from "@renderer/controls/data/DisassemblyText";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Button } from "@renderer/controls/Button";
 import { TextInput } from "@renderer/controls/TextInput";
@@ -14,7 +15,7 @@ import {
   type AnnotationRegionType,
   type ByteRegionFormat
 } from "@renderer/appIde/annotations/programAnnotations";
-import { formatBinaryByte } from "@renderer/appIde/annotations/annotatedDisassembly";
+import { createDefcItems, createFillItems, formatBinaryByte } from "@renderer/appIde/annotations/annotatedDisassembly";
 import { parseNexLabelValue } from "./NexLabelDialog";
 import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z80-disassembler";
 import { MemorySection } from "@renderer/appIde/disassemblers/common-types";
@@ -53,10 +54,12 @@ const REGION_TYPES: Array<{ value: AnnotationRegionType; labelKey?: MessageKey; 
   { value: "disassemble", labelKey: "panels.next.regionType.disassembly" },
   { value: "bytes", labelKey: "panels.next.regionType.bytes" },
   { value: "words", labelKey: "panels.next.regionType.words" },
-  { value: "copper", name: "Copper" },
-  { value: "dma", name: "DMA" },
   { value: "text", labelKey: "panels.next.regionType.text" },
-  { value: "skip", labelKey: "panels.next.regionType.skip" }
+  { value: "defc", labelKey: "panels.next.regionType.defc" },
+  { value: "fill", labelKey: "panels.next.regionType.fill" },
+  { value: "skip", labelKey: "panels.next.regionType.skip" },
+  { value: "copper", name: "Copper" },
+  { value: "dma", name: "DMA" }
 ];
 export function NexRegionDialog({
   initialType,
@@ -119,7 +122,7 @@ export function NexRegionDialog({
       <DialogRow label={t("panels.next.region.type")} rows={true}>
         <RadioGroup
           ariaLabel={t("panels.next.region.typeAria")}
-          columns={REGION_TYPES.length}
+          columns={Math.ceil(REGION_TYPES.length / 2)}
           value={type}
           options={REGION_TYPES.map((regionType) => ({
             value: regionType.value,
@@ -200,7 +203,7 @@ export function NexRegionDialog({
       </DialogRow>
       <DialogRow label={t("panels.next.field.preview")} rows={true}>
         <div className={styles.preview} aria-label={t("panels.next.region.previewLabel")}>
-          {preview}
+          <RegionPreviewLines text={preview} />
         </div>
       </DialogRow>
       <DialogFooter>
@@ -208,6 +211,33 @@ export function NexRegionDialog({
         <Button variant="secondary" text={t("common.button.cancel")} clicked={controls.cancel} />
       </DialogFooter>
     </form>
+  );
+}
+
+/**
+ * The preview's lines in the disassembly colours: each `$OFFS  instruction` line as an address and an
+ * instruction (data in the directive hue), anything else (`...`) as it is.
+ */
+function RegionPreviewLines({ text }: { text: string }) {
+  return (
+    <>
+      {text.split("\n").map((line, index) => {
+        const match = /^(\$[0-9A-Fa-f]{4})(\s+)(.*)$/.exec(line);
+        return (
+          <div key={index}>
+            {match ? (
+              <>
+                <span className={disassemblyText.address}>{match[1]}</span>
+                {match[2]}
+                <InstructionText text={match[3]} />
+              </>
+            ) : (
+              line
+            )}
+          </div>
+        );
+      })}
+    </>
   );
 }
 
@@ -306,6 +336,24 @@ export function formatRegionPreview(
           ? `${formatRegionOffset(offset)}  .defm "${String.fromCharCode(...values)}"`
           : `${formatRegionOffset(offset)}  .defb ${values.map((v) => `$${toHexa2(v)}`).join(", ")}`;
       });
+    case "fill": {
+      // --- One row per run of a repeated byte, as the listing shows them
+      const items = createFillItems(Uint8Array.from(bytes), start, end, false, 0, []);
+      const lines = items
+        .slice(0, PREVIEW_LINE_LIMIT)
+        .map((item) => `${formatRegionOffset(item.address)}  ${item.instruction}`);
+      if (items.length > PREVIEW_LINE_LIMIT) lines.push("...");
+      return lines.join("\n");
+    }
+    case "defc": {
+      // --- One row per bit-7-terminated string, as the listing shows them
+      const items = createDefcItems(Uint8Array.from(bytes), start, end, false, 0, []);
+      const lines = items
+        .slice(0, PREVIEW_LINE_LIMIT)
+        .map((item) => `${formatRegionOffset(item.address)}  ${item.instruction}`);
+      if (items.length > PREVIEW_LINE_LIMIT) lines.push("...");
+      return lines.join("\n");
+    }
     case "skip":
       return `${formatRegionOffset(start)}  .skip ${formatRegionOffset(length)}`;
     default:

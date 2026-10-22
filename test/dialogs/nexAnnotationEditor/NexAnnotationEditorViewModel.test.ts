@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import type { ProgramAnnotations } from "@renderer/appIde/annotations/programAnnotations";
 
 import {
   actionOffsetSpan,
@@ -138,11 +139,22 @@ describe("menu", () => {
       "mark-disassembly",
       "mark-bytes",
       "mark-words",
+      "mark-text",
+      "mark-defc",
+      "mark-fill",
+      "mark-skip",
       "mark-copper",
       "mark-dma",
-      "mark-skip",
       "clear"
     ]);
+  });
+
+  it("offers only the region kinds the machine's annotations can hold", () => {
+    const marks = (machine: ProgramAnnotations["machine"]) =>
+      selectViewModel(loaded({ annotations: anAnnotationModel({ machine }) }))
+        .menu.flatMap((entry) => (entry.kind === "item" && entry.id.startsWith("mark-") ? [entry.id] : []));
+    expect(marks("rom")).toEqual(["mark-disassembly", "mark-bytes", "mark-words", "mark-text", "mark-defc", "mark-fill", "mark-skip"]);
+    expect(marks("zx81")).toEqual(["mark-disassembly", "mark-bytes", "mark-words", "mark-text", "mark-fill", "mark-skip"]);
   });
 
   it("separates the groups", () => {
@@ -609,5 +621,21 @@ describe("the delete-label question", () => {
       deleteLabelConfirmRequest({ scope: "local", name: "Loop", referenceCount: 0, listedCount: 1 }).linesAfterCode
     ).toEqual(["1 row of this listing shows its name and will no longer."]);
     expect(deleteLabelConfirmRequest({ scope: "local", name: "Loop", referenceCount: 0, listedCount: 0 }).linesAfterCode).toBeUndefined();
+  });
+});
+
+describe("annotationsShown", () => {
+  it("keeps a read-only listing annotated, though nothing can be edited", () => {
+    // --- A shipped ROM sidecar opens read-only: its rows keep the annotated colours of the
+    // --- editable working copy, and only the editing tools go.
+    const vm = selectViewModel(loaded({ env: anEnvironment({ readOnly: true }) }));
+    expect(vm.annotationsShown).toEqual(true);
+    expect(vm.annotationsAvailable).toEqual(false);
+  });
+
+  it("is on for an editable listing, and off before the annotations load or without a sidecar", () => {
+    expect(selectViewModel(loaded()).annotationsShown).toEqual(true);
+    expect(selectViewModel(aState({ annotations: undefined })).annotationsShown).toEqual(false);
+    expect(selectViewModel(aState({ env: anEnvironment({ annotationPath: undefined }) })).annotationsShown).toEqual(false);
   });
 });

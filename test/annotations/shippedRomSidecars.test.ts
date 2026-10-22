@@ -13,6 +13,7 @@ import {
   strayProvenance
 } from "@common/roms/romAnnotationTools";
 import { knownRomPageKind, romPageIdentity } from "@common/roms/romIdentity";
+import { withInheritedEntries } from "@renderer/appIde/annotations/romInheritance";
 
 /*
  * Every shipped ROM sidecar (`src/public/roms/*.rom.dis`), checked as §7 of
@@ -68,7 +69,18 @@ describe("the shipped ROM sidecars", () => {
 
     it("puts each label on an instruction start inside a code region, per Klive's disassembler", async () => {
       const rom = romOf(name);
-      for (const [page, bank] of Object.entries<any>(raw.banks)) {
+      // --- An inheriting sidecar is measured with its inherited, byte-bound entries (its page as shown)
+      const pageOf = (page: number) => rom.subarray(page * 0x4000, Math.min(rom.length, (page + 1) * 0x4000));
+      const { annotations, missing } = await withInheritedEntries(
+        parseAnnotations(text).annotations!,
+        pageOf,
+        async (sidecar, page) => ({
+          annotations: parseAnnotations(readFileSync(join(ROMS, sidecar), "utf8")).annotations!,
+          bytes: romOf(sidecar).subarray(page * 0x4000, (page + 1) * 0x4000)
+        })
+      );
+      expect(missing).toEqual([]);
+      for (const [page, bank] of Object.entries<any>(annotations.banks)) {
         const bytes = rom.subarray(Number(page) * 0x4000, Math.min(rom.length, (Number(page) + 1) * 0x4000));
         const report = await measureRomLevel(bank, bytes, romDecoderFor(knownRomPageKind(romPageIdentity(bytes))));
         expect(report.misplacedLabels).toEqual([]);
@@ -84,7 +96,21 @@ describe("the shipped ROM sidecars", () => {
 
   it("has an index that is up to date", () => {
     const index = readFileSync(join(ROMS, "rom-annotations.index.json"), "utf8");
-    expect(index).toBe(formatRomIndex(buildRomIndex(sidecars, (rom) => new Uint8Array(readFileSync(join(ROMS, rom))))));
+    const described = (sidecar: string) =>
+      Object.keys(JSON.parse(readFileSync(join(ROMS, sidecar), "utf8")).banks ?? {}).map(Number);
+    expect(index).toBe(
+      formatRomIndex(buildRomIndex(sidecars, (rom) => new Uint8Array(readFileSync(join(ROMS, rom))), described))
+    );
+  });
+});
+
+describe("buildRomIndex", () => {
+  it("indexes only the pages a sidecar describes", () => {
+    // --- enNextLG.rom.dis describes page 2 only; its file's other pages are enNextZX.rom's bytes
+    const index = JSON.parse(readFileSync(join(ROMS, "rom-annotations.index.json"), "utf8"));
+    expect(index["43fc1f2f"]).toEqual({ sidecar: "enNextLG.rom.dis", page: 2 });
+    expect(index["95ba84d4"]).toEqual({ sidecar: "enNextZX.rom.dis", page: 0 });
+    expect(index["92d23960"]).toEqual({ sidecar: "enNextZX.rom.dis", page: 3 });
   });
 });
 

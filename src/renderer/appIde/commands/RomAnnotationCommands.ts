@@ -1,3 +1,4 @@
+import { resolveCommandFilePath } from "./commandFilePath";
 import type { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
 import type { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext";
 import type { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
@@ -10,6 +11,7 @@ import { formatRomSidecar, type Provenance } from "@common/roms/romAnnotationToo
 import { romPageIdentity } from "@common/roms/romIdentity";
 import {
   SHIPPED_ROM_FOLDER,
+  inheritedSidecarSource,
   readShippedIndex,
   workingCopyOf
 } from "@renderer/appIde/annotations/romAnnotationLoader";
@@ -35,9 +37,11 @@ import {
   commandSuccessWith,
   IdeCommandBase,
   validationError,
+  writeInfoMessage,
   writeMessage,
   writeSuccessMessage
 } from "../services/ide-commands";
+import { romExportVerdictText, runRomSourceExport } from "@renderer/appIde/annotations/romSourceExport";
 import { t } from "@common/i18n/i18n";
 
 /*
@@ -46,14 +50,6 @@ import { t } from "@common/i18n/i18n";
  * A ROM is named as Klive ships it (`sp48.rom`, `sp128-1.rom`), or by the path of a ROM file
  * (absolute, or relative to the open project). A multi-page file takes `-page <n>`.
  */
-
-/** A path relative to the open project's folder, as the other file commands take them. */
-function resolvePath(context: IdeCommandContext, file: string): string {
-  const trimmed = file.trim();
-  const folder = context.store.getState().project?.folderPath;
-  const isAbsolute = /^([A-Za-z]:)?[\\/]/.test(trimmed);
-  return isAbsolute || !folder ? trimmed : `${folder.replace(/[\\/]+$/, "")}/${trimmed}`;
-}
 
 function fileNameOf(path: string): string {
   return path.split(/[\\/]/).pop() ?? path;
@@ -82,11 +78,13 @@ export async function romTargetOf(
   if (!isPath) {
     path = `${SHIPPED_ROM_FOLDER}/${rom}`;
     bytes = await mainApi.readBinaryFile(path).catch(() => undefined);
-  } else {
-    path = resolvePath(context, rom);
   }
   if (!bytes) {
-    path = resolvePath(context, rom);
+    const resolved = resolveCommandFilePath(context, rom);
+    // --- A bare name that is not a shipped ROM is most likely one mistyped, so say that rather
+    // --- than that no project is open; a path needs the project to mean anything
+    if ("error" in resolved) return { error: isPath ? resolved.error : t("commands.romAnn.unknownRom", { rom }) };
+    path = resolved.path;
     bytes = await mainApi.readBinaryFile(path).catch(() => undefined);
   }
   if (!bytes) return { error: t("commands.romAnn.unknownRom", { rom }) };
@@ -201,7 +199,9 @@ export class RomAnnotationOpenCommand extends IdeCommandBase<RomArgs> {
   async execute(context: IdeCommandContext, args: RomArgs): Promise<IdeCommandResult> {
     const hub = context.service.projectService.getActiveDocumentHubService();
     if (/\.dis$/i.test(args.rom!)) {
-      await openRomAnnotationEditor(hub, resolvePath(context, args.rom!));
+      const resolved = resolveCommandFilePath(context, args.rom!);
+      if ("error" in resolved) return commandError(resolved.error);
+      await openRomAnnotationEditor(hub, resolved.path);
       return commandSuccess;
     }
     const target = await romTargetOf(context, args.rom!, args["-page"] ?? 0);
@@ -226,7 +226,10 @@ export class RomAnnotationOpenCommand extends IdeCommandBase<RomArgs> {
 
 /** The sidecar a `rom-ann-check` / `rom-ann-provenance` argument names. */
 async function sidecarPathOf(context: IdeCommandContext, args: RomArgs): Promise<string | { error: string }> {
-  if (args.rom && /\.dis$/i.test(args.rom)) return resolvePath(context, args.rom);
+  if (args.rom && /\.dis$/i.test(args.rom)) {
+    const resolved = resolveCommandFilePath(context, args.rom);
+    return "error" in resolved ? resolved : resolved.path;
+  }
   if (!args.rom) return { error: t("commands.romAnn.nameRomOrSidecar") };
   const target = await romTargetOf(context, args.rom, args["-page"] ?? 0);
   return "error" in target ? target : target.workingPath;
@@ -266,7 +269,11 @@ export class RomAnnotationCheckCommand extends IdeCommandBase<RomArgs> {
       return commandError(t("commands.romAnn.invalidJson", { path, message: (err as Error).message }));
     }
     const matches = await matchRomPages({ files: context.mainApi, emuApi: context.emuApi }, path, raw.pages ?? {});
-    const check = await checkRomSidecar(text, (page) => matches.find((m) => m.page === page)?.bytes);
+    const check = await checkRomSidecar(
+      text,
+      (page) => matches.find((m) => m.page === page)?.bytes,
+      inheritedSidecarSource({ files: context.mainApi, projectService: context.service.projectService })
+    );
     const levels = Object.entries(check.levels)
       .map(([page, level]) => t("commands.romAnn.pageLevel", { page, level: String(level) }))
       .join(", ");
@@ -363,7 +370,9 @@ export class RomAnnotationImportNamesCommand extends IdeCommandBase<ImportNamesA
     if (path.startsWith(`${SHIPPED_ROM_FOLDER}/`)) return commandError(t("commands.romAnn.shippedReadOnly"));
     const page = args["-page"] ?? 0;
 
-    const listPath = resolvePath(context, args.list!);
+    const resolvedList = resolveCommandFilePath(context, args.list!);
+    if ("error" in resolvedList) return commandError(resolvedList.error);
+    const listPath = resolvedList.path;
     const listText = await Promise.resolve(context.service.projectService.readFileContent(listPath, false))
       .then((text) => (typeof text === "string" ? text : undefined))
       .catch(() => undefined);
@@ -411,7 +420,11 @@ export class RomAnnotationImportNamesCommand extends IdeCommandBase<ImportNamesA
       writeMessage(context.output, t("commands.romAnn.renamed", { from: entry.from, name: entry.name }));
     }
     if (result.text) {
-      const check = await checkRomSidecar(result.text, (p) => matches.find((m) => m.page === p)?.bytes);
+      const check = await checkRomSidecar(
+        result.text,
+        (p) => matches.find((m) => m.page === p)?.bytes,
+        inheritedSidecarSource({ files: context.mainApi, projectService: context.service.projectService })
+      );
       for (const problem of check.problems) writeMessage(context.output, `  ${problem}`, "yellow");
     }
     writeSuccessMessage(
@@ -419,6 +432,91 @@ export class RomAnnotationImportNamesCommand extends IdeCommandBase<ImportNamesA
       t("commands.romAnn.imported", { added: result.added.length, path, skipped: result.skipped.length })
     );
     return commandSuccess;
+  }
+}
+
+type ExportArgs = RomArgs & { file?: string; "-open"?: boolean };
+
+/**
+ * `rom-ann-export`: every page of a ROM's annotations as one Klive Z80 source file, assembled
+ * afterwards and compared with the ROM (`romSourceExport.ts`) — always: the verdict is the
+ * command's result, a success only when the bytes are identical. The ROM annotation editor's "Export
+ * as source" runs the same export.
+ */
+export class RomAnnotationExportCommand extends IdeCommandBase<ExportArgs> {
+  readonly id = "rom-ann-export";
+  get description() {
+    return t("commands.romAnn.exportDescription");
+  }
+  readonly usage = "rom-ann-export <rom>|<sidecar.dis> <file> [-page <n>] [-open]";
+  readonly argumentInfo: CommandArgumentInfo = {
+    mandatory: [
+      { name: "rom", type: "string" },
+      { name: "file", type: "string" }
+    ],
+    namedOptions: [{ name: "-page", type: "number" }],
+    commandOptions: ["-open"]
+  };
+
+  async validateCommandArgs(_context: IdeCommandContext, args: ExportArgs): Promise<ValidationMessage[]> {
+    const messages = await validateRom(args, true);
+    if (!args.file?.trim()) messages.push(validationError(t("commands.romAnn.nameExportFile")));
+    return messages;
+  }
+
+  async execute(context: IdeCommandContext, args: ExportArgs): Promise<IdeCommandResult> {
+    const resolvedFile = resolveCommandFilePath(context, args.file!);
+    if ("error" in resolvedFile) return commandError(resolvedFile.error);
+    const file = resolvedFile.path;
+    let path = await sidecarPathOf(context, args);
+    if (typeof path !== "string") return commandError(path.error);
+
+    // --- The file as an open page document last wrote it
+    await flushAnnotationSession(path);
+    let text = await readText(context, path);
+    // --- A ROM with no working copy is exported from its shipped sidecar, as rom-ann-open shows it
+    if (text === undefined && args.rom && !/\.dis$/i.test(args.rom)) {
+      const target = await romTargetOf(context, args.rom, args["-page"] ?? 0);
+      if (!("error" in target) && target.shippedSidecar) {
+        path = `${SHIPPED_ROM_FOLDER}/${target.shippedSidecar}`;
+        text = await readText(context, path);
+      }
+    }
+    if (text === undefined) return commandError(t("commands.romAnn.cannotRead", { path }));
+    const parsed = parseAnnotations(text);
+    if (!parsed.annotations) {
+      return commandError(t("commands.romAnn.invalidJson", { path, message: parsed.diagnostics[0]?.message ?? "" }));
+    }
+    const raw = JSON.parse(text);
+    const matches = await matchRomPages({ files: context.mainApi, emuApi: context.emuApi }, path, raw.pages ?? {});
+
+    let run;
+    try {
+      run = await runRomSourceExport(
+        context.mainApi,
+        { path, annotations: parsed.annotations, matches, inherited: inheritedSidecarSource({ files: context.mainApi, projectService: context.service.projectService }) },
+        file
+      );
+    } catch (err) {
+      return commandError(t("commands.romAnn.exportFailed", { message: err instanceof Error ? err.message : String(err) }));
+    }
+    writeSuccessMessage(context.output, t("commands.romAnn.exported", { path, file }));
+    if (run.missingPages.length) {
+      writeMessage(
+        context.output,
+        t("commands.romAnn.exportLeftOut", { count: run.missingPages.length, pages: run.missingPages.join(", ") }),
+        "yellow"
+      );
+    }
+    run.notes.forEach((note) => writeInfoMessage(context.output, note));
+    if (args["-open"]) {
+      const quoted = file.replace(/"/g, '\\"');
+      await context.service.ideCommandsService.executeCommand(`nav "${quoted}"`);
+    }
+    const verdictText = romExportVerdictText(run.verdict);
+    return run.verdict.kind === "identical"
+      ? commandSuccessWith(verdictText, { identical: true, file })
+      : commandError(verdictText);
   }
 }
 

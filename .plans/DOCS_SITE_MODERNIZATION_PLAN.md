@@ -337,7 +337,7 @@ change.
 
 > **As built (2026-10-18).** `docs/landing/` (server component plus three small client parts:
 > Download, theme switch, language menu), text in `docs/i18n/landing/en.json`, tokens in
-> `docs/app/tokens.css` guarded by `test/docs/site-tokens.test.ts`, fonts through `next/font`.
+> `docs/app/tokens.css` guarded by `test/docs/site-tokens.test.ts`, fonts through `next/font` (self-hosted with `next/font/local` since v0.64.0: the files are in `docs/fonts/`, refreshed by `scripts/build-doc-fonts.cjs`, because `next/font/google` failed a release build on a Google response it could not parse).
 > `scripts/build-doc-site-info.cjs` reads the latest tag and the release's asset names (GitHub
 > API, falling back to the naming pattern) for the per-OS Download button and the `since` gating;
 > with v0.63.0 the page shows five features and holds back reverse debugging and testing. The

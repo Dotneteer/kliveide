@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 3,
+  "machine": "rom",
+  "source": {"fileName":"enNextLG.rom"},
+  "authoring": ".ai/rom-annotations/README.md",
+  "level": 2,
+  "pages": {
+    "2": {"crc32":"43fc1f2f","name":"ZX Spectrum Next NextZXOS ROM 2 (enNextLG)"}
+  },
+  "inherits": [{"sidecar":"enNextZX.rom.dis","page":2}],
+  "banks": {
+    "2": {
+      "offsetIndex": 0,
+      "regions": [
+        {"start":0,"end":8124,"type":"disassemble"},
+        {"start":8125,"end":8155,"type":"bytes","decode":"text"},
+        {"start":8156,"end":8166,"type":"bytes","decode":"text"},
+        {"start":8167,"end":8175,"type":"bytes","decode":"text"},
+        {"start":8176,"end":8188,"type":"bytes","decode":"text"},
+        {"start":8189,"end":8194,"type":"bytes","decode":"text"},
+        {"start":8195,"end":8203,"type":"bytes","decode":"text"},
+        {"start":8204,"end":8206,"type":"bytes","decode":"text"},
+        {"start":8207,"end":8209,"type":"bytes","decode":"text"},
+        {"start":8210,"end":8212,"type":"bytes","decode":"text"},
+        {"start":8213,"end":8215,"type":"bytes","decode":"text"},
+        {"start":8216,"end":8224,"type":"bytes","decode":"text"},
+        {"start":8225,"end":8236,"type":"bytes","decode":"text"},
+        {"start":8237,"end":8243,"type":"bytes","decode":"text"},
+        {"start":8244,"end":8271,"type":"bytes"},
+        {"start":8272,"end":8273,"type":"bytes"},
+        {"start":8274,"end":8299,"type":"bytes","decode":"text"},
+        {"start":8300,"end":8316,"type":"bytes","decode":"text"},
+        {"start":8317,"end":8332,"type":"bytes","decode":"text"},
+        {"start":8333,"end":8352,"type":"bytes","decode":"text"},
+        {"start":8353,"end":8361,"type":"bytes","decode":"text"},
+        {"start":8362,"end":8382,"type":"bytes","decode":"text"},
+        {"start":8383,"end":8419,"type":"bytes","decode":"text"},
+        {"start":8420,"end":16383,"type":"disassemble"}
+      ],
+      "localLabels": [
+        {"name":"ROM_FILE_NAMES","value":8125},
+        {"name":"MSG_VERSION","value":8383}
+      ],
+      "lineAnnotations": {
+        "8125": {"synopsis":"Machine ROM file names for ROM_FILE_PATH, 8 bytes apart: \"zx80.rom\", \"zx81.rom\", \"128.rom\" $FF,\n\"lg.rom\" $FF (enNextZX.rom has \"48.rom\" here: the only other difference between the two files is\nMSG_VERSION's name)."},
+        "8383": {"synopsis":"\"Version mismatch:\", ENTER, \"0208 enNextLG.rom\", ENTER, $FF (CHECK_VERSION)."}
+      }
+    }
+  },
+  "provenance": {
+    "2:8125:label": "observed",
+    "2:8125:line": "observed",
+    "2:8125:region": "observed",
+    "2:8156:region": "observed",
+    "2:8167:region": "observed",
+    "2:8176:region": "observed",
+    "2:8189:region": "observed",
+    "2:8195:region": "observed",
+    "2:8204:region": "observed",
+    "2:8207:region": "observed",
+    "2:8210:region": "observed",
+    "2:8213:region": "observed",
+    "2:8216:region": "observed",
+    "2:8225:region": "observed",
+    "2:8237:region": "observed",
+    "2:8244:region": "observed",
+    "2:8272:region": "observed",
+    "2:8274:region": "observed",
+    "2:8300:region": "observed",
+    "2:8317:region": "observed",
+    "2:8333:region": "observed",
+    "2:8353:region": "observed",
+    "2:8362:region": "observed",
+    "2:8383:label": "observed",
+    "2:8383:line": "observed",
+    "2:8383:region": "observed"
+  }
+}

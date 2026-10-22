@@ -34,13 +34,17 @@ export function bankContentMix(regions: AnnotationRegion[] | undefined): NexBank
     copper: 0,
     dma: 0,
     text: 0,
+    defc: 0,
+    fill: 0,
     graphic: 0,
     skip: 0
   };
   for (const region of regions ?? []) {
     const start = Math.max(0, region.start);
     const end = Math.min(ANNOTATION_BANK_SIZE - 1, region.end);
-    if (end >= start) mix[region.type] += end - start + 1;
+    // --- `.defc` strings are text and `.fillb` runs bytes in the mix: the legend has no colour for them
+    const type = region.type === "defc" ? "text" : region.type === "fill" ? "bytes" : region.type;
+    if (end >= start) mix[type] += end - start + 1;
   }
   return mix;
 }
