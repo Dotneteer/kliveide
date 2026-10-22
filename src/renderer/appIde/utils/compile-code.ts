@@ -9,6 +9,8 @@ import {
 import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
 import { outputNavigateAction, writeErrorMessageWithLinks } from "@common/utils/output-utils";
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
+import { Z88DK_SETUP_ERROR_CODE } from "@main/z88dk-integration/z88dk-config";
+import { t } from "@common/i18n/i18n";
 import type { BuildDiagnostic } from "@common/automation/protocol";
 
 /**
@@ -175,6 +177,17 @@ export async function compileCode(
         err.message,
         err.isWarning ? "yellow" : "bright-red"
       );
+      // --- z88dk is not set up: one click opens its integration dialog (`Z88DK_SETUP_ERROR_CODE`)
+      if (err.errorCode === Z88DK_SETUP_ERROR_CODE) {
+        out.write(" ");
+        out.color("bright-cyan");
+        out.write(
+          t("commands.compile.z88dkSetupLink"),
+          () => void context.service.ideCommandsService.executeCommand("z88dk-setup"),
+          true
+        );
+        out.color(err.isWarning ? "yellow" : "bright-red");
+      }
       out.write(" - ");
       out.bold(false);
       out.color("bright-cyan");

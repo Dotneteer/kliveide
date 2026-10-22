@@ -9,6 +9,7 @@ import { checkSourceAnnotations } from "@common/utils/source-annotations";
 import { createCompilerRegistry } from "@main/compiler-integration/compiler-registry";
 import { SJASMP_EXECUTABLE_PATH, SJASMP_INSTALL_FOLDER } from "@main/sjasmp-integration/sjasmp-config";
 import { getSjasmplusExecutableName } from "@main/sjasmp-integration/sjasmplus-resolver";
+import { Z88DK_INSTALL_FOLDER } from "@main/z88dk-integration/z88dk-config";
 import { resolveSettingsFilePath } from "@main/settings-path";
 import { CliError, EXIT_INTERNAL, usageError } from "./exit-codes";
 import { buildRootPath, languageOf, type CliProject } from "./project";
@@ -23,6 +24,8 @@ import { buildRootPath, languageOf, type CliProject } from "./project";
 export type CompileOptions = {
   /** `--sjasmplus <path>` */
   sjasmplus?: string;
+  /** `--z88dk <folder>`: the z88dk installation for a C build root */
+  z88dk?: string;
   /** `--use-ide-settings`: the IDE's user settings join the project's (Q4) */
   useIdeSettings?: boolean;
   /** `--machine` over the project's (the sjasmplus device follows it) */
@@ -165,6 +168,11 @@ export async function compileProject(project: CliProject, options: CompileOption
   if (language === "sjasmp") {
     const merged = { ...userSettings, ...projectSettings };
     writePath(projectSettings, SJASMP_EXECUTABLE_PATH, resolveSjasmplus(options, merged, env, cwd));
+  }
+  if (language === "c") {
+    // --- `--z88dk`, then `Z88DK`; else the settings, else the compiler's own detection (`~/z88dk`, ...)
+    const root = options.z88dk ?? env.Z88DK;
+    if (root) writePath(projectSettings, Z88DK_INSTALL_FOLDER, path.resolve(cwd, root));
   }
   compiler.setAppState?.(
     minimalAppState(project, projectSettings, userSettings, options.machineId ?? project.machineId, options.modelId ?? project.modelId)

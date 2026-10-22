@@ -14,6 +14,8 @@ export const DETECT_CODE_DATA_DIALOG = 9;
 // --- Boriel BASIC setup (`.plans/BORIEL_BASIC_INTEGRATION_PLAN.md` §3.3). Both registries render it:
 // --- the first-run offer appears in the emulator window, Settings opens it in the IDE window
 export const BORIEL_SETUP_DIALOG = 10;
+// --- z88dk (C) setup (`.plans/Z88DK_INTEGRATION_PLAN.md` §4), opened from Settings, `z88dk-setup` and a C build
+export const Z88DK_INTEGRATION_DIALOG = 11;
 
 // --- Emulator dialogs
 export const EMU_DIALOG_BASE = 1000;

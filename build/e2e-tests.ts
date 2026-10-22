@@ -32,6 +32,8 @@ export const E2E_CORE_TESTS: string[] = [
   "test/cli/klive-test-e2e.test.ts",
   // --- `klive run` on the fixtures, every machine and stop condition (`.plans/COMMAND_LINE_AUTOMATION_PLAN.md` §6)
   "test/cli/klive-run-e2e.test.ts",
+  // --- z88dk programs (committed zcc output) on the cores (`.plans/Z88DK_INTEGRATION_PLAN.md` §3)
+  "test/z88dk/**/*.core.test.ts",
 
   // --- Mixed folders: the files that run a core
   "test/audio/AudioIntegration.test.ts",

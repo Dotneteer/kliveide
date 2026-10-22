@@ -585,6 +585,53 @@
   "@settings.integrations.borielBasic.description": {
     "context": "Help text under the setting 'Boriel BASIC' (Settings dialog, Integrations page). Wraps over several lines."
   },
+  "settings.integrations.z88dk.title": "z88dk",
+  "@settings.integrations.z88dk.title": {
+    "context": "Settings dialog, Integrations page, 'C compiler' group: label of a file setting (shows the z88dk installation folder, with a Configure button beside it). z88dk is a product name, always lower case."
+  },
+  "settings.integrations.z88dk.description": "The z88dk installation that builds .c files: use one you have, or download a release",
+  "@settings.integrations.z88dk.description": {
+    "context": "Help text under the setting 'z88dk' (Settings dialog, Integrations page). Wraps over several lines."
+  },
+  "settings.integrations.z88dkCompiler.title": "Compiler",
+  "@settings.integrations.z88dkCompiler.title": {
+    "context": "Settings dialog, Integrations page, 'C compiler' group: label of a select setting choosing z88dk's C compiler (sccz80 or SDCC, product names). Shown only while a project is open."
+  },
+  "settings.integrations.z88dkCompiler.description": "sccz80 builds debuggable programs. SDCC programs run and export, but breakpoints and stepping work at assembly level only. Saved in the project.",
+  "@settings.integrations.z88dkCompiler.description": {
+    "context": "Help text under the setting 'Compiler' (C compiler group, Settings dialog). Wraps over several lines."
+  },
+  "settings.integrations.z88dkClib.title": "C library",
+  "@settings.integrations.z88dkClib.title": {
+    "context": "Settings dialog, Integrations page, 'C compiler' group: label of a select setting choosing which z88dk C library programs link with. Shown only while a project is open."
+  },
+  "settings.integrations.z88dkClib.description": "The library the program links with. Saved in the project.",
+  "@settings.integrations.z88dkClib.description": {
+    "context": "Help text under the setting 'C library' (C compiler group, Settings dialog)."
+  },
+  "settings.integrations.z88dkClib.option.classic": "Classic",
+  "@settings.integrations.z88dkClib.option.classic": {
+    "context": "Option of the 'C library' setting: z88dk's classic C library (the default).",
+    "maxChars": 24
+  },
+  "settings.integrations.z88dkClib.option.new": "New library",
+  "@settings.integrations.z88dkClib.option.new": {
+    "context": "Option of the 'C library' setting: z88dk's newer C library.",
+    "maxChars": 24
+  },
+  "settings.integrations.z88dkOptimise.title": "Optimisation",
+  "@settings.integrations.z88dkOptimise.title": {
+    "context": "Settings dialog, Integrations page, 'C compiler' group: label of a select setting choosing the optimisation level of release builds (the options are zcc's own flags, shown verbatim). Shown only while a project is open."
+  },
+  "settings.integrations.z88dkOptimise.description": "Used by Run and Export. Debug builds are not optimised, so breakpoints stay on their lines. Saved in the project.",
+  "@settings.integrations.z88dkOptimise.description": {
+    "context": "Help text under the setting 'Optimisation' (C compiler group, Settings dialog). Wraps over several lines."
+  },
+  "settings.integrations.z88dkOptimise.option.none": "None",
+  "@settings.integrations.z88dkOptimise.option.none": {
+    "context": "Option of the 'Optimisation' setting: no optimisation.",
+    "maxChars": 24
+  },
   "settings.group.startup": "Startup",
   "@settings.group.startup": {
     "context": "Group heading in the Settings dialog (General page). The style shows it in capitals; write it in your language's normal case.",
@@ -722,6 +769,11 @@
   },
   "settings.group.basicCompilers": "BASIC compilers",
   "@settings.group.basicCompilers": {
+    "context": "Group heading in the Settings dialog (Integrations page). The style shows it in capitals; write it in your language's normal case.",
+    "maxChars": 28
+  },
+  "settings.group.cCompiler": "C compiler",
+  "@settings.group.cCompiler": {
     "context": "Group heading in the Settings dialog (Integrations page). The style shows it in capitals; write it in your language's normal case.",
     "maxChars": 28
   },

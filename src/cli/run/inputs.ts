@@ -39,6 +39,8 @@ export type RunInputOptions = {
   machine?: string;
   roms?: string[];
   sjasmplus?: string;
+  /** `--z88dk <folder>` for a C project */
+  z88dk?: string;
   useIdeSettings?: boolean;
 };
 
@@ -174,7 +176,7 @@ async function loadProjectInput(folder: string, options: RunInputOptions, io: Cl
   const roms = romOverrides(options.roms, project.roms, project.folder, io.cwd);
   const build = await compileProject(
     project,
-    { sjasmplus: options.sjasmplus, useIdeSettings: !!options.useIdeSettings, machineId: machine.machineId, modelId: machine.modelId },
+    { sjasmplus: options.sjasmplus, z88dk: options.z88dk, useIdeSettings: !!options.useIdeSettings, machineId: machine.machineId, modelId: machine.modelId },
     io.env,
     io.cwd
   );

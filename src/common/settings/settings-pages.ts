@@ -53,6 +53,12 @@ import {
 import { getTimexModel, type TimexModelId } from "@emu/machines/timex/timexModels";
 import { createSettingsReader } from "@common/utils/SettingsReader";
 import { BORIEL_INSTALL_FOLDER } from "@main/boriel-integration/boriel-config";
+import {
+  Z88DK_CLIB,
+  Z88DK_COMPILER,
+  Z88DK_INSTALL_FOLDER,
+  Z88DK_OPTIMISE
+} from "@main/z88dk-integration/z88dk-config";
 import { selectedZxBasicCompiler, ZXBC_EXECUTABLE_PATH } from "@main/zxb-integration/zxb-config";
 import {
   SETTING_EDITOR_ALLOW_BACKGROUND_COMPILE,
@@ -146,7 +152,11 @@ export type SettingsStateKey =
   | "automationEnabled"
   | "automationLevel"
   | "basicCompiler"
-  | "borielInstallation";
+  | "borielInstallation"
+  | "z88dkInstallation"
+  | "z88dkCompiler"
+  | "z88dkClib"
+  | "z88dkOptimise";
 
 export type SettingsRowSource =
   | { kind: "setting"; settingId: string }
@@ -1093,8 +1103,82 @@ export const SETTINGS_ROWS: SettingsRow[] = [
     editor: "file",
     source: state("borielInstallation"),
     buttons: [{ labelKey: "settings.button.configure", action: "dialog:boriel", closesDialog: true }]
+  },
+  {
+    // --- `.plans/Z88DK_INTEGRATION_PLAN.md` §4.2: the install, set up through its dialog
+    id: "z88dk",
+    page: "integrations",
+    groupKey: "settings.group.cCompiler",
+    titleKey: "settings.integrations.z88dk.title",
+    descriptionKey: "settings.integrations.z88dk.description",
+    editor: "file",
+    source: state("z88dkInstallation"),
+    buttons: [{ labelKey: "settings.button.configure", action: "dialog:z88dk", closesDialog: true }]
+  },
+  {
+    // --- C6: the build options are project settings, written into `klive.project`
+    id: "z88dkCompiler",
+    page: "integrations",
+    groupKey: "settings.group.cCompiler",
+    titleKey: "settings.integrations.z88dkCompiler.title",
+    descriptionKey: "settings.integrations.z88dkCompiler.description",
+    editor: "select",
+    source: state("z88dkCompiler"),
+    options: [
+      { label: "sccz80", value: "sccz80" },
+      { label: "SDCC", value: "sdcc" }
+    ],
+    when: { kind: "kliveProject" },
+    defaultValue: "sccz80"
+  },
+  {
+    id: "z88dkClib",
+    page: "integrations",
+    groupKey: "settings.group.cCompiler",
+    titleKey: "settings.integrations.z88dkClib.title",
+    descriptionKey: "settings.integrations.z88dkClib.description",
+    editor: "select",
+    source: state("z88dkClib"),
+    options: () =>
+      opts([
+        ["classic", "settings.integrations.z88dkClib.option.classic"],
+        ["new", "settings.integrations.z88dkClib.option.new"]
+      ]),
+    when: { kind: "kliveProject" },
+    defaultValue: "classic"
+  },
+  {
+    id: "z88dkOptimise",
+    page: "integrations",
+    groupKey: "settings.group.cCompiler",
+    titleKey: "settings.integrations.z88dkOptimise.title",
+    descriptionKey: "settings.integrations.z88dkOptimise.description",
+    editor: "select",
+    source: state("z88dkOptimise"),
+    options: () =>
+      opts([
+        ["none", "settings.integrations.z88dkOptimise.option.none"],
+        ["O1", lit("-O1")],
+        ["O2", lit("-O2")],
+        ["O3", lit("-O3")],
+        ["SO3", lit("-SO3")]
+      ]),
+    when: { kind: "kliveProject" },
+    defaultValue: "O2"
   }
 ];
+
+/** What the settings say about the z88dk install (not whether it still works: the dialog checks). */
+export function z88dkInstallationFolder(appState: AppState | undefined): string {
+  const settings = appState ? createSettingsReader(appState) : undefined;
+  return String(settings?.readSetting(Z88DK_INSTALL_FOLDER) ?? "").trim();
+}
+
+/** A project's z88dk build option, or its default when the project does not set it. */
+export function z88dkProjectOption(appState: AppState | undefined, key: string, fallback: string): string {
+  const value = key.split(".").reduce<any>((node, part) => (node == null ? undefined : node[part]), appState?.projectSettings);
+  return typeof value === "string" && value ? value : fallback;
+}
 
 /**
  * The folder of the Boriel BASIC Klive uses: an explicit `zxc` path's folder, else the installation
@@ -1170,6 +1254,14 @@ export function readSettingsRowValue(row: SettingsRow, appState: AppState | unde
       return selectedZxBasicCompiler(appState);
     case "borielInstallation":
       return borielInstallationFolder(appState);
+    case "z88dkInstallation":
+      return z88dkInstallationFolder(appState);
+    case "z88dkCompiler":
+      return z88dkProjectOption(appState, Z88DK_COMPILER, "sccz80");
+    case "z88dkClib":
+      return z88dkProjectOption(appState, Z88DK_CLIB, "classic");
+    case "z88dkOptimise":
+      return z88dkProjectOption(appState, Z88DK_OPTIMISE, "O2");
     default:
       return undefined;
   }

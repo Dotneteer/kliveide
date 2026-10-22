@@ -58,6 +58,8 @@ vendor/boriel-basic/kits/
 vendor/boriel-basic/stage/
 # Output of scripts/boriel-ide-check.cjs (throwaway homes and screenshots)
 .boriel-ide-check/
+# Output of scripts/z88dk-ide-check.cjs (throwaway homes and screenshots)
+.z88dk-ide-check/
 
 # Localization work files: i18n:todo batches and translators' answers (LOCALIZATION_PLAN §6)
 i18n-work/

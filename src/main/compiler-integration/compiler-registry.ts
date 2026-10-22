@@ -3,6 +3,7 @@ import { Pasta80Compiler } from "@main/pasta80-integration/Pasta80Compiler";
 import { SjasmPCompiler } from "@main/sjasmp-integration/SjasmPCompiler";
 import { Z80Compiler } from "@main/z80-compiler/Z80Compiler";
 import { ZxBasicDispatcher } from "@main/zxb-integration/ZxBasicDispatcher";
+import { Z88dkCompiler } from "@main/z88dk-integration/Z88dkCompiler";
 
 class CompilerRegistry {
   private _compilerRegistry: Record<string, IKliveCompiler> = {};
@@ -30,5 +31,6 @@ export function createCompilerRegistry(): CompilerRegistry {
   registry.registerCompiler(new ZxBasicDispatcher());
   registry.registerCompiler(new SjasmPCompiler());
   registry.registerCompiler(new Pasta80Compiler());
+  registry.registerCompiler(new Z88dkCompiler());
   return registry;
 }

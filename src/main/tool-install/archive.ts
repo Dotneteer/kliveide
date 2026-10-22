@@ -44,6 +44,82 @@ export function extractZip(
 ): ExtractedEntry[] {
   const buffer = fs.readFileSync(zipFile);
   const extracted: ExtractedEntry[] = [];
+  for (const entry of zipEntries(buffer, outputFolder, options)) {
+    const fileData = inflateEntry(
+      entry,
+      entry.compressionMethod === 8 ? zlib.inflateRawSync(entry.compressedData) : entry.compressedData
+    );
+    writeEntry(outputFolder, entry.entryPath, fileData, entry.mode, options);
+    extracted.push({ path: entry.entryPath, mode: entry.mode });
+  }
+  return extracted;
+}
+
+/** What `extractArchiveAsync` adds: it yields to the event loop as it goes, and can be stopped. */
+export type AsyncExtractOptions = ExtractOptions & {
+  /** Aborting it stops the extraction (with an `AbortError`) before the next entry. */
+  signal?: AbortSignal;
+  /** Called after each extracted file. */
+  onEntry?: (done: number, total: number) => void;
+};
+
+/**
+ * `extractArchive` for big archives (a z88dk release: ~29 000 files, ~410 MB): inflates on libuv's
+ * thread pool and writes with async I/O, so the main process keeps serving the windows while it runs.
+ * Only `.zip`; a tarball goes through the synchronous path.
+ */
+export async function extractArchiveAsync(
+  archiveFile: string,
+  outputFolder: string,
+  options: AsyncExtractOptions = {}
+): Promise<ExtractedEntry[]> {
+  if (!archiveFile.toLowerCase().endsWith(".zip")) return extractArchive(archiveFile, outputFolder, options);
+  const buffer = await fs.promises.readFile(archiveFile);
+  const entries = [...zipEntries(buffer, outputFolder, options)];
+  const extracted: ExtractedEntry[] = [];
+  const applyModes = options.applyModes ?? process.platform !== "win32";
+  const madeFolders = new Set<string>();
+  for (const entry of entries) {
+    if (options.signal?.aborted) {
+      const error = new Error("The extraction was cancelled.");
+      error.name = "AbortError";
+      throw error;
+    }
+    const raw =
+      entry.compressionMethod === 8
+        ? await new Promise<Buffer>((resolve, reject) =>
+            zlib.inflateRaw(entry.compressedData, (err, data) => (err ? reject(err) : resolve(data)))
+          )
+        : Buffer.from(entry.compressedData);
+    const fileData = inflateEntry(entry, raw);
+    const targetPath = safeJoin(outputFolder, entry.entryPath);
+    const folder = path.dirname(targetPath);
+    if (!madeFolders.has(folder)) {
+      await fs.promises.mkdir(folder, { recursive: true });
+      madeFolders.add(folder);
+    }
+    await fs.promises.writeFile(targetPath, fileData);
+    if (applyModes && entry.mode) await fs.promises.chmod(targetPath, entry.mode & 0o777);
+    extracted.push({ path: entry.entryPath, mode: entry.mode });
+    options.onEntry?.(extracted.length, entries.length);
+  }
+  return extracted;
+}
+
+type ZipEntry = {
+  rawName: string;
+  entryPath: string;
+  mode: number;
+  compressionMethod: number;
+  uncompressedSize: number;
+  compressedData: Buffer;
+};
+
+/**
+ * The files of a zip, after stripping and filtering, read from its central directory. Folder entries
+ * are created on the way (they hold no data), so a kept empty folder survives.
+ */
+function* zipEntries(buffer: Buffer, outputFolder: string, options: ExtractOptions): Generator<ZipEntry> {
   let offset = findZipCentralDirectoryOffset(buffer);
 
   while (offset < buffer.length && buffer.readUInt32LE(offset) === 0x02014b50) {
@@ -72,26 +148,30 @@ export function extractZip(
     if (buffer.readUInt32LE(localHeaderOffset) !== 0x04034b50) {
       throw new Error(`Invalid ZIP local header for ${rawName}.`);
     }
+    if (compressionMethod !== 0 && compressionMethod !== 8) {
+      throw new Error(`Unsupported ZIP compression method ${compressionMethod} for ${rawName}.`);
+    }
     const localNameLength = buffer.readUInt16LE(localHeaderOffset + 26);
     const localExtraLength = buffer.readUInt16LE(localHeaderOffset + 28);
     const dataOffset = localHeaderOffset + 30 + localNameLength + localExtraLength;
-    const compressedData = buffer.subarray(dataOffset, dataOffset + compressedSize);
-    let fileData: Buffer;
-    if (compressionMethod === 0) {
-      fileData = compressedData;
-    } else if (compressionMethod === 8) {
-      fileData = zlib.inflateRawSync(compressedData);
-    } else {
-      throw new Error(`Unsupported ZIP compression method ${compressionMethod} for ${rawName}.`);
-    }
-    if (fileData.length !== uncompressedSize) {
-      throw new Error(`Invalid ZIP entry size for ${rawName}.`);
-    }
-
-    writeEntry(outputFolder, entryPath, fileData, mode, options);
-    extracted.push({ path: entryPath, mode });
+    yield {
+      rawName,
+      entryPath,
+      mode,
+      compressionMethod,
+      uncompressedSize,
+      compressedData: buffer.subarray(dataOffset, dataOffset + compressedSize)
+    };
   }
-  return extracted;
+}
+
+/** The entry's bytes: stored data as it is, deflated data as inflated; checked against the recorded size. */
+function inflateEntry(entry: ZipEntry, inflated: Buffer): Buffer {
+  const fileData = entry.compressionMethod === 0 ? entry.compressedData : inflated;
+  if (fileData.length !== entry.uncompressedSize) {
+    throw new Error(`Invalid ZIP entry size for ${entry.rawName}.`);
+  }
+  return fileData;
 }
 
 export function extractTarGz(

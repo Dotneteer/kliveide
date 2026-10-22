@@ -2,8 +2,6 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 import { execa } from "execa";
-import { Readable } from "stream";
-import { pipeline } from "stream/promises";
 
 import type {
   SjasmplusProbeResult,
@@ -22,6 +20,7 @@ import {
   normalizeExecutablePath
 } from "./sjasmplus-resolver";
 import { extractArchive, safeJoin } from "../tool-install/archive";
+import { downloadToFile, type FetchLike } from "../tool-install/download";
 
 const PROBE_SOURCE = [
   "  DEVICE ZXSPECTRUM48",
@@ -35,19 +34,6 @@ const PROBE_SOURCE = [
 
 const EXPECTED_PROBE_BYTES = [0x3e, 0x42, 0xc9];
 const SJASMPLUS_RELEASES_URL = "https://api.github.com/repos/z00m128/sjasmplus/releases";
-
-type FetchLike = (
-  input: string,
-  init?: { headers?: Record<string, string> }
-) => Promise<{
-  ok: boolean;
-  status: number;
-  statusText: string;
-  body?: unknown;
-  headers?: { get: (key: string) => string | null };
-  arrayBuffer?: () => Promise<ArrayBuffer>;
-  json: () => Promise<unknown>;
-}>;
 
 type GithubReleaseAsset = {
   name?: unknown;
@@ -382,32 +368,11 @@ async function downloadAsset(
   downloadUrl: string,
   targetFile: string
 ): Promise<number> {
-  const response = await fetcher(downloadUrl, {
-    headers: {
-      Accept: "application/octet-stream",
-      "User-Agent": "klive-ide-sjasmplus-integration"
-    }
+  const { bytes } = await downloadToFile(fetcher, downloadUrl, targetFile, {
+    userAgent: "klive-ide-sjasmplus-integration",
+    what: "SJASMPLUS release"
   });
-
-  if (!response.ok) {
-    throw new Error(
-      `Cannot download SJASMPLUS release. Server returned ${response.status} ${response.statusText}.`
-    );
-  }
-
-  if (response.body) {
-    const nodeStream =
-      typeof (Readable as any).fromWeb === "function"
-        ? (Readable as any).fromWeb(response.body)
-        : Readable.from(response.body as any);
-    await pipeline(nodeStream, fs.createWriteStream(targetFile));
-  } else if (response.arrayBuffer) {
-    fs.writeFileSync(targetFile, Buffer.from(await response.arrayBuffer()));
-  } else {
-    throw new Error("Cannot download SJASMPLUS release. Response body is empty.");
-  }
-
-  return fs.statSync(targetFile).size;
+  return bytes;
 }
 
 function prepareDownloadedAsset(

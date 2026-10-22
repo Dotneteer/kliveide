@@ -246,6 +246,7 @@ describe("the project and the options (D2, D6)", () => {
     expect(languageOf("/p/main.sjasm", {})).toBe("sjasmp");
     expect(languageOf("/p/main.z80", { languages: { sjasmp: ".z80|.s" } })).toBe("sjasmp");
     expect(languageOf("/p/main.zxbas", {})).toBe("zxbas");
+    expect(languageOf("/p/code/main.c", {})).toBe("c");
     expect(languageOf("/p/main.txt", {})).toBeUndefined();
   });
 

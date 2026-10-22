@@ -421,6 +421,8 @@ const withNextra = nextra({
             "markdown",
             // --- The automation page's Python client (working-with-ide/automation.mdx)
             "python",
+            // --- The z88dk (C) guide (guides/languages/z88dk.mdx)
+            "c",
             "asm",
             "diff",
             {

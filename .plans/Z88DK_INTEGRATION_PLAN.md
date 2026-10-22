@@ -1,6 +1,7 @@
 # Z88DK (C) Integration — Implementation Plan
 
-Status: **proposed** (2026-10-18). Nothing implemented; decisions in §0.2 need the author's OK.
+Status: **implemented** (2026-10-18, branch `feature/z88dk-integration`), all phases Z0–Z7, with the
+decisions of §0.2 as written. §14 records what was built and where it differs from the text above.
 The author's requirement (2026-10-18): **setup goes through a dialog with download, like the
 sjasmplus integration** (§4).
 
@@ -335,3 +336,38 @@ This phase is optional and the most expensive. Start it only if Z3 proves the ma
 
 Suggested order: Z0 → Z1 → Z2 → Z3 → Z4 → Z7, then decide on Z5/Z6 from real use. Z3 and Z4 can
 run in parallel once Z2 is in.
+
+## 14. As built (2026-10-18)
+
+- **Z0.** Facts are in `.ai/z88dk/` (v2.4, re-verified). New facts: zcc's banner goes to stderr and it
+  exits 0; `-clib=classic` exists only on `+zxn` (whose default `sdcc_iy` cannot `-debug`); C4 holds on
+  v2.4; the CDB names escape digits too; **sccz80 reads one line ahead**, so a shared address maps to
+  the *lowest* line (not the last, as §6 guessed); **`-debug` keeps a frame-pointer chain in
+  `__debug_framepointer`** with an IX frame's layout, which is what made Z5 cheap. Fixtures:
+  `test/z88dk/fixtures/` (`npm run z88dk:fixtures`, two documented path normalisations; the Next map
+  is not committed, 1.2 MB).
+- **Z1.** As §4, plus: the download helper (`tool-install/download.ts`, shared with sjasmplus) and an
+  async zip extractor (`extractArchiveAsync`) so a 29 000-file release does not freeze the main
+  process; progress is polled (`getZ88dkDownloadProgress`) rather than pushed. The release list is
+  cached for 10 minutes in main and fetched once per dialog session. The not-set-up build error
+  carries a **Set up z88dk...** link (error code `ZCC-SETUP`). Settings rows edit `z88dk.compiler`,
+  `clib` and `optimise`; the other C6 keys are `klive.project` keys (documented).
+- **Z2.** Builds go to `_klive/z88dk/<profile>/` (like Boriel's `_klive/boriel`), every profile with
+  `-create-app`. Real-core tests (`test/z88dk/*.core.test.ts`) changed two routes: Klive's 128 BASIC
+  injection starts code with the editor ROM paged, so the **128K, +3 and Scorpion inject in 48 BASIC**;
+  the ZX80/ZX81 **load appmake's `.O`/`.P`** like `tape-load -r` (the ZX80's org is not Klive's REM
+  body). `-lndos` is the default library on classic Spectrum/Next targets (printf needs it).
+- **Z3.** As §6; `lineCanHaveBreakpoint` is a text rule (not the last build's line set).
+- **Z4.** v2.4's appmake writes `.epr` itself. The Z88 Run route is `z88AppFlow.ts`: card in slot 3,
+  soft reset (needed: OZ does not list a hot-plugged application otherwise), then □ + `APP_KEY` after
+  1600 frames (OZ needed 400–800).
+- **Z5.** `z88dk-debug-adapter.ts`; the shared debugger gained `framePointerAddress`, the `char` and
+  `pointer` value types and `typeLabel`. Not decoded: floats, structs, arrays; banked functions are
+  line-level only. The startup code is the entry-point callable (`__restore_sp_onexit` + 1 holds its
+  SP); a function's opening line (before `call l_debug_push_frame`) is no statement.
+- **Z6.** Banked builds: segments per `BANK_n`, list items with partition and segment; on the 128K and
+  Scorpion they run from appmake's tape through the Tape Loader (48 BASIC locks the paging); banked
+  +3 builds are export-only.
+- **Z7.** `klive build`/`run` take `--z88dk`; docs `guides/languages/z88dk.mdx`;
+  `scripts/z88dk-ide-check.cjs` (run, debug, export, zx81, setup, nosetup) passed on the built app.
+

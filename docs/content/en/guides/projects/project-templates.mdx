@@ -13,14 +13,14 @@ When you create a project with **File › New Project...** or the [`newp`](/en/r
 | Machine | Machine ID | `default` | `zx-basic` | `sjasmplus` | `pasta-80` | `z88-dk` |
 | --- | --- | :-: | :-: | :-: | :-: | :-: |
 | ZX Spectrum 48K | `sp48` | ✓ | ✓ | ✓ | ✓ | ✓ |
-| ZX Spectrum 128K | `sp128` | ✓ | ✓ | ✓ | ✓ | |
-| ZX Spectrum +2E/+3E | `spp3e` | ✓ | | ✓ | ✓ | |
+| ZX Spectrum 128K | `sp128` | ✓ | ✓ | ✓ | ✓ | ✓ |
+| ZX Spectrum +2E/+3E | `spp3e` | ✓ | | ✓ | ✓ | ✓ |
 | Timex | `timex` | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Scorpion ZS-256 | `scorpion` | ✓ | ✓ | ✓ | ✓ | |
-| ZX Spectrum Next | `zxnext` | ✓ | ✓ | | | |
-| ZX81 | `zx81` | ✓ | | | | |
-| ZX80 | `zx80` | ✓ | | | | |
-| Cambridge Z88 | `z88` | ✓ | | | | |
+| ZX Spectrum Next | `zxnext` | ✓ | ✓ | | | ✓ |
+| ZX81 | `zx81` | ✓ | | | | ✓ |
+| ZX80 | `zx80` | ✓ | | | | ✓ |
+| Cambridge Z88 | `z88` | ✓ | | | | ✓ |
 
 [Machine types](/en/reference/machine-types/) lists the models of each machine.
 
@@ -32,14 +32,15 @@ When you create a project with **File › New Project...** or the [`newp`](/en/r
 | `zx-basic` | ZX BASIC | `code/program.zxbas` | Nothing: Klive BASIC is built in. [ZX BASIC](/en/guides/languages/zx-basic/) explains the options and how to use Boriel BASIC instead. |
 | `sjasmplus` | sjasmplus assembly | `code/code.asm` | sjasmplus, set up as [sjasmplus](/en/guides/languages/sjasmplus/) describes. |
 | `pasta-80` | Pascal | `main.pas` | The PASTA/80 compiler, set up as [PASTA/80](/en/guides/languages/pasta80/) describes. |
-| `z88-dk` | C | `code/main.c` | z88dk, installed separately. |
+| `z88-dk` | C | `code/main.c` | z88dk, set up as [z88dk (C)](/en/guides/languages/z88dk/) describes. |
 
 A few details:
 
 - The `default` template's code starts with a `.model` pragma for its machine (`Spectrum48`, `Spectrum128`, `SpectrumP3`, `ZX80`, `ZX81`), so the assembler knows what it targets.
 - On the ZX81 and ZX80, the program runs as a BASIC program: Klive puts the code into a `1 REM` line and calls it. See [ZX80 and ZX81](/en/reference/z80-assembler/zx80-zx81/).
 - The ZX Spectrum Next's `zx-basic` template shows how `CODEBANK` blocks put routines into 8K pages.
-- The Cambridge Z88's template has no program yet; it gives you the project structure to start from.
+- The Cambridge Z88's `default` template has no program yet; it gives you the project structure to start from. Its `z88-dk` template is a complete card application: Run puts the card in slot 3, restarts the Z88 and starts the application.
+- The `z88-dk` templates print with `printf` (the Spectrum ones clear the screen and set the border first), call a small function in a loop, and keep a global counter, so breakpoints, the call stack and the Variables panel have something to show.
 
 <Callout type="info" emoji="💡">
 You can change a project's machine at any time while it is open, but the template's code stays what it was: a program written for the 48K's ROM does not run on a ZX81.

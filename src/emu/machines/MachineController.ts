@@ -1018,6 +1018,17 @@ export class MachineController implements IMachineController {
   }
 
   /**
+   * Stops the machine and runs a ready-made flow on it (a Z88 card application: `z88AppFlow.ts`).
+   * @param debug Arm the breakpoints once the flow has run
+   */
+  async runFlow(flow: CodeInjectionFlow, debug: boolean): Promise<void> {
+    const operationRevision = this.beginMachineOperation();
+    await this.stop(operationRevision);
+    this.assertMachineOperationIsCurrent(operationRevision);
+    await this.executeInjectionFlow(flow, undefined, debug, operationRevision);
+  }
+
+  /**
    * Runs a code-injection flow's steps, then starts the machine - in debug mode if asked. Shared by
    * `runCode` and `runTapeLoad`; a flow with no `Inject` step needs no code.
    */

@@ -45,6 +45,7 @@ Input:
                             (Symbol Shift), {CS+5}-style chords of named keys
   --rom <name>=<file>       A ROM file in place of the one Klive ships (sp48, sp128-0, ...)
   --sjasmplus <path>        The sjasmplus executable, for a project that uses it
+  --z88dk <folder>          The z88dk installation, for a C project
   --use-ide-settings        Read the IDE's user settings too
 
 After the stop:
@@ -61,7 +62,7 @@ Exit codes: 0 stopped as asked, 2 build errors, 3 usage or input, 4 internal err
 
 const SPEC = {
   flags: ["until-halt", "no-timestamp", "use-ide-settings", "json", "help"],
-  values: ["machine", "frames", "tstates", "timeout", "keys", "wait-frames", "dump-regs", "screenshot", "save-state", "sjasmplus"],
+  values: ["machine", "frames", "tstates", "timeout", "keys", "wait-frames", "dump-regs", "screenshot", "save-state", "sjasmplus", "z88dk"],
   repeatable: ["until-pc", "bp", "dump-mem", "rom"]
 };
 
@@ -134,6 +135,7 @@ export async function runRunVerb(argv: string[], io: CliIo): Promise<number> {
       machine: options.machine as string | undefined,
       roms: options.rom as string[] | undefined,
       sjasmplus: options.sjasmplus as string | undefined,
+      z88dk: options.z88dk as string | undefined,
       useIdeSettings: !!options["use-ide-settings"]
     },
     io

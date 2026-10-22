@@ -20,7 +20,7 @@ describe("automation: commands that cannot run unattended (T5)", () => {
       .filter((c) => c.automation === "deny")
       .map((c) => c.id)
       .sort();
-    expect(denied).toEqual(["display-dialog", "exit", "history-take-over", "settings"]);
+    expect(denied).toEqual(["display-dialog", "exit", "history-take-over", "settings", "z88dk-setup"]);
   });
 
   it("refuses them by id or alias, and lets everything else through", () => {

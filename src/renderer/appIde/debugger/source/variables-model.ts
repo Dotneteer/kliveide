@@ -119,9 +119,9 @@ export function elementAddress(layout: ArrayLayout, subscripts: number[]): numbe
   return (layout.data + flat * layout.elementSize) & 0xffff;
 }
 
-function scalarNode(id: string, name: string, type: SourceValueType, mem: MemoryView, address: number): VariableNode {
+function scalarNode(id: string, name: string, type: SourceValueType, mem: MemoryView, address: number, label?: string): VariableNode {
   const decoded = decodeValue(type, mem, address);
-  return { id, name, type: typeName(type), value: decoded.text, address, decoded, valueType: type };
+  return { id, name, type: label ?? typeName(type), value: decoded.text, address, decoded, valueType: type };
 }
 
 function boundsText(layout: ArrayLayout): string {
@@ -198,7 +198,7 @@ export function variableNode(v: VariableDebugInfo, mem: MemoryView, ix: number |
   }
   const address = variableAddress(v, mem, ix);
   if (address === undefined) return undefined;
-  if (!v.array) return scalarNode(id, v.displayName, v.type, mem, address);
+  if (!v.array) return scalarNode(id, v.displayName, v.type, mem, address, v.typeLabel);
   const layout = arrayLayout(v, mem, address);
   const allocated = layout.data !== 0;
   return {

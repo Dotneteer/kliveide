@@ -4,7 +4,8 @@ import {
   CREATE_DISK_DIALOG,
   SJASMPLUS_INTEGRATION_DIALOG,
   DETECT_CODE_DATA_DIALOG,
-  BORIEL_SETUP_DIALOG
+  BORIEL_SETUP_DIALOG,
+  Z88DK_INTEGRATION_DIALOG
 } from "@common/messaging/dialog-ids";
 import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
 import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
@@ -58,5 +59,6 @@ export const publicDialogIds: Record<string, PublicDialogInfo> = {
   sjasmplusIntegration: { source: "ide", dialogId: SJASMPLUS_INTEGRATION_DIALOG },
   detectCodeData: { source: "ide", dialogId: DETECT_CODE_DATA_DIALOG },
   borielSetup: { source: "ide", dialogId: BORIEL_SETUP_DIALOG },
+  z88dkIntegration: { source: "ide", dialogId: Z88DK_INTEGRATION_DIALOG },
   createDisk: { source: "emu", dialogId: CREATE_DISK_DIALOG }
 };

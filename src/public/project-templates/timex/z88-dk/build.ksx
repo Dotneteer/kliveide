@@ -1,40 +1,19 @@
 export function buildCode() {
-  $notifications.startCompilation();
-  const result = Z88dk.compile($project.buildRoot);
-  $notifications.completeCompilation(result);
-  return result;
+  $command("klive.compile")
 }
 
 export function injectCode() {
-  const result = buildForInject();
-  if (!result) return;
-
-  if ($emu.executionState !== 3) {
-    Output.warn("The virtual machine must be paused to inject code.");
-    return;
-  }
-
-  $emu.injectCode(result.contents);
-  Output.info("Code (" + result.contents.length + " bytes) successfully injected.")
+  $command("klive.inject")
 }
 
 export function runCode() {
-  const result = buildForInject();
-  if (!result) return;
+  $command("klive.run")
+}
 
-  $emu.runCode(result.contents);
-  Output.info("Code (" + result.contents.length + " bytes) successfully injected and started.")
+export function debugCode() {
+  $command("klive.debug")
 }
 
 export function exportCode() {
-  // TODO: Implement export
-}
-
-function buildForInject() {
-  const result = buildCode();
-  if (result.failed || !result.contents) {
-    Output.error("No code to inject.")
-    return null;
-  }
-  return result;
+  $command("display-dialog export")
 }

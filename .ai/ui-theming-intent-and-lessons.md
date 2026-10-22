@@ -1397,6 +1397,14 @@ and the folder field stay neutral. **`--color-secondary-label` is not a green**:
 `--data-secondary`, a grey, so a "working" state painted with it reads as disabled (the SJASMPLUS
 dialog's comment claiming otherwise is stale).
 
+A tool download's **progress bar** (the z88dk dialog, the first one in the app) is a thin 6px track in
+`--accent-subtle` with an `--accent-solid` fill, its label and Cancel on the same row; when the size is
+unknown (unpacking, no Content-Length) the fill becomes a sliding block of the same colours rather
+than a bar stuck at zero. Progress is the accent because it is the dialog's current activity, not a
+verdict - the verdict colours above apply only once it settles. The row keeps its place while idle
+("Not downloading", dimmed), so starting a download never resizes the dialog. A tool whose version
+works but is outside the supported range is the warning tone (`--status-warning`), never error.
+
 ## Translated Text Is ~40 % Longer: Check New UI In The `qps` Locale
 
 UI text goes through `t()` (`.plans/LOCALIZATION_PLAN.md`), and German/Hungarian run about 35-40 %
