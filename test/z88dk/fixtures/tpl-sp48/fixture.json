@@ -1,0 +1,1 @@
+{"template": "sp48", "machine": "sp48", "model": "pal", "profile": "debug", "zccArgs": ["+zx", "-debug", "-O0", "-lndos", "-m", "-create-app", "-o", "program", "main.c"], "map": "gzip"}

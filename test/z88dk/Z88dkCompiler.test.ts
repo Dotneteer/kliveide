@@ -7,13 +7,12 @@ import {
   cLineCanHaveBreakpoint,
   z88dkOptionsFrom,
   Z88dkCompiler,
-  zccArgumentsFor,
-  type ZccRunner
+  zccArgumentsFor
 } from "@main/z88dk-integration/Z88dkCompiler";
 import { z88dkTargetFor, type Z88dkTarget } from "@main/z88dk-integration/z88dk-targets";
 import { parseZccDiagnostics } from "@main/z88dk-integration/z88dk-diagnostics";
+import { FIXTURES, replay, replayProject } from "./zccReplay";
 
-const FIXTURES = path.join(__dirname, "fixtures");
 let temp: string;
 
 beforeEach(() => (temp = fs.mkdtempSync(path.join(os.tmpdir(), "klive-z88dk-cc-"))));
@@ -131,43 +130,9 @@ describe("cLineCanHaveBreakpoint", () => {
 
 // ─── Builds through a fake zcc that replays the committed fixtures ─────────────
 
-/** A zcc stand-in: copies a fixture's outputs to `-o`'s name, prints `stderr` and exits with `exitCode`. */
-function replay(fixture: string, run: { stderr?: string; exitCode?: number } = {}): ZccRunner & { calls: string[][] } {
-  const calls: string[][] = [];
-  const runner = (async (_zcc, args, { cwd }) => {
-    calls.push(args);
-    const output = args[args.indexOf("-o") + 1];
-    if ((run.exitCode ?? 0) === 0) {
-      for (const file of fs.readdirSync(path.join(FIXTURES, fixture))) {
-        if (!file.startsWith("program")) continue;
-        fs.copyFileSync(path.join(FIXTURES, fixture, file), output + file.slice("program".length));
-      }
-    }
-    expect(cwd).toBeTruthy();
-    return { exitCode: run.exitCode ?? 0, stdout: "", stderr: run.stderr ?? "", timedOut: false };
-  }) as ZccRunner & { calls: string[][] };
-  runner.calls = calls;
-  return runner;
-}
-
-/** A project folder with the fixture's sources and an install-shaped z88dk folder. */
+/** A project folder with the fixture's sources and an install-shaped z88dk folder (`zccReplay.ts`). */
 function project(fixture: string, machineId = "sp48", settings: Record<string, unknown> = {}) {
-  const folder = path.join(temp, "project");
-  fs.mkdirSync(folder, { recursive: true });
-  for (const file of fs.readdirSync(path.join(FIXTURES, fixture))) {
-    if (file.endsWith(".c")) fs.copyFileSync(path.join(FIXTURES, fixture, file), path.join(folder, file));
-  }
-  const root = path.join(temp, "z88dk");
-  fs.mkdirSync(path.join(root, "bin"), { recursive: true });
-  fs.mkdirSync(path.join(root, "lib", "config"), { recursive: true });
-  fs.writeFileSync(path.join(root, "bin", process.platform === "win32" ? "zcc.exe" : "zcc"), "");
-  const state: any = {
-    project: { folderPath: folder, isKliveProject: true },
-    emulatorState: { machineId },
-    userSettings: { z88dk: { root } },
-    projectSettings: settings
-  };
-  return { folder, state, main: path.join(folder, "main.c") };
+  return replayProject(temp, fixture, machineId, settings);
 }
 
 describe("Z88dkCompiler (fixtures)", () => {
@@ -233,6 +198,32 @@ describe("Z88dkCompiler (fixtures)", () => {
     // --- The fixture keeps no map (too big): the build still runs, from __head... which the map gives,
     // --- so without one it reports the missing load address
     expect(out.errors[0].message).toMatch(/does not say where the program loads/);
+  });
+
+  // --- z88dk v2.4's classic Next startup runs into printf's format table (`.ai/z88dk/targets.md`)
+  it("warns when printf's format table is linked into the startup code (a Next program using printf)", async () => {
+    const compiler = new Z88dkCompiler(replay("zxn-printf"));
+    const { state, main } = project("zxn-printf", "zxnext");
+    compiler.setAppState(state);
+    const out: any = await compiler.compileFile(main, undefined, "build");
+    const warnings = out.errors.filter((e: any) => e.errorCode === "ZCC-PRINTF");
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0].isWarning).toBe(true);
+    expect(warnings[0].message).toMatch(/putchar or puts/);
+    // --- A warning, not an error: the build still delivers the .nex
+    expect(out.prebuiltNex?.length).toBeGreaterThan(0);
+  });
+
+  it.each([
+    ["tpl-zxnext-build", "zxnext"],
+    ["tpl-sp48-build", "sp48"],
+    ["tpl-timex-ts2068-build", "timex"]
+  ])("gives no printf warning for %s (the table is outside the startup code, or absent)", async (fixture, machineId) => {
+    const compiler = new Z88dkCompiler(replay(fixture));
+    const { state, main } = project(fixture, machineId);
+    compiler.setAppState(state);
+    const out: any = await compiler.compileFile(main, undefined, "build");
+    expect(out.errors.filter((e: any) => e.errorCode === "ZCC-PRINTF")).toEqual([]);
   });
 
   it("reports zcc's diagnostics and writes nothing else", async () => {

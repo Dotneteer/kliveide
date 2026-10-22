@@ -31,7 +31,7 @@ Like the other integrations, the setup can go into your user settings or, with a
 
 ## Projects
 
-Create a project with the `z88-dk` template (see [Project templates](/en/guides/projects/project-templates)). It exists for the ZX Spectrum 48K, 128K and +2E/+3E, the Timex, the ZX Spectrum Next, the ZX81, the ZX80 and the Cambridge Z88. Its build root is `code/main.c`:
+Create a project with the `z88-dk` template (see [Project templates](/en/guides/projects/project-templates)). It exists for every machine of the ZX Spectrum family (the 48K, the 128K and the Pentagon 128, the +2A/+3/+2E/+3E, the Timex models, the Scorpion and the ZX Spectrum Next) and for the ZX81, the ZX80 and the Cambridge Z88. Its build root is `code/main.c`; the Spectrum version is:
 
 ```c
 #include <stdio.h>
@@ -57,6 +57,8 @@ int main(void)
 }
 ```
 
+The ZX Spectrum Next's template differs: see [The ZX Spectrum Next](#the-zx-spectrum-next).
+
 Any `.c` file can be a build root. To build several files together, list the others (C or z88dk assembly) in the project's `z88dk.extraArgs` setting (see [Build options](#build-options)): zcc compiles and links them with the build root.
 
 ## The machine decides the target
@@ -66,17 +68,33 @@ Klive builds for the machine the emulator runs; you do not choose a z88dk target
 | Machine | z88dk target | Run | Export |
 | --- | --- | --- | --- |
 | ZX Spectrum 48K, Timex TC2048 | `+zx` | injects the code and starts it | `.tap` with a BASIC loader |
-| ZX Spectrum 128K, Scorpion | `+zx` | injects the code in 48 BASIC; a banked program loads from its tape | `.tap` |
-| ZX Spectrum +2E/+3E | `+zx -subtype=plus3` | injects the code in 48 BASIC | `.dsk` |
+| ZX Spectrum 128K, Pentagon 128, Scorpion | `+zx` | injects the code in 48 BASIC; a banked program loads from its tape | `.tap` |
+| ZX Spectrum +2A/+3/+2E/+3E | `+zx -subtype=plus3` | injects the code in 48 BASIC | `.dsk` |
 | Timex TC2068 / TS2068 | `+ts2068` | injects the code and starts it | `.tap` |
 | ZX Spectrum Next | `+zxn -subtype=nex` | loads the `.nex` | `.nex` |
 | ZX81 (and a ZX80 with the 8K ROM) | `+zx81` | loads the `.P` program | `.P` |
 | ZX80 | `+zx80` | loads the `.O` program | `.O` |
 | Cambridge Z88 | `+z88 -subtype=app` | inserts the application card and starts it | `.epr` card |
 
-The 16K Spectrum and the Commodore 64 are refused with a reason: z88dk programs load at `$8000`, and the C64 has no Z80.
+The 16K Spectrum and the Commodore 64 are refused with a reason: z88dk programs load at `$8000`, and the C64 has no Z80. A Scorpion running its own ROM (rather than the 128K ROMs it uses without one) refuses Run and Debug, because Klive cannot start a program from that ROM's editor; export the program and load it there by hand.
 
 **Export** copies the file z88dk itself wrote (`.tap`, `.dsk`, `.P`, `.O`, `.epr`), so what you export is exactly what z88dk built; the tape loader options of the Export dialog do not apply to it. Intel HEX (`-f hex`) still comes from Klive.
+
+### The ZX Spectrum Next
+
+Run and Debug export the `.nex` and have NextZXOS load it with `.nexload`. Two things are different from the other Spectrums:
+
+- **A `.nex` program must not return from `main`.** `.nexload` starts it with the stack from the NEX file and no return address, so a return crashes and resets the machine. End the program with an endless loop, as the template does, or with a soft reset to go back to NextZXOS: `ZXN_WRITE_REG(0x02, 1);` from `<arch/zxn.h>`.
+- **Programs that use `printf` may fail to start.** In z88dk v2.4, the Next's startup code runs into the table `printf` uses for its formats. Whether the program survives depends on where the linker puts the code, so a small change can break a program that worked. When a build has this layout, Klive warns about it. Print with `putchar` or `puts` instead, as the template does.
+
+```c
+void print_text(char *text)
+{
+    while (*text) {
+        putchar(*text++);
+    }
+}
+```
 
 ### The Cambridge Z88
 
@@ -106,7 +124,7 @@ Debug builds the program with z88dk's debug information and without optimisation
 **What debugging cannot show.** Floats, structures and arrays are not decoded in the Variables panel (their addresses are in Watch as symbols). Functions in banked code take breakpoints, but they are not stepped at source level. On the Z88, a breakpoint matches its address in whatever bank OZ has paged in.
 </Callout>
 
-**How lines map to code.** z88dk's compiler reads one line ahead, so the line after a statement sometimes shares its address. Klive shows the earlier line there, and a breakpoint on the later line stops where that shared code starts.
+**How lines map to code.** z88dk's compiler reads one line ahead, so the line after a statement sometimes shares its address. Klive shows the earlier line there, and a breakpoint on the later line stops where that shared code starts. For the same reason, Step Out from a function whose result is passed straight to another call (`print_number(square(n));`) can show the following line; assign the result first (`squared = square(n);`) to land on the call.
 
 **SDCC.** z88dk's second compiler, SDCC, cannot produce the line information Klive reads. A project that chooses SDCC still runs and exports, but debugging works in the disassembly only; the build says so.
 

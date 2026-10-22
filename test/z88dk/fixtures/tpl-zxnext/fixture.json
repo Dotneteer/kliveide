@@ -1,0 +1,1 @@
+{"template": "zxnext", "machine": "zxnext", "model": "standard", "profile": "debug", "zccArgs": ["+zxn", "-subtype=nex", "-clib=classic", "-debug", "-O0", "-lndos", "-m", "-create-app", "-o", "program", "main.c"], "map": "gzip"}

@@ -1,0 +1,1 @@
+{"template": "scorpion", "machine": "scorpion", "profile": "build", "zccArgs": ["+zx", "-O2", "-lndos", "-m", "-create-app", "-o", "program", "main.c"], "map": "gzip"}

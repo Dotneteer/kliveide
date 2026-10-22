@@ -153,6 +153,9 @@ export const E2E_KBASIC_TESTS: string[] = [
  * cheaper. Exact paths, no globs, so a new test never lands here by accident.
  */
 export const E2E_SLOW_TESTS: string[] = [
+  // --- The z88dk templates on every Spectrum family model (`.plans/ZX_SPECTRUM_C_TEMPLATES_PLAN.md` T3;
+  // --- one per route stays fast in `z88dk-templates-run.core.test.ts`)
+  "test/z88dk/z88dk-templates-run-models.core.test.ts",
   // --- Klive BASIC: the zxbc compatibility suites, the optimiser report, the corpus beyond levels 0 and 3 on the 48K
   "test/kbasic/compat/compat.test.ts",
   "test/kbasic/opt/opt-report.test.ts",

@@ -1,9 +1,16 @@
 /*
  * Regenerates the z88dk test fixtures (`test/z88dk/fixtures/`, `.plans/Z88DK_INTEGRATION_PLAN.md`
  * §0.1, as Boriel's B-T1): each folder's sources, compiled by an installed z88dk with the arguments
- * in its `fixture.json`, into `program` (the raw image), `program.map` (unless `"map": false`) and whatever `-create-app`
- * writes (`program.tap`, `program.nex`, `program.P`, `program.epr`, `program_BANK_n.bin`). Run
- * locally only - CI uses the committed files, and never runs zcc.
+ * in its `fixture.json`, into `program` (the raw image), `program.map` (`program.map.gz` with
+ * `"map": "gzip"`, none with `"map": false`) and whatever `-create-app` writes (`program.tap`,
+ * `program.nex`, `program.P`, `program.epr`, `program_BANK_n.bin`). Run locally only - CI uses the
+ * committed files, and never runs zcc.
+ *
+ * A **template fixture** (`.plans/ZX_SPECTRUM_C_TEMPLATES_PLAN.md`, T1) names a shipped project
+ * template (`"template": "<machineId>"`): its `main.c` is copied from
+ * `src/public/project-templates/<machineId>/z88-dk/code/main.c` first, and `"zccArgs"` is the complete
+ * argument list Klive's debug build passes (`zccArgumentsFor`), used verbatim; `test/z88dk/templates.test.ts`
+ * checks both against the product.
  *
  *   npm run z88dk:fixtures [-- <z88dk root>]
  *
@@ -20,11 +27,13 @@ const { execFileSync, spawnSync } = require("node:child_process");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
+const zlib = require("node:zlib");
 
 const FIXTURES = path.join(__dirname, "..", "test", "z88dk", "fixtures");
+const TEMPLATES = path.join(__dirname, "..", "src", "public", "project-templates");
 const MIN_BUILD = 23854;
 const NEUTRAL_ROOT = "/opt/z88dk";
-const OUTPUTS = /^program(\.(map|tap|nex|P|O|epr|dsk|63|62|ap0)|_[A-Za-z0-9_]+\.bin)?$/;
+const OUTPUTS = /^program(\.(map|map\.gz|tap|nex|P|O|epr|dsk|63|62|ap0)|_[A-Za-z0-9_]+\.bin)?$/;
 
 function z88dkRoot() {
   return process.argv[2] || process.env.Z88DK_ROOT || path.join(os.homedir(), "z88dk");
@@ -84,14 +93,18 @@ function main() {
     const folder = path.join(FIXTURES, name);
     const spec = path.join(folder, "fixture.json");
     if (!fs.existsSync(spec)) continue;
-    const { args, sources, map = true } = JSON.parse(fs.readFileSync(spec, "utf8"));
+    const { args, sources, zccArgs, template, map = true } = JSON.parse(fs.readFileSync(spec, "utf8"));
     for (const file of fs.readdirSync(folder)) {
       if (OUTPUTS.test(file)) fs.rmSync(path.join(folder, file), { force: true });
+    }
+    // --- A template fixture compiles the shipped template's program, never a copy edited here
+    if (template) {
+      fs.copyFileSync(path.join(TEMPLATES, template, "z88-dk", "code", "main.c"), path.join(folder, "main.c"));
     }
     try {
       execFileSync(
         path.join(root, "bin", process.platform === "win32" ? "zcc.exe" : "zcc"),
-        [...args, "-debug", "-m", "-create-app", "-o", "program", ...sources],
+        zccArgs ?? [...args, "-debug", "-m", "-create-app", "-o", "program", ...sources],
         { cwd: folder, env: zccEnv(root), stdio: ["ignore", "pipe", "pipe"], encoding: "utf8" }
       );
     } catch (error) {
@@ -99,7 +112,12 @@ function main() {
     }
     const mapFile = path.join(folder, "program.map");
     // --- `"map": false`: a map too big to commit (the Next's classic library makes 1.2 MB of it)
-    if (map) fs.writeFileSync(mapFile, normaliseMap(fs.readFileSync(mapFile, "utf8"), root));
+    // --- `"map": "gzip"`: committed compressed (the template fixtures; the Next's is 1.2 MB plain)
+    if (map === "gzip") {
+      const text = normaliseMap(fs.readFileSync(mapFile, "utf8"), root);
+      fs.writeFileSync(`${mapFile}.gz`, zlib.gzipSync(Buffer.from(text, "utf8"), { level: 9 }));
+      fs.rmSync(mapFile);
+    } else if (map) fs.writeFileSync(mapFile, normaliseMap(fs.readFileSync(mapFile, "utf8"), root));
     else fs.rmSync(mapFile);
     // --- Intermediate files appmake leaves beside the outputs Klive reads
     for (const file of fs.readdirSync(folder)) {
