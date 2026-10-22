@@ -69,5 +69,6 @@ within one, entries follow the order the changesets were added to git.
 ## The PR check
 
 `.github/workflows/changeset-check.yml` fails a PR that changes files outside `docs/`, `.plans/`,
-`.ai/`, `.docs/`, `.github/`, `test/` and root `*.md` files without adding or editing a changeset.
+`.ai/`, `.docs/`, `.github/`, `test/`, `_input/` (reference material) and root `*.md` files
+without adding or editing a changeset.
 Dependabot PRs, release PRs (`release/v*`) and PRs with the `no-changeset` label pass.
