@@ -144,6 +144,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     hasSurround,
     canvasWidth,
     canvasHeight,
+    canvasPixelScale,
     imageBuffer8,
     xRatio,
     yRatio,
@@ -522,7 +523,13 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
               beamText={beamState ? beamOverlayPill(beamState) : undefined}
             />
             {captured && showCapturedPointer && <CapturedPointer ref={capturedPointer} />}
-            <canvas ref={screenElement} width={canvasWidth} height={canvasHeight} />
+            {/* --- Sized in CSS pixels; its backing store is `canvasPixelScale` times finer */}
+            <canvas
+              ref={screenElement}
+              width={Math.round((canvasWidth ?? 0) * canvasPixelScale)}
+              height={Math.round((canvasHeight ?? 0) * canvasPixelScale)}
+              style={{ width: `${canvasWidth ?? 0}px`, height: `${canvasHeight ?? 0}px` }}
+            />
             {beamState && (
               <BeamPositionOverlay
                 state={beamState}

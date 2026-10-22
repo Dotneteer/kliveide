@@ -28,7 +28,8 @@ describe("WASM machines: shared Z80/Z80N CPU contract", () => {
       ["spp3e", "z80"],
       ["zxnext", "z80n"],
       ["z88", "z80"],
-      ["zx8081", "z80"]
+      ["zx8081", "z80"],
+      ["ht1080z", "z80"]
     ]);
     for (const model of report.models) {
       expect(model.sharedCpuSource).toBe(report.shared.relativePath);
@@ -64,6 +65,11 @@ describe("WASM machines: shared Z80/Z80N CPU contract", () => {
     expect(zx8081?.forbiddenIncludeFragments).toEqual(["zxSpectrum/wasm/common/"]);
     expect(zx8081?.allowedIncludeFragments).toEqual(["zxSpectrum/wasm/common/zx-spectrum-keyboard.c"]);
     expect(zx8081?.ok).toBe(true);
+    // --- The HT-1080Z may share the Spectrum's AY (`.plans/HT1080Z_PLAN.md` §5), nothing else
+    const ht1080z = report.models.find(model => model.id === "ht1080z");
+    expect(ht1080z?.forbiddenIncludeFragments).toEqual(["zxSpectrum/wasm/common/"]);
+    expect(ht1080z?.allowedIncludeFragments).toEqual(["zxSpectrum/wasm/common/zx-spectrum-psg.c"]);
+    expect(ht1080z?.ok).toBe(true);
   });
 
   it("records execution history in every core (EXECUTION_HISTORY_VIEWER_PLAN §4.1, EXECUTION_HISTORY_ALL_CORES_PLAN)", () => {
@@ -75,6 +81,6 @@ describe("WASM machines: shared Z80/Z80N CPU contract", () => {
   });
 
   it("keeps the contract list explicit so new WASM machines cannot appear silently", () => {
-    expect(wasmCpuContract.map(entry => entry.id)).toEqual(["sp48", "timex", "sp128", "spp3e", "zxnext", "z88", "zx8081"]);
+    expect(wasmCpuContract.map(entry => entry.id)).toEqual(["sp48", "timex", "sp128", "spp3e", "zxnext", "z88", "zx8081", "ht1080z"]);
   });
 });

@@ -606,3 +606,21 @@ function buildZx8081Chars(isZx81: boolean): Record<number, CharDescriptor> {
   }
   return chars;
 }
+
+/**
+ * The HT-1080Z character set for the memory panel (`.plans/HT1080Z_PLAN.md` §11): ASCII at
+ * $20-$7F, control codes below, and the 2 x 3 semigraphics blocks at $80-$FF (bit 6 is ignored
+ * there). The per-model glyphs - the Series II accents, the /64's Hungarian set at $00-$1F - and the
+ * BASIC tokens come with Phase 8.
+ */
+export const Ht1080zChars: Record<number, CharDescriptor> = buildHt1080zChars();
+
+function buildHt1080zChars(): Record<number, CharDescriptor> {
+  const chars: Record<number, CharDescriptor> = {};
+  for (let code = 0x00; code < 0x20; code++) chars[code] = { c: "ctrl" };
+  chars[0x0d] = { c: "ctrl", t: "(NEW LINE)" };
+  chars[0x20] = { v: "\xa0", t: "(space)" };
+  for (let code = 0x21; code < 0x80; code++) chars[code] = { v: String.fromCharCode(code) };
+  for (let code = 0x80; code < 0x100; code++) chars[code] = { c: "graph", t: `(block ${(code & 0x3f).toString(2).padStart(6, "0")})` };
+  return chars;
+}

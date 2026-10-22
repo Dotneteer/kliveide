@@ -20,5 +20,12 @@ export const SCORPION_ROM_FILE = "ScorpionRomFile";
 export const DISK_A_UNSAVED = "DiskAUnsaved";
 export const DISK_B_UNSAVED = "DiskBUnsaved";
 export const FILE_PROVIDER = "FileProvider";
+/**
+ * The HT-1080Z's video switches (`.plans/HT1080Z_PLAN.md` §6): VIDEO CUT (32 columns), PAGE (the
+ * right half of each row in 32 columns) and the CPU-access black dash (D7, on by default)
+ */
+export const HT_VIDEO_CUT = "HtVideoCut";
+export const HT_VIDEO_PAGE = "HtVideoPage";
+export const HT_VIDEO_DASH = "HtVideoDash";
 export const AUDIO_SAMPLE_RATE = "AudioSampleRate";
 export const BEEPER_SAMPLES = "BeeperSamples";

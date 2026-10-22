@@ -11,6 +11,8 @@ export const MI_ZX81 = "zx81";
 export const MI_TIMEX = "timex";
 /** The Scorpion ZS-256 (`.plans/TIMEX_SCORPION_PLAN.md` G9.4c), on the 128K's core */
 export const MI_SCORPION = "scorpion";
+/** The HT-1080Z (`.plans/HT1080Z_PLAN.md`): Series I, Series II and the /64 as models */
+export const MI_HT1080Z = "ht1080z";
 
 /**
  * The machines whose emulator screen can show the media strip (the tape and disk files in use),
@@ -78,6 +80,8 @@ export const MC_SP128_TIMING = "sp128Timing";
 export const MC_TIMEX_MODEL = "timexModel";
 /** Scorpion only: the 128K core runs as the Scorpion ZS-256 */
 export const MC_SCORPION = "scorpion";
+/** HT-1080Z only: the model the core runs (`ht1080zMachineInfo.ts`): "s1", "s2" or "s64" */
+export const MC_HT_MODEL = "htModel";
 
 // Available machine config keys
 export const MF_TAPE_SUPPORT = "tapeSupport";

@@ -172,6 +172,28 @@ const wasmCpuContract = [
       "zx8081GetCpuPc",
       "zx8081GetCpuSp"
     ]
+  },
+  {
+    id: "ht1080z",
+    label: "HT-1080Z",
+    mode: "z80",
+    buildScript: resolve(root, "scripts/build-ht1080z-wasm.cjs"),
+    buildEntrySource: resolve(root, "src/emu/machines/ht1080z/wasm/ht1080z/ht1080z.c"),
+    cpuAdapterSource: resolve(root, "src/emu/machines/ht1080z/wasm/ht1080z/ht1080z.c"),
+    artifact: resolve(root, "src/emu/machines/ht1080z/wasm/dist/ht1080z.wasm"),
+    include: '#include "../../../../z80/wasm/z80.c"',
+    // --- The AY is the Spectrum's PSG through aliases (`.plans/HT1080Z_PLAN.md` §5, §10, from
+    // --- Phase 5); every other Spectrum device is not
+    forbiddenIncludeFragments: ["zxSpectrum/wasm/common/"],
+    allowedIncludeFragments: ["zxSpectrum/wasm/common/zx-spectrum-psg.c"],
+    requiredExports: [
+      "ht1080zGetCpuAf",
+      "ht1080zGetCpuBc",
+      "ht1080zGetCpuDe",
+      "ht1080zGetCpuHl",
+      "ht1080zGetCpuPc",
+      "ht1080zGetCpuSp"
+    ]
   }
 ];
 

@@ -35,6 +35,10 @@
   "@hardware.text.zx80": {
     "context": "Value of the Text row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the ZX80: the picture disappears while a program runs, because the Z80 cannot draw it then."
   },
+  "hardware.text.ht1080z": "64 × 16 characters; 128 × 48 block graphics",
+  "@hardware.text.ht1080z": {
+    "context": "Value of the Text row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the HT-1080Z, a Hungarian school computer compatible with the TRS-80 Model I: a 64-column, 16-row character screen, whose characters can also be 2 × 3 blocks, giving 128 × 48 block graphics."
+  },
   "hardware.layers.next": "ULA, Layer 2 (up to 320 × 256), tilemap, sprites, copper",
   "@hardware.layers.next": {
     "context": "Value of the Layers row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the ZX Spectrum Next: its display layers. ULA, Layer 2 and copper are hardware names: keep them; tilemap and sprites may be translated if your language has settled terms."
@@ -79,6 +83,10 @@
   "hardware.timing.next": "Frame timing follows the video mode (48K, 128K/+3, Pentagon) and 50/60 Hz, set by NextRegs $03 and $05.",
   "@hardware.timing.next": {
     "context": "Note in the timing section of the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the ZX Spectrum Next, which has no single frame timing. Keep chip, port and register names, numbers, $hex values and file extensions as they are."
+  },
+  "hardware.timing.ht1080z": "One T-state per character position; no interrupts",
+  "@hardware.timing.ht1080z": {
+    "context": "Value of the Timing note row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the HT-1080Z, a Hungarian school computer compatible with the TRS-80 Model I: the video circuit draws one character position for every clock cycle (T-state) of the Z80 processor, and the machine has no interrupt source. Keep \"T-state\", the Z80 term for one clock cycle."
   },
   "hardware.rom.timexHome": "HOME ROM; your copy, or the 48K ROM",
   "@hardware.rom.timexHome": {
@@ -127,6 +135,14 @@
   "hardware.rom.characterSet": "character set",
   "@hardware.rom.characterSet": {
     "context": "Role of a ROM image in the ROM row of the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the Commodore 64: the ROM holding the character shapes. Lowercase."
+  },
+  "hardware.rom.htBasic": "Level II BASIC",
+  "@hardware.rom.htBasic": {
+    "context": "Value of the ROM row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the HT-1080Z, a Hungarian school computer compatible with the TRS-80 Model I: the role of the 12K ROM that holds the BASIC interpreter. Level II BASIC is the name of the TRS-80 BASIC (by Microsoft): keep \"Level II\"."
+  },
+  "hardware.rom.htExtension": "BASIC extension",
+  "@hardware.rom.htExtension": {
+    "context": "Value of the ROM row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the HT-1080Z, a Hungarian school computer compatible with the TRS-80 Model I: the role of the 2K ROM that adds commands and keyboard features to the BASIC."
   },
   "hardware.rom.ozFlash": "OZ, {cardType} flash",
   "@hardware.rom.ozFlash": {
@@ -253,6 +269,10 @@
   "hardware.keyboard.zx8081": "40-key membrane",
   "@hardware.keyboard.zx8081": {
     "context": "Value of the Keyboard row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the ZX80/ZX81: a flat 40-key membrane keyboard."
+  },
+  "hardware.keyboard.ht1080z": "TRS-80 layout",
+  "@hardware.keyboard.ht1080z": {
+    "context": "Value of the Keyboard row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the HT-1080Z, a Hungarian school computer compatible with the TRS-80 Model I: a full-travel keyboard laid out as the TRS-80 Model I's. TRS-80 is a product name: keep it."
   },
   "hardware.keyboard.next": "Next, with extended keys",
   "@hardware.keyboard.next": {

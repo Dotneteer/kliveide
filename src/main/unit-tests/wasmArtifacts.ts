@@ -18,7 +18,8 @@ const CORE_FOLDERS: Record<string, string> = {
   "zx-spectrum-next.wasm": "zxNext",
   "zx-timex.wasm": "timex",
   "cambridge-z88.wasm": "z88",
-  "zx8081.wasm": "zx8081"
+  "zx8081.wasm": "zx8081",
+  "ht1080z.wasm": "ht1080z"
 };
 
 /**

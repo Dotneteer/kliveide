@@ -42,7 +42,8 @@ import {
   MI_Z88,
   MI_ZX80,
   MI_ZX81,
-  MI_ZXNEXT
+  MI_ZXNEXT,
+  MI_HT1080Z
 } from "./constants";
 import {
   ZX80_ROM,
@@ -56,6 +57,15 @@ import {
   Z88_TACTS_IN_FRAME,
   Z88_UI_FRAME_FREQUENCY
 } from "@emu/machines/z88/z88MachineInfo";
+import {
+  HT1080Z_CLOCK_S12,
+  HT1080Z_LINES_PER_FRAME,
+  HT1080Z_SCREEN_HEIGHT,
+  HT1080Z_SCREEN_WIDTH,
+  HT1080Z_TACTS_IN_FRAME,
+  HT1080Z_TACTS_PER_LINE
+} from "@emu/machines/ht1080z/ht1080zMachineInfo";
+import { HT1080Z_ROM_SETS } from "@emu/machines/ht1080z/Ht1080zRoms";
 import { getP3RomSet } from "@emu/machines/zxSpectrumP3e/p3RomSets";
 import { TIMEX_MODELS_INFO } from "@emu/machines/timex/timexModels";
 import { SP128_TIMINGS } from "@emu/machines/zxSpectrum128/sp128Timings";
@@ -430,6 +440,48 @@ export const HARDWARE_SPECS: Readonly<Record<string, MachineSpecs>> = {
   [MI_ZX81]: {
     base: ZX8081_BASE,
     models: { "zx81-16k-us": ZX8081_NTSC, "zx81-1k-us": ZX8081_NTSC }
+  },
+  [MI_HT1080Z]: {
+    // --- ht1080zMachineInfo.ts, Ht1080zRoms.ts, wasm/ht1080z/ht1080z.c (`.plans/HT1080Z_PLAN.md`).
+    // --- Series II only for now; the beeper and the AY (Phase 5) and the tape (Phase 6) join the
+    // --- sound and media rows with their phases.
+    base: {
+      cpu: "Zilog Z80",
+      clockHz: HT1080Z_CLOCK_S12,
+      rom: [
+        { id: HT1080Z_ROM_SETS.s2.basic.name, kb: HT1080Z_ROM_SETS.s2.basic.size / 1024, role: tx("hardware.rom.htBasic") },
+        {
+          id: HT1080Z_ROM_SETS.s2.extension.name,
+          kb: HT1080Z_ROM_SETS.s2.extension.size / 1024,
+          role: tx("hardware.rom.htExtension")
+        },
+        {
+          id: HT1080Z_ROM_SETS.s2.chargen.name,
+          kb: HT1080Z_ROM_SETS.s2.chargen.size / 1024,
+          role: tx("hardware.rom.characterSet")
+        }
+      ],
+      ramKb: 16,
+      display: {
+        kind: "crt",
+        width: 384,
+        height: 192,
+        rasterWidth: HT1080Z_SCREEN_WIDTH,
+        rasterHeight: HT1080Z_SCREEN_HEIGHT,
+        colours: tx("hardware.colours.monochrome"),
+        text: tx("hardware.text.ht1080z")
+      },
+      timing: {
+        unit: "T-states",
+        perLine: HT1080Z_TACTS_PER_LINE,
+        linesPerFrame: HT1080Z_LINES_PER_FRAME,
+        perFrame: HT1080Z_TACTS_IN_FRAME,
+        note: tx("hardware.timing.ht1080z")
+      },
+      sound: [],
+      media: [],
+      input: [{ label: KEYBOARD, value: tx("hardware.keyboard.ht1080z") }]
+    }
   },
   [MI_ZX80]: {
     base: {

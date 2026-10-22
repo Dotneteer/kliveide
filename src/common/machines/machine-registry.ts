@@ -36,10 +36,11 @@ import {
   MI_ZX80,
   MI_ZX81,
   MI_TIMEX,
-  MI_SCORPION
+  MI_SCORPION,
+  MI_HT1080Z
 } from "./constants";
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_DOCK, MEDIA_TAPE } from "@common/structs/project-const";
-import { Zx80Chars, Zx81Chars, ZxNextChars, ZxSpectrumChars } from "./char-codes";
+import { Ht1080zChars, Zx80Chars, Zx81Chars, ZxNextChars, ZxSpectrumChars } from "./char-codes";
 import { DisassemblyOptions, MemorySection } from "@renderer/appIde/disassemblers/common-types";
 import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z80-disassembler";
 import { ZxSpectrum48CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/zx-spectrum-48-disassembler";
@@ -59,6 +60,7 @@ import {
   type CustomDisassemblerFactory
 } from "@renderer/appIde/disassemblers/z80-disassembler/rom-gated-disassembler";
 import { ZX80_MODELS, ZX81_MODELS } from "@emu/machines/zx8081/zx8081MachineInfo";
+import { HT1080Z_MODELS } from "@emu/machines/ht1080z/ht1080zMachineInfo";
 import { SCORPION_MODELS, SP128_MODELS } from "@emu/machines/zxSpectrum128/sp128Timings";
 import { P3_MODELS } from "@emu/machines/zxSpectrumP3e/p3RomSets";
 import { TIMEX_MODELS } from "@emu/machines/timex/timexModels";
@@ -625,6 +627,31 @@ export const machineRegistry: MachineInfo[] = [
         options?: DisassemblyOptions
       ) => new Z80Disassembler(memorySections, memoryContents, partitionLabels, options),
       [CT_CUSTOM_DISASSEMBLER]: zx80CustomDisassembler,
+      [CT_DISASSEMBLER_VIEW]: {
+        showRamOption: false,
+        showScreenOption: false
+      }
+    }
+  },
+  {
+    // --- `.plans/HT1080Z_PLAN.md`: Series II only until Phase 7 adds Series I and the /64. Tape,
+    // --- the AY, history, profile and reverse debugging join with their phases.
+    machineId: MI_HT1080Z,
+    displayName: "HT-1080Z",
+    charSet: Ht1080zChars,
+    features: {
+      [MF_Z80]: true,
+      [MF_INJECT_SUPPORT]: false,
+      [MF_ALLOW_SCAN_LINES]: false
+    },
+    models: [...HT1080Z_MODELS],
+    toolInfo: {
+      [CT_DISASSEMBLER]: (
+        memorySections: MemorySection[],
+        memoryContents: Uint8Array,
+        partitionLabels?: string[],
+        options?: DisassemblyOptions
+      ) => new Z80Disassembler(memorySections, memoryContents, partitionLabels, options),
       [CT_DISASSEMBLER_VIEW]: {
         showRamOption: false,
         showScreenOption: false

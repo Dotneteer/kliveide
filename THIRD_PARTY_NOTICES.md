@@ -49,6 +49,17 @@ For information on obtaining a commercial license, please contact John Grant.
 This notice must be retained.
 ```
 
+## The HT-1080Z ROMs
+
+`src/public/roms/ht1080z-s1*.rom`, `ht1080z-s2*.rom` and `ht1080z-s64*.rom` (shipped under `roms/`)
+are the BASIC, extension and character-generator ROMs of the HT-1080Z Series I, Series II and
+HT-1080Z/64, unmodified. They are not covered by the MIT licence above, nor by Klive's own. Their
+rights belong to Microsoft (Level II BASIC), EACA and Hiradástechnika Szövetkezet. No explicit
+permission to redistribute them is known: they are included because the HT preservation group
+publishes them openly (https://ht.homeserver.hu/, dumps by Majzik István), and they will be removed
+on request from a rights holder. The details and the file list are kept beside them in
+`ht1080z-roms-readme.txt`.
+
 ## The ZX Spectrum +2A/+3 ROMs
 
 `src/public/roms/spp3-40-*.rom`, `spp3-41-*.rom` and `spp3-41es-*.rom` (shipped under `roms/`) are

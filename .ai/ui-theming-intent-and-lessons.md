@@ -600,6 +600,21 @@ pixel buffer stays exactly as the core made it, and screenshots, recordings and 
 tests keep comparing the machine's real picture. Their greys are raw levels, not tokens, for the same
 reason as the surround above: they belong to the emulated picture, in both themes alike.
 
+**A machine's pixels are scaled exactly when they can be, and evenly when they cannot.** Square
+pixels, and an aspect that is a whole fraction or multiple of square (the Timex's and the Next's
+0.5), land on whole canvas pixels at the zoom steps, so the emulator canvas scales them
+nearest-neighbour (`image-rendering: pixelated`) and never smooths them. Any other aspect (the
+HT-1080Z's dots are 0.658 of their height) cannot: nearest-neighbour then makes some dot columns a
+pixel wider than others, and letters look uneven. Those pictures are drawn sharp-bilinear
+(`features/emulator/sharpScale.ts`): a whole nearest-neighbour step, then the remaining fraction
+smoothed. An axis whose scale is already whole is not softened, since that step maps it 1:1. **The
+smoothing needs device pixels.** Smoothed onto a CSS-pixel canvas that the display then doubles, a
+1.3-pixel dot became a stroke that flickered between white and grey from one dot to the next. So
+that path alone gives the canvas a `devicePixelRatio`-times finer backing store, with its CSS size
+pinned (`canvasPixelScale` in `useEmulatorScreen`). Nothing reads the canvas's attribute size except
+the drawing code: overlays and the mouse use its CSS box. Whether a picture takes this path is
+decided by its aspect alone, so fractional zoom steps of a square-pixel machine are left as they were.
+
 **A user who has learned one control should not have to learn it twice.** The sprite editor's bank
 switch is the sidebar's, deliberately — same two segments, same meaning (*the fill is the bank you
 are looking at, the ring is the bank the machine is drawing with*), same default of following the

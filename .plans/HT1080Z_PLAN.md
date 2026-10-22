@@ -1,6 +1,7 @@
 # HT-1080Z on the WASM Core — Implementation Plan
 
-**Status:** decisions accepted 2026-10-22 (§15); Phase 0 done 2026-10-22 (§17). Next: Phase 1.
+**Status:** decisions accepted 2026-10-22 (§15; D10 revised the same day after Phase 2); Phases 0-3
+done 2026-10-22 (§17). Next: Phase 4.
 **Input:** the research pack `_input/ht1080z/`. Read its `README.md` first, then `HARDWARE.md`,
 `VIDEO_TIMING.md`, `SOUND_AY.md`, `STORAGE_FIRMWARE_SOFTWARE.md` and `EXISTING_EMULATORS.md`.
 Every hardware fact in this plan comes from there, with its source.
@@ -232,8 +233,8 @@ One machine ID, `MI_HT1080Z = "ht1080z"`, with three models:
 
 | Model | ROM set (HS name = MAME set) | RAM | Clock | Character set | VRAM |
 |---|---|---|---|---|---|
-| `ht1080z-s1` Series I (1983) | `ht_s1_*` = `ht1080z` | 16K | 1,774,000 Hz | no accents | 8-bit (verify, Phase 0) |
-| `ht1080z-s2` Series II (1984) | `ht_s2_*` = `ht1080z2` | 16K | 1,774,000 Hz | É Ö Á Ü é ö á ü on `@ \ ] ^ \` \| } ~` | 8-bit (verify) |
+| `ht1080z-s1` Series I (1983) | `ht_s1_*` = `ht1080z` | 16K | 1,774,000 Hz | no accents | 8-bit; 00h–1Fh drawn as 40h–5Fh (D10) |
+| `ht1080z-s2` Series II (1984) | `ht_s2_*` = `ht1080z2` | 16K | 1,774,000 Hz | É Ö Á Ü é ö á ü on `@ \ ] ^ \` \| } ~` | 8-bit; 00h–1Fh drawn as 40h–5Fh (D10) |
 | `ht1080z-64` HT-1080Z/64 (1985) | `ht_s3_*` = `ht108064` | 48K | 1,777,417 Hz | full Hungarian set + maths symbols on codes 0–31 | 8-bit |
 
 An optional `MC_HT_RAM` config key could give Series I/II 48K, standing in for an expansion RAM
@@ -285,7 +286,8 @@ From `VIDEO_TIMING.md` §1–7.
   - The line and frame totals are unchanged.
 - **Character ROM decode:**
   - Settled in Phase 0 (§17). The character ROM address is A0–A3 = scan line 0–11 and A4–A10 =
-    code bits D0–D6, so there are 128 glyphs of 16 bytes and codes 00h–1Fh are displayed.
+    code bits D0–D6, so there are 128 glyphs of 16 bytes. On the /64 codes 00h–1Fh show their own
+    glyphs (the Hungarian set); on Series I/II they are drawn as 40h–5Fh (D10, revised).
   - **Dots are bits 7–3, with bit 7 leftmost.** The 6th dot is always blank (graphics excepted).
   - Only ROM outputs O3–O7 are wired to the shift register. The low bits that eleven /64 glyphs
     carry are never shown and must be ignored.
@@ -574,7 +576,8 @@ All recommendations were accepted as written: **D1** one machine ID, three model
 ROMs (with the readme and notices); **D3** the provenance rule of §0.1; **D5** 1,774,000 Hz for
 Series I/II and 1,777,417 Hz for the /64; **D6** a 528 × 288 window with about 2:3 pixel aspect;
 **D7** the CPU-access dash on by default, with a toggle; **D8** one modelled deck; **D9** the base
-machine only; **D10** 8-bit video RAM on every model. **D4** was withdrawn when D2 was accepted.
+machine only; **D10** 8-bit video RAM on every model, with codes 00h–1Fh drawn as 40h–5Fh on Series
+I/II (revised after Phase 2, below). **D4** was withdrawn when D2 was accepted.
 The original questions follow for the record.
 
 - **D1 — One machine ID with three models, or three IDs?**
@@ -617,6 +620,12 @@ The original questions follow for the record.
   - *Recommendation: 8-bit*, unless Phase 0 finds a schematic or ROM reason otherwise. If the ROM
     never writes 00–1Fh to the screen, the difference is visible only to software that POKEs those
     codes.
+  - **REVISED 2026-10-22, after Phase 2 (reading (a) of §17's Phase 2 question):** the video RAM
+    keeps all 8 bits on every model, so a read gives back what was written. When drawing, Series
+    I/II show codes 00h–1Fh as 40h–5Fh (MAME's rule): their BASIC stores every letter there (the
+    fold at 0471h), and their character ROMs' glyphs at 00h–1Fh would make the screen unreadable.
+    The /64, whose BASIC removes the fold, shows its own glyphs at 00h–1Fh (the Hungarian set). The
+    rejected reading (b) stored bit 6 as NOR(D5, D7) on every write, as lkesteloot and MiST do.
 
 ---
 
@@ -654,7 +663,7 @@ values and record each deviation from this plan with its reason, as in `ZX8081_W
 | AY ports | W 1Fh addr, W 1Eh data, R 1Fh data | Sound panel schematic decode; *Rádiótechnika* 1984/8 program 4 |
 | ROM sets | HS s1/s2/s3 = MAME ht1080z/ht1080z2/ht108064 | `STORAGE_FIRMWARE_SOFTWARE.md` §1.4b (hashes verified 2026-10-22) |
 | Shipped images (CRC32) | `ht1080z-s1.rom` / `-s2.rom` 2bfef8f7 (12 KB, identical); `ht1080z-s64.rom` 48985a30; `-s1-ext` 2a851e33; `-s2-ext` 07415ac6; `-s64-ext` fc12bd28; `-s1-chargen` e8c59d4f; `-s2-chargen` 6728f0ab; `-s64-chargen` e76b73a4 | §1.4b; the ROM-image test checks these |
-| VRAM width | **8 bits on every model**. The character ROM sees D0–D6, so codes 00h–1Fh show their own glyphs (MAME's 7-bit s1/s2 mapping is not used) | Genie §1.4.2: two 2114 (1K × 4); /64 E panel IC13/IC14 MM2114, chargen IC20 A4–A10 from latches IC21/IC3; s1/s2 chargen holds distinct glyphs at 00h–1Fh |
+| VRAM width | **8 bits on every model**. The character ROM sees D0–D6; Series I/II draw codes 00h–1Fh as 40h–5Fh, the /64 shows its own glyphs there (D10, revised after Phase 2) | Genie §1.4.2: two 2114 (1K × 4); /64 E panel IC13/IC14 MM2114, chargen IC20 A4–A10 from latches IC21/IC3; s1/s2 chargen holds distinct glyphs at 00h–1Fh |
 | Character ROM addressing | A0–A3 = scan line (0–11; 12–15 never addressed), A4–A10 = code D0–D6 | /64 E panel IC20 TMS2716 pins 8–5 and 1–4, 23, 22, 19 |
 | Dots per glyph row | bits 7–3 (bit 7 leftmost), 6th dot blank; bits 2–0 ignored | IC20 outputs O3–O7 (pins 13–17) only wired; F/R glyphs read correctly with bit 7 leftmost |
 | Glyph rows used | s1/s2: 0–8 (body 0–6); s64: 0–11 (accents 0–2, body 3–9) | Row statistics of the shipped character ROMs |
@@ -667,3 +676,84 @@ values and record each deviation from this plan with its reason, as in `ZX8081_W
 | Leader | 255 × 00h then A5h | 0284h–0290h (`LD B,0FFh`) |
 | /64 port-FF output | three-level: two latch outputs (IC6 Q3, Q̄2) summed through R30/R31 10k; relay from Q0; recorder select IC35 (FE bit 4) | /64 E panel sheet 2 (corrects the earlier "D0, D2, D3" reading, which was flip-flop pin labels) |
 | Fast-load trap PCs | *Phase 6* | |
+
+**Phase 1 done 2026-10-22.** `zx-spectrum-psg.c` now wraps `SP128_PSG_CLOCK_STEP` (default 16u)
+and `SP128_PSG_ROUTE_GAIN` (default 0.25) in `#ifndef`, with a header comment saying why; both are
+still `#undef`'d at the end of the file. Proof of the no-op:
+- sp48, sp128, spp3e and timex were rebuilt before and after the change, and all four `.wasm`
+  artifacts are **byte-identical** (SHA-1), which is stronger than identical AY goldens;
+- `wasm-psg-audio`, `wasm-beeper-audio`, `PsgPanel`, the shared CPU contract test,
+  `2068-ay`, `sp128-golden`, `pentagon-timing` and the slow-tier sp128/spp3e loader tests pass.
+
+Deviation: the `check-wasm-cpu-contract.cjs` allowance for `zx-spectrum-psg.c` (§5, last bullet)
+moves to Phase 2. There is no HT entry to put it in until the core exists; Phase 2 adds the entry
+with `allowedIncludeFragments: ["zxSpectrum/wasm/common/zx-spectrum-psg.c"]`. (Done in Phase 2.)
+
+**Phase 2 done 2026-10-22.** Every model boots on the real ROMs, observed through video RAM
+(`test/harness/ht1080z/self-tests/session.test.ts`), and the probes in
+`test/ht1080z-hw/skeleton.test.ts` pin the memory map, the unmapped FFh reads, the keyboard OR-read
+(with the 3900h-3BFFh mirror), the ports without tape, the RESET-key NMI, and the absence of INT.
+
+| Value | Klive | Source |
+|---|---|---|
+| Boot, Series I/II | `READY ? _` within 60 frames; NEW LINE gives `READY` and `>_`; MEMSIZ (40B1h) = 7FFFh | Observed on the core, both ROMs |
+| Boot, /64 | `MEMORY SIZE? _`; NEW LINE gives `BASIC  2.20`, `READY`, `>_`; MEMSIZ = FFFFh | Observed on the core |
+| RESET key | NMI at the next instruction boundary; BASIC returns to `READY`, RAM kept | Probe; HARDWARE.md §2 |
+| Unmapped memory (16K models) | 8000h-FFFFh read FFh, writes lost | Probe; the ROM's memory-size test finds 7FFFh |
+| Size | 241 KB (speed build) against a 300 KB ceiling | `check:ht1080z-wasm-size` |
+
+Deviations from the plan, with their reasons:
+- **A fourth C file, `ht1080z-ports.c`,** holds the port decode and the cassette-in latch. §4.1 has no
+  home for them before the audio and tape files exist; Phases 5 and 6 add to it.
+- **The core already carries the history recorder and the access profile.** The shared debug loop
+  calls `z80HistoryStopNow`, and `wasm-shared-z80-cpu-contract.test.ts` requires every core to record
+  history. Their TypeScript side (the context decoder, the profile layout, `IExecutionHistorySource`)
+  and the `MF_EXEC_HISTORY`/`MF_PROFILE`/`MF_REVERSE_DEBUG` features stay in Phase 8.
+- **A position key mapping and a minimal character map exist now** (`Ht1080zKeyMappings.ts`,
+  `Ht1080zChars`), so the registered machine is usable. Phase 4 adds the character-level mapping and
+  the typer; Phase 8 the per-model glyphs and BASIC tokens.
+- `HT1080Z_ALL_MODELS` defines all three models for the core and the harness; the registry lists
+  only `HT1080Z_MODELS` (Series II) until Phase 7. The model key is `MC_HT_MODEL` (`s1`/`s2`/`s64`).
+
+**Question found in Phase 2 (against D10), answered 2026-10-22: reading (a).** The Series I/II BASIC's
+display driver folds every character 40h-7Fh down to 00h-1Fh before writing it (0471h: `CP 40h` /
+`JR C` / `SUB 40h` / `CP 20h` / `JR C` / `SUB 20h`), so `READY` is stored as 12h 05h 01h 04h 19h.
+The /64 BASIC NOPs exactly those bytes out. The Series II character ROM has glyphs at 00h-1Fh that
+differ from 40h-5Fh (none of the 32 match). So D10's "codes 00h-1Fh show their own glyphs on every
+model" would put garbage on the Series I/II boot screen: on those models 00h-1Fh must *display* as
+40h-5Fh. Two readings fit the evidence:
+- (a) keep 8-bit video RAM and alias 00h-1Fh to 40h-5Fh when drawing on Series I/II (MAME's `m_7bit`);
+- (b) store bit 6 as NOR(D5, D7) on every write on Series I/II, a 7-bit RAM with the TRS-80's
+  regenerated bit (lkesteloot's `writeToScreenMemory`; MiST stores `din or 40h` below 20h).
+They differ only for software that reads video RAM back or writes 00h-1Fh/60h-7Fh itself. The project
+author chose (a); D10 (§15) records it.
+
+**Phase 3 done 2026-10-22.** `ht1080z-video.c` draws the picture against the CPU clock as §6 says.
+`test/ht1080z-hw/video.test.ts` pins the rules at T-state precision, and `screen.test.ts` holds a
+boot-screen and a character-set golden per model, each checked by eye before it was recorded. In the
+running app (Playwright, `scripts/doc-shots/harness.cjs`), Series II shows `READY ?`, NEW LINE gives
+`READY`, and the host keyboard types at the `>` prompt.
+
+| Value | Klive | Source |
+|---|---|---|
+| Content timing | the display reads column n at slot n and shows it at slot n + 2; a write is seen by reads after its T1 slot | VIDEO_TIMING.md §3, §5; `video.test.ts` |
+| Dash | an access with T1 at slot x blanks the reads at x and x + 1, so the dash is drawn at slots x + 2 and x + 3; a constant pair in `ht1080z-video.c` | VIDEO_TIMING.md §5 (inference: VID low mid-T1 to mid-T3); `video.test.ts` |
+| Window | 384 x 192 at (72, 48) in a 528 x 288 black picture | D6 |
+| Dot aspect | 7 / 10.644 = 0.658 of its height (Klive shows a 7 MHz Spectrum pixel square) | D6; `HT1080Z_PIXEL_ASPECT` |
+| Size | 259 KB | `check:ht1080z-wasm-size` |
+
+Deviations from the plan, with their reasons:
+- **VIDEO CUT, PAGE and the dash toggle are machine properties now** (`HT_VIDEO_CUT`, `HT_VIDEO_PAGE`,
+  `HT_VIDEO_DASH` in `machine-props.ts`), with core exports to set them. Their menu items come with
+  the HT menus in Phase 8 (§11), and the PAGE host key with the keyboard in Phase 4.
+- **The renderer also catches up when the IDE shows a paused machine** (`renderInstantScreen` calls
+  `ht1080zRenderToBeam`), so a debugger stop shows the frame down to the beam. Drawing is output only,
+  so this cannot change what a run computes.
+- An opcode fetch from video RAM is treated as a 3-T access like any other (the M1 cycle drives MREQ
+  too); the core does not tell the hook which kind of cycle it is.
+
+Found in the running app and fixed the same day: the panel scaled the 528-dot picture by the 0.658
+aspect nearest-neighbour, so some dot columns came out a pixel wider than others and letters looked
+uneven. A picture whose aspect is not a whole fraction is now drawn sharp-bilinear on a
+device-resolution canvas (`features/emulator/sharpScale.ts`, the rule in
+`.ai/ui-theming-intent-and-lessons.md`); every other machine's path is unchanged.
