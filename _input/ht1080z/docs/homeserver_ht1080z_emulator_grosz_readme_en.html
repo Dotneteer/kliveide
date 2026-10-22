@@ -1,0 +1,359 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-2">
+<meta name="GENERATOR" content="Mozilla/4.7 [en] (WinNT; I) [Netscape]">
+<title>HT</title>
+<link href="../ht.css" rel="stylesheet" type="text/css">
+</head>
+<body bgcolor="#CCCCCC">
+<p class="cim" align="center">THE HT1080Z EMULATOR</p>
+<p class="szovegvastag" align="center">HT1080Z - VideoGenie-I/System-80/HT-1080Z 
+  emulator</p>
+<p class="szoveg" align="center">(C) 2004-2011 Attila Grósz (gyros AT freemail 
+  DOT hu)<br>
+  <a href="http://gaia.atilia.eu/" target="_blank">http://gaia.atilia.eu</a><br>
+  <a href="http://ht.homeserver.hu" target="_blank">http://ht.homeserver.hu</a></p>
+<p class="cim" align="left"><br>
+  What's a HT-1080Z?</p>
+<p class="szoveg" align="left">The HT-1080Z was the second official school computer 
+  in Hungary. Initial versions were unaltered VideoGenie-1 computers relabeled 
+  and mounted with an on-board Yamaha/General Instruments AY-3-8910 sound chip. 
+  Later revisions had accented characters and modified ROM contents. This Yamaha 
+  chip is the same one that appeared in other famous computer models, such as 
+  the Amstrad and the Atari ST.</p>
+<p class="szoveg" align="left">The current version of the emulator supports the 
+  unaltered HT1080Z which is basically a VideoGenie with the Yamaha sound chip, 
+  along with the BASIC ROM extension and the second series of HT1080Z's with some 
+  of the extended characters of the Hungarian alphabet.</p>
+<p class="szoveg" align="left">The VideoGenie (as marketed in Europe) and the 
+  System-80 (as marketed in New Zealand and Australia) were in turn slightly modified 
+  clones of the popular TRS-80 Model 1 Level II.</p>
+<p class="cim" align="left">What's this thing I've just downloaded?</p>
+<p class="szoveg" align="left">Emulator, that imitates the behaviour of a piece 
+  of computer hardware on another platform, in this specific case thus an 8-bit 
+  VideoGenie-1 is emulated on the Windows platform that is at the moment 32-bit.</p>
+<p class="szoveg" align="left">Although a very good TRS-80 emulator exists that 
+  is in a great deal capable of emulating a VideoGenie as well, it has no specific 
+  support for this series and is also shareware.</p>
+<p class="szoveg" align="left">HT1080Z is in turn freeware, and may be distributed 
+  freely if unaltered, and the copyright notice is retained. As a consequence, 
+  the author take no responsibilities whatsoever for any damage caused by this 
+  emulator. <br>
+  In short: use it at your own risk! </p>
+<p class="szoveg" align="left">HT1080Z also exploits the possibilities of a graphical 
+  user interface with features such as drag'n'drop, intuitive menus etc.</p>
+<p class="szoveg" align="left">New releases of the emulator will be published 
+  on the following page: <a href="http://ht.homeserver.hu/">http://ht.homeserver.hu/</a></p>
+<p class="cim" align="left"> Features of the HT1080Z emulator</p>
+<ul>
+  <li> 
+    <div align="left"><span class="szoveg">full and cycle exact Z80 CPU core</span></div>
+  </li>
+  <li> 
+    <div align="left"><span class="szoveg">support for VideoGenie-1/System-80 
+      and the 1st and 2nd series of HT1080Z computers</span></div>
+  </li>
+  <li> 
+    <div align="left"><span class="szoveg">support for 16 and 64 kb memory setups</span></div>
+  </li>
+  <li> 
+    <div align="left"><span class="szoveg">NMI interrupt (RESET)</span></div>
+  </li>
+  <li> 
+    <div align="left"><span class="szoveg">Video Cut (32 columns mode) and Page 
+      buttons</span></div>
+  </li>
+  <li> 
+    <div align="left"><span class="szoveg">3 channel YM2149 sound chip emulation 
+      along with the noise and envelope generators</span></div>
+  </li>
+  <li> 
+    <div align="left"><span class="szoveg">TRS-80 compatible tape sound</span></div>
+  </li>
+  <li> 
+    <div align="left"><span class="szoveg">full keyboard emulation</span></div>
+  </li>
+  <li> 
+    <div align="left"><span class="szoveg">direct loading of the disk based CMD 
+      format files</span></div>
+  </li>
+  <li> 
+    <div align="left"><span class="szoveg">read/write support for the CAS tape 
+      format</span></div>
+  </li>
+  <li> 
+    <div align="left"><span class="szoveg">WAV format support for tape output</span></div>
+  </li>
+  <li> 
+    <div align="left"><span class="szoveg">simple printer support</span></div>
+  </li>
+  <li> 
+    <div align="left"><span class="szoveg">Lowe LE15 High Resolution Graphic Adapter 
+      emulation</span></div>
+  </li>
+</ul>
+<div align="center"> 
+  <p class="cim" align="left">Missing features of the emulator</p>
+</div>
+<ul>
+  <li> 
+    <div align="left" class="szoveg">I/O port on the YM2149/AY-3-8910 sound board 
+      of the HT1080Z is not emulated</div>
+  </li>
+  <li> 
+    <div align="left" class="szoveg">the YM2149/AY-3-8910 emulation is not cycle 
+      exact</div>
+  </li>
+  <li class="szoveg">joystick</li>
+</ul>
+<div align="left"> 
+  <p class="cim">Usage</p>
+  <p class="szovegvastag">Running</p>
+  <p class="szoveg">To be able to run this program, minimum Windows 95 is needed. 
+    No install is necessary, just copy the contents of the ZIP package to a new 
+    folder and click on the executable called HT1080Z.</p>
+</div>
+<div align="center"> 
+  <p class="szoveg" align="left">The simplest way to get programs started is with 
+    drag'n'drop or via the File-&gt;Autostart menu option. When drag'n'dropping 
+    a DSK file, keeping the Ctrl key down will reboot the emulated machine.</p>
+  <p class="szovegvastag" align="left">Command line options</p>
+  <p class="szoveg" align="left">General format:</p>
+  <p class="szoveg" align="left"><span class="ascii">HT1080Z.EXE [/a] [/d] [/g] 
+    [/h] [/i filename] [/m] [/r] [/w] [filename]</span></p>
+  <p class="szoveg" align="left">For now, only a few command line switches are 
+    supported:</p>
+</div>
+<blockquote> 
+  <div align="left" class="szoveg">/a : suppress autostart of CAS and CMD images<br>
+    /d : enable double scan of screen lines<br>
+    /g : Lowe LE15 High Resolution Graphic Adapter emulation<br>
+    /h : disables sound at startup (by default it's on)<br>
+    /i : insert diskimage on startup into drive:0<br>
+    /m : specify HT model (1, 2 or 3)<br>
+    /r : specify RAM size (16 or 48)<br>
+    /w : run the emulator with the maximum speed possible</div>
+</blockquote>
+<div align="center"> 
+  <p class="szovegvastag" align="left">Monitor<br>
+  </p>
+  <p class="szoveg" align="left">The program has a simple built-in monitor/disassembler. 
+    By pressing ESC[-APE] can this be entered. On pressing this button again, 
+    one can return to the emulated machine. Further keyboard shortcuts:</p>
+</div>
+<blockquote> 
+  <div align="left" class="szoveg">F1 : Disassembly list from the actual value 
+    of the IP. On top of the page, the current state of the CPU is shown.<br>
+    F2 : Memory map of the emulated machine<br>
+    F4 : Set breakpoint at actual position<br>
+    F5 : Switch to emulator screen when in monitor<br>
+    F7 : Run until here (if possible within a given amount of cycles)<br>
+    ENTER : Step one assembly instruction<br>
+    PAGE UP : One page up in the list<br>
+    PAGE DOWN : One page down in the list<br>
+    UP-ARROW : One row upwards in the list<br>
+    DOWN-ARROW: One row downwards in the list</div>
+</blockquote>
+<div align="center"> 
+  <p class="szovegvastag" align="left">Drive</p>
+  <p class="szoveg" align="left">Full drive and WD1771 disk controller emulation 
+    is available. Image support is restricted to DSK images (also known as JV1 
+    and JV3) for now.</p>
+  <p class="szoveg" align="left">Any DOS that is supported on a TRS-80 Model I 
+    should work well in the emulator, among others: TRSDOS and NewDOS.</p>
+  <p class="szoveg" align="left">The /i command line option can be used to attach 
+    a boot disk image on startup, so that the emulator will boot up in DOS mode. 
+    Holding the BREAK key (TAB in the emulator) down on startup however will enforce 
+    booting into normal BASIC mode.</p>
+  <p class="szoveg" align="left">If a disk image has been altered, the user will 
+    be prompted upon detaching it, or exiting the emulator whether the changes 
+    should be saved or not.</p>
+  <p class="szoveg" align="left">At the moment disk drive support is not very 
+    robust, so do not use ot for important stuff. The emulator is somewhat fussy 
+    about the disk images too: it will only accept perfectly aligned 89.600, 102.400 
+    and 204.800 bytes long files as valid JV1 or 98.304, 111.104 and 213.504 bytes 
+    long files as valid JV3 images (35, 40 and 80 sectors respectively).</p>
+  <p class="szovegvastag" align="left">Tape</p>
+  <p class="szoveg" align="left">This was the most widespread and thus most important 
+    peripheral of the VideGenie as it was built-in to the computer case.</p>
+  <p class="szoveg" align="left">Two major formats exist for tape emulation: CAS 
+    and WAV. Latter is at the moment write-only, the former is read and writeable.</p>
+  <p class="szovegdolt" align="left">WAV</p>
+</div>
+<blockquote> 
+  <div align="left" class="szoveg">This format can be used if one would like to 
+    transfer a program to the real machine. The result can be then played back 
+    via the sound output of the PC to a tape and reloaded on the real machine.</div>
+  <div align="left" class="szoveg">For creating such WAV, one has to first choose 
+    'Create WAV' from the Tape menu, press PLAY/RECORD by selecting the appropriate 
+    menu point from the Tape menu and issuing the necessary commands in the emulated 
+    machine (for example: CSAVE&quot;NAME&quot;). The saving process is done realtime 
+    (=slow) but the process can be accelerated by pressing ALT+F3 that gives full 
+    CPU power to the emulator on your machine. It is important that once the save 
+    command has finished the tape must be stopped (via the Tape menu, by ticking 
+    PLAY/RECORD off) and the WAV should be closed (very important!).</div>
+  <div align="left" class="szoveg">Just like the TRS-80 Model I Level 2, the VideoGenie-1 
+    also used a 500 baud tape recording frequency.</div>
+</blockquote>
+<div align="center"> 
+  <p class="szovegdolt" align="left"> CAS</p>
+</div>
+<blockquote> 
+  <div align="left" class="szoveg">Quicker and more efficient format, widespread 
+    in the TRS-80 world. It is a literal byte-exact representation of what is 
+    written to a real tape on a real TRS-80/VideoGenie-1/System-80/HT1080Z.Saving/loading 
+    of CAS files is done via ROM traps and hence it is not supporting custom loaders, 
+    but in return it is much quicker. Most load and save operations finish in 
+    a snap. BASIC programs can be saved with the CSAVE&quot;N&quot; command, in 
+    this case a pop-up window will appear where you must fill in the name and 
+    location of the desired CAS image.Saving a given memory location in CAS format 
+    is also possible via the file menu. Here you must fill in the begin and the 
+    end of the memory area that is about to be saved along with the start address 
+    which defaults to 0066h which is the NMI entry point (RESET).</div>
+</blockquote>
+<div align="center"> 
+  <p class="szovegvastag" align="left">BASIC extension</p>
+  <p class="szoveg" align="left">The emulator comes with support for the BASIC 
+    ROM extension and the machine code monitor. To enter the extended mode, one 
+    should type</p>
+  <p class="ascii" align="left">&gt;SYSTEM<br>
+    *? /12288</p>
+  <p class="szoveg" align="left">into the emulator. For a full list of possibilities, 
+    see the relevant PDF documentation available on <a href="http://www.classic-computers.org.nz/system-80/">Terry
+    Stewart's System 80 page</a>.</p>
+  <p class="cim" align="left">Thanks</p>
+</div>
+<ul>
+  <li class="szoveg">István Majzik, HT1080Z ROM dumps, tips, 
+      testing
+  </li>
+  <li class="szoveg">József László, webspace
+  </li>
+  <li class="szoveg">Viktor Varga, homepage
+  </li>
+  <li class="szoveg">Terry Stewart, for linking the emulator's 
+      page to his great System-80 site
+  </li>
+  <li class="szoveg">Zoltán Kollár, help with disk controller 
+      emulation, testing
+  </li>
+</ul>
+<div align="left"> 
+  <p class="cim">Links</p>
+</div>
+<ul>
+  <li> 
+    <div align="left" class="szoveg">Terry Stewart's System 80 resource site: 
+      <a href="http://www.classic-computers.org.nz/system-80/">http://www.classic-computers.org.nz/system-80/</a></div>
+  </li>
+  <li> 
+    <div align="left" class="szoveg">Hungarian VideoGenie/System-80/HT-1080Z tribute 
+      website (for now, mostly Hungarian only): <a href="http://ht.homeserver.hu">http://ht.homeserver.hu/</a></div>
+  </li>
+  <li>
+    <div align="left" class="szoveg">Ira Goldklang's TRS-80 website: <a href="http://www.trs-80.com">http://www.trs-80.com</a></div>
+  </li>
+</ul>
+<p class="cim" align="left">Changelog</p>
+<p class="szovegvastag" align="left">v1.6.4</p>
+<ul>
+  <li class="szoveg">return correct port values when PC-joystick is not present</li>
+  <li class="szoveg">turn off dynamic sound buffering when recording video</li>
+</ul>
+<p class="szovegvastag">v1.6.3</p>
+<ul>
+  <li class="szoveg">PC-joystick and gamepad support</li>
+  <li class="szoveg">improved Centronics printer support</li>
+  <li class="szoveg">fixing breakpoint support in the external monitor</li>
+</ul>
+<p></p>
+<p class="szovegvastag" align="left">v1.6.2<br>
+</p>
+<ul>
+  <li><span class="szoveg">custom screen refresh frequencies (between 5 and 200)</span></li>
+  <li><span class="szoveg">copy screen contents to the clipboard (text format)</span></li>
+  <li><span class="szoveg">better AY-3-8910 sound IC emulation (mixer)</span></li>
+  <li><span class="szoveg">bugfixes (reenabled breakpoints)</span><br>
+  </li>
+</ul>
+<p class="szovegvastag" align="left"></p>
+<p class="szovegvastag" align="left"></p>
+<p class="szovegvastag" align="left">v1.6.1<br>
+</p>
+<ul>
+  <li> <span class="szoveg">custom CPU frequencies</span></li>
+  <li><span class="szoveg">bugfixes (CAS traps, ROM handling, character generator, 
+    monitor)</span></li>
+</ul>
+<p class="szovegvastag" align="left"></p>
+<p class="szovegvastag" align="left">v1.6<br>
+</p>
+<ul>
+  <li> <span class="szoveg">ability to use custom ROMs</span></li>
+  <li><span class="szoveg">bugfixes</span></li>
+</ul>
+<p class="szovegvastag" align="left">v1.5</p>
+<ul>
+  <li class="szoveg">added emulation of the TRS-80 Model 1 Level II </li>
+  <li class="szoveg">save emulator output to AVI video </li>
+  <li class="szoveg">save screenshot in GIF format (when non 1-bit display) </li>
+  <li class="szoveg">a new, large anamorph screen mode (768x576) </li>
+  <li class="szoveg">AY-3-8910 (YM2149) noise generator and frequency bug fixed 
+  </li>
+  <li class="szoveg">Lowe LE18 split screen mode bug fixed </li>
+</ul>
+<p class="szovegvastag" align="left">v1.4</p>
+<ul>
+  <li class="szoveg"> Lowe LE15 High Resolution Graphic Adapter emulation </li>
+  <li class="szoveg"> correct screen aspect ratio </li>
+  <li class="szoveg"> paste text from the clipboard </li>
+  <li class="szoveg"> composite TV blur </li>
+  <li class="szoveg"> settings are now saved in the registry </li>
+  <li class="szoveg"> bugfixes (charset, video RAM etc. </li>
+</ul>
+<p class="szovegvastag" align="left">v1.3</p>
+<ul>
+  <li class="szoveg"> full drive and WD1771 disk controller emulation</li>
+  <li class="szoveg">support for tokenized /BAS images</li>
+  <li class="szoveg">support for non-byte aligned CAS images</li>
+  <li class="szoveg">fullscreen mode</li>
+  <li class="szoveg">support for HT model 3</li>
+  <li class="szoveg">new machine configuration dialog window</li>
+  <li class="szoveg">many bugfixes</li>
+</ul>
+<p class="szovegvastag" align="left">v1.2</p>
+<ul>
+  <li> <span class="szoveg">drag'n'drop support</span></li>
+  <li class="szoveg">support for command line options</li>
+  <li class="szoveg">double scan</li>
+  <li class="szoveg">autostart emulator images (great for novice users)</li>
+  <li class="szoveg">README in English</li>
+  <li class="szoveg">graphic charset bug fixed</li>
+  <li class="szoveg">YM2149 envelope bug fixed</li>
+</ul>
+<p class="szovegvastag" align="left">v1.1</p>
+<ul>
+  <li> <span class="szoveg">simulated keyboard input from external text files 
+    (BAS/TXT)</span></li>
+  <li class="szoveg">almost full YM2149 sound chip emulation</li>
+  <li class="szoveg">Video Cut (32 column mode) and Page buttons</li>
+  <li class="szoveg">better CAS tape format support</li>
+  <li class="szoveg">improved charset for the VideoGenie-1</li>
+  <li class="szoveg"> 48 kb RAM suuport, selectable RAM size</li>
+  <li class="szoveg">support for the second series of HT1080Z (different ROM from 
+    VideoGenie)</li>
+</ul>
+<p class="szovegvastag" align="left">v1.0</p>
+<ul>
+  <li class="szoveg"> <span class="szoveg">CAS format support (R/W)</span></li>
+  <li class="szoveg">saving in WAV format</li>
+  <li class="szoveg">new icons</li>
+</ul>
+<p class="szovegvastag" align="left">Without version nr.</p>
+<ul>
+  <li class="szoveg"><span class="szoveg"> first public release</span></li>
+</ul>
+<p class="szovegdolt" align="right">(Attila Grósz)</p>
+</body>
+</html>
