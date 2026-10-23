@@ -1,6 +1,7 @@
 import { expect, it } from "vitest";
 
-import { kitMachine, loadKitFile, press, savePicture, screenText } from "./kit";
+import { kitMachine, loadKitFile, savePicture, screenText } from "./kit";
+import { PublishedPictures } from "./pictures";
 
 /*
  * The floating bus: Float48K and Float128K (Mark Woodmass, 2008) list what an IN from an unattached
@@ -27,11 +28,14 @@ function expectPattern(table: Map<number, number>, firstRead: number): void {
 }
 
 it("Float48K: the ULA's reads from 14,338 on", async () => {
+  const pictures = new PublishedPictures();
   const s = await kitMachine({ model: "48k" });
   loadKitFile(s, "float48k/Float48K (2008-03-24)(Woodmass, Mark)[!].tap");
   s.runFrames(3000);
   savePicture(s, "float48k");
+  pictures.take(s, "float48k");
   expectPattern(rows(screenText(s)), 14338);
+  pictures.settle();
 }, 120_000);
 
 it("Float128K: the ULA's reads from 14,364 on", async () => {

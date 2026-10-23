@@ -13,6 +13,9 @@ import { createSp128Session, type Sp128TestSession } from "../harness/sp128";
  * machines) is asserted. A program that only draws gets its picture written to `.spectrum-kit/`
  * (git-ignored) for a by-eye comparison with the real-machine photos and videos on its ZXE wiki page:
  * never a golden recorded from Klive's own output (the plan's ground rules).
+ *
+ * Some runs' pictures are published on the documentation site and checked against it on every run
+ * (`PublishedPictures` in `pictures.ts`, `.plans/SPECTRUM_ACCURACY_DOCS_PLAN.md`).
  */
 
 /** The kit's folder */
@@ -75,17 +78,23 @@ export function savePicture(s: KitSession, name: string): void {
 /**
  * Pages through a program that shows one result screen after another and waits for a key: runs
  * `frames` frames, keeps the text, presses SPACE, until `done` matches the text or `maxPages` pass.
- * Returns the pages' texts.
+ * Returns the pages' texts. `onPage` sees each page while it is on the screen (to take its picture).
  */
 export function pageThrough(
   s: KitSession,
-  { frames = 300, maxPages = 120, done }: { frames?: number; maxPages?: number; done: RegExp }
+  {
+    frames = 300,
+    maxPages = 120,
+    done,
+    onPage
+  }: { frames?: number; maxPages?: number; done: RegExp; onPage?: (text: string) => void }
 ): string[] {
   const pages: string[] = [];
   for (let page = 0; page < maxPages; page++) {
     s.runFrames(frames);
     const text = screenText(s);
     pages.push(text);
+    onPage?.(text);
     if (done.test(text)) break;
     press(s, "Space");
   }

@@ -719,6 +719,8 @@ Klive's display is checked against test programs whose results come from real ma
 Timing Tests 48K and 128K, HALT2INT (whose author photographed his own early and late 48Ks),
 Float48K, Float128K and FloatSpy, Border Time and Screen Time. They live in the repository
 (`vendor/spectrum-tests/`) and run in Klive's slow test tier.
+[ZX Spectrum: How Klive's Accuracy Is Tested](/en/under-the-hood/emulator-internals/spectrum-accuracy/)
+shows each program's result in Klive, beside the real machines' where there is a photo.
 
 Contention is applied from the same tables: whenever the CPU touches contended memory, the core
 looks up the wait for the current T-state and adds it to the clock. The floating bus reads the byte

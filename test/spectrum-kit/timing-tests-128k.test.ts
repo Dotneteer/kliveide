@@ -1,6 +1,7 @@
 import { expect, it } from "vitest";
 
 import { kitMachine, loadKitFile, pageThrough, press, savePicture } from "./kit";
+import { PublishedPictures } from "./pictures";
 
 /*
  * ZX Spectrum Timing Tests - 128K v1.0 (Richard and Tim Butler, 2015), a `.szx` snapshot: the 48K
@@ -28,7 +29,7 @@ function outcomes(pages: string[]): Map<string, string> {
  * test that fails waits, so every failure is seen. Its BASIC stops after test 34 (line 1350), before
  * the summary the 48K suite prints, so a run ends at test 34.
  */
-async function run(late: boolean): Promise<{ results: Map<string, string>; last: string }> {
+async function run(late: boolean, pictures?: PublishedPictures): Promise<{ results: Map<string, string>; last: string }> {
   const s = await kitMachine({ model: "128k" });
   loadKitFile(s, SZX);
   // --- After the load: the file's header says standard timing (an .szx sets the machine's)
@@ -37,14 +38,17 @@ async function run(late: boolean): Promise<{ results: Map<string, string>; last:
   press(s, "Enter");
   const pages = pageThrough(s, { frames: 300, maxPages: 200, done: /Test 34 \{Contended\}(.|\n)*(Pass|Fail)/ });
   savePicture(s, `timing-tests-128k-${late ? "late" : "early"}`);
+  pictures?.take(s, "timing-tests-128k-late");
   return { results: outcomes(pages), last: pages[pages.length - 1] };
 }
 
 it("passes every test but one with late timing (its authors' 128K)", async () => {
-  const { results, last } = await run(true);
+  const pictures = new PublishedPictures();
+  const { results, last } = await run(true, pictures);
   const failed = [...results].filter(([, outcome]) => outcome === "Fail").map(([test]) => test);
   expect(failed).toEqual(["15 Uncontended"]);
   expect(last).toContain("Test 34 {Contended}");
+  pictures.settle();
 }, 300_000);
 
 it("fails contended tests with early timing", async () => {

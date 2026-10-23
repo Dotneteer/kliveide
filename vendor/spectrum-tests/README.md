@@ -14,6 +14,13 @@ the programs that report their own result are asserted, the others write their p
 `.spectrum-kit/` for a by-eye check against the real-machine photos and videos on their wiki pages.
 `.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` ("As built") has the results.
 
+Some runs' pictures are published on the documentation site, on "ZX Spectrum: how Klive's accuracy
+is tested" (`docs/content/en/under-the-hood/emulator-internals/spectrum-accuracy.mdx`), from
+`docs/public/images/spectrum-accuracy/`. Every slow-tier run compares them with what Klive draws and
+fails when one differs; after an intended change, re-publish them with `KIT_PUBLISH=1 npm run
+test:slow` and re-read the page (`test/spectrum-kit/pictures.ts`). HALT2INT's photos are converted
+for the site by `node scripts/build-doc-accuracy-photos.cjs`.
+
 ## Where they come from
 
 Every file was downloaded from the **ZXE depot** (`https://zxe.io/depot/software/ZX%20Spectrum/`),

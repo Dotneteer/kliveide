@@ -192,10 +192,13 @@
 /en/under-the-hood/contribute/improve-docs/index.html
 /en/under-the-hood/contribute/translate/index.html
 /en/under-the-hood/contribute/wasm-toolchain/index.html
+/en/under-the-hood/emulator-internals/crt-display/index.html
 /en/under-the-hood/emulator-internals/debugger-loop/index.html
 /en/under-the-hood/emulator-internals/ht1080z-video/index.html
 /en/under-the-hood/emulator-internals/next-core/index.html
 /en/under-the-hood/emulator-internals/reverse-debugging/index.html
+/en/under-the-hood/emulator-internals/spectrum-accuracy/index.html
+/en/under-the-hood/emulator-internals/spectrum-display/index.html
 /en/under-the-hood/emulator-internals/wasm-cores/index.html
 /en/under-the-hood/emulator-internals/zx81-display/index.html
 /en/under-the-hood/emulator-internals/zx81-tape/index.html

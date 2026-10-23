@@ -1,6 +1,7 @@
 import { expect, it } from "vitest";
 
 import { kitMachine, loadKitFile, savePicture, screenText } from "./kit";
+import { PublishedPictures } from "./pictures";
 
 /*
  * HALT2INT v3 (Mark Woodmass, 2022): when a HALT reaches its interrupt, at six addresses and five
@@ -54,23 +55,32 @@ ADDR  CYCLE R   ADDR  CYCLE R
 32768/57239:5F  49151/57239:5F
 49152/57239:5F  65535/57239:5F`;
 
-async function run(model: "48k" | "128k", late: boolean): Promise<string> {
+/** Runs the program; `pictures`: publish its picture (all but the 128K's early run are) */
+async function run(model: "48k" | "128k", late: boolean, pictures?: PublishedPictures): Promise<string> {
   const s = await kitMachine({ model, late });
   loadKitFile(s, model === "48k" ? "halt2int/halt2int.tap" : "halt2int/halt2int128.tap");
   s.runFrames(3000);
-  savePicture(s, `halt2int-${model}-${late ? "late" : "early"}`);
+  const name = `halt2int-${model}-${late ? "late" : "early"}`;
+  savePicture(s, name);
+  pictures?.take(s, name);
   return screenText(s);
 }
 
 it("the 48K with early timing shows the real early 48K's photo", async () => {
-  expect(await run("48k", false)).toContain(EARLY_48K);
+  const pictures = new PublishedPictures();
+  expect(await run("48k", false, pictures)).toContain(EARLY_48K);
+  pictures.settle();
 }, 120_000);
 
 it("the 48K with late timing shows the real late 48K's photo", async () => {
-  expect(await run("48k", true)).toContain(LATE_48K);
+  const pictures = new PublishedPictures();
+  expect(await run("48k", true, pictures)).toContain(LATE_48K);
+  pictures.settle();
 }, 120_000);
 
 it("the 128K matches the program's own early and late tables", async () => {
+  const pictures = new PublishedPictures();
   expect(await run("128k", false)).toContain("Float: Early    HALT: Early");
-  expect(await run("128k", true)).toContain("Float: Late     HALT: Late");
+  expect(await run("128k", true, pictures)).toContain("Float: Late     HALT: Late");
+  pictures.settle();
 }, 180_000);

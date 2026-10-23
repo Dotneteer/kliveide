@@ -1,6 +1,7 @@
 import { expect, it } from "vitest";
 
 import { kitMachine, loadKitFile, pictureRgb, press, savePicture, screenText } from "./kit";
+import { PublishedPictures } from "./pictures";
 
 /*
  * Jan Bobrowski's Border Time and Screen Time (2011). Each repeats one action at a T-state shown on
@@ -33,11 +34,13 @@ function step(s: Parameters<typeof press>[0], key: string): void {
 }
 
 it("Border Time: the FAQ's OUT window lands on the paper's left edge", async () => {
+  const pictures = new PublishedPictures();
   const s = await kitMachine({ model: "48k" });
   loadKitFile(s, "border-time/Border Time (2011-08-20)(Bobrowski, Jan)[!].tap");
   s.runFrames(1500);
   expect(screenText(s)).toContain("14112 + 224 = 14336");
   savePicture(s, "border-time-14336");
+  pictures.take(s, "border-time-14336");
   // --- The border line above the paper is the picture's row 47 (48 border rows, the first is row 0)
   const row = 47;
   step(s, "A");
@@ -48,14 +51,17 @@ it("Border Time: the FAQ's OUT window lands on the paper's left edge", async () 
     expect(firstChange(s, row), `${tstate}`).toBe(expected[i]);
     step(s, "Q");
   }
+  pictures.settle();
 }, 180_000);
 
 it("Screen Time: a write cycle at 14,334 is read, one at 14,335 is not", async () => {
+  const pictures = new PublishedPictures();
   const s = await kitMachine({ model: "48k" });
   loadKitFile(s, "screen-time/Screen Time (2011-08-20)(Bobrowski, Jan)[!].tap");
   s.runFrames(1500);
   expect(screenText(s)).toContain("14335");
   savePicture(s, "screen-time-14335");
+  pictures.take(s, "screen-time-14335");
   // --- $4000's cell: the picture's row 48, columns 48-55
   const paper = pictureRgb(s, 60, 100);
   const cellShowsInk = () => Array.from({ length: 8 }, (_, i) => pictureRgb(s, 48, 48 + i)).some((c) => c !== paper);
@@ -63,4 +69,5 @@ it("Screen Time: a write cycle at 14,334 is read, one at 14,335 is not", async (
   step(s, "Q");
   expect(screenText(s)).toContain("14336");
   expect(cellShowsInk(), "14336").toBe(false);
+  pictures.settle();
 }, 120_000);
