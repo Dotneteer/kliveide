@@ -108,6 +108,11 @@ BASIC waits for a key, so it never types over a load. With *Fast Load* on (the d
 loads at once, through the ROM's own cassette routines; with it off, the tape plays in real time and
 the two stars in the top right corner blink as on the real machine.
 
+To start debugging a machine-code program at its first instruction, choose *Debug from the start
+address* in the Explorer, use the matching button on the tape's tab, or run `tape-load <file> -e`.
+Klive loads the tape under the debugger and stops at the start address the tape names (the `/` at
+the `*?` prompt would jump there), so you can step from there in the Disassembly view.
+
 `CSAVE "A"` writes `A.cas` to the saved-files folder (see [Saving Files](/en/guides/emulator/saving-files)).
 The emulator window shows the tape in the deck under the screen, with buttons to eject or change it.
 
@@ -136,7 +141,8 @@ or /64 characters (it starts with the model the emulator runs, or Series II), as
 Each part pops out into its own document, from its row's icon, by double-clicking it or with
 *Pop out* in the details: a BASIC program as a listing, code as a disassembly or as memory at the
 address it loads to. *Pop out the file's bytes* in the summary shows the whole file in hex. A damaged
-part (a wrong checksum, a file cut short) is marked in the list and explained in the details.
+part (a wrong checksum, a file cut short) is marked in the list and explained in the details. Click
+the **Start** address in the summary to select the record that holds it.
 
 ## Sound
 

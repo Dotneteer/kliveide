@@ -1733,9 +1733,9 @@
       "saved": "The machine the recording was made on"
     }
   },
-  "commands.tapeLoad.description": "Inserts a .tap or .tzx tape (ZX Spectrum), a .p/.o program (ZX80/ZX81) or a .cas/.cmd/.bas tape (HT-1080Z) into the deck (-r resets and loads it, -d does so with breakpoints armed)",
+  "commands.tapeLoad.description": "Inserts a .tap or .tzx tape (ZX Spectrum), a .p/.o program (ZX80/ZX81) or a .cas/.cmd/.bas tape (HT-1080Z) into the deck (-r resets and loads it, -d does so with breakpoints armed, -e debugs an HT-1080Z machine-code tape and stops at its start address)",
   "@commands.tapeLoad.description": {
-    "context": "Help text of the 'tape-load' IDE command. Keep the option names -r and -d."
+    "context": "Help text of the 'tape-load' IDE command. Keep the option names -r, -d and -e."
   },
   "commands.tapeLoad.guard.tape": "requires a ZX Spectrum 48K, 128K or +2/+3 machine",
   "@commands.tapeLoad.guard.tape": {
@@ -1757,9 +1757,27 @@
   "@commands.tapeLoad.wrongType": {
     "context": "Validation error of 'tape-load'."
   },
-  "commands.tapeLoad.oneMode": "Use only one of -r and -d.",
+  "commands.tapeLoad.oneMode": "Use only one of -r, -d and -e.",
   "@commands.tapeLoad.oneMode": {
-    "context": "Validation error of 'tape-load': the two options exclude each other. Keep the option names."
+    "context": "Validation error of 'tape-load': the three options exclude each other. Keep the option names."
+  },
+  "commands.tapeLoad.entryHtOnly": "-e stops at the start address of an HT-1080Z machine-code tape (.cas or .cmd); this file is not one.",
+  "@commands.tapeLoad.entryHtOnly": {
+    "context": "Validation error of 'tape-load' when -e is given for a file that is not an HT-1080Z tape. Keep the option name -e."
+  },
+  "commands.tapeLoad.entryNotSystem": "{file} holds a BASIC program, which has no start address to stop at: -e needs a machine-code (SYSTEM) tape or a .cmd file.",
+  "@commands.tapeLoad.entryNotSystem": {
+    "context": "Error of 'tape-load -e' when the HT-1080Z tape holds BASIC. SYSTEM is the machine's command: not translated. Keep the option name -e.",
+    "placeholders": {
+      "file": "The file's full path"
+    }
+  },
+  "commands.tapeLoad.entryBreak": "The debugger stops at the program's start address, {address}.",
+  "@commands.tapeLoad.entryBreak": {
+    "context": "Output of 'tape-load -e': a one-shot breakpoint is set at the start address the HT-1080Z tape names.",
+    "placeholders": {
+      "address": "A hexadecimal address, e.g. $7FB0"
+    }
   },
   "commands.tapeLoad.refusedTape": "Loading a tape requires a ZX Spectrum 48K, 128K or +2/+3 machine; the current machine is {machine}.",
   "@commands.tapeLoad.refusedTape": {

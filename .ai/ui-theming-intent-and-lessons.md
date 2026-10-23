@@ -2457,10 +2457,14 @@ cartridge) wraps it rather than copying `NexBankBrowser`.
   BASIC listing and no byte preview (the author's call): a program shows its line count and a
   "Pop out the listing" link, code shows nothing of its bytes. A long listing in a side pane is
   neither readable nor scannable; the pop-out has the room and the tools.
+  A summary fact that comes from one part (the HT tape viewer's **Start** address) is that part's
+  link: the value itself in `--accent-text`, underlined on hover, selecting the part and clearing a
+  filter that hides it - not a separate "show" button beside it.
   The one exception is a file whose whole program is small by nature: the HT-1080Z tape viewer lists
-  a Level II program (a few hundred bytes) in the details, in a bounded thin-bar `ScrollViewer` of
-  sixteen lines, with the pop-out link under it (the author's approved mockup). A per-line `.bas`
-  shows the selected line only.
+  a Level II program (a few hundred bytes) in the details in full, with the pop-out link under it
+  (the author's approved mockup). The details pane is its scroller: a listing with a scroller of its
+  own inside a scrolling pane was a third nested scroller, and the author found it awkward. A
+  per-line `.bas` shows the selected line only.
 
 - **The shell owns everything a user learns once**: the list's keyboard, double-click and the row's
   pop-out icon, the details' split "Pop out · *last view*" button, the chips, the fact list and the
@@ -2484,9 +2488,17 @@ cartridge) wraps it rather than copying `NexBankBrowser`.
   `sticky`; round corners with `overflow: clip`**, which makes no scroll container.
 - **A scroll area is a `ScrollViewer`, never bare `overflow: auto`.** The platform's scrollbar is an
   unthemed white strip in the dark tone; nothing in the app styles `::-webkit-scrollbar`.
-- **A nested scroller must not hand the wheel on**: `overscroll-behavior: contain` on its overlay
-  viewport (`[data-overlayscrollbars-viewport]`, the element that actually scrolls), or reaching the
-  end of the list scrolls the viewer and the heading goes with it.
+- **A viewer with content above its browser fills, it does not scroll** (`fill`, the TAP and HT tape
+  viewers): the browser is as tall as the space left below the summary and graphics, so the viewer
+  has nothing to scroll and the list and the details are the only scrollers. Bounding it to the whole
+  viewport instead gave the viewer a page scrollbar on top of the panes' two, and "contain" (below)
+  then left the wheel dead over a details pane too short to scroll - the author's complaint.
+- **A nested scroller must not hand the wheel on** where the viewer still scrolls (NEX, Z88):
+  `overscroll-behavior: contain` on its overlay viewport (`[data-overlayscrollbars-viewport]`, the
+  element that actually scrolls), or reaching the end of the list scrolls the viewer and the heading
+  goes with it. A filling browser sets it back to `auto`.
+- **The details' title and pop-out button stay pinned** (`.detailsHead`, sticky, on the pane's
+  surface, reaching over its top padding): a long part must not scroll its one action away.
 - **When probing a bounded list over CDP, aim the wheel at the pane, not the list.** Inside a
   scroller the listbox is the full-height *content*; its centre can be off screen, and the wheel then
   lands on whatever is there — which read as "the viewer scrolls" when the list was never touched.

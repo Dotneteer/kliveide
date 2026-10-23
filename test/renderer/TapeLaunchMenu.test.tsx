@@ -1,4 +1,6 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -34,8 +36,19 @@ afterEach(() => {
 
 const appState = (machineId?: string) => ({ emulatorState: { machineId } });
 
-async function loadModule(machineId?: string, fastLoad = true) {
+/** One API object per byte array, so the bar's effect does not re-run on every render */
+const mainApis = new Map<Uint8Array, unknown>();
+const MAIN_API = (bytes: Uint8Array) => {
+  if (!mainApis.has(bytes)) mainApis.set(bytes, { readBinaryFile: () => Promise.resolve(bytes) });
+  return mainApis.get(bytes);
+};
+
+async function loadModule(machineId?: string, fastLoad = true, fileBytes: Uint8Array = new Uint8Array()) {
   const executeCommand = vi.fn(() => Promise.resolve({ success: true }));
+  // --- An HT tape's bar reads the file to know whether it names a start address
+  vi.doMock("@renderer/core/MainApi", () => ({
+    useMainApi: () => MAIN_API(fileBytes)
+  }));
   vi.doMock("@renderer/appIde/services/AppServicesProvider", () => ({
     useAppServices: () => ({ ideCommandsService: { executeCommand } })
   }));
@@ -140,11 +153,32 @@ describe("Tape launch - HT-1080Z tapes (.cas, .cmd)", () => {
     const { getHtTapeLaunchContextMenuInfo, executeCommand } = await loadModule(machineId);
     const entries = getHtTapeLaunchContextMenuInfo({ ideCommandsService: { executeCommand } } as any);
     const store = { getState: () => appState(machineId) } as any;
-    expect(entries.map((entry) => entry.disabled!(store, CAS))).toEqual([disabled, disabled, disabled]);
+    // --- Run, insert, debug, and debug from the start address
+    expect(entries.map((entry) => entry.disabled!(store, CAS))).toEqual([disabled, disabled, disabled, disabled]);
     if (!disabled) {
       await entries[0].clicked!(CAS);
       expect(executeCommand).toHaveBeenCalledWith(`tape-load "${CAS}" -r`);
+      await entries[3].clicked!(CAS);
+      expect(executeCommand).toHaveBeenCalledWith(`tape-load "${CAS}" -e`);
     }
+  });
+
+  it("offers debugging from the start address for a machine-code tape", async () => {
+    const galaxy = new Uint8Array(readFileSync(join(__dirname, "../testfiles/ht1080z/galaxy.cas")));
+    const { htTapeLaunchCommandBarRenderer, executeCommand } = await loadModule(MI_HT1080Z, true, galaxy);
+    render(<>{htTapeLaunchCommandBarRenderer(CAS)}</>);
+    const entry = await screen.findByRole("button", { name: /stopping at its start address/ });
+    fireEvent.click(entry);
+    await waitFor(() => expect(executeCommand).toHaveBeenCalledWith(`tape-load "${CAS}" -e`));
+  });
+
+  it("offers no start address for a BASIC tape", async () => {
+    const amoeba = new Uint8Array(readFileSync(join(__dirname, "../testfiles/ht1080z/amoeba.cas")));
+    const basic = await loadModule(MI_HT1080Z, true, amoeba);
+    render(<>{basic.htTapeLaunchCommandBarRenderer(CAS)}</>);
+    await screen.findAllByRole("button");
+    await new Promise((r) => setTimeout(r, 20));
+    expect(screen.getAllByRole("button")).toHaveLength(3);
   });
 
   it("disables the tab-bar buttons on another machine, and says why", async () => {

@@ -173,6 +173,22 @@ describe("Ht1080zTapeViewerPanel", () => {
     expect(strip.textContent).toBe("01" + "08" + "0070" + "21003C3648C9");
   });
 
+  it("selects the record that holds the start address from the summary, clearing a filter", async () => {
+    await renderViewer("hello.cmd", HELLO_CMD, { partFilter: "loads" });
+    const list = await screen.findByRole("listbox", { name: "Part list" });
+    // --- The Loads filter hides the transfer record
+    expect(within(list).getAllByRole("option")).toHaveLength(1);
+    fireEvent.click(screen.getByRole("button", { name: "$7000" }));
+    expect(await screen.findByRole("complementary", { name: "#2 details" })).toBeInTheDocument();
+    expect(within(list).getAllByRole("option")).toHaveLength(3);
+  });
+
+  it("leaves the start address plain when no record holds it", async () => {
+    await renderViewer("demo.cas", DEMO_CAS);
+    const summary = await screen.findByLabelText("File summary");
+    expect(within(summary).queryByRole("button", { name: /^\$/ })).toBeNull();
+  });
+
   it("pops a load block out as a disassembly at its address", async () => {
     const { openDocument } = await renderViewer("hello.cmd", HELLO_CMD);
     fireEvent.click(await screen.findByRole("button", { name: "Pop out in Disassembly" }));

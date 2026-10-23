@@ -12,7 +12,6 @@ import {
   BankRowText,
   type BankBrowserItem
 } from "@renderer/controls/bankBrowser/BankBrowser";
-import ScrollViewer from "@renderer/controls/ScrollViewer";
 import { ByteAnatomy, type ByteAnatomyField } from "@renderer/controls/bankBrowser/ByteAnatomy";
 import { openStaticMemoryDump } from "@renderer/features/memory/StaticMemoryDump";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
@@ -395,7 +394,17 @@ const TapeView = ({
 
   return (
     <div className={styles.viewer}>
-      <Summary analysis={analysis} onPopOutFile={() => void popOutFile()} />
+      <Summary
+        analysis={analysis}
+        onPopOutFile={() => void popOutFile()}
+        onShowEntry={(index) =>
+          ctx.changeViewState((state) => {
+            state.selectedPart = index;
+            // --- The entry loads nothing, so a filter may hide it
+            if (state.partFilter && state.partFilter !== "all") state.partFilter = "all";
+          })
+        }
+      />
       {analysis.hasProblems && (
         <div className={styles.banner} role="note">
           {t("panels.htTape.problemBanner")}
@@ -419,6 +428,7 @@ const TapeView = ({
         viewNames={VIEW_NAMES}
         itemKind="part"
         layout="sideBySide"
+        fill
         formatNumber={(item) => `#${item.bank}`}
         viewsFor={(item) => viewsOf(item.part, analysis)}
         onSelect={(item) => select(item.part.index)}
@@ -498,13 +508,22 @@ const Fact = ({ label, value, tone }: { label: string; value: string; tone?: "ok
   </span>
 );
 
-const Summary = ({ analysis, onPopOutFile }: { analysis: Ht1080zTapeAnalysis; onPopOutFile: () => void }) => {
+type SummaryProps = {
+  analysis: Ht1080zTapeAnalysis;
+  onPopOutFile: () => void;
+  /** Selects the part that holds the start address */
+  onShowEntry: (index: number) => void;
+};
+
+const Summary = ({ analysis, onPopOutFile, onShowEntry }: SummaryProps) => {
   const t = useT();
   const lines = analysis.lines ?? [];
   const blocks = analysis.parts.filter(isCodePart).length;
   const loads = analysis.loadTop !== undefined;
   const fits = fitsSixteenK(analysis);
   const programBytes = lines.reduce((sum, l) => sum + l.length, 0);
+  // --- The ENTRY record of a SYSTEM tape, the 02 (transfer) record of a .cmd
+  const entryPart = analysis.parts.find((p) => p.role === "systemEntry" || p.role === "cmdTransfer");
   return (
     <div className={styles.summary} aria-label={t("panels.htTape.summaryLabel")}>
       <Fact label={t("panels.tape.fact.format")} value={FORMAT_NAMES[analysis.kind]} />
@@ -524,7 +543,23 @@ const Summary = ({ analysis, onPopOutFile }: { analysis: Ht1080zTapeAnalysis; on
       {analysis.codeBytes !== undefined && blocks > 0 && (
         <Fact label={t("panels.htTape.fact.code")} value={t("panels.htTape.fact.codeValue", { count: blocks, bytes: fmt(analysis.codeBytes) })} />
       )}
-      {analysis.entry !== undefined && <Fact label={t("panels.htTape.fact.start")} value={hex4(analysis.entry)} />}
+      {analysis.entry !== undefined && (
+        <span className={styles.fact}>
+          <span className={styles.factLabel}>{t("panels.htTape.fact.start")}</span>
+          {entryPart ? (
+            <button
+              type="button"
+              className={styles.factLink}
+              title={t("panels.htTape.showEntry", { index: entryPart.index })}
+              onClick={() => onShowEntry(entryPart.index)}
+            >
+              {hex4(analysis.entry)}
+            </button>
+          ) : (
+            <span className={styles.factValue}>{hex4(analysis.entry)}</span>
+          )}
+        </span>
+      )}
       <Fact
         label={analysis.kind === "basicTape" || analysis.kind === "systemTape" ? t("panels.tape.fact.playTime") : t("panels.htTape.fact.asTape")}
         value={formatPlayTime(analysis.playMs)}
@@ -777,14 +812,12 @@ const Details = ({ analysis, part, charSet, charSetId, onCharSet, onShowAll }: D
 
       {part.role === "basicProgram" && lines.length > 0 && (
         <BankDetailsSection title={t("panels.helpers.view.basic")}>
-          {/* --- A Level II program is a few hundred bytes: it is listed here, bounded, and scrolls */}
-          <ScrollViewer className={styles.listingScroller} thinScrollBar={true} allowHorizontal={false}>
-            <div className={styles.listing} data-testid="ht-tape-listing">
-              {lines.map((line) => (
-                <ListingLine key={line.offset} lineNo={line.lineNo} text={line.text} charSet={charSet} s64={s64} />
-              ))}
-            </div>
-          </ScrollViewer>
+          {/* --- A Level II program is a few hundred bytes: listed here in full; the details pane scrolls */}
+          <div className={styles.listing} data-testid="ht-tape-listing">
+            {lines.map((line) => (
+              <ListingLine key={line.offset} lineNo={line.lineNo} text={line.text} charSet={charSet} s64={s64} />
+            ))}
+          </div>
           <button type="button" className={styles.more} onClick={onShowAll}>
             {t("panels.helpers.popOutListing")}
           </button>

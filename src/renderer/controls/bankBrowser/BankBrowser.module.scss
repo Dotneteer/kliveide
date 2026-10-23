@@ -153,6 +153,24 @@
   }
 }
 
+/*
+ * A browser that fills the viewer (`fill`) leaves the viewer nothing to scroll, so nothing needs
+ * guarding: the wheel over a pane that has nothing to scroll then reaches the viewer, which matters
+ * only in a window so short that the browser's minimum height makes the viewer scroll after all.
+ * Containing it there left the wheel dead over a short details pane.
+ */
+.browser.fill .listPane,
+.browser.fill .detailsPane {
+  :global([data-overlayscrollbars-viewport]) {
+    overscroll-behavior: auto;
+  }
+}
+
+/* --- Its bottom margin is the viewer's padding: the browser ends where the viewer's content does */
+.browser.fill {
+  margin-bottom: 0;
+}
+
 .list {
   position: relative;
   display: flex;
@@ -314,11 +332,23 @@
   padding: var(--space-3);
 }
 
+/*
+ * The title and the pop-out button stay at the top of the details pane while its content scrolls: a
+ * long part (a program's listing, a block's bytes) must not carry the one action away with it. It
+ * takes the pane's surface, so what scrolls under it is hidden, and reaches up over the pane's top
+ * padding, so nothing shows above it either.
+ */
 .detailsHead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
+  margin: calc(var(--space-3) * -1) calc(var(--space-3) * -1) 0;
+  padding: var(--space-3) var(--space-3) var(--space-1);
+  background: var(--surface-chrome);
 }
 
 .detailsTitle {

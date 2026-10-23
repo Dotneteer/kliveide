@@ -3595,6 +3595,13 @@
   "@panels.htTape.section.lineBytes": {
     "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Title of the byte breakdown of the selected BASIC line."
   },
+  "panels.htTape.showEntry": "Show the part that holds it (#{index})",
+  "@panels.htTape.showEntry": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Tooltip of the start address in the summary, which is a link: clicking it selects the record that holds the address in the parts list.",
+    "placeholders": {
+      "index": "The part's number"
+    }
+  },
   "panels.htTape.strip.lineTooltip": "Line {line} · {count, plural, one {# byte} other {# bytes}}",
   "@panels.htTape.strip.lineTooltip": {
     "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Tooltip of a segment of the strip that shows a .bas file's lines by size.",

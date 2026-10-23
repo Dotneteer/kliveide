@@ -44,21 +44,46 @@ import styles from "./BankBrowser.module.scss";
  * A viewer scrolls inside an OverlayScrollbars viewport (`ScrollViewer`), else inside the nearest
  * ancestor that scrolls. `undefined` until measured, or with no such ancestor - the stylesheet then
  * falls back to a share of the window.
+ *
+ * With `fill`, the height left in that viewport *below what sits above the browser* (a summary, a
+ * timeline) and above what pads it at the bottom: the browser then ends at the viewport's bottom
+ * edge, so the viewer itself never scrolls and the list and the details are the only scrollers. The
+ * stylesheet's minimum still applies, so a short window scrolls the viewer rather than squeeze the
+ * list to nothing.
  */
-function useViewportHeight(ref: RefObject<HTMLElement>): number | undefined {
+function useViewportHeight(ref: RefObject<HTMLElement>, fill = false): number | undefined {
   const [height, setHeight] = useState<number>();
   useLayoutEffect(() => {
     const element = ref.current;
     if (!element) return undefined;
     const viewport = findScrollViewport(element);
     if (!viewport) return undefined;
-    const update = () => setHeight(viewport.clientHeight || undefined);
+    const update = () => {
+      if (!fill) {
+        setHeight(viewport.clientHeight || undefined);
+        return;
+      }
+      // --- Where the browser starts in the viewport's content, and what follows it: its own bottom
+      // --- margin and the bottom padding of every box between it and the viewport
+      const top =
+        element.getBoundingClientRect().top - viewport.getBoundingClientRect().top + viewport.scrollTop;
+      let below = parseFloat(getComputedStyle(element).marginBottom) || 0;
+      for (let node = element.parentElement; node && node !== viewport; node = node.parentElement) {
+        const style = getComputedStyle(node);
+        below += (parseFloat(style.paddingBottom) || 0) + (parseFloat(style.borderBottomWidth) || 0);
+      }
+      // --- Rounded down, so subpixel layout never leaves the viewer a pixel to scroll
+      const remaining = Math.floor(viewport.clientHeight - top - below);
+      setHeight(remaining > 0 ? remaining : undefined);
+    };
     update();
     if (typeof ResizeObserver === "undefined") return undefined;
     const observer = new ResizeObserver(update);
     observer.observe(viewport);
+    // --- What sits above can change height too (a summary that wraps when the pane narrows)
+    if (fill && element.parentElement) observer.observe(element.parentElement);
     return () => observer.disconnect();
-  }, [ref]);
+  }, [ref, fill]);
   return height;
 }
 
@@ -145,6 +170,12 @@ type Props<T extends BankBrowserItem<V>, V extends string> = {
    * `sideBySide` never stacks - the list keeps ~30ch and the details scroll sideways instead.
    */
   layout?: "auto" | "sideBySide";
+  /**
+   * Fill the space left below what the viewer shows above the browser, so the viewer does not
+   * scroll as a page and only the list and the details do (the tape viewers, whose summary and
+   * graphics sit above the browser).
+   */
+  fill?: boolean;
 };
 
 const defaultNumber = (item: BankBrowserItem) => `$${toHexa2(item.bank)}`;
@@ -171,7 +202,8 @@ export function BankBrowser<T extends BankBrowserItem<V>, V extends string>({
   formatNumber,
   viewsFor,
   beforeBody,
-  layout = "auto"
+  layout = "auto",
+  fill = false
 }: Props<T, V>) {
   const t = useT();
   const sideBySide = layout === "sideBySide";
@@ -181,11 +213,13 @@ export function BankBrowser<T extends BankBrowserItem<V>, V extends string>({
   const selected = visible.find((item) => item.key === selectedKey) ?? visible[0] ?? undefined;
   const listRef = useRef<HTMLDivElement | null>(null);
   const browserRef = useRef<HTMLElement>(null);
-  const viewportHeight = useViewportHeight(browserRef);
+  const viewportHeight = useViewportHeight(browserRef, fill);
 
   /*
-   * Bring the selected row into the list's view when the list is shown or refiltered: a remembered
-   * selection can be far down a long list. Through the list's own scroller, not `scrollIntoView`,
+   * Bring the selected row into the list's view when the list is shown or refiltered, or the
+   * selection changes from outside the list (a timeline segment, a memory-map block, a summary link):
+   * a selection can be far down a long list. A row already in view is left where it is, so a click or
+   * a key in the list itself never scrolls it. Through the list's own scroller, not `scrollIntoView`,
    * which would also scroll the viewer around the browser. OverlayScrollbars initialises after the
    * first render, so this waits for its API.
    */
@@ -205,9 +239,7 @@ export function BankBrowser<T extends BankBrowserItem<V>, V extends string>({
         Math.max(0, top - (viewport.clientHeight - row.offsetHeight) / 2)
       );
     }
-    // --- Only on showing and refiltering: a click or a key already keeps the row in view
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterKey, viewportHeight, listScroller]);
+  }, [filterKey, viewportHeight, listScroller, selected?.key]);
   const [rowMenuState, rowMenuApi] = useContextMenuState();
   const rowMenuItem = useRef<T>();
 
@@ -258,7 +290,7 @@ export function BankBrowser<T extends BankBrowserItem<V>, V extends string>({
   return (
     <section
       ref={browserRef}
-      className={classnames(styles.browser, { [styles.sideBySide]: sideBySide })}
+      className={classnames(styles.browser, { [styles.sideBySide]: sideBySide, [styles.fill]: fill })}
       aria-label={heading}
       style={
         viewportHeight === undefined

@@ -10,12 +10,14 @@ import { MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48, MI_TIMEX, MI_SCORPION,
 } from "@common/machines/constants";
 import { isZx8081ProgramFileName, parseZxProgramFile } from "@emu/machines/zx8081/ZxPFile";
 import { ht1080zTapeErrorKey, isHt1080zTapeFor, parseHt1080zTapeFile } from "@emu/machines/ht1080z/Ht1080zTapeFile";
+import { analyzeHt1080zFile } from "../DocumentPanels/Ht1080zTape/ht1080zTapeView";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { analyzeTape } from "../DocumentPanels/Tape/tapeView";
 import {
   commandError,
   commandSuccessWith,
   IdeCommandBase,
+  toHexa4,
   validationError,
   writeMessage
 } from "../services/ide-commands";
@@ -25,6 +27,8 @@ export type TapeLoadCommandArgs = {
   file: string;
   "-r"?: boolean;
   "-d"?: boolean;
+  /** Debug, stopping at the start address of an HT-1080Z machine-code tape (as `nex-run -e`) */
+  "-e"?: boolean;
 };
 
 /** The machines a tape loads into from the IDE (`.plans/TAPE_VIEWER_PLAN.md` D4) */
@@ -108,6 +112,8 @@ export function tapeLoadGuard(state: {
  *
  * `-r` then resets the machine and starts the tape loading: it types `LOAD ""` on a 48K and picks
  * the Tape Loader (Loader on a +2A/+3) on a 128K. `-d` does the same with the breakpoints armed.
+ * `-e` debugs an HT-1080Z machine-code tape (a SYSTEM `.cas` or a `.cmd`) and stops at its start
+ * address, with a one-shot breakpoint armed before the load - as `nex-run -e` stops at a NEX's entry.
  * Both then move the keyboard focus to the emulator window, where the loaded program expects it.
  */
 export class TapeLoadCommand extends IdeCommandBase<TapeLoadCommandArgs> {
@@ -116,11 +122,11 @@ export class TapeLoadCommand extends IdeCommandBase<TapeLoadCommandArgs> {
     return t("commands.tapeLoad.description");
   }
   readonly aliases = ["tapeload"];
-  readonly usage = "tape-load <tape-file> [-r | -d]";
+  readonly usage = "tape-load <tape-file> [-r | -d | -e]";
 
   readonly argumentInfo: CommandArgumentInfo = {
     mandatory: [{ name: "file", type: "string" }],
-    commandOptions: ["-r", "-d"]
+    commandOptions: ["-r", "-d", "-e"]
   };
 
   async validateCommandArgs(
@@ -148,8 +154,12 @@ export class TapeLoadCommand extends IdeCommandBase<TapeLoadCommandArgs> {
     } else if (!isTapeFilePath(args.file) && !isProgram && !isHtTape) {
       messages.push(validationError(t("commands.tapeLoad.wrongType")));
     }
-    if (args["-r"] && args["-d"]) {
+    if ([args["-r"], args["-d"], args["-e"]].filter(Boolean).length > 1) {
       messages.push(validationError(t("commands.tapeLoad.oneMode")));
+    }
+    // --- Only an HT-1080Z machine-code tape names its start address
+    if (args["-e"] && args.file?.trim() && !isHtTape) {
+      messages.push(validationError(t("commands.tapeLoad.entryHtOnly")));
     }
     // --- An HT-1080Z tape loads into the HT only (`.plans/HT1080Z_PLAN.md` §9)
     if (isHtTape) {
@@ -229,7 +239,25 @@ export class TapeLoadCommand extends IdeCommandBase<TapeLoadCommandArgs> {
       );
     }
 
-    const run = args["-r"] || args["-d"];
+    // --- `-e`: the start address the tape names, and a one-shot stop there. Session-owned, so it
+    // --- fires during the load flow, stays out of the project, and is gone once it has fired.
+    const debug = !!args["-d"] || !!args["-e"];
+    if (args["-e"]) {
+      const entry = isHtTape ? analyzeHt1080zFile(bytes, file).analysis?.entry : undefined;
+      if (entry === undefined) {
+        return commandError(t("commands.tapeLoad.entryNotSystem", { file }));
+      }
+      await context.emuApi.setBreakpoint({
+        address: entry,
+        exec: true,
+        oneShot: true,
+        runTo: true,
+        owner: { kind: "session" }
+      });
+      writeMessage(context.output, t("commands.tapeLoad.entryBreak", { address: `$${toHexa4(entry)}` }), "green");
+    }
+
+    const run = args["-r"] || debug;
     if (!run) {
       return commandSuccessWith(t("commands.tapeLoad.inserted", { file }));
     }
@@ -242,7 +270,7 @@ export class TapeLoadCommand extends IdeCommandBase<TapeLoadCommandArgs> {
       );
     }
     try {
-      await context.emuApi.startTapeLoad(!!args["-d"]);
+      await context.emuApi.startTapeLoad(debug);
     } catch (err) {
       return commandError(t("commands.tapeLoad.startFailed", { file, error: messageOf(err) }));
     }
@@ -256,7 +284,7 @@ export class TapeLoadCommand extends IdeCommandBase<TapeLoadCommandArgs> {
       // --- Intentionally ignored
     }
     return commandSuccessWith(
-      args["-d"] ? t("commands.tapeLoad.loadingDebug", { file }) : t("commands.tapeLoad.loading", { file })
+      debug ? t("commands.tapeLoad.loadingDebug", { file }) : t("commands.tapeLoad.loading", { file })
     );
   }
 }

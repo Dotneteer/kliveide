@@ -36,6 +36,25 @@
   overflow-wrap: anywhere;
 }
 
+/* --- A fact that selects the part it comes from: the value, in the link colour */
+.factLink {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent-text);
+  cursor: pointer;
+  font: inherit;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: 1px solid var(--focus-ring);
+    outline-offset: 1px;
+  }
+}
+
 .ok {
   color: var(--status-success);
 }
@@ -239,18 +258,7 @@
   color: var(--accent-text);
 }
 
-/* --- The program's listing in the details: bounded, scrolled by a thin-bar ScrollViewer */
-.listingScroller {
-  max-height: calc(var(--panel-line-height) * 16);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  background: var(--surface-raised);
-}
-
-.listingScroller .listing {
-  border: 0;
-}
-
+/* --- The program's listing in the details, in full: the details pane is its only scroller */
 .listing {
   padding: var(--space-1) 0;
   border: 1px solid var(--border-subtle);

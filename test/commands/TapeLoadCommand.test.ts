@@ -70,7 +70,7 @@ describe("tape-load command", () => {
     const command = new TapeLoadCommand();
     expect(command.id).toBe("tape-load");
     expect(command.aliases).toEqual(["tapeload"]);
-    expect(command.argumentInfo.commandOptions).toEqual(["-r", "-d"]);
+    expect(command.argumentInfo.commandOptions).toEqual(["-r", "-d", "-e"]);
   });
 
   it("recognises tape paths", () => {
@@ -149,8 +149,41 @@ describe("tape-load command", () => {
       "The file to load must be a .tap or .tzx tape, a ZX80/ZX81 .p, .81, .o or .80 program, or an HT-1080Z .cas, .cmd or .bas tape."
     ]);
     expect(await validate({ file: "/p/a.tap", "-r": true, "-d": true })).toEqual([
-      "Use only one of -r and -d."
+      "Use only one of -r, -d and -e."
     ]);
+    expect(await validate({ file: "/p/a.tap", "-e": true })).toEqual([
+      "-e stops at the start address of an HT-1080Z machine-code tape (.cas or .cmd); this file is not one."
+    ]);
+  });
+
+  it("-e stops a machine-code tape at its start address with a one-shot session breakpoint", async () => {
+    const galaxy = new Uint8Array(readFileSync(join(__dirname, "../testfiles/ht1080z/galaxy.cas")));
+    const { context, startTapeLoad } = contextFor("ht1080z", galaxy);
+    const setBreakpoint = vi.fn().mockResolvedValue(true);
+    context.emuApi.setBreakpoint = setBreakpoint;
+    const result = await new TapeLoadCommand().execute(context, { file: "/p/galaxy.cas", "-e": true } as any);
+    expect(result.success).toBe(true);
+    expect(setBreakpoint).toHaveBeenCalledWith({
+      address: 0x7fb0,
+      exec: true,
+      oneShot: true,
+      runTo: true,
+      owner: { kind: "session" }
+    });
+    // --- Armed before the load starts, which runs under the debugger
+    expect(setBreakpoint.mock.invocationCallOrder[0]).toBeLessThan(startTapeLoad.mock.invocationCallOrder[0]);
+    expect(startTapeLoad).toHaveBeenCalledWith(true);
+  });
+
+  it("-e refuses a BASIC tape, which names no start address", async () => {
+    const amoeba = new Uint8Array(readFileSync(join(__dirname, "../testfiles/ht1080z/amoeba.cas")));
+    const { context, startTapeLoad } = contextFor("ht1080z", amoeba);
+    context.emuApi.setBreakpoint = vi.fn();
+    const result = await new TapeLoadCommand().execute(context, { file: "/p/amoeba.cas", "-e": true } as any);
+    expect(result.success).toBe(false);
+    expect(result.finalMessage).toMatch(/holds a BASIC program, which has no start address/);
+    expect(context.emuApi.setBreakpoint).not.toHaveBeenCalled();
+    expect(startTapeLoad).not.toHaveBeenCalled();
   });
 
   it("refuses the ZX Spectrum Next and says why", async () => {

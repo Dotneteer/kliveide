@@ -303,3 +303,21 @@ is not offered for it (the registry entry has no `canBeBuildRoot`).
   (`.changes/ht-1080z-tape-file-viewer-629f.md`, a feature) describes the plan as a whole.
 - Gates: `build:check`, `lint:renderer`, `test:fast`, `test:slow`, the electron-vite build and
   `doc:build`/`doc:check` green.
+
+**After the plan (2026-10-23).**
+- The summary's **Start** address is a link that selects the part holding it (a SYSTEM tape's entry
+  record, a `.cmd`'s transfer record), clearing a filter that hides it. The bank browser now brings
+  the selection into view whenever it changes from outside the list (a timeline segment, a memory-map
+  block, this link), not only when the list is shown or refiltered.
+- **Debug from the start address**, as the NEX viewer's "break at entry point": `tape-load <file> -e`
+  arms a one-shot, session-owned breakpoint at the start address of a machine-code tape and loads it
+  under the debugger; a BASIC tape is refused with the reason. An HT tape's tab bar shows the button
+  when the file names a start address (read from the file), and the Explorer menu has the entry. In the
+  running app `tape-load galaxy.cas -e` pauses at $7FB0.
+- Real sample files in `test/testfiles/ht1080z/` (README: sources and hashes), checked by the model and
+  on the core (`sample-files.test.ts`).
+- **Scrolling simplified** (the author found the viewer awkward: a page scrollbar besides the panes',
+  and the wheel dead over the details). `BankBrowser`'s new `fill` sizes the browser to the space left
+  below the summary and graphics, so the viewer does not scroll; the TAP/TZX viewer takes it too. The
+  details' title and pop-out button are pinned to the top of the pane, and the HT listing lost its own
+  scroller. Checked in the running app with real wheel events on GALAXY, Android Nim and a `.tap`.
