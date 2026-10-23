@@ -1722,6 +1722,10 @@
   "@commands.tapeLoad.guard.program": {
     "context": "Why a ZX80/ZX81 program file cannot be loaded now: shown in brackets after a disabled button's tooltip. Starts in lower case in English because it continues the tooltip."
   },
+  "commands.tapeLoad.guard.htTape": "requires an HT-1080Z machine",
+  "@commands.tapeLoad.guard.htTape": {
+    "context": "Why an HT-1080Z tape (.cas, .cmd) cannot be loaded now: shown in brackets after a disabled button's tooltip. HT-1080Z is a Hungarian school computer's name. Starts in lower case in English because it continues the tooltip."
+  },
   "commands.tapeLoad.emptyPath": "The tape file path cannot be empty.",
   "@commands.tapeLoad.emptyPath": {
     "context": "Validation error of 'tape-load'."

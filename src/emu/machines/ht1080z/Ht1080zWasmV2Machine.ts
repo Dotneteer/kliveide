@@ -1,3 +1,11 @@
+import { WasmHistorySource } from "../history/WasmHistorySource";
+import { WasmProfileSource } from "../profile/WasmProfileSource";
+import type { IExecutionHistorySource } from "@emu/abstractions/IExecutionHistorySource";
+import type { IAccessProfileSource } from "@emu/abstractions/IAccessProfileSource";
+import type { ProfileCounts, ProfileEdge, ProfileInfo, ProfileTouchedByte } from "@common/profile/profileTypes";
+import type { ExecutionHistoryInfo, ExecutionHistoryPage } from "@common/history/historyTypes";
+import type { HistoryServiceSpan } from "@common/history/serviceSpans";
+import { captureWasmImage, restoreWasmImage, type MachineStateParts } from "../state/wasmStateImage";
 import type { MachineConfigSet, MachineModel } from "@common/machines/info-types";
 import type { MessengerBase } from "@common/messaging/MessengerBase";
 import type { CpuState } from "@common/messaging/EmuApi";
@@ -58,10 +66,96 @@ const CORE_MODEL = { s1: 0, s2: 1, s64: 2 } as const;
  * instruction by instruction, or - when the stop policy can only stop at known addresses - the core
  * runs on to the next candidate, exactly as on the ZX80/ZX81.
  *
- * Execution history, the access profile, reverse debugging and state files come with Phase 8 of the
- * plan; the core already carries the shared recorder and profile module.
+ * The core carries the shared execution-history recorder and access profile, and its whole state is
+ * its linear memory: state files and reverse debugging save and restore that image (§11).
  */
-export class Ht1080zWasmV2Machine extends Ht1080zWasmHost {
+export class Ht1080zWasmV2Machine extends Ht1080zWasmHost implements IExecutionHistorySource, IAccessProfileSource {
+  // ==============================================================================================
+  // Execution history (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`): the shared recorder in the
+  // core, read through the shared reader; the machine id names the context decoder
+
+  get historyMachineId(): string {
+    return this.machineId;
+  }
+
+  private readonly wasmV2History = new WasmHistorySource(
+    () => this.wasmV2Runtime?.exports,
+    () => this.historyMachineId
+  );
+
+  getHistoryInfo(): ExecutionHistoryInfo | undefined {
+    return this.wasmV2History.info();
+  }
+
+  readHistory(fromSequence: number, count: number): ExecutionHistoryPage | undefined {
+    return this.wasmV2History.read(fromSequence, count);
+  }
+
+  getHistoryServiceSpans(): HistoryServiceSpan[] | undefined {
+    return this.wasmV2History.serviceSpans();
+  }
+
+  clearHistory(): void {
+    this.wasmV2History.clear();
+  }
+
+  setHistoryEnabled(enabled: boolean): void {
+    this.wasmV2History.setEnabled(enabled);
+  }
+
+  // ==============================================================================================
+  // The access profile (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md`): the shared module in the core,
+  // read through the shared reader; every model shares one layout (`layouts/ht1080z.ts`)
+
+  get profileMachineId(): string {
+    return this.machineId;
+  }
+
+  private readonly wasmV2Profile = new WasmProfileSource(
+    () => this.wasmV2Runtime?.exports,
+    () => this.profileMachineId
+  );
+
+  getProfileInfo(): ProfileInfo | undefined {
+    return this.wasmV2Profile.info();
+  }
+
+  setProfiling(enabled: boolean, counters: boolean): void {
+    this.wasmV2Profile.setEnabled(enabled, counters);
+  }
+
+  resetProfile(): void {
+    this.wasmV2Profile.reset();
+  }
+
+  readProfileFlags(start: number, length: number): Uint8Array | undefined {
+    return this.wasmV2Profile.flags(start, length);
+  }
+
+  readProfileCounts(start: number, length: number): ProfileCounts | undefined {
+    return this.wasmV2Profile.counts(start, length);
+  }
+
+  readProfileTouched(mask?: number): ProfileTouchedByte[] | undefined {
+    return this.wasmV2Profile.touched(mask);
+  }
+
+  mergeProfile(bytes: readonly ProfileTouchedByte[], totals: { instructions: number; timeTotal: number }): void {
+    this.wasmV2Profile.merge(bytes, totals);
+  }
+
+  setProfileCalls(on: boolean): void {
+    this.wasmV2Profile.setCalls(on);
+  }
+
+  armProfileWindow(start: number | undefined, stop: number | undefined): void {
+    this.wasmV2Profile.arm(start, stop);
+  }
+
+  readProfileEdges(): ProfileEdge[] | undefined {
+    return this.wasmV2Profile.edges();
+  }
+
   public readonly implementation = "wasm" as const;
   public wasmV2Runtime?: Ht1080zWasmV2Runtime;
 
@@ -387,9 +481,13 @@ export class Ht1080zWasmV2Machine extends Ht1080zWasmHost {
     this.requireWasmV2Runtime().exports.ht1080zPressResetKey();
   }
 
-  /** The machine-menu commands (`ht1080z-menus.ts`): `reset_key` presses the RESET key */
+  /**
+   * The machine-menu commands (`ht1080z-menus.ts`): `reset_key` presses the RESET key, `page_key`
+   * presses the latching PAGE key once
+   */
   override async executeCustomCommand(command: string): Promise<any> {
     if (command === "reset_key") this.pressResetKey();
+    else if (command === "page_key") this.setMachineProperty(HT_VIDEO_PAGE, !this.getMachineProperty(HT_VIDEO_PAGE));
   }
 
   override setMachineProperty(key: string, value?: any): void {
@@ -790,6 +888,82 @@ export class Ht1080zWasmV2Machine extends Ht1080zWasmHost {
     // --- Drawing is output only: the catch-up renderer would draw the same slots the same way later
     this.requireWasmV2Runtime().exports.ht1080zRenderToBeam();
     return this.getPixelBuffer();
+  }
+
+  // ==========================================================================================
+  // State files and reverse debugging (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.5,
+  // `.plans/REVERSE_DEBUGGING_PLAN.md` §4.2)
+
+  /**
+   * Captures the machine's whole state: the core's memory image, which holds the tape deck, the
+   * video switches and the motor override too. The machine must be paused.
+   */
+  saveMachineState(): MachineStateParts {
+    const runtime = this.requireWasmV2Runtime();
+    return {
+      ...captureWasmImage("ht1080z", runtime.module, runtime.exports.memory.buffer),
+      host: this.captureHostState()
+    };
+  }
+
+  /**
+   * Puts the machine back into a saved state. The wrapper's mirrors of core state are re-read from
+   * it, and the tape-load flow of the run being replaced is dropped. The PAGE latch comes back with
+   * the state; VIDEO CUT and the dash keep the IDE's settings.
+   * @throws MachineStateMismatchError when the state was saved by another core or layout
+   */
+  loadMachineState(parts: MachineStateParts): void {
+    const runtime = this.requireWasmV2Runtime();
+    // --- VIDEO CUT and the dash are the IDE's settings (the menu's check marks): they stay as they are
+    const cut = this.getMachineProperty(HT_VIDEO_CUT);
+    const dash = this.getMachineProperty(HT_VIDEO_DASH);
+    restoreWasmImage(parts, "ht1080z", runtime.module, runtime.exports.memory.buffer);
+    this.syncedTargetClockMultiplier = -1;
+    this.restoreHostState(parts.host);
+    super.setMachineProperty(HT_VIDEO_CUT, cut);
+    super.setMachineProperty(HT_VIDEO_DASH, dash);
+    this.syncVideoControls(runtime);
+  }
+
+  /** The core, as the export contract names it */
+  get reverseCoreId(): string {
+    return "ht1080z";
+  }
+
+  get reverseRuntime(): Ht1080zWasmV2Runtime | undefined {
+    return this.wasmV2Runtime;
+  }
+
+  readonly reverseFrameExport = "ht1080zExecuteFrame";
+
+  isAtFrameBoundary(): boolean {
+    return this.wasmV2Runtime?.exports.ht1080zGetFrameCompleted() !== 0;
+  }
+
+  /** The wrapper keeps no state of its own a keyframe needs: the core holds it all */
+  captureHostState(): Record<string, unknown> {
+    return {};
+  }
+
+  /**
+   * After the core changed under the wrapper (a state load, a replay, a return to the present): the
+   * mirrors re-read from the core, nothing pushed, queued keystrokes and load commands dropped
+   */
+  restoreHostState(_state: unknown): void {
+    const runtime = this.requireWasmV2Runtime();
+    const w = runtime.exports;
+    this.emulatedKeyStrokes.length = 0;
+    this.loadScript = [];
+    this.loadScriptLoops = -1;
+    this.motorOverride = w.ht1080zTapeGetMotorOverride() !== 0;
+    // --- The video switches are the core's now; the properties follow without pushing them back
+    super.setMachineProperty(HT_VIDEO_CUT, w.ht1080zGetVideoCut() !== 0);
+    super.setMachineProperty(HT_VIDEO_PAGE, w.ht1080zGetVideoPage() !== 0);
+    super.setMachineProperty(HT_VIDEO_DASH, w.ht1080zGetVideoDash() !== 0);
+    // --- What the core already holds must not be published again as new
+    this.savedTapeRevision = w.ht1080zTapeGetSavedRevision();
+    this.frameCompleted = w.ht1080zGetFrameCompleted() !== 0;
+    this.syncCpuFromWasmV2(runtime);
   }
 
   getConditionStore(): ConditionStore | undefined {

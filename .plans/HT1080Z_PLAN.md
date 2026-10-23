@@ -1,7 +1,7 @@
 # HT-1080Z on the WASM Core — Implementation Plan
 
 **Status:** decisions accepted 2026-10-22 (§15; D10 revised the same day after Phase 2); Phases 0-3
-done 2026-10-22 (§17); Phases 4 and 5 done 2026-10-22, Phases 6 and 7 2026-10-23. Next: Phase 8.
+done 2026-10-22 (§17); Phases 4 and 5 done 2026-10-22, Phases 6, 7 and 8 2026-10-23. Next: Phase 9.
 **Input:** the research pack `_input/ht1080z/`. Read its `README.md` first, then `HARDWARE.md`,
 `VIDEO_TIMING.md`, `SOUND_AY.md`, `STORAGE_FIRMWARE_SOFTWARE.md` and `EXISTING_EMULATORS.md`.
 Every hardware fact in this plan comes from there, with its source.
@@ -869,4 +869,34 @@ clock in the status bar.
 Deviation: the optional 48K for Series I/II (§4.3's `MC_HT_RAM`) is two more models with
 `MC_MEM_SIZE: 48`, as the ZX81's RAM sizes are models, not a new configuration key. The HT is no longer
 a single-model "leaf" in the Select Machine dialog.
+
+**Phase 8 done 2026-10-23.** The debugger and the IDE:
+- **Disassembler** (`ht1080z-disassembler.ts`): the byte after `RST 08h` as the character or token the
+  syntax check expects, and the BASIC ROM's tables as data - function dispatch 1608h, reserved words
+  1650h-1821h, statement dispatch 1822h, operator precedences 189Ah, arithmetic dispatch 18A1h, the
+  23 error codes 18C9h (the same addresses in all three ROMs). It gates itself on 0000h-2FFFh: the
+  IDE's ROM-gate context knows no HT bank space, and the HT's ROM is never paged out.
+- **Character map**: one per character ROM (`ht1080zCharsFor`), on the model (`MachineModel.charSet`,
+  read through `charSetOfModel`): Series II's accents, the /64's 32 specials at 00h-1Fh with the ROM's
+  code numbers, Series I/II showing 00h-1Fh as the 40h-5Fh glyphs (D10).
+- **BASIC listing** (`ht1080zBasicListing.ts`, tokens in `src/common/ht1080z/basicTokens.ts`, checked
+  against every ROM's table): as the ROM's LIST prints it, observed on the core - tokens expanded
+  everywhere, even in quotes and REMs; the colon before `ELSE` and `:REM` before `'` hidden; control
+  codes not printed; on the /64 the 32 backtick pairs as their characters (other pairs are dropped by
+  the display driver). `basic-listing.test.ts` LISTs programs on each model and compares.
+- **History, profile, reverse debugging, state files**: `ht1080zContext.ts`, `layouts/ht1080z.ts`, the
+  export contract (every export classified), the journal-replay determinism test (fast and debug),
+  state determinism, debug-recording, the shared history suite (with no INT case: the HT has none)
+  and a `.kls` round trip in `debug.test.ts`. A state load keeps the PAGE latch of the state but the
+  IDE's VIDEO CUT and dash settings.
+- **Menus**: PAGE key, VIDEO CUT and the dash (settings `emuOptions.ht1080zVideoCut` /
+  `ht1080zCpuDash`), BASIC Listing in the View menu; state save/restore.
+- **Tapes in the IDE**: `.cas`/`.cmd` in the Explorer (hex viewer, Run/Insert/Debug on the HT only),
+  File Open and drag-and-drop, the media strip (its Insert dialog offers HT tapes on the HT).
+- **Headless and CLI**: the HT runs headless; `klive run x.cas|x.cmd|x.bas` loads and starts the tape.
+- In the running app: a `.bas` loaded with `tape-load -r` ran, the BASIC Listing showed `10 PRINT 42`,
+  the media strip showed the tape, and the menus had their items.
+
+Not done, left to follow-ups: a `.bas` in the Explorer stays Klive BASIC source (no HT launch entries
+there; File Open and drag-and-drop take only `.cas`/`.cmd`); the beam-position overlay is not offered.
 

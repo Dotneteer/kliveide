@@ -51,7 +51,9 @@ export const machineMenuRegistry: Record<string, MachineMenuInfo> = {
   },
   [MI_HT1080Z]: {
     devices: { tape: ht1080zTapeMenuRenderer },
-    hardwareItems: ht1080zHardwareRenderer
+    hardwareItems: ht1080zHardwareRenderer,
+    // --- The BASIC Listing view lists Level II BASIC programs (`.plans/HT1080Z_PLAN.md` §11)
+    viewItems: spectrumIdeRenderer
   },
   [MI_SPECTRUM_48]: {
     devices: { tape: tapeMenuRenderer },

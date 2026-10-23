@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
+  MI_HT1080Z,
   MI_SPECTRUM_128,
   MI_SPECTRUM_3E,
   MI_SPECTRUM_48,
@@ -125,5 +126,33 @@ describe("Tape launch - tab bar", () => {
     }
     fireEvent.click(buttons[0]);
     expect(executeCommand).not.toHaveBeenCalled();
+  });
+});
+
+describe("Tape launch - HT-1080Z tapes (.cas, .cmd)", () => {
+  const CAS = "/project/game.cas";
+
+  it.each([
+    [MI_HT1080Z, false],
+    [MI_SPECTRUM_48, true],
+    [MI_ZXNEXT, true]
+  ])("on %s the Explorer entries are disabled: %s", async (machineId, disabled) => {
+    const { getHtTapeLaunchContextMenuInfo, executeCommand } = await loadModule(machineId);
+    const entries = getHtTapeLaunchContextMenuInfo({ ideCommandsService: { executeCommand } } as any);
+    const store = { getState: () => appState(machineId) } as any;
+    expect(entries.map((entry) => entry.disabled!(store, CAS))).toEqual([disabled, disabled, disabled]);
+    if (!disabled) {
+      await entries[0].clicked!(CAS);
+      expect(executeCommand).toHaveBeenCalledWith(`tape-load "${CAS}" -r`);
+    }
+  });
+
+  it("disables the tab-bar buttons on another machine, and says why", async () => {
+    const { htTapeLaunchCommandBarRenderer } = await loadModule(MI_SPECTRUM_48);
+    render(<>{htTapeLaunchCommandBarRenderer(CAS)}</>);
+    for (const button of screen.getAllByRole("button")) {
+      expect(button).toBeDisabled();
+      expect(button.getAttribute("aria-label")).toMatch(/\(requires an HT-1080Z machine\)/);
+    }
   });
 });

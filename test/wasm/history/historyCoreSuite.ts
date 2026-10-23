@@ -60,6 +60,8 @@ export type HistoryCoreSpec = {
   codeBase: number;
   /** Executing a HALT leaves the CPU in halted cycles the recorder sees (false: the Z88 snoozes) */
   halts?: boolean;
+  /** The machine raises maskable interrupts (false: the HT-1080Z has its INT line unconnected) */
+  interrupts?: boolean;
   /**
    * A program that changes the paging as it runs, in Klive assembler, starting at `codeBase` with
    * `Start`: the partition check (D4) steps through it. Omitted: a machine without paging.
@@ -222,7 +224,7 @@ Loop:   inc b
 Isr:    ei
         reti`;
 
-    it("records an INT acknowledge with the interrupted PC; the ISR's first instruction follows", async () => {
+    it.skipIf(spec.interrupts === false)("records an INT acknowledge with the interrupted PC; the ISR's first instruction follows", async () => {
       const d = await spec.create();
       const symbol = await loadRecording(d, base, IM2);
       d.runFrames(3);

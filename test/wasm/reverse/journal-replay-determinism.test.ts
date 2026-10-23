@@ -35,6 +35,8 @@ import { createTimexSession } from "../../harness/timex";
 import { createZx81Session } from "../../harness/zx81";
 import { ZX8081_KEY } from "@emu/machines/zx8081/Zx8081KeyCode";
 import { MI_ZX80, MI_ZX81 } from "@common/machines/constants";
+import { createHtSession } from "../../harness/ht1080z";
+import { Ht1080zKeyCode } from "@emu/machines/ht1080z/Ht1080zKeyCode";
 import { ReverseRig, seededRandom, type SpikeCoreId } from "../../harness/reverseSupport";
 import { expectSameBytes } from "../../expectBytes";
 
@@ -437,6 +439,44 @@ function zx8081Machine(machineId: string): MachineFactory {
 }
 
 /**
+ * The HT-1080Z at the `>` prompt (`.plans/HT1080Z_PLAN.md` §11): no interrupts, the video drawn
+ * against the CPU clock, the AY beside the beeper. Inputs besides keys: memory edits, the clock
+ * multiplier, AY register writes through ports 1Fh/1Eh, and the RESET key's NMI.
+ */
+async function ht1080zMachine(): Promise<Driver> {
+  const s = (await createHtSession()).bootToPrompt();
+  return {
+    rig: new ReverseRig("ht1080z", s.machine),
+    executeFrame: () => s.machine.executeMachineFrame(),
+    key: (key, down) => (down ? s.keyDown(Ht1080zKeyCode[key]) : s.keyUp(Ht1080zKeyCode[key])),
+    input: (n) => {
+      switch (n & 7) {
+        case 0:
+        case 1:
+        case 2:
+          // --- Above the BASIC program, below the 16K RAM top
+          s.poke(0x6000 + ((n >> 3) & 0xff), n >> 11);
+          return;
+        case 3:
+          s.machine.targetClockMultiplier = s.machine.targetClockMultiplier === 1 ? 2 : 1;
+          return;
+        case 4:
+        case 5:
+          s.machine.doWritePort(0x1f, (n >> 3) & 0x0f);
+          s.machine.doWritePort(0x1e, (n >> 7) & 0xff);
+          return;
+        default:
+          s.machine.pressResetKey();
+          return;
+      }
+    },
+    setStepMode: (mode) => (s.machine.executionContext.debugStepMode = mode),
+    saveState: () => s.machine.saveMachineState(),
+    loadState: (parts) => s.machine.loadMachineState(parts)
+  };
+}
+
+/**
  * The Timex TC2048 at the BASIC editor (the 48K's frame loop with the SCLD): inputs besides keys are
  * memory edits, the clock multiplier, and the screen-mode port $FF - standard, second screen, hi-colour,
  * hi-res and its ink colours.
@@ -473,6 +513,7 @@ const ZX8081_KEYS = ["A", "P", "N1", "NewLine", "Space", "Shift", "Q", "N0"];
 const Z88_KEYS = ["Down", "Up", "Enter", "Escape", "A", "N1", "ShiftL", "Index"];
 const SP128_KEYS = ["N6", "N7", "Enter", "Space", "CShift", "SShift", "A", "P"];
 const NEXT_KEYS = ["A", "Q", "1", "ENTER", "SPACE", "CAPS", "SYM", "P"];
+const HT1080Z_KEYS = ["A", "P", "N1", "Enter", "Space", "Shift", "Break", "Clear"];
 
 /** Two seeds per variant in CI; `KLIVE_REVERSE_SEEDS=1-40` runs more locally */
 const SEEDS = (() => {
@@ -496,7 +537,8 @@ const cores: [SpikeCoreId, MachineFactory, string[], string?][] = [
   ["z88", z88Machine, Z88_KEYS],
   ["zx8081", zx8081Machine(MI_ZX81), ZX8081_KEYS, "zx81"],
   // --- The ZX80 runs on the same core with its own ROM and display timing
-  ["zx8081", zx8081Machine(MI_ZX80), ZX8081_KEYS, "zx80"]
+  ["zx8081", zx8081Machine(MI_ZX80), ZX8081_KEYS, "zx80"],
+  ["ht1080z", ht1080zMachine, HT1080Z_KEYS]
 ];
 
 /** The cores whose layout stamp names frame-boundary scratch (T5): only they get the scratch proof */

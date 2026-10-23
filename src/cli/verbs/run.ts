@@ -38,7 +38,7 @@ When to stop (at least one; frames and T-states count from after --keys):
                             --until-pc, --until-halt or --bp)
 
 Input:
-  --machine <id>[:<model>]  The machine (sp48, sp128, spp3e, zxnext, zx80, zx81); a project's
+  --machine <id>[:<model>]  The machine (sp48, sp128, spp3e, zxnext, zx80, zx81, ht1080z); a project's
                             or the file's own by default
   --wait-frames <n>         Frames to run before typing (default 0)
   --keys "<text>"           Type at the keyboard: letters, digits, space, \\n for ENTER, symbols

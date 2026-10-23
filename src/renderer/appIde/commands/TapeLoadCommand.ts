@@ -36,6 +36,15 @@ export const TAPE_LOAD_MACHINES: readonly string[] = [
   MI_SCORPION
 ];
 
+/**
+ * Why an HT-1080Z tape (`.cas`, `.cmd`) cannot be loaded into the current machine, or undefined when
+ * it can (`.plans/HT1080Z_PLAN.md` §9).
+ * @param state The IDE's state (the part read here)
+ */
+export function htTapeLoadGuard(state: { emulatorState?: { machineId?: string } }): string | undefined {
+  return state.emulatorState?.machineId === MI_HT1080Z ? undefined : t("commands.tapeLoad.guard.htTape");
+}
+
 /** The machines a ZX80/ZX81 program file (`.p`, `.81`, `.o`, `.80`) loads into */
 export const PROGRAM_LOAD_MACHINES: readonly string[] = [MI_ZX81, MI_ZX80];
 

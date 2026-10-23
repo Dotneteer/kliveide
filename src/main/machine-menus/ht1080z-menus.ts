@@ -5,7 +5,7 @@ import type { MachineMenuItem, MachineMenuRenderer } from "@common/machines/info
 import { MachineControllerState } from "@common/abstractions/MachineControllerState";
 import { getEmuApi } from "@common/messaging/MainToEmuMessenger";
 import { MEDIA_TAPE } from "@common/structs/project-const";
-import { SETTING_EMU_FAST_LOAD } from "@common/settings/setting-const";
+import { SETTING_EMU_FAST_LOAD, SETTING_EMU_HT_CPU_DASH, SETTING_EMU_HT_VIDEO_CUT } from "@common/settings/setting-const";
 import { createBooleanSettingsMenu } from "@main/menus/menu-utils";
 import { mainStore } from "@main/main-store";
 import { saveKliveProject } from "@main/projects";
@@ -77,21 +77,35 @@ export const ht1080zTapeMenuRenderer: MachineMenuRenderer = (windowInfo) => {
 };
 
 /**
- * The HT-1080Z's hardware items (`.plans/HT1080Z_PLAN.md` §7, §11): the RESET key on the back panel,
- * an NMI that takes BASIC back to READY with the memory kept. It is not the IDE's reset, which
- * powers the machine on again. The video switches and the tape join in Phases 6 and 8.
+ * The HT-1080Z's hardware items (`.plans/HT1080Z_PLAN.md` §6, §7, §11): the RESET key on the back
+ * panel, an NMI that takes BASIC back to READY with the memory kept (not the IDE's reset, which powers
+ * the machine on again); the PAGE key, which latches the right half of each row in 32-column mode; and
+ * the video switches - VIDEO CUT, which blanks the picture, and the dash a CPU access to video RAM
+ * draws at the beam.
  */
 export const ht1080zHardwareRenderer: MachineMenuRenderer = () => {
   const execState = mainStore.getState()?.emulatorState?.machineState;
+  const running = execState === MachineControllerState.Running;
   return [
     { type: "separator" },
     {
       id: "ht1080z_reset_key",
       label: t("menu.ht1080z.resetKey"),
-      enabled: execState === MachineControllerState.Running,
+      enabled: running,
       click: async () => {
         await getEmuApi().issueMachineCommand("custom", "reset_key");
       }
-    }
+    },
+    {
+      id: "ht1080z_page_key",
+      label: t("menu.ht1080z.pageKey"),
+      enabled: running || execState === MachineControllerState.Paused,
+      click: async () => {
+        await getEmuApi().issueMachineCommand("custom", "page_key");
+      }
+    },
+    { type: "separator" },
+    createBooleanSettingsMenu(SETTING_EMU_HT_VIDEO_CUT, { label: t("menu.ht1080z.videoCut") }) as any,
+    createBooleanSettingsMenu(SETTING_EMU_HT_CPU_DASH, { label: t("menu.ht1080z.cpuDash") }) as any
   ];
 };

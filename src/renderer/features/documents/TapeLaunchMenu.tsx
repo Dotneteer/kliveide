@@ -8,7 +8,7 @@ import { SETTING_EMU_FAST_LOAD } from "@common/settings/setting-const";
 import type { AppServices } from "@renderer/abstractions/AppServices";
 import type { ContextMenuInfo } from "@renderer/abstractions/ContextMenuIfo";
 
-import { programLoadGuard, tapeLoadGuard } from "@renderer/appIde/commands/TapeLoadCommand";
+import { htTapeLoadGuard, programLoadGuard, tapeLoadGuard } from "@renderer/appIde/commands/TapeLoadCommand";
 
 /*
  * **Load and run** / **Insert** / **Load and debug** for a `.tap` or `.tzx` file: the Explorer's
@@ -49,6 +49,15 @@ export function getTapeLaunchContextMenuInfo(services: AppServices): ContextMenu
  */
 export function getProgramLaunchContextMenuInfo(services: AppServices): ContextMenuInfo[] {
   return launchMenuInfo(services, programLoadGuard);
+}
+
+/**
+ * The Explorer's entries for an HT-1080Z tape (`.cas`, `.cmd`): the same `tape-load` command,
+ * enabled on the HT-1080Z (`.plans/HT1080Z_PLAN.md` §9, §11).
+ * @param services The app services
+ */
+export function getHtTapeLaunchContextMenuInfo(services: AppServices): ContextMenuInfo[] {
+  return launchMenuInfo(services, htTapeLoadGuard);
 }
 
 type LoadGuard = (state: { emulatorState?: { machineId?: string } }) => string | undefined;
@@ -139,4 +148,8 @@ export const tapeLaunchCommandBarRenderer = (path: string) => (
 
 export const programLaunchCommandBarRenderer = (path: string) => (
   <TapeLaunchCommandBar path={path} guard={programLoadGuard} />
+);
+
+export const htTapeLaunchCommandBarRenderer = (path: string) => (
+  <TapeLaunchCommandBar path={path} guard={htTapeLoadGuard} />
 );

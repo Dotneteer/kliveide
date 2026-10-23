@@ -23,7 +23,8 @@ export const MEDIA_INFO_MACHINE_IDS: string[] = [
   MI_SPECTRUM_128,
   MI_SPECTRUM_3E,
   MI_TIMEX,
-  MI_SCORPION
+  MI_SCORPION,
+  MI_HT1080Z
 ];
 
 /**

@@ -8,7 +8,7 @@ import { app, BrowserWindow, dialog } from "electron";
 
 import { EMULATOR_FILE_EXTENSIONS, droppedFileAction } from "@common/utils/dropped-file-action";
 import { machineRegistry } from "@common/machines/machine-registry";
-import { MF_TAPE_SUPPORT } from "@common/machines/constants";
+import { MF_TAPE_SUPPORT, MI_HT1080Z } from "@common/machines/constants";
 import { getIdeApi } from "@messaging/MainToIdeMessenger";
 import { mainStore } from "./main-store";
 import { saveKliveProject } from "./projects";
@@ -37,6 +37,7 @@ export async function pickAndOpenEmulatorFile(window: BrowserWindow): Promise<vo
       { name: t("common.filter.debugRecordings"), extensions: ["klr"] },
       { name: t("common.filter.rzxRecordingsShort"), extensions: ["rzx"] },
       { name: t("common.filter.tapes"), extensions: ["tap", "tzx"] },
+      { name: t("common.filter.ht1080zTapes"), extensions: ["cas", "cmd"] },
       { name: t("common.filter.allFiles"), extensions: ["*"] }
     ],
     properties: ["openFile"]
@@ -84,6 +85,16 @@ export async function openEmulatorFile(
     }
     const result = await getIdeApi().executeCommand(action.command);
     error = result?.success ? undefined : (result?.finalMessage ?? t("messages.couldNotOpen", { file: filename }));
+  } else if (action.kind === "htTape") {
+    // --- An HT-1080Z tape goes in the HT-1080Z's deck only (`.plans/HT1080Z_PLAN.md` §9)
+    const machineId = mainStore.getState()?.emulatorState?.machineId;
+    if (machineId !== MI_HT1080Z) {
+      const name = machineRegistry.find((m) => m.machineId === machineId)?.displayName;
+      error = name ? t("commands.tapeLoad.refusedHtTape", { machine: name }) : t("commands.tapeLoad.refusedHtTapeNoMachine");
+    } else {
+      error = await setSelectedTapeFile(filename, false);
+      if (!error) await saveKliveProject();
+    }
   } else if (action.kind === "tape") {
     const machineId = mainStore.getState()?.emulatorState?.machineId;
     const machine = machineRegistry.find((m) => m.machineId === machineId);

@@ -68,7 +68,20 @@ export type MachineModel = {
    * The configuratiton of the machine
    */
   config: MachineConfigSet;
+
+  /**
+   * The model's own character set, when it differs from the machine's (the HT-1080Z's Series I,
+   * Series II and /64 each have their own character ROM)
+   */
+  charSet?: Record<number, CharDescriptor>;
 };
+
+/** The character set of a machine's model: the model's own, or the machine's. */
+export function charSetOfModel(
+  info: { machine: MachineInfo; model?: MachineModel } | undefined
+): Record<number, CharDescriptor> | undefined {
+  return info?.model?.charSet ?? info?.machine?.charSet;
+}
 
 /**
  * Available machine models with their IDs

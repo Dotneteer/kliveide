@@ -176,8 +176,10 @@ import {
   z88SnapshotLaunchCommandBarRenderer
 } from "@renderer/features/documents/Z88SnapshotLaunchMenu";
 import {
+  getHtTapeLaunchContextMenuInfo,
   getProgramLaunchContextMenuInfo,
   getTapeLaunchContextMenuInfo,
+  htTapeLaunchCommandBarRenderer,
   programLaunchCommandBarRenderer,
   tapeLaunchCommandBarRenderer
 } from "@renderer/features/documents/TapeLaunchMenu";
@@ -821,6 +823,32 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     openPermanent: true,
     documentTabRenderer: tapeLaunchCommandBarRenderer,
     contextMenuInfo: getTapeLaunchContextMenuInfo
+  },
+  {
+    matchType: "ends",
+    pattern: ".cas",
+    // --- An HT-1080Z tape (`.plans/HT1080Z_PLAN.md` §9): the bytes in the hex viewer, Run/Insert/Debug
+    ignoreCase: true,
+    editor: BIN_VIEWER,
+    icon: "@file-tap-tzx",
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true,
+    documentTabRenderer: htTapeLaunchCommandBarRenderer,
+    contextMenuInfo: getHtTapeLaunchContextMenuInfo
+  },
+  {
+    matchType: "ends",
+    pattern: ".cmd",
+    // --- An HT-1080Z tape (`.plans/HT1080Z_PLAN.md` §9): the bytes in the hex viewer, Run/Insert/Debug
+    ignoreCase: true,
+    editor: BIN_VIEWER,
+    icon: "@file-tap-tzx",
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true,
+    documentTabRenderer: htTapeLaunchCommandBarRenderer,
+    contextMenuInfo: getHtTapeLaunchContextMenuInfo
   },
   {
     matchType: "ends",

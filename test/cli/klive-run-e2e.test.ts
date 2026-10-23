@@ -10,6 +10,7 @@ import { compileNexFile } from "../harness/zxnext/core/compile-nex";
 import { buildSp48Wasm } from "../../scripts/build-sp48-wasm.cjs";
 import { buildSp128Wasm } from "../../scripts/build-sp128-wasm.cjs";
 import { buildZx8081Wasm } from "../../scripts/build-zx8081-wasm.cjs";
+import { buildHt1080zWasm } from "../../scripts/build-ht1080z-wasm.cjs";
 import { buildZxNextWasmArtifact } from "../wasm/zxNext/wasm-next-test-helpers";
 
 /*
@@ -104,6 +105,7 @@ beforeAll(async () => {
   buildSp48Wasm();
   buildSp128Wasm();
   buildZx8081Wasm();
+  buildHt1080zWasm();
   await buildZxNextWasmArtifact();
   out = fs.mkdtempSync(path.join(os.tmpdir(), "klive-run-"));
 }, 300_000);
@@ -256,6 +258,20 @@ describe("klive run: inputs", () => {
     expect(run.out[0]).toMatch(/^Characters\.P \(ZX81 program\): stopped/);
     // --- The program prints the character set, each followed by its inverse
     expect(zx81Screen(bytesOf("zx81.bin"))[0].startsWith(" [ ]")).toBe(true);
+  }, 120_000);
+
+  it("loads an HT-1080Z .cmd with SYSTEM and starts it", async () => {
+    // --- At 7000h: LD A,'H' / LD (3C00h),A / JR $, with a module header and the transfer address
+    const cmd = new Uint8Array([
+      0x05, 0x06, ...Array.from("HTEST ", (c) => c.charCodeAt(0)),
+      0x01, 0x09, 0x00, 0x70, 0x3e, 0x48, 0x32, 0x00, 0x3c, 0x18, 0xfe,
+      0x02, 0x02, 0x00, 0x70
+    ]);
+    fs.writeFileSync(file("htest.cmd"), cmd);
+    const run = await klive(["run", file("htest.cmd"), "--until-pc", "$7005", "--timeout", "120", "--dump-mem", `$3C00:1=${file("ht.bin")}`]);
+    expect(run.code).toBe(0);
+    expect(run.out[0]).toMatch(/^htest\.cmd \(HT-1080Z tape\): stopped/);
+    expect(bytesOf("ht.bin")).toEqual(new Uint8Array([0x48]));
   }, 120_000);
 
   it("runs a Next project and the same program as a .nex file", async () => {

@@ -6,6 +6,7 @@
  *  - `.sna`, `.z80`, `.szx`: run the snapshot (`zx-snapshot -r`);
  *  - `.z88`: open the Z88 snapshot (`z88-snapshot -a`, following Autorun);
  *  - `.tap`, `.tzx`: insert the tape, as Machine › Tape › Insert Tape... does;
+ *  - `.cas`, `.cmd`: insert the HT-1080Z tape, on the HT-1080Z only (`.plans/HT1080Z_PLAN.md` §9);
  *  - `.kls`: load the Klive state and debug it, stopping at its PC (`state-load -d`, asking before a
  *    load that needs `-y`);
  *  - `.rzx`: play the RZX recording (`zx-rzx`, `.plans/RZX_PLAN.md`);
@@ -24,12 +25,13 @@ import { t } from "@common/i18n/i18n";
 export type DroppedFileAction =
   | { kind: "command"; command: string }
   | { kind: "tape" }
+  | { kind: "htTape" }
   | { kind: "state"; command: string }
   | { kind: "recording"; command: string }
   | { kind: "unsupported"; message: string };
 
 /** The extensions `droppedFileAction` opens, for File › Open File…'s file filter */
-export const EMULATOR_FILE_EXTENSIONS = ["sna", "z80", "szx", "z88", "kls", "klr", "rzx", "tap", "tzx"];
+export const EMULATOR_FILE_EXTENSIONS = ["sna", "z80", "szx", "z88", "kls", "klr", "rzx", "tap", "tzx", "cas", "cmd"];
 
 /** The action for a dropped (or opened) file's path */
 export function droppedFileAction(path: string): DroppedFileAction {
@@ -45,6 +47,9 @@ export function droppedFileAction(path: string): DroppedFileAction {
     case "tap":
     case "tzx":
       return { kind: "tape" };
+    case "cas":
+    case "cmd":
+      return { kind: "htTape" };
     case "kls":
       return { kind: "state", command: machineStateLoadCommandText(path, "debug") };
     case "rzx":
