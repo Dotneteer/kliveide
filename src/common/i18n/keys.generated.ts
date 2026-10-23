@@ -2568,6 +2568,7 @@ export type MessageKey =
   | "hardware.rom.tc2048"
   | "hardware.rom.timexExrom"
   | "hardware.rom.timexHome"
+  | "hardware.sound.ayHt1080z"
   | "hardware.sound.ayTimex"
   | "hardware.sound.beeper"
   | "hardware.sound.nextDac"

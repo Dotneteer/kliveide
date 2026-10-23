@@ -20,7 +20,14 @@ import { Ht1080zWasmHost } from "./Ht1080zWasmHost";
 import { HT1080Z_ROM_SETS } from "./Ht1080zRoms";
 import { HT1080Z_PIXEL_ASPECT } from "./ht1080zMachineInfo";
 import { HT1080Z_FIRST_SWITCH_KEY, Ht1080zKeyCode } from "./Ht1080zKeyCode";
-import { HT_VIDEO_CUT, HT_VIDEO_DASH, HT_VIDEO_PAGE } from "../machine-props";
+import { AUDIO_SAMPLE_RATE, HT_VIDEO_CUT, HT_VIDEO_DASH, HT_VIDEO_PAGE } from "../machine-props";
+import type { AudioSample } from "@emu/abstractions/IAudioDevice";
+import type { ISpectrumPsgDevice } from "../zxSpectrum/ISpectrumPsgDevice";
+import type { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
+import { WasmSpectrumPsgDevice } from "../zxSpectrum/WasmSpectrumSupport";
+
+/** The DC filter's cut-off, as the other cores' (`AudioDeviceBase.DC_FILTER_CUTOFF_HZ`); the core has no `exp` */
+const DC_FILTER_CUTOFF_HZ = 1.4;
 
 /** The model numbers `ht1080zConfigure` takes */
 const CORE_MODEL = { s1: 0, s2: 1, s64: 2 } as const;
@@ -45,6 +52,17 @@ export class Ht1080zWasmV2Machine extends Ht1080zWasmHost {
   private syncedTargetClockMultiplier = -1;
   /** Whether the PAGE key is down: it latches on the press, and host key repeats must not flip it */
   private pageKeyDown = false;
+  /** The current frame's samples; the array and its objects are reused, as the Z88's are */
+  private readonly wasmV2AudioSamples: AudioSample[] = [];
+
+  /**
+   * The AY for the PSG panel (`MF_PSG`): the Spectrum cores' adapter, reading the core's
+   * `ht1080zGetPsg*` exports. It only keeps the machine reference; the HT is no Spectrum.
+   */
+  readonly psgDevice: ISpectrumPsgDevice = new WasmSpectrumPsgDevice(this as unknown as IZxSpectrumMachine, (name, ...args) => {
+    const fn = (this.wasmV2Runtime?.exports as Record<string, unknown> | undefined)?.[`ht1080z${name}`];
+    return typeof fn === "function" ? (fn as (...a: number[]) => number)(...args) : undefined;
+  });
 
   constructor(
     machineId: string,
@@ -302,6 +320,7 @@ export class Ht1080zWasmV2Machine extends Ht1080zWasmHost {
     this.setTactsInFrame(runtime.exports.ht1080zGetTactsInFrame());
     runtime.exports.ht1080zHardReset();
     this.syncVideoControls(runtime);
+    this.syncAudioSampleRate(runtime);
     this.syncCpuFromWasmV2(runtime);
   }
 
@@ -349,7 +368,40 @@ export class Ht1080zWasmV2Machine extends Ht1080zWasmHost {
       case HT_VIDEO_DASH:
         this.syncVideoControls(runtime);
         break;
+      case AUDIO_SAMPLE_RATE:
+        this.syncAudioSampleRate(runtime);
+        break;
     }
+  }
+
+  /** The host's audio rate (`AUDIO_SAMPLE_RATE`) and the DC filter's coefficient for it */
+  private syncAudioSampleRate(runtime: Ht1080zWasmV2Runtime): void {
+    const rate = this.getMachineProperty(AUDIO_SAMPLE_RATE);
+    if (typeof rate === "number" && rate > 0) {
+      runtime.exports.ht1080zSetAudioSampleRate(rate, Math.exp((-2 * Math.PI * DC_FILTER_CUTOFF_HZ) / rate));
+    }
+  }
+
+  /**
+   * The current frame's samples (the beeper and the AY, mono in both channels), read from the core's
+   * double buffer
+   */
+  getAudioSamples(): AudioSample[] {
+    const runtime = this.requireWasmV2Runtime();
+    const values = runtime.audioSamples;
+    const count = runtime.exports.ht1080zGetAudioSampleCount();
+    const samples = this.wasmV2AudioSamples;
+    for (let i = 0; i < count; i++) {
+      const sample = samples[i];
+      if (sample) {
+        sample.left = values[i * 2];
+        sample.right = values[i * 2 + 1];
+      } else {
+        samples.push({ left: values[i * 2], right: values[i * 2 + 1] });
+      }
+    }
+    samples.length = count;
+    return samples;
   }
 
   /**

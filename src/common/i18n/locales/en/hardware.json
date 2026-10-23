@@ -159,6 +159,10 @@
   "@hardware.sound.ayTimex": {
     "context": "An item of the Sound row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the TC2068/TS2068: the AY sound chip and the ports it is reached through. Keep chip, port and register names, numbers, $hex values and file extensions as they are."
   },
+  "hardware.sound.ayHt1080z": "AY-3-8910 PSG at the CPU clock (ports $1E/$1F), mono",
+  "@hardware.sound.ayHt1080z": {
+    "context": "An item of the Sound row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the HT-1080Z: its AY sound chip, which runs from the processor's clock and whose three channels are mixed into one. Keep chip, port and register names, numbers, $hex values and file extensions as they are."
+  },
   "hardware.sound.nextDac": "4-channel DAC (SpecDrum)",
   "@hardware.sound.nextDac": {
     "context": "An item of the Sound row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the ZX Spectrum Next: its four-channel digital-to-analogue converter, compatible with the SpecDrum. SpecDrum is a product name: keep it."

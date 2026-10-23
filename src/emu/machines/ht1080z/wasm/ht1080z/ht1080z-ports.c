@@ -5,11 +5,12 @@
  *   FF read   bit 7 the cassette-in latch; the other bits read 1 (undocumented)
  *   FE write  bit 4 selects recorder 2 (stored only: one deck is modelled, D8)
  *   FD read   printer status: 30h, the status of no printer attached (MiST's value)
- *   1E/1F     the AY-3-8910 (Phase 5): until then 1Fh reads FFh and writes are dropped
+ *   1F write  AY register select; 1E write AY data; 1F read AY data; 1E read open bus (FFh)
  *
  * Every other port reads FFh.
  *
- * The tape (Phase 6) sets the cassette-in latch; the beeper (Phase 5) reads the port-FF level.
+ * The tape (Phase 6) sets the cassette-in latch; port FF's level also drives the beeper
+ * (`ht1080z-audio.c`).
  */
 
 /* The last value written to port FF (bits 0-3 are latched on the real machine) */
@@ -31,6 +32,8 @@ static uint8_t htCpuReadPort(uint16_t address) {
       return (uint8_t)((htCassetteLatch ? 0x80u : 0x00u) | 0x7fu);
     case 0xfdu:
       return 0x30u;
+    case 0x1fu:
+      return htAyDataRead();
     default:
       return 0xffu;
   }
@@ -41,6 +44,13 @@ static void htCpuWritePort(uint16_t address, uint8_t value) {
     case 0xffu:
       htPortFf = value;
       htCassetteLatch = 0u;
+      htBeeperPortWrite(value);
+      break;
+    case 0x1fu:
+      htAyAddressWrite(value);
+      break;
+    case 0x1eu:
+      htAyDataWrite(value);
       break;
     case 0xfeu:
       htRecorder2 = (value & 0x10u) ? 1u : 0u;

@@ -635,12 +635,14 @@ export const machineRegistry: MachineInfo[] = [
   },
   {
     // --- `.plans/HT1080Z_PLAN.md`: Series II only until Phase 7 adds Series I and the /64. Tape,
-    // --- the AY, history, profile and reverse debugging join with their phases.
+    // --- history, profile and reverse debugging join with their phases.
     machineId: MI_HT1080Z,
     displayName: "HT-1080Z",
     charSet: Ht1080zChars,
     features: {
       [MF_Z80]: true,
+      // --- The AY-3-8910 at ports $1E/$1F, on the PSG panel (§10)
+      [MF_PSG]: true,
       [MF_INJECT_SUPPORT]: false,
       [MF_ALLOW_SCAN_LINES]: false
     },

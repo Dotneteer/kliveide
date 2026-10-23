@@ -443,8 +443,7 @@ export const HARDWARE_SPECS: Readonly<Record<string, MachineSpecs>> = {
   },
   [MI_HT1080Z]: {
     // --- ht1080zMachineInfo.ts, Ht1080zRoms.ts, wasm/ht1080z/ht1080z.c (`.plans/HT1080Z_PLAN.md`).
-    // --- Series II only for now; the beeper and the AY (Phase 5) and the tape (Phase 6) join the
-    // --- sound and media rows with their phases.
+    // --- Series II only for now; the tape (Phase 6) joins the media row with its phase.
     base: {
       cpu: "Zilog Z80",
       clockHz: HT1080Z_CLOCK_S12,
@@ -478,7 +477,7 @@ export const HARDWARE_SPECS: Readonly<Record<string, MachineSpecs>> = {
         perFrame: HT1080Z_TACTS_IN_FRAME,
         note: tx("hardware.timing.ht1080z")
       },
-      sound: [],
+      sound: [BEEPER, tx("hardware.sound.ayHt1080z")],
       media: [],
       input: [{ label: KEYBOARD, value: tx("hardware.keyboard.ht1080z") }]
     }

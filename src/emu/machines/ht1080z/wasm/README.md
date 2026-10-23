@@ -18,9 +18,28 @@ with the values recorded in the plan's §17. The code is Klive's own.
 - `ht1080z/ht1080z-keyboard.c`: the 8 x 8 matrix at 3800h-3BFFh.
 - `ht1080z/ht1080z-ports.c`: ports FFh, FEh and FDh; the cassette-in latch.
 - `ht1080z/ht1080z-video.c`: the catch-up raster renderer, the CPU-access dash, VIDEO CUT and PAGE.
+- `ht1080z/ht1080z-audio.c`: the beeper, the AY (the Spectrum's `zx-spectrum-psg.c`, the one shared
+  Spectrum device `check-wasm-cpu-contract.cjs` allows here), the mono mix and the sample buffer.
 
-Still to come, each with its phase: the AY and the beeper (5, through `zx-spectrum-psg.c`, which
-`check-wasm-cpu-contract.cjs` already allows), the tape (6).
+Still to come: the tape (Phase 6).
+
+## Sound
+
+One speaker, as on the board (SOUND_AY.md §4): the beeper (port FF bits 0-1, three levels; muted
+while bit 2, the recorder relay, is on) and the AY's three channels, tied together, summed in mono
+and written to both sides of a stereo buffer of doubles after a 1.4 Hz DC high-pass (its coefficient
+from the host) and a clamp. Both sources are averaged over each sample.
+
+- **The AY's clock is the CPU clock**: the shared PSG steps its prescaler every 8 T
+  (`SP128_PSG_CLOCK_STEP`, overridable since Phase 1; the Spectrum's AY at half its CPU clock steps
+  every 16). A tone period of 100 plays 1,110.9 Hz on the /64 (`test/ht1080z-hw/sound.test.ts`).
+- **Ports:** OUT 1Fh latches the register, OUT 1Eh writes it, IN 1Fh reads it (MAME reads at 1Eh,
+  which the schematic contradicts); IN 1Eh is open bus, FFh. I/O ports A and B read FFh as inputs.
+- **Time:** the PSG and the sample schedule count in the frame's tacts (`sp128Tacts` is
+  `htFrameTacts`), so the 32-bit CPU counter's wrap never reaches them; `htAudioEndFrame` moves every
+  absolute point back by a frame. **A new absolute point must be added there.**
+- **Reset:** the AY at power-on only; the RESET key (an NMI) leaves it playing (SOUND_AY.md §6:
+  probable, unverified).
 
 ## The picture
 
@@ -62,8 +81,8 @@ reads it as the machine's linear memory.
 ## Building and measuring
 
 `npm run build:ht1080z-wasm` (compiler `clang`, or `HT1080Z_WASM_CC`; `HT1080Z_WASM_OPTIMIZATION` =
-`speed` (default), `size` or `lto`). `npm run check:ht1080z-wasm-size`: 259 KB against a 300 KB
-ceiling, set with room for the AY and tape phases.
+`speed` (default), `size` or `lto`). `npm run check:ht1080z-wasm-size`: 266 KB against a 300 KB
+ceiling, set with room for the tape phase.
 
 ## Tests
 

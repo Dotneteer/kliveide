@@ -50,6 +50,8 @@ export type Ht1080zWasmV2Views = {
   readonly pixelBufferBytes: Uint8ClampedArray;
   /** The keyboard matrix rows (a set bit is a pressed key) */
   readonly keyboardLines: Uint8Array;
+  /** The current frame's audio samples: left and right doubles, `ht1080zGetAudioSampleCount` of them */
+  readonly audioSamples: Float64Array;
   /** The shared core's per-instruction data-access log */
   readonly accessLog: Uint32Array;
   /** The debugger's breakpoint flags, one word per address (`DebugSupport.breakpointFlags`) */
@@ -160,6 +162,23 @@ export const ht1080zWasmV2RequiredExports = [
   "ht1080zSetVideoCut",
   "ht1080zSetVideoDash",
   "ht1080zSetVideoPage",
+  "ht1080zAudioSamplesPtr",
+  "ht1080zGetAudioOverflows",
+  "ht1080zGetAudioSampleCapacity",
+  "ht1080zGetAudioSampleCount",
+  "ht1080zGetAudioSampleRate",
+  "ht1080zGetBeeperLevel",
+  "ht1080zGetPsgCurrentOutput",
+  "ht1080zGetPsgRegisterIndex",
+  "ht1080zGetPsgRegisterValue",
+  "ht1080zGetPsgToneA",
+  "ht1080zGetPsgToneB",
+  "ht1080zGetPsgToneC",
+  "ht1080zGetPsgVolumeA",
+  "ht1080zGetPsgVolumeB",
+  "ht1080zGetPsgVolumeC",
+  "ht1080zReadPsgRegisterValue",
+  "ht1080zSetAudioSampleRate",
   "ht1080zWriteMemory",
   "ht1080zWritePort",
   // --- Last: the breakpoint condition evaluator, identical in every Z80 core
@@ -229,6 +248,8 @@ export function createHt1080zWasmV2Views(
   check("chargen", exports.ht1080zChargenPtr(), chargenSize);
   check("pixelBuffer", exports.ht1080zPixelBufferPtr(), pixelWords * 4);
   check("keyboardLines", exports.ht1080zKeyboardLinesPtr(), HT1080Z_WASM_V2_KEYBOARD_LINE_COUNT);
+  const audioDoubles = exports.ht1080zGetAudioSampleCapacity() * 2;
+  check("audioSamples", exports.ht1080zAudioSamplesPtr(), audioDoubles * 8);
   check("accessLog", exports.ht1080zGetAccessLogPtr(), WASM_ACCESS_LOG_CAPACITY * 4);
   check("breakpointFlags", exports.ht1080zBreakpointFlagsPtr(), 0x1_0000 * 2);
   check("condPlan", exports.ht1080zCondPlanPtr(), WASM_CORE_CONDITION_PLAN_WORDS * 4);
@@ -240,6 +261,7 @@ export function createHt1080zWasmV2Views(
     pixelBuffer: new Uint32Array(memoryBuffer, exports.ht1080zPixelBufferPtr(), pixelWords),
     pixelBufferBytes: new Uint8ClampedArray(memoryBuffer, exports.ht1080zPixelBufferPtr(), pixelWords * 4),
     keyboardLines: new Uint8Array(memoryBuffer, exports.ht1080zKeyboardLinesPtr(), HT1080Z_WASM_V2_KEYBOARD_LINE_COUNT),
+    audioSamples: new Float64Array(memoryBuffer, exports.ht1080zAudioSamplesPtr(), audioDoubles),
     accessLog: new Uint32Array(memoryBuffer, exports.ht1080zGetAccessLogPtr(), WASM_ACCESS_LOG_CAPACITY),
     breakpointFlags: new Uint16Array(memoryBuffer, exports.ht1080zBreakpointFlagsPtr(), 0x1_0000),
     condPlan: new Uint32Array(memoryBuffer, exports.ht1080zCondPlanPtr(), WASM_CORE_CONDITION_PLAN_WORDS)

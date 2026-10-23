@@ -144,15 +144,22 @@ static inline void htDelayMemory(uint16_t address);
 
 #include "ht1080z-keyboard.c"
 #include "ht1080z-memory.c"
+#include "ht1080z-audio.c"
 #include "ht1080z-ports.c"
 #include "ht1080z-video.c"
 
-/* Every CPU clock step: the tact counter and the frame accounting */
+/*
+ * Every CPU clock step: the tact counter, the audio samples due, and the frame accounting. The
+ * samples of a step that passes the frame's end belong to the frame ending (at most one): the
+ * buffer is the host's until the next frame begins.
+ */
 static void HT_NOINLINE htAdvanceTacts(uint32_t value) {
   cpu.tacts += value;
   htFrameTacts += value;
+  htAudioAdvance();
   if (htFrameTacts >= htTactsInCurrentFrame) {
     htVideoEndFrame();
+    htAudioEndFrame(htTactsInCurrentFrame);
     htFrames++;
     htFrameTacts -= htTactsInCurrentFrame;
     htFrameCompleted = 1u;
@@ -169,6 +176,7 @@ static void htBeginFrame(void) {
   }
   htTactsInCurrentFrame = HT_TACTS_IN_FRAME * htClockMultiplier;
   htFrameCompleted = 0u;
+  htAudioNewFrame();
 }
 
 /*
@@ -259,6 +267,7 @@ static void htResetMachine(void) {
   htResetKeyboard();
   htResetPorts();
   htVideoReset();
+  htAudioReset();
 }
 
 /* The IDE's soft reset: the CPU's registers kept as on a Z80 /RESET, the memory kept */
@@ -275,6 +284,8 @@ void ht1080zHardReset(void) {
   for (uint32_t i = HT_KEYBOARD_START; i < HT_MEMORY_SIZE; i++) htMemory[i] = 0u;
   z80Reset();
   htResetMachine();
+  /* The AY is reset by the power-on /RESET only (SOUND_AY.md §6) */
+  resetPsg();
 }
 
 /* The RESET key on the back panel: an NMI to 0066h, which keeps the memory (HARDWARE.md §2, §10) */

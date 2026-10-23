@@ -1,7 +1,7 @@
 # HT-1080Z on the WASM Core — Implementation Plan
 
 **Status:** decisions accepted 2026-10-22 (§15; D10 revised the same day after Phase 2); Phases 0-3
-done 2026-10-22 (§17); Phase 4 done 2026-10-22. Next: Phase 5.
+done 2026-10-22 (§17); Phases 4 and 5 done 2026-10-22. Next: Phase 6.
 **Input:** the research pack `_input/ht1080z/`. Read its `README.md` first, then `HARDWARE.md`,
 `VIDEO_TIMING.md`, `SOUND_AY.md`, `STORAGE_FIRMWARE_SOFTWARE.md` and `EXISTING_EMULATORS.md`.
 Every hardware fact in this plan comes from there, with its source.
@@ -798,4 +798,29 @@ Corrections and deviations:
 - Found in passing, not changed: the shared `Z80MachineBase.queueKeystroke` puts its edges on frame
   boundaries, the jitter fixed above for the HT. The ZX80/81 typer holds keys 4 frames and has not
   shown it.
+
+**Phase 5 done 2026-10-22.** `ht1080z-audio.c`: the beeper, the AY through the shared PSG
+(`SP128_PSG_CLOCK_STEP 8u`), the mono mix with a DC filter, the sample buffer; the PSG panel through
+the Spectrum cores' `WasmSpectrumPsgDevice` and `MF_PSG`. `test/ht1080z-hw/sound.test.ts` covers
+every exit criterion. In the running app the manual's sea program runs and the PSG panel shows its
+registers.
+
+| Value | Klive | Source |
+|---|---|---|
+| AY pitch | TP = 100 plays 1,110.9 Hz on the /64 and 1,108.75 Hz on Series II, within 1 % in the sample buffer | `sound.test.ts`; confirms SOUND_AY.md §3's inference that the AY runs at Φ, as far as the emulator can |
+| AY ports | OUT 1Fh address, OUT 1Eh data, IN 1Fh read, IN 1Eh FFh; R14/R15 read FFh as inputs, their value as outputs | `sound.test.ts`; SOUND_AY.md §2, §5 |
+| Mix | beeper x 0.5 (levels -1, 0, 1; muted by FF bit 2) + AY channels x 0.25 each, mono; DC high-pass 1.4 Hz; clamp | Chosen here (§5 left the gain to this phase); MAME's mono route is 0.25 too |
+| Samples per frame | 44,100 x 34,944 / 1,774,000 = 868.6 on average, each frame within 1.5 | `sound.test.ts` (§16's check) |
+| Reset | the AY at power-on only; the RESET key leaves it playing | SOUND_AY.md §6 (unverified); `sound.test.ts` |
+| Size | 266 KB | `check:ht1080z-wasm-size` |
+
+Deviations from the plan, with their reasons:
+- **The AY and the sample schedule count in frame tacts, not the CPU's counter** (§10's "tact epoch"
+  item): `sp128Tacts` is the frame's tact counter, and `htAudioEndFrame` moves the PSG's two absolute
+  points, the beeper's and the next sample's back by a frame. The CPU counter never rebases, so
+  nothing wraps after the 40 minutes a 32-bit counter lasts at 1.77 MHz.
+- `OUT 1Fh` passes the whole byte to the PSG, whose chip select ignores a register number with any of
+  bits 4-7 set, as the AY-3-8910 does; §10 said "low 4 bits".
+- The PSG panel's title reads "PSG (AY-3-8912)", shared with the Spectrums; the HT's chip is the
+  AY-3-8910, which has the same registers and one more I/O port (B). Left as it is.
 
