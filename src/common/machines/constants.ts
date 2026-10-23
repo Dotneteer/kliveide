@@ -50,6 +50,13 @@ export const BEAM_POSITION_MACHINE_IDS: string[] = [
  */
 export const TV_NOISE_MACHINE_IDS: string[] = [MI_ZX80, MI_ZX81];
 
+/**
+ * The machines with a Sinclair ULA whose late timing and snow Klive emulates (the 16K, the 48K and the
+ * 128K; `.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phases 4, 5). The Pentagon among the 128K's models
+ * ignores both.
+ */
+export const ULA_TIMING_MACHINE_IDS: string[] = [MI_SPECTRUM_48, MI_SPECTRUM_128];
+
 // Available machine configuration keys
 export const MC_DISK_SUPPORT = "diskSupport";
 export const MC_SCREEN_FREQ = "screenFreq";

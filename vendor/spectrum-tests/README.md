@@ -7,6 +7,13 @@ timing, kept here so they can be run in Klive at any time. They are the test kit
 They are **not** part of Klive and are never packaged with it (the app ships only `out/`). Each one
 belongs to its author; Klive's MIT licence does not apply to anything in this folder.
 
+## Running them
+
+`test/spectrum-kit/` runs every program on Klive's cores in the slow test tier (`npm run test:slow`):
+the programs that report their own result are asserted, the others write their picture to
+`.spectrum-kit/` for a by-eye check against the real-machine photos and videos on their wiki pages.
+`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` ("As built") has the results.
+
 ## Where they come from
 
 Every file was downloaded from the **ZXE depot** (`https://zxe.io/depot/software/ZX%20Spectrum/`),

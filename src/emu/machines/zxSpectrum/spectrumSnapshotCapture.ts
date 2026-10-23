@@ -151,6 +151,10 @@ export function captureSpectrumSnapshot(
     lastFe: call("GetPortFeValue") & 0xff,
     frameTact: call("GetCurrentFrameTact")
   };
+  // --- Late ("alternate") ULA timing, on the cores that have it (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phase 4)
+  if (typeof all[core.prefix + "GetLateTiming"] === "function" && call("GetLateTiming") !== 0) {
+    ula.alternateTimings = true;
+  }
 
   // --- RAM, in 128K bank numbering
   const ram = new Map<number, Uint8Array>();

@@ -16,6 +16,8 @@ import {
   SETTING_EMU_FAST_LOAD,
   SETTING_EMU_HT_CPU_DASH,
   SETTING_EMU_HT_VIDEO_CUT,
+  SETTING_EMU_ULA_LATE_TIMING,
+  SETTING_EMU_ULA_SNOW,
   SETTING_EMU_REVERSE_DEBUGGING,
   SETTING_EMU_REVERSE_DEBUG_MEMORY_MB,
   SETTING_EMU_PROFILE_RESET_ON_START,
@@ -180,6 +182,31 @@ const settingDefinitions: Setting[] = [
     description: "Intensity of the CRT scanline effect (off, 50%, 25%, or 12.5%).",
     type: "string",
     defaultValue: "off",
+    saveWithIde: true,
+    boundTo: "emu"
+  },
+  // --- The ZX Spectrum ULA's timing variants (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phases 4, 5)
+  {
+    id: SETTING_EMU_ULA_LATE_TIMING,
+    title: "Late ULA Timing",
+    description:
+      "ZX Spectrum 16K, 48K and 128K: run the ULA one T-state later against the interrupt, as many " +
+      "real machines do (\"late\" or \"alternate\" timing). Contention, the screen reads, the border " +
+      "and the floating bus all move by one T-state. Off: the documented (\"early\") timings.",
+    type: "boolean",
+    defaultValue: false,
+    saveWithIde: true,
+    boundTo: "emu"
+  },
+  {
+    id: SETTING_EMU_ULA_SNOW,
+    title: "Snow Effect",
+    description:
+      "ZX Spectrum 16K, 48K and 128K: with the I register pointing at contended memory, the CPU's " +
+      "memory refresh disturbs the ULA's screen reads and the picture shows 'snow', as on the real " +
+      "machine. Turn it off for programs that set I there and should not show it.",
+    type: "boolean",
+    defaultValue: true,
     saveWithIde: true,
     boundTo: "emu"
   },

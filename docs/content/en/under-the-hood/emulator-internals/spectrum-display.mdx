@@ -655,12 +655,23 @@ In the border, that is `$FF`. Over the display area, it is the byte the ULA is f
 or attribute byte of the cell the beam is about to draw. This is the **floating bus**, and a few games
 use it to find out where the beam is without counting T-states.
 
+The test programs measure it exactly. On the 48K, an `IN` that samples the bus at T-state 14,338 reads
+the bitmap byte of `$4000`, at 14,339 its attribute, at 14,340 and 14,341 the next cell's bitmap and
+attribute, and then `$FF` for four T-states, before the next group. So the ULA reads its four bytes
+three T-states into its contention window, not at its start. The 128K does the same from 14,364.
+
 <Callout type="info">
 **Snow.** During a refresh cycle the Z80 puts the I and R registers on the address bus. If a program
 sets I to a value from `$40` to `$7F` (as some programs do to place an interrupt table), every refresh
 cycle looks like an access to the screen memory. When one falls into the ULA's window, the ULA's page
 mode read picks up the refresh's row address instead of its own, and reads the wrong byte. The
-picture shows it as scattered wrong dots, the Spectrum's **snow**. (Klive does not emulate snow.)
+picture shows it as scattered wrong dots, the Spectrum's **snow**. When the refresh meets the ULA's
+first read, the cell's bitmap and attribute come from the address with R in its low seven bits; when
+it meets the second, the second cell is not read at all and shows the first one's bytes again.
+
+Klive emulates snow on the 16K, 48K and 128K (the +2A/+3 and the clones do not have it). It is on by
+default; **Snow Effect** in the machine's menu, or in Settings › Emulator, turns it off for a program
+that sets I there and should not show it.
 </Callout>
 
 ## Part 6: How Klive follows the beam
@@ -687,12 +698,40 @@ the picture depends on is about to change:
 
 Because the catch-up uses the memory and the border as they are *before* the change, everything the
 beam has already passed is drawn with the old values and everything after with the new ones. That is
-exactly what the real beam would have shown, so border stripes, multicolour attributes and
-beam-racing tricks come out right, at a fraction of the cost of drawing every T-state.
+what the real beam would have shown, so border stripes, multicolour attributes and beam-racing
+tricks come out right, at a fraction of the cost of drawing every T-state.
+
+"The beam has already passed" has to be exact to the T-state, and three details make it so:
+
+- **The ULA reads later than the tables say.** Klive's tables fetch a byte a few T-states before the
+  real ULA reads it (4 on the 48K, 2 on the 128K), and they draw it from there. A write is therefore
+  measured against the real read: a write cycle that starts at 14,334 is in the RAM when the ULA reads
+  `$4000` at 14,338, one that asks for 14,335 is held by the contention until 14,341 and is too late.
+- **The border changes once per 8 dots.** The ULA takes the border colour once every 4 T-states, so
+  a change cannot start in the middle of a character's width. An `OUT` that ends 14,339–14,342
+  T-states after the interrupt changes the border exactly at the position of `$4000`'s column (the
+  WoS 48K FAQ; 14,365–14,368 on the 128K), and Klive draws it there.
+- **A prefixed instruction's accesses fall on their own T-states.** `LD (nn),BC`, `LD A,(IX+d)` and
+  the other prefixed instructions fetch their second opcode in a 4 T-state cycle of its own; their
+  memory accesses that follow are contended at the T-states they really happen.
+
+Klive's display is checked against test programs whose results come from real machines: ZX Spectrum
+Timing Tests 48K and 128K, HALT2INT (whose author photographed his own early and late 48Ks),
+Float48K, Float128K and FloatSpy, Border Time and Screen Time. They live in the repository
+(`vendor/spectrum-tests/`) and run in Klive's slow test tier.
 
 Contention is applied from the same tables: whenever the CPU touches contended memory, the core
 looks up the wait for the current T-state and adds it to the clock. The floating bus reads the byte
 the table says the ULA is fetching.
+
+### Early and late machines
+
+Real Spectrums do not all agree to the T-state. On many of them everything the ULA does comes one
+T-state later against the interrupt than the documented figures: contention starts at 14,336 instead
+of 14,335, and the reads, the border and the floating bus move with it. These are the **late** (or
+"alternate") timings; a warm ULA can drift from early to late. **Late ULA Timing** in the machine's
+menu (or Settings › Emulator) switches Klive's 16K, 48K and 128K to them. An `.szx` snapshot records
+which timing its machine ran, and Klive sets it when it loads one.
 
 ### The other models
 
@@ -706,6 +745,8 @@ longer line:
 | Lines per frame | 312 | 311 |
 | T-states per frame | 69,888 | 70,908 |
 | First display line starts at | 14,336 | 14,364 (line 63) |
+| First contended T-state | 14,335 | 14,361 |
+| Interrupt length | 32 T-states | 35 T-states |
 
 The screen memory, the attributes and the order of the bitmap are the same on every model. The 128K
 can show a second screen from another RAM bank, which the ULA reads in exactly the same way.
@@ -736,4 +777,6 @@ can show a second screen from another RAM bank, which the ULA reads in exactly t
 - When the CPU wants the screen memory while the ULA is reading it, the ULA **stops the CPU's clock**:
   contention, 6, 5, 4, 3, 2, 1, 0, 0.
 - Klive follows the beam with **per-T-state tables** and draws lazily, catching up just before every
-  change the picture could see.
+  change the picture could see, against the moment the ULA really reads. Snow and the late timings of
+  many real machines are emulated, and the timing is checked against test programs measured on real
+  machines.

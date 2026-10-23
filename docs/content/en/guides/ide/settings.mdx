@@ -71,6 +71,8 @@ See [Editing Code](/en/guides/ide/editing-code).
 | Zoom steps | The zoom steps of the emulator screen. |
 | Scanline effect | Draws CRT-style scanlines over the picture. |
 | Show TV noise without sync | ZX80 and ZX81 only. While the machine sends no usable sync (a ZX81 running a program in FAST mode, a ZX80 computing), shows the noise a real television showed instead of a black screen. Only the display changes, not the machine. |
+| Show the snow effect | ZX Spectrum 16K, 48K and 128K. With the I register in contended memory, the CPU's memory refresh disturbs the ULA's screen reads and the picture shows "snow", as on the real machine. On by default. Also **Machine › ZX Spectrum 48K / 128K › Snow Effect**. |
+| Late ULA timing | ZX Spectrum 16K, 48K and 128K. Runs the ULA one T-state later against the interrupt, as many real machines do: contention, the screen reads, the border and the floating bus all move by one T-state. Off by default (the documented timings). Also **Machine › ZX Spectrum 48K / 128K › Late ULA Timing**. An `.szx` snapshot sets it to the timing its machine ran. |
 | Show the instant screen | See [Using the Instant Screen](/en/guides/debugging/instant-screen). Also a button in the emulator toolbar. |
 | Show the beam position while paused | See [The Beam Position](/en/guides/debugging/beam-position). Also a button in the emulator toolbar. |
 | Keep the emulator on top | See [Keeping the Emulator always on top](/en/guides/emulator/always-on-top). Also a button in the emulator toolbar. |

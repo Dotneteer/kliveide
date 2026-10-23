@@ -57,7 +57,8 @@ export const SP128_TIMINGS: Record<Sp128TimingId, Sp128Timing> = {
     tactsPerLine: 228,
     linesPerFrame: 311,
     tactsPerFrame: 70_908,
-    interruptTacts: 32,
+    // --- The ZXE wiki's Timings table: 35 on the 128K, 32 on the 48K (sp128.c SP128_INTERRUPT_TACTS)
+    interruptTacts: 35,
     paperStartTact: 63 * 228,
     contention: true,
     floatingBus: true,

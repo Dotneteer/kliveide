@@ -13,7 +13,7 @@ import {
   MI_HT1080Z
 } from "@common/machines/constants";
 import { zx8081TapeMenuRenderer } from "./zx8081-menus";
-import { tapeMenuRenderer, spectrumIdeRenderer, diskMenuRenderer } from "./zx-specrum-menus";
+import { tapeMenuRenderer, spectrumIdeRenderer, diskMenuRenderer, ulaHardwareRenderer } from "./zx-specrum-menus";
 import { z88ResetRenderer } from "./z88-menus";
 import { ht1080zHardwareRenderer, ht1080zTapeMenuRenderer } from "./ht1080z-menus";
 import {
@@ -57,6 +57,7 @@ export const machineMenuRegistry: Record<string, MachineMenuInfo> = {
   },
   [MI_SPECTRUM_48]: {
     devices: { tape: tapeMenuRenderer },
+    hardwareItems: ulaHardwareRenderer,
     viewItems: spectrumIdeRenderer,
     recordItems: rzxMenuRenderer
   },
@@ -74,6 +75,7 @@ export const machineMenuRegistry: Record<string, MachineMenuInfo> = {
       // --- The Pentagon's Beta 128 (model config `MC_DISK_SUPPORT`; none on the 128K)
       disks: diskMenuRenderer
     },
+    hardwareItems: ulaHardwareRenderer,
     viewItems: spectrumIdeRenderer,
     recordItems: rzxMenuRenderer
   },

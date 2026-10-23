@@ -501,6 +501,14 @@
   "@menu.tape.fastLoad": {
     "context": "Machine › Tape / Program checkbox: loads programs instantly instead of at the real tape speed."
   },
+  "menu.spectrum.snowEffect": "Snow Effect",
+  "@menu.spectrum.snowEffect": {
+    "context": "Machine menu of the ZX Spectrum 48K and 128K, a checked menu item: shows the speckles ('snow') the real machine's picture shows while the I register points at contended memory."
+  },
+  "menu.spectrum.lateUlaTiming": "Late ULA Timing",
+  "@menu.spectrum.lateUlaTiming": {
+    "context": "Machine menu of the ZX Spectrum 48K and 128K, a checked menu item: runs the ULA (the video chip; keep the name) one T-state later, as many real machines do."
+  },
   "menu.program.select": "Select Program File...",
   "@menu.program.select": {
     "context": "Machine › Program (ZX80/ZX81): picks the program file (.p/.o) the machine loads. The trailing '...' means the item opens a dialog; keep it."

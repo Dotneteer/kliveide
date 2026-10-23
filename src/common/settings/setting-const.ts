@@ -24,6 +24,10 @@ export const SETTING_EMU_FAST_LOAD = "emuOptions.fastLoad";
 export const SETTING_EMU_HT_VIDEO_CUT = "emuOptions.ht1080zVideoCut";
 /** The HT-1080Z's dash: a CPU access to video RAM blanks cells at the beam (D7): on */
 export const SETTING_EMU_HT_CPU_DASH = "emuOptions.ht1080zCpuDash";
+/** ZX Spectrum 16K/48K/128K: late ("alternate") ULA timing, one T-state later (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phase 4): off */
+export const SETTING_EMU_ULA_LATE_TIMING = "emuOptions.ulaLateTiming";
+/** ZX Spectrum 16K/48K/128K: the snow effect (Phase 5): on */
+export const SETTING_EMU_ULA_SNOW = "emuOptions.ulaSnow";
 /** Reverse debugging in debug sessions (`.plans/REVERSE_DEBUGGING_PLAN.md` D2): on by default */
 export const SETTING_EMU_REVERSE_DEBUGGING = "emuOptions.reverseDebugging";
 /** The reverse-debugging keyframe budget in MB (D6); 0: the smaller of 512 MB and 1/16 of memory */

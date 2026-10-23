@@ -30,6 +30,8 @@ import {
   DISK_B_UNSAVED,
   DISK_B_WP,
   FAST_LOAD,
+  ULA_LATE_TIMING,
+  ULA_SNOW,
   REWIND_REQUESTED,
   SAVED_TO_TAPE,
   TAPE_MODE,
@@ -973,6 +975,15 @@ export class ZxSpectrum128WasmV2Machine
 
       case FAST_LOAD:
         runtime.exports.sp128TapeSetFastLoad(value ? 1 : 0);
+        break;
+
+      // --- The ULA's late timing and snow (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phases 4, 5)
+      case ULA_LATE_TIMING:
+        runtime.exports.sp128SetLateTiming(value ? 1 : 0);
+        break;
+
+      case ULA_SNOW:
+        runtime.exports.sp128SetSnowEffect(value === false ? 0 : 1);
         break;
     }
   }

@@ -126,6 +126,14 @@ typedef struct Spp3eScreenConfig {
   uint16_t pixelDataPrefetchTime;
   uint16_t attributeDataPrefetchTime;
   uint8_t contentionValues[8];
+  /*
+   * How many T-states the ULA's real memory reads come after the T-states this table fetches at
+   * (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` §1.2): 4 on the 48K, 2 on the 128K/+2 - the offset the
+   * floating bus already used (its byte is the table's fetch of `delay + 1` T-states before the
+   * port read). A CPU write and an `OUT` to the border take effect against the real reads; 0 keeps
+   * the old behaviour on the machines no measurement covers yet (+2A/+3, Timex, Pentagon, Scorpion).
+   */
+  uint8_t ulaFetchDelay;
 } Spp3eScreenConfig;
 
 typedef struct Spp3eAudioSample {
@@ -356,7 +364,7 @@ static uint8_t spp3eAttrByte2;
 
 static const Spp3eScreenConfig spp3eUlaConfig = {
   8u, 7u, 48u, 48u, 8u, 192u, 24u, 24u, 128u, 40u, 12u, 2u, 1u,
-  {0u, 7u, 6u, 5u, 4u, 3u, 2u, 1u}
+  {0u, 7u, 6u, 5u, 4u, 3u, 2u, 1u}, 0u
 };
 
 static uint32_t spp3eRamBankOffset(uint32_t bank) {

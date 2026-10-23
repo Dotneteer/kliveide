@@ -17,7 +17,12 @@ import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_DOCK, MEDIA_TAPE } from "@common/stru
 import { ejectDock, selectDockFile } from "./timex-menus";
 import { CREATE_DISK_DIALOG } from "@messaging/dialog-ids";
 import { createBooleanSettingsMenu } from "@main/menus/menu-utils";
-import { SETTING_EMU_FAST_LOAD, SETTING_EMU_TRDOS_ROM } from "@common/settings/setting-const";
+import {
+  SETTING_EMU_FAST_LOAD,
+  SETTING_EMU_TRDOS_ROM,
+  SETTING_EMU_ULA_LATE_TIMING,
+  SETTING_EMU_ULA_SNOW
+} from "@common/settings/setting-const";
 import { appSettings, getSettingValue, saveAppSettings, setSettingValue } from "@main/settings-utils";
 import { spectrumSnapshotSaveCommandText } from "@common/spectrum/snapshot/spectrumSnapshotSaveTypes";
 import {
@@ -82,6 +87,15 @@ export const tapeMenuRenderer: MachineMenuRenderer = (windowInfo, machine) => {
   }
   return items;
 };
+
+/**
+ * The Sinclair ULA's variants (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phases 4, 5): the snow effect
+ * and late timing, on the 16K/48K and the 128K. The Pentagon among the 128K's models ignores them.
+ */
+export const ulaHardwareRenderer: MachineMenuRenderer = () => [
+  createBooleanSettingsMenu(SETTING_EMU_ULA_SNOW, { label: t("menu.spectrum.snowEffect") }) as any,
+  createBooleanSettingsMenu(SETTING_EMU_ULA_LATE_TIMING, { label: t("menu.spectrum.lateUlaTiming") }) as any
+];
 
 /**
  * Renders disk commands

@@ -7,6 +7,9 @@
  *  1. RAM is written straight into the core's RAM, then the machine is reset (through the wrapper,
  *     which re-syncs the tape, audio and disk state the core reset clears). The reset keeps RAM, but
  *     unlocks paging, silences the AY and rebuilds the 128K cores' flat 64K view from the banks.
+ *     A `.szx` file then sets the ULA's late ("alternate") timing on the cores that have it
+ *     (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phase 4); `.sna` and `.z80` cannot say, so the machine
+ *     keeps its own.
  *  2. Paging: $1FFD first (+3), then $7FFD, whose bit 5 locks every later $7FFD write (trap 5).
  *  3. The AY registers, then the selected one (writing R13 restarts the envelope; trap 14).
  *  4. The border through port $FE (border bits only, plus MIC/EAR when the file has them; trap 13).
@@ -72,6 +75,10 @@ export function restoreSpectrumSnapshot(core: SpectrumSnapshotCore, snapshot: Sp
     });
   }
   core.reset();
+  const setLate = all[core.prefix + "SetLateTiming"];
+  if (snapshot.format === "szx" && typeof setLate === "function") {
+    setLate(snapshot.ula.alternateTimings ? 1 : 0);
+  }
 
   // --- 2. Paging
   if (paged && snapshot.paging) {

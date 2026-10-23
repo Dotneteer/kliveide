@@ -22,7 +22,7 @@ import {
 } from "../wasmDebugLoop";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { TapeMode } from "@emu/abstractions/TapeMode";
-import { AUDIO_SAMPLE_RATE, FAST_LOAD, REWIND_REQUESTED, SAVED_TO_TAPE, TAPE_MODE } from "../machine-props";
+import { AUDIO_SAMPLE_RATE, FAST_LOAD, REWIND_REQUESTED, SAVED_TO_TAPE, TAPE_MODE, ULA_LATE_TIMING, ULA_SNOW } from "../machine-props";
 import { MC_MEM_SIZE, MC_SCREEN_FREQ, MC_SP48_ROM_FILE } from "@common/machines/constants";
 import { MEDIA_TAPE } from "@common/structs/project-const";
 import { BinaryWriter } from "@utils/BinaryWriter";
@@ -789,6 +789,15 @@ export class ZxSpectrum48WasmV2Machine
 
       case FAST_LOAD:
         runtime.exports.sp48TapeSetFastLoad(value ? 1 : 0);
+        break;
+
+      // --- The ULA's late timing and snow (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phases 4, 5)
+      case ULA_LATE_TIMING:
+        runtime.exports.sp48SetLateTiming(value ? 1 : 0);
+        break;
+
+      case ULA_SNOW:
+        runtime.exports.sp48SetSnowEffect(value === false ? 0 : 1);
         break;
     }
   }

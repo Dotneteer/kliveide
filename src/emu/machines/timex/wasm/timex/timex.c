@@ -59,7 +59,7 @@ static uint8_t timexTapeTrapActive(void);
  * the top non-visible border.
  */
 static const Sp48ScreenConfig timexTs2068Config = {
-  8u, 13u, 25u, 24u, 0u, 192u, 24u, 24u, 128u, 40u, 8u, 2u, 1u, {6u, 5u, 4u, 3u, 2u, 1u, 0u, 0u}
+  8u, 13u, 25u, 24u, 0u, 192u, 24u, 24u, 128u, 40u, 8u, 2u, 1u, {6u, 5u, 4u, 3u, 2u, 1u, 0u, 0u}, 0u
 };
 
 static uint32_t timexModel = TIMEX_MODEL_TC2048;

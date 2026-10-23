@@ -73,6 +73,11 @@ export type Sp48WasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Z80
   sp48GetRenderingPixelIndex: Sp48WasmV2ExportFunction;
   sp48GetBeamInfo: Sp48WasmV2ExportFunction;
   sp48RenderToBeam: Sp48WasmV2ExportFunction;
+  sp48SetLateTiming: Sp48WasmV2ExportFunction;
+  sp48GetLateTiming: Sp48WasmV2ExportFunction;
+  sp48SetSnowEffect: Sp48WasmV2ExportFunction;
+  sp48GetSnowEffect: Sp48WasmV2ExportFunction;
+  sp48GetUlaFetchDelay: Sp48WasmV2ExportFunction;
   sp48GetTotalContentionDelaySinceStart: Sp48WasmV2ExportFunction;
   sp48GetContentionDelaySincePause: Sp48WasmV2ExportFunction;
   sp48GetNextFrameStartTact: Sp48WasmV2ExportFunction;
@@ -275,6 +280,11 @@ const requiredV2Exports = [
   "sp48GetRenderingPixelIndex",
   "sp48GetBeamInfo",
   "sp48RenderToBeam",
+  "sp48SetLateTiming",
+  "sp48GetLateTiming",
+  "sp48SetSnowEffect",
+  "sp48GetSnowEffect",
+  "sp48GetUlaFetchDelay",
   "sp48GetTotalContentionDelaySinceStart",
   "sp48GetContentionDelaySincePause",
   "sp48GetNextFrameStartTact",

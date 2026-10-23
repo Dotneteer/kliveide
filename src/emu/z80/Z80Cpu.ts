@@ -1007,8 +1007,9 @@ export class Z80Cpu implements IZ80Cpu {
 
     // --- Let's handle the halted state.
     if (this.halted) {
-      // --- While in halted state, the CPU executes a dummy M1 cycle: contention on PC + 3T read + refresh + 1T.
-      this.delayMemoryRead(this.pc);
+      // --- While in halted state, the CPU executes a dummy M1 cycle on the byte after the HALT (PC
+      // --- stays on the HALT): contention on PC + 1, 3T read, refresh, 1T. Mirrors z80.c.
+      this.delayMemoryRead((this.pc + 1) & 0xffff);
       this.refreshMemory();
       this.tactPlus1WithAddress(this.ir);
       return;
@@ -1036,8 +1037,11 @@ export class Z80Cpu implements IZ80Cpu {
     } else if (this.prefix !== OpCodePrefix.DDCB && this.prefix !== OpCodePrefix.FDCB) {
       // --- The byte after a CB/ED/DD/FD prefix is read by a second M1, which refreshes too: a
       // --- prefixed instruction adds 2 to R. The DDCB/FDCB displacement and opcode do not count.
-      // --- Only R changes; the tacts stay where they were. Mirrors `z80ExecuteCpuCycle` in z80.c.
+      // --- Its fourth T-state comes here, before the operation, as in the first M1, so the
+      // --- instruction's operand and data accesses fall on the right T-states (contention).
+      // --- Mirrors `z80ExecuteCpuCycle` in z80.c.
       this.refreshMemory();
+      this.tactPlus1WithAddress(this.ir);
     }
     this.pc++;
 
@@ -1069,14 +1073,12 @@ export class Z80Cpu implements IZ80Cpu {
       // --- Bit instructions
       case OpCodePrefix.CB:
         this.bitOps[this.opCode](this);
-        this.tactPlusN(1);
         this.prefix = OpCodePrefix.None;
         break;
 
       // --- Extended instructions
       case OpCodePrefix.ED:
         this.getExtendedOpsTable()[this.opCode](this);
-        this.tactPlusN(1);
         this.prefix = OpCodePrefix.None;
         break;
 
@@ -1091,7 +1093,6 @@ export class Z80Cpu implements IZ80Cpu {
           this.prefix = this.prefix == OpCodePrefix.DD ? OpCodePrefix.DDCB : OpCodePrefix.FDCB;
         } else {
           this.indexedOps[this.opCode](this);
-          this.tactPlusN(1);
           this.prefix = OpCodePrefix.None;
         }
         break;
@@ -1105,7 +1106,6 @@ export class Z80Cpu implements IZ80Cpu {
         this.tactPlus2WithAddress(this.pc);
         this.pc++;
         this.indexedBitOps[this.opCode](this);
-        this.tactPlusN(1);
         this.prefix = OpCodePrefix.None;
         break;
     }

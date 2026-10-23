@@ -112,6 +112,11 @@ export type Sp128WasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Z8
   sp128GetRenderingPixelIndex: Sp128WasmV2ExportFunction;
   sp128GetBeamInfo: Sp128WasmV2ExportFunction;
   sp128RenderToBeam: Sp128WasmV2ExportFunction;
+  sp128SetLateTiming: Sp128WasmV2ExportFunction;
+  sp128GetLateTiming: Sp128WasmV2ExportFunction;
+  sp128SetSnowEffect: Sp128WasmV2ExportFunction;
+  sp128GetSnowEffect: Sp128WasmV2ExportFunction;
+  sp128GetUlaFetchDelay: Sp128WasmV2ExportFunction;
   sp128GetTotalContentionDelaySinceStart: Sp128WasmV2ExportFunction;
   sp128GetContentionDelaySincePause: Sp128WasmV2ExportFunction;
   sp128GetCpuInstructionsExecuted: Sp128WasmV2ExportFunction;
@@ -329,6 +334,11 @@ const requiredV2Exports = [
   "sp128GetRenderingPixelIndex",
   "sp128GetBeamInfo",
   "sp128RenderToBeam",
+  "sp128SetLateTiming",
+  "sp128GetLateTiming",
+  "sp128SetSnowEffect",
+  "sp128GetSnowEffect",
+  "sp128GetUlaFetchDelay",
   "sp128GetTotalContentionDelaySinceStart",
   "sp128GetContentionDelaySincePause",
   "sp128GetCpuInstructionsExecuted",

@@ -180,8 +180,10 @@ describe.each(MODELS)("%s", (model) => {
   it("floating bus: an unattached port reads $FF at every tact only on the Pentagon", async () => {
     const { s, x, t } = await boot(model);
     s.poke(0x4000, new Array(0x1b00).fill(0x55));
-    // --- DI; LD D,$FF; LD E,12; o: LD B,0; l: IN A,($FF); AND D; LD D,A; DJNZ l; DEC E; JR NZ,o
-    measure(s, x, [0xf3, 0x16, 0xff, 0x1e, 12, 0x06, 0x00, 0xdb, 0xff, 0xa2, 0x57, 0x10, 0xfa, 0x1d, 0x20, 0xf5]);
+    // --- DI; LD D,$FF; LD E,12; o: LD B,0; l: LD A,$FF; IN A,($FF); AND D; LD D,A; DJNZ l; DEC E;
+    // --- JR NZ,o. The loop takes 39 T, so its reads fall on every phase of the ULA's 8 T-state cell;
+    // --- a 32 T loop reading a port with a contended high byte is held to the same idle phase.
+    measure(s, x, [0xf3, 0x16, 0xff, 0x1e, 12, 0x06, 0x00, 0x3e, 0xff, 0xdb, 0xff, 0xa2, 0x57, 0x10, 0xf8, 0x1d, 0x20, 0xf3]);
     const anded = s.cpu().de >> 8;
     if (t.floatingBus) expect(anded).not.toBe(0xff);
     else expect(anded).toBe(0xff);
@@ -191,11 +193,16 @@ describe.each(MODELS)("%s", (model) => {
   it("interrupt: active from frame tact 0 for the table's length", async () => {
     const { s, x, t } = await boot(model);
     const seen = new Set<number>();
-    for (let prefix = 0; prefix < 4; prefix++) {
+    // --- Eight prefixes: the sled's start tact varies, and each phase gets two chances
+    for (let prefix = 0; prefix < 8; prefix++) {
       loadSled(s, prefix);
       for (let target = 24; target <= 44; target += 1) {
-        startSled(s);
-        const at = sledTo(s, prefix, target);
+        // --- The sled's start tact varies from frame to frame: retry until it lands on the target
+        let at = -1;
+        for (let attempt = 0; attempt < 8 && at !== target; attempt++) {
+          startSled(s);
+          at = sledTo(s, prefix, target);
+        }
         seen.add(at);
         x.sp128SetCpuInterruptMode(1);
         x.sp128SetCpuIff1(1);
@@ -210,14 +217,17 @@ describe.each(MODELS)("%s", (model) => {
   }, 120_000);
 
   it("display: the first paper byte is fetched 2 T before the table's paper start", async () => {
-    const { s, t } = await boot(model);
+    const { s, x, t } = await boot(model);
     const p = t.paperStartTact;
+    // --- A write lands `delay` T-states into the table's future (the ULA reads that much later,
+    // --- zx-spectrum-ula.c): the last write that misses the first byte ends `delay` later
+    const delay = x.sp128GetUlaFetchDelay();
     const width = s.machine.screenWidthInPixels;
     const pixel = () => s.machine.getPixelBuffer()[48 * width + 48] >>> 0;
     const seen = new Set<number>();
     for (let prefix = 0; prefix < 4; prefix++) {
       loadSled(s, prefix);
-      for (let target = p - 6; target <= p + 1; target += 1) {
+      for (let target = p - 6; target <= p + 1 + delay; target += 1) {
         s.poke(0x4000, 0x00).poke(0x5800, 0x38);
         startSled(s);
         const at = sledTo(s, prefix, target);
@@ -225,10 +235,10 @@ describe.each(MODELS)("%s", (model) => {
         s.poke(0x4000, 0xff);
         s.finishFrame();
         const shown = pixel();
-        expect(shown, `write at frame tact ${at}`).toBe(at < p - 2 ? INK_BLACK : PAPER_WHITE);
+        expect(shown, `write at frame tact ${at}`).toBe(at < p - 2 + delay ? INK_BLACK : PAPER_WHITE);
       }
     }
-    expect([...seen].sort((a, b) => a - b).join(",")).toContain(`${p - 3},${p - 2}`);
+    expect([...seen].sort((a, b) => a - b).join(",")).toContain(`${p - 3 + delay},${p - 2 + delay}`);
   }, 120_000);
 
   it("border: a colour change lands on the pixel the ULA draws next", async () => {
@@ -262,10 +272,15 @@ describe.each(MODELS)("%s", (model) => {
       expect(first, `change at ${at}`).toBeGreaterThanOrEqual(0);
       const row = Math.floor(first / width);
       const col = first % width;
-      expect(drawTact(t, row, col), `change at ${at}: first red pixel (${row}, ${col})`).toBeGreaterThan(at);
+      // --- Without a fetch delay the change shows from the next tact; with one, the ULA takes the
+      // --- colour once per 4 T-states and an OUT ending up to `delay - 1` T-states after a chunk's
+      // --- start still lands on it (WoS 128K FAQ: an OUT ending at 14,365-14,368 shows at 14,364)
+      const delay = x.sp128GetUlaFetchDelay();
+      const from = delay === 0 ? at + 1 : (at - (delay - 1)) & ~3;
+      expect(drawTact(t, row, col), `change at ${at}: first red pixel (${row}, ${col})`).toBeGreaterThanOrEqual(from);
       if (first > 0) {
         const before = first - 2;
-        expect(drawTact(t, Math.floor(before / width), before % width)).toBeLessThanOrEqual(at);
+        expect(drawTact(t, Math.floor(before / width), before % width)).toBeLessThan(from);
       }
     }
   }, 120_000);

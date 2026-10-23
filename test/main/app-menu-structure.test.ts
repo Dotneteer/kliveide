@@ -155,7 +155,7 @@ describe("the application menu", () => {
     ]);
   });
 
-  it("gives a ZX Spectrum 48K a Tape submenu and RZX in Record", () => {
+  it("gives a ZX Spectrum 48K a Tape submenu, its ULA options and RZX in Record", () => {
     const machine = menu(buildMenu("sp48"), "Machine");
     expect(labels(machine)).toEqual([
       "Machine Type",
@@ -167,9 +167,12 @@ describe("the application menu", () => {
       "Sound",
       "Tape",
       "Input",
+      "ZX Spectrum 48K",
       "Record"
     ]);
     expect(labels(submenu(machine, "Tape"))).toEqual(["Rewind", "Insert Tape...", "Eject", "Fast load"]);
+    // --- The ULA's snow and late timing (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phases 4, 5)
+    expect(labels(submenu(machine, "ZX Spectrum 48K"))).toEqual(["Snow Effect", "Late ULA Timing"]);
     expect(labels(submenu(machine, "Record"))).toEqual([
       "Start Video Recording",
       "Pause Video Recording",
