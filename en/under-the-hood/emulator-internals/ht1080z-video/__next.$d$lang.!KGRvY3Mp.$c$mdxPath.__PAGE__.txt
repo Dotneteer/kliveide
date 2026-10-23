@@ -1,0 +1,267 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-882a1bb790cd477f.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T2a1e,---
+description: "How the HT-1080Z draws its 64 × 16 character screen: one CPU T-state per character cell, a frame of 112 × 312 slots, the character ROM and the block graphics, the black dashes a video-memory access leaves, VIDEO CUT and PAGE, and how Klive's core draws the same picture against the CPU's clock."
+---
+
+import { Callout } from 'nextra/components'
+
+# HT-1080Z: How the Screen Is Drawn
+
+The HT-1080Z's picture comes from a chain of counters that runs on its own, independently of the
+program. Unlike the ZX81, the CPU does not draw the screen. Unlike the ZX Spectrum, the video
+circuit never stops the CPU. The two simply share one clock and one block of memory, and that
+sharing has visible consequences: a program that writes the screen while it is being drawn leaves
+short black dashes in the picture, and a character changed in the middle of a frame can show half
+old and half new.
+
+This article explains the video circuit from the clock up, then shows how Klive reproduces it. You
+need to know the Z80's memory cycle (T-states, MREQ). The facts come from the circuit diagrams of
+the HT-1080Z/64's video board, the technical manual of the EACA Genie (the HT-1080Z's close
+relative), and measurements on Klive's emulator; the few points that are inferred rather than
+read off a diagram are marked as such.
+
+## One T-state is one character
+
+Everything follows from one fact: **the CPU's clock and the video's character clock are the same
+frequency**. A crystal of about 10.66 MHz drives the dot clock, the rate at which dots leave the
+video circuit. Divided by six, it gives both the character clock (one character is 6 dots wide)
+and the Z80's clock:
+
+| | Series I and II | HT-1080Z/64 |
+|---|---|---|
+| Crystal (dot clock) | 10.644 MHz | 10.6645 MHz |
+| CPU clock = character clock | 1,774,000 Hz | 1,777,417 Hz |
+| One T-state = one character | 563.7 ns | 562.6 ns |
+
+So while the CPU executes a 4-T-state `NOP`, the beam draws four characters. There are **no wait
+states and no interrupts**: the Z80's INT line is not connected, and the CPU cannot read where the
+beam is. A program cannot synchronise itself to the picture. The raster runs freely under it.
+
+## The counter chain
+
+The video circuit is a chain of counters fed by the dot clock. Each stage divides the one before it:
+
+| Stage | Divides by | Gives |
+|---|---|---|
+| Dots within a character | 6 | the character clock (and the CPU clock) |
+| Characters within a line | 112 | the column, 0-111; 0-63 are shown |
+| Scan lines within a character row | 12 | the row of the glyph to show |
+| Character rows within a frame | 26 | the text row, 0-25; 0-15 are shown |
+
+A line is therefore **112 T-states**: 64 characters of picture and 48 of horizontal blanking, during
+which the television's beam flies back to the left edge. A frame is 26 rows of 12 scan lines,
+**312 lines**: 192 of picture (16 rows of 12) and 120 of vertical blanking.
+
+```text
+frame = 112 × 312 = 34,944 T-states
+        50.77 frames a second on Series I and II, 50.86 on the /64
+```
+
+The picture is not interlaced: every frame draws the same 312 lines. The sync pulses that tell the
+television where a line and a frame begin come from the counters too, through small analog delays
+that the trimmers on the board adjust. That is how a technician centred the picture, and why the
+size of the border is not a fact of the machine. Klive draws a fixed black border of 72 dots on
+each side and 48 lines above and below: the picture is 528 × 288 dots, the same share of the
+television's line as the Spectrum's border.
+
+## One line, character by character
+
+Within a visible line the counter's column runs from 0 to 111, one step per T-state. For the first
+64 steps it addresses the video memory (3C00h-3FFFh, 64 bytes a row):
+
+| T-state in the line | What happens |
+|---|---|
+| *n* (0-63) | The video memory is **read** at column *n* of the current row |
+| *n* + 1 | The byte is **latched**, and its 6 dots are looked up |
+| *n* + 2 | The 6 dots **leave** the shift register, one per dot clock |
+| 64-111 | Blanking: the counter keeps counting, but nothing is shown |
+
+So column *n* is drawn two character times after it is read: the visible window is T-states 2 to
+65 of each of lines 0 to 191. The row is line ÷ 12, and line mod 12 picks which of the glyph's 12
+scan lines to draw.
+
+## What the byte becomes
+
+Each byte of video memory is a character or a block of graphics, chosen by bit 7.
+
+**Characters** (bit 7 clear). Bits 0-6 and the scan line address the **character ROM**: 128 glyphs
+of 16 bytes, 12 of which are used. Bits 7 to 3 of the ROM byte are the 5 dots, bit 7 the leftmost,
+and the 6th dot is always dark: that is the gap between characters. The character ROMs differ by
+model:
+
+- **Series I** has the TRS-80's character set.
+- **Series II** puts accented capitals and small letters in place of a few symbols: É at 40h
+  (`@`), Ö Á Ü at 5Ch-5Eh, and é ö á ü among the small letters.
+- **The /64** has 32 more glyphs at 00h-1Fh: all the Hungarian accented letters, capitals and small,
+  and Greek and mathematical signs (λ π √ μ α γ ∫ β ω Ω Σ Ψ ∞ ■). Its capitals' accents sit in the
+  glyph's top three scan lines, so the /64 uses all 12.
+
+On Series I and II, BASIC never stores codes 40h-7Fh in video memory: its display routine moves
+every character 40h-7Fh down into 00h-1Fh before it writes it (`READY` is stored as 12h 05h 01h 04h
+19h). Those codes are drawn with the glyphs of 40h-5Fh. The /64's BASIC does not fold them, and its
+00h-1Fh show their own glyphs.
+
+**Block graphics** (bit 7 set). The cell is a 2 × 3 grid of blocks, each 3 dots wide and 4 scan
+lines tall. Bits 0 and 1 light the top pair, bits 2 and 3 the middle pair, bits 4 and 5 the bottom
+pair; the even bit is the left block. Bit 6 is ignored. BASIC's `SET`, `RESET` and `POINT` work on
+this 128 × 48 grid.
+
+## When the CPU touches video memory
+
+The video memory has one set of address lines. While the video circuit reads it, the CPU cannot;
+the designers did not make the CPU wait, they gave it priority. When the CPU addresses
+3C00h-3FFFh, a signal called VID switches the memory's address lines over to the CPU **and clears
+the video latch**. Every character whose latch moment falls while VID is active is latched as zero,
+and a zero shows as blank: **a short black dash** on the scan line being drawn.
+
+How long is VID active? It follows the Z80's MREQ signal, which goes active in the middle of a memory
+cycle's first T-state and stays active until the middle of its third. That covers the latch moments
+at the start of the second and third T-states: two characters, about 12 dots. (This is inferred from
+the Z80's timing and the circuit; it has not been measured on a real machine.) In the column
+numbering above, an access whose first T-state is at column *x* blanks the reads at *x* and *x* + 1,
+so the dash is drawn at slots *x* + 2 and *x* + 3.
+
+The dashes are what a real HT-1080Z shows while a program draws: a `LDIR` into video memory leaves
+a trail of them, and a program that keeps reading the screen makes it flicker. Klive draws them by
+default. **Machine › Show Video RAM Access Dash** turns them off.
+
+The second effect is **tearing**. The display reads column *n* at T-state *n* of the line, and a CPU
+write lands at its own T-state. If the write comes after the beam has read that cell on this scan
+line, the change shows from the next scan line on. Changing a character while the beam draws its
+row shows the top of the old character and the bottom of the new one, for one frame.
+
+## VIDEO CUT and PAGE
+
+The **VIDEO CUT** switch halves the column clock. Each character then lasts two character times and
+is drawn 12 dots wide, so 32 characters fill the same window. The line and frame do not change
+(the television still needs them), and neither does the CPU's timing. The **PAGE** key chooses which
+32 columns of each 64-byte row are shown: the left half or the right.
+
+With VIDEO CUT on, the slot the beam is at shows the left or right half of its column, the column
+being PAGE × 32 + (slot − 2) ÷ 2, read two slots earlier.
+
+## How Klive draws it
+
+Klive's HT-1080Z core draws the picture the way the hardware does, against the CPU's clock, but it
+does not draw it one T-state at a time. The core keeps one number: **how far the picture has been
+drawn**, as a slot of the frame. Slot *s* is frame T-state *s*. It draws up to the CPU's current
+T-state only when it must:
+
+- **before the CPU touches video memory**. The memory hook sees every read and write to 3C00h-3FFFh,
+  instruction fetches included. It draws up to the access's first T-state, places the dash over the
+  next two reads, and lets the access happen. Reads after it see the new byte, which is the tearing;
+- **before VIDEO CUT, PAGE or the dash setting changes**, so the rest of the frame is drawn the new
+  way;
+- **at the end of the frame**, for everything the program left alone.
+
+A frame in which the program never touches video memory is drawn in one pass at its end, so
+emulating the beam costs almost nothing, yet a program that races the beam sees exactly what the
+hardware shows.
+
+The code is in Klive's repository:
+
+| File | What it holds |
+|---|---|
+| `src/emu/machines/ht1080z/wasm/ht1080z/ht1080z-video.c` | The catch-up renderer, the character and block decoding, the dash, VIDEO CUT and PAGE |
+| `src/emu/machines/ht1080z/wasm/ht1080z/ht1080z.c` | The frame loop (34,944 T-states) and the memory map |
+| `test/ht1080z-hw/video.test.ts` | Probes that pin the two-slot delay, the dash and the 32-column mode |
+| `test/ht1080z-hw/screen.test.ts` | The boot screen and character-set pictures of each model |
+
+The dash's position and length are two constants in `ht1080z-video.c`, because they are inferred:
+a measurement on a real machine would change only those.
+
+<Callout type="info">
+The CPU and the video share one crystal on Series I and II. The /64 divides the same crystal with two
+separate counters, so the CPU and the picture are in a fixed phase that may differ by up to five
+dots. At character resolution this makes no difference, and Klive does not model it.
+</Callout>
+
+## Summary
+
+| | |
+|---|---|
+| Clock | crystal ÷ 6: one CPU T-state is one character |
+| Line | 112 T-states: 64 shown (slots 2-65), 48 blanking |
+| Frame | 312 lines (192 shown) = 34,944 T-states, not interlaced |
+| Screen | 64 × 16 characters of 6 × 12 dots; 128 × 48 blocks |
+| Character | bits 7-3 of the character ROM, 12 rows; codes 00h-1Fh as 40h-5Fh on Series I/II |
+| CPU access to 3C00h-3FFFh | never delayed; blanks two characters at the beam |
+| VIDEO CUT, PAGE | 32 columns, 12 dots each; the left or right half of each row |
+
+To try the machine itself, see [Using the HT-1080Z](/en/guides/emulator/ht1080z).a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"One T-state is one character","id":"one-t-state-is-one-character","depth":2},{"value":"The counter chain","id":"the-counter-chain","depth":2},{"value":"One line, character by character","id":"one-line-character-by-character","depth":2},{"value":"What the byte becomes","id":"what-the-byte-becomes","depth":2},{"value":"When the CPU touches video memory","id":"when-the-cpu-touches-video-memory","depth":2},{"value":"VIDEO CUT and PAGE","id":"video-cut-and-page","depth":2},{"value":"How Klive draws it","id":"how-klive-draws-it","depth":2},{"value":"Summary","id":"summary","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"How the HT-1080Z draws its 64 × 16 character screen: one CPU T-state per character cell, a frame of 112 × 312 slots, the character ROM and the block graphics, the black dashes a video-memory access leaves, VIDEO CUT and PAGE, and how Klive's core draws the same picture against the CPU's clock.","title":"HT-1080Z: How the Screen Is Drawn","filePath":"content/en/under-the-hood/emulator-internals/ht1080z-video.mdx","timestamp":1792315833000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"under-the-hood/emulator-internals/ht1080z-video","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"HT-1080Z: How the Screen Is Drawn - Klive IDE"}],["$","meta","1",{"name":"description","content":"How the HT-1080Z draws its 64 × 16 character screen: one CPU T-state per character cell, a frame of 112 × 312 slots, the character ROM and the block graphics, the black dashes a video-memory access leaves, VIDEO CUT and PAGE, and how Klive's core draws the same picture against the CPU's clock."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/under-the-hood/emulator-internals/ht1080z-video/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"NGI3gFRiuPbFxmr7aqzSu"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+46:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["HT-1080Z: How the Screen Is Drawn","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The HT-1080Z’s picture comes from a chain of counters that runs on its own, independently of the\nprogram. Unlike the ZX81, the CPU does not draw the screen. Unlike the ZX Spectrum, the video\ncircuit never stops the CPU. The two simply share one clock and one block of memory, and that\nsharing has visible consequences: a program that writes the screen while it is being drawn leaves\nshort black dashes in the picture, and a character changed in the middle of a frame can show half\nold and half new."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This article explains the video circuit from the clock up, then shows how Klive reproduces it. You\nneed to know the Z80’s memory cycle (T-states, MREQ). The facts come from the circuit diagrams of\nthe HT-1080Z/64’s video board, the technical manual of the EACA Genie (the HT-1080Z’s close\nrelative), and measurements on Klive’s emulator; the few points that are inferred rather than\nread off a diagram are marked as such."}],"\n",["$","h2",null,{"id":"one-t-state-is-one-character","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["One T-state is one character",["$","$L20",null,{"id":"one-t-state-is-one-character"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Everything follows from one fact: ",["$","strong",null,{"children":"the CPU’s clock and the video’s character clock are the same\nfrequency"}],". A crystal of about 10.66 MHz drives the dot clock, the rate at which dots leave the\nvideo circuit. Divided by six, it gives both the character clock (one character is 6 dots wide)\nand the Z80’s clock:"]}],"\n",["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Series I and II","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"HT-1080Z/64","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"Crystal (dot clock)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"10.644 MHz","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"10.6645 MHz","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"CPU clock = character clock","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"1,774,000 Hz","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"1,777,417 Hz","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$L21"]}]]}],"\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45"]]}]
+15:["$","$L46",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@47"}]}]
+1f:true
+48:"ToggleWordWrapButton"
+49:I[9023,["545","$b","500","$c","436","$d","25","$e"],"$48"]
+4a:I[7976,["545","$b","500","$c","436","$d","25","$e"],"CopyToClipboard"]
+4b:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+9:300
+21:["$","tr",null,{"children":[["$","td",null,{"children":"One T-state = one character","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"563.7 ns","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"562.6 ns","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+22:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["So while the CPU executes a 4-T-state ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"NOP"}],", the beam draws four characters. There are ",["$","strong",null,{"children":"no wait\nstates and no interrupts"}],": the Z80’s INT line is not connected, and the CPU cannot read where the\nbeam is. A program cannot synchronise itself to the picture. The raster runs freely under it."]}]
+23:["$","h2",null,{"id":"the-counter-chain","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The counter chain",["$","$L20",null,{"id":"the-counter-chain"}]]}]
+24:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The video circuit is a chain of counters fed by the dot clock. Each stage divides the one before it:"}]
+25:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Stage","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Divides by","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Gives","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"Dots within a character","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"6","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"the character clock (and the CPU clock)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Characters within a line","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"112","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"the column, 0-111; 0-63 are shown","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Scan lines within a character row","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"12","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"the row of the glyph to show","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Character rows within a frame","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"26","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"the text row, 0-25; 0-15 are shown","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}]
+26:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A line is therefore ",["$","strong",null,{"children":"112 T-states"}],": 64 characters of picture and 48 of horizontal blanking, during\nwhich the television’s beam flies back to the left edge. A frame is 26 rows of 12 scan lines,\n",["$","strong",null,{"children":"312 lines"}],": 192 of picture (16 rows of 12) and 120 of vertical blanking."]}]
+27:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L49",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L4a",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"frame = 112 × 312 = 34,944 T-states"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"        50.77 frames a second on Series I and II, 50.86 on the /64"}]}]]}]]}]]}]
+28:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The picture is not interlaced: every frame draws the same 312 lines. The sync pulses that tell the\ntelevision where a line and a frame begin come from the counters too, through small analog delays\nthat the trimmers on the board adjust. That is how a technician centred the picture, and why the\nsize of the border is not a fact of the machine. Klive draws a fixed black border of 72 dots on\neach side and 48 lines above and below: the picture is 528 × 288 dots, the same share of the\ntelevision’s line as the Spectrum’s border."}]
+29:["$","h2",null,{"id":"one-line-character-by-character","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["One line, character by character",["$","$L20",null,{"id":"one-line-character-by-character"}]]}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Within a visible line the counter’s column runs from 0 to 111, one step per T-state. For the first\n64 steps it addresses the video memory (3C00h-3FFFh, 64 bytes a row):"}]
+2b:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"T-state in the line","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"What happens","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":[["$","em",null,{"children":"n"}]," (0-63)"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["The video memory is ",["$","strong",null,{"children":"read"}]," at column ",["$","em",null,{"children":"n"}]," of the current row"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":[["$","em",null,{"children":"n"}]," + 1"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["The byte is ",["$","strong",null,{"children":"latched"}],", and its 6 dots are looked up"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":[["$","em",null,{"children":"n"}]," + 2"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["The 6 dots ",["$","strong",null,{"children":"leave"}]," the shift register, one per dot clock"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"64-111","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Blanking: the counter keeps counting, but nothing is shown","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}]
+2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["So column ",["$","em",null,{"children":"n"}]," is drawn two character times after it is read: the visible window is T-states 2 to\n65 of each of lines 0 to 191. The row is line ÷ 12, and line mod 12 picks which of the glyph’s 12\nscan lines to draw."]}]
+2d:["$","h2",null,{"id":"what-the-byte-becomes","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["What the byte becomes",["$","$L20",null,{"id":"what-the-byte-becomes"}]]}]
+2e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Each byte of video memory is a character or a block of graphics, chosen by bit 7."}]
+2f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Characters"}]," (bit 7 clear). Bits 0-6 and the scan line address the ",["$","strong",null,{"children":"character ROM"}],": 128 glyphs\nof 16 bytes, 12 of which are used. Bits 7 to 3 of the ROM byte are the 5 dots, bit 7 the leftmost,\nand the 6th dot is always dark: that is the gap between characters. The character ROMs differ by\nmodel:"]}]
+30:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Series I"}]," has the TRS-80’s character set."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Series II"}]," puts accented capitals and small letters in place of a few symbols: É at 40h\n(",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"@"}],"), Ö Á Ü at 5Ch-5Eh, and é ö á ü among the small letters."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"The /64"}]," has 32 more glyphs at 00h-1Fh: all the Hungarian accented letters, capitals and small,\nand Greek and mathematical signs (λ π √ μ α γ ∫ β ω Ω Σ Ψ ∞ ■). Its capitals’ accents sit in the\nglyph’s top three scan lines, so the /64 uses all 12."]}],"\n"]}]
+31:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["On Series I and II, BASIC never stores codes 40h-7Fh in video memory: its display routine moves\nevery character 40h-7Fh down into 00h-1Fh before it writes it (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"READY"}]," is stored as 12h 05h 01h 04h\n19h). Those codes are drawn with the glyphs of 40h-5Fh. The /64’s BASIC does not fold them, and its\n00h-1Fh show their own glyphs."]}]
+32:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Block graphics"}]," (bit 7 set). The cell is a 2 × 3 grid of blocks, each 3 dots wide and 4 scan\nlines tall. Bits 0 and 1 light the top pair, bits 2 and 3 the middle pair, bits 4 and 5 the bottom\npair; the even bit is the left block. Bit 6 is ignored. BASIC’s ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"SET"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RESET"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"POINT"}]," work on\nthis 128 × 48 grid."]}]
+33:["$","h2",null,{"id":"when-the-cpu-touches-video-memory","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["When the CPU touches video memory",["$","$L20",null,{"id":"when-the-cpu-touches-video-memory"}]]}]
+34:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The video memory has one set of address lines. While the video circuit reads it, the CPU cannot;\nthe designers did not make the CPU wait, they gave it priority. When the CPU addresses\n3C00h-3FFFh, a signal called VID switches the memory’s address lines over to the CPU ",["$","strong",null,{"children":"and clears\nthe video latch"}],". Every character whose latch moment falls while VID is active is latched as zero,\nand a zero shows as blank: ",["$","strong",null,{"children":"a short black dash"}]," on the scan line being drawn."]}]
+35:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["How long is VID active? It follows the Z80’s MREQ signal, which goes active in the middle of a memory\ncycle’s first T-state and stays active until the middle of its third. That covers the latch moments\nat the start of the second and third T-states: two characters, about 12 dots. (This is inferred from\nthe Z80’s timing and the circuit; it has not been measured on a real machine.) In the column\nnumbering above, an access whose first T-state is at column ",["$","em",null,{"children":"x"}]," blanks the reads at ",["$","em",null,{"children":"x"}]," and ",["$","em",null,{"children":"x"}]," + 1,\nso the dash is drawn at slots ",["$","em",null,{"children":"x"}]," + 2 and ",["$","em",null,{"children":"x"}]," + 3."]}]
+36:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The dashes are what a real HT-1080Z shows while a program draws: a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"LDIR"}]," into video memory leaves\na trail of them, and a program that keeps reading the screen makes it flicker. Klive draws them by\ndefault. ",["$","strong",null,{"children":"Machine › Show Video RAM Access Dash"}]," turns them off."]}]
+37:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The second effect is ",["$","strong",null,{"children":"tearing"}],". The display reads column ",["$","em",null,{"children":"n"}]," at T-state ",["$","em",null,{"children":"n"}]," of the line, and a CPU\nwrite lands at its own T-state. If the write comes after the beam has read that cell on this scan\nline, the change shows from the next scan line on. Changing a character while the beam draws its\nrow shows the top of the old character and the bottom of the new one, for one frame."]}]
+38:["$","h2",null,{"id":"video-cut-and-page","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["VIDEO CUT and PAGE",["$","$L20",null,{"id":"video-cut-and-page"}]]}]
+39:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","strong",null,{"children":"VIDEO CUT"}]," switch halves the column clock. Each character then lasts two character times and\nis drawn 12 dots wide, so 32 characters fill the same window. The line and frame do not change\n(the television still needs them), and neither does the CPU’s timing. The ",["$","strong",null,{"children":"PAGE"}]," key chooses which\n32 columns of each 64-byte row are shown: the left half or the right."]}]
+3a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"With VIDEO CUT on, the slot the beam is at shows the left or right half of its column, the column\nbeing PAGE × 32 + (slot − 2) ÷ 2, read two slots earlier."}]
+3b:["$","h2",null,{"id":"how-klive-draws-it","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["How Klive draws it",["$","$L20",null,{"id":"how-klive-draws-it"}]]}]
+3c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Klive’s HT-1080Z core draws the picture the way the hardware does, against the CPU’s clock, but it\ndoes not draw it one T-state at a time. The core keeps one number: ",["$","strong",null,{"children":"how far the picture has been\ndrawn"}],", as a slot of the frame. Slot ",["$","em",null,{"children":"s"}]," is frame T-state ",["$","em",null,{"children":"s"}],". It draws up to the CPU’s current\nT-state only when it must:"]}]
+3d:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"before the CPU touches video memory"}],". The memory hook sees every read and write to 3C00h-3FFFh,\ninstruction fetches included. It draws up to the access’s first T-state, places the dash over the\nnext two reads, and lets the access happen. Reads after it see the new byte, which is the tearing;"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"before VIDEO CUT, PAGE or the dash setting changes"}],", so the rest of the frame is drawn the new\nway;"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"at the end of the frame"}],", for everything the program left alone."]}],"\n"]}]
+3e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A frame in which the program never touches video memory is drawn in one pass at its end, so\nemulating the beam costs almost nothing, yet a program that races the beam sees exactly what the\nhardware shows."}]
+3f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The code is in Klive’s repository:"}]
+40:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"File","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"What it holds","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"src/emu/machines/ht1080z/wasm/ht1080z/ht1080z-video.c"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The catch-up renderer, the character and block decoding, the dash, VIDEO CUT and PAGE","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"src/emu/machines/ht1080z/wasm/ht1080z/ht1080z.c"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The frame loop (34,944 T-states) and the memory map","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"test/ht1080z-hw/video.test.ts"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Probes that pin the two-slot delay, the dash and the 32-column mode","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"test/ht1080z-hw/screen.test.ts"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The boot screen and character-set pictures of each model","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}]
+41:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The dash’s position and length are two constants in ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ht1080z-video.c"}],", because they are inferred:\na measurement on a real machine would change only those."]}]
+42:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The CPU and the video share one crystal on Series I and II. The /64 divides the same crystal with two\nseparate counters, so the CPU and the picture are in a fixed phase that may differ by up to five\ndots. At character resolution this makes no difference, and Klive does not model it."}]}]]}]
+43:["$","h2",null,{"id":"summary","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Summary",["$","$L20",null,{"id":"summary"}]]}]
+44:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"Clock","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"crystal ÷ 6: one CPU T-state is one character","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Line","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"112 T-states: 64 shown (slots 2-65), 48 blanking","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Frame","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"312 lines (192 shown) = 34,944 T-states, not interlaced","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Screen","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"64 × 16 characters of 6 × 12 dots; 128 × 48 blocks","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Character","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"bits 7-3 of the character ROM, 12 rows; codes 00h-1Fh as 40h-5Fh on Series I/II","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"CPU access to 3C00h-3FFFh","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"never delayed; blanks two characters at the beam","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"VIDEO CUT, PAGE","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"32 columns, 12 dots each; the left or right half of each row","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}]
+45:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["To try the machine itself, see ",["$","$L4b",null,{"href":"/en/guides/emulator/ht1080z","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Using the HT-1080Z"}],"."]}]
+47:null
+9:C
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"
