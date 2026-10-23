@@ -917,6 +917,8 @@ static uint32_t sp128CpuReadPort(uint32_t address);
 #define Z80_DELAY_MEMORY_READ(address) sp128DelayMemoryAccess((uint32_t)(address))
 #define Z80_DELAY_MEMORY_WRITE(address) sp128DelayMemoryAccess((uint32_t)(address))
 #define Z80_DELAY_ADDRESS_BUS_ACCESS(address) sp128CpuDelayAddressBusAccess((uint32_t)(address))
+/* The ULA cannot stop the CPU in a refresh (z80.c) */
+#define Z80_DELAY_REFRESH_BUS_ACCESS(address) ((void)(address))
 #define Z80_DELAY_PORT_READ(address) sp128DelayPortAccess((uint32_t)(address))
 #define Z80_DELAY_PORT_WRITE(address) sp128DelayPortAccess((uint32_t)(address))
 /* RZX (`zx-spectrum-rzx.c`): the fetch counter counts every refresh but the INT acknowledge's */
@@ -996,6 +998,7 @@ static uint32_t sp128CpuReadPort(uint32_t address) {
 #undef Z80_DELAY_MEMORY_READ
 #undef Z80_DELAY_MEMORY_WRITE
 #undef Z80_DELAY_ADDRESS_BUS_ACCESS
+#undef Z80_DELAY_REFRESH_BUS_ACCESS
 #undef Z80_DELAY_PORT_READ
 #undef Z80_DELAY_PORT_WRITE
 

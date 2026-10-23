@@ -389,13 +389,15 @@ expectation comes from.
 
 ### Open
 
-- **Timing Tests 128K, test 15 uncontended** (IM 0/1/2, LD A,I ...): the real machine counts twice
-  the loops, as if it skipped an interrupt. Not explained.
-- **The +2A/+3 contention table** is 3 T-states earlier than the WoS FAQ's +2A/+3 table (7 at 14,364
-  against 14,367). No real-machine result in the kit decides it (ULA 128E +3 Test only draws).
-- **By-eye checks against the wiki's videos**: the ULA tests, IR Contention (48K and 128), the snow
-  programs (Snow R and Snow128N show no snow; Snow Contention asks for input), Time to First INT.
-  Their pictures are in `.spectrum-kit/` after `npm run test:slow`.
+Updated 2026-10-23 by `.plans/SPECTRUM_ACCURACY_DOCS_PLAN.md` ("Follow-up: the Not yet proven
+items"), which closed test 15, the +2A/+3's I/O and internal-cycle contention, the refresh
+contention and the ULA and IR Contention pictures.
+
+- **The +2A/+3 contention table's start**: WoS puts the 7 at 14,367, the Sinclair Wiki at 14,363;
+  Klive keeps 14,364. ULA 128E +3 Test draws the same picture with all three.
+- **Snow**: the real 48K's Snow48 (var b5) repeats every second cell; Klive does not.
+- **By-eye checks** still open: Snow R, Snow128N, Snow Contention (no real-machine picture), Time to
+  First INT (real 48K photos on its wiki page).
 - **The ULA's read times** are derived from the floating bus and the FAQ, not from Chris Smith's
   book; a check against it remains worthwhile.
 - The 128K's shadow-screen switch (`$7FFD` bit 3) is still taken at the end of the OUT, untested.

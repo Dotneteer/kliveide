@@ -37,14 +37,22 @@ describe("ZX Spectrum WASM contention", () => {
     expectAddressDelay(machine, "sp128", 0xc000, 0);
   });
 
-  it("+3E delays the top slot when RAM bank 4-7 is selected", async () => {
+  /*
+   * The +2A/+3 gate array contends only MREQ cycles (Sinclair Wiki, "Contended memory"): a memory read
+   * of the top slot with RAM bank 4-7 paged in waits; the internal cycles of `INC BC` with IR in
+   * contended memory do not (the ULA's `pc:4,ir:1 x2` is the gate array's `pc:6`).
+   */
+  it("+3E delays memory reads of the top slot when RAM bank 4-7 is selected, not internal cycles", async () => {
     const machine = await createTestSpp3eWasmMachine([testRom([]), testRom([]), testRom([]), testRom([])]);
+    const ldANn = { code: [0x3a, 0x00, 0xc0], startAddress: 0x8000, registers: { ir: 0 } };
 
     machine.writeTestPort(0x7ffd, 0x04);
-    expectAddressDelay(machine, "spp3e", 0xc000, DELAY);
+    expectInstructionContention(machine, { ...ldANn, expectedTacts: 13 + DELAY, expectedDelay: DELAY });
 
     machine.writeTestPort(0x7ffd, 0x03);
-    expectAddressDelay(machine, "spp3e", 0xc000, 0);
+    expectInstructionContention(machine, { ...ldANn, expectedTacts: 13, expectedDelay: 0 });
+
+    expectInstructionContention(machine, { code: [0x03], startAddress: 0x8000, registers: { ir: 0x4000 }, expectedTacts: 6, expectedDelay: 0 });
   });
 
   it("48K applies I/O contention only for contended odd ports", async () => {
@@ -92,24 +100,17 @@ describe("ZX Spectrum WASM contention", () => {
     });
   });
 
-  it("+3E applies I/O contention for 0xc000 ports only when bank 4-7 is selected", async () => {
+  /*
+   * No I/O cycle is contended on the +2A/+3, port $FE included (WoS 128K reference, "+2A/+3"; Sinclair
+   * Wiki, "Contended I/O": the gate array contends only while MREQ is active, which it is not for I/O).
+   */
+  it("+3E applies no I/O contention", async () => {
     const machine = await createTestSpp3eWasmMachine([testRom([]), testRom([]), testRom([]), testRom([])]);
 
     machine.writeTestPort(0x7ffd, 0x05);
-    expectOutInstructionContention(machine, {
-      accumulator: 0xc0,
-      operand: 0xff,
-      expectedTacts: 4 + 3 + 4 * DELAY + 4,
-      expectedDelay: 4 * DELAY
-    });
-
-    machine.writeTestPort(0x7ffd, 0x02);
-    expectOutInstructionContention(machine, {
-      accumulator: 0xc0,
-      operand: 0xff,
-      expectedTacts: 4 + 3 + 4,
-      expectedDelay: 0
-    });
+    expectOutInstructionContention(machine, { accumulator: 0xc0, operand: 0xff, expectedTacts: 4 + 3 + 4, expectedDelay: 0 });
+    expectOutInstructionContention(machine, { accumulator: 0x40, operand: 0xfe, expectedTacts: 4 + 3 + 4, expectedDelay: 0 });
+    expectOutInstructionContention(machine, { accumulator: 0x00, operand: 0xfe, expectedTacts: 4 + 3 + 4, expectedDelay: 0 });
   });
 
   it("48K HALT applies contention at 0x4000 but not 0x8000", async () => {
@@ -141,14 +142,29 @@ describe("ZX Spectrum WASM contention", () => {
     expect(nonContended.getTestCpuRegisters().halted).toBe(true);
   });
 
-  it("48K M1 refresh applies contention via IR address", async () => {
+  /*
+   * An opcode fetch is `pc:4`: the ULA halts the CPU only on an M-cycle's first T-state, so the
+   * refresh with IR in contended memory is not delayed (z80.c, Z80_DELAY_REFRESH_BUS_ACCESS). It used
+   * to be, which put IR Contention's lower border bars out of place on the 48K and the 128K, and drew
+   * ULA 128 Timing Test wrong; both now match the real machines' pictures.
+   */
+  it("48K and 128K M1 refresh is not contended via the IR address", async () => {
     const refreshOnly = await createTestSp48WasmMachine(testRom([]));
     expectInstructionContention(refreshOnly, {
       code: [0x00],
       startAddress: 0x8000,
       registers: { ir: 0x4000 },
-      expectedTacts: 4 + DELAY,
-      expectedDelay: DELAY
+      expectedTacts: 4,
+      expectedDelay: 0
+    });
+
+    const refreshOnly128 = await createTestSp128WasmMachine(testRom([]), testRom([]));
+    expectInstructionContention(refreshOnly128, {
+      code: [0x00],
+      startAddress: 0x8000,
+      registers: { ir: 0x4000 },
+      expectedTacts: 4,
+      expectedDelay: 0
     });
 
     const noRefresh = await createTestSp48WasmMachine(testRom([]));
@@ -160,13 +176,13 @@ describe("ZX Spectrum WASM contention", () => {
       expectedDelay: 0
     });
 
-    const fetchAndRefresh = await createTestSp48WasmMachine(testRom([]));
-    expectInstructionContention(fetchAndRefresh, {
+    const fetchOnly = await createTestSp48WasmMachine(testRom([]));
+    expectInstructionContention(fetchOnly, {
       code: [0x00],
       startAddress: 0x4000,
       registers: { ir: 0x4000 },
-      expectedTacts: 4 + 2 * DELAY,
-      expectedDelay: 2 * DELAY
+      expectedTacts: 4 + DELAY,
+      expectedDelay: DELAY
     });
   });
 

@@ -223,6 +223,48 @@ All recommendations accepted:
   where it shows and `nex` drops off. `doc:i18n:check` does not fail on English-only keys (landing
   now 110/117 per language), so the seven new keys go out in the next translation round. G10.1, W10
   and the comparison table updated.
+- **"What the tests found" (§3 item 5) removed** at the author's request: the page states the
+  current results, not the history of the fixes (that stays in `SPECTRUM_ULA_ACCURACY_PLAN.md`).
 - **Changeset**: a `feature` with a release-notes line, at the author's choice (instead of §5's
   `internal`).
+
+## Follow-up: the "Not yet proven" items (2026-10-23)
+
+The author asked for the page's "Not yet proven" list to be worked on. What each item turned out to be:
+
+- **Timing Tests 128K, test 15 uncontended: a harness fault, not the core.** The test counts loops
+  until an interrupt lands while IM 2 is set; one landing in IM 0/1 runs the ROM's interrupt routine,
+  whose length depends on the keyboard. `pageThrough` pressed SPACE every page, so the key was held
+  during the measurement (loop 1113; the real machine's 2226). Pressing only at the program's
+  prompts, for one frame (`pageThrough`'s `prompt`), the late 128K passes every test. Klive with no
+  key held reproduces the real values exactly.
+- **+2A/+3: three core defects, found with ULA 128E +3 Test against Marta Sevillano Mancilla's +3
+  photos (ZXE wiki).** The gate array contends only MREQ cycles (Sinclair Wiki "Contended memory" and
+  "Contended I/O"; WoS 128K reference: port $FE is not contended, repeated `pc+1`/`hl` entries are
+  combined): Klive contended port $FE and the address-bus-only T-states. And a border change landed
+  4 T-states late: the +3 now has a fetch delay of 5 (its first read is at 14,367, the ZXE +2A/+3
+  Floating Bus Test table), which gives the border and the screen writes the 128K's mechanism. The
+  picture now matches row for row; the contention table is rebuilt per line (1, 0, then 7..0 sixteen
+  times). Its start stays at 14,364: WoS says 14,367, the Sinclair Wiki 14,363, and the picture is the
+  same with all three - open.
+- **The picture-only tests: one more core defect.** The shared Z80 contended the M1 refresh's second
+  T-state when IR is in contended memory (a test pinned it). The ULA halts the CPU only on an
+  M-cycle's first T-state (Sinclair Wiki), and the documented timings give `pc:4`. Without it IR
+  Contention and IR Contention 128 draw the symmetrical bars the real 48K's and 128K's photos show,
+  and ULA 128 Timing Test matches row for row (it did not before). New hook
+  `Z80_DELAY_REFRESH_BUS_ACCESS` (default: the old behaviour), off on the 48K and 128K; the Timex and
+  the Next keep theirs. ULA 48 Simple already matched. `test/spectrum-kit/ula-pictures.test.ts`
+  asserts transcribed rows (ULA tests) and the bars' symmetry (IR Contention).
+- **A latent Klive BASIC runtime race the new timing exposed:** `RomIn`/`RomOut` wrote BANKM and
+  BANK678 and then the ports with interrupts on; the +3's interrupt routine (disk motor, on models
+  with a drive) re-pages from those shadows, so an interrupt in between paged ROM 2 in under running
+  code (`targets.test.ts`, SCREEN$ and print42 on the +3 models with a drive). The switch now runs
+  with interrupts off and restores them as they were (double `LD A,I` for the NMOS quirk); this also
+  closes the depth-count race for a handler that calls RomIn.
+- Two tests set PC right after `runFrames`, which can end after a prefix byte; the new +3 timing made
+  that happen. `Sp128TestSession.toInstructionBoundary()` steps past it.
+- **Still open** (on the page): snow (the real Snow48 var b5 repeats every second cell; Klive does
+  not, before or after the refresh change), the +2A/+3 contention start, the +2A/+3 floating bus,
+  Snow R / Snow128N / Snow Contention (no real-machine picture) and Time to First INT (photos not
+  compared yet). Snow48 var b51 no longer differs with snow on and off (no real video of it).
 

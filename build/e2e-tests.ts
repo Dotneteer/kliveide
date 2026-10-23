@@ -165,6 +165,7 @@ export const E2E_SLOW_TESTS: string[] = [
   "test/spectrum-kit/bobrowski.test.ts",
   "test/spectrum-kit/timing-test.test.ts",
   "test/spectrum-kit/visual.test.ts",
+  "test/spectrum-kit/ula-pictures.test.ts",
   // --- The z88dk templates on every Spectrum family model (`.plans/ZX_SPECTRUM_C_TEMPLATES_PLAN.md` T3;
   // --- one per route stays fast in `z88dk-templates-run.core.test.ts`)
   "test/z88dk/z88dk-templates-run-models.core.test.ts",

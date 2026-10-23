@@ -333,6 +333,15 @@ export class Sp128TestSession {
     return this;
   }
 
+  /**
+   * Steps until the CPU is between two instructions: a frame can end after a CB/ED/DD/FD prefix, and
+   * a test that then sets PC (or takes a snapshot) would join that prefix to the wrong opcode.
+   */
+  toInstructionBoundary(): this {
+    while (this.call("GetCpuPrefix") !== 0) this.step();
+    return this;
+  }
+
   /** Executes single instructions */
   step(count = 1): this {
     const ctx = this.machine.executionContext;

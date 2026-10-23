@@ -79,6 +79,11 @@ export function savePicture(s: KitSession, name: string): void {
  * Pages through a program that shows one result screen after another and waits for a key: runs
  * `frames` frames, keeps the text, presses SPACE, until `done` matches the text or `maxPages` pass.
  * Returns the pages' texts. `onPage` sees each page while it is on the screen (to take its picture).
+ *
+ * With `prompt`, SPACE is pressed only while the screen shows the prompt (the program is waiting),
+ * held for a single frame. A key pressed while a test runs changes how long the ROM's interrupt
+ * routine takes, and with it where a later interrupt lands: a test that counts loops between
+ * interrupts then measures the keyboard, not the machine (Timing Tests 128K, test 15).
  */
 export function pageThrough(
   s: KitSession,
@@ -86,8 +91,9 @@ export function pageThrough(
     frames = 300,
     maxPages = 120,
     done,
-    onPage
-  }: { frames?: number; maxPages?: number; done: RegExp; onPage?: (text: string) => void }
+    onPage,
+    prompt
+  }: { frames?: number; maxPages?: number; done: RegExp; onPage?: (text: string) => void; prompt?: RegExp }
 ): string[] {
   const pages: string[] = [];
   for (let page = 0; page < maxPages; page++) {
@@ -96,7 +102,8 @@ export function pageThrough(
     pages.push(text);
     onPage?.(text);
     if (done.test(text)) break;
-    press(s, "Space");
+    if (!prompt) press(s, "Space");
+    else if (prompt.test(text)) s.typeKeys([["Space"]], { hold: 1, gap: 10 });
   }
   return pages;
 }

@@ -51,6 +51,18 @@
 #endif
 
 /*
+ * The second T-state of an M1's refresh (the fetch's fourth), with IR on the address bus. A machine
+ * whose memory controller cannot stop the CPU there defines it as nothing: the ZX Spectrum's ULA halts
+ * the Z80 only on an M-cycle's first T-state (Sinclair Wiki, "ZX Spectrum ULA"), and the documented
+ * instruction timings give an opcode fetch as `pc:4` with no IR entry. Real 48K and 128K machines
+ * draw IR Contention's (Mark Woodmass) lower border bars where they are only without this delay
+ * (`.plans/SPECTRUM_ACCURACY_DOCS_PLAN.md`). By default it is an address-bus access, as before.
+ */
+#ifndef Z80_DELAY_REFRESH_BUS_ACCESS
+#define Z80_DELAY_REFRESH_BUS_ACCESS(address) Z80_DELAY_ADDRESS_BUS_ACCESS(address)
+#endif
+
+/*
  * Runs at the M1 of an unprefixed opcode fetch, before the read - where `Z80Cpu.beforeOpcodeFetch`
  * runs and where `Z80Cpu` starts a new instruction's bus-access record.
  */
@@ -3406,7 +3418,8 @@ void z80ExecuteCpuCycle(void) {
     delayMemoryRead((uint16_t)(cpu.pc + 1));
     Z80_REFRESH(IR);
     refreshMemory();
-    tactPlus1WithAddress(IR);
+    Z80_DELAY_REFRESH_BUS_ACCESS(IR);
+    tactPlusN(1);
     Z80_PROFILE_HALT_END();
     return;
   }
@@ -3422,7 +3435,8 @@ void z80ExecuteCpuCycle(void) {
   if (m1Active) {
     Z80_REFRESH(IR);
     refreshMemory();
-    tactPlus1WithAddress(IR);
+    Z80_DELAY_REFRESH_BUS_ACCESS(IR);
+    tactPlusN(1);
     Z80_AFTER_OPCODE_FETCH();
     Z80_HISTORY_COMMIT();
   } else if (cpu.prefix != PREFIX_DDCB && cpu.prefix != PREFIX_FDCB) {
@@ -3440,7 +3454,8 @@ void z80ExecuteCpuCycle(void) {
      */
     Z80_REFRESH(IR);
     refreshMemory();
-    tactPlus1WithAddress(IR);
+    Z80_DELAY_REFRESH_BUS_ACCESS(IR);
+    tactPlusN(1);
   }
   cpu.pc = (uint16_t)(cpu.pc + 1);
 

@@ -254,6 +254,7 @@
 /images/spectrum-accuracy/halt2int-128k-late.png
 /images/spectrum-accuracy/halt2int-48k-early.png
 /images/spectrum-accuracy/halt2int-48k-late.png
+/images/spectrum-accuracy/ir-contention-128.png
 /images/spectrum-accuracy/real-48k-early.webp
 /images/spectrum-accuracy/real-48k-late.webp
 /images/spectrum-accuracy/screen-time-14335.png
@@ -263,6 +264,8 @@
 /images/spectrum-accuracy/timing-tests-128k-late.png
 /images/spectrum-accuracy/timing-tests-48k-contended.png
 /images/spectrum-accuracy/timing-tests-48k.png
+/images/spectrum-accuracy/ula128-timing.png
+/images/spectrum-accuracy/ula128e-plus3.png
 /images/working-with-ide/banked-disass-view.png
 /images/working-with-ide/banked-mem-view.png
 /images/working-with-ide/basic-list.png

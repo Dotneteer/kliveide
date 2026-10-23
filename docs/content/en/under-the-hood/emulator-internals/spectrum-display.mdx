@@ -637,6 +637,10 @@ first T-state of a group waits 6 T-states, one that starts at the next waits 5, 
 well-known sequence **6, 5, 4, 3, 2, 1, 0, 0**. The first contended T-state of the frame is 14,335,
 one before the first line of the display area.
 
+The ULA can stop the clock only on the first T-state of a machine cycle. An instruction fetch waits
+before it starts, if at all, and never during the refresh that ends it, even when the I register
+points into contended memory.
+
 The consequences for programs:
 
 - **Code in the upper 32K runs at full speed**, always. Timing-critical code, such as a tape loader,
@@ -752,6 +756,12 @@ longer line:
 
 The screen memory, the attributes and the order of the bitmap are the same on every model. The 128K
 can show a second screen from another RAM bank, which the ULA reads in exactly the same way.
+
+The **+2A and +3** replace the ULA with an Amstrad gate array on the 128K's frame. It reads the
+bitmap of `$4000` at 14,367, three T-states after the 128K's ULA, and it stops the CPU only for a
+memory access: I/O, port `$FE` included, is never contended, and neither are an instruction's
+internal T-states. Its contended RAM banks are 4 to 7, its pattern is 1, 0, 7, 6, 5, 4, 3, 2, and it
+has no snow and no late timing.
 
 ### Where to read the code
 

@@ -365,6 +365,10 @@ static void SP48_CPU_NOINLINE sp48CpuDelayAddressBusAccess(uint32_t address);
 #define Z80_DELAY_MEMORY_READ(address) sp48CpuDelayMemoryRead((uint32_t)(address))
 #define Z80_DELAY_MEMORY_WRITE(address) sp48CpuDelayMemoryRead((uint32_t)(address))
 #define Z80_DELAY_ADDRESS_BUS_ACCESS(address) sp48CpuDelayAddressBusAccess((uint32_t)(address))
+/* The ULA cannot stop the CPU in a refresh (z80.c); the Timex's SCLD keeps the old behaviour */
+#ifndef SP48_SCLD
+#define Z80_DELAY_REFRESH_BUS_ACCESS(address) ((void)(address))
+#endif
 #define Z80_DELAY_PORT_READ(address) sp48CpuDelayPortAccess((uint32_t)(address))
 #define Z80_DELAY_PORT_WRITE(address) sp48CpuDelayPortAccess((uint32_t)(address))
 /* RZX (`zx-spectrum-rzx.c`): the fetch counter counts every refresh but the INT acknowledge's */
@@ -499,6 +503,7 @@ static void SP48_CPU_NOINLINE sp48CpuDelayAddressBusAccess(uint32_t address) {
 #undef Z80_DELAY_MEMORY_READ
 #undef Z80_DELAY_MEMORY_WRITE
 #undef Z80_DELAY_ADDRESS_BUS_ACCESS
+#undef Z80_DELAY_REFRESH_BUS_ACCESS
 #undef Z80_DELAY_PORT_READ
 #undef Z80_DELAY_PORT_WRITE
 #undef Z80_REFRESH
