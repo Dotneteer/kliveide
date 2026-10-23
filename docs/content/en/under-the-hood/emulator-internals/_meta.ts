@@ -6,5 +6,6 @@ export default {
   "crt-display": "How a television draws a picture",
   "zx81-display": "ZX81: how the screen is drawn",
   "zx81-tape": "ZX81: how programs go to tape",
+  "spectrum-display": "ZX Spectrum: how the screen is drawn",
   "ht1080z-video": "HT-1080Z: how the screen is drawn"
 };
