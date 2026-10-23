@@ -172,6 +172,8 @@ async function startP3Program(model: (typeof P3_TARGET_MODELS)[number], rom: 0 |
   });
   expect(session.cpu().pc).toBe(p3ModelRomSet(model).returnToEditor);
   session.runFrames(20);
+  // --- PC is set below: not while a prefix waits for its opcode
+  session.toInstructionBoundary();
 
   const { generated } = await compileBasic(source, { target: "zxplus3" });
   expect(generated.emitted.text).toContain(".model SpectrumP3");

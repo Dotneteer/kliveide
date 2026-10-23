@@ -17,6 +17,16 @@ The plans behind them: `.plans/EXECUTION_HISTORY_VIEWER_PLAN.md`, `.plans/CODE_C
 `.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md` and, for the cost of debugging and the in-core loop,
 `.plans/WASM_CORE_LEAN_AND_DEBUG_PLAN.md`. `scripts/check-wasm-cpu-contract.cjs` checks the includes.
 
+## Contention hooks
+
+A core with memory contention defines `Z80_DELAY_MEMORY_READ`/`_WRITE` (a memory cycle),
+`Z80_DELAY_PORT_READ`/`_WRITE` (an I/O cycle) and `Z80_DELAY_ADDRESS_BUS_ACCESS` (an internal T-state
+with an address on the bus, the timing tables' `ir:1`, `hl:1`, `pc+1:1` entries). The second T-state
+of an M1's refresh, with IR on the bus, goes through `Z80_DELAY_REFRESH_BUS_ACCESS`, which defaults to
+the address-bus hook; the 48K and 128K define it as nothing, because the ULA halts the CPU only on an
+M-cycle's first T-state (IR Contention's real-machine pictures, `.plans/SPECTRUM_ACCURACY_DOCS_PLAN.md`).
+The +2A/+3's gate array contends memory cycles only, so its address-bus and port hooks add no delay.
+
 ## A fast frame does no debugging work it can avoid
 
 A plain Run is `<prefix>ExecuteFrame`, one call per frame. Every debugging hook in it is either compiled

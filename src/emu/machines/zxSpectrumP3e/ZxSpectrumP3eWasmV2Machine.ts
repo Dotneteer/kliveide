@@ -678,11 +678,8 @@ export class ZxSpectrumP3eWasmV2Machine
     this.importWasmV2BusAccess(runtime);
   }
 
-  override delayAddressBusAccess(address: number): void {
-    const runtime = this.requireWasmV2Runtime();
-    runtime.exports.spp3eDelayAddressBusAccess(address & 0xffff);
-    this.syncFrameCountersFromWasmV2(runtime);
-  }
+  /** The gate array contends only MREQ cycles: an internal cycle never waits (Sinclair Wiki, "Contended memory") */
+  override delayAddressBusAccess(_address: number): void {}
 
   override doReadPort(address: number): number {
     const runtime = this.requireWasmV2Runtime();

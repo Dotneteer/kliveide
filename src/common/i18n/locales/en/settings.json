@@ -245,6 +245,22 @@
   "@settings.emulator.tvNoise.description": {
     "context": "Help text under the setting 'Show TV noise without sync' (Settings dialog, Emulator page). Wraps over several lines."
   },
+  "settings.emulator.ulaSnow.title": "Show the snow effect",
+  "@settings.emulator.ulaSnow.title": {
+    "context": "Settings dialog, Emulator page, 'Screen' group: label of an on/off switch, shown for the ZX Spectrum 48K and 128K. 'Snow' is the name ZX Spectrum users give to the speckles the real machine shows; translate it as the community in your language calls it, or keep it."
+  },
+  "settings.emulator.ulaSnow.description": "ZX Spectrum 16K, 48K and 128K: speckles on the picture while the I register points at contended memory, as on the real machine",
+  "@settings.emulator.ulaSnow.description": {
+    "context": "Help text under the setting 'Show the snow effect' (Settings dialog, Emulator page). 'I register' and 'contended memory' are ZX Spectrum terms: keep 'I' as it is. Wraps over several lines."
+  },
+  "settings.emulator.ulaLateTiming.title": "Late ULA timing",
+  "@settings.emulator.ulaLateTiming.title": {
+    "context": "Settings dialog, Emulator page, 'Screen' group: label of an on/off switch, shown for the ZX Spectrum 48K and 128K. ULA is the name of the Spectrum's video chip: keep it. 'Late timing' is the name of a hardware variant."
+  },
+  "settings.emulator.ulaLateTiming.description": "ZX Spectrum 16K, 48K and 128K: the screen, contention and the border one T-state later, as on many real machines",
+  "@settings.emulator.ulaLateTiming.description": {
+    "context": "Help text under the setting 'Late ULA timing' (Settings dialog, Emulator page). A T-state is one clock cycle of the Z80 CPU: keep the term. Wraps over several lines."
+  },
   "settings.emulator.instantScreen.title": "Show the instant screen",
   "@settings.emulator.instantScreen.title": {
     "context": "Settings dialog, Emulator page, 'Screen' group: label of an on/off switch. Its help text: 'Also on the emulator toolbar'"

@@ -21,11 +21,11 @@ static const uint32_t sp48SpectrumColors[16] = {
 };
 
 static const Sp48ScreenConfig sp48PalConfig = {
-  8u, 7u, 49u, 48u, 8u, 192u, 24u, 24u, 128u, 40u, 8u, 2u, 1u, {6u, 5u, 4u, 3u, 2u, 1u, 0u, 0u}
+  8u, 7u, 49u, 48u, 8u, 192u, 24u, 24u, 128u, 40u, 8u, 2u, 1u, {6u, 5u, 4u, 3u, 2u, 1u, 0u, 0u}, 4u
 };
 
 static const Sp48ScreenConfig sp48NtscConfig = {
-  8u, 15u, 25u, 24u, 0u, 192u, 24u, 24u, 128u, 40u, 8u, 2u, 1u, {6u, 5u, 4u, 3u, 2u, 1u, 0u, 0u}
+  8u, 15u, 25u, 24u, 0u, 192u, 24u, 24u, 128u, 40u, 8u, 2u, 1u, {6u, 5u, 4u, 3u, 2u, 1u, 0u, 0u}, 4u
 };
 
 /*
@@ -36,6 +36,33 @@ static const Sp48ScreenConfig sp48NtscConfig = {
 #ifndef SP48_PIXEL_SCALE
 #define SP48_PIXEL_SCALE 1u
 #endif
+
+/*
+ * The ULA's memory reads and the CPU (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phases 1, 2, 4, 5).
+ *
+ * The timing tables fetch each screen byte `ulaFetchDelay` T-states before the real ULA reads it
+ * (the screen config's `ulaFetchDelay`): on the 48K the bitmap of $4000 is fetched at 14,334, the
+ * hardware reads it at 14,338, three T-states into the contention window that opens at 14,335. The
+ * floating bus was calibrated on real machines (FloatSpy, Float48K) with exactly that offset, so the
+ * tables stay as they are and the CPU's writes, the border and snow are taken against the real
+ * reads by subtracting the delay. With a delay of 0 a machine keeps the old behaviour.
+ */
+static uint8_t ulaFetchDelay;
+/* Late ("alternate") ULA timing: every table one T-state later against the interrupt */
+static uint8_t ulaLateTiming;
+/* How many T-states the tables are rotated later for late timing (the beam overlay's field 8) */
+static uint32_t ulaRasterShift;
+/* The config the tables were last built from, so late timing can rebuild them */
+static const Sp48ScreenConfig *ulaTimingConfig;
+/* The bitmap byte the last first-cell fetch read, before the renderer shifted it out (snow) */
+static uint8_t ulaPixelByte1Latch;
+/* Snow (Phase 5): on unless switched off; the table tact and low address of the last snowy fetch */
+static uint8_t ulaSnowEnabled = 1u;
+static uint32_t ulaSnowTact = 0xffffffffu;
+static uint8_t ulaSnowLow;
+
+static inline uint32_t ulaMachineTact(void);
+static void renderUlaUntilFrameTact(uint32_t lastTact);
 
 static inline uint32_t currentScreenWidth(void) {
   return sp48TimingScreenWidth == 0u ? SP48_SCREEN_BUFFER_WIDTH_MAX : sp48TimingScreenWidth * SP48_PIXEL_SCALE;
@@ -158,9 +185,15 @@ static void setRenderingTact(
 #define SP48_ATTR_FETCH_PIXEL_ADDRESS(address) ((void)0)
 #endif
 
+static void ulaRotateTimingTables(uint32_t by);
+
 static void initializeTimingTables(const Sp48ScreenConfig *config) {
   initializeAttrColorTables();
   clearTimingTables();
+  ulaTimingConfig = config;
+  ulaFetchDelay = config->ulaFetchDelay;
+  ulaRasterShift = 0u;
+  ulaSnowTact = 0xffffffffu;
 
   sp48FirstDisplayLine =
     config->verticalSyncLines + config->nonVisibleBorderTopLines + config->borderTopLines;
@@ -304,6 +337,73 @@ static void initializeTimingTables(const Sp48ScreenConfig *config) {
       setRenderingTact(tact, phase, pixelAddress, attributeAddress, contention);
     }
   }
+
+  /*
+   * The ULA machines' contention, written group by group (Phase 2): the pattern 6,5,4,3,2,1,0,0
+   * sixteen times per display line, each group starting where the config's values put its 6 - one
+   * T-state before its cell on the 48K (14,335, WoS 48K FAQ), three on the 128K (14,361, WoS 128K
+   * FAQ). Taking the values from the rendering phases above left the 128K, whose pattern starts in
+   * the previous group, without the 6 before every line's first group but the top one and with a
+   * stray 6 after its last group: ZX Spectrum Timing Tests 128K failed its contended tests.
+   */
+  if (config->ulaFetchDelay != 0u) {
+    uint32_t peak = 0u;
+    for (uint32_t i = 1u; i < 8u; i++) {
+      if (config->contentionValues[i] > config->contentionValues[peak]) peak = i;
+    }
+    /* The phase (tact in the 8-tact cell) whose value is the peak, and how far before the cell it is */
+    const uint32_t lead = (8u - ((peak + 7u) & 0x07u)) & 0x07u;
+    for (uint32_t tact = 0u; tact < sp48TactsInFrame; tact++) sp48Contention[tact] = 0u;
+    for (uint32_t line = sp48FirstDisplayLine; line <= lastDisplayLine; line++) {
+      for (uint32_t cell = 0u; cell < config->displayLineTime; cell += 8u) {
+        const uint32_t start = line * sp48ScreenLineTime + cell - lead;
+        for (uint32_t i = 0u; i < 8u; i++) {
+          sp48Contention[start + i] = config->contentionValues[(peak + i) & 0x07u];
+        }
+      }
+    }
+  }
+
+  /*
+   * Late timing (Phase 4): "one cycle later than normal timings" (the SZX specification's
+   * ZXSTMF_ALTERNATETIMINGS; the WoS FAQ and the Sinclair Wiki say the same), so contention, the
+   * reads, the border and the floating bus all move together. Only the ULA machines have it: the
+   * ones with a fetch delay.
+   */
+  if (ulaLateTiming != 0u && config->ulaFetchDelay != 0u) {
+    ulaRotateTimingTables(1u);
+    ulaRasterShift = 1u;
+  }
+}
+
+static void ulaReverseTables(uint32_t lo, uint32_t hi) {
+  for (; lo < hi; lo++, hi--) {
+    uint8_t b = sp48Contention[lo]; sp48Contention[lo] = sp48Contention[hi]; sp48Contention[hi] = b;
+    b = sp48RenderingPhase[lo]; sp48RenderingPhase[lo] = sp48RenderingPhase[hi]; sp48RenderingPhase[hi] = b;
+    uint16_t w = sp48RenderingPixelAddress[lo];
+    sp48RenderingPixelAddress[lo] = sp48RenderingPixelAddress[hi];
+    sp48RenderingPixelAddress[hi] = w;
+    w = sp48RenderingAttributeAddress[lo];
+    sp48RenderingAttributeAddress[lo] = sp48RenderingAttributeAddress[hi];
+    sp48RenderingAttributeAddress[hi] = w;
+    const uint32_t d = sp48RenderingPixelIndex[lo];
+    sp48RenderingPixelIndex[lo] = sp48RenderingPixelIndex[hi];
+    sp48RenderingPixelIndex[hi] = d;
+  }
+}
+
+/* Moves every table entry `by` tacts later in the frame, the last ones wrapping to its start */
+static void ulaRotateTimingTables(uint32_t by) {
+  const uint32_t n = sp48TactsInFrame;
+  if (by == 0u || by >= n) return;
+  ulaReverseTables(0u, n - 1u);
+  ulaReverseTables(0u, by - 1u);
+  ulaReverseTables(by, n - 1u);
+}
+
+/* Switches late timing on or off and rebuilds the tables (the 128K core rebuilds its own way) */
+static void ulaSetLateTiming(uint32_t late) {
+  ulaLateTiming = late != 0u ? 1u : 0u;
 }
 
 static inline void applyContentionDelay(void) {
@@ -329,6 +429,7 @@ static inline uint8_t shouldRaiseInterrupt(void) {
 static void beginBorderFrame(uint32_t frameStartTact) {
   sp48BorderFrameStartTact = frameStartTact;
   sp48LastRenderedFrameTact = 0u;
+  ulaSnowTact = 0xffffffffu;
   sp48PixelByte1 = 0u;
   sp48PixelByte2 = 0u;
   sp48AttrByte1 = 0u;
@@ -339,6 +440,9 @@ static void beginBorderFrame(uint32_t frameStartTact) {
 /* The Timex SCLD's screen modes draw the picture (`.plans/TIMEX_SCORPION_PLAN.md` G9.4a) */
 #include "zx-spectrum-scld.c"
 #define SP48_FILL_BORDER_PIXEL() scldBorderPixel()
+/* The Timex's SCLD keeps the old border and snow behaviour (its delay is 0) */
+static inline void ulaRepaintBorderForChange(void) {}
+static inline void ulaSnowRefresh(uint8_t r) { (void)r; }
 #define SP48_FLOATING_PIXEL(tact) scldFetchPixel(tact)
 #define SP48_FLOATING_ATTR(tact) scldFetchAttr(tact)
 #else
@@ -384,7 +488,7 @@ static void renderUlaTact(uint32_t tact) {
 
     case SP48_RENDER_PHASE_BORDER_FETCH_PIXEL:
       renderBorderPixelsAt(index);
-      sp48PixelByte1 = readScreenMemoryOffset(sp48RenderingPixelAddress[tact]);
+      sp48PixelByte1 = ulaPixelByte1Latch = readScreenMemoryOffset(sp48RenderingPixelAddress[tact]);
       break;
 
     case SP48_RENDER_PHASE_BORDER_FETCH_ATTR:
@@ -412,7 +516,7 @@ static void renderUlaTact(uint32_t tact) {
 
     case SP48_RENDER_PHASE_DISPLAY_B2_FETCH_B1:
       renderByte2PixelsAt(index);
-      sp48PixelByte1 = readScreenMemoryOffset(sp48RenderingPixelAddress[tact]);
+      sp48PixelByte1 = ulaPixelByte1Latch = readScreenMemoryOffset(sp48RenderingPixelAddress[tact]);
       break;
 
     case SP48_RENDER_PHASE_DISPLAY_B2_FETCH_A1:
@@ -422,12 +526,114 @@ static void renderUlaTact(uint32_t tact) {
   }
 }
 
+/*
+ * Snow (Phase 5; the ZXE wiki's "Snow effect" page). The CPU's refresh puts I and R on the address
+ * bus with MREQ; with I in contended memory the ULA takes it for an access it cannot stop. The ULA
+ * reads its four bytes in two bursts, the first cell's bitmap and attribute, then the second cell's.
+ * When the refresh's second T-state (the M1's fourth) falls on the first burst, both of its reads
+ * get R's low seven bits (R already incremented) as their low address bits ("snow"); when it falls
+ * on the second burst, the second cell is not read and shows the first cell's bytes again (the
+ * "double" effect). `r` is R as the refresh put it on the bus.
+ */
+static void ulaSnowFetch(uint32_t tact, uint8_t mode, uint8_t low) {
+  const uint32_t index = sp48RenderingPixelIndex[tact];
+  switch (sp48RenderingPhase[tact]) {
+    case SP48_RENDER_PHASE_BORDER_FETCH_PIXEL:
+      renderBorderPixelsAt(index);
+      sp48PixelByte1 = ulaPixelByte1Latch =
+        readScreenMemoryOffset((sp48RenderingPixelAddress[tact] & ~0x7fu) | low);
+      break;
+    case SP48_RENDER_PHASE_BORDER_FETCH_ATTR:
+      renderBorderPixelsAt(index);
+      sp48AttrByte1 = readScreenMemoryOffset((sp48RenderingAttributeAddress[tact] & ~0x7fu) | low);
+      break;
+    case SP48_RENDER_PHASE_DISPLAY_B2_FETCH_B1:
+      renderByte2PixelsAt(index);
+      sp48PixelByte1 = ulaPixelByte1Latch =
+        readScreenMemoryOffset((sp48RenderingPixelAddress[tact] & ~0x7fu) | low);
+      break;
+    case SP48_RENDER_PHASE_DISPLAY_B2_FETCH_A1:
+      renderByte2PixelsAt(index);
+      sp48AttrByte1 = readScreenMemoryOffset((sp48RenderingAttributeAddress[tact] & ~0x7fu) | low);
+      break;
+    case SP48_RENDER_PHASE_DISPLAY_B1_FETCH_B2:
+      renderByte1PixelsAt(index);
+      if (mode == 2u) sp48PixelByte2 = ulaPixelByte1Latch;
+      else sp48PixelByte2 = readScreenMemoryOffset(sp48RenderingPixelAddress[tact]);
+      break;
+    case SP48_RENDER_PHASE_DISPLAY_B1_FETCH_A2:
+      renderByte1PixelsAt(index);
+      if (mode == 2u) sp48AttrByte2 = sp48AttrByte1;
+      else sp48AttrByte2 = readScreenMemoryOffset(sp48RenderingAttributeAddress[tact]);
+      break;
+    default:
+      renderUlaTact(tact);
+      break;
+  }
+}
+
+static void ulaSnowRefresh(uint8_t r) {
+  if (ulaFetchDelay == 0u) return;
+  const uint32_t machineTact = ulaMachineTact();
+  if (machineTact < ulaFetchDelay) return;
+  const uint32_t tact = machineTact - ulaFetchDelay;
+  if (tact + 1u >= sp48TactsInFrame || sp48LastRenderedFrameTact > tact) return;
+  const uint8_t phase = sp48RenderingPhase[tact];
+  uint8_t mode;
+  if (phase == SP48_RENDER_PHASE_BORDER_FETCH_PIXEL || phase == SP48_RENDER_PHASE_DISPLAY_B2_FETCH_B1) {
+    mode = 1u;
+  } else if (phase == SP48_RENDER_PHASE_DISPLAY_B1_FETCH_B2) {
+    mode = 2u;
+  } else {
+    return;
+  }
+  const uint8_t low = (uint8_t)((r + 1u) & 0x7fu);
+  if (tact > 0u) renderUlaUntilFrameTact(tact - 1u);
+  /* Rendering one tact past the beam is safe: no write or OUT can land before the next M1 ends */
+  ulaSnowFetch(tact, mode, low);
+  ulaSnowFetch(tact + 1u, mode, low);
+  sp48LastRenderedFrameTact = tact + 2u;
+  if (mode == 1u) {
+    ulaSnowTact = tact;
+    ulaSnowLow = low;
+  }
+}
+
+/*
+ * An OUT that changes the border colour, at the end of its I/O cycle (now). The ULA takes the border
+ * colour once per 8 pixels (4 T-states), and an OUT ending in a 4 T-state window lands on one chunk:
+ * on the 48K the chunk at $4000's position for an OUT ending at 14,339-14,342 (WoS 48K FAQ), on the
+ * 128K at 14,365-14,368 (WoS 128K FAQ). In table tacts that chunk starts `delay - 1` T-states or more
+ * before the OUT's end, so it has been drawn in the old colour already: draw its border again.
+ */
+static void ulaRepaintBorderForChange(void) {
+  if (ulaFetchDelay == 0u) return;
+  const uint32_t machineTact = ulaMachineTact();
+  /* Chunks start where the paper's 8-pixel cells do: a multiple of 4, plus late timing's shift */
+  const uint32_t back = (uint32_t)ulaFetchDelay - 1u + ulaRasterShift;
+  const uint32_t from = machineTact >= back ? ((machineTact - back) & ~3u) + ulaRasterShift : 0u;
+  for (uint32_t tact = from; tact < sp48LastRenderedFrameTact; tact++) {
+    switch (sp48RenderingPhase[tact]) {
+      case SP48_RENDER_PHASE_BORDER:
+      case SP48_RENDER_PHASE_BORDER_FETCH_PIXEL:
+      case SP48_RENDER_PHASE_BORDER_FETCH_ATTR:
+        renderBorderPixelsAt(sp48RenderingPixelIndex[tact]);
+        break;
+    }
+  }
+}
+
 #define SP48_FILL_BORDER_PIXEL() getBorderPixel(sp48BorderColor)
-#define SP48_FLOATING_PIXEL(tact) readScreenMemoryOffset(sp48RenderingPixelAddress[tact])
-#define SP48_FLOATING_ATTR(tact) readScreenMemoryOffset(sp48RenderingAttributeAddress[tact])
+#define SP48_FLOATING_PIXEL(tact) \
+  readScreenMemoryOffset((tact) == ulaSnowTact \
+    ? ((sp48RenderingPixelAddress[tact] & ~0x7fu) | ulaSnowLow) : sp48RenderingPixelAddress[tact])
+#define SP48_FLOATING_ATTR(tact) \
+  readScreenMemoryOffset((tact) == ulaSnowTact + 1u \
+    ? ((sp48RenderingAttributeAddress[tact] & ~0x7fu) | ulaSnowLow) : sp48RenderingAttributeAddress[tact])
 #endif
 
-static void renderUlaUntilCurrentTact(void) {
+/* The frame tact the renderer counts from (`sp48BorderFrameStartTact`), clock multiplier applied */
+static inline uint32_t ulaMachineTact(void) {
   const uint32_t elapsedTacts =
     sp48Tacts >= sp48BorderFrameStartTact ? sp48Tacts - sp48BorderFrameStartTact : 0u;
   const uint32_t multiplier = sp48ClockMultiplier == 0u ? 1u : sp48ClockMultiplier;
@@ -435,10 +641,34 @@ static void renderUlaUntilCurrentTact(void) {
   if (machineTact >= sp48TactsInFrame) {
     machineTact = sp48TactsInFrame - 1u;
   }
+  return machineTact;
+}
 
-  while (sp48LastRenderedFrameTact <= machineTact && sp48LastRenderedFrameTact < sp48TactsInFrame) {
+/* Renders every tact up to and including `lastTact` */
+static void renderUlaUntilFrameTact(uint32_t lastTact) {
+  while (sp48LastRenderedFrameTact <= lastTact && sp48LastRenderedFrameTact < sp48TactsInFrame) {
     renderUlaTact(sp48LastRenderedFrameTact);
     sp48LastRenderedFrameTact++;
+  }
+}
+
+static void renderUlaUntilCurrentTact(void) {
+  renderUlaUntilFrameTact(ulaMachineTact());
+}
+
+/*
+ * Brings the picture up to a CPU write to the screen memory, which the caller makes now, at the end
+ * of its 3 T-state cycle (Phase 2). A real ULA read sees the new byte from the fourth T-state after
+ * the cycle's first on (the data is in the RAM before then; contention keeps the CPU's cycles away
+ * from the reads near it, so the edge cases cannot occur). In table tacts that is `delay` earlier:
+ * render with the old byte only what comes before it.
+ */
+static void renderUlaBeforeWrite(void) {
+  const uint32_t machineTact = ulaMachineTact();
+  if (ulaFetchDelay == 0u) {
+    renderUlaUntilFrameTact(machineTact);
+  } else if (machineTact >= ulaFetchDelay) {
+    renderUlaUntilFrameTact(machineTact - ulaFetchDelay);
   }
 }
 
@@ -465,6 +695,7 @@ static uint32_t ulaBeamInfo(uint32_t field) {
     case 5u: return sp48FirstVisibleBorderTact;
     case 6u: return sp48LastRenderedFrameTact;
     case 7u: return sp48TactsInFrame;
+    case 8u: return ulaRasterShift;
     default: return 0u;
   }
 }

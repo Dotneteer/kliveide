@@ -38,6 +38,14 @@ export const FEATURES: Feature[] = [
     more: { area: "guides", rest: "debugging/reverse-debugging/" }
   },
   {
+    // --- `.plans/SPECTRUM_ACCURACY_DOCS_PLAN.md` Phase 3. The ULA accuracy work ships in the release
+    // after 0.64.0; confirm this version when that release is prepared, so it never shows earlier (R6).
+    id: "accuracy",
+    since: "0.65.0",
+    image: { path: "landing/accuracy-halt2int.webp" },
+    more: { area: "under-the-hood", rest: "emulator-internals/spectrum-accuracy/" }
+  },
+  {
     id: "speaksNext",
     since: "0.61.0",
     image: { path: "landing/sprite-editor.webp" },

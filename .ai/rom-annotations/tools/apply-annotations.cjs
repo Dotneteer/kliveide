@@ -74,7 +74,10 @@ const starts = new Set(readFileSync(listFile, "utf8").split("\n").filter(Boolean
 const manual = new Set((data.manualLines ?? []).map(n));
 // --- regions: carve the new data regions out of the disassemble regions
 const added = (data.regions ?? []).map((r) => ({ start: n(r.start), end: n(r.end), type: r.type, ...(r.decode ? { decode: r.decode } : {}), ...(r.rowBytes ? { rowBytes: r.rowBytes } : {}), ...(r.radix ? { radix: r.radix } : {}) }));
-const dataRegions = [...bank.regions.filter((r) => r.type !== "disassemble"), ...added].sort((a, b) => a.start - b.start);
+// --- A region the file already has (a batch applied again, after its regions-only first pass) is not added twice
+const existing = bank.regions.filter((r) => r.type !== "disassemble");
+const fresh = added.filter((r) => !existing.some((e) => e.start === r.start && e.end === r.end && e.type === r.type));
+const dataRegions = [...existing, ...fresh].sort((a, b) => a.start - b.start);
 const regions = [];
 let at = 0;
 for (const r of dataRegions) {

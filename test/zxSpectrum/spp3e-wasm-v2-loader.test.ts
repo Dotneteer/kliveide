@@ -318,7 +318,7 @@ describe("ZX Spectrum +3E WASM v2 loader", () => {
     expect(runtime.exports.spp3eGetLastPortIsWrite()).toBe(1);
   });
 
-  it("applies +3E memory and I/O contention across normal and special paging", async () => {
+  it("applies +3E memory contention across normal and special paging, and no I/O contention", async () => {
     buildSpP3eWasm();
     const runtime = await loadSpP3eWasmV2({
       artifactName: "test-spp3e-contention-v2.wasm",
@@ -353,8 +353,9 @@ describe("ZX Spectrum +3E WASM v2 loader", () => {
     runtime.exports.spp3eSetTacts(100);
     runtime.exports.spp3eResetContentionCounters();
     runtime.exports.spp3eDelayPortWrite(0xc0ff);
-    expect(runtime.exports.spp3eGetTacts()).toBe(128);
-    expect(runtime.exports.spp3eGetTotalContentionDelaySinceStart()).toBe(24);
+    // --- The gate array contends no I/O cycle (MREQ only)
+    expect(runtime.exports.spp3eGetTacts()).toBe(104);
+    expect(runtime.exports.spp3eGetTotalContentionDelaySinceStart()).toBe(0);
 
     runtime.exports.spp3eWritePort(0x1ffd, 0x01);
     runtime.exports.spp3eSetTacts(100);

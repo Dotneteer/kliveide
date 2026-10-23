@@ -51,6 +51,18 @@
 #endif
 
 /*
+ * The second T-state of an M1's refresh (the fetch's fourth), with IR on the address bus. A machine
+ * whose memory controller cannot stop the CPU there defines it as nothing: the ZX Spectrum's ULA halts
+ * the Z80 only on an M-cycle's first T-state (Sinclair Wiki, "ZX Spectrum ULA"), and the documented
+ * instruction timings give an opcode fetch as `pc:4` with no IR entry. Real 48K and 128K machines
+ * draw IR Contention's (Mark Woodmass) lower border bars where they are only without this delay
+ * (`.plans/SPECTRUM_ACCURACY_DOCS_PLAN.md`). By default it is an address-bus access, as before.
+ */
+#ifndef Z80_DELAY_REFRESH_BUS_ACCESS
+#define Z80_DELAY_REFRESH_BUS_ACCESS(address) Z80_DELAY_ADDRESS_BUS_ACCESS(address)
+#endif
+
+/*
  * Runs at the M1 of an unprefixed opcode fetch, before the read - where `Z80Cpu.beforeOpcodeFetch`
  * runs and where `Z80Cpu` starts a new instruction's bus-access record.
  */
@@ -3398,10 +3410,16 @@ void z80ExecuteCpuCycle(void) {
   if (cpu.halted) {
     Z80_HISTORY_EVENT(Z80_HISTORY_KIND_HALT);
     Z80_PROFILE_MARK();
-    delayMemoryRead(cpu.pc);
+    /*
+     * A halted CPU fetches the byte after the HALT and ignores it (PC stays on the HALT here, so
+     * that is PC + 1): a HALT at $7FFF on the 48K is contended once, its halted cycles are not.
+     * HALT2INT's real-machine results show it (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phase 4).
+     */
+    delayMemoryRead((uint16_t)(cpu.pc + 1));
     Z80_REFRESH(IR);
     refreshMemory();
-    tactPlus1WithAddress(IR);
+    Z80_DELAY_REFRESH_BUS_ACCESS(IR);
+    tactPlusN(1);
     Z80_PROFILE_HALT_END();
     return;
   }
@@ -3417,7 +3435,8 @@ void z80ExecuteCpuCycle(void) {
   if (m1Active) {
     Z80_REFRESH(IR);
     refreshMemory();
-    tactPlus1WithAddress(IR);
+    Z80_DELAY_REFRESH_BUS_ACCESS(IR);
+    tactPlusN(1);
     Z80_AFTER_OPCODE_FETCH();
     Z80_HISTORY_COMMIT();
   } else if (cpu.prefix != PREFIX_DDCB && cpu.prefix != PREFIX_FDCB) {
@@ -3426,11 +3445,17 @@ void z80ExecuteCpuCycle(void) {
      * every M1, so a prefixed instruction adds 2 to R (the ZX81 ROM and its hi-res drivers count on
      * it). The displacement and opcode of DDCB/FDCB are plain reads and do not count.
      *
-     * Only R and the hook change here; the tacts stay where they were (the 3-T read above and the
-     * trailing tact after the operation), so contention and every timing golden are unaffected.
+     * Its fourth T-state (the refresh's second) comes here, before the operation, as in the first
+     * M1. It used to be added after the operation, which kept every instruction's length but put
+     * each operand and data access of a prefixed instruction one T-state early, so the ZX Spectrum
+     * contended them at the wrong T-state (ZX Spectrum Timing Tests 48K failed all its contended
+     * tests; `.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phase 0), and a DD/FD repeated as a prefix
+     * took 3 T-states instead of 4.
      */
     Z80_REFRESH(IR);
     refreshMemory();
+    Z80_DELAY_REFRESH_BUS_ACCESS(IR);
+    tactPlusN(1);
   }
   cpu.pc = (uint16_t)(cpu.pc + 1);
 
@@ -3458,13 +3483,11 @@ void z80ExecuteCpuCycle(void) {
 
     case PREFIX_CB:
       bitOps[cpu.opCode]();
-      tactPlusN(1);
       cpu.prefix = PREFIX_NONE;
       break;
 
     case PREFIX_ED:
       getExtendedOperation()();
-      tactPlusN(1);
       cpu.prefix = PREFIX_NONE;
       break;
 
@@ -3478,7 +3501,6 @@ void z80ExecuteCpuCycle(void) {
         cpu.prefix = cpu.prefix == PREFIX_DD ? PREFIX_DDCB : PREFIX_FDCB;
       } else {
         indexedOps[cpu.opCode]();
-        tactPlusN(1);
         cpu.prefix = PREFIX_NONE;
       }
       break;
@@ -3490,7 +3512,6 @@ void z80ExecuteCpuCycle(void) {
       tactPlus2WithAddress(cpu.pc);
       cpu.pc = (uint16_t)(cpu.pc + 1);
       indexedBitOps[cpu.opCode]();
-      tactPlusN(1);
       cpu.prefix = PREFIX_NONE;
       break;
   }

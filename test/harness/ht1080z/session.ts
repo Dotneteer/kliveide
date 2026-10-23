@@ -36,8 +36,9 @@ class HarnessHt1080zMachine extends Ht1080zWasmV2Machine {
     });
   }
 
+  /** Reads the shipped file and records it under the path the app's loader uses, for `getRomSources` */
   protected override async loadRomFromResource(romName: string): Promise<Uint8Array> {
-    return new Uint8Array(readFileSync(join(ROMS, `${romName}.rom`)));
+    return this.recordLoadedRom(`roms/${romName}.rom`, new Uint8Array(readFileSync(join(ROMS, `${romName}.rom`))));
   }
 }
 

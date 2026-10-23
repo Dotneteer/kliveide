@@ -60,8 +60,10 @@ void sp48WritePort(uint32_t address, uint32_t value) {
   const uint8_t nextBorderColor = (uint8_t)(value & 0x07u);
   if (nextBorderColor != sp48BorderColor) {
     renderUlaUntilCurrentTact();
+    sp48BorderColor = nextBorderColor;
+    /* The 8-pixel chunk the change lands on may be drawn already (zx-spectrum-ula.c) */
+    ulaRepaintBorderForChange();
   }
-  sp48BorderColor = nextBorderColor;
 
   const uint8_t nextMicBit = (value & 0x08u) != 0u ? 1u : 0u;
   const uint8_t nextEarBit = (value & 0x10u) != 0u ? 1u : 0u;

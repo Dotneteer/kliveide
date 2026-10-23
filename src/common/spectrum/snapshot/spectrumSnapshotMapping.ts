@@ -10,7 +10,7 @@
 
 import { t } from "@common/i18n/i18n";
 import type { MessageKey } from "@common/i18n/keys.generated";
-import { MI_SCORPION, MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48, MI_TIMEX } from "@common/machines/constants";
+import { MI_SCORPION, MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48, MI_TIMEX, ULA_TIMING_MACHINE_IDS } from "@common/machines/constants";
 import { TIMEX_MODELS } from "@emu/machines/timex/timexModels";
 import { P3_MODELS } from "@emu/machines/zxSpectrumP3e/p3RomSets";
 import { SP128_MODELS } from "@emu/machines/zxSpectrum128/sp128Timings";
@@ -159,7 +159,8 @@ export function mapSpectrumSnapshotToKlive(snapshot: SpectrumSnapshot): Spectrum
     }
   }
   if (p.issue2) warnings.push(t("media.snapshot.warning.issue2"));
-  if (snapshot.ula.alternateTimings) {
+  // --- The 16K, 48K and 128K run it (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phase 4); other targets cannot
+  if (snapshot.ula.alternateTimings && !ULA_TIMING_MACHINE_IDS.includes(target.machineId)) {
     warnings.push(t("media.snapshot.warning.alternateTimings"));
   }
   if (p.customRomSize) {

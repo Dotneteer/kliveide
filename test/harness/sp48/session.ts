@@ -1,6 +1,7 @@
 import type { HistoryRecord } from "@common/history/historyRecord";
 import type { ExecutionHistoryInfo } from "@common/history/historyTypes";
 import { historyFromOf, historyInfoOf, historyOf } from "../historySupport";
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -27,6 +28,10 @@ import type { RzxPlayer, RzxPlayerOptions } from "@emu/machines/zxSpectrum/rzx/R
 import type { RzxRecorder, RzxRecorderOptions } from "@emu/machines/zxSpectrum/rzx/RzxRecorder";
 import type { RzxStop } from "@emu/machines/zxSpectrum/rzx/rzxSession";
 import * as rzx from "../spectrumRzx";
+import { tapeBlocksOf } from "@common/headless/tapeBlocks";
+import { screenImageOf } from "@common/headless/screenImage";
+import { encodePng } from "@common/imaging/png";
+import { sp48TapeLoadFlow } from "@emu/machines/tapeLoadFlows";
 
 import { buildSp48Wasm, productionOutput } from "../../../scripts/build-sp48-wasm.cjs";
 
@@ -64,16 +69,17 @@ class HarnessSp48Machine extends ZxSpectrum48WasmV2Machine {
 let wasmBuilt = false;
 
 /**
- * Creates a ZX Spectrum 48K with the real ROM, ready to boot. Builds the WASM core first, once per
+ * Creates a ZX Spectrum 48K with the real ROM (or the one given), ready to boot. Builds the WASM core first, once per
  * test process (the same build the 48K machine tests use).
  */
-export async function createSp48Session(): Promise<Sp48TestSession> {
+export async function createSp48Session({ rom }: { rom?: Uint8Array } = {}): Promise<Sp48TestSession> {
   // --- Once per test process: the build runs clang, which is most of a session's start-up cost
   if (!wasmBuilt) {
     buildSp48Wasm();
     wasmBuilt = true;
   }
-  const machine = new HarnessSp48Machine(new Uint8Array(readFileSync(ROM_PATH)));
+  // --- `rom`: a 16K ROM in place of the real one (a test program that is a ROM, Time to First INT)
+  const machine = new HarnessSp48Machine(rom ?? new Uint8Array(readFileSync(ROM_PATH)));
   await machine.setup();
   return new Sp48TestSession(machine);
 }
@@ -184,12 +190,45 @@ export class Sp48TestSession {
    * address itself; after `bootToBasic` the current PC ($12AC) is safe.
    */
   call(where: number | string, options: { returnTo?: number } & RunLimit = {}): this {
+    this.completeInstruction();
     const ret = options.returnTo ?? this.machine.pc;
     const sp = (this.machine.sp - 2) & 0xffff;
     this.pokeWord(sp, ret);
     this.machine.sp = sp;
     this.machine.pc = this.address(where);
     return this.runTo(ret, options);
+  }
+
+  /**
+   * Finishes an instruction a frame left half-way: the core runs a CB/ED/DD/FD prefix as a cycle of
+   * its own, so a frame can end between a prefix and its opcode. Moving PC then would run the new
+   * code's first byte as the pending prefix's opcode.
+   */
+  completeInstruction(): this {
+    const exports = this.machine.wasmV2Runtime?.exports;
+    for (let i = 0; i < 4 && exports && exports.sp48GetCpuPrefix() !== 0; i++) this.step(1);
+    return this;
+  }
+
+  /** T-states since the start of the current frame */
+  frameTact(): number {
+    return this.machine.wasmV2Runtime!.exports.sp48GetCurrentFrameTact();
+  }
+
+  /**
+   * Runs the rest of the current frame instruction by instruction, as the debugger does, so the
+   * picture the frame has drawn so far is kept and completed.
+   */
+  finishFrame(): this {
+    const ctx = this.machine.executionContext;
+    const start = this.frames;
+    ctx.debugStepMode = DebugStepMode.StopAtBreakpoint;
+    try {
+      while (this.frames === start) this.execute();
+    } finally {
+      ctx.debugStepMode = DebugStepMode.NoDebug;
+    }
+    return this;
   }
 
   /** Executes `count` Z80 instructions. */
@@ -224,6 +263,7 @@ export class Sp48TestSession {
    * Returns the PC it stopped at. Throws if the routine returns first.
    */
   callToBreakpoint(where: number | string, options: { returnTo?: number } & RunLimit = {}): number {
+    this.completeInstruction();
     const ret = options.returnTo ?? this.machine.pc;
     const sp = (this.machine.sp - 2) & 0xffff;
     this.pokeWord(sp, ret);
@@ -360,8 +400,58 @@ export class Sp48TestSession {
     return this;
   }
 
+  /**
+   * Loads a `.tap` / `.tzx` file the way a user does: boots to BASIC if the machine has not booted
+   * yet, inserts the tape (fast load by default), types `LOAD ""` and ENTER, and returns with the
+   * ROM loading it. Run frames (or `runUntilStable`) afterwards for the program to load and start.
+   */
+  loadTap(path: string, { fastLoad = true }: { fastLoad?: boolean } = {}): this {
+    const parsed = tapeBlocksOf(new Uint8Array(readFileSync(path)));
+    if ("error" in parsed) throw new Error(`${path} is not a tape: ${parsed.error}`);
+    if (this.frames === 0) this.bootToBasic();
+    this.insertTape(parsed.blocks, { fastLoad });
+    return this.typeFlowKeys(sp48TapeLoadFlow(), { hold: 5, gap: 10 });
+  }
+
   // ==========================================================================================
   // Memory and screen
+
+  /** The whole picture, border included, as RGBA bytes (what the emulator panel draws) */
+  screenImage(): { width: number; height: number; pixels: Uint8Array } {
+    return screenImageOf(this.machine);
+  }
+
+  /** The whole picture as a PNG file */
+  screenPng(): Buffer {
+    const { width, height, pixels } = this.screenImage();
+    return encodePng(pixels, width, height);
+  }
+
+  /** A SHA-256 of the whole picture's pixels, for comparing pictures */
+  screenHash(): string {
+    return createHash("sha256").update(this.screenImage().pixels).digest("hex");
+  }
+
+  /**
+   * Runs frames until the picture has not changed for `stableFrames` frames in a row (a test
+   * program that has finished drawing its result), and returns the frames run. Throws after
+   * `maxFrames`. A picture that keeps changing every frame (a flashing cursor counts) never settles:
+   * pass `period` to compare frames that many apart instead.
+   */
+  runUntilStable({ stableFrames = 50, maxFrames = 3000, period = 1 }: { stableFrames?: number; maxFrames?: number; period?: number } = {}): number {
+    const hashes: string[] = [];
+    let same = 0;
+    for (let i = 1; i <= maxFrames; i++) {
+      this.runFrames(1);
+      hashes.push(this.screenHash());
+      if (hashes.length > period) {
+        same = hashes[hashes.length - 1] === hashes[hashes.length - 1 - period] ? same + 1 : 0;
+        hashes.shift();
+      }
+      if (same >= stableFrames) return i;
+    }
+    throw new Error(`The picture did not settle in ${maxFrames} frames.`);
+  }
 
   peek(address: number): number {
     return this.machine.doReadMemory(address & 0xffff);

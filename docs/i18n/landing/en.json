@@ -275,6 +275,34 @@
   "@feature.timeTravel.point3": {
     "context": "Bullet point."
   },
+  "feature.accuracy.tag": "Accuracy",
+  "@feature.accuracy.tag": {
+    "context": "Short label above the feature heading."
+  },
+  "feature.accuracy.title": "Tested against real hardware",
+  "@feature.accuracy.title": {
+    "context": "Feature heading: the emulator's timing is checked against results measured on real ZX Spectrums."
+  },
+  "feature.accuracy.short": "Timing checked against the community's test programs, measured on real machines.",
+  "@feature.accuracy.short": {
+    "context": "One-sentence version of the feature, in a coloured block."
+  },
+  "feature.accuracy.text": "Klive's 48K and 128K run the ZX Spectrum community's timing test programs, whose expected results come from real machines. See each result on Klive's own screen, beside photos of the real thing.",
+  "@feature.accuracy.text": {
+    "context": "The feature's paragraph. 'Klive', '48K' and '128K' are never translated."
+  },
+  "feature.accuracy.point1": "ZX Spectrum Timing Tests 48K: 100% pass",
+  "@feature.accuracy.point1": {
+    "context": "Bullet point. 'ZX Spectrum Timing Tests 48K' is the name of a test program: never translated."
+  },
+  "feature.accuracy.point2": "HALT2INT matches real early and late 48Ks",
+  "@feature.accuracy.point2": {
+    "context": "Bullet point. 'HALT2INT' is the name of a test program; 'early' and 'late' are the two timings of real ULA chips."
+  },
+  "feature.accuracy.point3": "Snow and late ULA timing emulated",
+  "@feature.accuracy.point3": {
+    "context": "Bullet point. 'Snow' is the ZX Spectrum's screen glitch of that name; 'ULA' is never translated."
+  },
   "feature.speaksNext.tag": "ZX Spectrum Next",
   "@feature.speaksNext.tag": {
     "context": "Short label above the feature heading. Product name: never translated."

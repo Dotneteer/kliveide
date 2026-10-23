@@ -116,6 +116,8 @@ async function roundTrip(model: Sp128SessionModel, fdc: boolean) {
   // --- Record
   const s = await createSp128Session(model);
   s.runFrames(20);
+  // --- A frame can end between a prefix and its opcode, where no snapshot (the RZX's first) can be taken
+  s.toInstructionBoundary();
   s.machine.pc = await loadProgram(s, fdc);
   const samples = new Map<number, string>();
   const start = s.frames;

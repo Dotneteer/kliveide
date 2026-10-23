@@ -69,7 +69,7 @@ static void timexWriteMapped(uint32_t address, uint32_t value) {
     return;
   }
   if (sp48TimexChunkSource[chunk] == TIMEX_CHUNK_HOME && a < SP48_DISPLAY_MEMORY_END) {
-    renderUlaUntilCurrentTact();
+    renderUlaBeforeWrite();
   }
   sp48TimexChunkBase[chunk][a & 0x1fffu] = (uint8_t)value;
 }
@@ -93,7 +93,8 @@ static void sp48CpuWriteMemory(uint32_t address, uint32_t value) {
   const uint16_t maskedAddress = (uint16_t)(address & 0xffffu);
   if (maskedAddress >= 0x4000u) {
     if (maskedAddress < SP48_DISPLAY_MEMORY_END) {
-      renderUlaUntilCurrentTact();
+      /* The ULA's reads from the 4th T-state of the write cycle on see the new byte (Phase 2) */
+      renderUlaBeforeWrite();
     }
     sp48Memory[maskedAddress] = (uint8_t)value;
   }

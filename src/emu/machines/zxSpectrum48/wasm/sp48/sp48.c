@@ -108,6 +108,14 @@ typedef struct Sp48ScreenConfig {
   uint16_t pixelDataPrefetchTime;
   uint16_t attributeDataPrefetchTime;
   uint8_t contentionValues[8];
+  /*
+   * How many T-states the ULA's real memory reads come after the T-states this table fetches at
+   * (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` §1.2): 4 on the 48K, 2 on the 128K/+2 - the offset the
+   * floating bus already used (its byte is the table's fetch of `delay + 1` T-states before the
+   * port read). A CPU write and an `OUT` to the border take effect against the real reads; 0 keeps
+   * the old behaviour on the machines no measurement covers yet (+2A/+3, Timex, Pentagon, Scorpion).
+   */
+  uint8_t ulaFetchDelay;
 } Sp48ScreenConfig;
 
 typedef struct Sp48AudioSample {
@@ -309,6 +317,7 @@ static uint8_t sp48TimexChunkMapValid;
 
 static void setNextAudioSample(void);
 static void renderUlaUntilCurrentTact(void);
+static void renderUlaBeforeWrite(void);
 static uint32_t normalizeClockMultiplier(uint32_t value);
 
 #ifdef SP48_SCLD
@@ -356,6 +365,10 @@ static void SP48_CPU_NOINLINE sp48CpuDelayAddressBusAccess(uint32_t address);
 #define Z80_DELAY_MEMORY_READ(address) sp48CpuDelayMemoryRead((uint32_t)(address))
 #define Z80_DELAY_MEMORY_WRITE(address) sp48CpuDelayMemoryRead((uint32_t)(address))
 #define Z80_DELAY_ADDRESS_BUS_ACCESS(address) sp48CpuDelayAddressBusAccess((uint32_t)(address))
+/* The ULA cannot stop the CPU in a refresh (z80.c); the Timex's SCLD keeps the old behaviour */
+#ifndef SP48_SCLD
+#define Z80_DELAY_REFRESH_BUS_ACCESS(address) ((void)(address))
+#endif
 #define Z80_DELAY_PORT_READ(address) sp48CpuDelayPortAccess((uint32_t)(address))
 #define Z80_DELAY_PORT_WRITE(address) sp48CpuDelayPortAccess((uint32_t)(address))
 /* RZX (`zx-spectrum-rzx.c`): the fetch counter counts every refresh but the INT acknowledge's */
@@ -363,8 +376,23 @@ static inline void rzxCountFetch(void);
 static inline void rzxIntAck(void);
 /* Not under the benchmark-only strip (`z80.c`): no RZX recording, so no fetch count */
 #ifndef Z80_BENCH_STRIP_DEBUG
-#define Z80_REFRESH(address) rzxCountFetch()
+#define SP48_REFRESH_RZX() rzxCountFetch()
 #define Z80_INT_ACK() rzxIntAck()
+#else
+#define SP48_REFRESH_RZX() ((void)0)
+#endif
+/*
+ * Snow (`zx-spectrum-ula.c`): a refresh with I in $40-$7F disturbs the ULA's read. One compare while
+ * I is anywhere else, so the fast frame does not slow down. The Timex's SCLD has no snow.
+ */
+#ifdef SP48_SCLD
+#define Z80_REFRESH(address) SP48_REFRESH_RZX()
+#else
+#define Z80_REFRESH(address) \
+  do { \
+    SP48_REFRESH_RZX(); \
+    if (__builtin_expect(((address) & 0xc000u) == 0x4000u, 0) && ulaSnowEnabled != 0u) ulaSnowRefresh((uint8_t)(address)); \
+  } while (0)
 #endif
 /* The execution-history recorder's hooks; the recorder and this machine's macros for it are at the
    end of this file (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` Phase 1) */
@@ -475,9 +503,11 @@ static void SP48_CPU_NOINLINE sp48CpuDelayAddressBusAccess(uint32_t address) {
 #undef Z80_DELAY_MEMORY_READ
 #undef Z80_DELAY_MEMORY_WRITE
 #undef Z80_DELAY_ADDRESS_BUS_ACCESS
+#undef Z80_DELAY_REFRESH_BUS_ACCESS
 #undef Z80_DELAY_PORT_READ
 #undef Z80_DELAY_PORT_WRITE
 #undef Z80_REFRESH
+#undef SP48_REFRESH_RZX
 #undef Z80_INT_ACK
 #undef SP48_CPU_NOINLINE
 
@@ -658,6 +688,35 @@ void sp48HardReset(uint32_t is16k, uint32_t isNtsc) {
 
 void sp48RenderInstantScreen(void) {
   renderUlaDisplay();
+}
+
+/*
+ * Late ("alternate") ULA timing (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phase 4): 1 makes every
+ * timing one T-state later against the interrupt. A setting of the machine, not of its state: it
+ * survives resets and rebuilds the tables at once.
+ */
+void sp48SetLateTiming(uint32_t late) {
+  if ((late != 0u ? 1u : 0u) == ulaLateTiming) return;
+  ulaSetLateTiming(late);
+  if (ulaTimingConfig != 0) initializeTimingTables(ulaTimingConfig);
+}
+
+uint32_t sp48GetLateTiming(void) {
+  return ulaLateTiming;
+}
+
+/* Snow (Phase 5): 0 switches the effect off; the refresh's IR contention stays (it is timing) */
+void sp48SetSnowEffect(uint32_t on) {
+  ulaSnowEnabled = on != 0u ? 1u : 0u;
+}
+
+uint32_t sp48GetSnowEffect(void) {
+  return ulaSnowEnabled;
+}
+
+/* How many T-states the ULA's reads come after the timing tables' fetches (zx-spectrum-ula.c) */
+uint32_t sp48GetUlaFetchDelay(void) {
+  return ulaFetchDelay;
 }
 
 /* The frame loop and the RZX playback steps (zx-spectrum-frame.c) */

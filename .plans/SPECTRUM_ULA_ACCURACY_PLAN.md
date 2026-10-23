@@ -1,7 +1,7 @@
 # ZX Spectrum ULA Accuracy Plan
 
-Status: **in progress** (2026-10-23). Phase 0 step 1 done: the test programs are in
-`vendor/spectrum-tests/` (see its `README.md` and `kit.json`). Nothing else implemented yet.
+Status: **implemented** (2026-10-23), Phases 0-6; see "As built" at the end for what each phase
+found, the before/after table and what stays open. Not committed yet (the author reviews first).
 
 **The author's answers (2026-10-23)**, which this plan now follows:
 
@@ -315,3 +315,89 @@ None at the moment; the four earlier questions are answered at the top of this p
 - Chris Smith, *The ZX Spectrum ULA: How to Design a Microcomputer*, ZX Design and Media, 2010.
 - ZXE depot, where the kit's files come from: https://zxe.io/depot/software/ZX%20Spectrum/
 - Z80 wiki (redcode/Z80), *HALT2INT*: https://github.com/redcode/Z80/wiki/HALT2INT
+
+---
+
+## As built (2026-10-23)
+
+### Before and after
+
+Phase 0's baseline (today's core before the plan) against the end of the plan. "Real" is where the
+expectation comes from.
+
+| Program | Before | After | Real |
+|---|---|---|---|
+| ZX Spectrum Timing Tests 48K | uncontended all pass; contended: 4 of 34 pass | **All Tests Complete 100% Pass** | the program's tables (its authors' 48K) |
+| ZX Spectrum Timing Tests 128K | 2 pass, 42 fail | late timing: **every test but 15 uncontended**; early: 5 contended fail | the program's tables (its authors' late 128K) |
+| HALT2INT 48K | Float: Early, HALT: **Unknown** ($7FFF column wrong) | early: **Early/Early**, every value of the photo; late: **Late/Late**, every value of the photo | `halt2int/Real 48k (early).png`, `(late).png` |
+| HALT2INT 128 | - | early: Early/Early; late: Late/Late | the program's own tables |
+| Float48K / Float128K | 14,338 (14,364) bitmap, attr, bitmap, attr, 4 idle | unchanged | FloatSpy, the author's runs |
+| FloatSpy (48K) | ULA type 48K | unchanged | the author's runs on both models |
+| Border Time | the OUT window lands one chunk (8 dots) right | at the paper's edge for the FAQ's window | WoS 48K FAQ |
+| Screen Time | a write cycle at 14,334 missed $4000 | read; 14,335 (contended to 14,341) missed | the contention window and the floating bus |
+| Timing Test (Rak) test 0 | the FAQ's pattern | unchanged | WoS 48K FAQ |
+| Snow programs | no snow | 18 of the 21 snow pictures differ with snow on and off | by eye against the wiki's videos (open) |
+
+### What each phase found and did
+
+- **Phase 0.** Harness methods `loadTap`, `screenImage`/`screenPng`/`screenHash`, `runUntilStable`,
+  `frameTact`, `finishFrame` (48K and 128K), `createSp48Session({ rom })`, and
+  `test/harness/spectrumBeam.ts` (start code at an exact frame T-state). The runner is
+  `test/spectrum-kit/` (slow tier, one file per program or group; pictures to `.spectrum-kit/`).
+  The baseline exposed two bugs outside the plan's five gaps, both fixed:
+  - **Prefixed instructions** (`z80.c`): the second opcode fetch's fourth T-state was added after
+    the instruction, so every operand and data access of a CB/ED/DD/FD instruction was contended one
+    T-state early (and DD DD... took 3 T per extra prefix). The cause of Timing Tests 48K's failures.
+  - **HALT** (`z80.c`): a halted CPU fetches the byte *after* the HALT (Patrik Rak, Spectrum
+    Computing forum, "Contention pattern for HALT"); Klive fetched the HALT's own, which contended the
+    halted cycles of a HALT at $7FFF. The cause of HALT2INT's "Unknown".
+- **Phase 2 (gap 1).** §1.2's concern was right in effect, not in mechanism: the tables fetch each
+  byte `ulaFetchDelay` T-states *before* the real ULA reads it (4 on the 48K, 2 on the 128K), exactly
+  the offset the floating bus was calibrated with (FloatSpy, Float48K: the first read samples at
+  14,338 = the window's 14,335 + 3; 14,364 = 14,361 + 3 on the 128K). The tables stay; a CPU write now
+  renders only up to `now - delay` before it lands (`renderUlaBeforeWrite`), so a write cycle starting
+  at 14,334 is read and one held to 14,341 is not. No change to the shared Z80 (as preferred). The
+  128K's contention table was also wrong: built from the rendering phases, it lacked the 6 before
+  every display line's first group but the top one and had a stray 6 after the last; it is now
+  written group by group (48K table unchanged). The 128K's interrupt is 35 T-states (ZXE wiki
+  "Timings": 14364/35), not 32: Timing Tests 128K's uncontended tests need it (36 behaves the same
+  there). +2A/+3, Timex, Pentagon, Scorpion keep a delay of 0 (old behaviour).
+- **Phase 1 (gap 2).** Confirmed: the border is taken once per 4 T-states. The OUT's chunk starts
+  `delay - 1` or more T-states before its end in table tacts, so the border change renders to now and
+  repaints the border of the chunk it lands on (`ulaRepaintBorderForChange`). 48K: 14,339-14,342 →
+  $4000's column; 128K: 14,365-14,368 (WoS 128K FAQ). Jan Bobrowski's programs (and Patrik Rak's,
+  built on them) number a machine cycle one higher than the FAQ; with that, Border Time matches.
+- **Phase 3 (gap 3).** `test/spectrum-hw/ula-timing.test.ts` reads port $FF at single T-states on both
+  machines; it fails if the offset moves by one. The +2A/+3 floating bus stays out of scope.
+- **Phase 4 (gap 4).** Settled for these results by the simplest model, "everything one T-state
+  later" (SZX's ZXSTMF_ALTERNATETIMINGS, WoS, Sinclair Wiki): the tables rotated one T-state later
+  (`ulaRotateTimingTables`). It reproduces both HALT2INT photos value for value, and Timing Tests
+  128K needs it, so ZXE's conditional /RFSH model was not needed. Setting **Late ULA Timing**
+  (`emuOptions.ulaLateTiming`, off), machine property `UlaLateTiming`, core `<prefix>SetLateTiming`;
+  `.szx` restore sets it from the header flag and capture writes it (`.sna`/`.z80` keep the machine's).
+- **Phase 5 (gap 5).** The ZXE wiki's "Snow effect" page gave the rule: the refresh's second
+  T-state (the M1's fourth) on the ULA's first burst gives both reads R's low 7 bits (R incremented)
+  as their low address bits; on the second burst the second cell is not read and repeats the first.
+  The ULA's 8 T-state cell starts at the paper's 14,336 and its bursts at T-states 3 and 5
+  (14,338, 14,340) - the reads the floating bus sees. `Z80_REFRESH` checks the address with a branch
+  hint (48K) or a precomputed slot mask (128K). Setting **Snow Effect** (`emuOptions.ulaSnow`, on),
+  property `UlaSnow`. Cost, `npm run benchmark:spectrum-wasm`, ms/frame median, HEAD → now: 48K
+  nop-loop 0.53 → 0.51, cpu-loop 0.49 → 0.49-0.50; 128K nop-loop 0.59-0.60 → 0.62, cpu-loop 0.56 →
+  0.56; border-out-loop +3-6% (the repaint).
+- **Phase 6.** `spectrum-display.mdx` (floating bus, snow, "Drawing late", early/late machines, the
+  128K table), the settings guide, machine types, G10.1 / W10 / the comparison table.
+
+### Open
+
+Updated 2026-10-23 by `.plans/SPECTRUM_ACCURACY_DOCS_PLAN.md` ("Follow-up: the Not yet proven
+items"), which closed test 15, the +2A/+3's I/O and internal-cycle contention, the refresh
+contention and the ULA and IR Contention pictures.
+
+- **The +2A/+3 contention table's start**: WoS puts the 7 at 14,367, the Sinclair Wiki at 14,363;
+  Klive keeps 14,364. ULA 128E +3 Test draws the same picture with all three.
+- **Snow**: the real 48K's Snow48 (var b5) repeats every second cell; Klive does not.
+- **By-eye checks** still open: Snow R, Snow128N, Snow Contention (no real-machine picture), Time to
+  First INT (real 48K photos on its wiki page).
+- **The ULA's read times** are derived from the floating bus and the FAQ, not from Chris Smith's
+  book; a check against it remains worthwhile.
+- The 128K's shadow-screen switch (`$7FFD` bit 3) is still taken at the end of the OUT, untested.

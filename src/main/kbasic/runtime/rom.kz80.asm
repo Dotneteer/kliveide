@@ -43,33 +43,56 @@ RomCallReturn:              ; S: [ret][caller IY]
 ; ------------------------------------------------------------------------------------------------
 ; Pages the 48K BASIC ROM in (RomIn) and back out to what the program had (RomOut). Change nothing,
 ; the flags included.
+;
+; On the 128K and the +3 the switch runs with interrupts off, and back on afterwards only if they
+; were: the depth count, the system variables that shadow the paging ports (BANKM, BANK678) and the
+; ports change together. The +3's interrupt routine pages the disk motor's ROM in and out again from
+; those shadows, so an interrupt between a shadow's write and its port's OUT paged the wrong ROM in
+; under the running code; and a handler calling RomIn between the depth count and the OUT ran its
+; ROM call without the ROM.
 RomIn:
 #ifmod Spectrum128
     push af
+    push bc
+    ld a,i                  ; P/V = IFF2; read again if it says off: an interrupt accepted
+    jp pe,RomInIntsRead     ; during LD A,I clears P/V on an NMOS Z80
+    ld a,i
+RomInIntsRead:
+    push af                 ; S: [interrupt state][BC][AF]
+    di
     ld a,(RomDepth)
     inc a
     ld (RomDepth),a
     dec a
     jr nz,RomInDone
-    push bc
     ld a,($5b5c)            ; BANKM
     ld (RomSavedBank),a
     or $10                  ; ROM 1: 48K BASIC
     ld ($5b5c),a
     ld bc,$7ffd
     out (c),a
-    pop bc
 RomInDone:
+    pop af
+    jp po,RomInIntsOff  ; interrupts were off: leave them off
+    ei
+RomInIntsOff:
+    pop bc
     pop af
 #endif
 #ifmod SpectrumP3
     push af
+    push bc
+    ld a,i                  ; P/V = IFF2; read again if it says off: an interrupt accepted
+    jp pe,RomInIntsRead     ; during LD A,I clears P/V on an NMOS Z80
+    ld a,i
+RomInIntsRead:
+    push af                 ; S: [interrupt state][BC][AF]
+    di
     ld a,(RomDepth)
     inc a
     ld (RomDepth),a
     dec a
     jr nz,RomInDone
-    push bc
     ld a,($5b5c)            ; BANKM
     ld (RomSavedBank),a
     or $10
@@ -82,8 +105,12 @@ RomInDone:
     ld ($5b67),a
     ld b,$1f
     out (c),a
-    pop bc
 RomInDone:
+    pop af
+    jp po,RomInIntsOff  ; interrupts were off: leave them off
+    ei
+RomInIntsOff:
+    pop bc
     pop af
 #endif
 #ifmod Next
@@ -126,26 +153,42 @@ RomInDone:
 RomOut:
 #ifmod Spectrum128
     push af
+    push bc
+    ld a,i                  ; P/V = IFF2; read again if it says off: an interrupt accepted
+    jp pe,RomOutIntsRead     ; during LD A,I clears P/V on an NMOS Z80
+    ld a,i
+RomOutIntsRead:
+    push af                 ; S: [interrupt state][BC][AF]
+    di
     ld a,(RomDepth)
     dec a
     ld (RomDepth),a
     jr nz,RomOutDone
-    push bc
     ld a,(RomSavedBank)
     ld ($5b5c),a
     ld bc,$7ffd
     out (c),a
-    pop bc
 RomOutDone:
+    pop af
+    jp po,RomOutIntsOff  ; interrupts were off: leave them off
+    ei
+RomOutIntsOff:
+    pop bc
     pop af
 #endif
 #ifmod SpectrumP3
     push af
+    push bc
+    ld a,i                  ; P/V = IFF2; read again if it says off: an interrupt accepted
+    jp pe,RomOutIntsRead     ; during LD A,I clears P/V on an NMOS Z80
+    ld a,i
+RomOutIntsRead:
+    push af                 ; S: [interrupt state][BC][AF]
+    di
     ld a,(RomDepth)
     dec a
     ld (RomDepth),a
     jr nz,RomOutDone
-    push bc
     ld a,(RomSavedBank)
     ld ($5b5c),a
     ld bc,$7ffd
@@ -154,8 +197,12 @@ RomOutDone:
     ld ($5b67),a
     ld b,$1f
     out (c),a
-    pop bc
 RomOutDone:
+    pop af
+    jp po,RomOutIntsOff  ; interrupts were off: leave them off
+    ei
+RomOutIntsOff:
+    pop bc
     pop af
 #endif
 #ifmod Next

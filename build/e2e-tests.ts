@@ -25,6 +25,8 @@ export const E2E_CORE_TESTS: string[] = [
   "test/sp128-hw/**/*.test.ts",
   "test/timex-hw/**/*.test.ts",
   "test/spectrum-hw/**/*.test.ts",
+  // --- The ZX Spectrum timing test kit (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phase 0); all slow
+  "test/spectrum-kit/**/*.test.ts",
   // --- The ROM annotation tools' coverage run (`.plans/REVERSE_ENGINEERING_ANNOTATIONS_PLAN.md` §6)
   "test/rom-annotations/**/*.test.ts",
   "test/harness/**/self-tests/**/*.test.ts",
@@ -154,6 +156,16 @@ export const E2E_KBASIC_TESTS: string[] = [
  * cheaper. Exact paths, no globs, so a new test never lands here by accident.
  */
 export const E2E_SLOW_TESTS: string[] = [
+  // --- The ZX Spectrum timing test kit: the community's test programs on the cores
+  // --- (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phase 0)
+  "test/spectrum-kit/timing-tests-48k.test.ts",
+  "test/spectrum-kit/timing-tests-128k.test.ts",
+  "test/spectrum-kit/halt2int.test.ts",
+  "test/spectrum-kit/floating-bus.test.ts",
+  "test/spectrum-kit/bobrowski.test.ts",
+  "test/spectrum-kit/timing-test.test.ts",
+  "test/spectrum-kit/visual.test.ts",
+  "test/spectrum-kit/ula-pictures.test.ts",
   // --- The z88dk templates on every Spectrum family model (`.plans/ZX_SPECTRUM_C_TEMPLATES_PLAN.md` T3;
   // --- one per route stays fast in `z88dk-templates-run.core.test.ts`)
   "test/z88dk/z88dk-templates-run-models.core.test.ts",

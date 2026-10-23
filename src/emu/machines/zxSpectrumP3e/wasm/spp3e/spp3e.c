@@ -126,6 +126,14 @@ typedef struct Spp3eScreenConfig {
   uint16_t pixelDataPrefetchTime;
   uint16_t attributeDataPrefetchTime;
   uint8_t contentionValues[8];
+  /*
+   * How many T-states the ULA's real memory reads come after the T-states this table fetches at
+   * (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` §1.2): 4 on the 48K, 2 on the 128K/+2 - the offset the
+   * floating bus already used (its byte is the table's fetch of `delay + 1` T-states before the
+   * port read). A CPU write and an `OUT` to the border take effect against the real reads; 0 keeps
+   * the old behaviour on the machines no measurement covers yet (+2A/+3, Timex, Pentagon, Scorpion).
+   */
+  uint8_t ulaFetchDelay;
 } Spp3eScreenConfig;
 
 typedef struct Spp3eAudioSample {
@@ -354,9 +362,15 @@ static uint8_t spp3ePixelByte2;
 static uint8_t spp3eAttrByte1;
 static uint8_t spp3eAttrByte2;
 
+/*
+ * The gate array reads $4000's bitmap at 14,367 (the ZXE wiki's +2A/+3 Floating Bus Test table, from
+ * real machines), five T-states after this table fetches it: the fetch delay the border and the CPU's
+ * screen writes are taken against (`zx-spectrum-ula.c`). The contention the shared builder writes from
+ * the values below is replaced by the gate array's own table (`spp3eBuildGateArrayContention`).
+ */
 static const Spp3eScreenConfig spp3eUlaConfig = {
   8u, 7u, 48u, 48u, 8u, 192u, 24u, 24u, 128u, 40u, 12u, 2u, 1u,
-  {0u, 7u, 6u, 5u, 4u, 3u, 2u, 1u}
+  {0u, 7u, 6u, 5u, 4u, 3u, 2u, 1u}, 5u
 };
 
 static uint32_t spp3eRamBankOffset(uint32_t bank) {
@@ -1163,33 +1177,19 @@ static void SPP3E_CPU_NOINLINE spp3eDelayMemoryAccess(uint32_t address) {
   spp3eTactPlusN(3u);
 }
 
+/*
+ * The gate array contends only cycles with MREQ active (Sinclair Wiki, "Contended memory" and
+ * "Contended I/O"; the WoS 128K reference: on the +2A/+3 an instruction's repeated `pc+1`/`hl`
+ * entries are combined into one, and port $FE is not contended). An internal or refresh cycle with a
+ * contended address on the bus, and every I/O cycle, run at full speed.
+ */
 static void SPP3E_CPU_NOINLINE spp3eCpuDelayAddressBusAccess(uint32_t address) {
-  if (spp3eIsContendedMemoryAddress(address) != 0u) {
-    spp3eApplyContentionDelay();
-  }
+  (void)address;
 }
 
 static void SPP3E_CPU_NOINLINE spp3eDelayPortAccess(uint32_t address) {
-  const uint8_t lowBit = (address & 0x0001u) != 0u ? 1u : 0u;
-  if (spp3eIsContendedMemoryAddress(address) != 0u) {
-    if (lowBit != 0u) {
-      for (uint32_t i = 0u; i < 4u; i++) {
-        spp3eApplyContentionDelay();
-        spp3eTactPlusN(1u);
-      }
-    } else {
-      spp3eApplyContentionDelay();
-      spp3eTactPlusN(1u);
-      spp3eApplyContentionDelay();
-      spp3eTactPlusN(3u);
-    }
-  } else if (lowBit != 0u) {
-    spp3eTactPlusN(4u);
-  } else {
-    spp3eTactPlusN(1u);
-    spp3eApplyContentionDelay();
-    spp3eTactPlusN(3u);
-  }
+  (void)address;
+  spp3eTactPlusN(4u);
 }
 
 #undef SPP3E_CPU_NOINLINE
@@ -1798,8 +1798,35 @@ static void spp3eCompleteMachineFrame(void) {
   }
 }
 
+/*
+ * Where on a display line the gate array's first 7 is, in T-states after the line's first cell (frame
+ * tact 14,364 on the top line). The published sources disagree: the WoS 128K reference puts it at
+ * 14,367 (+3), the Sinclair Wiki at 14,363 (-1). ULA 128E +3 Test draws the same picture with either,
+ * and so does Klive with 0, where its table always had it; no real-machine result in the kit decides
+ * it (`.plans/SPECTRUM_ACCURACY_DOCS_PLAN.md`, "Not yet proven").
+ */
+static const uint32_t spp3eContentionPeakOffset = 0u;
+
+/*
+ * The gate array's contention: per display line 1, 0, then 7, 6, 5, 4, 3, 2, 1, 0 sixteen times, the
+ * last 0 130 T-states after the first 1 (WoS 128K reference, "+2A/+3": 1 at 14,365, 7 at 14,367 and
+ * so on until 14,494). It contends only MREQ cycles (Sinclair Wiki, "Contended memory"), so the table
+ * is applied to memory reads and writes only: never to I/O, internal or refresh cycles.
+ */
+static void spp3eBuildGateArrayContention(void) {
+  for (uint32_t tact = 0u; tact < spp3eTactsInFrame; tact++) spp3eContention[tact] = 0u;
+  for (uint32_t line = 0u; line < 192u; line++) {
+    const uint32_t cell = (spp3eFirstDisplayLine + line) * spp3eScreenLineTime;
+    const uint32_t peak = cell + spp3eContentionPeakOffset;
+    for (uint32_t tact = peak - 2u; tact <= peak + 127u; tact++) {
+      spp3eContention[tact] = (uint8_t)(7u - ((tact + 8u - peak) & 0x07u));
+    }
+  }
+}
+
 void spp3eReset(void) {
   spp3eUlaInitializeTimingTables(&spp3eUlaConfig);
+  spp3eBuildGateArrayContention();
   z80Reset();
   spp3eFrames = 0;
   spp3eTacts = 0;
@@ -1939,7 +1966,8 @@ void spp3eWriteMemory(uint32_t address, uint32_t value) {
   const uint32_t offset = maskedAddress & 0x3fffu;
   const uint8_t byteValue = (uint8_t)value;
   if (spp3eIsVisibleScreenSlotOffset(slot, offset) != 0u) {
-    spp3eUlaRenderUntilCurrentTact();
+    /* The gate array's reads from the fetch delay on see the new byte (zx-spectrum-ula.c) */
+    renderUlaBeforeWrite();
   }
   spp3eMemorySlotBase[slot][offset] = byteValue;
   spp3eMemory[maskedAddress] = byteValue;
@@ -2053,6 +2081,9 @@ void spp3eWritePort(uint32_t address, uint32_t value) {
     const uint8_t nextBorderColor = (uint8_t)(value & 0x07u);
     if (nextBorderColor != spp3eBorderColor) {
       spp3eUlaRenderUntilCurrentTact();
+      spp3eBorderColor = nextBorderColor;
+      /* The 8-pixel chunk the change lands on, against the gate array's reads (zx-spectrum-ula.c) */
+      ulaRepaintBorderForChange();
     }
     spp3eBorderColor = nextBorderColor;
     const uint8_t nextMicBit = (value & 0x08u) != 0u ? 1u : 0u;
@@ -2423,6 +2454,11 @@ uint32_t spp3eGetRenderingPixelIndex(uint32_t tact) { return spp3eRenderingPixel
    (see ulaBeamInfo), and rendering the paused picture up to it, which changes nothing later (T2) */
 uint32_t spp3eGetBeamInfo(uint32_t field) { return ulaBeamInfo(field); }
 void spp3eRenderToBeam(void) { spp3eUlaRenderUntilCurrentTact(); }
+/*
+ * A test and control export: the wait a memory access to the address would have now (paging decides
+ * which slots are contended). The CPU does not call it: its internal and refresh cycles are not
+ * contended on the gate array (`spp3eCpuDelayAddressBusAccess`).
+ */
 void spp3eDelayAddressBusAccess(uint32_t address) {
   if (spp3eIsContendedMemoryAddress(address) != 0u) {
     spp3eApplyContentionDelay();

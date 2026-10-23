@@ -31,9 +31,16 @@
 /* The per-tact tables hold the longer frame: the Pentagon's 320 lines of 224 T */
 #define SP128_TACTS_PER_FRAME_MAX 71680u
 #define SP128_SCREEN_LINE_TIME 228u
-/* The 128K's INT pulse in Klive's core; the Pentagon's comes from the Next VHDL (zxnext.vhd ~1989) */
-#define SP128_INTERRUPT_TACTS 32u
+/*
+ * The 128K's INT pulse: 35 T-states (the ZXE wiki's Timings table, "14364/35"; 32 is the 48K's).
+ * ZX Spectrum Timing Tests 128K fails all its uncontended tests with 32, whose sync sequences run
+ * EI and HALT while the pulse is still active (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phase 0). The
+ * Pentagon's comes from the Next VHDL (zxnext.vhd ~1989).
+ */
+#define SP128_INTERRUPT_TACTS 35u
 #define SP128_PENTAGON_INTERRUPT_TACTS 36u
+/* The Scorpion keeps the 32 T-states it always had (it runs the 48K's raster, plan §8) */
+#define SP128_SCORPION_INTERRUPT_TACTS 32u
 /*
  * Where the Pentagon's interrupt falls relative to the raster the timing tables are built for.
  * zxula_timing.vhd (Pentagon): the interrupt at (vc 319, hc 439) and the ULA's first fetch of a line
@@ -150,6 +157,14 @@ typedef struct Sp128ScreenConfig {
   uint16_t pixelDataPrefetchTime;
   uint16_t attributeDataPrefetchTime;
   uint8_t contentionValues[8];
+  /*
+   * How many T-states the ULA's real memory reads come after the T-states this table fetches at
+   * (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` §1.2): 4 on the 48K, 2 on the 128K/+2 - the offset the
+   * floating bus already used (its byte is the table's fetch of `delay + 1` T-states before the
+   * port read). A CPU write and an `OUT` to the border take effect against the real reads; 0 keeps
+   * the old behaviour on the machines no measurement covers yet (+2A/+3, Timex, Pentagon, Scorpion).
+   */
+  uint8_t ulaFetchDelay;
 } Sp128ScreenConfig;
 
 static uint8_t sp128Ram[SP128_RAM_SIZE];
@@ -164,6 +179,8 @@ static uint8_t sp128MemorySlotWritable[4];
 static uint8_t sp128MemorySlotMapInitialized;
 /* Bit n set: the 16K slot n is contended (slot 1, and slot 3 with an odd bank; none on the Pentagon) */
 static uint8_t sp128ContendedSlots;
+/* The contended slots while snow is on (zx-spectrum-ula.c), 0 when it is off: the refresh's one test */
+static uint8_t sp128SnowSlots;
 static uint8_t sp128Contention[SP128_TACTS_PER_FRAME_MAX];
 static uint8_t sp128RenderingPhase[SP128_TACTS_PER_FRAME_MAX];
 static uint16_t sp128RenderingPixelAddress[SP128_TACTS_PER_FRAME_MAX];
@@ -375,7 +392,7 @@ static const uint32_t sp128SpectrumColors[16] = {
 
 static const Sp128ScreenConfig sp128UlaConfig = {
   8u, 7u, 48u, 48u, 8u, 192u, 24u, 24u, 128u, 40u, 12u, 2u, 1u,
-  {4u, 3u, 2u, 1u, 0u, 0u, 6u, 5u}
+  {4u, 3u, 2u, 1u, 0u, 0u, 6u, 5u}, 2u
 };
 
 /*
@@ -385,7 +402,7 @@ static const Sp128ScreenConfig sp128UlaConfig = {
  */
 static const Sp128ScreenConfig sp128PentagonConfig = {
   16u, 16u, 48u, 48u, 0u, 192u, 24u, 24u, 128u, 32u, 16u, 2u, 1u,
-  {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}
+  {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u
 };
 
 /*
@@ -395,7 +412,7 @@ static const Sp128ScreenConfig sp128PentagonConfig = {
  */
 static const Sp128ScreenConfig sp128ScorpionConfig = {
   8u, 8u, 48u, 48u, 8u, 192u, 24u, 24u, 128u, 40u, 8u, 2u, 1u,
-  {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}
+  {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u
 };
 
 #define Sp48ScreenConfig Sp128ScreenConfig
@@ -762,6 +779,7 @@ static void rebuildMemorySlotMap(void) {
   sp128ContendedSlots = sp128Contended == 0u
     ? 0u
     : (uint8_t)(0x02u | ((sp128SelectedBank & 0x01u) != 0u ? 0x08u : 0u));
+  sp128SnowSlots = ulaSnowEnabled != 0u ? sp128ContendedSlots : 0u;
   sp128MemorySlotMapInitialized = 1u;
 }
 
@@ -817,7 +835,8 @@ SP128_ALWAYS_INLINE void writeMappedMemory(uint32_t address, uint32_t value) {
   }
   const uint32_t offset = maskedAddress & 0x3fffu;
   if (isVisibleScreenSlotOffset(slot, offset) != 0u) {
-    sp128UlaRenderUntilCurrentTact();
+    /* The ULA's reads from the 4th T-state of the write cycle on see the new byte (zx-spectrum-ula.c) */
+    renderUlaBeforeWrite();
   }
   uint8_t *base = sp128MemorySlotBase[slot];
   base[offset] = byteValue;
@@ -898,6 +917,8 @@ static uint32_t sp128CpuReadPort(uint32_t address);
 #define Z80_DELAY_MEMORY_READ(address) sp128DelayMemoryAccess((uint32_t)(address))
 #define Z80_DELAY_MEMORY_WRITE(address) sp128DelayMemoryAccess((uint32_t)(address))
 #define Z80_DELAY_ADDRESS_BUS_ACCESS(address) sp128CpuDelayAddressBusAccess((uint32_t)(address))
+/* The ULA cannot stop the CPU in a refresh (z80.c) */
+#define Z80_DELAY_REFRESH_BUS_ACCESS(address) ((void)(address))
 #define Z80_DELAY_PORT_READ(address) sp128DelayPortAccess((uint32_t)(address))
 #define Z80_DELAY_PORT_WRITE(address) sp128DelayPortAccess((uint32_t)(address))
 /* RZX (`zx-spectrum-rzx.c`): the fetch counter counts every refresh but the INT acknowledge's */
@@ -905,9 +926,22 @@ static inline void rzxCountFetch(void);
 static inline void rzxIntAck(void);
 /* Not under the benchmark-only strip (`z80.c`): no RZX recording, so no fetch count */
 #ifndef Z80_BENCH_STRIP_DEBUG
-#define Z80_REFRESH(address) rzxCountFetch()
+#define SP128_REFRESH_RZX() rzxCountFetch()
 #define Z80_INT_ACK() rzxIntAck()
+#else
+#define SP128_REFRESH_RZX() ((void)0)
 #endif
+/*
+ * Snow (`zx-spectrum-ula.c`): a refresh with I in contended memory disturbs the ULA's read - $4000
+ * (bank 5) or an odd bank at $C000. Only the 128K's own timing has it (its fetch delay); one compare
+ * while the address is elsewhere or the effect is off.
+ */
+#define Z80_REFRESH(address) \
+  do { \
+    SP128_REFRESH_RZX(); \
+    if (__builtin_expect(((sp128SnowSlots >> (((address) >> 14u) & 0x03u)) & 0x01u) != 0u, 0)) \
+      ulaSnowRefresh((uint8_t)(address)); \
+  } while (0)
 /*
  * The Beta 128's paging trap ([BK], plan §9): an M1 fetch from $3D00-$3DFF with the 48K BASIC ROM
  * selected pages the TR-DOS ROM in, before the fetch reads it; an M1 fetch from RAM pages it out.
@@ -936,6 +970,7 @@ static inline void sp128BetaBeforeFetch(uint16_t pc) {
 #define Z80_EXPORT_PREFIX sp128
 #include "../../../../z80/wasm/z80-cpu-exports.c"
 #undef Z80_REFRESH
+#undef SP128_REFRESH_RZX
 #undef Z80_INT_ACK
 #define RZX_CORE_PREFIX sp128
 #include "../../../zxSpectrum/wasm/common/zx-spectrum-rzx.c"
@@ -963,6 +998,7 @@ static uint32_t sp128CpuReadPort(uint32_t address) {
 #undef Z80_DELAY_MEMORY_READ
 #undef Z80_DELAY_MEMORY_WRITE
 #undef Z80_DELAY_ADDRESS_BUS_ACCESS
+#undef Z80_DELAY_REFRESH_BUS_ACCESS
 #undef Z80_DELAY_PORT_READ
 #undef Z80_DELAY_PORT_WRITE
 
@@ -1330,7 +1366,9 @@ static void sp128ApplyTiming(uint32_t timing) {
   sp128Scorpion = scorpion;
   sp128BaseClockFrequency =
     pentagon != 0u || scorpion != 0u ? SP128_PENTAGON_CLOCK_FREQUENCY : SP128_BASE_CLOCK_FREQUENCY;
-  sp128InterruptTacts = pentagon != 0u ? SP128_PENTAGON_INTERRUPT_TACTS : SP128_INTERRUPT_TACTS;
+  sp128InterruptTacts = pentagon != 0u
+    ? SP128_PENTAGON_INTERRUPT_TACTS
+    : scorpion != 0u ? SP128_SCORPION_INTERRUPT_TACTS : SP128_INTERRUPT_TACTS;
   sp128Contended = pentagon != 0u || scorpion != 0u ? 0u : 1u;
   /* The Scorpion's unattached ports read the attribute byte the ULA fetches (plan §8) */
   sp128HasFloatingBus = pentagon != 0u ? 0u : 1u;
@@ -2312,6 +2350,32 @@ uint32_t sp128GetBeamInfo(uint32_t field) {
   /* The Pentagon's tables are the raster rotated SP128_PENTAGON_RASTER_SHIFT tacts later */
   if (field == 8u) return sp128Timing == SP128_TIMING_PENTAGON ? SP128_PENTAGON_RASTER_SHIFT : 0u;
   return ulaBeamInfo(field);
+}
+
+/* Late ("alternate") ULA timing (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phase 4); the 128K only */
+void sp128SetLateTiming(uint32_t late) {
+  if ((late != 0u ? 1u : 0u) == ulaLateTiming) return;
+  ulaSetLateTiming(late);
+  if (sp128ScreenLineTime != 0u) sp128ApplyTiming(sp128Timing);
+}
+
+uint32_t sp128GetLateTiming(void) {
+  return ulaLateTiming;
+}
+
+/* Snow (Phase 5): 0 switches the effect off */
+void sp128SetSnowEffect(uint32_t on) {
+  ulaSnowEnabled = on != 0u ? 1u : 0u;
+  sp128SnowSlots = ulaSnowEnabled != 0u ? sp128ContendedSlots : 0u;
+}
+
+uint32_t sp128GetSnowEffect(void) {
+  return ulaSnowEnabled;
+}
+
+/* How many T-states the ULA's reads come after the timing tables' fetches (zx-spectrum-ula.c) */
+uint32_t sp128GetUlaFetchDelay(void) {
+  return ulaFetchDelay;
 }
 
 void sp128RenderToBeam(void) {

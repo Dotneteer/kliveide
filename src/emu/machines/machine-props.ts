@@ -27,5 +27,8 @@ export const FILE_PROVIDER = "FileProvider";
 export const HT_VIDEO_CUT = "HtVideoCut";
 export const HT_VIDEO_PAGE = "HtVideoPage";
 export const HT_VIDEO_DASH = "HtVideoDash";
+/** The ZX Spectrum ULA's late timing and snow effect (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phases 4, 5) */
+export const ULA_LATE_TIMING = "UlaLateTiming";
+export const ULA_SNOW = "UlaSnow";
 export const AUDIO_SAMPLE_RATE = "AudioSampleRate";
 export const BEEPER_SAMPLES = "BeeperSamples";

@@ -1,6 +1,7 @@
 import type { HistoryRecord } from "@common/history/historyRecord";
 import type { ExecutionHistoryInfo } from "@common/history/historyTypes";
 import { historyFromOf, historyInfoOf, historyOf } from "../historySupport";
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -39,6 +40,9 @@ import type { RzxPlayer, RzxPlayerOptions } from "@emu/machines/zxSpectrum/rzx/R
 import type { RzxRecorder, RzxRecorderOptions } from "@emu/machines/zxSpectrum/rzx/RzxRecorder";
 import type { RzxStop } from "@emu/machines/zxSpectrum/rzx/rzxSession";
 import * as rzx from "../spectrumRzx";
+import { tapeBlocksOf } from "@common/headless/tapeBlocks";
+import { screenImageOf } from "@common/headless/screenImage";
+import { encodePng } from "@common/imaging/png";
 import { spectrumChordsOf } from "@common/headless/keyboard";
 import { ScorpionWasmV2Machine } from "@emu/machines/zxSpectrum128/ScorpionWasmV2Machine";
 import { SCORPION_ROM_FILE } from "@emu/machines/machine-props";
@@ -329,6 +333,15 @@ export class Sp128TestSession {
     return this;
   }
 
+  /**
+   * Steps until the CPU is between two instructions: a frame can end after a CB/ED/DD/FD prefix, and
+   * a test that then sets PC (or takes a snapshot) would join that prefix to the wrong opcode.
+   */
+  toInstructionBoundary(): this {
+    while (this.call("GetCpuPrefix") !== 0) this.step();
+    return this;
+  }
+
   /** Executes single instructions */
   step(count = 1): this {
     const ctx = this.machine.executionContext;
@@ -472,6 +485,22 @@ export class Sp128TestSession {
     return this;
   }
 
+  /**
+   * Loads a `.tap` / `.tzx` file the way a user does: inserts it (fast load by default) and plays
+   * the machine's own tape-load flow from a hard reset (the start-up menu's tape loader on the
+   * 128K and +2, Loader on the +2A/+3, `LOAD ""` on the Pentagon and the Scorpion). Run frames (or
+   * `runUntilStable`) afterwards for the program to load and start.
+   */
+  loadTap(path: string, { fastLoad = true }: { fastLoad?: boolean } = {}): this {
+    const parsed = tapeBlocksOf(new Uint8Array(readFileSync(path)));
+    if ("error" in parsed) throw new Error(`${path} is not a tape: ${parsed.error}`);
+    const flow = this.machine.getTapeLoadFlow?.();
+    if (!flow) throw new Error(`The ${this.model} has no tape-load flow.`);
+    this.insertTape(parsed.blocks, { fastLoad });
+    this.runFlow(flow);
+    return this;
+  }
+
   /** Inserts a `.dsk` image in drive A (0) or B (1) as the IDE does; +2A/+3/+3E only */
   insertDisk(drive: 0 | 1, bytes: Uint8Array): this {
     this.machine.setMachineProperty(drive ? MEDIA_DISK_B : MEDIA_DISK_A, bytes);
@@ -546,6 +575,42 @@ export class Sp128TestSession {
     let text = "";
     for (let col = 0; col < 32; col++) text += this.screenChar(row, col) ?? "?";
     return text.replace(/\s+$/, "");
+  }
+
+  /** The whole picture, border included, as RGBA bytes (what the emulator panel draws) */
+  screenImage(): { width: number; height: number; pixels: Uint8Array } {
+    return screenImageOf(this.machine);
+  }
+
+  /** The whole picture as a PNG file */
+  screenPng(): Buffer {
+    const { width, height, pixels } = this.screenImage();
+    return encodePng(pixels, width, height);
+  }
+
+  /** A SHA-256 of the whole picture's pixels, for comparing pictures */
+  screenHash(): string {
+    return createHash("sha256").update(this.screenImage().pixels).digest("hex");
+  }
+
+  /**
+   * Runs frames until the picture has not changed for `stableFrames` frames in a row, and returns
+   * the frames run; throws after `maxFrames`. With `period`, compares frames that many apart (a
+   * flashing cursor never settles frame to frame).
+   */
+  runUntilStable({ stableFrames = 50, maxFrames = 3000, period = 1 }: { stableFrames?: number; maxFrames?: number; period?: number } = {}): number {
+    const hashes: string[] = [];
+    let same = 0;
+    for (let i = 1; i <= maxFrames; i++) {
+      this.runFrames(1);
+      hashes.push(this.screenHash());
+      if (hashes.length > period) {
+        same = hashes[hashes.length - 1] === hashes[hashes.length - 1 - period] ? same + 1 : 0;
+        hashes.shift();
+      }
+      if (same >= stableFrames) return i;
+    }
+    throw new Error(`The picture did not settle in ${maxFrames} frames.`);
   }
 
   /** The whole screen as text, one line per row */
