@@ -302,8 +302,8 @@ class EmuMessageProcessor {
     }
 
     // --- An HT-1080Z tape (.cas, .cmd, or a tokenised .bas): turned into the bit stream its core plays.
-    // --- A .bas is also BASIC source for other machines, so it is a tape only when the HT is running.
-    if (isHt1080zTapeFor(file, this.machineService.getMachineController()?.machine?.machineId)) {
+    // --- A .bas is a tape by its content; on the HT a text one is refused with the reason.
+    if (isHt1080zTapeFor(file, this.machineService.getMachineController()?.machine?.machineId, contents)) {
       let htTape;
       try {
         htTape = parseHt1080zTapeFile(contents, file);

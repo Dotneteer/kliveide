@@ -5,7 +5,7 @@ import { Store } from "@common/state/redux-light";
 import { ITreeNode, ITreeView } from "@abstractions/ITreeNode";
 import { ProjectNode } from "@abstractions/ProjectNode";
 import { IProjectService } from "@renderer/abstractions/IProjectService";
-import { buildProjectTree } from "@renderer/appIde/project/project-node";
+import { buildProjectTree, takeChangedContentKinds } from "@renderer/appIde/project/project-node";
 
 const folderCache = new Map<string, ITreeView<ProjectNode>>();
 let lastExplorerPath = "";
@@ -17,6 +17,8 @@ type UseExplorerTreeArgs = {
   mainApi: MainApi;
   projectService: IProjectService;
   store: Store<AppState>;
+  /** Opens a file again after its content kind changed (`nav`) */
+  reopenDocument?: (path: string) => Promise<unknown>;
 };
 
 export function useExplorerTree({
@@ -25,7 +27,8 @@ export function useExplorerTree({
   folderPath,
   mainApi,
   projectService,
-  store
+  store,
+  reopenDocument
 }: UseExplorerTreeArgs) {
   const [tree, setTree] = useState<ITreeView<ProjectNode>>(null);
   const [visibleNodes, setVisibleNodes] = useState<ITreeNode<ProjectNode>[]>([]);
@@ -62,11 +65,23 @@ export function useExplorerTree({
 
     const contents = await mainApi.getDirectoryContent(folderPath);
     const projectTree = buildProjectTree(contents, store, lastExpandedRef.current);
+    // --- A .bas that turned from source text into a tokenised HT-1080Z program (or back) is open in
+    // --- the wrong editor: close it and open it again in the right one (HT1080Z_TAPE_VIEWERS_PLAN D2)
+    for (const changed of takeChangedContentKinds()) {
+      const doc = projectService.getDocumentById(changed);
+      if (!doc?.usedIn?.length) continue;
+      // --- Closing is asynchronous: the document opens again only once every hub has let it go
+      const hubs = [...doc.usedIn];
+      void Promise.all(hubs.map((docHub) => docHub.closeDocument(changed))).then(() => {
+        projectService.forgetFile(changed);
+        return reopenDocument?.(changed);
+      });
+    }
     setTree(projectTree);
     setVisibleNodes(projectTree.getVisibleNodes());
     projectService.setProjectTree(projectTree);
     folderCache.set(folderPath, projectTree);
-  }, [folderPath, mainApi, projectService, store]);
+  }, [folderPath, mainApi, projectService, store, reopenDocument]);
 
   const refreshProjectFolderRef = useRef(refreshProjectFolder);
   refreshProjectFolderRef.current = refreshProjectFolder;

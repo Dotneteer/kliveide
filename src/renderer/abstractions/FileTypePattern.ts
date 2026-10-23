@@ -1,6 +1,7 @@
 import type { AppServices } from "./AppServices";
 import type { ContextMenuInfo } from "./ContextMenuIfo";
 import type { PanelRenderer } from "./PanelRenderer";
+import type { FileContentKind } from "@common/ht1080z/basContent";
 
 export type PatternMatchType = "starts" | "contains" | "ends" | "full";
 
@@ -13,6 +14,12 @@ export type FileTypePattern = {
    * the case-sensitive default stays for everything else.
    */
   ignoreCase?: boolean;
+  /**
+   * The entry matches only a file of this content kind, which the main process sniffed when it listed
+   * the folder (a tokenised HT-1080Z `.bas`; `.plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D2). An entry
+   * without one matches whatever the content.
+   */
+  contentKind?: FileContentKind;
   icon?: string;
   iconFill?: string;
 };

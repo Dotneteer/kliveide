@@ -55,6 +55,7 @@ export type Ht1080zTapeFile = {
 };
 
 import type { MessageKey } from "@common/i18n/keys.generated";
+import { isTokenisedHt1080zBasic } from "@common/ht1080z/basContent";
 
 /** Why a file cannot go on an HT-1080Z tape: the IDE shows `HT1080Z_TAPE_ERROR_KEYS[code]` */
 export type Ht1080zTapeFileErrorCode =
@@ -85,12 +86,20 @@ export function ht1080zTapeErrorKey(err: unknown): MessageKey {
 }
 
 /**
- * Whether a file goes in the HT-1080Z's deck: a `.cas` or `.cmd` always, a `.bas` only while the HT
- * runs - elsewhere a `.bas` is BASIC source (Klive BASIC, Boriel BASIC), not a tape
+ * Whether a file goes in the HT-1080Z's deck: a `.cas` or `.cmd` always; a `.bas` when its content is a
+ * tokenised HT program (`.plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D1, D6), or - its content unknown or text
+ * - while the HT runs, where reading it says why a text `.bas` is not a tape. Elsewhere a text `.bas`
+ * is BASIC source (Klive BASIC, Boriel BASIC).
+ * @param bytes The file's bytes (or its first ones), when known
  */
-export function isHt1080zTapeFor(fileName: string | undefined, machineId: string | undefined): boolean {
+export function isHt1080zTapeFor(
+  fileName: string | undefined,
+  machineId: string | undefined,
+  bytes?: ArrayLike<number>
+): boolean {
   if (!isHt1080zTapeFileName(fileName)) return false;
-  return !fileName!.toLowerCase().endsWith(".bas") || machineId === "ht1080z";
+  if (!fileName!.toLowerCase().endsWith(".bas")) return true;
+  return machineId === "ht1080z" || (!!bytes && isTokenisedHt1080zBasic(bytes, true));
 }
 
 /** Thrown for a file that cannot go on an HT-1080Z tape, with the reason (English, for logs) */

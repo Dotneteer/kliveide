@@ -741,6 +741,13 @@
       "address": "The first segment's start address, e.g. '$8000'"
     }
   },
+  "commands.compile.tokenisedBasRoot": "{file} is a tokenised HT-1080Z program, not BASIC source: load it as a tape (Load and run) instead of building it.",
+  "@commands.compile.tokenisedBasRoot": {
+    "context": "Error of the IDE's build commands when the project's build root is a .bas file stored as a tokenised HT-1080Z (TRS-80 Level II) program rather than BASIC source text. 'Load and run' is the Explorer's menu item name.",
+    "placeholders": {
+      "file": "The build root's path in the project, e.g. 'code/game.bas'"
+    }
+  },
   "commands.compile.ht1080zFormat": "HT-1080Z code exports as a .cmd or .cas file (or Intel HEX), not as {format}.",
   "@commands.compile.ht1080zFormat": {
     "context": "Error of the IDE's export command (expc) when HT-1080Z code is asked for a format of another machine. .cmd, .cas and Intel HEX are file formats: keep them.",

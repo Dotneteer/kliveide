@@ -1,0 +1,14 @@
+Floating Spy v0.33 - Floating bus test program (C) 2002 RAMSOFT
+---------------------------------------------------------------
+
+For our technical document about the floating bus, and to get the latest
+version of this program please visit our homepage:
+
+      http://www.ramsoft.bbk.org
+
+or write us at:
+
+      ramsoft@bbk.org
+
+
+The Ramsoft staff.

@@ -1,0 +1,469 @@
+{
+  "source": "ZXE depot (https://zxe.io/depot/software/ZX%20Spectrum/), catalogued by the ZXE wiki (https://github.com/redcode/ZXSpectrum/wiki/Tests)",
+  "downloaded": "2026-10-23",
+  "programs": [
+    {
+      "id": "ula48-simple",
+      "title": "ULA 48 Simple Test",
+      "machines": [
+        "48K"
+      ],
+      "wiki": "https://github.com/redcode/ZXSpectrum/wiki/ULA-48-Simple-Test",
+      "licence": "not stated",
+      "downloads": [
+        {
+          "file": "ULA 48 Simple Test (2012-10-06)(azesmbog)[!].tap",
+          "url": "https://zxe.io/depot/software/ZX%20Spectrum/ULA%2048%20Simple%20Test%20(2012-10-06)(azesmbog)%5B!%5D.tap",
+          "size": 32588,
+          "sha256": "1bcd04d0dda815eb8ae49014b828752288551f596a82c7ffd46662d6f82f2c4e",
+          "extracted": false
+        }
+      ]
+    },
+    {
+      "id": "ula128-timing",
+      "title": "ULA 128 Timing Test",
+      "machines": [
+        "128K"
+      ],
+      "wiki": "https://github.com/redcode/ZXSpectrum/wiki/ULA-128-Timing-Test",
+      "licence": "not stated",
+      "downloads": [
+        {
+          "file": "ULA 128 Timing Test (2012-10-06)(azesmbog)[!].tap",
+          "url": "https://zxe.io/depot/software/ZX%20Spectrum/ULA%20128%20Timing%20Test%20(2012-10-06)(azesmbog)%5B!%5D.tap",
+          "size": 16338,
+          "sha256": "59578bae6352d6a92b1887b392ee786aa9f162624a1ddef9541037b517b0c90f",
+          "extracted": false
+        }
+      ]
+    },
+    {
+      "id": "ula128e-plus3",
+      "title": "ULA 128E +3 Test",
+      "machines": [
+        "+2A/+3"
+      ],
+      "wiki": "https://github.com/redcode/ZXSpectrum/wiki/ULA-128E-3-Test",
+      "licence": "not stated",
+      "downloads": [
+        {
+          "file": "ULA 128E +3 Test (2012-10-10)(azesmbog)[!].tap",
+          "url": "https://zxe.io/depot/software/ZX%20Spectrum/ULA%20128E%20%2B3%20Test%20(2012-10-10)(azesmbog)%5B!%5D.tap",
+          "size": 17184,
+          "sha256": "60b3aaeca5b9d45c712d874fafa136c97d373c1569964cb87703ddf53911a8d5",
+          "extracted": false
+        }
+      ]
+    },
+    {
+      "id": "timing-test",
+      "title": "Timing Test",
+      "machines": [],
+      "wiki": "https://github.com/redcode/ZXSpectrum/wiki/Timing-Test",
+      "licence": "GPL (per the ZXE wiki); source included",
+      "downloads": [
+        {
+          "file": "Timing Test v0.3 (2013-12-09)(Rak, Patrik)[!].zip",
+          "url": "https://zxe.io/depot/software/ZX%20Spectrum/Timing%20Test%20v0.3%20(2013-12-09)(Rak%2C%20Patrik)%5B!%5D.zip",
+          "size": 6516,
+          "sha256": "bacff01453a01c14754c167b5b02695ec29a0a5960c2f202b52b26494c2e8dff",
+          "extracted": true
+        }
+      ]
+    },
+    {
+      "id": "timing-tests-48k",
+      "title": "ZX Spectrum Timing Tests - 48K",
+      "machines": [
+        "48K"
+      ],
+      "wiki": "https://github.com/redcode/ZXSpectrum/wiki/ZX-Spectrum-Timing-Tests-48K",
+      "licence": "not stated",
+      "downloads": [
+        {
+          "file": "ZX Spectrum Timing Tests - 48K v1.0 (2010-04-14)(Butler, Richard; Butler, Tim)[!].tap",
+          "url": "https://zxe.io/depot/software/ZX%20Spectrum/ZX%20Spectrum%20Timing%20Tests%20-%2048K%20v1.0%20(2010-04-14)(Butler%2C%20Richard%3B%20Butler%2C%20Tim)%5B!%5D.tap",
+          "size": 11918,
+          "sha256": "ecdc983879dcd27f232c3abe69e2b6c6c27befcbacfc1d7d5a710b5058f2f2f6",
+          "extracted": false
+        }
+      ]
+    },
+    {
+      "id": "timing-tests-128k",
+      "title": "ZX Spectrum Timing Tests - 128K",
+      "machines": [
+        "128K"
+      ],
+      "wiki": "https://github.com/redcode/ZXSpectrum/wiki/ZX-Spectrum-Timing-Tests-128K",
+      "licence": "not stated",
+      "downloads": [
+        {
+          "file": "ZX Spectrum Timing Tests - 128K v1.0 (2015-03-30)(Butler, Richard; Butler, Tim)[!].szx",
+          "url": "https://zxe.io/depot/software/ZX%20Spectrum/ZX%20Spectrum%20Timing%20Tests%20-%20128K%20v1.0%20(2015-03-30)(Butler%2C%20Richard%3B%20Butler%2C%20Tim)%5B!%5D.szx",
+          "size": 6170,
+          "sha256": "cc380ad8f77fa8a66d4c1e92cd7be4bad71dac6d051da9464d6ca5ca942a7261",
+          "extracted": false
+        }
+      ]
+    },
+    {
+      "id": "border-time",
+      "title": "Border Time",
+      "machines": [],
+      "wiki": "https://github.com/redcode/ZXSpectrum/wiki/Border-Time",
+      "licence": "not stated",
+      "downloads": [
+        {
+          "file": "Border Time (2011-08-20)(Bobrowski, Jan)[!].tap",
+          "url": "https://zxe.io/depot/software/ZX%20Spectrum/Border%20Time%20(2011-08-20)(Bobrowski%2C%20Jan)%5B!%5D.tap",
+          "size": 695,
+          "sha256": "235f3ed166f819b4b743daf968dd06719aeb1b5cfbaea4635ed75790ddf959cd",
+          "extracted": false
+        }
+      ]
+    },
+    {
+      "id": "screen-time",
+      "title": "Screen Time",
+      "machines": [],
+      "wiki": "https://github.com/redcode/ZXSpectrum/wiki/Screen-Time",
+      "licence": "not stated",
+      "downloads": [
+        {
+          "file": "Screen Time (2011-08-20)(Bobrowski, Jan)[!].tap",
+          "url": "https://zxe.io/depot/software/ZX%20Spectrum/Screen%20Time%20(2011-08-20)(Bobrowski%2C%20Jan)%5B!%5D.tap",
+          "size": 662,
+          "sha256": "5c136a2adee5064aad3397223bb1fc51bea5aaa9e4b7a5c099b06647f03864c2",
+          "extracted": false
+        }
+      ]
+    },
+    {
+      "id": "floating-spy",
+      "title": "Floating Spy (FloatSpy)",
+      "machines": [],
+      "wiki": "https://github.com/redcode/ZXSpectrum/wiki/Floating-Spy",
+      "licence": "not stated",
+      "downloads": [
+        {
+          "file": "Floating Spy v0.33 (2002-04)(Ramsoft)[!].zip",
+          "url": "https://zxe.io/depot/software/ZX%20Spectrum/Floating%20Spy%20v0.33%20(2002-04)(Ramsoft)%5B!%5D.zip",
+          "size": 2632,
+          "sha256": "3663cfc76b0733491c69faf088dfacda9294aa76e828600070380086138747ed",
+          "extracted": true
+        }
+      ]
+    },
+    {
+      "id": "float48k",
+      "title": "Float48K",
+      "machines": [
+        "48K"
+      ],
+      "wiki": "https://github.com/redcode/ZXSpectrum/wiki/Float48K",
+      "licence": "not stated",
+      "downloads": [
+        {
+          "file": "Float48K (2008-03-24)(Woodmass, Mark)[!].tap",
+          "url": "https://zxe.io/depot/software/ZX%20Spectrum/Float48K%20(2008-03-24)(Woodmass%2C%20Mark)%5B!%5D.tap",
+          "size": 656,
+          "sha256": "80ed598dca627c1798819a19e02631c48d054e2b4779ce861fc3334866ab4cc6",
+          "extracted": false
+        }
+      ]
+    },
+    {
+      "id": "float128k",
+      "title": "Float128K",
+      "machines": [
+        "128K"
+      ],
+      "wiki": "https://github.com/redcode/ZXSpectrum/wiki/Float128K",
+      "licence": "not stated",
+      "downloads": [
+        {
+          "file": "Float128K (2008-04-02)(Woodmass, Mark)[!].tap",
+          "url": "https://zxe.io/depot/software/ZX%20Spectrum/Float128K%20(2008-04-02)(Woodmass%2C%20Mark)%5B!%5D.tap",
+          "size": 723,
+          "sha256": "bb33aadc2cb354e2020768a0e8ce57a2b3383f64fee92dd7188c6d6c3214816f",
+          "extracted": false
+        }
+      ]
+    },
+    {
+      "id": "snow",
+      "title": "Snow",
+      "machines": [],
+      "wiki": "https://github.com/redcode/ZXSpectrum/wiki/Snow",
+      "licence": "not stated",
+      "downloads": [
+        {
+          "file": "Snow (2014-01-16)(Hikaru)[!].tap",
+          "url": "https://zxe.io/depot/software/ZX%20Spectrum/Snow%20(2014-01-16)(Hikaru)%5B!%5D.tap",
+          "size": 7157,
+          "sha256": "d930335f0455604c0e0082f20105f82cc0d85f1e2a4daa30f124132cd041e74a",
+          "extracted": false
+        }
+      ]
+    },
+    {
+      "id": "snow-contention",
+      "title": "Snow Contention",
+      "machines": [],
+      "wiki": "https://github.com/redcode/ZXSpectrum/wiki/Snow-Contention",
+      "licence": "not stated",
+      "downloads": [
+        {
+          "file": "Snow Contention (2009-06-20)(Woodmass, Mark)[!].tap",
+          "url": "https://zxe.io/depot/software/ZX%20Spectrum/Snow%20Contention%20(2009-06-20)(Woodmass%2C%20Mark)%5B!%5D.tap",
+          "size": 1704,
+          "sha256": "0076451a2f30ae79ae0df175274e19f06d43142d1243a8e5624f578b1a69bac4",
+          "extracted": false
+        }
+      ]
+    },
+    {
+      "id": "snow-hold",
+      "title": "Snow Hold",
+      "machines": [],
+      "wiki": "https://github.com/redcode/ZXSpectrum/wiki/Snow-Hold",
+      "licence": "GPLv2 (COPYING included); source included",
+      "downloads": [
+        {
+          "file": "Snow Hold (2025-05-27)(Woodmass, Mark)[!].zip",
+          "url": "https://zxe.io/depot/software/ZX%20Spectrum/Snow%20Hold%20(2025-05-27)(Woodmass%2C%20Mark)%5B!%5D.zip",
+          "size": 10315,
+          "sha256": "692f17898e3f16a82e5ed3f3ce607c6dc06b776ab231637bf251df1317b4309c",
+          "extracted": true
+        }
+      ]
+    },
+    {
+      "id": "snow-r",
+      "title": "Snow R",
+      "machines": [],
+      "wiki": "https://github.com/redcode/ZXSpectrum/wiki/Snow-R",
+      "licence": "not stated",
+      "downloads": [
+        {
+          "file": "Snow R (2022-10-20)(Neo Spectruman)[!].tap",
+          "url": "https://zxe.io/depot/software/ZX%20Spectrum/Snow%20R%20(2022-10-20)(Neo%20Spectruman)%5B!%5D.tap",
+          "size": 327,
+          "sha256": "7c5223ff135d081df9259172bac9c31b5a963c9f77858392c00f4f673a3e0f7d",
+          "extracted": false
+        }
+      ]
+    },
+    {
+      "id": "snow-tests",
+      "title": "Snow Tests",
+      "machines": [],
+      "wiki": "https://github.com/redcode/ZXSpectrum/wiki/Snow-Tests",
+      "licence": "not stated",
+      "downloads": [
+        {
+          "file": "Snow Tests (2022-10-19)(Weiv)[!].zip",
+          "url": "https://zxe.io/depot/software/ZX%20Spectrum/Snow%20Tests%20(2022-10-19)(Weiv)%5B!%5D.zip",
+          "size": 8963,
+          "sha256": "907ee0c8d40203de7e058c70a4100a9d414cf5a7e0936ffb31861131c6233be7",
+          "extracted": true
+        }
+      ]
+    },
+    {
+      "id": "snow48",
+      "title": "Snow48 (main and variants)",
+      "machines": [
+        "48K"
+      ],
+      "wiki": "https://github.com/redcode/ZXSpectrum/wiki/Snow48",
+      "licence": "not stated",
+      "downloads": [
+        {
+          "file": "Snow48 (2021-09-13)(azesmbog)[!].tap",
+          "url": "https://zxe.io/depot/software/ZX%20Spectrum/Snow48%20(2021-09-13)(azesmbog)%5B!%5D.tap",
+          "size": 39717,
+          "sha256": "cce12c57a9c2dbb0f21a68033a4f5f9f7965dcc3e586ce920bbb23c3ea931797",
+          "extracted": false
+        },
+        {
+          "file": "Snow48 (var b) (2021-09-12)(azesmbog)[!].tap",
+          "url": "https://zxe.io/depot/software/ZX%20Spectrum/Snow48%20(var%20b)%20(2021-09-12)(azesmbog)%5B!%5D.tap",
+          "size": 39717,
+          "sha256": "ef2315762489aa9c9d2f8fa93d0188cb2386e8ae99c5081b08439c499def165a",
+          "extracted": false
+        },
+        {
+          "file": "Snow48 (var b2) (2021-09-12)(azesmbog)[!].tap",
+          "url": "https://zxe.io/depot/software/ZX%20Spectrum/Snow48%20(var%20b2)%20(2021-09-12)(azesmbog)%5B!%5D.tap",
+          "size": 39717,
+          "sha256": "d35b99262c431383c80a1c0af5c2e728a30ce9664958aa7dace5054bccd2c71c",
+          "extracted": false
+        },
+        {
+          "file": "Snow48 (var b3) (2021-09-12)(azesmbog)[!].tap",
+          "url": "https://zxe.io/depot/software/ZX%20Spectrum/Snow48%20(var%20b3)%20(2021-09-12)(azesmbog)%5B!%5D.tap",
+          "size": 39717,
+          "sha256": "8a897ab17b1a057d1ba9d399cffde2034e7f8e713f32c6b7a4025d7a3f5141d4",
+          "extracted": false
+        },
+        {
+          "file": "Snow48 (var b5) (2021-09-13)(azesmbog)[!].tap",
+          "url": "https://zxe.io/depot/software/ZX%20Spectrum/Snow48%20(var%20b5)%20(2021-09-13)(azesmbog)%5B!%5D.tap",
+          "size": 39717,
+          "sha256": "4382fd6e8bf4bbc758299feb3811b160eeb49af893b00c8c6a38acfebcd9c016",
+          "extracted": false
+        },
+        {
+          "file": "Snow48 (var b51) (2021-09-14)(azesmbog)[!].tap",
+          "url": "https://zxe.io/depot/software/ZX%20Spectrum/Snow48%20(var%20b51)%20(2021-09-14)(azesmbog)%5B!%5D.tap",
+          "size": 4144,
+          "sha256": "3121a9e94e22c34c1282587ca3ff415d2c5d0c09c55ce7943b7c5037983e1d98",
+          "extracted": false
+        },
+        {
+          "file": "Snow48 (var b52) (2021-09-15)(azesmbog)[!].tap",
+          "url": "https://zxe.io/depot/software/ZX%20Spectrum/Snow48%20(var%20b52)%20(2021-09-15)(azesmbog)%5B!%5D.tap",
+          "size": 6749,
+          "sha256": "a4c0916175869c983bf14ea409f3cbfc32185d501a5c9df998f60d5ea89a6e5a",
+          "extracted": false
+        },
+        {
+          "file": "Snow48 (var b6) (2021-09-15)(azesmbog)[!].tap",
+          "url": "https://zxe.io/depot/software/ZX%20Spectrum/Snow48%20(var%20b6)%20(2021-09-15)(azesmbog)%5B!%5D.tap",
+          "size": 6781,
+          "sha256": "c6ea852157f54cbd63585b7d13bc0871803bd585757bcaf190b43b23162a65b9",
+          "extracted": false
+        },
+        {
+          "file": "Snow48 (var b7) (2021-09-16)(azesmbog)[!].tap",
+          "url": "https://zxe.io/depot/software/ZX%20Spectrum/Snow48%20(var%20b7)%20(2021-09-16)(azesmbog)%5B!%5D.tap",
+          "size": 6825,
+          "sha256": "27afaf6389e43fbdc5a5a1786b204293ad99d8091448931792199a4ae6f41af0",
+          "extracted": false
+        },
+        {
+          "file": "Snow48 (var b9) (2021-09-17)(azesmbog)[!].tap",
+          "url": "https://zxe.io/depot/software/ZX%20Spectrum/Snow48%20(var%20b9)%20(2021-09-17)(azesmbog)%5B!%5D.tap",
+          "size": 6929,
+          "sha256": "93049b6f592e3c5200d4ca538279b131d9266956f5f6ec79288f4f3efc7a9d39",
+          "extracted": false
+        },
+        {
+          "file": "Snow48 (var c0) (2021-09-18)(azesmbog)[!].tap",
+          "url": "https://zxe.io/depot/software/ZX%20Spectrum/Snow48%20(var%20c0)%20(2021-09-18)(azesmbog)%5B!%5D.tap",
+          "size": 7058,
+          "sha256": "fa7890a6b81c49c7276eca6902acd5027961f01363b49950d42badd238d9862a",
+          "extracted": false
+        }
+      ]
+    },
+    {
+      "id": "snow128n",
+      "title": "Snow128N",
+      "machines": [
+        "128K"
+      ],
+      "wiki": "https://github.com/redcode/ZXSpectrum/wiki/Snow128N",
+      "licence": "not stated",
+      "downloads": [
+        {
+          "file": "Snow128N (2023-04-04)(Weiv)[!].zip",
+          "url": "https://zxe.io/depot/software/ZX%20Spectrum/Snow128N%20(2023-04-04)(Weiv)%5B!%5D.zip",
+          "size": 483,
+          "sha256": "c0692851cf372c5f9d1eb0577a7700c2913953e5160e59a0a14b6835e918b0db",
+          "extracted": true
+        }
+      ]
+    },
+    {
+      "id": "ula-snow-crash",
+      "title": "ULA Snow Crash",
+      "machines": [],
+      "wiki": "https://github.com/redcode/ZXSpectrum/wiki/ULA-Snow-Crash",
+      "licence": "not stated",
+      "downloads": [
+        {
+          "file": "ULA Snow Crash (2018-02-06)(Panov, Astamur)[!].tap",
+          "url": "https://zxe.io/depot/software/ZX%20Spectrum/ULA%20Snow%20Crash%20(2018-02-06)(Panov%2C%20Astamur)%5B!%5D.tap",
+          "size": 174,
+          "sha256": "06dee881e353d4f21ad54cf24e094380fb85eff9f3a44060c462e84b7a77a302",
+          "extracted": false
+        }
+      ]
+    },
+    {
+      "id": "ir-contention",
+      "title": "IR Contention",
+      "machines": [
+        "48K"
+      ],
+      "wiki": "https://github.com/redcode/ZXSpectrum/wiki/IR-Contention",
+      "licence": "not stated",
+      "downloads": [
+        {
+          "file": "IR Contention (2023-01-08)(Woodmass, Mark)[!].tap",
+          "url": "https://zxe.io/depot/software/ZX%20Spectrum/IR%20Contention%20(2023-01-08)(Woodmass%2C%20Mark)%5B!%5D.tap",
+          "size": 529,
+          "sha256": "c9d9fb0a182d353e4f8c7d3e189a6136d6445f92d521de5b58b3a4f595832e8b",
+          "extracted": false
+        }
+      ]
+    },
+    {
+      "id": "ir-contention-128",
+      "title": "IR Contention 128",
+      "machines": [
+        "128K/+2"
+      ],
+      "wiki": "https://github.com/redcode/ZXSpectrum/wiki/IR-Contention-128",
+      "licence": "not stated",
+      "downloads": [
+        {
+          "file": "IR Contention 128 (2023-07-02)(Woodmass, Mark)[!].tap",
+          "url": "https://zxe.io/depot/software/ZX%20Spectrum/IR%20Contention%20128%20(2023-07-02)(Woodmass%2C%20Mark)%5B!%5D.tap",
+          "size": 646,
+          "sha256": "c52f750ed36bf5426e227a38faebde5987f3ab03e33fb0e0e3740a7fe5d2ffa7",
+          "extracted": false
+        }
+      ]
+    },
+    {
+      "id": "halt2int",
+      "title": "HALT2INT",
+      "machines": [
+        "48K",
+        "128K"
+      ],
+      "wiki": "https://github.com/redcode/Z80/wiki/HALT2INT",
+      "licence": "GPLv2 (COPYING included); source included",
+      "downloads": [
+        {
+          "file": "HALT2INT v3 (2022-01-04)(Woodmass, Mark)[!].zip",
+          "url": "https://zxe.io/depot/software/ZX%20Spectrum/HALT2INT%20v3%20(2022-01-04)(Woodmass%2C%20Mark)%5B!%5D.zip",
+          "size": 2102150,
+          "sha256": "c76c1fef02315017b8ae9d64c6c339f49b20daec7931412416c5556c681ecedf",
+          "extracted": true
+        }
+      ]
+    },
+    {
+      "id": "time-to-first-int",
+      "title": "Time to First INT",
+      "machines": [],
+      "wiki": "https://github.com/redcode/ZXSpectrum/wiki/Time-to-First-INT",
+      "licence": "MIT (stated in rom_first_int.asm); runs as a ROM, not a tape",
+      "downloads": [
+        {
+          "file": "Time to First INT (2022-08-23)(Helcmanovsky, Peter)[!].7z",
+          "url": "https://zxe.io/depot/software/ZX%20Spectrum/Time%20to%20First%20INT%20(2022-08-23)(Helcmanovsky%2C%20Peter)%5B!%5D.7z",
+          "size": 3559,
+          "sha256": "42d7d43365d9ec1e9c68ba0e19de6f769eedfbfb83f6519e018c6c5cc36f417d",
+          "extracted": true
+        }
+      ]
+    }
+  ]
+}

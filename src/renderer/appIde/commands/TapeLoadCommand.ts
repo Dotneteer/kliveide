@@ -130,7 +130,19 @@ export class TapeLoadCommand extends IdeCommandBase<TapeLoadCommandArgs> {
     const messages: ValidationMessage[] = [];
     const isProgram = !!args.file?.trim() && isZx8081ProgramFileName(args.file.trim());
     const currentMachine = context.store.getState().emulatorState?.machineId;
-    const isHtTape = !!args.file?.trim() && isHt1080zTapeFor(args.file.trim(), currentMachine);
+    // --- A .bas is a tape by its content (HT1080Z_TAPE_VIEWERS_PLAN D1, D6): a tokenised one is refused
+    // --- on another machine with the reason, a text one there is not a tape at all
+    let basBytes: Uint8Array | undefined;
+    if (args.file?.trim().toLowerCase().endsWith(".bas")) {
+      try {
+        basBytes = await context.mainApi.readBinaryFile(
+          resolveTapePath(args.file.trim(), context.store.getState().project?.folderPath)
+        );
+      } catch {
+        basBytes = undefined;
+      }
+    }
+    const isHtTape = !!args.file?.trim() && isHt1080zTapeFor(args.file.trim(), currentMachine, basBytes);
     if (!args.file?.trim()) {
       messages.push(validationError(t("commands.tapeLoad.emptyPath")));
     } else if (!isTapeFilePath(args.file) && !isProgram && !isHtTape) {
@@ -179,7 +191,7 @@ export class TapeLoadCommand extends IdeCommandBase<TapeLoadCommandArgs> {
       return commandError(t("commands.tapeLoad.readFailed", { file, error: messageOf(err) }));
     }
     // --- An HT-1080Z tape: checked as the emulator reads it, so a bad one is refused here with its reason
-    const isHtTape = isHt1080zTapeFor(file, context.store.getState().emulatorState?.machineId);
+    const isHtTape = isHt1080zTapeFor(file, context.store.getState().emulatorState?.machineId, bytes);
     if (isHtTape) {
       try {
         parseHt1080zTapeFile(bytes, file);

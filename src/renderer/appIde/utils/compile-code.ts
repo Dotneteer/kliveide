@@ -1,6 +1,6 @@
 import type { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext";
 import { CompileProfile, KliveCompilerOutput } from "@abstractions/CompilerInfo";
-import { getFileTypeEntry } from "@renderer/appIde/project/project-node";
+import { fileContentKindOf, getFileTypeEntry } from "@renderer/appIde/project/project-node";
 import {
   endCompileAction,
   incBreakpointsVersionAction,
@@ -110,6 +110,10 @@ export async function compileCode(
     return { message: "No build root selected in the current Klive project." };
   }
   const fullPath = `${state.project.folderPath}/${buildRoot}`;
+  // --- A tokenised HT-1080Z .bas is a program to load, not source to build (HT1080Z_TAPE_VIEWERS_PLAN D7)
+  if (fileContentKindOf(fullPath) === "ht1080zBasic") {
+    return { message: t("commands.compile.tokenisedBasRoot", { file: buildRoot }) };
+  }
   const language = getFileTypeEntry(fullPath, context.store)?.subType;
 
   // --- The compiler reads the files from disk: write what the editors have not saved yet (saving

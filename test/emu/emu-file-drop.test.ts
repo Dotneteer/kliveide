@@ -35,6 +35,7 @@ describe("droppedFileAction", () => {
     expect(droppedFileAction("/g/a.tap")).toEqual({ kind: "tape" });
     expect(droppedFileAction("/g/GAME.CAS")).toEqual({ kind: "htTape" });
     expect(droppedFileAction("/g/a.cmd")).toEqual({ kind: "htTape" });
+    expect(droppedFileAction("/g/GAME.BAS")).toEqual({ kind: "basic" });
     expect(droppedFileAction("/g/a.txt")).toMatchObject({ kind: "unsupported", message: expect.stringMatching(/\.txt file/) });
     expect(droppedFileAction("/g/README")).toMatchObject({ kind: "unsupported" });
   });

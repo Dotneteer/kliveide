@@ -1,0 +1,530 @@
+<!doctype html>
+<!--
+  HT-1080Z tape file viewers - mockup for the project author's approval. Approved by the project author on 2026-10-23 (`.plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D-Q1).
+
+  Viewers for `.cas`, `.cmd` and `.bas`, built on the TAP/TZX viewer's layout
+  (`src/renderer/appIde/DocumentPanels/Tape/`, `.plans/TAPE_VIEWER_PLAN.md`): a summary strip, a
+  graphic of the whole file, the parts list grouped by file, and a detail pane with the byte anatomy
+  of the selected part.
+
+  Every byte shown is real: the BASIC program is `scripts/doc-shots/recipes/ht1080z-demo.bas` (typed on
+  the emulated Series II), the machine code is the `default` project template assembled at $7000, and
+  the `.cas` files are what `basToBasicTape` / `cmdToSystemTape` make of them. The parsers below run on
+  those bytes; the listing uses Level II's token table and each model's character set.
+
+  Play times are at the ROM's 500 baud: a byte is 8 cells of ~3,560 T-states at 1.774 MHz (16.0 ms).
+
+  Literal colours are fine in this mockup only; the components take every colour from theme tokens.
+  Open it directly in a browser.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HT-1080Z tape viewers</title>
+<style>
+:root {
+  --page: #e9ebee; --panel: #f7f8f9; --chrome: #f1f2f4; --canvas: #ffffff; --raised: #ffffff;
+  --hover: #e8eaee; --selected: #e2e6ec; --border-subtle: #e5e7ea; --border: #d5d8dd; --border-strong: #b9bec6;
+  --text: #1b1d21; --text-2: #565c65; --text-3: #6b717a;
+  --accent: #0A6FB8; --on-accent: #ffffff; --accent-wash: #0A6FB81c;
+  --pill-hdr: #6b4fbf; --pill-data: #0A6FB8; --pill-code: #0A6FB8; --pill-sync: #8A6A00; --pill-lead: #6b717a; --pill-end: #6b717a;
+  --ok: #2D7D46; --warn: #8A6A00; --bad: #C8322B;
+  --seg-lead: #c9ccd2; --seg-sync: #d9b84a; --seg-hdr: #9b85dd; --seg-data: #4c94d0; --seg-end: #aab0b8;
+  --map-rom: #c9ccd2; --map-kb: #d9dbe0; --map-vram: #d4c8ef; --map-work: #e3e5e9; --map-ram: #eef3f8; --map-ram48: #f4f6f9;
+  --hi: #0A6FB8; --hi-wash: #0A6FB822;
+  --font-ui: "IBM Plex Sans", -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page: #0e0f11; --panel: #17191c; --chrome: #1b1d21; --canvas: #1b1c1f; --raised: #202329;
+  --hover: #24272e; --selected: #26313d; --border-subtle: #24272b; --border: #2e3238; --border-strong: #3d424a;
+  --text: #e4e6ea; --text-2: #949aa4; --text-3: #7f8690;
+  --accent: #45A5E6; --on-accent: #0e0f11; --accent-wash: #45A5E624;
+  --pill-hdr: #a493f0; --pill-data: #45A5E6; --pill-code: #45A5E6; --pill-sync: #FFC933; --pill-lead: #949aa4; --pill-end: #949aa4;
+  --ok: #6CC488; --warn: #FFC933; --bad: #F0605A;
+  --seg-lead: #3a3e45; --seg-sync: #b8962b; --seg-hdr: #7c68cf; --seg-data: #3c8fd0; --seg-end: #555b64;
+  --map-rom: #3a3e45; --map-kb: #30343a; --map-vram: #3b3356; --map-work: #2a2e34; --map-ram: #1f2b37; --map-ram48: #1b2129;
+  --hi: #45A5E6; --hi-wash: #45A5E62e;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --page: #0e0f11; --panel: #17191c; --chrome: #1b1d21; --canvas: #1b1c1f; --raised: #202329;
+  --hover: #24272e; --selected: #26313d; --border-subtle: #24272b; --border: #2e3238; --border-strong: #3d424a;
+  --text: #e4e6ea; --text-2: #949aa4; --text-3: #7f8690;
+  --accent: #45A5E6; --on-accent: #0e0f11; --accent-wash: #45A5E624;
+  --pill-hdr: #a493f0; --pill-data: #45A5E6; --pill-code: #45A5E6; --pill-sync: #FFC933; --pill-lead: #949aa4; --pill-end: #949aa4;
+  --ok: #6CC488; --warn: #FFC933; --bad: #F0605A;
+  --seg-lead: #3a3e45; --seg-sync: #b8962b; --seg-hdr: #7c68cf; --seg-data: #3c8fd0; --seg-end: #555b64;
+  --map-rom: #3a3e45; --map-kb: #30343a; --map-vram: #3b3356; --map-work: #2a2e34; --map-ram: #1f2b37; --map-ram48: #1b2129;
+  --hi: #45A5E6; --hi-wash: #45A5E62e;
+  color-scheme: dark; }
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+* { box-sizing: border-box; }
+body { background: var(--page); color: var(--text); font: 13px/1.45 var(--font-ui); margin: 0; padding: 24px 16px 56px; }
+.wrap { max-width: 1280px; margin: 0 auto; display: grid; gap: 22px; }
+h1 { font-size: 19px; font-weight: 600; margin: 0 0 6px; }
+h2 { font-size: 14px; font-weight: 600; margin: 0 0 6px; }
+p { margin: 0 0 8px; max-width: 95ch; }
+.muted { color: var(--text-2); }
+code, .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+code { font-size: 12px; }
+button { font: inherit; color: inherit; }
+button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* --- the decision box --- */
+.decision { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; display: grid; gap: 10px; }
+.options { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; }
+.opt { border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; background: var(--raised); }
+.opt.rec { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+.opt h3 { font-size: 13px; margin: 0 0 4px; }
+.opt p { margin: 0; color: var(--text-2); }
+.tag { display: inline-block; font-size: 10.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--accent); margin-left: 6px; }
+
+/* --- view switcher --- */
+.switch { display: flex; gap: 6px; flex-wrap: wrap; }
+.switch button { border: 1px solid var(--border); background: var(--raised); border-radius: 999px; padding: 5px 12px; cursor: pointer; }
+.switch button.on { border-color: var(--accent); color: var(--accent); background: var(--accent-wash); }
+
+/* --- IDE frame --- */
+.ide { background: var(--canvas); border: 1px solid var(--border-strong); border-radius: 6px; overflow: hidden; box-shadow: 0 12px 40px #0003; min-width: 0; }
+.tabs { display: flex; align-items: stretch; background: var(--chrome); border-bottom: 1px solid var(--border); }
+.tab { padding: 7px 14px; color: var(--text); background: var(--canvas); box-shadow: inset 0 2px 0 var(--accent); font-size: 12.5px; display: flex; gap: 8px; align-items: center; white-space: nowrap; }
+.tab .ext { color: var(--text-3); }
+.tabbtns { margin-left: auto; display: flex; gap: 2px; align-items: center; padding: 0 8px; }
+.tabbtns span { width: 26px; height: 24px; display: grid; place-items: center; color: var(--text-2); border-radius: 4px; }
+.tabbtns span:hover { background: var(--hover); }
+.tabbtns span.dis { opacity: .4; }
+.body { padding: 10px 14px 14px; display: grid; gap: 10px; }
+.summary { display: flex; flex-wrap: wrap; gap: 4px 22px; font-family: var(--font-mono); font-size: 13px; }
+.summary b { font-weight: 400; color: var(--text-2); margin-right: 6px; }
+.summary .ok { color: var(--ok); }
+.secthead { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.secthead h2 { margin: 0; font-family: var(--font-mono); }
+.secthead .count { color: var(--text-2); font-family: var(--font-mono); font-size: 12px; }
+.chips { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
+.chip { border: 1px solid var(--border); border-radius: 999px; padding: 2px 10px; font-family: var(--font-mono); font-size: 12px; color: var(--text-2); background: transparent; cursor: pointer; }
+.chip.on { border-color: var(--accent); color: var(--accent); background: var(--accent-wash); }
+
+/* --- the graphics --- */
+.graphic { display: grid; gap: 4px; }
+.glabel { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 11px; color: var(--text-3); }
+.glabel.abs { position: relative; height: 14px; display: block; }
+.glabel.abs span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+.glabel.abs span:first-child { transform: none; } .glabel.abs span:last-child { transform: translateX(-100%); }
+.strip { display: flex; height: 14px; border-radius: 3px; overflow: hidden; gap: 1px; }
+.strip .seg { background: var(--seg-hdr); cursor: pointer; opacity: .75; }
+.strip .seg.sel { opacity: 1; outline: 2px solid var(--hi); outline-offset: -2px; }
+.txt::before, .txt::after { content: "‹"; color: var(--text-3); } .txt::after { content: "›"; }
+.timeline { display: flex; height: 14px; border-radius: 3px; overflow: hidden; background: var(--seg-lead); }
+.timeline .seg { height: 100%; border-right: 1px solid var(--canvas); cursor: pointer; position: relative; }
+.timeline .seg:last-child { border-right: 0; }
+.timeline .seg.sel { outline: 2px solid var(--hi); outline-offset: -2px; }
+.memmap { position: relative; height: 26px; border-radius: 3px; overflow: hidden; display: flex; font-family: var(--font-mono); font-size: 10px; color: var(--text-2); }
+.memmap .zone { height: 100%; display: flex; align-items: center; justify-content: center; border-right: 1px solid var(--canvas); overflow: hidden; white-space: nowrap; }
+.memmap .blk { position: absolute; top: 3px; bottom: 3px; background: var(--seg-data); border-radius: 2px; min-width: 3px; cursor: pointer; }
+.memmap .blk.sel { outline: 2px solid var(--hi); outline-offset: 1px; }
+.memmap .blk.basic { background: var(--seg-hdr); }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 11.5px; color: var(--text-2); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+
+/* --- split --- */
+.split { display: grid; grid-template-columns: minmax(280px, 36%) 1fr; border: 1px solid var(--border); border-radius: 4px; min-height: 420px; }
+@media (max-width: 760px) { .split { grid-template-columns: 1fr; } .list { border-right: 0 !important; border-bottom: 1px solid var(--border); } }
+.list { border-right: 1px solid var(--border); font-family: var(--font-mono); overflow: auto; }
+.group { padding: 8px 12px 4px; font-weight: 600; font-size: 13.5px; border-bottom: 1px solid var(--border-subtle); }
+.row { display: grid; grid-template-columns: 34px auto 1fr auto 18px; gap: 8px; align-items: center; padding: 5px 12px; border-bottom: 1px solid var(--border-subtle); cursor: pointer; }
+.row:hover { background: var(--hover); }
+.row.sel { background: var(--selected); box-shadow: inset 3px 0 0 var(--accent); }
+.row .no { color: var(--accent); }
+.row .what { color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row .len { color: var(--text-2); text-align: right; }
+.row .pop { color: var(--text-3); text-align: center; }
+.pill { border: 1px solid currentColor; border-radius: 999px; padding: 0 8px; font-size: 11.5px; line-height: 18px; white-space: nowrap; }
+.pill.hdr { color: var(--pill-hdr); } .pill.data, .pill.code, .pill.basic { color: var(--pill-data); }
+.pill.sync { color: var(--pill-sync); } .pill.lead, .pill.end, .pill.entry { color: var(--pill-lead); }
+.detail { padding: 12px 16px; display: grid; align-content: start; gap: 12px; min-width: 0; }
+.dhead { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-family: var(--font-mono); }
+.dhead .no { color: var(--accent); font-size: 15px; }
+.popbtn { margin-left: auto; display: inline-flex; border-radius: 4px; overflow: hidden; background: var(--accent); color: var(--on-accent); font-family: var(--font-mono); font-size: 12.5px; }
+.popbtn span { padding: 5px 10px; } .popbtn span + span { border-left: 1px solid #0003; }
+.kv { display: grid; grid-template-columns: max-content 1fr; gap: 3px 22px; font-family: var(--font-mono); }
+.kv dt { color: var(--text-2); } .kv dd { margin: 0; }
+.ok { color: var(--ok); } .bad { color: var(--bad); }
+.sub { font: 500 11px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--text-2); margin-bottom: -4px; }
+.hint { color: var(--text-3); font-family: var(--font-mono); font-size: 12px; }
+.link { color: var(--accent); font-family: var(--font-mono); cursor: pointer; }
+
+/* --- byte anatomy (the TAP viewer's header bytes) --- */
+.bytes { display: flex; flex-wrap: wrap; gap: 4px; font-family: var(--font-mono); }
+.bytes .grp { background: var(--raised); border: 1px solid var(--border-subtle); border-radius: 4px; padding: 1px 6px; cursor: default; }
+.bytes .grp.on { border-color: var(--hi); color: var(--hi); background: var(--hi-wash); }
+.bytes .grp.tok { color: var(--pill-hdr); }
+.bytes .grp.more { color: var(--text-3); border-style: dashed; }
+.fields { display: grid; grid-template-columns: 64px max-content 1fr; gap: 2px 18px; font-family: var(--font-mono); }
+.fields > div { padding: 2px 6px; border-radius: 4px; }
+.fields .f { display: contents; }
+.fields .f > span { padding: 2px 6px; }
+.fields .f.on > span { background: var(--hi-wash); }
+.fields .f.on > span:last-child { color: var(--hi); }
+.fields .off { color: var(--text-3); } .fields .nm { color: var(--text-2); }
+.note { background: var(--raised); border: 1px solid var(--border-subtle); border-radius: 4px; padding: 8px 10px; color: var(--text-2); font-family: var(--font-mono); font-size: 12.5px; }
+
+/* --- the listing --- */
+.listing { font-family: var(--font-mono); background: var(--raised); border: 1px solid var(--border-subtle); border-radius: 4px; padding: 6px 0; }
+.listing div { padding: 1px 10px; white-space: pre-wrap; cursor: pointer; }
+.listing div:hover { background: var(--hover); }
+.listing div.sel { background: var(--hi-wash); }
+.listing .ln { color: var(--accent); }
+.listing .kw { color: var(--pill-hdr); }
+.listing .st { color: #c98a3a; }
+.modelsel { display: inline-flex; gap: 4px; margin-left: 8px; }
+
+/* --- explorer mock --- */
+.explorer { display: grid; grid-template-columns: 300px 1fr; gap: 14px; }
+@media (max-width: 760px) { .explorer { grid-template-columns: 1fr; } }
+.tree { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 8px 0; font-size: 13px; }
+.tree div { padding: 3px 12px; display: flex; gap: 8px; align-items: center; }
+.tree .ind { padding-left: 28px; }
+.tree .ico { width: 16px; text-align: center; font-family: var(--font-mono); font-size: 11px; color: var(--text-3); }
+.tree .badge { margin-left: auto; font-size: 11px; color: var(--text-3); font-family: var(--font-mono); }
+.tree .badge.ht { color: var(--accent); }
+table.rules { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+table.rules th, table.rules td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--border-subtle); vertical-align: top; }
+table.rules th { color: var(--text-2); font-weight: 500; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>HT-1080Z tape file viewers</h1>
+  <p class="muted">Mockups for <code>.cas</code>, <code>.cmd</code> and <code>.bas</code>, on the TAP/TZX viewer's layout: a summary
+  strip, a graphic of the whole file, the parts grouped by file, and the selected part's byte anatomy. Click a part, a
+  timeline segment or a block on the memory map; hover a byte group to see its field. Every byte here is real: the demo
+  BASIC program the Series II saved, and the <code>default</code> template's code assembled at $7000.</p>
+</header>
+
+<section class="decision" aria-labelledby="dilemma">
+  <h2 id="dilemma">The <code>.bas</code> dilemma</h2>
+  <p>A tokenised HT-1080Z program and a BASIC source file share the extension. They never share the content: Level II
+  saves a tokenised <code>.bas</code> as an <b>FFh byte</b> followed by binary program lines (keywords are bytes
+  80h-FBh, line links and numbers are binary), while Klive BASIC, Boriel BASIC or a Level II listing saved as text are
+  printable text. So the file itself can decide, wherever it is and whatever machine runs.</p>
+  <div class="options">
+    <div class="opt rec"><h3>A. Decide by content <span class="tag">recommended</span></h3>
+      <p>A <code>.bas</code> that starts with FFh and holds non-text bytes is an HT-1080Z program: it opens in the HT
+      viewer, gets Load and run in the Explorer, and goes into the deck. Any other <code>.bas</code> is source text: it
+      opens in the code editor and builds as today. The file type registry gains an optional content test (the first
+      bytes), checked when a file opens.</p></div>
+    <div class="opt"><h3>B. Decide by the project's machine</h3>
+      <p><code>.bas</code> is a tape in an HT-1080Z project and source text elsewhere. Simple, but wrong both ways: a
+      Spectrum project can hold an HT program, and an HT project can hold a text listing.</p></div>
+    <div class="opt"><h3>C. A + run a text listing on the HT <span class="tag">optional extra</span></h3>
+      <p>On top of A: Load and run a <i>text</i> <code>.bas</code> on the HT by tokenising it with the ROM's own
+      keyword table into a CLOAD tape, so a Level II listing typed in Klive's editor runs as it is. Text with no
+      Level II syntax would only give <code>?SN ERROR</code>s, so this is offered on the HT only.</p></div>
+  </div>
+</section>
+
+<nav class="switch" aria-label="Mockup">
+  <button data-view="casBasic" class="on">BASIC tape (.cas)</button>
+  <button data-view="casSystem">Machine-code tape (.cas)</button>
+  <button data-view="cmd">Load module (.cmd)</button>
+  <button data-view="bas">Tokenised BASIC (.bas)</button>
+  <button data-view="explorer">Which .bas opens where</button>
+</nav>
+
+<main id="view"></main>
+
+</div>
+<script>
+// ===================================================================================================
+// The real bytes
+const BAS = "FF EF 42 0A 00 84 00 12 43 14 00 81 20 58 D5 30 20 BD 20 31 32 37 3A 83 28 58 2C 30 29 3A 83 28 58 2C 34 37 29 3A 87 20 58 00 45 43 1E 00 81 20 59 D5 31 20 BD 20 34 36 3A 83 28 30 2C 59 29 3A 83 28 31 2C 59 29 3A 83 28 31 32 36 2C 59 29 3A 83 28 31 32 37 2C 59 29 3A 87 20 59 00 5D 43 28 00 B2 20 40 20 33 34 38 2C 22 48 54 2D 31 30 38 30 5A 22 3B 00 78 43 32 00 B2 20 40 20 34 37 34 2C 22 5E 44 56 5C 5A 5C 4C 4A 5E 4B 21 22 3B 00 81 43 3C 00 8D 20 36 30 00 00 00";
+const CODE = "CD C9 01 21 96 3D 11 42 70 CD 28 70 21 1C 3E 11 57 70 CD 28 70 21 D6 3D 06 14 36 83 23 10 FB 21 C0 3E 22 20 40 C3 CC 06 E5 CD 3C 70 E1 22 20 40 1A B7 28 08 D5 CD 33 00 D1 13 18 F4 2A 20 40 36 20 C9 57 45 4C 43 4F 4D 45 20 54 4F 20 4B 4C 49 56 45 20 49 44 45 00 48 54 2D 31 30 38 30 5A 00";
+const bytesOf = (h) => h.split(" ").map((x) => parseInt(x, 16));
+const bas = bytesOf(BAS), code = bytesOf(CODE);
+const cmd = [0x05, 5, ..."HELLO"].map((c) => (typeof c === "string" ? c.charCodeAt(0) : c));
+cmd.push(0x01, (code.length + 2) & 0xff, 0x00, 0x70, ...code, 0x02, 2, 0x00, 0x70);
+const LEADER = 255;
+const sysCas = [...new Array(LEADER).fill(0), 0xa5, 0x55, ..."HELLO ".split("").map((c) => c.charCodeAt(0)), 0x3c, code.length & 0xff, 0x00, 0x70, ...code];
+sysCas.push((0x00 + 0x70 + code.reduce((a, b) => a + b, 0)) & 0xff, 0x78, 0x00, 0x70);
+const basCas = [...new Array(LEADER).fill(0), 0xa5, 0xd3, 0xd3, 0xd3, 0x44, ...bas.slice(1)];
+
+// --- Level II's keywords, 80h-FBh (the ROM's table at 1650h)
+const TOKENS = "END FOR RESET SET CLS CMD RANDOM NEXT DATA INPUT DIM READ LET GOTO RUN IF RESTORE GOSUB RETURN REM STOP ELSE TRON TROFF DEFSTR DEFINT DEFSNG DEFDBL LINE EDIT ERROR RESUME OUT ON OPEN FIELD GET PUT CLOSE LOAD MERGE NAME KILL LSET RSET SAVE SYSTEM LPRINT DEF POKE PRINT CONT LIST LLIST DELETE AUTO CLEAR CLOAD CSAVE NEW TAB( TO FN USING VARPTR USR ERL ERR STRING$ INSTR POINT TIME$ MEM INKEY$ THEN NOT STEP + - * / [ AND OR > = < SGN INT ABS FRE INP POS SQR RND LOG EXP COS SIN TAN ATN PEEK CVI CVS CVD EOF LOC LOF MKI$ MKS$ MKD$ CINT CSNG CDBL FIX LEN STR$ VAL ASC CHR$ LEFT$ RIGHT$ MID$ '".split(" ");
+// --- Each model's characters for the codes that differ from ASCII
+const CHARSETS = {
+  s1: {},
+  s2: { 0x40: "É", 0x5b: "↑", 0x5c: "Ö", 0x5d: "Á", 0x5e: "Ü", 0x60: "é", 0x7c: "ö", 0x7d: "á", 0x7e: "ü" },
+  s64: { 0x5b: "↑", 0x5d: "↓" }
+};
+let model = "s2";
+const MS_PER_BYTE = (8 * 3560) / 1774;  // 16.05 ms
+const hx = (n, w = 2) => n.toString(16).toUpperCase().padStart(w, "0");
+const ad = (n) => "$" + hx(n, 4);
+const fmt = (n) => n.toLocaleString("en-US");
+const secs = (ms) => { const s = ms / 1000; return `${Math.floor(s / 60)}:${(s % 60).toFixed(1).padStart(4, "0")}`; };
+const ch = (c) => CHARSETS[model][c] ?? String.fromCharCode(c);
+
+// --- The program's lines, from the bytes after the FFh
+function parseBasic(prog, base = 0x42e9) {
+  const lines = []; let p = 0;
+  while (p + 1 < prog.length) {
+    const link = prog[p] | (prog[p + 1] << 8);
+    if (!link) { lines.push({ end: true, off: p }); break; }
+    const no = prog[p + 2] | (prog[p + 3] << 8);
+    let q = p + 4; while (prog[q] !== 0) q++;
+    lines.push({ off: p, addr: base + p, link, no, text: prog.slice(p + 4, q), len: q + 1 - p });
+    p = q + 1;
+  }
+  return lines;
+}
+function listingHtml(text) {
+  let out = "", inStr = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (c === 0x3a && text[i + 1] === 0x93 && text[i + 2] === 0xfb) { i++; continue; }
+    if (c === 0x3a && text[i + 1] === 0x95) continue;
+    if (c >= 0x80 && c <= 0xfb) { out += `<span class="kw">${TOKENS[c - 0x80]}</span>`; continue; }
+    if (c === 0x22) inStr = !inStr;
+    const g = ch(c).replace("<", "&lt;").replace(">", "&gt;");
+    out += inStr || c === 0x22 ? `<span class="st">${g}</span>` : g;
+  }
+  return out;
+}
+
+// ===================================================================================================
+// Rendering helpers
+const $ = (s, el = document) => el.querySelector(s);
+let state = { view: "casBasic", sel: 3, hover: -1 };
+
+function frame(name, ext, inner, tabButtons = true) {
+  return `<div class="ide"><div class="tabs"><div class="tab">${name}<span class="ext">${ext}</span></div>
+    <div class="tabbtns">${tabButtons ? `<span title="Load and run tape (HT-1080Z)">▷</span><span title="Insert tape">⏏</span><span title="Load and debug tape">🐞</span>` : ""}</div></div>
+    <div class="body">${inner}</div></div>`;
+}
+function summary(items) {
+  return `<div class="summary">${items.map(([k, v]) => `<span><b>${k}</b>${v}</span>`).join("")}</div>`;
+}
+function timeline(parts, total) {
+  return `<div class="graphic"><div class="timeline" role="list">${parts.map((p, i) =>
+    `<div class="seg ${i === state.sel ? "sel" : ""}" data-i="${i}" title="#${i} ${p.label} · ${secs(p.t0)}-${secs(p.t1)}"
+      style="flex:${Math.max(p.t1 - p.t0, total / 300)};background:var(--seg-${p.seg})"></div>`).join("")}</div>
+    <div class="glabel"><span>0:00.0</span><span>leader · sync · header · data · end</span><span>${secs(total)}</span></div></div>`;
+}
+const ZONES = [
+  [0x0000, 0x3000, "ROM", "rom"], [0x3000, 0x3800, "EXT", "rom"], [0x3800, 0x3c00, "KB", "kb"],
+  [0x3c00, 0x4000, "VIDEO", "vram"], [0x4000, 0x42e9, "", "work"], [0x42e9, 0x8000, "RAM (16K)", "ram"], [0x8000, 0x10000, "RAM, 48K models", "ram48"]
+];
+function memmap(blocks) {
+  const zones = ZONES.map(([a, b, l, c]) => `<div class="zone" style="flex:${b - a};background:var(--map-${c})">${l}</div>`).join("");
+  const blks = blocks.map((b) => `<div class="blk ${b.kind} ${b.i === state.sel ? "sel" : ""}" data-i="${b.i}" title="${b.label}"
+      style="left:${(b.from / 65536) * 100}%;width:${((b.to - b.from) / 65536) * 100}%"></div>`).join("");
+  return `<div class="graphic"><div class="memmap">${zones}${blks}</div>
+    <div class="glabel abs">${[[0, "$0000"], [0x3c00, "$3C00"], [0x8000, "$8000"], [0x10000, "$FFFF"]].map(([a, l]) => `<span style="left:${(a / 65536) * 100}%">${l}</span>`).join("")}</div>
+    <div class="legend"><span><i style="background:var(--map-rom)"></i>ROM</span><span><i style="background:var(--map-vram)"></i>video RAM</span>
+    <span><i style="background:var(--map-ram)"></i>RAM of every model</span><span><i style="background:var(--map-ram48)"></i>RAM of the 48K models</span>
+    <span><i style="background:var(--seg-data)"></i>code</span><span><i style="background:var(--seg-hdr)"></i>BASIC program</span></div></div>`;
+}
+function rows(groups) {
+  return groups.map((g) => `<div class="group">${g.title}</div>` + g.parts.map((p) =>
+    `<div class="row ${p.i === state.sel ? "sel" : ""}" data-i="${p.i}" tabindex="0">
+      <span class="no">#${p.i}</span><span class="pill ${p.pill}">${p.pillText}</span><span class="what">${p.what}</span>
+      <span class="len">${fmt(p.len)}</span><span class="pop">${p.pop ? "⧉" : ""}</span></div>`).join("")).join("");
+}
+function anatomy(groups, fields) {
+  return `<div class="bytes">${groups.map((g, i) =>
+    `<span class="grp ${g.cls ?? ""} ${i === state.hover ? "on" : ""}" data-g="${i}">${g.bytes}</span>`).join("")}</div>
+    <div class="fields">${fields.map((f, i) =>
+    `<div class="f ${f.g === state.hover ? "on" : ""}" data-g="${f.g}"><span class="off">${f.off}</span><span class="nm">${f.name}</span><span>${f.value}</span></div>`).join("")}</div>`;
+}
+const hexs = (arr, max = 12) => arr.length > max ? arr.slice(0, max).map((b) => hx(b)).join(" ") + " …" : arr.map((b) => hx(b)).join(" ");
+
+// ===================================================================================================
+// The views
+function casBasic() {
+  const lines = parseBasic(bas.slice(1));
+  const prog = bas.length - 1;
+  let t = 0; const P = [];
+  const add = (label, bytes, seg, extra = {}) => { const t0 = t; t += bytes * MS_PER_BYTE + (extra.gap ?? 0); P.push({ label, t0, t1: t, seg, len: bytes, ...extra }); };
+  add("Leader", LEADER, "lead");
+  add("Sync", 1, "sync", { gap: 1 });
+  add("Header", 4, "hdr");
+  add("BASIC program", prog - 2, "data");
+  add("End of program", 2, "end");
+  const parts = [
+    { pill: "lead", pillText: "LEADER", what: `${LEADER} × 00`, len: LEADER },
+    { pill: "sync", pillText: "SYNC", what: "A5", len: 1 },
+    { pill: "hdr", pillText: "HDR", what: 'CLOAD "D"', len: 4 },
+    { pill: "basic", pillText: "BASIC", what: `${lines.filter((l) => !l.end).length} lines · 10-60`, len: prog - 2, pop: true },
+    { pill: "end", pillText: "END", what: "00 00", len: 2 }
+  ].map((p, i) => ({ ...p, i }));
+  const total = t;
+  const sel = state.sel, p = P[sel];
+  let det = "";
+  const common = `<dl class="kv"><dt>Length</dt><dd>${fmt(p.len)} bytes</dd><dt>Plays</dt><dd>${secs(p.t0)}-${secs(p.t1)}</dd>`;
+  if (sel === 0) det = `${common}<dt>Holds</dt><dd>255 zero bytes: a steady tone the ROM syncs to</dd></dl>
+     <p class="hint">The ROM's CLOAD reads bits until it sees the sync byte, so a leader of any length works.</p>`;
+  if (sel === 1) det = `${common}<dt>Byte</dt><dd>A5h</dd></dl><p class="hint">After the sync, about 1 ms of silence; then the file's bytes start.</p>`;
+  if (sel === 2) det = `${common}</dl><div class="sub">Header bytes</div>${anatomy(
+      [{ bytes: "D3 D3 D3" }, { bytes: "44" }],
+      [{ g: 0, off: "0-2", name: "Marker", value: "D3 D3 D3 · a BASIC program (CLOAD)" }, { g: 1, off: "3", name: "Name", value: '"D" · CLOAD "D" loads only this program; CLOAD loads any' }])}`;
+  if (sel === 3) det = `${common}<dt>Loads at</dt><dd>$42E9 (TXTTAB), relinked by CLOAD</dd><dt>Lines</dt><dd>${lines.filter((l) => !l.end).length} · from 10 to 60</dd>
+     <dt>Characters</dt><dd>${modelSel()}</dd></dl>
+     <div class="sub">BASIC</div><div class="listing">${lines.filter((l) => !l.end).map((l) => `<div><span class="ln">${l.no}</span> ${listingHtml(l.text)}</div>`).join("")}</div>
+     <span class="link">Pop out the listing</span><p class="hint">Series II shows code 40h (@) as É: PRINT @ lists as PRINT É, as on the machine's own screen.</p>`;
+  if (sel === 4) det = `${common}</dl><div class="sub">End bytes</div>${anatomy([{ bytes: "00 00" }], [{ g: 0, off: "0-1", name: "Link", value: "0000 · the end of the program" }])}`;
+  const head = `<div class="dhead"><span class="no">#${sel}</span><span class="pill ${parts[sel].pill}">${parts[sel].pillText}</span>
+     ${sel === 3 ? `<span class="popbtn"><span>⧉ Pop out · BASIC</span><span>▾</span></span>` : ""}</div>`;
+  return frame("demo", ".cas", summary([["Format", "CAS · BASIC tape"], ["Size", `${fmt(basCas.length)} bytes`], ["Name", '"D"'], ["Program", "6 lines, 152 bytes"], ["Play time", secs(total)]]) +
+    `<div class="secthead"><h2>Parts</h2><span class="count">5 parts · 1 file</span><div class="chips"><button class="chip on">All</button><button class="chip">Data</button><button class="chip">Not played</button></div></div>` +
+    timeline(P, total) +
+    `<div class="split"><div class="list">${rows([{ title: 'BASIC program "D"', parts }])}</div><div class="detail">${head}${det}</div></div>`);
+}
+
+function casSystem() {
+  let t = 0; const P = [];
+  const add = (label, bytes, seg, gap = 0) => { const t0 = t; t += bytes * MS_PER_BYTE + gap; P.push({ label, t0, t1: t, seg, len: bytes }); };
+  add("Leader", LEADER, "lead"); add("Sync", 1, "sync", 1); add("Header", 7, "hdr"); add("Block", code.length + 5, "data"); add("Entry", 3, "end");
+  const cs = sysCas[sysCas.length - 4];
+  const parts = [
+    { pill: "lead", pillText: "LEADER", what: `${LEADER} × 00`, len: LEADER },
+    { pill: "sync", pillText: "SYNC", what: "A5", len: 1 },
+    { pill: "hdr", pillText: "HDR", what: 'SYSTEM "HELLO"', len: 7 },
+    { pill: "code", pillText: "CODE", what: `$7000-${ad(0x7000 + code.length - 1)}`, len: code.length + 5, pop: true },
+    { pill: "entry", pillText: "ENTRY", what: "$7000", len: 3 }
+  ].map((p, i) => ({ ...p, i }));
+  const total = t, sel = state.sel, p = P[sel];
+  const common = `<dl class="kv"><dt>Length</dt><dd>${fmt(p.len)} bytes</dd><dt>Plays</dt><dd>${secs(p.t0)}-${secs(p.t1)}</dd>`;
+  let det = "";
+  if (sel <= 1) det = casBasicDetailFor(sel, common);
+  if (sel === 2) det = `${common}</dl><div class="sub">Header bytes</div>${anatomy(
+      [{ bytes: "55" }, { bytes: "48 45 4C 4C 4F 20" }],
+      [{ g: 0, off: "0", name: "Marker", value: "55h · a machine-code (SYSTEM) tape" }, { g: 1, off: "1-6", name: "Name", value: '"HELLO" · type HELLO at SYSTEM\'s *? prompt' }])}`;
+  if (sel === 3) det = `${common}<dt>Loads</dt><dd>$7000-${ad(0x7000 + code.length - 1)} (${code.length} bytes)</dd><dt>Checksum</dt><dd class="ok">${hx(cs)}h · OK</dd><dt>Fits</dt><dd>every model (below $8000)</dd></dl>
+     <div class="sub">Block bytes</div>${anatomy(
+      [{ bytes: "3C" }, { bytes: hx(code.length) }, { bytes: "00 70" }, { bytes: hexs(code), cls: "more" }, { bytes: hx(cs) }],
+      [{ g: 0, off: "0", name: "Marker", value: "3Ch · a load block" }, { g: 1, off: "1", name: "Length", value: `${code.length} data bytes (00 means 256)` },
+       { g: 2, off: "2-3", name: "Address", value: "$7000 · low byte first" }, { g: 3, off: `4-${3 + code.length}`, name: "Data", value: `${code.length} bytes of code` },
+       { g: 4, off: `${4 + code.length}`, name: "Checksum", value: `${hx(cs)}h · the address and data bytes summed, low byte · OK` }])}
+     ${memmap([{ i: 3, from: 0x7000, to: 0x7000 + code.length, kind: "", label: "$7000-$705F" }])}`;
+  if (sel === 4) det = `${common}</dl><div class="sub">Entry bytes</div>${anatomy([{ bytes: "78" }, { bytes: "00 70" }],
+      [{ g: 0, off: "0", name: "Marker", value: "78h · the end of the tape" }, { g: 1, off: "1-2", name: "Entry", value: "$7000 · / at SYSTEM's *? prompt starts it here" }])}`;
+  const head = `<div class="dhead"><span class="no">#${sel}</span><span class="pill ${parts[sel].pill}">${parts[sel].pillText}</span>
+     ${sel === 3 ? `<span class="popbtn"><span>⧉ Pop out · Disassembly</span><span>▾</span></span>` : ""}</div>`;
+  return frame("hello", ".cas", summary([["Format", "CAS · machine-code tape"], ["Size", `${fmt(sysCas.length)} bytes`], ["Name", '"HELLO"'], ["Code", `1 block, ${code.length} bytes`], ["Start", "$7000"], ["Play time", secs(total)]]) +
+    `<div class="secthead"><h2>Parts</h2><span class="count">5 parts · 1 file</span><div class="chips"><button class="chip on">All</button><button class="chip">Code</button><button class="chip">Not played</button></div></div>` +
+    timeline(P, total) +
+    `<div class="split"><div class="list">${rows([{ title: 'Machine code "HELLO"', parts }])}</div><div class="detail">${head}${det}</div></div>`);
+}
+function casBasicDetailFor(sel, common) {
+  if (sel === 0) return `${common}<dt>Holds</dt><dd>255 zero bytes: a steady tone the ROM syncs to</dd></dl>`;
+  return `${common}<dt>Byte</dt><dd>A5h</dd></dl><p class="hint">After the sync, about 1 ms of silence; then the file's bytes start.</p>`;
+}
+
+function cmdView() {
+  const recs = [
+    { pill: "hdr", pillText: "05 NAME", what: '"HELLO"', len: 7, bytes: [0x05, 5, ...cmd.slice(2, 7)] },
+    { pill: "code", pillText: "01 LOAD", what: `$7000-${ad(0x7000 + code.length - 1)}`, len: code.length + 4, pop: true },
+    { pill: "entry", pillText: "02 START", what: "$7000", len: 4 }
+  ].map((p, i) => ({ ...p, i }));
+  const sel = Math.min(state.sel, 2);
+  let det = "";
+  if (sel === 0) det = `<dl class="kv"><dt>Record</dt><dd>05h · module header</dd><dt>Length</dt><dd>7 bytes</dd></dl><div class="sub">Record bytes</div>${anatomy(
+      [{ bytes: "05" }, { bytes: "05" }, { bytes: "48 45 4C 4C 4F" }],
+      [{ g: 0, off: "0", name: "Type", value: "05h · the module's name" }, { g: 1, off: "1", name: "Length", value: "5" }, { g: 2, off: "2-6", name: "Name", value: '"HELLO" · the name on the tape Klive makes of it' }])}`;
+  if (sel === 1) det = `<dl class="kv"><dt>Record</dt><dd>01h · load block</dd><dt>Loads</dt><dd>$7000-${ad(0x7000 + code.length - 1)} (${code.length} bytes)</dd><dt>Fits</dt><dd>every model (below $8000)</dd></dl>
+     <div class="sub">Record bytes</div>${anatomy(
+      [{ bytes: "01" }, { bytes: hx((code.length + 2) & 0xff) }, { bytes: "00 70" }, { bytes: hexs(code), cls: "more" }],
+      [{ g: 0, off: "0", name: "Type", value: "01h · bytes to load" }, { g: 1, off: "1", name: "Length", value: `${hx(code.length + 2)}h = ${code.length + 2}: the address and ${code.length} data bytes (00-02 mean 256-258)` },
+       { g: 2, off: "2-3", name: "Address", value: "$7000 · low byte first" }, { g: 3, off: `4-${3 + code.length}`, name: "Data", value: `${code.length} bytes of code` }])}`;
+  if (sel === 2) det = `<dl class="kv"><dt>Record</dt><dd>02h · transfer address</dd></dl><div class="sub">Record bytes</div>${anatomy(
+      [{ bytes: "02" }, { bytes: "02" }, { bytes: "00 70" }],
+      [{ g: 0, off: "0", name: "Type", value: "02h · where the program starts; the module ends here" }, { g: 1, off: "1", name: "Length", value: "2" }, { g: 2, off: "2-3", name: "Address", value: "$7000 · / starts it, as SYSTEM's own does" }])}`;
+  const head = `<div class="dhead"><span class="no">#${sel}</span><span class="pill ${recs[sel].pill}">${recs[sel].pillText}</span>
+     ${sel === 1 ? `<span class="popbtn"><span>⧉ Pop out · Disassembly</span><span>▾</span></span>` : ""}</div>`;
+  return frame("hello", ".cmd", summary([["Format", "CMD · load module"], ["Size", `${fmt(cmd.length)} bytes`], ["Name", '"HELLO"'], ["Load blocks", `1, ${code.length} bytes`], ["Start", "$7000"], ["As a tape", secs((LEADER + 1 + 7 + code.length + 5 + 3) * MS_PER_BYTE)], ["Fits", '<span class="ok">16K and 48K</span>']]) +
+    `<div class="secthead"><h2>Records</h2><span class="count">3 records</span><div class="chips"><button class="chip on">All</button><button class="chip">Load blocks</button></div></div>` +
+    memmap([{ i: 1, from: 0x7000, to: 0x7000 + code.length, kind: "", label: `#1 · $7000-${ad(0x7000 + code.length - 1)}` }]) +
+    `<div class="split"><div class="list">${rows([{ title: 'Load module "HELLO"', parts: recs }])}</div><div class="detail">${head}${det}
+     <p class="hint">Klive turns a .cmd into a SYSTEM tape when it loads it; the memory map shows where each block lands.</p></div></div>`);
+}
+
+function basView() {
+  const lines = parseBasic(bas.slice(1)).filter((l) => !l.end);
+  const sel = Math.min(state.sel, lines.length - 1), L = lines[sel];
+  const parts = lines.map((l, i) => ({ i, pill: "basic", pillText: `${l.no}`, what: stripHtml(listingHtml(l.text)), len: l.len }));
+  // --- The line's anatomy: link, number, then the text in runs of tokens and of characters
+  const groups = [{ bytes: `${hx(L.link & 0xff)} ${hx(L.link >> 8)}` }, { bytes: `${hx(L.no & 0xff)} ${hx(L.no >> 8)}` }];
+  const fields = [{ g: 0, off: "0-1", name: "Link", value: `${ad(L.link)} · the next line, where it sat when saved` }, { g: 1, off: "2-3", name: "Line", value: `${L.no}` }];
+  let run = [], start = 4;
+  const flush = (end) => { if (!run.length) return; const g = groups.length; groups.push({ bytes: run.map((b) => hx(b)).join(" ") });
+    fields.push({ g, off: start === end - 1 ? `${start}` : `${start}-${end - 1}`, name: "Text", value: `<span class="txt">${run.map(ch).join("")}</span>` }); run = []; };
+  L.text.forEach((b, k) => {
+    if (b >= 0x80 && b <= 0xfb) { flush(4 + k); const g = groups.length; groups.push({ bytes: hx(b), cls: "tok" }); fields.push({ g, off: `${4 + k}`, name: "Token", value: `${hx(b)}h · ${TOKENS[b - 0x80]}` }); start = 5 + k; }
+    else { if (!run.length) start = 4 + k; run.push(b); }
+  });
+  flush(4 + L.text.length);
+  const g = groups.length; groups.push({ bytes: "00" }); fields.push({ g, off: `${4 + L.text.length}`, name: "End", value: "00 · the end of the line" });
+  return frame("demo", ".bas", summary([["Format", "BAS · tokenised Level II BASIC"], ["Size", `${fmt(bas.length)} bytes`], ["Lines", `${lines.length} · 10-60`], ["Loads at", "$42E9"], ["As a tape", secs((LEADER + 1 + 4 + bas.length - 1) * MS_PER_BYTE)]]) +
+    `<div class="secthead"><h2>Lines</h2><span class="count">${lines.length} lines · ${fmt(bas.length - 1)} bytes after the FFh</span><span class="muted">Characters ${modelSel()}</span></div>` +
+    memmap(lines.map((l, i) => ({ i, from: l.addr, to: l.addr + l.len, kind: "basic", label: `${l.no} · ${ad(l.addr)}` }))) +
+    `<div class="graphic"><div class="strip">${lines.map((l, i) => `<div class="seg ${i === sel ? "sel" : ""}" data-i="${i}" title="${l.no} · ${l.len} bytes" style="flex:${l.len}"></div>`).join("")}</div>
+     <div class="glabel"><span>$42E9</span><span>the program, one segment a line, by size</span><span>${ad(0x42e9 + bas.length - 2)}</span></div></div>` +
+    `<div class="split"><div class="list">${rows([{ title: 'Program "demo"', parts }])}</div><div class="detail">
+      <div class="dhead"><span class="no">${L.no}</span><span class="pill basic">LINE</span><span class="popbtn"><span>⧉ Pop out · BASIC</span><span>▾</span></span></div>
+      <dl class="kv"><dt>At</dt><dd>${ad(L.addr)}-${ad(L.addr + L.len - 1)} once loaded</dd><dt>Length</dt><dd>${L.len} bytes</dd></dl>
+      <div class="listing"><div class="sel"><span class="ln">${L.no}</span> ${listingHtml(L.text)}</div></div>
+      <div class="sub">Line bytes</div>${anatomy(groups, fields)}
+      <p class="hint">Keywords are one byte each (80h-FBh); everything else is stored as typed. CLOAD relinks the lines wherever the program lands.</p></div></div>`, true);
+}
+const stripHtml = (s) => s.replace(/<[^>]+>/g, "");
+function modelSel() {
+  return `<span class="modelsel">${[["s1", "Series I"], ["s2", "Series II"], ["s64", "/64"]].map(([v, l]) =>
+    `<button class="chip ${model === v ? "on" : ""}" data-model="${v}">${l}</button>`).join("")}</span>`;
+}
+
+function explorer() {
+  return `<div class="explorer"><div class="tree">
+     <div><span class="ico">▾</span>my-project</div>
+     <div class="ind"><span class="ico">⌸</span>demo.bas<span class="badge ht">HT program</span></div>
+     <div class="ind"><span class="ico">K</span>game.bas<span class="badge">BASIC source</span></div>
+     <div class="ind"><span class="ico">⌸</span>hello.cmd<span class="badge ht">HT load module</span></div>
+     <div class="ind"><span class="ico">⌸</span>hello.cas<span class="badge ht">HT tape</span></div>
+     <div class="ind"><span class="ico">⌸</span>float.tap<span class="badge">Spectrum tape</span></div></div>
+   <div><h2>Option A: what decides where a file opens</h2>
+    <table class="rules"><thead><tr><th>File</th><th>First bytes</th><th>Opens in</th><th>Explorer actions</th></tr></thead><tbody>
+     <tr><td><code>demo.bas</code></td><td><code>FF EF 42 0A 00 84</code> · FFh, then binary lines</td><td>HT-1080Z viewer</td><td>Load and run · Insert · Load and debug (on the HT)</td></tr>
+     <tr><td><code>game.bas</code></td><td><code>10 PRINT "HI"</code> · text</td><td>Code editor (Klive BASIC)</td><td>Build root, as today</td></tr>
+     <tr><td><code>hello.cmd</code>, <code>hello.cas</code></td><td>by extension</td><td>HT-1080Z viewer</td><td>Load and run · Insert · Load and debug (on the HT)</td></tr>
+    </tbody></table>
+    <p class="muted" style="margin-top:10px">The same test decides everywhere: the tape menu, File › Open File… and drag and drop take a <code>.bas</code>
+    as an HT tape only when it is tokenised, and Klive BASIC never tries to compile one. A text <code>.bas</code> put into the
+    HT's deck gets a clear message — or, with option C, is tokenised into a CLOAD tape.</p></div></div>`;
+}
+
+// ===================================================================================================
+const VIEWS = { casBasic, casSystem, cmd: cmdView, bas: basView, explorer };
+function render() {
+  $("#view").innerHTML = VIEWS[state.view]();
+}
+document.addEventListener("click", (e) => {
+  const v = e.target.closest("[data-view]");
+  if (v) { state = { view: v.dataset.view, sel: v.dataset.view === "casBasic" || v.dataset.view === "casSystem" ? 3 : v.dataset.view === "cmd" ? 1 : 3, hover: -1 };
+    document.querySelectorAll("[data-view]").forEach((b) => b.classList.toggle("on", b === v)); render(); return; }
+  const m = e.target.closest("[data-model]"); if (m) { model = m.dataset.model; render(); return; }
+  const r = e.target.closest("[data-i]"); if (r) { state.sel = +r.dataset.i; state.hover = -1; render(); }
+});
+document.addEventListener("keydown", (e) => { const r = e.target.closest?.(".row"); if (r && e.key === "Enter") { state.sel = +r.dataset.i; render(); } });
+document.addEventListener("mouseover", (e) => {
+  const g = e.target.closest("[data-g]"); const h = g ? +g.dataset.g : -1;
+  if (h !== state.hover) { state.hover = h; render(); }
+});
+render();
+</script>
+</body>
+</html>

@@ -119,6 +119,29 @@ describe("tape-load command", () => {
     ]);
   });
 
+  it("decides a .bas by its content: a tokenised program is an HT tape anywhere, text is not a tape", async () => {
+    // --- `.plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D1, D6
+    const tokenised = new Uint8Array(readFileSync(join(__dirname, "../../scripts/doc-shots/recipes/ht1080z-demo.bas")));
+    const text = new TextEncoder().encode('10 PRINT "HI"\n');
+    const validateWith = async (bytes: Uint8Array, machineId: string) => {
+      const { context } = contextFor(machineId, bytes);
+      const messages = await new TapeLoadCommand().validateCommandArgs(context, { file: "/p/prog.bas" } as any);
+      return messages.filter((m) => m.type === ValidationMessageType.Error).map((m) => m.message);
+    };
+    expect(await validateWith(tokenised, MI_SPECTRUM_48)).toEqual([
+      "Loading an HT-1080Z tape requires the HT-1080Z; the current machine is ZX Spectrum 48K."
+    ]);
+    expect(await validateWith(text, MI_SPECTRUM_48)).toEqual([
+      expect.stringMatching(/^The file to load must be a \.tap or \.tzx tape/)
+    ]);
+    expect(await validateWith(tokenised, "ht1080z")).toEqual([]);
+    // --- On the HT a text .bas reaches the reader, which says why it is not a tape
+    const { context } = contextFor("ht1080z", text);
+    const result = await new TapeLoadCommand().execute(context, { file: "/p/prog.bas" } as any);
+    expect(result.success).toBe(false);
+    expect(result.finalMessage).toMatch(/is BASIC source text, not a tokenised HT-1080Z program/);
+  });
+
   it("validates its arguments", async () => {
     expect(await validate({ file: "/p/a.tap" })).toEqual([]);
     expect(await validate({ file: "" })).toEqual(["The tape file path cannot be empty."]);

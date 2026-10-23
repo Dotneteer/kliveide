@@ -279,7 +279,7 @@
       "file": "The file's path"
     }
   },
-  "emu.media.tape.ht1080z.basNotTokenised": "{file} is not a tokenised BASIC file for the HT-1080Z.",
+  "emu.media.tape.ht1080z.basNotTokenised": "{file} is BASIC source text, not a tokenised HT-1080Z program. Only tokenised programs load from tape.",
   "@emu.media.tape.ht1080z.basNotTokenised": {
     "context": "Message box text when a tape file cannot be put in the HT-1080Z's tape deck: the chosen .bas file is not stored in the HT-1080Z's (TRS-80 Level II) tokenised BASIC format; it may be BASIC source text.",
     "placeholders": {

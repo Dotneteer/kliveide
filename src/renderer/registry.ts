@@ -765,6 +765,21 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   {
     matchType: "ends",
     pattern: ".bas",
+    // --- A tokenised HT-1080Z program, by its content (`.plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D1-D3);
+    // --- any other .bas is BASIC source, the entry below
+    contentKind: "ht1080zBasic",
+    ignoreCase: true,
+    editor: BIN_VIEWER,
+    icon: "@file-tap-tzx",
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true,
+    documentTabRenderer: htTapeLaunchCommandBarRenderer,
+    contextMenuInfo: getHtTapeLaunchContextMenuInfo
+  },
+  {
+    matchType: "ends",
+    pattern: ".bas",
     editor: CODE_EDITOR,
     subType: "zxbas",
     icon: "file-zxbas"

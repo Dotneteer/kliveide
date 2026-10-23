@@ -237,6 +237,7 @@ export type MessageKey =
   | "commands.compile.started"
   | "commands.compile.startedDebug"
   | "commands.compile.startedNoDebug"
+  | "commands.compile.tokenisedBasRoot"
   | "commands.compile.unitTestOnNext"
   | "commands.compile.z88CardStarted"
   | "commands.compile.z88dkExported"

@@ -1,3 +1,5 @@
+import type { FileContentKind } from "@common/ht1080z/basContent";
+
 /**
  * This interface represents a project node for transferring data
  * between the main and renderer processes
@@ -67,6 +69,12 @@ export type ProjectNode = {
    * This project node should be open as permanent
    */
   openPermanent?: boolean;
+
+  /**
+   * What the file holds when its extension does not say (a tokenised HT-1080Z `.bas`), sniffed by
+   * the main process when it lists the folder (`.plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D2)
+   */
+  contentKind?: FileContentKind;
 };
 
 /**
