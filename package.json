@@ -172,7 +172,7 @@
   },
   "overrides": {
     "postcss": "^8.5.26",
-    "dompurify": "^3.4.16",
+    "dompurify": "^3.4.17",
     "sharp": "^0.35.3",
     "tsconfck": {
       "typescript": "$typescript"
