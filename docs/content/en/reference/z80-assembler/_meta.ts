@@ -12,5 +12,6 @@ export default {
   "zx-next": "ZX Spectrum Next",
   "zx-next-dma": ".dma pragma",
   "zx-next-copper": ".copper pragma",
-  "zx80-zx81": "ZX80 and ZX81"
+  "zx80-zx81": "ZX80 and ZX81",
+  "ht1080z": "HT-1080Z"
 };

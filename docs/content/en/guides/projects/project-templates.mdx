@@ -21,6 +21,7 @@ When you create a project with **File › New Project...** or the [`newp`](/en/r
 | ZX81 | `zx81` | ✓ | | | | ✓ |
 | ZX80 | `zx80` | ✓ | | | | ✓ |
 | Cambridge Z88 | `z88` | ✓ | | | | ✓ |
+| HT-1080Z | `ht1080z` | ✓ | | | | |
 
 A machine's models share its templates: the Pentagon 128 is a model of the ZX Spectrum 128K, and the +2A and +3 models are on the `spp3e` row. [Machine types](/en/reference/machine-types/) lists the models of each machine.
 
@@ -36,9 +37,10 @@ A machine's models share its templates: the Pentagon 128 is a model of the ZX Sp
 
 A few details:
 
-- The `default` template's code starts with a `.model` pragma for its machine (`Spectrum48`, `Spectrum128`, `SpectrumP3`, `ZX80`, `ZX81`), so the assembler knows what it targets.
+- The `default` template's code starts with a `.model` pragma for its machine (`Spectrum48`, `Spectrum128`, `SpectrumP3`, `ZX80`, `ZX81`, `HT1080Z`), so the assembler knows what it targets.
 - The ZX Spectrum Next's `default` template is a Next program (`.model next`): Klive builds it into a `.nex` file, which Run and Debug have NextZXOS load. It switches the CPU to 28 MHz, prints with the Next's pixel instructions (`pixelad`, `pixeldn`) and ends in a loop, because a `.nex` program has nothing to return to. [ZX Spectrum Next development](/en/reference/z80-assembler/zx-next/) explains `.model next` and the `.savenex` pragma.
 - On the ZX81 and ZX80, the program runs as a BASIC program: Klive puts the code into a `1 REM` line and calls it. See [ZX80 and ZX81](/en/reference/z80-assembler/zx80-zx81/).
+- On the HT-1080Z, the `default` template prints a welcome in the middle of the screen through the ROM's display routine, draws a block-graphics bar under it and goes back to BASIC. Run starts it from RAM at $7000; Export writes a `.cmd` file that loads with `SYSTEM`. See [HT-1080Z Development](/en/reference/z80-assembler/ht1080z/).
 - The ZX Spectrum Next's `zx-basic` template shows how `CODEBANK` blocks put routines into 8K pages.
 - The Cambridge Z88's `default` template has no program yet; it gives you the project structure to start from. Its `z88-dk` template is a complete card application: Run puts the card in slot 3, restarts the Z88 and starts the application.
 - The `z88-dk` templates call a small function in a loop and keep a global counter, so breakpoints, the call stack and the Variables panel have something to show. The Spectrum ones print with `printf` after clearing the screen and setting the border.

@@ -175,6 +175,7 @@
 /en/reference/whats-new/index.html
 /en/reference/z80-assembler/directives/index.html
 /en/reference/z80-assembler/expressions/index.html
+/en/reference/z80-assembler/ht1080z/index.html
 /en/reference/z80-assembler/index.html
 /en/reference/z80-assembler/language-structure/index.html
 /en/reference/z80-assembler/macros/index.html

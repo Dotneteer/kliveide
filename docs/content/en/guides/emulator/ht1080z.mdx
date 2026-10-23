@@ -139,10 +139,19 @@ The disassembly shows the byte after `RST 08h` as the character BASIC's syntax c
 lists the ROM's tables (the keywords, the routines they run, the error codes) as data. The memory
 panel shows each model's characters, and the block graphics as blocks.
 
+## Writing machine code
+
+Create a project for the HT-1080Z: its `default` template is a Z80 program that prints a welcome in
+the middle of the screen and goes back to BASIC. **Run** switches the machine on, answers its
+power-on question so BASIC keeps below your code, writes the code into RAM and starts it; **Debug**
+does the same with your breakpoints; **Export** writes a `.cmd` or `.cas` file that loads with
+`SYSTEM`. [HT-1080Z Development](/en/reference/z80-assembler/ht1080z) explains `.model HT1080Z`,
+where code may go and the useful ROM routines.
+
 ## The command line
 
 `klive run game.cas` (or a `.cmd` or `.bas` file) starts an HT-1080Z, loads the tape and runs it,
-without the IDE. Pass `--machine ht1080z:ht1080z-64` to choose a model.
+without the IDE; `klive run <project folder>` builds an HT-1080Z project and starts it as Run does. Pass `--machine ht1080z:ht1080z-64` to choose a model.
 
 ## The ROMs
 

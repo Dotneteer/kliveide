@@ -260,6 +260,15 @@ describe("klive run: inputs", () => {
     expect(zx81Screen(bytesOf("zx81.bin"))[0].startsWith(" [ ]")).toBe(true);
   }, 120_000);
 
+  it("builds an HT-1080Z project and starts it after the power-on question", async () => {
+    // --- `.plans/HT1080Z_CODE_INJECTION_PLAN.md` D4, D9: BASIC keeps below the code, PC starts at it
+    const run = await kliveJson(["run", "runht1080z", "--until-pc", "Done", "--dump-mem", `Counter:1=${file("ht.bin")}`]);
+    expect(run.code).toBe(0);
+    expect(run.result.stop).toBe("pc");
+    expect(bytesOf("ht.bin")).toEqual(new Uint8Array([10]));
+    expect(run.result.registers.pc).toBe(0x7009);
+  }, 120_000);
+
   it("loads an HT-1080Z .cmd with SYSTEM and starts it", async () => {
     // --- At 7000h: LD A,'H' / LD (3C00h),A / JR $, with a module header and the transfer address
     const cmd = new Uint8Array([

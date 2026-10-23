@@ -142,6 +142,7 @@ import { CommonTokenStream } from "./common-token-stream";
 import { CommonAsmParser } from "./common-asm-parser";
 import {
   findModelTypeByName,
+  isHt1080zModelType,
   isZx8081ModelType,
   SpectrumModelType
 } from "@main/z80-compiler/SpectrumModelTypes";
@@ -1104,6 +1105,27 @@ export abstract class CommonAssembler<
     }
   }
 
+  /**
+   * On the HT-1080Z, code below $3C00 is in the ROM or the keyboard area and cannot be loaded, and code
+   * in $3C00-$42E8 is overwritten by BASIC's screen and the ROM's work area
+   * (`.plans/HT1080Z_CODE_INJECTION_PLAN.md` D2). Warned once per segment and area: injection and
+   * export refuse the first, and the second can be deliberate (a picture in video RAM).
+   */
+  protected checkHt1080zCodeRange(): void {
+    const model = this._output.modelType ?? this._options.currentModel;
+    if (!isHt1080zModelType(model) || !this._currentSegment) return;
+    const address = this.getCurrentAssemblyAddress();
+    const segment = this._currentSegment as any;
+    const hex = address.toString(16).toUpperCase().padStart(4, "0");
+    if (address < 0x3c00) {
+      if (!segment.ht1080zRomWarned) this.reportAssemblyWarning("Z0382", this._currentSourceLine, null, hex);
+      segment.ht1080zRomWarned = true;
+    } else if (address < 0x42e9) {
+      if (!segment.ht1080zWorkWarned) this.reportAssemblyWarning("Z0383", this._currentSourceLine, null, hex);
+      segment.ht1080zWorkWarned = true;
+    }
+  }
+
   protected checkUnbankedCodeRange(): void {
     // Only check if in Next auto mode and current segment is unbanked
     if (!this._output.isNextAutoMode || !this._currentSegment || this._currentSegment.bank !== undefined) {
@@ -1340,6 +1362,9 @@ export abstract class CommonAssembler<
         return ZX81_REM_BODY;
       case SpectrumModelType.ZX80:
         return ZX80_REM_BODY;
+      // --- Free RAM on every HT-1080Z model, above BASIC (`.plans/HT1080Z_CODE_INJECTION_PLAN.md` D8)
+      case SpectrumModelType.HT1080Z:
+        return 0x7000;
       default:
         return 0x8000;
     }
@@ -5747,6 +5772,7 @@ export abstract class CommonAssembler<
     this.ensureCodeSegment();
     this.checkUnbankedCodeRange();
     this.checkZx8081CodeRange();
+    this.checkHt1080zCodeRange();
     const overflow = this._currentSegment.emitByte(data);
     if (overflow) {
       this.reportAssemblyError(overflow, this._currentSourceLine);

@@ -100,12 +100,15 @@ export type UnitTestRunInput = {
  * The injection-flow model a compilation boots (D7): 48 BASIC for a `.model Spectrum48` program,
  * the machine's own flow otherwise, as the IDE's run does
  * @param machineId The machine
- * @param modelType The compilation's `SpectrumModelType` (`Spectrum48` is 1, `ZX80` 5, `ZX81` 6)
+ * @param modelType The compilation's `SpectrumModelType` (`Spectrum48` is 1, `ZX80` 5, `ZX81` 6,
+ *   `HT1080Z` 7)
  */
 export function bootModelFor(machineId: string, modelType: number | undefined): string {
   // --- The ZX80/ZX81 flow checks the code's model against the ROM (`ZX8081_CODE_INJECTION_PLAN.md`)
   if (modelType === 5) return "zx80";
   if (modelType === 6) return "zx81";
+  // --- The HT-1080Z boots through its own flow on every model (`HT1080Z_CODE_INJECTION_PLAN.md` D9)
+  if (modelType === 7) return "ht1080z";
   return modelType === 1 && machineId !== MI_ZXNEXT ? "sp48" : machineId;
 }
 

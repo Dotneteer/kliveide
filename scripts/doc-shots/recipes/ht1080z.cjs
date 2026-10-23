@@ -5,7 +5,9 @@
  *   the approved mockup);
  * - `ht1080z/ht1080z-demo.png` — the EMU window after `tape-load <ht1080z-demo.bas> -r`: CLOAD, RUN,
  *   and the program's semigraphics frame with `HT-1080Z` and `ÜDVÖZÖLJÜK!` (Series II's accents);
- * - `ht1080z/ht1080z-basic-listing.png` — the IDE with the BASIC Listing view of that program.
+ * - `ht1080z/ht1080z-basic-listing.png` — the IDE with the BASIC Listing view of that program;
+ * - `ht1080z/ht1080z-debug.png` — a project from the `default` template paused at a source
+ *   breakpoint (`.plans/HT1080Z_CODE_INJECTION_PLAN.md` Phase 5).
  *
  * `ht1080z-demo.bas` is a tokenised `.bas` the Series II itself made: its lines were typed on the
  * emulated machine and its program area saved (an FFh byte, then the bytes from 42E9h).
@@ -15,6 +17,7 @@
  */
 const path = require("path");
 const fs = require("fs");
+const os = require("os");
 const { IMAGES, REPO } = require("../harness.cjs");
 
 const MODEL_ITEM = "machine_ht1080z_ht1080z-s2";
@@ -127,5 +130,21 @@ module.exports = {
     }
     await klive.cmd("cls", 700);
     await save(await klive.ide.screenshot(), "ht1080z/ht1080z-basic-listing.png", 720);
+
+    // --- The default template in the debugger, stopped at a source breakpoint
+    const projects = fs.mkdtempSync(path.join(os.tmpdir(), "klive-shots-ht-"));
+    try {
+      await klive.cmd(`newp ht1080z hello -p "${projects}" -o`, 8000);
+      await klive.cmd("bp-set [code/code.kz80.asm]:15", 1500);
+      await klive.cmd("debug", 12000);
+      const paused = /Paused \(PC: \$7003\)/.test(await emu.evaluate(() => document.body.innerText));
+      if (!paused) throw new Error("Debug did not stop at the breakpoint on line 15 ($7003)");
+      const marked = await klive.ide.evaluate(() => !!document.querySelector('[class*="activeBreakpointLine"]'));
+      if (!marked) throw new Error("The editor does not mark the line the machine stopped at");
+      await klive.cmd("cls", 700);
+      await save(await klive.ide.screenshot(), "ht1080z/ht1080z-debug.png", 720);
+    } finally {
+      fs.rmSync(projects, { recursive: true, force: true });
+    }
   }
 };

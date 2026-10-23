@@ -991,5 +991,32 @@
   "@panels.controls.dropdown.placeholder": {
     "context": "Placeholder of a drop-down list while nothing is chosen (used when the caller sets no placeholder of its own).",
     "maxChars": 16
+  },
+  "emu.ht1080z.code.empty": "The build has no code to put into the HT-1080Z.",
+  "@emu.ht1080z.code.empty": {
+    "context": "Error when building code for the HT-1080Z (a Hungarian school computer) produced no bytes."
+  },
+  "emu.ht1080z.code.rom": "Code at {address} is in the HT-1080Z's ROM or keyboard area (below $3C00) and cannot be loaded. Put it in RAM; $7000 is a good place.",
+  "@emu.ht1080z.code.rom": {
+    "context": "Error: assembled code lies where the HT-1080Z has ROM or its keyboard, so it cannot be written. $3C00 and $7000 are addresses: keep them.",
+    "placeholders": {
+      "address": "A hexadecimal address such as $3000"
+    }
+  },
+  "emu.ht1080z.code.beyondRam": "Code at {address} is beyond the RAM of this {ramKb}K HT-1080Z. Keep it below $8000, or choose a 48K model.",
+  "@emu.ht1080z.code.beyondRam": {
+    "context": "Error: assembled code is above the end of the running HT-1080Z's memory.",
+    "placeholders": {
+      "address": "A hexadecimal address such as $8000",
+      "ramKb": "The machine's memory in kilobytes: 16 or 48"
+    }
+  },
+  "emu.ht1080z.code.tooLow": "Code at {address} leaves BASIC less than 1K of memory. Put it at {lowest} or above; $7000 is a good place.",
+  "@emu.ht1080z.code.tooLow": {
+    "context": "Error: assembled code starts so low in the HT-1080Z's memory that BASIC would have no room left.",
+    "placeholders": {
+      "address": "A hexadecimal address",
+      "lowest": "The lowest allowed hexadecimal address, $46E9"
+    }
   }
 }

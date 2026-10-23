@@ -32,12 +32,23 @@ const ZX80_OPTION: SelectOption = labelled({
 });
 const HEX_OPTION: SelectOption = labelled({ value: "hex", labelKey: "dialog.exportCode.format.hex" });
 export const ZX81_FORMAT_OPTIONS: SelectOption[] = [ZX81_OPTION, HEX_OPTION];
+
+// --- The HT-1080Z's code goes into a .cmd load module or a .cas SYSTEM tape
+// --- (`.plans/HT1080Z_CODE_INJECTION_PLAN.md` D6); `.cmd` comes first, the default (D-Q4)
+export const HT1080Z_CMD_FORMAT = "cmd";
+export const HT1080Z_CAS_FORMAT = "cas";
+export const HT1080Z_FORMAT_OPTIONS: SelectOption[] = [
+  labelled({ value: HT1080Z_CMD_FORMAT, labelKey: "dialog.exportCode.format.ht1080zCmd" }),
+  labelled({ value: HT1080Z_CAS_FORMAT, labelKey: "dialog.exportCode.format.ht1080zCas" }),
+  HEX_OPTION
+];
 export const ZX80_FORMAT_OPTIONS: SelectOption[] = [ZX80_OPTION, ZX81_OPTION, HEX_OPTION];
 
 /** The formats the running machine's code exports as */
 export function formatOptionsFor(machineId: string | undefined): SelectOption[] {
   if (machineId === "zx81") return ZX81_FORMAT_OPTIONS;
   if (machineId === "zx80") return ZX80_FORMAT_OPTIONS;
+  if (machineId === "ht1080z") return HT1080Z_FORMAT_OPTIONS;
   return FORMAT_OPTIONS;
 }
 
@@ -238,10 +249,16 @@ export function effectiveFormatOf(state: ExportCodeState): string {
 }
 
 // --- A HEX file has no tape blocks, so there is no loader to create; a ZX80 program cannot start
-// --- itself. On a ZX81 program the checkbox makes it run once loaded.
+// --- itself. On a ZX81 program the checkbox makes it run once loaded. An HT-1080Z .cmd or .cas
+// --- always carries its start address: SYSTEM's `/` starts it.
 export function supportsLoader(state: ExportCodeState): boolean {
   const format = effectiveFormatOf(state);
-  return format !== HEX_FORMAT && format !== ZX80_PROGRAM_FORMAT;
+  return (
+    format !== HEX_FORMAT &&
+    format !== ZX80_PROGRAM_FORMAT &&
+    format !== HT1080Z_CMD_FORMAT &&
+    format !== HT1080Z_CAS_FORMAT
+  );
 }
 
 // --- On a ZX81 program the loader checkbox means "run once loaded", not "add a BASIC loader".

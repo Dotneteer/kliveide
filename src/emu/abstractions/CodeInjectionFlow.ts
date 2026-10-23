@@ -1,3 +1,5 @@
+import type { CodeToInject } from "@common/abstractions/CodeToInject";
+
 export type CodeInjectionFlow = CodeInjectionStep[];
 
 export type CodeInjectionStep =
@@ -9,7 +11,8 @@ export type CodeInjectionStep =
   | KeepPcStep
   | WaitStep
   | WaitKeyQueueStep
-  | WaitIdleStep;
+  | WaitIdleStep
+  | TypeTextStep;
 
 interface CodeInjectionStepBase {
   type: CodeInjectionStep["type"];
@@ -39,6 +42,22 @@ interface InjectStep extends CodeInjectionStepBase {
 interface SetReturnStep extends CodeInjectionStepBase {
   type: "SetReturn";
   returnPoint: number;
+  /**
+   * Push the return point whether or not the code asked to run as a subroutine (the HT-1080Z: a
+   * `RET` from any started program goes back to BASIC). A unit test still returns to its wrapper.
+   */
+  always?: boolean;
+}
+
+/**
+ * Types text through the machine's own typer (`typeText`), with the machine's own key timing, which
+ * `QueueKey`'s fixed hold does not know. The text may depend on the code being injected (the
+ * HT-1080Z answers its power-on question with the code's lowest address); a function that throws
+ * refuses the code before anything is written.
+ */
+export interface TypeTextStep extends CodeInjectionStepBase {
+  type: "TypeText";
+  text: string | ((code: CodeToInject | undefined) => string);
 }
 
 interface QueueKeyStep extends CodeInjectionStepBase {

@@ -124,6 +124,10 @@ export type ErrorCodes =
   | "Z0380"
   | "Z0381"
 
+  // --- HT-1080Z model
+  | "Z0382"
+  | "Z0383"
+
   // --- Instructions
   | "Z0401"
   | "Z0402"

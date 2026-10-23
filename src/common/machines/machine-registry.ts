@@ -646,7 +646,8 @@ export const machineRegistry: MachineInfo[] = [
       [MF_PSG]: true,
       // --- .cas/.cmd/.bas tapes, real time or fast load (§9)
       [MF_TAPE_SUPPORT]: true,
-      [MF_INJECT_SUPPORT]: false,
+      // --- Built code goes into RAM and starts, as SYSTEM would (`.plans/HT1080Z_CODE_INJECTION_PLAN.md`)
+      [MF_INJECT_SUPPORT]: true,
       [MF_ALLOW_SCAN_LINES]: false,
       // --- The shared execution-history recorder (EXECUTION_HISTORY_ALL_CORES_PLAN)
       [MF_EXEC_HISTORY]: true,

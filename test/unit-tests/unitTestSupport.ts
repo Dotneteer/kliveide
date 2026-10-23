@@ -11,12 +11,13 @@ import { checkSourceAnnotations } from "@common/utils/source-annotations";
 import { createHeadlessMachine } from "@common/headless/HeadlessMachineFactory";
 import { runUnitTests } from "@main/unit-tests/UnitTestRunner";
 import { KLIVE_UNIT_TEST_INCLUDE } from "@main/unit-tests/includes/kliveInclude";
-import { MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48, MI_ZXNEXT } from "@common/machines/constants";
+import { MI_HT1080Z, MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48, MI_ZXNEXT } from "@common/machines/constants";
 
 import { buildSp48Wasm, productionOutput as sp48Output } from "../../scripts/build-sp48-wasm.cjs";
 import { buildSp128Wasm, productionOutput as sp128Output } from "../../scripts/build-sp128-wasm.cjs";
 import { buildSpP3eWasm, productionOutput as spp3eOutput } from "../../scripts/build-spp3e-wasm.cjs";
 import { productionOutput as zxnextOutput } from "../../scripts/build-zxnext-wasm.cjs";
+import { buildHt1080zWasm, productionOutput as ht1080zOutput } from "../../scripts/build-ht1080z-wasm.cjs";
 
 /*
  * Shared by the unit-test runner's tests: the production cores and ROMs, read from the repo the way
@@ -52,6 +53,7 @@ function artifactFor(machineId: string): Uint8Array {
     if (machineId === MI_SPECTRUM_48) buildSp48Wasm();
     else if (machineId === MI_SPECTRUM_128) buildSp128Wasm();
     else if (machineId === MI_SPECTRUM_3E) buildSpP3eWasm();
+    else if (machineId === MI_HT1080Z) buildHt1080zWasm();
     built.add(machineId);
   }
   const path =
@@ -61,7 +63,9 @@ function artifactFor(machineId: string): Uint8Array {
         ? sp128Output
         : machineId === MI_SPECTRUM_3E
           ? spp3eOutput
-          : zxnextOutput;
+          : machineId === MI_HT1080Z
+            ? ht1080zOutput
+            : zxnextOutput;
   return new Uint8Array(readFileSync(path));
 }
 
@@ -115,4 +119,4 @@ export async function runProgram(
   return { events, results, summary, problems: events.flatMap((e) => (e.kind === "problem" ? [e.message] : [])) };
 }
 
-export { MI_SPECTRUM_48, MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_ZXNEXT };
+export { MI_SPECTRUM_48, MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_ZXNEXT, MI_HT1080Z };

@@ -26,6 +26,10 @@ export function buildExportCodeCommand(options: ExportCodeCommandOptions) {
     return { command: `expc "${fullFilename}" -f ${options.formatId}${autoRun}`, fullFilename };
   }
   const programName = options.programName || getNodeName(options.exportName);
+  // --- An HT-1080Z .cmd or .cas: the program name is the module's name, nothing else applies
+  if (options.formatId === "cmd" || options.formatId === "cas") {
+    return { command: `expc "${fullFilename}" -n ${programName} -f ${options.formatId}`, fullFilename };
+  }
   const command = `expc "${fullFilename}" -n ${programName} -f ${options.formatId}${
     options.startBlock ? " -as" : ""
   }${options.addPause ? " -p" : ""}${

@@ -50,6 +50,8 @@ export function modelTypeToMachineType(model: SpectrumModelType): string | null 
       return "zx80";
     case SpectrumModelType.ZX81:
       return "zx81";
+    case SpectrumModelType.HT1080Z:
+      return "ht1080z";
     default:
       return null;
   }

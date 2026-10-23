@@ -741,6 +741,22 @@
       "address": "The first segment's start address, e.g. '$8000'"
     }
   },
+  "commands.compile.ht1080zFormat": "HT-1080Z code exports as a .cmd or .cas file (or Intel HEX), not as {format}.",
+  "@commands.compile.ht1080zFormat": {
+    "context": "Error of the IDE's export command (expc) when HT-1080Z code is asked for a format of another machine. .cmd, .cas and Intel HEX are file formats: keep them.",
+    "placeholders": {
+      "format": "The format the user asked for, e.g. 'tap'"
+    }
+  },
+  "commands.compile.injectedHt1080z": "Successfully injected {bytes, plural, one {# byte} other {# bytes}} in {segments, plural, one {# segment} other {# segments}} from start address {address}. Type X=USR(0) to call it; Run also keeps BASIC away from the code.",
+  "@commands.compile.injectedHt1080z": {
+    "context": "Result message of the IDE's inject command on the HT-1080Z (a Hungarian school computer). 'X=USR(0)' is BASIC the user types: keep it exactly. 'Run' is the IDE's Run command.",
+    "placeholders": {
+      "bytes": "Code length in bytes",
+      "segments": "Number of code segments",
+      "address": "The first segment's start address, e.g. '$7000'"
+    }
+  },
   "commands.compile.injectedRem": "Successfully injected {bytes, plural, one {# byte} other {# bytes}} in {segments, plural, one {# segment} other {# segments}} from start address {address} as a 1 REM program. Type RUN to start it.",
   "@commands.compile.injectedRem": {
     "context": "Result message of the IDE's build/run commands (klive.build, klive.inject, klive.run, klive.debug, expc), shown in the command output and in notifications. On a ZX80/ZX81 the code goes into a BASIC '1 REM' line; 'REM' and 'RUN' are BASIC keywords: keep them.",

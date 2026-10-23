@@ -12,6 +12,14 @@ import { Ht1080zKeyCode } from "./Ht1080zKeyCode";
 import { ht1080zKeyMappings } from "./Ht1080zKeyMappings";
 import { ht1080zStrokesForText } from "./Ht1080zTyper";
 import {
+  describeHt1080zPlacementProblem,
+  HT1080Z_RETURN_TO_BASIC,
+  HT1080Z_USR_VECTOR,
+  isHt1080zPlacementProblem,
+  placeHt1080zCode,
+  type Ht1080zPlacement
+} from "@common/ht1080z/codePlacement";
+import {
   HT1080Z_KEYBOARD_START,
   HT1080Z_TACTS_IN_FRAME,
   resolveHt1080zHardware,
@@ -231,13 +239,60 @@ export abstract class Ht1080zWasmHost extends Z80MachineBase {
   }
 
   // ==========================================================================================
-  // Code injection: the assembler plan (`.plans/HT1080Z_PLAN.md` §14), not this one
+  // Code injection (`.plans/HT1080Z_CODE_INJECTION_PLAN.md` D3-D5)
 
-  async getCodeInjectionFlow(_model: string): Promise<CodeInjectionFlow> {
-    throw new Error("Code injection is not supported on the HT-1080Z yet.");
+  /** The ROM's wait-for-key loop (`JR 0049h` at 004Eh): idle at the power-on question and at `>` */
+  static readonly KEY_WAIT_LOOP = 0x004e;
+
+  /**
+   * Where the code goes on this model, or an error naming the problem (D2): nothing below 3C00h,
+   * nothing beyond the RAM, and BASIC left at least 1K below the code
+   */
+  placeCode(codeToInject: CodeToInject): Ht1080zPlacement {
+    const placement = placeHt1080zCode(codeToInject.segments, codeToInject.entryAddress, this.hardware.ramKb);
+    if (isHt1080zPlacementProblem(placement)) throw new Error(describeHt1080zPlacementProblem(placement));
+    return placement;
   }
 
-  injectCodeToRun(_codeToInject: CodeToInject): number {
-    throw new Error("Code injection is not supported on the HT-1080Z yet.");
+  /**
+   * Run and Debug (D4): power the machine on, answer the power-on question with the code's lowest
+   * address (the ROM then keeps BASIC below it, D-Q2), wait for the `>` prompt, write the code, push
+   * the way back to BASIC (D-Q3) and start at the entry. Every model asks the question: Series I/II
+   * `READY ?`, the /64 `MEMORY SIZE?`.
+   */
+  async getCodeInjectionFlow(model: string): Promise<CodeInjectionFlow> {
+    if (model !== this.machineId) {
+      throw new Error(`Code for machine model '${model}' cannot run on this virtual machine.`);
+    }
+    return [
+      { type: "ReachExecPoint", rom: 0, execPoint: Ht1080zWasmHost.KEY_WAIT_LOOP, message: "BASIC asks the power-on question" },
+      {
+        type: "TypeText",
+        // --- NEW LINE alone gives BASIC all the memory: code only in video RAM needs no protection
+        text: (code) => `${code ? (this.placeCode(code).memoryTop ?? "") : ""}\n`
+      },
+      { type: "Start" },
+      { type: "WaitKeyQueue" },
+      { type: "ReachExecPoint", rom: 0, execPoint: Ht1080zWasmHost.KEY_WAIT_LOOP, message: "BASIC is at its > prompt" },
+      { type: "Inject" },
+      { type: "SetReturn", returnPoint: HT1080Z_RETURN_TO_BASIC, always: true }
+    ];
+  }
+
+  /**
+   * Writes the code where it was assembled and returns its entry (D5). BASIC's USR vector is pointed
+   * at the entry too, so after an Inject, `X=USR(0)` calls the code. Run has already set the top of
+   * BASIC's memory below the code; Inject leaves it as it is.
+   */
+  injectCodeToRun(codeToInject: CodeToInject): number {
+    const placement = this.placeCode(codeToInject);
+    for (const segment of placement.segments) {
+      for (let i = 0; i < segment.emittedCode.length; i++) {
+        this.doWriteMemory((segment.startAddress + i) & 0xffff, segment.emittedCode[i]);
+      }
+    }
+    this.doWriteMemory(HT1080Z_USR_VECTOR, placement.entry & 0xff);
+    this.doWriteMemory(HT1080Z_USR_VECTOR + 1, placement.entry >> 8);
+    return placement.entry;
   }
 }
