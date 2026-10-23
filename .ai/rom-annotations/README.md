@@ -92,7 +92,9 @@ routine doing the same job as one already named in another sidecar takes that na
 traps, the level-2 comment pass and the tools added for it (`annotated-view.py`,
 `apply-comments.py`, `reassemble-test.ts.txt`, `sp48-probe-template.ts.txt`). For the ZX81 ROM, `zx81-authoring-guide.md` beside this file carries the session method, the
 helper scripts in `tools/` (a listing through Klive's disassembler, applying a batch through the
-formatter, the IDE's readiness check, a harness probe template) and the state of the work.
+formatter, the IDE's readiness check, a harness probe template) and the state of the work. For the HT-1080Z ROMs,
+`ht1080z-authoring-guide.md` carries the order of work, `tools/ht1080z-dis.cjs` (the BASIC through the
+`ht1080z-basic` decoding), the probe recipe, the facts read so far and the state of the work.
 
 ```
 npm run rom:annotations                    # format every sidecar, regenerate the CRC index
@@ -169,4 +171,5 @@ makes the work faster, not the sources wider.
 `sp48.rom.dis` first (everything else inherits from it; done, at level 2), `sp128-1` by inheritance
 (done, at level 2; `sp48-authoring-guide.md` explains `inherits`), then the +3 ROM 3s by inheritance
 plus their differing routines, `sp128-0`, the +3 ROMs 0–2 (the +3DOS call
-table from the +3 manual first), and the ZX81 and ZX80 ROMs.
+table from the +3 manual first), and the ZX81 and ZX80 ROMs. The HT-1080Z's are done, every one at level 2: the BASIC ROMs, the extension ROMs and the
+character generators (`ht1080z-authoring-guide.md`).

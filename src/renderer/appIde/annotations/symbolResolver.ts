@@ -423,11 +423,13 @@ export function annotationRoutineLabels(
     for (const partition of romPartitions) {
       const merged = mergeRomLayers(input.romLayersOf(partition));
       for (const label of merged?.bankAnnotation.localLabels ?? []) {
-        // --- A partitionless machine (the 48K, the ZX80/81) has its ROM at its own addresses
-        const partitioned = bankSpace?.id !== "sp48" && bankSpace?.id !== "zx81" && bankSpace?.id !== "zx80";
+        // --- A partitionless machine (the 48K, the ZX80/81, the HT-1080Z) has its ROM at its own
+        // --- addresses: the page's start (the HT-1080Z's extension ROM is at $3000) plus the offset
+        const partitioned =
+          bankSpace?.id !== "sp48" && bankSpace?.id !== "zx81" && bankSpace?.id !== "zx80" && bankSpace?.id !== "ht1080z";
         result.push({
           name: label.name,
-          address: label.value,
+          address: (bankSpace?.romBase?.(partition) ?? 0) + label.value,
           ...(partitioned ? { partition } : {})
         });
       }

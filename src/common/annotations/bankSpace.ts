@@ -2,6 +2,7 @@ import { t } from "@common/i18n/i18n";
 import {
   MC_MEM_SIZE,
   MC_ZX80_ROM8K,
+  MI_HT1080Z,
   MI_SCORPION,
   MI_SPECTRUM_128,
   MI_SPECTRUM_3E,
@@ -35,6 +36,9 @@ import {
  * - `zx81` / `zx80`: no partitions; a fixed map with mirrors that depend on the model (T11). An
  *   address folds to its *canonical* address — the lowest one a data access reaches the byte at, the
  *   rule the core's profile layout uses — and the canonical RAM is cut into 16K blocks.
+ * - `ht1080z`: no partitions, no mirrors. Two ROM pages at fixed addresses, the BASIC (`-1`,
+ *   $0000-$2FFF) and the extension (`-2`, $3000-$37FF), each counted from its own start; RAM from
+ *   $4000 as 16K blocks 1-3. The keyboard and the video RAM ($3800-$3FFF) cannot be annotated.
  */
 
 /** Which bank space a machine's annotations are numbered in. Not a machine model. */
@@ -47,6 +51,7 @@ export type AnnotationMachine =
   | "timex"
   | "zx81"
   | "zx80"
+  | "ht1080z"
   | "rom";
 
 /** One partition index per 8K slot, as `resolveMem64kPartitions` / `getCurrentPartitions` give it. */
@@ -93,6 +98,11 @@ export interface BankSpace {
   candidateAddresses(site: BankSite): number[];
   /** Which 16K slot a bank is listed at when nothing else says (`offsetIndex`). */
   defaultOffsetIndex(bank: number): 0 | 1 | 2 | 3;
+  /**
+   * The address a ROM page starts at, on a machine whose ROM pages sit at fixed addresses and do
+   * not all start at $0000 (the HT-1080Z's extension ROM). Absent: every ROM page starts at $0000.
+   */
+  romBase?(partition: number): number | undefined;
 }
 
 const BANK_SIZE = 0x4000 as const;
@@ -347,6 +357,46 @@ export function zx8081RomAddresses(model: Zx8081MemoryModel, offset: number): nu
 }
 
 // ------------------------------------------------------------------------------------------------
+// The HT-1080Z: two ROM pages at fixed addresses, RAM from $4000
+
+/** The HT-1080Z's ROM pages: the partition each is reported as, where it starts and its size. */
+export const HT1080Z_ROM_PAGES = [
+  { partition: -1, start: 0x0000, size: 0x3000 },
+  { partition: -2, start: 0x3000, size: 0x0800 }
+] as const;
+
+/** The HT-1080Z bank space for a RAM size: 16K ($4000-$7FFF) or 48K ($4000-$FFFF). */
+export function ht1080zBankSpace(ramKb: 16 | 48): BankSpace {
+  const ramBanks = ramKb === 48 ? [1, 2, 3] : [1];
+  const ramEnd = 0x4000 + ramKb * 0x400 - 1;
+  const ramAddress = (site: BankSite): number[] =>
+    ramBanks.includes(site.bank) && site.offset >= 0 && site.offset < BANK_SIZE
+      ? [site.bank * BANK_SIZE + site.offset]
+      : [];
+  return {
+    id: "ht1080z",
+    bankSize: BANK_SIZE,
+    maxBank: 3,
+    ramBanks,
+    extendedSet: false,
+    // --- Nothing is paged: a bank breakpoint is refused, a label one resolves to its address
+    bankBreakpoints: false,
+    siteAt(address) {
+      const a = address & 0xffff;
+      const rom = HT1080Z_ROM_PAGES.find((page) => a >= page.start && a < page.start + page.size);
+      if (rom) return { kind: "rom", partition: rom.partition, offset: a - rom.start };
+      if (a < 0x4000 || a > ramEnd) return undefined;
+      return { kind: "bank", bank: a >> 14, offset: a & 0x3fff };
+    },
+    addressesOf: ramAddress,
+    partitionOf: () => undefined,
+    candidateAddresses: ramAddress,
+    defaultOffsetIndex: (bank) => (bank & 0x03) as 0 | 1 | 2 | 3,
+    romBase: (partition) => HT1080Z_ROM_PAGES.find((page) => page.partition === partition)?.start
+  };
+}
+
+// ------------------------------------------------------------------------------------------------
 // Choosing one
 
 /** The ZX80/ZX81 model a machine configuration describes (`resolveZx8081Hardware`'s rule). */
@@ -388,6 +438,8 @@ export function bankSpaceFor(
     case MI_ZX81:
     case MI_ZX80:
       return zx8081BankSpace(machineId, zx8081MemoryModelOf(machineId, config));
+    case MI_HT1080Z:
+      return ht1080zBankSpace(Number(config?.[MC_MEM_SIZE] ?? 16) >= 48 ? 48 : 16);
     default:
       return undefined;
   }
@@ -412,6 +464,8 @@ export function bankSpaceForAnnotationMachine(machine: AnnotationMachine): BankS
       return zx8081BankSpace("zx81", { ramKb: 16, rom8k: true });
     case "zx80":
       return zx8081BankSpace("zx80", { ramKb: 16, rom8k: false });
+    case "ht1080z":
+      return ht1080zBankSpace(48);
     default:
       return undefined;
   }

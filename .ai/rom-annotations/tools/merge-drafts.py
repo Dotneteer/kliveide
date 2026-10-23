@@ -20,6 +20,8 @@ def W(text):
     return '\n'.join(o)
 H=lambda k:int(k.strip('$'),16)
 names={l['name']:l['value'] for l in b['localLabels']}; vals={l['value'] for l in b['localLabels']}
+# --- The page ends where its last region ends ($3FFF for a 16K page, $2FFF for the HT-1080Z's 12K BASIC)
+PAGE_END=max(r['end'] for r in b['regions'])
 regions=[r for r in b['regions'] if r['type']!='disassemble']; report=[]
 for f in drafts:
     dr=json.load(open(f)); tag=f.split('/')[-1]
@@ -49,7 +51,7 @@ regions.sort(key=lambda r:r['start']); out=[];at=0
 for r in regions:
     if r['start']>at: out.append({"start":at,"end":r['start']-1,"type":"disassemble"})
     out.append(r); at=r['end']+1
-if at<=0x3FFF: out.append({"start":at,"end":0x3FFF,"type":"disassemble"})
+if at<=PAGE_END: out.append({"start":at,"end":PAGE_END,"type":"disassemble"})
 b['regions']=out; b['localLabels'].sort(key=lambda l:l['value'])
 json.dump(d,open(outp,'w'))
 print('\n'.join(report)); print('labels',len(b['localLabels']))

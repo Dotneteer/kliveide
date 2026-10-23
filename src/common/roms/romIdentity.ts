@@ -43,6 +43,10 @@ export type RomPageKind =
   | "plus3-dos"
   | "zx81"
   | "zx80"
+  // --- The HT-1080Z's 12K Level II BASIC ROM ($0000-$2FFF), whose RST $08 takes an inline byte
+  | "ht1080z-basic"
+  // --- The HT-1080Z's 2K extension ROM, at $3000-$37FF: plain Z80, listed at its own address
+  | "ht1080z-ext"
   // --- The ZX Spectrum Next: NextZXOS's pages (and the alternate ROM's), the DivMMC and Multiface ROMs
   | "next-basic"
   // --- NextZXOS's pages 0-2, each with its own restarts and inline data (`nextzxos-disassembler.ts`)
@@ -93,8 +97,25 @@ export const KNOWN_ROM_PAGES: Readonly<
   "5a443736": { file: "enNxtmmc.rom", kind: "next-divmmc" },
   "36db4453": { file: "enNextMf.rom", kind: "next-multiface" },
   "4b1dd6eb": { file: "zx81.rom", kind: "zx81" },
-  "4c7fc597": { file: "zx80.rom", kind: "zx80" }
+  "4c7fc597": { file: "zx80.rom", kind: "zx80" },
+  // --- The HT-1080Z's BASIC: Series I and II share one image (ht1080z-s2.rom is byte-identical),
+  // --- the HT-1080Z/64 has its own; then each model's extension ROM. The character generators hold
+  // --- no code and are not paged into the CPU's memory, so they need no kind
+  "2bfef8f7": { file: "ht1080z-s1.rom", kind: "ht1080z-basic" },
+  "48985a30": { file: "ht1080z-s64.rom", kind: "ht1080z-basic" },
+  "2a851e33": { file: "ht1080z-s1-ext.rom", kind: "ht1080z-ext" },
+  "07415ac6": { file: "ht1080z-s2-ext.rom", kind: "ht1080z-ext" },
+  "fc12bd28": { file: "ht1080z-s64-ext.rom", kind: "ht1080z-ext" }
 };
+
+/**
+ * The address a page of this kind runs at, when it is not $0000: the HT-1080Z's extension ROM sits
+ * at $3000, so its `JP $3005` is a jump to its own offset 5. The ROM annotation tools decode such a
+ * page at that address and count offsets and targets from it.
+ */
+export function romKindOrigin(kind: RomPageKind | undefined): number {
+  return kind === "ht1080z-ext" ? 0x3000 : 0;
+}
 
 /** Whether a page of this kind is the Next's, whose code uses the Z80N's extra opcodes. */
 export function romKindUsesZ80N(kind: RomPageKind | undefined): boolean {

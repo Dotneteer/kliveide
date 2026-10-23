@@ -39,6 +39,7 @@ import {
   SAVED_TO_TAPE
 } from "../machine-props";
 import { MEDIA_TAPE } from "@common/structs/project-const";
+import { HT1080Z_ROM_PAGES } from "@common/annotations/bankSpace";
 import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import { ht1080zSavedFileName, isHt1080zTapeFile } from "./Ht1080zTapeFile";
 import { ht1080zStrokesForText } from "./Ht1080zTyper";
@@ -824,9 +825,19 @@ export class Ht1080zWasmV2Machine extends Ht1080zWasmHost implements IExecutionH
     this.requireWasmV2Runtime().exports.ht1080zWriteMemory(address & 0xffff, value & 0xff);
   }
 
-  /** The ROMs as one page at `-1`: the BASIC and the extension, $0000-$37FF */
+  /**
+   * The ROMs as two pages, each its own file and so its own ROM annotations (`HT1080Z_ROM_PAGES`): the
+   * BASIC at `-1` ($0000-$2FFF) and the extension at `-2` ($3000-$37FF)
+   */
   protected override getRomPartitionImages(): Map<number, Uint8Array> {
-    return new Map([[-1, this.get64KFlatMemory().slice(0, 0x3800)]]);
+    const wasm = this.requireWasmV2Runtime().exports;
+    return new Map(
+      HT1080Z_ROM_PAGES.map(({ partition, start, size }) => {
+        const image = new Uint8Array(size);
+        for (let i = 0; i < size; i++) image[i] = wasm.ht1080zReadMemory(start + i);
+        return [partition, image] as [number, Uint8Array];
+      })
+    );
   }
 
   /** The 64K the CPU sees, through the memory map (the keyboard reads as the CPU would read it) */

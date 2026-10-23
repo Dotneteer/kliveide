@@ -2094,3 +2094,90 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
   inheritance path.
 - **Level:** both alternate pages measure 2 (511 labels and 2,309 comments; 612 and 3,059) and reassemble
   byte for byte; enNextLG's page 2 measures 2 (761 labels, 2 its own). All record level 2. Not shipped (N6).
+
+### 2026-10-23 — HT-1080Z BASIC, first session (`ht1080z-s1.rom`, shipped file, level 0)
+
+- **Set-up:** the BASIC ROM is known by its CRC (`romIdentity.ts`: kind `ht1080z-basic` for `2bfef8f7`,
+  Series I and II, which are byte-identical, and `48985a30`, the /64), and `romDecoder.ts` decodes that kind
+  with the IDE's own `Ht1080zCustomDisassembler` (the byte after `RST $08` as data; it also lists
+  $1608-$18F6 as tables, a range this session did not yet check from the bytes). New tool
+  `tools/ht1080z-dis.cjs`. `apply-annotations.cjs` no longer adds a batch's region twice. New sidecar
+  `src/public/roms/ht1080z-s1.rom.dis` (no working copy yet), indexed.
+- **Rule D4:** Level II BASIC is a ROM with widely published commented disassemblies, which the author of
+  this session has very probably met in training. None was opened, no name list was used, and every name is
+  a Klive name chosen after reading the routine. Region boundaries come from the bytes and the code that
+  reads them.
+- **Read from the bytes:** the restarts all jump through RAM ($4000-$4014), filled at power-on from $06D2
+  (BOOT's 54-byte copy, read back from RAM in a run). `RST $08` → $1C96: compares (HL) with the byte after
+  the RST and steps past it, else $1997. `RST $10` → $1D78 (next character), `RST $18` → $1C90 (HL with DE),
+  `RST $20` → $25D9 (flags of the byte at $40AF), `RST $28`/`$30` RET, `RST $38` EI/RET. $0013/$001B/$0023
+  call a device block (type, driver, two letters: KI $03E3, DO $0458, PR $058D) with B = 1/2/4 through
+  $03C2. The key table at $0050 is read by the keyboard driver at $0443 for matrix row 6; the row's order is
+  Klive's own key map (`Ht1080zKeyCode.ts`).
+- **Probe** (a throwaway `test/ht1080z-hw/` test, deleted; Series I, 16K):
+  - Power-on stops at $0075 then $00B5, never $069F; $37EC reads $FF (extension ROM).
+  - NEW LINE alone at the question: the RAM test stops with HL = $8000; $40B1 = $7FFF, $40A0 = $7FCD.
+    The answer 20000 gives $40B1 = $4E1E.
+  - `$4000-$4035` after the question equals the $06D2 image except the display block's position bytes.
+  - `PRINT (` stops at $19A2 with E = $28 and prints `?MO ERROR`; `A=1)` stops at $1997 and prints
+    `?SN ERROR`, so E / 2 indexes the two-letter table at $18C9.
+  - BREAK at the prompt reaches $0456 (`RST $28`), then $05F0 and $0661. The RESET key runs $0066,
+    $06CC, $1A18, $1A19, and READY is printed again.
+- **Done:** 45 labels (four on table starts), each with a synopsis, and 9 regions: the restarts, the device
+  calls, the keyboard driver, BOOT and its disabled sector boot, the NMI, BASIC_INIT and the power-on
+  question with its RAM test, the syntax check, NEXT_CHAR, CP_HL_DE, TYPE_FLAGS and the two error entries.
+  Provenance `observed` throughout. Level 0: 764 unlabelled targets and 36 targets inside an instruction
+  remain.
+
+### 2026-10-23 — HT-1080Z ROM pages in the running machine (no annotation content)
+
+- The machine now reports its BASIC and extension ROMs as two pages (-1, -2) instead of one 14K page, and
+  has an `ht1080z` bank space, so the shipped `ht1080z-s1.rom.dis` shows in the live Disassembly view.
+  Checked in the running IDE (Playwright harness): POWER_ON at $0000 and EXPECT_CHAR at $1C96 with their
+  synopses. No annotations were added in this change.
+
+### 2026-10-23 — HT-1080Z BASIC to level 2 (`ht1080z-s1.rom`, shipped file)
+
+- **Method:** eight helper agents drafted $0000-$2FFF in $600 ranges from the listing alone
+  (`helper-briefs/ht1080z-draft-a-range.md`: no `_input/` file — it holds commented disassemblies of this ROM —
+  no web, no remembered Level II or Microsoft names). They had the IDE decoder's output, `dispatch.txt` (the
+  routines the ROM's own function and statement tables reach, with Klive's token names), Klive's core and key
+  map, and the facts of the first session. Merged with `merge-drafts.py` (three name clashes renamed:
+  INT_SIGNED_HL, EVAL_BRACKETED, FN_CALL). No name list was used; every label is `observed`.
+- **Found** (each with its code address in the synopses): the cassette format (255 zeros, $A5, SYSTEM blocks
+  $55/$3C/$78 with checksums, BASIC programs as $D3 x3 and a name character), the display and printer drivers
+  and their control codes, the line editor and EDIT, the tokenizer and lister, the expression evaluator and its
+  precedences, the number formats (4-byte single, 8-byte double, exponent bias $80, sign in the top mantissa
+  byte), single/double/integer arithmetic, number input and output, PRINT USING, the string space and its
+  collector, the variable and array layouts, FOR/GOSUB stack frames, the error trap.
+- **Settled at merge:** RND's multiplier is $4090-$4092 (one helper had "probably the seed"); the never-taken
+  `JP C` at $0E11 became a one-byte region so that $0E12 (DBL_DIV_KEEP) lists as code and the false target
+  $0412 goes.
+- **Probe** (throwaway, deleted; Series I): program start $42E9; `10 ?1` stores $B2 (PRINT), `20 'X` stores
+  `: REM $FB X`, ELSE is stored as `: $95`; $4090-$4092 read 40 E6 4D and one RND step takes a zero seed to
+  65 B0 05 (seed x multiplier + $05B065); the error code at $409A after NEXT, RETURN, 1/0, READ, CHR$(300), a
+  second DIM, A$=1, GOTO 999, RESUME, CONT and A(11) was 0, 4, $14, 6, 8, $12, $18, $0E, $24, $20, $10: NF, RG,
+  /0, OD, FC, DD, TM, UL, RW, CN, BS, as the table at $18C9 gives.
+- **Level:** 2, measured and recorded (915 labels, 928 synopses, 3,047 comments, 33 regions; 32 targets inside an
+  instruction, each explained). Checked in the running IDE.
+
+### 2026-10-23 — The other HT-1080Z ROMs (all at level 2, shipped files)
+
+- **/64 BASIC** (`ht1080z-s64.rom.dis`): `inherits` s1; authors its five changed runs from the bytes. Probe
+  (throwaway, deleted): the /64 asks `MEMORY SIZE?` and prints `BASIC  2.20`; NEW LINE made the top $FFFF; the
+  banner is stored as $42 $41 $53 where Series I stores READY as $12 $05 $01; CLEAR -1 left $409A = $0C (OM) on
+  the /64 and 8 (FC) on Series I; LPRINT completes on both. Added HOOK_ERROR ($012D) to s1, whose span the /64's
+  text change cut.
+- **Extension ROMs**: a page kind `ht1080z-ext` with an origin of $3000 (`romKindOrigin`), so the tools decode
+  them where they run. Series I's and the /64's drafted by helpers (`helper-briefs/ht1080z-draft-extension.md`:
+  no `_input/`, no web, no remembered names), the /64's reusing Series I's names where the bytes match; both ran
+  probes (deleted) for the RAM vectors /12288 sets, the workspace, blink, auto-repeat, the renumber command, the
+  monitor and the /64's accent mode. Series II's `inherits` Series I's and authors its accent code; probe: no
+  message after /12288, $4016 = $303A, CLEAR+A typed $5D, CLEAR+E $40, a plain O $4F, CLEAR alone nothing.
+  The /64's byte $05B9 is $00 where Series I has $10 (DJNZ): RE 1,1 left old digits and $40F9 unchanged
+  (observed); the image matches the MAME set's checksums.
+- **Character generators**: glyphs read from sheets rendered from the bytes (bits 7-3, 16 rows each); the
+  core's use of them from `ht1080z-video.c`.
+- **Merge fixes**: label references swapped for names with paragraphs re-flowed; a duplicated name and the
+  RESUME synopsis repaired; every "probably" removed. Checked in the running IDE (Playwright harness): the /64
+  shows its own MEMORY_TEXT and the extension's labels at $3000; Series I shows READY_TEXT.
