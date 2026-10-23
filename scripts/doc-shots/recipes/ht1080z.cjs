@@ -7,7 +7,10 @@
  *   and the program's semigraphics frame with `HT-1080Z` and `ÜDVÖZÖLJÜK!` (Series II's accents);
  * - `ht1080z/ht1080z-basic-listing.png` — the IDE with the BASIC Listing view of that program;
  * - `ht1080z/ht1080z-debug.png` — a project from the `default` template paused at a source
- *   breakpoint (`.plans/HT1080Z_CODE_INJECTION_PLAN.md` Phase 5).
+ *   breakpoint (`.plans/HT1080Z_CODE_INJECTION_PLAN.md` Phase 5);
+ * - `ht1080z/ht1080z-tape-viewer-cas.png` and `ht1080z-tape-viewer-cmd.png` — the tape file viewer
+ *   (`.plans/HT1080Z_TAPE_VIEWERS_PLAN.md` Phase 4) on the demo program as a CLOAD tape, and on a
+ *   load module that copies "HELLO" to the screen.
  *
  * `ht1080z-demo.bas` is a tokenised `.bas` the Series II itself made: its lines were typed on the
  * emulated machine and its program area saved (an FFh byte, then the bytes from 42E9h).
@@ -22,6 +25,48 @@ const { IMAGES, REPO } = require("../harness.cjs");
 
 const MODEL_ITEM = "machine_ht1080z_ht1080z-s2";
 const DEMO = path.join(__dirname, "ht1080z-demo.bas");
+
+/** A CLOAD tape of the demo program: the leader, the sync byte, D3 D3 D3 "D" and the program */
+function demoCas() {
+  const program = fs.readFileSync(DEMO).subarray(1);
+  return Buffer.concat([Buffer.alloc(255), Buffer.from([0xa5, 0xd3, 0xd3, 0xd3, 0x44]), program]);
+}
+
+/** A load module: `LD HL,MSG / LD DE,$3C00 / LD BC,5 / LDIR / RET / MSG: "HELLO"` at $7000 */
+function helloCmd() {
+  const code = [0x21, 0x0c, 0x70, 0x11, 0x00, 0x3c, 0x01, 0x05, 0x00, 0xed, 0xb0, 0xc9, ...Buffer.from("HELLO")];
+  return Buffer.from([0x05, 5, ...Buffer.from("HELLO"), 0x01, code.length + 2, 0x00, 0x70, ...code, 0x02, 0x02, 0x00, 0x70]);
+}
+
+/**
+ * The viewer as it is on screen: the document runs on under the tool panel, so the shot is clipped
+ * to the part of it its scroll viewport shows
+ */
+async function viewerShot(klive) {
+  await klive.ide.mouse.move(5, 5);
+  await klive.sleep(300);
+  const clip = await klive.ide.evaluate(() => {
+    const viewer = document.querySelector("[aria-label='File summary']").parentElement;
+    const port = viewer.closest("[data-overlayscrollbars-viewport]") ?? viewer.parentElement;
+    const a = viewer.getBoundingClientRect();
+    const b = port.getBoundingClientRect();
+    const top = Math.max(a.top, b.top);
+    const left = Math.max(a.left, b.left);
+    return { x: left, y: top, width: Math.min(a.right, b.right) - left, height: Math.min(a.bottom, b.bottom) - top };
+  });
+  return klive.ide.screenshot({ clip });
+}
+
+/** Opens a file in the tape viewer and waits until it shows what `ready` looks for */
+async function openViewer(klive, file, ready) {
+  await klive.cmd(`nav "${file.replace(/\\/g, "/")}"`, 2500);
+  for (let i = 0; i < 20; i++) {
+    const text = await klive.ide.evaluate(() => document.querySelector("[aria-label='File summary']")?.closest("[class*='_viewer_']")?.textContent ?? "");
+    if (ready.every((r) => text.includes(r))) return;
+    await klive.sleep(500);
+  }
+  throw new Error(`The tape viewer of ${path.basename(file)} does not show: ${ready.join(", ")}`);
+}
 
 async function emuWindow(klive) {
   await klive.app.evaluate(({ BrowserWindow }) => {
@@ -143,6 +188,21 @@ module.exports = {
       if (!marked) throw new Error("The editor does not mark the line the machine stopped at");
       await klive.cmd("cls", 700);
       await save(await klive.ide.screenshot(), "ht1080z/ht1080z-debug.png", 720);
+
+      // --- The tape file viewer: a CLOAD tape with its program selected, and a load module
+      await klive.cmd("em-stop", 2000);
+      const folder = path.join(projects, "hello", "code");
+      fs.writeFileSync(path.join(folder, "demo.cas"), demoCas());
+      fs.writeFileSync(path.join(folder, "hello.cmd"), helloCmd());
+      await klive.sleep(2500);
+      await openViewer(klive, path.join(folder, "demo.cas"), [
+        "CAS · BASIC program tape",
+        "6 lines · 10–60",
+        "PRINT É 348,\"HT-1080Z\";"
+      ]);
+      await save(await viewerShot(klive), "ht1080z/ht1080z-tape-viewer-cas.png", 720);
+      await openViewer(klive, path.join(folder, "hello.cmd"), ["CMD · load module", "$7000–$7010", "Every model"]);
+      await save(await viewerShot(klive), "ht1080z/ht1080z-tape-viewer-cmd.png", 720);
     } finally {
       fs.rmSync(projects, { recursive: true, force: true });
     }

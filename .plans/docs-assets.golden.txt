@@ -144,6 +144,8 @@
 /images/ht1080z/ht1080z-debug.png
 /images/ht1080z/ht1080z-demo.png
 /images/ht1080z/ht1080z-keyboard.png
+/images/ht1080z/ht1080z-tape-viewer-cas.png
+/images/ht1080z/ht1080z-tape-viewer-cmd.png
 /images/hu/get-started/basic-debug.webp
 /images/hu/get-started/basic-debug.webp.json
 /images/hu/get-started/basic-running.webp

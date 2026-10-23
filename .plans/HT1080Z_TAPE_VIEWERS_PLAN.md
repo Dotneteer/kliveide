@@ -1,7 +1,7 @@
 # HT-1080Z Tape File Viewers and `.bas` by Content — Implementation Plan
 
 **Status:** decisions accepted by the project author 2026-10-23: option A for `.bas` (decide by
-content) and D-Q1 to D-Q4 (§7), the mockup approved. Phases 1 to 3 done 2026-10-23 (§8). Next: Phase 4.
+content) and D-Q1 to D-Q4 (§7), the mockup approved. **Complete** 2026-10-23: all four phases done (§8).
 **Mockup:** `.plans/mockups/ht1080z-tape-viewers.html` (real bytes, interactive; open it in a browser).
 **Follows:** `.plans/HT1080Z_PLAN.md` (complete) and `.plans/HT1080Z_CODE_INJECTION_PLAN.md`
 (complete). The pattern is `.plans/TAPE_VIEWER_PLAN.md` (the TAP/TZX viewer) and the ZX81's `.p`
@@ -290,3 +290,16 @@ is not offered for it (the registry entry has no `canBeBuildRoot`).
   memory, the pop-outs, a text `.bas`), the line-run and relink cases in `test/ht1080z/tape-view.test.ts`,
   and the routing of `.cas`/`.cmd`. In the running app a `.cas` of each kind, a `.cmd` and a `.bas` open
   with their graphics and details.
+
+**Phase 4 (ship) done 2026-10-23.**
+- Docs: the HT-1080Z guide's Tapes section says a `.bas` is an HT program by its content, lists the
+  ways a tokenised `.bas` loads, and has a new "Viewing tape files" part with two screenshots; the
+  ZX BASIC page notes that a tokenised `.bas` is not ZX BASIC.
+- Screenshots: the `ht1080z` recipe writes `ht1080z-tape-viewer-cas.png` (the demo program as a CLOAD
+  tape, its program selected) and `ht1080z-tape-viewer-cmd.png` (a load module that copies "HELLO" to
+  the screen), each checked for its text before it is taken and clipped to the part of the viewer the
+  document area shows (the viewer runs on under the tool panel).
+- `.ai/ui-theming-intent-and-lessons.md` was updated with Phase 3; the changeset
+  (`.changes/ht-1080z-tape-file-viewer-629f.md`, a feature) describes the plan as a whole.
+- Gates: `build:check`, `lint:renderer`, `test:fast`, `test:slow`, the electron-vite build and
+  `doc:build`/`doc:check` green.
