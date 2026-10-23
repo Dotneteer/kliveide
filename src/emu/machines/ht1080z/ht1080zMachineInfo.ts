@@ -39,29 +39,35 @@ export const HT1080Z_VIDEO_RAM_SIZE = 0x0400;
 export const HT1080Z_RAM_START = 0x4000;
 
 /**
- * The models (D1). Only Series II is registered until Phase 7 of the plan; the other two are defined
- * here so the core and the harness can run them.
+ * The models (D1): each has its own ROMs, character set and clock (§4.3). Series I and II also come
+ * with 48K of RAM, standing in for the expansion RAM board (HARDWARE.md §9.2) that much software
+ * assumes; the /64 has 48K as built.
  */
 export const HT1080Z_MODELS: MachineModel[] = [
-  {
-    modelId: "ht1080z-s2",
-    displayName: "HT-1080Z Series II",
-    config: { [MC_HT_MODEL]: "s2", [MC_MEM_SIZE]: 16 }
-  }
-];
-
-/** Every model the core runs, the registered ones included (the harness uses this) */
-export const HT1080Z_ALL_MODELS: MachineModel[] = [
   {
     modelId: "ht1080z-s1",
     displayName: "HT-1080Z Series I",
     config: { [MC_HT_MODEL]: "s1", [MC_MEM_SIZE]: 16 }
   },
-  ...HT1080Z_MODELS,
+  {
+    modelId: "ht1080z-s2",
+    displayName: "HT-1080Z Series II",
+    config: { [MC_HT_MODEL]: "s2", [MC_MEM_SIZE]: 16 }
+  },
   {
     modelId: "ht1080z-64",
     displayName: "HT-1080Z/64",
     config: { [MC_HT_MODEL]: "s64", [MC_MEM_SIZE]: 48 }
+  },
+  {
+    modelId: "ht1080z-s1-48k",
+    displayName: "HT-1080Z Series I (48K)",
+    config: { [MC_HT_MODEL]: "s1", [MC_MEM_SIZE]: 48 }
+  },
+  {
+    modelId: "ht1080z-s2-48k",
+    displayName: "HT-1080Z Series II (48K)",
+    config: { [MC_HT_MODEL]: "s2", [MC_MEM_SIZE]: 48 }
   }
 ];
 

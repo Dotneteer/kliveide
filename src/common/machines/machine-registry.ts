@@ -634,8 +634,8 @@ export const machineRegistry: MachineInfo[] = [
     }
   },
   {
-    // --- `.plans/HT1080Z_PLAN.md`: Series II only until Phase 7 adds Series I and the /64. History,
-    // --- profile and reverse debugging join with Phase 8.
+    // --- `.plans/HT1080Z_PLAN.md`: Series I, Series II and the /64 (D1), Series I/II also with 48K.
+    // --- History, profile and reverse debugging join with Phase 8.
     machineId: MI_HT1080Z,
     displayName: "HT-1080Z",
     charSet: Ht1080zChars,

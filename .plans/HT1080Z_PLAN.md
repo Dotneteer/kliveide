@@ -1,7 +1,7 @@
 # HT-1080Z on the WASM Core — Implementation Plan
 
 **Status:** decisions accepted 2026-10-22 (§15; D10 revised the same day after Phase 2); Phases 0-3
-done 2026-10-22 (§17); Phases 4 and 5 done 2026-10-22, Phase 6 2026-10-23. Next: Phase 7.
+done 2026-10-22 (§17); Phases 4 and 5 done 2026-10-22, Phases 6 and 7 2026-10-23. Next: Phase 8.
 **Input:** the research pack `_input/ht1080z/`. Read its `README.md` first, then `HARDWARE.md`,
 `VIDEO_TIMING.md`, `SOUND_AY.md`, `STORAGE_FIRMWARE_SOFTWARE.md` and `EXISTING_EMULATORS.md`.
 Every hardware fact in this plan comes from there, with its source.
@@ -856,4 +856,17 @@ Deviations from the plan, with their reasons:
 - `.wav` input (6b, optional) is not done.
 - F1 is a latching key that holds the motor on, on the virtual keyboard too (§7 called it a
   "motor override" toggle).
+
+**Phase 7 done 2026-10-23.** All five models are registered: Series I, Series II and the /64 (D1),
+and Series I and II with 48K. Each has its own ROMs, clock and RAM in the core, the Select Machine
+sheet (per-model ROMs, the /64's clock and 48K, and now the tape row) and the keyboard's hints.
+`test/ht1080z-hw/models.test.ts`: every model boots at its clock to its model's boot golden with the
+ROM's memory test finding its RAM; the /64 prints `ÁRVÍZTŰRŐ ∞π` from a BASIC string as its own
+character codes; Series II prints its eight accents. The `hardware-specs` drift test covers all five
+models. In the running app each model is selected from the Machine menu and boots, with its name and
+clock in the status bar.
+
+Deviation: the optional 48K for Series I/II (§4.3's `MC_HT_RAM`) is two more models with
+`MC_MEM_SIZE: 48`, as the ZX81's RAM sizes are models, not a new configuration key. The HT is no longer
+a single-model "leaf" in the Select Machine dialog.
 

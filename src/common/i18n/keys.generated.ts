@@ -2551,6 +2551,7 @@ export type MessageKey =
   | "hardware.layers.next"
   | "hardware.media.floppyA"
   | "hardware.media.floppyAB"
+  | "hardware.media.ht1080zTape"
   | "hardware.media.noFloppy"
   | "hardware.media.pentagonBeta"
   | "hardware.media.scorpionBeta"

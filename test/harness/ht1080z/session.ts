@@ -12,7 +12,7 @@ import { HT1080Z_EXTENSION_ON } from "@emu/machines/ht1080z/Ht1080zTyper";
 import { parseHt1080zTapeFile, type Ht1080zTapeFile } from "@emu/machines/ht1080z/Ht1080zTapeFile";
 import { FAST_LOAD, SAVED_TO_TAPE } from "@emu/machines/machine-props";
 import { MEDIA_TAPE } from "@common/structs/project-const";
-import { HT1080Z_ALL_MODELS, HT1080Z_VIDEO_RAM_START } from "@emu/machines/ht1080z/ht1080zMachineInfo";
+import { HT1080Z_MODELS, HT1080Z_VIDEO_RAM_START } from "@emu/machines/ht1080z/ht1080zMachineInfo";
 
 import { buildHt1080zWasm, productionOutput } from "../../../scripts/build-ht1080z-wasm.cjs";
 
@@ -28,7 +28,7 @@ export type Ht1080zSessionOptions = { model?: string };
 
 class HarnessHt1080zMachine extends Ht1080zWasmV2Machine {
   constructor(modelId: string) {
-    const model = HT1080Z_ALL_MODELS.find((m) => m.modelId === modelId);
+    const model = HT1080Z_MODELS.find((m) => m.modelId === modelId);
     if (!model) throw new Error(`Unknown HT-1080Z model '${modelId}'`);
     super(MI_HT1080Z, model, undefined, undefined, {
       artifactName: "harness-ht1080z.wasm",

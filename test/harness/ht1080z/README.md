@@ -18,7 +18,7 @@ it("boots", async () => {
 
 | Group | Method | What it does |
 | --- | --- | --- |
-| Create | `createHtSession({ model? })` | Builds the core once per test process and powers the machine on: `ht1080z-s1`, `ht1080z-s2` (default) or `ht1080z-64` (`HT1080Z_ALL_MODELS`). |
+| Create | `createHtSession({ model? })` | Builds the core once per test process and powers the machine on: `ht1080z-s1`, `ht1080z-s2` (default), `ht1080z-64`, or Series I/II with 48K, `ht1080z-s1-48k` / `ht1080z-s2-48k` (`HT1080Z_MODELS`). |
 | Boot | `bootToPrompt()`, `hasFirstPrompt()` | Runs to the power-on question (`READY ?` on Series I/II, `MEMORY SIZE?` on the /64), answers it with NEW LINE, and runs to the `>` prompt. |
 | Run | `runFrames(n)`, `runUntil(pred)`, `runTo(address)`, `step(n)` | Whole 34,944-T frames; until a predicate holds; until PC reaches an address; single instructions. |
 | Keys | `typeKeys(text)`, `extensionOn()`, `keyDown`/`keyUp`, `pressKey(...codes)`, `pressResetKey()` | Text through the machine's typer (`Ht1080zTyper.ts`), accents included; `SYSTEM` `/12288`, which the accents and lowercase need; raw `Ht1080zKeyCode` keys (`row * 8 + column`); a chord held 3 frames and released 3; the RESET key's NMI. |

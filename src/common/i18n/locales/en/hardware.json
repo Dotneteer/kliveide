@@ -195,6 +195,10 @@
   "@hardware.media.zx81Tape": {
     "context": "An item of the Media row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the ZX81: it loads programs from tape, from .P files."
   },
+  "hardware.media.ht1080zTape": "Tape (.CAS, .CMD, .BAS)",
+  "@hardware.media.ht1080zTape": {
+    "context": "An item of the Media row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the HT-1080Z: the file types its tape deck takes. Keep the file extensions as they are."
+  },
   "hardware.media.zx80Tape": "Tape (.O)",
   "@hardware.media.zx80Tape": {
     "context": "An item of the Media row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the ZX80: it loads programs from tape, from .O files."
