@@ -1,0 +1,190 @@
+---
+description: "How the HT-1080Z draws its 64 × 16 character screen: one CPU T-state per character cell, a frame of 112 × 312 slots, the character ROM and the block graphics, the black dashes a video-memory access leaves, VIDEO CUT and PAGE, and how Klive's core draws the same picture against the CPU's clock."
+---
+
+import { Callout } from 'nextra/components'
+
+# HT-1080Z: How the Screen Is Drawn
+
+The HT-1080Z's picture comes from a chain of counters that runs on its own, independently of the
+program. Unlike the ZX81, the CPU does not draw the screen. Unlike the ZX Spectrum, the video
+circuit never stops the CPU. The two simply share one clock and one block of memory, and that
+sharing has visible consequences: a program that writes the screen while it is being drawn leaves
+short black dashes in the picture, and a character changed in the middle of a frame can show half
+old and half new.
+
+This article explains the video circuit from the clock up, then shows how Klive reproduces it. You
+need to know the Z80's memory cycle (T-states, MREQ). The facts come from the circuit diagrams of
+the HT-1080Z/64's video board, the technical manual of the EACA Genie (the HT-1080Z's close
+relative), and measurements on Klive's emulator; the few points that are inferred rather than
+read off a diagram are marked as such.
+
+## One T-state is one character
+
+Everything follows from one fact: **the CPU's clock and the video's character clock are the same
+frequency**. A crystal of about 10.66 MHz drives the dot clock, the rate at which dots leave the
+video circuit. Divided by six, it gives both the character clock (one character is 6 dots wide)
+and the Z80's clock:
+
+| | Series I and II | HT-1080Z/64 |
+|---|---|---|
+| Crystal (dot clock) | 10.644 MHz | 10.6645 MHz |
+| CPU clock = character clock | 1,774,000 Hz | 1,777,417 Hz |
+| One T-state = one character | 563.7 ns | 562.6 ns |
+
+So while the CPU executes a 4-T-state `NOP`, the beam draws four characters. There are **no wait
+states and no interrupts**: the Z80's INT line is not connected, and the CPU cannot read where the
+beam is. A program cannot synchronise itself to the picture. The raster runs freely under it.
+
+## The counter chain
+
+The video circuit is a chain of counters fed by the dot clock. Each stage divides the one before it:
+
+| Stage | Divides by | Gives |
+|---|---|---|
+| Dots within a character | 6 | the character clock (and the CPU clock) |
+| Characters within a line | 112 | the column, 0-111; 0-63 are shown |
+| Scan lines within a character row | 12 | the row of the glyph to show |
+| Character rows within a frame | 26 | the text row, 0-25; 0-15 are shown |
+
+A line is therefore **112 T-states**: 64 characters of picture and 48 of horizontal blanking, during
+which the television's beam flies back to the left edge. A frame is 26 rows of 12 scan lines,
+**312 lines**: 192 of picture (16 rows of 12) and 120 of vertical blanking.
+
+```text
+frame = 112 × 312 = 34,944 T-states
+        50.77 frames a second on Series I and II, 50.86 on the /64
+```
+
+The picture is not interlaced: every frame draws the same 312 lines. The sync pulses that tell the
+television where a line and a frame begin come from the counters too, through small analog delays
+that the trimmers on the board adjust. That is how a technician centred the picture, and why the
+size of the border is not a fact of the machine. Klive draws a fixed black border of 72 dots on
+each side and 48 lines above and below: the picture is 528 × 288 dots, the same share of the
+television's line as the Spectrum's border.
+
+## One line, character by character
+
+Within a visible line the counter's column runs from 0 to 111, one step per T-state. For the first
+64 steps it addresses the video memory (3C00h-3FFFh, 64 bytes a row):
+
+| T-state in the line | What happens |
+|---|---|
+| *n* (0-63) | The video memory is **read** at column *n* of the current row |
+| *n* + 1 | The byte is **latched**, and its 6 dots are looked up |
+| *n* + 2 | The 6 dots **leave** the shift register, one per dot clock |
+| 64-111 | Blanking: the counter keeps counting, but nothing is shown |
+
+So column *n* is drawn two character times after it is read: the visible window is T-states 2 to
+65 of each of lines 0 to 191. The row is line ÷ 12, and line mod 12 picks which of the glyph's 12
+scan lines to draw.
+
+## What the byte becomes
+
+Each byte of video memory is a character or a block of graphics, chosen by bit 7.
+
+**Characters** (bit 7 clear). Bits 0-6 and the scan line address the **character ROM**: 128 glyphs
+of 16 bytes, 12 of which are used. Bits 7 to 3 of the ROM byte are the 5 dots, bit 7 the leftmost,
+and the 6th dot is always dark: that is the gap between characters. The character ROMs differ by
+model:
+
+- **Series I** has the TRS-80's character set.
+- **Series II** puts accented capitals and small letters in place of a few symbols: É at 40h
+  (`@`), Ö Á Ü at 5Ch-5Eh, and é ö á ü among the small letters.
+- **The /64** has 32 more glyphs at 00h-1Fh: all the Hungarian accented letters, capitals and small,
+  and Greek and mathematical signs (λ π √ μ α γ ∫ β ω Ω Σ Ψ ∞ ■). Its capitals' accents sit in the
+  glyph's top three scan lines, so the /64 uses all 12.
+
+On Series I and II, BASIC never stores codes 40h-7Fh in video memory: its display routine moves
+every character 40h-7Fh down into 00h-1Fh before it writes it (`READY` is stored as 12h 05h 01h 04h
+19h). Those codes are drawn with the glyphs of 40h-5Fh. The /64's BASIC does not fold them, and its
+00h-1Fh show their own glyphs.
+
+**Block graphics** (bit 7 set). The cell is a 2 × 3 grid of blocks, each 3 dots wide and 4 scan
+lines tall. Bits 0 and 1 light the top pair, bits 2 and 3 the middle pair, bits 4 and 5 the bottom
+pair; the even bit is the left block. Bit 6 is ignored. BASIC's `SET`, `RESET` and `POINT` work on
+this 128 × 48 grid.
+
+## When the CPU touches video memory
+
+The video memory has one set of address lines. While the video circuit reads it, the CPU cannot;
+the designers did not make the CPU wait, they gave it priority. When the CPU addresses
+3C00h-3FFFh, a signal called VID switches the memory's address lines over to the CPU **and clears
+the video latch**. Every character whose latch moment falls while VID is active is latched as zero,
+and a zero shows as blank: **a short black dash** on the scan line being drawn.
+
+How long is VID active? It follows the Z80's MREQ signal, which goes active in the middle of a memory
+cycle's first T-state and stays active until the middle of its third. That covers the latch moments
+at the start of the second and third T-states: two characters, about 12 dots. (This is inferred from
+the Z80's timing and the circuit; it has not been measured on a real machine.) In the column
+numbering above, an access whose first T-state is at column *x* blanks the reads at *x* and *x* + 1,
+so the dash is drawn at slots *x* + 2 and *x* + 3.
+
+The dashes are what a real HT-1080Z shows while a program draws: a `LDIR` into video memory leaves
+a trail of them, and a program that keeps reading the screen makes it flicker. Klive draws them by
+default. **Machine › Show Video RAM Access Dash** turns them off.
+
+The second effect is **tearing**. The display reads column *n* at T-state *n* of the line, and a CPU
+write lands at its own T-state. If the write comes after the beam has read that cell on this scan
+line, the change shows from the next scan line on. Changing a character while the beam draws its
+row shows the top of the old character and the bottom of the new one, for one frame.
+
+## VIDEO CUT and PAGE
+
+The **VIDEO CUT** switch halves the column clock. Each character then lasts two character times and
+is drawn 12 dots wide, so 32 characters fill the same window. The line and frame do not change
+(the television still needs them), and neither does the CPU's timing. The **PAGE** key chooses which
+32 columns of each 64-byte row are shown: the left half or the right.
+
+With VIDEO CUT on, the slot the beam is at shows the left or right half of its column, the column
+being PAGE × 32 + (slot − 2) ÷ 2, read two slots earlier.
+
+## How Klive draws it
+
+Klive's HT-1080Z core draws the picture the way the hardware does, against the CPU's clock, but it
+does not draw it one T-state at a time. The core keeps one number: **how far the picture has been
+drawn**, as a slot of the frame. Slot *s* is frame T-state *s*. It draws up to the CPU's current
+T-state only when it must:
+
+- **before the CPU touches video memory**. The memory hook sees every read and write to 3C00h-3FFFh,
+  instruction fetches included. It draws up to the access's first T-state, places the dash over the
+  next two reads, and lets the access happen. Reads after it see the new byte, which is the tearing;
+- **before VIDEO CUT, PAGE or the dash setting changes**, so the rest of the frame is drawn the new
+  way;
+- **at the end of the frame**, for everything the program left alone.
+
+A frame in which the program never touches video memory is drawn in one pass at its end, so
+emulating the beam costs almost nothing, yet a program that races the beam sees exactly what the
+hardware shows.
+
+The code is in Klive's repository:
+
+| File | What it holds |
+|---|---|
+| `src/emu/machines/ht1080z/wasm/ht1080z/ht1080z-video.c` | The catch-up renderer, the character and block decoding, the dash, VIDEO CUT and PAGE |
+| `src/emu/machines/ht1080z/wasm/ht1080z/ht1080z.c` | The frame loop (34,944 T-states) and the memory map |
+| `test/ht1080z-hw/video.test.ts` | Probes that pin the two-slot delay, the dash and the 32-column mode |
+| `test/ht1080z-hw/screen.test.ts` | The boot screen and character-set pictures of each model |
+
+The dash's position and length are two constants in `ht1080z-video.c`, because they are inferred:
+a measurement on a real machine would change only those.
+
+<Callout type="info">
+The CPU and the video share one crystal on Series I and II. The /64 divides the same crystal with two
+separate counters, so the CPU and the picture are in a fixed phase that may differ by up to five
+dots. At character resolution this makes no difference, and Klive does not model it.
+</Callout>
+
+## Summary
+
+| | |
+|---|---|
+| Clock | crystal ÷ 6: one CPU T-state is one character |
+| Line | 112 T-states: 64 shown (slots 2-65), 48 blanking |
+| Frame | 312 lines (192 shown) = 34,944 T-states, not interlaced |
+| Screen | 64 × 16 characters of 6 × 12 dots; 128 × 48 blocks |
+| Character | bits 7-3 of the character ROM, 12 rows; codes 00h-1Fh as 40h-5Fh on Series I/II |
+| CPU access to 3C00h-3FFFh | never delayed; blanks two characters at the beam |
+| VIDEO CUT, PAGE | 32 columns, 12 dots each; the left or right half of each row |
+
+To try the machine itself, see [Using the HT-1080Z](/en/guides/emulator/ht1080z).

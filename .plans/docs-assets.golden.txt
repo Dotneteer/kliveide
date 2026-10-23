@@ -140,6 +140,9 @@
 /images/howto/instant-screen-in-toolbar.png
 /images/howto/tstate-1.png
 /images/howto/tstate-2.png
+/images/ht1080z/ht1080z-basic-listing.png
+/images/ht1080z/ht1080z-demo.png
+/images/ht1080z/ht1080z-keyboard.png
 /images/hu/get-started/basic-debug.webp
 /images/hu/get-started/basic-debug.webp.json
 /images/hu/get-started/basic-running.webp

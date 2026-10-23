@@ -116,6 +116,7 @@
 /en/guides/debugging/watch/index.html
 /en/guides/emulator/always-on-top/index.html
 /en/guides/emulator/custom-rom/index.html
+/en/guides/emulator/ht1080z/index.html
 /en/guides/emulator/keyboard/index.html
 /en/guides/emulator/machine-state/index.html
 /en/guides/emulator/rzx-recordings/index.html
@@ -191,6 +192,7 @@
 /en/under-the-hood/contribute/translate/index.html
 /en/under-the-hood/contribute/wasm-toolchain/index.html
 /en/under-the-hood/emulator-internals/debugger-loop/index.html
+/en/under-the-hood/emulator-internals/ht1080z-video/index.html
 /en/under-the-hood/emulator-internals/next-core/index.html
 /en/under-the-hood/emulator-internals/reverse-debugging/index.html
 /en/under-the-hood/emulator-internals/wasm-cores/index.html

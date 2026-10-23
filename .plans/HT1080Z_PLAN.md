@@ -1,7 +1,8 @@
 # HT-1080Z on the WASM Core — Implementation Plan
 
-**Status:** decisions accepted 2026-10-22 (§15; D10 revised the same day after Phase 2); Phases 0-3
-done 2026-10-22 (§17); Phases 4 and 5 done 2026-10-22, Phases 6, 7 and 8 2026-10-23. Next: Phase 9.
+**Status:** complete 2026-10-23. Decisions accepted 2026-10-22 (§15; D10 revised the same day after
+Phase 2); Phases 0-5 done 2026-10-22, Phases 6-9 2026-10-23 (§17). Follow-ups are in §14 and at the
+end of §17.
 **Input:** the research pack `_input/ht1080z/`. Read its `README.md` first, then `HARDWARE.md`,
 `VIDEO_TIMING.md`, `SOUND_AY.md`, `STORAGE_FIRMWARE_SOFTWARE.md` and `EXISTING_EMULATORS.md`.
 Every hardware fact in this plan comes from there, with its source.
@@ -899,4 +900,21 @@ a single-model "leaf" in the Select Machine dialog.
 
 Not done, left to follow-ups: a `.bas` in the Explorer stays Klive BASIC source (no HT launch entries
 there; File Open and drag-and-drop take only `.cas`/`.cmd`); the beam-position overlay is not offered.
+
+**Phase 9 done 2026-10-23; the plan is complete.**
+- Docs: `guides/emulator/ht1080z.mdx` (models, typing and accents, tapes, sound, the Machine menu,
+  debugging, the command line, the ROMs); `under-the-hood/emulator-internals/ht1080z-video.mdx` (the
+  counter chain, a line and a frame, characters and blocks, the dash, VIDEO CUT/PAGE, Klive's catch-up
+  renderer); the machine-types reference; the BASIC Listing page; the machine lists of the reverse
+  debugging, history, coverage, profiler, state and `klive run` pages.
+- Screenshots: `scripts/doc-shots/recipes/ht1080z.cjs` (keyboard, a demo program, its BASIC listing),
+  from `ht1080z-demo.bas`, a tokenised program the emulated Series II itself saved. Series II lists `@`
+  as `É`, as its character ROM and its own LIST do.
+- `.ai/wasm-migration-intent-and-lessons.md` has an HT-1080Z section. `THIRD_PARTY_NOTICES.md` and
+  packaging were done in Phases 2 and 6.
+- Gates: `build:check`, `lint:renderer`, the full `npm test`, `test:slow` (21 files), the electron-vite
+  build, `doc:build` and `doc:check` (route goldens re-baselined for the two pages and three images).
+  A packaged macOS build (`electron-builder --mac --arm64 --dir`) carries the core and the nine ROMs,
+  and runs the Series II and the demo tape.
+- The changeset describes the whole plan.
 

@@ -570,6 +570,43 @@ taught:
   not the character address) turned out right: WRX hi-res needs it, and a hi-res program draws
   stripes the other way.
 
+## A Machine With No Interrupts: The HT-1080Z
+
+The HT-1080Z (`.plans/HT1080Z_PLAN.md`, `src/emu/machines/ht1080z/wasm/README.md`) is the second
+machine built from scratch on the shared core: a TRS-80 Model I relative with no INT, no wait states,
+a video circuit that draws against the CPU clock, an AY borrowed from the Spectrum cores, and five
+models on one artifact. What it taught:
+
+- **A machine that raises NMI must lower it.** The shared Z80 takes an NMI on the edge and leaves the
+  line alone, as the ZX81's ULA needs. The HT's RESET key raised it and never lowered it, so the CPU
+  re-entered 0066h forever; the first probe passed because `READY` was already on the screen. Test an
+  event by first destroying the evidence it would leave (blank the screen, then press RESET).
+- **A raster that needs no wait states needs no per-T-state work.** The video catches up to the CPU in
+  the memory delay hook, only when the CPU touches video RAM, when a switch changes and at the frame
+  end; an untouched frame is drawn in one pass. The hardware's tearing and the CPU-access dash fall
+  out of drawing up to the access's T1 and then applying it. Keep inferred timing (the dash's
+  position and length) in named constants, so a measurement is a one-line change.
+- **Key edges on frame boundaries jitter.** A frame starts a few T-states late, by a different amount
+  each time, so a key held "3 frames" is sometimes 2 and the ROM drops it (Series II accents lost é
+  and ü). The typer puts its edges half a frame before each boundary. The shared
+  `queueKeystroke` still uses boundaries; the ZX80/81 hold long enough not to show it.
+- **Pace scripted typing by what the ROM is doing, not by time.** The tape-load flow types its next
+  command when the core's count of passes through the ROM's wait-for-key `JR` (004Eh) grows and
+  nothing is queued: one rule covers the power-on question, the prompt, `SYSTEM`'s `*?` and the end
+  of a load, and never types into a load. Counting entries to the routine (0049h) failed: it
+  re-enters itself hundreds of times per key.
+- **Real-time tape needs the gaps the ROM expects.** The ROM resynchronises after the A5h sync byte;
+  without ~1 ms of silence there, the first header bit was lost. Fast load and real-time load must
+  leave identical RAM, and a test should say so.
+- **Observe the ROM, then write the table.** The preservation site's code numbers for the /64's
+  mathematical characters are wrong (its keys are right); the /64's backtick pairs, the BASIC
+  `LIST` rules (tokens expanded inside quotes, the colon before `ELSE` hidden) and the boot prompts
+  were all read off the running core and pinned in tests.
+- **Models carry what differs per model.** RAM size is a model (`ht1080z-s2-48k`), not a new config
+  key, and a model can carry its own character set (`MachineModel.charSet`, read through
+  `charSetOfModel`). The IDE's ROM-gated custom disassembly asks a bank space the HT does not have;
+  a ROM that is never paged out gates on its addresses instead.
+
 ## Recommended First Reading For Next Migration
 
 Before touching ZX Spectrum Next WASM work, read:
