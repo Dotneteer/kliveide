@@ -1,7 +1,7 @@
 # HT-1080Z Tape File Viewers and `.bas` by Content — Implementation Plan
 
 **Status:** decisions accepted by the project author 2026-10-23: option A for `.bas` (decide by
-content) and D-Q1 to D-Q4 (§7), the mockup approved. Phase 1 done 2026-10-23 (§8). Next: Phase 2.
+content) and D-Q1 to D-Q4 (§7), the mockup approved. Phases 1 and 2 done 2026-10-23 (§8). Next: Phase 3.
 **Mockup:** `.plans/mockups/ht1080z-tape-viewers.html` (real bytes, interactive; open it in a browser).
 **Follows:** `.plans/HT1080Z_PLAN.md` (complete) and `.plans/HT1080Z_CODE_INJECTION_PLAN.md`
 (complete). The pattern is `.plans/TAPE_VIEWER_PLAN.md` (the TAP/TZX viewer) and the ZX81's `.p`
@@ -240,4 +240,23 @@ is not offered for it (the registry entry has no `canBeBuildRoot`).
   open `game.bas` with a tokenised program changes its icon and reopens it in the hex viewer.
 - Not done: the status message the plan mentioned when a document reopens (the reopened tab shows
   it); a `.bas` outside any project opened through `nav` is not sniffed (it opens as text).
+
+**Phase 2 (the model) done 2026-10-23.**
+- `DocumentPanels/Ht1080zTape/ht1080zTapeView.ts`, `analyzeHt1080zFile(bytes, fileName, clock)`: the
+  kind (`basicTape`, `systemTape`, `cmd`, `bas`), the parts with their role, bytes, offset, play times,
+  load range, entry, checksum (stored and computed), name, record type or program line, and a problem
+  (`truncated`, `checksum`, `badRecord`) for a part that cannot be read; then the program's lines, the
+  code's size, the entry, the highest address loaded (`fitsSixteenK`) and the play time. A `.cas` is read
+  bit by bit past the sync found at any bit offset (`findSync`/`byteAtBit`, now exported from
+  `Ht1080zTapeFile.ts` with the record markers); a damaged block is a part with a problem and the rest
+  still reads. A `.cmd` or `.bas` gets the play time of the tape Klive makes of it.
+- Deviation: the field texts are a separate module, `ht1080zTapeFields.ts` (`ht1080zPartAnatomy`,
+  `ht1080zLineAnatomy`: byte groups and the fields that name them, worded through `t()` at display
+  time), as `tapeHeaderFields.ts` is beside `tapeView.ts`; the model itself holds no text.
+- Play times: a 1 bit is 3,557 T-states, a 0 bit 3,570, and 1,774 after the sync, as `ht1080z-tape.c`
+  plays them; `test/ht1080z-hw/tape-view.test.ts` plays a tape on the core with the motor on and finds
+  it ends within a frame of the model's time. It also reads a tape the ROM wrote with `CSAVE`.
+- `test/ht1080z/tape-view.test.ts`: the demo `.bas`, the template's `.cmd`, the BASIC and SYSTEM tapes
+  made of them, a tape shifted by 3 bits, a damaged block, three truncated files, files that are no
+  tape, and the anatomy of a SYSTEM block and of a line in Series I and Series II characters.
 

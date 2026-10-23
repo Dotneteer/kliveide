@@ -112,12 +112,12 @@ export class Ht1080zTapeFileError extends Error {
   }
 }
 
-const LEADER_LENGTH = 255;
-const SYNC = 0xa5;
-const BASIC_HEADER = 0xd3;
-const SYSTEM_HEADER = 0x55;
-const SYSTEM_BLOCK = 0x3c;
-const SYSTEM_ENTRY = 0x78;
+export const HT1080Z_LEADER_LENGTH = 255;
+export const HT1080Z_SYNC = 0xa5;
+export const HT1080Z_BASIC_HEADER = 0xd3;
+export const HT1080Z_SYSTEM_HEADER = 0x55;
+export const HT1080Z_SYSTEM_BLOCK = 0x3c;
+export const HT1080Z_SYSTEM_ENTRY = 0x78;
 
 const LOW_SPEED_DETECT = 0x000000a5;
 const HIGH_SPEED_DETECT = (0x55 << 24) | (0x55 << 16) | (0x55 << 8) | 0x7f;
@@ -134,7 +134,7 @@ function checkMatch(actual: number, reference: number): number | undefined {
  * lkesteloot `findHeader`, reduced to what the HT needs: where the first low-speed sync ends, as a bit
  * index into the image (the first bit of the program), or "high" for a 1500-baud header first
  */
-function findSync(binary: Uint8Array): number | "high" | undefined {
+export function findSync(binary: Uint8Array): number | "high" | undefined {
   let recentBits = 0xffffffff;
   for (let i = 0; i < binary.length; i++) {
     recentBits = ((recentBits << 8) | binary[i]) >>> 0;
@@ -146,7 +146,7 @@ function findSync(binary: Uint8Array): number | "high" | undefined {
 }
 
 /** The byte that starts at bit `bit` of the image */
-function byteAtBit(binary: Uint8Array, bit: number): number {
+export function byteAtBit(binary: Uint8Array, bit: number): number {
   const index = bit >> 3;
   const shift = bit & 7;
   const value = ((binary[index] ?? 0) << 8) | (binary[index + 1] ?? 0);
@@ -166,10 +166,10 @@ function describeCas(binary: Uint8Array): { kind: Ht1080zTapeProgramKind; name: 
     throw new Ht1080zTapeFileError("noHeader", "No 500-baud tape header (zero bytes and the A5h sync) was found in this file.");
   }
   const at = (n: number) => byteAtBit(binary, sync + n * 8);
-  if (at(0) === BASIC_HEADER && at(1) === BASIC_HEADER && at(2) === BASIC_HEADER) {
+  if (at(0) === HT1080Z_BASIC_HEADER && at(1) === HT1080Z_BASIC_HEADER && at(2) === HT1080Z_BASIC_HEADER) {
     return { kind: "basic", name: String.fromCharCode(at(3)) };
   }
-  if (at(0) === SYSTEM_HEADER) {
+  if (at(0) === HT1080Z_SYSTEM_HEADER) {
     let name = "";
     for (let i = 1; i <= 6; i++) name += String.fromCharCode(at(i));
     return { kind: "system", name: name.trimEnd() };
@@ -179,7 +179,7 @@ function describeCas(binary: Uint8Array): { kind: Ht1080zTapeProgramKind; name: 
 
 /** A tape image: the leader, the sync and the file's bytes, as the ROM writes them */
 function withLeader(body: number[]): Uint8Array {
-  return new Uint8Array([...new Array(LEADER_LENGTH).fill(0), SYNC, ...body]);
+  return new Uint8Array([...new Array(HT1080Z_LEADER_LENGTH).fill(0), HT1080Z_SYNC, ...body]);
 }
 
 /** A name for a tape: letters and digits of the file name, upper case, at most `length` */
@@ -218,17 +218,17 @@ export function cmdToSystemTape(cmd: Uint8Array, name: string): Uint8Array {
   }
   if (entry === undefined) throw new Ht1080zTapeFileError("cmdNoEntry", "The .cmd file has no transfer address (record 02).");
   if (blocks.length === 0) throw new Ht1080zTapeFileError("cmdNoCode", "The .cmd file has no load blocks (record 01).");
-  const body: number[] = [SYSTEM_HEADER, ...name.padEnd(6, " ").slice(0, 6).split("").map((c) => c.charCodeAt(0))];
+  const body: number[] = [HT1080Z_SYSTEM_HEADER, ...name.padEnd(6, " ").slice(0, 6).split("").map((c) => c.charCodeAt(0))];
   for (const block of blocks) {
     for (let offset = 0; offset < block.data.length; offset += 256) {
       const chunk = block.data.slice(offset, offset + 256);
       const address = (block.address + offset) & 0xffff;
       let checksum = (address & 0xff) + (address >> 8);
       for (const b of chunk) checksum += b;
-      body.push(SYSTEM_BLOCK, chunk.length & 0xff, address & 0xff, address >> 8, ...chunk, checksum & 0xff);
+      body.push(HT1080Z_SYSTEM_BLOCK, chunk.length & 0xff, address & 0xff, address >> 8, ...chunk, checksum & 0xff);
     }
   }
-  body.push(SYSTEM_ENTRY, entry & 0xff, entry >> 8);
+  body.push(HT1080Z_SYSTEM_ENTRY, entry & 0xff, entry >> 8);
   return withLeader(body);
 }
 
@@ -244,7 +244,7 @@ export function basToBasicTape(bas: Uint8Array, name: string): Uint8Array {
   // --- The end of the program is a 00 00 link; a file cut short of it gets one
   const last = program.length;
   if (!(last >= 2 && program[last - 1] === 0 && program[last - 2] === 0)) program.push(0, 0);
-  return withLeader([BASIC_HEADER, BASIC_HEADER, BASIC_HEADER, name.charCodeAt(0), ...program]);
+  return withLeader([HT1080Z_BASIC_HEADER, HT1080Z_BASIC_HEADER, HT1080Z_BASIC_HEADER, name.charCodeAt(0), ...program]);
 }
 
 /**

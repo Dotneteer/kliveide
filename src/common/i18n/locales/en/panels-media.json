@@ -3047,5 +3047,188 @@
   "panels.rom.nextTargetTitle": "Open the disassembly at the next call or jump target that has no label yet. Level 1 needs a label on every one.",
   "@panels.rom.nextTargetTitle": {
     "context": "The ROM annotation editor (a document listing a ROM annotation file's pages). Tooltip of the 'next $xxxx' link in a page row."
+  },
+  "panels.htTape.field.marker": "Marker",
+  "@panels.htTape.field.marker": {
+    "context": "HT-1080Z tape file viewer (a Hungarian school computer, a TRS-80 Model I relative): the byte breakdown of the selected part of a .cas, .cmd or .bas file. Field name: the byte(s) that say what kind of record follows."
+  },
+  "panels.htTape.field.name": "Name",
+  "@panels.htTape.field.name": {
+    "context": "HT-1080Z tape file viewer (a Hungarian school computer, a TRS-80 Model I relative): the byte breakdown of the selected part of a .cas, .cmd or .bas file. Field name: the program's name on the tape."
+  },
+  "panels.htTape.field.length": "Length",
+  "@panels.htTape.field.length": {
+    "context": "HT-1080Z tape file viewer (a Hungarian school computer, a TRS-80 Model I relative): the byte breakdown of the selected part of a .cas, .cmd or .bas file. Field name: a record's length byte."
+  },
+  "panels.htTape.field.address": "Address",
+  "@panels.htTape.field.address": {
+    "context": "HT-1080Z tape file viewer (a Hungarian school computer, a TRS-80 Model I relative): the byte breakdown of the selected part of a .cas, .cmd or .bas file. Field name: where the bytes load in memory."
+  },
+  "panels.htTape.field.data": "Data",
+  "@panels.htTape.field.data": {
+    "context": "HT-1080Z tape file viewer (a Hungarian school computer, a TRS-80 Model I relative): the byte breakdown of the selected part of a .cas, .cmd or .bas file. Field name: the bytes that are loaded."
+  },
+  "panels.htTape.field.checksum": "Checksum",
+  "@panels.htTape.field.checksum": {
+    "context": "HT-1080Z tape file viewer (a Hungarian school computer, a TRS-80 Model I relative): the byte breakdown of the selected part of a .cas, .cmd or .bas file. Field name: a block's checksum byte."
+  },
+  "panels.htTape.field.entry": "Entry",
+  "@panels.htTape.field.entry": {
+    "context": "HT-1080Z tape file viewer (a Hungarian school computer, a TRS-80 Model I relative): the byte breakdown of the selected part of a .cas, .cmd or .bas file. Field name: the address the program starts at."
+  },
+  "panels.htTape.field.link": "Link",
+  "@panels.htTape.field.link": {
+    "context": "HT-1080Z tape file viewer (a Hungarian school computer, a TRS-80 Model I relative): the byte breakdown of the selected part of a .cas, .cmd or .bas file. Field name: a BASIC line's pointer to the next line."
+  },
+  "panels.htTape.field.type": "Type",
+  "@panels.htTape.field.type": {
+    "context": "HT-1080Z tape file viewer (a Hungarian school computer, a TRS-80 Model I relative): the byte breakdown of the selected part of a .cas, .cmd or .bas file. Field name: a .cmd record's type byte."
+  },
+  "panels.htTape.field.line": "Line",
+  "@panels.htTape.field.line": {
+    "context": "HT-1080Z tape file viewer (a Hungarian school computer, a TRS-80 Model I relative): the byte breakdown of the selected part of a .cas, .cmd or .bas file. Field name: a BASIC line's number."
+  },
+  "panels.htTape.field.text": "Text",
+  "@panels.htTape.field.text": {
+    "context": "HT-1080Z tape file viewer (a Hungarian school computer, a TRS-80 Model I relative): the byte breakdown of the selected part of a .cas, .cmd or .bas file. Field name: characters of a BASIC line stored as typed."
+  },
+  "panels.htTape.field.token": "Token",
+  "@panels.htTape.field.token": {
+    "context": "HT-1080Z tape file viewer (a Hungarian school computer, a TRS-80 Model I relative): the byte breakdown of the selected part of a .cas, .cmd or .bas file. Field name: a BASIC keyword stored as one byte."
+  },
+  "panels.htTape.field.end": "End",
+  "@panels.htTape.field.end": {
+    "context": "HT-1080Z tape file viewer (a Hungarian school computer, a TRS-80 Model I relative): the byte breakdown of the selected part of a .cas, .cmd or .bas file. Field name: the byte that ends a BASIC line."
+  },
+  "panels.htTape.field.basicMarker": "D3 D3 D3 · a BASIC program (CLOAD)",
+  "@panels.htTape.field.basicMarker": {
+    "context": "HT-1080Z tape file viewer (a Hungarian school computer, a TRS-80 Model I relative): the byte breakdown of the selected part of a .cas, .cmd or .bas file. Value: the three D3h bytes that start a BASIC program on tape. CLOAD is a BASIC command: keep it."
+  },
+  "panels.htTape.field.basicName": "\"{name}\" · CLOAD \"{name}\" loads only this program; CLOAD loads any",
+  "@panels.htTape.field.basicName": {
+    "context": "HT-1080Z tape file viewer (a Hungarian school computer, a TRS-80 Model I relative): the byte breakdown of the selected part of a .cas, .cmd or .bas file. Value: the one-character name of a BASIC program on tape. CLOAD is a BASIC command: keep it.",
+    "placeholders": {
+      "name": "The program's one-character name"
+    }
+  },
+  "panels.htTape.field.systemMarker": "55h · a machine-code (SYSTEM) tape",
+  "@panels.htTape.field.systemMarker": {
+    "context": "HT-1080Z tape file viewer (a Hungarian school computer, a TRS-80 Model I relative): the byte breakdown of the selected part of a .cas, .cmd or .bas file. Value: the byte that starts a machine-code tape. SYSTEM is a BASIC command: keep it."
+  },
+  "panels.htTape.field.systemName": "\"{name}\" · type it at SYSTEM's *? prompt",
+  "@panels.htTape.field.systemName": {
+    "context": "HT-1080Z tape file viewer (a Hungarian school computer, a TRS-80 Model I relative): the byte breakdown of the selected part of a .cas, .cmd or .bas file. Value: the name of a machine-code tape, which the user types after the SYSTEM command's *? prompt.",
+    "placeholders": {
+      "name": "The program's name, up to 6 characters"
+    }
+  },
+  "panels.htTape.field.blockMarker": "3Ch · a load block",
+  "@panels.htTape.field.blockMarker": {
+    "context": "HT-1080Z tape file viewer (a Hungarian school computer, a TRS-80 Model I relative): the byte breakdown of the selected part of a .cas, .cmd or .bas file. Value: the byte that starts a block of machine code on a SYSTEM tape."
+  },
+  "panels.htTape.field.blockLength": "{count, plural, one {# data byte} other {# data bytes}} (00 means 256)",
+  "@panels.htTape.field.blockLength": {
+    "context": "HT-1080Z tape file viewer (a Hungarian school computer, a TRS-80 Model I relative): the byte breakdown of the selected part of a .cas, .cmd or .bas file. Value: a block's length byte.",
+    "placeholders": {
+      "count": "Number of data bytes"
+    }
+  },
+  "panels.htTape.field.address.value": "{address} · low byte first",
+  "@panels.htTape.field.address.value": {
+    "context": "HT-1080Z tape file viewer (a Hungarian school computer, a TRS-80 Model I relative): the byte breakdown of the selected part of a .cas, .cmd or .bas file. Value: a load address, stored with its low byte first.",
+    "placeholders": {
+      "address": "A hexadecimal address such as $7000"
+    }
+  },
+  "panels.htTape.field.dataBytes": "{count, plural, one {# byte} other {# bytes}} of code",
+  "@panels.htTape.field.dataBytes": {
+    "context": "HT-1080Z tape file viewer (a Hungarian school computer, a TRS-80 Model I relative): the byte breakdown of the selected part of a .cas, .cmd or .bas file. Value: how many bytes of machine code a record holds.",
+    "placeholders": {
+      "count": "Number of bytes"
+    }
+  },
+  "panels.htTape.field.checksumOk": "{value}h · the address and data bytes summed, low byte · OK",
+  "@panels.htTape.field.checksumOk": {
+    "context": "HT-1080Z tape file viewer (a Hungarian school computer, a TRS-80 Model I relative): the byte breakdown of the selected part of a .cas, .cmd or .bas file. Value: a block's checksum, which matches its bytes.",
+    "placeholders": {
+      "value": "The checksum in hexadecimal"
+    }
+  },
+  "panels.htTape.field.checksumBad": "{value}h · should be {expected}h: the block is damaged",
+  "@panels.htTape.field.checksumBad": {
+    "context": "HT-1080Z tape file viewer (a Hungarian school computer, a TRS-80 Model I relative): the byte breakdown of the selected part of a .cas, .cmd or .bas file. Value: a block's checksum, which does not match its bytes.",
+    "placeholders": {
+      "value": "The stored checksum in hexadecimal",
+      "expected": "The checksum the bytes give, in hexadecimal"
+    }
+  },
+  "panels.htTape.field.entryMarker": "78h · the end of the tape",
+  "@panels.htTape.field.entryMarker": {
+    "context": "HT-1080Z tape file viewer (a Hungarian school computer, a TRS-80 Model I relative): the byte breakdown of the selected part of a .cas, .cmd or .bas file. Value: the byte that ends a machine-code tape and carries its start address."
+  },
+  "panels.htTape.field.entry.value": "{address} · / at SYSTEM's *? prompt starts it here",
+  "@panels.htTape.field.entry.value": {
+    "context": "HT-1080Z tape file viewer (a Hungarian school computer, a TRS-80 Model I relative): the byte breakdown of the selected part of a .cas, .cmd or .bas file. Value: the start address of a machine-code program; '/' typed at the SYSTEM command's '*?' prompt starts it.",
+    "placeholders": {
+      "address": "A hexadecimal address such as $7000"
+    }
+  },
+  "panels.htTape.field.endLink": "0000 · the end of the program",
+  "@panels.htTape.field.endLink": {
+    "context": "HT-1080Z tape file viewer (a Hungarian school computer, a TRS-80 Model I relative): the byte breakdown of the selected part of a .cas, .cmd or .bas file. Value: the zero link that ends a BASIC program."
+  },
+  "panels.htTape.field.cmdHeaderType": "05h · the module's name",
+  "@panels.htTape.field.cmdHeaderType": {
+    "context": "HT-1080Z tape file viewer (a Hungarian school computer, a TRS-80 Model I relative): the byte breakdown of the selected part of a .cas, .cmd or .bas file. Value: a .cmd record that holds the program's name."
+  },
+  "panels.htTape.field.cmdName": "\"{name}\" · the name on the tape Klive makes of it",
+  "@panels.htTape.field.cmdName": {
+    "context": "HT-1080Z tape file viewer (a Hungarian school computer, a TRS-80 Model I relative): the byte breakdown of the selected part of a .cas, .cmd or .bas file. Value: a .cmd module's name, which Klive uses when it turns the file into a tape.",
+    "placeholders": {
+      "name": "The module's name"
+    }
+  },
+  "panels.htTape.field.cmdLoadType": "01h · bytes to load",
+  "@panels.htTape.field.cmdLoadType": {
+    "context": "HT-1080Z tape file viewer (a Hungarian school computer, a TRS-80 Model I relative): the byte breakdown of the selected part of a .cas, .cmd or .bas file. Value: a .cmd record that holds machine code to load."
+  },
+  "panels.htTape.field.cmdLoadLength": "{value}h = {count}: the address and {data} data bytes (00-02 mean 256-258)",
+  "@panels.htTape.field.cmdLoadLength": {
+    "context": "HT-1080Z tape file viewer (a Hungarian school computer, a TRS-80 Model I relative): the byte breakdown of the selected part of a .cas, .cmd or .bas file. Value: a .cmd load record's length byte, which counts the 2-byte address too.",
+    "placeholders": {
+      "value": "The length byte in hexadecimal",
+      "count": "The bytes it counts",
+      "data": "The data bytes among them"
+    }
+  },
+  "panels.htTape.field.cmdTransferType": "02h · where the program starts; the module ends here",
+  "@panels.htTape.field.cmdTransferType": {
+    "context": "HT-1080Z tape file viewer (a Hungarian school computer, a TRS-80 Model I relative): the byte breakdown of the selected part of a .cas, .cmd or .bas file. Value: a .cmd record that holds the start address."
+  },
+  "panels.htTape.field.cmdOtherType": "{value}h · skipped by the loader",
+  "@panels.htTape.field.cmdOtherType": {
+    "context": "HT-1080Z tape file viewer (a Hungarian school computer, a TRS-80 Model I relative): the byte breakdown of the selected part of a .cas, .cmd or .bas file. Value: a .cmd record type the loader ignores (a comment or copyright record).",
+    "placeholders": {
+      "value": "The record type in hexadecimal"
+    }
+  },
+  "panels.htTape.field.lineLink": "{address} · the next line, where it sat when saved",
+  "@panels.htTape.field.lineLink": {
+    "context": "HT-1080Z tape file viewer (a Hungarian school computer, a TRS-80 Model I relative): the byte breakdown of the selected part of a .cas, .cmd or .bas file. Value: a BASIC line's link to the next line.",
+    "placeholders": {
+      "address": "A hexadecimal address"
+    }
+  },
+  "panels.htTape.field.token.value": "{code}h · {keyword}",
+  "@panels.htTape.field.token.value": {
+    "context": "HT-1080Z tape file viewer (a Hungarian school computer, a TRS-80 Model I relative): the byte breakdown of the selected part of a .cas, .cmd or .bas file. Value: a keyword token and the keyword it stands for. Keep the keyword as it is.",
+    "placeholders": {
+      "code": "The token in hexadecimal",
+      "keyword": "The BASIC keyword, e.g. PRINT"
+    }
+  },
+  "panels.htTape.field.lineEnd": "00 · the end of the line",
+  "@panels.htTape.field.lineEnd": {
+    "context": "HT-1080Z tape file viewer (a Hungarian school computer, a TRS-80 Model I relative): the byte breakdown of the selected part of a .cas, .cmd or .bas file. Value: the zero byte that ends a BASIC line."
   }
 }
