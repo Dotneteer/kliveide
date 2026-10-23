@@ -7,6 +7,7 @@ import type { ExecutionHistoryInfo, ExecutionHistoryPage } from "@common/history
 import type { HistoryServiceSpan } from "@common/history/serviceSpans";
 import { captureWasmImage, restoreWasmImage, type MachineStateParts } from "../state/wasmStateImage";
 import type { MachineConfigSet, MachineModel } from "@common/machines/info-types";
+import { beamAt, drawnUpTo, type BeamPosition, type BeamTiming } from "@common/utils/beamGeometry";
 import type { MessengerBase } from "@common/messaging/MessengerBase";
 import type { CpuState } from "@common/messaging/EmuApi";
 import type { Ht1080zWasmV2LoaderOptions, Ht1080zWasmV2Runtime } from "./wasm/Ht1080zWasmV2Loader";
@@ -54,6 +55,22 @@ const LOAD_SCRIPT_TIMEOUT_FRAMES = 6000;
 
 /** The DC filter's cut-off, as the other cores' (`AudioDeviceBase.DC_FILTER_CUTOFF_HZ`); the core has no `exp` */
 const DC_FILTER_CUTOFF_HZ = 1.4;
+
+/** The raster as the beam overlay sees it (`getBeamPosition`) */
+const HT1080Z_BEAM_TIMING: BeamTiming = {
+  unit: "T",
+  tactsPerLine: 112,
+  linesPerFrame: 312,
+  // --- Slot 2 of line 0 is dot 72 of row 48: 48 lines and 12 slots (72 dots) earlier is (0, 0)
+  firstVisibleTact: -48 * 112 + 2 - 12,
+  tactsPerBufferPixel: 1 / 6,
+  bufferWidth: 528,
+  bufferHeight: 288,
+  paperLeft: 72,
+  paperTop: 48,
+  paperWidth: 384,
+  paperHeight: 192
+};
 
 /** The model numbers `ht1080zConfigure` takes */
 const CORE_MODEL = { s1: 0, s2: 1, s64: 2 } as const;
@@ -882,6 +899,25 @@ export class Ht1080zWasmV2Machine extends Ht1080zWasmHost implements IExecutionH
   getPixelBufferBytes(): Uint8ClampedArray {
     this.requireWasmV2Runtime();
     return this.screenPixelBytes!;
+  }
+
+  /**
+   * The beam position overlay (`.plans/BEAM_POSITION_OVERLAY_PLAN.md` §4.3). One T-state is one
+   * character slot of 6 dots; slot `s` of a line shows the byte read at slot `s - 2`, so visible slots
+   * 2-65 of lines 0-191 are the picture, which sits 72 dots and 48 lines into the 528 x 288 buffer
+   * (`ht1080z-video.c`). Buffer pixel (0, 0) is therefore drawn 48 lines and 12 slots before the
+   * frame starts: the top border belongs to the previous frame's last lines, all black.
+   */
+  getBeamPosition(): BeamPosition {
+    const w = this.requireWasmV2Runtime().exports;
+    const frameTact = Math.floor(w.ht1080zGetFrameTacts() / Math.max(1, w.ht1080zGetClockMultiplier()));
+    // --- The renderer draws by read slot: read `r` is the picture at slot `r + 2`
+    return beamAt(HT1080Z_BEAM_TIMING, frameTact, drawnUpTo(HT1080Z_BEAM_TIMING, w.ht1080zGetVideoRenderedRead() + 2));
+  }
+
+  /** Draws the paused picture up to the beam: the core's own catch-up, which later frames redraw the same */
+  renderToBeamPreview(): void {
+    this.requireWasmV2Runtime().exports.ht1080zRenderToBeam();
   }
 
   renderInstantScreen(_savedPixelBuffer?: Uint32Array): Uint32Array {

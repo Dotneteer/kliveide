@@ -899,7 +899,10 @@ a single-model "leaf" in the Select Machine dialog.
   the media strip showed the tape, and the menus had their items.
 
 Not done, left to follow-ups: a `.bas` in the Explorer stays Klive BASIC source (no HT launch entries
-there; File Open and drag-and-drop take only `.cas`/`.cmd`); the beam-position overlay is not offered.
+there; File Open and drag-and-drop take only `.cas`/`.cmd`). The beam-position overlay, first left out,
+was added on 2026-10-23: `getBeamPosition` from the raster timing, `renderToBeamPreview` through
+`ht1080zRenderToBeam`, and a read-only `ht1080zGetVideoRenderedRead` for what the picture has drawn
+(`test/ht1080z-hw/beam-position.test.ts`).
 
 **Phase 9 done 2026-10-23; the plan is complete.**
 - Docs: `guides/emulator/ht1080z.mdx` (models, typing and accents, tapes, sound, the Machine menu,

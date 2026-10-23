@@ -29,8 +29,8 @@ export const MEDIA_INFO_MACHINE_IDS: string[] = [
 
 /**
  * The machines with a raster beam the emulator can show on its paused screen
- * (`.plans/BEAM_POSITION_OVERLAY_PLAN.md`): the ZX Spectrum family and the Next. Not the Z88 (an LCD,
- * no beam), the ZX80/81 (a CPU-generated display) or the C64. The toolbar button and the View menu
+ * (`.plans/BEAM_POSITION_OVERLAY_PLAN.md`): the ZX Spectrum family, the Next and the HT-1080Z. Not
+ * the Z88 (an LCD, no beam), the ZX80/81 (a CPU-generated display) or the C64. The toolbar button and the View menu
  * item appear only for these.
  */
 export const BEAM_POSITION_MACHINE_IDS: string[] = [
@@ -39,7 +39,8 @@ export const BEAM_POSITION_MACHINE_IDS: string[] = [
   MI_SPECTRUM_3E,
   MI_TIMEX,
   MI_SCORPION,
-  MI_ZXNEXT
+  MI_ZXNEXT,
+  MI_HT1080Z
 ];
 
 /**

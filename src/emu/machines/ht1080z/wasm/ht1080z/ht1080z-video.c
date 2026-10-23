@@ -175,5 +175,7 @@ void ht1080zSetVideoDash(uint32_t on) {
 uint32_t ht1080zGetVideoCut(void) { return htVideoCut; }
 uint32_t ht1080zGetVideoPage(void) { return htVideoPage; }
 uint32_t ht1080zGetVideoDash(void) { return htVideoDashOn; }
+/* The beam overlay: the next read slot of the frame the picture has not drawn yet */
+uint32_t ht1080zGetVideoRenderedRead(void) { return htVideoRenderedRead; }
 /* Draws the picture up to the beam: a paused machine's screen shows the frame so far */
 void ht1080zRenderToBeam(void) { htVideoCatchUp(htVideoSlot()); }

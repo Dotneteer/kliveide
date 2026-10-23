@@ -113,6 +113,7 @@ const productionExports = [
   "ht1080zGetVideoCut",
   "ht1080zGetVideoDash",
   "ht1080zGetVideoPage",
+  "ht1080zGetVideoRenderedRead",
   "ht1080zRenderToBeam",
   "ht1080zSetVideoCut",
   "ht1080zSetVideoDash",

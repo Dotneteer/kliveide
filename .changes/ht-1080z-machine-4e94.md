@@ -10,5 +10,5 @@ character sets, the accented letters and the /64's Hungarian and mathematical ch
 `.cmd` and `.bas` tapes (Load and Run, `tape-load`, the Explorer, drag and drop, `klive run`),
 fast or in real time, and `CSAVE` writes `.cas` files. The screen is drawn against the CPU clock,
 with the black dashes a video-memory access leaves, VIDEO CUT and PAGE. Debugging, the BASIC
-Listing, the disassembly of the ROM's tables, execution history, reverse debugging, code coverage
-and state files work as on the other machines.
+Listing, the disassembly of the ROM's tables, execution history, reverse debugging, code coverage,
+the beam position overlay and state files work as on the other machines.
