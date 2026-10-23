@@ -2983,6 +2983,11 @@ drift. Change a neutral or the default accent in the app, and the site changes w
 - **The language menus size to their longest name** (`width: max-content`, a 16rem minimum, rows
   that never wrap), in the landing header and the docs navbar alike: a fixed narrow width wrapped
   "Português (Portugal)" and its code onto two lines.
+- **A hand-drawn figure sits in a quiet panel with its caption inside** (`custom.css`,
+  `article figure:not([class])`): panel background, thin border, generous margin above and below,
+  and the caption under a divider in smaller, muted italics. A caption that floats loose under the
+  drawing reads as the next paragraph. The rule skips figures with a class, so `<Shot>` screenshots
+  keep their own label-above look.
 - **A screenshot's callouts are HTML, never pixels:** `<Shot markers>` draws numbered badges from
   the harness's sidecar, and the numbered list under the figure is styled like the badges, so the
   text translates with the page.

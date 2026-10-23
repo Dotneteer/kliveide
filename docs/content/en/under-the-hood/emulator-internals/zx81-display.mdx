@@ -13,7 +13,9 @@ custom chip, the **ULA**, catches each byte on the way past and turns it into do
 
 This article explains how that works, step by step. You need to know the Z80 (registers, opcodes,
 interrupts) and have some engineering basics. You do not need to know anything about televisions or
-video hardware: we start there.
+video hardware: Part 1 sums up what you need, and
+[How a Television Draws a Picture](/en/under-the-hood/emulator-internals/crt-display/) tells the
+whole story.
 
 Be prepared for something remarkable. The ZX81's picture is not the work of one clever trick but of
 a whole **orchestra of hardware and software** playing in time: the ULA's counters and sync pulses,
@@ -62,68 +64,21 @@ piece lives in the source.
 
 ## Part 1: How an old television draws a picture
 
-### The electron beam
+The ZX81 draws its picture on an ordinary cathode ray tube television, and the television sets the
+rules. [How a Television Draws a Picture](/en/under-the-hood/emulator-internals/crt-display/)
+explains them in full: the electron beam, the raster, the video signal, and how colour is added
+(which the black-and-white ZX81 does without). This part sums up what you need for the rest of the
+article.
 
-A cathode ray tube (CRT) television has an **electron gun** at the back of the glass. It shoots a thin
-beam of electrons at the inside of the screen, which is coated with **phosphor**: wherever the beam
-hits, the phosphor glows for a moment. A stronger beam makes a brighter dot; no beam leaves the
-spot dark.
+An electron beam sweeps the screen in a fixed pattern: left to right along a **scan line**, back
+to the left and one line lower, and from the bottom back to the top to start a new **frame**. A
+European (PAL) television draws a line every **64 microseconds** and a frame 50 times a second.
 
-The beam can light only one spot at a time. To make a whole picture, magnetic coils around the tube
-sweep it across the screen in a fixed pattern called a **raster**:
-
-1. The beam travels from left to right, drawing one horizontal **scan line**.
-2. At the right edge it snaps back to the left, a little lower, and draws the next line.
-   This quick return is the **horizontal retrace**.
-3. When it reaches the bottom, it snaps back to the top-left corner and starts again.
-   This is the **vertical retrace**.
-
-<figure>
-<svg viewBox="0 0 640 250" role="img" aria-label="The raster: scan lines drawn left to right, horizontal retraces back to the left, and a vertical retrace from the bottom right to the top left" style={{ width: "100%", maxWidth: "640px", height: "auto" }}>
-  <defs>
-    <marker id="crt-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
-    </marker>
-    <marker id="crt-arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path d="M0,0 L10,5 L0,10 z" fill="#3b82f6" />
-    </marker>
-    <marker id="crt-arrow-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path d="M0,0 L10,5 L0,10 z" fill="#e8912d" />
-    </marker>
-  </defs>
-  <rect x="40" y="20" width="360" height="210" rx="22" fill="none" stroke="currentColor" strokeWidth="3" />
-  <line x1="70" y1="50" x2="370" y2="50" stroke="currentColor" strokeWidth="2.5" markerEnd="url(#crt-arrow)" />
-  <line x1="370" y1="56" x2="74" y2="78" stroke="#3b82f6" strokeWidth="1.5" strokeDasharray="5 4" markerEnd="url(#crt-arrow-blue)" />
-  <line x1="70" y1="84" x2="370" y2="84" stroke="currentColor" strokeWidth="2.5" markerEnd="url(#crt-arrow)" />
-  <line x1="370" y1="90" x2="74" y2="112" stroke="#3b82f6" strokeWidth="1.5" strokeDasharray="5 4" markerEnd="url(#crt-arrow-blue)" />
-  <line x1="70" y1="118" x2="370" y2="118" stroke="currentColor" strokeWidth="2.5" markerEnd="url(#crt-arrow)" />
-  <text x="220" y="150" textAnchor="middle" fill="currentColor" fontSize="18">⋮</text>
-  <line x1="70" y1="200" x2="370" y2="200" stroke="currentColor" strokeWidth="2.5" markerEnd="url(#crt-arrow)" />
-  <line x1="372" y1="194" x2="76" y2="44" stroke="#e8912d" strokeWidth="1.5" strokeDasharray="8 5" markerEnd="url(#crt-arrow-orange)" />
-  <text x="420" y="54" fill="currentColor" fontSize="14">scan line: the beam draws</text>
-  <text x="420" y="88" fill="#3b82f6" fontSize="14">horizontal retrace (HSYNC)</text>
-  <text x="420" y="106" fill="currentColor" fontSize="12">back to the left, one line lower</text>
-  <text x="420" y="176" fill="#e8912d" fontSize="14">vertical retrace (VSYNC)</text>
-  <text x="420" y="194" fill="currentColor" fontSize="12">back to the top: a new frame</text>
-</svg>
-<figcaption>The raster. Solid lines are drawn; dashed lines are the retraces, when the beam is switched off.</figcaption>
-</figure>
-
-A European (PAL) television draws a line every **64 microseconds** and a full screen, a **frame**,
-50 times a second. That is fast enough that your eye sees a steady picture instead of a moving dot.
-
-### The signal carries only "how bright, right now"
-
-Here is the part that matters most. The signal going into the television **does not contain pixels
-or coordinates**. It is just one voltage that changes over time, and it means *"this is how bright the
-spot under the beam is, at this very instant"*.
-
-The television does not know which dot belongs where. It knows only *when*. A dot appears 20
-microseconds into a line because the voltage changed 20 microseconds after the line started.
-**In a video signal, time is position.**
-
-So how does the television know when a line or a frame starts? The signal also carries two kinds of
-special pulses, each a short stretch of "blacker than black" voltage:
+The signal going into the television **does not contain pixels or coordinates**. It is one voltage
+that means *"this is how bright the spot under the beam is, right now"*. A dot appears 20
+microseconds into a line because the voltage changed 20 microseconds after the line started:
+**in a video signal, time is position.** Two kinds of "blacker than black" pulse tell the television
+where lines and frames begin:
 
 - **HSYNC** (horizontal sync): "start a new line now". One arrives every 64 µs.
 - **VSYNC** (vertical sync): "go back to the top now". One arrives every frame. It is much longer
@@ -171,16 +126,9 @@ modulator. The same source gives HSYNC as about 5 µs long, every 64 µs, and VS
 These are nominal figures: owners who have measured their machines report noticeably different
 levels, which vary with the board and the ULA version.
 
-The television locks onto these pulses. Its own sweep circuits (the **flywheels**) keep running at
-roughly the right speed even if a pulse is missing, which is why a picture rolls or tears rather
-than vanishing when the sync goes wrong.
-
-### Why you must follow the beam
-
-There is no memory inside an old television. Nothing stores the picture. Whatever is on the signal
-wire **now** becomes the dot under the beam **now**, and a few milliseconds later it has faded away.
-So the computer has to deliver every dot **at exactly the right microsecond**, 50 times a second,
-forever. Programmers call this **racing the beam**.
+There is no memory inside an old television. Whatever is on the signal wire **now** becomes the dot
+under the beam **now**, so the computer has to deliver every dot **at exactly the right
+microsecond**, 50 times a second, forever. Programmers call this **racing the beam**.
 
 <Callout type="info">
 **PAL and NTSC.** "50 times a second" is the European **PAL** standard: a line every 64 µs and 50

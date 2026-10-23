@@ -39,6 +39,34 @@ samp {
   border-radius: 4px;
 }
 
+/*
+ * --- Hand-written figures (<figure> with an inline SVG diagram and a <figcaption>). A quiet panel
+ * holds the drawing and its caption together, with room around it so it stands apart from the
+ * text. <Shot> screenshots carry module classes and keep their own look, hence :not([class]).
+ */
+article figure:not([class]) {
+  margin: 2.25rem 0;
+  padding: 1.5rem 1.25rem 1rem;
+  border: 1px solid var(--site-line);
+  border-radius: 8px;
+  background: var(--site-panel);
+}
+
+article figure:not([class]) > svg {
+  display: block;
+  margin: 0 auto;
+}
+
+article figure:not([class]) > figcaption {
+  margin-top: 1.25rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--site-line);
+  font-size: 0.875rem;
+  font-style: italic;
+  line-height: 1.5;
+  color: var(--site-muted);
+}
+
 /* --- The list under a screenshot with markers: numbers styled like the markers (<Shot>) */
 article figure + ol {
   list-style: none;
