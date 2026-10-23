@@ -135,8 +135,14 @@ export function playInjectionFlow(
           entry = machine.injectCodeToRun(code);
         }
         break;
+      case "TypeText": {
+        const typer = (machine as unknown as { typeText?: (text: string) => void }).typeText;
+        if (!typer) throw new Error("This machine cannot type text.");
+        typer.call(machine, typeof step.text === "function" ? step.text(code) : step.text);
+        break;
+      }
       case "SetReturn":
-        if (code?.subroutine) {
+        if (code?.subroutine || (step.always && code && !code.unitTest)) {
           const sp = (machine.sp - 2) & 0xffff;
           machine.doWriteMemory(sp, step.returnPoint & 0xff);
           machine.doWriteMemory((sp + 1) & 0xffff, step.returnPoint >> 8);

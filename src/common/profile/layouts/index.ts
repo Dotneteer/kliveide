@@ -1,3 +1,4 @@
+import { ht1080zProfileLayout } from "./ht1080z";
 import type { ProfileLayout } from "./profileLayout";
 import { scorpionProfileLayout, sp128ProfileLayout } from "./sp128";
 import { sp48ProfileLayout } from "./sp48";
@@ -20,7 +21,8 @@ const layouts: Record<string, ProfileLayout> = {
   z88: z88ProfileLayout,
   zxnext: zxnextProfileLayout,
   zx80: zx8081ProfileLayout,
-  zx81: zx8081ProfileLayout
+  zx81: zx8081ProfileLayout,
+  ht1080z: ht1080zProfileLayout
 };
 
 /** The profile layout of a machine; undefined for a machine whose core does not profile */

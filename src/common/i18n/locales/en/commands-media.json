@@ -741,6 +741,29 @@
       "address": "The first segment's start address, e.g. '$8000'"
     }
   },
+  "commands.compile.tokenisedBasRoot": "{file} is a tokenised HT-1080Z program, not BASIC source: load it as a tape (Load and run) instead of building it.",
+  "@commands.compile.tokenisedBasRoot": {
+    "context": "Error of the IDE's build commands when the project's build root is a .bas file stored as a tokenised HT-1080Z (TRS-80 Level II) program rather than BASIC source text. 'Load and run' is the Explorer's menu item name.",
+    "placeholders": {
+      "file": "The build root's path in the project, e.g. 'code/game.bas'"
+    }
+  },
+  "commands.compile.ht1080zFormat": "HT-1080Z code exports as a .cmd or .cas file (or Intel HEX), not as {format}.",
+  "@commands.compile.ht1080zFormat": {
+    "context": "Error of the IDE's export command (expc) when HT-1080Z code is asked for a format of another machine. .cmd, .cas and Intel HEX are file formats: keep them.",
+    "placeholders": {
+      "format": "The format the user asked for, e.g. 'tap'"
+    }
+  },
+  "commands.compile.injectedHt1080z": "Successfully injected {bytes, plural, one {# byte} other {# bytes}} in {segments, plural, one {# segment} other {# segments}} from start address {address}. Type X=USR(0) to call it; Run also keeps BASIC away from the code.",
+  "@commands.compile.injectedHt1080z": {
+    "context": "Result message of the IDE's inject command on the HT-1080Z (a Hungarian school computer). 'X=USR(0)' is BASIC the user types: keep it exactly. 'Run' is the IDE's Run command.",
+    "placeholders": {
+      "bytes": "Code length in bytes",
+      "segments": "Number of code segments",
+      "address": "The first segment's start address, e.g. '$7000'"
+    }
+  },
   "commands.compile.injectedRem": "Successfully injected {bytes, plural, one {# byte} other {# bytes}} in {segments, plural, one {# segment} other {# segments}} from start address {address} as a 1 REM program. Type RUN to start it.",
   "@commands.compile.injectedRem": {
     "context": "Result message of the IDE's build/run commands (klive.build, klive.inject, klive.run, klive.debug, expc), shown in the command output and in notifications. On a ZX80/ZX81 the code goes into a BASIC '1 REM' line; 'REM' and 'RUN' are BASIC keywords: keep them.",
@@ -1710,9 +1733,9 @@
       "saved": "The machine the recording was made on"
     }
   },
-  "commands.tapeLoad.description": "Inserts a .tap or .tzx tape (ZX Spectrum) or a .p/.o program (ZX80/ZX81) into the deck (-r resets and loads it, -d does so with breakpoints armed)",
+  "commands.tapeLoad.description": "Inserts a .tap or .tzx tape (ZX Spectrum), a .p/.o program (ZX80/ZX81) or a .cas/.cmd/.bas tape (HT-1080Z) into the deck (-r resets and loads it, -d does so with breakpoints armed, -e debugs an HT-1080Z machine-code tape and stops at its start address)",
   "@commands.tapeLoad.description": {
-    "context": "Help text of the 'tape-load' IDE command. Keep the option names -r and -d."
+    "context": "Help text of the 'tape-load' IDE command. Keep the option names -r, -d and -e."
   },
   "commands.tapeLoad.guard.tape": "requires a ZX Spectrum 48K, 128K or +2/+3 machine",
   "@commands.tapeLoad.guard.tape": {
@@ -1722,17 +1745,39 @@
   "@commands.tapeLoad.guard.program": {
     "context": "Why a ZX80/ZX81 program file cannot be loaded now: shown in brackets after a disabled button's tooltip. Starts in lower case in English because it continues the tooltip."
   },
+  "commands.tapeLoad.guard.htTape": "requires an HT-1080Z machine",
+  "@commands.tapeLoad.guard.htTape": {
+    "context": "Why an HT-1080Z tape (.cas, .cmd) cannot be loaded now: shown in brackets after a disabled button's tooltip. HT-1080Z is a Hungarian school computer's name. Starts in lower case in English because it continues the tooltip."
+  },
   "commands.tapeLoad.emptyPath": "The tape file path cannot be empty.",
   "@commands.tapeLoad.emptyPath": {
     "context": "Validation error of 'tape-load'."
   },
-  "commands.tapeLoad.wrongType": "The file to load must be a .tap or .tzx tape, or a ZX80/ZX81 .p, .81, .o or .80 program.",
+  "commands.tapeLoad.wrongType": "The file to load must be a .tap or .tzx tape, a ZX80/ZX81 .p, .81, .o or .80 program, or an HT-1080Z .cas, .cmd or .bas tape.",
   "@commands.tapeLoad.wrongType": {
     "context": "Validation error of 'tape-load'."
   },
-  "commands.tapeLoad.oneMode": "Use only one of -r and -d.",
+  "commands.tapeLoad.oneMode": "Use only one of -r, -d and -e.",
   "@commands.tapeLoad.oneMode": {
-    "context": "Validation error of 'tape-load': the two options exclude each other. Keep the option names."
+    "context": "Validation error of 'tape-load': the three options exclude each other. Keep the option names."
+  },
+  "commands.tapeLoad.entryHtOnly": "-e stops at the start address of an HT-1080Z machine-code tape (.cas or .cmd); this file is not one.",
+  "@commands.tapeLoad.entryHtOnly": {
+    "context": "Validation error of 'tape-load' when -e is given for a file that is not an HT-1080Z tape. Keep the option name -e."
+  },
+  "commands.tapeLoad.entryNotSystem": "{file} holds a BASIC program, which has no start address to stop at: -e needs a machine-code (SYSTEM) tape or a .cmd file.",
+  "@commands.tapeLoad.entryNotSystem": {
+    "context": "Error of 'tape-load -e' when the HT-1080Z tape holds BASIC. SYSTEM is the machine's command: not translated. Keep the option name -e.",
+    "placeholders": {
+      "file": "The file's full path"
+    }
+  },
+  "commands.tapeLoad.entryBreak": "The debugger stops at the program's start address, {address}.",
+  "@commands.tapeLoad.entryBreak": {
+    "context": "Output of 'tape-load -e': a one-shot breakpoint is set at the start address the HT-1080Z tape names.",
+    "placeholders": {
+      "address": "A hexadecimal address, e.g. $7FB0"
+    }
   },
   "commands.tapeLoad.refusedTape": "Loading a tape requires a ZX Spectrum 48K, 128K or +2/+3 machine; the current machine is {machine}.",
   "@commands.tapeLoad.refusedTape": {
@@ -1755,6 +1800,17 @@
   "commands.tapeLoad.refusedProgramNoMachine": "Loading a tape requires a ZX80 or ZX81 machine; no machine is selected.",
   "@commands.tapeLoad.refusedProgramNoMachine": {
     "context": "Validation error of 'tape-load' for a ZX80/ZX81 program file (which loads like a tape)."
+  },
+  "commands.tapeLoad.refusedHtTape": "Loading an HT-1080Z tape requires the HT-1080Z; the current machine is {machine}.",
+  "@commands.tapeLoad.refusedHtTape": {
+    "context": "Validation error of 'tape-load' for an HT-1080Z tape file (.cas, .cmd or .bas) when another machine is running. HT-1080Z is a machine name: keep it.",
+    "placeholders": {
+      "machine": "The name of the current machine"
+    }
+  },
+  "commands.tapeLoad.refusedHtTapeNoMachine": "Loading an HT-1080Z tape requires the HT-1080Z; no machine is selected.",
+  "@commands.tapeLoad.refusedHtTapeNoMachine": {
+    "context": "Validation error of 'tape-load' for an HT-1080Z tape file (.cas, .cmd or .bas) when no machine is selected. HT-1080Z is a machine name: keep it."
   },
   "commands.tapeLoad.readFailed": "Could not read {file}: {error}",
   "@commands.tapeLoad.readFailed": {

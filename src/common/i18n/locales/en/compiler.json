@@ -126,7 +126,7 @@
   "@compiler.asm.Z0205": {
     "context": "Z80 assembler message Z0205, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
   },
-  "compiler.asm.Z0206": "An #ifmod or #ifnmod directive can be used only with these identifiers: 'SPECTRUM48', 'SPECTRUM128', 'SPECTRUMP3', 'NEXT', 'ZX80', 'ZX81'.",
+  "compiler.asm.Z0206": "An #ifmod or #ifnmod directive can be used only with these identifiers: 'SPECTRUM48', 'SPECTRUM128', 'SPECTRUMP3', 'NEXT', 'ZX80', 'ZX81', 'HT1080Z'.",
   "@compiler.asm.Z0206": {
     "context": "Z80 assembler message Z0206, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
   },
@@ -146,7 +146,7 @@
   "@compiler.asm.Z0302": {
     "context": "Z80 assembler message Z0302, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
   },
-  "compiler.asm.Z0303": "A .model pragma can have only these values: 'SPECTRUM48', 'SPECTRUM128', 'SPECTRUMP3', 'NEXT', 'ZX80', 'ZX81'.",
+  "compiler.asm.Z0303": "A .model pragma can have only these values: 'SPECTRUM48', 'SPECTRUM128', 'SPECTRUMP3', 'NEXT', 'ZX80', 'ZX81', 'HT1080Z'.",
   "@compiler.asm.Z0303": {
     "context": "Z80 assembler message Z0303, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
   },
@@ -485,6 +485,20 @@
     "placeholders": {
       "0": "A name, token, number or file name from the source code or the build, shown verbatim",
       "1": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0382": "Code at ${0} is in the HT-1080Z's ROM or keyboard area (below $3C00): it cannot be loaded there. Put the code in RAM, from $42E9 up; $7000 is a good place.",
+  "@compiler.asm.Z0382": {
+    "context": "Z80 assembler message Z0382, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
+    }
+  },
+  "compiler.asm.Z0383": "Code at ${0} is in the HT-1080Z's video RAM or the ROM's work area ($3C00-$42E8): BASIC and the ROM overwrite it. Put the code in RAM, from $42E9 up.",
+  "@compiler.asm.Z0383": {
+    "context": "Z80 assembler message Z0383, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
     }
   },
   "compiler.asm.Z0401": "Unexpected error when emitting code for mnemonic ''{0}'.",

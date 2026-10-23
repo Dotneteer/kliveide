@@ -606,6 +606,22 @@
   "@menu.timex.ejectCartridge": {
     "context": "Machine › Cartridge (Timex 2068): removes the cartridge."
   },
+  "menu.ht1080z.resetKey": "Press the RESET Key",
+  "@menu.ht1080z.resetKey": {
+    "context": "Machine › HT-1080Z (a Hungarian school computer): presses the RESET key on the machine's back panel, which takes BASIC back to its READY prompt and keeps the program in memory. RESET is the key's label: keep it in capitals."
+  },
+  "menu.ht1080z.pageKey": "Press the PAGE Key",
+  "@menu.ht1080z.pageKey": {
+    "context": "Machine › HT-1080Z: presses the PAGE key once. In 32-column mode it switches between the left and right halves of each screen row, and it stays latched until pressed again. PAGE is the key's label: keep it in capitals."
+  },
+  "menu.ht1080z.videoCut": "VIDEO CUT",
+  "@menu.ht1080z.videoCut": {
+    "context": "Machine › HT-1080Z, a checked menu item: the machine's VIDEO CUT switch, which blanks the picture while programs keep running. VIDEO CUT is the switch's label on the machine: keep it in capitals, untranslated."
+  },
+  "menu.ht1080z.cpuDash": "Show Video RAM Access Dash",
+  "@menu.ht1080z.cpuDash": {
+    "context": "Machine › HT-1080Z, a checked menu item: when on, a CPU read or write of video memory blanks a short dash on the screen at the beam position, as the real hardware does."
+  },
   "menu.z88.softReset": "Soft Reset",
   "@menu.z88.softReset": {
     "context": "Machine › Cambridge Z88: resets the machine keeping its memory (like the reset button)."

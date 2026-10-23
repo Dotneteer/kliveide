@@ -606,3 +606,53 @@ function buildZx8081Chars(isZx81: boolean): Record<number, CharDescriptor> {
   }
   return chars;
 }
+
+/**
+ * The HT-1080Z character set for the memory panel (`.plans/HT1080Z_PLAN.md` §11): ASCII at
+ * $20-$7F, control codes below, and the 2 x 3 semigraphics blocks at $80-$FF (bit 6 is ignored
+ * there). The per-model glyphs - the Series II accents, the /64's Hungarian set at $00-$1F - and the
+ * BASIC tokens come with Phase 8.
+ */
+/*
+ * The HT-1080Z's character sets (`.plans/HT1080Z_PLAN.md` §11, §15 D10), one per character ROM, the
+ * glyphs read off each model's ROM:
+ *
+ * - Series I: ASCII, `[ \ ] ^ _` and lowercase as on a TRS-80; 7Fh is a checkerboard.
+ * - Series II: É at 40h, ↑ at 5Bh, Ö Á Ü at 5Ch-5Eh, é at 60h and ö á ü at 7Ch-7Eh.
+ * - /64: ↑ at 5Bh and ↓ at 5Dh, and 32 Hungarian and mathematical characters at 00h-1Fh. The HS ROM
+ *   page's code numbers for the mathematical ones are wrong; these are the ROM's (§17).
+ *
+ * Series I/II video RAM holds letters at 00h-1Fh (the BASIC folds 40h-7Fh down), and those codes show
+ * the glyphs of 40h-5Fh, as on the screen. 80h-FFh are the 2×3 semigraphics blocks on every model.
+ */
+export type Ht1080zCharSetId = "s1" | "s2" | "s64";
+
+const HT_S2_GLYPHS: Record<number, string> = {
+  0x40: "É", 0x5b: "↑", 0x5c: "Ö", 0x5d: "Á", 0x5e: "Ü", 0x60: "é", 0x7c: "ö", 0x7d: "á", 0x7e: "ü"
+};
+
+const HT_S64_GLYPHS: Record<number, string> = {
+  0x5b: "↑", 0x5d: "↓",
+  0x00: "Á", 0x01: "É", 0x02: "Í", 0x03: "Ó", 0x04: "Ö", 0x05: "Ő", 0x06: "Ú", 0x07: "Ü",
+  0x08: "Ű", 0x09: "■", 0x0a: "λ", 0x0b: "∞", 0x0c: "π", 0x0d: "Σ", 0x0e: "Ψ", 0x0f: "Ω",
+  0x10: "á", 0x11: "é", 0x12: "í", 0x13: "ó", 0x14: "ö", 0x15: "ő", 0x16: "ú", 0x17: "ü",
+  0x18: "ű", 0x19: "√", 0x1a: "μ", 0x1b: "α", 0x1c: "γ", 0x1d: "∫", 0x1e: "β", 0x1f: "ω"
+};
+
+/** The character set of an HT-1080Z character ROM. */
+export function ht1080zCharsFor(set: Ht1080zCharSetId): Record<number, CharDescriptor> {
+  const glyphs = set === "s2" ? HT_S2_GLYPHS : set === "s64" ? HT_S64_GLYPHS : {};
+  const glyphOf = (code: number) => glyphs[code] ?? String.fromCharCode(code);
+  const chars: Record<number, CharDescriptor> = {};
+  for (let code = 0x00; code < 0x20; code++) {
+    chars[code] = set === "s64" ? { v: glyphOf(code) } : { v: glyphOf(code + 0x40) };
+  }
+  chars[0x20] = { v: "\xa0", t: "(space)" };
+  for (let code = 0x21; code < 0x7f; code++) chars[code] = { v: glyphOf(code) };
+  chars[0x7f] = { v: "▒" };
+  for (let code = 0x80; code < 0x100; code++) chars[code] = { c: "graph", t: `(block ${(code & 0x3f).toString(2).padStart(6, "0")})` };
+  return chars;
+}
+
+/** The machine's default character set: Series II, the default model's. */
+export const Ht1080zChars: Record<number, CharDescriptor> = ht1080zCharsFor("s2");

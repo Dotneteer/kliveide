@@ -16,6 +16,7 @@ import { createSp128Session } from "../../harness/sp128";
 import { createTimexSession } from "../../harness/timex";
 import { createZ88Session } from "../../harness/z88";
 import { createZx81Session } from "../../harness/zx81";
+import { createHtSession } from "../../harness/ht1080z";
 import { createSession as createNextSession } from "../../harness/zxnext";
 
 type Runtime = { module: WebAssembly.Module; exports: Record<string, unknown> & { memory: WebAssembly.Memory } };
@@ -88,6 +89,14 @@ loop:
     async () => {
       const s = await createZx81Session();
       s.bootToBasic();
+      return s.machine.wasmV2Runtime as unknown as Runtime;
+    }
+  ],
+  [
+    "ht1080z",
+    async () => {
+      const s = await createHtSession();
+      s.bootToPrompt();
       return s.machine.wasmV2Runtime as unknown as Runtime;
     }
   ]

@@ -26,6 +26,7 @@ import { createSp128Session } from "../harness/sp128";
 import { createTimexSession } from "../harness/timex";
 import { createZ88Session } from "../harness/z88";
 import { createZx81Session } from "../harness/zx81";
+import { createHtSession } from "../harness/ht1080z";
 import { createCore, createSession as createNextSession } from "../harness/zxnext";
 
 /*
@@ -71,6 +72,7 @@ const MACHINES: { name: string; coreId: string; create(): Promise<AnyWasmMachine
   { name: "Cambridge Z88", coreId: "z88", create: async () => (await createZ88Session({ rom: "model" })).runFrames(900).machine as never },
   { name: "ZX81", coreId: "zx8081", create: async () => (await createZx81Session({ machineId: MI_ZX81 })).bootToBasic().machine as never },
   { name: "ZX80", coreId: "zx8081", create: async () => (await createZx81Session({ machineId: MI_ZX80 })).bootToBasic().machine as never },
+  { name: "HT-1080Z", coreId: "ht1080z", create: async () => (await createHtSession()).bootToPrompt().machine as never },
   { name: "ZX Spectrum Next", coreId: "zxnext", create: async () => (await createCore({ hardReset: true })) as never }
 ];
 

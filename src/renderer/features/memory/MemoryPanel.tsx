@@ -1,4 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { charSetOfModel } from "@common/machines/info-types";
 import { useRowSizes } from "@renderer/theming/useRowSizes";
 import { derivePartitionWidthCh } from "@renderer/controls/data/partitionWidth";
 import styles from "./MemoryPanel.module.scss";
@@ -71,7 +72,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
   const mainApi = useMainApi();
   const dialogs = useDialogs();
   const { ideCommandsService, machineService, navigationHistoryService } = useAppServices();
-  const memoryCharacterInfo = getMemoryCharacterInfo(machineService.getMachineInfo()?.machine?.charSet);
+  const memoryCharacterInfo = getMemoryCharacterInfo(charSetOfModel(machineService.getMachineInfo()));
 
   // Machine setup is intentionally separate from memory refresh. Setup answers
   // "which banks/partitions exist?", while refresh answers "what bytes and

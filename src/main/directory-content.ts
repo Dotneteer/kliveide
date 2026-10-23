@@ -7,6 +7,7 @@ import { app } from "electron";
 import { getKliveProjectStructure } from "./projects";
 import { pathStartsWith } from "@common/utils/path-utils";
 import { appSettings } from "./settings-utils";
+import { sniffFileContentKind } from "./sniff-content-kind";
 
 type DirectoryContentFilter = (p: string) => boolean;
 
@@ -43,6 +44,8 @@ export async function getDirectoryContent(
     };
     if (fileEntryInfo.isFile()) {
       fileEntryCount++;
+      const contentKind = sniffFileContentKind(entryPath);
+      if (contentKind) entry.contentKind = contentKind;
       return entry;
     }
     if (fileEntryInfo.isDirectory()) {

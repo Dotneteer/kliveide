@@ -15,6 +15,7 @@ import { AppState } from "@common/state/AppState";
 import { createSettingsReader } from "@common/utils/SettingsReader";
 import { LANGUAGE_SETTINGS } from "@common/structs/project-const";
 import { TEXT_EDITOR, BIN_VIEWER } from "@state/common-ids";
+import type { FileContentKind } from "@common/ht1080z/basContent";
 
 // --- Tracks files with unknown extensions that have been probed and confirmed as plain text.
 // --- Populated by ProjectService at document-open time; consulted during tree rebuild so that
@@ -27,6 +28,36 @@ export function registerDetectedTextFile(path: string): void {
 
 export function clearDetectedTextFiles(): void {
   detectedTextFilePaths.clear();
+}
+
+// --- What files hold when their extension cannot tell (a tokenised HT-1080Z `.bas`), by full path:
+// --- filled from the tree the main process sniffs, read by `getFileTypeEntry`
+// --- (`.plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D2)
+const fileContentKinds = new Map<string, FileContentKind>();
+// --- The files a tree has listed, so a kind that changes can be told from one seen the first time
+const listedFilePaths = new Set<string>();
+// --- The listed files whose kind changed since `takeChangedContentKinds` was last asked
+const changedContentKinds = new Set<string>();
+
+/** Records a file's content kind, or forgets it (`undefined`), noting a change of a file listed before */
+export function registerFileContentKind(path: string | undefined, kind: FileContentKind | undefined): void {
+  if (!path) return;
+  if (listedFilePaths.has(path) && fileContentKinds.get(path) !== kind) changedContentKinds.add(path);
+  listedFilePaths.add(path);
+  if (kind) fileContentKinds.set(path, kind);
+  else fileContentKinds.delete(path);
+}
+
+/** The files whose content kind changed since the last call: their open documents need another editor */
+export function takeChangedContentKinds(): string[] {
+  const changed = [...changedContentKinds];
+  changedContentKinds.clear();
+  return changed;
+}
+
+/** The content kind of a file, by its full path */
+export function fileContentKindOf(path: string | undefined): FileContentKind | undefined {
+  return path ? fileContentKinds.get(path) : undefined;
 }
 
 // --- Tracks files with unknown extensions that have been probed and confirmed as binary.
@@ -48,8 +79,11 @@ export function buildProjectTree(
   return new TreeView<ProjectNode>(toTreeNode(root), false);
 
   function toTreeNode(node: ProjectNodeWithChildren): ITreeNode<ProjectNode> {
+    // --- What the main process sniffed decides between the entries of one extension (D2)
+    if (!node.isFolder) registerFileContentKind(node.fullPath, node.contentKind);
+
     // --- Get the file type information
-    let fileTypeEntry = getFileTypeEntry(node.name, store) ?? unknownFileType;
+    let fileTypeEntry = getFileTypeEntry(node.fullPath ?? node.name, store) ?? unknownFileType;
 
     // --- If the file has an unknown extension but was previously probed as plain text,
     // --- use the TEXT_EDITOR icon/editor so the explorer shows the correct icon.
@@ -90,7 +124,8 @@ export function buildProjectTree(
     }
 
     // --- Get the language information
-    if (!node.isFolder) {
+    // --- A file whose content overrides its extension (a tokenised .bas) is never a build root (D7)
+    if (!node.isFolder && !node.contentKind) {
       const nodeFullPath = typeof node === "string" ? node : node.fullPath;
       node.canBeBuildRoot ||= customLanguagesRegistry
         .filter((reg) => reg.extensions.some((ext) => nodeFullPath.endsWith(ext)))
@@ -175,7 +210,11 @@ export function getFileTypeEntry(filename: string, store: Store<AppState>): File
   }
 
   const lowerName = filename.toLowerCase();
+  const contentKind = fileContentKindOf(filename);
   for (const typeEntry of fileTypeRegistry) {
+    // --- An entry for a content kind matches only that content; a file of a kind skips none of the
+    // --- others, so a kind without its own entry opens as its extension says (D2)
+    if (typeEntry.contentKind && typeEntry.contentKind !== contentKind) continue;
     let match = false;
     const name = typeEntry.ignoreCase ? lowerName : filename;
     const pattern = typeEntry.ignoreCase ? typeEntry.pattern.toLowerCase() : typeEntry.pattern;

@@ -4,7 +4,7 @@ import { getGlobalSetting, useGlobalSetting, useSelector, useStore } from "@rend
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { EmulatorOverlay } from "./EmulatorOverlay";
-import { FAST_LOAD } from "@emu/machines/machine-props";
+import { FAST_LOAD, HT_VIDEO_CUT, HT_VIDEO_DASH } from "@emu/machines/machine-props";
 import { FrameCompletedArgs, IMachineController } from "../../abstractions/IMachineController";
 import { reportMessagingError } from "@renderer/reportError";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
@@ -14,6 +14,8 @@ import { setClockMultiplierAction } from "@common/state/actions";
 import { useMainApi } from "@renderer/core/MainApi";
 import {
   SETTING_EMU_FAST_LOAD,
+  SETTING_EMU_HT_CPU_DASH,
+  SETTING_EMU_HT_VIDEO_CUT,
   SETTING_EMU_MOUSE_SHOW_POINTER,
   SETTING_EMU_SHOW_BEAM_POSITION,
   SETTING_EMU_SHOW_INSTANT_SCREEN
@@ -94,6 +96,8 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   const isDebugging = useSelector((s) => s.emulatorState?.isDebugging ?? false);
 
   const fastLoad = useGlobalSetting(SETTING_EMU_FAST_LOAD);
+  const htVideoCut = useGlobalSetting(SETTING_EMU_HT_VIDEO_CUT);
+  const htCpuDash = useGlobalSetting(SETTING_EMU_HT_CPU_DASH);
   const showInstantScreen = useGlobalSetting(SETTING_EMU_SHOW_INSTANT_SCREEN);
   const showBeamPosition = !!useGlobalSetting(SETTING_EMU_SHOW_BEAM_POSITION);
   // --- Counts the stops, so the beam overlay redraws at each one, stepping included (T9)
@@ -144,6 +148,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     hasSurround,
     canvasWidth,
     canvasHeight,
+    canvasPixelScale,
     imageBuffer8,
     xRatio,
     yRatio,
@@ -432,6 +437,12 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     controller?.machine?.setMachineProperty(FAST_LOAD, fastLoad);
   }, [controller, fastLoad]);
 
+  // --- The HT-1080Z's video switches (other machines ignore the properties)
+  useEffect(() => {
+    controller?.machine?.setMachineProperty(HT_VIDEO_CUT, !!htVideoCut);
+    controller?.machine?.setMachineProperty(HT_VIDEO_DASH, htCpuDash !== false);
+  }, [controller, htVideoCut, htCpuDash]);
+
   // --- Respond to shadow screen changes
   useEffect(() => {
     const state = componentStateRef.current;
@@ -522,7 +533,13 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
               beamText={beamState ? beamOverlayPill(beamState) : undefined}
             />
             {captured && showCapturedPointer && <CapturedPointer ref={capturedPointer} />}
-            <canvas ref={screenElement} width={canvasWidth} height={canvasHeight} />
+            {/* --- Sized in CSS pixels; its backing store is `canvasPixelScale` times finer */}
+            <canvas
+              ref={screenElement}
+              width={Math.round((canvasWidth ?? 0) * canvasPixelScale)}
+              height={Math.round((canvasHeight ?? 0) * canvasPixelScale)}
+              style={{ width: `${canvasWidth ?? 0}px`, height: `${canvasHeight ?? 0}px` }}
+            />
             {beamState && (
               <BeamPositionOverlay
                 state={beamState}

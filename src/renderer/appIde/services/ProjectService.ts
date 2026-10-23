@@ -1,7 +1,7 @@
 import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
 import { IProjectService } from "../../abstractions/IProjectService";
-import { compareProjectNode, getFileTypeEntry, getNodeDir, getNodeFile, registerDetectedTextFile, clearDetectedTextFiles, registerDetectedBinaryFile, clearDetectedBinaryFiles } from "@renderer/appIde/project/project-node";
+import { compareProjectNode, getFileTypeEntry, getNodeDir, getNodeFile, registerDetectedTextFile, clearDetectedTextFiles, registerDetectedBinaryFile, clearDetectedBinaryFiles, fileContentKindOf, registerFileContentKind } from "@renderer/appIde/project/project-node";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { MessengerBase } from "@common/messaging/MessengerBase";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
@@ -543,6 +543,8 @@ class ProjectService implements IProjectService {
       throw new Error(`Cannot find file node for ${oldId}`);
     }
 
+    // --- The content does not change with the name: the sniffed kind moves with it
+    registerFileContentKind(newId, fileContentKindOf(oldId));
     const fileTypeEntry = getFileTypeEntry(newId, this.store);
     renamedNode.data.icon = fileTypeEntry?.icon;
 

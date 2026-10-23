@@ -30,7 +30,8 @@ export const CORE_EXPORT_PREFIXES: Record<string, readonly string[]> = {
   spp3e: ["spp3e"],
   zxnext: ["zxnext"],
   z88: ["z88"],
-  zx8081: ["zx8081"]
+  zx8081: ["zx8081"],
+  ht1080z: ["ht1080z"]
 };
 
 /** Exports shared by every Z80 core, by exact name prefix */

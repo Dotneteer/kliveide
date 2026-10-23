@@ -21,6 +21,7 @@ import { createSp128Session, type Sp128SessionModel } from "../../harness/sp128"
 import { createTimexSession } from "../../harness/timex";
 import { createZ88Session } from "../../harness/z88";
 import { createZx81Session } from "../../harness/zx81";
+import { createHtSession } from "../../harness/ht1080z";
 import { createSession as createNextSession } from "../../harness/zxnext";
 import { BANK, buildSzx, state128, state48, szxBlock } from "../../spectrum/snapshot/builders";
 import { expectSameBytes } from "../../expectBytes";
@@ -156,6 +157,16 @@ describe("machine state: save, load into another machine, run = keep running", (
     const b = await createZx81Session();
     a.bootToBasic();
     a.typeKeys("10 PRINT 1");
+    a.runFrames(7).step(333);
+    proveDeterminism(a as unknown as Driver, b as unknown as Driver, 30);
+  });
+
+  it("HT-1080Z", async () => {
+    const a = await createHtSession({ model: "ht1080z-64" });
+    const b = await createHtSession({ model: "ht1080z-64" });
+    a.bootToPrompt();
+    // --- A program that writes the AY, the cassette port and the video RAM
+    a.typeKeys("10 OUT 31,7:OUT 30,56:FOR I=0 TO 9:POKE 15360+I,I:OUT 255,I AND 3:NEXT:GOTO 10\nRUN\n");
     a.runFrames(7).step(333);
     proveDeterminism(a as unknown as Driver, b as unknown as Driver, 30);
   });

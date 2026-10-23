@@ -633,6 +633,24 @@
   "@documents.tape.menu.debug": {
     "context": "Explorer context-menu item for a tape file: loads it with the debugger's breakpoints active."
   },
+  "documents.tape.menu.entry": "Debug from the start address",
+  "@documents.tape.menu.entry": {
+    "context": "Explorer context-menu item for an HT-1080Z tape file: loads its machine-code program under the debugger and stops at the program's first instruction (its start address)."
+  },
+  "documents.tape.button.entry": "Load and debug this program, stopping at its start address — fast load {fastLoad, select, on {on} other {off}}",
+  "@documents.tape.button.entry": {
+    "context": "Tooltip of the debug-from-start button in an HT-1080Z machine-code tape's tab bar. 'Fast load' is the emulator option that loads tapes instantly; translate the two words on/off inside the braces only.",
+    "placeholders": {
+      "fastLoad": "'on' or 'off' (selects the matching word): whether the fast-load setting is on"
+    }
+  },
+  "documents.tape.button.entryRefused": "Load and debug this program from its start address ({reason})",
+  "@documents.tape.button.entryRefused": {
+    "context": "Tooltip of the disabled debug-from-start button in an HT-1080Z tape's tab bar: the current machine cannot load it.",
+    "placeholders": {
+      "reason": "Why it is disabled, e.g. 'requires the HT-1080Z machine'"
+    }
+  },
   "documents.tape.button.run": "Load and run this tape: reset, then LOAD \"\" — fast load {fastLoad, select, on {on} other {off}}",
   "@documents.tape.button.run": {
     "context": "Tooltip of the play button in a tape document's tab bar. 'LOAD \"\"' is the BASIC command, keep it exactly. 'Fast load' is the emulator option that loads tapes instantly; translate the two words on/off inside the braces only.",

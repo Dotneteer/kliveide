@@ -295,6 +295,18 @@ export const componentAliases: Record<string, string> = {
   "--color-keyzx80-dim": "var(--device-legend-zx80-dim)",
   "--color-keyzx80-highlight": "var(--accent-on-device-dark)",
   "--bgcolor-hilitedzx80": "var(--accent-device-pressed-zx80)",
+  // --- The HT-1080Z keyboard: cream keys in a charcoal recess on an off-white case. Every legend is
+  // --- on a light key face, so a hovered one takes the accent's dark end, as on the ZX81.
+  "--bgcolor-keyboardht1080z": "var(--device-body-ht1080z)",
+  "--bgcolor-keyboardht1080z-panel": "var(--device-panel-ht1080z)",
+  "--bgcolor-keyht1080z": "var(--device-key-ht1080z)",
+  "--color-keyht1080z-edge": "var(--device-key-edge-ht1080z)",
+  "--bgcolor-keyht1080z-switch": "var(--device-key-switch-ht1080z)",
+  "--color-keyht1080z-switch-edge": "var(--device-key-switch-edge-ht1080z)",
+  "--color-keyht1080z-main": "var(--device-legend-ht1080z-ink)",
+  "--color-keyht1080z-hint": "var(--device-legend-ht1080z-hint)",
+  "--color-keyht1080z-highlight": "var(--accent-on-device-light)",
+  "--bgcolor-hilitedht1080z": "var(--accent-device-pressed-ht1080z)",
 
   // --- Document area ----------------------------------------------------------------------------
   "--bgcolor-docspanel": "var(--surface-canvas)",
@@ -911,6 +923,35 @@ export const componentAliases: Record<string, string> = {
   "--color-tape-segment-merged": "var(--text-disabled)",
   "--color-tape-segment-unplayable": "var(--status-error)",
   "--color-tape-segment-selected": "var(--text-primary)",
+
+  // --- Byte anatomy and the HT-1080Z tape viewer (`.plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D5) ------
+  /*
+   * In a listing a BASIC keyword is coloured as the editor colours a keyword (`--syntax-keyword`) and
+   * a string as the editor's strings: a listing and the source it came from name the same thing with
+   * the same colour. In the byte strip a token's byte takes the secondary accent instead: the strip's
+   * highlight for the field being explained is the primary accent (the keyword's hue), and a token
+   * in that hue would read as a second highlight.
+   *
+   * The memory map's zones are neutral surfaces, graded so ROM reads as the most solid and the 48K
+   * models' RAM as the least: they are the ground, not the subject. What loads onto them takes the
+   * timeline's segment colours (code, BASIC), so a part is one colour in both graphics, and the
+   * selection ring is the timeline's too.
+   */
+  "--color-byte-anatomy-token": "var(--accent-secondary-text)",
+  "--color-ht-listing-keyword": "var(--syntax-keyword)",
+  "--color-ht-listing-string": "var(--syntax-string)",
+  "--color-ht-listing-line": "var(--data-secondary)",
+  "--bgcolor-memory-map-rom": "var(--surface-active)",
+  "--bgcolor-memory-map-io": "var(--surface-hover)",
+  "--bgcolor-memory-map-video": "var(--border-subtle)",
+  "--bgcolor-memory-map-system": "var(--surface-raised)",
+  "--bgcolor-memory-map-ram": "var(--surface-raised)",
+  "--bgcolor-memory-map-ram48": "var(--surface-panel)",
+  "--color-memory-map-zone": "var(--data-secondary)",
+  "--color-memory-map-divider": "var(--surface-canvas)",
+  "--color-memory-map-code": "var(--color-tape-segment-code)",
+  "--color-memory-map-basic": "var(--color-tape-segment-basic)",
+  "--color-memory-map-selected": "var(--color-tape-segment-selected)",
 
   // --- Unit Tests panel (`.plans/Z80_UNIT_TESTS_PLAN.md` D13) ------------------------------------
   /*

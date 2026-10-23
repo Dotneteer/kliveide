@@ -10,6 +10,10 @@ import { buildSp128Wasm, productionOutput as sp128Wasm } from "../../scripts/bui
 import { TimexWasmV2Machine } from "@emu/machines/timex/TimexWasmV2Machine";
 import { ScorpionWasmV2Machine } from "@emu/machines/zxSpectrum128/ScorpionWasmV2Machine";
 import { buildTimexWasm, productionOutput as timexWasm } from "../../scripts/build-timex-wasm.cjs";
+import { Ht1080zWasmV2Machine } from "@emu/machines/ht1080z/Ht1080zWasmV2Machine";
+import { HT1080Z_MODELS } from "@emu/machines/ht1080z/ht1080zMachineInfo";
+import { MI_HT1080Z } from "@common/machines/constants";
+import { buildHt1080zWasm, productionOutput as ht1080zWasm } from "../../scripts/build-ht1080z-wasm.cjs";
 
 /*
  * The hardware sheet's figures against the running cores, for the machines that only report their
@@ -36,6 +40,12 @@ class Scorpion extends ScorpionWasmV2Machine {
 class Timex extends TimexWasmV2Machine {
   protected override async loadRomFromResource(): Promise<Uint8Array> {
     return new Uint8Array(0x4000);
+  }
+}
+
+class Ht1080z extends Ht1080zWasmV2Machine {
+  protected override async loadRomFromResource(): Promise<Uint8Array> {
+    return new Uint8Array(0x3000);
   }
 }
 
@@ -99,5 +109,14 @@ describe("hardware specs against the cores", () => {
       readArtifact: async () => readFileSync(sp128Wasm)
     });
     await expectMatches(machine, "scorpion", model.modelId);
+  });
+
+  it.each(HT1080Z_MODELS.map((m) => m.modelId!))("HT-1080Z %s", async (modelId) => {
+    buildHt1080zWasm();
+    const model = HT1080Z_MODELS.find((m) => m.modelId === modelId)!;
+    const machine = new Ht1080z(MI_HT1080Z, model, undefined, undefined, {
+      readArtifact: async () => readFileSync(ht1080zWasm)
+    });
+    await expectMatches(machine, MI_HT1080Z, modelId);
   });
 });

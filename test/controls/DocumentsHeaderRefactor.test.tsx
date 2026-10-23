@@ -1629,7 +1629,7 @@ describe("useExplorerTree", () => {
     const visibleNodes = [createTreeNode({ isFolder: true, name: "project" })];
     const tree = createTreeView(visibleNodes);
     const buildProjectTree = vi.fn(() => tree);
-    vi.doMock("@renderer/appIde/project/project-node", () => ({ buildProjectTree }));
+    vi.doMock("@renderer/appIde/project/project-node", () => ({ buildProjectTree, takeChangedContentKinds: () => [] }));
 
     const { clearExplorerFolderCache, useExplorerTree } = await import(
       "@renderer/features/explorer/useExplorerTree"
@@ -1688,7 +1688,7 @@ describe("useExplorerTree", () => {
     const tree = createTreeView(visibleNodes);
     tree.getVisibleNodes = vi.fn(() => visibleNodes);
     const buildProjectTree = vi.fn(() => tree);
-    vi.doMock("@renderer/appIde/project/project-node", () => ({ buildProjectTree }));
+    vi.doMock("@renderer/appIde/project/project-node", () => ({ buildProjectTree, takeChangedContentKinds: () => [] }));
 
     const { clearExplorerFolderCache, useExplorerTree } = await import(
       "@renderer/features/explorer/useExplorerTree"

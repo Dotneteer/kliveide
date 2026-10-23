@@ -19,6 +19,7 @@ import {
   type ScanlineIntensity
 } from "./scanlineEffect";
 import { fillTvNoise, type TvNoiseState } from "./tvNoiseEffect";
+import { drawPictureScaled, needsSharpScaling, type SharpScaleScratch } from "./sharpScale";
 
 /**
  * How long the layout must be still before the window size hints are sent (see `scheduleHints`)
@@ -66,10 +67,19 @@ export function useEmulatorScreen(
   const screenElement = useRef<HTMLCanvasElement>();
   const [canvasWidth, setCanvasWidth] = useState(0);
   const [canvasHeight, setCanvasHeight] = useState(0);
+  /*
+   * Canvas pixels per CSS pixel. 1 for every picture that scales exactly; the device pixel ratio for
+   * one that scales sharp-bilinear (`sharpScale.ts`), whose soft dot edges must be device pixels wide,
+   * not CSS pixels the display then doubles.
+   */
+  const [canvasPixelScale, setCanvasPixelScale] = useState(1);
   const shadowCanvasWidth = useRef(0);
   const shadowCanvasHeight = useRef(0);
   const xRatio = useRef(1);
   const yRatio = useRef(1);
+  // --- A pixel aspect that is not a whole fraction draws sharp-bilinear (`sharpScale.ts`)
+  const sharpScaling = useRef(false);
+  const sharpScratch = useRef<SharpScaleScratch>({});
   const hostRectangle = useRef<DOMRect>();
   // --- Held in a ref so a new callback identity does not rebuild the sizing callbacks
   const hintsListener = useRef(onContentSizeHintsChanged);
@@ -231,6 +241,7 @@ export function useEmulatorScreen(
      */
     setCanvasWidth(Math.round(width * ratio * xRatio.current));
     setCanvasHeight(Math.round(height * ratio * yRatio.current));
+    setCanvasPixelScale(sharpScaling.current ? window.devicePixelRatio || 1 : 1);
 
     /*
      * What the window needs for this picture (issue #1377): at 1x (the minimum, since the ratio
@@ -289,6 +300,7 @@ export function useEmulatorScreen(
       xRatio.current = 1;
       yRatio.current = 1;
     }
+    sharpScaling.current = needsSharpScaling(xRatio.current, yRatio.current);
     configureScreen();
     // --- Report this machine's hints even if they equal the last machine's: the main process
     // --- restores each machine's own window size when the machine in the hints changes
@@ -306,7 +318,7 @@ export function useEmulatorScreen(
     if (!tempCtx) return;
     tempCtx.putImageData(imageData, 0, 0);
     ctx.globalCompositeOperation = "copy";
-    ctx.drawImage(tempCanvas, 0, 0, canvas.width, canvas.height);
+    drawPictureScaled(ctx, tempCanvas, canvas.width, canvas.height, sharpScaling.current, sharpScratch.current);
     ctx.globalCompositeOperation = "source-over";
   }, []);
 
@@ -324,7 +336,9 @@ export function useEmulatorScreen(
       shadowCanvasWidth.current,
       shadowCanvasHeight.current,
       scanlineIntensity,
-      tempCanvas
+      tempCanvas,
+      sharpScaling.current,
+      sharpScratch.current
     );
   }, []);
 
@@ -455,6 +469,7 @@ export function useEmulatorScreen(
     hasSurround,
     canvasWidth,
     canvasHeight,
+    canvasPixelScale,
     imageBuffer8,
     xRatio,
     yRatio,

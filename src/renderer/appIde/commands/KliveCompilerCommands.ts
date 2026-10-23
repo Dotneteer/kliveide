@@ -35,7 +35,7 @@ import { nexFileNameOf, sdCardNexName } from "@renderer/appIde/utils/nex-file-na
 import { createSourceDebugSidecar, sidecarProgramOf, sourceDebugSidecarPath } from "@common/utils/source-debug-sidecar";
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
 import { machineRegistry } from "@common/machines/machine-registry";
-import { MF_INJECT_SUPPORT, MI_Z88, MI_ZX80, MI_ZX81, MI_ZXNEXT } from "@common/machines/constants";
+import { MF_INJECT_SUPPORT, MI_Z88, MI_ZX80, MI_ZX81, MI_HT1080Z, MI_ZXNEXT } from "@common/machines/constants";
 import {
   zx8081ExportFile,
   zx8081ExportFormatOf,
@@ -49,6 +49,13 @@ import {
   modelTypeToMachineType
 } from "@renderer/appIde/utils/compile-code";
 import { t } from "@common/i18n/i18n";
+import {
+  describeHt1080zPlacementProblem,
+  isHt1080zPlacementProblem,
+  placeHt1080zCode
+} from "@common/ht1080z/codePlacement";
+import { resolveHt1080zHardware } from "@emu/machines/ht1080z/ht1080zMachineInfo";
+import { ht1080zExportFile, ht1080zExportFormatOf, ht1080zFormatProblem } from "../utils/ht1080z-code";
 
 const EXPORT_FILE_FOLDER = "KliveExports";
 
@@ -154,7 +161,7 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
     return t("commands.compile.export.description");
   }
   readonly usage =
-    "expc filename [-n name] [-f tap|tzx|hex|nex|p|o|dsk|epr] [-as] [-p] [-c] [-b border] [-sb] [-addr address] [-scr screenfile]";
+    "expc filename [-n name] [-f tap|tzx|hex|nex|p|o|cmd|cas|dsk|epr] [-as] [-p] [-c] [-b border] [-sb] [-addr address] [-scr screenfile]";
 
   readonly argumentInfo: CommandArgumentInfo = {
     mandatory: [{ name: "filename" }],
@@ -202,8 +209,33 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
     const z88dkExport = await exportZ88dkArtefact(context, output, args);
     if (z88dkExport) return z88dkExport;
 
-    // --- A ZX80/ZX81 program exports as the machine's own program file (`ZX8081_CODE_INJECTION_PLAN.md` D8)
     const emulatorState = context.store.getState().emulatorState;
+
+    // --- HT-1080Z code exports as a .cmd load module or a .cas SYSTEM tape (`HT1080Z_CODE_INJECTION_PLAN.md` D6)
+    const htFormat = ht1080zExportFormatOf((output as CompilerOutput).modelType, emulatorState?.machineId);
+    if (htFormat) {
+      const htRequested = args["-f"] ?? htFormat;
+      const problem = ht1080zFormatProblem(htRequested);
+      if (problem) return commandError(problem);
+      if (htRequested === "cmd" || htRequested === "cas") {
+        const file = ht1080zExportFile(
+          htRequested,
+          output as CompilerOutput,
+          emulatorState?.machineId,
+          emulatorState?.config,
+          args["-n"] ?? args.filename
+        );
+        if ("error" in file) return commandError(file.error);
+        try {
+          const filePath = await context.mainApi.saveBinaryFile(args.filename, file.data, `kliveHome:${EXPORT_FILE_FOLDER}`);
+          return commandSuccessWith(t("commands.compile.exported", { file: filePath }), { file: filePath });
+        } catch (err) {
+          return commandError(err.toString());
+        }
+      }
+    }
+
+    // --- A ZX80/ZX81 program exports as the machine's own program file (`ZX8081_CODE_INJECTION_PLAN.md` D8)
     const zxFormat = zx8081ExportFormatOf(
       (output as CompilerOutput).modelType,
       emulatorState?.machineId,
@@ -1390,6 +1422,19 @@ export async function injectCode(
   );
   if (zx8081Problem) return commandError(zx8081Problem);
 
+  // --- The HT-1080Z takes code in RAM it can protect from BASIC (`.plans/HT1080Z_CODE_INJECTION_PLAN.md` D2)
+  const isHt1080z = emulatorState?.machineId === MI_HT1080Z;
+  // --- Another machine's code (a Spectrum build from sjasmplus or Klive BASIC) gets the machine's
+  // --- model-mismatch refusal instead
+  if (isHt1080z && (result.modelType === undefined || result.modelType === SpectrumModelType.HT1080Z)) {
+    const placement = placeHt1080zCode(
+      result.segments,
+      result.entryAddress,
+      resolveHt1080zHardware(emulatorState?.config).ramKb
+    );
+    if (isHt1080zPlacementProblem(placement)) return commandError(describeHt1080zPlacementProblem(placement));
+  }
+
   if (isZxNext && operationType === "inject") {
     if (context.store.getState().emulatorState?.machineState !== MachineControllerState.Paused) {
       return commandError(t("commands.compile.mustBePaused"));
@@ -1446,7 +1491,9 @@ export async function injectCode(
         };
         returnMessage = isZx8081
           ? t("commands.compile.injectedRem", injected)
-          : t("commands.compile.injected", injected);
+          : isHt1080z
+            ? t("commands.compile.injectedHt1080z", injected)
+            : t("commands.compile.injected", injected);
       }
       break;
 

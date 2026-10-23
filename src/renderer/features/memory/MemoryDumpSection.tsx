@@ -5,7 +5,7 @@ import classnames from "classnames";
 import { toHexa4, toHexa6Dash, toHexa2, toDecimal5, toDecimal7, toDecimal3, toBin8 } from "@renderer/appIde/services/ide-commands";
 import styles from "./MemoryDumpSection.module.scss";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
-import { CharDescriptor } from "@common/machines/info-types";
+import { CharDescriptor, charSetOfModel } from "@common/machines/info-types";
 import { memo, useRef, useState, useMemo, useCallback } from "react";
 import { EMPTY_OBJECT } from "@renderer/utils/stablerefs";
 import { isWidePartitionLabel } from "@renderer/controls/data/partitionWidth";
@@ -68,7 +68,7 @@ type MemoryDumpSectionViewProps = MemoryDumpSectionProps & {
 
 export const MemoryDumpSection = (props: MemoryDumpSectionProps) => {
   const { machineService } = useAppServices();
-  const characterInfo = useMemoryCharacterInfo(machineService.getMachineInfo()?.machine?.charSet);
+  const characterInfo = useMemoryCharacterInfo(charSetOfModel(machineService.getMachineInfo()));
 
   return <MemoryDumpSectionView {...props} characterInfo={characterInfo} />;
 };

@@ -32,6 +32,8 @@ export const TILE_SNAPSHOT_VIEWER = "TileSnapshot";
 export const TAP_VIEWER = "TapViewer";
 // --- A tape block popped out as a BASIC listing or a screen (`.plans/TAPE_VIEWER_PLAN.md` §4.5)
 export const TAPE_BLOCK_VIEWER = "TapeBlockViewer";
+// --- An HT-1080Z .cas, .cmd or tokenised .bas (`.plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D5)
+export const HT1080Z_TAPE_VIEWER = "Ht1080zTapeViewer";
 /** The ZX81 `.P` program file viewer */
 export const P_FILE_VIEWER = "PFileViewer";
 export const DSK_VIEWER = "DskViewer";

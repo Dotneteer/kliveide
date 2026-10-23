@@ -132,6 +132,7 @@ export const TapeBlockBrowser = ({
       viewNames={TAPE_VIEW_NAMES}
       itemKind="block"
       layout="sideBySide"
+      fill
       formatNumber={(item) => `#${item.bank}`}
       viewsFor={(item) => viewsOf(item.block, !!basicOverride?.[item.block.index])}
       onSelect={(item) => onSelect(item.block.index)}

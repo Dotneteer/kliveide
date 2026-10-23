@@ -70,7 +70,7 @@ describe("tape-load command", () => {
     const command = new TapeLoadCommand();
     expect(command.id).toBe("tape-load");
     expect(command.aliases).toEqual(["tapeload"]);
-    expect(command.argumentInfo.commandOptions).toEqual(["-r", "-d"]);
+    expect(command.argumentInfo.commandOptions).toEqual(["-r", "-d", "-e"]);
   });
 
   it("recognises tape paths", () => {
@@ -102,15 +102,88 @@ describe("tape-load command", () => {
     ]);
   });
 
+  it("takes an HT-1080Z tape on the HT-1080Z, and only there; a .bas only while the HT runs", async () => {
+    expect(await validate({ file: "/p/game.cas" }, "ht1080z")).toEqual([]);
+    expect(await validate({ file: "/p/game.CMD" }, "ht1080z")).toEqual([]);
+    expect(await validate({ file: "/p/game.bas" }, "ht1080z")).toEqual([]);
+    expect(await validate({ file: "/p/game.cas" })).toEqual([
+      "Loading an HT-1080Z tape requires the HT-1080Z; the current machine is ZX Spectrum 48K."
+    ]);
+    // --- Elsewhere a .bas is BASIC source, not a tape
+    expect(await validate({ file: "/p/prog.bas" })).toEqual([
+      expect.stringMatching(/^The file to load must be a \.tap or \.tzx tape/)
+    ]);
+    // --- A Spectrum tape is not the HT's
+    expect(await validate({ file: "/p/game.tap" }, "ht1080z")).toEqual([
+      expect.stringMatching(/^Loading a tape requires a ZX Spectrum 48K, 128K or \+2\/\+3 machine/)
+    ]);
+  });
+
+  it("decides a .bas by its content: a tokenised program is an HT tape anywhere, text is not a tape", async () => {
+    // --- `.plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D1, D6
+    const tokenised = new Uint8Array(readFileSync(join(__dirname, "../../scripts/doc-shots/recipes/ht1080z-demo.bas")));
+    const text = new TextEncoder().encode('10 PRINT "HI"\n');
+    const validateWith = async (bytes: Uint8Array, machineId: string) => {
+      const { context } = contextFor(machineId, bytes);
+      const messages = await new TapeLoadCommand().validateCommandArgs(context, { file: "/p/prog.bas" } as any);
+      return messages.filter((m) => m.type === ValidationMessageType.Error).map((m) => m.message);
+    };
+    expect(await validateWith(tokenised, MI_SPECTRUM_48)).toEqual([
+      "Loading an HT-1080Z tape requires the HT-1080Z; the current machine is ZX Spectrum 48K."
+    ]);
+    expect(await validateWith(text, MI_SPECTRUM_48)).toEqual([
+      expect.stringMatching(/^The file to load must be a \.tap or \.tzx tape/)
+    ]);
+    expect(await validateWith(tokenised, "ht1080z")).toEqual([]);
+    // --- On the HT a text .bas reaches the reader, which says why it is not a tape
+    const { context } = contextFor("ht1080z", text);
+    const result = await new TapeLoadCommand().execute(context, { file: "/p/prog.bas" } as any);
+    expect(result.success).toBe(false);
+    expect(result.finalMessage).toMatch(/is BASIC source text, not a tokenised HT-1080Z program/);
+  });
+
   it("validates its arguments", async () => {
     expect(await validate({ file: "/p/a.tap" })).toEqual([]);
     expect(await validate({ file: "" })).toEqual(["The tape file path cannot be empty."]);
     expect(await validate({ file: "/p/a.nex" })).toEqual([
-      "The file to load must be a .tap or .tzx tape, or a ZX80/ZX81 .p, .81, .o or .80 program."
+      "The file to load must be a .tap or .tzx tape, a ZX80/ZX81 .p, .81, .o or .80 program, or an HT-1080Z .cas, .cmd or .bas tape."
     ]);
     expect(await validate({ file: "/p/a.tap", "-r": true, "-d": true })).toEqual([
-      "Use only one of -r and -d."
+      "Use only one of -r, -d and -e."
     ]);
+    expect(await validate({ file: "/p/a.tap", "-e": true })).toEqual([
+      "-e stops at the start address of an HT-1080Z machine-code tape (.cas or .cmd); this file is not one."
+    ]);
+  });
+
+  it("-e stops a machine-code tape at its start address with a one-shot session breakpoint", async () => {
+    const galaxy = new Uint8Array(readFileSync(join(__dirname, "../testfiles/ht1080z/galaxy.cas")));
+    const { context, startTapeLoad } = contextFor("ht1080z", galaxy);
+    const setBreakpoint = vi.fn().mockResolvedValue(true);
+    context.emuApi.setBreakpoint = setBreakpoint;
+    const result = await new TapeLoadCommand().execute(context, { file: "/p/galaxy.cas", "-e": true } as any);
+    expect(result.success).toBe(true);
+    expect(setBreakpoint).toHaveBeenCalledWith({
+      address: 0x7fb0,
+      exec: true,
+      oneShot: true,
+      runTo: true,
+      owner: { kind: "session" }
+    });
+    // --- Armed before the load starts, which runs under the debugger
+    expect(setBreakpoint.mock.invocationCallOrder[0]).toBeLessThan(startTapeLoad.mock.invocationCallOrder[0]);
+    expect(startTapeLoad).toHaveBeenCalledWith(true);
+  });
+
+  it("-e refuses a BASIC tape, which names no start address", async () => {
+    const amoeba = new Uint8Array(readFileSync(join(__dirname, "../testfiles/ht1080z/amoeba.cas")));
+    const { context, startTapeLoad } = contextFor("ht1080z", amoeba);
+    context.emuApi.setBreakpoint = vi.fn();
+    const result = await new TapeLoadCommand().execute(context, { file: "/p/amoeba.cas", "-e": true } as any);
+    expect(result.success).toBe(false);
+    expect(result.finalMessage).toMatch(/holds a BASIC program, which has no start address/);
+    expect(context.emuApi.setBreakpoint).not.toHaveBeenCalled();
+    expect(startTapeLoad).not.toHaveBeenCalled();
   });
 
   it("refuses the ZX Spectrum Next and says why", async () => {

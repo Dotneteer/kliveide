@@ -90,6 +90,9 @@ describe("klive run: inputs and outputs", () => {
     expect(inputKindOf("a.P", false)).toBe("zxprogram");
     expect(inputKindOf("a.81", false)).toBe("zxprogram");
     expect(inputKindOf("a.o", false)).toBe("zxprogram");
+    expect(inputKindOf("a.CAS", false)).toBe("httape");
+    expect(inputKindOf("a.cmd", false)).toBe("httape");
+    expect(inputKindOf("a.bas", false)).toBe("httape");
     expect(inputKindOf("a.bin", false)).toBeUndefined();
   });
 
@@ -114,7 +117,7 @@ describe("klive run: inputs and outputs", () => {
   });
 
   it("runs the Spectrums, the Next and the ZX80/81 headless, and names the others", () => {
-    expect(HEADLESS_MACHINES).toEqual(["sp48", "sp128", "spp3e", "zxnext", "zx80", "zx81"]);
+    expect(HEADLESS_MACHINES).toEqual(["sp48", "sp128", "spp3e", "zxnext", "zx80", "zx81", "ht1080z"]);
     expect(artifactNameOf("zx81")).toBe("zx8081.wasm");
     expect(artifactNameOf("zx80")).toBe("zx8081.wasm");
     expect(headlessUnsupportedMessage("zx81")).toBeUndefined();

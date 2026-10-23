@@ -182,8 +182,9 @@ klive run [<project-dir> | <file>] [<options>]
 | `.kls` | Loads a Klive state file as the IDE does, on the machine it was saved on |
 | `.nex` | Starts the file on a ZX Spectrum Next without NextZXOS: banks, paging, border, SP and PC as the format promises, no loading screen. Klive says what such a start leaves out. |
 | `.p`, `.81`, `.o`, `.80` | Loads the ZX81 (or ZX80) program and lets it `RUN` |
+| `.cas`, `.cmd`, `.bas` | Starts an HT-1080Z, loads the tape with `CLOAD` (or `SYSTEM`) and runs it |
 
-`--machine <id>[:<model>]` picks the machine: `sp48`, `sp128`, `spp3e`, `zxnext`, `zx80` or `zx81`. A
+`--machine <id>[:<model>]` picks the machine: `sp48`, `sp128`, `spp3e`, `zxnext`, `zx80`, `zx81` or `ht1080z`. A
 project's own machine, the file's machine, or the 48K for a tape is the default. `--rom`,
 `--sjasmplus` and `--use-ide-settings` work as for `klive test`.
 

@@ -982,12 +982,12 @@ z88-snapshot "snapshots/game.z88" -a
 This command puts a `.tap` or `.tzx` file into the ZX Spectrum's tape deck and, optionally, starts it loading.
 
 ```
-tape-load <tape-file> [-r | -d]
+tape-load <tape-file> [-r | -d | -e]
 ```
 
 Available aliases: `tapeload`
 
-With no option, the tape is only inserted, as **Machine | Tape | Insert Tape...** does; inserting the tape already in the deck rewinds it. `-r` then resets the machine and starts the tape loading: it types `LOAD ""` on a 48K and chooses the Tape Loader (Loader on a +2A/+3) from a 128K's start-up menu. `-d` does the same with your breakpoints armed. A relative path is taken from the project folder.
+With no option, the tape is only inserted, as **Machine | Tape | Insert Tape...** does; inserting the tape already in the deck rewinds it. `-r` then resets the machine and starts the tape loading: it types `LOAD ""` on a 48K and chooses the Tape Loader (Loader on a +2A/+3) from a 128K's start-up menu. `-d` does the same with your breakpoints armed. `-e` loads an HT-1080Z machine-code tape (a `SYSTEM` `.cas` or a `.cmd`) under the debugger and stops at the program's start address, with a one-time breakpoint that is not saved with the project. A relative path is taken from the project folder.
 
 The command works on the ZX Spectrum 48K, 128K and +2/+3 only. It is what the tape viewer's buttons and the Explorer's context menu on a tape file run; see [Loading from Tape](./getting-started/tapes).
 

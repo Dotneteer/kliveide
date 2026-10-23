@@ -3,7 +3,8 @@ import classnames from "classnames";
 import type { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import type { IDocumentHubService } from "@renderer/abstractions/IDocumentHubService";
 import { TAPE_BLOCK_VIEWER } from "@common/state/common-ids";
-import { ZxSpectrumChars } from "@common/machines/char-codes";
+import { ZxSpectrumChars, ht1080zCharsFor, type Ht1080zCharSetId } from "@common/machines/char-codes";
+import { HT1080Z_PROGRAM_START } from "@common/ht1080z/codePlacement";
 import { SPECTRUM_48_COLORS } from "@emu/machines/spectrum-colors";
 import { FullPanel } from "@renderer/controls/layout/Panels";
 import { EmptyState, PanelHeader } from "@renderer/controls/data";
@@ -20,6 +21,7 @@ import basicStyles from "../BasicPanel.module.scss";
 import { basicListingText, decodeBasicProgram } from "../basicListing";
 import { createScrPixelData } from "../Next/ScrFileViewerPanel";
 import { decodeZx8081Program } from "../zx8081BasicListing";
+import { decodeHt1080zProgram } from "../ht1080zBasicListing";
 import { zx81DisplayRows, ZX81_PROGRAM_START } from "../PFile/pFileView";
 import { ZX80_PROGRAM_START } from "../PFile/oFileView";
 import { Zx81ScreenView } from "../PFile/Zx81ScreenView";
@@ -37,12 +39,14 @@ import { useT } from "@common/i18n/useT";
  * The ZX81 `.P` viewer pops its program and display file out here too (`format: "zx81"`): the same
  * document, with the ZX81's detokenizer (`zx8081BasicListing.ts`) and its character-set picture. A
  * ZX80 `.O` file's program comes as `format: "zx80"`, listed by the 4K ROM's rules (it has no screen).
+ * An HT-1080Z program (`format: "ht1080z"`, from the HT tape viewer) is listed at 42E9h by Level II's
+ * rules, in the character set the viewer showed it in.
  *
  * Not restored at startup: like a memory dump, it is not a project file.
  */
 
 /** Whose bytes these are: a Spectrum tape block (the default), or a part of a ZX81 `.P` or ZX80 `.O` file */
-export type TapeBlockFormat = "spectrum" | "zx81" | "zx80";
+export type TapeBlockFormat = "spectrum" | "zx81" | "zx80" | "ht1080z";
 
 export type TapeBlockViewState = {
   view: "basic" | "screen";
@@ -52,6 +56,8 @@ export type TapeBlockViewState = {
   autostart?: number;
   showCodes?: boolean;
   showSpectrumFont?: boolean;
+  /** An HT-1080Z program: the model whose characters it is listed in */
+  htCharSet?: Ht1080zCharSetId;
 };
 
 type OpenOptions = {
@@ -62,12 +68,13 @@ type OpenOptions = {
   basicEnd?: number;
   autostart?: number;
   format?: TapeBlockFormat;
+  htCharSet?: Ht1080zCharSetId;
 };
 
 /** Opens (or brings forward) a block's BASIC listing or screen */
 export async function openTapeBlockView(
   hub: IDocumentHubService,
-  { id, title, bytes, view, basicEnd, autostart, format }: OpenOptions
+  { id, title, bytes, view, basicEnd, autostart, format, htCharSet }: OpenOptions
 ): Promise<void> {
   if (hub.isOpen(id)) {
     await hub.setActiveDocument(id);
@@ -82,7 +89,7 @@ export async function openTapeBlockView(
       contents: bytes,
       isReadOnly: true
     },
-    { view, basicEnd, autostart, format, showSpectrumFont: true } satisfies TapeBlockViewState,
+    { view, basicEnd, autostart, format, htCharSet, showSpectrumFont: true } satisfies TapeBlockViewState,
     false
   );
 }
@@ -125,16 +132,27 @@ const TapeBasicListing = ({
   const [showSpectrumFont, setShowSpectrumFont] = useState(viewState?.showSpectrumFont ?? true);
   const end = Math.min(viewState?.basicEnd ?? bytes.length, bytes.length);
   const format = viewState?.format ?? "spectrum";
-  const zx81 = format !== "spectrum";
+  const zx81 = format === "zx81" || format === "zx80";
+  const htCharSet = viewState?.htCharSet ?? "s2";
 
   const listing = useMemo(() => {
     if (format === "spectrum") return decodeBasicProgram(bytes, 0, end, { charSet: ZxSpectrumChars, showCodes });
+    if (format === "ht1080z") {
+      // --- Relinked at 42E9h by the viewer, so it lists where CLOAD puts it
+      const memory = new Uint8Array(0x10000);
+      memory.set(bytes.subarray(0, Math.min(end, 0x10000 - HT1080Z_PROGRAM_START)), HT1080Z_PROGRAM_START);
+      return decodeHt1080zProgram(memory, HT1080Z_PROGRAM_START, HT1080Z_PROGRAM_START + end, {
+        charSet: ht1080zCharsFor(htCharSet),
+        backtickPairs: htCharSet === "s64",
+        showCodes
+      });
+    }
     // --- A ZX81's or ZX80's lines are read where the machine keeps them, after the system variables
     const start = format === "zx80" ? ZX80_PROGRAM_START : ZX81_PROGRAM_START;
     const memory = new Uint8Array(0x10000);
     memory.set(bytes.subarray(0, Math.min(end, 0x10000 - start)), start);
     return decodeZx8081Program(memory, start, start + end, format, { showCodes });
-  }, [bytes, end, showCodes, format]);
+  }, [bytes, end, showCodes, format, htCharSet]);
   const lines = useMemo(() => listing.lines.filter((l) => l.spans.length > 0), [listing]);
 
   useEffect(() => {
@@ -164,13 +182,15 @@ const TapeBasicListing = ({
           title={t("panels.tape.block.showCodesTitle")}
           clicked={setShowCodes}
         />
-        <ToolbarSeparator small={true} />
+        {format !== "ht1080z" && <ToolbarSeparator small={true} />}
+        {format !== "ht1080z" && (
         <LabeledSwitch
           value={showSpectrumFont}
           label={zx81 ? t("panels.tape.block.sinclairFont") : t("panels.tape.block.spectrumFont")}
           title={zx81 ? t("panels.tape.block.sinclairFontTitle") : t("panels.tape.block.spectrumFontTitle")}
           clicked={setShowSpectrumFont}
         />
+        )}
         <ToolbarSeparator small={true} />
         <span>
           {viewState?.autostart !== undefined
@@ -191,7 +211,7 @@ const TapeBasicListing = ({
                 [basicStyles.last]: idx === lines.length - 1
               })}
             >
-              <BasicLineDisplay spans={lines[idx]?.spans} showSpectrumFont={showSpectrumFont} />
+              <BasicLineDisplay spans={lines[idx]?.spans} showSpectrumFont={format !== "ht1080z" && showSpectrumFont} />
             </div>
           )}
         />

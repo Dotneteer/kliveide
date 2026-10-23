@@ -600,6 +600,21 @@ pixel buffer stays exactly as the core made it, and screenshots, recordings and 
 tests keep comparing the machine's real picture. Their greys are raw levels, not tokens, for the same
 reason as the surround above: they belong to the emulated picture, in both themes alike.
 
+**A machine's pixels are scaled exactly when they can be, and evenly when they cannot.** Square
+pixels, and an aspect that is a whole fraction or multiple of square (the Timex's and the Next's
+0.5), land on whole canvas pixels at the zoom steps, so the emulator canvas scales them
+nearest-neighbour (`image-rendering: pixelated`) and never smooths them. Any other aspect (the
+HT-1080Z's dots are 0.658 of their height) cannot: nearest-neighbour then makes some dot columns a
+pixel wider than others, and letters look uneven. Those pictures are drawn sharp-bilinear
+(`features/emulator/sharpScale.ts`): a whole nearest-neighbour step, then the remaining fraction
+smoothed. An axis whose scale is already whole is not softened, since that step maps it 1:1. **The
+smoothing needs device pixels.** Smoothed onto a CSS-pixel canvas that the display then doubles, a
+1.3-pixel dot became a stroke that flickered between white and grey from one dot to the next. So
+that path alone gives the canvas a `devicePixelRatio`-times finer backing store, with its CSS size
+pinned (`canvasPixelScale` in `useEmulatorScreen`). Nothing reads the canvas's attribute size except
+the drawing code: overlays and the mouse use its CSS box. Whether a picture takes this path is
+decided by its aspect alone, so fractional zoom steps of a square-pixel machine are left as they were.
+
 **A user who has learned one control should not have to learn it twice.** The sprite editor's bank
 switch is the sidebar's, deliberately — same two segments, same meaning (*the fill is the bank you
 are looking at, the ring is the bank the machine is drawing with*), same default of following the
@@ -675,7 +690,20 @@ Pick the end by the ground the legend sits on, not by the machine: the ZX80's ke
 (`--device-key-zx80`) with white and amber print, so every hovered legend there - on the key or on
 the case - takes `--accent-on-device-dark`, and a pressed key gets its own tint over its own face
 (`--accent-device-pressed-zx80`), because a tint mixed over the ZX81's white key would read as a
-different key colour, not a pressed one.
+different key colour, not a pressed one. The HT-1080Z's cream keys follow the ZX81: every legend sits
+on the key, so every hover takes `--accent-on-device-light`, and a pressed key gets its own tint
+(`--accent-device-pressed-ht1080z`).
+
+**A device keyboard's colours come from a photo of the machine, not from a drawing or from taste.**
+The HT-1080Z mockup was first drawn dark-on-light-legends because the manual's keyboard drawing is
+black and white; the machine's keys are cream with black legends. Its tokens (`keyHt1080z` and the
+rest of that block in `palette.ts`) are averages sampled from a photo, and the palette comment names
+the photo. A drawing gives geometry and legends; only a photo gives colour.
+
+**Legends a device never had are marked as the emulator's.** The HT-1080Z keyboard's Hungarian
+hints (`--color-keyht1080z-hint`) type characters the extension ROM builds from key combinations;
+the machine printed none of them. They take a colour no printed legend on that keyboard uses (burnt
+orange, dark enough for cream), so nobody mistakes them for the machine's own print.
 
 ## Alignment In The Register Panels
 
@@ -1705,7 +1733,8 @@ before trusting any assertion about it.
   dialog field, with 8px block margins, a 32px button and a `font-size: 0.9em` M1 forbids.
 - **`controls/bankBrowser/`** — `BankBrowser`, the bounded list-and-details browser of a file's banks
   with per-bank pop-out, shared by the NEX viewer (`NexBankBrowser`) and the `.z88` viewer
-  (`Z88SlotBrowser`), and by the tape viewer (`Tape/TapeBlockBrowser`). The shell's stylesheet holds the frame, rows, chips (`BankChip`), facts
+  (`Z88SlotBrowser`), by the tape viewer (`Tape/TapeBlockBrowser`) and by the HT-1080Z tape viewer
+  (`Ht1080zTape/Ht1080zTapeViewerPanel`); `ByteAnatomy` beside it explains a part's bytes. The shell's stylesheet holds the frame, rows, chips (`BankChip`), facts
   (`BankFacts`), sections and group headers; a viewer's own stylesheet holds only what that viewer
   alone shows (the NEX breakpoint chip, content mix, comment, labels). See "A Bank Browser Has One
   Shell".
@@ -2428,6 +2457,14 @@ cartridge) wraps it rather than copying `NexBankBrowser`.
   BASIC listing and no byte preview (the author's call): a program shows its line count and a
   "Pop out the listing" link, code shows nothing of its bytes. A long listing in a side pane is
   neither readable nor scannable; the pop-out has the room and the tools.
+  A summary fact that comes from one part (the HT tape viewer's **Start** address) is that part's
+  link: the value itself in `--accent-text`, underlined on hover, selecting the part and clearing a
+  filter that hides it - not a separate "show" button beside it.
+  The one exception is a file whose whole program is small by nature: the HT-1080Z tape viewer lists
+  a Level II program (a few hundred bytes) in the details in full, with the pop-out link under it
+  (the author's approved mockup). The details pane is its scroller: a listing with a scroller of its
+  own inside a scrolling pane was a third nested scroller, and the author found it awkward. A
+  per-line `.bas` shows the selected line only.
 
 - **The shell owns everything a user learns once**: the list's keyboard, double-click and the row's
   pop-out icon, the details' split "Pop out · *last view*" button, the chips, the fact list and the
@@ -2451,9 +2488,17 @@ cartridge) wraps it rather than copying `NexBankBrowser`.
   `sticky`; round corners with `overflow: clip`**, which makes no scroll container.
 - **A scroll area is a `ScrollViewer`, never bare `overflow: auto`.** The platform's scrollbar is an
   unthemed white strip in the dark tone; nothing in the app styles `::-webkit-scrollbar`.
-- **A nested scroller must not hand the wheel on**: `overscroll-behavior: contain` on its overlay
-  viewport (`[data-overlayscrollbars-viewport]`, the element that actually scrolls), or reaching the
-  end of the list scrolls the viewer and the heading goes with it.
+- **A viewer with content above its browser fills, it does not scroll** (`fill`, the TAP and HT tape
+  viewers): the browser is as tall as the space left below the summary and graphics, so the viewer
+  has nothing to scroll and the list and the details are the only scrollers. Bounding it to the whole
+  viewport instead gave the viewer a page scrollbar on top of the panes' two, and "contain" (below)
+  then left the wheel dead over a details pane too short to scroll - the author's complaint.
+- **A nested scroller must not hand the wheel on** where the viewer still scrolls (NEX, Z88):
+  `overscroll-behavior: contain` on its overlay viewport (`[data-overlayscrollbars-viewport]`, the
+  element that actually scrolls), or reaching the end of the list scrolls the viewer and the heading
+  goes with it. A filling browser sets it back to `auto`.
+- **The details' title and pop-out button stay pinned** (`.detailsHead`, sticky, on the pane's
+  surface, reaching over its top padding): a long part must not scroll its one action away.
 - **When probing a bounded list over CDP, aim the wheel at the pane, not the list.** Inside a
   scroller the listbox is the full-height *content*; its centre can be off screen, and the wheel then
   lands on whatever is there — which read as "the viewer scrolls" when the list was never touched.
@@ -2476,6 +2521,15 @@ bar whose segments are as wide as their share of a whole. What carries over to a
   segment that is already accent.
 - **It is not a second control.** No tab stop and `aria-hidden`: the list's keyboard moves the
   selection and the strip follows, so a screen reader is not told the list twice.
+- **One layout, one drawing**: `timelineLayout` (in `Tape/tapeView.ts`) and `Tape/TimelineStrip.tsx`
+  are shared by the TAP/TZX timeline, the HT-1080Z tape timeline and the HT `.bas` line strip (lines
+  by size, all in the BASIC tone, told apart by the hairline). A new proportional strip feeds them
+  items with a tone; it does not copy the minimum-width arithmetic.
+- **A memory map is the same idea over addresses** (`Ht1080zTape/MemoryMapStrip.tsx`): the machine's
+  zones are the ground, in neutral surfaces graded from the most solid (ROM, `--surface-active`) to
+  the least (the 48K-only RAM, `--surface-panel`), aliased as `--bgcolor-memory-map-*`; what loads
+  onto them takes the timeline's code/BASIC segment colours and selection ring, so a part is one
+  colour in both graphics. Zone labels are `--data-secondary`, and only the big zones carry one.
 
 ### A categorical bar that already spends both accents: fixed hues, named by its tooltip
 
@@ -2507,8 +2561,8 @@ text cannot see this; only the running app showed it.
 
 ## An Explainer Links Bytes To Meanings With One Highlight
 
-The tape viewer's header explainer (`Tape/TapeHeaderBytes.tsx`) shows raw bytes above the fields
-they form. What carries over to any "these bytes mean this" view:
+The tape viewer's header explainer (`Tape/TapeHeaderBytes.tsx`, drawn by the shared `ByteAnatomy`)
+shows raw bytes above the fields they form. What carries over to any "these bytes mean this" view:
 
 - **One highlight, used in both places**: the field being explained takes `--accent-subtle` with an
   `--accent-border` edge and `--accent-text` for its bytes and its value — in the byte strip and in
@@ -2524,6 +2578,14 @@ they form. What carries over to any "these bytes mean this" view:
   pane keeps a ten-byte name or a two-byte word whole.
 - **Do not show the same bytes twice**: a view that explains every byte drops the generic hex preview
   and anything that only applies to a payload ("List at", "n of data").
+- **One component, `controls/bankBrowser/ByteAnatomy.tsx`**, for the TAP header and the HT-1080Z
+  tape viewer's records and lines. A long data run shows its first eight bytes and a dashed-quiet
+  `…` (the bytes are in the memory pop-out); text values are quoted `‹ ›` in `--data-secondary`, so
+  spaces at their ends show; the explanation box appears only when the fields carry a meaning.
+- **A keyword token's byte takes the secondary accent** (`--color-byte-anatomy-token`), not the
+  keyword's hue: the highlight of the field being explained is the primary accent, and a token in
+  that hue reads as a second highlight. In a listing, where nothing is highlighted, keywords keep the
+  editor's `--syntax-keyword` and strings `--syntax-string` (`--color-ht-listing-*`).
 
 ## A Listing Pane Pads Its Rows, Not Its Scroller
 
@@ -2955,6 +3017,11 @@ drift. Change a neutral or the default accent in the app, and the site changes w
 - **The language menus size to their longest name** (`width: max-content`, a 16rem minimum, rows
   that never wrap), in the landing header and the docs navbar alike: a fixed narrow width wrapped
   "Português (Portugal)" and its code onto two lines.
+- **A hand-drawn figure sits in a quiet panel with its caption inside** (`custom.css`,
+  `article figure:not([class])`): panel background, thin border, generous margin above and below,
+  and the caption under a divider in smaller, muted italics. A caption that floats loose under the
+  drawing reads as the next paragraph. The rule skips figures with a class, so `<Shot>` screenshots
+  keep their own label-above look.
 - **A screenshot's callouts are HTML, never pixels:** `<Shot markers>` draws numbered badges from
   the harness's sidecar, and the numbered list under the figure is styled like the badges, so the
   text translates with the page.

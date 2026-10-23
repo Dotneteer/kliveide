@@ -52,7 +52,7 @@ import { CommonAsmParser } from "@main/compiler-common/common-asm-parser";
 /**
  * The valid Spectrum model values
  */
-const VALID_MODELS = ["SPECTRUM48", "SPECTRUM128", "SPECTRUMP3", "NEXT", "ZX80", "ZX81"];
+const VALID_MODELS = ["SPECTRUM48", "SPECTRUM128", "SPECTRUMP3", "NEXT", "ZX80", "ZX81", "HT1080Z"];
 
 /**
  * This class provides the functionality of the Z80 Assembler
@@ -100,7 +100,7 @@ export class Z80Assembler extends CommonAssembler<Z80Node, Z80TokenType> {
    * @param modelId The model ID to check
    */
   protected modelSupportsBankPragma(modelId: number): ErrorCodes | null {
-    // --- The 128K, +3 and Next page banks; the 48K and the ZX80/ZX81 have none
+    // --- The 128K, +3 and Next page banks; the 48K, the ZX80/ZX81 and the HT-1080Z have none
     if (
       modelId === SpectrumModelType.Spectrum128 ||
       modelId === SpectrumModelType.SpectrumP3 ||

@@ -71,7 +71,7 @@ export const DocumentsHeader = () => {
   const selectedIsBuildRoot = activeNode?.projectPath
     ? buildRoots.indexOf(activeNode.projectPath) >= 0
     : false;
-  const editorInfo = getFileTypeEntry(activeNode?.name, store);
+  const editorInfo = getFileTypeEntry(activeNode?.fullPath ?? activeNode?.name, store);
 
   // --- Ensures that the active document tab is visible in its full size
   const ensureTabVisible = useCallback(() => {

@@ -36,10 +36,12 @@ import {
   MI_ZX80,
   MI_ZX81,
   MI_TIMEX,
-  MI_SCORPION
+  MI_SCORPION,
+  MI_HT1080Z,
+  MC_HT_MODEL
 } from "./constants";
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_DOCK, MEDIA_TAPE } from "@common/structs/project-const";
-import { Zx80Chars, Zx81Chars, ZxNextChars, ZxSpectrumChars } from "./char-codes";
+import { Ht1080zChars, type Ht1080zCharSetId, ht1080zCharsFor, Zx80Chars, Zx81Chars, ZxNextChars, ZxSpectrumChars } from "./char-codes";
 import { DisassemblyOptions, MemorySection } from "@renderer/appIde/disassemblers/common-types";
 import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z80-disassembler";
 import { ZxSpectrum48CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/zx-spectrum-48-disassembler";
@@ -48,6 +50,7 @@ import { ZxSpectrumNextCustomDisassembler } from "@renderer/appIde/disassemblers
 import { Z88CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z88-custom.disassembler";
 import { Zx80CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/zx80-disassembler";
 import { Zx81CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/zx81-disassembler";
+import { Ht1080zCustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/ht1080z-disassembler";
 import {
   plus3SyntaxDecoder,
   ZxSpectrum128EditorCustomDisassembler
@@ -59,6 +62,7 @@ import {
   type CustomDisassemblerFactory
 } from "@renderer/appIde/disassemblers/z80-disassembler/rom-gated-disassembler";
 import { ZX80_MODELS, ZX81_MODELS } from "@emu/machines/zx8081/zx8081MachineInfo";
+import { HT1080Z_MODELS } from "@emu/machines/ht1080z/ht1080zMachineInfo";
 import { SCORPION_MODELS, SP128_MODELS } from "@emu/machines/zxSpectrum128/sp128Timings";
 import { P3_MODELS } from "@emu/machines/zxSpectrumP3e/p3RomSets";
 import { TIMEX_MODELS } from "@emu/machines/timex/timexModels";
@@ -625,6 +629,48 @@ export const machineRegistry: MachineInfo[] = [
         options?: DisassemblyOptions
       ) => new Z80Disassembler(memorySections, memoryContents, partitionLabels, options),
       [CT_CUSTOM_DISASSEMBLER]: zx80CustomDisassembler,
+      [CT_DISASSEMBLER_VIEW]: {
+        showRamOption: false,
+        showScreenOption: false
+      }
+    }
+  },
+  {
+    // --- `.plans/HT1080Z_PLAN.md`: Series I, Series II and the /64 (D1), Series I/II also with 48K.
+    machineId: MI_HT1080Z,
+    displayName: "HT-1080Z",
+    charSet: Ht1080zChars,
+    features: {
+      [MF_Z80]: true,
+      // --- The AY-3-8910 at ports $1E/$1F, on the PSG panel (§10)
+      [MF_PSG]: true,
+      // --- .cas/.cmd/.bas tapes, real time or fast load (§9)
+      [MF_TAPE_SUPPORT]: true,
+      // --- Built code goes into RAM and starts, as SYSTEM would (`.plans/HT1080Z_CODE_INJECTION_PLAN.md`)
+      [MF_INJECT_SUPPORT]: true,
+      [MF_ALLOW_SCAN_LINES]: false,
+      // --- The shared execution-history recorder (EXECUTION_HISTORY_ALL_CORES_PLAN)
+      [MF_EXEC_HISTORY]: true,
+      // --- Passes the journal-replay determinism test (REVERSE_DEBUGGING_PLAN D19)
+      [MF_REVERSE_DEBUG]: true,
+      // --- Code coverage and the heat map (`.plans/CODE_COVERAGE_AND_HEAT_MAP_PLAN.md` D15)
+      [MF_PROFILE]: true
+    },
+    // --- Each model shows its own character ROM's glyphs in the memory panel and the BASIC listing
+    models: HT1080Z_MODELS.map((model) => ({
+      ...model,
+      charSet: ht1080zCharsFor(model.config[MC_HT_MODEL] as Ht1080zCharSetId)
+    })),
+    mediaIds: [MEDIA_TAPE],
+    toolInfo: {
+      [CT_DISASSEMBLER]: (
+        memorySections: MemorySection[],
+        memoryContents: Uint8Array,
+        partitionLabels?: string[],
+        options?: DisassemblyOptions
+      ) => new Z80Disassembler(memorySections, memoryContents, partitionLabels, options),
+      // --- The ROM is never paged out: the decoder gates itself on the BASIC ROM's addresses
+      [CT_CUSTOM_DISASSEMBLER]: () => new Ht1080zCustomDisassembler(),
       [CT_DISASSEMBLER_VIEW]: {
         showRamOption: false,
         showScreenOption: false

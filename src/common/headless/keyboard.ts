@@ -130,13 +130,13 @@ export function typeSpectrumChords(
   }
 }
 
-/** The part of a ZX80/ZX81 that typing needs */
+/** The part of a ZX80/ZX81 or an HT-1080Z that typing needs */
 export type QueueTypingMachine = FrameMachine & {
   typeText(text: string, delayFrames?: number): void;
   getKeyQueueLength(): number;
 };
 
-/** Does the machine type through its own key queue (the ZX80/ZX81)? */
+/** Does the machine type through its own key queue (the ZX80/ZX81, the HT-1080Z)? */
 export function typesThroughQueue(machine: unknown): machine is QueueTypingMachine {
   return typeof (machine as QueueTypingMachine).typeText === "function";
 }

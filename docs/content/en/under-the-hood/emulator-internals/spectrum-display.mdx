@@ -1,0 +1,739 @@
+---
+description: "How the ZX Spectrum's ULA draws the picture: the frame and its timing, the bitmap and the attributes, the four reads behind every sixteen pixels, why the dynamic RAM's row and column addressing gave the screen memory its famous scrambled order, how the CPU and the ULA share the memory, and how Klive's emulator follows the same beam."
+---
+
+import { Callout } from 'nextra/components'
+
+# ZX Spectrum: How the Screen Is Drawn
+
+Ask anyone who has written machine code for the ZX Spectrum about its screen, and sooner or later
+they will mention the strange order of its memory. The first 32 bytes are the top line of pixels, as
+you would expect. The next 32 are not the second line but the **ninth**. The second line starts 256
+bytes further on. Load a picture from tape and you can watch it happen: the image arrives as a
+venetian blind of thin stripes, one third of the screen at a time.
+
+This looks like a quirk, or a mistake. It is neither. It falls straight out of how the Spectrum's
+custom chip, the **ULA**, reads the screen from memory, and how the memory chips of 1982 liked to be
+read. This article explains how the ULA draws the picture, and then shows step by step why that
+design gave the screen memory exactly this shape.
+
+You need to know the Z80 and have some engineering basics. You do not need to know how a television
+works: [How a Television Draws a Picture](/en/under-the-hood/emulator-internals/crt-display/)
+explains the beam, the scan lines, the sync pulses and how colour travels to the screen, and this
+article builds on it. If you have read the
+[ZX81 display article](/en/under-the-hood/emulator-internals/zx81-display/), you will find the
+Spectrum the opposite of its little brother: there, the CPU draws every dot; here, the CPU hardly
+takes part at all.
+
+### How this article is organised
+
+- **The frame** ([Part 1](#part-1-the-frame)): the timing the ULA follows, line by line and frame by
+  frame.
+- **The screen in memory** ([Part 2](#part-2-the-screen-in-memory)): the bitmap, the attributes, and
+  the famous order.
+- **How the ULA draws a line** ([Part 3](#part-3-how-the-ula-draws-a-line)): the reads behind every
+  sixteen pixels, the shift register, colours, FLASH and the border.
+- **Why the memory looks scrambled** ([Part 4](#part-4-why-the-memory-looks-scrambled)): dynamic
+  RAM, rows and columns, and the one requirement that fixes the order of the address bits. If you
+  read only one part, read this one.
+- **Sharing the memory** ([Part 5](#part-5-sharing-the-memory)): contention, the floating bus and
+  the snow.
+- **The emulator** ([Part 6](#part-6-how-klive-follows-the-beam)): how Klive reproduces all of this,
+  and where to read its code.
+
+<Callout type="info">
+The numbers in this article are those of the **48K Spectrum**, the original design. The 128K models
+and their descendants work the same way with slightly different timings;
+[Part 6](#part-6-how-klive-follows-the-beam) lists them. Everything below is also how Klive emulates
+the machine: its Spectrum cores draw the picture T-state by T-state, as the ULA does.
+</Callout>
+
+## Part 1: The frame
+
+The ULA (Uncommitted Logic Array) is Sinclair's custom chip, the Spectrum's only "video chip". It
+generates the sync pulses, reads the screen from memory, turns bytes into coloured dots and sends them
+to the television, all by itself. The Z80 only writes the screen memory; it does not need to know
+where the beam is. (Except when it wants to, as the rest of this article shows.)
+
+### Three numbers that make it fit
+
+- The ULA runs on a **7 MHz** clock and sends out one dot per clock: **2 dots per T-state** of the
+  Z80, which runs at half that speed, **3.5 MHz**.
+- One scan line is **224 T-states**: 224 × 0.286 µs = 64 µs, exactly one PAL line.
+- A character cell is 8 dots wide, so one cell takes **4 T-states**: the 256 dots of a screen line
+  take 128.
+
+### One line and one frame
+
+Of the 224 T-states of a line, 128 draw the **display area**, the 256 × 192 dots that show the screen
+memory. 24 draw the right **border**, 48 are spent on the horizontal blanking and the HSYNC pulse,
+and the last 24 draw the left border of the next line. The border is the frame of a single colour
+around the display area; on the Spectrum it is wide, 48 dots on either side. (Spectrum BASIC uses
+the word PAPER for something else: the background colour of a character cell, which Part 2 explains.
+This article never uses it for the area.)
+
+A frame is **312 lines**: 16 lines of vertical sync and blanking, 48 lines of top border, the 192
+lines of the display area, and 56 lines of bottom border, the last few of which fall into the
+blanking again. That is 312 × 224 = **69,888 T-states** per frame, 19.97 ms, or 50.08 frames a second.
+
+<figure>
+<svg viewBox="0 0 700 390" role="img" aria-label="The 48K Spectrum frame: 312 lines of 224 T-states. Each line has 24 T-states of left border, 128 of display area, 24 of right border and 48 of horizontal blanking. The frame has 16 lines of vertical blanking, 48 lines of top border, 192 lines of display area and 56 lines of bottom border. The interrupt marks the start of the frame." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
+  <rect x="40" y="40" width="448" height="312" fill="currentColor" fillOpacity="0.04" stroke="currentColor" strokeOpacity="0.5" />
+  <rect x="40" y="40" width="448" height="16" fill="currentColor" fillOpacity="0.18" />
+  <rect x="40" y="344" width="448" height="8" fill="currentColor" fillOpacity="0.18" />
+  <rect x="392" y="56" width="96" height="288" fill="currentColor" fillOpacity="0.18" />
+  <rect x="40" y="56" width="352" height="288" fill="#e8912d" fillOpacity="0.22" />
+  <rect x="88" y="104" width="256" height="192" fill="#3b82f6" fillOpacity="0.25" stroke="#3b82f6" strokeWidth="1.2" />
+  <text x="216" y="196" textAnchor="middle" fill="currentColor" fontSize="14" fontWeight="600">display area</text>
+  <text x="216" y="214" textAnchor="middle" fill="currentColor" fontSize="12">256 × 192 dots, 128 T-states a line</text>
+  <text x="216" y="84" textAnchor="middle" fill="currentColor" fontSize="12">top border: 48 lines</text>
+  <text x="216" y="324" textAnchor="middle" fill="currentColor" fontSize="12">bottom border: 56 lines</text>
+  <text x="64" y="204" textAnchor="middle" fill="currentColor" fontSize="11" transform="rotate(-90 64 200)">left: 24 T</text>
+  <text x="368" y="204" textAnchor="middle" fill="currentColor" fontSize="11" transform="rotate(-90 368 200)">right: 24 T</text>
+  <text x="440" y="196" textAnchor="middle" fill="currentColor" fontSize="12">blanking</text>
+  <text x="440" y="212" textAnchor="middle" fill="currentColor" fontSize="12">and HSYNC</text>
+  <text x="440" y="228" textAnchor="middle" fill="currentColor" fontSize="12">48 T</text>
+  <text x="264" y="52" textAnchor="middle" fill="currentColor" fontSize="11">vertical sync and blanking: 16 lines</text>
+  <line x1="40" y1="28" x2="488" y2="28" stroke="currentColor" strokeWidth="1" />
+  <line x1="40" y1="24" x2="40" y2="32" stroke="currentColor" strokeWidth="1" />
+  <line x1="488" y1="24" x2="488" y2="32" stroke="currentColor" strokeWidth="1" />
+  <text x="264" y="20" textAnchor="middle" fill="currentColor" fontSize="12">one line: 224 T-states = 64 µs</text>
+  <line x1="500" y1="40" x2="500" y2="352" stroke="currentColor" strokeWidth="1" />
+  <line x1="496" y1="40" x2="504" y2="40" stroke="currentColor" strokeWidth="1" />
+  <line x1="496" y1="352" x2="504" y2="352" stroke="currentColor" strokeWidth="1" />
+  <text x="512" y="190" fill="currentColor" fontSize="12">one frame:</text>
+  <text x="512" y="206" fill="currentColor" fontSize="12">312 lines,</text>
+  <text x="512" y="222" fill="currentColor" fontSize="12">69,888 T-states</text>
+  <path d="M600,64 L600,44 L492,44" fill="none" stroke="#e5484d" strokeWidth="1.5" />
+  <text x="606" y="68" fill="#e5484d" fontSize="12">interrupt:</text>
+  <text x="606" y="84" fill="#e5484d" fontSize="12">a new frame</text>
+</svg>
+<figcaption>The 48K frame, drawn to scale: one unit across is one dot (half a T-state), one unit down is one line. The grey areas are never seen; the orange area is the border.</figcaption>
+</figure>
+
+At the start of every frame the ULA pulls the Z80's **INT** line for 32 T-states. This is the
+Spectrum's only regular interrupt, and it is a frame interrupt: it tells the program that the beam
+is at the top of the frame, well above the display area. Its first line begins **14,336 T-states**
+(64 lines) later. A program that waits for the interrupt (`HALT`) and then updates the screen has
+those 64 lines of head start before the beam catches up with it, which is how flicker-free games
+are written.
+
+## Part 2: The screen in memory
+
+The screen occupies **6,912 bytes** at the bottom of the RAM, from `$4000`:
+
+| Area | Addresses | Size | What it holds |
+|---|---|---|---|
+| **Bitmap** | `$4000`–`$57FF` | 6,144 bytes | One bit per dot, 256 × 192: 1 is *ink*, 0 is *paper* |
+| **Attributes** | `$5800`–`$5AFF` | 768 bytes | One byte per 8 × 8 character cell, 32 × 24 cells: the colours |
+
+Each bitmap byte holds eight dots side by side, the leftmost in bit 7. The bitmap says only whether a
+dot is ink or paper. *Which* colours ink and paper are comes from the cell's **attribute** byte:
+
+```text
+  bit:   7       6        5  4  3      2  1  0
+       FLASH   BRIGHT     PAPER         INK
+```
+
+INK and PAPER are colours 0–7 (black, blue, red, magenta, green, cyan, yellow, white). BRIGHT makes
+both of them brighter, and FLASH swaps them every 16 frames, about three times a second.
+
+Why cells and not a colour for every dot? Memory, and the television. A colour of its own for each
+of the 49,152 dots would take 24K at four bits each, more than the whole RAM of the 16K model, and the
+ULA could not have read it fast enough. And a PAL television blurs colour far more than brightness
+anyway (see [Colour is blurrier than
+brightness](/en/under-the-hood/emulator-internals/crt-display/#colour-is-blurrier-than-brightness)):
+sharp dots of one colour on a ground of another were what the screen could show well. The price is
+the Spectrum's famous **attribute clash**: two sprites of different colours in the same 8 × 8 cell
+have to share its two colours.
+
+### The famous order
+
+The strange order of the bitmap is not a whim or a mistake. It is a hardware trick that keeps the
+ULA fast and cheap: **page-mode reads of the dynamic RAM**. The ULA reads each bitmap byte and the
+attribute of its cell as a quick pair from the same row of the memory chips, and that works only if
+the two addresses share their low bits. That one requirement fixes where every bit of the bitmap
+address goes. [Part 4](#part-4-why-the-memory-looks-scrambled) explains the trick step by step; this
+section shows what it does to the addresses.
+
+The attributes are laid out the way you would expect: 32 bytes for each row of cells, row after row.
+The attribute of the cell in character row *r* and column *c* is at `$5800 + 32 × r + c`.
+
+The bitmap is not. Number the dot lines 0 to 191 from the top, and write the line number *y* as eight
+bits Y7…Y0 and the byte's column (0–31) as five bits X4…X0. The bitmap byte's address is not
+`$4000 + 32 × y + x`. Its bits are shuffled:
+
+<figure>
+<svg viewBox="0 0 700 300" role="img" aria-label="The 16 address bits of a bitmap byte and of its attribute byte. Bitmap: 0 1 0, Y7 Y6, Y2 Y1 Y0, Y5 Y4 Y3, X4 to X0. Attribute: 0 1 0 1 1 0, Y7 Y6, Y5 Y4 Y3, X4 to X0. The low byte is identical in both, so both share the same DRAM row address and differ only in the column address." style={{ width: "100%", maxWidth: "700px", height: "auto" }}>
+  <text x="137" y="44" textAnchor="middle" fill="currentColor" fillOpacity="0.7" fontSize="11">A15</text>
+  <text x="171" y="44" textAnchor="middle" fill="currentColor" fillOpacity="0.7" fontSize="11">A14</text>
+  <text x="205" y="44" textAnchor="middle" fill="currentColor" fillOpacity="0.7" fontSize="11">A13</text>
+  <text x="239" y="44" textAnchor="middle" fill="currentColor" fillOpacity="0.7" fontSize="11">A12</text>
+  <text x="273" y="44" textAnchor="middle" fill="currentColor" fillOpacity="0.7" fontSize="11">A11</text>
+  <text x="307" y="44" textAnchor="middle" fill="currentColor" fillOpacity="0.7" fontSize="11">A10</text>
+  <text x="341" y="44" textAnchor="middle" fill="currentColor" fillOpacity="0.7" fontSize="11">A9</text>
+  <text x="375" y="44" textAnchor="middle" fill="currentColor" fillOpacity="0.7" fontSize="11">A8</text>
+  <text x="409" y="44" textAnchor="middle" fill="currentColor" fillOpacity="0.7" fontSize="11">A7</text>
+  <text x="443" y="44" textAnchor="middle" fill="currentColor" fillOpacity="0.7" fontSize="11">A6</text>
+  <text x="477" y="44" textAnchor="middle" fill="currentColor" fillOpacity="0.7" fontSize="11">A5</text>
+  <text x="511" y="44" textAnchor="middle" fill="currentColor" fillOpacity="0.7" fontSize="11">A4</text>
+  <text x="545" y="44" textAnchor="middle" fill="currentColor" fillOpacity="0.7" fontSize="11">A3</text>
+  <text x="579" y="44" textAnchor="middle" fill="currentColor" fillOpacity="0.7" fontSize="11">A2</text>
+  <text x="613" y="44" textAnchor="middle" fill="currentColor" fillOpacity="0.7" fontSize="11">A1</text>
+  <text x="647" y="44" textAnchor="middle" fill="currentColor" fillOpacity="0.7" fontSize="11">A0</text>
+  <rect x="422" y="60" width="246" height="128" rx="6" fill="#30a46c" fillOpacity="0.08" stroke="#30a46c" strokeWidth="1.2" strokeDasharray="5 4" />
+  <text x="108" y="91" textAnchor="end" fill="currentColor" fontSize="13">bitmap</text>
+  <rect x="121" y="70" width="32" height="32" rx="3" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.4" strokeWidth="1" />
+  <text x="137" y="91" textAnchor="middle" fill="currentColor" fontSize="13" fontWeight="400">0</text>
+  <rect x="155" y="70" width="32" height="32" rx="3" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.4" strokeWidth="1" />
+  <text x="171" y="91" textAnchor="middle" fill="currentColor" fontSize="13" fontWeight="400">1</text>
+  <rect x="189" y="70" width="32" height="32" rx="3" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.4" strokeWidth="1" />
+  <text x="205" y="91" textAnchor="middle" fill="currentColor" fontSize="13" fontWeight="400">0</text>
+  <rect x="223" y="70" width="32" height="32" rx="3" fill="#e8912d" fillOpacity="0.22" stroke="#e8912d" strokeOpacity="1" strokeWidth="1" />
+  <text x="239" y="91" textAnchor="middle" fill="#e8912d" fontSize="13" fontWeight="600">Y7</text>
+  <rect x="257" y="70" width="32" height="32" rx="3" fill="#e8912d" fillOpacity="0.22" stroke="#e8912d" strokeOpacity="1" strokeWidth="1" />
+  <text x="273" y="91" textAnchor="middle" fill="#e8912d" fontSize="13" fontWeight="600">Y6</text>
+  <rect x="291" y="70" width="32" height="32" rx="3" fill="#a855f7" fillOpacity="0.22" stroke="#a855f7" strokeOpacity="1" strokeWidth="1" />
+  <text x="307" y="91" textAnchor="middle" fill="#a855f7" fontSize="13" fontWeight="600">Y2</text>
+  <rect x="325" y="70" width="32" height="32" rx="3" fill="#a855f7" fillOpacity="0.22" stroke="#a855f7" strokeOpacity="1" strokeWidth="1" />
+  <text x="341" y="91" textAnchor="middle" fill="#a855f7" fontSize="13" fontWeight="600">Y1</text>
+  <rect x="359" y="70" width="32" height="32" rx="3" fill="#a855f7" fillOpacity="0.22" stroke="#a855f7" strokeOpacity="1" strokeWidth="1" />
+  <text x="375" y="91" textAnchor="middle" fill="#a855f7" fontSize="13" fontWeight="600">Y0</text>
+  <rect x="393" y="70" width="32" height="32" rx="3" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeOpacity="1" strokeWidth="1" />
+  <text x="409" y="91" textAnchor="middle" fill="#3b82f6" fontSize="13" fontWeight="600">Y5</text>
+  <rect x="427" y="70" width="32" height="32" rx="3" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeOpacity="1" strokeWidth="1" />
+  <text x="443" y="91" textAnchor="middle" fill="#3b82f6" fontSize="13" fontWeight="600">Y4</text>
+  <rect x="461" y="70" width="32" height="32" rx="3" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeOpacity="1" strokeWidth="1" />
+  <text x="477" y="91" textAnchor="middle" fill="#3b82f6" fontSize="13" fontWeight="600">Y3</text>
+  <rect x="495" y="70" width="32" height="32" rx="3" fill="#30a46c" fillOpacity="0.22" stroke="#30a46c" strokeOpacity="1" strokeWidth="1" />
+  <text x="511" y="91" textAnchor="middle" fill="#30a46c" fontSize="13" fontWeight="600">X4</text>
+  <rect x="529" y="70" width="32" height="32" rx="3" fill="#30a46c" fillOpacity="0.22" stroke="#30a46c" strokeOpacity="1" strokeWidth="1" />
+  <text x="545" y="91" textAnchor="middle" fill="#30a46c" fontSize="13" fontWeight="600">X3</text>
+  <rect x="563" y="70" width="32" height="32" rx="3" fill="#30a46c" fillOpacity="0.22" stroke="#30a46c" strokeOpacity="1" strokeWidth="1" />
+  <text x="579" y="91" textAnchor="middle" fill="#30a46c" fontSize="13" fontWeight="600">X2</text>
+  <rect x="597" y="70" width="32" height="32" rx="3" fill="#30a46c" fillOpacity="0.22" stroke="#30a46c" strokeOpacity="1" strokeWidth="1" />
+  <text x="613" y="91" textAnchor="middle" fill="#30a46c" fontSize="13" fontWeight="600">X1</text>
+  <rect x="631" y="70" width="32" height="32" rx="3" fill="#30a46c" fillOpacity="0.22" stroke="#30a46c" strokeOpacity="1" strokeWidth="1" />
+  <text x="647" y="91" textAnchor="middle" fill="#30a46c" fontSize="13" fontWeight="600">X0</text>
+  <text x="108" y="171" textAnchor="end" fill="currentColor" fontSize="13">attribute</text>
+  <rect x="121" y="150" width="32" height="32" rx="3" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.4" strokeWidth="1" />
+  <text x="137" y="171" textAnchor="middle" fill="currentColor" fontSize="13" fontWeight="400">0</text>
+  <rect x="155" y="150" width="32" height="32" rx="3" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.4" strokeWidth="1" />
+  <text x="171" y="171" textAnchor="middle" fill="currentColor" fontSize="13" fontWeight="400">1</text>
+  <rect x="189" y="150" width="32" height="32" rx="3" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.4" strokeWidth="1" />
+  <text x="205" y="171" textAnchor="middle" fill="currentColor" fontSize="13" fontWeight="400">0</text>
+  <rect x="223" y="150" width="32" height="32" rx="3" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.4" strokeWidth="1" />
+  <text x="239" y="171" textAnchor="middle" fill="currentColor" fontSize="13" fontWeight="400">1</text>
+  <rect x="257" y="150" width="32" height="32" rx="3" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.4" strokeWidth="1" />
+  <text x="273" y="171" textAnchor="middle" fill="currentColor" fontSize="13" fontWeight="400">1</text>
+  <rect x="291" y="150" width="32" height="32" rx="3" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.4" strokeWidth="1" />
+  <text x="307" y="171" textAnchor="middle" fill="currentColor" fontSize="13" fontWeight="400">0</text>
+  <rect x="325" y="150" width="32" height="32" rx="3" fill="#e8912d" fillOpacity="0.22" stroke="#e8912d" strokeOpacity="1" strokeWidth="1" />
+  <text x="341" y="171" textAnchor="middle" fill="#e8912d" fontSize="13" fontWeight="600">Y7</text>
+  <rect x="359" y="150" width="32" height="32" rx="3" fill="#e8912d" fillOpacity="0.22" stroke="#e8912d" strokeOpacity="1" strokeWidth="1" />
+  <text x="375" y="171" textAnchor="middle" fill="#e8912d" fontSize="13" fontWeight="600">Y6</text>
+  <rect x="393" y="150" width="32" height="32" rx="3" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeOpacity="1" strokeWidth="1" />
+  <text x="409" y="171" textAnchor="middle" fill="#3b82f6" fontSize="13" fontWeight="600">Y5</text>
+  <rect x="427" y="150" width="32" height="32" rx="3" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeOpacity="1" strokeWidth="1" />
+  <text x="443" y="171" textAnchor="middle" fill="#3b82f6" fontSize="13" fontWeight="600">Y4</text>
+  <rect x="461" y="150" width="32" height="32" rx="3" fill="#3b82f6" fillOpacity="0.22" stroke="#3b82f6" strokeOpacity="1" strokeWidth="1" />
+  <text x="477" y="171" textAnchor="middle" fill="#3b82f6" fontSize="13" fontWeight="600">Y3</text>
+  <rect x="495" y="150" width="32" height="32" rx="3" fill="#30a46c" fillOpacity="0.22" stroke="#30a46c" strokeOpacity="1" strokeWidth="1" />
+  <text x="511" y="171" textAnchor="middle" fill="#30a46c" fontSize="13" fontWeight="600">X4</text>
+  <rect x="529" y="150" width="32" height="32" rx="3" fill="#30a46c" fillOpacity="0.22" stroke="#30a46c" strokeOpacity="1" strokeWidth="1" />
+  <text x="545" y="171" textAnchor="middle" fill="#30a46c" fontSize="13" fontWeight="600">X3</text>
+  <rect x="563" y="150" width="32" height="32" rx="3" fill="#30a46c" fillOpacity="0.22" stroke="#30a46c" strokeOpacity="1" strokeWidth="1" />
+  <text x="579" y="171" textAnchor="middle" fill="#30a46c" fontSize="13" fontWeight="600">X2</text>
+  <rect x="597" y="150" width="32" height="32" rx="3" fill="#30a46c" fillOpacity="0.22" stroke="#30a46c" strokeOpacity="1" strokeWidth="1" />
+  <text x="613" y="171" textAnchor="middle" fill="#30a46c" fontSize="13" fontWeight="600">X1</text>
+  <rect x="631" y="150" width="32" height="32" rx="3" fill="#30a46c" fillOpacity="0.22" stroke="#30a46c" strokeOpacity="1" strokeWidth="1" />
+  <text x="647" y="171" textAnchor="middle" fill="#30a46c" fontSize="13" fontWeight="600">X0</text>
+  <line x1="392" y1="52" x2="392" y2="196" stroke="currentColor" strokeOpacity="0.35" strokeWidth="1" />
+  <path d="M190,202 v6 H424 v-6" fill="none" stroke="currentColor" strokeWidth="1.2" />
+  <text x="307" y="224" textAnchor="middle" fill="currentColor" fontSize="12">DRAM column address: differs</text>
+  <path d="M428,202 v6 H662 v-6" fill="none" stroke="#30a46c" strokeWidth="1.2" />
+  <text x="545" y="224" textAnchor="middle" fill="#30a46c" fontSize="12">DRAM row address: the same</text>
+  <rect x="20" y="252" width="12" height="12" rx="2" fill="#e8912d" fillOpacity="0.35" stroke="#e8912d" />
+  <text x="38" y="262" fill="currentColor" fontSize="12">Y7 Y6: which third</text>
+  <rect x="180" y="252" width="12" height="12" rx="2" fill="#3b82f6" fillOpacity="0.35" stroke="#3b82f6" />
+  <text x="198" y="262" fill="currentColor" fontSize="12">Y5 Y4 Y3: character row in the third</text>
+  <rect x="420" y="252" width="12" height="12" rx="2" fill="#a855f7" fillOpacity="0.35" stroke="#a855f7" />
+  <text x="438" y="262" fill="currentColor" fontSize="12">Y2 Y1 Y0: line inside the character</text>
+  <rect x="20" y="274" width="12" height="12" rx="2" fill="#30a46c" fillOpacity="0.35" stroke="#30a46c" />
+  <text x="38" y="284" fill="currentColor" fontSize="12">X4–X0: column</text>
+</svg>
+<figcaption>The address of a bitmap byte and of its attribute, bit by bit. Both are built from the same line and column bits; their low bytes are identical.</figcaption>
+</figure>
+
+Read the bitmap's address from the left: `010` puts it at `$4000`; **Y7 Y6** say which **third** of
+the screen (the top, middle or bottom 64 lines); **Y2 Y1 Y0** say which of the eight **lines inside a
+character** it is; **Y5 Y4 Y3** say which of the eight **character rows** of that third; and X4…X0
+the column. So the address counts lines in an unusual order: first along a line, then down the
+*character rows* of the third, and only then down the lines inside a character:
+
+| Address | Line | |
+|---|---|---|
+| `$4000` | 0 | the top line of character row 0 |
+| `$4020` | 8 | the top line of character row 1 |
+| `$40E0` | 56 | the top line of character row 7, the last row of the top third |
+| `$4100` | 1 | the second line of character row 0 |
+| `$4700` | 7 | the bottom line of character row 0 |
+| `$47E0` | 63 | the bottom line of the top third |
+| `$4800` | 64 | the first line of the middle third |
+| `$5000` | 128 | the first line of the bottom third |
+
+That is what you see when `LOAD "" SCREEN$` fills the bitmap in memory order:
+
+<figure>
+<svg viewBox="0 0 652 190" role="img" aria-label="Three snapshots of the screen while a picture loads in memory order. After 256 bytes, every eighth line of the top third is filled. After 1,024 bytes, four of every eight lines of the top third are filled. After 2,304 bytes, the whole top third is filled and every eighth line of the middle third is filled." style={{ width: "100%", maxWidth: "652px", height: "auto" }}>
+  <rect x="12" y="14" width="192" height="144" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.45" />
+  <rect x="12" y="14.00" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="12" y="20.00" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="12" y="26.00" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="12" y="32.00" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="12" y="38.00" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="12" y="44.00" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="12" y="50.00" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="12" y="56.00" width="192" height="0.75" fill="#3b82f6" />
+  <line x1="12" y1="62" x2="204" y2="62" stroke="currentColor" strokeOpacity="0.3" strokeDasharray="3 3" />
+  <line x1="12" y1="110" x2="204" y2="110" stroke="currentColor" strokeOpacity="0.3" strokeDasharray="3 3" />
+  <text x="108" y="178" textAnchor="middle" fill="currentColor" fontSize="12">after 256 bytes</text>
+  <rect x="230" y="14" width="192" height="144" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.45" />
+  <rect x="230" y="14.00" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="230" y="14.75" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="230" y="15.50" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="230" y="16.25" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="230" y="20.00" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="230" y="20.75" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="230" y="21.50" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="230" y="22.25" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="230" y="26.00" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="230" y="26.75" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="230" y="27.50" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="230" y="28.25" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="230" y="32.00" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="230" y="32.75" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="230" y="33.50" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="230" y="34.25" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="230" y="38.00" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="230" y="38.75" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="230" y="39.50" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="230" y="40.25" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="230" y="44.00" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="230" y="44.75" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="230" y="45.50" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="230" y="46.25" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="230" y="50.00" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="230" y="50.75" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="230" y="51.50" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="230" y="52.25" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="230" y="56.00" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="230" y="56.75" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="230" y="57.50" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="230" y="58.25" width="192" height="0.75" fill="#3b82f6" />
+  <line x1="230" y1="62" x2="422" y2="62" stroke="currentColor" strokeOpacity="0.3" strokeDasharray="3 3" />
+  <line x1="230" y1="110" x2="422" y2="110" stroke="currentColor" strokeOpacity="0.3" strokeDasharray="3 3" />
+  <text x="326" y="178" textAnchor="middle" fill="currentColor" fontSize="12">after 1,024 bytes</text>
+  <rect x="448" y="14" width="192" height="144" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.45" />
+  <rect x="448" y="14.00" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="14.75" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="15.50" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="16.25" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="17.00" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="17.75" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="18.50" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="19.25" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="20.00" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="20.75" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="21.50" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="22.25" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="23.00" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="23.75" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="24.50" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="25.25" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="26.00" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="26.75" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="27.50" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="28.25" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="29.00" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="29.75" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="30.50" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="31.25" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="32.00" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="32.75" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="33.50" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="34.25" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="35.00" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="35.75" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="36.50" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="37.25" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="38.00" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="38.75" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="39.50" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="40.25" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="41.00" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="41.75" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="42.50" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="43.25" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="44.00" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="44.75" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="45.50" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="46.25" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="47.00" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="47.75" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="48.50" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="49.25" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="50.00" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="50.75" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="51.50" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="52.25" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="53.00" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="53.75" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="54.50" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="55.25" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="56.00" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="56.75" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="57.50" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="58.25" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="59.00" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="59.75" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="60.50" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="61.25" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="62.00" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="68.00" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="74.00" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="80.00" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="86.00" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="92.00" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="98.00" width="192" height="0.75" fill="#3b82f6" />
+  <rect x="448" y="104.00" width="192" height="0.75" fill="#3b82f6" />
+  <line x1="448" y1="62" x2="640" y2="62" stroke="currentColor" strokeOpacity="0.3" strokeDasharray="3 3" />
+  <line x1="448" y1="110" x2="640" y2="110" stroke="currentColor" strokeOpacity="0.3" strokeDasharray="3 3" />
+  <text x="544" y="178" textAnchor="middle" fill="currentColor" fontSize="12">after 2,304 bytes</text>
+</svg>
+<figcaption>A picture loading in memory order. The first 256 bytes give the top line of every character row in the top third; each further 256 bytes add the next line of every row. Only after 2,048 bytes is the first third complete.</figcaption>
+</figure>
+
+Before Part 4 shows how the trick works, let us look at how the ULA actually reads this memory.
+
+## Part 3: How the ULA draws a line
+
+### Four reads for sixteen dots
+
+While the beam is over the display area, the ULA needs a bitmap byte and an attribute byte for every 8 dots,
+which is every 4 T-states. It does not fetch them one at a time. It works in groups of **8 T-states
+and 16 dots**, two character cells, and in each group it makes **four reads in quick succession**:
+
+1. the bitmap byte of the first cell,
+2. the attribute byte of the first cell,
+3. the bitmap byte of the second cell,
+4. the attribute byte of the second cell.
+
+Then it leaves the memory alone until the next group. It reads each pair a little ahead of time and
+keeps the bytes in latches, so that they are ready when the beam reaches their cells. Across a whole
+line, that is 64 bytes of bitmap and attribute for 32 cells, all inside the 128 T-states of the display area.
+
+<figure>
+<svg viewBox="0 0 680 200" role="img" aria-label="One group of 8 T-states. During the first 6 the ULA owns the screen memory and makes four reads: bitmap and attribute of two character cells. During the last 2 the CPU may use the memory freely. If the CPU asks for the screen memory at T-state 0 it waits 6 T-states, at T-state 1 it waits 5, and so on down to 0 at T-states 6 and 7. Meanwhile 16 dots, two characters, go to the screen." style={{ width: "100%", maxWidth: "680px", height: "auto" }}>
+  <text x="80" y="38" textAnchor="end" fill="currentColor" fontSize="12">T-state</text>
+  <text x="80" y="76" textAnchor="end" fill="currentColor" fontSize="12">memory</text>
+  <text x="80" y="128" textAnchor="end" fill="currentColor" fontSize="12">CPU waits</text>
+  <text x="80" y="174" textAnchor="end" fill="currentColor" fontSize="12">screen</text>
+  <rect x="96" y="56" width="420" height="32" rx="4" fill="#e8912d" fillOpacity="0.25" stroke="#e8912d" />
+  <text x="306" y="70" textAnchor="middle" fill="currentColor" fontSize="12">the ULA owns the screen memory</text>
+  <text x="306" y="84" textAnchor="middle" fill="currentColor" fontSize="11">bitmap 1 · attribute 1 · bitmap 2 · attribute 2</text>
+  <rect x="516" y="56" width="140" height="32" rx="4" fill="#30a46c" fillOpacity="0.2" stroke="#30a46c" />
+  <text x="586" y="76" textAnchor="middle" fill="currentColor" fontSize="12">free for the CPU</text>
+  <text x="131" y="38" textAnchor="middle" fill="currentColor" fontSize="13">0</text>
+  <text x="201" y="38" textAnchor="middle" fill="currentColor" fontSize="13">1</text>
+  <text x="271" y="38" textAnchor="middle" fill="currentColor" fontSize="13">2</text>
+  <text x="341" y="38" textAnchor="middle" fill="currentColor" fontSize="13">3</text>
+  <text x="411" y="38" textAnchor="middle" fill="currentColor" fontSize="13">4</text>
+  <text x="481" y="38" textAnchor="middle" fill="currentColor" fontSize="13">5</text>
+  <text x="551" y="38" textAnchor="middle" fill="currentColor" fontSize="13">6</text>
+  <text x="621" y="38" textAnchor="middle" fill="currentColor" fontSize="13">7</text>
+  <rect x="98" y="108" width="66" height="28" rx="3" fill="#e5484d" fillOpacity="0.3" />
+  <rect x="168" y="108" width="66" height="28" rx="3" fill="#e5484d" fillOpacity="0.25" />
+  <rect x="238" y="108" width="66" height="28" rx="3" fill="#e5484d" fillOpacity="0.2" />
+  <rect x="308" y="108" width="66" height="28" rx="3" fill="#e5484d" fillOpacity="0.15" />
+  <rect x="378" y="108" width="66" height="28" rx="3" fill="#e5484d" fillOpacity="0.1" />
+  <rect x="448" y="108" width="66" height="28" rx="3" fill="#e5484d" fillOpacity="0.06" />
+  <rect x="518" y="108" width="66" height="28" rx="3" fill="none" stroke="currentColor" strokeOpacity="0.25" />
+  <rect x="588" y="108" width="66" height="28" rx="3" fill="none" stroke="currentColor" strokeOpacity="0.25" />
+  <text x="131" y="127" textAnchor="middle" fill="currentColor" fontSize="13">6</text>
+  <text x="201" y="127" textAnchor="middle" fill="currentColor" fontSize="13">5</text>
+  <text x="271" y="127" textAnchor="middle" fill="currentColor" fontSize="13">4</text>
+  <text x="341" y="127" textAnchor="middle" fill="currentColor" fontSize="13">3</text>
+  <text x="411" y="127" textAnchor="middle" fill="currentColor" fontSize="13">2</text>
+  <text x="481" y="127" textAnchor="middle" fill="currentColor" fontSize="13">1</text>
+  <text x="551" y="127" textAnchor="middle" fill="currentColor" fontSize="13">0</text>
+  <text x="621" y="127" textAnchor="middle" fill="currentColor" fontSize="13">0</text>
+  <rect x="96" y="156" width="280" height="26" rx="3" fill="#3b82f6" fillOpacity="0.2" stroke="#3b82f6" />
+  <rect x="376" y="156" width="280" height="26" rx="3" fill="#3b82f6" fillOpacity="0.12" stroke="#3b82f6" />
+  <text x="236" y="174" textAnchor="middle" fill="currentColor" fontSize="12">8 dots of one cell</text>
+  <text x="516" y="174" textAnchor="middle" fill="currentColor" fontSize="12">8 dots of the next cell</text>
+</svg>
+<figcaption>One 8 T-state group while the beam is over the display area. The bytes read here are drawn a few T-states later; the dots on screen meanwhile come from the bytes read in the group before. Part 5 explains the CPU's waiting.</figcaption>
+</figure>
+
+### From bytes to coloured dots
+
+The bitmap byte goes into a **shift register**, which pushes its bits out one at a time at 7 MHz,
+leftmost first. For each bit, the ULA looks at the cell's attribute: a 1 sends the INK colour to the
+video output, a 0 the PAPER colour, both made brighter if BRIGHT is set. The ULA has an internal
+counter of frames, and when the FLASH bit is set it swaps INK and PAPER for 16 frames out of every
+32. The colour itself leaves the ULA as a brightness and two colour-difference levels, which a
+separate encoder chip turns into the PAL signal, as the
+[television article](/en/under-the-hood/emulator-internals/crt-display/#how-a-computer-produces-it)
+describes.
+
+Notice what this means: the ULA reads every byte **at the moment the beam needs it**, not once per
+frame. If a program changes a byte after the ULA has read it, the change appears only in the next
+frame; if it changes it before, it appears now. Programs exploit this: by rewriting a cell's
+attribute between its scan lines, in step with the beam, a program can give a single 8 × 8 cell
+eight different pairs of colours (the **multicolour** and rainbow effects of later games).
+
+### The border
+
+Outside the display area, the ULA reads nothing. It sends the **border colour** instead, which a program
+sets with bits 0–2 of an `OUT` to port `$FE`. The ULA uses whatever value the port holds at the
+moment, so a program that changes the border many times a frame draws stripes on it: the coloured
+bars of a tape loading are the ROM's loader flipping the border colour with every edge of the signal
+it reads.
+
+## Part 4: Why the memory looks scrambled
+
+Here is the question again: why does the bitmap address count the character rows before the lines
+inside a character? Part 2 named the answer, page-mode reads of the dynamic RAM. This part shows how
+they work and why they force the order, starting with the memory chips.
+
+### How dynamic RAM is addressed
+
+The Spectrum's screen lives in the lower 16K of RAM, made of eight **4116 dynamic RAM** chips. Each
+chip holds 16,384 bits, one bit of every byte, and stores them in a grid of **128 rows by 128
+columns**. Its address needs 14 bits, but to keep the chip small and cheap it has only 7 address
+pins. So the address goes in two halves, one after the other:
+
+1. The **row address** (7 bits) is put on the pins and latched by a pulse on the **RAS** (row address
+   strobe) pin. The chip then reads that whole row of 128 bits into an internal buffer. This is the
+   slow part.
+2. The **column address** (7 bits) is put on the same pins and latched by a pulse on **CAS** (column
+   address strobe). The chip picks one bit out of the buffered row and puts it on its output.
+
+Once a row is open, the chip can deliver *another* bit from the same row with just a new column
+address and another CAS pulse, without repeating the slow row step. This is **page mode**, and it
+makes the second read from the same row much quicker than a fresh read.
+
+On the Spectrum, the ULA drives these chips, and it splits the Z80's address the simple way: the low
+7 bits, **A0–A6, are the row**; the next seven, **A7–A13, are the column**. (The Z80's memory refresh
+agrees: during refresh it puts the R register on A0–A6, so it steps through the rows, which is what a
+dynamic RAM needs to keep its contents.)
+
+### The requirement: a bitmap byte and its attribute in one row
+
+Now recall the four reads of Part 3: a bitmap byte, then **its own attribute**, then the next bitmap
+byte and its attribute. The ULA has to make them all in one short burst and leave the memory free
+for the CPU the rest of the time. If each bitmap byte and its attribute sit in the **same
+DRAM row**, each pair is one row step and two quick column steps, a page-mode pair. That is what the
+ULA does: open a row, read the bitmap byte, read the attribute, then do the same for the next cell.
+
+So the design has one requirement: **a bitmap byte and the attribute of its cell must have the same
+A0–A6.** Follow what that requirement does:
+
+1. **The attribute's address is fixed by the cell.** The attributes are 32 per row of cells, in
+   order: the attribute address is the character row (Y7…Y3, five bits) followed by the column
+   (X4…X0). Its low byte, A0–A7, is therefore **Y5 Y4 Y3 X4 X3 X2 X1 X0**.
+2. **The bitmap byte's low bits must match.** For the shared row, the bitmap address must also have
+   X4…X0 in A0–A4 and Y4 Y3 in A5–A6; keeping Y5 in A7 as well makes the whole low byte the same,
+   so the ULA can drive it once for both reads.
+3. **What is left goes on top.** The bitmap still needs the three bits the attribute does not have,
+   **Y2 Y1 Y0**, the line inside the character, and the two highest, **Y7 Y6**. They can only go
+   above the low byte, in A8–A12.
+
+And there is the famous order. Because an attribute serves all eight lines of its cell, it cannot
+contain the line-inside-the-character bits, and so they are pushed above the character row in the
+bitmap address. The "natural" order, with Y2 Y1 Y0 in the low byte, would give a bitmap byte and its
+attribute different rows, and every pair of reads would need two slow row steps instead of one.
+
+The other side of it is just as neat. Look at the two addresses in the figure of Part 2 again: they
+are made of **the same counter bits**, only wired to different address pins, plus a few constant
+bits. The ULA's horizontal counter gives X4…X0, its line counter Y7…Y0, and the two addresses are
+two fixed arrangements of those wires. No adder, no multiplier: in an uncommitted logic array, where
+every gate was precious, that mattered.
+
+The last free choice, the order of Y7 Y6 and Y2 Y1 Y0 in A8–A12, does not matter to the memory.
+Sinclair put Y2 Y1 Y0 at the bottom, in A8–A10, and that choice is a gift to programmers, as we see
+next. The thirds are its side effect: Y7 Y6 on top divide the screen into three blocks of 2K.
+
+<Callout type="info">
+**The source of this explanation.** When I started designing my ZX Spectrum emulator about ten
+years ago, it frustrated me that I could not understand every detail of how the screen is put
+together. I read many articles and technical descriptions, but none of them told the whole story.
+The book that completed the picture and made it clear was Chris Smith's *The ZX Spectrum ULA: How to
+Design a Microcomputer* (2010), which reconstructs the ULA from its silicon. That the ULA reads a
+bitmap byte and its attribute as a page-mode pair comes from it, and it remains the best reference
+for the timing detail of everything in this article.
+</Callout>
+
+### What it means for programs
+
+Sinclair's choice of A8–A10 for the line inside the character makes the most common move of all, one
+line down inside a character, a single instruction: `INC H`. Printing a character works like
+this: point HL at the top line of the cell, then eight times copy a byte of the character's shape
+and `INC H`. Finding a cell's attribute from its bitmap address is a few rotations:
+
+```z80klive
+; HL = the address of a bitmap byte (010 Y7Y6 Y2Y1Y0 | Y5Y4Y3 X4..X0)
+; Out: DE = the address of its attribute (010110 Y7Y6 | Y5Y4Y3 X4..X0)
+AttrOf:
+    ld a,h          ; A = 010 Y7Y6 Y2Y1Y0
+    rrca
+    rrca
+    rrca            ; A = Y2Y1Y0 010 Y7Y6
+    and $03         ; A = 000000 Y7Y6
+    or $58          ; A = 010110 Y7Y6
+    ld d,a
+    ld e,l          ; the low byte is the same: that is the whole point
+    ret
+```
+
+Moving one dot line down *across* a character boundary is the price. Incrementing H moves down a
+line; when the line inside the character wraps from 7 back to 0, the carry has gone into Y6 instead
+of Y3, and the address must be corrected:
+
+```z80klive
+; HL = the address of a bitmap byte. Out: HL = the byte one dot line below it.
+LineDown:
+    inc h           ; the next line inside the character
+    ld a,h
+    and $07         ; did Y2Y1Y0 wrap to 0?
+    ret nz          ; no: done, the common case (7 times out of 8)
+    ld a,l
+    add a,$20       ; yes: the next character row (Y5Y4Y3 + 1)
+    ld l,a
+    ret c           ; it wrapped too: the INC H has already moved us into the next third
+    ld a,h
+    sub $08         ; still in the same third: take back the carry INC H put into Y6
+    ld h,a
+    ret
+```
+
+Every Spectrum game that draws sprites carries a routine like this one, or a table of 192 line
+addresses to skip it.
+
+## Part 5: Sharing the memory
+
+### Contention
+
+The ULA and the CPU share the lower 16K, and the ULA cannot wait: if it is late, the picture is
+wrong. So when both want that memory at the same time, the ULA wins, and it makes the CPU wait by
+**stopping the CPU's clock**. The Z80 is simply frozen for a few T-states, and carries on when the
+ULA is done. This is called **contention**, and the memory from `$4000` to `$7FFF` is the **contended
+memory**.
+
+It happens only while the beam is over the display area, and only in the first 6 T-states of each 8 T-state
+group, the ULA's window in the figure of Part 3. A CPU access to contended memory that starts at the
+first T-state of a group waits 6 T-states, one that starts at the next waits 5, and so on: the
+well-known sequence **6, 5, 4, 3, 2, 1, 0, 0**. The first contended T-state of the frame is 14,335,
+one before the first line of the display area.
+
+The consequences for programs:
+
+- **Code in the upper 32K runs at full speed**, always. Timing-critical code, such as a tape loader,
+  is kept out of the lower 16K.
+- **Code or data in the lower 16K slows down** while the display area is being drawn, by an amount that
+  depends on exactly when each access falls. A program in the 16K model, which has no other RAM,
+  runs noticeably slower than the same program in the upper RAM of a 48K.
+- **I/O is contended too.** The ULA stops the clock for accesses to its own port (any even port
+  address), and an I/O access whose address lies in `$4000`–`$7FFF` looks like a memory access to it.
+
+### The floating bus
+
+The ULA reads the memory over the same wires the CPU's data bus is connected to through resistors.
+When the CPU reads a port that no device answers, it gets whatever is on its data bus at that moment.
+In the border, that is `$FF`. Over the display area, it is the byte the ULA is fetching right then: a bitmap
+or attribute byte of the cell the beam is about to draw. This is the **floating bus**, and a few games
+use it to find out where the beam is without counting T-states.
+
+<Callout type="info">
+**Snow.** During a refresh cycle the Z80 puts the I and R registers on the address bus. If a program
+sets I to a value from `$40` to `$7F` (as some programs do to place an interrupt table), every refresh
+cycle looks like an access to the screen memory. When one falls into the ULA's window, the ULA's page
+mode read picks up the refresh's row address instead of its own, and reads the wrong byte. The
+picture shows it as scattered wrong dots, the Spectrum's **snow**. (Klive does not emulate snow.)
+</Callout>
+
+## Part 6: How Klive follows the beam
+
+### A table for every T-state
+
+Klive's Spectrum cores do what the ULA does, one T-state at a time. When a machine starts, the core
+builds tables with one entry for every T-state of the frame (69,888 on the 48K). Each entry says
+what the ULA is doing at that moment: drawing border, drawing dots from the first or the second
+latched byte, fetching a bitmap or an attribute byte (with its address, worked out by the bit
+arrangement of Part 2), and how long a CPU access to contended memory starting at that T-state would
+wait. The tables come from a handful of numbers per machine: the lines of sync, border and display area,
+the T-states of each part of a line, and the contention sequence.
+
+### Drawing late, but at the right moment
+
+The core does not draw every T-state as it happens; that would be slow. It draws **lazily**: it
+remembers the last T-state it has drawn, and catches up to the current one only when something that
+the picture depends on is about to change:
+
+- a write to the screen memory,
+- an `OUT` that changes the border colour,
+- the end of the frame.
+
+Because the catch-up uses the memory and the border as they are *before* the change, everything the
+beam has already passed is drawn with the old values and everything after with the new ones. That is
+exactly what the real beam would have shown, so border stripes, multicolour attributes and
+beam-racing tricks come out right, at a fraction of the cost of drawing every T-state.
+
+Contention is applied from the same tables: whenever the CPU touches contended memory, the core
+looks up the wait for the current T-state and adds it to the clock. The floating bus reads the byte
+the table says the ULA is fetching.
+
+### The other models
+
+The 128K Spectrum and its successors use the same ULA design with a slightly faster clock and a
+longer line:
+
+| | 48K | 128K, +2 |
+|---|---|---|
+| CPU clock | 3.5 MHz | 3.5469 MHz |
+| T-states per line | 224 | 228 |
+| Lines per frame | 312 | 311 |
+| T-states per frame | 69,888 | 70,908 |
+| First display line starts at | 14,336 | 14,364 (line 63) |
+
+The screen memory, the attributes and the order of the bitmap are the same on every model. The 128K
+can show a second screen from another RAM bank, which the ULA reads in exactly the same way.
+
+### Where to read the code
+
+| What | Where |
+|---|---|
+| The timing tables, the drawing, contention and the floating bus | `src/emu/machines/zxSpectrum/wasm/common/zx-spectrum-ula.c` |
+| The 48K's screen numbers (`Sp48ScreenConfig`) | `src/emu/machines/zxSpectrum48/wasm/sp48/sp48.c` |
+| Catching up before a screen-memory write | `src/emu/machines/zxSpectrum48/wasm/sp48/sp48-memory.c` |
+| Catching up before a border change | `src/emu/machines/zxSpectrum/wasm/common/zx-spectrum-ports.c` |
+| The 128K timings | `src/emu/machines/zxSpectrum128/sp128Timings.ts` |
+
+## Summary
+
+- The **ULA** draws the Spectrum's picture by itself: 7 MHz dots, 2 per T-state, 224 T-states a
+  line, 312 lines and 69,888 T-states a frame, with a frame interrupt at the top.
+- The screen is a **6,144-byte bitmap** (ink or paper for every dot) and **768 attribute bytes**
+  (the two colours of each 8 × 8 cell).
+- Over the display area, the ULA reads a **bitmap byte and its attribute** for every cell, two cells per
+  8 T-states, just before the beam needs them.
+- The lower 16K is **dynamic RAM**, addressed by row (A0–A6) and column (A7–A13). Reading a bitmap
+  byte and its attribute as a quick **page-mode pair** requires them to share their low address bits.
+- The attribute cannot contain the line inside the character, so the bitmap address cannot have it in
+  its low bits either: **Y2 Y1 Y0 move up to A8–A10**, and the screen memory gets its famous order,
+  with the thirds as a side effect. `INC H` moving one line down is the bonus.
+- When the CPU wants the screen memory while the ULA is reading it, the ULA **stops the CPU's clock**:
+  contention, 6, 5, 4, 3, 2, 1, 0, 0.
+- Klive follows the beam with **per-T-state tables** and draws lazily, catching up just before every
+  change the picture could see.

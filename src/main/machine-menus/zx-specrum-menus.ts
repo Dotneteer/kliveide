@@ -25,7 +25,8 @@ import {
   MI_SPECTRUM_128,
   MI_SPECTRUM_3E,
   MI_SPECTRUM_48,
-  MI_TIMEX
+  MI_TIMEX,
+  MI_HT1080Z
 } from "@common/machines/constants";
 
 /** The machines whose drives are a Beta 128's (TR-DOS disks): the Pentagon's and the Scorpion's */
@@ -364,7 +365,10 @@ async function setTapeFile(browserWindow: BrowserWindow, state: AppState): Promi
     title: t("messages.tape.select"),
     defaultPath,
     filters: [
-      { name: t("common.filter.tapeFiles"), extensions: ["tap", "tzx"] },
+      // --- The media strip's Insert button asks here on the HT-1080Z too (`.plans/HT1080Z_PLAN.md` §9)
+      state.emulatorState?.machineId === MI_HT1080Z
+        ? { name: t("common.filter.ht1080zTapes"), extensions: ["cas", "cmd", "bas"] }
+        : { name: t("common.filter.tapeFiles"), extensions: ["tap", "tzx"] },
       { name: t("common.filter.allFiles"), extensions: ["*"] }
     ],
     properties: ["openFile"]

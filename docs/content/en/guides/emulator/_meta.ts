@@ -7,6 +7,7 @@ export default {
   "trdos-disks": "TR-DOS disks (Pentagon 128)",
   "custom-rom": "A custom ROM on the 48K",
   "zx81-zx80": "The ZX81 and ZX80",
+  "ht1080z": "The HT-1080Z",
   "z88-snapshots": "Cambridge Z88 snapshots",
   "screen-recording": "Recording the screen",
   "always-on-top": "Emulator always on top"

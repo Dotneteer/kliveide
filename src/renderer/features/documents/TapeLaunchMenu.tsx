@@ -2,13 +2,16 @@ import { t } from "@common/i18n/i18n";
 import { useT } from "@common/i18n/useT";
 import { TabButton, TabButtonSeparator, TabButtonSpace } from "@renderer/controls/TabButton";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
+import { useEffect, useState } from "react";
 import { useGlobalSetting, useSelector } from "@renderer/core/RendererProvider";
+import { useMainApi } from "@renderer/core/MainApi";
+import { analyzeHt1080zFile } from "@renderer/appIde/DocumentPanels/Ht1080zTape/ht1080zTapeView";
 import { SETTING_EMU_FAST_LOAD } from "@common/settings/setting-const";
 
 import type { AppServices } from "@renderer/abstractions/AppServices";
 import type { ContextMenuInfo } from "@renderer/abstractions/ContextMenuIfo";
 
-import { programLoadGuard, tapeLoadGuard } from "@renderer/appIde/commands/TapeLoadCommand";
+import { htTapeLoadGuard, programLoadGuard, tapeLoadGuard } from "@renderer/appIde/commands/TapeLoadCommand";
 
 /*
  * **Load and run** / **Insert** / **Load and debug** for a `.tap` or `.tzx` file: the Explorer's
@@ -24,7 +27,9 @@ import { programLoadGuard, tapeLoadGuard } from "@renderer/appIde/commands/TapeL
 const LAUNCH_OPTIONS = {
   run: " -r",
   insert: "",
-  debug: " -d"
+  debug: " -d",
+  // --- An HT-1080Z machine-code tape only: debug, stopping at its start address
+  entry: " -e"
 } as const;
 
 type TapeLaunchMode = keyof typeof LAUNCH_OPTIONS;
@@ -49,6 +54,26 @@ export function getTapeLaunchContextMenuInfo(services: AppServices): ContextMenu
  */
 export function getProgramLaunchContextMenuInfo(services: AppServices): ContextMenuInfo[] {
   return launchMenuInfo(services, programLoadGuard);
+}
+
+/**
+ * The Explorer's entries for an HT-1080Z tape (`.cas`, `.cmd`): the same `tape-load` command,
+ * enabled on the HT-1080Z (`.plans/HT1080Z_PLAN.md` §9, §11).
+ * @param services The app services
+ */
+export function getHtTapeLaunchContextMenuInfo(services: AppServices): ContextMenuInfo[] {
+  // --- A menu cannot read the file, so the entry is offered for every HT tape; `tape-load -e` says
+  // --- why a BASIC one has no start address
+  return [
+    ...launchMenuInfo(services, htTapeLoadGuard),
+    {
+      text: t("documents.tape.menu.entry"),
+      disabled: (store) => !!htTapeLoadGuard(store.getState()),
+      clicked: async (item: string) => {
+        await services.ideCommandsService.executeCommand(tapeLoadCommandText(item, "entry"));
+      }
+    }
+  ];
 }
 
 type LoadGuard = (state: { emulatorState?: { machineId?: string } }) => string | undefined;
@@ -83,10 +108,12 @@ function launchMenuInfo(services: AppServices, guard: LoadGuard): ContextMenuInf
 type Props = {
   path: string;
   guard: LoadGuard;
+  /** Offer "debug from the start address": the file is an HT-1080Z machine-code tape */
+  withEntry?: boolean;
 };
 
 /** The three actions in a tape (or ZX80/ZX81 program) document's tab bar */
-const TapeLaunchCommandBar = ({ path, guard }: Props) => {
+const TapeLaunchCommandBar = ({ path, guard, withEntry }: Props) => {
   const t = useT();
   const { ideCommandsService } = useAppServices();
   const machineId = useSelector((s) => s.emulatorState?.machineId);
@@ -129,8 +156,48 @@ const TapeLaunchCommandBar = ({ path, guard }: Props) => {
         disabled={!!refusal}
         clicked={async () => await launch("debug")}
       />
+      {withEntry && (
+        <>
+          <TabButtonSpace />
+          <TabButton
+            iconName="debug-with-bp"
+            title={
+              refusal
+                ? t("documents.tape.button.entryRefused", { reason: refusal })
+                : t("documents.tape.button.entry", { fastLoad: fastLoadArg })
+            }
+            disabled={!!refusal}
+            clicked={async () => await launch("entry")}
+          />
+        </>
+      )}
     </>
   );
+};
+
+/**
+ * An HT-1080Z tape's bar: the three actions, and - for a machine-code tape, which names its start
+ * address - "debug, stopping there", as a `.nex` document's bar has. Whether the file is one is read
+ * from it: a `.cmd` always is, a `.cas` when it holds a SYSTEM program.
+ */
+const HtTapeLaunchCommandBar = ({ path }: { path: string }) => {
+  const mainApi = useMainApi();
+  const [withEntry, setWithEntry] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    mainApi
+      .readBinaryFile(path)
+      .then((bytes) => {
+        if (!cancelled) setWithEntry(analyzeHt1080zFile(bytes, path).analysis?.entry !== undefined);
+      })
+      .catch(() => {
+        if (!cancelled) setWithEntry(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [mainApi, path]);
+  return <TapeLaunchCommandBar path={path} guard={htTapeLoadGuard} withEntry={withEntry} />;
 };
 
 export const tapeLaunchCommandBarRenderer = (path: string) => (
@@ -140,3 +207,5 @@ export const tapeLaunchCommandBarRenderer = (path: string) => (
 export const programLaunchCommandBarRenderer = (path: string) => (
   <TapeLaunchCommandBar path={path} guard={programLoadGuard} />
 );
+
+export const htTapeLaunchCommandBarRenderer = (path: string) => <HtTapeLaunchCommandBar path={path} />;

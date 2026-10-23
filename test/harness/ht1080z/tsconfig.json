@@ -1,0 +1,8 @@
+{
+  // Type-checks the HT-1080Z harness and the tests that use it:
+  //   npx tsc -p test/harness/ht1080z/tsconfig.json
+  "extends": "../../tsconfig.json",
+  "compilerOptions": { "noEmit": true, "lib": ["ESNext", "DOM"], "module": "esnext" },
+  "include": ["./**/*.ts", "../../ht1080z-hw/**/*.ts"],
+  "exclude": ["node_modules"]
+}

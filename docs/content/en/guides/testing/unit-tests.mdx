@@ -193,9 +193,11 @@ Edit the section by hand; Klive keeps it when it saves the project file.
 
 ## Machines
 
-Tests run on the ZX Spectrum 48K and 16K, 128K, +2A/+3/+2E/+3E and the ZX Spectrum Next. On the
-banked machines a test may live in a bank: Klive writes every bank's code into its bank, and your
-initialisation code pages it in (`OUT ($7FFD),A` on the 128K, `NEXTREG $56,n` on the Next).
+Tests run on the ZX Spectrum 48K and 16K, 128K, +2A/+3/+2E/+3E, the ZX Spectrum Next and the
+HT-1080Z. On the banked machines a test may live in a bank: Klive writes every bank's code into its
+bank, and your initialisation code pages it in (`OUT ($7FFD),A` on the 128K, `NEXTREG $56,n` on the
+Next). On the HT-1080Z the runner boots the machine as Run does; put the tests in RAM, at $7000 for
+example (`.model HT1080Z` puts code with no `.org` there).
 
 ## The macros
 

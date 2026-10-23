@@ -7,6 +7,7 @@ import {
   BIN_VIEWER,
   TAP_VIEWER,
   TAPE_BLOCK_VIEWER,
+  HT1080Z_TAPE_VIEWER,
   P_FILE_VIEWER,
   DSK_VIEWER,
   NEX_VIEWER,
@@ -93,6 +94,7 @@ import {
 } from "./appIde/ToolArea/OutputPanel";
 import { createTapeViewerPanel } from "./appIde/DocumentPanels/Tape/TapeViewerPanel";
 import { createTapeBlockViewerPanel } from "./appIde/DocumentPanels/Tape/TapeBlockViewerPanel";
+import { createHt1080zTapeViewerPanel } from "./appIde/DocumentPanels/Ht1080zTape/Ht1080zTapeViewerPanel";
 import { readTapeBlockBytes } from "./appIde/DocumentPanels/Tape/tapeBlockDocument";
 import { createPFileViewerPanel } from "./appIde/DocumentPanels/PFile/PFileViewerPanel";
 import { readPFileRegion } from "./appIde/DocumentPanels/PFile/pFileDocument";
@@ -176,8 +178,10 @@ import {
   z88SnapshotLaunchCommandBarRenderer
 } from "@renderer/features/documents/Z88SnapshotLaunchMenu";
 import {
+  getHtTapeLaunchContextMenuInfo,
   getProgramLaunchContextMenuInfo,
   getTapeLaunchContextMenuInfo,
+  htTapeLaunchCommandBarRenderer,
   programLaunchCommandBarRenderer,
   tapeLaunchCommandBarRenderer
 } from "@renderer/features/documents/TapeLaunchMenu";
@@ -543,6 +547,14 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     navigation: fileDocumentNavigationAdapter
   },
   {
+    // --- An HT-1080Z .cas, .cmd or tokenised .bas (`.plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D5)
+    id: HT1080Z_TAPE_VIEWER,
+    renderer: createHt1080zTapeViewerPanel,
+    icon: "@file-tap-tzx",
+    // --- Its parts pop out into documents, and Go Back must return here
+    navigation: fileDocumentNavigationAdapter
+  },
+  {
     id: TAPE_BLOCK_VIEWER,
     renderer: createTapeBlockViewerPanel,
     icon: "code"
@@ -763,6 +775,21 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   {
     matchType: "ends",
     pattern: ".bas",
+    // --- A tokenised HT-1080Z program, by its content (`.plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D1-D3);
+    // --- any other .bas is BASIC source, the entry below
+    contentKind: "ht1080zBasic",
+    ignoreCase: true,
+    editor: HT1080Z_TAPE_VIEWER,
+    icon: "@file-tap-tzx",
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true,
+    documentTabRenderer: htTapeLaunchCommandBarRenderer,
+    contextMenuInfo: getHtTapeLaunchContextMenuInfo
+  },
+  {
+    matchType: "ends",
+    pattern: ".bas",
     editor: CODE_EDITOR,
     subType: "zxbas",
     icon: "file-zxbas"
@@ -821,6 +848,34 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     openPermanent: true,
     documentTabRenderer: tapeLaunchCommandBarRenderer,
     contextMenuInfo: getTapeLaunchContextMenuInfo
+  },
+  {
+    matchType: "ends",
+    pattern: ".cas",
+    // --- An HT-1080Z tape (`.plans/HT1080Z_PLAN.md` §9): its parts in the HT tape viewer
+    // --- (`.plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D5), Run/Insert/Debug
+    ignoreCase: true,
+    editor: HT1080Z_TAPE_VIEWER,
+    icon: "@file-tap-tzx",
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true,
+    documentTabRenderer: htTapeLaunchCommandBarRenderer,
+    contextMenuInfo: getHtTapeLaunchContextMenuInfo
+  },
+  {
+    matchType: "ends",
+    pattern: ".cmd",
+    // --- An HT-1080Z tape (`.plans/HT1080Z_PLAN.md` §9): its parts in the HT tape viewer
+    // --- (`.plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D5), Run/Insert/Debug
+    ignoreCase: true,
+    editor: HT1080Z_TAPE_VIEWER,
+    icon: "@file-tap-tzx",
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true,
+    documentTabRenderer: htTapeLaunchCommandBarRenderer,
+    contextMenuInfo: getHtTapeLaunchContextMenuInfo
   },
   {
     matchType: "ends",

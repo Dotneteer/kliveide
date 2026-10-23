@@ -5,7 +5,8 @@ import {
   MI_SPECTRUM_48,
   MI_ZX80,
   MI_ZX81,
-  MI_ZXNEXT
+  MI_ZXNEXT,
+  MI_HT1080Z
 } from "@common/machines/constants";
 
 
@@ -16,7 +17,8 @@ export const enum SpectrumModelType {
   SpectrumP3 = 3,
   Next = 4,
   ZX80 = 5,
-  ZX81 = 6
+  ZX81 = 6,
+  HT1080Z = 7
 }
 
 /**
@@ -28,7 +30,8 @@ export const SpectrumModelTypes: Record<number, string> = {
   3: "SpectrumP3",
   4: "Next",
   5: "ZX80",
-  6: "ZX81"
+  6: "ZX81",
+  7: "HT1080Z"
 }
 
 /**
@@ -37,6 +40,14 @@ export const SpectrumModelTypes: Record<number, string> = {
  */
 export function isZx8081ModelType(modelType: number | undefined): boolean {
   return modelType === SpectrumModelType.ZX80 || modelType === SpectrumModelType.ZX81;
+}
+
+/**
+ * Whether a model type is the HT-1080Z's, every model of it (`.plans/HT1080Z_CODE_INJECTION_PLAN.md`
+ * D1, D-Q1)
+ */
+export function isHt1080zModelType(modelType: number | undefined): boolean {
+  return modelType === SpectrumModelType.HT1080Z;
 }
 
 /**
@@ -72,6 +83,8 @@ export function defaultModelTypeForMachine(
       return SpectrumModelType.ZX81;
     case MI_ZX80:
       return config?.[MC_ZX80_ROM8K] === true ? SpectrumModelType.ZX81 : SpectrumModelType.ZX80;
+    case MI_HT1080Z:
+      return SpectrumModelType.HT1080Z;
     default:
       return undefined;
   }

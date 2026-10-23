@@ -38,6 +38,7 @@ import { SmallIconButton } from "@renderer/controls/IconButton";
 import { Text } from "@renderer/controls/layout/Text";
 import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z80-disassembler";
 import { Z88CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z88-custom.disassembler";
+import { Ht1080zCustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/ht1080z-disassembler";
 import { prepareRomDisassembler } from "@renderer/appIde/annotations/romDecoder";
 import { romSysVarsFor } from "@renderer/appIde/annotations/romSysVars";
 import { createSysVarOperandLabelResolver } from "@renderer/appIde/disassemblers/sys-var-operand-labels";
@@ -234,7 +235,11 @@ type MemoryDumpViewState = {
  * Whose code the bytes are. `"z88"`: OZ code (`RST 20h` calls). `"rom"`: a ROM page, decoded with
  * the ROM's own conventions (`romPageKind`) — see `romDecoder.ts`.
  */
-export type StaticDisassemblyFlavor = "z88" | "rom";
+/**
+ * How a dump's bytes are disassembled: as Z88 code (OZ calls after `RST 20h`), as a ROM page, or as
+ * HT-1080Z code (plain Z80, with the Level II ROM's syntax checks decoded when they are in the dump)
+ */
+export type StaticDisassemblyFlavor = "z88" | "rom" | "ht1080z";
 
 type StaticDumpViewMode = "memory" | "disassembly" | "sprites" | "graphics";
 
@@ -535,6 +540,7 @@ const StaticMemoryDump = ({
   // --- Spectrum's (or whatever is running), which names nothing in OZ code.
   const isZ88Listing = currentViewState.disassemblyFlavor === "z88";
   const isRomListing = currentViewState.disassemblyFlavor === "rom";
+  const isHt1080zListing = currentViewState.disassemblyFlavor === "ht1080z";
   const romPageKind = currentViewState.romPageKind;
   // --- A ROM page lists with the ROM's own decoding, in both the annotated and the plain path
   const prepareRomListing = useMemo(
@@ -1427,7 +1433,8 @@ const StaticMemoryDump = ({
             {
               // --- The Next's extra opcodes are not instructions on a Z88, nor on a Spectrum or
               // --- ZX81 ROM; they are on the Next's own ROM pages
-              allowExtendedSet: !isZ88Listing && (!isRomListing || romKindUsesZ80N(romPageKind)),
+              allowExtendedSet:
+                !isZ88Listing && !isHt1080zListing && (!isRomListing || romKindUsesZ80N(romPageKind)),
               decimalMode: decimalView,
               // --- An un-annotated bank has no labels of its own, so the machine's system variables
               // --- are the only names available here — and the only ones this path ever needs.
@@ -1439,6 +1446,8 @@ const StaticMemoryDump = ({
             // --- `RST 20h` + its operand is an OZ call: without this, the operand bytes are
             // --- decoded as instructions and every following line is off.
             disassembler.setCustomDisassembler(new Z88CustomDisassembler());
+          } else if (isHt1080zListing) {
+            disassembler.setCustomDisassembler(new Ht1080zCustomDisassembler());
           }
           prepareRomListing?.(disassembler);
           const output = await disassembler.disassemble(runStart, runEnd);
@@ -1475,6 +1484,7 @@ const StaticMemoryDump = ({
     listingAnnotations,
     hideScreenArea,
     isZ88Listing,
+    isHt1080zListing,
     isRomListing,
     romPageKind,
     prepareRomListing,

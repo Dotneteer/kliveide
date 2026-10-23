@@ -14,6 +14,8 @@ import {
 import { DEFAULT_JOYSTICK_BINDINGS } from "@common/settings/joystick-bindings";
 import {
   SETTING_EMU_FAST_LOAD,
+  SETTING_EMU_HT_CPU_DASH,
+  SETTING_EMU_HT_VIDEO_CUT,
   SETTING_EMU_REVERSE_DEBUGGING,
   SETTING_EMU_REVERSE_DEBUG_MEMORY_MB,
   SETTING_EMU_PROFILE_RESET_ON_START,
@@ -320,6 +322,26 @@ const settingDefinitions: Setting[] = [
     id: SETTING_EMU_FAST_LOAD,
     title: "Fast load",
     description: "Allows the emulator fast tape load mode.",
+    type: "boolean",
+    defaultValue: true,
+    saveWithIde: true,
+    boundTo: "emu"
+  },
+  // --- The HT-1080Z's video switches (`.plans/HT1080Z_PLAN.md` §6, D7)
+  {
+    id: SETTING_EMU_HT_VIDEO_CUT,
+    title: "HT-1080Z VIDEO CUT",
+    description: "The HT-1080Z's VIDEO CUT switch: the picture is blanked while the machine runs on.",
+    type: "boolean",
+    defaultValue: false,
+    saveWithIde: true,
+    boundTo: "emu"
+  },
+  {
+    id: SETTING_EMU_HT_CPU_DASH,
+    title: "HT-1080Z video RAM access dash",
+    description:
+      "When the CPU reads or writes the HT-1080Z's video RAM, the character cells at the beam are blanked, as on the real machine.",
     type: "boolean",
     defaultValue: true,
     saveWithIde: true,

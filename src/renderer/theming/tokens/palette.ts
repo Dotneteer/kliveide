@@ -312,7 +312,22 @@ export const DEVICE = {
    */
   keyZx80: "#1c45b0",
   legendZx80Amber: "#e8a935",
-  legendZx80Dim: "#2b3d78"
+  legendZx80Dim: "#2b3d78",
+  /*
+   * The HT-1080Z's keyboard: cream keys with near-black legends in a dark charcoal recess, set in an
+   * off-white case; PAGE and F1 are small light-grey keys (sampled from a photo of a Series I/II
+   * machine, https://frescho.hu/ht-1080z-adatlap/; the approved mockup
+   * `.plans/ht1080z/ht1080z-keyboard-mockup.html`). The Hungarian hint legends are Klive's, not
+   * printed on the machine, in a burnt orange that stays readable on cream.
+   */
+  keyHt1080z: "#e6dfcb",
+  keyHt1080zEdge: "#b9af95",
+  legendHt1080zInk: "#1a1712",
+  legendHt1080zHint: "#b5481a",
+  ht1080zPanel: "#3f4045",
+  ht1080zCase: "#e8e2d4",
+  keyHt1080zSwitch: "#a9a9ac",
+  keyHt1080zSwitchEdge: "#7d7d82"
 } as const;
 
 /**

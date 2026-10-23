@@ -6,10 +6,19 @@
 // AY envelope step multiplier 2, and the 17-bit noise LFSR with the /2
 // prescaler. The Spectrum 128 routes all three AY outputs to the speaker at
 // gain 0.25.
+//
+// A machine may define SP128_PSG_CLOCK_STEP and SP128_PSG_ROUTE_GAIN before including this
+// file. The clock step is the number of the host's tacts per AY prescaler step: 16 on the
+// Spectrums, whose AY runs at the CPU clock / 2 (the AY divides its input by 8); the HT-1080Z
+// clocks its AY at the CPU clock, so it uses 8. Both are #undef'd at the end of this file.
 
+#ifndef SP128_PSG_CLOCK_STEP
 #define SP128_PSG_CLOCK_STEP 16u
+#endif
 #define SP128_PSG_ENV_STEP_MASK 0x0fu
+#ifndef SP128_PSG_ROUTE_GAIN
 #define SP128_PSG_ROUTE_GAIN 0.25
+#endif
 
 enum {
   SP128_AY_AFINE = 0x00,

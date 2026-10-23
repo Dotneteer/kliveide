@@ -2422,6 +2422,16 @@
     "context": "Option in the Export format dropdown of the Export Code dialog. Intel HEX is a file format name; keep it.",
     "maxChars": 22
   },
+  "dialog.exportCode.format.ht1080zCmd": "HT-1080Z program (.cmd)",
+  "@dialog.exportCode.format.ht1080zCmd": {
+    "context": "Export Code dialog, a choice in the Format list: a machine-code load module for the HT-1080Z (a Hungarian school computer, a TRS-80 Model I relative). .cmd is a file extension: keep it.",
+    "maxChars": 24
+  },
+  "dialog.exportCode.format.ht1080zCas": "HT-1080Z tape (.cas)",
+  "@dialog.exportCode.format.ht1080zCas": {
+    "context": "Export Code dialog, a choice in the Format list: a cassette tape image for the HT-1080Z that loads with SYSTEM. .cas is a file extension: keep it.",
+    "maxChars": 24
+  },
   "dialog.exportCode.format.zx81Program": "ZX81 program (.p)",
   "@dialog.exportCode.format.zx81Program": {
     "context": "Option in the Export format dropdown of the Export Code dialog. A ZX81 program file; keep the machine name and the extension.",

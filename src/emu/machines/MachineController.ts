@@ -1176,8 +1176,16 @@ export class MachineController implements IMachineController {
           this.assertMachineOperationIsCurrent(operationRevision);
           break;
 
+        case "TypeText": {
+          const text = typeof step.text === "function" ? step.text(codeToInject) : step.text;
+          const typer = (m as unknown as { typeText?: (text: string) => void }).typeText;
+          if (!typer) throw new Error("This machine cannot type text.");
+          typer.call(m, text);
+          break;
+        }
+
         case "SetReturn":
-          if (codeToInject?.subroutine) {
+          if (codeToInject?.subroutine || (step.always && codeToInject && !codeToInject.unitTest)) {
             const spValue = m.sp;
             m.doWriteMemory(spValue - 1, step.returnPoint >> 8);
             m.doWriteMemory(spValue - 2, step.returnPoint & 0xff);

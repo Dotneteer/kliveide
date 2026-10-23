@@ -1,0 +1,287 @@
+/*
+ * The HT-1080Z tape file viewer (`.plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D5): the summary strip, the
+ * graphics above the parts, the memory map and the listing in the details. The timeline's segments
+ * are the TAP viewer's (`TapeTimeline.module.scss`); every other colour is an L4 alias in
+ * `componentAliases.ts` ("Byte anatomy and the HT-1080Z tape viewer") or a semantic token.
+ */
+
+.viewer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  min-width: 0;
+}
+
+/* --- One wrapping line of facts: label, value, label, value */
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-4);
+}
+
+.fact {
+  display: inline-flex;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.factLabel {
+  color: var(--data-label);
+}
+
+.factValue {
+  color: var(--data-value);
+  overflow-wrap: anywhere;
+}
+
+/* --- A fact that selects the part it comes from: the value, in the link colour */
+.factLink {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent-text);
+  cursor: pointer;
+  font: inherit;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: 1px solid var(--focus-ring);
+    outline-offset: 1px;
+  }
+}
+
+.ok {
+  color: var(--status-success);
+}
+
+.warning {
+  color: var(--status-warning);
+}
+
+.error {
+  color: var(--status-error);
+}
+
+.banner {
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--status-warning-subtle);
+  color: var(--text-primary);
+}
+
+.more {
+  align-self: flex-start;
+  padding: var(--space-0_5) 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent-text);
+  cursor: pointer;
+  font: inherit;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.rowLength {
+  flex: 0 0 auto;
+  color: var(--data-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.hint {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+/* --- The graphics */
+.graphics {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.graphic {
+  display: flex;
+  flex-direction: column;
+}
+
+.caption {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  color: var(--data-secondary);
+  font-size: var(--font-size-100);
+}
+
+.memoryMap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0_5);
+}
+
+.mapTrack {
+  position: relative;
+  display: flex;
+  height: calc(var(--panel-line-height) * 1.25);
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  color: var(--color-memory-map-zone);
+  font-size: var(--font-size-100);
+}
+
+.zone {
+  display: flex;
+  flex-basis: 0;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  box-shadow: inset -1px 0 0 var(--color-memory-map-divider);
+}
+
+.rom {
+  background: var(--bgcolor-memory-map-rom);
+}
+
+.io {
+  background: var(--bgcolor-memory-map-io);
+}
+
+.video {
+  background: var(--bgcolor-memory-map-video);
+}
+
+.system {
+  background: var(--bgcolor-memory-map-system);
+}
+
+.ram {
+  background: var(--bgcolor-memory-map-ram);
+}
+
+.ram48 {
+  background: var(--bgcolor-memory-map-ram48);
+}
+
+.mapBlock {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  min-width: 3px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.code {
+  background: var(--color-memory-map-code);
+}
+
+.basic {
+  background: var(--color-memory-map-basic);
+}
+
+.mapBlock.selected {
+  outline: 1px solid var(--color-memory-map-selected);
+  outline-offset: 1px;
+}
+
+.mapAxis {
+  position: relative;
+  height: var(--panel-line-height);
+  color: var(--data-secondary);
+  font-size: var(--font-size-100);
+
+  span {
+    position: absolute;
+    white-space: nowrap;
+    transform: translateX(-50%);
+  }
+
+  span:first-child {
+    transform: none;
+  }
+
+  span:last-child {
+    transform: translateX(-100%);
+  }
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  color: var(--data-label);
+  font-size: var(--font-size-100);
+
+  i {
+    display: inline-block;
+    width: 1ch;
+    height: 1ch;
+    margin-right: var(--space-1);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-subtle);
+  }
+}
+
+/* --- The details */
+.charSets {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.charSet {
+  padding: 0 var(--space-2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--data-label);
+  cursor: pointer;
+  font: inherit;
+
+  &:focus-visible {
+    outline: 1px solid var(--focus-ring);
+    outline-offset: 1px;
+  }
+}
+
+.charSet.on {
+  border-color: var(--accent-border);
+  background: var(--accent-subtle);
+  color: var(--accent-text);
+}
+
+/* --- The program's listing in the details, in full: the details pane is its only scroller */
+.listing {
+  padding: var(--space-1) 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  font-family: var(--monospace-font);
+}
+
+.listingLine {
+  padding: 0 var(--space-2);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--data-value);
+}
+
+.lineNo {
+  color: var(--color-ht-listing-line);
+}
+
+.keyword {
+  color: var(--color-ht-listing-keyword);
+}
+
+.string {
+  color: var(--color-ht-listing-string);
+}

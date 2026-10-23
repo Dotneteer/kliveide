@@ -1,6 +1,8 @@
 # HT-1080Z on the WASM Core — Implementation Plan
 
-**Status:** decisions accepted 2026-10-22 (§15); Phase 0 done 2026-10-22 (§17). Next: Phase 1.
+**Status:** complete 2026-10-23. Decisions accepted 2026-10-22 (§15; D10 revised the same day after
+Phase 2); Phases 0-5 done 2026-10-22, Phases 6-9 2026-10-23 (§17). Follow-ups are in §14 and at the
+end of §17.
 **Input:** the research pack `_input/ht1080z/`. Read its `README.md` first, then `HARDWARE.md`,
 `VIDEO_TIMING.md`, `SOUND_AY.md`, `STORAGE_FIRMWARE_SOFTWARE.md` and `EXISTING_EMULATORS.md`.
 Every hardware fact in this plan comes from there, with its source.
@@ -232,8 +234,8 @@ One machine ID, `MI_HT1080Z = "ht1080z"`, with three models:
 
 | Model | ROM set (HS name = MAME set) | RAM | Clock | Character set | VRAM |
 |---|---|---|---|---|---|
-| `ht1080z-s1` Series I (1983) | `ht_s1_*` = `ht1080z` | 16K | 1,774,000 Hz | no accents | 8-bit (verify, Phase 0) |
-| `ht1080z-s2` Series II (1984) | `ht_s2_*` = `ht1080z2` | 16K | 1,774,000 Hz | É Ö Á Ü é ö á ü on `@ \ ] ^ \` \| } ~` | 8-bit (verify) |
+| `ht1080z-s1` Series I (1983) | `ht_s1_*` = `ht1080z` | 16K | 1,774,000 Hz | no accents | 8-bit; 00h–1Fh drawn as 40h–5Fh (D10) |
+| `ht1080z-s2` Series II (1984) | `ht_s2_*` = `ht1080z2` | 16K | 1,774,000 Hz | É Ö Á Ü é ö á ü on `@ \ ] ^ \` \| } ~` | 8-bit; 00h–1Fh drawn as 40h–5Fh (D10) |
 | `ht1080z-64` HT-1080Z/64 (1985) | `ht_s3_*` = `ht108064` | 48K | 1,777,417 Hz | full Hungarian set + maths symbols on codes 0–31 | 8-bit |
 
 An optional `MC_HT_RAM` config key could give Series I/II 48K, standing in for an expansion RAM
@@ -285,7 +287,8 @@ From `VIDEO_TIMING.md` §1–7.
   - The line and frame totals are unchanged.
 - **Character ROM decode:**
   - Settled in Phase 0 (§17). The character ROM address is A0–A3 = scan line 0–11 and A4–A10 =
-    code bits D0–D6, so there are 128 glyphs of 16 bytes and codes 00h–1Fh are displayed.
+    code bits D0–D6, so there are 128 glyphs of 16 bytes. On the /64 codes 00h–1Fh show their own
+    glyphs (the Hungarian set); on Series I/II they are drawn as 40h–5Fh (D10, revised).
   - **Dots are bits 7–3, with bit 7 leftmost.** The 6th dot is always blank (graphics excepted).
   - Only ROM outputs O3–O7 are wired to the shift register. The low bits that eleven /64 glyphs
     carry are never shown and must be ignored.
@@ -574,7 +577,8 @@ All recommendations were accepted as written: **D1** one machine ID, three model
 ROMs (with the readme and notices); **D3** the provenance rule of §0.1; **D5** 1,774,000 Hz for
 Series I/II and 1,777,417 Hz for the /64; **D6** a 528 × 288 window with about 2:3 pixel aspect;
 **D7** the CPU-access dash on by default, with a toggle; **D8** one modelled deck; **D9** the base
-machine only; **D10** 8-bit video RAM on every model. **D4** was withdrawn when D2 was accepted.
+machine only; **D10** 8-bit video RAM on every model, with codes 00h–1Fh drawn as 40h–5Fh on Series
+I/II (revised after Phase 2, below). **D4** was withdrawn when D2 was accepted.
 The original questions follow for the record.
 
 - **D1 — One machine ID with three models, or three IDs?**
@@ -617,6 +621,12 @@ The original questions follow for the record.
   - *Recommendation: 8-bit*, unless Phase 0 finds a schematic or ROM reason otherwise. If the ROM
     never writes 00–1Fh to the screen, the difference is visible only to software that POKEs those
     codes.
+  - **REVISED 2026-10-22, after Phase 2 (reading (a) of §17's Phase 2 question):** the video RAM
+    keeps all 8 bits on every model, so a read gives back what was written. When drawing, Series
+    I/II show codes 00h–1Fh as 40h–5Fh (MAME's rule): their BASIC stores every letter there (the
+    fold at 0471h), and their character ROMs' glyphs at 00h–1Fh would make the screen unreadable.
+    The /64, whose BASIC removes the fold, shows its own glyphs at 00h–1Fh (the Hungarian set). The
+    rejected reading (b) stored bit 6 as NOR(D5, D7) on every write, as lkesteloot and MiST do.
 
 ---
 
@@ -654,7 +664,7 @@ values and record each deviation from this plan with its reason, as in `ZX8081_W
 | AY ports | W 1Fh addr, W 1Eh data, R 1Fh data | Sound panel schematic decode; *Rádiótechnika* 1984/8 program 4 |
 | ROM sets | HS s1/s2/s3 = MAME ht1080z/ht1080z2/ht108064 | `STORAGE_FIRMWARE_SOFTWARE.md` §1.4b (hashes verified 2026-10-22) |
 | Shipped images (CRC32) | `ht1080z-s1.rom` / `-s2.rom` 2bfef8f7 (12 KB, identical); `ht1080z-s64.rom` 48985a30; `-s1-ext` 2a851e33; `-s2-ext` 07415ac6; `-s64-ext` fc12bd28; `-s1-chargen` e8c59d4f; `-s2-chargen` 6728f0ab; `-s64-chargen` e76b73a4 | §1.4b; the ROM-image test checks these |
-| VRAM width | **8 bits on every model**. The character ROM sees D0–D6, so codes 00h–1Fh show their own glyphs (MAME's 7-bit s1/s2 mapping is not used) | Genie §1.4.2: two 2114 (1K × 4); /64 E panel IC13/IC14 MM2114, chargen IC20 A4–A10 from latches IC21/IC3; s1/s2 chargen holds distinct glyphs at 00h–1Fh |
+| VRAM width | **8 bits on every model**. The character ROM sees D0–D6; Series I/II draw codes 00h–1Fh as 40h–5Fh, the /64 shows its own glyphs there (D10, revised after Phase 2) | Genie §1.4.2: two 2114 (1K × 4); /64 E panel IC13/IC14 MM2114, chargen IC20 A4–A10 from latches IC21/IC3; s1/s2 chargen holds distinct glyphs at 00h–1Fh |
 | Character ROM addressing | A0–A3 = scan line (0–11; 12–15 never addressed), A4–A10 = code D0–D6 | /64 E panel IC20 TMS2716 pins 8–5 and 1–4, 23, 22, 19 |
 | Dots per glyph row | bits 7–3 (bit 7 leftmost), 6th dot blank; bits 2–0 ignored | IC20 outputs O3–O7 (pins 13–17) only wired; F/R glyphs read correctly with bit 7 leftmost |
 | Glyph rows used | s1/s2: 0–8 (body 0–6); s64: 0–11 (accents 0–2, body 3–9) | Row statistics of the shipped character ROMs |
@@ -666,4 +676,248 @@ values and record each deviation from this plan with its reason, as in `ZX8081_W
 | Cassette read window | latch cleared about 906 T after the clock pulse is seen, sampled about 2,476 T after it (bit = 1 if a pulse fell in between) | CTBIT 0241h (`LD B,41h`, `LD B,76h`) |
 | Leader | 255 × 00h then A5h | 0284h–0290h (`LD B,0FFh`) |
 | /64 port-FF output | three-level: two latch outputs (IC6 Q3, Q̄2) summed through R30/R31 10k; relay from Q0; recorder select IC35 (FE bit 4) | /64 E panel sheet 2 (corrects the earlier "D0, D2, D3" reading, which was flip-flop pin labels) |
-| Fast-load trap PCs | *Phase 6* | |
+| Fast-load trap PCs | CTBIT 0241h and the byte loop 0235h (fast load); 0264h writer, 0284h recording start, 01F8h motor off (SAVE); 004Eh, the wait-for-key loop's `JR` (Load and Run's pacing) | Disassembly of the Series II ROM; the /64 ROM has them at the same addresses (Phase 6) |
+
+**Phase 1 done 2026-10-22.** `zx-spectrum-psg.c` now wraps `SP128_PSG_CLOCK_STEP` (default 16u)
+and `SP128_PSG_ROUTE_GAIN` (default 0.25) in `#ifndef`, with a header comment saying why; both are
+still `#undef`'d at the end of the file. Proof of the no-op:
+- sp48, sp128, spp3e and timex were rebuilt before and after the change, and all four `.wasm`
+  artifacts are **byte-identical** (SHA-1), which is stronger than identical AY goldens;
+- `wasm-psg-audio`, `wasm-beeper-audio`, `PsgPanel`, the shared CPU contract test,
+  `2068-ay`, `sp128-golden`, `pentagon-timing` and the slow-tier sp128/spp3e loader tests pass.
+
+Deviation: the `check-wasm-cpu-contract.cjs` allowance for `zx-spectrum-psg.c` (§5, last bullet)
+moves to Phase 2. There is no HT entry to put it in until the core exists; Phase 2 adds the entry
+with `allowedIncludeFragments: ["zxSpectrum/wasm/common/zx-spectrum-psg.c"]`. (Done in Phase 2.)
+
+**Phase 2 done 2026-10-22.** Every model boots on the real ROMs, observed through video RAM
+(`test/harness/ht1080z/self-tests/session.test.ts`), and the probes in
+`test/ht1080z-hw/skeleton.test.ts` pin the memory map, the unmapped FFh reads, the keyboard OR-read
+(with the 3900h-3BFFh mirror), the ports without tape, the RESET-key NMI, and the absence of INT.
+
+| Value | Klive | Source |
+|---|---|---|
+| Boot, Series I/II | `READY ? _` within 60 frames; NEW LINE gives `READY` and `>_`; MEMSIZ (40B1h) = 7FFFh | Observed on the core, both ROMs |
+| Boot, /64 | `MEMORY SIZE? _`; NEW LINE gives `BASIC  2.20`, `READY`, `>_`; MEMSIZ = FFFFh | Observed on the core |
+| RESET key | NMI at the next instruction boundary; BASIC returns to `READY`, RAM kept | Probe; HARDWARE.md §2 |
+| Unmapped memory (16K models) | 8000h-FFFFh read FFh, writes lost | Probe; the ROM's memory-size test finds 7FFFh |
+| Size | 241 KB (speed build) against a 300 KB ceiling | `check:ht1080z-wasm-size` |
+
+Deviations from the plan, with their reasons:
+- **A fourth C file, `ht1080z-ports.c`,** holds the port decode and the cassette-in latch. §4.1 has no
+  home for them before the audio and tape files exist; Phases 5 and 6 add to it.
+- **The core already carries the history recorder and the access profile.** The shared debug loop
+  calls `z80HistoryStopNow`, and `wasm-shared-z80-cpu-contract.test.ts` requires every core to record
+  history. Their TypeScript side (the context decoder, the profile layout, `IExecutionHistorySource`)
+  and the `MF_EXEC_HISTORY`/`MF_PROFILE`/`MF_REVERSE_DEBUG` features stay in Phase 8.
+- **A position key mapping and a minimal character map exist now** (`Ht1080zKeyMappings.ts`,
+  `Ht1080zChars`), so the registered machine is usable. Phase 4 adds the character-level mapping and
+  the typer; Phase 8 the per-model glyphs and BASIC tokens.
+- `HT1080Z_ALL_MODELS` defines all three models for the core and the harness; the registry lists
+  only `HT1080Z_MODELS` (Series II) until Phase 7. The model key is `MC_HT_MODEL` (`s1`/`s2`/`s64`).
+
+**Question found in Phase 2 (against D10), answered 2026-10-22: reading (a).** The Series I/II BASIC's
+display driver folds every character 40h-7Fh down to 00h-1Fh before writing it (0471h: `CP 40h` /
+`JR C` / `SUB 40h` / `CP 20h` / `JR C` / `SUB 20h`), so `READY` is stored as 12h 05h 01h 04h 19h.
+The /64 BASIC NOPs exactly those bytes out. The Series II character ROM has glyphs at 00h-1Fh that
+differ from 40h-5Fh (none of the 32 match). So D10's "codes 00h-1Fh show their own glyphs on every
+model" would put garbage on the Series I/II boot screen: on those models 00h-1Fh must *display* as
+40h-5Fh. Two readings fit the evidence:
+- (a) keep 8-bit video RAM and alias 00h-1Fh to 40h-5Fh when drawing on Series I/II (MAME's `m_7bit`);
+- (b) store bit 6 as NOR(D5, D7) on every write on Series I/II, a 7-bit RAM with the TRS-80's
+  regenerated bit (lkesteloot's `writeToScreenMemory`; MiST stores `din or 40h` below 20h).
+They differ only for software that reads video RAM back or writes 00h-1Fh/60h-7Fh itself. The project
+author chose (a); D10 (§15) records it.
+
+**Phase 3 done 2026-10-22.** `ht1080z-video.c` draws the picture against the CPU clock as §6 says.
+`test/ht1080z-hw/video.test.ts` pins the rules at T-state precision, and `screen.test.ts` holds a
+boot-screen and a character-set golden per model, each checked by eye before it was recorded. In the
+running app (Playwright, `scripts/doc-shots/harness.cjs`), Series II shows `READY ?`, NEW LINE gives
+`READY`, and the host keyboard types at the `>` prompt.
+
+| Value | Klive | Source |
+|---|---|---|
+| Content timing | the display reads column n at slot n and shows it at slot n + 2; a write is seen by reads after its T1 slot | VIDEO_TIMING.md §3, §5; `video.test.ts` |
+| Dash | an access with T1 at slot x blanks the reads at x and x + 1, so the dash is drawn at slots x + 2 and x + 3; a constant pair in `ht1080z-video.c` | VIDEO_TIMING.md §5 (inference: VID low mid-T1 to mid-T3); `video.test.ts` |
+| Window | 384 x 192 at (72, 48) in a 528 x 288 black picture | D6 |
+| Dot aspect | 7 / 10.644 = 0.658 of its height (Klive shows a 7 MHz Spectrum pixel square) | D6; `HT1080Z_PIXEL_ASPECT` |
+| Size | 259 KB | `check:ht1080z-wasm-size` |
+
+Deviations from the plan, with their reasons:
+- **VIDEO CUT, PAGE and the dash toggle are machine properties now** (`HT_VIDEO_CUT`, `HT_VIDEO_PAGE`,
+  `HT_VIDEO_DASH` in `machine-props.ts`), with core exports to set them. Their menu items come with
+  the HT menus in Phase 8 (§11), and the PAGE host key with the keyboard in Phase 4.
+- **The renderer also catches up when the IDE shows a paused machine** (`renderInstantScreen` calls
+  `ht1080zRenderToBeam`), so a debugger stop shows the frame down to the beam. Drawing is output only,
+  so this cannot change what a run computes.
+- An opcode fetch from video RAM is treated as a 3-T access like any other (the M1 cycle drives MREQ
+  too); the core does not tell the hook which kind of cycle it is.
+
+Found in the running app and fixed the same day: the panel scaled the 528-dot picture by the 0.658
+aspect nearest-neighbour, so some dot columns came out a pixel wider than others and letters looked
+uneven. A picture whose aspect is not a whole fraction is now drawn sharp-bilinear on a
+device-resolution canvas (`features/emulator/sharpScale.ts`, the rule in
+`.ai/ui-theming-intent-and-lessons.md`); every other machine's path is unchanged.
+
+**Phase 4 done 2026-10-22.** The typer (`Ht1080zTyper.ts`, `Ht1080zWasmHost.typeText`), the RESET
+key (Machine menu, `ht1080z-menus.ts`, custom command `reset_key`), PAGE as a latching key on Page
+Up/Page Down, `test/ht1080z-hw/keyboard.test.ts`, and the virtual keyboard
+(`src/renderer/appEmu/Keyboard/Ht1080zKeyboard.tsx`, `test/controls/Ht1080zKeyboard.test.tsx`), built
+to the mockup `.plans/ht1080z/ht1080z-keyboard-mockup.html`, which the project author approved on
+2026-10-22. Its geometry and printed legends are measured from the user manual's keyboard drawing
+(§4.1, p. 8); its colours are sampled from a photo of a Series I/II machine
+(https://frescho.hu/ht-1080z-adatlap/): cream keys with black legends in a charcoal recess, light
+grey PAGE and F1. The Hungarian legends are Klive's hints, per model, in burnt orange; a click types
+its character through the typer. F1 is drawn and inert until Phase 6. Checked in the running app:
+the keyboard matches the mockup, and clicks on it type at the prompt.
+
+| Value | Klive | Source |
+|---|---|---|
+| Typing timing | held 3 frames, released 3; the Level II keyboard routine loses a repeated key at 2 frames in all and takes every key from 3 | Measured on both BASICs |
+| Typer frame edges | half a frame before each boundary: a frame starts a few T-states late by a different amount each time, and an edge on the boundary moved a key's hold between 2 and 3 frames | Measured (a run of Series II accents lost é and ü) |
+| Shifted keys | the TRS-80's: SHIFT+1-9 `! " # $ % & ' ( )`, SHIFT+: `*`, SHIFT+; `+`, SHIFT+, `<`, SHIFT+- `=`, SHIFT+. `>`, SHIFT+/ `?`; SHIFT+@ stores 00h (Series I/II) or 60h (/64) | Observed in video RAM |
+| Extension ROM | off at power-on; `SYSTEM` then `/12288` switches it on (Series I prints `NEW KEYBOARD ROUTINE ENABLE`, the /64 `BASIC ROM EXTENSION  2.51`, Series II nothing); it adds lowercase and a block cursor (8Fh) | Observed |
+| Series II accents | with the extension on: CLEAR held, then A E U O give 5Dh 40h 5Eh 5Ch (Á É Ü Ö); with SHIFT too 7Dh 60h 7Eh 7Ch (á é ü ö). CLEAR must go down before the letter | Observed; matches the HS ROM page |
+| /64 specials | with the extension on and `PRINT CHR$(21)`: `` ` `` (SHIFT+@) then A E I O U 3 4 5 6 give codes 0 1 2 3 6 4 5 7 8 (Á É Í Ó Ú Ö Ő Ü Ű), SHIFT+ them 16-24; 7 8 9 B G M S give Ω 15, ∞ 11, ■ 9, Ψ 14, π 12, λ 10, Σ 13; SHIFT+ them ω 31, α 27, √ 25, β 30, γ 28, μ 26, ∫ 29 | Observed; glyphs read off the /64 character ROM |
+| RESET key | NMI to 0066h, taken once; the handler (`LD SP,0600h`, 37ECh tested for a disk, `JP 06CCh`) returns BASIC to its `>` prompt, the program kept | Observed |
+
+Corrections and deviations:
+- **The HS ROM page's code numbers for the /64's mathematical and Greek characters are wrong** (and
+  so are HARDWARE.md §5.5 and STORAGE §1.3, which copy them); its *keys* are right. The /64
+  character ROM has λ at 10, π at 12, √ at 25, μ at 26, α at 27, γ at 28, ∫ at 29 and β at 30 (the
+  page says ∫ 10, √ 12, α 25, β 26, γ 27, λ 28, μ 29, π 30). The Phase 8 character map must use the
+  ROM's.
+- **A Phase 2 bug, fixed here:** the core raised NMI and never lowered it. The shared Z80 does not
+  clear the line when it takes an NMI (the machine owns it, as on the ZX81), so after one RESET the
+  CPU re-entered 0066h for ever. The Phase 2 probe passed because `READY` was still on the screen; it
+  now blanks the screen first and checks that the NMI is taken once.
+- §7's "Shift keeps the TRS-80 shifted symbols, which needs a character-level mapping" is read as:
+  host keys go by position (SHIFT+2 is `"`, as on the ZX80/81), and the character-level mapping is
+  the typer's. A host-character mapping would need a new mechanism in `useEmulatorKeyboard`.
+- The video switches (VIDEO CUT, the dash) stay machine properties without menu items until the
+  Phase 8 menus, which need settings for their check marks.
+- Found in passing, not changed: the shared `Z80MachineBase.queueKeystroke` puts its edges on frame
+  boundaries, the jitter fixed above for the HT. The ZX80/81 typer holds keys 4 frames and has not
+  shown it.
+
+**Phase 5 done 2026-10-22.** `ht1080z-audio.c`: the beeper, the AY through the shared PSG
+(`SP128_PSG_CLOCK_STEP 8u`), the mono mix with a DC filter, the sample buffer; the PSG panel through
+the Spectrum cores' `WasmSpectrumPsgDevice` and `MF_PSG`. `test/ht1080z-hw/sound.test.ts` covers
+every exit criterion. In the running app the manual's sea program runs and the PSG panel shows its
+registers.
+
+| Value | Klive | Source |
+|---|---|---|
+| AY pitch | TP = 100 plays 1,110.9 Hz on the /64 and 1,108.75 Hz on Series II, within 1 % in the sample buffer | `sound.test.ts`; confirms SOUND_AY.md §3's inference that the AY runs at Φ, as far as the emulator can |
+| AY ports | OUT 1Fh address, OUT 1Eh data, IN 1Fh read, IN 1Eh FFh; R14/R15 read FFh as inputs, their value as outputs | `sound.test.ts`; SOUND_AY.md §2, §5 |
+| Mix | beeper x 0.5 (levels -1, 0, 1; muted by FF bit 2) + AY channels x 0.25 each, mono; DC high-pass 1.4 Hz; clamp | Chosen here (§5 left the gain to this phase); MAME's mono route is 0.25 too |
+| Samples per frame | 44,100 x 34,944 / 1,774,000 = 868.6 on average, each frame within 1.5 | `sound.test.ts` (§16's check) |
+| Reset | the AY at power-on only; the RESET key leaves it playing | SOUND_AY.md §6 (unverified); `sound.test.ts` |
+| Size | 266 KB | `check:ht1080z-wasm-size` |
+
+Deviations from the plan, with their reasons:
+- **The AY and the sample schedule count in frame tacts, not the CPU's counter** (§10's "tact epoch"
+  item): `sp128Tacts` is the frame's tact counter, and `htAudioEndFrame` moves the PSG's two absolute
+  points, the beeper's and the next sample's back by a frame. The CPU counter never rebases, so
+  nothing wraps after the 40 minutes a 32-bit counter lasts at 1.77 MHz.
+- `OUT 1Fh` passes the whole byte to the PSG, whose chip select ignores a register number with any of
+  bits 4-7 set, as the AY-3-8910 does; §10 said "low 4 bits".
+- The PSG panel's title reads "PSG (AY-3-8912)", shared with the Spectrums; the HT's chip is the
+  AY-3-8910, which has the same registers and one more I/O port (B). Left as it is.
+
+**Phase 6 done 2026-10-23.** `ht1080z-tape.c` (the pulse player, the fast-load and SAVE traps),
+`Ht1080zTapeFile.ts` (`.cas` recognition, `.cmd` and `.bas` turned into tapes), the machine's tape
+plumbing and Load and Run, the Machine menu's tape items, the emulator's and `tape-load`'s handling of
+HT tapes. `test/ht1080z-hw/tape.test.ts` and `test/ht1080z/tape-file.test.ts`. In the running app,
+`tape-load <file>.cas -r` loads a tape and runs it by itself.
+
+| Value | Klive | Source |
+|---|---|---|
+| Pulse player | clock edge 227 T into a cell, data edge 1,763 + 227 T, cells 3,557 T (1) / 3,570 T (0), at the model's clock; the latch set on each edge | §17's writer timing; the ROM reads every bit of a tape it wrote |
+| Silence after a sync | 1 ms (1,774 T) after 00 00 00 A5h | Found in Phase 6: the reader's post-sync work (about 2,100 T: `**`, the return to CLOAD) is longer than a cell's slack, so the first header bit was lost without it; MAME's CAS player leaves 1 ms there too |
+| Real time vs fast | the same program bytes, pointers (40A4h, 40F9h, 40FBh, 40FDh) and screen; real time 9.8 bits a frame | `tape.test.ts` |
+| SAVE capture | `CSAVE "A"` gives 255 zeros, A5h, D3h D3h D3h, `A`, the program, 00 00 - a valid `.cas` that loads back | `tape.test.ts` |
+| Load and Run | NEW LINE (the power-on question), then `CLOAD` / `RUN`, or `SYSTEM` / the name / `/`; each typed once BASIC is idle at a prompt | `tape.test.ts`; in the app |
+
+Deviations from the plan, with their reasons:
+- **Quick load is fast load of a converted tape** (§9 "Quick load"). A `.cmd` becomes a SYSTEM tape
+  (its load blocks as 3Ch blocks with checksums, its transfer address as the 78h entry) and a `.bas`
+  a CLOAD tape, both loaded through the ROM's own routines with the fast-load traps. The ROM then puts
+  the bytes in place, relinks the BASIC lines and sets the pointers itself, where a direct memory
+  write would have to imitate all of that; and the same file also plays in real time.
+- **Load and Run is paced by BASIC being idle, not by the end of the load.** The core counts passes of
+  the wait-for-key loop's `JR` (004Eh); the machine types its next command once that count grows and
+  nothing is being typed. One rule covers the power-on question, the `>` prompt, SYSTEM's `*?` and
+  the prompt after a load, and it never types while BASIC is printing, sizing memory or loading. The
+  entries to 0049h could not be used: the routine re-enters itself hundreds of times per key.
+- `.bas` is an HT tape only while the HT runs: elsewhere it is BASIC source (Klive BASIC, Boriel
+  BASIC). The explorer's Run/Insert buttons, File Open and drag-and-drop of tapes, the media strip
+  and `klive run` with a tape are left to Phase 8 (§11's IDE list); the Machine menu and `tape-load`
+  cover loading a tape from the IDE.
+- `.wav` input (6b, optional) is not done.
+- F1 is a latching key that holds the motor on, on the virtual keyboard too (§7 called it a
+  "motor override" toggle).
+
+**Phase 7 done 2026-10-23.** All five models are registered: Series I, Series II and the /64 (D1),
+and Series I and II with 48K. Each has its own ROMs, clock and RAM in the core, the Select Machine
+sheet (per-model ROMs, the /64's clock and 48K, and now the tape row) and the keyboard's hints.
+`test/ht1080z-hw/models.test.ts`: every model boots at its clock to its model's boot golden with the
+ROM's memory test finding its RAM; the /64 prints `ÁRVÍZTŰRŐ ∞π` from a BASIC string as its own
+character codes; Series II prints its eight accents. The `hardware-specs` drift test covers all five
+models. In the running app each model is selected from the Machine menu and boots, with its name and
+clock in the status bar.
+
+Deviation: the optional 48K for Series I/II (§4.3's `MC_HT_RAM`) is two more models with
+`MC_MEM_SIZE: 48`, as the ZX81's RAM sizes are models, not a new configuration key. The HT is no longer
+a single-model "leaf" in the Select Machine dialog.
+
+**Phase 8 done 2026-10-23.** The debugger and the IDE:
+- **Disassembler** (`ht1080z-disassembler.ts`): the byte after `RST 08h` as the character or token the
+  syntax check expects, and the BASIC ROM's tables as data - function dispatch 1608h, reserved words
+  1650h-1821h, statement dispatch 1822h, operator precedences 189Ah, arithmetic dispatch 18A1h, the
+  23 error codes 18C9h (the same addresses in all three ROMs). It gates itself on 0000h-2FFFh: the
+  IDE's ROM-gate context knows no HT bank space, and the HT's ROM is never paged out.
+- **Character map**: one per character ROM (`ht1080zCharsFor`), on the model (`MachineModel.charSet`,
+  read through `charSetOfModel`): Series II's accents, the /64's 32 specials at 00h-1Fh with the ROM's
+  code numbers, Series I/II showing 00h-1Fh as the 40h-5Fh glyphs (D10).
+- **BASIC listing** (`ht1080zBasicListing.ts`, tokens in `src/common/ht1080z/basicTokens.ts`, checked
+  against every ROM's table): as the ROM's LIST prints it, observed on the core - tokens expanded
+  everywhere, even in quotes and REMs; the colon before `ELSE` and `:REM` before `'` hidden; control
+  codes not printed; on the /64 the 32 backtick pairs as their characters (other pairs are dropped by
+  the display driver). `basic-listing.test.ts` LISTs programs on each model and compares.
+- **History, profile, reverse debugging, state files**: `ht1080zContext.ts`, `layouts/ht1080z.ts`, the
+  export contract (every export classified), the journal-replay determinism test (fast and debug),
+  state determinism, debug-recording, the shared history suite (with no INT case: the HT has none)
+  and a `.kls` round trip in `debug.test.ts`. A state load keeps the PAGE latch of the state but the
+  IDE's VIDEO CUT and dash settings.
+- **Menus**: PAGE key, VIDEO CUT and the dash (settings `emuOptions.ht1080zVideoCut` /
+  `ht1080zCpuDash`), BASIC Listing in the View menu; state save/restore.
+- **Tapes in the IDE**: `.cas`/`.cmd` in the Explorer (hex viewer, Run/Insert/Debug on the HT only),
+  File Open and drag-and-drop, the media strip (its Insert dialog offers HT tapes on the HT).
+- **Headless and CLI**: the HT runs headless; `klive run x.cas|x.cmd|x.bas` loads and starts the tape.
+- In the running app: a `.bas` loaded with `tape-load -r` ran, the BASIC Listing showed `10 PRINT 42`,
+  the media strip showed the tape, and the menus had their items.
+
+Not done, left to follow-ups: a `.bas` in the Explorer stays Klive BASIC source (no HT launch entries
+there; File Open and drag-and-drop take only `.cas`/`.cmd`). The beam-position overlay, first left out,
+was added on 2026-10-23: `getBeamPosition` from the raster timing, `renderToBeamPreview` through
+`ht1080zRenderToBeam`, and a read-only `ht1080zGetVideoRenderedRead` for what the picture has drawn
+(`test/ht1080z-hw/beam-position.test.ts`).
+
+**Phase 9 done 2026-10-23; the plan is complete.**
+- Docs: `guides/emulator/ht1080z.mdx` (models, typing and accents, tapes, sound, the Machine menu,
+  debugging, the command line, the ROMs); `under-the-hood/emulator-internals/ht1080z-video.mdx` (the
+  counter chain, a line and a frame, characters and blocks, the dash, VIDEO CUT/PAGE, Klive's catch-up
+  renderer); the machine-types reference; the BASIC Listing page; the machine lists of the reverse
+  debugging, history, coverage, profiler, state and `klive run` pages.
+- Screenshots: `scripts/doc-shots/recipes/ht1080z.cjs` (keyboard, a demo program, its BASIC listing),
+  from `ht1080z-demo.bas`, a tokenised program the emulated Series II itself saved. Series II lists `@`
+  as `É`, as its character ROM and its own LIST do.
+- `.ai/wasm-migration-intent-and-lessons.md` has an HT-1080Z section. `THIRD_PARTY_NOTICES.md` and
+  packaging were done in Phases 2 and 6.
+- Gates: `build:check`, `lint:renderer`, the full `npm test`, `test:slow` (21 files), the electron-vite
+  build, `doc:build` and `doc:check` (route goldens re-baselined for the two pages and three images).
+  A packaged macOS build (`electron-builder --mac --arm64 --dir`) carries the core and the nine ROMs,
+  and runs the Series II and the demo tape.
+- The changeset describes the whole plan.
+

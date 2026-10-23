@@ -1,3 +1,5 @@
+import { drawPictureScaled, type SharpScaleScratch } from "./sharpScale";
+
 /**
  * Scanline effect module - GPU-accelerated scanline rendering
  * Eliminates expensive CPU readback (getImageData/putImageData)
@@ -133,7 +135,9 @@ export function applyScanlineEffectToCanvas(
   sourceWidth: number,
   sourceHeight: number,
   scanlineIntensity: ScanlineIntensity = "off",
-  tempCanvas?: HTMLCanvasElement
+  tempCanvas?: HTMLCanvasElement,
+  sharp = false,
+  sharpScratch: SharpScaleScratch = {}
 ): void {
   const darkening = getScanlineDarkening(scanlineIntensity);
 
@@ -151,7 +155,7 @@ export function applyScanlineEffectToCanvas(
   // Use 'copy' mode to completely replace canvas content without compositing
   // This prevents flickering by ensuring a complete frame replacement
   ctx.globalCompositeOperation = "copy";
-  ctx.drawImage(useCanvas, 0, 0, canvas.width, canvas.height);
+  drawPictureScaled(ctx, useCanvas, canvas.width, canvas.height, sharp, sharpScratch);
   
   // If scanline effect is off, we're done
   if (darkening === 0.0) {

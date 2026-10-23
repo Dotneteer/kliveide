@@ -14,7 +14,15 @@ import { useEmuStateListener } from "../useStateRefresh";
 import { BasicLine, BasicLineSpan, BasicProgramBuffer, getMemoryWord } from "./BasicLine";
 import { decodeBasicProgram } from "./basicListing";
 import { decodeZx8081Program, type Zx8081BasicKind, zx8081ProgramArea } from "./zx8081BasicListing";
-import { MC_ZX80_ROM8K, MI_ZX80, MI_ZX81 } from "@common/machines/constants";
+import { decodeHt1080zProgram, ht1080zProgramArea } from "./ht1080zBasicListing";
+import {
+  MC_HT_MODEL,
+  MC_ZX80_ROM8K,
+  MI_HT1080Z,
+  MI_ZX80,
+  MI_ZX81
+} from "@common/machines/constants";
+import { charSetOfModel } from "@common/machines/info-types";
 import styles from "./BasicPanel.module.scss";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
 import classnames from "classnames";
@@ -46,7 +54,7 @@ const BasicPanel = ({ document, viewState }: DocumentProps<BasicViewState>) => {
   // --- Use these app state variables
   const machineState = useSelector((s) => s.emulatorState?.machineState);
   const { machineService } = useAppServices();
-  const machineCharSet = machineService.getMachineInfo()?.machine?.charSet;
+  const machineCharSet = charSetOfModel(machineService.getMachineInfo());
   // --- The ZX81 and ZX80 keep their programs in their own formats; a ZX80 with the 8K ROM runs the
   // --- ZX81's BASIC
   const machineId = useSelector((s) => s.emulatorState?.machineId);
@@ -59,6 +67,16 @@ const BasicPanel = ({ document, viewState }: DocumentProps<BasicViewState>) => {
         : undefined;
   const zx8081KindRef = useRef(zx8081Kind);
   zx8081KindRef.current = zx8081Kind;
+  // --- The HT-1080Z's Level II BASIC; the /64 shows its backtick pairs as characters
+  const htModel = useSelector((s) =>
+    s.emulatorState?.machineId === MI_HT1080Z
+      ? (s.emulatorState?.config?.[MC_HT_MODEL] ?? "s2")
+      : undefined
+  );
+  const htModelRef = useRef(htModel);
+  htModelRef.current = htModel;
+  const charSetRef = useRef(machineCharSet);
+  charSetRef.current = machineCharSet;
 
   // --- Use these options to set memory options. As memory view is async, we sometimes
   // --- need to use state changes not yet committed by React.
@@ -84,7 +102,15 @@ const BasicPanel = ({ document, viewState }: DocumentProps<BasicViewState>) => {
     const getWord = (address: number) => getMemoryWord(memory.current, address);
     const kind = zx8081KindRef.current;
     let lines: BasicLine[];
-    if (kind) {
+    if (htModelRef.current && charSetRef.current) {
+      const { start, end } = ht1080zProgramArea(memory.current);
+      ({ lines } = decodeHt1080zProgram(memory.current, start, end, {
+        charSet: charSetRef.current,
+        backtickPairs: htModelRef.current === "s64",
+        showCodes: useCodes.current,
+        buffer: programBuffer.current
+      }));
+    } else if (kind) {
       const { start, end } = zx8081ProgramArea(memory.current, kind);
       ({ lines } = decodeZx8081Program(memory.current, start, end, kind, {
         showCodes: useCodes.current,
@@ -168,7 +194,7 @@ const BasicPanel = ({ document, viewState }: DocumentProps<BasicViewState>) => {
   // --- Whenever the state of view options change, or the machine does
   useEffect(() => {
     refreshBasicView();
-  }, [autoRefresh, showCodes, showSpectrumFont, zx8081Kind]);
+  }, [autoRefresh, showCodes, showSpectrumFont, zx8081Kind, htModel]);
 
   // --- Take care of refreshing the screen
   useEmuStateListener(emuApi, async () => {
@@ -222,13 +248,18 @@ const BasicPanel = ({ document, viewState }: DocumentProps<BasicViewState>) => {
           title={t("panels.doc.basic.showCodesTitle")}
           clicked={setShowCodes}
         />
-        <ToolbarSeparator small={true} />
-        <LabeledSwitch
-          value={showSpectrumFont}
-          label={t(zx8081Kind ? "panels.doc.basic.sinclairFont" : "panels.doc.basic.spectrumFont")}
-          title={t("panels.doc.basic.fontTitle")}
-          clicked={setShowSpectrumFont}
-        />
+        {/* --- The Sinclair fonts have no HT-1080Z glyphs (accents, the /64's mathematical signs) */}
+        {!htModel && <ToolbarSeparator small={true} />}
+        {!htModel && (
+          <LabeledSwitch
+            value={showSpectrumFont}
+            label={t(
+              zx8081Kind ? "panels.doc.basic.sinclairFont" : "panels.doc.basic.spectrumFont"
+            )}
+            title={t("panels.doc.basic.fontTitle")}
+            clicked={setShowSpectrumFont}
+          />
+        )}
       </PanelHeader>
       {message && (
         <FullPanel
@@ -259,7 +290,7 @@ const BasicPanel = ({ document, viewState }: DocumentProps<BasicViewState>) => {
               >
                 <BasicLineDisplay
                   spans={basicLines[idx]?.spans}
-                  showSpectrumFont={showSpectrumFont}
+                  showSpectrumFont={showSpectrumFont && !htModel}
                 />
               </div>
             );

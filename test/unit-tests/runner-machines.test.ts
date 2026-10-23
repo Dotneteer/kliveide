@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
-import { MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_ZXNEXT, runProgram } from "./unitTestSupport";
+import { MI_HT1080Z, MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_ZXNEXT, runProgram } from "./unitTestSupport";
 
 /*
  * The unit-test runner on the 128K, the +2A/+3/+3E and the Next (`.plans/Z80_UNIT_TESTS_PLAN.md`
@@ -116,5 +116,43 @@ UT_SecondPage:
     expect(results.UT_SecondPage.status).toBe("passed");
     expect(results.UT_NextFails).toMatchObject({ status: "failed" });
     expect(summary).toMatchObject({ total: 3, passed: 2, failed: 1 });
+  });
+});
+
+describe("unit-test runner, HT-1080Z", () => {
+  // --- `.plans/HT1080Z_CODE_INJECTION_PLAN.md` D9, D-Q6: booted by the machine's own flow, code at $7000
+  it.each(["ht1080z-s2", "ht1080z-64"])("runs tests that call the ROM on %s", async (modelId) => {
+    const { results, summary, problems } = await runProgram(
+      `
+  .model HT1080Z
+  .org $7000
+  UNITTEST_INITIALIZE()
+    ret
+
+UT_Adds:
+    ld a,40
+    add a,2
+    TEST_A(42)
+    TC_END()
+
+UT_ReadsMemsiz:
+    ld hl,($40B1)        ; MEMSIZ, set by the ROM at boot
+    ld a,h
+    or a
+    TEST_FLAG_NZ()
+    TC_END()
+
+UT_Fails:
+    ld a,1
+    TEST_A(2)
+    TC_END()
+`,
+      { machineId: MI_HT1080Z, modelId, model: SpectrumModelType.HT1080Z }
+    );
+    expect(problems).toEqual([]);
+    expect(summary).toMatchObject({ total: 3, passed: 2, failed: 1, errors: 0 });
+    expect(results.UT_Adds.status).toBe("passed");
+    expect(results.UT_ReadsMemsiz.status).toBe("passed");
+    expect(results.UT_Fails.message).toContain("(A=$01, B=$02)");
   });
 });

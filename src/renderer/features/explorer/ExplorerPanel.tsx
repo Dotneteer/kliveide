@@ -1,6 +1,6 @@
 import styles from "./ExplorerPanel.module.scss";
 import { useDispatch, useRendererContext, useSelector } from "@renderer/core/RendererProvider";
-import { type ComponentProps, type KeyboardEvent, type MouseEvent, useEffect, useRef, useState } from "react";
+import { type ComponentProps, type KeyboardEvent, type MouseEvent, useCallback, useEffect, useRef, useState } from "react";
 import { getFileTypeEntry } from "@renderer/appIde/project/project-node";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { useContextMenuState } from "@controls/ContextMenu";
@@ -110,6 +110,11 @@ export const ExplorerPanel = () => {
   const vlApi = useRef<VListHandle>();
 
   const explorerViewVersion = useSelector((s) => s.ideView?.explorerViewVersion);
+  // --- A file whose content kind changed opens again in its new editor (HT1080Z_TAPE_VIEWERS_PLAN D2)
+  const reopenDocument = useCallback(
+    (path: string) => ideCommandsService.executeCommand(`nav "${path}"`),
+    [ideCommandsService]
+  );
   const {
     refreshTree,
     rememberExpandedItems,
@@ -124,7 +129,8 @@ export const ExplorerPanel = () => {
     folderPath,
     mainApi,
     projectService,
-    store
+    store,
+    reopenDocument
   });
 
   useEffect(() => {
