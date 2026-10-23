@@ -932,7 +932,8 @@ export type TapeTimelineOptions = {
   mergeAbove?: number;
 };
 
-function toneOf(block: TapeBlockInfo): TapeSegmentTone {
+/** The tone a block is drawn in on the timeline */
+export function toneOfBlock(block: TapeBlockInfo): TapeSegmentTone {
   if (block.carriesSignal && !block.playable) return "unplayable";
   if (block.kind === "header") return "header";
   if (block.role === "basic") return "basic";
@@ -952,37 +953,57 @@ function toneOf(block: TapeBlockInfo): TapeSegmentTone {
 export function tapeTimeline(
   blocks: TapeBlockInfo[],
   width: number,
+  options: TapeTimelineOptions = {}
+): TapeTimelineSegment[] {
+  return timelineLayout(
+    blocks
+      .filter((b) => b.carriesSignal)
+      .map((b) => ({ index: b.index, ms: b.durationMs, tone: toneOfBlock(b) })),
+    width,
+    options
+  );
+}
+
+/** One item a timeline lays out: its index, how long it plays, and how it is coloured */
+export type TimelineItem = { index: number; ms: number; tone: TapeSegmentTone };
+
+/**
+ * Lays items out along a strip `width` pixels wide, each as wide as its share of the play time - the
+ * layout behind every tape timeline (the TAP/TZX viewer's and the HT-1080Z tape viewer's).
+ */
+export function timelineLayout(
+  items: TimelineItem[],
+  width: number,
   { minWidth = 2, mergeAbove = 500 }: TapeTimelineOptions = {}
 ): TapeTimelineSegment[] {
-  const signal = blocks.filter((b) => b.carriesSignal);
-  if (signal.length === 0 || width <= 0) return [];
-  const total = signal.reduce((sum, b) => sum + Math.max(b.durationMs, 0), 0);
+  if (items.length === 0 || width <= 0) return [];
+  const total = items.reduce((sum, b) => sum + Math.max(b.ms, 0), 0);
   const rawOf = (ms: number) =>
-    total > 0 ? (Math.max(ms, 0) / total) * width : width / signal.length;
+    total > 0 ? (Math.max(ms, 0) / total) * width : width / items.length;
 
-  // --- Runs: one block each, or merged runs of sub-pixel blocks on a long tape
+  // --- Runs: one item each, or merged runs of sub-pixel items on a long tape
   type Run = { first: number; last: number; raw: number; tone: TapeSegmentTone };
   const runs: Run[] = [];
-  const merge = signal.length > mergeAbove;
-  // --- A run of sub-pixel blocks still being gathered; it closes once it is a pixel wide
+  const merge = items.length > mergeAbove;
+  // --- A run of sub-pixel items still being gathered; it closes once it is a pixel wide
   let pending: Run | undefined;
   const flush = () => {
     if (pending) runs.push(pending);
     pending = undefined;
   };
-  for (const block of signal) {
-    const raw = rawOf(block.durationMs);
+  for (const item of items) {
+    const raw = rawOf(item.ms);
     if (!merge || raw >= 1) {
       flush();
-      runs.push({ first: block.index, last: block.index, raw, tone: toneOf(block) });
+      runs.push({ first: item.index, last: item.index, raw, tone: item.tone });
       continue;
     }
     if (pending) {
-      pending.last = block.index;
+      pending.last = item.index;
       pending.raw += raw;
       pending.tone = "merged";
     } else {
-      pending = { first: block.index, last: block.index, raw, tone: toneOf(block) };
+      pending = { first: item.index, last: item.index, raw, tone: item.tone };
     }
     if (pending.raw >= 1) flush();
   }

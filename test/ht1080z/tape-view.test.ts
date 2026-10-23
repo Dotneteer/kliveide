@@ -146,3 +146,28 @@ describe("HT-1080Z tape viewer model", () => {
     expect(ht1080zPartAnatomy(analysis!.parts[0], S2)).toBeUndefined();
   });
 });
+
+describe("HT-1080Z tape viewer listing", () => {
+  it("cuts a line into keyword, string and text runs as LIST prints it", async () => {
+    const { ht1080zLineRuns, ht1080zLineText } = await import("@renderer/appIde/DocumentPanels/Ht1080zTape/ht1080zLineText");
+    // --- PRINT "A@B":ELSE REM'X: 0xB2 is PRINT, 3A 95 is :ELSE, 3A 93 FB is :REM' (an apostrophe)
+    const text = new Uint8Array([0xb2, 0x20, 0x22, 0x41, 0x40, 0x42, 0x22, 0x3a, 0x95, 0x3a, 0x93, 0xfb, 0x58]);
+    expect(ht1080zLineRuns(text, S2)).toEqual([
+      { kind: "keyword", text: "PRINT" },
+      { kind: "text", text: " " },
+      { kind: "string", text: '"AÉB"' },
+      { kind: "keyword", text: "ELSE'" },
+      { kind: "text", text: "X" }
+    ]);
+    expect(ht1080zLineText(text, ht1080zCharsFor("s1"))).toBe('PRINT "A@B"ELSE\'X');
+  });
+
+  it("relinks a program at 42E9h, wherever it was saved from", async () => {
+    const { relinkedProgram } = await import("@renderer/appIde/DocumentPanels/Ht1080zTape/ht1080zLineText");
+    const { analysis } = analyzeHt1080zFile(DEMO, "demo.bas");
+    const lines = analysis!.lines!.map((l) => ({ ...l, link: l.link + 0x1000 }));
+    const program = relinkedProgram(lines);
+    expect(program.length).toBe(DEMO.length - 1);
+    expect(Array.from(program)).toEqual(Array.from(DEMO.subarray(1)));
+  });
+});

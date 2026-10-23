@@ -1,7 +1,7 @@
 # HT-1080Z Tape File Viewers and `.bas` by Content — Implementation Plan
 
 **Status:** decisions accepted by the project author 2026-10-23: option A for `.bas` (decide by
-content) and D-Q1 to D-Q4 (§7), the mockup approved. Phases 1 and 2 done 2026-10-23 (§8). Next: Phase 3.
+content) and D-Q1 to D-Q4 (§7), the mockup approved. Phases 1 to 3 done 2026-10-23 (§8). Next: Phase 4.
 **Mockup:** `.plans/mockups/ht1080z-tape-viewers.html` (real bytes, interactive; open it in a browser).
 **Follows:** `.plans/HT1080Z_PLAN.md` (complete) and `.plans/HT1080Z_CODE_INJECTION_PLAN.md`
 (complete). The pattern is `.plans/TAPE_VIEWER_PLAN.md` (the TAP/TZX viewer) and the ZX81's `.p`
@@ -260,3 +260,33 @@ is not offered for it (the registry entry has no `canBeBuildRoot`).
   made of them, a tape shifted by 3 bits, a damaged block, three truncated files, files that are no
   tape, and the anatomy of a SYSTEM block and of a line in Series I and Series II characters.
 
+**Phase 3 (the viewer) done 2026-10-23.**
+- `DocumentPanels/Ht1080zTape/Ht1080zTapeViewerPanel.tsx` (`HT1080Z_TAPE_VIEWER`), on `GenericFilePanel`
+  and `BankBrowser`: the summary (format, size, name, program or code, start, play time - "As a tape"
+  for a `.cmd`/`.bas` - and whether it fits a 16K model), a pop-out of the file's own bytes, a banner
+  when a part is damaged, the parts list (one group per file; chips per role; filters All, Loads,
+  Problems) and the details: facts, the byte anatomy, and for a BASIC part the listing with the
+  Series I / Series II / /64 switch. The `.cas`, `.cmd` and tokenised `.bas` registry entries open it.
+- Graphics: a `.cas` gets the timeline (tones per role; a damaged part in the unplayable colour),
+  anything that loads gets `MemoryMapStrip.tsx` (the HT's zones, a block per loaded part, clickable),
+  and a `.bas` the line strip (one segment a line, by size). All three follow the list's selection.
+- Shared pieces: `timelineLayout` and `Tape/TimelineStrip.tsx` now draw the TAP/TZX timeline too
+  (`TapeTimeline` is a wrapper); `controls/bankBrowser/ByteAnatomy.tsx` draws the TAP header bytes
+  (`TapeHeaderBytes` is a wrapper; its tests are unchanged) and the HT parts, abbreviating a data run
+  past eight bytes and quoting text.
+- Listing: `ht1080zLineText.ts` cuts a line into keyword, string and text runs by LIST's rules (`:ELSE`,
+  `:REM'`, the /64's backtick pairs); the character set is the running HT model's, else Series II, and
+  the switch is kept in the document's view state (D-Q2). Deviation from the TAP viewer's rule that
+  details hold no listing: the program is listed in the details, bounded to sixteen lines, as the
+  approved mockup shows; the pop-out has the whole of it.
+- Pop-outs: the BASIC listing is the tape block document with a new `ht1080z` format (the program
+  relinked at 42E9h, listed by `decodeHt1080zProgram` in the chosen characters); memory and
+  disassembly open a static dump at the load address (a program part: the whole program at 42E9h),
+  with a new `ht1080z` disassembly flavour (the HT's custom disassembler, no Z80N opcodes).
+- Tokens: `--color-byte-anatomy-token` (the secondary accent: the anatomy's highlight is the primary),
+  `--color-ht-listing-*` (the editor's keyword and string hues) and `--bgcolor-memory-map-*` (graded
+  neutral surfaces); `.ai/ui-theming-intent-and-lessons.md` records the rules.
+- Tests: `test/renderer/Ht1080zTapeViewerPanel.test.tsx` (each kind, the character-set switch and its
+  memory, the pop-outs, a text `.bas`), the line-run and relink cases in `test/ht1080z/tape-view.test.ts`,
+  and the routing of `.cas`/`.cmd`. In the running app a `.cas` of each kind, a `.cmd` and a `.bas` open
+  with their graphics and details.

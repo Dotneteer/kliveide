@@ -8,7 +8,7 @@ import {
   registerFileContentKind,
   takeChangedContentKinds
 } from "@renderer/appIde/project/project-node";
-import { BIN_VIEWER, CODE_EDITOR } from "@state/common-ids";
+import { CODE_EDITOR, HT1080Z_TAPE_VIEWER } from "@state/common-ids";
 
 /*
  * A `.bas` opens by its content (`.plans/HT1080Z_TAPE_VIEWERS_PLAN.md` D2, D3, D7): the tree carries the
@@ -19,11 +19,16 @@ const store: any = { getState: () => ({}) };
 describe("file types by content", () => {
   it("opens a tokenised .bas in the HT entry and a text one in the code editor", () => {
     registerFileContentKind("/p/demo.bas", "ht1080zBasic");
-    expect(getFileTypeEntry("/p/demo.bas", store)).toMatchObject({ editor: BIN_VIEWER, isBinary: true, contentKind: "ht1080zBasic" });
+    expect(getFileTypeEntry("/p/demo.bas", store)).toMatchObject({ editor: HT1080Z_TAPE_VIEWER, isBinary: true, contentKind: "ht1080zBasic" });
     expect(getFileTypeEntry("/p/other.bas", store)?.editor).toBe(CODE_EDITOR);
     expect(getFileTypeEntry("/p/game.bas", store)).toMatchObject({ editor: CODE_EDITOR, subType: "zxbas" });
     registerFileContentKind("/p/demo.bas", undefined);
     expect(getFileTypeEntry("/p/demo.bas", store)?.editor).toBe(CODE_EDITOR);
+  });
+
+  it("opens .cas and .cmd files in the HT tape viewer", () => {
+    expect(getFileTypeEntry("/p/hello.cas", store)?.editor).toBe(HT1080Z_TAPE_VIEWER);
+    expect(getFileTypeEntry("/p/HELLO.CMD", store)?.editor).toBe(HT1080Z_TAPE_VIEWER);
   });
 
   it("takes the kinds from the tree, and a tokenised .bas is never a build root", () => {
@@ -41,7 +46,7 @@ describe("file types by content", () => {
     const demo = nodes.find((n) => n.name === "demo.bas")!;
     const game = nodes.find((n) => n.name === "game.bas")!;
     expect(fileContentKindOf("/q/demo.bas")).toBe("ht1080zBasic");
-    expect(demo).toMatchObject({ editor: BIN_VIEWER, canBeBuildRoot: false });
+    expect(demo).toMatchObject({ editor: HT1080Z_TAPE_VIEWER, canBeBuildRoot: false });
     expect(game.editor).toBe(CODE_EDITOR);
     expect(game.canBeBuildRoot).toBe(true);
   });

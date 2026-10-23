@@ -1,14 +1,12 @@
-import { useLayoutEffect, useMemo, useRef, useState } from "react";
-import classnames from "classnames";
+import { useMemo } from "react";
 import {
   blockStartTimes,
   formatPlayTime,
-  segmentOfBlock,
-  tapeTimeline,
+  toneOfBlock,
   type TapeBlockInfo,
   type TapeTimelineSegment
 } from "./tapeView";
-import styles from "./TapeTimeline.module.scss";
+import { TimelineStrip } from "./TimelineStrip";
 import { useT } from "@common/i18n/useT";
 
 /*
@@ -30,24 +28,14 @@ type Props = {
 
 export const TapeTimeline = ({ blocks, selectedIndex, onSelect }: Props) => {
   const t = useT();
-  const ref = useRef<HTMLDivElement>(null);
-  const [width, setWidth] = useState(0);
-
-  useLayoutEffect(() => {
-    const element = ref.current;
-    if (!element) return undefined;
-    const update = () => setWidth(element.clientWidth);
-    update();
-    if (typeof ResizeObserver === "undefined") return undefined;
-    const observer = new ResizeObserver(update);
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, []);
-
-  const segments = useMemo(() => tapeTimeline(blocks, width), [blocks, width]);
+  const items = useMemo(
+    () =>
+      blocks
+        .filter((b) => b.carriesSignal)
+        .map((b) => ({ index: b.index, ms: b.durationMs, tone: toneOfBlock(b) })),
+    [blocks]
+  );
   const starts = useMemo(() => blockStartTimes(blocks), [blocks]);
-  const selected =
-    selectedIndex === undefined ? undefined : segmentOfBlock(segments, selectedIndex);
 
   const tooltip = (segment: TapeTimelineSegment) => {
     const first = blocks[segment.first];
@@ -68,25 +56,5 @@ export const TapeTimeline = ({ blocks, selectedIndex, onSelect }: Props) => {
     return `#${first.index} · ${first.kindName} · ${first.groupLabel} · ${span}`;
   };
 
-  return (
-    <div className={styles.timeline} ref={ref} aria-hidden="true" data-testid="tape-timeline">
-      {segments.map((segment) => (
-        <div
-          key={segment.first}
-          className={classnames(styles.segment, styles[segment.tone])}
-          style={{ left: segment.x, width: segment.width }}
-          title={tooltip(segment)}
-          data-first={segment.first}
-          onClick={() => onSelect(segment.first)}
-        />
-      ))}
-      {selected && (
-        <div
-          className={styles.selection}
-          style={{ left: selected.x, width: selected.width }}
-          data-testid="tape-timeline-selection"
-        />
-      )}
-    </div>
-  );
+  return <TimelineStrip items={items} selectedIndex={selectedIndex} onSelect={onSelect} tooltip={tooltip} />;
 };

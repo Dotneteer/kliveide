@@ -1,5 +1,6 @@
 /*
- * The header byte explainer (`TapeHeaderBytes.tsx`). One highlight colour for "the field you are
+ * The byte anatomy (`ByteAnatomy.tsx`): the TAP viewer's header bytes, the HT-1080Z tape viewer's
+ * parts and lines. One highlight colour for "the field you are
  * looking at", in the strip and the list alike, so the eye links the two; the fields otherwise
  * alternate between two neutral surfaces, which is all a reader needs to see where one ends.
  */
@@ -25,12 +26,22 @@
   background: var(--surface-panel);
 }
 
+/* --- A keyword token's byte: the colour the listings print keywords in */
+.token .cell {
+  color: var(--color-byte-anatomy-token);
+}
+
 .cell {
   min-width: 2.5ch;
   padding: 0 var(--space-0_5);
   color: var(--data-value);
   font-family: var(--monospace-font);
   text-align: center;
+}
+
+/* --- The rest of a long run, left to the memory pop-out */
+.more {
+  color: var(--data-secondary);
 }
 
 .fields {
@@ -71,6 +82,17 @@
 }
 
 /* --- The field being explained: the same accent wash on its bytes and its row */
+/* --- Text is quoted, so the spaces at its ends show */
+.text::before {
+  content: "‹";
+  color: var(--data-secondary);
+}
+
+.text::after {
+  content: "›";
+  color: var(--data-secondary);
+}
+
 .group.active,
 .field.active {
   border-color: var(--accent-border);

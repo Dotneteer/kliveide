@@ -3230,5 +3230,418 @@
   "panels.htTape.field.lineEnd": "00 · the end of the line",
   "@panels.htTape.field.lineEnd": {
     "context": "HT-1080Z tape file viewer (a Hungarian school computer, a TRS-80 Model I relative): the byte breakdown of the selected part of a .cas, .cmd or .bas file. Value: the zero byte that ends a BASIC line."
+  },
+  "panels.htTape.charSet.s1": "Series I",
+  "@panels.htTape.charSet.s1": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Button of the character-set switch beside a BASIC listing: list it in the Series I model's characters. A model name.",
+    "maxChars": 12
+  },
+  "panels.htTape.charSet.s2": "Series II",
+  "@panels.htTape.charSet.s2": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Button of the character-set switch: list it in the Series II model's characters (Hungarian letters). A model name.",
+    "maxChars": 12
+  },
+  "panels.htTape.charSet.s64": "/64",
+  "@panels.htTape.charSet.s64": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Button of the character-set switch: list it in the HT-1080Z/64 model's characters. A model name, normally left as is.",
+    "maxChars": 12
+  },
+  "panels.htTape.chip.leader": "LEADER",
+  "@panels.htTape.chip.leader": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Short tag on a list row: the part is the tape's leader (zero bytes before the sync byte).",
+    "maxChars": 8
+  },
+  "panels.htTape.chip.sync": "SYNC",
+  "@panels.htTape.chip.sync": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Short tag on a list row: the part is the sync byte (A5h).",
+    "maxChars": 8
+  },
+  "panels.htTape.chip.header": "HEADER",
+  "@panels.htTape.chip.header": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Short tag on a list row: the part is the file's header (its kind and name).",
+    "maxChars": 8
+  },
+  "panels.htTape.chip.end": "END",
+  "@panels.htTape.chip.end": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Short tag on a list row: the part is the 0000h link that ends a BASIC program.",
+    "maxChars": 8
+  },
+  "panels.htTape.chip.code": "CODE",
+  "@panels.htTape.chip.code": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Short tag on a list row: the part is a block of machine code.",
+    "maxChars": 8
+  },
+  "panels.htTape.chip.entry": "ENTRY",
+  "@panels.htTape.chip.entry": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Short tag on a list row: the part names the address the machine code starts at.",
+    "maxChars": 8
+  },
+  "panels.htTape.chip.cmdName": "05 NAME",
+  "@panels.htTape.chip.cmdName": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Short tag on a .cmd record's row: record type 05h, the module's name. Keep '05'.",
+    "maxChars": 10
+  },
+  "panels.htTape.chip.cmdLoad": "01 LOAD",
+  "@panels.htTape.chip.cmdLoad": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Short tag on a .cmd record's row: record type 01h, bytes to load. Keep '01'.",
+    "maxChars": 10
+  },
+  "panels.htTape.chip.cmdStart": "02 START",
+  "@panels.htTape.chip.cmdStart": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Short tag on a .cmd record's row: record type 02h, the start address. Keep '02'.",
+    "maxChars": 10
+  },
+  "panels.htTape.chip.cmdOther": "{type} SKIP",
+  "@panels.htTape.chip.cmdOther": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Short tag on a .cmd record's row: a record type the loader skips.",
+    "maxChars": 10,
+    "placeholders": {
+      "type": "The record type, two hex digits, e.g. 1F"
+    }
+  },
+  "panels.htTape.chip.trailing": "EXTRA",
+  "@panels.htTape.chip.trailing": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Short tag on a list row: bytes after the file's last part (silence, noise or another file).",
+    "maxChars": 8
+  },
+  "panels.htTape.chip.problem": "Damaged",
+  "@panels.htTape.chip.problem": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Tag beside the selected part's title: something is wrong with the part (see its Problem fact).",
+    "maxChars": 10
+  },
+  "panels.htTape.detail.cmdHint": "Klive turns a .cmd into a SYSTEM tape when it loads it; the memory map shows where each block lands.",
+  "@panels.htTape.detail.cmdHint": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Hint under a .cmd load block's details. SYSTEM is the machine's command: not translated."
+  },
+  "panels.htTape.detail.fits48k": "Only the 48K models: it loads above $7FFF",
+  "@panels.htTape.detail.fits48k": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Value of the Fits fact of a block of code that loads above 7FFFh, past the 16K models' RAM."
+  },
+  "panels.htTape.detail.fitsAll": "Every model: it loads below $8000",
+  "@panels.htTape.detail.fitsAll": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Value of the Fits fact of a block of code that fits the 16K models' RAM."
+  },
+  "panels.htTape.detail.leader": "Zero bytes: a steady tone the ROM syncs to",
+  "@panels.htTape.detail.leader": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Value of the Holds fact of the tape's leader part."
+  },
+  "panels.htTape.detail.lineAt": "{span} once loaded",
+  "@panels.htTape.detail.lineAt": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Value of the At fact of a BASIC line: where it sits in memory once the program is loaded.",
+    "placeholders": {
+      "span": "An address range, e.g. $42E9–$42F8"
+    }
+  },
+  "panels.htTape.detail.lineHint": "Keywords are one byte each (80h–FBh); everything else is stored as typed. CLOAD relinks the lines wherever the program lands.",
+  "@panels.htTape.detail.lineHint": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Hint under a BASIC line's bytes. CLOAD is the machine's command: not translated."
+  },
+  "panels.htTape.detail.loads": "{span} ({count, plural, one {# byte} other {# bytes}})",
+  "@panels.htTape.detail.loads": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Value of the Loads fact of a block of code: where it loads.",
+    "placeholders": {
+      "span": "An address range, e.g. $7000–$705F",
+      "count": "How many bytes"
+    }
+  },
+  "panels.htTape.detail.programAt": "{address} (TXTTAB), relinked by CLOAD",
+  "@panels.htTape.detail.programAt": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Value of the Loads at fact of a BASIC program on tape. TXTTAB is the ROM's name for the program start and CLOAD the command: not translated.",
+    "placeholders": {
+      "address": "An address, $42E9"
+    }
+  },
+  "panels.htTape.detail.sync": "After the sync byte, about 1 ms of silence; then the file's bytes start.",
+  "@panels.htTape.detail.sync": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Hint under the sync byte part's details."
+  },
+  "panels.htTape.error.highSpeed": "This is a high-speed (1500 baud) tape. Klive plays only Level II's 500-baud tapes.",
+  "@panels.htTape.error.highSpeed": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Shown in place of the viewer when a .cas file is recorded at the high speed. Level II is the machine's BASIC."
+  },
+  "panels.htTape.error.noHeader": "No HT-1080Z file follows the sync byte: neither a BASIC program (D3 D3 D3) nor machine code (55h).",
+  "@panels.htTape.error.noHeader": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Shown in place of the viewer when a .cas file holds no file the machine can load."
+  },
+  "panels.htTape.error.notTokenised": "This .bas file is BASIC source text, not a tokenised HT-1080Z program.",
+  "@panels.htTape.error.notTokenised": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Shown in place of the viewer when a .bas file opened in it is text."
+  },
+  "panels.htTape.error.unknownFile": "This is not an HT-1080Z tape file (.cas, .cmd or .bas).",
+  "@panels.htTape.error.unknownFile": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Shown in place of the viewer for a file of another kind."
+  },
+  "panels.htTape.fact.asTape": "As a tape",
+  "@panels.htTape.fact.asTape": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Label in the summary of a .cmd or .bas file: how long the tape Klive makes of it plays."
+  },
+  "panels.htTape.fact.at": "At",
+  "@panels.htTape.fact.at": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Label of a BASIC line's fact: where it sits in memory."
+  },
+  "panels.htTape.fact.characters": "Characters",
+  "@panels.htTape.fact.characters": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Label of the character-set switch beside a BASIC listing: which model's characters the listing shows."
+  },
+  "panels.htTape.fact.code": "Code",
+  "@panels.htTape.fact.code": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Label in the summary: the machine code the file loads."
+  },
+  "panels.htTape.fact.codeValue": "{count, plural, one {# block} other {# blocks}}, {bytes} bytes",
+  "@panels.htTape.fact.codeValue": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Value of the Code fact in the summary.",
+    "placeholders": {
+      "count": "How many blocks",
+      "bytes": "How many bytes, already formatted"
+    }
+  },
+  "panels.htTape.fact.fits": "Fits",
+  "@panels.htTape.fact.fits": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Label: which models have the RAM the file loads into (16K or 48K)."
+  },
+  "panels.htTape.fact.loads": "Loads",
+  "@panels.htTape.fact.loads": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Label of a block of code's fact: where it loads."
+  },
+  "panels.htTape.fact.name": "Name",
+  "@panels.htTape.fact.name": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Label in the summary: the program's or module's name."
+  },
+  "panels.htTape.fact.problem": "Problem",
+  "@panels.htTape.fact.problem": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Label of the fact saying what is wrong with a part."
+  },
+  "panels.htTape.fact.program": "Program",
+  "@panels.htTape.fact.program": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Label in the summary: the BASIC program the file holds."
+  },
+  "panels.htTape.fact.programValue": "{count, plural, one {# line} other {# lines}} ({first}–{last}), {bytes} bytes",
+  "@panels.htTape.fact.programValue": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Value of the Program fact in the summary.",
+    "placeholders": {
+      "count": "How many lines",
+      "first": "The first line number",
+      "last": "The last line number",
+      "bytes": "How many bytes, already formatted"
+    }
+  },
+  "panels.htTape.fact.record": "Record",
+  "@panels.htTape.fact.record": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Label of a .cmd record's fact: its type byte."
+  },
+  "panels.htTape.fact.start": "Start",
+  "@panels.htTape.fact.start": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Label: the address the machine code starts at."
+  },
+  "panels.htTape.filter.loads": "Loads",
+  "@panels.htTape.filter.loads": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Filter chip above the parts list: only the parts that load into memory.",
+    "maxChars": 12
+  },
+  "panels.htTape.filter.problems": "Problems",
+  "@panels.htTape.filter.problems": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Filter chip above the parts list: only the damaged parts.",
+    "maxChars": 12
+  },
+  "panels.htTape.fits.48k": "48K models only",
+  "@panels.htTape.fits.48k": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Value of the Fits fact in the summary: the file loads above 7FFFh."
+  },
+  "panels.htTape.fits.all": "16K and 48K models",
+  "@panels.htTape.fits.all": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Value of the Fits fact in the summary: the file fits every model."
+  },
+  "panels.htTape.format.bas": "BAS · tokenised Level II BASIC",
+  "@panels.htTape.format.bas": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Value of the Format fact in the summary of a .bas file. Level II is the machine's BASIC."
+  },
+  "panels.htTape.format.basicTape": "CAS · BASIC program tape",
+  "@panels.htTape.format.basicTape": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Value of the Format fact in the summary of a .cas file holding a BASIC program."
+  },
+  "panels.htTape.format.cmd": "CMD · load module",
+  "@panels.htTape.format.cmd": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Value of the Format fact in the summary of a .cmd file."
+  },
+  "panels.htTape.format.systemTape": "CAS · machine-code tape",
+  "@panels.htTape.format.systemTape": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Value of the Format fact in the summary of a .cas file holding machine code (SYSTEM tape)."
+  },
+  "panels.htTape.group.bas": "Program \"{name}\"",
+  "@panels.htTape.group.bas": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Group title above the lines of a .bas file.",
+    "placeholders": {
+      "name": "The file's name"
+    }
+  },
+  "panels.htTape.group.basicTape": "BASIC program \"{name}\"",
+  "@panels.htTape.group.basicTape": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Group title above the parts of a BASIC program tape.",
+    "placeholders": {
+      "name": "The program's one-character name"
+    }
+  },
+  "panels.htTape.group.cmd": "Load module \"{name}\"",
+  "@panels.htTape.group.cmd": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Group title above the records of a .cmd file.",
+    "placeholders": {
+      "name": "The module's name"
+    }
+  },
+  "panels.htTape.group.cmdNoName": "Load module",
+  "@panels.htTape.group.cmdNoName": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Group title above the records of a .cmd file that names no module."
+  },
+  "panels.htTape.group.systemTape": "Machine code \"{name}\"",
+  "@panels.htTape.group.systemTape": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Group title above the parts of a machine-code (SYSTEM) tape.",
+    "placeholders": {
+      "name": "The program's name"
+    }
+  },
+  "panels.htTape.heading.lines": "Lines",
+  "@panels.htTape.heading.lines": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Heading of the list of a .bas file's program lines."
+  },
+  "panels.htTape.heading.parts": "Parts",
+  "@panels.htTape.heading.parts": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Heading of the list of a .cas file's parts."
+  },
+  "panels.htTape.heading.records": "Records",
+  "@panels.htTape.heading.records": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Heading of the list of a .cmd file's records."
+  },
+  "panels.htTape.legend.basic": "BASIC program",
+  "@panels.htTape.legend.basic": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Legend of the memory map: the colour of a BASIC program."
+  },
+  "panels.htTape.legend.code": "code",
+  "@panels.htTape.legend.code": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Legend of the memory map: the colour of a block of machine code."
+  },
+  "panels.htTape.legend.ram": "RAM of every model",
+  "@panels.htTape.legend.ram": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Legend of the memory map: the colour of the RAM the 16K models have too."
+  },
+  "panels.htTape.legend.ram48": "RAM of the 48K models",
+  "@panels.htTape.legend.ram48": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Legend of the memory map: the colour of the RAM only the 48K models have."
+  },
+  "panels.htTape.legend.rom": "ROM",
+  "@panels.htTape.legend.rom": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Legend of the memory map: the colour of the ROM."
+  },
+  "panels.htTape.legend.video": "video RAM",
+  "@panels.htTape.legend.video": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Legend of the memory map: the colour of the video RAM and the keyboard."
+  },
+  "panels.htTape.listSummary": "{kind, select, records {{count, plural, one {# record} other {# records}}} lines {{count, plural, one {# line} other {# lines}}} other {{count, plural, one {# part} other {# parts}}}}",
+  "@panels.htTape.listSummary": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Count beside the list's heading: records of a .cmd, program lines of a .bas, parts of a .cas.",
+    "placeholders": {
+      "kind": "records, lines or parts (selects the noun)",
+      "count": "How many items the list has"
+    }
+  },
+  "panels.htTape.map.ram": "RAM (16K)",
+  "@panels.htTape.map.ram": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Label inside the memory map's zone of the RAM every model has.",
+    "maxChars": 12
+  },
+  "panels.htTape.map.ram48": "RAM, 48K models",
+  "@panels.htTape.map.ram48": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Label inside the memory map's zone of the RAM only the 48K models have.",
+    "maxChars": 18
+  },
+  "panels.htTape.map.rom": "ROM",
+  "@panels.htTape.map.rom": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Label inside the memory map's ROM zone.",
+    "maxChars": 6
+  },
+  "panels.htTape.popOutFile": "Pop out the file's bytes",
+  "@panels.htTape.popOutFile": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Link in the summary: opens the whole file as a memory dump document."
+  },
+  "panels.htTape.problem.badRecord": "Not a record the loader knows: loading stops here",
+  "@panels.htTape.problem.badRecord": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Value of the Problem fact of an unknown record."
+  },
+  "panels.htTape.problem.checksum": "The checksum does not match: the ROM reports a load error",
+  "@panels.htTape.problem.checksum": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Value of the Problem fact of a block whose checksum is wrong."
+  },
+  "panels.htTape.problem.truncated": "The file ends inside this part",
+  "@panels.htTape.problem.truncated": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Value of the Problem fact of a part cut short."
+  },
+  "panels.htTape.problemBanner": "Some parts of this file are damaged: the machine may not load it.",
+  "@panels.htTape.problemBanner": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Banner above the parts list when a part has a problem."
+  },
+  "panels.htTape.row.lines": "{count, plural, one {# line} other {# lines}} · {first}–{last}",
+  "@panels.htTape.row.lines": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Text of a BASIC program part's row in the list.",
+    "placeholders": {
+      "count": "How many lines",
+      "first": "The first line number",
+      "last": "The last line number"
+    }
+  },
+  "panels.htTape.section.bytes": "Bytes",
+  "@panels.htTape.section.bytes": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Title of the byte breakdown of the selected part."
+  },
+  "panels.htTape.section.lineBytes": "Line bytes",
+  "@panels.htTape.section.lineBytes": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Title of the byte breakdown of the selected BASIC line."
+  },
+  "panels.htTape.strip.lineTooltip": "Line {line} · {count, plural, one {# byte} other {# bytes}}",
+  "@panels.htTape.strip.lineTooltip": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Tooltip of a segment of the strip that shows a .bas file's lines by size.",
+    "placeholders": {
+      "line": "The line number",
+      "count": "The line's length"
+    }
+  },
+  "panels.htTape.strip.lines": "the program, one segment a line, by size",
+  "@panels.htTape.strip.lines": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Caption under the strip that shows a .bas file's lines by size, between its start and end address."
+  },
+  "panels.htTape.strip.timeline": "leader · sync · header · data · end",
+  "@panels.htTape.strip.timeline": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Caption under the tape's timeline: the order of its parts."
+  },
+  "panels.htTape.summaryLabel": "File summary",
+  "@panels.htTape.summaryLabel": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Accessible name of the summary strip at the top of the viewer."
+  },
+  "panels.htTape.title.basic": "{source} - BASIC",
+  "@panels.htTape.title.basic": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Tab title of the BASIC listing popped out of the viewer.",
+    "placeholders": {
+      "source": "The file's name or project path"
+    }
+  },
+  "panels.htTape.title.file": "{source} - Bytes",
+  "@panels.htTape.title.file": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Tab title of the memory dump of the whole file.",
+    "placeholders": {
+      "source": "The file's name or project path"
+    }
+  },
+  "panels.htTape.title.part": "{source} - Part #{index}",
+  "@panels.htTape.title.part": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Tab title of a part popped out as memory or disassembly.",
+    "placeholders": {
+      "source": "The file's name or project path",
+      "index": "The part's number"
+    }
+  },
+  "panels.htTape.title.program": "{source} - Program",
+  "@panels.htTape.title.program": {
+    "context": "HT-1080Z tape file viewer (a document showing an HT-1080Z .cas tape image, .cmd load module or tokenised .bas program; the HT-1080Z is a Hungarian school computer, a TRS-80 Model I relative). Tab title of the BASIC program popped out as memory at $42E9.",
+    "placeholders": {
+      "source": "The file's name or project path"
+    }
   }
 }
