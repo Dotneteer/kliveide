@@ -20,6 +20,7 @@ import { isZ88IdeMachine } from "@emu/machines/z88/IZ88IdeMachine";
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_DOCK, MEDIA_SD_CARD, MEDIA_TAPE } from "@common/structs/project-const";
 import { dockBankOf, parseDckFile } from "@common/timex/dckFile";
 import { isZx8081ProgramFileName, parseZxProgramFile } from "@emu/machines/zx8081/ZxPFile";
+import { ht1080zTapeErrorKey, isHt1080zTapeFor, parseHt1080zTapeFile } from "@emu/machines/ht1080z/Ht1080zTapeFile";
 import { mediaStore } from "@emu/machines/media/media-info";
 import { screenImageOf } from "@common/headless/screenImage";
 import { tapeBlocksOf } from "@common/headless/tapeBlocks";
@@ -290,6 +291,34 @@ class EmuMessageProcessor {
       }
       mediaStore.addMedia({ id: MEDIA_TAPE, mediaFile: file, mediaContents: program });
       this.machineService.getMachineController()?.machine?.setMachineProperty(MEDIA_TAPE, program);
+      if (confirm) {
+        await createMainApi(this.mainMessenger).displayMessageBox(
+          "info",
+          t("emu.media.tape.setTitle"),
+          t("emu.media.tape.setMessage", { file })
+        );
+      }
+      return;
+    }
+
+    // --- An HT-1080Z tape (.cas, .cmd, or a tokenised .bas): turned into the bit stream its core plays.
+    // --- A .bas is also BASIC source for other machines, so it is a tape only when the HT is running.
+    if (isHt1080zTapeFor(file, this.machineService.getMachineController()?.machine?.machineId)) {
+      let htTape;
+      try {
+        htTape = parseHt1080zTapeFile(contents, file);
+      } catch (err) {
+        if (!suppressError) {
+          await createMainApi(this.mainMessenger).displayMessageBox(
+            "error",
+            t("emu.media.tape.errorTitle"),
+            t(ht1080zTapeErrorKey(err), { file })
+          );
+        }
+        return;
+      }
+      mediaStore.addMedia({ id: MEDIA_TAPE, mediaFile: file, mediaContents: htTape });
+      this.machineService.getMachineController()?.machine?.setMachineProperty(MEDIA_TAPE, htTape);
       if (confirm) {
         await createMainApi(this.mainMessenger).displayMessageBox(
           "info",

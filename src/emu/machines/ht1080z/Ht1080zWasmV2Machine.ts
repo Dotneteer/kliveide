@@ -20,11 +20,29 @@ import { Ht1080zWasmHost } from "./Ht1080zWasmHost";
 import { HT1080Z_ROM_SETS } from "./Ht1080zRoms";
 import { HT1080Z_PIXEL_ASPECT } from "./ht1080zMachineInfo";
 import { HT1080Z_FIRST_SWITCH_KEY, Ht1080zKeyCode } from "./Ht1080zKeyCode";
-import { AUDIO_SAMPLE_RATE, HT_VIDEO_CUT, HT_VIDEO_DASH, HT_VIDEO_PAGE } from "../machine-props";
+import {
+  AUDIO_SAMPLE_RATE,
+  FAST_LOAD,
+  HT_VIDEO_CUT,
+  HT_VIDEO_DASH,
+  HT_VIDEO_PAGE,
+  REWIND_REQUESTED,
+  SAVED_TO_TAPE
+} from "../machine-props";
+import { MEDIA_TAPE } from "@common/structs/project-const";
+import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
+import { ht1080zSavedFileName, isHt1080zTapeFile } from "./Ht1080zTapeFile";
+import { ht1080zStrokesForText } from "./Ht1080zTyper";
 import type { AudioSample } from "@emu/abstractions/IAudioDevice";
 import type { ISpectrumPsgDevice } from "../zxSpectrum/ISpectrumPsgDevice";
 import type { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
 import { WasmSpectrumPsgDevice } from "../zxSpectrum/WasmSpectrumSupport";
+
+/** The ROM's wait-for-key loop (`JR 0049h` at 004Eh): where a tape-load flow finds BASIC idle */
+const HT1080Z_KEY_WAIT_LOOP = 0x004e;
+
+/** Frames after which an unfinished tape-load script is dropped (about two minutes) */
+const LOAD_SCRIPT_TIMEOUT_FRAMES = 6000;
 
 /** The DC filter's cut-off, as the other cores' (`AudioDeviceBase.DC_FILTER_CUTOFF_HZ`); the core has no `exp` */
 const DC_FILTER_CUTOFF_HZ = 1.4;
@@ -52,6 +70,18 @@ export class Ht1080zWasmV2Machine extends Ht1080zWasmHost {
   private syncedTargetClockMultiplier = -1;
   /** Whether the PAGE key is down: it latches on the press, and host key repeats must not flip it */
   private pageKeyDown = false;
+  /** Whether F1 is down, and whether it holds the recorder's motor on (a latching key) */
+  private f1KeyDown = false;
+  private motorOverride = false;
+  /** The core's SAVE revision already published (`ht1080zTapeGetSavedRevision`) */
+  private savedTapeRevision = 0;
+  /**
+   * The tape-load flow's commands still to type, each once BASIC is idle at a prompt again: the
+   * answer to the power-on question, CLOAD or SYSTEM and the name, then RUN or `/`
+   */
+  private loadScript: string[] = [];
+  private loadScriptLoops = -1;
+  private loadScriptAge = 0;
   /** The current frame's samples; the array and its objects are reused, as the Z88's are */
   private readonly wasmV2AudioSamples: AudioSample[] = [];
 
@@ -321,6 +351,8 @@ export class Ht1080zWasmV2Machine extends Ht1080zWasmHost {
     runtime.exports.ht1080zHardReset();
     this.syncVideoControls(runtime);
     this.syncAudioSampleRate(runtime);
+    this.savedTapeRevision = runtime.exports.ht1080zTapeGetSavedRevision();
+    this.syncTapeFromProperties(runtime);
     this.syncCpuFromWasmV2(runtime);
   }
 
@@ -331,6 +363,7 @@ export class Ht1080zWasmV2Machine extends Ht1080zWasmHost {
     const runtime = this.wasmV2Runtime;
     if (runtime != null) {
       runtime.exports.ht1080zHardReset();
+      this.syncTapeFromProperties(runtime);
       this.syncCpuFromWasmV2(runtime);
     }
   }
@@ -341,6 +374,7 @@ export class Ht1080zWasmV2Machine extends Ht1080zWasmHost {
     if (runtime != null) {
       this.syncTargetClockMultiplier(runtime);
       runtime.exports.ht1080zReset();
+      this.syncTapeFromProperties(runtime);
       this.syncCpuFromWasmV2(runtime);
     }
   }
@@ -371,7 +405,110 @@ export class Ht1080zWasmV2Machine extends Ht1080zWasmHost {
       case AUDIO_SAMPLE_RATE:
         this.syncAudioSampleRate(runtime);
         break;
+      case MEDIA_TAPE:
+        this.uploadTape(runtime, value);
+        break;
+      case FAST_LOAD:
+        runtime.exports.ht1080zTapeSetFastLoad(value === undefined || value ? 1 : 0);
+        break;
+      case REWIND_REQUESTED:
+        if (value === true || value === undefined) runtime.exports.ht1080zTapeRewind();
+        break;
     }
+  }
+
+  // ==========================================================================================
+  // Tape (`.plans/HT1080Z_PLAN.md` §8-9, `wasm/ht1080z/ht1080z-tape.c`)
+
+  /**
+   * Puts a tape in the deck: its `.cas` bit stream goes to the core, which plays it while the
+   * recorder's motor runs, or reads it through the fast-load traps. Anything that is not an HT tape
+   * (a Spectrum tape) empties the deck.
+   */
+  private uploadTape(runtime: Ht1080zWasmV2Runtime, value: unknown): void {
+    if (!isHt1080zTapeFile(value)) {
+      runtime.exports.ht1080zTapeSetLength(0);
+      runtime.exports.ht1080zTapeSetPlaying(0);
+      return;
+    }
+    const bytes = value.tapeBytes;
+    if (bytes.length > runtime.tapeData.length) {
+      throw new Error(`The tape is too large: ${bytes.length} bytes (at most ${runtime.tapeData.length}).`);
+    }
+    writeCoreBytes(runtime, runtime.tapeData, bytes);
+    runtime.exports.ht1080zTapeSetLength(bytes.length);
+    runtime.exports.ht1080zTapeSetPlaying(1);
+  }
+
+  private syncTapeFromProperties(runtime: Ht1080zWasmV2Runtime): void {
+    const fast = this.getMachineProperty(FAST_LOAD);
+    runtime.exports.ht1080zTapeSetFastLoad(fast === undefined || fast ? 1 : 0);
+    runtime.exports.ht1080zTapeSetMotorOverride(this.motorOverride ? 1 : 0);
+    this.uploadTape(runtime, this.getMachineProperty(MEDIA_TAPE));
+  }
+
+  /**
+   * Hands a SAVE the ROM finished to the host as a `.cas` (`SAVED_TO_TAPE`), as the other machines
+   * hand over theirs: a new revision of the core's capture is a new file. The controller writes it
+   * to the save folder.
+   */
+  private publishSavedTape(runtime: Ht1080zWasmV2Runtime): void {
+    const revision = runtime.exports.ht1080zTapeGetSavedRevision();
+    if (revision === this.savedTapeRevision) return;
+    this.savedTapeRevision = revision;
+    const contents = new Uint8Array(runtime.savedData.subarray(0, runtime.exports.ht1080zTapeGetSavedLength()));
+    super.setMachineProperty(SAVED_TO_TAPE, { name: ht1080zSavedFileName(contents), contents });
+  }
+
+  /**
+   * Loads and starts the tape in the deck. The flow powers the machine on and runs it to its first
+   * idle prompt; the machine then types, each once BASIC is idle at a prompt again: NEW LINE (the
+   * power-on question), then `CLOAD` and `RUN` for a BASIC tape, or `SYSTEM`, the name and `/` for a
+   * machine-code one.
+   */
+  getTapeLoadFlow(): CodeInjectionFlow {
+    const tape = this.getMachineProperty(MEDIA_TAPE);
+    if (!isHt1080zTapeFile(tape)) throw new Error("There is no HT-1080Z tape in the deck.");
+    const script =
+      tape.kind === "system" ? ["\n", "SYSTEM\n", `${tape.name}\n`, "/\n"] : ["\n", "CLOAD\n", "RUN\n"];
+    // --- A name the keyboard cannot type fails here, before anything runs
+    script.forEach((text) => ht1080zStrokesForText(text, this.hardware.romSet));
+    this.loadScript = script;
+    this.loadScriptLoops = -1;
+    this.loadScriptAge = 0;
+    return [
+      {
+        type: "ReachExecPoint",
+        rom: 0,
+        execPoint: HT1080Z_KEY_WAIT_LOOP,
+        message: "BASIC is waiting for a key ($004E)"
+      },
+      { type: "KeepPc" },
+      { type: "Start" }
+    ];
+  }
+
+  /** The tape-load commands still to type (the tests read it) */
+  get pendingLoadCommands(): readonly string[] {
+    return this.loadScript;
+  }
+
+  /**
+   * Types the load script's next command once BASIC is idle at a prompt: nothing is being typed and
+   * the core counted passes of the wait-for-key loop since the last frame. A reverse-debugging replay
+   * types nothing (the journal replays the keys the live run typed); a script that never finishes is
+   * dropped.
+   */
+  private advanceLoadScript(runtime: Ht1080zWasmV2Runtime): void {
+    if (this.loadScript.length === 0 || this.executionContext.isReplayingHistory?.()) return;
+    if (++this.loadScriptAge > LOAD_SCRIPT_TIMEOUT_FRAMES) {
+      this.loadScript = [];
+      return;
+    }
+    const loops = runtime.exports.ht1080zGetKeyWaitLoops();
+    const idle = this.loadScriptLoops >= 0 && loops > this.loadScriptLoops && this.getKeyQueueLength() === 0;
+    this.loadScriptLoops = loops;
+    if (idle) this.typeText(this.loadScript.shift()!);
   }
 
   /** The host's audio rate (`AUDIO_SAMPLE_RATE`) and the DC filter's coefficient for it */
@@ -439,6 +576,8 @@ export class Ht1080zWasmV2Machine extends Ht1080zWasmHost {
     this.syncTargetClockMultiplier(runtime);
     runtime.exports.ht1080zExecuteFrame();
     this.syncFrameCounters(runtime);
+    this.advanceLoadScript(runtime);
+    this.publishSavedTape(runtime);
     this.frameCompleted = runtime.exports.ht1080zGetFrameCompleted() !== 0;
     this.executionContext.lastTerminationReason = FrameTerminationMode.Normal;
     return FrameTerminationMode.Normal;
@@ -501,7 +640,7 @@ export class Ht1080zWasmV2Machine extends Ht1080zWasmHost {
       importBusAccess: () => this.importBusAccess(runtime),
       hasAccessBreakpoint: () => this.hasAccessBreakpoint(),
       shouldStopAtBreakpoint: (instructionsExecuted) => this.shouldStopAtBreakpoint(instructionsExecuted),
-      onFrameEnd: () => {},
+      onFrameEnd: () => this.advanceLoadScript(runtime),
       finish: (termination) => this.finishDebugLoop(termination)
     };
   }
@@ -510,6 +649,7 @@ export class Ht1080zWasmV2Machine extends Ht1080zWasmHost {
     const runtime = this.requireWasmV2Runtime();
     this.syncCpuFromWasmV2(runtime);
     this.importBusAccess(runtime);
+    this.publishSavedTape(runtime);
     this.executionContext.lastTerminationReason = termination;
     return termination;
   }
@@ -593,6 +733,11 @@ export class Ht1080zWasmV2Machine extends Ht1080zWasmHost {
   // ==========================================================================================
   // Keyboard and screen
 
+  /** Whether F1 holds the recorder's motor on */
+  get isMotorOverride(): boolean {
+    return this.motorOverride;
+  }
+
   /**
    * A key of the matrix goes to the core. PAGE, outside the matrix, is a latching key: each press
    * flips the 32-column page (`HT_VIDEO_PAGE`); holding it down does nothing more.
@@ -602,6 +747,13 @@ export class Ht1080zWasmV2Machine extends Ht1080zWasmHost {
       if (key === Ht1080zKeyCode.Page) {
         if (isDown && !this.pageKeyDown) this.setMachineProperty(HT_VIDEO_PAGE, !this.getMachineProperty(HT_VIDEO_PAGE));
         this.pageKeyDown = isDown;
+      } else if (key === Ht1080zKeyCode.F1) {
+        // --- F1 latches too: it holds the internal recorder's motor on, for winding by hand
+        if (isDown && !this.f1KeyDown) {
+          this.motorOverride = !this.motorOverride;
+          this.requireWasmV2Runtime().exports.ht1080zTapeSetMotorOverride(this.motorOverride ? 1 : 0);
+        }
+        this.f1KeyDown = isDown;
       }
       return;
     }

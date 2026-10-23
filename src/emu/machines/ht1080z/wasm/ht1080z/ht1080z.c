@@ -146,6 +146,7 @@ static inline void htDelayMemory(uint16_t address);
 #include "ht1080z-memory.c"
 #include "ht1080z-audio.c"
 #include "ht1080z-ports.c"
+#include "ht1080z-tape.c"
 #include "ht1080z-video.c"
 
 /*
@@ -157,6 +158,7 @@ static void HT_NOINLINE htAdvanceTacts(uint32_t value) {
   cpu.tacts += value;
   htFrameTacts += value;
   htAudioAdvance();
+  if (htTapeRunning()) htTapeAdvance(value);
   if (htFrameTacts >= htTactsInCurrentFrame) {
     htVideoEndFrame();
     htAudioEndFrame(htTactsInCurrentFrame);
@@ -197,6 +199,8 @@ uint32_t ht1080zExecuteInstruction(void) {
    * only. The shared core does not lower it when it takes the NMI - the machine owns the line, as on
    * the ZX81 - so left up, every instruction would start with another NMI to 0066h.
    */
+  /* The tape: SAVE's bookkeeping, and the fast-load/fast-save traps, which run a ROM routine whole */
+  if (htTapeTryTrap()) return htFrameCompleted;
   z80SetSigNmi(htNmiPending);
   htNmiPending = 0u;
   do {
@@ -268,6 +272,9 @@ static void htResetMachine(void) {
   htResetPorts();
   htVideoReset();
   htAudioReset();
+  /* As on the ZX80/81 core: a reset rewinds the tape, so Load and Run reads it from the start */
+  htTapeResetPlayback();
+  htTapeResetSave();
 }
 
 /* The IDE's soft reset: the CPU's registers kept as on a Z80 /RESET, the memory kept */

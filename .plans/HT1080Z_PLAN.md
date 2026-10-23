@@ -1,7 +1,7 @@
 # HT-1080Z on the WASM Core — Implementation Plan
 
 **Status:** decisions accepted 2026-10-22 (§15; D10 revised the same day after Phase 2); Phases 0-3
-done 2026-10-22 (§17); Phases 4 and 5 done 2026-10-22. Next: Phase 6.
+done 2026-10-22 (§17); Phases 4 and 5 done 2026-10-22, Phase 6 2026-10-23. Next: Phase 7.
 **Input:** the research pack `_input/ht1080z/`. Read its `README.md` first, then `HARDWARE.md`,
 `VIDEO_TIMING.md`, `SOUND_AY.md`, `STORAGE_FIRMWARE_SOFTWARE.md` and `EXISTING_EMULATORS.md`.
 Every hardware fact in this plan comes from there, with its source.
@@ -675,7 +675,7 @@ values and record each deviation from this plan with its reason, as in `ZX8081_W
 | Cassette read window | latch cleared about 906 T after the clock pulse is seen, sampled about 2,476 T after it (bit = 1 if a pulse fell in between) | CTBIT 0241h (`LD B,41h`, `LD B,76h`) |
 | Leader | 255 × 00h then A5h | 0284h–0290h (`LD B,0FFh`) |
 | /64 port-FF output | three-level: two latch outputs (IC6 Q3, Q̄2) summed through R30/R31 10k; relay from Q0; recorder select IC35 (FE bit 4) | /64 E panel sheet 2 (corrects the earlier "D0, D2, D3" reading, which was flip-flop pin labels) |
-| Fast-load trap PCs | *Phase 6* | |
+| Fast-load trap PCs | CTBIT 0241h and the byte loop 0235h (fast load); 0264h writer, 0284h recording start, 01F8h motor off (SAVE); 004Eh, the wait-for-key loop's `JR` (Load and Run's pacing) | Disassembly of the Series II ROM; the /64 ROM has them at the same addresses (Phase 6) |
 
 **Phase 1 done 2026-10-22.** `zx-spectrum-psg.c` now wraps `SP128_PSG_CLOCK_STEP` (default 16u)
 and `SP128_PSG_ROUTE_GAIN` (default 0.25) in `#ifndef`, with a header comment saying why; both are
@@ -823,4 +823,37 @@ Deviations from the plan, with their reasons:
   bits 4-7 set, as the AY-3-8910 does; §10 said "low 4 bits".
 - The PSG panel's title reads "PSG (AY-3-8912)", shared with the Spectrums; the HT's chip is the
   AY-3-8910, which has the same registers and one more I/O port (B). Left as it is.
+
+**Phase 6 done 2026-10-23.** `ht1080z-tape.c` (the pulse player, the fast-load and SAVE traps),
+`Ht1080zTapeFile.ts` (`.cas` recognition, `.cmd` and `.bas` turned into tapes), the machine's tape
+plumbing and Load and Run, the Machine menu's tape items, the emulator's and `tape-load`'s handling of
+HT tapes. `test/ht1080z-hw/tape.test.ts` and `test/ht1080z/tape-file.test.ts`. In the running app,
+`tape-load <file>.cas -r` loads a tape and runs it by itself.
+
+| Value | Klive | Source |
+|---|---|---|
+| Pulse player | clock edge 227 T into a cell, data edge 1,763 + 227 T, cells 3,557 T (1) / 3,570 T (0), at the model's clock; the latch set on each edge | §17's writer timing; the ROM reads every bit of a tape it wrote |
+| Silence after a sync | 1 ms (1,774 T) after 00 00 00 A5h | Found in Phase 6: the reader's post-sync work (about 2,100 T: `**`, the return to CLOAD) is longer than a cell's slack, so the first header bit was lost without it; MAME's CAS player leaves 1 ms there too |
+| Real time vs fast | the same program bytes, pointers (40A4h, 40F9h, 40FBh, 40FDh) and screen; real time 9.8 bits a frame | `tape.test.ts` |
+| SAVE capture | `CSAVE "A"` gives 255 zeros, A5h, D3h D3h D3h, `A`, the program, 00 00 - a valid `.cas` that loads back | `tape.test.ts` |
+| Load and Run | NEW LINE (the power-on question), then `CLOAD` / `RUN`, or `SYSTEM` / the name / `/`; each typed once BASIC is idle at a prompt | `tape.test.ts`; in the app |
+
+Deviations from the plan, with their reasons:
+- **Quick load is fast load of a converted tape** (§9 "Quick load"). A `.cmd` becomes a SYSTEM tape
+  (its load blocks as 3Ch blocks with checksums, its transfer address as the 78h entry) and a `.bas`
+  a CLOAD tape, both loaded through the ROM's own routines with the fast-load traps. The ROM then puts
+  the bytes in place, relinks the BASIC lines and sets the pointers itself, where a direct memory
+  write would have to imitate all of that; and the same file also plays in real time.
+- **Load and Run is paced by BASIC being idle, not by the end of the load.** The core counts passes of
+  the wait-for-key loop's `JR` (004Eh); the machine types its next command once that count grows and
+  nothing is being typed. One rule covers the power-on question, the `>` prompt, SYSTEM's `*?` and
+  the prompt after a load, and it never types while BASIC is printing, sizing memory or loading. The
+  entries to 0049h could not be used: the routine re-enters itself hundreds of times per key.
+- `.bas` is an HT tape only while the HT runs: elsewhere it is BASIC source (Klive BASIC, Boriel
+  BASIC). The explorer's Run/Insert buttons, File Open and drag-and-drop of tapes, the media strip
+  and `klive run` with a tape are left to Phase 8 (§11's IDE list); the Machine menu and `tape-load`
+  cover loading a tape from the IDE.
+- `.wav` input (6b, optional) is not done.
+- F1 is a latching key that holds the motor on, on the virtual keyboard too (§7 called it a
+  "motor override" toggle).
 

@@ -3,7 +3,7 @@
  * `.plans/ht1080z/ht1080z-keyboard-mockup.html`): every key of the drawing is rendered, and each zone
  * sends what the mockup says - the face holds the key (SHIFT too on the right button), the printed
  * shifted legend holds SHIFT with it, a Hungarian hint types its character through the machine's
- * typer, PAGE latches, F1 does nothing yet.
+ * typer, PAGE and F1 latch.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent } from "@testing-library/react";
@@ -67,8 +67,7 @@ describe("HT-1080Z virtual keyboard", () => {
     // --- The 52 matrix keys, the second SHIFT, PAGE and F1
     expect(names).toHaveLength(55);
     expect(names.filter((n) => n === "Shift")).toHaveLength(2);
-    const matrix = Object.keys(K).filter((n) => n !== "Page");
-    expect(new Set(names)).toEqual(new Set([...matrix, "Page", "F1"]));
+    expect(new Set(names)).toEqual(new Set(Object.keys(K)));
     expect(HT1080Z_KEY_ROWS.map((r) => r.keys.length)).toEqual([14, 14, 12, 12, 1, 2]);
   });
 
@@ -128,7 +127,7 @@ describe("HT-1080Z virtual keyboard", () => {
     }
   });
 
-  it("PAGE goes to the machine, which latches it; F1 does nothing", async () => {
+  it("PAGE and F1 go to the machine, which latches them", async () => {
     const container = await render();
     fireEvent.mouseDown(zoneOf(container, "Page", "main"), { button: 0 });
     fireEvent.mouseUp(zoneOf(container, "Page", "main"), { button: 0 });
@@ -138,7 +137,7 @@ describe("HT-1080Z virtual keyboard", () => {
     ]);
     machine.setKeyStatus.mockClear();
     fireEvent.mouseDown(zoneOf(container, "F1", "main"), { button: 0 });
-    expect(machine.setKeyStatus).not.toHaveBeenCalled();
+    expect(machine.setKeyStatus.mock.calls).toEqual([[K.F1, true]]);
   });
 
   it("ignores clicks while the machine is still typing", async () => {

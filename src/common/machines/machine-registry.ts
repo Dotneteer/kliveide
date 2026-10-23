@@ -634,8 +634,8 @@ export const machineRegistry: MachineInfo[] = [
     }
   },
   {
-    // --- `.plans/HT1080Z_PLAN.md`: Series II only until Phase 7 adds Series I and the /64. Tape,
-    // --- history, profile and reverse debugging join with their phases.
+    // --- `.plans/HT1080Z_PLAN.md`: Series II only until Phase 7 adds Series I and the /64. History,
+    // --- profile and reverse debugging join with Phase 8.
     machineId: MI_HT1080Z,
     displayName: "HT-1080Z",
     charSet: Ht1080zChars,
@@ -643,10 +643,13 @@ export const machineRegistry: MachineInfo[] = [
       [MF_Z80]: true,
       // --- The AY-3-8910 at ports $1E/$1F, on the PSG panel (§10)
       [MF_PSG]: true,
+      // --- .cas/.cmd/.bas tapes, real time or fast load (§9)
+      [MF_TAPE_SUPPORT]: true,
       [MF_INJECT_SUPPORT]: false,
       [MF_ALLOW_SCAN_LINES]: false
     },
     models: [...HT1080Z_MODELS],
+    mediaIds: [MEDIA_TAPE],
     toolInfo: {
       [CT_DISASSEMBLER]: (
         memorySections: MemorySection[],

@@ -15,7 +15,7 @@ import {
 import { zx8081TapeMenuRenderer } from "./zx8081-menus";
 import { tapeMenuRenderer, spectrumIdeRenderer, diskMenuRenderer } from "./zx-specrum-menus";
 import { z88ResetRenderer } from "./z88-menus";
-import { ht1080zHardwareRenderer } from "./ht1080z-menus";
+import { ht1080zHardwareRenderer, ht1080zTapeMenuRenderer } from "./ht1080z-menus";
 import {
   hotkeyMenuRenderer,
   initializeZxSpectrumNext,
@@ -50,6 +50,7 @@ export const machineMenuRegistry: Record<string, MachineMenuInfo> = {
     viewItems: spectrumIdeRenderer
   },
   [MI_HT1080Z]: {
+    devices: { tape: ht1080zTapeMenuRenderer },
     hardwareItems: ht1080zHardwareRenderer
   },
   [MI_SPECTRUM_48]: {

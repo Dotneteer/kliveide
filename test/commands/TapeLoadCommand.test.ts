@@ -102,11 +102,28 @@ describe("tape-load command", () => {
     ]);
   });
 
+  it("takes an HT-1080Z tape on the HT-1080Z, and only there; a .bas only while the HT runs", async () => {
+    expect(await validate({ file: "/p/game.cas" }, "ht1080z")).toEqual([]);
+    expect(await validate({ file: "/p/game.CMD" }, "ht1080z")).toEqual([]);
+    expect(await validate({ file: "/p/game.bas" }, "ht1080z")).toEqual([]);
+    expect(await validate({ file: "/p/game.cas" })).toEqual([
+      "Loading an HT-1080Z tape requires the HT-1080Z; the current machine is ZX Spectrum 48K."
+    ]);
+    // --- Elsewhere a .bas is BASIC source, not a tape
+    expect(await validate({ file: "/p/prog.bas" })).toEqual([
+      expect.stringMatching(/^The file to load must be a \.tap or \.tzx tape/)
+    ]);
+    // --- A Spectrum tape is not the HT's
+    expect(await validate({ file: "/p/game.tap" }, "ht1080z")).toEqual([
+      expect.stringMatching(/^Loading a tape requires a ZX Spectrum 48K, 128K or \+2\/\+3 machine/)
+    ]);
+  });
+
   it("validates its arguments", async () => {
     expect(await validate({ file: "/p/a.tap" })).toEqual([]);
     expect(await validate({ file: "" })).toEqual(["The tape file path cannot be empty."]);
     expect(await validate({ file: "/p/a.nex" })).toEqual([
-      "The file to load must be a .tap or .tzx tape, or a ZX80/ZX81 .p, .81, .o or .80 program."
+      "The file to load must be a .tap or .tzx tape, a ZX80/ZX81 .p, .81, .o or .80 program, or an HT-1080Z .cas, .cmd or .bas tape."
     ]);
     expect(await validate({ file: "/p/a.tap", "-r": true, "-d": true })).toEqual([
       "Use only one of -r and -d."

@@ -37,6 +37,36 @@ SOFTWARE.
 
 ```
 
+## lkesteloot/trs80 by Lawrence Kesteloot — MIT
+
+The HT-1080Z's tape-file reader (`src/emu/machines/ht1080z/Ht1080zTapeFile.ts`) ports the cassette
+header detection of lkesteloot/trs80 (`packages/trs80-base/src/Cassette.ts`, commit 11ed9327): the
+500-baud header and sync found at any bit offset, and the 1500-baud header refused.
+
+```
+MIT License
+
+Copyright (c) 2021 Lawrence Kesteloot
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
 ## The ZX80 and ZX81 ROMs
 
 `src/public/roms/zx80.rom` and `src/public/roms/zx81.rom` (shipped as `roms/zx80.rom` and

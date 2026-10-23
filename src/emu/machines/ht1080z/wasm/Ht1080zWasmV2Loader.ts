@@ -52,6 +52,10 @@ export type Ht1080zWasmV2Views = {
   readonly keyboardLines: Uint8Array;
   /** The current frame's audio samples: left and right doubles, `ht1080zGetAudioSampleCount` of them */
   readonly audioSamples: Float64Array;
+  /** The tape image's bytes (a `.cas` bit stream), which the pulse player and the traps read */
+  readonly tapeData: Uint8Array;
+  /** The bytes of the last SAVE that finished: a `.cas`, leader and sync included */
+  readonly savedData: Uint8Array;
   /** The shared core's per-instruction data-access log */
   readonly accessLog: Uint32Array;
   /** The debugger's breakpoint flags, one word per address (`DebugSupport.breakpointFlags`) */
@@ -108,6 +112,7 @@ export const ht1080zWasmV2RequiredExports = [
   "ht1080zGetFrameTacts",
   "ht1080zGetFrames",
   "ht1080zGetInterruptDepth",
+  "ht1080zGetKeyWaitLoops",
   "ht1080zGetKeyboardLine",
   "ht1080zGetLastPortAddress",
   "ht1080zGetLastPortIsWrite",
@@ -179,6 +184,25 @@ export const ht1080zWasmV2RequiredExports = [
   "ht1080zGetPsgVolumeC",
   "ht1080zReadPsgRegisterValue",
   "ht1080zSetAudioSampleRate",
+  "ht1080zGetTapeCapacity",
+  "ht1080zTapeDataPtr",
+  "ht1080zTapeGetBitPosition",
+  "ht1080zTapeGetLengthBits",
+  "ht1080zTapeGetMotor",
+  "ht1080zTapeGetMotorOverride",
+  "ht1080zTapeGetPlaying",
+  "ht1080zTapeGetRunning",
+  "ht1080zTapeGetSaveCapacity",
+  "ht1080zTapeGetSaveOpen",
+  "ht1080zTapeGetSavedLength",
+  "ht1080zTapeGetSavedRevision",
+  "ht1080zTapeGetTraps",
+  "ht1080zTapeRewind",
+  "ht1080zTapeSavedDataPtr",
+  "ht1080zTapeSetFastLoad",
+  "ht1080zTapeSetLength",
+  "ht1080zTapeSetMotorOverride",
+  "ht1080zTapeSetPlaying",
   "ht1080zWriteMemory",
   "ht1080zWritePort",
   // --- Last: the breakpoint condition evaluator, identical in every Z80 core
@@ -249,6 +273,10 @@ export function createHt1080zWasmV2Views(
   check("pixelBuffer", exports.ht1080zPixelBufferPtr(), pixelWords * 4);
   check("keyboardLines", exports.ht1080zKeyboardLinesPtr(), HT1080Z_WASM_V2_KEYBOARD_LINE_COUNT);
   const audioDoubles = exports.ht1080zGetAudioSampleCapacity() * 2;
+  const tapeSize = exports.ht1080zGetTapeCapacity();
+  const saveSize = exports.ht1080zTapeGetSaveCapacity();
+  check("tapeData", exports.ht1080zTapeDataPtr(), tapeSize);
+  check("savedData", exports.ht1080zTapeSavedDataPtr(), saveSize);
   check("audioSamples", exports.ht1080zAudioSamplesPtr(), audioDoubles * 8);
   check("accessLog", exports.ht1080zGetAccessLogPtr(), WASM_ACCESS_LOG_CAPACITY * 4);
   check("breakpointFlags", exports.ht1080zBreakpointFlagsPtr(), 0x1_0000 * 2);
@@ -262,6 +290,8 @@ export function createHt1080zWasmV2Views(
     pixelBufferBytes: new Uint8ClampedArray(memoryBuffer, exports.ht1080zPixelBufferPtr(), pixelWords * 4),
     keyboardLines: new Uint8Array(memoryBuffer, exports.ht1080zKeyboardLinesPtr(), HT1080Z_WASM_V2_KEYBOARD_LINE_COUNT),
     audioSamples: new Float64Array(memoryBuffer, exports.ht1080zAudioSamplesPtr(), audioDoubles),
+    tapeData: new Uint8Array(memoryBuffer, exports.ht1080zTapeDataPtr(), tapeSize),
+    savedData: new Uint8Array(memoryBuffer, exports.ht1080zTapeSavedDataPtr(), saveSize),
     accessLog: new Uint32Array(memoryBuffer, exports.ht1080zGetAccessLogPtr(), WASM_ACCESS_LOG_CAPACITY),
     breakpointFlags: new Uint16Array(memoryBuffer, exports.ht1080zBreakpointFlagsPtr(), 0x1_0000),
     condPlan: new Uint32Array(memoryBuffer, exports.ht1080zCondPlanPtr(), WASM_CORE_CONDITION_PLAN_WORDS)

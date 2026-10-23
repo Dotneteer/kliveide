@@ -21,7 +21,7 @@ with the values recorded in the plan's §17. The code is Klive's own.
 - `ht1080z/ht1080z-audio.c`: the beeper, the AY (the Spectrum's `zx-spectrum-psg.c`, the one shared
   Spectrum device `check-wasm-cpu-contract.cjs` allows here), the mono mix and the sample buffer.
 
-Still to come: the tape (Phase 6).
+- `ht1080z/ht1080z-tape.c`: the tape: the pulse player, the fast-load and SAVE traps.
 
 ## Sound
 
@@ -78,11 +78,33 @@ The memory is one 64K array, the CPU's view: the host uploads the ROMs to its st
 (`ht1080zRomPtr`, 3800h bytes) and a power-on clears everything from 3800h up. The condition store
 reads it as the machine's linear memory.
 
+## Tape
+
+A tape is a `.cas` bit stream (`.cmd` and tokenised `.bas` files are turned into one by
+`../Ht1080zTapeFile.ts`: a SYSTEM tape and a CLOAD tape, as the ROM writes them). The host uploads it
+once; the core plays it.
+
+- **Real time:** each bit is a cell with a clock pulse and, for a 1, a data pulse; the cassette-in
+  latch is set 227 T into a pulse. The timing is the ROM writer's own: the data pulse 1,763 T after
+  the clock pulse, cells of 3,557 T (1) and 3,570 T (0). The tape moves while the recorder's motor
+  runs (port FF bit 2) or F1 holds it on. After every sync (00 00 00 A5h at any bit offset) the
+  player leaves 1 ms of silence: the ROM's reader draws `**` and returns to CLOAD/SYSTEM there,
+  longer than a cell's slack, and a `.cas` does not record the pause a real tape has.
+- **Fast load:** at the entry of CTBIT (0241h) and the byte loop (0235h) the core does the routine's
+  work itself from the same bit position, so both modes read the same bits and end in the same RAM
+  (`test/ht1080z-hw/tape.test.ts`).
+- **SAVE:** the bytes the ROM's writer (0264h) sends from a recording's start (0284h) to the motor
+  going off (01F8h) are captured as a `.cas`; with fast load on the writer is skipped.
+- **Load and Run:** the host's typing script types each command once BASIC is idle at a prompt,
+  which the core sees as passes of the wait-for-key loop's `JR` at 004Eh
+  (`ht1080zGetKeyWaitLoops`).
+- A reset rewinds the tape, as on the ZX80/81 core.
+
 ## Building and measuring
 
 `npm run build:ht1080z-wasm` (compiler `clang`, or `HT1080Z_WASM_CC`; `HT1080Z_WASM_OPTIMIZATION` =
-`speed` (default), `size` or `lto`). `npm run check:ht1080z-wasm-size`: 266 KB against a 300 KB
-ceiling, set with room for the tape phase.
+`speed` (default), `size` or `lto`). `npm run check:ht1080z-wasm-size`: 269 KB against a 300 KB
+ceiling.
 
 ## Tests
 

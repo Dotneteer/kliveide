@@ -212,6 +212,10 @@
   "@common.filter.zx81Programs": {
     "context": "File-type filter in an operating-system Open/Save file dialog (the drop-down of file types). ZX81 program files (.p/.81)."
   },
+  "common.filter.ht1080zTapes": "HT-1080Z Tapes",
+  "@common.filter.ht1080zTapes": {
+    "context": "File type filter in the Insert Tape dialog for the HT-1080Z: tape images (.cas) and the program files the emulator turns into tapes (.cmd machine code, .bas tokenised BASIC)."
+  },
   "common.filter.textTrace": "Text trace",
   "@common.filter.textTrace": {
     "context": "File-type filter in an operating-system Open/Save file dialog (the drop-down of file types). An instruction trace as plain text."

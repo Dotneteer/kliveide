@@ -17,7 +17,8 @@ import { HT_VIDEO_PAGE } from "@emu/machines/machine-props";
  * Zones: the key face presses the key (the right button adds SHIFT); the printed shifted legend presses
  * SHIFT with the key; the Hungarian hint - Klive's, not printed on the machine - types its character
  * through the machine's typer (`Ht1080zTyper.ts`: left button the first, right button the second),
- * which needs the extension ROM on. PAGE latches; F1 is drawn but inert until the tape (Phase 6).
+ * which needs the extension ROM on. PAGE and F1 latch: PAGE selects the 32-column page, F1 holds
+ * the recorder's motor on.
  */
 
 /** The drawing's pixels (2000 px wide) to key units: a key is 68 px there and 100 units here */
@@ -135,7 +136,6 @@ export const HT1080Z_HINTS: Record<Ht1080zRomSetId, Record<string, [string, stri
 
 const FONT = "Helvetica, Arial, sans-serif";
 const SHIFT = Ht1080zKeyCode.Shift;
-const F1 = "F1";
 
 type Zone = "main" | "shift" | "hint";
 
@@ -168,6 +168,7 @@ export const Ht1080zKeyboard = ({ width, height, romSet = "s2", apiLoaded }: Pro
 
   const machine = () => machineService.getMachineController()?.machine;
   const pageLatched = !!machine()?.getMachineProperty?.(HT_VIDEO_PAGE);
+  const motorLatched = !!(machine() as unknown as { isMotorOverride?: boolean } | undefined)?.isMotorOverride;
   const hints = HT1080Z_HINTS[romSet] ?? {};
   const appliedZoom = zoom <= 0 ? 0.05 : zoom;
 
@@ -180,25 +181,20 @@ export const Ht1080zKeyboard = ({ width, height, romSet = "s2", apiLoaded }: Pro
       next = x + w;
       const code = Ht1080zKeyCode[def.name];
       const id = `${def.name}-${x}`;
-      const inert = def.name === F1;
       const W = w * PX - 8;
       const H = row.h * PX - 8;
       const isSwitch = def.kind === "switch";
-      const down = def.name === "Page" ? pageLatched : code !== undefined && isPressed(code);
+      const down =
+        def.name === "Page" ? pageLatched : def.name === "F1" ? motorLatched : code !== undefined && isPressed(code);
       const hot = (z: Zone) => hover === `${id}:${z}`;
-      const zone = (z: Zone) =>
-        inert
-          ? { "data-zone": z }
-          : {
-              "data-zone": z,
-              style: { cursor: "pointer" },
-              onMouseEnter: () => setHover(`${id}:${z}`),
-              onMouseLeave: () => setHover(undefined),
-              onMouseDown: (e: React.MouseEvent) =>
-                handleClick({ code, keyCategory: z, button: e.button, down: true }, def.name),
-              onMouseUp: (e: React.MouseEvent) =>
-                handleClick({ code, keyCategory: z, button: e.button, down: false }, def.name)
-            };
+      const zone = (z: Zone) => ({
+        "data-zone": z,
+        style: { cursor: "pointer" },
+        onMouseEnter: () => setHover(`${id}:${z}`),
+        onMouseLeave: () => setHover(undefined),
+        onMouseDown: (e: React.MouseEvent) => handleClick({ code, keyCategory: z, button: e.button, down: true }, def.name),
+        onMouseUp: (e: React.MouseEvent) => handleClick({ code, keyCategory: z, button: e.button, down: false }, def.name)
+      });
       const legend = (z: Zone) => (hot(z) ? highlight : ink);
       const words = def.main.length > 2;
       const parts = def.main.split(" ");
@@ -297,7 +293,7 @@ export const Ht1080zKeyboard = ({ width, height, romSet = "s2", apiLoaded }: Pro
       case "main":
         if (e.code === SHIFT || e.button === 0) setKeys(e.down, e.code);
         else setKeys(e.down, e.code, SHIFT);
-        if (name === "Page") setPageVersion((v) => v + 1);
+        if (name === "Page" || name === "F1") setPageVersion((v) => v + 1);
         break;
       case "shift":
         setKeys(e.down, e.code, SHIFT);

@@ -5,8 +5,11 @@ import type { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext
 import type { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
 import type { ValidationMessage } from "@renderer/abstractions/ValidationMessage";
 
-import { MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48, MI_TIMEX, MI_SCORPION, MI_ZX80, MI_ZX81 } from "@common/machines/constants";
+import { MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48, MI_TIMEX, MI_SCORPION, MI_ZX80, MI_ZX81,
+  MI_HT1080Z
+} from "@common/machines/constants";
 import { isZx8081ProgramFileName, parseZxProgramFile } from "@emu/machines/zx8081/ZxPFile";
+import { ht1080zTapeErrorKey, isHt1080zTapeFor, parseHt1080zTapeFile } from "@emu/machines/ht1080z/Ht1080zTapeFile";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { analyzeTape } from "../DocumentPanels/Tape/tapeView";
 import {
@@ -117,13 +120,27 @@ export class TapeLoadCommand extends IdeCommandBase<TapeLoadCommandArgs> {
   ): Promise<ValidationMessage[]> {
     const messages: ValidationMessage[] = [];
     const isProgram = !!args.file?.trim() && isZx8081ProgramFileName(args.file.trim());
+    const currentMachine = context.store.getState().emulatorState?.machineId;
+    const isHtTape = !!args.file?.trim() && isHt1080zTapeFor(args.file.trim(), currentMachine);
     if (!args.file?.trim()) {
       messages.push(validationError(t("commands.tapeLoad.emptyPath")));
-    } else if (!isTapeFilePath(args.file) && !isProgram) {
+    } else if (!isTapeFilePath(args.file) && !isProgram && !isHtTape) {
       messages.push(validationError(t("commands.tapeLoad.wrongType")));
     }
     if (args["-r"] && args["-d"]) {
       messages.push(validationError(t("commands.tapeLoad.oneMode")));
+    }
+    // --- An HT-1080Z tape loads into the HT only (`.plans/HT1080Z_PLAN.md` §9)
+    if (isHtTape) {
+      if (currentMachine !== MI_HT1080Z) {
+        const name = machineRegistry.find((m) => m.machineId === currentMachine)?.displayName ?? currentMachine;
+        messages.push(
+          validationError(
+            name ? t("commands.tapeLoad.refusedHtTape", { machine: name }) : t("commands.tapeLoad.refusedHtTapeNoMachine")
+          )
+        );
+      }
+      return messages;
     }
     const guard = isProgram ? programLoadGuard(context.store.getState()) : tapeLoadGuard(context.store.getState());
     if (guard) {
@@ -152,13 +169,23 @@ export class TapeLoadCommand extends IdeCommandBase<TapeLoadCommandArgs> {
     } catch (err) {
       return commandError(t("commands.tapeLoad.readFailed", { file, error: messageOf(err) }));
     }
+    // --- An HT-1080Z tape: checked as the emulator reads it, so a bad one is refused here with its reason
+    const isHtTape = isHt1080zTapeFor(file, context.store.getState().emulatorState?.machineId);
+    if (isHtTape) {
+      try {
+        parseHt1080zTapeFile(bytes, file);
+      } catch (err) {
+        return commandError(t(ht1080zTapeErrorKey(err), { file }));
+      }
+    }
     // --- A ZX80/ZX81 program goes into the deck as it is; the ROM's LOAD reads it
     const isProgram = isZx8081ProgramFileName(file);
     if (isProgram && !parseZxProgramFile(bytes, file)) {
       return commandError(t("commands.tapeLoad.badProgram", { file }));
     }
-    const { analysis, error } = isProgram ? { analysis: undefined, error: undefined } : analyzeTape(bytes);
-    if (!isProgram && !analysis) {
+    const { analysis, error } =
+      isProgram || isHtTape ? { analysis: undefined, error: undefined } : analyzeTape(bytes);
+    if (!isProgram && !isHtTape && !analysis) {
       return commandError(t("commands.tapeLoad.badTape", { file, error }));
     }
 

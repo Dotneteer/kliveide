@@ -1710,7 +1710,7 @@
       "saved": "The machine the recording was made on"
     }
   },
-  "commands.tapeLoad.description": "Inserts a .tap or .tzx tape (ZX Spectrum) or a .p/.o program (ZX80/ZX81) into the deck (-r resets and loads it, -d does so with breakpoints armed)",
+  "commands.tapeLoad.description": "Inserts a .tap or .tzx tape (ZX Spectrum), a .p/.o program (ZX80/ZX81) or a .cas/.cmd/.bas tape (HT-1080Z) into the deck (-r resets and loads it, -d does so with breakpoints armed)",
   "@commands.tapeLoad.description": {
     "context": "Help text of the 'tape-load' IDE command. Keep the option names -r and -d."
   },
@@ -1726,7 +1726,7 @@
   "@commands.tapeLoad.emptyPath": {
     "context": "Validation error of 'tape-load'."
   },
-  "commands.tapeLoad.wrongType": "The file to load must be a .tap or .tzx tape, or a ZX80/ZX81 .p, .81, .o or .80 program.",
+  "commands.tapeLoad.wrongType": "The file to load must be a .tap or .tzx tape, a ZX80/ZX81 .p, .81, .o or .80 program, or an HT-1080Z .cas, .cmd or .bas tape.",
   "@commands.tapeLoad.wrongType": {
     "context": "Validation error of 'tape-load'."
   },
@@ -1755,6 +1755,17 @@
   "commands.tapeLoad.refusedProgramNoMachine": "Loading a tape requires a ZX80 or ZX81 machine; no machine is selected.",
   "@commands.tapeLoad.refusedProgramNoMachine": {
     "context": "Validation error of 'tape-load' for a ZX80/ZX81 program file (which loads like a tape)."
+  },
+  "commands.tapeLoad.refusedHtTape": "Loading an HT-1080Z tape requires the HT-1080Z; the current machine is {machine}.",
+  "@commands.tapeLoad.refusedHtTape": {
+    "context": "Validation error of 'tape-load' for an HT-1080Z tape file (.cas, .cmd or .bas) when another machine is running. HT-1080Z is a machine name: keep it.",
+    "placeholders": {
+      "machine": "The name of the current machine"
+    }
+  },
+  "commands.tapeLoad.refusedHtTapeNoMachine": "Loading an HT-1080Z tape requires the HT-1080Z; no machine is selected.",
+  "@commands.tapeLoad.refusedHtTapeNoMachine": {
+    "context": "Validation error of 'tape-load' for an HT-1080Z tape file (.cas, .cmd or .bas) when no machine is selected. HT-1080Z is a machine name: keep it."
   },
   "commands.tapeLoad.readFailed": "Could not read {file}: {error}",
   "@commands.tapeLoad.readFailed": {

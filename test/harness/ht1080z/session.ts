@@ -9,6 +9,9 @@ import { DebugSupport } from "@emu/machines/DebugSupport";
 import { Ht1080zWasmV2Machine } from "@emu/machines/ht1080z/Ht1080zWasmV2Machine";
 import { Ht1080zKeyCode } from "@emu/machines/ht1080z/Ht1080zKeyCode";
 import { HT1080Z_EXTENSION_ON } from "@emu/machines/ht1080z/Ht1080zTyper";
+import { parseHt1080zTapeFile, type Ht1080zTapeFile } from "@emu/machines/ht1080z/Ht1080zTapeFile";
+import { FAST_LOAD, SAVED_TO_TAPE } from "@emu/machines/machine-props";
+import { MEDIA_TAPE } from "@common/structs/project-const";
 import { HT1080Z_ALL_MODELS, HT1080Z_VIDEO_RAM_START } from "@emu/machines/ht1080z/ht1080zMachineInfo";
 
 import { buildHt1080zWasm, productionOutput } from "../../../scripts/build-ht1080z-wasm.cjs";
@@ -220,6 +223,51 @@ export class Ht1080zTestSession {
       .filter(({ text }) => text !== "");
     const { line } = lines[lines.length - 1 - back];
     return Array.from({ length }, (_, column) => this.screenCode(line, column));
+  }
+
+  // ==========================================================================================
+  // Tape
+
+  /** A tape file from bytes, as the IDE reads one (`Ht1080zTapeFile.ts`) */
+  static tape(bytes: Uint8Array | number[], fileName: string): Ht1080zTapeFile {
+    return parseHt1080zTapeFile(bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes), fileName);
+  }
+
+  /** Puts a tape in the deck (fast load by default), as the IDE does */
+  insertTape(tape: Ht1080zTapeFile, { fastLoad = true }: { fastLoad?: boolean } = {}): this {
+    this.machine.setMachineProperty(FAST_LOAD, fastLoad);
+    this.machine.setMachineProperty(MEDIA_TAPE, tape);
+    return this;
+  }
+
+  /**
+   * Loads and starts a tape as the IDE's Load and Run does, on a machine just powered on: the
+   * machine's tape-load flow (run to BASIC's first idle prompt, then the machine types the answer,
+   * the load command and the start). Returns once every command has been typed, plus `settle`
+   * frames. Returns the frames it took.
+   */
+  loadTape(
+    tape: Ht1080zTapeFile,
+    { fastLoad = true, settle = 30, maxFrames = 3000 }: { fastLoad?: boolean; settle?: number; maxFrames?: number } = {}
+  ): number {
+    this.insertTape(tape, { fastLoad });
+    const start = this.frames;
+    this.machine.getTapeLoadFlow();
+    this.runTo(0x004e, { maxFrames: 600 });
+    this.runUntil(
+      () => this.machine.pendingLoadCommands.length === 0 && this.machine.getKeyQueueLength() === 0,
+      { maxFrames },
+      "the tape-load flow"
+    );
+    this.runFrames(settle);
+    return this.frames - start;
+  }
+
+  /** The last SAVE the machine published (`SAVED_TO_TAPE`), if any; reading it clears it */
+  takeSavedTape(): { name: string; contents: Uint8Array } | undefined {
+    const saved = this.machine.getMachineProperty(SAVED_TO_TAPE);
+    this.machine.setMachineProperty(SAVED_TO_TAPE, undefined);
+    return saved;
   }
 
   /** The RESET key on the back panel (NMI) */
