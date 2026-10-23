@@ -38,7 +38,7 @@ import { beamOverlayPill } from "./beamOverlayModel";
 import { normalizeMousePointerDisplay } from "@common/settings/mouse-capture";
 import { renderMachineAudioFrame } from "./audioFrameRendering";
 import { MEDIA_DISK_A, MEDIA_DISK_B } from "@common/structs/project-const";
-import { applySectorChangesToDiskContents } from "@emu/machines/disk/disk-changes";
+import { applySectorChangesToDiskContents, DSK_WHOLE_IMAGE_KEY } from "@emu/machines/disk/disk-changes";
 import { mediaStore } from "@emu/machines/media/media-info";
 import { useT } from "@common/i18n/useT";
 import type { MessageKey } from "@common/i18n/keys.generated";
@@ -186,12 +186,17 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   const saveDiskChanges = useCallback(async (diskIndex: number, changes: SectorChanges): Promise<void> => {
     const mediaId = diskIndex ? MEDIA_DISK_B : MEDIA_DISK_A;
     try {
+      // --- Patched in place; a whole new image of another size (a reformatted disk) replaces the
+      // --- media store's copy, and the machine already holds it
       const mediaContents = mediaStore.getMedia(mediaId)?.mediaContents;
       if (mediaContents instanceof Uint8Array) {
-        applySectorChangesToDiskContents(mediaContents, changes);
+        const updated = applySectorChangesToDiskContents(mediaContents, changes);
+        if (updated !== mediaContents) {
+          mediaStore.addMedia({ id: mediaId, mediaContents: updated });
+        }
       }
       const machineContents = controllerRef.current?.machine?.getMachineProperty(mediaId);
-      if (machineContents instanceof Uint8Array && machineContents !== mediaContents) {
+      if (machineContents instanceof Uint8Array && machineContents !== mediaContents && !changes.has(DSK_WHOLE_IMAGE_KEY)) {
         applySectorChangesToDiskContents(machineContents, changes);
       }
     } catch (err) {

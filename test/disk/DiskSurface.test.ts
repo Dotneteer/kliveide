@@ -90,8 +90,11 @@ describe("Disk Surface View", () => {
           expect(datasum).toEqual(512 * 0xe5);  
         }
         
-        expect(sector.tailData.get(0)).toEqual(crc.high);
-        expect(sector.tailData.get(1)).toEqual(crc.low);
+        // --- A sector the dump read with a data CRC error (ST2 bit 5: ltk.dsk's track 12
+        // --- protection) carries a wrong CRC on the surface, as on the real disk
+        const crcFlip = (diskInfo.tracks[trackIdx].sectors[sectorIdx].SR2 & 0x20) !== 0 ? 0xff : 0x00;
+        expect(sector.tailData.get(0)).toEqual(crc.high ^ crcFlip);
+        expect(sector.tailData.get(1)).toEqual(crc.low ^ crcFlip);
         for (let i = 2; i < 26; i++) {
           expect(sector.tailData.get(i)).toEqual(0x4e);
         }
@@ -183,8 +186,11 @@ describe("Disk Surface View", () => {
         }
         expect(datasum).toEqual(dskDatasum);
         
-        expect(sector.tailData.get(0)).toEqual(crc.high);
-        expect(sector.tailData.get(1)).toEqual(crc.low);
+        // --- A sector the dump read with a data CRC error (ST2 bit 5: ltk.dsk's track 12
+        // --- protection) carries a wrong CRC on the surface, as on the real disk
+        const crcFlip = (diskInfo.tracks[trackIdx].sectors[sectorIdx].SR2 & 0x20) !== 0 ? 0xff : 0x00;
+        expect(sector.tailData.get(0)).toEqual(crc.high ^ crcFlip);
+        expect(sector.tailData.get(1)).toEqual(crc.low ^ crcFlip);
         for (let i = 2; i < 26; i++) {
           expect(sector.tailData.get(i)).toEqual(0x4e);
         }
@@ -197,3 +203,34 @@ export function readTestFile (filename: string): Uint8Array {
   const fullname = path.join(__dirname, "../testfiles", filename);
   return fs.readFileSync(fullname);
 }
+
+describe("Disk surface from the DSK corpus", () => {
+  it("writes a deleted data mark for a sector dumped with one", async () => {
+    const { corpusDisk } = await import("./dskCorpus");
+    const surface = createDiskSurface(corpusDisk("status-bytes"));
+    const prefix = surface.tracks[6].sectors[3].sectorPrefix;
+    expect(prefix.get(prefix.length - 1)).toBe(0xf8);
+    const normal = surface.tracks[6].sectors[0].sectorPrefix;
+    expect(normal.get(normal.length - 1)).toBe(0xfb);
+  });
+
+  it("puts one copy of a weak sector on the track and marks its bytes weak", async () => {
+    const { corpusDisk, pattern } = await import("./dskCorpus");
+    const surface = createDiskSurface(corpusDisk("weak-sectors"));
+    const track = surface.tracks[4];
+    const sector = track.sectors[2];
+    expect(sector.sectordata.length).toBe(512);
+    expect(sector.sectordata.view()).toEqual(pattern(4, 0, 3, 512, 0));
+    const first = sector.sectordata.startOffset;
+    expect(track.weakSectorData.getBit(first)).toBe(true);
+    expect(track.weakSectorData.getBit(first + 511)).toBe(true);
+    expect(track.weakSectorData.getBit(track.sectors[0].sectordata.startOffset)).toBe(false);
+  });
+
+  it("lays out a track of mixed sector sizes without overlap", async () => {
+    const { corpusDisk, pattern } = await import("./dskCorpus");
+    const track = createDiskSurface(corpusDisk("mixed-sizes")).tracks[1];
+    expect(track.sectors.map((s) => s.sectordata.length)).toEqual([256, 512, 1024, 128]);
+    expect(track.sectors[2].sectordata.view()).toEqual(pattern(1, 0, 3, 1024));
+  });
+});

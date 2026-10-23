@@ -2594,6 +2594,11 @@
     "context": "Option in the Create Disk dialog's disk-type dropdown: a double-sided extended CPC-format (EDSK) disk of 360 KB. Keep CPC, ECPC, TR-DOS and the size untranslated; the dropdown grows to fit the longest option.",
     "maxChars": 34
   },
+  "dialog.createDisk.diskType.dse80": "Double-sided ECPC, 80 tracks (720K)",
+  "@dialog.createDisk.diskType.dse80": {
+    "context": "Option in the Create Disk dialog's disk-type dropdown: a double-sided, 80-track extended CPC-format (EDSK) disk of 720 KB, the +3DOS format of a 3.5-inch drive B. Keep CPC, ECPC, TR-DOS and the size untranslated; the dropdown grows to fit the longest option.",
+    "maxChars": 42
+  },
   "dialog.createDisk.diskType.trd80ds": "TR-DOS 80 tracks, double-sided (640K)",
   "@dialog.createDisk.diskType.trd80ds": {
     "context": "Option in the Create Disk dialog's disk-type dropdown: a TR-DOS disk (Beta 128 interface), 80 tracks, double-sided, 640 KB. Keep CPC, ECPC, TR-DOS and the size untranslated; the dropdown grows to fit the longest option.",

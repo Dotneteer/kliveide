@@ -59,6 +59,7 @@ import {
   PROJECT_TEMPLATES
 } from "@common/structs/project-const";
 import { readDiskData } from "@emu/machines/disk/disk-readers";
+import { DSK_WHOLE_IMAGE_KEY, dskSectorWrites } from "@emu/machines/disk/disk-changes";
 import { createDiskFile } from "@common/utils/create-disk-file";
 import { mainScriptManager } from "./ksx-runner/MainScriptManager";
 import { collectedBuildTasks } from "./build";
@@ -1598,22 +1599,29 @@ function saveDiskChanges(diskIndex: number, changes: SectorChanges): ResponseMes
     return defaultResponse();
   }
 
+  // --- A DSK whose layout the guest changed (a format): the whole new image replaces the file,
+  // --- written beside it and renamed over it, so a failed write leaves the old disk intact
+  const whole = changes.get(DSK_WHOLE_IMAGE_KEY);
+  if (whole) {
+    try {
+      const temporary = `${diskFile}.klive-tmp`;
+      fs.writeFileSync(temporary, whole);
+      fs.renameSync(temporary, diskFile);
+    } catch (err) {
+      return errorResponse(`Saving disk changes failed: ${err.message}`);
+    }
+    return defaultResponse();
+  }
+
+  // --- A DSK: each change lands at its sector's physical position (`dskSectorWrites`)
   try {
     const contents = fs.readFileSync(diskFile);
-    const diskInfo = readDiskData(new Uint8Array(contents));
+    const writes = dskSectorWrites(readDiskData(new Uint8Array(contents)), changes);
 
     const handle = fs.openSync(diskFile, "r+");
     try {
-      for (const change of changes.keys()) {
-        const trackIndex = Math.floor(change / 100);
-        const sectorIndex = change % 100;
-        const track = diskInfo.tracks[trackIndex];
-        const sector = track.sectors.find((s) => s.R === sectorIndex);
-        if (!sector) {
-          throw Error(`Sector with index #${sectorIndex} cannot be found on track #${trackIndex}`);
-        }
-        const data = changes.get(change);
-        fs.writeSync(handle, data, 0, data.length, sector.sectorDataPosition);
+      for (const { position, data } of writes) {
+        fs.writeSync(handle, data, 0, data.length, position);
       }
     } finally {
       fs.closeSync(handle);

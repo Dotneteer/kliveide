@@ -799,7 +799,8 @@ describe("ZX Spectrum +3E WASM v2 loader", () => {
     expect(runtime.exports.spp3eDiskGetLength(1)).toBe(4);
     expect(runtime.exports.spp3eDiskGetWriteProtected(1)).toBe(1);
     expect(runtime.exports.spp3eDiskGetHasTwoHeads(1)).toBe(0);
-    expect(runtime.exports.spp3eDiskGetMaxCylinders(1)).toBe(40);
+    // --- A 40-track image in a 40-track drive, which steps to 42
+    expect(runtime.exports.spp3eDiskGetMaxCylinders(1)).toBe(42);
     expect(runtime.exports.spp3eDiskGetRevision(1)).toBe(startRevision + 1);
 
     runtime.exports.spp3eDiskSetWriteProtected(1, 0);
@@ -928,7 +929,7 @@ describe("ZX Spectrum +3E WASM v2 loader", () => {
     expect(runtime.exports.spp3eReadPort(0x3ffd)).toBe(0x59);
   });
 
-  it("transfers FDC read/write data and journals dirty disk ranges", async () => {
+  it("transfers FDC read/write data and marks the written sector dirty", async () => {
     buildSpP3eWasm();
     const runtime = await loadSpP3eWasmV2({
       artifactName: "test-spp3e-fdc-data-commands-v2.wasm",
@@ -936,8 +937,11 @@ describe("ZX Spectrum +3E WASM v2 loader", () => {
     });
 
     runtime.exports.spp3eHardReset();
+    // --- One track with one 128-byte sector: C = 0, H = 0, R = 1, N = 0
     runtime.exports.spp3eDiskBeginUpload(0, 128, 0, 42, 2);
     runtime.exports.spp3eDiskWriteData(0, 0, 0x9a);
+    runtime.exports.spp3eDiskUploadTrack(0, 0, 0, 0x1b, 0xe5, 0);
+    runtime.exports.spp3eDiskUploadSector(0, 0x00010000, 0x00010000, 0, 128);
     runtime.exports.spp3eDiskFinishUpload(0);
     runtime.exports.spp3eWritePort(0x1ffd, 0x08);
     for (let i = 0; i < 50; i++) {
@@ -961,9 +965,11 @@ describe("ZX Spectrum +3E WASM v2 loader", () => {
     for (let i = 1; i < 128; i++) {
       runtime.exports.spp3eReadPort(0x3ffd);
     }
+    // --- Past EOT with no TC (the +3 does not wire it): abnormal termination, End of Cylinder
     expect(runtime.exports.spp3eFdcGetOperationPhase()).toBe(2);
-    expect(runtime.exports.spp3eReadPort(0x3ffd)).toBe(0x00);
-    for (let i = 1; i < 7; i++) {
+    expect(runtime.exports.spp3eReadPort(0x3ffd)).toBe(0x40);
+    expect(runtime.exports.spp3eReadPort(0x3ffd)).toBe(0x80);
+    for (let i = 2; i < 7; i++) {
       runtime.exports.spp3eReadPort(0x3ffd);
     }
 
@@ -985,14 +991,13 @@ describe("ZX Spectrum +3E WASM v2 loader", () => {
       runtime.exports.spp3eWritePort(0x3ffd, 0x00);
     }
 
+    // --- The written sector's bit in the drive's dirty-sector bitmap
     expect(runtime.exports.spp3eDiskReadData(0, 0)).toBe(0x77);
     expect(runtime.exports.spp3eFdcGetDirtyDrive()).toBe(0);
-    expect(runtime.exports.spp3eFdcGetDirtyOffset()).toBe(0);
-    expect(runtime.exports.spp3eFdcGetDirtyLength()).toBe(128);
     expect(runtime.exports.spp3eFdcGetDirtyRevision()).toBe(revision + 1);
-    expect(runtime.diskChanges.slice(0, 8)).toEqual(new Uint8Array([0, 0, 0, 0, 128, 0, 0, 0]));
+    expect(runtime.diskChanges.slice(0, 2)).toEqual(new Uint8Array([1, 0]));
     expect(runtime.exports.spp3eFdcGetOperationPhase()).toBe(2);
-    expect(runtime.exports.spp3eReadPort(0x3ffd)).toBe(0x00);
+    expect(runtime.exports.spp3eReadPort(0x3ffd)).toBe(0x40);
   });
 
   it("rejects artifacts without WebAssembly memory", () => {

@@ -24,6 +24,19 @@ import { DiskDensity } from "@emu/abstractions/DiskDensity";
 import { createDiskSurface } from "@emu/machines/disk/DiskSurface";
 import ScrollViewer from "@renderer/controls/ScrollViewer";
 import { useT } from "@common/i18n/useT";
+import type { MessageKey } from "@common/i18n/keys.generated";
+import { DiskImageError, type DiskImageErrorCode } from "@emu/machines/disk/DiskImageError";
+
+// --- The viewer's message for each reason a disk image cannot be read
+const READ_ERROR_KEYS: Partial<Record<DiskImageErrorCode, MessageKey>> = {
+  notDsk: "panels.doc.dsk.error.notDsk",
+  badHeader: "panels.doc.dsk.error.badHeader",
+  badSides: "panels.doc.dsk.error.badSides",
+  badTracks: "panels.doc.dsk.error.badTracks",
+  truncated: "panels.doc.dsk.error.truncated",
+  missingTrackInfo: "panels.doc.dsk.error.missingTrackInfo",
+  badTrack: "panels.doc.dsk.error.badTrack"
+};
 
 const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
   const t = useT();
@@ -54,7 +67,7 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
       const fileInfo = readDiskData(contents);
       return { fileInfo, floppyInfo: createDiskSurface(fileInfo), error: undefined as string | undefined };
     } catch (err) {
-      return { fileInfo: undefined, floppyInfo: undefined, error: (err as Error)?.message };
+      return { fileInfo: undefined, floppyInfo: undefined, error: err };
     }
   }, [contents]);
   const { fileInfo, floppyInfo } = parsed;
@@ -70,8 +83,8 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
     [floppyInfo]
   );
   const hasWeakSectors = useMemo(
-    () => !!floppyInfo?.tracks.some((track) => track.weakSectorData.length > 0),
-    [floppyInfo]
+    () => !!fileInfo?.tracks.some((track) => track.sectors.some((s) => (s.copies ?? 1) > 1)),
+    [fileInfo]
   );
 
   useEffect(() => {
@@ -85,7 +98,7 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
       <EmptyState
         tone="error"
         motif={false}
-        message={parsed.error ?? t("panels.doc.dsk.unreadable")}
+        message={readErrorText(parsed.error, t)}
       />
     );
   }
@@ -391,3 +404,9 @@ export const createDskViewerPanel = ({
     apiLoaded={() => {}}
   />
 );
+
+// --- The text explaining why the disk image could not be read
+function readErrorText (error: unknown, t: ReturnType<typeof useT>): string {
+  const key = error instanceof DiskImageError ? READ_ERROR_KEYS[error.code] : undefined;
+  return key ? t(key, error instanceof DiskImageError ? error.args : undefined) : t("panels.doc.dsk.unreadable");
+}

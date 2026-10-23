@@ -8,6 +8,7 @@ import type {
 
 import { createDiskSurface } from "./DiskSurface";
 import { readDiskData } from "./disk-readers";
+import { dskSectorKey } from "./disk-changes";
 import { FloppyControllerDevice } from "./FloppyControllerDevice";
 
 // --- Percentage of motor speed increment in a single complete frame
@@ -286,11 +287,13 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
   getChangedSectors(): SectorChanges {
     const changes = new Map<number, Uint8Array>();
     for (const sectorKey of this.dirtySectors) {
-      const trackIndex = Math.floor(sectorKey / 100);
-      const sectorIndex = sectorKey % 100;
-      const track = this.surface.tracks[trackIndex];
-      const sector = track.sectors[sectorIndex - 1];
-      changes.set(sectorKey, sector.sectordata.view());
+      // --- The drive notes the sector ID it wrote; the write-back wants its physical position
+      const trackIndex = Math.floor(sectorKey / 256);
+      const sectorId = sectorKey % 256;
+      const sectorIndex = this.disk.tracks[trackIndex]?.sectors.findIndex((s) => s.R === sectorId) ?? -1;
+      if (sectorIndex < 0) continue;
+      const sector = this.surface.tracks[trackIndex].sectors[sectorIndex];
+      changes.set(dskSectorKey(trackIndex, sectorIndex), sector.sectordata.view());
     }
     this.dirtySectors.clear();
     return changes;
@@ -371,7 +374,7 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
   }
 
   private sectorKey(): number {
-    return this.currentTrackIndex * 100 + this.currentSectorIndex;
+    return this.currentTrackIndex * 256 + (this.currentSectorIndex & 0xff);
   }
 }
 

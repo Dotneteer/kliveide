@@ -614,6 +614,53 @@
   "@panels.doc.dsk.unreadable": {
     "context": "Error message filling the disk image viewer when the opened file is not a valid disk image. '.dsk' is a file extension; keep it."
   },
+  "panels.doc.dsk.error.notDsk": "This file is not a .dsk disk image: it starts with neither the standard nor the extended DSK signature.",
+  "@panels.doc.dsk.error.notDsk": {
+    "context": "Error filling the disk image viewer: the file does not start like a .dsk file. '.dsk' and 'DSK' are file-format names; keep them."
+  },
+  "panels.doc.dsk.error.badHeader": "The disk image's Disk-Info block is damaged.",
+  "@panels.doc.dsk.error.badHeader": {
+    "context": "Error filling the disk image viewer: the file's header block is damaged. 'Disk-Info' is the name of a block in the file format; keep it."
+  },
+  "panels.doc.dsk.error.badSides": "The disk image says it has {sides} sides; a floppy disk has one or two.",
+  "@panels.doc.dsk.error.badSides": {
+    "context": "Error filling the disk image viewer: the file's header gives an impossible number of disk sides.",
+    "placeholders": {
+      "sides": "The number of sides the file declares, e.g. 80"
+    }
+  },
+  "panels.doc.dsk.error.badTracks": "The disk image says it has {tracks} tracks per side, more than a .dsk file can hold.",
+  "@panels.doc.dsk.error.badTracks": {
+    "context": "Error filling the disk image viewer: the file's header gives an impossible number of tracks.",
+    "placeholders": {
+      "tracks": "The number of tracks per side the file declares, e.g. 0 or 119"
+    }
+  },
+  "panels.doc.dsk.error.truncated": "The disk image is cut short: its tracks need {needed} bytes, but the file has only {length}.",
+  "@panels.doc.dsk.error.truncated": {
+    "context": "Error filling the disk image viewer: the file ends before the tracks its header lists.",
+    "placeholders": {
+      "needed": "How many bytes the file should have at least, e.g. 194816",
+      "length": "How many bytes the file has, e.g. 190180"
+    }
+  },
+  "panels.doc.dsk.error.missingTrackInfo": "Track {cylinder} on side {side} has no Track-Info block (at byte {offset}): the image is damaged.",
+  "@panels.doc.dsk.error.missingTrackInfo": {
+    "context": "Error filling the disk image viewer: a track's header block is missing. 'Track-Info' is the name of a block in the file format; keep it.",
+    "placeholders": {
+      "cylinder": "The track (cylinder) number, from 0",
+      "side": "The disk side, 0 or 1",
+      "offset": "Where in the file the block should be, in bytes"
+    }
+  },
+  "panels.doc.dsk.error.badTrack": "Track {track} lists {sectors} sectors, more than its block in the file holds.",
+  "@panels.doc.dsk.error.badTrack": {
+    "context": "Error filling the disk image viewer: a track says it holds more sectors than fit in its part of the file.",
+    "placeholders": {
+      "track": "The track's index in the file, from 0",
+      "sectors": "The number of sectors the track lists"
+    }
+  },
   "panels.doc.dsk.sides": "Sides:",
   "@panels.doc.dsk.sides": {
     "context": "Label of a value in the disk image viewer's header: how many sides the floppy disk has.",

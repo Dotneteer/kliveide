@@ -13,6 +13,7 @@ import {
 } from "@emu/machines/disk/FloppyControllerDevice";
 import { MEDIA_DISK_A, MEDIA_DISK_B } from "@common/structs/project-const";
 import { DISK_A_CHANGES } from "@emu/machines/machine-props";
+import { dskSectorKey } from "@emu/machines/disk/disk-changes";
 
 describe("FloppyControllerDevice", () => {
   it("constructor works", () => {
@@ -690,7 +691,7 @@ describe("FloppyControllerDevice", () => {
 
     const changes = updm.getMachineProperty(DISK_A_CHANGES);
     expect(changes.size).toBe(1);
-    expect(changes.get(1)).toEqual(fdt.driveA.surface.tracks[0].sectors[0].sectordata.view());
+    expect(changes.get(dskSectorKey(0, 0))).toEqual(fdt.driveA.surface.tracks[0].sectors[0].sectordata.view());
     expect(fdt.driveA.dirtySectors.size).toBe(0);
   });
 

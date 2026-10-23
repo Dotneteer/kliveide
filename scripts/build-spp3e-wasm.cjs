@@ -145,6 +145,19 @@ const productionExports = [
   "spp3eDiskGetHeadLoaded",
   "spp3eDiskGetLength",
   "spp3eDiskGetRevision",
+  "spp3eDiskUploadTrack",
+  "spp3eDiskUploadSector",
+  "spp3eDiskGetImageCylinders",
+  "spp3eDiskGetImageSides",
+  "spp3eDiskGetStructureRevision",
+  "spp3eDiskGetSectorCapacity",
+  "spp3eDiskGetTrackInfo",
+  "spp3eDiskGetTrackFormat",
+  "spp3eDiskGetSectorId",
+  "spp3eDiskGetSectorStatus",
+  "spp3eDiskGetSectorOffset",
+  "spp3eDiskGetSectorLength",
+  "spp3eDiskClearDirty",
   "spp3eGetTapeMaxBlocks",
   "spp3eGetTapeDataCapacity",
   "spp3eGetTapeSaveMaxBlocks",
@@ -253,7 +266,8 @@ const buildModes = {
     // --- 12 MB: the 4 MB execution-history ring (EXECUTION_HISTORY_ALL_CORES_PLAN D2, D3)
     // --- 18 MB: the access profile's 192 KB of flags and its 24-page (4.5 MB) counter pool, which
     // --- covers all physical memory (CODE_COVERAGE_AND_HEAT_MAP_PLAN D5, T6)
-    initialMemory: 18 * 1024 * 1024
+    // --- 20 MB: two 1 MB floppy data areas and their sector tables (DISK_IMAGES_AND_FILE_SYSTEMS_PLAN A3)
+    initialMemory: 20 * 1024 * 1024
   }
 };
 

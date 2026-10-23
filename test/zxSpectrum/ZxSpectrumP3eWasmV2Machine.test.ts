@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { DSK_WHOLE_IMAGE_KEY, dskSectorKey } from "@emu/machines/disk/disk-changes";
 
 import { buildSpP3eWasm, productionOutput } from "../../scripts/build-spp3e-wasm.cjs";
 import type { TapeDataBlock } from "@common/structs/TapeDataBlock";
@@ -283,19 +284,22 @@ describe("ZX Spectrum +2E/+3E WASM v2 machine adapter", () => {
 
     machine.flushDiskChanges();
 
+    // --- Keyed by the sector's physical position: track 0, the track's first sector
     const changes = machine.getMachineProperty(DISK_A_CHANGES);
     expect(changes.size).toBe(1);
-    expect(changes.get(firstSector.record)[0]).toBe(0x77);
-    expect(changes.get(firstSector.record)).toHaveLength(firstSector.data.length);
+    expect(changes.get(dskSectorKey(0, 0))[0]).toBe(0x77);
+    expect(changes.get(dskSectorKey(0, 0))).toHaveLength(firstSector.data.length);
     expect(Array.from(runtime.diskChanges.slice(0, 8))).toEqual([0, 0, 0, 0, 0, 0, 0, 0]);
 
-    // --- A reverse-debugging fork republishes every sector of the in-core disk (REVERSE_DEBUGGING_PLAN D13)
+    // --- A reverse-debugging fork republishes the in-core disk whole (REVERSE_DEBUGGING_PLAN D13)
     machine.setMachineProperty(DISK_A_CHANGES);
     expect(machine.republishDisks()).toBe(true);
     const all = machine.getMachineProperty(DISK_A_CHANGES);
-    expect(all.size).toBe(40 * 9);
-    expect(all.get(firstSector.record)[0]).toBe(0x77);
-    expect(all.get(1 * 100 + firstSector.record)).toHaveLength(firstSector.data.length);
+    expect([...all.keys()]).toEqual([DSK_WHOLE_IMAGE_KEY]);
+    const image = readDiskData(all.get(DSK_WHOLE_IMAGE_KEY));
+    expect(image.tracks.length).toBe(40);
+    expect(image.tracks[0].sectors[0].sectorData[0]).toBe(0x77);
+    expect(image.tracks[1].sectors[0].sectorData).toEqual(readDiskData(diskA).tracks[1].sectors[0].sectorData);
   });
 
   it("syncs keyboard rows into WASM before frames and port reads", async () => {

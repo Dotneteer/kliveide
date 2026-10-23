@@ -1,6 +1,49 @@
-import type { DiskInformation, SectorInformation } from "./DiskInformation";
+import type { DiskInformation, SectorInformation, TrackInformation } from "./DiskInformation";
 import { FloppyDiskFormat } from "@emu/abstractions/FloppyDiskFormat";
-import { BinaryReader } from "@common/utils/BinaryReader";
+import { DiskImageError } from "./DiskImageError";
+
+/**
+ * The CPC DSK container formats (standard "MV - CPCEMU" and extended "EXTENDED CPC DSK").
+ *
+ * Layout facts, from the format's public description:
+ * - a 256-byte Disk-Info block: signature (34 bytes), creator (14), tracks (1), sides (1), then a
+ *   uniform track size (standard, 2 bytes LE) or a table of track-size high bytes (extended, one
+ *   byte per track in file order, from offset 0x34; 0 = unformatted track);
+ * - each track block starts with a Track-Info header: signature (12), 4 unused, cylinder, side,
+ *   data rate, recording mode, sector size code N, sector count, GAP#3, filler, then 8 bytes per
+ *   sector (C, H, R, N, ST1, ST2, stored length LE - the length only in the extended format);
+ * - sector data follows the header at its 256-byte boundary (0x100 unless more than 29 sectors
+ *   push the header past it), sectors back to back in header order;
+ * - an extended sector storing a multiple of its nominal size holds that many copies (a weak
+ *   sector, read differently each time on the real disk).
+ */
+export const DSK_STANDARD_SIGNATURE = "MV - CPCEMU Disk-File\r\nDisk-Info\r\n";
+export const DSK_EXTENDED_SIGNATURE = "EXTENDED CPC DSK File\r\nDisk-Info\r\n";
+export const DSK_TRACK_SIGNATURE = "Track-Info\r\n";
+export const DSK_DISK_INFO_SIZE = 0x100;
+export const DSK_TRACK_HEADER_SIZE = 0x18;
+export const DSK_SECTOR_INFO_SIZE = 8;
+export const DSK_MAX_TRACK_ENTRIES = 204;
+export const DSK_CREATOR_LENGTH = 14;
+
+// --- The signatures are told apart by their first bytes, as every reader of the format does
+const STANDARD_PREFIX = "MV - CPC";
+const EXTENDED_PREFIX = "EXTENDED CPC";
+const DISK_INFO_SUFFIX = "Disk-Info\r\n";
+
+/**
+ * The bytes a sector of size code N holds (N above 7 is taken as 7's 16K, the largest the
+ * controller can transfer in one go)
+ */
+export function nominalSectorLength (n: number): number {
+  return 0x80 << Math.min(n & 0xff, 7);
+}
+
+/** Where the sector data of a track with `sectorCount` sectors starts, from the track's start */
+export function trackDataOffset (sectorCount: number): number {
+  const header = DSK_TRACK_HEADER_SIZE + sectorCount * DSK_SECTOR_INFO_SIZE;
+  return Math.max(0x100, Math.ceil(header / 0x100) * 0x100);
+}
 
 /**
  * Reads disk information from the specified disk contents
@@ -8,251 +51,214 @@ import { BinaryReader } from "@common/utils/BinaryReader";
  * @returns Disk information
  */
 export function readDiskData (contents: Uint8Array): DiskInformation {
-  return readDsk(contents);
-}
-
-// --- Headers used in a DSK file
-const DSK_NORMAL_DISK_HEADER = "MV - CPC"; // --- from 0x00-0x16, 23 bytes
-const DSK_EXTENDED_DISK_HEADER = "EXTENDED CPC"; // --- from 0x00-0x16, 23 bytes
-const DSK_ADDITIONAL_HEADER = "Disk-Info\r\n"; // --- from 0x17-0x21, 11 bytes
-const DSK_TRACK_HEADER = "Track-Info\r\n"; // --- from 0x00-0x0b, 12 bytes
-const DSK_START_DISK_TRACK_POINTER = 0x100;
-const DSK_START_DISK_SECTOR_POINTER = 0x100;
-const DSK_SECTOR_HEADER_SIZE = 8;
-const DSK_TRACK_HEADER_SIZE = 24;
-
-// --- Read .DSK contents
-function readDsk (contents: Uint8Array): DiskInformation {
-  const reader = new BinaryReader(contents);
-
-  // --- Read the disk header
-  // --- Read the disk information block
-  const header = reader.readBytes(23);
-
-  // --- Compare with normal disk header
-  let diskFormat = FloppyDiskFormat.Cpc;
-  if (!compareHeader(header, DSK_NORMAL_DISK_HEADER)) {
-    // --- Compare with extended disk header
-
-    if (!compareHeader(header, DSK_EXTENDED_DISK_HEADER)) {
-      throw new Error(`Not a valid DSK format`);
+  if (contents.length < DSK_DISK_INFO_SIZE) {
+    if (startsWith(contents, 0, STANDARD_PREFIX) || startsWith(contents, 0, EXTENDED_PREFIX)) {
+      throw truncated(DSK_DISK_INFO_SIZE, contents.length);
     }
+    throw new DiskImageError("notDsk", "Not a valid DSK format");
+  }
+
+  // --- Disk-Info block
+  let diskFormat: FloppyDiskFormat;
+  if (startsWith(contents, 0, STANDARD_PREFIX)) {
+    diskFormat = FloppyDiskFormat.Cpc;
+  } else if (startsWith(contents, 0, EXTENDED_PREFIX)) {
     diskFormat = FloppyDiskFormat.CpcExtended;
-  }
-
-  // --- Check header suffix
-  const headerSuffix = reader.readBytes(11);
-
-  // --- Compare with normal disk header
-  if (!compareHeader(headerSuffix, DSK_ADDITIONAL_HEADER)) {
-    throw new Error(`Invalid DSK header`);
-  }
-
-  // --- Read the disk information
-  const creator = reader.readBytes(14);
-  let diskCreator = "";
-  for (let i = 0; i < creator.length; i++) {
-    if (creator[i]) {
-      diskCreator += String.fromCharCode(creator[i]);
-    }
-  }
-
-  // --- Read the disk geometry
-  const numberOfTracks = reader.readByte();
-  const numberOfSides = reader.readByte();
-  const trackSize = reader.readUint16();
-  const trackSizes: number[] = [];
-  if (diskFormat === FloppyDiskFormat.CpcExtended) {
-    const msbBytes = reader.readBytes(204);
-    for (let i = 0; i < numberOfTracks * numberOfSides; i++) {
-      trackSizes[i] =
-        diskFormat === FloppyDiskFormat.CpcExtended
-          ? msbBytes[i] << 8
-          : trackSize;
-    }
   } else {
-    for (let i = 0; i < numberOfTracks * numberOfSides; i++) {
-      trackSizes[i] = trackSize;
-    }
+    throw new DiskImageError("notDsk", "Not a valid DSK format");
+  }
+  if (!startsWith(contents, 0x17, DISK_INFO_SUFFIX)) {
+    throw new DiskImageError("badHeader", "Invalid DSK header");
+  }
+  const extended = diskFormat === FloppyDiskFormat.CpcExtended;
+
+  let creator = "";
+  for (let i = 0; i < DSK_CREATOR_LENGTH; i++) {
+    const ch = contents[0x22 + i];
+    if (ch) creator += String.fromCharCode(ch);
+  }
+  const numTracks = contents[0x30];
+  const numSides = contents[0x31];
+  if (numSides < 1 || numSides > 2) {
+    throw new DiskImageError(
+      "badSides",
+      `The disk image has ${numSides} sides; a disk has one or two.`,
+      { sides: numSides }
+    );
+  }
+  const entries = numTracks * numSides;
+  if (numTracks === 0 || (extended && entries > DSK_MAX_TRACK_ENTRIES)) {
+    throw new DiskImageError(
+      "badTracks",
+      `The disk image declares ${numTracks} tracks per side, which the format cannot hold.`,
+      { tracks: numTracks }
+    );
   }
 
-  // --- Now, we have the disk header.
-  const diskInformation: DiskInformation = {
+  // --- The size of each track block in the file
+  const standardTrackSize = contents[0x32] | (contents[0x33] << 8);
+  const trackSizes: number[] = [];
+  for (let i = 0; i < entries; i++) {
+    trackSizes.push(extended ? contents[0x34 + i] << 8 : standardTrackSize);
+  }
+
+  const disk: DiskInformation = {
     diskFormat,
-    creator: diskCreator,
-    numTracks: numberOfTracks,
-    numSides: numberOfSides,
+    creator,
+    numTracks,
+    numSides,
     tracks: []
   };
-
-  // --- Check disk geometry
-  if (numberOfSides > 2) {
-    throw new Error("Disk image cannot have more than two sides.");
-  } else if (numberOfTracks > 42) {
-    throw new Error(
-      "Disk image file could not be parsed. This is incompatible with the +3 disk drive format (up to 42 tracks in one side)"
-    );
+  if (!extended) {
+    disk.standardTrackSize = standardTrackSize;
   }
 
-  // --- Iterate through tracks
-  for (
-    let trackIndex = 0;
-    trackIndex < numberOfTracks * numberOfSides;
-    trackIndex++
-  ) {
-    // --- Check for unformatted track
-    if (trackSizes[trackIndex] === 0) {
-      diskInformation.tracks.push({
-        unformatted: true,
-        trackNumber: 0,
-        sideNumber: 0,
-        dataRate: 0,
-        recordingMode: 0,
-        sectorSize: 0,
-        sectorCount: 0,
-        gap3: 0,
-        filler: 0,
-        sectors: []
-      });
-
-      // --- Unformatted track, no more information to read
+  let trackStart = DSK_DISK_INFO_SIZE;
+  for (let trackIndex = 0; trackIndex < entries; trackIndex++) {
+    const trackSize = trackSizes[trackIndex];
+    const cylinder = Math.floor(trackIndex / numSides);
+    const side = trackIndex % numSides;
+    if (trackSize === 0) {
+      // --- An unformatted track takes no room in the file
+      disk.tracks.push(unformattedTrack(cylinder, side));
       continue;
     }
-
-    // --- Read the track header of a formatted track
-    reader.seek(getTrackPosition(trackIndex));
-    const trackHeader = reader.readBytes(12);
-    if (!compareHeader(trackHeader, DSK_TRACK_HEADER)) {
-      throw new Error("Invalid DSK track header");
+    if (trackStart + DSK_TRACK_HEADER_SIZE > contents.length) {
+      throw truncated(trackStart + trackSize, contents.length);
     }
-
-    // --- Skip unused bytes
-    reader.readBytes(4);
-
-    // --- Read and store the track information
-    diskInformation.tracks.push({
-      unformatted: false,
-      trackNumber: reader.readByte(),
-      sideNumber: reader.readByte(),
-      dataRate: reader.readByte(),
-      recordingMode: reader.readByte(),
-      sectorSize: reader.readByte(),
-      sectorCount: reader.readByte(),
-      gap3: reader.readByte(),
-      filler: reader.readByte(),
-      sectors: []
-    });
-
-    // ---- Iterate through the sectors of the track
-    for (
-      let sectorIndex = 0;
-      sectorIndex < diskInformation.tracks[trackIndex].sectorCount;
-      sectorIndex++
-    ) {
-      // --- Point to the beginning of the sector header
-      const sectorPointer =
-        getTrackPosition(trackIndex) +
-        DSK_TRACK_HEADER_SIZE +
-        sectorIndex * DSK_SECTOR_HEADER_SIZE;
-      let sectorSize: number;
-
-      // --- Obtain sector size information
-      if (diskFormat === FloppyDiskFormat.Cpc) {
-        // --- Get sector size for the CPC format
-        reader.seek(sectorPointer + 3);
-        const size = reader.readByte();
-
-        if (size === 0 || size > 6) {
-          sectorSize = trackSizes[trackIndex];
-        } else if (size === 6) {
-          sectorSize = 0x1800;
-        } else {
-          sectorSize = 0x80 << size;
-        }
-      } else {
-        // --- Get sector size for the Extended CPC format
-        reader.seek(sectorPointer + 6);
-        sectorSize = reader.readUint16();
-      }
-
-      // --- Go back to the beginning of the sector header and read sector header
-      reader.seek(sectorPointer);
-      const sectorDataPosition = getSectorDataPosition(trackIndex, sectorIndex);
-      const sector: SectorInformation = {
-        C: reader.readByte(),
-        H: reader.readByte(),
-        R: reader.readByte(),
-        N: reader.readByte(),
-        SR1: reader.readByte(),
-        SR2: reader.readByte(),
-        actualLength: sectorSize,
-        sectorData: new Uint8Array(sectorSize),
-        sectorDataPosition
-      };
-
-      // --- Test if the format has multiple weak sector
-      let multipleWeakSectors = false;
-      if (diskFormat === FloppyDiskFormat.CpcExtended) {
-        // --- Check for multiple weak/random sectors stored
-        if (sectorSize <= 7) {
-          // --- sectorSize n=8 is equivilent to n=0 - FDC will use DTL for length
-          const specifiedSize = 0x80 << sectorSize;
-          if (specifiedSize < sector.actualLength) {
-            // --- More data stored than sectorsize defines
-            // --- Check for multiple weak/random copies
-            if (sector.actualLength % specifiedSize != 0) {
-              multipleWeakSectors = true;
-            }
-          }
-        }
-      }
-      sector.multipleWeakSectors = multipleWeakSectors;
-
-      // --- Copy the data
-      reader.seek(sectorDataPosition);
-      const sectorData = reader.readBytes(sector.actualLength);
-      for (let i = 0; i < sector.actualLength; i++) {
-        sector.sectorData[i] = sectorData[i];
-      }
-
-      diskInformation.tracks[trackIndex].sectors.push(sector);
+    if (!startsWith(contents, trackStart, DSK_TRACK_SIGNATURE)) {
+      throw new DiskImageError(
+        "missingTrackInfo",
+        `Track ${cylinder} on side ${side} has no Track-Info block (at offset ${trackStart}).`,
+        { cylinder, side, offset: trackStart }
+      );
     }
+    disk.tracks.push(readTrack(contents, trackStart, trackSize, trackIndex, extended));
+    trackStart += trackSize;
   }
 
-  // --- Done.
-  return diskInformation;
+  // --- Whatever follows the last track (EDSK v5's Offset-Info, or padding) is kept as it is
+  if (trackStart < contents.length) {
+    disk.trailer = contents.slice(trackStart);
+  }
+  return disk;
+}
 
-  // --- Gets the stream index to the beginning of the specified track's data
-  function getTrackPosition (trackIndex: number): number {
-    return (
-      DSK_START_DISK_TRACK_POINTER +
-      (trackIndex
-        ? trackSizes.slice(0, trackIndex).reduce((a, b) => a + b, 0)
-        : 0)
+// --- Reads one formatted track block
+function readTrack (
+  contents: Uint8Array,
+  trackStart: number,
+  trackSize: number,
+  trackIndex: number,
+  extended: boolean
+): TrackInformation {
+  const at = (offset: number) => contents[trackStart + offset];
+  const track: TrackInformation = {
+    unformatted: false,
+    trackNumber: at(0x10),
+    sideNumber: at(0x11),
+    dataRate: at(0x12),
+    recordingMode: at(0x13),
+    sectorSize: at(0x14),
+    sectorCount: at(0x15),
+    gap3: at(0x16),
+    filler: at(0x17),
+    sectors: []
+  };
+
+  const dataStart = trackDataOffset(track.sectorCount);
+  if (dataStart > trackSize && track.sectorCount > 0) {
+    throw new DiskImageError(
+      "badTrack",
+      `Track ${trackIndex} lists ${track.sectorCount} sectors, more than its block can hold.`,
+      { track: trackIndex, sectors: track.sectorCount }
     );
   }
 
-  // --- Gets the stream index that points to the beginning of the specified sector's data
-  function getSectorDataPosition (
-    trackIndex: number,
-    sectorIndex: number
-  ): number {
-    const startSectorPointer =
-      DSK_START_DISK_SECTOR_POINTER +
-      (sectorIndex == 0
-        ? 0
-        : diskInformation.tracks[trackIndex].sectors
-            .slice(0, sectorIndex)
-            .map(item => item.actualLength)
-            .reduce((a, b) => a + b, 0));
-    return getTrackPosition(trackIndex) + startSectorPointer;
+  // --- A standard image stores every sector at the track's size; a sector code that does not fit
+  // --- (N = 6 in a 6K track, for example) gets an equal share of the track block
+  let standardLength = nominalSectorLength(track.sectorSize);
+  if (!extended && track.sectorCount > 0) {
+    const room = Math.floor((trackSize - dataStart) / track.sectorCount);
+    if (standardLength > room) standardLength = room;
   }
+
+  let dataPosition = trackStart + dataStart;
+  for (let i = 0; i < track.sectorCount; i++) {
+    const info = trackStart + DSK_TRACK_HEADER_SIZE + i * DSK_SECTOR_INFO_SIZE;
+    const n = contents[info + 3];
+    const actualLength = extended
+      ? contents[info + 6] | (contents[info + 7] << 8)
+      : standardLength;
+    if (dataPosition + actualLength > contents.length) {
+      throw truncated(dataPosition + actualLength, contents.length);
+    }
+
+    // --- Weak sectors: the extended format stores several copies back to back
+    let copies = 1;
+    if (extended && n <= 7) {
+      const nominal = nominalSectorLength(n);
+      if (actualLength > nominal && actualLength % nominal === 0) {
+        copies = actualLength / nominal;
+      }
+    }
+
+    const sector: SectorInformation = {
+      C: contents[info],
+      H: contents[info + 1],
+      R: contents[info + 2],
+      N: n,
+      SR1: contents[info + 4],
+      SR2: contents[info + 5],
+      actualLength,
+      sectorData: contents.slice(dataPosition, dataPosition + actualLength),
+      multipleWeakSectors: copies > 1,
+      copies,
+      sectorDataPosition: dataPosition
+    };
+    track.sectors.push(sector);
+    dataPosition += actualLength;
+  }
+
+  if (dataPosition > trackStart + trackSize) {
+    throw new DiskImageError(
+      "badTrack",
+      `The sectors of track ${trackIndex} overflow its block.`,
+      { track: trackIndex, sectors: track.sectorCount }
+    );
+  }
+  return track;
 }
 
-// --- Compares the specified input with the header
-function compareHeader (input: number[], header: string): boolean {
-  for (let i = 0; i < header.length; i++) {
-    if (input[i] !== header.charCodeAt(i)) {
+/** The entry of an unformatted track */
+export function unformattedTrack (cylinder: number, side: number): TrackInformation {
+  return {
+    unformatted: true,
+    trackNumber: cylinder,
+    sideNumber: side,
+    dataRate: 0,
+    recordingMode: 0,
+    sectorSize: 0,
+    sectorCount: 0,
+    gap3: 0,
+    filler: 0,
+    sectors: []
+  };
+}
+
+function truncated (needed: number, length: number): DiskImageError {
+  return new DiskImageError(
+    "truncated",
+    `The disk image is cut short: its contents need ${needed} bytes, the file has ${length}.`,
+    { needed, length }
+  );
+}
+
+// --- Compares the bytes at `offset` with the text
+function startsWith (contents: Uint8Array, offset: number, text: string): boolean {
+  if (offset + text.length > contents.length) return false;
+  for (let i = 0; i < text.length; i++) {
+    if (contents[offset + i] !== text.charCodeAt(i)) {
       return false;
     }
   }

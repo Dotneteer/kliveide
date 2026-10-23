@@ -406,7 +406,7 @@ Available aliases: `co`
 
 ## `crd`
 
-This command creates an empty disk file: a DSK file for the ZX Spectrum +3 models (and compatible), or a blank, formatted TR-DOS disk (`.trd`) for the Pentagon 128's Beta 128 interface.
+This command creates an empty disk file: a blank, +3DOS-formatted DSK file for the ZX Spectrum +3 models (and compatible), or a blank, formatted TR-DOS disk (`.trd`) for the Pentagon 128's Beta 128 interface. Every DSK type has 9 sectors of 512 bytes per track; the single-sided ones are what the +3's own `FORMAT` lays down, and the double-sided ones carry the disk specification +3DOS reads their geometry from.
 
 ```
 crd <disk-type> <disk-name> [<disk-folder>] [-p]
@@ -414,10 +414,11 @@ crd <disk-type> <disk-name> [<disk-folder>] [-p]
 
 These are the arguments of the command:
 - `disk-type`: One of these supported formats:
-  - `ss`: Single-sided CPC
-  - `ds`: Double-sided CPC
-  - `sse`: Single-sided Extended CPC
-  - `dse`: Double-sided Extended CPC
+  - `ss`: Single-sided CPC, 40 tracks (180K; 173K free)
+  - `ds`: Double-sided CPC, 40 tracks (360K; 353K free)
+  - `sse`: Single-sided Extended CPC, 40 tracks (180K; 173K free)
+  - `dse`: Double-sided Extended CPC, 40 tracks (360K; 353K free)
+  - `dse80`: Double-sided Extended CPC, 80 tracks (720K; 706K free), the +3DOS format of a 3.5-inch drive B
   - `trd80ds`: TR-DOS, 80 tracks, double-sided (640K)
   - `trd40ds`: TR-DOS, 40 tracks, double-sided (320K)
   - `trd80ss`: TR-DOS, 80 tracks, single-sided (320K)

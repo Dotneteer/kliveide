@@ -62,7 +62,8 @@ describe("ZX Spectrum +3E WASM disk and FDC parity", () => {
     expect(callWasmExport(machine, "spp3eDiskGetLength")(1)).toBe(4);
     expect(callWasmExport(machine, "spp3eDiskGetWriteProtected")(1)).toBe(1);
     expect(callWasmExport(machine, "spp3eDiskGetHasTwoHeads")(1)).toBe(0);
-    expect(callWasmExport(machine, "spp3eDiskGetMaxCylinders")(1)).toBe(40);
+    // --- A 40-track image in a 40-track drive, which steps to 42
+    expect(callWasmExport(machine, "spp3eDiskGetMaxCylinders")(1)).toBe(42);
     expect(callWasmExport(machine, "spp3eDiskGetRevision")(1)).toBe(startRevision + 1);
 
     callWasmExport(machine, "spp3eDiskSetWriteProtected")(1, 0);
@@ -154,12 +155,15 @@ describe("ZX Spectrum +3E WASM disk and FDC parity", () => {
     expect(callWasmExport(machine, "spp3eFdcGetOperationPhase")()).toBe(0);
   });
 
-  it("transfers synthetic FDC read/write data and journals dirty ranges", async () => {
+  it("transfers synthetic FDC read/write data and marks the written sector dirty", async () => {
     const machine = await createMachine();
     const runtime = machine.wasmV2Runtime!;
 
+    // --- One track with one 128-byte sector: C = 0, H = 0, R = 1, N = 0
     expect(callWasmExport(machine, "spp3eDiskBeginUpload")(0, 128, 0, 42, 2)).toBe(1);
     expect(callWasmExport(machine, "spp3eDiskWriteData")(0, 0, 0x9a)).toBe(1);
+    expect(callWasmExport(machine, "spp3eDiskUploadTrack")(0, 0, 0, 0x1b, 0xe5, 0)).toBe(1);
+    expect(callWasmExport(machine, "spp3eDiskUploadSector")(0, 0x00010000, 0x00010000, 0, 128)).toBe(1);
     expect(callWasmExport(machine, "spp3eDiskFinishUpload")(0)).toBe(1);
     machine.writeTestPort(0x1ffd, 0x08);
     for (let i = 0; i < 50; i++) {
@@ -175,9 +179,11 @@ describe("ZX Spectrum +3E WASM disk and FDC parity", () => {
     for (let i = 1; i < 128; i++) {
       machine.readTestPort(0x3ffd);
     }
+    // --- Past EOT with no TC (the +3 does not wire it): abnormal termination, End of Cylinder
     expect(callWasmExport(machine, "spp3eFdcGetOperationPhase")()).toBe(2);
-    expect(machine.readTestPort(0x3ffd)).toBe(0x00);
-    for (let i = 1; i < 7; i++) {
+    expect(machine.readTestPort(0x3ffd)).toBe(0x40);
+    expect(machine.readTestPort(0x3ffd)).toBe(0x80);
+    for (let i = 2; i < 7; i++) {
       machine.readTestPort(0x3ffd);
     }
 
@@ -191,14 +197,13 @@ describe("ZX Spectrum +3E WASM disk and FDC parity", () => {
       machine.writeTestPort(0x3ffd, 0x00);
     }
 
+    // --- The written sector's bit in the drive's dirty-sector bitmap
     expect(callWasmExport(machine, "spp3eDiskReadData")(0, 0)).toBe(0x77);
     expect(callWasmExport(machine, "spp3eFdcGetDirtyDrive")()).toBe(0);
-    expect(callWasmExport(machine, "spp3eFdcGetDirtyOffset")()).toBe(0);
-    expect(callWasmExport(machine, "spp3eFdcGetDirtyLength")()).toBe(128);
     expect(callWasmExport(machine, "spp3eFdcGetDirtyRevision")()).toBe(revision + 1);
-    expect(Array.from(runtime.diskChanges.slice(0, 8))).toEqual([0, 0, 0, 0, 128, 0, 0, 0]);
+    expect(Array.from(runtime.diskChanges.slice(0, 2))).toEqual([1, 0]);
     expect(callWasmExport(machine, "spp3eFdcGetOperationPhase")()).toBe(2);
-    expect(machine.readTestPort(0x3ffd)).toBe(0x00);
+    expect(machine.readTestPort(0x3ffd)).toBe(0x40);
   });
 });
 

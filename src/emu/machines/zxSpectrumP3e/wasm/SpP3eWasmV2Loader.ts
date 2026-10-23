@@ -103,6 +103,19 @@ export type SpP3eWasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Z8
   spp3eDiskGetHeadLoaded: SpP3eWasmV2ExportFunction;
   spp3eDiskGetLength: SpP3eWasmV2ExportFunction;
   spp3eDiskGetRevision: SpP3eWasmV2ExportFunction;
+  spp3eDiskUploadTrack: SpP3eWasmV2ExportFunction;
+  spp3eDiskUploadSector: SpP3eWasmV2ExportFunction;
+  spp3eDiskGetImageCylinders: SpP3eWasmV2ExportFunction;
+  spp3eDiskGetImageSides: SpP3eWasmV2ExportFunction;
+  spp3eDiskGetStructureRevision: SpP3eWasmV2ExportFunction;
+  spp3eDiskGetSectorCapacity: SpP3eWasmV2ExportFunction;
+  spp3eDiskGetTrackInfo: SpP3eWasmV2ExportFunction;
+  spp3eDiskGetTrackFormat: SpP3eWasmV2ExportFunction;
+  spp3eDiskGetSectorId: SpP3eWasmV2ExportFunction;
+  spp3eDiskGetSectorStatus: SpP3eWasmV2ExportFunction;
+  spp3eDiskGetSectorOffset: SpP3eWasmV2ExportFunction;
+  spp3eDiskGetSectorLength: SpP3eWasmV2ExportFunction;
+  spp3eDiskClearDirty: SpP3eWasmV2ExportFunction;
   spp3eGetTapeMaxBlocks: SpP3eWasmV2ExportFunction;
   spp3eGetTapeDataCapacity: SpP3eWasmV2ExportFunction;
   spp3eGetTapeSaveMaxBlocks: SpP3eWasmV2ExportFunction;
@@ -382,6 +395,19 @@ const requiredV2Exports = [
   "spp3eDiskGetHeadLoaded",
   "spp3eDiskGetLength",
   "spp3eDiskGetRevision",
+  "spp3eDiskUploadTrack",
+  "spp3eDiskUploadSector",
+  "spp3eDiskGetImageCylinders",
+  "spp3eDiskGetImageSides",
+  "spp3eDiskGetStructureRevision",
+  "spp3eDiskGetSectorCapacity",
+  "spp3eDiskGetTrackInfo",
+  "spp3eDiskGetTrackFormat",
+  "spp3eDiskGetSectorId",
+  "spp3eDiskGetSectorStatus",
+  "spp3eDiskGetSectorOffset",
+  "spp3eDiskGetSectorLength",
+  "spp3eDiskClearDirty",
   "spp3eGetTapeMaxBlocks",
   "spp3eGetTapeDataCapacity",
   "spp3eGetTapeSaveMaxBlocks",

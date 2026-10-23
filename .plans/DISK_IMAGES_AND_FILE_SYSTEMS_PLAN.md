@@ -1,7 +1,8 @@
 # Disk images and file systems: hardened DSK, a disk explorer, and DivMMC hard-disk images
 
-Status: 📝 **accepted** (2026-10-23), not started. The author's decisions are in §9; phases run in
-the order of §7 (A0–A2 → B → A3 → C).
+Status: ◐ **Part A done** (2026-10-23; main, unreleased) - A0–A4, all of it, at the author's request
+ahead of §7's order (§10 records what was built). Parts B and C not started. The author's
+decisions are in §9.
 Base plan: [CLOSING_THE_GAPS_PLAN.md](CLOSING_THE_GAPS_PLAN.md), §G9 (G9.5).
 Related: [BETA128_TRDOS_PLAN.md](BETA128_TRDOS_PLAN.md) (done; its "TRD/SCL catalogue viewer" was
 left undone, and Part B delivers it), [PLUS3_AMSTRAD_ROMS_PLAN.md](PLUS3_AMSTRAD_ROMS_PLAN.md)
@@ -494,3 +495,97 @@ The author's order (Q9) is **A0–A2 → B → A3 → C**:
    `.bak` per editing session. Hard images get no `.bak` and rely on the existing SD card backup (D5).
 9. **Phase order:** A0–A2 → B → A3 → C (§7), so the file-focused explorer ships before the
    controller work.
+
+## 10. As built: Part A (2026-10-23)
+
+The author asked for all of Part A at once, so A3 and A4 came before Part B, not after it as §7
+orders. Everything below is on main, unreleased.
+
+**The model and the container (A0, A1).**
+- `DiskInformation` stays the one disk model; there is no second `DskImage` class.
+- `disk-readers.ts` is rewritten, with the A1 fixes built in:
+  - no 42-track limit (up to 204 track entries);
+  - weak sectors found by stored length as a multiple of 128 << N, recorded as `copies`;
+  - a standard sector's size taken from its track and capped by the track block;
+  - a Track-Info past 256 bytes (more than 29 sectors);
+  - unformatted tracks;
+  - whatever follows the last track (EDSK v5's Offset-Info) kept as `trailer`.
+- Errors are `DiskImageError`s with a code. The DSK viewer translates the codes
+  (`panels.doc.dsk.error.*`).
+- `disk-writer.ts` is the serializer, and `disk-builder.ts` builds models in code.
+- All four real images in the repository round trip byte for byte: `blank180K.dsk`, `ltk.dsk` and
+  the two `appmake` disks.
+
+**The corpus (D9).**
+- `test/disk/dskCorpus.ts` holds 16 disks made in code, each sector's bytes naming its cylinder,
+  head, ID and copy.
+- There are no corpus files on disk: generating the images in the test was simpler than a builder
+  script plus committed binaries, and it cannot go stale.
+- The four broken fixtures are wired in as reject cases. `missingTrackInfo2.dsk` is a missing block,
+  not a truncation.
+
+**Write-back (A2).**
+- Changes are keyed `dskSectorKey(trackIndex, sectorIndex)`. `dskSectorWrites` writes each sector
+  at its own stored length, and every copy of a weak sector.
+- A layout change travels as the whole image under `DSK_WHOLE_IMAGE_KEY`: the main process writes it
+  beside the file and renames it over, and the renderer's media store takes the new array.
+- `applySectorChangesToDiskContents` handles `.trd` too. The renderer used to run the DSK parser on
+  the Beta 128's changes, so every TR-DOS save also reported "Updating attached disk media failed".
+- `DiskSurface` puts one copy of a sector on the track, marks a weak sector's bytes, writes $F8 for a
+  deleted mark and a wrong CRC for a recorded data error. It used to overrun the next sector with
+  the extra copies. `ltk.dsk`'s track 12, its protection, has two such sectors.
+
+**Blank disks (A2).**
+- `blank-dsk.ts` makes `ss`/`sse`/`ds`/`dse` and the new `dse80` (720K).
+- The `ds` types used to come out single-sided: `"ds".endsWith("d")`.
+- The single-sided types are exactly what the +3's own `FORMAT "a:"` lays down (40 x 9 x 512, IDs
+  1..9, all $E5, no disk specification). The test compares the two sector for sector.
+- The double-sided types carry a +3DOS specification:
+  - 40 x 2: `03 01 28 09 02 01 03 02 2A 52`
+  - 80 x 2: `03 81 50 09 02 01 04 04 2A 52`
+- The real ROM logs each type in at 173K, 353K or 706K free, and saves, lists, loads and runs a
+  program on them.
+
+**The controller (A3, A4).**
+- `spp3e.c` holds a per-drive track table (102 cylinders x 2 heads) and an 8,192-entry sector table
+  over a 1 MB data area. The core's memory grew from 18 MB to 20 MB.
+- The host uploads every sector with its own ID, ST1/ST2, copies and stored length, and reads the
+  tables back for the write-back. The flattened geometry is gone.
+- From the data sheet:
+  - sectors are matched on C, H, R and N from the disk's rotation point; ND, WC and BC on a miss;
+    MA on a track with no IDs;
+  - runs go R to EOT, with MT onto side 1, and always end with AT + EN, because the +3 does not
+    wire TC; +3DOS takes that as the normal end;
+  - a deleted mark gives CM, skipped with SK or ending the run after the sector;
+  - recorded DE + DD errors end the command after the data, MD gives MA + MD;
+  - READ ID cycles the real IDs; READ TRACK, SCAN EQUAL/LOW/HIGH, and FORMAT (WRITE ID) are
+    implemented.
+- FORMAT allocates new space and compacts the tables when it runs out.
+- A rewritten sector loses its recorded error, and a WRITE DELETED sets CM; both count as layout
+  changes.
+- A4: a weak sector returns its copies in turn, and a write gives every copy the new data.
+- The drive steps to 42 cylinders, or 84 for an image of more than 42 (Q3).
+- The host writes the sector data into the core with `writeCoreBytes`, so the reverse-debugging
+  journal records the upload. A plain `view.set` made the slow tier's replay-determinism test
+  replay a drive with no data (REVERSE_DEBUGGING_PLAN D7).
+- The double-sided blank disks failed under the old controller ("track 0, sector 0, unknown error"),
+  not because of their specification.
+
+**Tests.**
+- Unit tier: `test/disk/dsk-image.test.ts`, `disk-changes.test.ts` and `DiskSurface.test.ts`.
+- Core tier, `test/sp128-hw/plus3-disk/` (with the `plus3Disk.ts` helpers), on `plus3-fdd2` with the
+  Amstrad v4.1 ROMs:
+  - `upd765.test.ts`: 16 command-level checks on the corpus;
+  - `blank-disks.test.ts`: the oracle tests;
+  - `write-back.test.ts`: SAVE persisted and re-read by a second +3, a CPC data-format disk, and
+    FORMAT.
+- Two traps when typing into the +3 editor:
+  - the key that dismisses a report is swallowed, and the editor needs about 50 frames to redraw;
+  - a doubled key is read once (`"p` loses its `p`).
+
+**Not done, and why.**
+- No `KLIVE_DISK_CORPUS` sweep over a local collection of real images yet. There was no collection
+  to run it on in this session; it is a small slow-tier test to add.
+- No timing in the controller: transfers are immediate, as before.
+- No overrun, no index-pulse counting, no drive-type setting (Q3).
+

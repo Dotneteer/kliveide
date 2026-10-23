@@ -412,17 +412,31 @@ Use the existing TypeScript disk persistence contract as the shared ABI:
 
 - disk writes publish `DISK_A_CHANGES` or `DISK_B_CHANGES`;
 - the payload is a `SectorChanges` map;
-- map keys use `trackIndex * 100 + sectorId`, where `trackIndex` indexes the
-  parsed DSK track list and `sectorId` is the sector's logical `R` value;
+- a DSK change is keyed by the sector's **physical position**,
+  `dskSectorKey(trackIndex, sectorIndex)` (`src/emu/machines/disk/disk-changes.ts`):
+  `trackIndex` indexes the parsed DSK track list (cylinder * sides + side) and
+  `sectorIndex` the sector's place in that track's list. Never by the sector ID
+  `R`: IDs repeat on protected disks and the CPC formats use IDs of 100 and up,
+  which is how the old `trackIndex * 100 + R` key wrote to the wrong sector;
 - values are complete sector byte arrays;
-- the main process applies those sectors to the backing DSK file using
-  `readDiskData()` and each sector's `sectorDataPosition`.
+- when the guest changed the layout (a track formatted, a data mark rewritten),
+  the map holds the whole new image under `DSK_WHOLE_IMAGE_KEY` instead, the
+  machine replaces its own media property with it, and the renderer and the main
+  process replace their copies (the file is written beside the old one and
+  renamed over it);
+- the main process applies sector changes with `dskSectorWrites()`, which writes
+  each sector at its `sectorDataPosition` and its stored length (every copy of a
+  weak sector). A `.trd` change is keyed by file sector (256 bytes each).
 
 The WASM adapter should convert C-owned dirty disk state into that same
-`SectorChanges` shape. Keep DSK/EDSK parsing in TypeScript unless there is a
-measured reason to move it: parse the attached disk in the adapter, upload a
-bounded normalized sector buffer and geometry into WASM, then use that stored
-geometry to translate dirty byte ranges back into sector changes.
+`SectorChanges` shape. Keep DSK/EDSK parsing in TypeScript: the +3 adapter parses
+the attached disk and uploads it as a **sector table** (every track, every sector
+with its own ID, ST1/ST2, copies and stored length; `spp3eDiskUploadTrack` /
+`spp3eDiskUploadSector`), never as a flattened uniform geometry, which lost
+mixed-size and protected disks. The core marks written sectors in a bitmap (one
+bit per table entry) and bumps a structure revision when the layout changes; the
+adapter reads the core's tables back to key the changes, so it holds no geometry
+of its own that could drift from the core's.
 
 Do not rely only on frame completion to publish disk writes. Stopping, pausing,
 or restarting a machine can happen before another full frame completes, and

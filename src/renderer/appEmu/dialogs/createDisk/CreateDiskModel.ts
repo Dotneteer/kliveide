@@ -14,7 +14,8 @@ export const DISK_TYPES: DiskTypeOption[] = withLabels([
   { labelKey: "dialog.createDisk.diskType.ss", value: "ss" },
   { labelKey: "dialog.createDisk.diskType.ds", value: "ds" },
   { labelKey: "dialog.createDisk.diskType.sse", value: "sse" },
-  { labelKey: "dialog.createDisk.diskType.dse", value: "dse" }
+  { labelKey: "dialog.createDisk.diskType.dse", value: "dse" },
+  { labelKey: "dialog.createDisk.diskType.dse80", value: "dse80" }
 ]);
 
 export const DEFAULT_DISK_TYPE = "ss";
