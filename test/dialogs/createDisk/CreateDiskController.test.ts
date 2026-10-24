@@ -5,6 +5,39 @@ import { NEW_DISK_FOLDER_SETTINGS_KEY } from "@renderer/appEmu/dialogs/createDis
 import { deferred } from "../../mvc/deferred";
 import { anEnv, fillForm, openCreateDiskDialog, rejectingValidation } from "./fakes";
 
+describe("CreateDiskController — opening", () => {
+  it("proposes the default folder: the project's disks folder, or Klive/Disks", async () => {
+    const h = openCreateDiskDialog({ service: { defaultFolder: async () => "/projects/game/disks" } });
+
+    await h.dispatch({ type: "opened" });
+
+    expect(h.vm.folder.value).toBe("/projects/game/disks");
+  });
+
+  it("keeps a folder the user typed before the default arrived", async () => {
+    const h = openCreateDiskDialog();
+    await fillForm(h, { folder: "/mine" });
+
+    await h.dispatch({ type: "opened" });
+
+    expect(h.vm.folder.value).toBe("/mine");
+  });
+
+  it("leaves the field empty when the default cannot be found", async () => {
+    const h = openCreateDiskDialog({
+      service: {
+        defaultFolder: async () => {
+          throw new Error("no main process");
+        }
+      }
+    });
+
+    await h.dispatch({ type: "opened" });
+
+    expect(h.vm.folder.value).toBe("");
+  });
+});
+
 describe("CreateDiskController — editing", () => {
   it("records what the user types", async () => {
     const h = openCreateDiskDialog();

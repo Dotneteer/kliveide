@@ -10,6 +10,7 @@ const {
   stampWasmLayout
 } = require("./wasm-layout.cjs");
 const { RZX_VOLATILE_SYMBOLS, rzxExports } = require("./rzx-core-exports.cjs");
+const { divMmcClassicExports } = require("./divmmc-classic-exports.cjs");
 const { cpuExports, debugLoopExports, debugLoopVolatileSymbols, Z80_ACCESS_LOG_VOLATILE_SYMBOLS } = require("./z80-cpu-exports.cjs");
 const { Z80_CONDITION_EXPORTS, Z80_CONDITION_VOLATILE_SYMBOLS } = require("./z80-condition-exports.cjs");
 const { Z80_HISTORY_EXPORTS, Z80_HISTORY_VOLATILE_SYMBOLS } = require("./z80-history-exports.cjs");
@@ -217,7 +218,8 @@ const productionExports = [
 const buildModes = {
   production: {
     output: productionOutput,
-    exports: productionExports,
+    // --- The DivMMC is the 48K's only: the Timex build (which shares `productionExports`) has none
+    exports: [...productionExports, ...divMmcClassicExports("sp48")],
     sources: [source],
     // --- 14 MB: the 4 MB execution-history ring (EXECUTION_HISTORY_ALL_CORES_PLAN D2, D3) and the
     // --- access profile's 64 KB of flags and 1.5 MB counter pool (CODE_COVERAGE_AND_HEAT_MAP_PLAN D5)

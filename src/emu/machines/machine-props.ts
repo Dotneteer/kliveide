@@ -9,6 +9,8 @@ export const DISK_A_CHANGES = "DiskAChanges";
 export const DISK_B_CHANGES = "DiskBChanges";
 /** The TR-DOS ROM file's path (the Pentagon's Beta 128), from the `SETTING_EMU_TRDOS_ROM` setting */
 export const TRDOS_ROM_FILE = "TrdosRomFile";
+/** The DivMMC's esxDOS ROM file's path, from the `SETTING_EMU_ESXDOS_ROM` setting (DISK_IMAGES plan C5) */
+export const ESXDOS_ROM_FILE = "EsxDosRomFile";
 /** The TC2048 ROM file's path, from the `SETTING_EMU_TC2048_ROM` setting (`.plans/TIMEX_SCORPION_PLAN.md` P5) */
 export const TIMEX_ROM_FILE = "TimexRomFile";
 /** The TC2068's and TS2068's 24K ROM files, from `SETTING_EMU_TC2068_ROM` / `SETTING_EMU_TS2068_ROM` */

@@ -1,3 +1,5 @@
+import { buildExportDisk } from "@common/diskfs/diskExport";
+import { DiskFsError } from "@common/diskfs/types";
 import type {
   BinarySegment,
   CompilerOutput,
@@ -161,7 +163,7 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
     return t("commands.compile.export.description");
   }
   readonly usage =
-    "expc filename [-n name] [-f tap|tzx|hex|nex|p|o|cmd|cas|dsk|epr] [-as] [-p] [-c] [-b border] [-sb] [-addr address] [-scr screenfile]";
+    "expc filename [-n name] [-f tap|tzx|hex|nex|dsk|trd|p|o|cmd|cas|epr] [-as] [-p] [-c] [-b border] [-sb] [-addr address] [-scr screenfile]";
 
   readonly argumentInfo: CommandArgumentInfo = {
     mandatory: [{ name: "filename" }],
@@ -292,6 +294,35 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
       screenFileType = checkScreenFileType(scrContent);
       if (!screenFileType) {
         return commandError(t("commands.compile.invalidScreenFile", { file: screenFile }));
+      }
+    }
+
+    // --- A bootable disk (`.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md` B6): the code files and a
+    // --- BASIC loader the machine's own boot runs - `DISK` on a +3, `boot` under TR-DOS
+    if (args["-f"] === "dsk" || args["-f"] === "trd") {
+      const screen =
+        screenFileType === 1
+          ? scrContent
+          : screenFileType === 2
+            ? scrContent.slice(128)
+            : screenFileType === 3
+              ? readTapeData(scrContent)?.[1]?.data.slice(1, 6913)
+              : undefined;
+      const compiled = output as CompilerOutput;
+      try {
+        const image = buildExportDisk(args["-f"], {
+          name: args["-n"] ?? args.filename.replace(/^.*[\\/]/, ""),
+          segments: compiled.segments,
+          entryAddress:
+            args["-addr"] ?? compiled.exportEntryAddress ?? compiled.entryAddress ?? compiled.segments[0].startAddress,
+          clear: !!args["-c"],
+          border: args["-b"],
+          screen: screen?.length === 6912 ? screen : undefined
+        });
+        const filePath = await context.mainApi.saveBinaryFile(args.filename, image, `kliveHome:${EXPORT_FILE_FOLDER}`);
+        return commandSuccessWith(t("commands.compile.exported", { file: filePath }), { file: filePath });
+      } catch (err) {
+        return commandError(err instanceof DiskFsError ? t("commands.compile.diskExportBanked") : String(err));
       }
     }
 
@@ -1231,7 +1262,7 @@ async function exportZ88dkArtefact(
 /** With no `-f`: the export file's extension, else the one native file the build has (a +3's `.dsk`). */
 function defaultZ88dkExportFormat(artefacts: Record<string, string>, filename: string): string | undefined {
   const ext = /\.([A-Za-z0-9]+)$/.exec(filename ?? "")?.[1]?.toLowerCase();
-  if (ext && ["tap", "tzx", "hex", "nex", "p", "o", "dsk", "epr"].includes(ext)) return ext;
+  if (ext && ["tap", "tzx", "hex", "nex", "p", "o", "dsk", "trd", "epr"].includes(ext)) return ext;
   const own = Object.keys(artefacts);
   return own.length === 1 ? own[0].toLowerCase() : undefined;
 }

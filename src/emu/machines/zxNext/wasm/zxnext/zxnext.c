@@ -232,8 +232,8 @@ static void clearMachineBuffers(void) {
   for (uint32_t i = 0; i < ZXNEXT_MEMORY_SIZE; i++) zxnextMemory[i] = 0;
   for (uint32_t i = 0; i < ZXNEXT_PIXEL_COUNT; i++) zxnextPixelBuffer[i] = 0x00000000u;
   zxnextKeyboardReset();
-  zxnextDivMmcReset();
-  zxnextSdReset();
+  zxDivMmcReset();
+  zxSdReset();
   zxnextPaletteHardReset();
   zxnextLayer2Reset();
   zxnextTilemapReset();
@@ -256,7 +256,7 @@ static void clearMachineBuffers(void) {
 }
 
 void zxnextReset(void) {
-  /* NextReg $06 bits 4-3 live in the DivMMC module, which zxnextDivMmcReset clears */
+  /* NextReg $06 bits 4-3 live in the DivMMC module, which zxDivMmcReset clears */
   uint32_t keptNr06 = zxnextNextRegGetDirect(0x06u);
   cpuAf = 0;
   cpuBc = 0;
@@ -285,8 +285,8 @@ void zxnextReset(void) {
   zxnextMultifaceReset();
   zxnextInterruptsReset();
   zxnextTapeReset();
-  zxnextDivMmcReset();
-  zxnextSdReset();
+  zxDivMmcReset();
+  zxSdReset();
   zxnextPaletteReset();
   zxnextLayer2Reset();
   zxnextTilemapReset();
@@ -315,8 +315,8 @@ void zxnextReset(void) {
 void zxnextHardReset(void) {
   zxnextReset();
   clearMachineBuffers();
-  zxnextDivMmcSetEnableMultifaceNmiByM1Button(1);
-  zxnextDivMmcSetEnableNmiByDriveButton(1);
+  zxDivMmcSetEnableMultifaceNmiByM1Button(1);
+  zxDivMmcSetEnableNmiByDriveButton(1);
 }
 
 uint32_t zxnextExecuteFrame(void) {
@@ -338,7 +338,7 @@ static uint32_t zxnextDebugAccessHit(uint32_t accessMask);
 #define Z80_DEBUG_LOOP_PREFIX zxnext
 #define Z80_DEBUG_LOOP_FRAME_COMPLETED frameCompleted
 #define Z80_DEBUG_LOOP_STOP() \
-  (zxnextSdGetHostCommand() != ZXNEXT_SD_HOST_COMMAND_NONE || zxnextResetRequest != 0u)
+  (zxSdGetHostCommand() != ZX_SD_HOST_COMMAND_NONE || zxnextResetRequest != 0u)
 #include "../../../../z80/wasm/z80-debug-loop.c"
 
 /* The access-breakpoint test of the last instruction: the shared log's memory accesses, the Next's port record */
@@ -594,36 +594,36 @@ uint32_t zxnextTakeSpriteHit(void) {
   return hit;
 }
 
-void zxnextDivMmcBeforeFetch(uint32_t pc) { zxnextDivMmcBeforeOpcodeFetch(pc); }
-void zxnextDivMmcAfterFetch(uint32_t retnSeen, uint32_t suppressRetn) { zxnextDivMmcAfterOpcodeFetch(retnSeen, suppressRetn); }
-void zxnextDivMmcArmNmi(void) { zxnextDivMmcArmNmiButton(); }
-uint32_t zxnextGetDivMmcPortE3Value(void) { return zxnextDivMmcGetPortE3(); }
-uint32_t zxnextGetDivMmcEnabled(void) { return zxnextDivMmcGetEnabled(); }
-uint32_t zxnextGetDivMmcEnableAutomap(void) { return zxnextDivMmcGetEnableAutomap(); }
-uint32_t zxnextGetDivMmcConmem(void) { return zxnextDivMmcGetConmem(); }
-uint32_t zxnextGetDivMmcMapram(void) { return zxnextDivMmcGetMapram(); }
-uint32_t zxnextGetDivMmcBank(void) { return zxnextDivMmcGetBank(); }
-uint32_t zxnextGetDivMmcAutoMapActive(void) { return zxnextDivMmcGetAutoMapActive(); }
-uint32_t zxnextGetDivMmcRequestAutomapOn(void) { return zxnextDivMmcGetRequestAutomapOn(); }
-uint32_t zxnextGetDivMmcRequestAutomapOff(void) { return zxnextDivMmcGetRequestAutomapOff(); }
-uint32_t zxnextGetDivMmcNmiHold(void) { return zxnextDivMmcGetNmiHold(); }
+void zxnextDivMmcBeforeFetch(uint32_t pc) { zxDivMmcBeforeOpcodeFetch(pc); }
+void zxnextDivMmcAfterFetch(uint32_t retnSeen, uint32_t suppressRetn) { zxDivMmcAfterOpcodeFetch(retnSeen, suppressRetn); }
+void zxnextDivMmcArmNmi(void) { zxDivMmcArmNmiButton(); }
+uint32_t zxnextGetDivMmcPortE3Value(void) { return zxDivMmcGetPortE3(); }
+uint32_t zxnextGetDivMmcEnabled(void) { return zxDivMmcGetEnabled(); }
+uint32_t zxnextGetDivMmcEnableAutomap(void) { return zxDivMmcGetEnableAutomap(); }
+uint32_t zxnextGetDivMmcConmem(void) { return zxDivMmcGetConmem(); }
+uint32_t zxnextGetDivMmcMapram(void) { return zxDivMmcGetMapram(); }
+uint32_t zxnextGetDivMmcBank(void) { return zxDivMmcGetBank(); }
+uint32_t zxnextGetDivMmcAutoMapActive(void) { return zxDivMmcGetAutoMapActive(); }
+uint32_t zxnextGetDivMmcRequestAutomapOn(void) { return zxDivMmcGetRequestAutomapOn(); }
+uint32_t zxnextGetDivMmcRequestAutomapOff(void) { return zxDivMmcGetRequestAutomapOff(); }
+uint32_t zxnextGetDivMmcNmiHold(void) { return zxDivMmcGetNmiHold(); }
 
-void zxnextSetSdCardInfo(uint32_t card, uint32_t totalSectors) { zxnextSdSetCardInfo(card, totalSectors); }
-uint32_t zxnextGetSdSelectedCard(void) { return zxnextSdGetSelectedCard(); }
-uint32_t zxnextGetSdPortE7Value(void) { return zxnextSdGetPortE7Value(); }
-uint32_t zxnextGetSdState(uint32_t card) { return zxnextSdGetState(card); }
-uint32_t zxnextGetSdCommandIndex(uint32_t card) { return zxnextSdGetCommandIndex(card); }
-uint32_t zxnextGetSdLastCommand(uint32_t card) { return zxnextSdGetLastCommand(card); }
-uint32_t zxnextGetSdResponseReady(uint32_t card) { return zxnextSdGetResponseReady(card); }
-uint32_t zxnextGetSdResponseIndex(uint32_t card) { return zxnextSdGetResponseIndex(card); }
-uint32_t zxnextGetSdHostCommand(void) { return zxnextSdGetHostCommand(); }
-uint32_t zxnextGetSdHostSector(void) { return zxnextSdGetHostSector(); }
-uint32_t zxnextGetSdHostCard(void) { return zxnextSdGetHostCard(); }
-uint32_t zxnextGetSdWriteBufferPtr(void) { return zxnextSdWriteBufferPtr(); }
-uint32_t zxnextGetSdWriteBufferLength(void) { return zxnextSdGetWriteBufferLength(); }
-void zxnextClearSdHostCommand(void) { zxnextSdClearHostCommand(); }
-void zxnextSetSdReadResponse(uint32_t card, uint32_t dataPtr, uint32_t length) { zxnextSdSetReadResponse(card, dataPtr, length); }
-void zxnextSetSdWriteResponse(uint32_t card, uint32_t success) { zxnextSdSetWriteResponse(card, success); }
+void zxnextSetSdCardInfo(uint32_t card, uint32_t totalSectors) { zxSdSetCardInfo(card, totalSectors); }
+uint32_t zxnextGetSdSelectedCard(void) { return zxSdGetSelectedCard(); }
+uint32_t zxnextGetSdPortE7Value(void) { return zxSdGetPortE7Value(); }
+uint32_t zxnextGetSdState(uint32_t card) { return zxSdGetState(card); }
+uint32_t zxnextGetSdCommandIndex(uint32_t card) { return zxSdGetCommandIndex(card); }
+uint32_t zxnextGetSdLastCommand(uint32_t card) { return zxSdGetLastCommand(card); }
+uint32_t zxnextGetSdResponseReady(uint32_t card) { return zxSdGetResponseReady(card); }
+uint32_t zxnextGetSdResponseIndex(uint32_t card) { return zxSdGetResponseIndex(card); }
+uint32_t zxnextGetSdHostCommand(void) { return zxSdGetHostCommand(); }
+uint32_t zxnextGetSdHostSector(void) { return zxSdGetHostSector(); }
+uint32_t zxnextGetSdHostCard(void) { return zxSdGetHostCard(); }
+uint32_t zxnextGetSdWriteBufferPtr(void) { return zxSdWriteBufferPtr(); }
+uint32_t zxnextGetSdWriteBufferLength(void) { return zxSdGetWriteBufferLength(); }
+void zxnextClearSdHostCommand(void) { zxSdClearHostCommand(); }
+void zxnextSetSdReadResponse(uint32_t card, uint32_t dataPtr, uint32_t length) { zxSdSetReadResponse(card, dataPtr, length); }
+void zxnextSetSdWriteResponse(uint32_t card, uint32_t success) { zxSdSetWriteResponse(card, success); }
 
 uint32_t zxnextGetPortFeValue(void) { return portFeValue; }
 uint32_t zxnextGetBorderColor(void) { return borderColor; }
@@ -1058,9 +1058,9 @@ static inline void zxnextHistoryContext(uint32_t kind, uint8_t *out) {
   out[8] = memPort7ffd;
   out[9] = memPort1ffd;
   out[10] = memPortDffd;
-  out[11] = (uint8_t)zxnextDivMmcGetPortE3();
+  out[11] = (uint8_t)zxDivMmcGetPortE3();
   /* -6..-1: a Next ROM or an Alt ROM */
-  out[12] = (uint8_t)((zxnextDivMmcIsMappingActive() ? 0x01u : 0u) | (zxnextMultifaceIsPaged() ? 0x02u : 0u) |
+  out[12] = (uint8_t)((zxDivMmcIsMappingActive() ? 0x01u : 0u) | (zxnextMultifaceIsPaged() ? 0x02u : 0u) |
                       ((zxnextNextRegs[0x8cu] & 0x80u) ? 0x04u : 0u) |
                       (out[0] >= 250u ? 0x08u : 0u));
   out[13] = (uint8_t)(cpuEffectiveSpeed & 0x03u);
@@ -1096,8 +1096,8 @@ static inline void zxnextHistoryPeek3(uint16_t from, uint8_t *out) {
 #define Z80_HISTORY_PEEK(address) zxnextMemoryPeekMapped(address)
 #define Z80_HISTORY_PEEK3(from, out3) zxnextHistoryPeek3(from, out3)
 #define Z80_HISTORY_CONTEXT(kind, out16) zxnextHistoryContext(kind, out16)
-/* The DivMMC's instant entry points map before the fetch (zxnextDivMmcBeforeOpcodeFetch), its delayed
-   ones after it (zxnextDivMmcAfterM1): the map at the begin phase is the one the fetch saw */
+/* The DivMMC's instant entry points map before the fetch (zxDivMmcBeforeOpcodeFetch), its delayed
+   ones after it (zxDivMmcAfterM1): the map at the begin phase is the one the fetch saw */
 #define Z80_HISTORY_CONTEXT_BEFORE_FETCH 1
 #define Z80_HISTORY_FRAME() frames
 #define Z80_HISTORY_FRAME_TACT() frameTacts28

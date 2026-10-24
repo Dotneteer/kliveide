@@ -326,6 +326,36 @@ static uint32_t normalizeClockMultiplier(uint32_t value);
 #include "../../../zxSpectrum/wasm/common/zx-spectrum-psg.c"
 #undef sp128Tacts
 #endif
+#ifndef SP48_SCLD
+/*
+ * The DivMMC (`zx-spectrum-divmmc-classic.c`; .plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md C4): the 48K's
+ * only, not the Timex build's - the host connects it (`sp48DivMmcSetPresent`). The ROM is always the
+ * 48K BASIC ROM, so every entry point is live. `sp48Memory` holds the ROM itself at $0000, so while
+ * the DivMMC is mapped its view replaces those bytes and `sp48RomShadow` keeps the ROM.
+ */
+static uint8_t sp48RomShadow[0x4000u];
+static void sp48DivMmcRemapped(void);
+#define ZXDC_PREFIX sp48
+#define ZXDC_ROM3_PRESENT() 1
+#define ZXDC_TACTS sp48Tacts
+#define ZXDC_REMAPPED() sp48DivMmcRemapped()
+#include "../../../zxSpectrum/wasm/common/zx-spectrum-divmmc-classic.c"
+static void sp48DivMmcRemapped(void) {
+  const uint8_t *source = zxdcMapped != 0u ? zxdcView : sp48RomShadow;
+  for (uint32_t i = 0u; i < 0x4000u; i++) sp48Memory[i] = source[i];
+}
+#else
+/* The Timex build has no DivMMC */
+#define ZXDC_BEFORE_OPCODE_FETCH(pc) ((void)0)
+#define ZXDC_AFTER_OPCODE_FETCH() ((void)0)
+#define ZXDC_AFTER_RETN(opCode) ((void)0)
+#define ZXDC_HOST_WAITING() 0
+#define zxdcNmiBeforeCycle() 0u
+#define zxdcNmiAfterCycle(raised) ((void)(raised))
+#define zxdcReset(hard) ((void)0)
+#define zxdcWrite(address, value) 0u
+#define zxdcMapped 0u
+#endif
 #include "sp48-memory.c"
 #include "../../../zxSpectrum/wasm/common/zx-spectrum-ula.c"
 
@@ -353,6 +383,10 @@ static void SP48_CPU_NOINLINE sp48CpuDelayPortAccess(uint32_t address);
 static void SP48_CPU_NOINLINE sp48CpuDelayMemoryRead(uint32_t address);
 static void SP48_CPU_NOINLINE sp48CpuDelayAddressBusAccess(uint32_t address);
 
+/* The DivMMC's entry points, its delayed mapping and RETN (none in the Timex build) */
+#define Z80_BEFORE_OPCODE_FETCH() ZXDC_BEFORE_OPCODE_FETCH(cpu.pc)
+#define Z80_AFTER_OPCODE_FETCH() ZXDC_AFTER_OPCODE_FETCH()
+#define Z80_AFTER_RETN() ZXDC_AFTER_RETN(cpu.opCode)
 #define Z80_EXTERNAL_BUS 1
 #define Z80_MEMORY_PTR() sp48CpuMemoryPtr()
 #define Z80_READ_MEMORY(address) sp48CpuReadMemory((uint32_t)(address))
@@ -524,6 +558,12 @@ static void SP48_CPU_NOINLINE sp48CpuDelayAddressBusAccess(uint32_t address) {
 #define SP48_PORT_IS_ULA(address) scldIsUlaPort(address)
 #define SP48_PORT_READ_NON_FE(address) scldReadNonFePort(address)
 #define SP48_PORT_WRITE_NON_FE(address, value) scldWriteNonFePort((address), (value))
+#else
+/* The DivMMC's ports, else the floating bus */
+#define SP48_PORT_READ_NON_FE(address) \
+  (zxdcIsPort(address) != 0u ? zxdcReadPort(address) : sp48ReadFloatingBus())
+#define SP48_PORT_WRITE_NON_FE(address, value) \
+  do { if (zxdcIsPort(address) != 0u) zxdcWritePort((address), (value)); } while (0)
 #endif
 #include "../../../zxSpectrum/wasm/common/zx-spectrum-ports.c"
 #define SP48_EXTERNAL_TACT(tact) ((uint32_t)((tact) + sp48TactEpoch))
@@ -672,6 +712,7 @@ void sp48Reset(void) {
 #ifdef SP48_SCLD
   resetPsg();
 #endif
+  zxdcReset(0u);
   renderUlaDisplay();
 }
 
@@ -683,6 +724,7 @@ void sp48HardReset(uint32_t is16k, uint32_t isNtsc) {
     : SP48_BASE_CLOCK_FREQUENCY_PAL;
   initializeTimingTables(isNtsc != 0u ? &sp48NtscConfig : &sp48PalConfig);
   clearRam(is16k);
+  zxdcReset(1u);
   sp48Reset();
 }
 
@@ -725,9 +767,12 @@ uint32_t sp48GetUlaFetchDelay(void) {
 #define ZXS_FRAME_LENGTH sp48TactsInCurrentFrame
 #define ZXS_RENDER_UNTIL_CURRENT_TACT() renderUlaUntilCurrentTact()
 #define ZXS_TACT_REBASE_THRESHOLD SP48_TACT_REBASE_THRESHOLD
+/* The DivMMC's SD card waiting for a sector returns to the host */
+#define ZXS_STOP() ZXDC_HOST_WAITING()
 #include "../../../zxSpectrum/wasm/common/zx-spectrum-frame.c"
 /* The debugger's breakpoint flags and in-core loop, `sp48ExecuteUntilStop` (z80-debug-loop.c) */
 #define Z80_DEBUG_LOOP_PREFIX sp48
+#define Z80_DEBUG_LOOP_STOP() ZXDC_HOST_WAITING()
 #include "../../../../z80/wasm/z80-debug-loop.c"
 
 uint32_t sp48ExecuteInstruction(void) {
@@ -753,7 +798,9 @@ uint32_t sp48ExecuteInstruction(void) {
   sp48InterruptLineActive = intActive;
   z80SetSigInt(intActive);
   z80SetTacts(sp48Tacts);
+  const uint8_t divMmcNmi = zxdcNmiBeforeCycle();
   z80ExecuteCpuCycle();
+  zxdcNmiAfterCycle(divMmcNmi);
   sp48Tacts = z80GetTacts();
 #ifndef Z80_BENCH_STRIP_DEBUG
   sp48CpuInstructionsExecuted++;

@@ -47,6 +47,8 @@ export const SETTING_IDE_COVERAGE_LINE_TINT = "ideViewOptions.coverageLineTint";
 export const SETTING_IDE_PROFILER_INLAYS = "ideViewOptions.profilerInlays";
 /** The TR-DOS ROM file the Pentagon's Beta 128 boots (`.plans/BETA128_TRDOS_PLAN.md` Q1): Klive cannot ship it */
 export const SETTING_EMU_TRDOS_ROM = "emuOptions.trdosRomFile";
+/** The 8K esxDOS ROM the DivMMC boots (`.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md` C5): Klive cannot ship it */
+export const SETTING_EMU_ESXDOS_ROM = "emuOptions.esxDosRomFile";
 /** The TC2048 ROM file the Timex boots (`.plans/TIMEX_SCORPION_PLAN.md` P5): Klive cannot ship it */
 export const SETTING_EMU_TC2048_ROM = "emuOptions.tc2048RomFile";
 /** The TC2068's and TS2068's 24K ROM files (the HOME ROM, then the EXROM); Klive cannot ship them */

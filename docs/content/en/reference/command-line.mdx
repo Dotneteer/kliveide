@@ -15,9 +15,10 @@ Klive comes with a command-line tool, `klive`, for scripts and continuous integr
 | `klive test` | Runs a project's unit tests headless and reports the results, optionally as JUnit XML and with LCOV coverage. | [Unit tests on the command line](/en/guides/testing/unit-tests-cli/) |
 | `klive build` | Compiles a project's build root, and can write the code as Intel HEX or a binary. | [`klive build`](/en/guides/testing/unit-tests-cli#klive-build) |
 | `klive run` | Runs a project, a tape, a snapshot or a NEX file on a machine of its own until a condition you name, then writes screenshots, memory dumps, registers or a state file. | [`klive run`](/en/guides/testing/unit-tests-cli#klive-run) |
+| `klive disk <action>` | Lists and changes the files of a `.dsk`, `.trd` or `.scl` image, or of an `.img`, `.hdf` or `.cim` hard-disk image (FAT16/FAT32), without a running Klive: `ls`, `info`, `add`, `get`, `rm`, `mv`, `mkdir`, `compact`, `new` (`klive disk --help`). | [Disk images](/en/guides/emulator/disk-explorer#from-the-command-prompt) |
 | `klive ide <verb>` | Talks to a running Klive: builds, runs, debugs, steps, reads registers and memory, sets breakpoints, takes screenshots. | [Automation](/en/guides/testing/automation/) |
 
-`klive test`, `klive build` and `klive run` never open a window, so they can run while the IDE is open. `klive ide` needs a running Klive with automation turned on; [Automation](/en/guides/testing/automation/#turning-it-on) explains how, and what a script may do at each permission level.
+`klive test`, `klive build`, `klive run` and `klive disk` never open a window, so they can run while the IDE is open. `klive ide` needs a running Klive with automation turned on; [Automation](/en/guides/testing/automation/#turning-it-on) explains how, and what a script may do at each permission level.
 
 ## Exit codes
 

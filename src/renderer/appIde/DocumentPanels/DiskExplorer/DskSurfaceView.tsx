@@ -4,8 +4,8 @@ import { Label } from "@renderer/controls/layout/Label";
 import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import { Secondary } from "@renderer/controls/layout/Secondary";
 import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
-import styles from "./DskViewerPanel.module.scss";
-import { ValueLabel } from "./helpers/ValueLabel";
+import styles from "./DskSurfaceView.module.scss";
+import { ValueLabel } from "../helpers/ValueLabel";
 import { useEffect, useMemo, useState } from "react";
 import {
   useDocumentHubService,
@@ -13,9 +13,9 @@ import {
 } from "@renderer/appIde/services/DocumentServiceProvider";
 import { ToolbarSeparator } from "@renderer/controls/ToolbarSeparator";
 import { DataSection } from "@renderer/controls/DataSection";
-import { StaticMemoryView } from "./StaticMemoryView";
+import { StaticMemoryView } from "../StaticMemoryView";
 import { LabeledGroup } from "@renderer/controls/LabeledGroup";
-import { toHexa2 } from "../services/ide-commands";
+import { toHexa2 } from "../../services/ide-commands";
 import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";
 import { readDiskData } from "@emu/machines/disk/disk-readers";
 import { SectorInformation } from "@emu/machines/disk/DiskInformation";
@@ -24,8 +24,15 @@ import { DiskDensity } from "@emu/abstractions/DiskDensity";
 import { createDiskSurface } from "@emu/machines/disk/DiskSurface";
 import ScrollViewer from "@renderer/controls/ScrollViewer";
 import { useT } from "@common/i18n/useT";
+import { readErrorText } from "./diskErrorText";
 
-const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
+
+/*
+ * The DSK's tracks as stored and as laid on the disk's surface (the raw MFM view). It was the whole
+ * `.dsk` viewer; the Disk Explorer (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, B5) shows it in its
+ * Layout view behind the "Surface" switch.
+ */
+export const DskSurfaceView = ({ document, contents: data }: Pick<DocumentProps, "document" | "contents">) => {
   const t = useT();
   const documentHubService = useDocumentHubService();
   const hubVersion = useDocumentHubServiceVersion();
@@ -54,7 +61,7 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
       const fileInfo = readDiskData(contents);
       return { fileInfo, floppyInfo: createDiskSurface(fileInfo), error: undefined as string | undefined };
     } catch (err) {
-      return { fileInfo: undefined, floppyInfo: undefined, error: (err as Error)?.message };
+      return { fileInfo: undefined, floppyInfo: undefined, error: err };
     }
   }, [contents]);
   const { fileInfo, floppyInfo } = parsed;
@@ -70,8 +77,8 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
     [floppyInfo]
   );
   const hasWeakSectors = useMemo(
-    () => !!floppyInfo?.tracks.some((track) => track.weakSectorData.length > 0),
-    [floppyInfo]
+    () => !!fileInfo?.tracks.some((track) => track.sectors.some((s) => (s.copies ?? 1) > 1)),
+    [fileInfo]
   );
 
   useEffect(() => {
@@ -85,7 +92,7 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
       <EmptyState
         tone="error"
         motif={false}
-        message={parsed.error ?? t("panels.doc.dsk.unreadable")}
+        message={readErrorText(parsed.error, t)}
       />
     );
   }
@@ -377,17 +384,3 @@ const SectorPanel = ({ sector }: SectorProps) => {
     </>
   );
 };
-
-export const createDskViewerPanel = ({
-  document,
-  viewState,
-  contents
-}: DocumentProps) => (
-  <DskViewerPanel
-    key={document.id}
-    document={document}
-    viewState={viewState}
-    contents={contents}
-    apiLoaded={() => {}}
-  />
-);

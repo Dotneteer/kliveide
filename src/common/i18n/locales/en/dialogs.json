@@ -2422,6 +2422,16 @@
     "context": "Option in the Export format dropdown of the Export Code dialog. Intel HEX is a file format name; keep it.",
     "maxChars": 22
   },
+  "dialog.exportCode.format.dsk": "+3 disk (.dsk), booted by the Loader",
+  "@dialog.exportCode.format.dsk": {
+    "context": "Option of the Export Code dialog's format dropdown: a +3DOS disk image with the code and a BASIC loader named DISK, which the +3's Loader menu runs. Keep '+3', '.dsk' and 'Loader' as they are.",
+    "maxChars": 44
+  },
+  "dialog.exportCode.format.trd": "TR-DOS disk (.trd), booted by TR-DOS",
+  "@dialog.exportCode.format.trd": {
+    "context": "Option of the Export Code dialog's format dropdown: a TR-DOS disk image with the code and a BASIC loader named boot, which TR-DOS runs when the disk boots. Keep 'TR-DOS' and '.trd'.",
+    "maxChars": 44
+  },
   "dialog.exportCode.format.ht1080zCmd": "HT-1080Z program (.cmd)",
   "@dialog.exportCode.format.ht1080zCmd": {
     "context": "Export Code dialog, a choice in the Format list: a machine-code load module for the HT-1080Z (a Hungarian school computer, a TRS-80 Model I relative). .cmd is a file extension: keep it.",
@@ -2593,6 +2603,11 @@
   "@dialog.createDisk.diskType.dse": {
     "context": "Option in the Create Disk dialog's disk-type dropdown: a double-sided extended CPC-format (EDSK) disk of 360 KB. Keep CPC, ECPC, TR-DOS and the size untranslated; the dropdown grows to fit the longest option.",
     "maxChars": 34
+  },
+  "dialog.createDisk.diskType.dse80": "Double-sided ECPC, 80 tracks (720K)",
+  "@dialog.createDisk.diskType.dse80": {
+    "context": "Option in the Create Disk dialog's disk-type dropdown: a double-sided, 80-track extended CPC-format (EDSK) disk of 720 KB, the +3DOS format of a 3.5-inch drive B. Keep CPC, ECPC, TR-DOS and the size untranslated; the dropdown grows to fit the longest option.",
+    "maxChars": 42
   },
   "dialog.createDisk.diskType.trd80ds": "TR-DOS 80 tracks, double-sided (640K)",
   "@dialog.createDisk.diskType.trd80ds": {
@@ -2820,5 +2835,9 @@
   "@dialog.joystick.pin.mode": {
     "context": "Name of a joystick connector pin in the joystick bindings dialog (ZX Spectrum Next). 'MD' is the Mega Drive pad; keep it and the button letters.",
     "maxChars": 22
+  },
+  "dialog.createDisk.folder.hint": "New disks go into the open project's disks folder, or into Klive/Disks when no project is open",
+  "@dialog.createDisk.folder.hint": {
+    "context": "A note under the 'Disk file folder' field of the Create Disk File dialog, which makes a blank floppy disk image: where the field's starting folder is. 'disks' and 'Klive/Disks' are folder names: keep them as they are. Wraps over two lines."
   }
 }

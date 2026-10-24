@@ -14,7 +14,8 @@ export const DISK_TYPES: DiskTypeOption[] = withLabels([
   { labelKey: "dialog.createDisk.diskType.ss", value: "ss" },
   { labelKey: "dialog.createDisk.diskType.ds", value: "ds" },
   { labelKey: "dialog.createDisk.diskType.sse", value: "sse" },
-  { labelKey: "dialog.createDisk.diskType.dse", value: "dse" }
+  { labelKey: "dialog.createDisk.diskType.dse", value: "dse" },
+  { labelKey: "dialog.createDisk.diskType.dse80", value: "dse80" }
 ]);
 
 export const DEFAULT_DISK_TYPE = "ss";
@@ -68,6 +69,8 @@ export type CreateDiskEvent =
   | { type: "envReplaced"; env: CreateDiskEnvironment }
   | { type: "diskTypeChanged"; diskType: string }
   | { type: "folderChanged"; folder: string }
+  // --- The default folder arrived; it fills the field only while the user has put nothing there
+  | { type: "defaultFolderResolved"; folder: string }
   | { type: "filenameChanged"; filename: string }
   | { type: "createStarted" }
   // --- Success and failure both land here: the difference is which port the
@@ -100,6 +103,9 @@ export const reduce: UiReducer<CreateDiskState, CreateDiskEvent> = (state, event
 
     case "folderChanged":
       return event.folder === state.folder ? state : { ...state, folder: event.folder };
+
+    case "defaultFolderResolved":
+      return state.folder || !event.folder ? state : { ...state, folder: event.folder };
 
     case "filenameChanged":
       return event.filename === state.filename ? state : { ...state, filename: event.filename };

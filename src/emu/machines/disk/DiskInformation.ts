@@ -14,8 +14,14 @@ export type DiskInformation = {
   // --- Optional disk creator
   creator?: string;
 
-  // --- The tracks of the disk
+  // --- The tracks of the disk, in file order: index = cylinder * numSides + side
   tracks: TrackInformation[];
+
+  // --- Standard DSK only: the size of every track block (Track-Info included) in the file
+  standardTrackSize?: number;
+
+  // --- Bytes after the last track (an EDSK v5 Offset-Info block, for example), kept as they are
+  trailer?: Uint8Array;
 };
 
 // --- Describes a particular track
@@ -35,7 +41,7 @@ export type TrackInformation = {
   // --- Optional recording mode information
   recordingMode?: number;
 
-  // --- Sector size
+  // --- The Track-Info's sector size code (N)
   sectorSize: number;
 
   // --- Sector count
@@ -62,7 +68,7 @@ export type SectorInformation = {
   // --- Record number (Record ID)
   R: number;
 
-  // --- Sector size
+  // --- Sector size code: the sector holds 128 << N bytes (N = 0..7)
   N: number;
 
   // --- FDC status register 1
@@ -71,14 +77,17 @@ export type SectorInformation = {
   // --- FDC status register 2
   SR2: number;
 
-  // --- The actual sector length
+  // --- The number of bytes stored for the sector in the file (all copies of a weak sector)
   actualLength: number;
 
-  // --- The sector data
+  // --- The sector data as stored (`actualLength` bytes)
   sectorData: Uint8Array;
 
-  // --- Has this sector multiple weak sectors?
+  // --- Has the file stored several copies of this (weak) sector?
   multipleWeakSectors?: boolean;
+
+  // --- How many copies of the sector the file stores (1 for an ordinary sector)
+  copies?: number;
 
   // --- The position of the sector data in the file
   sectorDataPosition: number;

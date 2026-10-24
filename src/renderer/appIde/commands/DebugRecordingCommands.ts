@@ -1,3 +1,4 @@
+import { hasDivMmc } from "@common/machines/divMmc";
 import type { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
 import type { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext";
 import type { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
@@ -101,7 +102,12 @@ export class DebugRecordingSaveCommand extends IdeCommandBase<DebugRecordingSave
     const state = context.store.getState();
     let result: Awaited<ReturnType<typeof context.emuApi.saveDebugRecording>>;
     try {
-      const sdCard = state.emulatorState?.machineId === MI_ZXNEXT ? await context.mainApi.getSdCardFingerprint() : undefined;
+      // --- The Next's card, or a DivMMC's (DISK_IMAGES_AND_FILE_SYSTEMS_PLAN C5)
+      const emu = state.emulatorState;
+      const sdCard =
+        emu?.machineId === MI_ZXNEXT || hasDivMmc(emu?.machineId, emu?.modelId, emu?.config)
+          ? await context.mainApi.getSdCardFingerprint()
+          : undefined;
       result = await context.emuApi.saveDebugRecording({
         kliveVersion: await versionOf(context),
         from: args["-from"] !== undefined ? parseRecordingFrom(String(args["-from"])) : undefined,

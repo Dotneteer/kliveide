@@ -44,7 +44,7 @@ static uint8_t zxnextCpuHeldAtFrameEnd;
 #define Z80_ACCESS_LOG_NOINLINE 1
 #define Z80_MEMORY_WRITE_SUPPRESSED() zxnextCpuMreqSuppressed
 /* DivMMC: a delayed automap takes effect after the opcode's M1 cycle (ZxNextMachine afterOpcodeFetch) */
-#define Z80_AFTER_OPCODE_FETCH() zxnextDivMmcAfterM1()
+#define Z80_AFTER_OPCODE_FETCH() zxDivMmcAfterM1()
 #define Z80_DELAY_MEMORY_READ(address) zxnextCpuDelayMemoryRead(address)
 #define Z80_DELAY_MEMORY_WRITE(address) zxnextCpuDelayMemoryWrite(address)
 static inline void zxnextCpuDelayContendedMemory(uint32_t address, uint32_t memoryCycle);
@@ -428,8 +428,8 @@ static uint32_t zxnextCpuExecuteInstruction(void) {
    * which sent every following F_READ to the caller's HL (nxmodplayer overwrote its own code page).
    * The manual conmem check is not an entry point and still runs every instruction.
    */
-  if (nmiSignal || intTaken) zxnextDivMmcCheckManualConmem();
-  else zxnextDivMmcBeforeOpcodeFetch(pcBefore);
+  if (nmiSignal || intTaken) zxDivMmcCheckManualConmem();
+  else zxDivMmcBeforeOpcodeFetch(pcBefore);
   /* An NMI acknowledge fetches no opcode; the state machine steps at real opcode fetches only. */
   if (!nmiSignal) zxnextNmiBeforeOpcodeFetch(pcBefore);
   z80SetSigNmi(nmiSignal);
@@ -481,7 +481,7 @@ static uint32_t zxnextCpuExecuteInstruction(void) {
       z80SetPc(stacklessReturnAddress);
     }
   }
-  if (isRetnInstruction && !mfWasActive) zxnextDivMmcRetn();
+  if (isRetnInstruction && !mfWasActive) zxDivMmcRetn();
 #ifndef Z80_BENCH_STRIP_DEBUG
   if (z80GetRetExecuted()) {
     z80SetRetExecuted(0);

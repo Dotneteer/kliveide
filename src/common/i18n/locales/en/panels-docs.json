@@ -614,6 +614,53 @@
   "@panels.doc.dsk.unreadable": {
     "context": "Error message filling the disk image viewer when the opened file is not a valid disk image. '.dsk' is a file extension; keep it."
   },
+  "panels.doc.dsk.error.notDsk": "This file is not a .dsk disk image: it starts with neither the standard nor the extended DSK signature.",
+  "@panels.doc.dsk.error.notDsk": {
+    "context": "Error filling the disk image viewer: the file does not start like a .dsk file. '.dsk' and 'DSK' are file-format names; keep them."
+  },
+  "panels.doc.dsk.error.badHeader": "The disk image's Disk-Info block is damaged.",
+  "@panels.doc.dsk.error.badHeader": {
+    "context": "Error filling the disk image viewer: the file's header block is damaged. 'Disk-Info' is the name of a block in the file format; keep it."
+  },
+  "panels.doc.dsk.error.badSides": "The disk image says it has {sides} sides; a floppy disk has one or two.",
+  "@panels.doc.dsk.error.badSides": {
+    "context": "Error filling the disk image viewer: the file's header gives an impossible number of disk sides.",
+    "placeholders": {
+      "sides": "The number of sides the file declares, e.g. 80"
+    }
+  },
+  "panels.doc.dsk.error.badTracks": "The disk image says it has {tracks} tracks per side, more than a .dsk file can hold.",
+  "@panels.doc.dsk.error.badTracks": {
+    "context": "Error filling the disk image viewer: the file's header gives an impossible number of tracks.",
+    "placeholders": {
+      "tracks": "The number of tracks per side the file declares, e.g. 0 or 119"
+    }
+  },
+  "panels.doc.dsk.error.truncated": "The disk image is cut short: its tracks need {needed} bytes, but the file has only {length}.",
+  "@panels.doc.dsk.error.truncated": {
+    "context": "Error filling the disk image viewer: the file ends before the tracks its header lists.",
+    "placeholders": {
+      "needed": "How many bytes the file should have at least, e.g. 194816",
+      "length": "How many bytes the file has, e.g. 190180"
+    }
+  },
+  "panels.doc.dsk.error.missingTrackInfo": "Track {cylinder} on side {side} has no Track-Info block (at byte {offset}): the image is damaged.",
+  "@panels.doc.dsk.error.missingTrackInfo": {
+    "context": "Error filling the disk image viewer: a track's header block is missing. 'Track-Info' is the name of a block in the file format; keep it.",
+    "placeholders": {
+      "cylinder": "The track (cylinder) number, from 0",
+      "side": "The disk side, 0 or 1",
+      "offset": "Where in the file the block should be, in bytes"
+    }
+  },
+  "panels.doc.dsk.error.badTrack": "Track {track} lists {sectors} sectors, more than its block in the file holds.",
+  "@panels.doc.dsk.error.badTrack": {
+    "context": "Error filling the disk image viewer: a track says it holds more sectors than fit in its part of the file.",
+    "placeholders": {
+      "track": "The track's index in the file, from 0",
+      "sectors": "The number of sectors the track lists"
+    }
+  },
   "panels.doc.dsk.sides": "Sides:",
   "@panels.doc.dsk.sides": {
     "context": "Label of a value in the disk image viewer's header: how many sides the floppy disk has.",
@@ -1370,5 +1417,541 @@
   "panels.doc.basic.corrupted": "*** BASIC code corrupted or partially loaded ***",
   "@panels.doc.basic.corrupted": {
     "context": "Line written at the end of a BASIC listing (BASIC Listing panel, tape viewer) when the program's bytes stop making sense. Keep the asterisks."
+  },
+  "panels.diskExplorer.error.unformatted": "This disk has no file system Klive can read: it is unformatted, or not a +3DOS or TR-DOS disk.",
+  "@panels.diskExplorer.error.unformatted": {
+    "context": "Error banner in the Disk Explorer (the document that shows a .dsk, .trd or .scl disk image's files and sectors): shown instead of the file list when the disk has no readable file system."
+  },
+  "panels.diskExplorer.error.notFound": "{name} is not on the disk.",
+  "@panels.diskExplorer.error.notFound": {
+    "context": "Error banner in the Disk Explorer (the document that shows a .dsk, .trd or .scl disk image's files and sectors): a file the action named was not found.",
+    "placeholders": {
+      "name": "A file name on the disk, e.g. 'GAME.BIN'"
+    }
+  },
+  "panels.diskExplorer.error.exists": "A file named {name} is already on the disk.",
+  "@panels.diskExplorer.error.exists": {
+    "context": "Error banner in the Disk Explorer (the document that shows a .dsk, .trd or .scl disk image's files and sectors): adding or renaming a file would give two files one name.",
+    "placeholders": {
+      "name": "A file name on the disk, e.g. 'GAME.BIN'"
+    }
+  },
+  "panels.diskExplorer.error.badName": "\"{name}\" is not a valid file name on this disk (+3DOS: up to 8 characters, a dot and 3; TR-DOS: up to 8 characters and a type letter).",
+  "@panels.diskExplorer.error.badName": {
+    "context": "Error banner in the Disk Explorer (the document that shows a .dsk, .trd or .scl disk image's files and sectors): a file name the disk's file system refuses. +3DOS and TR-DOS are file-system names; keep them.",
+    "placeholders": {
+      "name": "A file name on the disk, e.g. 'GAME.BIN'"
+    }
+  },
+  "panels.diskExplorer.error.diskFull": "The disk has no room for {name}.",
+  "@panels.diskExplorer.error.diskFull": {
+    "context": "Error banner in the Disk Explorer (the document that shows a .dsk, .trd or .scl disk image's files and sectors): adding a file failed: not enough free space.",
+    "placeholders": {
+      "name": "A file name on the disk, e.g. 'GAME.BIN'"
+    }
+  },
+  "panels.diskExplorer.error.directoryFull": "The disk's directory has no room for {name}.",
+  "@panels.diskExplorer.error.directoryFull": {
+    "context": "Error banner in the Disk Explorer (the document that shows a .dsk, .trd or .scl disk image's files and sectors): adding a file failed: the directory (catalogue) has no free entry.",
+    "placeholders": {
+      "name": "A file name on the disk, e.g. 'GAME.BIN'"
+    }
+  },
+  "panels.diskExplorer.error.readOnly": "{name} is read-only: clear its read-only attribute first.",
+  "@panels.diskExplorer.error.readOnly": {
+    "context": "Error banner in the Disk Explorer (the document that shows a .dsk, .trd or .scl disk image's files and sectors): deleting a read-only +3DOS file was refused.",
+    "placeholders": {
+      "name": "A file name on the disk, e.g. 'GAME.BIN'"
+    }
+  },
+  "panels.diskExplorer.error.unsupported": "This disk's file system cannot do that.",
+  "@panels.diskExplorer.error.unsupported": {
+    "context": "Error banner in the Disk Explorer (the document that shows a .dsk, .trd or .scl disk image's files and sectors): an action the disk's file system does not have (e.g. attributes on TR-DOS)."
+  },
+  "panels.diskExplorer.error.io": "The disk image could not be changed: {message}",
+  "@panels.diskExplorer.error.io": {
+    "context": "Error banner in the Disk Explorer (the document that shows a .dsk, .trd or .scl disk image's files and sectors): an unexpected error while reading or writing the disk image.",
+    "placeholders": {
+      "message": "The system's error message, in English"
+    }
+  },
+  "panels.diskExplorer.codeStart.title": "Load address",
+  "@panels.diskExplorer.codeStart.title": {
+    "context": "Title of the dialog that asks where a plain binary file added to a disk loads in memory.",
+    "maxChars": 32
+  },
+  "panels.diskExplorer.codeStart.prompt": "Where does {name} load? Enter a decimal address or a $hex one.",
+  "@panels.diskExplorer.codeStart.prompt": {
+    "context": "Prompt in the load-address dialog of the Disk Explorer (the document that shows a .dsk, .trd or .scl disk image's files and sectors). '$hex' means a hexadecimal number written with a $ prefix.",
+    "placeholders": {
+      "name": "The host file's name, e.g. 'game.bin'"
+    }
+  },
+  "panels.diskExplorer.codeStart.invalid": "An address from 0 to 65535, or $0000 to $FFFF",
+  "@panels.diskExplorer.codeStart.invalid": {
+    "context": "Validation message under the load-address field."
+  },
+  "panels.diskExplorer.codeStart.submit": "Add",
+  "@panels.diskExplorer.codeStart.submit": {
+    "context": "Button of the load-address dialog: adds the file to the disk.",
+    "maxChars": 16
+  },
+  "panels.diskExplorer.extractTitle": "Save the file from the disk",
+  "@panels.diskExplorer.extractTitle": {
+    "context": "Title of the save dialog when extracting a file from the Disk Explorer (the document that shows a .dsk, .trd or .scl disk image's files and sectors)."
+  },
+  "panels.diskExplorer.renameTitle": "Rename the file on the disk",
+  "@panels.diskExplorer.renameTitle": {
+    "context": "Title of the rename dialog in the Disk Explorer (the document that shows a .dsk, .trd or .scl disk image's files and sectors).",
+    "maxChars": 40
+  },
+  "panels.diskExplorer.confirm.deleteTitle": "Delete from the disk",
+  "@panels.diskExplorer.confirm.deleteTitle": {
+    "context": "Title of the confirmation box before deleting files in the Disk Explorer (the document that shows a .dsk, .trd or .scl disk image's files and sectors).",
+    "maxChars": 40
+  },
+  "panels.diskExplorer.confirm.delete": "{count, plural, one {Delete {name} from the disk?} other {Delete # files from the disk?}}",
+  "@panels.diskExplorer.confirm.delete": {
+    "context": "Question before deleting files in the Disk Explorer (the document that shows a .dsk, .trd or .scl disk image's files and sectors).",
+    "placeholders": {
+      "count": "How many files are deleted",
+      "name": "The first file's name, e.g. 'GAME.BIN'"
+    }
+  },
+  "panels.diskExplorer.confirm.deleteButton": "Delete",
+  "@panels.diskExplorer.confirm.deleteButton": {
+    "context": "Button that confirms deleting files from a disk.",
+    "maxChars": 16
+  },
+  "panels.diskExplorer.confirm.replaceTitle": "Replace on the disk",
+  "@panels.diskExplorer.confirm.replaceTitle": {
+    "context": "Title of the confirmation box before replacing files on a disk.",
+    "maxChars": 40
+  },
+  "panels.diskExplorer.confirm.replace": "{count, plural, one {{name} is already on the disk. Replace it?} other {# files are already on the disk. Replace them?}}",
+  "@panels.diskExplorer.confirm.replace": {
+    "context": "Question before adding files whose names are already on the disk.",
+    "placeholders": {
+      "count": "How many names clash",
+      "name": "The first clashing name"
+    }
+  },
+  "panels.diskExplorer.confirm.replaceButton": "Replace",
+  "@panels.diskExplorer.confirm.replaceButton": {
+    "context": "Button that confirms replacing files on a disk.",
+    "maxChars": 16
+  },
+  "panels.diskExplorer.confirm.compactTitle": "Compact the disk",
+  "@panels.diskExplorer.confirm.compactTitle": {
+    "context": "Title of the confirmation box before compacting a TR-DOS disk.",
+    "maxChars": 40
+  },
+  "panels.diskExplorer.confirm.compact": "Lay the files down again without the deleted ones? Their space becomes free, and deleted files can no longer be recovered.",
+  "@panels.diskExplorer.confirm.compact": {
+    "context": "Question before compacting a TR-DOS disk (the counterpart of TR-DOS's MOVE command)."
+  },
+  "panels.diskExplorer.confirm.compactButton": "Compact",
+  "@panels.diskExplorer.confirm.compactButton": {
+    "context": "Button that confirms compacting a TR-DOS disk.",
+    "maxChars": 16
+  },
+  "panels.diskExplorer.space": "{free} free of {total}, {files, plural, one {# file} other {# files}}",
+  "@panels.diskExplorer.space": {
+    "context": "Facts in the header strip of the Disk Explorer (the document that shows a .dsk, .trd or .scl disk image's files and sectors).",
+    "placeholders": {
+      "free": "Free space, e.g. '172K'",
+      "total": "The disk's capacity, e.g. '173K'",
+      "files": "How many files the disk holds"
+    },
+    "maxChars": 60
+  },
+  "panels.diskExplorer.mounted": "In drive {drive}",
+  "@panels.diskExplorer.mounted": {
+    "context": "Badge in the header strip of the Disk Explorer (the document that shows a .dsk, .trd or .scl disk image's files and sectors) when the image is in one of the emulated machine's drives.",
+    "placeholders": {
+      "drive": "The drive letter, A or B"
+    },
+    "maxChars": 16
+  },
+  "panels.diskExplorer.mountedTitle": "The disk is in the machine's drive: an edit pauses a running machine, writes the disk and inserts it again.",
+  "@panels.diskExplorer.mountedTitle": {
+    "context": "Tooltip of the 'In drive' badge."
+  },
+  "panels.diskExplorer.viewFiles": "Files",
+  "@panels.diskExplorer.viewFiles": {
+    "context": "Tooltip of the button that shows the disk's files in the header of the Disk Explorer (the document that shows a .dsk, .trd or .scl disk image's files and sectors).",
+    "maxChars": 48
+  },
+  "panels.diskExplorer.viewLayout": "Layout: tracks and sectors",
+  "@panels.diskExplorer.viewLayout": {
+    "context": "Tooltip of the button that shows the disk's tracks and sectors in the header of the Disk Explorer (the document that shows a .dsk, .trd or .scl disk image's files and sectors).",
+    "maxChars": 48
+  },
+  "panels.diskExplorer.add": "Add files to the disk",
+  "@panels.diskExplorer.add": {
+    "context": "Tooltip of the button that adds host files to the disk in the header of the Disk Explorer (the document that shows a .dsk, .trd or .scl disk image's files and sectors).",
+    "maxChars": 48
+  },
+  "panels.diskExplorer.extract": "Save the selected file",
+  "@panels.diskExplorer.extract": {
+    "context": "Tooltip of the button that saves the selected file to the host in the header of the Disk Explorer (the document that shows a .dsk, .trd or .scl disk image's files and sectors).",
+    "maxChars": 48
+  },
+  "panels.diskExplorer.rename": "Rename the selected file",
+  "@panels.diskExplorer.rename": {
+    "context": "Tooltip of the button that renames the selected file in the header of the Disk Explorer (the document that shows a .dsk, .trd or .scl disk image's files and sectors).",
+    "maxChars": 48
+  },
+  "panels.diskExplorer.delete": "Delete the selected file",
+  "@panels.diskExplorer.delete": {
+    "context": "Tooltip of the button that deletes the selected file in the header of the Disk Explorer (the document that shows a .dsk, .trd or .scl disk image's files and sectors).",
+    "maxChars": 48
+  },
+  "panels.diskExplorer.compact": "Compact the disk (TR-DOS MOVE)",
+  "@panels.diskExplorer.compact": {
+    "context": "Tooltip of the button that compacts a TR-DOS disk; MOVE is a TR-DOS command, keep it in the header of the Disk Explorer (the document that shows a .dsk, .trd or .scl disk image's files and sectors).",
+    "maxChars": 48
+  },
+  "panels.diskExplorer.showDeleted": "Show deleted files",
+  "@panels.diskExplorer.showDeleted": {
+    "context": "Tooltip of the toggle that lists deleted files too in the header of the Disk Explorer (the document that shows a .dsk, .trd or .scl disk image's files and sectors).",
+    "maxChars": 48
+  },
+  "panels.diskExplorer.reload": "Read the disk again",
+  "@panels.diskExplorer.reload": {
+    "context": "Tooltip of the button that reloads the disk image in the header of the Disk Explorer (the document that shows a .dsk, .trd or .scl disk image's files and sectors).",
+    "maxChars": 48
+  },
+  "panels.diskExplorer.noFiles": "The disk holds no files.",
+  "@panels.diskExplorer.noFiles": {
+    "context": "Empty-state message of the file list."
+  },
+  "panels.diskExplorer.selectFile": "Select a file to see its contents.",
+  "@panels.diskExplorer.selectFile": {
+    "context": "Empty-state message of the inspector beside the file list."
+  },
+  "panels.diskExplorer.selectSector": "Select a sector to see its bytes.",
+  "@panels.diskExplorer.selectSector": {
+    "context": "Empty-state message of the inspector in the Layout view."
+  },
+  "panels.diskExplorer.col.name": "Name",
+  "@panels.diskExplorer.col.name": {
+    "context": "Column header of the file list in the Disk Explorer (the document that shows a .dsk, .trd or .scl disk image's files and sectors) (also a label in the file details). 'User' is the +3DOS user area 0-15; 'Attr.' the read-only/system/archive flags.",
+    "maxChars": 14
+  },
+  "panels.diskExplorer.col.kind": "Type",
+  "@panels.diskExplorer.col.kind": {
+    "context": "Column header of the file list in the Disk Explorer (the document that shows a .dsk, .trd or .scl disk image's files and sectors) (also a label in the file details). 'User' is the +3DOS user area 0-15; 'Attr.' the read-only/system/archive flags.",
+    "maxChars": 9
+  },
+  "panels.diskExplorer.col.size": "Size",
+  "@panels.diskExplorer.col.size": {
+    "context": "Column header of the file list in the Disk Explorer (the document that shows a .dsk, .trd or .scl disk image's files and sectors) (also a label in the file details). 'User' is the +3DOS user area 0-15; 'Attr.' the read-only/system/archive flags.",
+    "maxChars": 9
+  },
+  "panels.diskExplorer.col.start": "Start",
+  "@panels.diskExplorer.col.start": {
+    "context": "Column header of the file list in the Disk Explorer (the document that shows a .dsk, .trd or .scl disk image's files and sectors) (also a label in the file details). 'User' is the +3DOS user area 0-15; 'Attr.' the read-only/system/archive flags.",
+    "maxChars": 9
+  },
+  "panels.diskExplorer.col.attributes": "Attr.",
+  "@panels.diskExplorer.col.attributes": {
+    "context": "Column header of the file list in the Disk Explorer (the document that shows a .dsk, .trd or .scl disk image's files and sectors) (also a label in the file details). 'User' is the +3DOS user area 0-15; 'Attr.' the read-only/system/archive flags.",
+    "maxChars": 9
+  },
+  "panels.diskExplorer.col.user": "User",
+  "@panels.diskExplorer.col.user": {
+    "context": "Column header of the file list in the Disk Explorer (the document that shows a .dsk, .trd or .scl disk image's files and sectors) (also a label in the file details). 'User' is the +3DOS user area 0-15; 'Attr.' the read-only/system/archive flags.",
+    "maxChars": 9
+  },
+  "panels.diskExplorer.sizeOnDisk": "{size} bytes ({allocated} on the disk)",
+  "@panels.diskExplorer.sizeOnDisk": {
+    "context": "A file's size in the file details.",
+    "placeholders": {
+      "size": "The file's length in bytes",
+      "allocated": "The bytes the file takes on the disk"
+    }
+  },
+  "panels.diskExplorer.autorun": "Auto-run line",
+  "@panels.diskExplorer.autorun": {
+    "context": "Label of a BASIC program's auto-run line number in the file details.",
+    "maxChars": 20
+  },
+  "panels.diskExplorer.variable": "Variable",
+  "@panels.diskExplorer.variable": {
+    "context": "Label of an array file's variable name in the file details.",
+    "maxChars": 20
+  },
+  "panels.diskExplorer.attr.readOnly": "Read-only",
+  "@panels.diskExplorer.attr.readOnly": {
+    "context": "Checkbox in the file details of a +3DOS file: the file's read-only attribute.",
+    "maxChars": 16
+  },
+  "panels.diskExplorer.attr.system": "System",
+  "@panels.diskExplorer.attr.system": {
+    "context": "Checkbox in the file details of a +3DOS file: the file's system attribute.",
+    "maxChars": 16
+  },
+  "panels.diskExplorer.attr.archive": "Archive",
+  "@panels.diskExplorer.attr.archive": {
+    "context": "Checkbox in the file details of a +3DOS file: the file's archive attribute.",
+    "maxChars": 16
+  },
+  "panels.diskExplorer.showSectors": "Show the file's sectors",
+  "@panels.diskExplorer.showSectors": {
+    "context": "Tooltip of the button that opens the Layout view with the file's sectors marked.",
+    "maxChars": 48
+  },
+  "panels.diskExplorer.openMemory": "Open the file as memory",
+  "@panels.diskExplorer.openMemory": {
+    "context": "Tooltip of the button that opens the file's bytes in a memory view.",
+    "maxChars": 48
+  },
+  "panels.diskExplorer.openDisassembly": "Open the file as disassembly",
+  "@panels.diskExplorer.openDisassembly": {
+    "context": "Tooltip of the button that opens the file's bytes as Z80 disassembly at its load address.",
+    "maxChars": 48
+  },
+  "panels.diskExplorer.role.system": "System",
+  "@panels.diskExplorer.role.system": {
+    "context": "Legend entry in the Layout view of the Disk Explorer (the document that shows a .dsk, .trd or .scl disk image's files and sectors): a sector holding reserved system tracks (a TR-DOS disk's info sector).",
+    "maxChars": 12
+  },
+  "panels.diskExplorer.role.directory": "Directory",
+  "@panels.diskExplorer.role.directory": {
+    "context": "Legend entry in the Layout view of the Disk Explorer (the document that shows a .dsk, .trd or .scl disk image's files and sectors): a sector holding the directory / catalogue.",
+    "maxChars": 12
+  },
+  "panels.diskExplorer.role.file": "File",
+  "@panels.diskExplorer.role.file": {
+    "context": "Legend entry in the Layout view of the Disk Explorer (the document that shows a .dsk, .trd or .scl disk image's files and sectors): a sector holding a file's data.",
+    "maxChars": 12
+  },
+  "panels.diskExplorer.role.free": "Free",
+  "@panels.diskExplorer.role.free": {
+    "context": "Legend entry in the Layout view of the Disk Explorer (the document that shows a .dsk, .trd or .scl disk image's files and sectors): a sector holding free space.",
+    "maxChars": 12
+  },
+  "panels.diskExplorer.role.unused": "Unused",
+  "@panels.diskExplorer.role.unused": {
+    "context": "Legend entry in the Layout view of the Disk Explorer (the document that shows a .dsk, .trd or .scl disk image's files and sectors): a sector holding space the file system never uses.",
+    "maxChars": 12
+  },
+  "panels.diskExplorer.surface": "Surface",
+  "@panels.diskExplorer.surface": {
+    "context": "Switch in the Layout view that shows the DSK's tracks as stored and as laid on the disk surface (the raw view).",
+    "maxChars": 12
+  },
+  "panels.diskExplorer.unformatted": "unformatted",
+  "@panels.diskExplorer.unformatted": {
+    "context": "Shown on a track row of the Layout view when the track is not formatted.",
+    "maxChars": 14
+  },
+  "panels.diskExplorer.sector.position": "Position",
+  "@panels.diskExplorer.sector.position": {
+    "context": "Label in the sector details: where the sector is on the disk.",
+    "maxChars": 16
+  },
+  "panels.diskExplorer.sector.positionValue": "cylinder {cylinder}, side {side}, sector {index}",
+  "@panels.diskExplorer.sector.positionValue": {
+    "context": "The sector's place on the disk in the sector details.",
+    "placeholders": {
+      "cylinder": "The cylinder (track) number from 0",
+      "side": "The disk side, 0 or 1",
+      "index": "The sector's place in its track, from 0"
+    }
+  },
+  "panels.diskExplorer.sector.copies": "{size} bytes, {copies} copies (a weak sector)",
+  "@panels.diskExplorer.sector.copies": {
+    "context": "A weak sector's size in the sector details: the disk image stores several versions of it.",
+    "placeholders": {
+      "size": "Bytes per copy",
+      "copies": "How many copies the image stores"
+    }
+  },
+  "panels.diskExplorer.sector.holds": "Holds",
+  "@panels.diskExplorer.sector.holds": {
+    "context": "Label in the sector details: what the sector is used for (a file's name, the directory, free space).",
+    "maxChars": 16
+  },
+  "panels.diskExplorer.sector.flags": "Status",
+  "@panels.diskExplorer.sector.flags": {
+    "context": "Label in the sector details: what the disk dump recorded about the sector (CRC error, deleted mark, weak).",
+    "maxChars": 16
+  },
+  "panels.diskExplorer.sector.chip": "Sector {r}: {holds}",
+  "@panels.diskExplorer.sector.chip": {
+    "context": "Tooltip of a sector square in the Layout view.",
+    "placeholders": {
+      "r": "The sector's ID number",
+      "holds": "What the sector holds: a file's name, or 'Directory', 'Free', ..."
+    }
+  },
+  "panels.diskExplorer.flag.crc": "data CRC error",
+  "@panels.diskExplorer.flag.crc": {
+    "context": "What a disk dump recorded about a sector, in the sector details (lower case, listed with commas)."
+  },
+  "panels.diskExplorer.flag.deleted": "deleted data mark",
+  "@panels.diskExplorer.flag.deleted": {
+    "context": "What a disk dump recorded about a sector, in the sector details (lower case, listed with commas)."
+  },
+  "panels.diskExplorer.flag.noData": "no data",
+  "@panels.diskExplorer.flag.noData": {
+    "context": "What a disk dump recorded about a sector, in the sector details (lower case, listed with commas)."
+  },
+  "panels.diskExplorer.flag.weak": "weak (copies)",
+  "@panels.diskExplorer.flag.weak": {
+    "context": "What a disk dump recorded about a sector, in the sector details (lower case, listed with commas)."
+  },
+  "panels.diskExplorer.titleNoFs": "Disk, {cylinders} x {sides}",
+  "@panels.diskExplorer.titleNoFs": {
+    "context": "Header title of the Disk Explorer (the document that shows a .dsk, .trd or .scl disk image's files and sectors) when the disk has no readable file system.",
+    "placeholders": {
+      "cylinders": "Number of cylinders",
+      "sides": "Number of sides"
+    }
+  },
+  "panels.diskExplorer.titleLabelled": "{system} ({format}) - {label}",
+  "@panels.diskExplorer.titleLabelled": {
+    "context": "Header title of the Disk Explorer (the document that shows a .dsk, .trd or .scl disk image's files and sectors) for a disk with a label (TR-DOS).",
+    "placeholders": {
+      "system": "The file system: +3DOS or TR-DOS",
+      "format": "The format, e.g. '80 x 2'",
+      "label": "The disk's label"
+    }
+  },
+  "panels.diskExplorer.title": "{system} ({format})",
+  "@panels.diskExplorer.title": {
+    "context": "Header title of the Disk Explorer (the document that shows a .dsk, .trd or .scl disk image's files and sectors).",
+    "placeholders": {
+      "system": "The file system: +3DOS or TR-DOS",
+      "format": "The format, e.g. '+3' or 'CPC data'"
+    }
+  },
+  "panels.diskExplorer.kind.basic": "BASIC",
+  "@panels.diskExplorer.kind.basic": {
+    "context": "The kind of a file on a disk, in the file list: what its header says ('Headerless': a file with no header).",
+    "maxChars": 14
+  },
+  "panels.diskExplorer.kind.numberArray": "Number array",
+  "@panels.diskExplorer.kind.numberArray": {
+    "context": "The kind of a file on a disk, in the file list: what its header says ('Headerless': a file with no header).",
+    "maxChars": 14
+  },
+  "panels.diskExplorer.kind.charArray": "Char. array",
+  "@panels.diskExplorer.kind.charArray": {
+    "context": "The kind of a file on a disk, in the file list: what its header says ('Headerless': a file with no header).",
+    "maxChars": 14
+  },
+  "panels.diskExplorer.kind.code": "Code",
+  "@panels.diskExplorer.kind.code": {
+    "context": "The kind of a file on a disk, in the file list: what its header says ('Headerless': a file with no header).",
+    "maxChars": 14
+  },
+  "panels.diskExplorer.kind.raw": "Headerless",
+  "@panels.diskExplorer.kind.raw": {
+    "context": "The kind of a file on a disk, in the file list: what its header says ('Headerless': a file with no header).",
+    "maxChars": 14
+  },
+  "panels.diskExplorer.deletedKind": "{kind} (deleted)",
+  "@panels.diskExplorer.deletedKind": {
+    "context": "The type column of a deleted file the list shows.",
+    "placeholders": {
+      "kind": "The file's kind, e.g. 'Code'"
+    },
+    "maxChars": 20
+  },
+  "panels.diskExplorer.hardDiskNoFs": "Hard disk ({size}), no FAT file system",
+  "@panels.diskExplorer.hardDiskNoFs": {
+    "context": "Header title of the Disk Explorer for a hard-disk image or SD card (.img, .hdf, .cim) with a FAT file system when no FAT16/FAT32 volume was found on it.",
+    "placeholders": {
+      "size": "The image size, e.g. 128M"
+    }
+  },
+  "panels.diskExplorer.partition": "Partition",
+  "@panels.diskExplorer.partition": {
+    "context": "Accessible label of the partition picker in the header of the Disk Explorer for a hard-disk image or SD card (.img, .hdf, .cim) with a FAT file system."
+  },
+  "panels.diskExplorer.partitionItem": "Partition {index} ({size})",
+  "@panels.diskExplorer.partitionItem": {
+    "context": "An item of the partition picker in the Disk Explorer for a hard-disk image or SD card (.img, .hdf, .cim) with a FAT file system.",
+    "placeholders": {
+      "index": "The partition number, from 1",
+      "size": "The partition size, e.g. 512M"
+    },
+    "maxChars": 30
+  },
+  "panels.diskExplorer.folderUp": "Up one folder",
+  "@panels.diskExplorer.folderUp": {
+    "context": "Tooltip of the toolbar button of the Disk Explorer for a hard-disk image or SD card (.img, .hdf, .cim) with a FAT file system that shows the parent folder."
+  },
+  "panels.diskExplorer.newFolder": "New folder",
+  "@panels.diskExplorer.newFolder": {
+    "context": "Tooltip of the toolbar button of the Disk Explorer for a hard-disk image or SD card (.img, .hdf, .cim) with a FAT file system that creates a folder in the folder shown."
+  },
+  "panels.diskExplorer.newFolderName": "New folder",
+  "@panels.diskExplorer.newFolderName": {
+    "context": "The name offered for a new folder in the Disk Explorer for a hard-disk image or SD card (.img, .hdf, .cim) with a FAT file system; the user edits it in the name dialog.",
+    "maxChars": 40
+  },
+  "panels.diskExplorer.tooBigToPreview": "The file is too big to preview here: extract it to see its contents.",
+  "@panels.diskExplorer.tooBigToPreview": {
+    "context": "Shown instead of the preview in the Disk Explorer for a hard-disk image or SD card (.img, .hdf, .cim) with a FAT file system for a large file."
+  },
+  "panels.diskExplorer.regionsLabel": "The areas of the volume",
+  "@panels.diskExplorer.regionsLabel": {
+    "context": "Accessible label of the bar in the Layout view of the Disk Explorer for a hard-disk image or SD card (.img, .hdf, .cim) with a FAT file system that shows the volume divided into its areas."
+  },
+  "panels.diskExplorer.region.reserved": "Reserved",
+  "@panels.diskExplorer.region.reserved": {
+    "context": "An area of a FAT volume in the Layout view of the Disk Explorer for a hard-disk image or SD card (.img, .hdf, .cim) with a FAT file system: the boot sector and the sectors reserved after it.",
+    "maxChars": 16
+  },
+  "panels.diskExplorer.region.fats": "FAT",
+  "@panels.diskExplorer.region.fats": {
+    "context": "An area of a FAT volume in the Layout view of the Disk Explorer for a hard-disk image or SD card (.img, .hdf, .cim) with a FAT file system: the file allocation tables. Usually left untranslated.",
+    "maxChars": 16
+  },
+  "panels.diskExplorer.region.root": "Root folder",
+  "@panels.diskExplorer.region.root": {
+    "context": "An area of a FAT16 volume in the Layout view of the Disk Explorer for a hard-disk image or SD card (.img, .hdf, .cim) with a FAT file system: the fixed-size root folder.",
+    "maxChars": 16
+  },
+  "panels.diskExplorer.region.data": "Data",
+  "@panels.diskExplorer.region.data": {
+    "context": "An area of a FAT volume in the Layout view of the Disk Explorer for a hard-disk image or SD card (.img, .hdf, .cim) with a FAT file system: the clusters that hold files and folders.",
+    "maxChars": 16
+  },
+  "panels.diskExplorer.regionTitle": "{name}: {count} sectors from sector {first}",
+  "@panels.diskExplorer.regionTitle": {
+    "context": "Tooltip of an area of the volume in the Layout view of the Disk Explorer for a hard-disk image or SD card (.img, .hdf, .cim) with a FAT file system.",
+    "placeholders": {
+      "name": "The area, e.g. FAT",
+      "count": "How many 512-byte sectors it takes",
+      "first": "Its first sector within the volume"
+    }
+  },
+  "panels.diskExplorer.clusterMap": "{count} clusters, in {buckets} groups: the darker a group, the more of it is in use",
+  "@panels.diskExplorer.clusterMap": {
+    "context": "Legend over the cluster map in the Layout view of the Disk Explorer for a hard-disk image or SD card (.img, .hdf, .cim) with a FAT file system.",
+    "placeholders": {
+      "count": "The number of clusters on the volume",
+      "buckets": "How many squares the map shows"
+    }
+  },
+  "panels.diskExplorer.clusterMapFile": "Outlined: the {count} clusters of {name}",
+  "@panels.diskExplorer.clusterMapFile": {
+    "context": "Legend of the cluster map in the Disk Explorer for a hard-disk image or SD card (.img, .hdf, .cim) with a FAT file system when a file is selected: its clusters are outlined.",
+    "placeholders": {
+      "count": "How many clusters the file takes",
+      "name": "The selected file name"
+    }
+  },
+  "panels.diskExplorer.clusterBucket": "{percent}% in use",
+  "@panels.diskExplorer.clusterBucket": {
+    "context": "Tooltip of a square of the cluster map in the Disk Explorer for a hard-disk image or SD card (.img, .hdf, .cim) with a FAT file system.",
+    "placeholders": {
+      "percent": "A whole number, 0-100"
+    }
   }
 }

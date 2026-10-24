@@ -3,6 +3,12 @@ import type { DiskInformation, TrackInformation } from "./DiskInformation";
 import { DiskDensity } from "@emu/abstractions/DiskDensity";
 import { BufferSpan } from "./BufferSpan";
 import { DiskCrc } from "./DiskCrc";
+import { nominalSectorLength } from "./disk-readers";
+
+// --- ST2 bit 6 (CM): the sector was read with a deleted data address mark
+const ST2_CONTROL_MARK = 0x40;
+// --- ST2 bit 5 (DD): CRC error in the data field
+const ST2_DATA_ERROR = 0x20;
 
 // --- Gap type indexes
 const GAP_MINIMAL_FM = 0;
@@ -80,9 +86,9 @@ export function createDiskSurface(diskInfo: DiskInformation): DiskSurface {
         2 + // --- CRC
         gapInfo.len[2]; // --- Gap 2
 
-      // --- Add sector data block length
-      const lengthByN = 0x80 << s.N;
-      const sectorDataLength = lengthByN > s.actualLength ? lengthByN : s.actualLength;
+      // --- Add sector data block length: the surface holds one copy of the sector, at its size
+      // --- code's length (a weak sector's further copies are versions of the same bytes)
+      const sectorDataLength = nominalSectorLength(s.N);
       trackDataLength +=
         gapInfo.sync_len + // -- Sync bytes
         (gapInfo.mark !== 0xff ? 3 : 0) +
@@ -141,14 +147,15 @@ export function createDiskSurface(diskInfo: DiskInformation): DiskSurface {
     const fmOffset = weakOffset - bitArrayLength;
     const clockOffset = fmOffset - bitArrayLength;
     const clockData = new BufferSpan(trackData, clockOffset, bitArrayLength);
+    const weakSectorData = new BufferSpan(trackData, weakOffset, bitArrayLength);
     const track = (tracks[i] = {
       trackLength: bytesPerTrack,
       trackData,
       header: new BufferSpan(trackData, 0, trackHeaderLength),
-      sectors: setSectorData(diskInfo.tracks[i], sectorSpan, gapInfo, clockData),
+      sectors: setSectorData(diskInfo.tracks[i], sectorSpan, gapInfo, clockData, weakSectorData),
       clockData,
       fmData: new BufferSpan(trackData, fmOffset, bitArrayLength),
-      weakSectorData: new BufferSpan(trackData, weakOffset, bitArrayLength)
+      weakSectorData
     });
 
     // --- Fill the track header
@@ -197,7 +204,8 @@ function setSectorData(
   track: TrackInformation,
   sectorSpan: BufferSpan,
   gapInfo: DiskGap,
-  clockData: BufferSpan
+  clockData: BufferSpan,
+  weakData: BufferSpan
 ): SectorSurface[] {
   const sectors: SectorSurface[] = [];
   let offset = 0;
@@ -261,31 +269,41 @@ function setSectorData(
     if (gapInfo.mark === 0xff) {
       clockData.setBit(clockOffset + offset, true);
     }
-    sectorSpan.set(offset++, 0xfb);
-    crc.add(0xfb);
+    // --- A deleted data address mark when the dump says the sector was read with one
+    const dataMark = (s.SR2 & ST2_CONTROL_MARK) !== 0 ? 0xf8 : 0xfb;
+    sectorSpan.set(offset++, dataMark);
+    crc.add(dataMark);
 
     // --- Take a not of prefix length
     const prefixLength = offset - sectorOffset - headerLength;
 
-    // --- Sector data block (actual data)
-    for (let i = 0; i < s.actualLength; i++) {
+    // --- Sector data block: the first copy, padded with 0x00 when the dump stored fewer bytes
+    const storedDataLenght = nominalSectorLength(s.N);
+    const dataOffset = offset;
+    const stored = Math.min(s.actualLength, storedDataLenght);
+    for (let i = 0; i < stored; i++) {
       sectorSpan.set(offset++, s.sectorData[i]);
       crc.add(s.sectorData[i]);
     }
-
-    // --- Sector data block (autofill with 0x00)
-    const storedDataLenght = 0x80 << s.N;
-    for (let i = s.actualLength; i < storedDataLenght; i++) {
+    for (let i = stored; i < storedDataLenght; i++) {
       sectorSpan.set(offset++, 0x00);
       crc.add(0x00);
+    }
+
+    // --- A weak sector's bytes read differently each time: mark them on the weak-data bit array
+    if ((s.copies ?? 1) > 1) {
+      for (let i = 0; i < storedDataLenght; i++) {
+        weakData.setBit(clockOffset + dataOffset + i, true);
+      }
     }
 
     // --- Take a note of sector tail length
     const tailLength = offset - sectorOffset - headerLength;
 
-    // --- Sector data block (CRC)
-    sectorSpan.set(offset++, crc.high);
-    sectorSpan.set(offset++, crc.low);
+    // --- Sector data block (CRC), deliberately wrong when the dump recorded a data CRC error
+    const crcFlip = (s.SR2 & ST2_DATA_ERROR) !== 0 ? 0xff : 0x00;
+    sectorSpan.set(offset++, crc.high ^ crcFlip);
+    sectorSpan.set(offset++, crc.low ^ crcFlip);
 
     // --- Gap 3
     for (let i = 0; i < gapInfo.len[3]; i++) {

@@ -25,7 +25,8 @@ import { WasmFloatingBusDevice, WasmSpectrumPsgDevice } from "../zxSpectrum/Wasm
 
 import { menuTapeLoadFlow } from "../tapeLoadFlows";
 import { getSp128Timing, type Sp128Timing } from "./sp128Timings";
-import { MC_DISK_SUPPORT, MC_SP128_TIMING } from "@common/machines/constants";
+import { MC_DISK_SUPPORT, MC_DIVMMC, MC_SP128_TIMING } from "@common/machines/constants";
+import { divMmcPartitionLabels } from "../zxSpectrum/divmmc/divMmcCoreBridge";
 
 /**
  * The model's configuration under the project's: the project's own settings win, except the timing,
@@ -59,6 +60,14 @@ export abstract class ZxSpectrum128WasmHost extends ZxSpectrumBase {
   get beta128Model(): boolean {
     const drives = this.config?.[MC_DISK_SUPPORT];
     return (this.timing.id === "pentagon" || this.timing.id === "scorpion") && typeof drives === "number" && drives > 0;
+  }
+
+  /**
+   * The model has a DivMMC (`MC_DIVMMC`): the 128K's own timing only - not the Pentagon or the
+   * Scorpion (DISK_IMAGES_AND_FILE_SYSTEMS_PLAN decision). It needs the user's esxDOS ROM.
+   */
+  get divMmcModel(): boolean {
+    return this.timing.id === "sp128" && !!this.config?.[MC_DIVMMC];
   }
 
   constructor(_modelInfo?: MachineModel, config?: MachineConfigSet) {
@@ -136,6 +145,7 @@ export abstract class ZxSpectrum128WasmHost extends ZxSpectrumBase {
 
   getPartitionLabels(): Record<number, string> {
     return {
+      ...(this.divMmcModel ? divMmcPartitionLabels() : {}),
       ...(this.beta128Model ? { [-3]: "R2" } : {}),
       [-2]: "R1",
       [-1]: "R0",

@@ -5,4 +5,4 @@
  *
  * See README.md.
  */
-export { createSp48Session, Sp48TestSession, type RunLimit, type Sp48Program } from "./session";
+export { createSp48Session, Sp48TestSession, type HarnessSdCard, type RunLimit, type Sp48Program } from "./session";

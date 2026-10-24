@@ -13,7 +13,8 @@ import { getP3RomSet, type P3RomSet } from "./p3RomSets";
 import { AUDIO_SAMPLE_RATE, REWIND_REQUESTED, TAPE_MODE, TAPE_SAVER } from "../machine-props";
 import { TapeDevice, TapeSaver } from "../tape/TapeDevice";
 import { SpectrumKeyCode } from "@emu/machines/zxSpectrum/SpectrumKeyCode";
-import { MC_DISK_SUPPORT } from "@common/machines/constants";
+import { MC_DISK_SUPPORT, MC_DIVMMC } from "@common/machines/constants";
+import { divMmcPartitionLabels } from "../zxSpectrum/divmmc/divMmcCoreBridge";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 import { zxSpectrum128SysVars } from "../zxSpectrum128/ZxSpectrum128SysVars";
 import { zxSpectrum48SysVars } from "../zxSpectrum48/ZxSpectrum48SysVars";
@@ -147,12 +148,18 @@ export abstract class ZxSpectrumP3eWasmHost extends ZxSpectrumBase {
     return this.selectedRom === 3;
   }
 
+  /** The model has a DivMMC (`MC_DIVMMC`, DISK_IMAGES_AND_FILE_SYSTEMS_PLAN C5); it needs the user's esxDOS ROM */
+  get divMmcModel(): boolean {
+    return !!this.config?.[MC_DIVMMC];
+  }
+
   parsePartitionLabel(label: string): number | undefined {
     return parseSpectrumPartitionLabel(label, 4);
   }
 
   getPartitionLabels(): Record<number, string> {
     return {
+      ...(this.divMmcModel ? divMmcPartitionLabels() : {}),
       [-1]: "R0",
       [-2]: "R1",
       [-3]: "R2",

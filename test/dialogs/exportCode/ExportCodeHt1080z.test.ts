@@ -31,3 +31,12 @@ describe("Export dialog on the HT-1080Z", () => {
     );
   });
 });
+
+describe("disk export formats (DISK_IMAGES_AND_FILE_SYSTEMS_PLAN B6)", () => {
+  it("offers a .dsk on the +2A/+3 and a .trd on the machines with a Beta 128", () => {
+    expect(formatOptionsFor("spp3e").map((o) => o.value)).toContain("dsk");
+    expect(formatOptionsFor("sp128").map((o) => o.value)).toContain("trd");
+    expect(formatOptionsFor("scorpion").map((o) => o.value)).toContain("trd");
+    expect(formatOptionsFor("sp48").map((o) => o.value)).not.toContain("dsk");
+  });
+});

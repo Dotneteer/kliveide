@@ -54,6 +54,14 @@ const OVERRIDES: Record<string, ExportClass> = {
   TakeResetRequest: "journaled", // clears the NextReg $02 request (non-volatile)
   // --- The debug loop begins its frames through this; the fast path does the same itself (T17)
   BeginAudioFrame: "execution",
+  // --- The classic cores' DivMMC (`zx-spectrum-divmmc-classic.c`): its getters read, but the
+  // --- device noun would class them as inputs - the hosts ask them around every debug step
+  DivMmcGetPresent: "pure",
+  DivMmcGetPortE3: "pure",
+  DivMmcGetMapped: "pure",
+  DivMmcGetAutoMapActive: "pure",
+  DivMmcGetPageSource: "pure",
+  DivMmcMemorySize: "pure",
   // --- RZX: the play and record buffers and the mode are volatile (an RZX load ends the timeline, D2) ...
   RzxSetMode: "debug",
   RzxSetPlayFrame: "debug",

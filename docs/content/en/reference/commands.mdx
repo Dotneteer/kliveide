@@ -406,7 +406,7 @@ Available aliases: `co`
 
 ## `crd`
 
-This command creates an empty disk file: a DSK file for the ZX Spectrum +3 models (and compatible), or a blank, formatted TR-DOS disk (`.trd`) for the Pentagon 128's Beta 128 interface.
+This command creates an empty disk file: a blank, +3DOS-formatted DSK file for the ZX Spectrum +3 models (and compatible), or a blank, formatted TR-DOS disk (`.trd`) for the Pentagon 128's Beta 128 interface. Every DSK type has 9 sectors of 512 bytes per track; the single-sided ones are what the +3's own `FORMAT` lays down, and the double-sided ones carry the disk specification +3DOS reads their geometry from.
 
 ```
 crd <disk-type> <disk-name> [<disk-folder>] [-p]
@@ -414,17 +414,46 @@ crd <disk-type> <disk-name> [<disk-folder>] [-p]
 
 These are the arguments of the command:
 - `disk-type`: One of these supported formats:
-  - `ss`: Single-sided CPC
-  - `ds`: Double-sided CPC
-  - `sse`: Single-sided Extended CPC
-  - `dse`: Double-sided Extended CPC
+  - `ss`: Single-sided CPC, 40 tracks (180K; 173K free)
+  - `ds`: Double-sided CPC, 40 tracks (360K; 353K free)
+  - `sse`: Single-sided Extended CPC, 40 tracks (180K; 173K free)
+  - `dse`: Double-sided Extended CPC, 40 tracks (360K; 353K free)
+  - `dse80`: Double-sided Extended CPC, 80 tracks (720K; 706K free), the +3DOS format of a 3.5-inch drive B
   - `trd80ds`: TR-DOS, 80 tracks, double-sided (640K)
   - `trd40ds`: TR-DOS, 40 tracks, double-sided (320K)
   - `trd80ss`: TR-DOS, 80 tracks, single-sided (320K)
   - `trd40ss`: TR-DOS, 40 tracks, single-sided (160K)
 - `disk-name`: The name of the disk file (the `.dsk` or `.trd` extension is added automatically)
-- `disk-folder`: An optional folder in which the new disk file is created. The folder must exist.
-- `-p`: Creates the disk file within the currently opened project folder (under `disks`).
+- `disk-folder`: An optional folder in which the new disk file is created; Klive makes it if it does not exist. Without one, the disk goes into the open project's `disks` folder, or into `Klive/Disks` in your home folder when no project is open (the Create Disk File dialog starts there too).
+- `-p`: Creates the disk file within the currently opened project folder (under `disks`); a `disk-folder` given with it is a folder inside `disks`.
+
+## `disk`
+
+This command lists and changes the files of a disk image: a `.dsk` (+3DOS), a `.trd` or a `.scl`
+(TR-DOS). It does what the [Disk Explorer](/en/guides/emulator/disk-explorer) does; a disk in the
+running machine's drive is paused, written and put back.
+
+```
+disk ls <image> [-d]
+disk info <image>
+disk add <image> <host-file> [<name>] [-start <address>]
+disk get <image> <disk-file> <host-file>
+disk rm <image> <disk-file>
+disk mv <image> <disk-file> <new-name>
+disk compact <image>
+disk new <image> <disk-type>
+```
+
+- `ls`: lists the files (`-d`: deleted ones too); `info`: the file system and its free space.
+- `add`: puts a host file on the disk. A `.tap` adds the files on the tape, a `.scr` a screen, a
+  `.bas` a tokenised BASIC program, anything else code at `-start` (32768 by default). A third
+  argument names the file on the disk.
+- `get`: saves a file from the disk to the host.
+- `rm`, `mv`: delete and rename a file.
+- `compact`: lays a TR-DOS disk's files down again without the deleted ones.
+- `new`: creates a blank disk, of a type `crd` takes.
+
+Paths are the project's, or absolute.
 
 ## `debug`
 
@@ -551,6 +580,8 @@ These are the input arguments and options:
   - `tzx`: TZX file format
   - `tap`: TAP file format
   - `nex`: ZX Spectrum Next NEX file
+  - `dsk`: a ZX Spectrum +3 disk that boots the program: its `DISK` loader runs from the +3's Loader menu ([details](/en/guides/emulator/disk-explorer#exporting-a-program-to-a-disk))
+  - `trd`: a TR-DOS disk that boots the program: its `boot` loader runs when TR-DOS boots the disk
   - `p`: ZX81 program file (the default for ZX81 code); only `-as` applies to it
   - `o`: ZX80 program file (the default for ZX80 code); none of the other options apply to it
 - `-as`: Autostart the exported code after loading it (on a `.p` file: the program runs itself once loaded)

@@ -871,6 +871,12 @@ easy to miss when adding a field: **anything placed directly beneath a field sit
 explanatory line that touches the box it explains reads as part of the control rather than as a note
 about it.
 
+**`DialogRow` lays its children out side by side**, so a field and its note given to it as two
+children end up next to each other, the note squeezing the field until its value is cut off. Wrap
+the pair in one column (`display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0`) and
+give the note its top margin there - the Create Disk File dialog's folder note
+(`CreateDiskDialog.module.scss`, `.fieldWithHint`).
+
 ## A `min-width` Is A Column, Not A Gap
 
 `.bpLabel` used one `min-width: 9ch` to do two jobs — line the keys up into a column, *and* keep the
@@ -1251,6 +1257,14 @@ list**, one row per part under its own `PanelHeader` with a count. Rules it sett
   (`repeat(auto-fill, minmax(30ch, 1fr))`), and the rows are `minmax(0, max-content)` and a list
   minimum of five strips, so both panes still scroll on their own. **A container query cannot
   restyle the container itself**: put the rule that must change on a child of it.
+  **A size container takes no width from its content**: in a flex row, an element with
+  `container-type: inline-size` and no width of its own collapses to 0 wide, and everything in it
+  vanishes without an error. A document panel that is its own root (not inside `GenericFilePanel`,
+  which sizes it) sets `width: 100%; flex: 1 1 auto` - the hard-disk explorer's `.wholeDocument`.
+- **A map of a large volume is groups, not units**: a disk with tens of thousands of clusters shows
+  a fixed number of chips (128), each the fraction of its clusters in use as the file hue's opacity,
+  and the selected file outlined on the chips that hold it; the volume's areas sit above as one
+  proportional bar with a `ch` minimum per area so the small ones stay readable.
 - **`ch` tracks resolve against each grid's own font size.** Column heads drawn at 12px over 14px
   rows put every `ch` column of the head out of line with the rows below it. The head keeps the
   rows' font size and shrinks only its text (`> span { font-size }`).
@@ -1267,6 +1281,21 @@ list**, one row per part under its own `PanelHeader` with a count. Rules it sett
   (`--accent-solid` filled, `--border-strong` empty), `role="img"` with "Level n of 2".
 - **The parts' views are icon buttons at the row's end** (`logs` for disassembly, `binary` for
   memory, the toolbar's pair), titled with the view's name; text buttons there cost the columns.
+- **An inspector that holds a hex dump is `62ch`, not `34ch`.** `StaticMemoryView` lays 16 bytes,
+  their characters and two offsets in one row, which a `34ch` column cuts off. The Disk Explorer's
+  inspector is `62ch` and stacks below `110ch`; where the list's own content is narrow (its Layout
+  view's sector grid), the list column is `max-content` and the inspector takes the rest.
+- **A map of a medium's units colours each unit by what it holds**, as the Disk Explorer's sector
+  chips do: `--accent-solid` for the user's data (a file), `--accent-secondary-solid` for the
+  structure that indexes it (the directory), `--text-tertiary` for system areas, a hollow
+  `--surface-raised` square with a `--border-default` edge for free space, and a dashed
+  `--border-subtle` outline for space never used. A unit with something to notice (an error, a weak
+  sector) gets a `--status-warning` edge, the selected one a `--focus-ring` outline, and the
+  selected file's units `--accent-solid-hover` with an `--accent-text` edge. A legend above the map
+  names the colours; the chip's tooltip names the unit and what it holds.
+- **A document that takes dropped files outlines itself** while files are over it (a dashed
+  `--accent-border` outline inset by its width), so the drop target is the whole document, not a
+  small zone.
 
 ## A Heading Inside Panel Content Is `SectionHeader`, Not `PanelHeader`
 

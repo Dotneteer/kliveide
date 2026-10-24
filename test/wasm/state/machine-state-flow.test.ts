@@ -250,10 +250,11 @@ describe("loading a state", () => {
     await emu.until(MachineControllerState.Paused);
     emu.media = { [MEDIA_DISK_A]: "/d/a.dsk" };
     const bytes = (await saveMachineStateFile(emu.ports, { kliveVersion: "0.62.1" })).bytes;
-    (emu.machine as any).wasmV2DiskPayloads[0] = { data: new Uint8Array(1), sectorLength: 512 };
+    // --- A disk attached to its file: the host holds its state (the model it uploaded)
+    (emu.machine as any).wasmV2DiskStates[0] = { disk: {}, structureRevision: 0 };
     const result = await loadMachineStateFile(emu.ports, "s.kls", bytes, "debug");
     await emu.until(MachineControllerState.Paused);
-    expect((emu.machine as any).wasmV2DiskPayloads.length).toBe(0);
+    expect((emu.machine as any).wasmV2DiskStates.length).toBe(0);
     expect(result.warnings.join()).toMatch(/Disk A .*detached/);
   });
 });

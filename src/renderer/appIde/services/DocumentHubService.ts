@@ -76,8 +76,10 @@ class DocumentHubService implements IDocumentHubService {
     if (!document || !document.path) return;
 
     try {
-      // Read the file content
-      const contents = await this.projectService.readFileContent(document.path);
+      // Read the file content (not for a document whose panel reads the file itself: a hard disk)
+      const contents = getFileTypeEntry(document.path, this.store)?.noContent
+        ? new Uint8Array(0)
+        : await this.projectService.readFileContent(document.path);
 
       // Update the document content
       document.contents = contents;

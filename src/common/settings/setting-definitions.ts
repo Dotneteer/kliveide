@@ -26,6 +26,7 @@ import {
   SETTING_IDE_COVERAGE_LINE_TINT,
   SETTING_IDE_PROFILER_INLAYS,
   SETTING_EMU_TRDOS_ROM,
+  SETTING_EMU_ESXDOS_ROM,
   SETTING_EMU_TC2048_ROM,
   SETTING_EMU_TC2068_ROM,
   SETTING_EMU_TS2068_ROM,
@@ -285,6 +286,17 @@ const settingDefinitions: Setting[] = [
       "by a separator. Edited in the Select Machine dialog; absent means the built-in defaults.",
     type: "array",
     defaultValue: undefined,
+    saveWithIde: true,
+    boundTo: "emu"
+  },
+  {
+    id: SETTING_EMU_ESXDOS_ROM,
+    title: "esxDOS ROM file",
+    description:
+      "The 8K esxDOS ROM the DivMMC interface boots on the 48K, the 128K and the +2A/+3. Klive cannot " +
+      "ship it, so the DivMMC works once you name your own copy.",
+    type: "string",
+    defaultValue: "",
     saveWithIde: true,
     boundTo: "emu"
   },

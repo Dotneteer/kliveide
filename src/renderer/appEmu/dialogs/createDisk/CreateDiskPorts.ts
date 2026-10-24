@@ -13,6 +13,8 @@ export type CreateDiskDialogResult = {
  */
 export type CreateDiskServicePort = {
   createDiskFile(folder: string, filename: string, diskType: string): Promise<string>;
+  /** Where a new disk goes unless the user says otherwise: the project's `disks` folder, or `Klive/Disks` */
+  defaultFolder(): Promise<string>;
   // --- The modal message box. Both the success confirmation and the failure
   // --- report go through it, so it is one call, not two ports.
   notify(type: "info" | "error", title: string, message: string): Promise<void>;

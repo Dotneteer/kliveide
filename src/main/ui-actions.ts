@@ -65,6 +65,7 @@ import {
   selectTrdosRomFile
 } from "./machine-menus/zx-specrum-menus";
 import { forgetTimexRom, selectTimexRom } from "./machine-menus/timex-menus";
+import { forgetEsxDosRom, selectEsxDosRomFile } from "./machine-menus/divmmc-menus";
 import { forgetScorpionRom, selectScorpionRomFile } from "./machine-menus/scorpion-menus";
 import { toggleWindowRecording } from "./recording/window-recording/windowRecordingController";
 import { focusEmuWindow, getAppWindows, isIdeWindowFocused, isIdeWindowVisible, showIdeWindow } from ".";
@@ -302,6 +303,12 @@ export async function runUiAction(actionId: UiActionId, value?: unknown): Promis
       return undefined;
     case "rom:trdos:forget":
       await forgetTrdosRom();
+      return undefined;
+    case "rom:esxdos:select":
+      await selectEsxDosRomFile(owner);
+      return undefined;
+    case "rom:esxdos:forget":
+      await forgetEsxDosRom();
       return undefined;
     case "rom:timex:select":
       await selectTimexRom(owner);

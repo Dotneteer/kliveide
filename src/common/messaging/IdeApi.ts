@@ -137,6 +137,15 @@ abstract class IdeApiImpl {
   }
 
   /**
+   * The machine wrote to a disk image file (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, D4): a Disk
+   * Explorer showing it reloads
+   * @param _filePath The image's absolute path
+   */
+  async diskImageChanged(_filePath: string): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * Gets the current project structure.
    */
   async getProjectStructure(): Promise<ProjectStructure> {

@@ -43,6 +43,17 @@ describe("CreateDiskModel — field edits", () => {
   });
 });
 
+describe("CreateDiskModel — default folder", () => {
+  it("fills an empty folder field", () => {
+    expect(reduce(aState(), { type: "defaultFolderResolved", folder: "/p/disks" }).folder).toBe("/p/disks");
+  });
+
+  it("never replaces a folder the user set", () => {
+    const state = aState({ folder: "/mine" });
+    expect(reduce(state, { type: "defaultFolderResolved", folder: "/p/disks" })).toBe(state);
+  });
+});
+
 describe("CreateDiskModel — environment", () => {
   it("adopts a different rule set", () => {
     const state = aState();

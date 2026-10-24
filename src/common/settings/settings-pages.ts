@@ -51,6 +51,7 @@ import {
   MI_Z88,
   MI_ZXNEXT
 } from "@common/machines/constants";
+import { isDivMmcMachine } from "@common/machines/divMmc";
 import { getTimexModel, type TimexModelId } from "@emu/machines/timex/timexModels";
 import { createSettingsReader } from "@common/utils/SettingsReader";
 import { BORIEL_INSTALL_FOLDER } from "@main/boriel-integration/boriel-config";
@@ -102,6 +103,7 @@ import {
   SETTING_EMU_TC2048_ROM,
   SETTING_EMU_TC2068_ROM,
   SETTING_EMU_TRDOS_ROM,
+  SETTING_EMU_ESXDOS_ROM,
   SETTING_EMU_TS2068_ROM,
   SETTING_EMU_ZOOM_STEP,
   SETTING_IDE_BP_GROUP_BY_KIND,
@@ -184,6 +186,8 @@ export type SettingsRowCondition =
   | { kind: "machine"; machineIds: string[] }
   /** The Pentagon's and the Scorpion's Beta 128 */
   | { kind: "beta128" }
+  /** A machine that can have a DivMMC: the 48K, the 128K (not the Pentagon), the +2A/+3/+2E/+3E */
+  | { kind: "divMmc" }
   | { kind: "kliveProject" }
   /** The advanced-debugging feature switch is on (`@common/features/advancedDebugging`) */
   | { kind: "advancedDebugging" }
@@ -874,6 +878,20 @@ export const SETTINGS_ROWS: SettingsRow[] = [
     replaces: "Machine › TR-DOS ROM"
   },
   {
+    id: "esxDosRom",
+    page: "machine",
+    groupKey: "settings.group.rom",
+    titleKey: "settings.machine.esxDosRom.title",
+    descriptionKey: "settings.machine.esxDosRom.description",
+    editor: "file",
+    source: setting(SETTING_EMU_ESXDOS_ROM),
+    buttons: [
+      { labelKey: "settings.button.browse", action: "rom:esxdos:select" },
+      { labelKey: "settings.button.forget", action: "rom:esxdos:forget", needsValue: true }
+    ],
+    when: { kind: "divMmc" }
+  },
+  {
     id: "scorpionRom",
     page: "machine",
     groupKey: "settings.group.rom",
@@ -1312,6 +1330,8 @@ export function isSettingsRowApplicable(row: SettingsRow, appState: AppState | u
       const model = machine?.models?.find((m) => m.modelId === appState?.emulatorState?.modelId);
       return (model?.config?.[MC_DISK_SUPPORT] ?? 0) > 0;
     }
+    case "divMmc":
+      return isDivMmcMachine(machineId, appState?.emulatorState?.modelId, appState?.emulatorState?.config);
     case "kliveProject":
       return !!appState?.project?.isKliveProject;
     case "advancedDebugging":

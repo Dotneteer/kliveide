@@ -44,6 +44,7 @@ it("prints through the ROM", async () => {
 | | `typeKeys(chords, { hold, gap })` | Types as a user does: each chord (keys pressed together) held `hold` frames (3), then released `gap` frames (3), short of the ROM's auto-repeat. The ROM or a program must be reading the keyboard. |
 | | `typeFlowKeys(flow, { hold, gap })` | Types a code-injection flow's `QueueKey` steps (for example `sp48TapeLoadFlow()`), so a test checks the keys the IDE queues. |
 | Tape | `insertTape(blocks, { fastLoad })` | Puts `TapeDataBlock`s in the deck (`MEDIA_TAPE`), fast load on by default; the ROM's LOAD reads them. |
+| DivMMC | `connectDivMmc(rom, sdCard?)` | Connects the DivMMC with an 8K ROM and resets; `sdCard` (`HarnessSdCard`: `sectorCount`, `readSector`, `writeSector`) is answered whenever the card waits for a sector, so `runFrames` and `runTo` go on as in the IDE. Without it the slot is empty. |
 | Memory | `peek`, `peekWord`, `poke`, `pokeWord` | Through the machine's memory API. |
 | Snapshot | `loadSnapshot(name, bytes)` | Parses a `.sna`/`.z80`/`.szx` file (its extension picks the format) and loads it with `loadSnapshotState`, as the emulator does; returns the frame tact. |
 | | `captureSnapshot()` | Reads the machine's state as a snapshot model with `captureSnapshotState`, without changing it. |

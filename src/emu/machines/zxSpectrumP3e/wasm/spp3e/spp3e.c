@@ -13,9 +13,22 @@
 #define SPP3E_DEFAULT_SAMPLE_RATE 44100u
 #define SPP3E_BASE_CLOCK_FREQUENCY 3546900u
 #define SPP3E_DISK_DRIVE_COUNT 2u
-#define SPP3E_DISK_DATA_CAPACITY 0x80000u
+/*
+ * The floppy drives (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, A3). A disk lives in the core as
+ * a per-track sector table over a data area, uploaded by the host from the DSK file: every sector
+ * keeps its own ID (C, H, R, N), the status bytes the dump recorded (ST1, ST2), its stored length
+ * and, for a weak sector, the number of stored copies. The data area holds 1 MB per drive (an
+ * 80-track, double-sided 720K disk with room to reformat it); the change area is a bitmap with one
+ * bit per sector-table entry that the host turns into write-back changes.
+ */
+#define SPP3E_DISK_DATA_CAPACITY 0x100000u
 #define SPP3E_DISK_CHANGE_CAPACITY 0x1000u
 #define SPP3E_DISK_DEFAULT_MAX_CYLINDERS 42u
+#define SPP3E_DISK_LONG_DRIVE_CYLINDERS 84u
+#define SPP3E_DISK_MAX_CYLINDERS 102u
+#define SPP3E_DISK_TRACK_ENTRIES (SPP3E_DISK_MAX_CYLINDERS * 2u)
+#define SPP3E_DISK_SECTOR_CAPACITY 8192u
+#define SPP3E_DISK_MAX_SECTORS_PER_TRACK 255u
 #define SPP3E_FDC_PHASE_COMMAND 0u
 #define SPP3E_FDC_PHASE_EXECUTION 1u
 #define SPP3E_FDC_PHASE_RESULT 2u
@@ -40,13 +53,25 @@
 #define SPP3E_FDC_CMD_SENSE_DRIVE 8u
 #define SPP3E_FDC_CMD_SEEK 9u
 #define SPP3E_FDC_CMD_INVALID 10u
+#define SPP3E_FDC_CMD_READ_TRACK 11u
 #define SPP3E_FDC_INT_NONE 0u
 #define SPP3E_FDC_INT_SEEK 4u
 #define SPP3E_FDC_SR0_SE 0x20u
 #define SPP3E_FDC_SR0_AT 0x40u
 #define SPP3E_FDC_SR0_IC 0x80u
+#define SPP3E_FDC_SR0_NR 0x08u
+#define SPP3E_FDC_SR1_MA 0x01u
 #define SPP3E_FDC_SR1_NW 0x02u
 #define SPP3E_FDC_SR1_ND 0x04u
+#define SPP3E_FDC_SR1_DE 0x20u
+#define SPP3E_FDC_SR1_EN 0x80u
+#define SPP3E_FDC_SR2_MD 0x01u
+#define SPP3E_FDC_SR2_BC 0x02u
+#define SPP3E_FDC_SR2_SN 0x04u
+#define SPP3E_FDC_SR2_SH 0x08u
+#define SPP3E_FDC_SR2_WC 0x10u
+#define SPP3E_FDC_SR2_DD 0x20u
+#define SPP3E_FDC_SR2_CM 0x40u
 #define SPP3E_TAPE_MAX_BLOCKS 512u
 #define SPP3E_TAPE_DATA_CAPACITY 0x400000u
 #define SPP3E_TAPE_FILENAME_CAPACITY 260u
@@ -169,12 +194,42 @@ typedef struct Spp3eDiskDrive {
   uint8_t currentCylinder;
   uint8_t maxCylinders;
   uint8_t headLoaded;
-  uint8_t sectorsPerTrack;
-  uint8_t firstSectorId;
-  uint16_t sectorLength;
+  uint8_t imageCylinders;
+  uint8_t imageSides;
+  uint16_t rotation;
+  uint16_t sectorsUsed;
+  uint8_t weakCounter;
   uint32_t diskLength;
   uint32_t revision;
+  uint32_t structureRevision;
 } Spp3eDiskDrive;
+
+/* One track of a disk: its sectors are table entries `firstSector` .. `firstSector + sectorCount - 1`,
+ * in physical order, their data back to back in the data area */
+typedef struct Spp3eDiskTrack {
+  uint16_t firstSector;
+  uint8_t sectorCount;
+  uint8_t formatted;
+  uint8_t gap3;
+  uint8_t filler;
+  uint8_t sizeCode;
+  uint8_t reserved;
+} Spp3eDiskTrack;
+
+/* One sector: its ID, the dump's status bytes, and `copies` stored copies of `length` bytes each */
+typedef struct Spp3eDiskSector {
+  uint8_t c;
+  uint8_t h;
+  uint8_t r;
+  uint8_t n;
+  uint8_t st1;
+  uint8_t st2;
+  uint8_t copies;
+  uint8_t reserved;
+  uint32_t offset;
+  uint16_t length;
+  uint16_t reserved2;
+} Spp3eDiskSector;
 
 static uint8_t spp3eMemory[SPP3E_MEMORY_SIZE];
 static uint8_t spp3eRam[SPP3E_RAM_SIZE];
@@ -185,6 +240,8 @@ static uint8_t spp3eKeyboardLines[SPP3E_KEYBOARD_LINE_COUNT];
 static uint8_t spp3eKeyboardSelectedLineValue[256];
 static uint8_t spp3eDiskData[SPP3E_DISK_DRIVE_COUNT][SPP3E_DISK_DATA_CAPACITY];
 static uint8_t spp3eDiskChanges[SPP3E_DISK_DRIVE_COUNT][SPP3E_DISK_CHANGE_CAPACITY];
+static Spp3eDiskTrack spp3eDiskTracks[SPP3E_DISK_DRIVE_COUNT][SPP3E_DISK_TRACK_ENTRIES];
+static Spp3eDiskSector spp3eDiskSectors[SPP3E_DISK_DRIVE_COUNT][SPP3E_DISK_SECTOR_CAPACITY];
 static uint8_t spp3eTapeData[SPP3E_TAPE_DATA_CAPACITY];
 static uint8_t spp3eTapeFileName[SPP3E_TAPE_FILENAME_CAPACITY];
 static uint8_t spp3eTapeSaveData[SPP3E_TAPE_SAVE_DATA_CAPACITY];
@@ -339,6 +396,20 @@ static uint32_t spp3eFdcTransferLength;
 static uint32_t spp3eFdcDirtyOffset;
 static uint32_t spp3eFdcDirtyLength;
 static uint32_t spp3eFdcDirtyRevision;
+/* The running read/write: the sector being transferred, and what the command asked for */
+static int32_t spp3eFdcSector = -1;
+static uint32_t spp3eFdcSectorStored;
+static uint8_t spp3eFdcEndSector;
+static uint8_t spp3eFdcMultiTrack;
+static uint8_t spp3eFdcSkip;
+static uint8_t spp3eFdcDeletedMark;
+static uint8_t spp3eFdcScanType;
+static uint8_t spp3eFdcScanEqual;
+static uint8_t spp3eFdcScanNotMet;
+static uint8_t spp3eFdcPendingSr1;
+static uint8_t spp3eFdcPendingSr2;
+static uint8_t spp3eFdcStopAfterSector;
+static uint8_t spp3eFdcFormatIds[SPP3E_DISK_MAX_SECTORS_PER_TRACK * 4u];
 
 uint32_t spp3eExecuteInstruction(void);
 void spp3eRenderInstantScreen(void);
@@ -348,9 +419,8 @@ static uint8_t spp3eDiskUploadActive;
 static uint8_t spp3eDiskUploadWriteProtected;
 static uint8_t spp3eDiskUploadTracks;
 static uint8_t spp3eDiskUploadSides;
-static uint8_t spp3eDiskUploadSectorsPerTrack;
-static uint8_t spp3eDiskUploadFirstSectorId;
-static uint16_t spp3eDiskUploadSectorLength;
+static int32_t spp3eDiskUploadTrackEntry = -1;
+static uint16_t spp3eDiskUploadSectors;
 static uint8_t spp3eLastContendedValue = 0xffu;
 static uint8_t spp3eLastUlaReadValue = 0xffu;
 static uint32_t spp3eAttrColors[2][256][2];
@@ -372,6 +442,17 @@ static const Spp3eScreenConfig spp3eUlaConfig = {
   8u, 7u, 48u, 48u, 8u, 192u, 24u, 24u, 128u, 40u, 12u, 2u, 1u,
   {0u, 7u, 6u, 5u, 4u, 3u, 2u, 1u}, 5u
 };
+
+/*
+ * The DivMMC (`zx-spectrum-divmmc-classic.c`; .plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md C4): the host
+ * connects it (`spp3eDivMmcSetPresent`). Its ROM-3 entry points need the 48K BASIC ROM (ROM 3) paged in.
+ */
+static void spp3eDivMmcRemapped(void);
+#define ZXDC_PREFIX spp3e
+#define ZXDC_ROM3_PRESENT() (spp3eInSpecialPagingMode == 0u && spp3eSelectedRom == 3u)
+#define ZXDC_TACTS spp3eTacts
+#define ZXDC_REMAPPED() spp3eDivMmcRemapped()
+#include "../../../zxSpectrum/wasm/common/zx-spectrum-divmmc-classic.c"
 
 static uint32_t spp3eRamBankOffset(uint32_t bank) {
   return (bank & 0x07u) * 0x4000u;
@@ -442,12 +523,26 @@ static void spp3eApplyNormalMemoryConfig(void) {
   spp3eSetRamSlot(3u, spp3eSelectedBank);
 }
 
+/* The DivMMC's ROM-area view while it is mapped (`zxdcView` in zx-spectrum-divmmc-classic.c) */
+#define SPP3E_PARTITION_DIVMMC (-5)
+
 static void spp3eRebuildMemorySlotMap(void) {
   if (spp3eInSpecialPagingMode != 0u) {
     spp3eApplySpecialMemoryConfig();
   } else {
     spp3eApplyNormalMemoryConfig();
   }
+  if (zxdcMapped != 0u) {
+    spp3eMemorySlotBase[0] = zxdcView;
+    spp3eMemorySlotWritable[0] = 0u;
+    spp3eMemorySlotPartition[0] = SPP3E_PARTITION_DIVMMC;
+  }
+}
+
+/* The DivMMC mapped in or out, or its banks changed */
+static void spp3eDivMmcRemapped(void) {
+  spp3eRebuildMemorySlotMap();
+  for (uint32_t offset = 0u; offset < 0x4000u; offset++) spp3eMemory[offset] = spp3eMemorySlotBase[0][offset];
 }
 
 static void spp3eRebuildFlatMemory(void) {
@@ -793,6 +888,10 @@ void spp3eWritePort(uint32_t address, uint32_t value);
 #undef SP48_AUDIO_TRANSITION_CAPACITY
 #undef SP48_DEFAULT_SAMPLE_RATE
 
+/* The DivMMC's entry points, its delayed mapping and RETN */
+#define Z80_BEFORE_OPCODE_FETCH() ZXDC_BEFORE_OPCODE_FETCH(cpu.pc)
+#define Z80_AFTER_OPCODE_FETCH() ZXDC_AFTER_OPCODE_FETCH()
+#define Z80_AFTER_RETN() ZXDC_AFTER_RETN(cpu.opCode)
 #define Z80_EXTERNAL_BUS 1
 #define Z80_MEMORY_PTR() spp3eMemory
 #define Z80_READ_MEMORY(address) spp3eCpuReadMemory((uint32_t)(address))
@@ -1271,13 +1370,18 @@ static void spp3eDiskResetDrive(uint32_t driveIndex) {
   drive->currentCylinder = 0u;
   drive->maxCylinders = SPP3E_DISK_DEFAULT_MAX_CYLINDERS;
   drive->headLoaded = 0u;
-  drive->sectorsPerTrack = 32u;
-  drive->firstSectorId = 1u;
-  drive->sectorLength = 0u;
+  drive->imageCylinders = 0u;
+  drive->imageSides = 1u;
+  drive->rotation = 0u;
+  drive->sectorsUsed = 0u;
+  drive->weakCounter = 0u;
   drive->diskLength = 0u;
   drive->revision = 0u;
+  drive->structureRevision = 0u;
   spp3eClearBytes(spp3eDiskData[driveIndex], SPP3E_DISK_DATA_CAPACITY);
   spp3eClearBytes(spp3eDiskChanges[driveIndex], SPP3E_DISK_CHANGE_CAPACITY);
+  spp3eClearBytes((uint8_t *)spp3eDiskTracks[driveIndex], (uint32_t)sizeof(spp3eDiskTracks[driveIndex]));
+  spp3eClearBytes((uint8_t *)spp3eDiskSectors[driveIndex], (uint32_t)sizeof(spp3eDiskSectors[driveIndex]));
 }
 
 static uint8_t spp3eNormalizeEnabledDriveCount(uint32_t count) {
@@ -1322,6 +1426,10 @@ static void spp3eFdcIdentifyCommand(uint32_t value) {
   spp3eFdcCommandResultLength = 1u;
   if ((command & 0x1fu) == 0x06u || (command & 0x1fu) == 0x0cu) {
     spp3eFdcCommandId = SPP3E_FDC_CMD_READ_DATA;
+    spp3eFdcCommandLength = 8u;
+    spp3eFdcCommandResultLength = 7u;
+  } else if ((command & 0x9fu) == 0x02u) {
+    spp3eFdcCommandId = SPP3E_FDC_CMD_READ_TRACK;
     spp3eFdcCommandLength = 8u;
     spp3eFdcCommandResultLength = 7u;
   } else if (command == 0x07u) {
@@ -1393,26 +1501,64 @@ static void spp3eFdcSelectFromHdUs(uint32_t value) {
   spp3eFdcUpdateSr3();
 }
 
-static uint32_t spp3eFdcSectorByteOffset(void) {
-  const Spp3eDiskDrive *drive = spp3eGetDiskDrive(spp3eFdcCurrentDrive);
-  const uint32_t cylinder = spp3eFdcDataRegister[1];
-  const uint32_t head = spp3eFdcDataRegister[2] & 0x01u;
-  const uint32_t sectorId = spp3eFdcDataRegister[3];
-  const uint32_t lengthCode = spp3eFdcDataRegister[4] & 0x07u;
-  const uint32_t sectorLength = drive->sectorLength != 0u ? drive->sectorLength : 128u << lengthCode;
-  const uint32_t sideCount = drive->hasTwoHeads != 0u ? 2u : 1u;
-  const uint32_t firstSectorId = drive->firstSectorId;
-  const uint32_t sectorsPerTrack = drive->sectorsPerTrack == 0u ? 32u : drive->sectorsPerTrack;
-  if (head >= sideCount || sectorId < firstSectorId || sectorId >= firstSectorId + sectorsPerTrack) {
-    return SPP3E_DISK_DATA_CAPACITY;
+/* ---------------------------------------------------------------------------------------------
+ * The uPD765A's read, write, format and scan commands, over the per-track sector table
+ * (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, A3). Written from the NEC uPD765 data sheet
+ * (`_input/765.pdf`):
+ *
+ * - A sector is found by comparing its ID field with the command's C, H, R and N, on the track
+ *   under the selected head, starting where the disk has rotated to. No match in a revolution:
+ *   No Data (ST1 ND), with Wrong Cylinder (ST2 WC) - and Bad Cylinder (BC) for C = FF - when a
+ *   sector with that R had another C. A track without IDs: Missing Address Mark (ST1 MA).
+ * - Read/write run from R to the end-of-track sector (EOT), one sector after another; with MT the
+ *   run continues on side 1. The +3 does not wire the controller's TC input, so a run always ends
+ *   past EOT, with an abnormal termination and End of Cylinder (ST0 IC = 01, ST1 EN), which +3DOS
+ *   expects.
+ * - A sector whose data mark is not the one the command reads (a deleted mark for READ DATA, a
+ *   normal one for READ DELETED DATA) sets Control Mark (ST2 CM): with SK it is skipped, without SK
+ *   it is read and the command ends after it.
+ * - A sector the dump read with a data CRC error (ST1 DE + ST2 DD) is transferred and ends the
+ *   command with those bits; one without a data field (ST2 MD) ends it with MA + MD.
+ * - N = 0 transfers DTL bytes; otherwise 128 << N.
+ * --------------------------------------------------------------------------------------------- */
+
+static Spp3eDiskTrack *spp3eDiskTrackAt(uint32_t driveIndex, uint32_t cylinder, uint32_t head) {
+  if (driveIndex >= SPP3E_DISK_DRIVE_COUNT || cylinder >= SPP3E_DISK_MAX_CYLINDERS || head > 1u) {
+    return 0;
   }
-  const uint32_t sector = sectorId - firstSectorId;
-  return (((cylinder * sideCount) + head) * sectorsPerTrack + sector) * sectorLength;
+  return &spp3eDiskTracks[driveIndex][cylinder * 2u + head];
 }
 
-static uint32_t spp3eFdcSectorLength(void) {
-  const uint32_t lengthCode = spp3eFdcDataRegister[4] & 0x07u;
-  return 128u << lengthCode;
+/* The formatted track under the current drive's head, or 0 */
+static Spp3eDiskTrack *spp3eFdcCurrentTrack(void) {
+  const Spp3eDiskDrive *drive = spp3eGetDiskDrive(spp3eFdcCurrentDrive);
+  if (drive->hasDiskLoaded == 0u) {
+    return 0;
+  }
+  Spp3eDiskTrack *track = spp3eDiskTrackAt(spp3eFdcCurrentDrive, drive->currentCylinder, drive->currentHead);
+  return track != 0 && track->formatted != 0u && track->sectorCount > 0u ? track : 0;
+}
+
+static Spp3eDiskSector *spp3eDiskSectorAt(uint32_t driveIndex, int32_t index) {
+  if (driveIndex >= SPP3E_DISK_DRIVE_COUNT || index < 0 || (uint32_t)index >= SPP3E_DISK_SECTOR_CAPACITY) {
+    return 0;
+  }
+  return &spp3eDiskSectors[driveIndex][index];
+}
+
+static uint32_t spp3eFdcHeadAddress(void) {
+  const Spp3eDiskDrive *drive = spp3eGetDiskDrive(spp3eFdcCurrentDrive);
+  return (uint32_t)((drive->currentHead & 0x01u) << 2u) | (spp3eFdcCurrentDrive & 0x03u);
+}
+
+/* The bytes one sector transfer moves: 128 << N, or DTL when N = 0 */
+static uint32_t spp3eFdcTransferSize(void) {
+  const uint32_t n = spp3eFdcDataRegister[4];
+  if (n == 0u) {
+    const uint32_t dtl = spp3eFdcDataRegister[7];
+    return dtl == 0u || dtl > 128u ? 128u : dtl;
+  }
+  return 128u << (n > 7u ? 7u : n);
 }
 
 static void spp3eFdcBuildRwResult(uint8_t sr0, uint8_t sr1, uint8_t sr2) {
@@ -1428,34 +1574,371 @@ static void spp3eFdcBuildRwResult(uint8_t sr0, uint8_t sr1, uint8_t sr2) {
   spp3eFdcSr2 = sr2;
 }
 
-static void spp3eFdcJournalDirtyRange(uint32_t drive, uint32_t offset, uint32_t length) {
-  if (drive >= SPP3E_DISK_DRIVE_COUNT) {
+/* Ends a read/write/scan/format command with its result phase */
+static void spp3eFdcFinishRw(uint8_t ic, uint8_t sr1, uint8_t sr2) {
+  spp3eFdcSector = -1;
+  spp3eFdcBuildRwResult((uint8_t)(ic | spp3eFdcHeadAddress()), sr1, sr2);
+  spp3eFdcCompleteCommand();
+}
+
+/* Notes a sector the guest wrote, for the host's write-back (one bit per table entry) */
+static void spp3eDiskMarkDirty(uint32_t driveIndex, int32_t index) {
+  if (driveIndex >= SPP3E_DISK_DRIVE_COUNT || index < 0 || (uint32_t)index >= SPP3E_DISK_CHANGE_CAPACITY * 8u) {
     return;
   }
-  spp3eFdcDirtyDrive = (uint8_t)drive;
-  spp3eFdcDirtyOffset = offset;
-  spp3eFdcDirtyLength = length;
+  spp3eDiskChanges[driveIndex][(uint32_t)index >> 3u] |= (uint8_t)(1u << ((uint32_t)index & 7u));
+  spp3eFdcDirtyDrive = (uint8_t)driveIndex;
   spp3eFdcDirtyRevision++;
-  uint32_t entryOffset = SPP3E_DISK_CHANGE_CAPACITY - 8u;
-  for (uint32_t candidate = 0u; candidate + 8u <= SPP3E_DISK_CHANGE_CAPACITY; candidate += 8u) {
-    const uint32_t entryLength =
-      (uint32_t)spp3eDiskChanges[drive][candidate + 4u] |
-      ((uint32_t)spp3eDiskChanges[drive][candidate + 5u] << 8u) |
-      ((uint32_t)spp3eDiskChanges[drive][candidate + 6u] << 16u) |
-      ((uint32_t)spp3eDiskChanges[drive][candidate + 7u] << 24u);
-    if (entryLength == 0u) {
-      entryOffset = candidate;
-      break;
+  spp3eGetDiskDrive(driveIndex)->revision++;
+}
+
+/* The disk's layout changed (a format, a data mark rewritten): the host republishes the image */
+static void spp3eDiskMarkStructureChanged(uint32_t driveIndex) {
+  Spp3eDiskDrive *drive = spp3eGetDiskDrive(driveIndex);
+  drive->structureRevision++;
+  drive->revision++;
+  spp3eFdcDirtyDrive = (uint8_t)driveIndex;
+  spp3eFdcDirtyRevision++;
+}
+
+/*
+ * Finds the sector the command's C, H, R, N name on the current track.
+ * @returns its table index, or -1 with the error bits set
+ */
+static int32_t spp3eFdcFindSector(uint8_t *sr1, uint8_t *sr2) {
+  Spp3eDiskDrive *drive = spp3eGetDiskDrive(spp3eFdcCurrentDrive);
+  const Spp3eDiskTrack *track = spp3eFdcCurrentTrack();
+  if (track == 0) {
+    *sr1 = SPP3E_FDC_SR1_MA;
+    *sr2 = 0u;
+    return -1;
+  }
+  const uint8_t c = spp3eFdcDataRegister[1];
+  const uint8_t h = spp3eFdcDataRegister[2];
+  const uint8_t r = spp3eFdcDataRegister[3];
+  const uint8_t n = spp3eFdcDataRegister[4];
+  uint8_t wrongCylinder = 0u;
+  uint8_t badCylinder = 0u;
+  for (uint32_t k = 0u; k < track->sectorCount; k++) {
+    const uint32_t position = (drive->rotation + k) % track->sectorCount;
+    const int32_t index = (int32_t)(track->firstSector + position);
+    const Spp3eDiskSector *sector = &spp3eDiskSectors[spp3eFdcCurrentDrive][index];
+    if (sector->c == c && sector->h == h && sector->r == r && sector->n == n) {
+      drive->rotation = (uint16_t)((position + 1u) % track->sectorCount);
+      return index;
+    }
+    if (sector->r == r && sector->c != c) {
+      wrongCylinder = 1u;
+      if (sector->c == 0xffu) {
+        badCylinder = 1u;
+      }
     }
   }
-  spp3eDiskChanges[drive][entryOffset] = (uint8_t)(offset & 0xffu);
-  spp3eDiskChanges[drive][entryOffset + 1u] = (uint8_t)((offset >> 8u) & 0xffu);
-  spp3eDiskChanges[drive][entryOffset + 2u] = (uint8_t)((offset >> 16u) & 0xffu);
-  spp3eDiskChanges[drive][entryOffset + 3u] = (uint8_t)((offset >> 24u) & 0xffu);
-  spp3eDiskChanges[drive][entryOffset + 4u] = (uint8_t)(length & 0xffu);
-  spp3eDiskChanges[drive][entryOffset + 5u] = (uint8_t)((length >> 8u) & 0xffu);
-  spp3eDiskChanges[drive][entryOffset + 6u] = (uint8_t)((length >> 16u) & 0xffu);
-  spp3eDiskChanges[drive][entryOffset + 7u] = (uint8_t)((length >> 24u) & 0xffu);
+  *sr1 = SPP3E_FDC_SR1_ND;
+  *sr2 = (uint8_t)((wrongCylinder != 0u ? SPP3E_FDC_SR2_WC : 0u) | (badCylinder != 0u ? SPP3E_FDC_SR2_BC : 0u));
+  return -1;
+}
+
+/* Where the next transfer of a sector comes from: a weak sector gives a different copy each read */
+static uint32_t spp3eFdcCopyOffset(const Spp3eDiskSector *sector, uint8_t forRead) {
+  if (forRead == 0u || sector->copies <= 1u) {
+    return sector->offset;
+  }
+  Spp3eDiskDrive *drive = spp3eGetDiskDrive(spp3eFdcCurrentDrive);
+  const uint32_t copy = drive->weakCounter % sector->copies;
+  drive->weakCounter++;
+  return sector->offset + copy * sector->length;
+}
+
+static uint8_t spp3eFdcIsReadDeleted(void) {
+  return (spp3eFdcCommandRegister & 0x1fu) == 0x0cu ? 1u : 0u;
+}
+
+static uint8_t spp3eFdcIsWriteDeleted(void) {
+  return (spp3eFdcCommandRegister & 0x3fu) == 0x09u ? 1u : 0u;
+}
+
+/*
+ * Moves to the next sector of a run: R + 1, or past EOT the end of the run (on to side 1 with MT).
+ * @returns 1 when the run goes on
+ */
+static uint8_t spp3eFdcAdvanceRecord(void) {
+  if (spp3eFdcDataRegister[3] != spp3eFdcEndSector) {
+    spp3eFdcDataRegister[3]++;
+    return 1u;
+  }
+  Spp3eDiskDrive *drive = spp3eGetDiskDrive(spp3eFdcCurrentDrive);
+  if (spp3eFdcMultiTrack != 0u && drive->currentHead == 0u && drive->hasTwoHeads != 0u) {
+    drive->currentHead = 1u;
+    spp3eFdcDataRegister[0] |= 0x04u;
+    spp3eFdcDataRegister[2] ^= 0x01u;
+    spp3eFdcDataRegister[3] = 1u;
+    return 1u;
+  }
+  /* Past EOT: the result names the next cylinder's first sector */
+  if (spp3eFdcMultiTrack != 0u && drive->currentHead != 0u) {
+    spp3eFdcDataRegister[2] ^= 0x01u;
+  }
+  spp3eFdcDataRegister[1]++;
+  spp3eFdcDataRegister[3] = 1u;
+  return 0u;
+}
+
+/* Starts the transfer of the next sector of a read, write or scan run (or ends the command) */
+static void spp3eFdcStartSector(void) {
+  const uint8_t forWrite = spp3eFdcCommandId == SPP3E_FDC_CMD_WRITE_DATA ? 1u : 0u;
+  for (;;) {
+    uint8_t sr1 = 0u;
+    uint8_t sr2 = 0u;
+    const int32_t index = spp3eFdcFindSector(&sr1, &sr2);
+    if (index < 0) {
+      spp3eFdcFinishRw(SPP3E_FDC_SR0_AT, (uint8_t)(sr1 | spp3eFdcPendingSr1), (uint8_t)(sr2 | spp3eFdcPendingSr2));
+      return;
+    }
+    const Spp3eDiskSector *sector = &spp3eDiskSectors[spp3eFdcCurrentDrive][index];
+    if (forWrite == 0u) {
+      /* No data field: the ID is there, the data mark is not */
+      if ((sector->st2 & SPP3E_FDC_SR2_MD) != 0u) {
+        spp3eFdcFinishRw(SPP3E_FDC_SR0_AT, SPP3E_FDC_SR1_MA, SPP3E_FDC_SR2_MD);
+        return;
+      }
+      const uint8_t deleted = (sector->st2 & SPP3E_FDC_SR2_CM) != 0u ? 1u : 0u;
+      if (deleted != spp3eFdcIsReadDeleted() && spp3eFdcCommandId == SPP3E_FDC_CMD_READ_DATA) {
+        spp3eFdcPendingSr2 |= SPP3E_FDC_SR2_CM;
+        if (spp3eFdcSkip != 0u) {
+          if (spp3eFdcAdvanceRecord() == 0u) {
+            spp3eFdcFinishRw(SPP3E_FDC_SR0_AT, (uint8_t)(SPP3E_FDC_SR1_EN | spp3eFdcPendingSr1), spp3eFdcPendingSr2);
+            return;
+          }
+          continue;
+        }
+        spp3eFdcStopAfterSector = 1u;
+      }
+    }
+    spp3eFdcSector = index;
+    spp3eFdcSectorOffset = 0u;
+    spp3eFdcTransferOffset = spp3eFdcCopyOffset(sector, forWrite == 0u ? 1u : 0u);
+    spp3eFdcSectorStored = sector->length;
+    spp3eFdcTransferLength = spp3eFdcTransferSize();
+    spp3eFdcMsr = (uint8_t)(SPP3E_FDC_MSR_RQM | SPP3E_FDC_MSR_CB | SPP3E_FDC_MSR_EXM |
+      (forWrite == 0u && spp3eFdcCommandId != SPP3E_FDC_CMD_SCAN ? SPP3E_FDC_MSR_DIO : 0u));
+    return;
+  }
+}
+
+/* A sector's last byte went across: end the command or go on with the next sector */
+static void spp3eFdcSectorDone(void) {
+  const Spp3eDiskSector *sector = spp3eDiskSectorAt(spp3eFdcCurrentDrive, spp3eFdcSector);
+  if (spp3eFdcCommandId == SPP3E_FDC_CMD_WRITE_DATA && sector != 0) {
+    Spp3eDiskSector *written = &spp3eDiskSectors[spp3eFdcCurrentDrive][spp3eFdcSector];
+    /* Every stored copy gets the new data: a rewritten sector reads the same each time */
+    for (uint32_t copy = 1u; copy < written->copies; copy++) {
+      for (uint32_t i = 0u; i < written->length; i++) {
+        spp3eDiskData[spp3eFdcCurrentDrive][written->offset + copy * written->length + i] =
+          spp3eDiskData[spp3eFdcCurrentDrive][written->offset + i];
+      }
+    }
+    /* A new data mark and a good CRC: the status bytes the dump recorded no longer apply */
+    const uint8_t st2 = spp3eFdcIsWriteDeleted() != 0u ? SPP3E_FDC_SR2_CM : 0u;
+    if (written->st1 != 0u || written->st2 != st2) {
+      written->st1 = 0u;
+      written->st2 = st2;
+      spp3eDiskMarkStructureChanged(spp3eFdcCurrentDrive);
+    }
+    spp3eDiskMarkDirty(spp3eFdcCurrentDrive, spp3eFdcSector);
+  }
+  if (spp3eFdcCommandId != SPP3E_FDC_CMD_WRITE_DATA && sector != 0 &&
+      (sector->st1 & SPP3E_FDC_SR1_DE) != 0u && (sector->st2 & SPP3E_FDC_SR2_DD) != 0u) {
+    spp3eFdcFinishRw(SPP3E_FDC_SR0_AT, SPP3E_FDC_SR1_DE, (uint8_t)(SPP3E_FDC_SR2_DD | spp3eFdcPendingSr2));
+    return;
+  }
+  if (spp3eFdcCommandId == SPP3E_FDC_CMD_SCAN && spp3eFdcScanEqual != 0u) {
+    /* A scan stops at the first sector that meets its condition */
+    spp3eFdcFinishRw(0u, 0u, (uint8_t)(spp3eFdcScanNotMet != 0u ? SPP3E_FDC_SR2_SN : SPP3E_FDC_SR2_SH));
+    return;
+  }
+  if (spp3eFdcStopAfterSector != 0u) {
+    spp3eFdcAdvanceRecord();
+    spp3eFdcFinishRw(0u, spp3eFdcPendingSr1, spp3eFdcPendingSr2);
+    return;
+  }
+  if (spp3eFdcAdvanceRecord() == 0u) {
+    spp3eFdcFinishRw(SPP3E_FDC_SR0_AT, (uint8_t)(SPP3E_FDC_SR1_EN | spp3eFdcPendingSr1),
+      (uint8_t)(spp3eFdcPendingSr2 | (spp3eFdcCommandId == SPP3E_FDC_CMD_SCAN ? SPP3E_FDC_SR2_SN : 0u)));
+    return;
+  }
+  if (spp3eFdcCommandId == SPP3E_FDC_CMD_SCAN) {
+    spp3eFdcScanEqual = 0u;
+    spp3eFdcScanNotMet = 0u;
+  }
+  spp3eFdcStartSector();
+}
+
+/* READ TRACK: the sectors in physical order from the index hole, whatever their IDs */
+static void spp3eFdcStartTrackSector(void) {
+  const Spp3eDiskTrack *track = spp3eFdcCurrentTrack();
+  if (track == 0) {
+    spp3eFdcFinishRw(SPP3E_FDC_SR0_AT, SPP3E_FDC_SR1_MA, 0u);
+    return;
+  }
+  const uint32_t position = spp3eFdcSectorStored;
+  if (position >= track->sectorCount || position >= spp3eFdcEndSector) {
+    spp3eFdcFinishRw(SPP3E_FDC_SR0_AT, (uint8_t)(SPP3E_FDC_SR1_EN | spp3eFdcPendingSr1), spp3eFdcPendingSr2);
+    return;
+  }
+  const int32_t index = (int32_t)(track->firstSector + position);
+  const Spp3eDiskSector *sector = &spp3eDiskSectors[spp3eFdcCurrentDrive][index];
+  if (sector->c != spp3eFdcDataRegister[1] || sector->h != spp3eFdcDataRegister[2] ||
+      sector->r != spp3eFdcDataRegister[3] || sector->n != spp3eFdcDataRegister[4]) {
+    spp3eFdcPendingSr1 |= SPP3E_FDC_SR1_ND;
+  }
+  spp3eFdcSector = index;
+  spp3eFdcSectorOffset = 0u;
+  spp3eFdcTransferOffset = sector->offset;
+  spp3eFdcTransferLength = spp3eFdcTransferSize();
+  spp3eFdcMsr = SPP3E_FDC_MSR_RQM | SPP3E_FDC_MSR_DIO | SPP3E_FDC_MSR_CB | SPP3E_FDC_MSR_EXM;
+}
+
+/* The byte at a position of the running sector: past what the dump stored, the disk gives 0 */
+static uint8_t spp3eFdcSectorByte(uint32_t position) {
+  const Spp3eDiskSector *sector = spp3eDiskSectorAt(spp3eFdcCurrentDrive, spp3eFdcSector);
+  if (sector == 0 || position >= sector->length) {
+    return 0u;
+  }
+  return spp3eDiskData[spp3eFdcCurrentDrive][spp3eFdcTransferOffset + position];
+}
+
+/* Moves the live tracks down to the start of the data area and the sector table (a reformat
+ * leaves the replaced tracks' space behind) */
+static void spp3eDiskCompact(uint32_t driveIndex) {
+  Spp3eDiskDrive *drive = spp3eGetDiskDrive(driveIndex);
+  uint32_t dataCursor = 0u;
+  uint32_t sectorCursor = 0u;
+  uint32_t lastData = 0u;
+  uint8_t haveLast = 0u;
+  /* Tracks in the order of their data, so every move goes down */
+  for (;;) {
+    int32_t next = -1;
+    uint32_t nextOffset = 0u;
+    for (uint32_t t = 0u; t < SPP3E_DISK_TRACK_ENTRIES; t++) {
+      const Spp3eDiskTrack *track = &spp3eDiskTracks[driveIndex][t];
+      if (track->formatted == 0u || track->sectorCount == 0u) continue;
+      const uint32_t offset = spp3eDiskSectors[driveIndex][track->firstSector].offset;
+      if (haveLast != 0u && offset <= lastData) continue;
+      if (next < 0 || offset < nextOffset) {
+        next = (int32_t)t;
+        nextOffset = offset;
+      }
+    }
+    if (next < 0) break;
+    lastData = nextOffset;
+    haveLast = 1u;
+    Spp3eDiskTrack *track = &spp3eDiskTracks[driveIndex][next];
+    for (uint32_t i = 0u; i < track->sectorCount; i++) {
+      Spp3eDiskSector *sector = &spp3eDiskSectors[driveIndex][track->firstSector + i];
+      const uint32_t size = sector->length * (sector->copies == 0u ? 1u : sector->copies);
+      for (uint32_t b = 0u; b < size; b++) {
+        spp3eDiskData[driveIndex][dataCursor + b] = spp3eDiskData[driveIndex][sector->offset + b];
+      }
+      sector->offset = dataCursor;
+      dataCursor += size;
+    }
+  }
+  /* The sector table, in the order of the tracks' entries (a second pass by first entry) */
+  uint32_t lastFirst = 0u;
+  haveLast = 0u;
+  for (;;) {
+    int32_t next = -1;
+    uint32_t nextFirst = 0u;
+    for (uint32_t t = 0u; t < SPP3E_DISK_TRACK_ENTRIES; t++) {
+      const Spp3eDiskTrack *track = &spp3eDiskTracks[driveIndex][t];
+      if (track->formatted == 0u || track->sectorCount == 0u) continue;
+      if (haveLast != 0u && track->firstSector <= lastFirst) continue;
+      if (next < 0 || track->firstSector < nextFirst) {
+        next = (int32_t)t;
+        nextFirst = track->firstSector;
+      }
+    }
+    if (next < 0) break;
+    lastFirst = nextFirst;
+    haveLast = 1u;
+    Spp3eDiskTrack *track = &spp3eDiskTracks[driveIndex][next];
+    for (uint32_t i = 0u; i < track->sectorCount; i++) {
+      spp3eDiskSectors[driveIndex][sectorCursor + i] = spp3eDiskSectors[driveIndex][track->firstSector + i];
+    }
+    track->firstSector = (uint16_t)sectorCursor;
+    sectorCursor += track->sectorCount;
+  }
+  drive->diskLength = dataCursor;
+  drive->sectorsUsed = (uint16_t)sectorCursor;
+  /* Table indexes moved: the host takes the whole image (the structure change says so) */
+  spp3eClearBytes(spp3eDiskChanges[driveIndex], SPP3E_DISK_CHANGE_CAPACITY);
+}
+
+/* FORMAT A TRACK (WRITE ID): lays the received IDs down on the track under the head */
+static void spp3eFdcFormatTrack(void) {
+  Spp3eDiskDrive *drive = spp3eGetDiskDrive(spp3eFdcCurrentDrive);
+  const uint32_t count = spp3eFdcDataRegister[2];
+  const uint32_t n = spp3eFdcDataRegister[1] > 7u ? 7u : spp3eFdcDataRegister[1];
+  const uint32_t length = 128u << n;
+  const uint32_t needed = count * length;
+  Spp3eDiskTrack *track = spp3eDiskTrackAt(spp3eFdcCurrentDrive, drive->currentCylinder, drive->currentHead);
+  if (track == 0) {
+    spp3eFdcFinishRw(SPP3E_FDC_SR0_AT, SPP3E_FDC_SR1_ND, 0u);
+    return;
+  }
+  /* The replaced track's space is left behind; compact when the new one does not fit after it */
+  track->formatted = 0u;
+  track->sectorCount = 0u;
+  if (drive->diskLength + needed > SPP3E_DISK_DATA_CAPACITY ||
+      (uint32_t)drive->sectorsUsed + count > SPP3E_DISK_SECTOR_CAPACITY) {
+    spp3eDiskCompact(spp3eFdcCurrentDrive);
+  }
+  if (drive->diskLength + needed > SPP3E_DISK_DATA_CAPACITY ||
+      (uint32_t)drive->sectorsUsed + count > SPP3E_DISK_SECTOR_CAPACITY) {
+    spp3eDiskMarkStructureChanged(spp3eFdcCurrentDrive);
+    spp3eFdcFinishRw(SPP3E_FDC_SR0_AT, SPP3E_FDC_SR1_ND, 0u);
+    return;
+  }
+  track->firstSector = drive->sectorsUsed;
+  track->sectorCount = (uint8_t)count;
+  track->formatted = 1u;
+  track->sizeCode = (uint8_t)n;
+  track->gap3 = spp3eFdcDataRegister[3];
+  track->filler = spp3eFdcDataRegister[4];
+  for (uint32_t i = 0u; i < count; i++) {
+    Spp3eDiskSector *sector = &spp3eDiskSectors[spp3eFdcCurrentDrive][drive->sectorsUsed + i];
+    sector->c = spp3eFdcFormatIds[i * 4u];
+    sector->h = spp3eFdcFormatIds[i * 4u + 1u];
+    sector->r = spp3eFdcFormatIds[i * 4u + 2u];
+    sector->n = spp3eFdcFormatIds[i * 4u + 3u];
+    sector->st1 = 0u;
+    sector->st2 = 0u;
+    sector->copies = 1u;
+    sector->offset = drive->diskLength + i * length;
+    sector->length = (uint16_t)length;
+    for (uint32_t b = 0u; b < length; b++) {
+      spp3eDiskData[spp3eFdcCurrentDrive][sector->offset + b] = spp3eFdcDataRegister[4];
+    }
+  }
+  drive->sectorsUsed = (uint16_t)(drive->sectorsUsed + count);
+  drive->diskLength += needed;
+  drive->rotation = 0u;
+  if (drive->currentCylinder + 1u > drive->imageCylinders) {
+    drive->imageCylinders = (uint8_t)(drive->currentCylinder + 1u);
+  }
+  if (drive->currentHead + 1u > drive->imageSides) {
+    drive->imageSides = (uint8_t)(drive->currentHead + 1u);
+  }
+  spp3eDiskMarkStructureChanged(spp3eFdcCurrentDrive);
+  /* The result's C, H, R, N carry the last ID laid down */
+  if (count > 0u) {
+    spp3eFdcDataRegister[1] = spp3eFdcFormatIds[(count - 1u) * 4u];
+    spp3eFdcDataRegister[2] = spp3eFdcFormatIds[(count - 1u) * 4u + 1u];
+    spp3eFdcDataRegister[3] = spp3eFdcFormatIds[(count - 1u) * 4u + 2u];
+    spp3eFdcDataRegister[4] = spp3eFdcFormatIds[(count - 1u) * 4u + 3u];
+  }
+  spp3eFdcFinishRw(0u, 0u, 0u);
 }
 
 static void spp3eFdcExecuteCommand(void) {
@@ -1475,6 +1958,9 @@ static void spp3eFdcExecuteCommand(void) {
   }
 
   Spp3eDiskDrive *drive = spp3eGetDiskDrive(spp3eFdcCurrentDrive);
+  spp3eFdcPendingSr1 = 0u;
+  spp3eFdcPendingSr2 = 0u;
+  spp3eFdcStopAfterSector = 0u;
   switch (spp3eFdcCommandId) {
     case SPP3E_FDC_CMD_SPECIFY:
       spp3eFdcStepRate = (uint8_t)(16u - ((spp3eFdcDataRegister[0] >> 4u) & 0x0fu));
@@ -1505,6 +1991,7 @@ static void spp3eFdcExecuteCommand(void) {
         ? spp3eFdcDataRegister[1]
         : (uint8_t)(drive->maxCylinders - 1u);
       drive->track0Mark = drive->currentCylinder == 0u ? 1u : 0u;
+      drive->rotation = 0u;
       spp3eFdcPresentCylinder[spp3eFdcCurrentDrive] = drive->currentCylinder;
       spp3eFdcSr0 = SPP3E_FDC_SR0_SE | (spp3eFdcCurrentDrive & 0x01u);
       spp3eFdcSenseIntResult[0] = spp3eFdcSr0;
@@ -1515,6 +2002,7 @@ static void spp3eFdcExecuteCommand(void) {
     case SPP3E_FDC_CMD_RECALIBRATE:
       drive->currentCylinder = 0u;
       drive->track0Mark = 1u;
+      drive->rotation = 0u;
       spp3eFdcPresentCylinder[spp3eFdcCurrentDrive] = 0u;
       spp3eFdcSr0 = SPP3E_FDC_SR0_SE | (spp3eFdcCurrentDrive & 0x01u);
       spp3eFdcSenseIntResult[0] = spp3eFdcSr0;
@@ -1522,47 +2010,71 @@ static void spp3eFdcExecuteCommand(void) {
       spp3eFdcIntReq = SPP3E_FDC_INT_SEEK;
       spp3eFdcCompleteCommand();
       break;
-    case SPP3E_FDC_CMD_READ_ID:
-      spp3eFdcDataRegister[1] = drive->currentCylinder;
-      spp3eFdcDataRegister[2] = drive->currentHead;
-      spp3eFdcDataRegister[3] = drive->firstSectorId;
-      spp3eFdcDataRegister[4] =
-        drive->sectorLength >= 1024u ? 3u :
-        drive->sectorLength >= 512u ? 2u :
-        drive->sectorLength >= 256u ? 1u :
-        0u;
-      spp3eFdcBuildRwResult(0u, drive->ready != 0u ? 0u : SPP3E_FDC_SR1_ND, 0u);
-      spp3eFdcCompleteCommand();
+    case SPP3E_FDC_CMD_READ_ID: {
+      if (drive->ready == 0u) {
+        spp3eFdcFinishRw(SPP3E_FDC_SR0_AT | SPP3E_FDC_SR0_NR, 0u, 0u);
+        break;
+      }
+      const Spp3eDiskTrack *track = spp3eFdcCurrentTrack();
+      if (track == 0) {
+        spp3eFdcFinishRw(SPP3E_FDC_SR0_AT, SPP3E_FDC_SR1_MA, 0u);
+        break;
+      }
+      /* The next ID to pass under the head */
+      const uint32_t position = drive->rotation % track->sectorCount;
+      const Spp3eDiskSector *sector = &spp3eDiskSectors[spp3eFdcCurrentDrive][track->firstSector + position];
+      drive->rotation = (uint16_t)((position + 1u) % track->sectorCount);
+      spp3eFdcDataRegister[1] = sector->c;
+      spp3eFdcDataRegister[2] = sector->h;
+      spp3eFdcDataRegister[3] = sector->r;
+      spp3eFdcDataRegister[4] = sector->n;
+      spp3eFdcFinishRw(0u, 0u, 0u);
       break;
-    case SPP3E_FDC_CMD_READ_DATA: {
-      const uint32_t offset = spp3eFdcSectorByteOffset();
-      const uint32_t length = spp3eFdcSectorLength();
-      if (drive->ready == 0u || offset >= drive->diskLength || length > drive->diskLength - offset) {
-        spp3eFdcBuildRwResult(SPP3E_FDC_SR0_AT | (spp3eFdcCurrentDrive & 0x01u), SPP3E_FDC_SR1_ND, 0u);
-        spp3eFdcCompleteCommand();
+    }
+    case SPP3E_FDC_CMD_READ_DATA:
+    case SPP3E_FDC_CMD_WRITE_DATA:
+    case SPP3E_FDC_CMD_SCAN:
+    case SPP3E_FDC_CMD_READ_TRACK: {
+      spp3eFdcMultiTrack = (spp3eFdcCommandRegister & 0x80u) != 0u && spp3eFdcCommandId != SPP3E_FDC_CMD_READ_TRACK ? 1u : 0u;
+      spp3eFdcSkip = (spp3eFdcCommandRegister & 0x20u) != 0u && spp3eFdcCommandId != SPP3E_FDC_CMD_WRITE_DATA ? 1u : 0u;
+      spp3eFdcEndSector = spp3eFdcDataRegister[5];
+      spp3eFdcDeletedMark = spp3eFdcIsWriteDeleted();
+      spp3eFdcScanType = (uint8_t)(spp3eFdcCommandRegister & 0x1fu);
+      spp3eFdcScanEqual = 0u;
+      spp3eFdcScanNotMet = 0u;
+      if (drive->ready == 0u) {
+        spp3eFdcFinishRw(SPP3E_FDC_SR0_AT | SPP3E_FDC_SR0_NR, 0u, 0u);
+        break;
+      }
+      if (spp3eFdcCommandId == SPP3E_FDC_CMD_WRITE_DATA && drive->writeProtected != 0u) {
+        spp3eFdcFinishRw(SPP3E_FDC_SR0_AT, SPP3E_FDC_SR1_NW, 0u);
+        break;
+      }
+      if (spp3eFdcCommandId == SPP3E_FDC_CMD_READ_TRACK) {
+        spp3eFdcSectorStored = 0u;
+        spp3eFdcStartTrackSector();
       } else {
-        spp3eFdcSectorOffset = 0u;
-        spp3eFdcTransferOffset = offset;
-        spp3eFdcTransferLength = length;
-        spp3eFdcMsr = SPP3E_FDC_MSR_RQM | SPP3E_FDC_MSR_DIO | SPP3E_FDC_MSR_CB | SPP3E_FDC_MSR_EXM;
+        spp3eFdcStartSector();
       }
       break;
     }
-    case SPP3E_FDC_CMD_WRITE_DATA: {
-      const uint32_t offset = spp3eFdcSectorByteOffset();
-      const uint32_t length = spp3eFdcSectorLength();
-      if (drive->writeProtected != 0u) {
-        spp3eFdcBuildRwResult(SPP3E_FDC_SR0_AT | (spp3eFdcCurrentDrive & 0x01u), SPP3E_FDC_SR1_NW, 0u);
-        spp3eFdcCompleteCommand();
-      } else if (drive->ready == 0u || offset >= SPP3E_DISK_DATA_CAPACITY || length > SPP3E_DISK_DATA_CAPACITY - offset) {
-        spp3eFdcBuildRwResult(SPP3E_FDC_SR0_AT | (spp3eFdcCurrentDrive & 0x01u), SPP3E_FDC_SR1_ND, 0u);
-        spp3eFdcCompleteCommand();
-      } else {
-        spp3eFdcSectorOffset = 0u;
-        spp3eFdcTransferOffset = offset;
-        spp3eFdcTransferLength = length;
-        spp3eFdcMsr = SPP3E_FDC_MSR_RQM | SPP3E_FDC_MSR_CB | SPP3E_FDC_MSR_EXM;
+    case SPP3E_FDC_CMD_WRITE_ID: {
+      if (drive->ready == 0u) {
+        spp3eFdcFinishRw(SPP3E_FDC_SR0_AT | SPP3E_FDC_SR0_NR, 0u, 0u);
+        break;
       }
+      if (drive->writeProtected != 0u) {
+        spp3eFdcFinishRw(SPP3E_FDC_SR0_AT, SPP3E_FDC_SR1_NW, 0u);
+        break;
+      }
+      /* The IDs come next, four bytes per sector */
+      spp3eFdcSectorOffset = 0u;
+      spp3eFdcTransferLength = (uint32_t)spp3eFdcDataRegister[2] * 4u;
+      if (spp3eFdcTransferLength == 0u) {
+        spp3eFdcFormatTrack();
+        break;
+      }
+      spp3eFdcMsr = SPP3E_FDC_MSR_RQM | SPP3E_FDC_MSR_CB | SPP3E_FDC_MSR_EXM;
       break;
     }
     default:
@@ -1599,7 +2111,19 @@ static void spp3eFdcReset(void) {
   spp3eFdcDirtyOffset = 0u;
   spp3eFdcDirtyLength = 0u;
   spp3eFdcDirtyRevision = 0u;
-  for (uint32_t i = 0u; i < 9u; i++) {
+  spp3eFdcSector = -1;
+  spp3eFdcSectorStored = 0u;
+  spp3eFdcEndSector = 0u;
+  spp3eFdcMultiTrack = 0u;
+  spp3eFdcSkip = 0u;
+  spp3eFdcDeletedMark = 0u;
+  spp3eFdcScanType = 0u;
+  spp3eFdcScanEqual = 0u;
+  spp3eFdcScanNotMet = 0u;
+  spp3eFdcPendingSr1 = 0u;
+  spp3eFdcPendingSr2 = 0u;
+  spp3eFdcStopAfterSector = 0u;
+  for (uint32_t i = 0; i < 9u; i++) {
     spp3eFdcDataRegister[i] = 0u;
     spp3eFdcResultRegister[i] = 0u;
   }
@@ -1625,12 +2149,19 @@ static uint32_t spp3eFdcReadDataRegister(void) {
   if ((spp3eFdcMsr & SPP3E_FDC_MSR_RQM) == 0u || (spp3eFdcMsr & SPP3E_FDC_MSR_DIO) == 0u) {
     return 0xffu;
   }
-  if (spp3eFdcOperationPhase == SPP3E_FDC_PHASE_EXECUTION && spp3eFdcCommandId == SPP3E_FDC_CMD_READ_DATA) {
-    const uint8_t data = spp3eDiskData[spp3eFdcCurrentDrive][spp3eFdcTransferOffset + spp3eFdcSectorOffset];
+  if (spp3eFdcOperationPhase == SPP3E_FDC_PHASE_EXECUTION &&
+      (spp3eFdcCommandId == SPP3E_FDC_CMD_READ_DATA || spp3eFdcCommandId == SPP3E_FDC_CMD_READ_TRACK) &&
+      spp3eFdcSector >= 0) {
+    const uint8_t data = spp3eFdcSectorByte(spp3eFdcSectorOffset);
     spp3eFdcSectorOffset++;
     if (spp3eFdcSectorOffset >= spp3eFdcTransferLength) {
-      spp3eFdcBuildRwResult(0u, 0u, 0u);
-      spp3eFdcCompleteCommand();
+      if (spp3eFdcCommandId == SPP3E_FDC_CMD_READ_TRACK) {
+        spp3eFdcSectorStored++;
+        spp3eFdcDataRegister[3]++;
+        spp3eFdcStartTrackSector();
+      } else {
+        spp3eFdcSectorDone();
+      }
     }
     return data;
   }
@@ -1653,20 +2184,50 @@ static void spp3eFdcWriteDataRegister(uint32_t value) {
   if ((spp3eFdcMsr & SPP3E_FDC_MSR_RQM) == 0u || (spp3eFdcMsr & SPP3E_FDC_MSR_DIO) != 0u) {
     return;
   }
-  if (spp3eFdcOperationPhase == SPP3E_FDC_PHASE_EXECUTION && spp3eFdcCommandId == SPP3E_FDC_CMD_WRITE_DATA) {
-    Spp3eDiskDrive *drive = spp3eGetDiskDrive(spp3eFdcCurrentDrive);
-    spp3eDiskData[spp3eFdcCurrentDrive][spp3eFdcTransferOffset + spp3eFdcSectorOffset] = (uint8_t)value;
-    spp3eFdcSectorOffset++;
-    if (spp3eFdcSectorOffset >= spp3eFdcTransferLength) {
-      if (spp3eFdcTransferOffset + spp3eFdcTransferLength > drive->diskLength) {
-        drive->diskLength = spp3eFdcTransferOffset + spp3eFdcTransferLength;
+  if (spp3eFdcOperationPhase == SPP3E_FDC_PHASE_EXECUTION) {
+    if (spp3eFdcCommandId == SPP3E_FDC_CMD_WRITE_DATA && spp3eFdcSector >= 0) {
+      /* Bytes past what the dump stored for the sector have no place in the image */
+      if (spp3eFdcSectorOffset < spp3eFdcSectorStored) {
+        spp3eDiskData[spp3eFdcCurrentDrive][spp3eFdcTransferOffset + spp3eFdcSectorOffset] = (uint8_t)value;
       }
-      spp3eFdcJournalDirtyRange(spp3eFdcCurrentDrive, spp3eFdcTransferOffset, spp3eFdcTransferLength);
-      drive->revision++;
-      spp3eFdcBuildRwResult(0u, 0u, 0u);
-      spp3eFdcCompleteCommand();
+      spp3eFdcSectorOffset++;
+      if (spp3eFdcSectorOffset >= spp3eFdcTransferLength) {
+        spp3eFdcSectorDone();
+      }
+      return;
     }
-    return;
+    if (spp3eFdcCommandId == SPP3E_FDC_CMD_SCAN && spp3eFdcSector >= 0) {
+      /* SCAN: the host's byte against the disk's; FF from either side always matches */
+      const uint8_t disk = spp3eFdcSectorByte(spp3eFdcSectorOffset);
+      const uint8_t host = (uint8_t)value;
+      if (disk != 0xffu && host != 0xffu && spp3eFdcScanNotMet == 0u && spp3eFdcScanEqual == 0u) {
+        if (spp3eFdcScanType == 0x11u ? disk != host :
+            spp3eFdcScanType == 0x19u ? disk > host :
+            disk < host) {
+          spp3eFdcScanNotMet = 1u;
+        }
+      }
+      spp3eFdcSectorOffset++;
+      if (spp3eFdcSectorOffset >= spp3eFdcTransferLength) {
+        /* The sector met the condition unless a byte said otherwise */
+        spp3eFdcScanEqual = spp3eFdcScanNotMet == 0u ? 1u : 0u;
+        if (spp3eFdcScanEqual == 0u) {
+          spp3eFdcScanNotMet = 0u;
+        }
+        spp3eFdcSectorDone();
+      }
+      return;
+    }
+    if (spp3eFdcCommandId == SPP3E_FDC_CMD_WRITE_ID) {
+      if (spp3eFdcSectorOffset < sizeof(spp3eFdcFormatIds)) {
+        spp3eFdcFormatIds[spp3eFdcSectorOffset] = (uint8_t)value;
+      }
+      spp3eFdcSectorOffset++;
+      if (spp3eFdcSectorOffset >= spp3eFdcTransferLength) {
+        spp3eFdcFormatTrack();
+      }
+      return;
+    }
   }
   if (spp3eFdcCommandBytesReceived == 0u) {
     spp3eFdcIdentifyCommand(value);
@@ -1859,6 +2420,7 @@ void spp3eReset(void) {
   spp3eEarBitChangedFrom1Tacts = 0u;
   spp3eLastContendedValue = 0xffu;
   spp3eLastUlaReadValue = 0xffu;
+  zxdcReset(0u);
   spp3eRebuildFlatMemory();
   spp3eResetPsg();
   spp3eResetAudio();
@@ -1872,6 +2434,8 @@ void spp3eHardReset(void) {
   spp3eRzxSetMode(RZX_MODE_OFF);
   spp3eReset();
   spp3eClearBytes(spp3eRam, SPP3E_RAM_SIZE);
+  zxdcReset(1u);
+  spp3eRebuildFlatMemory();
   for (uint32_t i = 0u; i < SPP3E_DISK_DRIVE_COUNT; i++) {
     spp3eClearBytes(spp3eDiskData[i], SPP3E_DISK_DATA_CAPACITY);
     spp3eClearBytes(spp3eDiskChanges[i], SPP3E_DISK_CHANGE_CAPACITY);
@@ -1891,9 +2455,12 @@ void spp3eHardReset(void) {
     spp3eFdcOnFrameCompleted(); \
   } while (0)
 #define ZXS_AFTER_PLAY_CYCLE() spp3eSetNextAudioSample()
+/* The DivMMC's SD card waiting for a sector returns to the host */
+#define ZXS_STOP() ZXDC_HOST_WAITING()
 #include "../../../zxSpectrum/wasm/common/zx-spectrum-frame.c"
 /* The debugger's breakpoint flags and in-core loop, `spp3eExecuteUntilStop` (z80-debug-loop.c) */
 #define Z80_DEBUG_LOOP_PREFIX spp3e
+#define Z80_DEBUG_LOOP_STOP() ZXDC_HOST_WAITING()
 #include "../../../../z80/wasm/z80-debug-loop.c"
 
 uint32_t spp3eExecuteInstruction(void) {
@@ -1919,7 +2486,9 @@ uint32_t spp3eExecuteInstruction(void) {
   spp3eInterruptLineActive = intActive;
   z80SetSigInt(intActive);
   z80SetTacts(spp3eTacts);
+  const uint8_t divMmcNmi = zxdcNmiBeforeCycle();
   z80ExecuteCpuCycle();
+  zxdcNmiAfterCycle(divMmcNmi);
   spp3eTacts = z80GetTacts();
   spp3eSetNextAudioSample();
   spp3eUpdateTapeMode();
@@ -1942,7 +2511,7 @@ void spp3eUploadRomByte(uint32_t bank, uint32_t offset, uint32_t value) {
   if (bank < 4u && offset < 0x4000u) {
     const uint8_t byteValue = (uint8_t)value;
     spp3eRom[spp3eRomBankOffset(bank) + offset] = byteValue;
-    if (spp3eInSpecialPagingMode == 0u && spp3eSelectedRom == (uint8_t)bank) {
+    if (spp3eInSpecialPagingMode == 0u && spp3eSelectedRom == (uint8_t)bank && zxdcMapped == 0u) {
       spp3eMemory[offset] = byteValue;
     }
   }
@@ -1961,6 +2530,8 @@ void spp3eWriteMemory(uint32_t address, uint32_t value) {
   const uint32_t maskedAddress = address & 0xffffu;
   const uint32_t slot = maskedAddress >> 14u;
   if (spp3eMemorySlotWritable[slot] == 0u) {
+    /* The DivMMC's RAM page takes a write to the ROM area while it is mapped */
+    if (slot == 0u && zxdcWrite(maskedAddress, (uint8_t)value) != 0u) spp3eMemory[maskedAddress] = (uint8_t)value;
     return;
   }
   const uint32_t offset = maskedAddress & 0x3fffu;
@@ -2045,6 +2616,9 @@ uint32_t spp3eReadFloatingBus(void) {
 }
 
 uint32_t spp3eReadPort(uint32_t address) {
+  if (zxdcIsPort(address) != 0u) {
+    return zxdcReadPort(address);
+  }
   if ((address & 0x0001u) == 0u) {
     const uint32_t selectedLines = (~(address >> 8u)) & 0xffu;
     const uint8_t status = spp3eKeyboardSelectedLineValue[selectedLines];
@@ -2075,6 +2649,10 @@ uint32_t spp3eReadPort(uint32_t address) {
 }
 
 void spp3eWritePort(uint32_t address, uint32_t value) {
+  if (zxdcIsPort(address) != 0u) {
+    zxdcWritePort(address, value);
+    return;
+  }
   if ((address & 0x0001u) == 0u) {
     spp3eCommonSetNextAudioSample();
     spp3ePortFeValue = (uint8_t)value;
@@ -2209,29 +2787,36 @@ void spp3eFdcSelectDrive(uint32_t drive, uint32_t head) {
   spp3eFdcSelectDriveInternal(drive, head);
   spp3eFdcUpdateSr3();
 }
+/*
+ * Uploading a disk (the host's `createWasmDiskPayload`): BeginUpload clears the drive, the host
+ * writes the sector data into the data area (`spp3eDiskDataPtr`), declares each formatted track
+ * with UploadTrack and its sectors, in physical order, with UploadSector; FinishUpload inserts it.
+ * The geometry is the image's: `cylinders` x `sides`, and a drive that takes more than 42 cylinders
+ * steps up to 84 (an 80-track drive B).
+ */
 uint32_t spp3eDiskBeginUpload(
   uint32_t drive,
   uint32_t length,
   uint32_t writeProtected,
-  uint32_t tracks,
-  uint32_t sides,
-  uint32_t sectorsPerTrack,
-  uint32_t firstSectorId,
-  uint32_t sectorLength
+  uint32_t cylinders,
+  uint32_t sides
 ) {
-  if (drive >= SPP3E_DISK_DRIVE_COUNT || drive >= spp3eFdcEnabledDriveCount || length > SPP3E_DISK_DATA_CAPACITY) {
+  if (drive >= SPP3E_DISK_DRIVE_COUNT || drive >= spp3eFdcEnabledDriveCount || length > SPP3E_DISK_DATA_CAPACITY ||
+      cylinders > SPP3E_DISK_MAX_CYLINDERS) {
     return 0u;
   }
   spp3eDiskUploadDrive = (uint8_t)drive;
   spp3eDiskUploadLength = length;
   spp3eDiskUploadWriteProtected = writeProtected != 0u ? 1u : 0u;
-  spp3eDiskUploadTracks = tracks == 0u ? SPP3E_DISK_DEFAULT_MAX_CYLINDERS : (uint8_t)tracks;
+  spp3eDiskUploadTracks = (uint8_t)cylinders;
   spp3eDiskUploadSides = sides > 1u ? 2u : 1u;
-  spp3eDiskUploadSectorsPerTrack = sectorsPerTrack == 0u ? 32u : (uint8_t)sectorsPerTrack;
-  spp3eDiskUploadFirstSectorId = firstSectorId == 0u ? 1u : (uint8_t)firstSectorId;
-  spp3eDiskUploadSectorLength = sectorLength == 0u ? 0u : (uint16_t)sectorLength;
+  spp3eDiskUploadTrackEntry = -1;
+  spp3eDiskUploadSectors = 0u;
   spp3eDiskUploadActive = 1u;
   spp3eClearBytes(spp3eDiskData[drive], SPP3E_DISK_DATA_CAPACITY);
+  spp3eClearBytes(spp3eDiskChanges[drive], SPP3E_DISK_CHANGE_CAPACITY);
+  spp3eClearBytes((uint8_t *)spp3eDiskTracks[drive], (uint32_t)sizeof(spp3eDiskTracks[drive]));
+  spp3eClearBytes((uint8_t *)spp3eDiskSectors[drive], (uint32_t)sizeof(spp3eDiskSectors[drive]));
   return 1u;
 }
 uint32_t spp3eDiskWriteData(uint32_t drive, uint32_t offset, uint32_t value) {
@@ -2246,21 +2831,76 @@ uint32_t spp3eDiskWriteData(uint32_t drive, uint32_t offset, uint32_t value) {
   spp3eDiskData[drive][offset] = (uint8_t)value;
   return 1u;
 }
+/* Declares a formatted track; the sectors uploaded next are its sectors */
+uint32_t spp3eDiskUploadTrack(uint32_t drive, uint32_t cylinder, uint32_t head, uint32_t gap3, uint32_t filler, uint32_t sizeCode) {
+  if (spp3eDiskUploadActive == 0u || drive != spp3eDiskUploadDrive || cylinder >= SPP3E_DISK_MAX_CYLINDERS || head > 1u) {
+    return 0u;
+  }
+  Spp3eDiskTrack *track = &spp3eDiskTracks[drive][cylinder * 2u + head];
+  track->firstSector = spp3eDiskUploadSectors;
+  track->sectorCount = 0u;
+  track->formatted = 1u;
+  track->gap3 = (uint8_t)gap3;
+  track->filler = (uint8_t)filler;
+  track->sizeCode = (uint8_t)sizeCode;
+  spp3eDiskUploadTrackEntry = (int32_t)(cylinder * 2u + head);
+  return 1u;
+}
+/* Adds a sector to the last declared track: its ID, status, `copies` x `length` bytes at `offset` */
+uint32_t spp3eDiskUploadSector(
+  uint32_t drive,
+  uint32_t id,
+  uint32_t status,
+  uint32_t offset,
+  uint32_t length
+) {
+  if (spp3eDiskUploadActive == 0u || drive != spp3eDiskUploadDrive || spp3eDiskUploadTrackEntry < 0 ||
+      spp3eDiskUploadSectors >= SPP3E_DISK_SECTOR_CAPACITY) {
+    return 0u;
+  }
+  Spp3eDiskTrack *track = &spp3eDiskTracks[drive][spp3eDiskUploadTrackEntry];
+  const uint32_t copies = (status >> 16u) & 0xffu;
+  if (track->sectorCount >= SPP3E_DISK_MAX_SECTORS_PER_TRACK ||
+      offset + length * (copies == 0u ? 1u : copies) > spp3eDiskUploadLength) {
+    return 0u;
+  }
+  Spp3eDiskSector *sector = &spp3eDiskSectors[drive][spp3eDiskUploadSectors];
+  sector->c = (uint8_t)(id & 0xffu);
+  sector->h = (uint8_t)((id >> 8u) & 0xffu);
+  sector->r = (uint8_t)((id >> 16u) & 0xffu);
+  sector->n = (uint8_t)((id >> 24u) & 0xffu);
+  sector->st1 = (uint8_t)(status & 0xffu);
+  sector->st2 = (uint8_t)((status >> 8u) & 0xffu);
+  sector->copies = (uint8_t)(copies == 0u ? 1u : copies);
+  sector->offset = offset;
+  sector->length = (uint16_t)length;
+  track->sectorCount++;
+  spp3eDiskUploadSectors++;
+  return 1u;
+}
 uint32_t spp3eDiskFinishUpload(uint32_t drive) {
   if (spp3eDiskUploadActive == 0u || drive != spp3eDiskUploadDrive) {
     return 0u;
   }
   Spp3eDiskDrive *diskDrive = spp3eGetDiskDrive(drive);
-  diskDrive->hasDiskLoaded = spp3eDiskUploadLength > 0u ? 1u : 0u;
+  /* A disk with no formatted track (a blank, never-formatted one) is still a disk in the drive */
+  diskDrive->hasDiskLoaded = spp3eDiskUploadLength > 0u || spp3eDiskUploadSectors > 0u || spp3eDiskUploadTracks > 0u ? 1u : 0u;
   diskDrive->diskLength = spp3eDiskUploadLength;
   diskDrive->writeProtected = spp3eDiskUploadWriteProtected;
   diskDrive->hasTwoHeads = spp3eDiskUploadSides > 1u ? 1u : 0u;
-  diskDrive->maxCylinders = spp3eDiskUploadTracks;
-  diskDrive->sectorsPerTrack = spp3eDiskUploadSectorsPerTrack;
-  diskDrive->firstSectorId = spp3eDiskUploadFirstSectorId;
-  diskDrive->sectorLength = spp3eDiskUploadSectorLength;
-  diskDrive->currentCylinder = 0u;
-  diskDrive->track0Mark = 1u;
+  diskDrive->imageCylinders = spp3eDiskUploadTracks;
+  diskDrive->imageSides = spp3eDiskUploadSides;
+  diskDrive->maxCylinders = spp3eDiskUploadTracks > SPP3E_DISK_DEFAULT_MAX_CYLINDERS
+    ? SPP3E_DISK_LONG_DRIVE_CYLINDERS
+    : SPP3E_DISK_DEFAULT_MAX_CYLINDERS;
+  diskDrive->sectorsUsed = spp3eDiskUploadSectors;
+  diskDrive->rotation = 0u;
+  diskDrive->weakCounter = 0u;
+  /* A disk put in the drive does not move the head (the IDE re-inserts an edited disk mid-session) */
+  if (diskDrive->currentCylinder >= diskDrive->maxCylinders) {
+    diskDrive->currentCylinder = (uint8_t)(diskDrive->maxCylinders - 1u);
+  }
+  diskDrive->track0Mark = diskDrive->currentCylinder == 0u ? 1u : 0u;
   diskDrive->currentHead = diskDrive->hasTwoHeads != 0u ? diskDrive->currentHead : 0u;
   diskDrive->headLoaded = diskDrive->selected != 0u && diskDrive->hasDiskLoaded != 0u ? 1u : 0u;
   diskDrive->revision++;
@@ -2305,6 +2945,49 @@ uint32_t spp3eDiskGetMaxCylinders(uint32_t drive) { return spp3eGetDiskDrive(dri
 uint32_t spp3eDiskGetHeadLoaded(uint32_t drive) { return spp3eGetDiskDrive(drive)->headLoaded; }
 uint32_t spp3eDiskGetLength(uint32_t drive) { return spp3eGetDiskDrive(drive)->diskLength; }
 uint32_t spp3eDiskGetRevision(uint32_t drive) { return spp3eGetDiskDrive(drive)->revision; }
+/* Reading the disk back (the host's write-back): the geometry, the track and sector tables */
+uint32_t spp3eDiskGetImageCylinders(uint32_t drive) { return spp3eGetDiskDrive(drive)->imageCylinders; }
+uint32_t spp3eDiskGetImageSides(uint32_t drive) { return spp3eGetDiskDrive(drive)->imageSides; }
+uint32_t spp3eDiskGetStructureRevision(uint32_t drive) { return spp3eGetDiskDrive(drive)->structureRevision; }
+uint32_t spp3eDiskGetSectorCapacity(void) { return SPP3E_DISK_SECTOR_CAPACITY; }
+/* formatted << 31 | sector count << 16 | first sector entry, or 0 for an unformatted track */
+uint32_t spp3eDiskGetTrackInfo(uint32_t drive, uint32_t cylinder, uint32_t head) {
+  const Spp3eDiskTrack *track = spp3eDiskTrackAt(drive, cylinder, head);
+  if (track == 0 || track->formatted == 0u) return 0u;
+  return 0x80000000u | ((uint32_t)track->sectorCount << 16u) | track->firstSector;
+}
+/* gap3 | filler << 8 | size code << 16 */
+uint32_t spp3eDiskGetTrackFormat(uint32_t drive, uint32_t cylinder, uint32_t head) {
+  const Spp3eDiskTrack *track = spp3eDiskTrackAt(drive, cylinder, head);
+  if (track == 0) return 0u;
+  return (uint32_t)track->gap3 | ((uint32_t)track->filler << 8u) | ((uint32_t)track->sizeCode << 16u);
+}
+/* C | H << 8 | R << 16 | N << 24 */
+uint32_t spp3eDiskGetSectorId(uint32_t drive, uint32_t index) {
+  const Spp3eDiskSector *sector = spp3eDiskSectorAt(drive, (int32_t)index);
+  if (sector == 0) return 0u;
+  return (uint32_t)sector->c | ((uint32_t)sector->h << 8u) | ((uint32_t)sector->r << 16u) | ((uint32_t)sector->n << 24u);
+}
+/* ST1 | ST2 << 8 | copies << 16 */
+uint32_t spp3eDiskGetSectorStatus(uint32_t drive, uint32_t index) {
+  const Spp3eDiskSector *sector = spp3eDiskSectorAt(drive, (int32_t)index);
+  if (sector == 0) return 0u;
+  return (uint32_t)sector->st1 | ((uint32_t)sector->st2 << 8u) | ((uint32_t)sector->copies << 16u);
+}
+uint32_t spp3eDiskGetSectorOffset(uint32_t drive, uint32_t index) {
+  const Spp3eDiskSector *sector = spp3eDiskSectorAt(drive, (int32_t)index);
+  return sector == 0 ? 0u : sector->offset;
+}
+uint32_t spp3eDiskGetSectorLength(uint32_t drive, uint32_t index) {
+  const Spp3eDiskSector *sector = spp3eDiskSectorAt(drive, (int32_t)index);
+  return sector == 0 ? 0u : sector->length;
+}
+/* The host took the changes: clear the drive's dirty-sector bitmap */
+void spp3eDiskClearDirty(uint32_t drive) {
+  if (drive < SPP3E_DISK_DRIVE_COUNT) {
+    spp3eClearBytes(spp3eDiskChanges[drive], SPP3E_DISK_CHANGE_CAPACITY);
+  }
+}
 uint32_t spp3eGetTapeMaxBlocks(void) { return SPP3E_TAPE_MAX_BLOCKS; }
 uint32_t spp3eGetTapeDataCapacity(void) { return SPP3E_TAPE_DATA_CAPACITY; }
 uint32_t spp3eGetTapeSaveMaxBlocks(void) { return SPP3E_TAPE_SAVE_MAX_BLOCKS; }

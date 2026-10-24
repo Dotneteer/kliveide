@@ -9,13 +9,15 @@ import {
   TIMEX_ROM_FILE,
   SCORPION_ROM_FILE,
   TRDOS_ROM_FILE,
-  TS2068_ROM_FILE
+  TS2068_ROM_FILE,
+  ESXDOS_ROM_FILE
 } from "@emu/machines/machine-props";
 import { getGlobalSetting } from "@renderer/core/RendererProvider";
 import {
   SETTING_EMU_TC2048_ROM,
   SETTING_EMU_TC2068_ROM,
   SETTING_EMU_TRDOS_ROM,
+  SETTING_EMU_ESXDOS_ROM,
   SETTING_EMU_TS2068_ROM,
   SETTING_EMU_SCORPION_ROM
 } from "@common/settings/setting-const";
@@ -146,6 +148,7 @@ class MachineService implements IMachineService {
       this.store.getState()?.emulatorState?.audioSampleRate
     );
     machine.setMachineProperty(TRDOS_ROM_FILE, getGlobalSetting(this.store, SETTING_EMU_TRDOS_ROM) || undefined);
+    machine.setMachineProperty(ESXDOS_ROM_FILE, getGlobalSetting(this.store, SETTING_EMU_ESXDOS_ROM) || undefined);
     machine.setMachineProperty(TIMEX_ROM_FILE, getGlobalSetting(this.store, SETTING_EMU_TC2048_ROM) || undefined);
     machine.setMachineProperty(TC2068_ROM_FILE, getGlobalSetting(this.store, SETTING_EMU_TC2068_ROM) || undefined);
     machine.setMachineProperty(TS2068_ROM_FILE, getGlobalSetting(this.store, SETTING_EMU_TS2068_ROM) || undefined);

@@ -32,13 +32,21 @@ import {
   FAST_LOAD,
   REWIND_REQUESTED,
   SAVED_TO_TAPE,
-  TAPE_MODE
+  TAPE_MODE,
+  ESXDOS_ROM_FILE
 } from "../machine-props";
+import { DivMmcSupport } from "../zxSpectrum/divmmc/divMmcCoreBridge";
+import type { MessengerBase } from "@common/messaging/MessengerBase";
+import type { SdRevertResult, SdUndoEntry, SdUndoLog } from "@emu/machines/reverse/SdUndoLog";
 import { MC_DISK_SUPPORT } from "@common/machines/constants";
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "@common/structs/project-const";
 import { BinaryWriter } from "@utils/BinaryWriter";
 import { loadSpP3eWasmV2 } from "./wasm/SpP3eWasmV2Loader";
-import { readDiskData } from "../disk/disk-readers";
+import { readDiskData, unformattedTrack } from "../disk/disk-readers";
+import { writeDiskData, canWriteStandard } from "../disk/disk-writer";
+import { applySectorChangesToDiskContents, dskSectorKey, DSK_WHOLE_IMAGE_KEY } from "../disk/disk-changes";
+import type { DiskInformation, SectorInformation, TrackInformation } from "../disk/DiskInformation";
+import { FloppyDiskFormat } from "@emu/abstractions/FloppyDiskFormat";
 import { TzxHeader } from "../tape/TzxHeader";
 import { TzxStandardSpeedBlock } from "../tape/TzxStandardSpeedBlock";
 import { ZxSpectrumP3eWasmHost, mergeZxSpectrumP3eConfig } from "./ZxSpectrumP3eWasmHost";
@@ -63,13 +71,10 @@ import { fillCoreBytes, writeCoreBytes } from "@emu/machines/reverse/coreMemoryW
 
 const WASM_AUDIO_SAMPLE_SCALE = 32768.0;
 
-type WasmDiskPayload = {
-  data: Uint8Array;
-  tracks: number;
-  sides: number;
-  sectorsPerTrack: number;
-  firstSectorId: number;
-  sectorLength: number;
+/** A disk uploaded to the core: the model it came from, and the core's layout revision then */
+type WasmDiskState = {
+  disk: DiskInformation;
+  structureRevision: number;
 };
 
 export type SpP3eWasmV2Diagnostics = {
@@ -190,6 +195,12 @@ export class ZxSpectrumP3eWasmV2Machine
 
   public readonly implementation = "wasm" as const;
   public wasmV2Runtime?: SpP3eWasmV2Runtime;
+
+  /** The DivMMC (`.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md` C4): with `MC_DIVMMC`, connected at setup */
+  readonly divMmc = new DivMmcSupport("spp3e", {
+    getDivMmcRuntime: () => this.wasmV2Runtime,
+    loadDivMmcRom: (path) => this.loadRomFromResource(path)
+  });
   /** The RZX session playing or recording on this machine (`.plans/RZX_PLAN.md` §4.3) */
   public rzxSession?: IRzxSession;
   private rzxCoreBridge?: RzxCoreBridge;
@@ -203,7 +214,7 @@ export class ZxSpectrumP3eWasmV2Machine
   private wasmV2SavedTapeRevision = 0;
   private wasmV2DiskChangeRevision = 0;
   private wasmV2ContentionPauseBase = 0;
-  private readonly wasmV2DiskPayloads: (WasmDiskPayload | undefined)[] = [];
+  private readonly wasmV2DiskStates: (WasmDiskState | undefined)[] = [];
 
   constructor(
     public readonly requestedModelInfo?: MachineModel,
@@ -482,11 +493,18 @@ export class ZxSpectrumP3eWasmV2Machine
     this.syncAudioSampleRateToWasmV2(this.wasmV2Runtime);
     this.syncTapeStateToWasmV2(this.wasmV2Runtime);
     this.syncDiskStateToWasmV2(this.wasmV2Runtime);
+    if (this.divMmcModel) {
+      await this.divMmc.connect(this.getMachineProperty(ESXDOS_ROM_FILE) as string | undefined);
+      // --- The interface resets with the machine: it boots esxDOS from the first fetch at $0000
+      this.wasmV2Runtime.exports.spp3eReset();
+    }
     this.syncFrameCountersFromWasmV2(this.wasmV2Runtime);
   }
 
   override hardReset(): void {
     super.hardReset();
+    // --- A card swapped while the machine was stopped: its size is asked for again
+    this.divMmc.cardChanged();
     if (this.wasmV2Runtime != null) {
       this.hardResetWasmV2(this.wasmV2Runtime);
       this.replayUploadedRomPages((partition, data) => this.uploadRomBytes(partition, data));
@@ -539,7 +557,8 @@ export class ZxSpectrumP3eWasmV2Machine
     this.syncFrameCountersFromWasmV2(runtime);
     this.publishSavedTapeFromWasmV2(runtime);
     this.flushDiskChanges();
-    this.frameCompleted = true;
+    // --- The DivMMC's SD card stopped the frame for a sector: the controller answers it
+    this.frameCompleted = this.divMmc.syncFrameCommand() ? runtime.exports.spp3eGetFrameCompleted() !== 0 : true;
     this.executionContext.lastTerminationReason = FrameTerminationMode.Normal;
     return FrameTerminationMode.Normal;
   }
@@ -617,6 +636,8 @@ export class ZxSpectrumP3eWasmV2Machine
 
   override getMemoryPartition(index: number): Uint8Array {
     const runtime = this.requireWasmV2Runtime();
+    const divMmcMemory = index <= -16 ? this.divMmc.partitionMemory(index) : undefined;
+    if (divMmcMemory) return divMmcMemory;
     if (index < 0) {
       const romIndex = Math.max(0, Math.min(3, -index - 1));
       return runtime.rom.subarray(romIndex * 0x4000, (romIndex + 1) * 0x4000);
@@ -640,7 +661,42 @@ export class ZxSpectrumP3eWasmV2Machine
     const slot1 = wasm.spp3eGetCurrentPartition(1);
     const slot2 = wasm.spp3eGetCurrentPartition(2);
     const slot3 = wasm.spp3eGetCurrentPartition(3);
-    return [slot0, slot0, slot1, slot1, slot2, slot2, slot3, slot3];
+    // --- The DivMMC's ROM and RAM bank over $0000-$3FFF while it is mapped
+    const [page0, page1] = this.divMmcModel ? this.divMmc.pagePartitions() : [undefined, undefined];
+    return [page0 ?? slot0, page1 ?? slot0, slot1, slot1, slot2, slot2, slot3, slot3];
+  }
+
+  /** "divMmcNmi": the DivMMC's button (Machine › SD Card) */
+  override async executeCustomCommand(command: string): Promise<any> {
+    if (command === "divMmcNmi") {
+      this.divMmc.pressNmi();
+      return true;
+    }
+    return super.executeCustomCommand(command);
+  }
+
+  // --- The DivMMC's SD card requests are this machine's frame commands
+  override getFrameCommand(): any {
+    return this.divMmc.getFrameCommand();
+  }
+
+  override setFrameCommand(command: any): void {
+    this.divMmc.setFrameCommand(command);
+  }
+
+  override async processFrameCommand(messenger?: MessengerBase): Promise<void> {
+    if (messenger && this.divMmc.handles(this.divMmc.getFrameCommand())) {
+      await this.divMmc.processFrameCommand(messenger);
+    }
+  }
+
+  /** The timeline's SD undo log while one runs (REVERSE_DEBUGGING_PLAN D14) */
+  attachSdUndoLog(log: SdUndoLog | undefined): void {
+    this.divMmc.attachSdUndoLog(log);
+  }
+
+  async revertSdWrites(entries: readonly SdUndoEntry[], messenger: MessengerBase): Promise<SdRevertResult> {
+    return this.divMmc.revertSdWrites(entries, messenger);
   }
 
   override getSelectedRomPage(): number {
@@ -1038,38 +1094,70 @@ export class ZxSpectrumP3eWasmV2Machine
     }
   }
 
+  /*
+   * The disks in the core (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, A3). A disk is uploaded as
+   * its sector table: every track the file formats, every sector with its own ID, status bytes,
+   * copies and stored length, the data back to back in file order. The write-back reads the core's
+   * tables, never a geometry of its own: a written sector comes back keyed by its physical
+   * position (`dskSectorKey`), and after the guest reformatted a track (the structure revision
+   * moved) the whole image comes back, rebuilt from the tables (`DSK_WHOLE_IMAGE_KEY`).
+   */
   private syncDiskMediaToWasmV2(
     runtime: SpP3eWasmV2Runtime,
     drive: number,
     value: unknown,
     writeProtected: boolean
   ): void {
+    this.wasmV2DiskStates[drive] = undefined;
     if (!(value instanceof Uint8Array)) {
       runtime.exports.spp3eDiskEject(drive);
-      this.wasmV2DiskPayloads[drive] = undefined;
       return;
     }
-    const payload = this.createWasmDiskPayload(value);
-    if (
-      runtime.exports.spp3eDiskBeginUpload(
-        drive,
-        payload.data.length,
-        writeProtected ? 1 : 0,
-        payload.tracks,
-        payload.sides,
-        payload.sectorsPerTrack,
-        payload.firstSectorId,
-        payload.sectorLength
-      ) === 0
-    ) {
-      this.wasmV2DiskPayloads[drive] = undefined;
+    let disk: DiskInformation;
+    try {
+      disk = readDiskData(value);
+    } catch {
+      // --- Not a disk the controller can read: the drive stays empty
+      runtime.exports.spp3eDiskEject(drive);
       return;
     }
-    for (let i = 0; i < payload.data.length; i++) {
-      runtime.exports.spp3eDiskWriteData(drive, i, payload.data[i]);
+    const dataLength = disk.tracks.reduce(
+      (sum, track) => sum + track.sectors.reduce((s, sector) => s + sector.actualLength, 0),
+      0
+    );
+    if (runtime.exports.spp3eDiskBeginUpload(drive, dataLength, writeProtected ? 1 : 0, disk.numTracks, disk.numSides) === 0) {
+      runtime.exports.spp3eDiskEject(drive);
+      return;
+    }
+    const diskData = drive === 0 ? runtime.diskData : runtime.diskBData;
+    let offset = 0;
+    let uploaded = true;
+    disk.tracks.forEach((track, index) => {
+      if (!uploaded || track.unformatted) return;
+      const cylinder = Math.floor(index / disk.numSides);
+      const head = index % disk.numSides;
+      uploaded = runtime.exports.spp3eDiskUploadTrack(drive, cylinder, head, track.gap3, track.filler, track.sectorSize) !== 0;
+      for (const sector of track.sectors) {
+        if (!uploaded) return;
+        const copies = Math.max(1, sector.copies ?? 1);
+        // --- Journaled, as every byte the host writes into the core (REVERSE_DEBUGGING_PLAN D7)
+        writeCoreBytes(runtime, diskData, sector.sectorData.subarray(0, sector.actualLength), offset);
+        const id = (sector.C | (sector.H << 8) | (sector.R << 16) | (sector.N << 24)) >>> 0;
+        const status = sector.SR1 | (sector.SR2 << 8) | (copies << 16);
+        uploaded = runtime.exports.spp3eDiskUploadSector(drive, id, status, offset, sector.actualLength / copies) !== 0;
+        offset += sector.actualLength;
+      }
+    });
+    if (!uploaded) {
+      // --- More tracks or sectors than the drive's tables hold
+      runtime.exports.spp3eDiskEject(drive);
+      return;
     }
     runtime.exports.spp3eDiskFinishUpload(drive);
-    this.wasmV2DiskPayloads[drive] = payload;
+    this.wasmV2DiskStates[drive] = {
+      disk,
+      structureRevision: runtime.exports.spp3eDiskGetStructureRevision(drive)
+    };
   }
 
   private publishDiskChangesFromWasmV2(runtime: SpP3eWasmV2Runtime): void {
@@ -1077,23 +1165,14 @@ export class ZxSpectrumP3eWasmV2Machine
     if (revision === this.wasmV2DiskChangeRevision) {
       return;
     }
-
-    this.mergePendingDiskChanges(
-      DISK_A_CHANGES,
-      this.collectWasmDiskChanges(runtime, 0, runtime.diskChanges)
-    );
-    this.mergePendingDiskChanges(
-      DISK_B_CHANGES,
-      this.collectWasmDiskChanges(runtime, 1, runtime.diskBChanges)
-    );
-    fillCoreBytes(runtime, runtime.diskChanges, 0);
-    fillCoreBytes(runtime, runtime.diskBChanges, 0);
+    this.mergePendingDiskChanges(0, this.collectWasmDiskChanges(runtime, 0));
+    this.mergePendingDiskChanges(1, this.collectWasmDiskChanges(runtime, 1));
     this.wasmV2DiskChangeRevision = revision;
   }
 
   /**
-   * After a reverse-debugging fork (REVERSE_DEBUGGING_PLAN D13): every sector of the inserted disks
-   * goes to the write-back, so the `.dsk` files follow the restored in-core disks
+   * After a reverse-debugging fork (REVERSE_DEBUGGING_PLAN D13): the inserted disks go to the
+   * write-back whole, so the `.dsk` files follow the restored in-core disks
    * @returns true when there was a disk to write back
    */
   republishDisks(): boolean {
@@ -1101,130 +1180,157 @@ export class ZxSpectrumP3eWasmV2Machine
     if (runtime == null) return false;
     let any = false;
     for (let drive = 0; drive < 2; drive++) {
-      const payload = this.wasmV2DiskPayloads[drive];
-      if (payload == null || payload.sectorLength === 0) continue;
-      const diskData = drive === 0 ? runtime.diskData : runtime.diskBData;
-      const changes: SectorChanges = new Map();
-      this.collectWasmDiskRangeChanges(changes, diskData, payload, 0, Math.min(payload.data.length, diskData.length));
-      if (changes.size === 0) continue;
-      this.mergePendingDiskChanges(drive === 0 ? DISK_A_CHANGES : DISK_B_CHANGES, changes);
+      const state = this.wasmV2DiskStates[drive];
+      if (state == null) continue;
+      this.mergePendingDiskChanges(drive, this.wholeDiskChange(runtime, drive));
       any = true;
     }
     return any;
   }
 
-  private collectWasmDiskChanges(
-    runtime: SpP3eWasmV2Runtime,
-    drive: number,
-    journal: Uint8Array
-  ): SectorChanges | undefined {
-    const payload = this.wasmV2DiskPayloads[drive];
-    if (payload == null || payload.sectorLength === 0) {
+  private collectWasmDiskChanges(runtime: SpP3eWasmV2Runtime, drive: number): SectorChanges | undefined {
+    const state = this.wasmV2DiskStates[drive];
+    if (state == null) {
+      runtime.exports.spp3eDiskClearDirty(drive);
       return undefined;
     }
-
+    if (runtime.exports.spp3eDiskGetStructureRevision(drive) !== state.structureRevision) {
+      return this.wholeDiskChange(runtime, drive);
+    }
+    const dirty = drive === 0 ? runtime.diskChanges : runtime.diskBChanges;
+    if (!dirty.some((byte) => byte !== 0)) {
+      return undefined;
+    }
     const diskData = drive === 0 ? runtime.diskData : runtime.diskBData;
     const changes: SectorChanges = new Map();
-    for (let entryOffset = 0; entryOffset + 8 <= journal.length; entryOffset += 8) {
-      const length = this.readUint32Le(journal, entryOffset + 4);
-      if (length === 0) {
-        break;
+    const sides = state.disk.numSides;
+    for (let cylinder = 0; cylinder < state.disk.numTracks; cylinder++) {
+      for (let head = 0; head < sides; head++) {
+        const info = runtime.exports.spp3eDiskGetTrackInfo(drive, cylinder, head) >>> 0;
+        if ((info & 0x80000000) === 0) continue;
+        const count = (info >>> 16) & 0xff;
+        const first = info & 0xffff;
+        for (let i = 0; i < count; i++) {
+          const index = first + i;
+          if ((dirty[index >> 3] & (1 << (index & 7))) === 0) continue;
+          const offset = runtime.exports.spp3eDiskGetSectorOffset(drive, index);
+          const length = runtime.exports.spp3eDiskGetSectorLength(drive, index);
+          changes.set(dskSectorKey(cylinder * sides + head, i), new Uint8Array(diskData.subarray(offset, offset + length)));
+        }
       }
-      const offset = this.readUint32Le(journal, entryOffset);
-      this.collectWasmDiskRangeChanges(changes, diskData, payload, offset, length);
     }
-
+    runtime.exports.spp3eDiskClearDirty(drive);
     return changes.size > 0 ? changes : undefined;
   }
 
-  private collectWasmDiskRangeChanges(
-    changes: SectorChanges,
-    diskData: Uint8Array,
-    payload: WasmDiskPayload,
-    offset: number,
-    length: number
-  ): void {
-    const sectorLength = payload.sectorLength;
-    const firstSector = Math.floor(offset / sectorLength);
-    const lastSector = Math.floor((offset + length - 1) / sectorLength);
-    for (let sectorOrdinal = firstSector; sectorOrdinal <= lastSector; sectorOrdinal++) {
-      const sectorIndex = sectorOrdinal % payload.sectorsPerTrack;
-      const trackOrdinal = Math.floor(sectorOrdinal / payload.sectorsPerTrack);
-      const trackIndex = trackOrdinal;
-      const sectorId = payload.firstSectorId + sectorIndex;
-      const sectorOffset = sectorOrdinal * sectorLength;
-      if (sectorOffset + sectorLength > diskData.length) {
-        continue;
-      }
-      changes.set(
-        trackIndex * 100 + sectorId,
-        new Uint8Array(diskData.subarray(sectorOffset, sectorOffset + sectorLength))
-      );
-    }
+  /**
+   * The whole disk as the core holds it, as a change: the image rebuilt from the core's tables. The
+   * machine's own copy of the medium follows it (without a re-upload), so a restart reloads it.
+   */
+  private wholeDiskChange(runtime: SpP3eWasmV2Runtime, drive: number): SectorChanges | undefined {
+    const state = this.wasmV2DiskStates[drive];
+    if (state == null) return undefined;
+    const bytes = writeDiskData(this.readDiskFromWasm(runtime, drive, state.disk));
+    state.disk = readDiskData(bytes);
+    state.structureRevision = runtime.exports.spp3eDiskGetStructureRevision(drive);
+    runtime.exports.spp3eDiskClearDirty(drive);
+    super.setMachineProperty(drive === 0 ? MEDIA_DISK_A : MEDIA_DISK_B, bytes);
+    return new Map([[DSK_WHOLE_IMAGE_KEY, bytes]]);
   }
 
-  private mergePendingDiskChanges(property: string, changes: SectorChanges | undefined): void {
+  /** The disk model of what the core's tables hold, keeping the file's own track fields */
+  private readDiskFromWasm(runtime: SpP3eWasmV2Runtime, drive: number, original: DiskInformation): DiskInformation {
+    const exports = runtime.exports;
+    const diskData = drive === 0 ? runtime.diskData : runtime.diskBData;
+    const cylinders = exports.spp3eDiskGetImageCylinders(drive);
+    const sides = exports.spp3eDiskGetImageSides(drive) > 1 ? 2 : 1;
+    const tracks: TrackInformation[] = [];
+    for (let cylinder = 0; cylinder < cylinders; cylinder++) {
+      for (let head = 0; head < sides; head++) {
+        const info = exports.spp3eDiskGetTrackInfo(drive, cylinder, head) >>> 0;
+        if ((info & 0x80000000) === 0) {
+          tracks.push(unformattedTrack(cylinder, head));
+          continue;
+        }
+        const count = (info >>> 16) & 0xff;
+        const first = info & 0xffff;
+        const format = exports.spp3eDiskGetTrackFormat(drive, cylinder, head);
+        const sectors: SectorInformation[] = [];
+        for (let i = 0; i < count; i++) {
+          const index = first + i;
+          const id = exports.spp3eDiskGetSectorId(drive, index) >>> 0;
+          const status = exports.spp3eDiskGetSectorStatus(drive, index);
+          const copies = Math.max(1, (status >>> 16) & 0xff);
+          const offset = exports.spp3eDiskGetSectorOffset(drive, index);
+          const length = exports.spp3eDiskGetSectorLength(drive, index) * copies;
+          sectors.push({
+            C: id & 0xff,
+            H: (id >>> 8) & 0xff,
+            R: (id >>> 16) & 0xff,
+            N: (id >>> 24) & 0xff,
+            SR1: status & 0xff,
+            SR2: (status >>> 8) & 0xff,
+            actualLength: length,
+            sectorData: new Uint8Array(diskData.subarray(offset, offset + length)),
+            multipleWeakSectors: copies > 1,
+            copies,
+            sectorDataPosition: 0
+          });
+        }
+        // --- The file's own Track-Info fields, unless the guest laid the track down anew
+        const before = original.numSides === sides ? original.tracks[cylinder * sides + head] : undefined;
+        const same = before && !before.unformatted && before.sectors.length === count;
+        tracks.push({
+          unformatted: false,
+          trackNumber: same ? before.trackNumber : cylinder,
+          sideNumber: same ? before.sideNumber : head,
+          dataRate: same ? before.dataRate : 0,
+          recordingMode: same ? before.recordingMode : 0,
+          sectorSize: (format >>> 16) & 0xff,
+          sectorCount: count,
+          gap3: format & 0xff,
+          filler: (format >>> 8) & 0xff,
+          sectors
+        });
+      }
+    }
+    const disk: DiskInformation = {
+      diskFormat: original.diskFormat,
+      creator: original.creator,
+      numTracks: cylinders,
+      numSides: sides,
+      tracks,
+      standardTrackSize: original.standardTrackSize,
+      trailer: original.trailer
+    };
+    // --- A standard image that can no longer be one (a track of another sector size) is extended
+    if (disk.diskFormat === FloppyDiskFormat.Cpc && !canWriteStandard(disk)) {
+      disk.diskFormat = FloppyDiskFormat.CpcExtended;
+      disk.standardTrackSize = undefined;
+    }
+    return disk;
+  }
+
+  /**
+   * Adds changes to the ones the machine controller has not taken yet. A whole image replaces them;
+   * sector changes after a whole image land in that image (it is the layout they are keyed for).
+   */
+  private mergePendingDiskChanges(drive: number, changes: SectorChanges | undefined): void {
     if (!changes || changes.size === 0) {
       return;
     }
-    const pendingChanges = this.getMachineProperty(property) as SectorChanges;
-    if (pendingChanges) {
-      changes.forEach((sectorData, sectorKey) => pendingChanges.set(sectorKey, sectorData));
-    } else {
+    const property = drive === 0 ? DISK_A_CHANGES : DISK_B_CHANGES;
+    const pendingChanges = this.getMachineProperty(property) as SectorChanges | undefined;
+    if (!pendingChanges || changes.has(DSK_WHOLE_IMAGE_KEY)) {
       super.setMachineProperty(property, changes);
+      return;
     }
-  }
-
-  private readUint32Le(buffer: Uint8Array, offset: number): number {
-    return (
-      buffer[offset] |
-      (buffer[offset + 1] << 8) |
-      (buffer[offset + 2] << 16) |
-      (buffer[offset + 3] << 24)
-    ) >>> 0;
-  }
-
-  private createWasmDiskPayload(contents: Uint8Array): WasmDiskPayload {
-    try {
-      const disk = readDiskData(contents);
-      const sectors = disk.tracks.flatMap((track) => track.sectors);
-      if (sectors.length === 0) {
-        throw new Error("Disk has no sectors.");
-      }
-
-      const sides = Math.max(1, Math.min(2, disk.numSides));
-      const sectorsPerTrack = Math.max(...disk.tracks.map((track) => track.sectorCount));
-      const firstSectorId = Math.min(...sectors.map((sector) => sector.R));
-      const sectorLength = Math.max(
-        ...sectors.map((sector) => Math.max(0x80 << (sector.N & 0x07), sector.actualLength))
-      );
-      const data = new Uint8Array(disk.numTracks * sides * sectorsPerTrack * sectorLength);
-      data.fill(0xe5);
-
-      for (const track of disk.tracks) {
-        for (const sector of track.sectors) {
-          const sectorIndex = sector.R - firstSectorId;
-          const side = sector.H & 0x01;
-          if (sectorIndex < 0 || sectorIndex >= sectorsPerTrack || side >= sides) {
-            continue;
-          }
-          const offset =
-            (((sector.C * sides + side) * sectorsPerTrack + sectorIndex) * sectorLength);
-          data.set(sector.sectorData.subarray(0, sectorLength), offset);
-        }
-      }
-
-      return { data, tracks: disk.numTracks, sides, sectorsPerTrack, firstSectorId, sectorLength };
-    } catch {
-      return {
-        data: contents,
-        tracks: 42,
-        sides: 2,
-        sectorsPerTrack: 32,
-        firstSectorId: 1,
-        sectorLength: 0
-      };
+    const whole = pendingChanges.get(DSK_WHOLE_IMAGE_KEY);
+    if (whole) {
+      applySectorChangesToDiskContents(whole, changes);
+      return;
     }
+    changes.forEach((sectorData, sectorKey) => pendingChanges.set(sectorKey, sectorData));
   }
 
   /**
@@ -1360,6 +1466,12 @@ export class ZxSpectrumP3eWasmV2Machine
       },
       getFrameCommand: () => this.getFrameCommand(),
       enter: () => {
+        // --- A sector the DivMMC's card waits for is answered before another instruction runs
+        if (this.divMmc.syncFrameCommand()) {
+          const termination = this.finishWasmV2DebugLoop(FrameTerminationMode.Normal);
+          this.frameCompleted = false;
+          return termination;
+        }
         if (this.frameCompleted) {
           this.onInitNewFrame(false);
           this.frameCompleted = false;
@@ -1399,6 +1511,13 @@ export class ZxSpectrumP3eWasmV2Machine
         return pc;
       },
       historyStopReached: () => wasm.z80HistoryCheckStop() !== 0,
+      // --- The DivMMC's card asked for a sector: the loop ends at its frame-command test
+      afterStep: this.divMmcModel
+        ? () => {
+            this.divMmc.syncFrameCommand();
+            return undefined;
+          }
+        : undefined,
       importBusAccess: () => this.importWasmV2BusAccess(runtime),
       hasAccessBreakpoint: () => this.hasWasmV2AccessBreakpoint(),
       shouldStopAtBreakpoint: (instructionsExecuted) => this.shouldStopAtWasmV2Breakpoint(instructionsExecuted),
@@ -1594,10 +1713,10 @@ export class ZxSpectrumP3eWasmV2Machine
     this.invalidateWasmV2Sync();
     // --- What the core already holds must not be published again as new
     this.wasmV2SavedTapeRevision = runtime.exports.spp3eTapeGetSavedRevision();
-    // --- The restored disks are detached from their files (D11): with no payload, no sector the
+    // --- The restored disks are detached from their files (D11): with no disk state, no sector the
     // --- rewound machine writes is merged back into a host .dsk; inserting a disk attaches again
     this.wasmV2DiskChangeRevision = runtime.exports.spp3eFdcGetDirtyRevision();
-    this.wasmV2DiskPayloads.length = 0;
+    this.wasmV2DiskStates.length = 0;
     fillCoreBytes(runtime, runtime.diskChanges, 0);
     fillCoreBytes(runtime, runtime.diskBChanges, 0);
     this.syncFrameCountersFromWasmV2(runtime);

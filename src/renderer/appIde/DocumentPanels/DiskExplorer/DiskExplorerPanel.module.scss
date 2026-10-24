@@ -1,0 +1,377 @@
+/*
+ * The Disk Explorer (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, B4/B5): a header strip, then the
+ * list (files, or tracks of sector chips) beside a 34ch inspector. Neutral data colours for the
+ * text; the Layout view's chips carry what a sector holds - files on the accent, the directory on
+ * the secondary accent, system tracks neutral, free sectors hollow, unused ones dashed.
+ */
+
+.explorer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  container-type: inline-size;
+}
+
+/* --- Files dragged over the explorer: the whole document is the drop target */
+.dropTarget {
+  outline: 2px dashed var(--accent-border);
+  outline-offset: -2px;
+}
+
+.facts {
+  color: var(--data-secondary);
+  white-space: nowrap;
+}
+
+.mounted {
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-sm);
+  background: var(--accent-subtle);
+  color: var(--accent-text);
+  white-space: nowrap;
+}
+
+.banner {
+  margin: var(--space-1) var(--space-2) 0;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--status-error-subtle);
+  color: var(--text-primary);
+}
+
+.note {
+  margin: var(--space-1) var(--space-2) 0;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--status-warning-subtle);
+  color: var(--text-primary);
+}
+
+/* --- The list beside the inspector; stacked when the document is narrow */
+.body {
+  flex: 1 1 auto;
+  display: grid;
+  /* --- 62ch, not the usual 34ch: the inspector holds a 16-byte-a-row hex dump */
+  grid-template-columns: minmax(0, 1fr) 62ch;
+  min-height: 0;
+}
+
+@container (max-width: 110ch) {
+  .body {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+/* --- The Layout view: the tracks take what their chips need, the sector inspector the rest */
+.layoutBody {
+  grid-template-columns: max-content minmax(0, 1fr);
+}
+
+@container (max-width: 110ch) {
+  .layoutBody {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.listPane {
+  min-height: 0;
+}
+
+.inspector {
+  min-height: 0;
+  background: var(--surface-panel);
+  border-left: 1px solid var(--border-default);
+}
+
+/* --- The files table: fixed ch tracks, the name takes the slack */
+.table {
+  display: grid;
+  grid-template-columns: minmax(14ch, 1fr) 14ch 9ch 9ch;
+  min-width: 46ch;
+  font-variant-numeric: tabular-nums;
+}
+
+.table.plus3 {
+  grid-template-columns: minmax(14ch, 1fr) 14ch 9ch 9ch 7ch 6ch;
+  min-width: 59ch;
+}
+
+.headerRow,
+.row {
+  display: contents;
+}
+
+.headerRow > span {
+  position: sticky;
+  top: 0;
+  padding: var(--space-0_5) var(--space-2);
+  background: var(--surface-header);
+  color: var(--data-label);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.row > span {
+  padding: var(--space-0_5) var(--space-2);
+  color: var(--data-value);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.row:hover > span {
+  background: var(--surface-hover);
+}
+
+.rowSelected > span,
+.rowSelected:hover > span {
+  background: var(--surface-selected);
+}
+
+.deleted > span {
+  color: var(--text-tertiary);
+  text-decoration: line-through;
+}
+
+.name {
+  color: var(--data-value);
+}
+
+.number {
+  text-align: right;
+}
+
+/* --- The inspector */
+.preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  min-width: 0;
+}
+
+.preview .facts {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: var(--space-0_5) var(--space-3);
+  margin: 0;
+  white-space: normal;
+}
+
+.preview dt {
+  color: var(--data-label);
+}
+
+.preview dd {
+  margin: 0;
+  color: var(--data-value);
+  overflow-wrap: anywhere;
+}
+
+.attributes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+}
+
+.previewActions {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.basic {
+  display: flex;
+  flex-direction: column;
+}
+
+.linkButton {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-text);
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* --- The Layout view */
+.layout {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  padding: var(--space-1) var(--space-3);
+  color: var(--data-secondary);
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.surfaceSwitch {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-left: auto;
+  color: var(--data-label);
+  cursor: pointer;
+}
+
+.surface {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.tracks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0_5);
+  padding: var(--space-1) var(--space-3);
+}
+
+.track {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-0_5);
+}
+
+.trackLabel {
+  flex: 0 0 6ch;
+  color: var(--data-label);
+  font-variant-numeric: tabular-nums;
+}
+
+.unformatted {
+  color: var(--text-tertiary);
+}
+
+.chip {
+  display: inline-block;
+  width: 1.6ch;
+  height: 1.6ch;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.role-file {
+  background: var(--accent-solid);
+}
+
+.role-directory {
+  background: var(--accent-secondary-solid);
+}
+
+.role-system {
+  background: var(--text-tertiary);
+}
+
+.role-free {
+  background: var(--surface-raised);
+  border-color: var(--border-default);
+}
+
+.role-unused {
+  background: transparent;
+  border: 1px dashed var(--border-subtle);
+}
+
+.chipHighlighted {
+  background: var(--accent-solid-hover);
+  border-color: var(--accent-text);
+}
+
+.chipFlagged {
+  border-color: var(--status-warning);
+}
+
+.chipSelected {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+/* --- Hard-disk images (HardDiskExplorerPanel): FAT folders and the volume map */
+.table.fat {
+  grid-template-columns: minmax(20ch, 1fr) 12ch 8ch;
+  min-width: 40ch;
+}
+
+.path {
+  padding: var(--space-1) var(--space-3);
+  color: var(--data-label);
+  overflow-wrap: anywhere;
+}
+
+.volume {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+}
+
+/* One bar, the volume's areas side by side, each as wide as its share (a minimum keeps the small
+   ones - the reserved sectors, the FATs - readable) */
+.regionBar {
+  display: flex;
+  gap: var(--space-0_5);
+  min-height: calc(var(--space-3) * 2);
+}
+
+.region {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 8ch;
+  padding: 0 var(--space-1);
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  color: var(--text-on-accent);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.region-reserved {
+  background: var(--text-tertiary);
+}
+
+.region-fats,
+.region-root {
+  background: var(--accent-secondary-solid);
+}
+
+.region-data {
+  background: var(--accent-solid);
+}
+
+.clusterMap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-0_5);
+}
+
+.clusterMap .chip {
+  cursor: default;
+}
+
+/* The hard-disk explorer is the document itself (no GenericFilePanel around it): `container-type`
+   keeps it from taking its width from its content, so it must take the document's */
+.wholeDocument {
+  width: 100%;
+  flex: 1 1 auto;
+}

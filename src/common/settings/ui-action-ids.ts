@@ -31,6 +31,8 @@ export type UiActionId =
   | "rom:sp48:reset"
   | "rom:trdos:select"
   | "rom:trdos:forget"
+  | "rom:esxdos:select"
+  | "rom:esxdos:forget"
   | "rom:timex:select"
   | "rom:timex:forget"
   | "rom:scorpion:select"

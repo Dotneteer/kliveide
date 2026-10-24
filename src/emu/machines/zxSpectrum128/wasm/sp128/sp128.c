@@ -347,6 +347,17 @@ static void sp128WriteNonFePort(uint32_t address, uint32_t value);
 #include "../../../zxSpectrum/wasm/common/zx-spectrum-beta128.c"
 #undef BETA128_TACTS_PER_MS
 #undef BETA128_NOW
+/*
+ * The DivMMC (`zx-spectrum-divmmc-classic.c`; .plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md C4): the
+ * 128K model only - the host connects it (`sp128DivMmcSetPresent`). Its ROM-3 entry points need the
+ * 48K BASIC ROM (ROM 1) paged in.
+ */
+static void sp128DivMmcRemapped(void);
+#define ZXDC_PREFIX sp128
+#define ZXDC_ROM3_PRESENT() (sp128SelectedRom == 1u && beta128Paged == 0u)
+#define ZXDC_TACTS sp128Tacts
+#define ZXDC_REMAPPED() sp128DivMmcRemapped()
+#include "../../../zxSpectrum/wasm/common/zx-spectrum-divmmc-classic.c"
 static uint32_t sp128CommonTapeGetEarBit(void);
 static void sp128CommonTapeProcessMicBit(uint32_t micBit);
 
@@ -765,7 +776,8 @@ static void rebuildMemorySlotMap(void) {
   /* The Scorpion's $0000: RAM bank 0, else the service ROM, else TR-DOS or ROM 0/1 */
   const uint8_t ramAtZero = sp128Scorpion != 0u && (sp128Port1ffd & 0x01u) != 0u;
   const uint8_t serviceRom = sp128Scorpion != 0u && (sp128Port1ffd & 0x02u) != 0u;
-  sp128MemorySlotBase[0] = ramAtZero != 0u ? &sp128Ram[ramBankOffset(0u)]
+  sp128MemorySlotBase[0] = zxdcMapped != 0u ? zxdcView
+    : ramAtZero != 0u ? &sp128Ram[ramBankOffset(0u)]
     : serviceRom != 0u ? &sp128Rom[romBankOffset(2u)]
     : beta128Paged != 0u ? sp128TrdosRom
     : &sp128Rom[romBankOffset(sp128SelectedRom)];
@@ -787,6 +799,18 @@ static void rebuildFlatRomSlot(void) {
   for (uint32_t i = 0u; i < 0x4000u; i++) {
     sp128Memory[i] = sp128MemorySlotBase[0][i];
   }
+}
+
+/* The DivMMC mapped in or out, or its banks changed: its view is the ROM slot while mapped */
+static void sp128DivMmcRemapped(void) {
+  if (sp128MemorySlotMapInitialized == 0u) return;
+  rebuildMemorySlotMap();
+  rebuildFlatRomSlot();
+}
+
+/* A CPU write to the ROM slot (cold): the DivMMC's RAM page takes it while mapped */
+static ZXDC_NOINLINE void sp128DivMmcWrite(uint32_t address, uint8_t value) {
+  if (zxdcWrite(address, value) != 0u) sp128Memory[address & 0x3fffu] = value;
 }
 
 static void rebuildFlatTopRamSlot(void) {
@@ -831,6 +855,7 @@ SP128_ALWAYS_INLINE void writeMappedMemory(uint32_t address, uint32_t value) {
   const uint8_t byteValue = (uint8_t)value;
   const uint32_t slot = maskedAddress >> 14u;
   if (sp128MemorySlotWritable[slot] == 0u) {
+    if (slot == 0u) sp128DivMmcWrite(maskedAddress, byteValue);
     return;
   }
   const uint32_t offset = maskedAddress & 0x3fffu;
@@ -946,7 +971,14 @@ static inline void rzxIntAck(void);
  * The Beta 128's paging trap ([BK], plan §9): an M1 fetch from $3D00-$3DFF with the 48K BASIC ROM
  * selected pages the TR-DOS ROM in, before the fetch reads it; an M1 fetch from RAM pages it out.
  */
-#define Z80_BEFORE_OPCODE_FETCH() sp128BetaBeforeFetch(cpu.pc)
+#define Z80_BEFORE_OPCODE_FETCH() \
+  do { \
+    sp128BetaBeforeFetch(cpu.pc); \
+    ZXDC_BEFORE_OPCODE_FETCH(cpu.pc); \
+  } while (0)
+/* The DivMMC's delayed entry points map after the M1; RETN unmaps it */
+#define Z80_AFTER_OPCODE_FETCH() ZXDC_AFTER_OPCODE_FETCH()
+#define Z80_AFTER_RETN() ZXDC_AFTER_RETN(cpu.opCode)
 static inline void sp128BetaBeforeFetch(uint16_t pc) {
   if (beta128Enabled == 0u) return;
   if (beta128Paged == 0u) {
@@ -1424,6 +1456,7 @@ void sp128Reset(void) {
   sp128InterruptLineActive = 0u;
   sp128CommonResetKeyboard();
   beta128Reset();
+  zxdcReset(0u);
   sp128CommonResetAudio();
   rebuildFlatMemory();
   sp128UlaRenderDisplay();
@@ -1440,6 +1473,7 @@ void sp128HardReset(uint32_t timing, uint32_t beta128) {
   for (uint32_t i = 0u; i < SP128_RAM_SIZE; i++) {
     sp128Ram[i] = 0u;
   }
+  zxdcReset(1u);
   sp128Reset();
 }
 
@@ -1449,9 +1483,12 @@ void sp128HardReset(uint32_t timing, uint32_t beta128) {
 #define ZXS_FRAME_LENGTH sp128TactsInCurrentFrame
 #define ZXS_RENDER_UNTIL_CURRENT_TACT() sp128UlaRenderUntilCurrentTact()
 #define ZXS_TACT_REBASE_THRESHOLD SP128_TACT_REBASE_THRESHOLD
+#define ZXS_STOP() ZXDC_HOST_WAITING()
 #include "../../../zxSpectrum/wasm/common/zx-spectrum-frame.c"
 /* The debugger's breakpoint flags and in-core loop, `sp128ExecuteUntilStop` (z80-debug-loop.c) */
 #define Z80_DEBUG_LOOP_PREFIX sp128
+/* It returns where the fast frame does: the DivMMC's SD card waiting for a sector */
+#define Z80_DEBUG_LOOP_STOP() ZXDC_HOST_WAITING()
 #include "../../../../z80/wasm/z80-debug-loop.c"
 
 uint32_t sp128ExecuteInstruction(void) {
@@ -1477,7 +1514,9 @@ uint32_t sp128ExecuteInstruction(void) {
   sp128InterruptLineActive = intActive;
   z80SetSigInt(intActive);
   z80SetTacts(sp128Tacts);
+  const uint8_t divMmcNmi = zxdcNmiBeforeCycle();
   z80ExecuteCpuCycle();
+  zxdcNmiAfterCycle(divMmcNmi);
   sp128Tacts = z80GetTacts();
   updateTapeMode();
 #ifndef Z80_BENCH_STRIP_DEBUG
@@ -1520,7 +1559,7 @@ void sp128UploadRomByte(uint32_t rom, uint32_t offset, uint32_t value) {
     sp128RomChecksum =
       ((sp128RomChecksum << 5u) | (sp128RomChecksum >> 27u)) ^ ((uint8_t)value + offset + (rom << 14u));
     sp128Rom[romBankOffset(rom) + offset] = (uint8_t)value;
-    if (rom == sp128SelectedRom && beta128Paged == 0u) {
+    if (rom == sp128SelectedRom && beta128Paged == 0u && zxdcMapped == 0u) {
       sp128Memory[offset] = (uint8_t)value;
     }
   }
@@ -1598,6 +1637,9 @@ void sp128SetKeyStatus(uint32_t key, uint32_t down) {
 }
 
 static uint32_t sp128ReadNonFePort(uint32_t address) {
+  if (zxdcIsPort(address) != 0u) {
+    return zxdcReadPort(address);
+  }
   if (beta128Paged != 0u && beta128IsPort(address)) {
     return beta128ReadPort(address);
   }
@@ -1628,6 +1670,10 @@ static void sp128WriteScorpion1ffd(uint32_t value) {
 }
 
 static void sp128WriteNonFePort(uint32_t address, uint32_t value) {
+  if (zxdcIsPort(address) != 0u) {
+    zxdcWritePort(address, value);
+    return;
+  }
   if (beta128Paged != 0u && beta128IsPort(address)) {
     beta128WritePort(address, value);
     return;

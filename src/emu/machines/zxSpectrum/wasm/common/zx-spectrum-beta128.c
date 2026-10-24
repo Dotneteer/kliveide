@@ -53,8 +53,9 @@
 #define BETA128_SYS_SIDE 0x10u
 #define BETA128_SYS_MFM 0x40u
 /*
- * Which value of the side bit selects side 1 ([BK] reads as "0 = the first head"). Kept in this one
- * place; plan §9 lists it as open until TR-DOS reading a file on side 1 decides it.
+ * Which value of the side bit selects side 1 ([BK] reads as "0 = the first head"). Confirmed with
+ * TR-DOS 5.03 (`test/sp128-hw/beta128/trdos.test.ts`, KLIVE_TRDOS_ROM): it selects side 0 with the bit
+ * set ($3C) and loads a file from logical track 1 - cylinder 0, side 1 - with it clear ($2C).
  */
 #define BETA128_SIDE1_WHEN_BIT_CLEAR 1u
 

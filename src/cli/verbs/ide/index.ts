@@ -70,7 +70,7 @@ Machine:
 Project:
   build                        Compile the build root (errors in file:line:col format; exit 2)
   run | debug | inject         Build and run, debug or inject the code
-  export <file> [--format tap|tzx|hex|nex] [--name n] [--auto-start] [--add-pause]
+  export <file> [--format tap|tzx|hex|nex|dsk|trd] [--name n] [--auto-start] [--add-pause]
          [--add-clear] [--single-block] [--border 0-7] [--address a] [--screen file]
 State:
   regs                         CPU registers

@@ -55,14 +55,14 @@ static void zxnextNmiUpdateSources(void);
 /* The source latches on the next 28 MHz clock (~2051-2070), not at the next opcode fetch - which a DMA
    transfer holding the bus postpones (and $CC bit 7 lets the NMI stop it) */
 static void zxnextNmiRequestMultiface(void) {
-  if (zxnextNmiAcceptCause() && !nmiSourceMf && !nmiSourceDivMmc && zxnextDivMmcGetEnableMultifaceNmiByM1Button()) {
+  if (zxnextNmiAcceptCause() && !nmiSourceMf && !nmiSourceDivMmc && zxDivMmcGetEnableMultifaceNmiByM1Button()) {
     nmiPendingMf = 1u;
     zxnextNmiUpdateSources();
   }
 }
 
 static void zxnextNmiRequestDivMmc(void) {
-  if (zxnextNmiAcceptCause() && !nmiSourceMf && !nmiSourceDivMmc && zxnextDivMmcGetEnableNmiByDriveButton()) {
+  if (zxnextNmiAcceptCause() && !nmiSourceMf && !nmiSourceDivMmc && zxDivMmcGetEnableNmiByDriveButton()) {
     nmiPendingDivMmc = 1u;
     zxnextNmiUpdateSources();
   }
@@ -70,10 +70,10 @@ static void zxnextNmiRequestDivMmc(void) {
 
 static void zxnextNmiUpdateSources(void) {
   if (nmiSourceMf || nmiSourceDivMmc) return;
-  uint32_t assertMf = nmiPendingMf && zxnextDivMmcGetEnableMultifaceNmiByM1Button();
-  uint32_t assertDivMmc = nmiPendingDivMmc && zxnextDivMmcGetEnableNmiByDriveButton();
-  uint32_t conmem = (zxnextDivMmcGetPortE3() & 0x80u) != 0u;
-  if (assertMf && !conmem && !zxnextDivMmcGetNmiHold()) {
+  uint32_t assertMf = nmiPendingMf && zxDivMmcGetEnableMultifaceNmiByM1Button();
+  uint32_t assertDivMmc = nmiPendingDivMmc && zxDivMmcGetEnableNmiByDriveButton();
+  uint32_t conmem = (zxDivMmcGetPortE3() & 0x80u) != 0u;
+  if (assertMf && !conmem && !zxDivMmcGetNmiHold()) {
     nmiSourceMf = 1u;
   } else if (assertDivMmc && !zxnextMultifaceIsActive()) {
     nmiSourceDivMmc = 1u;
@@ -91,7 +91,7 @@ static void zxnextNmiBeforeOpcodeFetch(uint32_t pc) {
         nmiState = ZXNEXT_NMI_FETCH;
         nmiSignalActive = 1u;
         if (nmiSourceMf) zxnextMultifacePressNmiButton();
-        if (nmiSourceDivMmc) zxnextDivMmcArmNmiButton();
+        if (nmiSourceDivMmc) zxDivMmcArmNmiButton();
       }
       break;
     case ZXNEXT_NMI_FETCH:
@@ -102,7 +102,7 @@ static void zxnextNmiBeforeOpcodeFetch(uint32_t pc) {
       }
       break;
     case ZXNEXT_NMI_HOLD: {
-      uint32_t hold = nmiSourceMf ? zxnextMultifaceNmiHold() : nmiSourceDivMmc ? zxnextDivMmcGetNmiHold() : 0u;
+      uint32_t hold = nmiSourceMf ? zxnextMultifaceNmiHold() : nmiSourceDivMmc ? zxDivMmcGetNmiHold() : 0u;
       /* S_NMI_END lasts one CPU clock (no I/O write is in progress at an opcode fetch): pass through it
          at once, so a cause raised by the next instruction is accepted, as on the FPGA */
       if (!hold) {
