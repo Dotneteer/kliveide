@@ -2,8 +2,8 @@
   "format": "zx-source-debug",
   "version": 1,
   "architecture": "zxnext",
-  "binaryLength": 7695,
-  "binaryChecksum": 3910810397,
+  "binaryLength": 7766,
+  "binaryChecksum": 769130357,
   "sourceLevelDebug": {
     "language": "basic",
     "files": [
@@ -203,7 +203,7 @@
         "endLine": 40,
         "endColumn": 3,
         "startAddress": 37783,
-        "endAddress": 37797,
+        "endAddress": 37788,
         "kind": "normal",
         "callableIndex": 3,
         "callTargets": []
@@ -281,7 +281,7 @@
         "endLine": 12,
         "endColumn": 12,
         "startAddress": 37856,
-        "endAddress": 37906,
+        "endAddress": 37862,
         "kind": "normal",
         "callableIndex": 0,
         "callTargets": []
@@ -320,7 +320,7 @@
         "endLine": 21,
         "endColumn": 22,
         "startAddress": 37953,
-        "endAddress": 38016,
+        "endAddress": 37993,
         "kind": "normal",
         "callableIndex": 1,
         "callTargets": []
@@ -333,7 +333,7 @@
         "endLine": 25,
         "endColumn": 16,
         "startAddress": 38016,
-        "endAddress": 38016,
+        "endAddress": 38020,
         "kind": "normal",
         "callableIndex": 2,
         "callTargets": []

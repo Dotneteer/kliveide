@@ -10,7 +10,8 @@ import { createSession } from "../harness/zxnext";
 
 /*
  * Boriel BASIC programs on the real ZX Spectrum Next core, started from the `.nex` zxbc wrote, as the
- * IDE starts them (`.plans/BORIEL_BASIC_INTEGRATION_PLAN.md` §6.3): source breakpoints, the call
+ * IDE starts them (`.plans/BORIEL_BASIC_INTEGRATION_PLAN.md` §6.3): a program that runs to the end
+ * with the right output (zxbc's Next code, Z80N instructions included, works), source breakpoints, the call
  * stack, and the runtime-error stop, which on the Next must come before zxbc's panic screen.
  */
 
@@ -42,6 +43,24 @@ async function startNex(name: string) {
 }
 
 describe("Boriel BASIC on the ZX Spectrum Next", () => {
+  it("runs a program to the end with the right screen and memory", async () => {
+    const session = await startNex("language-next");
+    // --- The program POKEs 40000 last, then loops forever
+    session.runUntil(() => session.peek(40000) === 77, "the program's last POKE", { maxFrames: 300 });
+    session.runFrames(1);
+    expect([0, 1, 2, 3, 4, 5].map((row) => session.screenLine(row).trimEnd())).toEqual([
+      "BORIEL NEXT OK", // PRINT AT
+      "SUM 30", // a SUB filling an array, a FOR loop summing it into a ULONG
+      "FACT 3628800", // a recursive FUNCTION returning ULONG
+      "HELLO WORLD 11", // string concatenation and LEN
+      "WORLD", // slicing
+      "F 7 12" // FLOAT arithmetic, SQR and INT
+    ]);
+    // --- The ASM block's Z80N instructions: NEXTREG $14,$AB and MUL D,E (5 * 7)
+    expect(session.nextRegValue(0x14)).toBe(0xab);
+    expect(session.peek(40001)).toBe(35);
+  });
+
   it("stops at a source breakpoint inside a FUNCTION, with the call stack", async () => {
     const info = load("calls-next");
     const session = await startNex("calls-next");

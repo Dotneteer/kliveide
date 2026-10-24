@@ -2,8 +2,8 @@
   "format": "zx-source-debug",
   "version": 1,
   "architecture": "zx128k",
-  "binaryLength": 20028,
-  "binaryChecksum": 206347084,
+  "binaryLength": 20046,
+  "binaryChecksum": 3284726133,
   "sourceLevelDebug": {
     "language": "basic",
     "files": [
@@ -89,7 +89,7 @@
         "endLine": 13,
         "endColumn": 0,
         "startAddress": 32928,
-        "endAddress": 32928,
+        "endAddress": 32933,
         "kind": "normal",
         "callableIndex": 0,
         "callTargets": []
@@ -105,7 +105,7 @@
         "endAddress": 55185,
         "kind": "normal",
         "partition": 0,
-        "callableIndex": 0,
+        "callableIndex": 1,
         "callTargets": []
       },
       {
@@ -119,7 +119,7 @@
         "endAddress": 55234,
         "kind": "normal",
         "partition": 0,
-        "callableIndex": 0,
+        "callableIndex": 1,
         "callTargets": []
       },
       {
@@ -130,10 +130,10 @@
         "endLine": 317,
         "endColumn": 12,
         "startAddress": 55234,
-        "endAddress": 61273,
+        "endAddress": 55240,
         "kind": "normal",
         "partition": 0,
-        "callableIndex": 0,
+        "callableIndex": 1,
         "callTargets": []
       },
       {
@@ -147,7 +147,7 @@
         "endAddress": 61303,
         "kind": "normal",
         "partition": 0,
-        "callableIndex": 0,
+        "callableIndex": 2,
         "callTargets": []
       },
       {
@@ -158,10 +158,10 @@
         "endLine": 315,
         "endColumn": 12,
         "startAddress": 61303,
-        "endAddress": 61331,
+        "endAddress": 61309,
         "kind": "normal",
         "partition": 0,
-        "callableIndex": 0,
+        "callableIndex": 2,
         "callTargets": []
       },
       {
@@ -175,7 +175,7 @@
         "endAddress": 61348,
         "kind": "normal",
         "partition": 0,
-        "callableIndex": 0,
+        "callableIndex": 3,
         "callTargets": []
       },
       {
@@ -186,10 +186,10 @@
         "endLine": 8,
         "endColumn": 12,
         "startAddress": 61348,
-        "endAddress": 61348,
+        "endAddress": 61354,
         "kind": "normal",
         "partition": 0,
-        "callableIndex": 0,
+        "callableIndex": 3,
         "callTargets": []
       },
       {
@@ -200,10 +200,10 @@
         "endLine": 312,
         "endColumn": 19,
         "startAddress": 55172,
-        "endAddress": 55172,
+        "endAddress": 55186,
         "kind": "normal",
         "partition": 1,
-        "callableIndex": 0,
+        "callableIndex": 4,
         "callTargets": []
       }
     ],
@@ -664,7 +664,7 @@
             51,
             34,
             205,
-            145,
+            163,
             134
           ],
           "slots": [

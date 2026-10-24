@@ -1,0 +1,1 @@
+{ "description": "A program that runs to the end on the ZX Spectrum Next, built as a .nex: FUNCTION recursion, a SUB, arrays, ULONG and FLOAT arithmetic, strings and slicing, and an ASM block with Z80N instructions (NEXTREG, MUL). Its screen and memory are checked", "args": ["--arch", "zxnext", "-O", "2", "-S", "32768"], "nex": true }

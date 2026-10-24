@@ -104,5 +104,6 @@
 9867: .core.__MODU8_FAST
 986C: .core.__MODI8
 986E: .core.__MODI8_FAST
-9873: .core.__PRINTI8
-987E: .core.__PRINTU8
+987A: .core.__MODI8_POS
+9881: .core.__PRINTI8
+988C: .core.__PRINTU8

@@ -2,8 +2,8 @@
   "format": "zx-source-debug",
   "version": 1,
   "architecture": "zx48k",
-  "binaryLength": 6292,
-  "binaryChecksum": 2379143152,
+  "binaryLength": 6306,
+  "binaryChecksum": 295896793,
   "sourceLevelDebug": {
     "language": "basic",
     "files": [
@@ -60,7 +60,7 @@
         "endLine": 6,
         "endColumn": 0,
         "startAddress": 37625,
-        "endAddress": 37625,
+        "endAddress": 37630,
         "kind": "normal",
         "callableIndex": 0,
         "callTargets": []

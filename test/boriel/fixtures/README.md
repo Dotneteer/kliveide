@@ -1,6 +1,6 @@
 # Boriel BASIC test fixtures
 
-Output of **Boriel BASIC `zxbc` 2.0.0-beta25** (the version `vendor/boriel-basic/kit.json` pins) for
+Output of **Boriel BASIC `zxbc` 2.0.0-beta29** (the version `vendor/boriel-basic/kit.json` pins) for
 Klive's own small test programs, committed so CI can test the `.dbg` adapter and the debugger without
 running zxbc (`.plans/BORIEL_BASIC_INTEGRATION_PLAN.md`, decision B-T1).
 

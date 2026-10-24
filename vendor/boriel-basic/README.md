@@ -23,7 +23,7 @@ first removing `com.apple.quarantine` (`.ai/boriel/kit.md`, "The macOS first-lau
 
 ## Licence
 
-Version `2.0.0-beta25` is redistributed with Boriel's written permission (plan §0.3, B-L1). The kits
+Version `2.0.0-beta29` is redistributed with Boriel's written permission (plan §0.3, B-L1). The kits
 contain no LICENSE file. A production version needs its licence text shipped with Klive and an
 entry in `THIRD_PARTY_NOTICES.md`.
 
