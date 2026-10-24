@@ -1712,6 +1712,19 @@
     "context": "Tooltip of the button that opens the file's bytes as Z80 disassembly at its load address.",
     "maxChars": 48
   },
+  "panels.diskExplorer.openBasic": "Open the program as a BASIC listing",
+  "@panels.diskExplorer.openBasic": {
+    "context": "Tooltip of the button that opens a BASIC program file from a disk or Microdrive cartridge in its own BASIC listing tab.",
+    "maxChars": 48
+  },
+  "panels.diskExplorer.basicTitle": "{name} ({source}) - BASIC",
+  "@panels.diskExplorer.basicTitle": {
+    "context": "Tab title of a BASIC program from a disk image opened as a listing. Keep BASIC.",
+    "placeholders": {
+      "name": "The program's file name on the disk",
+      "source": "The disk image's file name"
+    }
+  },
   "panels.diskExplorer.role.system": "System",
   "@panels.diskExplorer.role.system": {
     "context": "Legend entry in the Layout view of the Disk Explorer (the document that shows a .dsk, .trd or .scl disk image's files and sectors): a sector holding reserved system tracks (a TR-DOS disk's info sector).",

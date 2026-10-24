@@ -29,6 +29,7 @@ import { BasicLineDisplay } from "../BasicPanel";
 import basicStyles from "../BasicPanel.module.scss";
 import { createScrPixelData } from "../Next/ScrFileViewerPanel";
 import { CodeStartDialog } from "./CodeStartDialog";
+import { openTapeBlockView } from "../Tape/TapeBlockViewerPanel";
 import { DskSurfaceView } from "./DskSurfaceView";
 import { failureText, readErrorText } from "./diskErrorText";
 import {
@@ -294,6 +295,20 @@ const DiskExplorerView = ({ ctx, document }: { ctx: ViewContext; document: Docum
                       { disassemblyEnabled: true, disassOffset: selected.start ?? 0, viewMode: mode }
                     );
                   }}
+                  onOpenBasic={() => {
+                    const data = readDiskFile(bytes, filePath, selected.name);
+                    void openTapeBlockView(documentHubService, {
+                      id: `diskFileBasic:${filePath}:${selected.name}`,
+                      title: t("panels.diskExplorer.basicTitle", {
+                        name: selected.name,
+                        source: filePath.replace(/^.*[\\/]/, "")
+                      }),
+                      bytes: data,
+                      view: "basic",
+                      basicEnd: selected.variablesOffset ?? data.length,
+                      autostart: selected.start
+                    });
+                  }}
                 />
               ) : (
                 <EmptyState message={t("panels.diskExplorer.selectFile")} />
@@ -371,7 +386,8 @@ const FilePreview = ({
   busy,
   onAttributes,
   onShowSectors,
-  onOpenDump
+  onOpenDump,
+  onOpenBasic
 }: {
   file: DiskFileEntry;
   model: DiskExplorerModel;
@@ -381,6 +397,8 @@ const FilePreview = ({
   onAttributes: (attributes: Partial<DiskFileEntry["attributes"]>) => void;
   onShowSectors: () => void;
   onOpenDump: (mode: "memory" | "disassembly") => void;
+  /** Pops a BASIC program out into its own listing tab (the tape viewer's BASIC view) */
+  onOpenBasic: () => void;
 }) => {
   const t = useT();
   const data = useMemo(() => (file.deleted ? new Uint8Array(0) : safeRead(bytes, filePath, file.name)), [bytes, filePath, file]);
@@ -418,6 +436,9 @@ const FilePreview = ({
         <SmallIconButton iconName="spr-grid" title={t("panels.diskExplorer.showSectors")} enable={file.sectors.length > 0} clicked={onShowSectors} />
         <SmallIconButton iconName="binary" title={t("panels.diskExplorer.openMemory")} enable={data.length > 0} clicked={() => onOpenDump("memory")} />
         <SmallIconButton iconName="logs" title={t("panels.diskExplorer.openDisassembly")} enable={data.length > 0 && file.kind !== "basic"} clicked={() => onOpenDump("disassembly")} />
+        {kind === "basic" && (
+          <SmallIconButton iconName="code" title={t("panels.diskExplorer.openBasic")} enable={data.length > 0} clicked={onOpenBasic} />
+        )}
       </div>
       {data.length > 0 && kind === "basic" && <BasicPreview data={data} end={file.variablesOffset ?? data.length} />}
       {data.length >= 6912 && kind === "screen" && (
