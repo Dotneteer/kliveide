@@ -49,6 +49,11 @@ export const SETTING_IDE_PROFILER_INLAYS = "ideViewOptions.profilerInlays";
 export const SETTING_EMU_TRDOS_ROM = "emuOptions.trdosRomFile";
 /** The 8K esxDOS ROM the DivMMC boots (`.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md` C5): Klive cannot ship it */
 export const SETTING_EMU_ESXDOS_ROM = "emuOptions.esxDosRomFile";
+/**
+ * An Interface 1 ROM file that replaces the shipped v2 ROM (`.plans/MICRODRIVE_PLAN.md` Q1): empty means
+ * the shipped `if1-2.rom`
+ */
+export const SETTING_EMU_IF1_ROM = "emuOptions.interface1RomFile";
 /** The TC2048 ROM file the Timex boots (`.plans/TIMEX_SCORPION_PLAN.md` P5): Klive cannot ship it */
 export const SETTING_EMU_TC2048_ROM = "emuOptions.tc2048RomFile";
 /** The TC2068's and TS2068's 24K ROM files (the HOME ROM, then the EXROM); Klive cannot ship them */

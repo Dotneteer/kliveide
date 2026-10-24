@@ -1,7 +1,7 @@
 # ZX Interface 1 and Microdrives on the 48K and 128K (G9.6)
 
-Status: 📝 **proposed** (2026-10-24). Decisions Q1–Q8 were taken by the author on 2026-10-24 (§8).
-No code yet.
+Status: 🚧 **in progress**. Phase 0 done (2026-10-24, see its "As built" note). Decisions Q1–Q8 were
+taken by the author on 2026-10-24 (§8).
 Base plan: [CLOSING_THE_GAPS_PLAN.md](CLOSING_THE_GAPS_PLAN.md), §G9 (a new row, **G9.6**, size L).
 Research: [`_input/microdrive/`](../_input/microdrive/README.md). Every fact in this plan comes from
 there. Each file's citations point at its own bibliography (`sources.md`, `sources-formats.md`).
@@ -116,7 +116,7 @@ Full survey with paths and line numbers: `_input/microdrive/klive-integration-su
 - **Disk file systems:** `src/common/diskfs/` (`DiskFileSystem`, `open.ts` dispatching by kind,
   `diskExport.ts` for `expc -f dsk|trd`, `importFiles.ts`), the Disk Explorer and `DiskCommands.ts`.
 
-## 3. Design (proposals, to be confirmed in Phase 0–1 against the real ROM)
+## 3. Design (proposals, to be confirmed in Phases 1–2 against the real ROM)
 
 - **M1. One C device, shared.** `zxSpectrum/wasm/common/zx-spectrum-if1.c`, prefix-macro'd like the
   DivMMC, included by `sp48.c` (and so by `timex.c`, where it is compiled out, as the DivMMC is) and
@@ -156,10 +156,14 @@ Full survey with paths and line numbers: `_input/microdrive/klive-integration-su
     READ-BLK verifies as 15 + 612 `$FC` bytes. 528 would make every sector fail verification. The
     `.mdr` keeps 528 bytes; the final mark-free pass rewrites the records at normal length. The
     trailing bytes the ROM writes beyond 528 (3 per record) are dropped on save.
-  - Gap lengths come from the ROM's minimum poll counts (`interface1-hardware.md` §7.3): at least 8
-    GAP=1 polls (~90 T each), then at least 6 GAP=0 polls before SYNC, with v2's 60-poll (38 T)
-    SYNC window. Nominal values follow v1 FORMAT's layout (header → 3.2 ms → record → 6.2 ms) and
-    are fixed in Phase 0.
+  - Gap lengths come from the ROM's minimum poll counts (§9, counted in Phase 0): at least 8 GAP=1
+    polls of 88 T, then at least 6 GAP=0 polls before SYNC, with v2's 60-poll window of 38 T. So
+    the signal must run for 528–2 900 T before SYNC; the real 12-byte preamble is 2 016 T. Nominal
+    values follow v1 FORMAT's layout (header → 3.2 ms → record → 6.2 ms). The exact tolerances are
+    bisected in Phase 2.
+  - **Reads are paced by the CPU** (Phase 0 finding): byte *i* is delivered no earlier than its
+    nominal time and never skipped, and the head's position within a block is the later of elapsed
+    time and bytes consumed.
   - **Why not a raw track** (ZEsarUX `.rmd`): the `.mdr` stores sectors, not gaps. A slot ring
     converts losslessly both ways, matches the `.szx` `MDRV` block's head position and preamble
     count, and keeps write-back to sector granularity like the Beta 128's.
@@ -173,9 +177,12 @@ Full survey with paths and line numbers: `_input/microdrive/klive-integration-su
   - Writes to `$E7` in read mode are ignored, and reads in write mode return `$FF` (undocumented,
     §9).
 - **M6. Fast Microdrive (Q6).**
-  - A core flag shortens the byte time to the minimum and the gaps to twice the ROM's poll minima.
-    The real ROM still runs every step, so FORMAT, CAT, SAVE and LOAD stay correct; only the tape's
-    speed changes. Target: at least 5× faster CAT and LOAD; Phase 1 measures it.
+  - A core flag shortens the byte time to ~24 T, keeps the signal-before-SYNC at ~1 000 T (above
+    the 6 × 88 T presence and search minimum) and cuts the gaps to the Phase 2 tolerances plus
+    margin. The real ROM still runs every step, so FORMAT, CAT, SAVE and LOAD stay correct; only the
+    tape's speed changes.
+  - Estimate: a slot falls from ~129 000 T to ~20 000 T, so a 254-slot loop takes ~1.5 s instead of
+    ~9.4 s. That is ~6×; Phase 1 measures it.
   - The ROM's own fixed delays (motor start ~37 ms, drive select ~16 ms, FORMAT's ~97 ms) are
     unchanged.
   - The flag lives in core memory, so states and replays carry it. Toggling it is a host input like
@@ -233,24 +240,50 @@ Full survey with paths and line numbers: `_input/microdrive/klive-integration-su
 
 ## 5. Phases
 
-### Phase 0 — ROM, references and the reference values (S)
+### Phase 0 — ROM, references and the reference values (S) ✅
 1. **The ROM (Q1).**
    - Add `src/public/roms/if1-2.rom` (8192 bytes, CRC32 `bb66dd1e`) with
      `if1-roms-readme.txt` (source, editions, the CRCs of v1 `e72a12ae` and v2).
    - Add a `THIRD_PARTY_NOTICES.md` section in the HT-1080Z style: rights with Sinclair Research,
      not covered by Amstrad's permission, no explicit permission known, removed on request.
    - Add a size and CRC test.
-   - The author supplies the file (e.g. from Debian's `spectrum-roms` package), checked against
-     the CRC.
-2. **The user-ROM setting.** `emuOptions.interface1RomFile` (`SETTING_EMU_IF1_ROM`), with a
-   settings-pages row (`when: {kind: "interface1"}`) and Machine › Interface 1 › ROM select/forget.
-   A user ROM must be 8K; it is identified by CRC as v1, v2 or "custom".
-3. **Reference values.** Boot the harness with the shipped ROM. Record in §9: the exact gap lengths
-   the ROM tolerates (by bisection), the reads and writes of FORMAT, CAT, SAVE and LOAD as port
-   traces, PROG after the first IF1 entry, and CAT's "K free" on a fresh 254-slot cartridge under
-   v2 and v1 (derived: 126 and 127). These become test expectations only once recorded.
-4. Record GAP polarity, data rate and decode as **decided** in §9 (they are the open questions of
-   the research). Each says what decided it.
+2. **The user-ROM setting.** `emuOptions.interface1RomFile` (`SETTING_EMU_IF1_ROM`), handed to the
+   machine as `IF1_ROM_FILE`. A user ROM must be 8K; it is identified by CRC as v1, v2 or "custom".
+3. **Reference values** that can be read from the ROM itself go into §9 now. The ones that need the
+   ROM running (gap tolerance by bisection, port traces, PROG, CAT's "K free") need the device and
+   move to Phase 2, step 0.
+
+**As built (2026-10-24).**
+- **The ROM.** `src/public/roms/if1-2.rom` was taken from a copy already on the author's machine.
+  Three copies were found, all matching MAME's v2 CRC32 and SHA-1. Beside it are
+  `if1-roms-readme.txt` and a `THIRD_PARTY_NOTICES.md` section.
+  `test/machines/if1-rom-image.test.ts` checks:
+  - size and CRC;
+  - the Sinclair notice;
+  - the bytes that M2 relies on, against `sp48.rom` and `sp128-1.rom`: the same instruction at
+    `$0008`/`$1708`, `RET` against `LD (HL),C` at `$0700`;
+  - `EI : RET` at `$0038` and `RETN` at `$0066`.
+
+  There is no v1 file on this machine. The v1 runs of Phase 4 stay opt-in.
+- **The setting.** `SETTING_EMU_IF1_ROM` goes in `setting-const.ts` and `setting-definitions.ts`,
+  `IF1_ROM_FILE` in `machine-props.ts`, and `MachineService` hands the setting to every machine.
+  `src/emu/machines/zxSpectrum/if1/if1Rom.ts` holds the resource name, the size and
+  `checkInterface1Rom()` (v1 / v2 / custom by CRC32, refusing other sizes).
+  - **Moved to Phase 3:** the Settings page row and the Machine › Interface 1 › ROM items. Both are
+    gated on the Interface 1 being connected (`MC_INTERFACE1`), which Phase 3 adds; before that
+    they would never show.
+- **Counted from the v2 ROM's code**, as T-states at 3.5 MHz with uncontended ROM fetches (§9). Each
+  gap poll in the block search (`CHKLOOP`/`CHK-LP-2`, TEST-BRK included) takes 88 T. Each SYNC poll
+  (`DR-READY`) takes 38 T. A failed presence try takes ~113 T. The ROM takes ~104 T from seeing
+  SYNC to its first `INIR`. Its slowest per-byte loop is READ-BLK's 36 T. These numbers settle M4's
+  gap rules and change M6 (below).
+- **A finding for M4/M6.** A drive whose bytes come purely from elapsed time loses bytes when a
+  byte time is shorter than the ROM's ~104 T lead-in after SYNC. Real speed (168 T) is safe, but
+  fast mode would not be. So **reads are paced by the CPU**: byte *i* of a block is delivered no
+  earlier than its nominal time, and never skipped. The head's position within a block is the
+  later of elapsed time and bytes consumed. This makes the real-speed behaviour identical to the
+  hardware's (the ROM is always faster than the tape) and lets fast mode shrink the byte time
+  freely.
 
 ### Phase 1 — the device in the cores (M–L)
 1. `zx-spectrum-if1.c`: paging (M2), ports (M3), the shift register (M7), the lazy slot-ring drive
@@ -271,6 +304,14 @@ Full survey with paths and line numbers: `_input/microdrive/klive-integration-su
    slow down (as G9.1b measured).
 
 ### Phase 2 — hardware tests (M)
+0. **The reference values Phase 0 could not take without the device** (§9 rows marked "Phase 2"):
+   - the gap lengths the ROM tolerates, by bisection on the real ROM, in particular how long gap B
+     must last after a header for G-HD-RC to find the record in the same pass;
+   - port traces of FORMAT, CAT, SAVE and LOAD;
+   - PROG after the first IF1 entry;
+   - CAT's "K free" on a fresh 254-slot cartridge (v2).
+
+   They become test expectations only once recorded.
 A stand-in ROM in `test/spectrum-hw/if1/test-rom.ts`, assembled by Klive, with routines at the IF1
 ROM's entry points (`$0008` dispatcher, `$0700` `RET`, a minimal select/read/write). It is used
 where the real ROM's behaviour would hide the device's. Most tests run on the **shipped real ROM**.
@@ -313,6 +354,8 @@ research file and section it checks:
      the CLI verb pick it up.
 3. **Config and menu.**
    - `MC_INTERFACE1` with `isInterface1Machine` / `hasInterface1` (`src/common/machines/interface1.ts`).
+   - The Settings page row for `SETTING_EMU_IF1_ROM` (`when: {kind: "interface1"}`, browse/forget),
+     moved here from Phase 0.
    - `interface1-menus.ts`: Connect (disconnects the DivMMC and says so, Q4), ROM, Fast Microdrive,
      and per drive Insert…, New Blank Cartridge…, Eject (asks to save if unsaved), Write Protect.
    - A `microdrives` key in `MACHINE_DEVICE_MENUS`; `setMachineType` rebuilds the machine, as the
@@ -336,7 +379,7 @@ research file and section it checks:
 
 ### Phase 4 — the real ROM end to end and the IDE flows (M)
 1. **On the shipped v2 ROM in the harness**, scripts T1–T12 of `test-material.md`, each expectation
-   taken from Phase 0's recorded values, never from the derived ones:
+   taken from the values Phases 0 and 2 recorded, never from the derived ones:
    - `FORMAT "m";1;"TEST"` then `CAT 1`;
    - `SAVE *`/`VERIFY *`/`LOAD *` of a program (with LINE), CODE, SCREEN$ and arrays;
    - OPEN#/PRINT#/INPUT#/CLOSE# and MOVE;
@@ -378,7 +421,7 @@ research file and section it checks:
      the standard v2) and one `MDRV` per inserted drive (motor, head position, preamble count, the
      `.mdr` path);
    - a missing `.mdr` on load leaves the drive empty with a warning;
-   - `wDrivePos`'s units are settled in Phase 0 against a Spectaculator- or Fuse-written file, if
+   - `wDrivePos`'s units are settled against a Spectaculator- or Fuse-written file, if
      one can be found; otherwise Klive writes slot × 543 + offset, clamped, and reads it the same
      way (§9).
 3. **`.sna`:** no field. Saving warns while the IF1 ROM is paged. Loading keeps the IF1 as
@@ -423,7 +466,7 @@ research file and section it checks:
 | Risk | Mitigation |
 |---|---|
 | Shipping the IF1 ROM: the rights are Sinclair's, with no known permission (Q1) | Readme and notice in the HT-1080Z style, removal on request. The user-ROM setting means a removal never breaks the feature |
-| The slot model's gaps do not satisfy some program that drives the ports itself (copiers, Microdrive Doctor) | Gaps from the ROM's poll minima plus margin. Phase 0 bisects the tolerance. Local opt-in runs of the Demo cartridge's Microdrive Test and a sector copier |
+| The slot model's gaps do not satisfy some program that drives the ports itself (copiers, Microdrive Doctor) | Gaps from the ROM's poll minima plus margin. Phase 2 bisects the tolerance. Local opt-in runs of the Demo cartridge's Microdrive Test and a sector copier |
 | v2 FORMAT's long records, or a short ring, behave differently from real tape | M4's `R_MAX` and write snapping; Phase 2 tests both |
 | Klive flows and traps assume the 48K ROM at `$0000–$1FFF` or PROG = 23755 | Tape trap gated (Phase 1). Code injection and loader flows re-run with the IF1 (Phase 4.4). The disassembly and profiler see the partition |
 | The "IN 0" hang looks like an emulator freeze | Documented. The debugger shows PC on the `IN`. Reset recovers |
@@ -448,7 +491,7 @@ research file and section it checks:
   a Microdrive Loader flow, and code injection (`expc -f mdr` plus "export and boot").
 - **Q8. Snapshots:** `.z80` and `.szx` read and written; Klive state files carry everything.
 
-## 9. Reference values (to be completed in Phase 0)
+## 9. Reference values (Phase 0 recorded; rows marked Phase 2 follow)
 
 Sources are the research files in `_input/microdrive/`, which carry the citations.
 
@@ -457,9 +500,13 @@ Sources are the research files in `_input/microdrive/`, which carry the citation
 | Paging | in on M1 `$0008`/`$1708` (before the fetch), out after the M1 at `$0700`; address only | `interface1-hardware.md` §3; MAME |
 | `$2000–$3FFF` while paged | the 8K ROM mirrored | MAME; **not verified on hardware** |
 | Port decode | A4/A3 only | `interface1-hardware.md` §2.1; full decode **unknown** |
-| GAP polarity | 1 = gap / no signal | inferred from the ROM's logic (presence test, block search, FORMAT skipping the presence test); one disassembly's comments disagree. **To confirm** by the ROM working in Phase 0 |
+| GAP polarity | 1 = gap / no signal | inferred from the ROM's logic (presence test, block search, FORMAT skipping the presence test); one disassembly's comments disagree. **To confirm** by the ROM working in Phase 2: only one polarity lets the block search (8 gap polls, 6 signal polls, then SYNC) meet a preamble |
 | Byte time | ~48 µs ≈ 168 T at 3.5 MHz (12 µs per bit per track, two tracks) | OqtaDrive, Sinclair Wiki; Wikipedia's 15 KB/s disagrees. The ROM never measures it |
-| Gaps | ≥ 8 GAP=1 polls (~90 T), then ≥ 6 GAP=0 polls before SYNC; v2: SYNC within 60 × 38 T; nominal header → 3.2 ms → record → 6.2 ms | `interface1-hardware.md` §7.3. **Bisect in Phase 0** |
+| Gaps | ≥ 8 GAP=1 polls, then ≥ 6 GAP=0 polls before SYNC; nominal header → 3.2 ms → record → 6.2 ms | `interface1-hardware.md` §7.3. Exact tolerances: **Phase 2** |
+| ROM poll timing (v2, counted) | gap poll 88 T (`CHKLOOP`/`CHK-LP-2`, TEST-BRK included); SYNC poll 38 T × 60 (2 280 T); SYNC → first `INIR` ~104 T; `INIR` 21 T/byte; slowest byte loop 36 T (READ-BLK); a failed presence try ~113 T × 5 000 (~0.16 s) after a 5 000 × 26 T (~37 ms) settle; DELAY-BC 26 T per count | v2 code (`IF1 v2 rom source.txt`), counted in Phase 0 |
+| Signal before SYNC | 528–2 900 T (6 polls minimum, then the 60-poll window); the real preamble is 12 × 168 = 2 016 T | derived from the row above |
+| Slot at real speed | ~30 + 67 + 543 + 129 byte times (header, gap B, record, gap C) ≈ 129 000 T ≈ 37 ms; 254 slots ≈ 9.4 s a loop | v1 FORMAT's delays, Phase 0 |
+| v2 FORMAT test record | `WR-BLK` writes 27 + 256 + 256 + 102 = 641 bytes; `READ-BLK` reads 15, then checks 256 + 256 + 100 = 612 bytes of `$FC` | v2 code, counted in Phase 0 |
 | Preamble | 10 × `$00`, 2 × `$FF`; never handed to the CPU | `microdrive-media.md` §2.1 |
 | Blocks | header 15 bytes, record 528 (ROM writes 543 with preamble + 3 junk, reads 528); v2 FORMAT record 641 written, 627 verified | `microdrive-media.md` §2.2–2.3; v2 disassembly WR-BLK/READ-BLK |
 | Checksum | sum mod 255 | verified by simulation (`mdr-and-file-formats.md` §3) |
@@ -469,8 +516,9 @@ Sources are the research files in `_input/microdrive/`, which carry the citation
 | Motor/select delays (ROM) | select ~16 ms; presence wait ~37 ms; FORMAT ~97 ms | `interface1-hardware.md` §5 |
 | Unused read bits, BUSY | 1 | **guess** |
 | `$E7` in the wrong direction | write in read mode ignored; read in write mode `$FF` | **guess**; undocumented |
-| PROG after the first IF1 entry | 23813 (derived) | **record in Phase 0** |
-| CAT "K free", fresh 254-slot cartridge | 126 (v2) / 127 (v1) (derived) | **record in Phase 0** |
+| PROG after the first IF1 entry | 23813 (derived) | **record in Phase 2** |
+| CAT "K free", fresh 254-slot cartridge | 126 (v2) / 127 (v1) (derived) | **record in Phase 2** (v1 only with a user ROM) |
 | `.szx` `wDrivePos` | Klive: byte offset within the 543-byte slot image, clamped to 16 bits | spec says "position within the file" but the field is a WORD; **check a foreign file** |
-| ROM editions | v1 CRC32 `e72a12ae`, v2 `bb66dd1e`; `CLOSE #0: PRINT PEEK 23729` → 0 / 80 | MAME hashes; Carri |
+| ROM editions | v1 CRC32 `e72a12ae`, v2 `bb66dd1e` (SHA-1 `5cfb6bca…3a127c08`, the shipped file); `CLOSE #0: PRINT PEEK 23729` → 0 / 80 | MAME hashes; Carri; the shipped file checked in Phase 0 |
+| Paging-address bytes | `$0008` `2A 5D 5C` and `$1708` `23` in the IF1 ROM, `sp48.rom` and `sp128-1.rom`; `$0700` `C9` (IF1) vs `71` (48K); `$0038` `FB C9`, `$0066` `ED 45` in the IF1 ROM | checked by `if1-rom-image.test.ts` |
 | 128K ROM 0 | never fetches from `$0008`/`$1708` | `_input/Spectrum128_ROM0.asm` (Paul Farrow's notes) |

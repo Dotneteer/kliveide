@@ -11,6 +11,8 @@ export const DISK_B_CHANGES = "DiskBChanges";
 export const TRDOS_ROM_FILE = "TrdosRomFile";
 /** The DivMMC's esxDOS ROM file's path, from the `SETTING_EMU_ESXDOS_ROM` setting (DISK_IMAGES plan C5) */
 export const ESXDOS_ROM_FILE = "EsxDosRomFile";
+/** A user Interface 1 ROM file's path, from the `SETTING_EMU_IF1_ROM` setting; absent means the shipped v2 ROM */
+export const IF1_ROM_FILE = "If1RomFile";
 /** The TC2048 ROM file's path, from the `SETTING_EMU_TC2048_ROM` setting (`.plans/TIMEX_SCORPION_PLAN.md` P5) */
 export const TIMEX_ROM_FILE = "TimexRomFile";
 /** The TC2068's and TS2068's 24K ROM files, from `SETTING_EMU_TC2068_ROM` / `SETTING_EMU_TS2068_ROM` */

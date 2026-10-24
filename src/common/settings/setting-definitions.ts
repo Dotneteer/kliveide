@@ -27,6 +27,7 @@ import {
   SETTING_IDE_PROFILER_INLAYS,
   SETTING_EMU_TRDOS_ROM,
   SETTING_EMU_ESXDOS_ROM,
+  SETTING_EMU_IF1_ROM,
   SETTING_EMU_TC2048_ROM,
   SETTING_EMU_TC2068_ROM,
   SETTING_EMU_TS2068_ROM,
@@ -295,6 +296,17 @@ const settingDefinitions: Setting[] = [
     description:
       "The 8K esxDOS ROM the DivMMC interface boots on the 48K, the 128K and the +2A/+3. Klive cannot " +
       "ship it, so the DivMMC works once you name your own copy.",
+    type: "string",
+    defaultValue: "",
+    saveWithIde: true,
+    boundTo: "emu"
+  },
+  {
+    id: SETTING_EMU_IF1_ROM,
+    title: "Interface 1 ROM file",
+    description:
+      "An 8K ZX Interface 1 ROM that replaces the second-edition ROM Klive ships, for example the " +
+      "first edition. Empty means the shipped ROM.",
     type: "string",
     defaultValue: "",
     saveWithIde: true,
