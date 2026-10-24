@@ -1,0 +1,340 @@
+<!doctype html public "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+
+  <head>
+    <title>Spectrum 128 ROM Disassembly - UK Spectrum 128</title>
+    <link rel="stylesheet" href="Spectrum128ROMDisassembly.css" type="text/css">
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+    <meta name="keywords"    content="Sinclair,Spectrum 128,Spectrum +2, Spectrum +2A/+3, Spanish Spectrum 128,ROM Disassembly, Bug Fixes">
+    <meta name="author"      content="Paul Farrow">
+    <meta name="description" content="Commented disassemblies of the Sinclair ZX Spectrum 128 ROM.">
+    <meta name="copyright"   content="(c)2009 Paul Farrow">
+  </head>
+
+<!-- ************************************************** -->
+
+  <body onload="Init()">
+
+<!-- SCRIPTS -->
+
+    <script type="text/javascript">
+<!--
+
+    var DefaultMenuID='MC_Mn1';
+
+//------ INITIALISE
+
+    function Init()
+    {
+      emailE="feedback@fruitcake.plus.com?subject=Spectrum 128 ROM Disassembly (do not modify this subject)";
+      emailO='onmouseover="self.status=' + "'Send Feedback Via Email';return true;" + '" onmouseout="self.status=' + "''" + '";';
+      document.getElementById('email').innerHTML='<a id="email" class="Footer" href="mailto:' + emailE + '" ' + emailO + '>Contact Me</' + 'a>';
+    }
+
+//------ SET AN ELEMENT'S IMAGE
+
+    function UpdateImage(MenuID, NewColour)
+    {
+      document.getElementById(MenuID).className=NewColour;
+    }
+
+//------   CLEAR DEFAULT HIGHLIGHTED MENU ITEM
+
+    function ClearDefaultMenu(MenuID)
+    {
+      if(MenuID != DefaultMenuID)
+        UpdateImage(DefaultMenuID, 'White');
+    }
+
+//-->
+    </script>
+
+<!-- ************************************************** -->
+
+  <div id="header">
+
+<!-- PAGE HEADER -->
+
+    <table class="Banner" width="100%" border="0" cellspacing="0" cellpadding="0">
+    <tr>
+      <td><img src="Images/Titles/Spectrum128TitleBar.gif" width="252" height="22" align="left" alt=""></td>
+      <td width="100%"><img src="Images/Titles/Spectrum128Bar.gif" width="100%" height="22" align="right" alt=""></td>
+      <td><img src="Images/Titles/SpectrumLogo.gif" width="109" height="22" align="right" alt=""></td>
+    </tr>
+    </table>
+
+  </div>
+
+<!-- ************************************************** -->
+
+  <div id="content">
+
+    <p id="PageTop" align="center">
+    Use the Spectrum&nbsp;128 style menu below to navigate to the various sections concerning the ROM disassemblies.
+    </p>
+
+    <table align="center" cellspacing="0" cellpadding="0" border="0">
+
+    <tr><td>
+      <img src="Images/Menus/Main/MainMenu_Title.gif" border="0" height="16px" width="384px" alt="ROM Disassembly Main Menu Title"><br>
+    </td></tr>
+
+    <tr><td id="MC_Mn1" class="Cyan">
+      <a href="Spectrum128ROMDisassembly.htm"
+            onmouseover="UpdateImage('MC_Mn1', 'Cyan'); ClearDefaultMenu('MC_Mn1'); self.status='To Section: Spectrum 128';return true"
+            onmouseout ="UpdateImage('MC_Mn1', 'White'); UpdateImage(DefaultMenuID, 'Cyan'); self.status=''">
+        <img name="ImgMC_Mn1" id="ImgMC_Mn1" src="Images/Menus/Main/MainMenu_1.gif" border="0" height="16px" width="384px" alt="Spectrum 128"><br>
+      </a>
+    </td></tr>
+
+    <tr><td id="MC_Mn2" class="White">
+      <a href="Spectrum128ROMDisassembly2.htm"
+            onmouseover="UpdateImage('MC_Mn2', 'Cyan'); ClearDefaultMenu('MC_Mn2'); self.status='To Section: Spectrum +2';return true"
+            onmouseout ="UpdateImage('MC_Mn2', 'White'); UpdateImage(DefaultMenuID, 'Cyan'); self.status=''">
+        <img name="ImgMC_Mn2" id="ImgMC_Mn2" src="Images/Menus/Main/MainMenu_2.gif" border="0" height="16px" width="384px" alt="Spectrum +2"><br>
+      </a>
+    </td></tr>
+
+    <tr><td id="MC_Mn3" class="White">
+      <a href="Spectrum128ROMDisassembly4.htm"
+            onmouseover="UpdateImage('MC_Mn3', 'Cyan'); ClearDefaultMenu('MC_Mn3'); self.status='To Section: Spectrum +2A/+3';return true"
+            onmouseout ="UpdateImage('MC_Mn3', 'White'); UpdateImage(DefaultMenuID, 'Cyan'); self.status=''">
+        <img name="ImgMC_Mn3" id="ImgMC_Mn3" src="Images/Menus/Main/MainMenu_3.gif" border="0" height="16px" width="384px" alt="Spectrum +2A/+3"><br>
+      </a>
+    </td></tr>
+
+    <tr><td id="MC_Mn4" class="White">
+      <a href="Spectrum128ROMDisassembly3.htm"
+            onmouseover="UpdateImage('MC_Mn4', 'Cyan'); ClearDefaultMenu('MC_Mn4'); self.status='To Section: Spanish Spectrum 128';return true"
+            onmouseout ="UpdateImage('MC_Mn4', 'White'); UpdateImage(DefaultMenuID, 'Cyan'); self.status=''">
+        <img name="ImgMC_Mn4" id="ImgMC_Mn4" src="Images/Menus/Main/MainMenu_4.gif" border="0" height="16px" width="384px" alt="Spanish Spectrum 128"><br>
+      </a>
+    </td></tr>
+
+    <tr><td><img src="Images/Menus/Main/MainMenu_Bottom.gif" border="0" height="16px" width="384px" alt=""><br>
+    </td></tr>
+
+    </table>
+
+    <p>
+    </p>
+
+<!-- PAGE TEXT -->
+
+<!-- ************************************************** -->
+
+    <br>
+    <table border="0" cellspacing="0" cellpadding="0">
+    <tr class="Title"><td><img src="Images/Graphics/DummySpace3.gif" width="1" height="3" border="0" alt=""></td></tr>
+    <tr><td><img src="Images/Graphics/DummySpace5.gif" width="1" height="5" border="0" alt=""></td></tr>
+    <tr>
+      <td class="Title">Spectrum 128 ROM</td>
+    </tr>
+    <tr><td><img src="Images/Graphics/DummySpace5.gif" width="1" height="5" border="0" alt=""></td></tr>
+    <tr class="Title"><td><img src="Images/Graphics/DummySpace3.gif" width="1" height="3" border="0" alt=""></td></tr>
+    </table>
+
+    <p>
+    The Spectrum&nbsp;128 contains 32K of ROM, divided into two banks of 16K referred to as ROM 0 (Editor ROM) and ROM 1 (BASIC ROM). At power on,
+    ROM 0 is active and contains the menu system, the 128&nbsp;BASIC editor, the new 128&nbsp;BASIC commands, the Calculator, the
+    Tape Tester and Tape Loader. ROM 1 contains a slightly modified version of the standard Spectrum ROM, and includes
+    the keypad scanning routine and test screen in the previously unused area at the end of the ROM.
+    </p>
+
+    <p>
+    The Spectrum&nbsp;128 ROM 0 disassembly was originally initiated by <a target="_blank" href="http://www.matthew-wilson.net/spectrum/rom/">Matthew Wilson</a>.
+    I incorporated all of my disassembly notes into this to form a single unified version and then proceeded to complete the disassembly.
+    The latest release, and all future enhancements, of the ROM 0 disassembly can therefore also be found on his website, along with very
+    useful HTML and PDF versions that Matthew has produced.
+    </p>
+
+    <p>
+    The Spectrum&nbsp;128 ROM 1 disassembly is built upon the Spectrum ROM disassembly produced by <a target="_blank" href="https://web.archive.org/web/20150602175320/http://www.wearmouth.demon.co.uk/">Geoff Wearmouth</a>
+    (who also has disassemblies of the ZX&nbsp;Interface&nbsp;1 ROM Editions 1 and 2, the ZX80 ROM, the ZX81 ROM Edition 2 and the Jupiter Ace ROM on his website).
+    I have incorporated commented disassemblies of all of the new routines found within the Spectrum&nbsp;128's version of the BASIC ROM into Geoff's Spectrum ROM disassembly.
+    Most of these new comments have resulted from my work on the 
+    <a href="../Keypad/Spectrum128Keypad.htm" onmouseover="self.status='View Details About The Spectrum 128 Keypad';return true" onmouseout ="self.status=''">
+    Spectrum&nbsp;128 Keypad</a> and 
+    <a href="../SCARTCable/Spectrum128SCARTCable.htm" onmouseover="self.status='View Details On Constructing A Spectrum 128 SCART Cable';return true" onmouseout ="self.status=''">
+    Spectrum&nbsp;128 Scart Cable</a>.
+    </p>
+
+    <table cellspacing="10" cellpadding="0" border="0" class="Light">
+    <tr>
+      <td><a href="Files/Disassemblies/Spectrum128_ROM0.zip"><img src="Images/Icons/Disassembly.gif" width="29" height="32" border="0" onmouseover="self.status='Download The Spectrum 128 ROM 0 Disassembly'; return true;" onmouseout="self.status=''" alt=""></a></td>
+      <td class="Light">Click here to download the <a href="Files/Disassemblies/Spectrum128_ROM0.zip" onmouseover="self.status='Download The Spectrum 128 ROM 0 Disassembly'; return true;"
+          onmouseout="self.status=''">Spectrum&nbsp;128 ROM&nbsp;0 Disassembly</a> (dated 4th February 2019).</td>
+    </tr>
+    <tr>
+      <td><a href="Files/Disassemblies/Spectrum128_ROM1.zip"><img src="Images/Icons/Disassembly.gif" width="29" height="32" border="0" onmouseover="self.status='Download The Spectrum 128 ROM 1 Disassembly'; return true;" onmouseout="self.status=''" alt=""></a></td>
+      <td class="Light">Click here to download the <a href="Files/Disassemblies/Spectrum128_ROM1.zip" onmouseover="self.status='Download The Spectrum 128 ROM 1 Disassembly'; return true;"
+          onmouseout="self.status=''">Spectrum&nbsp;128 ROM&nbsp;1 Disassembly</a> (dated 13th December 2011).</td>
+    </tr>
+    </table>
+
+    <table cellspacing="10" cellpadding="0" border="0" class="Light">
+    <tr>
+      <td><a href="Files/ROM_Dumps/Spectrum128_ROM0.bin"><img src="Images/Icons/ROM.gif" width="29" height="32" border="0" onmouseover="self.status='Download The Spectrum 128 ROM 0'; return true;" onmouseout="self.status=''" alt=""></a></td>
+      <td class="Light">Click here to download a dump of the <a href="Files/ROM_Dumps/Spectrum128_ROM0.bin" onmouseover="self.status='Download The Spectrum 128 ROM 0'; return true;"
+          onmouseout="self.status=''">Spectrum&nbsp;128 ROM&nbsp;0</a>.</td>
+    </tr>
+    <tr>
+      <td><a href="Files/ROM_Dumps/Spectrum128_ROM1.bin"><img src="Images/Icons/ROM.gif" width="29" height="32" border="0" onmouseover="self.status='Download The Spectrum 128 ROM 1'; return true;" onmouseout="self.status=''" alt=""></a></td>
+      <td class="Light">Click here to download a dump of the <a href="Files/ROM_Dumps/Spectrum128_ROM1.bin" onmouseover="self.status='Download The Spectrum 128 ROM 1'; return true;"
+          onmouseout="self.status=''">Spectrum&nbsp;128 ROM&nbsp;1</a>.</td>
+    </tr>
+    </table>
+
+    <p>
+    The Editor ROM of the Spectrum&nbsp;128 contains 44 bugs, although some of these never actually manifest themselves to cause problems.
+    </p>
+
+    <table cellspacing="10" cellpadding="0" border="0" class="Light">
+    <tr>
+      <td><a href="Files/Disassemblies/Spectrum128_ROM0_BugList.txt"><img src="Images/Icons/BugList.gif" width="29" height="32" border="0" onmouseover="self.status='View The Spectrum 128 ROM 0 Bug List'; return true;" onmouseout="self.status=''" alt=""></a></td>
+      <td class="Light">Click here to view the <a href="Files/Disassemblies/Spectrum128_ROM0_BugList.txt" onmouseover="self.status='View The Spectrum 128 ROM 0 Bug List'; return true;"
+          onmouseout="self.status=''">Spectrum 128 ROM 0 Bug List</a> (24th January 2017).</td>
+    </tr>
+    </table>
+
+    <p>
+    The Spectrum&nbsp;128 ROM 0 contains 0.5K of unused routines that are remnants from the original
+      <a href="Spectrum128ROMDisassembly3.htm" onmouseover="self.status='To Section: Spanish Spectrum 128';return true" onmouseout ="self.status=''">
+    Spanish Spectrum&nbsp;128</a>. I have used this space to patch the Spectrum&nbsp;128 ROM&nbsp;0 to include fixes for all but one of the bugs it contains.
+    A fix does not yet exist for the bug at $0321 which causes GO SUB entries on the stack to be discarded whenever a BASIC program stops, e.g. due to an error report.
+    </p>
+
+    <table cellspacing="10" cellpadding="0" border="0" class="Light">
+    <tr>
+      <td><a href="Files/Disassemblies/Spectrum128_ROM0_BugFixed.zip"><img src="Images/Icons/SourceCode.gif" width="29" height="32" border="0" onmouseover="self.status='Download The Bug Fixed Spectrum 128 ROM 0 Disassembly'; return true;" onmouseout="self.status=''" alt=""></a></td>
+      <td class="Light">Click here to download the <a href="Files/Disassemblies/Spectrum128_ROM0_BugFixed.zip" onmouseover="self.status='Download The Bug Fixed Spectrum 128 ROM 0 Disassembly'; return true;"
+          onmouseout="self.status=''">Bug Fixed Spectrum&nbsp;128 ROM&nbsp;0 Disassembly</a> (4th February 2019).</td>
+    </tr>
+    </table>
+
+    <table cellspacing="10" cellpadding="0" border="0" class="Light">
+    <tr>
+      <td><a href="Files/ROM_Dumps/Spectrum128_ROM0_BugFixed.bin"><img src="Images/Icons/ROM.gif" width="29" height="32" border="0" onmouseover="self.status='Download The Spectrum 128 Bug Fixed ROM 0'; return true;" onmouseout="self.status=''" alt=""></a></td>
+      <td class="Light">Click here to download a dump of the <a href="Files/ROM_Dumps/Spectrum128_ROM0_BugFixed.bin" onmouseover="self.status='Download The Spectrum 128 Bug Fixed ROM 0'; return true;"
+          onmouseout="self.status=''">Bug Fixed Spectrum&nbsp;128 ROM&nbsp;0</a>.</td>
+    </tr>
+    </table>
+
+    <p>
+    I have ported the Spectrum&nbsp;128 ROM to work on my
+    <a href="../../Interface2/Cartridges/Interface2_RC_ZXC2.htm" onmouseover="self.status='View ZXC2 ROM Cartridge PCB Details'; return true;" onmouseout="self.status=''">ZXC2</a>,
+    <a href="../../Interface2/Cartridges/Interface2_RC_ZXC3.htm" onmouseover="self.status='View ZXC3 ROM Cartridge PCB Details'; return true;" onmouseout="self.status=''">ZXC3</a>
+    and
+    <a href="../../Interface2/Cartridges/Interface2_RC_ZXC4.htm" onmouseover="self.status='View ZXC4 ROM Cartridge PCB Details'; return true;" onmouseout="self.status=''">ZXC4</a>
+    Interface 2 PCBs, thereby creating a 
+    <a href="../../Interface2/Cartridges/Interface2_RC_New_Spectrum_128.htm" onmouseover="self.status='View Details About The Spectrum 128 Emulator ROM Cartridge'; return true;" onmouseout="self.status=''">Spectrum&nbsp;128 Emulator ROM cartridge</a>.
+    Screenshots of the Spectrum&nbsp;128's menus and 128&nbsp;BASIC mode can also be seen on this page.
+    </p>
+
+<!-- ************************************************** -->
+
+  </div>
+
+  <div id="footer">
+
+<!-- RETURN BUTTONS -->
+
+    <hr>
+
+    <table width="100%" cellspacing="10" cellpadding="0" border="0">
+    <tr>
+    <td width="1%" height="51px" class="Black">
+      <a href="#PageTop"><img src="Images/Keys/Other/UpArrowKey.gif" onmouseover="self.status='To Menu'; return true;" onmouseout="self.status=''" alt="To 128 ROM Disassembly Menu" width="51px" height="51px" border="0"></a>
+    </td>
+    <td class="Table">
+      <a href="#PageTop" onmouseover="self.status='To Menu'; return true;" onmouseout="self.status=''">To Top Of Page<br></a>
+    </td>
+    <td width="1%" height="51px" class="Black">
+      <a href="Spectrum128ROMDisassembly2.htm"><img src="Images/Keys/Other/DownArrowKey.gif" onmouseover="self.status='To Next Section: Spectrum +2'; return true;" onmouseout="self.status=''" alt="To Next Section" width="51px" height="51px" border="0"></a>
+    </td>
+    <td class="Table">
+      <a href="Spectrum128ROMDisassembly2.htm" onmouseover="self.status='To Next Section: Spectrum+2'; return true;" onmouseout="self.status=''">To Next Section</a>
+    </td>
+    <td class="TableR">
+      <a href="../Spectrum128_ResourceCentre.htm" onmouseover="self.status='To Spectrum 128 Resource Centre'; return true;" onmouseout="self.status=''">Spectrum&nbsp;128 Resource Centre</a>
+    </td>
+    <td width="1%" height="51px" class="Black">
+      <a href="../Spectrum128_ResourceCentre.htm"> <img src="Images/Keys/Other/LeftArrowKey.gif" onmouseover="self.status='To Spectrum 128 Resource Centre'; return true;" onmouseout="self.status=''" alt="Spectrum 128 Resource Centre" width="51px" height="51px" border="0"> </a>
+    </td>
+    </tr>
+    </table>
+
+<!-- PAGE FOOTER -->
+
+    <table class="Banner" width="100%" border="0" cellspacing="0" cellpadding="0">
+    <tr>
+      <td width="100%"><img src="Images/Titles/Spectrum128Bar.gif" width="100%" height="22" align="right" alt=""></td>
+      <td><img src="Images/Titles/SpectrumLogo.gif" width="109" height="22" align="right" alt=""></td>
+    </tr>
+    </table>
+
+  </div>
+
+  <div id="mainmenu">
+
+    <table width="100%" cellspacing="0" cellpadding="0" border="0">
+    <tr valign="top">
+      <td align="center" height="52"><img src="Images/Titles/SinclairLogo.gif" width="147" height="52" border="0" alt=""></td>
+    </tr>
+    <tr><td height="13"></td></tr>
+    <tr valign="top">
+      <td align="center" height="13"><img src="Images/Titles/Spectrum128Subject.gif" width="150" height="43" border="0" alt=""></td>
+    </tr>
+    <tr><td height="22"></td></tr>
+    </table>
+
+    <table class="Menu" width="100%" cellspacing="9" cellpadding="0" border="0" align="center">
+    <tr>
+      <td><td height="22"><a class="MenuSel" href="Spectrum128ROMDisassembly.htm" onmouseover="self.status='View Details About The Spectrum 128 ROM';return true;" onmouseout="self.status=''">Spectrum 128</a></td>
+    </tr>
+    <tr>
+      <td><td height="22"><a class="Menu" href="Spectrum128ROMDisassembly2.htm" onmouseover="self.status='View Details About The Spectrum +2 ROM';return true;" onmouseout="self.status=''">Spectrum +2</a></td>
+    </tr>
+    <tr>
+      <td><td height="22"><a class="Menu" href="Spectrum128ROMDisassembly4.htm" onmouseover="self.status='View Details About The Spectrum +2A/+3 ROM';return true;" onmouseout="self.status=''">Spectrum +2A/+3</a></td>
+    </tr>
+    <tr>
+      <td><td height="22"><a class="Menu" href="Spectrum128ROMDisassembly3.htm" onmouseover="self.status='View Details About The Spanish Spectrum 128 ROM';return true;" onmouseout="self.status=''">Spanish Spectrum 128</a></td>
+    </tr>
+    </table>
+
+  </div>
+
+  <div id="disclaimer">
+
+    <table class="Menu" width="100%" cellspacing="0" cellpadding="0" border="0" align="center">
+    <tr>
+      <td height="34"><hr></td>
+    </tr>
+    <tr>
+      <td height="22" align="center"><a class="Menu" href="../../Sinclair_ResourceCentre.htm" onmouseover="self.status='To ZX Resource Centre';return true;" onmouseout="self.status=''">ZX Resource Centre</a></td>
+    </tr>
+    <tr>
+      <td height="34"><hr></td>
+    </tr>
+    <tr><td height="14"></td></tr>
+    </table>
+
+    <table class="Footer" width="100%" cellspacing="0" cellpadding="0" border="0">
+    <tr valign="bottom">
+    <td align="left"><div id="email" class="Footer">Contact Me</div></td>
+    <td rowspan="2" align="right"><img src="Images/Titles/Spectrum128Logo.gif" width="47" height="26" border="0" alt=""></td>
+    </tr>
+    <tr valign="bottom">
+    <td align="left"><a class="Footer" href="Spectrum128ROMDisassemblyDisclaimer.htm"
+            onmouseover = "self.status='View copyright information';return true;"
+            onmouseout = "self.status=''">Disclaimer</a></td>
+    </tr>
+    </table>
+
+  </div>
+
+  </body>
+
+</html>

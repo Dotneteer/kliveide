@@ -1,0 +1,312 @@
+The '''ZX Interface 1''' is a communications and storage interface for the ZX Spectrum released by [[Sinclair Research Ltd.|Sinclair Research]].
+
+It provided an RS-232 serial interface, as well as storage using Microdrives and networking capabilities through the [[Sinclair Network]], a proprietary interface of Sinclair's.  The Sinclair Network would later be supported by MGT's [[DISCiPLE]] interface.
+
+{| class="wikitable" style="text-align: center;"
+|-
+! rowspan="2" colspan="2" style="width: 8em;" | Port
+! colspan="8" | Bit
+|-
+! style="width: 5em;" | 7 
+! style="width: 5em;" | 6 
+! style="width: 5em;" | 5 
+! style="width: 5em;" | 4 
+! style="width: 5em;" | 3 
+! style="width: 5em;" | 2 
+! style="width: 5em;" | 1 
+! style="width: 5em;" | 0
+|-
+! style="height: 8em;" rowspan="2" | 0xf7
+! style="height: 4em;" | Read
+| TX Data || || || || || || || Net Input
+|-
+! Write
+| || || || || || || || Net Output / RX Data 
+|-
+! style="height: 8em;" rowspan="2" | 0xef
+! style="height: 4em;" | Read
+| || || || Busy || DTR || Gap || Sync || Write Protect 
+|-
+! Write
+| || || Wait || CTS || Erase || R/W || Comms Clock || Comms Data
+|-
+! style="height: 8em;" rowspan="2" | 0xe7
+! style="height: 4em;" | Read
+| colspan="8" | Microdrive data read
+|-
+! Write
+| colspan="8" | Microdrive data write
+|-
+|}
+
+* ''TX Data'' is the value '''received''' by the serial port.
+* ''Net Input'' is the value read from the Sinclair Network port.
+* Bit 0 of port 0x7f is output to the serial port if ''Comms Data'' is '''set''', or to the network port if ''Comms Data'' is '''reset'''.
+* ''DTR'' signals that the remote station wishes to send data, ''CTS'' signals that the Spectrum wishes to send data
+* Wait is used for network synchronisation.
+
+* When a drive is selected, it starts running automatically, and in the absence of "write" and "erase" signals, will start returning data to the Interface1, allowing it to detect gaps and syncronisation pulses. If it is not deselected, it will continue to run indefinitely, until power is removed. It is possible to turn on more than one drive at a time, which would result in a bus conflict and may damage the drives, so only one drive should ever be selected when accessing the registers directly from code. 
+* ''Comms Data'' is used to select which microdrive is selected. It's an 8 bit word, with a single bit set. The first bit in the sequence is Drive 8, the last one is Drive 1.
+* ''Comms Clock'' clocks the drive selection data through the chain of microdrives. 
+
+* When ''Erase'' is '''reset''' the tape is erased. Typically turns on 2ms before writing, and although it turns off with the end of write, takes around 2ms to stop erasing.
+* ''R/W'' instructs the microdrive to read or write. When ''R/W'' is '''set''' the data channel reads, when '''reset''' the data channel writes. Used in conjunction with ERASE.
+* ''Write Protect'' indicates that a cartridge is write protected. If a drive that is not connected is accessed, it will be in "protect" by default to prevent format commands from working. 
+* ''Gap'' and ''Sync'' are used to locate the correct block of data on the microdrive. They are produced by the ULA which decodes the synchronisation pulses and detects the gaps in between sectors and between the sector file and the record file. 
+
+== Interface 1 Pin Assignments ==
+
+The Interface 1 pin assignments contain 7 data pins, one of which is a high-voltage open-collector data pin, a 9v supply and several ground pins as well as a 2-pin keyway to avoid incorrect insertion. This is all configured as a 16 pin edge connector to connect to an IDC ( Insulation Displacement Connector ) plug.
+
+=== Microdrive Edge Connector ===
+
+{| class="wikitable" style="text-align: center;"
+|-
+! rowspan="2" colspan="2" style="width: 8em;" | PIN
+! colspan="8" | Edge Connector
+|-
+! style="width: 5em;" | 15
+! style="width: 5em;" | 13
+! style="width: 5em;" | 11
+! style="width: 5em;" | 09
+! style="width: 5em;" | 07
+! style="width: 5em;" | 05
+! style="width: 5em;" | 03
+! style="width: 5em;" | 01
+|-
+! style="height: 8em;" rowspan="2" | Function
+! style="height: 4em;" | TOP
+| GND || GND || GND || ERASE || Comms Data || KEY ||Comms Clk || D1
+|-
+! BOTTOM
+| GND || GND || GND || R/W || 9v || KEY ||WR-PROT || D0
+|-
+! rowspan="2" colspan="2" style="width: 8em;" | PIN
+! style="width: 5em;" | 16
+! style="width: 5em;" | 14
+! style="width: 5em;" | 12
+! style="width: 5em;" | 10
+! style="width: 5em;" | 08
+! style="width: 5em;" | 06
+! style="width: 5em;" | 04
+! style="width: 5em;" | 02
+|-
+! colspan="8" | 
+Interface 1 connector Viewed from side.
+|-
+|}
+
+Signals:
+* D0/D1 - Interleaved data, a byte at a time, from each of the read/write heads in the microdrive. Data rate approximately 80 Kbps per track. TTL Level.
+* Comms Clock - Drive select clock, identifies which drive to turn on. TTL level.
+* WR-PROT - A "low" on this indicates a cartridge is write protected. 9 volt = Not protected. 
+* Comms Data - Drive select is serially clocked through drives. Logic 1 = selected. Line is inverted from register. TTL Level.
+* 9v - Power supply for drive.
+* ERASE - Open Collector via 270 Ohm resistor, to ERASE head on selected microdrive. Typically sits between 10v and 6v (6v=ERASE) when active.
+* R/W - Write is active low. Select to read or write data to drive. TTL level.
+
+== Microdrive Performance Characteristics ==
+
+In many ways, the Microdrive, despite it's simple construction, performed similarly to disk systems of the era, and was roughly as fast at loading, however the lack of file allocation tables on the disk meant that the file allocation tables had to be build prior to every write operation, slowing down write access. 
+
+* "Infinite loop" - Repeating magnetic tape. 
+* Two tracks, operating as a single interleaved track.
+* Byte by byte interleave ( Even bytes Track 0, Odd bytes Track 1, Interleave every 4 bits. )
+* Directoryless Data Structure.
+* Typical Capacity 90 Kb
+* 160 Kbps Data Transfer Rate ( 20 Kbytes/second raw transfer rate )
+* Data encoded using Biphase Frequency Modulation ( same coding as credit card )
+* Does not support a cartridge change line - All sectors must be eximined before writing data. 
+* Typical full cycle time of around 8 to 10 seconds.
+* Can handle media stretching and data rate change without losing data.
+
+== Microdrive Data Storage Format ==
+
+The microdrive is arranged as an unspecified number of sectors, at a maximum of 254 sectors, each of 512 Kb, allowing for a theoretical maximum of 127Kb per cartridge. Theoretically it is also possible to exceed this in "Read Only" mode as long as Record 0 of a file can be read before the Interface 1 times out, as the read routine appears to match on name and record number without any reference to sectors. 
+
+Each sector consists of two files, each similar. There is the Sector Header, which is a 15 byte file record, or the data record recorded after the sector header, which is 528 bytes, including one "sacrificial byte" on the D1 data line, which does not contribute to the data stored, though could be modified into a high-order byte checksum in the future to improve data integrity on older cartridges.
+
+All bytes are written LSB ( Least Significant Bit ) first. Here's how to read the images, as data is spread across two data lines. 
+
+[[File:How to read the decodes.png]]
+
+=== Sector, including header and data ===
+
+As the spectrum uses soft-coded sectors, without any indication of tape start and end, each Microdrive cartridge is a collection of sectors that present sequentially to the reader and are read at random, depending on where the loop happens to be when a particular read operation occurs. The sectors do not require to be in order, or to follow any convention. Typical sectors are sequential in nature, however interleave to allow time for internal transfer between reading and writing sectors seems to be accomplished through the process, such that any new writes rarely write in two physically consecutive sectors. The sector format includes a header and a record. The header is only written during the format operation, while the record can be written at any time it is unused. Bit 2 in the RECFLAG byte, the first byte of the sector, identifies whether it is in used. If set, it is used. If unset, it is not used. 
+
+[[File:Logic_Analysis_of_sector_Header_and_Data_sections_with_gaps.png]]
+
+Each of these structures is similar, apart from length, and can be examined independently. From this image, it can be seen that the ERASE line turns on just before the R/W line begins writing the sector. In this case, the Sector Header has been read, and it has been determined previously when the sector map was constructed that this sector can be written to. The ERASE is activated, and then the R/W is activated (active low ) just prior to writing data.
+
+=== Sector Header ===
+
+Each sector header is 15 bytes long, and follows the same format as the Data Header which follows it, though omits the data itself, and the filename is replaced with the cartridge name. The Received File Flags (RECFLG In the Disassembly) seems to use Bit 0,1 and 2. Only Bit0 is set in the Sector Header. This identifies it as a sector marker, and so it is used to find the correct sector when writing. Reading does not pay attention to the Sector identifier file. Also, the record number field is the Sector Number field in this case.
+
+[[File:Sector130 Header with cartridge name Microdrive.png]]
+
+In this file, the first 12 bytes, sometimes erroneously identified as "12 bytes for identification", are actually 6 sync bytes per channel. These provide information to the Interface1, along with the preceding gap, that valid data is about to follow and establish the necessary conditions for the Interface1 software to begin reading Sector Headers and Sector Data contents. 
+
+In the above image, they are identified as 0x00,0x00,0x00,0x00,0x00,0xFF. Spurious bits prior to this sequence have been ignored in the above example, but are common in the process. 
+
+Immediately following this, bytes are read in order, from the bottom row to the top, and would form the following Sector Record.
+
+{| class="wikitable" style="text-align: center;"
+|-
+| Offset || Example Byte || Significance
+|-
+| 00H || 0x01 || This is the RECFLG byte. Bit0 signifies a sector header.
+|-
+| 01H || 0x82 || Sector 0x82. Sectors count from 0xFF to 0x00. Sector 130 in decimal.
+|-
+| 02H || 0xEB || Undefined. Not in use at the present time. 
+|-
+| 03H || 0x20 || Undefined. Not in use at the present time. 
+|-
+| 04H-0DH || 0x4D, 0x69, 0x63, 0x72, 0x6F, 0x64, 0x72, 0x69, 0x76, 0x65 || Cartridge name, in this case, the cartridge was formatted with ''FORMAT "M";1;"Microdrive"'' Any unused name spaces are padded with 0x20
+|-
+| 0EH || 0xA7 || The Sector Header Checksum... 
+|-
+|}
+
+There is also a final byte clearly visible at 0xFH, which would make the 16th byte, however this is a wasted byte and does not support anything. It may well be used for a 16bit checksum in the future.
+
+
+=== Sector Data ===
+
+Data files, or "Records" follow each Sector Header file. These are 528 bytes long, and include the same synchronisation pulses at the start as the Sector Header.  In addition, while the DATA content of the record is 512 bytes, some spectrum files have a header that parallels the tape header, though obviously omits the filename as that's contained within the record preamble. As such this data stream contains;
+
+12 bytes ( 6 per channel ) of synchronisation pulses ( possibly with some spurious additional pulses ) 
+
+15 bytes of Preamble, containing the filename, record number and Received Flags.
+
+512 bytes of record data and;
+
+1 wasted byte ( that also might be used for a 16 bit checksum in the future )
+
+[[File:Sector record file example.png]]
+
+
+In this example, it can be seen that the identifier section ( preamble ) is very similar to the format of the Sector Header identifier section. The same routines read both in the Interface 1 ROM. Also, as with the Sector Header, the first 12 bytes are synchronisation pulses. 
+
+
+{| class="wikitable" style="text-align: center;"
+|-
+| Offset || Example Byte || Significance
+|-
+| 00H || 0x04 || This is the RECFLG byte. Bit2 signifies that the sector is in use. If it was the final sector in the record, then it would be 0x06, as Bit1 signifies that it is the final record. (EOF)
+|-
+| 01H || 0x00 || Record Segment 0x00. Segments count from 0x00 to 0xFF. 
+|-
+| 02H-03H || 0x00, 0x02 || Record length. Will always be 0x0200H unless the RECFLG is 0x06. Number of bytes to read. 
+|-
+| 04H-0DH || 0x53, 0x65, 0x71, 0x75, 0x65, 0x6E, 0x74, 0x69, 0x61, 0x6c || The filename, in this case, "Sequential". It was generated with ''SAVE *"M";1;"Sequential" CODE 40000,512'' 
+|-
+| 0EH || 0x25 || The Header Checksum. 
+|-
+|}
+
+Additionally, it can be seen that the Data Stream then begins with; 0x03, 0x00, 0x02, 0x40, 0x9C, 0xFF, 0xFF, 0xFF, 0xFF before the data that was saved (ie, 0x00, 0x01, 0x02, 0x03... ) is saved.
+
+This is the file header and can only be found in Record 0 for any file, and is always 9 bytes long. It has the following meanings.
+
+{| class="wikitable" style="text-align: center;"
+|-
+| Offset || Example Byte || Significance
+|-
+| 00H || 0x03 || File Type. 00=Basic Program, 01=Numeric Array, 02=Character Array, 03=CODE Function.
+|-
+| 01H-02H || 0x00, 0x02H || File Length (0x0200H bytes = 512 Bytes )
+|-
+| 03H-04H || 0x40, 0x9CH || Place it was saved from (Used for code only, but populated for all file types)
+|-
+| 05H-06H || 0xFF, 0xFFH  || 
+* BASIC: start of variables area in file. 
+* Numeric arrays: [5] = 0x80 + (variable name - 'A')
+* Char array: [5] =  0xC0 + (variable name - 'A')
+* Code: Unused (Should be FFh FFh)
+|-
+| 07H-08H || 0xFF, 0xFF || For BASIC, Autorun line no (lsb first, 0x00 0x80 = No autorun), $FF for all other file types. 
+|-
+| 09H-01FFH || 0x00, 0x01, 0x02, 0x04 etc... to 0xFF || The first 503 bytes of actual saved data. Anything more than this gets saved in the next sector. 
+|-
+| 0200H || 0xnn || The data checksum. 
+|-
+|}
+
+=== Calculating the checksum ===
+
+The checksum isn't a standard checksum, a parity, a logitudinal redundancy check or a a two's compliment checksum. 
+
+It starts as a basic 8-bit sum of each of the characters, but has additional calculated bits inserted to avoid the sum "255" ever being calculated at any stage during the sum process. 
+
+The assembly language in the Interface1 ROM is called with HL pointing to the buffer where the microdrive data is stored. It looks like this (below); 
+
+
+{| class="wikitable" style="text-align: left;"
+|-
+|SECTOR:||LD BC,$000E||14 bytes in the header. Entry point for headers, location 0x1426.
+|-
+| ||JR      SUM|| Calculate the checksum. 
+|-
+|RECORD:||LD BC,$0200||200 bytes in the record. Location 0x142B
+|-
+|SUM:||PUSH    HL|| Enter with HL pointing to the buffer, either at the header, or the record contents. Store the start.
+|-
+| ||LD      E,$00||Zero the checksum to start. 
+|-
+|LOOP:||LD      A,E|| Pick up the current checksum. 
+|-
+| ||ADD     A,(HL)||Add a byte from the buffer to the checksum.
+|-
+| ||INC     HL||Move the pointer to the next byte in the buffer. 
+|-
+| ||ADC     A,$01||Here's where it gets complicated. If the previous add overflowed, add Carry plus 1 ( add 2 ). Otherwise just add 1. 
+|-
+| ||JR      Z,SKIP||However if the last checksum calculation was 0FF, now it will be zero, and the zero flag set. If it's zero, skip the next instruction.
+|-
+| ||DEC     A|| If not skipped, remove the 1 just added, however if two were added, then just subtract 1. If it was 0FF, just leave it as 00 now.
+|-
+|SKIP:||LD E,A||Store the sum so far... 
+|-
+| ||DEC     BC||Reduce the counter of bytes in the buffer.
+|- 
+| ||LD      A,B||We need to test if the counter is zero.
+|-
+| ||OR      C||Set the zero flag now if BC is zero. 
+|-
+| ||JR      NZ,LOOP||If we haven't summed all the bytes in the buffer, loop back and iterate.
+|-
+| ||LD      A,E||Collect the checksum.
+|-
+| ||CP      (HL)||Byte after the buffer is where the checksum should be stored. Test the calculated checksum against the stored checksum.
+|-
+| ||LD      (HL),A||And regardless of whether it's right or wrong, write the correct checksum in there now... So this routine both checks and calculates the checksum. 
+|-
+| ||POP     HL||Retrieve HL to point to the start of the buffer again. 
+|-
+| ||RET||Zero flag is set if the checksum was correct. Can be tested by the routine that called this one. 
+|-
+|}
+
+The Pseudocode for this process, if calculated in a high level language looks something like this;
+
+{| class="wikitable" style="text-align: left;"
+|-
+|Checksum = 0
+|-
+|while (bytes in buffer) do
+|-
+|...Add byte to checksum
+|-
+|...If checksum=255 then checksum=0
+|-
+|...If checksum>255 then checksum=(checksum modulo 256)+1
+|-
+|done
+|-
+|}
+
+== External links ==
+* [[Wikipedia:ZX Interface 1|Wikipedia's article on the ZX Interface 1]]
+
+[[Category:Peripherals]]

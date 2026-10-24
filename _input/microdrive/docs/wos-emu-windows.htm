@@ -1,0 +1,338 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>Emulators - Microsoft Windows</title>
+<meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+<link href="../styles/cssFAQ.css" title="CSSFAQStyle" id="CSSFAQStyle" type="text/css" rel="stylesheet" media="screen" />
+<link href="../styles/cssFAQPrint.css" title="CSSFAQStylePrint" id="CSSFAQStylePrint" type="text/css" rel="stylesheet" media="print" />
+</head><script async src="https://www.googletagmanager.com/gtag/js?id=UA-92375114-4"></script><script async src="/assets/wosc.js"></script>
+<body>
+
+<div id="pageHeader" class="pageHeader"><h1>comp.sys.sinclair FAQ</h1></div>
+
+<br />
+
+<div class="siteNavigation">
+<a title="SinclairFAQ [on master site]" href="http://www.sinclairfaq.com/">SinclairFAQ</a> &raquo;
+<a title="comp.sys.sinclair FAQ" href="/faq/index.html">c.s.s FAQ</a> |
+<a title="Documentation" href="../resources/documents.htm">Documents</a> |
+<a title="Essential Sites" href="../essential.htm">Essential Sites</a> |
+<a title="Emulators" href="/faq/emulators/emulators.htm">Emulators</a> |
+<a title="Reference" href="../reference/reference.htm">Reference</a> |
+<a title="Links" href="../resources/links.htm">Links</a> |
+<a title="Resources" href="/faq/resources/resources.htm">Resources</a> |
+<a title="Help" href="../help.htm">Help</a>
+</div>
+
+<br />
+<table id="Content" cellspacing="1" cellpadding="1" width="100%" border="0">
+<tr>
+<td width="75" colspan="1" rowspan="1" />
+<td>
+<table id="SectionTitle" cellspacing="1" cellpadding="1" width="95%" align="center" border="0">
+<tr>
+<td class="sectionTitle">Emulators - Microsoft Windows</td></tr>
+</table>
+<table id="SectionContent" cellspacing="1" cellpadding="1" width="95%" align="center" border="0">
+<tr>
+<td class="bodyTable">
+
+<p>There are 12 emulators currently listed for Microsoft Windows users. Many more are available, and several will be added during
+later revisions of this FAQ. Please see the <a href="../../emulators.html#pcwin">World of Spectrum</a>
+for a list of available alternatives if the products listed do not meet your requirements.</p>
+<ul>
+
+<li><a id="Spectaculator" href="http://www.spectaculator.com/">Spectaculator</a> v6.1<br /><br />
+<strong>Emulates</strong>: 16K / 48K / 128K / +2 / +2A / +3 ZX Spectrums, Pentagon 128 and Scorpion ZS256 clones.
+<a href="../reference/peripherals.htm#InterfaceI">ZX Interface I</a> (including RS-232) and
+<a href="../reference/peripherals.htm#ZXMicrodrive">ZX Microdrives</a>.<br />
+<strong>Tape/Disk Formats</strong>: Loads <a href="../reference/formats.htm#SNA">.sna</a> and
+<a href="../reference/z80format.htm">.z80</a> snapshots,
+<a href="../reference/formats.htm#TZX">.tzx</a> and <a href="../reference/formats.htm#TAP">.tap</a>
+tape images, or .voc, .csw and .wav audio cassettes through a built-in 'tape-recorder' simulator.
+Includes Microdrive support, using <a href="../reference/formats.htm#MDR">.mdr</a> files, and +3 Disk support via
+<a href="../reference/formats.htm#DSK">.dsk</a> files (both standard and extended .dsk).
+Saves <a href="../reference/formats.htm#SNA">.sna</a>,
+<a href="../reference/formats.htm#SZX">.szx</a> and <a href="../reference/z80format.htm">.z80</a>, .dsk, .tap and .tzx files.<br /><br />
+<strong>Requirements</strong>: Windows 9x, Me, NT4.0, 2000 or XP.<br />
+<strong>Created by</strong>: <a href="/cdn-cgi/l/email-protection#0365666667616260684370736660776260766f62776c712d606c6e2d71666e6c75662d776b6a70">Jonathan Needle</a>.<br />
+<strong>Last updated</strong>: March 19th, 2004.<br /><br />
+<strong>Comments</strong>: Version 6.0 includes ZX Spectrum +3 emulation, with up to 2 disk drives. Both 3" and 3.5" disks are supported,
+and Spectaculator will switch automatically to the correct emulation mode for the disk size inserted. A 'Fast Disk' loader is included, as
+is an 'Auto-Boot' option ('On' by default, but can be over-ridden). A small disk utility window has been included that allows disks to be quickly
+inserted/ejected, fomatted (3.5" disks can be formatted to a full 720k) and write-protected. Increased disk capacity for 3" disks can be achieved
+by formatting them using Amstrad CPC 'Data' format (this option is also provided). The zx-state format, introduced in version 4.0 includes support for
+disk images.<br /><br />
+The ZX Interface I and Microdrive emulation introduced with previous versions has been enhanced, with the Interface I RS-232 connector now being emulated.
+Both Input and Output can be (independently) directed to either the Serial port or to a file. Up to 8
+<a href="../reference/peripherals.htm#ZXMicrodrive">ZX Microdrives</a> can be 'connected' at once, and the original Business and Games cartridges
+are included in the distribution. Zipped Microdrive files can now be loaded directly. An added bonus is that drive noise is emulated.
+A Black &amp; White TV mode is available, as is proportional scaling of the display window.<br /><br />
+Various enhancements to the virtual tape recorder have been made with v5.0; these include improvements to the tape loading noise emulation, a 'boost volume' option
+that can be used to load files directly into a real ZX Spectrum, plus other additions.
+The <a href="../reference/peripherals.htm#Speech">Currah �Speech</a>
+(16K / 48K Spectrums only), SpecDrum, <a href="../reference/peripherals.htm#Miscellaneous">Multiface 1 / 128</a>
+(includes licensed ROM, write-able in v5.0) and <a href="../reference/peripherals.htm#Mice">Kempston / AMX Mice</a> are also emulated.
+The <a href="../reference/formats.htm#POK">.pok</a>
+'cheat' format is supported. A comprehensive compiled HTML help file is included, as are several popular games. Instructions for games
+can be viewed from the 'Help' menu if they are saved as [snapshotname].rtf or [snapshotname].txt and placed in the correct folder.
+Supports .zip archives directly, and will load the contents automatically if they are in a supported format.<br /><br />
+Includes support for the
+<a href="../reference/formats.htm#SZX">zx-state format (.szx)</a>, which allows every aspect of the machine to be saved along with the snapshot; this
+includes the name of the cassette in the cassette recorder, the optional hardware attached to the emulated machine, which ROM is in use,
+etc. (this format is described in the emulator help file), and the <a href="../reference/formats.htm#RZX">.rzx</a>
+input recording format. Supplied as a standard Windows Installer package with a full uninstall options, Spectaculator is considered to be
+one of the most accurate and complete emulators available. Please view the
+<a href="http://www.spectaculator.com/">Spectaculator</a> web page for additional information.<br /><br />
+Please refer to the <a href="../reference/z80format.htm">Z80 Format</a> page for details of the extensions to the .z80 format
+supported by Spectaculator.<br /><br /></li>
+
+<li><a id="SPIN" href="http://www.zxspin.com/zxspin.zip">SPIN</a> v0.41<br /><br />
+<strong>Emulates</strong>: 48K / 128K / +2 / +2A / +3 and <a href="../resources/links.htm#Projects">+3e</a>
+ZX Spectrums. Can be switched to emulate Pentagon timings.<br />
+<strong>Tape/Disk Formats</strong>: Automatically senses <a href="../reference/formats.htm#SNA">.sna</a>
+and <a href="../reference/z80format.htm">.z80</a> snapshots, and will switch to the
+appropriate hardware mode dynamically (this feature can be disabled if required) when loading. Saves to your choice of
+<a href="../reference/formats.htm#SNA">.sna</a> or
+<a href="../reference/z80format.htm">.z80</a> formats.
+Supports automatic loading of tape images stored as <a href="../reference/formats.htm#TZX">.tzx</a>,
+<a href="../reference/formats.htm#TAP">.tap</a>, .csw or .wav files.
+Tape images can be replayed at normal speed, or 'fast-loaded' Using this option, tapes are loaded more quickly than with any other
+emulator. Original tape files can also be loaded directly from the LINE IN socket of your sound card. Disk files may be loaded using either
+<a href="../reference/formats.htm#DSK">.dsk</a> or enhanced dsk format. Currently, emulation of the
+<a href="/faq/reference/ports.htm">+3 / +3e FDC</a> is believed to be 98-99% accurate. It is also possible to load and save binary
+images. Using MIC output recording, .wav or .csw files can be saved for transfer to tape.
+Also supports the new <a href="../reference/formats.htm#RZX">.rzx</a> file format for playback of suitably encoded
+snapshots. Direct support for .zip encoded archives.<br /><br />
+<strong>Requirements</strong>: Windows 9x, Windows Me, 2000 or XP. Uses MMX extensions where available.<br />
+<strong>Created by</strong>: <a href="/cdn-cgi/l/email-protection#91e1f0e4fdbff5e4ffffa5d1ffe5fde6fee3fdf5bff2fefcbfe3f4fcfee7f4bfe5f9f8e2">Paul Dunn</a>, Mark Boyd and Damien Guard.<br />
+<strong>Last updated</strong>: December 1st, 2002<br /><br />
+<strong>Comments</strong>: Includes the enhanced <a href="../resources/links.htm#Projects">SE Basic</a>
+and <a href="../resources/links.htm#Projects">+3e</a> ROMs as part of the standard distribution. Also emulates the
+<a href="../reference/peripherals.htm#Printers">ZX Printer</a>,
+<a href="../reference/peripherals.htm#InterfaceII">ZX Interface II</a>, <a href="../reference/peripherals.htm#Mice">Kempston Mouse</a>,
+Multiface 128/3 (without ROMs - see note on main 'Emulators' page), the <a href="../reference/peripherals.htm#Speech">Currah �Speech</a>
+and several popular <a href="../reference/peripherals.htm#Joysticks">Joystick Interfaces</a>. AY sound is emulated very
+accurately (with support for the <a href="../reference/peripherals.htm#Fuller">Fuller Audio Box</a>), with full stereo ACB/ABC
+user-defineable panning. Includes the option to save screen images directly as a bitmap (including border), or
+<a href="../reference/formats.htm#SCR">.scr</a> images. An integrated debugger is included, with support for single-stepping and
+setting breakpoints.<br /><br />
+<a href="../resources/links.htm#Projects">SE Basic</a> provided by <a title="Contributors" href="../credits.htm">Andrew Owen</a>.
+<a href="../resources/links.htm#Projects">+3e</a> ROM provided by
+<a href="/cdn-cgi/l/email-protection#ddbabcafafa482b1bcb3bebcaea9b8af9da4bcb5b2b2f3beb2f3a8b6f3afb8b0b2abb8f3a9b5b4ae">Garry Lancaster</a>. A SPIN
+<a href="../resources/newsgroups.htm#IRC">IRC Channel</a> is available to discuss this emulator with the development team.<br /><br /></li>
+
+
+<li><a id="vbSpec" href="http://www.muhi.org/vbspec/">vbSpec</a> v1.80<br /><br />
+<strong>Emulates</strong>: 48K ZX Spectrum, Timex TC2048<br />
+<strong>Tape/Disk Formats</strong>: Loads <a href="../reference/formats.htm#SNA">.sna</a>,
+<a href="../reference/z80format.htm">.z80</a>,
+<a href="../reference/formats.htm#TAP">.tap</a>, <a href="../reference/formats.htm#TZX">.tzx</a>, .rom and
+<a href="../reference/formats.htm#SCR">.scr</a> files. Saves <a href="../reference/formats.htm#TAP">.tap</a>,
+<a href="../reference/formats.htm#SNA">.sna</a>, <a href="../reference/z80format.htm">.z80</a> and .rom files.
+'Save Binary' option (included since v1.70) allows any area of memory to be saved.<br /><br />
+<strong>Requirements</strong>: Unspecified.<br />
+<strong>Created by</strong>: <a href="/cdn-cgi/l/email-protection#23554150534640634e564b4a0d4c51440d51464e4c55460d574b4a50">Miklos Muhi</a>.<br />
+<strong>Last updated</strong>: May 1st, 2003.<br /><br />
+<strong>Comments</strong>: Written using Microsoft Visual Basic, and released under the GNU General Public License (GPL) Supplied with standard
+ROM files for supported systems, and includes the enhanced <a href="../resources/links.htm#Projects">SE Basic</a> ROM
+provided by <a title="Contributors" href="../credits.htm">Andrew Owen</a>.
+Also emulates the <a href="../reference/peripherals.htm#ZXPrinter">ZX Printer</a>,
+<a href="../reference/peripherals.htm#Alphacom">Alphacom 32</a> and <a href="../reference/peripherals.htm#Mice">Kempston Mouse</a>.
+Includes the option to save screen images directly from the emulator as a bitmap or <a href="../reference/formats.htm#SCR">.scr</a>
+file. Enhancements included with v1.80 include improved Joystick emulation (up to 8 buttons), a full-screen mode, and support for multiple keyboard
+layouts (English, German).<br /><br />
+A full distribution package (including the VB6 runtime) is available, as is a 'core' version which comprises just the emulator itself. Souce code is available.<br /><br />
+Versions up to v1.70 were developed and maintained by Chris Cowley, while the version 1.80 updates were by Miklos Muhi.
+Chris still maintains and supports his ZX81 emulator (vb81) which is available from his web site
+(see the '<a href="/faq/emulators/other.htm#ZX81">other machines</a>' page for details).<br /><br />
+Please refer to the <a href="../reference/z80format.htm">Z80 Format</a> page for details of the extensions to the .z80 format
+supported by vbSpec, and the <a href="../reference/formats.htm#SCR">.scr format</a> entry for details of additional features provided.<br /><br /></li>
+
+
+<li><a id="Klive" href="https://worldofspectrum.net/pub/sinclair/emulators/pc/windows/Klive11.zip">Klive</a> v1.10<br /><br />
+<strong>Emulates</strong>: 48K, 128K, +2, +2A and +3 ZX Spectrums.<br />
+<strong>Tape/Disk Formats</strong>: Loads <a href="../reference/formats.htm#SNA">.sna</a>,
+<a href="../reference/z80format.htm">.z80</a>, .rom,
+<a href="../reference/formats.htm#DSK">.dsk</a>, .wav,
+<a href="../reference/formats.htm#TAP">.tap</a> and
+<a href="../reference/formats.htm#TZX">.tzx</a> files. Saves <a href="../reference/formats.htm#SNA">.sna</a> files.<br />
+<strong>Requirements</strong>: Microsoft Windows 98, Me, 2000 or XP. Requires DirectX 7.<br />
+<strong>Created by</strong>: <a href="/cdn-cgi/l/email-protection#7f141a181e201a120a3f17100b121e1613511c1012510d1a1210091a510b17160c">Steve Snake</a>.<br />
+<strong>Last updated</strong>: September 9th, 2002.<br /><br />
+<strong>Comments</strong>: Also emulates the
+<a href="../reference/peripherals.htm#Speech">Currah �Speech</a>, which is well documented,
+<a href="../reference/peripherals.htm#Fuller">Fuller Audio Box</a>,
+<a href="../reference/peripherals.htm#InterfaceII">ZX Interface II</a>, Cursor and Kempston
+<a href="../reference/peripherals.htm#Joysticks">Joystick Interfaces</a> and Cheetah SpecDrum
+(requires SpecDrum software) Offers variable emulation speed, various video modes and options, and the ability to switch sound chip emulation
+between AY-3-8912 and YM2149 options. Screen images can loaded &amp; saved as
+<a href="../reference/formats.htm#SCR">.scr</a> or .pcx files.<br /><br /></li>
+
+
+<li><a id="RealSpec" href="http://www.ramsoft.bbk.org/realspec.html">RealSpec</a> v0.96.16 b13<br /><br />
+<strong>Emulates</strong>: Various.<br />
+<strong>Tape/Disk Formats</strong>: Various.<br />
+<strong>Requirements</strong>: Unspecified.<br />
+<strong>Created by</strong>: <a href="/cdn-cgi/l/email-protection#d9abb8b4aab6bfad99bbbbb2f7b6abbef7abbcb4b6afbcf7adb1b0aa">RamSoft</a>.<br />
+<strong>Last updated</strong>: September 10th, 2002<br /><br />
+<strong>Comments</strong>: Version of the MS-DOS emulator compiled to run under Microsoft Windows. Please refer to the
+<a href="msdos.htm">MS-DOS</a> entry.<br /><br /></li>
+
+
+<li><a id="Z80" href="https://worldofspectrum.net/pub/sinclair/emulators/pc/dos/z80-400.zip">Z80</a> v4.0<br /><br />
+<strong>Emulates</strong>: 48K / 128K ZX Spectrums.<br />
+<strong>Tape/Disk Formats</strong>: Various.<br />
+<strong>Requirements</strong>: MS-DOS, Microsoft Windows 3.1 / 9x or NT.<br /> 
+<strong>Created by</strong>: Gerton Lunter.<br />
+<strong>Last updated</strong>: September 9th, 2002<br /><br />
+<strong>Comments</strong>: See <a href="msdos.htm">MS-DOS</a> entry for more information. Released as shareware,
+but apparently no longer regularly maintained.<br /><br /></li>
+
+
+<li><a href="https://worldofspectrum.net/pub/sinclair/emulators/pc/windows/speccyal072b.zip">SpeccyAl</a> v0.72b<br /><br />
+<strong>Emulates</strong>: 48K ZX Spectrum.<br />
+<strong>Tape/Disk Formats</strong>: Loads <a href="../reference/formats.htm#SNA">.sna</a>,
+<a href="../reference/z80format.htm">.z80</a>,<a href="../reference/formats.htm#TAP">.tap</a> and
+<a href="../reference/formats.htm#SCR">.scr</a> file. Saves <a href="../reference/formats.htm#SNA">.sna</a>
+and <a href="../reference/formats.htm#SCR">.scr</a> files.<br />
+<strong>Requirements</strong>: DirectX (unspecified version).<br />
+<strong>Created by</strong>: <a href="/cdn-cgi/l/email-protection#9be8effeebf3faf5feb5e8f8f3f6f2efe1dbf4f5f7f2f5feb5f9feb5e9fef6f4edfeb5eff3f2e8">Stephane Schmitz</a>.<br />
+<strong>Last updated</strong>: February 29th, 2000<br /><br />
+<strong>Comments</strong>: Also emulates the Kempston, Sinclair and Cursor <a href="../reference/peripherals.htm#Joysticks">Joystick Interfaces</a>.
+Development of several other features is imcomplete, with several options having been removed since previous versions.<br /><br /></li>
+
+
+<li><a href="https://worldofspectrum.net/pub/sinclair/emulators/pc/windows/DelphiSpec03.zip">DelphiSpec</a> v0.30<br /><br />
+<strong>Emulates</strong>: 48K / 128K ZX Spectrums.<br />
+<strong>Tape/Disk Formats</strong> Loads and Saves <a href="../reference/formats.htm#SNA">.sna</a>,
+<a href="../reference/z80format.htm">.z80</a> and .rom files.<br />
+<strong>Requirements</strong>: Unspecified.<br />
+<strong>Created by</strong>: <a href="/cdn-cgi/l/email-protection#5f353e2d362b7134302d3730313a311f332a2a34342a713c3032712d3a3230293a712b37362c">Jari Korhonen</a>.<br />
+<strong>Last updated</strong>: July 28th, 2001<br /><br />
+<strong>Comments</strong>: DelphiSpec is based on a previous version of vbSpec (see below) by Chris Cowley.
+<a href="https://worldofspectrum.net/pub/sinclair/emulators/pc/windows/DelphiSpecSource03.zip">Source Code</a> is available.<br /><br /></li>
+
+
+<li><a href="https://worldofspectrum.net/pub/sinclair/emulators/pc/windows/gleck005.zip">Gleck</a> v0.0.5 Beta<br /><br />
+<strong>Emulates</strong>: 16K / 48K / 128K / +2 / +2A ZX Spectrums, Pentagon, Scorpion, TK-90x and TK-95 clones.<br />
+<strong>Tape/Disk Formats</strong>: Loads (with optional preview) <a href="../reference/formats.htm#SNA">.sna</a>,
+<a href="../reference/formats.htm#TAP">.tap</a>, <a href="../reference/formats.htm#TZX">.tzx</a>, .blk, .voc,
+<a href="../reference/formats.htm#DSK">.dsk</a>, <a href="../reference/formats.htm#TRD">.trd</a>,
+<a href="../reference/formats.htm#SCR">.scr</a>, <a href="../reference/formats.htm#POK">.pok</a>, .sp,
+<a href="../reference/z80format.htm">.z80</a> and compressed archives (.zip) files. Saves
+<a href="../reference/z80format.htm">.z80</a>, <a href="../reference/formats.htm#SNA">.sna</a>,
+.sp and <a href="../reference/formats.htm#SCR">.scr</a> files.<br /><br />
+<strong>Requirements</strong>: Recent version of DirectX recommended.<br />
+<strong>Created by</strong>: <a href="/cdn-cgi/l/email-protection#9ef7f9f0fffdf7f1defbf3ebebf0f2f7f3b0fdf1f3b0ecfbf3f1e8fbb0eaf6f7ed">Ignacio Burgue�o</a>.<br />
+<strong>Last updated</strong>: March 8th, 2001<br /><br />
+<strong>Comments</strong>: Features an integrated debugger, and Tape/Disk browsers. The colour palette used can be varied.
+The author notes that Gleck does emulate the ZX Spectrum +3, but that emulation of the disk drive is not implimented,
+so the behaviour in this mode is similar to the +2A. Optimized versions for AMD and Intel Pentium processors are
+available. Documentation is provided in English and Spanish languages.<br /><br /></li>
+
+
+<li><a href="https://worldofspectrum.net/pub/sinclair/emulators/pc/windows/MTMW130b.ZIP">MultiMachine</a> v1.30b<br /><br />
+<strong>Emulates</strong>: 16K / 48K / + / 128K / +2 / +2A and +3 ZX Spectrums.<br />
+<strong>Tape/Disk Formats</strong>: Loads .sp, <a href="../reference/formats.htm#SNA">.sna</a>,
+<a href="../reference/z80format.htm">.z80</a>, .zx, .snx, .llt,
+<a href="../reference/formats.htm#SLT">.slt</a>, <a href="../reference/formats.htm#TAP">.tap</a>, .blk, .voc and
+<a href="../reference/formats.htm#DSK">.dsk</a> files. Various other formats as required by other emulated machines.<br /><br />
+<strong>Requirements</strong>: Microsoft Windows 9x. DirectX 5.0 or above.<br />
+<strong>Created by</strong>: Paul A. Hodgson.<br />
+<strong>Last updated</strong>: June 16th, 1998<br /><br />
+<strong>Comments</strong>: Apparently no longer maintained. Also emulates the Amstrad CPC, Enterprise, Jupiter Ace, ZX-80, ZX81,
+Timex TS1000 and TC/TS2068 machines, and the Microdigital TK-90X an TK-95 clones Warajevo
+<a href="../reference/formats.htm#DCK">.dck</a> files are not supported (Timex Cartridge), but
+.tap files are. Please note that the download links on the MultiMachine
+<a href="http://www.geocities.com/TimesSquare/Stadium/4428/index.html">web page</a> are broken.<br /><br /></li>
+
+
+<li><a href="https://worldofspectrum.net/pub/sinclair/emulators/pc/windows/zx32/ZX32103.exe">ZX-32</a> v1.03a<br /><br />
+<strong>Emulates</strong>: 48K / + / 128K / +2 / +2A and +3 ZX Spectrums.<br />
+<strong>Tape/Disk Formats</strong>: Loads .zx, <a href="../reference/formats.htm#SNA">.sna</a>,
+<a href="../reference/z80format.htm">.z80</a>,
+<a href="../reference/formats.htm#TAP">.tap</a>, .cpd, <a href="../reference/formats.htm#DSK">.dsk</a> and .zip files.
+Saves <a href="../reference/formats.htm#SNA">.sna</a>, .zxs, .z80, <a href="../reference/formats.htm#DSK">.dsk</a> and
+<a href="../reference/formats.htm#TAP">.tap</a> files.<br />
+<strong>Requirements</strong>: Microsoft Windows 9x or NT. DirectX 5.0 or above.<br />
+<strong>Created by</strong>: Vaggelis Kapartzianis.<br />
+<strong>Last updated</strong>: December 13th, 1997<br /><br />
+<strong>Comments</strong>: Also emulates the Kempston, Cursor and Sinclair <a href="../reference/peripherals.htm#Joysticks">Joystick Interfaces</a>,
+and features variable emulation speed. Although no longer actively developed or maintained, ZX-32 is one of the most frequently used
+of all emulators. Various patches and special editions of ZX-32 are available that provide additional functionality - please visit the ZX-32
+<a href="http://www.geocities.com/SiliconValley/Bay/9932/">web page</a> for details of these, the latest beta version
+(v2.00.04.04 - updated April 4th, 2000) and various incremental updates for previous versions. Will not operate on systems with more
+than 256 colours/16-bit colour depth.
+<br /><br /></li>
+
+
+<li><a href="http://bonanzas.rinet.ru/apps/EmuZWin_Eng.htm">EmuZWin</a> v2.3 r1.5<br /><br />
+<strong>Emulates</strong>: 48K / + / 128K / +2 / +2A and +3 ZX Spectrums, and Pentagon.<br />
+<strong>Tape/Disk Formats</strong>: Loads
+.ezx,
+<a href="../reference/formats.htm#SNA">.sna</a>,
+<a href="../reference/formats.htm#TAP">.tzx</a>,
+<a href="../reference/z80format.htm">.z80</a>,
+<a href="../reference/formats.htm#TAP">.tap</a>,
+.cpd,
+.blk,
+.trd,
+.scl,
+Hobeta
+and .zip files.
+Saves
+.ezx,
+<a href="../reference/formats.htm#SNA">.sna</a>,
+<a href="../reference/formats.htm#TAP">.tzx</a>,
+ <a href="../reference/z80format.htm">.z80</a>,
+<a href="../reference/formats.htm#TAP">.tap</a>,
+.cpd,
+.blk,
+.trd,
+.scl,
+and Hobeta. Supports plugins to load from/save to other formats.
+<br />
+<strong>Requirements</strong>: Microsoft Windows 9x, Me, NT, 2000 or XP. DirectX.<br />
+<strong>Created by</strong>: Vladimir Kladov.<br />
+<strong>Last updated</strong>: February 28th, 2004<br /><br />
+<strong>Comments</strong>: Emulates the Kempston, Cursor, Sinclair and Fuller Box <a href="../reference/peripherals.htm#Joysticks">Joystick Interfaces</a>,
+large set of features &mdash; see the website for more information and change history.
+<br /><br /></li>
+
+
+<li><a href="http://www.webcids.com/spectrumanywhere/">SpectrumAnyWhere</a> 1.1<br /><br />
+<strong>Emulates</strong>: ZX Spectrum 48K.<br />
+<strong>Tape/Disk Formats</strong>: Loads
+<a href="../reference/z80format.htm">.z80</a>,
+<a href="../reference/formats.htm#SNA">.sna</a>,
+<a href="../reference/formats.htm#SLT">.slt</a>,
+.sp,
+<a href="../reference/formats.htm#TAP">.tap</a> and
+<a href="../reference/formats.htm#TZX">.tzx</a> files.
+Saves <a href="../reference/formats.htm#SNA">.sna</a> snapshots.<br />
+<strong>Requirements</strong>: Pentium PC or better, Windows 9x, Me, NT, 2000, XP or 2003.<br />
+<strong>Created by</strong>: <a href="/cdn-cgi/l/email-protection#e4978593a4938186878d8097ca878b89ca9681898b9281ca908c8d97">Juan Cid</a>.<br />
+<strong>Last updated</strong>: Unknown.<br /><br />
+<strong>Comments</strong>:
+Emulates undocumented Z80 instructions and flags,
+emulates the Kempston, and Cursor <a href="../reference/peripherals.htm#Joysticks">Joystick Interfaces</a>,
+runs windowed (normal- or double-size) or full screen,
+can load programmes directly from cassette via line-in (sound card or device required).
+<br /><br /></li>
+
+</ul>
+
+</td>
+</tr>
+</table></td>
+<td width="75" /></tr>
+</table>
+
+<div class="pageFooter">$Id: windows.htm,v 1.13 2005/09/18 19:24:09 pak21 Exp $<br />
+Please read the
+<a title="Copyright Notice and Distribution Policy" href="../distributions.htm">Copyright Notice</a> for distribution policies, and the
+<a title="Contributors" href="../credits.htm">Credits</a> page for a list of contributors.</div>
+
+</body>
+</html>

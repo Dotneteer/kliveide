@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ZXSTMCART &mdash; The zx-state File Format 1.5 (c4287de) documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=8ebcc553" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=951b99ce"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="copyright" title="Copyright" href="copyright.html" />
+    <link rel="next" title="ZXSTMOUSE" href="mouse.html" />
+    <link rel="prev" title="ZXSTLECRAMPAGE" href="lecrampage.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            The zx-state File Format
+          </a>
+              <div class="version">
+                1.5
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="intro.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="copyright.html">Copyrights and acknowledgements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="version.html">Revision history</a></li>
+<li class="toctree-l1"><a class="reference internal" href="basic_info.html">Basic information</a></li>
+<li class="toctree-l1"><a class="reference internal" href="header.html">zx-state header</a></li>
+<li class="toctree-l1"><a class="reference internal" href="block.html">ZXSTBLOCK header</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="block_types.html">Block types</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="atasp.html">ZXSTATASP</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ataspram.html">ZXSTATARAM</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ay.html">ZXSTAYBLOCK</a></li>
+<li class="toctree-l2"><a class="reference internal" href="beta128.html">ZXSTBETA128</a></li>
+<li class="toctree-l2"><a class="reference internal" href="betadisk.html">ZXSTBETADISK</a></li>
+<li class="toctree-l2"><a class="reference internal" href="zxcf.html">ZXSTCF</a></li>
+<li class="toctree-l2"><a class="reference internal" href="zxcfram.html">ZXSTCFRAM</a></li>
+<li class="toctree-l2"><a class="reference internal" href="covox.html">ZXSTCOVOX</a></li>
+<li class="toctree-l2"><a class="reference internal" href="creator.html">ZXSTCREATOR</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dock.html">ZXSTDOCK</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dskfile.html">ZXSTDSKFILE</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gs.html">ZXSTGS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gsrampage.html">ZXSTGSRAMPAGE</a></li>
+<li class="toctree-l2"><a class="reference internal" href="interface1.html">ZXSTIF1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="if2rom.html">ZXSTIF2ROM</a></li>
+<li class="toctree-l2"><a class="reference internal" href="joystick.html">ZXSTJOYSTICK</a></li>
+<li class="toctree-l2"><a class="reference internal" href="keyboard.html">ZXSTKEYBOARD</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lec.html">ZXSTLEC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lecrampage.html">ZXSTLECRAMPAGE</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">ZXSTMCART</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mouse.html">ZXSTMOUSE</a></li>
+<li class="toctree-l2"><a class="reference internal" href="multiface.html">ZXSTMULTIFACE</a></li>
+<li class="toctree-l2"><a class="reference internal" href="opus.html">ZXSTOPUS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="opusdisk.html">ZXSTOPUSDISK</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plus3disk.html">ZXSTPLUS3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plusd.html">ZXSTPLUSD</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plusddisk.html">ZXSTPLUSDDISK</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rampage.html">ZXSTRAMPAGE</a></li>
+<li class="toctree-l2"><a class="reference internal" href="custom_rom.html">ZXSTROM</a></li>
+<li class="toctree-l2"><a class="reference internal" href="scld.html">ZXSTSCLDREGS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="simple8bitide.html">ZXSTSIDE</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cassette_recorder.html">ZXSTTAPE</a></li>
+<li class="toctree-l2"><a class="reference internal" href="specregs.html">ZXSTSPECREGS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="spectranet.html">ZXSTSPECTRANET</a></li>
+<li class="toctree-l2"><a class="reference internal" href="uspeech.html">ZXSTUSPEECH</a></li>
+<li class="toctree-l2"><a class="reference internal" href="specdrum.html">ZXSTSPECDRUM</a></li>
+<li class="toctree-l2"><a class="reference internal" href="z80regs.html">ZXSTZ80REGS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="zxprinter.html">ZXSTZXPRINTER</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">The zx-state File Format</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="block_types.html">Block types</a></li>
+      <li class="breadcrumb-item active">ZXSTMCART</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="zxstmcart">
+<h1>ZXSTMCART</h1>
+<p>Microdrive cartridge. Each drive that has a cartridge inserted has one
+of these blocks. These will follow the Interface 1
+(<a class="reference internal" href="interface1.html"><span class="doc">ZXSTIF1</span></a>) block.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="c1">// Microdrive cartridge</span>
+<span class="c1">// Each drive that has a cartridge in has one of</span>
+<span class="c1">// these blocks.</span>
+<span class="cp">#define ZXSTMDF_COMPRESSED  1</span>
+<span class="cp">#define ZXSTMDF_EMBEDDED    2</span>
+
+<span class="k">typedef</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">_tagZXSTMCART</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="n">ZXSTBLOCK</span><span class="w"> </span><span class="n">blk</span><span class="p">;</span>
+<span class="w">  </span><span class="n">WORD</span><span class="w"> </span><span class="n">wFlags</span><span class="p">;</span>
+<span class="w">  </span><span class="n">BYTE</span><span class="w"> </span><span class="n">chDriveNum</span><span class="p">;</span>
+<span class="w">  </span><span class="n">BYTE</span><span class="w"> </span><span class="n">fDriveRunning</span><span class="p">;</span>
+<span class="w">  </span><span class="n">WORD</span><span class="w"> </span><span class="n">wDrivePos</span><span class="p">;</span>
+<span class="w">  </span><span class="n">WORD</span><span class="w"> </span><span class="n">wPreamble</span><span class="p">;</span>
+<span class="w">  </span><span class="n">DWORD</span><span class="w"> </span><span class="n">dwUncompressedSize</span><span class="p">;</span>
+<span class="w">  </span><span class="n">BYTE</span><span class="w"> </span><span class="n">chData</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+<span class="p">}</span><span class="w"> </span><span class="n">ZXSTMCART</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">LPZXSTMCART</span><span class="p">;</span>
+</pre></div>
+</div>
+<section id="members">
+<h2>Members</h2>
+<dl>
+<dt>blk</dt><dd><p>The block header. The <a class="reference internal" href="block.html"><span class="doc">block id</span></a> is
+<strong>ZXSTBID_MICRODRIVE</strong> ('M', 'D', 'R', 'V').</p>
+</dd>
+<dt>wFlags</dt><dd><p>Various flags. This can be one of:</p>
+<table class="table is-bordered is-fullwidth docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Flag</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>ZXSTMDF_COMPRESSED</p></td>
+<td><p>Not implemented. All Microdrive cartridges are
+currently links to external <strong>.mdr</strong> files</p></td>
+</tr>
+<tr class="row-odd"><td><p>ZXSTMDF_EMBEDDED</p></td>
+<td><p>Not implemented. All Microdrive cartridges are
+currently links to external <strong>.mdr</strong> files</p></td>
+</tr>
+</tbody>
+</table>
+</dd>
+<dt>chDriveNum</dt><dd><p>The drive number this cartridge should be inserted into (1-8)</p>
+</dd>
+<dt>fDriveRunning</dt><dd><p>Indicates whether or not the Microdrive motor is running. This will
+either be 0 or 1 (on)</p>
+</dd>
+<dt>wDrivePos</dt><dd><p>Position of the virtual Microdrive head within the file</p>
+</dd>
+<dt>wPreamble</dt><dd><p>Number of preamble bytes left to skip</p>
+</dd>
+<dt>dwUncompressedSize</dt><dd><p>The length of the filename at <strong>chData</strong></p>
+</dd>
+<dt>chData</dt><dd><p>The file name of the Microdrive cartridge file (.<strong>mdr</strong>) which
+should be opened and inserted into this drive</p>
+</dd>
+</dl>
+</section>
+<section id="revision-history">
+<h2>Revision history</h2>
+<blockquote>
+<div><p>Available since <a class="reference internal" href="version.html"><span class="doc">version 1.0</span></a></p>
+</div></blockquote>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="lecrampage.html" class="btn btn-neutral float-left" title="ZXSTLECRAMPAGE" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="mouse.html" class="btn btn-neutral float-right" title="ZXSTMOUSE" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; <a href="copyright.html">Copyright</a> 2001-2025, Jonathan Needle. All rights reserved. Revision c4287de.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(false);
+      });
+  </script> 
+
+</body>
+</html>

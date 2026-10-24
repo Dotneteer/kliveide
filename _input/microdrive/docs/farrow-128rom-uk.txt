@@ -1,0 +1,340 @@
+
+
+
+
+  
+    Spectrum 128 ROM Disassembly - UK Spectrum 128
+    
+    
+    
+    
+    
+    
+  
+
+
+
+  
+
+
+
+    
+<!--
+
+    var DefaultMenuID='MC_Mn1';
+
+//------ INITIALISE
+
+    function Init()
+    {
+      emailE="feedback@fruitcake.plus.com?subject=Spectrum 128 ROM Disassembly (do not modify this subject)";
+      emailO='onmouseover="self.status=' + "'Send Feedback Via Email';return true;" + '" onmouseout="self.status=' + "''" + '";';
+      document.getElementById('email').innerHTML='Contact Me';
+    }
+
+//------ SET AN ELEMENT'S IMAGE
+
+    function UpdateImage(MenuID, NewColour)
+    {
+      document.getElementById(MenuID).className=NewColour;
+    }
+
+//------   CLEAR DEFAULT HIGHLIGHTED MENU ITEM
+
+    function ClearDefaultMenu(MenuID)
+    {
+      if(MenuID != DefaultMenuID)
+        UpdateImage(DefaultMenuID, 'White');
+    }
+
+//-->
+    
+
+
+
+  
+
+
+
+    
+    
+      
+      
+      
+    
+    
+
+  
+
+
+
+  
+
+    
+    Use the Spectrum&nbsp;128 style menu below to navigate to the various sections concerning the ROM disassemblies.
+    
+
+    
+
+    
+      
+    
+
+    
+      <a href="Spectrum128ROMDisassembly.htm"
+            onmouseover="UpdateImage('MC_Mn1', 'Cyan'); ClearDefaultMenu('MC_Mn1'); self.status='To Section: Spectrum 128';return true"
+            onmouseout ="UpdateImage('MC_Mn1', 'White'); UpdateImage(DefaultMenuID, 'Cyan'); self.status=''">
+        
+      
+    
+
+    
+      <a href="Spectrum128ROMDisassembly2.htm"
+            onmouseover="UpdateImage('MC_Mn2', 'Cyan'); ClearDefaultMenu('MC_Mn2'); self.status='To Section: Spectrum +2';return true"
+            onmouseout ="UpdateImage('MC_Mn2', 'White'); UpdateImage(DefaultMenuID, 'Cyan'); self.status=''">
+        
+      
+    
+
+    
+      <a href="Spectrum128ROMDisassembly4.htm"
+            onmouseover="UpdateImage('MC_Mn3', 'Cyan'); ClearDefaultMenu('MC_Mn3'); self.status='To Section: Spectrum +2A/+3';return true"
+            onmouseout ="UpdateImage('MC_Mn3', 'White'); UpdateImage(DefaultMenuID, 'Cyan'); self.status=''">
+        
+      
+    
+
+    
+      <a href="Spectrum128ROMDisassembly3.htm"
+            onmouseover="UpdateImage('MC_Mn4', 'Cyan'); ClearDefaultMenu('MC_Mn4'); self.status='To Section: Spanish Spectrum 128';return true"
+            onmouseout ="UpdateImage('MC_Mn4', 'White'); UpdateImage(DefaultMenuID, 'Cyan'); self.status=''">
+        
+      
+    
+
+    
+    
+
+    
+
+    
+    
+
+
+
+
+
+    
+    
+    
+    
+    
+      Spectrum 128 ROM
+    
+    
+    
+    
+
+    
+    The Spectrum&nbsp;128 contains 32K of ROM, divided into two banks of 16K referred to as ROM 0 (Editor ROM) and ROM 1 (BASIC ROM). At power on,
+    ROM 0 is active and contains the menu system, the 128&nbsp;BASIC editor, the new 128&nbsp;BASIC commands, the Calculator, the
+    Tape Tester and Tape Loader. ROM 1 contains a slightly modified version of the standard Spectrum ROM, and includes
+    the keypad scanning routine and test screen in the previously unused area at the end of the ROM.
+    
+
+    
+    The Spectrum&nbsp;128 ROM 0 disassembly was originally initiated by Matthew Wilson.
+    I incorporated all of my disassembly notes into this to form a single unified version and then proceeded to complete the disassembly.
+    The latest release, and all future enhancements, of the ROM 0 disassembly can therefore also be found on his website, along with very
+    useful HTML and PDF versions that Matthew has produced.
+    
+
+    
+    The Spectrum&nbsp;128 ROM 1 disassembly is built upon the Spectrum ROM disassembly produced by Geoff Wearmouth
+    (who also has disassemblies of the ZX&nbsp;Interface&nbsp;1 ROM Editions 1 and 2, the ZX80 ROM, the ZX81 ROM Edition 2 and the Jupiter Ace ROM on his website).
+    I have incorporated commented disassemblies of all of the new routines found within the Spectrum&nbsp;128's version of the BASIC ROM into Geoff's Spectrum ROM disassembly.
+    Most of these new comments have resulted from my work on the 
+    
+    Spectrum&nbsp;128 Keypad and 
+    
+    Spectrum&nbsp;128 Scart Cable.
+    
+
+    
+    
+      
+      Click here to download the <a href="Files/Disassemblies/Spectrum128_ROM0.zip" onmouseover="self.status='Download The Spectrum 128 ROM 0 Disassembly'; return true;"
+          onmouseout="self.status=''">Spectrum&nbsp;128 ROM&nbsp;0 Disassembly (dated 4th February 2019).
+    
+    
+      
+      Click here to download the <a href="Files/Disassemblies/Spectrum128_ROM1.zip" onmouseover="self.status='Download The Spectrum 128 ROM 1 Disassembly'; return true;"
+          onmouseout="self.status=''">Spectrum&nbsp;128 ROM&nbsp;1 Disassembly (dated 13th December 2011).
+    
+    
+
+    
+    
+      
+      Click here to download a dump of the <a href="Files/ROM_Dumps/Spectrum128_ROM0.bin" onmouseover="self.status='Download The Spectrum 128 ROM 0'; return true;"
+          onmouseout="self.status=''">Spectrum&nbsp;128 ROM&nbsp;0.
+    
+    
+      
+      Click here to download a dump of the <a href="Files/ROM_Dumps/Spectrum128_ROM1.bin" onmouseover="self.status='Download The Spectrum 128 ROM 1'; return true;"
+          onmouseout="self.status=''">Spectrum&nbsp;128 ROM&nbsp;1.
+    
+    
+
+    
+    The Editor ROM of the Spectrum&nbsp;128 contains 44 bugs, although some of these never actually manifest themselves to cause problems.
+    
+
+    
+    
+      
+      Click here to view the <a href="Files/Disassemblies/Spectrum128_ROM0_BugList.txt" onmouseover="self.status='View The Spectrum 128 ROM 0 Bug List'; return true;"
+          onmouseout="self.status=''">Spectrum 128 ROM 0 Bug List (24th January 2017).
+    
+    
+
+    
+    The Spectrum&nbsp;128 ROM 0 contains 0.5K of unused routines that are remnants from the original
+      
+    Spanish Spectrum&nbsp;128. I have used this space to patch the Spectrum&nbsp;128 ROM&nbsp;0 to include fixes for all but one of the bugs it contains.
+    A fix does not yet exist for the bug at $0321 which causes GO SUB entries on the stack to be discarded whenever a BASIC program stops, e.g. due to an error report.
+    
+
+    
+    
+      
+      Click here to download the <a href="Files/Disassemblies/Spectrum128_ROM0_BugFixed.zip" onmouseover="self.status='Download The Bug Fixed Spectrum 128 ROM 0 Disassembly'; return true;"
+          onmouseout="self.status=''">Bug Fixed Spectrum&nbsp;128 ROM&nbsp;0 Disassembly (4th February 2019).
+    
+    
+
+    
+    
+      
+      Click here to download a dump of the <a href="Files/ROM_Dumps/Spectrum128_ROM0_BugFixed.bin" onmouseover="self.status='Download The Spectrum 128 Bug Fixed ROM 0'; return true;"
+          onmouseout="self.status=''">Bug Fixed Spectrum&nbsp;128 ROM&nbsp;0.
+    
+    
+
+    
+    I have ported the Spectrum&nbsp;128 ROM to work on my
+    ZXC2,
+    ZXC3
+    and
+    ZXC4
+    Interface 2 PCBs, thereby creating a 
+    Spectrum&nbsp;128 Emulator ROM cartridge.
+    Screenshots of the Spectrum&nbsp;128's menus and 128&nbsp;BASIC mode can also be seen on this page.
+    
+
+
+
+  
+
+  
+
+
+
+    
+
+    
+    
+    
+      
+    
+    
+      To Top Of Page
+    
+    
+      
+    
+    
+      To Next Section
+    
+    
+      Spectrum&nbsp;128 Resource Centre
+    
+    
+        
+    
+    
+    
+
+
+
+    
+    
+      
+      
+    
+    
+
+  
+
+  
+
+    
+    
+      
+    
+    
+    
+      
+    
+    
+    
+
+    
+    
+      Spectrum 128
+    
+    
+      Spectrum +2
+    
+    
+      Spectrum +2A/+3
+    
+    
+      Spanish Spectrum 128
+    
+    
+
+  
+
+  
+
+    
+    
+      
+    
+    
+      ZX Resource Centre
+    
+    
+      
+    
+    
+    
+
+    
+    
+    Contact Me
+    
+    
+    
+    <a class="Footer" href="Spectrum128ROMDisassemblyDisclaimer.htm"
+            onmouseover = "self.status='View copyright information';return true;"
+            onmouseout = "self.status=''">Disclaimer
+    
+    
+
+  
+
+  
+
+

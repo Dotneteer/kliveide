@@ -1,0 +1,528 @@
+***********************************
+*** SPECTRUM 128 ROM 0 BUG LIST ***
+***********************************
+Compiled by Paul Farrow (www.fruitcake.plus.com), 29th March 2009 (revised 24th January 2017).
+
+There are 44 definite bugs within the Spectrum 128 Editor ROM (ROM 0), although some of these never actually manifest
+themselves to cause problems. There are also a number of other issues which appear to be more design decisions than bugs.
+The bugs have been categorised under group headings. The design decision issues are listed afterwards.
+
+----------------
+VECTOR TABLE BUG
+----------------
+
+Symptom:     Cannot read keypad via vector jump table.
+Location:    $012E
+Discoverer:  Paul Farrow
+Description: The Spectrum 128 contains a vector table of 16 routine addresses. The table is not used internally by the
+             ROM, but instead is intended to allow user programs a guaranteed method for accessing these routines
+             irrespective of whether their locations changed in subsequent ROM versions. The last entry in this vector
+             table executes the routine at $3B01 in ROM 1. However, this is not the start of a routine but is mid way
+             through the keypad reading routine. It appears that the vector was supposed to allow reading/monitoring of
+             the keypad and so the most likely addresses are $3A42 (read keypad) or $39A0 (scan keypad). At $3C01 in
+             ROM 1 there is a vector jump command to $39A0 to scan the keypad and this is similar enough to the $3B01
+             to imply a simple programming error in one of the bytes.
+
+-------------------
+INITIALISATION BUGS
+-------------------
+
+Symptom:     Corruption of main memory at $FF24.
+Location:    $01CE
+Discoverer:  Geoff Wearmouth
+Description: As part of the initialisation routine, address $FF24 is set to hold the value $EC00 (the start address of
+             the editor workspace variables). However, this value is written whilst RAM bank 0 is paged in and not when
+             RAM bank 7 is paged in. As a result main memory is corrupted, and will be corrupted ever time NEW is issued.
+             This can affect programs stored above RAMTOP. Note that the ROM never actually attempts to read back the
+             stored value.
+
+Symptom:     Corruption of main memory at $EC13. Typing INVERSE 1: PRINT "Hello", followed by NEW, followed by
+             PRINT "World" will cause the second word to also be printed in inverse.
+Location:    $0212
+Discoverer:  Geoff Wearmouth
+Description: As part of the initialisation routine, address $EC13 is set to hold $00. This value is written whilst RAM
+             bank 0 is paged in and not when RAM bank 7 is paged in. As a result main memory is corrupted, and will be
+             corrupted ever time NEW is issued. This can affect programs stored above RAMTOP. The workspace variable
+             in RAM bank 7 is subsequently used by the ROM to hold the value of system variable P-FLAG whilst a temporary
+             value is being used instead.
+
+-------------
+ERROR HANDLER
+-------------
+Symptom:     The GO SUB stack is discarded whenever a BASIC program stops. If the program was stopped whilst in a
+             subroutine then continuing the program will produce error report '7 RETURN without GOSUB' when an attempt
+             is made to return from the subroutine.
+Location:    $0321
+Discoverer:  Michal Skrzypek
+Description: Upon terminating a BASIC program, either via reaching the end of the program or due to an error occurring,
+             execution is passed to the error handler routine. Its first action is to reset the stack pointer to point
+             to the location of RAMTOP, i.e. after the GO SUB marker. However, this means that any existing GO SUB calls
+             that were on the stack are lost and so attempting to continue the program (without the use of CLEAR or RUN)
+             will likely lead to a "7 RETURN without GOSUB" error report message being displayed. When a new typed in
+             command is executed, a new GO SUB marker is set up on the stack at $030C.
+
+Symptom:     None. Technical error but symptoms never manifest themselves.
+Location:    $05C1
+Discoverer:  Paul Farrow
+Description: The error handler routine processes standard Spectrum error codes differently to 128 specific error codes.
+             However, it incorrectly determines that error 'a MERGE error' is a standard Spectrum error code. It therefore
+             invokes ROM 1 to handle it. This does produce the error report message but just takes longer to achieve it
+             than if the error code has been processed within ROM 0.
+
+----------
+RS232 BUGS
+----------
+Symptom:     'LPRINT INK 4' produces error report 'C Nonsense in BASIC'.
+Location:    $086C
+Discoverer:  Toni Baker, ZX Computing Monthly
+Description: The handler routine for control codes INK, PAPER, FLASH, BRIGHT, INVERSE and OVER expects them to be followed
+             by two parameters instead of one.
+
+Symptom:     'LPRINT INK 1;' produces error report '8 End of file'.
+Location:    $0871
+Discoverer:  Ian Collier (discovered within the +3), Andrew Owen (corresponding location identified within the 128)
+Description: The main RS232 routine processes both input and output, calling handler routines for each. It is the state
+             of the carry and zero flags that identifies the success or failure status from these handler routines. When
+             outputting control codes INK, PAPER, FLASH, BRIGHT, INVERSE and OVER, the handler routine fails to return
+             with the carry flag reset and the zero flag set.
+
+Symptom:     'LPRINT INK 1;' produces error report '8 End of file'.
+Location:    $087C
+Discoverer:  Toni Baker, ZX Computing Monthly
+Description: The main RS232 routine processes both input and output, calling handler routines for each. It is the state
+             of the carry and zero flags that identifies the success or failure status from these handler routines. When
+             outputting the parameter for control codes INK, PAPER, FLASH, BRIGHT, INVERSE and OVER, the handler routine
+             fails to return with the carry flag reset and the zero flag set.
+
+-----------------
+PLAY COMMAND BUGS
+-----------------
+
+Symptom:     There is a 1 in 65536 chance of the volume setting for channel A being corrupted when executing a PLAY command.
+Location:    $09CD
+Discoverer:  Toni Baker, ZX Computing Monthly
+Description: The PLAY command routine uses the IY register to point to channel string information and therefore disables
+             interrupts since the interrupt routine assumes IY points to the system variables and uses it to update the
+             FRAMES system variable. The PLAY command routine calls the ROM 1 routine STK_FETCH at $2BF1 to obtain the
+             details of each PLAY string from the stack but this routine causes interrupts to be re-enabled. Although the
+             PLAY command routine immediately disables interrupts after calling STK_FETCH, this still leaves a small time
+             interval in which interrupts are enabled and hence can occur. When an interrupts does occur during this
+             period, then instead of the interrupt routine updating FRAMES, it actually modifies the volume setting for
+             sound channel A.
+
+Symptom:     The PLAY volume command 'V' attempts to set the AY-3-8912 sound chip registers even for MIDI only channels.
+Location:    $0CA1
+Discoverer:  Ian Collier (discovered within the +3), Paul Farrow (corresponding location identified within the 128)
+Description: The 'V' command handler routine fails to take into account that it is also called to set the volume for a
+             MIDI only channel, i.e. play strings 4 to 8. As a result, corruption occurs to various sound generator registers,
+             causing spurious sound output. There is in fact no need for this routine to set the volume for any channels
+             since this is done every time a new note is played (see routine at $0A97).
+
+Symptom:     PLAY "abc" renders a 1/96th of a note gap of silence between playing each note.
+Location:    $1066
+Discoverer:  Ian Collier (discovered within the +3), Paul Farrow (corresponding location identified within the 128)
+Description: After a note has finished, the volume for both sound chip and MIDI channels has been set to 0, i.e. off. The
+             new notes have been set playing on the sound chip channels, no sound is audible. For MIDI channels, no new
+             notes have yet been output and hence these are also silent. If the time from turning the volume off for the
+             current note to the time to turn the volume on for the next note is short enough, then it will not be noticeable.
+             However, the code at $1066 introduces a 1/96th of a note delay and as a result a 1/96th of a note period of
+             silence between notes. A positive side effect of the bug in the 'V' volume command at $0C95 is that it can be
+             used to overcome the gaps of silence between notes for sound chip channels. By interspersing volume commands
+             between notes, a new volume level is immediately set before the 1/96th of a note delay is introduced for the
+             new note. Therefore, the delay occurs when the new note is audible instead of when it is silent. For example,
+             PLAY "cV15cV15c" instead of PLAY "ccc". The note durations are still 1/96th of a note longer than they should
+             be though. This technique will only work on the sound chip channels and not for any MIDI channels.
+
+------------------------
+RELIST BASIC PROGRAM BUG
+------------------------
+
+Symptom:     Inserting a BASIC line with two or more spaces or zeros before the line number causes the cursor to be placed
+             on incorrect row instead of the row immediately following the BASIC line.
+Location:    $15B2
+Discoverer:  Paul Farrow
+Description: Entering a line with two or more leading spaces or zeros, e.g. '  10 REM' or '0010 REM', will insert the line
+             into the program area but instead of placing the cursor on the following row it is placed after the following
+             BASIC line, or if the line inserted was the last in the program then the cursor is placed on row 20. The bug
+             occurs due to the leading spaces or zeros, and hence will apply to every BASIC command. When the line is being
+             processed for insertion, the leading spaces/zeros are discarded and hence the line length is shorter than that
+             typed in. However, it is the typed in line length that is used when parsing the BASIC line and as a result this
+             causes an attempt to find the remaining characters on the following row. If another BASIC line is on the row
+             then the search completes and the cursor is placed on the row after this BASIC line. If there is not a BASIC
+             line on the following row then the search continues on the next row. Since this will also be empty, the search
+             advances onto the next row, and then the next, and so on until row 20 is reached.
+
+-----------------
+CLEAR COMMAND BUG
+-----------------
+
+Symptom:     Using CLEAR to set RAMTOP within a GO SUB subroutine causes the GO SUB stack to become corrupt.
+Location:    $1A46
+Discoverer:  Ian Collier (discovered within the +3), Paul Farrow (corresponding location identified within the 128)
+Description: The CLEAR command routine assumes that the top of the GO SUB stack will be empty and hence will only contain
+             the end marker. This will not be the case if CLEAR is used within a subroutine, in which case BC will now hold
+             the calling line number and this will be stacked in place of the end marker. When a RETURN command is encountered,
+             the GO SUB stack appears to contain an entry since the end marker was not the top item. An attempt to return is
+             therefore made. Note that the CLEAR command handler within the 48K Spectrum ROM does not make any assumption
+             about the contents of the GO SUB stack and instead always re-inserts the end marker. It therefore does not suffer
+             from this bug.
+
+--------------------
+SPECTRUM COMMAND BUG
+--------------------
+
+Symptom:     After switching to 48K mode via the SPECTRUM command, the ZX Printer buffer is not cleared.
+Location:    $1B53
+Discoverer:  Paul Farrow
+Description: Although the channel 'P' information has been reconfigured to use the ZX Printer, the ZX printer buffer and
+             associated system variables still need to be cleared. Failure to do so means that the first use of the ZX Printer
+             will cause garbage to the printed, i.e. the paging routines and new system variables still present in the ZX Printer
+             buffer. Subsequently printer output will then be ok since the ZX Printer buffer and system variables will be cleared.
+             Worse still, there is the possibility that new data to be printed will be inserted beyond the ZX Printer buffer since
+             ROM 1 does not trap whether the ZX Printer system variable PR_POSN and PR_CC hold invalid values.
+
+-----------------
+INPUT COMMAND BUG
+-----------------
+
+Symptom:     Channel 'S' is inadvertently re-selected after opening channel 'K'.
+Location:    $2197
+Discoverer:  Geoff Wearmouth
+Description: The INPUT command opens channel 'K' and then inadvertently switches to channel 'S' via the call in ROM 1 to
+             CLS_LOWER at $0D6E. It is a direct copy of the bug that exists in the standard Spectrum ROM (and ROM 1) and
+             hence 128K mode behaves identically to 48K mode.
+
+-----------------
+ERROR MESSAGE BUG
+-----------------
+
+Symptom:     Error report 'p' produces the message "p (c) 1986 Sinclair Research Ltd".
+Location:    $232F
+Discoverer:  Andrew Owen
+Description: This should have been "Parameter error". The Spanish 128 produces "p Parameter error" but there is no such
+             string defined within the UK 128. To save memory, perhaps the UK 128 was intended to use the existing
+             "Q Parameter error" and the change of the error code byte within the ROM was overlooked.
+
+----------------------
+MAIN CONTROL LOOP BUGS
+----------------------
+
+Symptom:     With ZX Interface 1 attached, 1000 OPEN #4, "X" will produce "Invalid device expression, 1000:1" but this is
+             one character too long to fit within the lower editing area. It results in spurious effects or a crash.
+Location:    $2604
+Discoverer:  Toni Baker, ZX Computing Monthly
+Description: This bug only occurs only with ZX Interface 1 attached and a BASIC line such as 1000 OPEN #4, "X" (the line
+             number must be greater than 999), which produces the error message "Invalid device expression, 1000:1". This
+             message is too long to fit on a single line. When using the lower screen for editing, spurious effects happen
+             to the bottom lines. When using the full screen editor, a crash occurs.
+
+Symptom:     Stack overflow if unsupported function key repeatedly pressed.
+Location:    $2696
+Discoverer:  John Steven (discovered within the +3), Paul Farrow (corresponding location identified within the 128)
+Description: When a key press is detected, the ROM determines whether it is a function code (e.g. DELETE) or a character
+             code. If it is not a character code and not a supported function code then a jump back to the main key waiting
+             loop is made. However, the key processing routine was actually called and hence a return back instead of a
+             jump back should be made. Repeatedly generating supported function key codes will result in a memory leak and
+             eventually stack overflow causing a crash.
+
+---------------------
+EDITING FUNCTION BUGS
+---------------------
+
+Symptom:     None. Technical error but symptoms never manifest themselves.
+Location:    $2B77
+Discoverer:  Paul Farrow
+Description: When searching for the previous edit position to the left, the routine should return with the carry flag set
+             to indicate whether an editable position was found. If no such position was found then the routine fails to
+             ensure that the carry flag is reset. Fortunately, the carry flag is always reset when this routine is called
+             and is not changed should an editable position not exists. As a result, the bug is harmless.
+
+Symptom:     None. An incorrect row is indented but the BASIC line is immediately redrawn thereby 'undoing' the bug.
+Location:    $2BBA
+Discoverer:  Paul Farrow
+Description: When typing a line that spills over onto a new line, the new line needs to be indented. However, instead of
+             the newly inserted line getting indented, it is the line after it that gets indented. The indentation occurs
+             within the editing buffer and is not immediately reflected in the display file. When the newly typed line is
+             executed or inserted into the program area, the editing buffer gets refreshed and hence the effect of the bug
+             is never seen.
+
+Symptom:     The preferred column gets corrupted after a syntax error followed by moving the cursor to a different BASIC line.
+Location:    $2D4A
+Discoverer:  Ian Collier (discovered within the +3), Andrew Owen (corresponding location identified within the 128)
+Description: Following a syntax error, if the cursor was moved from its original position into the error position then the
+             preferred column gets set to zero and the next up or down cursor movement will cause the cursor marker to
+             jump to the left-hand side of the screen. However, if the cursor remained in the same position then the
+             preferred column gets set to a random value and so on the next up or down cursor movement the cursor marker
+             can jump to a random position on the screen. The bug can be reproduced by typing a line that is just longer
+             than one row, pressing enter twice and then cursor down. The cursor marker will probably jump somewhere in
+             the middle of the screen. Press an arrow again and the computer may even crash. 
+
+Symptom:     Inserting an edited BASIC line that has rows spanning above the screen causes the line to become corrupt.
+Location:    $2DA1
+Discoverer:  Ian Collier (discovered within the +3), Andrew Owen (corresponding location identified within the 128)
+Description: Instead of directly setting the HL register with the address of the editing buffer that holds the BASIC
+             line that spans off the top of the screen, the ROM performs an indirect memory access from the address of
+             the buffer. This results in HL holding random data and then using this as the address of the buffer.
+
+Symptom:     Typing a BASIC line, delete all characters, then press Enter causes the ROM to try to insert the new 'line'.
+Location:    $2F7D
+Discoverer:  Ian Collier (discovered within the +3), Paul Farrow (corresponding location identified within the 128)
+Description: For each visible line, the ROM holds a flag that it set as soon as the editing on the line is commenced.
+             This 'line altered' flag is not cleared when the 'edited' line consists of no characters. To reproduce the
+             bug, insert a couple of BASIC lines, type a character, delete it, and then cursor up or down onto a program
+             line. The line is considered to have been changed and so is processed as if it consists of characters.
+             Further, when cursor down is pressed to move to a BASIC line below, that line is deemed to have changed and
+             hence moving off from it causing that line to be re-inserted into the BASIC program.
+
+Symptom:     Using the DELETE-WORD-LEFT function corrupts the preferred cursor column.
+Location:    $3012
+Discoverer:  Ian Collier (discovered within the +3), Andrew Owen (corresponding location identified within the 128)
+Description: When moving the cursor up or down a BASIC program, the ROM attempts to place the cursor on the same column position
+             as it had in the previous row. If the new row is shorter then the cursor is placed at the end of the row.
+             When moving to the row after this, again the ROM attempts to place the cursor on the same column as it
+             had on the original row. After using the DELETE-WORD-LEFT function, this preferred column position is
+             corrupted with the number of editing rows on screen (20 when using the main screen, 2 when using the lower
+             screen).
+
+Symptom:     None. Technical error but symptoms never manifest themselves.
+Location:    $30D2
+Discoverer:  Paul Farrow
+Description: When initialising the workspace variables that manage the editing buffer, incorrect default values are set.
+             However, these values are subsequently over-written prior to use and hence the bug is harmless.
+
+Symptom:     Editing a BASIC line that spans above the screen can result in corruption to the line number, and hence when
+             Enter is pressed a completely new line is inserted rather then the existing line modified.
+Location:    $324C
+Discoverer:  Paul Farrow
+Description: The bug occurs because the HL register points incorrectly to the start of the row, but instead ends up pointing
+             3 bytes further on. This results in the first three characters of the existing line number being pre-pended
+             to itself, often resulting in the creation of a completely different line number. For high line numbers, the
+             corrupt line number can be larger than 9999 and hence the BASIC line is refused entry into the BASIC program.
+             The effects of the bug are often masked by the bug at $2DA1 which performs LD HL,($F9DB) instead of LD HL,$F9DB
+             and thereby fails to detect when the end of the editing buffer holding the BASIC line spanning above the screen
+             has been reached.
+
+Symptom:     None. Technical error causing the following (harmless) routine to be run.
+Location:    $335E
+Discoverer:  Ian Collier (discovered within the +3), Andrew Owen (corresponding location identified within the 128)
+Description: When de-tokenizing a BASIC line from the BASIC program into the characters to display on screen, instead of
+             using RET to return from the routine a RET NC instruction is mistakenly used. This can cause the following
+             routine to be executed, which re-copies a subroutine into RAM. The only side effect of this bug is the extra
+             time taken to un-necessarily copy the routine into RAM.
+
+Symptom:     None. Technical error but symptoms do not appear to manifest themselves.
+Location:    $3433
+Discoverer:  Paul Farrow
+Description: As part of generating a de-tokenized representation of a BASIC line, a routine is called to create the line
+             number string representation for a specified line number value. This routine also attempts to clear a flag
+             which indicates whether to print a leading space for the next keyword encountered but the method is flawed,
+             using OR A instead of XOR A.
+
+Symptom:     None. Technical error but symptoms do not appear to manifest themselves.
+Location:    $34B9
+Discoverer:  Paul Farrow
+Description: As part of generating a de-tokenized representation of a BASIC line, a routine is called to determine the
+             address of a BASIC line with a specified line number. This routine also attempts to clear a flag which
+             indicates whether to print a leading space for the next keyword encountered but the method is flawed, using
+             OR A instead of XOR A.
+
+Symptom:     Tokens '>=', '<=' and '<>' are printed with both leading and trailing spaces.
+Location:    $3561
+Discoverer:  Ian Collier (discovered within the +3), Paul Farrow (corresponding location identified within the 128)
+Description: Generally all tokens require leading and trailing spaces. Where two tokens are next to each other, one of the
+             spaces between them is suppressed. However, the three tokens '>=', '<=' and '<>' should not be printed with
+             either a leading or trailing space, but the ROM treats these ones the same as all the other tokens.
+
+-------------
+RENUMBER BUGS
+-------------
+
+Symptom:     Failure to detect that renumbering more than 6553 lines will result in line 9999 being exceeded.
+Location:    $3897
+Discoverer:  Ian Collier (discovered within the +3), Andrew Owen (corresponding location identified within the 128)
+Description: If there are more than 6553 lines to be renumbered then an arithmetic overflow will occur when checking
+             whether line 9999 would be exceeded and hence an incorrect result returned.
+
+Symptom:     Potential failure to renumber references to line numbers beyond the last BASIC line.
+Location:    $395C
+Discoverer:  Ian Collier (discovered within the +3), Andrew Owen (corresponding location identified within the 128)
+Description: If renumbering a line number reference that points beyond the last BASIC line then the reference should be
+             renumbered to 9999. However, the calculation to determine the new line number fails to take into account
+             that an arithmetic overflow might have occurred and the test for greater than line 9999 will be return an
+             incorrect result.
+
+Symptom:     Renumber routine fails to detect the end of the BASIC program if variables are held in memory.
+Location:    $3966
+Discoverer:  Ian Collier (discovered within the +3), Andrew Owen (corresponding location identified within the 128)
+Description: The test for whether the end of the BASIC program has been reached when renumbering is incorrect and actually
+             tests for the end of the variables area having been reached. Hence the renumber routine will only work properly
+             when no variables are held in memory. Therefore, executing CLEAR prior to renumbering will overcome this bug.
+
+Symptom:     Stack memory leak.
+Location:    $39E0
+Discoverer:  Paul Farrow
+Description: When changing a line number reference, the renumber routine places the new line number value on the calculator
+             stack in order to access the 5 byte floating point representation. However, it neglects to discard the number
+             from the stack afterwards. The memory is finally reclaimed when control is returned to the Editor but the
+             bug could prevent large programs from being renumbered due to a lack of free memory.
+
+----------------
+TAPE TESTER BUGS
+----------------
+
+Symptom:     Incorrect tape input level noted as representing silence.
+Location:    $3BED
+Discoverer:  Paul Farrow
+Description: At the start of the Tape Tester routine, the ROM performs a single sample of the cassette input line and assumes
+             the state read represents silence. If a tape was playing as the Tape Tester routine was activated, the cassette
+             input line might in fact contain noise and not silence. The routine will now treat all cassette input signals
+             as inverted, i.e. silence represents maximum volume and noise represents quieter volumes. The cyan volume level
+             marker is therefore drawn moving from right to left instead of left to right, with the far right position corresponding
+             to no signal.
+
+Symptom:     The cyan volume level marker spills onto the first column of the following row.
+Location:    $3C01
+Discoverer:  Paul Farrow
+Description: This bug occurs when the cassette input line sample incorrectly detects noise rather than silence, as described
+             for the bug at $3BED. The Tape Tester routine executes a loop that samples the cassette input line 2048 times
+             in order to determine the volume level. With a noise level incorrectly noted as representing silence, a true
+             silence level will cause all 2048 samples to yields maximum volume level. However, when converting from number
+             high level samples to display column position, a maximum sample count results in a column value of 32 and hence
+             a spill over onto the first column of the next row.
+
+------------------------
+TOKENIZE BASIC LINE BUGS
+------------------------
+
+Symptom:     A valid BASIC line containing a '>' or '<' character can fail to insert into the BASIC program.
+Location:    $3C81
+Discoverer:  Paul Farrow
+Description: The routine within the ROM that tokenizes a typed in BASIC line fails to ensure that the flag used for
+             processing of '<' and '>' characters is reset. The flag is used when tokenizing '>=', '<=' and '<>' and
+             records the fact that a '<' or '>' was encountered thereby indicating that the next character needs to be
+             examined to see if one of the tokens '>=', '<=' or '<>' has been found. Attempting to insert a BASIC line
+             such as 'PRINT VAL a$>b' will fail since the parser does not like '>' immediately after 'a$' (due to the bug
+             at $3CB8). The parser stores a flag indicating '>' was found thereby causing it to check the following
+             character in case the two characters form one of the token '<>', '>=' or '<='. After the parser throws the
+             syntax error, it does not clear the flag indicating '>' was found and so even if the line is modified such
+             that it should now be accepted, e.g. 'PRINT VAL a$=b', the parser believes the line is really '>PRINT VAL n$=b'
+             and so throws another syntax error. Since a letter follows the '>', the contents of flag will get cleared and
+             hence a second attempt to insert the line will now succeed. 
+
+Symptom:     The location of '>' or '<' characters within a BASIC line get shifted if followed by a letter when inserting
+             the line into the BASIC program.
+Location:    $3CB8
+Discoverer:  Ian Collier (discovered within the +3), Andrew Owen (corresponding location identified within the 128)
+Description: When a '>' or '<' character is encountered, it is temporarily stored in case the next character forms part of
+             the tokens '>=', '<=' or '<>'. If it does then the token is inserted in replacement of the two characters. If
+             it does not form one of the three tokens then the '>' or '<' character should get inserted before inserting
+             the new character. However, the routine proceeds with the new potential keyword and this is inserted into the
+             tokenized BASIC line next. The '>' or '<' character will only be inserted when the next non-letter character
+             is encountered. The bug causes an expression such as 'a>b1' to be translated into 'ab>1'.
+
+Symptom:     String characters "<>", "<=" and ">=" get tokenized even within quotes or a REM statement.
+Location:    $3E17
+Discoverer:  Paul Collins (discovered within the +3), Andrew Owen (corresponding location identified within the 128)
+Description: The tokenizer routine fails to take into account that the characters "<>", "<=" and ">=" may appear within
+             quotes or a REM statement and hence should not be tokenized into the single characters '<>', '<=' and '>='
+             respectively.
+
+Symptom:     The ':' character within a REM statement does not revert back to 'K' mode.
+Location:    $3E17
+Discoverer:  Paul Farrow
+Description: This is arguably not a bug but a bug fix upon how the ':' character is handled by the standard Spectrum ROM.
+             On the 48K Spectrum, typing a colon returns the cursor into 'K' mode and hence the next key press inserts a
+             keyword token. On the Spectrum 128, typing a colon does not cause the characters following it to be interpreted
+             as a possible keyword. There is no noticeable difference when executing the REM statement since subsequent
+             statements are ignored following a REM command. However, for consistency the 128K mode editor ought to
+             generate identical BASIC lines to those that would be created from 48K mode. 
+
+Symptom:     A trailing space at the end of a BASIC line will not be inserted.
+Location:    $3E93
+Discoverer:  Paul Farrow
+Description: The ROM attempts to remove double spaces caused by leading/trailing spaces from tokens. It notes the first space
+             encountered and then inserts it should the next character prove not to be a space. However, if the end of the
+             line is reached then the ROM neglects to check whether the previous character was a space and hence whether it
+             should be inserted.
+
+Symptom:     The red syntax error cursor is generally not positioned where the error is.
+Location:    $3F1A
+Discoverer:  Ian Collier (discovered within the +3), Andrew Owen (corresponding location identified within the 128)
+Description: When trying to insert a BASIC line that contains a syntax error, the ROM attempts to position a red cursor
+             at the position where the error occurred. It does this by first tokenizing the typed in line, attempts to
+             insert the tokenized line into the BASIC program, when this fails it counts through both the tokenized and
+             typed lines until the syntax error marker is located within the tokenized line. At this point, the count
+             along the typed in line needs the length of the last character to be removed from it, and for a token this
+             would be several bytes. However, the routine simply returns the lower of the tokenized and typed counts, and
+             this yields very unhelpful error marker positions shown within the typed BASIC line.
+
+Symptom:     The red syntax error cursor is not positioned where the error is if the BASIC line includes numeric literals.
+Location:    $3F3A
+Discoverer:  Paul Farrow
+Description: When counting through the tokenized BASIC line searching for the error marker position, the ROM has to skip
+             over embedded floating point number representations that will have been added when the attempt to insert the
+             line into the BASIC program was made. The ROM attempts to detect these embedded floating point number
+             representations but performs the check on the current visible character and not the 'hidden number' marker
+             byte that might follow it. As a result, the typed line character count progressively drifts by 6 bytes for
+             each numeric literal within the BASIC line.
+
+Symptom:     The red syntax error cursor is not positioned where the error is if the BASIC line includes numeric literals.
+Location:    $3F41
+Discoverer:  Ian Collier (discovered within the +3), Andrew Owen (corresponding location identified within the 128)
+Description: When locating the position of the syntax error marker (as described for the bug at $3F3A), the routine tries
+             to skip over embedded floating point number representations. Although it fails to detect these due to the bug
+             at $3F3A, the code to skip over them is anyway incorrect and advances one byte less than it should. The programmer
+             has forgotten to skip over the visible character that caused the routine to be called in the first place. If embedded
+             floating point number representations had been detected, i.e. the bug at $3F3A did not exist, then the attempt
+             to locate the error marker location would drift off by one byte for every numeric literal within the BASIC
+             statement, and if there were many numeric literals in the statement then the error marker location might
+             never be found before the end of the statement is parsed.
+
+
+================
+DESIGN DECISIONS
+================
+
+Symptom:     The RAM disk command VERIFY! does not verify but performs a load instead.
+Location:    $12C1
+Discoverer:  Paul Farrow
+Description: The Spectrum 128 manual states that the VERIFY keyword is not used with the RAM disk yet VERIFY! commands are
+             parsed and accepted as valid statements. However, when executed they simply load in files just as LOAD! does.
+
+Symptom:     RAM disk catalogue corrupts Screen 1.
+Location:    $1CA0
+Discoverer:  Toni Baker, ZX Computing Monthly
+Description: The shadow screen (SCREEN 1) resides in physical RAM bank 7, as does the RAM disk catalogue. If more than 217
+             catalogue entries are created then SCREEN 1 will become corrupted. Since screen 1 cannot be used from BASIC,
+             it may have been a design decision to allow the RAM disk to overwrite it.
+
+Symptom:     RAM disk files corrupts RAM disk catalogue.
+Location:    $1CF3
+Discoverer:  Paul Farrow
+Description: The RAM disk files share the first 8K of RAM bank 7 with the RAM disk catalogue. It was probably a design
+             decision to allow this sharing so as to allow the available space to be efficiently used whether a lot of
+             small files or a few large files.
+
+Symptom:     Key click and error rasp tones/durations in 128K mode are different to 48K mode.
+Location:    $26EC
+Discoverer:  Ian Collier (discovered within the +3), Andrew Owen (identified within the 128)
+Description: The key click is of the same tone in 128K mode as it is in 48K mode, but its duration is longer. The error
+             rasp tone in 128K mode is half that in 48K mode, but of shorter duration. Both the key click and the error
+             rasp tone use the same note duration via the same routine at $26EC. It can easily be imagined that the error
+             rasp note duration of 48K mode would quickly become very irritating when in 128K mode where it is likely to
+             occur far more often. Hence the reason for its shorter duration. The reason for the longer key click is less
+             clear, unless it was to save memory by using a single routine. However, it would only have required an additional
+             3 bytes to set HL independently for key clicks, which is not a great deal considering there is 1/2K of unused
+             routines within the ROM. It could simply be that the new note was deemed to sound better suited to 128K mode;
+             the structure of the ROM routine would imply that the change in tones/durations was a design decision rather
+             than a bug. Since the INPUT command is handled by ROM 1, it produces key clicks at the 48K mode duration even
+             when executed from 128 BASIC mode.
+
+Symptom:     Line number 0 is not supported in 128K mode.
+Location:    Numerous routines within the ROM.
+Discoverer:  Ian Collier (discovered within the +3), Andrew Owen (identified within the 128)
+Description: Line number 0 is not supported and will not list properly. It is not possible to directly insert such a line
+             (not even in 48 BASIC mode) and so line number 0 is not officially supported. A line number value of 0 is
+             used by the ROM to indicate 'no line' and this is the cause of many of the issues when attempting to list a
+             a loaded program that includes a line number 0.
+
