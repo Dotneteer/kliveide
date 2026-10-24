@@ -62,6 +62,9 @@ import { readDiskData } from "@emu/machines/disk/disk-readers";
 import { DSK_WHOLE_IMAGE_KEY, dskSectorWrites } from "@emu/machines/disk/disk-changes";
 import { createDiskFile } from "@common/utils/create-disk-file";
 import { beginDiskImageEdit, cancelDiskImageEdit, commitDiskImageEdit } from "./disk-image-edit";
+import { createHardDiskImage, hardDiskFileClusters, queryHardDisk, readHardDiskFile } from "./hard-disk-images";
+import { copyFolderToHardDiskSafely, editHardDiskSafely } from "./hard-disk-edit";
+import type { DiskEdit } from "@common/diskfs/edit";
 import type { DiskImageEditStart } from "@common/messaging/MainApi";
 import { mainScriptManager } from "./ksx-runner/MainScriptManager";
 import { collectedBuildTasks } from "./build";
@@ -73,7 +76,7 @@ import { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
 import {
   activeSdCardFile,
   DEFAULT_SD_CARD_FILE,
-  getSdCardHandler,
+  getSdCardDevice,
   invalidateSdCardHandler
 } from "./machine-menus/zx-next-menus";
 import { withSdCardAccess } from "./sd-card-access";
@@ -340,6 +343,51 @@ class MainMessageProcessor {
     if (!(contents instanceof Uint8Array)) throw new Error("The disk image must be bytes");
     // --- Input validated
     await commitDiskImageEdit(filePath, contents, start ?? {});
+  }
+
+  queryHardDisk(filePath: string, options?: { partition?: number; dir?: string; deleted?: boolean }) {
+    // Input validation
+    if (typeof filePath !== "string" || !filePath) throw new Error("A disk image path is required");
+    // --- Input validated
+    return queryHardDisk(filePath, options ?? {});
+  }
+
+  readHardDiskFile(filePath: string, name: string, partition?: number) {
+    // Input validation
+    if (typeof filePath !== "string" || typeof name !== "string") throw new Error("An image and a file name are required");
+    // --- Input validated
+    return readHardDiskFile(filePath, name, partition);
+  }
+
+  hardDiskFileClusters(filePath: string, name: string, partition?: number) {
+    // Input validation
+    if (typeof filePath !== "string" || typeof name !== "string") throw new Error("An image and a file name are required");
+    // --- Input validated
+    return hardDiskFileClusters(filePath, name, partition);
+  }
+
+  async editHardDisk(filePath: string, edit: DiskEdit, partition?: number) {
+    // Input validation
+    if (typeof filePath !== "string" || !edit || typeof edit.kind !== "string") throw new Error("An image and an edit are required");
+    // --- Input validated
+    await editHardDiskSafely(filePath, edit, partition);
+  }
+
+  async copyFolderToHardDisk(filePath: string, hostFolder: string, targetDir?: string, partition?: number) {
+    // Input validation
+    if (typeof filePath !== "string" || typeof hostFolder !== "string") throw new Error("An image and a folder are required");
+    // --- Input validated
+    return copyFolderToHardDiskSafely(filePath, hostFolder, targetDir, partition);
+  }
+
+  createHardDiskImage(filePath: string, options: { sizeMb: number; fatType: 16 | 32; label?: string; partitioned?: boolean }) {
+    // Input validation
+    if (typeof filePath !== "string" || !options || !Number.isInteger(options.sizeMb) || ![16, 32].includes(options.fatType)) {
+      throw new Error("A path, a size in MB and a FAT type (16 or 32) are required");
+    }
+    // --- Input validated
+    createHardDiskImage(filePath, options);
+    return filePath;
   }
 
   async cancelDiskImageEdit(start?: Omit<DiskImageEditStart, "contents">) {
@@ -1221,7 +1269,7 @@ class MainMessageProcessor {
       throw new Error("Invalid sector index");
     }
     // --- Input validated
-    return withSdCardAccess(() => getSdCardHandler().readSector(sectorIndex));
+    return withSdCardAccess(() => getSdCardDevice().readSector(sectorIndex));
   }
 
   /**
@@ -1240,7 +1288,7 @@ class MainMessageProcessor {
       throw new Error("Data must be a Uint8Array");
     }
     // --- Input validated
-    await withSdCardAccess(() => getSdCardHandler().writeSector(sectorIndex, data));
+    await withSdCardAccess(() => getSdCardDevice().writeSector(sectorIndex, data));
 
     // --- FIX for ISSUE #8: Explicit persistence confirmation
     // --- Only return success after fsyncSync has completed
@@ -1255,10 +1303,7 @@ class MainMessageProcessor {
    * Returns the total number of 512-byte sectors on the mounted SD card image.
    */
   async getSdCardInfo(): Promise<{ totalSectors: number }> {
-    return withSdCardAccess(() => {
-      const info = getSdCardHandler().cimInfo;
-      return { totalSectors: (info.maxSize * 2048) / info.sectorSize };
-    });
+    return withSdCardAccess(() => ({ totalSectors: getSdCardDevice().totalSectors }));
   }
 
   /**

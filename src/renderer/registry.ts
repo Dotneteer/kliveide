@@ -10,6 +10,7 @@ import {
   HT1080Z_TAPE_VIEWER,
   P_FILE_VIEWER,
   DISK_EXPLORER,
+  HARD_DISK_EXPLORER,
   NEX_VIEWER,
   ROM_ANNOTATION_EDITOR,
   Z88_SNAPSHOT_VIEWER,
@@ -101,6 +102,7 @@ import { readPFileRegion } from "./appIde/DocumentPanels/PFile/pFileDocument";
 import { PsgPanel } from "./appIde/SideBarPanels/PsgPanel";
 import { NecUpd765Panel } from "./appIde/SideBarPanels/NecUpd765Panel";
 import { createDiskExplorerPanel } from "./appIde/DocumentPanels/DiskExplorer/DiskExplorerPanel";
+import { createHardDiskExplorerPanel } from "./appIde/DocumentPanels/DiskExplorer/HardDiskExplorerPanel";
 import {
   MC_DISK_SUPPORT,
   MF_BLINK,
@@ -576,6 +578,12 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     navigation: fileDocumentNavigationAdapter
   },
   {
+    id: HARD_DISK_EXPLORER,
+    renderer: createHardDiskExplorerPanel,
+    icon: "floppy",
+    navigation: fileDocumentNavigationAdapter
+  },
+  {
     // --- A ROM sidecar: its pages, matched to the ROM by CRC, open as editable bank documents
     id: ROM_ANNOTATION_EDITOR,
     renderer: createRomAnnotationEditorPanel,
@@ -941,6 +949,19 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     icon: "floppy",
     isBinary: true,
     isReadOnly: true,
+    openPermanent: true
+  })),
+  // --- Hard-disk images and SD cards (C2): gigabytes, so the document holds none of the file
+  // --- (`noContent`); the explorer asks the main process for the folder and the file it shows
+  ...[".img", ".hdf", ".cim"].map((pattern) => ({
+    matchType: "ends" as const,
+    pattern,
+    ignoreCase: true,
+    editor: HARD_DISK_EXPLORER,
+    icon: "floppy",
+    isBinary: true,
+    isReadOnly: true,
+    noContent: true,
     openPermanent: true
   })),
   /*

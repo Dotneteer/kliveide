@@ -1,7 +1,8 @@
 import { diskImageBytes, openDiskFileSystem } from "./open";
 import { Plus3DosFileSystem } from "./plus3dos";
 import { TrdosFileSystem } from "./trdos";
-import { DiskFsError, type DiskFileAttributes, type NewDiskFile } from "./types";
+import { FatFileSystem } from "./fat";
+import { DiskFsError, type DiskFileAttributes, type DiskFileSystem, type NewDiskFile } from "./types";
 
 /*
  * The edits the Disk Explorer, the `disk` IDE command and `klive disk` make
@@ -16,7 +17,8 @@ export type DiskEdit =
   | { kind: "attributes"; name: string; attributes: Partial<DiskFileAttributes> }
   | { kind: "user"; name: string; user: number }
   | { kind: "compact" }
-  | { kind: "label"; label: string };
+  | { kind: "label"; label: string }
+  | { kind: "mkdir"; path: string };
 
 /**
  * An edit applied to an image's bytes
@@ -25,11 +27,23 @@ export type DiskEdit =
  */
 export function applyDiskEdit (bytes: Uint8Array, fileName: string, edit: DiskEdit): Uint8Array {
   const fs = openDiskFileSystem(bytes, fileName);
+  applyEdit(fs, edit);
+  return diskImageBytes(fs, fileName);
+}
+
+/**
+ * An edit applied to an open file system (a hard disk's, on its device)
+ * @throws DiskFsError when the file system refuses it
+ */
+export function applyEdit (fs: DiskFileSystem, edit: DiskEdit): void {
   switch (edit.kind) {
     case "add":
       for (const file of edit.files) {
-        if (edit.replace && fs.list().some((f) => f.name.toUpperCase() === file.name.toUpperCase())) {
-          fs.delete(file.name);
+        if (edit.replace) {
+          const slash = file.name.lastIndexOf("/");
+          const dir = slash >= 0 ? file.name.slice(0, slash) : "";
+          const same = fs.list({ dir }).find((f) => f.name.toUpperCase() === file.name.toUpperCase());
+          if (same) fs.delete(same.name);
         }
         fs.write(file);
       }
@@ -55,8 +69,11 @@ export function applyDiskEdit (bytes: Uint8Array, fileName: string, edit: DiskEd
       if (!(fs instanceof TrdosFileSystem)) throw new DiskFsError("unsupported", "Only TR-DOS disks have a label.");
       fs.setLabel(edit.label);
       break;
+    case "mkdir":
+      if (!(fs instanceof FatFileSystem)) throw new DiskFsError("unsupported", "Only FAT disks have folders.");
+      fs.mkdir(edit.path);
+      break;
   }
-  return diskImageBytes(fs, fileName);
 }
 
 /** A file's contents, as the disk's file system reads them */

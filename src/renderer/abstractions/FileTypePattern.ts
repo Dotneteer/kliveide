@@ -29,6 +29,11 @@ export type FileTypeEditor = FileTypePattern & {
   subType?: string;
   isReadOnly?: boolean;
   isBinary?: boolean;
+  /**
+   * The document opens without reading the file: its panel reads what it shows through the main
+   * process (a hard-disk image of gigabytes; `.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md` C2)
+   */
+  noContent?: boolean;
   openPermanent?: boolean;
   canBeBuildRoot?: boolean;
   documentTabRenderer?: PanelRenderer;

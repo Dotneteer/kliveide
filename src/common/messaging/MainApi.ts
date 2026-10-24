@@ -1,4 +1,6 @@
 import { ProjectNodeWithChildren } from "@abstractions/ProjectNode";
+import type { HardDiskView } from "@common/diskfs/hardDisk";
+import type { DiskEdit } from "@common/diskfs/edit";
 import type { SdCardFingerprint } from "@common/machineState/machineStateTypes";
 import { buildMessagingProxy } from "./MessageProxy";
 import type { UnitTestRunRequest, UnitTestRunResponse } from "@common/unit-tests/unitTestTypes";
@@ -159,6 +161,46 @@ class MainApiImpl {
    * @param _start What `beginDiskImageEdit` returned (its contents left out)
    */
   async cancelDiskImageEdit(_start?: Omit<DiskImageEditStart, "contents">): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * What a hard-disk image (`.img`, `.hdf`, `.cim`) holds: its partitions, its FAT file system and a
+   * folder's files (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md, C2). Read sector by sector in the
+   * main process: the image is never sent whole.
+   */
+  async queryHardDisk(
+    _filePath: string,
+    _options?: { partition?: number; dir?: string; deleted?: boolean }
+  ): Promise<HardDiskView> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /** A file's contents on a hard-disk image */
+  async readHardDiskFile(_filePath: string, _name: string, _partition?: number): Promise<Uint8Array> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /** A file's clusters on a hard-disk image (the Layout view) */
+  async hardDiskFileClusters(_filePath: string, _name: string, _partition?: number): Promise<number[]> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /** Changes a hard-disk image; an image the machine uses as its SD card is edited under its lock */
+  async editHardDisk(_filePath: string, _edit: DiskEdit, _partition?: number): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /** Copies a host folder's files and folders into a folder of a hard-disk image; returns the file count */
+  async copyFolderToHardDisk(_filePath: string, _hostFolder: string, _targetDir?: string, _partition?: number): Promise<number> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /** Creates a formatted hard-disk image (`.img`, `.hdf` or `.cim` by the name's extension) */
+  async createHardDiskImage(
+    _filePath: string,
+    _options: { sizeMb: number; fatType: 16 | 32; label?: string; partitioned?: boolean }
+  ): Promise<string> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 

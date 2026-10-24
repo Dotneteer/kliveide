@@ -188,7 +188,7 @@ static void zxnextTraceRecordInstruction(uint32_t pcBefore) {
   zxnextTraceWrite8(offset + 113u, zxnextMemoryGetPort1ffd());
   zxnextTraceWrite8(offset + 114u, zxnextMemoryGetPortDffd());
   zxnextTraceWrite8(offset + 115u, 0u);
-  zxnextTraceWrite8(offset + 116u, zxnextDivMmcGetPortE3());
+  zxnextTraceWrite8(offset + 116u, zxDivMmcGetPortE3());
   zxnextTraceWrite8(offset + 117u, 0u);
   zxnextTraceWrite8(offset + 118u, zxnextNextRegs[0x8cu]);
   zxnextTraceWrite8(offset + 119u, 0u);

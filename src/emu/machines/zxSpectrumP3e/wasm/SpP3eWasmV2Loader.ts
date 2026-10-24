@@ -3,6 +3,7 @@ import { CONDITION_CORE_EXPORTS, type ConditionCoreExports } from "@emu/machines
 import { Z80_HISTORY_CORE_EXPORTS, type Z80HistoryCoreExports } from "@emu/machines/history/WasmHistoryReader";
 import { WASM_ACCESS_LOG_CAPACITY } from "../../wasmAccessLog";
 import { rzxCoreExportNames, type RzxCoreExports } from "../../zxSpectrum/rzx/rzxCoreBridge";
+import { divMmcCoreExportNames, type DivMmcCoreExports } from "../../zxSpectrum/divmmc/divMmcCoreBridge";
 
 export const SPP3E_WASM_V2_ARTIFACT_NAME = "zx-spectrum-p3e.wasm";
 export const SPP3E_WASM_V2_MEMORY_SIZE = 0x10000;
@@ -12,7 +13,7 @@ export const SPP3E_WASM_V2_KEYBOARD_LINE_COUNT = 8;
 
 export type SpP3eWasmV2ExportFunction = (...args: number[]) => number;
 
-export type SpP3eWasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Z80HistoryCoreExports & RzxCoreExports<"spp3e"> & {
+export type SpP3eWasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Z80HistoryCoreExports & RzxCoreExports<"spp3e"> & DivMmcCoreExports<"spp3e"> & {
   memory: WebAssembly.Memory;
   spp3eMemoryPtr: SpP3eWasmV2ExportFunction;
   spp3eRamPtr: SpP3eWasmV2ExportFunction;
@@ -553,6 +554,8 @@ const requiredV2Exports = [
   "spp3eSetLastUlaReadValue",
   // --- RZX playback and recording (`zx-spectrum-rzx.c`)
   ...rzxCoreExportNames("spp3e"),
+  // --- The DivMMC and its SD card (`zx-spectrum-divmmc-classic.c`)
+  ...divMmcCoreExportNames("spp3e"),
   // --- Last, so a core missing its own exports is reported by those: the breakpoint condition
   // --- evaluator, identical in every Z80 core
   ...CONDITION_CORE_EXPORTS,

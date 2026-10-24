@@ -32,8 +32,12 @@ import {
   FAST_LOAD,
   REWIND_REQUESTED,
   SAVED_TO_TAPE,
-  TAPE_MODE
+  TAPE_MODE,
+  ESXDOS_ROM_FILE
 } from "../machine-props";
+import { DivMmcSupport } from "../zxSpectrum/divmmc/divMmcCoreBridge";
+import type { MessengerBase } from "@common/messaging/MessengerBase";
+import type { SdRevertResult, SdUndoEntry, SdUndoLog } from "@emu/machines/reverse/SdUndoLog";
 import { MC_DISK_SUPPORT } from "@common/machines/constants";
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "@common/structs/project-const";
 import { BinaryWriter } from "@utils/BinaryWriter";
@@ -191,6 +195,12 @@ export class ZxSpectrumP3eWasmV2Machine
 
   public readonly implementation = "wasm" as const;
   public wasmV2Runtime?: SpP3eWasmV2Runtime;
+
+  /** The DivMMC (`.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md` C4): with `MC_DIVMMC`, connected at setup */
+  readonly divMmc = new DivMmcSupport("spp3e", {
+    getDivMmcRuntime: () => this.wasmV2Runtime,
+    loadDivMmcRom: (path) => this.loadRomFromResource(path)
+  });
   /** The RZX session playing or recording on this machine (`.plans/RZX_PLAN.md` §4.3) */
   public rzxSession?: IRzxSession;
   private rzxCoreBridge?: RzxCoreBridge;
@@ -483,11 +493,18 @@ export class ZxSpectrumP3eWasmV2Machine
     this.syncAudioSampleRateToWasmV2(this.wasmV2Runtime);
     this.syncTapeStateToWasmV2(this.wasmV2Runtime);
     this.syncDiskStateToWasmV2(this.wasmV2Runtime);
+    if (this.divMmcModel) {
+      await this.divMmc.connect(this.getMachineProperty(ESXDOS_ROM_FILE) as string | undefined);
+      // --- The interface resets with the machine: it boots esxDOS from the first fetch at $0000
+      this.wasmV2Runtime.exports.spp3eReset();
+    }
     this.syncFrameCountersFromWasmV2(this.wasmV2Runtime);
   }
 
   override hardReset(): void {
     super.hardReset();
+    // --- A card swapped while the machine was stopped: its size is asked for again
+    this.divMmc.cardChanged();
     if (this.wasmV2Runtime != null) {
       this.hardResetWasmV2(this.wasmV2Runtime);
       this.replayUploadedRomPages((partition, data) => this.uploadRomBytes(partition, data));
@@ -540,7 +557,8 @@ export class ZxSpectrumP3eWasmV2Machine
     this.syncFrameCountersFromWasmV2(runtime);
     this.publishSavedTapeFromWasmV2(runtime);
     this.flushDiskChanges();
-    this.frameCompleted = true;
+    // --- The DivMMC's SD card stopped the frame for a sector: the controller answers it
+    this.frameCompleted = this.divMmc.syncFrameCommand() ? runtime.exports.spp3eGetFrameCompleted() !== 0 : true;
     this.executionContext.lastTerminationReason = FrameTerminationMode.Normal;
     return FrameTerminationMode.Normal;
   }
@@ -618,6 +636,8 @@ export class ZxSpectrumP3eWasmV2Machine
 
   override getMemoryPartition(index: number): Uint8Array {
     const runtime = this.requireWasmV2Runtime();
+    const divMmcMemory = index <= -16 ? this.divMmc.partitionMemory(index) : undefined;
+    if (divMmcMemory) return divMmcMemory;
     if (index < 0) {
       const romIndex = Math.max(0, Math.min(3, -index - 1));
       return runtime.rom.subarray(romIndex * 0x4000, (romIndex + 1) * 0x4000);
@@ -641,7 +661,42 @@ export class ZxSpectrumP3eWasmV2Machine
     const slot1 = wasm.spp3eGetCurrentPartition(1);
     const slot2 = wasm.spp3eGetCurrentPartition(2);
     const slot3 = wasm.spp3eGetCurrentPartition(3);
-    return [slot0, slot0, slot1, slot1, slot2, slot2, slot3, slot3];
+    // --- The DivMMC's ROM and RAM bank over $0000-$3FFF while it is mapped
+    const [page0, page1] = this.divMmcModel ? this.divMmc.pagePartitions() : [undefined, undefined];
+    return [page0 ?? slot0, page1 ?? slot0, slot1, slot1, slot2, slot2, slot3, slot3];
+  }
+
+  /** "divMmcNmi": the DivMMC's button (Machine › SD Card) */
+  override async executeCustomCommand(command: string): Promise<any> {
+    if (command === "divMmcNmi") {
+      this.divMmc.pressNmi();
+      return true;
+    }
+    return super.executeCustomCommand(command);
+  }
+
+  // --- The DivMMC's SD card requests are this machine's frame commands
+  override getFrameCommand(): any {
+    return this.divMmc.getFrameCommand();
+  }
+
+  override setFrameCommand(command: any): void {
+    this.divMmc.setFrameCommand(command);
+  }
+
+  override async processFrameCommand(messenger?: MessengerBase): Promise<void> {
+    if (messenger && this.divMmc.handles(this.divMmc.getFrameCommand())) {
+      await this.divMmc.processFrameCommand(messenger);
+    }
+  }
+
+  /** The timeline's SD undo log while one runs (REVERSE_DEBUGGING_PLAN D14) */
+  attachSdUndoLog(log: SdUndoLog | undefined): void {
+    this.divMmc.attachSdUndoLog(log);
+  }
+
+  async revertSdWrites(entries: readonly SdUndoEntry[], messenger: MessengerBase): Promise<SdRevertResult> {
+    return this.divMmc.revertSdWrites(entries, messenger);
   }
 
   override getSelectedRomPage(): number {
@@ -1411,6 +1466,12 @@ export class ZxSpectrumP3eWasmV2Machine
       },
       getFrameCommand: () => this.getFrameCommand(),
       enter: () => {
+        // --- A sector the DivMMC's card waits for is answered before another instruction runs
+        if (this.divMmc.syncFrameCommand()) {
+          const termination = this.finishWasmV2DebugLoop(FrameTerminationMode.Normal);
+          this.frameCompleted = false;
+          return termination;
+        }
         if (this.frameCompleted) {
           this.onInitNewFrame(false);
           this.frameCompleted = false;
@@ -1450,6 +1511,13 @@ export class ZxSpectrumP3eWasmV2Machine
         return pc;
       },
       historyStopReached: () => wasm.z80HistoryCheckStop() !== 0,
+      // --- The DivMMC's card asked for a sector: the loop ends at its frame-command test
+      afterStep: this.divMmcModel
+        ? () => {
+            this.divMmc.syncFrameCommand();
+            return undefined;
+          }
+        : undefined,
       importBusAccess: () => this.importWasmV2BusAccess(runtime),
       hasAccessBreakpoint: () => this.hasWasmV2AccessBreakpoint(),
       shouldStopAtBreakpoint: (instructionsExecuted) => this.shouldStopAtWasmV2Breakpoint(instructionsExecuted),

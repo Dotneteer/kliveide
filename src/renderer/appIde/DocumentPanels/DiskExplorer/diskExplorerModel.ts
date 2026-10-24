@@ -48,7 +48,7 @@ export type DiskExplorerModel = {
   fileName: string;
   /** The file system's info, when the disk has one Klive reads */
   info?: DiskFsInfo;
-  system?: "+3dos" | "trdos";
+  system?: "+3dos" | "trdos" | "fat";
   /** Why the disk's files cannot be shown (an unformatted disk, for example) */
   fsError?: DiskFsError;
   files: DiskFileEntry[];

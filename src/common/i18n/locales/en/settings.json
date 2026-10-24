@@ -1021,5 +1021,13 @@
   "@settings.button.helpTranslate": {
     "context": "Button on the 'Translations' row of the Settings dialog: opens the contributor guide (a web page) in the browser.",
     "maxChars": 20
+  },
+  "settings.machine.esxDosRom.title": "esxDOS ROM",
+  "@settings.machine.esxDosRom.title": {
+    "context": "Settings dialog, Machine page, 'ROM' group: label of a file setting (shows the chosen file's name, with buttons beside it). esxDOS is the DivMMC interface's operating system; keep the name. Its help text: 'The DivMMC stays off without it. Changing it restarts the machine'"
+  },
+  "settings.machine.esxDosRom.description": "The DivMMC stays off without it. Changing it restarts the machine",
+  "@settings.machine.esxDosRom.description": {
+    "context": "Help text under the setting 'esxDOS ROM' (Settings dialog, Machine page). Wraps over several lines."
   }
 }

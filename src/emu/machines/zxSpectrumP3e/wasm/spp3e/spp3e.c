@@ -443,6 +443,17 @@ static const Spp3eScreenConfig spp3eUlaConfig = {
   {0u, 7u, 6u, 5u, 4u, 3u, 2u, 1u}, 5u
 };
 
+/*
+ * The DivMMC (`zx-spectrum-divmmc-classic.c`; .plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md C4): the host
+ * connects it (`spp3eDivMmcSetPresent`). Its ROM-3 entry points need the 48K BASIC ROM (ROM 3) paged in.
+ */
+static void spp3eDivMmcRemapped(void);
+#define ZXDC_PREFIX spp3e
+#define ZXDC_ROM3_PRESENT() (spp3eInSpecialPagingMode == 0u && spp3eSelectedRom == 3u)
+#define ZXDC_TACTS spp3eTacts
+#define ZXDC_REMAPPED() spp3eDivMmcRemapped()
+#include "../../../zxSpectrum/wasm/common/zx-spectrum-divmmc-classic.c"
+
 static uint32_t spp3eRamBankOffset(uint32_t bank) {
   return (bank & 0x07u) * 0x4000u;
 }
@@ -512,12 +523,26 @@ static void spp3eApplyNormalMemoryConfig(void) {
   spp3eSetRamSlot(3u, spp3eSelectedBank);
 }
 
+/* The DivMMC's ROM-area view while it is mapped (`zxdcView` in zx-spectrum-divmmc-classic.c) */
+#define SPP3E_PARTITION_DIVMMC (-5)
+
 static void spp3eRebuildMemorySlotMap(void) {
   if (spp3eInSpecialPagingMode != 0u) {
     spp3eApplySpecialMemoryConfig();
   } else {
     spp3eApplyNormalMemoryConfig();
   }
+  if (zxdcMapped != 0u) {
+    spp3eMemorySlotBase[0] = zxdcView;
+    spp3eMemorySlotWritable[0] = 0u;
+    spp3eMemorySlotPartition[0] = SPP3E_PARTITION_DIVMMC;
+  }
+}
+
+/* The DivMMC mapped in or out, or its banks changed */
+static void spp3eDivMmcRemapped(void) {
+  spp3eRebuildMemorySlotMap();
+  for (uint32_t offset = 0u; offset < 0x4000u; offset++) spp3eMemory[offset] = spp3eMemorySlotBase[0][offset];
 }
 
 static void spp3eRebuildFlatMemory(void) {
@@ -863,6 +888,10 @@ void spp3eWritePort(uint32_t address, uint32_t value);
 #undef SP48_AUDIO_TRANSITION_CAPACITY
 #undef SP48_DEFAULT_SAMPLE_RATE
 
+/* The DivMMC's entry points, its delayed mapping and RETN */
+#define Z80_BEFORE_OPCODE_FETCH() ZXDC_BEFORE_OPCODE_FETCH(cpu.pc)
+#define Z80_AFTER_OPCODE_FETCH() ZXDC_AFTER_OPCODE_FETCH()
+#define Z80_AFTER_RETN() ZXDC_AFTER_RETN(cpu.opCode)
 #define Z80_EXTERNAL_BUS 1
 #define Z80_MEMORY_PTR() spp3eMemory
 #define Z80_READ_MEMORY(address) spp3eCpuReadMemory((uint32_t)(address))
@@ -2391,6 +2420,7 @@ void spp3eReset(void) {
   spp3eEarBitChangedFrom1Tacts = 0u;
   spp3eLastContendedValue = 0xffu;
   spp3eLastUlaReadValue = 0xffu;
+  zxdcReset(0u);
   spp3eRebuildFlatMemory();
   spp3eResetPsg();
   spp3eResetAudio();
@@ -2404,6 +2434,8 @@ void spp3eHardReset(void) {
   spp3eRzxSetMode(RZX_MODE_OFF);
   spp3eReset();
   spp3eClearBytes(spp3eRam, SPP3E_RAM_SIZE);
+  zxdcReset(1u);
+  spp3eRebuildFlatMemory();
   for (uint32_t i = 0u; i < SPP3E_DISK_DRIVE_COUNT; i++) {
     spp3eClearBytes(spp3eDiskData[i], SPP3E_DISK_DATA_CAPACITY);
     spp3eClearBytes(spp3eDiskChanges[i], SPP3E_DISK_CHANGE_CAPACITY);
@@ -2423,9 +2455,12 @@ void spp3eHardReset(void) {
     spp3eFdcOnFrameCompleted(); \
   } while (0)
 #define ZXS_AFTER_PLAY_CYCLE() spp3eSetNextAudioSample()
+/* The DivMMC's SD card waiting for a sector returns to the host */
+#define ZXS_STOP() ZXDC_HOST_WAITING()
 #include "../../../zxSpectrum/wasm/common/zx-spectrum-frame.c"
 /* The debugger's breakpoint flags and in-core loop, `spp3eExecuteUntilStop` (z80-debug-loop.c) */
 #define Z80_DEBUG_LOOP_PREFIX spp3e
+#define Z80_DEBUG_LOOP_STOP() ZXDC_HOST_WAITING()
 #include "../../../../z80/wasm/z80-debug-loop.c"
 
 uint32_t spp3eExecuteInstruction(void) {
@@ -2451,7 +2486,9 @@ uint32_t spp3eExecuteInstruction(void) {
   spp3eInterruptLineActive = intActive;
   z80SetSigInt(intActive);
   z80SetTacts(spp3eTacts);
+  const uint8_t divMmcNmi = zxdcNmiBeforeCycle();
   z80ExecuteCpuCycle();
+  zxdcNmiAfterCycle(divMmcNmi);
   spp3eTacts = z80GetTacts();
   spp3eSetNextAudioSample();
   spp3eUpdateTapeMode();
@@ -2474,7 +2511,7 @@ void spp3eUploadRomByte(uint32_t bank, uint32_t offset, uint32_t value) {
   if (bank < 4u && offset < 0x4000u) {
     const uint8_t byteValue = (uint8_t)value;
     spp3eRom[spp3eRomBankOffset(bank) + offset] = byteValue;
-    if (spp3eInSpecialPagingMode == 0u && spp3eSelectedRom == (uint8_t)bank) {
+    if (spp3eInSpecialPagingMode == 0u && spp3eSelectedRom == (uint8_t)bank && zxdcMapped == 0u) {
       spp3eMemory[offset] = byteValue;
     }
   }
@@ -2493,6 +2530,8 @@ void spp3eWriteMemory(uint32_t address, uint32_t value) {
   const uint32_t maskedAddress = address & 0xffffu;
   const uint32_t slot = maskedAddress >> 14u;
   if (spp3eMemorySlotWritable[slot] == 0u) {
+    /* The DivMMC's RAM page takes a write to the ROM area while it is mapped */
+    if (slot == 0u && zxdcWrite(maskedAddress, (uint8_t)value) != 0u) spp3eMemory[maskedAddress] = (uint8_t)value;
     return;
   }
   const uint32_t offset = maskedAddress & 0x3fffu;
@@ -2577,6 +2616,9 @@ uint32_t spp3eReadFloatingBus(void) {
 }
 
 uint32_t spp3eReadPort(uint32_t address) {
+  if (zxdcIsPort(address) != 0u) {
+    return zxdcReadPort(address);
+  }
   if ((address & 0x0001u) == 0u) {
     const uint32_t selectedLines = (~(address >> 8u)) & 0xffu;
     const uint8_t status = spp3eKeyboardSelectedLineValue[selectedLines];
@@ -2607,6 +2649,10 @@ uint32_t spp3eReadPort(uint32_t address) {
 }
 
 void spp3eWritePort(uint32_t address, uint32_t value) {
+  if (zxdcIsPort(address) != 0u) {
+    zxdcWritePort(address, value);
+    return;
+  }
   if ((address & 0x0001u) == 0u) {
     spp3eCommonSetNextAudioSample();
     spp3ePortFeValue = (uint8_t)value;

@@ -29,6 +29,10 @@
 #ifndef ZXS_AFTER_PLAY_CYCLE
 #define ZXS_AFTER_PLAY_CYCLE() ((void)0)
 #endif
+/* Nonzero when the frame must return to the host mid-way (the DivMMC's SD card waits for a sector) */
+#ifndef ZXS_STOP
+#define ZXS_STOP() 0
+#endif
 
 #define ZXS_PASTE2(a, b) a##b
 #define ZXS_PASTE(a, b) ZXS_PASTE2(a, b)
@@ -122,6 +126,7 @@ uint32_t ZXS(ExecuteFrame)(void) {
     const uint32_t stop = z80HistoryStopNow();
     if (ZXS(FrameCompleted) != 0u) break;
     if (stop != 0u) break;
+    if (ZXS_STOP()) break;
   }
   ZXS(CaptureBusEvents) = 1u;
   return 0u;
@@ -140,6 +145,7 @@ void ZXS(RzxSetFrameTact)(uint32_t tact) {
 }
 
 #undef ZXS
+#undef ZXS_STOP
 #undef ZXS_PASTE
 #undef ZXS_PASTE2
 #undef ZXS_FRAME_PREFIX

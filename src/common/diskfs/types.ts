@@ -48,8 +48,12 @@ export type DiskFileEntry = {
   attributes: DiskFileAttributes;
   /** A deleted entry the disk still lists */
   deleted: boolean;
-  /** The sectors the file's bytes occupy, in file order */
+  /** The sectors the file's bytes occupy, in file order (empty on a hard disk: see `FatFileSystem`) */
   sectors: DiskSectorRef[];
+  /** A folder (FAT) */
+  isDirectory?: boolean;
+  /** Hidden (FAT) */
+  hidden?: boolean;
 };
 
 /** A new file to put on the disk */
@@ -113,10 +117,10 @@ export class DiskFsError extends Error {
 }
 
 export interface DiskFileSystem {
-  readonly system: "+3dos" | "trdos";
+  readonly system: "+3dos" | "trdos" | "fat";
   info(): DiskFsInfo;
-  /** The files, in catalogue order; deleted ones too when asked */
-  list(options?: { deleted?: boolean }): DiskFileEntry[];
+  /** The files, in catalogue order; deleted ones too when asked; on FAT, those of a folder */
+  list(options?: { deleted?: boolean; dir?: string }): DiskFileEntry[];
   /** A file's contents, its header excluded */
   read(name: string): Uint8Array;
   write(file: NewDiskFile): DiskFileEntry;

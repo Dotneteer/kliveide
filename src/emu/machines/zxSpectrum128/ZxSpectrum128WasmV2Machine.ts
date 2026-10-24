@@ -35,7 +35,8 @@ import {
   REWIND_REQUESTED,
   SAVED_TO_TAPE,
   TAPE_MODE,
-  TRDOS_ROM_FILE
+  TRDOS_ROM_FILE,
+  ESXDOS_ROM_FILE
 } from "../machine-props";
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "@common/structs/project-const";
 import type { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
@@ -65,6 +66,9 @@ import type { IRzxMachine, IRzxSession } from "../zxSpectrum/rzx/rzxSession";
 import { spectrumWasmBeamPosition } from "../zxSpectrum/WasmSpectrumSupport";
 import type { BeamPosition } from "@common/utils/beamGeometry";
 import { writeCoreBytes } from "@emu/machines/reverse/coreMemoryWrites";
+import { DivMmcSupport } from "../zxSpectrum/divmmc/divMmcCoreBridge";
+import type { MessengerBase } from "@common/messaging/MessengerBase";
+import type { SdRevertResult, SdUndoEntry, SdUndoLog } from "@emu/machines/reverse/SdUndoLog";
 
 const WASM_AUDIO_SAMPLE_SCALE = 32768.0;
 
@@ -203,6 +207,15 @@ export class ZxSpectrum128WasmV2Machine
   private wasmV2ContentionPauseBase = 0;
   /** The TR-DOS ROM, when the model has the Beta 128 and the user named a readable 16K ROM */
   protected trdosRom?: Uint8Array;
+
+  /**
+   * The DivMMC (`.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md` C4): on the 128K model with `MC_DIVMMC`,
+   * connected at setup with the user's esxDOS ROM
+   */
+  readonly divMmc = new DivMmcSupport("sp128", {
+    getDivMmcRuntime: () => this.wasmV2Runtime,
+    loadDivMmcRom: (path) => this.loadRomFromResource(path)
+  });
   /** Why the Beta 128 is off on a model that has it (no ROM named, unreadable, wrong size) */
   trdosRomProblem?: string;
   private beta128Disks?: Beta128Disks;
@@ -493,6 +506,11 @@ export class ZxSpectrum128WasmV2Machine
       this.beta128Disks = new Beta128Disks(runtime.exports as never);
       this.syncBetaDisksToWasmV2();
     }
+    if (this.divMmcModel) {
+      await this.divMmc.connect(this.getMachineProperty(ESXDOS_ROM_FILE) as string | undefined);
+      // --- The interface resets with the machine: it boots esxDOS from the first fetch at $0000
+      runtime.exports.sp128Reset();
+    }
     this.syncAudioSampleRateToWasmV2(runtime);
     this.syncTargetClockMultiplierToWasmV2(runtime);
     this.syncTapeStateToWasmV2(runtime);
@@ -501,6 +519,8 @@ export class ZxSpectrum128WasmV2Machine
 
   override hardReset(): void {
     super.hardReset();
+    // --- A card swapped while the machine was stopped: its size is asked for again
+    this.divMmc.cardChanged();
     if (this.wasmV2Runtime != null) {
       this.hardResetWasmV2(this.wasmV2Runtime);
       this.syncAudioSampleRateToWasmV2(this.wasmV2Runtime);
@@ -672,7 +692,9 @@ export class ZxSpectrum128WasmV2Machine
     this.syncFrameCountersFromWasmV2(runtime);
     this.publishSavedTapeFromWasmV2(runtime);
     this.publishBetaDiskChanges();
-    this.frameCompleted = true;
+    // --- The DivMMC's SD card stopped the frame for a sector: the controller answers it, and the
+    // --- frame goes on where it stopped
+    this.frameCompleted = this.divMmc.syncFrameCommand() ? runtime.exports.sp128GetFrameCompleted() !== 0 : true;
     this.executionContext.lastTerminationReason = FrameTerminationMode.Normal;
     return FrameTerminationMode.Normal;
   }
@@ -710,6 +732,8 @@ export class ZxSpectrum128WasmV2Machine
 
   override getMemoryPartition(index: number): Uint8Array {
     const runtime = this.requireWasmV2Runtime();
+    const divMmcMemory = index <= -16 ? this.divMmc.partitionMemory(index) : undefined;
+    if (divMmcMemory) return divMmcMemory;
     if (index === -3) {
       // --- The Beta 128's TR-DOS ROM (partition "R2")
       return this.trdosRom ?? new Uint8Array(0x4000);
@@ -743,7 +767,42 @@ export class ZxSpectrum128WasmV2Machine
     const slot1 = wasm.sp128GetCurrentPartition(1);
     const slot2 = wasm.sp128GetCurrentPartition(2);
     const slot3 = wasm.sp128GetCurrentPartition(3);
-    return [slot0, slot0, slot1, slot1, slot2, slot2, slot3, slot3];
+    // --- The DivMMC's ROM and RAM bank over $0000-$3FFF while it is mapped
+    const [page0, page1] = this.divMmcModel ? this.divMmc.pagePartitions() : [undefined, undefined];
+    return [page0 ?? slot0, page1 ?? slot0, slot1, slot1, slot2, slot2, slot3, slot3];
+  }
+
+  /** "divMmcNmi": the DivMMC's button (Machine › SD Card) */
+  override async executeCustomCommand(command: string): Promise<any> {
+    if (command === "divMmcNmi") {
+      this.divMmc.pressNmi();
+      return true;
+    }
+    return super.executeCustomCommand(command);
+  }
+
+  // --- The DivMMC's SD card requests are this machine's frame commands
+  override getFrameCommand(): any {
+    return this.divMmc.getFrameCommand();
+  }
+
+  override setFrameCommand(command: any): void {
+    this.divMmc.setFrameCommand(command);
+  }
+
+  override async processFrameCommand(messenger?: MessengerBase): Promise<void> {
+    if (messenger && this.divMmc.handles(this.divMmc.getFrameCommand())) {
+      await this.divMmc.processFrameCommand(messenger);
+    }
+  }
+
+  /** The timeline's SD undo log while one runs (REVERSE_DEBUGGING_PLAN D14) */
+  attachSdUndoLog(log: SdUndoLog | undefined): void {
+    this.divMmc.attachSdUndoLog(log);
+  }
+
+  async revertSdWrites(entries: readonly SdUndoEntry[], messenger: MessengerBase): Promise<SdRevertResult> {
+    return this.divMmc.revertSdWrites(entries, messenger);
   }
 
   override getSelectedRomPage(): number {
@@ -1193,6 +1252,12 @@ export class ZxSpectrum128WasmV2Machine
       },
       getFrameCommand: () => this.getFrameCommand(),
       enter: () => {
+        // --- A sector the DivMMC's card waits for is answered before another instruction runs
+        if (this.divMmc.syncFrameCommand()) {
+          const termination = this.finishWasmV2DebugLoop(FrameTerminationMode.Normal);
+          this.frameCompleted = false;
+          return termination;
+        }
         if (this.frameCompleted) {
           this.onInitNewFrame(false);
           this.frameCompleted = false;
@@ -1234,6 +1299,13 @@ export class ZxSpectrum128WasmV2Machine
       },
       historyStopReached: () => wasm.z80HistoryCheckStop() !== 0,
       importBusAccess: () => this.importWasmV2BusAccess(runtime),
+      // --- The DivMMC's card asked for a sector: the loop ends at its frame-command test
+      afterStep: this.divMmcModel
+        ? () => {
+            this.divMmc.syncFrameCommand();
+            return undefined;
+          }
+        : undefined,
       hasAccessBreakpoint: () => this.hasWasmV2AccessBreakpoint(),
       shouldStopAtBreakpoint: (instructionsExecuted) => this.shouldStopAtWasmV2Breakpoint(instructionsExecuted),
       finish: (termination) => this.finishWasmV2DebugLoop(termination)

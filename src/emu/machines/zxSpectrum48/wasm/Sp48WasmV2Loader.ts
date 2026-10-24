@@ -3,6 +3,7 @@ import { CONDITION_CORE_EXPORTS, type ConditionCoreExports } from "@emu/machines
 import { Z80_HISTORY_CORE_EXPORTS, type Z80HistoryCoreExports } from "@emu/machines/history/WasmHistoryReader";
 import { WASM_ACCESS_LOG_CAPACITY } from "../../wasmAccessLog";
 import { rzxCoreExportNames, type RzxCoreExports } from "../../zxSpectrum/rzx/rzxCoreBridge";
+import type { DivMmcCoreExports } from "../../zxSpectrum/divmmc/divMmcCoreBridge";
 
 export const SP48_WASM_V2_ARTIFACT_NAME = "zx-spectrum48.wasm";
 export const SP48_WASM_V2_MEMORY_SIZE = 0x10000;
@@ -11,7 +12,7 @@ export const SP48_WASM_V2_PIXEL_GUARD_LINES = 4;
 
 export type Sp48WasmV2ExportFunction = (...args: number[]) => number;
 
-export type Sp48WasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Z80HistoryCoreExports & RzxCoreExports<"sp48"> & {
+export type Sp48WasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Z80HistoryCoreExports & RzxCoreExports<"sp48"> & Partial<DivMmcCoreExports<"sp48">> & {
   memory: WebAssembly.Memory;
   sp48MemoryPtr: Sp48WasmV2ExportFunction;
   sp48PixelBufferPtr: Sp48WasmV2ExportFunction;

@@ -64,7 +64,7 @@ export async function runDiskEdit (ports: DiskExplorerPorts, filePath: string, e
 export async function addHostFiles (
   ports: DiskExplorerPorts,
   filePath: string,
-  system: "+3dos" | "trdos",
+  system: "+3dos" | "trdos" | "fat",
   existing: DiskFileEntry[],
   hostPaths?: string[]
 ): Promise<boolean> {

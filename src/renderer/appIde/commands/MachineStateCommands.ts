@@ -1,3 +1,4 @@
+import { hasDivMmc } from "@common/machines/divMmc";
 import type { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
 import type { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext";
 import type { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
@@ -93,8 +94,12 @@ export class StateSaveCommand extends IdeCommandBase<StateSaveCommandArgs> {
     const machineId = context.store.getState()?.emulatorState?.machineId;
     let result: Awaited<ReturnType<typeof context.emuApi.saveMachineStateFile>>;
     try {
+      // --- The Next's card, or a DivMMC's (DISK_IMAGES_AND_FILE_SYSTEMS_PLAN C5)
+      const emulatorState = context.store.getState()?.emulatorState;
       const sdCard =
-        machineId === MI_ZXNEXT ? await context.mainApi.getSdCardFingerprint() : undefined;
+        machineId === MI_ZXNEXT || hasDivMmc(machineId, emulatorState?.modelId, emulatorState?.config)
+          ? await context.mainApi.getSdCardFingerprint()
+          : undefined;
       result = await context.emuApi.saveMachineStateFile({
         kliveVersion: await versionOf(context),
         sdCard

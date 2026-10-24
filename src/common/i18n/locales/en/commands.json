@@ -313,7 +313,7 @@
   "@commands.crd.description": {
     "context": "Description of the 'crd' interactive command, shown by 'help' and after an argument error. Option names in quotes are never translated."
   },
-  "commands.disk.description": "Lists and edits the files of a disk image (.dsk, .trd, .scl).",
+  "commands.disk.description": "Lists and edits the files of a disk image (.dsk, .trd, .scl) or a hard-disk image or SD card (.img, .hdf, .cim).",
   "@commands.disk.description": {
     "context": "Description of the 'disk' interactive command (it lists and edits the files of a .dsk, .trd or .scl disk image). Command and option names are never translated."
   },
@@ -1783,5 +1783,23 @@
   "commands.compile.diskExportBanked": "Banked code (128K paging) cannot be exported to a disk yet: export a tape instead.",
   "@commands.compile.diskExportBanked": {
     "context": "Error of the 'expc' command with -f dsk or -f trd when the program uses 128K memory banks, or has no code."
+  },
+  "commands.disk.folderCreated": "Folder {name} created.",
+  "@commands.disk.folderCreated": {
+    "context": "Output of the disk mkdir command, which makes a folder on a hard-disk image.",
+    "placeholders": {
+      "name": "The folder path on the image"
+    }
+  },
+  "commands.disk.badHardDisk": "A hard-disk image needs a file system and a size: disk new <image> fat16|fat32 <MB>",
+  "@commands.disk.badHardDisk": {
+    "context": "Error of the disk new command for a .img, .hdf or .cim image given without a valid file system (fat16 or fat32) or size in MB. Keep the command syntax untranslated."
+  },
+  "commands.disk.notOnHardDisk": "'disk {action}' works only on floppy images (.dsk, .trd, .scl).",
+  "@commands.disk.notOnHardDisk": {
+    "context": "Error of the disk command when an action that only floppy images have, such as compact, is used on a hard-disk image.",
+    "placeholders": {
+      "action": "The action, e.g. compact"
+    }
   }
 }

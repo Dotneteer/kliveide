@@ -83,6 +83,15 @@
 #endif
 
 /*
+ * Runs when a RETN has popped the return address. Its ED aliases and RETI (ED 4D) run it too:
+ * `cpu.opCode` tells them apart - the DivMMC unmaps on exactly ED 45 (im2_control o_retn_seen;
+ * zx-spectrum-divmmc.c).
+ */
+#ifndef Z80_AFTER_RETN
+#define Z80_AFTER_RETN() ((void)0)
+#endif
+
+/*
  * Runs at every refresh cycle with the I:R value the Z80 drives onto the address bus - R *before*
  * the refresh increments it. Every M1 has one: unprefixed opcode fetches, the second opcode byte of
  * a CB/ED/DD/FD instruction, the HALTed cycle, and the NMI and INT acknowledges.
@@ -1887,6 +1896,7 @@ static void ext45Retn(void) {
   cpu.iff1 = cpu.iff2;
   cpu.retnExecuted = 1;
   retCore();
+  Z80_AFTER_RETN();
 }
 
 static void ext46Im0(void) {

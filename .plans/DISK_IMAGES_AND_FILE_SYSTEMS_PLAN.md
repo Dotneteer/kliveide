@@ -1,7 +1,7 @@
 # Disk images and file systems: hardened DSK, a disk explorer, and DivMMC hard-disk images
 
-Status: ◐ **Parts A and B done** (2026-10-23; main, unreleased) - A0–A4 (§10) and B0–B7 (§11).
-Part C not started. The author's decisions are in §9.
+Status: ✅ **Done** (2026-10-24; main, unreleased) - A0–A4 (§10), B0–B7 (§11), C0–C6 (§12). The
+author's decisions are in §9.
 Base plan: [CLOSING_THE_GAPS_PLAN.md](CLOSING_THE_GAPS_PLAN.md), §G9 (G9.5).
 Related: [BETA128_TRDOS_PLAN.md](BETA128_TRDOS_PLAN.md) (done; its "TRD/SCL catalogue viewer" was
 left undone, and Part B delivers it), [PLUS3_AMSTRAD_ROMS_PLAN.md](PLUS3_AMSTRAD_ROMS_PLAN.md)
@@ -690,4 +690,83 @@ it for gigabyte images. Floppies are small enough to edit whole.
 - The docs goldens re-baselined.
 - The theming lessons gained the hex-dump inspector width, the unit-map colours and the
   drop-target outline.
+
+## 12. As built: Part C (2026-10-24)
+
+**Block devices and FAT (C1).**
+- `src/common/diskfs/blockDevice.ts`: `BlockDevice` (512-byte sectors), a memory device, a
+  partition window, MBR partitions or a whole-disk ("superfloppy") volume, the RAMsoft HDF header
+  (read, and v1.1 written). `src/main/hard-disk-images.ts` opens `.img`, `.hdf` (halved images
+  refused) and `.cim` as devices over the file.
+- **Deviation:** `src/common/diskfs/fat.ts` is a **new** FAT16/FAT32 layer written from Microsoft's
+  specification, not a refactor of `src/main/fat32/`, which is bound to the `.cim` container and to
+  the Next's `ncp` path. That driver is unchanged; the explorer reads `.cim` through `CimHandler`.
+- Long names with their checksums and `~N` aliases, folders that grow, FSInfo kept, every FAT copy
+  written. `formatFat` makes MBR or whole-disk volumes; an unnamed volume has "NO NAME" only in the
+  boot sector. No FAT12 (Q5).
+- Interop checked by hand on macOS: `fsck_msdos` passes Klive's FAT16 (both layouts) and FAT32
+  images, macOS mounts them, and Klive reads and extends a macOS-made image
+  (`test/testfiles/fat/macos-fat16.img.gz`).
+
+**The explorer for hard images (C2).**
+- `HardDiskExplorerPanel.tsx`, a `noContent` document (new `FileTypeEditor.noContent`): the
+  document holds none of the image; the main process (`queryHardDisk`, `readHardDiskFile`,
+  `hardDiskFileClusters`, `editHardDisk`, `copyFolderToHardDisk`, `createHardDiskImage`) reads the
+  folder shown, the file previewed (up to 256K) and the volume map. Edits to the running machine's
+  SD card pause it and run under the SD card lock (`src/main/hard-disk-edit.ts`). No `.bak`.
+- Files view: folders, up, new folder, add (a folder copies recursively), extract, rename, delete,
+  show deleted, a partition picker; files go on as they are. Layout view: the regions bar and a
+  128-group cluster map with the selected file's clusters outlined.
+- `disk` and `klive disk` take `.img`/`.hdf`/`.cim`: `new <img> fat16|fat32 <MB>`, `ls <folder>`,
+  `mkdir`, `add` of a folder.
+- **Not done:** a "New image" dialog (the command makes one), the partition table and an LBA hex
+  view in the Layout view, "Prepare card" as a button (adding esxDOS's folders is a drop). The
+  Next's `.cim` card opens in the explorer like any other.
+- Checked in the running app by the doc-shots recipe (`disk-explorer.cjs`), which builds a card with
+  the `disk` command. It found that the panel, having no `GenericFilePanel` around it, collapsed to
+  zero width under `container-type: inline-size` (`.wholeDocument`).
+
+**Shared DivMMC and SD (C3).** `zx-spectrum-divmmc.c` and `zx-spectrum-sd.c` in
+`src/emu/machines/zxSpectrum/wasm/common/` are the Next's modules moved unchanged, with hook macros
+for the memory offsets, the ROM-3 test, the mapping change, the T-state counter and the config-mode
+test. The Next includes them through `zxnext-divmmc.c`/`zxnext-sd.c`; its hardware tests (508 in
+divmmc, sd, nmi, memory, multiface, nextreg, ports) pass unchanged.
+
+**DivMMC on the classic cores (C4).**
+- `zx-spectrum-divmmc-classic.c`, included by `sp48.c` (not its Timex build), `sp128.c` and
+  `spp3e.c`: 8K ROM and 16 × 8K RAM, the VHDL's reset configuration ($B8=$83, $B9=$01, $BA=$00,
+  $BB=$CD, automap and the drive button's NMI on), ports `$E3`/`$E7`/`$EB` decoded on A7-A0, NMI
+  pending until an instruction boundary, RETN (exactly ED 45, a new `Z80_AFTER_RETN` hook in `z80.c`).
+- **Zero cost when absent:** while mapped, a 16K composite view of the two pages is the core's ROM
+  slot (the 48K, whose flat memory is its ROM, swaps the view in and keeps the ROM in
+  `sp48RomShadow`), so reads never test for the interface; only writes to the ROM area reach it. A
+  first version that tested every access grew the 128K core by 41K and failed its size gate.
+- The ROM-3 test is "the 48K BASIC ROM is paged": always on the 48K, ROM 1 on the 128K, ROM 3 on the
+  +3 outside special paging. The VHDL's defaults trap RST $38 with that ROM in, so every IM 1
+  interrupt passes through esxDOS, as on the real interface.
+- The SD card pulls sectors as the Next's does: the frame loop (`ZXS_STOP`) and the debug loop
+  (`Z80_DEBUG_LOOP_STOP`) return while the card waits; `DivMmcSupport`
+  (`zxSpectrum/divmmc/divMmcCoreBridge.ts`) turns that into `divmmc-sd-read`/`-write` frame
+  commands, answers through `readSdCardSector`/`writeSdCardSector` (journaled with
+  `writeCoreBytes`) and logs writes in `SdUndoLog`. The main process serves `.img`/`.hdf` cards as
+  well as `.cim` (`getSdCardDevice`), flushing each write.
+- The debugger names the DivMMC's pages `DR` and `D0`-`DF` on the 128K and +3; the 48K has no
+  partitions, and its 64K view shows the DivMMC while it is mapped.
+- Tests: `test/sp128-hw/divmmc/` (128K and +2A: boot through RST $00, RST $08 with and without the
+  48K ROM, $3Dxx instant, NMI and RETN, `$E3` conmem/banks/MAPRAM, SD read and write through the
+  host) and `test/spectrum-hw/divmmc-48k.test.ts`, with a Klive test ROM.
+
+**Media, menus, state (C5).** `MC_DIVMMC` (toggled in Machine › SD Card › DivMMC Interface, which
+restarts the machine), `SETTING_EMU_ESXDOS_ROM` (Settings › Machine), Machine › SD Card on the 48K,
+128K (not the Pentagon) and +2A/+3 with the card image and the NMI button. The card is the shared
+`MEDIA_SD_CARD`, so it is restored with the project and fingerprinted in `.kls`/`.klr`.
+**Not done:** a media-strip entry (the Next has none either) and an `.szx` DivMMC block; a Klive
+state file keeps the interface in the core image.
+
+**esxDOS end to end (C6).** `test/spectrum-hw/esxdos-e2e.test.ts` builds a FAT16 card with Klive's
+formatter and esxDOS's folders, boots esxDOS on the 48K and runs `.ls`. It runs only with
+`KLIVE_ESXDOS_DIR`; **it has not been run** - no esxDOS distribution was at hand - so esxDOS's own
+behaviour (and `.snapload`, files esxDOS writes) is unverified.
+
+**C0.** The DivMMC and HDF facts are recorded in `.ai/diskfs/README.md`.
 

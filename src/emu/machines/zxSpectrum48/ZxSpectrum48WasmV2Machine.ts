@@ -22,7 +22,19 @@ import {
 } from "../wasmDebugLoop";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { TapeMode } from "@emu/abstractions/TapeMode";
-import { AUDIO_SAMPLE_RATE, FAST_LOAD, REWIND_REQUESTED, SAVED_TO_TAPE, TAPE_MODE, ULA_LATE_TIMING, ULA_SNOW } from "../machine-props";
+import {
+  AUDIO_SAMPLE_RATE,
+  ESXDOS_ROM_FILE,
+  FAST_LOAD,
+  REWIND_REQUESTED,
+  SAVED_TO_TAPE,
+  TAPE_MODE,
+  ULA_LATE_TIMING,
+  ULA_SNOW
+} from "../machine-props";
+import { DivMmcSupport } from "../zxSpectrum/divmmc/divMmcCoreBridge";
+import type { MessengerBase } from "@common/messaging/MessengerBase";
+import type { SdRevertResult, SdUndoEntry, SdUndoLog } from "@emu/machines/reverse/SdUndoLog";
 import { MC_MEM_SIZE, MC_SCREEN_FREQ, MC_SP48_ROM_FILE } from "@common/machines/constants";
 import { MEDIA_TAPE } from "@common/structs/project-const";
 import { BinaryWriter } from "@utils/BinaryWriter";
@@ -175,6 +187,15 @@ export class ZxSpectrum48WasmV2Machine
 
   public readonly implementation = "wasm" as const;
   public wasmV2Runtime?: Sp48WasmV2Runtime;
+
+  /**
+   * The DivMMC (`.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md` C4): with `MC_DIVMMC`, connected at setup.
+   * The Timex build of this core has none (`divMmc.available` is false there).
+   */
+  readonly divMmc = new DivMmcSupport("sp48", {
+    getDivMmcRuntime: () => this.wasmV2Runtime,
+    loadDivMmcRom: (path) => this.loadRomFromResource(path)
+  });
   /** The RZX session playing or recording on this machine (`.plans/RZX_PLAN.md` §4.3) */
   public rzxSession?: IRzxSession;
   private rzxCoreBridge?: RzxCoreBridge;
@@ -459,6 +480,39 @@ export class ZxSpectrum48WasmV2Machine
     this.ir = (this.ir & 0xff00) | (value & 0xff);
   }
 
+  /** "divMmcNmi": the DivMMC's button (Machine › SD Card) */
+  override async executeCustomCommand(command: string): Promise<any> {
+    if (command === "divMmcNmi") {
+      this.divMmc.pressNmi();
+      return true;
+    }
+    return super.executeCustomCommand(command);
+  }
+
+  // --- The DivMMC's SD card requests are this machine's frame commands
+  override getFrameCommand(): any {
+    return this.divMmc.getFrameCommand();
+  }
+
+  override setFrameCommand(command: any): void {
+    this.divMmc.setFrameCommand(command);
+  }
+
+  override async processFrameCommand(messenger?: MessengerBase): Promise<void> {
+    if (messenger && this.divMmc.handles(this.divMmc.getFrameCommand())) {
+      await this.divMmc.processFrameCommand(messenger);
+    }
+  }
+
+  /** The timeline's SD undo log while one runs (REVERSE_DEBUGGING_PLAN D14) */
+  attachSdUndoLog(log: SdUndoLog | undefined): void {
+    this.divMmc.attachSdUndoLog(log);
+  }
+
+  async revertSdWrites(entries: readonly SdUndoEntry[], messenger: MessengerBase): Promise<SdRevertResult> {
+    return this.divMmc.revertSdWrites(entries, messenger);
+  }
+
   override async setup(): Promise<void> {
     this.wasmV2Runtime = await loadSp48WasmV2(this.wasmV2LoaderOptions);
     const runtime = this.requireWasmV2Runtime();
@@ -466,6 +520,11 @@ export class ZxSpectrum48WasmV2Machine
 
     this.hardResetWasmV2(runtime);
     this.uploadRomBytes(romContents);
+    if (this.divMmcModel) {
+      await this.divMmc.connect(this.getMachineProperty(ESXDOS_ROM_FILE) as string | undefined);
+      // --- The interface resets with the machine: it boots esxDOS from the first fetch at $0000
+      runtime.exports.sp48Reset();
+    }
     this.syncAudioSampleRateToWasmV2(runtime);
     this.syncTargetClockMultiplierToWasmV2(runtime);
     this.syncTapeStateToWasmV2(runtime);
@@ -487,6 +546,8 @@ export class ZxSpectrum48WasmV2Machine
 
   override hardReset(): void {
     super.hardReset();
+    // --- A card swapped while the machine was stopped: its size is asked for again
+    this.divMmc.cardChanged();
     if (this.wasmV2Runtime != null) {
       this.hardResetWasmV2(this.wasmV2Runtime);
       this.syncAudioSampleRateToWasmV2(this.wasmV2Runtime);
@@ -546,7 +607,8 @@ export class ZxSpectrum48WasmV2Machine
     this.wasmV2NormalFrames++;
     this.syncFrameCountersFromWasmV2(runtime);
     this.publishSavedTapeFromWasmV2(runtime);
-    this.frameCompleted = true;
+    // --- The DivMMC's SD card stopped the frame for a sector: the controller answers it
+    this.frameCompleted = this.divMmc.syncFrameCommand() ? runtime.exports.sp48GetFrameCompleted() !== 0 : true;
     this.executionContext.lastTerminationReason = FrameTerminationMode.Normal;
     return FrameTerminationMode.Normal;
   }
@@ -987,6 +1049,12 @@ export class ZxSpectrum48WasmV2Machine
       },
       getFrameCommand: () => this.getFrameCommand(),
       enter: () => {
+        // --- A sector the DivMMC's card waits for is answered before another instruction runs
+        if (this.divMmc.syncFrameCommand()) {
+          const termination = this.finishWasmV2DebugLoop(FrameTerminationMode.Normal);
+          this.frameCompleted = false;
+          return termination;
+        }
         if (this.frameCompleted) {
           this.onInitNewFrame(false);
           this.frameCompleted = false;
@@ -1027,6 +1095,13 @@ export class ZxSpectrum48WasmV2Machine
         return pc;
       },
       historyStopReached: () => wasm.z80HistoryCheckStop() !== 0,
+      // --- The DivMMC's card asked for a sector: the loop ends at its frame-command test
+      afterStep: this.divMmcModel
+        ? () => {
+            this.divMmc.syncFrameCommand();
+            return undefined;
+          }
+        : undefined,
       importBusAccess: () => this.importWasmV2BusAccess(runtime),
       hasAccessBreakpoint: () => this.hasWasmV2AccessBreakpoint(),
       shouldStopAtBreakpoint: (instructionsExecuted) => this.shouldStopAtWasmV2Breakpoint(instructionsExecuted),

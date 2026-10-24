@@ -97,6 +97,9 @@ static void sp48CpuWriteMemory(uint32_t address, uint32_t value) {
       renderUlaBeforeWrite();
     }
     sp48Memory[maskedAddress] = (uint8_t)value;
+  } else if (zxdcWrite(maskedAddress, (uint8_t)value) != 0u) {
+    /* The DivMMC's RAM page, while it is mapped */
+    sp48Memory[maskedAddress] = (uint8_t)value;
   }
 }
 
@@ -112,7 +115,10 @@ static void clearRam(uint32_t is16k) {
 
 void sp48UploadRomByte(uint32_t offset, uint32_t value) {
   if (offset < 0x4000u) {
-    sp48Memory[offset] = (uint8_t)value;
+#ifndef SP48_SCLD
+    sp48RomShadow[offset] = (uint8_t)value;
+#endif
+    if (zxdcMapped == 0u) sp48Memory[offset] = (uint8_t)value;
     if (offset == 0u) {
       sp48RomUploadCount = 0u;
       sp48RomChecksum = 0u;
@@ -143,6 +149,8 @@ void sp48WriteMemory(uint32_t address, uint32_t value) {
     if (maskedAddress < SP48_DISPLAY_MEMORY_END) {
       renderUlaUntilCurrentTact();
     }
+    sp48Memory[maskedAddress] = (uint8_t)value;
+  } else if (zxdcWrite(maskedAddress, (uint8_t)value) != 0u) {
     sp48Memory[maskedAddress] = (uint8_t)value;
   }
 }

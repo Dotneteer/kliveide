@@ -14,6 +14,7 @@ import {
 } from "@emu/machines/zxSpectrum128/wasm/Sp128WasmV2Loader";
 import { afterEach, describe, expect, it } from "vitest";
 import { rzxCoreExportNames } from "@emu/machines/zxSpectrum/rzx/rzxCoreBridge";
+import { divMmcCoreExportNames } from "@emu/machines/zxSpectrum/divmmc/divMmcCoreBridge";
 
 describe("ZX Spectrum 128K WASM v2 loader", () => {
   afterEach(() => resetSp128WasmV2ModuleCache());
@@ -1076,6 +1077,7 @@ function fakeV2Instance(overrides: Partial<Sp128WasmV2Exports> = {}): Promise<Sp
       sp128GetDiagnosticFlags: () => 0,
       // --- RZX playback and recording
       ...Object.fromEntries(rzxCoreExportNames("sp128").map((name) => [name, () => 0])),
+      ...Object.fromEntries(divMmcCoreExportNames("sp128").map((name) => [name, () => 0])),
       ...overrides
     } as Sp128WasmV2Exports
   });

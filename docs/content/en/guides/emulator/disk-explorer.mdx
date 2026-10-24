@@ -1,5 +1,5 @@
 ---
-description: "The Disk Explorer opens .dsk, .trd and .scl disk images: list, preview, add, extract, rename and delete their files, and see every track and sector the disk holds."
+description: "The Disk Explorer opens .dsk, .trd and .scl disk images and .img, .hdf and .cim SD cards: list, preview, add, extract, rename and delete their files, and see how the disk is laid out. The DivMMC brings esxDOS SD cards to the 48K, 128K and +3."
 ---
 
 import { Callout } from 'nextra/components'
@@ -86,6 +86,52 @@ label:
 
 <ClickableImage src="/images/disk-explorer/trdos.png" width={720} />
 
+## Hard-disk images and SD cards
+
+The Disk Explorer also opens **hard-disk images**: a raw `.img`, a RAMsoft `.hdf` and Klive's own
+`.cim` (the ZX Spectrum Next's SD card). Klive reads their **FAT16** and **FAT32** file systems, with
+long file names and folders. A card can be gigabytes, so the explorer reads only the folder and the
+file it shows.
+
+<ClickableImage src="/images/disk-explorer/hard-disk.png" width={720} />
+
+- Double-click a folder to open it; **Up** goes back to the folder above. **New folder** makes one.
+- **Add**, **Save**, **Rename**, **Delete** and dragging files work as on a floppy, but files go on
+  the card **as they are**, under their own names: esxDOS and NextZXOS load a `.tap`, a `.sna` or
+  a `.scr` straight from the card. Drop a **folder** to copy it with everything in it.
+- A card with several partitions shows a **partition picker** in the header.
+- Attributes show as **R**ead-only, **S**ystem, **H**idden and **A**rchive.
+
+The **Layout** view shows the volume's areas - the reserved sectors, the FATs, the root folder and
+the data - and a map of its clusters in use. The selected file's clusters are outlined.
+
+<ClickableImage src="/images/disk-explorer/hard-disk-layout.png" width={720} />
+
+<Callout type="info">
+Klive changes a hard-disk image **in place**, without a `.bak` copy. When the image is the running
+machine's SD card, the machine pauses while Klive writes it.
+</Callout>
+
+Make a new card with the `disk` command - `disk new card.img fat16 64` (or `fat32`, with the size in
+MB) - then drop the folders you want on it.
+
+### The DivMMC
+
+The **DivMMC** is an SD card interface for the ZX Spectrum 48K, 128K and +2A/+3, which runs the
+**esxDOS** operating system. Klive emulates it on these machines (not on the Pentagon or the
+Scorpion, which have the Beta 128):
+
+1. Klive cannot ship esxDOS. Get it from its authors and name its 8K ROM in **Settings › Machine ›
+   esxDOS ROM**.
+2. Turn on **Machine › SD Card › DivMMC Interface**. The machine restarts with the interface.
+3. **Machine › SD Card › Select SD Card Image** names the card: an `.img`, `.hdf` or `.cim` with a
+   FAT16 or FAT32 file system and esxDOS's `BIN`, `SYS` and `TMP` folders on it. You can prepare one
+   in the Disk Explorer.
+
+esxDOS's dot commands then work as on the real interface (`.ls`, `.cd`, `.tapein`, `.snapload`).
+**Press the NMI Button** in the same menu opens esxDOS's NMI menu. While the debugger shows memory,
+the interface's ROM and RAM banks appear as the partitions `DR` and `D0`-`DF`.
+
 ## From the command prompt
 
 The `disk` command does the same from the IDE's command prompt, from scripts and from
@@ -100,7 +146,13 @@ disk mv game.dsk GAME.BIN MAIN.BIN
 disk rm game.dsk NOTES.TXT
 disk compact magazine.trd
 disk new blank.dsk dse80
+disk new card.img fat16 64
+disk mkdir card.img games/arcade
+disk add card.img mygames games
+disk ls card.img games
 ```
+
+On a hard-disk image, `add` copies a file or a whole folder, and `ls` lists a folder.
 
 Without a running Klive, `klive disk` takes the same actions on the image file directly; see
 [the command line](/en/reference/command-line/).

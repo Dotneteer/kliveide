@@ -13,13 +13,16 @@ import type { DiskFileKind, NewDiskFile } from "./types";
  *
  * The names are made to fit the disk: +3DOS takes 8 characters, a dot and 3 (letters, digits and a
  * few signs, upper case); TR-DOS 8 characters and its type letter.
+ *
+ * A FAT disk (an SD card) takes every file as it is, under its own name: esxDOS and NextZXOS load
+ * `.tap`, `.scr` and the rest straight from the card.
  */
 
 export type ImportOptions = {
   /** Where headerless code loads */
   codeStart?: number;
   /** The disk's file system: names follow its rules */
-  system: "+3dos" | "trdos";
+  system: "+3dos" | "trdos" | "fat";
   /** Accept the 128K keywords in `.bas` text */
   plus128?: boolean;
 };
@@ -33,7 +36,9 @@ export function hostFileToDiskFiles (fileName: string, bytes: Uint8Array, option
   const dot = base.lastIndexOf(".");
   const stem = dot > 0 ? base.slice(0, dot) : base;
   const extension = dot > 0 ? base.slice(dot + 1).toLowerCase() : "";
-  const named = (name: string, ext: string, kind: DiskFileKind) => diskFileName(name, ext, kind, options.system);
+  if (options.system === "fat") return [{ name: base, kind: "raw", data: bytes }];
+  const system = options.system;
+  const named = (name: string, ext: string, kind: DiskFileKind) => diskFileName(name, ext, kind, system);
 
   if (extension === "tap") {
     return tapFiles(bytes, stem).map((f) => ({ ...f, name: named(f.name, f.kind === "code" ? "bin" : "", f.kind) }));
@@ -49,7 +54,8 @@ export function hostFileToDiskFiles (fileName: string, bytes: Uint8Array, option
 }
 
 /** A name that fits the file system */
-export function diskFileName (name: string, extension: string, kind: DiskFileKind, system: "+3dos" | "trdos"): string {
+export function diskFileName (name: string, extension: string, kind: DiskFileKind, system: "+3dos" | "trdos" | "fat"): string {
+  if (system === "fat") return extension ? `${name}.${extension}` : name;
   if (system === "trdos") {
     const base = (name.trim() || "file").slice(0, 8);
     const type = kind === "basic" ? "B" : kind === "code" ? "C" : kind === "raw" ? "#" : "D";

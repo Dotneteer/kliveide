@@ -1251,6 +1251,14 @@ list**, one row per part under its own `PanelHeader` with a count. Rules it sett
   (`repeat(auto-fill, minmax(30ch, 1fr))`), and the rows are `minmax(0, max-content)` and a list
   minimum of five strips, so both panes still scroll on their own. **A container query cannot
   restyle the container itself**: put the rule that must change on a child of it.
+  **A size container takes no width from its content**: in a flex row, an element with
+  `container-type: inline-size` and no width of its own collapses to 0 wide, and everything in it
+  vanishes without an error. A document panel that is its own root (not inside `GenericFilePanel`,
+  which sizes it) sets `width: 100%; flex: 1 1 auto` - the hard-disk explorer's `.wholeDocument`.
+- **A map of a large volume is groups, not units**: a disk with tens of thousands of clusters shows
+  a fixed number of chips (128), each the fraction of its clusters in use as the file hue's opacity,
+  and the selected file outlined on the chips that hold it; the volume's areas sit above as one
+  proportional bar with a `ch` minimum per area so the small ones stay readable.
 - **`ch` tracks resolve against each grid's own font size.** Column heads drawn at 12px over 14px
   rows put every `ch` column of the head out of line with the rows below it. The head keeps the
   rows' font size and shrinks only its text (`> span { font-size }`).

@@ -94,13 +94,13 @@ static void zxnextNextRegHardReset(void) {
   zxnextNextRegs[0xb9] = 0x01;
   zxnextNextRegs[0xba] = 0x00;
   zxnextNextRegs[0xbb] = 0xcd;
-  zxnextDivMmcSetNextReg09(zxnextNextRegs[0x09]);
-  zxnextDivMmcSetNextReg0A(zxnextNextRegs[0x0a]);
-  zxnextDivMmcSetNextReg83(zxnextNextRegs[0x83]);
-  zxnextDivMmcSetNextRegB8(zxnextNextRegs[0xb8]);
-  zxnextDivMmcSetNextRegB9(zxnextNextRegs[0xb9]);
-  zxnextDivMmcSetNextRegBA(zxnextNextRegs[0xba]);
-  zxnextDivMmcSetNextRegBB(zxnextNextRegs[0xbb]);
+  zxDivMmcSetNextReg09(zxnextNextRegs[0x09]);
+  zxDivMmcSetNextReg0A(zxnextNextRegs[0x0a]);
+  zxDivMmcSetNextReg83(zxnextNextRegs[0x83]);
+  zxDivMmcSetNextRegB8(zxnextNextRegs[0xb8]);
+  zxDivMmcSetNextRegB9(zxnextNextRegs[0xb9]);
+  zxDivMmcSetNextRegBA(zxnextNextRegs[0xba]);
+  zxDivMmcSetNextRegBB(zxnextNextRegs[0xbb]);
   zxnextPsgSetAyStereoMode(zxnextNextRegs[0x08] & 0x20u);
   zxnextDacSetEnabled(zxnextNextRegs[0x08] & 0x08u);
   zxnextExpansionHardReset();
@@ -168,10 +168,10 @@ static void zxnextNextRegApplyResetBranch(void) {
   zxnextNextRegs[0xb9] = 0x01;
   zxnextNextRegs[0xba] = 0x00;
   zxnextNextRegs[0xbb] = 0xcd;
-  zxnextDivMmcSetNextRegB8(zxnextNextRegs[0xb8]);
-  zxnextDivMmcSetNextRegB9(zxnextNextRegs[0xb9]);
-  zxnextDivMmcSetNextRegBA(zxnextNextRegs[0xba]);
-  zxnextDivMmcSetNextRegBB(zxnextNextRegs[0xbb]);
+  zxDivMmcSetNextRegB8(zxnextNextRegs[0xb8]);
+  zxDivMmcSetNextRegB9(zxnextNextRegs[0xb9]);
+  zxDivMmcSetNextRegBA(zxnextNextRegs[0xba]);
+  zxDivMmcSetNextRegBB(zxnextNextRegs[0xbb]);
   cpuProgrammedSpeed = 0; /* ~5733: nr_07_cpu_speed <= "00" */
   cpuEffectiveSpeed = 0;
   cpuTactScale = 8;
@@ -558,27 +558,27 @@ static void zxnextNextRegSetDirect(uint32_t reg, uint32_t value) {
   /* $06 bit 2 (PS/2 mode) changes only in config mode (~5145) */
   if (normalized == 0x06u && !zxnextConfigMode) value = (value & 0xfbu) | (zxnextNextRegs[0x06u] & 0x04u);
   if (normalized == 0x09u) {
-    zxnextDivMmcSetNextReg09(value);
+    zxDivMmcSetNextReg09(value);
   } else if (normalized == 0x06u) {
-    zxnextDivMmcSetEnableNmiByDriveButton(value & 0x10u);
-    zxnextDivMmcSetEnableMultifaceNmiByM1Button(value & 0x08u);
+    zxDivMmcSetEnableNmiByDriveButton(value & 0x10u);
+    zxDivMmcSetEnableMultifaceNmiByM1Button(value & 0x08u);
   } else if (normalized == 0x0au) {
-    zxnextDivMmcSetNextReg0A(value);
+    zxDivMmcSetNextReg0A(value);
   } else if (normalized == 0x1cu) {
     if ((value & 0x01u) != 0u) zxnextLayer2ResetClipIndex();
     if ((value & 0x02u) != 0u) zxnextSpritesResetClipIndex();
     if ((value & 0x04u) != 0u) zxnextUlaResetClipIndex();
     if ((value & 0x08u) != 0u) zxnextTilemapResetClipIndex();
   } else if (normalized == 0x83u) {
-    zxnextDivMmcSetNextReg83(value);
+    zxDivMmcSetNextReg83(value);
   } else if (normalized == 0xb8u) {
-    zxnextDivMmcSetNextRegB8(value);
+    zxDivMmcSetNextRegB8(value);
   } else if (normalized == 0xb9u) {
-    zxnextDivMmcSetNextRegB9(value);
+    zxDivMmcSetNextRegB9(value);
   } else if (normalized == 0xbau) {
-    zxnextDivMmcSetNextRegBA(value);
+    zxDivMmcSetNextRegBA(value);
   } else if (normalized == 0xbbu) {
-    zxnextDivMmcSetNextRegBB(value);
+    zxDivMmcSetNextRegBB(value);
   }
   if (normalized == 0x07u) {
     cpuProgrammedSpeed = (uint8_t)(value & 0x03u);
@@ -657,8 +657,8 @@ static uint32_t zxnextNextRegGetDirect(uint32_t reg) {
     }
     case 0x06u:
       return (zxnextNextRegs[0x06u] & 0xe7u) |
-        (zxnextDivMmcGetEnableNmiByDriveButton() ? 0x10u : 0x00u) |
-        (zxnextDivMmcGetEnableMultifaceNmiByM1Button() ? 0x08u : 0x00u);
+        (zxDivMmcGetEnableNmiByDriveButton() ? 0x10u : 0x00u) |
+        (zxDivMmcGetEnableMultifaceNmiByM1Button() ? 0x08u : 0x00u);
     case 0x07u:
       return (cpuProgrammedSpeed & 0x03u) | ((cpuEffectiveSpeed & 0x03u) << 4u);
     /* ~5843: the joystick modes and the effective 50/60 Hz and scandoubler bits */
@@ -686,10 +686,10 @@ static uint32_t zxnextNextRegGetDirect(uint32_t reg) {
     /* $A2: nr_a2(7:6) & '0' & nr_a2(4:2) & '1' & nr_a2(0) */
     case 0xa2u:
       return (zxnextNextRegs[0xa2u] & 0xddu) | 0x02u;
-    case 0xb8u: return zxnextDivMmcGetNextRegB8();
-    case 0xb9u: return zxnextDivMmcGetNextRegB9();
-    case 0xbau: return zxnextDivMmcGetNextRegBA();
-    case 0xbbu: return zxnextDivMmcGetNextRegBB();
+    case 0xb8u: return zxDivMmcGetNextRegB8();
+    case 0xb9u: return zxDivMmcGetNextRegB9();
+    case 0xbau: return zxDivMmcGetNextRegBA();
+    case 0xbbu: return zxDivMmcGetNextRegBB();
     case 0x80u:
     case 0x81u:
     case 0x86u:

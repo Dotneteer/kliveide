@@ -44,6 +44,8 @@
 /images/de/get-started/settings-language.webp
 /images/de/get-started/settings-language.webp.json
 /images/disk-explorer/files.png
+/images/disk-explorer/hard-disk-layout.png
+/images/disk-explorer/hard-disk.png
 /images/disk-explorer/layout.png
 /images/disk-explorer/trdos.png
 /images/en/get-started/basic-debug.webp

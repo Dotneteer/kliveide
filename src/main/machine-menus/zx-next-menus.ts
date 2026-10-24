@@ -13,6 +13,8 @@ import { getKliveHomeBase } from "@main/portable";
 import { setMediaAction } from "@common/state/actions";
 import { logEmuEvent } from "@main/registeredMachines";
 import { CimHandler } from "@main/fat32/CimHandlers";
+import { openHardDiskImage } from "@main/hard-disk-images";
+import type { BlockDevice } from "@common/diskfs/blockDevice";
 import { appSettings, saveAppSettings, setSettingValue } from "@main/settings-utils";
 import { getEmuApi } from "@common/messaging/MainToEmuMessenger";
 import { getIdeApi } from "@messaging/MainToIdeMessenger";
@@ -306,6 +308,52 @@ export function invalidateSdCardHandler(): void {
     cimHandler.close();
     cimHandler = undefined;
   }
+  if (rawSdCard) {
+    rawSdCard.device.close();
+    rawSdCard = undefined;
+  }
+}
+
+/** The SD card's sectors, whatever its container (`getSdCardDevice`) */
+export type SdCardDevice = {
+  readonly totalSectors: number;
+  readSector(sector: number): Uint8Array;
+  /** Written and flushed to the disk before it returns */
+  writeSector(sector: number, data: Uint8Array): void;
+};
+
+let rawSdCard: { file: string; device: BlockDevice & { close(): void } } | undefined;
+
+/**
+ * The machine's SD card as sectors (.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md C5): a `.cim` through
+ * its handler (the Next's card, and the default one), a raw `.img` or an `.hdf` (the DivMMC's cards are
+ * often those) as a block device over the file
+ */
+export function getSdCardDevice(): SdCardDevice {
+  const sdCardFile = activeSdCardFile();
+  if (sdCardFile.toLowerCase().endsWith(".cim")) {
+    const handler = getSdCardHandler();
+    return {
+      totalSectors: (handler.cimInfo.maxSize * 2048) / handler.cimInfo.sectorSize,
+      readSector: (sector) => handler.readSector(sector),
+      writeSector: (sector, data) => handler.writeSector(sector, data)
+    };
+  }
+  if (rawSdCard && rawSdCard.file !== sdCardFile) {
+    rawSdCard.device.close();
+    rawSdCard = undefined;
+  }
+  if (!rawSdCard) rawSdCard = { file: sdCardFile, device: openHardDiskImage(sdCardFile) };
+  const device = rawSdCard.device;
+  return {
+    totalSectors: device.sectorCount,
+    readSector: (sector) => (sector < device.sectorCount ? device.readSector(sector) : new Uint8Array(512)),
+    writeSector: (sector, data) => {
+      if (sector >= device.sectorCount) throw new Error(`Sector ${sector} is past the card's end`);
+      device.writeSector(sector, data);
+      (device as { flush?(): void }).flush?.();
+    }
+  };
 }
 
 // ============================================================================

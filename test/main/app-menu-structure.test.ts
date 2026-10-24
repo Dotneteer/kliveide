@@ -166,11 +166,14 @@ describe("the application menu", () => {
       "Speed",
       "Sound",
       "Tape",
+      "SD Card",
       "Input",
       "ZX Spectrum 48K",
       "Record"
     ]);
     expect(labels(submenu(machine, "Tape"))).toEqual(["Rewind", "Insert Tape...", "Eject", "Fast load"]);
+    // --- The DivMMC (DISK_IMAGES_AND_FILE_SYSTEMS_PLAN C5): off until connected
+    expect(labels(submenu(machine, "SD Card"))).toEqual(["DivMMC Interface"]);
     // --- The ULA's snow and late timing (`.plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phases 4, 5)
     expect(labels(submenu(machine, "ZX Spectrum 48K"))).toEqual(["Snow Effect", "Late ULA Timing"]);
     expect(labels(submenu(machine, "Record"))).toEqual([

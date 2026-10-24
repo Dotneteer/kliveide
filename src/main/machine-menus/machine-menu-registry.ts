@@ -27,6 +27,7 @@ import {
 import { joystickMenuRenderer, mouseMenuRenderer } from "./zx-next-input-menus";
 import { rzxMenuRenderer } from "./rzx-menus";
 import { timexDockMenuRenderer, timexJoystickMenuRenderer } from "./timex-menus";
+import { divMmcMenuRenderer } from "./divmmc-menus";
 
 /** Renders the items of several renderers, one after the other */
 function combine(...renderers: MachineMenuRenderer[]): MachineMenuRenderer {
@@ -56,7 +57,8 @@ export const machineMenuRegistry: Record<string, MachineMenuInfo> = {
     viewItems: spectrumIdeRenderer
   },
   [MI_SPECTRUM_48]: {
-    devices: { tape: tapeMenuRenderer },
+    // --- The DivMMC (`MC_DIVMMC`) and its SD card (DISK_IMAGES_AND_FILE_SYSTEMS_PLAN C5)
+    devices: { tape: tapeMenuRenderer, sdCard: divMmcMenuRenderer },
     hardwareItems: ulaHardwareRenderer,
     viewItems: spectrumIdeRenderer,
     recordItems: rzxMenuRenderer
@@ -73,7 +75,9 @@ export const machineMenuRegistry: Record<string, MachineMenuInfo> = {
     devices: {
       tape: tapeMenuRenderer,
       // --- The Pentagon's Beta 128 (model config `MC_DISK_SUPPORT`; none on the 128K)
-      disks: diskMenuRenderer
+      disks: diskMenuRenderer,
+      // --- The 128K's DivMMC (none on the Pentagon)
+      sdCard: divMmcMenuRenderer
     },
     hardwareItems: ulaHardwareRenderer,
     viewItems: spectrumIdeRenderer,
@@ -84,7 +88,7 @@ export const machineMenuRegistry: Record<string, MachineMenuInfo> = {
     viewItems: spectrumIdeRenderer
   },
   [MI_SPECTRUM_3E]: {
-    devices: { tape: tapeMenuRenderer, disks: diskMenuRenderer },
+    devices: { tape: tapeMenuRenderer, disks: diskMenuRenderer, sdCard: divMmcMenuRenderer },
     viewItems: spectrumIdeRenderer,
     recordItems: rzxMenuRenderer
   },

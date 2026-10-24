@@ -60,4 +60,34 @@ describe("klive disk", () => {
     const c = io(dir);
     expect(await runCli(["disk", "zap", "d.trd"], c.cli)).toBe(3);
   });
+
+  it("makes and edits a FAT hard-disk image: folders, a host folder copied, files out", async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "klive-disk-verb-"));
+    fs.mkdirSync(path.join(dir, "games", "sub"), { recursive: true });
+    fs.writeFileSync(path.join(dir, "games", "Long file name.tap"), new Uint8Array(3000).fill(7));
+    fs.writeFileSync(path.join(dir, "games", "sub", "x.bin"), new Uint8Array([1, 2, 3]));
+    const run = async (...args: string[]) => {
+      const x = io(dir);
+      const code = await runCli(["disk", ...args], x.cli);
+      return { code, ...x };
+    };
+    expect((await run("new", "card.img", "fat16", "32", "--label", "KLIVE")).code).toBe(0);
+    expect((await run("mkdir", "card.img", "bin/tools")).code).toBe(0);
+    expect((await run("add", "card.img", "games")).code).toBe(0);
+    expect((await run("add", "card.img", "games/sub/x.bin", "bin/tools")).code).toBe(0);
+    const root = JSON.parse((await run("ls", "card.img", "--json")).out.join("\n"));
+    expect(root.map((f: { name: string }) => f.name).sort()).toEqual(["bin", "games"]);
+    const games = JSON.parse((await run("ls", "card.img", "games", "--json")).out.join("\n"));
+    expect(games.map((f: { name: string }) => f.name).sort()).toEqual(["games/Long file name.tap", "games/sub"]);
+    expect((await run("mv", "card.img", "games/Long file name.tap", "game.tap")).code).toBe(0);
+    expect((await run("get", "card.img", "games/game.tap", "out.tap")).code).toBe(0);
+    expect(new Uint8Array(fs.readFileSync(path.join(dir, "out.tap")))).toEqual(new Uint8Array(3000).fill(7));
+    expect((await run("rm", "card.img", "bin/tools/x.bin")).code).toBe(0);
+    const info = JSON.parse((await run("info", "card.img", "--json")).out.join("\n"));
+    expect(info.info.system).toBe("FAT16");
+    expect(info.info.label).toBe("KLIVE");
+    expect(info.partitions).toHaveLength(1);
+    expect((await run("compact", "card.img")).code).toBe(3);
+    expect((await run("new", "bad.img", "fat12", "32")).code).toBe(3);
+  });
 });

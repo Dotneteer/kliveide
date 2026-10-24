@@ -239,5 +239,10 @@
   "common.filter.clear": "Clear filter",
   "@common.filter.clear": {
     "context": "Accessible name of the small X button that empties a panel's filter box."
+  },
+  "common.filter.sdCardImages": "SD Card Images",
+  "@common.filter.sdCardImages": {
+    "context": "Filter name in a file dialog: SD card and hard-disk image files (.img, .hdf, .cim).",
+    "maxChars": 40
   }
 }

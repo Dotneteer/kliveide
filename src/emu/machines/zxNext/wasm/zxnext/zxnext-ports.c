@@ -87,9 +87,9 @@ static uint32_t zxnextPortsRead(uint32_t address) {
   } else if ((normalized & 0x00ffu) == 0x0037u) {
     lastPortValue = zxnextPortsGroupEnabled(0, 7) ? zxnextInputReadPort(0x0037u) : 0xffu;
   } else if ((normalized & 0x00ffu) == 0x00e3u) {
-    lastPortValue = zxnextPortsGroupEnabled(1, 0) ? zxnextDivMmcGetPortE3() : 0xffu;
+    lastPortValue = zxnextPortsGroupEnabled(1, 0) ? zxDivMmcGetPortE3() : 0xffu;
   } else if ((normalized & 0x00ffu) == 0x00ebu) {
-    lastPortValue = zxnextPortsGroupEnabled(1, 3) ? zxnextSdReadMmcData() : 0xffu;
+    lastPortValue = zxnextPortsGroupEnabled(1, 3) ? zxSdReadMmcData() : 0xffu;
   } else if ((normalized & 0xc00fu) == 0x8005u) {
     /* $BFF5 (A3 = 0): ym2149.vhd ~221 AY_ID & '0' & the 5-bit register number */
     if (zxnextPortsGroupEnabled(2, 0)) {
@@ -205,11 +205,11 @@ static void zxnextPortsWrite(uint32_t address, uint32_t value) {
     /* $EFF7 (zxnext.vhd ~2560): A15-12 = 1110, low byte $F7; internal port enable bit 26 = $85 bit 2 */
     if (zxnextPortsGroupEnabled(3, 2)) zxnextMemorySetPortEff7(byteValue);
   } else if ((normalized & 0x00ffu) == 0x00e3u) {
-    if (zxnextPortsGroupEnabled(1, 0)) zxnextDivMmcSetPortE3(byteValue);
+    if (zxnextPortsGroupEnabled(1, 0)) zxDivMmcSetPortE3(byteValue);
   } else if ((normalized & 0x00ffu) == 0x00e7u) {
-    if (zxnextPortsGroupEnabled(1, 3)) zxnextSdSpiCsWrite(byteValue);
+    if (zxnextPortsGroupEnabled(1, 3)) zxSdSpiCsWrite(byteValue);
   } else if ((normalized & 0x00ffu) == 0x00ebu) {
-    if (zxnextPortsGroupEnabled(1, 3)) zxnextSdWriteMmcData(byteValue);
+    if (zxnextPortsGroupEnabled(1, 3)) zxSdWriteMmcData(byteValue);
   } else if ((normalized & 0x00ffu) == 0x00ffu) {
     if (zxnextPortsGroupEnabled(0, 0)) {
       portTimexValue = byteValue;

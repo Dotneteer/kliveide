@@ -41,6 +41,13 @@ const ROM_PATH = join(__dirname, "../../../src/public/roms/sp48.rom");
 /** First byte of the ROM character set (character 32, space). */
 const ROM_CHARSET = 0x3d00;
 
+/** An SD card for the DivMMC: 512-byte sectors */
+export type HarnessSdCard = {
+  readonly sectorCount: number;
+  readSector(sector: number): Uint8Array;
+  writeSector(sector: number, data: Uint8Array): void;
+};
+
 export type RunLimit = { maxFrames?: number };
 
 /** A program assembled by `loadCode`. */
@@ -578,7 +585,46 @@ export class Sp48TestSession {
   private execute(): FrameTerminationMode {
     const termination = this.machine.executeMachineFrame();
     if (this.machine.frameJustCompleted) this.frames++;
+    this.serveSdCard();
     return termination;
+  }
+
+  // ==========================================================================================
+  // The DivMMC (`.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md` C4/C6)
+
+  private sdCard?: HarnessSdCard;
+
+  /**
+   * Connects the DivMMC with an 8K ROM and resets the machine, which boots through it. `sdCard`: the
+   * card's sectors, served here as the IDE's controller serves them (none: an empty slot).
+   */
+  connectDivMmc(rom: Uint8Array, sdCard?: HarnessSdCard): this {
+    const x = this.machine.wasmV2Runtime!.exports as unknown as Record<string, (...args: number[]) => number>;
+    this.machine.divMmc.uploadRom(rom);
+    x.sp48DivMmcSetPresent(1);
+    x.sp48SetSdCardInfo(sdCard ? sdCard.sectorCount : 0);
+    this.sdCard = sdCard;
+    x.sp48Reset();
+    this.machine.pc = 0;
+    return this;
+  }
+
+  /** The DivMMC's card waits for a sector: answers it at once from `sdCard` */
+  private serveSdCard(): void {
+    const divMmc = this.machine.divMmc;
+    const command = divMmc.getFrameCommand();
+    if (!command) return;
+    divMmc.setFrameCommand(undefined);
+    if (command.command === "divmmc-sd-read") {
+      divMmc.answerRead(this.sdCard && command.sector < this.sdCard.sectorCount ? this.sdCard.readSector(command.sector) : undefined);
+    } else {
+      let ok = false;
+      if (this.sdCard && command.sector < this.sdCard.sectorCount) {
+        this.sdCard.writeSector(command.sector, command.data);
+        ok = true;
+      }
+      divMmc.answerWrite(ok);
+    }
   }
 
   // ==========================================================================================

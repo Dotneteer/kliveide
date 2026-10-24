@@ -472,5 +472,21 @@
   "messages.sdCard.select": "Select SD Card Image",
   "@messages.sdCard.select": {
     "context": "Title of an Open File dialog picking an SD card image for the ZX Spectrum Next."
+  },
+  "messages.divMmc.selectRom": "Select the esxDOS ROM (8K)",
+  "@messages.divMmc.selectRom": {
+    "context": "Title of the open-file dialog that picks the esxDOS ROM the DivMMC interface boots."
+  },
+  "messages.divMmc.notRom": "Not an esxDOS ROM",
+  "@messages.divMmc.notRom": {
+    "context": "Title of the error box when the file picked as the esxDOS ROM has the wrong size."
+  },
+  "messages.divMmc.wrongSize": "The esxDOS ROM is 8192 bytes; {file} has {size}.",
+  "@messages.divMmc.wrongSize": {
+    "context": "Text of the error box when the file picked as the esxDOS ROM has the wrong size.",
+    "placeholders": {
+      "file": "The file's path",
+      "size": "Its size in bytes"
+    }
   }
 }

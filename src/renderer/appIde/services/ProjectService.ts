@@ -430,6 +430,9 @@ class ProjectService implements IProjectService {
       }
       // --- Store the resolved content in the file cache
       this._fileCache.set(node.fullPath, contents);
+    } else if (getFileTypeEntry(node.fullPath, this.store)?.noContent) {
+      // --- Its panel reads what it shows through the main process: the file is not loaded
+      contents = new Uint8Array(0);
     } else {
       // --- Load the document's contents the normal way
       contents = await this.getFileContent(node.fullPath, node.isBinary);

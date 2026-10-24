@@ -305,3 +305,73 @@
   outline: 2px solid var(--focus-ring);
   outline-offset: 1px;
 }
+
+/* --- Hard-disk images (HardDiskExplorerPanel): FAT folders and the volume map */
+.table.fat {
+  grid-template-columns: minmax(20ch, 1fr) 12ch 8ch;
+  min-width: 40ch;
+}
+
+.path {
+  padding: var(--space-1) var(--space-3);
+  color: var(--data-label);
+  overflow-wrap: anywhere;
+}
+
+.volume {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+}
+
+/* One bar, the volume's areas side by side, each as wide as its share (a minimum keeps the small
+   ones - the reserved sectors, the FATs - readable) */
+.regionBar {
+  display: flex;
+  gap: var(--space-0_5);
+  min-height: calc(var(--space-3) * 2);
+}
+
+.region {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 8ch;
+  padding: 0 var(--space-1);
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  color: var(--text-on-accent);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.region-reserved {
+  background: var(--text-tertiary);
+}
+
+.region-fats,
+.region-root {
+  background: var(--accent-secondary-solid);
+}
+
+.region-data {
+  background: var(--accent-solid);
+}
+
+.clusterMap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-0_5);
+}
+
+.clusterMap .chip {
+  cursor: default;
+}
+
+/* The hard-disk explorer is the document itself (no GenericFilePanel around it): `container-type`
+   keeps it from taking its width from its content, so it must take the document's */
+.wholeDocument {
+  width: 100%;
+  flex: 1 1 auto;
+}

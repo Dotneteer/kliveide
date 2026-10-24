@@ -239,7 +239,7 @@ static inline void zxnextMemoryWritePhysical(uint32_t offset, uint32_t value) {
 
 /* $0000-$3FFF overlays: the Multiface wins over DivMMC (MemoryDevice._readSlot0Complex), both over Layer 2. */
 static inline uint32_t zxnextMemoryLowOverlayActive(void) {
-  return zxnextMultifaceIsPaged() || zxnextDivMmcIsMappingActive();
+  return zxnextMultifaceIsPaged() || zxDivMmcIsMappingActive();
 }
 
 static inline uint32_t zxnextMemoryResolveReadOffset(uint32_t page) {
@@ -247,8 +247,8 @@ static inline uint32_t zxnextMemoryResolveReadOffset(uint32_t page) {
   if (normalizedPage < 2u && zxnextMultifaceIsPaged()) {
     return ZXNEXT_OFFS_MULTIFACE_MEM + (normalizedPage << 13u);
   }
-  if (normalizedPage < 2u && zxnextDivMmcIsMappingActive()) {
-    return zxnextDivMmcGetReadOffset(normalizedPage);
+  if (normalizedPage < 2u && zxDivMmcIsMappingActive()) {
+    return zxDivMmcGetReadOffset(normalizedPage);
   }
   return pageReadOffset[normalizedPage];
 }
@@ -259,8 +259,8 @@ static inline uint32_t zxnextMemoryResolveWriteOffset(uint32_t page) {
     /* page 0 is the MF ROM; only the MF RAM (page 1) is writable */
     return normalizedPage == 0u ? ZXNEXT_NO_WRITE_OFFSET : ZXNEXT_OFFS_MULTIFACE_MEM + 0x2000u;
   }
-  if (normalizedPage < 2u && zxnextDivMmcIsMappingActive()) {
-    return zxnextDivMmcGetWriteOffset(normalizedPage);
+  if (normalizedPage < 2u && zxDivMmcIsMappingActive()) {
+    return zxDivMmcGetWriteOffset(normalizedPage);
   }
   return pageWriteOffset[normalizedPage];
 }

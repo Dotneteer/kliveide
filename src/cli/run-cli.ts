@@ -20,7 +20,7 @@ Verbs:
   test [<dir>]     Build the project and run its Z80 unit tests, headless: 'klive test --help'
   build [<dir>]    Compile the project's build root, headless: 'klive build --help'
   run [<dir|file>] Run a build or a file until it stops, headless: 'klive run --help'
-  disk <action>    List and edit the files of a .dsk, .trd or .scl image, headless: 'klive disk --help'
+  disk <action>    List and edit the files of a disk image (.dsk, .trd, .scl, .img, .hdf, .cim), headless: 'klive disk --help'
   ide <verb>       Drive a running Klive (build, run, debug, read memory, ...): 'klive ide help'
   help             This text
   --version        Klive's version

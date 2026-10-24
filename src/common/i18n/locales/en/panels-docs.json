@@ -1860,5 +1860,98 @@
       "kind": "The file's kind, e.g. 'Code'"
     },
     "maxChars": 20
+  },
+  "panels.diskExplorer.hardDiskNoFs": "Hard disk ({size}), no FAT file system",
+  "@panels.diskExplorer.hardDiskNoFs": {
+    "context": "Header title of the Disk Explorer for a hard-disk image or SD card (.img, .hdf, .cim) with a FAT file system when no FAT16/FAT32 volume was found on it.",
+    "placeholders": {
+      "size": "The image size, e.g. 128M"
+    }
+  },
+  "panels.diskExplorer.partition": "Partition",
+  "@panels.diskExplorer.partition": {
+    "context": "Accessible label of the partition picker in the header of the Disk Explorer for a hard-disk image or SD card (.img, .hdf, .cim) with a FAT file system."
+  },
+  "panels.diskExplorer.partitionItem": "Partition {index} ({size})",
+  "@panels.diskExplorer.partitionItem": {
+    "context": "An item of the partition picker in the Disk Explorer for a hard-disk image or SD card (.img, .hdf, .cim) with a FAT file system.",
+    "placeholders": {
+      "index": "The partition number, from 1",
+      "size": "The partition size, e.g. 512M"
+    },
+    "maxChars": 30
+  },
+  "panels.diskExplorer.folderUp": "Up one folder",
+  "@panels.diskExplorer.folderUp": {
+    "context": "Tooltip of the toolbar button of the Disk Explorer for a hard-disk image or SD card (.img, .hdf, .cim) with a FAT file system that shows the parent folder."
+  },
+  "panels.diskExplorer.newFolder": "New folder",
+  "@panels.diskExplorer.newFolder": {
+    "context": "Tooltip of the toolbar button of the Disk Explorer for a hard-disk image or SD card (.img, .hdf, .cim) with a FAT file system that creates a folder in the folder shown."
+  },
+  "panels.diskExplorer.newFolderName": "New folder",
+  "@panels.diskExplorer.newFolderName": {
+    "context": "The name offered for a new folder in the Disk Explorer for a hard-disk image or SD card (.img, .hdf, .cim) with a FAT file system; the user edits it in the name dialog.",
+    "maxChars": 40
+  },
+  "panels.diskExplorer.tooBigToPreview": "The file is too big to preview here: extract it to see its contents.",
+  "@panels.diskExplorer.tooBigToPreview": {
+    "context": "Shown instead of the preview in the Disk Explorer for a hard-disk image or SD card (.img, .hdf, .cim) with a FAT file system for a large file."
+  },
+  "panels.diskExplorer.regionsLabel": "The areas of the volume",
+  "@panels.diskExplorer.regionsLabel": {
+    "context": "Accessible label of the bar in the Layout view of the Disk Explorer for a hard-disk image or SD card (.img, .hdf, .cim) with a FAT file system that shows the volume divided into its areas."
+  },
+  "panels.diskExplorer.region.reserved": "Reserved",
+  "@panels.diskExplorer.region.reserved": {
+    "context": "An area of a FAT volume in the Layout view of the Disk Explorer for a hard-disk image or SD card (.img, .hdf, .cim) with a FAT file system: the boot sector and the sectors reserved after it.",
+    "maxChars": 16
+  },
+  "panels.diskExplorer.region.fats": "FAT",
+  "@panels.diskExplorer.region.fats": {
+    "context": "An area of a FAT volume in the Layout view of the Disk Explorer for a hard-disk image or SD card (.img, .hdf, .cim) with a FAT file system: the file allocation tables. Usually left untranslated.",
+    "maxChars": 16
+  },
+  "panels.diskExplorer.region.root": "Root folder",
+  "@panels.diskExplorer.region.root": {
+    "context": "An area of a FAT16 volume in the Layout view of the Disk Explorer for a hard-disk image or SD card (.img, .hdf, .cim) with a FAT file system: the fixed-size root folder.",
+    "maxChars": 16
+  },
+  "panels.diskExplorer.region.data": "Data",
+  "@panels.diskExplorer.region.data": {
+    "context": "An area of a FAT volume in the Layout view of the Disk Explorer for a hard-disk image or SD card (.img, .hdf, .cim) with a FAT file system: the clusters that hold files and folders.",
+    "maxChars": 16
+  },
+  "panels.diskExplorer.regionTitle": "{name}: {count} sectors from sector {first}",
+  "@panels.diskExplorer.regionTitle": {
+    "context": "Tooltip of an area of the volume in the Layout view of the Disk Explorer for a hard-disk image or SD card (.img, .hdf, .cim) with a FAT file system.",
+    "placeholders": {
+      "name": "The area, e.g. FAT",
+      "count": "How many 512-byte sectors it takes",
+      "first": "Its first sector within the volume"
+    }
+  },
+  "panels.diskExplorer.clusterMap": "{count} clusters, in {buckets} groups: the darker a group, the more of it is in use",
+  "@panels.diskExplorer.clusterMap": {
+    "context": "Legend over the cluster map in the Layout view of the Disk Explorer for a hard-disk image or SD card (.img, .hdf, .cim) with a FAT file system.",
+    "placeholders": {
+      "count": "The number of clusters on the volume",
+      "buckets": "How many squares the map shows"
+    }
+  },
+  "panels.diskExplorer.clusterMapFile": "Outlined: the {count} clusters of {name}",
+  "@panels.diskExplorer.clusterMapFile": {
+    "context": "Legend of the cluster map in the Disk Explorer for a hard-disk image or SD card (.img, .hdf, .cim) with a FAT file system when a file is selected: its clusters are outlined.",
+    "placeholders": {
+      "count": "How many clusters the file takes",
+      "name": "The selected file name"
+    }
+  },
+  "panels.diskExplorer.clusterBucket": "{percent}% in use",
+  "@panels.diskExplorer.clusterBucket": {
+    "context": "Tooltip of a square of the cluster map in the Disk Explorer for a hard-disk image or SD card (.img, .hdf, .cim) with a FAT file system.",
+    "placeholders": {
+      "percent": "A whole number, 0-100"
+    }
   }
 }

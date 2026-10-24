@@ -37,7 +37,7 @@ static uint32_t zxnextFrameExecute(void) {
   }
   /* A fast frame logs no CPU accesses - unless the frame is traced, whose records carry one */
   zxnextCaptureBusEvents = zxnextTraceEnabled != 0u;
-  while (frameCompleted == 0u && zxnextSdGetHostCommand() == ZXNEXT_SD_HOST_COMMAND_NONE && zxnextResetRequest == 0u) {
+  while (frameCompleted == 0u && zxSdGetHostCommand() == ZX_SD_HOST_COMMAND_NONE && zxnextResetRequest == 0u) {
     zxnextCpuExecuteInstruction();
     /* Checked on the frame's last instruction too: the host reads the reached mark after the call */
     const uint32_t stop = z80HistoryStopNow();
