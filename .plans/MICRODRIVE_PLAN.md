@@ -1,6 +1,6 @@
 # ZX Interface 1 and Microdrives on the 48K and 128K (G9.6)
 
-Status: 🚧 **in progress**. Phases 0 and 1 done (2026-10-24, see their "As built" notes). Decisions Q1–Q8 were
+Status: 🚧 **in progress**. Phases 0–2 done (2026-10-24, see their "As built" notes). Decisions Q1–Q8 were
 taken by the author on 2026-10-24 (§8).
 Base plan: [CLOSING_THE_GAPS_PLAN.md](CLOSING_THE_GAPS_PLAN.md), §G9 (a new row, **G9.6**, size L).
 Research: [`_input/microdrive/`](../_input/microdrive/README.md). Every fact in this plan comes from
@@ -377,6 +377,44 @@ research file and section it checks:
 8. Tact rebase and state round trip with a drive running (extend `wasm-tact-rebase.test.ts`,
    `machine-state-flow.test.ts`).
 
+**As built (2026-10-24).**
+- **Bridge and harness.** `src/emu/machines/zxSpectrum/if1/if1CoreBridge.ts` (`Interface1Support`)
+  is the TypeScript side Phase 3's machines will use too. Image writes go through `writeCoreBytes`,
+  so a journal sees them. `test/harness/interface1Support.ts` puts it on both sessions:
+  - `connectInterface1(rom?)`: no reset; the ROM pages in at the next `$0008`.
+  - `insertCartridge`, `interface1()`, `cartridge()`, `interface1Bridge`.
+
+  The 48K session also gained `tacts()`, `reset()`, `saveState()`, `loadState()` and
+  `testAdvanceTacts()`.
+- **Tests:** `test/spectrum-hw/if1/`, 39 in six files, all in the fast tier (each under 20 s).
+  `if1TestSupport.ts` holds a stand-in ROM, a tool-formatted cartridge builder, a BASIC runner and
+  `SELECT` / `READ_BLOCK` routines written after SW-MOTOR and GET-M-BLK.
+  - **paging:** `RST 8`, a fetch from `$0008` by RET, a fetch from `$1708`, data reads that page
+    nothing, page-out after `$0700`'s fetch, the `$2700` mirror, reset, disconnected, and both
+    128K ROMs.
+  - **ports:** A4/A3 decoding, `$1F`/`$FF` not decoded, idle status `$FE`, write-protect per
+    drive, the network and RS232 stubs, selecting drives 1/2/5/8, deselecting all, falling-edge
+    shifting.
+  - **drive:** the flag byte first, headers and records alternating with sectors descending,
+    WAIT's pace (15 bytes in 14-16 byte times), presence on a formatted cartridge and none on a
+    blank one, a wait across ~9 frames, the IN 0 hang ended by reset.
+  - **writes:** a SEND-BLK-style record lands on the header's sector and nothing else changes;
+    write protection; the erase head alone turns ~25 slots a second into gap.
+  - **rom** (real v2): FORMAT/CAT 126, FORMAT on a 100-slot tape, SAVE */LOAD *, a write-protected
+    SAVE, `OUT 239,0` erasing the tape, "not present" twice, PROG and `PEEK 23729`, the 128K.
+  - **state:** RS232 through BASIC, five rebases mid-CAT changing nothing, a Klive state mid-SAVE *
+    restoring the transfer to the same bytes and T-state.
+- **A fix the tests found.** Switching ERASE on erased the block under the read head, so a
+  SEND-BLK-style write lost the header it had just read. The erase head is ahead of the read head:
+  only blocks that arrive later are erased (`zxIf1EnterSegment`). The real ROM had not shown it,
+  because its processing takes it into gap B first.
+- **Reference values recorded** (§9): gap tolerance, PROG = 23813, the short tape's 49K, and that
+  RS232 sends complete.
+- **Not done:**
+  - **Port traces.** The real-ROM runs cover FORMAT, CAT, SAVE and LOAD end to end, and the
+    traces would add nothing a test checks.
+  - **WAIT on a read in write mode.** It stays the guess in §9: no ROM path does it.
+
 ### Phase 3 — the `.mdr` format, the media path and the UI (M–L)
 1. **`src/emu/machines/microdrive/mdrImage.ts`.**
    - Parse `n × 543 (+1)` images (the trailing write-protect byte optional, as Warajevo writes them).
@@ -545,7 +583,8 @@ Sources are the research files in `_input/microdrive/`, which carry the citation
 | Port decode | A4/A3 only | `interface1-hardware.md` §2.1; full decode **unknown** |
 | GAP polarity | 1 = gap / no signal | **confirmed** in Phase 1: the real v2 ROM formats, catalogues, saves and loads with it |
 | Byte time | ~48 µs ≈ 168 T at 3.5 MHz (12 µs per bit per track, two tracks) | OqtaDrive, Sinclair Wiki; Wikipedia's 15 KB/s disagrees. The ROM never measures it |
-| Gaps | ≥ 8 GAP=1 polls, then ≥ 6 GAP=0 polls before SYNC; nominal header → 3.2 ms → record → 6.2 ms | `interface1-hardware.md` §7.3. Exact tolerances: **Phase 2** |
+| Gaps | ≥ 8 GAP=1 polls, then ≥ 6 GAP=0 polls before SYNC; Klive: gap A 0.57 ms, gap B 3.23 ms, gap C 6.2 ms (v1 FORMAT's layout) | `interface1-hardware.md` §7.3 |
+| Gap tolerance (v2 ROM, real speed) | gap B ≥ ~1 ms (0.6 ms fails: G-HD-RC's processing after a header must end inside it); gap C ≥ ~3 ms (2 ms fails); gap A anything, even 0 (gap C precedes it). Klive's nominal values keep ≥ 2× margin | bisected in Phase 2 (FORMAT, CAT, SAVE */LOAD *) |
 | ROM poll timing (v2, counted) | gap poll 88 T (`CHKLOOP`/`CHK-LP-2`, TEST-BRK included); SYNC poll 38 T × 60 (2 280 T); SYNC → first `INIR` ~104 T; `INIR` 21 T/byte; slowest byte loop 36 T (READ-BLK); a failed presence try ~113 T × 5 000 (~0.16 s) after a 5 000 × 26 T (~37 ms) settle; DELAY-BC 26 T per count | v2 code (`IF1 v2 rom source.txt`), counted in Phase 0 |
 | Signal before SYNC | 528–2 900 T (6 polls minimum, then the 60-poll window); the real preamble is 12 × 168 = 2 016 T | derived from the row above |
 | Slot at real speed | ~30 + 67 + 543 + 129 byte times (header, gap B, record, gap C) ≈ 129 000 T ≈ 37 ms; 254 slots ≈ 9.4 s a loop | v1 FORMAT's delays, Phase 0 |
@@ -559,7 +598,8 @@ Sources are the research files in `_input/microdrive/`, which carry the citation
 | Motor/select delays (ROM) | select ~16 ms; presence wait ~37 ms; FORMAT ~97 ms | `interface1-hardware.md` §5 |
 | Unused read bits, BUSY | 1 | **guess** |
 | `$E7` in the wrong direction | write in read mode ignored; read in write mode `$FF` | **guess**; undocumented |
-| PROG after the first IF1 entry | 23813 (derived) | **record in Phase 2** |
+| PROG after the first IF1 entry | 23813 | **confirmed** in Phase 2 (`if1-rom.test.ts`) |
+| FORMAT on a 100-slot tape (v2) | the last 100 sectors written survive (100 down to 1); CAT: 49K (98 usable) | recorded in Phase 2 |
 | CAT "K free", fresh 254-slot cartridge (v2) | 126 | **confirmed** in Phase 1 (`if1-rom.test.ts`) |
 | CAT "K free", fresh 254-slot cartridge | 126 (v2) / 127 (v1) (derived) | **record in Phase 2** (v1 only with a user ROM) |
 | `.szx` `wDrivePos` | Klive: byte offset within the 543-byte slot image, clamped to 16 bits | spec says "position within the file" but the field is a WORD; **check a foreign file** |

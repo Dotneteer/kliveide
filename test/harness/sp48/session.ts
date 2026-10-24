@@ -32,6 +32,8 @@ import { tapeBlocksOf } from "@common/headless/tapeBlocks";
 import { screenImageOf } from "@common/headless/screenImage";
 import { encodePng } from "@common/imaging/png";
 import { sp48TapeLoadFlow } from "@emu/machines/tapeLoadFlows";
+import type { Interface1DriveState, Interface1State, Interface1Support } from "@emu/machines/zxSpectrum/if1/if1CoreBridge";
+import { connectInterface1, insertCartridge, interface1Of, type HarnessCartridge } from "../interface1Support";
 
 import { buildSp48Wasm, productionOutput } from "../../../scripts/build-sp48-wasm.cjs";
 
@@ -593,6 +595,72 @@ export class Sp48TestSession {
   // The DivMMC (`.plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md` C4/C6)
 
   private sdCard?: HarnessSdCard;
+  private if1?: Interface1Support;
+
+  private get interface1Support(): Interface1Support {
+    this.if1 ??= interface1Of("sp48", this.machine);
+    return this.if1;
+  }
+
+  /** Connects the Interface 1 with a ROM (the shipped v2 by default); no reset (see interface1Support.ts) */
+  connectInterface1(rom?: Uint8Array): this {
+    connectInterface1(this.interface1Support, rom);
+    return this;
+  }
+
+  /** Puts an .mdr (or `{ blank: slots }`) into drive 0-7; `writeProtected` overrides its last byte */
+  insertCartridge(drive: number, cartridge: HarnessCartridge, writeProtected?: boolean): this {
+    insertCartridge(this.interface1Support, drive, cartridge, writeProtected);
+    return this;
+  }
+
+  /** The interface's state, with every drive's */
+  interface1(): Interface1State & { drives: Interface1DriveState[] } {
+    const support = this.interface1Support;
+    return { ...support.state(), drives: Array.from({ length: 8 }, (_, d) => support.drive(d)) };
+  }
+
+  /** Drive `drive`'s cartridge as an .mdr, as the guest left it */
+  cartridge(drive: number): Uint8Array | undefined {
+    return this.interface1Support.cartridge(drive);
+  }
+
+  /** The bridge itself, for what the methods above do not cover (slot signal, dirty slots) */
+  get interface1Bridge(): Interface1Support {
+    return this.interface1Support;
+  }
+
+  /** The CPU's T-state counter, as the host sees it (continuous across the core's rebases) */
+  tacts(): number {
+    return (this.machine.wasmV2Runtime!.exports as unknown as { sp48GetTacts(): number }).sp48GetTacts() >>> 0;
+  }
+
+  /** The machine's reset (the RESET button: memory kept, every device reset) */
+  reset(): this {
+    (this.machine.wasmV2Runtime!.exports as unknown as { sp48Reset(): void }).sp48Reset();
+    this.machine.pc = 0;
+    return this;
+  }
+
+  /**
+   * Test hook: as if `amount` T-states passed with nothing happening - every absolute tact point the
+   * core keeps moves forward, so a few calls reach the counter's rebase (`sp48TestAdvanceTacts`)
+   */
+  testAdvanceTacts(amount: number): this {
+    (this.machine.wasmV2Runtime!.exports as unknown as { sp48TestAdvanceTacts(n: number): void }).sp48TestAdvanceTacts(amount >>> 0);
+    return this;
+  }
+
+  /** A Klive machine state, as the IDE saves one */
+  saveState(): ReturnType<HarnessSp48Machine["saveMachineState"]> {
+    return this.machine.saveMachineState();
+  }
+
+  /** Restores a state `saveState` returned */
+  loadState(parts: ReturnType<HarnessSp48Machine["saveMachineState"]>): this {
+    this.machine.loadMachineState(parts);
+    return this;
+  }
 
   /**
    * Connects the DivMMC with an 8K ROM and resets the machine, which boots through it. `sdCard`: the

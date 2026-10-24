@@ -545,16 +545,11 @@ static void zxIf1WritePort(uint32_t address, uint32_t value) {
         zxIf1EndWrite(now);
       }
       if ((next & ZXIF1_CTL_ERASE_OFF) != 0u) zxIf1EraseChain = 0u;
-      /* The erase head switched on over a block erases it */
-      if ((old & ZXIF1_CTL_ERASE_OFF) != 0u && (next & ZXIF1_CTL_ERASE_OFF) == 0u) {
-        const int32_t d = zxIf1SelectedDrive();
-        if (d >= 0 && zxIf1Drives[d].inserted != 0u && zxIf1Drives[d].motorOn != 0u && zxIf1Erasing((uint32_t)d) != 0u) {
-          const uint32_t segment = zxIf1Drives[d].segment;
-          if (segment != ZXIF1_SEG_GAP_A && segment != ZXIF1_SEG_GAP_B && segment != ZXIF1_SEG_GAP_C) {
-            zxIf1EraseBlock((uint32_t)d, zxIf1Drives[d].slot, segment);
-          }
-        }
-      }
+      /*
+       * Switching the erase head on spares the block under the read head: the erase head sits ahead
+       * of it on the tape, so it reaches only what arrives later (zxIf1EnterSegment). SEND-BLK turns
+       * it on right after reading the header it writes behind.
+       */
       /* COMMS CLK falling: the flip-flops shift, drive 1 taking NOT COMMS DATA (§3 M7) */
       if ((old & ZXIF1_CTL_COMMS_CLK) != 0u && (next & ZXIF1_CTL_COMMS_CLK) == 0u) {
         const uint8_t in = (next & ZXIF1_CTL_COMMS_DATA) == 0u ? 1u : 0u;
