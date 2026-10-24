@@ -9,7 +9,8 @@ import {
   commandSuccess,
   IdeCommandBase
 } from "../services/ide-commands";
-import { DISK_FOLDER } from "@common/structs/project-const";
+import { CARTRIDGE_FOLDER, DISK_FOLDER } from "@common/structs/project-const";
+import { isMdrCartridgeType } from "@emu/machines/microdrive/mdrImage";
 import { t } from "@common/i18n/i18n";
 
 // --- CPC DSK disks for the +3, blank TR-DOS disks for the Pentagon (`.plans/BETA128_TRDOS_PLAN.md`)
@@ -58,9 +59,9 @@ export class CreateDiskFileCommand extends IdeCommandBase<CreateDiskFileCommandA
       // --- Create a disk file in the project folder
       const projectFolder = context.store.getState()?.project?.folderPath;
       if (projectFolder) {
-        folder = folder
-          ? `${projectFolder}/${DISK_FOLDER}/${folder}`
-          : `${projectFolder}/${DISK_FOLDER}`;
+        // --- A Microdrive cartridge goes into `cartridges`, a disk into `disks`
+        const kindFolder = isMdrCartridgeType(args.diskType) ? CARTRIDGE_FOLDER : DISK_FOLDER;
+        folder = folder ? `${projectFolder}/${kindFolder}/${folder}` : `${projectFolder}/${kindFolder}`;
       }
     }
     try {

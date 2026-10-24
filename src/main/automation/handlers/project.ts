@@ -49,7 +49,7 @@ async function buildCommand(ctx: MethodContext, command: string): Promise<BuildR
 }
 
 /** `expc`'s formats */
-const EXPORT_FORMATS = ["tap", "tzx", "hex", "nex", "dsk", "trd"];
+const EXPORT_FORMATS = ["tap", "tzx", "hex", "nex", "dsk", "trd", "mdr"];
 
 export const projectMethods: MethodTable = {
   "project.info": {

@@ -10,7 +10,11 @@ import path from "path";
  */
 
 const state: { media: Record<string, unknown>; emulatorState: Record<string, unknown> } = { media: {}, emulatorState: {} };
-const emu = { issueMachineCommand: vi.fn(async () => {}), setDiskFile: vi.fn(async () => {}) };
+const emu = {
+  issueMachineCommand: vi.fn(async () => {}),
+  setDiskFile: vi.fn(async () => {}),
+  setMicrodriveFile: vi.fn(async () => {})
+};
 
 vi.mock("@main/main-store", () => ({ mainStore: { getState: () => state } }));
 vi.mock("@messaging/MainToEmuMessenger", () => ({ getEmuApi: () => emu }));
@@ -34,6 +38,7 @@ beforeEach(() => {
   state.emulatorState = {};
   emu.issueMachineCommand.mockClear();
   emu.setDiskFile.mockClear();
+  emu.setMicrodriveFile.mockClear();
   resetDiskImageBackups();
 });
 
@@ -46,6 +51,20 @@ describe("disk image edits", () => {
     expect(new Uint8Array(fs.readFileSync(`${disk}.bak`))).toEqual(new Uint8Array([1, 2, 3]));
     expect(emu.issueMachineCommand).not.toHaveBeenCalled();
     expect(emu.setDiskFile).not.toHaveBeenCalled();
+  });
+
+  it("pauses a running machine with the cartridge in Microdrive 2, re-inserts it and runs on", async () => {
+    const cartridge = path.join(folder, "games.mdr");
+    fs.writeFileSync(cartridge, new Uint8Array([7]));
+    state.media = { microdrive2: { diskFile: cartridge } };
+    state.emulatorState = { machineState: MachineControllerState.Running };
+    const start = await beginDiskImageEdit(cartridge);
+    expect(start).toMatchObject({ drive: undefined, microdrive: 1, resume: true, debug: false });
+    expect(emu.issueMachineCommand).toHaveBeenCalledWith("pause");
+    await commitDiskImageEdit(cartridge, new Uint8Array([8]), start);
+    expect(emu.setMicrodriveFile).toHaveBeenCalledWith(1, cartridge, new Uint8Array([8]));
+    expect(emu.setDiskFile).not.toHaveBeenCalled();
+    expect(emu.issueMachineCommand).toHaveBeenLastCalledWith("start");
   });
 
   it("pauses a running machine with the disk in drive B, re-inserts it and runs on", async () => {

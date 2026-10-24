@@ -426,8 +426,8 @@ These are the arguments of the command:
   - `mdr`: a formatted Microdrive cartridge, 254 sectors (127K free)
   - `mdrblank`: an unformatted Microdrive cartridge, for the Interface 1's own `FORMAT`
 - `disk-name`: The name of the disk file (the `.dsk`, `.trd` or `.mdr` extension is added automatically)
-- `disk-folder`: An optional folder in which the new disk file is created; Klive makes it if it does not exist. Without one, the disk goes into the open project's `disks` folder, or into `Klive/Disks` in your home folder when no project is open (the Create Disk File dialog starts there too).
-- `-p`: Creates the disk file within the currently opened project folder (under `disks`); a `disk-folder` given with it is a folder inside `disks`.
+- `disk-folder`: An optional folder in which the new disk file is created; Klive makes it if it does not exist. Without one, the disk goes into the open project's `disks` folder, or into `Klive/Disks` in your home folder when no project is open (the Create Disk File dialog starts there too). A Microdrive cartridge (`mdr`, `mdrblank`) goes into the project's `cartridges` folder instead, or into `Klive/Cartridges`.
+- `-p`: Creates the disk file within the currently opened project folder (under `disks`, or `cartridges` for a Microdrive cartridge); a `disk-folder` given with it is a folder inside that one.
 
 ## `disk`
 

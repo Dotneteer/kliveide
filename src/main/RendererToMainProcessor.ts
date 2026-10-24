@@ -62,7 +62,7 @@ import { readDiskData } from "@emu/machines/disk/disk-readers";
 import { DSK_WHOLE_IMAGE_KEY, dskSectorWrites } from "@emu/machines/disk/disk-changes";
 import { createDiskFile } from "@common/utils/create-disk-file";
 import { MDR_SLOT_SIZE } from "@emu/machines/microdrive/mdrImage";
-import { defaultDiskFolder } from "./disk-folders";
+import { defaultDiskFolder, defaultFolderForDiskType } from "./disk-folders";
 import { beginDiskImageEdit, cancelDiskImageEdit, commitDiskImageEdit } from "./disk-image-edit";
 import { createHardDiskImage, hardDiskFileClusters, queryHardDisk, readHardDiskFile } from "./hard-disk-images";
 import { copyFolderToHardDiskSafely, editHardDiskSafely } from "./hard-disk-edit";
@@ -334,8 +334,9 @@ class MainMessageProcessor {
   }
 
   createDiskFile(diskFolder: string, filename: string, diskType: string) {
-    // --- No folder named: the project's `disks` folder, or `Klive/Disks`
-    return createDiskFile(diskFolder || defaultDiskFolder(), filename, diskType);
+    // --- No folder named: the project's `disks` folder, or `Klive/Disks` (`cartridges` and
+    // --- `Klive/Cartridges` for a Microdrive cartridge)
+    return createDiskFile(diskFolder || defaultFolderForDiskType(diskType), filename, diskType);
   }
 
   async beginDiskImageEdit(filePath: string) {

@@ -66,6 +66,8 @@ export type DiskImageEditStart = {
   contents: Uint8Array;
   /** The drive the image is in (0: A, 1: B), if any */
   drive?: number;
+  /** The Microdrive the cartridge is in (0: 1, 1: 2), if any */
+  microdrive?: number;
   /** The machine was running and the edit paused it */
   resume?: boolean;
   /** It was running under the debugger */

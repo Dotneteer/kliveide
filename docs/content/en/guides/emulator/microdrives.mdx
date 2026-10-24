@@ -39,7 +39,7 @@ With the interface connected, **Machine › Interfaces** has these items for Mic
 | Item | What it does |
 | --- | --- |
 | **Insert Cartridge into Microdrive 1...** | Puts an `.mdr` file into the drive (**Change Cartridge** once one is in) |
-| **New Blank Cartridge in Microdrive 1...** | Creates an unformatted cartridge file and inserts it, ready for `FORMAT` |
+| **New Blank Cartridge in Microdrive 1...** | Creates an unformatted cartridge file and inserts it, ready for `FORMAT`. With a project open, the file goes into the project's `cartridges` folder |
 | **Save Cartridge in Microdrive 1 As...** | Writes the cartridge, as the machine left it, to a new file, which then takes the drive |
 | **Eject Microdrive 1** | Takes the cartridge out |
 | **Write Protect Microdrive 1** | Breaks off the cartridge's tab: the ROM then reports `Drive 'write' protected` |
@@ -50,6 +50,8 @@ runs.
 
 The IDE command [`crd`](/en/reference/commands#crd) makes cartridges too: `crd mdr games` makes a
 formatted one with all 254 sectors free (`CAT` shows 127K), `crd mdrblank work` an unformatted one.
+Both go into the open project's `cartridges` folder, or into `Klive/Cartridges` in your home folder
+when no project is open.
 The [Disk Explorer](/en/guides/emulator/disk-explorer) opens an `.mdr`: it lists the files, previews
 them, and adds, extracts, renames and deletes them.
 

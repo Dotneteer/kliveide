@@ -704,6 +704,15 @@ research file and section it checks:
 - **Roadmap.**
   - G9.6 row ✅ in `CLOSING_THE_GAPS_PLAN.md`.
   - The tape/disk row (§2) and W9 (§4) in `LANDING_PAGE_COMPETITIVE_ANALYSIS.md`.
+- **Where new cartridges go** (asked by the author after the phases): New Blank Cartridge starts in
+  the open project's `cartridges` folder, which it makes (`newCartridgeDialogFolder`). Without a
+  project, it starts in the last cartridge's folder. `crd mdr`/`mdrblank` without a folder (and with
+  `-p`) use `cartridges` too, or `Klive/Cartridges` without a project (`defaultCartridgeFolder`).
+- **`.mdr` in the project explorer** (found by the author after the phases): the file-type registry
+  sent only `.dsk`/`.trd`/`.scl` to the Disk Explorer, so a cartridge opened as text. `.mdr` now opens
+  there with the Microdrive icon (`diskFileType.test.ts`). An edit of a cartridge in a Microdrive
+  pauses a running machine and re-inserts the cartridge, as for disks (`mountedMicrodrive`). The
+  automation API's `expc` formats gained `mdr`.
 - **No theming note.** Phase 6 changed no style, and Phase 3's icon rule is already recorded.
 - **The changeset** is a feature, with a highlight.
 - **Checks:** `doc:build` and `doc:check`, the fast tiers, and `test:slow`.

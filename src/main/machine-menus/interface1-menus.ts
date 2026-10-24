@@ -12,6 +12,7 @@ import { createBlankMdr, mdrShape } from "@emu/machines/microdrive/mdrImage";
 import { incMenuVersionAction, setMediaAction } from "@state/actions";
 import { getEmuApi } from "@messaging/MainToEmuMessenger";
 import { mainStore } from "@main/main-store";
+import { newCartridgeDialogFolder } from "@main/disk-folders";
 import { createBooleanSettingsMenu } from "@main/menus/menu-utils";
 import { saveKliveProject } from "@main/projects";
 import { logEmuEvent, setMachineType } from "@main/registeredMachines";
@@ -203,7 +204,7 @@ export async function setSelectedMicrodriveFile(drive: number, filename: string,
 async function newBlankCartridge(owner: BrowserWindow, drive: number): Promise<void> {
   const dialogResult = await dialog.showSaveDialog(owner, {
     title: t("messages.if1.newCartridge"),
-    defaultPath: path.join(appSettings?.folders?.[MDR_FILE_FOLDER] || app.getPath("home"), "cartridge.mdr"),
+    defaultPath: path.join(newCartridgeDialogFolder(appSettings?.folders?.[MDR_FILE_FOLDER]), "cartridge.mdr"),
     filters: [{ name: t("common.filter.mdrFiles"), extensions: ["mdr"] }]
   });
   if (dialogResult.canceled || !dialogResult.filePath) return;
