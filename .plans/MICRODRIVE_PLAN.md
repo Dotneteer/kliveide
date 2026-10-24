@@ -1,6 +1,6 @@
 # ZX Interface 1 and Microdrives on the 48K and 128K (G9.6)
 
-Status: 🚧 **in progress**. Phase 0 done (2026-10-24, see its "As built" note). Decisions Q1–Q8 were
+Status: 🚧 **in progress**. Phases 0 and 1 done (2026-10-24, see their "As built" notes). Decisions Q1–Q8 were
 taken by the author on 2026-10-24 (§8).
 Base plan: [CLOSING_THE_GAPS_PLAN.md](CLOSING_THE_GAPS_PLAN.md), §G9 (a new row, **G9.6**, size L).
 Research: [`_input/microdrive/`](../_input/microdrive/README.md). Every fact in this plan comes from
@@ -176,18 +176,18 @@ Full survey with paths and line numbers: `_input/microdrive/klive-integration-su
     a reset still work.
   - Writes to `$E7` in read mode are ignored, and reads in write mode return `$FF` (undocumented,
     §9).
-- **M6. Fast Microdrive (Q6).**
-  - A core flag shortens the byte time to ~24 T, keeps the signal-before-SYNC at ~1 000 T (above
-    the 6 × 88 T presence and search minimum) and cuts the gaps to the Phase 2 tolerances plus
-    margin. The real ROM still runs every step, so FORMAT, CAT, SAVE and LOAD stay correct; only the
-    tape's speed changes.
-  - Estimate: a slot falls from ~129 000 T to ~20 000 T, so a 254-slot loop takes ~1.5 s instead of
-    ~9.4 s. That is ~6×; Phase 1 measures it.
-  - The ROM's own fixed delays (motor start ~37 ms, drive select ~16 ms, FORMAT's ~97 ms) are
-    unchanged.
-  - The flag lives in core memory, so states and replays carry it. Toggling it is a host input like
-    a media change: it clears the history cursor.
-  - The setting is `emuOptions.fastMicrodrive`, separate from `fastLoad`.
+- **M6. Fast Microdrive (Q6)** — *changed in Phase 1.*
+  - **The tape is never shortened.** Phase 1 tried a fast tape first: shorter byte time and gaps. The
+    ROM's own delays are fixed CPU time: ~53 ms to select and start the motor, and FORMAT's pauses.
+    On a shorter tape those delays cover many more sectors than the ROM expects. ROM 2's FORMAT then
+    starts its verify pass mid-tape, runs out of its visit budget ("highest sector seen + 3") and
+    marks the unvisited sectors bad: 83K instead of 126K.
+  - **Instead the host runs the machine faster.** While a drive's motor runs (`If1GetSelect` ≠ 0)
+    and `emuOptions.fastMicrodrive` is on, `MachineController` runs frames back to back without the
+    frame delay. It already does this for render-to-video (`unthrottled`).
+  - Emulated time is unchanged, so the ROM sees real timing and nothing is lost. Replays, states
+    and the core are untouched: the setting is host policy, not machine state.
+  - The audio is muted while running fast (Phase 3 decides how).
 - **M7. Drive select.** An 8-bit shift register, shifted on the falling edge of COMMS CLK with
   data = NOT COMMS DATA. The lowest selected stage is the running drive (two set bits would collide
   on hardware). Only that drive's motor runs. Write-protect reads 1 only for a selected drive
@@ -287,9 +287,9 @@ Full survey with paths and line numbers: `_input/microdrive/klive-integration-su
 
 ### Phase 1 — the device in the cores (M–L)
 1. `zx-spectrum-if1.c`: paging (M2), ports (M3), the shift register (M7), the lazy slot-ring drive
-   (M4) with snapped writes and `R_MAX`, WAIT (M5), fast mode (M6), stubs (M8), image buffers and
+   (M4) with snapped writes and `R_MAX`, WAIT (M5), stubs (M8), image buffers and
    dirty bits (M9). Exports: present, ROM upload, insert/eject/write-protect, read slot, dirty
-   revision, state getters for the debugger and snapshots, fast flag.
+   revision, state getters for the debugger and snapshots.
 2. `sp48.c`: the hooks, port routing in `SP48_PORT_*_NON_FE`, a slot-0 view like the DivMMC's (the
    8K IF1 ROM mirrored into `$0000–$3FFF` of the flat memory while paged), reset/hard reset,
    ShiftTactOrigin, and `SP48_TAPE_TRAP_ACTIVE()` false while paged. The Timex build compiles it
@@ -297,11 +297,53 @@ Full survey with paths and line numbers: `_input/microdrive/klive-integration-su
 3. `sp128.c`: the same, with the IF1 view in `rebuildMemorySlotMap()` above ROM 0/1 (and below
    nothing: the DivMMC is never present with it, and the Beta 128 is on the Pentagon only), and
    `sp128GetCurrentPartition` / the history context's paged byte.
-4. Build scripts: the exports list, the volatile list (scratch and debug only; the fast flag and
-   all drive state are **not** volatile), `check-wasm-cpu-contract.cjs`. Check the fixed memory
+4. Build scripts: the exports list, the volatile list (scratch and debug only; the
+   drive state is **not** volatile), `check-wasm-cpu-contract.cjs`. Check the fixed memory
    sizes.
 5. Unconnected, the 48K and 128K goldens pass bit for bit and the 1 000-frame benchmark does not
    slow down (as G9.1b measured).
+
+**As built (2026-10-24).**
+- **The device.** `zxSpectrum/wasm/common/zx-spectrum-if1.c` is included by `sp48.c` (left out of
+  the Timex build, which stubs it like the DivMMC) and `sp128.c`.
+  - The 48K's ROM-slot remap now serves both the DivMMC and the Interface 1
+    (`sp48RomSlotRemapped`). On the 128K the IF1 view sits in `rebuildMemorySlotMap()` below the
+    DivMMC.
+  - Ports reach the device through the cores' non-`$FE` decoding. That is **odd ports only**: an
+    even port with A3 or A4 clear goes to the ULA alone, not to both as §3 M3 proposed.
+  - WAIT stalls in the cores' port delay hooks (`sp48CpuDelayPortRead/Write`,
+    `sp128CpuDelayPortRead/Write`), 16 T at a time so the beeper's sampling follows.
+  - A wait past the frame's end, or one that never ends, **freezes** the CPU (`sp48If1RunFrozen`):
+    time and the picture go on, no instruction runs. The byte a long wait delivers is already known
+    when it starts, because nothing else moves the drive while the CPU is frozen.
+  - The tape trap is off while the IF1 ROM is paged (`SP48_TAPE_TRAP_ACTIVE`).
+  - The history context records the paging: the 48K's byte 1, the 128K's byte 3 bit 2. The 128K's
+    `GetCurrentPartition` names the IF1 ROM −4.
+  - Profiling still credits IF1 code to the 48K ROM's addresses until Phase 3's layouts.
+- **Memory.** sp48 grew from 14 MB to 16 MB and sp128 from 21 MB to 23 MB, for the eight drives'
+  1.3 MB. The export lists are `scripts/if1-exports.cjs`, added in each build mode (not to
+  `productionExports`) so a benchmark reference built from older sources still links. `If1` is a
+  device noun in the reverse-debugging export contract (`exportContract.ts`): its setters are
+  journaled, its getters pure.
+- **Fixes the real ROM found.**
+  - **An off-by-one.** Byte *i* arrives (i + 1) byte times after sync, so a data segment lasts
+    (n + 1) byte times. With n, the last header byte came from the next record and every header
+    failed its checksum.
+  - **The fast tape.** It failed as M6 now records.
+- **Results** (`test/spectrum-hw/if1/if1-rom.test.ts`, shipped v2 ROM, real speed):
+  - `FORMAT "m";1;"TEST"` writes all 254 slots, and `CAT 1` prints `TEST`, then **126**, then
+    `0 OK, 20:1`. This confirms §9's derived 126K.
+  - `SAVE *` writes one record (RECFLG `$06`), and `LOAD *` after NEW runs the program at its
+    LINE.
+  - `CAT 2` with no cartridge and `CAT 1` on a blank one both report
+    `Microdrive not present, 10:1`.
+  - On the 128K, `FORMAT` and `CAT` work from 128 BASIC (126).
+  - The GAP polarity (1 = gap) is therefore **confirmed**: the ROM works only with it.
+- **Speed.** `benchmark:debug-overhead --reference HEAD`: every core emulates identically to HEAD
+  with the interface unconnected. The 128K is within noise. The 48K's mixed workload is +0.8%, and
+  its idle-ROM run is −5.1% against −2.9% for HEAD against itself: about 2% real, under the 3%
+  line. The hooks are out of line behind one predictable branch (`ZXIF1_UNLIKELY`).
+- Full fast e2e tiers and the slow export-contract and replay-determinism tests pass.
 
 ### Phase 2 — hardware tests (M)
 0. **The reference values Phase 0 could not take without the device** (§9 rows marked "Phase 2"):
@@ -329,7 +371,8 @@ research file and section it checks:
    order; the "IN 0" hang and recovery by reset.
 5. Writes: header and record snapping, v2's long record verifying, a short (n < 254) ring
    overwriting its first sectors, erase without write becoming gap, write-protect.
-6. Fast mode: the same tests pass with the flag; CAT/LOAD time drops by the Phase 1 target.
+6. Fast Microdrive is host policy (M6): its test is in Phase 3, where the controller runs
+   unthrottled while a motor runs and the emulated result is identical to real speed.
 7. Stubs: RS232 send completes, receive times out, the network fails cleanly.
 8. Tact rebase and state round trip with a drive running (extend `wasm-tact-rebase.test.ts`,
    `machine-state-flow.test.ts`).
@@ -472,7 +515,7 @@ research file and section it checks:
 | The "IN 0" hang looks like an emulator freeze | Documented. The debugger shows PC on the `IN`. Reset recovers |
 | The paging check slows every M1 | Gated on "connected"; benchmark in Phase 1 |
 | Core memory grows ~1.3 MB on each core | Checked against the fixed sizes; the image buffers could shrink to two drives' worth if needed (UI shows two) |
-| Fast mode breaks determinism | The flag lives in core memory; toggling it is a host input that clears the history cursor |
+| Fast mode breaks determinism | It no longer can: the core runs at real speed and only the host's frame pacing changes (M6, Phase 1) |
 | `.szx` `MDRV` head position cannot be interpreted | Klive writes and reads its own convention (§9); foreign values only position the head, which the ROM does not depend on |
 
 ## 8. Decisions from the author (2026-10-24)
@@ -500,7 +543,7 @@ Sources are the research files in `_input/microdrive/`, which carry the citation
 | Paging | in on M1 `$0008`/`$1708` (before the fetch), out after the M1 at `$0700`; address only | `interface1-hardware.md` §3; MAME |
 | `$2000–$3FFF` while paged | the 8K ROM mirrored | MAME; **not verified on hardware** |
 | Port decode | A4/A3 only | `interface1-hardware.md` §2.1; full decode **unknown** |
-| GAP polarity | 1 = gap / no signal | inferred from the ROM's logic (presence test, block search, FORMAT skipping the presence test); one disassembly's comments disagree. **To confirm** by the ROM working in Phase 2: only one polarity lets the block search (8 gap polls, 6 signal polls, then SYNC) meet a preamble |
+| GAP polarity | 1 = gap / no signal | **confirmed** in Phase 1: the real v2 ROM formats, catalogues, saves and loads with it |
 | Byte time | ~48 µs ≈ 168 T at 3.5 MHz (12 µs per bit per track, two tracks) | OqtaDrive, Sinclair Wiki; Wikipedia's 15 KB/s disagrees. The ROM never measures it |
 | Gaps | ≥ 8 GAP=1 polls, then ≥ 6 GAP=0 polls before SYNC; nominal header → 3.2 ms → record → 6.2 ms | `interface1-hardware.md` §7.3. Exact tolerances: **Phase 2** |
 | ROM poll timing (v2, counted) | gap poll 88 T (`CHKLOOP`/`CHK-LP-2`, TEST-BRK included); SYNC poll 38 T × 60 (2 280 T); SYNC → first `INIR` ~104 T; `INIR` 21 T/byte; slowest byte loop 36 T (READ-BLK); a failed presence try ~113 T × 5 000 (~0.16 s) after a 5 000 × 26 T (~37 ms) settle; DELAY-BC 26 T per count | v2 code (`IF1 v2 rom source.txt`), counted in Phase 0 |
@@ -517,6 +560,7 @@ Sources are the research files in `_input/microdrive/`, which carry the citation
 | Unused read bits, BUSY | 1 | **guess** |
 | `$E7` in the wrong direction | write in read mode ignored; read in write mode `$FF` | **guess**; undocumented |
 | PROG after the first IF1 entry | 23813 (derived) | **record in Phase 2** |
+| CAT "K free", fresh 254-slot cartridge (v2) | 126 | **confirmed** in Phase 1 (`if1-rom.test.ts`) |
 | CAT "K free", fresh 254-slot cartridge | 126 (v2) / 127 (v1) (derived) | **record in Phase 2** (v1 only with a user ROM) |
 | `.szx` `wDrivePos` | Klive: byte offset within the 543-byte slot image, clamped to 16 bits | spec says "position within the file" but the field is a WORD; **check a foreign file** |
 | ROM editions | v1 CRC32 `e72a12ae`, v2 `bb66dd1e` (SHA-1 `5cfb6bca…3a127c08`, the shipped file); `CLOSE #0: PRINT PEEK 23729` → 0 / 80 | MAME hashes; Carri; the shipped file checked in Phase 0 |
